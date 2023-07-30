@@ -5,9 +5,12 @@ __pycache__/
 .ipynb_checkpoints/
 *.log
 *.ipynb
-data/
 dist
 
 .envrc
 .direnv
 shell.nix
+
+# local data files
+crypto_ecosystems.json
+protocol_mapping.json
