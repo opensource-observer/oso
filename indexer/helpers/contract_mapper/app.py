@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for
 import json
 from fuzzywuzzy import fuzz, process
 from collections import defaultdict
+import os
 
 JSON_PATH = 'data/protocol_mapping.json'
 GITHUB_DATA_PATH = 'data/crypto_ecosystems.json'
@@ -20,12 +21,15 @@ def flatten_github_data(projects):
 
 
 def find_closest_matches(name, orgs, num_matches=10):
-    substring_matches = [org for org in orgs if name.lower() in org.lower()]
+    matches = [(org,100) for org in orgs if name.lower() in org.lower()]
     closest_matches = process.extract(name, orgs, limit=num_matches, scorer=fuzz.token_sort_ratio)
-    closest_matches.sort(key=lambda x: x[1], reverse=True)
-    repo_names = [x[0] for x in closest_matches]
-    matches = list(set(substring_matches + repo_names))
-    return matches
+    matches.extend(closest_matches)
+    matches.sort(key=lambda x: x[1], reverse=True)
+    repo_names = []
+    for repo,_ in matches:
+        if repo not in repo_names:
+            repo_names.append(repo)
+    return repo_names
 
 
 @app.route('/', methods=['GET', 'POST'])
@@ -96,4 +100,4 @@ def home():
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, host='0.0.0.0', port=int(os.getenv('PORT', 4444)))
