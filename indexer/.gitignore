@@ -14,3 +14,4 @@ shell.nix
 # local data files
 crypto_ecosystems.json
 protocol_mapping.json
+_notebooks/
