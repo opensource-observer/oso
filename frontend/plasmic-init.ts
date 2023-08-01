@@ -26,17 +26,17 @@ PLASMIC.registerComponent(ProjectsClientProvider, {
   name: "ProjectsClientProvider",
   description: "Provides the client for OS Observer",
   props: {
+    children: "slot",
     variableName: {
       type: "string",
       defaultValue: "projectsClient",
     },
-    children: "slot",
-    testData: "object",
     useTestData: {
       type: "boolean",
-      helpText: "render with test data",
+      helpText: "Render with test data",
       editOnly: true,
     },
+    testData: "object",
   },
   providesData: true,
   defaultStyles: {

@@ -145,6 +145,7 @@ export function DataTable<T extends ViewType>(props: DataTableProps<T>) {
               </tr>
               <tr
                 className={rowClassName}
+                key={item.id + "-expanded"}
                 style={{
                   display: item.id == expandedId ? "table-row" : "none",
                 }}
