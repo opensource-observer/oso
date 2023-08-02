@@ -86,18 +86,6 @@ async function getArtifactOrganization(name: string) {
 
   // Upsert the organization and artifact into the database
   logger.debug("Upserting organization and artifact into database");
-  const dbOrg = githubOrg
-    ? await prisma.organization.upsert({
-        where: {
-          githubOrg,
-        },
-        update: {},
-        create: {
-          name: githubOrg,
-          githubOrg,
-        },
-      })
-    : null;
   const dbArtifact = await prisma.artifact.upsert({
     where: {
       type_namespace_name: {
@@ -108,14 +96,12 @@ async function getArtifactOrganization(name: string) {
     },
     update: {},
     create: {
-      organizationId: dbOrg?.id,
       type: ArtifactType.NPM_PACKAGE,
       namespace: ArtifactNamespace.NPM_REGISTRY,
       name: name,
       url: getNpmUrl(name),
     },
   });
-  logger.info("Inserted organization into DB", dbOrg);
   logger.info("Inserted artifact into DB", dbArtifact);
 
   return dbArtifact;

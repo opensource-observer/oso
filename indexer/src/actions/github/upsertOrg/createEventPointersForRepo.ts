@@ -38,7 +38,7 @@ export async function createEventPointersForRepo(repo: Artifact) {
 
   const repoCreatedAt = await getRepositoryCreatedAt(owner, name);
 
-  const eventSources = await prisma.eventSourcePointer.findMany({
+  const eventSources = await prisma.eventPointer.findMany({
     where: { artifactId: repo.id },
   });
   const githubRepoEvents = [
@@ -57,7 +57,7 @@ export async function createEventPointersForRepo(repo: Artifact) {
     lastFetch: repoCreatedAt,
   };
 
-  const newEventSources: Prisma.EventSourcePointerCreateManyInput[] =
+  const newEventSources: Prisma.EventPointerCreateManyInput[] =
     missingEventSources.map((eventInterface) => {
       const queryArgs = {
         org: owner,
@@ -77,7 +77,7 @@ export async function createEventPointersForRepo(repo: Artifact) {
     `created ${newEventSources.length} event sources for github repo ${owner}/${name}`,
   );
 
-  await prisma.eventSourcePointer.createMany({
+  await prisma.eventPointer.createMany({
     data: newEventSources,
   });
 }

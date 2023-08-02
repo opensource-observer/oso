@@ -1,8 +1,8 @@
-import { prisma } from "../db/prisma-client.js";
-import { ApiReturnType, CommonArgs } from "../utils/api.js";
-import { normalizeToObject } from "../utils/common.js";
-import { logger } from "../utils/logger.js";
-import { FETCHER_REGISTRY } from "../cli.js";
+//import { prisma } from "../db/prisma-client.js";
+import { CommonArgs } from "../utils/api.js";
+//import { normalizeToObject } from "../utils/common.js";
+//import { logger } from "../utils/logger.js";
+//import { FETCHER_REGISTRY } from "../cli.js";
 
 /**
  * Entrypoint arguments
@@ -10,8 +10,9 @@ import { FETCHER_REGISTRY } from "../cli.js";
 export type RunAutocrawlArgs = CommonArgs;
 
 export async function runAutocrawl(_args: RunAutocrawlArgs): Promise<void> {
+  /**
   // Get all pointers marked for autocrawl
-  const pointers = await prisma.eventSourcePointer.findMany({
+  const pointers = await prisma.eventPointer.findMany({
     where: {
       autocrawl: true,
     },
@@ -19,14 +20,10 @@ export async function runAutocrawl(_args: RunAutocrawlArgs): Promise<void> {
 
   // Iterate over pointers and call the appropriate function
   const summarize = async (
-    queryCommand: string,
-    queryArgs: any,
     p: Promise<ApiReturnType>,
   ) => {
     const result = await p;
     return {
-      queryCommand,
-      queryArgs,
       ...result,
     };
   };
@@ -43,12 +40,12 @@ export async function runAutocrawl(_args: RunAutocrawlArgs): Promise<void> {
       return;
     }
     return summarize(
-      queryCommand,
-      queryArgs,
       action.func(normalizeToObject(queryArgs)),
     );
   });
+  */
 
   // Go do it
+  const promises: Promise<void>[] = [];
   console.log(await Promise.all(promises));
 }

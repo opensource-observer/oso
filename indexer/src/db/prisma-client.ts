@@ -24,7 +24,7 @@ export async function getEventSourcePointer<PointerType>(
   artifactId: number,
   eventType: EventType,
 ) {
-  const record = await prisma.eventSourcePointer.findUnique({
+  const record = await prisma.eventPointer.findUnique({
     where: {
       artifactId_eventType: {
         artifactId,
@@ -61,7 +61,7 @@ export async function insertData<PointerType>(
   // Set it all up as an atomic transaction
   return await prisma.$transaction(async (txn) => {
     // Check if the pointer hasn't changed, abort if so (concurrent job)
-    const dbCheckEvtSrcPtr = await txn.eventSourcePointer.findUnique({
+    const dbCheckEvtSrcPtr = await txn.eventPointer.findUnique({
       where: {
         artifactId_eventType: {
           artifactId,
@@ -88,7 +88,7 @@ export async function insertData<PointerType>(
     });
 
     // Update the event source pointer
-    await txn.eventSourcePointer.upsert({
+    await txn.eventPointer.upsert({
       where: {
         artifactId_eventType: {
           artifactId,
@@ -96,16 +96,12 @@ export async function insertData<PointerType>(
         },
       },
       update: {
-        queryCommand,
-        queryArgs,
         pointer: newPointer,
         ...(autocrawl ? { autocrawl } : {}),
       },
       create: {
         artifactId,
         eventType,
-        queryCommand,
-        queryArgs,
         pointer: newPointer,
         ...(autocrawl ? { autocrawl } : {}),
       },

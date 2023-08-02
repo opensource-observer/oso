@@ -38,6 +38,10 @@ yarn db:migrate
 
 For more details on how to collaborate within a team with Prisma, see [here](https://www.prisma.io/docs/guides/migrate/developing-with-prisma-migrate/team-development)
 
+### Run data fetchers
+
+TODO: fill
+
 ## Python
 
 ### Setup

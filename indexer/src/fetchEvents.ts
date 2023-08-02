@@ -4,7 +4,7 @@ import {
   ArtifactType,
   EventType,
   PrismaClient,
-  EventSourcePointer,
+  EventPointer,
 } from "@prisma/client";
 import { fetchGithubIssues } from "./actions/github/fetchIssues/index.js";
 
@@ -33,7 +33,7 @@ export async function fetchEvents(args: FetchEventsArgs) {
   const eventType = EventType[args.eventType];
 
   // [artifactId, eventType] tuples are enforced as unique in the DB, but the prisma client does not understand this so we can't use findUnique
-  const pointer = await prisma.eventSourcePointer.findFirst({
+  const pointer = await prisma.eventPointer.findFirst({
     where: {
       AND: [
         {
@@ -77,10 +77,7 @@ function findFetcher(
   return null;
 }
 
-type FetcherFunc = (
-  artifact: Artifact,
-  pointer: EventSourcePointer,
-) => Promise<void>;
+type FetcherFunc = (artifact: Artifact, pointer: EventPointer) => Promise<void>;
 
 interface EventFetcherKey {
   artifactNamespace: ArtifactNamespace;
