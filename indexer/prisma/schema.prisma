@@ -7,35 +7,54 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Used to track a group of people, who may be producing many artifacts 
-model Organization {
+// Used to track a collection of projects (e.g. Optimism contracts)
+// Each collection is owned/defined by a team.
+model Collection {
   id        Int      @id @default(autoincrement())
   createdAt DateTime @default(now()) @db.Timestamptz(3)
   updatedAt DateTime @updatedAt
 
-  // Human-readable name for the organization
+  // Human-readable name
   name        String
-  // The GitHub organization slug (e.g "hypercerts-org")
-  githubOrg   String? @unique
-  // Human-readable description for the organization
+  // Human-readable description
   description String?
+  // Is this collection verified?
+  verified   Boolean @default(false)
 
   // RELATIONS
-  // Associated artifacts
-  artifacts Artifact[]
+  // Many-to-many relations with projects
+  projects Project[]
 }
 
-// A particular piece of work created by an organization
+// Used to track a collection of artifacts (e.g. Uniswap)
+// Each project is owned/defined by a team.
+model Project {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt
+
+  // Human-readable name
+  name        String
+  // Human-readable description
+  description String?
+  // Is this project verified?
+  verified   Boolean @default(false)
+
+  // RELATIONS
+  // Many-to-many relations with collections
+  collections Collection[]
+  // Many-to-many relations with artifacts
+  artifacts   Artifact[]
+}
+
+
+// A particular piece of work (e.g. an npm package or GitHub repo)
 // TODO: if we really want to have separate tables for wallets, repositories, etc, we can turn this into a union type later
 //    https://dev.to/reggi/working-with-unions-within-prisma-nm6
 model Artifact {
   id        Int      @id @default(autoincrement())
   createdAt DateTime @default(now()) @db.Timestamptz(3)
   updatedAt DateTime @updatedAt
-
-  // Relation to the Organization if one exists
-  organization   Organization? @relation(fields: [organizationId], references: [id])
-  organizationId Int?
 
   // The type of artifact
   type      ArtifactType
@@ -49,10 +68,12 @@ model Artifact {
   details   Json?
 
   // RELATIONS
-  // Associated events
-  events          Event[]
-  // Associated event source pointers
-  eventSourcePtrs EventSourcePointer[]
+  // Many-to-many relation with projects
+  projects  Project[]
+  // One-to-many relation with events
+  events    Event[]
+  // One-to-many relation with event pointers
+  eventPtrs EventPointer[]
 
   // A combination of the type, namespace, and name must be unique
   @@unique([type, namespace, name])
@@ -71,12 +92,12 @@ model Contributor {
   // TODO add more fields as necessary
 
   // RELATIONS
-  // Associated events
+  // One-to-many relation with events
   events Event[]
 }
 
 // An event that happened to an artifact
-// An event stream is identified by its (organization, artifact, eventType)
+// An event stream is identified by its (artifact, eventType)
 model Event {
   id        Int      @id @default(autoincrement())
   createdAt DateTime @default(now()) @db.Timestamptz(3)
@@ -99,7 +120,7 @@ model Event {
   details       Json?
 }
 
-model EventSourcePointer {
+model EventPointer {
   id        Int      @id @default(autoincrement())
   createdAt DateTime @default(now()) @db.Timestamptz(3)
   updatedAt DateTime @updatedAt
@@ -109,11 +130,6 @@ model EventSourcePointer {
   artifactId Int
   // Type of event
   eventType  EventType
-
-  // Used to run a command to get data
-  queryCommand String
-  // Arguments to the query command
-  queryArgs    Json
   // The relevant pointer information on where we left off
   pointer      Json
   // Should the we auto-crawl this source?

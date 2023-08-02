@@ -10,5 +10,6 @@ export const requireEnv = (identifier: string) => {
   return value;
 };
 
+export const DATABASE_URL = requireEnv("DATABASE_URL");
 export const GITHUB_TOKEN = requireEnv("GITHUB_TOKEN");
 export const GITHUB_GRAPHQL_API = requireEnv("GITHUB_GRAPHQL_API");

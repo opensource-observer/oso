@@ -4,6 +4,8 @@ import { GithubEventPointer } from "../../actions/github/upsertOrg/createEventPo
 import { EventType, prisma } from "../../db/prisma-client.js";
 import { InvalidInputError } from "../error.js";
 
+export const getArtifactName = (org: string, repo: string) => `${org}/${repo}`;
+
 export async function getGithubPointer(
   args: GithubFetchArgs,
   eventType: EventType,
@@ -18,20 +20,12 @@ export async function getGithubPointer(
     throw new InvalidInputError("Missing required argument: org");
   }
 
-  const dbOrg = await prisma.organization.findFirst({
-    where: { name: args.org },
-  });
-
-  if (!dbOrg) {
-    throw new InvalidInputError(`No org matching ${args.org}`);
-  }
-
+  const artifactName = getArtifactName(org, repo);
   const dbArtifact = await prisma.artifact.findFirst({
     where: {
       AND: [
         {
-          name: args.repo,
-          organizationId: dbOrg.id,
+          name: artifactName,
         },
       ],
     },
@@ -43,7 +37,7 @@ export async function getGithubPointer(
     );
   }
 
-  const pointer = await prisma.eventSourcePointer.findFirst({
+  const pointer = await prisma.eventPointer.findFirst({
     where: {
       AND: [
         {

@@ -1,19 +1,16 @@
-import {
-  ArtifactNamespace,
-  ArtifactType,
-  Organization,
-  PrismaClient,
-} from "@prisma/client";
+import { ArtifactNamespace, ArtifactType, PrismaClient } from "@prisma/client";
 import { createEventPointersForRepo } from "./createEventPointersForRepo.js";
 
-export async function createEventPointersForOrg(org: Organization) {
+export async function createEventPointersForOrg(orgName: string) {
   const prisma = new PrismaClient();
 
   const orgRepos = await prisma.artifact.findMany({
     where: {
       AND: [
         {
-          organizationId: org.id,
+          name: {
+            startsWith: orgName,
+          },
         },
         {
           type: ArtifactType.GIT_REPOSITORY,

@@ -2,7 +2,7 @@ import {
   Artifact,
   ArtifactNamespace,
   ArtifactType,
-  EventSourcePointer,
+  EventPointer,
   EventType,
   Prisma,
 } from "@prisma/client";
@@ -16,10 +16,7 @@ import {
   getRepoIssuesFiled,
 } from "../../../utils/github/getRepoIusses.js";
 
-export async function fetchGithubIssues(
-  repo: Artifact,
-  pointer: EventSourcePointer,
-) {
+export async function fetchGithubIssues(repo: Artifact, pointer: EventPointer) {
   if (
     repo.type != ArtifactType.GIT_REPOSITORY ||
     repo.namespace != ArtifactNamespace.GITHUB
@@ -81,7 +78,7 @@ export async function fetchGithubIssues(
 
   await prisma.$transaction([
     prisma.event.createMany({ data: newIssues }),
-    prisma.eventSourcePointer.update({
+    prisma.eventPointer.update({
       where: {
         id: pointer.id,
       },
