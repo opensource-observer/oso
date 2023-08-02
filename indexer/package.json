@@ -24,6 +24,7 @@
     "db:stop": "supabase stop",
     "deploy": "yarn db:migrate",
     "dev": "tsc-watch --onSuccess \"node dist/index.js\"",
+    "json-yaml": "yarn ts-node --esm utilities/json-yaml/index.ts",
     "lint": "tsc --noEmit && yarn lint:eslint && yarn lint:prettier",
     "lint:eslint": "eslint --ignore-path ../.gitignore --max-warnings 0 --cache .",
     "lint:prettier": "prettier --ignore-path ../.gitignore --loglevel warn --check **/*.ts",
@@ -59,6 +60,7 @@
     "npm-registry-fetch": "^14.0.5",
     "ts-adt": "^2.1.2",
     "winston": "^3.10.0",
+    "yaml": "^2.3.1",
     "yargs": "^17.7.2"
   }
 }
