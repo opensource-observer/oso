@@ -18,17 +18,17 @@ export type ProjectsClientProviderTestData = {
 };
 
 export type ProjectsClientProviderProps = {
-  children?: ReactNode;
   className?: string;
+  children?: ReactNode;
   variableName: string;
-  testData?: ProjectsClientProviderTestData;
   useTestData?: boolean;
+  testData?: ProjectsClientProviderTestData;
 };
 
 // Provides access to the projects client both through the context and the data
 // provider for plasmic users. Probably a bit superfluous.
 export function ProjectsClientProvider(props: ProjectsClientProviderProps) {
-  const { children, className, variableName, useTestData, testData } = props;
+  const { className, children, variableName, useTestData, testData } = props;
   const [client, setClient] = React.useState<IProjectsClient>(
     new NullProjectsClient(),
   );
