@@ -25,6 +25,22 @@ describe("parsing", () => {
     expect(result?.name).toEqual("hypercerts");
   });
 
+  it("parses just a github org - no trailing slash", () => {
+    const url = "ssh://github.com/hypercerts-org";
+    const result = parseGithubUrl(url);
+    expect(result).not.toBeNull();
+    expect(result?.owner).toEqual("hypercerts-org");
+    expect(result?.name).toBeUndefined();
+  });
+
+  it("parses just a github org - trailing slash", () => {
+    const url = "ssh://github.com/hypercerts-org/";
+    const result = parseGithubUrl(url);
+    expect(result).not.toBeNull();
+    expect(result?.owner).toEqual("hypercerts-org");
+    expect(result?.name).toBeUndefined();
+  });
+
   it("doesn't parse gitlab ssh urls", () => {
     const url = "ssh://gitlab.com/hypercerts-org/hypercerts.git";
     const result = parseGithubUrl(url);
