@@ -1,6 +1,6 @@
 export interface ParseGitHubUrlResult {
   owner: string;
-  name: string;
+  name?: string;
 }
 
 /**
@@ -14,14 +14,21 @@ export function parseGithubUrl(url: any): ParseGitHubUrlResult | null {
   }
 
   // eslint-disable-next-line no-useless-escape
-  const regex = /\/\/github.com\/([^/]+)\/([^\./]+)/g;
+  const regex = /\/\/github.com\/([^/]+)(\/([^\./]+))?/g;
   const matches = regex.exec(url);
-  if (!matches || matches.length < 3) {
+  if (!matches || matches.length < 2) {
+    return null;
+  }
+
+  const owner = matches[1];
+  const name = matches[3];
+
+  if (!owner) {
     return null;
   }
 
   return {
-    owner: matches[1],
-    name: matches[2],
+    owner,
+    name,
   };
 }
