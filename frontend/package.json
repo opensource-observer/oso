@@ -5,12 +5,12 @@
   "private": true,
   "scripts": {
     "build": "next build",
-    "deploy": "yarn build",
+    "deploy": "pnpm build",
     "dev": "next",
-    "lint": "tsc --noEmit && next lint && yarn lint:eslint",
+    "lint": "tsc --noEmit && next lint && pnpm lint:eslint",
     "lint:eslint": "eslint --ignore-path ../.gitignore --ignore-path .gitignore --max-warnings 0 .",
     "lint:prettier": "prettier --ignore-path ../.gitignore --ignore-path .gitignore --loglevel warn --check **/*.{js,jsx,ts,tsx,sol,md,json}",
-    "prestart": "yarn export",
+    "prestart": "pnpm export",
     "start": "serve out",
     "test": "jest --ci --passWithNoTests",
     "test:watch": "jest --watch"
@@ -22,19 +22,20 @@
     "@mui/material": "^5.14.3",
     "@plasmicapp/loader-nextjs": "^1.0.302",
     "add": "^2.0.6",
+    "csstype": "^3.1.2",
     "next": "latest",
     "random-words": "^2.0.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "serve": "^14.2.0",
-    "uuid": "^9.0.0",
-    "yarn": "^1.22.19"
+    "uuid": "^9.0.0"
   },
   "devDependencies": {
     "@testing-library/dom": "^9.3.1",
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^14.0.0",
     "@testing-library/user-event": "^14.4.3",
+    "@types/lodash": "^4.14.196",
     "@types/node": "^18.11.5",
     "@types/papaparse": "^5.3.7",
     "@types/qs": "^6.9.7",
