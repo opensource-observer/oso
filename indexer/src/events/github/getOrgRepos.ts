@@ -71,5 +71,5 @@ export async function getOrgRepos(orgName: string): Promise<Repository[]> {
     variables,
   );
 
-  return nodes.map((node) => node.node);
+  return nodes.map((node: any) => node.node);
 }

@@ -6,7 +6,7 @@ import {
   EventType,
   Prisma,
 } from "@prisma/client";
-import { prisma } from "../../../db/prisma-client.js";
+import { prisma } from "../../../db/events.js";
 import {
   getNameAndOwnerFromUrl,
   GithubEventPointer,
@@ -14,7 +14,7 @@ import {
 import {
   formatGithubDate,
   getRepoIssuesFiled,
-} from "../../../utils/github/getRepoIusses.js";
+} from "../../../events/github/getRepoIusses.js";
 
 export async function fetchGithubIssues(repo: Artifact, pointer: EventPointer) {
   if (

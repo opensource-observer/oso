@@ -5,7 +5,7 @@ import {
   ArtifactNamespace,
 } from "@prisma/client";
 
-import { getOrgRepos } from "../../../utils/github/getOrgRepos.js";
+import { getOrgRepos } from "../../../events/github/getOrgRepos.js";
 
 export async function fetchGithubReposForOrg(orgName: string) {
   const prisma = new PrismaClient();

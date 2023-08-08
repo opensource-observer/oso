@@ -14,6 +14,10 @@ import {
   UpsertGithubOrgArgs,
 } from "./actions/github/upsertOrg/index.js";
 import { GithubIssueClosedInterface } from "./actions/github/fetch/issueClosed.js";
+import {
+  ImportOssDirectoryArgs,
+  importOssDirectory,
+} from "./actions/oss-directory.js";
 
 const callLibrary = async <Args>(
   func: EventSourceFunction<Args>,
@@ -42,6 +46,14 @@ yargs(hideBin(process.argv))
     describe: "Mark the query for auto-crawling",
     default: false,
   })
+  .command<ImportOssDirectoryArgs>(
+    "importOssDirectory",
+    "Import projects and collections from 'oss-directory'",
+    (yags) => {
+      yags;
+    },
+    (argv) => handleError(importOssDirectory(argv)),
+  )
   .command<RunAutocrawlArgs>(
     "runAutocrawl",
     "Iterate over EventSourcePointer table and update all data marked for autocrawl",
