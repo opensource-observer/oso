@@ -8,7 +8,7 @@ import {
   getEventSourcePointer,
   insertData,
   prisma,
-} from "../db/prisma-client.js";
+} from "../db/events.js";
 import {
   EventSourceFunction,
   ApiInterface,

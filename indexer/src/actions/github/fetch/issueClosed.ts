@@ -6,13 +6,13 @@ import {
 } from "../../../utils/api.js";
 
 import { EventType, Prisma } from "@prisma/client";
-import { insertData } from "../../../db/prisma-client.js";
+import { insertData } from "../../../db/events.js";
 import { GithubEventPointer } from "../upsertOrg/createEventPointersForRepo.js";
 import {
   formatGithubDate,
   getRepoIssuesClosed,
-} from "../../../utils/github/getRepoIusses.js";
-import { getGithubPointer } from "../../../utils/github/getGithubPointer.js";
+} from "../../../events/github/getRepoIusses.js";
+import { getGithubPointer } from "../../../events/github/getGithubPointer.js";
 
 export interface GithubApiInterface extends ApiInterface<GithubFetchArgs> {
   eventType: EventType;

@@ -1,6 +1,6 @@
 import { graphQLClient } from "./graphQLClient.js";
 
-import { Path, Choose, getPath } from "../getPath.js";
+import { Path, Choose, getPath } from "../../utils/getPath.js";
 
 type PageInfo = {
   hasNextPage: boolean;
