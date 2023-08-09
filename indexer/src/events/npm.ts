@@ -24,7 +24,7 @@ import {
 } from "../utils/common.js";
 import { InvalidInputError, MalformedDataError } from "../utils/error.js";
 import { logger } from "../utils/logger.js";
-import { parseGithubUrl } from "../utils/parsing.js";
+import { parseGitHubUrl } from "../utils/parsing.js";
 
 // API endpoint to query
 const NPM_HOST = "https://api.npmjs.org/";
@@ -77,7 +77,7 @@ async function getArtifactOrganization(name: string) {
   // Check if the organization exists
   const repoUrl = pkgManifest?.repository?.url ?? "";
   logger.info(`Repository URL: ${repoUrl}`);
-  const { owner: githubOrg } = parseGithubUrl(repoUrl) ?? {};
+  const { owner: githubOrg } = parseGitHubUrl(repoUrl) ?? {};
   if (!githubOrg) {
     logger.warn(`Unable to find the GitHub organization for ${name}`);
   } else {
