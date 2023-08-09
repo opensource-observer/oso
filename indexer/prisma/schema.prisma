@@ -14,6 +14,8 @@ model Collection {
   createdAt DateTime @default(now()) @db.Timestamptz(3)
   updatedAt DateTime @updatedAt
 
+  // A unique human-readable identifier for this project
+  slug        String @unique
   // Human-readable name
   name        String
   // Human-readable description
@@ -23,7 +25,20 @@ model Collection {
 
   // RELATIONS
   // Many-to-many relations with projects
-  projects Project[]
+  projects CollectionsOnProjects[]
+}
+
+// Explicit many-to-many relation between projects and artifacts
+model CollectionsOnProjects {
+  assignedAt    DateTime @default(now()) @db.Timestamptz(3)
+
+  collection    Collection @relation(fields: [collectionId], references: [id])
+  collectionId  Int // relation scalar field (used in the `@relation` attribute above)
+  
+  project       Project   @relation(fields: [projectId], references: [id])
+  projectId     Int // relation scalar field (used in the `@relation` attribute above)
+
+  @@id([collectionId, projectId])
 }
 
 // Used to track a collection of artifacts (e.g. Uniswap)
@@ -33,6 +48,8 @@ model Project {
   createdAt DateTime @default(now()) @db.Timestamptz(3)
   updatedAt DateTime @updatedAt
 
+  // A unique human-readable identifier for this project
+  slug        String @unique
   // Human-readable name
   name        String
   // Human-readable description
@@ -42,11 +59,22 @@ model Project {
 
   // RELATIONS
   // Many-to-many relations with collections
-  collections Collection[]
+  collections CollectionsOnProjects[]
   // Many-to-many relations with artifacts
-  artifacts   Artifact[]
+  artifacts   ProjectsOnArtifacts[]
 }
 
+// Explicit many-to-many relation between projects and artifacts
+model ProjectsOnArtifacts {
+  assignedAt  DateTime @default(now()) @db.Timestamptz(3)
+
+  project     Project   @relation(fields: [projectId], references: [id])
+  projectId   Int // relation scalar field (used in the `@relation` attribute above)
+  artifact    Artifact  @relation(fields: [artifactId], references: [id])
+  artifactId  Int // relation scalar field (used in the `@relation` attribute above)
+
+  @@id([projectId, artifactId])
+}
 
 // A particular piece of work (e.g. an npm package or GitHub repo)
 // TODO: if we really want to have separate tables for wallets, repositories, etc, we can turn this into a union type later
@@ -69,7 +97,7 @@ model Artifact {
 
   // RELATIONS
   // Many-to-many relation with projects
-  projects  Project[]
+  projects  ProjectsOnArtifacts[]
   // One-to-many relation with events
   events    Event[]
   // One-to-many relation with event pointers
@@ -163,6 +191,7 @@ enum ArtifactType {
   EOA_ADDRESS
   SAFE_ADDRESS
   CONTRACT_ADDRESS
+  FACTORY_ADDRESS
   // Software artifacts
   GIT_REPOSITORY
   NPM_PACKAGE

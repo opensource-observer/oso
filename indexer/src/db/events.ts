@@ -1,15 +1,7 @@
 import _ from "lodash";
-import {
-  PrismaClient,
-  ArtifactNamespace,
-  ArtifactType,
-  EventType,
-  Prisma,
-} from "@prisma/client";
+import { EventType, Prisma } from "@prisma/client";
+import { prisma } from "./prisma-client.js";
 import { assert, normalizeToObject } from "../utils/common.js";
-
-export const prisma = new PrismaClient();
-export { ArtifactNamespace, ArtifactType, EventType };
 
 /**
  * Before you do any work to fetch data, use this to retrieve the EventSourcePointer

@@ -1,14 +1,9 @@
 import dayjs, { Dayjs } from "dayjs";
 import _ from "lodash";
 import npmFetch from "npm-registry-fetch";
-import {
-  ArtifactNamespace,
-  ArtifactType,
-  EventType,
-  getEventSourcePointer,
-  insertData,
-  prisma,
-} from "../db/events.js";
+import { EventType } from "@prisma/client";
+import { getEventSourcePointer, insertData } from "../db/events.js";
+import { upsertNpmPackage } from "../db/entities.js";
 import {
   EventSourceFunction,
   ApiInterface,
@@ -25,6 +20,7 @@ import {
 import { InvalidInputError, MalformedDataError } from "../utils/error.js";
 import { logger } from "../utils/logger.js";
 import { parseGitHubUrl } from "../utils/parsing.js";
+import { formatDate } from "../utils/format.js";
 
 // API endpoint to query
 const NPM_HOST = "https://api.npmjs.org/";
@@ -33,11 +29,6 @@ const DEFAULT_START_DATE = "2010-01-01";
 const NPM_DOWNLOADS_COMMAND = "npmDownloads";
 // Only get data up to 2 days ago, accounting for incomplete days and time zones
 const TODAY_MINUS = 2;
-
-// date format used by NPM APIs
-export const formatDate = (date: Dayjs) => date.format("YYYY-MM-DD");
-// human-readable URL for a package
-const getNpmUrl = (name: string) => `https://www.npmjs.com/package/${name}`;
 
 /**
  * What we expect to store in the EventSourcePointer DB table
@@ -65,13 +56,13 @@ function createDayDownloads(x: any): DayDownloads {
 /**
  * Get the artifact and organization for a package, creating it if it doesn't exist
  *
- * @param name npm package name
+ * @param packageName npm package name
  * @returns Artifact
  */
-async function getArtifactOrganization(name: string) {
+async function getArtifactOrganization(packageName: string) {
   // Get package.json
   logger.debug(`Fetching package.json`);
-  const pkgManifest: any = await npmFetch.json(`/${name}/latest`);
+  const pkgManifest: any = await npmFetch.json(`/${packageName}/latest`);
   //console.log(JSON.stringify(pkgManifest, null, 2));
 
   // Check if the organization exists
@@ -79,29 +70,14 @@ async function getArtifactOrganization(name: string) {
   logger.info(`Repository URL: ${repoUrl}`);
   const { owner: githubOrg } = parseGitHubUrl(repoUrl) ?? {};
   if (!githubOrg) {
-    logger.warn(`Unable to find the GitHub organization for ${name}`);
+    logger.warn(`Unable to find the GitHub organization for ${packageName}`);
   } else {
-    logger.info(`GitHub organization for ${name}: ${githubOrg}`);
+    logger.info(`GitHub organization for ${packageName}: ${githubOrg}`);
   }
 
   // Upsert the organization and artifact into the database
   logger.debug("Upserting organization and artifact into database");
-  const dbArtifact = await prisma.artifact.upsert({
-    where: {
-      type_namespace_name: {
-        type: ArtifactType.NPM_PACKAGE,
-        namespace: ArtifactNamespace.NPM_REGISTRY,
-        name: name,
-      },
-    },
-    update: {},
-    create: {
-      type: ArtifactType.NPM_PACKAGE,
-      namespace: ArtifactNamespace.NPM_REGISTRY,
-      name: name,
-      url: getNpmUrl(name),
-    },
-  });
+  const dbArtifact = upsertNpmPackage(packageName);
   logger.info("Inserted artifact into DB", dbArtifact);
 
   return dbArtifact;

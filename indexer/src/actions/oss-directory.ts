@@ -2,6 +2,7 @@
 import { CommonArgs } from "../utils/api.js";
 import { logger } from "../utils/logger.js";
 import { fetchData } from "oss-directory";
+import { upsertOssProject, upsertOssCollection } from "../db/entities.js";
 
 /**
  * Entrypoint arguments
@@ -16,4 +17,8 @@ export async function importOssDirectory(
   logger.info(
     `Found ${projects.length} projects and ${collections.length} collections`,
   );
+
+  await Promise.all(projects.map(upsertOssProject));
+  await Promise.all(collections.map(upsertOssCollection));
+  logger.info("Done");
 }
