@@ -6,7 +6,7 @@ import {
   EventType,
   Prisma,
 } from "@prisma/client";
-import { prisma } from "../../../db/events.js";
+import { prisma } from "../../../db/prisma-client.js";
 import {
   getNameAndOwnerFromUrl,
   GithubEventPointer,

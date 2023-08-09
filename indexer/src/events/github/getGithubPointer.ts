@@ -1,7 +1,7 @@
-import { Artifact } from "@prisma/client";
+import { Artifact, EventType } from "@prisma/client";
 import { GithubFetchArgs } from "../../actions/github/fetch/issueFiled.js";
 import { GithubEventPointer } from "../../actions/github/upsertOrg/createEventPointersForRepo.js";
-import { EventType, prisma } from "../../db/events.js";
+import { prisma } from "../../db/prisma-client.js";
 import { InvalidInputError } from "../../utils/error.js";
 
 export const getArtifactName = (org: string, repo: string) => `${org}/${repo}`;

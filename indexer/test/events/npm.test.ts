@@ -1,10 +1,7 @@
 import _ from "lodash";
 import dayjs from "dayjs";
-import {
-  hasDuplicates,
-  getMissingDays,
-  formatDate,
-} from "../../src/events/npm.js";
+import { hasDuplicates, getMissingDays } from "../../src/events/npm.js";
+import { formatDate } from "../../src/utils/format.js";
 
 const makeData = (dateStrings: string[]) =>
   dateStrings.map((dateString) => ({

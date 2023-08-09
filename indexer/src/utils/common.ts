@@ -112,3 +112,13 @@ export function hackyCast<T = any>(x: any): T {
 export function uncheckedCast<T>(x: any): T {
   return x;
 }
+
+export function isTruthy<T>(value: T): value is _.Truthy<T> {
+  return !!value;
+}
+
+export function filterFalsy<T>(
+  xs: ReadonlyArray<T | null | undefined | false>,
+): T[] {
+  return xs.filter(isTruthy);
+}

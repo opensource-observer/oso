@@ -40,7 +40,15 @@ For more details on how to collaborate within a team with Prisma, see [here](htt
 
 ### Run data fetchers
 
-TODO: fill
+To import projects and collections from [oss-directory](https://github.com/hypercerts-org/oss-directory), run the following
+
+```bash
+pnpm start importOssDirectory
+```
+
+This will populate the database with Projects, Collections, Artifacts, and start fetching event data associated with these artifacts
+
+TODO: fill out the rest
 
 ## Python
 
