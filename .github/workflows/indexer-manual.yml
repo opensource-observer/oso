@@ -44,5 +44,7 @@ jobs:
         with:
           cache: "pnpm"
           node-version: "18.x"
+      - name: Build
+        run: pnpm build
       - name: Run
         run: pnpm start:indexer ${{ inputs.command }} ${{ inputs.args }}
