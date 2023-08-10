@@ -89,9 +89,7 @@ async function ossUpsertProject(ossProj: Project) {
     name,
     artifacts: {
       createMany: {
-        data: artifacts.map((a) => ({
-          artifactId: a.id,
-        })),
+        data: artifacts.map((a) => ({ artifactId: a.id })),
         skipDuplicates: true,
       },
     },
@@ -101,6 +99,17 @@ async function ossUpsertProject(ossProj: Project) {
     update: { ...update },
     create: { ...update },
   });
+
+  // Remove any artifact relations that are no longer valid
+  await prisma.projectsOnArtifacts.deleteMany({
+    where: {
+      projectId: project.id,
+      artifactId: {
+        notIn: artifacts.map((a) => a.id),
+      },
+    },
+  });
+
   return project;
 }
 
@@ -258,6 +267,14 @@ async function ossCreateBlockchainArtifacts(
   return artifacts;
 }
 
+async function getCollectionBySlug(slug: string) {
+  return await prisma.collection.findUnique({ where: { slug } });
+}
+
+async function getProjectBySlug(slug: string) {
+  return await prisma.project.findUnique({ where: { slug } });
+}
+
 /**
  * Generic upsert for an artifact
  * @param address
@@ -315,6 +332,8 @@ async function upsertNpmPackage(packageName: string) {
 }
 
 export {
+  getCollectionBySlug,
+  getProjectBySlug,
   ossUpsertProject,
   ossUpsertCollection,
   upsertGitHubRepo,
