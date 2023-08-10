@@ -1,6 +1,8 @@
 import path from "path";
 
 type ParseGitHubUrlResult = {
+  // e.g. https://github.com/hypercerts-org/oso
+  url: string;
   // e.g. 'hypercerts-org/oso'
   slug: string;
   // e.g. 'hypercerts-org'
@@ -31,12 +33,14 @@ function parseGitHubUrl(urlStr: any): ParseGitHubUrlResult | null {
     } else if (pathParts.length === 1) {
       // If only 1 path part, then it is the owner with no repo
       return {
+        url: urlStr,
         slug: pathParts[0],
         owner: pathParts[0],
       };
     } else if (pathParts.length > 1) {
       // Otherwise, take the first 2 parts as the owner and repo
       return {
+        url: urlStr,
         slug: `${pathParts[0]}/${pathParts[1]}`,
         owner: pathParts[0],
         repo: path.basename(pathParts[1], ".git"),
@@ -50,7 +54,19 @@ function parseGitHubUrl(urlStr: any): ParseGitHubUrlResult | null {
   }
 }
 
+function isGitHubOrg(urlStr: string) {
+  const { owner, repo } = parseGitHubUrl(urlStr) ?? {};
+  return !!owner && !repo;
+}
+
+function isGitHubRepo(urlStr: string) {
+  const { owner, repo } = parseGitHubUrl(urlStr) ?? {};
+  return !!owner && !!repo;
+}
+
 type ParseNpmUrlResult = {
+  // e.g. 'https://www.npmjs.com/package/@hypercerts-org/oso'
+  url: string;
   // e.g. '@hypercerts-org/oso'
   slug: string;
   // e.g. '@hypercerts-org'
@@ -80,6 +96,7 @@ function parseNpmUrl(urlStr: any): ParseNpmUrlResult | null {
     } else if (pathParts.length === 1) {
       // If only 1 path part, then it is the slug
       return {
+        url: urlStr,
         slug: pathParts[0],
       };
     } else if (pathParts[0] !== "package") {
@@ -88,11 +105,13 @@ function parseNpmUrl(urlStr: any): ParseNpmUrlResult | null {
     } else if (pathParts.length === 2) {
       // If there are 2 parts, then the slug is the second part
       return {
+        url: urlStr,
         slug: pathParts[1],
       };
     } else if (pathParts.length > 2) {
       // Otherwise, the scope is the first part and the slug is the first 2
       return {
+        url: urlStr,
         slug: `${pathParts[1]}/${pathParts[2]}`,
         scope: pathParts[1],
       };
@@ -105,4 +124,11 @@ function parseNpmUrl(urlStr: any): ParseNpmUrlResult | null {
   }
 }
 
-export { ParseGitHubUrlResult, parseGitHubUrl, ParseNpmUrlResult, parseNpmUrl };
+export {
+  ParseGitHubUrlResult,
+  parseGitHubUrl,
+  isGitHubOrg,
+  isGitHubRepo,
+  ParseNpmUrlResult,
+  parseNpmUrl,
+};
