@@ -1,11 +1,16 @@
 import _ from "lodash";
-import { ArtifactType, ArtifactNamespace } from "@prisma/client";
+import { Artifact, ArtifactType, ArtifactNamespace } from "@prisma/client";
 import { Project, Collection, URL, BlockchainAddress } from "oss-directory";
 import { prisma } from "./prisma-client.js";
 import { logger } from "../utils/logger.js";
-import { parseGitHubUrl, parseNpmUrl } from "../utils/parsing.js";
+import {
+  isGitHubOrg,
+  isGitHubRepo,
+  parseGitHubUrl,
+  parseNpmUrl,
+} from "../utils/parsing.js";
 import { getNpmUrl } from "../utils/format.js";
-import { safeCast, filterFalsy } from "../utils/common.js";
+import { safeCast, ensure, filterFalsy } from "../utils/common.js";
 import { getOrgRepos } from "../events/github/getOrgRepos.js";
 import { HandledError } from "../utils/error.js";
 
@@ -14,7 +19,7 @@ import { HandledError } from "../utils/error.js";
  * Pre-condition: all of the project slugs need to already be in the database
  * @param ossCollection
  */
-async function upsertOssCollection(ossCollection: Collection) {
+async function ossUpsertCollection(ossCollection: Collection) {
   const { slug, name, projects: projectSlugs } = ossCollection;
 
   // Get all of the projects
@@ -26,12 +31,14 @@ async function upsertOssCollection(ossCollection: Collection) {
     },
   });
 
+  // Check that all Projects are already in the database
   if (projects.length != projectSlugs.length) {
     throw new HandledError(
       `Could not find all projects for collection ${slug}. Please add all projects first`,
     );
   }
 
+  // Upsert into the database
   const update = {
     name,
     projects: {
@@ -59,38 +66,26 @@ async function upsertOssCollection(ossCollection: Collection) {
  * @param ossProj
  * @returns
  */
-async function upsertOssProject(ossProj: Project) {
+async function ossUpsertProject(ossProj: Project) {
   const { slug, name, github, npm, optimism } = ossProj;
 
-  const expand = async <P, R>(
-    f: (p: P) => Promise<R>,
-    params?: P[],
-  ): Promise<R[]> =>
-    !params ? safeCast<R[]>([]) : _.flatten(await Promise.all(params.map(f)));
-
-  // Upsert all of the adderss and npm artifacts first
-  const artifacts = filterFalsy([
-    // Enumerate npm artifacts
-    ...(await expand(upsertOssNpm, npm)),
-    // Enumerate Optimism artifacts
-    ...(await expand(
-      (a) => upsertOssBlockchainAddress(a, ArtifactNamespace.OPTIMISM),
+  // Create all of the missing artifacts first
+  // Note: this will only create missing artifacts, not update existing ones
+  const artifacts = [
+    // Create GitHub artifacts
+    ...(await ossCreateGitHubArtifacts(github)),
+    // Create npm artifacts
+    ...(await ossCreateNpmArtifacts(npm)),
+    // Create Optimism artifacts
+    ...(await ossCreateBlockchainArtifacts(
+      ArtifactNamespace.OPTIMISM,
       optimism,
     )),
-  ]);
-
-  // Enumerate GitHub artifacts
-  if (github) {
-    for (const githubUrl of github) {
-      const githubArtifacts = await upsertOssGitHub(githubUrl);
-      if (githubArtifacts) {
-        artifacts.push(...githubArtifacts);
-      }
-    }
-  }
+  ];
 
   // Then upsert the project with the relations
   const update = {
+    slug,
     name,
     artifacts: {
       createMany: {
@@ -104,10 +99,7 @@ async function upsertOssProject(ossProj: Project) {
   const project = await prisma.project.upsert({
     where: { slug },
     update: { ...update },
-    create: {
-      slug,
-      ...update,
-    },
+    create: { ...update },
   });
   return project;
 }
@@ -115,32 +107,182 @@ async function upsertOssProject(ossProj: Project) {
 /**
  * Upsert a GitHub resource from oss-directory
  */
-async function upsertOssGitHub(ossUrl: URL) {
-  const { url } = ossUrl;
-  const { slug, owner, repo } = parseGitHubUrl(url) ?? {};
-
-  if (!slug || !owner) {
-    logger.warn(`Invalid GitHub URL: ${url}`);
-    return;
+async function ossCreateGitHubArtifacts(
+  urlObjects?: URL[],
+): Promise<Artifact[]> {
+  if (!urlObjects) {
+    return safeCast<Artifact[]>([]);
   }
 
-  // If there is a single repo specified, just get that
-  if (repo) {
-    return [await upsertGitHubRepo(slug, url)];
+  const urls = urlObjects.map((o) => o.url);
+  const repoUrls = urls.filter(isGitHubRepo);
+  const orgUrls = urls.filter(isGitHubOrg);
+
+  // Check for invalid URLs
+  if (orgUrls.length + repoUrls.length !== urls.length) {
+    const nonConfirmingUrls = urls.filter(
+      (u) => !isGitHubOrg(u) && !isGitHubRepo(u),
+    );
+    const sep = "\n\t";
+    logger.warn(`Invalid GitHub URLs:${sep}${nonConfirmingUrls.join(sep)}`);
   }
 
-  // Otherwise, get all repos for the org
-  return await upsertGitHubOrg(owner);
+  // Flatten all GitHub orgs
+  const orgNames = filterFalsy(
+    orgUrls.map(parseGitHubUrl).map((p) => p?.owner),
+  );
+  const orgRepos = _.flatten(await Promise.all(orgNames.map(getOrgRepos)));
+  const orgRepoUrls = orgRepos.map((r) => r.url);
+  const allRepos = [...repoUrls, ...orgRepoUrls];
+  const parsedRepos = allRepos.map(parseGitHubUrl);
+  const data = parsedRepos.map((p) => ({
+    type: ArtifactType.GIT_REPOSITORY,
+    namespace: ArtifactNamespace.GITHUB,
+    name: ensure<string>(p?.slug, `Invalid parsed GitHub URL: ${p}`),
+    url: ensure<string>(p?.url, `Invalid parsed GitHub URL: ${p}`),
+  }));
+  const slugs = filterFalsy(parsedRepos.map((p) => p?.slug));
+
+  // Create records
+  const { count: createCount } = await prisma.artifact.createMany({
+    data,
+    skipDuplicates: true,
+  });
+  logger.debug(
+    `... created ${createCount}/${data.length} GitHub artifacts (skip duplicates)`,
+  );
+
+  // Now get all of the artifacts
+  const artifacts = await prisma.artifact.findMany({
+    where: {
+      type: ArtifactType.GIT_REPOSITORY,
+      namespace: ArtifactNamespace.GITHUB,
+      name: {
+        in: slugs,
+      },
+    },
+  });
+  return artifacts;
 }
 
 /**
- * Upsert all of the repos in an organization
+ * Upsert an npm artifact from oss-directory
+ * @param ossUrl
+ * @returns
  */
-async function upsertGitHubOrg(owner: string) {
-  const repos = await getOrgRepos(owner);
-  return await Promise.all(
-    repos.map((r) => upsertGitHubRepo(r.nameWithOwner, r.url)),
+async function ossCreateNpmArtifacts(urlObjects?: URL[]) {
+  if (!urlObjects) {
+    return safeCast<Artifact[]>([]);
+  }
+
+  const urls = urlObjects.map((o) => o.url);
+  const parsed = urls.map(parseNpmUrl);
+  const data = parsed.map((p) => ({
+    type: ArtifactType.NPM_PACKAGE,
+    namespace: ArtifactNamespace.NPM_REGISTRY,
+    name: ensure<string>(p?.slug, `Invalid parsed npm URL: ${p}`),
+    url: ensure<string>(p?.url, `Invalid parsed npm URL: ${p}`),
+  }));
+  const slugs = filterFalsy(parsed.map((p) => p?.slug));
+
+  // Create records
+  const { count: createCount } = await prisma.artifact.createMany({
+    data,
+    skipDuplicates: true,
+  });
+  logger.debug(
+    `... inserted ${createCount}/${data.length} npm artifacts (skip duplicates)`,
   );
+
+  // Now get all of the artifacts
+  const artifacts = await prisma.artifact.findMany({
+    where: {
+      type: ArtifactType.NPM_PACKAGE,
+      namespace: ArtifactNamespace.NPM_REGISTRY,
+      name: {
+        in: slugs,
+      },
+    },
+  });
+  return artifacts;
+}
+
+/**
+ * Upsert a blockchain address artifact from oss-directory
+ * @param ossAddr
+ * @param artifactNamespace
+ * @returns
+ */
+async function ossCreateBlockchainArtifacts(
+  namespace: ArtifactNamespace,
+  addrObjects?: BlockchainAddress[],
+) {
+  if (!addrObjects) {
+    return safeCast<Artifact[]>([]);
+  }
+
+  const data = addrObjects.map((o) => ({
+    type:
+      o.type === "eoa"
+        ? ArtifactType.EOA_ADDRESS
+        : o.type === "safe"
+        ? ArtifactType.SAFE_ADDRESS
+        : o.type === "contract"
+        ? ArtifactType.CONTRACT_ADDRESS
+        : o.type === "factory"
+        ? ArtifactType.FACTORY_ADDRESS
+        : ArtifactType.EOA_ADDRESS,
+    namespace,
+    name: o.address,
+  }));
+  const addresses = data.map((d) => d.name);
+
+  // Create records
+  const { count: createCount } = await prisma.artifact.createMany({
+    data,
+    skipDuplicates: true,
+  });
+  logger.debug(
+    `... inserted ${createCount}/${data.length} blockchain artifacts (skip duplicates)`,
+  );
+
+  // Now get all of the artifacts
+  const artifacts = await prisma.artifact.findMany({
+    where: {
+      namespace,
+      name: {
+        in: addresses,
+      },
+    },
+  });
+  return artifacts;
+}
+
+/**
+ * Generic upsert for an artifact
+ * @param address
+ * @param type
+ * @param ns
+ * @returns
+ */
+async function upsertArtifact(fields: {
+  type: ArtifactType;
+  namespace: ArtifactNamespace;
+  name: string;
+  url?: string;
+  details?: any;
+}) {
+  return await prisma.artifact.upsert({
+    where: {
+      type_namespace_name: {
+        type: fields.type,
+        namespace: fields.namespace,
+        name: fields.name,
+      },
+    },
+    update: { ...fields },
+    create: { ...fields },
+  });
 }
 
 /**
@@ -150,39 +292,12 @@ async function upsertGitHubOrg(owner: string) {
  * @returns
  */
 async function upsertGitHubRepo(slug: string, url: string) {
-  return await prisma.artifact.upsert({
-    where: {
-      type_namespace_name: {
-        type: ArtifactType.GIT_REPOSITORY,
-        namespace: ArtifactNamespace.GITHUB,
-        name: slug,
-      },
-    },
-    update: {},
-    create: {
-      type: ArtifactType.GIT_REPOSITORY,
-      namespace: ArtifactNamespace.GITHUB,
-      name: slug,
-      url,
-    },
+  return await upsertArtifact({
+    type: ArtifactType.GIT_REPOSITORY,
+    namespace: ArtifactNamespace.GITHUB,
+    name: slug,
+    url,
   });
-}
-
-/**
- * Upsert an npm artifact from oss-directory
- * @param ossUrl
- * @returns
- */
-async function upsertOssNpm(ossUrl: URL) {
-  const { url } = ossUrl;
-  const { slug } = parseNpmUrl(url) ?? {};
-
-  if (!slug) {
-    logger.warn(`Invalid npm URL: ${url}`);
-    return;
-  }
-
-  return await upsertNpmPackage(slug);
 }
 
 /**
@@ -191,79 +306,17 @@ async function upsertOssNpm(ossUrl: URL) {
  * @returns
  */
 async function upsertNpmPackage(packageName: string) {
-  return await prisma.artifact.upsert({
-    where: {
-      type_namespace_name: {
-        type: ArtifactType.NPM_PACKAGE,
-        namespace: ArtifactNamespace.NPM_REGISTRY,
-        name: packageName,
-      },
-    },
-    update: {},
-    create: {
-      type: ArtifactType.NPM_PACKAGE,
-      namespace: ArtifactNamespace.NPM_REGISTRY,
-      name: packageName,
-      url: getNpmUrl(packageName),
-    },
+  return await upsertArtifact({
+    type: ArtifactType.NPM_PACKAGE,
+    namespace: ArtifactNamespace.NPM_REGISTRY,
+    name: packageName,
+    url: getNpmUrl(packageName),
   });
 }
 
-/**
- * Upsert a blockchain address artifact from oss-directory
- * @param ossAddr
- * @param artifactNamespace
- * @returns
- */
-async function upsertOssBlockchainAddress(
-  ossAddr: BlockchainAddress,
-  artifactNamespace: ArtifactNamespace,
-) {
-  const { address, type } = ossAddr;
-  const artifactType =
-    type === "eoa"
-      ? ArtifactType.EOA_ADDRESS
-      : type === "safe"
-      ? ArtifactType.SAFE_ADDRESS
-      : type === "contract"
-      ? ArtifactType.CONTRACT_ADDRESS
-      : type === "factory"
-      ? ArtifactType.FACTORY_ADDRESS
-      : ArtifactType.EOA_ADDRESS;
-  return await upsertBlockchainAddress(
-    address,
-    artifactType,
-    artifactNamespace,
-  );
-}
-
-/**
- * Upsert a blockchain address artifact
- * @param address
- * @param type
- * @param ns
- * @returns
- */
-async function upsertBlockchainAddress(
-  address: string,
-  type: ArtifactType,
-  ns: ArtifactNamespace,
-) {
-  return await prisma.artifact.upsert({
-    where: {
-      type_namespace_name: {
-        type,
-        namespace: ns,
-        name: address,
-      },
-    },
-    update: {},
-    create: {
-      type,
-      namespace: ns,
-      name: address,
-    },
-  });
-}
-
-export { upsertOssProject, upsertOssCollection, upsertNpmPackage };
+export {
+  ossUpsertProject,
+  ossUpsertCollection,
+  upsertGitHubRepo,
+  upsertNpmPackage,
+};

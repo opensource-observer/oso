@@ -2,7 +2,7 @@
 import { CommonArgs } from "../utils/api.js";
 import { logger } from "../utils/logger.js";
 import { fetchData } from "oss-directory";
-import { upsertOssProject, upsertOssCollection } from "../db/entities.js";
+import { ossUpsertCollection, ossUpsertProject } from "../db/entities.js";
 
 /**
  * Entrypoint arguments
@@ -18,7 +18,19 @@ export async function importOssDirectory(
     `Found ${projects.length} projects and ${collections.length} collections`,
   );
 
-  await Promise.all(projects.map(upsertOssProject));
-  await Promise.all(collections.map(upsertOssCollection));
+  logger.info("Upserting projects...");
+  for (let i = 0; i < projects.length; i++) {
+    const p = projects[i];
+    logger.info(`projects[${i}]: Upserting ${p.slug}`);
+    await ossUpsertProject(p);
+  }
+
+  logger.info("Upserting collections...");
+  for (let i = 0; i < collections.length; i++) {
+    const c = collections[i];
+    logger.info(`collections[${i}]: Upserting ${c.slug}`);
+    await ossUpsertCollection(c);
+  }
+
   logger.info("Done");
 }

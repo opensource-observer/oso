@@ -11,5 +11,5 @@ export const requireEnv = (identifier: string) => {
 };
 
 export const DATABASE_URL = requireEnv("DATABASE_URL");
-export const GITHUB_TOKEN = ""; //requireEnv("GITHUB_TOKEN");
-export const GITHUB_GRAPHQL_API = ""; //requireEnv("GITHUB_GRAPHQL_API");
+export const GITHUB_GRAPHQL_API = requireEnv("X_GITHUB_GRAPHQL_API");
+export const GITHUB_TOKEN = requireEnv("X_GITHUB_TOKEN");
