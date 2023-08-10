@@ -1,5 +1,5 @@
+import ora from "ora";
 import { graphQLClient } from "./graphQLClient.js";
-
 import { Path, Choose, getPath } from "../../utils/getPath.js";
 
 type PageInfo = {
@@ -23,6 +23,7 @@ export function unpaginate<T extends Record<string | number, any>>() {
     let cursor = null;
     const items: any[] = [];
 
+    const spinner = ora("GitHub API").start();
     /* eslint-disable-next-line no-constant-condition */
     while (true) {
       const data = await graphQLClient.request<T>(query, {
@@ -41,6 +42,7 @@ export function unpaginate<T extends Record<string | number, any>>() {
       cursor = pageInfo.endCursor;
 
       const rateLimit: RateLimit = data.rateLimit;
+      spinner.suffixText = `: ${rateLimit.remaining}/${rateLimit.limit} credits remaining`;
 
       if (
         rateLimit.remaining == 0 ||
@@ -51,6 +53,7 @@ export function unpaginate<T extends Record<string | number, any>>() {
         await sleep(timeToReset);
       }
     }
+    spinner.stop();
 
     return items as any;
   };

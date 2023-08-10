@@ -50,7 +50,7 @@ yargs(hideBin(process.argv))
     "importOssDirectory",
     "Import projects and collections from 'oss-directory'",
     (yags) => {
-      yags;
+      yags.option("skipExisting", { type: "boolean" });
     },
     (argv) => handleError(importOssDirectory(argv)),
   )
