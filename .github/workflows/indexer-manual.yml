@@ -1,6 +1,8 @@
 name: os-observer-manual
 env:
   DATABASE_URL: ${{ secrets.DATABASE_URL }}
+  PLASMIC_PROJECT_API_TOKEN: ${{ vars.PLASMIC_PROJECT_API_TOKEN }}
+  PLASMIC_PROJECT_ID: ${{ vars.PLASMIC_PROJECT_ID }}
 
 # Trigger the workflow when:
 on:
