@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>GitHub Activity Chart</title>
+  <!-- Include Highcharts library -->
+  <script src="https://code.highcharts.com/highcharts.js"></script>
+</head>
+<body>
+  <div id="chartContainer" style="width: 100%; height: 600px;"></div>
+  <button id="downloadButton">Download Chart</button>
+  <script>
+    // Function to generate random data for a given range
+
+    const growthRate = 1.01;
+    function generateRandomData(startDate, endDate) {
+      const data = [];
+      const currentDate = new Date(startDate);
+      let multiplier = 1.0;
+
+      while (currentDate <= endDate) {
+        const formattedDate = currentDate.toISOString().split('T')[0];
+        const commits = Math.floor(Math.random() * 10 * multiplier) + 1;
+        const issues = Math.floor(Math.random() * 5 * multiplier);
+        const prs = Math.floor(Math.random() * 3 * multiplier);
+        multiplier *= growthRate;
+
+        data.push({ date: formattedDate, commits, issues, prs });
+
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+
+      return data;
+    }
+
+    const startDate = new Date("2023-01-01");
+    const endDate = new Date("2023-04-30");
+    const dummyData = generateRandomData(startDate, endDate);
+
+    // Extract data for each series
+    const dates = dummyData.map(dataPoint => dataPoint.date);
+    const commitsData = dummyData.map(dataPoint => dataPoint.commits);
+    const issuesData = dummyData.map(dataPoint => dataPoint.issues);
+    const prsData = dummyData.map(dataPoint => dataPoint.prs);
+
+    // Create the stacked area chart
+    Highcharts.chart('chartContainer', {
+      chart: {
+        type: 'area'
+      },
+      title: {
+        text: 'GitHub Activity Chart'
+      },
+      xAxis: {
+        categories: dates,
+        labels: {
+          enabled: false // Hide x-axis labels
+        },
+        lineColor: 'transparent', // Hide x-axis line
+        tickLength: 0 // Hide x-axis ticks
+      },
+      yAxis: {
+        title: {
+          text: null // Remove y-axis title
+        },
+        labels: {
+          enabled: false // Hide y-axis labels
+        },
+        gridLineWidth: 0 // Hide y-axis gridlines
+      },
+      legend: {
+        align: 'right', // Move the legend to the right
+        verticalAlign: 'bottom', // Move the legend to the bottom
+        layout: 'vertical',
+        itemStyle: {
+          color: '#333333' // Legend text color
+        },
+        itemHoverStyle: {
+          color: '#555555' // Legend text color on hover
+        },
+        itemHiddenStyle: {
+          color: '#999999' // Legend item color when series is hidden
+        }
+      },
+      plotOptions: {
+        area: {
+          stacking: 'normal',
+          lineColor: 'white', // Set line color at the top of the area
+          lineWidth: 1,
+          crisp: true,
+          marker: {
+            enabled: false
+          },
+        }
+      },
+      series: [
+        {
+          name: 'Commits',
+          data: commitsData,
+          color: '#136986', // Commits color
+          fillColor: {
+            linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 },
+            stops: [
+              [0, '#136986'],
+              [1, Highcharts.color('#136986').setOpacity(0).get('rgba')]
+            ]
+          }
+        },
+        {
+          name: 'Issues',
+          data: issuesData,
+          color: '#851369', // Issues color
+          fillColor: {
+            linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 },
+            stops: [
+              [0, '#851369'],
+              [1, Highcharts.color('#851369').setOpacity(0).get('rgba')]
+            ]
+          }
+        },
+        {
+          name: 'Merged PRs',
+          data: prsData,
+          color: '#E3B505', // Merged PRs color
+          fillColor: {
+            linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 },
+            stops: [
+              [0, '#E3B505'],
+              [1, Highcharts.color('#E3B505').setOpacity(0).get('rgba')]
+            ]
+          }
+        }
+      ]
+    });
+
+    // Function to trigger the download of the chart as an image
+    function downloadChart() {
+      const chart = Highcharts.charts[0];
+      const svg = chart.getSVG();
+      const blob = new Blob([svg], { type: 'image/svg+xml' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'github_activity_chart.svg';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    // Attach the downloadChart function to the button click event
+    const downloadButton = document.getElementById('downloadButton');
+    downloadButton.addEventListener('click', downloadChart);
+  </script>
+</body>
+</html>
