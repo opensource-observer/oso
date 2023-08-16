@@ -1,5 +1,5 @@
 import _ from "lodash";
-import { AssertionError, NullOrUndefinedValueError } from "./error.js";
+import { AssertionError, NullOrUndefinedValueError } from "./errors.js";
 
 export function spawn(_promise: Promise<any>) {} // eslint-disable-line
 
