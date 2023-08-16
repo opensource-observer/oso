@@ -1,11 +1,8 @@
 name: os-observer-manual
 env:
   DATABASE_URL: ${{ secrets.DATABASE_URL }}
-  X_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   X_GITHUB_GRAPHQL_API: ${{ vars.X_GITHUB_GRAPHQL_API }}
-  PLASMIC_PROJECT_API_TOKEN: ${{ vars.PLASMIC_PROJECT_API_TOKEN }}
-  PLASMIC_PROJECT_ID: ${{ vars.PLASMIC_PROJECT_ID }}
+  X_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 # Trigger the workflow when:
 on:
