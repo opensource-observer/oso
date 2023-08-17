@@ -18,6 +18,10 @@ import {
   ImportOssDirectoryArgs,
   importOssDirectory,
 } from "./actions/oss-directory.js";
+import {
+  ImportDailyContractUsage,
+  importDailyContractUsage,
+} from "./actions/dune/index.js";
 
 const callLibrary = async <Args>(
   func: EventSourceFunction<Args>,
@@ -53,6 +57,14 @@ yargs(hideBin(process.argv))
       yags.option("skipExisting", { type: "boolean" });
     },
     (argv) => handleError(importOssDirectory(argv)),
+  )
+  .command<ImportDailyContractUsage>(
+    "importDailyContractUsage",
+    "Manually import contract usage statistics from dune",
+    (yags) => {
+      yags.option("skipExisting", { type: "boolean" });
+    },
+    (argv) => handleError(importDailyContractUsage(argv)),
   )
   .command<RunAutocrawlArgs>(
     "runAutocrawl",

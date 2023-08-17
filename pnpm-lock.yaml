@@ -141,9 +141,15 @@ importers:
 
   indexer:
     dependencies:
+      '@cowprotocol/ts-dune-client':
+        specifier: ^0.0.2
+        version: 0.0.2
       '@prisma/client':
         specifier: ^5.1.1
         version: 5.1.1(prisma@5.1.1)
+      '@types/luxon':
+        specifier: ^3.3.1
+        version: 3.3.1
       chalk:
         specifier: ^5.3.0
         version: 5.3.0
@@ -162,6 +168,9 @@ importers:
       lodash:
         specifier: ^4.17.21
         version: 4.17.21
+      luxon:
+        specifier: ^3.4.0
+        version: 3.4.0
       npm-registry-fetch:
         specifier: ^15.0.0
         version: 15.0.0
@@ -562,6 +571,15 @@ packages:
   /@colors/colors@1.5.0:
     resolution: {integrity: sha512-ooWCrlZP11i8GImSjTHYHLkvFDP48nS4+204nGb1RiX/WXYHmJA2III9/e2DWVabCESdW7hBAEzHRqUn9OUVvQ==}
     engines: {node: '>=0.1.90'}
+    dev: false
+
+  /@cowprotocol/ts-dune-client@0.0.2:
+    resolution: {integrity: sha512-OtqzwjmTQpvhDiWpgROleTff4XASMoa4GElEvFYgzlg/W90GV1vS187XxZbCKRg2vmBI8SLZAB/8hmH93hWV4Q==}
+    dependencies:
+      cross-fetch: 3.1.8
+      loglevel: 1.8.1
+    transitivePeerDependencies:
+      - encoding
     dev: false
 
   /@cspotcode/source-map-support@0.8.1:
@@ -1819,6 +1837,10 @@ packages:
   /@types/lodash@4.14.196:
     resolution: {integrity: sha512-22y3o88f4a94mKljsZcanlNWPzO0uBsBdzLAngf2tp533LzZcQzb6+eZPJ+vCTt+bqF2XnvT9gejTLsAcJAJyQ==}
     dev: true
+
+  /@types/luxon@3.3.1:
+    resolution: {integrity: sha512-XOS5nBcgEeP2PpcqJHjCWhUCAzGfXIU8ILOSLpx2FhxqMW9KdxgCGXNOEKGVBfveKtIpztHzKK5vSRVLyW/NqA==}
+    dev: false
 
   /@types/node-fetch@2.6.4:
     resolution: {integrity: sha512-1ZX9fcN4Rvkvgv4E6PAY5WXUFWFcRWxZa3EW83UjycOB9ljJCedb2CupIP4RZMEwF/M3eTcCihbBRgwtGbg5Rg==}
@@ -5420,6 +5442,11 @@ packages:
       triple-beam: 1.4.1
     dev: false
 
+  /loglevel@1.8.1:
+    resolution: {integrity: sha512-tCRIJM51SHjAayKwC+QAg8hT8vg6z7GSgLJKGvzuPb1Wc+hLzqtuVLxp6/HzSPOozuK+8ErAhy7U/sVzw8Dgfg==}
+    engines: {node: '>= 0.6.0'}
+    dev: false
+
   /loose-envify@1.4.0:
     resolution: {integrity: sha512-lyuxPGr/Wfhrlem2CL/UcnUc1zcqKAImBDzukY7Y5F/yQiNdko6+fRLevlw1HgMySw7f611UIY408EtxRSoK3Q==}
     hasBin: true
@@ -5444,6 +5471,11 @@ packages:
 
   /lru-cache@7.18.3:
     resolution: {integrity: sha512-jumlc0BIUrS3qJGgIkWZsyfAM7NCWiBcCDhnd+3NNM5KbBmLTgHVfWBcg6W+rLUsIpzpERPsvwUP7CckAQSOoA==}
+    engines: {node: '>=12'}
+    dev: false
+
+  /luxon@3.4.0:
+    resolution: {integrity: sha512-7eDo4Pt7aGhoCheGFIuq4Xa2fJm4ZpmldpGhjTYBNUYNCN6TIEP6v7chwwwt3KRp7YR+rghbfvjyo3V5y9hgBw==}
     engines: {node: '>=12'}
     dev: false
 
