@@ -1,6 +1,10 @@
 import _ from "lodash";
-import { AssertionError, NullOrUndefinedValueError } from "./errors.js";
+import { AssertionError, NullOrUndefinedValueError } from "./errors";
 
+/**
+ * Makes it explicit that we don't expect to await on the Promise
+ * @param _promise
+ */
 export function spawn(_promise: Promise<any>) {} // eslint-disable-line
 
 /**

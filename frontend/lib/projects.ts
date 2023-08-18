@@ -8,6 +8,7 @@ import {
 import { generate } from "random-words";
 import { v4 as uuid4 } from "uuid";
 import * as _ from "lodash";
+import { safeCast } from "./common";
 
 export type GrowthMetric = {
   current: number;
@@ -302,7 +303,7 @@ export class RandomTestProjectsClient implements IProjectsClient {
   }
 
   randomProjects(count: number): Array<ProjectView> {
-    const projects = [];
+    const projects: Array<ProjectView> = safeCast<Array<ProjectView>>([]);
     for (let i = 0; i < count; i++) {
       projects.push(this.randomProject());
     }
@@ -848,7 +849,7 @@ export function fakeDataGenerator(
   // Randomly Generate some projects
   const currentProjectRepos = fakeData.projects.map((p) => p.project.repo);
   for (let i = 0; i < additionalGeneration; i++) {
-    let dependsOn = [];
+    let dependsOn: Array<string> = [];
     const randomDepLen = randomInt(currentProjectRepos.length);
     for (let j = 0; j < randomDepLen; j++) {
       dependsOn.push(
