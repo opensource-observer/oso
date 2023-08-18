@@ -16,14 +16,16 @@ import {
   PrismaClient,
   ContributorNamespace,
   ArtifactNamespace,
+  ArtifactType,
 } from "@prisma/client";
 import { DUNE_API_KEY } from "../../config.js";
 import { fstat, readFileSync, writeFileSync } from "fs";
 import fsPromises from "fs/promises";
 import fs from "fs";
 import path from "path";
-import { prisma } from "../../db/prisma-client.js";
-import { identity } from "lodash";
+import { prisma as prismaClient } from "../../db/prisma-client.js";
+import { IDuneClient, NoopDuneClient } from "../../utils/dune/type.js";
+import _, { add } from "lodash";
 
 const ADDRESS_PAGE_SIZE = 5000;
 const MAX_PAGES = 1;
@@ -74,18 +76,18 @@ export const DefaultDailyContractUsageSyncerOptions: DailyContractUsageSyncerOpt
 interface DailyContractUsageRawRow {
   date: string;
   contract_id: number;
-  user_addresses: string[];
-  user_ids: number[];
-  total_l2_gas_cost_gwei: string;
-  total_tx_count: number;
+  user_addresses: string[] | null;
+  user_ids: number[] | null;
+  contract_total_l2_gas_cost_gwei: string;
+  contract_total_tx_count: number;
 }
 
 export interface DailyContractUsageRow {
   date: Date;
   contractAddress: string;
   userAddresses: string[];
-  totalL2GasCostGwei: string;
-  totalTxCount: number;
+  contractTotalL2GasCostGwei: string;
+  contractTotalTxCount: number;
 }
 
 export class DailyContractUsageCacheableResponse {
@@ -94,6 +96,38 @@ export class DailyContractUsageCacheableResponse {
   knownUserAddresses: Awaited<
     ReturnType<typeof getKnownUserAddressesWithinTimeFrame>
   >;
+
+  public static async fromJSON(path: string) {
+    const rawResponse = await fsPromises.readFile(path, {
+      encoding: "utf-8",
+    });
+    const parsedResponse = JSON.parse(rawResponse) as {
+      results: ResultsResponse;
+      monitoredContracts: Awaited<ReturnType<typeof getUnsyncedContracts>>;
+      knownUserAddresses: Awaited<
+        ReturnType<typeof getKnownUserAddressesWithinTimeFrame>
+      >;
+    };
+
+    if (parsedResponse.knownUserAddresses.length === 0) {
+      // temp
+      const usersRaw = await fsPromises.readFile("users0_short.json", {
+        encoding: "utf-8",
+      });
+      const users = JSON.parse(usersRaw) as Array<[string, string]>;
+      parsedResponse.knownUserAddresses = users.map((u) => {
+        return {
+          id: parseInt(u[0]),
+          name: u[1],
+        };
+      });
+    }
+    return new DailyContractUsageCacheableResponse(
+      parsedResponse.results,
+      parsedResponse.monitoredContracts,
+      parsedResponse.knownUserAddresses,
+    );
+  }
 
   constructor(
     results: ResultsResponse,
@@ -117,41 +151,66 @@ export class DailyContractUsageCacheableResponse {
       userAddressMap[u.id] = u.name;
     });
     const rows = (this.results.result?.rows || []) as unknown[];
+    const processedRows: DailyContractUsageRow[] = [];
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i] as DailyContractUsageRawRow;
       // resolve the user addresses to contract addresses
+      const userIds = row.user_ids || [];
+      const partialUserAddresses = row.user_addresses || [];
+      const contractAddress = contractAddressMap[row.contract_id];
+      const userAddresses = userIds
+        .map((u) => {
+          const addr = userAddressMap[u];
+          if (addr === undefined || addr === null) {
+            logger.error(`error looking up ${addr} in the given response`);
+          }
+          return userAddressMap[u];
+        })
+        .concat(partialUserAddresses);
+      console.log(
+        `processing ${contractAddress} with ${userAddresses.length} users`,
+      );
+
       yield {
-        date: DateTime.fromISO(row.date).toJSDate(),
-        contractAddress: contractAddressMap[row.contract_id],
-        userAddresses: row.user_ids
-          .map((u) => {
-            return userAddressMap[u];
-          })
-          .concat(row.user_addresses),
-        totalL2GasCostGwei: row.total_l2_gas_cost_gwei,
-        totalTxCount: row.total_tx_count,
+        date: DateTime.fromSQL(row.date).toJSDate(),
+        contractAddress: contractAddress,
+        userAddresses: userAddresses,
+        contractTotalL2GasCostGwei: row.contract_total_l2_gas_cost_gwei,
+        contractTotalTxCount: row.contract_total_tx_count,
       };
     }
+  }
+
+  toJSON(): string {
+    return JSON.stringify({
+      results: this.results,
+      monitoredContracts: this.monitoredContracts,
+      knownUserAddresses: this.knownUserAddresses,
+    });
   }
 }
 
 export class DailyContractUsageSyncer {
-  private client: DuneClient;
+  private client: IDuneClient;
   private prisma: PrismaClient;
   private options: DailyContractUsageSyncerOptions;
 
   constructor(
-    client: DuneClient,
+    client: IDuneClient,
     prisma: PrismaClient,
-    options: DailyContractUsageSyncerOptions = DefaultDailyContractUsageSyncerOptions,
+    options: Partial<DailyContractUsageSyncerOptions> = DefaultDailyContractUsageSyncerOptions,
   ) {
     this.client = client;
     this.prisma = prisma;
-    this.options = options;
+    this.options = {
+      ...DefaultDailyContractUsageSyncerOptions,
+      ...options,
+    };
   }
 
   async run() {
     // Load the data for a given interval (it might load from cache)
+    logger.info("loading contract usage data");
     const usageData = await this.loadData();
 
     // This is jank... but leave this here for now so we don't duplicate efforts
@@ -163,16 +222,27 @@ export class DailyContractUsageSyncer {
     const contracts = await this.prisma.artifact.findMany({
       where: {
         namespace: ArtifactNamespace.OPTIMISM,
+        type: ArtifactType.CONTRACT_ADDRESS,
         name: {
           in: usageData.monitoredContracts.map((c) => c.name),
         },
       },
     });
-    if (contracts.length !== usageData.monitoredContracts.length) {
+    console.log(
+      `monitored contracts length ${usageData.monitoredContracts.length}`,
+    );
+    console.log(`contracts length ${contracts.length}`);
+
+    const intersect = _.intersection(
+      contracts.map((c) => c.name),
+      usageData.monitoredContracts.map((c) => c.name),
+    );
+    if (intersect.length !== usageData.monitoredContracts.length) {
       throw new Error(
         "Missing some expected contracts in the database. No resolution at the moment",
       );
     }
+
     const contractAddressToArtifactMap: { [address: string]: number } = {};
     contracts.forEach((c) => {
       contractAddressToArtifactMap[c.name] = c.id;
@@ -208,6 +278,10 @@ export class DailyContractUsageSyncer {
       // Process each row into an event for each user address and contract
       const contractAddress = row.contractAddress;
       for (const userAddress of row.userAddresses) {
+        if (userAddress === undefined || userAddress === null) {
+          logger.info("unexpectedly undefined user address");
+          continue;
+        }
         let userAddressContributorId = upsertedAddresses[userAddress];
         if (!userAddressContributorId) {
           const contributor = await this.prisma.contributor.create({
@@ -235,18 +309,18 @@ export class DailyContractUsageSyncer {
         if (existingEvents.length > 1) {
           // TODO: add a more detailed error here and collect the errors
           logger.error(
-            "A hard to fix error exists within the contract invocation events",
+            "A unexpected and and hard to fix error exists within the contract invocation events",
           );
         } else if (existingEvents.length === 0) {
           await this.prisma.event.create({
             data: {
               eventTime: row.date,
-              amount: row.totalTxCount,
+              amount: row.contractTotalTxCount,
               eventType: EventType.CONTRACT_INVOKED,
               artifactId: contractAddressToArtifactMap[contractAddress],
               contributorId: userAddressContributorId,
               details: {
-                totalL2GasCostGwei: row.totalL2GasCostGwei,
+                totalL2GasCostGwei: row.contractTotalL2GasCostGwei,
               },
             },
           });
@@ -259,7 +333,7 @@ export class DailyContractUsageSyncer {
     await Promise.all(
       usageData.monitoredContracts.map(async (c) => {
         const updatedAt = this.options.baseDate.toJSDate();
-        return await prisma.eventPointer.upsert({
+        return await this.prisma.eventPointer.upsert({
           where: {
             artifactId_eventType: {
               artifactId: c.id,
@@ -287,6 +361,7 @@ export class DailyContractUsageSyncer {
     // caching because the API for dune is quiet resource constrained.
     const cache = await this.loadFromCache();
     if (cache) {
+      logger.info("loaded data from cache");
       return cache;
     }
     const monitoredContracts = await getUnsyncedContracts(
@@ -321,11 +396,17 @@ export class DailyContractUsageSyncer {
       this.options.contractUsersQueryId,
       parameters,
     );
-    return new DailyContractUsageCacheableResponse(
+    const response = new DailyContractUsageCacheableResponse(
       results,
       monitoredContracts,
       knownUserAddresses,
     );
+
+    // Write this to cache
+    await fsPromises.writeFile(this.intervalCachePath(), response.toJSON(), {
+      encoding: "utf-8",
+    });
+    return response;
   }
 
   protected intervalCachePath() {
@@ -343,18 +424,15 @@ export class DailyContractUsageSyncer {
     DailyContractUsageCacheableResponse | undefined
   > {
     const cachePath = this.intervalCachePath();
+    logger.info(`attempting to load cache from ${cachePath}`);
 
     // Check if the cache exists
     try {
       await fsPromises.access(cachePath);
-    } catch {
+    } catch (err) {
       return;
     }
-
-    const rawResponse = await fsPromises.readFile(cachePath, {
-      encoding: "utf-8",
-    });
-    return JSON.parse(rawResponse) as DailyContractUsageCacheableResponse;
+    return await DailyContractUsageCacheableResponse.fromJSON(cachePath);
   }
 
   protected get startDate() {
@@ -380,6 +458,12 @@ export async function importDailyContractUsage(
   args: ImportDailyContractUsage,
 ): Promise<void> {
   logger.info("importing contract usage");
+  //const client = new DuneClient(DUNE_API_KEY);
+  const client = new NoopDuneClient();
+  const syncer = new DailyContractUsageSyncer(client, prismaClient, {
+    cacheDirectory: "/tmp/oso",
+  });
+  await syncer.run();
   logger.info("done");
 }
 
@@ -505,5 +589,3 @@ export async function importDailyContractUsage(
 }
 
 /***/
-
-export async function loadContracts() {}
