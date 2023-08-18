@@ -4,6 +4,7 @@ import { PlasmicRootProvider } from "@plasmicapp/loader-nextjs";
 import { PLASMIC } from "./plasmic-init";
 import { ProjectsClientProvider } from "./components/project-browser/project-client-provider";
 import { ProjectBrowser } from "./components/project-browser/project-browser";
+import { SupabaseQuery } from "./components/dataprovider/supabase-query";
 
 /**
  * Plasmic component registration
@@ -20,6 +21,7 @@ PLASMIC.registerComponent(ProjectsClientProvider, {
     variableName: {
       type: "string",
       defaultValue: "projectsClient",
+      helpText: "Name to use in Plasmic data picker",
     },
     useTestData: {
       type: "boolean",
@@ -43,6 +45,55 @@ PLASMIC.registerComponent(ProjectBrowser, {
     width: "100%",
     minHeight: 300,
   },
+});
+
+PLASMIC.registerComponent(SupabaseQuery, {
+  name: "SupabaseQuery",
+  props: {
+    variableName: {
+      type: "string",
+      helpText: "Name to use in Plasmic data picker",
+    },
+    children: "slot",
+    loading: {
+      type: "slot",
+      defaultValue: {
+        type: "text",
+        value: "Placeholder",
+      },
+    },
+    ignoreLoading: {
+      type: "boolean",
+      helpText: "Don't show 'loading' even if we're still loading data",
+    },
+    tableName: {
+      type: "string",
+      helpText: "Supabase table name",
+    },
+    columns: {
+      type: "string",
+      helpText: "Comma-separated list of columns",
+    },
+    filters: {
+      type: "object",
+      defaultValue: [],
+      helpText: "e.g. [['id', 'lt', 10], ['name', 'eq', 'foobar']]",
+    },
+    limit: {
+      type: "number",
+      helpText: "Number of rows to return",
+    },
+    orderBy: {
+      type: "string",
+      helpText: "Name of column to order by",
+    },
+    orderAscending: {
+      type: "boolean",
+      helpText: "True if ascending, false if descending",
+    },
+  },
+  providesData: true,
+  importPath: "./components/supabase-query",
 });
 
 /**
