@@ -15,13 +15,13 @@ model Collection {
   updatedAt DateTime @updatedAt
 
   // A unique human-readable identifier for this project
-  slug        String @unique
+  slug        String  @unique
   // Human-readable name
   name        String
   // Human-readable description
   description String?
   // Is this collection verified?
-  verified   Boolean @default(false)
+  verified    Boolean @default(false)
 
   // RELATIONS
   // Many-to-many relations with projects
@@ -30,13 +30,13 @@ model Collection {
 
 // Explicit many-to-many relation between projects and artifacts
 model CollectionsOnProjects {
-  assignedAt    DateTime @default(now()) @db.Timestamptz(3)
+  assignedAt DateTime @default(now()) @db.Timestamptz(3)
 
-  collection    Collection @relation(fields: [collectionId], references: [id])
-  collectionId  Int // relation scalar field (used in the `@relation` attribute above)
-  
-  project       Project   @relation(fields: [projectId], references: [id])
-  projectId     Int // relation scalar field (used in the `@relation` attribute above)
+  collection   Collection @relation(fields: [collectionId], references: [id])
+  collectionId Int // relation scalar field (used in the `@relation` attribute above)
+
+  project   Project @relation(fields: [projectId], references: [id])
+  projectId Int // relation scalar field (used in the `@relation` attribute above)
 
   @@id([collectionId, projectId])
 }
@@ -49,13 +49,13 @@ model Project {
   updatedAt DateTime @updatedAt
 
   // A unique human-readable identifier for this project
-  slug        String @unique
+  slug        String  @unique
   // Human-readable name
   name        String
   // Human-readable description
   description String?
   // Is this project verified?
-  verified   Boolean @default(false)
+  verified    Boolean @default(false)
 
   // RELATIONS
   // Many-to-many relations with collections
@@ -66,12 +66,12 @@ model Project {
 
 // Explicit many-to-many relation between projects and artifacts
 model ProjectsOnArtifacts {
-  assignedAt  DateTime @default(now()) @db.Timestamptz(3)
+  assignedAt DateTime @default(now()) @db.Timestamptz(3)
 
-  project     Project   @relation(fields: [projectId], references: [id])
-  projectId   Int // relation scalar field (used in the `@relation` attribute above)
-  artifact    Artifact  @relation(fields: [artifactId], references: [id])
-  artifactId  Int // relation scalar field (used in the `@relation` attribute above)
+  project    Project  @relation(fields: [projectId], references: [id])
+  projectId  Int // relation scalar field (used in the `@relation` attribute above)
+  artifact   Artifact @relation(fields: [artifactId], references: [id])
+  artifactId Int // relation scalar field (used in the `@relation` attribute above)
 
   @@id([projectId, artifactId])
 }
@@ -159,9 +159,9 @@ model EventPointer {
   // Type of event
   eventType  EventType
   // The relevant pointer information on where we left off
-  pointer      Json
+  pointer    Json
   // Should the we auto-crawl this source?
-  autocrawl    Boolean?
+  autocrawl  Boolean?
 
   // This tuple must be unique!
   @@unique([artifactId, eventType])
@@ -210,4 +210,5 @@ enum ArtifactNamespace {
 
 enum ContributorNamespace {
   GITHUB_USER
+  EOA_ADDRESS
 }
