@@ -3,7 +3,7 @@
 > This document outlines how we define and categorize developers, and how we assign activity levels to them based on their contributions.
 
 A **developer** is a GitHub user who contributes to a repository or organization through various activities. These activities include:
-
+git 
 - **Commit**: An individual change to a file (or set of files).
 - **Open Pull Request**: Proposed changes to a repository submitted by a user.
 - **Merged Pull Request**: A pull request accepted and merged by a repository's collaborator.
@@ -12,6 +12,8 @@ A **developer** is a GitHub user who contributes to a repository or organization
 - **Code Review**: A systematic examination of a pull request performed by a collaborator.
 
 A developer is considered **active** if they've made at least one contribution in the past 30 days.
+
+A developer is considered **new** if they made their first contribution in the past 90 days.
 
 ## Types of Developers
 
