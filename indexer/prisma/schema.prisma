@@ -122,6 +122,8 @@ model Contributor {
   // RELATIONS
   // One-to-many relation with events
   events Event[]
+
+  @@unique([name, namespace])
 }
 
 // An event that happened to an artifact
@@ -183,6 +185,7 @@ enum EventType {
   DOWNLOADS
   // Usage events
   CONTRACT_INVOKED
+  //CONTRACT_AGGREGATE_STATS
   USERS_INTERACTED
 }
 

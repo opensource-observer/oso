@@ -6,10 +6,7 @@ import {
 } from "@prisma/client";
 import { DateTime, Duration } from "luxon";
 
-export async function getUnsyncedContracts(
-  prisma: PrismaClient,
-  date: DateTime,
-) {
+export async function getSyncedContracts(prisma: PrismaClient, date: DateTime) {
   const unsyncedContracts = await prisma.artifact.findMany({
     select: {
       id: true,
@@ -19,12 +16,26 @@ export async function getUnsyncedContracts(
       type: ArtifactType.CONTRACT_ADDRESS,
       namespace: ArtifactNamespace.OPTIMISM,
       eventPtrs: {
-        none: {
+        some: {
           updatedAt: {
             gte: date.startOf("day").toJSDate(),
           },
         },
       },
+    },
+  });
+  return unsyncedContracts;
+}
+
+export async function getMonitoredContracts(prisma: PrismaClient) {
+  const unsyncedContracts = await prisma.artifact.findMany({
+    select: {
+      id: true,
+      name: true,
+    },
+    where: {
+      type: ArtifactType.CONTRACT_ADDRESS,
+      namespace: ArtifactNamespace.OPTIMISM,
     },
   });
   return unsyncedContracts;
