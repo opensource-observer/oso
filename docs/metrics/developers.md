@@ -1,8 +1,8 @@
 # Developers
 
-> This document outlines how OS Observer defines and categorizes developers, and how it assigns activity levels to them based on their contributions.
+> This document outlines how we define and categorize developers, and how we assign activity levels to them based on their contributions.
 
-A developer, in the context of OS Observer, is a GitHub user who contributes to a repository or organization through various activities. These activities include:
+A **developer** is a GitHub user who contributes to a repository or organization through various activities. These activities include:
 
 - **Commit**: An individual change to a file (or set of files).
 - **Open Pull Request**: Proposed changes to a repository submitted by a user.
