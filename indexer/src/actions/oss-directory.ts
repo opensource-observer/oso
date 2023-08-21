@@ -35,7 +35,13 @@ export async function importOssDirectory(
       continue;
     }
     logger.info(`projects[${i}]: Upserting ${p.slug}`);
-    await ossUpsertProject(p);
+    try {
+      await ossUpsertProject(p);
+    } catch (e) {
+      logger.error(
+        `projects[${i}]: error occured processing project ${p.slug}. Skipping with error: ${e}`,
+      );
+    }
   }
 
   logger.info("Upserting collections...");
@@ -48,7 +54,13 @@ export async function importOssDirectory(
       continue;
     }
     logger.info(`collections[${i}]: Upserting ${c.slug}`);
-    await ossUpsertCollection(c);
+    try {
+      await ossUpsertCollection(c);
+    } catch (e) {
+      logger.error(
+        `collections[${i}]: error occured processing colelction ${c.slug}. Skipping with error: ${e}`,
+      );
+    }
   }
 
   logger.info("Done");
