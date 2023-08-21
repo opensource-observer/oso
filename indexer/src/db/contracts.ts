@@ -4,7 +4,7 @@ import {
   ArtifactType,
   ArtifactNamespace,
 } from "@prisma/client";
-import { DateTime, Duration } from "luxon";
+import { DateTime } from "luxon";
 
 export async function getSyncedContracts(prisma: PrismaClient, date: DateTime) {
   const unsyncedContracts = await prisma.artifact.findMany({
