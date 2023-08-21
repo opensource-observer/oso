@@ -50,6 +50,11 @@ yargs(hideBin(process.argv))
     describe: "Mark the query for auto-crawling",
     default: false,
   })
+  .option("cache-dir", {
+    type: "string",
+    describe: "sets the path to the cache directory",
+    default: "/tmp/oso",
+  })
   .command<ImportOssDirectoryArgs>(
     "importOssDirectory",
     "Import projects and collections from 'oss-directory'",

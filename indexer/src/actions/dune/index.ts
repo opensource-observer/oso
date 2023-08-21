@@ -723,12 +723,13 @@ export class DailyContractUsageSyncer {
 }
 
 export async function importDailyContractUsage(
-  _args: ImportDailyContractUsage,
+  args: ImportDailyContractUsage,
 ): Promise<void> {
   logger.info("importing contract usage");
+
   const client = new DuneClient(DUNE_API_KEY);
   const syncer = new DailyContractUsageSyncer(client, prismaClient, {
-    cacheDirectory: "/tmp/oso",
+    cacheDirectory: args.cacheDir,
   });
   await syncer.run();
   logger.info("done");

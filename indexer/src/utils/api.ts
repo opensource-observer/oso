@@ -6,6 +6,9 @@ export interface CommonArgs {
   // Mark the query for auto-crawling
   // Note: we currently ignore this when false, only updating the column when true
   autocrawl?: boolean;
+
+  // The cache directory to use for load/writing cache data.
+  cacheDir: string;
 }
 
 export interface ApiInterface<Args> {
