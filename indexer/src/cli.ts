@@ -22,6 +22,7 @@ import {
   ImportDailyContractUsage,
   importDailyContractUsage,
 } from "./actions/dune/index.js";
+import { DateTime } from "luxon";
 
 const callLibrary = async <Args>(
   func: EventSourceFunction<Args>,
@@ -67,7 +68,15 @@ yargs(hideBin(process.argv))
     "importDailyContractUsage",
     "Manually import contract usage statistics from dune",
     (yags) => {
-      yags.option("skipExisting", { type: "boolean" });
+      yags
+        .option("skipExisting", { type: "boolean" })
+        .option("base-date", { type: "string", default: "" })
+        .coerce("base-date", (arg) => {
+          if (arg === "") {
+            return DateTime.now();
+          }
+          return DateTime.fromISO(arg);
+        });
     },
     (argv) => handleError(importDailyContractUsage(argv)),
   )

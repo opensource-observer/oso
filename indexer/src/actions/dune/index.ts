@@ -31,6 +31,7 @@ const MAX_KNOWN_ADDRESSES = 5000;
  */
 export type ImportDailyContractUsage = CommonArgs & {
   skipExisting?: boolean;
+  baseDate?: DateTime;
 };
 
 export interface DailyContractUsageSyncerOptions {
@@ -730,7 +731,9 @@ export async function importDailyContractUsage(
   const client = new DuneClient(DUNE_API_KEY);
   const syncer = new DailyContractUsageSyncer(client, prismaClient, {
     cacheDirectory: args.cacheDir,
+    baseDate: args.baseDate,
   });
+
   await syncer.run();
   logger.info("done");
 }
