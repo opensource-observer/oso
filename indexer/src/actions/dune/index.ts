@@ -339,7 +339,7 @@ export class DailyContractUsageSyncer {
           create: {
             updatedAt: updatedAt,
             artifactId: contractId,
-            eventType: EventType.CONTRACT_INVOKED_AGGREGATE_STATS,
+            eventType: EventType.CONTRACT_INVOKED,
             pointer: {},
             autocrawl: false,
           },
@@ -552,24 +552,56 @@ export class DailyContractUsageSyncer {
   protected async retrieveFromCache(): Promise<
     DailyContractUsageCacheableResponse | undefined
   > {
-    const cachePath = this.intervalCachePath();
-    logger.info(`attempting to load cache from ${cachePath}`);
-
-    // Check if the cache exists
-    try {
-      await fsPromises.access(cachePath);
-    } catch (err) {
+    // We should try not to duplicate date. This method will choose to use a
+    // cache if it falls within the same interval.
+    const cachePaths = this.possibleCachePathsWithinInterval();
+    let cachePath = "";
+    console.log(cachePaths);
+    for (const { baseDate, path } of cachePaths) {
+      logger.info(`attempting cache from ${path}`);
+      try {
+        await fsPromises.access(path);
+      } catch (err) {
+        continue;
+      }
+      this.options.baseDate = baseDate;
+      cachePath = path;
+      break;
+    }
+    if (cachePath === "") {
       return;
     }
+
+    // Check if the cache exists
     return await DailyContractUsageCacheableResponse.fromJSON(cachePath);
   }
 
-  protected intervalCachePath() {
-    const startDate = this.options.baseDate;
-    const intervalLengthInDays: number = this.options.intervalLengthInDays;
+  protected possibleCachePathsWithinInterval(): {
+    baseDate: DateTime;
+    path: string;
+  }[] {
+    const currentBase = this.options.baseDate;
+    const intervalLengthInDays = this.options.intervalLengthInDays;
+    const possibleCachePaths: { baseDate: DateTime; path: string }[] = [];
+    for (let i = 0; i < intervalLengthInDays; i++) {
+      const date = currentBase.minus(Duration.fromObject({ days: i }));
+      const path = this.intervalCachePath(date);
+      possibleCachePaths.push({
+        baseDate: date,
+        path: path,
+      });
+    }
+    return possibleCachePaths;
+  }
+
+  protected intervalCachePath(date?: DateTime) {
+    if (!date) {
+      date = this.options.baseDate;
+    }
+    const intervalLengthInDays = this.options.intervalLengthInDays;
     return path.join(
       this.options.cacheDirectory,
-      `daily-contract-cache-${startDate.toFormat(
+      `daily-contract-cache-${date.toFormat(
         "yyyy-MM-dd",
       )}-interval-${intervalLengthInDays}.json`,
     );
@@ -660,7 +692,7 @@ export class DailyContractUsageSyncer {
       this.prisma.event.create({
         data: {
           eventTime: day.date,
-          eventType: EventType.CONTRACT_INVOKED,
+          eventType: EventType.CONTRACT_INVOKED_AGGREGATE_STATS,
           artifactId: contractId,
           amount: 0,
           details: {
