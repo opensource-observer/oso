@@ -17,6 +17,7 @@ on:
         options:
         - "npmDownloads"
         - "githubCommits" 
+        - "importOssDirectory"
       args:
         description: 'Arguments to pass to the command'
         required: false
