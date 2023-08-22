@@ -2,6 +2,7 @@ name: os-observer-manual
 env:
   DATABASE_URL: ${{ secrets.DATABASE_URL }}
   X_GITHUB_GRAPHQL_API: ${{ vars.X_GITHUB_GRAPHQL_API }}
+  DUNE_API_KEY: ${{ secrets.DUNE_API_KEY }}
   X_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 # Trigger the workflow when:

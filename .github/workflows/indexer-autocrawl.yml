@@ -3,6 +3,7 @@ env:
   DATABASE_URL: ${{ secrets.DATABASE_URL }}
   X_GITHUB_GRAPHQL_API: ${{ vars.X_GITHUB_GRAPHQL_API }}
   X_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  DUNE_API_KEY: ${{ secrets.DUNE_API_KEY }}
 
 # Trigger the workflow when:
 on:
