@@ -55,6 +55,9 @@ export interface DailyContractUsageSyncerOptions {
 
   // The query id in dune to call. The default is below
   contractUsersQueryId: number;
+
+  // User address create batch size
+  userAddressCreateBatchSize: number;
 }
 
 export const DefaultDailyContractUsageSyncerOptions: DailyContractUsageSyncerOptions =
@@ -68,6 +71,8 @@ export const DefaultDailyContractUsageSyncerOptions: DailyContractUsageSyncerOpt
 
     // This default is based on this: https://dune.com/queries/2835126
     contractUsersQueryId: 2835126,
+
+    userAddressCreateBatchSize: 1000,
   };
 
 interface DailyContractUsageRawRow {
@@ -123,12 +128,13 @@ export class DailyContractUsageCacheableResponse {
   // this data (especially while we're still building the system). This
   // cacheable response allows for this.
 
-  results: ResultsResponse;
-  monitoredContracts: Awaited<ReturnType<typeof getMonitoredContracts>>;
-  knownUserAddresses: Awaited<
+  private results: ResultsResponse;
+  private monitoredContracts: Awaited<ReturnType<typeof getMonitoredContracts>>;
+  private knownUserAddresses: Awaited<
     ReturnType<typeof getKnownUserAddressesWithinTimeFrame>
   >;
 
+  private _isFromCache: boolean;
   private processed: boolean;
   private cachedUniqueKnownUserAddresses: UniqueList<string>;
   private cachedUniqueNewUserAddresses: UniqueList<string>;
@@ -136,7 +142,7 @@ export class DailyContractUsageCacheableResponse {
     [contract: string]: DailyContractUsageRow[];
   };
 
-  public static async fromJSON(path: string) {
+  public static async fromJSON(path: string, isFromCache = true) {
     const rawResponse = await fsPromises.readFile(path, {
       encoding: "utf-8",
     });
@@ -152,6 +158,7 @@ export class DailyContractUsageCacheableResponse {
       parsedResponse.results,
       parsedResponse.monitoredContracts,
       parsedResponse.knownUserAddresses,
+      isFromCache,
     );
   }
 
@@ -161,6 +168,7 @@ export class DailyContractUsageCacheableResponse {
     knownUserAddresses: Awaited<
       ReturnType<typeof getKnownUserAddressesWithinTimeFrame>
     >,
+    isFromCache: boolean,
   ) {
     this.results = results;
     this.monitoredContracts = monitoredContracts;
@@ -169,6 +177,7 @@ export class DailyContractUsageCacheableResponse {
     this.processed = false;
     this.cachedUniqueKnownUserAddresses = new UniqueList((a) => a);
     this.cachedUniqueNewUserAddresses = new UniqueList((a) => a);
+    this._isFromCache = isFromCache;
   }
 
   // Process the rows so we can:
@@ -264,6 +273,17 @@ export class DailyContractUsageCacheableResponse {
       monitoredContracts: this.monitoredContracts,
       knownUserAddresses: this.knownUserAddresses,
     });
+  }
+
+  contractAddresses() {
+    if (!this.processed) {
+      this.processRows();
+    }
+    return Object.keys(this.cachedProcessedRowsByContract);
+  }
+
+  get isFromCache(): boolean {
+    return this._isFromCache;
   }
 }
 
@@ -470,83 +490,98 @@ export class DailyContractUsageSyncer {
 
     // Check the cache directory for the dune request's cache. We need
     // caching because the API for dune is quiet resource constrained.
+    const monitoredContracts = await getMonitoredContracts(this.prisma);
+
     let usageData = await this.retrieveFromCache();
     if (usageData) {
       logger.info("loaded data from cache");
-      return usageData;
     } else {
-      const monitoredContracts = await getMonitoredContracts(this.prisma);
-      let knownUserAddresses = await getKnownUserAddressesWithinTimeFrame(
+      // Get most active users from the previous interval
+      const knownUserAddresses = await getKnownUserAddressesWithinTimeFrame(
         this.prisma,
-        this.startDate,
-        this.endDate,
+        this.startDate.minus(
+          Duration.fromObject({ days: this.options.intervalLengthInDays }),
+        ),
+        this.endDate.minus(
+          Duration.fromObject({ days: this.options.intervalLengthInDays }),
+        ),
         MAX_KNOWN_ADDRESSES,
       );
 
-      // This is needed because the first time this is run there won't be any known addresses.
-      if (knownUserAddresses.length === 0) {
-        try {
-          knownUserAddresses = await this.loadKnownAddressesSeed();
-        } catch (e) {
-          throw new Error(
-            "this is an expensive call the known addresses seed must be specified if the database contains no known users",
-          );
-        }
-      }
-
-      const parameters = [
-        QueryParameter.text(
-          "contract_addresses",
-          monitoredContracts.map((c) => `(${c.id}, ${c.name})`).join(","),
-        ),
-        QueryParameter.text(
-          "known_user_addresses",
-          knownUserAddresses.map((a) => `(${a.id}, ${a.name})`).join(","),
-        ),
-        QueryParameter.text(
-          "start_time",
-          this.startDate.toFormat("yyyy-MM-dd 00:00:00") + " UTC",
-        ),
-        QueryParameter.text(
-          "end_time",
-          this.endDate.toFormat("yyyy-MM-dd 00:00:00") + " UTC",
-        ),
-      ];
-      logger.debug(
-        `retreiving data for ${this.startDate.toFormat(
-          "yyyy-MM-dd 00:00:00 UTC",
-        )} to ${this.endDate.toFormat("yyyy-MM-dd 00:00:00 UTC")}`,
-      );
-
-      await fsPromises.writeFile(
-        "contracts.txt",
-        monitoredContracts.map((c) => `(${c.id}, ${c.name})`).join(","),
-      );
-      await fsPromises.writeFile(
-        "users.txt",
-        knownUserAddresses.map((a) => `(${a.id}, ${a.name})`).join(","),
-      );
-
-      const results = await this.client.refresh(
-        this.options.contractUsersQueryId,
-        parameters,
-      );
-
-      usageData = new DailyContractUsageCacheableResponse(
-        results,
-        monitoredContracts,
-        knownUserAddresses,
-      );
-
-      // Write this to cache
-      await fsPromises.writeFile(this.intervalCachePath(), usageData.toJSON(), {
-        encoding: "utf-8",
-      });
+      usageData = this.retrieveFromDune(this.contracts, knownUserAddresses);
     }
     // Validate the given data to process
     this.validateUsageData(usageData);
 
     return usageData;
+  }
+
+  protected async retrieveFromDune(
+    contractsToRetrieve: Awaited<ReturnType<typeof getMonitoredContracts>>,
+    knownUserAddresses: Awaited<
+      ReturnType<typeof getKnownUserAddressesWithinTimeFrame>
+    >,
+  ): DailyContractUsageCacheableResponse {
+    // This is needed because the first time this is run there won't be any known addresses.
+    if (knownUserAddresses.length === 0) {
+      try {
+        knownUserAddresses = await this.loadKnownAddressesSeed();
+      } catch (e) {
+        throw new Error(
+          "this is an expensive call the known addresses seed must be specified if the database contains no known users",
+        );
+      }
+    }
+
+    const parameters = [
+      QueryParameter.text(
+        "contract_addresses",
+        contractsToRetrieve.map((c) => `(${c.id}, ${c.name})`).join(","),
+      ),
+      QueryParameter.text(
+        "known_user_addresses",
+        knownUserAddresses.map((a) => `(${a.id}, ${a.name})`).join(","),
+      ),
+      QueryParameter.text(
+        "start_time",
+        this.startDate.toFormat("yyyy-MM-dd 00:00:00") + " UTC",
+      ),
+      QueryParameter.text(
+        "end_time",
+        this.endDate.toFormat("yyyy-MM-dd 00:00:00") + " UTC",
+      ),
+    ];
+    logger.debug(
+      `retreiving data for ${this.startDate.toFormat(
+        "yyyy-MM-dd 00:00:00 UTC",
+      )} to ${this.endDate.toFormat("yyyy-MM-dd 00:00:00 UTC")}`,
+    );
+
+    await fsPromises.writeFile(
+      "contracts.txt",
+      contractsToRetrieve.map((c) => `(${c.id}, ${c.name})`).join(","),
+    );
+    await fsPromises.writeFile(
+      "users.txt",
+      knownUserAddresses.map((a) => `(${a.id}, ${a.name})`).join(","),
+    );
+
+    const results = await this.client.refresh(
+      this.options.contractUsersQueryId,
+      parameters,
+    );
+
+    usageData = new DailyContractUsageCacheableResponse(
+      results,
+      contractsToRetrieve,
+      knownUserAddresses,
+      false,
+    );
+
+    // Write this to cache
+    await fsPromises.writeFile(this.intervalCachePath(), usageData.toJSON(), {
+      encoding: "utf-8",
+    });
   }
 
   protected async retrieveFromCache(): Promise<
@@ -718,36 +753,47 @@ export class DailyContractUsageSyncer {
     });
     const addressesToAdd = _.difference(addresses, existingAddresses);
 
+    logger.debug(`adding ${addressesToAdd.length} new EOA_ADDRESSES`, {
+      addressesToAddCount: addressesToAdd.length,
+    });
+
     // Query for all users in the response data so we can insert any that do not
     // exist
     let batch = [];
-
+    let completed = 0;
     for (const addr of addressesToAdd) {
       batch.push(
-        this.prisma.contributor.upsert({
-          where: {
-            name_namespace: {
-              namespace: ContributorNamespace.EOA_ADDRESS,
-              name: addr,
-            },
-          },
-          create: {
+        this.prisma.contributor.create({
+          data: {
             name: addr,
             namespace: ContributorNamespace.EOA_ADDRESS,
           },
-          update: {},
         }),
       );
+      completed += 1;
 
       // We should generalize this for transactions generally. Especially
       // transactions that don't depend on each other like this one.
-      if (batch.length > 20000) {
-        logger.info("batching user upserts");
+      if (batch.length > this.options.userAddressCreateBatchSize) {
+        logger.debug(
+          `writing ${batch.length} EOA_ADDRESSES to contributors. Progress (${completed}/${addressesToAdd.length})`,
+          {
+            addressesToAddCount: addressesToAdd.length,
+            progress: completed,
+          },
+        );
         await this.prisma.$transaction(batch);
         batch = [];
       }
     }
     if (batch.length > 0) {
+      logger.debug(
+        `writing ${batch.length} EOA_ADDRESSES to contributors. Progress (${completed}/${addressesToAdd.length})`,
+        {
+          addressesToAddCount: addressesToAdd.length,
+          progress: completed,
+        },
+      );
       await this.prisma.$transaction(batch);
     }
 
