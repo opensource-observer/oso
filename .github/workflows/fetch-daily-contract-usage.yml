@@ -1,0 +1,57 @@
+# This is a temporary workflow. The current way the indexer runs isn't as
+# flexible with scheduling. However, the daily contract usage needs to be run.
+# Eventually we should coalesce all of this into a single scheduler that can spawn 
+# multiple workflows. Additionally, this workflow has a persistent caching mechanism 
+# that should be generalized for use to others. 
+
+name: os-observer-daily-contract-usage 
+env:
+  DATABASE_URL: ${{ secrets.DATABASE_URL }}
+  X_GITHUB_GRAPHQL_API: ${{ vars.X_GITHUB_GRAPHQL_API }}
+  X_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  DUNE_API_KEY: ${{ secrets.DUNE_API_KEY }}
+  CACHE_DIR: /tmp/oso-cache
+
+# Trigger the workflow when:
+on:
+  workflow_dispatch:
+  schedule:
+    # Every week on monday at midnight
+    - cron: '0 0 * * 1'
+
+jobs:
+  fetch-data:
+    # NOTE: This name appears in GitHub's Checks API.
+    name: fetch-data
+    environment: indexer
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 1
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+          run_install: |
+            - recursive: true
+              args: [--frozen-lockfile, --strict-peer-dependencies]
+
+      - name: Set up Node.js 18
+        uses: actions/setup-node@v3
+        with:
+          cache: "pnpm"
+          node-version: "18.x"
+
+      - name: Build
+        run: pnpm build:indexer
+
+      - name: Load docker persistent cache
+        run: ./.github/scripts/load-cache.sh
+
+      - name: Test cache loaded
+        run: ls -halt ${CACHE_DIR}
+
+      - name: Run
+        run: pnpm start:indexer --cache-dir ${CACHE_DIR} importDailyContractUsage 

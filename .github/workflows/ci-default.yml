@@ -16,6 +16,10 @@ env:
   X_GITHUB_GRAPHQL_API: ${{ vars.X_GITHUB_GRAPHQL_API }}
   X_GITHUB_TOKEN: ${{ secrets.X_GITHUB_TOKEN }}
 
+  # should not be set to a legitimate value for testing. This will use up API
+  # quota otherwise
+  DUNE_API_KEY: "none" 
+
 # Trigger the workflow when:
 on:
   # A push occurs to one of the matched branches.

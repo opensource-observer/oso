@@ -18,6 +18,11 @@ import {
   ImportOssDirectoryArgs,
   importOssDirectory,
 } from "./actions/oss-directory.js";
+import {
+  ImportDailyContractUsage,
+  importDailyContractUsage,
+} from "./actions/dune/index.js";
+import { DateTime } from "luxon";
 
 const callLibrary = async <Args>(
   func: EventSourceFunction<Args>,
@@ -46,6 +51,11 @@ yargs(hideBin(process.argv))
     describe: "Mark the query for auto-crawling",
     default: false,
   })
+  .option("cache-dir", {
+    type: "string",
+    describe: "sets the path to the cache directory",
+    default: "/tmp/oso",
+  })
   .command<ImportOssDirectoryArgs>(
     "importOssDirectory",
     "Import projects and collections from 'oss-directory'",
@@ -53,6 +63,22 @@ yargs(hideBin(process.argv))
       yags.option("skipExisting", { type: "boolean" });
     },
     (argv) => handleError(importOssDirectory(argv)),
+  )
+  .command<ImportDailyContractUsage>(
+    "importDailyContractUsage",
+    "Manually import contract usage statistics from dune",
+    (yags) => {
+      yags
+        .option("skipExisting", { type: "boolean" })
+        .option("base-date", { type: "string", default: "" })
+        .coerce("base-date", (arg) => {
+          if (arg === "") {
+            return DateTime.now();
+          }
+          return DateTime.fromISO(arg);
+        });
+    },
+    (argv) => handleError(importDailyContractUsage(argv)),
   )
   .command<RunAutocrawlArgs>(
     "runAutocrawl",
