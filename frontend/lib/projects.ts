@@ -25,6 +25,7 @@ export interface ProjectBase {
   project: ProjectReference;
   status: ProjectStatus;
   dependencies: number;
+  dependents: number;
   activeDevs: GrowthMetric;
   devReach: GrowthMetric;
   opMaus: GrowthMetric;
@@ -41,7 +42,7 @@ export interface ProjectBase {
 }
 
 export interface IProjectView extends ProjectBase {
-  dependents(): Promise<IProjectView[]>;
+  //dependents(): Promise<IProjectView[]>;
   id: string;
 }
 
@@ -51,6 +52,7 @@ export class EmptyProjectView implements IProjectView {
   project = { name: "", repo: "" };
   status = ProjectStatus.Unknown;
   dependencies = 0;
+  dependents = 0;
   activeDevs = { current: 0, growth: 0 };
   devReach = { current: 0, growth: 0 };
   opMaus = { current: 0, growth: 0 };
@@ -61,10 +63,6 @@ export class EmptyProjectView implements IProjectView {
   tags = [];
   dependsOn = [];
   [name: string]: any;
-
-  async dependents(): Promise<IProjectView[]> {
-    return [];
-  }
 }
 
 export class ProjectView implements IProjectView {
@@ -77,6 +75,7 @@ export class ProjectView implements IProjectView {
   };
   status: ProjectStatus;
   dependencies: number;
+  dependents: number;
   activeDevs: GrowthMetric;
   devReach: GrowthMetric;
   opMaus: GrowthMetric;
@@ -96,6 +95,7 @@ export class ProjectView implements IProjectView {
     this.project = raw.project;
     this.status = raw.status;
     this.dependencies = raw.dependencies;
+    this.dependents = raw.dependents;
     this.activeDevs = raw.activeDevs;
     this.devReach = raw.devReach;
     this.opMaus = raw.opMaus;
@@ -113,14 +113,6 @@ export class ProjectView implements IProjectView {
 
   get id() {
     return this._id;
-  }
-
-  async dependents(): Promise<IProjectView[]> {
-    const client = this.client;
-    if (client === undefined) {
-      return [];
-    }
-    return client.dependents(this.project.repo);
   }
 }
 
@@ -344,6 +336,7 @@ export class RandomTestProjectsClient implements IProjectsClient {
         devReach: this.randomGrowth(),
         opMaus: this.randomGrowth(),
         opMausReach: this.randomGrowth(),
+        dependents: randomInt(10000000),
       },
       this,
     );
@@ -479,6 +472,7 @@ export class FakeProjectsClient implements IProjectsClient {
           tags: project.tags,
           dependsOn: project.dependsOn,
           releases: randomIntRange(...project.releases),
+          dependents: 0,
         },
         this,
       );
@@ -493,7 +487,10 @@ export class FakeProjectsClient implements IProjectsClient {
     this.projects.forEach((project) => {
       const dependsOn = project.dependsOn || [];
       dependsOn.forEach((repo) => {
-        this.byRepoMap[repo].hasDependents = true;
+        const dependency = this.byRepoMap[repo];
+        dependency.hasDependents = true;
+        dependency.dependents += 1;
+
         this.dependentsMap[repo].push(project);
       });
     });
