@@ -27,7 +27,7 @@ export function ProjectDataTable(props: ProjectDataTableProps) {
     fieldOrder: [
       "project",
       "status",
-      "dependencies",
+      "dependents",
       "activeDevs",
       "devReach",
       "opMaus",
@@ -50,10 +50,10 @@ export function ProjectDataTable(props: ProjectDataTableProps) {
         expandable: false,
         minWidth: 60,
       },
-      dependencies: {
-        name: "dependencies",
+      dependents: {
+        name: "dependents",
         type: "number",
-        label: "Dependencies",
+        label: "Dependents",
         sortable: true,
         expandable: false,
         textAlign: "right",
