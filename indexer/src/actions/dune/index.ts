@@ -533,24 +533,6 @@ export class DailyContractUsageSyncer {
       }
     }
 
-    const parameters = [
-      QueryParameter.text(
-        "contract_addresses",
-        contractsToRetrieve.map((c) => `(${c.id}, ${c.name})`).join(","),
-      ),
-      QueryParameter.text(
-        "known_user_addresses",
-        knownUserAddresses.map((a) => `(${a.id}, ${a.name})`).join(","),
-      ),
-      QueryParameter.text(
-        "start_time",
-        this.startDate.toFormat("yyyy-MM-dd 00:00:00") + " UTC",
-      ),
-      QueryParameter.text(
-        "end_time",
-        this.endDate.toFormat("yyyy-MM-dd 00:00:00") + " UTC",
-      ),
-    ];
     logger.debug(
       `retreiving data for ${this.startDate.toFormat(
         "yyyy-MM-dd 00:00:00 UTC",
