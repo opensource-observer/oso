@@ -71,6 +71,7 @@ export interface DailyContractUsageClientOptions {
 
 export const DefaultDailyContractUsageClientOptions: DailyContractUsageClientOptions =
   {
+    // This default is based on this: https://dune.com/queries/2835126
     queryId: 2835126,
 
     contractBatchSize: 12000,
