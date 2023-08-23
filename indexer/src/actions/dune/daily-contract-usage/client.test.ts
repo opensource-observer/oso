@@ -1,11 +1,10 @@
-import { DateTime, Duration } from "luxon";
+//import { DateTime, Duration } from "luxon";
 
 import {
   resolveDailyContractUsage,
   IdToAddressMap,
   DailyContractUsageRawRow,
 } from "./client.js";
-import _ from "lodash";
 
 describe("resolveDailyContractUsageResults", () => {
   const fakeUserIdToAddressMap: IdToAddressMap = {
@@ -20,8 +19,8 @@ describe("resolveDailyContractUsageResults", () => {
     2: "0xc000000000000000000000000000000000000002",
   };
 
-  const fakeEndDate = DateTime.now();
-  const fakeStartDate = fakeEndDate.minus(Duration.fromObject({ days: 7 }));
+  //const fakeEndDate = DateTime.now();
+  //const fakeStartDate = fakeEndDate.minus(Duration.fromObject({ days: 7 }));
 
   test("resolve rows correctly", () => {
     const rows: DailyContractUsageRawRow[] = [

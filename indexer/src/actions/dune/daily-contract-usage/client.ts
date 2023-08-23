@@ -101,7 +101,6 @@ export function resolveDailyContractUsage(
   contractIdToAddressMap: IdToAddressMap,
   rows: unknown[],
 ): DailyContractUsageRow[] {
-  const resolvedRows: DailyContractUsageRow[] = [];
   return rows.map((r) => {
     const row = r as DailyContractUsageRawRow;
 
@@ -317,8 +316,6 @@ export class DailyContractUsageResponse {
   //   * resolve the userIds in the response to addresses.
   //   * get a list of user addresses (known and unknown)
   private processRows() {
-    const processedRows = this.memoRowsByContract;
-
     this.rows.forEach((row) => {
       // resolve the user addresses to contract addresses
       row.userAddresses.forEach((a) => {

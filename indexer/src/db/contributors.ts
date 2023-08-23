@@ -1,7 +1,5 @@
-import _ from "lodash";
 import { Readable } from "stream";
 import { Prisma, PrismaClient } from "@prisma/client";
-import { prisma } from "./prisma-client.js";
 
 export function streamFindAll(
   prisma: PrismaClient,

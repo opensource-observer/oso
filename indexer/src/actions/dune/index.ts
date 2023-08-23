@@ -13,7 +13,6 @@ import {
   ContributorNamespace,
   Contributor,
   Event,
-  Prisma,
   PrismaPromise,
 } from "@prisma/client";
 import { DUNE_API_KEY } from "../../config.js";
@@ -25,7 +24,6 @@ import {
   IDailyContractUsageClient,
   DailyContractUsageRow,
   DailyContractUsageResponse,
-  resolveDailyContractUsage,
 } from "./daily-contract-usage/client.js";
 import { streamFindAll as allEvents } from "../../db/events.js";
 import { streamFindAll as allContributors } from "../../db/contributors.js";
