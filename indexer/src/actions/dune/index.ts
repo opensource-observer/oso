@@ -1,8 +1,4 @@
-import {
-  QueryParameter,
-  DuneClient,
-  ResultsResponse,
-} from "@cowprotocol/ts-dune-client";
+import { DuneClient } from "@cowprotocol/ts-dune-client";
 import { DateTime, Duration } from "luxon";
 import {
   getKnownUserAddressesWithinTimeFrame,
@@ -16,12 +12,23 @@ import {
   PrismaClient,
   ContributorNamespace,
   Contributor,
+  Event,
+  Prisma,
+  PrismaPromise,
 } from "@prisma/client";
 import { DUNE_API_KEY } from "../../config.js";
 import fsPromises from "fs/promises";
 import path from "path";
 import { prisma as prismaClient } from "../../db/prisma-client.js";
-import { IDuneClient } from "../../utils/dune/type.js";
+import {
+  DailyContractUsageClient,
+  IDailyContractUsageClient,
+  DailyContractUsageRow,
+  DailyContractUsageResponse,
+  resolveDailyContractUsage,
+} from "./daily-contract-usage/client.js";
+import { streamFindAll as allEvents } from "../../db/events.js";
+import { streamFindAll as allContributors } from "../../db/contributors.js";
 import _ from "lodash";
 
 const MAX_KNOWN_ADDRESSES = 5000;
@@ -57,7 +64,10 @@ export interface DailyContractUsageSyncerOptions {
   contractUsersQueryId: number;
 
   // User address create batch size
-  userAddressCreateBatchSize: number;
+  batchCreateSize: number;
+
+  // batch read size
+  batchReadSize: number;
 }
 
 export const DefaultDailyContractUsageSyncerOptions: DailyContractUsageSyncerOptions =
@@ -72,233 +82,23 @@ export const DefaultDailyContractUsageSyncerOptions: DailyContractUsageSyncerOpt
     // This default is based on this: https://dune.com/queries/2835126
     contractUsersQueryId: 2835126,
 
-    userAddressCreateBatchSize: 1000,
+    batchCreateSize: 2500,
+
+    batchReadSize: 10000,
   };
-
-interface DailyContractUsageRawRow {
-  date: string;
-  contract_id: number;
-  user_addresses: string[] | null;
-  user_ids: number[] | null;
-  contract_total_l2_gas_cost_gwei: string;
-  contract_total_tx_count: number;
-  safe_address_count: number;
-}
-
-export interface DailyContractUsageRow {
-  date: Date;
-  contractAddress: string;
-  userAddresses: string[];
-  contractTotalL2GasCostGwei: string;
-  contractTotalTxCount: number;
-  uniqueSafeAddressCount: number;
-}
-
-class UniqueList<T> {
-  private uniqueMap: { [key: string]: boolean };
-  private arr: T[];
-  private idFunc: (value: T) => string;
-
-  constructor(idFunc: (value: T) => string) {
-    this.uniqueMap = {};
-    this.arr = [];
-    this.idFunc = idFunc;
-  }
-
-  push(obj: T) {
-    const id = this.idFunc(obj);
-    if (this.uniqueMap[id] !== undefined) {
-      return this.arr.length;
-    }
-    this.uniqueMap[id] = true;
-    this.arr.push(obj);
-  }
-
-  items(): T[] {
-    return this.arr;
-  }
-}
-
-export class DailyContractUsageCacheableResponse {
-  // The daily contract usage responses from dune are queried with mappings of
-  // all of our contracts that we monitor and their associated ids and some
-  // number of the top users. The difficulty is that we have limited quota from
-  // Dune so in case we delete our database and start over again we need to
-  // store exactly the id mapping we used so that we can consistently restore
-  // this data (especially while we're still building the system). This
-  // cacheable response allows for this.
-
-  private results: ResultsResponse;
-  private monitoredContracts: Awaited<ReturnType<typeof getMonitoredContracts>>;
-  private knownUserAddresses: Awaited<
-    ReturnType<typeof getKnownUserAddressesWithinTimeFrame>
-  >;
-
-  private _isFromCache: boolean;
-  private processed: boolean;
-  private cachedUniqueKnownUserAddresses: UniqueList<string>;
-  private cachedUniqueNewUserAddresses: UniqueList<string>;
-  private cachedProcessedRowsByContract: {
-    [contract: string]: DailyContractUsageRow[];
-  };
-
-  public static async fromJSON(path: string, isFromCache = true) {
-    const rawResponse = await fsPromises.readFile(path, {
-      encoding: "utf-8",
-    });
-    const parsedResponse = JSON.parse(rawResponse) as {
-      results: ResultsResponse;
-      monitoredContracts: Awaited<ReturnType<typeof getMonitoredContracts>>;
-      knownUserAddresses: Awaited<
-        ReturnType<typeof getKnownUserAddressesWithinTimeFrame>
-      >;
-    };
-
-    return new DailyContractUsageCacheableResponse(
-      parsedResponse.results,
-      parsedResponse.monitoredContracts,
-      parsedResponse.knownUserAddresses,
-      isFromCache,
-    );
-  }
-
-  constructor(
-    results: ResultsResponse,
-    monitoredContracts: Awaited<ReturnType<typeof getMonitoredContracts>>,
-    knownUserAddresses: Awaited<
-      ReturnType<typeof getKnownUserAddressesWithinTimeFrame>
-    >,
-    isFromCache: boolean,
-  ) {
-    this.results = results;
-    this.monitoredContracts = monitoredContracts;
-    this.knownUserAddresses = knownUserAddresses;
-    this.cachedProcessedRowsByContract = {};
-    this.processed = false;
-    this.cachedUniqueKnownUserAddresses = new UniqueList((a) => a);
-    this.cachedUniqueNewUserAddresses = new UniqueList((a) => a);
-    this._isFromCache = isFromCache;
-  }
-
-  // Process the rows so we can:
-  //   * resolve the userIds in the response to addresses.
-  //   * get a list of user addresses (known and unknown)
-  private processRows() {
-    logger.debug(
-      "Processing rows in retrieved daily usage data to map ids to addresses",
-    );
-
-    const contractAddressMap = this.monitoredContracts.reduce<{
-      [id: number]: string;
-    }>((cmap, c) => {
-      cmap[c.id] = c.name;
-      return cmap;
-    }, {});
-
-    const userAddressMap = this.knownUserAddresses.reduce<{
-      [id: number]: string;
-    }>((umap, u) => {
-      umap[u.id] = u.name;
-      this.cachedUniqueKnownUserAddresses.push(u.name);
-      return umap;
-    }, {});
-
-    const rows = (this.results.result?.rows || []) as unknown[];
-    const processedRows = this.cachedProcessedRowsByContract;
-
-    for (let i = 0; i < rows.length; i++) {
-      const row = rows[i] as DailyContractUsageRawRow;
-      // resolve the user addresses to contract addresses
-      const userIds = row.user_ids || [];
-      const partialUserAddresses = row.user_addresses || [];
-
-      // Add new user addresses to the new users hash map
-      partialUserAddresses.forEach((a) => {
-        this.cachedUniqueNewUserAddresses.push(a);
-      });
-
-      const contractAddress = contractAddressMap[row.contract_id];
-      const contractAddressRows = processedRows[contractAddress] || [];
-
-      const userAddresses = userIds
-        .map((u) => {
-          const addr = userAddressMap[u];
-          if (addr === undefined || addr === null) {
-            logger.error(`error looking up ${u} in the given response`);
-            throw new Error("irrecoverable");
-          }
-          return userAddressMap[u];
-        })
-        .concat(partialUserAddresses);
-
-      contractAddressRows.push({
-        date: DateTime.fromSQL(row.date).toJSDate(),
-        contractAddress: contractAddress,
-        userAddresses: userAddresses,
-        contractTotalL2GasCostGwei: row.contract_total_l2_gas_cost_gwei,
-        contractTotalTxCount: row.contract_total_tx_count,
-        uniqueSafeAddressCount: row.safe_address_count,
-      });
-      processedRows[contractAddress] = contractAddressRows;
-    }
-    this.processed = true;
-  }
-
-  uniqueUserAddresses(): string[] {
-    if (!this.processed) {
-      this.processRows();
-    }
-
-    return [
-      ...this.cachedUniqueKnownUserAddresses.items(),
-      ...this.cachedUniqueNewUserAddresses.items(),
-    ];
-  }
-
-  mapRowsByContractAddress<R>(
-    cb: (contractAddress: string, rows: DailyContractUsageRow[]) => R,
-  ): Array<R> {
-    if (!this.processed) {
-      this.processRows();
-    }
-
-    return Object.keys(this.cachedProcessedRowsByContract).map((address) => {
-      return cb(address, this.cachedProcessedRowsByContract[address]);
-    });
-  }
-
-  toJSON(): string {
-    return JSON.stringify({
-      results: this.results,
-      monitoredContracts: this.monitoredContracts,
-      knownUserAddresses: this.knownUserAddresses,
-    });
-  }
-
-  contractAddresses() {
-    if (!this.processed) {
-      this.processRows();
-    }
-    return Object.keys(this.cachedProcessedRowsByContract);
-  }
-
-  get isFromCache(): boolean {
-    return this._isFromCache;
-  }
-}
 
 export class DailyContractUsageSyncer {
-  private client: IDuneClient;
+  private client: IDailyContractUsageClient;
   private prisma: PrismaClient;
   private options: DailyContractUsageSyncerOptions;
-  private allUsers: Pick<Contributor, "id" | "name" | "namespace">[];
+  private allUsers: Contributor[];
   private userAddressToIdMap: { [address: string]: number };
   private contractsAlreadySynced: { [address: string]: boolean };
   private contracts: Awaited<ReturnType<typeof getMonitoredContracts>>;
   private contractAddressToIdMap: { [address: string]: number };
 
   constructor(
-    client: IDuneClient,
+    client: IDailyContractUsageClient,
     prisma: PrismaClient,
     options: Partial<DailyContractUsageSyncerOptions> = DefaultDailyContractUsageSyncerOptions,
   ) {
@@ -316,64 +116,80 @@ export class DailyContractUsageSyncer {
   }
 
   async run() {
-    await this.loadSystemState();
+    // Loads the system state into memory (this won't scale indefinitely but
+    // likely for a while) so that we can quickly process information without
+    // having to do too many db requests to do mapping. This is a tradeoff
+    // between storing users and contract addresses in the database such that it
+    // can stored more efficiently. For now this should be fine.
+
+    // Load contracts we monitor
+    await this.loadAllContracts();
+
+    // Load all the users we have in the database
+    await this.loadAllUsers();
 
     // Retrieve the data for a given interval (it might load from cache)
     logger.info("loading contract usage data");
     const usageData = await this.retrieveUsageData();
 
+    // Attempting to retrieve usage data can shift the baseDate (if we detect a
+    // cache from within the current interval). So we need to check for the
+    // currently synced contracts based on that baseDate;
+    await this.loadSyncedContracts();
+
     const uniqueUserAddresses = usageData.uniqueUserAddresses();
     await this.ensureUsersExist(uniqueUserAddresses);
 
     logger.info("Add all events by contract address");
-    await Promise.all(
-      usageData.mapRowsByContractAddress(async (contractAddress, days) => {
-        const contractId = this.contractAddressToId(contractAddress);
-        if (this.isContractSynced(contractAddress)) {
-          logger.info(
-            `skipping Contract<${contractId}> "${contractAddress}". already synced`,
-          );
-          return;
-        }
-        // Process each day sequentially so we can block on each day's transactions
-        for (const day of days) {
-          await this.createEventsForDay(contractId, day);
-          logger.debug(
-            `added events for Contract<${contractId}>(${contractAddress}) on ${DateTime.fromJSDate(
-              day.date,
-            ).toFormat("yyyy-MM-dd")}`,
-          );
-        }
+    await usageData.mapRowsByContractAddress(async (contractAddress, days) => {
+      const contractId = this.contractAddressToId(contractAddress);
+      if (!contractId) {
+        throw new Error(`no matching contract id found for ${contractAddress}`);
+      }
+      if (this.isContractSynced(contractAddress)) {
+        logger.info(
+          `skipping Contract<${contractId}> "${contractAddress}". already synced`,
+        );
+        return;
+      }
+      // Process each day sequentially so we can block on each day's transactions
+      for (const day of days) {
+        await this.createEventsForDay(contractId, day);
+        logger.debug(
+          `added events for Contract<${contractId}>(${contractAddress}) on ${DateTime.fromJSDate(
+            day.date,
+          ).toFormat("yyyy-MM-dd")}`,
+        );
+      }
 
-        // Update the event pointer for this contract
-        // FIXME: For now this doesn't do much error checking... this should be addressed
-        const updatedAt = this.options.baseDate.toJSDate();
+      // Update the event pointer for this contract
+      // FIXME: For now this doesn't do much error checking... this should be addressed
+      const updatedAt = this.options.baseDate.toJSDate();
 
-        await this.prisma.eventPointer.upsert({
-          where: {
-            artifactId_eventType: {
-              artifactId: contractId,
-              eventType: EventType.CONTRACT_INVOKED,
-            },
-          },
-          create: {
-            updatedAt: updatedAt,
+      await this.prisma.eventPointer.upsert({
+        where: {
+          artifactId_eventType: {
             artifactId: contractId,
             eventType: EventType.CONTRACT_INVOKED,
-            pointer: {},
-            autocrawl: false,
           },
-          update: {
-            updatedAt: updatedAt,
-          },
-        });
-        logger.debug(
-          `updated all events for Contract<${contractId}>(${contractAddress}) for ${this.startDate.toFormat(
-            "yyyy-MM-dd",
-          )} to ${this.endDate.toFormat("yyyy-MM-dd")}`,
-        );
-      }),
-    );
+        },
+        create: {
+          updatedAt: updatedAt,
+          artifactId: contractId,
+          eventType: EventType.CONTRACT_INVOKED,
+          pointer: {},
+          autocrawl: false,
+        },
+        update: {
+          updatedAt: updatedAt,
+        },
+      });
+      logger.debug(
+        `updated all events for Contract<${contractId}>(${contractAddress}) for ${this.startDate.toFormat(
+          "yyyy-MM-dd",
+        )} to ${this.endDate.toFormat("yyyy-MM-dd")}`,
+      );
+    });
   }
 
   protected get startDate() {
@@ -392,23 +208,6 @@ export class DailyContractUsageSyncer {
       .toUTC()
       .startOf("day")
       .minus(Duration.fromObject({ days: this.options.offsetDays }));
-  }
-
-  protected async loadSystemState() {
-    // Loads the system state into memory (this won't scale indefinitely but
-    // likely for a while) so that we can quickly process information without
-    // having to do too many db requests to do mapping. This is a tradeoff
-    // between storing users and contract addresses in the database such that it
-    // can stored more efficiently. For now this should be fine.
-
-    // Load contracts we monitor
-    await this.loadAllContracts();
-
-    // Load all the users we have in the database
-    await this.loadAllUsers();
-
-    // Load a mapping of all the already synced contracts
-    await this.loadSyncedContracts();
   }
 
   protected async loadAllContracts() {
@@ -440,16 +239,17 @@ export class DailyContractUsageSyncer {
   }
 
   protected async loadAllUsers() {
-    this.allUsers = await this.prisma.contributor.findMany({
-      select: {
-        id: true,
-        name: true,
-        namespace: true,
-      },
-      where: {
-        namespace: ContributorNamespace.EOA_ADDRESS,
-      },
-    });
+    this.allUsers = [];
+    const allUserStream = allContributors(
+      this.prisma,
+      this.options.batchReadSize,
+      { namespace: ContributorNamespace.EOA_ADDRESS },
+    );
+
+    for await (const user of allUserStream) {
+      const contributor = user as Contributor;
+      this.allUsers.push(contributor);
+    }
 
     this.userAddressToIdMap = this.allUsers.reduce<{ [addr: string]: number }>(
       (map, u) => {
@@ -485,19 +285,18 @@ export class DailyContractUsageSyncer {
     });
   }
 
-  protected async retrieveUsageData(): Promise<DailyContractUsageCacheableResponse> {
+  protected async retrieveUsageData(): Promise<DailyContractUsageResponse> {
     // Load all necessary sync related data
-
-    // Check the cache directory for the dune request's cache. We need
-    // caching because the API for dune is quiet resource constrained.
-    const monitoredContracts = await getMonitoredContracts(this.prisma);
-
     let usageData = await this.retrieveFromCache();
     if (usageData) {
       logger.info("loaded data from cache");
+      // FIXME: Right now the caching assumes that the contracts we're
+      // monitoring does not change (ie... we're not going to index anything
+      // more in the past). Once we do we should put the logic here to handle
+      // that case. For now. do nothing :)
     } else {
       // Get most active users from the previous interval
-      const knownUserAddresses = await getKnownUserAddressesWithinTimeFrame(
+      let knownUserAddresses = await getKnownUserAddressesWithinTimeFrame(
         this.prisma,
         this.startDate.minus(
           Duration.fromObject({ days: this.options.intervalLengthInDays }),
@@ -508,7 +307,11 @@ export class DailyContractUsageSyncer {
         MAX_KNOWN_ADDRESSES,
       );
 
-      usageData = this.retrieveFromDune(this.contracts, knownUserAddresses);
+      if (knownUserAddresses.length === 0) {
+        knownUserAddresses = await this.loadKnownAddressesSeed();
+      }
+
+      usageData = await this.retrieveFromDune(knownUserAddresses);
     }
     // Validate the given data to process
     this.validateUsageData(usageData);
@@ -517,63 +320,33 @@ export class DailyContractUsageSyncer {
   }
 
   protected async retrieveFromDune(
-    contractsToRetrieve: Awaited<ReturnType<typeof getMonitoredContracts>>,
     knownUserAddresses: Awaited<
       ReturnType<typeof getKnownUserAddressesWithinTimeFrame>
     >,
-  ): DailyContractUsageCacheableResponse {
-    // This is needed because the first time this is run there won't be any known addresses.
-    if (knownUserAddresses.length === 0) {
-      try {
-        knownUserAddresses = await this.loadKnownAddressesSeed();
-      } catch (e) {
-        throw new Error(
-          "this is an expensive call the known addresses seed must be specified if the database contains no known users",
-        );
-      }
-    }
-
-    logger.debug(
-      `retreiving data for ${this.startDate.toFormat(
-        "yyyy-MM-dd 00:00:00 UTC",
-      )} to ${this.endDate.toFormat("yyyy-MM-dd 00:00:00 UTC")}`,
-    );
-
-    await fsPromises.writeFile(
-      "contracts.txt",
-      contractsToRetrieve.map((c) => `(${c.id}, ${c.name})`).join(","),
-    );
-    await fsPromises.writeFile(
-      "users.txt",
-      knownUserAddresses.map((a) => `(${a.id}, ${a.name})`).join(","),
-    );
-
-    const results = await this.client.refresh(
-      this.options.contractUsersQueryId,
-      parameters,
-    );
-
-    usageData = new DailyContractUsageCacheableResponse(
-      results,
-      contractsToRetrieve,
-      knownUserAddresses,
-      false,
+  ): Promise<DailyContractUsageResponse> {
+    const response = await this.client.getDailyContractUsage(
+      this.startDate,
+      this.endDate,
+      knownUserAddresses.map((u) => u.name),
+      // Just load all contracts for now
+      this.contracts.map((c) => c.name),
     );
 
     // Write this to cache
-    await fsPromises.writeFile(this.intervalCachePath(), usageData.toJSON(), {
+    await fsPromises.writeFile(this.intervalCachePath(), response.toJSON(), {
       encoding: "utf-8",
     });
+
+    return response;
   }
 
   protected async retrieveFromCache(): Promise<
-    DailyContractUsageCacheableResponse | undefined
+    DailyContractUsageResponse | undefined
   > {
     // We should try not to duplicate date. This method will choose to use a
     // cache if it falls within the same interval.
     const cachePaths = this.possibleCachePathsWithinInterval();
     let cachePath = "";
-    console.log(cachePaths);
     for (const { baseDate, path } of cachePaths) {
       logger.info(`attempting cache from ${path}`);
       try {
@@ -590,7 +363,7 @@ export class DailyContractUsageSyncer {
     }
 
     // Check if the cache exists
-    return await DailyContractUsageCacheableResponse.fromJSON(cachePath);
+    return await DailyContractUsageResponse.fromJSON(cachePath);
   }
 
   protected possibleCachePathsWithinInterval(): {
@@ -624,13 +397,13 @@ export class DailyContractUsageSyncer {
     );
   }
 
-  protected validateUsageData(usageData: DailyContractUsageCacheableResponse) {
+  protected validateUsageData(usageData: DailyContractUsageResponse) {
     const intersect = _.intersection(
       this.contracts.map((c) => c.name),
-      usageData.monitoredContracts.map((c) => c.name),
+      usageData.contractAddresses,
     );
 
-    if (intersect.length !== usageData.monitoredContracts.length) {
+    if (intersect.length !== usageData.contractAddresses.length) {
       throw new Error(
         "Missing some expected contracts in the database. No resolution at the moment",
       );
@@ -649,10 +422,10 @@ export class DailyContractUsageSyncer {
       return id;
     });
 
-    // Check which users already have data written for that day.
-    // We'll need to update those
-    const existingEvents = await this.prisma.event.findMany({
-      where: {
+    const existingEventsStream = allEvents(
+      this.prisma,
+      this.options.batchReadSize,
+      {
         eventTime: day.date,
         eventType: EventType.CONTRACT_INVOKED,
         contributorId: {
@@ -660,68 +433,105 @@ export class DailyContractUsageSyncer {
         },
         artifactId: contractId,
       },
-    });
+    );
 
+    // Check which users already have data written for that day.
+    // We'll need to update those
+    const existingEvents: Event[] = [];
     const existingEventsMap: { [id: number]: Array<number> } = {};
-
-    existingEvents.forEach((e) => {
-      if (!e.contributorId) {
+    for await (const raw of existingEventsStream) {
+      const event = raw as Event;
+      existingEvents.push(event);
+      if (!event.contributorId) {
         return;
       }
-      const eventIds = existingEventsMap[e.contributorId] ?? [];
-      eventIds.push(e.id);
-      existingEventsMap[e.contributorId] = eventIds;
-    });
+      const eventIds = existingEventsMap[event.contributorId] ?? [];
+      eventIds.push(event.id);
+      existingEventsMap[event.contributorId] = eventIds;
+    }
 
-    const tx = userIds
-      .map((id) => {
-        const data = {
-          eventTime: day.date,
-          eventType: EventType.CONTRACT_INVOKED,
-          contributorId: id,
-          artifactId: contractId,
-          amount: 0,
-        };
-        const existingEvents = existingEventsMap[id] || [];
-        if (existingEvents.length > 0) {
-          if (existingEvents.length > 1) {
-            // FIXME: determine what to do in this instance
-            logger.error(
-              `contract Artifact<${contractId}> has duplicate entries for events related to user address Contributor<${id}> on ${day}`,
-            );
-          }
-          return this.prisma.event.update({
+    let txs: PrismaPromise<Event>[] = [];
+    let progress = 0;
+
+    logger.info(
+      `creating ${
+        userIds.length
+      } events for contract Artifact<${contractId}> on ${day.date.toISOString()}...`,
+      {
+        contractId: contractId,
+        date: day.date,
+        userIdsLength: userIds.length,
+      },
+    );
+    for (const id of userIds) {
+      const data = {
+        eventTime: day.date,
+        eventType: EventType.CONTRACT_INVOKED,
+        contributorId: id,
+        artifactId: contractId,
+        amount: 0,
+      };
+      const existingEvents = existingEventsMap[id] || [];
+      if (existingEvents.length > 0) {
+        if (existingEvents.length > 1) {
+          // FIXME: determine what to do in this instance
+          logger.error(
+            `contract Artifact<${contractId}> has duplicate entries for events related to user address Contributor<${id}> on ${day}`,
+          );
+        }
+        txs.push(
+          this.prisma.event.update({
             where: {
               id: existingEvents[0],
             },
             data: data,
-          });
-        }
-        return this.prisma.event.create({
-          data: data,
+          }),
+        );
+      } else {
+        txs.push(
+          this.prisma.event.create({
+            data: data,
+          }),
+        );
+      }
+
+      if (txs.length > this.options.batchCreateSize) {
+        await this.prisma.$transaction(txs);
+        progress += txs.length;
+        logger.debug(`committed ${progress}/${userIds.length} events`, {
+          contractId: contractId,
+          date: day.date,
+          userIdsLength: userIds.length,
         });
-      })
-      .filter((t) => t !== undefined);
+        txs = [];
+      }
+    }
+
+    if (txs.length !== 0) {
+      await this.prisma.$transaction(txs);
+      progress += txs.length;
+      logger.debug(`committed ${progress}/${userIds.length} events`, {
+        contractId: contractId,
+        date: day.date,
+        userIdsLength: userIds.length,
+      });
+    }
 
     // Create an event that reports the aggregate transaction information with
     // no contributor information
-    tx.push(
-      this.prisma.event.create({
-        data: {
-          eventTime: day.date,
-          eventType: EventType.CONTRACT_INVOKED_AGGREGATE_STATS,
-          artifactId: contractId,
-          amount: 0,
-          details: {
-            totalL2GasCostGwei: day.contractTotalL2GasCostGwei,
-            totalTxCount: day.contractTotalTxCount,
-            uniqueSafeAddresses: day.uniqueSafeAddressCount,
-          },
+    await this.prisma.event.create({
+      data: {
+        eventTime: day.date,
+        eventType: EventType.CONTRACT_INVOKED_AGGREGATE_STATS,
+        artifactId: contractId,
+        amount: 0,
+        details: {
+          totalL2GasCostGwei: day.contractTotalL2GasCostGwei,
+          totalTxCount: day.contractTotalTxCount,
+          uniqueSafeAddresses: day.uniqueSafeAddressCount,
         },
-      }),
-    );
-
-    await this.prisma.$transaction(tx);
+      },
+    });
   }
 
   protected async ensureUsersExist(addresses: string[]) {
@@ -735,48 +545,34 @@ export class DailyContractUsageSyncer {
     });
     const addressesToAdd = _.difference(addresses, existingAddresses);
 
-    logger.debug(`adding ${addressesToAdd.length} new EOA_ADDRESSES`, {
-      addressesToAddCount: addressesToAdd.length,
-    });
+    logger.debug(
+      `adding ${addressesToAdd.length} new EOA_ADDRESS contributors`,
+      {
+        addressesToAddCount: addressesToAdd.length,
+      },
+    );
 
     // Query for all users in the response data so we can insert any that do not
     // exist
-    let batch = [];
-    let completed = 0;
-    for (const addr of addressesToAdd) {
-      batch.push(
-        this.prisma.contributor.create({
-          data: {
-            name: addr,
+    const batchSize = this.options.batchCreateSize;
+    for (let i = 0; i < addressesToAdd.length; i += batchSize) {
+      const addressSlice = addressesToAdd.slice(i, i + batchSize);
+      await this.prisma.contributor.createMany({
+        data: addressSlice.map((a) => {
+          return {
+            name: a,
             namespace: ContributorNamespace.EOA_ADDRESS,
-          },
+          };
         }),
-      );
-      completed += 1;
-
-      // We should generalize this for transactions generally. Especially
-      // transactions that don't depend on each other like this one.
-      if (batch.length > this.options.userAddressCreateBatchSize) {
-        logger.debug(
-          `writing ${batch.length} EOA_ADDRESSES to contributors. Progress (${completed}/${addressesToAdd.length})`,
-          {
-            addressesToAddCount: addressesToAdd.length,
-            progress: completed,
-          },
-        );
-        await this.prisma.$transaction(batch);
-        batch = [];
-      }
-    }
-    if (batch.length > 0) {
+      });
+      const completed = i + addressSlice.length;
       logger.debug(
-        `writing ${batch.length} EOA_ADDRESSES to contributors. Progress (${completed}/${addressesToAdd.length})`,
+        `wrote ${batchSize} EOA_ADDRESSES to contributors. Progress (${completed}/${addressesToAdd.length})`,
         {
           addressesToAddCount: addressesToAdd.length,
-          progress: completed,
+          completed: completed,
         },
       );
-      await this.prisma.$transaction(batch);
     }
 
     await this.loadAllUsers();
@@ -788,7 +584,8 @@ export async function importDailyContractUsage(
 ): Promise<void> {
   logger.info("importing contract usage");
 
-  const client = new DuneClient(DUNE_API_KEY);
+  const dune = new DuneClient(DUNE_API_KEY);
+  const client = new DailyContractUsageClient(dune);
   const syncer = new DailyContractUsageSyncer(client, prismaClient, {
     cacheDirectory: args.cacheDir,
     baseDate: args.baseDate,

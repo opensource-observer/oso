@@ -7,9 +7,12 @@
  * the burden of the api calls on our quota by about 20% in testing.
  */
 import { DateTime } from "luxon";
-import { QueryParameter, ResultsResponse } from "@cowprotocol/ts-dune-client";
+import { QueryParameter } from "@cowprotocol/ts-dune-client";
+import fsPromises from "fs/promises";
 
+import { UniqueArray } from "../../../utils/array.js";
 import { IDuneClient } from "../../../utils/dune/type.js";
+import _ from "lodash";
 
 export type DailyContractUsageRawRow = {
   date: string;
@@ -52,7 +55,7 @@ export interface IDailyContractUsageClient {
     end: DateTime,
     knownUserAddresses: string[],
     knownContractAddresses: string[],
-  ): Promise<DailyContractUsageRow[]>;
+  ): Promise<DailyContractUsageResponse>;
 }
 
 export interface DailyContractUsageClientOptions {
@@ -80,6 +83,8 @@ export const DefaultDailyContractUsageClientOptions: DailyContractUsageClientOpt
 export interface IdToAddressMap {
   [id: number]: string;
 }
+
+export type Addresses = string[];
 
 type ContractAddressBatch = {
   map: IdToAddressMap;
@@ -140,11 +145,23 @@ export function resolveDailyContractUsage(
   });
 }
 
+export interface IDailyContractUsageResponse {
+  uniqueUserAddresses(): string[];
+  contractAddresses(): string[];
+  toJSON(): string;
+  mapRowsByContractAddress<R>(
+    cb: (contractAddress: string, rows: DailyContractUsageRow[]) => R,
+  ): Array<R>;
+}
+
 export class DailyContractUsageClient implements IDailyContractUsageClient {
   private client: IDuneClient;
   private options: DailyContractUsageClientOptions;
 
-  constructor(client: IDuneClient, options: DailyContractUsageClientOptions) {
+  constructor(
+    client: IDuneClient,
+    options: DailyContractUsageClientOptions = DefaultDailyContractUsageClientOptions,
+  ) {
     this.client = client;
     this.options = options;
   }
@@ -168,7 +185,7 @@ export class DailyContractUsageClient implements IDailyContractUsageClient {
     end: DateTime,
     knownUserAddresses: string[],
     knownContractAddresses: string[],
-  ): Promise<DailyContractUsageRow[]> {
+  ): Promise<DailyContractUsageResponse> {
     const userIdToAddress: { [id: number]: string } = {};
 
     const knownUserAddressesInput = knownUserAddresses
@@ -209,7 +226,8 @@ export class DailyContractUsageClient implements IDailyContractUsageClient {
         ),
       );
     }
-    return rows;
+
+    return new DailyContractUsageResponse(rows, knownContractAddresses);
   }
 
   private contractAddressesToBatch(
@@ -231,5 +249,133 @@ export class DailyContractUsageClient implements IDailyContractUsageClient {
       });
     }
     return batches;
+  }
+}
+
+interface DailyContractUsageResponseRaw {
+  rows: DailyContractUsageRow[];
+  input: {
+    contractAddresses: string[];
+  };
+}
+
+type CachedDailyContractUsageResponse = Omit<
+  DailyContractUsageResponseRaw,
+  "rows"
+> & {
+  rows: CachedDailyContractUsageRow[];
+};
+
+type CachedDailyContractUsageRow = Omit<DailyContractUsageRow, "date"> & {
+  date: string;
+};
+
+export class DailyContractUsageResponse {
+  // The daily contract usage responses from dune are queried with mappings of
+  // all of our contracts that we monitor and their associated ids and some
+  // number of the top users. The difficulty is that we have limited quota from
+  // Dune so in case we delete our database and start over again we need to
+  // store exactly the id mapping we used so that we can consistently restore
+  // this data (especially while we're still building the system). This
+  // cacheable response allows for this.
+
+  private rows: DailyContractUsageRow[];
+  private _contractAddresses: string[];
+
+  private memoUniqueUserAddresses: UniqueArray<string>;
+  private memoRowsByContract: {
+    [contract: string]: DailyContractUsageRow[];
+  };
+
+  private processed: boolean;
+
+  public static async fromJSON(path: string) {
+    const raw = await fsPromises.readFile(path, {
+      encoding: "utf-8",
+    });
+    const cached = JSON.parse(raw) as CachedDailyContractUsageResponse;
+    const rows: DailyContractUsageRow[] = cached.rows.map((a) => {
+      return {
+        ...a,
+        ...{ date: DateTime.fromISO(a.date).toJSDate() },
+      } as DailyContractUsageRow;
+    });
+
+    return new DailyContractUsageResponse(rows, cached.input.contractAddresses);
+  }
+
+  constructor(rows: DailyContractUsageRow[], contractAddresses: string[]) {
+    this.rows = rows;
+    this._contractAddresses = contractAddresses;
+    this.processed = false;
+    this.memoUniqueUserAddresses = new UniqueArray((a) => a);
+    this.memoRowsByContract = {};
+  }
+
+  // Process the rows so we can:
+  //   * resolve the userIds in the response to addresses.
+  //   * get a list of user addresses (known and unknown)
+  private processRows() {
+    const processedRows = this.memoRowsByContract;
+
+    this.rows.forEach((row) => {
+      // resolve the user addresses to contract addresses
+      row.userAddresses.forEach((a) => {
+        this.memoUniqueUserAddresses.push(a);
+      });
+      const contractAddressRows =
+        this.memoRowsByContract[row.contractAddress] || [];
+      contractAddressRows.push(row);
+      this.memoRowsByContract[row.contractAddress] = contractAddressRows;
+    });
+    this.processed = true;
+  }
+
+  uniqueUserAddresses(): string[] {
+    if (!this.processed) {
+      this.processRows();
+    }
+
+    return this.memoUniqueUserAddresses.items();
+  }
+
+  async mapRowsByContractAddress<R>(
+    cb: (contractAddress: string, rows: DailyContractUsageRow[]) => Promise<R>,
+    parallelism: number = 20,
+  ): Promise<Array<R>> {
+    if (!this.processed) {
+      this.processRows();
+    }
+
+    let result: Array<R> = [];
+    let parallel: Array<Promise<R>> = [];
+
+    for (const addr of this.contractAddresses) {
+      const rows = this.memoRowsByContract[addr] || [];
+      parallel.push(cb(addr, rows));
+      if (parallel.length > parallelism) {
+        result = result.concat(await Promise.all(parallel));
+        parallel = [];
+      }
+    }
+    if (parallel.length > 0) {
+      result = result.concat(await Promise.all(parallel));
+      await Promise.all(parallel);
+    }
+
+    return result;
+  }
+
+  toJSON(): string {
+    return JSON.stringify({
+      rows: this.rows,
+      input: {
+        contractAddresses: this._contractAddresses,
+      },
+    } as DailyContractUsageResponseRaw);
+  }
+
+  get contractAddresses() {
+    return _.clone(this._contractAddresses);
   }
 }
