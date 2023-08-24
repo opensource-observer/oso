@@ -1,5 +1,4 @@
 import {
-  PrismaClient,
   Event,
   EventType,
   Contributor,
@@ -11,7 +10,6 @@ import {
   Collection,
 } from "@prisma/client";
 export {
-  PrismaClient,
   Event,
   EventType,
   Contributor,
@@ -22,6 +20,16 @@ export {
   Project,
   Collection,
 };
+
+import {
+  getCollectionBySlug,
+  getProjectBySlug,
+  getArtifactByName,
+} from "./db/entities.js";
+export { getCollectionBySlug, getProjectBySlug, getArtifactByName };
+
+import * as utils from "./utils/common.js";
+export { utils };
 
 import { NpmDownloadsArgs, npmDownloads } from "./events/npm.js";
 export { NpmDownloadsArgs, npmDownloads };

@@ -1,16 +1,38 @@
 import chalk from "chalk";
 import { logger } from "./logger.js";
 
-// Expecting a value
+/**
+ * Used with assert statements (See common.ts)
+ */
+export class AssertionError extends Error {
+  constructor(msg = "Assertion failed") {
+    super(msg);
+  }
+}
+
+/**
+ * Something is `null` or `undefined` when we don't expect it
+ */
 export class NullOrUndefinedValueError extends Error {}
 
-// Explicit assert fails
-export class AssertionError extends Error {}
+/**
+ * Some value is out of an expected bound
+ */
+export class OutOfBoundsError extends Error {}
 
-// Invalid inputs to a function
+/**
+ * Data is malformed
+ */
+export class InvalidDataError extends Error {}
+
+/**
+ * Invalid inputs to a function
+ */
 export class InvalidInputError extends Error {}
 
-// Data is malformed
+/**
+ * Data is malformed
+ */
 export class MalformedDataError extends Error {}
 
 /**
