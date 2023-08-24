@@ -66,6 +66,11 @@ export interface DailyContractUsageSyncerOptions {
 
   // batch read size
   batchReadSize: number;
+
+  // Janky... currently passed into the DailyContractUsageResponse object to
+  // dictate how many contracts we process in "parallel". This would essentially
+  // dictate how many postgres connections we made (in theory?)
+  parallelism: number;
 }
 
 export const DefaultDailyContractUsageSyncerOptions: DailyContractUsageSyncerOptions =
@@ -83,6 +88,8 @@ export const DefaultDailyContractUsageSyncerOptions: DailyContractUsageSyncerOpt
     batchCreateSize: 2500,
 
     batchReadSize: 10000,
+
+    parallelism: 10,
   };
 
 export class DailyContractUsageSyncer {
@@ -187,7 +194,7 @@ export class DailyContractUsageSyncer {
           "yyyy-MM-dd",
         )} to ${this.endDate.toFormat("yyyy-MM-dd")}`,
       );
-    });
+    }, this.options.parallelism);
   }
 
   protected get startDate() {
