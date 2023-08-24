@@ -12,3 +12,6 @@ docker container create --name cache ghcr.io/hypercerts-org/oso-persistent-cache
 # The /. at the end of the source is important so that it copies the contents of
 # the cache directory to the intended destination
 docker cp cache:/cache/. ${CACHE_DIR}
+
+# Touch a file to use for checking for changed files in the cache directory
+touch "${CACHE_DIR}/.at-cache-load"
