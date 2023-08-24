@@ -70,3 +70,10 @@ Ecosystems: Ethereum Developer Tools & Optimism Applications
                |----> Dependency: ethers
                |----> Dependency: wagmi
 ```
+
+## Dependent Metrics
+
+In addition to mapping projects and their dependents, we also capture the following data about a project's dependents:
+
+- **Current Dependents**: the number of dependent projects as of the most recent indexing run. (We do not support historic analysis of how dependency graphs have changed over time.)
+- **Downloads**: the total number of times all packages released by the project have been downloaded over a given time period.
