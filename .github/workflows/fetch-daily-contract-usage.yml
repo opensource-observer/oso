@@ -55,3 +55,7 @@ jobs:
 
       - name: Run
         run: pnpm start:indexer --cache-dir ${CACHE_DIR} importDailyContractUsage 
+
+      - name: Write to cache if needed
+        if: always()
+        run: ./.github/scripts/write-cache.sh

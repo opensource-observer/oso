@@ -1,5 +1,6 @@
 import _ from "lodash";
-import { EventType, Prisma } from "@prisma/client";
+import { Readable } from "stream";
+import { EventType, Prisma, PrismaClient } from "@prisma/client";
 import { prisma } from "./prisma-client.js";
 import { assert, normalizeToObject } from "../utils/common.js";
 
@@ -98,5 +99,40 @@ export async function insertData<PointerType>(
         ...(autocrawl ? { autocrawl } : {}),
       },
     });
+  });
+}
+
+export function streamFindAll(
+  prisma: PrismaClient,
+  batchSize: number,
+  where: Prisma.EventWhereInput,
+): Readable {
+  let cursorId: number | undefined = undefined;
+
+  // Lazily stolen from: https://github.com/prisma/prisma/issues/5055
+  return new Readable({
+    objectMode: true,
+    highWaterMark: batchSize,
+    async read() {
+      try {
+        const items = await prisma.event.findMany({
+          where: where,
+          take: batchSize,
+          skip: cursorId ? 1 : 0,
+          cursor: cursorId ? { id: cursorId } : undefined,
+        });
+        for (const item of items) {
+          this.push(item);
+        }
+        if (items.length < batchSize) {
+          this.push(null);
+          return;
+        }
+        const item = items[items.length - 1];
+        cursorId = item.id;
+      } catch (err) {
+        this.destroy(err as any);
+      }
+    },
   });
 }
