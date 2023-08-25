@@ -54,31 +54,8 @@ PLASMIC.registerComponent(SupabaseQuery, {
       type: "string",
       helpText: "Name to use in Plasmic data picker. Must be unique per query.",
     },
-    children: "slot",
-    loadingChildren: {
-      type: "slot",
-      defaultValue: {
-        type: "text",
-        value: "Placeholder",
-      },
-    },
-    ignoreLoading: {
-      type: "boolean",
-      helpText: "Don't show 'loadingChildren' even if we're still loading data",
-      advanced: true,
-    },
-    errorChildren: {
-      type: "slot",
-      defaultValue: {
-        type: "text",
-        value: "Placeholder",
-      },
-    },
-    ignoreError: {
-      type: "boolean",
-      helpText: "Don't show 'errorChildren' even if we get an error",
-      advanced: true,
-    },
+
+    // SupabaseQueryArgs
     tableName: {
       type: "string",
       helpText: "Supabase table name",
@@ -103,6 +80,33 @@ PLASMIC.registerComponent(SupabaseQuery, {
     orderAscending: {
       type: "boolean",
       helpText: "True if ascending, false if descending",
+    },
+
+    // Plasmic elements
+    children: "slot",
+    loadingChildren: {
+      type: "slot",
+      defaultValue: {
+        type: "text",
+        value: "Placeholder",
+      },
+    },
+    ignoreLoading: {
+      type: "boolean",
+      helpText: "Don't show 'loadingChildren' even if we're still loading data",
+      advanced: true,
+    },
+    errorChildren: {
+      type: "slot",
+      defaultValue: {
+        type: "text",
+        value: "Placeholder",
+      },
+    },
+    ignoreError: {
+      type: "boolean",
+      helpText: "Don't show 'errorChildren' even if we get an error",
+      advanced: true,
     },
     useTestData: {
       type: "boolean",
