@@ -29,7 +29,7 @@ To qualify as an **active** collaborator, one must have made at least one contri
 
 Contributors are GitHub users who, although lacking collaborator access, have had a pull request they opened merged into the repository's main branch.
 
-An **active** contributor is defined as someone who has opened at least one pull request in the past 30 days.
+An **active** contributor is defined as someone who has opened at least one pull request or made commits to the main branch in the past 30 days.
 
 ### Maintainers
 
