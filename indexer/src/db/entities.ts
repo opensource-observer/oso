@@ -267,12 +267,43 @@ async function ossCreateBlockchainArtifacts(
   return artifacts;
 }
 
+/**
+ * Gets a collection by a slug
+ * @param slug
+ * @returns
+ */
 async function getCollectionBySlug(slug: string) {
   return await prisma.collection.findUnique({ where: { slug } });
 }
 
+/**
+ * Gets a project by a slug
+ * @param slug
+ * @returns
+ */
 async function getProjectBySlug(slug: string) {
   return await prisma.project.findUnique({ where: { slug } });
+}
+
+/**
+ * Gets an artifact by name
+ * @param fields
+ * @returns
+ */
+async function getArtifactByName(fields: {
+  namespace: ArtifactNamespace;
+  name: string;
+}): Promise<Artifact | null> {
+  const { namespace, name } = fields;
+  const result = await prisma.artifact.findUnique({
+    where: {
+      namespace_name: {
+        namespace,
+        name,
+      },
+    },
+  });
+  return result;
 }
 
 /**
@@ -283,16 +314,15 @@ async function getProjectBySlug(slug: string) {
  * @returns
  */
 async function upsertArtifact(fields: {
-  type: ArtifactType;
   namespace: ArtifactNamespace;
+  type: ArtifactType;
   name: string;
   url?: string;
   details?: any;
 }) {
   return await prisma.artifact.upsert({
     where: {
-      type_namespace_name: {
-        type: fields.type,
+      namespace_name: {
         namespace: fields.namespace,
         name: fields.name,
       },
@@ -334,6 +364,7 @@ async function upsertNpmPackage(packageName: string) {
 export {
   getCollectionBySlug,
   getProjectBySlug,
+  getArtifactByName,
   ossUpsertProject,
   ossUpsertCollection,
   upsertGitHubRepo,

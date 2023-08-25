@@ -84,12 +84,12 @@ model Artifact {
   createdAt DateTime @default(now()) @db.Timestamptz(3)
   updatedAt DateTime @updatedAt
 
-  // The type of artifact
-  type      ArtifactType
   // The namespace of `name`
   namespace ArtifactNamespace
   // A unique identifier for this artifact within the namespace
   name      String
+  // The type of artifact
+  type      ArtifactType
   // An optional URL to learn more about this artifact
   url       String?
   // Catch-all for other data we want to store
@@ -104,7 +104,7 @@ model Artifact {
   eventPtrs EventPointer[]
 
   // A combination of the type, namespace, and name must be unique
-  @@unique([type, namespace, name])
+  @@unique([namespace, name])
 }
 
 // Represents someone that is associated with an event
