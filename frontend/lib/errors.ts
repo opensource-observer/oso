@@ -6,3 +6,5 @@ export class NotImplementedError extends Error {
     super(msg);
   }
 }
+
+export class HttpError extends Error {}

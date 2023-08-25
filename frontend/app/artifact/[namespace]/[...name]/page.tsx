@@ -1,37 +1,15 @@
 import { notFound } from "next/navigation";
-import { ArtifactNamespace } from "@hypercerts-org/indexer";
-import { cachedGetArtifactByName } from "../../../../../lib/db";
-import { logger } from "../../../../../lib/logger";
-import { catchallPathToString } from "../../../../../lib/paths";
+import { cachedGetArtifactByName } from "../../../../lib/db";
+import { logger } from "../../../../lib/logger";
+import {
+  catchallPathToString,
+  pathToNamespaceEnum,
+} from "../../../../lib/paths";
 
 /**
  * TODO: This SSR route allows us to fetch the project from the database
  * on the first HTTP request, which should be faster than fetching it client-side
  */
-
-/**
- * Converts a path string to an ArtifactNamespace enum
- * @param namespacePath
- * @returns
- */
-const pathToNamespaceEnum = (namespacePath: string) => {
-  switch (namespacePath) {
-    case "github":
-      return ArtifactNamespace.GITHUB;
-    case "gitlab":
-      return ArtifactNamespace.GITLAB;
-    case "npm":
-      return ArtifactNamespace.NPM_REGISTRY;
-    case "ethereum":
-      return ArtifactNamespace.ETHEREUM;
-    case "optimism":
-      return ArtifactNamespace.OPTIMISM;
-    case "goerli":
-      return ArtifactNamespace.GOERLI;
-    default:
-      return null;
-  }
-};
 
 type ArtifactPageProps = {
   params: {

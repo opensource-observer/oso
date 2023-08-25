@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
-import { cachedGetProjectBySlug } from "../../../../lib/db";
-import { logger } from "../../../../lib/logger";
-import { catchallPathToString } from "../../../../lib/paths";
+import { cachedGetProjectBySlug } from "../../../lib/db";
+import { logger } from "../../../lib/logger";
+import { catchallPathToString } from "../../../lib/paths";
 
 /**
  * TODO: This SSR route allows us to fetch the project from the database
