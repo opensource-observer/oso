@@ -1,10 +1,10 @@
 # Dependents
 
-> This document aims to clarify the definition and categorization of software package dependents, highlighting their significance for the parent package.
+> This document aims to clarify the definition and categorization of software package dependents. This metric can highlight the usefulness of a given open source software project to other projects in the ecosystems.
 
-A **dependent** refers to a software package, module, or project that relies on a parent package to ensure proper functionality. The dependent package makes use of functionalities, classes, methods, or resources provided by the package it depends on.
+A **dependent** refers to a software package, module, or project that is included as a dependency in another project's source code. In other words, the project provides other projects with classes, methods, or resources that they rely on to function properly.
 
-Dependents are also commonly known as *reverse dependencies*.
+Dependents may also be referred to as *reverse dependencies*.
 
 ## Direct vs. Indirect Dependents
 
