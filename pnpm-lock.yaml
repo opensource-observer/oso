@@ -78,6 +78,9 @@ importers:
         specifier: ^3.10.0
         version: 3.10.0
     devDependencies:
+      '@prisma/nextjs-monorepo-workaround-plugin':
+        specifier: ^5.2.0
+        version: 5.2.0
       '@testing-library/dom':
         specifier: ^9.3.1
         version: 9.3.1
@@ -1599,6 +1602,10 @@ packages:
   /@prisma/engines@5.1.1:
     resolution: {integrity: sha512-NV/4nVNWFZSJCCIA3HIFJbbDKO/NARc9ej0tX5S9k2EVbkrFJC4Xt9b0u4rNZWL4V+F5LAjvta8vzEUw0rw+HA==}
     requiresBuild: true
+
+  /@prisma/nextjs-monorepo-workaround-plugin@5.2.0:
+    resolution: {integrity: sha512-HrbbIBKbOxFJlF6+RkzlWBy6vr90c45nn8IesH4Z5yqBNOFAqwVCh9nRSQcuViIGxZUvrolTMrVTICIfFpfqyw==}
+    dev: true
 
   /@rushstack/eslint-patch@1.3.2:
     resolution: {integrity: sha512-V+MvGwaHH03hYhY+k6Ef/xKd6RYlc4q8WBx+2ANmipHJcKuktNcI/NgEsJgdSUF6Lw32njT6OnrRsKYCdgHjYw==}
