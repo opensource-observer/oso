@@ -49,7 +49,7 @@ Consider a collection of "Ethereum Developer Tools" with projects like `ethers` 
 
 Assuming `velodrome-finance` includes `ethers` in its dependencies and `zora` includes both `ethers` and `wagmi`, then `ethers` would have two dependents and `wagmi` would have one. These relationships are shown in the diagram below.
 
-```mermaid
+```
 Ecosystems: Ethereum Developer Tools & Optimism Applications
     |
     |----> Project: ethers
