@@ -52,10 +52,10 @@ PLASMIC.registerComponent(SupabaseQuery, {
   props: {
     variableName: {
       type: "string",
-      helpText: "Name to use in Plasmic data picker",
+      helpText: "Name to use in Plasmic data picker. Must be unique per query.",
     },
     children: "slot",
-    loading: {
+    loadingChildren: {
       type: "slot",
       defaultValue: {
         type: "text",
@@ -64,7 +64,20 @@ PLASMIC.registerComponent(SupabaseQuery, {
     },
     ignoreLoading: {
       type: "boolean",
-      helpText: "Don't show 'loading' even if we're still loading data",
+      helpText: "Don't show 'loadingChildren' even if we're still loading data",
+      advanced: true,
+    },
+    errorChildren: {
+      type: "slot",
+      defaultValue: {
+        type: "text",
+        value: "Placeholder",
+      },
+    },
+    ignoreError: {
+      type: "boolean",
+      helpText: "Don't show 'errorChildren' even if we get an error",
+      advanced: true,
     },
     tableName: {
       type: "string",
@@ -90,6 +103,16 @@ PLASMIC.registerComponent(SupabaseQuery, {
     orderAscending: {
       type: "boolean",
       helpText: "True if ascending, false if descending",
+    },
+    useTestData: {
+      type: "boolean",
+      helpText: "Render with test data",
+      editOnly: true,
+      advanced: true,
+    },
+    testData: {
+      type: "object",
+      advanced: true,
     },
   },
   providesData: true,
