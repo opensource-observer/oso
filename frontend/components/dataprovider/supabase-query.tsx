@@ -1,10 +1,29 @@
 import React, { ReactNode } from "react";
+import useSWR from "swr";
 import { DataProvider } from "@plasmicapp/loader-nextjs";
-import { spawn } from "../../lib/common";
 import { supabase } from "../../lib/supabase-client";
 
 // The name used to pass data into the Plasmic DataProvider
-const DATAPROVIDER_NAME = "supabaseData";
+const KEY_PREFIX = "db";
+const genKey = (props: SupabaseQueryProps) => {
+  let key = `${KEY_PREFIX}:${props.tableName}`;
+  if (props.columns) {
+    key += `:${props.columns}`;
+  }
+  if (props.filters) {
+    key += `:${JSON.stringify(props.filters)}`;
+  }
+  if (props.limit) {
+    key += `:${props.limit}`;
+  }
+  if (props.orderBy) {
+    key += `:${props.orderBy}`;
+  }
+  if (props.orderAscending) {
+    key += `:${props.orderAscending}`;
+  }
+  return key;
+};
 
 /**
  * Generic Supabase query component.
@@ -16,8 +35,10 @@ export interface SupabaseQueryProps {
   className?: string; // Plasmic CSS class
   variableName?: string; // Name to use in Plasmic data picker
   children?: ReactNode; // Show this
-  loading?: ReactNode; // Show during loading if !ignoreLoading
+  loadingChildren?: ReactNode; // Show during loading if !ignoreLoading
   ignoreLoading?: boolean; // Skip the loading visual
+  errorChildren?: ReactNode; // Show if we get an error
+  ignoreError?: boolean; // Skip the error visual
   tableName?: string; // table to query
   columns?: string; // comma-delimited column names (e.g. `address,claimId`)
   filters?: any; // A list of filters, where each filter is `[ column, operator, value ]`
@@ -26,6 +47,8 @@ export interface SupabaseQueryProps {
   limit?: number; // Number of results to return
   orderBy?: string; // Name of column to order by
   orderAscending?: boolean; // True if ascending, false if descending
+  useTestData?: boolean;
+  testData?: any;
 }
 
 export function SupabaseQuery(props: SupabaseQueryProps) {
@@ -34,76 +57,76 @@ export function SupabaseQuery(props: SupabaseQueryProps) {
     className,
     variableName,
     children,
-    loading,
+    loadingChildren,
     ignoreLoading,
+    errorChildren,
+    ignoreError,
     tableName,
     columns,
     filters,
     limit,
     orderBy,
     orderAscending,
+    useTestData,
+    testData,
   } = props;
-  const [result, setResult] = React.useState<any[] | undefined>(undefined);
-
-  // Only query if the user is logged in
-  React.useEffect(() => {
-    // Short circuit if the user hasn't specified a table to query from
-    if (!tableName) {
+  const key = variableName ?? genKey(props);
+  const { data, error, isLoading } = useSWR(key, async () => {
+    if (useTestData) {
+      return testData;
+    } else if (!tableName) {
       return;
     }
-    spawn(
-      (async () => {
-        try {
-          let query = supabase.from(tableName).select(columns);
-          // Iterate over the filters
-          if (Array.isArray(filters)) {
-            for (let i = 0; i < filters.length; i++) {
-              const f = filters[i];
-              if (!Array.isArray(f) || f.length < 3) {
-                console.warn(`Invalid supabase filter: ${f}`);
-                continue;
-              }
-              query = query.filter(f[0], f[1], f[2]);
-            }
-          }
-          if (limit) {
-            query = query.limit(limit);
-          }
-          if (orderBy) {
-            query = query.order(orderBy, { ascending: orderAscending });
-          }
-          // Execute query
-          const { data, error, status } = await query;
-          if (error && status !== 406) {
-            throw error;
-          } else if (data) {
-            setResult(data);
-          }
-        } catch (error) {
-          // Just log query errors at the moment
-          console.error(error);
+    let query = supabase.from(tableName).select(columns);
+    // Iterate over the filters
+    if (Array.isArray(filters)) {
+      for (let i = 0; i < filters.length; i++) {
+        const f = filters[i];
+        if (!Array.isArray(f) || f.length < 3) {
+          console.warn(`Invalid supabase filter: ${f}`);
+          continue;
         }
-      })(),
-    );
-  }, [tableName, columns, filters, limit, orderBy, orderAscending]);
+        query = query.filter(f[0], f[1], f[2]);
+      }
+    }
+    if (limit) {
+      query = query.limit(limit);
+    }
+    if (orderBy) {
+      query = query.order(orderBy, { ascending: orderAscending });
+    }
+    // Execute query
+    const { data, error, status } = await query;
+    if (error && status !== 406) {
+      throw error;
+    } else {
+      return data;
+    }
+  });
 
   // Error messages are currently rendered in the component
   if (!tableName) {
     return <p>You need to set the tableName prop</p>;
-  } else if (!columns) {
-    return <p>You need to set the columns prop</p>;
   }
 
   // Show when loading
-  if (!ignoreLoading && !!loading && !result) {
-    return <div className={className}> {loading} </div>;
+  if (isLoading && !ignoreLoading && !!loadingChildren) {
+    return <div className={className}> {loadingChildren} </div>;
+  } else if (error && !ignoreError && !!errorChildren) {
+    return (
+      <div className={className}>
+        <DataProvider name={key} data={error}>
+          {errorChildren}
+        </DataProvider>
+      </div>
+    );
+  } else {
+    return (
+      <div className={className}>
+        <DataProvider name={key} data={data}>
+          {children}
+        </DataProvider>
+      </div>
+    );
   }
-
-  return (
-    <div className={className}>
-      <DataProvider name={variableName ?? DATAPROVIDER_NAME} data={result}>
-        {children}
-      </DataProvider>
-    </div>
-  );
 }
