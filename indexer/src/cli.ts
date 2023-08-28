@@ -22,6 +22,7 @@ import {
   ImportDailyContractUsage,
   importDailyContractUsage,
 } from "./actions/dune/index.js";
+import { LoadCommits, loadCommits } from "./actions/github/fetch/commits.js";
 import { DateTime } from "luxon";
 
 const callLibrary = async <Args>(
@@ -79,6 +80,14 @@ yargs(hideBin(process.argv))
         });
     },
     (argv) => handleError(importDailyContractUsage(argv)),
+  )
+  .command<LoadCommits>(
+    "loadCommits",
+    "Manually import commits",
+    (yags) => {
+      yags.option("skipExisting", { type: "boolean" });
+    },
+    (argv) => handleError(loadCommits(argv)),
   )
   .command<RunAutocrawlArgs>(
     "runAutocrawl",
