@@ -11,7 +11,6 @@ import {
   ArtifactType,
   ContributorNamespace,
   EventType,
-  Prisma,
   PrismaClient,
 } from "@prisma/client";
 import { BatchEventRecorder } from "../../../recorder/recorder.js";
@@ -238,7 +237,7 @@ export type LoadCommits = CommonArgs & {
   skipExisting?: boolean;
 };
 
-export async function loadCommits(args: LoadCommits): Promise<void> {
+export async function loadCommits(_args: LoadCommits): Promise<void> {
   logger.info("loading commits");
 
   const octokit = new Octokit({ auth: GITHUB_TOKEN });
