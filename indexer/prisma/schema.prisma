@@ -213,5 +213,10 @@ enum ArtifactNamespace {
 
 enum ContributorNamespace {
   GITHUB_USER
+  // If a commit doesn't have a github user use `GIT_EMAIL`
+  GIT_EMAIL
+  // If a commit doesn't have a git email use `GIT_NAME`
+  GIT_NAME
+
   EOA_ADDRESS
 }
