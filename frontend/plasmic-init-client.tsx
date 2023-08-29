@@ -152,7 +152,7 @@ PLASMIC.registerComponent(FormField, {
     },
     children: "slot",
   },
-  importPath: "./components/forms",
+  importPath: "./components/forms/form-elements",
 });
 
 PLASMIC.registerComponent(FormError, {
@@ -164,7 +164,7 @@ PLASMIC.registerComponent(FormError, {
       helpText: "Formik field name",
     },
   },
-  importPath: "./components/forms",
+  importPath: "./components/forms/form-elements",
 });
 
 PLASMIC.registerComponent(FormTextField, {
@@ -195,7 +195,7 @@ PLASMIC.registerComponent(FormTextField, {
       helpText: "If multiline, fixes the number of rows to show",
     },
   },
-  importPath: "./components/forms",
+  importPath: "./components/forms/form-elements",
 });
 
 PLASMIC.registerComponent(FormSelect, {
@@ -217,7 +217,7 @@ PLASMIC.registerComponent(FormSelect, {
     },
     disabled: "boolean",
   },
-  importPath: "./components/forms",
+  importPath: "./components/forms/form-elements",
 });
 
 PLASMIC.registerComponent(FormSlider, {
@@ -237,7 +237,7 @@ PLASMIC.registerComponent(FormSlider, {
     max: "number",
     step: "number",
   },
-  importPath: "./components/forms",
+  importPath: "./components/forms/form-elements",
 });
 
 PLASMIC.registerComponent(FormDatePicker, {
@@ -256,7 +256,7 @@ PLASMIC.registerComponent(FormDatePicker, {
     defaultUndefined: "boolean",
     disabled: "boolean",
   },
-  importPath: "./components/forms",
+  importPath: "./components/forms/form-elements",
 });
 
 PLASMIC.registerComponent(FormDropZone, {
@@ -273,7 +273,7 @@ PLASMIC.registerComponent(FormDropZone, {
       helpText: "Types of files to accept",
     },
   },
-  importPath: "./components/forms",
+  importPath: "./components/forms/form-elements",
 });
 
 PLASMIC.registerComponent(FormCheckbox, {
@@ -285,7 +285,7 @@ PLASMIC.registerComponent(FormCheckbox, {
       helpText: "Formik field name",
     },
   },
-  importPath: "./components/forms",
+  importPath: "./components/forms/form-elements",
 });
 
 PLASMIC.registerComponent(VisualizationContext, {
@@ -306,7 +306,7 @@ PLASMIC.registerComponent(VisualizationContext, {
     },
   },
   providesData: true,
-  importPath: "./components/hypercert-create",
+  importPath: "./components/forms/visualization-context",
 });
 
 /**
