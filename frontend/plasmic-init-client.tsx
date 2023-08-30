@@ -6,6 +6,7 @@ import { PLASMIC } from "./plasmic-init";
 import { ProjectsClientProvider } from "./components/project-browser/project-client-provider";
 import { ProjectBrowser } from "./components/project-browser/project-browser";
 import { SupabaseQuery } from "./components/dataprovider/supabase-query";
+import { EventDataProvider } from "./components/dataprovider/event-data-provider";
 import { FormField, FormError } from "./components/forms/form-elements";
 import { VisualizationContext } from "./components/forms/visualization-context";
 
@@ -130,7 +131,84 @@ PLASMIC.registerComponent(SupabaseQuery, {
     },
   },
   providesData: true,
-  importPath: "./components/supabase-query",
+  importPath: "./components/dataprovider/supabase-query",
+});
+
+PLASMIC.registerComponent(EventDataProvider, {
+  name: "EventDataProvider",
+  props: {
+    variableName: {
+      type: "string",
+      helpText: "Name to use in Plasmic data picker. Must be unique per query.",
+    },
+
+    // Plasmic elements
+    children: "slot",
+    loadingChildren: {
+      type: "slot",
+      defaultValue: {
+        type: "text",
+        value: "Placeholder",
+      },
+    },
+    ignoreLoading: {
+      type: "boolean",
+      helpText: "Don't show 'loadingChildren' even if we're still loading data",
+      advanced: true,
+    },
+    errorChildren: {
+      type: "slot",
+      defaultValue: {
+        type: "text",
+        value: "Placeholder",
+      },
+    },
+    ignoreError: {
+      type: "boolean",
+      helpText: "Don't show 'errorChildren' even if we get an error",
+      advanced: true,
+    },
+    useTestData: {
+      type: "boolean",
+      helpText: "Render with test data",
+      editOnly: true,
+      advanced: true,
+    },
+    testData: {
+      type: "object",
+      advanced: true,
+    },
+
+    // Data options
+    chartType: {
+      type: "choice",
+      helpText: "Pair this with the component in 'children'",
+      options: ["kpiCard", "areaChart", "barList"],
+    },
+    xAxis: {
+      type: "choice",
+      helpText: "What is the x-axis?",
+      options: ["date", "artifact", "eventType"],
+    },
+    artifactIds: {
+      type: "array",
+      defaultValue: [],
+    },
+    eventTypes: {
+      type: "array",
+      defaultValue: [],
+    },
+    startDate: {
+      type: "string",
+      helpText: "YYYY-MM-DD",
+    },
+    endDate: {
+      type: "string",
+      helpText: "YYYY-MM-DD",
+    },
+  },
+  providesData: true,
+  importPath: "./components/dataprovider/event-data-provider",
 });
 
 PLASMIC.registerComponent(FormField, {

@@ -39,7 +39,7 @@ export type SupabaseQueryProps = Partial<SupabaseQueryArgs> & {
   ignoreLoading?: boolean; // Skip the loading visual
   errorChildren?: ReactNode; // Show if we get an error
   ignoreError?: boolean; // Skip the error visual
-  useTestData?: boolean;
+  useTestData?: boolean; // Use the testData prop instead of querying database
   testData?: any;
 };
 
