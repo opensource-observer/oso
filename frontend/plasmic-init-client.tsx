@@ -1,6 +1,7 @@
 "use client";
 
 import CircularProgress from "@mui/material/CircularProgress";
+import { AreaChart, BarList } from "@tremor/react";
 import { PlasmicRootProvider } from "@plasmicapp/loader-nextjs";
 import { PLASMIC } from "./plasmic-init";
 import { ProjectsClientProvider } from "./components/project-browser/project-client-provider";
@@ -22,6 +23,64 @@ PLASMIC.registerComponent(CircularProgress, {
   description: "Circular loading widget",
   props: {},
   importPath: "@mui/material/CircularProgress",
+});
+
+PLASMIC.registerComponent(AreaChart, {
+  name: "AreaChart",
+  description: "Tremor AreaChart",
+  props: {
+    data: {
+      type: "array",
+      defaultValue: [],
+    },
+    categories: {
+      type: "array",
+    },
+    index: {
+      type: "string",
+      helpText: "Name of the index column",
+      defaultValue: "date",
+    },
+    colors: {
+      type: "array",
+    },
+    startEndOnly: "boolean",
+    showXAxis: "boolean",
+    showYAxis: "boolean",
+    yAxisWidth: "number",
+    showAnimation: "boolean",
+    animationDuration: "number",
+    showTooltip: "boolean",
+    showLegend: "boolean",
+    showGridLines: "boolean",
+    showGradient: "boolean",
+    autoMinValue: "boolean",
+    minValue: "number",
+    maxValue: "number",
+    stack: "boolean",
+    curveType: {
+      type: "choice",
+      options: ["linear", "step", "monotone"],
+    },
+    connectNulls: "boolean",
+    allowDecimals: "boolean",
+    noDataText: "string",
+  },
+  importPath: "@tremor/react",
+});
+
+PLASMIC.registerComponent(BarList, {
+  name: "BarList",
+  description: "Tremor BarList",
+  props: {
+    data: {
+      type: "array",
+      defaultValue: [],
+    },
+    color: "string",
+    showAnimation: "boolean",
+  },
+  importPath: "@tremor/react",
 });
 
 PLASMIC.registerComponent(ProjectsClientProvider, {
