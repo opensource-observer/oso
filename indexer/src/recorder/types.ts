@@ -152,9 +152,9 @@ export function generateEventTypeStrategy(
       // by default the "unique id" will just be the time, event type, and artifact id concatenated
       return `${event.eventTime.toISOString()}::${
         event.eventType
-      }::${artifactStr}:${contributorStr}`;
+      }::${artifactStr}::${contributorStr}`;
     },
-    async (directory, event) => {
+    async (_directory, event) => {
       let contributorStr = "";
       if (event.contributor) {
         contributorStr = `${event.contributor.name}::${event.contributor.namespace}`;

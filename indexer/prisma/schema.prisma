@@ -175,10 +175,25 @@ enum EventType {
   // Source code management events
   PULL_REQUEST_CREATED
   PULL_REQUEST_MERGED
+  PULL_REQUEST_CLOSED
+  PULL_REQUEST_REOPENED
+  // Not sure this event is possible
+  PULL_REQUEST_REMOVED_FROM_PROJECT
+  PULL_REQUEST_APPROVED
+
   COMMIT_CODE
+
+  // Star stats over time (GITHUB)
+  STAR_AGGREGATE_STATS
+  STARRED
+
   // Project management events
-  ISSUE_FILED
+  ISSUE_FILED // deprecated... use ISSUE_CREATED
+  ISSUE_CREATED
   ISSUE_CLOSED
+  ISSUE_REOPENED
+  ISSUE_REMOVED_FROM_PROJECT
+
   // Software dependency events
   DOWNSTREAM_DEPENDENCY_COUNT
   UPSTREAM_DEPENDENCY_COUNT
@@ -186,6 +201,7 @@ enum EventType {
   // Usage events
   CONTRACT_INVOKED
   CONTRACT_INVOKED_AGGREGATE_STATS
+
   USERS_INTERACTED
 }
 

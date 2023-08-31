@@ -19,6 +19,9 @@ on:
         - "npmDownloads"
         - "githubCommits" 
         - "importOssDirectory"
+        - "loadCommits"
+        - "loadStars"
+        - "loadPullRequests"
       args:
         description: 'Arguments to pass to the command'
         required: false

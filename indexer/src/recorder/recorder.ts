@@ -134,20 +134,20 @@ export class BatchEventRecorder implements IEventRecorder {
 
   async waitAll(): Promise<void[]> {
     // Wait for all queues to complete
-    return Promise.all(
-      Object.keys(this.eventTypeQueues).map((eventType) => {
-        return this.wait(eventType as EventType);
-      }),
-    );
+    const results: void[] = [];
+    for (const eventType in this.eventTypeQueues) {
+      results.push(await this.wait(eventType as EventType));
+    }
+    return results;
   }
 
   async wait(eventType: EventType): Promise<void> {
     if (!this.actorsLoaded) {
       await this.loadActors();
     }
+
     // Wait for a specific event type queue to complete
     const queue = this.getEventTypeQueue(eventType);
-
     if (queue.length === 0) {
       return;
     }
@@ -185,8 +185,8 @@ export class BatchEventRecorder implements IEventRecorder {
 
     for await (const raw of existingEvents) {
       const event = raw as Event;
-      existingEventMap[await strategy.idFromEvent(this.actorDirectory, event)] =
-        event;
+      const id = await strategy.idFromEvent(this.actorDirectory, event);
+      existingEventMap[id] = event;
     }
 
     const newEvents = [];
@@ -202,6 +202,10 @@ export class BatchEventRecorder implements IEventRecorder {
         this.actorDirectory,
         event,
       );
+      if (event.eventType === EventType.STAR_AGGREGATE_STATS) {
+        console.log(existingEventMap);
+        console.log(incompleteId);
+      }
       const existing = existingEventMap[incompleteId];
       if (!existing) {
         queuedArtifacts.push(event.artifact);
@@ -285,9 +289,11 @@ export class BatchEventRecorder implements IEventRecorder {
           }),
         );
 
-        return this.prisma.event.createMany({
+        const response = await this.prisma.event.createMany({
           data: events,
         });
+        logger.debug(`completed writing batch of ${batchLength}`);
+        return response;
       },
     );
   }
