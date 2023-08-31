@@ -29,7 +29,6 @@ import {
   LoadPullRequests,
   loadPullRequests,
 } from "./actions/github/fetch/pull-requests.js";
-import { runTestQuery } from "./gh-query.js";
 
 const callLibrary = async <Args>(
   func: EventSourceFunction<Args>,
