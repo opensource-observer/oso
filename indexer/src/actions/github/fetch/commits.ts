@@ -69,7 +69,7 @@ export class GithubCommitFetcher {
     const repos = await this.loadRelevantRepos();
 
     for (const repo of repos) {
-      this.recordEventsForRepo(repo);
+      await this.recordEventsForRepo(repo);
     }
 
     // Report that we've completed the job
