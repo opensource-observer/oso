@@ -7,6 +7,8 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd "${SCRIPT_DIR}/../../"
 REPO_DIR=$(pwd)
 
+cd ${CACHE_DIR}
+
 # if the cache file doesn't exist. We should force a new container
 if [[ -f "${CACHE_DIR}/.at-cache-load" ]]; then
     # Check if any files have changed. empty directories are ignored

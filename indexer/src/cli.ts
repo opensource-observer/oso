@@ -24,6 +24,12 @@ import {
 } from "./actions/dune/index.js";
 import { LoadCommits, loadCommits } from "./actions/github/fetch/commits.js";
 import { DateTime } from "luxon";
+import { LoadStars, loadStars } from "./actions/github/fetch/stars.js";
+import {
+  LoadPullRequests,
+  loadPullRequests,
+} from "./actions/github/fetch/pull-requests.js";
+import { runTestQuery } from "./gh-query.js";
 
 const callLibrary = async <Args>(
   func: EventSourceFunction<Args>,
@@ -88,6 +94,22 @@ yargs(hideBin(process.argv))
       yags.option("skipExisting", { type: "boolean" });
     },
     (argv) => handleError(loadCommits(argv)),
+  )
+  .command<LoadStars>(
+    "loadStars",
+    "Manually import commits",
+    (yags) => {
+      yags.option("skipExisting", { type: "boolean" });
+    },
+    (argv) => handleError(loadStars(argv)),
+  )
+  .command<LoadPullRequests>(
+    "loadPullRequests",
+    "Manually import pull requests",
+    (yags) => {
+      yags.option("skipExisting", { type: "boolean" });
+    },
+    (argv) => handleError(loadPullRequests(argv)),
   )
   .command<RunAutocrawlArgs>(
     "runAutocrawl",
