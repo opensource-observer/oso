@@ -64,7 +64,7 @@ export function unpaginateIterator<T extends Record<string | number, any>>() {
       };
 
       // hacky... slow things down right now
-      await sleep(1000);
+      await sleep(250);
 
       const rateLimit: RateLimit = data.rateLimit;
       spinner.suffixText = `: ${rateLimit.remaining}/${rateLimit.limit} credits remaining `;
@@ -81,6 +81,10 @@ export function unpaginateIterator<T extends Record<string | number, any>>() {
       const pageInfo: PageInfo = getPath(data, pageInfoPath);
       if (!pageInfo.hasNextPage) {
         break;
+      }
+
+      if (cursor === pageInfo.endCursor) {
+        throw new Error("the cursor is not changing. please fix your query");
       }
 
       cursor = pageInfo.endCursor;

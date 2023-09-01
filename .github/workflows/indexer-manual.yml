@@ -20,7 +20,7 @@ on:
         - "githubCommits" 
         - "importOssDirectory"
         - "loadCommits"
-        - "loadStars"
+        - "loadRepositoryFollowers"
         - "loadPullRequests"
       args:
         description: 'Arguments to pass to the command'
