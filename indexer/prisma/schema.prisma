@@ -187,6 +187,13 @@ enum EventType {
   STAR_AGGREGATE_STATS
   STARRED
 
+  // Forks over time
+  FORK_AGGREGATE_STATS
+  FORKED
+
+  // Github Watchers
+  WATCHER_AGGREGATE_STATS
+
   // Project management events
   ISSUE_FILED // deprecated... use ISSUE_CREATED
   ISSUE_CREATED
@@ -228,6 +235,8 @@ enum ArtifactNamespace {
 }
 
 enum ContributorNamespace {
+  GITHUB_ORG
+
   GITHUB_USER
   // If a commit doesn't have a github user use `GIT_EMAIL`
   GIT_EMAIL

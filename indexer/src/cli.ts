@@ -24,7 +24,10 @@ import {
 } from "./actions/dune/index.js";
 import { LoadCommits, loadCommits } from "./actions/github/fetch/commits.js";
 import { DateTime } from "luxon";
-import { LoadStars, loadStars } from "./actions/github/fetch/stars.js";
+import {
+  LoadRepositoryFollowers,
+  loadRepositoryFollowers,
+} from "./actions/github/fetch/repo-followers.js";
 import {
   LoadPullRequests,
   loadPullRequests,
@@ -76,6 +79,7 @@ yargs(hideBin(process.argv))
     (yags) => {
       yags
         .option("skipExisting", { type: "boolean" })
+        .option("interval", { type: "number" })
         .option("base-date", { type: "string", default: "" })
         .coerce("base-date", (arg) => {
           if (arg === "") {
@@ -94,13 +98,13 @@ yargs(hideBin(process.argv))
     },
     (argv) => handleError(loadCommits(argv)),
   )
-  .command<LoadStars>(
-    "loadStars",
+  .command<LoadRepositoryFollowers>(
+    "loadRepositoryFollowers",
     "Manually import commits",
     (yags) => {
       yags.option("skipExisting", { type: "boolean" });
     },
-    (argv) => handleError(loadStars(argv)),
+    (argv) => handleError(loadRepositoryFollowers(argv)),
   )
   .command<LoadPullRequests>(
     "loadPullRequests",

@@ -1,3 +1,5 @@
+import { PageInfo } from "../../../events/github/unpaginate.js";
+
 export type GithubGraphQLResponse<T> = T & {
   rateLimit: {
     remaining: number;
@@ -13,4 +15,9 @@ export type GraphQLNode<T> = {
 
 export type Actor = {
   login: string;
+};
+
+export type PaginatableEdges<T> = {
+  edges: T[];
+  pageInfo: PageInfo;
 };

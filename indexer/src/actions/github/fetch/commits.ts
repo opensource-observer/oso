@@ -80,7 +80,7 @@ export class GithubCommitFetcher {
     const projects = await this.prisma.project.findMany({
       where: {
         name: {
-          in: ["0xSplits", "gnosis-safe", "Uniswap"],
+          in: ["0xSplits", "Safe", "Uniswap"],
         },
       },
       include: {
