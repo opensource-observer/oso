@@ -22,10 +22,7 @@ import {
   PaginatableEdges,
   GraphQLNode,
 } from "./common.js";
-import {
-  unpaginateIterator,
-  PageInfo,
-} from "../../../events/github/unpaginate.js";
+import { unpaginateIterator } from "../../../events/github/unpaginate.js";
 
 const GET_ALL_PUBLIC_FORKS = gql`
   query getAllPublicForks($owner: String!, $name: String!, $cursor: String) {
@@ -295,7 +292,6 @@ export class GithubFollowingFetcher {
       },
     );
     for await (const data of iterator) {
-      const response = data.raw as GetAllPublicForks;
       for (const star of data.results) {
         yield star.node;
       }
