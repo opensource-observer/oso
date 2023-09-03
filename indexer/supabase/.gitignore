@@ -1,3 +1,5 @@
 # Supabase
 .branches
 .temp
+.ipynb_checkpoints
+.ipynb
