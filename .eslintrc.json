@@ -11,10 +11,7 @@
     "prettier",
     "next/core-web-vitals"
   ],
-  "ignorePatterns": [
-    "**/vendor/*.js",
-    "vendor/**/*.js"
-  ],
+  "ignorePatterns": ["**/vendor/*.js", "vendor/**/*.js"],
   "parser": "@typescript-eslint/parser",
   "parserOptions": {
     "ecmaFeatures": {
@@ -27,6 +24,31 @@
   "rules": {
     "react-hooks/exhaustive-deps": "off",
     "@typescript-eslint/no-explicit-any": "off",
-    "@typescript-eslint/no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }]
+    "@typescript-eslint/no-unused-vars": [
+      "warn",
+      { "argsIgnorePattern": "^_" }
+    ],
+    "no-restricted-properties": [
+      "error",
+      {
+        "object": "console",
+        "property": "error",
+        "message": "Please use the logger instead."
+      }
+    ],
+    "no-restricted-globals": [
+      "error",
+      {
+        "name": "prompt",
+        "message": "Please use a React modal instead."
+      }
+    ],
+    "no-restricted-syntax": [
+      "error",
+      {
+        "selector": "Property[key.name='preview'][value.value=true]",
+        "message": "Make sure to turn 'preview' off before committing."
+      }
+    ]
   }
 }
