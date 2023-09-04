@@ -15,7 +15,7 @@ WITH UserInteractions AS (
         e."eventTime" >= CURRENT_DATE - INTERVAL '30 days' AND
         e."eventTime" < CURRENT_DATE AND
         e."eventType" = 'CONTRACT_INVOKED' AND
-        p.name = 'Uniswap' -- Specify your project name here
+        p.name = 'Uniswap' -- insert your project name here
     GROUP BY
         e."contributorId"
 )
