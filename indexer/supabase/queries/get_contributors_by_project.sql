@@ -1,3 +1,6 @@
+-- This query counts incremental and cumulative commits by contributor
+-- includes a simple bot filter
+
 WITH FilteredData AS (
     SELECT
         p.name AS project_name,
