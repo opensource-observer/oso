@@ -152,6 +152,7 @@ const GET_ALL_ISSUES_AND_PRS = gql`
           ... on Issue {
             id
             repository {
+              nameWithOwner
               name
             }
             number
@@ -208,6 +209,7 @@ const GET_ALL_ISSUES_AND_PRS = gql`
           ... on PullRequest {
             id
             repository {
+              nameWithOwner
               name
             }
             number
@@ -308,6 +310,7 @@ export type IssueOrPullRequest = {
   __typename: string;
   id: string;
   repository: {
+    nameWithOwner: string;
     name: string;
   };
   title: string;
@@ -632,7 +635,7 @@ export class GithubPullRequestFetcher {
     }
     for await (const issue of this.loadAllIssuesForRepos(repos)) {
       const artifact: IncompleteArtifact = {
-        name: issue.repository.name,
+        name: issue.repository.nameWithOwner,
         namespace: ArtifactNamespace.GITHUB,
         type: ArtifactType.GIT_REPOSITORY,
       };
