@@ -247,7 +247,7 @@ PLASMIC.registerComponent(EventDataProvider, {
     xAxis: {
       type: "choice",
       helpText: "What is the x-axis?",
-      options: ["date", "artifact", "eventType"],
+      options: ["eventTime", "artifact", "eventType"],
     },
     artifactIds: {
       type: "array",
