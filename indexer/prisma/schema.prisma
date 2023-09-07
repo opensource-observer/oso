@@ -117,13 +117,32 @@ model Contributor {
   // Currently just an arbitrary string
   name      String
   namespace ContributorNamespace
-  // TODO add more fields as necessary
 
   // RELATIONS
   // One-to-many relation with events
   events Event[]
+  groups ContributorGroupsOnContributors[]
 
   @@unique([name, namespace])
+}
+
+model ContributorGroup {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt
+
+  name         String
+  contributors ContributorGroupsOnContributors[]
+}
+
+model ContributorGroupsOnContributors {
+  id Int @id @default(autoincrement())
+
+  contributor   Contributor @relation(fields: [contributorId], references: [id])
+  contributorId Int
+
+  group   ContributorGroup @relation(fields: [groupId], references: [id])
+  groupId Int
 }
 
 // An event that happened to an artifact
@@ -244,4 +263,8 @@ enum ContributorNamespace {
   GIT_NAME
 
   EOA_ADDRESS
+
+  CONTRACT_ADDRESS
+
+  SAFE_ADDRESS
 }
