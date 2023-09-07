@@ -761,6 +761,8 @@ export class GithubPullRequestFetcher {
         contributor: contributor,
         details: {
           githubId: event.id,
+          // Grab the original author's login if it's there
+          originalAuthorLogin: issue.author?.login || undefined,
         },
       });
     };
