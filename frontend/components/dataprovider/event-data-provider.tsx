@@ -2,7 +2,7 @@ import { DataProvider } from "@plasmicapp/loader-nextjs";
 import dayjs from "dayjs";
 import _ from "lodash";
 import React, { ReactNode } from "react";
-import useSWR from "swr";
+import useSWRImmutable from "swr/immutable";
 import { supabase } from "../../lib/supabase-client";
 import { HttpError, MissingDataError } from "../../lib/errors";
 import { assertNever } from "../../lib/common";
@@ -168,45 +168,62 @@ export function EventDataProvider(props: EventDataProviderProps) {
   const startDateObj = new Date(startDate ?? 0);
   const endDateObj = endDate ? new Date(endDate) : new Date();
   const key = variableName ?? DEFAULT_VARIABLE_NAME;
-  const { data, error, isLoading } = useSWR(genKey(props), async () => {
-    if (useTestData) {
-      return testData;
-    }
+  const { data, error, isLoading } = useSWRImmutable(
+    genKey(props),
+    async () => {
+      if (useTestData) {
+        return testData;
+      } else if (
+        !artifactIds ||
+        !Array.isArray(artifactIds) ||
+        artifactIds.length <= 0
+      ) {
+        return null;
+      } else if (
+        !eventTypes ||
+        !Array.isArray(eventTypes) ||
+        eventTypes.length <= 0
+      ) {
+        return null;
+      } else if (endDateObj.getTime() <= startDateObj.getTime()) {
+        return null;
+      }
 
-    const {
-      data: rawData,
-      error,
-      status,
-    } = await supabase
-      .from("Event")
-      .select(
-        "id, artifact:artifactId!inner(id, type, namespace, name), eventType, eventTime, amount",
-      )
-      .in("artifactId", artifactIds ?? [])
-      .in("eventType", eventTypes ?? [])
-      .gte("eventTime", startDateObj.toISOString())
-      .lte("eventTime", endDateObj.toISOString())
-      .limit(10000);
+      const {
+        data: rawData,
+        error,
+        status,
+      } = await supabase
+        .from("Event")
+        .select(
+          "id, artifact:artifactId!inner(id, type, namespace, name), eventType, eventTime, amount",
+        )
+        .in("artifactId", artifactIds ?? [])
+        .in("eventType", eventTypes ?? [])
+        .gte("eventTime", startDateObj.toISOString())
+        .lte("eventTime", endDateObj.toISOString())
+        .limit(10000);
 
-    if (error) {
-      throw error;
-    } else if (status > 300) {
-      throw new HttpError(`Invalid status code: ${status}`);
-    } else if (!rawData) {
-      throw new MissingDataError("Missing data");
-    }
-    console.log("Supabase Events", rawData);
-    const checkedData = rawData as unknown as SupabaseEvent[];
-    if (chartType === "kpiCard") {
-      return formatDataToKpiCard(checkedData);
-    } else if (chartType === "areaChart") {
-      return formatDataToAreaChart(checkedData);
-    } else if (chartType === "barList") {
-      return formatDataToBarList(checkedData, xAxis ?? "artifact");
-    } else {
-      assertNever(chartType);
-    }
-  });
+      if (error) {
+        throw error;
+      } else if (status > 300) {
+        throw new HttpError(`Invalid status code: ${status}`);
+      } else if (!rawData) {
+        throw new MissingDataError("Missing data");
+      }
+      console.log("Supabase Events", rawData);
+      const checkedData = rawData as unknown as SupabaseEvent[];
+      if (chartType === "kpiCard") {
+        return formatDataToKpiCard(checkedData);
+      } else if (chartType === "areaChart") {
+        return formatDataToAreaChart(checkedData);
+      } else if (chartType === "barList") {
+        return formatDataToBarList(checkedData, xAxis ?? "artifact");
+      } else {
+        assertNever(chartType);
+      }
+    },
+  );
 
   // Show when loading
   if (isLoading && !ignoreLoading && !!loadingChildren) {
