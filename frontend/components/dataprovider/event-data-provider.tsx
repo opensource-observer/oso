@@ -8,6 +8,7 @@ import { HttpError, MissingDataError } from "../../lib/errors";
 import { assertNever } from "../../lib/common";
 
 // The name used to pass data into the Plasmic DataProvider
+const DEFAULT_VARIABLE_NAME = "eventData";
 const KEY_PREFIX = "event";
 const genKey = (props: EventDataProviderProps) => {
   let key = `${KEY_PREFIX}`;
@@ -166,8 +167,8 @@ export function EventDataProvider(props: EventDataProviderProps) {
   } = props;
   const startDateObj = new Date(startDate ?? 0);
   const endDateObj = endDate ? new Date(endDate) : new Date();
-  const key = variableName ?? genKey(props);
-  const { data, error, isLoading } = useSWR(key, async () => {
+  const key = variableName ?? DEFAULT_VARIABLE_NAME;
+  const { data, error, isLoading } = useSWR(genKey(props), async () => {
     if (useTestData) {
       return testData;
     }
