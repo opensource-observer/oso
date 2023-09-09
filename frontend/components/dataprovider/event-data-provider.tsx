@@ -42,14 +42,24 @@ type SupabaseEvent = {
 
 const eventToValue = (e: SupabaseEvent) => Math.max(e.amount, 1);
 
-const formatDataToKpiCard = (data: SupabaseEvent[]) => {
+const formatDataToKpiCard = (data?: SupabaseEvent[]) => {
+  if (!data) {
+    return { data: 0 };
+  }
   const result = _.sumBy(data, eventToValue);
   return {
     data: result,
   };
 };
 
-const formatDataToAreaChart = (data: SupabaseEvent[]) => {
+const formatDataToAreaChart = (data?: SupabaseEvent[]) => {
+  if (!data) {
+    return {
+      data: [],
+      categories: [],
+      xAxis: "date",
+    };
+  }
   // Store the categories for the Tremor area chart
   const categories = new Set<string>();
   const simpleDates = data.map((x: SupabaseEvent) => ({
@@ -96,7 +106,10 @@ const formatDataToAreaChart = (data: SupabaseEvent[]) => {
   };
 };
 
-const formatDataToBarList = (data: SupabaseEvent[], xAxis: XAxis) => {
+const formatDataToBarList = (xAxis: XAxis, data?: SupabaseEvent[]) => {
+  if (!data) {
+    return { data: [] };
+  }
   const grouped = _.groupBy(data, (x) =>
     xAxis === "eventTime"
       ? dayjs(x.eventTime).format("YYYY-MM-DD")
@@ -209,17 +222,17 @@ export function EventDataProvider(props: EventDataProviderProps) {
         throw new MissingDataError("Missing data");
       }
       console.log("Supabase Events", rawData);
-      const checkedData = rawData as unknown as SupabaseEvent[];
-      return checkedData;
+      return rawData;
     },
   );
+  //const checkedData = rawData as unknown as SupabaseEvent[];
   const formattedData =
     chartType === "kpiCard"
       ? formatDataToKpiCard(data)
       : chartType === "areaChart"
       ? formatDataToAreaChart(data)
       : chartType === "barList"
-      ? formatDataToBarList(data, xAxis ?? "artifact")
+      ? formatDataToBarList(xAxis ?? "artifact", data)
       : assertNever(chartType);
 
   // Show when loading
