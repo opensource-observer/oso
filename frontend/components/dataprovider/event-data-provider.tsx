@@ -12,9 +12,6 @@ const DEFAULT_VARIABLE_NAME = "eventData";
 const KEY_PREFIX = "event";
 const genKey = (props: EventDataProviderProps) => {
   let key = `${KEY_PREFIX}`;
-  if (props.xAxis) {
-    key += `:${props.xAxis}`;
-  }
   if (props.artifactIds) {
     key += `:${JSON.stringify(props.artifactIds)}`;
   }
@@ -213,17 +210,17 @@ export function EventDataProvider(props: EventDataProviderProps) {
       }
       console.log("Supabase Events", rawData);
       const checkedData = rawData as unknown as SupabaseEvent[];
-      if (chartType === "kpiCard") {
-        return formatDataToKpiCard(checkedData);
-      } else if (chartType === "areaChart") {
-        return formatDataToAreaChart(checkedData);
-      } else if (chartType === "barList") {
-        return formatDataToBarList(checkedData, xAxis ?? "artifact");
-      } else {
-        assertNever(chartType);
-      }
+      return checkedData;
     },
   );
+  const formattedData =
+    chartType === "kpiCard"
+      ? formatDataToKpiCard(data)
+      : chartType === "areaChart"
+      ? formatDataToAreaChart(data)
+      : chartType === "barList"
+      ? formatDataToBarList(data, xAxis ?? "artifact")
+      : assertNever(chartType);
 
   // Show when loading
   if (isLoading && !ignoreLoading && !!loadingChildren) {
@@ -239,7 +236,7 @@ export function EventDataProvider(props: EventDataProviderProps) {
   } else {
     return (
       <div className={className}>
-        <DataProvider name={key} data={data}>
+        <DataProvider name={key} data={formattedData}>
           {children}
         </DataProvider>
       </div>
