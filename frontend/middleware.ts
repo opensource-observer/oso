@@ -23,9 +23,15 @@ async function projectMiddleware(request: NextRequest, slug: string) {
 
   // Get the project
   const project = projects[0];
+  const projectStr = JSON.stringify(project);
+  // Pass the metadata into the querystring
+  const encodedProject = encodeURIComponent(projectStr);
   //console.log(project);
   return NextResponse.rewrite(
-    new URL(`/projectById/${project.id}`, request.url),
+    new URL(
+      `/projectById/${project.id}?metadata=${encodedProject}`,
+      request.url,
+    ),
   );
 }
 
@@ -44,7 +50,6 @@ async function artifactMiddleware(
   // Get artifact metadata from the database
   const artifacts = await supabaseQuery({
     tableName: "Artifact",
-    columns: "id,namespace,name",
     filters: [
       ["namespace", "eq", namespace],
       ["name", "eq", name],
@@ -55,11 +60,17 @@ async function artifactMiddleware(
     return NextResponse.next();
   }
 
-  // Get the project
+  // Get the artifact
   const artifact = artifacts[0];
+  const artifactStr = JSON.stringify(artifact);
+  // Pass the metadata into the querystring
+  const encodedArtifact = encodeURIComponent(artifactStr);
   //console.log(artifact);
   return NextResponse.rewrite(
-    new URL(`/artifactById/${artifact.id}`, request.url),
+    new URL(
+      `/artifactById/${artifact.id}?metadata=${encodedArtifact}`,
+      request.url,
+    ),
   );
 }
 
@@ -86,6 +97,8 @@ export async function middleware(request: NextRequest) {
   return NextResponse.next();
 }
 
+// NOTE: disabling for now, using dynamic routing instead
 export const config = {
-  matcher: ["/artifact/:path+", "/project/:path+"],
+  //matcher: ["/artifact/:path+", "/project/:path+"],
+  matcher: [],
 };
