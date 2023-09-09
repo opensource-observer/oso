@@ -22,10 +22,10 @@ const genKey = (props: EventDataProviderProps) => {
     key += `:${JSON.stringify(props.eventTypes)}`;
   }
   if (props.startDate) {
-    key += `:${props.startDate}`;
+    key += `:${dayjs(props.startDate).format("YYYY-MM-DD")}`;
   }
   if (props.endDate) {
-    key += `:${props.endDate}`;
+    key += `:${dayjs(props.endDate).format("YYYY-MM-DD")}`;
   }
   return key;
 };
@@ -165,8 +165,8 @@ export function EventDataProvider(props: EventDataProviderProps) {
     startDate,
     endDate,
   } = props;
-  const startDateObj = new Date(startDate ?? 0);
-  const endDateObj = endDate ? new Date(endDate) : new Date();
+  const startDateObj = dayjs(startDate ?? 0);
+  const endDateObj = endDate ? dayjs(endDate) : dayjs();
   const key = variableName ?? DEFAULT_VARIABLE_NAME;
   const { data, error, isLoading } = useSWRImmutable(
     genKey(props),
@@ -185,7 +185,7 @@ export function EventDataProvider(props: EventDataProviderProps) {
         eventTypes.length <= 0
       ) {
         return null;
-      } else if (endDateObj.getTime() <= startDateObj.getTime()) {
+      } else if (endDateObj.isBefore(startDateObj)) {
         return null;
       }
 
@@ -200,8 +200,8 @@ export function EventDataProvider(props: EventDataProviderProps) {
         )
         .in("artifactId", artifactIds ?? [])
         .in("eventType", eventTypes ?? [])
-        .gte("eventTime", startDateObj.toISOString())
-        .lte("eventTime", endDateObj.toISOString())
+        .gte("eventTime", startDateObj.format("YYYY-MM-DD"))
+        .lte("eventTime", endDateObj.format("YYYY-MM-DD"))
         .limit(10000);
 
       if (error) {
