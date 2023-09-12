@@ -1,3 +1,4 @@
+import argparse
 from dotenv import load_dotenv
 import json
 import os
@@ -7,8 +8,6 @@ from web3 import Web3
 
 
 load_dotenv()
-
-
 ETHERSCAN_API_KEY = os.getenv("ETHERSCAN_API_KEY")
 ALCHEMY_API_KEY = os.environ['ALCHEMY_API_KEY']
 APIS = {
@@ -23,7 +22,7 @@ APIS = {
 }
 PATH_TO_CONTRACTS = "data/dune_exports/contracts.csv"
 PATH_TO_FACTORIES = "data/dune_exports/factories.csv"
-JSON_PATH = "data/dune_addresses.json"
+JSON_PATH = "data/dune_exports/addresses.json"
 
 
 def is_eoa(chain, address):
@@ -114,23 +113,23 @@ def deduplicate_info(addresses):
         addresses[address]['tags'] = list(set(info['tags']))
 
 
-def process_dune_data(contracts_path, factories_path, output_path):
+def process_dune_data(chain, contracts_path, factories_path, output_path):
     
     addresses = load_and_prepare_data(contracts_path, 'created_time', 'creator_address', ['creator'])
     print(f"Processing {len(addresses)} creator addresses.")
     for address, info in addresses.items():
-        eoa = is_eoa('optimism', address)
+        eoa = is_eoa(chain, address)
         info['tags'] = ['creator', 'eoa'] if eoa else ['contract', 'factory']
         if not eoa:
-            info['name'] = fetch_contract_name('optimism', address)
+            info['name'] = fetch_contract_name(chain, address)
 
     factories = load_and_prepare_data(factories_path, 'created_time_earliest', 'contract_creator_if_factory', ['factory', 'contract'])
     print(f"Processing {len(factories)} factory addresses.")
-    update_address_info(addresses, factories, 'optimism')
+    update_address_info(addresses, factories, chain)
     
     contracts = load_and_prepare_data(contracts_path, 'created_time', 'contract_address', ['contract'])
     print(f"Processing {len(contracts)} contract addresses.")
-    update_address_info(addresses, contracts, 'optimism')
+    update_address_info(addresses, contracts, chain)
 
     deduplicate_info(addresses)
 
@@ -139,4 +138,14 @@ def process_dune_data(contracts_path, factories_path, output_path):
 
 
 if __name__ == "__main__":
-    process_dune_data(PATH_TO_CONTRACTS, PATH_TO_FACTORIES, JSON_PATH)
+    parser = argparse.ArgumentParser(description='Process Dune data.')
+    parser.add_argument('--chain', dest='chain', required=True, help='Select a chain to process (mainnet or optimism)')
+    parser.add_argument('--contracts', dest='contracts_path', required=True, help='Path to contracts CSV file')
+    parser.add_argument('--factories', dest='factories_path', required=True, help='Path to factories CSV file')
+    parser.add_argument('--output', dest='output_path', required=True, help='Path to output JSON file')
+
+    args = parser.parse_args()
+    process_dune_data(args.chain, args.contracts_path, args.factories_path, args.output_path)
+
+    # test
+    # python src/process_dune_data.py --chain=optimism --contracts=data/dune_exports/contracts.csv --factories=data/dune_exports/factories.csv --output=data/dune_exports/addresses.json
