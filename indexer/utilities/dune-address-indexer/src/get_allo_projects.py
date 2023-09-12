@@ -1,3 +1,4 @@
+import argparse
 import json
 import pandas as pd
 import requests
@@ -10,10 +11,7 @@ CHAIN_IDS = {
     '10': 'optimism',
     '250': 'fantom',
     '42161': 'arbitrum one',
-    # '421613': 'arbitrum goerli testnet',    
     '424': 'pgn'
-    # '5': 'goerli testnet'
-    # '58008': 'pgn sepolia testnet'
 }
 
 def get_rounds(chain_num):
@@ -50,6 +48,9 @@ def get_projects(chain_num, funding_round_data):
             if project['status'] != "APPROVED":
                 continue
 
+            if not project.get('metadata'):
+                continue
+
             name = project['metadata']['application']['project']['title']
             address = project['metadata']['application']['recipient']
             github = project['metadata']['application']['project'].get('projectGithub', None)
@@ -76,7 +77,7 @@ def get_all_projects_in_round(chain_nums):
         all_projects.extend(get_projects(chain_id, funding_round_data))
         
     df = pd.DataFrame(all_projects)
-    df.to_csv("data/allo_projects.csv")
+    return df
 
 
 def github_handle_to_url(handle):
@@ -90,12 +91,9 @@ def github_handle_to_url(handle):
     return f"https://github.com/{handle}"
 
 
-def get_oss_projects(reindex=False):
+def get_oss_projects(df_path):
 
-    if reindex:
-        get_all_projects_in_round(CHAIN_IDS.keys())
-    
-    df = pd.read_csv("data/allo_projects.csv")
+    df = pd.read_csv(df_path)
     df['projectGithub'] = df['projectGithub'].apply(github_handle_to_url)
     df = df[df['projectGithub'].notnull()]
     df['chainAddress'] = df.apply(lambda x: f"{x['chain']}: {x['address']}", axis=1)
@@ -113,9 +111,25 @@ def get_oss_projects(reindex=False):
             **addresses
         })
 
-    with open("data/allo_projects.json", 'w') as outfile:
-        json.dump(project_data, outfile, indent=4)
+    return project_data
 
 
 if __name__ == "__main__":
-    get_oss_projects(reindex=False)    
+    parser = argparse.ArgumentParser(description='Get all OSS projects.')
+    parser.add_argument('--reindex', dest='reindex', action='store_true', help='Whether to reindex data')
+    parser.add_argument('--csv_output', dest='csv_output', required=True, help='Path to save the CSV output')
+    parser.add_argument('--json_output', dest='json_output', required=True, help='Path to save the JSON output')
+    
+    args = parser.parse_args()
+    
+    if args.reindex:
+        df = get_all_projects_in_round(CHAIN_IDS.keys())    
+        df.to_csv(args.csv_output, index=False)
+
+    project_data = get_oss_projects(args.csv_output)
+    with open(args.json_output, 'w') as outfile:
+        json.dump(project_data, outfile, indent=4)
+
+    # test
+    # python src/get_allo_projects.py --reindex --csv_output=data/allo/projects.csv --json_output=data/allo/oss-projects.json
+    # python src/get_allo_projects.py --csv_output=data/allo/projects.csv --json_output=data/allo/oss-projects.json
