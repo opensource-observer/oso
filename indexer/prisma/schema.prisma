@@ -118,6 +118,8 @@ model Contributor {
   name      String
   namespace ContributorNamespace
 
+  details Json?
+
   // RELATIONS
   // One-to-many relation with events
   events Event[]
