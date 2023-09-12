@@ -4,10 +4,6 @@ import pandas as pd
 
 from address_tagging import is_eoa, fetch_contract_name
 
-PATH_TO_CONTRACTS = "data/dune_exports/contracts.csv"
-PATH_TO_FACTORIES = "data/dune_exports/factories.csv"
-JSON_PATH = "data/dune_exports/addresses.json"
-
 
 def load_and_prepare_data(path, time_col_name, address_col_name, tags_list):
     
