@@ -30,8 +30,8 @@ def get_yaml_data(yaml_files):
     return yaml_data
 
 
-def get_yaml_data_from_path(path=LOCAL_PATH):
-    yaml_files = get_yaml_files(path)
+def get_yaml_data_from_path():
+    yaml_files = get_yaml_files(LOCAL_PATH)
     if not yaml_files:
         print("No YAML files found.")
         return []
@@ -58,4 +58,4 @@ def main():
     update_yaml_data(yaml_data)
 
 
-main()
+#main()

@@ -44,6 +44,10 @@ def deduplicate_info(addresses):
         addresses[address]['project_list'] = list(set(info['project_list']))
         addresses[address]['tags'] = list(set(info['tags']))
 
+        # handle strange edge case where an address is tagged as both a contract and an eoa
+        if addresses[address]['tags'] ==  ["eoa", "contract", "creator"]:   
+            addresses[address]['tags'] = ["eoa", "creator"]
+
 
 def process_dune_data(chain, contracts_path, factories_path, output_path):
     
