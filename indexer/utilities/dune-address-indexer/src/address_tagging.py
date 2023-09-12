@@ -5,22 +5,24 @@ from web3 import Web3
 
 
 load_dotenv()
-ETHERSCAN_API_KEY = os.getenv("ETHERSCAN_API_KEY")
 ALCHEMY_API_KEY = os.environ['ALCHEMY_API_KEY']
 APIS = {
     'optimism': {
         'etherscan': f'https://api-optimistic.etherscan.io/api',
+        'etherscan_api_key': os.getenv("OP_ETHERSCAN_API_KEY"),
         'alchemy': f'https://opt-mainnet.g.alchemy.com/v2/{ALCHEMY_API_KEY}'
     },
     'mainnet': {
         'etherscan': 'https://api.etherscan.io/api',
+        'etherscan_api_key': os.getenv("ETHERSCAN_API_KEY"),
         'alchemy': f'https://eth-mainnet.g.alchemy.com/v2/{ALCHEMY_API_KEY}'
     }
 }
+DEFAULT_API = APIS['mainnet']
 
 def is_eoa(chain, address):
     
-    url = APIS[chain]['alchemy']
+    url = APIS.get(chain, DEFAULT_API)['alchemy']
     payload = {
         "id": 1,
         "jsonrpc": "2.0",
@@ -33,7 +35,7 @@ def is_eoa(chain, address):
     }
     response = requests.post(url, json=payload, headers=headers)
     if response.status_code != 200:
-        print(f"Error looking up address {address}")
+        print(f"Error looking up address {address} on {chain}")
         return None
     result = response.json()['result']
     return result == '0x'
@@ -42,16 +44,20 @@ def is_eoa(chain, address):
 def fetch_contract_name(chain, address):    
     
     try:
-        url = APIS[chain]['etherscan']
+        # TODO: this won't work for unmapped chains unless the project uses a deterministic deployer
+        api = APIS.get(chain, DEFAULT_API)
+        url = api['etherscan']
+        api_key = api['etherscan_api_key']
         params = {
             'module': 'contract',
             'action': 'getsourcecode',
             'address': address,
-            'apikey': ETHERSCAN_API_KEY
+            'apikey': api_key
         }
         response = requests.get(url, params=params)
         if response.json()['status'] != '1':
-            print(f"Error looking up a contract at address {address}")
+            print(f"Error looking up a contract at address {address} on {chain}")
+            print(response.text)            
             return None
 
         contract_name = response.json()['result'][0]['ContractName']

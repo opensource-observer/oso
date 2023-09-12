@@ -3,6 +3,8 @@ import json
 import pandas as pd
 import requests
 
+from address_tagging import is_eoa, fetch_contract_name
+
 
 # https://github.com/gitcoinco/allo-indexer
 CHAINSAUCE_URL = "https://indexer-grants-stack.gitcoin.co/data/"
@@ -104,13 +106,25 @@ def get_oss_projects(df_path):
     project_data = []
     for gh in githubs:
         dff = df[df['projectGithub'] == gh]
-        addresses = dff.groupby('chain')['address'].apply(list)            
-        project_data.append({
-            'name': dff['name'].iloc[0],
-            'github': {"url": gh},
-            **addresses
-        })
-
+        addresses = dff.groupby('chain')['address'].apply(list)
+        addresses_dict = {}
+        for chain, address_list in addresses.items():
+            for addr in address_list: 
+                tags = ['wallet']
+                eoa = is_eoa(chain, addr)
+                if eoa:
+                    tags.append('eoa')
+                else:
+                    contract = fetch_contract_name(chain, addr)
+                    if contract and ("Safe" in contract or contract == "Proxy"):
+                        tags.append('safe')        
+                addresses_dict[chain] = {
+                    'address': addr,
+                    'tags': tags
+                }
+        p = {'name': dff['name'].iloc[0], 'github': {"url": gh}, **addresses_dict}            
+        project_data.append(p)
+        ##print(f"Normalized data for project: {p}")
     return project_data
 
 
