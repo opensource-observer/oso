@@ -190,6 +190,44 @@ model EventPointer {
   @@unique([artifactId, eventType])
 }
 
+model Job {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+
+  execGroup     String
+  scheduledTime DateTime
+  collector     String
+  status        JobStatus
+  executions    JobExecution[]
+}
+
+// Job execution rows are used to "lock" a specific job
+model JobExecution {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt
+
+  job Job @relation(fields: [jobId], references: [id])
+
+  status  JobExecutionStatus
+  // Additional details for things like errors or other messages
+  details Json?
+  Log     Log[]
+
+  jobId Int
+}
+
+model Log {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+
+  execution   JobExecution @relation(fields: [executionId], references: [id])
+  executionId Int
+
+  level String
+  body  Json
+}
+
 enum EventType {
   // Financing events
   FUNDING
@@ -269,4 +307,15 @@ enum ContributorNamespace {
   CONTRACT_ADDRESS
 
   SAFE_ADDRESS
+}
+
+enum JobStatus {
+  PENDING
+  COMPLETE
+}
+
+enum JobExecutionStatus {
+  ACTIVE
+  COMPLETE
+  FAILED
 }
