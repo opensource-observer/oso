@@ -23,7 +23,6 @@ import {
   IncompleteEvent,
 } from "../../recorder/types.js";
 import {
-  ITimeSeriesCacheManager,
   TimeSeriesCacheManager,
   TimeSeriesCacheWrapper,
 } from "../../cacher/time-series.js";
@@ -241,7 +240,7 @@ export class FundingEventsCollector {
           artifact: artifact,
           contributor: contributor,
           // Worried this could fail on very large values
-          amount: parseFloat(row.value),
+          amount: amountAsFloat,
           details: {
             amountAsString: row.value,
             txHash: row.txHash,

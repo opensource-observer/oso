@@ -10,7 +10,6 @@ import { DateTime } from "luxon";
 import { QueryParameter } from "@cowprotocol/ts-dune-client";
 
 import { IDuneClient } from "../../../utils/dune/type.js";
-import _ from "lodash";
 import { Cacheable } from "../../../cacher/time-series.js";
 import { logger } from "../../../utils/logger.js";
 
@@ -26,16 +25,6 @@ export type FundingEventRawRow = {
   // Catch all for other raw values returned in the result
   [key: string]: any;
 };
-
-const knownRawData = [
-  "block_time",
-  "from",
-  "to",
-  "blockchain",
-  "token",
-  "value",
-  "tx_hash",
-];
 
 export type FundingEventRow = {
   blockTime: string;
