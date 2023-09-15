@@ -353,12 +353,13 @@ export class TimeSeriesCacheWrapper {
       while (true) {
         const page = await retriever(missingRange, lastPage);
 
+        // Write the page to cache
+        await this.manager.write(lookup, page);
+
+        // Yield the page
         yield page;
 
         lastPage = page;
-
-        // Write the page to cache
-        this.manager.write(lookup, page);
 
         if (!page.hasNextPage) {
           break;
