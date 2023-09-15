@@ -1,5 +1,28 @@
 import { Readable } from "stream";
-import { Prisma, PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient, ArtifactType } from "@prisma/client";
+
+export async function allFundableProjectAddresses(prisma: PrismaClient) {
+  return await prisma.project.findMany({
+    include: {
+      artifacts: {
+        include: {
+          artifact: true,
+        },
+        where: {
+          artifact: {
+            type: {
+              in: [
+                ArtifactType.EOA_ADDRESS,
+                ArtifactType.SAFE_ADDRESS,
+                ArtifactType.CONTRACT_ADDRESS,
+              ],
+            },
+          },
+        },
+      },
+    },
+  });
+}
 
 export function streamFindAll(
   prisma: PrismaClient,
