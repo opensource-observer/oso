@@ -21,12 +21,15 @@ def assign_slugs_to_addresses(yaml_data, chain='optimism'):
         if not data:
             continue
         slug = data['slug']
-        address_list = data.get(chain, [])
-        if not address_list:
+        blockchain_entries = data.get('blockchain', [])
+        if not blockchain_entries:
             continue
-        for address in address_list:
-            a = address['address']        
-            addresses[a] = slug
+        for entry in blockchain_entries:
+            if chain not in entry.get('networks', []):
+                continue
+            address = entry.get('address', None)
+            if address:
+                addresses[address] = slug
     return addresses
 
 

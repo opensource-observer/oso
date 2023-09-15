@@ -38,8 +38,8 @@ def update_tags(addr):
     
     addr['tags'] = new_tags
 
-def update_project_info(project, chain):
 
+def update_project_info(project, chain):
     for address, info in DUNE_DATA.items():
         if len(info['project_list']) > 1:
             continue
@@ -53,27 +53,31 @@ def update_project_info(project, chain):
         entry = {
             "address": address,
             "tags": info['tags'],
-            "updated": True
+            "updated": True,
+            "networks": [chain]
         }
         if info.get('name'):
             entry['name'] = info.get('name')
         
         found = False
-        for addr in project[chain]:
-            if addr['address'] == address:
+        for addr in project.get('blockchain', []):
+            if addr['address'] == address and chain in addr.get('networks', []):
                 addr.update(entry)
                 found = True
                 break
         if not found:
-            project[chain].append(entry)
+            if 'blockchain' not in project:
+                project['blockchain'] = []
+            project['blockchain'].append(entry)
+
 
 def interactive_update(project, chain):
-
-    if chain not in project:
+    if 'blockchain' not in project:
         return False
-
-    updated_addresses = [addr for addr in project[chain] if 'updated' in addr]
-    missed_addresses = [addr for addr in project[chain] if 'updated' not in addr]
+    
+    relevant_addresses = [addr for addr in project['blockchain'] if chain in addr.get('networks', [])]
+    updated_addresses = [addr for addr in relevant_addresses if 'updated' in addr]
+    missed_addresses = [addr for addr in relevant_addresses if 'updated' not in addr]
 
     if updated_addresses:
         print(f"{project['slug']} updated {len(updated_addresses)} addresses.")
@@ -111,7 +115,7 @@ def interactive_update(project, chain):
 
 def main():
     
-    chain = 'optimism'
+    chain = 'optimism' # or mainnet, etc
     completed_slugs = read_progress_from_file()
 
     for project in YAML_DATA:
