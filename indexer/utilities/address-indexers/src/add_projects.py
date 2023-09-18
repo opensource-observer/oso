@@ -1,5 +1,8 @@
 import json
+import yaml
+
 from ossd import get_yaml_data_from_path, update_yaml_data
+
 
 
 def load_data():
@@ -159,16 +162,54 @@ def interactive_update(project_dict, template):
         return True
 
 
+def make_collection_from_addresses(yaml_data, new_data, yaml_path, collection_name):
+    
+    address_to_slug_mapping = {}
+    for project in yaml_data:
+        addresses = project.get('blockchain', [])
+        if not addresses:
+            continue
+        for addr in addresses:
+            a = addr['address'].lower()
+            address_to_slug_mapping[a] = project['slug']
+
+    collection = []
+    for project in new_data:
+        for key in project.keys():
+            if key not in ['name', 'github']:
+                a = key.lower()
+                slug = address_to_slug_mapping.get(a, None)
+                if slug:
+                    collection.append(slug)
+
+    collection = sorted(list(set(collection)))    
+
+    collection_data = {
+        "version": 3,
+        "slug": collection_name,
+        "name": collection_name,        
+        "projects": collection,
+    }
+
+    with open(yaml_path, 'w') as f:
+        yaml.dump(collection_data, f)
+    print("Dumped collection to", yaml_path)
+
+
 def main():
     yaml_data, new_data = load_data()
-    mapping, github_to_slug = create_slug_mapping(yaml_data)
+    # mapping, github_to_slug = create_slug_mapping(yaml_data)
 
-    template = make_template(yaml_data)
-    new_projects = update_existing_projects(mapping, github_to_slug, new_data)
-    for project in new_projects:
-        status = interactive_update(project, template)
-        if status == False:
-            break
+    # template = make_template(yaml_data)
+    # new_projects = update_existing_projects(mapping, github_to_slug, new_data)
+    # for project in new_projects:
+    #     status = interactive_update(project, template)
+    #     if status == False:
+    #         break
+
+    yaml_path = "data/allo/gitcoin-allo.yaml"
+    collection_name = "gitcoin-allo"
+    make_collection_from_addresses(yaml_data, new_data, yaml_path, collection_name)
 
 if __name__ == "__main__":
     main()
