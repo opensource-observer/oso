@@ -108,8 +108,8 @@ def get_oss_projects(df_path):
         dff = df[df['projectGithub'] == gh]
         addresses = dff.groupby('chain')['address'].apply(list)
         addresses_dict = {}
-        for chain, address_list in addresses.items():
-            for addr in address_list: 
+        for chain, address_list in addresses.items():            
+            for addr in address_list:                 
                 tags = ['wallet']
                 eoa = is_eoa(chain, addr)
                 if eoa:
@@ -118,13 +118,15 @@ def get_oss_projects(df_path):
                     contract = fetch_contract_name(chain, addr)
                     if contract and ("Safe" in contract or contract == "Proxy"):
                         tags.append('safe')        
-                addresses_dict[chain] = {
-                    'address': addr,
-                    'tags': tags
-                }
+                if addr not in addresses_dict:
+                    addresses_dict[addr] = {
+                        "tags": tags,
+                        "networks": [chain]
+                    }
+                else:
+                    addresses_dict[addr]['networks'].append(chain)
         p = {'name': dff['name'].iloc[0], 'github': {"url": gh}, **addresses_dict}            
         project_data.append(p)
-        ##print(f"Normalized data for project: {p}")
     return project_data
 
 
