@@ -35,6 +35,8 @@ def update_network_based_on_tags(addr):
     for network in unsupported_networks:
         if network in addr['networks']:
             addr['networks'].remove(network)
+            if 'eoa' in addr['tags']:
+                addr['networks'].append('mainnet')
 
     if len(addr['networks']) == 0:
         return False # Indicate that the address should not be added
@@ -49,26 +51,33 @@ def update_project_blockchain_data(mapping, slug, project):
     new_address = new_address.lower()
 
     updated = False
-    for addr in mapping[slug]['blockchain']:
-        if addr['address'] == new_address:
-            if update_network_based_on_tags(addr):
-                addr['tags'].extend(info['tags'])
-                addr['networks'].extend(info['networks'])                        
+    for index, addr in enumerate(mapping[slug]['blockchain']):
+        if addr['address'].lower() == new_address.lower():
+            should_add = update_network_based_on_tags(addr)
+            if should_add:
+                # Update tags and networks only if they are different
+                addr['tags'] = list(set(addr['tags']).union(set(info['tags'])))
+                addr['networks'] = list(set(addr['networks']).union(set(info['networks'])))
                 updated = True
+            else:
+                # Remove the address from the blockchain data
+                del mapping[slug]['blockchain'][index]
             break
-        else:
-            new_address_data = {
-                "address": new_address,
-                "tags": info['tags'],
-                "networks": info['networks']
-            }
-            if update_network_based_on_tags(new_address_data):
-                mapping[slug]['blockchain'].append(new_address_data)
-                updated = True
-            break
+
+    if not updated:
+        new_address_data = {
+            "address": new_address,
+            "tags": info['tags'],
+            "networks": info['networks']
+        }
+        if update_network_based_on_tags(new_address_data):
+            mapping[slug]['blockchain'].append(new_address_data)
+            updated = True
+
     if updated:
-        print("Updating", slug)
+        print(f"Updating {slug}")
         update_yaml_data([mapping[slug]])
+
 
 
 def update_existing_projects(mapping, github_to_slug, new_data):
@@ -95,7 +104,11 @@ def update_existing_projects(mapping, github_to_slug, new_data):
 
 def create_new_project(project, template):
     new_project = template.copy()
-    addresses = {k:v for k,v in project.items() if k not in ['name', 'github']}
+    addresses = [
+        {"address": k, **v} 
+        for k,v in project.items() 
+        if k not in ['name', 'github']
+    ]
     new_project['name'] = project['name']
     new_project['github'] = [project['github']]
     new_project['slug'] = project['github']['url'].split('/')[-1].lower()
@@ -110,14 +123,52 @@ def make_template(yaml_data):
     return template
 
 
+def interactive_update(project_dict, template):
+    
+    project = create_new_project(project_dict, template)
+    print("\nNew project:")
+    print(project)
+    print("\nDo you want to update this project? (y/n/q)")
+    status = input()
+    if status.lower() == 'q':
+        return False
+    elif status.lower() == 'n':
+        return True
+    elif status.lower() == 'yy':
+        update_yaml_data([project])
+        return True
+    
+    print("Enter a new name for the project:")
+    name = input()
+    if name:
+        project['name'] = name
+    
+    print("Enter a new slug for the project:")
+    slug = input()
+    if slug:
+        project['slug'] = slug
+    
+    print("\nDo you want to update this project? (y/n/q)")
+    status = input()
+    if status.lower() == 'q':
+        return False
+    elif status.lower() == 'y':
+        update_yaml_data([project])
+        return True
+    else:
+        return True
+
+
 def main():
     yaml_data, new_data = load_data()
     mapping, github_to_slug = create_slug_mapping(yaml_data)
-    new_projects = update_existing_projects(mapping, github_to_slug, new_data)
-    template = make_template(yaml_data)
-    new_project = create_new_project(new_projects[0], template)
-    #update_yaml_data([new_project])
 
+    template = make_template(yaml_data)
+    new_projects = update_existing_projects(mapping, github_to_slug, new_data)
+    for project in new_projects:
+        status = interactive_update(project, template)
+        if status == False:
+            break
 
 if __name__ == "__main__":
     main()
