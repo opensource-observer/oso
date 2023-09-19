@@ -4,14 +4,11 @@ import yaml
 from ossd import get_yaml_data_from_path, update_yaml_data
 
 
-
-def load_data():
+def load_data(json_path):
     """Load YAML and JSON data."""
     yaml_data = get_yaml_data_from_path()
-
-    with open("data/allo/oss-projects.json") as f:
+    with open(json_path) as f:
         new_data = json.load(f)
-
     return yaml_data, new_data
 
 
@@ -197,18 +194,35 @@ def make_collection_from_addresses(yaml_data, new_data, yaml_path, collection_na
 
 
 def main():
-    yaml_data, new_data = load_data()
-    # mapping, github_to_slug = create_slug_mapping(yaml_data)
+    
+    # Define file paths and collection slug here
+    #json_path = "data/allo/oss-projects.json"
+    #yaml_path = "data/allo/gitcoin-allo.yaml"
+    #collection_name = "gitcoin-allo"
 
-    # template = make_template(yaml_data)
-    # new_projects = update_existing_projects(mapping, github_to_slug, new_data)
-    # for project in new_projects:
-    #     status = interactive_update(project, template)
-    #     if status == False:
-    #         break
+    json_path = "data/rpgf2/rpgf2.json"
+    yaml_path = "data/rpgf2/rpf2.yaml"
+    collection_name = "rpgf2"
 
-    yaml_path = "data/allo/gitcoin-allo.yaml"
-    collection_name = "gitcoin-allo"
+    # Load the data
+    yaml_data, new_data = load_data(json_path)
+
+    # Create slug to project mapping
+    mapping, github_to_slug = create_slug_mapping(yaml_data)
+
+    # Create a template for new projects
+    template = make_template(yaml_data)
+
+    # Update existing projects and find new projects
+    new_projects = update_existing_projects(mapping, github_to_slug, new_data)
+
+    # Interactively update new projects
+    for project in new_projects:
+        status = interactive_update(project, template)
+        if status == False:
+            break
+
+    # Make and save the collection
     make_collection_from_addresses(yaml_data, new_data, yaml_path, collection_name)
 
 if __name__ == "__main__":
