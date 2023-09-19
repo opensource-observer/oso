@@ -97,11 +97,12 @@ model Artifact {
 
   // RELATIONS
   // Many-to-many relation with projects
-  projects  ProjectsOnArtifacts[]
+  projects        ProjectsOnArtifacts[]
   // One-to-many relation with events
-  events    Event[]
+  events          Event[]
   // One-to-many relation with event pointers
-  eventPtrs EventPointer[]
+  eventPtrs       EventPointer[]
+  rangedEventPtrs RangedEventPointer[]
 
   // A combination of the type, namespace, and name must be unique
   @@unique([namespace, name])
@@ -186,8 +187,30 @@ model EventPointer {
   // Should the we auto-crawl this source?
   autocrawl  Boolean?
 
-  // This tuple must be unique!
   @@unique([artifactId, eventType])
+}
+
+// Eventually all event pointers are ranged sections of covered events for a
+// given collector. Periodically event pointers should be merged into single
+// objects. We introduce a new table so that we can transition away from the old
+// EventPointer without massive changes to the code. 
+model RangedEventPointer {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt
+
+  // Relation to the Artifact
+  artifact   Artifact @relation(fields: [artifactId], references: [id])
+  artifactId Int
+
+  collector String
+
+  // The relevant pointer information on where we left off
+  pointer   Json
+  startDate DateTime
+  endDate   DateTime
+
+  @@unique([artifactId, collector, startDate, endDate])
 }
 
 model Job {
