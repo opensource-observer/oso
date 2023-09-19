@@ -67,7 +67,7 @@ def create_json(df):
         
         project = {
             "name": row['Project'],
-            "github": [{"url": github}],
+            "github": {"url": github},
             row['address_cleaned']: {
                 "tags": tags,
                 "networks": networks
