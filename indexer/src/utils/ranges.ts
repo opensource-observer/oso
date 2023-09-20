@@ -7,8 +7,8 @@ export interface Range {
 
 export function rangeFromISO(startDateISO: string, endDateISO: string): Range {
   return {
-    startDate: DateTime.fromISO(startDateISO),
-    endDate: DateTime.fromISO(endDateISO),
+    startDate: DateTime.fromISO(startDateISO, { zone: "utc" }),
+    endDate: DateTime.fromISO(endDateISO, { zone: "utc" }),
   };
 }
 

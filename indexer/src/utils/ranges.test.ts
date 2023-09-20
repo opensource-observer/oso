@@ -5,6 +5,7 @@ import {
   removeOverlappingRanges,
   doRangesIntersect,
   rangesEqual,
+  rangeFromISO,
 } from "./ranges.js";
 
 describe("findMissingRanges", () => {
@@ -282,6 +283,19 @@ describe("rangesEqual", () => {
       startDate: DateTime.fromISO("2023-01-01T00:00:00"),
       endDate: DateTime.fromISO("2023-01-01T04:00:00"),
     };
+
+    const equal = rangesEqual(range1, range2);
+
+    expect(equal).toBe(true);
+  });
+
+  it("should return true for equal ranges with different timezones", () => {
+    const range1 = rangeFromISO("2023-01-01T00:00:00Z", "2023-01-02T00:00:00");
+
+    const range2 = rangeFromISO(
+      "2023-01-01T00:00:00Z",
+      "2023-01-01T16:00:00-08:00",
+    );
 
     const equal = rangesEqual(range1, range2);
 
