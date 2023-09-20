@@ -10,6 +10,7 @@ import {
   ProjectAddress,
 } from "./funding-events/client.js";
 import {
+  Artifact,
   ArtifactNamespace,
   ArtifactType,
   ContributorNamespace,
@@ -31,9 +32,11 @@ import { allFundableProjectAddresses } from "../../db/artifacts.js";
 import { BatchEventRecorder } from "../../recorder/recorder.js";
 import { prisma as prismaClient } from "../../db/prisma-client.js";
 import _ from "lodash";
+import { ArtifactGroup, ICollector } from "../../scheduler/types.js";
+import { Range } from "../../utils/ranges.js";
+import { asyncBatch } from "../../utils/array.js";
 
 export interface FundingEventsCollectorOptions {
-  baseDate: DateTime;
   cacheOptions: {
     bucket: string;
   };
@@ -41,13 +44,12 @@ export interface FundingEventsCollectorOptions {
 
 export const DefaultFundingEventsCollectorOptions: FundingEventsCollectorOptions =
   {
-    baseDate: DateTime.now(),
     cacheOptions: {
       bucket: "funding-events",
     },
   };
 
-export class FundingEventsCollector {
+export class FundingEventsCollector implements ICollector {
   private client: IFundingEventsClient;
   private recorder: IEventRecorder;
   private prisma: PrismaClient;
@@ -59,7 +61,7 @@ export class FundingEventsCollector {
     prisma: PrismaClient,
     recorder: IEventRecorder,
     cache: TimeSeriesCacheWrapper,
-    options: Partial<FundingEventsCollectorOptions>,
+    options?: Partial<FundingEventsCollectorOptions>,
   ) {
     this.client = client;
     this.prisma = prisma;
@@ -68,10 +70,27 @@ export class FundingEventsCollector {
     this.cache = cache;
   }
 
-  async run() {
-    const endRange = this.options.baseDate.startOf("day").minus({ days: 2 });
-    const startRange = endRange.minus({ days: 7 });
+  async *groupedArtifacts(): AsyncGenerator<ArtifactGroup> {
+    const projectAddresses = await allFundableProjectAddresses(this.prisma);
+    const artifacts: Array<Artifact> = projectAddresses.flatMap((p) => {
+      return p.artifacts
+        .filter((a) => a.artifact.name.length == 42)
+        .map((a, i) => {
+          return a.artifact;
+        });
+    });
+    yield {
+      details: {},
+      artifacts: artifacts,
+    };
+  }
 
+  async collect(
+    group: ArtifactGroup,
+    range: Range,
+    commitArtifact: (artifact: Artifact) => Promise<void>,
+  ): Promise<void> {
+    logger.debug("running funding events collector");
     // Super pragmatic hack for now to create the funding addresses. Let's just make them now
     const fundingAddressesRaw: Array<[string, string, string, string]> = [
       [
@@ -142,7 +161,6 @@ export class FundingEventsCollector {
       ],
     ];
 
-    // Create contributor groups
     const fundingAddressesAsContributors: IncompleteContributor[] =
       fundingAddressesRaw.map((r) => {
         return {
@@ -173,27 +191,24 @@ export class FundingEventsCollector {
       return acc;
     }, {});
 
-    // get project addresses
-    const projectAddresses = await allFundableProjectAddresses(this.prisma);
     const projectAddressesInput: Array<
       ProjectAddress & { namespace: ArtifactNamespace; type: ArtifactType }
-    > = projectAddresses.flatMap((p) => {
-      return p.artifacts
-        .filter((a) => a.artifact.name.length == 42)
-        .map((a, i) => {
-          return {
-            id: i,
-            projectId: a.projectId,
-            address: a.artifact.name,
-            namespace: a.artifact.namespace,
-            type: a.artifact.type,
-          };
-        });
+    > = group.artifacts.map((a, i) => {
+      return {
+        id: i,
+        projectId: i,
+        address: a.name,
+        namespace: a.namespace,
+        type: a.type,
+      };
     });
-    const addressLookupMap: Record<
-      string,
-      (typeof projectAddressesInput)[number]
-    > = {};
+    console.log("%j", projectAddressesInput.slice(0, 3));
+    const addressLookupMap = projectAddressesInput.reduce<
+      Record<string, (typeof projectAddressesInput)[number]>
+    >((a, c) => {
+      a[c.address] = c;
+      return a;
+    }, {});
 
     const projectAddressesMap = projectAddressesInput.reduce<
       Record<string, IncompleteArtifact>
@@ -211,10 +226,7 @@ export class FundingEventsCollector {
       TimeSeriesCacheLookup.new(
         this.options.cacheOptions.bucket,
         projectAddressesInput.map((a) => a.address),
-        {
-          startDate: startRange,
-          endDate: endRange,
-        },
+        range,
       ),
       async (missing) => {
         return this.client.getFundingEvents(
@@ -258,6 +270,11 @@ export class FundingEventsCollector {
         this.recorder.record(event);
       }
     }
+
+    // Commit all of the artifacts
+    await asyncBatch(group.artifacts, 1, async (a) => {
+      return commitArtifact(a[0]);
+    });
   }
 }
 
@@ -282,11 +299,8 @@ export async function importFundingEvents(
     prismaClient,
     recorder,
     cache,
-    {
-      baseDate: args.baseDate,
-    },
   );
-  await collector.run();
+  //await collector.run();
   await recorder.waitAll();
   logger.info("done");
 }
