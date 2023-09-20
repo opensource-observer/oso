@@ -46,38 +46,38 @@ describe("TimeSeriesCaching", () => {
   });
 
   // Tear down the temporary directory after each test
-  // afterEach(async () => {
-  //   // Remove the temporary directory and its contents
-  //   await rimraf(tempDir);
-  // });
+  afterEach(async () => {
+    // Remove the temporary directory and its contents
+    await rimraf(tempDir);
+  });
 
-  // describe('without cache initialized', () => {
-  //   it('should be able to read and write to the cache', async () => {
-  //     const lookup: TimeSeriesCacheLookup = {
-  //       range: {
-  //         startDate: DateTime.fromISO('2023-01-01T00:00:00Z'),
-  //         endDate: DateTime.fromISO('2023-01-02T00:00:00Z'),
-  //       },
-  //       bucket: 'test',
-  //       key: 'tester',
-  //       normalizingUnit: 'day',
-  //     }
-  //     const cacheable = randomCacheable(lookup.range);
-  //     await manager.write(lookup, cacheable);
+  describe("without cache initialized", () => {
+    it("should be able to read and write to the cache", async () => {
+      const lookup: TimeSeriesCacheLookup = {
+        range: {
+          startDate: DateTime.fromISO("2023-01-01T00:00:00Z"),
+          endDate: DateTime.fromISO("2023-01-02T00:00:00Z"),
+        },
+        bucket: "test",
+        key: "tester",
+        normalizingUnit: "day",
+      };
+      const cacheable = randomCacheable(lookup.range);
+      await manager.write(lookup, cacheable);
 
-  //     const loaded = await manager.load(lookup);
-  //     expect(loaded.missingRanges()).toEqual([]);
+      const loaded = await manager.load(lookup);
+      expect(loaded.missingRanges()).toEqual([]);
 
-  //     let pages = 0;
-  //     for (const dir of loaded.directories()) {
-  //       for await (const page of dir.load()) {
-  //         expect(page.raw).toEqual(cacheable.raw);
-  //         pages += 1;
-  //       }
-  //     }
-  //     expect(pages).toEqual(1);
-  //   });
-  // })
+      let pages = 0;
+      for (const dir of loaded.directories()) {
+        for await (const page of dir.load()) {
+          expect(page.raw).toEqual(cacheable.raw);
+          pages += 1;
+        }
+      }
+      expect(pages).toEqual(1);
+    });
+  });
 
   describe("with cache initialized", () => {
     // Used to compare the randomly generated data
