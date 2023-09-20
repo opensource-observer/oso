@@ -13,14 +13,14 @@ export function rangeFromDates(startDate: Date, endDate: Date): Range {
 }
 
 export function rangeFromISO(startDateISO: string, endDateISO: string): Range {
-  const startDate = DateTime.fromISO(startDateISO);
-  const endDate = DateTime.fromISO(endDateISO);
+  const startDate = DateTime.fromISO(startDateISO, { zone: "utc" });
+  const endDate = DateTime.fromISO(endDateISO, { zone: "utc" });
   if (!(startDate.isValid && endDate.isValid)) {
     throw new Error("range is invalid");
   }
   return {
-    startDate: DateTime.fromISO(startDateISO, { zone: "utc" }),
-    endDate: DateTime.fromISO(endDateISO, { zone: "utc" }),
+    startDate: startDate,
+    endDate: endDate,
   };
 }
 
