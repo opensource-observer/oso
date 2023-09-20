@@ -8,7 +8,6 @@ import {
   TimeSeriesCacheManager,
   TimeSeriesCacheWrapper,
 } from "./time-series.js";
-import { DateTime } from "luxon";
 import {
   Range,
   findMissingRanges,
@@ -54,10 +53,7 @@ describe("TimeSeriesCaching", () => {
   describe("without cache initialized", () => {
     it("should be able to read and write to the cache", async () => {
       const lookup: TimeSeriesCacheLookup = {
-        range: {
-          startDate: DateTime.fromISO("2023-01-01T00:00:00Z"),
-          endDate: DateTime.fromISO("2023-01-02T00:00:00Z"),
-        },
+        range: rangeFromISO("2023-01-01T00:00:00Z", "2023-01-02T00:00:00Z"),
         bucket: "test",
         key: "tester",
         normalizingUnit: "day",
@@ -90,18 +86,15 @@ describe("TimeSeriesCaching", () => {
       // Ranges to create data
       const cachedRanges = [
         {
-          startDate: DateTime.fromISO("2022-01-01T00:00:00Z"),
-          endDate: DateTime.fromISO("2022-01-02T00:00:00Z"),
+          ...rangeFromISO("2022-01-01T00:00:00Z", "2022-01-02T00:00:00Z"),
           hasCompletePages: true,
         },
         {
-          startDate: DateTime.fromISO("2022-01-04T00:00:00Z"),
-          endDate: DateTime.fromISO("2022-01-05T00:00:00Z"),
+          ...rangeFromISO("2022-01-04T00:00:00Z", "2022-01-05T00:00:00Z"),
           hasCompletePages: true,
         },
         {
-          startDate: DateTime.fromISO("2022-01-10T00:00:00Z"),
-          endDate: DateTime.fromISO("2022-01-12T00:00:00Z"),
+          ...rangeFromISO("2022-01-10T00:00:00Z", "2022-01-12T00:00:00Z"),
           hasCompletePages: false,
         },
       ];
