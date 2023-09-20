@@ -170,6 +170,9 @@ model Event {
   amount        Float
   // Catch-all for other data we want to store with the event
   details       Json?
+
+  @@index([eventTime])
+  @@index([artifactId, eventType, eventTime])
 }
 
 model EventPointer {
