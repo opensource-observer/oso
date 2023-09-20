@@ -7,220 +7,161 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Used to track a collection of projects (e.g. Optimism contracts)
-// Each collection is owned/defined by a team.
 model Collection {
-  id        Int      @id @default(autoincrement())
-  createdAt DateTime @default(now()) @db.Timestamptz(3)
-  updatedAt DateTime @updatedAt
-
-  // A unique human-readable identifier for this project
-  slug        String  @unique
-  // Human-readable name
+  id          Int                     @id @default(autoincrement())
+  createdAt   DateTime                @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime                @updatedAt
   name        String
-  // Human-readable description
   description String?
-  // Is this collection verified?
-  verified    Boolean @default(false)
-
-  // RELATIONS
-  // Many-to-many relations with projects
-  projects CollectionsOnProjects[]
+  verified    Boolean                 @default(false)
+  slug        String                  @unique
+  projects    CollectionsOnProjects[]
 }
 
-// Explicit many-to-many relation between projects and artifacts
 model CollectionsOnProjects {
-  assignedAt DateTime @default(now()) @db.Timestamptz(3)
-
+  assignedAt   DateTime   @default(now()) @db.Timestamptz(3)
+  collectionId Int
+  projectId    Int
   collection   Collection @relation(fields: [collectionId], references: [id])
-  collectionId Int // relation scalar field (used in the `@relation` attribute above)
-
-  project   Project @relation(fields: [projectId], references: [id])
-  projectId Int // relation scalar field (used in the `@relation` attribute above)
+  project      Project    @relation(fields: [projectId], references: [id])
 
   @@id([collectionId, projectId])
 }
 
-// Used to track a collection of artifacts (e.g. Uniswap)
-// Each project is owned/defined by a team.
 model Project {
-  id        Int      @id @default(autoincrement())
-  createdAt DateTime @default(now()) @db.Timestamptz(3)
-  updatedAt DateTime @updatedAt
-
-  // A unique human-readable identifier for this project
-  slug        String  @unique
-  // Human-readable name
+  id          Int                     @id @default(autoincrement())
+  createdAt   DateTime                @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime                @updatedAt
   name        String
-  // Human-readable description
   description String?
-  // Is this project verified?
-  verified    Boolean @default(false)
-
-  // RELATIONS
-  // Many-to-many relations with collections
+  verified    Boolean                 @default(false)
+  slug        String                  @unique
   collections CollectionsOnProjects[]
-  // Many-to-many relations with artifacts
   artifacts   ProjectsOnArtifacts[]
 }
 
-// Explicit many-to-many relation between projects and artifacts
 model ProjectsOnArtifacts {
   assignedAt DateTime @default(now()) @db.Timestamptz(3)
-
-  project    Project  @relation(fields: [projectId], references: [id])
-  projectId  Int // relation scalar field (used in the `@relation` attribute above)
+  projectId  Int
+  artifactId Int
   artifact   Artifact @relation(fields: [artifactId], references: [id])
-  artifactId Int // relation scalar field (used in the `@relation` attribute above)
+  project    Project  @relation(fields: [projectId], references: [id])
 
   @@id([projectId, artifactId])
 }
 
-// A particular piece of work (e.g. an npm package or GitHub repo)
-// TODO: if we really want to have separate tables for wallets, repositories, etc, we can turn this into a union type later
-//    https://dev.to/reggi/working-with-unions-within-prisma-nm6
 model Artifact {
-  id        Int      @id @default(autoincrement())
-  createdAt DateTime @default(now()) @db.Timestamptz(3)
-  updatedAt DateTime @updatedAt
-
-  // The namespace of `name`
-  namespace ArtifactNamespace
-  // A unique identifier for this artifact within the namespace
-  name      String
-  // The type of artifact
-  type      ArtifactType
-  // An optional URL to learn more about this artifact
-  url       String?
-  // Catch-all for other data we want to store
-  details   Json?
-
-  // RELATIONS
-  // Many-to-many relation with projects
-  projects        ProjectsOnArtifacts[]
-  // One-to-many relation with events
+  id              Int                   @id @default(autoincrement())
+  createdAt       DateTime              @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime              @updatedAt
+  type            ArtifactType
+  namespace       ArtifactNamespace
+  name            String
+  url             String?
+  details         Json?
   events          Event[]
-  // One-to-many relation with event pointers
   eventPtrs       EventPointer[]
+  eventTs         EventTs[]
+  projects        ProjectsOnArtifacts[]
   rangedEventPtrs RangedEventPointer[]
 
-  // A combination of the type, namespace, and name must be unique
   @@unique([namespace, name])
 }
 
-// Represents someone that is associated with an event
-// e.g. a source of funding, a code contributor, etc.
 model Contributor {
-  id        Int      @id @default(autoincrement())
-  createdAt DateTime @default(now()) @db.Timestamptz(3)
-  updatedAt DateTime @updatedAt
-
-  // Currently just an arbitrary string
+  id        Int                               @id @default(autoincrement())
+  createdAt DateTime                          @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime                          @updatedAt
   name      String
   namespace ContributorNamespace
-
-  details Json?
-
-  // RELATIONS
-  // One-to-many relation with events
-  events Event[]
-  groups ContributorGroupsOnContributors[]
+  details   Json?
+  groups    ContributorGroupsOnContributors[]
+  events    Event[]
+  eventTs   EventTs[]
 
   @@unique([name, namespace])
 }
 
 model ContributorGroup {
-  id        Int      @id @default(autoincrement())
-  createdAt DateTime @default(now()) @db.Timestamptz(3)
-  updatedAt DateTime @updatedAt
-
+  id           Int                               @id @default(autoincrement())
+  createdAt    DateTime                          @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime                          @updatedAt
   name         String
   contributors ContributorGroupsOnContributors[]
 }
 
 model ContributorGroupsOnContributors {
-  id Int @id @default(autoincrement())
-
-  contributor   Contributor @relation(fields: [contributorId], references: [id])
+  id            Int              @id @default(autoincrement())
   contributorId Int
-
-  group   ContributorGroup @relation(fields: [groupId], references: [id])
-  groupId Int
+  groupId       Int
+  contributor   Contributor      @relation(fields: [contributorId], references: [id])
+  group         ContributorGroup @relation(fields: [groupId], references: [id])
 }
 
-// An event that happened to an artifact
-// An event stream is identified by its (artifact, eventType)
 model Event {
-  id        Int      @id @default(autoincrement())
-  createdAt DateTime @default(now()) @db.Timestamptz(3)
-  updatedAt DateTime @updatedAt
-
-  // Relation to the Artifact
-  artifact      Artifact     @relation(fields: [artifactId], references: [id])
+  id            Int          @id @default(autoincrement())
+  createdAt     DateTime     @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime     @updatedAt
   artifactId    Int
-  // Type of event
   eventType     EventType
-  // Time the event happened
   eventTime     DateTime     @db.Timestamptz(3)
-  // Who is the source of the event?
-  // Relation to the Contributor
-  contributor   Contributor? @relation(fields: [contributorId], references: [id])
   contributorId Int?
-  // Depending on the event type, this may reflect some count or amount
   amount        Float
-  // Catch-all for other data we want to store with the event
   details       Json?
+  artifact      Artifact     @relation(fields: [artifactId], references: [id])
+  contributor   Contributor? @relation(fields: [contributorId], references: [id])
 
   @@index([eventTime])
   @@index([artifactId, eventType, eventTime])
 }
 
-model EventPointer {
-  id        Int      @id @default(autoincrement())
-  createdAt DateTime @default(now()) @db.Timestamptz(3)
-  updatedAt DateTime @updatedAt
+model EventTs {
+  id            Int          @default(autoincrement())
+  createdAt     DateTime     @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime     @updatedAt
+  artifactId    Int
+  type          EventType
+  time          DateTime     @db.Timestamptz(3)
+  contributorId Int?
+  amount        Float
+  details       Json?
+  artifact      Artifact     @relation(fields: [artifactId], references: [id])
+  contributor   Contributor? @relation(fields: [contributorId], references: [id])
 
-  // Relation to the Artifact
-  artifact   Artifact  @relation(fields: [artifactId], references: [id])
+  @@unique([id, time])
+}
+
+model EventPointer {
+  id         Int       @id @default(autoincrement())
+  createdAt  DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt  DateTime  @updatedAt
   artifactId Int
-  // Type of event
   eventType  EventType
-  // The relevant pointer information on where we left off
   pointer    Json
-  // Should the we auto-crawl this source?
   autocrawl  Boolean?
+  artifact   Artifact  @relation(fields: [artifactId], references: [id])
 
   @@unique([artifactId, eventType])
 }
 
-// Eventually all event pointers are ranged sections of covered events for a
-// given collector. Periodically event pointers should be merged into single
-// objects. We introduce a new table so that we can transition away from the old
-// EventPointer without massive changes to the code. 
 model RangedEventPointer {
-  id        Int      @id @default(autoincrement())
-  createdAt DateTime @default(now()) @db.Timestamptz(3)
-  updatedAt DateTime @updatedAt
-
-  // Relation to the Artifact
-  artifact   Artifact @relation(fields: [artifactId], references: [id])
+  id         Int      @id @default(autoincrement())
+  createdAt  DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt  DateTime @updatedAt
   artifactId Int
-
-  collector String
-
-  // The relevant pointer information on where we left off
-  pointer   Json
-  version   Int
-  startDate DateTime
-  endDate   DateTime
+  collector  String
+  pointer    Json
+  startDate  DateTime
+  endDate    DateTime
+  version    Int
+  artifact   Artifact @relation(fields: [artifactId], references: [id])
 
   @@unique([artifactId, collector, startDate, endDate])
 }
 
 model Job {
-  id        Int      @id @default(autoincrement())
-  createdAt DateTime @default(now()) @db.Timestamptz(3)
-
+  id            Int            @id @default(autoincrement())
+  createdAt     DateTime       @default(now()) @db.Timestamptz(3)
   execGroup     String
   scheduledTime DateTime
   collector     String
@@ -228,111 +169,78 @@ model Job {
   executions    JobExecution[]
 }
 
-// Job execution rows are used to "lock" a specific job
 model JobExecution {
-  id        Int      @id @default(autoincrement())
-  createdAt DateTime @default(now()) @db.Timestamptz(3)
-  updatedAt DateTime @updatedAt
-
-  job Job @relation(fields: [jobId], references: [id])
-
-  status  JobExecutionStatus
-  // Additional details for things like errors or other messages
-  details Json?
-  Log     Log[]
-
-  jobId Int
+  id        Int                @id @default(autoincrement())
+  createdAt DateTime           @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime           @updatedAt
+  status    JobExecutionStatus
+  details   Json?
+  jobId     Int
+  job       Job                @relation(fields: [jobId], references: [id])
+  Log       Log[]
 }
 
 model Log {
-  id        Int      @id @default(autoincrement())
-  createdAt DateTime @default(now()) @db.Timestamptz(3)
-
-  execution   JobExecution @relation(fields: [executionId], references: [id])
+  id          Int          @id @default(autoincrement())
+  createdAt   DateTime     @default(now()) @db.Timestamptz(3)
   executionId Int
-
-  level String
-  body  Json
+  level       String
+  body        Json
+  execution   JobExecution @relation(fields: [executionId], references: [id])
 }
 
 enum EventType {
-  // Financing events
   FUNDING
-  // Source code management events
   PULL_REQUEST_CREATED
   PULL_REQUEST_MERGED
-  PULL_REQUEST_CLOSED
-  PULL_REQUEST_REOPENED
-  // Not sure this event is possible
-  PULL_REQUEST_REMOVED_FROM_PROJECT
-  PULL_REQUEST_APPROVED
-
   COMMIT_CODE
-
-  // Star stats over time (GITHUB)
-  STAR_AGGREGATE_STATS
-  STARRED
-
-  // Forks over time
-  FORK_AGGREGATE_STATS
-  FORKED
-
-  // Github Watchers
-  WATCHER_AGGREGATE_STATS
-
-  // Project management events
-  ISSUE_FILED // deprecated... use ISSUE_CREATED
-  ISSUE_CREATED
+  ISSUE_FILED
   ISSUE_CLOSED
-  ISSUE_REOPENED
-  ISSUE_REMOVED_FROM_PROJECT
-
-  // Software dependency events
   DOWNSTREAM_DEPENDENCY_COUNT
   UPSTREAM_DEPENDENCY_COUNT
   DOWNLOADS
-  // Usage events
   CONTRACT_INVOKED
-  CONTRACT_INVOKED_AGGREGATE_STATS
-
   USERS_INTERACTED
+  CONTRACT_INVOKED_AGGREGATE_STATS
+  PULL_REQUEST_CLOSED
+  STAR_AGGREGATE_STATS
+  PULL_REQUEST_REOPENED
+  PULL_REQUEST_REMOVED_FROM_PROJECT
+  PULL_REQUEST_APPROVED
+  ISSUE_CREATED
+  ISSUE_REOPENED
+  ISSUE_REMOVED_FROM_PROJECT
+  STARRED
+  FORK_AGGREGATE_STATS
+  FORKED
+  WATCHER_AGGREGATE_STATS
 }
 
 enum ArtifactType {
-  // On-chain artifacts
   EOA_ADDRESS
   SAFE_ADDRESS
   CONTRACT_ADDRESS
-  FACTORY_ADDRESS
-  // Software artifacts
   GIT_REPOSITORY
   NPM_PACKAGE
+  FACTORY_ADDRESS
 }
 
 enum ArtifactNamespace {
-  // Blockchains
   ETHEREUM
   OPTIMISM
   GOERLI
-  // Software
   GITHUB
   GITLAB
   NPM_REGISTRY
 }
 
 enum ContributorNamespace {
-  GITHUB_ORG
-
   GITHUB_USER
-  // If a commit doesn't have a github user use `GIT_EMAIL`
-  GIT_EMAIL
-  // If a commit doesn't have a git email use `GIT_NAME`
-  GIT_NAME
-
   EOA_ADDRESS
-
+  GIT_EMAIL
+  GIT_NAME
+  GITHUB_ORG
   CONTRACT_ADDRESS
-
   SAFE_ADDRESS
 }
 
