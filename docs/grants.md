@@ -19,5 +19,5 @@
 | Gitcoin Grants   | GR14 Match Payout | Ethereum  | 0x2878883dd4345c7b35c13fefc5096dd400814d91 |
 | Gitcoin Grants   | GR15 Match Payout | Ethereum  | 0xc8aca0b50f3ca9a0cbe413d8a110a7aab7d4c1ae |
 | DAO Drops        | DAO Drops 1       | Ethereum  | 0xafe5f7a1d1c173b311047cdc93729013ad03de0c |
-| Optimism RPGF    | RPGF2             | Optimism  | 0x19793c7824be70ec58bb673ca42d2779d12581be |
-
+| Optimism RPGF    | Retro PGF         | Optimism  | 0x19793c7824be70ec58bb673ca42d2779d12581be |
+| Optimism Foundation | Direct Grants  | Optimism  | 0x2501c477D0A35545a387Aa4A3EEe4292A9a8B3F0 |
