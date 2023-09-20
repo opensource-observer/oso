@@ -5,6 +5,13 @@ export interface Range {
   endDate: DateTime;
 }
 
+export function rangeFromDates(startDate: Date, endDate: Date): Range {
+  return {
+    startDate: DateTime.fromJSDate(startDate),
+    endDate: DateTime.fromJSDate(endDate),
+  };
+}
+
 export function rangeFromISO(startDateISO: string, endDateISO: string): Range {
   const startDate = DateTime.fromISO(startDateISO);
   const endDate = DateTime.fromISO(endDateISO);
