@@ -1,5 +1,6 @@
 generator client {
   provider = "prisma-client-js"
+  previewFeatures = ["views"]
 }
 
 datasource db {
@@ -59,9 +60,12 @@ model Artifact {
   name            String
   url             String?
   details         Json?
+
   events          Event[]
   eventPtrs       EventPointer[]
-  eventTs         EventTs[]
+
+  eventToArtifact   EventTs[] @relation("EventToArtifact")
+  eventFromArtifact EventTs[] @relation("EventFromArtifact")
   projects        ProjectsOnArtifacts[]
   rangedEventPtrs RangedEventPointer[]
 
@@ -77,7 +81,6 @@ model Contributor {
   details   Json?
   groups    ContributorGroupsOnContributors[]
   events    Event[]
-  eventTs   EventTs[]
 
   @@unique([name, namespace])
 }
@@ -119,14 +122,13 @@ model EventTs {
   id            Int          @default(autoincrement())
   createdAt     DateTime     @default(now()) @db.Timestamptz(3)
   updatedAt     DateTime     @updatedAt
-  artifactId    Int
   type          EventType
   time          DateTime     @db.Timestamptz(3)
-  contributorId Int?
+  toArtifactId    Int
+  fromArtifactId  Int?
   amount        Float
-  details       Json?
-  artifact      Artifact     @relation(fields: [artifactId], references: [id])
-  contributor   Contributor? @relation(fields: [contributorId], references: [id])
+  toArtifact    Artifact     @relation("EventToArtifact", fields: [toArtifactId], references: [id])
+  fromArtifact  Artifact?    @relation("EventFromArtifact", fields: [fromArtifactId], references: [id])
 
   @@unique([id, time])
 }

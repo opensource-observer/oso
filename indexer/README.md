@@ -1,6 +1,6 @@
 # Indexer
 
-## Typescript
+## Database
 
 ### Setup
 
@@ -8,19 +8,14 @@ Pre-requisites:
 
 - [Docker runtime](https://docs.docker.com/engine/install/) - for running a local Supabase instance
 
-Install your npm dependencies
-
-```bash
-yarn install
-```
-
 It is recommended you test any code changes against a development Supabase instance first.
 Please do not develop against the production database.
 This script will run a local Supabase server as a background service using docker.
 
 ```bash
-yarn db:start
-# yarn db:stop   # to stop the background service
+pnpm install
+pnpm db:start
+# pnpm db:stop   # to stop the background service
 ```
 
 After starting the Supabase instance, you will get the URL and keys.
@@ -28,12 +23,52 @@ Copy `.env.example` to `.env` and populate the `DATABASE_URL`.
 
 > Note: It is also possible to create a new throwaway project on supabase.com and use that instead.
 
+### Database configuration
+
+We use the following Postgres extensions, please make sure to enable them in your database
+
+- [timescaledb](https://supabase.com/docs/guides/database/extensions/timescaledb)
+
+### Dumping the database
+
+Since we are using Supabase for now, their CLI has some nice shortcuts:
+
+First [login to Supabase](https://supabase.com/docs/reference/cli/supabase-login)
+
+```bash
+pnpm supabase login
+```
+
+Note: If this just hangs, it might be an [issue with your window manager keychain](https://github.com/supabase/cli/issues/1000).
+
+[Link](https://supabase.com/docs/reference/cli/supabase-link) to the remote database
+
+```bash
+pnpm supabase link --project-ref REFERENCE_ID
+```
+
+Then run [Supabase dump](https://supabase.com/docs/reference/cli/supabase-db-dump)
+
+```bash
+pnpm supabase db dump -f /tmp/backup.sql
+```
+
+## Typescript
+
+### Setup
+
+Install your npm dependencies
+
+```bash
+pnpm install
+```
+
 ### After pulling latest changes
 
 After running `git pull`, make sure to run any missing migrations to make sure your local database schema matches the codebase.
 
 ```bash
-yarn db:migrate
+pnpm db:migrate
 ```
 
 For more details on how to collaborate within a team with Prisma, see [here](https://www.prisma.io/docs/guides/migrate/developing-with-prisma-migrate/team-development)
