@@ -19,10 +19,11 @@
   },
   "scripts": {
     "build": "prisma generate && tsc",
+    "db:deploy": "prisma migrate deploy",
     "db:migrate": "prisma migrate dev",
     "db:start": "supabase start",
     "db:stop": "supabase stop",
-    "deploy": "pnpm db:migrate",
+    "deploy": "pnpm db:deploy",
     "dev": "tsc-watch --onSuccess \"node dist/index.js\"",
     "json-yaml": "pnpm ts-node --esm utilities/json-yaml/index.ts",
     "lint": "tsc --noEmit && pnpm lint:eslint && pnpm lint:prettier",
