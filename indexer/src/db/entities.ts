@@ -11,7 +11,7 @@ import {
 } from "../utils/parsing.js";
 import { getNpmUrl } from "../utils/format.js";
 import { safeCast, ensure, filterFalsy } from "../utils/common.js";
-import { getOrgRepos } from "../events/github/getOrgRepos.js";
+import { getOwnerRepos } from "../events/github/getOrgRepos.js";
 import { HandledError } from "../utils/error.js";
 
 /**
@@ -33,8 +33,8 @@ async function ossUpsertCollection(ossCollection: Collection) {
 
   // Check that all Projects are already in the database
   if (projects.length != projectSlugs.length) {
-    throw new HandledError(
-      `Could not find all projects for collection ${slug}. Please add all projects first`,
+    logger.warn(
+      `Not all of the projects for collection ${slug} are in the database. Please add all projects first`,
     );
   }
 
@@ -67,7 +67,7 @@ async function ossUpsertCollection(ossCollection: Collection) {
  * @returns
  */
 async function ossUpsertProject(ossProj: Project) {
-  const { slug, name, github, npm, optimism } = ossProj;
+  const { slug, name, github, npm, blockchain } = ossProj;
 
   // Create all of the missing artifacts first
   // Note: this will only create missing artifacts, not update existing ones
@@ -77,10 +77,7 @@ async function ossUpsertProject(ossProj: Project) {
     // Create npm artifacts
     ...(await ossCreateNpmArtifacts(npm)),
     // Create Optimism artifacts
-    ...(await ossCreateBlockchainArtifacts(
-      ArtifactNamespace.OPTIMISM,
-      optimism,
-    )),
+    ...(await ossCreateBlockchainArtifacts(blockchain)),
   ];
 
   // Then upsert the project with the relations
@@ -140,7 +137,7 @@ async function ossCreateGitHubArtifacts(
   const orgNames = filterFalsy(
     orgUrls.map(parseGitHubUrl).map((p) => p?.owner),
   );
-  const orgRepos = _.flatten(await Promise.all(orgNames.map(getOrgRepos)));
+  const orgRepos = _.flatten(await Promise.all(orgNames.map(getOwnerRepos)));
   const orgRepoUrls = orgRepos.map((r) => r.url);
   const allRepos = [...repoUrls, ...orgRepoUrls];
   const parsedRepos = allRepos.map(parseGitHubUrl);
@@ -222,28 +219,33 @@ async function ossCreateNpmArtifacts(urlObjects?: URL[]) {
  * @param artifactNamespace
  * @returns
  */
-async function ossCreateBlockchainArtifacts(
-  namespace: ArtifactNamespace,
-  addrObjects?: BlockchainAddress[],
-) {
+async function ossCreateBlockchainArtifacts(addrObjects?: BlockchainAddress[]) {
   if (!addrObjects) {
     return safeCast<Artifact[]>([]);
   }
 
-  const data = addrObjects.map((o) => ({
-    type:
-      o.type === "eoa"
-        ? ArtifactType.EOA_ADDRESS
-        : o.type === "safe"
-        ? ArtifactType.SAFE_ADDRESS
-        : o.type === "contract"
-        ? ArtifactType.CONTRACT_ADDRESS
-        : o.type === "factory"
-        ? ArtifactType.FACTORY_ADDRESS
-        : ArtifactType.EOA_ADDRESS,
-    namespace,
-    name: o.address,
-  }));
+  const data = addrObjects.flatMap((o) => {
+    return o.networks.map((network) => {
+      return {
+        type:
+          o.tags.indexOf("eoa") !== -1
+            ? ArtifactType.EOA_ADDRESS
+            : o.tags.indexOf("safe") !== -1
+            ? ArtifactType.SAFE_ADDRESS
+            : o.tags.indexOf("factory") !== -1
+            ? ArtifactType.FACTORY_ADDRESS
+            : o.tags.indexOf("contract") !== -1
+            ? ArtifactType.CONTRACT_ADDRESS
+            : ArtifactType.EOA_ADDRESS,
+        // Hacky solution for now. We should we address after the typeorm migration
+        namespace:
+          network === "optimism"
+            ? ArtifactNamespace.OPTIMISM
+            : ArtifactNamespace.ETHEREUM,
+        name: o.address,
+      };
+    });
+  });
   const addresses = data.map((d) => d.name);
 
   // Create records
@@ -258,7 +260,6 @@ async function ossCreateBlockchainArtifacts(
   // Now get all of the artifacts
   const artifacts = await prisma.artifact.findMany({
     where: {
-      namespace,
       name: {
         in: addresses,
       },
