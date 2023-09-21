@@ -5,11 +5,30 @@ export interface Range {
   endDate: DateTime;
 }
 
-export function rangeFromISO(startDateISO: string, endDateISO: string): Range {
+export function rangeFromDates(startDate: Date, endDate: Date): Range {
   return {
-    startDate: DateTime.fromISO(startDateISO, { zone: "utc" }),
-    endDate: DateTime.fromISO(endDateISO, { zone: "utc" }),
+    startDate: DateTime.fromJSDate(startDate),
+    endDate: DateTime.fromJSDate(endDate),
   };
+}
+
+export function rangeFromISO(startDateISO: string, endDateISO: string): Range {
+  const startDate = DateTime.fromISO(startDateISO, { zone: "utc" });
+  const endDate = DateTime.fromISO(endDateISO, { zone: "utc" });
+  if (!(startDate.isValid && endDate.isValid)) {
+    throw new Error("range is invalid");
+  }
+  return {
+    startDate: startDate,
+    endDate: endDate,
+  };
+}
+
+export function rangeFromObj(obj: {
+  startDate: string;
+  endDate: string;
+}): Range {
+  return rangeFromISO(obj.startDate, obj.endDate);
 }
 
 export function rangesEqual(a: Range, b: Range): boolean {

@@ -10,6 +10,7 @@ import {
   ProjectAddress,
 } from "./funding-events/client.js";
 import {
+  Artifact,
   ArtifactNamespace,
   ArtifactType,
   ContributorNamespace,
@@ -23,6 +24,7 @@ import {
   IncompleteEvent,
 } from "../../recorder/types.js";
 import {
+  TimeSeriesCacheLookup,
   TimeSeriesCacheManager,
   TimeSeriesCacheWrapper,
 } from "../../cacher/time-series.js";
@@ -30,9 +32,11 @@ import { allFundableProjectAddresses } from "../../db/artifacts.js";
 import { BatchEventRecorder } from "../../recorder/recorder.js";
 import { prisma as prismaClient } from "../../db/prisma-client.js";
 import _ from "lodash";
+import { ArtifactGroup, ICollector } from "../../scheduler/types.js";
+import { Range } from "../../utils/ranges.js";
+import { asyncBatch } from "../../utils/array.js";
 
 export interface FundingEventsCollectorOptions {
-  baseDate: DateTime;
   cacheOptions: {
     bucket: string;
   };
@@ -40,13 +44,12 @@ export interface FundingEventsCollectorOptions {
 
 export const DefaultFundingEventsCollectorOptions: FundingEventsCollectorOptions =
   {
-    baseDate: DateTime.now(),
     cacheOptions: {
       bucket: "funding-events",
     },
   };
 
-export class FundingEventsCollector {
+export class FundingEventsCollector implements ICollector {
   private client: IFundingEventsClient;
   private recorder: IEventRecorder;
   private prisma: PrismaClient;
@@ -58,7 +61,7 @@ export class FundingEventsCollector {
     prisma: PrismaClient,
     recorder: IEventRecorder,
     cache: TimeSeriesCacheWrapper,
-    options: Partial<FundingEventsCollectorOptions>,
+    options?: Partial<FundingEventsCollectorOptions>,
   ) {
     this.client = client;
     this.prisma = prisma;
@@ -67,10 +70,27 @@ export class FundingEventsCollector {
     this.cache = cache;
   }
 
-  async run() {
-    const endRange = this.options.baseDate.startOf("day").minus({ days: 2 });
-    const startRange = endRange.minus({ days: 7 });
+  async *groupedArtifacts(): AsyncGenerator<ArtifactGroup> {
+    const projectAddresses = await allFundableProjectAddresses(this.prisma);
+    const artifacts: Array<Artifact> = projectAddresses.flatMap((p) => {
+      return p.artifacts
+        .filter((a) => a.artifact.name.length == 42)
+        .map((a) => {
+          return a.artifact;
+        });
+    });
+    yield {
+      details: {},
+      artifacts: artifacts,
+    };
+  }
 
+  async collect(
+    group: ArtifactGroup,
+    range: Range,
+    commitArtifact: (artifact: Artifact) => Promise<void>,
+  ): Promise<void> {
+    logger.debug("running funding events collector");
     // Super pragmatic hack for now to create the funding addresses. Let's just make them now
     const fundingAddressesRaw: Array<[string, string, string, string]> = [
       [
@@ -140,7 +160,7 @@ export class FundingEventsCollector {
         "mainnet",
       ],
     ];
-    // Create contributor groups
+
     const fundingAddressesAsContributors: IncompleteContributor[] =
       fundingAddressesRaw.map((r) => {
         return {
@@ -171,23 +191,23 @@ export class FundingEventsCollector {
       return acc;
     }, {});
 
-    // get project addresses
-    const projectAddresses = await allFundableProjectAddresses(this.prisma);
     const projectAddressesInput: Array<
       ProjectAddress & { namespace: ArtifactNamespace; type: ArtifactType }
-    > = projectAddresses.flatMap((p) => {
-      return p.artifacts
-        .filter((a) => a.artifact.name.length == 42)
-        .map((a, i) => {
-          return {
-            id: i,
-            projectId: a.projectId,
-            address: a.artifact.name,
-            namespace: a.artifact.namespace,
-            type: a.artifact.type,
-          };
-        });
+    > = group.artifacts.map((a, i) => {
+      return {
+        id: i,
+        projectId: i,
+        address: a.name.toLowerCase(),
+        namespace: a.namespace,
+        type: a.type,
+      };
     });
+    const addressLookupMap = projectAddressesInput.reduce<
+      Record<string, (typeof projectAddressesInput)[number]>
+    >((a, c) => {
+      a[c.address] = c;
+      return a;
+    }, {});
 
     const projectAddressesMap = projectAddressesInput.reduce<
       Record<string, IncompleteArtifact>
@@ -202,21 +222,17 @@ export class FundingEventsCollector {
 
     // Create a lookup
     const responses = this.cache.loadCachedOrRetrieve(
-      {
-        range: {
-          startDate: startRange,
-          endDate: endRange,
-        },
-        bucket: this.options.cacheOptions.bucket,
-        key: "generic",
-        normalizingUnit: "day",
-      },
-      async (missingRange) => {
+      TimeSeriesCacheLookup.new(
+        this.options.cacheOptions.bucket,
+        projectAddressesInput.map((a) => a.address),
+        range,
+      ),
+      async (missing) => {
         return this.client.getFundingEvents(
-          missingRange.startDate,
-          missingRange.endDate,
+          missing.range.startDate,
+          missing.range.endDate,
           fundingAddressesInput,
-          projectAddressesInput,
+          missing.keys.map((a) => addressLookupMap[a]),
         );
       },
     );
@@ -239,6 +255,7 @@ export class FundingEventsCollector {
           eventType: EventType.FUNDING,
           artifact: artifact,
           contributor: contributor,
+
           // Worried this could fail on very large values
           amount: amountAsFloat,
           details: {
@@ -252,35 +269,12 @@ export class FundingEventsCollector {
         this.recorder.record(event);
       }
     }
+
+    this.recorder.waitAll();
+
+    // Commit all of the artifacts
+    await asyncBatch(group.artifacts, 1, async (a) => {
+      return await commitArtifact(a[0]);
+    });
   }
-}
-
-export type FundingEventsUsage = CommonArgs & {
-  skipExisting?: boolean;
-  baseDate?: DateTime;
-};
-
-export async function importFundingEvents(
-  args: FundingEventsUsage,
-): Promise<void> {
-  logger.info("gathering funding events");
-
-  const dune = new DuneClient(DUNE_API_KEY);
-  const client = new FundingEventsClient(dune);
-
-  const recorder = new BatchEventRecorder(prismaClient);
-  const cacheManager = new TimeSeriesCacheManager(args.cacheDir);
-  const cache = new TimeSeriesCacheWrapper(cacheManager);
-  const collector = new FundingEventsCollector(
-    client,
-    prismaClient,
-    recorder,
-    cache,
-    {
-      baseDate: args.baseDate,
-    },
-  );
-  await collector.run();
-  await recorder.waitAll();
-  logger.info("done");
 }

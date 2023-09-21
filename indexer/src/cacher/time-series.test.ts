@@ -52,21 +52,21 @@ describe("TimeSeriesCaching", () => {
 
   describe("without cache initialized", () => {
     it("should be able to read and write to the cache", async () => {
-      const lookup: TimeSeriesCacheLookup = {
+      const lookup = TimeSeriesCacheLookup.fromRaw({
         range: rangeFromISO("2023-01-01T00:00:00Z", "2023-01-02T00:00:00Z"),
         bucket: "test",
-        key: "tester",
+        keys: ["tester"],
         normalizingUnit: "day",
-      };
+      });
       const cacheable = randomCacheable(lookup.range);
       await manager.write(lookup, cacheable);
 
       const loaded = await manager.load(lookup);
-      expect(loaded.missingRanges()).toEqual([]);
+      expect(loaded.missing()).toEqual([]);
 
       let pages = 0;
-      for (const dir of loaded.directories()) {
-        for await (const page of dir.load()) {
+      for await (const group of loaded.groups()) {
+        for await (const page of group.load()) {
           expect(page.raw).toEqual(cacheable.raw);
           pages += 1;
         }
@@ -103,12 +103,7 @@ describe("TimeSeriesCaching", () => {
         const rangeStr = rangeToString(r);
         const pagesToGenerate = Math.round(Math.random() * 9) + 1;
         const pages = [];
-        const lookup: TimeSeriesCacheLookup = {
-          bucket: "bucket",
-          key: "key",
-          range: r,
-          normalizingUnit: "day",
-        };
+        const lookup = TimeSeriesCacheLookup.new("bucket", "key", r);
 
         for (let i = 0; i < pagesToGenerate; i++) {
           const item = randomCacheable(r);
@@ -125,22 +120,22 @@ describe("TimeSeriesCaching", () => {
 
     it("should work to retrieve data using the wrapper", async () => {
       let called = false;
-      const lookup: TimeSeriesCacheLookup = {
-        range: rangeFromISO("2022-01-01T00:00:00Z", "2022-01-05T00:00:00Z"),
-        normalizingUnit: "day",
-        bucket: "bucket",
-        key: "key",
-      };
+      const lookup = TimeSeriesCacheLookup.new(
+        "bucket",
+        "key",
+        rangeFromISO("2022-01-01T00:00:00Z", "2022-01-05T00:00:00Z"),
+        "day",
+      );
       const responses = cache.loadCachedOrRetrieve<{ x: number }>(
         lookup,
-        async (range) => {
+        async (missing) => {
           const expectedRange = rangeFromISO(
-            "2022-01-02T00:00:00Z",
-            "2022-01-04T00:00:00Z",
+            "2022-01-01T00:00:00Z",
+            "2022-01-05T00:00:00Z",
           );
-          expect(rangesEqual(expectedRange, range)).toBeTruthy();
+          expect(rangesEqual(expectedRange, missing.range)).toBeTruthy();
           called = true;
-          return randomCacheable(range);
+          return randomCacheable(missing.range);
         },
       );
 
@@ -165,21 +160,21 @@ describe("TimeSeriesCaching", () => {
         "2022-01-10T00:00:00Z",
         "2022-01-12T00:00:00Z",
       );
-      const lookup: TimeSeriesCacheLookup = {
+      const lookup = TimeSeriesCacheLookup.fromRaw({
         range: inputRange,
         normalizingUnit: "day",
         bucket: "bucket",
-        key: "key",
-      };
+        keys: ["key"],
+      });
       const pageQueue = [0, 0];
       const pageQueueSize = pageQueue.length;
       const expectedCacheables = cachedRangeToItems[rangeToString(inputRange)];
       let lastCacheable = expectedCacheables.slice(-1)[0];
       const responses = cache.loadCachedOrRetrieve<{ x: number }>(
         lookup,
-        async (range, lastPage) => {
+        async (missing, lastPage) => {
           expect(lastPage?.raw.x).toBe(lastCacheable.raw.x);
-          const cacheable = randomCacheable(range);
+          const cacheable = randomCacheable(missing.range);
           if (pageQueue.length > 0) {
             called = true;
             pageQueue.pop();

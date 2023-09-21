@@ -202,10 +202,6 @@ export class BatchEventRecorder implements IEventRecorder {
         this.actorDirectory,
         event,
       );
-      if (event.eventType === EventType.STAR_AGGREGATE_STATS) {
-        console.log(existingEventMap);
-        console.log(incompleteId);
-      }
       const existing = existingEventMap[incompleteId];
       if (!existing) {
         queuedArtifacts.push(event.artifact);

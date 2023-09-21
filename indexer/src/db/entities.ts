@@ -12,7 +12,6 @@ import {
 import { getNpmUrl } from "../utils/format.js";
 import { safeCast, ensure, filterFalsy } from "../utils/common.js";
 import { getOwnerRepos } from "../events/github/getOrgRepos.js";
-import { HandledError } from "../utils/error.js";
 
 /**
  * Upsert a Collection from oss-directory
