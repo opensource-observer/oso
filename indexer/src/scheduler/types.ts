@@ -3,7 +3,6 @@ import {
   ArtifactNamespace,
   ContributorNamespace,
   EventType,
-  RangedEventPointer,
 } from "@prisma/client";
 import { IEventRecorder, IEventTypeStrategy } from "../recorder/types.js";
 import { Range, findMissingRanges, rangeFromDates } from "../utils/ranges.js";

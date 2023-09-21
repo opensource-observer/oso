@@ -43,7 +43,6 @@ export async function defaults(args: SchedulerArgs) {
       const dune = new DuneClient(DUNE_API_KEY);
       const client = new FundingEventsClient(dune);
 
-      const cacheManager = new TimeSeriesCacheManager(args.cacheDir);
       const collector = new FundingEventsCollector(
         client,
         prismaClient,

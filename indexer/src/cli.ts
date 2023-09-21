@@ -32,10 +32,6 @@ import {
   LoadPullRequests,
   loadPullRequests,
 } from "./actions/github/fetch/pull-requests.js";
-import {
-  FundingEventsUsage,
-  importFundingEvents,
-} from "./actions/dune/funding-event-collector.js";
 import { SchedulerArgs, defaults } from "./scheduler/index.js";
 
 const callLibrary = async <Args>(
@@ -94,22 +90,6 @@ yargs(hideBin(process.argv))
         });
     },
     (argv) => handleError(importDailyContractUsage(argv)),
-  )
-  .command<FundingEventsUsage>(
-    "importFundingEvents",
-    "Manually import contract usage statistics from dune",
-    (yags) => {
-      yags
-        .option("skipExisting", { type: "boolean" })
-        .option("base-date", { type: "string", default: "" })
-        .coerce("base-date", (arg) => {
-          if (arg === "") {
-            return DateTime.now();
-          }
-          return DateTime.fromISO(arg);
-        });
-    },
-    (argv) => handleError(importFundingEvents(argv)),
   )
   .command<LoadCommits>(
     "loadCommits",

@@ -75,7 +75,7 @@ export class FundingEventsCollector implements ICollector {
     const artifacts: Array<Artifact> = projectAddresses.flatMap((p) => {
       return p.artifacts
         .filter((a) => a.artifact.name.length == 42)
-        .map((a, i) => {
+        .map((a) => {
           return a.artifact;
         });
     });
@@ -277,31 +277,4 @@ export class FundingEventsCollector implements ICollector {
       return await commitArtifact(a[0]);
     });
   }
-}
-
-export type FundingEventsUsage = CommonArgs & {
-  skipExisting?: boolean;
-  baseDate?: DateTime;
-};
-
-export async function importFundingEvents(
-  args: FundingEventsUsage,
-): Promise<void> {
-  logger.info("gathering funding events");
-
-  const dune = new DuneClient(DUNE_API_KEY);
-  const client = new FundingEventsClient(dune);
-
-  const recorder = new BatchEventRecorder(prismaClient);
-  const cacheManager = new TimeSeriesCacheManager(args.cacheDir);
-  const cache = new TimeSeriesCacheWrapper(cacheManager);
-  const collector = new FundingEventsCollector(
-    client,
-    prismaClient,
-    recorder,
-    cache,
-  );
-  //await collector.run();
-  await recorder.waitAll();
-  logger.info("done");
 }

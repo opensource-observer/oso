@@ -1,10 +1,5 @@
-import {
-  Artifact,
-  Prisma,
-  PrismaClient,
-  RangedEventPointer,
-} from "@prisma/client";
-import { Range, findMissingRanges } from "../utils/ranges.js";
+import { Artifact, PrismaClient, RangedEventPointer } from "@prisma/client";
+import { Range } from "../utils/ranges.js";
 import { asyncBatch } from "../utils/array.js";
 import _ from "lodash";
 
