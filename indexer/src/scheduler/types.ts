@@ -152,6 +152,7 @@ export class BaseScheduler implements IScheduler {
       );
       // TODO: Ensure all artifacts are committed or error
     }
+    await this.recorder.waitAll();
   }
 
   private async findMissingArtifactsFromEventPointers(

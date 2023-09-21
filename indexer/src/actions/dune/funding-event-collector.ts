@@ -273,7 +273,8 @@ export class FundingEventsCollector implements ICollector {
 
     // Commit all of the artifacts
     await asyncBatch(group.artifacts, 1, async (a) => {
-      return commitArtifact(a[0]);
+      console.log(`committing for ${a[0].name}`);
+      return await commitArtifact(a[0]);
     });
   }
 }
