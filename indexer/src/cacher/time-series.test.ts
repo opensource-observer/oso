@@ -52,21 +52,21 @@ describe("TimeSeriesCaching", () => {
 
   describe("without cache initialized", () => {
     it("should be able to read and write to the cache", async () => {
-      const lookup: TimeSeriesCacheLookup = {
+      const lookup = TimeSeriesCacheLookup.fromRaw({
         range: rangeFromISO("2023-01-01T00:00:00Z", "2023-01-02T00:00:00Z"),
         bucket: "test",
-        key: "tester",
+        keys: ["tester"],
         normalizingUnit: "day",
-      };
+      });
       const cacheable = randomCacheable(lookup.range);
       await manager.write(lookup, cacheable);
 
       const loaded = await manager.load(lookup);
-      expect(loaded.missingRanges()).toEqual([]);
+      expect(loaded.missing()).toEqual([]);
 
       let pages = 0;
-      for (const dir of loaded.directories()) {
-        for await (const page of dir.load()) {
+      for await (const group of loaded.groups()) {
+        for await (const page of group.load()) {
           expect(page.raw).toEqual(cacheable.raw);
           pages += 1;
         }
