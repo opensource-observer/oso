@@ -1,4 +1,10 @@
-import { Artifact, EventType, RangedEventPointer } from "@prisma/client";
+import {
+  Artifact,
+  ArtifactNamespace,
+  ContributorNamespace,
+  EventType,
+  RangedEventPointer,
+} from "@prisma/client";
 import { IEventRecorder, IEventTypeStrategy } from "../recorder/types.js";
 import { Range, findMissingRanges, rangeFromDates } from "../utils/ranges.js";
 import { EventPointerManager } from "./pointers.js";
@@ -53,6 +59,10 @@ export interface CollectorRegistration {
   group: string;
 
   schedule: Schedule;
+
+  artifactScope: ArtifactNamespace[];
+
+  contributorScope: ContributorNamespace[];
 }
 
 export class Config implements IConfig {
@@ -127,6 +137,8 @@ export class BaseScheduler implements IScheduler {
 
   async executeForRange(collectorName: string, range: Range) {
     const reg = this.collectors[collectorName];
+
+    this.recorder.setActorScope(reg.artifactScope, reg.contributorScope);
     const collector = await reg.create(this.config, this.recorder, this.cache);
 
     // Get a list of the monitored artifacts
@@ -138,8 +150,13 @@ export class BaseScheduler implements IScheduler {
         collectorName,
       );
 
+      // Nothing missing in this group. Skip
+      if (missing.length === 0) {
+        continue;
+      }
+
       // Execute the collection for the missing items
-      collector.collect(
+      await collector.collect(
         { details: group.details, artifacts: missing },
         range,
         async (artifact) => {

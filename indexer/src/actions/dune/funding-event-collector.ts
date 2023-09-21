@@ -197,12 +197,11 @@ export class FundingEventsCollector implements ICollector {
       return {
         id: i,
         projectId: i,
-        address: a.name,
+        address: a.name.toLowerCase(),
         namespace: a.namespace,
         type: a.type,
       };
     });
-    console.log("%j", projectAddressesInput.slice(0, 3));
     const addressLookupMap = projectAddressesInput.reduce<
       Record<string, (typeof projectAddressesInput)[number]>
     >((a, c) => {
@@ -271,9 +270,10 @@ export class FundingEventsCollector implements ICollector {
       }
     }
 
+    this.recorder.waitAll();
+
     // Commit all of the artifacts
     await asyncBatch(group.artifacts, 1, async (a) => {
-      console.log(`committing for ${a[0].name}`);
       return await commitArtifact(a[0]);
     });
   }

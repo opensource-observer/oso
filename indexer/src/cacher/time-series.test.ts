@@ -173,8 +173,6 @@ describe("TimeSeriesCaching", () => {
       const responses = cache.loadCachedOrRetrieve<{ x: number }>(
         lookup,
         async (missing, lastPage) => {
-          console.log("missing boop? %j", missing);
-          console.log("%j", lastPage);
           expect(lastPage?.raw.x).toBe(lastCacheable.raw.x);
           const cacheable = randomCacheable(missing.range);
           if (pageQueue.length > 0) {
@@ -182,7 +180,6 @@ describe("TimeSeriesCaching", () => {
             pageQueue.pop();
             cacheable.hasNextPage = true;
           }
-          console.log("cacheable %j", cacheable);
           lastCacheable = cacheable;
           return cacheable;
         },

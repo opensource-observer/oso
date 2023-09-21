@@ -8,11 +8,11 @@ import {
 import { CommonArgs } from "../utils/api.js";
 import { DateTime } from "luxon";
 import { EventPointerManager } from "./pointers.js";
-import { rangeFromDates } from "../utils/ranges.js";
 import { FundingEventsCollector } from "../actions/dune/funding-event-collector.js";
 import { FundingEventsClient } from "../actions/dune/funding-events/client.js";
 import { DuneClient } from "@cowprotocol/ts-dune-client";
 import { DUNE_API_KEY } from "../config.js";
+import { ArtifactNamespace, ContributorNamespace } from "@prisma/client";
 
 export type SchedulerArgs = CommonArgs & {
   collector: string;
@@ -56,6 +56,12 @@ export async function defaults(args: SchedulerArgs) {
     description: "gathers funding events",
     group: "dune",
     schedule: "weekly",
+    artifactScope: [ArtifactNamespace.OPTIMISM, ArtifactNamespace.ETHEREUM],
+    contributorScope: [
+      ContributorNamespace.EOA_ADDRESS,
+      ContributorNamespace.SAFE_ADDRESS,
+      ContributorNamespace.CONTRACT_ADDRESS,
+    ],
   });
 
   return await scheduler.executeForRange(args.collector, {
