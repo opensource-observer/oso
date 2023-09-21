@@ -1,11 +1,12 @@
 generator client {
-  provider = "prisma-client-js"
-  previewFeatures = ["views"]
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions", "views"]
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider          = "postgresql"
+  url               = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
 }
 
 model Collection {
@@ -52,98 +53,36 @@ model ProjectsOnArtifacts {
 }
 
 model Artifact {
-  id              Int                   @id @default(autoincrement())
-  createdAt       DateTime              @default(now()) @db.Timestamptz(3)
-  updatedAt       DateTime              @updatedAt
-  type            ArtifactType
-  namespace       ArtifactNamespace
-  name            String
-  url             String?
-  details         Json?
-
-  events          Event[]
-  eventPtrs       EventPointer[]
-
-  eventToArtifact   EventTs[] @relation("EventToArtifact")
-  eventFromArtifact EventTs[] @relation("EventFromArtifact")
-  projects        ProjectsOnArtifacts[]
-  rangedEventPtrs RangedEventPointer[]
+  id                Int                   @id @default(autoincrement())
+  createdAt         DateTime              @default(now()) @db.Timestamptz(3)
+  updatedAt         DateTime              @updatedAt
+  type              ArtifactType
+  namespace         ArtifactNamespace
+  name              String
+  url               String?
+  details           Json?
+  eventFromArtifact EventTs[]             @relation("EventFromArtifact")
+  eventToArtifact   EventTs[]             @relation("EventToArtifact")
+  projects          ProjectsOnArtifacts[]
+  rangedEventPtrs   RangedEventPointer[]
 
   @@unique([namespace, name])
 }
 
-model Contributor {
-  id        Int                               @id @default(autoincrement())
-  createdAt DateTime                          @default(now()) @db.Timestamptz(3)
-  updatedAt DateTime                          @updatedAt
-  name      String
-  namespace ContributorNamespace
-  details   Json?
-  groups    ContributorGroupsOnContributors[]
-  events    Event[]
-
-  @@unique([name, namespace])
-}
-
-model ContributorGroup {
-  id           Int                               @id @default(autoincrement())
-  createdAt    DateTime                          @default(now()) @db.Timestamptz(3)
-  updatedAt    DateTime                          @updatedAt
-  name         String
-  contributors ContributorGroupsOnContributors[]
-}
-
-model ContributorGroupsOnContributors {
-  id            Int              @id @default(autoincrement())
-  contributorId Int
-  groupId       Int
-  contributor   Contributor      @relation(fields: [contributorId], references: [id])
-  group         ContributorGroup @relation(fields: [groupId], references: [id])
-}
-
-model Event {
-  id            Int          @id @default(autoincrement())
-  createdAt     DateTime     @default(now()) @db.Timestamptz(3)
-  updatedAt     DateTime     @updatedAt
-  artifactId    Int
-  eventType     EventType
-  eventTime     DateTime     @db.Timestamptz(3)
-  contributorId Int?
-  amount        Float
-  details       Json?
-  artifact      Artifact     @relation(fields: [artifactId], references: [id])
-  contributor   Contributor? @relation(fields: [contributorId], references: [id])
-
-  @@index([eventTime])
-  @@index([artifactId, eventType, eventTime])
-}
-
 model EventTs {
-  id            Int          @default(autoincrement())
-  createdAt     DateTime     @default(now()) @db.Timestamptz(3)
-  updatedAt     DateTime     @updatedAt
-  type          EventType
-  time          DateTime     @db.Timestamptz(3)
-  toArtifactId    Int
-  fromArtifactId  Int?
-  amount        Float
-  toArtifact    Artifact     @relation("EventToArtifact", fields: [toArtifactId], references: [id])
-  fromArtifact  Artifact?    @relation("EventFromArtifact", fields: [fromArtifactId], references: [id])
+  id             Int       @default(autoincrement())
+  createdAt      DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime  @updatedAt
+  type           EventType
+  time           DateTime  @db.Timestamptz(3)
+  toArtifactId   Int
+  fromArtifactId Int?
+  amount         Float
+  fromArtifact   Artifact? @relation("EventFromArtifact", fields: [fromArtifactId], references: [id])
+  toArtifact     Artifact  @relation("EventToArtifact", fields: [toArtifactId], references: [id])
 
   @@unique([id, time])
-}
-
-model EventPointer {
-  id         Int       @id @default(autoincrement())
-  createdAt  DateTime  @default(now()) @db.Timestamptz(3)
-  updatedAt  DateTime  @updatedAt
-  artifactId Int
-  eventType  EventType
-  pointer    Json
-  autocrawl  Boolean?
-  artifact   Artifact  @relation(fields: [artifactId], references: [id])
-
-  @@unique([artifactId, eventType])
+  @@index([time(sort: Desc)])
 }
 
 model RangedEventPointer {
@@ -189,6 +128,24 @@ model Log {
   level       String
   body        Json
   execution   JobExecution @relation(fields: [executionId], references: [id])
+}
+
+view EventsDailyByArtifact {
+  toArtifactId Int
+  type         EventType
+  bucketDaily  DateTime  @db.Timestamptz(6)
+  amount       Float
+
+  @@unique([toArtifactId, type, bucketDaily])
+}
+
+view EventsDailyByProject {
+  projectId   Int
+  type        EventType
+  bucketDaily DateTime  @db.Timestamptz(6)
+  amount      Float
+
+  @@unique([projectId, type, bucketDaily])
 }
 
 enum EventType {
