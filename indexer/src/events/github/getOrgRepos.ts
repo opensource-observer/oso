@@ -1,7 +1,35 @@
 import { gql } from "graphql-request";
 import { unpaginate } from "./unpaginate.js";
 
-const query = gql`
+const getUserRepos = gql`
+  query getUserRepos($name: String!, $cursor: String) {
+    rateLimit {
+      limit
+      cost
+      remaining
+      resetAt
+    }
+    user(login: $name) {
+      id
+      createdAt
+      repositories(first: 100, after: $cursor) {
+        pageInfo {
+          hasNextPage
+          endCursor
+        }
+        edges {
+          node {
+            nameWithOwner
+            url
+            name
+          }
+        }
+      }
+    }
+  }
+`;
+
+const getOrgRepos = gql`
   query getOrgRepos($name: String!, $cursor: String) {
     rateLimit {
       limit
@@ -29,7 +57,7 @@ const query = gql`
   }
 `;
 
-interface Data {
+interface OrgData {
   rateLimit: {
     limit: number;
     cost: number;
@@ -53,23 +81,58 @@ interface Data {
   };
 }
 
+interface UserData {
+  rateLimit: {
+    limit: number;
+    cost: number;
+    remaining: number;
+    resetAt: string;
+  };
+  user: {
+    id: string;
+    createdAt: string;
+    repositories: {
+      pageInfo: {
+        hasNextPage: boolean;
+        endCursor: string;
+      };
+      edges: [
+        {
+          node: Repository;
+        },
+      ];
+    };
+  };
+}
+
 export interface Repository {
   nameWithOwner: string;
   url: string;
   name: string;
 }
 
-export async function getOrgRepos(orgName: string): Promise<Repository[]> {
+export async function getOwnerRepos(ownerName: string): Promise<Repository[]> {
   const variables = {
-    name: orgName,
+    name: ownerName,
   };
 
-  const nodes = await unpaginate<Data>()(
-    query,
-    "organization.repositories.edges",
-    "organization.repositories.pageInfo",
-    variables,
-  );
-
-  return nodes.map((node: any) => node.node);
+  try {
+    const nodes = await unpaginate<OrgData>()(
+      getOrgRepos,
+      "organization.repositories.edges",
+      "organization.repositories.pageInfo",
+      variables,
+    );
+    return nodes.map((node: any) => node.node);
+  } catch (err) {
+    // Try getting the information as a user
+    const nodes = await unpaginate<UserData>()(
+      getUserRepos,
+      "user.repositories.edges",
+      "user.repositories.pageInfo",
+      variables,
+    );
+    return nodes.map((node: any) => node.node);
+  }
+  //return nodes.map((node: any) => node.node);
 }

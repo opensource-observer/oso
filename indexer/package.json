@@ -71,7 +71,7 @@
     "npm-registry-fetch": "^15.0.0",
     "octokit": "^3.1.0",
     "ora": "^7.0.1",
-    "oss-directory": "^0.0.4",
+    "oss-directory": "^0.0.5",
     "rimraf": "^5.0.1",
     "ts-adt": "^2.1.2",
     "winston": "^3.10.0",
