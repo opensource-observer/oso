@@ -1,7 +1,6 @@
 import _ from "lodash";
-import { Artifact, ArtifactType, ArtifactNamespace } from "@prisma/client";
+import { Artifact, ArtifactType, ArtifactNamespace } from "./orm-entities.js";
 import { Project, Collection, URL, BlockchainAddress } from "oss-directory";
-import { prisma } from "./prisma-client.js";
 import { logger } from "../utils/logger.js";
 import {
   isGitHubOrg,
@@ -12,6 +11,9 @@ import {
 import { getNpmUrl } from "../utils/format.js";
 import { safeCast, ensure, filterFalsy } from "../utils/common.js";
 import { getOwnerRepos } from "../events/github/getOrgRepos.js";
+import { ProjectRepository } from "./project.js";
+import { CollectionRepository } from "./collection.js";
+import { In } from "typeorm";
 
 /**
  * Upsert a Collection from oss-directory
@@ -22,11 +24,9 @@ async function ossUpsertCollection(ossCollection: Collection) {
   const { slug, name, projects: projectSlugs } = ossCollection;
 
   // Get all of the projects
-  const projects = await prisma.project.findMany({
+  const projects = await ProjectRepository.find({
     where: {
-      slug: {
-        in: projectSlugs,
-      },
+      slug: In(projectSlugs),
     },
   });
 
@@ -38,25 +38,26 @@ async function ossUpsertCollection(ossCollection: Collection) {
   }
 
   // Upsert into the database
-  const update = {
-    name,
-    projects: {
-      createMany: {
-        data: projects.map((p) => ({
-          projectId: p.id,
-        })),
-        skipDuplicates: true,
-      },
-    },
-  };
-  const collection = await prisma.collection.upsert({
+  const collection = await CollectionRepository.upsert(
+    [
+      {
+        name: name,
+        projects: projects.map((p) => ({
+          id: p.id,
+        }))
+      }
+    ],
+    ["slug"]
+  )
+  /*
+  const collection = await CollectionRepository.upsert({
     where: { slug },
     update: { ...update },
     create: {
       slug,
       ...update,
     },
-  });
+  });*/
   return collection;
 }
 
@@ -80,23 +81,20 @@ async function ossUpsertProject(ossProj: Project) {
   ];
 
   // Then upsert the project with the relations
-  const update = {
-    slug,
-    name,
-    artifacts: {
-      createMany: {
-        data: artifacts.map((a) => ({ artifactId: a.id })),
-        skipDuplicates: true,
-      },
-    },
-  };
-  const project = await prisma.project.upsert({
-    where: { slug },
-    update: { ...update },
-    create: { ...update },
-  });
+  const project = await ProjectRepository.upsert(
+    [
+      {
+        slug: slug,
+        name: name,
+        artifacts: artifacts.map((a) => ({ id: a.id }));
+      }
+    ],
+    ["slug"]
+  );
 
+  // FIXME this needs to be added back in.
   // Remove any artifact relations that are no longer valid
+  /*
   await prisma.projectsOnArtifacts.deleteMany({
     where: {
       projectId: project.id,
@@ -105,6 +103,7 @@ async function ossUpsertProject(ossProj: Project) {
       },
     },
   });
+  */
 
   return project;
 }
@@ -230,12 +229,12 @@ async function ossCreateBlockchainArtifacts(addrObjects?: BlockchainAddress[]) {
           o.tags.indexOf("eoa") !== -1
             ? ArtifactType.EOA_ADDRESS
             : o.tags.indexOf("safe") !== -1
-            ? ArtifactType.SAFE_ADDRESS
-            : o.tags.indexOf("factory") !== -1
-            ? ArtifactType.FACTORY_ADDRESS
-            : o.tags.indexOf("contract") !== -1
-            ? ArtifactType.CONTRACT_ADDRESS
-            : ArtifactType.EOA_ADDRESS,
+              ? ArtifactType.SAFE_ADDRESS
+              : o.tags.indexOf("factory") !== -1
+                ? ArtifactType.FACTORY_ADDRESS
+                : o.tags.indexOf("contract") !== -1
+                  ? ArtifactType.CONTRACT_ADDRESS
+                  : ArtifactType.EOA_ADDRESS,
         // Hacky solution for now. We should we address after the typeorm migration
         namespace:
           network === "optimism"
