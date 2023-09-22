@@ -3,6 +3,7 @@ version: '3'
 volumes:
   node_modules:
   indexer_modules:
+  indexer_dist:
   frontend_modules:
   postgres_storage:
   pnpm_home:
@@ -17,6 +18,7 @@ services:
       - ../:/usr/src/app
       - node_modules:/usr/src/app/node_modules
       - indexer_modules:/usr/src/app/indexer/node_modules
+      - indexer_dist:/usr/src/app/indexer/dist
       - frontend_modules:/usr/src/app/frontend/node_modules
     environment:
       - PNPM_HOME=/pnpm
@@ -50,4 +52,5 @@ services:
       - ../:/usr/src/app
       - node_modules:/usr/src/app/node_modules
       - indexer_modules:/usr/src/app/indexer/node_modules
+      - indexer_dist:/usr/src/app/indexer/dist
       - frontend_modules:/usr/src/app/frontend/node_modules
