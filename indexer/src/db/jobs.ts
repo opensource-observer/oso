@@ -1,10 +1,10 @@
+import { AppDataSource } from "./data-source.js";
 import {
-  PrismaClient,
   Job,
   JobStatus,
   JobExecutionStatus,
   JobExecution,
-} from "@prisma/client";
+} from "./orm-entities.js";
 
 export type JobGroup<T> = {
   name: string;
@@ -20,22 +20,14 @@ export type JobRef = {
 /**
  * Jobs repository
  */
-export class JobsRepository {
-  private prisma: PrismaClient;
-
-  constructor(prisma: PrismaClient) {
-    this.prisma = prisma;
-  }
-
+export const JobsRepository = AppDataSource.getRepository(Job).extend({
   async availableJobGroups(): Promise<JobGroup<JobRef>[]> {
-    const allIncompleteJobs = await this.prisma.job.findMany({
-      include: {
+    const allIncompleteJobs = await this.find({
+      relations: {
         executions: true,
       },
       where: {
-        status: {
-          equals: JobStatus.PENDING,
-        },
+        status: JobStatus.PENDING,
       },
     });
     const groupedJobsByName = allIncompleteJobs.reduce<
@@ -84,20 +76,22 @@ export class JobsRepository {
       }
     }
     return jobGroups;
-  }
+  },
+});
 
+export const JobExecutionRepository = AppDataSource.getRepository(
+  JobExecution,
+).extend({
   /**
    * Call this to establish a lock on a job's execution
    *
    * @param ref JobRef for the job to create an execution for
    * @returns
    */
-  async createExecutionForJob(ref: JobRef) {
-    return await this.prisma.jobExecution.createMany({
-      data: {
-        status: JobExecutionStatus.ACTIVE,
-        jobId: ref.id,
-      },
+  async createExecutionForJob(job: Job) {
+    return await this.create({
+      status: JobExecutionStatus.ACTIVE,
+      job: job,
     });
-  }
-}
+  },
+});
