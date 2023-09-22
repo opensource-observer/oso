@@ -1,0 +1,53 @@
+version: '3'
+
+volumes:
+  node_modules:
+  indexer_modules:
+  frontend_modules:
+  postgres_storage:
+  pnpm_home:
+
+
+services:
+  install:
+    image: node:18
+    working_dir: /usr/src/app
+    command: bash docker/install.sh
+    volumes:
+      - ../:/usr/src/app
+      - node_modules:/usr/src/app/node_modules
+      - indexer_modules:/usr/src/app/indexer/node_modules
+      - frontend_modules:/usr/src/app/frontend/node_modules
+    environment:
+      - PNPM_HOME=/pnpm
+      - PATH="$PNPM_HOME:$PATH"
+  postgres:
+    image: timescale/timescaledb:latest-pg15
+    restart: always
+    user: postgres
+    volumes:
+      - postgres_storage:/home/postgres/pgdata/data
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: postgres
+      POSTGRES_INITDB_ARGS: "-E UTF8 --locale=C"
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  test:
+    profiles:
+      - testing
+    image: node:18
+    working_dir: /usr/src/app/indexer
+    command: pnpm test
+    depends_on:
+      install:
+        condition: service_completed_successfully
+    volumes:
+      - ../:/usr/src/app
+      - node_modules:/usr/src/app/node_modules
+      - indexer_modules:/usr/src/app/indexer/node_modules
+      - frontend_modules:/usr/src/app/frontend/node_modules
