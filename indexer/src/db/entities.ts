@@ -1,7 +1,6 @@
 import _ from "lodash";
-import { Artifact, ArtifactType, ArtifactNamespace } from "@prisma/client";
+import { Artifact, ArtifactType, ArtifactNamespace } from "./orm-entities.js";
 import { Project, Collection, URL, BlockchainAddress } from "oss-directory";
-import { prisma } from "./prisma-client.js";
 import { logger } from "../utils/logger.js";
 import {
   isGitHubOrg,
@@ -12,6 +11,10 @@ import {
 import { getNpmUrl } from "../utils/format.js";
 import { safeCast, ensure, filterFalsy } from "../utils/common.js";
 import { getOwnerRepos } from "../events/github/getOrgRepos.js";
+import { ProjectRepository } from "./project.js";
+import { CollectionRepository } from "./collection.js";
+import { In } from "typeorm";
+import { ArtifactRepository } from "./artifacts.js";
 
 /**
  * Upsert a Collection from oss-directory
@@ -22,11 +25,9 @@ async function ossUpsertCollection(ossCollection: Collection) {
   const { slug, name, projects: projectSlugs } = ossCollection;
 
   // Get all of the projects
-  const projects = await prisma.project.findMany({
+  const projects = await ProjectRepository.find({
     where: {
-      slug: {
-        in: projectSlugs,
-      },
+      slug: In(projectSlugs),
     },
   });
 
@@ -38,25 +39,18 @@ async function ossUpsertCollection(ossCollection: Collection) {
   }
 
   // Upsert into the database
-  const update = {
-    name,
-    projects: {
-      createMany: {
-        data: projects.map((p) => ({
-          projectId: p.id,
+  const collection = await CollectionRepository.upsert(
+    [
+      {
+        name: name,
+        slug: slug,
+        projects: projects.map((p) => ({
+          id: p.id,
         })),
-        skipDuplicates: true,
       },
-    },
-  };
-  const collection = await prisma.collection.upsert({
-    where: { slug },
-    update: { ...update },
-    create: {
-      slug,
-      ...update,
-    },
-  });
+    ],
+    ["slug"],
+  );
   return collection;
 }
 
@@ -80,23 +74,20 @@ async function ossUpsertProject(ossProj: Project) {
   ];
 
   // Then upsert the project with the relations
-  const update = {
-    slug,
-    name,
-    artifacts: {
-      createMany: {
-        data: artifacts.map((a) => ({ artifactId: a.id })),
-        skipDuplicates: true,
+  const project = await ProjectRepository.upsert(
+    [
+      {
+        slug: slug,
+        name: name,
+        artifacts: artifacts.map((a) => ({ id: a.id })),
       },
-    },
-  };
-  const project = await prisma.project.upsert({
-    where: { slug },
-    update: { ...update },
-    create: { ...update },
-  });
+    ],
+    ["slug"],
+  );
 
+  // FIXME this needs to be added back in.
   // Remove any artifact relations that are no longer valid
+  /*
   await prisma.projectsOnArtifacts.deleteMany({
     where: {
       projectId: project.id,
@@ -105,6 +96,7 @@ async function ossUpsertProject(ossProj: Project) {
       },
     },
   });
+  */
 
   return project;
 }
@@ -148,23 +140,22 @@ async function ossCreateGitHubArtifacts(
   }));
   const slugs = filterFalsy(parsedRepos.map((p) => p?.slug));
 
+  const newArtifacts = Artifact.create(data);
+  logger.debug("Upserting artifacts");
   // Create records
-  const { count: createCount } = await prisma.artifact.createMany({
-    data,
-    skipDuplicates: true,
-  });
+  const result = await ArtifactRepository.upsertMany(newArtifacts);
+  const createCount = result.identifiers.length;
+
   logger.debug(
     `... created ${createCount}/${data.length} GitHub artifacts (skip duplicates)`,
   );
 
   // Now get all of the artifacts
-  const artifacts = await prisma.artifact.findMany({
+  const artifacts = ArtifactRepository.find({
     where: {
       type: ArtifactType.GIT_REPOSITORY,
       namespace: ArtifactNamespace.GITHUB,
-      name: {
-        in: slugs,
-      },
+      name: In(slugs),
     },
   });
   return artifacts;
@@ -191,22 +182,18 @@ async function ossCreateNpmArtifacts(urlObjects?: URL[]) {
   const slugs = filterFalsy(parsed.map((p) => p?.slug));
 
   // Create records
-  const { count: createCount } = await prisma.artifact.createMany({
-    data,
-    skipDuplicates: true,
-  });
+  const result = await ArtifactRepository.upsertMany(data);
+  const createCount = result.identifiers.length;
   logger.debug(
     `... inserted ${createCount}/${data.length} npm artifacts (skip duplicates)`,
   );
 
   // Now get all of the artifacts
-  const artifacts = await prisma.artifact.findMany({
+  const artifacts = await ArtifactRepository.find({
     where: {
       type: ArtifactType.NPM_PACKAGE,
       namespace: ArtifactNamespace.NPM_REGISTRY,
-      name: {
-        in: slugs,
-      },
+      name: In(slugs),
     },
   });
   return artifacts;
@@ -248,20 +235,16 @@ async function ossCreateBlockchainArtifacts(addrObjects?: BlockchainAddress[]) {
   const addresses = data.map((d) => d.name);
 
   // Create records
-  const { count: createCount } = await prisma.artifact.createMany({
-    data,
-    skipDuplicates: true,
-  });
+  const result = await ArtifactRepository.upsertMany(data);
+  const createCount = result.identifiers.length;
   logger.debug(
     `... inserted ${createCount}/${data.length} blockchain artifacts (skip duplicates)`,
   );
 
   // Now get all of the artifacts
-  const artifacts = await prisma.artifact.findMany({
+  const artifacts = await ArtifactRepository.find({
     where: {
-      name: {
-        in: addresses,
-      },
+      name: In(addresses),
     },
   });
   return artifacts;
@@ -273,7 +256,7 @@ async function ossCreateBlockchainArtifacts(addrObjects?: BlockchainAddress[]) {
  * @returns
  */
 async function getCollectionBySlug(slug: string) {
-  return await prisma.collection.findUnique({ where: { slug } });
+  return await CollectionRepository.findOne({ where: { slug } });
 }
 
 /**
@@ -282,7 +265,7 @@ async function getCollectionBySlug(slug: string) {
  * @returns
  */
 async function getProjectBySlug(slug: string) {
-  return await prisma.project.findUnique({ where: { slug } });
+  return await ProjectRepository.findOne({ where: { slug } });
 }
 
 /**
@@ -295,12 +278,10 @@ async function getArtifactByName(fields: {
   name: string;
 }): Promise<Artifact | null> {
   const { namespace, name } = fields;
-  const result = await prisma.artifact.findUnique({
+  const result = await ArtifactRepository.findOne({
     where: {
-      namespace_name: {
-        namespace,
-        name,
-      },
+      namespace: namespace,
+      name: name,
     },
   });
   return result;
@@ -320,16 +301,10 @@ async function upsertArtifact(fields: {
   url?: string;
   details?: any;
 }) {
-  return await prisma.artifact.upsert({
-    where: {
-      namespace_name: {
-        namespace: fields.namespace,
-        name: fields.name,
-      },
-    },
-    update: { ...fields },
-    create: { ...fields },
-  });
+  return await ArtifactRepository.upsert(
+    [{ ...fields }],
+    ["name", "namespace"],
+  );
 }
 
 /**

@@ -4,35 +4,26 @@ import { hideBin } from "yargs/helpers";
 import { RunAutocrawlArgs, runAutocrawl } from "./actions/autocrawl.js";
 import { handleError } from "./utils/error.js";
 import { CommonArgs, EventSourceFunction } from "./utils/api.js";
-import { NpmDownloadsArgs, NpmDownloadsInterface } from "./events/npm.js";
-import {
-  GithubFetchArgs,
-  GithubIssueFiledInterface,
-} from "./actions/github/fetch/issueFiled.js";
-import {
-  UpsertGithubOrgInterface,
-  UpsertGithubOrgArgs,
-} from "./actions/github/upsertOrg/index.js";
-import { GithubIssueClosedInterface } from "./actions/github/fetch/issueClosed.js";
+//import { NpmDownloadsArgs, NpmDownloadsInterface } from "./events/npm.js";
+import { DateTime } from "luxon";
 import {
   ImportOssDirectoryArgs,
   importOssDirectory,
 } from "./actions/oss-directory.js";
-import {
-  ImportDailyContractUsage,
-  importDailyContractUsage,
-} from "./actions/dune/index.js";
-import { LoadCommits, loadCommits } from "./actions/github/fetch/commits.js";
-import { DateTime } from "luxon";
-import {
-  LoadRepositoryFollowers,
-  loadRepositoryFollowers,
-} from "./actions/github/fetch/repo-followers.js";
-import {
-  LoadPullRequests,
-  loadPullRequests,
-} from "./actions/github/fetch/pull-requests.js";
-import { SchedulerArgs, defaults } from "./scheduler/index.js";
+import { AppDataSource } from "./db/data-source.js";
+// import {
+//   importDailyContractUsage,
+// } from "./actions/dune/index.js";
+// import { LoadCommits, loadCommits } from "./actions/github/fetch/commits.js";
+// import {
+//   LoadRepositoryFollowers,
+//   loadRepositoryFollowers,
+// } from "./actions/github/fetch/repo-followers.js";
+// import {
+//   LoadPullRequests,
+//   loadPullRequests,
+// } from "./actions/github/fetch/pull-requests.js";
+//import { SchedulerArgs, defaults } from "./scheduler/index.js";
 
 const callLibrary = async <Args>(
   func: EventSourceFunction<Args>,
@@ -47,10 +38,13 @@ const callLibrary = async <Args>(
  * When adding a new fetcher, please remember to add it to both this registry and yargs
  */
 export const FETCHER_REGISTRY = [
-  GithubIssueFiledInterface,
-  NpmDownloadsInterface,
+  //NpmDownloadsInterface,
 ];
 yargs(hideBin(process.argv))
+  .middleware(async () => {
+    // Initialize the database
+    await AppDataSource.initialize();
+  })
   .option("yes", {
     type: "boolean",
     describe: "Automatic yes to all prompts",
@@ -74,47 +68,47 @@ yargs(hideBin(process.argv))
     },
     (argv) => handleError(importOssDirectory(argv)),
   )
-  .command<ImportDailyContractUsage>(
-    "importDailyContractUsage",
-    "Manually import contract usage statistics from dune",
-    (yags) => {
-      yags
-        .option("skipExisting", { type: "boolean" })
-        .option("interval", { type: "number" })
-        .option("base-date", { type: "string", default: "" })
-        .coerce("base-date", (arg) => {
-          if (arg === "") {
-            return DateTime.now();
-          }
-          return DateTime.fromISO(arg);
-        });
-    },
-    (argv) => handleError(importDailyContractUsage(argv)),
-  )
-  .command<LoadCommits>(
-    "loadCommits",
-    "Manually import commits",
-    (yags) => {
-      yags.option("skipExisting", { type: "boolean" });
-    },
-    (argv) => handleError(loadCommits(argv)),
-  )
-  .command<LoadRepositoryFollowers>(
-    "loadRepositoryFollowers",
-    "Manually import commits",
-    (yags) => {
-      yags.option("skipExisting", { type: "boolean" });
-    },
-    (argv) => handleError(loadRepositoryFollowers(argv)),
-  )
-  .command<LoadPullRequests>(
-    "loadPullRequests",
-    "Manually import pull requests",
-    (yags) => {
-      yags.option("skipExisting", { type: "boolean" });
-    },
-    (argv) => handleError(loadPullRequests(argv)),
-  )
+  // .command<ImportDailyContractUsage>(
+  //   "importDailyContractUsage",
+  //   "Manually import contract usage statistics from dune",
+  //   (yags) => {
+  //     yags
+  //       .option("skipExisting", { type: "boolean" })
+  //       .option("interval", { type: "number" })
+  //       .option("base-date", { type: "string", default: "" })
+  //       .coerce("base-date", (arg) => {
+  //         if (arg === "") {
+  //           return DateTime.now();
+  //         }
+  //         return DateTime.fromISO(arg);
+  //       });
+  //   },
+  //   (argv) => handleError(importDailyContractUsage(argv)),
+  // )
+  // .command<LoadCommits>(
+  //   "loadCommits",
+  //   "Manually import commits",
+  //   (yags) => {
+  //     yags.option("skipExisting", { type: "boolean" });
+  //   },
+  //   (argv) => handleError(loadCommits(argv)),
+  // )
+  // .command<LoadRepositoryFollowers>(
+  //   "loadRepositoryFollowers",
+  //   "Manually import commits",
+  //   (yags) => {
+  //     yags.option("skipExisting", { type: "boolean" });
+  //   },
+  //   (argv) => handleError(loadRepositoryFollowers(argv)),
+  // )
+  // .command<LoadPullRequests>(
+  //   "loadPullRequests",
+  //   "Manually import pull requests",
+  //   (yags) => {
+  //     yags.option("skipExisting", { type: "boolean" });
+  //   },
+  //   (argv) => handleError(loadPullRequests(argv)),
+  // )
   .command<RunAutocrawlArgs>(
     "runAutocrawl",
     "Iterate over EventSourcePointer table and update all data marked for autocrawl",
@@ -123,90 +117,43 @@ yargs(hideBin(process.argv))
     },
     (argv) => handleError(runAutocrawl(argv)),
   )
-  .command<UpsertGithubOrgArgs>(
-    UpsertGithubOrgInterface.command,
-    "Add or update a github organization",
-    (yags) => {
-      yags
-        .option("orgName", {
-          type: "string",
-          describe: "GitHub organization name",
-        })
-        .demandOption(["orgName"]);
-    },
-    (argv) => handleError(callLibrary(UpsertGithubOrgInterface.func, argv)),
-  )
-  .command<GithubFetchArgs>(
-    GithubIssueFiledInterface.command,
-    "Fetch GitHub Issues Filed",
-    (yags) => {
-      yags
-        .option("org", {
-          type: "string",
-          describe: "GitHub organization name",
-        })
-        .option("repo", {
-          type: "string",
-          describe: "GitHub repository name",
-        })
-        .demandOption(["org", "repo"]);
-    },
-    (argv) => handleError(callLibrary(GithubIssueFiledInterface.func, argv)),
-  )
-  .command<GithubFetchArgs>(
-    GithubIssueClosedInterface.command,
-    "Fetch GitHub Issues Closed",
-    (yags) => {
-      yags
-        .option("org", {
-          type: "string",
-          describe: "GitHub organization name",
-        })
-        .option("repo", {
-          type: "string",
-          describe: "GitHub repository name",
-        })
-        .demandOption(["org", "repo"]);
-    },
-    (argv) => handleError(callLibrary(GithubIssueClosedInterface.func, argv)),
-  )
-  .command<NpmDownloadsArgs>(
-    NpmDownloadsInterface.command,
-    "Fetch NPM downloads",
-    (yags) => {
-      yags
-        .option("name", {
-          type: "string",
-          describe: "Package name",
-        })
-        .demandOption(["name"]);
-    },
-    (argv) => handleError(callLibrary(NpmDownloadsInterface.func, argv)),
-  )
-  .command<SchedulerArgs>(
-    "scheduler <collector>",
-    "Runs a manual execution",
-    (yags) => {
-      yags
-        .positional("collector", { describe: "the collector to execute" })
-        .option("start-date", { type: "string", default: "" })
-        .coerce("start-date", (arg) => {
-          if (arg === "") {
-            return DateTime.now().startOf("day").minus({ days: 9 });
-          }
-          return DateTime.fromISO(arg);
-        })
-        .option("end-date", { type: "string", default: "" })
-        .coerce("end-date", (arg) => {
-          if (arg === "") {
-            return DateTime.now().startOf("day").minus({ days: 2 });
-          }
-          return DateTime.fromISO(arg);
-        })
-        .option("batch-size", { type: "number", default: 5000 });
-    },
-    (argv) => handleError(defaults(argv)),
-  )
+  // .command<NpmDownloadsArgs>(
+  //   NpmDownloadsInterface.command,
+  //   "Fetch NPM downloads",
+  //   (yags) => {
+  //     yags
+  //       .option("name", {
+  //         type: "string",
+  //         describe: "Package name",
+  //       })
+  //       .demandOption(["name"]);
+  //   },
+  //   (argv) => handleError(callLibrary(NpmDownloadsInterface.func, argv)),
+  // )
+  // .command<SchedulerArgs>(
+  //   "scheduler <collector>",
+  //   "Runs a manual execution",
+  //   (yags) => {
+  //     yags
+  //       .positional("collector", { describe: "the collector to execute" })
+  //       .option("start-date", { type: "string", default: "" })
+  //       .coerce("start-date", (arg) => {
+  //         if (arg === "") {
+  //           return DateTime.now().startOf("day").minus({ days: 9 });
+  //         }
+  //         return DateTime.fromISO(arg);
+  //       })
+  //       .option("end-date", { type: "string", default: "" })
+  //       .coerce("end-date", (arg) => {
+  //         if (arg === "") {
+  //           return DateTime.now().startOf("day").minus({ days: 2 });
+  //         }
+  //         return DateTime.fromISO(arg);
+  //       })
+  //       .option("batch-size", { type: "number", default: 5000 });
+  //   },
+  //   (argv) => handleError(defaults(argv)),
+  // )
   .demandCommand()
   .strict()
   .help("h")

@@ -10,6 +10,8 @@ import {
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
 } from "typeorm";
 import { IsUrl, IsOptional, validateOrReject } from "class-validator";
 import type { Brand } from "utility-types";
@@ -79,9 +81,9 @@ abstract class Base<IdTag> extends BaseEntity {
   @PrimaryGeneratedColumn()
   id: Brand<number, IdTag>;
 
-  @Column("timestamptz")
+  @CreateDateColumn({ type: "timestamptz" })
   createdAt: Date;
-  @Column("timestamptz")
+  @UpdateDateColumn({ type: "timestamptz" })
   updatedAt: Date;
   @Column("timestamptz", { nullable: true })
   deletedAt: Date | null;

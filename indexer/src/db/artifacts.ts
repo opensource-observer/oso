@@ -1,29 +1,20 @@
 import { Readable } from "stream";
-import { Prisma, PrismaClient, ArtifactType } from "@prisma/client";
+import { AppDataSource } from "./data-source.js";
+import { Artifact } from "./orm-entities.js";
+import { DeepPartial } from "typeorm";
 
-export async function allFundableProjectAddresses(prisma: PrismaClient) {
-  return await prisma.project.findMany({
-    include: {
-      artifacts: {
-        include: {
-          artifact: true,
-        },
-        where: {
-          artifact: {
-            type: {
-              in: [
-                ArtifactType.EOA_ADDRESS,
-                ArtifactType.SAFE_ADDRESS,
-                ArtifactType.CONTRACT_ADDRESS,
-              ],
-            },
-          },
-        },
-      },
-    },
-  });
-}
+export const ArtifactRepository = AppDataSource.getRepository(Artifact).extend({
+  async createMany(artifacts: DeepPartial<Artifact>[]) {
+    const newArtifacts = Artifact.create(artifacts);
+    return await this.insert(newArtifacts);
+  },
+  async upsertMany(artifacts: DeepPartial<Artifact>[]) {
+    const newArtifacts = Artifact.create(artifacts);
+    return await this.upsert(newArtifacts, ["name", "namespace"]);
+  },
+});
 
+/*
 export function streamFindAll(
   prisma: PrismaClient,
   batchSize: number,
@@ -58,3 +49,4 @@ export function streamFindAll(
     },
   });
 }
+*/
