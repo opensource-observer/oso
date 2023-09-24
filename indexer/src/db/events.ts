@@ -1,107 +1,35 @@
 import _ from "lodash";
 import { Readable } from "stream";
-import { EventType, Prisma, PrismaClient } from "@prisma/client";
-import { prisma } from "./prisma-client.js";
 import { assert, normalizeToObject } from "../utils/common.js";
+import { AppDataSource } from "./data-source.js";
+import type { Brand } from "utility-types";
+import { EventType, EventPointer, Event } from "./orm-entities.js";
 
-/**
- * Before you do any work to fetch data, use this to retrieve the EventSourcePointer
- * from the database.
- * - You'll only fetch data from this point forward
- * - You'll need this to insert data below
- * @param artifactId
- * @param eventType
- * @returns
- */
-export async function getEventSourcePointer<PointerType>(
-  artifactId: number,
-  eventType: EventType,
-) {
-  const record = await prisma.eventPointer.findUnique({
-    where: {
-      artifactId_eventType: {
-        artifactId,
-        eventType,
+export const EventPointerRepository = AppDataSource.getRepository(
+  EventPointer,
+).extend({
+  async getPointer<PointerType>(
+    artifactId: Brand<number, "ArtifactId">,
+    collector: string,
+  ) {
+    const record = await this.findOne({
+      relations: {
+        artifact: true,
       },
-    },
-  });
-  // Safe because `Partial` means they're all optional props anyway
-  return normalizeToObject<PointerType>(record?.pointer);
-}
-
-/**
- * Idempotent insertions, which will
- * - Check that the EventSourcePointer hasn't changed
- * - Insert the data
- * - Update the EventSourcePointer
- *
- * @param previousPointer
- * @param artifactId
- * @param events
- * @param autocrawl
- * @returns
- */
-export async function insertData<PointerType>(
-  artifactId: number,
-  eventType: EventType,
-  events: Prisma.EventCreateManyInput[],
-  previousPointer: Prisma.JsonObject,
-  newPointer: Prisma.JsonObject,
-  queryCommand: string,
-  queryArgs: Prisma.JsonObject,
-  autocrawl?: boolean,
-) {
-  // Set it all up as an atomic transaction
-  return await prisma.$transaction(async (txn) => {
-    // Check if the pointer hasn't changed, abort if so (concurrent job)
-    const dbCheckEvtSrcPtr = await txn.eventPointer.findUnique({
       where: {
-        artifactId_eventType: {
-          artifactId,
-          eventType,
+        artifact: {
+          id: artifactId,
         },
+        collector: collector,
       },
     });
+    // Safe because `Partial` means they're all optional props anyway
+    return normalizeToObject<PointerType>(record?.pointer);
+  },
+});
+export const EventRepository = AppDataSource.getRepository(Event);
 
-    // Make sure that the pointer hasn't changed
-    assert(
-      _.isEqual(
-        normalizeToObject<PointerType>(dbCheckEvtSrcPtr?.pointer),
-        previousPointer,
-      ),
-      `EventSourcePointer has changed. Aborting. Expected$ ${JSON.stringify(
-        previousPointer,
-      )}, Saw ${JSON.stringify(dbCheckEvtSrcPtr?.pointer)}`,
-    );
-
-    // Insert the data
-    await txn.event.createMany({
-      data: events,
-      skipDuplicates: true,
-    });
-
-    // Update the event source pointer
-    await txn.eventPointer.upsert({
-      where: {
-        artifactId_eventType: {
-          artifactId,
-          eventType,
-        },
-      },
-      update: {
-        pointer: newPointer,
-        ...(autocrawl ? { autocrawl } : {}),
-      },
-      create: {
-        artifactId,
-        eventType,
-        pointer: newPointer,
-        ...(autocrawl ? { autocrawl } : {}),
-      },
-    });
-  });
-}
-
+/*
 export function streamFindAll(
   prisma: PrismaClient,
   batchSize: number,
@@ -136,3 +64,4 @@ export function streamFindAll(
     },
   });
 }
+*/

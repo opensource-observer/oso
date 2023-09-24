@@ -62,7 +62,7 @@ describe("TimeSeriesCaching", () => {
       await manager.write(lookup, cacheable);
 
       const loaded = await manager.load(lookup);
-      expect(loaded.missing()).toEqual([]);
+      expect(await loaded.missing()).toEqual([]);
 
       let pages = 0;
       for await (const group of loaded.groups()) {

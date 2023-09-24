@@ -1,3 +1,5 @@
+export {};
+/*
 import {
   PrismaClient,
   EventType,
@@ -89,3 +91,4 @@ export async function getKnownUserAddressesWithinTimeFrame(
 
   return knownUserAddresses;
 }
+*/

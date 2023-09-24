@@ -1,19 +1,15 @@
 import {
   Event,
   EventType,
-  Contributor,
-  ContributorNamespace,
   Artifact,
   ArtifactNamespace,
   ArtifactType,
   Project,
   Collection,
-} from "@prisma/client";
+} from "./db/orm-entities.js";
 export {
   Event,
   EventType,
-  Contributor,
-  ContributorNamespace,
   Artifact,
   ArtifactNamespace,
   ArtifactType,
@@ -31,5 +27,5 @@ export { getCollectionBySlug, getProjectBySlug, getArtifactByName };
 import * as utils from "./utils/common.js";
 export { utils };
 
-import { NpmDownloadsArgs, npmDownloads } from "./events/npm.js";
-export { NpmDownloadsArgs, npmDownloads };
+//import { NpmDownloadsArgs, npmDownloads } from "./events/npm.js";
+//export { NpmDownloadsArgs, npmDownloads };
