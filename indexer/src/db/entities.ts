@@ -43,6 +43,7 @@ async function ossUpsertCollection(ossCollection: Collection) {
     [
       {
         name: name,
+        slug: slug,
         projects: projects.map((p) => ({
           id: p.id,
         })),
@@ -140,8 +141,9 @@ async function ossCreateGitHubArtifacts(
   const slugs = filterFalsy(parsedRepos.map((p) => p?.slug));
 
   const newArtifacts = Artifact.create(data);
+  logger.debug("Upserting artifacts");
   // Create records
-  const result = await ArtifactRepository.insert(newArtifacts);
+  const result = await ArtifactRepository.upsertMany(newArtifacts);
   const createCount = result.identifiers.length;
 
   logger.debug(
@@ -180,7 +182,7 @@ async function ossCreateNpmArtifacts(urlObjects?: URL[]) {
   const slugs = filterFalsy(parsed.map((p) => p?.slug));
 
   // Create records
-  const result = await ArtifactRepository.createMany(data);
+  const result = await ArtifactRepository.upsertMany(data);
   const createCount = result.identifiers.length;
   logger.debug(
     `... inserted ${createCount}/${data.length} npm artifacts (skip duplicates)`,
@@ -233,7 +235,7 @@ async function ossCreateBlockchainArtifacts(addrObjects?: BlockchainAddress[]) {
   const addresses = data.map((d) => d.name);
 
   // Create records
-  const result = await ArtifactRepository.createMany(data);
+  const result = await ArtifactRepository.upsertMany(data);
   const createCount = result.identifiers.length;
   logger.debug(
     `... inserted ${createCount}/${data.length} blockchain artifacts (skip duplicates)`,

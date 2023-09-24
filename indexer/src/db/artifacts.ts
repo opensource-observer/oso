@@ -8,6 +8,10 @@ export const ArtifactRepository = AppDataSource.getRepository(Artifact).extend({
     const newArtifacts = Artifact.create(artifacts);
     return await this.insert(newArtifacts);
   },
+  async upsertMany(artifacts: DeepPartial<Artifact>[]) {
+    const newArtifacts = Artifact.create(artifacts);
+    return await this.upsert(newArtifacts, ["name", "namespace"]);
+  },
 });
 
 /*

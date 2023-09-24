@@ -10,6 +10,7 @@ import {
   ImportOssDirectoryArgs,
   importOssDirectory,
 } from "./actions/oss-directory.js";
+import { AppDataSource } from "./db/data-source.js";
 // import {
 //   importDailyContractUsage,
 // } from "./actions/dune/index.js";
@@ -40,6 +41,10 @@ export const FETCHER_REGISTRY = [
   //NpmDownloadsInterface,
 ];
 yargs(hideBin(process.argv))
+  .middleware(async () => {
+    // Initialize the database
+    await AppDataSource.initialize();
+  })
   .option("yes", {
     type: "boolean",
     describe: "Automatic yes to all prompts",
