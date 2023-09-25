@@ -28,7 +28,7 @@ Take a look at `./frontend/.env.local.example` for the complete list.
 - You can either set these yourself (e.g. in CI/CD)
 - or copy the file to `.env.local` and populate it.
 
-Then the do a turbo build of all apps, run the following:
+Then do a turbo build of all apps, run the following:
 
 ```bash
 yarn install
