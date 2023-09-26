@@ -9,6 +9,7 @@ import {
   ManyToMany,
   ManyToOne,
   OneToMany,
+  PrimaryColumn,
   PrimaryGeneratedColumn,
   CreateDateColumn,
   UpdateDateColumn,
@@ -18,63 +19,63 @@ import type { Brand } from "utility-types";
 import { normalizeToObject } from "../utils/common.js";
 
 export enum EventType {
-  FUNDING,
-  PULL_REQUEST_CREATED,
-  PULL_REQUEST_MERGED,
-  COMMIT_CODE,
-  ISSUE_FILED,
-  ISSUE_CLOSED,
-  DOWNSTREAM_DEPENDENCY_COUNT,
-  UPSTREAM_DEPENDENCY_COUNT,
-  DOWNLOADS,
-  CONTRACT_INVOKED,
-  USERS_INTERACTED,
-  CONTRACT_INVOKED_AGGREGATE_STATS,
-  PULL_REQUEST_CLOSED,
-  STAR_AGGREGATE_STATS,
-  PULL_REQUEST_REOPENED,
-  PULL_REQUEST_REMOVED_FROM_PROJECT,
-  PULL_REQUEST_APPROVED,
-  ISSUE_CREATED,
-  ISSUE_REOPENED,
-  ISSUE_REMOVED_FROM_PROJECT,
-  STARRED,
-  FORK_AGGREGATE_STATS,
-  FORKED,
-  WATCHER_AGGREGATE_STATS,
+  FUNDING = "funding",
+  PULL_REQUEST_CREATED = "pull_request_created",
+  PULL_REQUEST_MERGED = "pull_request_merged",
+  COMMIT_CODE = "commit_code",
+  ISSUE_FILED = "issue_filed",
+  ISSUE_CLOSED = "issue_closed",
+  DOWNSTREAM_DEPENDENCY_COUNT = "downstream_dependency_count",
+  UPSTREAM_DEPENDENCY_COUNT = "upstream_dependency_count",
+  DOWNLOADS = "downloads",
+  CONTRACT_INVOKED = "contract_invoked",
+  USERS_INTERACTED = "users_interacted",
+  CONTRACT_INVOKED_AGGREGATE_STATS = "contract_invoked_aggregate_stats",
+  PULL_REQUEST_CLOSED = "pull_request_closed",
+  STAR_AGGREGATE_STATS = "star_aggregate_stats",
+  PULL_REQUEST_REOPENED = "pull_request_reopened",
+  PULL_REQUEST_REMOVED_FROM_PROJECT = "pull_request_removed_from_project",
+  PULL_REQUEST_APPROVED = "pull_request_approved",
+  ISSUE_CREATED = "issue_created",
+  ISSUE_REOPENED = "issue_reopened",
+  ISSUE_REMOVED_FROM_PROJECT = "issue_removed_from_project",
+  STARRED = "starred",
+  FORK_AGGREGATE_STATS = "fork_aggregate_stats",
+  FORKED = "forked",
+  WATCHER_AGGREGATE_STATS = "watcher_aggregate_stats",
 }
 
 export enum ArtifactType {
-  EOA_ADDRESS,
-  SAFE_ADDRESS,
-  CONTRACT_ADDRESS,
-  GIT_REPOSITORY,
-  GIT_EMAIL,
-  GIT_NAME,
-  GITHUB_ORG,
-  GITHUB_USER,
-  NPM_PACKAGE,
-  FACTORY_ADDRESS,
+  EOA_ADDRESS = "eoa_address",
+  SAFE_ADDRESS = "safe_address",
+  CONTRACT_ADDRESS = "contract_address",
+  FACTORY_ADDRESS = "factory_address",
+  GIT_REPOSITORY = "git_repository",
+  GIT_EMAIL = "git_email",
+  GIT_NAME = "git_name",
+  GITHUB_ORG = "github_org",
+  GITHUB_USER = "github_user",
+  NPM_PACKAGE = "npm_package",
 }
 
 export enum ArtifactNamespace {
-  ETHEREUM,
-  OPTIMISM,
-  GOERLI,
-  GITHUB,
-  GITLAB,
-  NPM_REGISTRY,
+  ETHEREUM = "ethereum",
+  OPTIMISM = "optimism",
+  GOERLI = "goerli",
+  GITHUB = "github",
+  GITLAB = "gitlab",
+  NPM_REGISTRY = "NPM_REGISTRY",
 }
 
 export enum JobStatus {
-  PENDING,
-  COMPLETE,
+  PENDING = "pending",
+  COMPLETE = "complete",
 }
 
 export enum JobExecutionStatus {
-  ACTIVE,
-  COMPLETE,
-  FAILED,
+  ACTIVE = "active",
+  COMPLETE = "complete",
+  FAILED = "failed",
 }
 
 abstract class Base<IdTag> extends BaseEntity {
@@ -173,15 +174,19 @@ export class Artifact extends Base<"ArtifactId"> {
 
 @Entity()
 @Index(["time"])
-@Index(["sourceId", "type"], { unique: true })
-export class Event extends Base<"EventId"> {
+@Index(["id", "time"], { unique: true })
+@Index(["sourceId", "time"], { unique: true })
+export class Event {
+  @PrimaryColumn("integer", { generated: "increment" })
+  id: Brand<number, "EventId">;
+
   @Column("text")
   sourceId: string;
 
   @Column("enum", { enum: EventType })
   type: EventType;
 
-  @Column("timestamptz")
+  @PrimaryColumn("timestamptz")
   time: Date;
 
   @ManyToOne(() => Artifact, (artifact) => artifact.eventsAsTo)
@@ -195,8 +200,6 @@ export class Event extends Base<"EventId"> {
 
   @Column("float")
   amount: number;
-
-  //@@unique([id, time])
 }
 
 @Entity()
@@ -207,9 +210,6 @@ export class EventPointer extends Base<"EventPointerId"> {
 
   @Column("text")
   collector: string;
-
-  @Column("jsonb")
-  pointer: Record<string, any>;
 
   @Column("timestamptz")
   startDate: Date;

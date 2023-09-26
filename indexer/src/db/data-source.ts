@@ -1,5 +1,7 @@
 import "reflect-metadata";
+import path from "path";
 import { DataSource } from "typeorm";
+
 import {
   DB_DATABASE,
   DB_HOST,
@@ -27,7 +29,7 @@ export const AppDataSource = new DataSource({
   database: DB_DATABASE,
   synchronize: true,
   logging: false,
-  //entities: ["src/db/orm-entities.ts"],
+  //entities: [path.resolve("./src/db/orm-entities.ts")],
 
   // Unfortunately, jest seems to error when using this. We cannot use dynamic
   // imports. It's possible that this can be fixed in the future but for now
@@ -43,6 +45,6 @@ export const AppDataSource = new DataSource({
     JobExecution,
     Log,
   ],
-  migrations: ["src/db/migrations/**/*.ts"],
+  migrations: [path.resolve("./src/db/migration/**/*.ts")],
   subscribers: [],
 });
