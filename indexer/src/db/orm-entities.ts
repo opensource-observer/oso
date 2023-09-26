@@ -3,7 +3,9 @@ import {
   BeforeInsert,
   BeforeUpdate,
   Column,
+  ViewColumn,
   Entity,
+  ViewEntity,
   Index,
   JoinTable,
   ManyToMany,
@@ -141,6 +143,9 @@ export class Project extends Base<"ProjectId"> {
   @ManyToMany(() => Artifact, (artifact) => artifact.projects)
   @JoinTable()
   artifacts: Artifact[];
+
+  @OneToMany(() => EventsDailyByProject, (e) => e.project)
+  eventsDailyByProject: EventsDailyByProject[];
 }
 
 @Entity()
@@ -167,6 +172,8 @@ export class Artifact extends Base<"ArtifactId"> {
   eventsAsTo: Event[];
   @OneToMany(() => Event, (event) => event.from)
   eventsAsFrom: Event[];
+  @OneToMany(() => EventsDailyByArtifact, (e) => e.to)
+  eventsDailyByArtifact: EventsDailyByArtifact[];
 
   @OneToMany(() => EventPointer, (eventPointer) => eventPointer.artifact)
   eventPointers: EventPointer[];
@@ -261,4 +268,60 @@ export class Log extends Base<"LogId"> {
 
   @ManyToOne(() => JobExecution, (jobExecution) => jobExecution.log)
   execution: JobExecution;
+}
+
+@ViewEntity({
+  materialized: true,
+  expression: `
+    SELECT "toId",
+      "type",
+      time_bucket(INTERVAL '1 day', "time") AS "bucketDaily",
+      SUM(amount) as "amount"
+    FROM "event" 
+    GROUP BY "toId", "type", "bucketDaily"
+    WITH NO DATA;
+  `,
+})
+export class EventsDailyByArtifact {
+  @ManyToOne(() => Artifact, (artifact) => artifact.eventsDailyByArtifact)
+  @ViewColumn()
+  to: Artifact;
+
+  @ViewColumn()
+  type: EventType;
+
+  @ViewColumn()
+  bucketDaily: Date;
+
+  @ViewColumn()
+  amount: number;
+}
+
+@ViewEntity({
+  materialized: true,
+  expression: `
+    SELECT "projectId",
+      "type",
+      time_bucket(INTERVAL '1 day', "time") AS "bucketDaily",
+      SUM(amount) as "amount"
+    FROM "event"
+    INNER JOIN "project_artifacts_artifact"
+      on "project_artifacts_artifact"."artifactId" = "event"."toId"
+    GROUP BY "projectId", "type", "bucketDaily"
+    WITH NO DATA;
+  `,
+})
+export class EventsDailyByProject {
+  @ManyToOne(() => Project, (project) => project.eventsDailyByProject)
+  @ViewColumn()
+  project: Project;
+
+  @ViewColumn()
+  type: EventType;
+
+  @ViewColumn()
+  bucketDaily: Date;
+
+  @ViewColumn()
+  amount: number;
 }
