@@ -52,7 +52,7 @@ def update_yaml_data(yaml_data):
         dump(data, path)
 
 
-def assign_slugs_to_addresses(yaml_data, chain):
+def assign_slugs_to_addresses(yaml_data, chain, lowercase=True):
     addresses = {}
     for data in yaml_data:
         if not data:
@@ -66,6 +66,8 @@ def assign_slugs_to_addresses(yaml_data, chain):
                 continue
             address = entry.get('address', None)
             if address:
+                if lowercase:
+                    address = address.lower()
                 addresses[address] = slug
     return addresses
 
