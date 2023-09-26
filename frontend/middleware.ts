@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { NextRequest } from "next/server";
 import { supabaseQuery } from "./lib/supabase-client";
-import { catchallPathToString, pathToNamespaceEnum } from "./lib/paths";
+import { catchallPathToString } from "./lib/paths";
 
 /**
  * Rewrites for `/project/:slug`
@@ -84,7 +84,7 @@ export async function middleware(request: NextRequest) {
   if (pathParts.length > 1 && pathParts[0] === "project") {
     return projectMiddleware(request, catchallPathToString(pathParts.slice(1)));
   } else if (pathParts.length > 2 && pathParts[0] === "artifact") {
-    const namespaceEnum = pathToNamespaceEnum(pathParts[1]);
+    const namespaceEnum = pathParts[1];
     if (namespaceEnum) {
       return artifactMiddleware(
         request,

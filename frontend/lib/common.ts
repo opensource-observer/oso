@@ -13,6 +13,14 @@ export function safeCast<T>(x: T): T {
 }
 
 /**
+ * Marks that a cast should be checked at runtime.
+ * Usually this is at some system boundary, e.g. a message received over the network.
+ */
+export function uncheckedCast<T>(x: any): T {
+  return x;
+}
+
+/**
  * Asserts that a branch is never taken.
  * Useful for exhaustiveness checking.
  * @param _x

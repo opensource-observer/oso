@@ -7,27 +7,3 @@
 export const catchallPathToString = (parts: string[]) => {
   return parts.map((p) => decodeURIComponent(p)).join("/");
 };
-
-/**
- * Converts a path string to an  enum
- * @param namespacePath
- * @returns
- */
-export const pathToNamespaceEnum = (namespacePath: string) => {
-  switch (namespacePath) {
-    case "github":
-      return "GITHUB";
-    case "gitlab":
-      return "GITLAB";
-    case "npm":
-      return "NPM_REGISTRY";
-    case "ethereum":
-      return "ETHEREUM";
-    case "optimism":
-      return "OPTIMISM";
-    case "goerli":
-      return "GOERLI";
-    default:
-      return null;
-  }
-};
