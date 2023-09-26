@@ -25,7 +25,7 @@ pnpm install
 After running `git pull`, make sure to run any missing migrations to make sure your local database schema matches the codebase.
 
 ```bash
-pnpm db:migrate
+pnpm migration:run
 ```
 
 For more details on how to collaborate within a team with Prisma, see [here](https://www.prisma.io/docs/guides/migrate/developing-with-prisma-migrate/team-development)
@@ -41,6 +41,19 @@ pnpm start importOssDirectory
 This will populate the database with Projects, Collections, Artifacts, and start fetching event data associated with these artifacts
 
 TODO: fill out the rest
+
+### Updating the database schema
+
+All of our ORM entities are stored in `./src/db/orm-entities.ts`.
+After you've made your edits, run the following to automatically generate the migration.
+If you want to start with an empty migration file, use `pnpm migration:create`.
+
+```bash
+pnpm migration:generate src/db/migration/[NAME]
+# OR pnpm migration:create src/db/migration/[NAME]
+```
+
+To run the migration, use `pnpm migration:run`.
 
 ## Python
 

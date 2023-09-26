@@ -66,7 +66,7 @@ export enum ArtifactNamespace {
   GOERLI = "goerli",
   GITHUB = "github",
   GITLAB = "gitlab",
-  NPM_REGISTRY = "NPM_REGISTRY",
+  NPM_REGISTRY = "npm",
 }
 
 export enum JobStatus {

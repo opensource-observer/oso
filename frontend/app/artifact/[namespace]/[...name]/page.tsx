@@ -1,13 +1,12 @@
 import { notFound } from "next/navigation";
+import { ArtifactNamespace } from "@hypercerts-org/indexer";
 import { PlasmicComponent } from "@plasmicapp/loader-nextjs";
 import { PLASMIC } from "../../../../plasmic-init";
 import { PlasmicClientRootProvider } from "../../../../plasmic-init-client";
 import { cachedGetArtifactByName } from "../../../../lib/db";
 import { logger } from "../../../../lib/logger";
-import {
-  catchallPathToString,
-  pathToNamespaceEnum,
-} from "../../../../lib/paths";
+import { catchallPathToString } from "../../../../lib/paths";
+import { uncheckedCast } from "../../../../lib/common";
 
 // Using incremental static regeneration, will invalidate this page
 // after this (no deploy webhooks needed)
@@ -29,7 +28,7 @@ type ArtifactPageProps = {
 
 export default async function ArtifactPage(props: ArtifactPageProps) {
   const { params, searchParams } = props;
-  const namespace = pathToNamespaceEnum(params.namespace);
+  const namespace = uncheckedCast<ArtifactNamespace>(params.namespace);
   const name = catchallPathToString(params.name);
   if (
     !params.namespace ||
