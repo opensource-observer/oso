@@ -1,7 +1,11 @@
 # NOTE: This name appears in GitHub's Checks API and in workflow's status badge.
 name: deploy-indexer
 env:
-  DATABASE_URL: ${{ secrets.DATABASE_URL }}
+  DB_HOST: ${{ vars.DB_HOST }}
+  DB_PORT: ${{ vars.DB_PORT }}
+  DB_USER: ${{ vars.DB_USER }}
+  DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+  DB_DATABASE: ${{ vars.DB_DATABASE }}
 
 # Trigger the workflow when:
 on:

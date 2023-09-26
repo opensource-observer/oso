@@ -10,7 +10,6 @@ export const requireEnv = (identifier: string) => {
   return value;
 };
 
-export const DATABASE_URL = requireEnv("DATABASE_URL");
 export const DB_HOST = requireEnv("DB_HOST");
 export const DB_PORT = requireEnv("DB_PORT");
 export const DB_USER = requireEnv("DB_USER");
