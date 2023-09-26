@@ -52,6 +52,24 @@ def update_yaml_data(yaml_data):
         dump(data, path)
 
 
+def assign_slugs_to_addresses(yaml_data, chain):
+    addresses = {}
+    for data in yaml_data:
+        if not data:
+            continue
+        slug = data['slug']
+        blockchain_entries = data.get('blockchain', [])
+        if not blockchain_entries:
+            continue
+        for entry in blockchain_entries:
+            if chain not in entry.get('networks', []):
+                continue
+            address = entry.get('address', None)
+            if address:
+                addresses[address] = slug
+    return addresses
+
+
 def main():
     # test the script
     yaml_data = get_yaml_data_from_path()

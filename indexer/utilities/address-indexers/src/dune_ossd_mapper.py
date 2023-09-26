@@ -1,7 +1,7 @@
 import json
 from collections import defaultdict
 
-from ossd import get_yaml_data_from_path, update_yaml_data  
+from ossd import get_yaml_data_from_path, update_yaml_data, assign_slugs_to_addresses
 
 DUNE_ADDRESS_DATA_PATH = "data/dune_exports/addresses.json"
 MAPPING_FILE_PATH = "data/dune_exports/dune_ossd_mapping.json"
@@ -13,24 +13,6 @@ def load_dune_data():
 
 def load_yaml_data():
     return get_yaml_data_from_path()
-
-
-def assign_slugs_to_addresses(yaml_data, chain='optimism'):
-    addresses = {}
-    for data in yaml_data:
-        if not data:
-            continue
-        slug = data['slug']
-        blockchain_entries = data.get('blockchain', [])
-        if not blockchain_entries:
-            continue
-        for entry in blockchain_entries:
-            if chain not in entry.get('networks', []):
-                continue
-            address = entry.get('address', None)
-            if address:
-                addresses[address] = slug
-    return addresses
 
 
 def parse_dune_data(dune_data):
@@ -54,7 +36,7 @@ def map_dune_names_to_yaml_slugs():
     dune_data = load_dune_data()
     
     # Assign slugs to addresses
-    yaml_addresses = assign_slugs_to_addresses(yaml_data)
+    yaml_addresses = assign_slugs_to_addresses(yaml_data, chain='optimism')
     
     # Parse Dune data
     dune_addresses, dune_duplicates = parse_dune_data(dune_data)
