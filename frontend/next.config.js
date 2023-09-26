@@ -1,15 +1,18 @@
 // @ts-check
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const { PrismaPlugin } = require("@prisma/nextjs-monorepo-workaround-plugin");
+const path = require("path");
 
 /**
  * @type {import('next').NextConfig}
  **/
 const nextConfig = {
   //output: 'export',
+  experimental: {
+    serverComponentsExternalPackages: ["typeorm"],
+  },
   webpack: (config, { isServer }) => {
     if (isServer) {
-      config.plugins = [...config.plugins, new PrismaPlugin()];
+      config.plugins = [...config.plugins];
     }
 
     return config;
