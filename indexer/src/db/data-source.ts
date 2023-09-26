@@ -18,6 +18,8 @@ import {
   Job,
   JobExecution,
   Log,
+  EventsDailyByArtifact,
+  EventsDailyByProject,
 } from "./orm-entities.js";
 
 export const AppDataSource = new DataSource({
@@ -44,6 +46,8 @@ export const AppDataSource = new DataSource({
     Job,
     JobExecution,
     Log,
+    EventsDailyByArtifact,
+    EventsDailyByProject,
   ],
   migrations: [path.resolve("./src/db/migration/**/*.ts")],
   subscribers: [],
