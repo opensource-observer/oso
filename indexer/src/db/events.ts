@@ -27,6 +27,7 @@ export const EventPointerRepository = AppDataSource.getRepository(
     return normalizeToObject<PointerType>(record?.pointer);
   },
 });
+
 export const EventRepository = AppDataSource.getRepository(Event);
 
 /*

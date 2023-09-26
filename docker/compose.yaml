@@ -5,30 +5,32 @@ volumes:
   indexer_modules:
   indexer_dist:
   frontend_modules:
-  postgres_storage:
   pnpm_home:
+  pnpm_store:
 
 
 services:
   install:
-    image: node:18
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
     working_dir: /usr/src/app
     command: bash docker/install.sh
     volumes:
       - ../:/usr/src/app
+      - pnpm_store:/usr/src/app/.pnpm_store
+      - pnpm_store:/usr/src/app/.pnpm-store
       - node_modules:/usr/src/app/node_modules
       - indexer_modules:/usr/src/app/indexer/node_modules
       - indexer_dist:/usr/src/app/indexer/dist
       - frontend_modules:/usr/src/app/frontend/node_modules
+      - pnpm_home:/pnpm
     environment:
       - PNPM_HOME=/pnpm
-      - PATH="$PNPM_HOME:$PATH"
   postgres:
     image: timescale/timescaledb:latest-pg15
     restart: always
     user: postgres
-    volumes:
-      - postgres_storage:/home/postgres/pgdata/data
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
@@ -42,15 +44,31 @@ services:
   test:
     profiles:
       - testing
-    image: node:18
-    working_dir: /usr/src/app/indexer
-    command: pnpm test
+    privileged: true
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    working_dir: /usr/src/app
+    command: bash docker/test.sh
     depends_on:
       install:
         condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+    environment:
+      - PNPM_HOME=/pnpm
+      - DB_HOST=postgres
+      - DB_PASSWORD=password
+      - DB_DATABASE=postgres
+      - DB_PORT=5432
+      - DATABASE_URL=postgresql://postgres:password@postgres:5432/postgres
+      - TEST_ONLY_ALLOW_CLEAR_DB=true
     volumes:
       - ../:/usr/src/app
+      - pnpm_store:/usr/src/app/.pnpm_store
+      - pnpm_store:/usr/src/app/.pnpm-store
       - node_modules:/usr/src/app/node_modules
       - indexer_modules:/usr/src/app/indexer/node_modules
       - indexer_dist:/usr/src/app/indexer/dist
       - frontend_modules:/usr/src/app/frontend/node_modules
+      - pnpm_home:/pnpm
