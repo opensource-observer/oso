@@ -2,4 +2,5 @@ set -euxo pipefail
 
 npm install -g pnpm
 pnpm install
-pnpm build
+# For now let's just build the indexer
+pnpm build:indexer

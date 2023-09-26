@@ -1,6 +1,7 @@
 /** @type {import('ts-jest').JestConfigWithTsJest} */
 module.exports = {
   preset: "ts-jest/presets/js-with-ts-esm",
+  maxWorkers: 3,
   //testEnvironment: 'node',
   rootDir: ".",
   moduleDirectories: ["node_modules", "src"],

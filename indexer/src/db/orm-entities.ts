@@ -173,7 +173,7 @@ export class Artifact extends Base<"ArtifactId"> {
 
 @Entity()
 @Index(["time"])
-@Index(["sourceId"], { unique: true })
+@Index(["sourceId", "type"], { unique: true })
 export class Event extends Base<"EventId"> {
   @Column("text")
   sourceId: string;
