@@ -43,7 +43,7 @@ Without these constraints, it's possible for certain packages to become indirect
  
 ### Example
 
-> Note: this is made-up example. We'll add a real one based on a real depedency graph soon.
+> Note: this is made-up example. We'll add a real one based on a real dependency graph soon.
 
 Consider a collection of "Ethereum Developer Tools" with projects like `ethers` and `wagmi` and a collection called "Optimism Applications" that includes user-facing applications like `velodrome-finance` and `zora`. 
 
