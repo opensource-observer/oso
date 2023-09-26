@@ -19,14 +19,15 @@
   },
   "scripts": {
     "build": "tsc",
-    "db:deploy": "prisma migrate deploy",
-    "db:migrate": "prisma migrate dev",
-    "deploy": "pnpm db:deploy",
+    "deploy": "pnpm migration:run",
     "dev": "tsc-watch --onSuccess \"node dist/index.js\"",
     "json-yaml": "pnpm ts-node --esm utilities/json-yaml/index.ts",
     "lint": "tsc --noEmit && pnpm lint:eslint && pnpm lint:prettier",
     "lint:eslint": "eslint --ignore-path ../.gitignore --max-warnings 0 --cache .",
     "lint:prettier": "prettier --ignore-path ../.gitignore --log-level warn --check **/*.ts",
+    "migration:create": "typeorm-ts-node-esm migration:create",
+    "migration:generate": "typeorm-ts-node-esm migration:generate -d ./src/db/data-source.ts",
+    "migration:run": "typeorm-ts-node-esm migration:run -d ./src/db/data-source.ts",
     "start": "ts-node --esm src/cli.ts",
     "test": "NODE_OPTIONS=\"--no-warnings --experimental-vm-modules\" jest",
     "typeorm": "typeorm-ts-node-commonjs"
