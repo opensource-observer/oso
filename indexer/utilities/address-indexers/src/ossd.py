@@ -70,6 +70,33 @@ def assign_slugs_to_addresses(yaml_data, chain):
     return addresses
 
 
+def assign_slugs_to_repos(yaml_data):
+    repos = {}
+    for data in yaml_data:
+        if not data:
+            continue
+        slug = data['slug']
+        repo_entries = data.get('github', [])
+        if not repo_entries:
+            continue
+        for entry in repo_entries:
+            url = entry.get('url', None)
+            if url:
+                repos[url] = slug
+    return repos
+
+
+def map_slugs_to_names(yaml_data):
+    mapping = {}
+    for data in yaml_data:
+        if not data:
+            continue
+        slug = data['slug']
+        name = data['name']
+        mapping[slug] = name
+    return mapping
+
+
 def main():
     # test the script
     yaml_data = get_yaml_data_from_path()
