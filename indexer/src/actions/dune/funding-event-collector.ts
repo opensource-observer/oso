@@ -64,7 +64,6 @@ export class FundingEventsCollector implements ICollector {
     logger.debug("gathering artifacts");
     const projectAddresses =
       await this.projectRepository.allFundableProjectsWithAddresses();
-    console.log(projectAddresses.length);
     const artifacts: Array<Artifact> = projectAddresses.flatMap((p) => {
       return p.artifacts
         .filter((a) => a.name.length == 42)
@@ -234,9 +233,14 @@ export class FundingEventsCollector implements ICollector {
       },
     );
 
+    let i = 0;
     for await (const res of responses) {
       for (const row of res.raw) {
         const artifact = projectAddressesMap[row.to];
+        if (!artifact) {
+          logger.warn(`found an empty artifact for ${row.to}`);
+          continue;
+        }
         const contributor = fundingAddressMap[row.from];
         let amountAsFloat = 0.0;
         try {
@@ -266,9 +270,10 @@ export class FundingEventsCollector implements ICollector {
 
         this.recorder.record(event);
       }
+      i += 1;
     }
 
-    this.recorder.waitAll();
+    await this.recorder.waitAll();
 
     // Commit all of the artifacts
     await asyncBatch(group.artifacts, 1, async (a) => {

@@ -59,6 +59,9 @@ export class EventPointerManager {
         };
         return this.eventPointerRepository.find({
           // where (range.startDate <= startDate < range.endDate) || (range.startDate < endDate <= range.endDate)
+          relations: {
+            artifact: true,
+          },
           where: [
             _.merge(andPart, {
               startDate: And(

@@ -4,6 +4,7 @@ import {
   ArtifactType,
   Event,
   EventType,
+  eventTypeFromString,
 } from "../db/orm-entities.js";
 import {
   IEventRecorder,
@@ -15,9 +16,6 @@ import {
 import { In, Repository, And, MoreThanOrEqual, LessThanOrEqual } from "typeorm";
 import { InmemActorResolver } from "./actors.js";
 import { UniqueArray, asyncBatch } from "../utils/array.js";
-//import { streamFindAll as allEvents } from "../db/events.js";
-//import { streamFindAll as allContributors } from "../db/contributors.js";
-//import { streamFindAll as allArtifacts } from "../db/artifacts.js";
 import { logger } from "../utils/logger.js";
 import _ from "lodash";
 import { EntityLookup } from "../utils/lookup.js";
@@ -90,7 +88,7 @@ export class BatchEventRecorder implements IEventRecorder {
   // Records events into a queue and periodically flushes that queue as
   // transactions to the database.
   registerEventType(eventType: EventType, strategy: IEventTypeStrategy): void {
-    this.eventTypeStrategies[eventType] = strategy;
+    this.eventTypeStrategies[eventType.toString()] = strategy;
   }
 
   record(event: IncompleteEvent): void {
@@ -100,6 +98,7 @@ export class BatchEventRecorder implements IEventRecorder {
   }
 
   private getEventTypeStrategy(eventType: EventType): IEventTypeStrategy {
+    const typeString = eventType.toString();
     const strategy = this.eventTypeStrategies[eventType];
     if (!strategy) {
       return generateEventTypeStrategy(eventType);
@@ -108,12 +107,11 @@ export class BatchEventRecorder implements IEventRecorder {
   }
 
   async waitAll(): Promise<void[]> {
+    logger.debug("Waiting for all events to be recorded");
     // Wait for all queues to complete
     const results: void[] = [];
     for (const eventType in this.eventTypeQueues) {
-      results.push(
-        await this.wait(EventType[eventType as keyof typeof EventType]),
-      );
+      results.push(await this.wait(eventTypeFromString(eventType)));
     }
     return results;
   }
@@ -123,9 +121,11 @@ export class BatchEventRecorder implements IEventRecorder {
       await this.loadActors();
     }
 
+    logger.debug(`processing ${eventType}`);
     // Wait for a specific event type queue to complete
     const queue = this.getEventTypeQueue(eventType);
     if (queue.length === 0) {
+      logger.debug(`queue empty for ${eventType}`);
       return;
     }
     this.eventTypeQueues[eventType] = [];
@@ -239,10 +239,11 @@ export class BatchEventRecorder implements IEventRecorder {
   }
 
   protected getEventTypeQueue(eventType: EventType): IncompleteEvent[] {
-    let queue = this.eventTypeQueues[eventType];
+    const typeString = eventType.toString();
+    let queue = this.eventTypeQueues[typeString];
     if (!queue) {
-      this.eventTypeQueues[eventType] = [];
-      queue = this.eventTypeQueues[eventType];
+      this.eventTypeQueues[typeString] = [];
+      queue = this.eventTypeQueues[typeString];
     }
     return queue;
   }

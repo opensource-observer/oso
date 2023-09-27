@@ -5,20 +5,21 @@ export class Create1695752959358 implements MigrationInterface {
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
-      `CREATE TYPE "public"."artifact_type_enum" AS ENUM('eoa_address', 'safe_address', 'contract_address', 'factory_address', 'git_repository', 'git_email', 'git_name', 'github_org', 'github_user', 'npm_package')`,
+      `CREATE TYPE "public"."artifact_type_enum" AS ENUM('EOA_ADDRESS', 'SAFE_ADDRESS', 'CONTRACT_ADDRESS', 'FACTORY_ADDRESS', 'GIT_REPOSITORY', 'GIT_EMAIL', 'GIT_NAME', 'GITHUB_ORG', 'GITHUB_USER', 'NPM_PACKAGE')`,
     );
     await queryRunner.query(
-      `CREATE TYPE "public"."artifact_namespace_enum" AS ENUM('ethereum', 'optimism', 'goerli', 'github', 'gitlab', 'npm')`,
+      `CREATE TYPE "public"."artifact_namespace_enum" AS ENUM('ETHEREUM', 'OPTIMISM', 'GOERLI', 'GITHUB', 'GITLAB', 'NPM_REGISTRY')`,
     );
     await queryRunner.query(
-      `CREATE TYPE "public"."event_type_enum" AS ENUM('funding', 'pull_request_created', 'pull_request_merged', 'commit_code', 'issue_filed', 'issue_closed', 'downstream_dependency_count', 'upstream_dependency_count', 'downloads', 'contract_invoked', 'users_interacted', 'contract_invoked_aggregate_stats', 'pull_request_closed', 'star_aggregate_stats', 'pull_request_reopened', 'pull_request_removed_from_project', 'pull_request_approved', 'issue_created', 'issue_reopened', 'issue_removed_from_project', 'starred', 'fork_aggregate_stats', 'forked', 'watcher_aggregate_stats')`,
+      `CREATE TYPE "public"."event_type_enum" AS ENUM('FUNDING', 'PULL_REQUEST_CREATED', 'PULL_REQUEST_MERGED', 'COMMIT_CODE', 'ISSUE_FILED', 'ISSUE_CLOSED', 'DOWNSTREAM_DEPENDENCY_COUNT', 'UPSTREAM_DEPENDENCY_COUNT', 'DOWNLOADS', 'CONTRACT_INVOKED', 'USERS_INTERACTED', 'CONTRACT_INVOKED_AGGREGATE_STATS', 'PULL_REQUEST_CLOSED', 'STAR_AGGREGATE_STATS', 'PULL_REQUEST_REOPENED', 'PULL_REQUEST_REMOVED_FROM_PROJECT', 'PULL_REQUEST_APPROVED', 'ISSUE_CREATED', 'ISSUE_REOPENED', 'ISSUE_REMOVED_FROM_PROJECT', 'STARRED', 'FORK_AGGREGATE_STATS', 'FORKED', 'WATCHER_AGGREGATE_STATS')`,
     );
     await queryRunner.query(
-      `CREATE TYPE "public"."job_status_enum" AS ENUM('pending', 'complete')`,
+      `CREATE TYPE "public"."job_status_enum" AS ENUM('PENDING', 'COMPLETE')`,
     );
     await queryRunner.query(
-      `CREATE TYPE "public"."job_execution_status_enum" AS ENUM('active', 'complete', 'failed')`,
+      `CREATE TYPE "public"."job_execution_status_enum" AS ENUM('ACTIVE', 'COMPLETE', 'FAILED')`,
     );
+
     await queryRunner.query(
       `CREATE EXTENSION IF NOT EXISTS timescaledb CASCADE`,
     );
