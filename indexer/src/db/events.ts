@@ -23,8 +23,11 @@ export const EventPointerRepository = AppDataSource.getRepository(
         collector: collector,
       },
     });
+    if (!record) {
+      return null;
+    }
     // Safe because `Partial` means they're all optional props anyway
-    return normalizeToObject<PointerType>(record?.pointer);
+    return normalizeToObject<PointerType>(record);
   },
 });
 

@@ -5,6 +5,21 @@ export class Create1695752959358 implements MigrationInterface {
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
+      `CREATE TYPE "public"."artifact_type_enum" AS ENUM('eoa_address', 'safe_address', 'contract_address', 'factory_address', 'git_repository', 'git_email', 'git_name', 'github_org', 'github_user', 'npm_package')`,
+    );
+    await queryRunner.query(
+      `CREATE TYPE "public"."artifact_namespace_enum" AS ENUM('ethereum', 'optimism', 'goerli', 'github', 'gitlab', 'npm')`,
+    );
+    await queryRunner.query(
+      `CREATE TYPE "public"."event_type_enum" AS ENUM('funding', 'pull_request_created', 'pull_request_merged', 'commit_code', 'issue_filed', 'issue_closed', 'downstream_dependency_count', 'upstream_dependency_count', 'downloads', 'contract_invoked', 'users_interacted', 'contract_invoked_aggregate_stats', 'pull_request_closed', 'star_aggregate_stats', 'pull_request_reopened', 'pull_request_removed_from_project', 'pull_request_approved', 'issue_created', 'issue_reopened', 'issue_removed_from_project', 'starred', 'fork_aggregate_stats', 'forked', 'watcher_aggregate_stats')`,
+    );
+    await queryRunner.query(
+      `CREATE TYPE "public"."job_status_enum" AS ENUM('pending', 'complete')`,
+    );
+    await queryRunner.query(
+      `CREATE TYPE "public"."job_execution_status_enum" AS ENUM('active', 'complete', 'failed')`,
+    );
+    await queryRunner.query(
       `CREATE EXTENSION IF NOT EXISTS timescaledb CASCADE`,
     );
     await queryRunner.query(

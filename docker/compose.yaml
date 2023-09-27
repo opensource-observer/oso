@@ -5,6 +5,7 @@ volumes:
   indexer_modules:
   indexer_dist:
   frontend_modules:
+  frontend_next:
   pnpm_home:
   pnpm_store:
 
@@ -18,6 +19,7 @@ services:
     command: bash docker/install.sh
     volumes:
       - ../:/usr/src/app
+      - frontend_next:/usr/src/app/.next
       - pnpm_store:/usr/src/app/.pnpm_store
       - pnpm_store:/usr/src/app/.pnpm-store
       - node_modules:/usr/src/app/node_modules
@@ -27,6 +29,16 @@ services:
       - pnpm_home:/pnpm
     environment:
       - PNPM_HOME=/pnpm
+      - DB_HOST=postgres
+      - DB_USER=postgres
+      - DB_PASSWORD=password
+      - DB_DATABASE=postgres
+      - DB_PORT=5432
+      - DATABASE_URL=postgresql://postgres:password@postgres:5432/postgres
+      - TEST_ONLY_ALLOW_CLEAR_DB=true
+      - X_GITHUB_GRAPHQL_API=test
+      - X_GITHUB_TOKEN=test
+      - DUNE_API_KEY=test
   postgres:
     image: timescale/timescaledb:latest-pg15
     restart: always
@@ -58,13 +70,18 @@ services:
     environment:
       - PNPM_HOME=/pnpm
       - DB_HOST=postgres
+      - DB_USER=postgres
       - DB_PASSWORD=password
       - DB_DATABASE=postgres
       - DB_PORT=5432
       - DATABASE_URL=postgresql://postgres:password@postgres:5432/postgres
       - TEST_ONLY_ALLOW_CLEAR_DB=true
+      - X_GITHUB_GRAPHQL_API=test
+      - X_GITHUB_TOKEN=test
+      - DUNE_API_KEY=test
     volumes:
       - ../:/usr/src/app
+      - frontend_next:/usr/src/app/.next
       - pnpm_store:/usr/src/app/.pnpm_store
       - pnpm_store:/usr/src/app/.pnpm-store
       - node_modules:/usr/src/app/node_modules
