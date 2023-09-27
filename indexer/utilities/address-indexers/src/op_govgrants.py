@@ -101,7 +101,7 @@ def parse_grants_data():
                 update_yaml_data([data])
             continue
                 
-        print(f"Found no existing project for {name} at {address}.")
+        print(f"\nFound no existing project for {name} at {address}.")
         
         # case 2: grant address is not in YAML, but there appears to be an existing project already
         potential_names = find_closest_match(name, names)
@@ -130,8 +130,7 @@ def parse_grants_data():
         if status.lower() == 'q':
             return False
         elif status.lower() != 'y':
-            continue
-        data = template.copy()
+            continue        
         
         print("Enter a GitHub repo url for the project:")
         repo = input()
@@ -149,14 +148,13 @@ def parse_grants_data():
             continue
 
         if repo:
+            data = template.copy()
             data['github'] = [{"url": repo}]
-            data['blockchain'].append(
-                {
-                    "address": address,
-                    "networks": ["optimism"],
-                    "tags": project['Address Tags']
-                }
-            )
+            data['blockchain'] = [{
+                "address": address,
+                "networks": ["optimism"],
+                "tags": project['Address Tags']
+            }]
             slug = repo.split('/')[-1].lower()
             print(f"Would you like to use the slug {slug}? (y/n)")  
             status = input()
