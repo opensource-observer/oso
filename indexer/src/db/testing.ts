@@ -1,6 +1,7 @@
-import { TEST_ONLY_ALLOW_CLEAR_DB } from "../config.js";
+import { TEST_ONLY_ALLOW_CLEAR_DB, ENABLE_DB_TESTS } from "../config.js";
 import { logger } from "../utils/logger.js";
 import { AppDataSource } from "./data-source.js";
+import { it, describe } from "@jest/globals";
 
 // Testing utilities for the database
 export async function clearDb() {
@@ -17,6 +18,25 @@ export async function clearDb() {
     await repository.query(
       `TRUNCATE ${entity.tableName} RESTART IDENTITY CASCADE`,
     );
+  }
+}
+
+type IT_PARAMS = Parameters<typeof it>;
+type DESCRIBE_PARAMS = Parameters<typeof describe>;
+
+export function withDbDescribe(...args: DESCRIBE_PARAMS) {
+  if (ENABLE_DB_TESTS) {
+    return describe(...args);
+  } else {
+    return describe.skip(...args);
+  }
+}
+
+export function withDbIt(...args: IT_PARAMS) {
+  if (ENABLE_DB_TESTS) {
+    return it(...args);
+  } else {
+    return it.skip(...args);
   }
 }
 

@@ -22,3 +22,4 @@ export const TEST_ONLY_ALLOW_CLEAR_DB =
   process.env.TEST_ONLY_ALLOW_CLEAR_DB === "true" || false;
 export const NO_DYNAMIC_LOADS =
   process.env.NO_DYNAMIC_LOADS === "true" || false;
+export const ENABLE_DB_TESTS = process.env.ENABLE_DB_TESTS === "true" || false;
