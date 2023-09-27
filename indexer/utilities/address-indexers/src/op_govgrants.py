@@ -102,14 +102,14 @@ def parse_grants_data():
             continue
                 
         print(f"\nFound no existing project for {name} at {address}.")
+        print(f"Here is the proposal link, FYI: {project['Link']}")
         
         # case 2: grant address is not in YAML, but there appears to be an existing project already
         potential_names = find_closest_match(name, names)
         if potential_names:
             print(f"Here are some similar-named projects and their slugs: {potential_names}")            
         else:
-            print("There aren't any projects with similar names.")
-            print(f"Here is the proposal link, FYI: {project['Link']}")        
+            print("There aren't any projects with similar names.")                    
         print("Enter a slug for the project if there's a good match:")
         slug = input()
         data = mapping.get(slug, None)
@@ -185,4 +185,5 @@ def parse_grants_data():
                 continue
 
 
+tag_grant_addresses()
 parse_grants_data()        
