@@ -52,7 +52,14 @@ def update_yaml_data(yaml_data):
         dump(data, path)
 
 
-def assign_slugs_to_addresses(yaml_data, chain, lowercase=True):
+def map_addresses_to_slugs(yaml_data, chain, lowercase=True):
+    """
+    Returns a mapping of addresses to slugs.
+    Example:
+    {
+        "0x1234...": "project-slug"
+    }
+    """
     addresses = {}
     for data in yaml_data:
         if not data:
@@ -72,7 +79,14 @@ def assign_slugs_to_addresses(yaml_data, chain, lowercase=True):
     return addresses
 
 
-def assign_slugs_to_repos(yaml_data):
+def map_repos_to_slugs(yaml_data):
+    """
+    Returns a mapping of github repo urls to slugs.
+    Example:
+    {
+        "https://github.com/my-repo": "project-slug"
+    }
+    """
     repos = {}
     for data in yaml_data:
         if not data:
@@ -89,6 +103,13 @@ def assign_slugs_to_repos(yaml_data):
 
 
 def map_slugs_to_names(yaml_data):
+    """
+    Returns a mapping of slugs to names.
+    Example:
+    {
+        "project-slug": "My Project"
+    }
+    """
     mapping = {}
     for data in yaml_data:
         if not data:
@@ -99,10 +120,34 @@ def map_slugs_to_names(yaml_data):
     return mapping
 
 
-def main():
+def map_slugs_to_project_data(yaml_data):
+    """
+    Returns a mapping of slugs to project data.
+    Example:
+    {
+        "project-slug": {
+            "name": "My Project",
+            "github": "https://github.com/my-repo"
+        }
+    }
+    """
+    mapping = {}
+    for data in yaml_data:
+        if not data:
+            continue
+        slug = data['slug']
+        mapping[slug] = data
+    return mapping
+
+
+def test():
     # test the script
     yaml_data = get_yaml_data_from_path()
     update_yaml_data(yaml_data)
+    addresses = map_addresses_to_slugs(yaml_data, chain='optimism')
+    repos = map_repos_to_slugs(yaml_data)
+    names = map_slugs_to_names(yaml_data)
+    mapping = map_slugs_to_project_data(yaml_data)
 
 
-#main()
+test()
