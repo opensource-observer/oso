@@ -26,6 +26,7 @@
     "serve": "yarn serve build",
     "start:indexer": "turbo run start --filter=@hypercerts-org/indexer --",
     "test": "turbo run test --concurrency=1",
+    "test:integration": "(docker compose -f docker/compose.yaml down || true) && docker compose -f docker/compose.yaml run test",
     "prepare": "husky install"
   },
   "devDependencies": {

@@ -73,6 +73,10 @@ async function ossUpsertProject(ossProj: Project) {
     ...(await ossCreateBlockchainArtifacts(blockchain)),
   ];
 
+  if (artifacts.length > 0) {
+    console.log(artifacts);
+  }
+
   // Then upsert the project with the relations
   const project = await ProjectRepository.upsert(
     [

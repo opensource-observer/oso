@@ -30,7 +30,7 @@ withDbDescribe("BatchEventRecorder", () => {
     );
     recorder.setActorScope(
       [ArtifactNamespace.GITHUB],
-      [ArtifactNamespace.GITHUB],
+      [ArtifactType.GITHUB_USER, ArtifactType.GIT_REPOSITORY],
     );
     const testEvent = {
       amount: Math.random(),

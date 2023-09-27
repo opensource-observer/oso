@@ -3,6 +3,7 @@ import {
   EventType,
   Event,
   ArtifactNamespace,
+  ArtifactType,
 } from "../db/orm-entities.js";
 import { FindOptionsWhere } from "typeorm";
 import _ from "lodash";
@@ -28,10 +29,7 @@ export interface IEventRecorder {
   // Record a single event. These are batched
   record(event: IncompleteEvent): void;
 
-  setActorScope(
-    artifactNamespaces: ArtifactNamespace[],
-    contributorNamespaces: ArtifactNamespace[],
-  ): void;
+  setActorScope(namespaces: ArtifactNamespace[], types: ArtifactType[]): void;
 
   // Call this when you're done recording
   waitAll(): Promise<void[]>;

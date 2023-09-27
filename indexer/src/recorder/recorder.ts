@@ -1,6 +1,7 @@
 import {
   Artifact,
   ArtifactNamespace,
+  ArtifactType,
   Event,
   EventType,
 } from "../db/orm-entities.js";
@@ -36,8 +37,8 @@ export class BatchEventRecorder implements IEventRecorder {
   private actorDirectory: InmemActorResolver;
   private eventRepository: Repository<Event>;
   private artifactRepository: Repository<Artifact>;
-  private artifactNamespaces: ArtifactNamespace[];
-  private contributorNamespaces: ArtifactNamespace[];
+  private namespaces: ArtifactNamespace[];
+  private types: ArtifactType[];
   private actorsLoaded: boolean;
 
   constructor(
@@ -51,25 +52,18 @@ export class BatchEventRecorder implements IEventRecorder {
     this.eventTypeQueues = {};
     this.actorDirectory = new InmemActorResolver();
     this.options = _.merge(defaultBatchEventRecorderOptions, options);
-    this.artifactNamespaces = [];
-    this.contributorNamespaces = [];
+    this.namespaces = [];
+    this.types = [];
     this.actorsLoaded = false;
   }
 
-  setActorScope(
-    artifactNamespaces: ArtifactNamespace[],
-    contributorNamespaces: ArtifactNamespace[],
-  ) {
-    this.artifactNamespaces = artifactNamespaces;
-    this.contributorNamespaces = contributorNamespaces;
+  setActorScope(namespaces: ArtifactNamespace[], types: ArtifactType[]) {
+    this.namespaces = namespaces;
+    this.types = types;
   }
 
   private async loadActors(): Promise<void> {
-    if (this.artifactNamespaces.length === 0) {
-      throw new Error("scope of recording must be set");
-    }
-
-    if (this.contributorNamespaces.length === 0) {
+    if (this.namespaces.length === 0) {
       throw new Error("scope of recording must be set");
     }
 
@@ -78,7 +72,8 @@ export class BatchEventRecorder implements IEventRecorder {
     // Load all of the artifacts
     const artifacts = await this.artifactRepository.find({
       where: {
-        namespace: In(this.artifactNamespaces),
+        namespace: In(this.namespaces),
+        type: In(this.types),
       },
     });
 
