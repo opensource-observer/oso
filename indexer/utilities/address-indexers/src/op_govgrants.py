@@ -7,9 +7,10 @@ from ossd import (
     map_addresses_to_slugs, 
     map_repos_to_slugs, 
     map_slugs_to_names, 
-    map_slugs_to_project_data
+    map_slugs_to_project_data,
+    update_yaml_data,
+    make_template
 )
-
 
 
 GOVGRANTS_DATA_PATH = "data/govgrants/Optimism_GovFund_PublicTracker.json"
@@ -29,7 +30,9 @@ def tag_grant_addresses():
     
     grants = load_grants_data()
     for grant in grants:        
-        address = grant['Address'].lower()
+        if "Address Tags" in grant:
+            continue
+        address = grant['Address'].lower().strip()
         if address[:2] != "0x":
             continue
         if " " in address:
@@ -54,56 +57,134 @@ def tag_grant_addresses():
         json.dump(grants, f, indent=4)
 
 
-def load_yaml_data():
-    return get_yaml_data_from_path()
+def find_closest_match(project_name, names_dict, max_matches=10, fuzz_threshold=80):
 
-
-def find_closest_match(project_name, names_dict, num_matches=3):
-    
-    settings = dict(scorer=fuzz.token_set_ratio, limit=num_matches)
+    settings = dict(scorer=fuzz.token_set_ratio, limit=max_matches)
     names = list(names_dict.values())
     matches = process.extract(project_name, names, **settings)
-    return matches
-    
+    filtered_matches = [(name, score) for name, score in matches if score >= fuzz_threshold]
+    matches_dict = {name: [k for k, v in names_dict.items() if v == name] for name, _ in filtered_matches}    
+    return matches_dict
+
 
 def parse_grants_data():
 
     grants_data = load_grants_data()
-    yaml_data = load_yaml_data()
+    yaml_data = get_yaml_data_from_path()
+    template = make_template(yaml_data)
 
     addresses = map_addresses_to_slugs(yaml_data, chain='optimism')
     repos = map_repos_to_slugs(yaml_data)
     names = map_slugs_to_names(yaml_data)
     mapping = map_slugs_to_project_data(yaml_data)
 
-    found_count = 0
-    missing_addresses = []
-    new_projects = {}
     for project in grants_data:
         name = project['Project Name']
-        address = project['Address'].lower()
-        if address[:2] != "0x":
-            missing_addresses.append(name)
-            continue
-        if " " in address:
-            print(f"Splitting address for {name} to {address}") 
-            address = address.split(" ")[0]             
-        if address in addresses:
-            found_count += 1
-            continue
-        if address not in new_projects:
-            matches = find_closest_match(name, names)
-            print(f"Found no match for {name} at {address}. Closest matches: {matches}")
-            new_projects[address] = []
-        new_projects[address].append(name)
+        address = project['Address']
 
-    #print(new_projects)
-    print(f"Found {found_count} projects in OSSD.")
-    print("New projects:", len(new_projects))
-    
+        # case 1: grant address is already in YAML, confirm it has the right tags
+        slug = addresses.get(address, None)
+        if slug:
+            print(f"Found {name}'s address at {slug} in OSSD.")
+            update = False
+            data = mapping[slug]            
+            for addr in data['blockchain']:
+                if addr['address'] == address:
+                    if 'optimism' not in addr['networks']:
+                        addr['networks'].append('optimism')
+                        update = True
+                    if set(project['Address Tags']) != set(addr['tags']):
+                        addr['tags'] = list(set(addr['tags'] + project['Address Tags']))
+                        update = True
+                    break
+            if update:
+                update_yaml_data([data])
+            continue
+                
+        print(f"Found no existing project for {name} at {address}.")
+        
+        # case 2: grant address is not in YAML, but there appears to be an existing project already
+        potential_names = find_closest_match(name, names)
+        if potential_names:
+            print(f"Here are some similar-named projects and their slugs: {potential_names}")            
+        else:
+            print("There aren't any projects with similar names.")
+            print(f"Here is the proposal link, FYI: {project['Link']}")        
+        print("Enter a slug for the project if there's a good match:")
+        slug = input()
+        data = mapping.get(slug, None)
+        if data:
+            data['blockchain'].append(
+                {
+                    "address": address,
+                    "networks": ["optimism"],
+                    "tags": project['Address Tags']
+                }
+            )
+            update_yaml_data([data])
+            continue
+        
+        # case 3: grant address is not in YAML, check if a new project needs to be created
+        print("Do you want to create a new project? (y/n/q)")
+        status = input()
+        if status.lower() == 'q':
+            return False
+        elif status.lower() != 'y':
+            continue
+        data = template.copy()
+        
+        print("Enter a GitHub repo url for the project:")
+        repo = input()
+        if repos.get(repo, None):
+            print(f"Found {repo} in OSSD.")
+            data = mapping[repos[repo]]
+            data['blockchain'].append(
+                {
+                    "address": address,
+                    "networks": ["optimism"],
+                    "tags": project['Address Tags']
+                }
+            )
+            update_yaml_data([data])
+            continue
+
+        if repo:
+            data['github'] = [{"url": repo}]
+            data['blockchain'].append(
+                {
+                    "address": address,
+                    "networks": ["optimism"],
+                    "tags": project['Address Tags']
+                }
+            )
+            slug = repo.split('/')[-1].lower()
+            print(f"Would you like to use the slug {slug}? (y/n)")  
+            status = input()
+            if status.lower() == 'y':
+                data['slug'] = slug
+            else:
+                print("Enter a slug for the project:")
+                slug = input()
+                data['slug'] = slug
+            
+            print(f"Would you like to use the name {name}? (y/n)") 
+            status = input()
+            if status.lower() == 'y':
+                data['name'] = name
+            else:
+                print("Enter a name for the project:")
+                name = input()
+                data['name'] = name
+            
+            print(f"Would you like to export to a YAML file? (y/n/q)")
+            status = input()
+            if status.lower() == 'q':
+                return False
+            if status.lower() == 'y':
+                update_yaml_data([data])
+                continue
+            else:
+                continue
+
 
 parse_grants_data()        
-
-
-    
-

@@ -1,7 +1,7 @@
 import json
 import yaml
 
-from ossd import get_yaml_data_from_path, update_yaml_data
+from ossd import get_yaml_data_from_path, update_yaml_data, make_template
 
 
 def load_data(json_path):
@@ -114,13 +114,6 @@ def create_new_project(project, template):
     new_project['slug'] = project['github']['url'].split('/')[-1].lower()
     new_project['blockchain'] = addresses
     return new_project
-
-
-def make_template(yaml_data):
-    temp = yaml_data[0]
-    template = {k: None for k in temp.keys()}
-    template['version'] = temp.get('version', None)
-    return template
 
 
 def interactive_update(project_dict, template):

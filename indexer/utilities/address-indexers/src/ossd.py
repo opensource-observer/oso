@@ -140,14 +140,26 @@ def map_slugs_to_project_data(yaml_data):
     return mapping
 
 
+def make_template(yaml_data):
+    temp = yaml_data[0]
+    template = {
+        k: [] if isinstance(v, list) else None
+        for k,v in temp.items()
+    }
+    template['version'] = temp.get('version', None)
+    return template
+
+
 def test():
-    # test the script
     yaml_data = get_yaml_data_from_path()
-    update_yaml_data(yaml_data)
+    #update_yaml_data(yaml_data)
     addresses = map_addresses_to_slugs(yaml_data, chain='optimism')
     repos = map_repos_to_slugs(yaml_data)
     names = map_slugs_to_names(yaml_data)
     mapping = map_slugs_to_project_data(yaml_data)
+    template = make_template(yaml_data)
+    print("YAML template:")
+    print(template)
 
 
-test()
+#test()
