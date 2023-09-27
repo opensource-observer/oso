@@ -1,5 +1,11 @@
 import _ from "lodash";
-import { Artifact, ArtifactType, ArtifactNamespace } from "./orm-entities.js";
+import {
+  Artifact,
+  ArtifactType,
+  ArtifactNamespace,
+  Project as DBProject,
+  Collection as DBCollection,
+} from "./orm-entities.js";
 import { Project, Collection, URL, BlockchainAddress } from "oss-directory";
 import { logger } from "../utils/logger.js";
 import {
@@ -15,6 +21,7 @@ import { ProjectRepository } from "./project.js";
 import { CollectionRepository } from "./collection.js";
 import { In } from "typeorm";
 import { ArtifactRepository } from "./artifacts.js";
+import { AppDataSource } from "./data-source.js";
 
 /**
  * Upsert a Collection from oss-directory
@@ -39,19 +46,23 @@ async function ossUpsertCollection(ossCollection: Collection) {
   }
 
   // Upsert into the database
-  const collection = await CollectionRepository.upsert(
-    [
-      {
-        name: name,
-        slug: slug,
-        projects: projects.map((p) => ({
-          id: p.id,
-        })),
-      },
-    ],
-    ["slug"],
-  );
-  return collection;
+  return await AppDataSource.transaction(async (manager) => {
+    const collection = await manager
+      .withRepository(CollectionRepository)
+      .upsert(
+        {
+          name: name,
+          slug: slug,
+        },
+        ["slug"],
+      );
+    await manager
+      .createQueryBuilder()
+      .relation(DBCollection, "projects")
+      .of(collection.identifiers[0])
+      .add(projects.map((p) => p.id));
+    return collection;
+  });
 }
 
 /**
@@ -74,16 +85,26 @@ async function ossUpsertProject(ossProj: Project) {
   ];
 
   // Then upsert the project with the relations
-  const project = await ProjectRepository.upsert(
-    [
-      {
-        slug: slug,
-        name: name,
-        artifacts: artifacts.map((a) => ({ id: a.id })),
-      },
-    ],
-    ["slug"],
-  );
+  return await AppDataSource.transaction(async (manager) => {
+    const repo = manager.withRepository(ProjectRepository);
+    const project = await repo.upsert(
+      [
+        {
+          slug: slug,
+          name: name,
+        },
+      ],
+      ["slug"],
+    );
+    // Update all artifact relations
+    manager
+      .createQueryBuilder()
+      .relation(DBProject, "artifacts")
+      .of(project.identifiers[0])
+      .add(artifacts.map((a) => a.id));
+
+    return project;
+  });
 
   // FIXME this needs to be added back in.
   // Remove any artifact relations that are no longer valid
@@ -98,7 +119,7 @@ async function ossUpsertProject(ossProj: Project) {
   });
   */
 
-  return project;
+  //return project;
 }
 
 /**

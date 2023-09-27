@@ -3,6 +3,7 @@ import {
   EventType,
   Event,
   ArtifactNamespace,
+  ArtifactType,
 } from "../db/orm-entities.js";
 import { FindOptionsWhere } from "typeorm";
 import _ from "lodash";
@@ -28,10 +29,7 @@ export interface IEventRecorder {
   // Record a single event. These are batched
   record(event: IncompleteEvent): void;
 
-  setActorScope(
-    artifactNamespaces: ArtifactNamespace[],
-    contributorNamespaces: ArtifactNamespace[],
-  ): void;
+  setActorScope(namespaces: ArtifactNamespace[], types: ArtifactType[]): void;
 
   // Call this when you're done recording
   waitAll(): Promise<void[]>;
@@ -132,27 +130,10 @@ export function generateEventTypeStrategy(
       type: eventType,
     },
     async (directory, event) => {
-      const artifact = await directory.fromId(event.to.id);
-      const artifactStr = `${artifact.name}::${artifact.namespace}`;
-
-      let contributorStr = "";
-      if (event.from) {
-        const contributor = await directory.fromId(event.from.id);
-        contributorStr = `${contributor.name}::${contributor.namespace}`;
-      }
-      // by default the "unique id" will just be the time, event type, and artifact id concatenated
-      return `${event.time.toISOString()}::${
-        event.type
-      }::${artifactStr}::${contributorStr}`;
+      return event.sourceId;
     },
     async (_directory, event) => {
-      let contributorStr = "";
-      if (event.from) {
-        contributorStr = `${event.from.name}::${event.from.namespace}`;
-      }
-      return `${event.time.toUTC().toISO()}::${event.type}::${event.to.name}::${
-        event.to.namespace
-      }::${contributorStr}`;
+      return event.sourceId;
     },
   );
 }

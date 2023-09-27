@@ -1,6 +1,6 @@
 import "reflect-metadata";
 import path from "path";
-import { DataSource, DataSourceOptions } from "typeorm";
+import { DataSource, DataSourceOptions, LoggerOptions } from "typeorm";
 
 import {
   DB_DATABASE,
@@ -8,6 +8,7 @@ import {
   DB_PASSWORD,
   DB_PORT,
   DB_USER,
+  DEBUG_DB,
   NO_DYNAMIC_LOADS,
 } from "../config.js";
 import {
@@ -23,6 +24,8 @@ import {
   EventsDailyByProject,
 } from "./orm-entities.js";
 
+const loggingOption: LoggerOptions = DEBUG_DB ? ["query", "error"] : false;
+
 const dynamicallyLoadedDataSource: DataSourceOptions = {
   type: "postgres",
   host: DB_HOST,
@@ -31,7 +34,7 @@ const dynamicallyLoadedDataSource: DataSourceOptions = {
   password: DB_PASSWORD,
   database: DB_DATABASE,
   synchronize: true,
-  logging: false,
+  logging: loggingOption,
 
   entities: [path.resolve("./src/db/orm-entities.ts")],
   migrations: [path.resolve("./src/db/migration/**/*.ts")],
@@ -46,7 +49,7 @@ const staticLoadNoMigrations: DataSourceOptions = {
   password: DB_PASSWORD,
   database: DB_DATABASE,
   synchronize: true,
-  logging: false,
+  logging: loggingOption,
 
   entities: [
     Artifact,

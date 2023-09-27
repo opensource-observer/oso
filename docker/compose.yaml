@@ -76,6 +76,7 @@ services:
       - DB_PORT=5432
       - DATABASE_URL=postgresql://postgres:password@postgres:5432/postgres
       - TEST_ONLY_ALLOW_CLEAR_DB=true
+      - ENABLE_DB_TESTS=true
       - X_GITHUB_GRAPHQL_API=test
       - X_GITHUB_TOKEN=test
       - DUNE_API_KEY=test
