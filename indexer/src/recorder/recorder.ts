@@ -4,7 +4,6 @@ import {
   ArtifactType,
   Event,
   EventType,
-  eventTypeFromString,
 } from "../db/orm-entities.js";
 import {
   IEventRecorder,
@@ -99,7 +98,7 @@ export class BatchEventRecorder implements IEventRecorder {
 
   private getEventTypeStrategy(eventType: EventType): IEventTypeStrategy {
     const typeString = eventType.toString();
-    const strategy = this.eventTypeStrategies[eventType];
+    const strategy = this.eventTypeStrategies[typeString];
     if (!strategy) {
       return generateEventTypeStrategy(eventType);
     }

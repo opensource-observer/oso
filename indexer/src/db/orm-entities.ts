@@ -19,7 +19,7 @@ import {
 import { IsUrl, IsOptional, validateOrReject } from "class-validator";
 import type { Brand } from "utility-types";
 import { normalizeToObject } from "../utils/common.js";
-import _, { reverse } from "lodash";
+import _ from "lodash";
 
 export enum EventType {
   FUNDING = "FUNDING",
@@ -47,15 +47,6 @@ export enum EventType {
   FORKED = "FORKED",
   WATCHER_AGGREGATE_STATS = "WATCHER_AGGREGATE_STATS",
 }
-
-function reverseEnum<T>(e: Record<string, string>) {
-  const inverted = _.invert(e);
-  return (s: string): T => {
-    return e[inverted[s]] as T;
-  };
-}
-
-export const eventTypeFromString = reverseEnum<EventType>(EventType);
 
 export enum ArtifactType {
   EOA_ADDRESS = "EOA_ADDRESS",
