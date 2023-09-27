@@ -19,7 +19,6 @@ import {
 import { IsUrl, IsOptional, validateOrReject } from "class-validator";
 import type { Brand } from "utility-types";
 import { normalizeToObject } from "../utils/common.js";
-import _ from "lodash";
 
 export enum EventType {
   FUNDING = "FUNDING",
