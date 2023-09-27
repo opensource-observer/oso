@@ -1,9 +1,9 @@
-import { In, FindOptionsWhere } from "typeorm";
+import { In } from "typeorm";
 import { AppDataSource } from "./data-source.js";
 import { ArtifactType, Project } from "./orm-entities.js";
 
 export const ProjectRepository = AppDataSource.getRepository(Project).extend({
-  async allFundableProjectsWithAddresses(collectionId?: number) {
+  async allFundableProjectsWithAddresses() {
     return await this.find({
       relations: {
         artifacts: true,

@@ -9,7 +9,7 @@ import {
 } from "../db/orm-entities.js";
 import { clearDb } from "../db/testing.js";
 import { BatchEventRecorder } from "./recorder.js";
-import { BasicEventTypeStrategy, generateEventTypeStrategy } from "./types.js";
+import { generateEventTypeStrategy } from "./types.js";
 
 describe("BatchEventRecorder", () => {
   beforeEach(async () => {

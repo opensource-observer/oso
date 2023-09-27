@@ -11,14 +11,7 @@ import {
   generateEventTypeStrategy,
   IncompleteArtifact,
 } from "./types.js";
-import {
-  In,
-  Repository,
-  LessThan,
-  And,
-  MoreThanOrEqual,
-  LessThanOrEqual,
-} from "typeorm";
+import { In, Repository, And, MoreThanOrEqual, LessThanOrEqual } from "typeorm";
 import { InmemActorResolver } from "./actors.js";
 import { UniqueArray, asyncBatch } from "../utils/array.js";
 //import { streamFindAll as allEvents } from "../db/events.js";
@@ -143,9 +136,7 @@ export class BatchEventRecorder implements IEventRecorder {
     this.eventTypeQueues[eventType] = [];
 
     logger.info(
-      `emptying queue for ${EventType[eventType].toString()} with ${
-        queue.length
-      } items`,
+      `emptying queue for ${eventType.toString()} with ${queue.length} items`,
     );
 
     // Get the date range for the currently queued items
@@ -230,7 +221,8 @@ export class BatchEventRecorder implements IEventRecorder {
                 id: await this.actorDirectory.resolveArtifactId(e.from),
               };
             }
-            const input = Event.create({
+
+            const input = this.eventRepository.create({
               time: e.time.toJSDate(),
               to: {
                 id: artifactId,

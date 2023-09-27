@@ -20,3 +20,5 @@ export const GITHUB_TOKEN = requireEnv("X_GITHUB_TOKEN");
 export const DUNE_API_KEY = requireEnv("DUNE_API_KEY");
 export const TEST_ONLY_ALLOW_CLEAR_DB =
   process.env.TEST_ONLY_ALLOW_CLEAR_DB === "true" || false;
+export const NO_DYNAMIC_LOADS =
+  process.env.NO_DYNAMIC_LOADS === "true" || false;
