@@ -233,7 +233,6 @@ export class FundingEventsCollector implements ICollector {
       },
     );
 
-    let i = 0;
     for await (const res of responses) {
       for (const row of res.raw) {
         const artifact = projectAddressesMap[row.to];
@@ -270,7 +269,6 @@ export class FundingEventsCollector implements ICollector {
 
         this.recorder.record(event);
       }
-      i += 1;
     }
 
     await this.recorder.waitAll();

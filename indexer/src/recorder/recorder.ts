@@ -111,7 +111,9 @@ export class BatchEventRecorder implements IEventRecorder {
     // Wait for all queues to complete
     const results: void[] = [];
     for (const eventType in this.eventTypeQueues) {
-      results.push(await this.wait(eventTypeFromString(eventType)));
+      results.push(
+        await this.wait(EventType[eventType as keyof typeof EventType]),
+      );
     }
     return results;
   }
