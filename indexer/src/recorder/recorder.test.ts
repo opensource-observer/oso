@@ -7,7 +7,7 @@ import {
   ArtifactType,
   EventType,
 } from "../db/orm-entities.js";
-import { clearDb, withDbDescribe, withDbIt } from "../db/testing.js";
+import { clearDb, withDbDescribe } from "../db/testing.js";
 import { BatchEventRecorder } from "./recorder.js";
 import { generateEventTypeStrategy } from "./types.js";
 
