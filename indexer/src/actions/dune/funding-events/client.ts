@@ -57,7 +57,7 @@ export interface IFundingEventsClient {
     end: DateTime,
     fundingPoolAddresses: FundingPoolAddress[],
     projectAddresses: ProjectAddress[],
-  ): Promise<Cacheable<FundingEventRow[]>>;
+  ): Promise<Cacheable<FundingEventRow[], string>>;
 }
 
 export interface FundingEventsClientOptions {
@@ -94,7 +94,7 @@ export class FundingEventsClient implements IFundingEventsClient {
     end: DateTime,
     fundingPoolAddresses: FundingPoolAddress[],
     projectAddresses: ProjectAddress[],
-  ): Promise<Cacheable<FundingEventRow[]>> {
+  ): Promise<Cacheable<FundingEventRow[], string>> {
     logger.debug("Calling dune for funding events");
     const projectAddressesInput = projectAddresses.map((a) => {
       return `(${a.id}, ${a.projectId}, ${a.address})`;

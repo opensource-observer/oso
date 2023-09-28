@@ -1,4 +1,7 @@
 #!/bin/bash
 
 cd /usr/src/app/indexer
-pnpm test -- --verbose=true
+node --version
+sleep 3
+pnpm migration:run
+NO_DYNAMIC_LOADS=true pnpm test -- --verbose=true 

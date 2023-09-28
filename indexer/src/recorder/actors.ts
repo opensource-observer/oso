@@ -84,7 +84,7 @@ export class InmemActorResolver implements IActorDirectory {
     const resolved = this.artifactsLookup.byString(artifact);
     if (!resolved) {
       throw new UnknownActor(
-        `Artifact unknown name=${artifact.name} namespace=${artifact.namespace}`,
+        `Artifact unknown name=${artifact.name} namespace=${artifact.namespace} ${artifact.type}`,
       );
     }
     return resolved.id;

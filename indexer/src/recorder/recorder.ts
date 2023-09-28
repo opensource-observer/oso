@@ -1,6 +1,7 @@
 import {
   Artifact,
   ArtifactNamespace,
+  ArtifactType,
   Event,
   EventType,
 } from "../db/orm-entities.js";
@@ -11,19 +12,9 @@ import {
   generateEventTypeStrategy,
   IncompleteArtifact,
 } from "./types.js";
-import {
-  In,
-  Repository,
-  LessThan,
-  And,
-  MoreThanOrEqual,
-  LessThanOrEqual,
-} from "typeorm";
+import { In, Repository, And, MoreThanOrEqual, LessThanOrEqual } from "typeorm";
 import { InmemActorResolver } from "./actors.js";
 import { UniqueArray, asyncBatch } from "../utils/array.js";
-//import { streamFindAll as allEvents } from "../db/events.js";
-//import { streamFindAll as allContributors } from "../db/contributors.js";
-//import { streamFindAll as allArtifacts } from "../db/artifacts.js";
 import { logger } from "../utils/logger.js";
 import _ from "lodash";
 import { EntityLookup } from "../utils/lookup.js";
@@ -43,8 +34,8 @@ export class BatchEventRecorder implements IEventRecorder {
   private actorDirectory: InmemActorResolver;
   private eventRepository: Repository<Event>;
   private artifactRepository: Repository<Artifact>;
-  private artifactNamespaces: ArtifactNamespace[];
-  private contributorNamespaces: ArtifactNamespace[];
+  private namespaces: ArtifactNamespace[];
+  private types: ArtifactType[];
   private actorsLoaded: boolean;
 
   constructor(
@@ -58,25 +49,18 @@ export class BatchEventRecorder implements IEventRecorder {
     this.eventTypeQueues = {};
     this.actorDirectory = new InmemActorResolver();
     this.options = _.merge(defaultBatchEventRecorderOptions, options);
-    this.artifactNamespaces = [];
-    this.contributorNamespaces = [];
+    this.namespaces = [];
+    this.types = [];
     this.actorsLoaded = false;
   }
 
-  setActorScope(
-    artifactNamespaces: ArtifactNamespace[],
-    contributorNamespaces: ArtifactNamespace[],
-  ) {
-    this.artifactNamespaces = artifactNamespaces;
-    this.contributorNamespaces = contributorNamespaces;
+  setActorScope(namespaces: ArtifactNamespace[], types: ArtifactType[]) {
+    this.namespaces = namespaces;
+    this.types = types;
   }
 
   private async loadActors(): Promise<void> {
-    if (this.artifactNamespaces.length === 0) {
-      throw new Error("scope of recording must be set");
-    }
-
-    if (this.contributorNamespaces.length === 0) {
+    if (this.namespaces.length === 0) {
       throw new Error("scope of recording must be set");
     }
 
@@ -85,7 +69,8 @@ export class BatchEventRecorder implements IEventRecorder {
     // Load all of the artifacts
     const artifacts = await this.artifactRepository.find({
       where: {
-        namespace: In(this.artifactNamespaces),
+        namespace: In(this.namespaces),
+        type: In(this.types),
       },
     });
 
@@ -102,7 +87,7 @@ export class BatchEventRecorder implements IEventRecorder {
   // Records events into a queue and periodically flushes that queue as
   // transactions to the database.
   registerEventType(eventType: EventType, strategy: IEventTypeStrategy): void {
-    this.eventTypeStrategies[eventType] = strategy;
+    this.eventTypeStrategies[eventType.toString()] = strategy;
   }
 
   record(event: IncompleteEvent): void {
@@ -112,7 +97,8 @@ export class BatchEventRecorder implements IEventRecorder {
   }
 
   private getEventTypeStrategy(eventType: EventType): IEventTypeStrategy {
-    const strategy = this.eventTypeStrategies[eventType];
+    const typeString = eventType.toString();
+    const strategy = this.eventTypeStrategies[typeString];
     if (!strategy) {
       return generateEventTypeStrategy(eventType);
     }
@@ -120,6 +106,7 @@ export class BatchEventRecorder implements IEventRecorder {
   }
 
   async waitAll(): Promise<void[]> {
+    logger.debug("Waiting for all events to be recorded");
     // Wait for all queues to complete
     const results: void[] = [];
     for (const eventType in this.eventTypeQueues) {
@@ -135,17 +122,17 @@ export class BatchEventRecorder implements IEventRecorder {
       await this.loadActors();
     }
 
+    logger.debug(`processing ${eventType}`);
     // Wait for a specific event type queue to complete
     const queue = this.getEventTypeQueue(eventType);
     if (queue.length === 0) {
+      logger.debug(`queue empty for ${eventType}`);
       return;
     }
     this.eventTypeQueues[eventType] = [];
 
     logger.info(
-      `emptying queue for ${EventType[eventType].toString()} with ${
-        queue.length
-      } items`,
+      `emptying queue for ${eventType.toString()} with ${queue.length} items`,
     );
 
     // Get the date range for the currently queued items
@@ -207,6 +194,7 @@ export class BatchEventRecorder implements IEventRecorder {
     // Write all the new artifacts
     await asyncBatch(newArtifacts, this.options.maxBatchSize, async (batch) => {
       logger.debug("writing new artifacts");
+      console.log(batch);
       const artifacts = Artifact.create(batch);
       return this.artifactRepository.insert(artifacts);
     });
@@ -230,7 +218,8 @@ export class BatchEventRecorder implements IEventRecorder {
                 id: await this.actorDirectory.resolveArtifactId(e.from),
               };
             }
-            const input = Event.create({
+
+            const input = this.eventRepository.create({
               time: e.time.toJSDate(),
               to: {
                 id: artifactId,
@@ -252,10 +241,11 @@ export class BatchEventRecorder implements IEventRecorder {
   }
 
   protected getEventTypeQueue(eventType: EventType): IncompleteEvent[] {
-    let queue = this.eventTypeQueues[eventType];
+    const typeString = eventType.toString();
+    let queue = this.eventTypeQueues[typeString];
     if (!queue) {
-      this.eventTypeQueues[eventType] = [];
-      queue = this.eventTypeQueues[eventType];
+      this.eventTypeQueues[typeString] = [];
+      queue = this.eventTypeQueues[typeString];
     }
     return queue;
   }

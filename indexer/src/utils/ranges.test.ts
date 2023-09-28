@@ -6,6 +6,7 @@ import {
   doRangesIntersect,
   rangesEqual,
   rangeFromISO,
+  rangeUnion,
 } from "./ranges.js";
 
 describe("findMissingRanges", () => {
@@ -298,6 +299,22 @@ describe("rangesEqual", () => {
     );
 
     const equal = rangesEqual(range1, range2);
+
+    expect(equal).toBe(true);
+  });
+});
+
+describe("rangeUnion", () => {
+  it("should get the union of two ranges", () => {
+    const a = rangeFromISO("2023-01-01T00:00:00Z", "2023-01-31T00:00:00Z");
+    const b = rangeFromISO("2023-12-01T00:00:00Z", "2023-12-31T00:00:00Z");
+    const expected = rangeFromISO(
+      "2023-01-01T00:00:00Z",
+      "2023-12-31T00:00:00Z",
+    );
+    const unions = rangeUnion(a, b);
+
+    const equal = rangesEqual(unions, expected);
 
     expect(equal).toBe(true);
   });

@@ -1,155 +1,169 @@
-export {};
-// import { Artifact, PrismaClient, RangedEventPointer } from "@prisma/client";
-// import { Range } from "../utils/ranges.js";
-// import { asyncBatch } from "../utils/array.js";
-// import _ from "lodash";
+import { Artifact, EventPointer } from "../db/orm-entities.js";
+import { Range } from "../utils/ranges.js";
+import { asyncBatch } from "../utils/array.js";
+import _ from "lodash";
+import { EventPointerRepository } from "../db/events.js";
+import {
+  And,
+  DataSource,
+  FindOptionsWhere,
+  In,
+  LessThan,
+  LessThanOrEqual,
+  MoreThan,
+  MoreThanOrEqual,
+} from "typeorm";
 
-// export interface EventPointerManagerOptions {
-//   batchSize: number;
-// }
+type IEventPointerRepository = typeof EventPointerRepository;
 
-// export const DefaultEventPointerManagerOptions = {
-//   batchSize: 5000,
-// };
+export interface EventPointerManagerOptions {
+  batchSize: number;
+}
 
-// // Event pointer management
-// export class EventPointerManager {
-//   private prisma: PrismaClient;
-//   private options: EventPointerManagerOptions;
+export const DefaultEventPointerManagerOptions = {
+  batchSize: 5000,
+};
 
-//   constructor(prisma: PrismaClient, options?: EventPointerManagerOptions) {
-//     this.prisma = prisma;
-//     this.options = _.merge(DefaultEventPointerManagerOptions, options);
-//   }
+// Event pointer management
+export class EventPointerManager {
+  private eventPointerRepository: IEventPointerRepository;
+  private options: EventPointerManagerOptions;
+  private dataSource: DataSource;
 
-//   // Find all matching event pointers for the given artifacts and the collector
-//   // name
-//   async getAllEventPointersForRange(
-//     range: Range,
-//     artifacts: Artifact[],
-//     collector: string,
-//   ): Promise<RangedEventPointer[]> {
-//     const batches = await asyncBatch(
-//       artifacts,
-//       this.options.batchSize,
-//       async (batch) => {
-//         return this.prisma.rangedEventPointer.findMany({
-//           where: {
-//             collector: {
-//               equals: collector,
-//             },
-//             artifactId: {
-//               in: batch.map((a) => a.id),
-//             },
-//             OR: [
-//               {
-//                 startDate: {
-//                   gte: range.startDate.toJSDate(),
-//                   lt: range.endDate.toJSDate(),
-//                 },
-//               },
-//               {
-//                 endDate: {
-//                   gt: range.startDate.toJSDate(),
-//                   lte: range.endDate.toJSDate(),
-//                 },
-//               },
-//             ],
-//           },
-//         });
-//       },
-//     );
-//     return batches.flat(1);
-//   }
+  constructor(
+    dataSource: DataSource,
+    eventPointerRepository: IEventPointerRepository,
+    options?: EventPointerManagerOptions,
+  ) {
+    this.eventPointerRepository = eventPointerRepository;
+    this.dataSource = dataSource;
+    this.options = _.merge(DefaultEventPointerManagerOptions, options);
+  }
 
-//   async commitArtifactForRange(
-//     range: Range,
-//     artifact: Artifact,
-//     collector: string,
-//   ) {
-//     // Find any old event pointer that's connectable to this one if it exists. Update it.
-//     const intersectingPointers = await this.prisma.rangedEventPointer.findMany({
-//       where: {
-//         collector: {
-//           equals: collector,
-//         },
-//         artifactId: {
-//           equals: artifact.id,
-//         },
-//         OR: [
-//           // endDate >= range.startDate || startDate <= range.endDate
-//           {
-//             endDate: {
-//               gte: range.startDate.toJSDate(),
-//             },
-//           },
-//           {
-//             startDate: {
-//               lte: range.endDate.toJSDate(),
-//             },
-//           },
-//         ],
-//       },
-//     });
+  // Find all matching event pointers for the given artifacts and the collector
+  // name
+  async getAllEventPointersForRange(
+    range: Range,
+    artifacts: Artifact[],
+    collector: string,
+  ): Promise<EventPointer[]> {
+    const batches = await asyncBatch(
+      artifacts,
+      this.options.batchSize,
+      async (batch) => {
+        const andPart: FindOptionsWhere<EventPointer> = {
+          collector: collector,
+          artifact: {
+            id: In(batch.map((a) => a.id)),
+          },
+        };
+        return this.eventPointerRepository.find({
+          // where (range.startDate <= startDate < range.endDate) || (range.startDate < endDate <= range.endDate)
+          relations: {
+            artifact: true,
+          },
+          where: [
+            _.merge(andPart, {
+              startDate: And(
+                MoreThanOrEqual(range.startDate.toJSDate()),
+                LessThan(range.endDate.toJSDate()),
+              ),
+            }),
+            _.merge(andPart, {
+              endDate: And(
+                MoreThan(range.startDate.toJSDate()),
+                LessThanOrEqual(range.endDate.toJSDate()),
+              ),
+            }),
+          ],
+        });
+      },
+    );
+    return batches.flat(1);
+  }
 
-//     if (intersectingPointers.length === 0) {
-//       // Create a new pointer
-//       return this.prisma.rangedEventPointer.create({
-//         data: {
-//           startDate: range.startDate.toJSDate(),
-//           endDate: range.endDate.toJSDate(),
-//           collector: collector,
-//           artifactId: artifact.id,
-//           pointer: {},
-//           version: 0,
-//         },
-//       });
-//     } else {
-//       // Order all of the intersecting pointers by start date and also by end date
-//       // Start date ascending
-//       const byStartDate = _.clone(intersectingPointers).sort(
-//         (a, b) => a.startDate.getTime() - b.startDate.getTime(),
-//       );
+  async commitArtifactForRange(
+    range: Range,
+    artifact: Artifact,
+    collector: string,
+  ) {
+    const andPart: FindOptionsWhere<EventPointer> = {
+      collector: collector,
+      artifact: {
+        id: artifact.id,
+      },
+    };
+    // Find any old event pointer that's connectable to this one if it exists. Update it.
+    const intersectingPointers = await this.eventPointerRepository.find({
+      where: [
+        // endDate >= range.startDate || startDate <= range.endDate
+        _.merge(andPart, {
+          endDate: MoreThanOrEqual(range.startDate.toJSDate()),
+        }),
+        _.merge(andPart, {
+          startDate: LessThanOrEqual(range.endDate.toJSDate()),
+        }),
+      ],
+    });
 
-//       // End date descending
-//       const byEndDate = _.clone(intersectingPointers).sort(
-//         (a, b) => b.endDate.getTime() - a.endDate.getTime(),
-//       );
+    if (intersectingPointers.length === 0) {
+      // Create a new pointer
+      const pointer = this.eventPointerRepository.create({
+        startDate: range.startDate.toJSDate(),
+        endDate: range.endDate.toJSDate(),
+        collector: collector,
+        artifact: { id: artifact.id },
+        version: 0,
+      });
+      await this.eventPointerRepository.insert(pointer);
+      return;
+    } else {
+      // Order all of the intersecting pointers by start date and also by end date
+      // Start date ascending
+      const byStartDate = _.clone(intersectingPointers).sort(
+        (a, b) => a.startDate.getTime() - b.startDate.getTime(),
+      );
 
-//       const startDate =
-//         byStartDate[0].startDate.getTime() <
-//         range.startDate.toJSDate().getTime()
-//           ? byStartDate[0].startDate
-//           : range.startDate.toJSDate();
-//       const endDate =
-//         byEndDate[0].endDate.getTime() > range.endDate.toJSDate().getTime()
-//           ? byEndDate[0].endDate
-//           : range.endDate.toJSDate();
+      // End date descending
+      const byEndDate = _.clone(intersectingPointers).sort(
+        (a, b) => b.endDate.getTime() - a.endDate.getTime(),
+      );
 
-//       // Merge all of the pointers (arbitrarily choose the first and delete the others)
-//       const update = this.prisma.rangedEventPointer.update({
-//         where: {
-//           id: byStartDate[0].id,
-//           version: byStartDate[0].version,
-//         },
-//         data: {
-//           startDate: startDate,
-//           endDate: endDate,
-//           version: {
-//             increment: 1,
-//           },
-//         },
-//       });
-//       const deletions = byStartDate.slice(1).map((p) => {
-//         return this.prisma.rangedEventPointer.delete({
-//           where: {
-//             id: p.id,
-//             version: p.version,
-//           },
-//         });
-//       });
+      const startDate =
+        byStartDate[0].startDate.getTime() <
+        range.startDate.toJSDate().getTime()
+          ? byStartDate[0].startDate
+          : range.startDate.toJSDate();
+      const endDate =
+        byEndDate[0].endDate.getTime() > range.endDate.toJSDate().getTime()
+          ? byEndDate[0].endDate
+          : range.endDate.toJSDate();
 
-//       return await this.prisma.$transaction([update, ...deletions]);
-//     }
-//   }
-// }
+      // Merge all of the pointers (arbitrarily choose the first and delete the others)
+      return this.dataSource.transaction(async (manager) => {
+        const repository = manager.withRepository(this.eventPointerRepository);
+
+        await repository.update(
+          {
+            id: byStartDate[0].id,
+            version: byStartDate[0].version,
+          },
+          {
+            startDate: startDate,
+            endDate: endDate,
+            version: byStartDate[0].version + 1,
+          },
+        );
+
+        await Promise.all(
+          byStartDate.slice(1).map((p) => {
+            return repository.delete({
+              id: p.id,
+              version: p.version,
+            });
+          }),
+        );
+      });
+    }
+  }
+}

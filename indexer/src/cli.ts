@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 import yargs from "yargs";
+import { DateTime } from "luxon";
 import { hideBin } from "yargs/helpers";
 import { RunAutocrawlArgs, runAutocrawl } from "./actions/autocrawl.js";
 import { handleError } from "./utils/error.js";
-import { CommonArgs, EventSourceFunction } from "./utils/api.js";
+//import { EventSourceFunction } from "./utils/api.js";
 //import { NpmDownloadsArgs, NpmDownloadsInterface } from "./events/npm.js";
-import { DateTime } from "luxon";
 import {
   ImportOssDirectoryArgs,
   importOssDirectory,
@@ -23,16 +23,16 @@ import { AppDataSource } from "./db/data-source.js";
 //   LoadPullRequests,
 //   loadPullRequests,
 // } from "./actions/github/fetch/pull-requests.js";
-//import { SchedulerArgs, defaults } from "./scheduler/index.js";
+import { SchedulerArgs, configure } from "./scheduler/index.js";
 
-const callLibrary = async <Args>(
-  func: EventSourceFunction<Args>,
-  args: Args,
-): Promise<void> => {
-  // TODO: handle ApiReturnType properly and generically here
-  const result = await func(args);
-  console.log(result);
-};
+//const callLibrary = async <Args>(
+//  func: EventSourceFunction<Args>,
+//  args: Args,
+//): Promise<void> => {
+// TODO: handle ApiReturnType properly and generically here
+//  const result = await func(args);
+//  console.log(result);
+//};
 
 /**
  * When adding a new fetcher, please remember to add it to both this registry and yargs
@@ -130,30 +130,30 @@ yargs(hideBin(process.argv))
   //   },
   //   (argv) => handleError(callLibrary(NpmDownloadsInterface.func, argv)),
   // )
-  // .command<SchedulerArgs>(
-  //   "scheduler <collector>",
-  //   "Runs a manual execution",
-  //   (yags) => {
-  //     yags
-  //       .positional("collector", { describe: "the collector to execute" })
-  //       .option("start-date", { type: "string", default: "" })
-  //       .coerce("start-date", (arg) => {
-  //         if (arg === "") {
-  //           return DateTime.now().startOf("day").minus({ days: 9 });
-  //         }
-  //         return DateTime.fromISO(arg);
-  //       })
-  //       .option("end-date", { type: "string", default: "" })
-  //       .coerce("end-date", (arg) => {
-  //         if (arg === "") {
-  //           return DateTime.now().startOf("day").minus({ days: 2 });
-  //         }
-  //         return DateTime.fromISO(arg);
-  //       })
-  //       .option("batch-size", { type: "number", default: 5000 });
-  //   },
-  //   (argv) => handleError(defaults(argv)),
-  // )
+  .command<SchedulerArgs>(
+    "scheduler <collector>",
+    "Runs a manual execution",
+    (yags) => {
+      yags
+        .positional("collector", { describe: "the collector to execute" })
+        .option("start-date", { type: "string", default: "" })
+        .coerce("start-date", (arg) => {
+          if (arg === "") {
+            return DateTime.now().startOf("day").minus({ days: 9 });
+          }
+          return DateTime.fromISO(arg);
+        })
+        .option("end-date", { type: "string", default: "" })
+        .coerce("end-date", (arg) => {
+          if (arg === "") {
+            return DateTime.now().startOf("day").minus({ days: 2 });
+          }
+          return DateTime.fromISO(arg);
+        })
+        .option("batch-size", { type: "number", default: 5000 });
+    },
+    (argv) => handleError(configure(argv)),
+  )
   .demandCommand()
   .strict()
   .help("h")

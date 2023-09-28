@@ -7,11 +7,11 @@ import {
   ArtifactType,
   EventType,
 } from "../db/orm-entities.js";
-import { clearDb } from "../db/testing.js";
+import { clearDb, withDbDescribe } from "../db/testing.js";
 import { BatchEventRecorder } from "./recorder.js";
-import { BasicEventTypeStrategy, generateEventTypeStrategy } from "./types.js";
+import { generateEventTypeStrategy } from "./types.js";
 
-describe("BatchEventRecorder", () => {
+withDbDescribe("BatchEventRecorder", () => {
   beforeEach(async () => {
     await clearDb();
   });
@@ -30,7 +30,7 @@ describe("BatchEventRecorder", () => {
     );
     recorder.setActorScope(
       [ArtifactNamespace.GITHUB],
-      [ArtifactNamespace.GITHUB],
+      [ArtifactType.GITHUB_USER, ArtifactType.GIT_REPOSITORY],
     );
     const testEvent = {
       amount: Math.random(),

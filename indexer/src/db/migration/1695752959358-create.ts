@@ -5,6 +5,22 @@ export class Create1695752959358 implements MigrationInterface {
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
+      `CREATE TYPE "public"."artifact_type_enum" AS ENUM('EOA_ADDRESS', 'SAFE_ADDRESS', 'CONTRACT_ADDRESS', 'FACTORY_ADDRESS', 'GIT_REPOSITORY', 'GIT_EMAIL', 'GIT_NAME', 'GITHUB_ORG', 'GITHUB_USER', 'NPM_PACKAGE')`,
+    );
+    await queryRunner.query(
+      `CREATE TYPE "public"."artifact_namespace_enum" AS ENUM('ETHEREUM', 'OPTIMISM', 'GOERLI', 'GITHUB', 'GITLAB', 'NPM_REGISTRY')`,
+    );
+    await queryRunner.query(
+      `CREATE TYPE "public"."event_type_enum" AS ENUM('FUNDING', 'PULL_REQUEST_CREATED', 'PULL_REQUEST_MERGED', 'COMMIT_CODE', 'ISSUE_FILED', 'ISSUE_CLOSED', 'DOWNSTREAM_DEPENDENCY_COUNT', 'UPSTREAM_DEPENDENCY_COUNT', 'DOWNLOADS', 'CONTRACT_INVOKED', 'USERS_INTERACTED', 'CONTRACT_INVOKED_AGGREGATE_STATS', 'PULL_REQUEST_CLOSED', 'STAR_AGGREGATE_STATS', 'PULL_REQUEST_REOPENED', 'PULL_REQUEST_REMOVED_FROM_PROJECT', 'PULL_REQUEST_APPROVED', 'ISSUE_CREATED', 'ISSUE_REOPENED', 'ISSUE_REMOVED_FROM_PROJECT', 'STARRED', 'FORK_AGGREGATE_STATS', 'FORKED', 'WATCHER_AGGREGATE_STATS')`,
+    );
+    await queryRunner.query(
+      `CREATE TYPE "public"."job_status_enum" AS ENUM('PENDING', 'COMPLETE')`,
+    );
+    await queryRunner.query(
+      `CREATE TYPE "public"."job_execution_status_enum" AS ENUM('ACTIVE', 'COMPLETE', 'FAILED')`,
+    );
+
+    await queryRunner.query(
       `CREATE EXTENSION IF NOT EXISTS timescaledb CASCADE`,
     );
     await queryRunner.query(
