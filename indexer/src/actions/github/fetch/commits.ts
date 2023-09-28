@@ -93,6 +93,9 @@ export class GithubCommitCollector implements ICollector {
     commitArtifact: (artifact: Artifact) => Promise<void>,
   ) {
     const project = group.details as Project;
+    logger.debug(
+      `loading all commits for repos within the Project[${project.slug}]`,
+    );
 
     // Load commits for each artifact
     asyncBatch(group.artifacts, 1, async (batch) => {
@@ -111,9 +114,8 @@ export class GithubCommitCollector implements ICollector {
     });
   }
 
-  private splitGithubRepoName(artifact: Artifact) {
+  private splitGithubRepoIntoLocator(artifact: Artifact): GithubRepoLocator {
     const rawURL = artifact.url;
-    const repo = { owner: "", repo: "" };
     if (!rawURL) {
       throw new IncompleteRepoName(`no url for artifact[${artifact.id}]`);
     }
@@ -135,17 +137,17 @@ export class GithubCommitCollector implements ICollector {
     logger.debug(
       `Recording commits for ${repoArtifact.name} in ${rangeToString(range)}`,
     );
-    const repo = this.splitGithubRepoName(repoArtifact);
+    const locator = this.splitGithubRepoIntoLocator(repoArtifact);
     const responses = this.cache.loadCachedOrRetrieve<Commit[]>(
       TimeSeriesCacheLookup.new(
-        `${this.options.cacheOptions.bucket}/${repo.owner}/${repo.repo}`,
+        `${this.options.cacheOptions.bucket}/${locator.owner}/${locator.repo}`,
         [`${repoArtifact.namespace}:${repoArtifact.name}`],
         range,
       ),
       async (missing, lastPage) => {
         const currentPage = (lastPage?.cursor || 1) as number;
         const commits = await this.gh.rest.repos.listCommits({
-          ...repo,
+          ...locator,
           ...{
             since: range.startDate
               .toUTC()
@@ -179,10 +181,10 @@ export class GithubCommitCollector implements ICollector {
           commit.commit.committer?.date || commit.commit.author?.date;
         if (!rawCommitTime) {
           logger.warn(
-            `encountered a commit without a date. skipping for now. repo=${repo.owner}/${repo.repo}@${commit.sha}`,
+            `encountered a commit without a date. skipping for now. repo=${locator.owner}/${locator.repo}@${commit.sha}`,
             {
-              owner: repo.owner,
-              repo: repo.repo,
+              owner: locator.owner,
+              repo: locator.repo,
               sha: commit.sha,
             },
           );
@@ -200,10 +202,10 @@ export class GithubCommitCollector implements ICollector {
         const contributor = this.contributorFromCommit(commit);
         if (!contributor) {
           logger.warn(
-            `encountered a commit without a login, email, or a name. recording commit without a contributor. repo=${repo.owner}/${repo.repo}@${commit.sha}`,
+            `encountered a commit without a login, email, or a name. recording commit without a contributor. repo=${locator.owner}/${locator.repo}@${commit.sha}`,
             {
-              owner: repo.owner,
-              repo: repo.repo,
+              owner: locator.owner,
+              repo: locator.repo,
               sha: commit.sha,
             },
           );
