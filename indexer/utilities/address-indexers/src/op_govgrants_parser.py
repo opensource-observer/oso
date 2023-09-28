@@ -256,6 +256,7 @@ def generate_collection_files():
     for tag in collection_tags:
         make_collection_from_addresses(addresses, grants_data, tag)
 
+    all_projects = sorted(list(set(all_projects)))
     create_collection_yaml("OP GovGrants", all_projects)
 
 
