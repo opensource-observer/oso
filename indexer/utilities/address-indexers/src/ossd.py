@@ -1,4 +1,5 @@
 from dotenv import load_dotenv
+import json
 import os
 import yaml
 from yaml_formatter import dump
@@ -28,6 +29,14 @@ def get_yaml_data(yaml_files):
             except yaml.YAMLError as exc:
                 print(f"Error in {file}: {exc}")
     return yaml_data
+
+
+def serialize_yaml_data(outpath):
+    yaml_data = get_yaml_data_from_path()
+    data = map_slugs_to_project_data(yaml_data)
+    with open(outpath, 'w') as f:
+        json.dump(data, f, indent=4)
+    print("Dumped yaml data to", outpath)
 
 
 def get_yaml_data_from_path():
@@ -158,6 +167,7 @@ def test():
     names = map_slugs_to_names(yaml_data)
     mapping = map_slugs_to_project_data(yaml_data)
     template = make_template(yaml_data)
+    serialize_yaml_data('data/ossd.json')
     print("YAML template:")
     print(template)
 
