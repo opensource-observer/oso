@@ -1,5 +1,6 @@
 import json
 from fuzzywuzzy import fuzz, process
+import yaml
 
 from address_tagging import is_eoa, fetch_contract_name
 from ossd import (
@@ -11,6 +12,7 @@ from ossd import (
     update_yaml_data,
     make_template
 )
+from yaml_formatter import dump
 
 
 GOVGRANTS_DATA_PATH = "data/govgrants/Optimism_GovFund_PublicTracker.json"
@@ -197,4 +199,65 @@ def parse_grants_data(last_slug=None):
                 continue
 
 
+def create_collection_yaml(collection_name, list_of_projects):
+    
+    collection_slug = collection_name.lower().replace(" ", "-")
+    collection_data = {
+        "version": 3,
+        "slug": collection_slug,
+        "name": collection_name,        
+        "projects": list_of_projects
+    }
+
+    yaml_path = f"data/govgrants/{collection_slug}.yaml"
+    dump(collection_data, yaml_path)
+    print("Dumped collection to", yaml_path)
+
+
+def make_collection_from_addresses(address_mapping, grants_data, collection_name):
+    
+    collection = []
+    for project in grants_data:
+        name = project['Project Name']
+        address = project['Address'].lower()
+        tags = project['Tags']
+        if collection_name in tags:
+            slug = address_mapping.get(address, None)
+            if slug:
+                collection.append(slug)
+            else:
+                print(f"Could not find {name} at {address} in OSSD.")
+                
+    collection = sorted(list(set(collection)))    
+    collection_name = "OP GovGrants " + collection_name
+    create_collection_yaml(collection_name, collection)
+
+
+def generate_collection_files():
+
+    yaml_data = get_yaml_data_from_path()
+    grants_data = load_grants_data()
+    addresses = map_addresses_to_slugs(yaml_data, chain='optimism')
+    
+    collection_tags = []
+    all_projects = []
+    for project in grants_data:
+        name = project['Project Name']
+        address = project['Address'].lower()
+        slug = addresses.get(address, None) 
+        if slug:
+            all_projects.append(slug)
+        
+        tags = project['Tags']
+        if tags:
+            collection_tags.extend(tags)
+    
+    collection_tags = sorted(list(set(collection_tags)))    
+    for tag in collection_tags:
+        make_collection_from_addresses(addresses, grants_data, tag)
+
+    create_collection_yaml("OP GovGrants", all_projects)
+
+
 parse_grants_data()        
+generate_collection_files()
