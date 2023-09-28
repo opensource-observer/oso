@@ -31,9 +31,12 @@ today_tag=$(date '+%Y-%m-%d')
 month_tag=$(date '+%Y-%m')
 year_tag=$(date '+%Y')
 
+CACHE_DIR_NAME="$(basename ${CACHE_DIR})"
+
 # Create the cache using the caching dockerfile
 docker build -f "${REPO_DIR}/.github/cache.Dockerfile" \
     --build-arg "CREATION_DATE=${creation_date}" \
+    --build-arg "CACHE_DIR_NAME=${CACHE_DIR_NAME}" \
     -t ${DOCKER_REPO}:${latest_tag} \
     -t ${DOCKER_REPO}:${creation_tag} \
     -t ${DOCKER_REPO}:${today_tag} \
