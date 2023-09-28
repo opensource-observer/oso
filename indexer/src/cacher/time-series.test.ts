@@ -16,7 +16,7 @@ import {
   rangesEqual,
 } from "../utils/ranges.js";
 
-function randomCacheable(range: Range): Cacheable<{ x: number }> {
+function randomCacheable(range: Range): Cacheable<{ x: number }, string> {
   return {
     raw: { x: Math.round(Math.random() * 100000) },
     hasNextPage: false,
@@ -77,7 +77,8 @@ describe("TimeSeriesCaching", () => {
 
   describe("with cache initialized", () => {
     // Used to compare the randomly generated data
-    let cachedRangeToItems: Record<string, Cacheable<{ x: number }>[]> = {};
+    let cachedRangeToItems: Record<string, Cacheable<{ x: number }, string>[]> =
+      {};
 
     beforeEach(async () => {
       // Setup the cache with some initial data

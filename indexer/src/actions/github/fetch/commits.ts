@@ -16,75 +16,44 @@ import {
 import { logger } from "../../../utils/logger.js";
 import { Octokit } from "octokit";
 import { GetResponseDataTypeFromEndpointMethod } from "@octokit/types";
-import { In, Repository } from "typeorm";
-import { ArtifactGroup, ICollector } from "../../../scheduler/types.js";
+import { Repository } from "typeorm";
+import { ArtifactGroup } from "../../../scheduler/types.js";
 import {
   TimeSeriesCacheLookup,
   TimeSeriesCacheWrapper,
 } from "../../../cacher/time-series.js";
 import { asyncBatch } from "../../../utils/array.js";
 import { GenericError } from "../../../common/errors.js";
+import {
+  GithubBaseCollectorOptions,
+  GithubByProjectBaseCollector,
+} from "./common.js";
 
 type Commit = GetResponseDataTypeFromEndpointMethod<
   Octokit["rest"]["repos"]["getCommit"]
 >;
-type GithubRepoLocator = { owner: string; repo: string };
 
 class IncompleteRepoName extends GenericError {}
 
-export interface GithubCommitCollectorOptions {
+const DefaultGithubCommitCollectorOptions: GithubBaseCollectorOptions = {
   cacheOptions: {
-    bucket: string;
-  };
-}
+    bucket: "github-commits",
+  },
+};
 
-export const DefaultGithubCommitCollectorOptions: GithubCommitCollectorOptions =
-  {
-    cacheOptions: {
-      bucket: "github-commits",
-    },
-  };
-
-export class GithubCommitCollector implements ICollector {
-  private recorder: IEventRecorder;
+export class GithubCommitCollector extends GithubByProjectBaseCollector {
   private gh: Octokit;
-  private projectRepository: Repository<Project>;
-  private cache: TimeSeriesCacheWrapper;
-  private options: GithubCommitCollectorOptions;
 
   constructor(
     projectRepository: Repository<Project>,
     gh: Octokit,
     recorder: IEventRecorder,
     cache: TimeSeriesCacheWrapper,
-    options?: Partial<GithubCommitCollectorOptions>,
+    options?: Partial<GithubBaseCollectorOptions>,
   ) {
-    this.projectRepository = projectRepository;
-    this.recorder = recorder;
+    const opts = _.merge(DefaultGithubCommitCollectorOptions, options);
+    super(projectRepository, recorder, cache, opts);
     this.gh = gh;
-    this.cache = cache;
-    this.options = _.merge(DefaultGithubCommitCollectorOptions, options);
-  }
-
-  async *groupedArtifacts(): AsyncGenerator<ArtifactGroup> {
-    const projects = await this.projectRepository.find({
-      relations: {
-        artifacts: true,
-      },
-      where: {
-        artifacts: {
-          type: In([ArtifactType.GIT_REPOSITORY]),
-          namespace: ArtifactNamespace.GITHUB,
-        },
-      },
-    });
-    // Emit each project's artifacts as a group of artifacts to record
-    for (const project of projects) {
-      yield {
-        artifacts: project.artifacts,
-        details: project,
-      };
-    }
   }
 
   async collect(
@@ -114,31 +83,12 @@ export class GithubCommitCollector implements ICollector {
     });
   }
 
-  private splitGithubRepoIntoLocator(artifact: Artifact): GithubRepoLocator {
-    const rawURL = artifact.url;
-    if (!rawURL) {
-      throw new IncompleteRepoName(`no url for artifact[${artifact.id}]`);
-    }
-    const repoURL = new URL(rawURL);
-    if (repoURL.host !== "github.com") {
-      throw new IncompleteRepoName(`unexpected url ${rawURL}`);
-    }
-    const splitName = repoURL.pathname.slice(1).split("/");
-    if (splitName.length !== 2) {
-      throw new IncompleteRepoName(`unexpected url ${rawURL}`);
-    }
-    return {
-      owner: splitName[0],
-      repo: splitName[1],
-    };
-  }
-
   private async recordEventsForRepo(repoArtifact: Artifact, range: Range) {
     logger.debug(
       `Recording commits for ${repoArtifact.name} in ${rangeToString(range)}`,
     );
     const locator = this.splitGithubRepoIntoLocator(repoArtifact);
-    const responses = this.cache.loadCachedOrRetrieve<Commit[]>(
+    const responses = this.cache.loadCachedOrRetrieve<Commit[], number>(
       TimeSeriesCacheLookup.new(
         `${this.options.cacheOptions.bucket}/${locator.owner}/${locator.repo}`,
         [`${repoArtifact.namespace}:${repoArtifact.name}`],
@@ -158,7 +108,7 @@ export class GithubCommitCollector implements ICollector {
               .startOf("second")
               .toISO({ suppressMilliseconds: true })!,
             per_page: 500,
-            page: (lastPage?.cursor || 1) as number,
+            page: lastPage?.cursor || 1,
           },
         });
         let hasNextPage = false;

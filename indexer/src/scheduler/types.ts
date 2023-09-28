@@ -157,17 +157,22 @@ export class BaseScheduler implements IScheduler {
       }
 
       // Execute the collection for the missing items
-      await collector.collect(
-        { details: group.details, artifacts: missing },
-        range,
-        async (artifact) => {
-          await this.eventPointerManager.commitArtifactForRange(
-            range,
-            artifact,
-            collectorName,
-          );
-        },
-      );
+      try {
+        await collector.collect(
+          { details: group.details, artifacts: missing },
+          range,
+          async (artifact) => {
+            await this.eventPointerManager.commitArtifactForRange(
+              range,
+              artifact,
+              collectorName,
+            );
+          },
+        );
+      } catch (err) {
+        logger.error("Error encountered. Skipping group", err);
+        continue;
+      }
       // TODO: Ensure all artifacts are committed or error
     }
     await this.recorder.waitAll();
