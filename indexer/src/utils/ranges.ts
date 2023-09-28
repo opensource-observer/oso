@@ -41,18 +41,39 @@ export function rangesEqual(a: Range, b: Range): boolean {
   );
 }
 
+export function rangeUnion(a: Range, b: Range): Range {
+  const startDate =
+    a.startDate.toUnixInteger() < b.startDate.toUnixInteger()
+      ? a.startDate
+      : b.startDate;
+  const endDate =
+    a.endDate.toUnixInteger() > b.endDate.toUnixInteger()
+      ? a.endDate
+      : b.endDate;
+  return {
+    startDate: startDate,
+    endDate: endDate,
+  };
+}
+
 export function rangeToString(r: Range) {
   return `${r.startDate.setZone("utc").toISO()}-${r.endDate
     .setZone("utc")
     .toISO()}`;
 }
 
-export function doRangesIntersect(a: Range, b: Range): boolean {
-  if (a.endDate.toUnixInteger() == a.startDate.toUnixInteger()) {
-    throw new Error("a is not a valid range");
-  }
-  if (b.endDate.toUnixInteger() == b.startDate.toUnixInteger()) {
-    throw new Error("b is not a valid range");
+export function doRangesIntersect(
+  a: Range,
+  b: Range,
+  allowZeroRange: boolean = false,
+): boolean {
+  if (!allowZeroRange) {
+    if (a.endDate.toUnixInteger() == a.startDate.toUnixInteger()) {
+      throw new Error("a is not a valid range");
+    }
+    if (b.endDate.toUnixInteger() == b.startDate.toUnixInteger()) {
+      throw new Error("b is not a valid range");
+    }
   }
   return a.startDate < b.endDate && a.endDate > b.startDate;
 }

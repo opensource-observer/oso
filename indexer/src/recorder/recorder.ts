@@ -194,6 +194,7 @@ export class BatchEventRecorder implements IEventRecorder {
     // Write all the new artifacts
     await asyncBatch(newArtifacts, this.options.maxBatchSize, async (batch) => {
       logger.debug("writing new artifacts");
+      console.log(batch);
       const artifacts = Artifact.create(batch);
       return this.artifactRepository.insert(artifacts);
     });
