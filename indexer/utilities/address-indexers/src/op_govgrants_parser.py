@@ -20,18 +20,23 @@ def load_grants_data():
         grants_data = json.load(f)
     
     if not any("Address Tags" in grant for grant in grants_data):
-        tag_grant_addresses()
-        grants_data = load_grants_data()
+        tag_grant_addresses(grants_data)
 
     return grants_data
 
 
-def tag_grant_addresses():
+def tag_grant_addresses(grants):
     
-    grants = load_grants_data()
     for grant in grants:        
         if "Address Tags" in grant:
             continue
+        
+        # handle some special cases
+        if address[0] == "x":
+            address = "0" + address
+        elif address == "noahlitvin.eth":
+            address = "0x07Aeeb7E544A070a2553e142828fb30c214a1F86"
+        
         address = grant['Address'].lower().strip()
         if address[:2] != "0x":
             continue
@@ -67,7 +72,7 @@ def find_closest_match(project_name, names_dict, max_matches=10, fuzz_threshold=
     return matches_dict
 
 
-def parse_grants_data():
+def parse_grants_data(last_slug=None):
 
     grants_data = load_grants_data()
     yaml_data = get_yaml_data_from_path()
@@ -78,9 +83,16 @@ def parse_grants_data():
     names = map_slugs_to_names(yaml_data)
     mapping = map_slugs_to_project_data(yaml_data)
 
+    slug_found = (last_slug is None)
     for project in grants_data:
+        
         name = project['Project Name']
         address = project['Address']
+
+        if last_slug and addresses.get(address, None) == last_slug:
+            slug_found = True
+        elif not slug_found:
+            continue
 
         # case 1: grant address is already in YAML, confirm it has the right tags
         slug = addresses.get(address, None)
@@ -185,5 +197,4 @@ def parse_grants_data():
                 continue
 
 
-tag_grant_addresses()
 parse_grants_data()        
