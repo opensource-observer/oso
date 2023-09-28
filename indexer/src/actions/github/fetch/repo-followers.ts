@@ -31,7 +31,6 @@ import {
   Range,
   doRangesIntersect,
   rangeFromISO,
-  rangeUnion,
 } from "../../../utils/ranges.js";
 import { generateSourceIdFromArray } from "../../../utils/sourceIds.js";
 import { asyncBatch } from "../../../utils/array.js";
