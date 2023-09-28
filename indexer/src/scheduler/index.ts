@@ -19,6 +19,7 @@ import { ProjectRepository } from "../db/project.js";
 import { Octokit } from "octokit";
 import { throttling } from "@octokit/plugin-throttling";
 import { GithubCommitCollector } from "../actions/github/fetch/commits.js";
+import { GithubIssueCollector } from "../actions/github/fetch/pull-requests.js";
 
 export type SchedulerArgs = CommonArgs & {
   collector: string;
@@ -121,6 +122,28 @@ export async function configure(args: SchedulerArgs) {
     },
     name: "github-commits",
     description: "Collects github commits",
+    group: "github",
+    schedule: "daily",
+    artifactScope: [ArtifactNamespace.GITHUB],
+    artifactTypeScope: [
+      ArtifactType.GITHUB_USER,
+      ArtifactType.GIT_EMAIL,
+      ArtifactType.GIT_NAME,
+      ArtifactType.GIT_REPOSITORY,
+    ],
+  });
+
+  scheduler.registerCollector({
+    create: async (_config, recorder, cache) => {
+      const collector = new GithubIssueCollector(
+        ProjectRepository,
+        recorder,
+        cache,
+      );
+      return collector;
+    },
+    name: "github-issues",
+    description: "Collects github pull requests and issues",
     group: "github",
     schedule: "daily",
     artifactScope: [ArtifactNamespace.GITHUB],

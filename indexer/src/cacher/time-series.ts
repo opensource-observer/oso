@@ -23,12 +23,12 @@ const CACHE_DIRECTORY_PATTERN =
 const DATE_TO_NAME_FORMAT = "yyyy-LL-dd-HH";
 
 // Types for a generic caching mechanism
-export type Cacheable<T> = {
+export type Cacheable<T, C> = {
   raw: T;
 
   cacheRange: Range;
 
-  cursor?: any;
+  cursor?: C;
 
   hasNextPage: boolean;
 };
@@ -56,7 +56,7 @@ type RawCacheable = {
   hasNextPage: boolean;
 };
 
-async function cacheableFromFile<T>(path: string): Promise<Cacheable<T>> {
+async function cacheableFromFile<T, C>(path: string): Promise<Cacheable<T, C>> {
   const raw = JSON.parse(
     await fs.readFile(path, { encoding: "utf-8" }),
   ) as RawCacheable;
@@ -71,7 +71,7 @@ async function cacheableFromFile<T>(path: string): Promise<Cacheable<T>> {
 export interface ICacheGroup {
   range: Range;
 
-  load<T>(): AsyncGenerator<Cacheable<T>>;
+  load<T, C>(): AsyncGenerator<Cacheable<T, C>>;
 
   validForKey(key: string): Promise<boolean>;
 }
@@ -143,7 +143,7 @@ class CachePageDirectory implements ICacheGroup {
     return pageNumbers.map((n) => path.join(this.path, `${n}.json`));
   }
 
-  async *load<T>(): AsyncGenerator<Cacheable<T>> {
+  async *load<T, C>(): AsyncGenerator<Cacheable<T, C>> {
     // yield all of the cache directories' pages in order duplicates can occur
     // if the mechanism that has written into the directory structure allows
     // duplicates. We will assume that's fine.
@@ -233,19 +233,19 @@ export class TimeSeriesCacheLookup implements ITimeSeriesCacheLookup {
   }
 }
 
-export type PageRetreiver<T> = (
+export type PageRetreiver<T, C> = (
   lookup: ITimeSeriesCacheLookup,
-  lastPage?: Cacheable<T>,
-) => Promise<Cacheable<T>>;
+  lastPage?: Cacheable<T, C>,
+) => Promise<Cacheable<T, C>>;
 
 export interface ITimeSeriesCacheManager {
   load(
     lookup: ITimeSeriesCacheLookup,
     page?: number,
   ): Promise<TimeSeriesCacheCollection>;
-  write<T>(
+  write<T, C>(
     lookup: ITimeSeriesCacheLookup,
-    item: Cacheable<T>,
+    item: Cacheable<T, C>,
     page?: number,
   ): Promise<void>;
 }
@@ -320,9 +320,9 @@ export class TimeSeriesCacheManager implements ITimeSeriesCacheManager {
     return hash.digest("hex");
   }
 
-  async write<T>(
+  async write<T, C>(
     lookup: ITimeSeriesCacheLookup,
-    item: Cacheable<T>,
+    item: Cacheable<T, C>,
     page?: number,
   ): Promise<void> {
     const startDateWrite = lookup.range.startDate.startOf(
@@ -545,23 +545,23 @@ export class TimeSeriesCacheWrapper {
    * @param lookup Lookup parameters for the time series cache
    * @param retriever callback to use to load any additional things and automatically cache
    */
-  async *loadCachedOrRetrieve<T>(
+  async *loadCachedOrRetrieve<T, C>(
     lookup: ITimeSeriesCacheLookup,
-    retriever: PageRetreiver<T>,
-  ): AsyncGenerator<Cacheable<T>> {
+    retriever: PageRetreiver<T, C>,
+  ): AsyncGenerator<Cacheable<T, C>> {
     // Determine if the lookup matches anything in the cache. If not then call the retreiver
     const currentPage = 0;
 
     const missingQueue: Array<
-      [ITimeSeriesCacheLookup, Cacheable<T> | undefined]
+      [ITimeSeriesCacheLookup, Cacheable<T, C> | undefined]
     > = [];
     const response = await this.attemptCacheLoad(lookup, currentPage);
     if (response) {
       // Load everything from cache that we can and then queue the missing pages as needed
       for await (const dir of response.groups()) {
-        let lastPage: Cacheable<T> | undefined = undefined;
+        let lastPage: Cacheable<T, C> | undefined = undefined;
 
-        for await (const page of dir.load<T>()) {
+        for await (const page of dir.load<T, C>()) {
           yield page;
           lastPage = page;
         }
