@@ -11,7 +11,6 @@ import { Range } from "../../../utils/ranges.js";
 import { GenericError } from "../../../common/errors.js";
 import { IEventRecorder } from "../../../recorder/types.js";
 import { TimeSeriesCacheWrapper } from "../../../cacher/time-series.js";
-import _ from "lodash";
 import { RequestDocument, Variables } from "graphql-request";
 import { graphQLClient } from "../../../events/github/graphQLClient.js";
 import { DateTime } from "luxon";

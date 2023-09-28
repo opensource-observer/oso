@@ -30,10 +30,7 @@ import {
 } from "../../../cacher/time-series.js";
 import { ArtifactGroup } from "../../../scheduler/types.js";
 import { Range } from "../../../utils/ranges.js";
-import { graphQLClient } from "../../../events/github/graphQLClient.js";
 import { asyncBatch } from "../../../utils/array.js";
-
-type GithubRepoLocator = { owner: string; repo: string };
 
 const GET_ISSUE_TIMELINE = gql`
   query GetIssueTimeline($id: ID!, $cursor: String) {

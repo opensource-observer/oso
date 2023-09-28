@@ -16,7 +16,7 @@ import {
 import { logger } from "../../../utils/logger.js";
 import { Octokit } from "octokit";
 import { GetResponseDataTypeFromEndpointMethod } from "@octokit/types";
-import { In, Repository } from "typeorm";
+import { Repository } from "typeorm";
 import { ArtifactGroup } from "../../../scheduler/types.js";
 import {
   TimeSeriesCacheLookup,

@@ -23,7 +23,7 @@ const CACHE_DIRECTORY_PATTERN =
 const DATE_TO_NAME_FORMAT = "yyyy-LL-dd-HH";
 
 // Types for a generic caching mechanism
-export type Cacheable<T, C> = {
+export type Cacheable<T, C = string> = {
   raw: T;
 
   cacheRange: Range;
@@ -56,7 +56,9 @@ type RawCacheable = {
   hasNextPage: boolean;
 };
 
-async function cacheableFromFile<T, C>(path: string): Promise<Cacheable<T, C>> {
+async function cacheableFromFile<T, C = string>(
+  path: string,
+): Promise<Cacheable<T, C>> {
   const raw = JSON.parse(
     await fs.readFile(path, { encoding: "utf-8" }),
   ) as RawCacheable;
@@ -320,7 +322,7 @@ export class TimeSeriesCacheManager implements ITimeSeriesCacheManager {
     return hash.digest("hex");
   }
 
-  async write<T, C>(
+  async write<T, C = string>(
     lookup: ITimeSeriesCacheLookup,
     item: Cacheable<T, C>,
     page?: number,
@@ -545,7 +547,7 @@ export class TimeSeriesCacheWrapper {
    * @param lookup Lookup parameters for the time series cache
    * @param retriever callback to use to load any additional things and automatically cache
    */
-  async *loadCachedOrRetrieve<T, C>(
+  async *loadCachedOrRetrieve<T, C = string>(
     lookup: ITimeSeriesCacheLookup,
     retriever: PageRetreiver<T, C>,
   ): AsyncGenerator<Cacheable<T, C>> {
