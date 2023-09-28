@@ -23,7 +23,7 @@ import { AppDataSource } from "./db/data-source.js";
 //   LoadPullRequests,
 //   loadPullRequests,
 // } from "./actions/github/fetch/pull-requests.js";
-import { SchedulerArgs, defaults } from "./scheduler/index.js";
+import { SchedulerArgs, configure } from "./scheduler/index.js";
 
 //const callLibrary = async <Args>(
 //  func: EventSourceFunction<Args>,
@@ -152,7 +152,7 @@ yargs(hideBin(process.argv))
         })
         .option("batch-size", { type: "number", default: 5000 });
     },
-    (argv) => handleError(defaults(argv)),
+    (argv) => handleError(configure(argv)),
   )
   .demandCommand()
   .strict()

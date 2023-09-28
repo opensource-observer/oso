@@ -10,12 +10,15 @@ import { EventPointerManager } from "./pointers.js";
 import { FundingEventsCollector } from "../actions/dune/funding-event-collector.js";
 import { FundingEventsClient } from "../actions/dune/funding-events/client.js";
 import { DuneClient } from "@cowprotocol/ts-dune-client";
-import { DUNE_API_KEY } from "../config.js";
+import { DUNE_API_KEY, GITHUB_TOKEN } from "../config.js";
 import { ArtifactNamespace, ArtifactType } from "../db/orm-entities.js";
 import { EventPointerRepository, EventRepository } from "../db/events.js";
 import { ArtifactRepository } from "../db/artifacts.js";
 import { AppDataSource } from "../db/data-source.js";
 import { ProjectRepository } from "../db/project.js";
+import { Octokit } from "octokit";
+import { throttling } from "@octokit/plugin-throttling";
+import { GithubCommitCollector } from "../actions/github/fetch/commits.js";
 
 export type SchedulerArgs = CommonArgs & {
   collector: string;
@@ -26,7 +29,7 @@ export type SchedulerArgs = CommonArgs & {
 };
 
 // Entrypoint for the scheduler. Currently not where it should be but this is quick.
-export async function defaults(args: SchedulerArgs) {
+export async function configure(args: SchedulerArgs) {
   const recorder = new BatchEventRecorder(EventRepository, ArtifactRepository);
   const cacheManager = new TimeSeriesCacheManager(args.cacheDir);
   const cache = new TimeSeriesCacheWrapper(cacheManager);
@@ -44,6 +47,42 @@ export async function defaults(args: SchedulerArgs) {
     eventPointerManager,
     cache,
   );
+
+  const AppOctoKit = Octokit.plugin(throttling);
+  const gh = new AppOctoKit({
+    auth: GITHUB_TOKEN,
+    throttle: {
+      onRateLimit: (retryAfter, options, octokit, retryCount) => {
+        const opts = options as {
+          method: string;
+          url: string;
+        };
+        octokit.log.warn(
+          `Request quota exhausted for request ${opts.method} ${opts.url}`,
+        );
+        // Retry up to 50 times (that should hopefully be more than enough)
+        if (retryCount < 50) {
+          octokit.log.info(`Retrying after ${retryAfter} seconds!`);
+          return true;
+        }
+      },
+      onSecondaryRateLimit: (retryAfter, options, octokit, retryCount) => {
+        const opts = options as {
+          method: string;
+          url: string;
+        };
+        octokit.log.warn(
+          `Secondary rate limit detected for ${opts.method} ${opts.url}`,
+        );
+        if (retryCount < 3) {
+          octokit.log.info(`Retrying after ${retryAfter} seconds!`);
+          return true;
+        } else {
+          octokit.log.info(`Failing now`);
+        }
+      },
+    },
+  });
 
   scheduler.registerCollector({
     create: async (_config, recorder, cache) => {
@@ -67,6 +106,29 @@ export async function defaults(args: SchedulerArgs) {
       ArtifactType.EOA_ADDRESS,
       ArtifactType.SAFE_ADDRESS,
       ArtifactType.CONTRACT_ADDRESS,
+    ],
+  });
+
+  scheduler.registerCollector({
+    create: async (_config, recorder, cache) => {
+      const collector = new GithubCommitCollector(
+        ProjectRepository,
+        gh,
+        recorder,
+        cache,
+      );
+      return collector;
+    },
+    name: "github-commits",
+    description: "Collects github commits",
+    group: "github",
+    schedule: "daily",
+    artifactScope: [ArtifactNamespace.GITHUB],
+    artifactTypeScope: [
+      ArtifactType.GITHUB_USER,
+      ArtifactType.GIT_EMAIL,
+      ArtifactType.GIT_NAME,
+      ArtifactType.GIT_REPOSITORY,
     ],
   });
 
