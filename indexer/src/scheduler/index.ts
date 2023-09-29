@@ -21,6 +21,9 @@ import { throttling } from "@octokit/plugin-throttling";
 import { GithubCommitCollector } from "../actions/github/fetch/commits.js";
 import { GithubIssueCollector } from "../actions/github/fetch/pull-requests.js";
 import { GithubFollowingCollector } from "../actions/github/fetch/repo-followers.js";
+import { DailyContractUsageCollector } from "../actions/dune/index.js";
+import { DailyContractUsageClient } from "../actions/dune/daily-contract-usage/client.js";
+import path from "path";
 
 export type SchedulerArgs = CommonArgs & {
   collector: string;
@@ -49,6 +52,7 @@ export async function configure(args: SchedulerArgs) {
     eventPointerManager,
     cache,
   );
+  const dune = new DuneClient(DUNE_API_KEY);
 
   const AppOctoKit = Octokit.plugin(throttling);
   const gh = new AppOctoKit({
@@ -88,7 +92,6 @@ export async function configure(args: SchedulerArgs) {
 
   scheduler.registerCollector({
     create: async (_config, recorder, cache) => {
-      const dune = new DuneClient(DUNE_API_KEY);
       const client = new FundingEventsClient(dune);
 
       const collector = new FundingEventsCollector(
@@ -179,8 +182,39 @@ export async function configure(args: SchedulerArgs) {
     ],
   });
 
-  return await scheduler.executeForRange(args.collector, {
+  scheduler.registerCollector({
+    create: async (_config, recorder, cache) => {
+      const client = new DailyContractUsageClient(dune);
+      const collector = new DailyContractUsageCollector(
+        client,
+        ArtifactRepository,
+        recorder,
+        cache,
+        {
+          knownUserAddressesSeedPath: path.join(
+            args.cacheDir,
+            "known-user-addresses-seed.json",
+          ),
+        },
+      );
+      return collector;
+    },
+    name: "dune-daily-contract-usage",
+    description: "Collects github pull requests and issues",
+    group: "dune",
+    schedule: "weekly",
+    artifactScope: [ArtifactNamespace.OPTIMISM],
+    artifactTypeScope: [
+      ArtifactType.CONTRACT_ADDRESS,
+      ArtifactType.EOA_ADDRESS,
+      ArtifactType.SAFE_ADDRESS,
+    ],
+  });
+
+  await scheduler.executeForRange(args.collector, {
     startDate: args.startDate,
     endDate: args.endDate,
   });
+
+  return;
 }

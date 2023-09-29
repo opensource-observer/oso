@@ -38,7 +38,7 @@ const knownRawData = [
 ];
 
 export type DailyContractUsageRow = {
-  date: Date;
+  date: string;
   contractAddress: string;
   userAddresses: string[];
   contractTotalL2GasCostGwei: string;
@@ -55,7 +55,7 @@ export interface IDailyContractUsageClient {
     end: DateTime,
     knownUserAddresses: string[],
     knownContractAddresses: string[],
-  ): Promise<DailyContractUsageResponse>;
+  ): Promise<DailyContractUsageRow[]>;
 }
 
 export interface DailyContractUsageClientOptions {
@@ -126,7 +126,7 @@ export function resolveDailyContractUsage(
     const userAddresses = [...(row.user_addresses || []), ...resolvedAddresses];
 
     const response: DailyContractUsageRow = {
-      date: DateTime.fromSQL(row.date).toJSDate(),
+      date: row.date,
       contractAddress: contractAddress,
       userAddresses: userAddresses,
       contractTotalL2GasCostGwei: row.contract_total_l2_gas_cost_gwei,
@@ -185,7 +185,7 @@ export class DailyContractUsageClient implements IDailyContractUsageClient {
     end: DateTime,
     knownUserAddresses: string[],
     knownContractAddresses: string[],
-  ): Promise<DailyContractUsageResponse> {
+  ): Promise<DailyContractUsageRow[]> {
     const userIdToAddress: { [id: number]: string } = {};
 
     const knownUserAddressesInput = knownUserAddresses
@@ -227,7 +227,7 @@ export class DailyContractUsageClient implements IDailyContractUsageClient {
       );
     }
 
-    return new DailyContractUsageResponse(rows, knownContractAddresses);
+    return rows;
   }
 
   private contractAddressesToBatch(
@@ -297,7 +297,6 @@ export class DailyContractUsageResponse {
     const rows: DailyContractUsageRow[] = cached.rows.map((a) => {
       return {
         ...a,
-        ...{ date: DateTime.fromISO(a.date).toJSDate() },
       } as DailyContractUsageRow;
     });
 
@@ -339,26 +338,17 @@ export class DailyContractUsageResponse {
 
   async mapRowsByContractAddress<R>(
     cb: (contractAddress: string, rows: DailyContractUsageRow[]) => Promise<R>,
-    parallelism: number = 20,
   ): Promise<Array<R>> {
     if (!this.processed) {
       this.processRows();
     }
 
-    let result: Array<R> = [];
-    let parallel: Array<Promise<R>> = [];
+    const result: Array<R> = [];
 
     for (const addr of this.contractAddresses) {
       const rows = this.memoRowsByContract[addr] || [];
-      parallel.push(cb(addr, rows));
-      if (parallel.length > parallelism) {
-        result = result.concat(await Promise.all(parallel));
-        parallel = [];
-      }
-    }
-    if (parallel.length > 0) {
-      result = result.concat(await Promise.all(parallel));
-      await Promise.all(parallel);
+      const r = await cb(addr, rows);
+      result.push(r);
     }
 
     return result;

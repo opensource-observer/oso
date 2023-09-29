@@ -13,6 +13,7 @@ import {
 } from "../utils/ranges.js";
 import { createHash } from "crypto";
 import _ from "lodash";
+import { logger } from "../utils/logger.js";
 
 export class CacheDoesNotExist extends GenericError {}
 export class InvalidCache extends GenericError {}
@@ -551,6 +552,7 @@ export class TimeSeriesCacheWrapper {
     lookup: ITimeSeriesCacheLookup,
     retriever: PageRetreiver<T, C>,
   ): AsyncGenerator<Cacheable<T, C>> {
+    logger.debug("attempting to load from cache");
     // Determine if the lookup matches anything in the cache. If not then call the retreiver
     const currentPage = 0;
 
@@ -559,6 +561,7 @@ export class TimeSeriesCacheWrapper {
     > = [];
     const response = await this.attemptCacheLoad(lookup, currentPage);
     if (response) {
+      logger.debug("cache hit");
       // Load everything from cache that we can and then queue the missing pages as needed
       for await (const dir of response.groups()) {
         let lastPage: Cacheable<T, C> | undefined = undefined;
