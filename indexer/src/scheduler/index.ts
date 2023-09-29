@@ -201,20 +201,20 @@ export async function configure(args: SchedulerArgs) {
     },
     name: "dune-daily-contract-usage",
     description: "Collects github pull requests and issues",
-    group: "github",
+    group: "dune",
     schedule: "weekly",
-    artifactScope: [ArtifactNamespace.GITHUB],
+    artifactScope: [ArtifactNamespace.OPTIMISM],
     artifactTypeScope: [
-      ArtifactType.GITHUB_ORG,
-      ArtifactType.GITHUB_USER,
-      ArtifactType.GIT_EMAIL,
-      ArtifactType.GIT_NAME,
-      ArtifactType.GIT_REPOSITORY,
+      ArtifactType.CONTRACT_ADDRESS,
+      ArtifactType.EOA_ADDRESS,
+      ArtifactType.SAFE_ADDRESS,
     ],
   });
 
-  return await scheduler.executeForRange(args.collector, {
+  await scheduler.executeForRange(args.collector, {
     startDate: args.startDate,
     endDate: args.endDate,
   });
+
+  return;
 }

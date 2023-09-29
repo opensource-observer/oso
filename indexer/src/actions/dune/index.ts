@@ -128,6 +128,7 @@ export class DailyContractUsageCollector implements ICollector {
   }
 
   private async loadKnownUserAddresses(range: Range): Promise<string[]> {
+    logger.debug("loading known user addresses as input for dune");
     const largerRange: Range = {
       startDate: range.startDate.minus({ months: 1 }),
       endDate: DateTime.now(),
@@ -177,8 +178,9 @@ export class DailyContractUsageCollector implements ICollector {
         page.raw,
         contractAddresses,
       );
-      usageData.mapRowsByContractAddress(async (address, rows) => {
+      await usageData.mapRowsByContractAddress(async (address, rows) => {
         const contract = contractsByAddressMap[address];
+        logger.debug(`events for ${contract.name}`);
 
         rows.forEach((row) => {
           this.createEventsForDay(contract, row);
@@ -213,6 +215,7 @@ export class DailyContractUsageCollector implements ICollector {
     contracts: Artifact[],
     knownUserAddresses: string[],
   ): Promise<DailyContractUsageRow[]> {
+    logger.debug("retrieving data from dune");
     const response = await this.client.getDailyContractUsage(
       range.startDate,
       range.endDate,
@@ -250,20 +253,20 @@ export class DailyContractUsageCollector implements ICollector {
         };
       },
     );
+    const eventTime = DateTime.fromISO(day.date).toUTC();
 
     // Check which users already have data written for that day.
     // We'll need to update those
     logger.info(
       `creating ${userArtifacts.length} events for contract Artifact<${
         contract.id
-      }> on ${day.date.toISOString()}...`,
+      }> on ${eventTime.toISO()}...`,
       {
         contractId: contract.id,
         date: day.date,
         userArtifactsLength: userArtifacts.length,
       },
     );
-    const eventTime = DateTime.fromJSDate(day.date).toUTC();
     for (const user of userArtifacts) {
       const event: IncompleteEvent = {
         time: eventTime,

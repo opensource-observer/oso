@@ -1,5 +1,5 @@
 import { AppDataSource } from "./data-source.js";
-import { Artifact, EventType } from "./orm-entities.js";
+import { Artifact, EventType, Event } from "./orm-entities.js";
 import { DeepPartial } from "typeorm";
 import { Range } from "../utils/ranges.js";
 
