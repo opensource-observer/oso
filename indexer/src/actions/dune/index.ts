@@ -25,7 +25,6 @@ import {
   TimeSeriesCacheLookup,
   TimeSeriesCacheWrapper,
 } from "../../cacher/time-series.js";
-import { EventRepository } from "../../db/events.js";
 import { ArtifactRepository } from "../../db/artifacts.js";
 import { generateSourceIdFromArray } from "../../utils/sourceIds.js";
 
