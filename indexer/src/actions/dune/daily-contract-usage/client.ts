@@ -55,7 +55,7 @@ export interface IDailyContractUsageClient {
     end: DateTime,
     knownUserAddresses: string[],
     knownContractAddresses: string[],
-  ): Promise<DailyContractUsageResponse>;
+  ): Promise<DailyContractUsageRow[]>;
 }
 
 export interface DailyContractUsageClientOptions {
@@ -185,7 +185,7 @@ export class DailyContractUsageClient implements IDailyContractUsageClient {
     end: DateTime,
     knownUserAddresses: string[],
     knownContractAddresses: string[],
-  ): Promise<DailyContractUsageResponse> {
+  ): Promise<DailyContractUsageRow[]> {
     const userIdToAddress: { [id: number]: string } = {};
 
     const knownUserAddressesInput = knownUserAddresses
@@ -227,7 +227,7 @@ export class DailyContractUsageClient implements IDailyContractUsageClient {
       );
     }
 
-    return new DailyContractUsageResponse(rows, knownContractAddresses);
+    return rows;
   }
 
   private contractAddressesToBatch(

@@ -21,6 +21,9 @@ import { throttling } from "@octokit/plugin-throttling";
 import { GithubCommitCollector } from "../actions/github/fetch/commits.js";
 import { GithubIssueCollector } from "../actions/github/fetch/pull-requests.js";
 import { GithubFollowingCollector } from "../actions/github/fetch/repo-followers.js";
+import { DailyContractUsageCollector } from "../actions/dune/index.js";
+import { DailyContractUsageClient } from "../actions/dune/daily-contract-usage/client.js";
+import path from "path";
 
 export type SchedulerArgs = CommonArgs & {
   collector: string;
@@ -49,6 +52,7 @@ export async function configure(args: SchedulerArgs) {
     eventPointerManager,
     cache,
   );
+  const dune = new DuneClient(DUNE_API_KEY);
 
   const AppOctoKit = Octokit.plugin(throttling);
   const gh = new AppOctoKit({
@@ -88,7 +92,6 @@ export async function configure(args: SchedulerArgs) {
 
   scheduler.registerCollector({
     create: async (_config, recorder, cache) => {
-      const dune = new DuneClient(DUNE_API_KEY);
       const client = new FundingEventsClient(dune);
 
       const collector = new FundingEventsCollector(
@@ -166,6 +169,37 @@ export async function configure(args: SchedulerArgs) {
       return collector;
     },
     name: "github-followers",
+    description: "Collects github pull requests and issues",
+    group: "github",
+    schedule: "weekly",
+    artifactScope: [ArtifactNamespace.GITHUB],
+    artifactTypeScope: [
+      ArtifactType.GITHUB_ORG,
+      ArtifactType.GITHUB_USER,
+      ArtifactType.GIT_EMAIL,
+      ArtifactType.GIT_NAME,
+      ArtifactType.GIT_REPOSITORY,
+    ],
+  });
+
+  scheduler.registerCollector({
+    create: async (_config, recorder, cache) => {
+      const client = new DailyContractUsageClient(dune);
+      const collector = new DailyContractUsageCollector(
+        client,
+        ArtifactRepository,
+        recorder,
+        cache,
+        {
+          knownUserAddressesSeedPath: path.join(
+            args.cacheDir,
+            "known-user-addresses-seed.json",
+          ),
+        },
+      );
+      return collector;
+    },
+    name: "dune-daily-contract-usage",
     description: "Collects github pull requests and issues",
     group: "github",
     schedule: "weekly",
