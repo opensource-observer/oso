@@ -3,12 +3,21 @@ import {
   ArtifactNamespace,
   ArtifactType,
   EventType,
+  Job,
+  JobExecutionStatus,
 } from "../db/orm-entities.js";
 import { IEventRecorder, IEventTypeStrategy } from "../recorder/types.js";
 import { Range, findMissingRanges, rangeFromDates } from "../utils/ranges.js";
 import { EventPointerManager } from "./pointers.js";
 import { TimeSeriesCacheWrapper } from "../cacher/time-series.js";
 import { logger } from "../utils/logger.js";
+import {
+  JobAlreadyQueued,
+  JobExecutionRepository,
+  JobsRepository,
+} from "../db/jobs.js";
+import { DateTime } from "luxon";
+import _ from "lodash";
 
 export type ArtifactGroup = {
   details: unknown;
@@ -56,7 +65,7 @@ export interface CollectorRegistration {
 
   description: string;
 
-  group: string;
+  group?: string;
 
   schedule: Schedule;
 
@@ -94,7 +103,18 @@ export interface IScheduler {
    */
   schedule(): Promise<void>;
 
-  execute(): Promise<void>;
+  runWorker(group: string): Promise<void>;
+
+  executeForRange(collectorName: string, range: Range): Promise<void>;
+}
+
+/**
+ * Spawns workers (this can be through any means)
+ *
+ * This is used by the scheduler to begin spawning workers.
+ */
+export interface WorkerSpawner {
+  spawn(group?: string): Promise<void>;
 }
 
 export class BaseScheduler implements IScheduler {
@@ -103,18 +123,27 @@ export class BaseScheduler implements IScheduler {
   private collectors: Record<string, CollectorRegistration>;
   private eventPointerManager: EventPointerManager;
   private cache: TimeSeriesCacheWrapper;
+  private spawner: WorkerSpawner;
+  private jobsRepository: typeof JobsRepository;
+  private jobsExecutionRepository: typeof JobExecutionRepository;
 
   constructor(
     recorder: IEventRecorder,
     config: IConfig,
     eventPointerManager: EventPointerManager,
     cache: TimeSeriesCacheWrapper,
+    spawner: WorkerSpawner,
+    jobsRepository: typeof JobsRepository,
+    jobsExecutionRepository: typeof JobExecutionRepository,
   ) {
     this.recorder = recorder;
     this.config = config;
     this.collectors = {};
     this.cache = cache;
     this.eventPointerManager = eventPointerManager;
+    this.spawner = spawner;
+    this.jobsRepository = jobsRepository;
+    this.jobsExecutionRepository = jobsExecutionRepository;
   }
 
   registerCollector(reg: CollectorRegistration) {
@@ -126,12 +155,115 @@ export class BaseScheduler implements IScheduler {
   }
 
   async schedule(): Promise<void> {
-    // Create new jobs
-    return;
+    // Get the current time. Normalized for hour, month, day, week
+    const now = DateTime.now().toUTC().startOf("hour");
+
+    const scheduleMatches: Schedule[] = ["hourly"];
+    const scheduleRanges: Record<Schedule, Range> = {
+      hourly: {
+        startDate: now.minus({ hour: 2 }),
+        endDate: now.minus({ hour: 1 }),
+      },
+      weekly: {
+        startDate: now.minus({ days: 9 }),
+        endDate: now.minus({ days: 2 }),
+      },
+      monthly: {
+        startDate: now.minus({ days: 3 }).startOf("month"),
+        endDate: now.startOf("month"),
+      },
+      daily: {
+        startDate: now.minus({ hours: 3 }).startOf("day"),
+        endDate: now.startOf("day"),
+      },
+    };
+
+    // Find matching collector times
+    if (now.startOf("week").equals(now)) {
+      scheduleMatches.push("weekly");
+    }
+    if (now.startOf("day").plus({ hours: 2 }).equals(now)) {
+      scheduleMatches.push("daily");
+    }
+    if (now.startOf("month").plus({ days: 2 }).equals(now)) {
+      scheduleMatches.push("monthly");
+    }
+
+    for (const name in this.collectors) {
+      const collector = this.collectors[name];
+      if (scheduleMatches.indexOf(collector.schedule) !== -1) {
+        // attempt to schedule this job
+        const range = scheduleRanges[collector.schedule];
+        try {
+          await this.jobsRepository.queueJob(
+            collector.name,
+            collector.group || null,
+            now,
+            {
+              startDate: range.startDate.toISO(),
+              endDate: range.endDate.toISO(),
+            },
+          );
+        } catch (err) {
+          if (err instanceof JobAlreadyQueued) {
+            continue;
+          }
+          throw err;
+        }
+      }
+    }
   }
 
-  async execute(): Promise<void> {
+  async runWorker(group: string): Promise<void> {
     // Execute from the jobs queue.
+    const groups = await this.jobsRepository.availableJobGroups();
+
+    const jobsToChoose = groups.reduce<Job[]>((jobs, grouping) => {
+      if (grouping.name === "none") {
+        if (group === "all" || group === "none") {
+          jobs.push(...grouping.jobs);
+          return jobs;
+        }
+      } else {
+        if (grouping.name === group) {
+          jobs.push(...grouping.jobs);
+          return jobs;
+        }
+      }
+      return jobs;
+    }, []);
+
+    if (jobsToChoose.length === 0) {
+      logger.debug("no jobs queued for the given group");
+      return;
+    }
+
+    const job = _.sample(jobsToChoose)!;
+    const options = job.options as { startDate: string; endDate: string };
+    const startDate = DateTime.fromISO(options.startDate);
+    const endDate = DateTime.fromISO(options.endDate);
+
+    if (!(startDate.isValid && endDate.isValid)) {
+      throw new Error("irrecoverable error. job description is bad.");
+    }
+
+    const execution = await this.jobsExecutionRepository.createExecutionForJob(
+      job,
+    );
+    if (!execution) {
+      throw new Error("could not establish a lock");
+    }
+    try {
+      await this.executeForRange(job.collector, {
+        startDate: startDate,
+        endDate: endDate,
+      });
+    } catch (err) {
+      this.jobsExecutionRepository.updateExecutionStatus(
+        execution,
+        JobExecutionStatus.FAILED,
+      );
+    }
     return;
   }
 

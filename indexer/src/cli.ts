@@ -23,7 +23,14 @@ import { AppDataSource } from "./db/data-source.js";
 //   LoadPullRequests,
 //   loadPullRequests,
 // } from "./actions/github/fetch/pull-requests.js";
-import { SchedulerArgs, configure } from "./scheduler/index.js";
+import {
+  SchedulerArgs,
+  SchedulerManualArgs,
+  SchedulerQueueArgs,
+  SchedulerWorkerArgs,
+  configure,
+} from "./scheduler/index.js";
+import { argv } from "process";
 
 //const callLibrary = async <Args>(
 //  func: EventSourceFunction<Args>,
@@ -131,28 +138,69 @@ yargs(hideBin(process.argv))
   //   (argv) => handleError(callLibrary(NpmDownloadsInterface.func, argv)),
   // )
   .command<SchedulerArgs>(
-    "scheduler <collector>",
-    "Runs a manual execution",
+    "scheduler <subcommand>",
+    "scheduler commands",
     (yags) => {
+      const dateConverter = (input: string) => {
+        const date = DateTime.fromISO(input).toUTC();
+        if (!date.isValid) {
+          throw new Error(`input "${input}" is not a valid date`);
+        }
+        return date;
+      };
       yags
-        .positional("collector", { describe: "the collector to execute" })
-        .option("start-date", { type: "string", default: "" })
-        .coerce("start-date", (arg) => {
-          if (arg === "") {
-            return DateTime.now().startOf("day").minus({ days: 9 });
-          }
-          return DateTime.fromISO(arg);
-        })
-        .option("end-date", { type: "string", default: "" })
-        .coerce("end-date", (arg) => {
-          if (arg === "") {
-            return DateTime.now().startOf("day").minus({ days: 2 });
-          }
-          return DateTime.fromISO(arg);
-        })
-        .option("batch-size", { type: "number", default: 5000 });
+        .command<SchedulerManualArgs>(
+          "manual",
+          "manually execute a scheduler run",
+          (yags) => {
+            yags
+              .positional("collector", {
+                describe: "the name of the collector to execute",
+              })
+              .option("start-date", {
+                type: "string",
+                describe: "start-date for the manual run",
+              })
+              .coerce("start-date", dateConverter)
+              .option("end-date", {
+                type: "string",
+                describe: "start-date for the manual run",
+              })
+              .coerce("end-date", dateConverter)
+              .demandOption(["start-date", "end-date"]);
+          },
+          async (args) => {
+            const scheduler = await configure(args);
+
+            await scheduler.executeForRange(args.collector, {
+              startDate: args.startDate,
+              endDate: args.endDate,
+            });
+          },
+        )
+        .command<SchedulerWorkerArgs>(
+          "worker",
+          "run the worker",
+          (yags) => {
+            yags.positional("group", { describe: "the group to execute" });
+          },
+          async (args) => {
+            const scheduler = await configure(args);
+            await scheduler.runWorker(args.group);
+          },
+        )
+        .command<SchedulerQueueArgs>(
+          "queue",
+          "schedule workers into the queue",
+          (yags) => {
+            yags.positional("group", { describe: "the group to execute" });
+          },
+          async (args) => {
+            console.log("queue");
+            console.log(args);
+          },
+        );
     },
-    (argv) => handleError(configure(argv)),
   )
   .demandCommand()
   .strict()
