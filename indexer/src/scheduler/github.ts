@@ -1,6 +1,5 @@
 import { Octokit } from "octokit";
 import { WorkerSpawner } from "./types.js";
-import _ from "lodash";
 
 export interface GithubWorkerSpawnerOptions {
   owner: string;

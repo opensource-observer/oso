@@ -30,7 +30,6 @@ import {
   SchedulerWorkerArgs,
   configure,
 } from "./scheduler/index.js";
-import { argv } from "process";
 
 //const callLibrary = async <Args>(
 //  func: EventSourceFunction<Args>,

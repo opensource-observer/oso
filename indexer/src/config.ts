@@ -35,4 +35,6 @@ export const GITHUB_WORKERS_WORKFLOW_ID = process.env.GITHUB_WORKERS_WORKFLOW_ID
   ? process.env.GITHUB_WORKERS_WORKFLOW_ID
   : "indexer-worker.yml";
 export const ENABLE_DB_TESTS = process.env.ENABLE_DB_TESTS === "true" || false;
+export const INDEXER_NO_SPAWN =
+  process.env.INDEXER_NO_SPAWN === "true" || false;
 export const DEBUG_DB = process.env.DEBUG_DB === "true" || false;

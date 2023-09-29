@@ -18,6 +18,7 @@ import {
 } from "../db/jobs.js";
 import { DateTime } from "luxon";
 import _ from "lodash";
+import { INDEXER_NO_SPAWN } from "../config.js";
 
 export type ArtifactGroup = {
   details: unknown;
@@ -264,6 +265,16 @@ export class BaseScheduler implements IScheduler {
         JobExecutionStatus.FAILED,
       );
     }
+    // Check the available jobs after the run and spawn a worker
+    const afterGroups = await this.jobsRepository.availableJobGroups();
+    if (afterGroups.length) {
+      // Only spawn a single worker with the same group
+      if (INDEXER_NO_SPAWN) {
+        await this.spawner.spawn(group);
+      } else {
+        logger.debug(`No spawn allowed. would have spawned.`);
+      }
+    }
     return;
   }
 
@@ -308,7 +319,8 @@ export class BaseScheduler implements IScheduler {
       // TODO: Ensure all artifacts are committed or error
     }
     await this.recorder.waitAll();
-    logger.info("completed successfully");
+    // TODO collect errors and return here
+    logger.info("completed collector run successfully");
   }
 
   private async findMissingArtifactsFromEventPointers(

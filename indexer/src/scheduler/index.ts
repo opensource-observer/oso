@@ -179,7 +179,7 @@ export async function configure(args: SchedulerArgs) {
     name: "github-issues",
     description: "Collects github pull requests and issues",
     group: "github",
-    schedule: "daily",
+    schedule: "hourly",
     artifactScope: [ArtifactNamespace.GITHUB],
     artifactTypeScope: [
       ArtifactType.GITHUB_USER,

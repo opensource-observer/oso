@@ -7,8 +7,6 @@ import {
 } from "./jobs.js";
 import { clearDb, withDbDescribe } from "./testing.js";
 import { AppDataSource } from "./data-source.js";
-import { JobExecution } from "./orm-entities.js";
-import { QueryFailedError } from "typeorm";
 
 withDbDescribe("Jobs", () => {
   beforeEach(async () => {
@@ -36,7 +34,7 @@ withDbDescribe("Jobs", () => {
       "group1",
       DateTime.now().startOf("day"),
     );
-    const job4 = await JobsRepository.queueJob(
+    await JobsRepository.queueJob(
       "collector4",
       null,
       DateTime.now().startOf("day"),
@@ -45,7 +43,7 @@ withDbDescribe("Jobs", () => {
     let availableJobs = await JobsRepository.availableJobGroups();
     expect(availableJobs.length).toBe(4);
 
-    const execution = await JobExecutionRepository.createExecutionForJob(job0);
+    await JobExecutionRepository.createExecutionForJob(job0);
 
     availableJobs = await JobsRepository.availableJobGroups();
     expect(availableJobs.length).toBe(3);
