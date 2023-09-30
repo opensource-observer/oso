@@ -22,5 +22,19 @@ export const TEST_ONLY_ALLOW_CLEAR_DB =
   process.env.TEST_ONLY_ALLOW_CLEAR_DB === "true" || false;
 export const NO_DYNAMIC_LOADS =
   process.env.NO_DYNAMIC_LOADS === "true" || false;
+export const GITHUB_WORKERS_OWNER = process.env.GITHUB_WORKERS_OWNER
+  ? process.env.GITHUB_WORKERS_OWNER
+  : "hypercerts-org";
+export const GITHUB_WORKERS_REPO = process.env.GITHUB_WORKERS_REPO
+  ? process.env.GITHUB_WORKERS_REPO
+  : "oso";
+export const GITHUB_WORKERS_REF = process.env.GITHUB_WORKERS_REF
+  ? process.env.GITHUB_WORKERS_REF
+  : "main";
+export const GITHUB_WORKERS_WORKFLOW_ID = process.env.GITHUB_WORKERS_WORKFLOW_ID
+  ? process.env.GITHUB_WORKERS_WORKFLOW_ID
+  : "indexer-worker.yml";
 export const ENABLE_DB_TESTS = process.env.ENABLE_DB_TESTS === "true" || false;
+export const INDEXER_NO_SPAWN =
+  process.env.INDEXER_NO_SPAWN === "true" || false;
 export const DEBUG_DB = process.env.DEBUG_DB === "true" || false;

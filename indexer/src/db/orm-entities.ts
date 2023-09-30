@@ -229,9 +229,10 @@ export class EventPointer extends Base<"EventPointerId"> {
 }
 
 @Entity()
+@Index(["scheduledTime", "collector"], { unique: true })
 export class Job extends Base<"JobId"> {
-  @Column("text")
-  execGroup: string;
+  @Column("text", { nullable: true })
+  group: string | null;
 
   @Column("timestamptz")
   scheduledTime: Date;
@@ -242,14 +243,30 @@ export class Job extends Base<"JobId"> {
   @Column("enum", { enum: JobStatus })
   status: JobStatus;
 
+  @Column("jsonb", {
+    default: {},
+  })
+  options: Record<string, any>;
+
   @OneToMany(() => JobExecution, (jobExecution) => jobExecution.job)
   executions: JobExecution[];
 }
 
 @Entity()
+@Index(["name"], { unique: true })
+export class JobGroupLock extends Base<"JobGroupId"> {
+  @Column("text")
+  name: string;
+}
+
+@Entity()
+@Index(["job", "attempt"], { unique: true })
 export class JobExecution extends Base<"JobExecutionId"> {
   @Column("enum", { enum: JobExecutionStatus })
   status: JobExecutionStatus;
+
+  @Column("integer")
+  attempt: number;
 
   @ManyToOne(() => Job, (job) => job.executions)
   job: Job;

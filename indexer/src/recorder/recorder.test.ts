@@ -79,6 +79,10 @@ withDbDescribe("BatchEventRecorder", () => {
   });
 
   afterAll(async () => {
-    await AppDataSource.destroy();
+    try {
+      await AppDataSource.destroy();
+    } catch (_e) {
+      console.log("data source already disconnected");
+    }
   });
 });

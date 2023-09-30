@@ -10,7 +10,14 @@ import { EventPointerManager } from "./pointers.js";
 import { FundingEventsCollector } from "../actions/dune/funding-event-collector.js";
 import { FundingEventsClient } from "../actions/dune/funding-events/client.js";
 import { DuneClient } from "@cowprotocol/ts-dune-client";
-import { DUNE_API_KEY, GITHUB_TOKEN } from "../config.js";
+import {
+  DUNE_API_KEY,
+  GITHUB_TOKEN,
+  GITHUB_WORKERS_OWNER,
+  GITHUB_WORKERS_REF,
+  GITHUB_WORKERS_REPO,
+  GITHUB_WORKERS_WORKFLOW_ID,
+} from "../config.js";
 import { ArtifactNamespace, ArtifactType } from "../db/orm-entities.js";
 import { EventPointerRepository, EventRepository } from "../db/events.js";
 import { ArtifactRepository } from "../db/artifacts.js";
@@ -24,13 +31,26 @@ import { GithubFollowingCollector } from "../actions/github/fetch/repo-followers
 import { DailyContractUsageCollector } from "../actions/dune/index.js";
 import { DailyContractUsageClient } from "../actions/dune/daily-contract-usage/client.js";
 import path from "path";
+import { GithubWorkerSpawner } from "./github.js";
+import { JobExecutionRepository, JobsRepository } from "../db/jobs.js";
 
 export type SchedulerArgs = CommonArgs & {
-  collector: string;
   skipExisting?: boolean;
+  batchSize: number;
+};
+
+export type SchedulerManualArgs = SchedulerArgs & {
+  collector: string;
   startDate: DateTime;
   endDate: DateTime;
-  batchSize: number;
+};
+
+export type SchedulerWorkerArgs = SchedulerArgs & {
+  group: string;
+};
+
+export type SchedulerQueueArgs = SchedulerArgs & {
+  baseDate: DateTime;
 };
 
 // Entrypoint for the scheduler. Currently not where it should be but this is quick.
@@ -38,21 +58,6 @@ export async function configure(args: SchedulerArgs) {
   const recorder = new BatchEventRecorder(EventRepository, ArtifactRepository);
   const cacheManager = new TimeSeriesCacheManager(args.cacheDir);
   const cache = new TimeSeriesCacheWrapper(cacheManager);
-  const config = new Config();
-  const eventPointerManager = new EventPointerManager(
-    AppDataSource,
-    EventPointerRepository,
-    {
-      batchSize: args.batchSize,
-    },
-  );
-  const scheduler = new BaseScheduler(
-    recorder,
-    config,
-    eventPointerManager,
-    cache,
-  );
-  const dune = new DuneClient(DUNE_API_KEY);
 
   const AppOctoKit = Octokit.plugin(throttling);
   const gh = new AppOctoKit({
@@ -89,6 +94,33 @@ export async function configure(args: SchedulerArgs) {
       },
     },
   });
+
+  const config = new Config();
+  const eventPointerManager = new EventPointerManager(
+    AppDataSource,
+    EventPointerRepository,
+    {
+      batchSize: args.batchSize,
+    },
+  );
+
+  const spawner = new GithubWorkerSpawner(gh, {
+    owner: GITHUB_WORKERS_OWNER,
+    repo: GITHUB_WORKERS_REPO,
+    ref: GITHUB_WORKERS_REF,
+    workflowId: GITHUB_WORKERS_WORKFLOW_ID,
+  });
+
+  const scheduler = new BaseScheduler(
+    recorder,
+    config,
+    eventPointerManager,
+    cache,
+    spawner,
+    JobsRepository,
+    JobExecutionRepository,
+  );
+  const dune = new DuneClient(DUNE_API_KEY);
 
   scheduler.registerCollector({
     create: async (_config, recorder, cache) => {
@@ -211,10 +243,5 @@ export async function configure(args: SchedulerArgs) {
     ],
   });
 
-  await scheduler.executeForRange(args.collector, {
-    startDate: args.startDate,
-    endDate: args.endDate,
-  });
-
-  return;
+  return scheduler;
 }
