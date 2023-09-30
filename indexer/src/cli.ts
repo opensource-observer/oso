@@ -178,25 +178,41 @@ yargs(hideBin(process.argv))
           },
         )
         .command<SchedulerWorkerArgs>(
-          "worker",
+          "worker <group>",
           "run the worker",
           (yags) => {
-            yags.positional("group", { describe: "the group to execute" });
+            yags.positional("group", {
+              describe: "the group to execute",
+              type: "string",
+            });
           },
           async (args) => {
             const scheduler = await configure(args);
-            await scheduler.runWorker(args.group);
+            const errors = await scheduler.runWorker(args.group);
+            if (errors.length > 0) {
+              process.exit(1);
+            }
           },
         )
         .command<SchedulerQueueArgs>(
-          "queue",
+          "queue [base-date]",
           "schedule workers into the queue",
           (yags) => {
-            yags.positional("group", { describe: "the group to execute" });
+            yags
+              .positional("base-date", {
+                describe: "the date to start scheduling from",
+                type: "string",
+              })
+              .coerce("base-date", (input: string) => {
+                if (input) {
+                  return dateConverter(input);
+                }
+                return DateTime.now();
+              });
           },
           async (args) => {
-            console.log("queue");
-            console.log(args);
+            const scheduler = await configure(args);
+            await scheduler.queue(args.baseDate);
           },
         );
     },

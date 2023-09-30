@@ -25,6 +25,8 @@ export type ArtifactGroup = {
   artifacts: Artifact[];
 };
 
+export type ErrorsList = unknown[];
+
 /**
  * The interface for the scheduler that manages all of the schedules for jobs
  */
@@ -102,11 +104,11 @@ export interface IScheduler {
   /**
    * Should process all register collectors and schedule them
    */
-  schedule(): Promise<void>;
+  queue(baseTime?: DateTime): Promise<void>;
 
-  runWorker(group: string): Promise<void>;
+  runWorker(group: string): Promise<ErrorsList>;
 
-  executeForRange(collectorName: string, range: Range): Promise<void>;
+  executeForRange(collectorName: string, range: Range): Promise<ErrorsList>;
 }
 
 /**
@@ -155,38 +157,50 @@ export class BaseScheduler implements IScheduler {
     this.recorder.registerEventType(reg.type, reg.strategy);
   }
 
-  async schedule(): Promise<void> {
+  async queue(baseTime?: DateTime): Promise<void> {
     // Get the current time. Normalized for hour, month, day, week
-    const now = DateTime.now().toUTC().startOf("hour");
+    baseTime = baseTime
+      ? baseTime.startOf("hour")
+      : DateTime.now().toUTC().startOf("hour");
+    logger.debug(`queuing jobs for ${baseTime.toISO()}`);
 
     const scheduleMatches: Schedule[] = ["hourly"];
+
+    // The ranges have specific arbitrary offsets to hopefully (and cheaply)
+    // ensure that data collection doesn't miss if a data source is slow.
     const scheduleRanges: Record<Schedule, Range> = {
       hourly: {
-        startDate: now.minus({ hour: 2 }),
-        endDate: now.minus({ hour: 1 }),
+        startDate: baseTime.minus({ hour: 2 }),
+        endDate: baseTime.minus({ hour: 1 }),
       },
       weekly: {
-        startDate: now.minus({ days: 9 }),
-        endDate: now.minus({ days: 2 }),
+        startDate: baseTime.minus({ days: 9 }),
+        endDate: baseTime.minus({ days: 2 }),
       },
       monthly: {
-        startDate: now.minus({ days: 3 }).startOf("month"),
-        endDate: now.startOf("month"),
+        startDate: baseTime.minus({ days: 3 }).startOf("month"),
+        endDate: baseTime.startOf("month"),
       },
       daily: {
-        startDate: now.minus({ hours: 3 }).startOf("day"),
-        endDate: now.startOf("day"),
+        startDate: baseTime.minus({ hours: 3 }).startOf("day"),
+        endDate: baseTime.startOf("day"),
       },
     };
 
-    // Find matching collector times
-    if (now.startOf("week").equals(now)) {
+    // Find matching collector times. Offsets are intentionally set.
+    const weeklyMatchDateTime = baseTime.startOf("week");
+    logger.debug(`Weekly match is ${weeklyMatchDateTime.toISO()}`);
+    if (weeklyMatchDateTime.equals(baseTime)) {
       scheduleMatches.push("weekly");
     }
-    if (now.startOf("day").plus({ hours: 2 }).equals(now)) {
+    const dailyMatchDateTime = baseTime.startOf("day").plus({ hours: 2 });
+    logger.debug(`Daily match is ${dailyMatchDateTime.toISO()}`);
+    if (dailyMatchDateTime.equals(baseTime)) {
       scheduleMatches.push("daily");
     }
-    if (now.startOf("month").plus({ days: 2 }).equals(now)) {
+    const monthlyMatchDateTime = baseTime.startOf("month").plus({ days: 2 });
+    logger.debug(`Monthly match is ${monthlyMatchDateTime.toISO()}`);
+    if (monthlyMatchDateTime.equals(baseTime)) {
       scheduleMatches.push("monthly");
     }
 
@@ -199,7 +213,7 @@ export class BaseScheduler implements IScheduler {
           await this.jobsRepository.queueJob(
             collector.name,
             collector.group || null,
-            now,
+            baseTime,
             {
               startDate: range.startDate.toISO(),
               endDate: range.endDate.toISO(),
@@ -215,7 +229,7 @@ export class BaseScheduler implements IScheduler {
     }
   }
 
-  async runWorker(group: string): Promise<void> {
+  async runWorker(group: string): Promise<ErrorsList> {
     // Execute from the jobs queue.
     const groups = await this.jobsRepository.availableJobGroups();
 
@@ -235,8 +249,8 @@ export class BaseScheduler implements IScheduler {
     }, []);
 
     if (jobsToChoose.length === 0) {
-      logger.debug("no jobs queued for the given group");
-      return;
+      logger.debug("no jobs available for the given group");
+      return [];
     }
 
     const job = _.sample(jobsToChoose)!;
@@ -254,13 +268,12 @@ export class BaseScheduler implements IScheduler {
     if (!execution) {
       throw new Error("could not establish a lock");
     }
-    try {
-      await this.executeForRange(job.collector, {
-        startDate: startDate,
-        endDate: endDate,
-      });
-    } catch (err) {
-      this.jobsExecutionRepository.updateExecutionStatus(
+    const errors = await this.executeForRange(job.collector, {
+      startDate: startDate,
+      endDate: endDate,
+    });
+    if (errors.length > 0) {
+      await this.jobsExecutionRepository.updateExecutionStatus(
         execution,
         JobExecutionStatus.FAILED,
       );
@@ -275,7 +288,7 @@ export class BaseScheduler implements IScheduler {
         logger.debug(`No spawn allowed. would have spawned.`);
       }
     }
-    return;
+    return errors;
   }
 
   async executeForRange(collectorName: string, range: Range) {
@@ -284,6 +297,7 @@ export class BaseScheduler implements IScheduler {
 
     this.recorder.setActorScope(reg.artifactScope, reg.artifactTypeScope);
     const collector = await reg.create(this.config, this.recorder, this.cache);
+    const errors: unknown[] = [];
 
     // Get a list of the monitored artifacts
     for await (const group of collector.groupedArtifacts()) {
@@ -314,13 +328,20 @@ export class BaseScheduler implements IScheduler {
         );
       } catch (err) {
         logger.error("Error encountered. Skipping group", err);
+        errors.push(err);
         continue;
       }
       // TODO: Ensure all artifacts are committed or error
     }
     await this.recorder.waitAll();
-    // TODO collect errors and return here
-    logger.info("completed collector run successfully");
+
+    if (errors.length > 0) {
+      logger.info("completed with errors");
+    } else {
+      // TODO collect errors and return here
+      logger.info("completed collector run successfully");
+    }
+    return errors;
   }
 
   private async findMissingArtifactsFromEventPointers(

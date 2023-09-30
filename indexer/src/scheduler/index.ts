@@ -49,7 +49,9 @@ export type SchedulerWorkerArgs = SchedulerArgs & {
   group: string;
 };
 
-export type SchedulerQueueArgs = SchedulerArgs;
+export type SchedulerQueueArgs = SchedulerArgs & {
+  baseDate: DateTime;
+};
 
 // Entrypoint for the scheduler. Currently not where it should be but this is quick.
 export async function configure(args: SchedulerArgs) {
@@ -179,7 +181,7 @@ export async function configure(args: SchedulerArgs) {
     name: "github-issues",
     description: "Collects github pull requests and issues",
     group: "github",
-    schedule: "hourly",
+    schedule: "daily",
     artifactScope: [ArtifactNamespace.GITHUB],
     artifactTypeScope: [
       ArtifactType.GITHUB_USER,
