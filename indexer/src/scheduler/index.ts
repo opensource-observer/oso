@@ -49,8 +49,15 @@ export type SchedulerWorkerArgs = SchedulerArgs & {
   group: string;
 };
 
-export type SchedulerQueueArgs = SchedulerArgs & {
+export type SchedulerQueueAllArgs = SchedulerArgs & {
   baseDate: DateTime;
+};
+
+export type SchedulerQueueJobArgs = SchedulerArgs & {
+  collector: string;
+  baseDate: DateTime;
+  startDate: DateTime;
+  endDate: DateTime;
 };
 
 // Entrypoint for the scheduler. Currently not where it should be but this is quick.

@@ -1,10 +1,5 @@
-# This is a temporary workflow. The current way the indexer runs isn't as
-# flexible with scheduling. However, the daily contract usage needs to be run.
-# Eventually we should coalesce all of this into a single scheduler that can spawn 
-# multiple workflows. Additionally, this workflow has a persistent caching mechanism 
-# that should be generalized for use to others. 
-
-name: os-observer-daily-contract-usage 
+# Periodically trigger the scheduler to queue work
+name: os-observer-indexer-queue
 env:
   DB_HOST: ${{ vars.DB_HOST }}
   DB_PORT: ${{ vars.DB_PORT }}
@@ -52,5 +47,5 @@ jobs:
       - name: Build
         run: pnpm build:indexer
 
-      - name: Run worker for the given group
+      - name: Automatically queue work for all of the collectors
         run: pnpm start:indexer scheduler queue

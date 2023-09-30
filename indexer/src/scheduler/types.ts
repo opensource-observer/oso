@@ -104,7 +104,9 @@ export interface IScheduler {
   /**
    * Should process all register collectors and schedule them
    */
-  queue(baseTime?: DateTime): Promise<void>;
+  queueAll(baseTime?: DateTime): Promise<void>;
+
+  queueJob(collector: string, baseTime: DateTime, range: Range): Promise<void>;
 
   runWorker(group: string): Promise<ErrorsList>;
 
@@ -157,7 +159,7 @@ export class BaseScheduler implements IScheduler {
     this.recorder.registerEventType(reg.type, reg.strategy);
   }
 
-  async queue(baseTime?: DateTime): Promise<void> {
+  async queueAll(baseTime?: DateTime): Promise<void> {
     // Get the current time. Normalized for hour, month, day, week
     baseTime = baseTime
       ? baseTime.startOf("hour")
@@ -208,24 +210,31 @@ export class BaseScheduler implements IScheduler {
       const collector = this.collectors[name];
       if (scheduleMatches.indexOf(collector.schedule) !== -1) {
         // attempt to schedule this job
-        const range = scheduleRanges[collector.schedule];
-        try {
-          await this.jobsRepository.queueJob(
-            collector.name,
-            collector.group || null,
-            baseTime,
-            {
-              startDate: range.startDate.toISO(),
-              endDate: range.endDate.toISO(),
-            },
-          );
-        } catch (err) {
-          if (err instanceof JobAlreadyQueued) {
-            continue;
-          }
-          throw err;
-        }
+        await this.queueJob(name, baseTime, scheduleRanges[collector.schedule]);
       }
+    }
+  }
+
+  async queueJob(collectorName: string, baseTime: DateTime, range: Range) {
+    const collector = this.collectors[collectorName];
+    try {
+      await this.jobsRepository.queueJob(
+        collector.name,
+        collector.group || null,
+        baseTime,
+        {
+          startDate: range.startDate.toISO(),
+          endDate: range.endDate.toISO(),
+        },
+      );
+    } catch (err) {
+      if (err instanceof JobAlreadyQueued) {
+        console.log(
+          `job for ${collectorName} already queued at ${baseTime.toISO()}`,
+        );
+        return;
+      }
+      throw err;
     }
   }
 
