@@ -20,19 +20,15 @@ env:
 on:
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
-    inputs:
-      group:
-        description: 'group'
-        required: false
-        default: 'all'
+  schedule:
+    # Schedule every hour
+    - cron: '0 * * * *'
 
 jobs:
   collector-worker-run:
     name: collector-worker-run
     environment: indexer
     runs-on: ubuntu-latest
-    env:
-      CACHE_PREFIX: ${{ inputs.group }}
       
     steps:
       - name: Checkout code
@@ -56,15 +52,5 @@ jobs:
       - name: Build
         run: pnpm build:indexer
 
-      - name: Load docker persistent cache
-        run: ./.github/scripts/load-cache.sh
-
-      - name: Test cache loaded
-        run: ls -halt ${CACHE_DIR}
-
       - name: Run worker for the given group
-        run: pnpm start:indexer --cache-dir ${CACHE_DIR} scheduler worker ${{ inputs.group }}
-
-      - name: Write to cache if needed
-        if: always()
-        run: ./.github/scripts/write-cache.sh
+        run: pnpm start:indexer scheduler queue
