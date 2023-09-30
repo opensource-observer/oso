@@ -1,5 +1,5 @@
-# Execute the worker for a specific group
-name: os-observer-indexer-worker
+# Allow for manual queuing of jobs
+name: os-observer-indexer-create-queue
 env:
   DB_HOST: ${{ vars.DB_HOST }}
   DB_PORT: ${{ vars.DB_PORT }}
@@ -16,18 +16,24 @@ on:
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
     inputs:
-      group:
-        description: 'group'
-        required: false
-        default: 'none'
+      collector:
+        description: 'the name of the collector'
+        required: true 
+      start-date:
+        description: 'the start date for the queued job (ISO8601)'
+        required: true
+      end-date:
+        description: 'the end date for the queued job (ISO8601)'
+        required: true
+      base-date:
+        description: 'the "scheduledTime" of the queued job for deduplication of queues'
+        required: true
 
 jobs:
   collector-worker-run:
     name: collector-worker-run
     environment: indexer
     runs-on: ubuntu-latest
-    env:
-      CACHE_PREFIX: ${{ inputs.group }}
       
     steps:
       - name: Checkout code
@@ -51,15 +57,5 @@ jobs:
       - name: Build
         run: pnpm build:indexer
 
-      - name: Load docker persistent cache
-        run: ./.github/scripts/load-cache.sh
-
-      - name: Test cache loaded
-        run: ls -halt ${CACHE_DIR}
-
-      - name: Run worker for the given group
-        run: pnpm start:indexer --cache-dir ${CACHE_DIR} scheduler worker ${{ inputs.group }}
-
-      - name: Write to cache if needed
-        if: always()
-        run: ./.github/scripts/write-cache.sh
+      - name: Create a job with the given parameters
+        run: pnpm start:indexer scheduler create-job ${{ inputs.collector }} --start-date ${{ inputs.start-date }} --end-date ${{ inputs.end-date }} --base-date ${{ inputs.base-date }}

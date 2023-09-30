@@ -26,7 +26,8 @@ import { AppDataSource } from "./db/data-source.js";
 import {
   SchedulerArgs,
   SchedulerManualArgs,
-  SchedulerQueueArgs,
+  SchedulerQueueAllArgs,
+  SchedulerQueueJobArgs,
   SchedulerWorkerArgs,
   configure,
 } from "./scheduler/index.js";
@@ -194,7 +195,7 @@ yargs(hideBin(process.argv))
             }
           },
         )
-        .command<SchedulerQueueArgs>(
+        .command<SchedulerQueueAllArgs>(
           "queue [base-date]",
           "schedule workers into the queue",
           (yags) => {
@@ -212,7 +213,41 @@ yargs(hideBin(process.argv))
           },
           async (args) => {
             const scheduler = await configure(args);
-            await scheduler.queue(args.baseDate);
+            await scheduler.queueAll(args.baseDate);
+          },
+        )
+        .command<SchedulerQueueJobArgs>(
+          "create-job <collector>",
+          "queue a job manually",
+          (yags) => {
+            yags
+              .positional("collector", {
+                describe: "the collector",
+                type: "string",
+              })
+              .option("base-date", {
+                type: "string",
+                describe: "start-date for the manual run",
+              })
+              .coerce("base-date", dateConverter)
+              .option("start-date", {
+                type: "string",
+                describe: "start-date for the manual run",
+              })
+              .coerce("start-date", dateConverter)
+              .option("end-date", {
+                type: "string",
+                describe: "start-date for the manual run",
+              })
+              .coerce("end-date", dateConverter)
+              .demandOption(["base-date", "start-date", "end-date"]);
+          },
+          async (args) => {
+            const scheduler = await configure(args);
+            await scheduler.queueJob(args.collector, args.baseDate, {
+              startDate: args.startDate,
+              endDate: args.endDate,
+            });
           },
         );
     },
