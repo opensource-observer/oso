@@ -1,4 +1,4 @@
-import { BatchEventRecorder } from "../recorder/recorder.js";
+import { BatchEventRecorder, TimeoutFlusher } from "../recorder/recorder.js";
 import { BaseScheduler, Config } from "./types.js";
 import {
   TimeSeriesCacheManager,
@@ -62,7 +62,12 @@ export type SchedulerQueueJobArgs = SchedulerArgs & {
 
 // Entrypoint for the scheduler. Currently not where it should be but this is quick.
 export async function configure(args: SchedulerArgs) {
-  const recorder = new BatchEventRecorder(EventRepository, ArtifactRepository);
+  const flusher = new TimeoutFlusher(10000);
+  const recorder = new BatchEventRecorder(
+    EventRepository,
+    ArtifactRepository,
+    flusher,
+  );
   const cacheManager = new TimeSeriesCacheManager(args.cacheDir);
   const cache = new TimeSeriesCacheWrapper(cacheManager);
 

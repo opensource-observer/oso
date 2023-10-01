@@ -95,7 +95,7 @@ export interface IFlusher {
   isScheduled(): boolean;
 }
 
-class TimeoutFlusher implements IFlusher {
+export class TimeoutFlusher implements IFlusher {
   private timeout: NodeJS.Timeout | null;
   private timeoutMs: number;
 
@@ -198,8 +198,13 @@ export class BatchEventRecorder implements IEventRecorder {
     const queue = this.getEventTypeStorage(event.type);
     const promise = queue.pushAndWait(event);
 
-    this.flusher.scheduleIfNotSet(() => {
-      this.flushAll();
+    this.flusher.scheduleIfNotSet(async () => {
+      try {
+        await this.flushAll();
+      } catch {
+        logger.debug(`errors flushing`);
+      }
+      this.flusher.clear();
     });
     return promise;
   }
@@ -215,11 +220,9 @@ export class BatchEventRecorder implements IEventRecorder {
   }
 
   private async flushAll() {
-    this.flusher.clear();
-
-    // Wait for all queues to complete
+    // Wait for all queues to complete in series
     for (const eventType in this.eventTypeStorage) {
-      this.flushType(eventType as EventType);
+      await this.flushType(eventType as EventType);
     }
   }
 
