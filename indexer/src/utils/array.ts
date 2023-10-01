@@ -20,8 +20,21 @@ export class UniqueArray<T> {
     this.arr.push(obj);
   }
 
+  pop(): T | undefined {
+    const obj = this.arr.pop();
+    if (obj) {
+      const id = this.idFunc(obj);
+      delete this.uniqueMap[id];
+    }
+    return obj;
+  }
+
   items(): T[] {
     return _.cloneDeep(this.arr);
+  }
+
+  get length() {
+    return this.arr.length;
   }
 }
 

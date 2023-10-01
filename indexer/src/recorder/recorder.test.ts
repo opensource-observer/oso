@@ -8,18 +8,36 @@ import {
   EventType,
 } from "../db/orm-entities.js";
 import { clearDb, withDbDescribe } from "../db/testing.js";
-import { BatchEventRecorder } from "./recorder.js";
+import { BatchEventRecorder, IFlusher } from "./recorder.js";
 import { generateEventTypeStrategy } from "./types.js";
 
+class TestFlusher implements IFlusher {
+  flushCallback: () => void | undefined;
+
+  clear(): void {}
+
+  scheduleIfNotSet(cb: () => void): void {
+    this.flushCallback = cb;
+  }
+
+  isScheduled(): boolean {
+    return false;
+  }
+}
+
 withDbDescribe("BatchEventRecorder", () => {
+  let flusher: TestFlusher;
   beforeEach(async () => {
     await clearDb();
+
+    flusher = new TestFlusher();
   });
 
   it("should setup the recorder", async () => {
     const recorder = new BatchEventRecorder(
       EventRepository,
       ArtifactRepository,
+      flusher,
       {
         maxBatchSize: 3,
       },
