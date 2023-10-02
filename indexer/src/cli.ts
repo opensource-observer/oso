@@ -224,7 +224,7 @@ yargs(hideBin(process.argv))
         .command("job <job-subcommand>", "job tools", (yags) => {
           yags
             .command<SchedulerQueueJobArgs>(
-              "create",
+              "create <collector>",
               "queue a job manually",
               (yags) => {
                 yags
