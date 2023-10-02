@@ -13,6 +13,7 @@ import fsPromises from "fs/promises";
 import { UniqueArray } from "../../../utils/array.js";
 import { IDuneClient } from "../../../utils/dune/type.js";
 import _ from "lodash";
+import { logger } from "../../../utils/logger.js";
 
 export type DailyContractUsageRawRow = {
   date: string;
@@ -101,6 +102,7 @@ export function resolveDailyContractUsage(
   contractIdToAddressMap: IdToAddressMap,
   rows: unknown[],
 ): DailyContractUsageRow[] {
+  logger.debug("resolving daily contract addresses");
   return rows.map((r) => {
     const row = r as DailyContractUsageRawRow;
 
@@ -126,7 +128,7 @@ export function resolveDailyContractUsage(
     const userAddresses = [...(row.user_addresses || []), ...resolvedAddresses];
 
     const response: DailyContractUsageRow = {
-      date: row.date,
+      date: DateTime.fromSQL(row.date).toISO()!,
       contractAddress: contractAddress,
       userAddresses: userAddresses,
       contractTotalL2GasCostGwei: row.contract_total_l2_gas_cost_gwei,
@@ -336,18 +338,18 @@ export class DailyContractUsageResponse {
     return this.memoUniqueUserAddresses.items();
   }
 
-  async mapRowsByContractAddress<R>(
+  mapRowsByContractAddress<R>(
     cb: (contractAddress: string, rows: DailyContractUsageRow[]) => Promise<R>,
-  ): Promise<Array<R>> {
+  ): Promise<R>[] {
     if (!this.processed) {
       this.processRows();
     }
 
-    const result: Array<R> = [];
+    const result: Promise<R>[] = [];
 
     for (const addr of this.contractAddresses) {
       const rows = this.memoRowsByContract[addr] || [];
-      const r = await cb(addr, rows);
+      const r = cb(addr, rows);
       result.push(r);
     }
 

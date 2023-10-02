@@ -13,6 +13,7 @@ import {
   MoreThan,
   MoreThanOrEqual,
 } from "typeorm";
+import { logger } from "../utils/logger.js";
 
 type IEventPointerRepository = typeof EventPointerRepository;
 
@@ -87,6 +88,7 @@ export class EventPointerManager {
     artifact: Artifact,
     collector: string,
   ) {
+    logger.debug(`committing this artifact[${artifact.id}]`);
     const andPart: FindOptionsWhere<EventPointer> = {
       collector: collector,
       artifact: {
@@ -145,10 +147,16 @@ export class EventPointerManager {
 
         await repository.update(
           {
+            artifact: {
+              id: artifact.id,
+            },
             id: byStartDate[0].id,
             version: byStartDate[0].version,
           },
           {
+            artifact: {
+              id: artifact.id,
+            },
             startDate: startDate,
             endDate: endDate,
             version: byStartDate[0].version + 1,

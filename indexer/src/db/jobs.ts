@@ -9,6 +9,7 @@ import {
 } from "./orm-entities.js";
 import { DateTime } from "luxon";
 import { QueryFailedError } from "typeorm";
+import type { Brand } from "utility-types";
 
 export class JobAlreadyActive extends GenericError {}
 export class JobAlreadyQueued extends GenericError {}
@@ -213,6 +214,17 @@ export const JobExecutionRepository = AppDataSource.getRepository(
       }
     });
   },
+  async updateExecutionStatusById(id: number, status: JobExecutionStatus) {
+    const execution = await this.findOneOrFail({
+      relations: {
+        job: true,
+      },
+      where: {
+        id: id as Brand<number, "JobExecutionId">,
+      },
+    });
+    return this.updateExecutionStatus(execution, status);
+  },
   async updateExecutionStatus(exec: JobExecution, status: JobExecutionStatus) {
     return this.manager.transaction(async (manager) => {
       const jobRepo = manager.getRepository(Job);
@@ -259,10 +271,11 @@ export const JobExecutionRepository = AppDataSource.getRepository(
       return repo.update(
         {
           id: exec.id,
-          updatedAt: exec.updatedAt,
+          version: exec.version,
         },
         {
           status: status,
+          version: exec.version + 1,
         },
       );
     });

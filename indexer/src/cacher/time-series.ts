@@ -561,7 +561,6 @@ export class TimeSeriesCacheWrapper {
     > = [];
     const response = await this.attemptCacheLoad(lookup, currentPage);
     if (response) {
-      logger.debug("cache hit");
       // Load everything from cache that we can and then queue the missing pages as needed
       for await (const dir of response.groups()) {
         let lastPage: Cacheable<T, C> | undefined = undefined;
@@ -586,12 +585,13 @@ export class TimeSeriesCacheWrapper {
 
     for (const missing of missingQueue) {
       let lastPage = missing[1];
+      let pageNumber = 0;
 
       while (true) {
         const page = await retriever(missing[0], lastPage);
 
         // Write the page to cache
-        await this.manager.write(lookup, page);
+        await this.manager.write(lookup, page, pageNumber);
 
         // Yield the page
         yield page;
@@ -601,6 +601,7 @@ export class TimeSeriesCacheWrapper {
         if (!page.hasNextPage) {
           break;
         }
+        pageNumber += 1;
       }
     }
   }

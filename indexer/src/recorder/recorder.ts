@@ -18,18 +18,105 @@ import { UniqueArray, asyncBatch } from "../utils/array.js";
 import { logger } from "../utils/logger.js";
 import _ from "lodash";
 import { EntityLookup } from "../utils/lookup.js";
+import { PromisePubSub } from "../utils/pubsub.js";
 
 export interface BatchEventRecorderOptions {
   maxBatchSize: number;
+}
+
+export type RecordResponse = void;
+
+class EventTypeStorage<T> {
+  private queue: UniqueArray<IncompleteEvent>;
+  private pubsub: PromisePubSub<T, unknown>;
+
+  static setup<X>(): EventTypeStorage<X> {
+    const queue = new UniqueArray<IncompleteEvent>((event) => {
+      return event.sourceId;
+    });
+    return new EventTypeStorage(queue);
+  }
+
+  private constructor(queue: UniqueArray<IncompleteEvent>) {
+    this.queue = queue;
+    this.pubsub = new PromisePubSub();
+  }
+
+  pushAndWait(event: IncompleteEvent): Promise<T> {
+    this.queue.push(event);
+
+    return this.pubsub.sub(event.sourceId);
+  }
+
+  pop(): IncompleteEvent | undefined {
+    return this.queue.pop();
+  }
+
+  popAll(): IncompleteEvent[] {
+    const events = [];
+    const lengthToPop = this.length;
+
+    for (let i = 0; i < lengthToPop; i++) {
+      const event = this.pop();
+      if (event) {
+        events.push(event);
+      }
+    }
+    return events;
+  }
+
+  emitResponse(sourceId: string, err: unknown | null, res: T) {
+    return this.pubsub.pub(sourceId, err, res);
+  }
+
+  get length(): number {
+    return this.queue.length;
+  }
 }
 
 const defaultBatchEventRecorderOptions: BatchEventRecorderOptions = {
   maxBatchSize: 5000,
 };
 
+export interface IFlusher {
+  scheduleIfNotSet(cb: () => void): void;
+  clear(): void;
+  isScheduled(): boolean;
+}
+
+export class TimeoutFlusher implements IFlusher {
+  private timeout: NodeJS.Timeout | null;
+  private timeoutMs: number;
+
+  constructor(timeoutMs: number) {
+    this.timeoutMs = timeoutMs;
+    this.timeout = null;
+  }
+
+  scheduleIfNotSet(cb: () => void): void {
+    if (!this.timeout) {
+      this.timeout = setTimeout(cb, this.timeoutMs);
+    }
+  }
+
+  clear(): void {
+    if (this.timeout) {
+      clearTimeout(this.timeout);
+    }
+    this.timeout = null;
+  }
+
+  isScheduled(): boolean {
+    if (this.timeout) {
+      return true;
+    }
+    return false;
+  }
+}
+
 export class BatchEventRecorder implements IEventRecorder {
   private eventTypeStrategies: Record<string, IEventTypeStrategy>;
-  private eventTypeQueues: Record<string, IncompleteEvent[]>;
+  private eventTypeStorage: Record<string, EventTypeStorage<void>>;
   private options: BatchEventRecorderOptions;
   private actorDirectory: InmemActorResolver;
   private eventRepository: Repository<Event>;
@@ -37,21 +124,26 @@ export class BatchEventRecorder implements IEventRecorder {
   private namespaces: ArtifactNamespace[];
   private types: ArtifactType[];
   private actorsLoaded: boolean;
+  private flusher: IFlusher;
+  private pubsub: PromisePubSub<void, unknown>;
 
   constructor(
     eventRepository: Repository<Event>,
     artifactRepository: Repository<Artifact>,
+    flusher: IFlusher,
     options?: BatchEventRecorderOptions,
   ) {
     this.eventRepository = eventRepository;
     this.artifactRepository = artifactRepository;
     this.eventTypeStrategies = {};
-    this.eventTypeQueues = {};
+    this.eventTypeStorage = {};
     this.actorDirectory = new InmemActorResolver();
     this.options = _.merge(defaultBatchEventRecorderOptions, options);
     this.namespaces = [];
     this.types = [];
     this.actorsLoaded = false;
+    this.flusher = flusher;
+    this.pubsub = new PromisePubSub();
   }
 
   setActorScope(namespaces: ArtifactNamespace[], types: ArtifactType[]) {
@@ -90,58 +182,112 @@ export class BatchEventRecorder implements IEventRecorder {
     this.eventTypeStrategies[eventType.toString()] = strategy;
   }
 
-  record(event: IncompleteEvent): void {
+  record(event: IncompleteEvent): Promise<RecordResponse> {
     // Queue an event for writing
-    const queue = this.getEventTypeQueue(event.type);
-    queue.push(event);
+    const queue = this.getEventTypeStorage(event.type);
+    const promise = queue.pushAndWait(event);
+
+    this.flusher.scheduleIfNotSet(async () => {
+      try {
+        logger.debug(`flushing all queued events`);
+        await this.flushAll();
+      } catch {
+        logger.debug(`errors flushing`);
+      }
+      logger.debug("flush complete");
+      this.flusher.clear();
+    });
+    return promise;
   }
 
   private getEventTypeStrategy(eventType: EventType): IEventTypeStrategy {
     const typeString = eventType.toString();
     const strategy = this.eventTypeStrategies[typeString];
+
     if (!strategy) {
       return generateEventTypeStrategy(eventType);
     }
     return strategy;
   }
 
-  async waitAll(): Promise<void[]> {
-    logger.debug("Waiting for all events to be recorded");
-    // Wait for all queues to complete
-    const results: void[] = [];
-    for (const eventType in this.eventTypeQueues) {
-      results.push(
-        await this.wait(EventType[eventType as keyof typeof EventType]),
-      );
+  private async flushAll() {
+    // Wait for all queues to complete in series
+    for (const eventType in this.eventTypeStorage) {
+      try {
+        await this.flushType(eventType as EventType);
+      } catch (err) {
+        logger.error(`error processing events ${eventType}`, err);
+      }
     }
-    return results;
+  }
+
+  async waitAll(): Promise<void> {
+    const all: Promise<void>[] = [];
+    for (const eventType in this.eventTypeStorage) {
+      all.push(this.wait(eventType as EventType));
+    }
+    await Promise.all(all);
+    return;
   }
 
   async wait(eventType: EventType): Promise<void> {
+    const storage = this.getEventTypeStorage(eventType);
+    if (storage.length === 0) {
+      return;
+    }
+    return this.pubsub.sub(eventType);
+  }
+
+  private async flushType(eventType: EventType) {
+    logger.debug("Waiting for all events to be recorded");
     if (!this.actorsLoaded) {
       await this.loadActors();
     }
 
     logger.debug(`processing ${eventType}`);
     // Wait for a specific event type queue to complete
-    const queue = this.getEventTypeQueue(eventType);
-    if (queue.length === 0) {
+    const eventTypeStorage = this.getEventTypeStorage(eventType);
+    if (eventTypeStorage.length === 0) {
       logger.debug(`queue empty for ${eventType}`);
       return;
     }
-    this.eventTypeQueues[eventType] = [];
 
     logger.info(
-      `emptying queue for ${eventType.toString()} with ${queue.length} items`,
+      `emptying queue for ${eventType.toString()} with ${
+        eventTypeStorage.length
+      } items`,
     );
+    const processing = eventTypeStorage.popAll();
+    logger.info(`processing: ${processing.length}`);
 
+    try {
+      await this.processEvents(eventType, processing);
+      this.pubsub.pub(eventType, null);
+    } catch (err) {
+      logger.debug("caught error!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+      this.pubsub.pub(eventType, err);
+
+      // Report errors to all of the promises listening on specific events
+      for (const event of processing) {
+        eventTypeStorage.emitResponse(event.sourceId, err);
+      }
+      throw err;
+    }
+  }
+
+  private async processEvents(
+    eventType: EventType,
+    processing: IncompleteEvent[],
+  ): Promise<void> {
     // Get the date range for the currently queued items
-    let startDate = queue[0].time;
-    let endDate = queue[0].time;
-    queue.forEach((event) => {
+    const eventTypeStorage = this.getEventTypeStorage(eventType);
+    let startDate = processing[0].time;
+    let endDate = processing[0].time;
+    processing.forEach((event) => {
       if (startDate > event.time) {
         startDate = event.time;
       }
+
       if (endDate < event.time) {
         endDate = event.time;
       }
@@ -175,16 +321,21 @@ export class BatchEventRecorder implements IEventRecorder {
     );
 
     // Filter duplicates
-    for (const event of queue) {
+    for (const event of processing) {
       if (!existingEventsLookup.has(event)) {
         queuedArtifacts.push(event.to);
         if (event.from) {
           queuedArtifacts.push(event.from);
         }
         newEvents.push(event);
+      } else {
+        // Resolve any existing subscriptions for this event's creation
+        eventTypeStorage.emitResponse(event.sourceId, null);
       }
     }
-    logger.debug(`skipping ${queue.length - newEvents.length} existing events`);
+    logger.debug(
+      `skipping ${processing.length - newEvents.length} existing events`,
+    );
 
     // Create all of the new actors involved
     const newArtifacts = this.actorDirectory.unknownArtifactsFrom(
@@ -201,6 +352,8 @@ export class BatchEventRecorder implements IEventRecorder {
 
     // Load all of the actors again. We can improve this later
     await this.loadActors();
+
+    logger.debug(`about to start writing to db in batch ${newEvents.length}`);
 
     await asyncBatch(
       newEvents,
@@ -233,19 +386,28 @@ export class BatchEventRecorder implements IEventRecorder {
           }),
         );
 
-        const response = await this.eventRepository.insert(events);
-        logger.debug(`completed writing batch of ${batchLength}`);
-        return response;
+        try {
+          await this.eventRepository.insert(events);
+          logger.debug(`completed writing batch of ${batchLength}`);
+          events.forEach((e) => {
+            eventTypeStorage.emitResponse(e.sourceId, null);
+          });
+        } catch (err) {
+          events.forEach((e) => {
+            eventTypeStorage.emitResponse(e.sourceId, e);
+          });
+          throw err;
+        }
       },
     );
   }
 
-  protected getEventTypeQueue(eventType: EventType): IncompleteEvent[] {
+  protected getEventTypeStorage(eventType: EventType): EventTypeStorage<void> {
     const typeString = eventType.toString();
-    let queue = this.eventTypeQueues[typeString];
+    let queue = this.eventTypeStorage[typeString];
     if (!queue) {
-      this.eventTypeQueues[typeString] = [];
-      queue = this.eventTypeQueues[typeString];
+      this.eventTypeStorage[typeString] = EventTypeStorage.setup<void>();
+      queue = this.eventTypeStorage[typeString];
     }
     return queue;
   }

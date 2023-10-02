@@ -9,6 +9,8 @@ export interface CommonArgs {
 
   // The cache directory to use for load/writing cache data.
   cacheDir: string;
+
+  runDir: string;
 }
 
 export interface ApiInterface<Args> {

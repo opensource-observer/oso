@@ -8,18 +8,46 @@ import {
   EventType,
 } from "../db/orm-entities.js";
 import { clearDb, withDbDescribe } from "../db/testing.js";
-import { BatchEventRecorder } from "./recorder.js";
+import { BatchEventRecorder, IFlusher } from "./recorder.js";
 import { generateEventTypeStrategy } from "./types.js";
 
+type Callback = () => void;
+
+class TestFlusher implements IFlusher {
+  flushCallback: Callback | undefined;
+
+  clear(): void {
+    this.flushCallback = undefined;
+  }
+
+  flush(): void {
+    if (this.flushCallback) {
+      this.flushCallback();
+    }
+  }
+
+  scheduleIfNotSet(cb: () => void): void {
+    this.flushCallback = cb;
+  }
+
+  isScheduled(): boolean {
+    return false;
+  }
+}
+
 withDbDescribe("BatchEventRecorder", () => {
+  let flusher: TestFlusher;
   beforeEach(async () => {
     await clearDb();
+
+    flusher = new TestFlusher();
   });
 
   it("should setup the recorder", async () => {
     const recorder = new BatchEventRecorder(
       EventRepository,
       ArtifactRepository,
+      flusher,
       {
         maxBatchSize: 3,
       },
@@ -49,11 +77,16 @@ withDbDescribe("BatchEventRecorder", () => {
       sourceId: "test123",
     };
     recorder.record(testEvent);
-    await recorder.wait(EventType.COMMIT_CODE);
+    const record0 = recorder.wait(EventType.COMMIT_CODE);
+    flusher.flush();
+    await record0;
+
+    flusher.clear();
 
     // No errors should be thrown if we attempt to write twice
-    recorder.record(testEvent);
-    await recorder.wait(EventType.COMMIT_CODE);
+    const record1 = recorder.record(testEvent);
+    flusher.flush();
+    await record1;
 
     // Check that the values are correct
     const results = await EventRepository.find({
@@ -76,6 +109,30 @@ withDbDescribe("BatchEventRecorder", () => {
     expect(results[0].from?.namespace).toEqual(testEvent.from.namespace);
     expect(results[0].from?.type).toEqual(testEvent.from.type);
     expect(results[0].from?.id).toBeDefined();
+
+    const outOfScopeEvent = {
+      amount: Math.random(),
+      time: DateTime.now(),
+      type: EventType.CONTRACT_INVOKED,
+      to: {
+        name: "test",
+        namespace: ArtifactNamespace.ETHEREUM,
+        type: ArtifactType.CONTRACT_ADDRESS,
+      },
+      from: {
+        name: "contributor",
+        namespace: ArtifactNamespace.ETHEREUM,
+        type: ArtifactType.EOA_ADDRESS,
+      },
+      sourceId: "test456",
+    };
+
+    const record2 = recorder.record(outOfScopeEvent);
+    flusher.flush();
+
+    await expect(async () => {
+      return record2;
+    }).rejects.toThrow();
   });
 
   afterAll(async () => {

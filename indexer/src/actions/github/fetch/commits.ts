@@ -67,7 +67,7 @@ export class GithubCommitCollector extends GithubByProjectBaseCollector {
     );
 
     // Load commits for each artifact
-    asyncBatch(group.artifacts, 1, async (batch) => {
+    await asyncBatch(group.artifacts, 1, async (batch) => {
       const artifact = batch[0];
       try {
         await this.recordEventsForRepo(artifact, range);
@@ -113,7 +113,10 @@ export class GithubCommitCollector extends GithubByProjectBaseCollector {
         });
         let hasNextPage = false;
         if (commits.headers.link) {
-          hasNextPage = true;
+          if (commits.headers.link.indexOf('rel="next"') !== -1) {
+            logger.debug(`found next page after ${currentPage}`);
+            hasNextPage = true;
+          }
         }
 
         return {
@@ -124,6 +127,8 @@ export class GithubCommitCollector extends GithubByProjectBaseCollector {
         };
       },
     );
+
+    const recordPromises: Promise<void>[] = [];
 
     for await (const page of responses) {
       for (const commit of page.raw) {
@@ -163,12 +168,12 @@ export class GithubCommitCollector extends GithubByProjectBaseCollector {
           event.from = contributor;
         }
 
-        this.recorder.record(event);
+        recordPromises.push(this.recorder.record(event));
       }
     }
 
     // Wait for all of the events for this repo to be recorded
-    await this.recorder.wait(EventType.COMMIT_CODE);
+    await Promise.all(recordPromises);
   }
 
   private contributorFromCommit(

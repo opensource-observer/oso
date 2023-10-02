@@ -8,14 +8,11 @@ import {
 import { FindOptionsWhere } from "typeorm";
 import _ from "lodash";
 import { DateTime } from "luxon";
+import { GenericError } from "../common/errors.js";
 
-export class UnknownActor extends Error {
-  constructor(message: string) {
-    super(message);
+export class RecorderError extends GenericError {}
 
-    Object.setPrototypeOf(this, UnknownActor.prototype);
-  }
-}
+export class UnknownActor extends RecorderError {}
 
 export interface IEventRecorder {
   // A generic event recorder that will automatically handle batching writes for
@@ -27,12 +24,12 @@ export interface IEventRecorder {
   registerEventType(eventType: EventType, strategy: IEventTypeStrategy): void;
 
   // Record a single event. These are batched
-  record(event: IncompleteEvent): void;
+  record(event: IncompleteEvent): Promise<void>;
 
   setActorScope(namespaces: ArtifactNamespace[], types: ArtifactType[]): void;
 
   // Call this when you're done recording
-  waitAll(): Promise<void[]>;
+  waitAll(): Promise<void>;
 
   wait(eventType: EventType): Promise<void>;
 }

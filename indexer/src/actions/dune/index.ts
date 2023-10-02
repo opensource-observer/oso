@@ -26,7 +26,7 @@ import {
   TimeSeriesCacheWrapper,
 } from "../../cacher/time-series.js";
 import { ArtifactRepository } from "../../db/artifacts.js";
-import { generateSourceIdFromArray } from "../../utils/sourceIds.js";
+import { generateSourceIdFromArray } from "../../utils/source-ids.js";
 
 /**
  * Entrypoint arguments
@@ -178,18 +178,27 @@ export class DailyContractUsageCollector implements ICollector {
         page.raw,
         contractAddresses,
       );
-      await usageData.mapRowsByContractAddress(async (address, rows) => {
-        const contract = contractsByAddressMap[address];
-        logger.debug(`events for ${contract.name}`);
+      const contractPromises = usageData.mapRowsByContractAddress(
+        async (address, rows) => {
+          const contract = contractsByAddressMap[address];
+          logger.debug(`events for ${contract.name}`);
 
-        rows.forEach((row) => {
-          this.createEventsForDay(contract, row);
-        });
+          const eventPromises = rows.flatMap((row) => {
+            return this.createEventsForDay(contract, row);
+          });
+          await Promise.all(eventPromises);
+          logger.debug(`events for ${contract.name} recorded`);
 
-        await this.recorder.waitAll();
-        await commitArtifact(contract);
-      });
+          await commitArtifact(contract);
+        },
+      );
+
+      logger.debug(
+        `wait for all of the promises to resolve for contracts count ${contractPromises.length}`,
+      );
+      await Promise.all(contractPromises);
     }
+    logger.debug("finished collection");
   }
 
   protected async loadKnownUserAddressesSeed(): Promise<
@@ -244,6 +253,7 @@ export class DailyContractUsageCollector implements ICollector {
   }
 
   protected createEventsForDay(contract: Artifact, day: DailyContractUsageRow) {
+    const eventPromises: Promise<void>[] = [];
     const userArtifacts: IncompleteArtifact[] = day.userAddresses.map(
       (addr) => {
         return {
@@ -284,28 +294,31 @@ export class DailyContractUsageCollector implements ICollector {
         ]),
       };
 
-      this.recorder.record(event);
+      eventPromises.push(this.recorder.record(event));
     }
 
     // Create an event that reports the aggregate transaction information with
     // no contributor information
-    this.recorder.record({
-      time: eventTime,
-      type: EventType.CONTRACT_INVOKED_AGGREGATE_STATS,
-      to: contract,
-      amount: 0,
-      sourceId: generateSourceIdFromArray([
-        EventType.CONTRACT_INVOKED_AGGREGATE_STATS,
-        eventTime.toISODate()!,
-        contract.name,
-        contract.namespace,
-      ]),
-      details: {
-        totalL2GasCostGwei: day.contractTotalL2GasCostGwei,
-        totalTxCount: day.contractTotalTxCount,
-        uniqueSafeAddresses: day.uniqueSafeAddressCount,
-      },
-    });
+    eventPromises.push(
+      this.recorder.record({
+        time: eventTime,
+        type: EventType.CONTRACT_INVOKED_AGGREGATE_STATS,
+        to: contract,
+        amount: 0,
+        sourceId: generateSourceIdFromArray([
+          EventType.CONTRACT_INVOKED_AGGREGATE_STATS,
+          eventTime.toISODate()!,
+          contract.name,
+          contract.namespace,
+        ]),
+        details: {
+          totalL2GasCostGwei: day.contractTotalL2GasCostGwei,
+          totalTxCount: day.contractTotalTxCount,
+          uniqueSafeAddresses: day.uniqueSafeAddressCount,
+        },
+      }),
+    );
+    return eventPromises;
   }
 }
 
