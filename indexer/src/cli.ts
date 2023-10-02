@@ -187,14 +187,23 @@ yargs(hideBin(process.argv))
           "worker <group>",
           "run the worker",
           (yags) => {
-            yags.positional("group", {
-              describe: "the group to execute",
-              type: "string",
-            });
+            yags
+              .positional("group", {
+                describe: "the group to execute",
+                type: "string",
+              })
+              .option("resume-with-lock", {
+                describe: "resume with the lock on disk?",
+                type: "boolean",
+                default: false,
+              });
           },
           async (args) => {
             const scheduler = await configure(args);
-            const errors = await scheduler.runWorker(args.group);
+            const errors = await scheduler.runWorker(
+              args.group,
+              args.resumeWithLock,
+            );
             if (errors.length > 0) {
               process.exit(1);
             }

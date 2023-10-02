@@ -12,6 +12,14 @@ export function rangeFromDates(startDate: Date, endDate: Date): Range {
   };
 }
 
+export function isWithinRange(range: Range, dt: DateTime): boolean {
+  const dtMillis = dt.toMillis();
+  return (
+    range.startDate.toMillis() <= dtMillis &&
+    range.endDate.toMillis() > dtMillis
+  );
+}
+
 export function rangeFromISO(startDateISO: string, endDateISO: string): Range {
   const startDate = DateTime.fromISO(startDateISO, { zone: "utc" });
   const endDate = DateTime.fromISO(endDateISO, { zone: "utc" });

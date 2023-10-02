@@ -108,7 +108,7 @@ export class GithubByProjectBaseCollector implements ICollector {
   collect(
     _group: ArtifactGroup,
     _range: Range,
-    _commitArtifact: (artifact: Artifact) => Promise<void>,
+    _commitArtifact: (artifact: Artifact | Artifact[]) => Promise<void>,
   ): Promise<void> {
     throw new Error("Not implemented");
   }

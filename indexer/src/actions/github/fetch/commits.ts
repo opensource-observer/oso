@@ -59,7 +59,7 @@ export class GithubCommitCollector extends GithubByProjectBaseCollector {
   async collect(
     group: ArtifactGroup,
     range: Range,
-    commitArtifact: (artifact: Artifact) => Promise<void>,
+    commitArtifact: (artifact: Artifact | Artifact[]) => Promise<void>,
   ) {
     const project = group.details as Project;
     logger.debug(
@@ -67,7 +67,7 @@ export class GithubCommitCollector extends GithubByProjectBaseCollector {
     );
 
     // Load commits for each artifact
-    await asyncBatch(group.artifacts, 1, async (batch) => {
+    await asyncBatch(group.artifacts, 10, async (batch) => {
       const artifact = batch[0];
       try {
         await this.recordEventsForRepo(artifact, range);
@@ -128,7 +128,7 @@ export class GithubCommitCollector extends GithubByProjectBaseCollector {
       },
     );
 
-    const recordPromises: Promise<void>[] = [];
+    const recordPromises: Promise<string>[] = [];
 
     for await (const page of responses) {
       for (const commit of page.raw) {

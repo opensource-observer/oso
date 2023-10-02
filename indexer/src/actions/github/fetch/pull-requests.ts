@@ -421,7 +421,7 @@ export class GithubIssueCollector extends GithubByProjectBaseCollector {
   async collect(
     group: ArtifactGroup,
     range: Range,
-    commitArtifact: (artifact: Artifact) => Promise<void>,
+    commitArtifact: (artifact: Artifact | Artifact[]) => Promise<void>,
   ): Promise<void> {
     const project = group.details as Project;
     logger.debug(`collecting issues for repos of Project[${project.slug}]`);
@@ -493,7 +493,7 @@ export class GithubIssueCollector extends GithubByProjectBaseCollector {
       },
     );
 
-    const recordPromises: Promise<void>[] = [];
+    const recordPromises: Promise<string>[] = [];
 
     for await (const page of pages) {
       const edges = page.raw;
@@ -566,10 +566,9 @@ export class GithubIssueCollector extends GithubByProjectBaseCollector {
     logger.debug(
       `completed issue collection for repos of Project[${project.slug}]`,
     );
+
     // Commit all artifacts for this project
-    await asyncBatch(group.artifacts, 1, async (batch) => {
-      return await commitArtifact(batch[0]);
-    });
+    await commitArtifact(group.artifacts);
   }
 
   private async *loadIssueTimeline(id: string): AsyncGenerator<IssueEvent> {
@@ -648,7 +647,7 @@ export class GithubIssueCollector extends GithubByProjectBaseCollector {
       });
     };
 
-    const recordPromises: Promise<void>[] = [];
+    const recordPromises: Promise<string>[] = [];
     if (issue.reviews.pageInfo.hasNextPage) {
       for await (const review of this.loadReviews(issue.id)) {
         recordPromises.push(recordReview(review));
@@ -693,7 +692,7 @@ export class GithubIssueCollector extends GithubByProjectBaseCollector {
       });
     };
 
-    const recordPromises: Promise<void>[] = [];
+    const recordPromises: Promise<string>[] = [];
     if (issue.openCloseEvents.pageInfo.hasNextPage) {
       for await (const event of this.loadIssueTimeline(issue.id)) {
         recordPromises.push(recordOpenCloseEvent(event));
@@ -706,19 +705,3 @@ export class GithubIssueCollector extends GithubByProjectBaseCollector {
     return recordPromises;
   }
 }
-
-// export type LoadPullRequests = CommonArgs & {
-//   skipExisting?: boolean;
-// };
-
-// export async function loadPullRequests(_args: LoadPullRequests): Promise<void> {
-//   logger.info("loading pull requests");
-
-//   const recorder = new BatchEventRecorder(prismaClient);
-//   const fetcher = new GithubPullRequestCollector(prismaClient, recorder);
-
-//   await fetcher.run();
-//   await recorder.waitAll();
-
-//   logger.info("done");
-// }

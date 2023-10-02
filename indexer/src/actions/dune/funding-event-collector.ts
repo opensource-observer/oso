@@ -233,7 +233,7 @@ export class FundingEventsCollector implements ICollector {
       },
     );
 
-    const recordPromises: Promise<void>[] = [];
+    const recordPromises: Promise<string>[] = [];
 
     for await (const res of responses) {
       for (const row of res.raw) {

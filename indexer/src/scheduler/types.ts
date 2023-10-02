@@ -4,10 +4,16 @@ import {
   ArtifactType,
   EventType,
   Job,
+  JobExecution,
   JobExecutionStatus,
 } from "../db/orm-entities.js";
 import { IEventRecorder, IEventTypeStrategy } from "../recorder/types.js";
-import { Range, findMissingRanges, rangeFromDates } from "../utils/ranges.js";
+import {
+  Range,
+  findMissingRanges,
+  rangeFromDates,
+  rangeToString,
+} from "../utils/ranges.js";
 import { EventPointerManager } from "./pointers.js";
 import { TimeSeriesCacheWrapper } from "../cacher/time-series.js";
 import { logger } from "../utils/logger.js";
@@ -23,6 +29,7 @@ import { writeFile, readFile, unlink } from "fs/promises";
 import path from "path";
 import { fileExists } from "../utils/files.js";
 import { mkdirp } from "mkdirp";
+import type { Brand } from "utility-types";
 
 export type ArtifactGroup = {
   details: unknown;
@@ -49,7 +56,7 @@ export interface ICollector {
   collect(
     group: ArtifactGroup,
     range: Range,
-    commitArtifact: (artifact: Artifact) => Promise<void>,
+    commitArtifact: (artifact: Artifact | Artifact[]) => Promise<void>,
   ): Promise<void>;
 }
 
@@ -82,6 +89,8 @@ export interface CollectorRegistration {
   group?: string;
 
   schedule: Schedule;
+
+  dataSetIncludesNow?: boolean;
 
   artifactScope: ArtifactNamespace[];
 
@@ -119,7 +128,7 @@ export interface IScheduler {
 
   queueJob(collector: string, baseTime: DateTime, range: Range): Promise<void>;
 
-  runWorker(group: string): Promise<ErrorsList>;
+  runWorker(group: string, resumeWithLock: boolean): Promise<ErrorsList>;
 
   executeForRange(collectorName: string, range: Range): Promise<ErrorsList>;
 }
@@ -252,33 +261,60 @@ export class BaseScheduler implements IScheduler {
     }
   }
 
-  async runWorker(group: string): Promise<ErrorsList> {
+  async runWorker(group: string, resumeWithLock: boolean): Promise<ErrorsList> {
+    let job: Job;
+    let execution: JobExecution | undefined;
+
     // Execute from the jobs queue.
-    const groups = await this.jobsRepository.availableJobGroups();
+    if (resumeWithLock && (await this.lockExists())) {
+      logger.info(`resuming with job lock at ${this.lockJsonPath()}`);
 
-    const jobsToChoose = groups.reduce<Job[]>((jobs, grouping) => {
-      if (grouping.name === "none") {
-        if (group === "all" || group === "none") {
-          jobs.push(...grouping.jobs);
-          return jobs;
+      const lock = await this.loadLock();
+      execution = await this.jobsExecutionRepository.findOneOrFail({
+        relations: {
+          job: true,
+        },
+        where: {
+          id: lock.execution.id as Brand<number, "JobExecutionId">,
+        },
+      });
+      job = execution.job;
+    } else {
+      const groups = await this.jobsRepository.availableJobGroups();
+
+      const jobsToChoose = groups.reduce<Job[]>((jobs, grouping) => {
+        if (grouping.name === "none") {
+          if (group === "all" || group === "none") {
+            jobs.push(...grouping.jobs);
+            return jobs;
+          }
+        } else {
+          if (grouping.name === group) {
+            jobs.push(...grouping.jobs);
+            return jobs;
+          }
         }
-      } else {
-        if (grouping.name === group) {
-          jobs.push(...grouping.jobs);
-          return jobs;
-        }
+        return jobs;
+      }, []);
+
+      console.log(jobsToChoose);
+
+      if (jobsToChoose.length === 0) {
+        logger.debug("no jobs available for the given group");
+        return [];
       }
-      return jobs;
-    }, []);
 
-    console.log(jobsToChoose);
+      job = _.sample(jobsToChoose)!;
+      execution = await this.jobsExecutionRepository.createExecutionForJob(job);
 
-    if (jobsToChoose.length === 0) {
-      logger.debug("no jobs available for the given group");
-      return [];
+      if (!execution) {
+        throw new Error("could not establish a lock");
+      }
+    }
+    if (!execution) {
+      throw new Error("unexpected error. execution not set");
     }
 
-    const job = _.sample(jobsToChoose)!;
     const options = job.options as { startDate: string; endDate: string };
     const startDate = DateTime.fromISO(options.startDate);
     const endDate = DateTime.fromISO(options.endDate);
@@ -287,12 +323,6 @@ export class BaseScheduler implements IScheduler {
       throw new Error("irrecoverable error. job description is bad.");
     }
 
-    const execution = await this.jobsExecutionRepository.createExecutionForJob(
-      job,
-    );
-    if (!execution) {
-      throw new Error("could not establish a lock");
-    }
     // Write the data for the lock to disk. So that this can be used to kill any
     // prematurely killed job.
     await this.ensureRunDir();
@@ -346,23 +376,28 @@ export class BaseScheduler implements IScheduler {
     return mkdirp(this.runDir);
   }
 
+  private async lockExists(): Promise<boolean> {
+    return await fileExists(this.lockJsonPath());
+  }
+
+  private async loadLock() {
+    const lockData = await readFile(this.lockJsonPath(), { encoding: "utf-8" });
+    return JSON.parse(lockData) as LockData;
+  }
+
   async cleanLock() {
     // If there's an existing lock file then we need to cancel the current job and consider it failed.
     const lockJsonPath = this.lockJsonPath();
     if (!(await fileExists(lockJsonPath))) {
       logger.info("no lock found. assuming the job exited cleanly");
     }
-    const lockData = await readFile(lockJsonPath, { encoding: "utf-8" });
-    const lock = JSON.parse(lockData) as LockData;
-    lock.execution.id;
+    const lock = await this.loadLock();
 
     const r = await this.jobsExecutionRepository.updateExecutionStatusById(
       lock.execution.id,
       JobExecutionStatus.FAILED,
     );
-    console.log(r);
-
-    //await unlink(lockJsonPath);
+    await unlink(lockJsonPath);
   }
 
   async executeForRange(collectorName: string, range: Range) {
@@ -370,6 +405,14 @@ export class BaseScheduler implements IScheduler {
     const reg = this.collectors[collectorName];
 
     this.recorder.setActorScope(reg.artifactScope, reg.artifactTypeScope);
+    if (reg.dataSetIncludesNow) {
+      this.recorder.setRange({
+        startDate: range.startDate,
+        endDate: DateTime.now().toUTC(),
+      });
+    } else {
+      this.recorder.setRange(range);
+    }
     const collector = await reg.create(this.config, this.recorder, this.cache);
     const errors: unknown[] = [];
 
@@ -396,22 +439,35 @@ export class BaseScheduler implements IScheduler {
         await collector.collect(
           { details: group.details, artifacts: missing },
           range,
-          async (artifact) => {
-            let seenCount = seenIds[artifact.id] || 0;
-            seenCount += 1;
-            seenIds[artifact.id] = seenCount;
-            if (seenCount > 1) {
-              logger.warn(`duplicate artifact commitment. skipping.`);
-              return;
-            }
-            logger.debug(
-              `completed events for "${collectorName} on Artifact[${artifact.id}]`,
+          async (input) => {
+            const artifacts = !Array.isArray(input) ? [input] : input;
+
+            const newArtifacts = artifacts.filter((a) => {
+              let seenCount = seenIds[a.id] || 0;
+              seenCount += 1;
+              seenIds[a.id] = seenCount;
+              if (seenCount > 1) {
+                logger.warn(`duplicate artifact commitment. skipping.`);
+                return false;
+              }
+              return true;
+            });
+
+            await Promise.all(
+              newArtifacts.map(async (artifact) => {
+                logger.debug(
+                  `completed events for "${collectorName} on Artifact[${
+                    artifact.id
+                  }] for ${rangeToString(range)}`,
+                );
+                return await this.eventPointerManager.commitArtifactForRange(
+                  range,
+                  artifact,
+                  collectorName,
+                );
+              }),
             );
-            return await this.eventPointerManager.commitArtifactForRange(
-              range,
-              artifact,
-              collectorName,
-            );
+            return;
           },
         );
       } catch (err) {
@@ -421,7 +477,13 @@ export class BaseScheduler implements IScheduler {
       }
       // TODO: Ensure all artifacts are committed or error
     }
-    await this.recorder.waitAll();
+
+    try {
+      await this.recorder.waitAll();
+    } catch (err) {
+      logger.error("waiting for the recorder to complete", err);
+      errors.push(err);
+    }
 
     if (errors.length > 0) {
       logger.info("completed with errors");

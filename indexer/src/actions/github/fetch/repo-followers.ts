@@ -209,12 +209,12 @@ export class GithubFollowingCollector extends GithubByProjectBaseCollector {
   async collect(
     group: ArtifactGroup,
     range: Range,
-    commitArtifact: (artifact: Artifact) => Promise<void>,
+    commitArtifact: (artifact: Artifact | Artifact[]) => Promise<void>,
   ): Promise<void> {
     const project = group.details as Project;
     logger.debug(`collecting followers for repos of Project[${project.slug}]`);
 
-    const recordPromises: Promise<void>[] = [];
+    const recordPromises: Promise<string>[] = [];
 
     // load the summaries for each
     for (const repo of group.artifacts) {
@@ -246,11 +246,10 @@ export class GithubFollowingCollector extends GithubByProjectBaseCollector {
         );
       }
     }
-    await this.recorder.waitAll();
+    await Promise.all(recordPromises);
+    //await this.recorder.waitAll();
 
-    asyncBatch(group.artifacts, 1, async (batch) => {
-      return commitArtifact(batch[0]);
-    });
+    return commitArtifact(group.artifacts);
   }
 
   private async loadSummaryForRepo(locator: GithubRepoLocator) {
@@ -267,8 +266,8 @@ export class GithubFollowingCollector extends GithubByProjectBaseCollector {
     artifact: Artifact,
     locator: GithubRepoLocator,
     range: Range,
-  ): Promise<Promise<void>[]> {
-    const recordPromises: Promise<void>[] = [];
+  ): Promise<Promise<string>[]> {
+    const recordPromises: Promise<string>[] = [];
     let aggregateStatsRecorded = false;
 
     for await (const { summary, starring } of this.loadStarHistoryForRepo(
@@ -466,7 +465,7 @@ export class GithubFollowingCollector extends GithubByProjectBaseCollector {
   ) {
     const startOfDay = DateTime.now().startOf("day");
 
-    const recordPromises: Promise<void>[] = [];
+    const recordPromises: Promise<string>[] = [];
 
     // Get the aggregate stats for forking
     recordPromises.push(
@@ -513,20 +512,3 @@ export class GithubFollowingCollector extends GithubByProjectBaseCollector {
     return recordPromises;
   }
 }
-
-// export type LoadRepositoryFollowers = CommonArgs & {
-//   skipExisting?: boolean;
-// };
-
-// export async function loadRepositoryFollowers(
-//   _args: LoadRepositoryFollowers,
-// ): Promise<void> {
-//   logger.info("loading stars");
-
-//   const recorder = new BatchEventRecorder(prismaClient);
-//   const fetcher = new GithubFollowingCollector(prismaClient, recorder);
-
-//   await fetcher.run();
-//   await recorder.waitAll();
-//   logger.info("done");
-// }

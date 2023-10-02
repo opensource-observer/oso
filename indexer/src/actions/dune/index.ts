@@ -253,7 +253,7 @@ export class DailyContractUsageCollector implements ICollector {
   }
 
   protected createEventsForDay(contract: Artifact, day: DailyContractUsageRow) {
-    const eventPromises: Promise<void>[] = [];
+    const eventPromises: Promise<string>[] = [];
     const userArtifacts: IncompleteArtifact[] = day.userAddresses.map(
       (addr) => {
         return {
@@ -321,19 +321,3 @@ export class DailyContractUsageCollector implements ICollector {
     return eventPromises;
   }
 }
-
-// export async function importDailyContractUsage(
-//   args: ImportDailyContractUsage,
-// ): Promise<void> {
-//   logger.info("importing contract usage");
-
-//   const dune = new DuneClient(DUNE_API_KEY);
-//   const client = new DailyContractUsageClient(dune);
-//   const syncer = new DailyContractUsageCollector(client, prismaClient, {
-//     cacheDirectory: args.cacheDir,
-//     baseDate: args.baseDate,
-//   });
-
-//   await syncer.run();
-//   logger.info("done");
-// }
