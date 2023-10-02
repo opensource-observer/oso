@@ -9,7 +9,8 @@ env:
   X_GITHUB_GRAPHQL_API: ${{ vars.X_GITHUB_GRAPHQL_API }}
   X_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   DUNE_API_KEY: ${{ secrets.DUNE_API_KEY }}
-  CACHE_DIR: /tmp/oso-cache
+  CACHE_DIR: /tmp/oso/cache
+  RUN_DIR: /tmp/oso/run
 
 # Trigger the workflow when:
 on:
@@ -67,7 +68,11 @@ jobs:
         run: ls -halt ${CACHE_DIR}
 
       - name: Run worker for the given group
-        run: pnpm start:indexer --cache-dir ${CACHE_DIR} scheduler worker ${{ inputs.group }}
+        run: pnpm start:indexer --cache-dir ${CACHE_DIR} --run-dir ${RUN_DIR} scheduler worker ${{ inputs.group }}
+
+      - name: Close job execution if it exists
+        if: always()
+        run: pnpm start:indexer --cache-dir ${CACHE_DIR} --run-dir ${RUN_DIR} scheduler job clean-lock
 
       - name: Write to cache if needed
         if: always()

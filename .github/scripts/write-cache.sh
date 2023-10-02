@@ -24,12 +24,12 @@ fi
 cd "${CACHE_DIR}/../"
 
 # Get tag names
-latest_tag=latest
-creation_date=$(date '+%Y-%m-%d %H:%M:%S')
-creation_tag=$(date '+%Y-%m-%d-%H-%M-%S')
-today_tag=$(date '+%Y-%m-%d')
-month_tag=$(date '+%Y-%m')
-year_tag=$(date '+%Y')
+latest_tag=${CACHE_PREFIX}-latest
+creation_date=${CACHE_PREFIX}-$(date '+%Y-%m-%d %H:%M:%S')
+creation_tag=${CACHE_PREFIX}-$(date '+%Y-%m-%d-%H-%M-%S')
+today_tag=${CACHE_PREFIX}-$(date '+%Y-%m-%d')
+month_tag=${CACHE_PREFIX}-$(date '+%Y-%m')
+year_tag=${CACHE_PREFIX}-$(date '+%Y')
 
 CACHE_DIR_NAME="$(basename ${CACHE_DIR})"
 

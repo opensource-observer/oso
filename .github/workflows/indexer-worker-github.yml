@@ -1,10 +1,8 @@
-# This is a temporary workflow. The current way the indexer runs isn't as
-# flexible with scheduling. However, the daily contract usage needs to be run.
-# Eventually we should coalesce all of this into a single scheduler that can spawn 
-# multiple workflows. Additionally, this workflow has a persistent caching mechanism 
-# that should be generalized for use to others. 
+# THIS IS A TEMPORARY CRON'D WORKER TO AUTOMATICALLY RUN GITHUB JOBS. EVENTUALLY
+# THESE SHOULD BE SPAWNED INSIDE THE SCHEDULER FROM WITHIN NODE
 
-name: os-observer-daily-contract-usage 
+# Execute the worker for a specific group
+name: os-observer-indexer-worker-github
 env:
   DB_HOST: ${{ vars.DB_HOST }}
   DB_PORT: ${{ vars.DB_PORT }}
@@ -14,21 +12,26 @@ env:
   X_GITHUB_GRAPHQL_API: ${{ vars.X_GITHUB_GRAPHQL_API }}
   X_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   DUNE_API_KEY: ${{ secrets.DUNE_API_KEY }}
-  CACHE_DIR: /tmp/oso-cache
+  CACHE_DIR: /tmp/oso/cache
+  RUN_DIR: /tmp/oso/run
 
 # Trigger the workflow when:
 on:
-  workflow_dispatch:
+  # Allows you to run this workflow manually from the Actions tab
   schedule:
-    # Every week on monday at midnight
-    - cron: '0 0 * * 1'
+    # Schedule every 15 minutes
+    - cron: '*/15 * * * *'
 
 jobs:
-  fetch-data:
-    # NOTE: This name appears in GitHub's Checks API.
-    name: fetch-data
+  collector-worker-run:
+    name: collector-worker-run
     environment: indexer
     runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    env:
+      CACHE_PREFIX: github
+      
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -51,14 +54,25 @@ jobs:
       - name: Build
         run: pnpm build:indexer
 
+      - name: 'Login to GitHub Container Registry'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Load docker persistent cache
         run: ./.github/scripts/load-cache.sh
 
       - name: Test cache loaded
         run: ls -halt ${CACHE_DIR}
 
-      - name: Run
-        run: pnpm start:indexer --cache-dir ${CACHE_DIR} importDailyContractUsage 
+      - name: Run worker for the given group
+        run: pnpm start:indexer --cache-dir ${CACHE_DIR} --run-dir ${RUN_DIR} scheduler worker github
+
+      - name: Close job execution if it exists
+        if: always()
+        run: pnpm start:indexer --cache-dir ${CACHE_DIR} --run-dir ${RUN_DIR} scheduler job clean-lock
 
       - name: Write to cache if needed
         if: always()
