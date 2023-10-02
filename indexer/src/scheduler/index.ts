@@ -47,6 +47,7 @@ export type SchedulerManualArgs = SchedulerArgs & {
 
 export type SchedulerWorkerArgs = SchedulerArgs & {
   group: string;
+  resumeWithLock: boolean;
 };
 
 export type SchedulerQueueAllArgs = SchedulerArgs & {
@@ -62,7 +63,7 @@ export type SchedulerQueueJobArgs = SchedulerArgs & {
 
 // Entrypoint for the scheduler. Currently not where it should be but this is quick.
 export async function configure(args: SchedulerArgs) {
-  const flusher = new TimeoutFlusher(10000);
+  const flusher = new TimeoutFlusher(1000);
   const recorder = new BatchEventRecorder(
     EventRepository,
     ArtifactRepository,
@@ -173,6 +174,7 @@ export async function configure(args: SchedulerArgs) {
     description: "Collects github commits",
     group: "github",
     schedule: "daily",
+    dataSetIncludesNow: true,
     artifactScope: [ArtifactNamespace.GITHUB],
     artifactTypeScope: [
       ArtifactType.GITHUB_USER,
@@ -195,6 +197,7 @@ export async function configure(args: SchedulerArgs) {
     description: "Collects github pull requests and issues",
     group: "github",
     schedule: "daily",
+    dataSetIncludesNow: true,
     artifactScope: [ArtifactNamespace.GITHUB],
     artifactTypeScope: [
       ArtifactType.GITHUB_USER,
@@ -217,6 +220,7 @@ export async function configure(args: SchedulerArgs) {
     description: "Collects github pull requests and issues",
     group: "github",
     schedule: "weekly",
+    dataSetIncludesNow: true,
     artifactScope: [ArtifactNamespace.GITHUB],
     artifactTypeScope: [
       ArtifactType.GITHUB_ORG,

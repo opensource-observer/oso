@@ -9,6 +9,7 @@ import { FindOptionsWhere } from "typeorm";
 import _ from "lodash";
 import { DateTime } from "luxon";
 import { GenericError } from "../common/errors.js";
+import { Range } from "../utils/ranges.js";
 
 export class RecorderError extends GenericError {}
 
@@ -24,9 +25,11 @@ export interface IEventRecorder {
   registerEventType(eventType: EventType, strategy: IEventTypeStrategy): void;
 
   // Record a single event. These are batched
-  record(event: IncompleteEvent): Promise<void>;
+  record(event: IncompleteEvent): Promise<string>;
 
   setActorScope(namespaces: ArtifactNamespace[], types: ArtifactType[]): void;
+
+  setRange(range: Range): void;
 
   // Call this when you're done recording
   waitAll(): Promise<void>;

@@ -50,6 +50,7 @@ withDbDescribe("BatchEventRecorder", () => {
       flusher,
       {
         maxBatchSize: 3,
+        timeoutMs: 30000,
       },
     );
     recorder.registerEventType(

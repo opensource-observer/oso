@@ -12,19 +12,28 @@ import {
   generateEventTypeStrategy,
   IncompleteArtifact,
 } from "./types.js";
-import { In, Repository, And, MoreThanOrEqual, LessThanOrEqual } from "typeorm";
+import {
+  In,
+  Repository,
+  And,
+  MoreThanOrEqual,
+  LessThanOrEqual,
+  QueryFailedError,
+} from "typeorm";
 import { InmemActorResolver } from "./actors.js";
 import { UniqueArray, asyncBatch } from "../utils/array.js";
 import { logger } from "../utils/logger.js";
 import _ from "lodash";
 import { EntityLookup } from "../utils/lookup.js";
 import { PromisePubSub } from "../utils/pubsub.js";
+import { Range, isWithinRange } from "../utils/ranges.js";
 
 export interface BatchEventRecorderOptions {
   maxBatchSize: number;
+  timeoutMs: number;
 }
 
-export type RecordResponse = void;
+export type RecordResponse = string;
 
 class EventTypeStorage<T> {
   private queue: UniqueArray<IncompleteEvent>;
@@ -39,7 +48,11 @@ class EventTypeStorage<T> {
 
   private constructor(queue: UniqueArray<IncompleteEvent>) {
     this.queue = queue;
-    this.pubsub = new PromisePubSub();
+    this.pubsub = new PromisePubSub({
+      // the recorder should be fast enough to record within a minute. We will
+      // give it two to resolve.
+      timeoutMs: 120000,
+    });
   }
 
   pushAndWait(event: IncompleteEvent): Promise<T> {
@@ -54,9 +67,8 @@ class EventTypeStorage<T> {
 
   popAll(): IncompleteEvent[] {
     const events = [];
-    const lengthToPop = this.length;
 
-    for (let i = 0; i < lengthToPop; i++) {
+    while (this.length > 0) {
       const event = this.pop();
       if (event) {
         events.push(event);
@@ -76,6 +88,8 @@ class EventTypeStorage<T> {
 
 const defaultBatchEventRecorderOptions: BatchEventRecorderOptions = {
   maxBatchSize: 5000,
+  // ten minute timeout seems sane for completing any db writes
+  timeoutMs: 600000,
 };
 
 export interface IFlusher {
@@ -114,9 +128,15 @@ export class TimeoutFlusher implements IFlusher {
   }
 }
 
+type KnownEventStorage = {
+  loaded: boolean;
+  known: Record<string, boolean>;
+};
+
 export class BatchEventRecorder implements IEventRecorder {
   private eventTypeStrategies: Record<string, IEventTypeStrategy>;
-  private eventTypeStorage: Record<string, EventTypeStorage<void>>;
+  private eventTypeStorage: Record<string, EventTypeStorage<RecordResponse>>;
+  private knownEventsStorage: Record<string, KnownEventStorage>;
   private options: BatchEventRecorderOptions;
   private actorDirectory: InmemActorResolver;
   private eventRepository: Repository<Event>;
@@ -126,6 +146,8 @@ export class BatchEventRecorder implements IEventRecorder {
   private actorsLoaded: boolean;
   private flusher: IFlusher;
   private pubsub: PromisePubSub<void, unknown>;
+  private pause: boolean;
+  private range: Range | undefined;
 
   constructor(
     eventRepository: Repository<Event>,
@@ -143,12 +165,84 @@ export class BatchEventRecorder implements IEventRecorder {
     this.types = [];
     this.actorsLoaded = false;
     this.flusher = flusher;
-    this.pubsub = new PromisePubSub();
+    this.pubsub = new PromisePubSub({
+      timeoutMs: this.options.timeoutMs,
+    });
+    this.pause = false;
+    this.knownEventsStorage = {};
   }
 
   setActorScope(namespaces: ArtifactNamespace[], types: ArtifactType[]) {
     this.namespaces = namespaces;
     this.types = types;
+  }
+
+  setRange(range: Range) {
+    // This is used to optimize queries.
+    this.range = range;
+
+    // Invalidate any known event storage
+    this.knownEventsStorage = {};
+  }
+
+  private async loadEvents(eventType: EventType) {
+    if (!this.range) {
+      throw new Error("recorder needs a range to load events");
+    }
+    if (!this.knownEventsStorageForType(eventType).loaded) {
+      logger.debug(`Loading existing events for ${eventType} (if any)`);
+      // find all of the events that need for a given time range
+      const strategy = this.getEventTypeStrategy(eventType);
+      const where = strategy.all(this.actorDirectory);
+
+      where.time = And(
+        MoreThanOrEqual(this.range.startDate.toJSDate()),
+        LessThanOrEqual(this.range.endDate.toJSDate()),
+      );
+
+      // Find existing events (for idempotency)
+      const existingEvents = await this.eventRepository.find({
+        where: where,
+      });
+
+      const lookup = existingEvents.reduce<Record<string, boolean>>(
+        (lookup, curr) => {
+          lookup[curr.sourceId] = true;
+          return lookup;
+        },
+        {},
+      );
+
+      console.log(`existing events length ${existingEvents.length}`);
+
+      this.knownEventsStorage[eventType] = {
+        loaded: true,
+        known: lookup,
+      };
+    }
+  }
+
+  private knownEventsStorageForType(eventType: EventType): KnownEventStorage {
+    const storage = this.knownEventsStorage[eventType] || {
+      loaded: false,
+      known: {},
+    };
+    return storage;
+  }
+
+  private markEventAsKnown(event: Event | IncompleteEvent) {
+    const storage = this.knownEventsStorageForType(event.type);
+    if (!storage.loaded) {
+      throw new Error(
+        `eventType ${event.type} hasn't been loaded for the recorder`,
+      );
+    }
+    storage.known[event.sourceId] = true;
+  }
+
+  private isKnownEvent(event: IncompleteEvent) {
+    const storage = this.knownEventsStorageForType(event.type);
+    return storage.known[event.sourceId] !== undefined;
   }
 
   private async loadActors(): Promise<void> {
@@ -187,6 +281,13 @@ export class BatchEventRecorder implements IEventRecorder {
     const queue = this.getEventTypeStorage(event.type);
     const promise = queue.pushAndWait(event);
 
+    // Upon the first "record" and pausable loop will begin
+    this.pause = false;
+    this.scheduleFlush();
+    return promise;
+  }
+
+  private scheduleFlush() {
     this.flusher.scheduleIfNotSet(async () => {
       try {
         logger.debug(`flushing all queued events`);
@@ -196,8 +297,12 @@ export class BatchEventRecorder implements IEventRecorder {
       }
       logger.debug("flush complete");
       this.flusher.clear();
+
+      // Endlessly loop unless we're stopped.
+      if (!this.pause) {
+        this.scheduleFlush();
+      }
     });
-    return promise;
   }
 
   private getEventTypeStrategy(eventType: EventType): IEventTypeStrategy {
@@ -226,6 +331,10 @@ export class BatchEventRecorder implements IEventRecorder {
     for (const eventType in this.eventTypeStorage) {
       all.push(this.wait(eventType as EventType));
     }
+
+    // Wait all generally means we're looking to stop.
+    this.pause = true;
+
     await Promise.all(all);
     return;
   }
@@ -239,12 +348,13 @@ export class BatchEventRecorder implements IEventRecorder {
   }
 
   private async flushType(eventType: EventType) {
-    logger.debug("Waiting for all events to be recorded");
+    logger.debug(
+      `Waiting for all ${eventType.toString()} events to be recorded`,
+    );
     if (!this.actorsLoaded) {
       await this.loadActors();
     }
 
-    logger.debug(`processing ${eventType}`);
     // Wait for a specific event type queue to complete
     const eventTypeStorage = this.getEventTypeStorage(eventType);
     if (eventTypeStorage.length === 0) {
@@ -258,18 +368,20 @@ export class BatchEventRecorder implements IEventRecorder {
       } items`,
     );
     const processing = eventTypeStorage.popAll();
-    logger.info(`processing: ${processing.length}`);
 
     try {
       await this.processEvents(eventType, processing);
       this.pubsub.pub(eventType, null);
     } catch (err) {
-      logger.debug("caught error!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+      logger.error(
+        "error caught while processing one of the events in a batch",
+        err,
+      );
       this.pubsub.pub(eventType, err);
 
       // Report errors to all of the promises listening on specific events
       for (const event of processing) {
-        eventTypeStorage.emitResponse(event.sourceId, err);
+        eventTypeStorage.emitResponse(event.sourceId, err, "");
       }
       throw err;
     }
@@ -279,6 +391,8 @@ export class BatchEventRecorder implements IEventRecorder {
     eventType: EventType,
     processing: IncompleteEvent[],
   ): Promise<void> {
+    await this.loadEvents(eventType);
+
     // Get the date range for the currently queued items
     const eventTypeStorage = this.getEventTypeStorage(eventType);
     let startDate = processing[0].time;
@@ -293,28 +407,6 @@ export class BatchEventRecorder implements IEventRecorder {
       }
     });
 
-    // Get event type strategy
-    const strategy = this.getEventTypeStrategy(eventType);
-    const where = strategy.all(this.actorDirectory);
-    where.time = And(
-      MoreThanOrEqual(startDate.toJSDate()),
-      LessThanOrEqual(endDate.toJSDate()),
-    );
-
-    // Find existing events (for idempotency)
-    const existingEvents = await this.eventRepository.find({
-      where: where,
-    });
-    const existingEventsLookup: EntityLookup<{
-      sourceId: string;
-      type: EventType;
-    }> = new EntityLookup((e) => `${e.type}:${e.sourceId}`);
-
-    logger.debug("Loaded existing events (if any)");
-    existingEvents.forEach((e) => {
-      existingEventsLookup.push(e as Event);
-    });
-
     const newEvents = [];
     const queuedArtifacts: UniqueArray<IncompleteArtifact> = new UniqueArray(
       (a) => `${a.name}::${a.namespace}`,
@@ -322,7 +414,8 @@ export class BatchEventRecorder implements IEventRecorder {
 
     // Filter duplicates
     for (const event of processing) {
-      if (!existingEventsLookup.has(event)) {
+      // For now we ignore events outside the range we're recording and any known events.
+      if (!this.isKnownEvent(event) && isWithinRange(this.range!, event.time)) {
         queuedArtifacts.push(event.to);
         if (event.from) {
           queuedArtifacts.push(event.from);
@@ -330,9 +423,10 @@ export class BatchEventRecorder implements IEventRecorder {
         newEvents.push(event);
       } else {
         // Resolve any existing subscriptions for this event's creation
-        eventTypeStorage.emitResponse(event.sourceId, null);
+        eventTypeStorage.emitResponse(event.sourceId, null, event.sourceId);
       }
     }
+
     logger.debug(
       `skipping ${processing.length - newEvents.length} existing events`,
     );
@@ -350,8 +444,9 @@ export class BatchEventRecorder implements IEventRecorder {
       return this.artifactRepository.insert(artifacts);
     });
 
-    // Load all of the actors again. We can improve this later
-    await this.loadActors();
+    if (newArtifacts.length > 0) {
+      await this.loadActors();
+    }
 
     logger.debug(`about to start writing to db in batch ${newEvents.length}`);
 
@@ -390,11 +485,23 @@ export class BatchEventRecorder implements IEventRecorder {
           await this.eventRepository.insert(events);
           logger.debug(`completed writing batch of ${batchLength}`);
           events.forEach((e) => {
-            eventTypeStorage.emitResponse(e.sourceId, null);
+            // Mark as known event
+            this.markEventAsKnown(e);
+
+            // Notify any subscribers that the event has been recorded
+            eventTypeStorage.emitResponse(e.sourceId, null, e.sourceId);
           });
         } catch (err) {
+          if (err instanceof QueryFailedError) {
+            if (err.message.indexOf("duplicate") !== -1) {
+              console.log("attempted to write a dupe");
+              console.log(err.parameters);
+              console.log(events);
+            }
+          }
           events.forEach((e) => {
-            eventTypeStorage.emitResponse(e.sourceId, e);
+            // Notify any subscribers that the event has failed to record
+            eventTypeStorage.emitResponse(e.sourceId, e, "");
           });
           throw err;
         }
@@ -402,11 +509,14 @@ export class BatchEventRecorder implements IEventRecorder {
     );
   }
 
-  protected getEventTypeStorage(eventType: EventType): EventTypeStorage<void> {
+  protected getEventTypeStorage(
+    eventType: EventType,
+  ): EventTypeStorage<RecordResponse> {
     const typeString = eventType.toString();
     let queue = this.eventTypeStorage[typeString];
     if (!queue) {
-      this.eventTypeStorage[typeString] = EventTypeStorage.setup<void>();
+      this.eventTypeStorage[typeString] =
+        EventTypeStorage.setup<RecordResponse>();
       queue = this.eventTypeStorage[typeString];
     }
     return queue;
