@@ -8,7 +8,7 @@ import {
   JobGroupLock,
 } from "./orm-entities.js";
 import { DateTime } from "luxon";
-import { Equal, QueryFailedError } from "typeorm";
+import { QueryFailedError } from "typeorm";
 import type { Brand } from "utility-types";
 
 export class JobAlreadyActive extends GenericError {}

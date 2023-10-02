@@ -31,7 +31,6 @@ import {
   SchedulerWorkerArgs,
   configure,
 } from "./scheduler/index.js";
-import { CommonArgs } from "./utils/api.js";
 
 //const callLibrary = async <Args>(
 //  func: EventSourceFunction<Args>,

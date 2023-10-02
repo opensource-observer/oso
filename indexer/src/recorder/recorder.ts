@@ -11,7 +11,6 @@ import {
   IEventTypeStrategy,
   generateEventTypeStrategy,
   IncompleteArtifact,
-  RecorderError,
 } from "./types.js";
 import { In, Repository, And, MoreThanOrEqual, LessThanOrEqual } from "typeorm";
 import { InmemActorResolver } from "./actors.js";
@@ -19,8 +18,6 @@ import { UniqueArray, asyncBatch } from "../utils/array.js";
 import { logger } from "../utils/logger.js";
 import _ from "lodash";
 import { EntityLookup } from "../utils/lookup.js";
-import EventEmitter from "events";
-import { GenericError } from "../common/errors.js";
 import { PromisePubSub } from "../utils/pubsub.js";
 
 export interface BatchEventRecorderOptions {
@@ -28,11 +25,6 @@ export interface BatchEventRecorderOptions {
 }
 
 export type RecordResponse = void;
-
-type RecordResolver<T> = {
-  resolve: (r: T) => void;
-  reject: (e: unknown) => void;
-};
 
 class EventTypeStorage<T> {
   private queue: UniqueArray<IncompleteEvent>;
@@ -85,11 +77,6 @@ class EventTypeStorage<T> {
 const defaultBatchEventRecorderOptions: BatchEventRecorderOptions = {
   maxBatchSize: 5000,
 };
-
-interface StatusAndListeners {
-  wasRecorded: boolean;
-  listeners: Promise<void>[];
-}
 
 export interface IFlusher {
   scheduleIfNotSet(cb: () => void): void;
@@ -400,7 +387,7 @@ export class BatchEventRecorder implements IEventRecorder {
         );
 
         try {
-          const response = await this.eventRepository.insert(events);
+          await this.eventRepository.insert(events);
           logger.debug(`completed writing batch of ${batchLength}`);
           events.forEach((e) => {
             eventTypeStorage.emitResponse(e.sourceId, null);
