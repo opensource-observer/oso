@@ -62,7 +62,9 @@ class EventTypeStorage<T> {
 
   popAll(): IncompleteEvent[] {
     const events = [];
-    for (let i = 0; i < this.queue.length; i++) {
+    const lengthToPop = this.length;
+
+    for (let i = 0; i < lengthToPop; i++) {
       const event = this.pop();
       if (event) {
         events.push(event);
@@ -200,10 +202,12 @@ export class BatchEventRecorder implements IEventRecorder {
 
     this.flusher.scheduleIfNotSet(async () => {
       try {
+        logger.debug(`flushing all queued events`);
         await this.flushAll();
       } catch {
         logger.debug(`errors flushing`);
       }
+      logger.debug("flush complete");
       this.flusher.clear();
     });
     return promise;
@@ -222,7 +226,11 @@ export class BatchEventRecorder implements IEventRecorder {
   private async flushAll() {
     // Wait for all queues to complete in series
     for (const eventType in this.eventTypeStorage) {
-      await this.flushType(eventType as EventType);
+      try {
+        await this.flushType(eventType as EventType);
+      } catch (err) {
+        logger.error(`error processing events ${eventType}`, err);
+      }
     }
   }
 
@@ -263,12 +271,20 @@ export class BatchEventRecorder implements IEventRecorder {
       } items`,
     );
     const processing = eventTypeStorage.popAll();
+    logger.info(`processing: ${processing.length}`);
 
     try {
       await this.processEvents(eventType, processing);
       this.pubsub.pub(eventType, null);
     } catch (err) {
+      logger.debug("caught error!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
       this.pubsub.pub(eventType, err);
+
+      // Report errors to all of the promises listening on specific events
+      for (const event of processing) {
+        eventTypeStorage.emitResponse(event.sourceId, err);
+      }
+      throw err;
     }
   }
 
@@ -325,6 +341,9 @@ export class BatchEventRecorder implements IEventRecorder {
           queuedArtifacts.push(event.from);
         }
         newEvents.push(event);
+      } else {
+        // Resolve any existing subscriptions for this event's creation
+        eventTypeStorage.emitResponse(event.sourceId, null);
       }
     }
     logger.debug(
@@ -345,7 +364,9 @@ export class BatchEventRecorder implements IEventRecorder {
     });
 
     // Load all of the actors again. We can improve this later
-    //await this.loadActors();
+    await this.loadActors();
+
+    logger.debug(`about to start writing to db in batch ${newEvents.length}`);
 
     await asyncBatch(
       newEvents,
@@ -388,6 +409,7 @@ export class BatchEventRecorder implements IEventRecorder {
           events.forEach((e) => {
             eventTypeStorage.emitResponse(e.sourceId, e);
           });
+          throw err;
         }
       },
     );

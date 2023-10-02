@@ -34,6 +34,7 @@ export class PromisePubSub<T, E> {
         resolve: resolve,
         reject: reject,
       });
+      this.topicResolvers[topic] = resolvers;
     });
   }
 

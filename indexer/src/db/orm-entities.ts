@@ -268,6 +268,11 @@ export class JobExecution extends Base<"JobExecutionId"> {
   @Column("integer")
   attempt: number;
 
+  // Using the updatedAt field to maintain a row lock here doesn't seem to work
+  // properly. Just using a simple counter.
+  @Column("integer", { default: 0 })
+  version: number;
+
   @ManyToOne(() => Job, (job) => job.executions)
   job: Job;
 

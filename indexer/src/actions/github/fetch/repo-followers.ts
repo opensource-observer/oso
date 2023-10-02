@@ -32,7 +32,7 @@ import {
   doRangesIntersect,
   rangeFromISO,
 } from "../../../utils/ranges.js";
-import { generateSourceIdFromArray } from "../../../utils/sourceIds.js";
+import { generateSourceIdFromArray } from "../../../utils/source-ids.js";
 import { asyncBatch } from "../../../utils/array.js";
 
 const GET_ALL_PUBLIC_FORKS = gql`
@@ -132,6 +132,11 @@ const REPOSITORY_FOLLOWING_SUMMARY = gql`
   }
 `;
 
+type StarringWrapper = {
+  starring: Starring;
+  summary: RepoFollowingSummaryResponse;
+};
+
 type Starring = {
   node: Actor;
   starredAt: string;
@@ -209,6 +214,8 @@ export class GithubFollowingCollector extends GithubByProjectBaseCollector {
     const project = group.details as Project;
     logger.debug(`collecting followers for repos of Project[${project.slug}]`);
 
+    const recordPromises: Promise<void>[] = [];
+
     // load the summaries for each
     for (const repo of group.artifacts) {
       const locator = this.splitGithubRepoIntoLocator(repo);
@@ -220,11 +227,13 @@ export class GithubFollowingCollector extends GithubByProjectBaseCollector {
         doRangesIntersect(ranges.forksRange, range, true)
       ) {
         // Gather fork events within this range
-        await this.recordForkEvents(
-          repo,
-          locator,
-          summary.repository.forkCount,
-          range,
+        recordPromises.push(
+          ...(await this.recordForkEvents(
+            repo,
+            locator,
+            summary.repository.forkCount,
+            range,
+          )),
         );
       }
       if (
@@ -232,7 +241,9 @@ export class GithubFollowingCollector extends GithubByProjectBaseCollector {
         doRangesIntersect(ranges.stargazersRange, range, true)
       ) {
         // Gather starring events within this range
-        await this.recordStarHistoryForRepo(repo, locator, range);
+        recordPromises.push(
+          ...(await this.recordStarHistoryForRepo(repo, locator, range)),
+        );
       }
     }
     await this.recorder.waitAll();
@@ -256,12 +267,23 @@ export class GithubFollowingCollector extends GithubByProjectBaseCollector {
     artifact: Artifact,
     locator: GithubRepoLocator,
     range: Range,
-  ): Promise<void> {
-    for await (const starring of this.loadStarHistoryForRepo(
+  ): Promise<Promise<void>[]> {
+    const recordPromises: Promise<void>[] = [];
+    let aggregateStatsRecorded = false;
+
+    for await (const { summary, starring } of this.loadStarHistoryForRepo(
       artifact,
       locator,
       range,
     )) {
+      if (!aggregateStatsRecorded) {
+        // Hack to make this work. we need to change how this works
+        recordPromises.push(this.recordStarAggregateStats(locator, summary));
+        logger.debug("record watchers");
+
+        recordPromises.push(this.recordWatcherEvents(locator, summary));
+        aggregateStatsRecorded = true;
+      }
       const commitTime = DateTime.fromISO(starring.starredAt);
 
       const contributor =
@@ -288,15 +310,16 @@ export class GithubFollowingCollector extends GithubByProjectBaseCollector {
         ]),
       };
 
-      this.recorder.record(event);
+      recordPromises.push(this.recorder.record(event));
     }
+    return recordPromises;
   }
 
   private async *loadStarHistoryForRepo(
     artifact: Artifact,
     locator: GithubRepoLocator,
     range: Range,
-  ): AsyncGenerator<Starring> {
+  ): AsyncGenerator<StarringWrapper> {
     const iterator = unpaginateIterator<RepoFollowingSummaryResponse>()(
       REPOSITORY_FOLLOWING_SUMMARY,
       "repository.stargazers.edges",
@@ -306,17 +329,8 @@ export class GithubFollowingCollector extends GithubByProjectBaseCollector {
         name: locator.repo,
       },
     );
-    let aggregateStatsRecorded = false;
     for await (const data of iterator) {
       const response = data.raw as RepoFollowingSummaryResponse;
-      if (!aggregateStatsRecorded) {
-        // Hack to make this work. we need to change how the unpaginate works
-        await this.recordStarAggregateStats(locator, response);
-        logger.debug("record watchers");
-
-        await this.recordWatcherEvents(locator, response);
-        aggregateStatsRecorded = true;
-      }
 
       for (const starring of data.results) {
         const commitTime = DateTime.fromISO(starring.starredAt);
@@ -326,7 +340,10 @@ export class GithubFollowingCollector extends GithubByProjectBaseCollector {
           // for, we can stop collecting stars for this artifact.
           return;
         }
-        yield starring;
+        yield {
+          starring: starring,
+          summary: response,
+        };
       }
     }
   }
@@ -398,7 +415,7 @@ export class GithubFollowingCollector extends GithubByProjectBaseCollector {
     const startOfDay = DateTime.now().startOf("day");
     const starCount = response.repository.stargazers.totalCount;
 
-    this.recorder.record({
+    return this.recorder.record({
       time: startOfDay,
       type: EventType.STAR_AGGREGATE_STATS,
       to: artifact,
@@ -410,8 +427,6 @@ export class GithubFollowingCollector extends GithubByProjectBaseCollector {
         repo.repo,
       ]),
     });
-
-    return this.recorder.wait(EventType.STAR_AGGREGATE_STATS);
   }
 
   private async recordWatcherEvents(
@@ -429,7 +444,7 @@ export class GithubFollowingCollector extends GithubByProjectBaseCollector {
     logger.debug("recording watcher stats for today");
 
     // Get the aggregate stats for forking
-    this.recorder.record({
+    return this.recorder.record({
       time: startOfDay,
       type: EventType.WATCHER_AGGREGATE_STATS,
       to: artifact,
@@ -441,8 +456,6 @@ export class GithubFollowingCollector extends GithubByProjectBaseCollector {
         repo.repo,
       ]),
     });
-
-    return this.recorder.wait(EventType.WATCHER_AGGREGATE_STATS);
   }
 
   private async recordForkEvents(
@@ -453,19 +466,23 @@ export class GithubFollowingCollector extends GithubByProjectBaseCollector {
   ) {
     const startOfDay = DateTime.now().startOf("day");
 
+    const recordPromises: Promise<void>[] = [];
+
     // Get the aggregate stats for forking
-    this.recorder.record({
-      time: startOfDay,
-      type: EventType.FORK_AGGREGATE_STATS,
-      to: artifact,
-      amount: forkCount,
-      sourceId: generateSourceIdFromArray([
-        "FORKS",
-        startOfDay.toISO()!,
-        repo.owner,
-        repo.repo,
-      ]),
-    });
+    recordPromises.push(
+      this.recorder.record({
+        time: startOfDay,
+        type: EventType.FORK_AGGREGATE_STATS,
+        to: artifact,
+        amount: forkCount,
+        sourceId: generateSourceIdFromArray([
+          "FORKS",
+          startOfDay.toISO()!,
+          repo.owner,
+          repo.repo,
+        ]),
+      }),
+    );
 
     const recordForkedEvent = (f: Fork) => {
       const createdAt = DateTime.fromISO(f.createdAt);
@@ -477,7 +494,7 @@ export class GithubFollowingCollector extends GithubByProjectBaseCollector {
             ? ArtifactType.GITHUB_ORG
             : ArtifactType.GITHUB_USER,
       };
-      this.recorder.record({
+      return this.recorder.record({
         time: createdAt,
         type: EventType.FORKED,
         to: artifact,
@@ -490,11 +507,10 @@ export class GithubFollowingCollector extends GithubByProjectBaseCollector {
     // If we have more forks than 100 we need to make some additional queries to gather information
     logger.debug("loading fork history");
     for await (const fork of this.loadAllForksHistory(repo, range)) {
-      recordForkedEvent(fork);
+      recordPromises.push(recordForkedEvent(fork));
     }
 
-    await this.recorder.wait(EventType.FORK_AGGREGATE_STATS);
-    return this.recorder.wait(EventType.FORKED);
+    return recordPromises;
   }
 }
 

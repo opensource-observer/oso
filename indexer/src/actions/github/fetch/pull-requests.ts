@@ -418,19 +418,6 @@ export class GithubIssueCollector extends GithubByProjectBaseCollector {
     super(projectRepository, recorder, cache, opts);
   }
 
-  // async run() {
-  //   this.setupRecorder();
-
-  //   const projectRepos = await this.loadRelevantRepos();
-
-  //   for (const repos of projectRepos) {
-  //     await this.recordEventsForProject(repos);
-  //   }
-
-  //   // Report that we've completed the job
-  //   await this.recorder.waitAll();
-  // }
-
   async collect(
     group: ArtifactGroup,
     range: Range,
@@ -506,6 +493,8 @@ export class GithubIssueCollector extends GithubByProjectBaseCollector {
       },
     );
 
+    const recordPromises: Promise<void>[] = [];
+
     for await (const page of pages) {
       const edges = page.raw;
       for (const edge of edges) {
@@ -541,7 +530,7 @@ export class GithubIssueCollector extends GithubByProjectBaseCollector {
         };
 
         // Record creation
-        this.recorder.record(creationEvent);
+        recordPromises.push(this.recorder.record(creationEvent));
 
         // Record merging of a pull request
         if (issue.mergedAt) {
@@ -549,26 +538,30 @@ export class GithubIssueCollector extends GithubByProjectBaseCollector {
 
           const mergedBy = issue.mergedBy !== null ? issue.mergedBy.login : "";
 
-          this.recorder.record({
-            time: mergedTime,
-            type: this.getEventType("MergedEvent", issue.__typename),
-            to: artifact,
-            amount: 0,
-            from: creationEvent.from,
-            sourceId: githubId,
-            details: {
-              mergedBy: mergedBy,
-            },
-          });
+          recordPromises.push(
+            this.recorder.record({
+              time: mergedTime,
+              type: this.getEventType("MergedEvent", issue.__typename),
+              to: artifact,
+              amount: 0,
+              from: creationEvent.from,
+              sourceId: githubId,
+              details: {
+                mergedBy: mergedBy,
+              },
+            }),
+          );
         }
 
         // Find any reviews
-        await this.recordReviews(artifact, issue);
+        recordPromises.push(...(await this.recordReviews(artifact, issue)));
 
         // Find and record any close/open events
-        await this.recordOpenCloseEvents(artifact, issue);
+        recordPromises.push(
+          ...(await this.recordOpenCloseEvents(artifact, issue)),
+        );
       }
-      await this.recorder.waitAll();
+      await Promise.all(recordPromises);
     }
     logger.debug(
       `completed issue collection for repos of Project[${project.slug}]`,
@@ -627,23 +620,12 @@ export class GithubIssueCollector extends GithubByProjectBaseCollector {
     return eventType;
   }
 
-  // private async recordEventsForProject(repos: GithubRepoLocator[]) {
-  //   if (repos.length > 0) {
-  //     console.log(`Loading events for repos ${repos[0].owner}`);
-  //   }
-  //   for await (const issue of this.loadAllIssuesForRepos(repos)) {
-
-  //   }
-  //   // Wait for all of the events for this owner to be recorded
-  //   await this.recorder.waitAll();
-  // }
-
   private async recordReviews(
     artifact: IncompleteArtifact,
     issue: IssueOrPullRequest,
   ) {
     if (!issue.reviews) {
-      return;
+      return [];
     }
     const recordReview = (review: Review) => {
       const createdAt = DateTime.fromISO(review.createdAt);
@@ -656,7 +638,7 @@ export class GithubIssueCollector extends GithubByProjectBaseCollector {
             }
           : undefined;
 
-      this.recorder.record({
+      return this.recorder.record({
         time: createdAt,
         type: this.getEventType("PullRequestApprovedEvent", issue.__typename),
         to: artifact,
@@ -666,13 +648,17 @@ export class GithubIssueCollector extends GithubByProjectBaseCollector {
       });
     };
 
+    const recordPromises: Promise<void>[] = [];
     if (issue.reviews.pageInfo.hasNextPage) {
       for await (const review of this.loadReviews(issue.id)) {
-        recordReview(review);
+        recordPromises.push(recordReview(review));
       }
     } else {
-      issue.reviews.edges.forEach((n) => recordReview(n.node));
+      recordPromises.push(
+        ...issue.reviews.edges.map((n) => recordReview(n.node)),
+      );
     }
+    return recordPromises;
   }
 
   private async recordOpenCloseEvents(
@@ -680,7 +666,7 @@ export class GithubIssueCollector extends GithubByProjectBaseCollector {
     issue: IssueOrPullRequest,
   ) {
     if (!issue.openCloseEvents.edges) {
-      return;
+      return [];
     }
     const recordOpenCloseEvent = (event: IssueEvent) => {
       const createdAt = DateTime.fromISO(event.createdAt);
@@ -693,7 +679,7 @@ export class GithubIssueCollector extends GithubByProjectBaseCollector {
             }
           : undefined;
 
-      this.recorder.record({
+      return this.recorder.record({
         time: createdAt,
         type: this.getEventType(event.__typename, issue.__typename),
         to: artifact,
@@ -706,13 +692,18 @@ export class GithubIssueCollector extends GithubByProjectBaseCollector {
         },
       });
     };
+
+    const recordPromises: Promise<void>[] = [];
     if (issue.openCloseEvents.pageInfo.hasNextPage) {
       for await (const event of this.loadIssueTimeline(issue.id)) {
-        recordOpenCloseEvent(event);
+        recordPromises.push(recordOpenCloseEvent(event));
       }
     } else {
-      issue.openCloseEvents.edges.forEach((n) => recordOpenCloseEvent(n.node));
+      recordPromises.push(
+        ...issue.openCloseEvents.edges.map((n) => recordOpenCloseEvent(n.node)),
+      );
     }
+    return recordPromises;
   }
 }
 

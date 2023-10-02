@@ -233,6 +233,8 @@ export class FundingEventsCollector implements ICollector {
       },
     );
 
+    const recordPromises: Promise<void>[] = [];
+
     for await (const res of responses) {
       for (const row of res.raw) {
         const artifact = projectAddressesMap[row.to];
@@ -267,11 +269,11 @@ export class FundingEventsCollector implements ICollector {
           },
         };
 
-        this.recorder.record(event);
+        recordPromises.push(this.recorder.record(event));
       }
     }
 
-    await this.recorder.waitAll();
+    await Promise.all(recordPromises);
 
     // Commit all of the artifacts
     await asyncBatch(group.artifacts, 1, async (a) => {

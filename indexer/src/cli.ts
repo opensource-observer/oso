@@ -19,7 +19,7 @@ import { AppDataSource } from "./db/data-source.js";
 //   LoadRepositoryFollowers,
 //   loadRepositoryFollowers,
 // } from "./actions/github/fetch/repo-followers.js";
-// import {
+// import
 //   LoadPullRequests,
 //   loadPullRequests,
 // } from "./actions/github/fetch/pull-requests.js";
@@ -31,6 +31,7 @@ import {
   SchedulerWorkerArgs,
   configure,
 } from "./scheduler/index.js";
+import { CommonArgs } from "./utils/api.js";
 
 //const callLibrary = async <Args>(
 //  func: EventSourceFunction<Args>,
@@ -65,7 +66,12 @@ yargs(hideBin(process.argv))
   .option("cache-dir", {
     type: "string",
     describe: "sets the path to the cache directory",
-    default: "/tmp/oso",
+    default: "/tmp/oso/cache",
+  })
+  .option("run-dir", {
+    type: "string",
+    describe: "sets the path to the run directory",
+    default: "/tmp/oso/run",
   })
   .command<ImportOssDirectoryArgs>(
     "importOssDirectory",
@@ -150,7 +156,7 @@ yargs(hideBin(process.argv))
       };
       yags
         .command<SchedulerManualArgs>(
-          "manual",
+          "manual <collector>",
           "manually execute a scheduler run",
           (yags) => {
             yags
@@ -216,40 +222,52 @@ yargs(hideBin(process.argv))
             await scheduler.queueAll(args.baseDate);
           },
         )
-        .command<SchedulerQueueJobArgs>(
-          "create-job <collector>",
-          "queue a job manually",
-          (yags) => {
-            yags
-              .positional("collector", {
-                describe: "the collector",
-                type: "string",
-              })
-              .option("base-date", {
-                type: "string",
-                describe: "start-date for the manual run",
-              })
-              .coerce("base-date", dateConverter)
-              .option("start-date", {
-                type: "string",
-                describe: "start-date for the manual run",
-              })
-              .coerce("start-date", dateConverter)
-              .option("end-date", {
-                type: "string",
-                describe: "start-date for the manual run",
-              })
-              .coerce("end-date", dateConverter)
-              .demandOption(["base-date", "start-date", "end-date"]);
-          },
-          async (args) => {
-            const scheduler = await configure(args);
-            await scheduler.queueJob(args.collector, args.baseDate, {
-              startDate: args.startDate,
-              endDate: args.endDate,
-            });
-          },
-        );
+        .command("job <job-subcommand>", "job tools", (yags) => {
+          yags
+            .command<SchedulerQueueJobArgs>(
+              "create",
+              "queue a job manually",
+              (yags) => {
+                yags
+                  .positional("collector", {
+                    describe: "the collector",
+                    type: "string",
+                  })
+                  .option("base-date", {
+                    type: "string",
+                    describe: "start-date for the manual run",
+                  })
+                  .coerce("base-date", dateConverter)
+                  .option("start-date", {
+                    type: "string",
+                    describe: "start-date for the manual run",
+                  })
+                  .coerce("start-date", dateConverter)
+                  .option("end-date", {
+                    type: "string",
+                    describe: "start-date for the manual run",
+                  })
+                  .coerce("end-date", dateConverter)
+                  .demandOption(["base-date", "start-date", "end-date"]);
+              },
+              async (args) => {
+                const scheduler = await configure(args);
+                await scheduler.queueJob(args.collector, args.baseDate, {
+                  startDate: args.startDate,
+                  endDate: args.endDate,
+                });
+              },
+            )
+            .command<SchedulerArgs>(
+              "clean-lock",
+              "clean the lock for a job execution if it exists",
+              (_yags) => {},
+              async (args) => {
+                const scheduler = await configure(args);
+                await scheduler.cleanLock();
+              },
+            );
+        });
     },
   )
   .demandCommand()

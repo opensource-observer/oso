@@ -124,6 +124,7 @@ export async function configure(args: SchedulerArgs) {
   });
 
   const scheduler = new BaseScheduler(
+    args.runDir,
     recorder,
     config,
     eventPointerManager,
