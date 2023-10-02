@@ -58,4 +58,4 @@ jobs:
         run: pnpm build:indexer
 
       - name: Create a job with the given parameters
-        run: pnpm start:indexer scheduler create-job ${{ inputs.collector }} --start-date ${{ inputs.start-date }} --end-date ${{ inputs.end-date }} --base-date ${{ inputs.base-date }}
+        run: pnpm start:indexer scheduler job create ${{ inputs.collector }} --start-date ${{ inputs.start-date }} --end-date ${{ inputs.end-date }} --base-date ${{ inputs.base-date }}
