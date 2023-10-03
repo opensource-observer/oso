@@ -1,5 +1,5 @@
 {
-  "**/*.{js,jsx,ts,tsx,sol}": [
+  "**/!(.eslintrc)*.{js,jsx,ts,tsx,sol}": [
     "eslint --ignore-path .gitignore --max-warnings 0",
     "prettier --write"
   ],

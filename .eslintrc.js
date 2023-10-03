@@ -1,4 +1,4 @@
-{
+module.exports = {
   "env": {
     "browser": true,
     "es2021": true,
@@ -16,7 +16,11 @@
     "vendor/**/*.js",
     "**/jest.config.ts",
     "**/test.only/**",
-    "**/utilities/**"
+    "**/utilities/**",
+    "**/next.config.js",
+    "**/postcss.config.js",
+    "**/tailwind.config.js",
+    "**/.env"
   ],
   "parser": "@typescript-eslint/parser",
   "parserOptions": {
@@ -25,9 +29,13 @@
     },
     "ecmaVersion": "latest",
     "sourceType": "module",
-    "project": ["./tsconfig.json"]
+    "project": "tsconfig.json",
+    "tsconfigRootDir": __dirname,
   },
-  "plugins": ["react", "@typescript-eslint"],
+  "plugins": [
+    "react",
+    "@typescript-eslint"
+  ],
   "rules": {
     "react-hooks/exhaustive-deps": "off",
     "@typescript-eslint/no-misused-promises": "error",
