@@ -11,6 +11,7 @@ import {
   IEventTypeStrategy,
   generateEventTypeStrategy,
   IncompleteArtifact,
+  RecorderError,
 } from "./types.js";
 import {
   In,
@@ -26,6 +27,7 @@ import { logger } from "../utils/logger.js";
 import _ from "lodash";
 import { PromisePubSub } from "../utils/pubsub.js";
 import { Range, isWithinRange } from "../utils/ranges.js";
+import { EventEmitter } from "node:events";
 
 export interface BatchEventRecorderOptions {
   maxBatchSize: number;
@@ -147,6 +149,7 @@ export class BatchEventRecorder implements IEventRecorder {
   private pubsub: PromisePubSub<void, unknown>;
   private pause: boolean;
   private range: Range | undefined;
+  private emitter: EventEmitter;
 
   constructor(
     eventRepository: Repository<Event>,
@@ -169,6 +172,7 @@ export class BatchEventRecorder implements IEventRecorder {
     });
     this.pause = false;
     this.knownEventsStorage = {};
+    this.emitter = new EventEmitter();
   }
 
   setActorScope(namespaces: ArtifactNamespace[], types: ArtifactType[]) {
@@ -286,21 +290,33 @@ export class BatchEventRecorder implements IEventRecorder {
     return promise;
   }
 
-  private scheduleFlush() {
-    this.flusher.scheduleIfNotSet(async () => {
-      try {
-        logger.debug(`flushing all queued events`);
-        await this.flushAll();
-      } catch {
-        logger.debug(`errors flushing`);
-      }
-      logger.debug("flush complete");
-      this.flusher.clear();
+  addListener(listener: string, callback: (...args: any) => void) {
+    return this.emitter.on(listener, callback);
+  }
 
-      // Endlessly loop unless we're stopped.
-      if (!this.pause) {
-        this.scheduleFlush();
-      }
+  removeListener(listener: string, callback: (...args: any) => void) {
+    this.emitter.removeListener(listener, callback);
+  }
+
+  private scheduleFlush() {
+    this.flusher.scheduleIfNotSet(() => {
+      logger.debug(`flushing all queued events`);
+      this.flushAll()
+        .then(() => {
+          logger.debug("flush cycle completed");
+          this.emitter.emit("flush");
+        })
+        .catch((err) => {
+          logger.error(`error caught flushing ${err}`);
+          logger.error(err);
+          this.emitter.emit("error", err);
+        })
+        .finally(() => {
+          this.flusher.clear();
+          if (!this.pause) {
+            this.scheduleFlush();
+          }
+        });
     });
   }
 
@@ -317,11 +333,7 @@ export class BatchEventRecorder implements IEventRecorder {
   private async flushAll() {
     // Wait for all queues to complete in series
     for (const eventType in this.eventTypeStorage) {
-      try {
-        await this.flushType(eventType as EventType);
-      } catch (err) {
-        logger.error(`error processing events ${eventType}`, err);
-      }
+      await this.flushType(eventType as EventType);
     }
   }
 
@@ -481,8 +493,15 @@ export class BatchEventRecorder implements IEventRecorder {
         );
 
         try {
-          await this.eventRepository.insert(events);
-          logger.debug(`completed writing batch of ${batchLength}`);
+          const result = await this.eventRepository.insert(events);
+          if (result.identifiers.length !== batchLength) {
+            throw new RecorderError(
+              `recorder writes failed. Expected ${batchLength} writes but only received ${result.identifiers.length}`,
+            );
+          }
+          logger.debug(
+            `completed writing batch of ${result.identifiers.length}`,
+          );
           events.forEach((e) => {
             // Mark as known event
             this.markEventAsKnown(e);
@@ -493,9 +512,7 @@ export class BatchEventRecorder implements IEventRecorder {
         } catch (err) {
           if (err instanceof QueryFailedError) {
             if (err.message.indexOf("duplicate") !== -1) {
-              console.log("attempted to write a dupe");
-              console.log(err.parameters);
-              console.log(events);
+              console.log("attempted to write a duplicate event");
             }
           }
           events.forEach((e) => {

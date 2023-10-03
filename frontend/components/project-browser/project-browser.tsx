@@ -58,7 +58,10 @@ export function ProjectBrowser(props: ProjectBrowserProps) {
         await client.listProjects(filterValue, dateRangeValue, sortState),
       );
     };
-    load();
+    load().catch((err) => {
+      // eslint-disable-next-line no-restricted-properties
+      console.error("error detected getting dependents", err);
+    });
   }, [client, filterValue, filterInputValue, sortState]);
 
   const renderFilteringControls = () => {

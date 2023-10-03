@@ -417,6 +417,11 @@ export class BaseScheduler implements IScheduler {
     const collector = await reg.create(this.config, this.recorder, this.cache);
     const errors: unknown[] = [];
 
+    this.recorder.addListener("error", (err) => {
+      logger.error("caught error on the recorder");
+      errors.push(err);
+    });
+
     const seenIds: Record<number, number> = {};
 
     // Get a list of the monitored artifacts
@@ -434,6 +439,7 @@ export class BaseScheduler implements IScheduler {
         logger.debug("all artifacts already up to date");
         continue;
       }
+      logger.debug(`missing ${missing.length} artifacts for the group`);
 
       // Execute the collection for the missing items
       try {
@@ -453,6 +459,8 @@ export class BaseScheduler implements IScheduler {
               }
               return true;
             });
+
+            console.log(`writing ${newArtifacts.length} new artifacts`);
 
             await Promise.all(
               newArtifacts.map(async (artifact) => {

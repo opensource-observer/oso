@@ -10,6 +10,7 @@ import _ from "lodash";
 import { DateTime } from "luxon";
 import { GenericError } from "../common/errors.js";
 import { Range } from "../utils/ranges.js";
+import { EventEmitter } from "node:events";
 
 export class RecorderError extends GenericError {}
 
@@ -35,6 +36,12 @@ export interface IEventRecorder {
   waitAll(): Promise<void>;
 
   wait(eventType: EventType): Promise<void>;
+
+  addListener(listener: "error", cb: (err: unknown) => void): EventEmitter;
+  addListener(listener: "flush-complete", cb: () => void): EventEmitter;
+
+  removeListener(listener: "error", cb: (err: unknown) => void): void;
+  removeListener(listener: "flush-complete", cb: (err: unknown) => void): void;
 }
 
 export interface IActorDirectory {

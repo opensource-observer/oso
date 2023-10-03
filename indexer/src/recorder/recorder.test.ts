@@ -53,6 +53,10 @@ withDbDescribe("BatchEventRecorder", () => {
         timeoutMs: 30000,
       },
     );
+    recorder.setRange({
+      startDate: DateTime.now().minus({ month: 1 }),
+      endDate: DateTime.now().plus({ month: 1 }),
+    });
     recorder.registerEventType(
       EventType.COMMIT_CODE,
       generateEventTypeStrategy(EventType.COMMIT_CODE),
@@ -77,10 +81,11 @@ withDbDescribe("BatchEventRecorder", () => {
       },
       sourceId: "test123",
     };
-    recorder.record(testEvent);
-    const record0 = recorder.wait(EventType.COMMIT_CODE);
+    const record0Promise = recorder.record(testEvent);
+    const record0Wait = recorder.wait(EventType.COMMIT_CODE);
     flusher.flush();
-    await record0;
+    await record0Wait;
+    await record0Promise;
 
     flusher.clear();
 
@@ -128,12 +133,18 @@ withDbDescribe("BatchEventRecorder", () => {
       sourceId: "test456",
     };
 
+    const errorHandler = new Promise((_resolve, reject) => {
+      recorder.addListener("error", reject);
+    });
+
     const record2 = recorder.record(outOfScopeEvent);
     flusher.flush();
 
     await expect(async () => {
       return record2;
     }).rejects.toThrow();
+
+    await expect(errorHandler).rejects.toThrow();
   });
 
   afterAll(async () => {

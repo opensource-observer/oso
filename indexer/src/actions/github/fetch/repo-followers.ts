@@ -396,7 +396,7 @@ export class GithubFollowingCollector extends GithubByProjectBaseCollector {
     }
   }
 
-  private async recordStarAggregateStats(
+  private recordStarAggregateStats(
     repo: GithubRepoLocator,
     response: RepoFollowingSummaryResponse,
   ) {
@@ -422,7 +422,7 @@ export class GithubFollowingCollector extends GithubByProjectBaseCollector {
     });
   }
 
-  private async recordWatcherEvents(
+  private recordWatcherEvents(
     repo: GithubRepoLocator,
     response: RepoFollowingSummaryResponse,
   ) {

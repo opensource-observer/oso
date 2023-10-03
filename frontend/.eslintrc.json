@@ -1,0 +1,12 @@
+{
+  "extends": ["../.eslintrc.json"],
+  "root": false,
+  "parserOptions": {
+    "ecmaFeatures": {
+      "jsx": true
+    },
+    "ecmaVersion": "latest",
+    "sourceType": "module",
+    "project": ["./frontend/tsconfig.json"]
+  }
+}
