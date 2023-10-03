@@ -1,7 +1,10 @@
 import csv
 import json
-import requests
 import os
+import requests
+
+
+from ossd import get_yaml_data_from_path, map_addresses_to_slugs, map_repos_to_slugs
 
 
 ATTESTATIONS = {
@@ -9,9 +12,9 @@ ATTESTATIONS = {
     "RPGF3 Application": "0x76e98cce95f3ba992c2ee25cef25f756495147608a3da3aa2e5ca43109fe77cc",
 }
 
-JSON_ATTESTATION_DATA = "data/indexed_attestations.json"
-JSON_APPLICANT_DATA = "data/applicant_data.json"
-CSV_OUTPUT_PATH = "data/applicant_data.csv"
+JSON_ATTESTATION_DATA = "data/rpgf3/indexed_attestations.json"
+JSON_APPLICANT_DATA = "data/rpgf3/applicant_data.json"
+CSV_OUTPUT_PATH = "data/rpgf3/applicant_data.csv"
 
 def fetch_attestations_for_schema(schema_id, schema_name, time_created_after=0):
     url = 'https://optimism.easscan.org/graphql'
@@ -140,13 +143,48 @@ def clean_data(original_data):
         "Project Name": original_data["data"][0]["value"]["value"],  # Extract "displayName"
         "Applicant Type": original_data["data"][2]["json_data"]["applicantType"],  # Extract "applicantType" from "applicationMetadataPtr"
         "Date": original_data["timeCreated"],  # Extract "timeCreated"
-        "Address": original_data["attester"],  # Extract "attester"
+        "Attester Address": original_data["attester"],  # Extract "attester"
+        "Payout Address": original_data["data"][2]["json_data"]["payoutAddress"],  # Extract "payoutAddress" from "applicationMetadataPtr"
         "Link": original_data["data"][2]["value"]["value"],  # Extract "applicationMetadataPtr"
         "Tags": original_data["data"][2]["json_data"]["impactCategory"],  # Extract "impactCategory" from "applicationMetadataPtr"
-        "Github Urls": [item["url"] for item in original_data["data"][2]["json_data"]["contributionLinks"] if item["type"] == "GITHUB_REPO"],  # Extract "GITHUB_REPO" URLs from "contributionLinks" in "applicationMetadataPtr"
-        "Address Tags": ["wallet"],  # Define "Address Tags" as a static list
+        "Github Urls": [item["url"] for item in original_data["data"][2]["json_data"]["contributionLinks"] if item["type"] == "GITHUB_REPO"]  # Extract "GITHUB_REPO" URLs from "contributionLinks" in "applicationMetadataPtr"
     }
     return transformed_data
+
+
+def check_for_ossd_membership(cleaned_data):
+
+    yaml_data = get_yaml_data_from_path()
+    addresses_to_slugs = map_addresses_to_slugs(yaml_data, "optimism")
+    repos_to_slugs = map_repos_to_slugs(yaml_data)
+
+    get_owner = lambda url: url.replace("https://github.com/","").split("/")[0].lower()
+    
+    repo_owner_set = set([get_owner(repo) for repo in repos_to_slugs.keys()])
+    address_set = set(addresses_to_slugs.keys())
+    
+    for entry in cleaned_data:        
+        
+        github_owners = set([get_owner(repo) for repo in entry['Github Urls'].split(", ")])
+        if 'agora' in entry['Project Name'].lower():
+            print(entry['Github Urls'], github_owners)
+        
+        github_verified = False
+        if github_owners.intersection(repo_owner_set):
+            github_verified = True
+        
+        address_verified = False
+        if entry["Payout Address"].lower() in address_set or entry["Attester Address"].lower() in address_set:
+            address_verified = True
+
+        if github_verified and address_verified:
+            entry["OSS Directory"] = "Address & Github Found"
+        elif github_verified:
+            entry["OSS Directory"] = "Github Found"
+        elif address_verified:
+            entry["OSS Directory"] = "Address Found"
+        else:
+            entry["OSS Directory"] = "Not Found"
 
 
 def clean_applicant_data():
@@ -159,10 +197,12 @@ def clean_applicant_data():
     for entry in cleaned_data:
         entry["Tags"] = ", ".join(entry["Tags"])
         entry["Github Urls"] = ", ".join(entry["Github Urls"])
-        entry["Address Tags"] = ", ".join(entry["Address Tags"])
+        entry["OSS Directory"] = "Unknown"
+
+    check_for_ossd_membership(cleaned_data)
 
     with open(CSV_OUTPUT_PATH, mode='w', newline='') as csv_file:
-        fieldnames = ["Project Name", "Applicant Type", "Date", "Address", "Link", "Tags", "Github Urls", "Address Tags"]
+        fieldnames = ["Project Name", "Applicant Type", "Date", "Attester Address", "Payout Address", "Link", "Tags", "Github Urls", "OSS Directory"]
         writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
         writer.writeheader()
         writer.writerows(cleaned_data)
