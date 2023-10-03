@@ -30,7 +30,6 @@ import {
 } from "../../../cacher/time-series.js";
 import { ArtifactGroup } from "../../../scheduler/types.js";
 import { Range } from "../../../utils/ranges.js";
-import { asyncBatch } from "../../../utils/array.js";
 
 const GET_ISSUE_TIMELINE = gql`
   query GetIssueTimeline($id: ID!, $cursor: String) {
@@ -426,6 +425,8 @@ export class GithubIssueCollector extends GithubByProjectBaseCollector {
     const project = group.details as Project;
     logger.debug(`collecting issues for repos of Project[${project.slug}]`);
 
+    const artifactMap = _.keyBy(group.artifacts, "name");
+
     const locators = group.artifacts.map((a) => {
       return this.splitGithubRepoIntoLocator(a);
     });
@@ -493,17 +494,18 @@ export class GithubIssueCollector extends GithubByProjectBaseCollector {
       },
     );
 
-    const recordPromises: Promise<string>[] = [];
-
     for await (const page of pages) {
       const edges = page.raw;
       for (const edge of edges) {
+        const recordPromises: Promise<string>[] = [];
         const issue = edge.node;
-        const artifact: IncompleteArtifact = {
-          name: issue.repository.nameWithOwner,
-          namespace: ArtifactNamespace.GITHUB,
-          type: ArtifactType.GIT_REPOSITORY,
-        };
+
+        const artifact = artifactMap[issue.repository.nameWithOwner];
+        if (!artifact) {
+          throw Error(
+            `unexpected repository ${issue.repository.nameWithOwner}`,
+          );
+        }
         const creationTime = DateTime.fromISO(issue.createdAt);
 
         // Github replaces author with null if the user has been deleted from github.
@@ -560,15 +562,13 @@ export class GithubIssueCollector extends GithubByProjectBaseCollector {
         recordPromises.push(
           ...(await this.recordOpenCloseEvents(artifact, issue)),
         );
+
+        await Promise.all([...recordPromises, commitArtifact(artifact)]);
       }
-      await Promise.all(recordPromises);
     }
     logger.debug(
       `completed issue collection for repos of Project[${project.slug}]`,
     );
-
-    // Commit all artifacts for this project
-    await commitArtifact(group.artifacts);
   }
 
   private async *loadIssueTimeline(id: string): AsyncGenerator<IssueEvent> {

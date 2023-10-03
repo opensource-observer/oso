@@ -24,7 +24,6 @@ import { InmemActorResolver } from "./actors.js";
 import { UniqueArray, asyncBatch } from "../utils/array.js";
 import { logger } from "../utils/logger.js";
 import _ from "lodash";
-import { EntityLookup } from "../utils/lookup.js";
 import { PromisePubSub } from "../utils/pubsub.js";
 import { Range, isWithinRange } from "../utils/ranges.js";
 

@@ -33,7 +33,6 @@ import {
   rangeFromISO,
 } from "../../../utils/ranges.js";
 import { generateSourceIdFromArray } from "../../../utils/source-ids.js";
-import { asyncBatch } from "../../../utils/array.js";
 
 const GET_ALL_PUBLIC_FORKS = gql`
   query getAllPublicForks($owner: String!, $name: String!, $cursor: String) {
@@ -245,11 +244,8 @@ export class GithubFollowingCollector extends GithubByProjectBaseCollector {
           ...(await this.recordStarHistoryForRepo(repo, locator, range)),
         );
       }
+      await Promise.all([...recordPromises, commitArtifact(repo)]);
     }
-    await Promise.all(recordPromises);
-    //await this.recorder.waitAll();
-
-    return commitArtifact(group.artifacts);
   }
 
   private async loadSummaryForRepo(locator: GithubRepoLocator) {
@@ -271,7 +267,6 @@ export class GithubFollowingCollector extends GithubByProjectBaseCollector {
     let aggregateStatsRecorded = false;
 
     for await (const { summary, starring } of this.loadStarHistoryForRepo(
-      artifact,
       locator,
       range,
     )) {
@@ -315,7 +310,6 @@ export class GithubFollowingCollector extends GithubByProjectBaseCollector {
   }
 
   private async *loadStarHistoryForRepo(
-    artifact: Artifact,
     locator: GithubRepoLocator,
     range: Range,
   ): AsyncGenerator<StarringWrapper> {

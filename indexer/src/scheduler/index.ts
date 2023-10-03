@@ -148,7 +148,7 @@ export async function configure(args: SchedulerArgs) {
       );
       return collector;
     },
-    name: "funding-events",
+    name: "dune-funding-events",
     description: "gathers funding events",
     group: "dune",
     schedule: "weekly",

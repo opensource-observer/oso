@@ -390,10 +390,11 @@ export class BaseScheduler implements IScheduler {
     const lockJsonPath = this.lockJsonPath();
     if (!(await fileExists(lockJsonPath))) {
       logger.info("no lock found. assuming the job exited cleanly");
+      return;
     }
     const lock = await this.loadLock();
 
-    const r = await this.jobsExecutionRepository.updateExecutionStatusById(
+    await this.jobsExecutionRepository.updateExecutionStatusById(
       lock.execution.id,
       JobExecutionStatus.FAILED,
     );
