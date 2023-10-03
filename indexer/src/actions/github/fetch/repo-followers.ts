@@ -33,7 +33,6 @@ import {
   rangeFromISO,
 } from "../../../utils/ranges.js";
 import { generateSourceIdFromArray } from "../../../utils/source-ids.js";
-import { asyncBatch } from "../../../utils/array.js";
 
 const GET_ALL_PUBLIC_FORKS = gql`
   query getAllPublicForks($owner: String!, $name: String!, $cursor: String) {

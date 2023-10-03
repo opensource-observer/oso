@@ -30,7 +30,6 @@ import {
 } from "../../../cacher/time-series.js";
 import { ArtifactGroup } from "../../../scheduler/types.js";
 import { Range } from "../../../utils/ranges.js";
-import { asyncBatch } from "../../../utils/array.js";
 
 const GET_ISSUE_TIMELINE = gql`
   query GetIssueTimeline($id: ID!, $cursor: String) {

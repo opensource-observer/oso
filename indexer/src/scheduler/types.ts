@@ -393,7 +393,7 @@ export class BaseScheduler implements IScheduler {
     }
     const lock = await this.loadLock();
 
-    const r = await this.jobsExecutionRepository.updateExecutionStatusById(
+    await this.jobsExecutionRepository.updateExecutionStatusById(
       lock.execution.id,
       JobExecutionStatus.FAILED,
     );
