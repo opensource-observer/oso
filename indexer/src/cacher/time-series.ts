@@ -241,6 +241,10 @@ export type PageRetreiver<T, C> = (
   lastPage?: Cacheable<T, C>,
 ) => Promise<Cacheable<T, C>>;
 
+export type IteratorRetriever<T> = (
+  lookup: ITimeSeriesCacheLookup,
+) => Promise<AsyncGenerator<T>>;
+
 export interface ITimeSeriesCacheManager {
   load(
     lookup: ITimeSeriesCacheLookup,

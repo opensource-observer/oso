@@ -244,11 +244,8 @@ export class GithubFollowingCollector extends GithubByProjectBaseCollector {
           ...(await this.recordStarHistoryForRepo(repo, locator, range)),
         );
       }
+      await Promise.all([...recordPromises, commitArtifact(repo)]);
     }
-    await Promise.all(recordPromises);
-    //await this.recorder.waitAll();
-
-    return commitArtifact(group.artifacts);
   }
 
   private async loadSummaryForRepo(locator: GithubRepoLocator) {
@@ -270,7 +267,6 @@ export class GithubFollowingCollector extends GithubByProjectBaseCollector {
     let aggregateStatsRecorded = false;
 
     for await (const { summary, starring } of this.loadStarHistoryForRepo(
-      artifact,
       locator,
       range,
     )) {
@@ -314,7 +310,6 @@ export class GithubFollowingCollector extends GithubByProjectBaseCollector {
   }
 
   private async *loadStarHistoryForRepo(
-    artifact: Artifact,
     locator: GithubRepoLocator,
     range: Range,
   ): AsyncGenerator<StarringWrapper> {
