@@ -1,7 +1,9 @@
 {
   "**/*.{js,jsx,ts,tsx,sol}": [
-    "eslint --ignore-path .gitignore",
+    "eslint --ignore-path .gitignore --max-warnings 0",
     "prettier --write"
   ],
-  "**/*.{md,json}": ["prettier --write"]
+  "**/*.{md,json}": [
+    "prettier --write"
+  ]
 }
