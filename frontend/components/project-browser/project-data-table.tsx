@@ -53,7 +53,7 @@ export function ProjectDataTable(props: ProjectDataTableProps) {
       dependents: {
         name: "dependents",
         type: "number",
-        label: "Dependents",
+        label: "Dependent Projects",
         sortable: true,
         expandable: false,
         textAlign: "right",
@@ -69,7 +69,7 @@ export function ProjectDataTable(props: ProjectDataTableProps) {
       devReach: {
         name: "devReach",
         type: "growth",
-        label: "Dev Reach (Growth)",
+        label: "Downstream Devs (Growth)",
         sortable: true,
         expandable: true,
         expandableCb: (data: IProjectView) => {
@@ -80,7 +80,7 @@ export function ProjectDataTable(props: ProjectDataTableProps) {
       opMaus: {
         name: "opMaus",
         type: "growth",
-        label: "Op MAUs (Growth)",
+        label: "Onchain Users (Growth)",
         sortable: true,
         expandable: false,
         textAlign: "right",
@@ -88,7 +88,7 @@ export function ProjectDataTable(props: ProjectDataTableProps) {
       opMausReach: {
         name: "opMausReach",
         type: "growth",
-        label: "Op MAUs Reach (Growth)",
+        label: "Downstream Users (Growth)",
         sortable: true,
         expandable: true,
         expandableCb: (data: IProjectView) => {
