@@ -72,6 +72,8 @@ export enum ArtifactNamespace {
 export enum JobStatus {
   PENDING = "PENDING",
   COMPLETE = "COMPLETE",
+  // Used to prevent a job from scheduling temporarily
+  MANUALLY_LOCKED = "MANUALLY_LOCKED",
 }
 
 export enum JobExecutionStatus {
