@@ -1,4 +1,4 @@
-{
+module.exports = {
   "env": {
     "browser": true,
     "es2021": true,
@@ -11,22 +11,41 @@
     "prettier",
     "next/core-web-vitals"
   ],
-  "ignorePatterns": ["**/vendor/*.js", "vendor/**/*.js"],
+  "ignorePatterns": [
+    "**/vendor/*.js",
+    "vendor/**/*.js",
+    "**/jest.config.ts",
+    "**/test.only/**",
+    "**/utilities/**",
+    "**/next.config.js",
+    "**/postcss.config.js",
+    "**/tailwind.config.js",
+    "**/.env"
+  ],
   "parser": "@typescript-eslint/parser",
   "parserOptions": {
     "ecmaFeatures": {
       "jsx": true
     },
     "ecmaVersion": "latest",
-    "sourceType": "module"
+    "sourceType": "module",
+    "project": "tsconfig.json",
+    "tsconfigRootDir": __dirname,
   },
-  "plugins": ["react", "@typescript-eslint"],
+  "plugins": [
+    "react",
+    "@typescript-eslint"
+  ],
   "rules": {
     "react-hooks/exhaustive-deps": "off",
+    "@typescript-eslint/no-misused-promises": "error",
+    "@typescript-eslint/no-floating-promises": "error",
     "@typescript-eslint/no-explicit-any": "off",
     "@typescript-eslint/no-unused-vars": [
       "warn",
-      { "argsIgnorePattern": "^_" }
+      {
+        "argsIgnorePattern": "^_"
+      }
     ],
     "no-restricted-properties": [
       "error",

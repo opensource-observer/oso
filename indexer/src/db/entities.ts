@@ -97,7 +97,7 @@ async function ossUpsertProject(ossProj: Project) {
       ["slug"],
     );
     // Update all artifact relations
-    manager
+    await manager
       .createQueryBuilder()
       .relation(DBProject, "artifacts")
       .of(project.identifiers[0])

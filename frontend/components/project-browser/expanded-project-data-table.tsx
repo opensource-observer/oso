@@ -40,7 +40,10 @@ export function ExpandedProjectDataTable(props: ExpandedProjectDataTableProp) {
       setDependents(await data.dependents());
       setIsLoading(false);
     }
-    getDependents();
+    getDependents().catch((err) => {
+      // eslint-disable-next-line no-restricted-properties
+      console.error("error detected getting dependents", err);
+    });
   }, [expandedContext]);
 
   // React.useEffect(() => {

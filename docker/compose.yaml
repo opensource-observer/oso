@@ -19,12 +19,12 @@ services:
     command: bash docker/install.sh
     volumes:
       - ../:/usr/src/app
-      - frontend_next:/usr/src/app/.next
       - pnpm_store:/usr/src/app/.pnpm_store
       - pnpm_store:/usr/src/app/.pnpm-store
       - node_modules:/usr/src/app/node_modules
       - indexer_modules:/usr/src/app/indexer/node_modules
       - indexer_dist:/usr/src/app/indexer/dist
+      - frontend_next:/usr/src/app/frontend/.next
       - frontend_modules:/usr/src/app/frontend/node_modules
       - pnpm_home:/pnpm
     environment:
@@ -82,11 +82,11 @@ services:
       - DUNE_API_KEY=test
     volumes:
       - ../:/usr/src/app
-      - frontend_next:/usr/src/app/.next
       - pnpm_store:/usr/src/app/.pnpm_store
       - pnpm_store:/usr/src/app/.pnpm-store
       - node_modules:/usr/src/app/node_modules
       - indexer_modules:/usr/src/app/indexer/node_modules
       - indexer_dist:/usr/src/app/indexer/dist
+      - frontend_next:/usr/src/app/frontend/.next
       - frontend_modules:/usr/src/app/frontend/node_modules
       - pnpm_home:/pnpm

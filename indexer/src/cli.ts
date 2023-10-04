@@ -31,6 +31,7 @@ import {
   SchedulerWorkerArgs,
   configure,
 } from "./scheduler/index.js";
+import { logger } from "./utils/logger.js";
 
 //const callLibrary = async <Args>(
 //  func: EventSourceFunction<Args>,
@@ -47,7 +48,7 @@ import {
 export const FETCHER_REGISTRY = [
   //NpmDownloadsInterface,
 ];
-yargs(hideBin(process.argv))
+const cli = yargs(hideBin(process.argv))
   .middleware(async () => {
     // Initialize the database
     await AppDataSource.initialize();
@@ -281,5 +282,14 @@ yargs(hideBin(process.argv))
   .demandCommand()
   .strict()
   .help("h")
-  .alias("h", "help")
-  .parse();
+  .alias("h", "help");
+
+function main() {
+  // This was necessary to satisfy the es-lint no-floating-promises check.
+  const promise = cli.parse() as Promise<unknown>;
+  promise.catch((err) => {
+    logger.error("error caught running the cli", err);
+  });
+}
+
+main();
