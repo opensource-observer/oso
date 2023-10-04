@@ -32,7 +32,7 @@ WHERE
     )
     AND e."time" IS NOT NULL
     --AND e."time" >= '2019-01-01'        
-    AND p."slug" = 'l2beat'    
+    AND c."slug" = 'ffdw-grants'    
 GROUP BY
     p."slug",
     p."name",

@@ -144,8 +144,10 @@ def main():
         #save_query(db_connection, "get_commits_by_collection")
         
         #save_query(db_connection, "get_project_event_stats")
-        save_query(db_connection, "get_project_monthly_event_stats")
+        #save_query(db_connection, "get_collection_event_stats")
+        #save_query(db_connection, "get_project_monthly_event_stats")
         #save_query(db_connection, "get_project_github_metrics")
+        save_query(db_connection, "get_monthly_commits_by_collection")
     
         
     finally:
