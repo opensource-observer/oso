@@ -1,0 +1,62 @@
+<html>
+<body>
+ <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+
+<div id="sankey_multiple" style="width: 100%; height: 80%;"></div>
+
+<script type="text/javascript">
+  google.charts.load("current", {packages:["sankey"]});
+  google.charts.setOnLoadCallback(drawChart);
+   function drawChart() {
+    var data = new google.visualization.DataTable();
+    data.addColumn('string', 'From');
+    data.addColumn('string', 'To');
+    data.addColumn('number', 'Tx Fees');
+    data.addRows([
+       [ 'Ethers', 'Safe', 2 ],
+       [ 'Ethers', 'sound.xyz', 1 ],
+       [ 'Ethers', 'Gitcoin', 1 ],
+       [ 'Ethers', 'Uniswap', 1 ],
+       [ 'Ethers', 'Mirror', 3 ],
+       [ 'Ethers', 'Zora', 2 ],
+       [ 'Ethers', 'Velodrome', 6 ],
+       [ 'Open Zeppelin', 'Safe', 10 ],
+       [ 'Open Zeppelin', 'sound.xyz', 2 ],
+       [ 'Open Zeppelin', 'Zora', 5 ],
+       [ 'wagmi', 'hypercerts', 1 ],
+       [ 'wagmi', 'Gitcoin', 2 ],
+       [ 'wagmi', 'Uniswap', 1 ],
+       [ 'Foundry', 'Velodrome', 6 ],
+       [ 'Foundry', 'Safe', 4 ],
+       [ 'Foundry', 'Uniswap', 1 ],
+       
+       [ 'Safe', 'GnosisSafeProxy', 5 ],
+       [ 'Safe', 'GnosisSafeL2_v1_3_0', 10 ],
+       [ 'Safe', 'GnosisSafeProxyFactory_v1_3_0', 1],       
+       [ 'sound.xyz', 'SoundEditionV1_2', 3 ],
+       [ 'Gitcoin', 'RoundImplementation', 1 ],
+       [ 'Gitcoin', 'Vote', 2],       
+       [ 'Uniswap', 'Pair', 3],       
+       [ 'Mirror', 'WritingEditions', 3 ],
+       [ 'Zora', 'ERC721Drop', 5 ],
+       [ 'Zora', 'ZoraCreator1155Impl', 2 ],       
+       [ 'Velodrome', 'Bribe', 3 ],
+       [ 'Velodrome', 'Pool', 5 ],       
+       [ 'Velodrome', 'WrappedExternalBribe', 2 ],
+       [ 'Velodrome', 'VotingReward', 1 ],
+       [ 'Velodrome', 'Gauge', 1 ],
+       [ 'hypercerts', 'MintFromAllowlist', 1 ],
+    ]);
+
+    // Set chart options
+    var options = {
+      width: 1200,
+    };
+
+    // Instantiate and draw our chart, passing in some options.
+    var chart = new google.visualization.Sankey(document.getElementById('sankey_multiple'));
+    chart.draw(data, options);
+   }
+</script>
+</body>
+</html>
