@@ -2,10 +2,9 @@ SELECT
     p."slug" AS project_slug,
     p."name" AS project_name,
     e."type" AS event_type,
+    TO_CHAR(e."time", 'YYYY-MM') AS month_year,
     COUNT(e."id") AS total_events,
-    COUNT(DISTINCT e."fromId") AS total_contributors,
-    MIN(e."time") AS first_event_time,
-    MAX(e."time") AS last_event_time
+    COUNT(DISTINCT e."fromId") AS total_contributors
 FROM
     project p
 LEFT JOIN
@@ -36,6 +35,7 @@ WHERE
 GROUP BY
     p."slug",
     p."name",
-    e."type"
+    e."type",
+    TO_CHAR(e."time", 'YYYY-MM')
 ORDER BY
     project_name; 
