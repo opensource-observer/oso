@@ -1,6 +1,6 @@
 set -euxo pipefail
 
-DOCKER_REPO=${DOCKER_REPO:-ghcr.io/hypercerts-org/oso-persistent-cache}
+DOCKER_REPO=${DOCKER_REPO:-ghcr.io/opensource-observer/oso-persistent-cache}
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 # A hacky persistent cache for jobs.
 
