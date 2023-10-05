@@ -5,9 +5,9 @@
 [gha]: https://github.com/hypercerts-org/oso/actions/workflows/ci-default.yml
 [gha-badge]: https://github.com/hypercerts-org/oso/actions/workflows/ci-default.yml/badge.svg
 
-Open source observer is a tool for measuring the impact of open source software ecosystems.
+Open Source Observer is a free analytics suite that helps funders measure the impact of open source software contributions to the health of their ecosystem.
 
-[www.opensource.observer](https://www.opensource.observer)
+[opensource.observer](https://www.opensource.observer)
 
 ## Organization
 
