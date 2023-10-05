@@ -7,7 +7,7 @@ mkdir -p ${CACHE_DIR}
 echo "Attempting to load docker cache into ${CACHE_DIR}"
 
 # We need to create a container just so we can do the docker cp
-docker container create --name cache ghcr.io/hypercerts-org/oso-persistent-cache:${CACHE_PREFIX}-latest /bin/sh
+docker container create --name cache ghcr.io/opensource-observer/oso-persistent-cache:${CACHE_PREFIX}-latest /bin/sh
 
 # The /. at the end of the source is important so that it copies the contents of
 # the cache directory to the intended destination
