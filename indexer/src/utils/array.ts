@@ -1,11 +1,13 @@
 import _ from "lodash";
 
-export class UniqueArray<T> {
-  private uniqueMap: { [key: string]: boolean };
-  private arr: T[];
-  private idFunc: (value: T) => string;
+type Addressable = number | string;
 
-  constructor(idFunc: (value: T) => string) {
+export class UniqueArray<T> {
+  private uniqueMap: { [key: Addressable]: boolean };
+  private arr: T[];
+  private idFunc: (value: T) => Addressable;
+
+  constructor(idFunc: (value: T) => Addressable) {
     this.uniqueMap = {};
     this.arr = [];
     this.idFunc = idFunc;
