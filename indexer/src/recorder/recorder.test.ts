@@ -15,10 +15,9 @@ type Callback = () => void;
 
 class TestFlusher implements IFlusher {
   flushCallback: Callback | undefined;
+  lastNotify: number;
 
-  clear(): void {
-    this.flushCallback = undefined;
-  }
+  clear(): void {}
 
   flush(): void {
     if (this.flushCallback) {
@@ -26,12 +25,12 @@ class TestFlusher implements IFlusher {
     }
   }
 
-  scheduleIfNotSet(cb: () => void): void {
+  onFlush(cb: () => void): void {
     this.flushCallback = cb;
   }
 
-  isScheduled(): boolean {
-    return false;
+  notify(size: number): void {
+    this.lastNotify = size;
   }
 }
 
@@ -86,8 +85,6 @@ withDbDescribe("BatchEventRecorder", () => {
     flusher.flush();
     await record0Wait;
     await record0Promise;
-
-    flusher.clear();
 
     // No errors should be thrown if we attempt to write twice
     const record1 = recorder.record(testEvent);
