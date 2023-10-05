@@ -366,6 +366,7 @@ export class BaseScheduler implements IScheduler {
       startDate: startDate,
       endDate: endDate,
     });
+
     let execStatus = JobExecutionStatus.FAILED;
     if (errors.length === 0) {
       execStatus = JobExecutionStatus.COMPLETE;
