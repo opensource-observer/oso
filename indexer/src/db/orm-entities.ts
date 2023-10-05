@@ -245,6 +245,10 @@ export class Job extends Base<"JobId"> {
   @Column("enum", { enum: JobStatus })
   status: JobStatus;
 
+  // Used to prevent concurrent writes to this object
+  @Column("integer")
+  version: number;
+
   @Column("jsonb", {
     default: {},
   })

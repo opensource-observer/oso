@@ -242,7 +242,7 @@ export const JobExecutionRepository = AppDataSource.getRepository(
         await jobRepo.update(
           {
             id: job.id,
-            updatedAt: job.updatedAt,
+            version: job.version,
           },
           {
             status: JobStatus.COMPLETE,
