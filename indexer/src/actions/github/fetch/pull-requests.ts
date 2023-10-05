@@ -445,7 +445,9 @@ export class GithubIssueCollector extends GithubByProjectBaseCollector {
       async (missing, lastPage) => {
         const searchStrSuffix = lastPage?.cursor?.searchSuffix || "";
         const searchStr =
-          missing.keys.join(" ") + " sort:updated-desc " + searchStrSuffix;
+          missing.keys.map((a) => `repo:${a}`).join(" ") +
+          " sort:updated-desc " +
+          searchStrSuffix;
 
         const cursor = lastPage?.cursor?.githubCursor;
 
@@ -507,9 +509,7 @@ export class GithubIssueCollector extends GithubByProjectBaseCollector {
 
         const artifact = artifactMap[repoLocatorStr];
         if (!artifact) {
-          console.log("unexpected repository");
-          console.log(artifacts.map((a) => a.name));
-          console.log(issue.url);
+          // Try parsing the URL
           errors.push(
             new Error(
               `unexpected repository ${issue.repository.nameWithOwner}`,

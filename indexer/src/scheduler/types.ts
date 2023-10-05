@@ -31,6 +31,7 @@ import { fileExists } from "../utils/files.js";
 import { mkdirp } from "mkdirp";
 import type { Brand } from "utility-types";
 import { GenericError } from "../common/errors.js";
+import { UniqueArray } from "../utils/array.js";
 
 export type IArtifactGroup<T extends object = object> = {
   name(): Promise<string>;
@@ -453,14 +454,19 @@ export class BaseScheduler implements IScheduler {
 
     const seenIds: Record<number, number> = {};
 
+    const expectedArtifacts = new UniqueArray((a: number) => a);
+
     // Get a list of the monitored artifacts
     for await (const group of collector.groupedArtifacts()) {
+      const artifacts = await group.artifacts();
+      artifacts.forEach(({ id }) => expectedArtifacts.push(id));
+
       // Determine anything missing from this group
       const groupName = await group.name();
       logger.debug(`${groupName}: determine missing artifacts`);
       const missing = await this.findMissingArtifactsFromEventPointers(
         range,
-        await group.artifacts(),
+        artifacts,
         collectorName,
       );
 
@@ -530,7 +536,6 @@ export class BaseScheduler implements IScheduler {
         errors.push(err);
         continue;
       }
-      break;
       // TODO: Ensure all artifacts are committed or report errors
     }
 
@@ -547,7 +552,9 @@ export class BaseScheduler implements IScheduler {
       logger.info("completed with errors");
     } else {
       // TODO collect errors and return here
-      logger.info("completed collector run successfully");
+      logger.info(
+        `completed collector run successfully for ${expectedArtifacts.length} artifacts.`,
+      );
     }
     return errors;
   }
