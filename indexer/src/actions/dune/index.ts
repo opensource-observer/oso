@@ -13,7 +13,7 @@ import {
   DailyContractUsageRow,
   DailyContractUsageResponse,
 } from "./daily-contract-usage/client.js";
-import { ArtifactGroup, ICollector } from "../../scheduler/types.js";
+import { IArtifactGroup, ICollector } from "../../scheduler/types.js";
 import _ from "lodash";
 import { Range } from "../../utils/ranges.js";
 import {
@@ -27,6 +27,7 @@ import {
 } from "../../cacher/time-series.js";
 import { ArtifactRepository } from "../../db/artifacts.js";
 import { generateSourceIdFromArray } from "../../utils/source-ids.js";
+import { BasicArtifactGroup } from "../../scheduler/common.js";
 
 /**
  * Entrypoint arguments
@@ -114,17 +115,14 @@ export class DailyContractUsageCollector implements ICollector {
     this.cache = cache;
   }
 
-  async *groupedArtifacts(): AsyncGenerator<ArtifactGroup> {
+  async *groupedArtifacts(): AsyncGenerator<IArtifactGroup<object>> {
     // Get all contracts
     const artifacts = await this.artifactRepository.find({
       where: {
         type: ArtifactType.CONTRACT_ADDRESS,
       },
     });
-    yield {
-      artifacts: artifacts,
-      details: {},
-    };
+    yield new BasicArtifactGroup("ALL_CONTRACTS", {}, artifacts);
   }
 
   private async loadKnownUserAddresses(range: Range): Promise<string[]> {
@@ -145,14 +143,15 @@ export class DailyContractUsageCollector implements ICollector {
   }
 
   async collect(
-    group: ArtifactGroup,
+    group: IArtifactGroup,
     range: Range,
     commitArtifact: (artifact: Artifact) => Promise<void>,
   ): Promise<void> {
     logger.info("loading contract usage data");
     const knownUserAddresses = await this.loadKnownUserAddresses(range);
-    const contractAddresses = group.artifacts.map((a) => a.name);
-    const contractsByAddressMap = _.keyBy(group.artifacts, "name");
+    const artifacts = await group.artifacts();
+    const contractAddresses = artifacts.map((a) => a.name);
+    const contractsByAddressMap = _.keyBy(artifacts, "name");
     const responses = this.cache.loadCachedOrRetrieve<DailyContractUsageRow[]>(
       TimeSeriesCacheLookup.new(
         this.options.cacheOptions.bucket,
@@ -160,9 +159,12 @@ export class DailyContractUsageCollector implements ICollector {
         range,
       ),
       async (missing) => {
+        const missingArtifacts = missing.keys.map(
+          (k) => contractsByAddressMap[k],
+        );
         const rows = await this.retrieveFromDune(
           range,
-          group.artifacts,
+          missingArtifacts,
           knownUserAddresses,
         );
         return {

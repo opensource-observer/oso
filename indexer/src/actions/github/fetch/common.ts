@@ -6,7 +6,11 @@ import {
   ArtifactType,
   ArtifactNamespace,
 } from "../../../db/orm-entities.js";
-import { ArtifactGroup, ICollector } from "../../../scheduler/types.js";
+import {
+  IArtifactGroup,
+  CollectResponse,
+  ICollector,
+} from "../../../scheduler/types.js";
 import { Range } from "../../../utils/ranges.js";
 import { GenericError } from "../../../common/errors.js";
 import { IEventRecorder } from "../../../recorder/types.js";
@@ -15,6 +19,7 @@ import { RequestDocument, Variables } from "graphql-request";
 import { graphQLClient } from "../../../events/github/graphQLClient.js";
 import { DateTime } from "luxon";
 import { logger } from "../../../utils/logger.js";
+import { ProjectArtifactGroup } from "../../../scheduler/common.js";
 
 export class IncompleteRepoName extends GenericError {}
 export type GithubRepoLocator = { owner: string; repo: string };
@@ -83,7 +88,7 @@ export class GithubByProjectBaseCollector implements ICollector {
     this.resetTime = null;
   }
 
-  async *groupedArtifacts(): AsyncGenerator<ArtifactGroup> {
+  async *groupedArtifacts(): AsyncGenerator<IArtifactGroup<Project>> {
     const projects = await this.projectRepository.find({
       relations: {
         artifacts: true,
@@ -98,18 +103,15 @@ export class GithubByProjectBaseCollector implements ICollector {
 
     // Emit each project's artifacts as a group of artifacts to record
     for (const project of projects) {
-      yield {
-        artifacts: project.artifacts,
-        details: project,
-      };
+      yield ProjectArtifactGroup.create(project, project.artifacts);
     }
   }
 
   collect(
-    _group: ArtifactGroup,
+    _group: IArtifactGroup<Project>,
     _range: Range,
     _commitArtifact: (artifact: Artifact | Artifact[]) => Promise<void>,
-  ): Promise<void> {
+  ): Promise<CollectResponse> {
     throw new Error("Not implemented");
   }
 

@@ -14,10 +14,10 @@ import {
   Project,
 } from "../../../db/orm-entities.js";
 import { logger } from "../../../utils/logger.js";
-import { Octokit } from "octokit";
+import { Octokit, RequestError } from "octokit";
 import { GetResponseDataTypeFromEndpointMethod } from "@octokit/types";
 import { Repository } from "typeorm";
-import { ArtifactGroup } from "../../../scheduler/types.js";
+import { IArtifactGroup } from "../../../scheduler/types.js";
 import {
   TimeSeriesCacheLookup,
   TimeSeriesCacheWrapper,
@@ -32,6 +32,12 @@ import {
 type Commit = GetResponseDataTypeFromEndpointMethod<
   Octokit["rest"]["repos"]["getCommit"]
 >;
+
+interface EmptyRepository {
+  isEmptyRepository: boolean;
+}
+
+type CommitsResponse = Commit[] | EmptyRepository;
 
 class IncompleteRepoName extends GenericError {}
 
@@ -57,30 +63,36 @@ export class GithubCommitCollector extends GithubByProjectBaseCollector {
   }
 
   async collect(
-    group: ArtifactGroup,
+    group: IArtifactGroup<Project>,
     range: Range,
     commitArtifact: (artifact: Artifact | Artifact[]) => Promise<void>,
   ) {
-    const project = group.details as Project;
-    logger.debug(
-      `loading all commits for repos within the Project[${project.slug}]`,
-    );
+    const artifacts = await group.artifacts();
+    const errors: unknown[] = [];
 
     // Load commits for each artifact
-    await asyncBatch(group.artifacts, 10, async (batch) => {
-      const artifact = batch[0];
-      try {
-        await this.recordEventsForRepo(artifact, range);
-      } catch (err) {
-        if (err instanceof IncompleteRepoName) {
-          logger.warn(
-            `artifact[${artifact.id}] has a malformed github url ${artifact.url}`,
-          );
-          return;
+    await asyncBatch(artifacts, 10, async (batch) => {
+      const artifactCommits: Promise<void>[] = [];
+      for (const artifact of batch) {
+        try {
+          await this.recordEventsForRepo(artifact, range);
+        } catch (err) {
+          if (err instanceof IncompleteRepoName) {
+            logger.warn(
+              `artifact[${artifact.id}] has a malformed github url ${artifact.url}`,
+            );
+            return;
+          }
+          errors.push(err);
         }
+        artifactCommits.push(commitArtifact(artifact));
       }
-      return commitArtifact(artifact);
+      await Promise.all(artifactCommits);
     });
+
+    return {
+      errors: errors,
+    };
   }
 
   private async recordEventsForRepo(repoArtifact: Artifact, range: Range) {
@@ -88,7 +100,7 @@ export class GithubCommitCollector extends GithubByProjectBaseCollector {
       `Recording commits for ${repoArtifact.name} in ${rangeToString(range)}`,
     );
     const locator = this.splitGithubRepoIntoLocator(repoArtifact);
-    const responses = this.cache.loadCachedOrRetrieve<Commit[], number>(
+    const responses = this.cache.loadCachedOrRetrieve<CommitsResponse, number>(
       TimeSeriesCacheLookup.new(
         `${this.options.cacheOptions.bucket}/${locator.owner}/${locator.repo}`,
         [`${repoArtifact.namespace}:${repoArtifact.name}`],
@@ -96,42 +108,61 @@ export class GithubCommitCollector extends GithubByProjectBaseCollector {
       ),
       async (missing, lastPage) => {
         const currentPage = (lastPage?.cursor || 1) as number;
-        const commits = await this.gh.rest.repos.listCommits({
-          ...locator,
-          ...{
-            since: range.startDate
-              .toUTC()
-              .startOf("second")
-              .toISO({ suppressMilliseconds: true })!,
-            until: range.endDate
-              .toUTC()
-              .startOf("second")
-              .toISO({ suppressMilliseconds: true })!,
-            per_page: 500,
-            page: lastPage?.cursor || 1,
-          },
-        });
-        let hasNextPage = false;
-        if (commits.headers.link) {
-          if (commits.headers.link.indexOf('rel="next"') !== -1) {
-            logger.debug(`found next page after ${currentPage}`);
-            hasNextPage = true;
+        try {
+          logger.debug("loading page from github");
+          const commits = await this.gh.rest.repos.listCommits({
+            ...locator,
+            ...{
+              since: range.startDate
+                .toUTC()
+                .startOf("second")
+                .toISO({ suppressMilliseconds: true })!,
+              until: range.endDate
+                .toUTC()
+                .startOf("second")
+                .toISO({ suppressMilliseconds: true })!,
+              per_page: 500,
+              page: lastPage?.cursor || 1,
+            },
+          });
+          let hasNextPage = false;
+          if (commits.headers.link) {
+            if (commits.headers.link.indexOf('rel="next"') !== -1) {
+              logger.debug(`found next page after ${currentPage}`);
+              hasNextPage = true;
+            }
           }
-        }
 
-        return {
-          raw: commits.data as Commit[],
-          cacheRange: missing.range,
-          hasNextPage: hasNextPage,
-          cursor: currentPage + 1,
-        };
+          return {
+            raw: commits.data as Commit[],
+            cacheRange: missing.range,
+            hasNextPage: hasNextPage,
+            cursor: currentPage + 1,
+          };
+        } catch (err) {
+          if (err instanceof RequestError) {
+            if (err.response?.data === "Git Repository is empty") {
+              logger.debug("found empty repo");
+              return {
+                raw: { isEmptyRepository: true },
+                cacheRange: missing.range,
+                hasNextPage: false,
+                cursor: 1,
+              };
+            }
+          }
+          throw err;
+        }
       },
     );
 
     const recordPromises: Promise<string>[] = [];
 
     for await (const page of responses) {
-      for (const commit of page.raw) {
+      const commits: Commit[] = (page.raw as EmptyRepository).isEmptyRepository
+        ? []
+        : (page.raw as Commit[]);
+      for (const commit of commits) {
         const rawCommitTime =
           commit.commit.committer?.date || commit.commit.author?.date;
         if (!rawCommitTime) {

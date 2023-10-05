@@ -28,7 +28,7 @@ import {
   TimeSeriesCacheLookup,
   TimeSeriesCacheWrapper,
 } from "../../../cacher/time-series.js";
-import { ArtifactGroup } from "../../../scheduler/types.js";
+import { IArtifactGroup } from "../../../scheduler/types.js";
 import { Range } from "../../../utils/ranges.js";
 
 const GET_ISSUE_TIMELINE = gql`
@@ -418,16 +418,18 @@ export class GithubIssueCollector extends GithubByProjectBaseCollector {
   }
 
   async collect(
-    group: ArtifactGroup,
+    group: IArtifactGroup<Project>,
     range: Range,
     commitArtifact: (artifact: Artifact | Artifact[]) => Promise<void>,
-  ): Promise<void> {
-    const project = group.details as Project;
-    logger.debug(`collecting issues for repos of Project[${project.slug}]`);
+  ) {
+    const project = await group.meta();
+    const artifacts = await group.artifacts();
 
-    const artifactMap = _.keyBy(group.artifacts, "name");
+    const artifactMap = _.keyBy(artifacts, (a: Artifact) => {
+      return a.name.toLowerCase();
+    });
 
-    const locators = group.artifacts.map((a) => {
+    const locators = artifacts.map((a) => {
       return this.splitGithubRepoIntoLocator(a);
     });
 
@@ -494,17 +496,26 @@ export class GithubIssueCollector extends GithubByProjectBaseCollector {
       },
     );
 
+    const errors: unknown[] = [];
     for await (const page of pages) {
       const edges = page.raw;
       for (const edge of edges) {
         const recordPromises: Promise<string>[] = [];
         const issue = edge.node;
 
-        const artifact = artifactMap[issue.repository.nameWithOwner];
+        const repoLocatorStr = issue.repository.nameWithOwner.toLowerCase();
+
+        const artifact = artifactMap[repoLocatorStr];
         if (!artifact) {
-          throw Error(
-            `unexpected repository ${issue.repository.nameWithOwner}`,
+          console.log("unexpected repository");
+          console.log(artifacts.map((a) => a.name));
+          console.log(issue.url);
+          errors.push(
+            new Error(
+              `unexpected repository ${issue.repository.nameWithOwner}`,
+            ),
           );
+          continue;
         }
         const creationTime = DateTime.fromISO(issue.createdAt);
 

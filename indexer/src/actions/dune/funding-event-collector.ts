@@ -10,6 +10,7 @@ import {
   ArtifactNamespace,
   ArtifactType,
   EventType,
+  Project,
 } from "../../db/orm-entities.js";
 import {
   IEventRecorder,
@@ -21,10 +22,11 @@ import {
   TimeSeriesCacheWrapper,
 } from "../../cacher/time-series.js";
 import _ from "lodash";
-import { ArtifactGroup, ICollector } from "../../scheduler/types.js";
+import { IArtifactGroup, ICollector } from "../../scheduler/types.js";
 import { Range } from "../../utils/ranges.js";
 import { asyncBatch } from "../../utils/array.js";
 import { ProjectRepository } from "../../db/project.js";
+import { ProjectArtifactGroup } from "../../scheduler/common.js";
 
 export interface FundingEventsCollectorOptions {
   cacheOptions: {
@@ -60,29 +62,28 @@ export class FundingEventsCollector implements ICollector {
     this.cache = cache;
   }
 
-  async *groupedArtifacts(): AsyncGenerator<ArtifactGroup> {
+  async *groupedArtifacts(): AsyncGenerator<IArtifactGroup<Project>> {
     logger.debug("gathering artifacts");
-    const projectAddresses =
+    const projects =
       await this.projectRepository.allFundableProjectsWithAddresses();
-    const artifacts: Array<Artifact> = projectAddresses.flatMap((p) => {
-      return p.artifacts
+
+    for (const project of projects) {
+      const artifacts: Artifact[] = project.artifacts
         .filter((a) => a.name.length == 42)
         .map((a) => {
           return a;
         });
-    });
-    yield {
-      details: {},
-      artifacts: artifacts,
-    };
+      yield ProjectArtifactGroup.create(project, artifacts);
+    }
   }
 
   async collect(
-    group: ArtifactGroup,
+    group: IArtifactGroup<Project>,
     range: Range,
     commitArtifact: (artifact: Artifact) => Promise<void>,
   ): Promise<void> {
     logger.debug("running funding events collector");
+    const artifacts = await group.artifacts();
     // Super pragmatic hack for now to create the funding addresses. Let's just make them now
     const fundingAddressesRaw: Array<[string, string, string, string]> = [
       [
@@ -189,7 +190,7 @@ export class FundingEventsCollector implements ICollector {
 
     const projectAddressesInput: Array<
       ProjectAddress & { namespace: ArtifactNamespace; type: ArtifactType }
-    > = group.artifacts.map((a, i) => {
+    > = artifacts.map((a, i) => {
       return {
         id: i,
         projectId: i,
@@ -276,7 +277,7 @@ export class FundingEventsCollector implements ICollector {
     await Promise.all(recordPromises);
 
     // Commit all of the artifacts
-    await asyncBatch(group.artifacts, 1, async (a) => {
+    await asyncBatch(artifacts, 1, async (a) => {
       return await commitArtifact(a[0]);
     });
   }
