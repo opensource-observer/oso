@@ -246,7 +246,9 @@ export class Job extends Base<"JobId"> {
   status: JobStatus;
 
   // Used to prevent concurrent writes to this object
-  @Column("integer")
+  @Column("integer", {
+    default: 0,
+  })
   version: number;
 
   @Column("jsonb", {
