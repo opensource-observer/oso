@@ -28,6 +28,7 @@ import _ from "lodash";
 import { PromisePubSub } from "../utils/pubsub.js";
 import { Range, isWithinRange } from "../utils/ranges.js";
 import { EventEmitter } from "node:events";
+import { randomUUID } from "node:crypto";
 
 export interface BatchEventRecorderOptions {
   maxBatchSize: number;
@@ -93,39 +94,113 @@ const defaultBatchEventRecorderOptions: BatchEventRecorderOptions = {
   timeoutMs: 600000,
 };
 
+type FlusherCallback = () => Promise<void>;
+
 export interface IFlusher {
-  scheduleIfNotSet(cb: () => void): void;
+  notify(size: number): void;
   clear(): void;
-  isScheduled(): boolean;
+  onFlush(cb: FlusherCallback): void;
 }
 
-export class TimeoutFlusher implements IFlusher {
+/**
+ * A flusher that accumulates some arbitrary size (assumed to be the batch size)
+ * and chooses to flush once that size is reached or a timeout has been met.
+ */
+export class TimeoutBatchedFlusher implements IFlusher {
   private timeout: NodeJS.Timeout | null;
   private timeoutMs: number;
+  private waitMs: number;
+  private size: number;
+  private cb: FlusherCallback | undefined;
+  private maxSize: number;
+  private triggered: boolean;
 
-  constructor(timeoutMs: number) {
+  constructor(timeoutMs: number, maxSize: number) {
+    if (timeoutMs < 100) {
+      throw new Error("timeout is too short");
+    }
     this.timeoutMs = timeoutMs;
+    this.waitMs = timeoutMs;
     this.timeout = null;
+    this.size = 0;
+    this.maxSize = maxSize;
+    this.triggered = false;
   }
 
-  scheduleIfNotSet(cb: () => void): void {
-    if (!this.timeout) {
-      this.timeout = setTimeout(cb, this.timeoutMs);
+  notify(size: number): void {
+    this.size += size;
+
+    // if the size is 0 then this was called without anything in the queue. That
+    // means we should slow down processing the queue.
+    if (this.size == 0) {
+      if (this.waitMs == 0) {
+        this.waitMs = this.timeoutMs / 2;
+      }
+      this.waitMs += this.waitMs;
+    } else {
+      this.waitMs = this.timeoutMs;
+    }
+
+    // We should allow the flush notification to get pushed while the size of
+    // the flush is small.
+    if (this.size < this.maxSize) {
+      this.resetTimeout();
     }
   }
 
+  private resetTimeout() {
+    // Only reset the timeout if the flusher is currently untriggered. A
+    // triggered state means that this flusher is executing the callback
+    if (!this.triggered) {
+      if (this.timeout) {
+        clearTimeout(this.timeout);
+      }
+
+      this.timeout = setTimeout(() => {
+        // It is expected that the consuming class will clear the flusher.
+        this.triggered = true;
+
+        // Reset size which is just a count of notifications This allows the
+        // timeout to backoff if the notify function is continously called and
+        // this.size remains 0
+        this.size = 0;
+
+        if (this.cb) {
+          this.cb()
+            .then(() => {
+              this.triggered = false;
+              this.notify(0);
+            })
+            .catch((err) => {
+              // This should not happen and will trigger a failure. It is
+              // expected that the callback will capture all errors.
+              logger.error("recorder is not catching some errors");
+              logger.error(err);
+
+              // Thiw will cause an uncaughtException error to be thrown and the
+              // entire application to stop.
+              throw err;
+            });
+        }
+      }, this.waitMs);
+    }
+  }
+
+  onFlush(cb: FlusherCallback): void {
+    if (this.timeout) {
+      clearTimeout(this.timeout);
+    }
+    this.cb = cb;
+  }
+
   clear(): void {
+    this.size = 0;
+    this.waitMs = 0;
     if (this.timeout) {
       clearTimeout(this.timeout);
     }
     this.timeout = null;
-  }
-
-  isScheduled(): boolean {
-    if (this.timeout) {
-      return true;
-    }
-    return false;
+    this.triggered = false;
   }
 }
 
@@ -147,9 +222,9 @@ export class BatchEventRecorder implements IEventRecorder {
   private actorsLoaded: boolean;
   private flusher: IFlusher;
   private pubsub: PromisePubSub<void, unknown>;
-  private pause: boolean;
   private range: Range | undefined;
   private emitter: EventEmitter;
+  private closing: boolean;
 
   constructor(
     eventRepository: Repository<Event>,
@@ -170,9 +245,24 @@ export class BatchEventRecorder implements IEventRecorder {
     this.pubsub = new PromisePubSub({
       timeoutMs: this.options.timeoutMs,
     });
-    this.pause = false;
     this.knownEventsStorage = {};
     this.emitter = new EventEmitter();
+    this.closing = false;
+    // Arbitrarily set to an early time
+
+    // Setup flush event handler
+    this.flusher.onFlush(async () => {
+      logger.debug(`flushing all queued events`);
+      try {
+        await this.flushAll();
+        logger.debug("flush cycle completed");
+        this.emitter.emit("flush");
+      } catch (err) {
+        logger.error(`error caught flushing ${err}`);
+        logger.error(err);
+        this.emitter.emit("error", err);
+      }
+    });
   }
 
   setActorScope(namespaces: ArtifactNamespace[], types: ArtifactType[]) {
@@ -192,6 +282,7 @@ export class BatchEventRecorder implements IEventRecorder {
     if (!this.range) {
       throw new Error("recorder needs a range to load events");
     }
+
     if (!this.knownEventsStorageForType(eventType).loaded) {
       logger.debug(`Loading existing events for ${eventType} (if any)`);
       // find all of the events that need for a given time range
@@ -204,9 +295,12 @@ export class BatchEventRecorder implements IEventRecorder {
       );
 
       // Find existing events (for idempotency)
-      const existingEvents = await this.eventRepository.find({
+      const existingEvents = (await this.eventRepository.find({
         where: where,
-      });
+        select: {
+          sourceId: true,
+        },
+      })) as Pick<Event, "sourceId">[];
 
       const lookup = existingEvents.reduce<Record<string, boolean>>(
         (lookup, curr) => {
@@ -248,12 +342,12 @@ export class BatchEventRecorder implements IEventRecorder {
     return storage.known[event.sourceId] !== undefined;
   }
 
-  private async loadActors(): Promise<void> {
+  private async loadActors(flushId: string): Promise<void> {
     if (this.namespaces.length === 0) {
       throw new Error("scope of recording must be set");
     }
 
-    logger.debug("loading all artifacts and contributors");
+    logger.debug(`${flushId}: loading all artifacts and contributors`);
 
     // Load all of the artifacts
     const artifacts = await this.artifactRepository.find({
@@ -269,7 +363,7 @@ export class BatchEventRecorder implements IEventRecorder {
       this.actorDirectory.loadArtifact(artifact);
       count += 1;
     }
-    logger.debug(`loaded ${count} artifacts`);
+    logger.debug(`${flushId}: loaded ${count} artifacts`);
     this.actorsLoaded = true;
   }
 
@@ -280,13 +374,15 @@ export class BatchEventRecorder implements IEventRecorder {
   }
 
   record(event: IncompleteEvent): Promise<RecordResponse> {
+    if (this.closing) {
+      throw new RecorderError("recorder is closing. should be more writes");
+    }
     // Queue an event for writing
     const queue = this.getEventTypeStorage(event.type);
     const promise = queue.pushAndWait(event);
 
-    // Upon the first "record" and pausable loop will begin
-    this.pause = false;
-    this.scheduleFlush();
+    // Upon the first "record" begin the flush sequence
+    this.scheduleFlush(1);
     return promise;
   }
 
@@ -298,26 +394,8 @@ export class BatchEventRecorder implements IEventRecorder {
     this.emitter.removeListener(listener, callback);
   }
 
-  private scheduleFlush() {
-    this.flusher.scheduleIfNotSet(() => {
-      logger.debug(`flushing all queued events`);
-      this.flushAll()
-        .then(() => {
-          logger.debug("flush cycle completed");
-          this.emitter.emit("flush");
-        })
-        .catch((err) => {
-          logger.error(`error caught flushing ${err}`);
-          logger.error(err);
-          this.emitter.emit("error", err);
-        })
-        .finally(() => {
-          this.flusher.clear();
-          if (!this.pause) {
-            this.scheduleFlush();
-          }
-        });
-    });
+  private scheduleFlush(size: number) {
+    this.flusher.notify(size);
   }
 
   private getEventTypeStrategy(eventType: EventType): IEventTypeStrategy {
@@ -337,16 +415,23 @@ export class BatchEventRecorder implements IEventRecorder {
     }
   }
 
-  async waitAll(): Promise<void> {
+  async close(): Promise<void> {
+    if (this.closing) {
+      throw new RecorderError("there should only be one call to close()");
+    }
+
+    // Lock the recorder
+    this.closing = true;
+    logger.debug("closing the recorder");
     const all: Promise<void>[] = [];
+
     for (const eventType in this.eventTypeStorage) {
       all.push(this.wait(eventType as EventType));
     }
 
-    // Wait all generally means we're looking to stop.
-    this.pause = true;
-
     await Promise.all(all);
+
+    this.flusher.clear();
     return;
   }
 
@@ -359,11 +444,12 @@ export class BatchEventRecorder implements IEventRecorder {
   }
 
   private async flushType(eventType: EventType) {
+    const flushId = randomUUID();
     logger.debug(
-      `Waiting for all ${eventType.toString()} events to be recorded`,
+      `${flushId}: Waiting for all ${eventType.toString()} events to be recorded`,
     );
     if (!this.actorsLoaded) {
-      await this.loadActors();
+      await this.loadActors(flushId);
     }
 
     // Wait for a specific event type queue to complete
@@ -381,7 +467,7 @@ export class BatchEventRecorder implements IEventRecorder {
     const processing = eventTypeStorage.popAll();
 
     try {
-      await this.processEvents(eventType, processing);
+      await this.processEvents(flushId, eventType, processing);
       this.pubsub.pub(eventType, null);
     } catch (err) {
       logger.error(
@@ -399,6 +485,7 @@ export class BatchEventRecorder implements IEventRecorder {
   }
 
   private async processEvents(
+    flushId: string,
     eventType: EventType,
     processing: IncompleteEvent[],
   ): Promise<void> {
@@ -456,7 +543,7 @@ export class BatchEventRecorder implements IEventRecorder {
     });
 
     if (newArtifacts.length > 0) {
-      await this.loadActors();
+      await this.loadActors(flushId);
     }
 
     logger.debug(`about to start writing to db in batch ${newEvents.length}`);

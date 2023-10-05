@@ -30,13 +30,31 @@ import path from "path";
 import { fileExists } from "../utils/files.js";
 import { mkdirp } from "mkdirp";
 import type { Brand } from "utility-types";
+import { GenericError } from "../common/errors.js";
 
-export type ArtifactGroup = {
-  details: unknown;
-  artifacts: Artifact[];
+export type IArtifactGroup<T extends object = object> = {
+  name(): Promise<string>;
+  meta(): Promise<T>;
+  artifacts(): Promise<Artifact[]>;
+
+  createMissingGroup(missing: Artifact[]): Promise<IArtifactGroup<T>>;
 };
 
 export type ErrorsList = unknown[];
+
+export type CollectorErrorsOptions = {
+  unsortedErrors?: ErrorsList;
+  errorsBySourceId?: Record<string, ErrorsList>;
+};
+
+export class CollectorErrors extends GenericError {
+  constructor(message: string, options?: CollectorErrorsOptions) {
+    const details = {
+      ...options,
+    };
+    super(message, details);
+  }
+}
 
 type LockData = {
   execution: {
@@ -51,14 +69,20 @@ type LockData = {
 export interface ICollector {
   // Yield arrays of artifacts that this collector monitors. This is an async
   // generator so that artifacts can be yielded in groups if needed.
-  groupedArtifacts(): AsyncGenerator<ArtifactGroup>;
+  groupedArtifacts(): AsyncGenerator<IArtifactGroup<object>>;
 
   collect(
-    group: ArtifactGroup,
+    group: IArtifactGroup<object>,
     range: Range,
     commitArtifact: (artifact: Artifact | Artifact[]) => Promise<void>,
-  ): Promise<void>;
+  ): Promise<CollectResponse>;
 }
+
+export interface Errors {
+  errors: unknown[];
+}
+
+export type CollectResponse = Errors | void;
 
 /**
  * Rudimentary service locator that uses names to register services. This isn't
@@ -342,20 +366,17 @@ export class BaseScheduler implements IScheduler {
       startDate: startDate,
       endDate: endDate,
     });
-    if (errors.length > 0) {
-      await this.jobsExecutionRepository.updateExecutionStatus(
-        execution,
-        JobExecutionStatus.FAILED,
-      );
+    let execStatus = JobExecutionStatus.FAILED;
+    if (errors.length === 0) {
+      execStatus = JobExecutionStatus.COMPLETE;
     }
-
-    try {
-      await unlink(lockJsonPath);
-    } catch (e) {
-      logger.error("error occurred attempting to delete lock file");
-    }
+    await this.jobsExecutionRepository.updateExecutionStatus(
+      execution,
+      execStatus,
+    );
 
     // Check the available jobs after the run and spawn a worker
+    logger.info("releasing lock for current worker");
     const afterGroups = await this.jobsRepository.availableJobGroups();
     if (afterGroups.length) {
       // Only spawn a single worker with the same group
@@ -364,6 +385,13 @@ export class BaseScheduler implements IScheduler {
       } else {
         logger.debug(`No spawn allowed. would have spawned.`);
       }
+    }
+
+    try {
+      logger.info("deleting jobs lock file");
+      await unlink(lockJsonPath);
+    } catch (e) {
+      logger.error("error occurred attempting to delete lock file");
     }
     return errors;
   }
@@ -427,68 +455,88 @@ export class BaseScheduler implements IScheduler {
     // Get a list of the monitored artifacts
     for await (const group of collector.groupedArtifacts()) {
       // Determine anything missing from this group
-      logger.debug("determine missing artifacts");
+      const groupName = await group.name();
+      logger.debug(`${groupName}: determine missing artifacts`);
       const missing = await this.findMissingArtifactsFromEventPointers(
         range,
-        group.artifacts,
+        await group.artifacts(),
         collectorName,
       );
 
       // Nothing missing in this group. Skip
       if (missing.length === 0) {
-        logger.debug("all artifacts already up to date");
+        logger.debug(`${groupName}: all artifacts already up to date`);
         continue;
       }
-      logger.debug(`missing ${missing.length} artifacts for the group`);
+      logger.debug(
+        `${groupName}: missing ${missing.length} artifacts for the group`,
+      );
+      logger.debug(missing.map((a) => a.name));
+
+      const commitArtifact = async (input: Artifact | Artifact[]) => {
+        const artifacts = !Array.isArray(input) ? [input] : input;
+
+        const newArtifacts = artifacts.filter((a) => {
+          let seenCount = seenIds[a.id] || 0;
+          seenCount += 1;
+          seenIds[a.id] = seenCount;
+          if (seenCount > 1) {
+            logger.warn(
+              `${groupName}: duplicate artifact commitment for ${a.name}. skipping.`,
+            );
+            return false;
+          }
+          return true;
+        });
+
+        logger.debug(
+          `${groupName}: writing ${newArtifacts.length} new artifacts`,
+        );
+
+        await Promise.all(
+          newArtifacts.map(async (artifact) => {
+            logger.debug(
+              `completed events for "${collectorName} on Artifact[${
+                artifact.id
+              }] for ${rangeToString(range)}`,
+            );
+            return await this.eventPointerManager.commitArtifactForRange(
+              range,
+              artifact,
+              collectorName,
+            );
+          }),
+        );
+        return;
+      };
 
       // Execute the collection for the missing items
       try {
-        await collector.collect(
-          { details: group.details, artifacts: missing },
+        const response = await collector.collect(
+          await group.createMissingGroup(missing),
           range,
-          async (input) => {
-            const artifacts = !Array.isArray(input) ? [input] : input;
-
-            const newArtifacts = artifacts.filter((a) => {
-              let seenCount = seenIds[a.id] || 0;
-              seenCount += 1;
-              seenIds[a.id] = seenCount;
-              if (seenCount > 1) {
-                logger.warn(`duplicate artifact commitment. skipping.`);
-                return false;
-              }
-              return true;
-            });
-
-            console.log(`writing ${newArtifacts.length} new artifacts`);
-
-            await Promise.all(
-              newArtifacts.map(async (artifact) => {
-                logger.debug(
-                  `completed events for "${collectorName} on Artifact[${
-                    artifact.id
-                  }] for ${rangeToString(range)}`,
-                );
-                return await this.eventPointerManager.commitArtifactForRange(
-                  range,
-                  artifact,
-                  collectorName,
-                );
-              }),
-            );
-            return;
-          },
+          commitArtifact,
         );
+        if (response) {
+          const errorsResponse = response as Errors;
+          if (errorsResponse.errors) {
+            errors.push(...errorsResponse.errors);
+          }
+        }
       } catch (err) {
+        console.log("what");
         logger.error("Error encountered. Skipping group", err);
         errors.push(err);
         continue;
       }
-      // TODO: Ensure all artifacts are committed or error
+      break;
+      // TODO: Ensure all artifacts are committed or report errors
     }
 
+    logger.debug("collection recorded but waiting for recorder");
+
     try {
-      await this.recorder.waitAll();
+      await this.recorder.close();
     } catch (err) {
       logger.error("waiting for the recorder to complete", err);
       errors.push(err);

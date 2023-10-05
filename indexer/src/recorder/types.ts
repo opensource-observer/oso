@@ -33,7 +33,7 @@ export interface IEventRecorder {
   setRange(range: Range): void;
 
   // Call this when you're done recording
-  waitAll(): Promise<void>;
+  close(): Promise<void>;
 
   wait(eventType: EventType): Promise<void>;
 

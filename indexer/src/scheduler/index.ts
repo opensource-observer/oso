@@ -1,4 +1,7 @@
-import { BatchEventRecorder, TimeoutFlusher } from "../recorder/recorder.js";
+import {
+  BatchEventRecorder,
+  TimeoutBatchedFlusher,
+} from "../recorder/recorder.js";
 import { BaseScheduler, Config } from "./types.js";
 import {
   TimeSeriesCacheManager,
@@ -63,7 +66,7 @@ export type SchedulerQueueJobArgs = SchedulerArgs & {
 
 // Entrypoint for the scheduler. Currently not where it should be but this is quick.
 export async function configure(args: SchedulerArgs) {
-  const flusher = new TimeoutFlusher(1000);
+  const flusher = new TimeoutBatchedFlusher(2000, 2000);
   const recorder = new BatchEventRecorder(
     EventRepository,
     ArtifactRepository,
@@ -177,6 +180,7 @@ export async function configure(args: SchedulerArgs) {
     dataSetIncludesNow: true,
     artifactScope: [ArtifactNamespace.GITHUB],
     artifactTypeScope: [
+      ArtifactType.GITHUB_ORG,
       ArtifactType.GITHUB_USER,
       ArtifactType.GIT_EMAIL,
       ArtifactType.GIT_NAME,
@@ -200,6 +204,7 @@ export async function configure(args: SchedulerArgs) {
     dataSetIncludesNow: true,
     artifactScope: [ArtifactNamespace.GITHUB],
     artifactTypeScope: [
+      ArtifactType.GITHUB_ORG,
       ArtifactType.GITHUB_USER,
       ArtifactType.GIT_EMAIL,
       ArtifactType.GIT_NAME,

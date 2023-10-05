@@ -26,7 +26,7 @@ import {
 import { Repository } from "typeorm";
 import { TimeSeriesCacheWrapper } from "../../../cacher/time-series.js";
 import _ from "lodash";
-import { ArtifactGroup } from "../../../scheduler/types.js";
+import { IArtifactGroup } from "../../../scheduler/types.js";
 import {
   Range,
   doRangesIntersect,
@@ -206,17 +206,18 @@ export class GithubFollowingCollector extends GithubByProjectBaseCollector {
   }
 
   async collect(
-    group: ArtifactGroup,
+    group: IArtifactGroup<Project>,
     range: Range,
     commitArtifact: (artifact: Artifact | Artifact[]) => Promise<void>,
   ): Promise<void> {
-    const project = group.details as Project;
+    const project = await group.meta();
+    const artifacts = await group.artifacts();
     logger.debug(`collecting followers for repos of Project[${project.slug}]`);
 
     const recordPromises: Promise<string>[] = [];
 
     // load the summaries for each
-    for (const repo of group.artifacts) {
+    for (const repo of artifacts) {
       const locator = this.splitGithubRepoIntoLocator(repo);
       const summary = await this.loadSummaryForRepo(locator);
       const ranges = this.rangeOfRepoFollowingSummaryResponse(summary);
