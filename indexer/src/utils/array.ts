@@ -54,18 +54,20 @@ export async function asyncBatch<T, R>(
 ): Promise<R[]> {
   let batch = [];
   let batchNumber = 0;
-  const results = [];
+  const results: R[] = [];
   for (const item of arr) {
     batch.push(item);
 
     if (batch.length >= batchSize) {
-      results.push(await cb(batch, batch.length, batchNumber));
+      const batchResult = await cb(batch, batch.length, batchNumber);
+      results.push(batchResult);
       batchNumber += 1;
       batch = [];
     }
   }
   if (batch.length > 0) {
-    results.push(await cb(batch, batch.length, batchNumber));
+    const batchResult = await cb(batch, batch.length, batchNumber);
+    results.push(batchResult);
     batch = [];
   }
   return results;
