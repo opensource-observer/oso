@@ -432,6 +432,9 @@ export class BaseScheduler implements IScheduler {
   }
 
   async executeForRange(collectorName: string, range: Range) {
+    if (range.startDate >= range.endDate) {
+      throw new Error(`invalid input range ${rangeToString(range)}`);
+    }
     logger.debug(`starting ${collectorName}`);
     const reg = this.collectors[collectorName];
 
