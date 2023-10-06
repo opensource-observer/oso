@@ -1,5 +1,6 @@
 import {
   Event,
+  EventPointer,
   EventType,
   Artifact,
   ArtifactNamespace,
@@ -10,6 +11,7 @@ import {
 export {
   Event,
   EventType,
+  EventPointer,
   Artifact,
   ArtifactNamespace,
   ArtifactType,
