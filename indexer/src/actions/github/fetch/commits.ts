@@ -140,8 +140,19 @@ export class GithubCommitCollector extends GithubByProjectBaseCollector {
             cursor: currentPage + 1,
           };
         } catch (err) {
-          if (err instanceof RequestError) {
-            if (err.response?.data === "Git Repository is empty") {
+          const reqErr = err as RequestError;
+
+          if (reqErr.status) {
+            if (reqErr.status === 404) {
+              logger.debug("repo not found");
+              return {
+                raw: { isEmptyRepository: true },
+                cacheRange: missing.range,
+                hasNextPage: false,
+                cursor: 1,
+              };
+            }
+            if (reqErr.response?.data === "Git Repository is empty") {
               logger.debug("found empty repo");
               return {
                 raw: { isEmptyRepository: true },

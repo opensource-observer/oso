@@ -84,6 +84,21 @@ describe("findMissingRanges", () => {
     ]);
   });
 
+  it("should handle ranges missing entirely", () => {
+    const beginDate: DateTime = DateTime.fromISO("2023-01-01T00:00:00");
+    const endDate: DateTime = DateTime.fromISO("2023-01-01T12:00:00");
+
+    const missingRanges: Range[] = findMissingRanges(beginDate, endDate, []);
+
+    const expectedRange = rangeFromISO(
+      "2023-01-01T00:00:00",
+      "2023-01-01T12:00:00",
+    );
+
+    expect(missingRanges.length).toEqual(1);
+    expect(rangesEqual(missingRanges[0], expectedRange)).toBe(true);
+  });
+
   it("should handle no missing ranges", () => {
     const ranges: Range[] = [
       {
