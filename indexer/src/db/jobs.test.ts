@@ -5,14 +5,9 @@ import {
   JobExecutionRepository,
   JobsRepository,
 } from "./jobs.js";
-import { clearDb, withDbDescribe } from "./testing.js";
-import { AppDataSource } from "./data-source.js";
+import { withDbDescribe } from "./testing.js";
 
 withDbDescribe("Jobs", () => {
-  beforeEach(async () => {
-    await clearDb();
-  });
-
   it("should create jobs", async () => {
     const job0 = await JobsRepository.queueJob(
       "collector0",
@@ -59,13 +54,5 @@ withDbDescribe("Jobs", () => {
     await expect(() => {
       return JobExecutionRepository.createExecutionForJob(job3);
     }).rejects.toThrow(GroupAlreadyActive);
-  });
-
-  afterAll(async () => {
-    try {
-      await AppDataSource.destroy();
-    } catch (_e) {
-      console.log("data source already disconnected");
-    }
   });
 });

@@ -1,7 +1,8 @@
 import { TEST_ONLY_ALLOW_CLEAR_DB, ENABLE_DB_TESTS } from "../config.js";
 import { logger } from "../utils/logger.js";
 import { AppDataSource } from "./data-source.js";
-import { it, describe } from "@jest/globals";
+import { it, describe, beforeEach, afterAll } from "@jest/globals";
+import { randomUUID } from "crypto";
 
 // Testing utilities for the database
 export async function clearDb() {
@@ -24,11 +25,36 @@ export async function clearDb() {
 type IT_PARAMS = Parameters<typeof it>;
 type DESCRIBE_PARAMS = Parameters<typeof describe>;
 
+/**
+ * Helper for writing db tests. Should only be used as a top level describe. Use
+ * `describe()` for any subsequent levels of describe.
+ */
 export function withDbDescribe(...args: DESCRIBE_PARAMS) {
+  const id = randomUUID();
   if (ENABLE_DB_TESTS) {
-    return describe(...args);
+    describe(`Database setup for ${args[0]}: ${id}`, () => {
+      beforeEach(async () => {
+        await clearDb();
+
+        await new Promise((resolve) => {
+          setTimeout(() => {
+            resolve(null);
+          }, 1000);
+        });
+      });
+
+      afterAll(async () => {
+        try {
+          await AppDataSource.destroy();
+        } catch (_e) {
+          console.log("data source already disconnected");
+        }
+      });
+
+      describe(...args);
+    });
   } else {
-    return describe.skip(...args);
+    describe.skip(...args);
   }
 }
 
