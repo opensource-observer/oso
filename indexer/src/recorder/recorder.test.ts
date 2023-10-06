@@ -1,13 +1,12 @@
 import { DateTime } from "luxon";
 import { ArtifactRepository } from "../db/artifacts.js";
-import { AppDataSource } from "../db/data-source.js";
 import { EventRepository } from "../db/events.js";
 import {
   ArtifactNamespace,
   ArtifactType,
   EventType,
 } from "../db/orm-entities.js";
-import { clearDb, withDbDescribe } from "../db/testing.js";
+import { withDbDescribe } from "../db/testing.js";
 import { BatchEventRecorder, IFlusher } from "./recorder.js";
 import { generateEventTypeStrategy } from "./types.js";
 
@@ -37,8 +36,6 @@ class TestFlusher implements IFlusher {
 withDbDescribe("BatchEventRecorder", () => {
   let flusher: TestFlusher;
   beforeEach(async () => {
-    await clearDb();
-
     flusher = new TestFlusher();
   });
 
@@ -142,13 +139,5 @@ withDbDescribe("BatchEventRecorder", () => {
     }).rejects.toThrow();
 
     await expect(errorHandler).rejects.toThrow();
-  });
-
-  afterAll(async () => {
-    try {
-      await AppDataSource.destroy();
-    } catch (_e) {
-      console.log("data source already disconnected");
-    }
   });
 });

@@ -3,16 +3,7 @@ import { Range } from "../utils/ranges.js";
 import { asyncBatch } from "../utils/array.js";
 import _ from "lodash";
 import { EventPointerRepository } from "../db/events.js";
-import {
-  And,
-  DataSource,
-  FindOptionsWhere,
-  In,
-  LessThan,
-  LessThanOrEqual,
-  MoreThan,
-  MoreThanOrEqual,
-} from "typeorm";
+import { DataSource, In, LessThan, MoreThanOrEqual } from "typeorm";
 import { logger } from "../utils/logger.js";
 
 type IEventPointerRepository = typeof EventPointerRepository;
@@ -52,31 +43,19 @@ export class EventPointerManager {
       artifacts,
       this.options.batchSize,
       async (batch) => {
-        const andPart: FindOptionsWhere<EventPointer> = {
-          collector: collector,
-          artifact: {
-            id: In(batch.map((a) => a.id)),
-          },
-        };
         return this.eventPointerRepository.find({
           // where (range.startDate <= startDate < range.endDate) || (range.startDate < endDate <= range.endDate)
           relations: {
             artifact: true,
           },
-          where: [
-            _.merge(andPart, {
-              startDate: And(
-                MoreThanOrEqual(range.startDate.toJSDate()),
-                LessThan(range.endDate.toJSDate()),
-              ),
-            }),
-            _.merge(andPart, {
-              endDate: And(
-                MoreThan(range.startDate.toJSDate()),
-                LessThanOrEqual(range.endDate.toJSDate()),
-              ),
-            }),
-          ],
+          where: {
+            collector: collector,
+            artifact: {
+              id: In(batch.map((a) => a.id)),
+            },
+            startDate: LessThan(range.endDate.toJSDate()),
+            endDate: MoreThanOrEqual(range.startDate.toJSDate()),
+          },
         });
       },
     );
@@ -89,24 +68,13 @@ export class EventPointerManager {
     collector: string,
   ) {
     logger.debug(`committing this artifact[${artifact.id}]`);
-    const andPart: FindOptionsWhere<EventPointer> = {
-      collector: collector,
-      artifact: {
-        id: artifact.id,
-      },
-    };
+
     // Find any old event pointer that's connectable to this one if it exists. Update it.
-    const intersectingPointers = await this.eventPointerRepository.find({
-      where: [
-        // endDate >= range.startDate || startDate <= range.endDate
-        _.merge(andPart, {
-          endDate: MoreThanOrEqual(range.startDate.toJSDate()),
-        }),
-        _.merge(andPart, {
-          startDate: LessThanOrEqual(range.endDate.toJSDate()),
-        }),
-      ],
-    });
+    const intersectingPointers = await this.getAllEventPointersForRange(
+      range,
+      [artifact],
+      collector,
+    );
 
     if (intersectingPointers.length === 0) {
       // Create a new pointer
