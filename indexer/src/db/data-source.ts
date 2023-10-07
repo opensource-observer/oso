@@ -42,32 +42,46 @@ const dynamicallyLoadedDataSource: DataSourceOptions = {
   subscribers: [],
 };
 
-const staticLoadNoMigrations: DataSourceOptions = {
-  type: "postgres",
-  host: DB_HOST,
-  port: parseInt(DB_PORT),
-  username: DB_USER,
-  password: DB_PASSWORD,
-  database: DB_DATABASE,
-  synchronize: true,
-  logging: loggingOption,
+/**
+ * This is wrapped in a function so we can easily use this for testing.
+ *
+ * @param databaseName Name of the database to use
+ * @returns
+ */
+export function staticDataSourceOptions(
+  databaseName: string,
+): DataSourceOptions {
+  return {
+    type: "postgres",
+    host: DB_HOST,
+    port: parseInt(DB_PORT),
+    username: DB_USER,
+    password: DB_PASSWORD,
+    database: databaseName,
+    synchronize: true,
+    logging: loggingOption,
 
-  entities: [
-    Artifact,
-    Collection,
-    Project,
-    Event,
-    EventPointer,
-    Job,
-    JobGroupLock,
-    JobExecution,
-    Log,
-    EventsDailyByArtifact,
-    EventsDailyByProject,
-  ],
-  migrations: [],
-  subscribers: [],
-};
+    entities: [
+      Artifact,
+      Collection,
+      Project,
+      Event,
+      EventPointer,
+      Job,
+      JobGroupLock,
+      JobExecution,
+      Log,
+      EventsDailyByArtifact,
+      EventsDailyByProject,
+    ],
+    migrations: [],
+    subscribers: [],
+  };
+}
+
+export function testingDataSource(databaseName: string): DataSource {
+  return new DataSource(staticDataSourceOptions(databaseName));
+}
 
 // Unfortunately, jest seems to error when using this. We cannot use dynamic
 // imports. It's possible that this can be fixed in the future but for now this
@@ -76,6 +90,6 @@ const staticLoadNoMigrations: DataSourceOptions = {
 // solution so that we use dynamic normally and non-dynamic for tests which is
 // particularly important for migrations
 export const appDataSourceOptions = NO_DYNAMIC_LOADS
-  ? staticLoadNoMigrations
+  ? staticDataSourceOptions(DB_DATABASE)
   : dynamicallyLoadedDataSource;
 export const AppDataSource = new DataSource(appDataSourceOptions);

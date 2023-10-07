@@ -77,7 +77,10 @@ const cli = yargs(hideBin(process.argv))
     "importOssDirectory",
     "Import projects and collections from 'oss-directory'",
     (yags) => {
-      yags.option("skipExisting", { type: "boolean" });
+      yags.option("overwrite-existing-events", {
+        type: "boolean",
+        default: false,
+      });
     },
     (argv) => handleError(importOssDirectory(argv)),
   )
@@ -147,6 +150,10 @@ const cli = yargs(hideBin(process.argv))
     "scheduler <subcommand>",
     "scheduler commands",
     (yags) => {
+      yags.option("overwrite-existing-events", {
+        type: "boolean",
+        default: false,
+      });
       const dateConverter = (input: string) => {
         const date = DateTime.fromISO(input).toUTC();
         if (!date.isValid) {

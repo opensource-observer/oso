@@ -35,12 +35,6 @@ export function withDbDescribe(...args: DESCRIBE_PARAMS) {
     describe(`Database setup for ${args[0]}: ${id}`, () => {
       beforeEach(async () => {
         await clearDb();
-
-        await new Promise((resolve) => {
-          setTimeout(() => {
-            resolve(null);
-          }, 1000);
-        });
       });
 
       afterAll(async () => {
