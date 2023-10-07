@@ -36,9 +36,10 @@ import { DailyContractUsageClient } from "../actions/dune/daily-contract-usage/c
 import path from "path";
 import { GithubWorkerSpawner } from "./github.js";
 import { JobExecutionRepository, JobsRepository } from "../db/jobs.js";
+import { NpmDownloadCollector } from "../events/npm.js";
 
 export type SchedulerArgs = CommonArgs & {
-  skipExisting?: boolean;
+  overwriteExistingEvents: boolean;
   batchSize: number;
 };
 
@@ -72,6 +73,9 @@ export async function configure(args: SchedulerArgs) {
     ArtifactRepository,
     flusher,
   );
+  recorder.setOptions({
+    overwriteExistingEvents: args.overwriteExistingEvents,
+  });
   const cacheManager = new TimeSeriesCacheManager(args.cacheDir);
   const cache = new TimeSeriesCacheWrapper(cacheManager);
 
@@ -224,7 +228,7 @@ export async function configure(args: SchedulerArgs) {
     name: "github-followers",
     description: "Collects github pull requests and issues",
     group: "github",
-    schedule: "weekly",
+    schedule: "daily",
     dataSetIncludesNow: true,
     artifactScope: [ArtifactNamespace.GITHUB],
     artifactTypeScope: [
@@ -263,6 +267,23 @@ export async function configure(args: SchedulerArgs) {
       ArtifactType.EOA_ADDRESS,
       ArtifactType.SAFE_ADDRESS,
     ],
+  });
+
+  scheduler.registerCollector({
+    create: async (_config, recorder, cache) => {
+      const collector = new NpmDownloadCollector(
+        ProjectRepository,
+        recorder,
+        cache,
+      );
+      return collector;
+    },
+    name: "npm-downloads",
+    description: "Collects npm download metrics by day",
+    group: "npm",
+    schedule: "daily",
+    artifactScope: [ArtifactNamespace.NPM_REGISTRY],
+    artifactTypeScope: [ArtifactType.NPM_PACKAGE],
   });
 
   return scheduler;
