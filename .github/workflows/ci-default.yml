@@ -94,3 +94,13 @@ jobs:
           pnpm test
         # Always run this step so that all linting errors can be seen at once.
         if: always()
+
+  integration-tests:
+    # NOTE: This name appears in GitHub's Checks API.
+    name: test
+    environment: testing
+    runs-on: ubuntu-latest
+    steps:
+      - name: Integration Test
+        run: |
+          pnpm test:integration
