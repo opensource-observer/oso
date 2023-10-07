@@ -106,6 +106,13 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: "0"
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+          # no need to install just using to call docker through our 
+          # shortcut in the package.json
+          run_install: false 
       - name: Integration Test
         run: |
           pnpm test:integration
