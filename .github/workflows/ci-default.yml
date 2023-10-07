@@ -101,6 +101,11 @@ jobs:
     environment: testing
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: "0"
       - name: Integration Test
         run: |
           pnpm test:integration
