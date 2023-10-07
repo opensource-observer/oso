@@ -39,6 +39,11 @@ services:
       - X_GITHUB_GRAPHQL_API=test
       - X_GITHUB_TOKEN=test
       - DUNE_API_KEY=test
+      - PLASMIC_PROJECT_ID
+      - PLASMIC_PROJECT_API_TOKEN
+      - NEXT_PUBLIC_DOMAIN
+      - NEXT_PUBLIC_SUPABASE_URL
+      - NEXT_PUBLIC_SUPABASE_ANON_KEY
   postgres:
     image: timescale/timescaledb:latest-pg15
     restart: always
