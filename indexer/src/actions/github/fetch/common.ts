@@ -6,11 +6,7 @@ import {
   ArtifactType,
   ArtifactNamespace,
 } from "../../../db/orm-entities.js";
-import {
-  IArtifactGroup,
-  CollectResponse,
-  ICollector,
-} from "../../../scheduler/types.js";
+import { IArtifactGroup, CollectResponse } from "../../../scheduler/types.js";
 import { Range } from "../../../utils/ranges.js";
 import { GenericError } from "../../../common/errors.js";
 import { IEventRecorder } from "../../../recorder/types.js";
@@ -19,7 +15,10 @@ import { RequestDocument, Variables } from "graphql-request";
 import { graphQLClient } from "../../../events/github/graphQLClient.js";
 import { DateTime } from "luxon";
 import { logger } from "../../../utils/logger.js";
-import { ProjectArtifactGroup } from "../../../scheduler/common.js";
+import {
+  ProjectArtifactGroup,
+  ProjectArtifactsCollector,
+} from "../../../scheduler/common.js";
 
 export class IncompleteRepoName extends GenericError {}
 export type GithubRepoLocator = { owner: string; repo: string };
@@ -68,8 +67,7 @@ export type GithubGraphQLCursor = {
   count: number;
 };
 
-export class GithubByProjectBaseCollector implements ICollector {
-  protected projectRepository: Repository<Project>;
+export class GithubByProjectBaseCollector extends ProjectArtifactsCollector {
   protected recorder: IEventRecorder;
   protected cache: TimeSeriesCacheWrapper;
   protected options: GithubBaseCollectorOptions;
@@ -81,9 +79,11 @@ export class GithubByProjectBaseCollector implements ICollector {
     cache: TimeSeriesCacheWrapper,
     options: GithubBaseCollectorOptions,
   ) {
-    this.projectRepository = projectRepository;
-    this.recorder = recorder;
-    this.cache = cache;
+    super(projectRepository, recorder, cache, {
+      type: In([ArtifactType.GIT_REPOSITORY]),
+      namespace: ArtifactNamespace.GITHUB,
+    });
+
     this.options = options;
     this.resetTime = null;
   }

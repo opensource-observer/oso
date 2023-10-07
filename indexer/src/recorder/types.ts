@@ -16,6 +16,10 @@ export class RecorderError extends GenericError {}
 
 export class UnknownActor extends RecorderError {}
 
+export interface EventRecorderOptions {
+  overwriteExistingEvents: boolean;
+}
+
 export interface IEventRecorder {
   // A generic event recorder that will automatically handle batching writes for
   // events and also resolving artifacts and contributors (and automatically
@@ -31,6 +35,8 @@ export interface IEventRecorder {
   setActorScope(namespaces: ArtifactNamespace[], types: ArtifactType[]): void;
 
   setRange(range: Range): void;
+
+  setOptions(options: EventRecorderOptions): void;
 
   // Call this when you're done recording
   close(): Promise<void>;

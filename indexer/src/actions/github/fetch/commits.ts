@@ -175,7 +175,7 @@ export class GithubCommitCollector extends GithubByProjectBaseCollector {
         : (page.raw as Commit[]);
       for (const commit of commits) {
         const rawCommitTime =
-          commit.commit.committer?.date || commit.commit.author?.date;
+          commit.commit.author?.date || commit.commit.committer?.date;
         if (!rawCommitTime) {
           logger.warn(
             `encountered a commit without a date. skipping for now. repo=${locator.owner}/${locator.repo}@${commit.sha}`,
@@ -226,28 +226,28 @@ export class GithubCommitCollector extends GithubByProjectBaseCollector {
       namespace: ArtifactNamespace.GITHUB,
       type: ArtifactType.GITHUB_USER,
     };
-    if (commit.committer) {
-      contributor.name = commit.committer.login;
-    } else if (commit.author) {
+    if (commit.author) {
       contributor.name = commit.author.login;
+    } else if (commit.committer) {
+      contributor.name = commit.committer.login;
     }
 
     if (!contributor.name) {
       // We will need to resort to use the email of the user if we cannot find a
       // name
       contributor.type = ArtifactType.GIT_EMAIL;
-      if (commit.commit.committer?.email) {
-        contributor.name = commit.commit.committer.email;
-      } else if (commit.commit.author?.email) {
+      if (commit.commit.author?.email) {
         contributor.name = commit.commit.author.email;
+      } else if (commit.commit.committer?.email) {
+        contributor.name = commit.commit.committer.email;
       }
       if (!contributor.name) {
         contributor.type = ArtifactType.GIT_NAME;
         // If there's still nothing we will attempt to use a name
-        if (commit.commit.committer?.name) {
-          contributor.name = commit.commit.committer.name;
-        } else if (commit.commit.author?.name) {
+        if (commit.commit.author?.name) {
           contributor.name = commit.commit.author.name;
+        } else if (commit.commit.committer?.name) {
+          contributor.name = commit.commit.committer.name;
         }
         if (!contributor.name) {
           return undefined;
