@@ -64,6 +64,10 @@ type LockData = {
   group: string;
 };
 
+export type CommitArtifactCallback = (
+  artifact: Artifact | Artifact[],
+) => Promise<void>;
+
 /**
  * The interface for the scheduler that manages all of the schedules for jobs
  */
@@ -75,7 +79,7 @@ export interface ICollector {
   collect(
     group: IArtifactGroup<object>,
     range: Range,
-    commitArtifact: (artifact: Artifact | Artifact[]) => Promise<void>,
+    commitArtifact: CommitArtifactCallback,
   ): Promise<CollectResponse>;
 }
 
@@ -534,7 +538,6 @@ export class BaseScheduler implements IScheduler {
           }
         }
       } catch (err) {
-        console.log("what");
         logger.error("Error encountered. Skipping group", err);
         errors.push(err);
         continue;

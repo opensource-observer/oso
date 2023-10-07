@@ -1,5 +1,9 @@
+import { FindOptionsWhere, Repository } from "typeorm";
 import { Artifact, Project } from "../db/orm-entities.js";
-import { IArtifactGroup } from "./types.js";
+import { Range } from "../utils/ranges.js";
+import { CollectResponse, IArtifactGroup, ICollector } from "./types.js";
+import { TimeSeriesCacheWrapper } from "../cacher/time-series.js";
+import { IEventRecorder } from "../recorder/types.js";
 
 export class BasicArtifactGroup<T extends object> implements IArtifactGroup<T> {
   private _name: string;
@@ -36,5 +40,48 @@ export class ProjectArtifactGroup extends BasicArtifactGroup<Project> {
       project,
       artifacts,
     );
+  }
+}
+
+export class ProjectArtifactsCollector implements ICollector {
+  protected projectRepository: Repository<Project>;
+  protected cache: TimeSeriesCacheWrapper;
+  protected recorder: IEventRecorder;
+  protected artifactsWhere: FindOptionsWhere<Artifact>;
+
+  constructor(
+    projectRepository: Repository<Project>,
+    recorder: IEventRecorder,
+    cache: TimeSeriesCacheWrapper,
+    artifactsWhere: FindOptionsWhere<Artifact>,
+  ) {
+    this.projectRepository = projectRepository;
+    this.cache = cache;
+    this.recorder = recorder;
+    this.artifactsWhere = artifactsWhere;
+  }
+
+  async *groupedArtifacts(): AsyncGenerator<IArtifactGroup<Project>> {
+    const projects = await this.projectRepository.find({
+      relations: {
+        artifacts: true,
+      },
+      where: {
+        artifacts: this.artifactsWhere,
+      },
+    });
+
+    // Emit each project's artifacts as a group of artifacts to record
+    for (const project of projects) {
+      yield ProjectArtifactGroup.create(project, project.artifacts);
+    }
+  }
+
+  collect(
+    _group: IArtifactGroup<Project>,
+    _range: Range,
+    _commitArtifact: (artifact: Artifact | Artifact[]) => Promise<void>,
+  ): Promise<CollectResponse> {
+    throw new Error("Not implemented");
   }
 }

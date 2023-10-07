@@ -12,6 +12,7 @@ import {
   generateEventTypeStrategy,
   IncompleteArtifact,
   RecorderError,
+  EventRecorderOptions,
 } from "./types.js";
 import {
   In,
@@ -225,6 +226,7 @@ export class BatchEventRecorder implements IEventRecorder {
   private range: Range | undefined;
   private emitter: EventEmitter;
   private closing: boolean;
+  private recorderOptions: EventRecorderOptions;
 
   constructor(
     eventRepository: Repository<Event>,
@@ -248,6 +250,9 @@ export class BatchEventRecorder implements IEventRecorder {
     this.knownEventsStorage = {};
     this.emitter = new EventEmitter();
     this.closing = false;
+    this.recorderOptions = {
+      overwriteExistingEvents: false,
+    };
     // Arbitrarily set to an early time
 
     // Setup flush event handler
@@ -276,6 +281,13 @@ export class BatchEventRecorder implements IEventRecorder {
 
     // Invalidate any known event storage
     this.knownEventsStorage = {};
+  }
+
+  setOptions(options: EventRecorderOptions): void {
+    if (options.overwriteExistingEvents) {
+      logger.debug("setting recorder to overwrite existing events");
+    }
+    this.recorderOptions = options;
   }
 
   private async loadEvents(eventType: EventType) {
