@@ -97,7 +97,7 @@ jobs:
 
   integration-tests:
     # NOTE: This name appears in GitHub's Checks API.
-    name: test
+    name: integration-tests
     environment: testing
     runs-on: ubuntu-latest
     steps:
