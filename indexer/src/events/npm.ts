@@ -202,15 +202,24 @@ async function getDailyDownloads(
   const dateRange = `${start.toISODate()}:${end.toISODate()} `;
   const endpoint = `/downloads/range/${dateRange}/${name}`;
   logger.debug(`Fetching ${endpoint}`);
-  const results = await npmFetch
-    .json(endpoint, { registry: NPM_HOST })
-    .catch((err) => {
-      logger.warn("Error fetching from NPM API: ", err);
-      return;
-    });
-  // If we encounter an error, just return an empty array
-  if (!results) {
-    return [];
+  let results: Record<string, unknown>;
+  try {
+    results = await npmFetch.json(endpoint, { registry: NPM_HOST });
+  } catch (e) {
+    const err = e as { statusCode?: number; body?: { error?: string } };
+    logger.warn("Error fetching from NPM API: ", err);
+    if (err.statusCode && err.body) {
+      if (
+        err.statusCode == 400 &&
+        err.body.error?.indexOf("end date > start date") !== -1
+      ) {
+        logger.debug(
+          `npm is at the limit of all available history for project ${name}`,
+        );
+        return [];
+      }
+    }
+    throw err;
   }
   //logger.info(JSON.stringify(fetchResults, null, 2));
   const resultStart = DateTime.fromISO(ensureString(results.start), {
