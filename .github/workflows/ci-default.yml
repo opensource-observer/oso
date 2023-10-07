@@ -94,3 +94,25 @@ jobs:
           pnpm test
         # Always run this step so that all linting errors can be seen at once.
         if: always()
+
+  integration-tests:
+    # NOTE: This name appears in GitHub's Checks API.
+    name: integration-tests
+    environment: testing
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: "0"
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+          # no need to install just using to call docker through our 
+          # shortcut in the package.json
+          run_install: false 
+      - name: Integration Test
+        run: |
+          pnpm test:integration

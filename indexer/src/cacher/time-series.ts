@@ -570,7 +570,6 @@ export class TimeSeriesCacheWrapper {
         let lastPage: Cacheable<T, C> | undefined = undefined;
 
         for await (const page of dir.load<T, C>()) {
-          logger.debug("loading page of cache");
           yield page;
           lastPage = page;
         }
