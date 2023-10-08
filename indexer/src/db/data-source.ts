@@ -1,5 +1,6 @@
 import "reflect-metadata";
 import path from "path";
+import { fileURLToPath } from "url";
 import { DataSource, DataSourceOptions, LoggerOptions } from "typeorm";
 
 import {
@@ -26,7 +27,8 @@ import {
 } from "./orm-entities.js";
 
 const loggingOption: LoggerOptions = DEBUG_DB ? ["query", "error"] : false;
-
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 const dynamicallyLoadedDataSource: DataSourceOptions = {
   type: "postgres",
   host: DB_HOST,
@@ -37,8 +39,8 @@ const dynamicallyLoadedDataSource: DataSourceOptions = {
   synchronize: true,
   logging: loggingOption,
 
-  entities: [path.resolve("./src/db/orm-entities.ts")],
-  migrations: [path.resolve("./src/db/migration/**/*.ts")],
+  entities: [path.resolve(__dirname, "./orm-entities.ts")],
+  migrations: [path.resolve(__dirname, "./migration/**/*.ts")],
   subscribers: [],
 };
 
@@ -79,7 +81,7 @@ export function staticDataSourceOptions(
   };
 }
 
-export function testingDataSource(databaseName: string): DataSource {
+function testingDataSource(databaseName: string): DataSource {
   return new DataSource(staticDataSourceOptions(databaseName));
 }
 
@@ -89,7 +91,20 @@ export function testingDataSource(databaseName: string): DataSource {
 // https://github.com/typeorm/typeorm/issues/10212. This following is a hacky
 // solution so that we use dynamic normally and non-dynamic for tests which is
 // particularly important for migrations
-export const appDataSourceOptions = NO_DYNAMIC_LOADS
+const appDataSourceOptions = NO_DYNAMIC_LOADS
   ? staticDataSourceOptions(DB_DATABASE)
   : dynamicallyLoadedDataSource;
-export const AppDataSource = new DataSource(appDataSourceOptions);
+const AppDataSource = new DataSource(appDataSourceOptions);
+
+async function initializeDataSource() {
+  if (!AppDataSource.isInitialized) {
+    await AppDataSource.initialize();
+  }
+}
+
+export {
+  appDataSourceOptions,
+  AppDataSource,
+  initializeDataSource,
+  testingDataSource,
+};

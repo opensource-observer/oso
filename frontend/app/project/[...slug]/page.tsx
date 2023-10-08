@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { PlasmicComponent } from "@plasmicapp/loader-nextjs";
+import { initializeDataSource } from "@opensource-observer/indexer";
 import { PLASMIC } from "../../../plasmic-init";
 import { PlasmicClientRootProvider } from "../../../plasmic-init-client";
 import { cachedGetProjectBySlug } from "../../../lib/db";
@@ -32,6 +33,7 @@ export default async function ProjectPage(props: ProjectPageProps) {
   }
 
   // Get project metadata from the database
+  await initializeDataSource();
   const project = await cachedGetProjectBySlug(slug);
   if (!project) {
     logger.warn(`Cannot find project (slug=${slug})`);

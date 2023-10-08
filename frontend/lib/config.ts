@@ -14,6 +14,11 @@ export const DOMAIN = requireEnv(
   "NEXT_PUBLIC_DOMAIN",
 );
 
+export const DB_GRAPHQL_URL = requireEnv(
+  process.env.NEXT_PUBLIC_DB_GRAPHQL_URL,
+  "NEXT_PUBLIC_DB_GRAPHQL_URL",
+);
+
 export const SUPABASE_URL = requireEnv(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   "NEXT_PUBLIC_SUPABASE_URL",

@@ -31,22 +31,22 @@ Take a look at `./frontend/.env.local.example` for the complete list.
 Then do a turbo build of all apps, run the following:
 
 ```bash
-yarn install
-yarn build
+pnpm install
+pnpm build
 ```
 
 The resulting static site can be found in `./build/`.
 
 ### Running the prod server
 
-If you've already run the build, you can use `yarn serve` to serve the built files
+If you've already run the build, you can use `pnpm serve` to serve the built files
 
 ### Running the frontend dev server
 
 To run a dev server that watches for changes across code and Plasmic, run:
 
 ```bash
-yarn dev:frontend
+pnpm dev:frontend
 ```
 
 ## Playbooks

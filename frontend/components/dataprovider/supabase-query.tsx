@@ -1,7 +1,7 @@
 import React, { ReactNode } from "react";
 import useSWR from "swr";
 import { DataProvider } from "@plasmicapp/loader-nextjs";
-import { SupabaseQueryArgs, supabaseQuery } from "../../lib/supabase-client";
+import { SupabaseQueryArgs, supabaseQuery } from "../../lib/clients/supabase";
 
 // The name used to pass data into the Plasmic DataProvider
 const KEY_PREFIX = "db";

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { NextRequest } from "next/server";
-import { supabaseQuery } from "./lib/supabase-client";
+import { supabaseQuery } from "./lib/clients/supabase";
 import { catchallPathToString } from "./lib/paths";
 
 /**

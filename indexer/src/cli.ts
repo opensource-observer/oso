@@ -10,7 +10,7 @@ import {
   ImportOssDirectoryArgs,
   importOssDirectory,
 } from "./actions/oss-directory.js";
-import { AppDataSource } from "./db/data-source.js";
+import { AppDataSource, initializeDataSource } from "./db/data-source.js";
 // import {
 //   importDailyContractUsage,
 // } from "./actions/dune/index.js";
@@ -50,8 +50,8 @@ export const FETCHER_REGISTRY = [
 ];
 const cli = yargs(hideBin(process.argv))
   .middleware(async () => {
-    // Initialize the database
-    await AppDataSource.initialize();
+    // Initialize the database before operations
+    await initializeDataSource();
   })
   .option("yes", {
     type: "boolean",
