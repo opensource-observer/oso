@@ -587,7 +587,6 @@ export class BatchEventRecorder implements IEventRecorder {
     // Write all the new artifacts
     await asyncBatch(newArtifacts, this.options.maxBatchSize, async (batch) => {
       logger.debug("writing new artifacts");
-      //console.log(batch);
       const artifacts = Artifact.create(batch);
       return this.artifactRepository.insert(artifacts);
     });
@@ -620,7 +619,7 @@ export class BatchEventRecorder implements IEventRecorder {
         } catch (err) {
           if (err instanceof QueryFailedError) {
             if (err.message.indexOf("duplicate") !== -1) {
-              logger.debug("attempted to write a duplicate event. skipping");
+              logger.debug("attempted to insert a duplicate event. skipping");
             }
           }
           this.notifyFailure(eventTypeStorage, events);
@@ -643,7 +642,9 @@ export class BatchEventRecorder implements IEventRecorder {
         } catch (err) {
           if (err instanceof QueryFailedError) {
             if (err.message.indexOf("duplicate") !== -1) {
-              logger.debug("attempted to write a duplicate event. skipping");
+              logger.debug(
+                "attempted to update but have duplicated event. skipping",
+              );
             }
           }
           this.notifyFailure(eventTypeStorage, events);

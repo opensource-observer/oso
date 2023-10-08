@@ -184,7 +184,7 @@ export class Artifact extends Base<"ArtifactId"> {
 @Entity()
 @Index(["time"])
 @Index(["id", "time"], { unique: true })
-@Index(["sourceId", "time"], { unique: true })
+@Index(["type", "sourceId", "time"], { unique: true })
 export class Event {
   @PrimaryColumn("integer", { generated: "increment" })
   id: Brand<number, "EventId">;
