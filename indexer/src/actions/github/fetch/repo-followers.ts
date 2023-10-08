@@ -5,7 +5,7 @@ import {
   IncompleteEvent,
 } from "../../../recorder/types.js";
 import { logger } from "../../../utils/logger.js";
-import { gql } from "graphql-request";
+import { gql, ClientError } from "graphql-request";
 import {
   GithubGraphQLResponse,
   Actor,
@@ -26,13 +26,17 @@ import {
 import { Repository } from "typeorm";
 import { TimeSeriesCacheWrapper } from "../../../cacher/time-series.js";
 import _ from "lodash";
-import { IArtifactGroup } from "../../../scheduler/types.js";
+import {
+  IArtifactGroup,
+  IArtifactGroupCommitmentProducer,
+} from "../../../scheduler/types.js";
 import {
   Range,
   doRangesIntersect,
   rangeFromISO,
 } from "../../../utils/ranges.js";
 import { generateSourceIdFromArray } from "../../../utils/source-ids.js";
+import { GraphQLError } from "graphql";
 
 const GET_ALL_PUBLIC_FORKS = gql`
   query getAllPublicForks($owner: String!, $name: String!, $cursor: String) {
@@ -208,55 +212,91 @@ export class GithubFollowingCollector extends GithubByProjectBaseCollector {
   async collect(
     group: IArtifactGroup<Project>,
     range: Range,
-    commitArtifact: (artifact: Artifact | Artifact[]) => Promise<void>,
+    committer: IArtifactGroupCommitmentProducer,
   ): Promise<void> {
     const project = await group.meta();
     const artifacts = await group.artifacts();
     logger.debug(`collecting followers for repos of Project[${project.slug}]`);
 
-    const recordPromises: Promise<string>[] = [];
-
     // load the summaries for each
     for (const repo of artifacts) {
-      const locator = this.splitGithubRepoIntoLocator(repo);
-      const summary = await this.loadSummaryForRepo(locator);
-      const ranges = this.rangeOfRepoFollowingSummaryResponse(summary);
-
-      if (
-        ranges.forksRange &&
-        doRangesIntersect(ranges.forksRange, range, true)
-      ) {
-        // Gather fork events within this range
-        recordPromises.push(
-          ...(await this.recordForkEvents(
-            repo,
-            locator,
-            summary.repository.forkCount,
-            range,
-          )),
-        );
+      try {
+        const recordPromises = await this.collectEventsForRepo(repo, range);
+        committer.commit(repo).withPromises(recordPromises);
+      } catch (err) {
+        committer.commit(repo).withResults({
+          errors: [err],
+          success: [],
+        });
       }
-      if (
-        ranges.stargazersRange &&
-        doRangesIntersect(ranges.stargazersRange, range, true)
-      ) {
-        // Gather starring events within this range
-        recordPromises.push(
-          ...(await this.recordStarHistoryForRepo(repo, locator, range)),
-        );
-      }
-      await Promise.all([...recordPromises, commitArtifact(repo)]);
     }
   }
 
-  private async loadSummaryForRepo(locator: GithubRepoLocator) {
-    return await this.rateLimitedGraphQLRequest<RepoFollowingSummaryResponse>(
-      REPOSITORY_FOLLOWING_SUMMARY,
-      {
-        owner: locator.owner,
-        name: locator.repo,
-      },
-    );
+  private async collectEventsForRepo(repo: Artifact, range: Range) {
+    const locator = this.splitGithubRepoIntoLocator(repo);
+    const summary = await this.loadSummaryForRepo(locator);
+    if (!summary) {
+      logger.debug(
+        `${locator.owner}/${locator.repo} doesn't exist or is empty`,
+      );
+      return [];
+    }
+    const ranges = this.rangeOfRepoFollowingSummaryResponse(summary);
+    const recordPromises = [];
+
+    if (
+      ranges.forksRange &&
+      doRangesIntersect(ranges.forksRange, range, true)
+    ) {
+      // Gather fork events within this range
+      recordPromises.push(
+        ...(await this.recordForkEvents(
+          repo,
+          locator,
+          summary.repository.forkCount,
+          range,
+        )),
+      );
+    }
+    if (
+      ranges.stargazersRange &&
+      doRangesIntersect(ranges.stargazersRange, range, true)
+    ) {
+      // Gather starring events within this range
+      recordPromises.push(
+        ...(await this.recordStarHistoryForRepo(repo, locator, range)),
+      );
+    }
+    return recordPromises;
+  }
+
+  private async loadSummaryForRepo(
+    locator: GithubRepoLocator,
+  ): Promise<RepoFollowingSummaryResponse | undefined> {
+    try {
+      return await this.rateLimitedGraphQLRequest<RepoFollowingSummaryResponse>(
+        REPOSITORY_FOLLOWING_SUMMARY,
+        {
+          owner: locator.owner,
+          name: locator.repo,
+        },
+      );
+    } catch (err) {
+      if (err instanceof ClientError) {
+        const errors = err.response.errors || [];
+        const notFoundError = errors.filter((e) => {
+          return (
+            (e as GraphQLError & { [key: string]: string }).type === "NOT_FOUND"
+          );
+        });
+
+        // This repo doesn't exist. Just skip.
+        if (notFoundError.length > 0) {
+          return;
+        }
+      }
+      throw err;
+    }
   }
 
   private async recordStarHistoryForRepo(

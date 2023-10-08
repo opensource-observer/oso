@@ -1,5 +1,6 @@
 import { DateTime } from "luxon";
 import {
+  IEventGroupRecorder,
   IEventRecorder,
   IncompleteArtifact,
   IncompleteEvent,
@@ -22,14 +23,19 @@ import {
   GithubByProjectBaseCollector,
   GithubBaseCollectorOptions,
   GithubGraphQLCursor,
+  GithubRepoLocator,
 } from "./common.js";
 import { Repository } from "typeorm";
 import {
   TimeSeriesCacheLookup,
   TimeSeriesCacheWrapper,
 } from "../../../cacher/time-series.js";
-import { IArtifactGroup } from "../../../scheduler/types.js";
+import {
+  IArtifactGroup,
+  IArtifactGroupCommitmentProducer,
+} from "../../../scheduler/types.js";
 import { Range } from "../../../utils/ranges.js";
+import { ArtifactGroupRecorder } from "../../../recorder/group.js";
 
 const GET_ISSUE_TIMELINE = gql`
   query GetIssueTimeline($id: ID!, $cursor: String) {
@@ -420,18 +426,28 @@ export class GithubIssueCollector extends GithubByProjectBaseCollector {
   async collect(
     group: IArtifactGroup<Project>,
     range: Range,
-    commitArtifact: (artifact: Artifact | Artifact[]) => Promise<void>,
+    committer: IArtifactGroupCommitmentProducer,
   ) {
     const project = await group.meta();
     const artifacts = await group.artifacts();
+    const groupRecorder = new ArtifactGroupRecorder(this.recorder);
 
-    const artifactMap = _.keyBy(artifacts, (a: Artifact) => {
-      return a.name.toLowerCase();
-    });
-
-    const locators = artifacts.map((a) => {
-      return this.splitGithubRepoIntoLocator(a);
-    });
+    const locators = artifacts
+      .map((a) => {
+        try {
+          return this.splitGithubRepoIntoLocator(a);
+        } catch (err) {
+          // Errored for the current artifact. End now.
+          committer.commit(a).withResults({
+            errors: [err],
+            success: [],
+          });
+          return undefined;
+        }
+      })
+      .filter((a): a is GithubRepoLocator => {
+        return a !== undefined;
+      });
 
     const pages = this.cache.loadCachedOrRetrieve<
       GraphQLNode<IssueOrPullRequest>[],
@@ -443,6 +459,7 @@ export class GithubIssueCollector extends GithubByProjectBaseCollector {
         range,
       ),
       async (missing, lastPage) => {
+        logger.debug("loading more from github");
         const searchStrSuffix = lastPage?.cursor?.searchSuffix || "";
         const searchStr =
           missing.keys.map((a) => `repo:${a}`).join(" ") +
@@ -499,87 +516,94 @@ export class GithubIssueCollector extends GithubByProjectBaseCollector {
     );
 
     const errors: unknown[] = [];
+
     for await (const page of pages) {
       const edges = page.raw;
       for (const edge of edges) {
-        const recordPromises: Promise<string>[] = [];
-        const issue = edge.node;
-
-        const repoLocatorStr = issue.repository.nameWithOwner.toLowerCase();
-
-        const artifact = artifactMap[repoLocatorStr];
-        if (!artifact) {
-          // Try parsing the URL
-          errors.push(
-            new Error(
-              `unexpected repository ${issue.repository.nameWithOwner}`,
-            ),
-          );
-          continue;
+        try {
+          await this.collectEventsForIssue(groupRecorder, artifacts, edge.node);
+        } catch (err) {
+          errors.push(err);
         }
-        const creationTime = DateTime.fromISO(issue.createdAt);
-
-        // Github replaces author with null if the user has been deleted from github.
-        let contributor: IncompleteArtifact | undefined = undefined;
-        if (issue.author !== null && issue.author !== undefined) {
-          if (issue.author.login !== "") {
-            contributor = {
-              name: issue.author.login,
-              namespace: ArtifactNamespace.GITHUB,
-              type: ArtifactType.GITHUB_USER,
-            };
-          }
-        }
-        const githubId = issue.id;
-        const eventType = this.getEventType("CreatedEvent", issue.__typename);
-
-        const creationEvent: IncompleteEvent = {
-          time: creationTime,
-          type: eventType,
-          to: artifact,
-          amount: 0,
-          from: contributor,
-          sourceId: githubId,
-        };
-
-        // Record creation
-        recordPromises.push(this.recorder.record(creationEvent));
-
-        // Record merging of a pull request
-        if (issue.mergedAt) {
-          const mergedTime = DateTime.fromISO(issue.mergedAt);
-
-          const mergedBy = issue.mergedBy !== null ? issue.mergedBy.login : "";
-
-          recordPromises.push(
-            this.recorder.record({
-              time: mergedTime,
-              type: this.getEventType("MergedEvent", issue.__typename),
-              to: artifact,
-              amount: 0,
-              from: creationEvent.from,
-              sourceId: githubId,
-              details: {
-                mergedBy: mergedBy,
-              },
-            }),
-          );
-        }
-
-        // Find any reviews
-        recordPromises.push(...(await this.recordReviews(artifact, issue)));
-
-        // Find and record any close/open events
-        recordPromises.push(
-          ...(await this.recordOpenCloseEvents(artifact, issue)),
-        );
-
-        await Promise.all([...recordPromises, commitArtifact(artifact)]);
       }
     }
+    committer.commitGroup(groupRecorder);
+
     logger.debug(
       `completed issue collection for repos of Project[${project.slug}]`,
     );
+  }
+
+  private async collectEventsForIssue(
+    groupRecorder: IEventGroupRecorder<Artifact>,
+    artifacts: Artifact[],
+    issue: IssueOrPullRequest,
+  ) {
+    const artifactMap = _.keyBy(artifacts, (a: Artifact) => {
+      return a.name.toLowerCase();
+    });
+
+    const repoLocatorStr = issue.repository.nameWithOwner.toLowerCase();
+
+    const artifact = artifactMap[repoLocatorStr];
+    if (!artifact) {
+      // Try parsing the URL
+      throw new Error(
+        `unexpected repository ${issue.repository.nameWithOwner}`,
+      );
+    }
+    const creationTime = DateTime.fromISO(issue.createdAt);
+
+    // Github replaces author with null if the user has been deleted from github.
+    let contributor: IncompleteArtifact | undefined = undefined;
+    if (issue.author !== null && issue.author !== undefined) {
+      if (issue.author.login !== "") {
+        contributor = {
+          name: issue.author.login,
+          namespace: ArtifactNamespace.GITHUB,
+          type: ArtifactType.GITHUB_USER,
+        };
+      }
+    }
+    const githubId = issue.id;
+    const eventType = this.getEventType("CreatedEvent", issue.__typename);
+
+    const creationEvent: IncompleteEvent = {
+      time: creationTime,
+      type: eventType,
+      to: artifact,
+      amount: 0,
+      from: contributor,
+      sourceId: githubId,
+    };
+
+    // Record creation
+    groupRecorder.record(creationEvent);
+
+    // Record merging of a pull request
+    if (issue.mergedAt) {
+      const mergedTime = DateTime.fromISO(issue.mergedAt);
+
+      const mergedBy = issue.mergedBy !== null ? issue.mergedBy.login : "";
+
+      groupRecorder.record({
+        time: mergedTime,
+        type: this.getEventType("MergedEvent", issue.__typename),
+        to: artifact,
+        amount: 0,
+        from: creationEvent.from,
+        sourceId: githubId,
+        details: {
+          mergedBy: mergedBy,
+        },
+      });
+    }
+
+    // Find any reviews
+    await this.recordReviews(groupRecorder, artifact, issue);
+
+    // Find and record any close/open events
+    await this.recordOpenCloseEvents(groupRecorder, artifact, issue);
   }
 
   private async *loadIssueTimeline(id: string): AsyncGenerator<IssueEvent> {
@@ -631,11 +655,12 @@ export class GithubIssueCollector extends GithubByProjectBaseCollector {
   }
 
   private async recordReviews(
+    groupRecorder: IEventGroupRecorder<Artifact>,
     artifact: IncompleteArtifact,
     issue: IssueOrPullRequest,
   ) {
     if (!issue.reviews) {
-      return [];
+      return;
     }
     const recordReview = (review: Review) => {
       const createdAt = DateTime.fromISO(review.createdAt);
@@ -648,7 +673,7 @@ export class GithubIssueCollector extends GithubByProjectBaseCollector {
             }
           : undefined;
 
-      return this.recorder.record({
+      return groupRecorder.record({
         time: createdAt,
         type: this.getEventType("PullRequestApprovedEvent", issue.__typename),
         to: artifact,
@@ -658,25 +683,23 @@ export class GithubIssueCollector extends GithubByProjectBaseCollector {
       });
     };
 
-    const recordPromises: Promise<string>[] = [];
     if (issue.reviews.pageInfo.hasNextPage) {
+      logger.debug("need to load more reviews");
       for await (const review of this.loadReviews(issue.id)) {
-        recordPromises.push(recordReview(review));
+        recordReview(review);
       }
     } else {
-      recordPromises.push(
-        ...issue.reviews.edges.map((n) => recordReview(n.node)),
-      );
+      issue.reviews.edges.forEach((n) => recordReview(n.node));
     }
-    return recordPromises;
   }
 
   private async recordOpenCloseEvents(
+    groupRecorder: IEventGroupRecorder<Artifact>,
     artifact: IncompleteArtifact,
     issue: IssueOrPullRequest,
   ) {
     if (!issue.openCloseEvents.edges) {
-      return [];
+      return;
     }
     const recordOpenCloseEvent = (event: IssueEvent) => {
       const createdAt = DateTime.fromISO(event.createdAt);
@@ -689,7 +712,7 @@ export class GithubIssueCollector extends GithubByProjectBaseCollector {
             }
           : undefined;
 
-      return this.recorder.record({
+      return groupRecorder.record({
         time: createdAt,
         type: this.getEventType(event.__typename, issue.__typename),
         to: artifact,
@@ -703,16 +726,13 @@ export class GithubIssueCollector extends GithubByProjectBaseCollector {
       });
     };
 
-    const recordPromises: Promise<string>[] = [];
     if (issue.openCloseEvents.pageInfo.hasNextPage) {
+      logger.debug("need to load more open/close events");
       for await (const event of this.loadIssueTimeline(issue.id)) {
-        recordPromises.push(recordOpenCloseEvent(event));
+        recordOpenCloseEvent(event);
       }
     } else {
-      recordPromises.push(
-        ...issue.openCloseEvents.edges.map((n) => recordOpenCloseEvent(n.node)),
-      );
+      issue.openCloseEvents.edges.forEach((n) => recordOpenCloseEvent(n.node));
     }
-    return recordPromises;
   }
 }

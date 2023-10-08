@@ -17,13 +17,15 @@ import { logger } from "../../../utils/logger.js";
 import { Octokit, RequestError } from "octokit";
 import { GetResponseDataTypeFromEndpointMethod } from "@octokit/types";
 import { Repository } from "typeorm";
-import { IArtifactGroup } from "../../../scheduler/types.js";
+import {
+  IArtifactGroup,
+  IArtifactGroupCommitmentProducer,
+} from "../../../scheduler/types.js";
 import {
   TimeSeriesCacheLookup,
   TimeSeriesCacheWrapper,
 } from "../../../cacher/time-series.js";
 import { asyncBatch } from "../../../utils/array.js";
-import { GenericError } from "../../../common/errors.js";
 import {
   GithubBaseCollectorOptions,
   GithubByProjectBaseCollector,
@@ -38,8 +40,6 @@ interface EmptyRepository {
 }
 
 type CommitsResponse = Commit[] | EmptyRepository;
-
-class IncompleteRepoName extends GenericError {}
 
 const DefaultGithubCommitCollectorOptions: GithubBaseCollectorOptions = {
   cacheOptions: {
@@ -65,34 +65,24 @@ export class GithubCommitCollector extends GithubByProjectBaseCollector {
   async collect(
     group: IArtifactGroup<Project>,
     range: Range,
-    commitArtifact: (artifact: Artifact | Artifact[]) => Promise<void>,
+    committer: IArtifactGroupCommitmentProducer,
   ) {
     const artifacts = await group.artifacts();
-    const errors: unknown[] = [];
 
     // Load commits for each artifact
     await asyncBatch(artifacts, 10, async (batch) => {
-      const artifactCommits: Promise<void>[] = [];
       for (const artifact of batch) {
         try {
-          await this.recordEventsForRepo(artifact, range);
+          const promises = await this.recordEventsForRepo(artifact, range);
+          committer.commit(artifact).withPromises(promises);
         } catch (err) {
-          if (err instanceof IncompleteRepoName) {
-            logger.warn(
-              `artifact[${artifact.id}] has a malformed github url ${artifact.url}`,
-            );
-            return;
-          }
-          errors.push(err);
+          committer.commit(artifact).withResults({
+            success: [],
+            errors: [err],
+          });
         }
-        artifactCommits.push(commitArtifact(artifact));
       }
-      await Promise.all(artifactCommits);
     });
-
-    return {
-      errors: errors,
-    };
   }
 
   private async recordEventsForRepo(repoArtifact: Artifact, range: Range) {
@@ -152,7 +142,11 @@ export class GithubCommitCollector extends GithubByProjectBaseCollector {
                 cursor: 1,
               };
             }
-            if (reqErr.response?.data === "Git Repository is empty") {
+            const reqData: { message?: string } = reqErr.response?.data || {
+              message: "",
+            };
+            const reqDataMsg = reqData.message || "";
+            if (reqDataMsg.indexOf("Git Repository is empty") !== -1) {
               logger.debug("found empty repo");
               return {
                 raw: { isEmptyRepository: true },
@@ -215,7 +209,7 @@ export class GithubCommitCollector extends GithubByProjectBaseCollector {
     }
 
     // Wait for all of the events for this repo to be recorded
-    await Promise.all(recordPromises);
+    return recordPromises;
   }
 
   private contributorFromCommit(

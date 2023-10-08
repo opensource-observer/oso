@@ -7,14 +7,19 @@ import {
   JobExecution,
   JobExecutionStatus,
 } from "../db/orm-entities.js";
-import { IEventRecorder, IEventTypeStrategy } from "../recorder/types.js";
+import {
+  IEventGroupRecorder,
+  IEventRecorder,
+  IEventTypeStrategy,
+  RecordResponse,
+} from "../recorder/types.js";
 import {
   Range,
   findMissingRanges,
   rangeFromDates,
   rangeToString,
 } from "../utils/ranges.js";
-import { EventPointerManager } from "./pointers.js";
+import { IEventPointerManager } from "./pointers.js";
 import { TimeSeriesCacheWrapper } from "../cacher/time-series.js";
 import { logger } from "../utils/logger.js";
 import {
@@ -32,6 +37,12 @@ import { mkdirp } from "mkdirp";
 import type { Brand } from "utility-types";
 import { GenericError } from "../common/errors.js";
 import { UniqueArray } from "../utils/array.js";
+import { EventEmitter } from "node:events";
+import {
+  AsyncResults,
+  PossiblyError,
+  collectAsyncResults,
+} from "../utils/async-results.js";
 
 export type IArtifactGroup<T extends object = object> = {
   name(): Promise<string>;
@@ -41,7 +52,64 @@ export type IArtifactGroup<T extends object = object> = {
   createMissingGroup(missing: Artifact[]): Promise<IArtifactGroup<T>>;
 };
 
-export type ErrorsList = unknown[];
+export type ErrorsList = PossiblyError[];
+
+type ArtifactCommitterFn = (results: AsyncResults<RecordResponse>) => void;
+
+export interface IArtifactCommitter {
+  withResults(results: AsyncResults<RecordResponse>): void;
+  withPromises(promises: Promise<RecordResponse>[]): void;
+  withNone(): void;
+}
+
+class ArtifactCommitter implements IArtifactCommitter {
+  private cb: ArtifactCommitterFn;
+
+  static setup(cb: ArtifactCommitterFn) {
+    return new ArtifactCommitter(cb);
+  }
+
+  constructor(cb: ArtifactCommitterFn) {
+    this.cb = cb;
+  }
+
+  withPromises(promises: Promise<RecordResponse>[]): void {
+    collectAsyncResults(promises)
+      .then((results) => {
+        this.withResults(results);
+      })
+      .catch((err) => {
+        logger.error("FATAL: unexpected error. this is being suppressed", err);
+      });
+  }
+
+  withResults(results: AsyncResults<string>): void {
+    return this.cb(results);
+  }
+
+  withNone(): void {
+    return this.withResults({
+      success: [],
+      errors: [],
+    });
+  }
+}
+
+export interface IArtifactGroupCommitmentProducer {
+  commit(artifact: Artifact): IArtifactCommitter;
+  commitGroup(group: IEventGroupRecorder<Artifact>): void;
+  failAll(err: PossiblyError): void;
+}
+
+export interface IArtifactGroupCommitmentConsumer {
+  waitAll(): Promise<ArtifactCommitmentSummary[]>;
+  failAll(err: PossiblyError): void;
+}
+
+export type ArtifactRecordingStatus = {
+  recordings: RecordResponse[];
+  errors: PossiblyError[];
+};
 
 export type CollectorErrorsOptions = {
   unsortedErrors?: ErrorsList;
@@ -79,7 +147,7 @@ export interface ICollector {
   collect(
     group: IArtifactGroup<object>,
     range: Range,
-    commitArtifact: CommitArtifactCallback,
+    committer: IArtifactGroupCommitmentProducer,
   ): Promise<CollectResponse>;
 }
 
@@ -142,6 +210,11 @@ export class Config implements IConfig {
   }
 }
 
+export interface ExecutionSummary {
+  errors: PossiblyError[];
+  artifactSummaries: ArtifactCommitmentSummary[];
+}
+
 /**
  * Main interface to the indexer.
  */
@@ -157,9 +230,185 @@ export interface IScheduler {
 
   queueJob(collector: string, baseTime: DateTime, range: Range): Promise<void>;
 
-  runWorker(group: string, resumeWithLock: boolean): Promise<ErrorsList>;
+  runWorker(group: string, resumeWithLock: boolean): Promise<ExecutionSummary>;
 
-  executeForRange(collectorName: string, range: Range): Promise<ErrorsList>;
+  executeForRange(
+    collectorName: string,
+    range: Range,
+  ): Promise<ExecutionSummary>;
+}
+
+export type ArtifactCommitmentSummary = {
+  results: AsyncResults<string>;
+  artifact: Artifact;
+};
+
+export class ArtifactRecordsCommitmentWrapper
+  implements IArtifactGroupCommitmentProducer, IArtifactGroupCommitmentConsumer
+{
+  private collectorName: string;
+  private range: Range;
+  private promises: Promise<ArtifactCommitmentSummary>[];
+  private committers: Record<number, IArtifactCommitter>;
+  private artifacts: Artifact[];
+  private emitter: EventEmitter;
+  private eventPointerManager: IEventPointerManager;
+  private duplicatesTracker: Record<number, number>;
+  private recorder: IEventRecorder;
+
+  static setup(
+    recorder: IEventRecorder,
+    collectorName: string,
+    range: Range,
+    eventPointerManager: IEventPointerManager,
+    artifacts: Artifact[],
+    duplicatesTracker: Record<number, number>,
+  ) {
+    const wrapper = new ArtifactRecordsCommitmentWrapper(
+      recorder,
+      collectorName,
+      range,
+      eventPointerManager,
+      artifacts,
+      duplicatesTracker,
+    );
+    wrapper.createPromises();
+    wrapper.createCommitters();
+    return wrapper;
+  }
+
+  private constructor(
+    recorder: IEventRecorder,
+    collectorName: string,
+    range: Range,
+    eventPointerManager: IEventPointerManager,
+    artifacts: Artifact[],
+    duplicatesTracker: Record<number, number>,
+  ) {
+    this.recorder = recorder;
+    this.collectorName = collectorName;
+    this.range = range;
+    this.eventPointerManager = eventPointerManager;
+    this.artifacts = artifacts;
+    this.emitter = new EventEmitter();
+    this.promises = [];
+    this.duplicatesTracker = duplicatesTracker;
+  }
+
+  private createPromises() {
+    this.promises = this.artifacts.map((artifact) => {
+      return new Promise<ArtifactCommitmentSummary>((resolve) => {
+        this.emitter.addListener(
+          `${artifact.id}`,
+          (results: AsyncResults<RecordResponse>) => {
+            const internal = async () => {
+              if (results.errors.length > 0) {
+                return resolve({
+                  artifact: artifact,
+                  results: results,
+                });
+              }
+              const commitmentErrors: PossiblyError[] = [];
+
+              let seenCount = this.duplicatesTracker[artifact.id] || 0;
+
+              if (seenCount === 0) {
+                try {
+                  await this.eventPointerManager.commitArtifactForRange(
+                    this.collectorName,
+                    this.range,
+                    artifact,
+                  );
+                  seenCount += 1;
+                  this.duplicatesTracker[artifact.id] = seenCount;
+                  logger.info(
+                    `completed events for "${this.collectorName} on Artifact[${
+                      artifact.id
+                    }] for ${rangeToString(this.range)}`,
+                  );
+                } catch (err) {
+                  commitmentErrors.push(err);
+                }
+              } else {
+                logger.warn(
+                  `duplicate artifact commitment for Artifact[name=${artifact.name}, namespace=${artifact.namespace}]. skipping`,
+                );
+              }
+              resolve({
+                artifact: artifact,
+                results: results,
+              });
+            };
+
+            internal().catch((err) => {
+              logger.error(
+                "FATAL: unexpected error caught during artifact committment",
+                err,
+              );
+            });
+          },
+        );
+      });
+    });
+  }
+
+  private createCommitters() {
+    this.committers = this.artifacts.reduce<Record<string, IArtifactCommitter>>(
+      (acc, artifact) => {
+        acc[artifact.id.valueOf()] = ArtifactCommitter.setup((results) => {
+          this.emitter.emit(`${artifact.id}`, results);
+        });
+        return acc;
+      },
+      {},
+    );
+  }
+
+  commit(artifact: Artifact): IArtifactCommitter {
+    return this.getCommitter(artifact);
+  }
+
+  commitGroup(group: IEventGroupRecorder<Artifact>): void {
+    // Start waiting for all the artifacts asynchronously
+    this.artifacts.map((artifact) => {
+      return group
+        .wait(artifact)
+        .then((results) => {
+          this.commit(artifact).withResults(results);
+        })
+        .catch((err) => {
+          logger.error(
+            "FATAL: unexpected error handling artifact commitment",
+            err,
+          );
+        });
+    });
+    // Notify the group recorder that we're committing
+    group.commit();
+  }
+
+  async waitAll(): Promise<ArtifactCommitmentSummary[]> {
+    return await Promise.all(this.promises);
+  }
+
+  failAll(err: PossiblyError): void {
+    this.artifacts.forEach((artifact) => {
+      this.commit(artifact).withResults({
+        errors: [err],
+        success: [],
+      });
+    });
+  }
+
+  private getCommitter(artifact: Artifact) {
+    const committer = this.committers[artifact.id];
+    if (!committer) {
+      throw new Error(
+        `unexpected Artifact[name=${artifact.name}, namespace=${artifact.namespace}]`,
+      );
+    }
+    return committer;
+  }
 }
 
 /**
@@ -175,7 +424,7 @@ export class BaseScheduler implements IScheduler {
   private recorder: IEventRecorder;
   private config: IConfig;
   private collectors: Record<string, CollectorRegistration>;
-  private eventPointerManager: EventPointerManager;
+  private eventPointerManager: IEventPointerManager;
   private cache: TimeSeriesCacheWrapper;
   private spawner: WorkerSpawner;
   private jobsRepository: typeof JobsRepository;
@@ -186,7 +435,7 @@ export class BaseScheduler implements IScheduler {
     runDir: string,
     recorder: IEventRecorder,
     config: IConfig,
-    eventPointerManager: EventPointerManager,
+    eventPointerManager: IEventPointerManager,
     cache: TimeSeriesCacheWrapper,
     spawner: WorkerSpawner,
     jobsRepository: typeof JobsRepository,
@@ -290,7 +539,10 @@ export class BaseScheduler implements IScheduler {
     }
   }
 
-  async runWorker(group: string, resumeWithLock: boolean): Promise<ErrorsList> {
+  async runWorker(
+    group: string,
+    resumeWithLock: boolean,
+  ): Promise<ExecutionSummary> {
     let job: Job;
     let execution: JobExecution | undefined;
 
@@ -326,11 +578,12 @@ export class BaseScheduler implements IScheduler {
         return jobs;
       }, []);
 
-      console.log(jobsToChoose);
-
       if (jobsToChoose.length === 0) {
         logger.debug("no jobs available for the given group");
-        return [];
+        return {
+          errors: [],
+          artifactSummaries: [],
+        };
       }
 
       job = _.sample(jobsToChoose)!;
@@ -367,13 +620,13 @@ export class BaseScheduler implements IScheduler {
       { encoding: "utf-8" },
     );
 
-    const errors = await this.executeForRange(job.collector, {
+    const execSummary = await this.executeForRange(job.collector, {
       startDate: startDate,
       endDate: endDate,
     });
 
     let execStatus = JobExecutionStatus.FAILED;
-    if (errors.length === 0) {
+    if (execSummary.errors.length === 0) {
       execStatus = JobExecutionStatus.COMPLETE;
     }
     await this.jobsExecutionRepository.updateExecutionStatus(
@@ -399,7 +652,7 @@ export class BaseScheduler implements IScheduler {
     } catch (e) {
       logger.error("error occurred attempting to delete lock file");
     }
-    return errors;
+    return execSummary;
   }
 
   private lockJsonPath() {
@@ -452,16 +705,33 @@ export class BaseScheduler implements IScheduler {
       this.recorder.setRange(range);
     }
     const collector = await reg.create(this.config, this.recorder, this.cache);
-    const errors: unknown[] = [];
+    const executionSummary: ExecutionSummary = {
+      artifactSummaries: [],
+      errors: [],
+    };
 
     this.recorder.addListener("error", (err) => {
       logger.error("caught error on the recorder");
-      errors.push(err);
+      executionSummary.errors.push(err);
     });
 
     const seenIds: Record<number, number> = {};
 
     const expectedArtifacts = new UniqueArray((a: number) => a);
+
+    let totalMissing = 0;
+    // Get a full count of the remaining work so we can provide a percentage of completion.
+    for await (const group of collector.groupedArtifacts()) {
+      const artifacts = await group.artifacts();
+      const missing = await this.findMissingArtifactsFromEventPointers(
+        range,
+        artifacts,
+        collectorName,
+      );
+      totalMissing += missing.length;
+    }
+
+    logger.info(`Total missing artifacts: ${totalMissing}`);
 
     // Get a list of the monitored artifacts
     for await (const group of collector.groupedArtifacts()) {
@@ -470,11 +740,19 @@ export class BaseScheduler implements IScheduler {
 
       // Determine anything missing from this group
       const groupName = await group.name();
-      logger.debug(`${groupName}: determine missing artifacts`);
       const missing = await this.findMissingArtifactsFromEventPointers(
         range,
         artifacts,
         collectorName,
+      );
+
+      const committer = ArtifactRecordsCommitmentWrapper.setup(
+        this.recorder,
+        collectorName,
+        range,
+        this.eventPointerManager,
+        missing,
+        seenIds,
       );
 
       // Nothing missing in this group. Skip
@@ -483,63 +761,32 @@ export class BaseScheduler implements IScheduler {
         continue;
       }
       logger.debug(
-        `${groupName}: missing ${missing.length} artifacts for the group`,
+        `${groupName}: missing ${missing.length} artifacts for the group. ${totalMissing} remaining`,
       );
-      logger.debug(missing.map((a) => a.name));
-
-      const commitArtifact = async (input: Artifact | Artifact[]) => {
-        const artifacts = !Array.isArray(input) ? [input] : input;
-
-        const newArtifacts = artifacts.filter((a) => {
-          let seenCount = seenIds[a.id] || 0;
-          seenCount += 1;
-          seenIds[a.id] = seenCount;
-          if (seenCount > 1) {
-            logger.warn(
-              `${groupName}: duplicate artifact commitment for ${a.name}. skipping.`,
-            );
-            return false;
-          }
-          return true;
-        });
-
-        logger.debug(
-          `${groupName}: writing ${newArtifacts.length} new artifacts`,
-        );
-
-        await Promise.all(
-          newArtifacts.map(async (artifact) => {
-            logger.debug(
-              `completed events for "${collectorName} on Artifact[${
-                artifact.id
-              }] for ${rangeToString(range)}`,
-            );
-            return await this.eventPointerManager.commitArtifactForRange(
-              range,
-              artifact,
-              collectorName,
-            );
-          }),
-        );
-        return;
-      };
 
       // Execute the collection for the missing items
       try {
         const response = await collector.collect(
           await group.createMissingGroup(missing),
           range,
-          commitArtifact,
+          committer,
         );
+        logger.debug(`${groupName}: waiting for artifacts to complete commits`);
+
+        const artifactSummaries = await committer.waitAll();
+        totalMissing = totalMissing - artifactSummaries.length;
+        executionSummary.artifactSummaries.push(...artifactSummaries);
+
         if (response) {
           const errorsResponse = response as Errors;
           if (errorsResponse.errors) {
-            errors.push(...errorsResponse.errors);
+            executionSummary.errors.push(...errorsResponse.errors);
           }
         }
       } catch (err) {
         logger.error("Error encountered. Skipping group", err);
-        errors.push(err);
+        committer.failAll(err);
+        executionSummary.errors.push(err);
         continue;
       }
       // TODO: Ensure all artifacts are committed or report errors
@@ -551,10 +798,10 @@ export class BaseScheduler implements IScheduler {
       await this.recorder.close();
     } catch (err) {
       logger.error("waiting for the recorder to complete", err);
-      errors.push(err);
+      executionSummary.errors.push(err);
     }
 
-    if (errors.length > 0) {
+    if (executionSummary.errors.length > 0) {
       logger.info("completed with errors");
     } else {
       // TODO collect errors and return here
@@ -562,7 +809,7 @@ export class BaseScheduler implements IScheduler {
         `completed collector run successfully for ${expectedArtifacts.length} artifacts.`,
       );
     }
-    return errors;
+    return executionSummary;
   }
 
   private async findMissingArtifactsFromEventPointers(
@@ -572,9 +819,9 @@ export class BaseScheduler implements IScheduler {
   ): Promise<Artifact[]> {
     const eventPtrs =
       await this.eventPointerManager.getAllEventPointersForRange(
+        collectorName,
         range,
         artifacts,
-        collectorName,
       );
     const existingMap = eventPtrs.reduce<Record<number, Range[]>>((a, c) => {
       const pointers = a[c.artifact.id] || [];

@@ -6,7 +6,11 @@ import {
   ArtifactType,
   ArtifactNamespace,
 } from "../../../db/orm-entities.js";
-import { IArtifactGroup, CollectResponse } from "../../../scheduler/types.js";
+import {
+  IArtifactGroup,
+  CollectResponse,
+  IArtifactGroupCommitmentProducer,
+} from "../../../scheduler/types.js";
 import { Range } from "../../../utils/ranges.js";
 import { GenericError } from "../../../common/errors.js";
 import { IEventRecorder } from "../../../recorder/types.js";
@@ -110,7 +114,7 @@ export class GithubByProjectBaseCollector extends ProjectArtifactsCollector {
   collect(
     _group: IArtifactGroup<Project>,
     _range: Range,
-    _commitArtifact: (artifact: Artifact | Artifact[]) => Promise<void>,
+    _committer: IArtifactGroupCommitmentProducer,
   ): Promise<CollectResponse> {
     throw new Error("Not implemented");
   }

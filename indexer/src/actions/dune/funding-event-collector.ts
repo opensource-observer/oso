@@ -13,6 +13,7 @@ import {
   Project,
 } from "../../db/orm-entities.js";
 import {
+  IEventGroupRecorder,
   IEventRecorder,
   IncompleteArtifact,
   IncompleteEvent,
@@ -22,11 +23,15 @@ import {
   TimeSeriesCacheWrapper,
 } from "../../cacher/time-series.js";
 import _ from "lodash";
-import { IArtifactGroup, ICollector } from "../../scheduler/types.js";
+import {
+  IArtifactGroup,
+  IArtifactGroupCommitmentProducer,
+  ICollector,
+} from "../../scheduler/types.js";
 import { Range } from "../../utils/ranges.js";
-import { asyncBatch } from "../../utils/array.js";
 import { ProjectRepository } from "../../db/project.js";
 import { ProjectArtifactGroup } from "../../scheduler/common.js";
+import { ArtifactGroupRecorder } from "../../recorder/group.js";
 
 export interface FundingEventsCollectorOptions {
   cacheOptions: {
@@ -47,6 +52,7 @@ export class FundingEventsCollector implements ICollector {
   private projectRepository: typeof ProjectRepository;
   private cache: TimeSeriesCacheWrapper;
   private options: FundingEventsCollectorOptions;
+  private groupRecorder: IEventGroupRecorder<Artifact>;
 
   constructor(
     client: IFundingEventsClient,
@@ -60,6 +66,7 @@ export class FundingEventsCollector implements ICollector {
     this.recorder = recorder;
     this.options = _.merge(DefaultFundingEventsCollectorOptions, options);
     this.cache = cache;
+    this.groupRecorder = new ArtifactGroupRecorder(recorder);
   }
 
   async *groupedArtifacts(): AsyncGenerator<IArtifactGroup<Project>> {
@@ -80,7 +87,7 @@ export class FundingEventsCollector implements ICollector {
   async collect(
     group: IArtifactGroup<Project>,
     range: Range,
-    commitArtifact: (artifact: Artifact) => Promise<void>,
+    committer: IArtifactGroupCommitmentProducer,
   ): Promise<void> {
     logger.debug("running funding events collector");
     const artifacts = await group.artifacts();
@@ -234,8 +241,6 @@ export class FundingEventsCollector implements ICollector {
       },
     );
 
-    const recordPromises: Promise<string>[] = [];
-
     for await (const res of responses) {
       for (const row of res.raw) {
         const artifact = projectAddressesMap[row.to];
@@ -270,15 +275,10 @@ export class FundingEventsCollector implements ICollector {
           },
         };
 
-        recordPromises.push(this.recorder.record(event));
+        this.groupRecorder.record(event);
       }
     }
 
-    await Promise.all(recordPromises);
-
-    // Commit all of the artifacts
-    await asyncBatch(artifacts, 1, async (a) => {
-      return await commitArtifact(a[0]);
-    });
+    committer.commitGroup(this.groupRecorder);
   }
 }
