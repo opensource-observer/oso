@@ -98,10 +98,12 @@ class ArtifactCommitter implements IArtifactCommitter {
 export interface IArtifactGroupCommitmentProducer {
   commit(artifact: Artifact): IArtifactCommitter;
   commitGroup(group: IEventGroupRecorder<Artifact>): void;
+  failAll(err: PossiblyError): void;
 }
 
 export interface IArtifactGroupCommitmentConsumer {
   waitAll(): Promise<ArtifactCommitmentSummary[]>;
+  failAll(err: PossiblyError): void;
 }
 
 export type ArtifactRecordingStatus = {
@@ -252,8 +254,10 @@ export class ArtifactRecordsCommitmentWrapper
   private emitter: EventEmitter;
   private eventPointerManager: IEventPointerManager;
   private duplicatesTracker: Record<number, number>;
+  private recorder: IEventRecorder;
 
   static setup(
+    recorder: IEventRecorder,
     collectorName: string,
     range: Range,
     eventPointerManager: IEventPointerManager,
@@ -261,6 +265,7 @@ export class ArtifactRecordsCommitmentWrapper
     duplicatesTracker: Record<number, number>,
   ) {
     const wrapper = new ArtifactRecordsCommitmentWrapper(
+      recorder,
       collectorName,
       range,
       eventPointerManager,
@@ -273,12 +278,14 @@ export class ArtifactRecordsCommitmentWrapper
   }
 
   private constructor(
+    recorder: IEventRecorder,
     collectorName: string,
     range: Range,
     eventPointerManager: IEventPointerManager,
     artifacts: Artifact[],
     duplicatesTracker: Record<number, number>,
   ) {
+    this.recorder = recorder;
     this.collectorName = collectorName;
     this.range = range;
     this.eventPointerManager = eventPointerManager;
@@ -291,7 +298,7 @@ export class ArtifactRecordsCommitmentWrapper
   private createPromises() {
     this.promises = this.artifacts.map((artifact) => {
       return new Promise<ArtifactCommitmentSummary>((resolve) => {
-        this.emitter.once(
+        this.emitter.addListener(
           `${artifact.id}`,
           (results: AsyncResults<RecordResponse>) => {
             const internal = async () => {
@@ -382,6 +389,15 @@ export class ArtifactRecordsCommitmentWrapper
 
   async waitAll(): Promise<ArtifactCommitmentSummary[]> {
     return await Promise.all(this.promises);
+  }
+
+  failAll(err: PossiblyError): void {
+    this.artifacts.forEach((artifact) => {
+      this.commit(artifact).withResults({
+        errors: [err],
+        success: [],
+      });
+    });
   }
 
   private getCommitter(artifact: Artifact) {
@@ -562,8 +578,6 @@ export class BaseScheduler implements IScheduler {
         return jobs;
       }, []);
 
-      console.log(jobsToChoose);
-
       if (jobsToChoose.length === 0) {
         logger.debug("no jobs available for the given group");
         return {
@@ -733,6 +747,7 @@ export class BaseScheduler implements IScheduler {
       );
 
       const committer = ArtifactRecordsCommitmentWrapper.setup(
+        this.recorder,
         collectorName,
         range,
         this.eventPointerManager,
@@ -770,6 +785,7 @@ export class BaseScheduler implements IScheduler {
         }
       } catch (err) {
         logger.error("Error encountered. Skipping group", err);
+        committer.failAll(err);
         executionSummary.errors.push(err);
         continue;
       }

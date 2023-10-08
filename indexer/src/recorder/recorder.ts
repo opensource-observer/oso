@@ -116,6 +116,7 @@ export class TimeoutBatchedFlusher implements IFlusher {
   private cb: FlusherCallback | undefined;
   private maxSize: number;
   private triggered: boolean;
+  private nextFlush: DateTime;
 
   constructor(timeoutMs: number, maxSize: number) {
     if (timeoutMs < 100) {
@@ -127,9 +128,17 @@ export class TimeoutBatchedFlusher implements IFlusher {
     this.size = 0;
     this.maxSize = maxSize;
     this.triggered = false;
+    this.setNextFlush();
+  }
+
+  private setNextFlush() {
+    this.nextFlush = DateTime.now().plus({ milliseconds: this.timeoutMs });
   }
 
   notify(size: number): void {
+    if (this.triggered) {
+      return;
+    }
     this.size += size;
 
     // if the size is 0 then this was called without anything in the queue. That
@@ -162,15 +171,15 @@ export class TimeoutBatchedFlusher implements IFlusher {
         // It is expected that the consuming class will clear the flusher.
         this.triggered = true;
 
-        // Reset size which is just a count of notifications This allows the
-        // timeout to backoff if the notify function is continously called and
-        // this.size remains 0
-        this.size = 0;
-
         if (this.cb) {
           this.cb()
             .then(() => {
               this.triggered = false;
+              // Reset size which is just a count of notifications This allows the
+              // timeout to backoff if the notify function is continously called and
+              // this.size remains 0
+              this.size = 0;
+              this.setNextFlush();
               this.notify(0);
             })
             .catch((err) => {
@@ -326,7 +335,7 @@ export class BatchEventRecorder implements IEventRecorder {
         {},
       );
 
-      console.log(`existing events length ${existingEvents.length}`);
+      logger.debug(`existing events length ${existingEvents.length}`);
 
       this.knownEventsStorage[eventType] = {
         loaded: true,

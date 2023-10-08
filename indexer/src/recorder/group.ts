@@ -9,6 +9,7 @@ import {
 } from "./types.js";
 import { AsyncResults } from "../utils/async-results.js";
 import { collectAsyncResults } from "../utils/async-results.js";
+import { randomUUID } from "node:crypto";
 
 export type EventGrouperFn<T> = (event: IncompleteEvent) => T;
 export type GroupObjToStrFn<T> = (group: T) => string;
@@ -25,6 +26,7 @@ export class EventGroupRecorder<T> implements IEventGroupRecorder<T> {
   private recorder: IEventRecorder;
   private committed: boolean;
   private listeningIds: Record<string, boolean>;
+  private objectId: string;
 
   constructor(
     recorder: IEventRecorder,
@@ -37,7 +39,7 @@ export class EventGroupRecorder<T> implements IEventGroupRecorder<T> {
     this.emitter = new EventEmitter();
     this.recorder = recorder;
     this.listeningIds = {};
-
+    this.objectId = randomUUID();
     this.committed = false;
   }
 
@@ -48,12 +50,12 @@ export class EventGroupRecorder<T> implements IEventGroupRecorder<T> {
     // This should only run once.
     this.committed = true;
 
-    setImmediate(() => {
-      for (const groupId in this.groupRecordPromises) {
+    setTimeout(() => {
+      for (const groupId in this.listeningIds) {
         // Catch errors so we can record all of them
         this.commitId(groupId);
       }
-    });
+    }, 100);
   }
 
   async wait(group: T): Promise<AsyncResults<string>> {
@@ -73,6 +75,7 @@ export class EventGroupRecorder<T> implements IEventGroupRecorder<T> {
   }
 
   private commitId(id: string): void {
+    console.log(`commiting group ${id}`);
     const promises = this.groupRecordPromises[id] || [];
     collectAsyncResults(promises)
       .then((result) => {

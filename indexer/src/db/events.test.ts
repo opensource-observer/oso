@@ -94,8 +94,6 @@ withDbDescribe("EventRepository", () => {
       }),
     );
 
-    console.log("updating");
-
     const updatePartials: BulkUpdateBySourceIDEvent[] = [
       {
         time: createPartials[0].time,
