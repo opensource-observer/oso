@@ -8,9 +8,19 @@ JSON_ATTESTATION_DATA = "data/rpgf3/indexed_attestations.json"
 
 def extract_website_name(url):
 
+    if not url:
+        return 'none'
     parsed_url = urlparse(url)
     domain_parts = parsed_url.netloc.split('.')
-    return domain_parts[-2] if len(domain_parts) > 1 else parsed_url.netloc
+    domain = domain_parts[-2] if len(domain_parts) > 1 else parsed_url.netloc
+
+    mapping = {
+        "x": "twitter",
+        "t": "telegram",
+        "youtu": "youtube"
+    }
+
+    return mapping.get(domain, domain)
 
 
 
@@ -67,7 +77,7 @@ def tidy_dataframe(data):
                                         'number'])
     
     df['urlType'] = df['attestationUrl'].apply(extract_website_name)
-    
+
     print(f"Created Tidy DataFrame with {len(df)} records.")
     return df
 
