@@ -26,7 +26,6 @@ import {
   TimeSeriesCacheWrapper,
 } from "../../../cacher/time-series.js";
 import { asyncBatch } from "../../../utils/array.js";
-import { GenericError } from "../../../common/errors.js";
 import {
   GithubBaseCollectorOptions,
   GithubByProjectBaseCollector,
@@ -41,8 +40,6 @@ interface EmptyRepository {
 }
 
 type CommitsResponse = Commit[] | EmptyRepository;
-
-class IncompleteRepoName extends GenericError {}
 
 const DefaultGithubCommitCollectorOptions: GithubBaseCollectorOptions = {
   cacheOptions: {
@@ -79,12 +76,6 @@ export class GithubCommitCollector extends GithubByProjectBaseCollector {
           const promises = await this.recordEventsForRepo(artifact, range);
           committer.commit(artifact).withPromises(promises);
         } catch (err) {
-          if (err instanceof IncompleteRepoName) {
-            logger.warn(
-              `artifact[${artifact.id}] has a malformed github url ${artifact.url}`,
-            );
-            return;
-          }
           committer.commit(artifact).withResults({
             success: [],
             errors: [err],
@@ -151,7 +142,11 @@ export class GithubCommitCollector extends GithubByProjectBaseCollector {
                 cursor: 1,
               };
             }
-            if (reqErr.response?.data === "Git Repository is empty") {
+            const reqData: { message?: string } = reqErr.response?.data || {
+              message: "",
+            };
+            const reqDataMsg = reqData.message || "";
+            if (reqDataMsg.indexOf("Git Repository is empty") !== -1) {
               logger.debug("found empty repo");
               return {
                 raw: { isEmptyRepository: true },

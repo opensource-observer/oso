@@ -185,10 +185,23 @@ const cli = yargs(hideBin(process.argv))
           async (args) => {
             const scheduler = await configure(args);
 
-            await scheduler.executeForRange(args.collector, {
-              startDate: args.startDate,
-              endDate: args.endDate,
-            });
+            const execSummary = await scheduler.executeForRange(
+              args.collector,
+              {
+                startDate: args.startDate,
+                endDate: args.endDate,
+              },
+            );
+
+            logger.info(`--------------Completed manual run---------------`);
+            logger.info("   Collection Stats:");
+            logger.info(`       ${execSummary.errors.length} errors`);
+            logger.info(
+              `       ${execSummary.artifactSummaries.length} artifacts committed`,
+            );
+            if (execSummary.errors.length > 0) {
+              process.exit(1);
+            }
           },
         )
         .command<SchedulerWorkerArgs>(
@@ -208,11 +221,17 @@ const cli = yargs(hideBin(process.argv))
           },
           async (args) => {
             const scheduler = await configure(args);
-            const errors = await scheduler.runWorker(
+            const execSummary = await scheduler.runWorker(
               args.group,
               args.resumeWithLock,
             );
-            if (errors.length > 0) {
+            logger.info(`--------------Completed job---------------`);
+            logger.info("   Collection Stats:");
+            logger.info(`       ${execSummary.errors.length} errors`);
+            logger.info(
+              `       ${execSummary.artifactSummaries.length} artifacts committed`,
+            );
+            if (execSummary.errors.length > 0) {
               process.exit(1);
             }
           },

@@ -296,44 +296,41 @@ export class ArtifactRecordsCommitmentWrapper
           (results: AsyncResults<RecordResponse>) => {
             const internal = async () => {
               if (results.errors.length > 0) {
-                resolve({
-                  artifact: artifact,
-                  results: results,
-                });
-              } else {
-                const commitmentErrors: PossiblyError[] = [];
-
-                let seenCount = this.duplicatesTracker[artifact.id] || 0;
-                seenCount += 1;
-                this.duplicatesTracker[artifact.id] = seenCount;
-
-                if (seenCount === 0) {
-                  try {
-                    await this.eventPointerManager.commitArtifactForRange(
-                      this.collectorName,
-                      this.range,
-                      artifact,
-                    );
-                    logger.info(
-                      `completed events for "${
-                        this.collectorName
-                      } on Artifact[${artifact.id}] for ${rangeToString(
-                        this.range,
-                      )}`,
-                    );
-                  } catch (err) {
-                    commitmentErrors.push(err);
-                  }
-                } else {
-                  logger.warn(
-                    `duplicate artifact commitment for Artifact[name=${artifact.name}, namespace=${artifact.namespace}]. skipping`,
-                  );
-                }
-                resolve({
+                return resolve({
                   artifact: artifact,
                   results: results,
                 });
               }
+              const commitmentErrors: PossiblyError[] = [];
+
+              let seenCount = this.duplicatesTracker[artifact.id] || 0;
+
+              if (seenCount === 0) {
+                try {
+                  await this.eventPointerManager.commitArtifactForRange(
+                    this.collectorName,
+                    this.range,
+                    artifact,
+                  );
+                  seenCount += 1;
+                  this.duplicatesTracker[artifact.id] = seenCount;
+                  logger.info(
+                    `completed events for "${this.collectorName} on Artifact[${
+                      artifact.id
+                    }] for ${rangeToString(this.range)}`,
+                  );
+                } catch (err) {
+                  commitmentErrors.push(err);
+                }
+              } else {
+                logger.warn(
+                  `duplicate artifact commitment for Artifact[name=${artifact.name}, namespace=${artifact.namespace}]. skipping`,
+                );
+              }
+              resolve({
+                artifact: artifact,
+                results: results,
+              });
             };
 
             internal().catch((err) => {
@@ -708,25 +705,39 @@ export class BaseScheduler implements IScheduler {
 
     const expectedArtifacts = new UniqueArray((a: number) => a);
 
-    // Get a list of the monitored artifacts
+    let totalMissing = 0;
+    // Get a full count of the remaining work so we can provide a percentage of completion.
     for await (const group of collector.groupedArtifacts()) {
       const artifacts = await group.artifacts();
-      const committer = ArtifactRecordsCommitmentWrapper.setup(
-        collectorName,
-        range,
-        this.eventPointerManager,
-        artifacts,
-        seenIds,
-      );
-      artifacts.forEach(({ id }) => expectedArtifacts.push(id));
-
-      // Determine anything missing from this group
-      const groupName = await group.name();
-      logger.debug(`${groupName}: determine missing artifacts`);
       const missing = await this.findMissingArtifactsFromEventPointers(
         range,
         artifacts,
         collectorName,
+      );
+      totalMissing += missing.length;
+    }
+
+    logger.info(`Total missing artifacts: ${totalMissing}`);
+
+    // Get a list of the monitored artifacts
+    for await (const group of collector.groupedArtifacts()) {
+      const artifacts = await group.artifacts();
+      artifacts.forEach(({ id }) => expectedArtifacts.push(id));
+
+      // Determine anything missing from this group
+      const groupName = await group.name();
+      const missing = await this.findMissingArtifactsFromEventPointers(
+        range,
+        artifacts,
+        collectorName,
+      );
+
+      const committer = ArtifactRecordsCommitmentWrapper.setup(
+        collectorName,
+        range,
+        this.eventPointerManager,
+        missing,
+        seenIds,
       );
 
       // Nothing missing in this group. Skip
@@ -735,9 +746,8 @@ export class BaseScheduler implements IScheduler {
         continue;
       }
       logger.debug(
-        `${groupName}: missing ${missing.length} artifacts for the group`,
+        `${groupName}: missing ${missing.length} artifacts for the group. ${totalMissing} remaining`,
       );
-      logger.debug(missing.map((a) => a.name));
 
       // Execute the collection for the missing items
       try {
@@ -746,8 +756,11 @@ export class BaseScheduler implements IScheduler {
           range,
           committer,
         );
+        logger.debug(`${groupName}: waiting for artifacts to complete commits`);
 
-        executionSummary.artifactSummaries.push(...(await committer.waitAll()));
+        const artifactSummaries = await committer.waitAll();
+        totalMissing = totalMissing - artifactSummaries.length;
+        executionSummary.artifactSummaries.push(...artifactSummaries);
 
         if (response) {
           const errorsResponse = response as Errors;
