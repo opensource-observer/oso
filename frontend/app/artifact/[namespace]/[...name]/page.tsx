@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { ArtifactNamespace } from "@hypercerts-org/indexer";
+import { ArtifactNamespace } from "@opensource-observer/indexer";
 import { PlasmicComponent } from "@plasmicapp/loader-nextjs";
 import { PLASMIC } from "../../../../plasmic-init";
 import { PlasmicClientRootProvider } from "../../../../plasmic-init-client";

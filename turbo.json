@@ -19,7 +19,7 @@
       "cache": false
     },
     "test": {},
-    "@hypercerts-org/frontend#build": {
+    "@opensource-observer/frontend#build": {
       "dependsOn": ["^build"],
       "outputs": ["out/**", ".next/**"],
       "env": ["PLASMIC_PROJECT_ID", "PLASMIC_PROJECT_API_TOKEN"],

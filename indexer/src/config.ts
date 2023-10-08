@@ -24,7 +24,7 @@ export const NO_DYNAMIC_LOADS =
   process.env.NO_DYNAMIC_LOADS === "true" || false;
 export const GITHUB_WORKERS_OWNER = process.env.GITHUB_WORKERS_OWNER
   ? process.env.GITHUB_WORKERS_OWNER
-  : "hypercerts-org";
+  : "opensource-observer";
 export const GITHUB_WORKERS_REPO = process.env.GITHUB_WORKERS_REPO
   ? process.env.GITHUB_WORKERS_REPO
   : "oso";

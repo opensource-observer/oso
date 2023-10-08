@@ -2,8 +2,8 @@
 
 [license]: https://opensource.org/license/apache-2-0/
 [license-badge]: https://img.shields.io/badge/License-Apache2.0-blue.svg
-[gha]: https://github.com/hypercerts-org/oso/actions/workflows/ci-default.yml
-[gha-badge]: https://github.com/hypercerts-org/oso/actions/workflows/ci-default.yml/badge.svg
+[gha]: https://github.com/opensource-observer/oso/actions/workflows/ci-default.yml
+[gha-badge]: https://github.com/opensource-observer/oso/actions/workflows/ci-default.yml/badge.svg
 
 Open Source Observer is a free analytics suite that helps funders measure the impact of open source software contributions to the health of their ecosystem.
 
@@ -16,7 +16,7 @@ Open Source Observer is a free analytics suite that helps funders measure the im
 - `/frontend`: frontend application (Next.js)
   - [on Vercel](https://www.opensource.observer) - Production build
 - `/indexer`: Data indexer
-  - [on GitHub actions](https://github.com/hypercerts-org/oso/actions/workflows/indexer-autocrawl.yml)
+  - [on GitHub actions](https://github.com/opensource-observer/oso/actions/workflows/indexer-autocrawl.yml)
 
 ## Quickstart
 
@@ -52,5 +52,3 @@ yarn dev:frontend
 ## Playbooks
 
 For setup and common operations for each subproject, navigate into the respective directory and check out the `README.md`.
-
-We also maintain a [playbook](https://hypercerts.org/docs/devops) for larger operations.

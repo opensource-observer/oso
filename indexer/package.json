@@ -1,10 +1,13 @@
 {
-  "name": "@hypercerts-org/indexer",
+  "name": "@opensource-observer/indexer",
   "version": "0.0.1",
   "description": "Open source impact measurement",
-  "repository": "git@github.com:hypercerts-org/oso.git",
-  "author": "Hypercerts Foundation",
+  "author": "Kariba Labs",
   "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/opensource-observer/oso.git"
+  },
   "bin": "./dist/src/cli.js",
   "main": "./dist/src/index.js",
   "types": "./dist/src/index.d.ts",

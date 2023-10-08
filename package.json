@@ -2,12 +2,12 @@
   "name": "oso",
   "description": "Impact measurement for open source software",
   "version": "0.0.0",
-  "author": "Hypercerts Foundation",
+  "author": "Kariba Labs",
   "license": "Apache-2.0",
   "private": true,
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/hypercerts-org/oso.git"
+    "url": "git+https://github.com/opensource-observer/oso.git"
   },
   "scripts": {
     "build": "turbo run build --concurrency=100%",
