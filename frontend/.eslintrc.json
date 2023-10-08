@@ -1,7 +1,5 @@
 {
-  "extends": [
-    "../.eslintrc.js"
-  ],
+  "extends": ["../.eslintrc.js"],
   "root": false,
   "parserOptions": {
     "ecmaFeatures": {
@@ -9,8 +7,6 @@
     },
     "ecmaVersion": "latest",
     "sourceType": "module",
-    "project": [
-      "./frontend/tsconfig.json"
-    ]
+    "project": ["./frontend/tsconfig.json"]
   }
 }
