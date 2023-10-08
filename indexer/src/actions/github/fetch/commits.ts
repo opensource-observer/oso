@@ -17,7 +17,10 @@ import { logger } from "../../../utils/logger.js";
 import { Octokit, RequestError } from "octokit";
 import { GetResponseDataTypeFromEndpointMethod } from "@octokit/types";
 import { Repository } from "typeorm";
-import { IArtifactGroup } from "../../../scheduler/types.js";
+import {
+  IArtifactGroup,
+  IArtifactGroupCommitmentProducer,
+} from "../../../scheduler/types.js";
 import {
   TimeSeriesCacheLookup,
   TimeSeriesCacheWrapper,
@@ -65,17 +68,16 @@ export class GithubCommitCollector extends GithubByProjectBaseCollector {
   async collect(
     group: IArtifactGroup<Project>,
     range: Range,
-    commitArtifact: (artifact: Artifact | Artifact[]) => Promise<void>,
+    committer: IArtifactGroupCommitmentProducer,
   ) {
     const artifacts = await group.artifacts();
-    const errors: unknown[] = [];
 
     // Load commits for each artifact
     await asyncBatch(artifacts, 10, async (batch) => {
-      const artifactCommits: Promise<void>[] = [];
       for (const artifact of batch) {
         try {
-          await this.recordEventsForRepo(artifact, range);
+          const promises = await this.recordEventsForRepo(artifact, range);
+          committer.commit(artifact).withPromises(promises);
         } catch (err) {
           if (err instanceof IncompleteRepoName) {
             logger.warn(
@@ -83,16 +85,13 @@ export class GithubCommitCollector extends GithubByProjectBaseCollector {
             );
             return;
           }
-          errors.push(err);
+          committer.commit(artifact).withResults({
+            success: [],
+            errors: [err],
+          });
         }
-        artifactCommits.push(commitArtifact(artifact));
       }
-      await Promise.all(artifactCommits);
     });
-
-    return {
-      errors: errors,
-    };
   }
 
   private async recordEventsForRepo(repoArtifact: Artifact, range: Range) {
@@ -215,7 +214,7 @@ export class GithubCommitCollector extends GithubByProjectBaseCollector {
     }
 
     // Wait for all of the events for this repo to be recorded
-    await Promise.all(recordPromises);
+    return recordPromises;
   }
 
   private contributorFromCommit(

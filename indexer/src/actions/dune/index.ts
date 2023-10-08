@@ -13,7 +13,11 @@ import {
   DailyContractUsageRow,
   DailyContractUsageResponse,
 } from "./daily-contract-usage/client.js";
-import { IArtifactGroup, ICollector } from "../../scheduler/types.js";
+import {
+  IArtifactGroup,
+  IArtifactGroupCommitmentProducer,
+  ICollector,
+} from "../../scheduler/types.js";
 import _ from "lodash";
 import { Range } from "../../utils/ranges.js";
 import {
@@ -145,7 +149,7 @@ export class DailyContractUsageCollector implements ICollector {
   async collect(
     group: IArtifactGroup,
     range: Range,
-    commitArtifact: (artifact: Artifact) => Promise<void>,
+    committer: IArtifactGroupCommitmentProducer,
   ): Promise<void> {
     logger.info("loading contract usage data");
     const knownUserAddresses = await this.loadKnownUserAddresses(range);
@@ -191,7 +195,7 @@ export class DailyContractUsageCollector implements ICollector {
           await Promise.all(eventPromises);
           logger.debug(`events for ${contract.name} recorded`);
 
-          await commitArtifact(contract);
+          committer.commit(contract);
         },
       );
 

@@ -16,8 +16,21 @@ export const DefaultEventPointerManagerOptions = {
   batchSize: 5000,
 };
 
+export interface IEventPointerManager {
+  getAllEventPointersForRange(
+    collectorName: string,
+    range: Range,
+    artifacts: Artifact[],
+  ): Promise<EventPointer[]>;
+  commitArtifactForRange(
+    collectorName: string,
+    range: Range,
+    artifact: Artifact,
+  ): Promise<void>;
+}
+
 // Event pointer management
-export class EventPointerManager {
+export class EventPointerManager implements IEventPointerManager {
   private eventPointerRepository: IEventPointerRepository;
   private options: EventPointerManagerOptions;
   private dataSource: DataSource;
@@ -35,9 +48,9 @@ export class EventPointerManager {
   // Find all matching event pointers for the given artifacts and the collector
   // name
   async getAllEventPointersForRange(
+    collector: string,
     range: Range,
     artifacts: Artifact[],
-    collector: string,
   ): Promise<EventPointer[]> {
     const batches = await asyncBatch(
       artifacts,
@@ -63,17 +76,17 @@ export class EventPointerManager {
   }
 
   async commitArtifactForRange(
+    collector: string,
     range: Range,
     artifact: Artifact,
-    collector: string,
   ) {
     logger.debug(`committing this artifact[${artifact.id}]`);
 
     // Find any old event pointer that's connectable to this one if it exists. Update it.
     const intersectingPointers = await this.getAllEventPointersForRange(
+      collector,
       range,
       [artifact],
-      collector,
     );
 
     if (intersectingPointers.length === 0) {

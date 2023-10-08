@@ -32,13 +32,12 @@ import { EventEmitter } from "node:events";
 import { randomUUID } from "node:crypto";
 import { DateTime } from "luxon";
 import { EventRepository } from "../db/events.js";
+import { RecordResponse } from "./types.js";
 
 export interface BatchEventRecorderOptions {
   maxBatchSize: number;
   timeoutMs: number;
 }
-
-export type RecordResponse = string;
 
 class EventTypeStorage<T> {
   private queue: UniqueArray<IncompleteEvent>;

@@ -26,7 +26,10 @@ import {
 import { Repository } from "typeorm";
 import { TimeSeriesCacheWrapper } from "../../../cacher/time-series.js";
 import _ from "lodash";
-import { IArtifactGroup } from "../../../scheduler/types.js";
+import {
+  IArtifactGroup,
+  IArtifactGroupCommitmentProducer,
+} from "../../../scheduler/types.js";
 import {
   Range,
   doRangesIntersect,
@@ -208,7 +211,7 @@ export class GithubFollowingCollector extends GithubByProjectBaseCollector {
   async collect(
     group: IArtifactGroup<Project>,
     range: Range,
-    commitArtifact: (artifact: Artifact | Artifact[]) => Promise<void>,
+    committer: IArtifactGroupCommitmentProducer,
   ): Promise<void> {
     const project = await group.meta();
     const artifacts = await group.artifacts();
@@ -245,7 +248,7 @@ export class GithubFollowingCollector extends GithubByProjectBaseCollector {
           ...(await this.recordStarHistoryForRepo(repo, locator, range)),
         );
       }
-      await Promise.all([...recordPromises, commitArtifact(repo)]);
+      committer.commit(repo).withPromises(recordPromises);
     }
   }
 

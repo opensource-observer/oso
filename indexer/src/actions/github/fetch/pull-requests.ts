@@ -1,5 +1,6 @@
 import { DateTime } from "luxon";
 import {
+  IEventGroupRecorder,
   IEventRecorder,
   IncompleteArtifact,
   IncompleteEvent,
@@ -28,8 +29,12 @@ import {
   TimeSeriesCacheLookup,
   TimeSeriesCacheWrapper,
 } from "../../../cacher/time-series.js";
-import { IArtifactGroup } from "../../../scheduler/types.js";
+import {
+  IArtifactGroup,
+  IArtifactGroupCommitmentProducer,
+} from "../../../scheduler/types.js";
 import { Range } from "../../../utils/ranges.js";
+import { ArtifactGroupRecorder } from "../../../recorder/group.js";
 
 const GET_ISSUE_TIMELINE = gql`
   query GetIssueTimeline($id: ID!, $cursor: String) {
@@ -380,6 +385,8 @@ const DefaultGithubIssueCollectorOptions: GithubBaseCollectorOptions = {
 };
 
 export class GithubIssueCollector extends GithubByProjectBaseCollector {
+  private groupRecorder: IEventGroupRecorder<Artifact>;
+
   // Some of these event names are arbitrary
   private eventTypeMapping: Record<string, { [issueType: string]: EventType }> =
     {
@@ -415,12 +422,14 @@ export class GithubIssueCollector extends GithubByProjectBaseCollector {
   ) {
     const opts = _.merge(DefaultGithubIssueCollectorOptions, options);
     super(projectRepository, recorder, cache, opts);
+
+    this.groupRecorder = new ArtifactGroupRecorder(recorder);
   }
 
   async collect(
     group: IArtifactGroup<Project>,
     range: Range,
-    commitArtifact: (artifact: Artifact | Artifact[]) => Promise<void>,
+    committer: IArtifactGroupCommitmentProducer,
   ) {
     const project = await group.meta();
     const artifacts = await group.artifacts();
@@ -499,10 +508,10 @@ export class GithubIssueCollector extends GithubByProjectBaseCollector {
     );
 
     const errors: unknown[] = [];
+
     for await (const page of pages) {
       const edges = page.raw;
       for (const edge of edges) {
-        const recordPromises: Promise<string>[] = [];
         const issue = edge.node;
 
         const repoLocatorStr = issue.repository.nameWithOwner.toLowerCase();
@@ -543,7 +552,7 @@ export class GithubIssueCollector extends GithubByProjectBaseCollector {
         };
 
         // Record creation
-        recordPromises.push(this.recorder.record(creationEvent));
+        this.groupRecorder.record(creationEvent);
 
         // Record merging of a pull request
         if (issue.mergedAt) {
@@ -551,32 +560,28 @@ export class GithubIssueCollector extends GithubByProjectBaseCollector {
 
           const mergedBy = issue.mergedBy !== null ? issue.mergedBy.login : "";
 
-          recordPromises.push(
-            this.recorder.record({
-              time: mergedTime,
-              type: this.getEventType("MergedEvent", issue.__typename),
-              to: artifact,
-              amount: 0,
-              from: creationEvent.from,
-              sourceId: githubId,
-              details: {
-                mergedBy: mergedBy,
-              },
-            }),
-          );
+          this.groupRecorder.record({
+            time: mergedTime,
+            type: this.getEventType("MergedEvent", issue.__typename),
+            to: artifact,
+            amount: 0,
+            from: creationEvent.from,
+            sourceId: githubId,
+            details: {
+              mergedBy: mergedBy,
+            },
+          });
         }
 
         // Find any reviews
-        recordPromises.push(...(await this.recordReviews(artifact, issue)));
+        await this.recordReviews(artifact, issue);
 
         // Find and record any close/open events
-        recordPromises.push(
-          ...(await this.recordOpenCloseEvents(artifact, issue)),
-        );
-
-        await Promise.all([...recordPromises, commitArtifact(artifact)]);
+        await this.recordOpenCloseEvents(artifact, issue);
       }
     }
+    await committer.commitGroup(this.groupRecorder);
+
     logger.debug(
       `completed issue collection for repos of Project[${project.slug}]`,
     );
@@ -635,7 +640,7 @@ export class GithubIssueCollector extends GithubByProjectBaseCollector {
     issue: IssueOrPullRequest,
   ) {
     if (!issue.reviews) {
-      return [];
+      return;
     }
     const recordReview = (review: Review) => {
       const createdAt = DateTime.fromISO(review.createdAt);
@@ -648,7 +653,7 @@ export class GithubIssueCollector extends GithubByProjectBaseCollector {
             }
           : undefined;
 
-      return this.recorder.record({
+      return this.groupRecorder.record({
         time: createdAt,
         type: this.getEventType("PullRequestApprovedEvent", issue.__typename),
         to: artifact,
@@ -658,17 +663,13 @@ export class GithubIssueCollector extends GithubByProjectBaseCollector {
       });
     };
 
-    const recordPromises: Promise<string>[] = [];
     if (issue.reviews.pageInfo.hasNextPage) {
       for await (const review of this.loadReviews(issue.id)) {
-        recordPromises.push(recordReview(review));
+        recordReview(review);
       }
     } else {
-      recordPromises.push(
-        ...issue.reviews.edges.map((n) => recordReview(n.node)),
-      );
+      issue.reviews.edges.forEach((n) => recordReview(n.node));
     }
-    return recordPromises;
   }
 
   private async recordOpenCloseEvents(
@@ -676,7 +677,7 @@ export class GithubIssueCollector extends GithubByProjectBaseCollector {
     issue: IssueOrPullRequest,
   ) {
     if (!issue.openCloseEvents.edges) {
-      return [];
+      return;
     }
     const recordOpenCloseEvent = (event: IssueEvent) => {
       const createdAt = DateTime.fromISO(event.createdAt);
@@ -689,7 +690,7 @@ export class GithubIssueCollector extends GithubByProjectBaseCollector {
             }
           : undefined;
 
-      return this.recorder.record({
+      return this.groupRecorder.record({
         time: createdAt,
         type: this.getEventType(event.__typename, issue.__typename),
         to: artifact,
@@ -703,16 +704,12 @@ export class GithubIssueCollector extends GithubByProjectBaseCollector {
       });
     };
 
-    const recordPromises: Promise<string>[] = [];
     if (issue.openCloseEvents.pageInfo.hasNextPage) {
       for await (const event of this.loadIssueTimeline(issue.id)) {
-        recordPromises.push(recordOpenCloseEvent(event));
+        recordOpenCloseEvent(event);
       }
     } else {
-      recordPromises.push(
-        ...issue.openCloseEvents.edges.map((n) => recordOpenCloseEvent(n.node)),
-      );
+      issue.openCloseEvents.edges.forEach((n) => recordOpenCloseEvent(n.node));
     }
-    return recordPromises;
   }
 }

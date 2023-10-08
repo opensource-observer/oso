@@ -14,7 +14,7 @@ import {
 import {
   IArtifactGroup,
   CollectResponse,
-  CommitArtifactCallback,
+  IArtifactGroupCommitmentProducer,
 } from "../scheduler/types.js";
 import { Range } from "../utils/ranges.js";
 import {
@@ -22,9 +22,8 @@ import {
   TimeSeriesCacheWrapper,
 } from "../cacher/time-series.js";
 import { In, Repository } from "typeorm";
-import { IEventRecorder } from "../recorder/types.js";
+import { IEventRecorder, RecordResponse } from "../recorder/types.js";
 import { DateTime } from "luxon";
-import { RecordResponse } from "../recorder/recorder.js";
 import { generateSourceIdFromArray } from "../utils/source-ids.js";
 
 // API endpoint to query
@@ -65,18 +64,13 @@ export class NpmDownloadCollector extends ProjectArtifactsCollector {
   async collect(
     group: IArtifactGroup<Project>,
     range: Range,
-    commitArtifact: CommitArtifactCallback,
+    committer: IArtifactGroupCommitmentProducer,
   ): Promise<CollectResponse> {
     const artifacts = await group.artifacts();
     const project = await group.meta();
 
     for (const npmPackage of artifacts) {
-      await this.getEventsForPackage(
-        project,
-        npmPackage,
-        range,
-        commitArtifact,
-      );
+      await this.getEventsForPackage(project, npmPackage, range, committer);
     }
   }
 
@@ -84,7 +78,7 @@ export class NpmDownloadCollector extends ProjectArtifactsCollector {
     project: Project,
     npmPackage: Artifact,
     range: Range,
-    commitArtifact: CommitArtifactCallback,
+    committer: IArtifactGroupCommitmentProducer,
   ) {
     const response = this.cache.loadCachedOrRetrieve<DayDownloads[]>(
       TimeSeriesCacheLookup.new(
@@ -125,8 +119,7 @@ export class NpmDownloadCollector extends ProjectArtifactsCollector {
         );
       }
     }
-    await Promise.all(recordPromises);
-    await commitArtifact(npmPackage);
+    committer.commit(npmPackage).withPromises(recordPromises);
   }
 }
 

@@ -1,7 +1,12 @@
 import { FindOptionsWhere, Repository } from "typeorm";
 import { Artifact, Project } from "../db/orm-entities.js";
 import { Range } from "../utils/ranges.js";
-import { CollectResponse, IArtifactGroup, ICollector } from "./types.js";
+import {
+  CollectResponse,
+  IArtifactGroupCommitmentProducer,
+  IArtifactGroup,
+  ICollector,
+} from "./types.js";
 import { TimeSeriesCacheWrapper } from "../cacher/time-series.js";
 import { IEventRecorder } from "../recorder/types.js";
 
@@ -80,7 +85,7 @@ export class ProjectArtifactsCollector implements ICollector {
   collect(
     _group: IArtifactGroup<Project>,
     _range: Range,
-    _commitArtifact: (artifact: Artifact | Artifact[]) => Promise<void>,
+    _committer: IArtifactGroupCommitmentProducer,
   ): Promise<CollectResponse> {
     throw new Error("Not implemented");
   }

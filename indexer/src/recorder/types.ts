@@ -11,14 +11,18 @@ import { DateTime } from "luxon";
 import { GenericError } from "../common/errors.js";
 import { Range } from "../utils/ranges.js";
 import { EventEmitter } from "node:events";
+import { AsyncResults } from "../utils/async-results.js";
 
 export class RecorderError extends GenericError {}
+export class GrouperError extends GenericError {}
 
 export class UnknownActor extends RecorderError {}
 
 export interface EventRecorderOptions {
   overwriteExistingEvents: boolean;
 }
+
+export type RecordResponse = string;
 
 export interface IEventRecorder {
   // A generic event recorder that will automatically handle batching writes for
@@ -30,7 +34,7 @@ export interface IEventRecorder {
   registerEventType(eventType: EventType, strategy: IEventTypeStrategy): void;
 
   // Record a single event. These are batched
-  record(event: IncompleteEvent): Promise<string>;
+  record(event: IncompleteEvent): Promise<RecordResponse>;
 
   setActorScope(namespaces: ArtifactNamespace[], types: ArtifactType[]): void;
 
@@ -94,6 +98,16 @@ export type IncompleteEvent = {
   amount: number;
   details?: object;
 };
+
+export type EventGroupRecorderCallback<T> = (results: AsyncResults<T>) => void;
+
+export interface IEventGroupRecorder<G> {
+  record(event: IncompleteEvent): void;
+
+  wait(group: G): Promise<AsyncResults<string>>;
+
+  commit(): void;
+}
 
 export class BasicEventTypeStrategy implements IEventTypeStrategy {
   private allQuery: FindOptionsWhere<Event>;

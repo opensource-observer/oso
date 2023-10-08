@@ -63,11 +63,9 @@ withDbDescribe("EventPointerManager", () => {
       const expectedMatches = expectedPointerIndexes.map(
         (n) => eventPointers[n],
       );
-      const result = await manager.getAllEventPointersForRange(
-        range,
-        [artifact0],
-        "test",
-      );
+      const result = await manager.getAllEventPointersForRange("test", range, [
+        artifact0,
+      ]);
       expect(result.length).toBe(expectedMatches.length);
       const sortedResultIds = result.map((e) => e.id.valueOf());
       const sortedExpectedIds = expectedMatches.map((e) => e.id.valueOf());
@@ -121,20 +119,18 @@ withDbDescribe("EventPointerManager", () => {
 
   it("should merge pointers together", async () => {
     const range = rangeFromISO("2022-01-15T00:00:00Z", "2023-03-02T00:00:00Z");
-    await manager.commitArtifactForRange(range, artifact0, "test");
+    await manager.commitArtifactForRange("test", range, artifact0);
 
     // Check that there's only a single pointer left
-    const result = await manager.getAllEventPointersForRange(
-      range,
-      [artifact0],
-      "test",
-    );
+    const result = await manager.getAllEventPointersForRange("test", range, [
+      artifact0,
+    ]);
     expect(result.length).toBe(1);
   });
 
   it("should merge pointers together when they do not intersect", async () => {
     const range = rangeFromISO("2022-04-01T00:00:00Z", "2023-05-01T00:00:00Z");
-    await manager.commitArtifactForRange(range, artifact0, "test");
+    await manager.commitArtifactForRange("test", range, artifact0);
 
     // Check that there's only a single pointer left
     const totalRange = rangeFromISO(
@@ -142,9 +138,9 @@ withDbDescribe("EventPointerManager", () => {
       "2023-05-01T00:00:00Z",
     );
     const result = await manager.getAllEventPointersForRange(
+      "test",
       totalRange,
       [artifact0],
-      "test",
     );
     expect(result.length).toBe(1);
   });
