@@ -1,8 +1,8 @@
 # Contributing Guidelines
 
-Thank you for your interest in contributing to Hypercerts! There are many ways to contribute, and this document should not be considered encompassing.
+Thank you for your interest in contributing! There are many ways to contribute, and this document should not be considered encompassing.
 
-If you have a general question on how to use and deploy our software, please read our [Documentation](https://hypercerts.org/docs/) or join our [Hypercerts community server on Discord](https://testnet.hypercerts.org/discord).
+If you have a general question on how to use and deploy our software, please read our [Documentation](https://www.opensource.observer/docs/) or join our [community server on Discord](https://www.opensource.observer/discord).
 
 For concrete feature requests and/or bug reports, please file an issue in this
 repository as described below.
@@ -38,8 +38,8 @@ _Note that the project's committers still have the final word on what is accepte
 
 <!-- markdownlint-disable line-length -->
 
-[new Feature request]: https://github.com/hypercerts-org/hypercerts/issues/new?assignees=&labels=type%3Afeaturerequest&projects=&template=2.feature_request.yml
-[GitHub discussions]: https://github.com/hypercerts-org/hypercerts/discussions
+[new Feature request]: https://github.com/opensource-observer/oso/issues/new?assignees=&labels=type%3Afeaturerequest&projects=&template=2.feature_request.yml
+[GitHub discussions]: https://github.com/opensource-observer/oso/discussions
 
 <!-- markdownlint-enable line-length -->
 
@@ -47,14 +47,14 @@ _Note that the project's committers still have the final word on what is accepte
 
 Bugs are a reality for any software project. We can't fix what we don't know about.
 
-If you believe a bug report presents a security risk, please follow [responsible disclosure](https://en.wikipedia.org/wiki/Responsible_disclosure) and report it directly to security@hypercerts.org instead of filing a public issue or posting it to a public forum. We will get back to you promptly.
+If you believe a bug report presents a security risk, please follow [responsible disclosure](https://en.wikipedia.org/wiki/Responsible_disclosure) and report it directly to security@karibalabs.co instead of filing a public issue or posting it to a public forum. We will get back to you promptly.
 
 Otherwise, please, first search between [existing issues in our repository] and if the issue is not reported yet, [file a new one].
 
 <!-- markdownlint-disable line-length -->
 
-[existing issues in our repository]: https://github.com/hypercerts-org/hypercerts/issues
-[file a new one]: https://github.com/hypercerts-org/hypercerts/issues/new?assignees=&labels=type%3Abug&projects=&template=1.bug_report.yml
+[existing issues in our repository]: https://github.com/opensource-observer/oso/issues
+[file a new one]: https://github.com/opensource-observer/oso/issues/new?assignees=&labels=type%3Abug&projects=&template=1.bug_report.yml
 
 <!-- markdownlint-enable line-length -->
 
@@ -62,7 +62,7 @@ Otherwise, please, first search between [existing issues in our repository] and 
 
 ### Building
 
-Our development environment is documented in our [README](https://github.com/hypercerts-org/hypercerts/blob/main/README.md).
+Our development environment is documented in our [README](https://github.com/opensource-observer/oso/blob/main/README.md).
 
 ### Contributing Code
 
@@ -125,7 +125,7 @@ Our development environment is documented in our [README](https://github.com/hyp
 - **Signal to close issues:** Let the person who filed the issue close it. Ping them in a comment (e.g. @user) making sure you’ve commented how an issue was addressed.
   - Anyone else with write permissions should be able to close the issue if not addressed within a week.
 
-[developer documentation]: https://github.com/hypercerts-org/hypercerts/tree/main/docs/docs
+[developer documentation]: https://github.com/opensource-observer/oso/tree/main/docs
 
 ### Contributing Documentation
 

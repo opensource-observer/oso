@@ -1,5 +1,8 @@
 import { cache } from "react";
-import { getArtifactByName, getProjectBySlug } from "@hypercerts-org/indexer";
+import {
+  getArtifactByName,
+  getProjectBySlug,
+} from "@opensource-observer/indexer";
 
 // Revalidate the data at most every hour
 export const revalidate = 3600;
