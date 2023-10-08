@@ -1,8 +1,17 @@
 import json
 import pandas as pd
+from urllib.parse import urlparse
 
 
 JSON_ATTESTATION_DATA = "data/rpgf3/indexed_attestations.json"
+
+
+def extract_website_name(url):
+
+    parsed_url = urlparse(url)
+    domain_parts = parsed_url.netloc.split('.')
+    return domain_parts[-2] if len(domain_parts) > 1 else parsed_url.netloc
+
 
 
 def tidy_dataframe(data):
@@ -56,6 +65,8 @@ def tidy_dataframe(data):
                                         'applicantType', 'bio or description', 'impactCategory(ies)', 
                                         'attestationType', 'attestationUrl', 'attestationDescription', 
                                         'number'])
+    
+    df['urlType'] = df['attestationUrl'].apply(extract_website_name)
     
     print(f"Created Tidy DataFrame with {len(df)} records.")
     return df
