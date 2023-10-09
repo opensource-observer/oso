@@ -474,8 +474,7 @@ export class BatchEventRecorder implements IEventRecorder {
       try {
         await this.flushType(eventType as EventType);
       } catch (err) {
-        console.log(err);
-        throw err;
+        this.emitter.emit("error", err);
       }
     }
   }
@@ -651,7 +650,7 @@ export class BatchEventRecorder implements IEventRecorder {
             }
           }
           this.notifyFailure(eventTypeStorage, events);
-          throw err;
+          this.emitter.emit("error", err);
         }
       },
     );
@@ -674,7 +673,7 @@ export class BatchEventRecorder implements IEventRecorder {
           }
         }
         this.notifyFailure(eventTypeStorage, events);
-        throw err;
+        this.emitter.emit("error", err);
       }
     });
     logger.info(`finished flushing for ${eventType}`);
