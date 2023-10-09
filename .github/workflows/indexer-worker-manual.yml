@@ -8,6 +8,9 @@ env:
   X_GITHUB_GRAPHQL_API: ${{ vars.X_GITHUB_GRAPHQL_API }}
   X_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   DUNE_API_KEY: ${{ secrets.DUNE_API_KEY }}
+  CACHE_DIR: /tmp/oso/cache
+  RUN_DIR: /tmp/oso/run
+  LOG_FILE: /log/run.log
 
 # Trigger the workflow when:
 on:
@@ -81,9 +84,18 @@ jobs:
 
       - name: Test cache loaded
         run: ls -halt ${CACHE_DIR}
+      
+      - name: Ensure log directory
+        run: mkdir /log
 
       - name: Run worker for the given group
-        run: pnpm start:indexer --cache-dir ${CACHE_DIR} --run-dir ${RUN_DIR} scheduler manual ${{ inputs.collector }} --start-date ${{ inputs.start-date }} --end-date ${{ inputs.end-date }}
+        run: bash .github/scripts/scheduler.sh scheduler manual ${{ inputs.collector }} --start-date ${{ inputs.start-date }} --end-date ${{ inputs.end-date }}
+
+      - uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: worker-log
+          path: /log/run.log
 
       - name: Close job execution if it exists
         if: always()
