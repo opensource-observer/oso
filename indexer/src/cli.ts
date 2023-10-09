@@ -154,6 +154,10 @@ const cli = yargs(hideBin(process.argv))
         type: "boolean",
         default: false,
       });
+      yags.option("recorder-timeout-ms", {
+        type: "number",
+        default: 600000,
+      });
       const dateConverter = (input: string) => {
         const date = DateTime.fromISO(input).toUTC();
         if (!date.isValid) {

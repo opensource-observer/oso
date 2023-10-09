@@ -77,16 +77,16 @@ withDbDescribe("BatchEventRecorder", () => {
       },
       sourceId: "test123",
     };
-    const record0Promise = recorder.record(testEvent);
+    const record0Handle = await recorder.record(testEvent);
     const record0Wait = recorder.wait(EventType.COMMIT_CODE);
     flusher.flush();
     await record0Wait;
-    await record0Promise;
+    await record0Handle.wait();
 
     // No errors should be thrown if we attempt to write twice
-    const record1 = recorder.record(testEvent);
+    const record1 = await recorder.record(testEvent);
     flusher.flush();
-    await record1;
+    await record1.wait();
 
     // Check that the values are correct
     const results = await EventRepository.find({
@@ -131,11 +131,11 @@ withDbDescribe("BatchEventRecorder", () => {
       recorder.addListener("error", reject);
     });
 
-    const record2 = recorder.record(outOfScopeEvent);
+    const record2 = await recorder.record(outOfScopeEvent);
     flusher.flush();
 
     await expect(async () => {
-      return record2;
+      return record2.wait();
     }).rejects.toThrow();
 
     await expect(errorHandler).rejects.toThrow();

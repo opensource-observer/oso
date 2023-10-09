@@ -24,6 +24,7 @@ import {
   IEventRecorder,
   IncompleteArtifact,
   IncompleteEvent,
+  RecordHandle,
 } from "../../recorder/types.js";
 import {
   TimeSeriesCacheLookup,
@@ -32,6 +33,7 @@ import {
 import { ArtifactRepository } from "../../db/artifacts.js";
 import { generateSourceIdFromArray } from "../../utils/source-ids.js";
 import { BasicArtifactGroup } from "../../scheduler/common.js";
+import { asyncBatch } from "../../utils/array.js";
 
 /**
  * Entrypoint arguments
@@ -189,13 +191,14 @@ export class DailyContractUsageCollector implements ICollector {
           const contract = contractsByAddressMap[address];
           logger.debug(`events for ${contract.name}`);
 
-          const eventPromises = rows.flatMap((row) => {
-            return this.createEventsForDay(contract, row);
-          });
-          await Promise.all(eventPromises);
+          const recordHandles = (
+            await asyncBatch(rows, 1, async (row) => {
+              return this.createEventsForDay(contract, row[0]);
+            })
+          ).flat(1);
           logger.debug(`events for ${contract.name} recorded`);
 
-          committer.commit(contract).withPromises(eventPromises);
+          committer.commit(contract).withHandles(recordHandles);
         },
       );
 
@@ -258,8 +261,11 @@ export class DailyContractUsageCollector implements ICollector {
     }
   }
 
-  protected createEventsForDay(contract: Artifact, day: DailyContractUsageRow) {
-    const eventPromises: Promise<string>[] = [];
+  protected async createEventsForDay(
+    contract: Artifact,
+    day: DailyContractUsageRow,
+  ) {
+    const recordHandles: RecordHandle[] = [];
     const userArtifacts: IncompleteArtifact[] = day.userAddresses.map(
       (addr) => {
         return {
@@ -300,13 +306,13 @@ export class DailyContractUsageCollector implements ICollector {
         ]),
       };
 
-      eventPromises.push(this.recorder.record(event));
+      recordHandles.push(await this.recorder.record(event));
     }
 
     // Create an event that reports the aggregate transaction information with
     // no contributor information
-    eventPromises.push(
-      this.recorder.record({
+    recordHandles.push(
+      await this.recorder.record({
         time: eventTime,
         type: EventType.CONTRACT_INVOKED_AGGREGATE_STATS,
         to: contract,
@@ -324,6 +330,6 @@ export class DailyContractUsageCollector implements ICollector {
         },
       }),
     );
-    return eventPromises;
+    return recordHandles;
   }
 }

@@ -3,6 +3,7 @@ import {
   IEventRecorder,
   IncompleteArtifact,
   IncompleteEvent,
+  RecordHandle,
 } from "../../../recorder/types.js";
 import { logger } from "../../../utils/logger.js";
 import { gql, ClientError } from "graphql-request";
@@ -222,7 +223,7 @@ export class GithubFollowingCollector extends GithubByProjectBaseCollector {
     for (const repo of artifacts) {
       try {
         const recordPromises = await this.collectEventsForRepo(repo, range);
-        committer.commit(repo).withPromises(recordPromises);
+        committer.commit(repo).withHandles(recordPromises);
       } catch (err) {
         committer.commit(repo).withResults({
           errors: [err],
@@ -232,7 +233,10 @@ export class GithubFollowingCollector extends GithubByProjectBaseCollector {
     }
   }
 
-  private async collectEventsForRepo(repo: Artifact, range: Range) {
+  private async collectEventsForRepo(
+    repo: Artifact,
+    range: Range,
+  ): Promise<RecordHandle[]> {
     const locator = this.splitGithubRepoIntoLocator(repo);
     const summary = await this.loadSummaryForRepo(locator);
     if (!summary) {
@@ -303,8 +307,8 @@ export class GithubFollowingCollector extends GithubByProjectBaseCollector {
     artifact: Artifact,
     locator: GithubRepoLocator,
     range: Range,
-  ): Promise<Promise<string>[]> {
-    const recordPromises: Promise<string>[] = [];
+  ): Promise<RecordHandle[]> {
+    const recordHandles: RecordHandle[] = [];
     let aggregateStatsRecorded = false;
 
     for await (const { summary, starring } of this.loadStarHistoryForRepo(
@@ -313,10 +317,12 @@ export class GithubFollowingCollector extends GithubByProjectBaseCollector {
     )) {
       if (!aggregateStatsRecorded) {
         // Hack to make this work. we need to change how this works
-        recordPromises.push(this.recordStarAggregateStats(locator, summary));
+        recordHandles.push(
+          await this.recordStarAggregateStats(locator, summary),
+        );
         logger.debug("record watchers");
 
-        recordPromises.push(this.recordWatcherEvents(locator, summary));
+        recordHandles.push(await this.recordWatcherEvents(locator, summary));
         aggregateStatsRecorded = true;
       }
       const commitTime = DateTime.fromISO(starring.starredAt);
@@ -345,9 +351,9 @@ export class GithubFollowingCollector extends GithubByProjectBaseCollector {
         ]),
       };
 
-      recordPromises.push(this.recorder.record(event));
+      recordHandles.push(await this.recorder.record(event));
     }
-    return recordPromises;
+    return recordHandles;
   }
 
   private async *loadStarHistoryForRepo(
@@ -500,11 +506,11 @@ export class GithubFollowingCollector extends GithubByProjectBaseCollector {
   ) {
     const startOfDay = DateTime.now().startOf("day");
 
-    const recordPromises: Promise<string>[] = [];
+    const recordHandles: RecordHandle[] = [];
 
     // Get the aggregate stats for forking
-    recordPromises.push(
-      this.recorder.record({
+    recordHandles.push(
+      await this.recorder.record({
         time: startOfDay,
         type: EventType.FORK_AGGREGATE_STATS,
         to: artifact,
@@ -541,9 +547,9 @@ export class GithubFollowingCollector extends GithubByProjectBaseCollector {
     // If we have more forks than 100 we need to make some additional queries to gather information
     logger.debug("loading fork history");
     for await (const fork of this.loadAllForksHistory(repo, range)) {
-      recordPromises.push(recordForkedEvent(fork));
+      recordHandles.push(await recordForkedEvent(fork));
     }
 
-    return recordPromises;
+    return recordHandles;
   }
 }

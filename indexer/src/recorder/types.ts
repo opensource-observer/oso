@@ -24,6 +24,10 @@ export interface EventRecorderOptions {
 
 export type RecordResponse = string;
 
+export interface RecordHandle {
+  wait(): Promise<RecordResponse>;
+}
+
 export interface IEventRecorder {
   // A generic event recorder that will automatically handle batching writes for
   // events and also resolving artifacts and contributors (and automatically
@@ -34,7 +38,7 @@ export interface IEventRecorder {
   registerEventType(eventType: EventType, strategy: IEventTypeStrategy): void;
 
   // Record a single event. These are batched
-  record(event: IncompleteEvent): Promise<RecordResponse>;
+  record(event: IncompleteEvent): Promise<RecordHandle>;
 
   setActorScope(namespaces: ArtifactNamespace[], types: ArtifactType[]): void;
 
@@ -102,7 +106,7 @@ export type IncompleteEvent = {
 export type EventGroupRecorderCallback<T> = (results: AsyncResults<T>) => void;
 
 export interface IEventGroupRecorder<G> {
-  record(event: IncompleteEvent): void;
+  record(event: IncompleteEvent): Promise<void>;
 
   wait(group: G): Promise<AsyncResults<string>>;
 

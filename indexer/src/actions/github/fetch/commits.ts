@@ -4,6 +4,7 @@ import {
   IEventRecorder,
   IncompleteArtifact,
   IncompleteEvent,
+  RecordHandle,
 } from "../../../recorder/types.js";
 import { Range, rangeToString } from "../../../utils/ranges.js";
 import {
@@ -73,8 +74,8 @@ export class GithubCommitCollector extends GithubByProjectBaseCollector {
     await asyncBatch(artifacts, 10, async (batch) => {
       for (const artifact of batch) {
         try {
-          const promises = await this.recordEventsForRepo(artifact, range);
-          committer.commit(artifact).withPromises(promises);
+          const handles = await this.recordEventsForRepo(artifact, range);
+          committer.commit(artifact).withHandles(handles);
         } catch (err) {
           committer.commit(artifact).withResults({
             success: [],
@@ -161,7 +162,7 @@ export class GithubCommitCollector extends GithubByProjectBaseCollector {
       },
     );
 
-    const recordPromises: Promise<string>[] = [];
+    const recordHandles: RecordHandle[] = [];
 
     for await (const page of responses) {
       const commits: Commit[] = (page.raw as EmptyRepository).isEmptyRepository
@@ -204,12 +205,12 @@ export class GithubCommitCollector extends GithubByProjectBaseCollector {
           event.from = contributor;
         }
 
-        recordPromises.push(this.recorder.record(event));
+        recordHandles.push(await this.recorder.record(event));
       }
     }
 
     // Wait for all of the events for this repo to be recorded
-    return recordPromises;
+    return recordHandles;
   }
 
   private contributorFromCommit(
