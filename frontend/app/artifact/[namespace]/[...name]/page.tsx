@@ -6,9 +6,12 @@ import {
 import { PlasmicComponent } from "@plasmicapp/loader-nextjs";
 import { PLASMIC } from "../../../../plasmic-init";
 import { PlasmicClientRootProvider } from "../../../../plasmic-init-client";
-import { cachedGetArtifactByName } from "../../../../lib/db";
+import { cachedGetArtifactByName } from "../../../../lib/cached-queries";
 import { logger } from "../../../../lib/logger";
-import { catchallPathToString } from "../../../../lib/paths";
+import {
+  catchallPathToString,
+  pathToNamespaceEnum,
+} from "../../../../lib/paths";
 import { uncheckedCast } from "../../../../lib/common";
 
 // Using incremental static regeneration, will invalidate this page
@@ -31,7 +34,8 @@ type ArtifactPageProps = {
 
 export default async function ArtifactPage(props: ArtifactPageProps) {
   const { params, searchParams } = props;
-  const namespace = uncheckedCast<ArtifactNamespace>(params.namespace);
+  const namespaceSlug = uncheckedCast<ArtifactNamespace>(params.namespace);
+  const namespace = pathToNamespaceEnum(namespaceSlug);
   const name = catchallPathToString(params.name);
   if (
     !params.namespace ||
@@ -46,7 +50,7 @@ export default async function ArtifactPage(props: ArtifactPageProps) {
 
   // Get artifact metadata from the database
   await initializeDataSource();
-  const artifact = await cachedGetArtifactByName({ namespace, name });
+  const artifact = await cachedGetArtifactByName(namespace, name);
   if (!artifact) {
     logger.warn(`Cannot find artifact (namespace=${namespace}, name=${name})`);
     notFound();

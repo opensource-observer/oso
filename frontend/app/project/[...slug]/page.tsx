@@ -3,7 +3,7 @@ import { PlasmicComponent } from "@plasmicapp/loader-nextjs";
 import { initializeDataSource } from "@opensource-observer/indexer";
 import { PLASMIC } from "../../../plasmic-init";
 import { PlasmicClientRootProvider } from "../../../plasmic-init-client";
-import { cachedGetProjectBySlug } from "../../../lib/db";
+import { cachedGetProjectBySlug } from "../../../lib/cached-queries";
 import { logger } from "../../../lib/logger";
 import { catchallPathToString } from "../../../lib/paths";
 
