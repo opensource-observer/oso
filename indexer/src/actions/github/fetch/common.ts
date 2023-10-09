@@ -175,6 +175,7 @@ export class GithubByProjectBaseCollector extends ProjectArtifactsCollector {
         release();
         return response;
       } catch (err) {
+        release();
         if (err instanceof ClientError) {
           // Retry up
           if (err.response.status >= 500 && err.response.status < 600) {
@@ -183,7 +184,6 @@ export class GithubByProjectBaseCollector extends ProjectArtifactsCollector {
             continue;
           }
         }
-        release();
         throw err;
       }
     }
