@@ -31,7 +31,7 @@ import { Range, isWithinRange } from "../utils/ranges.js";
 import { EventEmitter } from "node:events";
 import { randomUUID } from "node:crypto";
 import { DateTime } from "luxon";
-import { EventRepository } from "../db/events.js";
+import { EventRef, EventRepository } from "../db/events.js";
 import { RecordResponse } from "./types.js";
 
 export interface BatchEventRecorderOptions {
@@ -39,23 +39,34 @@ export interface BatchEventRecorderOptions {
   timeoutMs: number;
 }
 
+interface EventTypeStorageOptions {
+  timeoutMs: number;
+}
+
 class EventTypeStorage<T> {
   private queue: UniqueArray<IncompleteEvent>;
   private pubsub: PromisePubSub<T, unknown>;
 
-  static setup<X>(): EventTypeStorage<X> {
+  static setup<X>(options?: EventTypeStorageOptions): EventTypeStorage<X> {
     const queue = new UniqueArray<IncompleteEvent>((event) => {
       return event.sourceId;
     });
-    return new EventTypeStorage(queue);
+    const opts = _.merge(
+      {
+        timeoutMs: 120000,
+      },
+      options,
+    );
+    return new EventTypeStorage(queue, opts);
   }
 
-  private constructor(queue: UniqueArray<IncompleteEvent>) {
+  private constructor(
+    queue: UniqueArray<IncompleteEvent>,
+    options: EventTypeStorageOptions,
+  ) {
     this.queue = queue;
     this.pubsub = new PromisePubSub({
-      // the recorder should be fast enough to record within a minute. We will
-      // give it two to resolve.
-      timeoutMs: 120000,
+      timeoutMs: options.timeoutMs,
     });
   }
 
@@ -188,7 +199,7 @@ export class TimeoutBatchedFlusher implements IFlusher {
               logger.error("recorder is not catching some errors");
               logger.error(err);
 
-              // Thiw will cause an uncaughtException error to be thrown and the
+              // This will cause an uncaughtException error to be thrown and the
               // entire application to stop.
               throw err;
             });
@@ -217,7 +228,8 @@ export class TimeoutBatchedFlusher implements IFlusher {
 
 type KnownEventStorage = {
   loaded: boolean;
-  known: Record<string, boolean>;
+  ref: Record<string, EventRef>;
+  incompleteRef: Record<string, Omit<EventRef, "id">>;
 };
 
 export class BatchEventRecorder implements IEventRecorder {
@@ -323,13 +335,14 @@ export class BatchEventRecorder implements IEventRecorder {
       const existingEvents = (await this.eventRepository.find({
         where: where,
         select: {
+          type: true,
           sourceId: true,
         },
-      })) as Pick<Event, "sourceId">[];
+      })) as EventRef[];
 
-      const lookup = existingEvents.reduce<Record<string, boolean>>(
+      const lookup = existingEvents.reduce<Record<string, EventRef>>(
         (lookup, curr) => {
-          lookup[curr.sourceId] = true;
+          lookup[curr.sourceId] = curr;
           return lookup;
         },
         {},
@@ -339,7 +352,8 @@ export class BatchEventRecorder implements IEventRecorder {
 
       this.knownEventsStorage[eventType] = {
         loaded: true,
-        known: lookup,
+        ref: lookup,
+        incompleteRef: {},
       };
     }
   }
@@ -359,12 +373,20 @@ export class BatchEventRecorder implements IEventRecorder {
         `eventType ${event.type} hasn't been loaded for the recorder`,
       );
     }
-    storage.known[event.sourceId] = true;
+
+    if ((event as Event).id) {
+      storage.ref[event.sourceId] = event as Event;
+    } else {
+      storage.incompleteRef[event.sourceId] = event;
+    }
   }
 
   private isKnownEvent(event: IncompleteEvent) {
     const storage = this.knownEventsStorageForType(event.type);
-    return storage.known[event.sourceId] !== undefined;
+    return (
+      storage.ref[event.sourceId] !== undefined ||
+      storage.incompleteRef[event.sourceId]
+    );
   }
 
   private async loadActors(flushId: string): Promise<void> {
@@ -449,7 +471,12 @@ export class BatchEventRecorder implements IEventRecorder {
   private async flushAll() {
     // Wait for all queues to complete in series
     for (const eventType in this.eventTypeStorage) {
-      await this.flushType(eventType as EventType);
+      try {
+        await this.flushType(eventType as EventType);
+      } catch (err) {
+        console.log(err);
+        throw err;
+      }
     }
   }
 
@@ -617,6 +644,7 @@ export class BatchEventRecorder implements IEventRecorder {
             `completed writing batch of ${result.identifiers.length}`,
           );
         } catch (err) {
+          console.log("encountered an error writing to the database");
           if (err instanceof QueryFailedError) {
             if (err.message.indexOf("duplicate") !== -1) {
               logger.debug("attempted to insert a duplicate event. skipping");
@@ -629,29 +657,27 @@ export class BatchEventRecorder implements IEventRecorder {
     );
 
     // Update any events
-    await asyncBatch(
-      updateEvents,
-      this.options.maxBatchSize,
-      async (batch, batchLength) => {
-        logger.info(`preparing to update a batch of ${batchLength} events`);
-        const events = await this.createEventsFromIncomplete(batch);
+    await asyncBatch(updateEvents, 100, async (batch, batchLength) => {
+      logger.info(`preparing to update a batch of ${batchLength} events`);
+      const events = await this.createEventsFromIncomplete(batch);
 
-        try {
-          await this.eventRepository.bulkUpdateBySourceID(events);
-          this.notifySuccess(eventTypeStorage, events);
-        } catch (err) {
-          if (err instanceof QueryFailedError) {
-            if (err.message.indexOf("duplicate") !== -1) {
-              logger.debug(
-                "attempted to update but have duplicated event. skipping",
-              );
-            }
+      try {
+        await this.eventRepository.bulkUpdateBySourceIDAndType(events);
+        this.notifySuccess(eventTypeStorage, events);
+      } catch (err) {
+        console.log("encountered an error updating to the database");
+        if (err instanceof QueryFailedError) {
+          if (err.message.indexOf("duplicate") !== -1) {
+            logger.debug(
+              "attempted to update but have duplicated event. skipping",
+            );
           }
-          this.notifyFailure(eventTypeStorage, events);
-          throw err;
         }
-      },
-    );
+        this.notifyFailure(eventTypeStorage, events);
+        throw err;
+      }
+    });
+    logger.info(`finished flushing for ${eventType}`);
   }
 
   protected notifySuccess(
@@ -712,7 +738,9 @@ export class BatchEventRecorder implements IEventRecorder {
     let queue = this.eventTypeStorage[typeString];
     if (!queue) {
       this.eventTypeStorage[typeString] =
-        EventTypeStorage.setup<RecordResponse>();
+        EventTypeStorage.setup<RecordResponse>({
+          timeoutMs: this.options.timeoutMs,
+        });
       queue = this.eventTypeStorage[typeString];
     }
     return queue;

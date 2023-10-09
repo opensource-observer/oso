@@ -31,10 +31,12 @@ export const EventPointerRepository = AppDataSource.getRepository(
 });
 
 export type BulkUpdateBySourceIDEvent = DeepPartial<Event> &
-  Pick<Event, "sourceId">;
+  Pick<Event, "type" | "sourceId">;
+
+export type EventRef = Pick<Event, "id" | "type" | "sourceId">;
 
 export const EventRepository = AppDataSource.getRepository(Event).extend({
-  async bulkUpdateBySourceID(events: BulkUpdateBySourceIDEvent[]) {
+  async bulkUpdateBySourceIDAndType(events: BulkUpdateBySourceIDEvent[]) {
     // This should likely be refactored eventually as this is likely slow.
     return this.manager.transaction(async (manager) => {
       const repo = manager.withRepository(this);
@@ -44,6 +46,7 @@ export const EventRepository = AppDataSource.getRepository(Event).extend({
         results.push(
           repo.update(
             {
+              type: event.type,
               sourceId: event.sourceId,
             },
             event,

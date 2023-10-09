@@ -129,7 +129,7 @@ withDbDescribe("EventRepository", () => {
       },
     ];
 
-    await EventRepository.bulkUpdateBySourceID(updatePartials);
+    await EventRepository.bulkUpdateBySourceIDAndType(updatePartials);
 
     const afterUpdate = await Promise.all(
       events.map((e) => {
