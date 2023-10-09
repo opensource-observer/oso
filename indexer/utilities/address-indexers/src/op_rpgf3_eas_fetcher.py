@@ -166,9 +166,6 @@ def check_for_ossd_membership(cleaned_data):
     for entry in cleaned_data:        
         
         github_owners = set([get_owner(repo) for repo in entry['Github Urls'].split(", ")])
-        if 'agora' in entry['Project Name'].lower():
-            print(entry['Github Urls'], github_owners)
-        
         github_verified = False
         if github_owners.intersection(repo_owner_set):
             github_verified = True
