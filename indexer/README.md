@@ -10,6 +10,14 @@ _It is recommended you test any code changes against a development database firs
 
 Copy `.env.example` to `.env` and populate the `DATABASE_URL`.
 
+### psql
+
+For convenience, we've added a script to quickly fire up `psql` with the database configured in your `.env`
+
+```bash
+bash ./utilities/database/psql.sh
+```
+
 ## TypeScript / JavaScript
 
 ### Setup
