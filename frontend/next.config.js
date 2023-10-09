@@ -6,7 +6,10 @@
 const nextConfig = {
   //output: 'export',
   experimental: {
-    serverComponentsExternalPackages: ["typeorm"],
+    serverComponentsExternalPackages: [
+      "typeorm",
+      "@opensource-observer/indexer",
+    ],
   },
   webpack: (config, { isServer }) => {
     if (isServer) {

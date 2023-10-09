@@ -26,6 +26,9 @@ import {
 } from "./db/entities.js";
 export { getCollectionBySlug, getProjectBySlug, getArtifactByName };
 
+import { initializeDataSource } from "./db/data-source.js";
+export { initializeDataSource };
+
 import * as utils from "./utils/common.js";
 export { utils };
 

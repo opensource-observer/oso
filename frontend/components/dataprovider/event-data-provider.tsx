@@ -3,7 +3,7 @@ import dayjs from "dayjs";
 import _ from "lodash";
 import React, { ReactNode } from "react";
 import useSWRImmutable from "swr/immutable";
-import { supabase } from "../../lib/supabase-client";
+import { supabaseClient } from "../../lib/clients/supabase";
 import { HttpError, MissingDataError } from "../../lib/errors";
 import { assertNever } from "../../lib/common";
 
@@ -203,7 +203,7 @@ export function EventDataProvider(props: EventDataProviderProps) {
         data: rawData,
         error,
         status,
-      } = await supabase
+      } = await supabaseClient
         .from("Event")
         .select(
           "id, artifact:artifactId!inner(id, type, namespace, name), eventType, eventTime, amount",

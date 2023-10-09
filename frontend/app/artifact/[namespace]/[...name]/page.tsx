@@ -1,5 +1,8 @@
 import { notFound } from "next/navigation";
-import { ArtifactNamespace } from "@opensource-observer/indexer";
+import {
+  ArtifactNamespace,
+  initializeDataSource,
+} from "@opensource-observer/indexer";
 import { PlasmicComponent } from "@plasmicapp/loader-nextjs";
 import { PLASMIC } from "../../../../plasmic-init";
 import { PlasmicClientRootProvider } from "../../../../plasmic-init-client";
@@ -42,6 +45,7 @@ export default async function ArtifactPage(props: ArtifactPageProps) {
   }
 
   // Get artifact metadata from the database
+  await initializeDataSource();
   const artifact = await cachedGetArtifactByName({ namespace, name });
   if (!artifact) {
     logger.warn(`Cannot find artifact (namespace=${namespace}, name=${name})`);

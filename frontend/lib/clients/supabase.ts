@@ -1,10 +1,10 @@
 import { createClient } from "@supabase/supabase-js";
-import { SUPABASE_ANON_KEY, SUPABASE_URL } from "./config";
-import { HttpError } from "./errors";
+import { SUPABASE_ANON_KEY, SUPABASE_URL } from "../config";
+import { HttpError } from "../errors";
 
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-export type SupabaseQueryArgs = {
+type SupabaseQueryArgs = {
   tableName: string; // table to query
   columns?: string; // comma-delimited column names (e.g. `address,claimId`)
   filters?: any; // A list of filters, where each filter is `[ column, operator, value ]`
@@ -15,9 +15,9 @@ export type SupabaseQueryArgs = {
   orderAscending?: boolean; // True if ascending, false if descending
 };
 
-export async function supabaseQuery(args: SupabaseQueryArgs): Promise<any[]> {
+async function supabaseQuery(args: SupabaseQueryArgs): Promise<any[]> {
   const { tableName, columns, filters, limit, orderBy, orderAscending } = args;
-  let query = supabase.from(tableName).select(columns);
+  let query = supabaseClient.from(tableName).select(columns);
   // Iterate over the filters
   if (Array.isArray(filters)) {
     for (let i = 0; i < filters.length; i++) {
@@ -47,3 +47,6 @@ export async function supabaseQuery(args: SupabaseQueryArgs): Promise<any[]> {
 
   return data;
 }
+
+export { supabaseClient, supabaseQuery };
+export type { SupabaseQueryArgs };
