@@ -17,7 +17,7 @@ module.exports = {
     "**/jest.config.ts",
     "**/test.only/**",
     "**/utilities/**",
-    "**/next.config.js",
+    //"**/next.config.js",
     "**/postcss.config.js",
     "**/tailwind.config.js",
     "**/.env"
