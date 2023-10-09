@@ -10,6 +10,7 @@ import {
 import { AsyncResults } from "../utils/async-results.js";
 import { collectAsyncResults } from "../utils/async-results.js";
 import { randomUUID } from "node:crypto";
+import { logger } from "../utils/logger.js";
 
 export type EventGrouperFn<T> = (event: IncompleteEvent) => T;
 export type GroupObjToStrFn<T> = (group: T) => string;
@@ -75,7 +76,7 @@ export class EventGroupRecorder<T> implements IEventGroupRecorder<T> {
   }
 
   private commitId(id: string): void {
-    console.log(`commiting group ${id}`);
+    logger.debug(`commiting group ${id}`);
     const recordHandles = this.groupRecordHandles[id] || [];
     const handlesAsPromises = recordHandles.map((r) => r.wait());
     collectAsyncResults(handlesAsPromises)

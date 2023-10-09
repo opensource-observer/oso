@@ -532,7 +532,7 @@ export class BaseScheduler implements IScheduler {
       );
     } catch (err) {
       if (err instanceof JobAlreadyQueued) {
-        console.log(
+        logger.info(
           `job for ${collectorName} already queued at ${baseTime.toISO()}`,
         );
         return;

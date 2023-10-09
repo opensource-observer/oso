@@ -312,7 +312,7 @@ export class BatchEventRecorder implements IEventRecorder {
           clearTimeout(timeout);
           resolve();
         } else {
-          console.log("queue full. blocking");
+          logger.debug("recorder queue full. applying backpressure");
           this.emitter.once("flush", checkQueue);
         }
       };
@@ -682,7 +682,7 @@ export class BatchEventRecorder implements IEventRecorder {
             `completed writing batch of ${result.identifiers.length}`,
           );
         } catch (err) {
-          console.log("encountered an error writing to the database");
+          logger.error("encountered an error writing to the database");
           if (err instanceof QueryFailedError) {
             if (err.message.indexOf("duplicate") !== -1) {
               logger.debug("attempted to insert a duplicate event. skipping");
