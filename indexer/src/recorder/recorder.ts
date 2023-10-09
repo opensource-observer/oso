@@ -13,6 +13,7 @@ import {
   IncompleteArtifact,
   RecorderError,
   EventRecorderOptions,
+  RecordHandle,
 } from "./types.js";
 import {
   In,
@@ -103,7 +104,9 @@ class EventTypeStorage<T> {
 
 const defaultBatchEventRecorderOptions: BatchEventRecorderOptions = {
   maxBatchSize: 5000,
-  // ten minute timeout seems sane for completing any db writes
+
+  // ten minute timeout seems sane for completing any db writes (in a normal
+  // case). When backfilling this should be made much bigger.
   timeoutMs: 600000,
 };
 
@@ -249,13 +252,14 @@ export class BatchEventRecorder implements IEventRecorder {
   private emitter: EventEmitter;
   private closing: boolean;
   private recorderOptions: EventRecorderOptions;
+  private queueSize: number;
   private lastActorUpdatedAt: DateTime;
 
   constructor(
     eventRepository: typeof EventRepository,
     artifactRepository: Repository<Artifact>,
     flusher: IFlusher,
-    options?: BatchEventRecorderOptions,
+    options?: Partial<BatchEventRecorderOptions>,
   ) {
     this.eventRepository = eventRepository;
     this.artifactRepository = artifactRepository;
@@ -267,6 +271,7 @@ export class BatchEventRecorder implements IEventRecorder {
     this.types = [];
     this.actorsLoaded = false;
     this.flusher = flusher;
+    this.queueSize = 0;
     this.pubsub = new PromisePubSub({
       timeoutMs: this.options.timeoutMs,
     });
@@ -293,6 +298,30 @@ export class BatchEventRecorder implements IEventRecorder {
         this.emitter.emit("error", err);
       }
     });
+  }
+
+  private async waitTillAvailable(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        reject(new Error("timed out waiting for recorder to become available"));
+      }, this.options.timeoutMs);
+
+      const checkQueue = () => {
+        // Start event waiting loop for flushes
+        if (!this.isQueueFull()) {
+          clearTimeout(timeout);
+          resolve();
+        } else {
+          logger.debug("recorder queue full. applying backpressure");
+          this.emitter.once("flush", checkQueue);
+        }
+      };
+      checkQueue();
+    });
+  }
+
+  private isQueueFull() {
+    return this.queueSize >= this.options.maxBatchSize;
   }
 
   setActorScope(namespaces: ArtifactNamespace[], types: ArtifactType[]) {
@@ -433,17 +462,26 @@ export class BatchEventRecorder implements IEventRecorder {
     this.eventTypeStrategies[eventType.toString()] = strategy;
   }
 
-  record(event: IncompleteEvent): Promise<RecordResponse> {
+  async record(event: IncompleteEvent): Promise<RecordHandle> {
     if (this.closing) {
       throw new RecorderError("recorder is closing. should be more writes");
     }
+
+    await this.waitTillAvailable();
+
     // Queue an event for writing
     const queue = this.getEventTypeStorage(event.type);
     const promise = queue.pushAndWait(event);
+    this.queueSize += 1;
 
     // Upon the first "record" begin the flush sequence
     this.scheduleFlush(1);
-    return promise;
+
+    return {
+      wait: () => {
+        return promise;
+      },
+    };
   }
 
   addListener(listener: string, callback: (...args: any) => void) {
@@ -477,6 +515,7 @@ export class BatchEventRecorder implements IEventRecorder {
         this.emitter.emit("error", err);
       }
     }
+    this.queueSize = 0;
   }
 
   async close(): Promise<void> {
@@ -643,7 +682,7 @@ export class BatchEventRecorder implements IEventRecorder {
             `completed writing batch of ${result.identifiers.length}`,
           );
         } catch (err) {
-          console.log("encountered an error writing to the database");
+          logger.error("encountered an error writing to the database");
           if (err instanceof QueryFailedError) {
             if (err.message.indexOf("duplicate") !== -1) {
               logger.debug("attempted to insert a duplicate event. skipping");
@@ -656,26 +695,30 @@ export class BatchEventRecorder implements IEventRecorder {
     );
 
     // Update any events
-    await asyncBatch(updateEvents, 100, async (batch, batchLength) => {
-      logger.info(`preparing to update a batch of ${batchLength} events`);
-      const events = await this.createEventsFromIncomplete(batch);
+    await asyncBatch(
+      updateEvents,
+      this.options.maxBatchSize,
+      async (batch, batchLength) => {
+        logger.info(`preparing to update a batch of ${batchLength} events`);
+        const events = await this.createEventsFromIncomplete(batch);
 
-      try {
-        await this.eventRepository.bulkUpdateBySourceIDAndType(events);
-        this.notifySuccess(eventTypeStorage, events);
-      } catch (err) {
-        console.log("encountered an error updating to the database");
-        if (err instanceof QueryFailedError) {
-          if (err.message.indexOf("duplicate") !== -1) {
-            logger.debug(
-              "attempted to update but have duplicated event. skipping",
-            );
+        try {
+          await this.eventRepository.bulkUpdateBySourceIDAndType(events);
+          this.notifySuccess(eventTypeStorage, events);
+        } catch (err) {
+          logger.error("encountered an error updating to the database");
+          if (err instanceof QueryFailedError) {
+            if (err.message.indexOf("duplicate") !== -1) {
+              logger.error(
+                "attempted to update but have duplicated event. skipping",
+              );
+            }
           }
+          this.notifyFailure(eventTypeStorage, events);
+          this.emitter.emit("error", err);
         }
-        this.notifyFailure(eventTypeStorage, events);
-        this.emitter.emit("error", err);
-      }
-    });
+      },
+    );
     logger.info(`finished flushing for ${eventType}`);
   }
 

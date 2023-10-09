@@ -15,7 +15,7 @@ import { Range } from "../../../utils/ranges.js";
 import { GenericError } from "../../../common/errors.js";
 import { IEventRecorder } from "../../../recorder/types.js";
 import { TimeSeriesCacheWrapper } from "../../../cacher/time-series.js";
-import { RequestDocument, Variables } from "graphql-request";
+import { ClientError, RequestDocument, Variables } from "graphql-request";
 import { graphQLClient } from "../../../events/github/graphQLClient.js";
 import { DateTime } from "luxon";
 import { logger } from "../../../utils/logger.js";
@@ -23,6 +23,7 @@ import {
   ProjectArtifactGroup,
   ProjectArtifactsCollector,
 } from "../../../scheduler/common.js";
+import { Mutex } from "async-mutex";
 
 export class IncompleteRepoName extends GenericError {}
 export type GithubRepoLocator = { owner: string; repo: string };
@@ -76,6 +77,7 @@ export class GithubByProjectBaseCollector extends ProjectArtifactsCollector {
   protected cache: TimeSeriesCacheWrapper;
   protected options: GithubBaseCollectorOptions;
   protected resetTime: DateTime | null;
+  private requestMutex: Mutex;
 
   constructor(
     projectRepository: Repository<Project>,
@@ -90,6 +92,7 @@ export class GithubByProjectBaseCollector extends ProjectArtifactsCollector {
 
     this.options = options;
     this.resetTime = null;
+    this.requestMutex = new Mutex();
   }
 
   async *groupedArtifacts(): AsyncGenerator<IArtifactGroup<Project>> {
@@ -140,29 +143,50 @@ export class GithubByProjectBaseCollector extends ProjectArtifactsCollector {
 
   protected async rateLimitedGraphQLRequest<
     R extends GithubGraphQLResponse<object>,
-  >(query: RequestDocument, variables: Variables) {
-    if (this.resetTime) {
-      const now = DateTime.now();
-      const diffMs = this.resetTime.toMillis() - now.toMillis();
-      if (diffMs > 0) {
-        if (diffMs > 200) {
-          logger.debug(
-            `encountered rate limit on github. waiting for ${diffMs}ms`,
-          );
+  >(query: RequestDocument, variables: Variables): Promise<R> {
+    for (let i = 0; i < 10; i++) {
+      if (this.resetTime) {
+        const now = DateTime.now();
+        const diffMs = this.resetTime.toMillis() - now.toMillis();
+        if (diffMs > 0) {
+          if (diffMs > 200) {
+            logger.debug(
+              `encountered rate limit on github. waiting for ${diffMs}ms`,
+            );
+          }
+          await sleep(diffMs);
         }
-        await sleep(diffMs);
+      }
+
+      const release = await this.requestMutex.acquire();
+      // Hacky retry loop for 5XX errors
+      try {
+        const response = await graphQLClient.request<R>(query, variables);
+        const rateLimit = response.rateLimit;
+        if (
+          rateLimit.remaining == 0 ||
+          rateLimit.remaining - rateLimit.cost <= 0
+        ) {
+          this.resetTime = DateTime.fromISO(rateLimit.resetAt);
+        } else {
+          // Artificially rate limit to 5reqs/second
+          this.resetTime = DateTime.now().plus(500);
+        }
+        release();
+        return response;
+      } catch (err) {
+        release();
+        if (err instanceof ClientError) {
+          // Retry up
+          if (err.response.status >= 500 && err.response.status < 600) {
+            logger.error("hit a github 500 error. waiting for some period");
+            this.resetTime = DateTime.now().plus({ milliseconds: 5000 });
+            continue;
+          }
+        }
+        throw err;
       }
     }
-
-    const response = await graphQLClient.request<R>(query, variables);
-    const rateLimit = response.rateLimit;
-
-    if (rateLimit.remaining == 0 || rateLimit.remaining - rateLimit.cost <= 0) {
-      this.resetTime = DateTime.fromISO(rateLimit.resetAt);
-    } else {
-      // Artificially rate limit to 5reqs/second
-      this.resetTime = DateTime.now().plus(200);
-    }
-    return response;
+    throw new Error("too many retries for graphql request");
   }
 }

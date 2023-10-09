@@ -11,6 +11,7 @@ import {
   IEventGroupRecorder,
   IEventRecorder,
   IEventTypeStrategy,
+  RecordHandle,
   RecordResponse,
 } from "../recorder/types.js";
 import {
@@ -58,7 +59,7 @@ type ArtifactCommitterFn = (results: AsyncResults<RecordResponse>) => void;
 
 export interface IArtifactCommitter {
   withResults(results: AsyncResults<RecordResponse>): void;
-  withPromises(promises: Promise<RecordResponse>[]): void;
+  withHandles(handles: RecordHandle[]): void;
   withNone(): void;
 }
 
@@ -73,8 +74,9 @@ class ArtifactCommitter implements IArtifactCommitter {
     this.cb = cb;
   }
 
-  withPromises(promises: Promise<RecordResponse>[]): void {
-    collectAsyncResults(promises)
+  withHandles(handles: RecordHandle[]): void {
+    const handlesAsPromises = handles.map((h) => h.wait());
+    collectAsyncResults(handlesAsPromises)
       .then((results) => {
         this.withResults(results);
       })
@@ -530,7 +532,7 @@ export class BaseScheduler implements IScheduler {
       );
     } catch (err) {
       if (err instanceof JobAlreadyQueued) {
-        console.log(
+        logger.info(
           `job for ${collectorName} already queued at ${baseTime.toISO()}`,
         );
         return;

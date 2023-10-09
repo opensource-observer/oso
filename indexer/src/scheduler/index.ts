@@ -39,6 +39,7 @@ import { JobExecutionRepository, JobsRepository } from "../db/jobs.js";
 import { NpmDownloadCollector } from "../events/npm.js";
 
 export type SchedulerArgs = CommonArgs & {
+  recorderTimeoutMs: number;
   overwriteExistingEvents: boolean;
   batchSize: number;
 };
@@ -72,6 +73,9 @@ export async function configure(args: SchedulerArgs) {
     EventRepository,
     ArtifactRepository,
     flusher,
+    {
+      timeoutMs: args.recorderTimeoutMs,
+    },
   );
   recorder.setOptions({
     overwriteExistingEvents: args.overwriteExistingEvents,

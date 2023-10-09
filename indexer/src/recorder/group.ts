@@ -3,13 +3,14 @@ import {
   IEventRecorder,
   IEventGroupRecorder,
   IncompleteEvent,
-  RecordResponse,
   EventGroupRecorderCallback,
   IncompleteArtifact,
+  RecordHandle,
 } from "./types.js";
 import { AsyncResults } from "../utils/async-results.js";
 import { collectAsyncResults } from "../utils/async-results.js";
 import { randomUUID } from "node:crypto";
+import { logger } from "../utils/logger.js";
 
 export type EventGrouperFn<T> = (event: IncompleteEvent) => T;
 export type GroupObjToStrFn<T> = (group: T) => string;
@@ -19,7 +20,7 @@ export type GroupObjToStrFn<T> = (group: T) => string;
  * (usually artifacts)
  */
 export class EventGroupRecorder<T> implements IEventGroupRecorder<T> {
-  private groupRecordPromises: Record<string, Promise<RecordResponse>[]>;
+  private groupRecordHandles: Record<string, RecordHandle[]>;
   private grouperFn: EventGrouperFn<T>;
   private groupToStrFn: GroupObjToStrFn<T>;
   private emitter: EventEmitter;
@@ -33,7 +34,7 @@ export class EventGroupRecorder<T> implements IEventGroupRecorder<T> {
     grouperFn: EventGrouperFn<T>,
     groupObjToStrFn: GroupObjToStrFn<T>,
   ) {
-    this.groupRecordPromises = {};
+    this.groupRecordHandles = {};
     this.grouperFn = grouperFn;
     this.groupToStrFn = groupObjToStrFn;
     this.emitter = new EventEmitter();
@@ -68,16 +69,17 @@ export class EventGroupRecorder<T> implements IEventGroupRecorder<T> {
     });
   }
 
-  record(event: IncompleteEvent): void {
+  async record(event: IncompleteEvent): Promise<void> {
     const group = this.grouperFn(event);
-    const promises = this.getGroupRecordPromises(group);
-    promises.push(this.recorder.record(event));
+    const promises = this.getGroupRecordHandles(group);
+    promises.push(await this.recorder.record(event));
   }
 
   private commitId(id: string): void {
-    console.log(`commiting group ${id}`);
-    const promises = this.groupRecordPromises[id] || [];
-    collectAsyncResults(promises)
+    logger.debug(`commiting group ${id}`);
+    const recordHandles = this.groupRecordHandles[id] || [];
+    const handlesAsPromises = recordHandles.map((r) => r.wait());
+    collectAsyncResults(handlesAsPromises)
       .then((result) => {
         this.emitter.emit(id, result);
       })
@@ -91,12 +93,12 @@ export class EventGroupRecorder<T> implements IEventGroupRecorder<T> {
       });
   }
 
-  private getGroupRecordPromises(group: T): Promise<RecordResponse>[] {
+  private getGroupRecordHandles(group: T): RecordHandle[] {
     const id = this.groupToStrFn(group);
-    if (!this.groupRecordPromises[id]) {
-      this.groupRecordPromises[id] = [];
+    if (!this.groupRecordHandles[id]) {
+      this.groupRecordHandles[id] = [];
     }
-    return this.groupRecordPromises[id];
+    return this.groupRecordHandles[id];
   }
 
   private addGroupCallback(

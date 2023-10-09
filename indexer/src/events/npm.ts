@@ -22,7 +22,7 @@ import {
   TimeSeriesCacheWrapper,
 } from "../cacher/time-series.js";
 import { In, Repository } from "typeorm";
-import { IEventRecorder, RecordResponse } from "../recorder/types.js";
+import { IEventRecorder, RecordHandle } from "../recorder/types.js";
 import { DateTime } from "luxon";
 import { generateSourceIdFromArray } from "../utils/source-ids.js";
 
@@ -99,13 +99,13 @@ export class NpmDownloadCollector extends ProjectArtifactsCollector {
         };
       },
     );
-    const recordPromises: Promise<RecordResponse>[] = [];
+    const recordHandle: RecordHandle[] = [];
 
     for await (const page of response) {
       const days = page.raw;
       for (const download of days) {
-        recordPromises.push(
-          this.recorder.record({
+        recordHandle.push(
+          await this.recorder.record({
             time: DateTime.fromISO(download.day),
             type: EventType.DOWNLOADS,
             to: npmPackage,
@@ -119,7 +119,7 @@ export class NpmDownloadCollector extends ProjectArtifactsCollector {
         );
       }
     }
-    committer.commit(npmPackage).withPromises(recordPromises);
+    committer.commit(npmPackage).withHandles(recordHandle);
   }
 }
 

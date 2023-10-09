@@ -5,10 +5,8 @@ import {
   Artifact,
   ArtifactNamespace,
   ArtifactType,
-  Event,
   EventType,
 } from "./orm-entities.js";
-import { DeepPartial } from "typeorm";
 
 withDbDescribe("EventRepository", () => {
   let artifact0: Artifact;
@@ -35,7 +33,7 @@ withDbDescribe("EventRepository", () => {
 
   it("should update the events based on sourceId", async () => {
     // Setup some events
-    const createPartials: DeepPartial<Event>[] = [
+    const createPartials: BulkUpdateBySourceIDEvent[] = [
       {
         time: new Date(),
         sourceId: "0",

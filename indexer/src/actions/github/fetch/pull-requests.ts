@@ -430,8 +430,33 @@ export class GithubIssueCollector extends GithubByProjectBaseCollector {
   ) {
     const project = await group.meta();
     const artifacts = await group.artifacts();
-    const groupRecorder = new ArtifactGroupRecorder(this.recorder);
 
+    const groupRecorder = new ArtifactGroupRecorder(this.recorder);
+    try {
+      await this.collectEventsForRepos(
+        groupRecorder,
+        project,
+        artifacts,
+        range,
+        committer,
+      );
+      committer.commitGroup(groupRecorder);
+    } catch (err) {
+      committer.failAll(err);
+    }
+
+    logger.debug(
+      `completed issue collection for repos of Project[${project.slug}]`,
+    );
+  }
+
+  private async collectEventsForRepos(
+    groupRecorder: IEventGroupRecorder<Artifact>,
+    project: Project,
+    artifacts: Artifact[],
+    range: Range,
+    committer: IArtifactGroupCommitmentProducer,
+  ) {
     const locators = artifacts
       .map((a) => {
         try {
@@ -527,11 +552,6 @@ export class GithubIssueCollector extends GithubByProjectBaseCollector {
         }
       }
     }
-    committer.commitGroup(groupRecorder);
-
-    logger.debug(
-      `completed issue collection for repos of Project[${project.slug}]`,
-    );
   }
 
   private async collectEventsForIssue(
@@ -578,7 +598,7 @@ export class GithubIssueCollector extends GithubByProjectBaseCollector {
     };
 
     // Record creation
-    groupRecorder.record(creationEvent);
+    await groupRecorder.record(creationEvent);
 
     // Record merging of a pull request
     if (issue.mergedAt) {
@@ -586,7 +606,7 @@ export class GithubIssueCollector extends GithubByProjectBaseCollector {
 
       const mergedBy = issue.mergedBy !== null ? issue.mergedBy.login : "";
 
-      groupRecorder.record({
+      await groupRecorder.record({
         time: mergedTime,
         type: this.getEventType("MergedEvent", issue.__typename),
         to: artifact,
@@ -686,10 +706,12 @@ export class GithubIssueCollector extends GithubByProjectBaseCollector {
     if (issue.reviews.pageInfo.hasNextPage) {
       logger.debug("need to load more reviews");
       for await (const review of this.loadReviews(issue.id)) {
-        recordReview(review);
+        await recordReview(review);
       }
     } else {
-      issue.reviews.edges.forEach((n) => recordReview(n.node));
+      for (const edge of issue.reviews.edges) {
+        await recordReview(edge.node);
+      }
     }
   }
 
@@ -729,10 +751,12 @@ export class GithubIssueCollector extends GithubByProjectBaseCollector {
     if (issue.openCloseEvents.pageInfo.hasNextPage) {
       logger.debug("need to load more open/close events");
       for await (const event of this.loadIssueTimeline(issue.id)) {
-        recordOpenCloseEvent(event);
+        await recordOpenCloseEvent(event);
       }
     } else {
-      issue.openCloseEvents.edges.forEach((n) => recordOpenCloseEvent(n.node));
+      for (const edge of issue.openCloseEvents.edges) {
+        await recordOpenCloseEvent(edge.node);
+      }
     }
   }
 }
