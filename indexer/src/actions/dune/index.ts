@@ -195,7 +195,7 @@ export class DailyContractUsageCollector implements ICollector {
           await Promise.all(eventPromises);
           logger.debug(`events for ${contract.name} recorded`);
 
-          committer.commit(contract);
+          committer.commit(contract).withPromises(eventPromises);
         },
       );
 

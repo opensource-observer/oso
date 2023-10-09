@@ -13,7 +13,6 @@ import {
   Project,
 } from "../../db/orm-entities.js";
 import {
-  IEventGroupRecorder,
   IEventRecorder,
   IncompleteArtifact,
   IncompleteEvent,
@@ -52,7 +51,6 @@ export class FundingEventsCollector implements ICollector {
   private projectRepository: typeof ProjectRepository;
   private cache: TimeSeriesCacheWrapper;
   private options: FundingEventsCollectorOptions;
-  private groupRecorder: IEventGroupRecorder<Artifact>;
 
   constructor(
     client: IFundingEventsClient,
@@ -66,7 +64,6 @@ export class FundingEventsCollector implements ICollector {
     this.recorder = recorder;
     this.options = _.merge(DefaultFundingEventsCollectorOptions, options);
     this.cache = cache;
-    this.groupRecorder = new ArtifactGroupRecorder(recorder);
   }
 
   async *groupedArtifacts(): AsyncGenerator<IArtifactGroup<Project>> {
@@ -91,6 +88,7 @@ export class FundingEventsCollector implements ICollector {
   ): Promise<void> {
     logger.debug("running funding events collector");
     const artifacts = await group.artifacts();
+    const groupRecorder = new ArtifactGroupRecorder(this.recorder);
     // Super pragmatic hack for now to create the funding addresses. Let's just make them now
     const fundingAddressesRaw: Array<[string, string, string, string]> = [
       [
@@ -275,10 +273,10 @@ export class FundingEventsCollector implements ICollector {
           },
         };
 
-        this.groupRecorder.record(event);
+        groupRecorder.record(event);
       }
     }
 
-    committer.commitGroup(this.groupRecorder);
+    committer.commitGroup(groupRecorder);
   }
 }
