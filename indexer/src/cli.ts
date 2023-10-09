@@ -10,7 +10,7 @@ import {
   ImportOssDirectoryArgs,
   importOssDirectory,
 } from "./actions/oss-directory.js";
-import { AppDataSource, initializeDataSource } from "./db/data-source.js";
+import { initializeDataSource } from "./db/data-source.js";
 // import {
 //   importDailyContractUsage,
 // } from "./actions/dune/index.js";
