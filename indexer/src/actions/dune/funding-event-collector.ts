@@ -273,7 +273,7 @@ export class FundingEventsCollector implements ICollector {
           },
         };
 
-        groupRecorder.record(event);
+        await groupRecorder.record(event);
       }
     }
 
