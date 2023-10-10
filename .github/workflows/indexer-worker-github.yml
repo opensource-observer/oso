@@ -6,6 +6,7 @@ name: os-observer-indexer-worker-github
 
 # Trigger the workflow when:
 on:
+  workflow_dispatch:
   # Allows you to run this workflow manually from the Actions tab
   schedule:
     # Schedule every 15 minutes
