@@ -13,6 +13,14 @@ on:
 
 jobs:
   collector-worker-call-github:
-    uses: opensource-observer/oso/.github/workflows/indexer-worker.yml@main
-    with:
-      group: github
+    name: collector-worker-run-github
+    environment: indexer
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      
+    steps:
+      - name: Run the reusable workflow
+        uses: ./indexer-workflow.yml
+        with:
+          group: github
