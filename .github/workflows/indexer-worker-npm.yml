@@ -2,7 +2,7 @@
 # THESE SHOULD BE SPAWNED INSIDE THE SCHEDULER FROM WITHIN NODE
 
 # Execute the worker for a specific group
-name: os-observer-indexer-worker-github
+name: os-observer-indexer-worker-npm
 
 # Trigger the workflow when:
 on:
@@ -12,7 +12,7 @@ on:
     - cron: '*/15 * * * *'
 
 jobs:
-  collector-worker-call-github:
+  collector-worker-call-npm:
     uses: opensource-observer/oso/.github/workflows/indexer-worker.yml@main
     with:
-      group: github
+      group: npm
