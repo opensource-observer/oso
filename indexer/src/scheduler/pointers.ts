@@ -1,5 +1,5 @@
 import { Artifact, EventPointer } from "../db/orm-entities.js";
-import { Range, rangeFromDates, rangeToString } from "../utils/ranges.js";
+import { Range } from "../utils/ranges.js";
 import { asyncBatch } from "../utils/array.js";
 import _ from "lodash";
 import { EventPointerRepository } from "../db/events.js";
@@ -101,9 +101,6 @@ export class EventPointerManager implements IEventPointerManager {
       false,
     );
 
-    console.log(`intersecting with ${rangeToString(range)}`);
-    console.log(intersectingPointers);
-
     const rangeStart = range.startDate.toJSDate();
     const rangeEnd = range.endDate.toJSDate();
 
@@ -130,19 +127,6 @@ export class EventPointerManager implements IEventPointerManager {
         (a, b) => b.endDate.getTime() - a.endDate.getTime(),
       );
 
-      console.log("by start");
-      console.log(
-        byStartDate.map((a) =>
-          rangeToString(rangeFromDates(a.startDate, a.endDate)),
-        ),
-      );
-      console.log("by end");
-      console.log(
-        byEndDate.map((a) =>
-          rangeToString(rangeFromDates(a.startDate, a.endDate)),
-        ),
-      );
-
       const startDate =
         byStartDate[0].startDate.getTime() < rangeStart.getTime()
           ? byStartDate[0].startDate
@@ -151,8 +135,6 @@ export class EventPointerManager implements IEventPointerManager {
         byEndDate[0].endDate.getTime() > rangeEnd.getTime()
           ? byEndDate[0].endDate
           : rangeEnd;
-
-      console.log(`computed range: ${startDate}-${endDate}`);
 
       // Merge all of the pointers (arbitrarily choose the first and delete the others)
       return this.dataSource.transaction(async (manager) => {
