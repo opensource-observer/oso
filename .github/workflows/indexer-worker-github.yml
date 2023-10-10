@@ -27,6 +27,6 @@ jobs:
           fetch-depth: 1
 
       - name: Run the reusable workflow
-        uses: ./.github/workflows/indexer-worker.yml
+        uses: ../.github/workflows/indexer-worker.yml
         with:
           group: github
