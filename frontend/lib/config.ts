@@ -1,3 +1,13 @@
+import dotenv from "dotenv";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const envPath = path.resolve(__dirname, "../.env.local");
+dotenv.config();
+dotenv.config({ path: envPath, override: true });
+
 export const requireEnv = (value: string | undefined, identifier: string) => {
   if (!value) {
     throw new Error(`Required env var ${identifier} does not exist`);
