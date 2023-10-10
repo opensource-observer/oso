@@ -13,7 +13,14 @@ on:
 
 jobs:
   collector-worker-call-npm:
-    uses: opensource-observer/oso/.github/workflows/indexer-worker.yml@main
-    with:
-      group: npm
-    secrets: inherit
+    name: collector-worker-run-npm
+    environment: indexer
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      
+    steps:
+      - name: Run the reusable workflow
+        uses: opensource-observer/oso/.github/workflows/indexer-worker.yml@main
+        with:
+          group: npm
