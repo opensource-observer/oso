@@ -3,9 +3,22 @@
 
 # Execute the worker for a specific group
 name: os-observer-indexer-worker-github
+env:
+  DB_HOST: ${{ vars.DB_HOST }}
+  DB_PORT: ${{ vars.DB_PORT }}
+  DB_USER: ${{ vars.DB_USER }}
+  DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+  DB_DATABASE: ${{ vars.DB_DATABASE }}
+  X_GITHUB_GRAPHQL_API: ${{ vars.X_GITHUB_GRAPHQL_API }}
+  X_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  DUNE_API_KEY: ${{ secrets.DUNE_API_KEY }}
+  CACHE_DIR: /tmp/oso/cache
+  RUN_DIR: /tmp/oso/run
+  LOG_FILE: /tmp/oso/log/run.log
 
 # Trigger the workflow when:
 on:
+  workflow_dispatch:
   # Allows you to run this workflow manually from the Actions tab
   schedule:
     # Schedule every 15 minutes
@@ -25,7 +38,10 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: Run the reusable workflow
-        uses: ./.github/workflows/indexer-worker.yml
+      - name: Run worker
+        uses: ./.github/workflows/indexer-worker
         with:
           group: github
+          github_actor: ${{ github.actor }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+        

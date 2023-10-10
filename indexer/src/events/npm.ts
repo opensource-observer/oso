@@ -156,7 +156,12 @@ async function getDailyDownloads(
   } catch (e) {
     const err = e as { statusCode?: number; body?: { error?: string } };
     logger.warn("Error fetching from NPM API: ", err);
+    if (err.statusCode == 404) {
+      logger.error(`${name} project cannot be found. skipping`);
+      return [];
+    }
     if (err.statusCode && err.body) {
+      // suppress 404's for now but we should like collect some kinds of warnings for data that is missing
       if (
         err.statusCode == 400 &&
         err.body.error?.indexOf("end date > start date") !== -1
