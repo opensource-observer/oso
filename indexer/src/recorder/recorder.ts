@@ -688,7 +688,7 @@ export class BatchEventRecorder implements IEventRecorder {
               logger.debug("attempted to insert a duplicate event. skipping");
             }
           }
-          this.notifyFailure(eventTypeStorage, events);
+          this.notifyFailure(eventTypeStorage, events, err);
           this.emitter.emit("error", err);
         }
       },
@@ -707,6 +707,7 @@ export class BatchEventRecorder implements IEventRecorder {
           this.notifySuccess(eventTypeStorage, events);
         } catch (err) {
           logger.error("encountered an error updating to the database");
+          logger.error(err);
           if (err instanceof QueryFailedError) {
             if (err.message.indexOf("duplicate") !== -1) {
               logger.error(
@@ -714,7 +715,7 @@ export class BatchEventRecorder implements IEventRecorder {
               );
             }
           }
-          this.notifyFailure(eventTypeStorage, events);
+          this.notifyFailure(eventTypeStorage, events, err);
           this.emitter.emit("error", err);
         }
       },
@@ -738,10 +739,11 @@ export class BatchEventRecorder implements IEventRecorder {
   protected notifyFailure(
     eventTypeStorage: EventTypeStorage<RecordResponse>,
     events: Event[],
+    err: unknown,
   ) {
     events.forEach((e) => {
       // Notify any subscribers that the event has failed to record
-      eventTypeStorage.emitResponse(e.sourceId, e, "");
+      eventTypeStorage.emitResponse(e.sourceId, err, "");
     });
   }
 

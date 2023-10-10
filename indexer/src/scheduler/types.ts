@@ -373,7 +373,7 @@ export class ArtifactRecordsCommitmentWrapper
   commitGroup(group: IEventGroupRecorder<Artifact>): void {
     // Listen for errors in the group
     const errorListener = (err: unknown) => {
-      logger.error("cauth error committing a group");
+      logger.error("caught error committing a group");
       this.emitter.emit("error", err);
     };
     group.addListener("error", errorListener);

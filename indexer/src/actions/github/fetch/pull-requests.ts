@@ -545,10 +545,14 @@ export class GithubIssueCollector extends GithubByProjectBaseCollector {
     for await (const page of pages) {
       const edges = page.raw;
       for (const edge of edges) {
+        // Stop processing if we've reached the end
         try {
           await this.collectEventsForIssue(groupRecorder, artifacts, edge.node);
         } catch (err) {
           errors.push(err);
+        }
+        if (DateTime.fromISO(edge.node.updatedAt) < range.startDate) {
+          return;
         }
       }
     }
