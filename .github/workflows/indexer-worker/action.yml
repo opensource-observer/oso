@@ -1,0 +1,83 @@
+# Generic worker executor. This is callable for use with cron scheduling.
+
+# Execute the worker for a specific group
+name: os-observer-indexer-worker
+
+inputs:
+  github_actor:
+    description: 'Used for ghcr.io login'
+    required: true
+  github_token:
+    description: 'The password for ghcr.io'
+    required: true
+  group:
+    description: 'The group to execute'
+    required: true
+  log_file:
+    description: 'The destination for the log file'
+    required: false
+    default: /tmp/oso/logs/run.log
+
+runs:
+  using: "composite"
+  steps:
+    - name: Setup environment
+      shell: bash
+      run: echo "CACHE_PREFIX=${{ inputs.group }}" >> $GITHUB_ENV
+
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v2
+      with:
+        version: 8
+        run_install: |
+          - recursive: true
+            args: [--frozen-lockfile, --strict-peer-dependencies]
+
+    - name: Set up Node.js 18
+      uses: actions/setup-node@v3
+      with:
+        cache: "pnpm"
+        node-version: "18.x"
+
+    - name: Build
+      shell: bash
+      run: pnpm build:indexer
+
+    - name: 'Login to GitHub Container Registry'
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ inputs.github_actor }}
+        password: ${{ inputs.github_token }}
+
+    - name: Load docker persistent cache
+      shell: bash
+      run: ./.github/scripts/load-cache.sh
+
+    - name: Test cache loaded
+      shell: bash
+      run: ls -halt ${CACHE_DIR}
+
+    - name: Ensure log directory
+      shell: bash
+      run: mkdir -p "$(dirname $LOG_FILE)"
+
+    - name: Run worker for the given group
+      shell: bash
+      run: bash .github/scripts/scheduler.sh worker ${{ inputs.group }}
+
+    - uses: actions/upload-artifact@v3
+      with:
+        name: worker-log
+        path: ${{ inputs.log_file }}
+      if: always()
+
+    - name: Close job execution if it exists
+      shell: bash
+      run: pnpm start:indexer --cache-dir ${CACHE_DIR} --run-dir ${RUN_DIR} scheduler job clean-lock
+      if: always()
+
+    - name: Write to cache if needed
+      shell: bash
+      run: ./.github/scripts/write-cache.sh
+      if: always()
