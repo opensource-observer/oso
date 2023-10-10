@@ -5,9 +5,11 @@
   "license": "Apache-2.0",
   "private": true,
   "scripts": {
-    "build": "next build",
+    "build": "pnpm graphql:compile && next build",
     "deploy": "pnpm build",
-    "dev": "next",
+    "dev": "pnpm graphql:watch && next",
+    "graphql:compile": "graphql-codegen",
+    "graphql:watch": "graphql-codegen -w",
     "lint": "tsc --noEmit && next lint && pnpm lint:eslint && pnpm lint:prettier",
     "lint:eslint": "eslint --ignore-path ../.gitignore --ignore-path .gitignore --max-warnings 0 .",
     "lint:prettier": "prettier --ignore-path ../.gitignore --ignore-path .gitignore --log-level warn --check **/*.{js,jsx,ts,tsx,sol,md,json}",
@@ -31,6 +33,7 @@
     "add": "^2.0.6",
     "csstype": "^3.1.2",
     "dayjs": "^1.11.9",
+    "dotenv": "^16.3.1",
     "formik": "^2.4.3",
     "formik-mui": "5.0.0-alpha.0",
     "formik-mui-x-date-pickers": "^0.0.1",
@@ -48,6 +51,9 @@
     "yup": "^1.2.0"
   },
   "devDependencies": {
+    "@graphql-codegen/cli": "^5.0.0",
+    "@graphql-codegen/client-preset": "^4.1.0",
+    "@graphql-typed-document-node/core": "^3.2.0",
     "@testing-library/dom": "^9.3.1",
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^14.0.0",

@@ -1,6 +1,6 @@
-import { gql } from "@apollo/client";
+import { gql } from "../__generated__/gql";
 
-const GET_ARTIFACT_BY_NAME = gql`
+const GET_ARTIFACT_BY_NAME = gql(`
   query ArtifactByName($namespace: artifact_namespace_enum!, $name: String!) {
     artifact(where: { name: { _eq: $name }, namespace: { _eq: $namespace } }) {
       id
@@ -10,9 +10,9 @@ const GET_ARTIFACT_BY_NAME = gql`
       url
     }
   }
-`;
+`);
 
-const GET_PROJECT_BY_SLUG = gql`
+const GET_PROJECT_BY_SLUG = gql(`
   query ProjectBySlug($slug: String!) {
     project(where: { slug: { _eq: $slug } }) {
       id
@@ -22,6 +22,6 @@ const GET_PROJECT_BY_SLUG = gql`
       description
     }
   }
-`;
+`);
 
 export { GET_ARTIFACT_BY_NAME, GET_PROJECT_BY_SLUG };
