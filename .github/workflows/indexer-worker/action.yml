@@ -16,14 +16,16 @@ inputs:
   log_file:
     description: 'The destination for the log file'
     required: false
-    default: /tmp/oso/logs/run.log
+    default: /tmp/oso/log/run.log
 
 runs:
   using: "composite"
   steps:
     - name: Setup environment
       shell: bash
-      run: echo "CACHE_PREFIX=${{ inputs.group }}" >> $GITHUB_ENV
+      run: |
+        echo "CACHE_PREFIX=${{ inputs.group }}" >> $GITHUB_ENV
+        echo "LOG_FILE=${{ inputs.log_file }}" >> $GITHUB_ENV
 
     - name: Setup pnpm
       uses: pnpm/action-setup@v2

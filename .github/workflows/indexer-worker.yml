@@ -34,67 +34,21 @@ on:
         default: 'none'
 
 jobs:
-  collector-worker-run:
-    name: collector-worker-run
+  collector-worker-call-manual:
+    name: collector-worker-run-npm
     environment: indexer
     runs-on: ubuntu-latest
     permissions:
       packages: write
-    env:
-      CACHE_PREFIX: ${{ inputs.group }}
       
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+
+      - name: Run worker
+        uses: ./.github/workflows/indexer-worker
         with:
-          fetch-depth: 1
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: 8
-          run_install: |
-            - recursive: true
-              args: [--frozen-lockfile, --strict-peer-dependencies]
-
-      - name: Set up Node.js 18
-        uses: actions/setup-node@v3
-        with:
-          cache: "pnpm"
-          node-version: "18.x"
-
-      - name: Build
-        run: pnpm build:indexer
-
-      - name: 'Login to GitHub Container Registry'
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Load docker persistent cache
-        run: ./.github/scripts/load-cache.sh
-
-      - name: Test cache loaded
-        run: ls -halt ${CACHE_DIR}
-
-      - name: Ensure log directory
-        run: mkdir -p "$(dirname $LOG_FILE)"
-
-      - name: Run worker for the given group
-        run: bash .github/scripts/scheduler.sh worker ${{ inputs.group }}
-
-      - uses: actions/upload-artifact@v3
-        if: always()
-        with:
-          name: worker-log
-          path: ${{ env.LOG_FILE }}
-
-      - name: Close job execution if it exists
-        if: always()
-        run: pnpm start:indexer --cache-dir ${CACHE_DIR} --run-dir ${RUN_DIR} scheduler job clean-lock
-
-      - name: Write to cache if needed
-        if: always()
-        run: ./.github/scripts/write-cache.sh
-  
+          group: ${{ inputs.group }}
+          github_actor: ${{ github.actor }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+        
