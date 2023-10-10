@@ -1,3 +1,5 @@
+# Generic worker executor. This is callable for use with cron scheduling.
+
 # Execute the worker for a specific group
 name: os-observer-indexer-worker
 env:
@@ -20,6 +22,14 @@ on:
     inputs:
       group:
         description: 'group'
+        required: false
+        default: 'none'
+  # This workflow is reusable
+  workflow_call:
+    inputs:
+      group:
+        description: 'group'
+        type: string
         required: false
         default: 'none'
 
