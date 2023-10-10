@@ -20,8 +20,14 @@ const cachedGetArtifactByName = cache(
     if (error) {
       logger.error(error);
       return null;
+    } else if (
+      !data?.artifact ||
+      !Array.isArray(data.artifact) ||
+      data.artifact.length < 1
+    ) {
+      return null;
     }
-    return data;
+    return data.artifact[0];
   },
 );
 
@@ -36,8 +42,14 @@ const cachedGetProjectBySlug = cache(async (slug: string) => {
   if (error) {
     logger.error(error);
     return null;
+  } else if (
+    !data?.project ||
+    !Array.isArray(data.project) ||
+    data.project.length < 1
+  ) {
+    return null;
   }
-  return data;
+  return data.project[0];
 });
 
 export { cachedGetArtifactByName, cachedGetProjectBySlug };

@@ -1,8 +1,4 @@
 import { notFound } from "next/navigation";
-import {
-  ArtifactNamespace,
-  initializeDataSource,
-} from "@opensource-observer/indexer";
 import { PlasmicComponent } from "@plasmicapp/loader-nextjs";
 import { PLASMIC } from "../../../../plasmic-init";
 import { PlasmicClientRootProvider } from "../../../../plasmic-init-client";
@@ -12,7 +8,6 @@ import {
   catchallPathToString,
   pathToNamespaceEnum,
 } from "../../../../lib/paths";
-import { uncheckedCast } from "../../../../lib/common";
 
 // Using incremental static regeneration, will invalidate this page
 // after this (no deploy webhooks needed)
@@ -34,8 +29,7 @@ type ArtifactPageProps = {
 
 export default async function ArtifactPage(props: ArtifactPageProps) {
   const { params, searchParams } = props;
-  const namespaceSlug = uncheckedCast<ArtifactNamespace>(params.namespace);
-  const namespace = pathToNamespaceEnum(namespaceSlug);
+  const namespace = pathToNamespaceEnum(params.namespace);
   const name = catchallPathToString(params.name);
   if (
     !params.namespace ||
@@ -49,7 +43,6 @@ export default async function ArtifactPage(props: ArtifactPageProps) {
   }
 
   // Get artifact metadata from the database
-  await initializeDataSource();
   const artifact = await cachedGetArtifactByName(namespace, name);
   if (!artifact) {
     logger.warn(`Cannot find artifact (namespace=${namespace}, name=${name})`);
