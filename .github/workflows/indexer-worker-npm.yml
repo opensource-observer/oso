@@ -6,6 +6,7 @@ name: os-observer-indexer-worker-npm
 
 # Trigger the workflow when:
 on:
+  workflow_dispatch:
   # Allows you to run this workflow manually from the Actions tab
   schedule:
     # Schedule every 15 minutes
@@ -22,9 +23,11 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-          with:
-            fetch-depth: 1
+        with:
+          fetch-depth: 1
+
       - name: Run the reusable workflow
         uses: ./.github/workflows/indexer-worker.yml
         with:
           group: npm
+        
