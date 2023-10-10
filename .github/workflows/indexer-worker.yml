@@ -78,7 +78,7 @@ jobs:
         if: always()
         with:
           name: worker-log
-          path: /log/run.log
+          path: ${{ env.LOG_FILE }}
 
       - name: Close job execution if it exists
         if: always()
