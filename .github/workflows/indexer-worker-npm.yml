@@ -20,7 +20,11 @@ jobs:
       packages: write
       
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+          with:
+            fetch-depth: 1
       - name: Run the reusable workflow
-        uses: opensource-observer/oso/.github/workflows/indexer-worker.yml@main
+        uses: ./.github/workflows/indexer-worker.yml
         with:
           group: npm
