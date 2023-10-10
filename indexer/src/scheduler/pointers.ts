@@ -1,9 +1,15 @@
 import { Artifact, EventPointer } from "../db/orm-entities.js";
-import { Range } from "../utils/ranges.js";
+import { Range, rangeFromDates, rangeToString } from "../utils/ranges.js";
 import { asyncBatch } from "../utils/array.js";
 import _ from "lodash";
 import { EventPointerRepository } from "../db/events.js";
-import { DataSource, In, LessThan, MoreThanOrEqual } from "typeorm";
+import {
+  DataSource,
+  In,
+  LessThan,
+  LessThanOrEqual,
+  MoreThanOrEqual,
+} from "typeorm";
 import { logger } from "../utils/logger.js";
 
 type IEventPointerRepository = typeof EventPointerRepository;
@@ -51,7 +57,12 @@ export class EventPointerManager implements IEventPointerManager {
     collector: string,
     range: Range,
     artifacts: Artifact[],
+    inclusive: boolean = false,
   ): Promise<EventPointer[]> {
+    const startDateWhere = inclusive
+      ? LessThanOrEqual(range.endDate.toJSDate())
+      : LessThan(range.endDate.toJSDate());
+    const endDateWhere = MoreThanOrEqual(range.startDate.toJSDate());
     const batches = await asyncBatch(
       artifacts,
       this.options.batchSize,
@@ -66,8 +77,8 @@ export class EventPointerManager implements IEventPointerManager {
             artifact: {
               id: In(batch.map((a) => a.id)),
             },
-            startDate: LessThan(range.endDate.toJSDate()),
-            endDate: MoreThanOrEqual(range.startDate.toJSDate()),
+            startDate: startDateWhere,
+            endDate: endDateWhere,
           },
         });
       },
@@ -87,13 +98,20 @@ export class EventPointerManager implements IEventPointerManager {
       collector,
       range,
       [artifact],
+      false,
     );
+
+    console.log(`intersecting with ${rangeToString(range)}`);
+    console.log(intersectingPointers);
+
+    const rangeStart = range.startDate.toJSDate();
+    const rangeEnd = range.endDate.toJSDate();
 
     if (intersectingPointers.length === 0) {
       // Create a new pointer
       const pointer = this.eventPointerRepository.create({
-        startDate: range.startDate.toJSDate(),
-        endDate: range.endDate.toJSDate(),
+        startDate: rangeStart,
+        endDate: rangeEnd,
         collector: collector,
         artifact: { id: artifact.id },
         version: 0,
@@ -112,15 +130,29 @@ export class EventPointerManager implements IEventPointerManager {
         (a, b) => b.endDate.getTime() - a.endDate.getTime(),
       );
 
+      console.log("by start");
+      console.log(
+        byStartDate.map((a) =>
+          rangeToString(rangeFromDates(a.startDate, a.endDate)),
+        ),
+      );
+      console.log("by end");
+      console.log(
+        byEndDate.map((a) =>
+          rangeToString(rangeFromDates(a.startDate, a.endDate)),
+        ),
+      );
+
       const startDate =
-        byStartDate[0].startDate.getTime() <
-        range.startDate.toJSDate().getTime()
+        byStartDate[0].startDate.getTime() < rangeStart.getTime()
           ? byStartDate[0].startDate
-          : range.startDate.toJSDate();
+          : rangeStart;
       const endDate =
-        byEndDate[0].endDate.getTime() > range.endDate.toJSDate().getTime()
+        byEndDate[0].endDate.getTime() > rangeEnd.getTime()
           ? byEndDate[0].endDate
-          : range.endDate.toJSDate();
+          : rangeEnd;
+
+      console.log(`computed range: ${startDate}-${endDate}`);
 
       // Merge all of the pointers (arbitrarily choose the first and delete the others)
       return this.dataSource.transaction(async (manager) => {

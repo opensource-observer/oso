@@ -129,12 +129,12 @@ withDbDescribe("EventPointerManager", () => {
   });
 
   it("should merge pointers together when they do not intersect", async () => {
-    const range = rangeFromISO("2022-04-01T00:00:00Z", "2023-05-01T00:00:00Z");
+    const range = rangeFromISO("2023-04-01T00:00:00Z", "2023-05-01T00:00:00Z");
     await manager.commitArtifactForRange("test", range, artifact0);
 
     // Check that there's only a single pointer left
     const totalRange = rangeFromISO(
-      "2022-03-01T00:00:00Z",
+      "2023-02-02T00:00:00Z",
       "2023-05-01T00:00:00Z",
     );
     const result = await manager.getAllEventPointersForRange(
@@ -143,5 +143,10 @@ withDbDescribe("EventPointerManager", () => {
       [artifact0],
     );
     expect(result.length).toBe(1);
+    expect(
+      DateTime.fromJSDate(result[0].startDate)
+        .toUTC()
+        .toISO({ suppressMilliseconds: true }),
+    ).toEqual("2023-03-01T00:00:00Z");
   });
 });

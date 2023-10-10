@@ -111,6 +111,15 @@ export interface IEventGroupRecorder<G> {
   wait(group: G): Promise<AsyncResults<string>>;
 
   commit(): void;
+
+  addListener(message: "error", cb: (err: unknown) => void): EventEmitter;
+  addListener(
+    message: "group-completed",
+    cb: (id: number) => void,
+  ): EventEmitter;
+
+  removeListener(message: "error", cb: (err: unknown) => void): void;
+  removeListener(message: "group-completed", cb: (id: number) => void): void;
 }
 
 export class BasicEventTypeStrategy implements IEventTypeStrategy {

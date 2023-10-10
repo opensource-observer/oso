@@ -106,6 +106,9 @@ export interface IArtifactGroupCommitmentProducer {
 export interface IArtifactGroupCommitmentConsumer {
   waitAll(): Promise<ArtifactCommitmentSummary[]>;
   failAll(err: PossiblyError): void;
+
+  addListener(listener: "error", cb: (err: unknown) => void): EventEmitter;
+  removeListener(listener: "error", cb: (err: unknown) => void): EventEmitter;
 }
 
 export type ArtifactRecordingStatus = {
@@ -259,7 +262,6 @@ export class ArtifactRecordsCommitmentWrapper
   private recorder: IEventRecorder;
 
   static setup(
-    recorder: IEventRecorder,
     collectorName: string,
     range: Range,
     eventPointerManager: IEventPointerManager,
@@ -267,7 +269,6 @@ export class ArtifactRecordsCommitmentWrapper
     duplicatesTracker: Record<number, number>,
   ) {
     const wrapper = new ArtifactRecordsCommitmentWrapper(
-      recorder,
       collectorName,
       range,
       eventPointerManager,
@@ -280,14 +281,12 @@ export class ArtifactRecordsCommitmentWrapper
   }
 
   private constructor(
-    recorder: IEventRecorder,
     collectorName: string,
     range: Range,
     eventPointerManager: IEventPointerManager,
     artifacts: Artifact[],
     duplicatesTracker: Record<number, number>,
   ) {
-    this.recorder = recorder;
     this.collectorName = collectorName;
     this.range = range;
     this.eventPointerManager = eventPointerManager;
@@ -347,6 +346,7 @@ export class ArtifactRecordsCommitmentWrapper
                 "FATAL: unexpected error caught during artifact committment",
                 err,
               );
+              this.emitter.emit("error", err);
             });
           },
         );
@@ -371,11 +371,19 @@ export class ArtifactRecordsCommitmentWrapper
   }
 
   commitGroup(group: IEventGroupRecorder<Artifact>): void {
+    // Listen for errors in the group
+    const errorListener = (err: unknown) => {
+      logger.error("cauth error committing a group");
+      this.emitter.emit("error", err);
+    };
+    group.addListener("error", errorListener);
+
     // Start waiting for all the artifacts asynchronously
     this.artifacts.map((artifact) => {
       return group
         .wait(artifact)
         .then((results) => {
+          group.removeListener("error", errorListener);
           this.commit(artifact).withResults(results);
         })
         .catch((err) => {
@@ -410,6 +418,14 @@ export class ArtifactRecordsCommitmentWrapper
       );
     }
     return committer;
+  }
+
+  addListener(listener: "error", cb: (err: unknown) => void): EventEmitter {
+    return this.emitter.addListener(listener, cb);
+  }
+
+  removeListener(listener: "error", cb: (err: unknown) => void): EventEmitter {
+    return this.emitter.removeListener(listener, cb);
   }
 }
 
@@ -714,6 +730,7 @@ export class BaseScheduler implements IScheduler {
 
     this.recorder.addListener("error", (err) => {
       logger.error("caught error on the recorder");
+      logger.error(err);
       executionSummary.errors.push(err);
     });
 
@@ -749,13 +766,20 @@ export class BaseScheduler implements IScheduler {
       );
 
       const committer = ArtifactRecordsCommitmentWrapper.setup(
-        this.recorder,
         collectorName,
         range,
         this.eventPointerManager,
         missing,
         seenIds,
       );
+
+      // Listen for errors on the committer
+      const committerErrorListener = (err: unknown) => {
+        logger.error("caught error on the committer");
+        logger.error(err);
+        executionSummary.errors.push(err);
+      };
+      committer.addListener("error", committerErrorListener);
 
       // Nothing missing in this group. Skip
       if (missing.length === 0) {
@@ -791,7 +815,7 @@ export class BaseScheduler implements IScheduler {
         executionSummary.errors.push(err);
         continue;
       }
-      // TODO: Ensure all artifacts are committed or report errors
+      committer.removeListener("error", committerErrorListener);
     }
 
     logger.debug("collection recorded but waiting for recorder");

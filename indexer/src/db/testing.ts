@@ -15,7 +15,7 @@ export async function clearDb() {
   const c = await initializeOnce();
   const entities = c.entityMetadatas;
   for (const entity of entities) {
-    const repository = await AppDataSource.getRepository(entity.name);
+    const repository = AppDataSource.getRepository(entity.name);
     await repository.query(
       `TRUNCATE ${entity.tableName} RESTART IDENTITY CASCADE`,
     );
