@@ -11,7 +11,7 @@ env:
   DUNE_API_KEY: ${{ secrets.DUNE_API_KEY }}
   CACHE_DIR: /tmp/oso/cache
   RUN_DIR: /tmp/oso/run
-  LOG_FILE: /log/run.log
+  LOG_FILE: /tmp/oso/log/run.log
 
 # Trigger the workflow when:
 on:
@@ -69,7 +69,7 @@ jobs:
         run: ls -halt ${CACHE_DIR}
 
       - name: Ensure log directory
-        run: mkdir -p /log
+        run: mkdir -p "$(dirname $LOG_FILE)"
 
       - name: Run worker for the given group
         run: bash .github/scripts/scheduler.sh worker ${{ inputs.group }}
