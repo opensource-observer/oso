@@ -12,7 +12,7 @@ on:
     - cron: '*/15 * * * *'
 
 jobs:
-  collector-worker-call:
+  collector-worker-call-dune:
     uses: opensource-observer/oso/.github/workflows/indexer-worker.yml@main
     with:
       group: dune
