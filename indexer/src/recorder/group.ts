@@ -54,7 +54,12 @@ export class EventGroupRecorder<T> implements IEventGroupRecorder<T> {
     setTimeout(() => {
       for (const groupId in this.listeningIds) {
         // Catch errors so we can record all of them
-        this.commitId(groupId);
+        this.commitId(groupId).catch((err) => {
+          logger.error(
+            `error encountered in artifact commit with groupId=${groupId}`,
+          );
+          this.emitter.emit("error", err);
+        });
       }
     }, 100);
   }
@@ -75,11 +80,11 @@ export class EventGroupRecorder<T> implements IEventGroupRecorder<T> {
     promises.push(await this.recorder.record(event));
   }
 
-  private commitId(id: string): void {
+  private commitId(id: string): Promise<void> {
     logger.debug(`commiting group ${id}`);
     const recordHandles = this.groupRecordHandles[id] || [];
     const handlesAsPromises = recordHandles.map((r) => r.wait());
-    collectAsyncResults(handlesAsPromises)
+    return collectAsyncResults(handlesAsPromises)
       .then((result) => {
         this.emitter.emit(id, result);
       })
@@ -117,6 +122,20 @@ export class EventGroupRecorder<T> implements IEventGroupRecorder<T> {
     const id = this.groupToStrFn(group);
     delete this.listeningIds[id];
     this.emitter.removeListener(id, cb);
+  }
+
+  addListener(
+    message: "error" | "group-completed",
+    cb: (...args: any) => void,
+  ): EventEmitter {
+    return this.emitter.addListener(message, cb);
+  }
+
+  removeListener(
+    message: "error" | "group-completed",
+    cb: (...args: any) => void,
+  ) {
+    return this.emitter.removeListener(message, cb);
   }
 }
 

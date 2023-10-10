@@ -545,8 +545,17 @@ export class GithubIssueCollector extends GithubByProjectBaseCollector {
     for await (const page of pages) {
       const edges = page.raw;
       for (const edge of edges) {
+        // Stop processing if we've reached the end
+        if (DateTime.fromISO(edge.node.updatedAt) < range.startDate) {
+          return;
+        }
         try {
-          await this.collectEventsForIssue(groupRecorder, artifacts, edge.node);
+          await this.collectEventsForIssue(
+            groupRecorder,
+            range,
+            artifacts,
+            edge.node,
+          );
         } catch (err) {
           errors.push(err);
         }
@@ -556,6 +565,7 @@ export class GithubIssueCollector extends GithubByProjectBaseCollector {
 
   private async collectEventsForIssue(
     groupRecorder: IEventGroupRecorder<Artifact>,
+    range: Range,
     artifacts: Artifact[],
     issue: IssueOrPullRequest,
   ) {
@@ -620,10 +630,10 @@ export class GithubIssueCollector extends GithubByProjectBaseCollector {
     }
 
     // Find any reviews
-    await this.recordReviews(groupRecorder, artifact, issue);
+    await this.recordReviews(groupRecorder, range, artifact, issue);
 
     // Find and record any close/open events
-    await this.recordOpenCloseEvents(groupRecorder, artifact, issue);
+    await this.recordOpenCloseEvents(groupRecorder, range, artifact, issue);
   }
 
   private async *loadIssueTimeline(id: string): AsyncGenerator<IssueEvent> {
@@ -676,6 +686,7 @@ export class GithubIssueCollector extends GithubByProjectBaseCollector {
 
   private async recordReviews(
     groupRecorder: IEventGroupRecorder<Artifact>,
+    range: Range,
     artifact: IncompleteArtifact,
     issue: IssueOrPullRequest,
   ) {
@@ -706,10 +717,16 @@ export class GithubIssueCollector extends GithubByProjectBaseCollector {
     if (issue.reviews.pageInfo.hasNextPage) {
       logger.debug("need to load more reviews");
       for await (const review of this.loadReviews(issue.id)) {
+        if (DateTime.fromISO(review.createdAt) < range.startDate) {
+          break;
+        }
         await recordReview(review);
       }
     } else {
       for (const edge of issue.reviews.edges) {
+        if (DateTime.fromISO(edge.node.createdAt) < range.startDate) {
+          break;
+        }
         await recordReview(edge.node);
       }
     }
@@ -717,6 +734,7 @@ export class GithubIssueCollector extends GithubByProjectBaseCollector {
 
   private async recordOpenCloseEvents(
     groupRecorder: IEventGroupRecorder<Artifact>,
+    range: Range,
     artifact: IncompleteArtifact,
     issue: IssueOrPullRequest,
   ) {
@@ -751,10 +769,16 @@ export class GithubIssueCollector extends GithubByProjectBaseCollector {
     if (issue.openCloseEvents.pageInfo.hasNextPage) {
       logger.debug("need to load more open/close events");
       for await (const event of this.loadIssueTimeline(issue.id)) {
+        if (DateTime.fromISO(event.createdAt) < range.startDate) {
+          break;
+        }
         await recordOpenCloseEvent(event);
       }
     } else {
       for (const edge of issue.openCloseEvents.edges) {
+        if (DateTime.fromISO(edge.node.createdAt) < range.startDate) {
+          break;
+        }
         await recordOpenCloseEvent(edge.node);
       }
     }
