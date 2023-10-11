@@ -43,11 +43,15 @@ export default async function ArtifactPage(props: ArtifactPageProps) {
   }
 
   // Get artifact metadata from the database
-  const artifact = await cachedGetArtifactByName(namespace, name);
-  if (!artifact) {
+  const { artifact: artifactArray } = await cachedGetArtifactByName({
+    namespace,
+    name,
+  });
+  if (!Array.isArray(artifactArray) || artifactArray.length < 1) {
     logger.warn(`Cannot find artifact (namespace=${namespace}, name=${name})`);
     notFound();
   }
+  const artifact = artifactArray[0];
 
   //console.log(artifact);
   const plasmicData = await PLASMIC.fetchComponentData(PLASMIC_COMPONENT);

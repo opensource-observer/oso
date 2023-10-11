@@ -32,11 +32,12 @@ export default async function ProjectPage(props: ProjectPageProps) {
   }
 
   // Get project metadata from the database
-  const project = await cachedGetProjectBySlug(slug);
-  if (!project) {
+  const { project: projectArray } = await cachedGetProjectBySlug({ slug });
+  if (!Array.isArray(projectArray) || projectArray.length < 1) {
     logger.warn(`Cannot find project (slug=${slug})`);
     notFound();
   }
+  const project = projectArray[0];
 
   //console.log(project);
   const plasmicData = await PLASMIC.fetchComponentData(PLASMIC_COMPONENT);
