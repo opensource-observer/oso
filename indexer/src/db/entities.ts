@@ -47,7 +47,7 @@ async function ossUpsertCollection(ossCollection: Collection) {
 
   // Upsert into the database
   return await AppDataSource.transaction(async (manager) => {
-    const collection = await manager
+    const collectionResult = await manager
       .withRepository(CollectionRepository)
       .upsert(
         {
@@ -56,12 +56,50 @@ async function ossUpsertCollection(ossCollection: Collection) {
         },
         ["slug"],
       );
+
+    // Manage all the relations for each of the projects
+    const collection = await manager.getRepository(DBCollection).findOneOrFail({
+      relations: {
+        projects: true,
+      },
+      where: {
+        id: collectionResult.identifiers[0].id,
+      },
+    });
+
+    const currentProjectIds = collection.projects.map((p) => p.id);
+    const intendedProjectIds = projects.map((p) => p.id);
+
+    // intended - current = new
+    const newProjectIds = _.difference(intendedProjectIds, currentProjectIds);
+
+    // current - intended = removed
+    const removedProjectIds = _.difference(
+      currentProjectIds,
+      intendedProjectIds,
+    );
+
+    // Add new
     await manager
       .createQueryBuilder()
       .relation(DBCollection, "projects")
-      .of(collection.identifiers[0])
-      .add(projects.map((p) => p.id));
-    return collection;
+      .of(collection.id)
+      .add(newProjectIds);
+
+    // Delete removed
+    await manager
+      .createQueryBuilder()
+      .relation(DBCollection, "projects")
+      .of(collection.id)
+      .remove(removedProjectIds);
+    return {
+      added: newProjectIds.length,
+      removed: removedProjectIds.length,
+      new: intendedProjectIds.length,
+      old: currentProjectIds.length,
+      ids: intendedProjectIds,
+      collection: collection,
+    };
   });
 }
 
@@ -87,7 +125,7 @@ async function ossUpsertProject(ossProj: Project) {
   // Then upsert the project with the relations
   return await AppDataSource.transaction(async (manager) => {
     const repo = manager.withRepository(ProjectRepository);
-    const project = await repo.upsert(
+    const projectResult = await repo.upsert(
       [
         {
           slug: slug,
@@ -96,14 +134,50 @@ async function ossUpsertProject(ossProj: Project) {
       ],
       ["slug"],
     );
+
+    const project = await repo.findOneOrFail({
+      relations: {
+        artifacts: true,
+      },
+      where: {
+        id: projectResult.identifiers[0].id,
+      },
+    });
+
+    const currentArtifactIds = project.artifacts.map((a) => a.id);
+    const intendedArtifactIds = artifacts.map((a) => a.id);
+
+    const newArtifactIds = _.difference(
+      intendedArtifactIds,
+      currentArtifactIds,
+    );
+    const removedArtifactIds = _.difference(
+      currentArtifactIds,
+      intendedArtifactIds,
+    );
+
     // Update all artifact relations
     await manager
       .createQueryBuilder()
       .relation(DBProject, "artifacts")
-      .of(project.identifiers[0])
-      .add(artifacts.map((a) => a.id));
+      .of(project.id)
+      .add(newArtifactIds);
 
-    return project;
+    // Delete removed artifacts
+    await manager
+      .createQueryBuilder()
+      .relation(DBProject, "artifacts")
+      .of(project.id)
+      .remove(removedArtifactIds);
+
+    return {
+      old: intendedArtifactIds.length,
+      new: currentArtifactIds.length,
+      added: newArtifactIds.length,
+      removed: removedArtifactIds.length,
+      ids: intendedArtifactIds,
+      project: project,
+    };
   });
 
   // FIXME this needs to be added back in.

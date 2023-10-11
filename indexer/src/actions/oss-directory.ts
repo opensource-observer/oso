@@ -36,7 +36,9 @@ export async function importOssDirectory(
     }
     logger.info(`projects[${i}]: Upserting ${p.slug}`);
     try {
-      await ossUpsertProject(p);
+      const result = await ossUpsertProject(p);
+      logger.info(`projects[${i}]: Added ${result.added} artifacts`);
+      logger.info(`projects[${i}]: Removed ${result.removed} artifacts`);
     } catch (e) {
       logger.error(
         `projects[${i}]: error occured processing project ${p.slug}. Skipping with error: ${e}`,
@@ -55,7 +57,9 @@ export async function importOssDirectory(
     }
     logger.info(`collections[${i}]: Upserting ${c.slug}`);
     try {
-      await ossUpsertCollection(c);
+      const result = await ossUpsertCollection(c);
+      logger.info(`collections[${i}]: Added ${result.added} artifacts`);
+      logger.info(`collections[${i}]: Removed ${result.removed} artifacts`);
     } catch (e) {
       logger.error(
         `collections[${i}]: error occured processing colelction ${c.slug}. Skipping with error: ${e}`,

@@ -81,6 +81,10 @@ const cli = yargs(hideBin(process.argv))
         type: "boolean",
         default: false,
       });
+      yags.option("skip-existing", {
+        type: "boolean",
+        default: false,
+      });
     },
     (argv) => handleError(importOssDirectory(argv)),
   )
