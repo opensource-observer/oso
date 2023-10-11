@@ -38,3 +38,15 @@ export const SUPABASE_ANON_KEY = requireEnv(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
   "NEXT_PUBLIC_SUPABASE_ANON_KEY",
 );
+
+export const ALGOLIA_APPLICATION_ID = requireEnv(
+  process.env.NEXT_PUBLIC_ALGOLIA_APPLICATION_ID,
+  "NEXT_PUBLIC_ALGOLIA_APPLICATION_ID",
+);
+
+export const ALGOLIA_API_KEY = requireEnv(
+  process.env.NEXT_PUBLIC_ALGOLIA_API_KEY,
+  "NEXT_PUBLIC_ALGOLIA_API_KEY",
+);
+
+export const ALGOLIA_INDEX = process.env.NEXT_PUBLIC_ALGOLIA_INDEX ?? "oso";

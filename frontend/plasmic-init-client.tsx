@@ -4,6 +4,7 @@ import CircularProgress from "@mui/material/CircularProgress";
 import { AreaChart, BarList } from "@tremor/react";
 import { PlasmicRootProvider } from "@plasmicapp/loader-nextjs";
 import { PLASMIC } from "./plasmic-init";
+import { AlgoliaSearchBox } from "./components/widgets/algolia";
 import { ProjectsClientProvider } from "./components/project-browser/project-client-provider";
 import { ProjectBrowser } from "./components/project-browser/project-browser";
 import { SupabaseQuery } from "./components/dataprovider/supabase-query";
@@ -81,6 +82,13 @@ PLASMIC.registerComponent(BarList, {
     showAnimation: "boolean",
   },
   importPath: "@tremor/react",
+});
+
+PLASMIC.registerComponent(AlgoliaSearchBox, {
+  name: "AlgoliaSearchBox",
+  description: "Algolia-powered search box",
+  props: {},
+  importPath: "./components/widgets/algolia",
 });
 
 PLASMIC.registerComponent(ProjectsClientProvider, {
