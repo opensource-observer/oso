@@ -49,4 +49,12 @@ export const ALGOLIA_API_KEY = requireEnv(
   "NEXT_PUBLIC_ALGOLIA_API_KEY",
 );
 
-export const ALGOLIA_INDEX = process.env.NEXT_PUBLIC_ALGOLIA_INDEX ?? "oso";
+export const ALGOLIA_INDEX = requireEnv(
+  process.env.NEXT_PUBLIC_ALGOLIA_INDEX,
+  "NEXT_PUBLIC_ALGOLIA_INDEX",
+);
+
+export const FEEDBACK_FARM_ID = requireEnv(
+  process.env.NEXT_PUBLIC_FEEDBACK_FARM_ID,
+  "NEXT_PUBLIC_FEEDBACK_FARM_ID",
+);

@@ -35,6 +35,9 @@ importers:
       '@emotion/styled':
         specifier: ^11.11.0
         version: 11.11.0(@emotion/react@11.11.1)(@types/react@18.2.17)(react@18.2.0)
+      '@feedbackfarm/react':
+        specifier: ^4.0.10
+        version: 4.0.10(react@18.2.0)
       '@mui/icons-material':
         specifier: ^5.14.3
         version: 5.14.3(@mui/material@5.14.3)(@types/react@18.2.17)(react@18.2.0)
@@ -1805,6 +1808,14 @@ packages:
       '@ethersproject/logger': 5.7.0
       '@ethersproject/properties': 5.7.0
       '@ethersproject/strings': 5.7.0
+    dev: false
+
+  /@feedbackfarm/react@4.0.10(react@18.2.0):
+    resolution: {integrity: sha512-W8KJZW8xGptZmSqtJ0wgO4bGALTmjjK96j9Zi67K5T1Wfg4yJEr2VPDPSG/zkZpArkdiqEShsfXPPxWQGzWpDg==}
+    peerDependencies:
+      react: '>=17'
+    dependencies:
+      react: 18.2.0
     dev: false
 
   /@floating-ui/core@1.4.1:

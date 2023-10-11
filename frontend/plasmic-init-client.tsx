@@ -5,6 +5,7 @@ import { AreaChart, BarList } from "@tremor/react";
 import { PlasmicRootProvider } from "@plasmicapp/loader-nextjs";
 import { PLASMIC } from "./plasmic-init";
 import { AlgoliaSearchBox } from "./components/widgets/algolia";
+import { FeedbackWrapper } from "./components/widgets/feedback-farm";
 import { ProjectsClientProvider } from "./components/project-browser/project-client-provider";
 import { ProjectBrowser } from "./components/project-browser/project-browser";
 import { SupabaseQuery } from "./components/dataprovider/supabase-query";
@@ -89,6 +90,15 @@ PLASMIC.registerComponent(AlgoliaSearchBox, {
   description: "Algolia-powered search box",
   props: {},
   importPath: "./components/widgets/algolia",
+});
+
+PLASMIC.registerComponent(FeedbackWrapper, {
+  name: "FeedbackWrapper",
+  description: "Feedback Farm click handler",
+  props: {
+    children: "slot",
+  },
+  importPath: "./components/widgets/feedback-farm",
 });
 
 PLASMIC.registerComponent(ProjectsClientProvider, {
