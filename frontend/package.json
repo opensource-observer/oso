@@ -23,6 +23,7 @@
     "@apollo/experimental-nextjs-app-support": "^0.4.3",
     "@emotion/react": "^11.11.1",
     "@emotion/styled": "^11.11.0",
+    "@feedbackfarm/react": "^4.0.10",
     "@mui/icons-material": "^5.14.3",
     "@mui/material": "^5.14.3",
     "@mui/x-date-pickers": "^6.12.0",
