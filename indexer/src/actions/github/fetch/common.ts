@@ -170,7 +170,7 @@ export class GithubByProjectBaseCollector extends ProjectArtifactsCollector {
           this.resetTime = DateTime.fromISO(rateLimit.resetAt);
         } else {
           // Artificially rate limit to 5reqs/second
-          this.resetTime = DateTime.now().plus(500);
+          this.resetTime = DateTime.now().plus(200);
         }
         release();
         return response;

@@ -10,7 +10,10 @@ export const ArtifactRepository = AppDataSource.getRepository(Artifact).extend({
   },
   async upsertMany(artifacts: DeepPartial<Artifact>[]) {
     const newArtifacts = Artifact.create(artifacts);
-    return await this.upsert(newArtifacts, ["name", "namespace"]);
+    return await this.upsert(newArtifacts, {
+      conflictPaths: ["namespace", "name"],
+      upsertType: "on-conflict-do-update",
+    });
   },
   async mostFrequentContributors(range: Range, eventTypes: EventType[]) {
     const response = (await this.manager
