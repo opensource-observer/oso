@@ -122,7 +122,6 @@ def main():
     with open("data/contract_creators/optimism_address_mapping.json", "w") as json_file:
         json.dump(address_mapping, json_file, indent=4)
 
-    # Print address_mapping or perform other operations as needed.
 
 if __name__ == "__main__":
     main()
