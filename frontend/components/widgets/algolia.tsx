@@ -1,10 +1,9 @@
+"use client";
+
+import "instantsearch.css/themes/algolia.css";
 import algoliasearch from "algoliasearch/lite";
-import {
-  InstantSearch,
-  SearchBox,
-  Hits,
-  Pagination,
-} from "react-instantsearch";
+import { SearchBox, Hits } from "react-instantsearch";
+import { InstantSearchNext } from "react-instantsearch-nextjs";
 import {
   ALGOLIA_APPLICATION_ID,
   ALGOLIA_API_KEY,
@@ -15,15 +14,14 @@ const searchClient = algoliasearch(ALGOLIA_APPLICATION_ID, ALGOLIA_API_KEY);
 
 function AlgoliaSearchBox() {
   return (
-    <InstantSearch
+    <InstantSearchNext
       searchClient={searchClient}
       indexName={ALGOLIA_INDEX}
       insights
     >
       <SearchBox />
       <Hits />
-      <Pagination />
-    </InstantSearch>
+    </InstantSearchNext>
   );
 }
 

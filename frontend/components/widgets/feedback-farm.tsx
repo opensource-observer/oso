@@ -1,5 +1,6 @@
 import React, { ReactElement } from "react";
 import { FeedbackFarm } from "@feedbackfarm/react";
+import { FEEDBACK_FARM_ID } from "../../lib/config";
 
 export type FeedbackWrapperProps = {
   className?: string; // Plasmic CSS class
@@ -15,7 +16,7 @@ function FeedbackWrapper(props: FeedbackWrapperProps) {
 
   return (
     <div className={className}>
-      <FeedbackFarm projectId="project_id">{children}</FeedbackFarm>
+      <FeedbackFarm projectId={FEEDBACK_FARM_ID}>{children}</FeedbackFarm>
     </div>
   );
 }

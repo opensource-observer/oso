@@ -86,6 +86,9 @@ importers:
       graphql:
         specifier: ^16.7.1
         version: 16.7.1
+      instantsearch.css:
+        specifier: ^8.1.0
+        version: 8.1.0
       next:
         specifier: latest
         version: 13.5.4(@babel/core@7.22.10)(react-dom@18.2.0)(react@18.2.0)
@@ -104,6 +107,9 @@ importers:
       react-instantsearch:
         specifier: ^7.2.0
         version: 7.2.0(algoliasearch@4.20.0)(react-dom@18.2.0)(react@18.2.0)
+      react-instantsearch-nextjs:
+        specifier: ^0.1.2
+        version: 0.1.2(next@13.5.4)(react-instantsearch@7.2.0)
       serve:
         specifier: ^14.2.0
         version: 14.2.0
@@ -8454,6 +8460,10 @@ packages:
       wrap-ansi: 6.2.0
     dev: true
 
+  /instantsearch.css@8.1.0:
+    resolution: {integrity: sha512-rPhcAZ02bLwUn3iOXbldZW/yl+17guWoH3qWYZ8nQEwNBx5+wZ6Bv8mFqqK448+R2aU4nbFKIhmoTIPXI5Zobg==}
+    dev: false
+
   /instantsearch.js@4.58.0(algoliasearch@4.20.0):
     resolution: {integrity: sha512-Y5vERyhoE1jEWew33OdsRbB24q2Pexft4/HK6a+QOO22C3qoGIkc3i4rP8RbB4kecDvkziFi/YCGE5t1B6J3eg==}
     peerDependencies:
@@ -11339,6 +11349,16 @@ packages:
       instantsearch.js: 4.58.0(algoliasearch@4.20.0)
       react: 18.2.0
       use-sync-external-store: 1.2.0(react@18.2.0)
+    dev: false
+
+  /react-instantsearch-nextjs@0.1.2(next@13.5.4)(react-instantsearch@7.2.0):
+    resolution: {integrity: sha512-cwObiL5RUey3u0fVgWvK3TbuPjMPjYQVsfVClnKNf8W3wAc6Ujt8pmoZbaJSaQ02tRElF7YUtd20NeTyLqo4ew==}
+    peerDependencies:
+      next: '>= 13.4 && < 14'
+      react-instantsearch: '>= 7.1.0 && < 8'
+    dependencies:
+      next: 13.5.4(@babel/core@7.22.10)(react-dom@18.2.0)(react@18.2.0)
+      react-instantsearch: 7.2.0(algoliasearch@4.20.0)(react-dom@18.2.0)(react@18.2.0)
     dev: false
 
   /react-instantsearch@7.2.0(algoliasearch@4.20.0)(react-dom@18.2.0)(react@18.2.0):
