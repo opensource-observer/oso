@@ -2,47 +2,23 @@ import { DataProvider } from "@plasmicapp/loader-nextjs";
 import dayjs from "dayjs";
 import _ from "lodash";
 import React, { ReactNode } from "react";
-import useSWRImmutable from "swr/immutable";
-import { supabaseClient } from "../../lib/clients/supabase";
-import { HttpError, MissingDataError } from "../../lib/errors";
+import { useQuery } from "@apollo/experimental-nextjs-app-support/ssr";
+import { GET_EVENTS_DAILY_BY_ARTIFACT } from "../../lib/graphql/queries";
 import { assertNever } from "../../lib/common";
 
 // The name used to pass data into the Plasmic DataProvider
 const DEFAULT_VARIABLE_NAME = "eventData";
-const KEY_PREFIX = "event";
-const genKey = (props: EventDataProviderProps) => {
-  let key = `${KEY_PREFIX}`;
-  if (props.artifactIds) {
-    key += `:${JSON.stringify(props.artifactIds)}`;
-  }
-  if (props.eventTypes) {
-    key += `:${JSON.stringify(props.eventTypes)}`;
-  }
-  if (props.startDate) {
-    key += `:${dayjs(props.startDate).format("YYYY-MM-DD")}`;
-  }
-  if (props.endDate) {
-    key += `:${dayjs(props.endDate).format("YYYY-MM-DD")}`;
-  }
-  return key;
-};
 
-type SupabaseEvent = {
-  id: number;
-  artifact: {
-    id: number;
-    type: string;
-    namespace: string;
-    name: string;
-  };
-  eventType: string;
-  eventTime: string;
-  amount: number;
-};
+type EventData = Partial<{
+  toId: number;
+  amount: any;
+  bucketDaily: any;
+  type: any;
+}>;
 
-const eventToValue = (e: SupabaseEvent) => Math.max(e.amount, 1);
+const eventToValue = (e: EventData) => Math.max(e.amount, 1);
 
-const formatDataToKpiCard = (data?: SupabaseEvent[]) => {
+const formatDataToKpiCard = (data?: EventData[]) => {
   if (!data) {
     return { data: 0 };
   }
@@ -52,7 +28,7 @@ const formatDataToKpiCard = (data?: SupabaseEvent[]) => {
   };
 };
 
-const formatDataToAreaChart = (data?: SupabaseEvent[]) => {
+const formatDataToAreaChart = (data?: EventData[]) => {
   if (!data) {
     return {
       data: [],
@@ -62,10 +38,10 @@ const formatDataToAreaChart = (data?: SupabaseEvent[]) => {
   }
   // Store the categories for the Tremor area chart
   const categories = new Set<string>();
-  const simpleDates = data.map((x: SupabaseEvent) => ({
+  const simpleDates = data.map((x: EventData) => ({
     ...x,
     // Pull out the date
-    date: dayjs(x.eventTime).format("YYYY-MM-DD"),
+    date: dayjs(x.bucketDaily).format("YYYY-MM-DD"),
     // Get the value we want to plot
     value: eventToValue(x),
   }));
@@ -78,8 +54,8 @@ const formatDataToAreaChart = (data?: SupabaseEvent[]) => {
     _.reduce(
       x,
       (accum, curr) => {
-        const category = `${curr.artifact.name} ${_.capitalize(
-          curr.eventType.replace(/_/g, " "),
+        const category = `${curr.toId} ${_.capitalize(
+          curr.type.replace(/_/g, " "),
         )}`;
         categories.add(category);
         return {
@@ -106,17 +82,17 @@ const formatDataToAreaChart = (data?: SupabaseEvent[]) => {
   };
 };
 
-const formatDataToBarList = (xAxis: XAxis, data?: SupabaseEvent[]) => {
+const formatDataToBarList = (xAxis: XAxis, data?: EventData[]) => {
   if (!data) {
     return { data: [] };
   }
   const grouped = _.groupBy(data, (x) =>
     xAxis === "eventTime"
-      ? dayjs(x.eventTime).format("YYYY-MM-DD")
+      ? dayjs(x.bucketDaily).format("YYYY-MM-DD")
       : xAxis === "artifact"
-      ? x.artifact.name
+      ? x.toId
       : xAxis === "eventType"
-      ? x.eventType
+      ? x.type
       : assertNever(xAxis),
   );
   const summed = _.mapValues(grouped, (x) => _.sumBy(x, eventToValue));
@@ -131,6 +107,7 @@ const formatDataToBarList = (xAxis: XAxis, data?: SupabaseEvent[]) => {
 
 type ChartType = "kpiCard" | "areaChart" | "barList";
 type XAxis = "eventTime" | "artifact" | "eventType";
+type EntityType = "collection" | "project" | "artifact";
 
 /**
  * Query component focused on providing data to visualiation components
@@ -150,7 +127,8 @@ export type EventDataProviderProps = {
   testData?: any;
   chartType: ChartType;
   xAxis?: XAxis; // X-axis
-  artifactIds?: string[];
+  entityType?: EntityType;
+  ids?: string[];
   eventTypes?: string[];
   startDate?: string;
   endDate?: string;
@@ -170,7 +148,7 @@ export function EventDataProvider(props: EventDataProviderProps) {
     testData,
     chartType,
     xAxis,
-    artifactIds,
+    ids,
     eventTypes,
     startDate,
     endDate,
@@ -178,65 +156,22 @@ export function EventDataProvider(props: EventDataProviderProps) {
   const startDateObj = dayjs(startDate ?? 0);
   const endDateObj = endDate ? dayjs(endDate) : dayjs();
   const key = variableName ?? DEFAULT_VARIABLE_NAME;
-  const { data, error, isLoading } = useSWRImmutable(
-    genKey(props),
-    async () => {
-      if (useTestData) {
-        return testData;
-      } else if (
-        !artifactIds ||
-        !Array.isArray(artifactIds) ||
-        artifactIds.length <= 0
-      ) {
-        return null;
-      } else if (
-        !eventTypes ||
-        !Array.isArray(eventTypes) ||
-        eventTypes.length <= 0
-      ) {
-        return null;
-      } else if (endDateObj.isBefore(startDateObj)) {
-        return null;
-      }
-
-      const {
-        data: rawData,
-        error,
-        status,
-      } = await supabaseClient
-        .from("Event")
-        .select(
-          "id, artifact:artifactId!inner(id, type, namespace, name), eventType, eventTime, amount",
-        )
-        .in("artifactId", artifactIds ?? [])
-        .in("eventType", eventTypes ?? [])
-        .gte("eventTime", startDateObj.format("YYYY-MM-DD"))
-        .lte("eventTime", endDateObj.format("YYYY-MM-DD"))
-        .limit(10000);
-
-      if (error) {
-        throw error;
-      } else if (status > 300) {
-        throw new HttpError(`Invalid status code: ${status}`);
-      } else if (!rawData) {
-        throw new MissingDataError("Missing data");
-      }
-      console.log("Supabase Events", rawData);
-      return rawData;
+  const {
+    data: rawData,
+    error,
+    loading,
+  } = useQuery(GET_EVENTS_DAILY_BY_ARTIFACT, {
+    variables: {
+      ids:
+        ids?.map((id) => parseInt(id)).filter((id) => !!id && !isNaN(id)) ?? [],
+      types: eventTypes ?? [],
+      startDate: startDateObj.format("YYYY-MM-DD"),
+      endDate: endDateObj.format("YYYY-MM-DD"),
     },
-  );
-  //const checkedData = rawData as unknown as SupabaseEvent[];
-  const formattedData =
-    chartType === "kpiCard"
-      ? formatDataToKpiCard(data)
-      : chartType === "areaChart"
-      ? formatDataToAreaChart(data)
-      : chartType === "barList"
-      ? formatDataToBarList(xAxis ?? "artifact", data)
-      : assertNever(chartType);
+  });
 
-  // Show when loading
-  if (isLoading && !ignoreLoading && !!loadingChildren) {
+  // Show when loading or error
+  if (loading && !ignoreLoading && !!loadingChildren) {
     return <div className={className}> {loadingChildren} </div>;
   } else if (error && !ignoreError && !!errorChildren) {
     return (
@@ -246,13 +181,25 @@ export function EventDataProvider(props: EventDataProviderProps) {
         </DataProvider>
       </div>
     );
-  } else {
-    return (
-      <div className={className}>
-        <DataProvider name={key} data={formattedData}>
-          {children}
-        </DataProvider>
-      </div>
-    );
   }
+
+  //const checkedData = rawData as unknown as EventData[];
+  // Short-circuit if test data
+  const data = useTestData ? testData : rawData?.events_daily_by_artifact;
+  const formattedData =
+    chartType === "kpiCard"
+      ? formatDataToKpiCard(data)
+      : chartType === "areaChart"
+      ? formatDataToAreaChart(data)
+      : chartType === "barList"
+      ? formatDataToBarList(xAxis ?? "artifact", data)
+      : assertNever(chartType);
+
+  return (
+    <div className={className}>
+      <DataProvider name={key} data={formattedData}>
+        {children}
+      </DataProvider>
+    </div>
+  );
 }
