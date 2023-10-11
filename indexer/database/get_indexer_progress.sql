@@ -3,8 +3,7 @@
 -- 
 -- If you happen to see that the progress value is GREATER than the expected
 -- value then the indexer has event pointers in disparate time ranges.
--- Eventually this will fix itself but a collector could be very very slow You
--- will need to add a some other time condition. 
+-- Eventually this will fix itself but a collector could be very very slow.
 with expected_by_type as (
 	select a."type", count(distinct a.id) as "count"
 	from project p
@@ -23,8 +22,9 @@ with expected_by_type as (
 		end as category,
 		count(*) as progress
 	from event_pointer ep
-	-- FILL IN THE DATE HERE to the desired time
+	-- Move this end date around to see the state of the collectors
 	where ep."endDate" > '2023-10-01'
+		  and ep."startDate" < '2008-01-01'
 	group by
 		ep.collector
 )
