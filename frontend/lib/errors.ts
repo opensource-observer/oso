@@ -9,3 +9,4 @@ export class NotImplementedError extends Error {
 
 export class HttpError extends Error {}
 export class MissingDataError extends Error {}
+export class NullOrUndefinedValueError extends Error {}

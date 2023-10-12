@@ -58,10 +58,10 @@ const GET_EVENTS_DAILY_BY_ARTIFACT = gql(`
       type: {_in: $types},
       bucketDaily: {_gte: $startDate, _lte: $endDate}
     }) {
-      toId
-      amount
-      bucketDaily
       type
+      toId
+      bucketDaily
+      amount
     }
   }
 `);
@@ -78,10 +78,10 @@ const GET_EVENTS_DAILY_BY_PROJECT = gql(`
       type: {_in: $types},
       bucketDaily: {_gte: $startDate, _lte: $endDate}
     }) {
-      amount
-      bucketDaily
-      projectId
       type
+      projectId
+      bucketDaily
+      amount
     }
   }
 `);

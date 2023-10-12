@@ -52,10 +52,7 @@ export default async function ProjectPage(props: ProjectPageProps) {
       <PlasmicComponent
         component={compMeta.displayName}
         componentProps={{
-          id: project.id,
           metadata: project,
-          artifacts: [],
-          collections: [],
         }}
       />
     </PlasmicClientRootProvider>

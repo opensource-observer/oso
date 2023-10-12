@@ -79,7 +79,6 @@ function AlgoliaSearchBox() {
         placeholder={"Search projects..."}
         onSubmit={(event) => {
           event.preventDefault();
-          console.log(event);
           setAnchorEl(event.currentTarget);
         }}
       />
