@@ -263,7 +263,6 @@ def process_updates(directory):
                 continue    
             print(f"Removing {address} from {slug} because it's not in Dune.")
 
-        # remove the name field for any entries where name is None (but the rest of the info)
         for entry in approved_entries:
             if entry.get('name', None) is None:
                 entry.pop('name', None)
