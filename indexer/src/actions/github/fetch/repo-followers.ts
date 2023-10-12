@@ -341,7 +341,7 @@ export class GithubFollowingCollector extends GithubByProjectBaseCollector {
         type: EventType.STARRED,
         to: artifact,
         from: contributor,
-        amount: 0,
+        amount: 1,
         sourceId: generateSourceIdFromArray([
           "STARRED",
           commitTime.toISO()!,
@@ -539,7 +539,7 @@ export class GithubFollowingCollector extends GithubByProjectBaseCollector {
         type: EventType.FORKED,
         to: artifact,
         from: contributor,
-        amount: 0,
+        amount: 1,
         sourceId: f.id,
       });
     };

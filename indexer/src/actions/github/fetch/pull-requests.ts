@@ -602,7 +602,7 @@ export class GithubIssueCollector extends GithubByProjectBaseCollector {
       time: creationTime,
       type: eventType,
       to: artifact,
-      amount: 0,
+      amount: 1,
       from: contributor,
       sourceId: githubId,
     };
@@ -620,7 +620,7 @@ export class GithubIssueCollector extends GithubByProjectBaseCollector {
         time: mergedTime,
         type: this.getEventType("MergedEvent", issue.__typename),
         to: artifact,
-        amount: 0,
+        amount: 1,
         from: creationEvent.from,
         sourceId: githubId,
         details: {
@@ -708,7 +708,7 @@ export class GithubIssueCollector extends GithubByProjectBaseCollector {
         time: createdAt,
         type: this.getEventType("PullRequestApprovedEvent", issue.__typename),
         to: artifact,
-        amount: 0,
+        amount: 1,
         from: contributor,
         sourceId: review.id,
       });
@@ -756,7 +756,7 @@ export class GithubIssueCollector extends GithubByProjectBaseCollector {
         time: createdAt,
         type: this.getEventType(event.__typename, issue.__typename),
         to: artifact,
-        amount: 0,
+        amount: 1,
         from: contributor,
         sourceId: event.id,
         details: {

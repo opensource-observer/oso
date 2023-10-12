@@ -39,7 +39,7 @@ withDbDescribe("EventRepository", () => {
         sourceId: "0",
         to: artifact0,
         type: EventType.CONTRACT_INVOKED,
-        amount: 0,
+        amount: 1,
         from: null,
       },
       {
