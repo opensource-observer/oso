@@ -66,7 +66,6 @@ export default async function ArtifactPage(props: ArtifactPageProps) {
       <PlasmicComponent
         component={compMeta.displayName}
         componentProps={{
-          id: artifact.id,
           metadata: artifact,
         }}
       />
