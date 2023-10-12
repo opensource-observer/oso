@@ -1,6 +1,7 @@
 from dotenv import load_dotenv
 import os
 import requests
+import time
 from web3 import Web3
 
 
@@ -20,7 +21,7 @@ APIS = {
 }
 DEFAULT_API = APIS['mainnet']
 
-def is_eoa(chain, address):
+def is_eoa(chain, address, sleep=.5):
     
     url = APIS.get(chain, DEFAULT_API)['alchemy']
     payload = {
@@ -38,10 +39,11 @@ def is_eoa(chain, address):
         print(f"Error looking up address {address} on {chain}")
         return None
     result = response.json()['result']
+    time.sleep(sleep)
     return result == '0x'
 
 
-def fetch_contract_name(chain, address):    
+def fetch_contract_name(chain, address, sleep=.5):    
     
     try:
         # TODO: this won't work for unmapped chains unless the project uses a deterministic deployer
@@ -66,6 +68,7 @@ def fetch_contract_name(chain, address):
             return None
         
         print(f"{chain}: {address} -> {contract_name}")
+        time.sleep(sleep)
         return contract_name    
     except:
         print(f"\n\n** Fatal error looking up a contract at address {address}\n\n")
