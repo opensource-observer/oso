@@ -8,10 +8,24 @@ import {
   GET_EVENTS_DAILY_BY_PROJECT,
 } from "../../lib/graphql/queries";
 import { assertNever, ensure, uncheckedCast } from "../../lib/common";
+import { ApolloError } from "@apollo/client";
+
+type ChartType = "kpiCard" | "areaChart" | "barList";
+type XAxis = "eventTime" | "artifact" | "eventType";
+type EntityType = "project" | "artifact";
 
 // The name used to pass data into the Plasmic DataProvider
 const DEFAULT_VARIABLE_NAME = "eventData";
+// Default entity type if not specified
+const DEFAULT_ENTITY_TYPE: EntityType = "artifact";
+// Default XAxis if not specified
+const DEFAULT_XAXIS: XAxis = "eventType";
 
+/**
+ * Regardless of the data query, this will be the intermediate
+ * format we need to normalize against before we put it into the
+ * data formatters (for charts)
+ **/
 type EventData = {
   type: string;
   id: number;
@@ -19,9 +33,23 @@ type EventData = {
   amount: number;
 };
 
+/**
+ * Convert the event time to a date label
+ */
 const eventTimeToLabel = (t: any) => dayjs(t).format("YYYY-MM-DD");
+
+/**
+ * If we get enums (e.g. NPM_PACKAGE), normalize it into a readable label
+ * @param t
+ * @returns
+ */
 const eventTypeToLabel = (t: string) => _.capitalize(t.replace(/_/g, " "));
 
+/**
+ * Formats normalized data into inputs to a KPI card
+ * @param data - normalized data
+ * @returns
+ */
 const formatDataToKpiCard = (data: EventData[]) => {
   const result = _.sumBy(data, (x) => x.amount);
   return {
@@ -29,52 +57,74 @@ const formatDataToKpiCard = (data: EventData[]) => {
   };
 };
 
-const formatDataToAreaChart = (data: EventData[]) => {
-  // Store the categories for the Tremor area chart
-  const categories = new Set<string>();
-  const simpleDates = data.map((x: EventData) => ({
-    ...x,
-    // Pull out the date
-    date: eventTimeToLabel(x.date),
-    // Get the value we want to plot
-    value: x.amount,
-  }));
-  //console.log(simpleDates);
-  const groupedByDate = _.groupBy(simpleDates, (x) => x.date);
+/**
+ * Formats normalized data into inputs to an area chart (for Tremor)
+ * @param data
+ * @returns
+ */
+const formatDataToAreaChart = (
+  data: EventData[],
+  categories: string[],
+  entityType: EntityType,
+) => {
+  // Start with an empty data point for each date
+  const emptyDataPoint = _.fromPairs(categories.map((c) => [c, 0]));
+  const datesWithData = _.uniq(data.map((x) => eventTimeToLabel(x.date)));
+  const groupedByDate = _.fromPairs(
+    datesWithData.map((d) => [d, _.clone(emptyDataPoint)]),
+  );
   //console.log(groupedByDate);
 
-  // Sum the values for each (artifactId, eventType, date)
-  const summed = _.mapValues(groupedByDate, (x) =>
-    _.reduce(
-      x,
-      (accum, curr) => {
-        //const category = `${curr.toId} ${eventTypeToLabel(curr.type)}`;
-        const category = `${eventTypeToLabel(curr.type)}`;
-        categories.add(category);
-        return {
-          ...accum,
-          [category]: (accum[category] ?? 0) + curr.value,
-        };
-      },
-      {} as Record<string, number>,
-    ),
-  );
+  // Sum the values for each (date, artifactId, eventType)
+  data.forEach((d) => {
+    const dateLabel = eventTimeToLabel(d.date);
+    const category = createCategory(entityType, d.id, d.type);
+    groupedByDate[dateLabel][category] += d.amount;
+  });
+  //console.log(groupedByDate);
+
   // Flatten into an array
-  //console.log(summed);
-  const unsorted = _.toPairs(summed).map((x) => ({
+  const unsorted = _.toPairs(groupedByDate).map((x) => ({
     ...x[1],
     date: x[0],
   }));
+  //console.log(unsorted);
+
   // Sort by date
   const result = _.sortBy(unsorted, (x) => x.date);
   //console.log(result);
+
+  // Trim empty data at the start and end
+  const isEmptyDataPoint = (x: _.Dictionary<number | string>): boolean => {
+    for (const cat of categories) {
+      if (x[cat] !== 0) {
+        return false;
+      }
+    }
+    return true;
+  };
+  let [i, j] = [0, result.length - 1];
+  while (i < result.length && isEmptyDataPoint(result[i])) {
+    i++;
+  }
+  while (j > 0 && isEmptyDataPoint(result[j])) {
+    j--;
+  }
+  const sliced = result.slice(i, j + 1);
+
   return {
-    data: result,
-    categories: Array.from(categories),
+    data: sliced,
+    categories,
     xAxis: "date",
   };
 };
 
+/**
+ * Formats normalized data for a bar chart (for Tremor)
+ * @param xAxis
+ * @param data
+ * @returns
+ */
 const formatDataToBarList = (xAxis: XAxis, data: EventData[]) => {
   const grouped = _.groupBy(data, (x) =>
     xAxis === "eventTime"
@@ -102,10 +152,6 @@ const formatDataToBarList = (xAxis: XAxis, data: EventData[]) => {
   };
 };
 
-type ChartType = "kpiCard" | "areaChart" | "barList";
-type XAxis = "eventTime" | "artifact" | "eventType";
-type EntityType = "project" | "artifact";
-
 /**
  * Query component focused on providing data to visualiation components
  *
@@ -131,6 +177,11 @@ type EventDataProviderProps = {
   endDate?: string;
 };
 
+/**
+ * Create the variables object for the GraphQL query
+ * @param props
+ * @returns
+ */
 const createVariables = (props: EventDataProviderProps) => ({
   ids:
     props.ids?.map((id) => parseInt(id)).filter((id) => !!id && !isNaN(id)) ??
@@ -140,6 +191,39 @@ const createVariables = (props: EventDataProviderProps) => ({
   endDate: eventTimeToLabel(props.endDate),
 });
 
+/**
+ * TODO: Creates unique categories for the area chart
+ * - Currently, we just use the type, which will merge data across IDs
+ * - We need to add unique identifiers for each ID to properly segregate
+ * @param entityType
+ * @param id
+ * @param type
+ * @returns
+ */
+const createCategory = (entityType: EntityType, id: number, type: string) =>
+  `${type}`;
+
+const createCategories = (props: EventDataProviderProps) => {
+  const entityType = props.entityType ?? DEFAULT_ENTITY_TYPE;
+  const ids = (props.ids ?? [])
+    .map(parseInt)
+    .filter((id) => !!id && !isNaN(id));
+  const types = props.eventTypes ?? [];
+  const result: string[] = [];
+  for (const id of ids) {
+    for (const type of types) {
+      result.push(createCategory(entityType, id, type));
+    }
+  }
+  return result;
+};
+
+/**
+ * Switches on the props to return formatted data
+ * @param props - component props
+ * @param rawData - normalized data from a GraphQL query
+ * @returns
+ */
 const formatData = (props: EventDataProviderProps, rawData: EventData[]) => {
   //const checkedData = rawData as unknown as EventData[];
   // Short-circuit if test data
@@ -151,16 +235,57 @@ const formatData = (props: EventDataProviderProps, rawData: EventData[]) => {
     props.chartType === "kpiCard"
       ? formatDataToKpiCard(data)
       : props.chartType === "areaChart"
-      ? formatDataToAreaChart(data)
+      ? formatDataToAreaChart(
+          data,
+          createCategories(props),
+          props.entityType ?? DEFAULT_ENTITY_TYPE,
+        )
       : props.chartType === "barList"
-      ? formatDataToBarList(props.xAxis ?? "artifact", data)
+      ? formatDataToBarList(props.xAxis ?? DEFAULT_XAXIS, data)
       : assertNever(props.chartType);
   return formattedData;
 };
 
-function ArtifactEventDataProvider(props: EventDataProviderProps) {
-  // These props are set in the Plasmic Studio
+type ProviderViewProps = EventDataProviderProps & {
+  formattedData: any;
+  loading: boolean;
+  error?: ApolloError;
+};
+
+/**
+ * Common view logic for EventDataProviders
+ * @param props
+ * @returns
+ */
+function ProviderView(props: ProviderViewProps) {
   const key = props.variableName ?? DEFAULT_VARIABLE_NAME;
+  // Show when loading or error
+  if (props.loading && !props.ignoreLoading && !!props.loadingChildren) {
+    return <div className={props.className}> {props.loadingChildren} </div>;
+  } else if (props.error && !props.ignoreError && !!props.errorChildren) {
+    return (
+      <div className={props.className}>
+        <DataProvider name={key} data={props.error}>
+          {props.errorChildren}
+        </DataProvider>
+      </div>
+    );
+  }
+  return (
+    <div className={props.className}>
+      <DataProvider name={key} data={props.formattedData}>
+        {props.children}
+      </DataProvider>
+    </div>
+  );
+}
+
+/**
+ * EventDataProvider for artifacts
+ * @param props
+ * @returns
+ */
+function ArtifactEventDataProvider(props: EventDataProviderProps) {
   const variables = createVariables(props);
   const {
     data: rawData,
@@ -177,31 +302,22 @@ function ArtifactEventDataProvider(props: EventDataProviderProps) {
   }));
   const formattedData = formatData(props, normalizedData);
   console.log(props.ids, rawData, formattedData);
-
-  // Show when loading or error
-  if (loading && !props.ignoreLoading && !!props.loadingChildren) {
-    return <div className={props.className}> {props.loadingChildren} </div>;
-  } else if (error && !props.ignoreError && !!props.errorChildren) {
-    return (
-      <div className={props.className}>
-        <DataProvider name={key} data={error}>
-          {props.errorChildren}
-        </DataProvider>
-      </div>
-    );
-  }
   return (
-    <div className={props.className}>
-      <DataProvider name={key} data={formattedData}>
-        {props.children}
-      </DataProvider>
-    </div>
+    <ProviderView
+      {...props}
+      formattedData={formattedData}
+      loading={loading}
+      error={error}
+    />
   );
 }
 
+/**
+ * EventDataProvider for projects
+ * @param props
+ * @returns
+ */
 function ProjectEventDataProvider(props: EventDataProviderProps) {
-  // These props are set in the Plasmic Studio
-  const key = props.variableName ?? DEFAULT_VARIABLE_NAME;
   const variables = createVariables(props);
   const {
     data: rawData,
@@ -218,28 +334,22 @@ function ProjectEventDataProvider(props: EventDataProviderProps) {
   }));
   const formattedData = formatData(props, normalizedData);
   console.log(props.ids, rawData, formattedData);
-
-  // Show when loading or error
-  if (loading && !props.ignoreLoading && !!props.loadingChildren) {
-    return <div className={props.className}> {props.loadingChildren} </div>;
-  } else if (error && !props.ignoreError && !!props.errorChildren) {
-    return (
-      <div className={props.className}>
-        <DataProvider name={key} data={error}>
-          {props.errorChildren}
-        </DataProvider>
-      </div>
-    );
-  }
   return (
-    <div className={props.className}>
-      <DataProvider name={key} data={formattedData}>
-        {props.children}
-      </DataProvider>
-    </div>
+    <ProviderView
+      {...props}
+      formattedData={formattedData}
+      loading={loading}
+      error={error}
+    />
   );
 }
 
+/**
+ * Switches between the EventDataProvider implementation
+ * depending on the `entityType`
+ * @param props
+ * @returns
+ */
 function EventDataProvider(props: EventDataProviderProps) {
   return props.entityType === "project" ? (
     <ProjectEventDataProvider {...props} />
