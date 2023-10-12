@@ -25,11 +25,10 @@ import _ from "lodash";
 import {
   IArtifactGroup,
   IArtifactGroupCommitmentProducer,
-  ICollector,
 } from "../../scheduler/types.js";
 import { Range } from "../../utils/ranges.js";
 import { ProjectRepository } from "../../db/project.js";
-import { ProjectArtifactGroup } from "../../scheduler/common.js";
+import { BaseCollector, ProjectArtifactGroup } from "../../scheduler/common.js";
 import { ArtifactGroupRecorder } from "../../recorder/group.js";
 
 export interface FundingEventsCollectorOptions {
@@ -45,7 +44,7 @@ export const DefaultFundingEventsCollectorOptions: FundingEventsCollectorOptions
     },
   };
 
-export class FundingEventsCollector implements ICollector {
+export class FundingEventsCollector extends BaseCollector<Project> {
   private client: IFundingEventsClient;
   private recorder: IEventRecorder;
   private projectRepository: typeof ProjectRepository;
@@ -59,6 +58,7 @@ export class FundingEventsCollector implements ICollector {
     cache: TimeSeriesCacheWrapper,
     options?: Partial<FundingEventsCollectorOptions>,
   ) {
+    super();
     this.client = client;
     this.projectRepository = projectRepository;
     this.recorder = recorder;

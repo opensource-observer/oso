@@ -2,7 +2,7 @@ import {
   BatchEventRecorder,
   TimeoutBatchedFlusher,
 } from "../recorder/recorder.js";
-import { BaseScheduler, Config } from "./types.js";
+import { BaseScheduler, Config, ExecutionMode } from "./types.js";
 import {
   TimeSeriesCacheManager,
   TimeSeriesCacheWrapper,
@@ -32,7 +32,7 @@ import { GithubCommitCollector } from "../actions/github/fetch/commits.js";
 import { GithubIssueCollector } from "../actions/github/fetch/pull-requests.js";
 import { GithubFollowingCollector } from "../actions/github/fetch/repo-followers.js";
 import { DailyContractUsageCollector } from "../actions/dune/index.js";
-import { DailyContractUsageClient } from "../actions/dune/daily-contract-usage/client.js";
+import { DailyContractUsageClient } from "../actions/dune/daily-contract-usage-v2/client.js";
 import path from "path";
 import { GithubWorkerSpawner } from "./github.js";
 import { JobExecutionRepository, JobsRepository } from "../db/jobs.js";
@@ -48,6 +48,7 @@ export type SchedulerManualArgs = SchedulerArgs & {
   collector: string;
   startDate: DateTime;
   endDate: DateTime;
+  executionMode: ExecutionMode;
 };
 
 export type SchedulerWorkerArgs = SchedulerArgs & {
@@ -69,17 +70,6 @@ export type SchedulerQueueJobArgs = SchedulerArgs & {
 // Entrypoint for the scheduler. Currently not where it should be but this is quick.
 export async function configure(args: SchedulerArgs) {
   const flusher = new TimeoutBatchedFlusher(2000, 2000);
-  const recorder = new BatchEventRecorder(
-    EventRepository,
-    ArtifactRepository,
-    flusher,
-    {
-      timeoutMs: args.recorderTimeoutMs,
-    },
-  );
-  recorder.setOptions({
-    overwriteExistingEvents: args.overwriteExistingEvents,
-  });
   const cacheManager = new TimeSeriesCacheManager(args.cacheDir);
   const cache = new TimeSeriesCacheWrapper(cacheManager);
 
@@ -137,7 +127,20 @@ export async function configure(args: SchedulerArgs) {
 
   const scheduler = new BaseScheduler(
     args.runDir,
-    recorder,
+    () => {
+      const recorder = new BatchEventRecorder(
+        EventRepository,
+        ArtifactRepository,
+        flusher,
+        {
+          timeoutMs: args.recorderTimeoutMs,
+        },
+      );
+      recorder.setOptions({
+        overwriteExistingEvents: args.overwriteExistingEvents,
+      });
+      return recorder;
+    },
     config,
     eventPointerManager,
     cache,

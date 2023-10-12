@@ -25,6 +25,7 @@ export interface EventRecorderOptions {
 export type RecordResponse = string;
 
 export interface RecordHandle {
+  id: string;
   wait(): Promise<RecordResponse>;
 }
 
@@ -49,7 +50,10 @@ export interface IEventRecorder {
   // Call this when you're done recording
   close(): Promise<void>;
 
-  wait(eventType: EventType): Promise<void>;
+  wait(
+    handles: RecordHandle[],
+    timeout?: number,
+  ): Promise<AsyncResults<RecordResponse>>;
 
   addListener(listener: "error", cb: (err: unknown) => void): EventEmitter;
   addListener(listener: "flush-complete", cb: () => void): EventEmitter;
@@ -57,6 +61,8 @@ export interface IEventRecorder {
   removeListener(listener: "error", cb: (err: unknown) => void): void;
   removeListener(listener: "flush-complete", cb: (err: unknown) => void): void;
 }
+
+export type RecorderFactory = () => IEventRecorder;
 
 export interface IActorDirectory {
   fromId(id: number): Promise<Artifact>;
@@ -101,6 +107,7 @@ export type IncompleteEvent = {
   from?: IncompleteArtifact;
   amount: number;
   details?: object;
+  size?: bigint;
 };
 
 export type EventGroupRecorderCallback<T> = (results: AsyncResults<T>) => void;

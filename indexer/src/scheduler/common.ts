@@ -48,7 +48,31 @@ export class ProjectArtifactGroup extends BasicArtifactGroup<Project> {
   }
 }
 
-export class ProjectArtifactsCollector implements ICollector {
+export abstract class BaseCollector<T extends object> implements ICollector {
+  async allArtifacts(): Promise<Artifact[]> {
+    // By default this will simply iterate through the grouped artifacts
+    const all: Artifact[] = [];
+    for await (const artifacts of this.groupedArtifacts()) {
+      all.push(...(await artifacts.artifacts()));
+    }
+    return all;
+  }
+
+  /* eslint-disable-next-line require-yield */
+  async *groupedArtifacts(): AsyncGenerator<IArtifactGroup<T>> {
+    throw new Error("groupedArtifacts() not implemented");
+  }
+
+  collect(
+    _group: IArtifactGroup<T>,
+    _range: Range,
+    _committer: IArtifactGroupCommitmentProducer,
+  ): Promise<CollectResponse> {
+    throw new Error("groupedArtifacts() not implemented");
+  }
+}
+
+export class ProjectArtifactsCollector extends BaseCollector<Project> {
   protected projectRepository: Repository<Project>;
   protected cache: TimeSeriesCacheWrapper;
   protected recorder: IEventRecorder;
@@ -60,6 +84,7 @@ export class ProjectArtifactsCollector implements ICollector {
     cache: TimeSeriesCacheWrapper,
     artifactsWhere: FindOptionsWhere<Artifact>,
   ) {
+    super();
     this.projectRepository = projectRepository;
     this.cache = cache;
     this.recorder = recorder;

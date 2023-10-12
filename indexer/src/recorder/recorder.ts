@@ -34,47 +34,29 @@ import { randomUUID } from "node:crypto";
 import { DateTime } from "luxon";
 import { EventRef, EventRepository } from "../db/events.js";
 import { RecordResponse } from "./types.js";
+import { AsyncResults } from "../utils/async-results.js";
 
 export interface BatchEventRecorderOptions {
   maxBatchSize: number;
   timeoutMs: number;
 }
 
-interface EventTypeStorageOptions {
-  timeoutMs: number;
-}
-
-class EventTypeStorage<T> {
+class EventTypeStorage {
   private queue: UniqueArray<IncompleteEvent>;
-  private pubsub: PromisePubSub<T, unknown>;
 
-  static setup<X>(options?: EventTypeStorageOptions): EventTypeStorage<X> {
+  static setup(): EventTypeStorage {
     const queue = new UniqueArray<IncompleteEvent>((event) => {
       return event.sourceId;
     });
-    const opts = _.merge(
-      {
-        timeoutMs: 120000,
-      },
-      options,
-    );
-    return new EventTypeStorage(queue, opts);
+    return new EventTypeStorage(queue);
   }
 
-  private constructor(
-    queue: UniqueArray<IncompleteEvent>,
-    options: EventTypeStorageOptions,
-  ) {
+  private constructor(queue: UniqueArray<IncompleteEvent>) {
     this.queue = queue;
-    this.pubsub = new PromisePubSub({
-      timeoutMs: options.timeoutMs,
-    });
   }
 
-  pushAndWait(event: IncompleteEvent): Promise<T> {
+  push(event: IncompleteEvent) {
     this.queue.push(event);
-
-    return this.pubsub.sub(event.sourceId);
   }
 
   pop(): IncompleteEvent | undefined {
@@ -93,17 +75,13 @@ class EventTypeStorage<T> {
     return events;
   }
 
-  emitResponse(sourceId: string, err: unknown | null, res: T) {
-    return this.pubsub.pub(sourceId, err, res);
-  }
-
   get length(): number {
     return this.queue.length;
   }
 }
 
 const defaultBatchEventRecorderOptions: BatchEventRecorderOptions = {
-  maxBatchSize: 5000,
+  maxBatchSize: 2000,
 
   // ten minute timeout seems sane for completing any db writes (in a normal
   // case). When backfilling this should be made much bigger.
@@ -131,6 +109,7 @@ export class TimeoutBatchedFlusher implements IFlusher {
   private maxSize: number;
   private triggered: boolean;
   private nextFlush: DateTime;
+  private stopped: boolean;
 
   constructor(timeoutMs: number, maxSize: number) {
     if (timeoutMs < 100) {
@@ -142,6 +121,7 @@ export class TimeoutBatchedFlusher implements IFlusher {
     this.size = 0;
     this.maxSize = maxSize;
     this.triggered = false;
+    this.stopped = false;
     this.setNextFlush();
   }
 
@@ -174,6 +154,11 @@ export class TimeoutBatchedFlusher implements IFlusher {
   }
 
   private resetTimeout() {
+    if (this.stopped) {
+      if (this.timeout) {
+        clearTimeout(this.timeout);
+      }
+    }
     // Only reset the timeout if the flusher is currently untriggered. A
     // triggered state means that this flusher is executing the callback
     if (!this.triggered) {
@@ -235,9 +220,13 @@ type KnownEventStorage = {
   incompleteRef: Record<string, Omit<EventRef, "id">>;
 };
 
+function eventUniqueId(event: Pick<Event, "sourceId" | "type">): string {
+  return `${event.type}:${event.sourceId}`;
+}
+
 export class BatchEventRecorder implements IEventRecorder {
   private eventTypeStrategies: Record<string, IEventTypeStrategy>;
-  private eventTypeStorage: Record<string, EventTypeStorage<RecordResponse>>;
+  private eventTypeStorage: Record<string, EventTypeStorage>;
   private knownEventsStorage: Record<string, KnownEventStorage>;
   private options: BatchEventRecorderOptions;
   private actorDirectory: InmemActorResolver;
@@ -254,6 +243,7 @@ export class BatchEventRecorder implements IEventRecorder {
   private recorderOptions: EventRecorderOptions;
   private queueSize: number;
   private lastActorUpdatedAt: DateTime;
+  private recordedHistory: Record<string, boolean>;
 
   constructor(
     eventRepository: typeof EventRepository,
@@ -281,10 +271,13 @@ export class BatchEventRecorder implements IEventRecorder {
     this.recorderOptions = {
       overwriteExistingEvents: false,
     };
+    this.recordedHistory = {};
+
     // Do you remember...
     this.lastActorUpdatedAt = DateTime.fromISO("1970-09-21T20:00:00Z");
     // Arbitrarily set to an early time
 
+    //this.emitter.setMaxListeners(0);
     // Setup flush event handler
     this.flusher.onFlush(async () => {
       logger.debug(`flushing all queued events`);
@@ -300,7 +293,80 @@ export class BatchEventRecorder implements IEventRecorder {
     });
   }
 
+  async wait(
+    handles: RecordHandle[],
+    timeoutMs?: number,
+  ): Promise<AsyncResults<RecordResponse>> {
+    timeoutMs = timeoutMs === undefined ? this.options.timeoutMs : timeoutMs;
+
+    const results: AsyncResults<RecordResponse> = {
+      success: [],
+      errors: [],
+    };
+
+    const expectedMap: Record<string, number> = {};
+    let expectedCount = 0;
+
+    handles.forEach((h) => {
+      // We can skip things that have already been recorded
+      if (this.isKnownByIdStr(h.id)) {
+        return;
+      }
+
+      expectedMap[h.id] = 1;
+      expectedCount += 1;
+    });
+    if (expectedCount === 0) {
+      return results;
+    }
+    console.log(`waiting for ${expectedCount}`);
+
+    return new Promise((resolve, reject) => {
+      let count = 0;
+      setTimeout(() => {
+        return reject(
+          new RecorderError("timed out waiting for recordings to complete"),
+        );
+      }, timeoutMs);
+
+      const eventCallback = (err: unknown | null, uniqueId: string) => {
+        if (expectedMap[uniqueId] === 1) {
+          console.log(uniqueId);
+          expectedMap[uniqueId] = 0;
+          count += 1;
+
+          if (err) {
+            results.errors.push(err);
+          } else {
+            results.success.push(uniqueId);
+          }
+
+          // Why's it greater tho?
+          if (expectedCount >= count) {
+            this.emitter.removeListener("event-record-failure", failure);
+            this.emitter.removeListener("event-record-success", success);
+            return resolve(results);
+          }
+        }
+      };
+
+      const failure = (err: unknown, uniqueId: string) => {
+        eventCallback(err, uniqueId);
+      };
+      const success = (uniqueId: string) => {
+        eventCallback(null, uniqueId);
+      };
+
+      this.emitter.addListener("event-record-failure", failure);
+
+      this.emitter.addListener("event-record-success", success);
+    });
+  }
   private async waitTillAvailable(): Promise<void> {
+    if (!this.isQueueFull()) {
+      return;
+    }
+    console.log("waiting till available");
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
         reject(new Error("timed out waiting for recorder to become available"));
@@ -403,6 +469,10 @@ export class BatchEventRecorder implements IEventRecorder {
       );
     }
 
+    // Janky for now
+    const uniqueId = eventUniqueId(event);
+    this.recordedHistory[uniqueId] = true;
+
     if ((event as Event).id) {
       storage.ref[event.sourceId] = event as Event;
     } else {
@@ -416,6 +486,10 @@ export class BatchEventRecorder implements IEventRecorder {
       storage.ref[event.sourceId] !== undefined ||
       storage.incompleteRef[event.sourceId]
     );
+  }
+
+  private isKnownByIdStr(id: string) {
+    return this.recordedHistory[id] === true;
   }
 
   private async loadActors(flushId: string): Promise<void> {
@@ -471,15 +545,30 @@ export class BatchEventRecorder implements IEventRecorder {
 
     // Queue an event for writing
     const queue = this.getEventTypeStorage(event.type);
-    const promise = queue.pushAndWait(event);
+    queue.push(event);
     this.queueSize += 1;
 
     // Upon the first "record" begin the flush sequence
     this.scheduleFlush(1);
 
+    const uniqueId = eventUniqueId(event);
+
     return {
+      id: uniqueId,
       wait: () => {
-        return promise;
+        // Let's not unnecessarily make a bunch of event listeners
+        if (this.recordedHistory[uniqueId]) {
+          return Promise.resolve(uniqueId);
+        }
+
+        return new Promise((resolve, reject) => {
+          this.emitter.addListener(uniqueId, (err) => {
+            if (err) {
+              return reject(err);
+            }
+            return resolve(uniqueId);
+          });
+        });
       },
     };
   }
@@ -525,20 +614,29 @@ export class BatchEventRecorder implements IEventRecorder {
 
     // Lock the recorder
     this.closing = true;
-    logger.debug("closing the recorder");
-    const all: Promise<void>[] = [];
+    return new Promise<void>((resolve, reject) => {
+      logger.debug("closing the recorder");
 
-    for (const eventType in this.eventTypeStorage) {
-      all.push(this.wait(eventType as EventType));
-    }
+      setTimeout(() => {
+        reject(new RecorderError("timeout closing the recorder"));
+      }, this.options.timeoutMs);
+      const all: Promise<void>[] = [];
 
-    await Promise.all(all);
+      for (const eventType in this.eventTypeStorage) {
+        all.push(this.waitForEventType(eventType as EventType));
+      }
 
-    this.flusher.clear();
-    return;
+      Promise.all(all)
+        .then(() => {
+          this.emitter.removeAllListeners();
+          this.flusher.clear();
+          resolve();
+        })
+        .catch(reject);
+    });
   }
 
-  async wait(eventType: EventType): Promise<void> {
+  private async waitForEventType(eventType: EventType): Promise<void> {
     const storage = this.getEventTypeStorage(eventType);
     if (storage.length === 0) {
       return;
@@ -580,9 +678,7 @@ export class BatchEventRecorder implements IEventRecorder {
       this.pubsub.pub(eventType, err);
 
       // Report errors to all of the promises listening on specific events
-      for (const event of processing) {
-        eventTypeStorage.emitResponse(event.sourceId, err, "");
-      }
+      this.notifyFailure(processing, err);
       throw err;
     }
   }
@@ -595,7 +691,6 @@ export class BatchEventRecorder implements IEventRecorder {
     await this.loadEvents(eventType);
 
     // Get the date range for the currently queued items
-    const eventTypeStorage = this.getEventTypeStorage(eventType);
     let startDate = processing[0].time;
     let endDate = processing[0].time;
     processing.forEach((event) => {
@@ -633,7 +728,7 @@ export class BatchEventRecorder implements IEventRecorder {
           updateEvents.push(event);
         } else {
           // Resolve any existing subscriptions for this event's creation
-          eventTypeStorage.emitResponse(event.sourceId, null, event.sourceId);
+          this.notifySuccess([event]);
         }
       }
     }
@@ -677,7 +772,7 @@ export class BatchEventRecorder implements IEventRecorder {
               `recorder writes failed. Expected ${batchLength} writes but only received ${result.identifiers.length}`,
             );
           }
-          this.notifySuccess(eventTypeStorage, events);
+          this.notifySuccess(events);
           logger.debug(
             `completed writing batch of ${result.identifiers.length}`,
           );
@@ -688,7 +783,7 @@ export class BatchEventRecorder implements IEventRecorder {
               logger.debug("attempted to insert a duplicate event. skipping");
             }
           }
-          this.notifyFailure(eventTypeStorage, events, err);
+          this.notifyFailure(events, err);
           this.emitter.emit("error", err);
         }
       },
@@ -704,7 +799,7 @@ export class BatchEventRecorder implements IEventRecorder {
 
         try {
           await this.eventRepository.bulkUpdateBySourceIDAndType(events);
-          this.notifySuccess(eventTypeStorage, events);
+          this.notifySuccess(events);
         } catch (err) {
           logger.error("encountered an error updating to the database");
           logger.error(err);
@@ -715,7 +810,7 @@ export class BatchEventRecorder implements IEventRecorder {
               );
             }
           }
-          this.notifyFailure(eventTypeStorage, events, err);
+          this.notifyFailure(events, err);
           this.emitter.emit("error", err);
         }
       },
@@ -723,27 +818,28 @@ export class BatchEventRecorder implements IEventRecorder {
     logger.info(`finished flushing for ${eventType}`);
   }
 
-  protected notifySuccess(
-    eventTypeStorage: EventTypeStorage<RecordResponse>,
-    events: Event[],
-  ) {
+  protected notifySuccess(events: (Event | IncompleteEvent)[]) {
     events.forEach((e) => {
       // Mark as known event
       this.markEventAsKnown(e);
 
+      const uniqueId = eventUniqueId(e);
+
       // Notify any subscribers that the event has been recorded
-      eventTypeStorage.emitResponse(e.sourceId, null, e.sourceId);
+      this.emitter.emit(uniqueId, null, uniqueId);
+      this.emitter.emit("event-record-success", uniqueId);
     });
   }
 
   protected notifyFailure(
-    eventTypeStorage: EventTypeStorage<RecordResponse>,
-    events: Event[],
+    events: Pick<Event, "sourceId" | "type">[],
     err: unknown,
   ) {
     events.forEach((e) => {
       // Notify any subscribers that the event has failed to record
-      eventTypeStorage.emitResponse(e.sourceId, err, "");
+      const uniqueId = eventUniqueId(e);
+      this.emitter.emit(uniqueId, err, "");
+      this.emitter.emit("event-record-failure", err, "");
     });
   }
 
@@ -759,6 +855,8 @@ export class BatchEventRecorder implements IEventRecorder {
             id: await this.actorDirectory.resolveArtifactId(e.from),
           };
         }
+        // Convert size to string
+        const size = !e.size ? "0" : e.size.toString(10);
 
         const input = this.eventRepository.create({
           time: e.time.toJSDate(),
@@ -769,22 +867,19 @@ export class BatchEventRecorder implements IEventRecorder {
           type: e.type,
           amount: e.amount,
           sourceId: e.sourceId,
+          size: size,
+          details: e.details,
         });
         return input;
       }),
     );
   }
 
-  protected getEventTypeStorage(
-    eventType: EventType,
-  ): EventTypeStorage<RecordResponse> {
+  protected getEventTypeStorage(eventType: EventType): EventTypeStorage {
     const typeString = eventType.toString();
     let queue = this.eventTypeStorage[typeString];
     if (!queue) {
-      this.eventTypeStorage[typeString] =
-        EventTypeStorage.setup<RecordResponse>({
-          timeoutMs: this.options.timeoutMs,
-        });
+      this.eventTypeStorage[typeString] = EventTypeStorage.setup();
       queue = this.eventTypeStorage[typeString];
     }
     return queue;

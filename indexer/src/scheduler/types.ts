@@ -13,11 +13,13 @@ import {
   IEventTypeStrategy,
   RecordHandle,
   RecordResponse,
+  RecorderFactory,
 } from "../recorder/types.js";
 import {
   Range,
   findMissingRanges,
   rangeFromDates,
+  rangeSplit,
   rangeToString,
 } from "../utils/ranges.js";
 import { IEventPointerManager } from "./pointers.js";
@@ -149,6 +151,8 @@ export interface ICollector {
   // generator so that artifacts can be yielded in groups if needed.
   groupedArtifacts(): AsyncGenerator<IArtifactGroup<object>>;
 
+  allArtifacts(): Promise<Artifact[]>;
+
   collect(
     group: IArtifactGroup<object>,
     range: Range,
@@ -176,6 +180,7 @@ export interface EventTypeStrategyRegistration {
 }
 
 export type Schedule = "monthly" | "weekly" | "daily" | "hourly";
+export type ExecutionMode = "all-at-once" | "progressive";
 
 export interface CollectorRegistration {
   create(
@@ -216,6 +221,7 @@ export class Config implements IConfig {
 }
 
 export interface ExecutionSummary {
+  group?: string;
   errors: PossiblyError[];
   artifactSummaries: ArtifactCommitmentSummary[];
 }
@@ -237,9 +243,10 @@ export interface IScheduler {
 
   runWorker(group: string, resumeWithLock: boolean): Promise<ExecutionSummary>;
 
-  executeForRange(
+  executeCollector(
     collectorName: string,
     range: Range,
+    mode: ExecutionMode,
   ): Promise<ExecutionSummary>;
 }
 
@@ -439,19 +446,20 @@ export interface WorkerSpawner {
 }
 
 export class BaseScheduler implements IScheduler {
-  private recorder: IEventRecorder;
   private config: IConfig;
   private collectors: Record<string, CollectorRegistration>;
   private eventPointerManager: IEventPointerManager;
+  private recorderFactory: RecorderFactory;
   private cache: TimeSeriesCacheWrapper;
   private spawner: WorkerSpawner;
   private jobsRepository: typeof JobsRepository;
   private jobsExecutionRepository: typeof JobExecutionRepository;
   private runDir: string;
+  private eventTypes: EventTypeStrategyRegistration[];
 
   constructor(
     runDir: string,
-    recorder: IEventRecorder,
+    recorderFactory: RecorderFactory,
     config: IConfig,
     eventPointerManager: IEventPointerManager,
     cache: TimeSeriesCacheWrapper,
@@ -460,14 +468,15 @@ export class BaseScheduler implements IScheduler {
     jobsExecutionRepository: typeof JobExecutionRepository,
   ) {
     this.runDir = runDir;
-    this.recorder = recorder;
     this.config = config;
     this.collectors = {};
+    this.eventTypes = [];
     this.cache = cache;
     this.eventPointerManager = eventPointerManager;
     this.spawner = spawner;
     this.jobsRepository = jobsRepository;
     this.jobsExecutionRepository = jobsExecutionRepository;
+    this.recorderFactory = recorderFactory;
   }
 
   registerCollector(reg: CollectorRegistration) {
@@ -475,7 +484,15 @@ export class BaseScheduler implements IScheduler {
   }
 
   registerEventType(reg: EventTypeStrategyRegistration) {
-    this.recorder.registerEventType(reg.type, reg.strategy);
+    this.eventTypes.push(reg);
+  }
+
+  newRecorder(): IEventRecorder {
+    const recorder = this.recorderFactory();
+    this.eventTypes.forEach((r) => {
+      recorder.registerEventType(r.type, r.strategy);
+    });
+    return recorder;
   }
 
   async queueAll(baseTime?: DateTime): Promise<void> {
@@ -514,11 +531,13 @@ export class BaseScheduler implements IScheduler {
     if (weeklyMatchDateTime.equals(baseTime)) {
       scheduleMatches.push("weekly");
     }
+
     const dailyMatchDateTime = baseTime.startOf("day").plus({ hours: 2 });
     logger.debug(`Daily match is ${dailyMatchDateTime.toISO()}`);
     if (dailyMatchDateTime.equals(baseTime)) {
       scheduleMatches.push("daily");
     }
+
     const monthlyMatchDateTime = baseTime.startOf("month").plus({ days: 2 });
     logger.debug(`Monthly match is ${monthlyMatchDateTime.toISO()}`);
     if (monthlyMatchDateTime.equals(baseTime)) {
@@ -638,10 +657,14 @@ export class BaseScheduler implements IScheduler {
       { encoding: "utf-8" },
     );
 
-    const execSummary = await this.executeForRange(job.collector, {
-      startDate: startDate,
-      endDate: endDate,
-    });
+    const execSummary = await this.executeCollector(
+      job.collector,
+      {
+        startDate: startDate,
+        endDate: endDate,
+      },
+      "all-at-once",
+    );
 
     let execStatus = JobExecutionStatus.FAILED;
     if (execSummary.errors.length === 0) {
@@ -706,29 +729,67 @@ export class BaseScheduler implements IScheduler {
     await unlink(lockJsonPath);
   }
 
-  async executeForRange(collectorName: string, range: Range) {
+  async executeCollector(
+    collectorName: string,
+    range: Range,
+    mode: ExecutionMode = "all-at-once",
+  ) {
     if (range.startDate >= range.endDate) {
       throw new Error(`invalid input range ${rangeToString(range)}`);
     }
-    logger.debug(`starting ${collectorName}`);
+    logger.debug(`starting ${collectorName} in ${mode}`);
     const reg = this.collectors[collectorName];
+    if (mode === "all-at-once") {
+      return this.executeForRange(reg, range);
+    } else {
+      // Execute range by day
+      const ranges = rangeSplit(range, "day");
 
-    this.recorder.setActorScope(reg.artifactScope, reg.artifactTypeScope);
-    if (reg.dataSetIncludesNow) {
-      this.recorder.setRange({
+      const summaries: ExecutionSummary[] = [];
+      for (const pullRange of ranges) {
+        const result = await this.executeForRange(reg, pullRange);
+        summaries.push(result);
+      }
+      const summary = summaries.reduce<ExecutionSummary>(
+        (acc, curr) => {
+          acc.errors.push(...curr.errors);
+          acc.artifactSummaries.push(...curr.artifactSummaries);
+          return acc;
+        },
+        {
+          errors: [],
+          artifactSummaries: [],
+        },
+      );
+      return summary;
+    }
+  }
+
+  async executeForRange(collectorReg: CollectorRegistration, range: Range) {
+    const recorder = this.newRecorder();
+    recorder.setActorScope(
+      collectorReg.artifactScope,
+      collectorReg.artifactTypeScope,
+    );
+    if (collectorReg.dataSetIncludesNow) {
+      recorder.setRange({
         startDate: range.startDate,
         endDate: DateTime.now().toUTC(),
       });
     } else {
-      this.recorder.setRange(range);
+      recorder.setRange(range);
     }
-    const collector = await reg.create(this.config, this.recorder, this.cache);
+    const collector = await collectorReg.create(
+      this.config,
+      recorder,
+      this.cache,
+    );
     const executionSummary: ExecutionSummary = {
       artifactSummaries: [],
       errors: [],
     };
 
-    this.recorder.addListener("error", (err) => {
+    recorder.addListener("error", (err) => {
       logger.error("caught error on the recorder");
       logger.error(err);
       executionSummary.errors.push(err);
@@ -745,7 +806,7 @@ export class BaseScheduler implements IScheduler {
       const missing = await this.findMissingArtifactsFromEventPointers(
         range,
         artifacts,
-        collectorName,
+        collectorReg.name,
       );
       totalMissing += missing.length;
     }
@@ -762,11 +823,11 @@ export class BaseScheduler implements IScheduler {
       const missing = await this.findMissingArtifactsFromEventPointers(
         range,
         artifacts,
-        collectorName,
+        collectorReg.name,
       );
 
       const committer = ArtifactRecordsCommitmentWrapper.setup(
-        collectorName,
+        collectorReg.name,
         range,
         this.eventPointerManager,
         missing,
@@ -821,9 +882,9 @@ export class BaseScheduler implements IScheduler {
     logger.debug("collection recorded but waiting for recorder");
 
     try {
-      await this.recorder.close();
+      await recorder.close();
     } catch (err) {
-      logger.error("waiting for the recorder to complete", err);
+      logger.error("error while waiting for the recorder to complete", err);
       executionSummary.errors.push(err);
     }
 

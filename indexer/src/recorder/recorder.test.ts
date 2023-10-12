@@ -78,9 +78,7 @@ withDbDescribe("BatchEventRecorder", () => {
       sourceId: "test123",
     };
     const record0Handle = await recorder.record(testEvent);
-    const record0Wait = recorder.wait(EventType.COMMIT_CODE);
     flusher.flush();
-    await record0Wait;
     await record0Handle.wait();
 
     // No errors should be thrown if we attempt to write twice

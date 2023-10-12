@@ -1,4 +1,4 @@
-import { DateTime } from "luxon";
+import { DateTime, DurationLikeObject, DateTimeUnit } from "luxon";
 
 export interface Range {
   startDate: DateTime;
@@ -10,6 +10,28 @@ export function rangeFromDates(startDate: Date, endDate: Date): Range {
     startDate: DateTime.fromJSDate(startDate),
     endDate: DateTime.fromJSDate(endDate),
   };
+}
+
+// Splits a range
+export function rangeSplit(range: Range, by: DateTimeUnit): Range[] {
+  if (range.startDate > range.endDate) {
+    throw new Error(`invalid range ${rangeToString(range)}`);
+  }
+  if (range.startDate.equals(range.endDate)) {
+    throw new Error(`invalid range ${rangeToString(range)}`);
+  }
+  let currentDate = range.startDate.startOf(by);
+  const step: DurationLikeObject = {};
+  step[by] = 1;
+  const ranges: Range[] = [];
+  while (currentDate < range.endDate) {
+    ranges.push({
+      startDate: currentDate,
+      endDate: currentDate.plus(step),
+    });
+    currentDate = currentDate.plus(step);
+  }
+  return ranges;
 }
 
 export function isWithinRange(range: Range, dt: DateTime): boolean {

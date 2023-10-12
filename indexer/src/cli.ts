@@ -4,25 +4,11 @@ import { DateTime } from "luxon";
 import { hideBin } from "yargs/helpers";
 import { RunAutocrawlArgs, runAutocrawl } from "./actions/autocrawl.js";
 import { handleError } from "./utils/error.js";
-//import { EventSourceFunction } from "./utils/api.js";
-//import { NpmDownloadsArgs, NpmDownloadsInterface } from "./events/npm.js";
 import {
   ImportOssDirectoryArgs,
   importOssDirectory,
 } from "./actions/oss-directory.js";
 import { initializeDataSource } from "./db/data-source.js";
-// import {
-//   importDailyContractUsage,
-// } from "./actions/dune/index.js";
-// import { LoadCommits, loadCommits } from "./actions/github/fetch/commits.js";
-// import {
-//   LoadRepositoryFollowers,
-//   loadRepositoryFollowers,
-// } from "./actions/github/fetch/repo-followers.js";
-// import
-//   LoadPullRequests,
-//   loadPullRequests,
-// } from "./actions/github/fetch/pull-requests.js";
 import {
   SchedulerArgs,
   SchedulerManualArgs,
@@ -32,6 +18,8 @@ import {
   configure,
 } from "./scheduler/index.js";
 import { logger } from "./utils/logger.js";
+import { csvCommandGroup } from "./scripts/manual-csv-import-helper.js";
+import { duneCommandGroup } from "./scripts/manual-dune-tools.js";
 
 //const callLibrary = async <Args>(
 //  func: EventSourceFunction<Args>,
@@ -77,10 +65,6 @@ const cli = yargs(hideBin(process.argv))
     "importOssDirectory",
     "Import projects and collections from 'oss-directory'",
     (yags) => {
-      yags.option("overwrite-existing-events", {
-        type: "boolean",
-        default: false,
-      });
       yags.option("skip-existing", {
         type: "boolean",
         default: false,
@@ -88,47 +72,20 @@ const cli = yargs(hideBin(process.argv))
     },
     (argv) => handleError(importOssDirectory(argv)),
   )
-  // .command<ImportDailyContractUsage>(
-  //   "importDailyContractUsage",
-  //   "Manually import contract usage statistics from dune",
-  //   (yags) => {
-  //     yags
-  //       .option("skipExisting", { type: "boolean" })
-  //       .option("interval", { type: "number" })
-  //       .option("base-date", { type: "string", default: "" })
-  //       .coerce("base-date", (arg) => {
-  //         if (arg === "") {
-  //           return DateTime.now();
-  //         }
-  //         return DateTime.fromISO(arg);
-  //       });
-  //   },
-  //   (argv) => handleError(importDailyContractUsage(argv)),
-  // )
-  // .command<LoadCommits>(
-  //   "loadCommits",
-  //   "Manually import commits",
-  //   (yags) => {
-  //     yags.option("skipExisting", { type: "boolean" });
-  //   },
-  //   (argv) => handleError(loadCommits(argv)),
-  // )
-  // .command<LoadRepositoryFollowers>(
-  //   "loadRepositoryFollowers",
-  //   "Manually import commits",
-  //   (yags) => {
-  //     yags.option("skipExisting", { type: "boolean" });
-  //   },
-  //   (argv) => handleError(loadRepositoryFollowers(argv)),
-  // )
-  // .command<LoadPullRequests>(
-  //   "loadPullRequests",
-  //   "Manually import pull requests",
-  //   (yags) => {
-  //     yags.option("skipExisting", { type: "boolean" });
-  //   },
-  //   (argv) => handleError(loadPullRequests(argv)),
-  // )
+  .command<Record<string, never>>(
+    "csv <subcommand>",
+    "subcommand for csv related tools",
+    (yargs) => {
+      csvCommandGroup(yargs);
+    },
+  )
+  .command<Record<string, never>>(
+    "dune <subcommand>",
+    "subcommand for dune related things",
+    (yargs) => {
+      duneCommandGroup(yargs);
+    },
+  )
   .command<RunAutocrawlArgs>(
     "runAutocrawl",
     "Iterate over EventSourcePointer table and update all data marked for autocrawl",
@@ -137,19 +94,6 @@ const cli = yargs(hideBin(process.argv))
     },
     (argv) => handleError(runAutocrawl(argv)),
   )
-  // .command<NpmDownloadsArgs>(
-  //   NpmDownloadsInterface.command,
-  //   "Fetch NPM downloads",
-  //   (yags) => {
-  //     yags
-  //       .option("name", {
-  //         type: "string",
-  //         describe: "Package name",
-  //       })
-  //       .demandOption(["name"]);
-  //   },
-  //   (argv) => handleError(callLibrary(NpmDownloadsInterface.func, argv)),
-  // )
   .command<SchedulerArgs>(
     "scheduler <subcommand>",
     "scheduler commands",
@@ -188,17 +132,23 @@ const cli = yargs(hideBin(process.argv))
                 describe: "start-date for the manual run",
               })
               .coerce("end-date", dateConverter)
-              .demandOption(["start-date", "end-date"]);
+              .demandOption(["start-date", "end-date"])
+              .option("execution-mode", {
+                type: "string",
+                choices: ["all-at-once", "progressive"],
+              });
           },
           async (args) => {
             const scheduler = await configure(args);
+            console.log(args);
 
-            const execSummary = await scheduler.executeForRange(
+            const execSummary = await scheduler.executeCollector(
               args.collector,
               {
                 startDate: args.startDate,
                 endDate: args.endDate,
               },
+              args.executionMode,
             );
 
             logger.info(`--------------Completed manual run---------------`);
