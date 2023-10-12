@@ -201,7 +201,7 @@ const createVariables = (props: EventDataProviderProps) => ({
  * @returns
  */
 const createCategory = (entityType: EntityType, id: number, type: string) =>
-  `${type}`;
+  `${eventTypeToLabel(type)}`;
 
 const createCategories = (props: EventDataProviderProps) => {
   const entityType = props.entityType ?? DEFAULT_ENTITY_TYPE;
