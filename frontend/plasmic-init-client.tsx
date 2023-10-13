@@ -214,11 +214,12 @@ PLASMIC.registerComponent(SupabaseQuery, {
 PLASMIC.registerComponent(EventDataProvider, {
   name: "EventDataProvider",
   props: {
+    //// CommonDataProviderRegistration
+    // Data variable
     variableName: {
       type: "string",
       helpText: "Name to use in Plasmic data picker. Must be unique per query.",
     },
-
     // Plasmic elements
     children: "slot",
     loadingChildren: {
@@ -255,7 +256,6 @@ PLASMIC.registerComponent(EventDataProvider, {
       type: "object",
       advanced: true,
     },
-
     // Data options
     chartType: {
       type: "choice",

@@ -1,7 +1,7 @@
-import React, { ReactNode } from "react";
+import React from "react";
 import useSWR from "swr";
-import { DataProvider } from "@plasmicapp/loader-nextjs";
 import { SupabaseQueryArgs, supabaseQuery } from "../../lib/clients/supabase";
+import { CommonDataProviderProps, DataProviderView } from "./provider-view";
 
 // The name used to pass data into the Plasmic DataProvider
 const KEY_PREFIX = "db";
@@ -31,32 +31,12 @@ const genKey = (props: SupabaseQueryProps) => {
  * Current limitations:
  * - Does not support authentication or RLS. Make sure data is readable by unauthenticated users
  */
-export type SupabaseQueryProps = Partial<SupabaseQueryArgs> & {
-  className?: string; // Plasmic CSS class
-  variableName?: string; // Name to use in Plasmic data picker
-  children?: ReactNode; // Show this
-  loadingChildren?: ReactNode; // Show during loading if !ignoreLoading
-  ignoreLoading?: boolean; // Skip the loading visual
-  errorChildren?: ReactNode; // Show if we get an error
-  ignoreError?: boolean; // Skip the error visual
-  useTestData?: boolean; // Use the testData prop instead of querying database
-  testData?: any;
-};
+export type SupabaseQueryProps = Partial<SupabaseQueryArgs> &
+  CommonDataProviderProps;
 
 export function SupabaseQuery(props: SupabaseQueryProps) {
   // These props are set in the Plasmic Studio
-  const {
-    className,
-    variableName,
-    children,
-    loadingChildren,
-    ignoreLoading,
-    errorChildren,
-    ignoreError,
-    tableName,
-    useTestData,
-    testData,
-  } = props;
+  const { variableName, tableName, useTestData, testData } = props;
   const key = variableName ?? genKey(props);
   const { data, error, isLoading } = useSWR(key, async () => {
     if (useTestData) {
@@ -64,7 +44,6 @@ export function SupabaseQuery(props: SupabaseQueryProps) {
     } else if (!tableName) {
       return;
     }
-
     return await supabaseQuery({ ...props, tableName });
   });
 
@@ -73,24 +52,12 @@ export function SupabaseQuery(props: SupabaseQueryProps) {
     return <p>You need to set the tableName prop</p>;
   }
 
-  // Show when loading
-  if (isLoading && !ignoreLoading && !!loadingChildren) {
-    return <div className={className}> {loadingChildren} </div>;
-  } else if (error && !ignoreError && !!errorChildren) {
-    return (
-      <div className={className}>
-        <DataProvider name={key} data={error}>
-          {errorChildren}
-        </DataProvider>
-      </div>
-    );
-  } else {
-    return (
-      <div className={className}>
-        <DataProvider name={key} data={data}>
-          {children}
-        </DataProvider>
-      </div>
-    );
-  }
+  return (
+    <DataProviderView
+      {...props}
+      formattedData={data}
+      loading={isLoading}
+      error={error}
+    />
+  );
 }
