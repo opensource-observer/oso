@@ -1,21 +1,19 @@
-import { DataProvider } from "@plasmicapp/loader-nextjs";
+import { useQuery } from "@apollo/experimental-nextjs-app-support/ssr";
 import dayjs from "dayjs";
 import _ from "lodash";
-import React, { ReactNode } from "react";
-import { useQuery } from "@apollo/experimental-nextjs-app-support/ssr";
+import React from "react";
+import { assertNever, ensure, uncheckedCast } from "../../lib/common";
 import {
   GET_EVENTS_DAILY_BY_ARTIFACT,
   GET_EVENTS_DAILY_BY_PROJECT,
 } from "../../lib/graphql/queries";
-import { assertNever, ensure, uncheckedCast } from "../../lib/common";
-import { ApolloError } from "@apollo/client";
+import { DataProviderView } from "./provider-view";
+import type { CommonDataProviderProps } from "./provider-view";
 
 type ChartType = "kpiCard" | "areaChart" | "barList";
 type XAxis = "eventTime" | "artifact" | "eventType";
 type EntityType = "project" | "artifact";
 
-// The name used to pass data into the Plasmic DataProvider
-const DEFAULT_VARIABLE_NAME = "eventData";
 // Default entity type if not specified
 const DEFAULT_ENTITY_TYPE: EntityType = "artifact";
 // Default XAxis if not specified
@@ -31,6 +29,22 @@ type EventData = {
   id: number;
   date: string;
   amount: number;
+};
+
+/**
+ * Query component focused on providing data to visualiation components
+ *
+ * Current limitations:
+ * - Does not support authentication or RLS. Make sure data is readable by unauthenticated users
+ */
+type EventDataProviderProps = CommonDataProviderProps & {
+  chartType: ChartType;
+  xAxis?: XAxis; // X-axis
+  entityType?: EntityType;
+  ids?: string[];
+  eventTypes?: string[];
+  startDate?: string;
+  endDate?: string;
 };
 
 /**
@@ -153,31 +167,6 @@ const formatDataToBarList = (xAxis: XAxis, data: EventData[]) => {
 };
 
 /**
- * Query component focused on providing data to visualiation components
- *
- * Current limitations:
- * - Does not support authentication or RLS. Make sure data is readable by unauthenticated users
- */
-type EventDataProviderProps = {
-  className?: string; // Plasmic CSS class
-  variableName?: string; // Name to use in Plasmic data picker
-  children?: ReactNode; // Show this
-  loadingChildren?: ReactNode; // Show during loading if !ignoreLoading
-  ignoreLoading?: boolean; // Skip the loading visual
-  errorChildren?: ReactNode; // Show if error
-  ignoreError?: boolean; // Skip the error visual
-  useTestData?: boolean; // Use the testData prop instead of querying database
-  testData?: any;
-  chartType: ChartType;
-  xAxis?: XAxis; // X-axis
-  entityType?: EntityType;
-  ids?: string[];
-  eventTypes?: string[];
-  startDate?: string;
-  endDate?: string;
-};
-
-/**
  * Create the variables object for the GraphQL query
  * @param props
  * @returns
@@ -246,40 +235,6 @@ const formatData = (props: EventDataProviderProps, rawData: EventData[]) => {
   return formattedData;
 };
 
-type ProviderViewProps = EventDataProviderProps & {
-  formattedData: any;
-  loading: boolean;
-  error?: ApolloError;
-};
-
-/**
- * Common view logic for EventDataProviders
- * @param props
- * @returns
- */
-function ProviderView(props: ProviderViewProps) {
-  const key = props.variableName ?? DEFAULT_VARIABLE_NAME;
-  // Show when loading or error
-  if (props.loading && !props.ignoreLoading && !!props.loadingChildren) {
-    return <div className={props.className}> {props.loadingChildren} </div>;
-  } else if (props.error && !props.ignoreError && !!props.errorChildren) {
-    return (
-      <div className={props.className}>
-        <DataProvider name={key} data={props.error}>
-          {props.errorChildren}
-        </DataProvider>
-      </div>
-    );
-  }
-  return (
-    <div className={props.className}>
-      <DataProvider name={key} data={props.formattedData}>
-        {props.children}
-      </DataProvider>
-    </div>
-  );
-}
-
 /**
  * EventDataProvider for artifacts
  * @param props
@@ -303,7 +258,7 @@ function ArtifactEventDataProvider(props: EventDataProviderProps) {
   const formattedData = formatData(props, normalizedData);
   console.log(props.ids, rawData, formattedData);
   return (
-    <ProviderView
+    <DataProviderView
       {...props}
       formattedData={formattedData}
       loading={loading}
@@ -335,7 +290,7 @@ function ProjectEventDataProvider(props: EventDataProviderProps) {
   const formattedData = formatData(props, normalizedData);
   console.log(props.ids, rawData, formattedData);
   return (
-    <ProviderView
+    <DataProviderView
       {...props}
       formattedData={formattedData}
       loading={loading}
