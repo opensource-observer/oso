@@ -39,7 +39,7 @@ withDbDescribe("EventRepository", () => {
         sourceId: "0",
         to: artifact0,
         type: EventType.CONTRACT_INVOKED,
-        amount: 0,
+        amount: 1,
         from: null,
       },
       {
@@ -147,7 +147,7 @@ withDbDescribe("EventRepository", () => {
       afterUpdate.map((e) => e.sourceId),
     );
 
-    expect(beforeUpdate[0].amount).toEqual(0);
+    expect(beforeUpdate[0].amount).toEqual(1);
     expect(afterUpdate[0].amount).toEqual(-100);
 
     expect(afterUpdate[1].amount).toEqual(2);

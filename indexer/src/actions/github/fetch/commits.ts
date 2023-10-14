@@ -187,7 +187,7 @@ export class GithubCommitCollector extends GithubByProjectBaseCollector {
           time: commitTime,
           type: EventType.COMMIT_CODE,
           to: repoArtifact,
-          amount: 0,
+          amount: 1,
           sourceId: commit.sha,
         };
 
