@@ -209,6 +209,12 @@ export class Event {
 
   @Column("float")
   amount: number;
+
+  @Column("bigint", { default: 0 })
+  size: string;
+
+  @Column("jsonb", { default: {} })
+  details: Record<string, any>;
 }
 
 @Entity()
