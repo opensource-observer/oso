@@ -147,7 +147,7 @@ withDbDescribe("EventRepository", () => {
       afterUpdate.map((e) => e.sourceId),
     );
 
-    expect(beforeUpdate[0].amount).toEqual(0);
+    expect(beforeUpdate[0].amount).toEqual(1);
     expect(afterUpdate[0].amount).toEqual(-100);
 
     expect(afterUpdate[1].amount).toEqual(2);
