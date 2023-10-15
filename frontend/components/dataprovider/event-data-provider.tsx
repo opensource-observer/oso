@@ -10,7 +10,7 @@ import {
 import { DataProviderView } from "./provider-view";
 import type { CommonDataProviderProps } from "./provider-view";
 
-type ChartType = "kpiCard" | "areaChart" | "barList";
+type ChartType = "areaChart" | "barList";
 type XAxis = "eventTime" | "artifact" | "eventType";
 type EntityType = "project" | "artifact";
 
@@ -58,18 +58,6 @@ const eventTimeToLabel = (t: any) => dayjs(t).format("YYYY-MM-DD");
  * @returns
  */
 const eventTypeToLabel = (t: string) => _.capitalize(t.replace(/_/g, " "));
-
-/**
- * Formats normalized data into inputs to a KPI card
- * @param data - normalized data
- * @returns
- */
-const formatDataToKpiCard = (data: EventData[]) => {
-  const result = _.sumBy(data, (x) => x.amount);
-  return {
-    data: result,
-  };
-};
 
 /**
  * Formats normalized data into inputs to an area chart (for Tremor)
@@ -221,9 +209,7 @@ const formatData = (props: EventDataProviderProps, rawData: EventData[]) => {
     : rawData;
 
   const formattedData =
-    props.chartType === "kpiCard"
-      ? formatDataToKpiCard(data)
-      : props.chartType === "areaChart"
+    props.chartType === "areaChart"
       ? formatDataToAreaChart(
           data,
           createCategories(props),

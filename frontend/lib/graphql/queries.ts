@@ -54,9 +54,9 @@ const GET_EVENTS_DAILY_BY_ARTIFACT = gql(`
     $endDate: timestamptz!, 
   ) {
     events_daily_by_artifact(where: {
-      toId: {_in: $ids},
-      type: {_in: $types},
-      bucketDaily: {_gte: $startDate, _lte: $endDate}
+      toId: { _in: $ids },
+      type: { _in: $types },
+      bucketDaily: { _gte: $startDate, _lte: $endDate }
     }) {
       type
       toId
@@ -74,14 +74,86 @@ const GET_EVENTS_DAILY_BY_PROJECT = gql(`
     $endDate: timestamptz!, 
   ) {
     events_daily_by_project(where: {
-      projectId: {_in: $ids}
-      type: {_in: $types},
-      bucketDaily: {_gte: $startDate, _lte: $endDate}
+      projectId: { _in: $ids },
+      type: { _in: $types },
+      bucketDaily: { _gte: $startDate, _lte: $endDate }
     }) {
       type
       projectId
       bucketDaily
       amount
+    }
+  }
+`);
+
+const GET_AGGREGATES_BY_ARTIFACT = gql(`
+  query GetAggregatesByArtifact(
+    $ids: [Int!],
+    $types: [event_type_enum!],
+    $startDate: timestamptz!,
+    $endDate: timestamptz!,
+  ) {
+    event_aggregate(where: {
+      toId: { _in: $ids },
+      type: { _in: $types }, 
+      time: { _gte: $startDate, _lte: $endDate }
+    }) {
+      aggregate {
+        avg {
+          amount
+        }
+        max {
+          amount
+          time
+        }
+        min {
+          amount
+          time
+        }
+        sum {
+          amount
+        }
+        variance {
+          amount
+        }
+        count(columns: fromId, distinct: true)
+      }
+    }
+  }
+`);
+
+const GET_AGGREGATES_BY_PROJECT = gql(`
+  query GetAggregatesByProject(
+    $ids: [Int!],
+    $types: [event_type_enum!],
+    $startDate: timestamptz!,
+    $endDate: timestamptz!,
+  ) {
+    event_aggregate(where: {
+      artifact: { project_artifacts_artifacts: { projectId: { _in: $ids } } },
+      type: { _in: $types }, 
+      time: { _gte: $startDate, _lte: $endDate }
+    }) {
+      aggregate {
+        avg {
+          amount
+        }
+        max {
+          amount
+          time
+        }
+        min {
+          amount
+          time
+        }
+        sum {
+          amount
+        }
+        variance {
+          amount
+        }
+        count(columns: fromId, distinct: true)
+      }
     }
   }
 `);
@@ -93,4 +165,6 @@ export {
   GET_PROJECT_BY_SLUG,
   GET_EVENTS_DAILY_BY_ARTIFACT,
   GET_EVENTS_DAILY_BY_PROJECT,
+  GET_AGGREGATES_BY_ARTIFACT,
+  GET_AGGREGATES_BY_PROJECT,
 };

@@ -1,7 +1,6 @@
 import dotenv from "dotenv";
-import path from "path";
 
-const envPath = path.resolve(__dirname, "../.env.local");
+const envPath = [__dirname, "../.env.local"].join("/");
 dotenv.config();
 dotenv.config({ path: envPath, override: true });
 

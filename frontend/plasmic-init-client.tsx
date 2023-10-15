@@ -260,7 +260,7 @@ PLASMIC.registerComponent(EventDataProvider, {
     chartType: {
       type: "choice",
       helpText: "Pair this with the component in 'children'",
-      options: ["kpiCard", "areaChart", "barList"],
+      options: ["areaChart", "barList"],
     },
     xAxis: {
       type: "choice",
@@ -269,7 +269,7 @@ PLASMIC.registerComponent(EventDataProvider, {
     },
     entityType: {
       type: "choice",
-      options: ["collection", "project", "artifact"],
+      options: ["project", "artifact"],
     },
     ids: {
       type: "array",
