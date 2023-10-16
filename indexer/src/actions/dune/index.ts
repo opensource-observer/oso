@@ -184,7 +184,7 @@ export class DailyContractUsageCollector extends BaseCollector<object> {
       logger.error("error collecting contract usage");
     }
 
-    console.log("done processing");
+    logger.debug("done processing contract calls");
     for (const artifact of artifacts) {
       committer.commit(artifact).withResults({
         success: [],
@@ -353,8 +353,9 @@ export class DailyContractUsageCollector extends BaseCollector<object> {
     const beforeAddLen = uniqueTracker.length;
     uniqueTracker.push(event.sourceId);
     if (uniqueTracker.length === beforeAddLen) {
-      console.log("Duplicates");
-      console.log(`SourceId=${event.sourceId}`);
+      logger.debug(
+        `duplicates for sourceId=${event.sourceId} found for contracts`,
+      );
     }
 
     return await this.recorder.record(event);

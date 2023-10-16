@@ -675,7 +675,7 @@ export class GithubIssueCollector extends GithubByProjectBaseCollector {
   private getEventType(eventTypeStr: string, issueType: string) {
     const eventTypeMap = this.eventTypeMapping[eventTypeStr];
     if (!eventTypeMap) {
-      console.log(`no map for ${eventTypeStr}`);
+      logger.debug(`no map for ${eventTypeStr}`);
     }
     const eventType = this.eventTypeMapping[eventTypeStr][issueType];
     if (!eventType) {
