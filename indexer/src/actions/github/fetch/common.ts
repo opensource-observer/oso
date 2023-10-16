@@ -6,7 +6,6 @@ import {
   ArtifactType,
   ArtifactNamespace,
 } from "../../../db/orm-entities.js";
-import { Range } from "../../../utils/ranges.js";
 import { GenericError } from "../../../common/errors.js";
 import { IEventRecorder } from "../../../recorder/types.js";
 import { TimeSeriesCacheWrapper } from "../../../cacher/time-series.js";
@@ -16,12 +15,11 @@ import { DateTime } from "luxon";
 import { logger } from "../../../utils/logger.js";
 import {
   BatchedProjectArtifactsCollector,
-  ProjectArtifactGroup,
   ProjectArtifactsCollector,
 } from "../../../scheduler/common.js";
 import { Mutex } from "async-mutex";
 
-export class IncompleteRepoName extends GenericError { }
+export class IncompleteRepoName extends GenericError {}
 export type GithubRepoLocator = { owner: string; repo: string };
 
 function sleep(ms: number) {
@@ -69,7 +67,7 @@ export type GithubGraphQLCursor = {
 };
 
 // Create a github mixin
-type Constructor = new (...args: any[]) => {};
+type Constructor = new (...args: any[]) => object;
 
 export function GithubCollectorMixins<TBase extends Constructor>(Base: TBase) {
   return class extends Base {
@@ -79,7 +77,7 @@ export function GithubCollectorMixins<TBase extends Constructor>(Base: TBase) {
     constructor(...args: any[]) {
       super(...args);
       this._requestMutex = new Mutex();
-      this._resetTime = DateTime.fromISO('1970-01-01T00:00:00Z')
+      this._resetTime = DateTime.fromISO("1970-01-01T00:00:00Z");
     }
 
     splitGithubRepoIntoLocator(artifact: Artifact): GithubRepoLocator {
@@ -101,9 +99,10 @@ export function GithubCollectorMixins<TBase extends Constructor>(Base: TBase) {
       };
     }
 
-    async rateLimitedGraphQLRequest<
-      R extends GithubGraphQLResponse<object>,
-    >(query: RequestDocument, variables: Variables): Promise<R> {
+    async rateLimitedGraphQLRequest<R extends GithubGraphQLResponse<object>>(
+      query: RequestDocument,
+      variables: Variables,
+    ): Promise<R> {
       for (let i = 0; i < 10; i++) {
         if (this._resetTime) {
           const now = DateTime.now();
@@ -149,8 +148,7 @@ export function GithubCollectorMixins<TBase extends Constructor>(Base: TBase) {
       }
       throw new Error("too many retries for graphql request");
     }
-
-  }
+  };
 }
 
 class _GithubByProjectBaseCollector extends ProjectArtifactsCollector {
@@ -175,7 +173,6 @@ class _GithubByProjectBaseCollector extends ProjectArtifactsCollector {
     this.resetTime = null;
     this.requestMutex = new Mutex();
   }
-
 }
 
 class _GithubBatchedProjectsBaseCollector extends BatchedProjectArtifactsCollector {
@@ -201,5 +198,9 @@ class _GithubBatchedProjectsBaseCollector extends BatchedProjectArtifactsCollect
   }
 }
 
-export const GithubByProjectBaseCollector = GithubCollectorMixins(_GithubByProjectBaseCollector);
-export const GithubBatchedProjectArtifactsBaseCollector = GithubCollectorMixins(_GithubBatchedProjectsBaseCollector);
+export const GithubByProjectBaseCollector = GithubCollectorMixins(
+  _GithubByProjectBaseCollector,
+);
+export const GithubBatchedProjectArtifactsBaseCollector = GithubCollectorMixins(
+  _GithubBatchedProjectsBaseCollector,
+);
