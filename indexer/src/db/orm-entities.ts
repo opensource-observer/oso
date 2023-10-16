@@ -207,6 +207,9 @@ export class Event {
   @Column("text")
   sourceId: string;
 
+  @Column("enum", { enum: EventType })
+  type: EventType;
+
   // The TS property name here is temporary. Will eventually be `type`
   @ManyToOne(() => EventTypeTable, (eventType) => eventType.events)
   @JoinColumn({
