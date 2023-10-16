@@ -18,7 +18,7 @@ import path from "path";
 import _ from "lodash";
 import { logger } from "../../../utils/logger.js";
 
-class SafeAggregate {
+export class SafeAggregate {
   rows: DailyContractUsageRow[];
 
   constructor(first: DailyContractUsageRow) {
