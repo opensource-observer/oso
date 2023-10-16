@@ -24,6 +24,7 @@ import {
   Log,
   EventsDailyByArtifact,
   EventsDailyByProject,
+  EventTypeTable,
 } from "./orm-entities.js";
 
 const loggingOption: LoggerOptions = DEBUG_DB ? ["query", "error"] : false;
@@ -75,6 +76,7 @@ export function staticDataSourceOptions(
       Log,
       EventsDailyByArtifact,
       EventsDailyByProject,
+      EventTypeTable,
     ],
     migrations: [],
     subscribers: [],
