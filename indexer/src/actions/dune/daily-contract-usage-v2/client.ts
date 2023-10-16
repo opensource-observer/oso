@@ -16,7 +16,7 @@ import { QueryParameter } from "@cowprotocol/ts-dune-client";
 import { Range } from "../../../utils/ranges.js";
 import path from "path";
 import _ from "lodash";
-import { readFile, writeFile } from "fs/promises";
+import { logger } from "../../../utils/logger.js";
 
 class SafeAggregate {
   rows: DailyContractUsageRow[];
@@ -26,7 +26,6 @@ class SafeAggregate {
   }
 
   aggregate(): DailyContractUsageRow {
-    const rows = this.rows;
     return this.rows.slice(1).reduce<DailyContractUsageRow>((agg, curr) => {
       const row = curr;
       const gasCostBI = BigInt(agg.gasCostGwei) + BigInt(row.gasCostGwei);
@@ -69,9 +68,14 @@ export type DailyContractUsageRawRow = {
 };
 
 export interface IDailyContractUsageClientV2 {
-  getDailyContractUsage(range: Range, contractSha1: string): Promise<DailyContractUsageRow[]>;
-  getDailyContractUsageFromCsv(date: DateTime, contractSha1: string): Promise<DailyContractUsageRow[]>;
-
+  getDailyContractUsage(
+    range: Range,
+    contractSha1: string,
+  ): Promise<DailyContractUsageRow[]>;
+  getDailyContractUsageFromCsv(
+    date: DateTime,
+    contractSha1: string,
+  ): Promise<DailyContractUsageRow[]>;
 }
 
 export interface DailyContractUsageClientOptions {
@@ -85,14 +89,14 @@ export interface DailyContractUsageClientOptions {
 }
 
 export const DefaultDailyContractUsageClientOptions: DailyContractUsageClientOptions =
-{
-  // This default is based on this: https://dune.com/queries/3083184
-  queryId: 3083184,
+  {
+    // This default is based on this: https://dune.com/queries/3083184
+    queryId: 3083184,
 
-  tablesDirectoryPath: "",
+    tablesDirectoryPath: "",
 
-  csvDirPath: "",
-};
+    csvDirPath: "",
+  };
 
 export type Addresses = string[];
 
@@ -183,10 +187,6 @@ export function parseDuneCSVArray(arrayString: string): ParsedArrayValue[] {
     index: number,
     depth: number,
   ): [ParsedArrayValue[], number] => {
-    if (depth > 2) {
-      console.log("GOING DEEEEEEEEEEEEEEP");
-      console.log(depth);
-    }
     index += 1;
 
     const result: ParsedArrayValue[] = [];
@@ -221,9 +221,9 @@ export function parseDuneCSVArray(arrayString: string): ParsedArrayValue[] {
 }
 
 type ContractTableRow = {
-  id: string,
-  address: string,
-}
+  id: string;
+  address: string;
+};
 
 export function loadContractsTable(path: string): Promise<ContractTableRow[]> {
   const stream = fs.createReadStream(path);
@@ -232,18 +232,18 @@ export function loadContractsTable(path: string): Promise<ContractTableRow[]> {
   return new Promise((resolve, reject) => {
     return stream
       .pipe(parse({ delimiter: ",", fromLine: 2 }))
-      .on('data', (row) => {
+      .on("data", (row) => {
         result.push({
           id: row[0],
           address: row[1],
-        })
+        });
       })
       .on("error", (err) => {
         reject(err);
       })
-      .on('finish', () => {
+      .on("finish", () => {
         resolve(result);
-      })
+      });
   });
 }
 
@@ -272,7 +272,7 @@ export class DailyContractUsageClient implements IDailyContractUsageClientV2 {
    * Refreshes our dune [query](https://dune.com/queries/3083184) to resolve the
    * daily contract usage. This uses a pre-uploaded version of the contract
    * addresses that we store in this database. When the monitored contracts
-   * changes, we need to upload a new version to dune. 
+   * changes, we need to upload a new version to dune.
    *
    * @param range The date range for the query execution
    * @param contractsSha1 sha1 of the data used for the uploaded csv
@@ -282,7 +282,7 @@ export class DailyContractUsageClient implements IDailyContractUsageClientV2 {
     contractSha1: string = "da1aae77b853fc7c74038ee08eec441b10b89570",
   ): Promise<DailyContractUsageRow[]> {
     // Load the contracts table
-    const contractsMap = await this.loadContractsTable(contractSha1)
+    const contractsMap = await this.loadContractsTable(contractSha1);
 
     const parameters = [
       QueryParameter.text(
@@ -293,67 +293,58 @@ export class DailyContractUsageClient implements IDailyContractUsageClientV2 {
         "end_time",
         range.endDate.toFormat("yyyy-MM-dd 00:00:00") + " UTC",
       ),
-      QueryParameter.text(
-        "contracts_table",
-        contractSha1,
-      )
+      QueryParameter.text("contracts_table", contractSha1),
     ];
 
-    //const response = await this.client.refresh(this.options.queryId, parameters);
-    const response = JSON.parse(await readFile('tester-123456.json', { encoding: 'utf-8' })) as Awaited<ReturnType<IDuneClient["refresh"]>>;
+    logger.debug("loading from dune");
+    const response = await this.client.refresh(
+      this.options.queryId,
+      parameters,
+    );
+    //const response = JSON.parse(await readFile('tester-123456.json', { encoding: 'utf-8' })) as Awaited<ReturnType<IDuneClient["refresh"]>>;
     //await writeFile('tester-123456.json', JSON.stringify(response));
-    const rawRows = (response.result?.rows as unknown[]) as DuneRawRow[];
-
-    console.log('lens');
-    console.log(response.result?.rows.length);
-
-    const currentDate = DateTime.fromSQL(rawRows[0].date);
+    const rawRows = response.result?.rows as unknown[] as DuneRawRow[];
 
     // Split raw rows by date
-    const rowsByDay = rawRows.reduce<Record<string, DuneRawRow[]>>((acc, curr) => {
-      // Update the date value to be ISO 
-      const rowsForDate = acc[curr.date] || [];
-      rowsForDate.push(curr);
-      acc[curr.date] = rowsForDate
-      return acc;
-    }, {});
-
-    console.log(Object.keys(rowsByDay));
+    const rowsByDay = rawRows.reduce<Record<string, DuneRawRow[]>>(
+      (acc, curr) => {
+        // Update the date value to be ISO
+        const rowsForDate = acc[curr.date] || [];
+        rowsForDate.push(curr);
+        acc[curr.date] = rowsForDate;
+        return acc;
+      },
+      {},
+    );
 
     const sortedDates = Object.keys(rowsByDay).sort();
-    console.log(sortedDates);
     const rows: DailyContractUsageRow[] = [];
     for (const date of sortedDates) {
-      console.log('i am here')
       const rawRows = rowsByDay[date];
       rows.push(...this.expandRowsForDate(contractsMap, rawRows));
     }
-
-    console.log(`expanded rows now: ${rows.length}`);
 
     // Aggregate safes. Not sure why but sometimes the data isn't being
     // aggregated on the Dune side.
     return rows;
   }
 
-  expandRowsForDate(contractsMap: Record<number, string>, rawRows: DuneRawRow[]): DailyContractUsageRow[] {
-    console.log('i am here2')
+  expandRowsForDate(
+    contractsMap: Record<number, string>,
+    rawRows: DuneRawRow[],
+  ): DailyContractUsageRow[] {
     const usageRows: DailyContractUsageRow[] = [];
 
     const safes: Record<string, SafeAggregate> = {};
     for (const rawRow of rawRows) {
-      console.log('i am here3')
       let expandedRows: DailyContractUsageRow[] = [];
       try {
         expandedRows = transformDuneRawRowToUsageRows(rawRow, contractsMap);
       } catch (err) {
-        console.log('what the fuck?');
-        console.log('i failed i guess')
-        console.error(err);
+        logger.error("Error collecting dune rows", err);
+        throw err;
       }
-      console.log('i am here4')
       for (const usageRow of expandedRows) {
-        console.log(usageRow);
         if (usageRow.safeAddress) {
           const address = usageRow.safeAddress.toLowerCase();
           if (safes[address]) {
@@ -373,24 +364,29 @@ export class DailyContractUsageClient implements IDailyContractUsageClientV2 {
     return usageRows;
   }
 
-  async getDailyContractUsageFromCsv(date: DateTime, contractSha1: string = "da1aae77b853fc7c74038ee08eec441b10b89570"): Promise<DailyContractUsageRow[]> {
+  // At this time the `_contractSha1` is not needed because the available csvs already resolve the contract addresses
+  async getDailyContractUsageFromCsv(
+    date: DateTime,
+    _contractSha1: string = "da1aae77b853fc7c74038ee08eec441b10b89570",
+  ): Promise<DailyContractUsageRow[]> {
     return this.loadCsvPath(
-      `/data/tmp/oso/dune-backfill/${date.toISODate()}.csv`,
+      `${this.options.csvDirPath}/${date.toISODate()}.csv`,
     );
   }
 
   async loadContractsTable(sha: string): Promise<Record<number, string>> {
-    const contracts = await loadContractsTable(path.join(this.options.tablesDirectoryPath, `contracts-${sha}.csv`));
+    const contracts = await loadContractsTable(
+      path.join(this.options.tablesDirectoryPath, `contracts-${sha}.csv`),
+    );
 
     return contracts.reduce<Record<number, string>>((acc, curr) => {
       const id = parseInt(curr.id);
       acc[id] = curr.address;
       return acc;
-    }, {})
+    }, {});
   }
 
   async loadCsvPath(path: string) {
-    console.log(`path=${path}`);
     return new Promise<DailyContractUsageRow[]>((resolve, reject) => {
       setImmediate(() => {
         const rows: DailyContractUsageRow[] = [];
