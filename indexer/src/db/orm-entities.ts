@@ -15,6 +15,7 @@ import {
   PrimaryGeneratedColumn,
   CreateDateColumn,
   UpdateDateColumn,
+  JoinColumn,
 } from "typeorm";
 import { IsUrl, IsOptional, validateOrReject } from "class-validator";
 import type { Brand } from "utility-types";
@@ -181,6 +182,20 @@ export class Artifact extends Base<"ArtifactId"> {
   eventPointers: EventPointer[];
 }
 
+@Entity({ name: "event_type" })
+@Index(["name", "version"], { unique: true })
+export class EventTypeTable extends Base<"EventTypeId"> {
+  @Column("varchar", { length: 50 })
+  name: string;
+
+  // Allow versioning of events for gradual migrations of data.
+  @Column("smallint")
+  version: number;
+
+  @OneToMany(() => Event, (event) => event.typeFromTable)
+  events: Event[];
+}
+
 @Entity()
 @Index(["time"])
 @Index(["id", "time"], { unique: true })
@@ -192,8 +207,12 @@ export class Event {
   @Column("text")
   sourceId: string;
 
-  @Column("enum", { enum: EventType })
-  type: EventType;
+  // The TS property name here is temporary. Will eventually be `type`
+  @ManyToOne(() => EventTypeTable, (eventType) => eventType.events)
+  @JoinColumn({
+    name: "typeId",
+  })
+  typeFromTable: EventTypeTable;
 
   @PrimaryColumn("timestamptz")
   time: Date;
