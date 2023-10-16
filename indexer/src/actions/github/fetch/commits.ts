@@ -1,4 +1,4 @@
-import { DateTime, StringUnitLength } from "luxon";
+import { DateTime } from "luxon";
 import _ from "lodash";
 import {
   IEventRecorder,
@@ -20,7 +20,6 @@ import { Octokit, RequestError } from "octokit";
 import { GetResponseDataTypeFromEndpointMethod } from "@octokit/types";
 import { Repository } from "typeorm";
 import {
-  CollectionSummary,
   IArtifactGroup,
   IArtifactGroupCommitmentProducer,
 } from "../../../scheduler/types.js";
@@ -34,48 +33,55 @@ import {
   GithubBatchedProjectArtifactsBaseCollector,
   GithubGraphQLResponse,
 } from "./common.js";
-import { Batch, BatchedProjectArtifactsCollector } from "../../../scheduler/common.js";
+import { Batch } from "../../../scheduler/common.js";
 
 const GET_COMMITS_FOR_MANY_REPOSITORIES = gql`
-query GetCommitsForManyRepositories($searchStr: String!, $first: Int, $since: GitTimestamp, $until: GitTimestamp, $cursor: String) {
-  rateLimit {
-    resetAt
-    remaining
-    nodeCount
-    cost
-  }
-  search(query: $searchStr, type: REPOSITORY, first: $first, after: $cursor) {
-    pageInfo {
-      hasNextPage
-      endCursor
+  query GetCommitsForManyRepositories(
+    $searchStr: String!
+    $first: Int
+    $since: GitTimestamp
+    $until: GitTimestamp
+    $cursor: String
+  ) {
+    rateLimit {
+      resetAt
+      remaining
+      nodeCount
+      cost
     }
-    nodes {
-      ... on Repository {
-        nameWithOwner
-        isFork
-        defaultBranchRef {
-          name
-          target {
-            ... on Commit {
-              history(first: $first, since: $since, until: $until) {
-                totalCount
-                nodes {
-                  ... on Commit {
-                    committedDate
-                    oid
-                    committer {
-                      user {
-                        login
+    search(query: $searchStr, type: REPOSITORY, first: $first, after: $cursor) {
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
+      nodes {
+        ... on Repository {
+          nameWithOwner
+          isFork
+          defaultBranchRef {
+            name
+            target {
+              ... on Commit {
+                history(first: $first, since: $since, until: $until) {
+                  totalCount
+                  nodes {
+                    ... on Commit {
+                      committedDate
+                      oid
+                      committer {
+                        user {
+                          login
+                        }
+                        name
+                        email
                       }
-                      name
-                      email
-                    }
-                    author {
-                      user {
-                        login
+                      author {
+                        user {
+                          login
+                        }
+                        name
+                        email
                       }
-                      name
-                      email
                     }
                   }
                 }
@@ -86,20 +92,19 @@ query GetCommitsForManyRepositories($searchStr: String!, $first: Int, $since: Gi
       }
     }
   }
-}
-`
+`;
 
 type RespositorySummariesResponse = GithubGraphQLResponse<RepositorySummaries>;
 
 type RepositorySummaries = {
   search: {
     pageInfo: {
-      hasNextPage: boolean,
+      hasNextPage: boolean;
       endCursor: string;
-    },
-    nodes: RepositorySummary[]
-  }
-}
+    };
+    nodes: RepositorySummary[];
+  };
+};
 
 type RepositorySummary = {
   nameWithOwner: string;
@@ -110,14 +115,14 @@ type RepositorySummary = {
       history: {
         totalCount: number;
         nodes: SummaryCommitInfo[];
-      }
-    }
+      };
+    };
   } | null;
-}
+};
 
 type CommitUser = {
   login: string;
-}
+};
 
 type GenericCommit = {
   committer: {
@@ -130,7 +135,7 @@ type GenericCommit = {
     name?: string | null | undefined;
     email?: string | null | undefined;
   } | null;
-}
+};
 
 type SummaryCommitInfo = {
   commitedDate: string;
@@ -144,8 +149,8 @@ type SummaryCommitInfo = {
     user: CommitUser | null;
     name: string;
     email: string;
-  }
-}
+  };
+};
 
 type Commit = GetResponseDataTypeFromEndpointMethod<
   Octokit["rest"]["repos"]["getCommit"]
@@ -163,11 +168,15 @@ const DefaultGithubCommitCollectorOptions: GithubBaseCollectorOptions = {
   },
 };
 
-type RepoSummaryProcessedResult = { repo: Artifact, count: number, events: IncompleteEvent[] };
+type RepoSummaryProcessedResult = {
+  repo: Artifact;
+  count: number;
+  events: IncompleteEvent[];
+};
 type RepoSummaryProcessedResults = {
   unchanged: Artifact[];
   changed: RepoSummaryProcessedResult[];
-}
+};
 
 export class GithubCommitCollector extends GithubBatchedProjectArtifactsBaseCollector {
   private gh: Octokit;
@@ -185,41 +194,43 @@ export class GithubCommitCollector extends GithubBatchedProjectArtifactsBaseColl
     this.gh = gh;
   }
 
-  async gatherSummary(missingRepos: Artifact[], range: Range): Promise<RepoSummaryProcessedResults> {
+  async gatherSummary(
+    missingRepos: Artifact[],
+    range: Range,
+  ): Promise<RepoSummaryProcessedResults> {
     const results: RepoSummaryProcessedResults = {
       changed: [],
       unchanged: [],
     };
-    const repoMap: Record<string, Artifact> = {};
-    // Organize all repos as organizations
-    const orgsMap = missingRepos.reduce<Record<string, Artifact[]>>((acc, curr) => {
-      repoMap[curr.name.toLowerCase()] = curr;
-      const orgName = curr.name.split('/')[0].toLowerCase();
-      const artifacts = acc[orgName] || [];
-      artifacts.push(curr);
-      acc[orgName] = artifacts;
-      return acc;
-    }, {});
 
-    const orgSearchStr = Object.keys(orgsMap).map((o) => `org:${o}`);
+    const repoMap = missingRepos.reduce<Record<string, Artifact>>(
+      (acc, curr) => {
+        acc[curr.name.toLowerCase()] = curr;
+        return acc;
+      },
+      {},
+    );
+
     const repoSearchStr = Object.keys(repoMap).map((n) => `repo:${n}`);
 
-    let cursor = '';
+    let cursor = "";
 
-    console.log(repoSearchStr.join(' '))
     let resultCount = 0;
+    let hasNextPage = true;
 
     // Do the summary search
-    while (true) {
-      const response = await this.rateLimitedGraphQLRequest(GET_COMMITS_FOR_MANY_REPOSITORIES, {
-        searchStr: `${repoSearchStr.join(' ')} fork:true sort:updated-desc`,
-        since: range.startDate.toUTC().toISO(),
-        until: range.endDate.toUTC().toISO(),
-        first: 100,
-        cursor: cursor === '' ? undefined : cursor,
-      }) as RespositorySummariesResponse;
+    while (hasNextPage) {
+      const response = (await this.rateLimitedGraphQLRequest(
+        GET_COMMITS_FOR_MANY_REPOSITORIES,
+        {
+          searchStr: `${repoSearchStr.join(" ")} fork:true sort:updated-desc`,
+          since: range.startDate.toUTC().toISO(),
+          until: range.endDate.toUTC().toISO(),
+          first: 100,
+          cursor: cursor === "" ? undefined : cursor,
+        },
+      )) as RespositorySummariesResponse;
 
-      console.log(`rateLimit.cost=${response.rateLimit.cost}`);
       resultCount += response.search.nodes.length;
 
       for (const summary of response.search.nodes) {
@@ -233,16 +244,16 @@ export class GithubCommitCollector extends GithubBatchedProjectArtifactsBaseColl
         if (!summary.defaultBranchRef) {
           // This means the repository is empty (at least that's how it will be interpreted)
           summary.defaultBranchRef = {
-            name: 'n/a',
+            name: "n/a",
             target: {
               history: {
                 totalCount: 0,
                 nodes: [],
-              }
-            }
-          }
+              },
+            },
+          };
         }
-        const totalCount = summary.defaultBranchRef!.target.history.totalCount
+        const totalCount = summary.defaultBranchRef!.target.history.totalCount;
         // Ignore things that are forks
         if (totalCount === 0 || summary.isFork) {
           results.unchanged.push(repo);
@@ -256,16 +267,15 @@ export class GithubCommitCollector extends GithubBatchedProjectArtifactsBaseColl
         }
       }
 
-      if (!response.search.pageInfo.hasNextPage) {
-        break;
-      }
+      hasNextPage = response.search.pageInfo.hasNextPage;
       cursor = response.search.pageInfo.endCursor;
     }
-    console.log(`Results from the search ${resultCount}`);
-    const repoMapLen = Object.keys(repoMap).length
+    logger.debug(`Results in github commits summary ${resultCount}`);
+    const repoMapLen = Object.keys(repoMap).length;
     if (repoMapLen !== 0) {
-      logger.debug(`it seems we missed ${repoMapLen} repos in the summary, force a search`)
-      console.log('%j', repoMap);
+      logger.debug(
+        `${repoMapLen} repos were missed in the summary, force retrieval`,
+      );
       for (const repoName in repoMap) {
         results.changed.push({
           repo: repoMap[repoName],
@@ -277,19 +287,25 @@ export class GithubCommitCollector extends GithubBatchedProjectArtifactsBaseColl
     return results;
   }
 
-  private createEventsFromSummaryResults(repo: Artifact, summary: RepositorySummary): IncompleteEvent[] {
+  private createEventsFromSummaryResults(
+    repo: Artifact,
+    summary: RepositorySummary,
+  ): IncompleteEvent[] {
     return summary.defaultBranchRef!.target.history.nodes.map((e) => {
       const contributor = this.contributorFromCommit({
-        committer: e.committer.user === null ? null : {
-          email: e.committer.email,
-          name: e.committer.name,
-          login: e.committer.user.login || '',
-        },
+        committer:
+          e.committer.user === null
+            ? null
+            : {
+                email: e.committer.email,
+                name: e.committer.name,
+                login: e.committer.user.login || "",
+              },
         author: {
           email: e.author.email,
           name: e.author.name,
-          login: e.author.user?.login || ''
-        }
+          login: e.author.user?.login || "",
+        },
       });
       return {
         time: DateTime.fromISO(e.commitedDate),
@@ -297,8 +313,8 @@ export class GithubCommitCollector extends GithubBatchedProjectArtifactsBaseColl
         from: contributor,
         sourceId: e.oid,
         type: EventType.COMMIT_CODE,
-        amount: 1
-      }
+        amount: 1,
+      };
     });
   }
 
@@ -314,7 +330,7 @@ export class GithubCommitCollector extends GithubBatchedProjectArtifactsBaseColl
 
     // Commit the unchanged artifacts
     for (const repo of summaryResults.unchanged) {
-      committer.commit(repo).withNoChanges()
+      committer.commit(repo).withNoChanges();
     }
 
     // Load commits for each artifact
@@ -325,13 +341,12 @@ export class GithubCommitCollector extends GithubBatchedProjectArtifactsBaseColl
         try {
           const handles = await asyncBatch(summary.events, 1, async (e) => {
             return this.recorder.record(e[0]);
-          })
+          });
           if (summary.count !== summary.events.length) {
-            handles.push(...await this.recordEventsForRepo(artifact, range));
+            handles.push(...(await this.recordEventsForRepo(artifact, range)));
           }
           committer.commit(artifact).withHandles(handles);
         } catch (err) {
-          console.error(err);
           committer.commit(artifact).withResults({
             success: [],
             errors: [err],

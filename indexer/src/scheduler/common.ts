@@ -6,7 +6,6 @@ import {
   IArtifactGroupCommitmentProducer,
   IArtifactGroup,
   ICollector,
-  CollectionSummary,
 } from "./types.js";
 import { TimeSeriesCacheWrapper } from "../cacher/time-series.js";
 import { IEventRecorder } from "../recorder/types.js";
@@ -50,18 +49,10 @@ export class ProjectArtifactGroup extends BasicArtifactGroup<Project> {
 }
 
 export abstract class BaseCollector<T extends object> implements ICollector {
-  async collectionSummary(missingArtifacts: [], range: Range): Promise<CollectionSummary> {
-    // By default this assumes that all of the artifacts have changed. This can
-    // be used by collectors that have the ability to short-circuit (this is a
-    // speed optimization for collection)
-    return {
-      unchanged: [],
-      changed: missingArtifacts,
-    };
-  }
-
   async allArtifacts(): Promise<Artifact[]> {
-    throw new Error('#allArtifacts not implemented for a batch artifact')
+    throw new Error(
+      "#allArtifacts not implemented for a base collector artifact",
+    );
   }
 
   /* eslint-disable-next-line require-yield */
@@ -97,7 +88,6 @@ export class ProjectArtifactsCollector extends BaseCollector<Project> {
     this.artifactsWhere = artifactsWhere;
   }
 
-
   async allArtifacts(): Promise<Artifact[]> {
     const projects = await this.allProjectsWithArtifacts();
     const uniqueIds: Record<number, boolean> = {};
@@ -108,7 +98,7 @@ export class ProjectArtifactsCollector extends BaseCollector<Project> {
         }
         uniqueIds[a.id] = true;
         artifacts.push(a);
-      })
+      });
       return artifacts;
     }, []);
   }
@@ -120,8 +110,8 @@ export class ProjectArtifactsCollector extends BaseCollector<Project> {
       },
       where: {
         artifacts: this.artifactsWhere,
-      }
-    })
+      },
+    });
   }
 
   async *groupedArtifacts(): AsyncGenerator<IArtifactGroup<Project>> {
@@ -146,7 +136,7 @@ export type Batch = {
   size: number;
   name: string;
   totalBatches: number;
-}
+};
 
 export class BatchArtifactsCollector extends BaseCollector<Batch> {
   protected cache: TimeSeriesCacheWrapper;
@@ -165,7 +155,7 @@ export class BatchArtifactsCollector extends BaseCollector<Batch> {
   }
 
   async allArtifacts(): Promise<Artifact[]> {
-    throw new Error('#allArtifacts not implemented for a batch artifact')
+    throw new Error("#allArtifacts not implemented for a batch artifact");
   }
 
   async *groupedArtifacts(): AsyncGenerator<IArtifactGroup<Batch>> {
@@ -177,14 +167,14 @@ export class BatchArtifactsCollector extends BaseCollector<Batch> {
     for (let i = 0; i < all.length; i += this.batchSize) {
       batchNumber += 1;
       const batchArtifacts = all.slice(i, i + this.batchSize);
-      const batchName = `Batch[${batchNumber}/${batches}]`
+      const batchName = `Batch[${batchNumber}/${batches}]`;
       const batch: Batch = {
         totalBatches: batches,
         size: batchArtifacts.length,
         name: batchName,
-      }
+      };
 
-      yield new BasicArtifactGroup(batchName, batch, batchArtifacts)
+      yield new BasicArtifactGroup(batchName, batch, batchArtifacts);
     }
   }
 
@@ -225,7 +215,7 @@ export class BatchedProjectArtifactsCollector extends BatchArtifactsCollector {
         }
         uniqueIds[a.id] = true;
         artifacts.push(a);
-      })
+      });
       return artifacts;
     }, []);
   }
@@ -237,7 +227,7 @@ export class BatchedProjectArtifactsCollector extends BatchArtifactsCollector {
       },
       where: {
         artifacts: this.artifactsWhere,
-      }
-    })
+      },
+    });
   }
 }
