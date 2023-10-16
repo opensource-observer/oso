@@ -6,7 +6,6 @@ import {
   ProjectAddress,
 } from "./funding-events/client.js";
 import {
-  Artifact,
   ArtifactNamespace,
   ArtifactType,
   EventType,
@@ -27,7 +26,10 @@ import {
 } from "../../scheduler/types.js";
 import { Range } from "../../utils/ranges.js";
 import { ProjectRepository } from "../../db/project.js";
-import { Batch, BatchedProjectArtifactsCollector } from "../../scheduler/common.js";
+import {
+  Batch,
+  BatchedProjectArtifactsCollector,
+} from "../../scheduler/common.js";
 import { ArtifactGroupRecorder } from "../../recorder/group.js";
 import { In } from "typeorm";
 
@@ -38,11 +40,11 @@ export interface FundingEventsCollectorOptions {
 }
 
 export const DefaultFundingEventsCollectorOptions: FundingEventsCollectorOptions =
-{
-  cacheOptions: {
-    bucket: "funding-events",
-  },
-};
+  {
+    cacheOptions: {
+      bucket: "funding-events",
+    },
+  };
 
 export class FundingEventsCollector extends BatchedProjectArtifactsCollector {
   private client: IFundingEventsClient;
@@ -89,7 +91,7 @@ export class FundingEventsCollector extends BatchedProjectArtifactsCollector {
     logger.debug("running funding events collector");
     const artifacts = await group.artifacts();
     const filteredArtifacts = artifacts.filter((a) => {
-      return a.name.length === 42
+      return a.name.length === 42;
     });
 
     const groupRecorder = new ArtifactGroupRecorder(this.recorder);
@@ -264,9 +266,7 @@ export class FundingEventsCollector extends BatchedProjectArtifactsCollector {
         try {
           amountAsBigInt = BigInt(row.value);
         } catch (e) {
-          logger.error(
-            "failed to parse amount as a bigint"
-          )
+          logger.error("failed to parse amount as a bigint");
         }
 
         const event: IncompleteEvent = {
