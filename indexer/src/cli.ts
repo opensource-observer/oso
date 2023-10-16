@@ -20,6 +20,7 @@ import {
 import { logger } from "./utils/logger.js";
 import { csvCommandGroup } from "./scripts/manual-csv-import-helper.js";
 import { duneCommandGroup } from "./scripts/manual-dune-tools.js";
+import { artifactsCommandGroup } from "./scripts/artifact-management.js";
 
 //const callLibrary = async <Args>(
 //  func: EventSourceFunction<Args>,
@@ -81,10 +82,17 @@ const cli = yargs(hideBin(process.argv))
   )
   .command<Record<string, never>>(
     "dune <subcommand>",
-    "subcommand for dune related things",
+    "subcommand for dune related tools",
     (yargs) => {
       duneCommandGroup(yargs);
     },
+  )
+  .command<Record<string, never>>(
+    "artifacts <subcommand>",
+    "subcommand for artifacts related tools",
+    (yargs) => {
+      artifactsCommandGroup(yargs);
+    }
   )
   .command<RunAutocrawlArgs>(
     "runAutocrawl",
@@ -140,7 +148,6 @@ const cli = yargs(hideBin(process.argv))
           },
           async (args) => {
             const scheduler = await configure(args);
-            console.log(args);
 
             const execSummary = await scheduler.executeCollector(
               args.collector,
@@ -254,7 +261,7 @@ const cli = yargs(hideBin(process.argv))
             .command<SchedulerArgs>(
               "clean-lock",
               "clean the lock for a job execution if it exists",
-              (_yags) => {},
+              (_yags) => { },
               async (args) => {
                 const scheduler = await configure(args);
                 await scheduler.cleanLock();

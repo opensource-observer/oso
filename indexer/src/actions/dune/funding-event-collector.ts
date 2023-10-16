@@ -10,7 +10,6 @@ import {
   ArtifactNamespace,
   ArtifactType,
   EventType,
-  Project,
 } from "../../db/orm-entities.js";
 import {
   IEventRecorder,
@@ -28,8 +27,9 @@ import {
 } from "../../scheduler/types.js";
 import { Range } from "../../utils/ranges.js";
 import { ProjectRepository } from "../../db/project.js";
-import { BaseCollector, ProjectArtifactGroup } from "../../scheduler/common.js";
+import { Batch, BatchedProjectArtifactsCollector } from "../../scheduler/common.js";
 import { ArtifactGroupRecorder } from "../../recorder/group.js";
+import { In } from "typeorm";
 
 export interface FundingEventsCollectorOptions {
   cacheOptions: {
@@ -38,17 +38,14 @@ export interface FundingEventsCollectorOptions {
 }
 
 export const DefaultFundingEventsCollectorOptions: FundingEventsCollectorOptions =
-  {
-    cacheOptions: {
-      bucket: "funding-events",
-    },
-  };
+{
+  cacheOptions: {
+    bucket: "funding-events",
+  },
+};
 
-export class FundingEventsCollector extends BaseCollector<Project> {
+export class FundingEventsCollector extends BatchedProjectArtifactsCollector {
   private client: IFundingEventsClient;
-  private recorder: IEventRecorder;
-  private projectRepository: typeof ProjectRepository;
-  private cache: TimeSeriesCacheWrapper;
   private options: FundingEventsCollectorOptions;
 
   constructor(
@@ -56,9 +53,12 @@ export class FundingEventsCollector extends BaseCollector<Project> {
     projectRepository: typeof ProjectRepository,
     recorder: IEventRecorder,
     cache: TimeSeriesCacheWrapper,
+    batchSize: number,
     options?: Partial<FundingEventsCollectorOptions>,
   ) {
-    super();
+    super(projectRepository, recorder, cache, batchSize, {
+      type: In([ArtifactType.EOA_ADDRESS, ArtifactType.SAFE_ADDRESS]),
+    });
     this.client = client;
     this.projectRepository = projectRepository;
     this.recorder = recorder;
@@ -66,28 +66,32 @@ export class FundingEventsCollector extends BaseCollector<Project> {
     this.cache = cache;
   }
 
-  async *groupedArtifacts(): AsyncGenerator<IArtifactGroup<Project>> {
-    logger.debug("gathering artifacts");
-    const projects =
-      await this.projectRepository.allFundableProjectsWithAddresses();
+  // async *groupedArtifacts(): AsyncGenerator<IArtifactGroup<Project>> {
+  //   logger.debug("gathering artifacts");
+  //   const projects =
+  //     await this.projectRepository.allFundableProjectsWithAddresses();
 
-    for (const project of projects) {
-      const artifacts: Artifact[] = project.artifacts
-        .filter((a) => a.name.length == 42)
-        .map((a) => {
-          return a;
-        });
-      yield ProjectArtifactGroup.create(project, artifacts);
-    }
-  }
+  //   for (const project of projects) {
+  //     const artifacts: Artifact[] = project.artifacts
+  //       .filter((a) => a.name.length == 42)
+  //       .map((a) => {
+  //         return a;
+  //       });
+  //     yield ProjectArtifactGroup.create(project, artifacts);
+  //   }
+  // }
 
   async collect(
-    group: IArtifactGroup<Project>,
+    group: IArtifactGroup<Batch>,
     range: Range,
     committer: IArtifactGroupCommitmentProducer,
   ): Promise<void> {
     logger.debug("running funding events collector");
     const artifacts = await group.artifacts();
+    const filteredArtifacts = artifacts.filter((a) => {
+      return a.name.length === 42
+    });
+
     const groupRecorder = new ArtifactGroupRecorder(this.recorder);
     // Super pragmatic hack for now to create the funding addresses. Let's just make them now
     const fundingAddressesRaw: Array<[string, string, string, string]> = [
@@ -195,7 +199,7 @@ export class FundingEventsCollector extends BaseCollector<Project> {
 
     const projectAddressesInput: Array<
       ProjectAddress & { namespace: ArtifactNamespace; type: ArtifactType }
-    > = artifacts.map((a, i) => {
+    > = filteredArtifacts.map((a, i) => {
       return {
         id: i,
         projectId: i,
@@ -256,6 +260,15 @@ export class FundingEventsCollector extends BaseCollector<Project> {
           );
         }
 
+        let amountAsBigInt = BigInt(0);
+        try {
+          amountAsBigInt = BigInt(row.value);
+        } catch (e) {
+          logger.error(
+            "failed to parse amount as a bigint"
+          )
+        }
+
         const event: IncompleteEvent = {
           time: DateTime.fromISO(row.blockTime, { zone: "utc" }),
           type: EventType.FUNDING,
@@ -265,6 +278,7 @@ export class FundingEventsCollector extends BaseCollector<Project> {
 
           // Worried this could fail on very large values
           amount: amountAsFloat,
+          size: amountAsBigInt,
           details: {
             amountAsString: row.value,
             txHash: row.txHash,

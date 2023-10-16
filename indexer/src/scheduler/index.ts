@@ -159,6 +159,7 @@ export async function configure(args: SchedulerArgs) {
         ProjectRepository,
         recorder,
         cache,
+        10000,
       );
       return collector;
     },
@@ -181,6 +182,7 @@ export async function configure(args: SchedulerArgs) {
         gh,
         recorder,
         cache,
+        900,
       );
       return collector;
     },
@@ -249,7 +251,9 @@ export async function configure(args: SchedulerArgs) {
 
   scheduler.registerCollector({
     create: async (_config, recorder, cache) => {
-      const client = new DailyContractUsageClient(dune);
+      const client = new DailyContractUsageClient(dune, {
+        tablesDirectoryPath: '/data/tmp/oso/dune-monitored-contracts/',
+      });
       const collector = new DailyContractUsageCollector(
         client,
         ArtifactRepository,

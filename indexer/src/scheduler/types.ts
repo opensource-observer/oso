@@ -62,7 +62,7 @@ type ArtifactCommitterFn = (results: AsyncResults<RecordResponse>) => void;
 export interface IArtifactCommitter {
   withResults(results: AsyncResults<RecordResponse>): void;
   withHandles(handles: RecordHandle[]): void;
-  withNone(): void;
+  withNoChanges(): void;
 }
 
 class ArtifactCommitter implements IArtifactCommitter {
@@ -91,9 +91,9 @@ class ArtifactCommitter implements IArtifactCommitter {
     return this.cb(results);
   }
 
-  withNone(): void {
+  withNoChanges(): void {
     return this.withResults({
-      success: [],
+      success: ['no changes'],
       errors: [],
     });
   }
@@ -143,6 +143,11 @@ export type CommitArtifactCallback = (
   artifact: Artifact | Artifact[],
 ) => Promise<void>;
 
+export interface CollectionSummary {
+  unchanged: Artifact[];
+  changed: Artifact[];
+}
+
 /**
  * The interface for the scheduler that manages all of the schedules for jobs
  */
@@ -152,6 +157,8 @@ export interface ICollector {
   groupedArtifacts(): AsyncGenerator<IArtifactGroup<object>>;
 
   allArtifacts(): Promise<Artifact[]>;
+
+  collectionSummary(missingArtifacts: Artifact[], range: Range): Promise<CollectionSummary>
 
   collect(
     group: IArtifactGroup<object>,
@@ -256,8 +263,7 @@ export type ArtifactCommitmentSummary = {
 };
 
 export class ArtifactRecordsCommitmentWrapper
-  implements IArtifactGroupCommitmentProducer, IArtifactGroupCommitmentConsumer
-{
+  implements IArtifactGroupCommitmentProducer, IArtifactGroupCommitmentConsumer {
   private collectorName: string;
   private range: Range;
   private promises: Promise<ArtifactCommitmentSummary>[];
@@ -330,8 +336,7 @@ export class ArtifactRecordsCommitmentWrapper
                   seenCount += 1;
                   this.duplicatesTracker[artifact.id] = seenCount;
                   logger.info(
-                    `completed events for "${this.collectorName} on Artifact[${
-                      artifact.id
+                    `completed events for "${this.collectorName} on Artifact[${artifact.id
                     }] for ${rangeToString(this.range)}`,
                   );
                 } catch (err) {
@@ -414,6 +419,12 @@ export class ArtifactRecordsCommitmentWrapper
         errors: [err],
         success: [],
       });
+    });
+  }
+
+  successAll(results: AsyncResults<RecordResponse>): void {
+    this.artifacts.forEach((artifact) => {
+      this.commit(artifact).withResults(results);
     });
   }
 
@@ -799,19 +810,52 @@ export class BaseScheduler implements IScheduler {
 
     const expectedArtifacts = new UniqueArray((a: number) => a);
 
-    let totalMissing = 0;
     // Get a full count of the remaining work so we can provide a percentage of completion.
-    for await (const group of collector.groupedArtifacts()) {
-      const artifacts = await group.artifacts();
-      const missing = await this.findMissingArtifactsFromEventPointers(
-        range,
-        artifacts,
-        collectorReg.name,
-      );
-      totalMissing += missing.length;
-    }
+    const artifacts = await collector.allArtifacts();
+    const allMissing = await this.findMissingArtifactsFromEventPointers(
+      range,
+      artifacts,
+      collectorReg.name,
+    );
+    let totalMissing = allMissing.length;
+    logger.info(`--------------------------------------------------------------`)
+    logger.info('Collection summary:')
+    logger.info(`    Total items: ${artifacts.length}`)
+    logger.info(`    Missing items: ${allMissing.length}`);
+    logger.info(`--------------------------------------------------------------`)
 
-    logger.info(`Total missing artifacts: ${totalMissing}`);
+    // Execute the collection summary to gather status on the currently missing
+    // items (if any). It gives the collector the ability to do a preprocessing
+    // step before collection of artifacts occurs.
+    // let summary: CollectionSummary = { changed: [], unchanged: [] };
+    // try {
+    //   summary = await collector.collectionSummary(allMissing, range);
+    //   logger.info(`--------------------------------------------------------------`)
+    //   logger.info('Collection summary:')
+    //   logger.info(`    Total items: ${artifacts.length}`)
+    //   logger.info(`    Changed items: ${summary.changed.length}`);
+    //   logger.info(`    Unchanged items: ${summary.unchanged.length}`);
+    //   logger.info(`--------------------------------------------------------------`)
+    // } catch (err) {
+    //   logger.error('error when collecting the collection summary');
+    //   executionSummary.errors.push(err);
+    //   return executionSummary;
+    // }
+
+    // if (summary.unchanged.length > 0) {
+    //   const committer = ArtifactRecordsCommitmentWrapper.setup(
+    //     collectorReg.name,
+    //     range,
+    //     this.eventPointerManager,
+    //     summary.unchanged,
+    //     seenIds,
+    //   );
+    //   committer.successAll({
+    //     errors: [],
+    //     success: ['No changes'],
+    //   });
+    //   await committer.waitAll();
+    // }
 
     // Get a list of the monitored artifacts
     for await (const group of collector.groupedArtifacts()) {

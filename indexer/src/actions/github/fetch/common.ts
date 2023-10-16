@@ -6,11 +6,6 @@ import {
   ArtifactType,
   ArtifactNamespace,
 } from "../../../db/orm-entities.js";
-import {
-  IArtifactGroup,
-  CollectResponse,
-  IArtifactGroupCommitmentProducer,
-} from "../../../scheduler/types.js";
 import { Range } from "../../../utils/ranges.js";
 import { GenericError } from "../../../common/errors.js";
 import { IEventRecorder } from "../../../recorder/types.js";
@@ -20,12 +15,13 @@ import { graphQLClient } from "../../../events/github/graphQLClient.js";
 import { DateTime } from "luxon";
 import { logger } from "../../../utils/logger.js";
 import {
+  BatchedProjectArtifactsCollector,
   ProjectArtifactGroup,
   ProjectArtifactsCollector,
 } from "../../../scheduler/common.js";
 import { Mutex } from "async-mutex";
 
-export class IncompleteRepoName extends GenericError {}
+export class IncompleteRepoName extends GenericError { }
 export type GithubRepoLocator = { owner: string; repo: string };
 
 function sleep(ms: number) {
@@ -72,7 +68,92 @@ export type GithubGraphQLCursor = {
   count: number;
 };
 
-export class GithubByProjectBaseCollector extends ProjectArtifactsCollector {
+// Create a github mixin
+type Constructor = new (...args: any[]) => {};
+
+export function GithubCollectorMixins<TBase extends Constructor>(Base: TBase) {
+  return class extends Base {
+    _requestMutex: Mutex;
+    _resetTime: DateTime;
+
+    constructor(...args: any[]) {
+      super(...args);
+      this._requestMutex = new Mutex();
+      this._resetTime = DateTime.fromISO('1970-01-01T00:00:00Z')
+    }
+
+    splitGithubRepoIntoLocator(artifact: Artifact): GithubRepoLocator {
+      const rawURL = artifact.url;
+      if (!rawURL) {
+        throw new IncompleteRepoName(`no url for artifact[${artifact.id}]`);
+      }
+      const repoURL = new URL(rawURL);
+      if (repoURL.host !== "github.com") {
+        throw new IncompleteRepoName(`unexpected url ${rawURL}`);
+      }
+      const splitName = repoURL.pathname.slice(1).split("/");
+      if (splitName.length !== 2) {
+        throw new IncompleteRepoName(`unexpected url ${rawURL}`);
+      }
+      return {
+        owner: splitName[0],
+        repo: splitName[1],
+      };
+    }
+
+    async rateLimitedGraphQLRequest<
+      R extends GithubGraphQLResponse<object>,
+    >(query: RequestDocument, variables: Variables): Promise<R> {
+      for (let i = 0; i < 10; i++) {
+        if (this._resetTime) {
+          const now = DateTime.now();
+          const diffMs = this._resetTime.toMillis() - now.toMillis();
+          if (diffMs > 0) {
+            if (diffMs > 200) {
+              logger.debug(
+                `encountered rate limit on github. waiting for ${diffMs}ms`,
+              );
+            }
+            await sleep(diffMs);
+          }
+        }
+
+        const release = await this._requestMutex.acquire();
+        // Hacky retry loop for 5XX errors
+        try {
+          const response = await graphQLClient.request<R>(query, variables);
+          const rateLimit = response.rateLimit;
+          if (
+            rateLimit.remaining == 0 ||
+            rateLimit.remaining - rateLimit.cost <= 0
+          ) {
+            this._resetTime = DateTime.fromISO(rateLimit.resetAt);
+          } else {
+            // Artificially rate limit to 5reqs/second
+            this._resetTime = DateTime.now().plus(200);
+          }
+          release();
+          return response;
+        } catch (err) {
+          release();
+          if (err instanceof ClientError) {
+            // Retry up
+            if (err.response.status >= 500 && err.response.status < 600) {
+              logger.error("hit a github 500 error. waiting for some period");
+              this._resetTime = DateTime.now().plus({ milliseconds: 5000 });
+              continue;
+            }
+          }
+          throw err;
+        }
+      }
+      throw new Error("too many retries for graphql request");
+    }
+
+  }
+}
+
+class _GithubByProjectBaseCollector extends ProjectArtifactsCollector {
   protected recorder: IEventRecorder;
   protected cache: TimeSeriesCacheWrapper;
   protected options: GithubBaseCollectorOptions;
@@ -95,98 +176,30 @@ export class GithubByProjectBaseCollector extends ProjectArtifactsCollector {
     this.requestMutex = new Mutex();
   }
 
-  async *groupedArtifacts(): AsyncGenerator<IArtifactGroup<Project>> {
-    const projects = await this.projectRepository.find({
-      relations: {
-        artifacts: true,
-      },
-      where: {
-        artifacts: {
-          type: In([ArtifactType.GIT_REPOSITORY]),
-          namespace: ArtifactNamespace.GITHUB,
-        },
-      },
+}
+
+class _GithubBatchedProjectsBaseCollector extends BatchedProjectArtifactsCollector {
+  protected recorder: IEventRecorder;
+  protected cache: TimeSeriesCacheWrapper;
+  protected options: GithubBaseCollectorOptions;
+  protected resetTime: DateTime | null;
+
+  constructor(
+    projectRepository: Repository<Project>,
+    recorder: IEventRecorder,
+    cache: TimeSeriesCacheWrapper,
+    batchSize: number,
+    options: GithubBaseCollectorOptions,
+  ) {
+    super(projectRepository, recorder, cache, batchSize, {
+      type: In([ArtifactType.GIT_REPOSITORY]),
+      namespace: ArtifactNamespace.GITHUB,
     });
 
-    // Emit each project's artifacts as a group of artifacts to record
-    for (const project of projects) {
-      yield ProjectArtifactGroup.create(project, project.artifacts);
-    }
-  }
-
-  collect(
-    _group: IArtifactGroup<Project>,
-    _range: Range,
-    _committer: IArtifactGroupCommitmentProducer,
-  ): Promise<CollectResponse> {
-    throw new Error("Not implemented");
-  }
-
-  protected splitGithubRepoIntoLocator(artifact: Artifact): GithubRepoLocator {
-    const rawURL = artifact.url;
-    if (!rawURL) {
-      throw new IncompleteRepoName(`no url for artifact[${artifact.id}]`);
-    }
-    const repoURL = new URL(rawURL);
-    if (repoURL.host !== "github.com") {
-      throw new IncompleteRepoName(`unexpected url ${rawURL}`);
-    }
-    const splitName = repoURL.pathname.slice(1).split("/");
-    if (splitName.length !== 2) {
-      throw new IncompleteRepoName(`unexpected url ${rawURL}`);
-    }
-    return {
-      owner: splitName[0],
-      repo: splitName[1],
-    };
-  }
-
-  protected async rateLimitedGraphQLRequest<
-    R extends GithubGraphQLResponse<object>,
-  >(query: RequestDocument, variables: Variables): Promise<R> {
-    for (let i = 0; i < 10; i++) {
-      if (this.resetTime) {
-        const now = DateTime.now();
-        const diffMs = this.resetTime.toMillis() - now.toMillis();
-        if (diffMs > 0) {
-          if (diffMs > 200) {
-            logger.debug(
-              `encountered rate limit on github. waiting for ${diffMs}ms`,
-            );
-          }
-          await sleep(diffMs);
-        }
-      }
-
-      const release = await this.requestMutex.acquire();
-      // Hacky retry loop for 5XX errors
-      try {
-        const response = await graphQLClient.request<R>(query, variables);
-        const rateLimit = response.rateLimit;
-        if (
-          rateLimit.remaining == 0 ||
-          rateLimit.remaining - rateLimit.cost <= 0
-        ) {
-          this.resetTime = DateTime.fromISO(rateLimit.resetAt);
-        } else {
-          // Artificially rate limit to 5reqs/second
-          this.resetTime = DateTime.now().plus(200);
-        }
-        release();
-        return response;
-      } catch (err) {
-        release();
-        if (err instanceof ClientError) {
-          // Retry up
-          if (err.response.status >= 500 && err.response.status < 600) {
-            logger.error("hit a github 500 error. waiting for some period");
-            this.resetTime = DateTime.now().plus({ milliseconds: 5000 });
-            continue;
-          }
-        }
-        throw err;
-      }
-    }
-    throw new Error("too many retries for graphql request");
+    this.options = options;
+    this.resetTime = null;
   }
 }
+
+export const GithubByProjectBaseCollector = GithubCollectorMixins(_GithubByProjectBaseCollector);
+export const GithubBatchedProjectArtifactsBaseCollector = GithubCollectorMixins(_GithubBatchedProjectsBaseCollector);

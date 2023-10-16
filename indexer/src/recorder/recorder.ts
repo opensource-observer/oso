@@ -661,8 +661,7 @@ export class BatchEventRecorder implements IEventRecorder {
     }
 
     logger.info(
-      `emptying queue for ${eventType.toString()} with ${
-        eventTypeStorage.length
+      `emptying queue for ${eventType.toString()} with ${eventTypeStorage.length
       } items`,
     );
     const processing = eventTypeStorage.popAll();
@@ -734,8 +733,7 @@ export class BatchEventRecorder implements IEventRecorder {
     }
 
     logger.debug(
-      `${duplicateAction} ${
-        processing.length - newEvents.length
+      `${duplicateAction} ${processing.length - newEvents.length
       } existing events`,
     );
 
@@ -756,6 +754,9 @@ export class BatchEventRecorder implements IEventRecorder {
     }
 
     logger.debug(`about to start writing to db in batch ${newEvents.length}`);
+    if (newEvents.length === 32) {
+      console.log(newEvents);
+    }
 
     // Insert new events
     await asyncBatch(
@@ -766,18 +767,22 @@ export class BatchEventRecorder implements IEventRecorder {
         const events = await this.createEventsFromIncomplete(batch);
 
         try {
+          console.log('boop');
           const result = await this.eventRepository.insert(events);
+          console.log('beep222');
           if (result.identifiers.length !== batchLength) {
             throw new RecorderError(
               `recorder writes failed. Expected ${batchLength} writes but only received ${result.identifiers.length}`,
             );
           }
+          console.log('beep');
           this.notifySuccess(events);
           logger.debug(
             `completed writing batch of ${result.identifiers.length}`,
           );
         } catch (err) {
           logger.error("encountered an error writing to the database");
+          logger.error(err);
           if (err instanceof QueryFailedError) {
             if (err.message.indexOf("duplicate") !== -1) {
               logger.debug("attempted to insert a duplicate event. skipping");
@@ -839,7 +844,7 @@ export class BatchEventRecorder implements IEventRecorder {
       // Notify any subscribers that the event has failed to record
       const uniqueId = eventUniqueId(e);
       this.emitter.emit(uniqueId, err, "");
-      this.emitter.emit("event-record-failure", err, "");
+      this.emitter.emit("event-record-failure", err, uniqueId);
     });
   }
 

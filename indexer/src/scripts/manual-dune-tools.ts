@@ -26,9 +26,8 @@ export type DuneCommonArgs = {
 };
 
 function rowToString(row: DailyContractUsageRow) {
-  return `${row.date},${row.contractAddress},${row.userAddress || ""},${
-    row.safeAddress || ""
-  },${row.gasCostGwei},${row.txCount}\n`;
+  return `${row.date},${row.contractAddress},${row.userAddress || ""},${row.safeAddress || ""
+    },${row.gasCostGwei},${row.txCount}\n`;
 }
 
 export class DuneDayExporter extends Writable {
@@ -244,6 +243,7 @@ export class DuneSafeAggregate extends Transform {
       this.outgoingRows.push(...this.popSafes());
       this.incomingDay = [];
     }
+
     // for some reason safes weren't aggregated properly on dune. let's do that here
     if (row.safeAddress) {
       const address = row.safeAddress.toLowerCase();

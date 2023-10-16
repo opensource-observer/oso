@@ -1,4 +1,4 @@
-import { DateTime } from "luxon";
+import { DateTime, StringUnitLength } from "luxon";
 import _ from "lodash";
 import {
   IEventRecorder,
@@ -7,6 +7,7 @@ import {
   RecordHandle,
 } from "../../../recorder/types.js";
 import { Range, rangeToString } from "../../../utils/ranges.js";
+import { gql } from "graphql-request";
 import {
   Artifact,
   ArtifactNamespace,
@@ -19,6 +20,7 @@ import { Octokit, RequestError } from "octokit";
 import { GetResponseDataTypeFromEndpointMethod } from "@octokit/types";
 import { Repository } from "typeorm";
 import {
+  CollectionSummary,
   IArtifactGroup,
   IArtifactGroupCommitmentProducer,
 } from "../../../scheduler/types.js";
@@ -29,8 +31,121 @@ import {
 import { asyncBatch } from "../../../utils/array.js";
 import {
   GithubBaseCollectorOptions,
-  GithubByProjectBaseCollector,
+  GithubBatchedProjectArtifactsBaseCollector,
+  GithubGraphQLResponse,
 } from "./common.js";
+import { Batch, BatchedProjectArtifactsCollector } from "../../../scheduler/common.js";
+
+const GET_COMMITS_FOR_MANY_REPOSITORIES = gql`
+query GetCommitsForManyRepositories($searchStr: String!, $first: Int, $since: GitTimestamp, $until: GitTimestamp, $cursor: String) {
+  rateLimit {
+    resetAt
+    remaining
+    nodeCount
+    cost
+  }
+  search(query: $searchStr, type: REPOSITORY, first: $first, after: $cursor) {
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+    nodes {
+      ... on Repository {
+        nameWithOwner
+        isFork
+        defaultBranchRef {
+          name
+          target {
+            ... on Commit {
+              history(first: $first, since: $since, until: $until) {
+                totalCount
+                nodes {
+                  ... on Commit {
+                    committedDate
+                    oid
+                    committer {
+                      user {
+                        login
+                      }
+                      name
+                      email
+                    }
+                    author {
+                      user {
+                        login
+                      }
+                      name
+                      email
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+`
+
+type RespositorySummariesResponse = GithubGraphQLResponse<RepositorySummaries>;
+
+type RepositorySummaries = {
+  search: {
+    pageInfo: {
+      hasNextPage: boolean,
+      endCursor: string;
+    },
+    nodes: RepositorySummary[]
+  }
+}
+
+type RepositorySummary = {
+  nameWithOwner: string;
+  isFork: boolean;
+  defaultBranchRef: {
+    name: string;
+    target: {
+      history: {
+        totalCount: number;
+        nodes: SummaryCommitInfo[];
+      }
+    }
+  } | null;
+}
+
+type CommitUser = {
+  login: string;
+}
+
+type GenericCommit = {
+  committer: {
+    login: string;
+    name?: string | null | undefined;
+    email?: string | null | undefined;
+  } | null;
+  author: {
+    login: string;
+    name?: string | null | undefined;
+    email?: string | null | undefined;
+  } | null;
+}
+
+type SummaryCommitInfo = {
+  commitedDate: string;
+  oid: string;
+  committer: {
+    user: CommitUser | null;
+    name: string;
+    email: string;
+  };
+  author: {
+    user: CommitUser | null;
+    name: string;
+    email: string;
+  }
+}
 
 type Commit = GetResponseDataTypeFromEndpointMethod<
   Octokit["rest"]["repos"]["getCommit"]
@@ -48,7 +163,13 @@ const DefaultGithubCommitCollectorOptions: GithubBaseCollectorOptions = {
   },
 };
 
-export class GithubCommitCollector extends GithubByProjectBaseCollector {
+type RepoSummaryProcessedResult = { repo: Artifact, count: number, events: IncompleteEvent[] };
+type RepoSummaryProcessedResults = {
+  unchanged: Artifact[];
+  changed: RepoSummaryProcessedResult[];
+}
+
+export class GithubCommitCollector extends GithubBatchedProjectArtifactsBaseCollector {
   private gh: Octokit;
 
   constructor(
@@ -56,27 +177,161 @@ export class GithubCommitCollector extends GithubByProjectBaseCollector {
     gh: Octokit,
     recorder: IEventRecorder,
     cache: TimeSeriesCacheWrapper,
+    batchSize: number,
     options?: Partial<GithubBaseCollectorOptions>,
   ) {
     const opts = _.merge(DefaultGithubCommitCollectorOptions, options);
-    super(projectRepository, recorder, cache, opts);
+    super(projectRepository, recorder, cache, batchSize, opts);
     this.gh = gh;
   }
 
+  async gatherSummary(missingRepos: Artifact[], range: Range): Promise<RepoSummaryProcessedResults> {
+    const results: RepoSummaryProcessedResults = {
+      changed: [],
+      unchanged: [],
+    };
+    const repoMap: Record<string, Artifact> = {};
+    // Organize all repos as organizations
+    const orgsMap = missingRepos.reduce<Record<string, Artifact[]>>((acc, curr) => {
+      repoMap[curr.name.toLowerCase()] = curr;
+      const orgName = curr.name.split('/')[0].toLowerCase();
+      const artifacts = acc[orgName] || [];
+      artifacts.push(curr);
+      acc[orgName] = artifacts;
+      return acc;
+    }, {});
+
+    const orgSearchStr = Object.keys(orgsMap).map((o) => `org:${o}`);
+    const repoSearchStr = Object.keys(repoMap).map((n) => `repo:${n}`);
+
+    let cursor = '';
+
+    console.log(repoSearchStr.join(' '))
+    let resultCount = 0;
+
+    // Do the summary search
+    while (true) {
+      const response = await this.rateLimitedGraphQLRequest(GET_COMMITS_FOR_MANY_REPOSITORIES, {
+        searchStr: `${repoSearchStr.join(' ')} fork:true sort:updated-desc`,
+        since: range.startDate.toUTC().toISO(),
+        until: range.endDate.toUTC().toISO(),
+        first: 100,
+        cursor: cursor === '' ? undefined : cursor,
+      }) as RespositorySummariesResponse;
+
+      console.log(`rateLimit.cost=${response.rateLimit.cost}`);
+      resultCount += response.search.nodes.length;
+
+      for (const summary of response.search.nodes) {
+        const repoName = summary.nameWithOwner.toLowerCase();
+        const repo = repoMap[repoName];
+        if (!repo) {
+          // skip things are aren't monitoring (at the moment)
+          continue;
+        }
+        delete repoMap[repoName];
+        if (!summary.defaultBranchRef) {
+          // This means the repository is empty (at least that's how it will be interpreted)
+          summary.defaultBranchRef = {
+            name: 'n/a',
+            target: {
+              history: {
+                totalCount: 0,
+                nodes: [],
+              }
+            }
+          }
+        }
+        const totalCount = summary.defaultBranchRef!.target.history.totalCount
+        // Ignore things that are forks
+        if (totalCount === 0 || summary.isFork) {
+          results.unchanged.push(repo);
+        } else {
+          // Create store the events for later
+          results.changed.push({
+            repo: repo,
+            count: totalCount,
+            events: this.createEventsFromSummaryResults(repo, summary),
+          });
+        }
+      }
+
+      if (!response.search.pageInfo.hasNextPage) {
+        break;
+      }
+      cursor = response.search.pageInfo.endCursor;
+    }
+    console.log(`Results from the search ${resultCount}`);
+    const repoMapLen = Object.keys(repoMap).length
+    if (repoMapLen !== 0) {
+      logger.debug(`it seems we missed ${repoMapLen} repos in the summary, force a search`)
+      console.log('%j', repoMap);
+      for (const repoName in repoMap) {
+        results.changed.push({
+          repo: repoMap[repoName],
+          count: 1,
+          events: [],
+        });
+      }
+    }
+    return results;
+  }
+
+  private createEventsFromSummaryResults(repo: Artifact, summary: RepositorySummary): IncompleteEvent[] {
+    return summary.defaultBranchRef!.target.history.nodes.map((e) => {
+      const contributor = this.contributorFromCommit({
+        committer: e.committer.user === null ? null : {
+          email: e.committer.email,
+          name: e.committer.name,
+          login: e.committer.user.login || '',
+        },
+        author: {
+          email: e.author.email,
+          name: e.author.name,
+          login: e.author.user?.login || ''
+        }
+      });
+      return {
+        time: DateTime.fromISO(e.commitedDate),
+        to: repo,
+        from: contributor,
+        sourceId: e.oid,
+        type: EventType.COMMIT_CODE,
+        amount: 1
+      }
+    });
+  }
+
   async collect(
-    group: IArtifactGroup<Project>,
+    group: IArtifactGroup<Batch>,
     range: Range,
     committer: IArtifactGroupCommitmentProducer,
   ) {
     const artifacts = await group.artifacts();
 
+    // Check if the preprocessing has everything cached
+    const summaryResults = await this.gatherSummary(artifacts, range);
+
+    // Commit the unchanged artifacts
+    for (const repo of summaryResults.unchanged) {
+      committer.commit(repo).withNoChanges()
+    }
+
     // Load commits for each artifact
-    await asyncBatch(artifacts, 10, async (batch) => {
-      for (const artifact of batch) {
+    await asyncBatch(summaryResults.changed, 10, async (batch) => {
+      for (const summary of batch) {
+        const artifact = summary.repo;
+
         try {
-          const handles = await this.recordEventsForRepo(artifact, range);
+          const handles = await asyncBatch(summary.events, 1, async (e) => {
+            return this.recorder.record(e[0]);
+          })
+          if (summary.count !== summary.events.length) {
+            handles.push(...await this.recordEventsForRepo(artifact, range));
+          }
           committer.commit(artifact).withHandles(handles);
         } catch (err) {
+          console.error(err);
           committer.commit(artifact).withResults({
             success: [],
             errors: [err],
@@ -214,7 +469,7 @@ export class GithubCommitCollector extends GithubByProjectBaseCollector {
   }
 
   private contributorFromCommit(
-    commit: Commit,
+    commit: GenericCommit,
   ): IncompleteArtifact | undefined {
     const contributor: IncompleteArtifact = {
       name: "",
@@ -231,18 +486,18 @@ export class GithubCommitCollector extends GithubByProjectBaseCollector {
       // We will need to resort to use the email of the user if we cannot find a
       // name
       contributor.type = ArtifactType.GIT_EMAIL;
-      if (commit.commit.author?.email) {
-        contributor.name = commit.commit.author.email;
-      } else if (commit.commit.committer?.email) {
-        contributor.name = commit.commit.committer.email;
+      if (commit.author?.email) {
+        contributor.name = commit.author.email;
+      } else if (commit.committer?.email) {
+        contributor.name = commit.committer.email;
       }
       if (!contributor.name) {
         contributor.type = ArtifactType.GIT_NAME;
         // If there's still nothing we will attempt to use a name
-        if (commit.commit.author?.name) {
-          contributor.name = commit.commit.author.name;
-        } else if (commit.commit.committer?.name) {
-          contributor.name = commit.commit.committer.name;
+        if (commit.author?.name) {
+          contributor.name = commit.author.name;
+        } else if (commit.committer?.name) {
+          contributor.name = commit.committer.name;
         }
         if (!contributor.name) {
           return undefined;
