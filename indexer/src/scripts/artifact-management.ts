@@ -6,6 +6,7 @@ import { ArtifactType, Artifact, Project, Event } from "../index.js";
 import _ from "lodash";
 import { AppDataSource } from "../db/data-source.js";
 import { ProjectRepository } from "../db/project.js";
+import { In } from "typeorm";
 
 export type ArtifactsCommonArgs = {
   type?: ArtifactType;
