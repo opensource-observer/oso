@@ -32,7 +32,7 @@ import { GithubCommitCollector } from "../actions/github/fetch/commits.js";
 import { GithubIssueCollector } from "../actions/github/fetch/pull-requests.js";
 import { GithubFollowingCollector } from "../actions/github/fetch/repo-followers.js";
 import { DailyContractUsageCollector } from "../actions/dune/index.js";
-import { DailyContractUsageClient } from "../actions/dune/daily-contract-usage-v2/client.js";
+import { DailyContractUsageClient } from "../actions/dune/daily-contract-usage/client.js";
 import path from "path";
 import { GithubWorkerSpawner } from "./github.js";
 import { JobExecutionRepository, JobsRepository } from "../db/jobs.js";
@@ -252,7 +252,7 @@ export async function configure(args: SchedulerArgs) {
   scheduler.registerCollector({
     create: async (_config, recorder, cache) => {
       const client = new DailyContractUsageClient(dune, {
-        tablesDirectoryPath: '/data/tmp/oso/dune-monitored-contracts/',
+        tablesDirectoryPath: "/data/tmp/oso/dune-monitored-contracts/",
       });
       const collector = new DailyContractUsageCollector(
         client,

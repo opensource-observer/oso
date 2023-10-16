@@ -11,7 +11,7 @@ import fsPromises from "fs/promises";
 import {
   IDailyContractUsageClientV2,
   DailyContractUsageRow,
-} from "./daily-contract-usage-v2/client.js";
+} from "./daily-contract-usage/client.js";
 import {
   IArtifactGroup,
   IArtifactGroupCommitmentProducer,
@@ -24,7 +24,10 @@ import {
   IncompleteEvent,
   RecordHandle,
 } from "../../recorder/types.js";
-import { TimeSeriesCacheLookup, TimeSeriesCacheWrapper } from "../../cacher/time-series.js";
+import {
+  TimeSeriesCacheLookup,
+  TimeSeriesCacheWrapper,
+} from "../../cacher/time-series.js";
 import { ArtifactRepository } from "../../db/artifacts.js";
 import { generateSourceIdFromArray } from "../../utils/source-ids.js";
 import { BaseCollector, BasicArtifactGroup } from "../../scheduler/common.js";
@@ -74,37 +77,37 @@ export interface DailyContractUsageSyncerOptions {
 
   blockchain: ArtifactNamespace;
 
-  mode: 'csv' | 'api';
+  mode: "csv" | "api";
 
   // This is the sha1 of the table used to store the monitored contractIds
   contractSha1: string;
 }
 
 export const DefaultDailyContractUsageSyncerOptions: DailyContractUsageSyncerOptions =
-{
-  intervalLengthInDays: 7,
-  offsetDays: 2,
-  cacheOptions: {
-    bucket: "contract-daily-usage",
-  },
+  {
+    intervalLengthInDays: 7,
+    offsetDays: 2,
+    cacheOptions: {
+      bucket: "contract-daily-usage",
+    },
 
-  knownUserAddressesSeedPath: "/tmp/known-addresses-seed.json",
+    knownUserAddressesSeedPath: "/tmp/known-addresses-seed.json",
 
-  // This default is based on this: https://dune.com/queries/2835126
-  contractUsersQueryId: 2835126,
+    // This default is based on this: https://dune.com/queries/2835126
+    contractUsersQueryId: 2835126,
 
-  batchCreateSize: 2500,
+    batchCreateSize: 2500,
 
-  batchReadSize: 10000,
+    batchReadSize: 10000,
 
-  parallelism: 10,
+    parallelism: 10,
 
-  blockchain: ArtifactNamespace.OPTIMISM,
+    blockchain: ArtifactNamespace.OPTIMISM,
 
-  mode: 'api',
+    mode: "api",
 
-  contractSha1: 'da1aae77b853fc7c74038ee08eec441b10b89570',
-};
+    contractSha1: "da1aae77b853fc7c74038ee08eec441b10b89570",
+  };
 
 export class DailyContractUsageCollector extends BaseCollector<object> {
   private client: IDailyContractUsageClientV2;
@@ -133,7 +136,7 @@ export class DailyContractUsageCollector extends BaseCollector<object> {
   async allArtifacts(): Promise<Artifact[]> {
     const artifacts: Artifact[] = [];
     for await (const group of this.groupedArtifacts()) {
-      artifacts.push(...await group.artifacts())
+      artifacts.push(...(await group.artifacts()));
     }
     return artifacts;
   }
@@ -172,13 +175,13 @@ export class DailyContractUsageCollector extends BaseCollector<object> {
     const uniqueEvents = new UniqueArray<string>((s) => s);
 
     try {
-      if (this.options.mode === 'api') {
+      if (this.options.mode === "api") {
         await this.collectFromApi(range, contractsByAddressMap, uniqueEvents);
       } else {
         await this.collectFromCsv(range, contractsByAddressMap, uniqueEvents);
       }
     } catch (err) {
-      logger.error('error collecting contract usage');
+      logger.error("error collecting contract usage");
     }
 
     console.log("done processing");
@@ -190,7 +193,11 @@ export class DailyContractUsageCollector extends BaseCollector<object> {
     }
   }
 
-  protected async collectFromApi(range: Range, contractsByAddressMap: _.Dictionary<Artifact>, uniqueEvents: UniqueArray<string>) {
+  protected async collectFromApi(
+    range: Range,
+    contractsByAddressMap: _.Dictionary<Artifact>,
+    uniqueEvents: UniqueArray<string>,
+  ) {
     const responses = this.cache.loadCachedOrRetrieve(
       TimeSeriesCacheLookup.new(
         this.options.cacheOptions.bucket,
@@ -198,14 +205,17 @@ export class DailyContractUsageCollector extends BaseCollector<object> {
         range,
       ),
       async (missing) => {
-        const rows = await this.client.getDailyContractUsage(missing.range, this.options.contractSha1)
+        const rows = await this.client.getDailyContractUsage(
+          missing.range,
+          this.options.contractSha1,
+        );
         return {
           raw: rows,
           hasNextPage: false,
           cacheRange: missing.range,
-        }
-      }
-    )
+        };
+      },
+    );
 
     for await (const page of responses) {
       const recordHandles: RecordHandle[] = [];
@@ -218,11 +228,18 @@ export class DailyContractUsageCollector extends BaseCollector<object> {
     }
   }
 
-  protected async collectFromCsv(range: Range, contractsByAddressMap: _.Dictionary<Artifact>, uniqueEvents: UniqueArray<string>) {
+  protected async collectFromCsv(
+    range: Range,
+    contractsByAddressMap: _.Dictionary<Artifact>,
+    uniqueEvents: UniqueArray<string>,
+  ) {
     let currentTime = range.startDate;
     while (currentTime < range.endDate) {
       logger.debug(`loading ${currentTime.toISODate()}`);
-      const rows = await this.client.getDailyContractUsageFromCsv(currentTime, this.options.contractSha1);
+      const rows = await this.client.getDailyContractUsageFromCsv(
+        currentTime,
+        this.options.contractSha1,
+      );
       const recordHandles: RecordHandle[] = [];
 
       currentTime = currentTime.plus({ day: 1 });
@@ -281,24 +298,24 @@ export class DailyContractUsageCollector extends BaseCollector<object> {
     const from: IncompleteArtifact =
       row.safeAddress === null
         ? {
-          name: row.userAddress!,
-          type: ArtifactType.EOA_ADDRESS,
-          namespace: ArtifactNamespace.OPTIMISM,
-        }
+            name: row.userAddress!,
+            type: ArtifactType.EOA_ADDRESS,
+            namespace: ArtifactNamespace.OPTIMISM,
+          }
         : {
-          name: row.safeAddress,
-          type: ArtifactType.SAFE_ADDRESS,
-          namespace: ArtifactNamespace.OPTIMISM,
-        };
+            name: row.safeAddress,
+            type: ArtifactType.SAFE_ADDRESS,
+            namespace: ArtifactNamespace.OPTIMISM,
+          };
 
     const recorderContract =
       contract !== undefined
         ? contract
         : {
-          name: row.contractAddress,
-          type: ArtifactType.CONTRACT_ADDRESS,
-          namespace: ArtifactNamespace.OPTIMISM,
-        };
+            name: row.contractAddress,
+            type: ArtifactType.CONTRACT_ADDRESS,
+            namespace: ArtifactNamespace.OPTIMISM,
+          };
 
     const sourceId = generateSourceIdFromArray([
       EventType.CONTRACT_INVOKED,

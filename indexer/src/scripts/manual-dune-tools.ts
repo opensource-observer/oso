@@ -17,7 +17,7 @@ import {
   DuneRawRow,
   transformDuneRawRowToUsageRows,
   DailyContractUsageRow,
-} from "../actions/dune/daily-contract-usage-v2/client.js";
+} from "../actions/dune/daily-contract-usage/client.js";
 import nodePath from "path";
 
 export type DuneCommonArgs = {
@@ -26,8 +26,9 @@ export type DuneCommonArgs = {
 };
 
 function rowToString(row: DailyContractUsageRow) {
-  return `${row.date},${row.contractAddress},${row.userAddress || ""},${row.safeAddress || ""
-    },${row.gasCostGwei},${row.txCount}\n`;
+  return `${row.date},${row.contractAddress},${row.userAddress || ""},${
+    row.safeAddress || ""
+  },${row.gasCostGwei},${row.txCount}\n`;
 }
 
 export class DuneDayExporter extends Writable {
