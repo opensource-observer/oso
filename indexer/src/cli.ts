@@ -92,7 +92,7 @@ const cli = yargs(hideBin(process.argv))
     "subcommand for artifacts related tools",
     (yargs) => {
       artifactsCommandGroup(yargs);
-    }
+    },
   )
   .command<RunAutocrawlArgs>(
     "runAutocrawl",
@@ -261,7 +261,7 @@ const cli = yargs(hideBin(process.argv))
             .command<SchedulerArgs>(
               "clean-lock",
               "clean the lock for a job execution if it exists",
-              (_yags) => { },
+              (_yags) => {},
               async (args) => {
                 const scheduler = await configure(args);
                 await scheduler.cleanLock();
