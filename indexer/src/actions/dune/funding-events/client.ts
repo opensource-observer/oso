@@ -12,7 +12,6 @@ import { QueryParameter } from "@cowprotocol/ts-dune-client";
 import { IDuneClient } from "../../../utils/dune/type.js";
 import { Cacheable } from "../../../cacher/time-series.js";
 import { logger } from "../../../utils/logger.js";
-import { writeFile } from "fs/promises";
 
 export type FundingEventRawRow = {
   block_time: string;
