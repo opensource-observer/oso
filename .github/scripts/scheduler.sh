@@ -8,4 +8,6 @@ REPO_DIR=$(pwd)
 
 cd ${REPO_DIR}/indexer
 
+export DUNE_CONTRACTS_TABLES_DIR=${REPO_DIR}/indexer/resources/dune-contracts-tables
+
 pnpm start --cache-dir "${CACHE_DIR}" --run-dir "${RUN_DIR}" scheduler "$@" 2>&1 | tee "${LOG_FILE}"
