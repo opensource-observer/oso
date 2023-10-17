@@ -246,6 +246,7 @@ def clean_applicant_data():
     fieldnames = ["Project Name", "Applicant Type", "Date", "Attester Address", "Payout Address", "Link", "Tags", "Github Urls", "OSS Directory"]
     csv_data = csv_data[fieldnames]
     csv_data.sort_values(by="Date", inplace=True)
+    csv_data.drop_duplicates(subset=["Link"], keep="last", inplace=True)
     csv_data.to_csv(CSV_OUTPUT_PATH, index=False)
 
 
