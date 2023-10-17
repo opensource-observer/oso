@@ -172,6 +172,7 @@ export class BasicEventTypeStrategy implements IEventTypeStrategy {
     this.allQuery = allQuery;
     this.eventIdFun = eventIdFunc;
     this.incompleteIdFunc = incompleteIdFunc;
+    this._type = eventType;
   }
 
   get type(): IRecorderEventType {

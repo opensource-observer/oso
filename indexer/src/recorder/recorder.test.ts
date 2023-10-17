@@ -52,13 +52,14 @@ withDbDescribe("BatchEventRecorder", () => {
         timeoutMs: 30000,
       },
     );
+    await recorder.loadEventTypes();
     recorder.setRange({
       startDate: DateTime.now().minus({ month: 1 }),
       endDate: DateTime.now().plus({ month: 1 }),
     });
     recorder.registerEventType(
       generateEventTypeStrategy({
-        name: EventTypeEnum.COMMIT_CODE,
+        name: "COMMIT_CODE",
         version: 1,
       }),
     );

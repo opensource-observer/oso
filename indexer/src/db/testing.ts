@@ -3,6 +3,7 @@ import { logger } from "../utils/logger.js";
 import { AppDataSource } from "./data-source.js";
 import { it, describe, beforeEach, afterAll } from "@jest/globals";
 import { randomUUID } from "crypto";
+import { EventTypeEnum } from "./orm-entities.js";
 
 // Testing utilities for the database
 export async function clearDb() {
@@ -20,6 +21,20 @@ export async function clearDb() {
       `TRUNCATE ${entity.tableName} RESTART IDENTITY CASCADE`,
     );
   }
+  // Initialize the event type table. It's fairly critical and the application
+  // tends to treat it as static.
+  const enumValues = Object.keys(EventTypeEnum);
+  const keys = Object.values(enumValues);
+
+  // Initialize the event type table. Not worrying about sql injection
+  // here. We're the ones providing input.
+  await c.createQueryRunner().query(
+    `
+      insert into event_type(name, version)
+      select unnest($1::text[]), 1
+    `,
+    [keys],
+  );
 }
 
 type IT_PARAMS = Parameters<typeof it>;

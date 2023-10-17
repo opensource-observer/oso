@@ -217,10 +217,13 @@ export class TimeoutBatchedFlusher implements IFlusher {
   }
 }
 
+type RecorderEventRef = Pick<IRecorderEvent, "id" | "sourceId" | "type">;
+type RecorderEventIncompleteRef = Pick<IRecorderEvent, "sourceId" | "type">;
+
 type KnownEventStorage = {
   loaded: boolean;
-  ref: Record<string, EventRef>;
-  incompleteRef: Record<string, Omit<EventRef, "id">>;
+  ref: Record<string, RecorderEventRef>;
+  incompleteRef: Record<string, RecorderEventIncompleteRef>;
 };
 
 function eventUniqueId(
@@ -389,6 +392,7 @@ export class BatchEventRecorder implements IEventRecorder {
   private eventTypeIdMap: Record<number, EventType>;
   private recorderEventTypeStringIdMap: Record<string, IRecorderEventType>;
   private eventTypeNameAndVersionMap: Record<string, Record<number, EventType>>;
+  private what: string;
 
   constructor(
     eventRepository: typeof EventRepository,
@@ -422,6 +426,7 @@ export class BatchEventRecorder implements IEventRecorder {
     this.eventTypeIdMap = {};
     this.eventTypeNameAndVersionMap = {};
     this.recorderEventTypeStringIdMap = {};
+    this.what = randomUUID();
 
     // Do you remember...
     this.lastActorUpdatedAt = DateTime.fromISO("1970-09-21T20:00:00Z");
@@ -562,13 +567,14 @@ export class BatchEventRecorder implements IEventRecorder {
     // Load all event types from the database. This is not expected to change during
     // execution so this should only happen once.
     const eventTypes = await this.eventTypeRepository.find();
+
     eventTypes.forEach((t) => {
       this.eventTypeIdMap[t.id] = t;
       const recorderEventType = RecorderEventType.fromDBEventType(t);
       this.recorderEventTypeStringIdMap[recorderEventType.toString()] =
         recorderEventType;
       const nameAndVersionMap: Record<number, EventType> =
-        !this.eventTypeNameAndVersionMap[t.name] || {};
+        this.eventTypeNameAndVersionMap[t.name] || {};
 
       nameAndVersionMap[t.version] = t;
       this.eventTypeNameAndVersionMap[t.name] = nameAndVersionMap;

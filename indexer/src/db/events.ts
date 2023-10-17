@@ -38,12 +38,12 @@ export const EventPointerRepository = AppDataSource.getRepository(
   },
 });
 
-export type BulkUpdateBySourceIDEvent = DeepPartial<Event> &
-  Pick<Event, "time" | "type" | "sourceId">;
+export type EventTypeRef = Pick<EventType, "name" | "version">;
 
-export type EventRef = Pick<Event, "id" | "sourceId"> & {
-  type: Pick<EventType, "name" | "version">;
-};
+export type EventRef = Pick<Event, "id" | "sourceId" | "type">;
+
+export type BulkUpdateBySourceIDEvent = DeepPartial<Event> &
+  Pick<Event, "time" | "sourceId" | "type">;
 
 export const EventRepository = AppDataSource.getRepository(Event).extend({
   async bulkUpdateBySourceIDAndType(events: BulkUpdateBySourceIDEvent[]) {
@@ -53,7 +53,7 @@ export const EventRepository = AppDataSource.getRepository(Event).extend({
     }
 
     const summary = events.reduce<{
-      types: EventType[];
+      types: Record<string, boolean>;
       sourceIds: string[];
       range: Range;
     }>(
@@ -65,14 +65,15 @@ export const EventRepository = AppDataSource.getRepository(Event).extend({
         if (time > summ.range.endDate) {
           summ.range.endDate = time;
         }
-        if (summ.types.indexOf(event.type) === -1) {
-          summ.types.push(event.type);
+        const eventTypeKey = `${event.type.name}:${event.type.version}`;
+        if (!summ.types[eventTypeKey]) {
+          summ.types[eventTypeKey] = true;
         }
         summ.sourceIds.push(event.sourceId);
         return summ;
       },
       {
-        types: [],
+        types: {},
         sourceIds: [],
         range: {
           startDate: DateTime.fromJSDate(events[0].time),
@@ -81,7 +82,8 @@ export const EventRepository = AppDataSource.getRepository(Event).extend({
       },
     );
 
-    if (summary.types.length !== 1) {
+    console.log(summary.types);
+    if (Object.keys(summary.types).length !== 1) {
       throw new Error("bulk update requires event types have the same type");
     }
 
@@ -97,7 +99,7 @@ export const EventRepository = AppDataSource.getRepository(Event).extend({
         ),
         sourceId: In(summary.sourceIds),
         type: {
-          id: summary.types[0].id,
+          id: events[0].type.id,
         },
       });
       if (!deleteResult.affected) {
