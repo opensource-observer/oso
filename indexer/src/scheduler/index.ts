@@ -144,7 +144,7 @@ export async function configure(args: SchedulerArgs) {
       recorder.setOptions({
         overwriteExistingEvents: args.overwriteExistingEvents,
       });
-      return recorder;
+      return Promise.resolve(recorder);
     },
     config,
     eventPointerManager,

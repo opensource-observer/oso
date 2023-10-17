@@ -84,7 +84,7 @@ class EventTypeStorage {
 }
 
 const defaultBatchEventRecorderOptions: BatchEventRecorderOptions = {
-  maxBatchSize: 2000,
+  maxBatchSize: 3000,
 
   // ten minute timeout seems sane for completing any db writes (in a normal
   // case). When backfilling this should be made much bigger.
@@ -477,7 +477,7 @@ export class BatchEventRecorder implements IEventRecorder {
 
     return new Promise((resolve, reject) => {
       let count = 0;
-      setTimeout(() => {
+      const timeout = setTimeout(() => {
         return reject(
           new RecorderError("timed out waiting for recordings to complete"),
         );
@@ -498,6 +498,7 @@ export class BatchEventRecorder implements IEventRecorder {
           if (expectedCount >= count) {
             this.emitter.removeListener("event-record-failure", failure);
             this.emitter.removeListener("event-record-success", success);
+            clearTimeout(timeout);
             return resolve(results);
           }
         }
@@ -561,6 +562,10 @@ export class BatchEventRecorder implements IEventRecorder {
       logger.debug("setting recorder to overwrite existing events");
     }
     this.recorderOptions = options;
+  }
+
+  async setup() {
+    await this.loadEventTypes();
   }
 
   async loadEventTypes() {
@@ -804,7 +809,7 @@ export class BatchEventRecorder implements IEventRecorder {
     return new Promise<void>((resolve, reject) => {
       logger.debug("closing the recorder");
 
-      setTimeout(() => {
+      const timeout = setTimeout(() => {
         reject(new RecorderError("timeout closing the recorder"));
       }, this.options.timeoutMs);
       const all: Promise<void>[] = [];
@@ -818,6 +823,7 @@ export class BatchEventRecorder implements IEventRecorder {
         .then(() => {
           this.emitter.removeAllListeners();
           this.flusher.clear();
+          clearTimeout(timeout);
           resolve();
         })
         .catch(reject);

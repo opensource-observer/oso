@@ -493,11 +493,12 @@ export class BaseScheduler implements IScheduler {
     this.eventTypes.push(reg);
   }
 
-  newRecorder(): IEventRecorder {
-    const recorder = this.recorderFactory();
+  async newRecorder(): Promise<IEventRecorder> {
+    const recorder = await this.recorderFactory();
     this.eventTypes.forEach((r) => {
       recorder.registerEventType(r.strategy);
     });
+    await recorder.setup();
     return recorder;
   }
 
@@ -772,7 +773,7 @@ export class BaseScheduler implements IScheduler {
   }
 
   async executeForRange(collectorReg: CollectorRegistration, range: Range) {
-    const recorder = this.newRecorder();
+    const recorder = await this.newRecorder();
     recorder.setActorScope(
       collectorReg.artifactScope,
       collectorReg.artifactTypeScope,

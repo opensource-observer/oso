@@ -37,6 +37,8 @@ export interface IEventRecorder {
   // generic for us to load events.
   registerEventType(strategy: IEventTypeStrategy): void;
 
+  setup(): Promise<void>;
+
   // Record a single event. These are batched
   record(event: IncompleteEvent): Promise<RecordHandle>;
 
@@ -61,7 +63,7 @@ export interface IEventRecorder {
   removeListener(listener: "flush-complete", cb: (err: unknown) => void): void;
 }
 
-export type RecorderFactory = () => IEventRecorder;
+export type RecorderFactory = () => Promise<IEventRecorder>;
 
 export interface IActorDirectory {
   fromId(id: number): Promise<Artifact>;
