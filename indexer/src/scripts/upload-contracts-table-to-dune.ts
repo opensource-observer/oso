@@ -24,7 +24,7 @@ export async function main() {
         type: In([ArtifactType.CONTRACT_ADDRESS]),
         namespace: ArtifactNamespace.OPTIMISM,
       },
-    }
+    },
   });
   const allArtifacts = projects.flatMap((p) => p.artifacts);
 
@@ -32,7 +32,9 @@ export async function main() {
   allArtifacts.forEach((a) => uniqueArtifacts.push(a));
   const sortedUniqueArtifacts = uniqueArtifacts.items();
   // Sort by creation
-  sortedUniqueArtifacts.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+  sortedUniqueArtifacts.sort(
+    (a, b) => a.createdAt.getTime() - b.createdAt.getTime(),
+  );
 
   const rows = ["id,address"];
   rows.push(
@@ -43,19 +45,25 @@ export async function main() {
   const artifactsCsv = rows.join("\n");
 
   if (sortedUniqueArtifacts.length === 0) {
-    throw new Error('expecting artifacts. have none')
+    throw new Error("expecting artifacts. have none");
   }
 
   const contractsCsvSha1 = generateSourceIdFromArray([artifactsCsv]);
 
-  await writeFile(`contracts-${contractsCsvSha1}-${sortedUniqueArtifacts[0].id}-${sortedUniqueArtifacts.slice(-1)[0].id}.csv`, artifactsCsv, { encoding: "utf-8" });
+  await writeFile(
+    `contracts-${contractsCsvSha1}-${sortedUniqueArtifacts[0].id}-${
+      sortedUniqueArtifacts.slice(-1)[0].id
+    }.csv`,
+    artifactsCsv,
+    { encoding: "utf-8" },
+  );
 
   await new Promise<void>((resolve) => {
-    console.log('about to upload')
+    console.log("about to upload");
     console.log(`sha1=${contractsCsvSha1}`);
     console.log(`count=${sortedUniqueArtifacts.length}`);
     setTimeout(() => {
-      console.log('uploading....')
+      console.log("uploading....");
       resolve();
     }, 30000);
   });
@@ -70,7 +78,7 @@ export async function main() {
   );
   if (response.status !== 200) {
     console.log("failed to upload to the contracts");
-    process.exit(1)
+    process.exit(1);
   }
   console.log(`uploaded to ${tableName}`);
 }

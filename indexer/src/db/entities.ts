@@ -313,12 +313,12 @@ async function ossCreateBlockchainArtifacts(addrObjects?: BlockchainAddress[]) {
           o.tags.indexOf("eoa") !== -1
             ? ArtifactType.EOA_ADDRESS
             : o.tags.indexOf("safe") !== -1
-              ? ArtifactType.SAFE_ADDRESS
-              : o.tags.indexOf("factory") !== -1
-                ? ArtifactType.FACTORY_ADDRESS
-                : o.tags.indexOf("contract") !== -1
-                  ? ArtifactType.CONTRACT_ADDRESS
-                  : ArtifactType.EOA_ADDRESS,
+            ? ArtifactType.SAFE_ADDRESS
+            : o.tags.indexOf("factory") !== -1
+            ? ArtifactType.FACTORY_ADDRESS
+            : o.tags.indexOf("contract") !== -1
+            ? ArtifactType.CONTRACT_ADDRESS
+            : ArtifactType.EOA_ADDRESS,
         // Hacky solution for now. We should we address after the typeorm migration
         namespace:
           network === "optimism"
