@@ -15,6 +15,7 @@ import { FundingEventsClient } from "../actions/dune/funding-events/client.js";
 import { DuneClient } from "@cowprotocol/ts-dune-client";
 import {
   DUNE_API_KEY,
+  DUNE_CONTRACTS_TABLES_DIR,
   GITHUB_TOKEN,
   GITHUB_WORKERS_OWNER,
   GITHUB_WORKERS_REF,
@@ -257,7 +258,7 @@ export async function configure(args: SchedulerArgs) {
   scheduler.registerCollector({
     create: async (_config, recorder, cache) => {
       const client = new DailyContractUsageClient(dune, {
-        tablesDirectoryPath: "/data/tmp/oso/dune-monitored-contracts/",
+        tablesDirectoryPath: DUNE_CONTRACTS_TABLES_DIR,
       });
       const collector = new DailyContractUsageCollector(
         client,
