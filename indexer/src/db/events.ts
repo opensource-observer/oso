@@ -41,7 +41,9 @@ export const EventPointerRepository = AppDataSource.getRepository(
 export type BulkUpdateBySourceIDEvent = DeepPartial<Event> &
   Pick<Event, "time" | "type" | "sourceId">;
 
-export type EventRef = Pick<Event, "id" | "type" | "sourceId">;
+export type EventRef = Pick<Event, "id" | "sourceId"> & {
+  type: Pick<EventType, "name" | "version">;
+};
 
 export const EventRepository = AppDataSource.getRepository(Event).extend({
   async bulkUpdateBySourceIDAndType(events: BulkUpdateBySourceIDEvent[]) {
@@ -94,7 +96,9 @@ export const EventRepository = AppDataSource.getRepository(Event).extend({
           LessThanOrEqual(summary.range.endDate.toJSDate()),
         ),
         sourceId: In(summary.sourceIds),
-        type: summary.types[0],
+        type: {
+          id: summary.types[0].id,
+        },
       });
       if (!deleteResult.affected) {
         throw new Error(

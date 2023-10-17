@@ -2,7 +2,6 @@ import { DateTime } from "luxon";
 import { CommonArgs } from "../../utils/api.js";
 import { logger } from "../../utils/logger.js";
 import {
-  EventType,
   Artifact,
   ArtifactNamespace,
   ArtifactType,
@@ -222,7 +221,7 @@ export class DailyContractUsageCollector extends BaseCollector<object> {
       for (const row of page.raw) {
         const contract = contractsByAddressMap[row.contractAddress];
         const event = await this.createEvents(contract, row, uniqueEvents);
-        recordHandles.push(event);
+        recordHandles.push(...event);
       }
       await this.recorder.wait(recordHandles);
     }
@@ -245,8 +244,8 @@ export class DailyContractUsageCollector extends BaseCollector<object> {
       currentTime = currentTime.plus({ day: 1 });
       for (const row of rows) {
         const contract = contractsByAddressMap[row.contractAddress];
-        const event = await this.createEvents(contract, row, uniqueEvents);
-        recordHandles.push(event);
+        const events = await this.createEvents(contract, row, uniqueEvents);
+        recordHandles.push(...events);
       }
       await this.recorder.wait(recordHandles);
     }
@@ -287,7 +286,7 @@ export class DailyContractUsageCollector extends BaseCollector<object> {
     contract: Artifact,
     row: DailyContractUsageRow,
     uniqueTracker: UniqueArray<string>,
-  ): Promise<RecordHandle> {
+  ): Promise<RecordHandle[]> {
     this.rowsProcessed += 1;
     const eventTime = DateTime.fromISO(row.date);
 
@@ -318,7 +317,7 @@ export class DailyContractUsageCollector extends BaseCollector<object> {
           };
 
     const sourceId = generateSourceIdFromArray([
-      EventType.CONTRACT_INVOKED,
+      "CONTRACT_INVOCATION",
       eventTime.toISODate()!,
       recorderContract.name,
       recorderContract.namespace,
@@ -329,9 +328,9 @@ export class DailyContractUsageCollector extends BaseCollector<object> {
     ]);
 
     // Convert gasCost to a bigint
-    let gasCost = BigInt(0);
+    let gasAsFloat = 0;
     try {
-      gasCost = BigInt(row.gasCostGwei);
+      gasAsFloat = parseFloat(row.gasCostGwei);
     } catch (err) {
       console.warn(
         `Could not get gasCost for ${sourceId}. Value ${row.gasCostGwei} is not a number`,
@@ -340,24 +339,40 @@ export class DailyContractUsageCollector extends BaseCollector<object> {
 
     // Check which users already have data written for that day.
     // We'll need to update those
-    const event: IncompleteEvent = {
+    const countEvent: IncompleteEvent = {
       time: eventTime,
-      type: EventType.CONTRACT_INVOKED,
+      type: {
+        name: "CONTRACT_INVOCATION_DAILY_COUNT",
+        version: 1,
+      },
       to: recorderContract,
       from: from,
       amount: row.txCount,
-      size: gasCost,
+      sourceId: sourceId,
+    };
+
+    const feeEvent: IncompleteEvent = {
+      time: eventTime,
+      type: {
+        name: "CONTRACT_INVOCATION_DAILY_FEES",
+        version: 1,
+      },
+      to: recorderContract,
+      from: from,
+      amount: gasAsFloat,
       sourceId: sourceId,
     };
 
     const beforeAddLen = uniqueTracker.length;
-    uniqueTracker.push(event.sourceId);
+    uniqueTracker.push(countEvent.sourceId);
     if (uniqueTracker.length === beforeAddLen) {
       logger.debug(
-        `duplicates for sourceId=${event.sourceId} found for contracts`,
+        `duplicates for sourceId=${countEvent.sourceId} found for contracts`,
       );
     }
-
-    return await this.recorder.record(event);
+    const handles: RecordHandle[] = [];
+    handles.push(await this.recorder.record(countEvent));
+    handles.push(await this.recorder.record(feeEvent));
+    return handles;
   }
 }

@@ -14,6 +14,8 @@ import {
   RecorderError,
   EventRecorderOptions,
   RecordHandle,
+  IRecorderEvent,
+  IRecorderEventType,
 } from "./types.js";
 import {
   In,
@@ -35,6 +37,7 @@ import { DateTime } from "luxon";
 import { EventRef, EventRepository } from "../db/events.js";
 import { RecordResponse } from "./types.js";
 import { AsyncResults } from "../utils/async-results.js";
+import { Brand } from "utility-types";
 
 export interface BatchEventRecorderOptions {
   maxBatchSize: number;
@@ -42,28 +45,28 @@ export interface BatchEventRecorderOptions {
 }
 
 class EventTypeStorage {
-  private queue: UniqueArray<IncompleteEvent>;
+  private queue: UniqueArray<IRecorderEvent>;
 
   static setup(): EventTypeStorage {
-    const queue = new UniqueArray<IncompleteEvent>((event) => {
+    const queue = new UniqueArray<IRecorderEvent>((event) => {
       return event.sourceId;
     });
     return new EventTypeStorage(queue);
   }
 
-  private constructor(queue: UniqueArray<IncompleteEvent>) {
+  private constructor(queue: UniqueArray<IRecorderEvent>) {
     this.queue = queue;
   }
 
-  push(event: IncompleteEvent) {
+  push(event: IRecorderEvent) {
     this.queue.push(event);
   }
 
-  pop(): IncompleteEvent | undefined {
+  pop(): IRecorderEvent | undefined {
     return this.queue.pop();
   }
 
-  popAll(): IncompleteEvent[] {
+  popAll(): IRecorderEvent[] {
     const events = [];
 
     while (this.length > 0) {
@@ -220,8 +223,146 @@ type KnownEventStorage = {
   incompleteRef: Record<string, Omit<EventRef, "id">>;
 };
 
-function eventUniqueId(event: Pick<Event, "sourceId" | "type">): string {
+function eventUniqueId(
+  event: Pick<IRecorderEvent, "sourceId" | "type">,
+): string {
   return `${event.type}:${event.sourceId}`;
+}
+
+export class RecorderEventType implements IRecorderEventType {
+  private _name: string;
+  private _version: number;
+
+  constructor(name: string, version: number) {
+    this._name = name;
+    this._version = version;
+  }
+
+  static fromDBEventType(eventType: EventType) {
+    return new RecorderEventType(eventType.name, eventType.version);
+  }
+
+  get name(): string {
+    return this._name;
+  }
+  get version(): number {
+    return this._version;
+  }
+
+  toString() {
+    return `${this.name}:v${this.version}`;
+  }
+}
+
+export class RecorderEvent implements IRecorderEvent {
+  private _id: number | null;
+  private _time: DateTime;
+  private _type: { name: string; version: number };
+  private _sourceId: string;
+  private _to: IncompleteArtifact;
+  private _from: IncompleteArtifact | null | undefined;
+  private _amount: number;
+  private _details: object;
+
+  constructor(
+    id: number | null,
+    time: DateTime,
+    type: IRecorderEventType,
+    sourceId: string,
+    to: IncompleteArtifact,
+    from: IncompleteArtifact | null | undefined,
+    amount: number,
+    details?: object,
+  ) {
+    this._id = id;
+    this._time = time;
+    this._type = type;
+    this._sourceId = sourceId;
+    this._to = to;
+    this._from = from;
+    this._amount = amount;
+    this._details = details || {};
+  }
+
+  static fromIncompleteEvent(event: IncompleteEvent) {
+    return new RecorderEvent(
+      null,
+      event.time,
+      event.type,
+      event.sourceId,
+      event.to,
+      event.from,
+      event.amount,
+      event.details,
+    );
+  }
+
+  static fromDBEvent(event: Event) {
+    return new RecorderEvent(
+      event.id,
+      DateTime.fromJSDate(event.time),
+      event.type,
+      event.sourceId,
+      event.to,
+      event.from,
+      event.amount,
+      event.details,
+    );
+  }
+
+  get id(): number | null {
+    return this._id;
+  }
+
+  get time(): DateTime {
+    return this._time;
+  }
+
+  get type(): IRecorderEventType {
+    const type = this._type;
+    return {
+      get name(): string {
+        return type.name;
+      },
+      get version(): number {
+        return type.version;
+      },
+      toString() {
+        return `${type.name}:v${type.version}`;
+      },
+    };
+  }
+
+  get sourceId(): string {
+    return this._sourceId;
+  }
+
+  get to(): IncompleteArtifact {
+    return {
+      name: this._to.name,
+      namespace: this._to.namespace,
+      type: this._to.type,
+    };
+  }
+
+  get from(): IncompleteArtifact | null {
+    if (!this._from) {
+      return null;
+    }
+    return {
+      name: this._from.name,
+      namespace: this._from.namespace,
+      type: this._from.type,
+    };
+  }
+
+  get amount(): number {
+    return this._amount;
+  }
+
+  get details(): object {
+    return this._details;
+  }
 }
 
 export class BatchEventRecorder implements IEventRecorder {
@@ -231,6 +372,7 @@ export class BatchEventRecorder implements IEventRecorder {
   private options: BatchEventRecorderOptions;
   private actorDirectory: InmemActorResolver;
   private eventRepository: typeof EventRepository;
+  private eventTypeRepository: Repository<EventType>;
   private artifactRepository: Repository<Artifact>;
   private namespaces: ArtifactNamespace[];
   private types: ArtifactType[];
@@ -244,14 +386,19 @@ export class BatchEventRecorder implements IEventRecorder {
   private queueSize: number;
   private lastActorUpdatedAt: DateTime;
   private recordedHistory: Record<string, boolean>;
+  private eventTypeIdMap: Record<number, EventType>;
+  private recorderEventTypeStringIdMap: Record<string, IRecorderEventType>;
+  private eventTypeNameAndVersionMap: Record<string, Record<number, EventType>>;
 
   constructor(
     eventRepository: typeof EventRepository,
+    eventTypeRepository: Repository<EventType>,
     artifactRepository: Repository<Artifact>,
     flusher: IFlusher,
     options?: Partial<BatchEventRecorderOptions>,
   ) {
     this.eventRepository = eventRepository;
+    this.eventTypeRepository = eventTypeRepository;
     this.artifactRepository = artifactRepository;
     this.eventTypeStrategies = {};
     this.eventTypeStorage = {};
@@ -272,6 +419,9 @@ export class BatchEventRecorder implements IEventRecorder {
       overwriteExistingEvents: false,
     };
     this.recordedHistory = {};
+    this.eventTypeIdMap = {};
+    this.eventTypeNameAndVersionMap = {};
+    this.recorderEventTypeStringIdMap = {};
 
     // Do you remember...
     this.lastActorUpdatedAt = DateTime.fromISO("1970-09-21T20:00:00Z");
@@ -408,7 +558,24 @@ export class BatchEventRecorder implements IEventRecorder {
     this.recorderOptions = options;
   }
 
-  private async loadEvents(eventType: EventType) {
+  async loadEventTypes() {
+    // Load all event types from the database. This is not expected to change during
+    // execution so this should only happen once.
+    const eventTypes = await this.eventTypeRepository.find();
+    eventTypes.forEach((t) => {
+      this.eventTypeIdMap[t.id] = t;
+      const recorderEventType = RecorderEventType.fromDBEventType(t);
+      this.recorderEventTypeStringIdMap[recorderEventType.toString()] =
+        recorderEventType;
+      const nameAndVersionMap: Record<number, EventType> =
+        !this.eventTypeNameAndVersionMap[t.name] || {};
+
+      nameAndVersionMap[t.version] = t;
+      this.eventTypeNameAndVersionMap[t.name] = nameAndVersionMap;
+    });
+  }
+
+  private async loadEvents(eventType: IRecorderEventType) {
     if (!this.range) {
       throw new Error("recorder needs a range to load events");
     }
@@ -427,8 +594,14 @@ export class BatchEventRecorder implements IEventRecorder {
       // Find existing events (for idempotency)
       const existingEvents = (await this.eventRepository.find({
         where: where,
-        select: {
+        relations: {
           type: true,
+        },
+        select: {
+          type: {
+            id: true,
+            name: true,
+          },
           sourceId: true,
         },
       })) as EventRef[];
@@ -443,7 +616,7 @@ export class BatchEventRecorder implements IEventRecorder {
 
       logger.debug(`existing events length ${existingEvents.length}`);
 
-      this.knownEventsStorage[eventType] = {
+      this.knownEventsStorage[eventType.name] = {
         loaded: true,
         ref: lookup,
         incompleteRef: {},
@@ -451,19 +624,21 @@ export class BatchEventRecorder implements IEventRecorder {
     }
   }
 
-  private knownEventsStorageForType(eventType: EventType): KnownEventStorage {
-    const storage = this.knownEventsStorage[eventType] || {
+  private knownEventsStorageForType(
+    eventType: IRecorderEventType,
+  ): KnownEventStorage {
+    const storage = this.knownEventsStorage[eventType.name] || {
       loaded: false,
       known: {},
     };
     return storage;
   }
 
-  private markEventAsKnown(event: Event | IncompleteEvent) {
+  private markEventAsKnown(event: IRecorderEvent) {
     const storage = this.knownEventsStorageForType(event.type);
     if (!storage.loaded) {
       throw new Error(
-        `eventType ${event.type} hasn't been loaded for the recorder`,
+        `eventType ${event.type.name} hasn't been loaded for the recorder`,
       );
     }
 
@@ -471,14 +646,18 @@ export class BatchEventRecorder implements IEventRecorder {
     const uniqueId = eventUniqueId(event);
     this.recordedHistory[uniqueId] = true;
 
-    if ((event as Event).id) {
-      storage.ref[event.sourceId] = event as Event;
+    if (event.id) {
+      storage.ref[event.sourceId] = {
+        id: event.id! as Brand<number, "EventId">,
+        sourceId: event.sourceId,
+        type: event.type,
+      };
     } else {
       storage.incompleteRef[event.sourceId] = event;
     }
   }
 
-  private isKnownEvent(event: IncompleteEvent) {
+  private isKnownEvent(event: IRecorderEvent) {
     const storage = this.knownEventsStorageForType(event.type);
     return (
       storage.ref[event.sourceId] !== undefined ||
@@ -530,14 +709,15 @@ export class BatchEventRecorder implements IEventRecorder {
 
   // Records events into a queue and periodically flushes that queue as
   // transactions to the database.
-  registerEventType(eventType: EventType, strategy: IEventTypeStrategy): void {
-    this.eventTypeStrategies[eventType.toString()] = strategy;
+  registerEventType(strategy: IEventTypeStrategy): void {
+    this.eventTypeStrategies[strategy.type.toString()] = strategy;
   }
 
-  async record(event: IncompleteEvent): Promise<RecordHandle> {
+  async record(input: IncompleteEvent): Promise<RecordHandle> {
     if (this.closing) {
       throw new RecorderError("recorder is closing. should be more writes");
     }
+    const event = RecorderEvent.fromIncompleteEvent(input);
 
     await this.waitTillAvailable();
 
@@ -583,7 +763,9 @@ export class BatchEventRecorder implements IEventRecorder {
     this.flusher.notify(size);
   }
 
-  private getEventTypeStrategy(eventType: EventType): IEventTypeStrategy {
+  private getEventTypeStrategy(
+    eventType: IRecorderEventType,
+  ): IEventTypeStrategy {
     const typeString = eventType.toString();
     const strategy = this.eventTypeStrategies[typeString];
 
@@ -595,9 +777,10 @@ export class BatchEventRecorder implements IEventRecorder {
 
   private async flushAll() {
     // Wait for all queues to complete in series
-    for (const eventType in this.eventTypeStorage) {
+    for (const eventTypeName in this.eventTypeStorage) {
       try {
-        await this.flushType(eventType as EventType);
+        const eventType = this.getEventTypeFromString(eventTypeName);
+        await this.flushType(eventType);
       } catch (err) {
         this.emitter.emit("error", err);
       }
@@ -620,8 +803,9 @@ export class BatchEventRecorder implements IEventRecorder {
       }, this.options.timeoutMs);
       const all: Promise<void>[] = [];
 
-      for (const eventType in this.eventTypeStorage) {
-        all.push(this.waitForEventType(eventType as EventType));
+      for (const eventTypeStringId in this.eventTypeStorage) {
+        const eventType = this.getEventTypeFromString(eventTypeStringId);
+        all.push(this.waitForEventType(eventType));
       }
 
       Promise.all(all)
@@ -634,15 +818,15 @@ export class BatchEventRecorder implements IEventRecorder {
     });
   }
 
-  private async waitForEventType(eventType: EventType): Promise<void> {
+  private async waitForEventType(eventType: IRecorderEventType): Promise<void> {
     const storage = this.getEventTypeStorage(eventType);
     if (storage.length === 0) {
       return;
     }
-    return this.pubsub.sub(eventType);
+    return this.pubsub.sub(eventType.toString());
   }
 
-  private async flushType(eventType: EventType) {
+  private async flushType(eventType: IRecorderEventType) {
     const flushId = randomUUID();
     logger.debug(
       `${flushId}: Waiting for all ${eventType.toString()} events to be recorded`,
@@ -654,7 +838,7 @@ export class BatchEventRecorder implements IEventRecorder {
     // Wait for a specific event type queue to complete
     const eventTypeStorage = this.getEventTypeStorage(eventType);
     if (eventTypeStorage.length === 0) {
-      logger.debug(`queue empty for ${eventType}`);
+      logger.debug(`queue empty for ${eventType.toString()}`);
       return;
     }
 
@@ -667,13 +851,13 @@ export class BatchEventRecorder implements IEventRecorder {
 
     try {
       await this.processEvents(flushId, eventType, processing);
-      this.pubsub.pub(eventType, null);
+      this.pubsub.pub(eventType.toString(), null);
     } catch (err) {
       logger.error(
         "error caught while processing one of the events in a batch",
         err,
       );
-      this.pubsub.pub(eventType, err);
+      this.pubsub.pub(eventType.toString(), err);
 
       // Report errors to all of the promises listening on specific events
       this.notifyFailure(processing, err);
@@ -683,8 +867,8 @@ export class BatchEventRecorder implements IEventRecorder {
 
   private async processEvents(
     flushId: string,
-    eventType: EventType,
-    processing: IncompleteEvent[],
+    eventType: IRecorderEventType,
+    processing: IRecorderEvent[],
   ): Promise<void> {
     await this.loadEvents(eventType);
 
@@ -761,7 +945,7 @@ export class BatchEventRecorder implements IEventRecorder {
       this.options.maxBatchSize,
       async (batch, batchLength) => {
         logger.info(`preparing to write a batch of ${batchLength} events`);
-        const events = await this.createEventsFromIncomplete(batch);
+        const events = await this.createEventsFromRecorderEvent(batch);
 
         try {
           const result = await this.eventRepository.insert(events);
@@ -770,7 +954,7 @@ export class BatchEventRecorder implements IEventRecorder {
               `recorder writes failed. Expected ${batchLength} writes but only received ${result.identifiers.length}`,
             );
           }
-          this.notifySuccess(events);
+          this.notifySuccess(batch);
           logger.debug(
             `completed writing batch of ${result.identifiers.length}`,
           );
@@ -782,7 +966,7 @@ export class BatchEventRecorder implements IEventRecorder {
               logger.debug("attempted to insert a duplicate event. skipping");
             }
           }
-          this.notifyFailure(events, err);
+          this.notifyFailure(batch, err);
           this.emitter.emit("error", err);
         }
       },
@@ -794,11 +978,11 @@ export class BatchEventRecorder implements IEventRecorder {
       this.options.maxBatchSize,
       async (batch, batchLength) => {
         logger.info(`preparing to update a batch of ${batchLength} events`);
-        const events = await this.createEventsFromIncomplete(batch);
+        const events = await this.createEventsFromRecorderEvent(batch);
 
         try {
           await this.eventRepository.bulkUpdateBySourceIDAndType(events);
-          this.notifySuccess(events);
+          this.notifySuccess(batch);
         } catch (err) {
           logger.error("encountered an error updating to the database");
           logger.error(err);
@@ -809,7 +993,7 @@ export class BatchEventRecorder implements IEventRecorder {
               );
             }
           }
-          this.notifyFailure(events, err);
+          this.notifyFailure(batch, err);
           this.emitter.emit("error", err);
         }
       },
@@ -817,7 +1001,7 @@ export class BatchEventRecorder implements IEventRecorder {
     logger.info(`finished flushing for ${eventType}`);
   }
 
-  protected notifySuccess(events: (Event | IncompleteEvent)[]) {
+  protected notifySuccess(events: IRecorderEvent[]) {
     events.forEach((e) => {
       // Mark as known event
       this.markEventAsKnown(e);
@@ -830,10 +1014,7 @@ export class BatchEventRecorder implements IEventRecorder {
     });
   }
 
-  protected notifyFailure(
-    events: Pick<Event, "sourceId" | "type">[],
-    err: unknown,
-  ) {
+  protected notifyFailure(events: IRecorderEvent[], err: unknown) {
     events.forEach((e) => {
       // Notify any subscribers that the event has failed to record
       const uniqueId = eventUniqueId(e);
@@ -842,11 +1023,11 @@ export class BatchEventRecorder implements IEventRecorder {
     });
   }
 
-  protected async createEventsFromIncomplete(
-    incompleteEvents: IncompleteEvent[],
+  protected async createEventsFromRecorderEvent(
+    recorderEvents: IRecorderEvent[],
   ): Promise<Event[]> {
     return await Promise.all(
-      incompleteEvents.map(async (e) => {
+      recorderEvents.map(async (e) => {
         const artifactId = await this.actorDirectory.resolveArtifactId(e.to);
         let contributorRef: { id: number } | null = null;
         if (e.from) {
@@ -854,8 +1035,7 @@ export class BatchEventRecorder implements IEventRecorder {
             id: await this.actorDirectory.resolveArtifactId(e.from),
           };
         }
-        // Convert size to string
-        const size = !e.size ? "0" : e.size.toString(10);
+        const eventType = this.resolveEventType(e.type);
 
         const input = this.eventRepository.create({
           time: e.time.toJSDate(),
@@ -863,10 +1043,9 @@ export class BatchEventRecorder implements IEventRecorder {
             id: artifactId,
           },
           from: contributorRef,
-          type: e.type,
+          type: eventType,
           amount: e.amount,
           sourceId: e.sourceId,
-          size: size,
           details: e.details,
         });
         return input;
@@ -874,13 +1053,30 @@ export class BatchEventRecorder implements IEventRecorder {
     );
   }
 
-  protected getEventTypeStorage(eventType: EventType): EventTypeStorage {
-    const typeString = eventType.toString();
-    let queue = this.eventTypeStorage[typeString];
+  protected resolveEventType(type: IRecorderEventType) {
+    const versions = this.eventTypeNameAndVersionMap[type.name] || {};
+    const resolved = versions[type.version];
+    if (!resolved) {
+      throw new RecorderError(
+        `Event type ${type.name} v${type.version} does not exist`,
+      );
+    }
+    return resolved;
+  }
+
+  protected getEventTypeStorage(
+    eventType: IRecorderEventType,
+  ): EventTypeStorage {
+    const idString = eventType.toString();
+    let queue = this.eventTypeStorage[idString];
     if (!queue) {
-      this.eventTypeStorage[typeString] = EventTypeStorage.setup();
-      queue = this.eventTypeStorage[typeString];
+      this.eventTypeStorage[idString] = EventTypeStorage.setup();
+      queue = this.eventTypeStorage[idString];
     }
     return queue;
+  }
+
+  protected getEventTypeFromString(id: string): IRecorderEventType {
+    return this.recorderEventTypeStringIdMap[id];
   }
 }

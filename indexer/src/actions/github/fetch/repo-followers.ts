@@ -1,8 +1,8 @@
 import { DateTime } from "luxon";
 import {
   IEventRecorder,
-  IncompleteArtifact,
-  IncompleteEvent,
+  RecorderArtifact,
+  RecoderEvent,
   RecordHandle,
 } from "../../../recorder/types.js";
 import { logger } from "../../../utils/logger.js";
@@ -336,7 +336,7 @@ export class GithubFollowingCollector extends GithubByProjectBaseCollector {
             }
           : undefined;
 
-      const event: IncompleteEvent = {
+      const event: RecoderEvent = {
         time: commitTime,
         type: EventType.STARRED,
         to: artifact,
@@ -447,7 +447,7 @@ export class GithubFollowingCollector extends GithubByProjectBaseCollector {
     repo: GithubRepoLocator,
     response: RepoFollowingSummaryResponse,
   ) {
-    const artifact: IncompleteArtifact = {
+    const artifact: RecorderArtifact = {
       name: `${repo.owner}/${repo.repo}`,
       type: ArtifactType.GIT_REPOSITORY,
       namespace: ArtifactNamespace.GITHUB,
@@ -473,7 +473,7 @@ export class GithubFollowingCollector extends GithubByProjectBaseCollector {
     repo: GithubRepoLocator,
     response: RepoFollowingSummaryResponse,
   ) {
-    const artifact: IncompleteArtifact = {
+    const artifact: RecorderArtifact = {
       name: `${repo.owner}/${repo.repo}`,
       type: ArtifactType.GIT_REPOSITORY,
       namespace: ArtifactNamespace.GITHUB,

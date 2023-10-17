@@ -5,11 +5,7 @@ import {
   IFundingEventsClient,
   ProjectAddress,
 } from "./funding-events/client.js";
-import {
-  ArtifactNamespace,
-  ArtifactType,
-  EventType,
-} from "../../db/orm-entities.js";
+import { ArtifactNamespace, ArtifactType } from "../../db/orm-entities.js";
 import {
   IEventRecorder,
   IncompleteArtifact,
@@ -177,7 +173,6 @@ export class FundingEventsCollector extends BatchedProjectArtifactsCollector {
           details: {
             fundingPoolName: r[2],
             blockchain: r[3],
-            contributorGroup: r[0],
           },
         };
       });
@@ -262,23 +257,18 @@ export class FundingEventsCollector extends BatchedProjectArtifactsCollector {
           );
         }
 
-        let amountAsBigInt = BigInt(0);
-        try {
-          amountAsBigInt = BigInt(row.value);
-        } catch (e) {
-          logger.error("failed to parse amount as a bigint");
-        }
-
         const event: IncompleteEvent = {
           time: DateTime.fromISO(row.blockTime, { zone: "utc" }),
-          type: EventType.FUNDING,
+          type: {
+            name: "FUNDING",
+            version: 1,
+          },
           to: artifact,
           from: contributor,
           sourceId: row.txHash,
 
           // Worried this could fail on very large values
           amount: amountAsFloat,
-          size: amountAsBigInt,
           details: {
             amountAsString: row.value,
             txHash: row.txHash,

@@ -496,7 +496,7 @@ export class BaseScheduler implements IScheduler {
   newRecorder(): IEventRecorder {
     const recorder = this.recorderFactory();
     this.eventTypes.forEach((r) => {
-      recorder.registerEventType(r.type, r.strategy);
+      recorder.registerEventType(r.strategy);
     });
     return recorder;
   }

@@ -12,7 +12,6 @@ import {
   Artifact,
   ArtifactNamespace,
   ArtifactType,
-  EventType,
   Project,
 } from "../../../db/orm-entities.js";
 import { logger } from "../../../utils/logger.js";
@@ -312,7 +311,10 @@ export class GithubCommitCollector extends GithubBatchedProjectArtifactsBaseColl
         to: repo,
         from: contributor,
         sourceId: e.oid,
-        type: EventType.COMMIT_CODE,
+        type: {
+          name: "COMMIT_CODE",
+          version: 1,
+        },
         amount: 1,
       };
     });
@@ -455,7 +457,10 @@ export class GithubCommitCollector extends GithubBatchedProjectArtifactsBaseColl
         const commitTime = DateTime.fromISO(rawCommitTime);
         const event: IncompleteEvent = {
           time: commitTime,
-          type: EventType.COMMIT_CODE,
+          type: {
+            name: "COMMIT_CODE",
+            version: 1,
+          },
           to: repoArtifact,
           amount: 1,
           sourceId: commit.sha,

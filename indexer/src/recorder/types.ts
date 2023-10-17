@@ -1,6 +1,5 @@
 import {
   Artifact,
-  EventType,
   Event,
   ArtifactNamespace,
   ArtifactType,
@@ -36,7 +35,7 @@ export interface IEventRecorder {
   // many of the batching calls necessary to make this work reliably with the
   // databases, which apparently can be finicky. It also makes it a bit more
   // generic for us to load events.
-  registerEventType(eventType: EventType, strategy: IEventTypeStrategy): void;
+  registerEventType(strategy: IEventTypeStrategy): void;
 
   // Record a single event. These are batched
   record(event: IncompleteEvent): Promise<RecordHandle>;
@@ -79,6 +78,7 @@ export interface IEventTypeStrategy {
   // uniqueness with events. This is for idempotency's sake. Most of the time
   // this likely doesn't need to be used.
   //uniqueEventsQueryFor(resolver: IActorResolver, events: IncompleteEvent[]): Prisma.EventWhereInput;
+  type: IRecorderEventType;
 
   // This is the query to use to get all of the events of a specific EventType
   all(directory: IActorDirectory): FindOptionsWhere<Event>;
@@ -87,7 +87,7 @@ export interface IEventTypeStrategy {
 
   idFromIncompleteEvent(
     directory: IActorDirectory,
-    event: IncompleteEvent,
+    event: IRecorderEvent,
   ): Promise<string>;
 }
 
@@ -99,16 +99,35 @@ export type IncompleteActor<N, M> = {
 export type IncompleteArtifact = Pick<Artifact, "name" | "namespace" | "type"> &
   Partial<Artifact>;
 
-export type IncompleteEvent = {
+export interface IRecorderEventType {
+  name: string;
+  version: number;
+  toString(): string;
+}
+
+export type IncompleteEventType = Pick<IRecorderEventType, "name" | "version">;
+
+export interface IncompleteEvent {
   time: DateTime;
-  type: EventType;
+  type: IRecorderEventType;
   sourceId: string;
   to: IncompleteArtifact;
   from?: IncompleteArtifact;
   amount: number;
   details?: object;
   size?: bigint;
-};
+}
+
+export interface IRecorderEvent {
+  id: number | null;
+  time: DateTime;
+  type: IRecorderEventType;
+  sourceId: string;
+  to: IncompleteArtifact;
+  from: IncompleteArtifact | null;
+  amount: number;
+  details: object;
+}
 
 export type EventGroupRecorderCallback<T> = (results: AsyncResults<T>) => void;
 
@@ -137,20 +156,26 @@ export class BasicEventTypeStrategy implements IEventTypeStrategy {
   ) => Promise<string>;
   private incompleteIdFunc: (
     directory: IActorDirectory,
-    event: IncompleteEvent,
+    event: IRecorderEvent,
   ) => Promise<string>;
+  private _type: IRecorderEventType;
 
   constructor(
+    eventType: IRecorderEventType,
     allQuery: FindOptionsWhere<Event>,
     eventIdFunc: (directory: IActorDirectory, event: Event) => Promise<string>,
     incompleteIdFunc: (
       directory: IActorDirectory,
-      event: IncompleteEvent,
+      event: IRecorderEvent,
     ) => Promise<string>,
   ) {
     this.allQuery = allQuery;
     this.eventIdFun = eventIdFunc;
     this.incompleteIdFunc = incompleteIdFunc;
+  }
+
+  get type(): IRecorderEventType {
+    return this._type;
   }
 
   idFromEvent(directory: IActorDirectory, event: Event): Promise<string> {
@@ -159,7 +184,7 @@ export class BasicEventTypeStrategy implements IEventTypeStrategy {
 
   idFromIncompleteEvent(
     directory: IActorDirectory,
-    event: IncompleteEvent,
+    event: IRecorderEvent,
   ): Promise<string> {
     return this.incompleteIdFunc(directory, event);
   }
@@ -170,11 +195,14 @@ export class BasicEventTypeStrategy implements IEventTypeStrategy {
 }
 
 export function generateEventTypeStrategy(
-  eventType: EventType,
+  eventType: IRecorderEventType,
 ): IEventTypeStrategy {
   return new BasicEventTypeStrategy(
+    eventType,
     {
-      type: eventType,
+      type: {
+        name: eventType.name,
+      },
     },
     async (directory, event) => {
       return event.sourceId;

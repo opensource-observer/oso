@@ -21,7 +21,11 @@ import {
   GITHUB_WORKERS_REPO,
   GITHUB_WORKERS_WORKFLOW_ID,
 } from "../config.js";
-import { ArtifactNamespace, ArtifactType } from "../db/orm-entities.js";
+import {
+  ArtifactNamespace,
+  ArtifactType,
+  EventType,
+} from "../db/orm-entities.js";
 import { EventPointerRepository, EventRepository } from "../db/events.js";
 import { ArtifactRepository } from "../db/artifacts.js";
 import { AppDataSource } from "../db/data-source.js";
@@ -130,6 +134,7 @@ export async function configure(args: SchedulerArgs) {
     () => {
       const recorder = new BatchEventRecorder(
         EventRepository,
+        AppDataSource.getRepository(EventType),
         ArtifactRepository,
         flusher,
         {

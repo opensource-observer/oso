@@ -21,7 +21,7 @@ import { IsUrl, IsOptional, validateOrReject } from "class-validator";
 import type { Brand } from "utility-types";
 import { normalizeToObject } from "../utils/common.js";
 
-export enum EventType {
+export enum EventTypeEnum {
   FUNDING = "FUNDING",
   PULL_REQUEST_CREATED = "PULL_REQUEST_CREATED",
   PULL_REQUEST_MERGED = "PULL_REQUEST_MERGED",
@@ -184,7 +184,7 @@ export class Artifact extends Base<"ArtifactId"> {
 
 @Entity({ name: "event_type" })
 @Index(["name", "version"], { unique: true })
-export class EventTypeTable extends Base<"EventTypeId"> {
+export class EventType extends Base<"EventTypeId"> {
   @Column("varchar", { length: 50 })
   name: string;
 
@@ -192,7 +192,7 @@ export class EventTypeTable extends Base<"EventTypeId"> {
   @Column("smallint")
   version: number;
 
-  @OneToMany(() => Event, (event) => event.typeFromTable)
+  @OneToMany(() => Event, (event) => event.type)
   events: Event[];
 }
 
@@ -207,15 +207,12 @@ export class Event {
   @Column("text")
   sourceId: string;
 
-  @Column("enum", { enum: EventType })
-  type: EventType;
-
   // The TS property name here is temporary. Will eventually be `type`
-  @ManyToOne(() => EventTypeTable, (eventType) => eventType.events)
+  @ManyToOne(() => EventType, (eventType) => eventType.events)
   @JoinColumn({
     name: "typeId",
   })
-  typeFromTable: EventTypeTable;
+  type: EventType;
 
   @PrimaryColumn("timestamptz")
   time: Date;

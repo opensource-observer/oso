@@ -9,7 +9,6 @@ import {
   Artifact,
   ArtifactNamespace,
   ArtifactType,
-  EventType,
   Project,
 } from "../../../db/orm-entities.js";
 import { logger } from "../../../utils/logger.js";
@@ -387,31 +386,32 @@ const DefaultGithubIssueCollectorOptions: GithubBaseCollectorOptions = {
 
 export class GithubIssueCollector extends GithubByProjectBaseCollector {
   // Some of these event names are arbitrary
-  private eventTypeMapping: Record<string, { [issueType: string]: EventType }> =
-    {
-      CreatedEvent: {
-        Issue: EventType.ISSUE_CREATED,
-        PullRequest: EventType.PULL_REQUEST_CREATED,
-      },
-      ClosedEvent: {
-        Issue: EventType.ISSUE_CLOSED,
-        PullRequest: EventType.PULL_REQUEST_CLOSED,
-      },
-      ReopenedEvent: {
-        Issue: EventType.ISSUE_REOPENED,
-        PullRequest: EventType.PULL_REQUEST_REOPENED,
-      },
-      RemovedFromProjectEvent: {
-        Issue: EventType.ISSUE_REMOVED_FROM_PROJECT,
-        PullRequest: EventType.PULL_REQUEST_REMOVED_FROM_PROJECT,
-      },
-      MergedEvent: {
-        PullRequest: EventType.PULL_REQUEST_MERGED,
-      },
-      PullRequestApprovedEvent: {
-        PullRequest: EventType.PULL_REQUEST_APPROVED,
-      },
-    };
+  private eventTypeMapping: Record<string, { [issueType: string]: string }> = {
+    CreatedEvent: {
+      Issue: "ISSUE_CREATED",
+      PullRequest: "PULL_REQUEST_CREATED",
+    },
+    ClosedEvent: {
+      Issue: "ISSUE_CLOSED",
+      PullRequest: "PULL_REQUEST_CLOSED",
+    },
+    ReopenedEvent: {
+      Issue: "ISSUE_REOPENED",
+      PullRequest: "PULL_REQUEST_REOPENED",
+    },
+    RemovedFromProjectEvent: {
+      Issue: "ISSUE_REMOVED_FROM_PROJECT",
+      PullRequest: "PULL_REQUEST_REMOVED_FROM_PROJECT",
+    },
+    MergedEvent: {
+      PullRequest: "PULL_REQUEST_MERGED",
+    },
+    PullRequestApprovedEvent: {
+      PullRequest: "PULL_REQUEST_APPROVED",
+    },
+  };
+
+  private eventVersion = 1;
 
   constructor(
     projectRepository: Repository<Project>,
@@ -600,7 +600,10 @@ export class GithubIssueCollector extends GithubByProjectBaseCollector {
 
     const creationEvent: IncompleteEvent = {
       time: creationTime,
-      type: eventType,
+      type: {
+        name: eventType,
+        version: this.eventVersion,
+      },
       to: artifact,
       amount: 1,
       from: contributor,
@@ -618,7 +621,10 @@ export class GithubIssueCollector extends GithubByProjectBaseCollector {
 
       await groupRecorder.record({
         time: mergedTime,
-        type: this.getEventType("MergedEvent", issue.__typename),
+        type: {
+          name: this.getEventType("MergedEvent", issue.__typename),
+          version: this.eventVersion,
+        },
         to: artifact,
         amount: 1,
         from: creationEvent.from,
@@ -706,7 +712,10 @@ export class GithubIssueCollector extends GithubByProjectBaseCollector {
 
       return groupRecorder.record({
         time: createdAt,
-        type: this.getEventType("PullRequestApprovedEvent", issue.__typename),
+        type: {
+          name: this.getEventType("PullRequestApprovedEvent", issue.__typename),
+          version: 1,
+        },
         to: artifact,
         amount: 1,
         from: contributor,
@@ -754,7 +763,10 @@ export class GithubIssueCollector extends GithubByProjectBaseCollector {
 
       return groupRecorder.record({
         time: createdAt,
-        type: this.getEventType(event.__typename, issue.__typename),
+        type: {
+          name: this.getEventType(event.__typename, issue.__typename),
+          version: 1,
+        },
         to: artifact,
         amount: 1,
         from: contributor,
