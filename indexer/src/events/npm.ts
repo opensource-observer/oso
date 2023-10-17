@@ -201,7 +201,7 @@ async function getDailyDownloads(
   } else if (!end.startOf("day").equals(resultEnd.startOf("day"))) {
     // Assume that NPM will always give us the newest data first
     throw new MalformedDataError(
-      `Expected end date ${end.toISODate()} but got ${resultEnd.toISODate()}`,
+      `Expected end date ${end.toISO()} but got ${resultEnd.toISO()}`,
     );
   } else {
     // If we didn't get all the data, recurse
