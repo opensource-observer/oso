@@ -1,6 +1,6 @@
-import csv
 import json
 import os
+import pandas as pd
 import requests
 from urllib.parse import urlparse
 
@@ -16,6 +16,7 @@ ATTESTATIONS = {
 JSON_ATTESTATION_DATA = "data/rpgf3/indexed_attestations.json"
 JSON_APPLICANT_DATA = "data/rpgf3/applicant_data.json"
 CSV_OUTPUT_PATH = "data/rpgf3/applicant_data.csv"
+MATCHED_APPLICANT_DATA = "data/rpgf3/matched_applicant_data.json"
 
 
 def fetch_attestations_for_schema(schema_id, schema_name, time_created_after=0):
@@ -166,26 +167,46 @@ def clean_data(original_data):
 def check_for_ossd_membership(cleaned_data):
 
     yaml_data = get_yaml_data_from_path()
+
     addresses_to_slugs = map_addresses_to_slugs(yaml_data, "optimism", lowercase=True)
-    repos_to_slugs = map_repos_to_slugs(yaml_data, lowercase=True)
+    address_set = set(addresses_to_slugs.keys())
 
     get_owner = lambda url: urlparse(url).path.split('/')[1].lower() if 'github.com' in url else None
-    repo_owner_set = set([get_owner(repo) for repo in repos_to_slugs.keys()])
-    address_set = set(addresses_to_slugs.keys())
-    
+
+    repos_to_slugs = map_repos_to_slugs(yaml_data, lowercase=True)
+    repo_owners_to_slugs = {}
+    for repo, slug in repos_to_slugs.items():
+        owner = get_owner(repo)
+        if owner is None:
+            continue
+        if owner not in repo_owners_to_slugs:
+            repo_owners_to_slugs[owner] = set()
+        repo_owners_to_slugs[owner].add(slug)
+    repo_owner_set = set(repo_owners_to_slugs.keys())
+
+    ossd_mappings = {}    
     for entry in cleaned_data:        
         
+        possible_slugs = []
+
+        address_verified = False
+        if entry["Payout Address"].lower() in address_set:
+            address_verified = True
+            possible_slugs = [addresses_to_slugs[entry["Payout Address"].lower()]]
+        if entry["Attester Address"].lower() in address_set:
+            address_verified = True
+            possible_slugs = [addresses_to_slugs[entry["Attester Address"].lower()]]
+        
+        github_verified = False
         github_owners = set([get_owner(repo) for repo in entry['Github Urls'].split(", ")])
         if None in github_owners:
             github_owners.remove(None)
-        github_verified = False
-        if github_owners.intersection(repo_owner_set):
+        matching_owners = github_owners.intersection(repo_owner_set)
+        if matching_owners:
             github_verified = True
-        
-        address_verified = False
-        if entry["Payout Address"].lower() in address_set or entry["Attester Address"].lower() in address_set:
-            address_verified = True
-
+            if not address_verified:
+                possible_slugs = [slug for owner in matching_owners for slug in repo_owners_to_slugs[owner]]
+            
         if github_verified and address_verified:
             entry["OSS Directory"] = "Address & Github Found"
         elif github_verified:
@@ -194,6 +215,12 @@ def check_for_ossd_membership(cleaned_data):
             entry["OSS Directory"] = "Address Found"
         else:
             entry["OSS Directory"] = "Not Found"
+            continue
+        
+        if len(possible_slugs) == 1:
+            entry["Slug(s)"] = possible_slugs[0]
+        elif len(possible_slugs) > 1:
+            entry["Slug(s)"] = ", ".join(possible_slugs)
 
 
 def clean_applicant_data():
@@ -211,11 +238,15 @@ def clean_applicant_data():
 
     check_for_ossd_membership(cleaned_data)
 
-    with open(CSV_OUTPUT_PATH, mode='w', newline='') as csv_file:
-        fieldnames = ["Project Name", "Applicant Type", "Date", "Attester Address", "Payout Address", "Link", "Tags", "Github Urls", "OSS Directory"]
-        writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
-        writer.writeheader()
-        writer.writerows(cleaned_data)
+    matched_data = [data for data in cleaned_data if data["OSS Directory"] != "Not Found"]
+    with open(MATCHED_APPLICANT_DATA, "w") as json_file:
+        json.dump(matched_data, json_file, indent=4)
+
+    csv_data = pd.DataFrame(cleaned_data)
+    fieldnames = ["Project Name", "Applicant Type", "Date", "Attester Address", "Payout Address", "Link", "Tags", "Github Urls", "OSS Directory"]
+    csv_data = csv_data[fieldnames]
+    csv_data.sort_values(by="Date", inplace=True)
+    csv_data.to_csv(CSV_OUTPUT_PATH, index=False)
 
 
 def main():
