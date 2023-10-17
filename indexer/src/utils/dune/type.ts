@@ -26,7 +26,6 @@ export class NoopDuneClient implements IDuneClient {
     _parameters?: QueryParameter[] | undefined,
     _pingFrequency?: number | undefined,
   ): Promise<ResultsResponse> {
-    console.log("---here---");
     return {
       execution_id: "",
       state: ExecutionState.COMPLETED,

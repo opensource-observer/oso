@@ -2,7 +2,7 @@ import {
   BatchEventRecorder,
   TimeoutBatchedFlusher,
 } from "../recorder/recorder.js";
-import { BaseScheduler, Config } from "./types.js";
+import { BaseScheduler, Config, ExecutionMode } from "./types.js";
 import {
   TimeSeriesCacheManager,
   TimeSeriesCacheWrapper,
@@ -21,7 +21,11 @@ import {
   GITHUB_WORKERS_REPO,
   GITHUB_WORKERS_WORKFLOW_ID,
 } from "../config.js";
-import { ArtifactNamespace, ArtifactType } from "../db/orm-entities.js";
+import {
+  ArtifactNamespace,
+  ArtifactType,
+  EventType,
+} from "../db/orm-entities.js";
 import { EventPointerRepository, EventRepository } from "../db/events.js";
 import { ArtifactRepository } from "../db/artifacts.js";
 import { AppDataSource } from "../db/data-source.js";
@@ -48,6 +52,7 @@ export type SchedulerManualArgs = SchedulerArgs & {
   collector: string;
   startDate: DateTime;
   endDate: DateTime;
+  executionMode: ExecutionMode;
 };
 
 export type SchedulerWorkerArgs = SchedulerArgs & {
@@ -69,17 +74,6 @@ export type SchedulerQueueJobArgs = SchedulerArgs & {
 // Entrypoint for the scheduler. Currently not where it should be but this is quick.
 export async function configure(args: SchedulerArgs) {
   const flusher = new TimeoutBatchedFlusher(2000, 2000);
-  const recorder = new BatchEventRecorder(
-    EventRepository,
-    ArtifactRepository,
-    flusher,
-    {
-      timeoutMs: args.recorderTimeoutMs,
-    },
-  );
-  recorder.setOptions({
-    overwriteExistingEvents: args.overwriteExistingEvents,
-  });
   const cacheManager = new TimeSeriesCacheManager(args.cacheDir);
   const cache = new TimeSeriesCacheWrapper(cacheManager);
 
@@ -137,7 +131,21 @@ export async function configure(args: SchedulerArgs) {
 
   const scheduler = new BaseScheduler(
     args.runDir,
-    recorder,
+    () => {
+      const recorder = new BatchEventRecorder(
+        EventRepository,
+        AppDataSource.getRepository(EventType),
+        ArtifactRepository,
+        flusher,
+        {
+          timeoutMs: args.recorderTimeoutMs,
+        },
+      );
+      recorder.setOptions({
+        overwriteExistingEvents: args.overwriteExistingEvents,
+      });
+      return Promise.resolve(recorder);
+    },
     config,
     eventPointerManager,
     cache,
@@ -156,6 +164,7 @@ export async function configure(args: SchedulerArgs) {
         ProjectRepository,
         recorder,
         cache,
+        10000,
       );
       return collector;
     },
@@ -178,6 +187,7 @@ export async function configure(args: SchedulerArgs) {
         gh,
         recorder,
         cache,
+        900,
       );
       return collector;
     },
@@ -246,7 +256,9 @@ export async function configure(args: SchedulerArgs) {
 
   scheduler.registerCollector({
     create: async (_config, recorder, cache) => {
-      const client = new DailyContractUsageClient(dune);
+      const client = new DailyContractUsageClient(dune, {
+        tablesDirectoryPath: "/data/tmp/oso/dune-monitored-contracts/",
+      });
       const collector = new DailyContractUsageCollector(
         client,
         ArtifactRepository,

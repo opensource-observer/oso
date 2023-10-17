@@ -15,12 +15,13 @@ import {
   PrimaryGeneratedColumn,
   CreateDateColumn,
   UpdateDateColumn,
+  JoinColumn,
 } from "typeorm";
 import { IsUrl, IsOptional, validateOrReject } from "class-validator";
 import type { Brand } from "utility-types";
 import { normalizeToObject } from "../utils/common.js";
 
-export enum EventType {
+export enum EventTypeEnum {
   FUNDING = "FUNDING",
   PULL_REQUEST_CREATED = "PULL_REQUEST_CREATED",
   PULL_REQUEST_MERGED = "PULL_REQUEST_MERGED",
@@ -181,6 +182,20 @@ export class Artifact extends Base<"ArtifactId"> {
   eventPointers: EventPointer[];
 }
 
+@Entity({ name: "event_type" })
+@Index(["name", "version"], { unique: true })
+export class EventType extends Base<"EventTypeId"> {
+  @Column("varchar", { length: 50 })
+  name: string;
+
+  // Allow versioning of events for gradual migrations of data.
+  @Column("smallint")
+  version: number;
+
+  @OneToMany(() => Event, (event) => event.type)
+  events: Event[];
+}
+
 @Entity()
 @Index(["time"])
 @Index(["id", "time"], { unique: true })
@@ -192,7 +207,11 @@ export class Event {
   @Column("text")
   sourceId: string;
 
-  @Column("enum", { enum: EventType })
+  // The TS property name here is temporary. Will eventually be `type`
+  @ManyToOne(() => EventType, (eventType) => eventType.events)
+  @JoinColumn({
+    name: "typeId",
+  })
   type: EventType;
 
   @PrimaryColumn("timestamptz")
@@ -209,9 +228,6 @@ export class Event {
 
   @Column("float")
   amount: number;
-
-  @Column("bigint", { default: 0 })
-  size: string;
 
   @Column("jsonb", { default: {} })
   details: Record<string, any>;
@@ -310,11 +326,11 @@ export class Log extends Base<"LogId"> {
   materialized: true,
   expression: `
     SELECT "toId",
-      "type",
+      "typeId",
       time_bucket(INTERVAL '1 day', "time") AS "bucketDaily",
       SUM(amount) as "amount"
     FROM "event" 
-    GROUP BY "toId", "type", "bucketDaily"
+    GROUP BY "toId", "typeId", "bucketDaily"
     WITH NO DATA;
   `,
 })
@@ -337,13 +353,13 @@ export class EventsDailyByArtifact {
   materialized: true,
   expression: `
     SELECT "projectId",
-      "type",
+      "typeId",
       time_bucket(INTERVAL '1 day', "time") AS "bucketDaily",
       SUM(amount) as "amount"
     FROM "event"
     INNER JOIN "project_artifacts_artifact"
       on "project_artifacts_artifact"."artifactId" = "event"."toId"
-    GROUP BY "projectId", "type", "bucketDaily"
+    GROUP BY "projectId", "typeId", "bucketDaily"
     WITH NO DATA;
   `,
 })

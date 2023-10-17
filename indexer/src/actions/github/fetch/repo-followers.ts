@@ -21,7 +21,6 @@ import {
   Project,
   ArtifactNamespace,
   ArtifactType,
-  EventType,
   Artifact,
 } from "../../../db/orm-entities.js";
 import { Repository } from "typeorm";
@@ -338,7 +337,10 @@ export class GithubFollowingCollector extends GithubByProjectBaseCollector {
 
       const event: IncompleteEvent = {
         time: commitTime,
-        type: EventType.STARRED,
+        type: {
+          name: "STARRED",
+          version: 1,
+        },
         to: artifact,
         from: contributor,
         amount: 1,
@@ -457,7 +459,10 @@ export class GithubFollowingCollector extends GithubByProjectBaseCollector {
 
     return this.recorder.record({
       time: startOfDay,
-      type: EventType.STAR_AGGREGATE_STATS,
+      type: {
+        name: "STAR_AGGREGATE_STATS",
+        version: 1,
+      },
       to: artifact,
       amount: starCount,
       sourceId: generateSourceIdFromArray([
@@ -486,7 +491,10 @@ export class GithubFollowingCollector extends GithubByProjectBaseCollector {
     // Get the aggregate stats for forking
     return this.recorder.record({
       time: startOfDay,
-      type: EventType.WATCHER_AGGREGATE_STATS,
+      type: {
+        name: "WATCHER_AGGREGATE_STATS",
+        version: 1,
+      },
       to: artifact,
       amount: watchersCount,
       sourceId: generateSourceIdFromArray([
@@ -512,7 +520,10 @@ export class GithubFollowingCollector extends GithubByProjectBaseCollector {
     recordHandles.push(
       await this.recorder.record({
         time: startOfDay,
-        type: EventType.FORK_AGGREGATE_STATS,
+        type: {
+          name: "FORK_AGGREGATE_STATS",
+          version: 1,
+        },
         to: artifact,
         amount: forkCount,
         sourceId: generateSourceIdFromArray([
@@ -536,7 +547,10 @@ export class GithubFollowingCollector extends GithubByProjectBaseCollector {
       };
       return this.recorder.record({
         time: createdAt,
-        type: EventType.FORKED,
+        type: {
+          name: "FORKED",
+          version: 1,
+        },
         to: artifact,
         from: contributor,
         amount: 1,

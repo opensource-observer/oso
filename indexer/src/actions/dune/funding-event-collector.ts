@@ -5,13 +5,7 @@ import {
   IFundingEventsClient,
   ProjectAddress,
 } from "./funding-events/client.js";
-import {
-  Artifact,
-  ArtifactNamespace,
-  ArtifactType,
-  EventType,
-  Project,
-} from "../../db/orm-entities.js";
+import { ArtifactNamespace, ArtifactType } from "../../db/orm-entities.js";
 import {
   IEventRecorder,
   IncompleteArtifact,
@@ -25,12 +19,15 @@ import _ from "lodash";
 import {
   IArtifactGroup,
   IArtifactGroupCommitmentProducer,
-  ICollector,
 } from "../../scheduler/types.js";
 import { Range } from "../../utils/ranges.js";
 import { ProjectRepository } from "../../db/project.js";
-import { ProjectArtifactGroup } from "../../scheduler/common.js";
+import {
+  Batch,
+  BatchedProjectArtifactsCollector,
+} from "../../scheduler/common.js";
 import { ArtifactGroupRecorder } from "../../recorder/group.js";
+import { In } from "typeorm";
 
 export interface FundingEventsCollectorOptions {
   cacheOptions: {
@@ -45,11 +42,8 @@ export const DefaultFundingEventsCollectorOptions: FundingEventsCollectorOptions
     },
   };
 
-export class FundingEventsCollector implements ICollector {
+export class FundingEventsCollector extends BatchedProjectArtifactsCollector {
   private client: IFundingEventsClient;
-  private recorder: IEventRecorder;
-  private projectRepository: typeof ProjectRepository;
-  private cache: TimeSeriesCacheWrapper;
   private options: FundingEventsCollectorOptions;
 
   constructor(
@@ -57,8 +51,12 @@ export class FundingEventsCollector implements ICollector {
     projectRepository: typeof ProjectRepository,
     recorder: IEventRecorder,
     cache: TimeSeriesCacheWrapper,
+    batchSize: number,
     options?: Partial<FundingEventsCollectorOptions>,
   ) {
+    super(projectRepository, recorder, cache, batchSize, {
+      type: In([ArtifactType.EOA_ADDRESS, ArtifactType.SAFE_ADDRESS]),
+    });
     this.client = client;
     this.projectRepository = projectRepository;
     this.recorder = recorder;
@@ -66,28 +64,32 @@ export class FundingEventsCollector implements ICollector {
     this.cache = cache;
   }
 
-  async *groupedArtifacts(): AsyncGenerator<IArtifactGroup<Project>> {
-    logger.debug("gathering artifacts");
-    const projects =
-      await this.projectRepository.allFundableProjectsWithAddresses();
+  // async *groupedArtifacts(): AsyncGenerator<IArtifactGroup<Project>> {
+  //   logger.debug("gathering artifacts");
+  //   const projects =
+  //     await this.projectRepository.allFundableProjectsWithAddresses();
 
-    for (const project of projects) {
-      const artifacts: Artifact[] = project.artifacts
-        .filter((a) => a.name.length == 42)
-        .map((a) => {
-          return a;
-        });
-      yield ProjectArtifactGroup.create(project, artifacts);
-    }
-  }
+  //   for (const project of projects) {
+  //     const artifacts: Artifact[] = project.artifacts
+  //       .filter((a) => a.name.length == 42)
+  //       .map((a) => {
+  //         return a;
+  //       });
+  //     yield ProjectArtifactGroup.create(project, artifacts);
+  //   }
+  // }
 
   async collect(
-    group: IArtifactGroup<Project>,
+    group: IArtifactGroup<Batch>,
     range: Range,
     committer: IArtifactGroupCommitmentProducer,
   ): Promise<void> {
     logger.debug("running funding events collector");
     const artifacts = await group.artifacts();
+    const filteredArtifacts = artifacts.filter((a) => {
+      return a.name.length === 42;
+    });
+
     const groupRecorder = new ArtifactGroupRecorder(this.recorder);
     // Super pragmatic hack for now to create the funding addresses. Let's just make them now
     const fundingAddressesRaw: Array<[string, string, string, string]> = [
@@ -171,7 +173,6 @@ export class FundingEventsCollector implements ICollector {
           details: {
             fundingPoolName: r[2],
             blockchain: r[3],
-            contributorGroup: r[0],
           },
         };
       });
@@ -195,7 +196,7 @@ export class FundingEventsCollector implements ICollector {
 
     const projectAddressesInput: Array<
       ProjectAddress & { namespace: ArtifactNamespace; type: ArtifactType }
-    > = artifacts.map((a, i) => {
+    > = filteredArtifacts.map((a, i) => {
       return {
         id: i,
         projectId: i,
@@ -258,7 +259,10 @@ export class FundingEventsCollector implements ICollector {
 
         const event: IncompleteEvent = {
           time: DateTime.fromISO(row.blockTime, { zone: "utc" }),
-          type: EventType.FUNDING,
+          type: {
+            name: "FUNDING",
+            version: 1,
+          },
           to: artifact,
           from: contributor,
           sourceId: row.txHash,

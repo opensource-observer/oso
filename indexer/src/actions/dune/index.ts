@@ -2,21 +2,18 @@ import { DateTime } from "luxon";
 import { CommonArgs } from "../../utils/api.js";
 import { logger } from "../../utils/logger.js";
 import {
-  EventType,
   Artifact,
   ArtifactNamespace,
   ArtifactType,
 } from "../../db/orm-entities.js";
 import fsPromises from "fs/promises";
 import {
-  IDailyContractUsageClient,
+  IDailyContractUsageClientV2,
   DailyContractUsageRow,
-  DailyContractUsageResponse,
 } from "./daily-contract-usage/client.js";
 import {
   IArtifactGroup,
   IArtifactGroupCommitmentProducer,
-  ICollector,
 } from "../../scheduler/types.js";
 import _ from "lodash";
 import { Range } from "../../utils/ranges.js";
@@ -32,8 +29,10 @@ import {
 } from "../../cacher/time-series.js";
 import { ArtifactRepository } from "../../db/artifacts.js";
 import { generateSourceIdFromArray } from "../../utils/source-ids.js";
-import { BasicArtifactGroup } from "../../scheduler/common.js";
-import { asyncBatch } from "../../utils/array.js";
+import { BaseCollector, BasicArtifactGroup } from "../../scheduler/common.js";
+import { UniqueArray } from "../../utils/array.js";
+import { ProjectRepository } from "../../db/project.js";
+import { In } from "typeorm";
 
 /**
  * Entrypoint arguments
@@ -76,6 +75,11 @@ export interface DailyContractUsageSyncerOptions {
   parallelism: number;
 
   blockchain: ArtifactNamespace;
+
+  mode: "csv" | "api";
+
+  // This is the sha1 of the table used to store the monitored contractIds
+  contractSha1: string;
 }
 
 export const DefaultDailyContractUsageSyncerOptions: DailyContractUsageSyncerOptions =
@@ -98,54 +102,62 @@ export const DefaultDailyContractUsageSyncerOptions: DailyContractUsageSyncerOpt
     parallelism: 10,
 
     blockchain: ArtifactNamespace.OPTIMISM,
+
+    mode: "api",
+
+    contractSha1: "da1aae77b853fc7c74038ee08eec441b10b89570",
   };
 
-export class DailyContractUsageCollector implements ICollector {
-  private client: IDailyContractUsageClient;
+export class DailyContractUsageCollector extends BaseCollector<object> {
+  private client: IDailyContractUsageClientV2;
   private artifactRepository: typeof ArtifactRepository;
   private recorder: IEventRecorder;
   private cache: TimeSeriesCacheWrapper;
   private options: DailyContractUsageSyncerOptions;
+  private rowsProcessed: number;
 
   constructor(
-    client: IDailyContractUsageClient,
+    client: IDailyContractUsageClientV2,
     artifactRepository: typeof ArtifactRepository,
     recorder: IEventRecorder,
     cache: TimeSeriesCacheWrapper,
     options: Partial<DailyContractUsageSyncerOptions> = DefaultDailyContractUsageSyncerOptions,
   ) {
+    super();
     this.client = client;
     this.artifactRepository = artifactRepository;
     this.options = _.merge(DefaultDailyContractUsageSyncerOptions, options);
     this.recorder = recorder;
     this.cache = cache;
+    this.rowsProcessed = 0;
+  }
+
+  async allArtifacts(): Promise<Artifact[]> {
+    const artifacts: Artifact[] = [];
+    for await (const group of this.groupedArtifacts()) {
+      artifacts.push(...(await group.artifacts()));
+    }
+    return artifacts;
   }
 
   async *groupedArtifacts(): AsyncGenerator<IArtifactGroup<object>> {
     // Get all contracts
-    const artifacts = await this.artifactRepository.find({
+    const projects = await ProjectRepository.find({
+      relations: {
+        artifacts: true,
+      },
       where: {
-        type: ArtifactType.CONTRACT_ADDRESS,
+        artifacts: {
+          type: In([ArtifactType.CONTRACT_ADDRESS]),
+          namespace: ArtifactNamespace.OPTIMISM,
+        },
       },
     });
-    yield new BasicArtifactGroup("ALL_CONTRACTS", {}, artifacts);
-  }
+    const allArtifacts = projects.flatMap((p) => p.artifacts);
 
-  private async loadKnownUserAddresses(range: Range): Promise<string[]> {
-    logger.debug("loading known user addresses as input for dune");
-    const largerRange: Range = {
-      startDate: range.startDate.minus({ months: 1 }),
-      endDate: DateTime.now(),
-    };
-    const frequentContributors =
-      await this.artifactRepository.mostFrequentContributors(largerRange, [
-        EventType.CONTRACT_INVOKED,
-      ]);
-    if (frequentContributors.length > 0) {
-      return frequentContributors.map((c) => c.contributorName);
-    }
-    const seed = await this.loadKnownUserAddressesSeed();
-    return seed.map((a) => a.name);
+    const uniqueArtifacts = new UniqueArray((a: Artifact) => a.id);
+    allArtifacts.forEach((a) => uniqueArtifacts.push(a));
+    yield new BasicArtifactGroup("ALL_CONTRACTS", {}, uniqueArtifacts.items());
   }
 
   async collect(
@@ -154,60 +166,89 @@ export class DailyContractUsageCollector implements ICollector {
     committer: IArtifactGroupCommitmentProducer,
   ): Promise<void> {
     logger.info("loading contract usage data");
-    const knownUserAddresses = await this.loadKnownUserAddresses(range);
     const artifacts = await group.artifacts();
-    const contractAddresses = artifacts.map((a) => a.name);
+    //const contractAddresses = artifacts.map((a) => a.name);
     const contractsByAddressMap = _.keyBy(artifacts, "name");
-    const responses = this.cache.loadCachedOrRetrieve<DailyContractUsageRow[]>(
+
+    // There seems to be some duplicates. Let's keep track for logging for now.
+    const uniqueEvents = new UniqueArray<string>((s) => s);
+
+    try {
+      if (this.options.mode === "api") {
+        await this.collectFromApi(range, contractsByAddressMap, uniqueEvents);
+      } else {
+        await this.collectFromCsv(range, contractsByAddressMap, uniqueEvents);
+      }
+    } catch (err) {
+      logger.error("error collecting contract usage");
+    }
+
+    logger.debug("done processing contract calls");
+    for (const artifact of artifacts) {
+      committer.commit(artifact).withResults({
+        success: [],
+        errors: [],
+      });
+    }
+  }
+
+  protected async collectFromApi(
+    range: Range,
+    contractsByAddressMap: _.Dictionary<Artifact>,
+    uniqueEvents: UniqueArray<string>,
+  ) {
+    const responses = this.cache.loadCachedOrRetrieve(
       TimeSeriesCacheLookup.new(
         this.options.cacheOptions.bucket,
-        contractAddresses,
+        this.options.contractSha1,
         range,
       ),
       async (missing) => {
-        const missingArtifacts = missing.keys.map(
-          (k) => contractsByAddressMap[k],
-        );
-        const rows = await this.retrieveFromDune(
-          range,
-          missingArtifacts,
-          knownUserAddresses,
+        const rows = await this.client.getDailyContractUsage(
+          missing.range,
+          this.options.contractSha1,
         );
         return {
           raw: rows,
-          cacheRange: missing.range,
           hasNextPage: false,
+          cacheRange: missing.range,
         };
       },
     );
 
     for await (const page of responses) {
-      const usageData = new DailyContractUsageResponse(
-        page.raw,
-        contractAddresses,
-      );
-      const contractPromises = usageData.mapRowsByContractAddress(
-        async (address, rows) => {
-          const contract = contractsByAddressMap[address];
-          logger.debug(`events for ${contract.name}`);
-
-          const recordHandles = (
-            await asyncBatch(rows, 1, async (row) => {
-              return this.createEventsForDay(contract, row[0]);
-            })
-          ).flat(1);
-          logger.debug(`events for ${contract.name} recorded`);
-
-          committer.commit(contract).withHandles(recordHandles);
-        },
-      );
-
-      logger.debug(
-        `wait for all of the promises to resolve for contracts count ${contractPromises.length}`,
-      );
-      await Promise.all(contractPromises);
+      const recordHandles: RecordHandle[] = [];
+      for (const row of page.raw) {
+        const contract = contractsByAddressMap[row.contractAddress];
+        const event = await this.createEvents(contract, row, uniqueEvents);
+        recordHandles.push(...event);
+      }
+      await this.recorder.wait(recordHandles);
     }
-    logger.debug("finished collection");
+  }
+
+  protected async collectFromCsv(
+    range: Range,
+    contractsByAddressMap: _.Dictionary<Artifact>,
+    uniqueEvents: UniqueArray<string>,
+  ) {
+    let currentTime = range.startDate;
+    while (currentTime < range.endDate) {
+      logger.debug(`loading ${currentTime.toISODate()}`);
+      const rows = await this.client.getDailyContractUsageFromCsv(
+        currentTime,
+        this.options.contractSha1,
+      );
+      const recordHandles: RecordHandle[] = [];
+
+      currentTime = currentTime.plus({ day: 1 });
+      for (const row of rows) {
+        const contract = contractsByAddressMap[row.contractAddress];
+        const events = await this.createEvents(contract, row, uniqueEvents);
+        recordHandles.push(...events);
+      }
+      await this.recorder.wait(recordHandles);
+    }
   }
 
   protected async loadKnownUserAddressesSeed(): Promise<
@@ -228,108 +269,110 @@ export class DailyContractUsageCollector implements ICollector {
     });
   }
 
-  protected async retrieveFromDune(
-    range: Range,
-    contracts: Artifact[],
-    knownUserAddresses: string[],
-  ): Promise<DailyContractUsageRow[]> {
-    logger.debug("retrieving data from dune");
-    const response = await this.client.getDailyContractUsage(
-      range.startDate,
-      range.endDate,
-      knownUserAddresses,
-      // Just load all contracts for now
-      contracts.map((c) => c.name),
-    );
+  // protected retrieveFromDune(
+  //   range: Range,
+  // ) {
+  //   logger.debug("retrieving data from dune");
+  //   const response = this.client.getDailyContractUsage(
+  //     range.startDate,
+  //     range.endDate,
+  //     "da1aae77b853fc7c74038ee08eec441b10b89570"
+  //   );
 
-    return response;
-  }
+  //   return response;
+  // }
 
-  protected validateUsageData(
-    contracts: Artifact[],
-    usageData: DailyContractUsageResponse,
-  ) {
-    const intersect = _.intersection(
-      contracts.map((c) => c.name),
-      usageData.contractAddresses,
-    );
+  protected async createEvents(
+    contract: Artifact,
+    row: DailyContractUsageRow,
+    uniqueTracker: UniqueArray<string>,
+  ): Promise<RecordHandle[]> {
+    this.rowsProcessed += 1;
+    const eventTime = DateTime.fromISO(row.date);
 
-    if (intersect.length !== usageData.contractAddresses.length) {
-      throw new Error(
-        "Missing some expected contracts in the database. No resolution at the moment",
+    if (!row.userAddress && !row.safeAddress) {
+      throw new Error("unexpectd no address");
+    }
+
+    const from: IncompleteArtifact =
+      row.safeAddress === null
+        ? {
+            name: row.userAddress!,
+            type: ArtifactType.EOA_ADDRESS,
+            namespace: ArtifactNamespace.OPTIMISM,
+          }
+        : {
+            name: row.safeAddress,
+            type: ArtifactType.SAFE_ADDRESS,
+            namespace: ArtifactNamespace.OPTIMISM,
+          };
+
+    const recorderContract =
+      contract !== undefined
+        ? contract
+        : {
+            name: row.contractAddress,
+            type: ArtifactType.CONTRACT_ADDRESS,
+            namespace: ArtifactNamespace.OPTIMISM,
+          };
+
+    const sourceId = generateSourceIdFromArray([
+      "CONTRACT_INVOCATION",
+      eventTime.toISODate()!,
+      recorderContract.name,
+      recorderContract.namespace,
+      recorderContract.type,
+      from.name,
+      from.namespace,
+      from.type,
+    ]);
+
+    // Convert gasCost to a bigint
+    let gasAsFloat = 0;
+    try {
+      gasAsFloat = parseFloat(row.gasCostGwei);
+    } catch (err) {
+      console.warn(
+        `Could not get gasCost for ${sourceId}. Value ${row.gasCostGwei} is not a number`,
       );
     }
-  }
-
-  protected async createEventsForDay(
-    contract: Artifact,
-    day: DailyContractUsageRow,
-  ) {
-    const recordHandles: RecordHandle[] = [];
-    const userArtifacts: IncompleteArtifact[] = day.userAddresses.map(
-      (addr) => {
-        return {
-          name: addr,
-          namespace: this.options.blockchain,
-          type: ArtifactType.EOA_ADDRESS,
-        };
-      },
-    );
-    const eventTime = DateTime.fromISO(day.date).toUTC();
 
     // Check which users already have data written for that day.
     // We'll need to update those
-    logger.info(
-      `creating ${userArtifacts.length} events for contract Artifact<${
-        contract.id
-      }> on ${eventTime.toISO()}...`,
-      {
-        contractId: contract.id,
-        date: day.date,
-        userArtifactsLength: userArtifacts.length,
+    const countEvent: IncompleteEvent = {
+      time: eventTime,
+      type: {
+        name: "CONTRACT_INVOCATION_DAILY_COUNT",
+        version: 1,
       },
-    );
-    for (const user of userArtifacts) {
-      const event: IncompleteEvent = {
-        time: eventTime,
-        type: EventType.CONTRACT_INVOKED,
-        to: contract,
-        from: user,
-        amount: 0,
-        sourceId: generateSourceIdFromArray([
-          EventType.CONTRACT_INVOKED,
-          eventTime.toISODate()!,
-          contract.name,
-          contract.namespace,
-          user.name,
-          user.namespace,
-        ]),
-      };
+      to: recorderContract,
+      from: from,
+      amount: row.txCount,
+      sourceId: sourceId,
+    };
 
-      recordHandles.push(await this.recorder.record(event));
+    const feeEvent: IncompleteEvent = {
+      time: eventTime,
+      type: {
+        name: "CONTRACT_INVOCATION_DAILY_FEES",
+        version: 1,
+      },
+      to: recorderContract,
+      from: from,
+      amount: gasAsFloat,
+      sourceId: sourceId,
+    };
+
+    const beforeAddLen = uniqueTracker.length;
+    uniqueTracker.push(countEvent.sourceId);
+    if (uniqueTracker.length === beforeAddLen) {
+      logger.debug(
+        `duplicates for sourceId=${countEvent.sourceId} found for contracts`,
+      );
     }
-
-    // Create an event that reports the aggregate transaction information with
-    // no contributor information
-    recordHandles.push(
-      await this.recorder.record({
-        time: eventTime,
-        type: EventType.CONTRACT_INVOKED_AGGREGATE_STATS,
-        to: contract,
-        amount: 0,
-        sourceId: generateSourceIdFromArray([
-          EventType.CONTRACT_INVOKED_AGGREGATE_STATS,
-          eventTime.toISODate()!,
-          contract.name,
-          contract.namespace,
-        ]),
-        details: {
-          totalL2GasCostGwei: day.contractTotalL2GasCostGwei,
-          totalTxCount: day.contractTotalTxCount,
-          uniqueSafeAddresses: day.uniqueSafeAddressCount,
-        },
-      }),
-    );
-    return recordHandles;
+    const handles: RecordHandle[] = [];
+    handles.push(await this.recorder.record(countEvent));
+    handles.push(await this.recorder.record(feeEvent));
+    return handles;
   }
 }

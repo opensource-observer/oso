@@ -7,10 +7,12 @@ import {
   ArtifactType,
   EventType,
 } from "./orm-entities.js";
+import { AppDataSource } from "./data-source.js";
 
 withDbDescribe("EventRepository", () => {
   let artifact0: Artifact;
   let artifact1: Artifact;
+  let eventType: EventType;
 
   beforeEach(async () => {
     // Setup the database
@@ -29,6 +31,12 @@ withDbDescribe("EventRepository", () => {
         type: ArtifactType.CONTRACT_ADDRESS,
       }),
     );
+
+    eventType = await AppDataSource.getRepository(EventType).findOneOrFail({
+      where: {
+        name: "CONTRACT_INVOKED",
+      },
+    });
   });
 
   it("should update the events based on sourceId", async () => {
@@ -38,7 +46,7 @@ withDbDescribe("EventRepository", () => {
         time: new Date(),
         sourceId: "0",
         to: artifact0,
-        type: EventType.CONTRACT_INVOKED,
+        type: eventType,
         amount: 1,
         from: null,
       },
@@ -46,7 +54,7 @@ withDbDescribe("EventRepository", () => {
         time: new Date(),
         sourceId: "1",
         to: artifact0,
-        type: EventType.CONTRACT_INVOKED,
+        type: eventType,
         amount: 1,
         from: null,
       },
@@ -54,7 +62,7 @@ withDbDescribe("EventRepository", () => {
         time: new Date(),
         sourceId: "2",
         to: artifact0,
-        type: EventType.CONTRACT_INVOKED,
+        type: eventType,
         amount: 2,
         from: null,
       },
@@ -62,7 +70,7 @@ withDbDescribe("EventRepository", () => {
         time: new Date(),
         sourceId: "3",
         to: artifact0,
-        type: EventType.CONTRACT_INVOKED,
+        type: eventType,
         amount: 3,
         from: null,
       },
@@ -70,7 +78,7 @@ withDbDescribe("EventRepository", () => {
         time: new Date(),
         sourceId: "4",
         to: artifact0,
-        type: EventType.CONTRACT_INVOKED,
+        type: eventType,
         amount: 4,
         from: null,
       },
@@ -97,7 +105,7 @@ withDbDescribe("EventRepository", () => {
         time: createPartials[0].time,
         sourceId: "0",
         to: artifact0,
-        type: EventType.CONTRACT_INVOKED,
+        type: eventType,
         amount: -100,
         from: null,
       },
@@ -105,7 +113,7 @@ withDbDescribe("EventRepository", () => {
         time: createPartials[1].time,
         sourceId: "1",
         to: artifact1,
-        type: EventType.CONTRACT_INVOKED,
+        type: eventType,
         amount: 2,
         from: null,
       },
@@ -113,7 +121,7 @@ withDbDescribe("EventRepository", () => {
         time: createPartials[2].time,
         sourceId: "2",
         to: artifact0,
-        type: EventType.CONTRACT_INVOKED,
+        type: eventType,
         amount: 4,
         from: artifact1,
       },
@@ -121,7 +129,7 @@ withDbDescribe("EventRepository", () => {
         time: new Date(),
         sourceId: "4",
         to: artifact0,
-        type: EventType.CONTRACT_INVOKED,
+        type: eventType,
         amount: 8,
         from: null,
       },

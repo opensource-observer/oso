@@ -92,6 +92,7 @@ async function ossUpsertCollection(ossCollection: Collection) {
       .relation(DBCollection, "projects")
       .of(collection.id)
       .remove(removedProjectIds);
+
     return {
       added: newProjectIds.length,
       removed: removedProjectIds.length,

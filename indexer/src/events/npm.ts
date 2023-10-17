@@ -9,7 +9,6 @@ import {
   Artifact,
   ArtifactType,
   ArtifactNamespace,
-  EventType,
 } from "../index.js";
 import {
   IArtifactGroup,
@@ -107,7 +106,10 @@ export class NpmDownloadCollector extends ProjectArtifactsCollector {
         recordHandle.push(
           await this.recorder.record({
             time: DateTime.fromISO(download.day),
-            type: EventType.DOWNLOADS,
+            type: {
+              name: "DOWNLOADS",
+              version: 1,
+            },
             to: npmPackage,
             sourceId: generateSourceIdFromArray([
               "NPM_DOWNLOADS",

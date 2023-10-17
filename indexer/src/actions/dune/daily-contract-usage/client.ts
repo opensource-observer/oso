@@ -7,143 +7,243 @@
  * the burden of the api calls on our quota by about 20% in testing.
  */
 import { DateTime } from "luxon";
-import { QueryParameter } from "@cowprotocol/ts-dune-client";
-import fsPromises from "fs/promises";
+import fs from "fs";
 
-import { UniqueArray } from "../../../utils/array.js";
 import { IDuneClient } from "../../../utils/dune/type.js";
+import { parse } from "csv";
+import { assert } from "../../../utils/common.js";
+import { QueryParameter } from "@cowprotocol/ts-dune-client";
+import { Range } from "../../../utils/ranges.js";
+import path from "path";
 import _ from "lodash";
 import { logger } from "../../../utils/logger.js";
 
-export type DailyContractUsageRawRow = {
-  date: string;
-  contract_id: number;
-  user_addresses: string[] | null;
-  user_ids: number[] | null;
-  contract_total_l2_gas_cost_gwei: string;
-  contract_total_tx_count: number;
-  safe_address_count: number;
+export class SafeAggregate {
+  rows: DailyContractUsageRow[];
 
-  // Catch all for other raw values returned in the result
-  [key: string]: any;
-};
+  constructor(first: DailyContractUsageRow) {
+    this.rows = [first];
+  }
 
-const knownRawData = [
-  "date",
-  "contract_id",
-  "user_addresses",
-  "user_ids",
-  "contract_total_l2_gas_cost_gwei",
-  "contract_total_tx_count",
-  "safe_address_count",
-];
+  aggregate(): DailyContractUsageRow {
+    return this.rows.slice(1).reduce<DailyContractUsageRow>((agg, curr) => {
+      const row = curr;
+      const gasCostBI = BigInt(agg.gasCostGwei) + BigInt(row.gasCostGwei);
+      return {
+        date: agg.date,
+        contractAddress: agg.contractAddress,
+        userAddress: agg.userAddress,
+        safeAddress: agg.safeAddress,
+        txCount: agg.txCount + row.txCount,
+        gasCostGwei: gasCostBI.toString(10),
+      };
+    }, this.rows[0]);
+  }
+
+  add(row: DailyContractUsageRow) {
+    this.rows.push(row);
+  }
+
+  get count() {
+    return this.rows.length;
+  }
+}
 
 export type DailyContractUsageRow = {
   date: string;
   contractAddress: string;
-  userAddresses: string[];
-  contractTotalL2GasCostGwei: string;
-  contractTotalTxCount: number;
-  uniqueSafeAddressCount: number;
-
-  // Catch all for other raw values returned in the result
-  [key: string]: any;
+  userAddress: string | null;
+  safeAddress: string | null;
+  gasCostGwei: string;
+  txCount: number;
 };
 
-export interface IDailyContractUsageClient {
+export type DailyContractUsageRawRow = {
+  date: string;
+  contractId: number;
+  userAddress: string | null;
+  safeAddress: string | null;
+  gasCostGwei: string;
+  txCount: number;
+};
+
+export interface IDailyContractUsageClientV2 {
   getDailyContractUsage(
-    start: DateTime,
-    end: DateTime,
-    knownUserAddresses: string[],
-    knownContractAddresses: string[],
+    range: Range,
+    contractSha1: string,
+  ): Promise<DailyContractUsageRow[]>;
+  getDailyContractUsageFromCsv(
+    date: DateTime,
+    contractSha1: string,
   ): Promise<DailyContractUsageRow[]>;
 }
 
 export interface DailyContractUsageClientOptions {
   queryId: number;
 
-  // if the max known input for the dune endpoint is reached we will split the
-  // contract calls into batches of these sizes.
-  contractBatchSize: number;
+  // Tables directory
+  tablesDirectoryPath: string;
 
-  // Another guessed number
-  maxKnownUsersInput: number;
+  // Load from CSV Path
+  csvDirPath: string;
 }
 
 export const DefaultDailyContractUsageClientOptions: DailyContractUsageClientOptions =
   {
-    // This default is based on this: https://dune.com/queries/2835126
-    queryId: 2835126,
+    // This default is based on this: https://dune.com/queries/3083184
+    queryId: 3083184,
 
-    contractBatchSize: 12000,
+    tablesDirectoryPath: "",
 
-    // This number is currently being guessed. That's what we've been able to
-    // achieve so far
-    maxKnownUsersInput: 5000,
+    csvDirPath: "",
   };
-
-export interface IdToAddressMap {
-  [id: number]: string;
-}
 
 export type Addresses = string[];
 
-type ContractAddressBatch = {
-  map: IdToAddressMap;
-  input: string[];
+export type DuneRawUsageItem = [
+  // eoa
+  string | null,
+  // safe
+  string | null,
+  // totalGasCostForUser - gasFees * gasPrice for each user
+  string,
+  // txCount - number of transactions
+  number,
+];
+
+export interface DuneRawRow {
+  date: string;
+  contract_id: number;
+  usage: DuneRawUsageItem[];
+}
+
+export function parseDuneContractUsageCSVRow(row: string[]): DuneRawRow {
+  // Parse the array of values from inside of the dune row
+  const usageArray = parseDuneCSVArray(row[2]);
+  const usage: DuneRawUsageItem[] = usageArray.map((u) => {
+    // Check the types
+    assert(!Array.isArray(u[0]), "eoa address should be a string");
+    assert(!Array.isArray(u[1]), "safe address should be a string");
+    assert(!Array.isArray(u[2]), "gas costs should be a string");
+    assert(!Array.isArray(u[3]), "call count should be a string");
+
+    return [
+      u[0] === "<nil>" ? null : (u[0] as string),
+      u[1] === "<nil>" ? null : (u[1] as string),
+      u[2] as string,
+      parseInt(u[3] as string),
+    ];
+  });
+  return {
+    date: row[0],
+    contract_id: parseInt(row[1]),
+    usage: usage,
+  };
+}
+
+export function transformDuneRawRowToUsageRows(
+  row: DuneRawRow,
+  contractsMap: Record<number, string>,
+): DailyContractUsageRow[] {
+  const rows = transformDuneRawRowToUsageRawRows(row);
+  return rows.map((r) => {
+    return {
+      date: r.date,
+      contractAddress: contractsMap[r.contractId],
+      userAddress: r.userAddress,
+      safeAddress: r.safeAddress,
+      gasCostGwei: r.gasCostGwei,
+      txCount: r.txCount,
+    };
+  });
+}
+
+export function transformDuneRawRowToUsageRawRows(
+  row: DuneRawRow,
+): DailyContractUsageRawRow[] {
+  const date = DateTime.fromSQL(row.date).toUTC().toISO();
+  if (date === null) {
+    throw new Error("invalid date");
+  }
+
+  // Expand raw rows into more rows
+  return row.usage.map((usage) => {
+    return {
+      date: date,
+      contractId: row.contract_id,
+      userAddress: usage[0],
+      safeAddress: usage[1],
+      gasCostGwei: usage[2],
+      txCount: usage[3],
+    };
+  });
+}
+
+type ParsedArrayValue = string | ParsedArrayValue[];
+
+export function parseDuneCSVArray(arrayString: string): ParsedArrayValue[] {
+  // Simple recursive scan to parse
+  const recursiveParser = (
+    index: number,
+    depth: number,
+  ): [ParsedArrayValue[], number] => {
+    index += 1;
+
+    const result: ParsedArrayValue[] = [];
+    let buffer = "";
+
+    while (index < arrayString.length) {
+      if (arrayString[index] == "]") {
+        if (buffer !== "") {
+          result.push(buffer);
+        }
+        return [result, index + 1];
+      }
+      if (arrayString[index] == "[") {
+        const [res, nextIndex] = recursiveParser(index, depth + 1);
+        index = nextIndex;
+        result.push(res);
+        continue;
+      }
+      if (arrayString[index] != " ") {
+        buffer += arrayString[index];
+      }
+      // We've reached the end of this string.
+      if (arrayString[index] == " " && buffer !== "") {
+        result.push(buffer);
+        buffer = "";
+      }
+      index += 1;
+    }
+    throw new Error("Invalid data. An array is unterminated");
+  };
+  return recursiveParser(0, 0)[0];
+}
+
+type ContractTableRow = {
+  id: string;
+  address: string;
 };
 
-/**
- * Mostly a private function but this should be exported so it can both be
- * tested but also used by other things in the future
- */
-export function resolveDailyContractUsage(
-  userIdToAddressMap: IdToAddressMap,
-  contractIdToAddressMap: IdToAddressMap,
-  rows: unknown[],
-): DailyContractUsageRow[] {
-  logger.debug("resolving daily contract addresses");
-  return rows.map((r) => {
-    const row = r as DailyContractUsageRawRow;
+export function loadContractsTable(path: string): Promise<ContractTableRow[]> {
+  const stream = fs.createReadStream(path);
+  const result: ContractTableRow[] = [];
 
-    // resolve the user addresses to contract addresses
-    const userIds = row.user_ids || [];
-    const resolvedAddresses = userIds.map((userId) => {
-      const addr = userIdToAddressMap[userId];
-      if (!addr) {
-        throw new Error(
-          "fatal error. user address mapping has unexpected result",
-        );
-      }
-      return addr;
-    });
-
-    const contractAddress = contractIdToAddressMap[row.contract_id];
-    if (!contractAddress) {
-      throw new Error(
-        "fatal error. contract address mapping has unexpected result",
-      );
-    }
-
-    const userAddresses = [...(row.user_addresses || []), ...resolvedAddresses];
-
-    const response: DailyContractUsageRow = {
-      date: DateTime.fromSQL(row.date).toISO()!,
-      contractAddress: contractAddress,
-      userAddresses: userAddresses,
-      contractTotalL2GasCostGwei: row.contract_total_l2_gas_cost_gwei,
-      contractTotalTxCount: row.contract_total_tx_count,
-      uniqueSafeAddressCount: row.safe_address_count,
-    };
-
-    // Copy any extra data so we can save it for later if needed
-    Object.keys(row)
-      .filter((name) => knownRawData.indexOf(name) === -1)
-      .forEach((name) => {
-        response[name] = row[name];
+  return new Promise((resolve, reject) => {
+    return stream
+      .pipe(parse({ delimiter: ",", fromLine: 2 }))
+      .on("data", (row) => {
+        result.push({
+          id: row[0],
+          address: row[1],
+        });
+      })
+      .on("error", (err) => {
+        reject(err);
+      })
+      .on("finish", () => {
+        resolve(result);
       });
-
-    return response;
   });
 }
 
@@ -156,216 +256,161 @@ export interface IDailyContractUsageResponse {
   ): Array<R>;
 }
 
-export class DailyContractUsageClient implements IDailyContractUsageClient {
+export class DailyContractUsageClient implements IDailyContractUsageClientV2 {
   private client: IDuneClient;
   private options: DailyContractUsageClientOptions;
 
   constructor(
     client: IDuneClient,
-    options: DailyContractUsageClientOptions = DefaultDailyContractUsageClientOptions,
+    options?: Partial<DailyContractUsageClientOptions>,
   ) {
     this.client = client;
-    this.options = options;
+    this.options = _.merge(DefaultDailyContractUsageClientOptions, options);
   }
 
   /**
-   * Refreshes our dune [query](https://dune.com/queries/2835126) to resolve the
-   * daily contract usage. This accepts only strings of addresses for the known
-   * users and known contracts so as to stay agnostic from the state of the
-   * database at the current time. We can then store the results (after
-   * unmapping returned ids to addresses) and reuse them if the database needs
-   * to be rebuilt from scratch. The known user addresses are expected to be in
-   * descending order of the most active addresses.
+   * Refreshes our dune [query](https://dune.com/queries/3083184) to resolve the
+   * daily contract usage. This uses a pre-uploaded version of the contract
+   * addresses that we store in this database. When the monitored contracts
+   * changes, we need to upload a new version to dune.
    *
-   * @param start
-   * @param end
-   * @param knownUserAddresses
-   * @param knownContractAddresses
+   * @param range The date range for the query execution
+   * @param contractsSha1 sha1 of the data used for the uploaded csv
    */
   async getDailyContractUsage(
-    start: DateTime,
-    end: DateTime,
-    knownUserAddresses: string[],
-    knownContractAddresses: string[],
+    range: Range,
+    contractSha1: string = "da1aae77b853fc7c74038ee08eec441b10b89570",
   ): Promise<DailyContractUsageRow[]> {
-    const userIdToAddress: { [id: number]: string } = {};
+    // Load the contracts table
+    const contractsMap = await this.loadContractsTable(contractSha1);
 
-    const knownUserAddressesInput = knownUserAddresses
-      .slice(0, this.options.maxKnownUsersInput)
-      .map((addr, i) => {
-        userIdToAddress[i] = addr;
-        return `(${i}, ${addr})`;
-      })
-      .join(",");
+    const parameters = [
+      QueryParameter.text(
+        "start_time",
+        range.startDate.toFormat("yyyy-MM-dd 00:00:00") + " UTC",
+      ),
+      QueryParameter.text(
+        "end_time",
+        range.endDate.toFormat("yyyy-MM-dd 00:00:00") + " UTC",
+      ),
+      QueryParameter.text("contracts_table", contractSha1),
+    ];
 
-    const contractBatches = this.contractAddressesToBatch(
-      knownContractAddresses,
+    logger.debug("loading from dune");
+    const response = await this.client.refresh(
+      this.options.queryId,
+      parameters,
     );
-    let rows: DailyContractUsageRow[] = [];
+    //const response = JSON.parse(await readFile('tester-123456.json', { encoding: 'utf-8' })) as Awaited<ReturnType<IDuneClient["refresh"]>>;
+    //await writeFile('tester-123456.json', JSON.stringify(response));
+    const rawRows = response.result?.rows as unknown[] as DuneRawRow[];
 
-    for (const batch of contractBatches) {
-      const parameters = [
-        QueryParameter.text("contract_addresses", batch.input.join(",")),
-        QueryParameter.text("known_user_addresses", knownUserAddressesInput),
-        QueryParameter.text(
-          "start_time",
-          start.toFormat("yyyy-MM-dd 00:00:00") + " UTC",
-        ),
-        QueryParameter.text(
-          "end_time",
-          end.toFormat("yyyy-MM-dd 00:00:00") + " UTC",
-        ),
-      ];
-      const response = await this.client.refresh(
-        this.options.queryId,
-        parameters,
-      );
-      rows = rows.concat(
-        resolveDailyContractUsage(
-          userIdToAddress,
-          batch.map,
-          response.result?.rows || [],
-        ),
-      );
+    // Split raw rows by date
+    const rowsByDay = rawRows.reduce<Record<string, DuneRawRow[]>>(
+      (acc, curr) => {
+        // Update the date value to be ISO
+        const rowsForDate = acc[curr.date] || [];
+        rowsForDate.push(curr);
+        acc[curr.date] = rowsForDate;
+        return acc;
+      },
+      {},
+    );
+
+    const sortedDates = Object.keys(rowsByDay).sort();
+    const rows: DailyContractUsageRow[] = [];
+    for (const date of sortedDates) {
+      const rawRows = rowsByDay[date];
+      rows.push(...this.expandRowsForDate(contractsMap, rawRows));
     }
 
+    // Aggregate safes. Not sure why but sometimes the data isn't being
+    // aggregated on the Dune side.
     return rows;
   }
 
-  private contractAddressesToBatch(
-    addresses: string[],
-  ): ContractAddressBatch[] {
-    const batches: ContractAddressBatch[] = [];
-    const size = this.options.contractBatchSize;
-    for (let i = 0; i < addresses.length; i += size) {
-      const batchAddrs = addresses.slice(i, i + size);
-      const map: ContractAddressBatch["map"] = {};
-      const input = batchAddrs.map((addr, j) => {
-        map[j] = addr;
-        return `(${j}, ${addr})`;
+  expandRowsForDate(
+    contractsMap: Record<number, string>,
+    rawRows: DuneRawRow[],
+  ): DailyContractUsageRow[] {
+    const usageRows: DailyContractUsageRow[] = [];
+
+    const safes: Record<string, SafeAggregate> = {};
+    for (const rawRow of rawRows) {
+      let expandedRows: DailyContractUsageRow[] = [];
+      try {
+        expandedRows = transformDuneRawRowToUsageRows(rawRow, contractsMap);
+      } catch (err) {
+        logger.error("Error collecting dune rows", err);
+        throw err;
+      }
+      for (const usageRow of expandedRows) {
+        if (usageRow.safeAddress) {
+          const address = usageRow.safeAddress.toLowerCase();
+          if (safes[address]) {
+            safes[address].add(usageRow);
+          } else {
+            safes[address] = new SafeAggregate(usageRow);
+          }
+        } else {
+          usageRows.push(usageRow);
+        }
+      }
+    }
+    for (const address in safes) {
+      const safe = safes[address];
+      usageRows.push(safe.aggregate());
+    }
+    return usageRows;
+  }
+
+  // At this time the `_contractSha1` is not needed because the available csvs already resolve the contract addresses
+  async getDailyContractUsageFromCsv(
+    date: DateTime,
+    _contractSha1: string = "da1aae77b853fc7c74038ee08eec441b10b89570",
+  ): Promise<DailyContractUsageRow[]> {
+    return this.loadCsvPath(
+      `${this.options.csvDirPath}/${date.toISODate()}.csv`,
+    );
+  }
+
+  async loadContractsTable(sha: string): Promise<Record<number, string>> {
+    const contracts = await loadContractsTable(
+      path.join(this.options.tablesDirectoryPath, `contracts-${sha}.csv`),
+    );
+
+    return contracts.reduce<Record<number, string>>((acc, curr) => {
+      const id = parseInt(curr.id);
+      acc[id] = curr.address;
+      return acc;
+    }, {});
+  }
+
+  async loadCsvPath(path: string) {
+    return new Promise<DailyContractUsageRow[]>((resolve, reject) => {
+      setImmediate(() => {
+        const rows: DailyContractUsageRow[] = [];
+        const stream = fs.createReadStream(path);
+        return stream
+          .pipe(parse({ delimiter: ",", fromLine: 1 }))
+          .on("data", (chunk) => {
+            const row: DailyContractUsageRow = {
+              date: chunk[0],
+              contractAddress: chunk[1],
+              userAddress: chunk[2] === "" ? null : chunk[2],
+              safeAddress: chunk[3] === "" ? null : chunk[3],
+              gasCostGwei: chunk[4],
+              txCount: parseInt(chunk[5], 10),
+            };
+            rows.push(row);
+          })
+          .on("error", (err) => {
+            return reject(err);
+          })
+          .on("finish", () => {
+            resolve(rows);
+          });
       });
-
-      batches.push({
-        map: map,
-        input: input,
-      });
-    }
-    return batches;
-  }
-}
-
-interface DailyContractUsageResponseRaw {
-  rows: DailyContractUsageRow[];
-  input: {
-    contractAddresses: string[];
-  };
-}
-
-type CachedDailyContractUsageResponse = Omit<
-  DailyContractUsageResponseRaw,
-  "rows"
-> & {
-  rows: CachedDailyContractUsageRow[];
-};
-
-type CachedDailyContractUsageRow = Omit<DailyContractUsageRow, "date"> & {
-  date: string;
-};
-
-export class DailyContractUsageResponse {
-  // The daily contract usage responses from dune are queried with mappings of
-  // all of our contracts that we monitor and their associated ids and some
-  // number of the top users. The difficulty is that we have limited quota from
-  // Dune so in case we delete our database and start over again we need to
-  // store exactly the id mapping we used so that we can consistently restore
-  // this data (especially while we're still building the system). This
-  // cacheable response allows for this.
-
-  private rows: DailyContractUsageRow[];
-  private _contractAddresses: string[];
-
-  private memoUniqueUserAddresses: UniqueArray<string>;
-  private memoRowsByContract: {
-    [contract: string]: DailyContractUsageRow[];
-  };
-
-  private processed: boolean;
-
-  public static async fromJSON(path: string) {
-    const raw = await fsPromises.readFile(path, {
-      encoding: "utf-8",
     });
-    const cached = JSON.parse(raw) as CachedDailyContractUsageResponse;
-    const rows: DailyContractUsageRow[] = cached.rows.map((a) => {
-      return {
-        ...a,
-      } as DailyContractUsageRow;
-    });
-
-    return new DailyContractUsageResponse(rows, cached.input.contractAddresses);
-  }
-
-  constructor(rows: DailyContractUsageRow[], contractAddresses: string[]) {
-    this.rows = rows;
-    this._contractAddresses = contractAddresses;
-    this.processed = false;
-    this.memoUniqueUserAddresses = new UniqueArray((a) => a);
-    this.memoRowsByContract = {};
-  }
-
-  // Process the rows so we can:
-  //   * resolve the userIds in the response to addresses.
-  //   * get a list of user addresses (known and unknown)
-  private processRows() {
-    this.rows.forEach((row) => {
-      // resolve the user addresses to contract addresses
-      row.userAddresses.forEach((a) => {
-        this.memoUniqueUserAddresses.push(a);
-      });
-      const contractAddressRows =
-        this.memoRowsByContract[row.contractAddress] || [];
-      contractAddressRows.push(row);
-      this.memoRowsByContract[row.contractAddress] = contractAddressRows;
-    });
-    this.processed = true;
-  }
-
-  uniqueUserAddresses(): string[] {
-    if (!this.processed) {
-      this.processRows();
-    }
-
-    return this.memoUniqueUserAddresses.items();
-  }
-
-  mapRowsByContractAddress<R>(
-    cb: (contractAddress: string, rows: DailyContractUsageRow[]) => Promise<R>,
-  ): Promise<R>[] {
-    if (!this.processed) {
-      this.processRows();
-    }
-
-    const result: Promise<R>[] = [];
-
-    for (const addr of this.contractAddresses) {
-      const rows = this.memoRowsByContract[addr] || [];
-      const r = cb(addr, rows);
-      result.push(r);
-    }
-
-    return result;
-  }
-
-  toJSON(): string {
-    return JSON.stringify({
-      rows: this.rows,
-      input: {
-        contractAddresses: this._contractAddresses,
-      },
-    } as DailyContractUsageResponseRaw);
-  }
-
-  get contractAddresses() {
-    return _.clone(this._contractAddresses);
   }
 }

@@ -5,10 +5,12 @@ import {
   ArtifactNamespace,
   ArtifactType,
   EventType,
+  EventTypeEnum,
 } from "../db/orm-entities.js";
 import { withDbDescribe } from "../db/testing.js";
 import { BatchEventRecorder, IFlusher } from "./recorder.js";
-import { generateEventTypeStrategy } from "./types.js";
+import { IncompleteEvent, generateEventTypeStrategy } from "./types.js";
+import { AppDataSource } from "../db/data-source.js";
 
 type Callback = () => void;
 
@@ -42,6 +44,7 @@ withDbDescribe("BatchEventRecorder", () => {
   it("should setup the recorder", async () => {
     const recorder = new BatchEventRecorder(
       EventRepository,
+      AppDataSource.getRepository(EventType),
       ArtifactRepository,
       flusher,
       {
@@ -49,22 +52,28 @@ withDbDescribe("BatchEventRecorder", () => {
         timeoutMs: 30000,
       },
     );
+    await recorder.loadEventTypes();
     recorder.setRange({
       startDate: DateTime.now().minus({ month: 1 }),
       endDate: DateTime.now().plus({ month: 1 }),
     });
     recorder.registerEventType(
-      EventType.COMMIT_CODE,
-      generateEventTypeStrategy(EventType.COMMIT_CODE),
+      generateEventTypeStrategy({
+        name: "COMMIT_CODE",
+        version: 1,
+      }),
     );
     recorder.setActorScope(
       [ArtifactNamespace.GITHUB],
       [ArtifactType.GITHUB_USER, ArtifactType.GIT_REPOSITORY],
     );
-    const testEvent = {
+    const testEvent: IncompleteEvent = {
       amount: Math.random(),
       time: DateTime.now(),
-      type: EventType.COMMIT_CODE,
+      type: {
+        name: "COMMIT_CODE",
+        version: 1,
+      },
       to: {
         name: "test",
         namespace: ArtifactNamespace.GITHUB,
@@ -78,9 +87,7 @@ withDbDescribe("BatchEventRecorder", () => {
       sourceId: "test123",
     };
     const record0Handle = await recorder.record(testEvent);
-    const record0Wait = recorder.wait(EventType.COMMIT_CODE);
     flusher.flush();
-    await record0Wait;
     await record0Handle.wait();
 
     // No errors should be thrown if we attempt to write twice
@@ -93,9 +100,12 @@ withDbDescribe("BatchEventRecorder", () => {
       relations: {
         to: true,
         from: true,
+        type: true,
       },
       where: {
-        type: EventType.COMMIT_CODE,
+        type: {
+          name: EventTypeEnum.COMMIT_CODE,
+        },
       },
     });
     expect(results.length).toEqual(1);
@@ -105,15 +115,18 @@ withDbDescribe("BatchEventRecorder", () => {
     expect(results[0].to.namespace).toEqual(testEvent.to.namespace);
     expect(results[0].to.type).toEqual(testEvent.to.type);
     expect(results[0].to.id).toBeDefined();
-    expect(results[0].from?.name).toEqual(testEvent.from.name);
-    expect(results[0].from?.namespace).toEqual(testEvent.from.namespace);
-    expect(results[0].from?.type).toEqual(testEvent.from.type);
+    expect(results[0].from?.name).toEqual(testEvent.from?.name);
+    expect(results[0].from?.namespace).toEqual(testEvent.from?.namespace);
+    expect(results[0].from?.type).toEqual(testEvent.from?.type);
     expect(results[0].from?.id).toBeDefined();
 
-    const outOfScopeEvent = {
+    const outOfScopeEvent: IncompleteEvent = {
       amount: Math.random(),
       time: DateTime.now(),
-      type: EventType.CONTRACT_INVOKED,
+      type: {
+        name: "CONTRACT_INVOKED",
+        version: 1,
+      },
       to: {
         name: "test",
         namespace: ArtifactNamespace.ETHEREUM,
