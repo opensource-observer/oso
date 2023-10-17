@@ -277,7 +277,7 @@ export async function configure(args: SchedulerArgs) {
     name: "dune-daily-contract-usage",
     description: "Collects github pull requests and issues",
     group: "dune",
-    schedule: "weekly",
+    schedule: "daily",
     artifactScope: [ArtifactNamespace.OPTIMISM],
     artifactTypeScope: [
       ArtifactType.CONTRACT_ADDRESS,
