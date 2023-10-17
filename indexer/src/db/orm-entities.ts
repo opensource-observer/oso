@@ -229,13 +229,6 @@ export class Event {
   @Column("float")
   amount: number;
 
-  @Column({
-    type: "numeric",
-    precision: 78,
-    default: 0,
-  })
-  size: string;
-
   @Column("jsonb", { default: {} })
   details: Record<string, any>;
 }
@@ -333,11 +326,11 @@ export class Log extends Base<"LogId"> {
   materialized: true,
   expression: `
     SELECT "toId",
-      "type",
+      "typeId",
       time_bucket(INTERVAL '1 day', "time") AS "bucketDaily",
       SUM(amount) as "amount"
     FROM "event" 
-    GROUP BY "toId", "type", "bucketDaily"
+    GROUP BY "toId", "typeId", "bucketDaily"
     WITH NO DATA;
   `,
 })
@@ -360,13 +353,13 @@ export class EventsDailyByArtifact {
   materialized: true,
   expression: `
     SELECT "projectId",
-      "type",
+      "typeId",
       time_bucket(INTERVAL '1 day', "time") AS "bucketDaily",
       SUM(amount) as "amount"
     FROM "event"
     INNER JOIN "project_artifacts_artifact"
       on "project_artifacts_artifact"."artifactId" = "event"."toId"
-    GROUP BY "projectId", "type", "bucketDaily"
+    GROUP BY "projectId", "typeId", "bucketDaily"
     WITH NO DATA;
   `,
 })
