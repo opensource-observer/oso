@@ -2,6 +2,7 @@ import json
 import pandas as pd
 from urllib.parse import urlparse
 
+from artifact_parse import Parser
 
 JSON_ATTESTATION_DATA = "data/rpgf3/indexed_attestations.json"
 
@@ -23,7 +24,6 @@ def extract_website_name(url):
     }
 
     return mapping.get(domain, domain)
-
 
 
 def tidy_dataframe(data):
@@ -78,7 +78,12 @@ def tidy_dataframe(data):
                                         'attestationType', 'attestationUrl', 'attestationDescription', 
                                         'number'])
     
+    # Extract artifact name from attestationUrl
     df['urlType'] = df['attestationUrl'].apply(extract_website_name)
+    df['artifactInfo'] = None
+    df['artifactInfo'].update(df[df['urlType'] == 'etherscan']['attestationUrl'].apply(Parser.etherscan))
+    df['artifactInfo'].update(df[df['urlType'] == 'npm']['attestationUrl'].apply(Parser.npm))
+    df['artifactInfo'].update(df[df['urlType'] == 'github']['attestationUrl'].apply(Parser.github))
 
     print(f"Created Tidy DataFrame with {len(df)} records.")
     return df
