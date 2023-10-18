@@ -17,7 +17,9 @@ def extract_website_name(url):
     mapping = {
         "x": "twitter",
         "t": "telegram",
-        "youtu": "youtube"
+        "youtu": "youtube",
+        "npmjs": "npm",
+        "npm-stat": "npm"
     }
 
     return mapping.get(domain, domain)
