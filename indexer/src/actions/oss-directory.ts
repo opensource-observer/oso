@@ -28,6 +28,8 @@ export async function importOssDirectory(
   logger.info("Upserting projects...");
   for (let i = 0; i < projects.length; i++) {
     const p = projects[i];
+    // This is not ideal but for now this will ensure the slug is normalized
+    p.slug = p.slug.toLowerCase();
     if (skipExisting && (await getProjectBySlug(p.slug))) {
       logger.info(
         `projects[${i}]: Skipping ${p.slug} because it already exists`,
@@ -49,6 +51,7 @@ export async function importOssDirectory(
   logger.info("Upserting collections...");
   for (let i = 0; i < collections.length; i++) {
     const c = collections[i];
+    c.slug = c.slug.toLowerCase();
     if (skipExisting && (await getCollectionBySlug(c.slug))) {
       logger.info(
         `collections[${i}]: Skipping ${c.slug} because it already exists`,
