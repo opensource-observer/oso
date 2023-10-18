@@ -10,6 +10,39 @@ import {
 import { DataProviderView } from "./provider-view";
 import type { CommonDataProviderProps } from "./provider-view";
 
+// TO FIX BUILDS WE ARE HARDCODING THE EVENT TYPES FOR NOW. THIS SHOULD INSTEAD
+// CALL THE DATABASE FOR THESE VALUES (AND CACHE THEM)
+const EVENT_TYPE_NAME_TO_ID: Record<string, number> = {
+  FUNDING: 1,
+  PULL_REQUEST_CREATED: 2,
+  PULL_REQUEST_MERGED: 3,
+  COMMIT_CODE: 4,
+  ISSUE_FILED: 5,
+  ISSUE_CLOSED: 6,
+  DOWNSTREAM_DEPENDENCY_COUNT: 7,
+  UPSTREAM_DEPENDENCY_COUNT: 8,
+  DOWNLOADS: 9,
+  CONTRACT_INVOKED: 10,
+  USERS_INTERACTED: 11,
+  CONTRACT_INVOKED_AGGREGATE_STATS: 12,
+  PULL_REQUEST_CLOSED: 13,
+  STAR_AGGREGATE_STATS: 14,
+  PULL_REQUEST_REOPENED: 15,
+  PULL_REQUEST_REMOVED_FROM_PROJECT: 16,
+  PULL_REQUEST_APPROVED: 17,
+  ISSUE_CREATED: 18,
+  ISSUE_REOPENED: 19,
+  ISSUE_REMOVED_FROM_PROJECT: 20,
+  STARRED: 21,
+  FORK_AGGREGATE_STATS: 22,
+  FORKED: 23,
+  WATCHER_AGGREGATE_STATS: 24,
+  CONTRACT_INVOCATION_DAILY_COUNT: 25,
+  CONTRACT_INVOCATION_DAILY_FEES: 26,
+};
+
+const EVENT_TYPE_ID_TO_NAME = _.invert(EVENT_TYPE_NAME_TO_ID);
+
 type ChartType = "areaChart" | "barList";
 type XAxis = "eventTime" | "artifact" | "eventType";
 type EntityType = "project" | "artifact";
@@ -25,7 +58,7 @@ const DEFAULT_XAXIS: XAxis = "eventType";
  * data formatters (for charts)
  **/
 type EventData = {
-  type: string;
+  typeId: number;
   id: number;
   date: string;
   amount: number;
@@ -80,7 +113,11 @@ const formatDataToAreaChart = (
   // Sum the values for each (date, artifactId, eventType)
   data.forEach((d) => {
     const dateLabel = eventTimeToLabel(d.date);
-    const category = createCategory(entityType, d.id, d.type);
+    const category = createCategory(
+      entityType,
+      d.id,
+      EVENT_TYPE_ID_TO_NAME[d.typeId],
+    );
     groupedByDate[dateLabel][category] += d.amount;
   });
   //console.log(groupedByDate);
@@ -134,7 +171,7 @@ const formatDataToBarList = (xAxis: XAxis, data: EventData[]) => {
       : xAxis === "artifact"
       ? x.id
       : xAxis === "eventType"
-      ? x.type
+      ? EVENT_TYPE_ID_TO_NAME[x.typeId]
       : assertNever(xAxis),
   );
   const summed = _.mapValues(grouped, (x) => _.sumBy(x, (x) => x.amount));
@@ -163,7 +200,7 @@ const createVariables = (props: EventDataProviderProps) => ({
   ids:
     props.ids?.map((id) => parseInt(id)).filter((id) => !!id && !isNaN(id)) ??
     [],
-  types: props.eventTypes ?? [],
+  typeIds: props.eventTypes?.map((n) => EVENT_TYPE_NAME_TO_ID[n]),
   startDate: eventTimeToLabel(props.startDate ?? 0),
   endDate: eventTimeToLabel(props.endDate),
 });
@@ -236,7 +273,7 @@ function ArtifactEventDataProvider(props: EventDataProviderProps) {
   const normalizedData: EventData[] = (
     rawData?.events_daily_by_artifact ?? []
   ).map((x) => ({
-    type: ensure<string>(x.type, "Data missing 'type'"),
+    typeId: ensure<number>(x.typeId, "Data missing 'typeId'"),
     id: ensure<number>(x.toId, "Data missing 'projectId'"),
     date: ensure<string>(x.bucketDaily, "Data missing 'bucketDaily'"),
     amount: ensure<number>(x.amount, "Data missing 'number'"),
@@ -268,7 +305,7 @@ function ProjectEventDataProvider(props: EventDataProviderProps) {
   const normalizedData: EventData[] = (
     rawData?.events_daily_by_project ?? []
   ).map((x) => ({
-    type: ensure<string>(x.type, "Data missing 'type'"),
+    typeId: ensure<number>(x.typeId, "Data missing 'type'"),
     id: ensure<number>(x.projectId, "Data missing 'projectId'"),
     date: ensure<string>(x.bucketDaily, "Data missing 'bucketDaily'"),
     amount: ensure<number>(x.amount, "Data missing 'number'"),
