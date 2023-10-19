@@ -321,10 +321,10 @@ export class GithubCommitCollector extends GithubBatchedProjectArtifactsBaseColl
             e.committer.user === null
               ? null
               : {
-                  email: e.committer.email,
-                  name: e.committer.name,
-                  login: e.committer.user.login || "",
-                },
+                email: e.committer.email,
+                name: e.committer.name,
+                login: e.committer.user.login || "",
+              },
           author: {
             email: e.author.email,
             name: e.author.name,
