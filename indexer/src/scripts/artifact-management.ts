@@ -86,6 +86,7 @@ export async function fixArtifactCasing(
       "There is currently no solution for collections without canonical names",
     );
   }
+  console.log(artifactsNonCanonical);
 
   if (artifactDupes.length === 0 && artifactsNonCanonical.length === 0) {
     console.log("");
@@ -106,6 +107,8 @@ export async function fixArtifactCasing(
     return process.exit(0);
   }
 
+  await fixAnyGitEmailsAndNames();
+
   // Fix dupes first
   if (artifactDupes.length > 0) {
     await fixArtifactDuplicates(caseInsensitiveTypes);
@@ -119,11 +122,32 @@ export async function fixArtifactCasing(
   }
 }
 
+async function fixAnyGitEmailsAndNames() {
+  // Punts on git emails by adding a prefix `unverified:email:` before the name
+  const r1 = await AppDataSource.query(`
+    update artifact a
+    set "name" = format('unverified:git:data:email:%s', a."name")
+    where a."type" = 'GIT_EMAIL' AND a."name" NOT LIKE 'unverified:git:data:%'
+  `);
+  console.log("changed names of GIT_EMAIL (that are not emails)");
+  console.log(r1);
+
+  const r2 = await AppDataSource.query(`
+    update artifact a
+    set "name" = format('unverified:git:data:name:%s', a."name")
+    where a."type" = 'GIT_NAME' AND a."name" NOT LIKE 'unverified:git:data:%'
+  `);
+
+  console.log("changed names of GIT_NAME");
+  console.log(r2);
+}
+
 async function fixNonCanonicalArtifacts(types: ArtifactType[]): Promise<void> {
   await AppDataSource.createQueryBuilder()
     .update(Artifact)
     .set({ name: () => 'lower("name")' })
     .where("type IN (:...types)", { types: types })
+    //.andWhere('lower("name") NOT IN (:...ignore)', { ignore: ignoreNames })
     .execute();
 }
 

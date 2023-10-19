@@ -94,8 +94,8 @@ export function GithubCollectorMixins<TBase extends Constructor>(Base: TBase) {
         throw new IncompleteRepoName(`unexpected url ${rawURL}`);
       }
       return {
-        owner: splitName[0],
-        repo: splitName[1],
+        owner: splitName[0].toLowerCase(),
+        repo: splitName[1].toLowerCase(),
       };
     }
 

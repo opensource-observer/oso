@@ -34,6 +34,14 @@ import {
 } from "./common.js";
 import { Batch } from "../../../scheduler/common.js";
 
+const validateEmail = (email: string) => {
+  return String(email)
+    .toLowerCase()
+    .match(
+      /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/,
+    );
+};
+
 const GET_COMMITS_FOR_MANY_REPOSITORIES = gql`
   query GetCommitsForManyRepositories(
     $searchStr: String!
@@ -511,19 +519,25 @@ export class GithubCommitCollector extends GithubBatchedProjectArtifactsBaseColl
       } else if (commit.committer?.email) {
         contributor.name = commit.committer.email;
       }
+      if (!validateEmail(contributor.name || "")) {
+        contributor.name = `unverified:git:data:email:${contributor.name}`;
+      }
       if (!contributor.name) {
         contributor.type = ArtifactType.GIT_NAME;
         // If there's still nothing we will attempt to use a name
         if (commit.author?.name) {
-          contributor.name = commit.author.name;
+          contributor.name = `unverified:git:data:name:${commit.author.name}`;
         } else if (commit.committer?.name) {
-          contributor.name = commit.committer.name;
+          contributor.name = `unverified:git:data:name:${commit.committer.name}`;
         }
         if (!contributor.name) {
           return undefined;
         }
       }
     }
+
+    // Lowercase the name being stored
+    contributor.name = contributor.name.toLowerCase();
     return contributor;
   }
 }
