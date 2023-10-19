@@ -88,7 +88,7 @@ def map_addresses_to_slugs(yaml_data, chain, lowercase=True):
     return addresses
 
 
-def map_repos_to_slugs(yaml_data):
+def map_repos_to_slugs(yaml_data, lowercase=True):
     """
     Returns a mapping of github repo urls to slugs.
     Example:
@@ -107,6 +107,8 @@ def map_repos_to_slugs(yaml_data):
         for entry in repo_entries:
             url = entry.get('url', None)
             if url:
+                if lowercase:
+                    url = url.lower()
                 repos[url] = slug
     return repos
 

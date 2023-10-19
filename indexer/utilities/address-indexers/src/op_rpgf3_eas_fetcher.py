@@ -1,7 +1,8 @@
-import csv
 import json
 import os
+import pandas as pd
 import requests
+from urllib.parse import urlparse
 
 
 from ossd import get_yaml_data_from_path, map_addresses_to_slugs, map_repos_to_slugs
@@ -15,6 +16,8 @@ ATTESTATIONS = {
 JSON_ATTESTATION_DATA = "data/rpgf3/indexed_attestations.json"
 JSON_APPLICANT_DATA = "data/rpgf3/applicant_data.json"
 CSV_OUTPUT_PATH = "data/rpgf3/applicant_data.csv"
+MATCHED_APPLICANT_DATA = "data/rpgf3/matched_applicant_data.json"
+
 
 def fetch_attestations_for_schema(schema_id, schema_name, time_created_after=0):
     url = 'https://optimism.easscan.org/graphql'
@@ -137,17 +140,26 @@ def update_json_file(schema_name_to_index):
     with open(JSON_ATTESTATION_DATA, "w") as json_file:
         json.dump(existing_data, json_file, indent=4)
 
+
 # very brittle, but works for now
 def clean_data(original_data):
+
+    project_name = original_data["data"][0]["value"]["value"]
+    project_link = original_data["data"][2]["value"]["value"]
+    json_data = original_data["data"][2].get("json_data", None)
+    if json_data is None:
+        print(f"No JSON data found for {project_name} at {project_link}.")
+        return None
+
     transformed_data = {
-        "Project Name": original_data["data"][0]["value"]["value"],  # Extract "displayName"
-        "Applicant Type": original_data["data"][2]["json_data"]["applicantType"],  # Extract "applicantType" from "applicationMetadataPtr"
+        "Project Name": project_name,  # Extract "displayName"
+        "Applicant Type": json_data["applicantType"],  # Extract "applicantType" from "applicationMetadataPtr"
         "Date": original_data["timeCreated"],  # Extract "timeCreated"
         "Attester Address": original_data["attester"],  # Extract "attester"
-        "Payout Address": original_data["data"][2]["json_data"]["payoutAddress"],  # Extract "payoutAddress" from "applicationMetadataPtr"
-        "Link": original_data["data"][2]["value"]["value"],  # Extract "applicationMetadataPtr"
-        "Tags": original_data["data"][2]["json_data"]["impactCategory"],  # Extract "impactCategory" from "applicationMetadataPtr"
-        "Github Urls": [item["url"] for item in original_data["data"][2]["json_data"]["contributionLinks"] if item["type"] == "GITHUB_REPO"]  # Extract "GITHUB_REPO" URLs from "contributionLinks" in "applicationMetadataPtr"
+        "Payout Address": json_data["payoutAddress"],  # Extract "payoutAddress" from "applicationMetadataPtr"
+        "Link": project_link,  # Extract "applicationMetadataPtr"
+        "Tags": json_data["impactCategory"],  # Extract "impactCategory" from "applicationMetadataPtr"
+        "Github Urls": [item["url"] for item in json_data["contributionLinks"] if item["type"] == "GITHUB_REPO"]  # Extract "GITHUB_REPO" URLs from "contributionLinks" in "applicationMetadataPtr"
     }
     return transformed_data
 
@@ -155,25 +167,46 @@ def clean_data(original_data):
 def check_for_ossd_membership(cleaned_data):
 
     yaml_data = get_yaml_data_from_path()
-    addresses_to_slugs = map_addresses_to_slugs(yaml_data, "optimism")
-    repos_to_slugs = map_repos_to_slugs(yaml_data)
 
-    get_owner = lambda url: url.replace("https://github.com/","").split("/")[0].lower()
-    
-    repo_owner_set = set([get_owner(repo) for repo in repos_to_slugs.keys()])
+    addresses_to_slugs = map_addresses_to_slugs(yaml_data, "optimism", lowercase=True)
     address_set = set(addresses_to_slugs.keys())
-    
+
+    get_owner = lambda url: urlparse(url).path.split('/')[1].lower() if 'github.com' in url else None
+
+    repos_to_slugs = map_repos_to_slugs(yaml_data, lowercase=True)
+    repo_owners_to_slugs = {}
+    for repo, slug in repos_to_slugs.items():
+        owner = get_owner(repo)
+        if owner is None:
+            continue
+        if owner not in repo_owners_to_slugs:
+            repo_owners_to_slugs[owner] = set()
+        repo_owners_to_slugs[owner].add(slug)
+    repo_owner_set = set(repo_owners_to_slugs.keys())
+
+    ossd_mappings = {}    
     for entry in cleaned_data:        
         
-        github_owners = set([get_owner(repo) for repo in entry['Github Urls'].split(", ")])
-        github_verified = False
-        if github_owners.intersection(repo_owner_set):
-            github_verified = True
-        
-        address_verified = False
-        if entry["Payout Address"].lower() in address_set or entry["Attester Address"].lower() in address_set:
-            address_verified = True
+        possible_slugs = []
 
+        address_verified = False
+        if entry["Payout Address"].lower() in address_set:
+            address_verified = True
+            possible_slugs = [addresses_to_slugs[entry["Payout Address"].lower()]]
+        if entry["Attester Address"].lower() in address_set:
+            address_verified = True
+            possible_slugs = [addresses_to_slugs[entry["Attester Address"].lower()]]
+        
+        github_verified = False
+        github_owners = set([get_owner(repo) for repo in entry['Github Urls'].split(", ")])
+        if None in github_owners:
+            github_owners.remove(None)
+        matching_owners = github_owners.intersection(repo_owner_set)
+        if matching_owners:
+            github_verified = True
+            if not address_verified:
+                possible_slugs = [slug for owner in matching_owners for slug in repo_owners_to_slugs[owner]]
+            
         if github_verified and address_verified:
             entry["OSS Directory"] = "Address & Github Found"
         elif github_verified:
@@ -182,12 +215,19 @@ def check_for_ossd_membership(cleaned_data):
             entry["OSS Directory"] = "Address Found"
         else:
             entry["OSS Directory"] = "Not Found"
+            continue
+        
+        if len(possible_slugs) == 1:
+            entry["Slug(s)"] = possible_slugs[0]
+        elif len(possible_slugs) > 1:
+            entry["Slug(s)"] = ", ".join(possible_slugs)
 
 
 def clean_applicant_data():
     with open(JSON_ATTESTATION_DATA, "r") as json_file:
         original_data = json.load(json_file)
     cleaned_data = [clean_data(data) for data in original_data]
+    cleaned_data = [data for data in cleaned_data if data is not None]
     with open(JSON_APPLICANT_DATA, "w") as json_file:
         json.dump(cleaned_data, json_file, indent=4)
     
@@ -198,11 +238,16 @@ def clean_applicant_data():
 
     check_for_ossd_membership(cleaned_data)
 
-    with open(CSV_OUTPUT_PATH, mode='w', newline='') as csv_file:
-        fieldnames = ["Project Name", "Applicant Type", "Date", "Attester Address", "Payout Address", "Link", "Tags", "Github Urls", "OSS Directory"]
-        writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
-        writer.writeheader()
-        writer.writerows(cleaned_data)
+    matched_data = [data for data in cleaned_data if data["OSS Directory"] != "Not Found"]
+    with open(MATCHED_APPLICANT_DATA, "w") as json_file:
+        json.dump(matched_data, json_file, indent=4)
+
+    csv_data = pd.DataFrame(cleaned_data)
+    fieldnames = ["Project Name", "Applicant Type", "Date", "Attester Address", "Payout Address", "Link", "Tags", "Github Urls", "OSS Directory"]
+    csv_data = csv_data[fieldnames]
+    csv_data.sort_values(by="Date", inplace=True)
+    csv_data.drop_duplicates(subset=["Link"], keep="last", inplace=True)
+    csv_data.to_csv(CSV_OUTPUT_PATH, index=False)
 
 
 def main():
