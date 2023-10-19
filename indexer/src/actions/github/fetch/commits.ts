@@ -74,6 +74,7 @@ const GET_COMMITS_FOR_MANY_REPOSITORIES = gql`
                   nodes {
                     ... on Commit {
                       committedDate
+                      authoredDate
                       oid
                       committer {
                         user {
@@ -145,7 +146,8 @@ type GenericCommit = {
 };
 
 type SummaryCommitInfo = {
-  commitedDate: string;
+  committedDate: string | undefined;
+  authoredDate: string | undefined;
   oid: string;
   committer: {
     user: CommitUser | null;
@@ -225,12 +227,14 @@ export class GithubCommitCollector extends GithubBatchedProjectArtifactsBaseColl
     let resultCount = 0;
     let hasNextPage = true;
 
+    const searchStr = `${repoSearchStr.join(" ")} fork:true sort:updated-desc`;
+
     // Do the summary search
     while (hasNextPage) {
       const response = (await this.rateLimitedGraphQLRequest(
         GET_COMMITS_FOR_MANY_REPOSITORIES,
         {
-          searchStr: `${repoSearchStr.join(" ")} fork:true sort:updated-desc`,
+          searchStr: searchStr,
           since: range.startDate.toUTC().toISO(),
           until: range.endDate.toUTC().toISO(),
           first: 100,
@@ -298,34 +302,44 @@ export class GithubCommitCollector extends GithubBatchedProjectArtifactsBaseColl
     repo: Artifact,
     summary: RepositorySummary,
   ): IncompleteEvent[] {
-    return summary.defaultBranchRef!.target.history.nodes.map((e) => {
-      const contributor = this.contributorFromCommit({
-        committer:
-          e.committer.user === null
-            ? null
-            : {
-                email: e.committer.email,
-                name: e.committer.name,
-                login: e.committer.user.login || "",
-              },
-        author: {
-          email: e.author.email,
-          name: e.author.name,
-          login: e.author.user?.login || "",
-        },
-      });
-      return {
-        time: DateTime.fromISO(e.commitedDate),
-        to: repo,
-        from: contributor,
-        sourceId: e.oid,
-        type: {
-          name: "COMMIT_CODE",
-          version: 1,
-        },
-        amount: 1,
-      };
-    });
+    return summary
+      .defaultBranchRef!.target.history.nodes.map((e) => {
+        const contributor = this.contributorFromCommit({
+          committer:
+            e.committer.user === null
+              ? null
+              : {
+                  email: e.committer.email,
+                  name: e.committer.name,
+                  login: e.committer.user.login || "",
+                },
+          author: {
+            email: e.author.email,
+            name: e.author.name,
+            login: e.author.user?.login || "",
+          },
+        });
+        let time = DateTime.fromISO(e.authoredDate || "");
+        if (!time.isValid) {
+          time = DateTime.fromISO(e.committedDate || "");
+        }
+        if (!time.isValid) {
+          console.log("invalid date for commit. skipping");
+          return undefined;
+        }
+        return {
+          time: time,
+          to: repo,
+          from: contributor,
+          sourceId: e.oid,
+          type: {
+            name: "COMMIT_CODE",
+            version: 1,
+          },
+          amount: 1,
+        };
+      })
+      .filter((s) => s !== undefined) as IncompleteEvent[];
   }
 
   async collect(

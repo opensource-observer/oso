@@ -144,6 +144,10 @@ const cli = yargs(hideBin(process.argv))
               .option("execution-mode", {
                 type: "string",
                 choices: ["all-at-once", "progressive"],
+              })
+              .option("reindex", {
+                type: "boolean",
+                default: false,
               });
           },
           async (args) => {
@@ -156,6 +160,7 @@ const cli = yargs(hideBin(process.argv))
                 endDate: args.endDate,
               },
               args.executionMode,
+              args.reindex,
             );
 
             logger.info(`--------------Completed manual run---------------`);

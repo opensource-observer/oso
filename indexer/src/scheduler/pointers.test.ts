@@ -11,6 +11,9 @@ import {
 import { EventPointerManager } from "./pointers.js";
 import { AppDataSource } from "../db/data-source.js";
 import { rangeFromISO, Range } from "../utils/ranges.js";
+import { jest } from "@jest/globals";
+
+jest.setTimeout(60000);
 
 withDbDescribe("EventPointerManager", () => {
   let artifact0: Artifact;
@@ -21,13 +24,12 @@ withDbDescribe("EventPointerManager", () => {
 
   beforeEach(async () => {
     // Setup the database
-    artifact0 = await ArtifactRepository.save(
-      ArtifactRepository.create({
-        name: "test0",
-        namespace: ArtifactNamespace.OPTIMISM,
-        type: ArtifactType.CONTRACT_ADDRESS,
-      }),
-    );
+    const updateArtifacts = ArtifactRepository.create({
+      name: "test0",
+      namespace: ArtifactNamespace.OPTIMISM,
+      type: ArtifactType.CONTRACT_ADDRESS,
+    });
+    artifact0 = await ArtifactRepository.save(updateArtifacts);
 
     eventPointer0 = await EventPointerRepository.save(
       EventPointerRepository.create({
@@ -125,6 +127,23 @@ withDbDescribe("EventPointerManager", () => {
     const result = await manager.getAllEventPointersForRange("test", range, [
       artifact0,
     ]);
+    expect(result.length).toBe(1);
+  });
+
+  it("should merge pointers together if the existing is larger", async () => {
+    const range = rangeFromISO("2022-01-10T00:00:00Z", "2023-01-20T00:00:00Z");
+    await manager.commitArtifactForRange("test", range, artifact0);
+
+    const totalRange = rangeFromISO(
+      "2023-01-01T00:00:00Z",
+      "2023-02-01T00:00:00Z",
+    );
+    // Check that there's only a single pointer left
+    const result = await manager.getAllEventPointersForRange(
+      "test",
+      totalRange,
+      [artifact0],
+    );
     expect(result.length).toBe(1);
   });
 

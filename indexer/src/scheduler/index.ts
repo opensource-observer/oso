@@ -54,6 +54,7 @@ export type SchedulerManualArgs = SchedulerArgs & {
   startDate: DateTime;
   endDate: DateTime;
   executionMode: ExecutionMode;
+  reindex: boolean;
 };
 
 export type SchedulerWorkerArgs = SchedulerArgs & {
