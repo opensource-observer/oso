@@ -49,16 +49,16 @@ const GET_PROJECT_BY_SLUG = gql(`
 const GET_EVENTS_DAILY_BY_ARTIFACT = gql(`
   query EventsDailyByArtifact(
     $ids: [Int!],
-    $types: [event_type_enum!],
+    $typeIds: [Int!],
     $startDate: timestamptz!,
     $endDate: timestamptz!, 
   ) {
     events_daily_by_artifact(where: {
       toId: { _in: $ids },
-      type: { _in: $types },
+      typeId: { _in: $typeIds },
       bucketDaily: { _gte: $startDate, _lte: $endDate }
     }) {
-      type
+      typeId
       toId
       bucketDaily
       amount
@@ -69,16 +69,16 @@ const GET_EVENTS_DAILY_BY_ARTIFACT = gql(`
 const GET_EVENTS_DAILY_BY_PROJECT = gql(`
   query EventsDailyByProject(
     $ids: [Int!],
-    $types: [event_type_enum!],
+    $typeIds: [Int!],
     $startDate: timestamptz!,
     $endDate: timestamptz!, 
   ) {
     events_daily_by_project(where: {
       projectId: { _in: $ids },
-      type: { _in: $types },
+      typeId: { _in: $typeIds },
       bucketDaily: { _gte: $startDate, _lte: $endDate }
     }) {
-      type
+      typeId
       projectId
       bucketDaily
       amount
@@ -89,13 +89,13 @@ const GET_EVENTS_DAILY_BY_PROJECT = gql(`
 const GET_AGGREGATES_BY_ARTIFACT = gql(`
   query GetAggregatesByArtifact(
     $ids: [Int!],
-    $types: [event_type_enum!],
+    $typeIds: [Int!],
     $startDate: timestamptz!,
     $endDate: timestamptz!,
   ) {
     event_aggregate(where: {
       toId: { _in: $ids },
-      type: { _in: $types }, 
+      typeId: { _in: $typeIds }, 
       time: { _gte: $startDate, _lte: $endDate }
     }) {
       aggregate {
@@ -125,13 +125,13 @@ const GET_AGGREGATES_BY_ARTIFACT = gql(`
 const GET_AGGREGATES_BY_PROJECT = gql(`
   query GetAggregatesByProject(
     $ids: [Int!],
-    $types: [event_type_enum!],
+    $typeIds: [Int!],
     $startDate: timestamptz!,
     $endDate: timestamptz!,
   ) {
     event_aggregate(where: {
       artifact: { project_artifacts_artifacts: { projectId: { _in: $ids } } },
-      type: { _in: $types }, 
+      typeId: { _in: $typeIds }, 
       time: { _gte: $startDate, _lte: $endDate }
     }) {
       aggregate {
