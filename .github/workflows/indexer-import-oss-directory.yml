@@ -1,0 +1,46 @@
+name: os-observer-import-oss-directory
+env:
+  DB_HOST: ${{ vars.DB_HOST }}
+  DB_PORT: ${{ vars.DB_PORT }}
+  DB_USER: ${{ vars.DB_USER }}
+  DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+  DB_DATABASE: ${{ vars.DB_DATABASE }}
+  X_GITHUB_GRAPHQL_API: ${{ vars.X_GITHUB_GRAPHQL_API }}
+  X_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  DUNE_API_KEY: ${{ secrets.DUNE_API_KEY }}
+
+# Trigger the workflow when:
+on:
+  workflow_dispatch:
+  # Allows you to run this workflow manually from the Actions tab
+  schedule:
+    # Schedule every other hour
+    - cron: '0 */2 * * *'
+
+jobs:
+  fetch-data:
+    # NOTE: This name appears in GitHub's Checks API.
+    name: fetch-data
+    environment: indexer
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 1
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+          run_install: |
+            - recursive: true
+              args: [--frozen-lockfile, --strict-peer-dependencies]
+      - name: Set up Node.js 18
+        uses: actions/setup-node@v3
+        with:
+          cache: "pnpm"
+          node-version: "18.x"
+      - name: Build
+        run: pnpm build:indexer
+      - name: Run
+        run: pnpm start:indexer importOssDirectory

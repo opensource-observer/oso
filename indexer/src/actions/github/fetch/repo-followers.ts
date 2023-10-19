@@ -483,7 +483,7 @@ export class GithubFollowingCollector extends GithubByProjectBaseCollector {
       type: ArtifactType.GIT_REPOSITORY,
       namespace: ArtifactNamespace.GITHUB,
     };
-    const startOfDay = DateTime.now().startOf("day");
+    const startOfDay = DateTime.now().toUTC().startOf("day");
     const watchersCount = response.repository.watchers.totalCount;
 
     logger.debug("recording watcher stats for today");
@@ -512,7 +512,7 @@ export class GithubFollowingCollector extends GithubByProjectBaseCollector {
     forkCount: number,
     range: Range,
   ) {
-    const startOfDay = DateTime.now().startOf("day");
+    const startOfDay = DateTime.now().toUTC().startOf("day");
 
     const recordHandles: RecordHandle[] = [];
 
@@ -561,6 +561,9 @@ export class GithubFollowingCollector extends GithubByProjectBaseCollector {
     // If we have more forks than 100 we need to make some additional queries to gather information
     logger.debug("loading fork history");
     for await (const fork of this.loadAllForksHistory(repo, range)) {
+      if (DateTime.fromISO(fork.createdAt) < range.startDate) {
+        break;
+      }
       recordHandles.push(await recordForkedEvent(fork));
     }
 

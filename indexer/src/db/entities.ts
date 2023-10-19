@@ -231,10 +231,16 @@ async function ossCreateGitHubArtifacts(
   const data = parsedRepos.map((p) => ({
     type: ArtifactType.GIT_REPOSITORY,
     namespace: ArtifactNamespace.GITHUB,
-    name: ensure<string>(p?.slug, `Invalid parsed GitHub URL: ${p}`),
-    url: ensure<string>(p?.url, `Invalid parsed GitHub URL: ${p}`),
+    name: ensure<string>(
+      p?.slug.toLowerCase(),
+      `Invalid parsed GitHub URL: ${p}`,
+    ),
+    url: ensure<string>(
+      p?.url.toLowerCase(),
+      `Invalid parsed GitHub URL: ${p}`,
+    ),
   }));
-  const slugs = filterFalsy(parsedRepos.map((p) => p?.slug));
+  const slugs = filterFalsy(parsedRepos.map((p) => p?.slug.toLowerCase()));
 
   const newArtifacts = Artifact.create(data);
   logger.debug("Upserting artifacts");
@@ -272,10 +278,10 @@ async function ossCreateNpmArtifacts(urlObjects?: URL[]) {
   const data = parsed.map((p) => ({
     type: ArtifactType.NPM_PACKAGE,
     namespace: ArtifactNamespace.NPM_REGISTRY,
-    name: ensure<string>(p?.slug, `Invalid parsed npm URL: ${p}`),
+    name: ensure<string>(p?.slug.toLowerCase(), `Invalid parsed npm URL: ${p}`),
     url: ensure<string>(p?.url, `Invalid parsed npm URL: ${p}`),
   }));
-  const slugs = filterFalsy(parsed.map((p) => p?.slug));
+  const slugs = filterFalsy(parsed.map((p) => p?.slug.toLowerCase()));
 
   // Create records
   const result = await ArtifactRepository.upsertMany(data);
@@ -306,25 +312,33 @@ async function ossCreateBlockchainArtifacts(addrObjects?: BlockchainAddress[]) {
     return safeCast<Artifact[]>([]);
   }
 
+  const typeMap: { [key: string]: ArtifactType } = {
+    eoa: ArtifactType.EOA_ADDRESS,
+    safe: ArtifactType.SAFE_ADDRESS,
+    factory: ArtifactType.FACTORY_ADDRESS,
+    contract: ArtifactType.CONTRACT_ADDRESS,
+  };
+  const typeResolutionOrder = ["eoa", "safe", "factory", "contract"];
+  const typeResolver = (tags: string[]) => {
+    for (const type of typeResolutionOrder) {
+      if (tags.indexOf(type) !== -1) {
+        return typeMap[type];
+      }
+    }
+    return typeMap["eoa"];
+  };
+
   const data = addrObjects.flatMap((o) => {
     return o.networks.map((network) => {
       return {
-        type:
-          o.tags.indexOf("eoa") !== -1
-            ? ArtifactType.EOA_ADDRESS
-            : o.tags.indexOf("safe") !== -1
-            ? ArtifactType.SAFE_ADDRESS
-            : o.tags.indexOf("factory") !== -1
-            ? ArtifactType.FACTORY_ADDRESS
-            : o.tags.indexOf("contract") !== -1
-            ? ArtifactType.CONTRACT_ADDRESS
-            : ArtifactType.EOA_ADDRESS,
+        type: typeResolver(o.tags),
         // Hacky solution for now. We should we address after the typeorm migration
         namespace:
           network === "optimism"
             ? ArtifactNamespace.OPTIMISM
             : ArtifactNamespace.ETHEREUM,
-        name: o.address,
+        // Normalize the addresses to lowercase
+        name: o.address.toLowerCase(),
       };
     });
   });
@@ -413,7 +427,7 @@ async function upsertGitHubRepo(slug: string, url: string) {
   return await upsertArtifact({
     type: ArtifactType.GIT_REPOSITORY,
     namespace: ArtifactNamespace.GITHUB,
-    name: slug,
+    name: slug.toLowerCase(),
     url,
   });
 }

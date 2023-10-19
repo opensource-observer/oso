@@ -1,5 +1,5 @@
 import { AppDataSource } from "./data-source.js";
-import { Artifact, EventType, Event } from "./orm-entities.js";
+import { Artifact, EventType, Event, ArtifactType } from "./orm-entities.js";
 import { DeepPartial } from "typeorm";
 import { Range } from "../utils/ranges.js";
 
@@ -14,6 +14,50 @@ export const ArtifactRepository = AppDataSource.getRepository(Artifact).extend({
       conflictPaths: ["namespace", "name"],
       upsertType: "on-conflict-do-update",
     });
+  },
+  async nonCanonical(types: ArtifactType[]) {
+    const sumString =
+      'SUM(CASE WHEN LOWER(a."name") = a."name" THEN 0 ELSE 1 END)';
+    return (await this.manager
+      .createQueryBuilder()
+      .select()
+      .addSelect('a."name"', "name")
+      .addSelect('a."namespace"', "namespace")
+      .addSelect('a."type"', "type")
+      .addSelect(sumString, "nonCanonicalCount")
+      .from(Artifact, "a")
+      .where("a.type IN (:...types)", { types: types })
+      .groupBy("1,2,3")
+      .having(`${sumString} > 0`)
+      .getRawMany()) as {
+      name: string;
+      namespace: string;
+      type: string;
+      nonCanonicalCount: number;
+    }[];
+  },
+  async duplicates(types: ArtifactType[]) {
+    return (await this.manager
+      .createQueryBuilder()
+      .select()
+      .addSelect('lower(a."name")', "name")
+      .addSelect('a."namespace"', "namespace")
+      .addSelect('a."type"', "type")
+      .addSelect('count(a."id")', "count")
+      .addSelect('array_agg(a."id")', "ids")
+      .addSelect('array_agg(a."name")', "names")
+      .from(Artifact, "a")
+      .where("a.type IN (:...types)", { types: types })
+      .groupBy("1,2,3")
+      .having('count(a."id") > 1')
+      .getRawMany()) as {
+      name: string;
+      namespace: string;
+      type: string;
+      count: number;
+      ids: number[];
+      names: string[];
+    }[];
   },
   async mostFrequentContributors(range: Range, eventTypes: EventType[]) {
     const response = (await this.manager

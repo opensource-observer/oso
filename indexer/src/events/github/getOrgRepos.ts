@@ -48,6 +48,7 @@ const getOrgRepos = gql`
         edges {
           node {
             nameWithOwner
+            isFork
             url
             name
           }
@@ -109,6 +110,7 @@ export interface Repository {
   nameWithOwner: string;
   url: string;
   name: string;
+  isFork: boolean;
 }
 
 export async function getOwnerRepos(ownerName: string): Promise<Repository[]> {
