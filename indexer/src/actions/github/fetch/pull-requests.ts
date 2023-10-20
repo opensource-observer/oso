@@ -589,7 +589,7 @@ export class GithubIssueCollector extends GithubByProjectBaseCollector {
     if (issue.author !== null && issue.author !== undefined) {
       if (issue.author.login !== "") {
         contributor = {
-          name: issue.author.login,
+          name: issue.author.login.toLowerCase(),
           namespace: ArtifactNamespace.GITHUB,
           type: ArtifactType.GITHUB_USER,
         };
@@ -704,7 +704,7 @@ export class GithubIssueCollector extends GithubByProjectBaseCollector {
       const contributor: IncompleteArtifact | undefined =
         review.author && review.author.login !== ""
           ? {
-              name: review.author.login,
+              name: review.author.login.toLowerCase(),
               namespace: ArtifactNamespace.GITHUB,
               type: ArtifactType.GITHUB_USER,
             }
@@ -755,7 +755,7 @@ export class GithubIssueCollector extends GithubByProjectBaseCollector {
       const contributor: IncompleteArtifact | undefined =
         event.actor && event.actor.login !== ""
           ? {
-              name: event.actor.login,
+              name: event.actor.login.toLowerCase(),
               namespace: ArtifactNamespace.GITHUB,
               type: ArtifactType.GITHUB_USER,
             }

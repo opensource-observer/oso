@@ -329,7 +329,7 @@ export class GithubFollowingCollector extends GithubByProjectBaseCollector {
       const contributor =
         starring.node && starring.node.login !== ""
           ? {
-              name: starring.node.login,
+              name: starring.node.login.toLowerCase(),
               namespace: ArtifactNamespace.GITHUB,
               type: ArtifactType.GITHUB_USER,
             }
