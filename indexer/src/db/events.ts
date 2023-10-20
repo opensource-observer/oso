@@ -1,6 +1,8 @@
 import {
   And,
   DeepPartial,
+  FindOperator,
+  FindOptionsWhere,
   In,
   LessThanOrEqual,
   MoreThanOrEqual,
@@ -11,6 +13,8 @@ import type { Brand } from "utility-types";
 import { EventPointer, Event, EventType } from "./orm-entities.js";
 import { Range } from "../utils/ranges.js";
 import { DateTime } from "luxon";
+import { logger } from "../utils/logger.js";
+import { GenericError } from "../common/errors.js";
 
 export const EventPointerRepository = AppDataSource.getRepository(
   EventPointer,
@@ -44,6 +48,9 @@ export type EventRef = Pick<Event, "id" | "sourceId" | "type">;
 
 export type BulkUpdateBySourceIDEvent = DeepPartial<Event> &
   Pick<Event, "time" | "sourceId" | "type">;
+
+export class BulkUpdateError extends GenericError {}
+class BulkUpdateDeletionRecordsMismatch extends GenericError {}
 
 export const EventRepository = AppDataSource.getRepository(Event).extend({
   async bulkUpdateBySourceIDAndType(events: BulkUpdateBySourceIDEvent[]) {
@@ -81,39 +88,70 @@ export const EventRepository = AppDataSource.getRepository(Event).extend({
         },
       },
     );
-
-    console.log(summary.types);
     if (Object.keys(summary.types).length !== 1) {
-      throw new Error("bulk update requires event types have the same type");
+      throw new BulkUpdateError(
+        "bulk update requires event types have the same type",
+      );
     }
 
-    // This should likely be refactored eventually as this is likely slow
-    return this.manager.transaction(async (manager) => {
-      const repo = manager.withRepository(this);
+    const updateTransaction = async (
+      queryRange: FindOperator<Date> | undefined,
+    ) => {
+      return await this.manager.transaction(async (manager) => {
+        const repo = manager.withRepository(this);
 
-      // Delete all of the events within the specific time range and with the specific sourceIds
-      const deleteResult = await repo.delete({
-        time: And(
-          MoreThanOrEqual(summary.range.startDate.toJSDate()),
-          LessThanOrEqual(summary.range.endDate.toJSDate()),
-        ),
-        sourceId: In(summary.sourceIds),
-        type: {
-          id: events[0].type.id,
-        },
+        // Delete all of the events within the specific time range and with the specific sourceIds
+        logger.debug(`deleting ${events.length} event(s) in transaction`);
+        const whereOptions: FindOptionsWhere<Event> = {
+          sourceId: In(summary.sourceIds),
+          type: {
+            id: events[0].type.id,
+          },
+        };
+        if (queryRange) {
+          whereOptions.time = queryRange;
+        }
+        const deleteResult = await repo.delete(whereOptions);
+        if (!deleteResult.affected) {
+          throw new BulkUpdateError(
+            "the deletion should have effected the expected number of rows. no deletions recorded",
+          );
+        }
+        if (deleteResult.affected !== summary.sourceIds.length) {
+          throw new BulkUpdateDeletionRecordsMismatch(
+            `the deletion should have effected ${summary.sourceIds.length}. Only deleted ${deleteResult.affected}`,
+          );
+        }
+
+        logger.debug(`reinserting ${events.length} event(s) in transaction`);
+        return await repo.insert(events);
       });
-      if (!deleteResult.affected) {
-        throw new Error(
-          "the deletion should have effected the expected number of rows. no deletions recorded",
-        );
-      }
-      if (deleteResult.affected !== summary.sourceIds.length) {
-        throw new Error(
-          "the deletion should have effected the expected number of rows",
-        );
-      }
+    };
 
-      return await repo.insert(events);
-    });
+    // All a retry with the range Give a larger range in case event dates
+    // changed (either we got it wrong our our definitions or data changed).
+    // There's retry logic to allow for more but this should hopefully cover 95%
+    // of cases
+    let rangeToUse: FindOperator<Date> | undefined = And(
+      MoreThanOrEqual(summary.range.startDate.minus({ months: 3 }).toJSDate()),
+      LessThanOrEqual(summary.range.endDate.plus({ months: 3 }).toJSDate()),
+    );
+    for (let i = 0; i < 2; i++) {
+      try {
+        return await updateTransaction(rangeToUse);
+      } catch (err) {
+        if (err instanceof BulkUpdateDeletionRecordsMismatch) {
+          logger.debug(
+            "failed to do bulk update due to unexpected affected records. retrying without time range constraint",
+          );
+          rangeToUse = undefined;
+        } else {
+          throw err;
+        }
+      }
+    }
+    throw new BulkUpdateError(
+      `failed to update ${events.length} existing event(s)`,
+    );
   },
 });

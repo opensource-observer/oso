@@ -170,6 +170,10 @@ const cli = yargs(hideBin(process.argv))
               `       ${execSummary.artifactSummaries.length} artifacts committed`,
             );
             if (execSummary.errors.length > 0) {
+              for (const err of execSummary.errors) {
+                logger.info(err);
+                logger.error(err);
+              }
               process.exit(1);
             }
           },

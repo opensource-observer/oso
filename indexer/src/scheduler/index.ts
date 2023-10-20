@@ -189,7 +189,7 @@ export async function configure(args: SchedulerArgs) {
         gh,
         recorder,
         cache,
-        900,
+        500,
       );
       return collector;
     },

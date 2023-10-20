@@ -27,7 +27,7 @@ import {
   EventType,
 } from "./orm-entities.js";
 
-const loggingOption: LoggerOptions = DEBUG_DB ? ["query", "error"] : false;
+const loggingOption: LoggerOptions = DEBUG_DB ? "all" : false;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const dynamicallyLoadedDataSource: DataSourceOptions = {

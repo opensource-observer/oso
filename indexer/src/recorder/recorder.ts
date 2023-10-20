@@ -38,6 +38,8 @@ import { EventRef, EventRepository } from "../db/events.js";
 import { RecordResponse } from "./types.js";
 import { AsyncResults } from "../utils/async-results.js";
 import { Brand } from "utility-types";
+import { ensure, ensureNumber, ensureString } from "../utils/common.js";
+import { setTimeout as asyncTimeout } from "node:timers/promises";
 
 export interface BatchEventRecorderOptions {
   maxBatchSize: number;
@@ -267,7 +269,7 @@ export class RecorderEvent implements IRecorderEvent {
   private _amount: number;
   private _details: object;
 
-  constructor(
+  private constructor(
     id: number | null,
     time: DateTime,
     type: IRecorderEventType,
@@ -288,7 +290,7 @@ export class RecorderEvent implements IRecorderEvent {
   }
 
   static fromIncompleteEvent(event: IncompleteEvent) {
-    return new RecorderEvent(
+    const e = new RecorderEvent(
       null,
       event.time,
       event.type,
@@ -298,6 +300,14 @@ export class RecorderEvent implements IRecorderEvent {
       event.amount,
       event.details,
     );
+    try {
+      e.ensureIsValid();
+    } catch (err) {
+      logger.debug(`errors converting IncompleteEvent to a RecorderEvent`);
+      logger.error(err);
+      throw err;
+    }
+    return e;
   }
 
   static fromDBEvent(event: Event) {
@@ -365,6 +375,18 @@ export class RecorderEvent implements IRecorderEvent {
 
   get details(): object {
     return this._details;
+  }
+
+  ensureIsValid() {
+    ensureNumber(this._amount);
+    ensureString(this._sourceId);
+    ensure<IncompleteArtifact>(this._to, "artifact for `to` must be defined");
+    if (!this._time.isValid) {
+      throw new Error("record date is invalid");
+    }
+    if (this._sourceId === "") {
+      throw new Error("sourceId cannot be empty");
+    }
   }
 }
 
@@ -592,7 +614,7 @@ export class BatchEventRecorder implements IEventRecorder {
     }
 
     if (!this.knownEventsStorageForType(eventType).loaded) {
-      logger.debug(`Loading existing events for ${eventType} (if any)`);
+      logger.debug(`loading existing events for ${eventType} (if any)`);
       // find all of the events that need for a given time range
       const strategy = this.getEventTypeStrategy(eventType);
       const where = strategy.all(this.actorDirectory);
@@ -793,6 +815,8 @@ export class BatchEventRecorder implements IEventRecorder {
         const eventType = this.getEventTypeFromString(eventTypeName);
         await this.flushType(eventType);
       } catch (err) {
+        logger.debug("cauth some flush errors");
+        logger.error(err);
         this.emitter.emit("error", err);
       }
     }
@@ -906,8 +930,17 @@ export class BatchEventRecorder implements IEventRecorder {
     let duplicateAction = "skipping";
     // Filter duplicates
     for (const event of processing) {
+      // Ignore events outside the range of events
+      if (
+        !isWithinRange(this.range!, event.time) &&
+        this.recorderOptions.overwriteExistingEvents
+      ) {
+        logger.debug("received event out of range. skipping");
+        this.notifySuccess([event]);
+        continue;
+      }
       // For now we ignore events outside the range we're recording and any known events.
-      if (!this.isKnownEvent(event) && isWithinRange(this.range!, event.time)) {
+      if (!this.isKnownEvent(event)) {
         queuedArtifacts.push(event.to);
         if (event.from) {
           queuedArtifacts.push(event.from);
@@ -960,7 +993,10 @@ export class BatchEventRecorder implements IEventRecorder {
         const events = await this.createEventsFromRecorderEvent(batch);
 
         try {
-          const result = await this.eventRepository.insert(events);
+          logger.debug("about to update?");
+          const result = await this.retryDbCall(() => {
+            return this.eventRepository.insert(events);
+          });
           if (result.identifiers.length !== batchLength) {
             throw new RecorderError(
               `recorder writes failed. Expected ${batchLength} writes but only received ${result.identifiers.length}`,
@@ -972,6 +1008,7 @@ export class BatchEventRecorder implements IEventRecorder {
           );
         } catch (err) {
           logger.error("encountered an error writing to the database");
+          logger.debug(typeof err);
           logger.error(err);
           if (err instanceof QueryFailedError) {
             if (err.message.indexOf("duplicate") !== -1) {
@@ -993,9 +1030,12 @@ export class BatchEventRecorder implements IEventRecorder {
         const events = await this.createEventsFromRecorderEvent(batch);
 
         try {
-          await this.eventRepository.bulkUpdateBySourceIDAndType(events);
+          await this.retryDbCall(() => {
+            return this.eventRepository.bulkUpdateBySourceIDAndType(events);
+          });
           this.notifySuccess(batch);
         } catch (err) {
+          logger.debug("error writing updates to db");
           logger.error("encountered an error updating to the database");
           logger.error(err);
           if (err instanceof QueryFailedError) {
@@ -1011,6 +1051,29 @@ export class BatchEventRecorder implements IEventRecorder {
       },
     );
     logger.info(`finished flushing for ${eventType}`);
+  }
+
+  protected async retryDbCall<T>(cb: () => Promise<T>): Promise<T> {
+    let timeoutMs = 100;
+    for (let i = 0; i < 10; i++) {
+      try {
+        return await cb();
+      } catch (err) {
+        if (i === 4) {
+          throw err;
+        }
+        if (err === undefined) {
+          logger.debug(
+            `received an undefined error from the database. sleeping then retrying`,
+          );
+          await asyncTimeout(timeoutMs);
+          timeoutMs += timeoutMs;
+        } else {
+          throw err;
+        }
+      }
+    }
+    throw new RecorderError(`maximum retries for database call reached.`);
   }
 
   protected notifySuccess(events: IRecorderEvent[]) {
