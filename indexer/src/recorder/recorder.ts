@@ -879,8 +879,7 @@ export class BatchEventRecorder implements IEventRecorder {
     }
 
     logger.info(
-      `emptying queue for ${eventType.toString()} with ${
-        eventTypeStorage.length
+      `emptying queue for ${eventType.toString()} with ${eventTypeStorage.length
       } items`,
     );
     const processing = eventTypeStorage.popAll();
@@ -961,8 +960,7 @@ export class BatchEventRecorder implements IEventRecorder {
     }
 
     logger.debug(
-      `${duplicateAction} ${
-        processing.length - newEvents.length
+      `${duplicateAction} ${processing.length - newEvents.length
       } existing events`,
     );
 
