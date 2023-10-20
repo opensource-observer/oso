@@ -54,6 +54,7 @@ export type SchedulerManualArgs = SchedulerArgs & {
   startDate: DateTime;
   endDate: DateTime;
   executionMode: ExecutionMode;
+  reindex: boolean;
 };
 
 export type SchedulerWorkerArgs = SchedulerArgs & {
@@ -188,7 +189,7 @@ export async function configure(args: SchedulerArgs) {
         gh,
         recorder,
         cache,
-        900,
+        500,
       );
       return collector;
     },

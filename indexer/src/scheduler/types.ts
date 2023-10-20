@@ -740,6 +740,7 @@ export class BaseScheduler implements IScheduler {
     collectorName: string,
     range: Range,
     mode: ExecutionMode = "all-at-once",
+    reindex: boolean = false,
   ) {
     if (range.startDate >= range.endDate) {
       throw new Error(`invalid input range ${rangeToString(range)}`);
@@ -747,14 +748,14 @@ export class BaseScheduler implements IScheduler {
     logger.debug(`starting ${collectorName} in ${mode}`);
     const reg = this.collectors[collectorName];
     if (mode === "all-at-once") {
-      return this.executeForRange(reg, range);
+      return this.executeForRange(reg, range, reindex);
     } else {
       // Execute range by day
       const ranges = rangeSplit(range, "day");
 
       const summaries: ExecutionSummary[] = [];
       for (const pullRange of ranges) {
-        const result = await this.executeForRange(reg, pullRange);
+        const result = await this.executeForRange(reg, pullRange, reindex);
         summaries.push(result);
       }
       const summary = summaries.reduce<ExecutionSummary>(
@@ -772,7 +773,11 @@ export class BaseScheduler implements IScheduler {
     }
   }
 
-  async executeForRange(collectorReg: CollectorRegistration, range: Range) {
+  async executeForRange(
+    collectorReg: CollectorRegistration,
+    range: Range,
+    reindex: boolean,
+  ) {
     const recorder = await this.newRecorder();
     recorder.setActorScope(
       collectorReg.artifactScope,
@@ -823,6 +828,11 @@ export class BaseScheduler implements IScheduler {
     logger.info(
       `--------------------------------------------------------------`,
     );
+    if (reindex) {
+      logger.info(
+        `-------------------------REINDEXING---------------------------`,
+      );
+    }
 
     // Get a list of the monitored artifacts
     for await (const group of collector.groupedArtifacts()) {
@@ -831,11 +841,13 @@ export class BaseScheduler implements IScheduler {
 
       // Determine anything missing from this group
       const groupName = await group.name();
-      const missing = await this.findMissingArtifactsFromEventPointers(
-        range,
-        artifacts,
-        collectorReg.name,
-      );
+      const missing = reindex
+        ? artifacts
+        : await this.findMissingArtifactsFromEventPointers(
+            range,
+            artifacts,
+            collectorReg.name,
+          );
 
       const committer = ArtifactRecordsCommitmentWrapper.setup(
         collectorReg.name,

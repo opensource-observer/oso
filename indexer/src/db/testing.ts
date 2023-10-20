@@ -13,6 +13,7 @@ export async function clearDb() {
     );
     throw new Error("clearing the database is not allowed");
   }
+
   const c = await initializeOnce();
   const entities = c.entityMetadatas;
   for (const entity of entities) {
@@ -49,7 +50,13 @@ export function withDbDescribe(...args: DESCRIBE_PARAMS) {
   if (ENABLE_DB_TESTS) {
     describe(`Database setup for ${args[0]}: ${id}`, () => {
       beforeEach(async () => {
-        await clearDb();
+        try {
+          await clearDb();
+        } catch (err) {
+          // eslint-disable-next-line no-restricted-properties
+          console.error(err);
+          throw err;
+        }
       });
 
       afterAll(async () => {
@@ -75,12 +82,9 @@ export function withDbIt(...args: IT_PARAMS) {
   }
 }
 
-export let isDbInitialized = false;
-
 export async function initializeOnce() {
-  if (!isDbInitialized) {
-    isDbInitialized = true;
-    return await AppDataSource.initialize();
+  if (AppDataSource.isInitialized) {
+    await AppDataSource.destroy();
   }
-  return AppDataSource;
+  return await AppDataSource.initialize();
 }

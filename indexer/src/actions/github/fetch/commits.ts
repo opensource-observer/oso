@@ -74,6 +74,7 @@ const GET_COMMITS_FOR_MANY_REPOSITORIES = gql`
                   nodes {
                     ... on Commit {
                       committedDate
+                      authoredDate
                       oid
                       committer {
                         user {
@@ -145,7 +146,8 @@ type GenericCommit = {
 };
 
 type SummaryCommitInfo = {
-  commitedDate: string;
+  committedDate: string | undefined;
+  authoredDate: string | undefined;
   oid: string;
   committer: {
     user: CommitUser | null;
@@ -220,26 +222,42 @@ export class GithubCommitCollector extends GithubBatchedProjectArtifactsBaseColl
 
     const repoSearchStr = Object.keys(repoMap).map((n) => `repo:${n}`);
 
-    let cursor = "";
-
     let resultCount = 0;
-    let hasNextPage = true;
+
+    const searchStr = `${repoSearchStr.join(" ")} fork:true sort:updated-desc`;
 
     // Do the summary search
-    while (hasNextPage) {
-      const response = (await this.rateLimitedGraphQLRequest(
-        GET_COMMITS_FOR_MANY_REPOSITORIES,
-        {
-          searchStr: `${repoSearchStr.join(" ")} fork:true sort:updated-desc`,
-          since: range.startDate.toUTC().toISO(),
-          until: range.endDate.toUTC().toISO(),
-          first: 100,
-          cursor: cursor === "" ? undefined : cursor,
-        },
-      )) as RespositorySummariesResponse;
+    const pages = this.cache.loadCachedOrRetrieve<RespositorySummariesResponse>(
+      TimeSeriesCacheLookup.new(
+        `${this.options.cacheOptions.bucket}/summaries`,
+        repoSearchStr,
+        range,
+      ),
+      async (missing, lastPage) => {
+        const response = (await this.rateLimitedGraphQLRequest(
+          GET_COMMITS_FOR_MANY_REPOSITORIES,
+          {
+            searchStr: searchStr,
+            since: missing.range.startDate.toUTC().toISO(),
+            until: missing.range.endDate.toUTC().toISO(),
+            first: 100,
+            cursor:
+              lastPage?.cursor !== undefined ? lastPage.cursor : undefined,
+          },
+        )) as RespositorySummariesResponse;
+        const hasNextPage = response.search.pageInfo.hasNextPage;
+        const cursor = response.search.pageInfo.endCursor;
+        return {
+          raw: response,
+          cacheRange: missing.range,
+          cursor: cursor,
+          hasNextPage: hasNextPage,
+        };
+      },
+    );
 
-      resultCount += response.search.nodes.length;
-
+    for await (const page of pages) {
+      const response = page.raw;
       for (const summary of response.search.nodes) {
         const repoName = summary.nameWithOwner.toLowerCase();
         const repo = repoMap[repoName];
@@ -261,6 +279,7 @@ export class GithubCommitCollector extends GithubBatchedProjectArtifactsBaseColl
           };
         }
         const totalCount = summary.defaultBranchRef!.target.history.totalCount;
+        resultCount += totalCount;
         // Ignore things that are forks
         if (totalCount === 0 || summary.isFork) {
           results.unchanged.push(repo);
@@ -273,9 +292,6 @@ export class GithubCommitCollector extends GithubBatchedProjectArtifactsBaseColl
           });
         }
       }
-
-      hasNextPage = response.search.pageInfo.hasNextPage;
-      cursor = response.search.pageInfo.endCursor;
     }
     logger.debug(`Results in github commits summary ${resultCount}`);
     const repoMapLen = Object.keys(repoMap).length;
@@ -298,34 +314,50 @@ export class GithubCommitCollector extends GithubBatchedProjectArtifactsBaseColl
     repo: Artifact,
     summary: RepositorySummary,
   ): IncompleteEvent[] {
-    return summary.defaultBranchRef!.target.history.nodes.map((e) => {
-      const contributor = this.contributorFromCommit({
-        committer:
-          e.committer.user === null
-            ? null
-            : {
-                email: e.committer.email,
-                name: e.committer.name,
-                login: e.committer.user.login || "",
-              },
-        author: {
-          email: e.author.email,
-          name: e.author.name,
-          login: e.author.user?.login || "",
-        },
-      });
-      return {
-        time: DateTime.fromISO(e.commitedDate),
-        to: repo,
-        from: contributor,
-        sourceId: e.oid,
-        type: {
-          name: "COMMIT_CODE",
-          version: 1,
-        },
-        amount: 1,
-      };
-    });
+    return summary
+      .defaultBranchRef!.target.history.nodes.map((e) => {
+        const contributor = this.contributorFromCommit({
+          committer:
+            e.committer.user === null
+              ? null
+              : {
+                  email: e.committer.email,
+                  name: e.committer.name,
+                  login: e.committer.user.login || "",
+                },
+          author: {
+            email: e.author.email,
+            name: e.author.name,
+            login: e.author.user?.login || "",
+          },
+        });
+
+        // Committed date is the date it was pushed to the repo. As opposed to
+        // the day it was written. This is likely more important however we'll
+        // make some decisions on this later. Pragmatically this is good enough
+        // and is more consistent with the `updatedAt` filtering that this
+        // collector utilizes.
+        let time = DateTime.fromISO(e.committedDate || "");
+        if (!time.isValid) {
+          time = DateTime.fromISO(e.authoredDate || "");
+        }
+        if (!time.isValid) {
+          logger.debug("invalid date for commit. skipping");
+          return undefined;
+        }
+        return {
+          time: time,
+          to: repo,
+          from: contributor,
+          sourceId: e.oid,
+          type: {
+            name: "COMMIT_CODE",
+            version: 1,
+          },
+          amount: 1,
+        };
+      })
+      .filter((s) => s !== undefined) as IncompleteEvent[];
   }
 
   async collect(

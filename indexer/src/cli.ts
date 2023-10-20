@@ -144,6 +144,10 @@ const cli = yargs(hideBin(process.argv))
               .option("execution-mode", {
                 type: "string",
                 choices: ["all-at-once", "progressive"],
+              })
+              .option("reindex", {
+                type: "boolean",
+                default: false,
               });
           },
           async (args) => {
@@ -156,6 +160,7 @@ const cli = yargs(hideBin(process.argv))
                 endDate: args.endDate,
               },
               args.executionMode,
+              args.reindex,
             );
 
             logger.info(`--------------Completed manual run---------------`);
@@ -165,6 +170,10 @@ const cli = yargs(hideBin(process.argv))
               `       ${execSummary.artifactSummaries.length} artifacts committed`,
             );
             if (execSummary.errors.length > 0) {
+              for (const err of execSummary.errors) {
+                logger.info(err);
+                logger.error(err);
+              }
               process.exit(1);
             }
           },
