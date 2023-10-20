@@ -297,12 +297,12 @@ export class DailyContractUsageCollector extends BaseCollector<object> {
     const from: IncompleteArtifact =
       row.safeAddress === null
         ? {
-            name: row.userAddress!,
+            name: row.userAddress!.toLowerCase(),
             type: ArtifactType.EOA_ADDRESS,
             namespace: ArtifactNamespace.OPTIMISM,
           }
         : {
-            name: row.safeAddress,
+            name: row.safeAddress.toLowerCase(),
             type: ArtifactType.SAFE_ADDRESS,
             namespace: ArtifactNamespace.OPTIMISM,
           };
