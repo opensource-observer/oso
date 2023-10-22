@@ -336,5 +336,9 @@ function EventDataProvider(props: EventDataProviderProps) {
   );
 }
 
-export { EventDataProvider };
+export {
+  EventDataProvider,
+  ProjectEventDataProvider,
+  ArtifactEventDataProvider,
+};
 export type { EventDataProviderProps };
