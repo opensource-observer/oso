@@ -1,0 +1,12 @@
+# Logs
+logs
+*.log
+
+# Data exports
+data/
+
+# Local artifacts
+.DS_Store
+.ipynb_checkpoints
+*.ipynb
+pycache
