@@ -1,38 +1,54 @@
-# Developers
+# GitHub Contributor Metrics
 
-> This document outlines how we define and categorize developers, and how we assign activity levels to them based on their contributions.
+> This document outlines how we define and categorize developers, maintainers, and other types of contributors, and how we assign activity levels to them based on their contributions. GitHub metrics are typically queried by project (eg, `uniswap`), although they can also be queried by repo in the format (eg, `repo-owner/repo-name`).
 
-A **developer** is a GitHub user who contributes to a repository or organization through various activities. These activities include:
+For information about GitHub data, also see: [Github Contributions](./github_contributions.md)
 
-- **Commit**: An individual change to a file (or set of files).
-- **Open Pull Request**: Proposed changes to a repository submitted by a user.
-- **Merged Pull Request**: A pull request accepted and merged by a repository's collaborator.
-- **Submitted Issue**: Suggestions, tasks, or questions related to the repository.
-- **Closed Issue**: An issue resolved and closed by a repository's collaborator.
-- **Code Review**: A systematic examination of a pull request performed by a collaborator.
+## GitHub Contributor Metrics
 
-A developer is considered **active** if they've made at least one contribution in the past 30 days.
-
-A developer is considered **new** if they made their first contribution in the past 90 days.
-
-## Types of Developers
-
-OS Observer identifies three main types of developers: collaborators, contributors, and maintainers.
-
-### Collaborators
-
-Collaborators are GitHub users granted read and write access to a repository by its owner. 
-
-To qualify as an **active** collaborator, one must have made at least one contribution (of any type) within the past 30 days.
+> Note: most of the metrics below are defined in the context of a "contributor" (the most general category of people working on a project), but definitions like "full-time" / "part-time" and "new" / "inactive" are also applicable to "developers" and "maintainers".
 
 ### Contributors
+Count of individual users (excluding bot accounts) who have contributed to a repository.
 
-Contributors are GitHub users who, although lacking collaborator access, have had a pull request they opened merged into the repository's main branch.
-
-An **active** contributor is defined as someone who has opened at least one pull request or made commits to the main branch in the past 30 days.
+### Developers
+Count of contributors that have made code commits.
 
 ### Maintainers
+Count of contributors that have merged pull requests or closed issues.
 
-Maintainers are trusted collaborators given additional responsibilities, such as conducting code reviews, merging pull requests, and closing issues.
+### Monthly Active Contributors
+Count of contributors that have made at least one contribution over a 30-day period.
 
-To be considered an **active** maintainer, one must have engaged in at least one of the aforementioned activities in the past 30 days.
+### Full-Time Contributors
+Count of monthly active contributors that have made contributions on 10 or more days over a 30-day period.
+
+### Part-Time Contributors
+Count of monthly active contributors that have made contributions on fewer than 10 days over a 30-day period.
+
+### New Contributors
+Count of contributors who made their first contribution in the last 90 days.
+
+### Inactive Contributors
+Count of past contributors who have not made any contributions in the last 90 days.
+
+### Contributor Churn Rate
+The proportion of inactive contributors to the total number of contributors, excluding new contributors.
+
+### Ecosystem Users
+Count of contributors that have also contributed to at least two other projects in the same collection.
+
+### Active Ecosystem Users
+Count of active contributors that are also active in at least two other projects in the same collection.
+
+## API Reference
+
+The following event `typeId`s are relevant to calculating contributor metrics:
+```
+'COMMIT_CODE': 4,
+'PULL_REQUEST_CREATED': 2,
+'PULL_REQUEST_MERGED': 3,
+'PULL_REQUEST_APPROVED': 17,
+'ISSUE_CLOSED': 6,
+'ISSUE_CREATED': 18,
+```
