@@ -2,9 +2,12 @@ import json
 import pandas as pd
 from urllib.parse import urlparse
 
-from artifact_parse import Parser
+from parse_links import Parser
 
-JSON_ATTESTATION_DATA = "data/rpgf3/indexed_attestations.json"
+
+RAW_APPLICANT_JSON = "data/raw_applicant_data.json"
+TIDY_ATTESTATION_CSV = "data/tidy_attestations.csv"
+PROJECT_SUMMARY_CSV = "data/project_attestation_summary.csv"
 
 
 def extract_website_name(url):
@@ -64,14 +67,6 @@ def tidy_dataframe(data):
                             bio_or_description, impact_categories, 'impactMetric', impact_metric['url'], 
                             impact_metric['description'], impact_metric['number']])
         
-        # Funding Sources
-        for funding_source in json_data.get('fundingSources', []):
-            fs_url = funding_source.get('url', '')
-            fs_description = f"{funding_source.get('type', '')} {funding_source.get('currency', '')}"
-            fs_amount = funding_source.get('amount', '')
-            records.append([record_id, attester, time_created, name, application_metadata_ptr, applicant_type, 
-                            bio_or_description, impact_categories, 'fundingSource', fs_url, fs_description, fs_amount])
-
     # Create DataFrame
     df = pd.DataFrame(records, columns=['id', 'attester', 'timeCreated', 'name', 'applicationMetadataPtr', 
                                         'applicantType', 'bio or description', 'impactCategory(ies)', 
@@ -84,19 +79,68 @@ def tidy_dataframe(data):
     df['artifactInfo'].update(df[df['urlType'] == 'etherscan']['attestationUrl'].apply(Parser.etherscan))
     df['artifactInfo'].update(df[df['urlType'] == 'npm']['attestationUrl'].apply(Parser.npm))
     df['artifactInfo'].update(df[df['urlType'] == 'github']['attestationUrl'].apply(Parser.github))
+    df['artifactInfo'].update(df[df['urlType'] == 'twitter']['attestationUrl'].apply(Parser.twitter))
+    df['artifactInfo'].update(df[df['urlType'] == 'substack']['attestationUrl'].apply(Parser.substack))
+
+    def create_clean_link(url_type, artifact_info):
+        if artifact_info is None:
+            return None
+        artifact = artifact_info[1]
+        if artifact is None:
+            return None
+        if url_type == 'etherscan':
+            return f"https://optimistic.etherscan.io/address/{artifact}"
+        if url_type == 'npm':
+            return f"https://www.npmjs.com/package/{artifact}"
+        if url_type == 'github':
+            return f"https://github.com/{artifact}"
+        if url_type == 'twitter':
+            return f"https://x.com/{artifact}"
+        if url_type == 'substack':
+            return f"https://{artifact}.substack.com/"
+    
+    df['cleanArtifactLink'] = df.apply(lambda row: create_clean_link(row['urlType'], row['artifactInfo']), axis=1)
+
+    df['potentialConflict'] = None
+    for artifact in df['cleanArtifactLink'].unique():
+        if artifact is None:
+            continue
+        artifact_attesters = df[df['cleanArtifactLink'] == artifact]['attester'].unique()        
+        if len(artifact_attesters) > 1:
+            names = df[df['cleanArtifactLink'] == artifact]['name'].unique()
+            conflict = " & ".join([f"{name} ({attester})" for name, attester in zip(names, artifact_attesters)])
+            df.loc[df['cleanArtifactLink'] == artifact, 'potentialConflict'] = conflict
+
 
     print(f"Created Tidy DataFrame with {len(df)} records.")
     return df
 
 
+def project_summary(df):
+
+    groupers = ['name', 'applicationMetadataPtr', 'applicantType', 'bio or description', 'impactCategory(ies)']
+    grouped_df = df.groupby(groupers).agg(
+        attestationCount=('id', 'count'),
+        contributionLinkCount=('attestationType', lambda x: (x == 'contributionLink').sum()),
+        impactMetricCount=('attestationType', lambda x: (x == 'impactMetric').sum()),
+        cleanArtifactLinkCount=('cleanArtifactLink', lambda x: x.notnull().sum()),
+        potentialConflictCount=('potentialConflict', lambda x: x.notnull().sum()),
+        urlTypeCount=('urlType', lambda x: x.value_counts().to_dict())
+    ).reset_index()
+
+    return grouped_df
+        
 def main():
 
-    with open(JSON_ATTESTATION_DATA, "r") as json_file:
+    with open(RAW_APPLICANT_JSON, "r") as json_file:
         data = json.load(json_file)
 
     df = tidy_dataframe(data)
-    csv_path = JSON_ATTESTATION_DATA.replace('.json', '.csv')
-    df.to_csv(csv_path, index=False)
+    df.to_csv(TIDY_ATTESTATION_CSV, index=False)
+
+    grouped_df = project_summary(df)
+    grouped_df.to_csv(PROJECT_SUMMARY_CSV, index=False)
 
 
-main()    
+if __name__ == "__main__":
+    main()
