@@ -91,7 +91,7 @@ def map_repos_to_slugs(yaml_data, lowercase=True):
             url = entry.get('url', None)
             if url:
                 if lowercase:
-                    url = url.lower()
+                    url = url.lower().strip('/')
                 repos[url] = slug
     return repos
 
