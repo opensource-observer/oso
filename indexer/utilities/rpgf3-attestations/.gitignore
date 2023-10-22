@@ -3,7 +3,7 @@ logs
 *.log
 
 # Data exports
-data/dune/
+data/
 
 # Local artifacts
 .DS_Store
