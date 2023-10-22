@@ -21,6 +21,10 @@ The ratio of total fees to total transactions over a specific time period.
 ### Users
 Count of unique addresses that have transacted with a contract or a group of contracts.
 
+Users may either be:
+- Externally owned accounts (EOAs), ie, accounts managed by a private key
+- Smart contract accounts (SCAs), ie, accounts controlled by a multisig or utilized account abstraction (ERC-4337)
+
 ### Weekly Active Users
 Count of users that have transacted at least once over a 7-day period.
 
@@ -54,7 +58,7 @@ Count of 90-day active users that had their first transaction more than 90 days 
 ### Inactive Users
 Count of users that have not had any transactions in the last 90 days.
 
-### Churn Rate
+### User Churn Rate
 The proportion of inactive users to the total number of users, excluding new users.
 
 ### Ecosystem Users
