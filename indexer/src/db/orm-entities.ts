@@ -149,6 +149,9 @@ export class Project extends Base<"ProjectId"> {
 
   @OneToMany(() => EventsDailyByProject, (e) => e.project)
   eventsDailyByProject: EventsDailyByProject[];
+
+  @OneToMany(() => EventsDailyByProject, (e) => e.project)
+  eventsMonthlyByProject: EventsDailyByProject[];
 }
 
 @Entity()
@@ -175,8 +178,12 @@ export class Artifact extends Base<"ArtifactId"> {
   eventsAsTo: Event[];
   @OneToMany(() => Event, (event) => event.from)
   eventsAsFrom: Event[];
+
   @OneToMany(() => EventsDailyByArtifact, (e) => e.to)
   eventsDailyByArtifact: EventsDailyByArtifact[];
+
+  @OneToMany(() => EventsMonthlyByArtifact, (e) => e.to)
+  eventsMonthlyByArtifact: EventsMonthlyByArtifact[];
 
   @OneToMany(() => EventPointer, (eventPointer) => eventPointer.artifact)
   eventPointers: EventPointer[];
@@ -364,6 +371,62 @@ export class EventsDailyByArtifact {
   `,
 })
 export class EventsDailyByProject {
+  @ManyToOne(() => Project, (project) => project.eventsDailyByProject)
+  @ViewColumn()
+  project: Project;
+
+  @ViewColumn()
+  type: EventType;
+
+  @ViewColumn()
+  bucketDaily: Date;
+
+  @ViewColumn()
+  amount: number;
+}
+
+@ViewEntity({
+  materialized: true,
+  expression: `
+    SELECT "toId",
+      "typeId",
+      time_bucket(INTERVAL '1 month', "time") AS "bucketMonthly",
+      SUM(amount) as "amount"
+    FROM "event" 
+    GROUP BY "toId", "typeId", "bucketMonthly"
+    WITH NO DATA;
+  `,
+})
+export class EventsMonthlyByArtifact {
+  @ManyToOne(() => Artifact, (artifact) => artifact.eventsDailyByArtifact)
+  @ViewColumn()
+  to: Artifact;
+
+  @ViewColumn()
+  type: EventType;
+
+  @ViewColumn()
+  bucketDaily: Date;
+
+  @ViewColumn()
+  amount: number;
+}
+
+@ViewEntity({
+  materialized: true,
+  expression: `
+    SELECT "projectId",
+      "typeId",
+      time_bucket(INTERVAL '1 month', "time") AS "bucketMonthly",
+      SUM(amount) as "amount"
+    FROM "event"
+    INNER JOIN "project_artifacts_artifact"
+      on "project_artifacts_artifact"."artifactId" = "event"."toId"
+    GROUP BY "projectId", "typeId", "bucketMonthly"
+    WITH NO DATA;
+  `,
+})
+export class EventsMonthlyByProject {
   @ManyToOne(() => Project, (project) => project.eventsDailyByProject)
   @ViewColumn()
   project: Project;
