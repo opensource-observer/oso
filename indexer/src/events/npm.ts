@@ -98,12 +98,12 @@ export class NpmDownloadCollector extends ProjectArtifactsCollector {
         };
       },
     );
-    const recordHandle: RecordHandle[] = [];
+    const handles: RecordHandle[] = [];
 
     for await (const page of response) {
       const days = page.raw;
       for (const download of days) {
-        recordHandle.push(
+        handles.push(
           await this.recorder.record({
             time: DateTime.fromISO(download.day),
             type: {
@@ -121,7 +121,8 @@ export class NpmDownloadCollector extends ProjectArtifactsCollector {
         );
       }
     }
-    committer.commit(npmPackage).withHandles(recordHandle);
+    await this.recorder.wait(handles);
+    committer.commit(npmPackage).withHandles(handles);
   }
 }
 
@@ -194,11 +195,13 @@ async function getDailyDownloads(
 
   // If we got all the data, we're good
   if (
-    start.startOf("day").equals(resultStart.startOf("day")) &&
-    end.startOf("day").equals(resultEnd.startOf("day"))
+    start.startOf("day").toMillis() === resultStart.startOf("day").toMillis() &&
+    end.startOf("day").toMillis() === resultEnd.startOf("day").toMillis()
   ) {
     return [...resultDownloads];
-  } else if (!end.startOf("day").equals(resultEnd.startOf("day"))) {
+  } else if (
+    end.startOf("day").toMillis() !== resultEnd.startOf("day").toMillis()
+  ) {
     // Assume that NPM will always give us the newest data first
     throw new MalformedDataError(
       `Expected end date ${end.toISO()} but got ${resultEnd.toISO()}`,
