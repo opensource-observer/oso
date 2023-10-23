@@ -150,8 +150,8 @@ export class Project extends Base<"ProjectId"> {
   @OneToMany(() => EventsDailyByProject, (e) => e.project)
   eventsDailyByProject: EventsDailyByProject[];
 
-  @OneToMany(() => EventsDailyByProject, (e) => e.project)
-  eventsMonthlyByProject: EventsDailyByProject[];
+  @OneToMany(() => EventsMonthlyByProject, (e) => e.project)
+  eventsMonthlyByProject: EventsMonthlyByProject[];
 }
 
 @Entity()
