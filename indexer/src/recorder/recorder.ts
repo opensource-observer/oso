@@ -454,7 +454,7 @@ export class BatchEventRecorder implements IEventRecorder {
     this.lastActorUpdatedAt = DateTime.fromISO("1970-09-21T20:00:00Z");
     // Arbitrarily set to an early time
 
-    //this.emitter.setMaxListeners(0);
+    this.emitter.setMaxListeners(this.options.maxBatchSize * 3);
     // Setup flush event handler
     this.flusher.onFlush(async () => {
       logger.debug(`flushing all queued events`);
@@ -620,8 +620,8 @@ export class BatchEventRecorder implements IEventRecorder {
       const where = strategy.all(this.actorDirectory);
 
       where.time = And(
-        MoreThanOrEqual(this.range.startDate.toJSDate()),
-        LessThanOrEqual(this.range.endDate.toJSDate()),
+        MoreThanOrEqual(this.range.startDate.minus({ month: 1 }).toJSDate()),
+        LessThanOrEqual(this.range.endDate.plus({ month: 1 }).toJSDate()),
       );
 
       // Find existing events (for idempotency)
@@ -1009,6 +1009,8 @@ export class BatchEventRecorder implements IEventRecorder {
         } catch (err) {
           logger.error("encountered an error writing to the database");
           logger.debug(typeof err);
+          logger.error(`Error type=${typeof err}`);
+          logger.error(`Error as JSON=${JSON.stringify(err)}`);
           logger.error(err);
           if (err instanceof QueryFailedError) {
             if (err.message.indexOf("duplicate") !== -1) {
