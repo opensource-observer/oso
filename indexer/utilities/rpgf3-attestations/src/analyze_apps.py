@@ -14,7 +14,7 @@ def extract_website_name(url):
 
     if not url:
         return 'none'
-    parsed_url = urlparse(url)
+    parsed_url = urlparse(url.strip('/'))
     domain_parts = parsed_url.netloc.split('.')
     domain = domain_parts[-2] if len(domain_parts) > 1 else parsed_url.netloc
 
@@ -99,6 +99,7 @@ def tidy_dataframe(data):
         if url_type == 'substack':
             return f"https://{artifact}.substack.com/"
     
+    df['linkValidation'] = df['artifactInfo'].apply(lambda x: x[0].title() if x is not None else 'n/a')
     df['cleanArtifactLink'] = df.apply(lambda row: create_clean_link(row['urlType'], row['artifactInfo']), axis=1)
 
     df['potentialConflict'] = None
