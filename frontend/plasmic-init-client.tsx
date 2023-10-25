@@ -269,7 +269,7 @@ PLASMIC.registerComponent(EventDataProvider, {
     xAxis: {
       type: "choice",
       helpText: "What is the x-axis?",
-      options: ["eventTime", "artifact", "eventType"],
+      options: ["eventTime", "entity", "eventType"],
     },
     entityType: {
       type: "choice",
@@ -350,7 +350,7 @@ PLASMIC.registerComponent(EventDataProvider, {
     xAxis: {
       type: "choice",
       helpText: "What is the x-axis?",
-      options: ["eventTime", "artifact", "eventType"],
+      options: ["eventTime", "entity", "eventType"],
     },
     entityType: {
       type: "choice",
@@ -431,7 +431,7 @@ PLASMIC.registerComponent(ProjectEventDataProvider, {
     xAxis: {
       type: "choice",
       helpText: "What is the x-axis?",
-      options: ["eventTime", "artifact", "eventType"],
+      options: ["eventTime", "entity", "eventType"],
     },
     ids: {
       type: "array",
@@ -508,7 +508,7 @@ PLASMIC.registerComponent(ArtifactEventDataProvider, {
     xAxis: {
       type: "choice",
       helpText: "What is the x-axis?",
-      options: ["eventTime", "artifact", "eventType"],
+      options: ["eventTime", "entity", "eventType"],
     },
     ids: {
       type: "array",
