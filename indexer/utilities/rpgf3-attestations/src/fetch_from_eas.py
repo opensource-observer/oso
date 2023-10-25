@@ -8,6 +8,7 @@ from parse_links import Parser
 
 EAS_SCHEMA = "0x76e98cce95f3ba992c2ee25cef25f756495147608a3da3aa2e5ca43109fe77cc"
 START_TIME = 0
+END_TIME = 1698136205
 RAW_APPLICANT_JSON = "data/raw_applicant_data.json"
 OSSD_SNAPSHOT_JSON = "data/ossd_snapshot.json"
 CLEANED_APPLICANT_JSON = "data/cleaned_applicant_data.json"
@@ -115,6 +116,8 @@ def update_data(schema_id, json_outpath):
 
     indexed_data = []
     for a in schema_attestations:
+        if a["timeCreated"] > last_time_created:
+            continue
         decoded_data = json.loads(a["decodedDataJson"])
         fetch_and_update_json_data(decoded_data)
         indexed_data.append({
