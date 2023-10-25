@@ -149,7 +149,7 @@ export class Collection extends Base<"CollectionId"> {
   })
   @JoinColumn()
   @IsOptional()
-  owner?: IArtifact;
+  artifactOwner?: IArtifact;
 }
 
 @Entity()
@@ -208,7 +208,7 @@ export class Artifact extends Base<"ArtifactId"> {
   @ManyToMany(() => Project, (project) => project.artifacts)
   projects: Project[];
 
-  @OneToMany(() => Collection, (collection) => collection.owner)
+  @OneToMany(() => Collection, (collection) => collection.artifactOwner)
   collections: Collection[];
 
   @OneToMany(() => Event, (event) => event.to)
