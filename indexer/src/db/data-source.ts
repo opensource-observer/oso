@@ -30,6 +30,12 @@ import {
   EventsDailyToProject,
   EventsWeeklyToProject,
   EventsMonthlyToProject,
+  EventsDailyFromArtifact,
+  EventsWeeklyFromArtifact,
+  EventsMonthlyFromArtifact,
+  EventsDailyFromProject,
+  EventsWeeklyFromProject,
+  EventsMonthlyFromProject,
 } from "./orm-entities.js";
 
 const loggingOption: LoggerOptions = DEBUG_DB ? "all" : false;
@@ -83,9 +89,15 @@ export function staticDataSourceOptions(
       EventsDailyToArtifact,
       EventsWeeklyToArtifact,
       EventsMonthlyToArtifact,
+      EventsDailyFromArtifact,
+      EventsWeeklyFromArtifact,
+      EventsMonthlyFromArtifact,
       EventsDailyToProject,
       EventsWeeklyToProject,
       EventsMonthlyToProject,
+      EventsDailyFromProject,
+      EventsWeeklyFromProject,
+      EventsMonthlyFromProject,
       EventType,
     ],
     migrations: [],
