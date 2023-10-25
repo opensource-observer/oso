@@ -6,7 +6,11 @@ import { assertNever, ensure, uncheckedCast } from "../../lib/common";
 import {
   GET_ARTIFACTS_BY_IDS,
   GET_EVENTS_DAILY_TO_ARTIFACT,
+  GET_EVENTS_WEEKLY_TO_ARTIFACT,
+  GET_EVENTS_MONTHLY_TO_ARTIFACT,
   GET_EVENTS_DAILY_TO_PROJECT,
+  GET_EVENTS_WEEKLY_TO_PROJECT,
+  GET_EVENTS_MONTHLY_TO_PROJECT,
   GET_PROJECTS_BY_IDS,
 } from "../../lib/graphql/queries";
 import { DataProviderView } from "./provider-view";
@@ -44,10 +48,13 @@ const EVENT_TYPE_NAME_TO_ID: Record<string, number> = {
 };
 const EVENT_TYPE_ID_TO_NAME = _.invert(EVENT_TYPE_NAME_TO_ID);
 
+type BucketWidth = "day" | "week" | "month";
 type ChartType = "areaChart" | "barList";
 type XAxis = "eventTime" | "entity" | "eventType";
 type EntityType = "project" | "artifact";
 
+// Ideal minimum number of data points in an area chart
+const MIN_DATA_POINTS = 20;
 // Default start time
 const DEFAULT_START_DATE = 0;
 // Default XAxis if not specified
@@ -109,6 +116,25 @@ const entityIdToLabel = (id: number | string, entityData?: EntityData[]) =>
   entityData?.find((x) => x.id == id)?.name ?? id;
 
 /**
+ * Choose a bucket width based on the number of data points
+ */
+const getBucketWidth = (props: EventDataProviderProps): BucketWidth => {
+  const startDate = dayjs(props.startDate ?? DEFAULT_START_DATE);
+  const endDate = dayjs(props.endDate);
+  if (endDate.diff(startDate, "month") > MIN_DATA_POINTS) {
+    return "month";
+  } else if (endDate.diff(startDate, "week") > MIN_DATA_POINTS) {
+    return "week";
+  } else {
+    return "day";
+  }
+};
+
+type FormatOpts = {
+  gapFill?: boolean;
+};
+
+/**
  * Formats normalized data into inputs to an area chart (for Tremor)
  * @param data
  * @returns
@@ -117,6 +143,7 @@ const formatDataToAreaChart = (
   data: EventData[],
   categories: { results: string[]; opts: CategoryOpts },
   entityData?: EntityData[],
+  formatOpts?: FormatOpts,
 ) => {
   // Start with an empty data point for each available date
   const emptyDataPoint = _.fromPairs(categories.results.map((c) => [c, 0]));
@@ -147,7 +174,7 @@ const formatDataToAreaChart = (
   //console.log(unsorted);
 
   // Sort by date
-  const result = _.sortBy(unsorted, (x) => x.date);
+  const sorted = _.sortBy(unsorted, (x) => x.date);
   //console.log(result);
 
   // Trim empty data at the start and end
@@ -159,34 +186,40 @@ const formatDataToAreaChart = (
     }
     return true;
   };
-  let [i, j] = [0, result.length - 1];
-  while (i < result.length && isEmptyDataPoint(result[i])) {
+  let [i, j] = [0, sorted.length - 1];
+  while (i < sorted.length && isEmptyDataPoint(sorted[i])) {
     i++;
   }
-  while (j > 0 && isEmptyDataPoint(result[j])) {
+  while (j > 0 && isEmptyDataPoint(sorted[j])) {
     j--;
   }
-  const slicedResult = result.slice(i, j + 1);
+  const sliced = sorted.slice(i, j + 1);
+  //categories.results.includes("Downloads") && console.log(sliced);
 
   // Fill in any empty dates
-  let currDate = dayjs(result[0]?.date);
-  const filledResult = [];
-  for (const x of slicedResult) {
-    const thisDate = dayjs(x.date);
-    while (currDate.isBefore(thisDate)) {
-      filledResult.push({
-        ...emptyDataPoint,
-        date: currDate.format("YYYY-MM-DD"),
-      });
-      currDate = currDate.add(1, "day");
+  let filled;
+  if (formatOpts?.gapFill) {
+    let currDate = dayjs(sliced[0]?.date);
+    filled = [];
+    for (const x of sliced) {
+      const thisDate = dayjs(x.date);
+      while (currDate.isBefore(thisDate)) {
+        filled.push({
+          ...emptyDataPoint,
+          date: currDate.format("YYYY-MM-DD"),
+        });
+        currDate = currDate.add(1, "day");
+      }
+      filled.push(x);
+      currDate = thisDate.add(1, "day");
     }
-    filledResult.push(x);
-    currDate = thisDate.add(1, "day");
+    //categories.results.includes("Downloads") && console.log(filled);
+  } else {
+    filled = sliced;
   }
-  //console.log(filledResult);
 
   return {
-    data: filledResult,
+    data: filled,
     categories: categories.results,
     xAxis: "date",
   };
@@ -298,6 +331,7 @@ const formatData = (
   props: EventDataProviderProps,
   rawData: EventData[],
   entityData?: EntityData[],
+  formatOpts?: FormatOpts,
 ) => {
   //const checkedData = rawData as unknown as EventData[];
   // Short-circuit if test data
@@ -311,6 +345,7 @@ const formatData = (
           data,
           createCategories(props, entityData),
           entityData,
+          formatOpts,
         )
       : props.chartType === "barList"
       ? formatDataToBarList(props.xAxis ?? DEFAULT_XAXIS, data, entityData)
@@ -324,11 +359,18 @@ const formatData = (
  * @returns
  */
 function ArtifactEventDataProvider(props: EventDataProviderProps) {
+  const bucketWidth = getBucketWidth(props);
+  const query =
+    bucketWidth === "month"
+      ? GET_EVENTS_MONTHLY_TO_ARTIFACT
+      : bucketWidth === "week"
+      ? GET_EVENTS_WEEKLY_TO_ARTIFACT
+      : GET_EVENTS_DAILY_TO_ARTIFACT;
   const {
     data: rawEventData,
     error: eventError,
     loading: eventLoading,
-  } = useQuery(GET_EVENTS_DAILY_TO_ARTIFACT, {
+  } = useQuery(query, {
     variables: {
       artifactIds: stringToIntArray(props.ids),
       typeIds: props.eventTypes?.map((n) => EVENT_TYPE_NAME_TO_ID[n]),
@@ -344,17 +386,24 @@ function ArtifactEventDataProvider(props: EventDataProviderProps) {
     variables: { artifactIds: stringToIntArray(props.ids) },
   });
   const normalizedEventData: EventData[] = (
-    rawEventData?.events_daily_to_artifact ?? []
-  ).map((x) => ({
+    (rawEventData as any)?.events_monthly_to_artifact ??
+    (rawEventData as any)?.events_weekly_to_artifact ??
+    rawEventData?.events_daily_to_artifact ??
+    []
+  ).map((x: any) => ({
     typeId: ensure<number>(x.typeId, "Data missing 'typeId'"),
     id: ensure<number>(x.artifactId, "Data missing 'projectId'"),
-    date: ensure<string>(x.bucketDaily, "Data missing 'bucketDaily'"),
+    date: ensure<string>(
+      x.bucketDaily ?? x.bucketWeekly ?? x.bucketMonthly,
+      "Data missing time",
+    ),
     amount: ensure<number>(x.amount, "Data missing 'number'"),
   }));
   const formattedData = formatData(
     props,
     normalizedEventData,
     artifactData?.artifact,
+    { gapFill: bucketWidth === "day" },
   );
   console.log(props.ids, rawEventData, formattedData);
   return (
@@ -373,11 +422,18 @@ function ArtifactEventDataProvider(props: EventDataProviderProps) {
  * @returns
  */
 function ProjectEventDataProvider(props: EventDataProviderProps) {
+  const bucketWidth = getBucketWidth(props);
+  const query =
+    bucketWidth === "month"
+      ? GET_EVENTS_MONTHLY_TO_PROJECT
+      : bucketWidth === "week"
+      ? GET_EVENTS_WEEKLY_TO_PROJECT
+      : GET_EVENTS_DAILY_TO_PROJECT;
   const {
     data: rawEventData,
     error: eventError,
     loading: eventLoading,
-  } = useQuery(GET_EVENTS_DAILY_TO_PROJECT, {
+  } = useQuery(query, {
     variables: {
       projectIds: stringToIntArray(props.ids),
       typeIds: props.eventTypes?.map((n) => EVENT_TYPE_NAME_TO_ID[n]),
@@ -393,14 +449,25 @@ function ProjectEventDataProvider(props: EventDataProviderProps) {
     variables: { projectIds: stringToIntArray(props.ids) },
   });
   const normalizedData: EventData[] = (
-    rawEventData?.events_daily_to_project ?? []
-  ).map((x) => ({
+    (rawEventData as any)?.events_monthly_to_project ??
+    (rawEventData as any)?.events_weekly_to_project ??
+    rawEventData?.events_daily_to_project ??
+    []
+  ).map((x: any) => ({
     typeId: ensure<number>(x.typeId, "Data missing 'type'"),
     id: ensure<number>(x.projectId, "Data missing 'projectId'"),
-    date: ensure<string>(x.bucketDaily, "Data missing 'bucketDaily'"),
+    date: ensure<string>(
+      x.bucketDaily ?? x.bucketWeekly ?? x.bucketMonthly,
+      "Data missing time",
+    ),
     amount: ensure<number>(x.amount, "Data missing 'number'"),
   }));
-  const formattedData = formatData(props, normalizedData, projectData?.project);
+  const formattedData = formatData(
+    props,
+    normalizedData,
+    projectData?.project,
+    { gapFill: bucketWidth === "day" },
+  );
   console.log(props.ids, rawEventData, formattedData);
   return (
     <DataProviderView
