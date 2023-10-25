@@ -4,8 +4,10 @@ import _ from "lodash";
 import React from "react";
 import { assertNever, ensure, uncheckedCast } from "../../lib/common";
 import {
+  GET_ARTIFACTS_BY_IDS,
   GET_EVENTS_DAILY_BY_ARTIFACT,
   GET_EVENTS_DAILY_BY_PROJECT,
+  GET_PROJECTS_BY_IDS,
 } from "../../lib/graphql/queries";
 import { DataProviderView } from "./provider-view";
 import type { CommonDataProviderProps } from "./provider-view";
@@ -40,13 +42,14 @@ const EVENT_TYPE_NAME_TO_ID: Record<string, number> = {
   CONTRACT_INVOCATION_DAILY_COUNT: 25,
   CONTRACT_INVOCATION_DAILY_FEES: 26,
 };
-
 const EVENT_TYPE_ID_TO_NAME = _.invert(EVENT_TYPE_NAME_TO_ID);
 
 type ChartType = "areaChart" | "barList";
-type XAxis = "eventTime" | "artifact" | "eventType";
+type XAxis = "eventTime" | "entity" | "eventType";
 type EntityType = "project" | "artifact";
 
+// Default start time
+const DEFAULT_START_DATE = 0;
 // Default entity type if not specified
 const DEFAULT_ENTITY_TYPE: EntityType = "artifact";
 // Default XAxis if not specified
@@ -62,6 +65,14 @@ type EventData = {
   id: number;
   date: string;
   amount: number;
+};
+
+/**
+ * Abstract entity data that could come from either an `Artifact` or `Project`
+ */
+type EntityData = {
+  id: number;
+  name: string;
 };
 
 /**
@@ -91,6 +102,13 @@ const eventTimeToLabel = (t: any) => dayjs(t).format("YYYY-MM-DD");
  * @returns
  */
 const eventTypeToLabel = (t: string) => _.capitalize(t.replace(/_/g, " "));
+
+/**
+ * Given an id, try to find the id in EntityData[] and return the name
+ * Note: the `==` is intentional here, since we may be comparing a string to a number
+ */
+const entityIdToLabel = (id: number | string, entityData?: EntityData[]) =>
+  entityData?.find((x) => x.id == id)?.name ?? id;
 
 /**
  * Formats normalized data into inputs to an area chart (for Tremor)
@@ -164,11 +182,15 @@ const formatDataToAreaChart = (
  * @param data
  * @returns
  */
-const formatDataToBarList = (xAxis: XAxis, data: EventData[]) => {
+const formatDataToBarList = (
+  xAxis: XAxis,
+  data: EventData[],
+  entityData?: EntityData[],
+) => {
   const grouped = _.groupBy(data, (x) =>
     xAxis === "eventTime"
       ? x.date
-      : xAxis === "artifact"
+      : xAxis === "entity"
       ? x.id
       : xAxis === "eventType"
       ? EVENT_TYPE_ID_TO_NAME[x.typeId]
@@ -179,8 +201,8 @@ const formatDataToBarList = (xAxis: XAxis, data: EventData[]) => {
     name:
       xAxis === "eventTime"
         ? eventTimeToLabel(x[0])
-        : xAxis === "artifact"
-        ? x[0]
+        : xAxis === "entity"
+        ? entityIdToLabel(x[0], entityData)
         : xAxis === "eventType"
         ? eventTypeToLabel(x[0])
         : assertNever(xAxis),
@@ -192,18 +214,12 @@ const formatDataToBarList = (xAxis: XAxis, data: EventData[]) => {
 };
 
 /**
- * Create the variables object for the GraphQL query
- * @param props
+ * Parses string IDs into integers
+ * @param ids
  * @returns
  */
-const createVariables = (props: EventDataProviderProps) => ({
-  ids:
-    props.ids?.map((id) => parseInt(id)).filter((id) => !!id && !isNaN(id)) ??
-    [],
-  typeIds: props.eventTypes?.map((n) => EVENT_TYPE_NAME_TO_ID[n]),
-  startDate: eventTimeToLabel(props.startDate ?? 0),
-  endDate: eventTimeToLabel(props.endDate),
-});
+const stringToIntArray = (ids?: string[]): number[] =>
+  ids?.map((id) => parseInt(id)).filter((id) => !!id && !isNaN(id)) ?? [];
 
 /**
  * TODO: Creates unique categories for the area chart
@@ -238,7 +254,11 @@ const createCategories = (props: EventDataProviderProps) => {
  * @param rawData - normalized data from a GraphQL query
  * @returns
  */
-const formatData = (props: EventDataProviderProps, rawData: EventData[]) => {
+const formatData = (
+  props: EventDataProviderProps,
+  rawData: EventData[],
+  entityData?: EntityData[],
+) => {
   //const checkedData = rawData as unknown as EventData[];
   // Short-circuit if test data
   const data = props.useTestData
@@ -253,7 +273,7 @@ const formatData = (props: EventDataProviderProps, rawData: EventData[]) => {
           props.entityType ?? DEFAULT_ENTITY_TYPE,
         )
       : props.chartType === "barList"
-      ? formatDataToBarList(props.xAxis ?? DEFAULT_XAXIS, data)
+      ? formatDataToBarList(props.xAxis ?? DEFAULT_XAXIS, data, entityData)
       : assertNever(props.chartType);
   return formattedData;
 };
@@ -264,28 +284,45 @@ const formatData = (props: EventDataProviderProps, rawData: EventData[]) => {
  * @returns
  */
 function ArtifactEventDataProvider(props: EventDataProviderProps) {
-  const variables = createVariables(props);
   const {
-    data: rawData,
-    error,
-    loading,
-  } = useQuery(GET_EVENTS_DAILY_BY_ARTIFACT, { variables });
-  const normalizedData: EventData[] = (
-    rawData?.events_daily_by_artifact ?? []
+    data: rawEventData,
+    error: eventError,
+    loading: eventLoading,
+  } = useQuery(GET_EVENTS_DAILY_BY_ARTIFACT, {
+    variables: {
+      artifactIds: stringToIntArray(props.ids),
+      typeIds: props.eventTypes?.map((n) => EVENT_TYPE_NAME_TO_ID[n]),
+      startDate: eventTimeToLabel(props.startDate ?? DEFAULT_START_DATE),
+      endDate: eventTimeToLabel(props.endDate),
+    },
+  });
+  const {
+    data: artifactData,
+    error: artifactError,
+    loading: artifactLoading,
+  } = useQuery(GET_ARTIFACTS_BY_IDS, {
+    variables: { artifactIds: stringToIntArray(props.ids) },
+  });
+  const normalizedEventData: EventData[] = (
+    rawEventData?.events_daily_by_artifact ?? []
   ).map((x) => ({
     typeId: ensure<number>(x.typeId, "Data missing 'typeId'"),
     id: ensure<number>(x.toId, "Data missing 'projectId'"),
     date: ensure<string>(x.bucketDaily, "Data missing 'bucketDaily'"),
     amount: ensure<number>(x.amount, "Data missing 'number'"),
   }));
-  const formattedData = formatData(props, normalizedData);
-  console.log(props.ids, rawData, formattedData);
+  const formattedData = formatData(
+    props,
+    normalizedEventData,
+    artifactData?.artifact,
+  );
+  console.log(props.ids, rawEventData, formattedData);
   return (
     <DataProviderView
       {...props}
       formattedData={formattedData}
-      loading={loading}
-      error={error}
+      loading={eventLoading || artifactLoading}
+      error={eventError ?? artifactError}
     />
   );
 }
@@ -296,28 +333,41 @@ function ArtifactEventDataProvider(props: EventDataProviderProps) {
  * @returns
  */
 function ProjectEventDataProvider(props: EventDataProviderProps) {
-  const variables = createVariables(props);
   const {
-    data: rawData,
-    error,
-    loading,
-  } = useQuery(GET_EVENTS_DAILY_BY_PROJECT, { variables });
+    data: rawEventData,
+    error: eventError,
+    loading: eventLoading,
+  } = useQuery(GET_EVENTS_DAILY_BY_PROJECT, {
+    variables: {
+      projectIds: stringToIntArray(props.ids),
+      typeIds: props.eventTypes?.map((n) => EVENT_TYPE_NAME_TO_ID[n]),
+      startDate: eventTimeToLabel(props.startDate ?? DEFAULT_START_DATE),
+      endDate: eventTimeToLabel(props.endDate),
+    },
+  });
+  const {
+    data: projectData,
+    error: projectError,
+    loading: projectLoading,
+  } = useQuery(GET_PROJECTS_BY_IDS, {
+    variables: { projectIds: stringToIntArray(props.ids) },
+  });
   const normalizedData: EventData[] = (
-    rawData?.events_daily_by_project ?? []
+    rawEventData?.events_daily_by_project ?? []
   ).map((x) => ({
     typeId: ensure<number>(x.typeId, "Data missing 'type'"),
     id: ensure<number>(x.projectId, "Data missing 'projectId'"),
     date: ensure<string>(x.bucketDaily, "Data missing 'bucketDaily'"),
     amount: ensure<number>(x.amount, "Data missing 'number'"),
   }));
-  const formattedData = formatData(props, normalizedData);
-  console.log(props.ids, rawData, formattedData);
+  const formattedData = formatData(props, normalizedData, projectData?.project);
+  console.log(props.ids, rawEventData, formattedData);
   return (
     <DataProviderView
       {...props}
       formattedData={formattedData}
-      loading={loading}
-      error={error}
+      loading={eventLoading || projectLoading}
+      error={eventError ?? projectError}
     />
   );
 }

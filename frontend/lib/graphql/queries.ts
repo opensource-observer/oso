@@ -22,6 +22,18 @@ const GET_ALL_PROJECTS = gql(`
   }
 `);
 
+const GET_ARTIFACTS_BY_IDS = gql(`
+  query ArtifactsByIds($artifactIds: [Int!]) {
+    artifact(where: { id: { _in: $artifactIds } }) {
+      id
+      name
+      namespace
+      type
+      url
+    }
+  }
+`);
+
 const GET_ARTIFACT_BY_NAME = gql(`
   query ArtifactByName($namespace: artifact_namespace_enum!, $name: String!) {
     artifact(where: { name: { _eq: $name }, namespace: { _eq: $namespace } }) {
@@ -30,6 +42,18 @@ const GET_ARTIFACT_BY_NAME = gql(`
       namespace
       type
       url
+    }
+  }
+`);
+
+const GET_PROJECTS_BY_IDS = gql(`
+  query ProjectsByIds($projectIds: [Int!]) {
+    project(where: { id: { _in: $projectIds } }) {
+      id
+      name
+      slug
+      verified
+      description
     }
   }
 `);
@@ -48,13 +72,13 @@ const GET_PROJECT_BY_SLUG = gql(`
 
 const GET_EVENTS_DAILY_BY_ARTIFACT = gql(`
   query EventsDailyByArtifact(
-    $ids: [Int!],
+    $artifactIds: [Int!],
     $typeIds: [Int!],
     $startDate: timestamptz!,
     $endDate: timestamptz!, 
   ) {
     events_daily_by_artifact(where: {
-      toId: { _in: $ids },
+      toId: { _in: $artifactIds },
       typeId: { _in: $typeIds },
       bucketDaily: { _gte: $startDate, _lte: $endDate }
     }) {
@@ -68,13 +92,13 @@ const GET_EVENTS_DAILY_BY_ARTIFACT = gql(`
 
 const GET_EVENTS_DAILY_BY_PROJECT = gql(`
   query EventsDailyByProject(
-    $ids: [Int!],
+    $projectIds: [Int!],
     $typeIds: [Int!],
     $startDate: timestamptz!,
     $endDate: timestamptz!, 
   ) {
     events_daily_by_project(where: {
-      projectId: { _in: $ids },
+      projectId: { _in: $projectIds },
       typeId: { _in: $typeIds },
       bucketDaily: { _gte: $startDate, _lte: $endDate }
     }) {
@@ -88,13 +112,13 @@ const GET_EVENTS_DAILY_BY_PROJECT = gql(`
 
 const GET_AGGREGATES_BY_ARTIFACT = gql(`
   query GetAggregatesByArtifact(
-    $ids: [Int!],
+    $artifactIds: [Int!],
     $typeIds: [Int!],
     $startDate: timestamptz!,
     $endDate: timestamptz!,
   ) {
     event_aggregate(where: {
-      toId: { _in: $ids },
+      toId: { _in: $artifactIds },
       typeId: { _in: $typeIds }, 
       time: { _gte: $startDate, _lte: $endDate }
     }) {
@@ -124,13 +148,13 @@ const GET_AGGREGATES_BY_ARTIFACT = gql(`
 
 const GET_AGGREGATES_BY_PROJECT = gql(`
   query GetAggregatesByProject(
-    $ids: [Int!],
+    $projectIds: [Int!],
     $typeIds: [Int!],
     $startDate: timestamptz!,
     $endDate: timestamptz!,
   ) {
     event_aggregate(where: {
-      artifact: { project_artifacts_artifacts: { projectId: { _in: $ids } } },
+      artifact: { project_artifacts_artifacts: { projectId: { _in: $projectIds } } },
       typeId: { _in: $typeIds }, 
       time: { _gte: $startDate, _lte: $endDate }
     }) {
@@ -160,7 +184,9 @@ const GET_AGGREGATES_BY_PROJECT = gql(`
 
 export {
   GET_ALL_ARTIFACTS,
+  GET_ARTIFACTS_BY_IDS,
   GET_ARTIFACT_BY_NAME,
+  GET_PROJECTS_BY_IDS,
   GET_ALL_PROJECTS,
   GET_PROJECT_BY_SLUG,
   GET_EVENTS_DAILY_BY_ARTIFACT,
