@@ -359,6 +359,7 @@ export class Log extends Base<"LogId"> {
 
 /******************************
  * MATERIALIZED VIEWS
+ * Not all views are possible via TimescaleDB continuous aggregates (e.g. DISTINCT)
  ******************************/
 
 /**

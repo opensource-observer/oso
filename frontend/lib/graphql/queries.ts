@@ -70,34 +70,34 @@ const GET_PROJECT_BY_SLUG = gql(`
   }
 `);
 
-const GET_EVENTS_DAILY_BY_ARTIFACT = gql(`
-  query EventsDailyByArtifact(
+const GET_EVENTS_DAILY_TO_ARTIFACT = gql(`
+  query EventsDailyToArtifact(
     $artifactIds: [Int!],
     $typeIds: [Int!],
     $startDate: timestamptz!,
     $endDate: timestamptz!, 
   ) {
-    events_daily_by_artifact(where: {
-      toId: { _in: $artifactIds },
+    events_daily_to_artifact(where: {
+      artifactId: { _in: $artifactIds },
       typeId: { _in: $typeIds },
       bucketDaily: { _gte: $startDate, _lte: $endDate }
     }) {
       typeId
-      toId
+      artifactId
       bucketDaily
       amount
     }
   }
 `);
 
-const GET_EVENTS_DAILY_BY_PROJECT = gql(`
-  query EventsDailyByProject(
+const GET_EVENTS_DAILY_TO_PROJECT = gql(`
+  query EventsDailyToProject(
     $projectIds: [Int!],
     $typeIds: [Int!],
     $startDate: timestamptz!,
     $endDate: timestamptz!, 
   ) {
-    events_daily_by_project(where: {
+    events_daily_to_project(where: {
       projectId: { _in: $projectIds },
       typeId: { _in: $typeIds },
       bucketDaily: { _gte: $startDate, _lte: $endDate }
@@ -110,78 +110,6 @@ const GET_EVENTS_DAILY_BY_PROJECT = gql(`
   }
 `);
 
-const GET_AGGREGATES_BY_ARTIFACT = gql(`
-  query GetAggregatesByArtifact(
-    $artifactIds: [Int!],
-    $typeIds: [Int!],
-    $startDate: timestamptz!,
-    $endDate: timestamptz!,
-  ) {
-    event_aggregate(where: {
-      toId: { _in: $artifactIds },
-      typeId: { _in: $typeIds }, 
-      time: { _gte: $startDate, _lte: $endDate }
-    }) {
-      aggregate {
-        avg {
-          amount
-        }
-        max {
-          amount
-          time
-        }
-        min {
-          amount
-          time
-        }
-        sum {
-          amount
-        }
-        variance {
-          amount
-        }
-        count(columns: fromId, distinct: true)
-      }
-    }
-  }
-`);
-
-const GET_AGGREGATES_BY_PROJECT = gql(`
-  query GetAggregatesByProject(
-    $projectIds: [Int!],
-    $typeIds: [Int!],
-    $startDate: timestamptz!,
-    $endDate: timestamptz!,
-  ) {
-    event_aggregate(where: {
-      artifact: { project_artifacts_artifacts: { projectId: { _in: $projectIds } } },
-      typeId: { _in: $typeIds }, 
-      time: { _gte: $startDate, _lte: $endDate }
-    }) {
-      aggregate {
-        avg {
-          amount
-        }
-        max {
-          amount
-          time
-        }
-        min {
-          amount
-          time
-        }
-        sum {
-          amount
-        }
-        variance {
-          amount
-        }
-        count(columns: fromId, distinct: true)
-      }
-    }
-  }
-`);
-
 export {
   GET_ALL_ARTIFACTS,
   GET_ARTIFACTS_BY_IDS,
@@ -189,8 +117,6 @@ export {
   GET_PROJECTS_BY_IDS,
   GET_ALL_PROJECTS,
   GET_PROJECT_BY_SLUG,
-  GET_EVENTS_DAILY_BY_ARTIFACT,
-  GET_EVENTS_DAILY_BY_PROJECT,
-  GET_AGGREGATES_BY_ARTIFACT,
-  GET_AGGREGATES_BY_PROJECT,
+  GET_EVENTS_DAILY_TO_ARTIFACT,
+  GET_EVENTS_DAILY_TO_PROJECT,
 };

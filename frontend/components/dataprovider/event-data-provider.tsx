@@ -5,8 +5,8 @@ import React from "react";
 import { assertNever, ensure, uncheckedCast } from "../../lib/common";
 import {
   GET_ARTIFACTS_BY_IDS,
-  GET_EVENTS_DAILY_BY_ARTIFACT,
-  GET_EVENTS_DAILY_BY_PROJECT,
+  GET_EVENTS_DAILY_TO_ARTIFACT,
+  GET_EVENTS_DAILY_TO_PROJECT,
   GET_PROJECTS_BY_IDS,
 } from "../../lib/graphql/queries";
 import { DataProviderView } from "./provider-view";
@@ -328,7 +328,7 @@ function ArtifactEventDataProvider(props: EventDataProviderProps) {
     data: rawEventData,
     error: eventError,
     loading: eventLoading,
-  } = useQuery(GET_EVENTS_DAILY_BY_ARTIFACT, {
+  } = useQuery(GET_EVENTS_DAILY_TO_ARTIFACT, {
     variables: {
       artifactIds: stringToIntArray(props.ids),
       typeIds: props.eventTypes?.map((n) => EVENT_TYPE_NAME_TO_ID[n]),
@@ -344,10 +344,10 @@ function ArtifactEventDataProvider(props: EventDataProviderProps) {
     variables: { artifactIds: stringToIntArray(props.ids) },
   });
   const normalizedEventData: EventData[] = (
-    rawEventData?.events_daily_by_artifact ?? []
+    rawEventData?.events_daily_to_artifact ?? []
   ).map((x) => ({
     typeId: ensure<number>(x.typeId, "Data missing 'typeId'"),
-    id: ensure<number>(x.toId, "Data missing 'projectId'"),
+    id: ensure<number>(x.artifactId, "Data missing 'projectId'"),
     date: ensure<string>(x.bucketDaily, "Data missing 'bucketDaily'"),
     amount: ensure<number>(x.amount, "Data missing 'number'"),
   }));
@@ -377,7 +377,7 @@ function ProjectEventDataProvider(props: EventDataProviderProps) {
     data: rawEventData,
     error: eventError,
     loading: eventLoading,
-  } = useQuery(GET_EVENTS_DAILY_BY_PROJECT, {
+  } = useQuery(GET_EVENTS_DAILY_TO_PROJECT, {
     variables: {
       projectIds: stringToIntArray(props.ids),
       typeIds: props.eventTypes?.map((n) => EVENT_TYPE_NAME_TO_ID[n]),
@@ -393,7 +393,7 @@ function ProjectEventDataProvider(props: EventDataProviderProps) {
     variables: { projectIds: stringToIntArray(props.ids) },
   });
   const normalizedData: EventData[] = (
-    rawEventData?.events_daily_by_project ?? []
+    rawEventData?.events_daily_to_project ?? []
   ).map((x) => ({
     typeId: ensure<number>(x.typeId, "Data missing 'type'"),
     id: ensure<number>(x.projectId, "Data missing 'projectId'"),

@@ -18,6 +18,28 @@ For convenience, we've added a script to quickly fire up `psql` with the databas
 bash ./utilities/database/psql.sh
 ```
 
+### Refreshing the materialized views
+
+Sometimes a materialized view will be missing data
+(for example if we insert [older historical data](https://docs.timescale.com/use-timescale/latest/continuous-aggregates/troubleshooting/#continuous-aggregate-doesnt-refresh-with-newly-inserted-historical-data))
+
+To refresh a TimescaleDB continuous aggregate:
+
+```sql
+CALL refresh_continuous_aggregate('events_daily_to_project', '2021-05-01', '2021-06-01');
+```
+
+See [Timescale docs](https://docs.timescale.com/use-timescale/latest/continuous-aggregates/refresh-policies/#manually-refresh-a-continuous-aggregate) for more details.
+
+Not all materialized views are supported by Timescale (for example `FirstContribution`).
+These views are _not_ continuously updated and must always be manually refreshed by running:
+
+```sql
+REFRESH MATERIALIZED VIEW first_contribution;
+```
+
+See the [Postgres docs](https://www.postgresql.org/docs/current/rules-materializedviews.html) for more details.
+
 ## TypeScript / JavaScript
 
 ### Setup
