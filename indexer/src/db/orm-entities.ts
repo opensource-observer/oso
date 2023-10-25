@@ -113,6 +113,16 @@ abstract class Base<IdTag> extends BaseEntity {
   }
 }
 
+// We need this to prevent circular references for Typeorm's relational mapping.
+// This interface should only need to be internal to this file.
+interface IArtifact {
+  id: Brand<number, "ArtifactId">;
+  type: ArtifactType;
+  namespace: ArtifactNamespace;
+  name: string;
+  url: string | null;
+}
+
 @Entity()
 export class Collection extends Base<"CollectionId"> {
   @Column("text")
@@ -131,6 +141,15 @@ export class Collection extends Base<"CollectionId"> {
   @ManyToMany(() => Project, (project) => project.collections)
   @JoinTable()
   projects: Project[];
+
+  // Allow artifacts to own collections. These can be dependents or maybe some
+  // other form of project relations.
+  @ManyToOne("Artifact", "collections", {
+    nullable: true,
+  })
+  @JoinColumn()
+  @IsOptional()
+  owner?: IArtifact;
 }
 
 @Entity()
@@ -188,6 +207,9 @@ export class Artifact extends Base<"ArtifactId"> {
 
   @ManyToMany(() => Project, (project) => project.artifacts)
   projects: Project[];
+
+  @OneToMany(() => Collection, (collection) => collection.owner)
+  collections: Collection[];
 
   @OneToMany(() => Event, (event) => event.to)
   eventsAsTo: Event[];
