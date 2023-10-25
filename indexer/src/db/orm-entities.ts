@@ -21,6 +21,10 @@ import { IsUrl, IsOptional, validateOrReject } from "class-validator";
 import type { Brand } from "utility-types";
 import { normalizeToObject } from "../utils/common.js";
 
+/******************************
+ * ENUMS
+ ******************************/
+
 export enum EventTypeEnum {
   FUNDING = "FUNDING",
   PULL_REQUEST_CREATED = "PULL_REQUEST_CREATED",
@@ -82,6 +86,10 @@ export enum JobExecutionStatus {
   COMPLETE = "COMPLETE",
   FAILED = "FAILED",
 }
+
+/******************************
+ * TABLES
+ ******************************/
 
 abstract class Base<IdTag> extends BaseEntity {
   @PrimaryGeneratedColumn()
@@ -147,8 +155,12 @@ export class Project extends Base<"ProjectId"> {
   @JoinTable()
   artifacts: Artifact[];
 
-  @OneToMany(() => EventsDailyByProject, (e) => e.project)
-  eventsDailyByProject: EventsDailyByProject[];
+  @OneToMany(() => EventsDailyToProject, (e) => e.project)
+  eventsDailyToProject: EventsDailyToProject[];
+  @OneToMany(() => EventsWeeklyToProject, (e) => e.project)
+  eventsWeeklyToProject: EventsWeeklyToProject[];
+  @OneToMany(() => EventsMonthlyToProject, (e) => e.project)
+  eventsMonthlyToProject: EventsMonthlyToProject[];
 }
 
 @Entity()
@@ -175,8 +187,12 @@ export class Artifact extends Base<"ArtifactId"> {
   eventsAsTo: Event[];
   @OneToMany(() => Event, (event) => event.from)
   eventsAsFrom: Event[];
-  @OneToMany(() => EventsDailyByArtifact, (e) => e.to)
-  eventsDailyByArtifact: EventsDailyByArtifact[];
+  @OneToMany(() => EventsDailyToArtifact, (e) => e.artifact)
+  eventsDailyToArtifact: EventsDailyToArtifact[];
+  @OneToMany(() => EventsWeeklyToArtifact, (e) => e.artifact)
+  eventsWeeklyToArtifact: EventsWeeklyToArtifact[];
+  @OneToMany(() => EventsMonthlyToArtifact, (e) => e.artifact)
+  eventsMonthlyToArtifact: EventsMonthlyToArtifact[];
 
   @OneToMany(() => EventPointer, (eventPointer) => eventPointer.artifact)
   eventPointers: EventPointer[];
@@ -322,28 +338,86 @@ export class Log extends Base<"LogId"> {
   execution: JobExecution;
 }
 
+/******************************
+ * MATERIALIZED VIEWS
+ ******************************/
+
 @ViewEntity({
   materialized: true,
   expression: `
-    SELECT "toId",
+    SELECT "toId" AS "artifactId",
       "typeId",
       time_bucket(INTERVAL '1 day', "time") AS "bucketDaily",
       SUM(amount) as "amount"
     FROM "event" 
-    GROUP BY "toId", "typeId", "bucketDaily"
+    GROUP BY "artifactId", "typeId", "bucketDaily"
     WITH NO DATA;
   `,
 })
-export class EventsDailyByArtifact {
-  @ManyToOne(() => Artifact, (artifact) => artifact.eventsDailyByArtifact)
+export class EventsDailyToArtifact {
+  @ManyToOne(() => Artifact, (artifact) => artifact.eventsDailyToArtifact)
   @ViewColumn()
-  to: Artifact;
+  artifact: Artifact;
 
   @ViewColumn()
   type: EventType;
 
   @ViewColumn()
   bucketDaily: Date;
+
+  @ViewColumn()
+  amount: number;
+}
+
+@ViewEntity({
+  materialized: true,
+  expression: `
+    SELECT "artifactId",
+      "typeId",
+      time_bucket(INTERVAL '1 week', "bucketDaily") AS "bucketWeekly",
+      SUM(amount) as "amount"
+    FROM "events_daily_to_artifact" 
+    GROUP BY "artifactId", "typeId", "bucketWeekly"
+    WITH NO DATA;
+  `,
+})
+export class EventsWeeklyToArtifact {
+  @ManyToOne(() => Artifact, (artifact) => artifact.eventsWeeklyToArtifact)
+  @ViewColumn()
+  artifact: Artifact;
+
+  @ViewColumn()
+  type: EventType;
+
+  @ViewColumn()
+  bucketWeekly: Date;
+
+  @ViewColumn()
+  amount: number;
+}
+
+@ViewEntity({
+  materialized: true,
+  expression: `
+    SELECT "artifactId",
+      "typeId",
+      time_bucket(INTERVAL '1 month', "bucketDaily") AS "bucketMonthly",
+      SUM(amount) as "amount"
+    FROM "events_daily_to_artifact" 
+    GROUP BY "artifactId", "typeId", "bucketMonthly"
+    WITH NO DATA;
+  `,
+})
+export class EventsMonthlyToArtifact {
+  @ManyToOne(() => Artifact, (artifact) => artifact.eventsMonthlyToArtifact)
+  @ViewColumn()
+  artifact: Artifact;
+
+  @ViewColumn()
+  type: EventType;
+
+  @ViewColumn()
+  bucketMonthly: Date;
 
   @ViewColumn()
   amount: number;
@@ -363,8 +437,8 @@ export class EventsDailyByArtifact {
     WITH NO DATA;
   `,
 })
-export class EventsDailyByProject {
-  @ManyToOne(() => Project, (project) => project.eventsDailyByProject)
+export class EventsDailyToProject {
+  @ManyToOne(() => Project, (project) => project.eventsDailyToProject)
   @ViewColumn()
   project: Project;
 
@@ -373,6 +447,60 @@ export class EventsDailyByProject {
 
   @ViewColumn()
   bucketDaily: Date;
+
+  @ViewColumn()
+  amount: number;
+}
+
+@ViewEntity({
+  materialized: true,
+  expression: `
+    SELECT "projectId",
+      "typeId",
+      time_bucket(INTERVAL '1 week', "bucketDaily") AS "bucketWeekly",
+      SUM(amount) as "amount"
+    FROM "events_daily_to_project" 
+    GROUP BY "projectId", "typeId", "bucketWeekly"
+    WITH NO DATA;
+  `,
+})
+export class EventsWeeklyToProject {
+  @ManyToOne(() => Project, (project) => project.eventsWeeklyToProject)
+  @ViewColumn()
+  project: Project;
+
+  @ViewColumn()
+  type: EventType;
+
+  @ViewColumn()
+  bucketWeekly: Date;
+
+  @ViewColumn()
+  amount: number;
+}
+
+@ViewEntity({
+  materialized: true,
+  expression: `
+    SELECT "projectId",
+      "typeId",
+      time_bucket(INTERVAL '1 month', "bucketDaily") AS "bucketMonthly",
+      SUM(amount) as "amount"
+    FROM "events_daily_to_project" 
+    GROUP BY "projectId", "typeId", "bucketMonthly"
+    WITH NO DATA;
+  `,
+})
+export class EventsMonthlyToProject {
+  @ManyToOne(() => Project, (project) => project.eventsMonthlyToProject)
+  @ViewColumn()
+  project: Project;
+
+  @ViewColumn()
+  type: EventType;
+
+  @ViewColumn()
+  bucketMonthly: Date;
 
   @ViewColumn()
   amount: number;
