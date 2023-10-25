@@ -50,8 +50,6 @@ type EntityType = "project" | "artifact";
 
 // Default start time
 const DEFAULT_START_DATE = 0;
-// Default entity type if not specified
-const DEFAULT_ENTITY_TYPE: EntityType = "artifact";
 // Default XAxis if not specified
 const DEFAULT_XAXIS: XAxis = "eventType";
 
@@ -117,11 +115,11 @@ const entityIdToLabel = (id: number | string, entityData?: EntityData[]) =>
  */
 const formatDataToAreaChart = (
   data: EventData[],
-  categories: string[],
-  entityType: EntityType,
+  categories: { results: string[]; opts: CategoryOpts },
+  entityData?: EntityData[],
 ) => {
-  // Start with an empty data point for each date
-  const emptyDataPoint = _.fromPairs(categories.map((c) => [c, 0]));
+  // Start with an empty data point for each available date
+  const emptyDataPoint = _.fromPairs(categories.results.map((c) => [c, 0]));
   const datesWithData = _.uniq(data.map((x) => eventTimeToLabel(x.date)));
   const groupedByDate = _.fromPairs(
     datesWithData.map((d) => [d, _.clone(emptyDataPoint)]),
@@ -132,9 +130,10 @@ const formatDataToAreaChart = (
   data.forEach((d) => {
     const dateLabel = eventTimeToLabel(d.date);
     const category = createCategory(
-      entityType,
       d.id,
       EVENT_TYPE_ID_TO_NAME[d.typeId],
+      entityData,
+      categories.opts,
     );
     groupedByDate[dateLabel][category] += d.amount;
   });
@@ -153,7 +152,7 @@ const formatDataToAreaChart = (
 
   // Trim empty data at the start and end
   const isEmptyDataPoint = (x: _.Dictionary<number | string>): boolean => {
-    for (const cat of categories) {
+    for (const cat of categories.results) {
       if (x[cat] !== 0) {
         return false;
       }
@@ -167,11 +166,28 @@ const formatDataToAreaChart = (
   while (j > 0 && isEmptyDataPoint(result[j])) {
     j--;
   }
-  const sliced = result.slice(i, j + 1);
+  const slicedResult = result.slice(i, j + 1);
+
+  // Fill in any empty dates
+  let currDate = dayjs(result[0]?.date);
+  const filledResult = [];
+  for (const x of slicedResult) {
+    const thisDate = dayjs(x.date);
+    while (currDate.isBefore(thisDate)) {
+      filledResult.push({
+        ...emptyDataPoint,
+        date: currDate.format("YYYY-MM-DD"),
+      });
+      currDate = currDate.add(1, "day");
+    }
+    filledResult.push(x);
+    currDate = thisDate.add(1, "day");
+  }
+  //console.log(filledResult);
 
   return {
-    data: sliced,
-    categories,
+    data: filledResult,
+    categories: categories.results,
     xAxis: "date",
   };
 };
@@ -221,6 +237,11 @@ const formatDataToBarList = (
 const stringToIntArray = (ids?: string[]): number[] =>
   ids?.map((id) => parseInt(id)).filter((id) => !!id && !isNaN(id)) ?? [];
 
+type CategoryOpts = {
+  includeIds?: boolean;
+  includeTypes?: boolean;
+};
+
 /**
  * TODO: Creates unique categories for the area chart
  * - Currently, we just use the type, which will merge data across IDs
@@ -230,22 +251,41 @@ const stringToIntArray = (ids?: string[]): number[] =>
  * @param type
  * @returns
  */
-const createCategory = (entityType: EntityType, id: number, type: string) =>
-  `${eventTypeToLabel(type)}`;
+const createCategory = (
+  id: number,
+  type: string,
+  entityData?: EntityData[],
+  opts?: CategoryOpts,
+) => {
+  if (opts?.includeIds && opts?.includeTypes) {
+    return `${entityIdToLabel(id, entityData)}: ${eventTypeToLabel(type)}`;
+  } else if (opts?.includeIds) {
+    return `${entityIdToLabel(id, entityData)}`;
+  } else {
+    return `${eventTypeToLabel(type)}`;
+  }
+};
 
-const createCategories = (props: EventDataProviderProps) => {
-  const entityType = props.entityType ?? DEFAULT_ENTITY_TYPE;
-  const ids = (props.ids ?? [])
-    .map(parseInt)
-    .filter((id) => !!id && !isNaN(id));
+const createCategories = (
+  props: EventDataProviderProps,
+  entityData?: EntityData[],
+) => {
+  const ids = stringToIntArray(props.ids);
   const types = props.eventTypes ?? [];
-  const result: string[] = [];
+  const results: string[] = [];
+  const opts: CategoryOpts = {
+    includeIds: ids.length > 1,
+    includeTypes: types.length > 1,
+  };
   for (const id of ids) {
     for (const type of types) {
-      result.push(createCategory(entityType, id, type));
+      results.push(createCategory(id, type, entityData, opts));
     }
   }
-  return result;
+  return {
+    results,
+    opts,
+  };
 };
 
 /**
@@ -269,8 +309,8 @@ const formatData = (
     props.chartType === "areaChart"
       ? formatDataToAreaChart(
           data,
-          createCategories(props),
-          props.entityType ?? DEFAULT_ENTITY_TYPE,
+          createCategories(props, entityData),
+          entityData,
         )
       : props.chartType === "barList"
       ? formatDataToBarList(props.xAxis ?? DEFAULT_XAXIS, data, entityData)
