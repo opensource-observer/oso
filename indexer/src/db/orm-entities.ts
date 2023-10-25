@@ -187,12 +187,18 @@ export class Artifact extends Base<"ArtifactId"> {
   eventsAsTo: Event[];
   @OneToMany(() => Event, (event) => event.from)
   eventsAsFrom: Event[];
+
   @OneToMany(() => EventsDailyToArtifact, (e) => e.artifact)
   eventsDailyToArtifact: EventsDailyToArtifact[];
   @OneToMany(() => EventsWeeklyToArtifact, (e) => e.artifact)
   eventsWeeklyToArtifact: EventsWeeklyToArtifact[];
   @OneToMany(() => EventsMonthlyToArtifact, (e) => e.artifact)
   eventsMonthlyToArtifact: EventsMonthlyToArtifact[];
+
+  @OneToMany(() => FirstContribution, (event) => event.to)
+  firstContributionAsTo: FirstContribution[];
+  @OneToMany(() => FirstContribution, (event) => event.from)
+  firstContributionAsFrom: FirstContribution[];
 
   @OneToMany(() => EventPointer, (eventPointer) => eventPointer.artifact)
   eventPointers: EventPointer[];
@@ -212,13 +218,14 @@ export class EventType extends Base<"EventTypeId"> {
   events: Event[];
 }
 
+type EventId = Brand<number, "EventId">;
 @Entity()
 @Index(["time"])
 @Index(["id", "time"], { unique: true })
 @Index(["type", "sourceId", "time"], { unique: true })
 export class Event {
   @PrimaryColumn("integer", { generated: "increment" })
-  id: Brand<number, "EventId">;
+  id: EventId;
 
   @Column("text")
   sourceId: string;
@@ -342,6 +349,56 @@ export class Log extends Base<"LogId"> {
  * MATERIALIZED VIEWS
  ******************************/
 
+/**
+ * For each (to, from) pair, get the first contribution event in time.
+ */
+@ViewEntity({
+  materialized: true,
+  expression: `
+    SELECT DISTINCT ON ("toId", "fromId")
+      "toId",
+      "fromId",
+      "time",
+      "id",
+      "typeId",
+      "amount"
+    FROM "event"
+    ORDER BY "toId", "fromId", "time" ASC 
+    WITH NO DATA;
+  `,
+})
+export class FirstContribution {
+  @ManyToOne(() => Artifact, (artifact) => artifact.firstContributionAsTo)
+  @ViewColumn()
+  to: Artifact;
+
+  @ManyToOne(() => Artifact, (artifact) => artifact.firstContributionAsFrom, {
+    nullable: true,
+  })
+  @IsOptional()
+  @ViewColumn()
+  from: Artifact | null;
+
+  @ViewColumn()
+  time: Date;
+
+  @ViewColumn()
+  id: Brand<number, "EventId">;
+
+  @ViewColumn()
+  type: EventType;
+
+  @ViewColumn()
+  amount: number;
+}
+
+/******************************
+ * TIMESCALEDB CONTINUOUS AGGREGATES
+ ******************************/
+
+/**
+ * Continuous aggregations to an artifact
+ */
 @ViewEntity({
   materialized: true,
   expression: `
@@ -423,6 +480,9 @@ export class EventsMonthlyToArtifact {
   amount: number;
 }
 
+/**
+ * Continuous aggregations to a project
+ */
 @ViewEntity({
   materialized: true,
   expression: `

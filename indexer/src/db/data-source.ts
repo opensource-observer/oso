@@ -18,17 +18,18 @@ import {
   Project,
   Event,
   EventPointer,
+  EventType,
   Job,
   JobGroupLock,
   JobExecution,
   Log,
+  FirstContribution,
   EventsDailyToArtifact,
   EventsWeeklyToArtifact,
   EventsMonthlyToArtifact,
   EventsDailyToProject,
   EventsWeeklyToProject,
   EventsMonthlyToProject,
-  EventType,
 } from "./orm-entities.js";
 
 const loggingOption: LoggerOptions = DEBUG_DB ? "all" : false;
@@ -78,6 +79,7 @@ export function staticDataSourceOptions(
       JobGroupLock,
       JobExecution,
       Log,
+      FirstContribution,
       EventsDailyToArtifact,
       EventsWeeklyToArtifact,
       EventsMonthlyToArtifact,
