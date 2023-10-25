@@ -1,3 +1,4 @@
+import argparse
 import csv
 from dotenv import load_dotenv
 import os
@@ -113,3 +114,14 @@ def parse_csv(csv_path, address_col, label_col, chain):
         writer = csv.DictWriter(f, fieldnames=reader.fieldnames)
         writer.writeheader()
         writer.writerows(rows)
+
+if __name__ == "__main__":
+    
+    parser = argparse.ArgumentParser(description='Parse a csv file.')
+    parser.add_argument('--csv', type=str, required=True, help='The path to the csv file')
+    parser.add_argument('--address_col', type=str, required=True, help='The column name of the addresses')
+    parser.add_argument('--label_col', type=str, required=True, help='The column name of the labels')
+    parser.add_argument('--chain', type=str, required=True, help='The chain to use for lookups')
+    args = parser.parse_args()
+
+    parse_csv(args.csv, args.address_col, args.label_col, args.chain)        
