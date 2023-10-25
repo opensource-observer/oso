@@ -113,11 +113,16 @@ export const EventRepository = AppDataSource.getRepository(Event).extend({
         }
         const deleteResult = await repo.delete(whereOptions);
         if (!deleteResult.affected) {
+          logger.debug(`deletion affected no rows. that is not expected`);
           throw new BulkUpdateError(
             "the deletion should have effected the expected number of rows. no deletions recorded",
           );
         }
-        if (deleteResult.affected !== summary.sourceIds.length) {
+        if (deleteResult.affected < summary.sourceIds.length) {
+          logger.debug(
+            `deletion affected ${deleteResult.affected} rows. expected to delete ${summary.sourceIds.length}`,
+          );
+          logger.debug(`deleted with ${whereOptions}`);
           throw new BulkUpdateDeletionRecordsMismatch(
             `the deletion should have effected ${summary.sourceIds.length}. Only deleted ${deleteResult.affected}`,
           );

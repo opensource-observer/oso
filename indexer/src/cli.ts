@@ -172,10 +172,16 @@ const cli = yargs(hideBin(process.argv))
             if (execSummary.errors.length > 0) {
               for (const err of execSummary.errors) {
                 logger.info(err);
-                logger.error(err);
+                try {
+                  logger.error(JSON.stringify(err));
+                } catch (_e) {
+                  logger.error("Cannot stringify error.");
+                  logger.error(err);
+                }
               }
               process.exit(1);
             }
+            process.exit(0);
           },
         )
         .command<SchedulerWorkerArgs>(
@@ -208,6 +214,7 @@ const cli = yargs(hideBin(process.argv))
             if (execSummary.errors.length > 0) {
               process.exit(1);
             }
+            process.exit(0);
           },
         )
         .command<SchedulerQueueAllArgs>(

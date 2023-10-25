@@ -815,7 +815,12 @@ export class BatchEventRecorder implements IEventRecorder {
         const eventType = this.getEventTypeFromString(eventTypeName);
         await this.flushType(eventType);
       } catch (err) {
-        logger.debug("cauth some flush errors");
+        logger.debug("caught some flush errors");
+        try {
+          logger.debug(`err: ${JSON.stringify(err)}`);
+        } catch (_e) {
+          logger.debug("could not json stringify err");
+        }
         logger.error(err);
         this.emitter.emit("error", err);
       }
