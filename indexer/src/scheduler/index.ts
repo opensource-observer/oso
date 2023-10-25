@@ -189,7 +189,10 @@ export async function configure(args: SchedulerArgs) {
         gh,
         recorder,
         cache,
-        500,
+        // Arrived at this batch size through trial and error. 500 was too much.
+        // Many "Premature close" errors. The less we have the less opportunity
+        // for HTTP5XX errors it seems. This batch size is fairly arbitrary.
+        100,
       );
       return collector;
     },

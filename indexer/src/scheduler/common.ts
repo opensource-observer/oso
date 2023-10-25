@@ -159,7 +159,10 @@ export class BatchArtifactsCollector extends BaseCollector<Batch> {
   }
 
   async *groupedArtifacts(): AsyncGenerator<IArtifactGroup<Batch>> {
-    const all = await this.allArtifacts();
+    const allUnsorted = await this.allArtifacts();
+    const all = allUnsorted.sort((a, b) => {
+      return a.id - b.id;
+    });
 
     let batchNumber = 0;
     const batches = Math.ceil(all.length / this.batchSize);

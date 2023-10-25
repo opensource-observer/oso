@@ -99,6 +99,16 @@ export function GithubCollectorMixins<TBase extends Constructor>(Base: TBase) {
       };
     }
 
+    debugLogAnError(message: string, err: unknown) {
+      logger.debug(message);
+      try {
+        logger.debug(JSON.stringify(err));
+      } catch (_e) {
+        logger.debug("could not json stringify the error");
+        logger.debug(err);
+      }
+    }
+
     async rateLimitedGraphQLRequest<R extends GithubGraphQLResponse<object>>(
       query: RequestDocument,
       variables: Variables,
@@ -129,7 +139,7 @@ export function GithubCollectorMixins<TBase extends Constructor>(Base: TBase) {
             this._resetTime = DateTime.fromISO(rateLimit.resetAt);
           } else {
             // Artificially rate limit to 5reqs/second
-            this._resetTime = DateTime.now().plus(200);
+            this._resetTime = DateTime.now().plus(500);
           }
           release();
           return response;
@@ -139,9 +149,32 @@ export function GithubCollectorMixins<TBase extends Constructor>(Base: TBase) {
             // Retry up
             if (err.response.status >= 500 && err.response.status < 600) {
               logger.error("hit a github 500 error. waiting for some period");
-              this._resetTime = DateTime.now().plus({ milliseconds: 5000 });
+              this.debugLogAnError("github 500 error:", err);
+              this._resetTime = DateTime.now().plus({
+                milliseconds: 5000 * (i + 1),
+              });
               continue;
             }
+
+            if (err.response.status === 403) {
+              logger.error("likely hit a secondary rate limit. pausing 5 mins");
+              this.debugLogAnError("github 403 error:", err);
+              logger.debug(JSON.stringify(err));
+              this._resetTime = DateTime.now().plus({ milliseconds: 300000 });
+              continue;
+            }
+          }
+          const errAsString = `${err}`;
+          if (errAsString.indexOf("Premature close") !== -1) {
+            logger.error(
+              "received a premature close from github. retrying request after a pause",
+            );
+            logger.error(err);
+            this.debugLogAnError("github premature close error:", err);
+            this._resetTime = DateTime.now().plus({
+              milliseconds: 2500 * (i + 1),
+            });
+            continue;
           }
           throw err;
         }
