@@ -90,6 +90,46 @@ const GET_EVENTS_DAILY_TO_ARTIFACT = gql(`
   }
 `);
 
+const GET_EVENTS_WEEKLY_TO_ARTIFACT = gql(`
+  query EventsWeeklyToArtifact(
+    $artifactIds: [Int!],
+    $typeIds: [Int!],
+    $startDate: timestamptz!,
+    $endDate: timestamptz!, 
+  ) {
+    events_weekly_to_artifact(where: {
+      artifactId: { _in: $artifactIds },
+      typeId: { _in: $typeIds },
+      bucketWeekly: { _gte: $startDate, _lte: $endDate }
+    }) {
+      typeId
+      artifactId
+      bucketWeekly
+      amount
+    }
+  }
+`);
+
+const GET_EVENTS_MONTHLY_TO_ARTIFACT = gql(`
+  query EventsMonthlyToArtifact(
+    $artifactIds: [Int!],
+    $typeIds: [Int!],
+    $startDate: timestamptz!,
+    $endDate: timestamptz!, 
+  ) {
+    events_monthly_to_artifact(where: {
+      artifactId: { _in: $artifactIds },
+      typeId: { _in: $typeIds },
+      bucketMonthly: { _gte: $startDate, _lte: $endDate }
+    }) {
+      typeId
+      artifactId
+      bucketMonthly
+      amount
+    }
+  }
+`);
+
 const GET_EVENTS_DAILY_TO_PROJECT = gql(`
   query EventsDailyToProject(
     $projectIds: [Int!],
@@ -110,6 +150,46 @@ const GET_EVENTS_DAILY_TO_PROJECT = gql(`
   }
 `);
 
+const GET_EVENTS_WEEKLY_TO_PROJECT = gql(`
+  query EventsWeeklyToProject(
+    $projectIds: [Int!],
+    $typeIds: [Int!],
+    $startDate: timestamptz!,
+    $endDate: timestamptz!, 
+  ) {
+    events_weekly_to_project(where: {
+      projectId: { _in: $projectIds },
+      typeId: { _in: $typeIds },
+      bucketWeekly: { _gte: $startDate, _lte: $endDate }
+    }) {
+      typeId
+      projectId
+      bucketWeekly
+      amount
+    }
+  }
+`);
+
+const GET_EVENTS_MONTHLY_TO_PROJECT = gql(`
+  query EventsMonthlyToProject(
+    $projectIds: [Int!],
+    $typeIds: [Int!],
+    $startDate: timestamptz!,
+    $endDate: timestamptz!, 
+  ) {
+    events_monthly_to_project(where: {
+      projectId: { _in: $projectIds },
+      typeId: { _in: $typeIds },
+      bucketMonthly: { _gte: $startDate, _lte: $endDate }
+    }) {
+      typeId
+      projectId
+      bucketMonthly
+      amount
+    }
+  }
+`);
+
 export {
   GET_ALL_ARTIFACTS,
   GET_ARTIFACTS_BY_IDS,
@@ -118,5 +198,9 @@ export {
   GET_ALL_PROJECTS,
   GET_PROJECT_BY_SLUG,
   GET_EVENTS_DAILY_TO_ARTIFACT,
+  GET_EVENTS_WEEKLY_TO_ARTIFACT,
+  GET_EVENTS_MONTHLY_TO_ARTIFACT,
   GET_EVENTS_DAILY_TO_PROJECT,
+  GET_EVENTS_WEEKLY_TO_PROJECT,
+  GET_EVENTS_MONTHLY_TO_PROJECT,
 };
