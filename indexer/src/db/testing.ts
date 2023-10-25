@@ -17,7 +17,7 @@ export async function clearDb() {
   const c = await initializeOnce();
   const entities = c.entityMetadatas;
   for (const entity of entities) {
-    if (entity.tableMetadataArgs.type == "view") {
+    if (entity.tableMetadataArgs.type === "view") {
       continue;
     }
     const repository = AppDataSource.getRepository(entity.name);
