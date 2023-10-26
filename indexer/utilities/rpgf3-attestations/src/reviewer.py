@@ -8,8 +8,9 @@ OSSD_SNAPSHOT_JSON = "data/ossd_snapshot.json"
 OSSD_REVIEWER_CSV = "data/ossd_reviewer.csv"
 
 
+GITHUB_BASE = "https://github.com/"
 def normalize_github_url(url):
-    return url.lower().replace("https://github.com/", "").strip('/')
+    return url.lower().replace(GITHUB_BASE, "").strip('/')
 
 
 def review_data(must_have_github=True):
@@ -24,8 +25,8 @@ def review_data(must_have_github=True):
         name = project['Project Name']
         slugs = project['Slug(s)']
         if not slugs:
-            continue
-        if len(slugs) > 1:
+            slug = None
+        elif len(slugs) > 1:
             print(f"WARNING: {name} has multiple slugs: {slugs}")
             slug = " && ".join(slugs)
         else:
@@ -50,10 +51,11 @@ def review_data(must_have_github=True):
             owner = repo.split("/")[0] if "/" in repo else repo
             if repo in existing_data['repos'] or owner in existing_data['repos']:
                 continue
+            url = GITHUB_BASE + repo
             if owner != repo:
-                records.append({**props, 'artifact': repo, 'type': 'github repo'})
+                records.append({**props, 'artifact': repo, 'type': 'github repo', 'url': url})
             else:
-                records.append({**props, 'artifact': repo, 'type': 'github owner'})  
+                records.append({**props, 'artifact': repo, 'type': 'github owner', 'url': url})  
 
         contracts = project['Contributions: Contracts']
         for contract in contracts:
@@ -63,15 +65,17 @@ def review_data(must_have_github=True):
             address = artifact[1].lower()
             if address in existing_data['addresses']:
                 continue
-            records.append({**props, 'artifact': address, 'type': 'contract'})
+            url = 'https://optimistic.etherscan.io/address/' + address
+            records.append({**props, 'artifact': address, 'type': 'contract', 'url': url})
         
         address = project['Payout Address'].lower()
+        url = 'https://optimistic.etherscan.io/address/' + address
         if address not in existing_data['addresses']:
-            records.append({**props, 'artifact': address, 'type': 'wallet'})
+            records.append({**props, 'artifact': address, 'type': 'wallet', 'url': url})
 
     df = pd.DataFrame(records)
     df = df.drop_duplicates(keep='first')
-    df.sort_values(by=['slug', 'name', 'type', 'artifact'], inplace=True)
+    df.sort_values(by=['slug', 'type', 'name', 'artifact'], inplace=True)
     df.to_csv(OSSD_REVIEWER_CSV, index=False)
 
 
