@@ -1,7 +1,12 @@
 import React from "react";
 import useSWR from "swr";
 import { SupabaseQueryArgs, supabaseQuery } from "../../lib/clients/supabase";
-import { CommonDataProviderProps, DataProviderView } from "./provider-view";
+import {
+  CommonDataProviderProps,
+  CommonDataProviderRegistration,
+  DataProviderView,
+} from "./provider-view";
+import { RegistrationProps } from "../../lib/types";
 
 // The name used to pass data into the Plasmic DataProvider
 const KEY_PREFIX = "db";
@@ -31,10 +36,38 @@ const genKey = (props: SupabaseQueryProps) => {
  * Current limitations:
  * - Does not support authentication or RLS. Make sure data is readable by unauthenticated users
  */
-export type SupabaseQueryProps = Partial<SupabaseQueryArgs> &
-  CommonDataProviderProps;
+type SupabaseQueryProps = Partial<SupabaseQueryArgs> & CommonDataProviderProps;
 
-export function SupabaseQuery(props: SupabaseQueryProps) {
+const SupabaseQueryRegistration: RegistrationProps<SupabaseQueryProps> = {
+  ...CommonDataProviderRegistration,
+  tableName: {
+    type: "string",
+    helpText: "Supabase table name",
+  },
+  columns: {
+    type: "string",
+    helpText: "Comma-separated list of columns",
+  },
+  filters: {
+    type: "object",
+    defaultValue: [],
+    helpText: "e.g. [['id', 'lt', 10], ['name', 'eq', 'foobar']]",
+  },
+  limit: {
+    type: "number",
+    helpText: "Number of rows to return",
+  },
+  orderBy: {
+    type: "string",
+    helpText: "Name of column to order by",
+  },
+  orderAscending: {
+    type: "boolean",
+    helpText: "True if ascending, false if descending",
+  },
+};
+
+function SupabaseQuery(props: SupabaseQueryProps) {
   // These props are set in the Plasmic Studio
   const { variableName, tableName, useTestData, testData } = props;
   const key = variableName ?? genKey(props);
@@ -61,3 +94,6 @@ export function SupabaseQuery(props: SupabaseQueryProps) {
     />
   );
 }
+
+export { SupabaseQueryRegistration, SupabaseQuery };
+export type { SupabaseQueryProps };

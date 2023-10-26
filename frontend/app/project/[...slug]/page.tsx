@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { PlasmicComponent } from "@plasmicapp/loader-nextjs";
 import { PLASMIC } from "../../../plasmic-init";
 import { PlasmicClientRootProvider } from "../../../plasmic-init-client";
-import { cachedGetProjectBySlug } from "../../../lib/cached-queries";
+import { cachedGetProjectsBySlugs } from "../../../lib/cached-queries";
 import { logger } from "../../../lib/logger";
 import { catchallPathToString } from "../../../lib/paths";
 
@@ -25,16 +25,16 @@ type ProjectPageProps = {
 
 export default async function ProjectPage(props: ProjectPageProps) {
   const { params, searchParams } = props;
-  const slug = catchallPathToString(params.slug);
+  const slugs = [catchallPathToString(params.slug)];
   if (!params.slug || !Array.isArray(params.slug) || params.slug.length < 1) {
     logger.warn("Invalid project page path", params);
     notFound();
   }
 
   // Get project metadata from the database
-  const { project: projectArray } = await cachedGetProjectBySlug({ slug });
+  const { project: projectArray } = await cachedGetProjectsBySlugs({ slugs });
   if (!Array.isArray(projectArray) || projectArray.length < 1) {
-    logger.warn(`Cannot find project (slug=${slug})`);
+    logger.warn(`Cannot find project (slugs=${slugs})`);
     notFound();
   }
   const project = projectArray[0];

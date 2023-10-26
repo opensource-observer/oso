@@ -8,9 +8,13 @@ import { AlgoliaSearchBox } from "./components/widgets/algolia";
 import { FeedbackWrapper } from "./components/widgets/feedback-farm";
 import { ProjectsClientProvider } from "./components/project-browser/project-client-provider";
 import { ProjectBrowser } from "./components/project-browser/project-browser";
-import { SupabaseQuery } from "./components/dataprovider/supabase-query";
+import {
+  SupabaseQuery,
+  SupabaseQueryRegistration,
+} from "./components/dataprovider/supabase-query";
 import {
   EventDataProvider,
+  EventDataProviderRegistration,
   ProjectEventDataProvider,
   ArtifactEventDataProvider,
 } from "./components/dataprovider/event-data-provider";
@@ -141,392 +145,28 @@ PLASMIC.registerComponent(ProjectBrowser, {
 
 PLASMIC.registerComponent(SupabaseQuery, {
   name: "SupabaseQuery",
-  props: {
-    variableName: {
-      type: "string",
-      helpText: "Name to use in Plasmic data picker. Must be unique per query.",
-    },
-
-    // SupabaseQueryArgs
-    tableName: {
-      type: "string",
-      helpText: "Supabase table name",
-    },
-    columns: {
-      type: "string",
-      helpText: "Comma-separated list of columns",
-    },
-    filters: {
-      type: "object",
-      defaultValue: [],
-      helpText: "e.g. [['id', 'lt', 10], ['name', 'eq', 'foobar']]",
-    },
-    limit: {
-      type: "number",
-      helpText: "Number of rows to return",
-    },
-    orderBy: {
-      type: "string",
-      helpText: "Name of column to order by",
-    },
-    orderAscending: {
-      type: "boolean",
-      helpText: "True if ascending, false if descending",
-    },
-
-    // Plasmic elements
-    children: "slot",
-    loadingChildren: {
-      type: "slot",
-      defaultValue: {
-        type: "text",
-        value: "Placeholder",
-      },
-    },
-    ignoreLoading: {
-      type: "boolean",
-      helpText: "Don't show 'loadingChildren' even if we're still loading data",
-      advanced: true,
-    },
-    errorChildren: {
-      type: "slot",
-      defaultValue: {
-        type: "text",
-        value: "Placeholder",
-      },
-    },
-    ignoreError: {
-      type: "boolean",
-      helpText: "Don't show 'errorChildren' even if we get an error",
-      advanced: true,
-    },
-    useTestData: {
-      type: "boolean",
-      helpText: "Render with test data",
-      editOnly: true,
-      advanced: true,
-    },
-    testData: {
-      type: "object",
-      advanced: true,
-    },
-  },
+  props: { ...SupabaseQueryRegistration },
   providesData: true,
   importPath: "./components/dataprovider/supabase-query",
 });
 
 PLASMIC.registerComponent(EventDataProvider, {
   name: "EventDataProvider",
-  props: {
-    //// CommonDataProviderRegistration
-    // Data variable
-    variableName: {
-      type: "string",
-      helpText: "Name to use in Plasmic data picker. Must be unique per query.",
-    },
-    // Plasmic elements
-    children: "slot",
-    loadingChildren: {
-      type: "slot",
-      defaultValue: {
-        type: "text",
-        value: "Placeholder",
-      },
-    },
-    ignoreLoading: {
-      type: "boolean",
-      helpText: "Don't show 'loadingChildren' even if we're still loading data",
-      advanced: true,
-    },
-    errorChildren: {
-      type: "slot",
-      defaultValue: {
-        type: "text",
-        value: "Placeholder",
-      },
-    },
-    ignoreError: {
-      type: "boolean",
-      helpText: "Don't show 'errorChildren' even if we get an error",
-      advanced: true,
-    },
-    useTestData: {
-      type: "boolean",
-      helpText: "Render with test data",
-      editOnly: true,
-      advanced: true,
-    },
-    testData: {
-      type: "object",
-      advanced: true,
-    },
-    // Data options
-    chartType: {
-      type: "choice",
-      helpText: "Pair this with the component in 'children'",
-      options: ["areaChart", "barList"],
-    },
-    xAxis: {
-      type: "choice",
-      helpText: "What is the x-axis?",
-      options: ["eventTime", "entity", "eventType"],
-    },
-    entityType: {
-      type: "choice",
-      options: ["project", "artifact"],
-    },
-    ids: {
-      type: "array",
-      defaultValue: [],
-    },
-    eventTypes: {
-      type: "array",
-      defaultValue: [],
-    },
-    startDate: {
-      type: "string",
-      helpText: "YYYY-MM-DD",
-    },
-    endDate: {
-      type: "string",
-      helpText: "YYYY-MM-DD",
-    },
-  },
-  providesData: true,
-  importPath: "./components/dataprovider/event-data-provider",
-});
-
-PLASMIC.registerComponent(EventDataProvider, {
-  name: "EventDataProvider",
-  props: {
-    //// CommonDataProviderRegistration
-    // Data variable
-    variableName: {
-      type: "string",
-      helpText: "Name to use in Plasmic data picker. Must be unique per query.",
-    },
-    // Plasmic elements
-    children: "slot",
-    loadingChildren: {
-      type: "slot",
-      defaultValue: {
-        type: "text",
-        value: "Placeholder",
-      },
-    },
-    ignoreLoading: {
-      type: "boolean",
-      helpText: "Don't show 'loadingChildren' even if we're still loading data",
-      advanced: true,
-    },
-    errorChildren: {
-      type: "slot",
-      defaultValue: {
-        type: "text",
-        value: "Placeholder",
-      },
-    },
-    ignoreError: {
-      type: "boolean",
-      helpText: "Don't show 'errorChildren' even if we get an error",
-      advanced: true,
-    },
-    useTestData: {
-      type: "boolean",
-      helpText: "Render with test data",
-      editOnly: true,
-      advanced: true,
-    },
-    testData: {
-      type: "object",
-      advanced: true,
-    },
-    // Data options
-    chartType: {
-      type: "choice",
-      helpText: "Pair this with the component in 'children'",
-      options: ["areaChart", "barList"],
-    },
-    xAxis: {
-      type: "choice",
-      helpText: "What is the x-axis?",
-      options: ["eventTime", "entity", "eventType"],
-    },
-    entityType: {
-      type: "choice",
-      options: ["project", "artifact"],
-    },
-    ids: {
-      type: "array",
-      defaultValue: [],
-    },
-    eventTypes: {
-      type: "array",
-      defaultValue: [],
-    },
-    startDate: {
-      type: "string",
-      helpText: "YYYY-MM-DD",
-    },
-    endDate: {
-      type: "string",
-      helpText: "YYYY-MM-DD",
-    },
-  },
+  props: { ...EventDataProviderRegistration },
   providesData: true,
   importPath: "./components/dataprovider/event-data-provider",
 });
 
 PLASMIC.registerComponent(ProjectEventDataProvider, {
   name: "ProjectEventDataProvider",
-  props: {
-    //// CommonDataProviderRegistration
-    // Data variable
-    variableName: {
-      type: "string",
-      helpText: "Name to use in Plasmic data picker. Must be unique per query.",
-    },
-    // Plasmic elements
-    children: "slot",
-    loadingChildren: {
-      type: "slot",
-      defaultValue: {
-        type: "text",
-        value: "Placeholder",
-      },
-    },
-    ignoreLoading: {
-      type: "boolean",
-      helpText: "Don't show 'loadingChildren' even if we're still loading data",
-      advanced: true,
-    },
-    errorChildren: {
-      type: "slot",
-      defaultValue: {
-        type: "text",
-        value: "Placeholder",
-      },
-    },
-    ignoreError: {
-      type: "boolean",
-      helpText: "Don't show 'errorChildren' even if we get an error",
-      advanced: true,
-    },
-    useTestData: {
-      type: "boolean",
-      helpText: "Render with test data",
-      editOnly: true,
-      advanced: true,
-    },
-    testData: {
-      type: "object",
-      advanced: true,
-    },
-    // Data options
-    chartType: {
-      type: "choice",
-      helpText: "Pair this with the component in 'children'",
-      options: ["areaChart", "barList"],
-    },
-    xAxis: {
-      type: "choice",
-      helpText: "What is the x-axis?",
-      options: ["eventTime", "entity", "eventType"],
-    },
-    ids: {
-      type: "array",
-      defaultValue: [],
-    },
-    eventTypes: {
-      type: "array",
-      defaultValue: [],
-    },
-    startDate: {
-      type: "string",
-      helpText: "YYYY-MM-DD",
-    },
-    endDate: {
-      type: "string",
-      helpText: "YYYY-MM-DD",
-    },
-  },
+  props: { ...EventDataProviderRegistration },
   providesData: true,
   importPath: "./components/dataprovider/event-data-provider",
 });
 
 PLASMIC.registerComponent(ArtifactEventDataProvider, {
   name: "ArtifactEventDataProvider",
-  props: {
-    //// CommonDataProviderRegistration
-    // Data variable
-    variableName: {
-      type: "string",
-      helpText: "Name to use in Plasmic data picker. Must be unique per query.",
-    },
-    // Plasmic elements
-    children: "slot",
-    loadingChildren: {
-      type: "slot",
-      defaultValue: {
-        type: "text",
-        value: "Placeholder",
-      },
-    },
-    ignoreLoading: {
-      type: "boolean",
-      helpText: "Don't show 'loadingChildren' even if we're still loading data",
-      advanced: true,
-    },
-    errorChildren: {
-      type: "slot",
-      defaultValue: {
-        type: "text",
-        value: "Placeholder",
-      },
-    },
-    ignoreError: {
-      type: "boolean",
-      helpText: "Don't show 'errorChildren' even if we get an error",
-      advanced: true,
-    },
-    useTestData: {
-      type: "boolean",
-      helpText: "Render with test data",
-      editOnly: true,
-      advanced: true,
-    },
-    testData: {
-      type: "object",
-      advanced: true,
-    },
-    // Data options
-    chartType: {
-      type: "choice",
-      helpText: "Pair this with the component in 'children'",
-      options: ["areaChart", "barList"],
-    },
-    xAxis: {
-      type: "choice",
-      helpText: "What is the x-axis?",
-      options: ["eventTime", "entity", "eventType"],
-    },
-    ids: {
-      type: "array",
-      defaultValue: [],
-    },
-    eventTypes: {
-      type: "array",
-      defaultValue: [],
-    },
-    startDate: {
-      type: "string",
-      helpText: "YYYY-MM-DD",
-    },
-    endDate: {
-      type: "string",
-      helpText: "YYYY-MM-DD",
-    },
-  },
+  props: { ...EventDataProviderRegistration },
   providesData: true,
   importPath: "./components/dataprovider/event-data-provider",
 });
