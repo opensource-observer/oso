@@ -13,7 +13,14 @@ import {
   GET_EVENTS_MONTHLY_TO_PROJECT,
   GET_PROJECTS_BY_IDS,
 } from "../../lib/graphql/queries";
-import { RegistrationProps } from "../../lib/types";
+import {
+  entityIdToLabel,
+  eventTimeToLabel,
+  eventTypeToLabel,
+  stringToIntArray,
+} from "../../lib/parsing";
+import { RegistrationProps } from "../../lib/types/plasmic";
+import type { EntityData, EventData } from "../../lib/types/db";
 import {
   DataProviderView,
   CommonDataProviderRegistration,
@@ -65,26 +72,6 @@ const DEFAULT_START_DATE = 0;
 const DEFAULT_XAXIS: XAxis = "eventType";
 
 /**
- * Regardless of the data query, this will be the intermediate
- * format we need to normalize against before we put it into the
- * data formatters (for charts)
- **/
-type EventData = {
-  typeId: number;
-  id: number;
-  date: string;
-  amount: number;
-};
-
-/**
- * Abstract entity data that could come from either an `Artifact` or `Project`
- */
-type EntityData = {
-  id: number;
-  name: string;
-};
-
-/**
  * Query component focused on providing data to visualiation components
  *
  * Current limitations:
@@ -134,25 +121,6 @@ const EventDataProviderRegistration: RegistrationProps<EventDataProviderProps> =
       helpText: "YYYY-MM-DD",
     },
   };
-
-/**
- * Convert the event time to a date label
- */
-const eventTimeToLabel = (t: any) => dayjs(t).format("YYYY-MM-DD");
-
-/**
- * If we get enums (e.g. NPM_PACKAGE), normalize it into a readable label
- * @param t
- * @returns
- */
-const eventTypeToLabel = (t: string) => _.capitalize(t.replace(/_/g, " "));
-
-/**
- * Given an id, try to find the id in EntityData[] and return the name
- * Note: the `==` is intentional here, since we may be comparing a string to a number
- */
-const entityIdToLabel = (id: number | string, entityData?: EntityData[]) =>
-  entityData?.find((x) => x.id == id)?.name ?? id;
 
 /**
  * Choose a bucket width based on the number of data points
@@ -300,14 +268,6 @@ const formatDataToBarList = (
     data: result,
   };
 };
-
-/**
- * Parses string IDs into integers
- * @param ids
- * @returns
- */
-const stringToIntArray = (ids?: string[]): number[] =>
-  ids?.map((id) => parseInt(id)).filter((id) => !!id && !isNaN(id)) ?? [];
 
 type CategoryOpts = {
   includeIds?: boolean;

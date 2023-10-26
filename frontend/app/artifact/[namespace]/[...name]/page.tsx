@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { PlasmicComponent } from "@plasmicapp/loader-nextjs";
 import { PLASMIC } from "../../../../plasmic-init";
 import { PlasmicClientRootProvider } from "../../../../plasmic-init-client";
-import { cachedGetArtifactByName } from "../../../../lib/cached-queries";
+import { cachedGetArtifactByName } from "../../../../lib/graphql/cached-queries";
 import { logger } from "../../../../lib/logger";
 import {
   catchallPathToString,
@@ -11,7 +11,7 @@ import {
 
 // Using incremental static regeneration, will invalidate this page
 // after this (no deploy webhooks needed)
-export const revalidate = 3600;
+export const revalidate = 86400; // 3600 = 1 hour
 const PLASMIC_COMPONENT = "ArtifactPage";
 
 /**

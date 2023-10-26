@@ -6,7 +6,7 @@ import {
   CommonDataProviderRegistration,
   DataProviderView,
 } from "./provider-view";
-import { RegistrationProps } from "../../lib/types";
+import { RegistrationProps } from "../../lib/types/plasmic";
 
 // The name used to pass data into the Plasmic DataProvider
 const KEY_PREFIX = "db";
