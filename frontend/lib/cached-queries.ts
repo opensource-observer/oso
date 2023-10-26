@@ -4,7 +4,7 @@ import {
   GET_ALL_ARTIFACTS,
   GET_ARTIFACT_BY_NAME,
   GET_ALL_PROJECTS,
-  GET_PROJECT_BY_SLUG,
+  GET_PROJECTS_BY_SLUGS,
 } from "./graphql/queries";
 import { logger } from "./logger";
 
@@ -48,21 +48,23 @@ const cachedGetAllProjects = cache(async () => {
   return data;
 });
 
-const cachedGetProjectBySlug = cache(async (variables: { slug: string }) => {
-  const { data, error } = await getApolloClient().query({
-    query: GET_PROJECT_BY_SLUG,
-    variables,
-  });
-  if (error) {
-    logger.error(error);
-    throw error;
-  }
-  return data;
-});
+const cachedGetProjectsBySlugs = cache(
+  async (variables: { slugs: string[] }) => {
+    const { data, error } = await getApolloClient().query({
+      query: GET_PROJECTS_BY_SLUGS,
+      variables,
+    });
+    if (error) {
+      logger.error(error);
+      throw error;
+    }
+    return data;
+  },
+);
 
 export {
   cachedGetAllArtifacts,
   cachedGetArtifactByName,
   cachedGetAllProjects,
-  cachedGetProjectBySlug,
+  cachedGetProjectsBySlugs,
 };

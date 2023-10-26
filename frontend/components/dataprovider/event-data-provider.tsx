@@ -13,7 +13,11 @@ import {
   GET_EVENTS_MONTHLY_TO_PROJECT,
   GET_PROJECTS_BY_IDS,
 } from "../../lib/graphql/queries";
-import { DataProviderView } from "./provider-view";
+import { RegistrationProps } from "../../lib/types";
+import {
+  DataProviderView,
+  CommonDataProviderRegistration,
+} from "./provider-view";
 import type { CommonDataProviderProps } from "./provider-view";
 
 // TO FIX BUILDS WE ARE HARDCODING THE EVENT TYPES FOR NOW. THIS SHOULD INSTEAD
@@ -95,6 +99,41 @@ type EventDataProviderProps = CommonDataProviderProps & {
   startDate?: string;
   endDate?: string;
 };
+
+const EventDataProviderRegistration: RegistrationProps<EventDataProviderProps> =
+  {
+    ...CommonDataProviderRegistration,
+    chartType: {
+      type: "choice",
+      helpText: "Pair this with the component in 'children'",
+      options: ["areaChart", "barList"],
+    },
+    xAxis: {
+      type: "choice",
+      helpText: "What is the x-axis?",
+      options: ["eventTime", "entity", "eventType"],
+    },
+    entityType: {
+      type: "choice",
+      options: ["project", "artifact"],
+    },
+    ids: {
+      type: "array",
+      defaultValue: [],
+    },
+    eventTypes: {
+      type: "array",
+      defaultValue: [],
+    },
+    startDate: {
+      type: "string",
+      helpText: "YYYY-MM-DD",
+    },
+    endDate: {
+      type: "string",
+      helpText: "YYYY-MM-DD",
+    },
+  };
 
 /**
  * Convert the event time to a date label
@@ -495,6 +534,7 @@ function EventDataProvider(props: EventDataProviderProps) {
 
 export {
   EventDataProvider,
+  EventDataProviderRegistration,
   ProjectEventDataProvider,
   ArtifactEventDataProvider,
 };

@@ -1,5 +1,6 @@
 import { DataProvider } from "@plasmicapp/loader-nextjs";
 import { ReactNode } from "react";
+import { RegistrationProps } from "../../lib/types";
 
 // The name used to pass data into the Plasmic DataProvider
 const DEFAULT_VARIABLE_NAME = "eventData";
@@ -22,50 +23,50 @@ type DataProviderViewProps = CommonDataProviderProps & {
   error?: Error;
 };
 
-const CommonDataProviderRegistration = {
-  //// CommonDataProviderRegistration
-  // Data variable
-  variableName: {
-    type: "string",
-    helpText: "Name to use in Plasmic data picker. Must be unique per query.",
-  },
-  // Plasmic elements
-  children: "slot",
-  loadingChildren: {
-    type: "slot",
-    defaultValue: {
-      type: "text",
-      value: "Placeholder",
+const CommonDataProviderRegistration: RegistrationProps<CommonDataProviderProps> =
+  {
+    // Data variable
+    variableName: {
+      type: "string",
+      helpText: "Name to use in Plasmic data picker. Must be unique per query.",
     },
-  },
-  ignoreLoading: {
-    type: "boolean",
-    helpText: "Don't show 'loadingChildren' even if we're still loading data",
-    advanced: true,
-  },
-  errorChildren: {
-    type: "slot",
-    defaultValue: {
-      type: "text",
-      value: "Placeholder",
+    // Plasmic elements
+    children: "slot",
+    loadingChildren: {
+      type: "slot",
+      defaultValue: {
+        type: "text",
+        value: "Placeholder",
+      },
     },
-  },
-  ignoreError: {
-    type: "boolean",
-    helpText: "Don't show 'errorChildren' even if we get an error",
-    advanced: true,
-  },
-  useTestData: {
-    type: "boolean",
-    helpText: "Render with test data",
-    editOnly: true,
-    advanced: true,
-  },
-  testData: {
-    type: "object",
-    advanced: true,
-  },
-};
+    ignoreLoading: {
+      type: "boolean",
+      helpText: "Don't show 'loadingChildren' even if we're still loading data",
+      advanced: true,
+    },
+    errorChildren: {
+      type: "slot",
+      defaultValue: {
+        type: "text",
+        value: "Placeholder",
+      },
+    },
+    ignoreError: {
+      type: "boolean",
+      helpText: "Don't show 'errorChildren' even if we get an error",
+      advanced: true,
+    },
+    useTestData: {
+      type: "boolean",
+      helpText: "Render with test data",
+      editOnly: true,
+      advanced: true,
+    },
+    testData: {
+      type: "object",
+      advanced: true,
+    },
+  };
 
 /**
  * Common view logic for EventDataProviders
