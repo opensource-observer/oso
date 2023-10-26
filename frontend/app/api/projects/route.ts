@@ -1,8 +1,9 @@
 import { notFound } from "next/navigation";
 import { NextResponse, type NextRequest } from "next/server";
 import { logger } from "../../../lib/logger";
-import { cachedGetAllProjects } from "../../../lib/cached-queries";
+import { cachedGetAllProjects } from "../../../lib/graphql/cached-queries";
 
+// TODO: Update to cache
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 

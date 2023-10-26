@@ -1,4 +1,4 @@
-import { NullOrUndefinedValueError } from "./errors";
+import { NullOrUndefinedValueError } from "./types/errors";
 /**
  * Explicitly marks a promise as something we won't await
  * @param _promise

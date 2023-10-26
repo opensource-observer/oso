@@ -4,7 +4,7 @@
  * @param parts comes from a catch-all path from Next.js
  * @returns
  */
-export const catchallPathToString = (parts: string[]) => {
+const catchallPathToString = (parts: string[]) => {
   return parts.map((p) => decodeURIComponent(p)).join("/");
 };
 
@@ -13,7 +13,7 @@ export const catchallPathToString = (parts: string[]) => {
  * @param namespacePath
  * @returns
  */
-export const pathToNamespaceEnum = (namespacePath: string) => {
+const pathToNamespaceEnum = (namespacePath: string) => {
   switch (namespacePath) {
     case "github":
       return "GITHUB";
@@ -31,3 +31,5 @@ export const pathToNamespaceEnum = (namespacePath: string) => {
       return null;
   }
 };
+
+export { catchallPathToString, pathToNamespaceEnum };

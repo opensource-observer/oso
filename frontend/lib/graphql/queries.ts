@@ -124,6 +124,15 @@ const GET_COLLECTIONS_BY_SLUGS = gql(`
  * EVENTS
  **********************/
 
+const GET_EVENT_TYPES_BY_IDS = gql(`
+  query EventTypesByIds($typeIds: [Int!]) {
+    event_type(where: {id: {_in: $typeIds}}) {
+      id
+      name
+    }
+  }
+`);
+
 const GET_EVENTS_DAILY_TO_ARTIFACT = gql(`
   query EventsDailyToArtifact(
     $artifactIds: [Int!],
@@ -277,6 +286,7 @@ export {
   GET_ALL_COLLECTIONS,
   GET_COLLECTIONS_BY_IDS,
   GET_COLLECTIONS_BY_SLUGS,
+  GET_EVENT_TYPES_BY_IDS,
   GET_EVENTS_DAILY_TO_ARTIFACT,
   GET_EVENTS_WEEKLY_TO_ARTIFACT,
   GET_EVENTS_MONTHLY_TO_ARTIFACT,

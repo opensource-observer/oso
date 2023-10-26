@@ -1,8 +1,9 @@
 import { notFound } from "next/navigation";
 import { NextResponse, type NextRequest } from "next/server";
 import { logger } from "../../../lib/logger";
-import { cachedGetAllArtifacts } from "../../../lib/cached-queries";
+import { cachedGetAllArtifacts } from "../../../lib/graphql/cached-queries";
 
+// TODO: Update to cache
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
@@ -13,7 +14,7 @@ export const revalidate = 0;
  * @returns
  */
 export async function GET(_request: NextRequest) {
-  // Get projects from database
+  // Get artifacts from database
   const { artifact: artifactArray } = await cachedGetAllArtifacts();
   if (!Array.isArray(artifactArray) || artifactArray.length < 1) {
     logger.warn(`Cannot find artifacts`);
