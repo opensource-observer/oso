@@ -1,6 +1,6 @@
 import { createHash } from "crypto";
 
-export function generateSourceIdFromArray(a: string[]) {
+export function sha1FromArray(a: string[]) {
   return hashFromArray(a, "sha1");
 }
 

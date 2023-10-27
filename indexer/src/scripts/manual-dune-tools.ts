@@ -54,7 +54,7 @@ export class DuneDayExporter extends Writable {
       this.currentDay = rowTime;
       this.startNewStream(this.currentDay);
     }
-    if (!this.currentDay.equals(rowTime)) {
+    if (this.currentDay.toMillis() !== rowTime.toMillis()) {
       if (this.currentDay > rowTime) {
         console.log(
           `OUT OF ORDER ${this.currentDay.toISO()} > ${rowTime.toISO()}`,

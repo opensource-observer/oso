@@ -25,6 +25,7 @@ import {
 import {
   ArtifactNamespace,
   ArtifactType,
+  CollectionType,
   EventType,
 } from "../db/orm-entities.js";
 import { EventPointerRepository, EventRepository } from "../db/events.js";
@@ -42,6 +43,9 @@ import path from "path";
 import { GithubWorkerSpawner } from "./github.js";
 import { JobExecutionRepository, JobsRepository } from "../db/jobs.js";
 import { NpmDownloadCollector } from "../events/npm.js";
+import { DependentsPeriodicCollector } from "../collectors/dependencies.js";
+import { CollectionRepository } from "../db/collection.js";
+import { BigQuery } from "@google-cloud/bigquery";
 
 export type SchedulerArgs = CommonArgs & {
   recorderTimeoutMs: number;
@@ -157,7 +161,7 @@ export async function configure(args: SchedulerArgs) {
   );
   const dune = new DuneClient(DUNE_API_KEY);
 
-  scheduler.registerCollector({
+  scheduler.registerEventCollector({
     create: async (_config, recorder, cache) => {
       const client = new FundingEventsClient(dune);
 
@@ -182,7 +186,7 @@ export async function configure(args: SchedulerArgs) {
     ],
   });
 
-  scheduler.registerCollector({
+  scheduler.registerEventCollector({
     create: async (_config, recorder, cache) => {
       const collector = new GithubCommitCollector(
         ProjectRepository,
@@ -211,7 +215,7 @@ export async function configure(args: SchedulerArgs) {
     ],
   });
 
-  scheduler.registerCollector({
+  scheduler.registerEventCollector({
     create: async (_config, recorder, cache) => {
       const collector = new GithubIssueCollector(
         ProjectRepository,
@@ -235,7 +239,7 @@ export async function configure(args: SchedulerArgs) {
     ],
   });
 
-  scheduler.registerCollector({
+  scheduler.registerEventCollector({
     create: async (_config, recorder, cache) => {
       const collector = new GithubFollowingCollector(
         ProjectRepository,
@@ -259,7 +263,7 @@ export async function configure(args: SchedulerArgs) {
     ],
   });
 
-  scheduler.registerCollector({
+  scheduler.registerEventCollector({
     create: async (_config, recorder, cache) => {
       const client = new DailyContractUsageClient(dune, {
         tablesDirectoryPath: DUNE_CONTRACTS_TABLES_DIR,
@@ -290,7 +294,7 @@ export async function configure(args: SchedulerArgs) {
     ],
   });
 
-  scheduler.registerCollector({
+  scheduler.registerEventCollector({
     create: async (_config, recorder, cache) => {
       const collector = new NpmDownloadCollector(
         ProjectRepository,
@@ -305,6 +309,22 @@ export async function configure(args: SchedulerArgs) {
     schedule: "daily",
     artifactScope: [ArtifactNamespace.NPM_REGISTRY],
     artifactTypeScope: [ArtifactType.NPM_PACKAGE],
+  });
+
+  scheduler.registerPeriodicCollector({
+    create: async (_config, _cache) => {
+      return new DependentsPeriodicCollector(
+        ArtifactRepository,
+        CollectionRepository,
+        AppDataSource.getRepository(CollectionType),
+        ProjectRepository,
+        new BigQuery(),
+        "opensource_observer",
+      );
+    },
+    name: "dependents",
+    description: "Periodically collect dependencies",
+    schedule: "monthly",
   });
 
   return scheduler;

@@ -10,7 +10,7 @@ import fetch from "node-fetch";
 import { DUNE_API_KEY } from "../config.js";
 import { writeFile } from "fs/promises";
 import { UniqueArray } from "../utils/array.js";
-import { generateSourceIdFromArray } from "../utils/source-ids.js";
+import { sha1FromArray } from "../utils/source-ids.js";
 
 export async function main() {
   await AppDataSource.initialize();
@@ -31,10 +31,10 @@ export async function main() {
   const uniqueArtifacts = new UniqueArray((a: Artifact) => a.id);
   allArtifacts.forEach((a) => uniqueArtifacts.push(a));
   const sortedUniqueArtifacts = uniqueArtifacts.items();
+
+  console.log(`SORTED UNIQUE COUNT: ${sortedUniqueArtifacts.length}`);
   // Sort by creation
-  sortedUniqueArtifacts.sort(
-    (a, b) => a.createdAt.getTime() - b.createdAt.getTime(),
-  );
+  sortedUniqueArtifacts.sort((a, b) => a.id - b.id);
 
   const rows = ["id,address"];
   rows.push(
@@ -48,7 +48,8 @@ export async function main() {
     throw new Error("expecting artifacts. have none");
   }
 
-  const contractsCsvSha1 = generateSourceIdFromArray([artifactsCsv]);
+  const contractsCsvSha1 = sha1FromArray([artifactsCsv]);
+  console.log(`sha1=${contractsCsvSha1}`);
 
   await writeFile(
     `contracts-${contractsCsvSha1}-${sortedUniqueArtifacts[0].id}-${

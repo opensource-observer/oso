@@ -28,8 +28,11 @@ import {
   TimeSeriesCacheWrapper,
 } from "../../cacher/time-series.js";
 import { ArtifactRepository } from "../../db/artifacts.js";
-import { generateSourceIdFromArray } from "../../utils/source-ids.js";
-import { BaseCollector, BasicArtifactGroup } from "../../scheduler/common.js";
+import { sha1FromArray } from "../../utils/source-ids.js";
+import {
+  BaseEventCollector,
+  BasicArtifactGroup,
+} from "../../scheduler/common.js";
 import { UniqueArray } from "../../utils/array.js";
 import { ProjectRepository } from "../../db/project.js";
 import { In } from "typeorm";
@@ -108,7 +111,7 @@ export const DefaultDailyContractUsageSyncerOptions: DailyContractUsageSyncerOpt
     contractSha1: "da1aae77b853fc7c74038ee08eec441b10b89570",
   };
 
-export class DailyContractUsageCollector extends BaseCollector<object> {
+export class DailyContractUsageCollector extends BaseEventCollector<object> {
   private client: IDailyContractUsageClientV2;
   private artifactRepository: typeof ArtifactRepository;
   private recorder: IEventRecorder;
@@ -316,7 +319,7 @@ export class DailyContractUsageCollector extends BaseCollector<object> {
             namespace: ArtifactNamespace.OPTIMISM,
           };
 
-    const sourceId = generateSourceIdFromArray([
+    const sourceId = sha1FromArray([
       "CONTRACT_INVOCATION",
       eventTime.toISODate()!,
       recorderContract.name,

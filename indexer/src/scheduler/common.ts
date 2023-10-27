@@ -5,7 +5,7 @@ import {
   CollectResponse,
   IArtifactGroupCommitmentProducer,
   IArtifactGroup,
-  ICollector,
+  IEventCollector,
 } from "./types.js";
 import { TimeSeriesCacheWrapper } from "../cacher/time-series.js";
 import { IEventRecorder } from "../recorder/types.js";
@@ -48,7 +48,9 @@ export class ProjectArtifactGroup extends BasicArtifactGroup<Project> {
   }
 }
 
-export abstract class BaseCollector<T extends object> implements ICollector {
+export abstract class BaseEventCollector<T extends object>
+  implements IEventCollector
+{
   async allArtifacts(): Promise<Artifact[]> {
     throw new Error(
       "#allArtifacts not implemented for a base collector artifact",
@@ -69,7 +71,7 @@ export abstract class BaseCollector<T extends object> implements ICollector {
   }
 }
 
-export class ProjectArtifactsCollector extends BaseCollector<Project> {
+export class ProjectArtifactsCollector extends BaseEventCollector<Project> {
   protected projectRepository: Repository<Project>;
   protected cache: TimeSeriesCacheWrapper;
   protected recorder: IEventRecorder;
@@ -138,7 +140,7 @@ export type Batch = {
   totalBatches: number;
 };
 
-export class BatchArtifactsCollector extends BaseCollector<Batch> {
+export class BatchArtifactsCollector extends BaseEventCollector<Batch> {
   protected cache: TimeSeriesCacheWrapper;
   protected recorder: IEventRecorder;
   protected batchSize: number;

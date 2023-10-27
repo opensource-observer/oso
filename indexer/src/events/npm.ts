@@ -23,7 +23,7 @@ import {
 import { In, Repository } from "typeorm";
 import { IEventRecorder, RecordHandle } from "../recorder/types.js";
 import { DateTime } from "luxon";
-import { generateSourceIdFromArray } from "../utils/source-ids.js";
+import { sha1FromArray } from "../utils/source-ids.js";
 
 // API endpoint to query
 const NPM_HOST = "https://api.npmjs.org/";
@@ -111,7 +111,7 @@ export class NpmDownloadCollector extends ProjectArtifactsCollector {
               version: 1,
             },
             to: npmPackage,
-            sourceId: generateSourceIdFromArray([
+            sourceId: sha1FromArray([
               "NPM_DOWNLOADS",
               npmPackage.name,
               download.day,
