@@ -14,10 +14,15 @@ type DependentRawRow = {
 
 class DependentsRecorder extends Writable {
   private collectionRepository: Repository<Collection>;
-  private batchCount: number;
+  private tempDependentCollections: Record<string, Collection>;
+  private tempDependenciesCollections: Record<string, Collection>;
   private batchSize: number;
+  private batch: DependentRawRow[];
+  private packages: Artifact[];
+  private packageMap: Record<string, Artifact>;
 
   constructor(
+    packages: Artifact[],
     collectionRepository: Repository<Collection>,
     batchSize: number,
     opts?: TransformOptions,
@@ -27,11 +32,19 @@ class DependentsRecorder extends Writable {
         objectMode: true,
         readableObjectMode: true,
         writableObjectMode: true,
+        highWaterMark: 1,
       },
       ...opts,
     });
+    this.batchSize = batchSize;
     this.collectionRepository = collectionRepository;
-    this.batchCount = 0;
+    this.batch = [];
+    this.packages = packages;
+
+    this.packageMap = packages.reduce<Record<string, Artifact>>((a, c) => {
+      a[c.name] = c;
+      return a;
+    }, {});
   }
 
   _write(
@@ -39,10 +52,45 @@ class DependentsRecorder extends Writable {
     encoding: BufferEncoding,
     done: TransformCallback,
   ): void {
-    done();
+    this.batch.push(row);
+
+    if (this.batch.length < this.batchSize) {
+      done();
+      return;
+    } else {
+      // Save things to the db
+    }
   }
 
-  async getTemporaryCollection() {}
+  async writeBatch() {
+    const toWrite = this.batch;
+    this.batch = [];
+
+    for (const row of toWrite) {
+      const dependency = this.packageMap[row.package_name];
+      const dependent = this.packageMap[row.dependent_name];
+      // Skip if the dependent or dependency doesn't exist (that shouldn't
+      // happen based on the query used)
+      if (!dependency || !dependent) {
+        logger.warn(
+          "response from bigquery contained an unknown dependency or dependent",
+        );
+        logger.debug(row);
+        continue;
+      }
+    }
+  }
+
+  async getTemporaryDependentCollection(dep: Artifact) {
+    const collection = this.tempDependentCollections[dep.name];
+    if (!collection) {
+      // Create the collection
+      Collection.create();
+    }
+    return collection;
+  }
+
+  async getTemporaryDependenctCollection(_dep: Artifact) {}
 }
 
 export class DependentsPeriodicCollector implements IPeriodicCollector {
@@ -93,9 +141,11 @@ export class DependentsPeriodicCollector implements IPeriodicCollector {
         dependents
           .createReadStream({ autoPaginate: true })
           .pipe(
-            new DependentsRecorder(this.collectionRepository, {
-              highWaterMark: 1000,
-            }),
+            new DependentsRecorder(
+              npmPackages,
+              this.collectionRepository,
+              2000,
+            ),
           )
           .on("end", () => {
             resolve();
