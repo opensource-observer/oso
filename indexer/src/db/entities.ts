@@ -5,6 +5,7 @@ import {
   ArtifactNamespace,
   Project as DBProject,
   Collection as DBCollection,
+  CollectionType,
 } from "./orm-entities.js";
 import { Project, Collection, URL, BlockchainAddress } from "oss-directory";
 import { logger } from "../utils/logger.js";
@@ -44,6 +45,14 @@ async function ossUpsertCollection(ossCollection: Collection) {
       `Not all of the projects for collection ${slug} are in the database. Please add all projects first`,
     );
   }
+  // Get collection type OSS_DIRECTORY
+  const collectionType = await AppDataSource.getRepository(
+    CollectionType,
+  ).findOneOrFail({
+    where: {
+      name: "OSS_DIRECTORY",
+    },
+  });
 
   // Upsert into the database
   return await AppDataSource.transaction(async (manager) => {
@@ -53,6 +62,7 @@ async function ossUpsertCollection(ossCollection: Collection) {
         {
           name: name,
           slug: slug,
+          type: collectionType,
         },
         ["slug"],
       );

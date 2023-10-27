@@ -14,6 +14,7 @@ import {
 } from "../config.js";
 import {
   Artifact,
+  CollectionType,
   Collection,
   Project,
   Event,
@@ -77,6 +78,7 @@ export function staticDataSourceOptions(
 
     entities: [
       Artifact,
+      CollectionType,
       Collection,
       Project,
       Event,

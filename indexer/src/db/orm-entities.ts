@@ -124,6 +124,16 @@ interface IArtifact {
 }
 
 @Entity()
+@Index(["name"], { unique: true })
+export class CollectionType extends Base<"CollectionTypeId"> {
+  @Column("text")
+  name: string;
+
+  @OneToMany(() => Collection, (c) => c.type)
+  collections: Collection[];
+}
+
+@Entity()
 export class Collection extends Base<"CollectionId"> {
   @Column("text")
   name: string;
@@ -137,6 +147,10 @@ export class Collection extends Base<"CollectionId"> {
 
   @Column("text", { unique: true })
   slug: string;
+
+  @ManyToOne(() => CollectionType, (t) => t.collections)
+  @JoinColumn()
+  type: CollectionType;
 
   @ManyToMany(() => Project, (project) => project.collections)
   @JoinTable()
