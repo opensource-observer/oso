@@ -35,7 +35,7 @@ import {
   doRangesIntersect,
   rangeFromISO,
 } from "../../../utils/ranges.js";
-import { generateSourceIdFromArray } from "../../../utils/source-ids.js";
+import { sha1FromArray } from "../../../utils/source-ids.js";
 import { GraphQLError } from "graphql";
 
 const GET_ALL_PUBLIC_FORKS = gql`
@@ -344,7 +344,7 @@ export class GithubFollowingCollector extends GithubByProjectBaseCollector {
         to: artifact,
         from: contributor,
         amount: 1,
-        sourceId: generateSourceIdFromArray([
+        sourceId: sha1FromArray([
           "STARRED",
           commitTime.toISO()!,
           locator.owner,
@@ -465,7 +465,7 @@ export class GithubFollowingCollector extends GithubByProjectBaseCollector {
       },
       to: artifact,
       amount: starCount,
-      sourceId: generateSourceIdFromArray([
+      sourceId: sha1FromArray([
         "STARS",
         startOfDay.toISO()!,
         repo.owner,
@@ -497,7 +497,7 @@ export class GithubFollowingCollector extends GithubByProjectBaseCollector {
       },
       to: artifact,
       amount: watchersCount,
-      sourceId: generateSourceIdFromArray([
+      sourceId: sha1FromArray([
         "WATCHERS",
         startOfDay.toISO()!,
         repo.owner,
@@ -526,7 +526,7 @@ export class GithubFollowingCollector extends GithubByProjectBaseCollector {
         },
         to: artifact,
         amount: forkCount,
-        sourceId: generateSourceIdFromArray([
+        sourceId: sha1FromArray([
           "FORKS",
           startOfDay.toISO()!,
           repo.owner,

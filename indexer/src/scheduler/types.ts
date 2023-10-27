@@ -46,6 +46,7 @@ import {
   PossiblyError,
   collectAsyncResults,
 } from "../utils/async-results.js";
+import { assert } from "../utils/common.js";
 
 export type IArtifactGroup<T extends object = object> = {
   name(): Promise<string>;
@@ -132,6 +133,9 @@ export class CollectorErrors extends GenericError {
   }
 }
 
+export class CollectorRegistrationError extends GenericError {}
+export class CollectorDoesNotExistError extends GenericError {}
+
 type LockData = {
   execution: {
     id: number;
@@ -146,7 +150,7 @@ export type CommitArtifactCallback = (
 /**
  * The interface for the scheduler that manages all of the schedules for jobs
  */
-export interface ICollector {
+export interface IEventCollector {
   // Yield arrays of artifacts that this collector monitors. This is an async
   // generator so that artifacts can be yielded in groups if needed.
   groupedArtifacts(): AsyncGenerator<IArtifactGroup<object>>;
@@ -158,6 +162,10 @@ export interface ICollector {
     range: Range,
     committer: IArtifactGroupCommitmentProducer,
   ): Promise<CollectResponse>;
+}
+
+export interface IPeriodicCollector {
+  collect(): Promise<CollectResponse>;
 }
 
 export interface Errors {
@@ -182,13 +190,14 @@ export interface EventTypeStrategyRegistration {
 export type Schedule = "monthly" | "weekly" | "daily" | "hourly";
 export type ExecutionMode = "all-at-once" | "progressive";
 
-export interface CollectorRegistration {
-  create(
-    config: IConfig,
-    recorder: IEventRecorder,
-    cache: TimeSeriesCacheWrapper,
-  ): Promise<ICollector>;
+// Collector Types. Currently there are only 2.
+// - "event" - Collects events. The execution of which will be controlled by
+//   `EventPointer`
+// - "periodic" - This means the collector is really just a simple job that will
+//   periodically execute.
+export type CollectorType = "event" | "periodic";
 
+interface CollectorRegistration {
   name: string;
 
   description: string;
@@ -196,12 +205,27 @@ export interface CollectorRegistration {
   group?: string;
 
   schedule: Schedule;
+}
+
+export interface EventCollectorRegistration extends CollectorRegistration {
+  create(
+    config: IConfig,
+    recorder: IEventRecorder,
+    cache: TimeSeriesCacheWrapper,
+  ): Promise<IEventCollector>;
 
   dataSetIncludesNow?: boolean;
 
   artifactScope: ArtifactNamespace[];
 
   artifactTypeScope: ArtifactType[];
+}
+
+export interface PeriodicCollectorRegistration extends CollectorRegistration {
+  create(
+    config: IConfig,
+    cache: TimeSeriesCacheWrapper,
+  ): Promise<IPeriodicCollector>;
 }
 
 export class Config implements IConfig {
@@ -226,27 +250,40 @@ export interface ExecutionSummary {
   artifactSummaries: ArtifactCommitmentSummary[];
 }
 
+export interface SchedulerExecuteCollectorOptions {
+  range?: Range;
+  mode?: ExecutionMode;
+  reindex?: boolean;
+}
+
 /**
  * Main interface to the indexer.
  */
 export interface IScheduler {
   registerEventType(reg: EventTypeStrategyRegistration): void;
 
-  registerCollector(reg: CollectorRegistration): void;
+  registerEventCollector(reg: EventCollectorRegistration): void;
+
+  registerPeriodicCollector(reg: PeriodicCollectorRegistration): void;
 
   /**
    * Should process all register collectors and schedule them
    */
   queueAll(baseTime?: DateTime): Promise<void>;
 
-  queueJob(collector: string, baseTime: DateTime, range: Range): Promise<void>;
+  queueEventJob(
+    collector: string,
+    baseTime: DateTime,
+    range: Range,
+  ): Promise<void>;
+
+  queuePeriodicJob(collector: string, baseTime: DateTime): Promise<void>;
 
   runWorker(group: string, resumeWithLock: boolean): Promise<ExecutionSummary>;
 
   executeCollector(
     collectorName: string,
-    range: Range,
-    mode: ExecutionMode,
+    options?: SchedulerExecuteCollectorOptions,
   ): Promise<ExecutionSummary>;
 }
 
@@ -453,7 +490,8 @@ export interface WorkerSpawner {
 
 export class BaseScheduler implements IScheduler {
   private config: IConfig;
-  private collectors: Record<string, CollectorRegistration>;
+  private eventCollectors: Record<string, EventCollectorRegistration>;
+  private periodicCollectors: Record<string, PeriodicCollectorRegistration>;
   private eventPointerManager: IEventPointerManager;
   private recorderFactory: RecorderFactory;
   private cache: TimeSeriesCacheWrapper;
@@ -475,7 +513,8 @@ export class BaseScheduler implements IScheduler {
   ) {
     this.runDir = runDir;
     this.config = config;
-    this.collectors = {};
+    this.eventCollectors = {};
+    this.periodicCollectors = {};
     this.eventTypes = [];
     this.cache = cache;
     this.eventPointerManager = eventPointerManager;
@@ -485,8 +524,25 @@ export class BaseScheduler implements IScheduler {
     this.recorderFactory = recorderFactory;
   }
 
-  registerCollector(reg: CollectorRegistration) {
-    this.collectors[reg.name] = reg;
+  registerEventCollector(reg: EventCollectorRegistration) {
+    this.assertUniqueCollectorName(reg.name);
+    this.eventCollectors[reg.name] = reg;
+  }
+
+  registerPeriodicCollector(reg: PeriodicCollectorRegistration): void {
+    this.assertUniqueCollectorName(reg.name);
+    this.periodicCollectors[reg.name] = reg;
+  }
+
+  private assertUniqueCollectorName(name: string) {
+    if (
+      this.eventCollectors[name] !== undefined ||
+      this.periodicCollectors[name]
+    ) {
+      throw new CollectorRegistrationError(
+        `collector ${name} already registered. names must be unique`,
+      );
+    }
   }
 
   registerEventType(reg: EventTypeStrategyRegistration) {
@@ -551,31 +607,71 @@ export class BaseScheduler implements IScheduler {
       scheduleMatches.push("monthly");
     }
 
-    for (const name in this.collectors) {
-      const collector = this.collectors[name];
+    for (const name in this.eventCollectors) {
+      const collector = this.eventCollectors[name];
       if (scheduleMatches.indexOf(collector.schedule) !== -1) {
         // attempt to schedule this job
-        await this.queueJob(name, baseTime, scheduleRanges[collector.schedule]);
+        await this.queueEventJob(
+          name,
+          baseTime,
+          scheduleRanges[collector.schedule],
+        );
+      }
+    }
+
+    for (const name in this.periodicCollectors) {
+      const collector = this.periodicCollectors[name];
+      if (scheduleMatches.indexOf(collector.schedule) !== -1) {
+        // attempt to schedule this job
+        await this.queueEventJob(
+          name,
+          baseTime,
+          scheduleRanges[collector.schedule],
+        );
       }
     }
   }
 
-  async queueJob(collectorName: string, baseTime: DateTime, range: Range) {
-    const collector = this.collectors[collectorName];
+  async queueEventJob(collectorName: string, baseTime: DateTime, range: Range) {
+    const collector = this.eventCollectors[collectorName];
+    const options = {
+      startDate: range.startDate.toISO(),
+      endDate: range.endDate.toISO(),
+    };
+    return this.queueJob(collector, baseTime, options);
+  }
+
+  async queuePeriodicJob(collectorName: string, baseTime: DateTime) {
+    const collector = this.periodicCollectors[collectorName];
+    return this.queueJob(collector, baseTime);
+  }
+
+  private getCollectorTypeByName(name: string): CollectorType {
+    if (this.eventCollectors[name] !== undefined) {
+      return "event";
+    }
+    if (this.periodicCollectors[name] !== undefined) {
+      return "periodic";
+    }
+    throw new CollectorDoesNotExistError(`collector ${name} does not exist.`);
+  }
+
+  private async queueJob(
+    collector: CollectorRegistration,
+    baseTime: DateTime,
+    options?: Record<string, any>,
+  ) {
     try {
       await this.jobsRepository.queueJob(
         collector.name,
         collector.group || null,
         baseTime,
-        {
-          startDate: range.startDate.toISO(),
-          endDate: range.endDate.toISO(),
-        },
+        options,
       );
     } catch (err) {
       if (err instanceof JobAlreadyQueued) {
         logger.info(
-          `job for ${collectorName} already queued at ${baseTime.toISO()}`,
+          `job for ${collector.name} already queued at ${baseTime.toISO()}`,
         );
         return;
       }
@@ -641,13 +737,7 @@ export class BaseScheduler implements IScheduler {
       throw new Error("unexpected error. execution not set");
     }
 
-    const options = job.options as { startDate: string; endDate: string };
-    const startDate = DateTime.fromISO(options.startDate);
-    const endDate = DateTime.fromISO(options.endDate);
-
-    if (!(startDate.isValid && endDate.isValid)) {
-      throw new Error("irrecoverable error. job description is bad.");
-    }
+    const collectorType = this.getCollectorTypeByName(job.collector);
 
     // Write the data for the lock to disk. So that this can be used to kill any
     // prematurely killed job.
@@ -664,14 +754,10 @@ export class BaseScheduler implements IScheduler {
       { encoding: "utf-8" },
     );
 
-    const execSummary = await this.executeCollector(
-      job.collector,
-      {
-        startDate: startDate,
-        endDate: endDate,
-      },
-      "all-at-once",
-    );
+    const execSummary =
+      collectorType === "event"
+        ? await this.runWorkerForEventCollector(job)
+        : await this.runWorkerForPeriodicCollector(job);
 
     let execStatus = JobExecutionStatus.FAILED;
     if (execSummary.errors.length === 0) {
@@ -701,6 +787,32 @@ export class BaseScheduler implements IScheduler {
       logger.error("error occurred attempting to delete lock file");
     }
     return execSummary;
+  }
+
+  private async runWorkerForEventCollector(
+    job: Job,
+  ): Promise<ExecutionSummary> {
+    const options = job.options as { startDate: string; endDate: string };
+    const startDate = DateTime.fromISO(options.startDate);
+    const endDate = DateTime.fromISO(options.endDate);
+
+    if (!(startDate.isValid && endDate.isValid)) {
+      throw new Error("irrecoverable error. job description is bad.");
+    }
+
+    return await this.executeCollector(job.collector, {
+      range: {
+        startDate: startDate,
+        endDate: endDate,
+      },
+      mode: "all-at-once",
+    });
+  }
+
+  private async runWorkerForPeriodicCollector(
+    job: Job,
+  ): Promise<ExecutionSummary> {
+    return await this.executeCollector(job.collector);
   }
 
   private lockJsonPath() {
@@ -738,6 +850,51 @@ export class BaseScheduler implements IScheduler {
 
   async executeCollector(
     collectorName: string,
+    options?: SchedulerExecuteCollectorOptions,
+  ) {
+    const collectorType = this.getCollectorTypeByName(collectorName);
+    let executionSummary: ExecutionSummary;
+
+    if (collectorType === "event") {
+      assert(options?.range !== undefined, "Range must be set");
+      assert(options?.mode !== undefined, "Mode must be set");
+      executionSummary = await this.executeEventCollector(
+        collectorName,
+        options.range,
+        options.mode,
+        options.reindex || false,
+      );
+    } else if (collectorType === "periodic") {
+      executionSummary = await this.executePeriodicCollector(collectorName);
+    } else {
+      throw new Error("collector type unknown. cannot execute collector");
+    }
+
+    return executionSummary;
+  }
+
+  async executePeriodicCollector(collectorName: string) {
+    const reg = this.periodicCollectors[collectorName];
+    const collector = await reg.create(this.config, this.cache);
+
+    const summary: ExecutionSummary = {
+      errors: [],
+      artifactSummaries: [],
+    };
+    try {
+      const res = await collector.collect();
+      if (res) {
+        summary.errors.push(...res.errors);
+      }
+    } catch (err) {
+      summary.errors.push(err);
+    }
+
+    return summary;
+  }
+
+  async executeEventCollector(
+    collectorName: string,
     range: Range,
     mode: ExecutionMode = "all-at-once",
     reindex: boolean = false,
@@ -746,7 +903,7 @@ export class BaseScheduler implements IScheduler {
       throw new Error(`invalid input range ${rangeToString(range)}`);
     }
     logger.debug(`starting ${collectorName} in ${mode}`);
-    const reg = this.collectors[collectorName];
+    const reg = this.eventCollectors[collectorName];
     if (mode === "all-at-once") {
       return this.executeForRange(reg, range, reindex);
     } else {
@@ -774,7 +931,7 @@ export class BaseScheduler implements IScheduler {
   }
 
   async executeForRange(
-    collectorReg: CollectorRegistration,
+    collectorReg: EventCollectorRegistration,
     range: Range,
     reindex: boolean,
   ) {

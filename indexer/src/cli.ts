@@ -140,7 +140,6 @@ const cli = yargs(hideBin(process.argv))
                 describe: "start-date for the manual run",
               })
               .coerce("end-date", dateConverter)
-              .demandOption(["start-date", "end-date"])
               .option("execution-mode", {
                 type: "string",
                 choices: ["all-at-once", "progressive"],
@@ -156,11 +155,13 @@ const cli = yargs(hideBin(process.argv))
             const execSummary = await scheduler.executeCollector(
               args.collector,
               {
-                startDate: args.startDate,
-                endDate: args.endDate,
+                range: {
+                  startDate: args.startDate,
+                  endDate: args.endDate,
+                },
+                mode: args.executionMode,
+                reindex: args.reindex,
               },
-              args.executionMode,
-              args.reindex,
             );
 
             logger.info(`--------------Completed manual run---------------`);
@@ -268,7 +269,7 @@ const cli = yargs(hideBin(process.argv))
               },
               async (args) => {
                 const scheduler = await configure(args);
-                await scheduler.queueJob(args.collector, args.baseDate, {
+                await scheduler.queueEventJob(args.collector, args.baseDate, {
                   startDate: args.startDate,
                   endDate: args.endDate,
                 });
