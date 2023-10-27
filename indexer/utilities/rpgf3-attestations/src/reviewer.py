@@ -59,6 +59,9 @@ def review_data(must_have_github=True):
 
         contracts = project['Contributions: Contracts']
         for contract in contracts:
+            # ignore testnet contracts
+            if 'goerli' in contract:
+                continue            
             artifact = Parser.etherscan(contract)
             if artifact is None or artifact[1] is None:
                 continue
