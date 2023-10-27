@@ -35,6 +35,11 @@ export class UniqueArray<T> {
     return _.cloneDeep(this.arr);
   }
 
+  clear() {
+    this.arr = [];
+    this.uniqueMap = {};
+  }
+
   get length() {
     return this.arr.length;
   }

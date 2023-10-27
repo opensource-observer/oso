@@ -175,9 +175,13 @@ const cli = yargs(hideBin(process.argv))
                 logger.info(err);
                 try {
                   logger.error(JSON.stringify(err));
+                  // eslint-disable-next-line no-restricted-properties
+                  console.error(err);
                 } catch (_e) {
                   logger.error("Cannot stringify error.");
                   logger.error(err);
+                  // eslint-disable-next-line no-restricted-properties
+                  console.error(err);
                 }
               }
               process.exit(1);
@@ -213,6 +217,19 @@ const cli = yargs(hideBin(process.argv))
               `       ${execSummary.artifactSummaries.length} artifacts committed`,
             );
             if (execSummary.errors.length > 0) {
+              for (const err of execSummary.errors) {
+                logger.info(err);
+                try {
+                  logger.error(JSON.stringify(err));
+                  // eslint-disable-next-line no-restricted-properties
+                  console.error(err);
+                } catch (_e) {
+                  logger.error("Cannot stringify error.");
+                  logger.error(err);
+                  // eslint-disable-next-line no-restricted-properties
+                  console.error(err);
+                }
+              }
               process.exit(1);
             }
             process.exit(0);

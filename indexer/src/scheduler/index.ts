@@ -25,6 +25,7 @@ import {
 import {
   ArtifactNamespace,
   ArtifactType,
+  CollectionType,
   EventType,
 } from "../db/orm-entities.js";
 import { EventPointerRepository, EventRepository } from "../db/events.js";
@@ -315,6 +316,8 @@ export async function configure(args: SchedulerArgs) {
       return new DependentsPeriodicCollector(
         ArtifactRepository,
         CollectionRepository,
+        AppDataSource.getRepository(CollectionType),
+        ProjectRepository,
         new BigQuery(),
         "opensource_observer",
       );

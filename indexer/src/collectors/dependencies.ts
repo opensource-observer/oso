@@ -1,29 +1,45 @@
-import { Repository } from "typeorm";
+import { In, Repository } from "typeorm";
 import { CollectResponse, IPeriodicCollector } from "../scheduler/types.js";
 import { Artifact, ArtifactType, Collection } from "../index.js";
 import { BigQuery } from "@google-cloud/bigquery";
 import { sha1FromArray } from "../utils/source-ids.js";
 import { logger } from "../utils/logger.js";
 import { TransformCallback, TransformOptions, Writable } from "stream";
+import { randomUUID } from "crypto";
+import { CollectionType, Project } from "../db/orm-entities.js";
+import _ from "lodash";
+import { UniqueArray } from "../utils/array.js";
 
 type DependentRawRow = {
   package_name: string;
   dependent_name: string;
-  depth_name: number;
+  minimum_depth: number;
+};
+
+type CollectionQueueStorage = {
+  name: string;
+  collection: Collection;
+  relations: UniqueArray<Project>;
 };
 
 class DependentsRecorder extends Writable {
   private collectionRepository: Repository<Collection>;
-  private tempDependentCollections: Record<string, Collection>;
-  private tempDependenciesCollections: Record<string, Collection>;
+  private collectionTypeRepository: Repository<CollectionType>;
+  private projectRepository: Repository<Project>;
   private batchSize: number;
   private batch: DependentRawRow[];
   private packages: Artifact[];
+  private uuid: string;
   private packageMap: Record<string, Artifact>;
+  private tempCollectionQueue: Record<string, CollectionQueueStorage>;
+  private collectionTypes: Record<string, CollectionType>;
+  private artifactNameToProjectsMap: Record<string, UniqueArray<Project>>;
 
   constructor(
     packages: Artifact[],
     collectionRepository: Repository<Collection>,
+    collectionTypeRepository: Repository<CollectionType>,
+    projectRepository: Repository<Project>,
     batchSize: number,
     opts?: TransformOptions,
   ) {
@@ -38,33 +54,172 @@ class DependentsRecorder extends Writable {
     });
     this.batchSize = batchSize;
     this.collectionRepository = collectionRepository;
+    this.collectionTypeRepository = collectionTypeRepository;
+    this.projectRepository = projectRepository;
     this.batch = [];
     this.packages = packages;
-
-    this.packageMap = packages.reduce<Record<string, Artifact>>((a, c) => {
-      a[c.name] = c;
-      return a;
-    }, {});
+    this.uuid = randomUUID();
+    this.tempCollectionQueue = {};
+    this.collectionTypes = {};
+    this.artifactNameToProjectsMap = {};
+    this.packageMap = _.keyBy(packages, "name");
   }
 
   _write(
     row: DependentRawRow,
-    encoding: BufferEncoding,
+    _encoding: BufferEncoding,
     done: TransformCallback,
   ): void {
-    this.batch.push(row);
+    logger.debug(`${row.package_name} -> ${row.dependent_name}`);
+    if (row !== null) {
+      this.batch.push(row);
+    }
 
-    if (this.batch.length < this.batchSize) {
+    if (this.batch.length < this.batchSize && row !== null) {
       done();
       return;
     } else {
       // Save things to the db
+      this.writeBatch()
+        .then(() => {
+          if (row === null) {
+            this.commitAll()
+              .then(() => {
+                done();
+              })
+              .catch((err) => {
+                done(err);
+              });
+          } else {
+            done();
+          }
+        })
+        .catch((err) => {
+          done(err);
+        });
     }
   }
 
+  _final(done: (error?: Error | null | undefined) => void): void {
+    logger.debug("Committing all temporary collections");
+    this.commitAll()
+      .then(() => {
+        done();
+      })
+      .catch((err) => {
+        done(err);
+      });
+  }
+
+  async commitAll() {
+    // In a transaction delete the old collection if it exists and rename the current one
+    for (const name in this.tempCollectionQueue) {
+      const queueStorage = this.tempCollectionQueue[name];
+      const collection = queueStorage.collection;
+
+      await this.collectionRepository.manager.transaction(async (manager) => {
+        const repo = manager.withRepository(this.collectionRepository);
+
+        // Find the canonical one if it exists
+        const artifact = collection.artifactOwner;
+        if (!artifact) {
+          throw new Error(
+            "invalid temporary collection. it has no artifact owner",
+          );
+        }
+        const canonicalSlug =
+          `${artifact.name}_${artifact.namespace}_${collection.type.name}`
+            .toLowerCase()
+            .replace("@", "at__")
+            .replace("/", "__");
+
+        const existing = await repo.findOne({
+          relations: {
+            projects: true,
+          },
+          where: {
+            slug: canonicalSlug,
+          },
+        });
+
+        if (existing) {
+          logger.debug(`removing existing ${canonicalSlug}`);
+          // delete relations
+          await repo
+            .createQueryBuilder()
+            .relation(Collection, "projects")
+            .of(existing.id)
+            .remove(existing.projects);
+          // delete the collection
+
+          await repo.delete({
+            id: existing.id,
+          });
+        }
+        logger.debug(
+          `renaming temporary collection[slug=${collection.slug}] to be ${canonicalSlug}`,
+        );
+
+        // Rename the current one to the canonical slug
+        await repo.update(
+          {
+            id: collection.id,
+          },
+          {
+            slug: canonicalSlug,
+          },
+        );
+      });
+    }
+  }
+
+  async resolveDepToProjects(dep: Artifact) {
+    if (Object.keys(this.artifactNameToProjectsMap).length === 0) {
+      const allRelatedProjects = await this.projectRepository.find({
+        relations: {
+          artifacts: true,
+        },
+        where: {
+          artifacts: {
+            id: In(this.packages.map((p) => p.id)),
+          },
+        },
+      });
+      // Build the mapping
+      this.artifactNameToProjectsMap = allRelatedProjects.reduce<
+        Record<string, UniqueArray<Project>>
+      >((acc, p) => {
+        p.artifacts.forEach((a) => {
+          const arr = acc[a.name] || new UniqueArray((p) => p.id);
+          arr.push(p);
+          acc[a.name] = arr;
+        });
+        return acc;
+      }, {});
+    }
+    return this.artifactNameToProjectsMap[dep.name];
+  }
+
   async writeBatch() {
+    logger.debug("writing a batch of dependencies");
     const toWrite = this.batch;
     this.batch = [];
+
+    // Retrieve collection types if they haven't already been retrieved
+    if (Object.keys(this.collectionTypes).length === 0) {
+      // Get the collection types
+      const types = await this.collectionTypeRepository.find({
+        where: {
+          name: In(["ARTIFACT_DEPENDENTS", "ARTIFACT_DEPENDENCIES"]),
+        },
+      });
+      if (types.length !== 2) {
+        throw new Error("required collection types do not exist");
+      }
+      this.collectionTypes = _.keyBy(types, "name");
+    }
+
+    const writeQueue: Record<string, CollectionQueueStorage> = {};
 
     for (const row of toWrite) {
       const dependency = this.packageMap[row.package_name];
@@ -78,37 +233,122 @@ class DependentsRecorder extends Writable {
         logger.debug(row);
         continue;
       }
+
+      const dependentsCollectionQueueStorage =
+        await this.getTemporaryDependentsCollection(dependency);
+      const dependenciesCollectionQueueStorage =
+        await this.getTemporaryDependenciesCollection(dependent);
+
+      const dependentsProjects = await this.resolveDepToProjects(dependent);
+      const dependencysProjects = await this.resolveDepToProjects(dependency);
+
+      dependencysProjects.items().forEach((dp) => {
+        dependenciesCollectionQueueStorage.relations.push(dp);
+      });
+
+      dependentsProjects.items().forEach((dp) => {
+        dependentsCollectionQueueStorage.relations.push(dp);
+      });
+
+      writeQueue[dependenciesCollectionQueueStorage.name] =
+        dependenciesCollectionQueueStorage;
+      writeQueue[dependentsCollectionQueueStorage.name] =
+        dependentsCollectionQueueStorage;
+    }
+
+    for (const name in writeQueue) {
+      // Clear queue storage
+      const queueStorage = writeQueue[name];
+      const queuedProjects = queueStorage.relations.items();
+
+      const collection = await this.collectionRepository.findOneOrFail({
+        relations: {
+          projects: true,
+        },
+        where: {
+          id: queueStorage.collection.id,
+        },
+      });
+
+      const newProjects = _.differenceBy(
+        queuedProjects,
+        collection.projects,
+        "id",
+      );
+
+      await this.collectionRepository
+        .createQueryBuilder()
+        .relation(Collection, "projects")
+        .of(queueStorage.collection.id)
+        .add(newProjects);
     }
   }
 
-  async getTemporaryDependentCollection(dep: Artifact) {
-    const collection = this.tempDependentCollections[dep.name];
-    if (!collection) {
+  async getTemporaryCollection(
+    dep: Artifact,
+    typeName: "ARTIFACT_DEPENDENTS" | "ARTIFACT_DEPENDENCIES",
+  ) {
+    const type = this.collectionTypes[typeName];
+    const key = `${dep.name}:${typeName}`;
+    let collectionQueue = this.tempCollectionQueue[key];
+    if (!collectionQueue) {
       // Create the collection
-      Collection.create();
+      const tempName = `temp-${this.uuid}-${dep.name}-${typeName}`;
+      const collection = Collection.create({
+        name: tempName,
+        slug: tempName,
+        type: type,
+        artifactOwner: dep,
+      });
+      await this.collectionRepository.insert(collection);
+      collectionQueue = {
+        name: tempName,
+        collection: collection,
+        relations: new UniqueArray((p) => p.id),
+      };
+      this.tempCollectionQueue[key] = collectionQueue;
     }
-    return collection;
+    return collectionQueue;
   }
 
-  async getTemporaryDependenctCollection(_dep: Artifact) {}
+  getTemporaryDependentsCollection(dep: Artifact) {
+    return this.getTemporaryCollection(dep, "ARTIFACT_DEPENDENTS");
+  }
+
+  getTemporaryDependenciesCollection(dep: Artifact) {
+    return this.getTemporaryCollection(dep, "ARTIFACT_DEPENDENCIES");
+  }
+}
+
+export interface DependentsPeriodicCollectorOptions {
+  depedentsTableId?: string;
 }
 
 export class DependentsPeriodicCollector implements IPeriodicCollector {
   private artifactRepository: Repository<Artifact>;
   private collectionRepository: Repository<Collection>;
+  private collectionTypeRepository: Repository<CollectionType>;
+  private projectRepository: Repository<Project>;
   private bq: BigQuery;
   private datasetId: string;
+  private options: DependentsPeriodicCollectorOptions;
 
   constructor(
     artifactRepository: Repository<Artifact>,
     collectionRepository: Repository<Collection>,
+    collectionTypeRepository: Repository<CollectionType>,
+    projectRepository: Repository<Project>,
     bq: BigQuery,
     datasetId: string,
+    options?: DependentsPeriodicCollectorOptions,
   ) {
     this.artifactRepository = artifactRepository;
     this.collectionRepository = collectionRepository;
+    this.collectionTypeRepository = collectionTypeRepository;
+    this.projectRepository = projectRepository;
     this.datasetId = datasetId;
     this.bq = bq;
+    this.options = _.merge({}, options);
   }
 
   async ensureDataset() {
@@ -144,13 +384,17 @@ export class DependentsPeriodicCollector implements IPeriodicCollector {
             new DependentsRecorder(
               npmPackages,
               this.collectionRepository,
-              2000,
+              this.collectionTypeRepository,
+              this.projectRepository,
+              20000,
             ),
           )
-          .on("end", () => {
+          .on("close", () => {
+            logger.debug("completed dependent/dependency collection");
             resolve();
           })
           .on("error", (err) => {
+            logger.debug("caught an error reading/writing from the stream");
             reject(err);
           });
       });
@@ -161,6 +405,12 @@ export class DependentsPeriodicCollector implements IPeriodicCollector {
   }
 
   private async getOrCreateDependentsTable(packages: Artifact[]) {
+    if (this.options.depedentsTableId) {
+      logger.debug("using supplied table id");
+      const dataset = await this.ensureDataset();
+      return dataset.table(this.options.depedentsTableId);
+    }
+
     const packagesSha1 = sha1FromArray(
       packages.map((a) => {
         return `${a.id},${a.name}`;
