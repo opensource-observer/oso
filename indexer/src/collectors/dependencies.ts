@@ -160,12 +160,19 @@ class DependentsRecorder extends Writable {
           `renaming temporary collection[slug=${collection.slug}] to be ${canonicalSlug}`,
         );
 
+        const namePrefix =
+          collection.type.name === "ARTIFACT_DEPENDENTS"
+            ? "Dependents of"
+            : "Dependencies for";
+        const name = `${namePrefix} ${artifact.name}`;
+
         // Rename the current one to the canonical slug
         await repo.update(
           {
             id: collection.id,
           },
           {
+            name: name,
             slug: canonicalSlug,
           },
         );
