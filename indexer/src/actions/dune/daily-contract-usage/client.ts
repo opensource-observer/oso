@@ -17,6 +17,9 @@ import { Range } from "../../../utils/ranges.js";
 import path from "path";
 import _ from "lodash";
 import { logger } from "../../../utils/logger.js";
+import { UniqueArray } from "../../../utils/array.js";
+import { sha1FromArray } from "../../../utils/source-ids.js";
+import { DuneCSVUploader } from "../utils/csv-uploader.js";
 
 export class SafeAggregate {
   rows: DailyContractUsageRow[];
@@ -67,14 +70,23 @@ export type DailyContractUsageRawRow = {
   txCount: number;
 };
 
+export type Contract = {
+  id: number;
+  address: string;
+};
+
+export type ContractTableReference = {
+  contracts?: Contract[];
+  tableId?: string;
+};
+
 export interface IDailyContractUsageClientV2 {
   getDailyContractUsage(
     range: Range,
-    contractSha1: string,
+    contractTableReference: ContractTableReference,
   ): Promise<DailyContractUsageRow[]>;
   getDailyContractUsageFromCsv(
     date: DateTime,
-    contractSha1: string,
   ): Promise<DailyContractUsageRow[]>;
 }
 
@@ -258,14 +270,55 @@ export interface IDailyContractUsageResponse {
 
 export class DailyContractUsageClient implements IDailyContractUsageClientV2 {
   private client: IDuneClient;
+  private uploader: DuneCSVUploader;
   private options: DailyContractUsageClientOptions;
 
   constructor(
     client: IDuneClient,
+    uploader: DuneCSVUploader,
     options?: Partial<DailyContractUsageClientOptions>,
   ) {
     this.client = client;
+    this.uploader = uploader;
     this.options = _.merge(DefaultDailyContractUsageClientOptions, options);
+  }
+
+  async uploadContractTable(contracts: Contract[]) {
+    const uniqueContracts = new UniqueArray<Contract>((c) => c.address);
+    contracts.forEach((c) => uniqueContracts.push(c));
+    const sortedUniqueContracts = uniqueContracts.items();
+
+    console.log(`SORTED UNIQUE COUNT: ${sortedUniqueContracts.length}`);
+    // Sort by creation
+    sortedUniqueContracts.sort((a, b) => a.id - b.id);
+
+    const rows = ["id,address"];
+    rows.push(
+      ...sortedUniqueContracts.map((a) => {
+        return `${a.id},${a.address}`;
+      }),
+    );
+    const artifactsCsv = rows.join("\n");
+
+    const contractsCsvSha1 = sha1FromArray([artifactsCsv]);
+    console.log(`sha1=${contractsCsvSha1}`);
+
+    logger.debug("about to upload contracts table to dune");
+    logger.debug(`sha1=${contractsCsvSha1}`);
+    logger.debug(`count=${sortedUniqueContracts.length}`);
+
+    const tableName = `oso_optimism_contracts_${contractsCsvSha1}`;
+
+    const response = await this.uploader.upload(
+      tableName,
+      `OSO monitored optimism contracts: ${contractsCsvSha1}.`,
+      rows,
+    );
+    if (response.status !== 200) {
+      throw new Error("failed to upload contracts table to dune");
+    }
+    logger.debug(`uploaded to ${tableName}`);
+    return contractsCsvSha1;
   }
 
   /**
@@ -279,10 +332,27 @@ export class DailyContractUsageClient implements IDailyContractUsageClientV2 {
    */
   async getDailyContractUsage(
     range: Range,
-    contractSha1: string = "da1aae77b853fc7c74038ee08eec441b10b89570",
+    contractTableReference: ContractTableReference,
   ): Promise<DailyContractUsageRow[]> {
-    // Load the contracts table
-    const contractsMap = await this.loadContractsTable(contractSha1);
+    let contractSha1 = contractTableReference.tableId;
+    let contractsMap: Record<number, string> = {};
+    if (!contractSha1) {
+      if (!contractTableReference.contracts) {
+        throw new Error(
+          "contracts have not been specified. cannot complete query",
+        );
+      }
+      const contracts = contractTableReference.contracts;
+      // If the sha1 isn't set we will upload our own table;
+      contractSha1 = await this.uploadContractTable(contracts);
+      contractsMap = contracts.reduce<Record<number, string>>((a, c) => {
+        a[c.id] = c.address;
+        return a;
+      }, {});
+    } else {
+      // Load the contracts table
+      contractsMap = await this.loadContractsTable(contractSha1);
+    }
 
     const parameters = [
       QueryParameter.text(
@@ -367,7 +437,6 @@ export class DailyContractUsageClient implements IDailyContractUsageClientV2 {
   // At this time the `_contractSha1` is not needed because the available csvs already resolve the contract addresses
   async getDailyContractUsageFromCsv(
     date: DateTime,
-    _contractSha1: string = "da1aae77b853fc7c74038ee08eec441b10b89570",
   ): Promise<DailyContractUsageRow[]> {
     return this.loadCsvPath(
       `${this.options.csvDirPath}/${date.toISODate()}.csv`,

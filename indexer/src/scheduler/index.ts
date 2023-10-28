@@ -46,6 +46,7 @@ import { NpmDownloadCollector } from "../events/npm.js";
 import { DependentsPeriodicCollector } from "../collectors/dependencies.js";
 import { CollectionRepository } from "../db/collection.js";
 import { BigQuery } from "@google-cloud/bigquery";
+import { DuneCSVUploader } from "../actions/dune/utils/csv-uploader.js";
 
 export type SchedulerArgs = CommonArgs & {
   recorderTimeoutMs: number;
@@ -265,9 +266,13 @@ export async function configure(args: SchedulerArgs) {
 
   scheduler.registerEventCollector({
     create: async (_config, recorder, cache) => {
-      const client = new DailyContractUsageClient(dune, {
-        tablesDirectoryPath: DUNE_CONTRACTS_TABLES_DIR,
-      });
+      const client = new DailyContractUsageClient(
+        dune,
+        new DuneCSVUploader(DUNE_API_KEY),
+        {
+          tablesDirectoryPath: DUNE_CONTRACTS_TABLES_DIR,
+        },
+      );
       const collector = new DailyContractUsageCollector(
         client,
         ArtifactRepository,
@@ -278,6 +283,7 @@ export async function configure(args: SchedulerArgs) {
             args.cacheDir,
             "known-user-addresses-seed.json",
           ),
+          contractSha1: "test",
         },
       );
       return collector;
