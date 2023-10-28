@@ -10,6 +10,7 @@ import fsPromises from "fs/promises";
 import {
   IDailyContractUsageClientV2,
   DailyContractUsageRow,
+  Contract,
 } from "./daily-contract-usage/client.js";
 import {
   IArtifactGroup,
@@ -178,12 +179,19 @@ export class DailyContractUsageCollector extends BaseEventCollector<object> {
 
     try {
       if (this.options.mode === "api") {
-        await this.collectFromApi(range, contractsByAddressMap, uniqueEvents);
+        await this.collectFromApi(
+          artifacts,
+          range,
+          contractsByAddressMap,
+          uniqueEvents,
+        );
       } else {
         await this.collectFromCsv(range, contractsByAddressMap, uniqueEvents);
       }
     } catch (err) {
       logger.error("error collecting contract usage");
+      logger.error(err);
+      throw err;
     }
 
     logger.debug("done processing contract calls");
@@ -196,21 +204,28 @@ export class DailyContractUsageCollector extends BaseEventCollector<object> {
   }
 
   protected async collectFromApi(
+    artifacts: Artifact[],
     range: Range,
     contractsByAddressMap: _.Dictionary<Artifact>,
     uniqueEvents: UniqueArray<string>,
   ) {
+    const contracts: Contract[] = artifacts.map((a) => {
+      return {
+        id: a.id,
+        address: a.name.toLowerCase(),
+      };
+    });
+
     const responses = this.cache.loadCachedOrRetrieve(
       TimeSeriesCacheLookup.new(
         this.options.cacheOptions.bucket,
-        this.options.contractSha1,
+        contracts.map((c) => c.address),
         range,
       ),
       async (missing) => {
-        const rows = await this.client.getDailyContractUsage(
-          missing.range,
-          this.options.contractSha1,
-        );
+        const rows = await this.client.getDailyContractUsage(missing.range, {
+          contracts: contracts,
+        });
         return {
           raw: rows,
           hasNextPage: false,
@@ -238,10 +253,7 @@ export class DailyContractUsageCollector extends BaseEventCollector<object> {
     let currentTime = range.startDate;
     while (currentTime < range.endDate) {
       logger.debug(`loading ${currentTime.toISODate()}`);
-      const rows = await this.client.getDailyContractUsageFromCsv(
-        currentTime,
-        this.options.contractSha1,
-      );
+      const rows = await this.client.getDailyContractUsageFromCsv(currentTime);
       const recordHandles: RecordHandle[] = [];
 
       currentTime = currentTime.plus({ day: 1 });
