@@ -147,6 +147,7 @@ def clean_data(original_data):
             return None
 
         transformed_data = {
+            "Project ID": original_data["id"],
             "Project Name": project_name,
             "Applicant Type": json_data["applicantType"],
             "Date": original_data["timeCreated"],
@@ -181,12 +182,13 @@ def check_for_ossd_membership(cleaned_data):
         github_found = False
         contract_found = False
         project["Slug(s)"] = []
+        project["Slug: Payout Address"] = None
 
         if project["Payout Address"].lower() in address_set:
             address_found = True
-            project["Slug(s)"].append(addresses_to_slugs[project["Payout Address"].lower()])
+            project["Slug: Payout Address"] = addresses_to_slugs[project["Payout Address"].lower()]
         elif project["Attester Address"].lower() in address_set:
-            address_found = True
+            address_found = True            
             project["Slug(s)"].append(addresses_to_slugs[project["Attester Address"].lower()])
         else:
             for url in project["Contributions: Contracts"]:
