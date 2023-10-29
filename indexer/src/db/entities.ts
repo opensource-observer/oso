@@ -235,7 +235,7 @@ async function ossCreateGitHubArtifacts(
     orgUrls.map(parseGitHubUrl).map((p) => p?.owner),
   );
   const orgRepos = _.flatten(await Promise.all(orgNames.map(getOwnerRepos)));
-  const orgRepoUrls = orgRepos.map((r) => r.url);
+  const orgRepoUrls = orgRepos.filter((r) => !r.isFork).map((r) => r.url);
   const allRepos = [...repoUrls, ...orgRepoUrls];
   const parsedRepos = allRepos.map(parseGitHubUrl);
   const data = parsedRepos.map((p) => ({
