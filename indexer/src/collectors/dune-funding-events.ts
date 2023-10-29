@@ -1,32 +1,32 @@
 import { DateTime } from "luxon";
-import { logger } from "../../utils/logger.js";
+import { logger } from "../utils/logger.js";
 import {
   FundingPoolAddress,
   IFundingEventsClient,
   ProjectAddress,
-} from "./funding-events/client.js";
-import { ArtifactNamespace, ArtifactType } from "../../db/orm-entities.js";
+} from "./dune/funding-events/client.js";
+import { ArtifactNamespace, ArtifactType } from "../db/orm-entities.js";
 import {
   IEventRecorder,
   IncompleteArtifact,
   IncompleteEvent,
-} from "../../recorder/types.js";
+} from "../recorder/types.js";
 import {
   TimeSeriesCacheLookup,
   TimeSeriesCacheWrapper,
-} from "../../cacher/time-series.js";
+} from "../cacher/time-series.js";
 import _ from "lodash";
 import {
   IArtifactGroup,
   IArtifactGroupCommitmentProducer,
-} from "../../scheduler/types.js";
-import { Range } from "../../utils/ranges.js";
-import { ProjectRepository } from "../../db/project.js";
+} from "../scheduler/types.js";
+import { Range } from "../utils/ranges.js";
+import { ProjectRepository } from "../db/project.js";
 import {
   Batch,
   BatchedProjectArtifactsCollector,
-} from "../../scheduler/common.js";
-import { ArtifactGroupRecorder } from "../../recorder/group.js";
+} from "../scheduler/common.js";
+import { ArtifactGroupRecorder } from "../recorder/group.js";
 import { In } from "typeorm";
 
 export interface FundingEventsCollectorOptions {

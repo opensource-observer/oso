@@ -17,7 +17,7 @@ import {
   DuneRawRow,
   transformDuneRawRowToUsageRows,
   DailyContractUsageRow,
-} from "../actions/dune/daily-contract-usage/client.js";
+} from "../collectors/dune/daily-contract-usage/client.js";
 import nodePath from "path";
 
 export type DuneCommonArgs = {

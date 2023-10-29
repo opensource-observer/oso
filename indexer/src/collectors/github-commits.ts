@@ -5,34 +5,34 @@ import {
   IncompleteArtifact,
   IncompleteEvent,
   RecordHandle,
-} from "../../../recorder/types.js";
-import { Range, rangeToString } from "../../../utils/ranges.js";
+} from "../recorder/types.js";
+import { Range, rangeToString } from "../utils/ranges.js";
 import { gql } from "graphql-request";
 import {
   Artifact,
   ArtifactNamespace,
   ArtifactType,
   Project,
-} from "../../../db/orm-entities.js";
-import { logger } from "../../../utils/logger.js";
+} from "../db/orm-entities.js";
+import { logger } from "../utils/logger.js";
 import { Octokit, RequestError } from "octokit";
 import { GetResponseDataTypeFromEndpointMethod } from "@octokit/types";
 import { Repository } from "typeorm";
 import {
   IArtifactGroup,
   IArtifactGroupCommitmentProducer,
-} from "../../../scheduler/types.js";
+} from "../scheduler/types.js";
 import {
   TimeSeriesCacheLookup,
   TimeSeriesCacheWrapper,
-} from "../../../cacher/time-series.js";
-import { asyncBatch } from "../../../utils/array.js";
+} from "../cacher/time-series.js";
+import { asyncBatch } from "../utils/array.js";
 import {
   GithubBaseCollectorOptions,
   GithubBatchedProjectArtifactsBaseCollector,
   GithubGraphQLResponse,
-} from "./common.js";
-import { Batch } from "../../../scheduler/common.js";
+} from "./github/common.js";
+import { Batch } from "../scheduler/common.js";
 
 const validateEmail = (email: string) => {
   return String(email)

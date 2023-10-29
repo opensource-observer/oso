@@ -4,8 +4,8 @@ import {
   IncompleteArtifact,
   IncompleteEvent,
   RecordHandle,
-} from "../../../recorder/types.js";
-import { logger } from "../../../utils/logger.js";
+} from "../recorder/types.js";
+import { logger } from "../utils/logger.js";
 import { gql, ClientError } from "graphql-request";
 import {
   GithubGraphQLResponse,
@@ -15,27 +15,23 @@ import {
   GithubByProjectBaseCollector,
   GithubBaseCollectorOptions,
   GithubRepoLocator,
-} from "./common.js";
-import { unpaginateIterator } from "../../../events/github/unpaginate.js";
+} from "./github/common.js";
+import { unpaginateIterator } from "./github/unpaginate.js";
 import {
   Project,
   ArtifactNamespace,
   ArtifactType,
   Artifact,
-} from "../../../db/orm-entities.js";
+} from "../db/orm-entities.js";
 import { Repository } from "typeorm";
-import { TimeSeriesCacheWrapper } from "../../../cacher/time-series.js";
+import { TimeSeriesCacheWrapper } from "../cacher/time-series.js";
 import _ from "lodash";
 import {
   IArtifactGroup,
   IArtifactGroupCommitmentProducer,
-} from "../../../scheduler/types.js";
-import {
-  Range,
-  doRangesIntersect,
-  rangeFromISO,
-} from "../../../utils/ranges.js";
-import { sha1FromArray } from "../../../utils/source-ids.js";
+} from "../scheduler/types.js";
+import { Range, doRangesIntersect, rangeFromISO } from "../utils/ranges.js";
+import { sha1FromArray } from "../utils/source-ids.js";
 import { GraphQLError } from "graphql";
 
 const GET_ALL_PUBLIC_FORKS = gql`

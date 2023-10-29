@@ -17,7 +17,7 @@ import {
 } from "../utils/parsing.js";
 import { getNpmUrl } from "../utils/format.js";
 import { safeCast, ensure, filterFalsy } from "../utils/common.js";
-import { getOwnerRepos } from "../events/github/getOrgRepos.js";
+import { getOwnerRepos } from "../collectors/github/get-org-repos.js";
 import { ProjectRepository } from "./project.js";
 import { CollectionRepository } from "./collection.js";
 import { In } from "typeorm";

@@ -1,41 +1,38 @@
 import { DateTime } from "luxon";
-import { CommonArgs } from "../../utils/api.js";
-import { logger } from "../../utils/logger.js";
+import { CommonArgs } from "../utils/api.js";
+import { logger } from "../utils/logger.js";
 import {
   Artifact,
   ArtifactNamespace,
   ArtifactType,
-} from "../../db/orm-entities.js";
+} from "../db/orm-entities.js";
 import fsPromises from "fs/promises";
 import {
   IDailyContractUsageClientV2,
   DailyContractUsageRow,
   Contract,
-} from "./daily-contract-usage/client.js";
+} from "./dune/daily-contract-usage/client.js";
 import {
   IArtifactGroup,
   IArtifactGroupCommitmentProducer,
-} from "../../scheduler/types.js";
+} from "../scheduler/types.js";
 import _ from "lodash";
-import { Range } from "../../utils/ranges.js";
+import { Range } from "../utils/ranges.js";
 import {
   IEventRecorder,
   IncompleteArtifact,
   IncompleteEvent,
   RecordHandle,
-} from "../../recorder/types.js";
+} from "../recorder/types.js";
 import {
   TimeSeriesCacheLookup,
   TimeSeriesCacheWrapper,
-} from "../../cacher/time-series.js";
-import { ArtifactRepository } from "../../db/artifacts.js";
-import { sha1FromArray } from "../../utils/source-ids.js";
-import {
-  BaseEventCollector,
-  BasicArtifactGroup,
-} from "../../scheduler/common.js";
-import { UniqueArray } from "../../utils/array.js";
-import { ProjectRepository } from "../../db/project.js";
+} from "../cacher/time-series.js";
+import { ArtifactRepository } from "../db/artifacts.js";
+import { sha1FromArray } from "../utils/source-ids.js";
+import { BaseEventCollector, BasicArtifactGroup } from "../scheduler/common.js";
+import { UniqueArray } from "../utils/array.js";
+import { ProjectRepository } from "../db/project.js";
 import { In } from "typeorm";
 
 /**

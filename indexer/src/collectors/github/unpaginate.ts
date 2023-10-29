@@ -1,5 +1,5 @@
 import ora from "ora";
-import { graphQLClient } from "./graphQLClient.js";
+import { graphQLClient } from "./graphql-client.js";
 import { Path, Choose, getPath } from "../../utils/getPath.js";
 
 export type PageInfo = {
