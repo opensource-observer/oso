@@ -2,12 +2,11 @@
 import yargs from "yargs";
 import { DateTime } from "luxon";
 import { hideBin } from "yargs/helpers";
-import { RunAutocrawlArgs, runAutocrawl } from "./actions/autocrawl.js";
 import { handleError } from "./utils/error.js";
 import {
   ImportOssDirectoryArgs,
   importOssDirectory,
-} from "./actions/oss-directory.js";
+} from "./collectors/import-oss-directory.js";
 import { initializeDataSource } from "./db/data-source.js";
 import {
   SchedulerArgs,
@@ -45,11 +44,6 @@ const cli = yargs(hideBin(process.argv))
   .option("yes", {
     type: "boolean",
     describe: "Automatic yes to all prompts",
-    default: false,
-  })
-  .option("autocrawl", {
-    type: "boolean",
-    describe: "Mark the query for auto-crawling",
     default: false,
   })
   .option("cache-dir", {
@@ -93,14 +87,6 @@ const cli = yargs(hideBin(process.argv))
     (yargs) => {
       artifactsCommandGroup(yargs);
     },
-  )
-  .command<RunAutocrawlArgs>(
-    "runAutocrawl",
-    "Iterate over EventSourcePointer table and update all data marked for autocrawl",
-    (yags) => {
-      yags;
-    },
-    (argv) => handleError(runAutocrawl(argv)),
   )
   .command<SchedulerArgs>(
     "scheduler <subcommand>",

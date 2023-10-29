@@ -4,16 +4,16 @@ import {
   IEventRecorder,
   IncompleteArtifact,
   IncompleteEvent,
-} from "../../../recorder/types.js";
+} from "../recorder/types.js";
 import {
   Artifact,
   ArtifactNamespace,
   ArtifactType,
   Project,
-} from "../../../db/orm-entities.js";
-import { logger } from "../../../utils/logger.js";
+} from "../db/orm-entities.js";
+import { logger } from "../utils/logger.js";
 import _ from "lodash";
-import { unpaginateIterator } from "../../../events/github/unpaginate.js";
+import { unpaginateIterator } from "../events/github/unpaginate.js";
 import { gql } from "graphql-request";
 import {
   GithubGraphQLResponse,
@@ -23,18 +23,18 @@ import {
   GithubBaseCollectorOptions,
   GithubGraphQLCursor,
   GithubRepoLocator,
-} from "./common.js";
+} from "./github/common.js";
 import { Repository } from "typeorm";
 import {
   TimeSeriesCacheLookup,
   TimeSeriesCacheWrapper,
-} from "../../../cacher/time-series.js";
+} from "../cacher/time-series.js";
 import {
   IArtifactGroup,
   IArtifactGroupCommitmentProducer,
-} from "../../../scheduler/types.js";
-import { Range } from "../../../utils/ranges.js";
-import { ArtifactGroupRecorder } from "../../../recorder/group.js";
+} from "../scheduler/types.js";
+import { Range } from "../utils/ranges.js";
+import { ArtifactGroupRecorder } from "../recorder/group.js";
 
 const GET_ISSUE_TIMELINE = gql`
   query GetIssueTimeline($id: ID!, $cursor: String) {

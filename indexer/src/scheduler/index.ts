@@ -10,8 +10,8 @@ import {
 import { CommonArgs } from "../utils/api.js";
 import { DateTime } from "luxon";
 import { EventPointerManager } from "./pointers.js";
-import { FundingEventsCollector } from "../actions/dune/funding-event-collector.js";
-import { FundingEventsClient } from "../actions/dune/funding-events/client.js";
+import { FundingEventsCollector } from "../collectors/dune-funding-events.js";
+import { FundingEventsClient } from "../collectors/dune/funding-events/client.js";
 import { DuneClient } from "@cowprotocol/ts-dune-client";
 import {
   DUNE_API_KEY,
@@ -34,19 +34,19 @@ import { AppDataSource } from "../db/data-source.js";
 import { ProjectRepository } from "../db/project.js";
 import { Octokit } from "octokit";
 import { throttling } from "@octokit/plugin-throttling";
-import { GithubCommitCollector } from "../actions/github/fetch/commits.js";
-import { GithubIssueCollector } from "../actions/github/fetch/pull-requests.js";
-import { GithubFollowingCollector } from "../actions/github/fetch/repo-followers.js";
-import { DailyContractUsageCollector } from "../actions/dune/index.js";
-import { DailyContractUsageClient } from "../actions/dune/daily-contract-usage/client.js";
+import { GithubCommitCollector } from "../collectors/github-commits.js";
+import { GithubIssueCollector } from "../collectors/github-issues.js";
+import { GithubFollowingCollector } from "../collectors/github-followers.js";
+import { DailyContractUsageCollector } from "../collectors/dune-daily-contract-usage.js";
+import { DailyContractUsageClient } from "../collectors/dune/daily-contract-usage/client.js";
 import path from "path";
 import { GithubWorkerSpawner } from "./github.js";
 import { JobExecutionRepository, JobsRepository } from "../db/jobs.js";
 import { NpmDownloadCollector } from "../events/npm.js";
-import { DependentsPeriodicCollector } from "../collectors/dependencies.js";
+import { DependentsPeriodicCollector } from "../collectors/dependents.js";
 import { CollectionRepository } from "../db/collection.js";
 import { BigQuery } from "@google-cloud/bigquery";
-import { DuneCSVUploader } from "../actions/dune/utils/csv-uploader.js";
+import { DuneCSVUploader } from "../collectors/dune/utils/csv-uploader.js";
 
 export type SchedulerArgs = CommonArgs & {
   recorderTimeoutMs: number;
