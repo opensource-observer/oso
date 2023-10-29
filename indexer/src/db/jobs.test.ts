@@ -8,31 +8,36 @@ import {
 import { withDbDescribe } from "./testing.js";
 
 withDbDescribe("Jobs", () => {
-  it("should create jobs", async () => {
+  it("should create non-backfill jobs", async () => {
     const job0 = await JobsRepository.queueJob(
       "collector0",
       null,
       DateTime.now().startOf("day"),
+      false,
     );
     const job1 = await JobsRepository.queueJob(
       "collector1",
       "group0",
       DateTime.now().startOf("day"),
+      false,
     );
     const job2 = await JobsRepository.queueJob(
       "collector2",
       "group1",
       DateTime.now().startOf("day"),
+      false,
     );
     const job3 = await JobsRepository.queueJob(
       "collector3",
       "group1",
       DateTime.now().startOf("day"),
+      false,
     );
     await JobsRepository.queueJob(
       "collector4",
       null,
       DateTime.now().startOf("day"),
+      false,
     );
 
     let availableJobs = await JobsRepository.availableJobGroups();
