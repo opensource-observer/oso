@@ -42,7 +42,7 @@ import { DailyContractUsageClient } from "../collectors/dune/daily-contract-usag
 import path from "path";
 import { GithubWorkerSpawner } from "./github.js";
 import { JobExecutionRepository, JobsRepository } from "../db/jobs.js";
-import { NpmDownloadCollector } from "../events/npm.js";
+import { NpmDownloadCollector } from "../collectors/npm-downloads.js";
 import { DependentsPeriodicCollector } from "../collectors/dependents.js";
 import { CollectionRepository } from "../db/collection.js";
 import { BigQuery } from "@google-cloud/bigquery";
