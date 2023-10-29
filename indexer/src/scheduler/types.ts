@@ -30,7 +30,7 @@ import {
   JobExecutionRepository,
   JobsRepository,
 } from "../db/jobs.js";
-import { DateTime } from "luxon";
+import { DateTime, DurationLike } from "luxon";
 import _ from "lodash";
 import { INDEXER_SPAWN } from "../config.js";
 import { writeFile, readFile, unlink } from "fs/promises";
@@ -219,6 +219,8 @@ export interface EventCollectorRegistration extends CollectorRegistration {
   artifactScope: ArtifactNamespace[];
 
   artifactTypeScope: ArtifactType[];
+
+  backfillInterval?: DurationLike;
 }
 
 export interface PeriodicCollectorRegistration extends CollectorRegistration {
@@ -278,6 +280,8 @@ export interface IScheduler {
   ): Promise<void>;
 
   queuePeriodicJob(collector: string, baseTime: DateTime): Promise<void>;
+
+  queueBackfill(collectorName: string, startTime: DateTime): Promise<void>;
 
   runWorker(group: string, resumeWithLock: boolean): Promise<ExecutionSummary>;
 
@@ -558,6 +562,48 @@ export class BaseScheduler implements IScheduler {
     return recorder;
   }
 
+  async queueBackfill(
+    collectorName: string,
+    startTime: DateTime,
+  ): Promise<void> {
+    // Only event collectors can do backfill.
+    const collector = this.eventCollectors[collectorName];
+
+    const backfillInterval: DurationLike = collector.backfillInterval
+      ? collector.backfillInterval
+      : { days: 30 };
+
+    let currentStartTime = startTime;
+    let currentEndTime = currentStartTime.plus(backfillInterval);
+    const baseTime = DateTime.now().toUTC().startOf("hour");
+
+    const untilTimes: Record<Schedule, DateTime> = {
+      hourly: baseTime.minus({ hour: 1 }),
+      weekly: baseTime.minus({ days: 2 }),
+      monthly: baseTime.startOf("month"),
+      daily: baseTime.startOf("day"),
+    };
+    const until = untilTimes[collector.schedule];
+
+    while (currentStartTime < until) {
+      if (currentEndTime > until) {
+        currentEndTime = until;
+      }
+      if (currentEndTime.toMillis() === currentStartTime.toMillis()) {
+        break;
+      }
+      await this.queueEventJob(
+        collectorName,
+        currentStartTime,
+        { startDate: currentStartTime, endDate: currentEndTime },
+        true,
+      );
+
+      currentStartTime = currentStartTime.plus(backfillInterval);
+      currentEndTime = currentEndTime.plus(backfillInterval);
+    }
+  }
+
   async queueAll(baseTime?: DateTime): Promise<void> {
     // Get the current time. Normalized for hour, month, day, week
     baseTime = baseTime
@@ -622,28 +668,30 @@ export class BaseScheduler implements IScheduler {
     for (const name in this.periodicCollectors) {
       const collector = this.periodicCollectors[name];
       if (scheduleMatches.indexOf(collector.schedule) !== -1) {
-        // attempt to schedule this job
-        await this.queueEventJob(
-          name,
-          baseTime,
-          scheduleRanges[collector.schedule],
-        );
+        // attempt to schedule this job. For now we can use the same input as
+        await this.queuePeriodicJob(name, baseTime);
       }
     }
   }
 
-  async queueEventJob(collectorName: string, baseTime: DateTime, range: Range) {
-    const collector = this.eventCollectors[collectorName];
+  async queueEventJob(
+    collectorName: string,
+    baseTime: DateTime,
+    range: Range,
+    backfill: boolean = false,
+  ) {
     const options = {
       startDate: range.startDate.toISO(),
       endDate: range.endDate.toISO(),
     };
-    return this.queueJob(collector, baseTime, options);
+    return this.queueJob(collectorName, baseTime, backfill, options);
   }
 
-  async queuePeriodicJob(collectorName: string, baseTime: DateTime) {
-    const collector = this.periodicCollectors[collectorName];
-    return this.queueJob(collector, baseTime);
+  async queuePeriodicJob(
+    collectorName: string,
+    baseTime: DateTime,
+  ): Promise<void> {
+    return this.queueJob(collectorName, baseTime, false);
   }
 
   private getCollectorTypeByName(name: string): CollectorType {
@@ -657,15 +705,18 @@ export class BaseScheduler implements IScheduler {
   }
 
   private async queueJob(
-    collector: CollectorRegistration,
+    collectorName: string,
     baseTime: DateTime,
+    backfill: boolean,
     options?: Record<string, any>,
   ) {
+    const collector = this.eventCollectors[collectorName];
     try {
       await this.jobsRepository.queueJob(
         collector.name,
         collector.group || null,
         baseTime,
+        backfill,
         options,
       );
     } catch (err) {

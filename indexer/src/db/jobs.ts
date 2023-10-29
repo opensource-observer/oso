@@ -1,3 +1,4 @@
+import { randomUUID } from "crypto";
 import { GenericError } from "../common/errors.js";
 import { AppDataSource } from "./data-source.js";
 import {
@@ -67,11 +68,17 @@ export const JobsRepository = AppDataSource.getRepository(Job).extend({
     collector: string,
     group: string | null,
     scheduledTime: DateTime,
+    backfill: boolean,
     options?: Record<string, any>,
   ): Promise<Job> {
+    let scheduleType = "main";
+    if (backfill) {
+      scheduleType = `backfill-${randomUUID()}`;
+    }
     const job = this.create({
       group: group,
       scheduledTime: scheduledTime.toJSDate(),
+      scheduleType: scheduleType,
       collector: collector,
       status: JobStatus.PENDING,
       options: options,

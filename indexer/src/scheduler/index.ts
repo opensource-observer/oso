@@ -78,6 +78,11 @@ export type SchedulerQueueJobArgs = SchedulerArgs & {
   endDate: DateTime;
 };
 
+export type SchedulerQueueBackfill = SchedulerArgs & {
+  collector: string;
+  startDate: DateTime;
+};
+
 // Entrypoint for the scheduler. Currently not where it should be but this is quick.
 export async function configure(args: SchedulerArgs) {
   const flusher = new TimeoutBatchedFlusher(2000, 2000);
