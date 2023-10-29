@@ -16,7 +16,7 @@ import {
   GithubBaseCollectorOptions,
   GithubRepoLocator,
 } from "./github/common.js";
-import { unpaginateIterator } from "../events/github/unpaginate.js";
+import { unpaginateIterator } from "./github/unpaginate.js";
 import {
   Project,
   ArtifactNamespace,

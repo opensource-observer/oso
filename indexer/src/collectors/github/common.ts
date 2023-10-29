@@ -1,5 +1,5 @@
 import { Repository, In } from "typeorm";
-import { PageInfo } from "../../events/github/unpaginate.js";
+import { PageInfo } from "./unpaginate.js";
 import {
   Artifact,
   Project,
@@ -10,7 +10,7 @@ import { GenericError } from "../../common/errors.js";
 import { IEventRecorder } from "../../recorder/types.js";
 import { TimeSeriesCacheWrapper } from "../../cacher/time-series.js";
 import { ClientError, RequestDocument, Variables } from "graphql-request";
-import { graphQLClient } from "../../events/github/graphQLClient.js";
+import { graphQLClient } from "./graphql-client.js";
 import { DateTime } from "luxon";
 import { logger } from "../../utils/logger.js";
 import {

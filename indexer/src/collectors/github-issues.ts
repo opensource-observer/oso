@@ -13,7 +13,7 @@ import {
 } from "../db/orm-entities.js";
 import { logger } from "../utils/logger.js";
 import _ from "lodash";
-import { unpaginateIterator } from "../events/github/unpaginate.js";
+import { unpaginateIterator } from "./github/unpaginate.js";
 import { gql } from "graphql-request";
 import {
   GithubGraphQLResponse,
