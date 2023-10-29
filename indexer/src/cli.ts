@@ -12,6 +12,7 @@ import {
   SchedulerArgs,
   SchedulerManualArgs,
   SchedulerQueueAllArgs,
+  SchedulerQueueBackfill,
   SchedulerQueueJobArgs,
   SchedulerWorkerArgs,
   configure,
@@ -276,6 +277,27 @@ const cli = yargs(hideBin(process.argv))
                   startDate: args.startDate,
                   endDate: args.endDate,
                 });
+              },
+            )
+            .command<SchedulerQueueBackfill>(
+              "backfill <collector>",
+              "create a backfill job",
+              (yags) => {
+                yags
+                  .positional("collector", {
+                    describe: "the collector",
+                    type: "string",
+                  })
+                  .option("start-date", {
+                    type: "string",
+                    describe: "start-date for the manual run",
+                  })
+                  .coerce("start-date", dateConverter)
+                  .demandOption(["start-date"]);
+              },
+              async (args) => {
+                const scheduler = await configure(args);
+                await scheduler.queueBackfill(args.collector, args.startDate);
               },
             )
             .command<SchedulerArgs>(

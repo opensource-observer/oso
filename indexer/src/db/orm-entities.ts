@@ -324,7 +324,7 @@ export class EventPointer extends Base<"EventPointerId"> {
 }
 
 @Entity()
-@Index(["scheduledTime", "collector"], { unique: true })
+@Index(["scheduledTime", "scheduleType", "collector"], { unique: true })
 export class Job extends Base<"JobId"> {
   @Column("text", { nullable: true })
   group: string | null;
@@ -334,6 +334,11 @@ export class Job extends Base<"JobId"> {
 
   @Column("text")
   collector: string;
+
+  // This is a hack to enable backfill. Fill this with a random value and it
+  // will allow for specifying "scheduledTime" values that overlap.
+  @Column("text", { default: "main" })
+  scheduleType: string;
 
   @Column("enum", { enum: JobStatus })
   status: JobStatus;

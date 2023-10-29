@@ -1,5 +1,5 @@
 # Allow for manual queuing of jobs
-name: os-observer-indexer-create-queue
+name: os-observer-indexer-create-job
 env:
   DB_HOST: ${{ vars.DB_HOST }}
   DB_PORT: ${{ vars.DB_PORT }}
@@ -18,7 +18,16 @@ on:
     inputs:
       collector:
         description: 'the name of the collector'
-        required: true 
+        required: true
+        type: choice
+        options:
+          - "npm-downloads"
+          - "github-commits" 
+          - "github-issues"
+          - "github-followers"
+          - "dune-daily-contract-usage"
+          - "dune-funding-events"
+          - "dependents"
       start-date:
         description: 'the start date for the queued job (ISO8601)'
         required: true
