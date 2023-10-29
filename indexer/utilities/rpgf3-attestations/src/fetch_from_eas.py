@@ -154,7 +154,7 @@ def clean_data(original_data):
             "Payout Address": json_data["payoutAddress"],
             "Link": project_link,
             "Tags": json_data["impactCategory"],
-            "Contributions: Github": [item["url"] for item in json_data["contributionLinks"] if item["type"] == "GITHUB_REPO" and "https://github.com/" in item["url"] and len(item["url"]) > 20],
+            "Contributions: Github": [item["url"].strip("/") for item in json_data["contributionLinks"] if item["type"] == "GITHUB_REPO" and "https://github.com/" in item["url"] and len(item["url"]) > 20],
             "Contributions: Contracts": [item["url"] for item in json_data["contributionLinks"] if item["type"] == "CONTRACT_ADDRESS" and "0x" in item["url"]],
             "Contributions: Other": [item["url"] for item in json_data["contributionLinks"] if item["type"] == "OTHER"],
             "Impact Metrics": [item["url"] for item in json_data["impactMetrics"]]
@@ -179,6 +179,7 @@ def check_for_ossd_membership(cleaned_data):
         project["OSS Directory"] = "Not Found"
         address_found = False
         github_found = False
+        contract_found = False
         project["Slug(s)"] = []
 
         if project["Payout Address"].lower() in address_set:
@@ -193,7 +194,7 @@ def check_for_ossd_membership(cleaned_data):
                 if owner is None:
                     continue
                 if owner in address_set:
-                    address_found = True
+                    contract_found = True
                     project["Slug(s)"].append(addresses_to_slugs[owner])
                     
         for url in project["Contributions: Github"]:

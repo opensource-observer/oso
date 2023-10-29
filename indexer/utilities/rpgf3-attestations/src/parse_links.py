@@ -33,10 +33,11 @@ class Parser:
             return 'github.com' in url
         
         def github_success_callback(url):
+            url = url.replace("orgs/","").replace("repositories","").strip("/")
             paths = urlparse(url).path.split('/')
             if len(paths) == 2 and "?" not in paths[1] and paths[1] != "search":
                 return "success", paths[1]
-            elif len(paths) == 3 and "?" not in paths[2]:
+            elif len(paths) >= 3 and "?" not in paths[2]:
                 return "success", paths[1] + "/" + paths[2]
             return f"review: {url}", None
         
