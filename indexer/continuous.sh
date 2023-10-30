@@ -4,14 +4,20 @@
 
 set -uxo pipefail
 
-# Replace these next 4 variables to use this script. If things happen to break
+# Replace these next 5 variables to use this script. If things happen to break
 # and you need to restart the process you will need to change the start/end
 # date. You should see references to where it left off in the logs. You can just
 # see the most updated log that's in `${log_dir}`
 start_date="2018-01-25T00:00:00Z"  # Initial start date
 end_date="2018-02-24T00:00:00Z"    # Initial end date
+
+# final_date is the last date to collect backfill until. It needs to be sufficiently
+# in the past otherwise you might accidentally run this into the future and that
+# will mess with the way event pointers track events. 
+final_date="2023-10-24T00:00:00Z"  
 collector_name="github-issues"
 base_dir="/tmp/oso"
+
 
 log_dir="${base_dir}/logs"
 cache_dir="${base_dir}/cache"
@@ -36,7 +42,7 @@ while true; do
   end_date=$(date -u -d "$end_date + 30 days" "+%Y-%m-%dT%H:%M:%SZ")
 
   # Break the loop if you reach a specific end date (optional)
-  if [ "$start_date" \> "2023-10-24T00:00:00Z" ]; then
+  if [ "$start_date" \> "${final_date}" ]; then
     break
   fi
 
