@@ -935,11 +935,8 @@ export class BatchEventRecorder implements IEventRecorder {
     let duplicateAction = "skipping";
     // Filter duplicates
     for (const event of processing) {
-      // Ignore events outside the range of events
-      if (
-        !isWithinRange(this.range!, event.time) &&
-        this.recorderOptions.overwriteExistingEvents
-      ) {
+      // Ignore events outside the range of events (unless we)
+      if (!isWithinRange(this.range!, event.time)) {
         logger.debug("received event out of range. skipping");
         this.notifySuccess([event]);
         continue;
@@ -998,7 +995,6 @@ export class BatchEventRecorder implements IEventRecorder {
         const events = await this.createEventsFromRecorderEvent(batch);
 
         try {
-          logger.debug("about to update?");
           const result = await this.retryDbCall(() => {
             return this.eventRepository.insert(events);
           });
