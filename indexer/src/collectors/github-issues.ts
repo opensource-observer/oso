@@ -19,10 +19,10 @@ import {
   GithubGraphQLResponse,
   GraphQLNode,
   Actor,
-  GithubByProjectBaseCollector,
   GithubBaseCollectorOptions,
   GithubGraphQLCursor,
   GithubRepoLocator,
+  GithubBatchedProjectArtifactsBaseCollector,
 } from "./github/common.js";
 import { Repository } from "typeorm";
 import {
@@ -35,6 +35,7 @@ import {
 } from "../scheduler/types.js";
 import { Range } from "../utils/ranges.js";
 import { ArtifactGroupRecorder } from "../recorder/group.js";
+import { Batch } from "../scheduler/common.js";
 
 const GET_ISSUE_TIMELINE = gql`
   query GetIssueTimeline($id: ID!, $cursor: String) {
@@ -384,7 +385,7 @@ const DefaultGithubIssueCollectorOptions: GithubBaseCollectorOptions = {
   },
 };
 
-export class GithubIssueCollector extends GithubByProjectBaseCollector {
+export class GithubIssueCollector extends GithubBatchedProjectArtifactsBaseCollector {
   // Some of these event names are arbitrary
   private eventTypeMapping: Record<string, { [issueType: string]: string }> = {
     CreatedEvent: {
@@ -417,25 +418,26 @@ export class GithubIssueCollector extends GithubByProjectBaseCollector {
     projectRepository: Repository<Project>,
     recorder: IEventRecorder,
     cache: TimeSeriesCacheWrapper,
+    batchSize: number,
     options?: Partial<GithubBaseCollectorOptions>,
   ) {
     const opts = _.merge(DefaultGithubIssueCollectorOptions, options);
-    super(projectRepository, recorder, cache, opts);
+    super(projectRepository, recorder, cache, batchSize, opts);
   }
 
   async collect(
-    group: IArtifactGroup<Project>,
+    group: IArtifactGroup<Batch>,
     range: Range,
     committer: IArtifactGroupCommitmentProducer,
   ) {
-    const project = await group.meta();
+    const batch = await group.meta();
     const artifacts = await group.artifacts();
 
     const groupRecorder = new ArtifactGroupRecorder(this.recorder);
     try {
       await this.collectEventsForRepos(
         groupRecorder,
-        project,
+        batch,
         artifacts,
         range,
         committer,
@@ -445,14 +447,12 @@ export class GithubIssueCollector extends GithubByProjectBaseCollector {
       committer.failAll(err);
     }
 
-    logger.debug(
-      `completed issue collection for repos of Project[${project.slug}]`,
-    );
+    logger.debug(`completed issue collection for repos of ${batch.name}`);
   }
 
   private async collectEventsForRepos(
     groupRecorder: IEventGroupRecorder<Artifact>,
-    project: Project,
+    batch: Batch,
     artifacts: Artifact[],
     range: Range,
     committer: IArtifactGroupCommitmentProducer,
@@ -479,7 +479,7 @@ export class GithubIssueCollector extends GithubByProjectBaseCollector {
       GithubGraphQLCursor
     >(
       TimeSeriesCacheLookup.new(
-        `${this.options.cacheOptions.bucket}/${project.slug}`,
+        `${this.options.cacheOptions.bucket}/${batch.name}`,
         locators.map((l) => `${l.owner}/${l.repo}`),
         range,
       ),
