@@ -935,7 +935,7 @@ export class BatchEventRecorder implements IEventRecorder {
     let duplicateAction = "skipping";
     // Filter duplicates
     for (const event of processing) {
-      // Ignore events outside the range of events (unless we)
+      // Ignore events outside the range of events
       if (!isWithinRange(this.range!, event.time)) {
         logger.debug("received event out of range. skipping");
         this.notifySuccess([event]);
