@@ -12,9 +12,9 @@ import {
   Actor,
   PaginatableEdges,
   GraphQLNode,
-  GithubByProjectBaseCollector,
   GithubBaseCollectorOptions,
   GithubRepoLocator,
+  GithubBatchedProjectArtifactsBaseCollector,
 } from "./github/common.js";
 import { unpaginateIterator } from "./github/unpaginate.js";
 import {
@@ -33,6 +33,7 @@ import {
 import { Range, doRangesIntersect, rangeFromISO } from "../utils/ranges.js";
 import { sha1FromArray } from "../utils/source-ids.js";
 import { GraphQLError } from "graphql";
+import { Batch } from "../scheduler/common.js";
 
 const GET_ALL_PUBLIC_FORKS = gql`
   query getAllPublicForks($owner: String!, $name: String!, $cursor: String) {
@@ -190,29 +191,31 @@ const DefaultGithubFollowingCollectorOptions: GithubBaseCollectorOptions = {
   },
 };
 
-export class GithubFollowingCollector extends GithubByProjectBaseCollector {
+export class GithubFollowingCollector extends GithubBatchedProjectArtifactsBaseCollector {
   constructor(
     projectRepository: Repository<Project>,
     recorder: IEventRecorder,
     cache: TimeSeriesCacheWrapper,
+    batchSize: number,
     options?: Partial<GithubBaseCollectorOptions>,
   ) {
     super(
       projectRepository,
       recorder,
       cache,
+      batchSize,
       _.merge(DefaultGithubFollowingCollectorOptions, options),
     );
   }
 
   async collect(
-    group: IArtifactGroup<Project>,
+    group: IArtifactGroup<Batch>,
     range: Range,
     committer: IArtifactGroupCommitmentProducer,
   ): Promise<void> {
-    const project = await group.meta();
+    const batch = await group.meta();
     const artifacts = await group.artifacts();
-    logger.debug(`collecting followers for repos of Project[${project.slug}]`);
+    logger.debug(`collecting followers for repos of ${batch.name}`);
 
     // load the summaries for each
     for (const repo of artifacts) {
