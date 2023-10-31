@@ -13,6 +13,7 @@ RAW_APPLICANT_JSON = "data/raw_applicant_data.json"
 OSSD_SNAPSHOT_JSON = "data/ossd_snapshot.json"
 CLEANED_APPLICANT_JSON = "data/cleaned_applicant_data.json"
 CLEANED_APPLICANT_CSV = "data/cleaned_applicant_data.csv"
+PROJECT_OSSD_MAPPINGS = "data/rpgf3_ossd_mappings.csv"
 
 
 def fetch_attestations(schema_id, time_created_after=0):
@@ -178,26 +179,33 @@ def check_for_ossd_membership(cleaned_data):
     for project in cleaned_data:
         
         project["OSS Directory"] = "Not Found"
-        address_found = False
-        github_found = False
+        address_found = False        
         contract_found = False
-        project["Slug(s)"] = []
-        project["Slug: Payout Address"] = None
+        github_found = False
+
+        project["Slugs: Payout Address"] = set()
+        project["Slugs: Attester Address"] = set()
+        project["Slugs: Contract Address"] = set()
+        project["Slugs: Github"] = set()
+        project["Slug: Primary"]  = None
+
+
 
         if project["Payout Address"].lower() in address_set:
             address_found = True
-            project["Slug: Payout Address"] = addresses_to_slugs[project["Payout Address"].lower()]
-        elif project["Attester Address"].lower() in address_set:
+            project["Slugs: Payout Address"].add(addresses_to_slugs[project["Payout Address"].lower()])
+        
+        if project["Attester Address"].lower() in address_set:
             address_found = True            
-            project["Slug(s)"].append(addresses_to_slugs[project["Attester Address"].lower()])
-        else:
-            for url in project["Contributions: Contracts"]:
-                owner = Parser.etherscan(url)[1]
-                if owner is None:
-                    continue
-                if owner in address_set:
-                    contract_found = True
-                    project["Slug(s)"].append(addresses_to_slugs[owner])
+            project["Slugs: Attester Address"].add(addresses_to_slugs[project["Attester Address"].lower()])
+
+        for url in project["Contributions: Contracts"]:
+            owner = Parser.etherscan(url)[1]
+            if owner is None:
+                continue
+            if owner in address_set:
+                contract_found = True
+                project["Slugs: Contract Address"].add(addresses_to_slugs[owner])
                     
         for url in project["Contributions: Github"]:
             repo = Parser.github(url)[1]            
@@ -206,10 +214,10 @@ def check_for_ossd_membership(cleaned_data):
             owner = repo.split("/")[0] if "/" in repo else repo
             if repo in repos_to_slugs:
                 github_found = True
-                project["Slug(s)"].append(repos_to_slugs[repo])
+                project["Slugs: Github"].add(repos_to_slugs[repo])
             elif owner in repos_to_slugs:
                 github_found = True
-                project["Slug(s)"].append(repos_to_slugs[owner])                
+                project["Slugs: Github"].add(repos_to_slugs[owner])                
             
                 
         if address_found and github_found:
@@ -221,8 +229,21 @@ def check_for_ossd_membership(cleaned_data):
         else:
             continue
 
-        project["Slug(s)"] = list(set(project["Slug(s)"]))
+        intersection = project["Slugs: Payout Address"].intersection(project["Slugs: Github"])
+        if len(intersection) == 1:
+            project["Slug: Primary"] = list(intersection)[0]
+        elif len(intersection) > 1:
+            project["Slug: Primary"] = list(project["Slugs: Payout Address"])[0]
+        elif len(project["Slugs: Github"]) == 1:
+            project["Slug: Primary"] = list(project["Slugs: Github"])[0]
 
+
+class SetEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, set):
+            return list(obj)
+        return json.JSONEncoder.default(self, obj)
+    
 
 def export_cleaned_data(raw_data, json_outpath, csv_outpath):
     
@@ -232,7 +253,7 @@ def export_cleaned_data(raw_data, json_outpath, csv_outpath):
     check_for_ossd_membership(cleaned_data)
 
     with open(json_outpath, "w") as json_file:
-        json.dump(cleaned_data, json_file, indent=4)
+        json.dump(cleaned_data, json_file, indent=4, cls=SetEncoder)
 
     for entry in cleaned_data:
         entry["Tags"] = ", ".join(entry["Tags"])
@@ -245,11 +266,33 @@ def export_cleaned_data(raw_data, json_outpath, csv_outpath):
     csv_data.drop_duplicates(subset=["Link"], keep="last", inplace=True)
     csv_data.to_csv(csv_outpath, index=False)
 
+    return cleaned_data
+
+
+def export_canonical_projects_list(cleaned_data, csv_outpath):    
+
+    csv_data = pd.DataFrame(cleaned_data)
+    cols = ["Project ID", "Project Name", "Slug: Primary", "Payout Address", "Slugs: Github", 
+            "Slugs: Contract Address", "Slugs: Attester Address", "Slugs: Payout Address", "Contributions: Github"]
+    csv_data = csv_data[cols]    
+    csv_data.sort_values(by=["Slug: Primary", "Payout Address"], inplace=True)
+
+    sep = " | "
+    csv_data["Slugs: Github"] = csv_data["Slugs: Github"].apply(lambda x: sep.join(x))
+    csv_data["Slugs: Contract Address"] = csv_data["Slugs: Contract Address"].apply(lambda x: sep.join(x))
+    csv_data["Slugs: Attester Address"] = csv_data["Slugs: Attester Address"].apply(lambda x: sep.join(x))
+    csv_data["Slugs: Payout Address"] = csv_data["Slugs: Payout Address"].apply(lambda x: sep.join(x))
+
+    csv_data.loc[csv_data["Slugs: Github"] != "", "Contributions: Github"] = None
+
+    csv_data.to_csv(csv_outpath, index=False)
+
 
 def main():
 
     data = update_data(EAS_SCHEMA, RAW_APPLICANT_JSON)
-    export_cleaned_data(data, CLEANED_APPLICANT_JSON, CLEANED_APPLICANT_CSV)
+    cleaned_data = export_cleaned_data(data, CLEANED_APPLICANT_JSON, CLEANED_APPLICANT_CSV)
+    export_canonical_projects_list(cleaned_data, PROJECT_OSSD_MAPPINGS)
     
 
 if __name__ == "__main__":

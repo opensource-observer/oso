@@ -119,7 +119,7 @@ def tidy_dataframe(data):
 
 def project_summary(df):	
 
-    groupers = ['name', 'applicationMetadataPtr', 'applicantType', 'bio or description', 'impactCategory(ies)']	
+    groupers = ['id', 'name', 'applicationMetadataPtr', 'applicantType', 'bio or description', 'impactCategory(ies)']	
     grouped_df = df.groupby(groupers).agg(	
         attestationCount=('id', 'count'),	
         contributionLinkCount=('attestationType', lambda x: (x == 'contributionLink').sum()),	
