@@ -485,11 +485,14 @@ export class GithubIssueCollector extends GithubBatchedProjectArtifactsBaseColle
       ),
       async (missing, lastPage) => {
         logger.debug("loading more from github");
-        const searchStrSuffix = lastPage?.cursor?.searchSuffix || "";
+        const searchStrSuffix =
+          lastPage?.cursor?.searchSuffix ||
+          `updated:<${missing.range.endDate.toISO()}`;
         const searchStr =
           missing.keys.map((a) => `repo:${a}`).join(" ") +
           " sort:updated-desc " +
           searchStrSuffix;
+        logger.debug(`running issues query with ${searchStr}`);
 
         const cursor = lastPage?.cursor?.githubCursor;
 
