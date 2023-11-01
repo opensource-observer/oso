@@ -168,12 +168,19 @@ def clean_data(original_data):
 
 
 def check_for_ossd_membership(cleaned_data):
-
+    
     with open(OSSD_SNAPSHOT_JSON, "r") as json_file:
         ossd_data = json.load(json_file)
     
+    # TODO: handle this more elegantly
+    github_slugs_to_ignore = ['op', 'spellbook-duneanalytics']
+    repos_to_slugs = {
+        repo.replace("https://github.com/",""): slug
+        for repo,slug in ossd_data["repos"].items()
+        if slug not in github_slugs_to_ignore
+    }
+
     addresses_to_slugs = ossd_data["addresses"]
-    repos_to_slugs = {repo.replace("https://github.com/",""): slug for repo,slug in ossd_data["repos"].items()}
     address_set = set(addresses_to_slugs.keys())
 
     for project in cleaned_data:
@@ -188,8 +195,6 @@ def check_for_ossd_membership(cleaned_data):
         project["Slugs: Contract Address"] = set()
         project["Slugs: Github"] = set()
         project["Slug: Primary"]  = None
-
-
 
         if project["Payout Address"].lower() in address_set:
             address_found = True
@@ -218,8 +223,7 @@ def check_for_ossd_membership(cleaned_data):
             elif owner in repos_to_slugs:
                 github_found = True
                 project["Slugs: Github"].add(repos_to_slugs[owner])                
-            
-                
+                        
         if address_found and github_found:
             project["OSS Directory"] = "Address & Github Found"
         elif address_found:
@@ -230,12 +234,15 @@ def check_for_ossd_membership(cleaned_data):
             continue
 
         intersection = project["Slugs: Payout Address"].intersection(project["Slugs: Github"])
+        union = project["Slugs: Payout Address"].union(project["Slugs: Github"]).union(project["Slugs: Contract Address"])
         if len(intersection) == 1:
             project["Slug: Primary"] = list(intersection)[0]
         elif len(intersection) > 1:
             project["Slug: Primary"] = list(project["Slugs: Payout Address"])[0]
         elif len(project["Slugs: Github"]) == 1:
             project["Slug: Primary"] = list(project["Slugs: Github"])[0]
+        elif len(union) >= 1 and project["OSS Directory"] == "Address Found":
+            project["Slug: Primary"] = list(project["Slugs: Payout Address"])[0]
 
 
 class SetEncoder(json.JSONEncoder):
