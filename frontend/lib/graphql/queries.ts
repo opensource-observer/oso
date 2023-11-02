@@ -5,7 +5,7 @@ import { gql } from "../__generated__/gql";
  **********************/
 
 const GET_ALL_ARTIFACTS = gql(`
-  query Artifacts {
+  query Artifacts @cached {
     artifact {
       id
       name
@@ -15,7 +15,7 @@ const GET_ALL_ARTIFACTS = gql(`
 `);
 
 const GET_ARTIFACTS_BY_IDS = gql(`
-  query ArtifactsByIds($artifactIds: [Int!]) {
+  query ArtifactsByIds($artifactIds: [Int!]) @cached  {
     artifact(where: { id: { _in: $artifactIds } }) {
       id
       name
@@ -25,7 +25,7 @@ const GET_ARTIFACTS_BY_IDS = gql(`
 `);
 
 const GET_ARTIFACT_BY_NAME = gql(`
-  query ArtifactByName($namespace: artifact_namespace_enum!, $name: String!) {
+  query ArtifactByName($namespace: artifact_namespace_enum!, $name: String!) @cached {
     artifact(where: { name: { _eq: $name }, namespace: { _eq: $namespace } }) {
       id
       name
@@ -41,7 +41,7 @@ const GET_ARTIFACT_BY_NAME = gql(`
  **********************/
 
 const GET_ALL_PROJECTS = gql(`
-  query Projects {
+  query Projects @cached {
     project {
       id
       name
@@ -51,7 +51,7 @@ const GET_ALL_PROJECTS = gql(`
 `);
 
 const GET_PROJECTS_BY_IDS = gql(`
-  query ProjectsByIds($projectIds: [Int!]) {
+  query ProjectsByIds($projectIds: [Int!]) @cached {
     project(where: { id: { _in: $projectIds } }) {
       id
       name
@@ -61,7 +61,7 @@ const GET_PROJECTS_BY_IDS = gql(`
 `);
 
 const GET_PROJECTS_BY_SLUGS = gql(`
-  query ProjectsBySlug($slugs: [String!]) {
+  query ProjectsBySlug($slugs: [String!]) @cached {
     project(where: { slug: { _in: $slugs } }) {
       id
       name
@@ -73,7 +73,7 @@ const GET_PROJECTS_BY_SLUGS = gql(`
 `);
 
 const GET_PROJECTS_BY_COLLECTION_SLUGS = gql(`
-  query ProjectsByCollectionSlugs($slugs: [String!]) {
+  query ProjectsByCollectionSlugs($slugs: [String!]) @cached {
     project(where: {collection_projects_projects: {collection: {slug: {_in: $slugs}}}}) {
       id
       name
@@ -89,7 +89,7 @@ const GET_PROJECTS_BY_COLLECTION_SLUGS = gql(`
  **********************/
 
 const GET_ALL_COLLECTIONS = gql(`
-  query Collections {
+  query Collections @cached {
     collection {
       id
       name
@@ -99,7 +99,7 @@ const GET_ALL_COLLECTIONS = gql(`
 `);
 
 const GET_COLLECTIONS_BY_IDS = gql(`
-  query CollectionsByIds($collectionIds: [Int!]) {
+  query CollectionsByIds($collectionIds: [Int!]) @cached {
     collection(where: { id: { _in: $collectionIds } }) {
       id
       name
@@ -109,7 +109,7 @@ const GET_COLLECTIONS_BY_IDS = gql(`
 `);
 
 const GET_COLLECTIONS_BY_SLUGS = gql(`
-  query CollectionsBySlug($slugs: [String!]) {
+  query CollectionsBySlug($slugs: [String!]) @cached {
     collection(where: { slug: { _in: $slugs } }) {
       id
       name
@@ -125,7 +125,7 @@ const GET_COLLECTIONS_BY_SLUGS = gql(`
  **********************/
 
 const GET_EVENT_TYPES_BY_IDS = gql(`
-  query EventTypesByIds($typeIds: [Int!]) {
+  query EventTypesByIds($typeIds: [Int!]) @cached {
     event_type(where: {id: {_in: $typeIds}}) {
       id
       name
@@ -259,7 +259,7 @@ const GET_EVENT_SUM = gql(`
     $typeIds: [Int!],
     $startDate: timestamptz!,
     $endDate: timestamptz!, 
-  ) {
+  ) @cached {
     events_daily_to_project_aggregate(
       where: {
         projectId: {_in: $projectIds},
