@@ -19,7 +19,7 @@ module.exports = {
     "**/utilities/**",
     //"**/next.config.js",
     "**/postcss.config.js",
-    "**/tailwind.config.js",
+    //"**/tailwind.config.js",
     "**/.env"
   ],
   "parser": "@typescript-eslint/parser",

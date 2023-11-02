@@ -1,7 +1,7 @@
 "use client";
 
 import CircularProgress from "@mui/material/CircularProgress";
-import { AreaChart, BarList } from "@tremor/react";
+import { AreaChart } from "@tremor/react";
 import { PlasmicRootProvider } from "@plasmicapp/loader-nextjs";
 import { PLASMIC } from "./plasmic-init";
 import { AlgoliaSearchBox } from "./components/widgets/algolia";
@@ -20,6 +20,7 @@ import {
 } from "./components/dataprovider/event-data-provider";
 import { FormField, FormError } from "./components/forms/form-elements";
 import { VisualizationContext } from "./components/forms/visualization-context";
+import { BarList } from "./components/widgets/tremor";
 
 /**
  * Plasmic component registration
@@ -90,7 +91,7 @@ PLASMIC.registerComponent(BarList, {
     color: "string",
     showAnimation: "boolean",
   },
-  importPath: "@tremor/react",
+  importPath: "./components/widgets/tremor",
 });
 
 PLASMIC.registerComponent(AlgoliaSearchBox, {
