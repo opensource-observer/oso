@@ -15,6 +15,7 @@ import {
 import {
   EventDataProviderRegistration,
   ProjectEventDataProvider,
+  ProjectUserDataProvider,
   ArtifactEventDataProvider,
 } from "./components/dataprovider/event-data-provider";
 import { FormField, FormError } from "./components/forms/form-elements";
@@ -159,6 +160,13 @@ PLASMIC.registerComponent(ProjectEventDataProvider, {
 
 PLASMIC.registerComponent(ArtifactEventDataProvider, {
   name: "ArtifactEventDataProvider",
+  props: { ...EventDataProviderRegistration },
+  providesData: true,
+  importPath: "./components/dataprovider/event-data-provider",
+});
+
+PLASMIC.registerComponent(ProjectUserDataProvider, {
+  name: "ProjectUserDataProvider",
   props: { ...EventDataProviderRegistration },
   providesData: true,
   importPath: "./components/dataprovider/event-data-provider",
