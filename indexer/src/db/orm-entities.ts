@@ -264,6 +264,8 @@ export class EventType extends Base<"EventTypeId"> {
 
   @OneToMany(() => Event, (event) => event.type)
   events: Event[];
+  @OneToMany(() => FirstContribution, (event) => event.type)
+  firstContributions: FirstContribution[];
 }
 
 type EventId = Brand<number, "EventId">;
@@ -409,15 +411,15 @@ export class Log extends Base<"LogId"> {
 @ViewEntity({
   materialized: true,
   expression: `
-    SELECT DISTINCT ON ("toId", "fromId")
+    SELECT DISTINCT ON ("toId", "fromId", "typeId")
       "toId",
       "fromId",
+      "typeId",
       "time",
       "id",
-      "typeId",
       "amount"
     FROM "event"
-    ORDER BY "toId", "fromId", "time" ASC 
+    ORDER BY "toId", "fromId", "typeId", "time" ASC 
     WITH NO DATA;
   `,
 })
@@ -433,14 +435,15 @@ export class FirstContribution {
   @ViewColumn()
   from: Artifact | null;
 
+  @ManyToOne(() => EventType, (eventType) => eventType.firstContributions)
+  @ViewColumn()
+  type: EventType;
+
   @ViewColumn()
   time: Date;
 
   @ViewColumn()
   id: Brand<number, "EventId">;
-
-  @ViewColumn()
-  type: EventType;
 
   @ViewColumn()
   amount: number;
