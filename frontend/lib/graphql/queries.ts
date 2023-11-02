@@ -233,6 +233,26 @@ const GET_EVENTS_WEEKLY_TO_PROJECT = gql(`
   }
 `);
 
+const GET_USERS_MONTHLY_TO_PROJECT = gql(`
+  query UsersMonthlyToProject(
+    $projectIds: [Int!],
+    $segmentTypes: [String!],
+    $startDate: timestamptz!,
+    $endDate: timestamptz!, 
+  ) {
+    users_monthly_to_project(where: {
+      projectId: { _in: $projectIds },
+      segmentType: { _in: $segmentTypes },
+      bucketMonthly: { _gte: $startDate, _lte: $endDate }
+    }) {
+      segmentType
+      projectId
+      bucketMonthly
+      amount
+    }
+  }
+`);
+
 const GET_EVENTS_MONTHLY_TO_PROJECT = gql(`
   query EventsMonthlyToProject(
     $projectIds: [Int!],
@@ -293,5 +313,6 @@ export {
   GET_EVENTS_DAILY_TO_PROJECT,
   GET_EVENTS_WEEKLY_TO_PROJECT,
   GET_EVENTS_MONTHLY_TO_PROJECT,
+  GET_USERS_MONTHLY_TO_PROJECT,
   GET_EVENT_SUM,
 };

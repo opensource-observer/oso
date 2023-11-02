@@ -4,7 +4,7 @@
  * data formatters (for charts)
  **/
 type EventData = {
-  typeId: number;
+  typeName: string;
   id: number;
   date: string;
   amount: number;

@@ -11,6 +11,7 @@ import {
   GET_EVENTS_DAILY_TO_PROJECT,
   GET_EVENTS_WEEKLY_TO_PROJECT,
   GET_EVENTS_MONTHLY_TO_PROJECT,
+  GET_USERS_MONTHLY_TO_PROJECT,
   GET_PROJECTS_BY_IDS,
 } from "../../lib/graphql/queries";
 import {
@@ -62,7 +63,6 @@ const EVENT_TYPE_ID_TO_NAME = _.invert(EVENT_TYPE_NAME_TO_ID);
 type BucketWidth = "day" | "week" | "month";
 type ChartType = "areaChart" | "barList";
 type XAxis = "eventTime" | "entity" | "eventType";
-type EntityType = "project" | "artifact";
 
 // Ideal minimum number of data points in an area chart
 const MIN_DATA_POINTS = 20;
@@ -80,7 +80,6 @@ const DEFAULT_XAXIS: XAxis = "eventType";
 type EventDataProviderProps = CommonDataProviderProps & {
   chartType: ChartType;
   xAxis?: XAxis; // X-axis
-  entityType?: EntityType;
   ids?: string[];
   eventTypes?: string[];
   startDate?: string;
@@ -99,10 +98,6 @@ const EventDataProviderRegistration: RegistrationProps<EventDataProviderProps> =
       type: "choice",
       helpText: "What is the x-axis?",
       options: ["eventTime", "entity", "eventType"],
-    },
-    entityType: {
-      type: "choice",
-      options: ["project", "artifact"],
     },
     ids: {
       type: "array",
@@ -165,7 +160,7 @@ const formatDataToAreaChart = (
     const dateLabel = eventTimeToLabel(d.date);
     const category = createCategory(
       d.id,
-      EVENT_TYPE_ID_TO_NAME[d.typeId],
+      d.typeName,
       entityData,
       categories.opts,
     );
@@ -251,7 +246,7 @@ const formatDataToBarList = (
       : xAxis === "entity"
       ? x.id
       : xAxis === "eventType"
-      ? EVENT_TYPE_ID_TO_NAME[x.typeId]
+      ? x.typeName
       : assertNever(xAxis),
   );
   const summed = _.mapValues(grouped, (x) => _.sumBy(x, (x) => x.amount));
@@ -280,9 +275,10 @@ type CategoryOpts = {
  * TODO: Creates unique categories for the area chart
  * - Currently, we just use the type, which will merge data across IDs
  * - We need to add unique identifiers for each ID to properly segregate
- * @param entityType
  * @param id
  * @param type
+ * @param entityData
+ * @param opts
  * @returns
  */
 const createCategory = (
@@ -392,7 +388,10 @@ function ArtifactEventDataProvider(props: EventDataProviderProps) {
     rawEventData?.events_daily_to_artifact ??
     []
   ).map((x: any) => ({
-    typeId: ensure<number>(x.typeId, "Data missing 'typeId'"),
+    typeName: ensure<string>(
+      EVENT_TYPE_ID_TO_NAME[x.typeId],
+      "Data missing 'typeId'",
+    ),
     id: ensure<number>(x.artifactId, "Data missing 'projectId'"),
     date: ensure<string>(
       x.bucketDaily ?? x.bucketWeekly ?? x.bucketMonthly,
@@ -455,7 +454,10 @@ function ProjectEventDataProvider(props: EventDataProviderProps) {
     rawEventData?.events_daily_to_project ??
     []
   ).map((x: any) => ({
-    typeId: ensure<number>(x.typeId, "Data missing 'type'"),
+    typeName: ensure<string>(
+      EVENT_TYPE_ID_TO_NAME[x.typeId],
+      "Data missing 'type'",
+    ),
     id: ensure<number>(x.projectId, "Data missing 'projectId'"),
     date: ensure<string>(
       x.bucketDaily ?? x.bucketWeekly ?? x.bucketMonthly,
@@ -480,9 +482,55 @@ function ProjectEventDataProvider(props: EventDataProviderProps) {
   );
 }
 
+/**
+ * UserDataProvider for projects
+ * @param props
+ * @returns
+ */
+function ProjectUserDataProvider(props: EventDataProviderProps) {
+  const {
+    data: rawEventData,
+    error: eventError,
+    loading: eventLoading,
+  } = useQuery(GET_USERS_MONTHLY_TO_PROJECT, {
+    variables: {
+      projectIds: stringToIntArray(props.ids),
+      segmentTypes: props.eventTypes ?? [],
+      startDate: eventTimeToLabel(props.startDate ?? DEFAULT_START_DATE),
+      endDate: eventTimeToLabel(props.endDate),
+    },
+  });
+  const {
+    data: projectData,
+    error: projectError,
+    loading: projectLoading,
+  } = useQuery(GET_PROJECTS_BY_IDS, {
+    variables: { projectIds: stringToIntArray(props.ids) },
+  });
+  const normalizedData: EventData[] = (
+    rawEventData?.users_monthly_to_project ?? []
+  ).map((x) => ({
+    typeName: ensure<string>(x.segmentType, "Data missing 'segmentType'"),
+    id: ensure<number>(x.projectId, "Data missing 'projectId'"),
+    date: ensure<string>(x.bucketMonthly, "Data missing time"),
+    amount: ensure<number>(x.amount, "Data missing 'number'"),
+  }));
+  const formattedData = formatData(props, normalizedData, projectData?.project);
+  console.log(props.ids, rawEventData, formattedData);
+  return (
+    <DataProviderView
+      {...props}
+      formattedData={formattedData}
+      loading={eventLoading || projectLoading}
+      error={eventError ?? projectError}
+    />
+  );
+}
+
 export {
   EventDataProviderRegistration,
   ProjectEventDataProvider,
   ArtifactEventDataProvider,
+  ProjectUserDataProvider,
 };
 export type { EventDataProviderProps };
