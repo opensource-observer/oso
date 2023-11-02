@@ -480,22 +480,7 @@ function ProjectEventDataProvider(props: EventDataProviderProps) {
   );
 }
 
-/**
- * Switches between the EventDataProvider implementation
- * depending on the `entityType`
- * @param props
- * @returns
- */
-function EventDataProvider(props: EventDataProviderProps) {
-  return props.entityType === "project" ? (
-    <ProjectEventDataProvider {...props} />
-  ) : (
-    <ArtifactEventDataProvider {...props} />
-  );
-}
-
 export {
-  EventDataProvider,
   EventDataProviderRegistration,
   ProjectEventDataProvider,
   ArtifactEventDataProvider,

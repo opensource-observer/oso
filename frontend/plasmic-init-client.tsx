@@ -13,7 +13,6 @@ import {
   SupabaseQueryRegistration,
 } from "./components/dataprovider/supabase-query";
 import {
-  EventDataProvider,
   EventDataProviderRegistration,
   ProjectEventDataProvider,
   ArtifactEventDataProvider,
@@ -149,13 +148,6 @@ PLASMIC.registerComponent(SupabaseQuery, {
   props: { ...SupabaseQueryRegistration },
   providesData: true,
   importPath: "./components/dataprovider/supabase-query",
-});
-
-PLASMIC.registerComponent(EventDataProvider, {
-  name: "EventDataProvider",
-  props: { ...EventDataProviderRegistration },
-  providesData: true,
-  importPath: "./components/dataprovider/event-data-provider",
 });
 
 PLASMIC.registerComponent(ProjectEventDataProvider, {
