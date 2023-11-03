@@ -195,9 +195,9 @@ const formatDataToAreaChart = (
   while (j > 0 && isEmptyDataPoint(sorted[j])) {
     j--;
   }
-  // TODO: we are temporarily removing this trimming function to see if users like this better.
+  // TODO: we are only trimming the right side to see if users like this better.
   //const sliced = sorted.slice(i, j + 1);
-  const sliced = sorted.slice();
+  const sliced = sorted.slice(0, j + 1);
   //categories.results.includes("Downloads") && console.log(sliced);
 
   // Fill in any empty dates
