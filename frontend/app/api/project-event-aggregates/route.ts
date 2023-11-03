@@ -76,6 +76,7 @@ export async function GET(request: NextRequest) {
   }
 
   const data = _.zip(projectArray, results).map(([p, r]) => ({
+    key: p?.slug,
     name: p?.name,
     ..._.fromPairs(
       _.zip(
