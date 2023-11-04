@@ -7,6 +7,8 @@ from parse_links import Parser
 
 
 EAS_SCHEMA = "0x76e98cce95f3ba992c2ee25cef25f756495147608a3da3aa2e5ca43109fe77cc"
+APPROVAL_SCHEMA = "0xebbf697d5d3ca4b53579917ffc3597fb8d1a85b8c6ca10ec10039709903b9277"
+APPROVER_ADDRESS = "0x621477dBA416E12df7FF0d48E14c4D20DC85D7D9"
 START_TIME = 0
 END_TIME = 1698136205
 RAW_APPLICANT_JSON = "data/raw_applicant_data.json"
@@ -295,10 +297,41 @@ def export_canonical_projects_list(cleaned_data, csv_outpath):
     csv_data.to_csv(csv_outpath, index=False)
 
 
+def fetch_approved_project_ids():
+
+    approved_projects = fetch_attestations(APPROVAL_SCHEMA)
+    approved_project_ids = []
+    rejected_project_ids = []
+    for a in approved_projects:
+        if a["attester"] != APPROVER_ADDRESS:
+            continue
+        data = json.loads(a["decodedDataJson"])
+        if data[0]['value']['value'] == True:
+            approved_project_ids.append(a["refUID"])
+        else:
+            print("Rejected:", a["refUID"])
+            rejected_project_ids.append(a["refUID"])
+            
+
+    for rejected_id in rejected_project_ids:        
+        if rejected_id in approved_project_ids:
+            approved_project_ids.remove(rejected_id)
+    return approved_project_ids
+
+
 def main():
 
+    print("Looking for new project applications...")
     data = update_data(EAS_SCHEMA, RAW_APPLICANT_JSON)
-    cleaned_data = export_cleaned_data(data, CLEANED_APPLICANT_JSON, CLEANED_APPLICANT_CSV)
+
+    print("Filtering on approved projects only...")
+    approved_project_ids = fetch_approved_project_ids()
+    approved_data = [project for project in data if project["id"] in approved_project_ids]
+
+    print("Exporting cleaned data...")
+    cleaned_data = export_cleaned_data(approved_data, CLEANED_APPLICANT_JSON, CLEANED_APPLICANT_CSV)
+
+    print("Exporting canonical projects list...")
     export_canonical_projects_list(cleaned_data, PROJECT_OSSD_MAPPINGS)
     
 
