@@ -30,7 +30,7 @@ import {
   JobExecutionRepository,
   JobsRepository,
 } from "../db/jobs.js";
-import { DateTime, DurationLike } from "luxon";
+import { DateTime, Duration, DurationLike } from "luxon";
 import _ from "lodash";
 import { INDEXER_SPAWN } from "../config.js";
 import { writeFile, readFile, unlink } from "fs/promises";
@@ -281,7 +281,11 @@ export interface IScheduler {
 
   queuePeriodicJob(collector: string, baseTime: DateTime): Promise<void>;
 
-  queueBackfill(collectorName: string, startTime: DateTime): Promise<void>;
+  queueBackfill(
+    collectorName: string,
+    startTime: DateTime,
+    backfillIntervalDays: number,
+  ): Promise<void>;
 
   runWorker(group: string, resumeWithLock: boolean): Promise<ExecutionSummary>;
 
@@ -565,13 +569,24 @@ export class BaseScheduler implements IScheduler {
   async queueBackfill(
     collectorName: string,
     startTime: DateTime,
+    backfillIntervalDays: number,
   ): Promise<void> {
     // Only event collectors can do backfill.
     const collector = this.eventCollectors[collectorName];
 
-    const backfillInterval: DurationLike = collector.backfillInterval
+    let backfillInterval: DurationLike = collector.backfillInterval
       ? collector.backfillInterval
       : { days: 30 };
+
+    if (
+      backfillIntervalDays !== 0 &&
+      !(
+        Duration.fromDurationLike({ days: backfillIntervalDays }) >
+        Duration.fromDurationLike(backfillInterval)
+      )
+    ) {
+      backfillInterval = { days: backfillIntervalDays };
+    }
 
     let currentStartTime = startTime;
     let currentEndTime = currentStartTime.plus(backfillInterval);
