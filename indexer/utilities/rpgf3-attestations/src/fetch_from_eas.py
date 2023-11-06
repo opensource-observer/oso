@@ -3,14 +3,15 @@ import os
 import pandas as pd
 import requests
 
-from parse_links import Parser
+from oss_directory import check_for_ossd_membership
 
 
 EAS_SCHEMA = "0x76e98cce95f3ba992c2ee25cef25f756495147608a3da3aa2e5ca43109fe77cc"
+APPROVAL_SCHEMA = "0xebbf697d5d3ca4b53579917ffc3597fb8d1a85b8c6ca10ec10039709903b9277"
+APPROVER_ADDRESS = "0x621477dBA416E12df7FF0d48E14c4D20DC85D7D9"
 START_TIME = 0
 END_TIME = 1698136205
 RAW_APPLICANT_JSON = "data/raw_applicant_data.json"
-OSSD_SNAPSHOT_JSON = "data/ossd_snapshot.json"
 CLEANED_APPLICANT_JSON = "data/cleaned_applicant_data.json"
 CLEANED_APPLICANT_CSV = "data/cleaned_applicant_data.csv"
 PROJECT_OSSD_MAPPINGS = "data/rpgf3_ossd_mappings.csv"
@@ -167,84 +168,6 @@ def clean_data(original_data):
         return None
 
 
-def check_for_ossd_membership(cleaned_data):
-    
-    with open(OSSD_SNAPSHOT_JSON, "r") as json_file:
-        ossd_data = json.load(json_file)
-    
-    # TODO: handle this more elegantly
-    github_slugs_to_ignore = ['op', 'spellbook-duneanalytics']
-    repos_to_slugs = {
-        repo.replace("https://github.com/",""): slug
-        for repo,slug in ossd_data["repos"].items()
-        if slug not in github_slugs_to_ignore
-    }
-
-    addresses_to_slugs = ossd_data["addresses"]
-    address_set = set(addresses_to_slugs.keys())
-
-    for project in cleaned_data:
-        
-        project["OSS Directory"] = "Not Found"
-        address_found = False        
-        contract_found = False
-        github_found = False
-
-        project["Slugs: Payout Address"] = set()
-        project["Slugs: Attester Address"] = set()
-        project["Slugs: Contract Address"] = set()
-        project["Slugs: Github"] = set()
-        project["Slug: Primary"]  = None
-
-        if project["Payout Address"].lower() in address_set:
-            address_found = True
-            project["Slugs: Payout Address"].add(addresses_to_slugs[project["Payout Address"].lower()])
-        
-        if project["Attester Address"].lower() in address_set:
-            address_found = True            
-            project["Slugs: Attester Address"].add(addresses_to_slugs[project["Attester Address"].lower()])
-
-        for url in project["Contributions: Contracts"]:
-            owner = Parser.etherscan(url)[1]
-            if owner is None:
-                continue
-            if owner in address_set:
-                contract_found = True
-                project["Slugs: Contract Address"].add(addresses_to_slugs[owner])
-                    
-        for url in project["Contributions: Github"]:
-            repo = Parser.github(url)[1]            
-            if repo is None:
-                continue
-            owner = repo.split("/")[0] if "/" in repo else repo
-            if repo in repos_to_slugs:
-                github_found = True
-                project["Slugs: Github"].add(repos_to_slugs[repo])
-            elif owner in repos_to_slugs:
-                github_found = True
-                project["Slugs: Github"].add(repos_to_slugs[owner])                
-                        
-        if address_found and github_found:
-            project["OSS Directory"] = "Address & Github Found"
-        elif address_found:
-            project["OSS Directory"] = "Address Found"
-        elif github_found:
-            project["OSS Directory"] = "Github Found"
-        else:
-            continue
-
-        intersection = project["Slugs: Payout Address"].intersection(project["Slugs: Github"])
-        union = project["Slugs: Payout Address"].union(project["Slugs: Github"]).union(project["Slugs: Contract Address"])
-        if len(intersection) == 1:
-            project["Slug: Primary"] = list(intersection)[0]
-        elif len(intersection) > 1:
-            project["Slug: Primary"] = list(project["Slugs: Payout Address"])[0]
-        elif len(project["Slugs: Github"]) == 1:
-            project["Slug: Primary"] = list(project["Slugs: Github"])[0]
-        elif len(union) >= 1 and project["OSS Directory"] == "Address Found":
-            project["Slug: Primary"] = list(project["Slugs: Payout Address"])[0]
-
-
 class SetEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, set):
@@ -295,11 +218,46 @@ def export_canonical_projects_list(cleaned_data, csv_outpath):
     csv_data.to_csv(csv_outpath, index=False)
 
 
+def fetch_approved_project_ids():
+
+    approved_projects = fetch_attestations(APPROVAL_SCHEMA)
+    approved_project_ids = []
+    rejected_project_ids = []
+    for a in approved_projects:
+        if a["attester"] != APPROVER_ADDRESS:
+            continue
+        data = json.loads(a["decodedDataJson"])
+        if data[0]['value']['value'] == True:
+            approved_project_ids.append(a["refUID"])
+        else:
+            print("Rejected:", a["refUID"])
+            rejected_project_ids.append(a["refUID"])
+            
+
+    for rejected_id in rejected_project_ids:        
+        if rejected_id in approved_project_ids:
+            approved_project_ids.remove(rejected_id)
+    return approved_project_ids
+
+
 def main():
 
+    print("Fetching project applications from EAS...")
     data = update_data(EAS_SCHEMA, RAW_APPLICANT_JSON)
-    cleaned_data = export_cleaned_data(data, CLEANED_APPLICANT_JSON, CLEANED_APPLICANT_CSV)
+    print("Dumped raw application data to:", RAW_APPLICANT_JSON)
+    print()
+    print("Fetching project approvals from EAS...")
+    approved_project_ids = fetch_approved_project_ids()
+    approved_data = [project for project in data if project["id"] in approved_project_ids]
+    print(f"Found {len(approved_data)} approved projects.")
+    print()
+    print("Cleaning application data...")
+    cleaned_data = export_cleaned_data(approved_data, CLEANED_APPLICANT_JSON, CLEANED_APPLICANT_CSV)
+    print("Export cleaned application data to:", CLEANED_APPLICANT_JSON)
+    print()
+    print("Generating a list of projects in OSS Directory...")
     export_canonical_projects_list(cleaned_data, PROJECT_OSSD_MAPPINGS)
+    print("Exported projects list to:", PROJECT_OSSD_MAPPINGS)
     
 
 if __name__ == "__main__":
