@@ -290,14 +290,32 @@ const cli = yargs(hideBin(process.argv))
                   })
                   .option("start-date", {
                     type: "string",
-                    describe: "start-date for the manual run",
+                    describe: "start-date for the backfill scheduling",
                   })
                   .coerce("start-date", dateConverter)
+                  .option("end-date", {
+                    type: "string",
+                    describe: "end-date for the backfill scheduling",
+                  })
+                  .coerce("end-date", (input: string) => {
+                    if (input) {
+                      return dateConverter(input);
+                    }
+                    return DateTime.now();
+                  })
+                  .option("backfill-interval-days", {
+                    type: "number",
+                    default: 0,
+                  })
                   .demandOption(["start-date"]);
               },
               async (args) => {
                 const scheduler = await configure(args);
-                await scheduler.queueBackfill(args.collector, args.startDate);
+                await scheduler.queueBackfill(
+                  args.collector,
+                  args.startDate,
+                  args.backfillIntervalDays,
+                );
               },
             )
             .command<SchedulerArgs>(

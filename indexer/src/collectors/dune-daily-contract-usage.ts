@@ -149,7 +149,10 @@ export class DailyContractUsageCollector extends BaseEventCollector<object> {
       },
       where: {
         artifacts: {
-          type: In([ArtifactType.CONTRACT_ADDRESS]),
+          type: In([
+            ArtifactType.CONTRACT_ADDRESS,
+            ArtifactType.FACTORY_ADDRESS,
+          ]),
           namespace: ArtifactNamespace.OPTIMISM,
         },
       },

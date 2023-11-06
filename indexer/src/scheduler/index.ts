@@ -81,6 +81,8 @@ export type SchedulerQueueJobArgs = SchedulerArgs & {
 export type SchedulerQueueBackfill = SchedulerArgs & {
   collector: string;
   startDate: DateTime;
+  endDate: DateTime;
+  backfillIntervalDays: number;
 };
 
 // Entrypoint for the scheduler. Currently not where it should be but this is quick.
@@ -302,6 +304,7 @@ export async function configure(args: SchedulerArgs) {
     artifactScope: [ArtifactNamespace.OPTIMISM],
     artifactTypeScope: [
       ArtifactType.CONTRACT_ADDRESS,
+      ArtifactType.FACTORY_ADDRESS,
       ArtifactType.EOA_ADDRESS,
       ArtifactType.SAFE_ADDRESS,
     ],
