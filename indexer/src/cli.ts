@@ -303,7 +303,10 @@ const cli = yargs(hideBin(process.argv))
                     }
                     return DateTime.now();
                   })
-                  .option("backfill-interval", { type: "number", default: 0 })
+                  .option("backfill-interval-days", {
+                    type: "number",
+                    default: 0,
+                  })
                   .demandOption(["start-date"]);
               },
               async (args) => {
@@ -311,7 +314,7 @@ const cli = yargs(hideBin(process.argv))
                 await scheduler.queueBackfill(
                   args.collector,
                   args.startDate,
-                  args.backfillInterval,
+                  args.backfillIntervalDays,
                 );
               },
             )

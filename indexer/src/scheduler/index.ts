@@ -82,7 +82,7 @@ export type SchedulerQueueBackfill = SchedulerArgs & {
   collector: string;
   startDate: DateTime;
   endDate: DateTime;
-  backfillInterval: number;
+  backfillIntervalDays: number;
 };
 
 // Entrypoint for the scheduler. Currently not where it should be but this is quick.
