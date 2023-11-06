@@ -138,9 +138,11 @@ def main():
 
     df = tidy_dataframe(data)	
     df.to_csv(TIDY_ATTESTATION_CSV, index=False)	
+    print("Exported individual metrics to:", TIDY_ATTESTATION_CSV)
 
     grouped_df = project_summary(df)	
     grouped_df.to_csv(PROJECT_SUMMARY_CSV, index=False)	
+    print("Exported project summary metrics to:", PROJECT_SUMMARY_CSV)
 
 
 if __name__ == "__main__":	
