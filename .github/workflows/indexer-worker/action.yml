@@ -65,6 +65,7 @@ runs:
       run: mkdir -p "$(dirname $LOG_FILE)"
 
     - name: Set application name in the environment
+      shell: bash
       run: |
         echo "DB_APPLICATION_NAME=indexer-worker-${{ inputs.group }}" >> "$GITHUB_ENV"
 
