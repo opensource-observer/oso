@@ -39,3 +39,7 @@ export const GITHUB_WORKERS_WORKFLOW_ID = process.env.GITHUB_WORKERS_WORKFLOW_ID
 export const ENABLE_DB_TESTS = process.env.ENABLE_DB_TESTS === "true" || false;
 export const INDEXER_SPAWN = process.env.INDEXER_SPAWN === "true" || false;
 export const DEBUG_DB = process.env.DEBUG_DB === "true" || false;
+export const DB_APPLICATION_NAME =
+  process.env.DB_APPLICATION_NAME !== ""
+    ? process.env.DB_APPLICATION_NAME
+    : "indexer-default";

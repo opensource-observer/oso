@@ -64,6 +64,10 @@ runs:
       shell: bash
       run: mkdir -p "$(dirname $LOG_FILE)"
 
+    - name: Set application name in the environment
+      run: |
+        echo "DB_APPLICATION_NAME=indexer-worker-${{ inputs.group }}" >> "$GITHUB_ENV"
+
     - name: Run worker for the given group
       shell: bash
       run: bash .github/scripts/scheduler.sh worker ${{ inputs.group }}
