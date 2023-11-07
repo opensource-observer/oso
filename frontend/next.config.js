@@ -31,6 +31,12 @@ const nextConfig = {
           "https://github.com/opensource-observer/oso/tree/main/docs",
         permanent: false,
       },
+      {
+        source: "/oso-interest",
+        destination:
+          "https://docs.google.com/forms/d/e/1FAIpQLSc5h3lczif2kjzDosfwdjsY6CdHDT8qHXbphZvNLwiT1uMHJw/viewform?usp=sf_link",
+        permanent: false,
+      },
     ];
   },
 };
