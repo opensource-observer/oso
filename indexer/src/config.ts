@@ -43,3 +43,5 @@ export const DB_APPLICATION_NAME =
   process.env.DB_APPLICATION_NAME !== ""
     ? process.env.DB_APPLICATION_NAME
     : "indexer-default";
+
+export const DB_SYNCHRONIZE = process.env.DB_SYNCHRONIZE === "true" || false;
