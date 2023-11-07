@@ -8,6 +8,7 @@ env:
   X_GITHUB_GRAPHQL_API: ${{ vars.X_GITHUB_GRAPHQL_API }}
   X_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   DUNE_API_KEY: ${{ secrets.DUNE_API_KEY }}
+  DB_APPLICATION_NAME: indexer-import-oss-directory
 
 # Trigger the workflow when:
 on:

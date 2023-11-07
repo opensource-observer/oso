@@ -12,4 +12,6 @@ if [[ ! -z $end_date ]]; then
     args+=("--end-date=${end_date}")
 fi
 
+export DB_APPLICATION_NAME="indexer-${collector}-backfill"
+
 pnpm start:indexer scheduler job backfill "${collector}" "${args[@]}"

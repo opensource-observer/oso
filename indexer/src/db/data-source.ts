@@ -11,6 +11,7 @@ import {
   DB_USER,
   DEBUG_DB,
   NO_DYNAMIC_LOADS,
+  DB_APPLICATION_NAME,
 } from "../config.js";
 import {
   Artifact,
@@ -51,6 +52,7 @@ const dynamicallyLoadedDataSource: DataSourceOptions = {
   database: DB_DATABASE,
   synchronize: true,
   logging: loggingOption,
+  applicationName: DB_APPLICATION_NAME,
 
   entities: [path.resolve(__dirname, "./orm-entities.ts")],
   migrations: [path.resolve(__dirname, "./migration/**/*.ts")],
@@ -75,6 +77,7 @@ export function staticDataSourceOptions(
     database: databaseName,
     synchronize: true,
     logging: loggingOption,
+    applicationName: DB_APPLICATION_NAME,
 
     entities: [
       Artifact,
