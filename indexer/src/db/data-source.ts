@@ -12,6 +12,7 @@ import {
   DEBUG_DB,
   NO_DYNAMIC_LOADS,
   DB_APPLICATION_NAME,
+  DB_SYNCHRONIZE,
 } from "../config.js";
 import {
   Artifact,
@@ -50,7 +51,7 @@ const dynamicallyLoadedDataSource: DataSourceOptions = {
   username: DB_USER,
   password: DB_PASSWORD,
   database: DB_DATABASE,
-  synchronize: true,
+  synchronize: DB_SYNCHRONIZE,
   logging: loggingOption,
   applicationName: DB_APPLICATION_NAME,
 
@@ -75,7 +76,7 @@ export function staticDataSourceOptions(
     username: DB_USER,
     password: DB_PASSWORD,
     database: databaseName,
-    synchronize: true,
+    synchronize: DB_SYNCHRONIZE,
     logging: loggingOption,
     applicationName: DB_APPLICATION_NAME,
 
