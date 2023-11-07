@@ -22,6 +22,7 @@ env:
   DB_USER: ${{ vars.DB_USER }}
   DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
   DB_DATABASE: ${{ vars.DB_DATABASE }}
+  DB_APPLICATION_NAME: oso-ci
   X_GITHUB_GRAPHQL_API: ${{ vars.X_GITHUB_GRAPHQL_API }}
   X_GITHUB_TOKEN: ${{ secrets.X_GITHUB_TOKEN }}
 
