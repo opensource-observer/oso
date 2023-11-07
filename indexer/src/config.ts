@@ -44,4 +44,5 @@ export const DB_APPLICATION_NAME =
     ? process.env.DB_APPLICATION_NAME
     : "indexer-default";
 
+// This should never be set to true for production. This might cause data loss.
 export const DB_SYNCHRONIZE = process.env.DB_SYNCHRONIZE === "true" || false;
