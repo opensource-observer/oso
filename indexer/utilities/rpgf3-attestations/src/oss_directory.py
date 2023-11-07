@@ -10,20 +10,21 @@ LOCAL_PATH = os.getenv("LOCAL_PATH_TO_OSSD")
 
 OSSD_SNAPSHOT_JSON = "data/ossd_snapshot.json"
 DUPLICATE_SLUG_RESOLVER = {
-    "bootnodedev": "0x7c96c745536a31712abeccc61dca77089e8eb9ab59876e5d40986700c834aca2",
-    "filosofiacodigo": "0x74c9135b2ca59c277d93942e535f02777d2779f1fee5b88c9ff76ff20cdcd8b8",
-    "gitcoin": "0x95bba9455fa1028d59c069660656b3fe0b46d7b2e1883b091c5b04b810bc7525", # Gitcoin and Passport
-    "itu-blockchain": "0x956b110e3b9aa11c53bbf41b97d34fadb4d516faede3304fa2807db3fd6d7407", # OPClave & ITU
-    "lxdao-official": "0x7d3cb52c6e006ca04df32b6bef1982962c0669a7b9d826114cf9f40c0ce9be97", # Various
-    "metagov": "0x335ee234463e3a9bf9ea3325fd6942f30877714716b159ca7843f9b4d9ff4285", # MetaGov and DAOstar
-    "playmint": "0x33135d1d7ea18427c5096af97f5d5bcac392b8bbe871a9a0a9dd62ce651212df", # Client Side Proofs and Downstream
-    "polynomial-protocol": "0x90ef634fad04d6ac2882db44d4a84f31c7f0621f3abd00efb067416e4ff1641c", # Optimitic Indexer & Polynomial Bytes
-    "rainbow": "0x723da383185924834ea462c791d4e21dac5dedc94ba164bd37adc571ba5008ed", # Rainbow Kit and Rainbow Me
-    "reth-paradigmxyz": "0x62aa2cbedbc3772d3110b0927f0eea6313a71c9b3d7980ee631ca9aa2e9db3c6", # OP Reth
-    "synapse": "0x224aae62a450603d6358ab1d699a3daeef169761279597712b08b8dc4d25b198", # Synapse Labs and Synapse DAO
-    "ultrasoundmoney": "0xd06423aa05a359735b911e9988486822acb3c3f62e3397ed35d6430240454b0f", # Ultra Sound Money and Relay
-    "vyperlang": "0x1b205ded96fa08412a2c8b7100de978779b13fd81fd8a85aaf71f7994065c690", # Vyper, Venom & Fang, Titanoboa
-    "waffle-truefieng": "0xf162490ee7fc0844a9f2033eb1107cf910df56889ce42a28ea4bf049ae75bf63" # Waffle and Vaults.fyi
+    "bootnodedev": "0x31fa3f2b3ab4221bb89dd64e864339a6c59ab6658d91860e239e2491f4bb2435",
+    "filosofiacodigo": "0xaa3b9caf85727a484ac82d25594adc78d68fef1291de82be680bf00436164741",
+    "gitcoin": "0x859d7ec1d7414662658b753da4559bfa6d091483fd0084b673a374e1c3cabf05", # Gitcoin and Passport
+    "itu-blockchain": "0x0517a9d930d480d5478b6b173e54376cd03ec48d17574baadde2a6322560c7a7", # OPClave & ITU
+    "lxdao-official": "0x79aaf24aab7a9cffbaffd2003b262aa452d31b5a07fb17c54021479284c564be", # Various
+    "metagov": "0xe367584886bdb185038a466f6a8e5a4ad746ffef051507a311cae85ae11c7d5e", # MetaGov and DAOstar
+    "playmint": "0x60e8b63d4c87c43409731ac1370379af9884f7239cf69b052fb36c14d121f736", # Client Side Proofs and Downstream
+    "polynomial-protocol": "0x75815ccd858e6b97c6e8435e24ec66b1bc4d67c4775a81d4b49a8c58b62daf3f", # Optimitic Indexer & Polynomial Bytes
+    "rainbow": "0xe9140c31f3a448f0f52124b3f9782f7947d698a686ceb20f77f60366670f3f8e", # Rainbow Kit and Rainbow Me
+    "reth-paradigmxyz": "0x356900a8a5aa893d522dfcd67cc89f6472f8793ea8cf41088b47833ff1c16b5f", # OP Reth
+    "synapse": "0x3d2fe07760753070d5f3fe44fb92923065c688b56f3069906d8eae4cc3867fb6", # Synapse Labs and Synapse DAO
+    "ultrasoundmoney": "0x5e97794e6f3b8af9c3b97da269e51387e788cb4b3c609d708aaa668538ef1de2", # Ultra Sound Money and Relay
+    "vyperlang": "0x023dfdedcfb50385c8c24fd86489a7f016633219c66583c71f154d7af99c6b51", # Vyper, Venom & Fang, Titanoboa
+    "waffle-truefieng": "0x877ded44fae0833c412ef1b802419a7d6d9e668c6f92f1fb439dbbd40ca12b2d", # Waffle and Vaults.fyi
+    "banklessdao": "0x023ec749b1a3ad4335595edad791b6dd5523a94817f53cba336060779471c3c8" # Bankless DAO and International Media Nodes
 }
 
 

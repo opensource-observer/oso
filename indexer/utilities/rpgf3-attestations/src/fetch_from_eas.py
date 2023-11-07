@@ -221,22 +221,21 @@ def export_canonical_projects_list(cleaned_data, csv_outpath):
 def fetch_approved_project_ids():
 
     approved_projects = fetch_attestations(APPROVAL_SCHEMA)
-    approved_project_ids = []
+    approved_project_ids = {}
     rejected_project_ids = []
     for a in approved_projects:
         if a["attester"] != APPROVER_ADDRESS:
             continue
         data = json.loads(a["decodedDataJson"])
         if data[0]['value']['value'] == True:
-            approved_project_ids.append(a["refUID"])
+            approved_project_ids[a["refUID"]] = a['id']
         else:
             print("Rejected:", a["refUID"])
             rejected_project_ids.append(a["refUID"])
             
-
     for rejected_id in rejected_project_ids:        
         if rejected_id in approved_project_ids:
-            approved_project_ids.remove(rejected_id)
+            del approved_project_ids[rejected_id]
     return approved_project_ids
 
 
@@ -248,7 +247,11 @@ def main():
     print()
     print("Fetching project approvals from EAS...")
     approved_project_ids = fetch_approved_project_ids()
-    approved_data = [project for project in data if project["id"] in approved_project_ids]
+    approved_data = []
+    for project in data:
+        if project["id"] in approved_project_ids:
+            project["id"] = approved_project_ids[project["id"]]
+            approved_data.append(project)
     print(f"Found {len(approved_data)} approved projects.")
     print()
     print("Cleaning application data...")
