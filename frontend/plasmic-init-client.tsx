@@ -18,6 +18,10 @@ import {
   ProjectUserDataProvider,
   ArtifactEventDataProvider,
 } from "./components/dataprovider/event-data-provider";
+import {
+  TableDataProvider,
+  TableDataProviderRegistration,
+} from "./components/dataprovider/table-data-provider";
 import { FormField, FormError } from "./components/forms/form-elements";
 import { VisualizationContext } from "./components/forms/visualization-context";
 import { BarList } from "./components/widgets/tremor";
@@ -170,6 +174,13 @@ PLASMIC.registerComponent(ProjectUserDataProvider, {
   props: { ...EventDataProviderRegistration },
   providesData: true,
   importPath: "./components/dataprovider/event-data-provider",
+});
+
+PLASMIC.registerComponent(TableDataProvider, {
+  name: "TableDataProvider",
+  props: { ...TableDataProviderRegistration },
+  providesData: true,
+  importPath: "./components/dataprovider/table-data-provider",
 });
 
 PLASMIC.registerComponent(FormField, {

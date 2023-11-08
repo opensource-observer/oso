@@ -1,4 +1,4 @@
-import { NullOrUndefinedValueError } from "./types/errors";
+import { NullOrUndefinedValueError, AssertionError } from "./types/errors";
 /**
  * Explicitly marks a promise as something we won't await
  * @param _promise
@@ -19,6 +19,19 @@ export function safeCast<T>(x: T): T {
  */
 export function uncheckedCast<T>(x: any): T {
   return x;
+}
+
+/**
+ * Asserts that a condition is true.
+ * @param cond
+ * @param msg
+ */
+export function assert<T>(cond: T, msg: string): asserts cond {
+  if (!cond) {
+    // eslint-disable-next-line no-debugger
+    debugger;
+    throw new AssertionError(msg || "Assertion failed");
+  }
 }
 
 /**

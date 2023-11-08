@@ -1,7 +1,12 @@
 import { useQuery } from "@apollo/experimental-nextjs-app-support/ssr";
 import React from "react";
-import { DataProviderView } from "./provider-view";
+import useSWR from "swr";
+import {
+  DataProviderView,
+  CommonDataProviderRegistration,
+} from "./provider-view";
 import type { CommonDataProviderProps } from "./provider-view";
+import { RegistrationProps } from "../../lib/types/plasmic";
 import {
   GET_PROJECTS_BY_SLUGS,
   GET_PROJECTS_BY_COLLECTION_SLUGS,
@@ -9,6 +14,7 @@ import {
 
 // Default start time
 const DEFAULT_START_DATE = 0;
+const API_ENDPOINT = "/api/project-event-aggregates";
 
 /**
  * Query component focused on providing data to our data tables
@@ -24,8 +30,33 @@ type TableDataProviderProps = CommonDataProviderProps & {
   endDate?: string;
 };
 
+const TableDataProviderRegistration: RegistrationProps<TableDataProviderProps> =
+  {
+    ...CommonDataProviderRegistration,
+    collectionSlugs: {
+      type: "array",
+      defaultValue: [],
+    },
+    projectSlugs: {
+      type: "array",
+      defaultValue: [],
+    },
+    eventTypes: {
+      type: "array",
+      defaultValue: [],
+    },
+    startDate: {
+      type: "string",
+      helpText: "YYYY-MM-DD",
+    },
+    endDate: {
+      type: "string",
+      helpText: "YYYY-MM-DD",
+    },
+  };
+
 /**
- * EventDataProvider for artifacts
+ * TableDataProvider for collections
  * @param props
  * @returns
  */
@@ -62,31 +93,49 @@ function TableDataProvider(props: TableDataProviderProps) {
     ...(projectsByCollectionData?.project ?? []),
     ...(projectsBySlugData?.project ?? []),
   ];
-  console.log(startDate, endDate, eventTypes);
 
-  // Get the aggregate event data
-  /**
-  const normalizedData: EventData[] = (
-    rawData?.events_daily_by_artifact ?? []
-  ).map((x) => ({
-    type: ensure<string>(x.type, "Data missing 'type'"),
-    id: ensure<number>(x.toId, "Data missing 'projectId'"),
-    date: ensure<string>(x.bucketDaily, "Data missing 'bucketDaily'"),
-    amount: ensure<number>(x.amount, "Data missing 'number'"),
-  }));
-  console.log(props.ids, rawData, formattedData);
-  */
+  const querySearchParams = new URLSearchParams();
+  if (projects.length > 0) {
+    querySearchParams.append(
+      "projectSlugs",
+      projects.map((p) => p.slug).join(","),
+    );
+  }
+  if (eventTypes && eventTypes.length > 0) {
+    querySearchParams.append("eventTypes", eventTypes?.join(",") ?? "");
+  }
+  if (startDate) {
+    querySearchParams.append("startDate", startDate);
+  }
+  if (endDate) {
+    querySearchParams.append("endDate", endDate);
+  }
+
+  const queryUrl = `${API_ENDPOINT}?${querySearchParams.toString()}`;
+  const {
+    data: aggregateData,
+    error: aggregateError,
+    isLoading: aggregateLoading,
+  } = useSWR(queryUrl, async () => {
+    const response = await fetch(queryUrl);
+    return await response.json();
+  });
+
   const formattedData = {
     projects,
+    table: aggregateData,
   };
+  //console.log(props.ids, formattedData);
   return (
     <DataProviderView
       {...props}
       formattedData={formattedData}
-      loading={projectsByCollectionLoading || projectsBySlugLoading}
-      error={projectsByCollectionError ?? projectsBySlugError}
+      loading={
+        projectsByCollectionLoading || projectsBySlugLoading || aggregateLoading
+      }
+      error={projectsByCollectionError ?? projectsBySlugError ?? aggregateError}
     />
   );
 }
 
-export { TableDataProvider };
+export { TableDataProvider, TableDataProviderRegistration };
