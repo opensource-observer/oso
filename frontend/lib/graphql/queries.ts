@@ -289,11 +289,11 @@ const GET_EVENT_SUM = gql(`
     $startDate: timestamptz!,
     $endDate: timestamptz!, 
   ) @cached {
-    events_daily_to_project_aggregate(
+    events_monthly_to_project_aggregate(
       where: {
         projectId: {_in: $projectIds},
         typeId: {_in: $typeIds},
-        bucketDaily: {_gte: $startDate, _lte: $endDate}}
+        bucketMonthly: {_gte: $startDate, _lte: $endDate}}
     ) {
       aggregate {
         sum {
