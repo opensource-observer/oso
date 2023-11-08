@@ -73,7 +73,8 @@ export async function GET(request: NextRequest) {
     });
     return [
       eventTypeIdToName[typeId],
-      response.events_daily_to_project_aggregate?.aggregate?.sum?.amount ?? "?",
+      response.events_monthly_to_project_aggregate?.aggregate?.sum?.amount ??
+        "0",
     ];
   };
   const getDataByNameAsPair = async (projectId: number, typeName: string) => {
