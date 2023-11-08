@@ -1,4 +1,3 @@
-import { useQuery } from "@apollo/experimental-nextjs-app-support/ssr";
 import React from "react";
 import useSWR from "swr";
 import {
@@ -7,10 +6,6 @@ import {
 } from "./provider-view";
 import type { CommonDataProviderProps } from "./provider-view";
 import { RegistrationProps } from "../../lib/types/plasmic";
-import {
-  GET_PROJECTS_BY_SLUGS,
-  GET_PROJECTS_BY_COLLECTION_SLUGS,
-} from "../../lib/graphql/queries";
 
 // Default start time
 const DEFAULT_START_DATE = 0;
@@ -70,36 +65,12 @@ function TableDataProvider(props: TableDataProviderProps) {
   } = props;
   const startDate = rawStartDate ?? DEFAULT_START_DATE;
 
-  // Get the project metadata
-  const {
-    data: projectsByCollectionData,
-    error: projectsByCollectionError,
-    loading: projectsByCollectionLoading,
-  } = useQuery(GET_PROJECTS_BY_COLLECTION_SLUGS, {
-    variables: {
-      slugs: collectionSlugs ?? [],
-    },
-  });
-  const {
-    data: projectsBySlugData,
-    error: projectsBySlugError,
-    loading: projectsBySlugLoading,
-  } = useQuery(GET_PROJECTS_BY_SLUGS, {
-    variables: {
-      slugs: projectSlugs ?? [],
-    },
-  });
-  const projects = [
-    ...(projectsByCollectionData?.project ?? []),
-    ...(projectsBySlugData?.project ?? []),
-  ];
-
   const querySearchParams = new URLSearchParams();
-  if (projects.length > 0) {
-    querySearchParams.append(
-      "projectSlugs",
-      projects.map((p) => p.slug).join(","),
-    );
+  if (collectionSlugs && collectionSlugs.length > 0) {
+    querySearchParams.append("collectionSlugs", collectionSlugs.join(","));
+  }
+  if (projectSlugs && projectSlugs.length > 0) {
+    querySearchParams.append("projectSlugs", projectSlugs.join(","));
   }
   if (eventTypes && eventTypes.length > 0) {
     querySearchParams.append("eventTypes", eventTypes?.join(",") ?? "");
@@ -122,7 +93,6 @@ function TableDataProvider(props: TableDataProviderProps) {
   });
 
   const formattedData = {
-    projects,
     table: aggregateData,
   };
   //console.log(props.ids, formattedData);
@@ -130,10 +100,8 @@ function TableDataProvider(props: TableDataProviderProps) {
     <DataProviderView
       {...props}
       formattedData={formattedData}
-      loading={
-        projectsByCollectionLoading || projectsBySlugLoading || aggregateLoading
-      }
-      error={projectsByCollectionError ?? projectsBySlugError ?? aggregateError}
+      loading={aggregateLoading}
+      error={aggregateError}
     />
   );
 }

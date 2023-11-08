@@ -9,6 +9,7 @@ import {
   cachedGetAllEventTypes,
   cachedGetEventSum,
   cachedGetProjectsBySlugs,
+  cachedGetProjectsByCollectionSlugs,
 } from "../../../lib/graphql/cached-queries";
 import { UserInputError } from "../../../lib/types/errors";
 import { assert } from "../../../lib/common";
@@ -30,9 +31,11 @@ type Project = {
  */
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
+  const rawCollectionSlugs = searchParams.get("collectionSlugs");
   const rawProjectSlugs = searchParams.get("projectSlugs");
   const rawEventTypeIds = searchParams.get("eventTypeIds");
   const rawEventTypes = searchParams.get("eventTypes");
+  const collectionSlugs = csvToArray(rawCollectionSlugs);
   const projectSlugs = csvToArray(rawProjectSlugs);
   const eventTypeIds = stringToIntArray(csvToArray(rawEventTypeIds));
   const eventTypes = csvToArray(rawEventTypes);
@@ -42,11 +45,13 @@ export async function GET(request: NextRequest) {
   const endDate = eventTimeToLabel(searchParams.get("endDate") ?? undefined);
   //console.log(projectSlugs, eventTypeIds, startDate, endDate);
 
-  if (projectSlugs.length < 1) {
-    throw new UserInputError("Missing required parameter projectSlugs");
+  if (collectionSlugs.length < 1 && projectSlugs.length < 1) {
+    throw new UserInputError(
+      "Missing 1 of required parameters [collectionSlugs, projectSlugs]",
+    );
   } else if (eventTypeIds.length < 1 && eventTypes.length < 1) {
     throw new UserInputError(
-      "Missing 1 of required parameter [eventTypeIds, eventTypes]",
+      "Missing 1 of required parameters [eventTypeIds, eventTypes]",
     );
   }
 
@@ -94,9 +99,17 @@ export async function GET(request: NextRequest) {
   };
 
   // Get projects from database
-  const { project: projectArray } = await cachedGetProjectsBySlugs({
+  const { project: projectsBySlugArray } = await cachedGetProjectsBySlugs({
     slugs: projectSlugs,
   });
+  const { project: projectsByCollectionSlugArray } =
+    await cachedGetProjectsByCollectionSlugs({
+      slugs: collectionSlugs,
+    });
+  const projectArray = [
+    ...projectsBySlugArray,
+    ...projectsByCollectionSlugArray,
+  ];
 
   // Get all aggregate event sums
   const results = await Promise.all(projectArray.map((p) => getRowData(p)));
