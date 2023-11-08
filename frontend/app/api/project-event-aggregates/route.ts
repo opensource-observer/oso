@@ -14,7 +14,7 @@ import {
 import { UserInputError } from "../../../lib/types/errors";
 import { assert } from "../../../lib/common";
 
-export const revalidate = 3600;
+export const revalidate = 86400; // 3600 = 1 hour
 const DEFAULT_START_DATE = 0;
 
 type Project = {

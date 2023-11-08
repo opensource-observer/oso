@@ -67,13 +67,16 @@ function TableDataProvider(props: TableDataProviderProps) {
 
   const querySearchParams = new URLSearchParams();
   if (collectionSlugs && collectionSlugs.length > 0) {
-    querySearchParams.append("collectionSlugs", collectionSlugs.join(","));
+    querySearchParams.append(
+      "collectionSlugs",
+      collectionSlugs.sort().join(","),
+    );
   }
   if (projectSlugs && projectSlugs.length > 0) {
-    querySearchParams.append("projectSlugs", projectSlugs.join(","));
+    querySearchParams.append("projectSlugs", projectSlugs.sort().join(","));
   }
   if (eventTypes && eventTypes.length > 0) {
-    querySearchParams.append("eventTypes", eventTypes?.join(",") ?? "");
+    querySearchParams.append("eventTypes", eventTypes?.sort().join(",") ?? "");
   }
   if (startDate) {
     querySearchParams.append("startDate", startDate);
