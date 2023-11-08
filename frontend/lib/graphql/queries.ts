@@ -124,6 +124,15 @@ const GET_COLLECTIONS_BY_SLUGS = gql(`
  * EVENTS
  **********************/
 
+const GET_ALL_EVENT_TYPES = gql(`
+  query GetAllEventTypes @cached {
+    event_type {
+      id
+      name
+    }
+  }
+`);
+
 const GET_EVENT_TYPES_BY_IDS = gql(`
   query EventTypesByIds($typeIds: [Int!]) @cached {
     event_type(where: {id: {_in: $typeIds}}) {
@@ -306,6 +315,7 @@ export {
   GET_ALL_COLLECTIONS,
   GET_COLLECTIONS_BY_IDS,
   GET_COLLECTIONS_BY_SLUGS,
+  GET_ALL_EVENT_TYPES,
   GET_EVENT_TYPES_BY_IDS,
   GET_EVENTS_DAILY_TO_ARTIFACT,
   GET_EVENTS_WEEKLY_TO_ARTIFACT,

@@ -6,7 +6,7 @@ import {
   GET_ALL_PROJECTS,
   GET_PROJECTS_BY_SLUGS,
   GET_EVENT_SUM,
-  GET_EVENT_TYPES_BY_IDS,
+  GET_ALL_EVENT_TYPES,
 } from "./queries";
 import { logger } from "../logger";
 
@@ -64,19 +64,16 @@ const cachedGetProjectsBySlugs = cache(
   },
 );
 
-const cachedGetEventTypesByIds = cache(
-  async (variables: { typeIds: number[] }) => {
-    const { data, error } = await getApolloClient().query({
-      query: GET_EVENT_TYPES_BY_IDS,
-      variables,
-    });
-    if (error) {
-      logger.error(error);
-      throw error;
-    }
-    return data;
-  },
-);
+const cachedGetAllEventTypes = cache(async () => {
+  const { data, error } = await getApolloClient().query({
+    query: GET_ALL_EVENT_TYPES,
+  });
+  if (error) {
+    logger.error(error);
+    throw error;
+  }
+  return data;
+});
 
 const cachedGetEventSum = cache(
   async (variables: {
@@ -102,6 +99,6 @@ export {
   cachedGetArtifactByName,
   cachedGetAllProjects,
   cachedGetProjectsBySlugs,
-  cachedGetEventTypesByIds,
+  cachedGetAllEventTypes,
   cachedGetEventSum,
 };
