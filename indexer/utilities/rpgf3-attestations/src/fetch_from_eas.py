@@ -152,14 +152,18 @@ def clean_data(original_data):
             "Project ID": original_data["id"],
             "Project Name": project_name,
             "Applicant Type": json_data["applicantType"],
+            "Bio": json_data["bio"],
+            "Website": json_data["websiteUrl"],
             "Date": original_data["timeCreated"],
             "Attester Address": original_data["attester"],
             "Payout Address": json_data["payoutAddress"],
             "Link": project_link,
             "Tags": json_data["impactCategory"],
+            "Contribution Description": json_data["contributionDescription"],
             "Contributions: Github": [item["url"].strip("/") for item in json_data["contributionLinks"] if item["type"] == "GITHUB_REPO" and "https://github.com/" in item["url"] and len(item["url"]) > 20],
             "Contributions: Contracts": [item["url"] for item in json_data["contributionLinks"] if item["type"] == "CONTRACT_ADDRESS" and "0x" in item["url"]],
             "Contributions: Other": [item["url"] for item in json_data["contributionLinks"] if item["type"] == "OTHER"],
+            "Impact Description": json_data["impactDescription"],
             "Impact Metrics": [item["url"] for item in json_data["impactMetrics"]]
         }
         return transformed_data
