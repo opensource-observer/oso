@@ -7,6 +7,7 @@ import {
   GET_PROJECTS_BY_SLUGS,
   GET_EVENT_SUM,
   GET_ALL_EVENT_TYPES,
+  GET_PROJECTS_BY_COLLECTION_SLUGS,
 } from "./queries";
 import { logger } from "../logger";
 
@@ -64,6 +65,20 @@ const cachedGetProjectsBySlugs = cache(
   },
 );
 
+const cachedGetProjectsByCollectionSlugs = cache(
+  async (variables: { slugs: string[] }) => {
+    const { data, error } = await getApolloClient().query({
+      query: GET_PROJECTS_BY_COLLECTION_SLUGS,
+      variables,
+    });
+    if (error) {
+      logger.error(error);
+      throw error;
+    }
+    return data;
+  },
+);
+
 const cachedGetAllEventTypes = cache(async () => {
   const { data, error } = await getApolloClient().query({
     query: GET_ALL_EVENT_TYPES,
@@ -99,6 +114,7 @@ export {
   cachedGetArtifactByName,
   cachedGetAllProjects,
   cachedGetProjectsBySlugs,
+  cachedGetProjectsByCollectionSlugs,
   cachedGetAllEventTypes,
   cachedGetEventSum,
 };
