@@ -1,11 +1,14 @@
 import { gql } from "../__generated__/gql";
 
+// Max TTL on Hasura is 300 seconds
+// https://hasura.io/docs/latest/caching/caching-config/#controlling-cache-lifetime/
+
 /**********************
  * ARTIFACT
  **********************/
 
 const GET_ALL_ARTIFACTS = gql(`
-  query Artifacts @cached {
+  query Artifacts @cached (ttl: 300) {
     artifact {
       id
       name
@@ -15,7 +18,7 @@ const GET_ALL_ARTIFACTS = gql(`
 `);
 
 const GET_ARTIFACTS_BY_IDS = gql(`
-  query ArtifactsByIds($artifactIds: [Int!]) @cached  {
+  query ArtifactsByIds($artifactIds: [Int!]) @cached (ttl: 300)  {
     artifact(where: { id: { _in: $artifactIds } }) {
       id
       name
@@ -25,7 +28,7 @@ const GET_ARTIFACTS_BY_IDS = gql(`
 `);
 
 const GET_ARTIFACT_BY_NAME = gql(`
-  query ArtifactByName($namespace: artifact_namespace_enum!, $name: String!) @cached {
+  query ArtifactByName($namespace: artifact_namespace_enum!, $name: String!) @cached(ttl: 300) {
     artifact(where: { name: { _eq: $name }, namespace: { _eq: $namespace } }) {
       id
       name
@@ -41,7 +44,7 @@ const GET_ARTIFACT_BY_NAME = gql(`
  **********************/
 
 const GET_ALL_PROJECTS = gql(`
-  query Projects @cached {
+  query Projects @cached(ttl: 300) {
     project {
       id
       name
@@ -51,7 +54,7 @@ const GET_ALL_PROJECTS = gql(`
 `);
 
 const GET_PROJECTS_BY_IDS = gql(`
-  query ProjectsByIds($projectIds: [Int!]) @cached {
+  query ProjectsByIds($projectIds: [Int!]) @cached(ttl: 300) {
     project(where: { id: { _in: $projectIds } }) {
       id
       name
@@ -61,7 +64,7 @@ const GET_PROJECTS_BY_IDS = gql(`
 `);
 
 const GET_PROJECTS_BY_SLUGS = gql(`
-  query ProjectsBySlug($slugs: [String!]) @cached {
+  query ProjectsBySlug($slugs: [String!]) @cached(ttl: 300) {
     project(where: { slug: { _in: $slugs } }) {
       id
       name
@@ -73,7 +76,7 @@ const GET_PROJECTS_BY_SLUGS = gql(`
 `);
 
 const GET_PROJECTS_BY_COLLECTION_SLUGS = gql(`
-  query ProjectsByCollectionSlugs($slugs: [String!]) @cached {
+  query ProjectsByCollectionSlugs($slugs: [String!]) @cached(ttl: 300) {
     project(where: {collection_projects_projects: {collection: {slug: {_in: $slugs}}}}) {
       id
       name
@@ -89,7 +92,7 @@ const GET_PROJECTS_BY_COLLECTION_SLUGS = gql(`
  **********************/
 
 const GET_ALL_COLLECTIONS = gql(`
-  query Collections @cached {
+  query Collections @cached(ttl: 300) {
     collection {
       id
       name
@@ -99,7 +102,7 @@ const GET_ALL_COLLECTIONS = gql(`
 `);
 
 const GET_COLLECTIONS_BY_IDS = gql(`
-  query CollectionsByIds($collectionIds: [Int!]) @cached {
+  query CollectionsByIds($collectionIds: [Int!]) @cached(ttl: 300) {
     collection(where: { id: { _in: $collectionIds } }) {
       id
       name
@@ -109,7 +112,7 @@ const GET_COLLECTIONS_BY_IDS = gql(`
 `);
 
 const GET_COLLECTIONS_BY_SLUGS = gql(`
-  query CollectionsBySlug($slugs: [String!]) @cached {
+  query CollectionsBySlug($slugs: [String!]) @cached(ttl: 300) {
     collection(where: { slug: { _in: $slugs } }) {
       id
       name
@@ -125,7 +128,7 @@ const GET_COLLECTIONS_BY_SLUGS = gql(`
  **********************/
 
 const GET_ALL_EVENT_TYPES = gql(`
-  query GetAllEventTypes @cached {
+  query GetAllEventTypes @cached(ttl: 300) {
     event_type {
       id
       name
@@ -134,7 +137,7 @@ const GET_ALL_EVENT_TYPES = gql(`
 `);
 
 const GET_EVENT_TYPES_BY_IDS = gql(`
-  query EventTypesByIds($typeIds: [Int!]) @cached {
+  query EventTypesByIds($typeIds: [Int!]) @cached(ttl: 300) {
     event_type(where: {id: {_in: $typeIds}}) {
       id
       name
@@ -288,7 +291,7 @@ const GET_EVENT_SUM = gql(`
     $typeIds: [Int!],
     $startDate: timestamptz!,
     $endDate: timestamptz!, 
-  ) @cached {
+  ) @cached(ttl: 300) {
     events_monthly_to_project_aggregate(
       where: {
         projectId: {_in: $projectIds},
