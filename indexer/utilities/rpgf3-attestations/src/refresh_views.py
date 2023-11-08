@@ -36,30 +36,30 @@ def refresh_mv(sql):
 def main():
 
     start_date = '2013-01-01'
-    end_date = '2023-11-01'
+    end_date = '2023-11-06'
     mvs = [
-        'events_daily_to_artifact',   # 1
-        'events_daily_to_project',    # 182 
+        'events_daily_to_artifact',
+        'events_daily_to_project',
     
-        'events_weekly_to_artifact',  # 27
-        'events_weekly_to_project',   # 10
+        'events_weekly_to_artifact',
+        'events_weekly_to_project',
 
-        'events_monthly_to_artifact', # 1
-        'events_monthly_to_project',  # 7
+        'events_monthly_to_artifact',
+        'events_monthly_to_project',
 
-        'events_daily_from_artifact', # 683
-        'events_daily_from_project',  # 99
+        'events_daily_from_artifact',
+        'events_daily_from_project',
 
-        'events_weekly_from_artifact', # 529
-        'events_weekly_from_project',  # 1
+        'events_weekly_from_artifact',
+        'events_weekly_from_project',
 
-        'events_monthly_from_artifact',# 398
-        'events_monthly_from_project'  # 1
+        'events_monthly_from_artifact'
+        'events_monthly_from_project'
     ]
     for mv in mvs:
         
         sql = f"CALL refresh_continuous_aggregate('{mv}', '{start_date}', '{end_date}');"
-        print("Executing...")
+        print("Executing...", mv)
         start_time = time.time()
         refresh_mv(sql)
         end_time = time.time()
