@@ -803,6 +803,7 @@ export class BatchEventRecorder implements IEventRecorder {
     const eventsWrite = async () => {
       return this.dataSource.transaction(async (manager) => {
         // Write artifacts
+        const arStart = DateTime.now();
         const artifactResponse = (await manager.query(
           `
           with new_artifact as (
@@ -829,7 +830,10 @@ export class BatchEventRecorder implements IEventRecorder {
         if (artifactResponse.length !== 1) {
           throw new RecorderError("unexpected response writing artifacts");
         }
-        logger.debug(`added ${artifactResponse[0].count} new artifacts`);
+        logger.debug(
+          `added ${artifactResponse[0].count} new artifacts in ${arStart.diffNow().milliseconds
+          }ms`,
+        );
 
         if (this.recorderOptions.overwriteExistingEvents) {
           // Delete existing events
@@ -846,6 +850,19 @@ export class BatchEventRecorder implements IEventRecorder {
           );
         }
 
+        // Create a temporary table
+        const tableName = `event_temp_${this.recorderId.replace(
+          /-/g,
+          "_",
+        )}_${batchId}`;
+
+        await manager.query(`
+          CREATE TEMP TABLE ${tableName} ON COMMIT DROP AS 
+          TABLE "event"
+          WITH NO DATA
+        `);
+
+        const brStart = DateTime.now();
         // Write all events and delete anything necessary. Ignore events with
         // duplicates we don't know what to do in that case. Leave those in the
         // database.
@@ -896,39 +913,39 @@ export class BatchEventRecorder implements IEventRecorder {
               ON rte."fromName" = a_from."name" AND
                  rte."fromNamespace" = a_from."namespace" AND
                  rte."fromType" = a_from."type"
-            LEFT JOIN event e
-              ON rte."sourceId" = e."sourceId" AND
-                 rte."typeId" = e."typeId"
             LEFT JOIN event_with_duplicates ewd
               ON rte."sourceId" = ewd."sourceId" AND
                  rte."typeId" = ewd."typeId"
             WHERE 
               rte."recorderId" = $1 AND
               rte."batchId" = $2 AND
-              e."id" IS NULL AND
               ewd."sourceId" IS NULL
-          ), commit_events AS (
-            INSERT INTO event("sourceId", "typeId", "time", "toId", "fromId", "amount", "details")
-            SELECT "sourceId", "typeId", "time", "toId", "fromId", "amount", "details" FROM event_with_artifact
-            ON CONFLICT ("sourceId", "typeId", "time") DO NOTHING
-            RETURNING "sourceId", "typeId"
-          ), commit_events_duplicate_tracking AS (
-            INSERT INTO recorder_temp_duplicate_event("recorderId", "sourceId", "typeId")
-            SELECT COALESCE($1), commit_events."sourceId", commit_events."typeId" FROM commit_events
-            RETURNING "sourceId", "typeId"
           )
-          DELETE FROM recorder_temp_event rte_del
-          USING commit_events_duplicate_tracking ce
-          WHERE rte_del."recorderId" = $1 AND
-                rte_del."batchId" = $2 AND
-                rte_del."sourceId" = ce."sourceId" AND
-                rte_del."typeId" = ce."typeId"
-          RETURNING rte_del."sourceId", rte_del."typeId"
+          INSERT INTO ${tableName} ("sourceId", "typeId", "time", "toId", "fromId", "amount", "details")
+          SELECT "sourceId", "typeId", "time", "toId", "fromId", "amount", "details" FROM event_with_artifact
       `,
           [this.recorderId, batchId],
         )) as [{ sourceId: string; typeId: number }[], number];
-        logger.debug(`bulk write wrote ${bulkWriteResponse[1]} events`);
-        return bulkWriteResponse;
+
+        // COPY the temp table to the real one
+        logger.debug(
+          `bulk write wrote ${bulkWriteResponse[1]} events in ${brStart.diffNow().milliseconds
+          }ms`,
+        );
+
+        const cStart = DateTime.now();
+        const response = (await manager.query(`
+          INSERT INTO event ("sourceId", "typeId", "time", "toId", "fromId", "amount", "details")
+          SELECT "sourceId", "typeId", "time", "toId", "fromId", "amount", "details" FROM ${tableName}
+          ON CONFLICT ("sourceId", "typeId", "time") DO NOTHING
+          RETURNING "sourceId", "typeId"
+        `)) as { sourceId: string; typeId: number }[];
+        logger.debug(
+          `final commit into event table in ${cStart.diffNow().milliseconds}ms`,
+        );
+
+        // Delete the temporary table
+        return [response, response.length];
       });
     };
 
