@@ -264,6 +264,7 @@ export class EventType extends Base<"EventTypeId"> {
 
   @OneToMany(() => Event, (event) => event.type)
   events: Event[];
+
   @OneToMany(() => FirstContribution, (event) => event.type)
   firstContributions: FirstContribution[];
 }
@@ -304,6 +305,172 @@ export class Event {
 
   @Column("jsonb", { default: {} })
   details: Record<string, any>;
+}
+
+@Entity()
+export class Recording {
+  @PrimaryColumn("uuid")
+  recorderId: string;
+
+  @Column("timestamptz")
+  expiration: Date;
+}
+
+/**
+ * A temporary event table used by the Recorder to load events into the
+ * database. This removes any need for the indexer to ensure that artifacts are
+ * created _before_ creating events as this is handled in batch by the database.
+ *
+ * Additionally, this table has no unique restrictions. This allows us to
+ * leave in progress writes to inspect errors.
+ */
+@Entity()
+export class RecorderTempEvent {
+  @PrimaryGeneratedColumn()
+  id: Brand<number, "TempEventId">;
+
+  // This is related to the Recording Entity but is not an explicit FK. To
+  // hopefully improve write speed. The recorderId is only used during garbage
+  // collection of this table anyhow.
+  @Column("uuid")
+  recorderId: string;
+
+  // Writes to the main event database are made in batches. Anything that fails
+  // within a specific batch will be left in this database until it's cleaned
+  // up. This is for debugging purposes.
+  @Column("int")
+  batchId: number;
+
+  @Column("text")
+  sourceId: string;
+
+  // To improve write speed this is not an FK.
+  @Column("int")
+  typeId: number;
+
+  @Column("timestamptz")
+  time: Date;
+
+  @Column("text")
+  toName: string;
+
+  @Column("enum", {
+    enum: ArtifactNamespace,
+    enumName: "artifact_namespace_enum",
+  })
+  toNamespace: ArtifactNamespace;
+
+  @Column("enum", { enum: ArtifactType, enumName: "artifact_type_enum" })
+  toType: ArtifactType;
+
+  @Column("text", { nullable: true })
+  @IsOptional()
+  toUrl?: string | null;
+
+  @Column("text", { nullable: true })
+  @IsOptional()
+  fromName?: string | null;
+
+  @Column("enum", {
+    enum: ArtifactNamespace,
+    enumName: "artifact_namespace_enum",
+    nullable: true,
+  })
+  @IsOptional()
+  fromNamespace?: string | null;
+
+  @Column("enum", {
+    enum: ArtifactType,
+    enumName: "artifact_type_enum",
+    nullable: true,
+  })
+  @IsOptional()
+  fromType?: string | null;
+
+  @Column("text", { nullable: true })
+  @IsOptional()
+  fromUrl?: string | null;
+
+  @Column("float")
+  amount: number;
+
+  @Column("jsonb", { default: {} })
+  details: Record<string, any>;
+}
+
+@ViewEntity({
+  expression: `
+  WITH to_artifacts AS (
+    SELECT
+      rte_to."toName" as "name",
+      rte_to."toNamespace" as "namespace",
+      rte_to."toType" as "type",
+      rte_to."toUrl" as "url",
+      rte_to."recorderId" as "recorderId",
+      rte_to."batchId" as "batchId"
+    FROM recorder_temp_event as rte_to
+  ),
+  from_artifacts AS (
+    SELECT
+      rte_from."fromName" as "name",
+      rte_from."fromNamespace" as "namespace",
+      rte_from."fromType" as "type",
+      rte_from."fromUrl" as "url",
+      rte_from."recorderId" as "recorderId",
+      rte_from."batchId" as "batchId"
+    FROM recorder_temp_event as rte_from
+  ), all_artifacts AS (
+    select * from to_artifacts
+    UNION
+    select * from from_artifacts
+  )
+  SELECT
+    * 
+  FROM all_artifacts a
+  WHERE 
+    a."name" IS NOT NULL AND
+    a."namespace" IS NOT NULL AND
+    a."type" IS NOT NULL
+  `,
+})
+export class RecorderTempEventArtifact {
+  @ViewColumn()
+  name: string;
+
+  @ViewColumn()
+  namespace: ArtifactNamespace;
+
+  @ViewColumn()
+  type: ArtifactType;
+
+  @ViewColumn()
+  url?: string | null;
+
+  @ViewColumn()
+  recorderId: string;
+
+  @ViewColumn()
+  batchId: number;
+}
+
+/**
+ * A recorder specific database used to track duplicate events for a given
+ * collector so that errors can be tracked.
+ */
+@Entity()
+@Index(["typeId", "sourceId", "recorderId"], { unique: true })
+export class RecorderTempDuplicateEvent {
+  @PrimaryGeneratedColumn()
+  id: Brand<number, "RecorderUsedSourceId">;
+
+  @Column("uuid")
+  recorderId: string;
+
+  @Column("int")
+  typeId: number;
+
+  @Column("text")
+  sourceId: string;
 }
 
 @Entity()

@@ -1,7 +1,4 @@
-import {
-  BatchEventRecorder,
-  TimeoutBatchedFlusher,
-} from "../recorder/recorder.js";
+import { BatchEventRecorder } from "../recorder/recorder.js";
 import { BaseScheduler, Config, ExecutionMode } from "./types.js";
 import {
   TimeSeriesCacheManager,
@@ -27,8 +24,10 @@ import {
   ArtifactType,
   CollectionType,
   EventType,
+  RecorderTempEvent,
+  Recording,
 } from "../db/orm-entities.js";
-import { EventPointerRepository, EventRepository } from "../db/events.js";
+import { EventPointerRepository } from "../db/events.js";
 import { ArtifactRepository } from "../db/artifacts.js";
 import { AppDataSource } from "../db/data-source.js";
 import { ProjectRepository } from "../db/project.js";
@@ -87,7 +86,6 @@ export type SchedulerQueueBackfill = SchedulerArgs & {
 
 // Entrypoint for the scheduler. Currently not where it should be but this is quick.
 export async function configure(args: SchedulerArgs) {
-  const flusher = new TimeoutBatchedFlusher(2000, 2000);
   const cacheManager = new TimeSeriesCacheManager(args.cacheDir);
   const cache = new TimeSeriesCacheWrapper(cacheManager);
 
@@ -147,10 +145,10 @@ export async function configure(args: SchedulerArgs) {
     args.runDir,
     () => {
       const recorder = new BatchEventRecorder(
-        EventRepository,
+        AppDataSource,
+        AppDataSource.getRepository(Recording),
+        AppDataSource.getRepository(RecorderTempEvent),
         AppDataSource.getRepository(EventType),
-        ArtifactRepository,
-        flusher,
         {
           timeoutMs: args.recorderTimeoutMs,
         },
