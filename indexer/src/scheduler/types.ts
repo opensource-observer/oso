@@ -78,6 +78,10 @@ class ArtifactCommitter implements IArtifactCommitter {
   }
 
   withHandles(handles: RecordHandle[]): void {
+    if (handles.length === 0) {
+      this.withNoChanges();
+      return;
+    }
     const handlesAsPromises = handles.map((h) => h.wait());
     collectAsyncResults(handlesAsPromises)
       .then((results) => {
@@ -246,10 +250,57 @@ export class Config implements IConfig {
   }
 }
 
-export interface ExecutionSummary {
+export interface IExecutionSummary {
   group?: string;
   errors: PossiblyError[];
   artifactSummaries: ArtifactCommitmentSummary[];
+
+  hasErrors(): boolean;
+  successfulArtifacts(): number;
+  failedArtifacts(): number;
+  errorCount(): number;
+}
+
+export class ExecutionSummary implements IExecutionSummary {
+  group?: string;
+  errors: PossiblyError[];
+  artifactSummaries: ArtifactCommitmentSummary[];
+
+  static empty() {
+    return new ExecutionSummary();
+  }
+
+  constructor() {
+    this.errors = [];
+    this.artifactSummaries = [];
+  }
+
+  failedArtifacts(): number {
+    return this.artifactSummaries.reduce<number>((a, c) => {
+      if (c.results.errors.length > 0) {
+        return a + 1;
+      }
+      return a;
+    }, 0);
+  }
+
+  successfulArtifacts(): number {
+    return this.artifactSummaries.length - this.failedArtifacts();
+  }
+
+  errorCount(): number {
+    const artifactErrors = this.artifactSummaries.reduce<number>((a, c) => {
+      return a + c.results.errors.length;
+    }, 0);
+    return artifactErrors + this.errors.length;
+  }
+
+  hasErrors(): boolean {
+    if (this.errors.length > 0) {
+      return true;
+    }
+    return this.failedArtifacts() > 0;
+  }
 }
 
 export interface SchedulerExecuteCollectorOptions {
@@ -287,12 +338,12 @@ export interface IScheduler {
     backfillIntervalDays: number,
   ): Promise<void>;
 
-  runWorker(group: string, resumeWithLock: boolean): Promise<ExecutionSummary>;
+  runWorker(group: string, resumeWithLock: boolean): Promise<IExecutionSummary>;
 
   executeCollector(
     collectorName: string,
     options?: SchedulerExecuteCollectorOptions,
-  ): Promise<ExecutionSummary>;
+  ): Promise<IExecutionSummary>;
 }
 
 export type ArtifactCommitmentSummary = {
@@ -356,6 +407,9 @@ export class ArtifactRecordsCommitmentWrapper
           (results: AsyncResults<RecordResponse>) => {
             const internal = async () => {
               if (results.errors.length > 0) {
+                logger.debug(
+                  `errors found for Artifact[name=${artifact.name}, namespace=${artifact.namespace}]`,
+                );
                 return resolve({
                   artifact: artifact,
                   results: results,
@@ -748,7 +802,7 @@ export class BaseScheduler implements IScheduler {
   async runWorker(
     group: string,
     resumeWithLock: boolean,
-  ): Promise<ExecutionSummary> {
+  ): Promise<IExecutionSummary> {
     let job: Job;
     let execution: JobExecution | undefined;
 
@@ -786,10 +840,7 @@ export class BaseScheduler implements IScheduler {
 
       if (jobsToChoose.length === 0) {
         logger.debug("no jobs available for the given group");
-        return {
-          errors: [],
-          artifactSummaries: [],
-        };
+        return ExecutionSummary.empty();
       }
 
       job = _.sample(jobsToChoose)!;
@@ -826,7 +877,7 @@ export class BaseScheduler implements IScheduler {
         : await this.runWorkerForPeriodicCollector(job);
 
     let execStatus = JobExecutionStatus.FAILED;
-    if (execSummary.errors.length === 0) {
+    if (!execSummary.hasErrors()) {
       execStatus = JobExecutionStatus.COMPLETE;
     }
     await this.jobsExecutionRepository.updateExecutionStatus(
@@ -857,7 +908,7 @@ export class BaseScheduler implements IScheduler {
 
   private async runWorkerForEventCollector(
     job: Job,
-  ): Promise<ExecutionSummary> {
+  ): Promise<IExecutionSummary> {
     const options = job.options as { startDate: string; endDate: string };
     const startDate = DateTime.fromISO(options.startDate);
     const endDate = DateTime.fromISO(options.endDate);
@@ -877,7 +928,7 @@ export class BaseScheduler implements IScheduler {
 
   private async runWorkerForPeriodicCollector(
     job: Job,
-  ): Promise<ExecutionSummary> {
+  ): Promise<IExecutionSummary> {
     return await this.executeCollector(job.collector);
   }
 
@@ -919,7 +970,7 @@ export class BaseScheduler implements IScheduler {
     options?: SchedulerExecuteCollectorOptions,
   ) {
     const collectorType = this.getCollectorTypeByName(collectorName);
-    let executionSummary: ExecutionSummary;
+    let executionSummary: IExecutionSummary;
 
     if (collectorType === "event") {
       assert(options?.range !== undefined, "Range must be set");
@@ -943,10 +994,7 @@ export class BaseScheduler implements IScheduler {
     const reg = this.periodicCollectors[collectorName];
     const collector = await reg.create(this.config, this.cache);
 
-    const summary: ExecutionSummary = {
-      errors: [],
-      artifactSummaries: [],
-    };
+    const summary = ExecutionSummary.empty();
     try {
       const res = await collector.collect();
       if (res) {
@@ -978,22 +1026,16 @@ export class BaseScheduler implements IScheduler {
       // Execute range by day
       const ranges = rangeSplit(range, "day");
 
-      const summaries: ExecutionSummary[] = [];
+      const summaries: IExecutionSummary[] = [];
       for (const pullRange of ranges) {
         const result = await this.executeForRange(reg, pullRange, reindex);
         summaries.push(result);
       }
-      const summary = summaries.reduce<ExecutionSummary>(
-        (acc, curr) => {
-          acc.errors.push(...curr.errors);
-          acc.artifactSummaries.push(...curr.artifactSummaries);
-          return acc;
-        },
-        {
-          errors: [],
-          artifactSummaries: [],
-        },
-      );
+      const summary = summaries.reduce<ExecutionSummary>((acc, curr) => {
+        acc.errors.push(...curr.errors);
+        acc.artifactSummaries.push(...curr.artifactSummaries);
+        return acc;
+      }, ExecutionSummary.empty());
       return summary;
     }
   }
@@ -1021,10 +1063,7 @@ export class BaseScheduler implements IScheduler {
       recorder,
       this.cache,
     );
-    const executionSummary: ExecutionSummary = {
-      artifactSummaries: [],
-      errors: [],
-    };
+    const executionSummary = ExecutionSummary.empty();
 
     recorder.addListener("error", (err) => {
       logger.error("caught error on the recorder");
@@ -1136,7 +1175,7 @@ export class BaseScheduler implements IScheduler {
       executionSummary.errors.push(err);
     }
 
-    if (executionSummary.errors.length > 0) {
+    if (executionSummary.hasErrors()) {
       logger.info("completed with errors");
     } else {
       // TODO collect errors and return here
