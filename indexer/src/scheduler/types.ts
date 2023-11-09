@@ -78,6 +78,12 @@ class ArtifactCommitter implements IArtifactCommitter {
   }
 
   withHandles(handles: RecordHandle[]): void {
+    if (handles.length === 0) {
+      this.withResults({
+        errors: [],
+        success: [],
+      });
+    }
     const handlesAsPromises = handles.map((h) => h.wait());
     collectAsyncResults(handlesAsPromises)
       .then((results) => {
