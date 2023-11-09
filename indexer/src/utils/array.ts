@@ -31,6 +31,13 @@ export class UniqueArray<T> {
     return obj;
   }
 
+  popAll(): T[] {
+    const all = this.arr;
+    this.arr = [];
+    this.uniqueMap = {};
+    return all;
+  }
+
   items(): T[] {
     return _.cloneDeep(this.arr);
   }
