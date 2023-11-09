@@ -219,6 +219,7 @@ export class GithubFollowingCollector extends GithubBatchedProjectArtifactsBaseC
 
     // load the summaries for each
     for (const repo of artifacts) {
+      logger.debug(`loading events for ${repo.name}`);
       try {
         const recordPromises = await this.collectEventsForRepo(repo, range);
         committer.commit(repo).withHandles(recordPromises);
@@ -229,6 +230,7 @@ export class GithubFollowingCollector extends GithubBatchedProjectArtifactsBaseC
         });
       }
     }
+    logger.debug(`follower collection complete`);
   }
 
   private async collectEventsForRepo(
