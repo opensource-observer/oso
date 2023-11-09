@@ -40,7 +40,7 @@ export interface BatchEventRecorderOptions {
 }
 
 const defaultBatchEventRecorderOptions: BatchEventRecorderOptions = {
-  maxBatchSize: 3000,
+  maxBatchSize: 5000,
 
   // ten minute timeout seems sane for completing any db writes (in a normal
   // case). When backfilling this should be made much bigger.
@@ -933,42 +933,16 @@ export class BatchEventRecorder implements IEventRecorder {
     };
 
     try {
-      const [commitedResponse, writeCount] = await this.retryDbCall(
-        eventsWrite,
-        3,
-      );
+      const response = await this.retryDbCall(eventsWrite, 3);
+      const writeCount = response[1];
       if (writeCount !== newEvents.length) {
-        logger.debug(`some data wasn't written`);
-        const commitedEventRefs: {
-          sourceId: string;
-          type: IRecorderEventType;
-        }[] = commitedResponse.map((r) => {
-          const eventType = this.eventTypeIdMap[r.typeId];
-          return {
-            sourceId: r.sourceId,
-            type: new RecorderEventType(eventType.name, eventType.version),
-          };
-        });
-        const uncommitedEvents = _.differenceBy(
-          newEvents,
-          commitedEventRefs,
-          eventUniqueId,
+        // For now duplicates are not treated as errors. This likely needs to
+        // change in the future depending on _when_ the duplicate is encounter
+        logger.debug(
+          `some data wasn't written. it's assumed they are duplicates`,
         );
-        const commitedEvents = _.differenceBy(
-          newEvents,
-          uncommitedEvents,
-          eventUniqueId,
-        );
-        this.notifyFailure(
-          uncommitedEvents,
-          new RecorderError(
-            "did not record. likely duplicated events generated during the collection",
-          ),
-        );
-        this.notifySuccess(commitedEvents);
-      } else {
-        this.notifySuccess(newEvents);
       }
+      this.notifySuccess(newEvents);
     } catch (err) {
       this.notifyFailure(newEvents, err);
     }

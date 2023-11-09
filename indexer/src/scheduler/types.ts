@@ -968,7 +968,9 @@ export class BaseScheduler implements IScheduler {
     if (range.startDate >= range.endDate) {
       throw new Error(`invalid input range ${rangeToString(range)}`);
     }
-    logger.debug(`starting ${collectorName} in ${mode}`);
+    logger.debug(
+      `starting ${collectorName} in ${mode} for range ${rangeToString(range)}`,
+    );
     const reg = this.eventCollectors[collectorName];
     if (mode === "all-at-once") {
       return this.executeForRange(reg, range, reindex);
