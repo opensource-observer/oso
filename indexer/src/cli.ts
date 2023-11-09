@@ -21,6 +21,7 @@ import { logger } from "./utils/logger.js";
 import { csvCommandGroup } from "./scripts/manual-csv-import-helper.js";
 import { duneCommandGroup } from "./scripts/manual-dune-tools.js";
 import { artifactsCommandGroup } from "./scripts/artifact-management.js";
+import { IExecutionSummary } from "./scheduler/types.js";
 
 //const callLibrary = async <Args>(
 //  func: EventSourceFunction<Args>,
@@ -30,6 +31,51 @@ import { artifactsCommandGroup } from "./scripts/artifact-management.js";
 //  const result = await func(args);
 //  console.log(result);
 //};
+
+function outputError(err: unknown) {
+  logger.info(err);
+  try {
+    logger.error(JSON.stringify(err));
+    // eslint-disable-next-line no-restricted-properties
+    console.error(err);
+  } catch (_e) {
+    logger.error("Cannot stringify error.");
+    logger.error(err);
+    // eslint-disable-next-line no-restricted-properties
+    console.error(err);
+  }
+}
+
+function handleExecutionSummary(execSummary: IExecutionSummary) {
+  logger.info(`--------------Completed manual run---------------`);
+  logger.info("   Collection Stats:");
+  logger.info(`       ${execSummary.errorCount()} errors`);
+  logger.info(
+    `       ${execSummary.successfulArtifacts()} artifacts committed`,
+  );
+  logger.info(`       ${execSummary.failedArtifacts()} artifacts failed`);
+  if (execSummary.hasErrors()) {
+    if (execSummary.errors.length > 0) {
+      logger.info(`General errors (not by artifact):`);
+      for (const err of execSummary.errors) {
+        outputError(err);
+      }
+    }
+    if (execSummary.failedArtifacts() > 0) {
+      for (const artifactSummary of execSummary.artifactSummaries) {
+        const artifact = artifactSummary.artifact;
+        logger.info(
+          `Errors for Artifact[name=${artifact.name}, namespace=${artifact.namespace}]`,
+        );
+        for (const err of artifactSummary.results.errors) {
+          outputError(err);
+        }
+      }
+    }
+    process.exit(1);
+  }
+  process.exit(0);
+}
 
 /**
  * When adding a new fetcher, please remember to add it to both this registry and yargs
@@ -150,30 +196,7 @@ const cli = yargs(hideBin(process.argv))
                 reindex: args.reindex,
               },
             );
-
-            logger.info(`--------------Completed manual run---------------`);
-            logger.info("   Collection Stats:");
-            logger.info(`       ${execSummary.errors.length} errors`);
-            logger.info(
-              `       ${execSummary.artifactSummaries.length} artifacts committed`,
-            );
-            if (execSummary.errors.length > 0) {
-              for (const err of execSummary.errors) {
-                logger.info(err);
-                try {
-                  logger.error(JSON.stringify(err));
-                  // eslint-disable-next-line no-restricted-properties
-                  console.error(err);
-                } catch (_e) {
-                  logger.error("Cannot stringify error.");
-                  logger.error(err);
-                  // eslint-disable-next-line no-restricted-properties
-                  console.error(err);
-                }
-              }
-              process.exit(1);
-            }
-            process.exit(0);
+            handleExecutionSummary(execSummary);
           },
         )
         .command<SchedulerWorkerArgs>(
@@ -197,29 +220,7 @@ const cli = yargs(hideBin(process.argv))
               args.group,
               args.resumeWithLock,
             );
-            logger.info(`--------------Completed job---------------`);
-            logger.info("   Collection Stats:");
-            logger.info(`       ${execSummary.errors.length} errors`);
-            logger.info(
-              `       ${execSummary.artifactSummaries.length} artifacts committed`,
-            );
-            if (execSummary.errors.length > 0) {
-              for (const err of execSummary.errors) {
-                logger.info(err);
-                try {
-                  logger.error(JSON.stringify(err));
-                  // eslint-disable-next-line no-restricted-properties
-                  console.error(err);
-                } catch (_e) {
-                  logger.error("Cannot stringify error.");
-                  logger.error(err);
-                  // eslint-disable-next-line no-restricted-properties
-                  console.error(err);
-                }
-              }
-              process.exit(1);
-            }
-            process.exit(0);
+            handleExecutionSummary(execSummary);
           },
         )
         .command<SchedulerQueueAllArgs>(

@@ -224,6 +224,7 @@ export class GithubFollowingCollector extends GithubBatchedProjectArtifactsBaseC
         const recordPromises = await this.collectEventsForRepo(repo, range);
         committer.commit(repo).withHandles(recordPromises);
       } catch (err) {
+        logger.debug(`encountered an error`);
         committer.commit(repo).withResults({
           errors: [err],
           success: [],

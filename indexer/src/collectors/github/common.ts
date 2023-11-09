@@ -85,7 +85,8 @@ export function GithubCollectorMixins<TBase extends Constructor>(Base: TBase) {
       if (!rawURL) {
         throw new IncompleteRepoName(`no url for artifact[${artifact.id}]`);
       }
-      const repoURL = new URL(rawURL);
+      // Parse without any trailing slashes
+      const repoURL = new URL(rawURL.replace(/\/+$/, ""));
       if (repoURL.host !== "github.com") {
         throw new IncompleteRepoName(`unexpected url ${rawURL}`);
       }
