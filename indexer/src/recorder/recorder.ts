@@ -40,7 +40,7 @@ export interface BatchEventRecorderOptions {
 }
 
 const defaultBatchEventRecorderOptions: BatchEventRecorderOptions = {
-  maxBatchSize: 10000,
+  maxBatchSize: 5000,
 
   // ten minute timeout seems sane for completing any db writes (in a normal
   // case). When backfilling this should be made much bigger.
