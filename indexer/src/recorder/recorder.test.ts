@@ -239,7 +239,9 @@ withDbDescribe("BatchEventRecorder", () => {
       await recorder.close();
     });
 
-    it("should fail when trying to write a duplicate event", async () => {
+    // In the current iteration of the recorder, dupes aren't errors. skipping
+    // for now.
+    it.skip("should fail when trying to write a duplicate event", async () => {
       const dupeRepo = AppDataSource.getRepository(RecorderTempDuplicateEvent);
 
       const dupes = await dupeRepo.find();
@@ -277,7 +279,9 @@ withDbDescribe("BatchEventRecorder", () => {
       expect(eventCount).toEqual(eventCountToWrite + 1);
     }, 90000);
 
-    it("should record errors when we write some duplicates over multiple batches", async () => {
+    // In the current iteration of the recorder, dupes aren't errors. skipping
+    // for now.
+    it.skip("should record errors when we write some duplicates over multiple batches", async () => {
       const events = randomCommitEventsGenerator(10);
 
       const errs: unknown[] = [];
