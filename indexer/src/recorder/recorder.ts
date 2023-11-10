@@ -985,10 +985,6 @@ export class BatchEventRecorder implements IEventRecorder {
         if (artifactResponse.length !== 1) {
           throw new RecorderError("unexpected response writing artifacts");
         }
-        logger.debug(
-          `added ${artifactResponse[0].count} new artifacts in ${arStart.diffNow().milliseconds
-          }ms`,
-        );
         logger.debug(`added ${artifactResponse[0].count} new artifacts`);
 
         if (this.recorderOptions.overwriteExistingEvents) {
