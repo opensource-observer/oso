@@ -11,7 +11,7 @@ import {
 
 // Using incremental static regeneration, will invalidate this page
 // after this (no deploy webhooks needed)
-export const revalidate = 86400; // 3600 = 1 hour
+export const revalidate = false; // 3600 = 1 hour
 const PLASMIC_COMPONENT = "ArtifactPage";
 
 /**

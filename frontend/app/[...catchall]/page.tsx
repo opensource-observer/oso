@@ -4,7 +4,8 @@ import { PLASMIC } from "../../plasmic-init";
 import { PlasmicClientRootProvider } from "../../plasmic-init-client";
 
 // Use revalidate if you want incremental static regeneration
-export const revalidate = 86400; // 3600 = 1 hour
+export const dynamic = "force-static";
+export const revalidate = false; // 3600 = 1 hour
 
 export default async function PlasmicLoaderPage({
   params,

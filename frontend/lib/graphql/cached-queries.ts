@@ -12,7 +12,7 @@ import {
 import { logger } from "../logger";
 
 // Revalidate the data at most every hour
-export const revalidate = 86400; // 3600 = 1 hour
+export const revalidate = false; // 3600 = 1 hour
 
 // Cached getters
 const cachedGetAllArtifacts = cache(async () => {
