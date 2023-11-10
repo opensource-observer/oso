@@ -501,7 +501,7 @@ export class BatchEventRecorder implements IEventRecorder {
     const t1 = timer("delete event dupes");
     let response: IRecorderCommitResult;
     try {
-      const [uncommitted, uncommittedCount] = (await this.dataSource.query(`
+      const [invalid, uncommittedCount] = (await this.dataSource.query(`
       WITH events_with_duplicates AS (
         SELECT 
           pct."sourceId", 
@@ -524,8 +524,9 @@ export class BatchEventRecorder implements IEventRecorder {
 
       logger.debug("committing to event database");
       // Write back into the main database
-      const committed = await this.dataSource.transaction(async (manager) => {
-        const t2 = timer("commit to event");
+      type Result = { sourceId: string; typeId: number };
+      const successful = await this.dataSource.transaction(async (manager) => {
+        const t2 = timer("commit to event table");
         const response = (await manager.query(`
           WITH write_to_canonical_event AS (
             INSERT INTO event ("sourceId", "typeId", "time", "toId", "fromId", "amount", "details")
@@ -537,7 +538,7 @@ export class BatchEventRecorder implements IEventRecorder {
           FROM ${this.preCommitTableName} p
           LEFT JOIN write_to_canonical_event w
             ON w."sourceId" = p."sourceId" AND p."typeId" = w."typeId"
-        `)) as { sourceId: string; typeId: number; skipped: number }[];
+        `)) as (Result & { skipped: number })[];
         t2();
 
         logger.debug("dropping the table");
@@ -548,6 +549,21 @@ export class BatchEventRecorder implements IEventRecorder {
         t3();
         return response;
       });
+
+      const { committed, skipped } = successful.reduce<{
+        committed: Result[];
+        skipped: Result[];
+      }>(
+        (a, c) => {
+          if (c.skipped) {
+            a.skipped.push(c);
+          } else {
+            a.committed.push(c);
+          }
+          return a;
+        },
+        { committed: [], skipped: [] },
+      );
 
       const uniqueCommittedEvents = new UniqueArray<RecorderEventRef>(
         eventUniqueId,
@@ -563,17 +579,28 @@ export class BatchEventRecorder implements IEventRecorder {
         };
       };
       const committedEvents = committed.map(convertResp);
-      const uncommittedEvents = uncommitted.map(convertResp);
-      uncommittedEvents.forEach((e) => {
+      const skippedEvents = skipped.map(convertResp);
+      const invalidEvents = invalid.map(convertResp);
+      invalidEvents.forEach((e) => {
         uniqueCommittedEvents.push(e);
       });
 
       if (committedEvents.length > 0) {
-        logger.debug("notifying of event completions");
+        logger.debug(
+          `notifying of event completions for ${committedEvents.length} committed events`,
+        );
         this.notifySuccess(committedEvents);
       }
-      if (uncommittedEvents.length > 0) {
-        logger.debug("notifying of event failures");
+      if (skippedEvents.length > 0) {
+        logger.debug(
+          `notifying of event completions for ${skippedEvents.length} skipped events`,
+        );
+        this.notifySuccess(skippedEvents);
+      }
+      if (invalidEvents.length > 0) {
+        logger.debug(
+          `notifying of event failures for ${invalidEvents.length} invalid events`,
+        );
         this.notifyFailure(
           uniqueCommittedEvents.items(),
           new RecorderError(
@@ -583,14 +610,16 @@ export class BatchEventRecorder implements IEventRecorder {
       }
       response = {
         committed: committedEvents.map(eventUniqueId),
-        uncommitted: uniqueCommittedEvents.items().map(eventUniqueId),
+        skipped: skippedEvents.map(eventUniqueId),
+        invalid: uniqueCommittedEvents.items().map(eventUniqueId),
         errors: [],
       };
     } catch (err) {
       this.emitter.emit("commit-error", err);
       response = {
         committed: [],
-        uncommitted: [],
+        invalid: [],
+        skipped: [],
         errors: [err],
       };
     }

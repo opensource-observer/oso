@@ -311,7 +311,7 @@ withDbDescribe("BatchEventRecorder", () => {
       const eventCount = await EventRepository.count();
       expect(eventCount).toEqual(eventCountToWrite / 2 + 1);
 
-      expect(results.uncommitted.length).toEqual(5);
+      expect(results.invalid.length).toEqual(5);
     }, 60000);
 
     // In the current iteration of the recorder, dupes aren't errors. skipping

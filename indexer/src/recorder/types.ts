@@ -30,7 +30,8 @@ export interface RecordHandle {
 
 export interface CommitResult {
   committed: string[];
-  uncommitted: string[];
+  skipped: string[];
+  invalid: string[];
   errors: unknown[];
 }
 
