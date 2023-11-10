@@ -5,6 +5,7 @@
  **/
 const nextConfig = {
   //output: 'export',
+  productionBrowserSourceMaps: true,
   experimental: {
     serverComponentsExternalPackages: [
       "typeorm",
