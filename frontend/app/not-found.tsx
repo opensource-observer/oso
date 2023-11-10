@@ -3,6 +3,8 @@ import { PlasmicClientRootProvider } from "../plasmic-init-client";
 import { PLASMIC } from "../plasmic-init";
 
 const PLASMIC_COMPONENT = "404Page";
+export const dynamic = "force-static";
+export const revalidate = false; // 3600 = 1 hour
 
 export default async function NotFoundPage() {
   const plasmicData = await PLASMIC.fetchComponentData(PLASMIC_COMPONENT);

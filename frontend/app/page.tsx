@@ -4,7 +4,8 @@ import { PlasmicClientRootProvider } from "../plasmic-init-client";
 
 // Using incremental static regeneration, will invalidate this page
 // after this (no deploy webhooks needed)
-export const revalidate = 3600;
+export const dynamic = "force-static";
+export const revalidate = false; // 3600 = 1 hour
 const PLASMIC_COMPONENT = "Homepage";
 
 export default async function HomePage() {
