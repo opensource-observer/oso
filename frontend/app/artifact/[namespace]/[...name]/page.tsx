@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { cache } from "react";
 import { PlasmicComponent } from "@plasmicapp/loader-nextjs";
 import { PLASMIC } from "../../../../plasmic-init";
 import { PlasmicClientRootProvider } from "../../../../plasmic-init-client";
@@ -13,6 +14,11 @@ import {
 // after this (no deploy webhooks needed)
 export const revalidate = false; // 3600 = 1 hour
 const PLASMIC_COMPONENT = "ArtifactPage";
+
+const cachedFetchComponent = cache(async (componentName: string) => {
+  const plasmicData = await PLASMIC.fetchComponentData(componentName);
+  return plasmicData;
+});
 
 /**
  * This SSR route allows us to fetch the project from the database
@@ -54,7 +60,7 @@ export default async function ArtifactPage(props: ArtifactPageProps) {
   const artifact = artifactArray[0];
 
   //console.log(artifact);
-  const plasmicData = await PLASMIC.fetchComponentData(PLASMIC_COMPONENT);
+  const plasmicData = await cachedFetchComponent(PLASMIC_COMPONENT);
   const compMeta = plasmicData.entryCompMetas[0];
 
   return (
