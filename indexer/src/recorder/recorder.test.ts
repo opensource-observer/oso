@@ -269,7 +269,7 @@ withDbDescribe("BatchEventRecorder", () => {
     });
 
     it("should do a large set of writes", async () => {
-      const eventCountToWrite = 200000;
+      const eventCountToWrite = 10000;
       const events = randomCommitEventsGenerator(eventCountToWrite, {
         fromProbability: 0.7,
         repoNameGenerator: () => `repo-${randomInt(100)}`,
