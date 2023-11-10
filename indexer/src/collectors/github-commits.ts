@@ -1,7 +1,7 @@
 import { DateTime } from "luxon";
 import _ from "lodash";
 import {
-  IEventRecorder,
+  IEventRecorderClient,
   IncompleteArtifact,
   IncompleteEvent,
   RecordHandle,
@@ -193,7 +193,7 @@ export class GithubCommitCollector extends GithubBatchedProjectArtifactsBaseColl
   constructor(
     projectRepository: Repository<Project>,
     gh: Octokit,
-    recorder: IEventRecorder,
+    recorder: IEventRecorderClient,
     cache: TimeSeriesCacheWrapper,
     batchSize: number,
     options?: Partial<GithubBaseCollectorOptions>,

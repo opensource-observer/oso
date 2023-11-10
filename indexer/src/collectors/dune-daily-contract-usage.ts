@@ -19,7 +19,7 @@ import {
 import _ from "lodash";
 import { Range } from "../utils/ranges.js";
 import {
-  IEventRecorder,
+  IEventRecorderClient,
   IncompleteArtifact,
   IncompleteEvent,
   RecordHandle,
@@ -112,7 +112,7 @@ export const DefaultDailyContractUsageSyncerOptions: DailyContractUsageSyncerOpt
 export class DailyContractUsageCollector extends BaseEventCollector<object> {
   private client: IDailyContractUsageClientV2;
   private artifactRepository: typeof ArtifactRepository;
-  private recorder: IEventRecorder;
+  private recorder: IEventRecorderClient;
   private cache: TimeSeriesCacheWrapper;
   private options: DailyContractUsageSyncerOptions;
   private rowsProcessed: number;
@@ -120,7 +120,7 @@ export class DailyContractUsageCollector extends BaseEventCollector<object> {
   constructor(
     client: IDailyContractUsageClientV2,
     artifactRepository: typeof ArtifactRepository,
-    recorder: IEventRecorder,
+    recorder: IEventRecorderClient,
     cache: TimeSeriesCacheWrapper,
     options: Partial<DailyContractUsageSyncerOptions> = DefaultDailyContractUsageSyncerOptions,
   ) {
@@ -241,7 +241,6 @@ export class DailyContractUsageCollector extends BaseEventCollector<object> {
         const event = await this.createEvents(contract, row, uniqueEvents);
         recordHandles.push(...event);
       }
-      await this.recorder.wait(recordHandles);
     }
   }
 
@@ -262,7 +261,6 @@ export class DailyContractUsageCollector extends BaseEventCollector<object> {
         const events = await this.createEvents(contract, row, uniqueEvents);
         recordHandles.push(...events);
       }
-      await this.recorder.wait(recordHandles);
     }
   }
 
@@ -306,7 +304,7 @@ export class DailyContractUsageCollector extends BaseEventCollector<object> {
     const eventTime = DateTime.fromISO(row.date);
 
     if (!row.userAddress && !row.safeAddress) {
-      throw new Error("unexpectd no address");
+      throw new Error("unexpected: no address");
     }
 
     const from: IncompleteArtifact =

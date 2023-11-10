@@ -21,7 +21,7 @@ import {
   TimeSeriesCacheWrapper,
 } from "../cacher/time-series.js";
 import { In, Repository } from "typeorm";
-import { IEventRecorder, RecordHandle } from "../recorder/types.js";
+import { IEventRecorderClient, RecordHandle } from "../recorder/types.js";
 import { DateTime } from "luxon";
 import { sha1FromArray } from "../utils/source-ids.js";
 
@@ -48,7 +48,7 @@ export class NpmDownloadCollector extends ProjectArtifactsCollector {
 
   constructor(
     projectRepository: Repository<Project>,
-    recorder: IEventRecorder,
+    recorder: IEventRecorderClient,
     cache: TimeSeriesCacheWrapper,
     options?: Partial<NPMCollectorOptions>,
   ) {
@@ -121,7 +121,7 @@ export class NpmDownloadCollector extends ProjectArtifactsCollector {
         );
       }
     }
-    await this.recorder.wait(handles);
+    //await this.recorder.wait(handles);
     committer.commit(npmPackage).withHandles(handles);
   }
 }

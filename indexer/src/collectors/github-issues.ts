@@ -1,7 +1,7 @@
 import { DateTime } from "luxon";
 import {
   IEventGroupRecorder,
-  IEventRecorder,
+  IEventRecorderClient,
   IncompleteArtifact,
   IncompleteEvent,
 } from "../recorder/types.js";
@@ -416,7 +416,7 @@ export class GithubIssueCollector extends GithubBatchedProjectArtifactsBaseColle
 
   constructor(
     projectRepository: Repository<Project>,
-    recorder: IEventRecorder,
+    recorder: IEventRecorderClient,
     cache: TimeSeriesCacheWrapper,
     batchSize: number,
     options?: Partial<GithubBaseCollectorOptions>,

@@ -28,7 +28,19 @@ export interface RecordHandle {
   wait(): Promise<RecordResponse>;
 }
 
-export interface IEventRecorder {
+export interface CommitResult {
+  committed: string[];
+  skipped: string[];
+  invalid: string[];
+  errors: unknown[];
+}
+
+export interface IEventRecorderClient {
+  // Record a single event. These are batched
+  record(event: IncompleteEvent): Promise<RecordHandle>;
+}
+
+export interface IEventRecorder extends IEventRecorderClient {
   // A generic event recorder that will automatically handle batching writes for
   // events and also resolving artifacts and contributors (and automatically
   // create any that we may need). This is so we don't have to manually control
@@ -39,22 +51,17 @@ export interface IEventRecorder {
 
   setup(): Promise<void>;
 
-  // Record a single event. These are batched
-  record(event: IncompleteEvent): Promise<RecordHandle>;
-
   setActorScope(namespaces: ArtifactNamespace[], types: ArtifactType[]): void;
 
   setRange(range: Range): void;
 
   setOptions(options: EventRecorderOptions): void;
 
+  begin(): Promise<void>;
+  commit(): Promise<CommitResult>;
+
   // Call this when you're done recording
   close(): Promise<void>;
-
-  wait(
-    handles: RecordHandle[],
-    timeout?: number,
-  ): Promise<AsyncResults<RecordResponse>>;
 
   addListener(listener: "error", cb: (err: unknown) => void): EventEmitter;
   addListener(listener: "flush-complete", cb: () => void): EventEmitter;

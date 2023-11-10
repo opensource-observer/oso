@@ -1,6 +1,6 @@
 import { DateTime } from "luxon";
 import {
-  IEventRecorder,
+  IEventRecorderClient,
   IncompleteArtifact,
   IncompleteEvent,
   RecordHandle,
@@ -194,7 +194,7 @@ const DefaultGithubFollowingCollectorOptions: GithubBaseCollectorOptions = {
 export class GithubFollowingCollector extends GithubBatchedProjectArtifactsBaseCollector {
   constructor(
     projectRepository: Repository<Project>,
-    recorder: IEventRecorder,
+    recorder: IEventRecorderClient,
     cache: TimeSeriesCacheWrapper,
     batchSize: number,
     options?: Partial<GithubBaseCollectorOptions>,
@@ -224,7 +224,6 @@ export class GithubFollowingCollector extends GithubBatchedProjectArtifactsBaseC
         const recordPromises = await this.collectEventsForRepo(repo, range);
         committer.commit(repo).withHandles(recordPromises);
       } catch (err) {
-        logger.debug(`encountered an error`);
         committer.commit(repo).withResults({
           errors: [err],
           success: [],

@@ -10,6 +10,7 @@ import {
 import {
   IEventGroupRecorder,
   IEventRecorder,
+  IEventRecorderClient,
   IEventTypeStrategy,
   RecordHandle,
   RecordResponse,
@@ -214,7 +215,7 @@ interface CollectorRegistration {
 export interface EventCollectorRegistration extends CollectorRegistration {
   create(
     config: IConfig,
-    recorder: IEventRecorder,
+    recorder: IEventRecorderClient,
     cache: TimeSeriesCacheWrapper,
   ): Promise<IEventCollector>;
 
@@ -362,7 +363,6 @@ export class ArtifactRecordsCommitmentWrapper
   private emitter: EventEmitter;
   private eventPointerManager: IEventPointerManager;
   private duplicatesTracker: Record<number, number>;
-  private recorder: IEventRecorder;
 
   static setup(
     collectorName: string,
@@ -1058,11 +1058,7 @@ export class BaseScheduler implements IScheduler {
     } else {
       recorder.setRange(range);
     }
-    const collector = await collectorReg.create(
-      this.config,
-      recorder,
-      this.cache,
-    );
+
     const executionSummary = ExecutionSummary.empty();
 
     recorder.addListener("error", (err) => {
@@ -1070,6 +1066,15 @@ export class BaseScheduler implements IScheduler {
       logger.error(err);
       executionSummary.errors.push(err);
     });
+
+    // Start the recorder
+    await recorder.begin();
+
+    const collector = await collectorReg.create(
+      this.config,
+      recorder,
+      this.cache,
+    );
 
     const seenIds: Record<number, number> = {};
 
@@ -1145,6 +1150,8 @@ export class BaseScheduler implements IScheduler {
           range,
           committer,
         );
+        // This is jank and needs to be fixed. This can be cleaned up.
+        await recorder.commit();
         logger.debug(`${groupName}: waiting for artifacts to complete commits`);
 
         const artifactSummaries = await committer.waitAll();

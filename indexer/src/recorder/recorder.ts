@@ -16,6 +16,7 @@ import {
   RecordHandle,
   IRecorderEvent,
   IRecorderEventType,
+  CommitResult as IRecorderCommitResult,
 } from "./types.js";
 import { Repository } from "typeorm";
 import { UniqueArray } from "../utils/array.js";
@@ -30,6 +31,7 @@ import { AsyncResults } from "../utils/async-results.js";
 import { ensure, ensureNumber, ensureString } from "../utils/common.js";
 import { setTimeout as asyncTimeout } from "node:timers/promises";
 import { DataSource } from "typeorm/browser";
+import { timer } from "../utils/debug.js";
 
 export interface BatchEventRecorderOptions {
   maxBatchSize: number;
@@ -40,7 +42,7 @@ export interface BatchEventRecorderOptions {
 }
 
 const defaultBatchEventRecorderOptions: BatchEventRecorderOptions = {
-  maxBatchSize: 3000,
+  maxBatchSize: 100000,
 
   // 15 minute timeout seems sane for completing any db writes (in a normal
   // case). When backfilling this should be made much bigger.
@@ -359,9 +361,11 @@ interface PGRecorderTempEventBatchInput {
   details: Record<string, any>[];
 }
 
+export type RecorderEventRef = Pick<IRecorderEvent, "sourceId" | "type">;
+
 export class BatchEventRecorder implements IEventRecorder {
   private eventTypeStrategies: Record<string, IEventTypeStrategy>;
-  private eventQueue: UniqueArray<IRecorderEvent>;
+  private eventQueue: Array<IRecorderEvent>;
   private options: BatchEventRecorderOptions;
   private tempEventRepository: Repository<RecorderTempEvent>;
   private dataSource: DataSource;
@@ -381,7 +385,11 @@ export class BatchEventRecorder implements IEventRecorder {
   private eventTypeNameAndVersionMap: Record<string, Record<number, EventType>>;
   private recorderId: string;
   private batchCounter: number;
+  private tableCounter: number;
   private initialized: boolean;
+  private _preCommitTableName: string;
+  private isPreCommitTableOpen: boolean;
+  private committing: boolean;
 
   constructor(
     dataSource: DataSource,
@@ -413,9 +421,13 @@ export class BatchEventRecorder implements IEventRecorder {
     this.eventTypeNameAndVersionMap = {};
     this.recorderEventTypeStringIdMap = {};
     this.recorderId = randomUUID();
-    this.eventQueue = new UniqueArray<IRecorderEvent>(eventUniqueId);
+    this.eventQueue = [];
     this.batchCounter = 0;
+    this.tableCounter = 0;
     this.initialized = false;
+    this.isPreCommitTableOpen = false;
+    this._preCommitTableName = "";
+    this.committing = false;
 
     this.emitter.setMaxListeners(this.options.maxBatchSize * 3);
     // Setup flush event handler
@@ -431,6 +443,190 @@ export class BatchEventRecorder implements IEventRecorder {
         this.emitter.emit("error", err);
       }
     });
+  }
+
+  async begin(): Promise<void> {
+    if (!this.initialized) {
+      logger.debug("saving recording details for later cleanup");
+      await this.recordingRepository.insert({
+        recorderId: this.recorderId,
+        expiration: DateTime.now().plus({ day: 1 }).toJSDate(),
+      });
+      this.initialized = true;
+    }
+
+    if (this.isPreCommitTableOpen) {
+      throw new RecorderError("Only one temporary table may be set at a time");
+    }
+
+    // Create a temporary table to collect precommit events
+    const formattedRecorderId = this.recorderId.replace(/-/g, "_");
+    this._preCommitTableName = `recorder_pre_commit_${formattedRecorderId}_${this.tableCounter}`;
+    this.tableCounter += 1;
+    this.isPreCommitTableOpen = true;
+
+    await this.dataSource.query(`
+      CREATE TABLE ${this.preCommitTableName} AS 
+      TABLE "event"
+      WITH NO DATA
+    `);
+    logger.debug(`created temporary table ${this.preCommitTableName}`);
+  }
+
+  private get preCommitTableName(): string {
+    if (this._preCommitTableName === "") {
+      throw new RecorderError("need to call begin before recording");
+    }
+    return this._preCommitTableName;
+  }
+
+  async commit(): Promise<IRecorderCommitResult> {
+    logger.debug(`committing changes to ${this.preCommitTableName}`);
+    this.committing = true;
+    // Flush whatever is in the
+    this.flusher.clear();
+
+    try {
+      await this.flushAll();
+    } catch (err) {
+      // No need to stop committing. We will commit what can possibly be
+      // committed
+      logger.debug(
+        "error on flush before commit. errors will appear with events",
+      );
+    }
+
+    // Using the recorder_temp_event table we can commit all of the events
+    // Remove anything with duplicates
+    const t1 = timer("delete event dupes");
+    let response: IRecorderCommitResult;
+    try {
+      const [invalid, uncommittedCount] = (await this.dataSource.query(`
+      WITH events_with_duplicates AS (
+        SELECT 
+          pct."sourceId", 
+          pct."typeId",
+          COUNT(*) as "count"
+        FROM ${this.preCommitTableName} AS pct
+        GROUP BY 1,2
+        HAVING COUNT(*) > 1
+      )
+      DELETE FROM ${this.preCommitTableName} p
+      USING events_with_duplicates ewd
+      WHERE p."sourceId" = ewd."sourceId" AND
+            p."typeId" = ewd."typeId" AND
+            ewd."typeId" IS NOT NULL AND
+            ewd."sourceId" IS NOT NULL
+      RETURNING p."sourceId", p."typeId"
+    `)) as [{ sourceId: string; typeId: number }[], number];
+      t1();
+      logger.debug(`deleted ${uncommittedCount} events with duplicates`);
+
+      logger.debug("committing to event database");
+      // Write back into the main database
+      type Result = { sourceId: string; typeId: number };
+      const successful = await this.dataSource.transaction(async (manager) => {
+        const t2 = timer("commit to event table");
+        const response = (await manager.query(`
+          WITH write_to_canonical_event AS (
+            INSERT INTO event ("sourceId", "typeId", "time", "toId", "fromId", "amount", "details")
+            SELECT "sourceId", "typeId", "time", "toId", "fromId", "amount", "details" FROM ${this.preCommitTableName}
+            ON CONFLICT ("sourceId", "typeId", "time") DO NOTHING
+            RETURNING "sourceId", "typeId"
+          )
+          SELECT p."sourceId", p."typeId", CASE WHEN w."typeId" IS NOT NULL THEN 0 ELSE 1 END AS "skipped"
+          FROM ${this.preCommitTableName} p
+          LEFT JOIN write_to_canonical_event w
+            ON w."sourceId" = p."sourceId" AND p."typeId" = w."typeId"
+        `)) as (Result & { skipped: number })[];
+        t2();
+
+        logger.debug("dropping the table");
+        const t3 = timer("drop table");
+        await manager.query(`
+          DROP TABLE ${this.preCommitTableName}
+        `);
+        t3();
+        return response;
+      });
+
+      const { committed, skipped } = successful.reduce<{
+        committed: Result[];
+        skipped: Result[];
+      }>(
+        (a, c) => {
+          if (c.skipped) {
+            a.skipped.push(c);
+          } else {
+            a.committed.push(c);
+          }
+          return a;
+        },
+        { committed: [], skipped: [] },
+      );
+
+      const uniqueCommittedEvents = new UniqueArray<RecorderEventRef>(
+        eventUniqueId,
+      );
+
+      const convertResp = (c: { sourceId: string; typeId: number }) => {
+        const t = RecorderEventType.fromDBEventType(
+          this.eventTypeIdMap[c.typeId],
+        );
+        return {
+          sourceId: c.sourceId,
+          type: t,
+        };
+      };
+      const committedEvents = committed.map(convertResp);
+      const skippedEvents = skipped.map(convertResp);
+      const invalidEvents = invalid.map(convertResp);
+      invalidEvents.forEach((e) => {
+        uniqueCommittedEvents.push(e);
+      });
+
+      if (committedEvents.length > 0) {
+        logger.debug(
+          `notifying of event completions for ${committedEvents.length} committed events`,
+        );
+        this.notifySuccess(committedEvents);
+      }
+      if (skippedEvents.length > 0) {
+        logger.debug(
+          `notifying of event completions for ${skippedEvents.length} skipped events`,
+        );
+        this.notifySuccess(skippedEvents);
+      }
+      if (invalidEvents.length > 0) {
+        logger.debug(
+          `notifying of event failures for ${invalidEvents.length} invalid events`,
+        );
+        this.notifyFailure(
+          uniqueCommittedEvents.items(),
+          new RecorderError(
+            "event has duplicates in this collection. something is wrong with the collector",
+          ),
+        );
+      }
+      response = {
+        committed: committedEvents.map(eventUniqueId),
+        skipped: skippedEvents.map(eventUniqueId),
+        invalid: uniqueCommittedEvents.items().map(eventUniqueId),
+        errors: [],
+      };
+    } catch (err) {
+      this.emitter.emit("commit-error", err);
+      response = {
+        committed: [],
+        invalid: [],
+        skipped: [],
+        errors: [err],
+      };
+    }
+    this._preCommitTableName = "";
+    this.isPreCommitTableOpen = false;
+    this.committing = false;
+    return response;
   }
 
   async wait(
@@ -468,6 +664,12 @@ export class BatchEventRecorder implements IEventRecorder {
         );
       }, timeoutMs);
 
+      const stopListening = () => {
+        this.emitter.removeListener("event-record-failure", failure);
+        this.emitter.removeListener("event-record-success", success);
+        clearTimeout(timeout);
+      };
+
       const eventCallback = (err: unknown | null, uniqueId: string) => {
         if (expectedMap[uniqueId] === 1) {
           expectedMap[uniqueId] = 0;
@@ -481,9 +683,7 @@ export class BatchEventRecorder implements IEventRecorder {
 
           // Why's it greater tho?
           if (expectedCount >= count) {
-            this.emitter.removeListener("event-record-failure", failure);
-            this.emitter.removeListener("event-record-success", success);
-            clearTimeout(timeout);
+            stopListening();
             return resolve(results);
           }
         }
@@ -495,6 +695,11 @@ export class BatchEventRecorder implements IEventRecorder {
       const success = (uniqueId: string) => {
         eventCallback(null, uniqueId);
       };
+
+      this.emitter.addListener("commit-error", (err: unknown) => {
+        stopListening();
+        return reject(err);
+      });
 
       this.emitter.addListener("event-record-failure", failure);
 
@@ -580,8 +785,11 @@ export class BatchEventRecorder implements IEventRecorder {
   }
 
   async record(input: IncompleteEvent): Promise<RecordHandle> {
+    if (this.committing) {
+      throw new RecorderError("recorder is committing. writes disallowed");
+    }
     if (this.closing) {
-      throw new RecorderError("recorder is closing. should be more writes");
+      throw new RecorderError("recorder is closing. writes disallowed");
     }
     const event = RecorderEvent.fromIncompleteEvent(input);
 
@@ -629,18 +837,10 @@ export class BatchEventRecorder implements IEventRecorder {
   }
 
   private async flushAll() {
-    if (!this.initialized) {
-      logger.debug("saving recording details for later cleanup");
-      await this.recordingRepository.insert({
-        recorderId: this.recorderId,
-        expiration: DateTime.now().plus({ day: 1 }).toJSDate(),
-      });
-      this.initialized = true;
-    }
-
     const batchId = this.batchCounter;
     this.batchCounter += 1;
-    const processing = this.eventQueue.popAll();
+    const processing = this.eventQueue;
+    this.eventQueue = [];
     try {
       await this.processEvents(batchId, processing);
     } catch (err) {
@@ -662,6 +862,8 @@ export class BatchEventRecorder implements IEventRecorder {
       throw new RecorderError("there should only be one call to close()");
     }
 
+    // If we have something open we need to commit it and close;
+
     // Lock the recorder
     this.closing = true;
     return new Promise<void>((resolve, reject) => {
@@ -670,52 +872,29 @@ export class BatchEventRecorder implements IEventRecorder {
       const timeout = setTimeout(() => {
         reject(new RecorderError("timed out closing the recorder"));
       }, this.options.timeoutMs);
-      this.flushAll()
-        .then(() => {
-          logger.debug("final recorder flush complete");
-          this.emitter.removeAllListeners();
-          this.flusher.clear();
-          clearTimeout(timeout);
-          resolve();
-        })
-        .catch(reject);
+
+      const closeAll = () => {
+        this.emitter.removeAllListeners();
+        this.flusher.clear();
+        clearTimeout(timeout);
+      };
+      if (this.isPreCommitTableOpen) {
+        this.commit()
+          .then(() => {
+            logger.debug("recorder flushed and committed");
+            closeAll();
+            resolve();
+          })
+          .catch((err) => {
+            closeAll();
+            reject(err);
+          });
+      } else {
+        closeAll();
+        resolve();
+      }
     });
   }
-
-  // private async flushType(eventType: IRecorderEventType) {
-  //   const flushId = randomUUID();
-  //   logger.debug(
-  //     `${flushId}: Waiting for all ${eventType.toString()} events to be recorded`,
-  //   );
-
-  //   // Wait for a specific event type queue to complete
-  //   const eventTypeStorage = this.getEventTypeStorage(eventType);
-  //   if (eventTypeStorage.length === 0) {
-  //     logger.debug(`queue empty for ${eventType.toString()}`);
-  //     return;
-  //   }
-
-  //   logger.info(
-  //     `emptying queue for ${eventType.toString()} with ${eventTypeStorage.length
-  //     } items`,
-  //   );
-  //   const processing = eventTypeStorage.popAll();
-
-  //   try {
-  //     await this.processEvents(flushId, eventType, processing);
-  //     this.pubsub.pub(eventType.toString(), null);
-  //   } catch (err) {
-  //     logger.error(
-  //       "error caught while processing one of the events in a batch",
-  //       err,
-  //     );
-  //     this.pubsub.pub(eventType.toString(), err);
-
-  //     // Report errors to all of the promises listening on specific events
-  //     this.notifyFailure(processing, err);
-  //     throw err;
-  //   }
-  // }
 
   private async processEvents(
     batchId: number,
@@ -729,8 +908,12 @@ export class BatchEventRecorder implements IEventRecorder {
     const newEvents = [];
     // Filter things that are out of the expected range
     for (const event of processing) {
-      // Ignore events outside the range of events
-      if (!isWithinRange(this.range!, event.time)) {
+      // Ignore events outside the range of events if we're not overwriting
+      // things otherwise everything is in play
+      if (
+        !isWithinRange(this.range!, event.time) &&
+        !this.recorderOptions.overwriteExistingEvents
+      ) {
         logger.debug(`${batchId}: received event out of range. skipping`);
         this.notifySuccess([event]);
         continue;
@@ -803,6 +986,7 @@ export class BatchEventRecorder implements IEventRecorder {
     const eventsWrite = async () => {
       return this.dataSource.transaction(async (manager) => {
         // Write artifacts
+        const t0 = timer("write new artifacts");
         const artifactResponse = (await manager.query(
           `
           with new_artifact as (
@@ -826,6 +1010,7 @@ export class BatchEventRecorder implements IEventRecorder {
       `,
           [this.recorderId, batchId],
         )) as { count: string }[];
+        t0();
         if (artifactResponse.length !== 1) {
           throw new RecorderError("unexpected response writing artifacts");
         }
@@ -833,6 +1018,7 @@ export class BatchEventRecorder implements IEventRecorder {
 
         if (this.recorderOptions.overwriteExistingEvents) {
           // Delete existing events
+          const t1 = timer("delete existing events");
           await manager.query(
             `
             DELETE FROM event e
@@ -844,40 +1030,16 @@ export class BatchEventRecorder implements IEventRecorder {
           `,
             [this.recorderId, batchId],
           );
+          t1();
         }
 
+        const t2 = timer("bulk write");
         // Write all events and delete anything necessary. Ignore events with
         // duplicates we don't know what to do in that case. Leave those in the
         // database.
-        const bulkWriteResponse = (await manager.query(
+        const batchResp = (await manager.query(
           `
-          with current_event_source_ids AS (
-            SELECT
-              rte_dupes."sourceId",
-              rte_dupes."typeId",
-              1 AS "num"
-            FROM recorder_temp_event AS rte_dupes
-            WHERE
-              rte_dupes."recorderId" = $1
-          ), event_source_ids AS (
-            SELECT 
-              "sourceId",
-              "typeId",
-              1 AS "num"
-            FROM recorder_temp_duplicate_event
-            WHERE
-              "recorderId" = $1
-            UNION ALL
-            SELECT * FROM current_event_source_ids
-          ), event_with_duplicates AS (
-            SELECT
-              "sourceId",
-              "typeId",
-              SUM(esi."num") as "count"
-            FROM event_source_ids esi
-            GROUP BY 1,2 
-            HAVING SUM(esi."num") > 1
-          ), event_with_artifact AS (
+          with event_with_artifact AS (
             SELECT
               rte."sourceId",
               rte."typeId",
@@ -890,59 +1052,38 @@ export class BatchEventRecorder implements IEventRecorder {
             FROM recorder_temp_event AS rte
             LEFT JOIN artifact a_to 
               ON rte."toName" = a_to."name" AND
-                 rte."toNamespace" = a_to."namespace" AND
-                 rte."toType" = a_to."type"
-            LEFT JOIN artifact a_from
+                 rte."toNamespace" = a_to."namespace"
+            LEFT JOIN artifact a_from 
               ON rte."fromName" = a_from."name" AND
-                 rte."fromNamespace" = a_from."namespace" AND
-                 rte."fromType" = a_from."type"
-            LEFT JOIN event e
-              ON rte."sourceId" = e."sourceId" AND
-                 rte."typeId" = e."typeId"
-            LEFT JOIN event_with_duplicates ewd
-              ON rte."sourceId" = ewd."sourceId" AND
-                 rte."typeId" = ewd."typeId"
+                 rte."fromNamespace" = a_from."namespace"
             WHERE 
               rte."recorderId" = $1 AND
-              rte."batchId" = $2 AND
-              e."id" IS NULL AND
-              ewd."sourceId" IS NULL
-          ), commit_events AS (
-            INSERT INTO event("sourceId", "typeId", "time", "toId", "fromId", "amount", "details")
+              rte."batchId" = $2
+          ), batch as (
+            INSERT INTO ${this.preCommitTableName} ("sourceId", "typeId", "time", "toId", "fromId", "amount", "details")
             SELECT "sourceId", "typeId", "time", "toId", "fromId", "amount", "details" FROM event_with_artifact
-            ON CONFLICT ("sourceId", "typeId", "time") DO NOTHING
-            RETURNING "sourceId", "typeId"
-          ), commit_events_duplicate_tracking AS (
-            INSERT INTO recorder_temp_duplicate_event("recorderId", "sourceId", "typeId")
-            SELECT COALESCE($1), commit_events."sourceId", commit_events."typeId" FROM commit_events
-            RETURNING "sourceId", "typeId"
+            RETURNING "id"
           )
-          DELETE FROM recorder_temp_event rte_del
-          USING commit_events_duplicate_tracking ce
-          WHERE rte_del."recorderId" = $1 AND
-                rte_del."batchId" = $2 AND
-                rte_del."sourceId" = ce."sourceId" AND
-                rte_del."typeId" = ce."typeId"
-          RETURNING rte_del."sourceId", rte_del."typeId"
+          select count(*) from batch;
       `,
           [this.recorderId, batchId],
-        )) as [{ sourceId: string; typeId: number }[], number];
-        logger.debug(`bulk write wrote ${bulkWriteResponse[1]} events`);
-        return bulkWriteResponse;
+        )) as { count: string }[];
+        t2();
+
+        if (batchResp.length !== 1) {
+          throw new RecorderError("error occurred counting the batch results");
+        }
+
+        // COPY the temp table to the real one
+        logger.debug(
+          `finished writing ${batchResp[0].count} events to the temporary table`,
+        );
+        return batchResp;
       });
     };
 
     try {
-      const response = await this.retryDbCall(eventsWrite, 3);
-      const writeCount = response[1];
-      if (writeCount !== newEvents.length) {
-        // For now duplicates are not treated as errors. This likely needs to
-        // change in the future depending on _when_ the duplicate is encounter
-        logger.debug(
-          `some data wasn't written. it's assumed they are duplicates`,
-        );
-      }
-      this.notifySuccess(newEvents);
+      await this.retryDbCall(eventsWrite, 3);
     } catch (err) {
       this.notifyFailure(newEvents, err);
     }
@@ -977,7 +1118,7 @@ export class BatchEventRecorder implements IEventRecorder {
     throw new RecorderError(`maximum retries for database call reached.`);
   }
 
-  protected notifySuccess(events: IRecorderEvent[]) {
+  protected notifySuccess(events: RecorderEventRef[]) {
     events.forEach((e) => {
       // Mark as known event
       const uniqueId = eventUniqueId(e);
@@ -989,7 +1130,7 @@ export class BatchEventRecorder implements IEventRecorder {
     });
   }
 
-  protected notifyFailure(events: IRecorderEvent[], err: unknown) {
+  protected notifyFailure(events: RecorderEventRef[], err: unknown) {
     events.forEach((e) => {
       // Notify any subscribers that the event has failed to record
       const uniqueId = eventUniqueId(e);

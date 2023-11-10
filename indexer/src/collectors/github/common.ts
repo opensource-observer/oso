@@ -7,7 +7,7 @@ import {
   ArtifactNamespace,
 } from "../../db/orm-entities.js";
 import { GenericError } from "../../common/errors.js";
-import { IEventRecorder } from "../../recorder/types.js";
+import { IEventRecorderClient } from "../../recorder/types.js";
 import { TimeSeriesCacheWrapper } from "../../cacher/time-series.js";
 import { ClientError, RequestDocument, Variables } from "graphql-request";
 import { graphQLClient } from "./graphql-client.js";
@@ -186,7 +186,7 @@ export function GithubCollectorMixins<TBase extends Constructor>(Base: TBase) {
 }
 
 class _GithubByProjectBaseCollector extends ProjectArtifactsCollector {
-  protected recorder: IEventRecorder;
+  protected recorder: IEventRecorderClient;
   protected cache: TimeSeriesCacheWrapper;
   protected options: GithubBaseCollectorOptions;
   protected resetTime: DateTime | null;
@@ -194,7 +194,7 @@ class _GithubByProjectBaseCollector extends ProjectArtifactsCollector {
 
   constructor(
     projectRepository: Repository<Project>,
-    recorder: IEventRecorder,
+    recorder: IEventRecorderClient,
     cache: TimeSeriesCacheWrapper,
     options: GithubBaseCollectorOptions,
   ) {
@@ -210,14 +210,14 @@ class _GithubByProjectBaseCollector extends ProjectArtifactsCollector {
 }
 
 class _GithubBatchedProjectsBaseCollector extends BatchedProjectArtifactsCollector {
-  protected recorder: IEventRecorder;
+  protected recorder: IEventRecorderClient;
   protected cache: TimeSeriesCacheWrapper;
   protected options: GithubBaseCollectorOptions;
   protected resetTime: DateTime | null;
 
   constructor(
     projectRepository: Repository<Project>,
-    recorder: IEventRecorder,
+    recorder: IEventRecorderClient,
     cache: TimeSeriesCacheWrapper,
     batchSize: number,
     options: GithubBaseCollectorOptions,
