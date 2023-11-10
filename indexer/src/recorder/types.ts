@@ -38,6 +38,11 @@ export interface CommitResult {
 export interface IEventRecorderClient {
   // Record a single event. These are batched
   record(event: IncompleteEvent): Promise<RecordHandle>;
+
+  wait(
+    handles: RecordHandle[],
+    timeoutMs?: number,
+  ): Promise<AsyncResults<RecordResponse>>;
 }
 
 export interface IEventRecorder extends IEventRecorderClient {

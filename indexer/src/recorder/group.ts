@@ -8,7 +8,6 @@ import {
   RecordHandle,
 } from "./types.js";
 import { AsyncResults } from "../utils/async-results.js";
-import { collectAsyncResults } from "../utils/async-results.js";
 import { randomUUID } from "node:crypto";
 import { logger } from "../utils/logger.js";
 
@@ -83,8 +82,8 @@ export class EventGroupRecorder<T> implements IEventGroupRecorder<T> {
   private commitId(id: string): Promise<void> {
     logger.debug(`commiting group ${id}`);
     const recordHandles = this.groupRecordHandles[id] || [];
-    const handlesAsPromises = recordHandles.map((r) => r.wait());
-    return collectAsyncResults(handlesAsPromises)
+    return this.recorder
+      .wait(recordHandles)
       .then((result) => {
         this.emitter.emit(id, result);
       })

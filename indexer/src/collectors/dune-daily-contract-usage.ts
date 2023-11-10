@@ -22,7 +22,6 @@ import {
   IEventRecorderClient,
   IncompleteArtifact,
   IncompleteEvent,
-  RecordHandle,
 } from "../recorder/types.js";
 import {
   TimeSeriesCacheLookup,
@@ -34,6 +33,7 @@ import { BaseEventCollector, BasicArtifactGroup } from "../scheduler/common.js";
 import { UniqueArray } from "../utils/array.js";
 import { ProjectRepository } from "../db/project.js";
 import { In } from "typeorm";
+import { ArtifactGroupRecorder } from "../recorder/group.js";
 
 /**
  * Entrypoint arguments
@@ -177,16 +177,23 @@ export class DailyContractUsageCollector extends BaseEventCollector<object> {
     // There seems to be some duplicates. Let's keep track for logging for now.
     const uniqueEvents = new UniqueArray<string>((s) => s);
 
+    const groupRecorder = new ArtifactGroupRecorder(this.recorder);
     try {
       if (this.options.mode === "api") {
         await this.collectFromApi(
+          groupRecorder,
           artifacts,
           range,
           contractsByAddressMap,
           uniqueEvents,
         );
       } else {
-        await this.collectFromCsv(range, contractsByAddressMap, uniqueEvents);
+        await this.collectFromCsv(
+          groupRecorder,
+          range,
+          contractsByAddressMap,
+          uniqueEvents,
+        );
       }
     } catch (err) {
       logger.error("error collecting contract usage");
@@ -195,15 +202,11 @@ export class DailyContractUsageCollector extends BaseEventCollector<object> {
     }
 
     logger.debug("done processing contract calls");
-    for (const artifact of artifacts) {
-      committer.commit(artifact).withResults({
-        success: [],
-        errors: [],
-      });
-    }
+    committer.commitGroup(groupRecorder);
   }
 
   protected async collectFromApi(
+    groupRecorder: ArtifactGroupRecorder,
     artifacts: Artifact[],
     range: Range,
     contractsByAddressMap: _.Dictionary<Artifact>,
@@ -235,16 +238,15 @@ export class DailyContractUsageCollector extends BaseEventCollector<object> {
     );
 
     for await (const page of responses) {
-      const recordHandles: RecordHandle[] = [];
       for (const row of page.raw) {
         const contract = contractsByAddressMap[row.contractAddress];
-        const event = await this.createEvents(contract, row, uniqueEvents);
-        recordHandles.push(...event);
+        await this.createEvents(groupRecorder, contract, row, uniqueEvents);
       }
     }
   }
 
   protected async collectFromCsv(
+    groupRecorder: ArtifactGroupRecorder,
     range: Range,
     contractsByAddressMap: _.Dictionary<Artifact>,
     uniqueEvents: UniqueArray<string>,
@@ -253,13 +255,11 @@ export class DailyContractUsageCollector extends BaseEventCollector<object> {
     while (currentTime < range.endDate) {
       logger.debug(`loading ${currentTime.toISODate()}`);
       const rows = await this.client.getDailyContractUsageFromCsv(currentTime);
-      const recordHandles: RecordHandle[] = [];
 
       currentTime = currentTime.plus({ day: 1 });
       for (const row of rows) {
         const contract = contractsByAddressMap[row.contractAddress];
-        const events = await this.createEvents(contract, row, uniqueEvents);
-        recordHandles.push(...events);
+        await this.createEvents(groupRecorder, contract, row, uniqueEvents);
       }
     }
   }
@@ -296,10 +296,11 @@ export class DailyContractUsageCollector extends BaseEventCollector<object> {
   // }
 
   protected async createEvents(
+    groupRecorder: ArtifactGroupRecorder,
     contract: Artifact,
     row: DailyContractUsageRow,
     uniqueTracker: UniqueArray<string>,
-  ): Promise<RecordHandle[]> {
+  ): Promise<void> {
     this.rowsProcessed += 1;
     const eventTime = DateTime.fromISO(row.date);
 
@@ -383,9 +384,7 @@ export class DailyContractUsageCollector extends BaseEventCollector<object> {
         `duplicates for sourceId=${countEvent.sourceId} found for contracts`,
       );
     }
-    const handles: RecordHandle[] = [];
-    handles.push(await this.recorder.record(countEvent));
-    handles.push(await this.recorder.record(feeEvent));
-    return handles;
+    await groupRecorder.record(countEvent);
+    await groupRecorder.record(feeEvent);
   }
 }
