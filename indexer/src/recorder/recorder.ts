@@ -361,9 +361,11 @@ interface PGRecorderTempEventBatchInput {
   details: Record<string, any>[];
 }
 
+export type RecorderEventRef = Pick<IRecorderEvent, "sourceId" | "type">;
+
 export class BatchEventRecorder implements IEventRecorder {
   private eventTypeStrategies: Record<string, IEventTypeStrategy>;
-  private eventQueue: UniqueArray<IRecorderEvent>;
+  private eventQueue: Array<IRecorderEvent>;
   private options: BatchEventRecorderOptions;
   private tempEventRepository: Repository<RecorderTempEvent>;
   private dataSource: DataSource;
@@ -419,7 +421,7 @@ export class BatchEventRecorder implements IEventRecorder {
     this.eventTypeNameAndVersionMap = {};
     this.recorderEventTypeStringIdMap = {};
     this.recorderId = randomUUID();
-    this.eventQueue = new UniqueArray<IRecorderEvent>(eventUniqueId);
+    this.eventQueue = [];
     this.batchCounter = 0;
     this.tableCounter = 0;
     this.initialized = false;
@@ -499,7 +501,7 @@ export class BatchEventRecorder implements IEventRecorder {
     const t1 = timer("delete event dupes");
     let response: IRecorderCommitResult;
     try {
-      const uncommitted = (await this.dataSource.query(`
+      const [uncommitted, uncommittedCount] = (await this.dataSource.query(`
       WITH events_with_duplicates AS (
         SELECT 
           pct."sourceId", 
@@ -512,25 +514,31 @@ export class BatchEventRecorder implements IEventRecorder {
       DELETE FROM ${this.preCommitTableName} p
       USING events_with_duplicates ewd
       WHERE p."sourceId" = ewd."sourceId" AND
-            p."typeId" = ewd."typeId"
+            p."typeId" = ewd."typeId" AND
+            ewd."typeId" IS NOT NULL AND
+            ewd."sourceId" IS NOT NULL
       RETURNING p."sourceId", p."typeId"
-    `)) as { sourceId: string; typeId: number }[];
+    `)) as [{ sourceId: string; typeId: number }[], number];
       t1();
-      logger.debug(uncommitted.length);
+      logger.debug(`deleted ${uncommittedCount} events with duplicates`);
 
       logger.debug("committing to event database");
       // Write back into the main database
       const committed = await this.dataSource.transaction(async (manager) => {
         const t2 = timer("commit to event");
         const response = (await manager.query(`
-          INSERT INTO event ("sourceId", "typeId", "time", "toId", "fromId", "amount", "details")
-          SELECT "sourceId", "typeId", "time", "toId", "fromId", "amount", "details" FROM ${this.preCommitTableName}
-          ON CONFLICT ("sourceId", "typeId", "time") DO NOTHING
-          RETURNING "sourceId", "typeId"
-        `)) as { sourceId: string; typeId: number }[];
+          WITH write_to_canonical_event AS (
+            INSERT INTO event ("sourceId", "typeId", "time", "toId", "fromId", "amount", "details")
+            SELECT "sourceId", "typeId", "time", "toId", "fromId", "amount", "details" FROM ${this.preCommitTableName}
+            ON CONFLICT ("sourceId", "typeId", "time") DO NOTHING
+            RETURNING "sourceId", "typeId"
+          )
+          SELECT p."sourceId", p."typeId", CASE WHEN w."typeId" IS NOT NULL THEN 0 ELSE 1 END AS "skipped"
+          FROM ${this.preCommitTableName} p
+          LEFT JOIN write_to_canonical_event w
+            ON w."sourceId" = p."sourceId" AND p."typeId" = w."typeId"
+        `)) as { sourceId: string; typeId: number; skipped: number }[];
         t2();
-
-        logger.debug(response.length);
 
         logger.debug("dropping the table");
         const t3 = timer("drop table");
@@ -541,21 +549,50 @@ export class BatchEventRecorder implements IEventRecorder {
         return response;
       });
 
+      const uniqueCommittedEvents = new UniqueArray<RecorderEventRef>(
+        eventUniqueId,
+      );
+
       const convertResp = (c: { sourceId: string; typeId: number }) => {
-        const t = this.eventTypeIdMap[c.typeId];
-        return eventUniqueId({
+        const t = RecorderEventType.fromDBEventType(
+          this.eventTypeIdMap[c.typeId],
+        );
+        return {
           sourceId: c.sourceId,
           type: t,
-        });
+        };
       };
+      const committedEvents = committed.map(convertResp);
+      const uncommittedEvents = uncommitted.map(convertResp);
+      uncommittedEvents.forEach((e) => {
+        uniqueCommittedEvents.push(e);
+      });
+
+      if (committedEvents.length > 0) {
+        logger.debug("notifying of event completions");
+        this.notifySuccess(committedEvents);
+      }
+      if (uncommittedEvents.length > 0) {
+        logger.debug("notifying of event failures");
+        this.notifyFailure(
+          uniqueCommittedEvents.items(),
+          new RecorderError(
+            "event has duplicates in this collection. something is wrong with the collector",
+          ),
+        );
+      }
       response = {
-        committed: committed.map(convertResp),
-        uncommitted: uncommitted.map(convertResp),
+        committed: committedEvents.map(eventUniqueId),
+        uncommitted: uniqueCommittedEvents.items().map(eventUniqueId),
         errors: [],
       };
     } catch (err) {
       this.emitter.emit("commit-error", err);
-      throw err;
+      response = {
+        committed: [],
+        uncommitted: [],
+        errors: [err],
+      };
     }
     this._preCommitTableName = "";
     this.isPreCommitTableOpen = false;
@@ -773,7 +810,8 @@ export class BatchEventRecorder implements IEventRecorder {
   private async flushAll() {
     const batchId = this.batchCounter;
     this.batchCounter += 1;
-    const processing = this.eventQueue.popAll();
+    const processing = this.eventQueue;
+    this.eventQueue = [];
     try {
       await this.processEvents(batchId, processing);
     } catch (err) {
@@ -1055,7 +1093,7 @@ export class BatchEventRecorder implements IEventRecorder {
     throw new RecorderError(`maximum retries for database call reached.`);
   }
 
-  protected notifySuccess(events: Pick<IRecorderEvent, "sourceId" | "type">[]) {
+  protected notifySuccess(events: RecorderEventRef[]) {
     events.forEach((e) => {
       // Mark as known event
       const uniqueId = eventUniqueId(e);
@@ -1067,7 +1105,7 @@ export class BatchEventRecorder implements IEventRecorder {
     });
   }
 
-  protected notifyFailure(events: IRecorderEvent[], err: unknown) {
+  protected notifyFailure(events: RecorderEventRef[], err: unknown) {
     events.forEach((e) => {
       // Notify any subscribers that the event has failed to record
       const uniqueId = eventUniqueId(e);
