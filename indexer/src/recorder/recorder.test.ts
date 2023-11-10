@@ -151,9 +151,12 @@ withDbDescribe("BatchEventRecorder", () => {
       },
       sourceId: "test123",
     };
-    const record0Handle = await recorder.record(testEvent);
-    flusher.flush();
-    await record0Handle.wait();
+
+    await recorder.begin();
+
+    await recorder.record(testEvent);
+    //flusher.flush();
+    await recorder.commit();
 
     // Check that the values are correct
     const results = await EventRepository.find({
@@ -191,7 +194,7 @@ withDbDescribe("BatchEventRecorder", () => {
         AppDataSource.getRepository(RecorderTempEvent),
         AppDataSource.getRepository(EventType),
         {
-          maxBatchSize: 5000,
+          maxBatchSize: 100000,
           flushIntervalMs: 1000,
           timeoutMs: 60000,
         },
@@ -230,9 +233,8 @@ withDbDescribe("BatchEventRecorder", () => {
         },
         sourceId: "test123",
       };
-      const record0Handle = await recorder.record(testEvent);
-      flusher.flush();
-      await record0Handle.wait();
+      await recorder.begin();
+      await recorder.record(testEvent);
     });
 
     afterEach(async () => {
@@ -261,23 +263,26 @@ withDbDescribe("BatchEventRecorder", () => {
       expect(errs.length).toEqual(1);
     });
 
-    it("should do a large set of writes", async () => {
-      const eventCountToWrite = 15000;
+    it.only("should do a large set of writes", async () => {
+      const eventCountToWrite = 200000;
       const events = randomCommitEventsGenerator(eventCountToWrite, {
         fromProbability: 0.7,
         repoNameGenerator: () => `repo-${randomInt(100)}`,
+        usernameGenerator: () => `user-${randomInt(10000)}`,
       });
 
       const handles: RecordHandle[] = [];
       for (const event of events) {
         handles.push(await recorder.record(event));
       }
-      await recorder.wait(handles);
+      const handle = recorder.wait(handles);
+      await recorder.commit();
+      await handle;
 
       // Check that the events are in the database
       const eventCount = await EventRepository.count();
       expect(eventCount).toEqual(eventCountToWrite + 1);
-    }, 90000);
+    }, 60000);
 
     // In the current iteration of the recorder, dupes aren't errors. skipping
     // for now.

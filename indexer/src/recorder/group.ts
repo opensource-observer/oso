@@ -1,6 +1,6 @@
 import { EventEmitter } from "node:events";
 import {
-  IEventRecorder,
+  IEventRecorderClient,
   IEventGroupRecorder,
   IncompleteEvent,
   EventGroupRecorderCallback,
@@ -24,13 +24,13 @@ export class EventGroupRecorder<T> implements IEventGroupRecorder<T> {
   private grouperFn: EventGrouperFn<T>;
   private groupToStrFn: GroupObjToStrFn<T>;
   private emitter: EventEmitter;
-  private recorder: IEventRecorder;
+  private recorder: IEventRecorderClient;
   private committed: boolean;
   private listeningIds: Record<string, boolean>;
   private objectId: string;
 
   constructor(
-    recorder: IEventRecorder,
+    recorder: IEventRecorderClient,
     grouperFn: EventGrouperFn<T>,
     groupObjToStrFn: GroupObjToStrFn<T>,
   ) {
@@ -140,7 +140,7 @@ export class EventGroupRecorder<T> implements IEventGroupRecorder<T> {
 }
 
 export class ArtifactGroupRecorder extends EventGroupRecorder<IncompleteArtifact> {
-  constructor(recorder: IEventRecorder) {
+  constructor(recorder: IEventRecorderClient) {
     const artifactToString = (a: IncompleteArtifact) => {
       return `${a.name}:${a.namespace}:${a.type}`;
     };

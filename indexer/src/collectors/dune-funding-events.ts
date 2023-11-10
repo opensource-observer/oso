@@ -7,7 +7,7 @@ import {
 } from "./dune/funding-events/client.js";
 import { ArtifactNamespace, ArtifactType } from "../db/orm-entities.js";
 import {
-  IEventRecorder,
+  IEventRecorderClient,
   IncompleteArtifact,
   IncompleteEvent,
 } from "../recorder/types.js";
@@ -49,7 +49,7 @@ export class FundingEventsCollector extends BatchedProjectArtifactsCollector {
   constructor(
     client: IFundingEventsClient,
     projectRepository: typeof ProjectRepository,
-    recorder: IEventRecorder,
+    recorder: IEventRecorderClient,
     cache: TimeSeriesCacheWrapper,
     batchSize: number,
     options?: Partial<FundingEventsCollectorOptions>,

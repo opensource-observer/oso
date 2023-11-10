@@ -10,6 +10,7 @@ import {
 import {
   IEventGroupRecorder,
   IEventRecorder,
+  IEventRecorderClient,
   IEventTypeStrategy,
   RecordHandle,
   RecordResponse,
@@ -214,7 +215,7 @@ interface CollectorRegistration {
 export interface EventCollectorRegistration extends CollectorRegistration {
   create(
     config: IConfig,
-    recorder: IEventRecorder,
+    recorder: IEventRecorderClient,
     cache: TimeSeriesCacheWrapper,
   ): Promise<IEventCollector>;
 
@@ -362,7 +363,6 @@ export class ArtifactRecordsCommitmentWrapper
   private emitter: EventEmitter;
   private eventPointerManager: IEventPointerManager;
   private duplicatesTracker: Record<number, number>;
-  private recorder: IEventRecorder;
 
   static setup(
     collectorName: string,

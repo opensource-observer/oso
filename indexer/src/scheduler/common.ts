@@ -8,7 +8,7 @@ import {
   IEventCollector,
 } from "./types.js";
 import { TimeSeriesCacheWrapper } from "../cacher/time-series.js";
-import { IEventRecorder } from "../recorder/types.js";
+import { IEventRecorderClient } from "../recorder/types.js";
 
 export class BasicArtifactGroup<T extends object> implements IArtifactGroup<T> {
   private _name: string;
@@ -74,12 +74,12 @@ export abstract class BaseEventCollector<T extends object>
 export class ProjectArtifactsCollector extends BaseEventCollector<Project> {
   protected projectRepository: Repository<Project>;
   protected cache: TimeSeriesCacheWrapper;
-  protected recorder: IEventRecorder;
+  protected recorder: IEventRecorderClient;
   protected artifactsWhere: FindOptionsWhere<Artifact>;
 
   constructor(
     projectRepository: Repository<Project>,
-    recorder: IEventRecorder,
+    recorder: IEventRecorderClient,
     cache: TimeSeriesCacheWrapper,
     artifactsWhere: FindOptionsWhere<Artifact>,
   ) {
@@ -142,11 +142,11 @@ export type Batch = {
 
 export class BatchArtifactsCollector extends BaseEventCollector<Batch> {
   protected cache: TimeSeriesCacheWrapper;
-  protected recorder: IEventRecorder;
+  protected recorder: IEventRecorderClient;
   protected batchSize: number;
 
   constructor(
-    recorder: IEventRecorder,
+    recorder: IEventRecorderClient,
     cache: TimeSeriesCacheWrapper,
     batchSize: number,
   ) {
@@ -198,7 +198,7 @@ export class BatchedProjectArtifactsCollector extends BatchArtifactsCollector {
 
   constructor(
     projectRepository: Repository<Project>,
-    recorder: IEventRecorder,
+    recorder: IEventRecorderClient,
     cache: TimeSeriesCacheWrapper,
     batchSize: number,
     artifactsWhere: FindOptionsWhere<Artifact>,
