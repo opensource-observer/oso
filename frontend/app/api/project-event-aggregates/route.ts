@@ -14,7 +14,7 @@ import {
 import { UserInputError } from "../../../lib/types/errors";
 import { assert } from "../../../lib/common";
 
-export const revalidate = 86400; // 3600 = 1 hour
+export const revalidate = false; // 3600 = 1 hour
 const DEFAULT_START_DATE = 0;
 
 type Project = {
@@ -107,10 +107,10 @@ export async function GET(request: NextRequest) {
     await cachedGetProjectsByCollectionSlugs({
       slugs: collectionSlugs,
     });
-  const projectArray = [
-    ...projectsBySlugArray,
-    ...projectsByCollectionSlugArray,
-  ];
+  const projectArray = _.uniqBy(
+    [...projectsBySlugArray, ...projectsByCollectionSlugArray],
+    "slug",
+  );
 
   // Get all aggregate event sums
   const results = await Promise.all(projectArray.map((p) => getRowData(p)));

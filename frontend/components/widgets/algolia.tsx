@@ -105,4 +105,4 @@ function AlgoliaSearchBox() {
   );
 }
 
-export { AlgoliaSearchBox };
+export default AlgoliaSearchBox;

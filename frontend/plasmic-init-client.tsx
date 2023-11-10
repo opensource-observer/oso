@@ -1,10 +1,10 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import CircularProgress from "@mui/material/CircularProgress";
 import { AreaChart } from "@tremor/react";
 import { PlasmicRootProvider } from "@plasmicapp/loader-nextjs";
 import { PLASMIC } from "./plasmic-init";
-import { AlgoliaSearchBox } from "./components/widgets/algolia";
 import { FeedbackWrapper } from "./components/widgets/feedback-farm";
 import { ProjectsClientProvider } from "./components/project-browser/project-client-provider";
 import { ProjectBrowser } from "./components/project-browser/project-browser";
@@ -98,12 +98,15 @@ PLASMIC.registerComponent(BarList, {
   importPath: "./components/widgets/tremor",
 });
 
-PLASMIC.registerComponent(AlgoliaSearchBox, {
-  name: "AlgoliaSearchBox",
-  description: "Algolia-powered search box",
-  props: {},
-  importPath: "./components/widgets/algolia",
-});
+PLASMIC.registerComponent(
+  dynamic(() => import("./components/widgets/algolia"), { ssr: false }),
+  {
+    name: "AlgoliaSearchBox",
+    description: "Algolia-powered search box",
+    props: {},
+    importPath: "./components/widgets/algolia",
+  },
+);
 
 PLASMIC.registerComponent(FeedbackWrapper, {
   name: "FeedbackWrapper",
