@@ -480,6 +480,26 @@ export class BatchEventRecorder implements IEventRecorder {
     return this._preCommitTableName;
   }
 
+  async rollback(): Promise<void> {
+    if (this.isPreCommitTableOpen) {
+      await this.clean();
+    }
+  }
+
+  private async clean() {
+    logger.debug("dropping the temporary table");
+    const t3 = timer("drop table");
+
+    await this.dataSource.query(`
+      DROP TABLE ${this.preCommitTableName}
+    `);
+    t3();
+
+    this._preCommitTableName = "";
+    this.isPreCommitTableOpen = false;
+    this.committing = false;
+  }
+
   async commit(): Promise<IRecorderCommitResult> {
     logger.debug(`committing changes to ${this.preCommitTableName}`);
     this.committing = true;
@@ -541,12 +561,6 @@ export class BatchEventRecorder implements IEventRecorder {
         `)) as (Result & { skipped: number })[];
         t2();
 
-        logger.debug("dropping the table");
-        const t3 = timer("drop table");
-        await manager.query(`
-          DROP TABLE ${this.preCommitTableName}
-        `);
-        t3();
         return response;
       });
 
@@ -623,9 +637,7 @@ export class BatchEventRecorder implements IEventRecorder {
         errors: [err],
       };
     }
-    this._preCommitTableName = "";
-    this.isPreCommitTableOpen = false;
-    this.committing = false;
+    await this.clean();
     return response;
   }
 

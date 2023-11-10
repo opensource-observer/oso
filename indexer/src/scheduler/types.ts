@@ -1067,9 +1067,6 @@ export class BaseScheduler implements IScheduler {
       executionSummary.errors.push(err);
     });
 
-    // Start the recorder
-    await recorder.begin();
-
     const collector = await collectorReg.create(
       this.config,
       recorder,
@@ -1145,11 +1142,15 @@ export class BaseScheduler implements IScheduler {
 
       // Execute the collection for the missing items
       try {
+        // Start the recorder
+        await recorder.begin();
+
         const response = await collector.collect(
           await group.createMissingGroup(missing),
           range,
           committer,
         );
+
         // This is jank and needs to be fixed. This can be cleaned up.
         await recorder.commit();
         logger.debug(`${groupName}: waiting for artifacts to complete commits`);
@@ -1166,6 +1167,7 @@ export class BaseScheduler implements IScheduler {
         }
       } catch (err) {
         logger.error("Error encountered. Skipping group", err);
+        await recorder.rollback();
         committer.failAll(err);
         executionSummary.errors.push(err);
         continue;

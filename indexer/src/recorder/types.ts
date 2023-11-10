@@ -64,6 +64,7 @@ export interface IEventRecorder extends IEventRecorderClient {
 
   begin(): Promise<void>;
   commit(): Promise<CommitResult>;
+  rollback(): Promise<void>;
 
   // Call this when you're done recording
   close(): Promise<void>;
