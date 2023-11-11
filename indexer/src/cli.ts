@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 import yargs from "yargs";
-import { DateTime } from "luxon";
 import { hideBin } from "yargs/helpers";
 import { handleError } from "./utils/error.js";
 import {
@@ -22,6 +21,8 @@ import { csvCommandGroup } from "./scripts/manual-csv-import-helper.js";
 import { duneCommandGroup } from "./scripts/manual-dune-tools.js";
 import { artifactsCommandGroup } from "./scripts/artifact-management.js";
 import { IExecutionSummary } from "./scheduler/types.js";
+import { coerceDateTime, coerceDateTimeOrNow } from "./utils/cli.js";
+import { dbUtilitiesCommandGroup } from "./scripts/db-utilities.js";
 
 //const callLibrary = async <Args>(
 //  func: EventSourceFunction<Args>,
@@ -135,6 +136,13 @@ const cli = yargs(hideBin(process.argv))
       artifactsCommandGroup(yargs);
     },
   )
+  .command<Record<string, never>>(
+    "db-utils <subcommand>",
+    "subcommand for artifacts related tools",
+    (yargs) => {
+      dbUtilitiesCommandGroup(yargs);
+    },
+  )
   .command<SchedulerArgs>(
     "scheduler <subcommand>",
     "scheduler commands",
@@ -147,13 +155,6 @@ const cli = yargs(hideBin(process.argv))
         type: "number",
         default: 600000,
       });
-      const dateConverter = (input: string) => {
-        const date = DateTime.fromISO(input).toUTC();
-        if (!date.isValid) {
-          throw new Error(`input "${input}" is not a valid date`);
-        }
-        return date;
-      };
       yags
         .command<SchedulerManualArgs>(
           "manual <collector>",
@@ -167,12 +168,12 @@ const cli = yargs(hideBin(process.argv))
                 type: "string",
                 describe: "start-date for the manual run",
               })
-              .coerce("start-date", dateConverter)
+              .coerce("start-date", coerceDateTime)
               .option("end-date", {
                 type: "string",
                 describe: "start-date for the manual run",
               })
-              .coerce("end-date", dateConverter)
+              .coerce("end-date", coerceDateTime)
               .option("execution-mode", {
                 type: "string",
                 choices: ["all-at-once", "progressive"],
@@ -232,12 +233,7 @@ const cli = yargs(hideBin(process.argv))
                 describe: "the date to start scheduling from",
                 type: "string",
               })
-              .coerce("base-date", (input: string) => {
-                if (input) {
-                  return dateConverter(input);
-                }
-                return DateTime.now();
-              });
+              .coerce("base-date", coerceDateTimeOrNow);
           },
           async (args) => {
             const scheduler = await configure(args);
@@ -259,17 +255,17 @@ const cli = yargs(hideBin(process.argv))
                     type: "string",
                     describe: "start-date for the manual run",
                   })
-                  .coerce("base-date", dateConverter)
+                  .coerce("base-date", coerceDateTime)
                   .option("start-date", {
                     type: "string",
                     describe: "start-date for the manual run",
                   })
-                  .coerce("start-date", dateConverter)
+                  .coerce("start-date", coerceDateTime)
                   .option("end-date", {
                     type: "string",
                     describe: "start-date for the manual run",
                   })
-                  .coerce("end-date", dateConverter)
+                  .coerce("end-date", coerceDateTime)
                   .demandOption(["base-date", "start-date", "end-date"]);
               },
               async (args) => {
@@ -293,17 +289,12 @@ const cli = yargs(hideBin(process.argv))
                     type: "string",
                     describe: "start-date for the backfill scheduling",
                   })
-                  .coerce("start-date", dateConverter)
+                  .coerce("start-date", coerceDateTime)
                   .option("end-date", {
                     type: "string",
                     describe: "end-date for the backfill scheduling",
                   })
-                  .coerce("end-date", (input: string) => {
-                    if (input) {
-                      return dateConverter(input);
-                    }
-                    return DateTime.now();
-                  })
+                  .coerce("end-date", coerceDateTimeOrNow)
                   .option("backfill-interval-days", {
                     type: "number",
                     default: 0,
