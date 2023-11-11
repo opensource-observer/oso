@@ -164,7 +164,8 @@ def clean_data(original_data):
             "Contributions: Contracts": [item["url"] for item in json_data["contributionLinks"] if item["type"] == "CONTRACT_ADDRESS" and "0x" in item["url"]],
             "Contributions: Other": [item["url"] for item in json_data["contributionLinks"] if item["type"] == "OTHER"],
             "Impact Description": json_data["impactDescription"],
-            "Impact Metrics": [item["url"] for item in json_data["impactMetrics"]]
+            "Impact Metrics": [item["url"] for item in json_data["impactMetrics"]],
+            "Funding Sources": [item["type"] for item in json_data["fundingSources"]]
         }
         return transformed_data
     except KeyError:
