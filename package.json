@@ -29,7 +29,7 @@
     "test:integration": "(docker compose -f docker/compose.yaml down || true) && docker compose -f docker/compose.yaml run --rm test",
     "prepare": "husky install"
   },
-  "devDependencies": {
+  "dependencies": {
     "husky": "^8.0.3",
     "lint-staged": "^13.2.3",
     "prettier": "^3.0.0",
