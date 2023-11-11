@@ -200,6 +200,11 @@ export class Project extends Base<"ProjectId"> {
   eventsWeeklyFromProject: EventsWeeklyFromProject[];
   @OneToMany(() => EventsMonthlyFromProject, (e) => e.project)
   eventsMonthlyFromProject: EventsMonthlyFromProject[];
+
+  @OneToMany(() => FirstContributionToProject, (event) => event.project)
+  firstContributionToProjectAsTo: FirstContributionToProject[];
+  @OneToMany(() => LastContributionToProject, (event) => event.project)
+  lastContributionToProjectAsTo: LastContributionToProject[];
 }
 
 @Entity()
@@ -243,10 +248,10 @@ export class Artifact extends Base<"ArtifactId"> {
   @OneToMany(() => EventsMonthlyFromArtifact, (e) => e.artifact)
   eventsMonthlyFromArtifact: EventsMonthlyFromArtifact[];
 
-  @OneToMany(() => FirstContribution, (event) => event.to)
-  firstContributionAsTo: FirstContribution[];
-  @OneToMany(() => FirstContribution, (event) => event.from)
-  firstContributionAsFrom: FirstContribution[];
+  @OneToMany(() => FirstContributionToProject, (event) => event.from)
+  firstContributionToProjectAsFrom: FirstContributionToProject[];
+  @OneToMany(() => LastContributionToProject, (event) => event.from)
+  lastContributionToProjectAsFrom: LastContributionToProject[];
 
   @OneToMany(() => EventPointer, (eventPointer) => eventPointer.artifact)
   eventPointers: EventPointer[];
@@ -265,8 +270,10 @@ export class EventType extends Base<"EventTypeId"> {
   @OneToMany(() => Event, (event) => event.type)
   events: Event[];
 
-  @OneToMany(() => FirstContribution, (event) => event.type)
-  firstContributions: FirstContribution[];
+  @OneToMany(() => FirstContributionToProject, (event) => event.type)
+  firstContributionsToProject: FirstContributionToProject[];
+  @OneToMany(() => LastContributionToProject, (event) => event.type)
+  lastContributionsToProject: LastContributionToProject[];
 }
 
 type EventId = Brand<number, "EventId">;
@@ -578,33 +585,95 @@ export class Log extends Base<"LogId"> {
 @ViewEntity({
   materialized: true,
   expression: `
-    SELECT DISTINCT ON ("toId", "fromId", "typeId")
-      "toId",
-      "fromId",
+    SELECT DISTINCT ON ("typeId", "projectId", "fromId")
       "typeId",
+      "projectId",
+      "fromId",
       "time",
       "id",
       "amount"
     FROM "event"
-    ORDER BY "toId", "fromId", "typeId", "time" ASC 
+    INNER JOIN "project_artifacts_artifact"
+      on "project_artifacts_artifact"."artifactId" = "event"."toId"
+    ORDER BY "typeId", "projectId", "fromId", "time" ASC 
     WITH NO DATA;
   `,
 })
-export class FirstContribution {
-  @ManyToOne(() => Artifact, (artifact) => artifact.firstContributionAsTo)
+export class FirstContributionToProject {
+  @ManyToOne(
+    () => EventType,
+    (eventType) => eventType.firstContributionsToProject,
+  )
   @ViewColumn()
-  to: Artifact;
+  type: EventType;
 
-  @ManyToOne(() => Artifact, (artifact) => artifact.firstContributionAsFrom, {
-    nullable: true,
-  })
+  @ManyToOne(() => Project, (project) => project.firstContributionToProjectAsTo)
+  @ViewColumn()
+  project: Project;
+
+  @ManyToOne(
+    () => Artifact,
+    (artifact) => artifact.firstContributionToProjectAsFrom,
+    {
+      nullable: true,
+    },
+  )
   @IsOptional()
   @ViewColumn()
   from: Artifact | null;
 
-  @ManyToOne(() => EventType, (eventType) => eventType.firstContributions)
+  @ViewColumn()
+  time: Date;
+
+  @ViewColumn()
+  id: Brand<number, "EventId">;
+
+  @ViewColumn()
+  amount: number;
+}
+
+/**
+ * For each (to, from, type) tuple, get the last contribution event in time.
+ */
+@ViewEntity({
+  materialized: true,
+  expression: `
+    SELECT DISTINCT ON ("typeId", "projectId", "fromId")
+      "typeId",
+      "projectId",
+      "fromId",
+      "time",
+      "id",
+      "amount"
+    FROM "event"
+    INNER JOIN "project_artifacts_artifact"
+      on "project_artifacts_artifact"."artifactId" = "event"."toId"
+    ORDER BY "typeId", "projectId", "fromId", "time" DESC
+    WITH NO DATA;
+  `,
+})
+export class LastContributionToProject {
+  @ManyToOne(
+    () => EventType,
+    (eventType) => eventType.lastContributionsToProject,
+  )
   @ViewColumn()
   type: EventType;
+
+  @ManyToOne(() => Project, (project) => project.lastContributionToProjectAsTo)
+  @ViewColumn()
+  project: Project;
+
+  @ManyToOne(
+    () => Artifact,
+    (artifact) => artifact.lastContributionToProjectAsFrom,
+    {
+      nullable: true,
+    },
+  )
+  @IsOptional()
+  @ViewColumn()
+  from: Artifact | null;
 
   @ViewColumn()
   time: Date;
@@ -623,7 +692,7 @@ export class FirstContribution {
   materialized: true,
   expression: `
     WITH Devs AS (
-      SELECT 
+      SELECT
         p."id" AS "projectId",
         e."fromId" AS "fromId",
         time_bucket(INTERVAL '1 month', e."time") AS "bucketMonthly",
@@ -685,7 +754,8 @@ export class FirstContribution {
     GROUP BY
       "projectId",
       "segmentType",
-      "bucketMonthly";
+      "bucketMonthly"
+    WITH NO DATA;
   `,
 })
 export class UsersMonthlyToProject {
