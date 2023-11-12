@@ -164,6 +164,13 @@ export class Collection extends Base<"CollectionId"> {
   @JoinColumn()
   @IsOptional()
   artifactOwner?: IArtifact;
+
+  @OneToMany(() => EventsDailyToCollection, (e) => e.collection)
+  eventsDailyToCollection: EventsDailyToCollection[];
+  @OneToMany(() => EventsWeeklyToCollection, (e) => e.collection)
+  eventsWeeklyToCollection: EventsWeeklyToCollection[];
+  @OneToMany(() => EventsMonthlyToCollection, (e) => e.collection)
+  eventsMonthlyToCollection: EventsMonthlyToCollection[];
 }
 
 @Entity()
@@ -935,6 +942,101 @@ export class EventsMonthlyToProject {
   @ManyToOne(() => Project, (project) => project.eventsMonthlyToProject)
   @ViewColumn()
   project: Project;
+
+  @ViewColumn()
+  type: EventType;
+
+  @ViewColumn()
+  bucketMonthly: Date;
+
+  @ViewColumn()
+  amount: number;
+}
+
+/**
+ * Continuous aggregations to a Collection
+ */
+@ViewEntity({
+  materialized: true,
+  expression: `
+    SELECT "collectionId",
+      "typeId",
+      time_bucket(INTERVAL '1 day', "bucketDaily") AS "bucketDay",
+      SUM(amount) as "amount"
+    FROM "events_daily_to_project"
+    INNER JOIN "collection_projects_project"
+      ON "collection_projects_project"."projectId" = "events_daily_to_project"."projectId"
+    GROUP BY "collectionId", "typeId", "bucketDay"
+    WITH NO DATA;
+  `,
+})
+export class EventsDailyToCollection {
+  @ManyToOne(
+    () => Collection,
+    (collection) => collection.eventsDailyToCollection,
+  )
+  @ViewColumn()
+  collection: Collection;
+
+  @ViewColumn()
+  type: EventType;
+
+  @ViewColumn()
+  bucketDaily: Date;
+
+  @ViewColumn()
+  amount: number;
+}
+
+@ViewEntity({
+  materialized: true,
+  expression: `
+    SELECT "collectionId",
+      "typeId",
+      time_bucket(INTERVAL '1 week', "bucketDay") AS "bucketWeekly",
+      SUM(amount) as "amount"
+    FROM "events_daily_to_collection" 
+    GROUP BY "collectionId", "typeId", "bucketWeekly"
+    WITH NO DATA;
+  `,
+})
+export class EventsWeeklyToCollection {
+  @ManyToOne(
+    () => Collection,
+    (collection) => collection.eventsWeeklyToCollection,
+  )
+  @ViewColumn()
+  collection: Collection;
+
+  @ViewColumn()
+  type: EventType;
+
+  @ViewColumn()
+  bucketWeekly: Date;
+
+  @ViewColumn()
+  amount: number;
+}
+
+@ViewEntity({
+  materialized: true,
+  expression: `
+    SELECT "collectionId",
+      "typeId",
+      time_bucket(INTERVAL '1 month', "bucketDay") AS "bucketMonthly",
+      SUM(amount) as "amount"
+    FROM "events_daily_to_collection" 
+    GROUP BY "collectionId", "typeId", "bucketMonthly"
+    WITH NO DATA;
+  `,
+})
+export class EventsMonthlyToCollection {
+  @ManyToOne(
+    () => Collection,
+    (collection) => collection.eventsMonthlyToCollection,
+  )
+  @ViewColumn()
+  collection: Collection;
 
   @ViewColumn()
   type: EventType;
