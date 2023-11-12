@@ -4,6 +4,7 @@ import _ from "lodash";
 import React from "react";
 import { assertNever, ensure, uncheckedCast } from "../../lib/common";
 import {
+  GET_ALL_EVENT_TYPES,
   GET_ARTIFACTS_BY_IDS,
   GET_EVENTS_DAILY_TO_ARTIFACT,
   GET_EVENTS_WEEKLY_TO_ARTIFACT,
@@ -32,38 +33,7 @@ import {
 } from "./provider-view";
 import type { CommonDataProviderProps } from "./provider-view";
 
-// TO FIX BUILDS WE ARE HARDCODING THE EVENT TYPES FOR NOW. THIS SHOULD INSTEAD
-// CALL THE DATABASE FOR THESE VALUES (AND CACHE THEM)
-const EVENT_TYPE_NAME_TO_ID: Record<string, number> = {
-  FUNDING: 1,
-  PULL_REQUEST_CREATED: 2,
-  PULL_REQUEST_MERGED: 3,
-  COMMIT_CODE: 4,
-  ISSUE_FILED: 5,
-  ISSUE_CLOSED: 6,
-  DOWNSTREAM_DEPENDENCY_COUNT: 7,
-  UPSTREAM_DEPENDENCY_COUNT: 8,
-  DOWNLOADS: 9,
-  CONTRACT_INVOKED: 10,
-  USERS_INTERACTED: 11,
-  CONTRACT_INVOKED_AGGREGATE_STATS: 12,
-  PULL_REQUEST_CLOSED: 13,
-  STAR_AGGREGATE_STATS: 14,
-  PULL_REQUEST_REOPENED: 15,
-  PULL_REQUEST_REMOVED_FROM_PROJECT: 16,
-  PULL_REQUEST_APPROVED: 17,
-  ISSUE_CREATED: 18,
-  ISSUE_REOPENED: 19,
-  ISSUE_REMOVED_FROM_PROJECT: 20,
-  STARRED: 21,
-  FORK_AGGREGATE_STATS: 22,
-  FORKED: 23,
-  WATCHER_AGGREGATE_STATS: 24,
-  CONTRACT_INVOCATION_DAILY_COUNT: 25,
-  CONTRACT_INVOCATION_DAILY_FEES: 26,
-};
-const EVENT_TYPE_ID_TO_NAME = _.invert(EVENT_TYPE_NAME_TO_ID);
-
+// Types used in the Plasmic registration
 type BucketWidth = "day" | "week" | "month";
 type ChartType = "areaChart" | "barList";
 type XAxis = "eventTime" | "entity" | "eventType";
@@ -90,6 +60,9 @@ type EventDataProviderProps = CommonDataProviderProps & {
   endDate?: string;
 };
 
+/**
+ * Plasmic component registration
+ */
 const EventDataProviderRegistration: RegistrationProps<EventDataProviderProps> =
   {
     ...CommonDataProviderRegistration,
@@ -136,7 +109,41 @@ const getBucketWidth = (props: EventDataProviderProps): BucketWidth => {
   }
 };
 
+/**
+ * EventType from GraphQL
+ */
+type EventType = {
+  id: number;
+  name: string;
+};
+
+/**
+ * Converts an event type from id to name
+ * @param id
+ * @param eventTypes
+ * @returns
+ */
+const eventTypeIdToName = (id: number, eventTypes: EventType[]) => {
+  const map = _.fromPairs(eventTypes.map((t) => [t.id, t.name]));
+  return map[id];
+};
+
+/**
+ * Converts an event type from name to id
+ * @param name
+ * @param eventTypes
+ * @returns
+ */
+const eventTypeNameToId = (name: string, eventTypes: EventType[]) => {
+  const map = _.fromPairs(eventTypes.map((t) => [t.name, t.id]));
+  return map[name];
+};
+
+/**
+ * Used in formatting chart data
+ */
 type FormatOpts = {
+  // Should we fill in empty dates with 0's?
   gapFill?: boolean;
 };
 
@@ -276,9 +283,7 @@ type CategoryOpts = {
 };
 
 /**
- * TODO: Creates unique categories for the area chart
- * - Currently, we just use the type, which will merge data across IDs
- * - We need to add unique identifiers for each ID to properly segregate
+ * Creates unique categories for the area chart
  * @param id
  * @param type
  * @param entityData
@@ -300,6 +305,9 @@ const createCategory = (
   }
 };
 
+/**
+ * Create all categories
+ */
 const createCategories = (
   props: EventDataProviderProps,
   entityData?: EntityData[],
@@ -361,6 +369,12 @@ const formatData = (
  */
 function ArtifactEventDataProvider(props: EventDataProviderProps) {
   const bucketWidth = getBucketWidth(props);
+  const {
+    data: eventTypeData,
+    error: eventTypeError,
+    loading: eventTypeLoading,
+  } = useQuery(GET_ALL_EVENT_TYPES);
+  const eventTypes = eventTypeData?.event_type ?? [];
   const query =
     bucketWidth === "month"
       ? GET_EVENTS_MONTHLY_TO_ARTIFACT
@@ -374,7 +388,7 @@ function ArtifactEventDataProvider(props: EventDataProviderProps) {
   } = useQuery(query, {
     variables: {
       artifactIds: stringToIntArray(props.ids),
-      typeIds: props.eventTypes?.map((n) => EVENT_TYPE_NAME_TO_ID[n]),
+      typeIds: props.eventTypes?.map((n) => eventTypeNameToId(n, eventTypes)),
       startDate: eventTimeToLabel(props.startDate ?? DEFAULT_START_DATE),
       endDate: eventTimeToLabel(props.endDate),
     },
@@ -393,7 +407,7 @@ function ArtifactEventDataProvider(props: EventDataProviderProps) {
     []
   ).map((x: any) => ({
     typeName: ensure<string>(
-      EVENT_TYPE_ID_TO_NAME[x.typeId],
+      eventTypeIdToName(x.typeId, eventTypes),
       "Data missing 'typeId'",
     ),
     id: ensure<number>(x.artifactId, "Data missing 'projectId'"),
@@ -414,8 +428,8 @@ function ArtifactEventDataProvider(props: EventDataProviderProps) {
     <DataProviderView
       {...props}
       formattedData={formattedData}
-      loading={eventLoading || artifactLoading}
-      error={eventError ?? artifactError}
+      loading={eventTypeLoading || eventLoading || artifactLoading}
+      error={eventTypeError ?? eventError ?? artifactError}
     />
   );
 }
@@ -427,6 +441,12 @@ function ArtifactEventDataProvider(props: EventDataProviderProps) {
  */
 function ProjectEventDataProvider(props: EventDataProviderProps) {
   const bucketWidth = getBucketWidth(props);
+  const {
+    data: eventTypeData,
+    error: eventTypeError,
+    loading: eventTypeLoading,
+  } = useQuery(GET_ALL_EVENT_TYPES);
+  const eventTypes = eventTypeData?.event_type ?? [];
   const query =
     bucketWidth === "month"
       ? GET_EVENTS_MONTHLY_TO_PROJECT
@@ -440,7 +460,7 @@ function ProjectEventDataProvider(props: EventDataProviderProps) {
   } = useQuery(query, {
     variables: {
       projectIds: stringToIntArray(props.ids),
-      typeIds: props.eventTypes?.map((n) => EVENT_TYPE_NAME_TO_ID[n]),
+      typeIds: props.eventTypes?.map((n) => eventTypeNameToId(n, eventTypes)),
       startDate: eventTimeToLabel(props.startDate ?? DEFAULT_START_DATE),
       endDate: eventTimeToLabel(props.endDate),
     },
@@ -459,7 +479,7 @@ function ProjectEventDataProvider(props: EventDataProviderProps) {
     []
   ).map((x: any) => ({
     typeName: ensure<string>(
-      EVENT_TYPE_ID_TO_NAME[x.typeId],
+      eventTypeIdToName(x.typeId, eventTypes),
       "Data missing 'type'",
     ),
     id: ensure<number>(x.projectId, "Data missing 'projectId'"),
@@ -480,8 +500,8 @@ function ProjectEventDataProvider(props: EventDataProviderProps) {
     <DataProviderView
       {...props}
       formattedData={formattedData}
-      loading={eventLoading || projectLoading}
-      error={eventError ?? projectError}
+      loading={eventTypeLoading || eventLoading || projectLoading}
+      error={eventTypeError ?? eventError ?? projectError}
     />
   );
 }
@@ -493,6 +513,12 @@ function ProjectEventDataProvider(props: EventDataProviderProps) {
  */
 function CollectionEventDataProvider(props: EventDataProviderProps) {
   const bucketWidth = getBucketWidth(props);
+  const {
+    data: eventTypeData,
+    error: eventTypeError,
+    loading: eventTypeLoading,
+  } = useQuery(GET_ALL_EVENT_TYPES);
+  const eventTypes = eventTypeData?.event_type ?? [];
   const query =
     bucketWidth === "month"
       ? GET_EVENTS_MONTHLY_TO_COLLECTION
@@ -506,7 +532,7 @@ function CollectionEventDataProvider(props: EventDataProviderProps) {
   } = useQuery(query, {
     variables: {
       collectionIds: stringToIntArray(props.ids),
-      typeIds: props.eventTypes?.map((n) => EVENT_TYPE_NAME_TO_ID[n]),
+      typeIds: props.eventTypes?.map((n) => eventTypeNameToId(n, eventTypes)),
       startDate: eventTimeToLabel(props.startDate ?? DEFAULT_START_DATE),
       endDate: eventTimeToLabel(props.endDate),
     },
@@ -525,7 +551,7 @@ function CollectionEventDataProvider(props: EventDataProviderProps) {
     []
   ).map((x: any) => ({
     typeName: ensure<string>(
-      EVENT_TYPE_ID_TO_NAME[x.typeId],
+      eventTypeIdToName(x.typeId, eventTypes),
       "Data missing 'type'",
     ),
     id: ensure<number>(x.collectionId, "Data missing 'collectionId'"),
@@ -546,8 +572,8 @@ function CollectionEventDataProvider(props: EventDataProviderProps) {
     <DataProviderView
       {...props}
       formattedData={formattedData}
-      loading={eventLoading || collectionLoading}
-      error={eventError ?? collectionError}
+      loading={eventTypeLoading || eventLoading || collectionLoading}
+      error={eventTypeError ?? eventError ?? collectionError}
     />
   );
 }
