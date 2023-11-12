@@ -7,9 +7,12 @@ import path from "path";
 import React from "react";
 import { SearchBox, Highlight, useHits } from "react-instantsearch";
 import { InstantSearchNext } from "react-instantsearch-nextjs";
-import Box from "@mui/material/Box";
-import Popover from "@mui/material/Popover";
-import Stack from "@mui/material/Stack";
+import SearchIcon from "@mui/icons-material/Search";
+import List from "@mui/material/List";
+import ListItem from "@mui/material/ListItem";
+import ListItemText from "@mui/material/ListItemText";
+import Modal from "@mui/material/Modal";
+import Paper from "@mui/material/Paper";
 import {
   ALGOLIA_APPLICATION_ID,
   ALGOLIA_API_KEY,
@@ -25,83 +28,75 @@ type HitProps = {
 
 function Hit({ hit }: HitProps) {
   return (
-    <Link href={path.join(PROJECT_PREFIX, hit.slug)}>
-      <article
+    <Link
+      href={path.join(PROJECT_PREFIX, hit.slug)}
+      style={{
+        width: "100%",
+      }}
+    >
+      <ListItem
         style={{
           width: "100%",
           textAlign: "center",
           padding: "1rem",
         }}
       >
-        <h2>
+        <ListItemText>
           <Highlight attribute="name" hit={hit} />
-        </h2>
-      </article>
+        </ListItemText>
+      </ListItem>
     </Link>
   );
 }
 
-type HitsContainerProps = {
-  onClose: () => void;
-};
-
-function HitsContainer(props: HitsContainerProps) {
-  const { onClose } = props;
+function HitsContainer() {
   const { hits, results } = useHits();
-
-  if (!results?.query || !hits || hits.length < 1) {
-    onClose();
-  }
   //console.log(hits);
 
   return (
-    <Box sx={{ width: "100%" }}>
-      <Stack spacing={0}>
-        {hits.map((hit) => (
-          <Hit key={hit.objectID} hit={hit} />
-        ))}
-      </Stack>
-    </Box>
+    <List sx={{ width: "100%" }}>
+      {results?.query &&
+        hits.map((hit) => <Hit key={hit.objectID} hit={hit} />)}
+    </List>
   );
 }
 
 function AlgoliaSearchBox() {
-  const [anchorEl, setAnchorEl] = React.useState<HTMLFormElement | null>(null);
-  const open = Boolean(anchorEl);
-  const onClose = () => setAnchorEl(null);
+  const [open, setOpen] = React.useState(false);
+  const handleOpen = () => setOpen(true);
+  const handleClose = () => setOpen(false);
+
   return (
-    <InstantSearchNext
-      searchClient={searchClient}
-      indexName={ALGOLIA_INDEX}
-      insights
-    >
-      <SearchBox
-        placeholder={"Search projects..."}
-        onSubmit={(event) => {
-          event.preventDefault();
-          setAnchorEl(event.currentTarget);
-        }}
-      />
-      <Popover
-        id={"search-popover"}
-        sx={{
-          minWidth: "500px",
-        }}
-        open={open}
-        anchorEl={anchorEl}
-        onClose={onClose}
-        anchorOrigin={{
-          vertical: "bottom",
-          horizontal: "right",
-        }}
-        transformOrigin={{
-          vertical: "top",
-          horizontal: "right",
-        }}
-      >
-        <HitsContainer onClose={onClose} />
-      </Popover>
-    </InstantSearchNext>
+    <div>
+      <button onClick={handleOpen}>
+        <SearchIcon />
+      </button>
+      <Modal open={open} onClose={handleClose}>
+        <Paper
+          elevation={4}
+          sx={{
+            width: "50%",
+            height: "70%",
+            padding: "8px",
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            bgcolor: "background.paper",
+            overflow: "auto",
+          }}
+        >
+          <InstantSearchNext
+            searchClient={searchClient}
+            indexName={ALGOLIA_INDEX}
+            insights
+          >
+            <SearchBox placeholder={"Search projects..."} autoFocus={true} />
+            <HitsContainer />
+          </InstantSearchNext>
+        </Paper>
+      </Modal>
+    </div>
   );
 }
 
