@@ -205,6 +205,66 @@ const GET_EVENTS_MONTHLY_TO_ARTIFACT = gql(`
   }
 `);
 
+const GET_EVENTS_DAILY_TO_COLLECTION = gql(`
+  query EventsDailyToCollection(
+    $collectionIds: [Int!],
+    $typeIds: [Int!],
+    $startDate: timestamptz!,
+    $endDate: timestamptz!, 
+  ) {
+    events_daily_to_collection(where: {
+      collectionId: { _in: $collectionIds },
+      typeId: { _in: $typeIds },
+      bucketDay: { _gte: $startDate, _lte: $endDate }
+    }) {
+      typeId
+      collectionId
+      bucketDay
+      amount
+    }
+  }
+`);
+
+const GET_EVENTS_WEEKLY_TO_COLLECTION = gql(`
+  query EventsWeeklyToCollection(
+    $collectionIds: [Int!],
+    $typeIds: [Int!],
+    $startDate: timestamptz!,
+    $endDate: timestamptz!, 
+  ) {
+    events_weekly_to_collection(where: {
+      collectionId: { _in: $collectionIds },
+      typeId: { _in: $typeIds },
+      bucketWeekly: { _gte: $startDate, _lte: $endDate }
+    }) {
+      typeId
+      collectionId
+      bucketWeekly
+      amount
+    }
+  }
+`);
+
+const GET_EVENTS_MONTHLY_TO_COLLECTION = gql(`
+  query EventsMonthlyToCollection(
+    $collectionIds: [Int!],
+    $typeIds: [Int!],
+    $startDate: timestamptz!,
+    $endDate: timestamptz!, 
+  ) {
+    events_monthly_to_collection(where: {
+      collectionId: { _in: $collectionIds },
+      typeId: { _in: $typeIds },
+      bucketMonthly: { _gte: $startDate, _lte: $endDate }
+    }) {
+      typeId
+      collectionId
+      bucketMonthly
+      amount
+    }
+  }
+`);
+
 const GET_EVENTS_DAILY_TO_PROJECT = gql(`
   query EventsDailyToProject(
     $projectIds: [Int!],
@@ -245,26 +305,6 @@ const GET_EVENTS_WEEKLY_TO_PROJECT = gql(`
   }
 `);
 
-const GET_USERS_MONTHLY_TO_PROJECT = gql(`
-  query UsersMonthlyToProject(
-    $projectIds: [Int!],
-    $segmentTypes: [String!],
-    $startDate: timestamptz!,
-    $endDate: timestamptz!, 
-  ) {
-    users_monthly_to_project(where: {
-      projectId: { _in: $projectIds },
-      segmentType: { _in: $segmentTypes },
-      bucketMonthly: { _gte: $startDate, _lte: $endDate }
-    }) {
-      segmentType
-      projectId
-      bucketMonthly
-      amount
-    }
-  }
-`);
-
 const GET_EVENTS_MONTHLY_TO_PROJECT = gql(`
   query EventsMonthlyToProject(
     $projectIds: [Int!],
@@ -278,6 +318,26 @@ const GET_EVENTS_MONTHLY_TO_PROJECT = gql(`
       bucketMonthly: { _gte: $startDate, _lte: $endDate }
     }) {
       typeId
+      projectId
+      bucketMonthly
+      amount
+    }
+  }
+`);
+
+const GET_USERS_MONTHLY_TO_PROJECT = gql(`
+  query UsersMonthlyToProject(
+    $projectIds: [Int!],
+    $segmentTypes: [String!],
+    $startDate: timestamptz!,
+    $endDate: timestamptz!, 
+  ) {
+    users_monthly_to_project(where: {
+      projectId: { _in: $projectIds },
+      segmentType: { _in: $segmentTypes },
+      bucketMonthly: { _gte: $startDate, _lte: $endDate }
+    }) {
+      segmentType
       projectId
       bucketMonthly
       amount
@@ -326,6 +386,9 @@ export {
   GET_EVENTS_DAILY_TO_PROJECT,
   GET_EVENTS_WEEKLY_TO_PROJECT,
   GET_EVENTS_MONTHLY_TO_PROJECT,
+  GET_EVENTS_DAILY_TO_COLLECTION,
+  GET_EVENTS_WEEKLY_TO_COLLECTION,
+  GET_EVENTS_MONTHLY_TO_COLLECTION,
   GET_USERS_MONTHLY_TO_PROJECT,
   GET_EVENT_SUM,
 };

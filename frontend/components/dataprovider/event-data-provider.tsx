@@ -13,6 +13,10 @@ import {
   GET_EVENTS_MONTHLY_TO_PROJECT,
   GET_USERS_MONTHLY_TO_PROJECT,
   GET_PROJECTS_BY_IDS,
+  GET_EVENTS_MONTHLY_TO_COLLECTION,
+  GET_EVENTS_WEEKLY_TO_COLLECTION,
+  GET_EVENTS_DAILY_TO_COLLECTION,
+  GET_COLLECTIONS_BY_IDS,
 } from "../../lib/graphql/queries";
 import {
   entityIdToLabel,
@@ -483,6 +487,72 @@ function ProjectEventDataProvider(props: EventDataProviderProps) {
 }
 
 /**
+ * EventDataProvider for collections
+ * @param props
+ * @returns
+ */
+function CollectionEventDataProvider(props: EventDataProviderProps) {
+  const bucketWidth = getBucketWidth(props);
+  const query =
+    bucketWidth === "month"
+      ? GET_EVENTS_MONTHLY_TO_COLLECTION
+      : bucketWidth === "week"
+      ? GET_EVENTS_WEEKLY_TO_COLLECTION
+      : GET_EVENTS_DAILY_TO_COLLECTION;
+  const {
+    data: rawEventData,
+    error: eventError,
+    loading: eventLoading,
+  } = useQuery(query, {
+    variables: {
+      collectionIds: stringToIntArray(props.ids),
+      typeIds: props.eventTypes?.map((n) => EVENT_TYPE_NAME_TO_ID[n]),
+      startDate: eventTimeToLabel(props.startDate ?? DEFAULT_START_DATE),
+      endDate: eventTimeToLabel(props.endDate),
+    },
+  });
+  const {
+    data: collectionData,
+    error: collectionError,
+    loading: collectionLoading,
+  } = useQuery(GET_COLLECTIONS_BY_IDS, {
+    variables: { collectionIds: stringToIntArray(props.ids) },
+  });
+  const normalizedData: EventData[] = (
+    (rawEventData as any)?.events_monthly_to_collection ??
+    (rawEventData as any)?.events_weekly_to_collection ??
+    rawEventData?.events_daily_to_collection ??
+    []
+  ).map((x: any) => ({
+    typeName: ensure<string>(
+      EVENT_TYPE_ID_TO_NAME[x.typeId],
+      "Data missing 'type'",
+    ),
+    id: ensure<number>(x.collectionId, "Data missing 'collectionId'"),
+    date: ensure<string>(
+      x.bucketDay ?? x.bucketWeekly ?? x.bucketMonthly,
+      "Data missing time",
+    ),
+    amount: ensure<number>(x.amount, "Data missing 'number'"),
+  }));
+  const formattedData = formatData(
+    props,
+    normalizedData,
+    collectionData?.collection,
+    { gapFill: bucketWidth === "day" },
+  );
+  console.log(props.ids, rawEventData, formattedData);
+  return (
+    <DataProviderView
+      {...props}
+      formattedData={formattedData}
+      loading={eventLoading || collectionLoading}
+      error={eventError ?? collectionError}
+    />
+  );
+}
+
+/**
  * UserDataProvider for projects
  * @param props
  * @returns
@@ -529,6 +599,7 @@ function ProjectUserDataProvider(props: EventDataProviderProps) {
 
 export {
   EventDataProviderRegistration,
+  CollectionEventDataProvider,
   ProjectEventDataProvider,
   ArtifactEventDataProvider,
   ProjectUserDataProvider,
