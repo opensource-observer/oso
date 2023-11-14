@@ -314,6 +314,7 @@ export async function configure(args: SchedulerArgs) {
         ProjectRepository,
         recorder,
         cache,
+        200,
       );
       return collector;
     },

@@ -51,7 +51,7 @@ export async function refreshAggregates(
     "events_weekly_from_project",
     "events_weekly_to_project",
   ];
-  const materialized = ["first_contribution"];
+  const materialized = ["first_contribution_to_project"];
   const startDate = args.startDate.toISODate()!;
   const endDate = args.endDate.toISODate()!;
 

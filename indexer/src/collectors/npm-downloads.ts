@@ -3,7 +3,10 @@ import npmFetch from "npm-registry-fetch";
 import { ensureString, ensureArray, ensureNumber } from "../utils/common.js";
 import { MalformedDataError } from "../utils/error.js";
 import { logger } from "../utils/logger.js";
-import { ProjectArtifactsCollector } from "../scheduler/common.js";
+import {
+  Batch,
+  BatchedProjectArtifactsCollector,
+} from "../scheduler/common.js";
 import {
   Project,
   Artifact,
@@ -43,16 +46,17 @@ export const DefaultNPMCollectorOptions: NPMCollectorOptions = {
   },
 };
 
-export class NpmDownloadCollector extends ProjectArtifactsCollector {
+export class NpmDownloadCollector extends BatchedProjectArtifactsCollector {
   private options: NPMCollectorOptions;
 
   constructor(
     projectRepository: Repository<Project>,
     recorder: IEventRecorderClient,
     cache: TimeSeriesCacheWrapper,
+    batchSize: number,
     options?: Partial<NPMCollectorOptions>,
   ) {
-    super(projectRepository, recorder, cache, {
+    super(projectRepository, recorder, cache, batchSize, {
       type: In([ArtifactType.NPM_PACKAGE]),
       namespace: ArtifactNamespace.NPM_REGISTRY,
     });
@@ -61,27 +65,25 @@ export class NpmDownloadCollector extends ProjectArtifactsCollector {
   }
 
   async collect(
-    group: IArtifactGroup<Project>,
+    group: IArtifactGroup<Batch>,
     range: Range,
     committer: IArtifactGroupCommitmentProducer,
   ): Promise<CollectResponse> {
     const artifacts = await group.artifacts();
-    const project = await group.meta();
 
     for (const npmPackage of artifacts) {
-      await this.getEventsForPackage(project, npmPackage, range, committer);
+      await this.getEventsForPackage(npmPackage, range, committer);
     }
   }
 
   async getEventsForPackage(
-    project: Project,
     npmPackage: Artifact,
     range: Range,
     committer: IArtifactGroupCommitmentProducer,
   ) {
     const response = this.cache.loadCachedOrRetrieve<DayDownloads[]>(
       TimeSeriesCacheLookup.new(
-        `${this.options.cacheOptions.bucket}/${project.slug}`,
+        `${this.options.cacheOptions.bucket}/${npmPackage.name}`,
         [npmPackage.name],
         range,
       ),
@@ -121,7 +123,6 @@ export class NpmDownloadCollector extends ProjectArtifactsCollector {
         );
       }
     }
-    //await this.recorder.wait(handles);
     committer.commit(npmPackage).withHandles(handles);
   }
 }

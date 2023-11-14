@@ -488,12 +488,12 @@ export class BatchEventRecorder implements IEventRecorder {
 
   private async clean() {
     logger.debug("dropping the temporary table");
-    const t3 = timer("drop table");
+    const tmDropTable = timer("drop table");
 
     await this.dataSource.query(`
       DROP TABLE ${this.preCommitTableName}
     `);
-    t3();
+    tmDropTable();
 
     this._preCommitTableName = "";
     this.isPreCommitTableOpen = false;
@@ -518,7 +518,7 @@ export class BatchEventRecorder implements IEventRecorder {
 
     // Using the recorder_temp_event table we can commit all of the events
     // Remove anything with duplicates
-    const t1 = timer("delete event dupes");
+    const tmDelDupes = timer("delete event dupes");
     let response: IRecorderCommitResult;
     try {
       const [invalid, uncommittedCount] = (await this.dataSource.query(`
@@ -539,14 +539,29 @@ export class BatchEventRecorder implements IEventRecorder {
             ewd."sourceId" IS NOT NULL
       RETURNING p."sourceId", p."typeId"
     `)) as [{ sourceId: string; typeId: number }[], number];
-      t1();
+      tmDelDupes();
       logger.debug(`deleted ${uncommittedCount} events with duplicates`);
 
       logger.debug("committing to event database");
       // Write back into the main database
       type Result = { sourceId: string; typeId: number };
       const successful = await this.dataSource.transaction(async (manager) => {
-        const t2 = timer("commit to event table");
+        if (this.recorderOptions.overwriteExistingEvents) {
+          logger.debug(`removing existing events`);
+          // Delete existing events
+          const tmDelEvents = timer("delete existing events");
+          await manager.query(
+            `
+            DELETE FROM event e
+            USING ${this.preCommitTableName} p
+            WHERE p."sourceId" = e."sourceId" AND
+                  p."typeId" = e."typeId"
+          `,
+          );
+          tmDelEvents();
+        }
+
+        const tmCommitEvents = timer("commit to event table");
         const response = (await manager.query(`
           WITH write_to_canonical_event AS (
             INSERT INTO event ("sourceId", "typeId", "time", "toId", "fromId", "amount", "details")
@@ -559,7 +574,7 @@ export class BatchEventRecorder implements IEventRecorder {
           LEFT JOIN write_to_canonical_event w
             ON w."sourceId" = p."sourceId" AND p."typeId" = w."typeId"
         `)) as (Result & { skipped: number })[];
-        t2();
+        tmCommitEvents();
 
         return response;
       });
@@ -998,7 +1013,7 @@ export class BatchEventRecorder implements IEventRecorder {
     const eventsWrite = async () => {
       return this.dataSource.transaction(async (manager) => {
         // Write artifacts
-        const t0 = timer("write new artifacts");
+        const tmWriteArtifacts = timer("write new artifacts");
         const artifactResponse = (await manager.query(
           `
           with new_artifact as (
@@ -1022,30 +1037,13 @@ export class BatchEventRecorder implements IEventRecorder {
       `,
           [this.recorderId, batchId],
         )) as { count: string }[];
-        t0();
+        tmWriteArtifacts();
         if (artifactResponse.length !== 1) {
           throw new RecorderError("unexpected response writing artifacts");
         }
         logger.debug(`added ${artifactResponse[0].count} new artifacts`);
 
-        if (this.recorderOptions.overwriteExistingEvents) {
-          // Delete existing events
-          const t1 = timer("delete existing events");
-          await manager.query(
-            `
-            DELETE FROM event e
-            USING recorder_temp_event rte
-            WHERE rte."sourceId" = e."sourceId" AND
-                  rte."typeId" = e."typeId" AND
-                  rte."recorderId" = $1 AND
-                  rte."batchId" = $2
-          `,
-            [this.recorderId, batchId],
-          );
-          t1();
-        }
-
-        const t2 = timer("bulk write");
+        const tmPrecommitEvents = timer("bulk write events to precommit table");
         // Write all events and delete anything necessary. Ignore events with
         // duplicates we don't know what to do in that case. Leave those in the
         // database.
@@ -1080,7 +1078,7 @@ export class BatchEventRecorder implements IEventRecorder {
       `,
           [this.recorderId, batchId],
         )) as { count: string }[];
-        t2();
+        tmPrecommitEvents();
 
         if (batchResp.length !== 1) {
           throw new RecorderError("error occurred counting the batch results");
