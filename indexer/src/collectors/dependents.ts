@@ -372,6 +372,8 @@ export class DependentsPeriodicCollector implements IPeriodicCollector {
   async collect(): Promise<CollectResponse> {
     logger.debug("collecting dependents for all npm packages");
 
+    // Crawl github repos in our packages for NPM dependencies.
+
     // Get a list of all `NPM_PACKAGES` in our database
     const npmPackages = await this.artifactRepository.find({
       where: {

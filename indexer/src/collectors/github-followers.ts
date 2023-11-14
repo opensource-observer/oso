@@ -34,6 +34,7 @@ import { Range, doRangesIntersect, rangeFromISO } from "../utils/ranges.js";
 import { sha1FromArray } from "../utils/source-ids.js";
 import { GraphQLError } from "graphql";
 import { Batch } from "../scheduler/common.js";
+import { VariableType } from "json-to-graphql-query";
 
 const GET_ALL_PUBLIC_FORKS = gql`
   query getAllPublicForks($owner: String!, $name: String!, $cursor: String) {
@@ -131,6 +132,60 @@ const REPOSITORY_FOLLOWING_SUMMARY = gql`
     }
   }
 `;
+
+function repositoryFollowersAsJson(includeCursor: boolean) {
+  const optional = includeCursor ? {
+    cursor: new VariableType('cursor'),
+  } : {};
+
+  return {
+    createdAt: true,
+    forkCount: true,
+    forks: {
+      __args: {
+        first: 100,
+        privacy: 'PUBLIC',
+        orderBy: { field: 'CREATED_AT', direction: 'DESC' },
+      },
+      totalCount: true,
+      pageInfo: {
+        hasNextPage: true,
+        endCursor: true,
+      },
+      edges: {
+        node: {
+          id: true,
+          url: true,
+          createdAt: true,
+          owner: {
+            __typename: true,
+            login: true,
+          }
+        }
+      }
+    },
+    watchers: {
+      totalCount: true,
+    },
+    stargazers: {
+      __args: _.merge({
+        first: 100,
+        orderBy: { field: 'STARRED_AT', direction: 'DESC' },
+      }, optional),
+      pageInfo: {
+        hasNextPage: true,
+        endCursor: true,
+      },
+      totalCount: true,
+      edges: {
+        node: {
+          login: true,
+        },
+        starredAt: true,
+      }
+    },
+  }
+}
 
 type StarringWrapper = {
   starring: Starring;
@@ -330,10 +385,10 @@ export class GithubFollowingCollector extends GithubBatchedProjectArtifactsBaseC
       const contributor =
         starring.node && starring.node.login !== ""
           ? {
-              name: starring.node.login.toLowerCase(),
-              namespace: ArtifactNamespace.GITHUB,
-              type: ArtifactType.GITHUB_USER,
-            }
+            name: starring.node.login.toLowerCase(),
+            namespace: ArtifactNamespace.GITHUB,
+            type: ArtifactType.GITHUB_USER,
+          }
           : undefined;
 
       const event: IncompleteEvent = {
