@@ -12,7 +12,7 @@ import { FundingEventsClient } from "../collectors/dune/funding-events/client.js
 import { DuneClient } from "@cowprotocol/ts-dune-client";
 import {
   DUNE_API_KEY,
-  DUNE_CONTRACTS_TABLES_DIR,
+  DUNE_CSV_DIR_PATH,
   GITHUB_TOKEN,
   GITHUB_WORKERS_OWNER,
   GITHUB_WORKERS_REF,
@@ -277,7 +277,7 @@ export async function configure(args: SchedulerArgs) {
         dune,
         new DuneCSVUploader(DUNE_API_KEY),
         {
-          tablesDirectoryPath: DUNE_CONTRACTS_TABLES_DIR,
+          csvDirPath: DUNE_CSV_DIR_PATH,
         },
       );
       const collector = new DailyContractUsageCollector(
@@ -290,6 +290,7 @@ export async function configure(args: SchedulerArgs) {
             args.cacheDir,
             "known-user-addresses-seed.json",
           ),
+          mode: "csv",
           contractSha1: "test",
         },
       );
