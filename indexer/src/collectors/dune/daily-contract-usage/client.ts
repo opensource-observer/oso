@@ -21,6 +21,22 @@ import { UniqueArray } from "../../../utils/array.js";
 import { sha1FromArray } from "../../../utils/source-ids.js";
 import { DuneCSVUploader } from "../utils/csv-uploader.js";
 
+export function stringToBigInt(x: string) {
+  try {
+    return BigInt(x);
+  } catch (_err) {
+    return BigInt(parseFloat(x));
+  }
+}
+
+export function stringToInt(x: string) {
+  try {
+    return parseInt(x);
+  } catch (_err) {
+    return parseFloat(x);
+  }
+}
+
 export class SafeAggregate {
   rows: DailyContractUsageRow[];
 
@@ -31,14 +47,18 @@ export class SafeAggregate {
   aggregate(): DailyContractUsageRow {
     return this.rows.slice(1).reduce<DailyContractUsageRow>((agg, curr) => {
       const row = curr;
-      const gasCostBI = BigInt(agg.gasCostGwei) + BigInt(row.gasCostGwei);
+      const l2GasUsed =
+        stringToBigInt(agg.l2GasUsed) + stringToBigInt(row.l2GasUsed);
+      const l1GasUsed =
+        stringToBigInt(agg.l1GasUsed) + stringToBigInt(row.l1GasUsed);
       return {
         date: agg.date,
         contractAddress: agg.contractAddress,
         userAddress: agg.userAddress,
         safeAddress: agg.safeAddress,
         txCount: agg.txCount + row.txCount,
-        gasCostGwei: gasCostBI.toString(10),
+        l2GasUsed: l2GasUsed.toString(10),
+        l1GasUsed: l1GasUsed.toString(10),
       };
     }, this.rows[0]);
   }
@@ -57,7 +77,8 @@ export type DailyContractUsageRow = {
   contractAddress: string;
   userAddress: string | null;
   safeAddress: string | null;
-  gasCostGwei: string;
+  l2GasUsed: string;
+  l1GasUsed: string;
   txCount: number;
 };
 
@@ -66,7 +87,8 @@ export type DailyContractUsageRawRow = {
   contractId: number;
   userAddress: string | null;
   safeAddress: string | null;
-  gasCostGwei: string;
+  l2GasUsed: string;
+  l1GasUsed: string;
   txCount: number;
 };
 
@@ -117,7 +139,9 @@ export type DuneRawUsageItem = [
   string | null,
   // safe
   string | null,
-  // totalGasCostForUser - gasFees * gasPrice for each user
+  // totalL2GasUsedForUser
+  string,
+  // totalL1GasUsedForUser
   string,
   // txCount - number of transactions
   number,
@@ -136,14 +160,16 @@ export function parseDuneContractUsageCSVRow(row: string[]): DuneRawRow {
     // Check the types
     assert(!Array.isArray(u[0]), "eoa address should be a string");
     assert(!Array.isArray(u[1]), "safe address should be a string");
-    assert(!Array.isArray(u[2]), "gas costs should be a string");
-    assert(!Array.isArray(u[3]), "call count should be a string");
+    assert(!Array.isArray(u[2]), "l2 gas used should be a string");
+    assert(!Array.isArray(u[3]), "l1 gas used should be a string");
+    assert(!Array.isArray(u[4]), "call count should be a string");
 
     return [
       u[0] === "<nil>" ? null : (u[0] as string),
       u[1] === "<nil>" ? null : (u[1] as string),
       u[2] as string,
-      parseInt(u[3] as string),
+      u[3] as string,
+      parseInt(u[4] as string),
     ];
   });
   return {
@@ -164,7 +190,8 @@ export function transformDuneRawRowToUsageRows(
       contractAddress: contractsMap[r.contractId],
       userAddress: r.userAddress,
       safeAddress: r.safeAddress,
-      gasCostGwei: r.gasCostGwei,
+      l2GasUsed: r.l2GasUsed,
+      l1GasUsed: r.l1GasUsed,
       txCount: r.txCount,
     };
   });
@@ -185,8 +212,9 @@ export function transformDuneRawRowToUsageRawRows(
       contractId: row.contract_id,
       userAddress: usage[0],
       safeAddress: usage[1],
-      gasCostGwei: usage[2],
-      txCount: usage[3],
+      l2GasUsed: usage[2],
+      l1GasUsed: usage[3],
+      txCount: usage[4],
     };
   });
 }
@@ -468,8 +496,9 @@ export class DailyContractUsageClient implements IDailyContractUsageClientV2 {
               contractAddress: chunk[1],
               userAddress: chunk[2] === "" ? null : chunk[2],
               safeAddress: chunk[3] === "" ? null : chunk[3],
-              gasCostGwei: chunk[4],
-              txCount: parseInt(chunk[5], 10),
+              l2GasUsed: chunk[4],
+              l1GasUsed: chunk[5],
+              txCount: parseInt(chunk[6], 10),
             };
             rows.push(row);
           })
