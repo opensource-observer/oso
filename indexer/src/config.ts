@@ -18,8 +18,7 @@ export const DB_DATABASE = requireEnv("DB_DATABASE");
 export const GITHUB_GRAPHQL_API = requireEnv("X_GITHUB_GRAPHQL_API");
 export const GITHUB_TOKEN = requireEnv("X_GITHUB_TOKEN");
 export const DUNE_API_KEY = requireEnv("DUNE_API_KEY");
-export const DUNE_CONTRACTS_TABLES_DIR =
-  process.env.DUNE_CONTRACTS_TABLES_DIR || "";
+export const DUNE_CSV_DIR_PATH = process.env.DUNE_CSVS_DIR_PATH || "";
 export const TEST_ONLY_ALLOW_CLEAR_DB =
   process.env.TEST_ONLY_ALLOW_CLEAR_DB === "true" || false;
 export const NO_DYNAMIC_LOADS =

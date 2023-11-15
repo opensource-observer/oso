@@ -23,11 +23,12 @@ import {
 import nodePath from "path";
 import { DuneClient } from "@cowprotocol/ts-dune-client";
 import { DuneCSVUploader } from "../collectors/dune/utils/csv-uploader.js";
-import { DUNE_API_KEY, DUNE_CONTRACTS_TABLES_DIR } from "../config.js";
+import { DUNE_API_KEY, DUNE_CSV_DIR_PATH } from "../config.js";
 import { ProjectRepository } from "../db/project.js";
 import { Artifact, ArtifactNamespace, ArtifactType } from "../index.js";
 import { UniqueArray } from "../utils/array.js";
 import { In } from "typeorm";
+import { Queue } from "@datastructures-js/queue";
 
 export type DuneUploadArgs = object;
 
@@ -67,6 +68,7 @@ export class DuneDayExporter extends Writable {
     }
     if (this.currentDay.toMillis() !== rowTime.toMillis()) {
       if (this.currentDay > rowTime) {
+        console.log(row);
         console.log(
           `OUT OF ORDER ${this.currentDay.toISO()} > ${rowTime.toISO()}`,
         );
@@ -101,7 +103,7 @@ export class DuneDayExporter extends Writable {
 
   writeToStream(row: DailyContractUsageRow) {
     this.writtenLines += 1;
-    if (this.writtenLines % 10 == 0) {
+    if (this.writtenLines % 1000 == 0) {
       console.log(
         `File[${this.currentDay?.toISODate()}]: ${this.writtenLines}`,
       );
@@ -190,7 +192,7 @@ export class DuneSplitRow extends Transform {
 
 export class DuneSafeAggregate extends Transform {
   incomingDay: DailyContractUsageRow[];
-  outgoingRows: DailyContractUsageRow[];
+  outgoingRows: Queue<DailyContractUsageRow>;
   currentDay: DateTime | null;
   safes: Record<string, SafeAggregate>;
 
@@ -204,7 +206,7 @@ export class DuneSafeAggregate extends Transform {
       ...opts,
     });
     this.incomingDay = [];
-    this.outgoingRows = [];
+    this.outgoingRows = new Queue();
     this.currentDay = null;
     this.safes = {};
   }
@@ -222,20 +224,30 @@ export class DuneSafeAggregate extends Transform {
       this.currentDay = rowDay;
     }
 
-    if (!this.currentDay.equals(rowDay)) {
+    if (this.currentDay.toMillis() !== rowDay.toMillis()) {
+      //console.log('new day triggered');
       if (this.currentDay > rowDay) {
+        console.log(row);
         console.log("this is happening");
         throw new Error("the data being passed is out of order");
       }
-      this.outgoingRows.push(...this.incomingDay);
-      this.outgoingRows.push(...this.popSafes());
+      for (const r of this.incomingDay) {
+        this.outgoingRows.enqueue(r);
+      }
+
+      const safeRows = this.popSafes();
+      for (const r of safeRows) {
+        this.outgoingRows.enqueue(r);
+      }
       this.incomingDay = [];
+      this.currentDay = rowDay;
     }
 
     // for some reason safes weren't aggregated properly on dune. let's do that here
     if (row.safeAddress) {
       const address = row.safeAddress.toLowerCase();
       const agg = this.safes[address];
+      //console.log(Object.keys(this.safes));
       if (agg) {
         agg.add(row);
       } else {
@@ -258,9 +270,9 @@ export class DuneSafeAggregate extends Transform {
   }
 
   pushRows() {
-    while (this.outgoingRows.length > 0) {
+    while (!this.outgoingRows.isEmpty()) {
       // Get top most queue
-      const next = this.outgoingRows.pop();
+      const next = this.outgoingRows.dequeue();
 
       if (!next) {
         return;
@@ -303,7 +315,7 @@ export async function uploadLatestContractTable(_args: DuneUploadArgs) {
     dune,
     new DuneCSVUploader(DUNE_API_KEY),
     {
-      tablesDirectoryPath: DUNE_CONTRACTS_TABLES_DIR,
+      csvDirPath: DUNE_CSV_DIR_PATH,
     },
   );
   const contracts = await currentContractsTableArtifacts();

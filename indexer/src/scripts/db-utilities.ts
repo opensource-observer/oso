@@ -9,6 +9,7 @@ import { logger } from "../utils/logger.js";
 export type UtilitiesRefreshAggregatesArgs = {
   startDate: DateTime;
   endDate: DateTime;
+  intervalDays: number;
 };
 
 export function dbUtilitiesCommandGroup(topYargs: Argv) {
@@ -20,7 +21,7 @@ export function dbUtilitiesCommandGroup(topYargs: Argv) {
         .option("start-date", {
           type: "string",
           describe: "ISO8601 of the start date",
-          default: "2005-01-01T00:00:00Z",
+          default: "2015-01-01T00:00:00Z",
         })
         .coerce("start-date", coerceDateTime)
         .option("end-date", {
@@ -28,7 +29,12 @@ export function dbUtilitiesCommandGroup(topYargs: Argv) {
           describe: "ISO8601 of the end date (defaults to now)",
           default: "",
         })
-        .coerce("end-date", coerceDateTimeOrNow);
+        .coerce("end-date", coerceDateTimeOrNow)
+        .option("interval-days", {
+          type: "number",
+          describe: "interval",
+          default: 5000,
+        });
     },
     (args) => handleError(refreshAggregates(args)),
   );
@@ -52,8 +58,9 @@ export async function refreshAggregates(
     "events_weekly_to_project",
   ];
   const materialized = ["first_contribution_to_project"];
-  const startDate = args.startDate.toISODate()!;
-  const endDate = args.endDate.toISODate()!;
+  const startDate = args.startDate;
+  const endDate = args.endDate!;
+  const intervalDays = args.intervalDays;
 
   for (const mv of materialized) {
     logger.info(`Refreshing ${mv}`);
@@ -64,15 +71,27 @@ export async function refreshAggregates(
     logger.info(resp);
   }
 
+  // Continuous aggregates will start
   for (const agg of aggregatesList) {
-    logger.info(`Refreshing ${agg} for ${startDate} to ${endDate}`);
-    const resp = await AppDataSource.query(
-      `
-      CALL refresh_continuous_aggregate($1, $2::timestamptz, $3::timestamptz)
-    `,
-      [agg, startDate, endDate],
-    );
-    logger.info("Refresh response");
-    logger.info(resp);
+    let currentStart = endDate.minus({ days: intervalDays });
+    let currentEnd = endDate;
+    while (currentEnd >= startDate) {
+      logger.info(
+        `Refreshing ${agg} for ${currentStart.toISODate()} to ${currentEnd.toISODate()}`,
+      );
+      const resp = await AppDataSource.query(
+        `
+          CALL refresh_continuous_aggregate($1, $2::timestamptz, $3::timestamptz)
+        `,
+        [agg, startDate, endDate],
+      );
+      currentStart = currentStart.minus({ days: intervalDays });
+      currentEnd = currentEnd.minus({ days: intervalDays });
+      if (currentStart < startDate) {
+        currentStart = startDate;
+      }
+      logger.info("Refresh response");
+      logger.info(resp);
+    }
   }
 }

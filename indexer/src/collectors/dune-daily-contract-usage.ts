@@ -306,19 +306,22 @@ export class DailyContractUsageCollector extends BaseEventCollector<object> {
       throw new Error("unexpected: no address");
     }
 
-    const from: IncompleteArtifact =
-      row.safeAddress === null
-        ? {
-            name: row.userAddress!.toLowerCase(),
-            type: ArtifactType.EOA_ADDRESS,
-            namespace: ArtifactNamespace.OPTIMISM,
-          }
-        : {
-            name: row.safeAddress.toLowerCase(),
-            type: ArtifactType.SAFE_ADDRESS,
-            namespace: ArtifactNamespace.OPTIMISM,
-          };
+    const from: IncompleteArtifact = !row.safeAddress
+      ? {
+          name: row.userAddress!.toLowerCase(),
+          type: ArtifactType.EOA_ADDRESS,
+          namespace: ArtifactNamespace.OPTIMISM,
+        }
+      : {
+          name: row.safeAddress.toLowerCase(),
+          type: ArtifactType.SAFE_ADDRESS,
+          namespace: ArtifactNamespace.OPTIMISM,
+        };
 
+    if (!row.contractAddress) {
+      console.log(row);
+      throw new Error("no artifact to record to");
+    }
     const recorderContract =
       contract !== undefined
         ? contract
@@ -328,9 +331,14 @@ export class DailyContractUsageCollector extends BaseEventCollector<object> {
             namespace: ArtifactNamespace.OPTIMISM,
           };
 
+    const eventTimeAsStr = eventTime.toISODate();
+    if (eventTimeAsStr === null) {
+      throw new Error("event time must be a date");
+    }
+
     const sourceId = sha1FromArray([
       "CONTRACT_INVOCATION",
-      eventTime.toISODate()!,
+      eventTimeAsStr,
       recorderContract.name,
       recorderContract.namespace,
       recorderContract.type,
@@ -340,12 +348,21 @@ export class DailyContractUsageCollector extends BaseEventCollector<object> {
     ]);
 
     // Convert gasCost to a bigint
-    let gasAsFloat = 0;
+    let l2GasAsFloat = 0;
     try {
-      gasAsFloat = parseFloat(row.gasCostGwei);
+      l2GasAsFloat = parseFloat(row.l2GasUsed);
     } catch (err) {
       console.warn(
-        `Could not get gasCost for ${sourceId}. Value ${row.gasCostGwei} is not a number`,
+        `Could not get gasCost for ${sourceId}. Value ${row.l2GasUsed} is not a number`,
+      );
+    }
+
+    let l1GasAsFloat = 0;
+    try {
+      l1GasAsFloat = parseFloat(row.l1GasUsed);
+    } catch (err) {
+      console.warn(
+        `Could not get gasCost for ${sourceId}. Value ${row.l1GasUsed} is not a number`,
       );
     }
 
@@ -363,15 +380,27 @@ export class DailyContractUsageCollector extends BaseEventCollector<object> {
       sourceId: sourceId,
     };
 
-    const feeEvent: IncompleteEvent = {
+    const l2GasUsedEvent: IncompleteEvent = {
       time: eventTime,
       type: {
-        name: "CONTRACT_INVOCATION_DAILY_FEES",
+        name: "CONTRACT_INVOCATION_DAILY_L2_GAS_USED",
         version: 1,
       },
       to: recorderContract,
       from: from,
-      amount: gasAsFloat,
+      amount: l2GasAsFloat,
+      sourceId: sourceId,
+    };
+
+    const l1GasUsedEvent: IncompleteEvent = {
+      time: eventTime,
+      type: {
+        name: "CONTRACT_INVOCATION_DAILY_L1_GAS_USED",
+        version: 1,
+      },
+      to: recorderContract,
+      from: from,
+      amount: l1GasAsFloat,
       sourceId: sourceId,
     };
 
@@ -379,10 +408,14 @@ export class DailyContractUsageCollector extends BaseEventCollector<object> {
     uniqueTracker.push(countEvent.sourceId);
     if (uniqueTracker.length === beforeAddLen) {
       logger.debug(
-        `duplicates for sourceId=${countEvent.sourceId} found for contracts`,
+        `duplicates for sourceId=${countEvent.sourceId} found for contract[${
+          countEvent.to.name
+        }] from address[${countEvent.from
+          ?.name}] on ${countEvent.time.toISODate()}`,
       );
     }
     await groupRecorder.record(countEvent);
-    await groupRecorder.record(feeEvent);
+    await groupRecorder.record(l2GasUsedEvent);
+    await groupRecorder.record(l1GasUsedEvent);
   }
 }

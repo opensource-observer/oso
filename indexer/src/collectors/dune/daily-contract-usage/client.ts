@@ -30,15 +30,17 @@ export function stringToBigInt(x: string) {
 }
 
 export function stringToInt(x: string) {
-  try {
-    return parseInt(x);
-  } catch (_err) {
+  // If it contains a scientific notation. parse as a float.
+  if (x.indexOf("e") !== -1) {
     return parseFloat(x);
   }
+
+  return parseInt(x);
 }
 
 export class SafeAggregate {
   rows: DailyContractUsageRow[];
+  id: string;
 
   constructor(first: DailyContractUsageRow) {
     this.rows = [first];
@@ -124,8 +126,8 @@ export interface DailyContractUsageClientOptions {
 
 export const DefaultDailyContractUsageClientOptions: DailyContractUsageClientOptions =
   {
-    // This default is based on this: https://dune.com/queries/3083184
-    queryId: 3083184,
+    // This default is based on this: https://dune.com/queries/3198847
+    queryId: 3198847,
 
     tablesDirectoryPath: "",
 
@@ -174,7 +176,7 @@ export function parseDuneContractUsageCSVRow(row: string[]): DuneRawRow {
   });
   return {
     date: row[0],
-    contract_id: parseInt(row[1]),
+    contract_id: stringToInt(row[1]),
     usage: usage,
   };
 }
@@ -184,7 +186,11 @@ export function transformDuneRawRowToUsageRows(
   contractsMap: Record<number, string>,
 ): DailyContractUsageRow[] {
   const rows = transformDuneRawRowToUsageRawRows(row);
+
   return rows.map((r) => {
+    if (!contractsMap[r.contractId]) {
+      throw new Error(`missing contract address for ${r.contractId} in map`);
+    }
     return {
       date: r.date,
       contractAddress: contractsMap[r.contractId],
