@@ -119,7 +119,10 @@ export async function csvDownloadScan(
           trackingDateTime = rowTime.startOf(normalizatingUnit);
 
           if (isCheckingContinuity) {
-            if (trackingDateTime !== previousScanResult!.lastPeriodDateTime) {
+            if (
+              trackingDateTime.toMillis() !==
+              previousScanResult!.lastPeriodDateTime.toMillis()
+            ) {
               isContinuous = false;
             }
           }

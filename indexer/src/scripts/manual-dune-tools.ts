@@ -17,10 +17,22 @@ import {
   DuneRawRow,
   transformDuneRawRowToUsageRows,
   DailyContractUsageRow,
+  DailyContractUsageClient,
+  SafeAggregate,
 } from "../collectors/dune/daily-contract-usage/client.js";
 import nodePath from "path";
+import { DuneClient } from "@cowprotocol/ts-dune-client";
+import { DuneCSVUploader } from "../collectors/dune/utils/csv-uploader.js";
+import { DUNE_API_KEY, DUNE_CSV_DIR_PATH } from "../config.js";
+import { ProjectRepository } from "../db/project.js";
+import { Artifact, ArtifactNamespace, ArtifactType } from "../index.js";
+import { UniqueArray } from "../utils/array.js";
+import { In } from "typeorm";
+import { Queue } from "@datastructures-js/queue";
 
-export type DuneCommonArgs = {
+export type DuneUploadArgs = object;
+
+export type DuneSplitUsageArgs = {
   path: string[];
   outputDir: string;
 };
@@ -28,7 +40,7 @@ export type DuneCommonArgs = {
 function rowToString(row: DailyContractUsageRow) {
   return `${row.date},${row.contractAddress},${row.userAddress || ""},${
     row.safeAddress || ""
-  },${row.gasCostGwei},${row.txCount}\n`;
+  },${row.l2GasUsed},${row.l1GasUsed},${row.txCount}\n`;
 }
 
 export class DuneDayExporter extends Writable {
@@ -56,6 +68,7 @@ export class DuneDayExporter extends Writable {
     }
     if (this.currentDay.toMillis() !== rowTime.toMillis()) {
       if (this.currentDay > rowTime) {
+        console.log(row);
         console.log(
           `OUT OF ORDER ${this.currentDay.toISO()} > ${rowTime.toISO()}`,
         );
@@ -90,7 +103,7 @@ export class DuneDayExporter extends Writable {
 
   writeToStream(row: DailyContractUsageRow) {
     this.writtenLines += 1;
-    if (this.writtenLines % 10 == 0) {
+    if (this.writtenLines % 1000 == 0) {
       console.log(
         `File[${this.currentDay?.toISODate()}]: ${this.writtenLines}`,
       );
@@ -106,6 +119,20 @@ export class DuneDayExporter extends Writable {
     this.writtenLines = 0;
     console.log(`Starting a write to file ${pathToWrite}`);
     this.stream = fs.createWriteStream(pathToWrite);
+  }
+
+  _final(done: (error?: Error | null | undefined) => void): void {
+    console.debug("Closing the day writer");
+    if (this.stream) {
+      const closingStream = this.stream;
+      setImmediate(() => {
+        closingStream.end(() => {
+          done();
+        });
+      });
+    } else {
+      done();
+    }
   }
 }
 
@@ -131,7 +158,7 @@ export class DuneSplitRow extends Transform {
 
   _write(
     chunk: any,
-    encoding: BufferEncoding,
+    _encoding: BufferEncoding,
     callback: TransformCallback,
   ): void {
     // Queue things up
@@ -163,47 +190,9 @@ export class DuneSplitRow extends Transform {
   }
 }
 
-class SafeAggregate {
-  rows: [TransformCallback, DailyContractUsageRow][];
-
-  constructor(first: [TransformCallback, DailyContractUsageRow]) {
-    this.rows = [first];
-  }
-
-  aggregate(): [TransformCallback, DailyContractUsageRow] {
-    const rows = this.rows;
-    const callback: TransformCallback = (err, data) => {
-      rows.forEach((r) => r[0](err, data));
-    };
-    return [
-      callback,
-      this.rows.slice(1).reduce<DailyContractUsageRow>((agg, curr) => {
-        const row = curr[1];
-        const gasCostBI = BigInt(agg.gasCostGwei) + BigInt(row.gasCostGwei);
-        return {
-          date: agg.date,
-          contractAddress: agg.contractAddress,
-          userAddress: agg.userAddress,
-          safeAddress: agg.safeAddress,
-          txCount: agg.txCount + row.txCount,
-          gasCostGwei: gasCostBI.toString(10),
-        };
-      }, this.rows[0][1]),
-    ];
-  }
-
-  add(row: [TransformCallback, DailyContractUsageRow]) {
-    this.rows.push(row);
-  }
-
-  get count() {
-    return this.rows.length;
-  }
-}
-
 export class DuneSafeAggregate extends Transform {
-  incomingDay: [TransformCallback, DailyContractUsageRow][];
-  outgoingRows: [TransformCallback, DailyContractUsageRow][];
+  incomingDay: DailyContractUsageRow[];
+  outgoingRows: Queue<DailyContractUsageRow>;
   currentDay: DateTime | null;
   safes: Record<string, SafeAggregate>;
 
@@ -217,7 +206,7 @@ export class DuneSafeAggregate extends Transform {
       ...opts,
     });
     this.incomingDay = [];
-    this.outgoingRows = [];
+    this.outgoingRows = new Queue();
     this.currentDay = null;
     this.safes = {};
   }
@@ -235,34 +224,44 @@ export class DuneSafeAggregate extends Transform {
       this.currentDay = rowDay;
     }
 
-    if (!this.currentDay.equals(rowDay)) {
+    if (this.currentDay.toMillis() !== rowDay.toMillis()) {
+      //console.log('new day triggered');
       if (this.currentDay > rowDay) {
+        console.log(row);
         console.log("this is happening");
         throw new Error("the data being passed is out of order");
       }
-      this.outgoingRows.push(...this.incomingDay);
-      this.outgoingRows.push(...this.popSafes());
+      for (const r of this.incomingDay) {
+        this.outgoingRows.enqueue(r);
+      }
+
+      const safeRows = this.popSafes();
+      for (const r of safeRows) {
+        this.outgoingRows.enqueue(r);
+      }
       this.incomingDay = [];
+      this.currentDay = rowDay;
     }
 
     // for some reason safes weren't aggregated properly on dune. let's do that here
     if (row.safeAddress) {
       const address = row.safeAddress.toLowerCase();
       const agg = this.safes[address];
+      //console.log(Object.keys(this.safes));
       if (agg) {
-        agg.add([callback, row]);
+        agg.add(row);
       } else {
-        this.safes[address] = new SafeAggregate([callback, row]);
+        this.safes[address] = new SafeAggregate(row);
       }
     } else {
-      this.incomingDay.push([callback, row]);
+      this.incomingDay.push(row);
     }
     this.pushRows();
     callback();
   }
 
-  popSafes(): [TransformCallback, DailyContractUsageRow][] {
-    const safes: [TransformCallback, DailyContractUsageRow][] = [];
+  popSafes(): DailyContractUsageRow[] {
+    const safes: DailyContractUsageRow[] = [];
     for (const addr in this.safes) {
       safes.push(this.safes[addr].aggregate());
     }
@@ -271,14 +270,14 @@ export class DuneSafeAggregate extends Transform {
   }
 
   pushRows() {
-    while (this.outgoingRows.length > 0) {
+    while (!this.outgoingRows.isEmpty()) {
       // Get top most queue
-      const next = this.outgoingRows.pop();
+      const next = this.outgoingRows.dequeue();
 
       if (!next) {
         return;
       }
-      const row = next[1];
+      const row = next;
 
       if (!this.push(row)) {
         return;
@@ -292,7 +291,7 @@ export class DuneSafeAggregate extends Transform {
 }
 
 export function duneCommandGroup(topYargs: Argv) {
-  topYargs.command<DuneCommonArgs>(
+  topYargs.command<DuneSplitUsageArgs>(
     "split-contract-usage",
     "Split the contract usage rows",
     (yargs) => {
@@ -302,6 +301,51 @@ export function duneCommandGroup(topYargs: Argv) {
     },
     (args) => handleError(splitContractUsage(args)),
   );
+  topYargs.command<DuneUploadArgs>(
+    "upload-latest-contracts-table",
+    "A way to manually upload the contracts table",
+    (_yargs) => {},
+    (args) => handleError(uploadLatestContractTable(args)),
+  );
+}
+
+export async function uploadLatestContractTable(_args: DuneUploadArgs) {
+  const dune = new DuneClient(DUNE_API_KEY);
+  const client = new DailyContractUsageClient(
+    dune,
+    new DuneCSVUploader(DUNE_API_KEY),
+    {
+      csvDirPath: DUNE_CSV_DIR_PATH,
+    },
+  );
+  const contracts = await currentContractsTableArtifacts();
+  await client.uploadContractTable(
+    contracts.map((c) => {
+      return {
+        id: c.id,
+        address: c.name,
+      };
+    }),
+  );
+}
+
+export async function currentContractsTableArtifacts() {
+  const projects = await ProjectRepository.find({
+    relations: {
+      artifacts: true,
+    },
+    where: {
+      artifacts: {
+        type: In([ArtifactType.CONTRACT_ADDRESS, ArtifactType.FACTORY_ADDRESS]),
+        namespace: ArtifactNamespace.OPTIMISM,
+      },
+    },
+  });
+  const allArtifacts = projects.flatMap((p) => p.artifacts);
+
+  const uniqueArtifacts = new UniqueArray((a: Artifact) => a.id);
+  allArtifacts.forEach((a) => uniqueArtifacts.push(a));
+  return uniqueArtifacts.items();
 }
 
 /**
@@ -314,7 +358,9 @@ export function duneCommandGroup(topYargs: Argv) {
  * command can be fed multiple paths and it will ensure that these csv files
  * maintain a continous set of results.
  */
-export async function splitContractUsage(args: DuneCommonArgs): Promise<void> {
+export async function splitContractUsage(
+  args: DuneSplitUsageArgs,
+): Promise<void> {
   await csvTransformAndSplit(args.path[0], args.outputDir, 0, "day");
 }
 
@@ -334,26 +380,34 @@ export async function csvTransformAndSplit(
 ): Promise<ScanResult> {
   //const writeStream = fs.createWriteStream(, { encoding: 'utf-8' });
 
-  const contractsMap = await new Promise<Record<number, string>>(
-    (resolve, reject) => {
-      const map: Record<number, string> = {};
-      fs.createReadStream(
-        "/home/raven/contracts-da1aae77b853fc7c74038ee08eec441b10b89570-90-503188.csv",
-      )
-        .pipe(parse({ delimiter: ",", fromLine: 2 }))
-        .on("data", (row) => {
-          const id = parseInt(row[0], 10);
-          const address = row[1];
-          map[id] = address;
-        })
-        .on("end", () => {
-          resolve(map);
-        })
-        .on("error", (err) => {
-          reject(err);
-        });
-    },
-  );
+  // const contractsMap = await new Promise<Record<number, string>>(
+  //   (resolve, reject) => {
+  //     const map: Record<number, string> = {};
+  //     fs.createReadStream(
+  //       "/home/raven/contracts-da1aae77b853fc7c74038ee08eec441b10b89570-90-503188.csv",
+  //     )
+  //       .pipe(parse({ delimiter: ",", fromLine: 2 }))
+  //       .on("data", (row) => {
+  //         const id = parseInt(row[0], 10);
+  //         const address = row[1];
+  //         map[id] = address;
+  //       })
+  //       .on("end", () => {
+  //         resolve(map);
+  //       })
+  //       .on("error", (err) => {
+  //         reject(err);
+  //       });
+  //   },
+  // );
+
+  const contracts = await currentContractsTableArtifacts();
+  const contractsMap = contracts.reduce<Record<number, string>>((a, c) => {
+    a[c.id] = c.name;
+    return a;
+  }, {});
+
+  console.log(contracts.length);
 
   console.log("here");
   console.log(path);

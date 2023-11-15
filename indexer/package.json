@@ -54,6 +54,7 @@
   },
   "dependencies": {
     "@cowprotocol/ts-dune-client": "^0.0.2",
+    "@datastructures-js/queue": "^4.2.3",
     "@google-cloud/bigquery": "^7.3.0",
     "@jest/globals": "^29.7.0",
     "@octokit/core": "^5.0.0",
