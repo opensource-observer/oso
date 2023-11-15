@@ -17,10 +17,20 @@ import {
   DuneRawRow,
   transformDuneRawRowToUsageRows,
   DailyContractUsageRow,
+  DailyContractUsageClient,
 } from "../collectors/dune/daily-contract-usage/client.js";
 import nodePath from "path";
+import { DuneClient } from "@cowprotocol/ts-dune-client";
+import { DuneCSVUploader } from "../collectors/dune/utils/csv-uploader.js";
+import { DUNE_API_KEY, DUNE_CONTRACTS_TABLES_DIR } from "../config.js";
+import { ProjectRepository } from "../db/project.js";
+import { Artifact, ArtifactNamespace, ArtifactType } from "../index.js";
+import { UniqueArray } from "../utils/array.js";
+import { In } from "typeorm";
 
-export type DuneCommonArgs = {
+export type DuneUploadArgs = object;
+
+export type DuneSplitUsageArgs = {
   path: string[];
   outputDir: string;
 };
@@ -107,6 +117,20 @@ export class DuneDayExporter extends Writable {
     console.log(`Starting a write to file ${pathToWrite}`);
     this.stream = fs.createWriteStream(pathToWrite);
   }
+
+  _final(done: (error?: Error | null | undefined) => void): void {
+    console.debug("Closing the day writer");
+    if (this.stream) {
+      const closingStream = this.stream;
+      setImmediate(() => {
+        closingStream.end(() => {
+          done();
+        });
+      });
+    } else {
+      done();
+    }
+  }
 }
 
 export class DuneSplitRow extends Transform {
@@ -131,7 +155,7 @@ export class DuneSplitRow extends Transform {
 
   _write(
     chunk: any,
-    encoding: BufferEncoding,
+    _encoding: BufferEncoding,
     callback: TransformCallback,
   ): void {
     // Queue things up
@@ -292,7 +316,7 @@ export class DuneSafeAggregate extends Transform {
 }
 
 export function duneCommandGroup(topYargs: Argv) {
-  topYargs.command<DuneCommonArgs>(
+  topYargs.command<DuneSplitUsageArgs>(
     "split-contract-usage",
     "Split the contract usage rows",
     (yargs) => {
@@ -301,6 +325,47 @@ export function duneCommandGroup(topYargs: Argv) {
         .option("output-dir", { type: "string" });
     },
     (args) => handleError(splitContractUsage(args)),
+  );
+  topYargs.command<DuneUploadArgs>(
+    "upload-latest-contracts-table",
+    "A way to manually upload the contracts table",
+    (_yargs) => {},
+    (args) => handleError(uploadLatestContractTable(args)),
+  );
+}
+
+export async function uploadLatestContractTable(_args: DuneUploadArgs) {
+  const dune = new DuneClient(DUNE_API_KEY);
+  const client = new DailyContractUsageClient(
+    dune,
+    new DuneCSVUploader(DUNE_API_KEY),
+    {
+      tablesDirectoryPath: DUNE_CONTRACTS_TABLES_DIR,
+    },
+  );
+  const projects = await ProjectRepository.find({
+    relations: {
+      artifacts: true,
+    },
+    where: {
+      artifacts: {
+        type: In([ArtifactType.CONTRACT_ADDRESS, ArtifactType.FACTORY_ADDRESS]),
+        namespace: ArtifactNamespace.OPTIMISM,
+      },
+    },
+  });
+  const allArtifacts = projects.flatMap((p) => p.artifacts);
+
+  const uniqueArtifacts = new UniqueArray((a: Artifact) => a.id);
+  allArtifacts.forEach((a) => uniqueArtifacts.push(a));
+
+  await client.uploadContractTable(
+    uniqueArtifacts.items().map((c) => {
+      return {
+        id: c.id,
+        address: c.name,
+      };
+    }),
   );
 }
 
@@ -314,7 +379,9 @@ export function duneCommandGroup(topYargs: Argv) {
  * command can be fed multiple paths and it will ensure that these csv files
  * maintain a continous set of results.
  */
-export async function splitContractUsage(args: DuneCommonArgs): Promise<void> {
+export async function splitContractUsage(
+  args: DuneSplitUsageArgs,
+): Promise<void> {
   await csvTransformAndSplit(args.path[0], args.outputDir, 0, "day");
 }
 

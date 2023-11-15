@@ -282,7 +282,7 @@ export async function configure(args: SchedulerArgs) {
       );
       const collector = new DailyContractUsageCollector(
         client,
-        ArtifactRepository,
+        ProjectRepository,
         recorder,
         cache,
         {

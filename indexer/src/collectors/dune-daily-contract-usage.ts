@@ -27,7 +27,6 @@ import {
   TimeSeriesCacheLookup,
   TimeSeriesCacheWrapper,
 } from "../cacher/time-series.js";
-import { ArtifactRepository } from "../db/artifacts.js";
 import { sha1FromArray } from "../utils/source-ids.js";
 import { BaseEventCollector, BasicArtifactGroup } from "../scheduler/common.js";
 import { UniqueArray } from "../utils/array.js";
@@ -111,7 +110,7 @@ export const DefaultDailyContractUsageSyncerOptions: DailyContractUsageSyncerOpt
 
 export class DailyContractUsageCollector extends BaseEventCollector<object> {
   private client: IDailyContractUsageClientV2;
-  private artifactRepository: typeof ArtifactRepository;
+  private projectRepository: typeof ProjectRepository;
   private recorder: IEventRecorderClient;
   private cache: TimeSeriesCacheWrapper;
   private options: DailyContractUsageSyncerOptions;
@@ -119,14 +118,14 @@ export class DailyContractUsageCollector extends BaseEventCollector<object> {
 
   constructor(
     client: IDailyContractUsageClientV2,
-    artifactRepository: typeof ArtifactRepository,
+    projectRepository: typeof ProjectRepository,
     recorder: IEventRecorderClient,
     cache: TimeSeriesCacheWrapper,
     options: Partial<DailyContractUsageSyncerOptions> = DefaultDailyContractUsageSyncerOptions,
   ) {
     super();
     this.client = client;
-    this.artifactRepository = artifactRepository;
+    this.projectRepository = projectRepository;
     this.options = _.merge(DefaultDailyContractUsageSyncerOptions, options);
     this.recorder = recorder;
     this.cache = cache;
@@ -143,7 +142,7 @@ export class DailyContractUsageCollector extends BaseEventCollector<object> {
 
   async *groupedArtifacts(): AsyncGenerator<IArtifactGroup<object>> {
     // Get all contracts
-    const projects = await ProjectRepository.find({
+    const projects = await this.projectRepository.find({
       relations: {
         artifacts: true,
       },
@@ -171,7 +170,6 @@ export class DailyContractUsageCollector extends BaseEventCollector<object> {
   ): Promise<void> {
     logger.info("loading contract usage data");
     const artifacts = await group.artifacts();
-    //const contractAddresses = artifacts.map((a) => a.name);
     const contractsByAddressMap = _.keyBy(artifacts, "name");
 
     // There seems to be some duplicates. Let's keep track for logging for now.
