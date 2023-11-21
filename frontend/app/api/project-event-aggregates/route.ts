@@ -14,6 +14,7 @@ import {
 import { UserInputError } from "../../../lib/types/errors";
 import { assert } from "../../../lib/common";
 
+export const runtime = "edge"; // 'nodejs' (default) | 'edge'
 export const revalidate = false; // 3600 = 1 hour
 const DEFAULT_START_DATE = 0;
 

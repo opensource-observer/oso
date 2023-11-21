@@ -7,8 +7,6 @@ import { cachedGetProjectsBySlugs } from "../../../lib/graphql/cached-queries";
 import { logger } from "../../../lib/logger";
 import { catchallPathToString } from "../../../lib/paths";
 
-// Using incremental static regeneration, will invalidate this page
-// after this (no deploy webhooks needed)
 export const revalidate = false; // 3600 = 1 hour
 const PLASMIC_COMPONENT = "ProjectPage";
 
