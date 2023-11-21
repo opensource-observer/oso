@@ -31,11 +31,11 @@ CALL refresh_continuous_aggregate('events_daily_to_project', '2021-05-01', '2021
 
 See [Timescale docs](https://docs.timescale.com/use-timescale/latest/continuous-aggregates/refresh-policies/#manually-refresh-a-continuous-aggregate) for more details.
 
-Not all materialized views are supported by Timescale (for example `FirstContribution`).
+Not all materialized views are supported by Timescale (for example `FirstContributionToProject`).
 These views are _not_ continuously updated and must always be manually refreshed by running:
 
 ```sql
-REFRESH MATERIALIZED VIEW first_contribution;
+REFRESH MATERIALIZED VIEW _first_contribution_to_project;
 ```
 
 See the [Postgres docs](https://www.postgresql.org/docs/current/rules-materializedviews.html) for more details.
