@@ -1,5 +1,7 @@
-import winston from "winston";
+//import winston from "winston";
 
+export const logger = console;
+/**
 export const logger = winston.createLogger({
   //level: "info",
   level: "debug",
@@ -17,3 +19,4 @@ export const logger = winston.createLogger({
     //new winston.transports.File({ filename: "combined.log", level: "info" }),
   ],
 });
+*/

@@ -3,7 +3,6 @@
 import "instantsearch.css/themes/algolia.css";
 import algoliasearch from "algoliasearch/lite";
 import Link from "next/link";
-import path from "path";
 import React from "react";
 import { SearchBox, Highlight, useHits } from "react-instantsearch";
 import { InstantSearchNext } from "react-instantsearch-nextjs";
@@ -19,8 +18,11 @@ import {
   ALGOLIA_INDEX,
 } from "../../lib/config";
 
-const PROJECT_PREFIX = "/project/";
 const searchClient = algoliasearch(ALGOLIA_APPLICATION_ID, ALGOLIA_API_KEY);
+const PROJECT_PREFIX = "/project";
+const createLink = (slug: string) => {
+  return `${PROJECT_PREFIX}/${slug}`;
+};
 
 type HitProps = {
   hit: any;
@@ -29,7 +31,7 @@ type HitProps = {
 function Hit({ hit }: HitProps) {
   return (
     <Link
-      href={path.join(PROJECT_PREFIX, hit.slug)}
+      href={createLink(hit.slug)}
       style={{
         width: "100%",
       }}

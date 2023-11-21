@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { logger } from "../../../lib/logger";
 import { cachedGetAllArtifacts } from "../../../lib/graphql/cached-queries";
 
-// TODO: Update to cache
+export const runtime = "edge"; // 'nodejs' (default) | 'edge'
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
