@@ -1,6 +1,7 @@
 from dotenv import load_dotenv
 import os
 import psycopg2
+import time
 
 
 def connect_to_database():
@@ -35,26 +36,23 @@ def refresh_mv(sql):
 
 def main():
 
-    start_date = '2013-01-01'
-    end_date = '2023-11-06'
+    start_date = '2000-01-01'
+    end_date = '2023-11-20'
     mvs = [
         'events_daily_to_artifact',
         'events_daily_to_project',
-    
-        'events_weekly_to_artifact',
-        'events_weekly_to_project',
-
-        'events_monthly_to_artifact',
-        'events_monthly_to_project',
-
         'events_daily_from_artifact',
         'events_daily_from_project',
+    
+        'events_monthly_to_artifact',
+        'events_monthly_to_project',
+        'events_monthly_from_artifact',
+        'events_monthly_from_project'
 
+        'events_weekly_to_artifact',
+        'events_weekly_to_project',
         'events_weekly_from_artifact',
         'events_weekly_from_project',
-
-        'events_monthly_from_artifact'
-        'events_monthly_from_project'
     ]
     for mv in mvs:
         
@@ -65,10 +63,13 @@ def main():
         end_time = time.time()
         print(f"Query took: {round(end_time-start_time)} seconds")       
 
-    print("Executing...")
-    sql = "REFRESH MATERIALIZED VIEW first_contribution;"
+    print("Executing FirstContributionToProject...")
+    sql = "REFRESH MATERIALIZED VIEW first_contribution_to_project;"
     refresh_mv(sql)
 
+    print("Executing LastContributionToProject...")
+    sql = "REFRESH MATERIALIZED VIEW last_contribution_to_project;"
+    refresh_mv(sql)
 
 if __name__ == "__main__":
     main()    
