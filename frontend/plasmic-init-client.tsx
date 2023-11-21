@@ -104,7 +104,9 @@ PLASMIC.registerComponent(
   {
     name: "AlgoliaSearchBox",
     description: "Algolia-powered search box",
-    props: {},
+    props: {
+      children: "slot",
+    },
     importPath: "./components/widgets/algolia",
   },
 );

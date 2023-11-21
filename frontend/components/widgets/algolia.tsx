@@ -3,7 +3,7 @@
 import "instantsearch.css/themes/algolia.css";
 import algoliasearch from "algoliasearch/lite";
 import Link from "next/link";
-import React from "react";
+import React, { ReactElement } from "react";
 import { SearchBox, Highlight, useHits } from "react-instantsearch";
 import { InstantSearchNext } from "react-instantsearch-nextjs";
 import SearchIcon from "@mui/icons-material/Search";
@@ -63,16 +63,23 @@ function HitsContainer() {
   );
 }
 
-function AlgoliaSearchBox() {
+export type AlgoliaSearchBoxProps = {
+  className?: string; // Plasmic CSS class
+  children?: ReactElement; // Show this
+};
+
+function AlgoliaSearchBox(props: AlgoliaSearchBoxProps) {
+  const { className, children: rawChildren } = props;
+  const children = rawChildren ?? <SearchIcon />;
   const [open, setOpen] = React.useState(false);
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
 
   return (
-    <div>
-      <button onClick={handleOpen}>
-        <SearchIcon />
-      </button>
+    <>
+      <div className={className} onClick={handleOpen}>
+        {children}
+      </div>
       <Modal open={open} onClose={handleClose}>
         <Paper
           elevation={4}
@@ -98,7 +105,7 @@ function AlgoliaSearchBox() {
           </InstantSearchNext>
         </Paper>
       </Modal>
-    </div>
+    </>
   );
 }
 
