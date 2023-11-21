@@ -291,7 +291,6 @@ export async function configure(args: SchedulerArgs) {
             "known-user-addresses-seed.json",
           ),
           mode: "api",
-          contractSha1: "test",
         },
       );
       return collector;
