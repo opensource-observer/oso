@@ -77,9 +77,6 @@ export interface DailyContractUsageSyncerOptions {
   blockchain: ArtifactNamespace;
 
   mode: "csv" | "api";
-
-  // This is the sha1 of the table used to store the monitored contractIds
-  contractSha1: string;
 }
 
 export const DefaultDailyContractUsageSyncerOptions: DailyContractUsageSyncerOptions =
@@ -104,8 +101,6 @@ export const DefaultDailyContractUsageSyncerOptions: DailyContractUsageSyncerOpt
     blockchain: ArtifactNamespace.OPTIMISM,
 
     mode: "api",
-
-    contractSha1: "da1aae77b853fc7c74038ee08eec441b10b89570",
   };
 
 export class DailyContractUsageCollector extends BaseEventCollector<object> {
