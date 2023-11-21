@@ -290,7 +290,7 @@ export async function configure(args: SchedulerArgs) {
             args.cacheDir,
             "known-user-addresses-seed.json",
           ),
-          mode: "csv",
+          mode: "api",
           contractSha1: "test",
         },
       );
