@@ -33,15 +33,13 @@ const nextConfig = {
         permanent: false,
       },
       {
-        source: "/forms/kariba-interest",
-        destination:
-          "https://docs.google.com/forms/d/e/1FAIpQLSc5h3lczif2kjzDosfwdjsY6CdHDT8qHXbphZvNLwiT1uMHJw/viewform?usp=sf_link",
+        source: "/forms/karibalabs-interest",
+        destination: "https://tally.so/r/w7NDv6",
         permanent: false,
       },
       {
-        source: "/forms/oso-data-collective",
-        destination:
-          "https://docs.google.com/forms/d/e/1FAIpQLSdfUwuzE5_n9ddfjIGel8LCyx84lU30vpmchooIGdPkTw9NuA/viewform?usp=sf_link",
+        source: "/forms/data-collective-interest",
+        destination: "https://tally.so/r/mRD4Pl",
         permanent: false,
       },
     ];
