@@ -81,6 +81,7 @@
     "ora": "^7.0.1",
     "oss-directory": "^0.0.5",
     "pg": "^8.4.0",
+    "redis": "^4.6.11",
     "reflect-metadata": "^0.1.13",
     "rimraf": "^5.0.1",
     "ts-adt": "^2.1.2",

@@ -1,24 +1,22 @@
 import { DateTime } from "luxon";
 import { EventRepository } from "../db/events.js";
 import {
+  ArtifactId,
   ArtifactNamespace,
   ArtifactType,
   EventType,
-  EventTypeEnum,
   RecorderTempDuplicateEvent,
   RecorderTempEvent,
   Recording,
 } from "../db/orm-entities.js";
 import { withDbDescribe } from "../db/testing.js";
 import { BatchEventRecorder, IFlusher } from "./recorder.js";
-import {
-  IncompleteEvent,
-  RecordHandle,
-  generateEventTypeStrategy,
-} from "./types.js";
+import { IncompleteEvent, RecordHandle } from "./types.js";
 import { AppDataSource } from "../db/data-source.js";
 import { randomInt, randomUUID } from "node:crypto";
 import _ from "lodash";
+import { createClient } from "redis";
+import { ArtifactRepository } from "../db/artifacts.js";
 
 type Callback = () => void;
 
@@ -101,8 +99,18 @@ function randomCommitEventsGenerator(
 
 withDbDescribe("BatchEventRecorder", () => {
   let flusher: TestFlusher;
+  let redisClient: ReturnType<typeof createClient>;
   beforeEach(async () => {
     flusher = new TestFlusher();
+    redisClient = createClient({
+      url: "redis://redis:6379",
+    });
+    await redisClient.connect();
+  });
+
+  afterEach(async () => {
+    await redisClient.flushAll();
+    await redisClient.disconnect();
   });
 
   it("should setup the recorder", async () => {
@@ -111,10 +119,12 @@ withDbDescribe("BatchEventRecorder", () => {
       AppDataSource.getRepository(Recording),
       AppDataSource.getRepository(RecorderTempEvent),
       AppDataSource.getRepository(EventType),
+      redisClient,
       {
         maxBatchSize: 3,
         timeoutMs: 30000,
         flusher: flusher,
+        enableRedis: true,
       },
     );
     await recorder.loadEventTypes();
@@ -122,12 +132,6 @@ withDbDescribe("BatchEventRecorder", () => {
       startDate: DateTime.now().minus({ month: 1 }),
       endDate: DateTime.now().plus({ month: 1 }),
     });
-    recorder.registerEventType(
-      generateEventTypeStrategy({
-        name: "COMMIT_CODE",
-        version: 1,
-      }),
-    );
     recorder.setActorScope(
       [ArtifactNamespace.GITHUB],
       [ArtifactType.GITHUB_USER, ArtifactType.GIT_REPOSITORY],
@@ -159,29 +163,27 @@ withDbDescribe("BatchEventRecorder", () => {
     await recorder.commit();
 
     // Check that the values are correct
-    const results = await EventRepository.find({
-      relations: {
-        to: true,
-        from: true,
-        type: true,
-      },
-      where: {
-        type: {
-          name: EventTypeEnum.COMMIT_CODE,
-        },
-      },
-    });
+    const results = await EventRepository.find();
     expect(results.length).toEqual(1);
     expect(results[0].sourceId).toEqual(testEvent.sourceId);
     expect(results[0].amount).toEqual(testEvent.amount);
-    expect(results[0].to.name).toEqual(testEvent.to.name);
-    expect(results[0].to.namespace).toEqual(testEvent.to.namespace);
-    expect(results[0].to.type).toEqual(testEvent.to.type);
-    expect(results[0].to.id).toBeDefined();
-    expect(results[0].from?.name).toEqual(testEvent.from?.name);
-    expect(results[0].from?.namespace).toEqual(testEvent.from?.namespace);
-    expect(results[0].from?.type).toEqual(testEvent.from?.type);
-    expect(results[0].from?.id).toBeDefined();
+    expect(results[0].fromId).toBeDefined();
+    expect(results[0].toId).toBeDefined();
+
+    const toArtifact = await ArtifactRepository.findOneByOrFail({
+      id: results[0].toId as ArtifactId,
+    });
+    const fromArtifact = await ArtifactRepository.findOneByOrFail({
+      id: results[0].fromId as ArtifactId,
+    });
+
+    expect(toArtifact.name).toEqual(testEvent.to.name);
+    expect(toArtifact.namespace).toEqual(testEvent.to.namespace);
+    expect(toArtifact.type).toEqual(testEvent.to.type);
+
+    expect(fromArtifact.name).toEqual(testEvent.from?.name);
+    expect(fromArtifact.namespace).toEqual(testEvent.from?.namespace);
+    expect(fromArtifact.type).toEqual(testEvent.from?.type);
   });
 
   describe("various recorder scenarios", () => {
@@ -195,10 +197,12 @@ withDbDescribe("BatchEventRecorder", () => {
         AppDataSource.getRepository(Recording),
         AppDataSource.getRepository(RecorderTempEvent),
         AppDataSource.getRepository(EventType),
+        redisClient,
         {
           maxBatchSize: 100000,
           flushIntervalMs: 1000,
           timeoutMs: 60000,
+          enableRedis: true,
         },
       );
       await recorder.loadEventTypes();
@@ -206,12 +210,6 @@ withDbDescribe("BatchEventRecorder", () => {
         startDate: DateTime.now().minus({ month: 1 }),
         endDate: DateTime.now().plus({ month: 1 }),
       });
-      recorder.registerEventType(
-        generateEventTypeStrategy({
-          name: "COMMIT_CODE",
-          version: 1,
-        }),
-      );
       recorder.setActorScope(
         [ArtifactNamespace.GITHUB],
         [ArtifactType.GITHUB_USER, ArtifactType.GIT_REPOSITORY],

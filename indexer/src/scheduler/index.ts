@@ -13,6 +13,7 @@ import { DuneClient } from "@cowprotocol/ts-dune-client";
 import {
   DUNE_API_KEY,
   DUNE_CSV_DIR_PATH,
+  ENABLE_REDIS,
   GITHUB_TOKEN,
   GITHUB_WORKERS_OWNER,
   GITHUB_WORKERS_REF,
@@ -46,6 +47,7 @@ import { DependentsPeriodicCollector } from "../collectors/dependents.js";
 import { CollectionRepository } from "../db/collection.js";
 import { BigQuery } from "@google-cloud/bigquery";
 import { DuneCSVUploader } from "../collectors/dune/utils/csv-uploader.js";
+import { createClient } from "redis";
 
 export type SchedulerArgs = CommonArgs & {
   recorderTimeoutMs: number;
@@ -144,12 +146,15 @@ export async function configure(args: SchedulerArgs) {
   const scheduler = new BaseScheduler(
     args.runDir,
     () => {
+      const redisClient = createClient();
       const recorder = new BatchEventRecorder(
         AppDataSource,
         AppDataSource.getRepository(Recording),
         AppDataSource.getRepository(RecorderTempEvent),
         AppDataSource.getRepository(EventType),
+        redisClient,
         {
+          enableRedis: ENABLE_REDIS,
           timeoutMs: args.recorderTimeoutMs,
         },
       );

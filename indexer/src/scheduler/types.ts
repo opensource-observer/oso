@@ -314,8 +314,6 @@ export interface SchedulerExecuteCollectorOptions {
  * Main interface to the indexer.
  */
 export interface IScheduler {
-  registerEventType(reg: EventTypeStrategyRegistration): void;
-
   registerEventCollector(reg: EventCollectorRegistration): void;
 
   registerPeriodicCollector(reg: PeriodicCollectorRegistration): void;
@@ -607,15 +605,8 @@ export class BaseScheduler implements IScheduler {
     }
   }
 
-  registerEventType(reg: EventTypeStrategyRegistration) {
-    this.eventTypes.push(reg);
-  }
-
   async newRecorder(): Promise<IEventRecorder> {
     const recorder = await this.recorderFactory();
-    this.eventTypes.forEach((r) => {
-      recorder.registerEventType(r.strategy);
-    });
     await recorder.setup();
     return recorder;
   }
