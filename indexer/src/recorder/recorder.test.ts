@@ -201,7 +201,7 @@ withDbDescribe("BatchEventRecorder", () => {
         {
           maxBatchSize: 100000,
           flushIntervalMs: 1000,
-          timeoutMs: 60000,
+          timeoutMs: 300000,
           enableRedis: true,
         },
       );
@@ -267,7 +267,7 @@ withDbDescribe("BatchEventRecorder", () => {
     });
 
     it("should do a large set of writes", async () => {
-      const eventCountToWrite = 10000;
+      const eventCountToWrite = 1000000;
       const events = randomCommitEventsGenerator(eventCountToWrite, {
         fromProbability: 0.7,
         repoNameGenerator: () => `repo-${randomInt(100)}`,
@@ -284,7 +284,7 @@ withDbDescribe("BatchEventRecorder", () => {
       // Check that the events are in the database
       const eventCount = await EventRepository.count();
       expect(eventCount).toEqual(eventCountToWrite + 1);
-    }, 60000);
+    }, 300000);
 
     it("should try to write duplicates", async () => {
       const eventCountToWrite = 10;
