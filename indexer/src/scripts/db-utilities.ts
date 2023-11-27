@@ -3,11 +3,7 @@ import { handleError } from "../utils/error.js";
 import { Argv } from "yargs";
 import { AppDataSource } from "../db/data-source.js";
 import { DateTime } from "luxon";
-import {
-  coerceDateTime,
-  coerceDateTimeOrNow,
-  coerceDateTimeOrNull,
-} from "../utils/cli.js";
+import { coerceDateTime, coerceDateTimeOrNow } from "../utils/cli.js";
 import { logger } from "../utils/logger.js";
 import { Recording } from "../db/orm-entities.js";
 import { LessThan } from "typeorm";
@@ -57,8 +53,9 @@ export function dbUtilitiesCommandGroup(topYargs: Argv) {
           type: "string",
           describe:
             "ISO8601 of the expiration date to use. defaults to using the stored expiration",
+          default: "",
         })
-        .coerce("older-than-date", coerceDateTimeOrNull);
+        .coerce("older-than-date", coerceDateTimeOrNow);
     },
     (args) => handleError(cleanRecorderTemps(args)),
   );
@@ -66,8 +63,7 @@ export function dbUtilitiesCommandGroup(topYargs: Argv) {
 
 export async function cleanRecorderTemps(args: CleanRecorderTempTableArgs) {
   const repo = AppDataSource.getRepository(Recording);
-  const olderThan =
-    args.olderThanDate !== null ? args.olderThanDate : DateTime.now();
+  const olderThan = args.olderThanDate ? args.olderThanDate : DateTime.now();
   const recordings = await repo.find({
     where: {
       expiration: LessThan(olderThan.toJSDate()),

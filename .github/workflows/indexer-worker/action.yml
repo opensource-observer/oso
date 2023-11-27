@@ -60,6 +60,10 @@ runs:
       shell: bash
       run: ls -halt ${CACHE_DIR}
 
+    - name: Start redis and have it's storage in the cache directory
+      shell: bash
+      run: ./.github/scripts/start-redis.sh
+
     - name: Ensure log directory
       shell: bash
       run: mkdir -p "$(dirname $LOG_FILE)"
@@ -72,6 +76,11 @@ runs:
     - name: Run worker for the given group
       shell: bash
       run: bash .github/scripts/scheduler.sh worker ${{ inputs.group }}
+    
+    - name: Stop redis
+      shell: bash
+      run: ./.github/scripts/stop-redis.sh
+      if: always()
 
     - uses: actions/upload-artifact@v3
       with:
