@@ -16,6 +16,7 @@ import {
   IRecorderEvent,
   IRecorderEventType,
   ICommitResult as IRecorderCommitResult,
+  ICommitResult,
 } from "./types.js";
 import { Repository } from "typeorm";
 import { UniqueArray, asyncBatchFlattened } from "../utils/array.js";
@@ -546,7 +547,7 @@ export class ArtifactResolver {
 
   async loadArtifacts() {
     const formatString = "yyyy-LL-dd HH:mm:ss";
-    logger.debug("load all the artifacts into redis");
+    logger.debug("load all the artifacts into redis after");
     const artifactMetaJson = await this.redis.get(this.metaKey);
     const artifactMeta: ArtifactMetaRedis =
       artifactMetaJson === null
@@ -560,6 +561,12 @@ export class ArtifactResolver {
 
     const repo = this.dataSource.getRepository(Artifact);
     let cursor: number | undefined = undefined;
+
+    console.log(
+      `loading artifacts since ${lastUpdatedAt.toFormat(
+        formatString,
+      )} (${lastUpdatedAt.toISO()})`,
+    );
 
     const loadArtifactsTimer = timer(
       `load artifacts since ${lastUpdatedAt.toFormat(
@@ -579,7 +586,7 @@ export class ArtifactResolver {
       }
       const page = await query
         .orderBy("artifact.id", "ASC")
-        .take(this.options.maxBatchSize)
+        .limit(this.options.maxBatchSize)
         .getMany();
 
       count += page.length;
@@ -594,14 +601,22 @@ export class ArtifactResolver {
       if (page.length < this.options.maxBatchSize) {
         cursor = undefined;
       } else {
-        cursor = page.slice(-1, 1)[0].id;
+        cursor = page.slice(-1)[0].id;
         logger.debug(`next artifact page starting at ${cursor}`);
       }
     } while (cursor !== undefined);
     loadArtifactsTimer();
 
+    // If the lastUpdatedAt time is earlier than 1 min ago. Set the
+    // lastUpdatedAt to 1 min ago. This will eventually speed up look ups
+    const oneMinAgo = DateTime.now().toUTC().minus({ minute: 1 });
+    if (lastUpdatedAt < oneMinAgo) {
+      lastUpdatedAt = oneMinAgo;
+    }
+
     // Set the metadata so we only ever get diffs
     artifactMeta.lastUpdatedAt = lastUpdatedAt.startOf("second").toISO()!;
+
     await this.redis.set(this.metaKey, JSON.stringify(artifactMeta));
     logger.debug(
       `loaded ${count} artifacts into redis after ${artifactMeta.lastUpdatedAt}`,
@@ -800,6 +815,7 @@ export class BatchEventRecorder implements IEventRecorder {
   private committing: boolean;
   private redis: RedisClient;
   private artifactResolver: ArtifactResolver;
+  private commitResult: ICommitResult | null;
 
   constructor(
     dataSource: DataSource,
@@ -840,6 +856,7 @@ export class BatchEventRecorder implements IEventRecorder {
     this.committing = false;
     this.redis = redisClient;
     this.preCommitCount = 0;
+    this.commitResult = null;
 
     this.artifactResolver = new ArtifactResolver(dataSource, redisClient, {
       maxBatchSize: this.options.maxBatchSize,
@@ -883,6 +900,7 @@ export class BatchEventRecorder implements IEventRecorder {
     this.tableCounter += 1;
     this.isPreCommitTableOpen = true;
     this.preCommitCount = 0;
+    this.commitResult = new CommitResult();
 
     await this.dataSource.query(`
       CREATE TABLE ${this.preCommitTableName} AS 
@@ -908,6 +926,7 @@ export class BatchEventRecorder implements IEventRecorder {
   private async clean() {
     logger.debug("dropping the temporary table");
     const tmDropTable = timer("drop table");
+    this.commitResult = null;
 
     await this.dataSource.query(`
       DROP TABLE ${this.preCommitTableName}
@@ -941,16 +960,18 @@ export class BatchEventRecorder implements IEventRecorder {
       );
     }
 
+    logger.debug("flush complete. beginning recorder commit");
+
     // Using the recorder_temp_event table we can commit all of the events
     // Remove anything with duplicates
     const tmDelDupes = timer("delete event dupes");
-    const commitResult = new CommitResult();
+    const commitResult = this.commitResult!;
     const toIdsToResolve: number[] = [];
     try {
       const [invalid, uncommittedCount] = (await this.dataSource.query(`
         WITH events_with_duplicates AS (
           SELECT 
-            pct."sourceId", 
+            pct."sourceId",
             pct."typeId",
             pct."toId",
             COUNT(*) as "count"
@@ -1069,10 +1090,11 @@ export class BatchEventRecorder implements IEventRecorder {
       const skippedRefs = skippedRedisMembers.map((s) => {
         return splitDbEventUniqueId(s);
       });
+      console.log("skipped refs %d", skippedRefs.length);
 
       tmCommitEvents();
 
-      const uniqueCommittedEvents = new UniqueArray<RecorderEventRef>(
+      const uncommittedEvents = new UniqueArray<RecorderEventRef>(
         eventUniqueId,
       );
 
@@ -1109,7 +1131,7 @@ export class BatchEventRecorder implements IEventRecorder {
         convertBatch,
       );
       invalidEvents.forEach((e) => {
-        uniqueCommittedEvents.push(e);
+        uncommittedEvents.push(e);
       });
 
       if (committedEvents.length > 0) {
@@ -1129,19 +1151,26 @@ export class BatchEventRecorder implements IEventRecorder {
           `notifying of event failures for ${invalidEvents.length} invalid events`,
         );
         this.notifyFailure(
-          uniqueCommittedEvents.items(),
+          uncommittedEvents.items(),
           new RecorderError(
             "event has duplicates in this collection. something is wrong with the collector",
           ),
         );
       }
-      commitResult.committed = committedEvents.map(eventUniqueId);
-      commitResult.skipped = skippedEvents.map(eventUniqueId);
-      commitResult.invalid = uniqueCommittedEvents.items().map(eventUniqueId);
-      commitResult.errors = [];
+      committedEvents.forEach((e) => {
+        commitResult.committed.push(eventUniqueId(e));
+      });
+      skippedEvents.forEach((e) => {
+        commitResult.skipped.push(eventUniqueId(e));
+      });
+      uncommittedEvents.items().forEach((e) => {
+        commitResult.invalid.push(eventUniqueId(e));
+      });
     } catch (err) {
+      logger.error(`error during commit`);
+      logger.error(`err=${JSON.stringify(err)}`);
       this.emitter.emit("commit-error", err);
-      commitResult.errors = [err];
+      commitResult.errors.push(err);
     }
     await this.clean();
     return commitResult;
@@ -1492,6 +1521,7 @@ export class BatchEventRecorder implements IEventRecorder {
         !this.recorderOptions.overwriteExistingEvents
       ) {
         logger.debug(`${batchId}: received event out of range. skipping`);
+        this.commitResult!.skipped.push(eventUniqueId(event));
         this.notifySuccess([event]);
         continue;
       }
@@ -1504,8 +1534,6 @@ export class BatchEventRecorder implements IEventRecorder {
     );
 
     const writeArtifacts = async () => {
-      console.log("artifact writing");
-      console.log(newArtifacts.length);
       const tmWriteArtifacts = timer("writing new artifacts");
       if (newArtifacts.length > 0) {
         const artifactResponse = (await this.dataSource.query(

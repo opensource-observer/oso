@@ -143,10 +143,12 @@ export async function configure(args: SchedulerArgs) {
     workflowId: GITHUB_WORKERS_WORKFLOW_ID,
   });
 
+  const redisClient = createClient();
+  await redisClient.connect();
+
   const scheduler = new BaseScheduler(
     args.runDir,
     () => {
-      const redisClient = createClient();
       const recorder = new BatchEventRecorder(
         AppDataSource,
         [],
@@ -207,7 +209,7 @@ export async function configure(args: SchedulerArgs) {
         // Arrived at this batch size through trial and error. 500 was too much.
         // Many "Premature close" errors. The less we have the less opportunity
         // for HTTP5XX errors it seems. This batch size is fairly arbitrary.
-        100,
+        75,
       );
       return collector;
     },

@@ -454,10 +454,31 @@ export class ArtifactRecordsCommitmentWrapper
             ? committer.results()
             : commit.collectResultsForHandles(committer.handles());
           if (results.errors.length === 0) {
-            await this.eventPointerManager.commitArtifactForRange(
-              this.collectorName,
-              this.range,
-              artifact,
+            try {
+              await this.eventPointerManager.commitArtifactForRange(
+                this.collectorName,
+                this.range,
+                artifact,
+              );
+              logger.info(
+                `successfully committed Artifact[name=${
+                  artifact.name
+                }, namespace=${artifact.namespace}] for ${rangeToString(
+                  this.range,
+                )}`,
+              );
+            } catch (err) {
+              return {
+                artifact: artifact,
+                results: {
+                  success: [],
+                  errors: [err],
+                },
+              };
+            }
+          } else {
+            logger.error(
+              `cannot commit Artifact[name=${artifact.name}, namespace=${artifact.namespace}]. has ${results.errors.length} error(s)`,
             );
           }
           return {
@@ -1101,6 +1122,7 @@ export class BaseScheduler implements IScheduler {
         logger.debug(`${groupName}: waiting for artifacts to complete commits`);
 
         const artifactSummaries = await committer.complete(commitResult);
+        logger.debug(`completed commits for ${artifactSummaries.length}`);
         totalMissing = totalMissing - artifactSummaries.length;
         executionSummary.artifactSummaries.push(...artifactSummaries);
 
