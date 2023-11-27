@@ -107,6 +107,8 @@ export async function configure(args: SchedulerArgs) {
         if (retryCount < 50) {
           octokit.log.info(`Retrying after ${retryAfter} seconds!`);
           return true;
+        } else {
+          octokit.log.error("failed too many times waiting for github quota");
         }
       },
       onSecondaryRateLimit: (retryAfter, options, octokit, retryCount) => {
@@ -209,7 +211,7 @@ export async function configure(args: SchedulerArgs) {
         // Arrived at this batch size through trial and error. 500 was too much.
         // Many "Premature close" errors. The less we have the less opportunity
         // for HTTP5XX errors it seems. This batch size is fairly arbitrary.
-        75,
+        50,
       );
       return collector;
     },
