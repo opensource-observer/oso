@@ -25,7 +25,6 @@ import {
   ArtifactType,
   CollectionType,
   EventType,
-  RecorderTempEvent,
   Recording,
 } from "../db/orm-entities.js";
 import { EventPointerRepository } from "../db/events.js";
@@ -53,6 +52,7 @@ export type SchedulerArgs = CommonArgs & {
   recorderTimeoutMs: number;
   overwriteExistingEvents: boolean;
   batchSize: number;
+  recorderConnections: number;
 };
 
 export type SchedulerManualArgs = SchedulerArgs & {
@@ -149,8 +149,8 @@ export async function configure(args: SchedulerArgs) {
       const redisClient = createClient();
       const recorder = new BatchEventRecorder(
         AppDataSource,
+        [],
         AppDataSource.getRepository(Recording),
-        AppDataSource.getRepository(RecorderTempEvent),
         AppDataSource.getRepository(EventType),
         redisClient,
         {

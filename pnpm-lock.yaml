@@ -276,6 +276,9 @@ importers:
       lodash:
         specifier: ^4.17.21
         version: 4.17.21
+      lru-cache:
+        specifier: ^10.1.0
+        version: 10.1.0
       luxon:
         specifier: ^3.4.0
         version: 3.4.0
@@ -3812,7 +3815,7 @@ packages:
       '@octokit/request-error': 5.0.0
       '@octokit/types': 11.1.0
       deprecation: 2.3.1
-      lru-cache: 10.0.0
+      lru-cache: 10.1.0
       universal-github-app-jwt: 1.1.1
       universal-user-agent: 6.0.0
     dev: false
@@ -10335,8 +10338,8 @@ packages:
       tslib: 2.6.2
     dev: true
 
-  /lru-cache@10.0.0:
-    resolution: {integrity: sha512-svTf/fzsKHffP42sujkO/Rjs37BCIsQVRCeNYIm9WN8rgT7ffoUnRtZCqU+6BqcSBdv8gwJeTz8knJpgACeQMw==}
+  /lru-cache@10.1.0:
+    resolution: {integrity: sha512-/1clY/ui8CzjKFyjdvwPWJUYKiFVXG2I2cY0ssG7h4+hwk+XOIX7ZSG9Q7TW8TW3Kp3BUSqgFWBLgL4PJ+Blag==}
     engines: {node: 14 || >=16.14}
     dev: false
 
@@ -11291,7 +11294,7 @@ packages:
     resolution: {integrity: sha512-MkhCqzzBEpPvxxQ71Md0b1Kk51W01lrYvlMzSUaIzNsODdd7mqhiimSZlr+VegAz5Z6Vzt9Xg2ttE//XBhH3EQ==}
     engines: {node: '>=16 || 14 >=14.17'}
     dependencies:
-      lru-cache: 10.0.0
+      lru-cache: 10.1.0
       minipass: 7.0.2
     dev: false
 

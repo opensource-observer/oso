@@ -281,6 +281,7 @@ type EventId = Brand<number, "EventId">;
 @Entity()
 @Index(["time"])
 @Index(["id", "time"], { unique: true })
+@Index(["sourceId", "typeId", "toId", "time"], { unique: true })
 export class Event {
   @PrimaryColumn("integer", { generated: "increment" })
   id: EventId;
@@ -298,7 +299,8 @@ export class Event {
   @Column("int")
   toId: number;
 
-  @Column("int")
+  @Column("int", { nullable: true })
+  @IsOptional()
   fromId: number | null;
 
   @Column("float")
@@ -307,6 +309,8 @@ export class Event {
   @Column("jsonb", { default: {} })
   details: Record<string, any>;
 }
+
+export type EventWeakRef = Pick<Event, "sourceId" | "typeId" | "toId">;
 
 @Entity()
 export class Recording {

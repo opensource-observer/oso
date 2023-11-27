@@ -13,9 +13,14 @@ export class RemoveFks1700946423231 implements MigrationInterface {
     await queryRunner.query(
       `ALTER TABLE "event" DROP CONSTRAINT "FK_b36ab188856dd8cf3d6c7ec4f48"`,
     );
+
     await queryRunner.query(
-      `DROP INDEX "public"."IDX_1bbe6d5332074e612550af9f35"`,
+      `ALTER TABLE "event" ALTER COLUMN "typeId" SET NOT NULL`,
     );
+    await queryRunner.query(
+      `ALTER TABLE "event" ALTER COLUMN "toId" SET NOT NULL`,
+    );
+
     await queryRunner.query(
       `ALTER TABLE "recorder_temp_event" ADD "toId" integer`,
     );
@@ -49,9 +54,14 @@ export class RemoveFks1700946423231 implements MigrationInterface {
     await queryRunner.query(
       `ALTER TABLE "recorder_temp_event" DROP COLUMN "toId"`,
     );
+
     await queryRunner.query(
-      `CREATE UNIQUE INDEX "IDX_1bbe6d5332074e612550af9f35" ON "event" ("sourceId", "time", "typeId") `,
+      `ALTER TABLE "event" ALTER COLUMN "toId" DROP NOT NULL`,
     );
+    await queryRunner.query(
+      `ALTER TABLE "event" ALTER COLUMN "typeId" DROP NOT NULL`,
+    );
+
     await queryRunner.query(
       `ALTER TABLE "event" ADD CONSTRAINT "FK_b36ab188856dd8cf3d6c7ec4f48" FOREIGN KEY ("fromId") REFERENCES "artifact"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`,
     );

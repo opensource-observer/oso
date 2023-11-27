@@ -6,13 +6,15 @@ import {
   ArtifactType,
   EventType,
   RecorderTempDuplicateEvent,
-  RecorderTempEvent,
   Recording,
 } from "../db/orm-entities.js";
 import { withDbDescribe } from "../db/testing.js";
 import { BatchEventRecorder, IFlusher } from "./recorder.js";
 import { IncompleteEvent, RecordHandle } from "./types.js";
-import { AppDataSource } from "../db/data-source.js";
+import {
+  AppDataSource,
+  createAndConnectDataSource,
+} from "../db/data-source.js";
 import { randomInt, randomUUID } from "node:crypto";
 import _ from "lodash";
 import { createClient } from "redis";
@@ -116,8 +118,8 @@ withDbDescribe("BatchEventRecorder", () => {
   it("should setup the recorder", async () => {
     const recorder = new BatchEventRecorder(
       AppDataSource,
+      [],
       AppDataSource.getRepository(Recording),
-      AppDataSource.getRepository(RecorderTempEvent),
       AppDataSource.getRepository(EventType),
       redisClient,
       {
@@ -194,8 +196,14 @@ withDbDescribe("BatchEventRecorder", () => {
       errors = [];
       recorder = new BatchEventRecorder(
         AppDataSource,
+        [
+          await createAndConnectDataSource("test1"),
+          await createAndConnectDataSource("test2"),
+          await createAndConnectDataSource("test3"),
+          await createAndConnectDataSource("test4"),
+          await createAndConnectDataSource("test5"),
+        ],
         AppDataSource.getRepository(Recording),
-        AppDataSource.getRepository(RecorderTempEvent),
         AppDataSource.getRepository(EventType),
         redisClient,
         {

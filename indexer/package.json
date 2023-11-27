@@ -73,6 +73,7 @@
     "graphql-request": "^6.1.0",
     "inquirer": "^9.2.11",
     "lodash": "^4.17.21",
+    "lru-cache": "^10.1.0",
     "luxon": "^3.4.0",
     "mkdirp": "^3.0.1",
     "node-fetch": "^3.3.2",

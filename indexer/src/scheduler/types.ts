@@ -8,6 +8,7 @@ import {
   JobExecutionStatus,
 } from "../db/orm-entities.js";
 import {
+  ICommitResult,
   IEventGroupRecorder,
   IEventRecorder,
   IEventRecorderClient,
@@ -40,13 +41,9 @@ import { fileExists } from "../utils/files.js";
 import { mkdirp } from "mkdirp";
 import type { Brand } from "utility-types";
 import { GenericError } from "../common/errors.js";
-import { UniqueArray } from "../utils/array.js";
+import { UniqueArray, asyncBatchFlattened } from "../utils/array.js";
 import { EventEmitter } from "node:events";
-import {
-  AsyncResults,
-  PossiblyError,
-  collectAsyncResults,
-} from "../utils/async-results.js";
+import { AsyncResults, PossiblyError } from "../utils/async-results.js";
 import { assert } from "../utils/common.js";
 
 export type IArtifactGroup<T extends object = object> = {
@@ -59,42 +56,59 @@ export type IArtifactGroup<T extends object = object> = {
 
 export type ErrorsList = PossiblyError[];
 
-type ArtifactCommitterFn = (results: AsyncResults<RecordResponse>) => void;
+export class ArtifactCommittmentError extends GenericError {}
 
-export interface IArtifactCommitter {
+export interface IArtifactCommitterProducer {
   withResults(results: AsyncResults<RecordResponse>): void;
   withHandles(handles: RecordHandle[]): void;
   withNoChanges(): void;
 }
 
-class ArtifactCommitter implements IArtifactCommitter {
-  private cb: ArtifactCommitterFn;
+export interface IArtifactCommitter extends IArtifactCommitterProducer {
+  handles(): RecordHandle[];
+  results(): AsyncResults<RecordResponse>;
+  isComplete(): boolean;
+}
 
-  static setup(cb: ArtifactCommitterFn) {
-    return new ArtifactCommitter(cb);
+class ArtifactCommitter implements IArtifactCommitter {
+  private _handles: RecordHandle[];
+  private _results: AsyncResults<RecordResponse>;
+  private artifact: Artifact;
+  private closed: boolean;
+
+  static setup(artifact: Artifact) {
+    return new ArtifactCommitter(artifact);
   }
 
-  constructor(cb: ArtifactCommitterFn) {
-    this.cb = cb;
+  constructor(artifact: Artifact) {
+    this.artifact = artifact;
+    this._handles = [];
+    this.closed = false;
+    this._results = {
+      success: [],
+      errors: [],
+    };
   }
 
   withHandles(handles: RecordHandle[]): void {
-    if (handles.length === 0) {
-      this.withNoChanges();
-      return;
+    if (this.closed) {
+      throw new ArtifactCommittmentError(
+        `committment results attempting to add unresolved handles. Artifact[id=${this.artifact.id}] committer was already resolved.`,
+      );
     }
-    const handlesAsPromises = handles.map((h) => h.wait());
-    collectAsyncResults(handlesAsPromises)
-      .then((results) => {
-        this.withResults(results);
-      })
-      .catch((err) => {
-        logger.error("FATAL: unexpected error. this is being suppressed", err);
-      });
+    handles.forEach((h) => {
+      this._handles.push(h);
+    });
   }
 
-  withResults(results: AsyncResults<string>): void {
-    return this.cb(results);
+  withResults(results: AsyncResults<RecordResponse>): void {
+    if (!this.closed) {
+      this._results = results;
+    } else {
+      throw new ArtifactCommittmentError(
+        `committment results attempting override. Artifact[id=${this.artifact.id}] committer was already resolved.`,
+      );
+    }
   }
 
   withNoChanges(): void {
@@ -103,17 +117,28 @@ class ArtifactCommitter implements IArtifactCommitter {
       errors: [],
     });
   }
+
+  isComplete(): boolean {
+    return this.closed;
+  }
+
+  handles(): RecordHandle[] {
+    return this._handles;
+  }
+
+  results(): AsyncResults<string> {
+    return this._results;
+  }
 }
 
 export interface IArtifactGroupCommitmentProducer {
-  commit(artifact: Artifact): IArtifactCommitter;
+  commit(artifact: Artifact): IArtifactCommitterProducer;
   commitGroup(group: IEventGroupRecorder<Artifact>): void;
   failAll(err: PossiblyError): void;
 }
 
 export interface IArtifactGroupCommitmentConsumer {
-  waitAll(): Promise<ArtifactCommitmentSummary[]>;
-  failAll(err: PossiblyError): void;
+  complete(result: ICommitResult): Promise<ArtifactCommitmentSummary[]>;
 
   addListener(listener: "error", cb: (err: unknown) => void): EventEmitter;
   removeListener(listener: "error", cb: (err: unknown) => void): EventEmitter;
@@ -376,8 +401,6 @@ export class ArtifactRecordsCommitmentWrapper
       artifacts,
       duplicatesTracker,
     );
-    wrapper.createPromises();
-    wrapper.createCommitters();
     return wrapper;
   }
 
@@ -395,114 +418,55 @@ export class ArtifactRecordsCommitmentWrapper
     this.emitter = new EventEmitter();
     this.promises = [];
     this.duplicatesTracker = duplicatesTracker;
+    this.committers = {};
   }
 
-  private createPromises() {
-    this.promises = this.artifacts.map((artifact) => {
-      return new Promise<ArtifactCommitmentSummary>((resolve) => {
-        this.emitter.addListener(
-          `${artifact.id}`,
-          (results: AsyncResults<RecordResponse>) => {
-            const internal = async () => {
-              if (results.errors.length > 0) {
-                logger.debug(
-                  `errors found for Artifact[name=${artifact.name}, namespace=${artifact.namespace}]`,
-                );
-                return resolve({
-                  artifact: artifact,
-                  results: results,
-                });
-              }
-              const commitmentErrors: PossiblyError[] = [];
-
-              let seenCount = this.duplicatesTracker[artifact.id] || 0;
-
-              if (seenCount === 0) {
-                try {
-                  await this.eventPointerManager.commitArtifactForRange(
-                    this.collectorName,
-                    this.range,
-                    artifact,
-                  );
-                  seenCount += 1;
-                  this.duplicatesTracker[artifact.id] = seenCount;
-                  logger.info(
-                    `completed events for "${this.collectorName} on Artifact[${
-                      artifact.id
-                    }] for ${rangeToString(this.range)}`,
-                  );
-                } catch (err) {
-                  commitmentErrors.push(err);
-                }
-              } else {
-                logger.warn(
-                  `duplicate artifact commitment for Artifact[name=${artifact.name}, namespace=${artifact.namespace}]. skipping`,
-                );
-              }
-              resolve({
-                artifact: artifact,
-                results: results,
-              });
-            };
-
-            internal().catch((err) => {
-              logger.error(
-                "FATAL: unexpected error caught during artifact committment",
-                err,
-              );
-              this.emitter.emit("error", err);
-            });
-          },
-        );
-      });
-    });
-  }
-
-  private createCommitters() {
-    this.committers = this.artifacts.reduce<Record<string, IArtifactCommitter>>(
-      (acc, artifact) => {
-        acc[artifact.id.valueOf()] = ArtifactCommitter.setup((results) => {
-          this.emitter.emit(`${artifact.id}`, results);
-        });
-        return acc;
-      },
-      {},
-    );
-  }
-
-  commit(artifact: Artifact): IArtifactCommitter {
-    return this.getCommitter(artifact);
+  commit(artifact: Artifact): IArtifactCommitterProducer {
+    let committer = this.committers[artifact.id.valueOf()];
+    if (!committer) {
+      committer = ArtifactCommitter.setup(artifact);
+      this.committers[artifact.id.valueOf()] = committer;
+    }
+    return committer;
   }
 
   commitGroup(group: IEventGroupRecorder<Artifact>): void {
     // Listen for errors in the group
-    const errorListener = (err: unknown) => {
-      logger.error("caught error committing a group");
-      this.emitter.emit("error", err);
-    };
-    group.addListener("error", errorListener);
+    //const groupedHandles = group.groupedHandles()
 
     // Start waiting for all the artifacts asynchronously
-    this.artifacts.map((artifact) => {
-      return group
-        .wait(artifact)
-        .then((results) => {
-          group.removeListener("error", errorListener);
-          this.commit(artifact).withResults(results);
-        })
-        .catch((err) => {
-          logger.error(
-            "FATAL: unexpected error handling artifact commitment",
-            err,
-          );
-        });
+    this.artifacts.forEach((artifact) => {
+      const handles = group.handlesForGroup(artifact);
+      if (handles.length === 0) {
+        this.commit(artifact).withNoChanges();
+      } else {
+        this.commit(artifact).withHandles(handles);
+      }
     });
-    // Notify the group recorder that we're committing
-    group.commit();
   }
 
-  async waitAll(): Promise<ArtifactCommitmentSummary[]> {
-    return await Promise.all(this.promises);
+  async complete(commit: ICommitResult): Promise<ArtifactCommitmentSummary[]> {
+    return await asyncBatchFlattened(this.artifacts, 1000, async (batch) => {
+      return await Promise.all(
+        batch.map(async (artifact) => {
+          const committer = this.committers[artifact.id];
+          const results = committer.isComplete()
+            ? committer.results()
+            : commit.collectResultsForHandles(committer.handles());
+          if (results.errors.length === 0) {
+            await this.eventPointerManager.commitArtifactForRange(
+              this.collectorName,
+              this.range,
+              artifact,
+            );
+          }
+          return {
+            artifact: artifact,
+            results: results,
+          };
+        }),
+      );
+    });
   }
 
   failAll(err: PossiblyError): void {
@@ -518,16 +482,6 @@ export class ArtifactRecordsCommitmentWrapper
     this.artifacts.forEach((artifact) => {
       this.commit(artifact).withResults(results);
     });
-  }
-
-  private getCommitter(artifact: Artifact) {
-    const committer = this.committers[artifact.id];
-    if (!committer) {
-      throw new Error(
-        `unexpected Artifact[name=${artifact.name}, namespace=${artifact.namespace}]`,
-      );
-    }
-    return committer;
   }
 
   addListener(listener: "error", cb: (err: unknown) => void): EventEmitter {
@@ -1143,10 +1097,10 @@ export class BaseScheduler implements IScheduler {
         );
 
         // This is jank and needs to be fixed. This can be cleaned up.
-        await recorder.commit();
+        const commitResult = await recorder.commit();
         logger.debug(`${groupName}: waiting for artifacts to complete commits`);
 
-        const artifactSummaries = await committer.waitAll();
+        const artifactSummaries = await committer.complete(commitResult);
         totalMissing = totalMissing - artifactSummaries.length;
         executionSummary.artifactSummaries.push(...artifactSummaries);
 

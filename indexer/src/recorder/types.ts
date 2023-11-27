@@ -24,24 +24,22 @@ export type RecordResponse = string;
 
 export interface RecordHandle {
   id: string;
-  wait(): Promise<RecordResponse>;
 }
 
-export interface CommitResult {
+export interface ICommitResult {
   committed: string[];
   skipped: string[];
   invalid: string[];
   errors: unknown[];
+
+  collectResultsForHandles(
+    handles: RecordHandle[],
+  ): AsyncResults<RecordResponse>;
 }
 
 export interface IEventRecorderClient {
   // Record a single event. These are batched
   record(event: IncompleteEvent): Promise<RecordHandle>;
-
-  wait(
-    handles: RecordHandle[],
-    timeoutMs?: number,
-  ): Promise<AsyncResults<RecordResponse>>;
 }
 
 export interface IEventRecorder extends IEventRecorderClient {
@@ -54,7 +52,7 @@ export interface IEventRecorder extends IEventRecorderClient {
   setOptions(options: EventRecorderOptions): void;
 
   begin(): Promise<void>;
-  commit(): Promise<CommitResult>;
+  commit(): Promise<ICommitResult>;
   rollback(): Promise<void>;
 
   // Call this when you're done recording
@@ -143,16 +141,5 @@ export type EventGroupRecorderCallback<T> = (results: AsyncResults<T>) => void;
 export interface IEventGroupRecorder<G> {
   record(event: IncompleteEvent): Promise<void>;
 
-  wait(group: G): Promise<AsyncResults<string>>;
-
-  commit(): void;
-
-  addListener(message: "error", cb: (err: unknown) => void): EventEmitter;
-  addListener(
-    message: "group-completed",
-    cb: (id: number) => void,
-  ): EventEmitter;
-
-  removeListener(message: "error", cb: (err: unknown) => void): void;
-  removeListener(message: "group-completed", cb: (id: number) => void): void;
+  handlesForGroup(g: G): RecordHandle[];
 }
