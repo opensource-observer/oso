@@ -1,14 +1,32 @@
 import * as dotenv from "dotenv";
 dotenv.config();
 
-export const requireEnv = (identifier: string) => {
+export function requireEnv(identifier: string) {
   const value = process.env[identifier];
 
   if (!value) {
     throw new Error(`Required env var ${identifier} does not exist`);
   }
   return value;
-};
+}
+
+export function envWithDefault(identifier: string, defaultValue: any) {
+  const value = process.env[identifier];
+  if (!value) {
+    return defaultValue;
+  }
+  return value;
+}
+
+export function envBoolean(
+  identifier: string,
+  defaultValue: boolean = false,
+): boolean {
+  if (defaultValue) {
+    return process.env[identifier] === "false" ? false : true;
+  }
+  return process.env[identifier] === "true" ? true : false;
+}
 
 export const DB_HOST = requireEnv("DB_HOST");
 export const DB_PORT = requireEnv("DB_PORT");
@@ -19,29 +37,26 @@ export const GITHUB_GRAPHQL_API = requireEnv("X_GITHUB_GRAPHQL_API");
 export const GITHUB_TOKEN = requireEnv("X_GITHUB_TOKEN");
 export const DUNE_API_KEY = requireEnv("DUNE_API_KEY");
 export const DUNE_CSV_DIR_PATH = process.env.DUNE_CSVS_DIR_PATH || "";
-export const TEST_ONLY_ALLOW_CLEAR_DB =
-  process.env.TEST_ONLY_ALLOW_CLEAR_DB === "true" || false;
-export const NO_DYNAMIC_LOADS =
-  process.env.NO_DYNAMIC_LOADS === "true" || false;
-export const GITHUB_WORKERS_OWNER = process.env.GITHUB_WORKERS_OWNER
-  ? process.env.GITHUB_WORKERS_OWNER
-  : "opensource-observer";
-export const GITHUB_WORKERS_REPO = process.env.GITHUB_WORKERS_REPO
-  ? process.env.GITHUB_WORKERS_REPO
-  : "oso";
-export const GITHUB_WORKERS_REF = process.env.GITHUB_WORKERS_REF
-  ? process.env.GITHUB_WORKERS_REF
-  : "main";
-export const GITHUB_WORKERS_WORKFLOW_ID = process.env.GITHUB_WORKERS_WORKFLOW_ID
-  ? process.env.GITHUB_WORKERS_WORKFLOW_ID
-  : "indexer-worker.yml";
-export const ENABLE_DB_TESTS = process.env.ENABLE_DB_TESTS === "true" || false;
-export const INDEXER_SPAWN = process.env.INDEXER_SPAWN === "true" || false;
-export const DEBUG_DB = process.env.DEBUG_DB === "true" || false;
-export const DB_APPLICATION_NAME =
-  process.env.DB_APPLICATION_NAME !== ""
-    ? process.env.DB_APPLICATION_NAME
-    : "indexer-default";
+export const TEST_ONLY_ALLOW_CLEAR_DB = envBoolean("TEST_ONLY_ALLOW_CLEAR_DB");
+export const NO_DYNAMIC_LOADS = envBoolean("NO_DYNAMIC_LOADS");
+export const GITHUB_WORKERS_OWNER = envWithDefault(
+  "GITHUB_WORKERS_OWNER",
+  "opensource-observer",
+);
+export const GITHUB_WORKERS_REPO = envWithDefault("GITHUB_WORKERS_REPO", "oso");
+export const GITHUB_WORKERS_REF = envWithDefault("GITHUB_WORKERS_REF", "main");
+export const GITHUB_WORKERS_WORKFLOW_ID = envWithDefault(
+  "GITHUB_WORKERS_WORKFLOW_ID",
+  "indexer-worker.yml",
+);
+export const ENABLE_DB_TESTS = envBoolean("ENABLE_DB_TESTS");
+export const ENABLE_REDIS = envBoolean("ENABLE_REDIS");
+export const INDEXER_SPAWN = envBoolean("INDEXER_SPAWN");
+export const DEBUG_DB = envBoolean("DEBUG_DB");
+export const DB_APPLICATION_NAME = envWithDefault(
+  "DB_APPLICATION_NAME",
+  "indexer-default",
+);
 
 // This should never be set to true for production. This might cause data loss.
-export const DB_SYNCHRONIZE = process.env.DB_SYNCHRONIZE === "true" || false;
+export const DB_SYNCHRONIZE = envBoolean("DB_SYNCHRONIZE");

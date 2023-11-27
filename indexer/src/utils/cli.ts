@@ -8,6 +8,13 @@ export function coerceDateTime(input: string) {
   return date;
 }
 
+export function coerceDateTimeOrNull(input: string) {
+  if (input) {
+    return coerceDateTime(input);
+  }
+  return null;
+}
+
 export function coerceDateTimeOrNow(input: string) {
   if (input) {
     return coerceDateTime(input);

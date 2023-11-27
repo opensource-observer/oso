@@ -5,7 +5,6 @@ import {
   ArtifactType,
 } from "../db/orm-entities.js";
 import { FindOptionsWhere } from "typeorm";
-import _ from "lodash";
 import { DateTime } from "luxon";
 import { GenericError } from "../common/errors.js";
 import { Range } from "../utils/ranges.js";
@@ -25,35 +24,25 @@ export type RecordResponse = string;
 
 export interface RecordHandle {
   id: string;
-  wait(): Promise<RecordResponse>;
 }
 
-export interface CommitResult {
+export interface ICommitResult {
   committed: string[];
   skipped: string[];
   invalid: string[];
   errors: unknown[];
+
+  collectResultsForHandles(
+    handles: RecordHandle[],
+  ): AsyncResults<RecordResponse>;
 }
 
 export interface IEventRecorderClient {
   // Record a single event. These are batched
   record(event: IncompleteEvent): Promise<RecordHandle>;
-
-  wait(
-    handles: RecordHandle[],
-    timeoutMs?: number,
-  ): Promise<AsyncResults<RecordResponse>>;
 }
 
 export interface IEventRecorder extends IEventRecorderClient {
-  // A generic event recorder that will automatically handle batching writes for
-  // events and also resolving artifacts and contributors (and automatically
-  // create any that we may need). This is so we don't have to manually control
-  // many of the batching calls necessary to make this work reliably with the
-  // databases, which apparently can be finicky. It also makes it a bit more
-  // generic for us to load events.
-  registerEventType(strategy: IEventTypeStrategy): void;
-
   setup(): Promise<void>;
 
   setActorScope(namespaces: ArtifactNamespace[], types: ArtifactType[]): void;
@@ -63,7 +52,7 @@ export interface IEventRecorder extends IEventRecorderClient {
   setOptions(options: EventRecorderOptions): void;
 
   begin(): Promise<void>;
-  commit(): Promise<CommitResult>;
+  commit(): Promise<ICommitResult>;
   rollback(): Promise<void>;
 
   // Call this when you're done recording
@@ -111,8 +100,11 @@ export type IncompleteActor<N, M> = {
   namespace: M;
 };
 
-export type IncompleteArtifact = Pick<Artifact, "name" | "namespace" | "type"> &
-  Partial<Artifact>;
+export type IncompleteArtifact = {
+  name: string;
+  namespace: ArtifactNamespace;
+  type: ArtifactType;
+} & Partial<Artifact>;
 
 export interface IRecorderEventType {
   name: string;
@@ -149,82 +141,5 @@ export type EventGroupRecorderCallback<T> = (results: AsyncResults<T>) => void;
 export interface IEventGroupRecorder<G> {
   record(event: IncompleteEvent): Promise<void>;
 
-  wait(group: G): Promise<AsyncResults<string>>;
-
-  commit(): void;
-
-  addListener(message: "error", cb: (err: unknown) => void): EventEmitter;
-  addListener(
-    message: "group-completed",
-    cb: (id: number) => void,
-  ): EventEmitter;
-
-  removeListener(message: "error", cb: (err: unknown) => void): void;
-  removeListener(message: "group-completed", cb: (id: number) => void): void;
-}
-
-export class BasicEventTypeStrategy implements IEventTypeStrategy {
-  private allQuery: FindOptionsWhere<Event>;
-  private eventIdFun: (
-    directory: IActorDirectory,
-    event: Event,
-  ) => Promise<string>;
-  private incompleteIdFunc: (
-    directory: IActorDirectory,
-    event: IRecorderEvent,
-  ) => Promise<string>;
-  private _type: IRecorderEventType;
-
-  constructor(
-    eventType: IRecorderEventType,
-    allQuery: FindOptionsWhere<Event>,
-    eventIdFunc: (directory: IActorDirectory, event: Event) => Promise<string>,
-    incompleteIdFunc: (
-      directory: IActorDirectory,
-      event: IRecorderEvent,
-    ) => Promise<string>,
-  ) {
-    this.allQuery = allQuery;
-    this.eventIdFun = eventIdFunc;
-    this.incompleteIdFunc = incompleteIdFunc;
-    this._type = eventType;
-  }
-
-  get type(): IRecorderEventType {
-    return this._type;
-  }
-
-  idFromEvent(directory: IActorDirectory, event: Event): Promise<string> {
-    return this.eventIdFun(directory, event);
-  }
-
-  idFromIncompleteEvent(
-    directory: IActorDirectory,
-    event: IRecorderEvent,
-  ): Promise<string> {
-    return this.incompleteIdFunc(directory, event);
-  }
-
-  all(_directory: IActorDirectory): FindOptionsWhere<Event> {
-    return _.cloneDeep(this.allQuery);
-  }
-}
-
-export function generateEventTypeStrategy(
-  eventType: IRecorderEventType,
-): IEventTypeStrategy {
-  return new BasicEventTypeStrategy(
-    eventType,
-    {
-      type: {
-        name: eventType.name,
-      },
-    },
-    async (directory, event) => {
-      return event.sourceId;
-    },
-    async (_directory, event) => {
-      return event.sourceId;
-    },
-  );
+  handlesForGroup(g: G): RecordHandle[];
 }

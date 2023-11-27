@@ -385,7 +385,19 @@ export class GithubCommitCollector extends GithubBatchedProjectArtifactsBaseColl
             return this.recorder.record(e[0]);
           });
           if (summary.count !== summary.events.length) {
-            handles.push(...(await this.recordEventsForRepo(artifact, range)));
+            const existingMap = summary.events.reduce<Record<string, boolean>>(
+              (a, c) => {
+                a[c.sourceId] = true;
+                return a;
+              },
+              {},
+            );
+            const newHandles = await this.recordEventsForRepo(
+              artifact,
+              range,
+              existingMap,
+            );
+            newHandles.forEach((h) => handles.push(h));
           }
           committer.commit(artifact).withHandles(handles);
         } catch (err) {
@@ -398,7 +410,12 @@ export class GithubCommitCollector extends GithubBatchedProjectArtifactsBaseColl
     });
   }
 
-  private async recordEventsForRepo(repoArtifact: Artifact, range: Range) {
+  private async recordEventsForRepo(
+    repoArtifact: Artifact,
+    range: Range,
+    skipExistingMap?: Record<string, boolean>,
+  ) {
+    skipExistingMap = skipExistingMap || {};
     logger.debug(
       `Recording commits for ${repoArtifact.name} in ${rangeToString(range)}`,
     );
@@ -481,6 +498,10 @@ export class GithubCommitCollector extends GithubBatchedProjectArtifactsBaseColl
         ? []
         : (page.raw as Commit[]);
       for (const commit of commits) {
+        if (skipExistingMap[commit.sha]) {
+          logger.debug(`skipping commit ${commit.sha}. already recorded`);
+          continue;
+        }
         const rawCommitTime =
           commit.commit.author?.date || commit.commit.committer?.date;
         if (!rawCommitTime) {

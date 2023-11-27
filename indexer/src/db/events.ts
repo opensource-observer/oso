@@ -44,15 +44,24 @@ export const EventPointerRepository = AppDataSource.getRepository(
 
 export type EventTypeRef = Pick<EventType, "name" | "version">;
 
-export type EventRef = Pick<Event, "id" | "sourceId" | "type">;
+export type EventRef = Pick<Event, "id" | "sourceId" | "typeId">;
 
 export type BulkUpdateBySourceIDEvent = DeepPartial<Event> &
-  Pick<Event, "time" | "sourceId" | "type">;
+  Pick<Event, "time" | "sourceId" | "typeId">;
 
 export class BulkUpdateError extends GenericError {}
 class BulkUpdateDeletionRecordsMismatch extends GenericError {}
 
 export const EventRepository = AppDataSource.getRepository(Event).extend({
+  // Mostly used for testing
+  // async findByTypeWithArtifacts(type: EventTypeEnum, addWhere?: FindOptionsWhere<Event>) {
+  //   const where: FindOptionsWhere<Event> = {
+  //   }
+
+  //   return this.find({
+  //     where: where
+  //   })
+  // },
   async bulkUpdateBySourceIDAndType(events: BulkUpdateBySourceIDEvent[]) {
     // Ensure all have the same event type
     if (events.length === 0) {
@@ -72,7 +81,7 @@ export const EventRepository = AppDataSource.getRepository(Event).extend({
         if (time > summ.range.endDate) {
           summ.range.endDate = time;
         }
-        const eventTypeKey = `${event.type.name}:${event.type.version}`;
+        const eventTypeKey = `${event.typeId}:${event.typeId}`;
         if (!summ.types[eventTypeKey]) {
           summ.types[eventTypeKey] = true;
         }
@@ -104,9 +113,7 @@ export const EventRepository = AppDataSource.getRepository(Event).extend({
         logger.debug(`deleting ${events.length} event(s) in transaction`);
         const whereOptions: FindOptionsWhere<Event> = {
           sourceId: In(summary.sourceIds),
-          type: {
-            id: events[0].type.id,
-          },
+          typeId: events[0].typeId,
         };
         if (queryRange) {
           whereOptions.time = queryRange;
