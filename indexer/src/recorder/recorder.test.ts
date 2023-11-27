@@ -316,6 +316,7 @@ withDbDescribe("BatchEventRecorder", () => {
       // Check that the events are in the database
       const eventCount = await EventRepository.count();
       expect(eventCount).toEqual(eventCountToWrite / 2 + 1);
+      expect(results.committed.length).toEqual(6);
 
       expect(results.invalid.length).toEqual(5);
     }, 60000);

@@ -1550,7 +1550,7 @@ export class BatchEventRecorder implements IEventRecorder {
     const loadArtifactIdsTimers = timer(
       `load ${allArtifacts.length} artifact ids for current flush`,
     );
-    await this.artifactResolver.idsFromIncompleteArtifacts(allArtifacts);
+    await this.loadArtifacts();
     loadArtifactIdsTimers();
 
     const dbEvents = await this.createEventsFromRecorderEvents(
