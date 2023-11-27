@@ -86,3 +86,12 @@ export async function asyncBatch<T, R>(
   }
   return results;
 }
+
+export async function asyncBatchFlattened<T, R>(
+  arr: T[],
+  batchSize: number,
+  cb: (batch: T[], batchLength: number, batchNumber: number) => Promise<R[]>,
+): Promise<R[]> {
+  const batches = await asyncBatch(arr, batchSize, cb);
+  return batches.flat(1);
+}

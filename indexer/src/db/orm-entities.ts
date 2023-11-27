@@ -214,6 +214,8 @@ export class Project extends Base<"ProjectId"> {
   lastContributionToProjectAsTo: LastContributionToProject[];
 }
 
+export type ArtifactId = Brand<number, "ArtifactId">;
+
 @Entity()
 @Index(["namespace", "name"], { unique: true })
 export class Artifact extends Base<"ArtifactId"> {
@@ -236,11 +238,6 @@ export class Artifact extends Base<"ArtifactId"> {
 
   @OneToMany(() => Collection, (collection) => collection.artifactOwner)
   collections: Collection[];
-
-  @OneToMany(() => Event, (event) => event.to)
-  eventsAsTo: Event[];
-  @OneToMany(() => Event, (event) => event.from)
-  eventsAsFrom: Event[];
 
   @OneToMany(() => EventsDailyToArtifact, (e) => e.artifact)
   eventsDailyToArtifact: EventsDailyToArtifact[];
@@ -274,9 +271,6 @@ export class EventType extends Base<"EventTypeId"> {
   @Column("smallint")
   version: number;
 
-  @OneToMany(() => Event, (event) => event.type)
-  events: Event[];
-
   @OneToMany(() => FirstContributionToProject, (event) => event.type)
   firstContributionsToProject: FirstContributionToProject[];
   @OneToMany(() => LastContributionToProject, (event) => event.type)
@@ -287,7 +281,7 @@ type EventId = Brand<number, "EventId">;
 @Entity()
 @Index(["time"])
 @Index(["id", "time"], { unique: true })
-@Index(["type", "sourceId", "time"], { unique: true })
+@Index(["sourceId", "typeId", "toId", "time"], { unique: true })
 export class Event {
   @PrimaryColumn("integer", { generated: "increment" })
   id: EventId;
@@ -296,23 +290,18 @@ export class Event {
   sourceId: string;
 
   // The TS property name here is temporary. Will eventually be `type`
-  @ManyToOne(() => EventType, (eventType) => eventType.events)
-  @JoinColumn({
-    name: "typeId",
-  })
-  type: EventType;
+  @Column("int")
+  typeId: number;
 
   @PrimaryColumn("timestamptz")
   time: Date;
 
-  @ManyToOne(() => Artifact, (artifact) => artifact.eventsAsTo)
-  to: Artifact;
+  @Column("int")
+  toId: number;
 
-  @ManyToOne(() => Artifact, (artifact) => artifact.eventsAsFrom, {
-    nullable: true,
-  })
+  @Column("int", { nullable: true })
   @IsOptional()
-  from: Artifact | null;
+  fromId: number | null;
 
   @Column("float")
   amount: number;
@@ -320,6 +309,8 @@ export class Event {
   @Column("jsonb", { default: {} })
   details: Record<string, any>;
 }
+
+export type EventWeakRef = Pick<Event, "sourceId" | "typeId" | "toId">;
 
 @Entity()
 export class Recording {
@@ -365,21 +356,36 @@ export class RecorderTempEvent {
   @Column("timestamptz")
   time: Date;
 
-  @Column("text")
-  toName: string;
+  @Column("int", { nullable: true })
+  toId: number | null;
+
+  @Column("text", { nullable: true })
+  @IsOptional()
+  toName: string | null;
 
   @Column("enum", {
     enum: ArtifactNamespace,
     enumName: "artifact_namespace_enum",
+    nullable: true,
   })
-  toNamespace: ArtifactNamespace;
+  @IsOptional()
+  toNamespace: ArtifactNamespace | null;
 
-  @Column("enum", { enum: ArtifactType, enumName: "artifact_type_enum" })
-  toType: ArtifactType;
+  @Column("enum", {
+    enum: ArtifactType,
+    enumName: "artifact_type_enum",
+    nullable: true,
+  })
+  @IsOptional()
+  toType: ArtifactType | null;
 
   @Column("text", { nullable: true })
   @IsOptional()
   toUrl?: string | null;
+
+  @Column("int", { nullable: true })
+  @IsOptional()
+  fromId: number | null;
 
   @Column("text", { nullable: true })
   @IsOptional()

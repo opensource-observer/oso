@@ -58,6 +58,14 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+  redis:
+    image: redis:latest
+    restart: always
+    healthcheck:
+      test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
   test:
     profiles:
       - testing
@@ -72,6 +80,8 @@ services:
         condition: service_completed_successfully
       postgres:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     environment:
       - PNPM_HOME=/pnpm
       - DB_HOST=postgres
@@ -82,6 +92,7 @@ services:
       - DATABASE_URL=postgresql://postgres:password@postgres:5432/postgres
       - TEST_ONLY_ALLOW_CLEAR_DB=true
       - ENABLE_DB_TESTS=true
+      - ENABLE_REDIS=true
       - X_GITHUB_GRAPHQL_API=test
       - X_GITHUB_TOKEN=test
       - DUNE_API_KEY=test

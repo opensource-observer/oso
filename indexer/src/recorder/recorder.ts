@@ -1,25 +1,25 @@
 import {
+  Artifact,
   ArtifactNamespace,
   ArtifactType,
-  Event,
   EventType,
-  RecorderTempEvent,
+  EventWeakRef,
   Recording,
 } from "../db/orm-entities.js";
 import {
   IEventRecorder,
   IncompleteEvent,
-  IEventTypeStrategy,
   IncompleteArtifact,
   RecorderError,
   EventRecorderOptions,
   RecordHandle,
   IRecorderEvent,
   IRecorderEventType,
-  CommitResult as IRecorderCommitResult,
+  ICommitResult as IRecorderCommitResult,
+  ICommitResult,
 } from "./types.js";
 import { Repository } from "typeorm";
-import { UniqueArray } from "../utils/array.js";
+import { UniqueArray, asyncBatchFlattened } from "../utils/array.js";
 import { logger } from "../utils/logger.js";
 import _ from "lodash";
 import { Range, isWithinRange } from "../utils/ranges.js";
@@ -32,6 +32,11 @@ import { ensure, ensureNumber, ensureString } from "../utils/common.js";
 import { setTimeout as asyncTimeout } from "node:timers/promises";
 import { DataSource } from "typeorm/browser";
 import { timer } from "../utils/debug.js";
+import { createClient } from "redis";
+import { LRUCache } from "lru-cache";
+import { CommitResult } from "./commit-result.js";
+
+type RedisClient = ReturnType<typeof createClient>;
 
 export interface BatchEventRecorderOptions {
   maxBatchSize: number;
@@ -39,6 +44,8 @@ export interface BatchEventRecorderOptions {
   flushIntervalMs: number;
   tempTableExpirationDays: number;
   flusher?: IFlusher;
+  enableRedis?: boolean;
+  redisArtifactMetaKey: string;
 }
 
 const defaultBatchEventRecorderOptions: BatchEventRecorderOptions = {
@@ -50,6 +57,8 @@ const defaultBatchEventRecorderOptions: BatchEventRecorderOptions = {
   flushIntervalMs: 2000,
 
   tempTableExpirationDays: 1,
+
+  redisArtifactMetaKey: "artifact::_meta",
 };
 
 export type FlusherCallback = () => Promise<void>;
@@ -179,9 +188,22 @@ export class TimeoutBatchedFlusher implements IFlusher {
 }
 
 function eventUniqueId(
-  event: Pick<IRecorderEvent, "sourceId" | "type">,
+  event: Pick<IRecorderEvent, "sourceId" | "type" | "to">,
 ): string {
-  return `${event.type}:${event.sourceId}`;
+  return `${event.type}:${event.sourceId}:${event.to.name}:${event.to.namespace}`;
+}
+
+function dbEventUniqueId(event: EventWeakRef): string {
+  return `${event.typeId}:::${event.toId}:::${event.sourceId}`;
+}
+
+function splitDbEventUniqueId(id: string): EventWeakRef {
+  const split = _.split(id, ":::");
+  return {
+    sourceId: split[2],
+    typeId: parseInt(split[0]),
+    toId: parseInt(split[1]),
+  };
 }
 
 export class RecorderEventType implements IRecorderEventType {
@@ -207,6 +229,22 @@ export class RecorderEventType implements IRecorderEventType {
   toString() {
     return `${this.name}:v${this.version}`;
   }
+}
+
+type ArtifactMatch = [IncompleteArtifact, number | null];
+type ArtifactMatches = ArtifactMatch[];
+interface IArtifactMap {
+  resolveToIds(
+    artifacts: (IncompleteArtifact | null)[],
+  ): Promise<(number | null)[]>;
+  resolveToIncompleteArtifacts(
+    ids: (number | null)[],
+  ): Promise<(IncompleteArtifact | null)[]>;
+
+  getId(artifact: IncompleteArtifact): Promise<number>;
+  getIncomplete(id: number): Promise<IncompleteArtifact>;
+
+  add(pairs: { id: number; artifact: IncompleteArtifact }[]): void;
 }
 
 export class RecorderEvent implements IRecorderEvent {
@@ -258,19 +296,6 @@ export class RecorderEvent implements IRecorderEvent {
       throw err;
     }
     return e;
-  }
-
-  static fromDBEvent(event: Event) {
-    return new RecorderEvent(
-      event.id,
-      DateTime.fromJSDate(event.time),
-      event.type,
-      event.sourceId,
-      event.to,
-      event.from,
-      event.amount,
-      event.details,
-    );
   }
 
   get id(): number | null {
@@ -343,31 +368,429 @@ export class RecorderEvent implements IRecorderEvent {
 type OrNull<T> = T | null;
 
 interface PGRecorderTempEventBatchInput {
-  recorderIds: string[];
-  batchIds: number[];
   sourceIds: string[];
   typeIds: number[];
   times: Date[];
-  toNames: string[];
-  toNamespaces: string[];
-  toTypes: string[];
-  toUrls: OrNull<string>[];
-  fromNames: OrNull<string>[];
-  fromNamespaces: OrNull<ArtifactNamespace>[];
-  fromTypes: OrNull<ArtifactType>[];
-  fromUrls: OrNull<string>[];
+  toIds: number[];
+  fromIds: OrNull<number>[];
   amounts: number[];
   details: Record<string, any>[];
+  uniqueIds: string[];
 }
 
-export type RecorderEventRef = Pick<IRecorderEvent, "sourceId" | "type">;
+export type RecorderEventRef = Pick<IRecorderEvent, "sourceId" | "type" | "to">;
+
+type ArtifactMetaRedis = {
+  lastUpdatedAt: string;
+};
+
+export interface ArtifactResolverOptions {
+  metaKey: string;
+  prefix: string;
+  separator: string;
+  maxBatchSize: number;
+  localLruSize: number;
+}
+
+const defaultArtifactResolverOptions: ArtifactResolverOptions = {
+  metaKey: "_meta",
+  prefix: "artifact",
+  separator: ":::",
+  maxBatchSize: 100000,
+  localLruSize: 300000,
+};
+
+type ArtifactLRUStorage = [string, ArtifactNamespace, ArtifactType];
+
+class LRUArtifactMap implements IArtifactMap {
+  private toIds: LRUCache<string, number>;
+  private toIncomplete: LRUCache<number, ArtifactLRUStorage>;
+  private resolver: ArtifactResolver;
+
+  constructor(resolver: ArtifactResolver, size: number) {
+    this.toIds = new LRUCache({
+      max: size,
+    });
+    this.toIncomplete = new LRUCache({
+      max: size,
+    });
+    this.resolver = resolver;
+  }
+
+  async resolveToIds(
+    artifacts: (IncompleteArtifact | null)[],
+  ): Promise<(number | null)[]> {
+    const unknownArtifacts = artifacts.filter((a) => {
+      if (!a) {
+        return false;
+      }
+      const r = this.toIds.get(this.incompleteKey(a));
+      return !r;
+    }) as IncompleteArtifact[];
+    if (unknownArtifacts.length > 0) {
+      await this.resolver.idsFromIncompleteArtifacts(unknownArtifacts);
+    }
+    return artifacts.map((a) => {
+      if (!a) {
+        return null;
+      }
+      const id = this.toIds.get(this.incompleteKey(a));
+      if (!id) {
+        return null;
+      }
+      return id;
+    });
+  }
+
+  async resolveToIncompleteArtifacts(
+    ids: (number | null)[],
+  ): Promise<(IncompleteArtifact | null)[]> {
+    const unknownIds = ids.filter((id) => {
+      if (!id) {
+        return false;
+      }
+      const r = this.toIncomplete.get(id);
+      return !r;
+    }) as number[];
+    if (unknownIds.length > 0) {
+      await this.resolver.incompleteArtifactsByIds(unknownIds);
+    }
+    return unknownIds.map((id) => {
+      if (!id) {
+        return null;
+      }
+      const r = this.toIncomplete.get(id);
+      if (!r) {
+        return null;
+      }
+      return this.storageToIncompleteArtifact(r);
+    });
+  }
+
+  async getId(artifact: IncompleteArtifact): Promise<number> {
+    let id: number | null | undefined = this.toIds.get(
+      this.incompleteKey(artifact),
+    );
+    if (!id) {
+      id = await this.resolver.idFromIncompleteArtifact(artifact);
+      if (!id) {
+        throw new Error(
+          `artifact is not currently known by incomplete reference "${this.incompleteKey(
+            artifact,
+          )}"`,
+        );
+      }
+    }
+    return id;
+  }
+
+  async getIncomplete(id: number): Promise<IncompleteArtifact> {
+    const incomplete = this.toIncomplete.get(id);
+    if (!incomplete) {
+      const resolverIncomplete = await this.resolver.incompleteArtifactById(id);
+      if (!resolverIncomplete) {
+        throw new Error(`artifact is not currently known by id ${id}`);
+      }
+      return resolverIncomplete;
+    }
+    return this.storageToIncompleteArtifact(incomplete);
+  }
+
+  add(pairs: { id: number; artifact: IncompleteArtifact }[]): void {
+    pairs.forEach(({ id, artifact }) => {
+      this.toIds.set(this.incompleteKey(artifact), id);
+      this.toIncomplete.set(id, this.incompleteArtifactToStorage(artifact));
+    });
+  }
+
+  private incompleteArtifactToStorage(
+    a: IncompleteArtifact,
+  ): ArtifactLRUStorage {
+    return [a.name, a.namespace, a.type];
+  }
+
+  private storageToIncompleteArtifact(
+    s: ArtifactLRUStorage,
+  ): IncompleteArtifact {
+    return {
+      name: s[0],
+      namespace: s[1],
+      type: s[2],
+    };
+  }
+
+  private incompleteKey(artifact: IncompleteArtifact) {
+    return `${artifact.name}:${artifact.namespace}:${artifact.type}`;
+  }
+}
+
+/**
+ * Mostly an internal class used to resolve artifacts for recording events. This is
+ * intended to speed up writes.
+ */
+export class ArtifactResolver {
+  private redis: RedisClient;
+  private dataSource: DataSource;
+  private options: ArtifactResolverOptions;
+  private localMap: LRUArtifactMap;
+
+  constructor(
+    dataSource: DataSource,
+    redis: RedisClient,
+    options?: Partial<ArtifactResolverOptions>,
+  ) {
+    this.dataSource = dataSource;
+    this.redis = redis;
+    this.options = _.merge(defaultArtifactResolverOptions, options);
+    this.localMap = new LRUArtifactMap(this, this.options.localLruSize);
+  }
+
+  async loadArtifacts() {
+    const formatString = "yyyy-LL-dd HH:mm:ss";
+    logger.debug("load all the artifacts into redis after");
+    const artifactMetaJson = await this.redis.get(this.metaKey);
+    const artifactMeta: ArtifactMetaRedis =
+      artifactMetaJson === null
+        ? {
+            lastUpdatedAt: DateTime.fromISO("1970-09-21T00:00:00Z")
+              .toUTC()
+              .toISO(),
+          }
+        : JSON.parse(artifactMetaJson);
+    let lastUpdatedAt = DateTime.fromISO(artifactMeta.lastUpdatedAt);
+
+    const repo = this.dataSource.getRepository(Artifact);
+    let cursor: number | undefined = undefined;
+
+    console.log(
+      `loading artifacts since ${lastUpdatedAt.toFormat(
+        formatString,
+      )} (${lastUpdatedAt.toISO()})`,
+    );
+
+    const loadArtifactsTimer = timer(
+      `load artifacts since ${lastUpdatedAt.toFormat(
+        formatString,
+      )} (${lastUpdatedAt.toISO()})`,
+    );
+    let count = 0;
+    do {
+      const query = repo
+        .createQueryBuilder("artifact")
+        .where('artifact."updatedAt" > :updatedAt', {
+          updatedAt: lastUpdatedAt.toFormat(formatString),
+        });
+
+      if (cursor !== undefined) {
+        query.andWhere("artifact.id > :id", { id: cursor });
+      }
+      const page = await query
+        .orderBy("artifact.id", "ASC")
+        .limit(this.options.maxBatchSize)
+        .getMany();
+
+      count += page.length;
+      for (const artifact of page) {
+        const currentUpdatedAt = DateTime.fromJSDate(artifact.updatedAt);
+        if (currentUpdatedAt > lastUpdatedAt) {
+          lastUpdatedAt = currentUpdatedAt;
+        }
+        await this.saveArtifact(artifact);
+      }
+
+      if (page.length < this.options.maxBatchSize) {
+        cursor = undefined;
+      } else {
+        cursor = page.slice(-1)[0].id;
+        logger.debug(`next artifact page starting at ${cursor}`);
+      }
+    } while (cursor !== undefined);
+    loadArtifactsTimer();
+
+    // If the lastUpdatedAt time is earlier than 1 min ago. Set the
+    // lastUpdatedAt to 1 min ago. This will eventually speed up look ups
+    const oneMinAgo = DateTime.now().toUTC().minus({ minute: 1 });
+    if (lastUpdatedAt < oneMinAgo) {
+      lastUpdatedAt = oneMinAgo;
+    }
+
+    // Set the metadata so we only ever get diffs
+    artifactMeta.lastUpdatedAt = lastUpdatedAt.startOf("second").toISO()!;
+
+    await this.redis.set(this.metaKey, JSON.stringify(artifactMeta));
+    logger.debug(
+      `loaded ${count} artifacts into redis after ${artifactMeta.lastUpdatedAt}`,
+    );
+  }
+
+  async saveArtifact(artifact: Artifact) {
+    const byIncompleteArtifact = this.redis.set(
+      this.getKeyByIncompleteArtifact(artifact),
+      artifact.id,
+    );
+    const byId = this.redis.set(
+      this.getKeyById(artifact.id),
+      JSON.stringify([artifact.name, artifact.namespace, artifact.type]),
+    );
+    this.addArtifactToLocalMap(artifact);
+    return Promise.all([byId, byIncompleteArtifact]);
+  }
+
+  addArtifactToLocalMap(artifact: Artifact) {
+    this.localMap.add([
+      {
+        id: artifact.id,
+        artifact: {
+          name: artifact.name,
+          namespace: artifact.namespace,
+          type: artifact.type,
+        },
+      },
+    ]);
+  }
+
+  addIncompleteArtifactToLocalMap(id: number, artifact: IncompleteArtifact) {
+    this.localMap.add([
+      {
+        id: id,
+        artifact: {
+          name: artifact.name,
+          namespace: artifact.namespace,
+          type: artifact.type,
+        },
+      },
+    ]);
+  }
+
+  async idFromIncompleteArtifact(
+    artifact: IncompleteArtifact,
+  ): Promise<number | null> {
+    const res = await this.redis.get(this.getKeyByIncompleteArtifact(artifact));
+    if (!res) {
+      return null;
+    }
+    const id = parseInt(res);
+    this.addIncompleteArtifactToLocalMap(id, artifact);
+    return id;
+  }
+
+  async idsFromIncompleteArtifacts(artifacts: IncompleteArtifact[]) {
+    const res = await this.redis.mGet(
+      artifacts.map((a) => this.getKeyByIncompleteArtifact(a)),
+    );
+    return res.map((r, i) => {
+      if (!r) {
+        return null;
+      }
+      const id = parseInt(r);
+      this.addIncompleteArtifactToLocalMap(id, artifacts[i]);
+      return id;
+    });
+  }
+
+  private parseIncompleteArtifact(
+    result: string | null,
+  ): IncompleteArtifact | null {
+    if (!result) {
+      return null;
+    }
+    const parsed = JSON.parse(result) as [
+      string,
+      ArtifactNamespace,
+      ArtifactType,
+    ];
+    return {
+      name: parsed[0],
+      namespace: parsed[1],
+      type: parsed[2],
+    };
+  }
+
+  async incompleteArtifactById(id: number): Promise<IncompleteArtifact | null> {
+    const result = await this.redis.get(this.getKeyById(id));
+    const artifact = this.parseIncompleteArtifact(result);
+    if (artifact) {
+      this.addIncompleteArtifactToLocalMap(id, artifact);
+    }
+    return artifact;
+  }
+
+  async incompleteArtifactsByIds(
+    ids: number[],
+  ): Promise<Array<IncompleteArtifact | null>> {
+    const results = await this.redis.mGet(ids.map((i) => this.getKeyById(i)));
+    return results.map((r, i) => {
+      const artifact = this.parseIncompleteArtifact(r);
+      if (artifact) {
+        this.addIncompleteArtifactToLocalMap(ids[i], artifact);
+      }
+      return artifact;
+    });
+  }
+
+  private getKey(...parts: string[]) {
+    const allParts = [this.options.prefix];
+    allParts.push(...parts);
+    return allParts.join("...");
+  }
+
+  private get metaKey() {
+    return this.getKey(this.options.metaKey);
+  }
+
+  private getKeyByIncompleteArtifact(artifact: IncompleteArtifact) {
+    return this.getKey("incomplete", artifact.name, artifact.namespace);
+  }
+
+  private getKeyById(id: number) {
+    return this.getKey("id", `${id}`);
+  }
+
+  get map(): IArtifactMap {
+    return this.localMap;
+  }
+}
+
+// export interface RecordingTrackerOptions {
+//   prefix: string;
+//   separator: string;
+//   maxBatchSize: number;
+// }
+
+// const defaultRecordingTrackerOptions: RecordingTrackerOptions = {
+//   prefix: "recording-tracker",
+//   separator: ":::",
+//   maxBatchSize: 100000,
+// }
+
+// /**
+//  * Mostly internal class to track recordings in redis. We utilize a local redis due to
+//  * memory limitations in node.
+//  */
+// export class RecordingTracker {
+//   private redis: RedisClient;
+//   private dataSource: DataSource;
+//   private options: RecordingTrackerOptions;
+//   private name: string;
+
+//   constructor(name: string, dataSource: DataSource, redis: RedisClient, options: RecordingTrackerOptions) {
+//     this.name = name;
+//     this.dataSource = dataSource;
+//     this.redis = redis;
+//     this.options = options;
+//   }
+
+//   track(handle: RecordHandle) {
+//   }
+//}
+
+type BatchResult = EventWeakRef;
 
 export class BatchEventRecorder implements IEventRecorder {
-  private eventTypeStrategies: Record<string, IEventTypeStrategy>;
   private eventQueue: Array<IRecorderEvent>;
   private options: BatchEventRecorderOptions;
-  private tempEventRepository: Repository<RecorderTempEvent>;
   private dataSource: DataSource;
+  private dataSourcePool: DataSource[];
   private eventTypeRepository: Repository<EventType>;
   private recordingRepository: Repository<Recording>;
   private namespaces: ArtifactNamespace[];
@@ -386,22 +809,26 @@ export class BatchEventRecorder implements IEventRecorder {
   private batchCounter: number;
   private tableCounter: number;
   private initialized: boolean;
+  private preCommitCount: number;
   private _preCommitTableName: string;
   private isPreCommitTableOpen: boolean;
   private committing: boolean;
+  private redis: RedisClient;
+  private artifactResolver: ArtifactResolver;
+  private commitResult: ICommitResult | null;
 
   constructor(
     dataSource: DataSource,
+    dataSourcePool: DataSource[],
     recordingRepository: Repository<Recording>,
-    tempEventRepository: Repository<RecorderTempEvent>,
     eventTypeRepository: Repository<EventType>,
+    redisClient: RedisClient,
     options?: Partial<BatchEventRecorderOptions>,
   ) {
+    this.dataSourcePool = dataSourcePool;
     this.dataSource = dataSource;
     this.recordingRepository = recordingRepository;
-    this.tempEventRepository = tempEventRepository;
     this.eventTypeRepository = eventTypeRepository;
-    this.eventTypeStrategies = {};
     this.options = _.merge(defaultBatchEventRecorderOptions, options);
     this.flusher =
       options?.flusher ||
@@ -427,6 +854,13 @@ export class BatchEventRecorder implements IEventRecorder {
     this.isPreCommitTableOpen = false;
     this._preCommitTableName = "";
     this.committing = false;
+    this.redis = redisClient;
+    this.preCommitCount = 0;
+    this.commitResult = null;
+
+    this.artifactResolver = new ArtifactResolver(dataSource, redisClient, {
+      maxBatchSize: this.options.maxBatchSize,
+    });
 
     this.emitter.setMaxListeners(this.options.maxBatchSize * 3);
     // Setup flush event handler
@@ -454,6 +888,8 @@ export class BatchEventRecorder implements IEventRecorder {
       this.initialized = true;
     }
 
+    await this.loadArtifacts();
+
     if (this.isPreCommitTableOpen) {
       throw new RecorderError("Only one temporary table may be set at a time");
     }
@@ -463,6 +899,8 @@ export class BatchEventRecorder implements IEventRecorder {
     this._preCommitTableName = `recorder_pre_commit_${formattedRecorderId}_${this.tableCounter}`;
     this.tableCounter += 1;
     this.isPreCommitTableOpen = true;
+    this.preCommitCount = 0;
+    this.commitResult = new CommitResult();
 
     await this.dataSource.query(`
       CREATE TABLE ${this.preCommitTableName} AS 
@@ -488,10 +926,17 @@ export class BatchEventRecorder implements IEventRecorder {
   private async clean() {
     logger.debug("dropping the temporary table");
     const tmDropTable = timer("drop table");
+    this.commitResult = null;
 
     await this.dataSource.query(`
       DROP TABLE ${this.preCommitTableName}
     `);
+    try {
+      await this.redis.del(this.preCommitTableName);
+    } catch (err) {
+      logger.error("error attempting to delete the redis set");
+      logger.error(err);
+    }
     tmDropTable();
 
     this._preCommitTableName = "";
@@ -515,102 +960,178 @@ export class BatchEventRecorder implements IEventRecorder {
       );
     }
 
+    logger.debug("flush complete. beginning recorder commit");
+
     // Using the recorder_temp_event table we can commit all of the events
     // Remove anything with duplicates
     const tmDelDupes = timer("delete event dupes");
-    let response: IRecorderCommitResult;
+    const commitResult = this.commitResult!;
+    const toIdsToResolve: number[] = [];
     try {
       const [invalid, uncommittedCount] = (await this.dataSource.query(`
-      WITH events_with_duplicates AS (
-        SELECT 
-          pct."sourceId", 
-          pct."typeId",
-          COUNT(*) as "count"
-        FROM ${this.preCommitTableName} AS pct
-        GROUP BY 1,2
-        HAVING COUNT(*) > 1
-      )
-      DELETE FROM ${this.preCommitTableName} p
-      USING events_with_duplicates ewd
-      WHERE p."sourceId" = ewd."sourceId" AND
-            p."typeId" = ewd."typeId" AND
-            ewd."typeId" IS NOT NULL AND
-            ewd."sourceId" IS NOT NULL
-      RETURNING p."sourceId", p."typeId"
-    `)) as [{ sourceId: string; typeId: number }[], number];
+        WITH events_with_duplicates AS (
+          SELECT 
+            pct."sourceId",
+            pct."typeId",
+            pct."toId",
+            COUNT(*) as "count"
+          FROM ${this.preCommitTableName} AS pct
+          GROUP BY 1,2,3
+          HAVING COUNT(*) > 1
+        )
+        DELETE FROM ${this.preCommitTableName} p
+        USING events_with_duplicates ewd
+        WHERE p."sourceId" = ewd."sourceId" AND
+              p."typeId" = ewd."typeId" AND
+              p."toId" = ewd."toId" AND
+              ewd."typeId" IS NOT NULL AND
+              ewd."sourceId" IS NOT NULL AND
+              ewd."toId" IS NOT NULL
+        RETURNING p."sourceId", p."typeId", p."toId"
+      `)) as [{ sourceId: string; typeId: number; toId: number }[], number];
+      if (invalid.length > 0) {
+        await this.redis.sRem(
+          this.preCommitTableName,
+          invalid.map((i) => {
+            toIdsToResolve.push(i.toId);
+            return dbEventUniqueId(i);
+          }),
+        );
+      }
       tmDelDupes();
       logger.debug(`deleted ${uncommittedCount} events with duplicates`);
 
-      logger.debug("committing to event database");
+      const eventsToCommitCount = this.preCommitCount - uncommittedCount;
+
+      logger.debug(
+        `committing ${
+          this.preCommitCount - uncommittedCount
+        } events to event database`,
+      );
       // Write back into the main database
-      type Result = { sourceId: string; typeId: number };
-      const successful = await this.dataSource.transaction(async (manager) => {
-        if (this.recorderOptions.overwriteExistingEvents) {
-          logger.debug(`removing existing events`);
-          // Delete existing events
-          const tmDelEvents = timer("delete existing events");
-          await manager.query(
-            `
+
+      if (this.recorderOptions.overwriteExistingEvents) {
+        logger.debug(`removing existing events`);
+        // Delete existing events
+        const tmDelEvents = timer("delete existing events");
+        await this.dataSource.query(
+          `
             DELETE FROM event e
             USING ${this.preCommitTableName} p
             WHERE p."sourceId" = e."sourceId" AND
-                  p."typeId" = e."typeId"
+                  p."typeId" = e."typeId" AND
+                  p."toId" = e."toId"
           `,
-          );
-          tmDelEvents();
-        }
+        );
+        tmDelEvents();
+      }
 
-        const tmCommitEvents = timer("commit to event table");
-        const response = (await manager.query(`
-          WITH write_to_canonical_event AS (
+      const tmCommitEvents = timer("commit to event table");
+      const pool = [this.dataSource];
+      pool.push(...this.dataSourcePool);
+
+      const limitSize = Math.round(eventsToCommitCount / pool.length);
+
+      const concurrent = pool.reduce<Promise<BatchResult[]>[]>((a, ds, i) => {
+        const offset = i * limitSize;
+
+        const result = async () => {
+          const written = (await ds.query(`
             INSERT INTO event ("sourceId", "typeId", "time", "toId", "fromId", "amount", "details")
-            SELECT "sourceId", "typeId", "time", "toId", "fromId", "amount", "details" FROM ${this.preCommitTableName}
-            ON CONFLICT ("sourceId", "typeId", "time") DO NOTHING
-            RETURNING "sourceId", "typeId"
-          )
-          SELECT p."sourceId", p."typeId", CASE WHEN w."typeId" IS NOT NULL THEN 0 ELSE 1 END AS "skipped"
-          FROM ${this.preCommitTableName} p
-          LEFT JOIN write_to_canonical_event w
-            ON w."sourceId" = p."sourceId" AND p."typeId" = w."typeId"
-        `)) as (Result & { skipped: number })[];
-        tmCommitEvents();
+            SELECT 
+              "sourceId", 
+              "typeId", 
+              "time", 
+              "toId", 
+              "fromId", 
+              "amount", 
+              "details" 
+            FROM ${this.preCommitTableName}
+            OFFSET ${offset}
+            LIMIT ${limitSize}
+            ON CONFLICT ("sourceId", "typeId", "time", "toId") DO NOTHING
 
-        return response;
-      });
+            RETURNING "sourceId", "typeId", "toId"
+          `)) as BatchResult[];
 
-      const { committed, skipped } = successful.reduce<{
-        committed: Result[];
-        skipped: Result[];
-      }>(
-        (a, c) => {
-          if (c.skipped) {
-            a.skipped.push(c);
-          } else {
-            a.committed.push(c);
+          const writtenIds = written.map((w) => {
+            toIdsToResolve.push(w.toId);
+            return dbEventUniqueId({
+              sourceId: w.sourceId,
+              typeId: w.typeId,
+              toId: w.toId,
+            });
+          });
+
+          if (writtenIds.length > 0) {
+            await this.redis.sRem(this.preCommitTableName, writtenIds);
           }
-          return a;
-        },
-        { committed: [], skipped: [] },
-      );
+          return written;
+        };
+        a.push(result());
+        return a;
+      }, []);
 
-      const uniqueCommittedEvents = new UniqueArray<RecorderEventRef>(
+      const results = await Promise.all(concurrent);
+      const committedRefs = results.reduce<BatchResult[]>((a, c) => {
+        // Don't use the spread operator `...` or we may experience call stack
+        // overflows.
+        c.forEach((r) => {
+          return a.push(r);
+        });
+
+        return a;
+      }, []);
+
+      // Check redis for the skipped values
+      const skippedRedisMembers = await this.redis.sMembers(
+        this.preCommitTableName,
+      );
+      const skippedRefs = skippedRedisMembers.map((s) => {
+        return splitDbEventUniqueId(s);
+      });
+      console.log("skipped refs %d", skippedRefs.length);
+
+      tmCommitEvents();
+
+      const uncommittedEvents = new UniqueArray<RecorderEventRef>(
         eventUniqueId,
       );
 
-      const convertResp = (c: { sourceId: string; typeId: number }) => {
-        const t = RecorderEventType.fromDBEventType(
-          this.eventTypeIdMap[c.typeId],
-        );
-        return {
-          sourceId: c.sourceId,
-          type: t,
-        };
+      const artifactMap = this.artifactResolver.map;
+      const convertBatch = async (weakRefs: EventWeakRef[]) => {
+        const events: RecorderEventRef[] = [];
+        for (const ref of weakRefs) {
+          const artifact = await artifactMap.getIncomplete(ref.toId);
+          const t = RecorderEventType.fromDBEventType(
+            this.eventTypeIdMap[ref.typeId],
+          );
+          events.push({
+            sourceId: ref.sourceId,
+            to: artifact,
+            type: t,
+          });
+        }
+        return events;
       };
-      const committedEvents = committed.map(convertResp);
-      const skippedEvents = skipped.map(convertResp);
-      const invalidEvents = invalid.map(convertResp);
+
+      const committedEvents = await asyncBatchFlattened(
+        committedRefs,
+        this.options.maxBatchSize,
+        convertBatch,
+      );
+      const skippedEvents = await asyncBatchFlattened(
+        skippedRefs,
+        this.options.maxBatchSize,
+        convertBatch,
+      );
+      const invalidEvents = await asyncBatchFlattened(
+        invalid,
+        this.options.maxBatchSize,
+        convertBatch,
+      );
       invalidEvents.forEach((e) => {
-        uniqueCommittedEvents.push(e);
+        uncommittedEvents.push(e);
       });
 
       if (committedEvents.length > 0) {
@@ -630,29 +1151,108 @@ export class BatchEventRecorder implements IEventRecorder {
           `notifying of event failures for ${invalidEvents.length} invalid events`,
         );
         this.notifyFailure(
-          uniqueCommittedEvents.items(),
+          uncommittedEvents.items(),
           new RecorderError(
             "event has duplicates in this collection. something is wrong with the collector",
           ),
         );
       }
-      response = {
-        committed: committedEvents.map(eventUniqueId),
-        skipped: skippedEvents.map(eventUniqueId),
-        invalid: uniqueCommittedEvents.items().map(eventUniqueId),
-        errors: [],
-      };
+      committedEvents.forEach((e) => {
+        commitResult.committed.push(eventUniqueId(e));
+      });
+      skippedEvents.forEach((e) => {
+        commitResult.skipped.push(eventUniqueId(e));
+      });
+      uncommittedEvents.items().forEach((e) => {
+        commitResult.invalid.push(eventUniqueId(e));
+      });
     } catch (err) {
+      logger.error(`error during commit`);
+      logger.error(`err=${JSON.stringify(err)}`);
       this.emitter.emit("commit-error", err);
-      response = {
-        committed: [],
-        invalid: [],
-        skipped: [],
-        errors: [err],
-      };
+      commitResult.errors.push(err);
     }
     await this.clean();
-    return response;
+    return commitResult;
+  }
+
+  async loadArtifacts() {
+    return this.artifactResolver.loadArtifacts();
+  }
+
+  private incompleteArtifactRedisKey(artifact: IncompleteArtifact) {
+    return `artifact::${artifact.name}::${artifact.namespace}`;
+  }
+
+  private async getArtifactId(artifact: IncompleteArtifact) {
+    const res = await this.redis.get(this.incompleteArtifactRedisKey(artifact));
+    if (!res) {
+      return null;
+    }
+    return parseInt(res);
+  }
+
+  private async matchArtifactIds(artifacts: IncompleteArtifact[]) {
+    const res = await this.artifactResolver.map.resolveToIds(artifacts);
+    const matches = artifacts.map((a, i) => {
+      const id: number | null = res[i];
+      return [a, id] as [IncompleteArtifact, number | null];
+    });
+    return matches;
+  }
+
+  private async matchArtifactIdsOrFail(
+    artifacts: IncompleteArtifact[],
+  ): Promise<ArtifactMatches> {
+    const matches = await this.matchArtifactIds(artifacts);
+    const nulls = matches.filter((m) => {
+      return m[1] === null;
+    });
+    if (nulls.length > 0) {
+      // Log for debugging purposes
+      nulls.forEach((n) => {
+        logger.debug(
+          `missing artifactId for Artifact[name=${n[0].name}, namespace=${n[0].namespace}]`,
+        );
+      });
+      throw new RecorderError(`missing ${nulls.length} artifact ids`);
+    }
+    return matches;
+  }
+
+  private async uniqArtifactsFromEvents(events: IRecorderEvent[]) {
+    const determineUniqArtifactsTimers = timer("deteremine unique artifacts");
+    const uniqArtifacts = new UniqueArray<IncompleteArtifact>((a) => {
+      return `${a.name}:${a.namespace}`;
+    });
+
+    for (const event of events) {
+      const toId: number | null = null;
+      const fromId: number | null = null;
+
+      if (!toId) {
+        uniqArtifacts.push(event.to);
+      }
+
+      if (event.from) {
+        if (!fromId) {
+          uniqArtifacts.push(event.from);
+        }
+      }
+    }
+    if (this.options.enableRedis) {
+      const matches = await this.matchArtifactIds(uniqArtifacts.items());
+      const newArtifacts = matches.reduce<IncompleteArtifact[]>((a, c) => {
+        if (c[1] === null) {
+          a.push(c[0]);
+        }
+        return a;
+      }, []);
+      determineUniqArtifactsTimers();
+      return [uniqArtifacts.items(), newArtifacts];
+    }
+    determineUniqArtifactsTimers();
+    return [uniqArtifacts.items(), uniqArtifacts.items()];
   }
 
   async wait(
@@ -804,12 +1404,6 @@ export class BatchEventRecorder implements IEventRecorder {
     return this.recordedHistory[id] === true;
   }
 
-  // Records events into a queue and periodically flushes that queue as
-  // transactions to the database.
-  registerEventType(strategy: IEventTypeStrategy): void {
-    this.eventTypeStrategies[strategy.type.toString()] = strategy;
-  }
-
   async record(input: IncompleteEvent): Promise<RecordHandle> {
     if (this.committing) {
       throw new RecorderError("recorder is committing. writes disallowed");
@@ -832,21 +1426,6 @@ export class BatchEventRecorder implements IEventRecorder {
 
     return {
       id: uniqueId,
-      wait: () => {
-        // Let's not unnecessarily make a bunch of event listeners
-        if (this.recordedHistory[uniqueId]) {
-          return Promise.resolve(uniqueId);
-        }
-
-        return new Promise((resolve, reject) => {
-          this.emitter.addListener(uniqueId, (err) => {
-            if (err) {
-              return reject(err);
-            }
-            return resolve(uniqueId);
-          });
-        });
-      },
     };
   }
 
@@ -930,6 +1509,7 @@ export class BatchEventRecorder implements IEventRecorder {
       logger.debug(`nothing queued for batch[${this.recorderId}:${batchId}]`);
       return;
     }
+    logger.debug(`processing ${processing.length} events`);
 
     const newEvents = [];
     // Filter things that are out of the expected range
@@ -941,60 +1521,115 @@ export class BatchEventRecorder implements IEventRecorder {
         !this.recorderOptions.overwriteExistingEvents
       ) {
         logger.debug(`${batchId}: received event out of range. skipping`);
+        this.commitResult!.skipped.push(eventUniqueId(event));
         this.notifySuccess([event]);
         continue;
       }
       newEvents.push(event);
     }
 
-    const dbEvents = this.createEventsFromRecorderEvents(batchId, newEvents);
+    // Get all of the unique artifacts
+    const [allArtifacts, newArtifacts] = await this.uniqArtifactsFromEvents(
+      newEvents,
+    );
 
-    // Insert events into the temp event table
-    try {
-      const result = (await this.retryDbCall(() => {
-        return this.tempEventRepository.query(
+    const writeArtifacts = async () => {
+      const tmWriteArtifacts = timer("writing new artifacts");
+      if (newArtifacts.length > 0) {
+        const artifactResponse = (await this.dataSource.query(
           `
-          INSERT INTO recorder_temp_event
+            INSERT INTO artifact("name", "namespace", "type", "url")
+            SELECT * FROM unnest(
+              $1::text[], $2::artifact_namespace_enum[], $3::artifact_type_enum[], $4::text[]
+            ) 
+            ON CONFLICT ("name", "namespace") DO NOTHING
+            RETURNING "name", "namespace", "id"
+          `,
+          newArtifacts.reduce<
+            [string[], string[], string[], (string | null)[]]
+          >(
+            (a, c) => {
+              a[0].push(c.name);
+              a[1].push(c.namespace);
+              a[2].push(c.type);
+              a[3].push(c.url || null);
+              return a;
+            },
+            [[], [], [], []],
+          ),
+        )) as { name: string; namespace: string; id: number }[];
+        tmWriteArtifacts();
+        logger.debug(`added ${artifactResponse.length} new artifacts`);
+      }
+    };
+
+    try {
+      await this.retryDbCall(writeArtifacts);
+    } catch (err) {
+      logger.error("encountered an error writing to the artifacts table");
+      logger.debug(typeof err);
+      logger.error(`Error type=${typeof err}`);
+      //logger.error(`Error as JSON=${JSON.stringify(err)}`);
+      logger.error(err);
+      this.notifyFailure(newEvents, err);
+      this.emitter.emit("error", err);
+    }
+
+    const loadArtifactIdsTimers = timer(
+      `load ${allArtifacts.length} artifact ids for current flush`,
+    );
+    await this.loadArtifacts();
+    loadArtifactIdsTimers();
+
+    const dbEvents = await this.createEventsFromRecorderEvents(
+      batchId,
+      newEvents,
+    );
+
+    const precommitWrites = async () => {
+      const precommitTimer = timer("write to precommit table");
+      const pgWrite = this.dataSource.query(
+        `
+          INSERT INTO ${this.preCommitTableName}
             (
-              "recorderId", "batchId", "sourceId", "typeId", "time", 
-              "toName", "toNamespace", "toType", "toUrl", 
-              "fromName", "fromNamespace", "fromType", "fromUrl", 
-              "amount", "details"
+              "sourceId", "typeId", "time", 
+              "toId", "fromId", "amount", "details"
             )
             (
               select * from unnest(
-                $1::uuid[], $2::int[], $3::text[], $4::int[], $5::timestamptz[],
-                $6::text[], $7::artifact_namespace_enum[], $8::artifact_type_enum[], $9::text[],
-                $10::text[], $11::artifact_namespace_enum[], $12::artifact_type_enum[], $13::text[],
-                $14::float[], $15::jsonb[]
+                $1::text[], $2::int[], $3::timestamptz[],
+                $4::int[],
+                $5::int[],
+                $6::float[], $7::jsonb[]
               )
             )
           RETURNING "id"
         `,
-          [
-            dbEvents.recorderIds,
-            dbEvents.batchIds,
-            dbEvents.sourceIds,
-            dbEvents.typeIds,
-            dbEvents.times,
-            dbEvents.toNames,
-            dbEvents.toNamespaces,
-            dbEvents.toTypes,
-            dbEvents.toUrls,
-            dbEvents.fromNames,
-            dbEvents.fromNamespaces,
-            dbEvents.fromTypes,
-            dbEvents.fromUrls,
-            dbEvents.amounts,
-            dbEvents.details,
-          ],
-        );
-      })) as { id: number }[];
+        [
+          dbEvents.sourceIds,
+          dbEvents.typeIds,
+          dbEvents.times,
+          dbEvents.toIds,
+          dbEvents.fromIds,
+          dbEvents.amounts,
+          dbEvents.details,
+        ],
+      );
+      await this.redis.sAdd(this.preCommitTableName, dbEvents.uniqueIds);
+      const res = (await pgWrite) as { id: number }[];
+      precommitTimer();
+      return res;
+    };
+
+    // Insert events into the pre commit event table
+    try {
+      const result = await this.retryDbCall(precommitWrites);
       if (result.length !== newEvents.length) {
         throw new RecorderError(
           `recorder writes failed. Expected ${newEvents.length} writes but only received ${result.length}`,
         );
       }
+      this.preCommitCount += result.length;
       logger.debug(
         `completed writing batch of ${result.length} to the temporary table`,
       );
@@ -1006,95 +1641,6 @@ export class BatchEventRecorder implements IEventRecorder {
       logger.error(err);
       this.notifyFailure(newEvents, err);
       this.emitter.emit("error", err);
-    }
-
-    // Run queries to commit events into the event database
-    const eventsWrite = async () => {
-      return this.dataSource.transaction(async (manager) => {
-        // Write artifacts
-        const tmWriteArtifacts = timer("write new artifacts");
-        const artifactResponse = (await manager.query(
-          `
-          with new_artifact as (
-            SELECT 
-              rtea."name" AS "name", 
-              rtea."namespace" AS "namespace", 
-              rtea."type" AS "type", 
-              (array_agg(rtea."url"))[1] AS "url"
-            FROM recorder_temp_event_artifact AS rtea
-            WHERE 
-              rtea."recorderId" = $1 AND
-              rtea."batchId" = $2
-            GROUP BY 1,2,3
-          ), artifact_insert AS (
-            INSERT INTO artifact("name", "namespace", "type", "url")
-            SELECT * FROM new_artifact
-            ON CONFLICT ("name", "namespace") DO NOTHING
-            RETURNING "id"
-          )
-          select count(*) from artifact_insert
-      `,
-          [this.recorderId, batchId],
-        )) as { count: string }[];
-        tmWriteArtifacts();
-        if (artifactResponse.length !== 1) {
-          throw new RecorderError("unexpected response writing artifacts");
-        }
-        logger.debug(`added ${artifactResponse[0].count} new artifacts`);
-
-        const tmPrecommitEvents = timer("bulk write events to precommit table");
-        // Write all events and delete anything necessary. Ignore events with
-        // duplicates we don't know what to do in that case. Leave those in the
-        // database.
-        const batchResp = (await manager.query(
-          `
-          with event_with_artifact AS (
-            SELECT
-              rte."sourceId",
-              rte."typeId",
-              rte."time",
-              a_to."id" AS "toId",
-              a_from."id" AS "fromId",
-              rte."amount",
-              rte."details",
-              rte."recorderId"
-            FROM recorder_temp_event AS rte
-            LEFT JOIN artifact a_to 
-              ON rte."toName" = a_to."name" AND
-                 rte."toNamespace" = a_to."namespace"
-            LEFT JOIN artifact a_from 
-              ON rte."fromName" = a_from."name" AND
-                 rte."fromNamespace" = a_from."namespace"
-            WHERE 
-              rte."recorderId" = $1 AND
-              rte."batchId" = $2
-          ), batch as (
-            INSERT INTO ${this.preCommitTableName} ("sourceId", "typeId", "time", "toId", "fromId", "amount", "details")
-            SELECT "sourceId", "typeId", "time", "toId", "fromId", "amount", "details" FROM event_with_artifact
-            RETURNING "id"
-          )
-          select count(*) from batch;
-      `,
-          [this.recorderId, batchId],
-        )) as { count: string }[];
-        tmPrecommitEvents();
-
-        if (batchResp.length !== 1) {
-          throw new RecorderError("error occurred counting the batch results");
-        }
-
-        // COPY the temp table to the real one
-        logger.debug(
-          `finished writing ${batchResp[0].count} events to the temporary table`,
-        );
-        return batchResp;
-      });
-    };
-
-    try {
-      await this.retryDbCall(eventsWrite, 3);
-    } catch (err) {
-      this.notifyFailure(newEvents, err);
     }
 
     logger.info(`finished flushing for batch[${this.recorderId}:${batchId}]`);
@@ -1155,46 +1701,54 @@ export class BatchEventRecorder implements IEventRecorder {
     });
   }
 
-  protected createEventsFromRecorderEvents(
+  protected async createEventsFromRecorderEvents(
     batchId: number,
     recorderEvents: IRecorderEvent[],
-  ): PGRecorderTempEventBatchInput {
+  ): Promise<PGRecorderTempEventBatchInput> {
     const inputs: PGRecorderTempEventBatchInput = {
-      recorderIds: [],
-      batchIds: [],
       sourceIds: [],
       typeIds: [],
       times: [],
-      toNames: [],
-      toNamespaces: [],
-      toTypes: [],
-      toUrls: [],
-      fromNames: [],
-      fromNamespaces: [],
-      fromTypes: [],
-      fromUrls: [],
+      toIds: [],
+      fromIds: [],
       amounts: [],
       details: [],
+      uniqueIds: [],
     };
-    recorderEvents.forEach((e) => {
+    const toArtifacts: IncompleteArtifact[] = [];
+    const fromArtifacts: (IncompleteArtifact | null)[] = [];
+    for (const e of recorderEvents) {
       const eventType = this.resolveEventType(e.type);
+      toArtifacts.push(e.to);
 
-      inputs.recorderIds.push(this.recorderId);
-      inputs.batchIds.push(batchId);
+      if (e.from) {
+        fromArtifacts.push(e.from);
+      }
+
       inputs.sourceIds.push(e.sourceId);
       inputs.typeIds.push(eventType.id.valueOf());
       inputs.times.push(e.time.toJSDate());
-      inputs.toNames.push(e.to.name);
-      inputs.toNamespaces.push(e.to.namespace);
-      inputs.toTypes.push(e.to.type);
-      inputs.toUrls.push(e.to.url || null);
-      inputs.fromNames.push(e.from?.name || null);
-      inputs.fromNamespaces.push(e.from?.namespace || null);
-      inputs.fromTypes.push(e.from?.type || null);
-      inputs.fromUrls.push(e.from?.url || null);
       inputs.amounts.push(e.amount);
       inputs.details.push(e.details);
+      //{ sourceId: e.sourceId, typeId: eventType.id.valueOf(), toId }));
+    }
+    inputs.toIds = (await this.artifactResolver.map.resolveToIds(
+      toArtifacts,
+    )) as number[];
+    inputs.fromIds = await this.artifactResolver.map.resolveToIds(
+      fromArtifacts,
+    );
+
+    inputs.toIds.forEach((toId, i) => {
+      inputs.uniqueIds.push(
+        dbEventUniqueId({
+          sourceId: inputs.sourceIds[i],
+          typeId: inputs.typeIds[i],
+          toId: toId,
+        }),
+      );
     });
+
     return inputs;
   }
 

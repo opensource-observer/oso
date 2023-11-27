@@ -3,13 +3,23 @@ import { handleError } from "../utils/error.js";
 import { Argv } from "yargs";
 import { AppDataSource } from "../db/data-source.js";
 import { DateTime } from "luxon";
-import { coerceDateTime, coerceDateTimeOrNow } from "../utils/cli.js";
+import {
+  coerceDateTime,
+  coerceDateTimeOrNow,
+  coerceDateTimeOrNull,
+} from "../utils/cli.js";
 import { logger } from "../utils/logger.js";
+import { Recording } from "../db/orm-entities.js";
+import { LessThan } from "typeorm";
 
 export type UtilitiesRefreshAggregatesArgs = {
   startDate: DateTime;
   endDate: DateTime;
   intervalDays: number;
+};
+
+export type CleanRecorderTempTableArgs = {
+  olderThanDate: DateTime | null;
 };
 
 export function dbUtilitiesCommandGroup(topYargs: Argv) {
@@ -38,6 +48,51 @@ export function dbUtilitiesCommandGroup(topYargs: Argv) {
     },
     (args) => handleError(refreshAggregates(args)),
   );
+  topYargs.command<CleanRecorderTempTableArgs>(
+    "clean-recorder-temps",
+    "Cleans the recorder temporary tables",
+    (yargs) => {
+      yargs
+        .option("older-than-date", {
+          type: "string",
+          describe:
+            "ISO8601 of the expiration date to use. defaults to using the stored expiration",
+        })
+        .coerce("older-than-date", coerceDateTimeOrNull);
+    },
+    (args) => handleError(cleanRecorderTemps(args)),
+  );
+}
+
+export async function cleanRecorderTemps(args: CleanRecorderTempTableArgs) {
+  const repo = AppDataSource.getRepository(Recording);
+  const olderThan =
+    args.olderThanDate !== null ? args.olderThanDate : DateTime.now();
+  const recordings = await repo.find({
+    where: {
+      expiration: LessThan(olderThan.toJSDate()),
+    },
+  });
+  for (const recording of recordings) {
+    console.log(`Cleaning Recording[${recording.recorderId}]`);
+    // Find all tables with the recorderId
+    const recorderId = recording.recorderId;
+    const recorderIdTableStr = recorderId.replace(/-/g, "_");
+    const tablesToDelete = (await AppDataSource.query(
+      `
+      SELECT tablename FROM pg_catalog.pg_tables where schemaname = 'public' AND tablename LIKE $1;
+    `,
+      [`%${recorderIdTableStr}%`],
+    )) as { tablename: string }[];
+    if (tablesToDelete.length > 0) {
+      logger.debug(`deleting tables for Recording[${recorderId}]`);
+      await AppDataSource.query(`
+        DROP TABLE ${tablesToDelete.map((a) => a.tablename).join(", ")}
+      `);
+    }
+    logger.debug(`deleting Recording[${recorderId}]`);
+    await repo.delete(recorderId);
+  }
 }
 
 export async function refreshAggregates(

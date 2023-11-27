@@ -13,6 +13,7 @@ import { DuneClient } from "@cowprotocol/ts-dune-client";
 import {
   DUNE_API_KEY,
   DUNE_CSV_DIR_PATH,
+  ENABLE_REDIS,
   GITHUB_TOKEN,
   GITHUB_WORKERS_OWNER,
   GITHUB_WORKERS_REF,
@@ -24,7 +25,6 @@ import {
   ArtifactType,
   CollectionType,
   EventType,
-  RecorderTempEvent,
   Recording,
 } from "../db/orm-entities.js";
 import { EventPointerRepository } from "../db/events.js";
@@ -46,11 +46,13 @@ import { DependentsPeriodicCollector } from "../collectors/dependents.js";
 import { CollectionRepository } from "../db/collection.js";
 import { BigQuery } from "@google-cloud/bigquery";
 import { DuneCSVUploader } from "../collectors/dune/utils/csv-uploader.js";
+import { createClient } from "redis";
 
 export type SchedulerArgs = CommonArgs & {
   recorderTimeoutMs: number;
   overwriteExistingEvents: boolean;
   batchSize: number;
+  recorderConnections: number;
 };
 
 export type SchedulerManualArgs = SchedulerArgs & {
@@ -141,15 +143,20 @@ export async function configure(args: SchedulerArgs) {
     workflowId: GITHUB_WORKERS_WORKFLOW_ID,
   });
 
+  const redisClient = createClient();
+  await redisClient.connect();
+
   const scheduler = new BaseScheduler(
     args.runDir,
     () => {
       const recorder = new BatchEventRecorder(
         AppDataSource,
+        [],
         AppDataSource.getRepository(Recording),
-        AppDataSource.getRepository(RecorderTempEvent),
         AppDataSource.getRepository(EventType),
+        redisClient,
         {
+          enableRedis: ENABLE_REDIS,
           timeoutMs: args.recorderTimeoutMs,
         },
       );
@@ -202,7 +209,7 @@ export async function configure(args: SchedulerArgs) {
         // Arrived at this batch size through trial and error. 500 was too much.
         // Many "Premature close" errors. The less we have the less opportunity
         // for HTTP5XX errors it seems. This batch size is fairly arbitrary.
-        100,
+        75,
       );
       return collector;
     },

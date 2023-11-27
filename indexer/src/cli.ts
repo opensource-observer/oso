@@ -155,6 +155,10 @@ const cli = yargs(hideBin(process.argv))
         type: "number",
         default: 600000,
       });
+      yags.option("recorder-connections", {
+        type: "number",
+        default: 10,
+      });
       yags
         .command<SchedulerManualArgs>(
           "manual <collector>",

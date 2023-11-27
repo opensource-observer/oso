@@ -2,6 +2,7 @@ import "reflect-metadata";
 import path from "path";
 import { fileURLToPath } from "url";
 import { DataSource, DataSourceOptions, LoggerOptions } from "typeorm";
+import _ from "lodash";
 
 import {
   DB_DATABASE,
@@ -52,21 +53,35 @@ import {
 const loggingOption: LoggerOptions = DEBUG_DB ? "all" : false;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const dynamicallyLoadedDataSource: DataSourceOptions = {
-  type: "postgres",
-  host: DB_HOST,
-  port: parseInt(DB_PORT),
-  username: DB_USER,
-  password: DB_PASSWORD,
-  database: DB_DATABASE,
-  synchronize: DB_SYNCHRONIZE,
-  logging: loggingOption,
-  applicationName: DB_APPLICATION_NAME,
 
-  entities: [path.resolve(__dirname, "./orm-entities.ts")],
-  migrations: [path.resolve(__dirname, "./migration/**/*.ts")],
-  subscribers: [],
+export interface OSODataSourceOptions {
+  connectionSuffix: string;
+}
+
+const defaultOSODataSourceOptions: OSODataSourceOptions = {
+  connectionSuffix: "",
 };
+
+export function dynamicallyLoadedDataSource(
+  options?: Partial<OSODataSourceOptions>,
+): DataSourceOptions {
+  const opts = _.merge(defaultOSODataSourceOptions, options);
+  return {
+    type: "postgres",
+    host: DB_HOST,
+    port: parseInt(DB_PORT),
+    username: DB_USER,
+    password: DB_PASSWORD,
+    database: DB_DATABASE,
+    synchronize: DB_SYNCHRONIZE,
+    logging: loggingOption,
+    applicationName: `${DB_APPLICATION_NAME}${opts.connectionSuffix}`,
+
+    entities: [path.resolve(__dirname, "./orm-entities.ts")],
+    migrations: [path.resolve(__dirname, "./migration/**/*.ts")],
+    subscribers: [],
+  };
+}
 
 /**
  * This is wrapped in a function so we can easily use this for testing.
@@ -76,7 +91,9 @@ const dynamicallyLoadedDataSource: DataSourceOptions = {
  */
 export function staticDataSourceOptions(
   databaseName: string,
+  options?: Partial<OSODataSourceOptions>,
 ): DataSourceOptions {
+  const opts = _.merge(defaultOSODataSourceOptions, options);
   return {
     type: "postgres",
     host: DB_HOST,
@@ -86,7 +103,7 @@ export function staticDataSourceOptions(
     database: databaseName,
     synchronize: DB_SYNCHRONIZE,
     logging: loggingOption,
-    applicationName: DB_APPLICATION_NAME,
+    applicationName: `${DB_APPLICATION_NAME}${opts.connectionSuffix}`,
 
     entities: [
       Artifact,
@@ -131,16 +148,33 @@ function testingDataSource(databaseName: string): DataSource {
   return new DataSource(staticDataSourceOptions(databaseName));
 }
 
-// Unfortunately, jest seems to error when using this. We cannot use dynamic
-// imports. It's possible that this can be fixed in the future but for now this
-// is something that is unavoidable. See:
-// https://github.com/typeorm/typeorm/issues/10212. This following is a hacky
-// solution so that we use dynamic normally and non-dynamic for tests which is
-// particularly important for migrations
-const appDataSourceOptions = NO_DYNAMIC_LOADS
-  ? staticDataSourceOptions(DB_DATABASE)
-  : dynamicallyLoadedDataSource;
-const AppDataSource = new DataSource(appDataSourceOptions);
+/**
+ * Creates a new app data source and connection
+ * @param id string used to name the connection
+ */
+export function createNewAppDataSource(id: string): DataSource {
+  // Unfortunately, jest seems to error when using this. We cannot use dynamic
+  // imports. It's possible that this can be fixed in the future but for now this
+  // is something that is unavoidable. See:
+  // https://github.com/typeorm/typeorm/issues/10212. This following is a hacky
+  // solution so that we use dynamic normally and non-dynamic for tests which is
+  // particularly important for migrations
+  return new DataSource(
+    NO_DYNAMIC_LOADS
+      ? staticDataSourceOptions(DB_DATABASE, { connectionSuffix: `-${id}` })
+      : dynamicallyLoadedDataSource({ connectionSuffix: `-${id}` }),
+  );
+}
+
+export async function createAndConnectDataSource(
+  id: string,
+): Promise<DataSource> {
+  const ds = createNewAppDataSource(id);
+  await ds.initialize();
+  return ds;
+}
+
+export const AppDataSource = createNewAppDataSource("default");
 
 async function initializeDataSource() {
   if (!AppDataSource.isInitialized) {
@@ -148,9 +182,4 @@ async function initializeDataSource() {
   }
 }
 
-export {
-  appDataSourceOptions,
-  AppDataSource,
-  initializeDataSource,
-  testingDataSource,
-};
+export { initializeDataSource, testingDataSource };
