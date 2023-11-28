@@ -10,7 +10,7 @@ mkdir -p "${CACHE_DIR}/redis"
 docker run --name redis -p 6379:6379 -d -v "${CACHE_DIR}/redis:/data" redis redis-server --save 60 1000 --loglevel warning
 
 retries=0
-max_retries=30
+max_retries=120
 until [ "$retries" -ge "$max_retries" ]
 do
     redis-cli ping && break && exit 0
