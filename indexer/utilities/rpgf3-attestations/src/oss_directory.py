@@ -12,7 +12,7 @@ OSSD_SNAPSHOT_JSON = "data/ossd_snapshot.json"
 DUPLICATE_SLUG_RESOLVER = {
     "bootnodedev": "0x31fa3f2b3ab4221bb89dd64e864339a6c59ab6658d91860e239e2491f4bb2435",
     "filosofiacodigo": "0xaa3b9caf85727a484ac82d25594adc78d68fef1291de82be680bf00436164741",
-    "gitcoin": "0x859d7ec1d7414662658b753da4559bfa6d091483fd0084b673a374e1c3cabf05", # Gitcoin and Passport
+    "gitcoin": "0x60085a98f5c48d97a28d7b45d193f9a734d1704e257df91827459b09565e0e47", # Gitcoin and Passport
     "itu-blockchain": "0x0517a9d930d480d5478b6b173e54376cd03ec48d17574baadde2a6322560c7a7", # OPClave & ITU
     "lxdao-official": "0x79aaf24aab7a9cffbaffd2003b262aa452d31b5a07fb17c54021479284c564be", # Various
     "metagov": "0xe367584886bdb185038a466f6a8e5a4ad746ffef051507a311cae85ae11c7d5e", # MetaGov and DAOstar
