@@ -28,7 +28,7 @@ export function dbUtilitiesCommandGroup(topYargs: Argv) {
         .option("start-date", {
           type: "string",
           describe: "ISO8601 of the start date",
-          default: "2015-01-01T00:00:00Z",
+          default: "2010-01-01T00:00:00Z",
         })
         .coerce("start-date", coerceDateTime)
         .option("end-date", {
@@ -138,6 +138,7 @@ export async function refreshAggregates(
     logger.info(resp);
   }
 
+  logger.debug(`refreshing indexes in ${intervalDays} day intervals`);
   // Continuous aggregates will start
   for (const agg of aggregatesList) {
     let currentStart = endDate.minus({ days: intervalDays });
