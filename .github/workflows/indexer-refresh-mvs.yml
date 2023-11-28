@@ -1,5 +1,5 @@
 # Allow for manual queuing of jobs
-name: os-observer-indexer-create-job
+name: os-observer-indexer-refresh-mvs
 env:
   DB_HOST: ${{ vars.DB_HOST }}
   DB_PORT: ${{ vars.DB_PORT }}
