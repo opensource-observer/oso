@@ -39,7 +39,7 @@ export class CommitResult implements ICommitResult {
     };
 
     invalid.forEach((i) => {
-      results.errors.push(new RecorderError(`invalid input for ${i}`));
+      results.errors.push(new RecorderError(`invalid result for ${i}`));
     });
     missing.forEach((m) => {
       results.errors.push(new RecorderError(`missing result for ${m}`));
