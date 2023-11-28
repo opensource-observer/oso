@@ -20,8 +20,9 @@ on:
       start-date:
         description: 'the start date for continous aggregates (ISO8601)'
         required: true
+        default: '2013-01-01T00:00:00Z'
       end-date:
-        description: 'the start date for continous aggregates (ISO8601)'
+        description: 'the end date for continous aggregates (ISO8601)'
         required: true
 
 jobs:
