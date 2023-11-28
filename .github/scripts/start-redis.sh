@@ -28,7 +28,7 @@ retries=0
 max_retries=60
 until [ "$retries" -ge "$max_retries" ]
 do
-    redis-cli ping && break && exit 0
+    redis-cli ping && break
     retries=$((retries+1))
     if [ "$retries" -eq 30 ]; then
         stop_redis
@@ -46,4 +46,5 @@ do
     fi
     sleep 5 
 done;
-exit 1
+redis-cli ping 
+exit $?
