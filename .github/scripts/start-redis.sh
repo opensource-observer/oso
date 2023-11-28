@@ -9,7 +9,7 @@ mkdir -p "${CACHE_DIR}/redis"
 ls -halt "${CACHE_DIR}/redis"
 
 # Start the redis container
-docker run --name redis -p 6379:6379 -d -v "${CACHE_DIR}/redis:/data" redis redis-server --save 60 1000 --loglevel warning
+docker run --name redis -p 6379:6379 -v "${CACHE_DIR}/redis:/data" redis redis-server --save 60 1000 --loglevel warning
 
 retries=0
 max_retries=120
