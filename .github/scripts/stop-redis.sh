@@ -1,6 +1,6 @@
 #!/bin/bash
 set -uxo pipefail
 
-redis-cli save
+redis-cli --rdb "${CACHE_DIR}/redis/dump.rdb"
 
 docker kill redis
