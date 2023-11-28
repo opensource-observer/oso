@@ -1,5 +1,6 @@
 import { DateTime } from "luxon";
 import {
+  IEventGroupRecorder,
   IEventRecorderClient,
   IncompleteArtifact,
   IncompleteEvent,
@@ -35,6 +36,12 @@ import { sha1FromArray } from "../utils/source-ids.js";
 import { GraphQLError } from "graphql";
 import { Batch } from "../scheduler/common.js";
 import { VariableType } from "json-to-graphql-query";
+import {
+  MultiplexGithubGraphQLRequester,
+  MultiplexObjectRetreiver,
+} from "./github/multiplex-graphql.js";
+import { ArtifactGroupRecorder } from "../recorder/group.js";
+import { EnumType } from "json-to-graphql-query";
 
 const GET_ALL_PUBLIC_FORKS = gql`
   query getAllPublicForks($owner: String!, $name: String!, $cursor: String) {
@@ -133,10 +140,27 @@ const REPOSITORY_FOLLOWING_SUMMARY = gql`
   }
 `;
 
-function repositoryFollowersAsJson(includeCursor: boolean) {
-  const optional = includeCursor ? {
-    cursor: new VariableType('cursor'),
-  } : {};
+const repositorySummaryRetriever: MultiplexObjectRetreiver<
+  GithubRepoLocator
+> = (vars) => {
+  return {
+    type: "repository",
+    definition: {
+      __args: {
+        owner: vars.owner,
+        name: vars.repo,
+      },
+      ...repositoryFollowersAsJson(),
+    },
+  };
+};
+
+function repositoryFollowersAsJson(includeCursor?: boolean) {
+  const optional = includeCursor
+    ? {
+        cursor: new VariableType("cursor"),
+      }
+    : {};
 
   return {
     createdAt: true,
@@ -144,8 +168,11 @@ function repositoryFollowersAsJson(includeCursor: boolean) {
     forks: {
       __args: {
         first: 100,
-        privacy: 'PUBLIC',
-        orderBy: { field: 'CREATED_AT', direction: 'DESC' },
+        privacy: new EnumType("PUBLIC"),
+        orderBy: {
+          field: new EnumType("CREATED_AT"),
+          direction: new EnumType("DESC"),
+        },
       },
       totalCount: true,
       pageInfo: {
@@ -160,18 +187,24 @@ function repositoryFollowersAsJson(includeCursor: boolean) {
           owner: {
             __typename: true,
             login: true,
-          }
-        }
-      }
+          },
+        },
+      },
     },
     watchers: {
       totalCount: true,
     },
     stargazers: {
-      __args: _.merge({
-        first: 100,
-        orderBy: { field: 'STARRED_AT', direction: 'DESC' },
-      }, optional),
+      __args: _.merge(
+        {
+          first: 100,
+          orderBy: {
+            field: new EnumType("STARRED_AT"),
+            direction: new EnumType("DESC"),
+          },
+        },
+        optional,
+      ),
       pageInfo: {
         hasNextPage: true,
         endCursor: true,
@@ -182,14 +215,14 @@ function repositoryFollowersAsJson(includeCursor: boolean) {
           login: true,
         },
         starredAt: true,
-      }
+      },
     },
-  }
+  };
 }
 
 type StarringWrapper = {
   starring: Starring;
-  summary: RepoFollowingSummaryResponse;
+  summary: RepoFollowingSummarySingleQueryResponse;
 };
 
 type Starring = {
@@ -204,26 +237,32 @@ type Fork = {
   owner: Actor & { __typename: string };
 };
 
-type RepoFollowingSummaryResponse = GithubGraphQLResponse<{
-  repository: {
-    createdAt: string;
+type RepoFollowingSummaryResponse = {
+  createdAt: string;
 
-    // This gives us total forks (the assumption is that this is different than
-    // forks.totalCount because of private forking)
-    forkCount: number;
+  // This gives us total forks (the assumption is that this is different than
+  // forks.totalCount because of private forking)
+  forkCount: number;
 
-    forks: PaginatableEdges<GraphQLNode<Fork>> & {
-      totalCount: number;
-    };
-
-    watchers: {
-      totalCount: number;
-    };
-
-    stargazers: PaginatableEdges<Starring> & {
-      totalCount: number;
-    };
+  forks: PaginatableEdges<GraphQLNode<Fork>> & {
+    totalCount: number;
   };
+
+  watchers: {
+    totalCount: number;
+  };
+
+  stargazers: PaginatableEdges<Starring> & {
+    totalCount: number;
+  };
+};
+
+type RepoFollowingSummarySingleQueryResponse = GithubGraphQLResponse<{
+  repository: RepoFollowingSummaryResponse;
+}>;
+
+type RepoFollowingSummariesResponse = GithubGraphQLResponse<{
+  [key: string]: RepoFollowingSummaryResponse;
 }>;
 
 type GetAllPublicForks = GithubGraphQLResponse<{
@@ -272,74 +311,87 @@ export class GithubFollowingCollector extends GithubBatchedProjectArtifactsBaseC
     const artifacts = await group.artifacts();
     logger.debug(`collecting followers for repos of ${batch.name}`);
 
+    const groupRecorder = new ArtifactGroupRecorder(this.recorder);
     // load the summaries for each
-    for (const repo of artifacts) {
-      logger.debug(`loading events for ${repo.name}`);
-      try {
-        const recordPromises = await this.collectEventsForRepo(repo, range);
-        committer.commit(repo).withHandles(recordPromises);
-      } catch (err) {
-        committer.commit(repo).withResults({
-          errors: [err],
-          success: [],
-        });
-      }
+    //logger.debug(`loading events for ${repo.name}`);
+    try {
+      await this.collectEventsForRepo(groupRecorder, artifacts, range);
+      committer.commitGroup(groupRecorder);
+    } catch (err) {
+      committer.failAll(err);
     }
     logger.debug(`follower collection complete`);
   }
 
   private async collectEventsForRepo(
-    repo: Artifact,
+    groupRecorder: IEventGroupRecorder<Artifact>,
+    repos: Artifact[],
     range: Range,
-  ): Promise<RecordHandle[]> {
-    const locator = this.splitGithubRepoIntoLocator(repo);
-    const summary = await this.loadSummaryForRepo(locator);
-    if (!summary) {
-      logger.debug(
-        `${locator.owner}/${locator.repo} doesn't exist or is empty`,
-      );
+  ) {
+    const locators = repos.map((r) => this.splitGithubRepoIntoLocator(r));
+    logger.debug("loading summary of many repos");
+    const summaries = await this.loadSummaryForRepos(locators);
+
+    if (!summaries) {
+      logger.debug("no responses? this is not expected");
       return [];
     }
-    const ranges = this.rangeOfRepoFollowingSummaryResponse(summary);
-    const recordPromises = [];
 
-    if (
-      ranges.forksRange &&
-      doRangesIntersect(ranges.forksRange, range, true)
-    ) {
-      // Gather fork events within this range
-      recordPromises.push(
-        ...(await this.recordForkEvents(
+    for (let i = 0; i < summaries.length; i++) {
+      const repo = repos[i];
+      const summary = summaries[i];
+      const locator = locators[i];
+      const ranges = this.rangeOfRepoFollowingSummaryResponse(summary);
+
+      if (
+        ranges.forksRange &&
+        doRangesIntersect(ranges.forksRange, range, true)
+      ) {
+        // Gather fork events within this range
+        await this.recordForkEvents(
+          groupRecorder,
           repo,
           locator,
-          summary.repository.forkCount,
+          summary.forkCount,
           range,
-        )),
-      );
+        );
+      }
+      if (
+        ranges.stargazersRange &&
+        doRangesIntersect(ranges.stargazersRange, range, true)
+      ) {
+        // Gather starring events within this range
+        await this.recordStarHistoryForRepo(
+          groupRecorder,
+          repo,
+          locator,
+          range,
+        );
+      }
     }
-    if (
-      ranges.stargazersRange &&
-      doRangesIntersect(ranges.stargazersRange, range, true)
-    ) {
-      // Gather starring events within this range
-      recordPromises.push(
-        ...(await this.recordStarHistoryForRepo(repo, locator, range)),
-      );
-    }
-    return recordPromises;
   }
 
-  private async loadSummaryForRepo(
-    locator: GithubRepoLocator,
-  ): Promise<RepoFollowingSummaryResponse | undefined> {
+  private async loadSummaryForRepos(
+    locators: GithubRepoLocator[],
+  ): Promise<RepoFollowingSummaryResponse[]> {
+    const multiplex = new MultiplexGithubGraphQLRequester<
+      GithubRepoLocator,
+      RepoFollowingSummaryResponse
+    >(
+      "getRepoFollowingSummaries",
+      {
+        owner: "String!",
+        repo: "String!",
+      },
+      repositorySummaryRetriever,
+    );
     try {
-      return await this.rateLimitedGraphQLRequest<RepoFollowingSummaryResponse>(
-        REPOSITORY_FOLLOWING_SUMMARY,
-        {
-          owner: locator.owner,
-          name: locator.repo,
-        },
-      );
+      const response = await this.rateLimitedGraphQLGeneratedRequest<
+        GithubRepoLocator,
+        RepoFollowingSummaryResponse,
+        RepoFollowingSummariesResponse
+      >(multiplex, locators);
+      return response.items;
     } catch (err) {
       if (err instanceof ClientError) {
         const errors = err.response.errors || [];
@@ -351,7 +403,7 @@ export class GithubFollowingCollector extends GithubBatchedProjectArtifactsBaseC
 
         // This repo doesn't exist. Just skip.
         if (notFoundError.length > 0) {
-          return;
+          throw new Error("something is broken");
         }
       }
       throw err;
@@ -359,11 +411,11 @@ export class GithubFollowingCollector extends GithubBatchedProjectArtifactsBaseC
   }
 
   private async recordStarHistoryForRepo(
+    groupRecorder: IEventGroupRecorder<Artifact>,
     artifact: Artifact,
     locator: GithubRepoLocator,
     range: Range,
-  ): Promise<RecordHandle[]> {
-    const recordHandles: RecordHandle[] = [];
+  ) {
     let aggregateStatsRecorded = false;
 
     for await (const { summary, starring } of this.loadStarHistoryForRepo(
@@ -372,12 +424,10 @@ export class GithubFollowingCollector extends GithubBatchedProjectArtifactsBaseC
     )) {
       if (!aggregateStatsRecorded) {
         // Hack to make this work. we need to change how this works
-        recordHandles.push(
-          await this.recordStarAggregateStats(locator, summary),
-        );
+        await this.recordStarAggregateStats(groupRecorder, locator, summary);
         logger.debug("record watchers");
 
-        recordHandles.push(await this.recordWatcherEvents(locator, summary));
+        await this.recordWatcherEvents(groupRecorder, locator, summary);
         aggregateStatsRecorded = true;
       }
       const commitTime = DateTime.fromISO(starring.starredAt);
@@ -385,10 +435,10 @@ export class GithubFollowingCollector extends GithubBatchedProjectArtifactsBaseC
       const contributor =
         starring.node && starring.node.login !== ""
           ? {
-            name: starring.node.login.toLowerCase(),
-            namespace: ArtifactNamespace.GITHUB,
-            type: ArtifactType.GITHUB_USER,
-          }
+              name: starring.node.login.toLowerCase(),
+              namespace: ArtifactNamespace.GITHUB,
+              type: ArtifactType.GITHUB_USER,
+            }
           : undefined;
 
       const event: IncompleteEvent = {
@@ -409,26 +459,26 @@ export class GithubFollowingCollector extends GithubBatchedProjectArtifactsBaseC
         ]),
       };
 
-      recordHandles.push(await this.recorder.record(event));
+      await groupRecorder.record(event);
     }
-    return recordHandles;
   }
 
   private async *loadStarHistoryForRepo(
     locator: GithubRepoLocator,
     range: Range,
   ): AsyncGenerator<StarringWrapper> {
-    const iterator = unpaginateIterator<RepoFollowingSummaryResponse>()(
-      REPOSITORY_FOLLOWING_SUMMARY,
-      "repository.stargazers.edges",
-      "repository.stargazers.pageInfo",
-      {
-        owner: locator.owner,
-        name: locator.repo,
-      },
-    );
+    const iterator =
+      unpaginateIterator<RepoFollowingSummarySingleQueryResponse>()(
+        REPOSITORY_FOLLOWING_SUMMARY,
+        "repository.stargazers.edges",
+        "repository.stargazers.pageInfo",
+        {
+          owner: locator.owner,
+          name: locator.repo,
+        },
+      );
     for await (const data of iterator) {
-      const response = data.raw as RepoFollowingSummaryResponse;
+      const response = data.raw as RepoFollowingSummarySingleQueryResponse;
 
       for (const starring of data.results) {
         const commitTime = DateTime.fromISO(starring.starredAt);
@@ -449,8 +499,8 @@ export class GithubFollowingCollector extends GithubBatchedProjectArtifactsBaseC
   private rangeOfRepoFollowingSummaryResponse(
     res: RepoFollowingSummaryResponse,
   ) {
-    const stargazersCount = res.repository.stargazers.edges.length;
-    const forksCount = res.repository.forks.edges.length;
+    const stargazersCount = res.stargazers.edges.length;
+    const forksCount = res.forks.edges.length;
     if (stargazersCount === 0 && forksCount === 0) {
       return {
         stargazersRange: undefined,
@@ -460,14 +510,14 @@ export class GithubFollowingCollector extends GithubBatchedProjectArtifactsBaseC
     let stargazersRange: Range | undefined = undefined;
     let forksRange: Range | undefined = undefined;
     if (stargazersCount > 0) {
-      const first = res.repository.stargazers.edges[0];
-      const last = res.repository.stargazers.edges.slice(-1)[0];
+      const first = res.stargazers.edges[0];
+      const last = res.stargazers.edges.slice(-1)[0];
 
       stargazersRange = rangeFromISO(last.starredAt, first.starredAt);
     }
     if (forksCount > 0) {
-      const first = res.repository.forks.edges[0];
-      const last = res.repository.forks.edges.slice(-1)[0];
+      const first = res.forks.edges[0];
+      const last = res.forks.edges.slice(-1)[0];
       forksRange = rangeFromISO(last.node.createdAt, first.node.createdAt);
     }
     return {
@@ -502,8 +552,9 @@ export class GithubFollowingCollector extends GithubBatchedProjectArtifactsBaseC
   }
 
   private recordStarAggregateStats(
+    groupRecorder: IEventGroupRecorder<Artifact>,
     repo: GithubRepoLocator,
-    response: RepoFollowingSummaryResponse,
+    response: RepoFollowingSummarySingleQueryResponse,
   ) {
     const artifact: IncompleteArtifact = {
       name: `${repo.owner}/${repo.repo}`,
@@ -513,7 +564,7 @@ export class GithubFollowingCollector extends GithubBatchedProjectArtifactsBaseC
     const startOfDay = DateTime.now().startOf("day");
     const starCount = response.repository.stargazers.totalCount;
 
-    return this.recorder.record({
+    return groupRecorder.record({
       time: startOfDay,
       type: {
         name: "STAR_AGGREGATE_STATS",
@@ -530,9 +581,10 @@ export class GithubFollowingCollector extends GithubBatchedProjectArtifactsBaseC
     });
   }
 
-  private recordWatcherEvents(
+  private async recordWatcherEvents(
+    groupRecorder: IEventGroupRecorder<Artifact>,
     repo: GithubRepoLocator,
-    response: RepoFollowingSummaryResponse,
+    response: RepoFollowingSummarySingleQueryResponse,
   ) {
     const artifact: IncompleteArtifact = {
       name: `${repo.owner}/${repo.repo}`,
@@ -545,7 +597,7 @@ export class GithubFollowingCollector extends GithubBatchedProjectArtifactsBaseC
     logger.debug("recording watcher stats for today");
 
     // Get the aggregate stats for forking
-    return this.recorder.record({
+    await groupRecorder.record({
       time: startOfDay,
       type: {
         name: "WATCHER_AGGREGATE_STATS",
@@ -563,6 +615,7 @@ export class GithubFollowingCollector extends GithubBatchedProjectArtifactsBaseC
   }
 
   private async recordForkEvents(
+    groupRecorder: IEventGroupRecorder<Artifact>,
     artifact: Artifact,
     repo: GithubRepoLocator,
     forkCount: number,

@@ -46,6 +46,7 @@ export type MultiplexObjectRetreiverResponse = {
 export type MultiplexObjectRetreiver<Input extends object> = (
   vars: MultiplexInputMapping<Input>,
 ) => MultiplexObjectRetreiverResponse;
+
 export type MultiplexRequestResponse<
   R extends { [key: string]: Response },
   Response,
@@ -150,9 +151,9 @@ export class MultiplexGithubGraphQLRequester<Input extends object, Response> {
     }
 
     query.query.__variables = _.merge(query.query.__variables, varDefs);
-
+    const gqlQuery = jsonToGraphQLQuery(query, { pretty: true });
     return {
-      graphql: jsonToGraphQLQuery(query, { pretty: true }),
+      graphql: gqlQuery,
       variables: inputVars,
     };
   }

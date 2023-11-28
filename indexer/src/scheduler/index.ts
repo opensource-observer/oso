@@ -152,7 +152,9 @@ export async function configure(args: SchedulerArgs) {
   // Used to allow for lazy loading of the redis client. This is a hack to
   // disable redis when it's not needed for some scheduler commands
   const redisFactory = async () => {
-    await redisClient.connect();
+    if (!redisClient.isReady) {
+      await redisClient.connect();
+    }
     return redisClient;
   };
 
@@ -268,7 +270,7 @@ export async function configure(args: SchedulerArgs) {
         ProjectRepository,
         recorder,
         cache,
-        100,
+        10,
       );
       return collector;
     },

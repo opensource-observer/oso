@@ -49,7 +49,7 @@ export class EventGroupRecorder<T> implements IEventGroupRecorder<T> {
 
   handlesForGroup(group: T): RecordHandle[] {
     const id = this.groupToStrFn(group);
-    return this.groupRecordHandles[id];
+    return this.groupRecordHandles[id] || [];
   }
 
   addListener(
