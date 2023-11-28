@@ -104,6 +104,7 @@ class ArtifactCommitter implements IArtifactCommitter {
   withResults(results: AsyncResults<RecordResponse>): void {
     if (!this.closed) {
       this._results = results;
+      this.closed = true;
     } else {
       throw new ArtifactCommittmentError(
         `committment results attempting override. Artifact[id=${this.artifact.id}] committer was already resolved.`,
@@ -422,6 +423,10 @@ export class ArtifactRecordsCommitmentWrapper
   }
 
   commit(artifact: Artifact): IArtifactCommitterProducer {
+    return this.committerForArtifact(artifact);
+  }
+
+  private committerForArtifact(artifact: Artifact) {
     let committer = this.committers[artifact.id.valueOf()];
     if (!committer) {
       committer = ArtifactCommitter.setup(artifact);
@@ -492,7 +497,11 @@ export class ArtifactRecordsCommitmentWrapper
 
   failAll(err: PossiblyError): void {
     this.artifacts.forEach((artifact) => {
-      this.commit(artifact).withResults({
+      const committer = this.committerForArtifact(artifact);
+      if (committer.isComplete()) {
+        return;
+      }
+      committer.withResults({
         errors: [err],
         success: [],
       });

@@ -18,6 +18,10 @@ import {
   ProjectArtifactsCollector,
 } from "../../scheduler/common.js";
 import { Mutex } from "async-mutex";
+import {
+  MultiplexGithubGraphQLRequester,
+  MultiplexRequestResponse,
+} from "./multiplex-graphql.js";
 
 export class IncompleteRepoName extends GenericError {}
 export type GithubRepoLocator = { owner: string; repo: string };
@@ -131,7 +135,9 @@ export function GithubCollectorMixins<TBase extends Constructor>(Base: TBase) {
         const release = await this._requestMutex.acquire();
         // Hacky retry loop for 5XX errors
         try {
-          const response = await graphQLClient.request<R>(query, variables);
+          const response = await graphQLClient.request<R>(query, variables, {
+            Accept: "application/vnd.github.hawkgirl-preview+json",
+          });
           const rateLimit = response.rateLimit;
           if (
             rateLimit.remaining == 0 ||
@@ -181,6 +187,20 @@ export function GithubCollectorMixins<TBase extends Constructor>(Base: TBase) {
         }
       }
       throw new Error("too many retries for graphql request");
+    }
+
+    async rateLimitedGraphQLGeneratedRequest<
+      Input extends object,
+      Response,
+      R extends GithubGraphQLResponse<{ [key: string]: Response }>,
+    >(
+      multiplex: MultiplexGithubGraphQLRequester<Input, Response>,
+      inputs: Input[],
+    ): Promise<MultiplexRequestResponse<R, Response>> {
+      const resp = await multiplex.request(inputs, (r, v) => {
+        return this.rateLimitedGraphQLRequest<R>(r, v);
+      });
+      return resp;
     }
   };
 }

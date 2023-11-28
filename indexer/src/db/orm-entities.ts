@@ -312,6 +312,15 @@ export class Event {
 
 export type EventWeakRef = Pick<Event, "sourceId" | "typeId" | "toId">;
 
+// @Entity()
+// export class PackageRelation extends Base<"PackageRelationId"> {
+//   @ManyToOne(() => Artifact)
+//   dependent: Artifact;
+
+//   @ManyToOne(() => Artifact)
+//   dependency: Artifact;
+// }
+
 @Entity()
 export class Recording {
   @PrimaryColumn("uuid")
