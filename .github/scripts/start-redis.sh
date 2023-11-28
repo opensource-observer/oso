@@ -1,16 +1,21 @@
 #!/bin/bash
 set -uxo pipefail
 
+cache_dump_path="${CACHE_DIR}/redis/dump.rdb"
+dump_path="/redis/dump.rdb"
+
 # Ensure we have the redis tools
 sudo apt-get install -y redis-tools
 
-mkdir -p "${CACHE_DIR}/redis"
+mkdir -p "/redis"
 
-ls -halt "${CACHE_DIR}/redis"
+if [ -f "${cache_dump_path}" ]; then
+    cp "${cache_dump_path}" "${dump_path}"
+fi
 
 # Start the redis container
 start_redis() {
-    docker run --name redis -d -p 6379:6379 -v "${CACHE_DIR}/redis:/data" redis redis-server --save 60 1000 --loglevel warning
+    docker run --name redis -d -p 6379:6379 -v /redis:/data redis redis-server --save 60 1000 --loglevel warning
 }
 
 stop_redis() {
@@ -26,8 +31,15 @@ do
     redis-cli ping && break && exit 0
     retries=$((retries+1))
     if [ "$retries" -eq 30 ]; then
-        rm -r "${CACHE_DIR}/redis"
-        mkdir -p "${CACHE_DIR}/redis"
+        stop_redis
+        # Clear the cache and also the current dump if the dump is corrupted
+        if [ -f "${cache_dump_path}" ]; then
+            rm "${cache_dump_path}"
+        fi
+
+        if [ -f "${dump_path}" ]; then
+            rm "${dump_path}"
+        fi
         
         stop_redis
         start_redis
