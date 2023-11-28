@@ -13,7 +13,7 @@ import { DuneClient } from "@cowprotocol/ts-dune-client";
 import {
   DUNE_API_KEY,
   DUNE_CSV_DIR_PATH,
-  ENABLE_REDIS,
+  REDIS_URL,
   GITHUB_TOKEN,
   GITHUB_WORKERS_OWNER,
   GITHUB_WORKERS_REF,
@@ -145,8 +145,16 @@ export async function configure(args: SchedulerArgs) {
     workflowId: GITHUB_WORKERS_WORKFLOW_ID,
   });
 
-  const redisClient = createClient();
-  await redisClient.connect();
+  const redisClient = createClient({
+    url: REDIS_URL,
+  });
+
+  // Used to allow for lazy loading of the redis client. This is a hack to
+  // disable redis when it's not needed for some scheduler commands
+  const redisFactory = async () => {
+    await redisClient.connect();
+    return redisClient;
+  };
 
   const scheduler = new BaseScheduler(
     args.runDir,
@@ -156,9 +164,8 @@ export async function configure(args: SchedulerArgs) {
         [],
         AppDataSource.getRepository(Recording),
         AppDataSource.getRepository(EventType),
-        redisClient,
+        redisFactory,
         {
-          enableRedis: ENABLE_REDIS,
           timeoutMs: args.recorderTimeoutMs,
         },
       );

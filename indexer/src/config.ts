@@ -50,7 +50,7 @@ export const GITHUB_WORKERS_WORKFLOW_ID = envWithDefault(
   "indexer-worker.yml",
 );
 export const ENABLE_DB_TESTS = envBoolean("ENABLE_DB_TESTS");
-export const ENABLE_REDIS = envBoolean("ENABLE_REDIS");
+export const REDIS_URL = envWithDefault("REDIS_URL", "redis://localhost:6379");
 export const INDEXER_SPAWN = envBoolean("INDEXER_SPAWN");
 export const DEBUG_DB = envBoolean("DEBUG_DB");
 export const DB_APPLICATION_NAME = envWithDefault(

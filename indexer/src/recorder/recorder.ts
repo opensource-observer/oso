@@ -44,7 +44,6 @@ export interface BatchEventRecorderOptions {
   flushIntervalMs: number;
   tempTableExpirationDays: number;
   flusher?: IFlusher;
-  enableRedis?: boolean;
   redisArtifactMetaKey: string;
 }
 
@@ -786,6 +785,8 @@ export class ArtifactResolver {
 
 type BatchResult = EventWeakRef;
 
+export type RedisClientFactory = () => Promise<RedisClient>;
+
 export class BatchEventRecorder implements IEventRecorder {
   private eventQueue: Array<IRecorderEvent>;
   private options: BatchEventRecorderOptions;
@@ -814,6 +815,7 @@ export class BatchEventRecorder implements IEventRecorder {
   private isPreCommitTableOpen: boolean;
   private committing: boolean;
   private redis: RedisClient;
+  private redisFactory: RedisClientFactory;
   private artifactResolver: ArtifactResolver;
   private commitResult: ICommitResult | null;
 
@@ -822,7 +824,7 @@ export class BatchEventRecorder implements IEventRecorder {
     dataSourcePool: DataSource[],
     recordingRepository: Repository<Recording>,
     eventTypeRepository: Repository<EventType>,
-    redisClient: RedisClient,
+    redisFactory: RedisClientFactory,
     options?: Partial<BatchEventRecorderOptions>,
   ) {
     this.dataSourcePool = dataSourcePool;
@@ -854,13 +856,9 @@ export class BatchEventRecorder implements IEventRecorder {
     this.isPreCommitTableOpen = false;
     this._preCommitTableName = "";
     this.committing = false;
-    this.redis = redisClient;
+    this.redisFactory = redisFactory;
     this.preCommitCount = 0;
     this.commitResult = null;
-
-    this.artifactResolver = new ArtifactResolver(dataSource, redisClient, {
-      maxBatchSize: this.options.maxBatchSize,
-    });
 
     this.emitter.setMaxListeners(this.options.maxBatchSize * 3);
     // Setup flush event handler
@@ -887,6 +885,12 @@ export class BatchEventRecorder implements IEventRecorder {
       });
       this.initialized = true;
     }
+
+    this.redis = await this.redisFactory();
+
+    this.artifactResolver = new ArtifactResolver(this.dataSource, this.redis, {
+      maxBatchSize: this.options.maxBatchSize,
+    });
 
     await this.loadArtifacts();
 
@@ -1240,19 +1244,15 @@ export class BatchEventRecorder implements IEventRecorder {
         }
       }
     }
-    if (this.options.enableRedis) {
-      const matches = await this.matchArtifactIds(uniqArtifacts.items());
-      const newArtifacts = matches.reduce<IncompleteArtifact[]>((a, c) => {
-        if (c[1] === null) {
-          a.push(c[0]);
-        }
-        return a;
-      }, []);
-      determineUniqArtifactsTimers();
-      return [uniqArtifacts.items(), newArtifacts];
-    }
+    const matches = await this.matchArtifactIds(uniqArtifacts.items());
+    const newArtifacts = matches.reduce<IncompleteArtifact[]>((a, c) => {
+      if (c[1] === null) {
+        a.push(c[0]);
+      }
+      return a;
+    }, []);
     determineUniqArtifactsTimers();
-    return [uniqArtifacts.items(), uniqArtifacts.items()];
+    return [uniqArtifacts.items(), newArtifacts];
   }
 
   async wait(

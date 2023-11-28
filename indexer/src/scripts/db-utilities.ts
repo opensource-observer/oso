@@ -7,6 +7,7 @@ import { coerceDateTime, coerceDateTimeOrNow } from "../utils/cli.js";
 import { logger } from "../utils/logger.js";
 import { Recording } from "../db/orm-entities.js";
 import { LessThan } from "typeorm";
+import _ from "lodash";
 
 export type UtilitiesRefreshAggregatesArgs = {
   startDate: DateTime;
@@ -94,21 +95,36 @@ export async function cleanRecorderTemps(args: CleanRecorderTempTableArgs) {
 export async function refreshAggregates(
   args: UtilitiesRefreshAggregatesArgs,
 ): Promise<void> {
-  const aggregatesList = [
-    "events_daily_from_artifact",
-    "events_daily_to_artifact",
-    "events_daily_from_project",
-    "events_daily_to_project",
-    "events_monthly_from_artifact",
-    "events_monthly_to_artifact",
-    "events_monthly_from_project",
-    "events_monthly_to_project",
-    "events_weekly_from_artifact",
-    "events_weekly_to_artifact",
-    "events_weekly_from_project",
-    "events_weekly_to_project",
-  ];
-  const materialized = ["first_contribution_to_project"];
+  // Query for all of the continous aggregate names. These will be excluded from
+  // the materialized views list
+  const rawAggregates = (await AppDataSource.query(`
+    SELECT view_name 
+    FROM timescaledb_information.continuous_aggregates
+    WHERE view_schema = 'public'
+  `)) as { view_name: string }[];
+
+  const aggregatesList = _.uniq(rawAggregates.map((a) => a.view_name));
+
+  const entities = AppDataSource.entityMetadatas;
+  const materialized: string[] = [];
+  for (const entity of entities) {
+    if (entity.tableMetadataArgs.type !== "view") {
+      continue;
+    }
+    const name = entity.tableName;
+    // Don't include views from the continous aggregates. Those are refreshed
+    // differently
+    if (
+      entity.tableMetadataArgs.materialized &&
+      aggregatesList.indexOf(name) === -1
+    ) {
+      materialized.push(entity.tableName);
+    }
+  }
+
+  console.log("Found the following materialized views %j", materialized);
+  console.log("Found the following continous aggregates %j", aggregatesList);
+
   const startDate = args.startDate;
   const endDate = args.endDate!;
   const intervalDays = args.intervalDays;

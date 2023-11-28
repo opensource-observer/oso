@@ -121,12 +121,11 @@ withDbDescribe("BatchEventRecorder", () => {
       [],
       AppDataSource.getRepository(Recording),
       AppDataSource.getRepository(EventType),
-      redisClient,
+      () => Promise.resolve(redisClient),
       {
         maxBatchSize: 3,
         timeoutMs: 30000,
         flusher: flusher,
-        enableRedis: true,
       },
     );
     await recorder.loadEventTypes();
@@ -205,12 +204,11 @@ withDbDescribe("BatchEventRecorder", () => {
         ],
         AppDataSource.getRepository(Recording),
         AppDataSource.getRepository(EventType),
-        redisClient,
+        () => Promise.resolve(redisClient),
         {
           maxBatchSize: 100000,
           flushIntervalMs: 1000,
           timeoutMs: 300000,
-          enableRedis: true,
         },
       );
       await recorder.loadEventTypes();
