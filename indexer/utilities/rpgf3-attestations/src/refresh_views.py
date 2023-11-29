@@ -31,7 +31,7 @@ def refresh_mv(sql):
     except Exception as e:
         print(e)
     finally:
-       cursor.close()
+        cursor.close()
 
 
 def main():
