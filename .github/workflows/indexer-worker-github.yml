@@ -10,7 +10,7 @@ env:
   DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
   DB_DATABASE: ${{ vars.DB_DATABASE }}
   X_GITHUB_GRAPHQL_API: ${{ vars.X_GITHUB_GRAPHQL_API }}
-  X_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  X_GITHUB_TOKEN: ${{ secrets.X_GITHUB_TOKEN }}
   DUNE_API_KEY: ${{ secrets.DUNE_API_KEY }}
   CACHE_DIR: /tmp/oso/cache
   RUN_DIR: /tmp/oso/run
