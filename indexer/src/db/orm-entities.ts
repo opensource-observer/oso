@@ -208,6 +208,12 @@ export class Project extends Base<"ProjectId"> {
   @OneToMany(() => EventsMonthlyFromProject, (e) => e.project)
   eventsMonthlyFromProject: EventsMonthlyFromProject[];
 
+  @OneToMany(() => ProjectPackageDependency, (d) => d.dependentProject)
+  packageDependencies: ProjectPackageDependency[];
+
+  @OneToMany(() => ProjectPackageDependency, (d) => d.dependencyProject)
+  dependents: ProjectPackageDependency[];
+
   @OneToMany(() => FirstContributionToProject, (event) => event.project)
   firstContributionToProjectAsTo: FirstContributionToProject[];
   @OneToMany(() => LastContributionToProject, (event) => event.project)
@@ -312,14 +318,48 @@ export class Event {
 
 export type EventWeakRef = Pick<Event, "sourceId" | "typeId" | "toId">;
 
-// @Entity()
-// export class PackageRelation extends Base<"PackageRelationId"> {
-//   @ManyToOne(() => Artifact)
-//   dependent: Artifact;
+@Entity()
+export class RepoDependency {
+  @PrimaryGeneratedColumn()
+  id: Brand<number, "RepoDependencyId">;
 
-//   @ManyToOne(() => Artifact)
-//   dependency: Artifact;
-// }
+  @ManyToOne(() => Artifact)
+  repo: Artifact;
+
+  @ManyToOne(() => Artifact)
+  dependency: Artifact;
+}
+
+@ViewEntity({
+  materialized: false,
+  expression: `
+    SELECT 
+      paa_r."projectId" as "dependentProjectId",
+      "repoId" as "dependentRepoId",
+      paa_d."projectId" as "dependencyProjectId",
+      rd."dependencyId" as "dependencyId"
+    FROM "repo_dependency" rd
+    INNER JOIN "project_artifacts_artifact" paa_r
+      on "paa_r"."artifactId" = rd."repoId"
+    LEFT OUTER JOIN "project_artifacts_artifact" paa_d
+      on "paa_d"."artifactId" = rd."dependencyId"
+  `,
+})
+export class ProjectPackageDependency {
+  @ManyToOne(() => Project, (project) => project.packageDependencies)
+  @ViewColumn()
+  dependentProject: Project;
+
+  @ViewColumn()
+  dependentRepoId: number;
+
+  @ManyToOne(() => Project, (project) => project.dependents)
+  @ViewColumn()
+  dependencyProject: Project | null;
+
+  @ViewColumn()
+  dependencyId: number;
+}
 
 @Entity()
 export class Recording {

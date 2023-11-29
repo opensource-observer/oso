@@ -22,6 +22,7 @@ import {
   MultiplexGithubGraphQLRequester,
   MultiplexRequestResponse,
 } from "./multiplex-graphql.js";
+import { asyncBatchFlattened } from "../../utils/array.js";
 
 export class IncompleteRepoName extends GenericError {}
 export type GithubRepoLocator = { owner: string; repo: string };
@@ -117,8 +118,10 @@ export function GithubCollectorMixins<TBase extends Constructor>(Base: TBase) {
     async rateLimitedGraphQLRequest<R extends GithubGraphQLResponse<object>>(
       query: RequestDocument,
       variables: Variables,
+      allowErrors: boolean = false,
+      retries: number = 10,
     ): Promise<R> {
-      for (let i = 0; i < 10; i++) {
+      for (let i = 0; i < retries; i++) {
         if (this._resetTime) {
           const now = DateTime.now();
           const diffMs = this._resetTime.toMillis() - now.toMillis();
@@ -170,6 +173,13 @@ export function GithubCollectorMixins<TBase extends Constructor>(Base: TBase) {
               this._resetTime = DateTime.now().plus({ milliseconds: 300000 });
               continue;
             }
+            if (err.response.status === 200) {
+              if (allowErrors) {
+                return err.response.data as GithubGraphQLResponse<R>;
+              }
+              logger.debug("very interesting! we only have some errors");
+              throw new Error("no errors expected in response");
+            }
           }
           const errAsString = `${err}`;
           if (errAsString.indexOf("Premature close") !== -1) {
@@ -197,10 +207,28 @@ export function GithubCollectorMixins<TBase extends Constructor>(Base: TBase) {
       multiplex: MultiplexGithubGraphQLRequester<Input, Response>,
       inputs: Input[],
     ): Promise<MultiplexRequestResponse<R, Response>> {
-      const resp = await multiplex.request(inputs, (r, v) => {
-        return this.rateLimitedGraphQLRequest<R>(r, v);
-      });
-      return resp;
+      try {
+        const resp = await multiplex.request(inputs, (r, v) => {
+          return this.rateLimitedGraphQLRequest<R>(r, v, true, 2);
+        });
+        return resp;
+      } catch (err) {
+        logger.debug("attempt to use smaller batches");
+        const responses = await asyncBatchFlattened(
+          inputs,
+          1,
+          async (batch) => {
+            const resp = await multiplex.request(batch, (r, v) => {
+              return this.rateLimitedGraphQLRequest<R>(r, v, true, 3);
+            });
+            return [resp];
+          },
+        );
+        return {
+          raw: responses.slice(-1)[0].raw,
+          items: responses.flatMap((r) => r.items),
+        };
+      }
     }
   };
 }
@@ -251,6 +279,10 @@ class _GithubBatchedProjectsBaseCollector extends BatchedProjectArtifactsCollect
     this.resetTime = null;
   }
 }
+
+class _Base {}
+
+export const GithubBaseMixin = GithubCollectorMixins(_Base);
 
 export const GithubByProjectBaseCollector = GithubCollectorMixins(
   _GithubByProjectBaseCollector,

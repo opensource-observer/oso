@@ -26,6 +26,7 @@ import {
   CollectionType,
   EventType,
   Recording,
+  RepoDependency,
 } from "../db/orm-entities.js";
 import { EventPointerRepository } from "../db/events.js";
 import { ArtifactRepository } from "../db/artifacts.js";
@@ -45,6 +46,7 @@ import { NpmDownloadCollector } from "../collectors/npm-downloads.js";
 import { DependentsPeriodicCollector } from "../collectors/dependents.js";
 import { CollectionRepository } from "../db/collection.js";
 import { BigQuery } from "@google-cloud/bigquery";
+import { Storage } from "@google-cloud/storage";
 import { DuneCSVUploader } from "../collectors/dune/utils/csv-uploader.js";
 import { createClient } from "redis";
 
@@ -347,12 +349,16 @@ export async function configure(args: SchedulerArgs) {
   scheduler.registerPeriodicCollector({
     create: async (_config, _cache) => {
       return new DependentsPeriodicCollector(
+        eventPointerManager,
+        AppDataSource.getRepository(RepoDependency),
         ArtifactRepository,
         CollectionRepository,
         AppDataSource.getRepository(CollectionType),
         ProjectRepository,
         new BigQuery(),
         "opensource_observer",
+        new Storage(),
+        "oso-csv-exports",
       );
     },
     name: "dependents",
