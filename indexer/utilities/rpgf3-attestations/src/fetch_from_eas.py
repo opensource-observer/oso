@@ -231,6 +231,8 @@ def fetch_approved_project_ids():
     for a in approved_projects:
         if a["attester"] != APPROVER_ADDRESS:
             continue
+        if a["revocationTime"]:
+            continue
         data = json.loads(a["decodedDataJson"])
         if data[0]['value']['value'] == True:
             approved_project_ids[a["refUID"]] = a['id']
