@@ -4,10 +4,11 @@ import pandas as pd
 import requests
 
 
+START_TIME       = 	1699246800 # 6 Nov 2023 00:00:00
 VOTERS_SCHEMA    = "0xfdcfdad2dbe7489e0ce56b260348b7f14e8365a8a325aef9834818c00d46b31b"
 LIST_SCHEMA      = "0x3e3e2172aebb902cf7aa6e1820809c5b469af139e7a4265442b1c22b97c6b2a5"
-DATA_EXPORT_JSON = "list_data.json"
-DATA_EXPORT_CSV  = "list_data.csv"
+DATA_EXPORT_JSON = "data/list_data.json"
+DATA_EXPORT_CSV  = "data/list_data.csv"
 
 
 def fetch_attestations(schema_id, time_created_after=0):
@@ -133,25 +134,35 @@ def generate_csv(voting_lists):
         list_id = vlist['id']
         attester = vlist['attester']
         list_name = vlist['data'][0]['value']['value']
-        list_metadata = {d['name']: d['value']['value'] for d in vlist['data']}
-        list_description = vlist['json_data'].get('listDescription', 'None')
-        impact_evaluation_link = vlist['json_data'].get('impactEvaluationLink', 'None')
-        impact_evaluation_description = vlist['json_data'].get('impactEvaluationDescription', 'None')
-        impact_category = vlist['json_data'].get('impactCategory', 'None')
+        time_created = vlist['timeCreated']
         allocations = {item['RPGF3_Application_UID']: item['OPAmount'] for item in vlist['json_data']['listContent']}
+
+        # special case for go-ethereum
+        if '0x779573aacec94452e1cc6fe2708ece867a8c056b5e5a02c003c53f650ee08ddc' in allocations:
+            allocations['0x5b5cb12df644ca17fabd91825886b5491d1526befaec2924315b8e5971d26cf8'] = allocations.pop('0x779573aacec94452e1cc6fe2708ece867a8c056b5e5a02c003c53f650ee08ddc')
+
+        impact_category = vlist['json_data']['impactCategory']
+        if not isinstance(impact_category, list):
+            continue
+        series = pd.Series(allocations)
+        stats = {
+            "count": series.count(),
+            "sum": series.sum(),
+            "mean": series.mean(),
+            "std": series.std(),
+            "min": series.min(),
+            "max": series.max()
+        }
         csv_row = {
             'id': list_id,
             'attester': attester,
             'listName': list_name,
-            'listDescription': list_description,
-            'impactEvaluationLink': impact_evaluation_link,
-            'impactEvaluationDescription': impact_evaluation_description,
-            'impactCategory': impact_category,
+            'timeCreated': time_created,
+            **stats,
             **allocations
         }
         csv_data.append(csv_row)
     df = pd.DataFrame(csv_data)
-    df.fillna('None', inplace=True)
     return df
 
 
@@ -162,7 +173,14 @@ def main():
     print(f"\nTotal valid voters: {len(voters)}")
     
     data = fetch_all_attestations(LIST_SCHEMA)
-    data = [d for d in data if d["attester"] in voters]
+    data = [
+        d for d in data
+        if (
+            d["attester"] in voters 
+            and d["attester"] == d["recipient"]
+            and d['timeCreated'] > START_TIME
+        )
+    ]   
     print(f"\nTotal valid lists: {len(data)}")
 
     print("\nRequesting JSON data for valid lists (this may take a minute)...")
@@ -173,7 +191,10 @@ def main():
     print(f"\nExported data to {DATA_EXPORT_JSON}.")
 
     df = generate_csv(data)
-    df.to_csv(DATA_EXPORT_CSV, index=False)
+    df.sort_values(by=['timeCreated'], inplace=True)
+    df.set_index('id', inplace=True, drop=True)
+    df.drop(['attester', 'timeCreated'], axis=1, inplace=True)
+    df.T.to_csv(DATA_EXPORT_CSV)
 
 
 if __name__ == "__main__":
