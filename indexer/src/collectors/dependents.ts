@@ -1,14 +1,25 @@
 import { In, Repository } from "typeorm";
 import { CollectResponse, IPeriodicCollector } from "../scheduler/types.js";
 import { Artifact, ArtifactType, Collection } from "../index.js";
-import { BigQuery } from "@google-cloud/bigquery";
+import { BigQuery, Dataset, Table } from "@google-cloud/bigquery";
+import { Storage } from "@google-cloud/storage";
 import { sha1FromArray } from "../utils/source-ids.js";
 import { logger } from "../utils/logger.js";
 import { TransformCallback, TransformOptions, Writable } from "stream";
 import { randomUUID } from "crypto";
-import { CollectionType, Project } from "../db/orm-entities.js";
+import {
+  ArtifactNamespace,
+  CollectionType,
+  Project,
+  RepoDependency,
+} from "../db/orm-entities.js";
 import _ from "lodash";
-import { UniqueArray } from "../utils/array.js";
+import stream from "stream";
+import { UniqueArray, asyncBatch } from "../utils/array.js";
+import { GithubBaseMixin } from "./github/common.js";
+import { MultiplexGithubGraphQLRequester } from "./github/multiplex-graphql.js";
+import { IEventPointerManager } from "../scheduler/pointers.js";
+import { DateTime } from "luxon";
 
 type DependentRawRow = {
   package_name: string;
@@ -22,6 +33,33 @@ type CollectionQueueStorage = {
   relations: UniqueArray<Project>;
 };
 
+function repositoryDependencies() {
+  return {
+    dependencyGraphManifests: {
+      totalCount: true,
+      nodes: {
+        filename: true,
+      },
+      edges: {
+        node: {
+          blobPath: true,
+          parseable: true,
+          filename: true,
+          dependencies: {
+            totalCount: true,
+            nodes: {
+              packageName: true,
+              requirements: true,
+              hasDependencies: true,
+              packageManager: true,
+            },
+          },
+        },
+      },
+    },
+  };
+}
+
 class DependentsRecorder extends Writable {
   private collectionRepository: Repository<Collection>;
   private collectionTypeRepository: Repository<CollectionType>;
@@ -34,6 +72,8 @@ class DependentsRecorder extends Writable {
   private tempCollectionQueue: Record<string, CollectionQueueStorage>;
   private collectionTypes: Record<string, CollectionType>;
   private artifactNameToProjectsMap: Record<string, UniqueArray<Project>>;
+  private repoDeps: Record<number, UniqueArray<Project>>;
+  private count: number;
 
   constructor(
     packages: Artifact[],
@@ -63,6 +103,8 @@ class DependentsRecorder extends Writable {
     this.collectionTypes = {};
     this.artifactNameToProjectsMap = {};
     this.packageMap = _.keyBy(packages, "name");
+    this.repoDeps = {};
+    this.count = 0;
   }
 
   _write(
@@ -70,7 +112,9 @@ class DependentsRecorder extends Writable {
     _encoding: BufferEncoding,
     done: TransformCallback,
   ): void {
-    logger.debug(`${row.package_name} -> ${row.dependent_name}`);
+    logger.debug(
+      `[DEPS: ${this.count++}] ${row.package_name} -> ${row.dependent_name}`,
+    );
     if (row !== null) {
       this.batch.push(row);
     }
@@ -180,7 +224,27 @@ class DependentsRecorder extends Writable {
     }
   }
 
+  async getProjectsForRepos(dependency: Artifact) {
+    let repos = this.repoDeps[dependency.id];
+    if (!repos) {
+      const projectsForRepos = await this.projectRepository.find({
+        where: {
+          packageDependencies: {
+            dependencyId: dependency.id,
+          },
+        },
+      });
+      const uniq = new UniqueArray<Project>((p) => p.id);
+      projectsForRepos.forEach((p) => uniq.push(p));
+      this.repoDeps[dependency.id] = uniq;
+      repos = uniq;
+    }
+    return repos.items();
+  }
+
   async resolveDepToProjects(dep: Artifact) {
+    logger.debug(`resolving to project ${dep.name}`);
+    console.log(dep.name);
     if (Object.keys(this.artifactNameToProjectsMap).length === 0) {
       const allRelatedProjects = await this.projectRepository.find({
         relations: {
@@ -204,7 +268,14 @@ class DependentsRecorder extends Writable {
         return acc;
       }, {});
     }
-    return this.artifactNameToProjectsMap[dep.name];
+    let map = this.artifactNameToProjectsMap[dep.name];
+    if (!map) {
+      this.artifactNameToProjectsMap[dep.name] = new UniqueArray<Project>(
+        (p) => p.id,
+      );
+      map = this.artifactNameToProjectsMap[dep.name];
+    }
+    return map;
   }
 
   async writeBatch() {
@@ -231,13 +302,8 @@ class DependentsRecorder extends Writable {
     for (const row of toWrite) {
       const dependency = this.packageMap[row.package_name];
       const dependent = this.packageMap[row.dependent_name];
-      // Skip if the dependent or dependency doesn't exist (that shouldn't
-      // happen based on the query used)
+      // Skip if the dependent or dependency doesn't exist (we are ignoring those values)
       if (!dependency || !dependent) {
-        logger.warn(
-          "response from bigquery contained an unknown dependency or dependent",
-        );
-        logger.debug(row);
         continue;
       }
 
@@ -247,6 +313,14 @@ class DependentsRecorder extends Writable {
         await this.getTemporaryDependenciesCollection(dependent);
 
       const dependentsProjects = await this.resolveDepToProjects(dependent);
+
+      // If the dependency appears in the repo dependency then we have an
+      // artifact that is used by something that _might_ not be a package.
+      // resolve all those projects and add them to dependentsProjects
+      const additionalDependentProjects = await this.getProjectsForRepos(
+        dependency,
+      );
+
       const dependencysProjects = await this.resolveDepToProjects(dependency);
 
       dependencysProjects.items().forEach((dp) => {
@@ -255,6 +329,10 @@ class DependentsRecorder extends Writable {
 
       dependentsProjects.items().forEach((dp) => {
         dependentsCollectionQueueStorage.relations.push(dp);
+      });
+
+      additionalDependentProjects.forEach((p) => {
+        dependentsCollectionQueueStorage.relations.push(p);
       });
 
       writeQueue[dependenciesCollectionQueueStorage.name] =
@@ -328,40 +406,92 @@ class DependentsRecorder extends Writable {
 }
 
 export interface DependentsPeriodicCollectorOptions {
-  depedentsTableId?: string;
+  dependentsTableId?: string;
 }
 
-export class DependentsPeriodicCollector implements IPeriodicCollector {
+type Repo = {
+  owner: string;
+  name: string;
+};
+
+type DependencyResponse = {
+  dependencyGraphManifests: {
+    totalCount: number;
+    nodes: Array<{
+      filename: true;
+    }>;
+    edges: Array<{
+      node: {
+        blobPath: string;
+        parseable: boolean;
+        filename: string;
+        dependencies: {
+          totalCount: number;
+          nodes: Array<{
+            packageName: string;
+            requirements: string;
+            hasDependencies: boolean;
+            packageManager: string;
+          }>;
+        };
+      };
+    }>;
+  };
+};
+
+export class DependentsPeriodicCollector
+  extends GithubBaseMixin
+  implements IPeriodicCollector
+{
   private artifactRepository: Repository<Artifact>;
   private collectionRepository: Repository<Collection>;
   private collectionTypeRepository: Repository<CollectionType>;
   private projectRepository: Repository<Project>;
+  private repoDepsRepository: Repository<RepoDependency>;
   private bq: BigQuery;
+  private gcs: Storage;
+  private gcsBucket: string;
   private datasetId: string;
   private options: DependentsPeriodicCollectorOptions;
+  private eventPointerManager: IEventPointerManager;
 
   constructor(
+    eventPointerManager: IEventPointerManager,
+    repoDepsRepository: Repository<RepoDependency>,
     artifactRepository: Repository<Artifact>,
     collectionRepository: Repository<Collection>,
     collectionTypeRepository: Repository<CollectionType>,
     projectRepository: Repository<Project>,
     bq: BigQuery,
     datasetId: string,
+    gcs: Storage,
+    gcsBucket: string,
     options?: DependentsPeriodicCollectorOptions,
   ) {
+    super();
+    this.eventPointerManager = eventPointerManager;
+    this.repoDepsRepository = repoDepsRepository;
     this.artifactRepository = artifactRepository;
     this.collectionRepository = collectionRepository;
     this.collectionTypeRepository = collectionTypeRepository;
     this.projectRepository = projectRepository;
     this.datasetId = datasetId;
     this.bq = bq;
+    this.gcs = gcs;
+    this.gcsBucket = gcsBucket;
     this.options = _.merge({}, options);
   }
 
   async ensureDataset() {
     const ds = this.bq.dataset(this.datasetId);
 
-    if (!(await ds.exists())) {
+    try {
+      if (!(await ds.exists())) {
+        throw new Error(
+          `dataset ${this.datasetId} does not exist. please create it`,
+        );
+      }
+    } catch (err) {
       throw new Error(
         `dataset ${this.datasetId} does not exist. please create it`,
       );
@@ -369,10 +499,164 @@ export class DependentsPeriodicCollector implements IPeriodicCollector {
     return ds;
   }
 
+  private async getManyRepositoryDeps(locators: Repo[]) {
+    const multiplex = new MultiplexGithubGraphQLRequester<
+      Repo,
+      DependencyResponse
+    >(
+      "getManyRepositories",
+      {
+        owner: "String!",
+        name: "String!",
+      },
+      (vars) => {
+        return {
+          type: "repository",
+          definition: {
+            __args: {
+              owner: vars.owner,
+              name: vars.name,
+            },
+            ...repositoryDependencies(),
+          },
+        };
+      },
+    );
+    return await this.rateLimitedGraphQLGeneratedRequest(multiplex, locators);
+  }
+
+  private async refreshDependenciesForAllRepositories() {
+    // We are going to abuse the event pointers to implement a TTL for pulling dependency data.
+
+    const artifacts = await this.artifactRepository.find({
+      where: {
+        type: ArtifactType.GIT_REPOSITORY,
+        namespace: ArtifactNamespace.GITHUB,
+      },
+    });
+
+    const validArtifacts = artifacts.filter((a) => {
+      try {
+        this.splitGithubRepoIntoLocator(a);
+        return true;
+      } catch (_e) {
+        return false;
+      }
+    });
+
+    const today = DateTime.now().toUTC().startOf("day");
+    const tomorrow = today.plus({ day: 1 });
+    const todayRange = {
+      startDate: today,
+      endDate: tomorrow,
+    };
+    const ttlRange = {
+      startDate: today,
+      endDate: today.plus({ day: 30 }),
+    };
+    const collectorName = "dependents";
+    const missingArtifacts =
+      await this.eventPointerManager.missingArtifactsForRange(
+        collectorName,
+        todayRange,
+        validArtifacts,
+      );
+
+    let count = 0;
+    // GH doesn't like double digit batched requests it seems.
+    await asyncBatch(missingArtifacts, 8, async (batch) => {
+      const locators = batch.map((a) => {
+        const parsed = this.splitGithubRepoIntoLocator(a);
+        return {
+          owner: parsed.owner,
+          name: parsed.repo,
+        };
+      });
+      const res = await this.getManyRepositoryDeps(locators);
+      for (let i = 0; i < res.items.length; i++) {
+        const artifact = batch[i];
+        const deps = res.items[i];
+        if (!deps) {
+          count += 1;
+          await this.eventPointerManager.commitArtifactForRange(
+            collectorName,
+            ttlRange,
+            artifact,
+          );
+          continue;
+        }
+
+        const npmArtifacts = deps.dependencyGraphManifests.edges.flatMap(
+          (manifest) => {
+            // One day we can remove the filter for now. Let's keep it.
+            return manifest.node.dependencies.nodes
+              .filter((d) => d.packageManager === "NPM")
+              .map((dep) => {
+                return {
+                  name: dep.packageName.toLowerCase(),
+                  namespace: ArtifactNamespace.NPM_REGISTRY,
+                  type: ArtifactType.NPM_PACKAGE,
+                };
+              });
+          },
+        );
+
+        const uniqNpmArtifacts = _.uniqBy(npmArtifacts, "name");
+
+        logger.debug(`upserting ${npmArtifacts.length} npm artifacts`);
+        await this.artifactRepository.upsert(uniqNpmArtifacts, {
+          conflictPaths: ["namespace", "name"],
+          upsertType: "on-conflict-do-update",
+        });
+
+        const allDeps = await this.artifactRepository.find({
+          where: {
+            name: In(uniqNpmArtifacts.map((a) => a.name)),
+            namespace: ArtifactNamespace.NPM_REGISTRY,
+            type: ArtifactType.NPM_PACKAGE,
+          },
+        });
+
+        const repoDeps = allDeps.map((a) => {
+          return {
+            repo: artifact,
+            dependency: a,
+          };
+        });
+
+        logger.debug(`updating all ${repoDeps.length} repository dependencies`);
+        await this.repoDepsRepository.manager.transaction(async (manager) => {
+          const repo = manager.withRepository(this.repoDepsRepository);
+
+          // Delete all of the deps for this artifact
+          await repo.delete({
+            repo: {
+              id: artifact.id,
+            },
+          });
+
+          // Add new ones
+          await repo.insert(repoDeps);
+        });
+
+        await this.eventPointerManager.commitArtifactForRange(
+          collectorName,
+          ttlRange,
+          artifact,
+        );
+        count += 1;
+      }
+      logger.debug(
+        `completed dependency collection [${count}/${missingArtifacts.length}]`,
+      );
+    });
+    throw new Error("test");
+  }
+
   async collect(): Promise<CollectResponse> {
     logger.debug("collecting dependents for all npm packages");
 
-    // Crawl github repos in our packages for NPM dependencies.
+    await this.refreshDependenciesForAllRepositories();
 
     // Get a list of all `NPM_PACKAGES` in our database
     const npmPackages = await this.artifactRepository.find({
@@ -383,6 +667,8 @@ export class DependentsPeriodicCollector implements IPeriodicCollector {
         id: { direction: "ASC" },
       },
     });
+
+    logger.debug(`found ${npmPackages.length} npm packages`);
 
     try {
       const dependents = await this.getOrCreateDependentsTable(npmPackages);
@@ -395,7 +681,7 @@ export class DependentsPeriodicCollector implements IPeriodicCollector {
               this.collectionRepository,
               this.collectionTypeRepository,
               this.projectRepository,
-              20000,
+              1000000,
             ),
           )
           .on("close", () => {
@@ -414,10 +700,10 @@ export class DependentsPeriodicCollector implements IPeriodicCollector {
   }
 
   private async getOrCreateDependentsTable(packages: Artifact[]) {
-    if (this.options.depedentsTableId) {
+    if (this.options.dependentsTableId) {
       logger.debug("using supplied table id");
       const dataset = await this.ensureDataset();
-      return dataset.table(this.options.depedentsTableId);
+      return dataset.table(this.options.dependentsTableId);
     }
 
     const packagesSha1 = sha1FromArray(
@@ -427,7 +713,7 @@ export class DependentsPeriodicCollector implements IPeriodicCollector {
     );
 
     // Check if the dataset's table already exists
-    const tableId = `npm_${packagesSha1}`;
+    const tableId = `npm_dependents_${packagesSha1}`;
 
     logger.debug(`checking for table ${tableId}`);
 
@@ -440,37 +726,111 @@ export class DependentsPeriodicCollector implements IPeriodicCollector {
       return destinationTable;
     }
 
+    await this.queryWithPackages(
+      dataset,
+      packagesSha1,
+      packages,
+      destinationTable,
+    );
+
+    return destinationTable;
+  }
+
+  private async ensurePackageTable(
+    dataset: Dataset,
+    packagesSha1: string,
+    packages: Artifact[],
+  ) {
+    logger.debug(`ensuring the package table exists`);
+    const bucket = this.gcs.bucket(this.gcsBucket);
+    const tableId = `oso_npm_packages_${packagesSha1}`;
+    const file = bucket.file(`${tableId}.csv`);
+
+    const passThroughStream = new stream.PassThrough();
+    passThroughStream.write("id,package_name\n");
+    packages.forEach((p) => passThroughStream.write(`${p.id},${p.name}\n`));
+    passThroughStream.end();
+
+    await new Promise<void>((resolve, reject) => {
+      passThroughStream
+        .pipe(file.createWriteStream())
+        .on("finish", () => {
+          resolve();
+        })
+        .on("error", (err) => {
+          reject(err);
+        });
+    });
+
+    // Create a BQ table with the newly uploaded .csv
+    const uploadMeta = {
+      sourceFormat: "CSV",
+      skipLeadingRows: 1,
+      schema: {
+        fields: [
+          { name: "id", type: "INT64" },
+          { name: "package_name", type: "STRING" },
+        ],
+      },
+      location: "US",
+    };
+    const table = dataset.table(tableId);
+    const [job] = await table.load(file, uploadMeta);
+    const errors = job.status?.errors;
+    if (errors && errors.length > 0) {
+      logger.debug(`failed to upload table to ${tableId} on job ${job.id}`);
+      throw errors;
+    }
+    const [metadata] = await table.getMetadata();
+    console.log(metadata);
+    logger.debug(
+      `uploaded table to ${tableId} on job ${job.id} ${table.projectId}.${table.dataset.id}.${table.id}`,
+    );
+    return `${metadata.tableReference.projectId}.${table.dataset.id}.${table.id}`;
+  }
+
+  private async queryWithPackages(
+    dataset: Dataset,
+    packagesSha1: string,
+    packages: Artifact[],
+    destinationTable: Table,
+  ) {
+    const packageTableName = await this.ensurePackageTable(
+      dataset,
+      packagesSha1,
+      packages,
+    );
+
     // Query the bigquery public dataset into a temporary table
     //
     // TODO: For now this is hardcoded to the snapshot of deps from 2023-10-16
     // to reduce the number of results to scan on BQ
     const query = `
-      SELECT 
-        Name as package_name, 
-        Dependent.Name as dependent_name,
-        MinimumDepth as minimum_depth
-      FROM 
-        \`bigquery-public-data.deps_dev_v1.Dependents\` 
-      WHERE 
-        TIMESTAMP_TRUNC(SnapshotAt, DAY) = TIMESTAMP('2023-10-16')
-        AND System = 'NPM'
-        AND Lower(Name) IN UNNEST(@packages)
-        AND Lower(Dependent.Name) IN UNNEST(@packages)
-        AND MinimumDepth < 5
-    `;
+			SELECT 
+				Name as package_name, 
+				Dependent.Name as dependent_name,
+				MIN(MinimumDepth) as minimum_depth
+			FROM 
+				\`bigquery-public-data.deps_dev_v1.Dependents\` AS d
+      INNER JOIN \`${packageTableName}\` AS pp
+        ON Lower(pp.package_name) = Lower(d.Name)
+      INNER JOIN \`${packageTableName}\` as pd
+        ON Lower(pd.package_name) = Lower(d.Dependent.Name)
+			WHERE 
+				TIMESTAMP_TRUNC(SnapshotAt, DAY) = TIMESTAMP('2023-10-16')
+				AND System = 'NPM'
+				AND MinimumDepth < 4
+      GROUP BY 1,2
+		`;
 
     const options = {
       query: query,
       location: "US",
       destination: destinationTable,
-      params: {
-        packages: packages.map((a) => a.name),
-      },
     };
     const [job] = await this.bq.createQueryJob(options);
     // Wait for the job to complete
     await job.getQueryResults({ maxResults: 0 });
     logger.debug(`biqquery job complete`);
-    return destinationTable;
   }
 }

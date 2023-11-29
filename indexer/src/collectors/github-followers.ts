@@ -332,15 +332,16 @@ export class GithubFollowingCollector extends GithubBatchedProjectArtifactsBaseC
     logger.debug("loading summary of many repos");
     const summaries = await this.loadSummaryForRepos(locators);
 
-    if (!summaries) {
-      logger.debug("no responses? this is not expected");
-      return [];
-    }
-
     for (let i = 0; i < summaries.length; i++) {
       const repo = repos[i];
       const summary = summaries[i];
       const locator = locators[i];
+      if (!summary) {
+        logger.debug(
+          `skipping artifact[name=${repo.name}, namespace=${repo.namespace}] - no summary found`,
+        );
+        continue;
+      }
       const ranges = this.rangeOfRepoFollowingSummaryResponse(summary);
 
       if (
@@ -373,7 +374,7 @@ export class GithubFollowingCollector extends GithubBatchedProjectArtifactsBaseC
 
   private async loadSummaryForRepos(
     locators: GithubRepoLocator[],
-  ): Promise<RepoFollowingSummaryResponse[]> {
+  ): Promise<(RepoFollowingSummaryResponse | null)[]> {
     const multiplex = new MultiplexGithubGraphQLRequester<
       GithubRepoLocator,
       RepoFollowingSummaryResponse

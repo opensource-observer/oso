@@ -1,5 +1,5 @@
 import { Artifact, EventPointer } from "../db/orm-entities.js";
-import { Range } from "../utils/ranges.js";
+import { Range, findMissingRanges, rangeFromDates } from "../utils/ranges.js";
 import { asyncBatch } from "../utils/array.js";
 import _ from "lodash";
 import { EventPointerRepository } from "../db/events.js";
@@ -33,6 +33,11 @@ export interface IEventPointerManager {
     range: Range,
     artifact: Artifact,
   ): Promise<void>;
+  missingArtifactsForRange(
+    collectorName: string,
+    range: Range,
+    artifacts: Artifact[],
+  ): Promise<Artifact[]>;
 }
 
 // Event pointer management
@@ -168,5 +173,33 @@ export class EventPointerManager implements IEventPointerManager {
         );
       });
     }
+  }
+
+  async missingArtifactsForRange(
+    collectorName: string,
+    range: Range,
+    artifacts: Artifact[],
+  ): Promise<Artifact[]> {
+    const eventPtrs = await this.getAllEventPointersForRange(
+      collectorName,
+      range,
+      artifacts,
+    );
+    const existingMap = eventPtrs.reduce<Record<number, Range[]>>((a, c) => {
+      const pointers = a[c.artifact.id] || [];
+      pointers.push(rangeFromDates(c.startDate, c.endDate));
+      a[c.artifact.id] = pointers;
+      return a;
+    }, {});
+    return artifacts.filter((a) => {
+      const ranges = existingMap[a.id];
+      // If there're no ranges then this is missing events
+      if (!ranges) {
+        return true;
+      }
+      return (
+        findMissingRanges(range.startDate, range.endDate, ranges).length > 0
+      );
+    });
   }
 }

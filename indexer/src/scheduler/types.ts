@@ -17,13 +17,7 @@ import {
   RecordResponse,
   RecorderFactory,
 } from "../recorder/types.js";
-import {
-  Range,
-  findMissingRanges,
-  rangeFromDates,
-  rangeSplit,
-  rangeToString,
-} from "../utils/ranges.js";
+import { Range, rangeSplit, rangeToString } from "../utils/ranges.js";
 import { IEventPointerManager } from "./pointers.js";
 import { TimeSeriesCacheWrapper } from "../cacher/time-series.js";
 import { logger } from "../utils/logger.js";
@@ -1171,32 +1165,15 @@ export class BaseScheduler implements IScheduler {
     return executionSummary;
   }
 
-  private async findMissingArtifactsFromEventPointers(
+  private findMissingArtifactsFromEventPointers(
     range: Range,
     artifacts: Artifact[],
     collectorName: string,
   ): Promise<Artifact[]> {
-    const eventPtrs =
-      await this.eventPointerManager.getAllEventPointersForRange(
-        collectorName,
-        range,
-        artifacts,
-      );
-    const existingMap = eventPtrs.reduce<Record<number, Range[]>>((a, c) => {
-      const pointers = a[c.artifact.id] || [];
-      pointers.push(rangeFromDates(c.startDate, c.endDate));
-      a[c.artifact.id] = pointers;
-      return a;
-    }, {});
-    return artifacts.filter((a) => {
-      const ranges = existingMap[a.id];
-      // If there're no ranges then this is missing events
-      if (!ranges) {
-        return true;
-      }
-      return (
-        findMissingRanges(range.startDate, range.endDate, ranges).length > 0
-      );
-    });
+    return this.eventPointerManager.missingArtifactsForRange(
+      collectorName,
+      range,
+      artifacts,
+    );
   }
 }

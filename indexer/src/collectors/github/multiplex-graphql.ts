@@ -52,7 +52,7 @@ export type MultiplexRequestResponse<
   Response,
 > = {
   raw: R;
-  items: Response[];
+  items: (Response | null)[];
 };
 
 /*
@@ -81,7 +81,7 @@ export class MultiplexGithubGraphQLRequester<Input extends object, Response> {
     const req = this.makeRequest(inputs);
     const res = await requester(req.graphql, req.variables);
 
-    const items: Response[] = inputs.map((_n, index) => {
+    const items: (Response | null)[] = inputs.map((_n, index) => {
       return res[`response${index}`];
     });
 
