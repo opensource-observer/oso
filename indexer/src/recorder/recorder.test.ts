@@ -5,7 +5,6 @@ import {
   ArtifactNamespace,
   ArtifactType,
   EventType,
-  RecorderTempDuplicateEvent,
   Recording,
 } from "../db/orm-entities.js";
 import { withDbDescribe } from "../db/testing.js";
@@ -250,28 +249,6 @@ withDbDescribe("BatchEventRecorder", () => {
       await recorder.close();
     });
 
-    // In the current iteration of the recorder, dupes aren't errors. skipping
-    // for now.
-    it.skip("should fail when trying to write a duplicate event", async () => {
-      const dupeRepo = AppDataSource.getRepository(RecorderTempDuplicateEvent);
-
-      const dupes = await dupeRepo.find();
-      expect(dupes.length).toEqual(1);
-
-      const errs: unknown[] = [];
-      recorder.addListener("error", (err) => {
-        errs.push(err);
-      });
-
-      // An error should be thrown if we attempt to write the same event twice.
-      // This should be considered a failure of the collector.
-      await recorder.record(testEvent);
-      const handle = await recorder.record(randomCommitEventsGenerator(1)[0]);
-      await recorder.wait([handle]);
-
-      expect(errs.length).toEqual(1);
-    });
-
     it("should do a large set of writes", async () => {
       const eventCountToWrite = 1000000;
       const events = randomCommitEventsGenerator(eventCountToWrite, {
@@ -292,6 +269,10 @@ withDbDescribe("BatchEventRecorder", () => {
       expect(eventCount).toEqual(eventCountToWrite + 1);
     }, 300000);
 
+    // In the current iteration of the recorder, dupes aren't errors, they're
+    // merged and one of the events is chosen. We treat this as a failure of the
+    // collector to clean up and do best effort to simply keep recordings
+    // flowing. This is useful for somethings that might _expect_ duplicates.
     it("should try to write duplicates", async () => {
       const eventCountToWrite = 10;
       const events = randomCommitEventsGenerator(eventCountToWrite, {
@@ -303,7 +284,10 @@ withDbDescribe("BatchEventRecorder", () => {
       for (const event of events) {
         handles.push(await recorder.record(event));
       }
-      // Try to dupe
+      // Try to dupe twice
+      for (const event of events.slice(0, eventCountToWrite / 2)) {
+        handles.push(await recorder.record(event));
+      }
       for (const event of events.slice(0, eventCountToWrite / 2)) {
         handles.push(await recorder.record(event));
       }
@@ -313,10 +297,12 @@ withDbDescribe("BatchEventRecorder", () => {
 
       // Check that the events are in the database
       const eventCount = await EventRepository.count();
-      expect(eventCount).toEqual(eventCountToWrite / 2 + 1);
-      expect(results.committed.length).toEqual(6);
+      expect(eventCount).toEqual(eventCountToWrite + 1);
+      expect(results.committed.length).toEqual(eventCountToWrite + 1);
 
-      expect(results.invalid.length).toEqual(5);
+      expect(results.invalid.length).toEqual(0);
+      expect(results.errors.length).toEqual(0);
+      expect(results.skipped.length).toEqual(0);
     }, 60000);
 
     // In the current iteration of the recorder, dupes aren't errors. skipping

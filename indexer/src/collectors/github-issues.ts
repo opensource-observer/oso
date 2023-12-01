@@ -36,6 +36,7 @@ import {
 import { Range } from "../utils/ranges.js";
 import { ArtifactGroupRecorder } from "../recorder/group.js";
 import { Batch } from "../scheduler/common.js";
+import { sha1FromArray } from "../utils/source-ids.js";
 
 const GET_ISSUE_TIMELINE = gql`
   query GetIssueTimeline($id: ID!, $cursor: String) {
@@ -474,13 +475,17 @@ export class GithubIssueCollector extends GithubBatchedProjectArtifactsBaseColle
         return a !== undefined;
       });
 
+    // FIXME. Quick fix. caching is broken... going to use a sha of all the locators
+    const locatorStrs = locators.map((l) => `${l.owner}/${l.repo}`);
+    const cacheKey = sha1FromArray(locators.map((l) => `${l.owner}/${l.repo}`));
+
     const pages = this.cache.loadCachedOrRetrieve<
       GraphQLNode<IssueOrPullRequest>[],
       GithubGraphQLCursor
     >(
       TimeSeriesCacheLookup.new(
-        `${this.options.cacheOptions.bucket}/${batch.name}`,
-        locators.map((l) => `${l.owner}/${l.repo}`),
+        `${this.options.cacheOptions.bucket}/${cacheKey}`,
+        locatorStrs,
         range,
       ),
       async (missing, lastPage) => {

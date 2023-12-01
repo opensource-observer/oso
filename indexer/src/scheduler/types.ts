@@ -597,9 +597,10 @@ export class BaseScheduler implements IScheduler {
     // Only event collectors can do backfill.
     const collector = this.eventCollectors[collectorName];
 
+    // Allow a year to be the maximum default interval for now
     let backfillInterval: DurationLike = collector.backfillInterval
       ? collector.backfillInterval
-      : { days: 30 };
+      : { days: 365 };
 
     if (
       backfillIntervalDays !== 0 &&

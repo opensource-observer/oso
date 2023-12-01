@@ -221,6 +221,7 @@ export const JobExecutionRepository = AppDataSource.getRepository(
       }
     });
   },
+
   async updateExecutionStatusById(id: number, status: JobExecutionStatus) {
     const execution = await this.findOneOrFail({
       relations: {
@@ -232,6 +233,7 @@ export const JobExecutionRepository = AppDataSource.getRepository(
     });
     return this.updateExecutionStatus(execution, status);
   },
+
   async updateExecutionStatus(exec: JobExecution, status: JobExecutionStatus) {
     return this.manager.transaction(async (manager) => {
       const jobRepo = manager.getRepository(Job);

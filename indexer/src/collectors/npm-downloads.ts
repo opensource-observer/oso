@@ -105,6 +105,11 @@ export class NpmDownloadCollector extends BatchedProjectArtifactsCollector {
     for await (const page of response) {
       const days = page.raw;
       for (const download of days) {
+        const sourceId = sha1FromArray([
+          "NPM_DOWNLOADS",
+          npmPackage.name,
+          download.day,
+        ]);
         handles.push(
           await this.recorder.record({
             time: DateTime.fromISO(download.day),
@@ -113,11 +118,7 @@ export class NpmDownloadCollector extends BatchedProjectArtifactsCollector {
               version: 1,
             },
             to: npmPackage,
-            sourceId: sha1FromArray([
-              "NPM_DOWNLOADS",
-              npmPackage.name,
-              download.day,
-            ]),
+            sourceId: sourceId,
             amount: download.downloads,
           }),
         );
