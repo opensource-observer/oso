@@ -972,7 +972,7 @@ export class BatchEventRecorder implements IEventRecorder {
     const commitResult = this.commitResult!;
     const toIdsToResolve: number[] = [];
     try {
-      const [invalid, uncommittedCount] = (await this.dataSource.query(`
+      const invalid = (await this.dataSource.query(`
         WITH events_with_duplicates AS (
           SELECT 
             pct."sourceId",
@@ -982,35 +982,37 @@ export class BatchEventRecorder implements IEventRecorder {
           FROM ${this.preCommitTableName} AS pct
           GROUP BY 1,2,3
           HAVING COUNT(*) > 1
+        ), deleted_events AS (
+          DELETE FROM ${this.preCommitTableName} p
+          USING events_with_duplicates ewd
+          WHERE p."sourceId" = ewd."sourceId" AND
+                p."typeId" = ewd."typeId" AND
+                p."toId" = ewd."toId" AND
+                ewd."typeId" IS NOT NULL AND
+                ewd."sourceId" IS NOT NULL AND
+                ewd."toId" IS NOT NULL
+          RETURNING p."sourceId", p."typeId", p."toId", p."time", p."fromId", p."amount", p."details"
         )
-        DELETE FROM ${this.preCommitTableName} p
-        USING events_with_duplicates ewd
-        WHERE p."sourceId" = ewd."sourceId" AND
-              p."typeId" = ewd."typeId" AND
-              p."toId" = ewd."toId" AND
-              ewd."typeId" IS NOT NULL AND
-              ewd."sourceId" IS NOT NULL AND
-              ewd."toId" IS NOT NULL
-        RETURNING p."sourceId", p."typeId", p."toId"
-      `)) as [{ sourceId: string; typeId: number; toId: number }[], number];
-      if (invalid.length > 0) {
-        await this.redis.sRem(
-          this.preCommitTableName,
-          invalid.map((i) => {
-            toIdsToResolve.push(i.toId);
-            return dbEventUniqueId(i);
-          }),
-        );
-      }
+        INSERT INTO ${this.preCommitTableName} ("sourceId", "typeId", "toId", "time", "fromId", "amount", "details")
+        SELECT 
+          DISTINCT ON ("sourceId", "typeId", "toId")
+          d."sourceId",
+          d."typeId",
+          d."toId",
+          d."time",
+          d."fromId",
+          d."amount",
+          d."details"
+        FROM deleted_events d
+        RETURNING "sourceId", "typeId", "toId"
+      `)) as { sourceId: string; typeId: number; toId: number }[];
       tmDelDupes();
-      logger.debug(`deleted ${uncommittedCount} events with duplicates`);
+      logger.debug(`merged ${invalid.length} events of duplicates`);
 
-      const eventsToCommitCount = this.preCommitCount - uncommittedCount;
+      const eventsToCommitCount = this.preCommitCount - invalid.length;
 
       logger.debug(
-        `committing ${
-          this.preCommitCount - uncommittedCount
-        } events to event database`,
+        `committing ${eventsToCommitCount} events to event database`,
       );
       // Write back into the main database
 
@@ -1150,31 +1152,17 @@ export class BatchEventRecorder implements IEventRecorder {
         );
         this.notifySuccess(skippedEvents);
       }
-      if (invalidEvents.length > 0) {
-        logger.debug(
-          `notifying of event failures for ${invalidEvents.length} invalid events`,
-        );
-        this.notifyFailure(
-          uncommittedEvents.items(),
-          new RecorderError(
-            "event has duplicates in this collection. something is wrong with the collector",
-          ),
-        );
-      }
       committedEvents.forEach((e) => {
         commitResult.committed.push(eventUniqueId(e));
       });
       skippedEvents.forEach((e) => {
         commitResult.skipped.push(eventUniqueId(e));
       });
-      uncommittedEvents.items().forEach((e) => {
-        commitResult.invalid.push(eventUniqueId(e));
-      });
     } catch (err) {
       logger.error(`error during commit`);
       logger.error(`err=${JSON.stringify(err)}`);
       this.emitter.emit("commit-error", err);
-      commitResult.errors.push(err);
+      throw new RecorderError("commit error. failed to commit properly");
     }
     await this.clean();
     return commitResult;
@@ -1405,6 +1393,10 @@ export class BatchEventRecorder implements IEventRecorder {
   }
 
   async record(input: IncompleteEvent): Promise<RecordHandle> {
+    if (input.sourceId === "b2abd62e09e5a5c1b1f61b34d552cd288b7a6873") {
+      console.log("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+      console.log("%j", input);
+    }
     if (this.committing) {
       throw new RecorderError("recorder is committing. writes disallowed");
     }
@@ -1521,6 +1513,7 @@ export class BatchEventRecorder implements IEventRecorder {
         !this.recorderOptions.overwriteExistingEvents
       ) {
         logger.debug(`${batchId}: received event out of range. skipping`);
+        console.log("%j", event);
         this.commitResult!.skipped.push(eventUniqueId(event));
         this.notifySuccess([event]);
         continue;
