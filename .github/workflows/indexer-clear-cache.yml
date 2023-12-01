@@ -41,5 +41,9 @@ jobs:
         run: |
           echo "CACHE_PREFIX=${{ inputs.group }}" >> $GITHUB_ENV
 
+      - name: Create empty cache dir
+        run: |
+          mkdir -p ${CACHE_DIR}
+
       - name: Clear cache
         run: bash .github/scripts/write-cache.sh
