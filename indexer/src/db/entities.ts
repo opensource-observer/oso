@@ -339,6 +339,7 @@ async function ossCreateBlockchainArtifacts(addrObjects?: BlockchainAddress[]) {
   };
 
   const data = addrObjects.flatMap((o) => {
+    const address = o.address.toLowerCase();
     return o.networks.map((network) => {
       return {
         type: typeResolver(o.tags),
@@ -348,7 +349,12 @@ async function ossCreateBlockchainArtifacts(addrObjects?: BlockchainAddress[]) {
             ? ArtifactNamespace.OPTIMISM
             : ArtifactNamespace.ETHEREUM,
         // Normalize the addresses to lowercase
-        name: o.address.toLowerCase(),
+        name: address,
+        // etherscan url
+        url:
+          network === "optimism"
+            ? `https://optimistic.etherscan.io/address/${address}`
+            : `https://etherscan.io/address/${address}`,
       };
     });
   });
