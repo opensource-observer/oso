@@ -588,7 +588,7 @@ export class ArtifactResolver {
     const repo = this.dataSource.getRepository(Artifact);
     let offset = 0;
 
-    console.log(
+    logger.debug(
       `loading artifacts since ${lastUpdatedAt.toFormat(
         formatString,
       )} (${lastUpdatedAt.toISO()})`,
@@ -1119,7 +1119,7 @@ export class BatchEventRecorder implements IEventRecorder {
       const skippedRefs = skippedRedisMembers.map((s) => {
         return splitDbEventUniqueId(s);
       });
-      console.log("skipped refs %d", skippedRefs.length);
+      logger.debug("skipped refs %d", skippedRefs.length);
 
       tmCommitEvents();
 
@@ -1416,10 +1416,6 @@ export class BatchEventRecorder implements IEventRecorder {
   }
 
   async record(input: IncompleteEvent): Promise<RecordHandle> {
-    if (input.sourceId === "b2abd62e09e5a5c1b1f61b34d552cd288b7a6873") {
-      console.log("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-      console.log("%j", input);
-    }
     if (this.committing) {
       throw new RecorderError("recorder is committing. writes disallowed");
     }
