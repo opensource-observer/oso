@@ -170,6 +170,10 @@ export class FundingEventsCollector extends BatchedProjectArtifactsCollector {
               ? ArtifactNamespace.OPTIMISM
               : ArtifactNamespace.ETHEREUM,
           type: ArtifactType.CONTRACT_ADDRESS,
+          url:
+            r[3] === "optimism"
+              ? `https://optimistic.etherscan.io/address/${r[1]}`
+              : `https://etherscan.io/address/${r[1]}`,
           details: {
             fundingPoolName: r[2],
             blockchain: r[3],

@@ -306,11 +306,13 @@ export class DailyContractUsageCollector extends BaseEventCollector<object> {
           name: row.userAddress!.toLowerCase(),
           type: ArtifactType.EOA_ADDRESS,
           namespace: ArtifactNamespace.OPTIMISM,
+          url: `https://optimistic.etherscan.io/address/${row.userAddress}`,
         }
       : {
           name: row.safeAddress.toLowerCase(),
           type: ArtifactType.SAFE_ADDRESS,
           namespace: ArtifactNamespace.OPTIMISM,
+          url: `https://optimistic.etherscan.io/address/${row.safeAddress}`,
         };
 
     if (!row.contractAddress) {
@@ -324,6 +326,7 @@ export class DailyContractUsageCollector extends BaseEventCollector<object> {
             name: row.contractAddress,
             type: ArtifactType.CONTRACT_ADDRESS,
             namespace: ArtifactNamespace.OPTIMISM,
+            url: `https://optimistic.etherscan.io/address/${row.contractAddress}`,
           };
 
     const eventTimeAsStr = eventTime.toISODate();
