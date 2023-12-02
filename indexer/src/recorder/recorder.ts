@@ -544,9 +544,93 @@ export class ArtifactResolver {
     this.localMap = new LRUArtifactMap(this, this.options.localLruSize);
   }
 
+  async *fullLoadArtifactPages() {
+    // during a full load we need to load based on id and calculate the last updated at
+    let cursor: number | undefined = 1;
+    let lastUpdatedAt = DateTime.fromISO("1970-09-21T00:00:00Z");
+    const repo = this.dataSource.getRepository(Artifact);
+
+    logger.debug("load all the artifacts into redis");
+    logger.debug("no artifact cache found. running a full load of artifacts");
+    do {
+      const query = repo
+        .createQueryBuilder("artifact")
+        .where('artifact."id" > :id', { id: cursor });
+
+      const page = await query
+        .orderBy("artifact.id", "ASC")
+        .limit(this.options.maxBatchSize)
+        .getMany();
+
+      for (const artifact of page) {
+        const currentUpdatedAt = DateTime.fromJSDate(artifact.updatedAt);
+        if (currentUpdatedAt > lastUpdatedAt) {
+          lastUpdatedAt = currentUpdatedAt;
+        }
+        yield artifact;
+      }
+
+      if (page.length < this.options.maxBatchSize) {
+        cursor = undefined;
+      } else {
+        // Ensure that we have everything by including this item
+        cursor = page.slice(-1)[0].id;
+        logger.debug(`next artifact page starting from ${cursor}`);
+      }
+    } while (cursor !== undefined);
+  }
+
+  async *latestArtifacts(lastUpdatedAt: DateTime) {
+    logger.debug("load latest artifacts by updatedAt");
+    const formatString = "yyyy-LL-dd HH:mm:ss";
+
+    //let lastUpdatedAt = DateTime.fromISO("1970-09-21T00:00:00Z");
+    const repo = this.dataSource.getRepository(Artifact);
+    let offset = 0;
+
+    logger.debug(
+      `loading artifacts since ${lastUpdatedAt.toFormat(
+        formatString,
+      )} (${lastUpdatedAt.toISO()})`,
+    );
+    let cursor: DateTime | undefined = lastUpdatedAt;
+    while (cursor !== undefined) {
+      const query = repo
+        .createQueryBuilder("artifact")
+        .where('artifact."updatedAt" > :updatedAt', {
+          updatedAt: cursor.toFormat(formatString),
+        });
+
+      const page = await query
+        .orderBy("artifact.updatedAt", "ASC")
+        .limit(this.options.maxBatchSize)
+        .offset(offset)
+        .getMany();
+
+      offset = this.options.maxBatchSize;
+      for (const artifact of page) {
+        const currentUpdatedAt = DateTime.fromJSDate(artifact.updatedAt);
+        if (currentUpdatedAt.toMillis() != lastUpdatedAt.toMillis()) {
+          lastUpdatedAt = currentUpdatedAt;
+          offset = 0;
+        }
+        yield artifact;
+      }
+
+      if (page.length < this.options.maxBatchSize) {
+        cursor = undefined;
+      } else {
+        // Ensure that we have everything by including this item
+        cursor = DateTime.fromJSDate(page.slice(-1)[0].updatedAt).minus({
+          second: 1,
+        });
+        logger.debug(`next artifact page starting from ${cursor.toISO()}`);
+      }
+    }
+  }
+
   async loadArtifacts() {
     const formatString = "yyyy-LL-dd HH:mm:ss";
-    logger.debug("load all the artifacts into redis after");
     const artifactMetaJson = await this.redis.get(this.metaKey);
     const artifactMeta: ArtifactMetaRedis =
       artifactMetaJson === null
@@ -556,16 +640,11 @@ export class ArtifactResolver {
               .toISO(),
           }
         : JSON.parse(artifactMetaJson);
+
     let lastUpdatedAt = DateTime.fromISO(artifactMeta.lastUpdatedAt);
-
-    const repo = this.dataSource.getRepository(Artifact);
-    let cursor: number | undefined = undefined;
-
-    console.log(
-      `loading artifacts since ${lastUpdatedAt.toFormat(
-        formatString,
-      )} (${lastUpdatedAt.toISO()})`,
-    );
+    const artifactsGenerator = !artifactMetaJson
+      ? this.fullLoadArtifactPages()
+      : this.latestArtifacts(lastUpdatedAt);
 
     const loadArtifactsTimer = timer(
       `load artifacts since ${lastUpdatedAt.toFormat(
@@ -573,37 +652,14 @@ export class ArtifactResolver {
       )} (${lastUpdatedAt.toISO()})`,
     );
     let count = 0;
-    do {
-      const query = repo
-        .createQueryBuilder("artifact")
-        .where('artifact."updatedAt" > :updatedAt', {
-          updatedAt: lastUpdatedAt.toFormat(formatString),
-        });
-
-      if (cursor !== undefined) {
-        query.andWhere("artifact.id > :id", { id: cursor });
+    for await (const artifact of artifactsGenerator) {
+      count += 1;
+      const currentUpdatedAt = DateTime.fromJSDate(artifact.updatedAt);
+      if (currentUpdatedAt > lastUpdatedAt) {
+        lastUpdatedAt = currentUpdatedAt;
       }
-      const page = await query
-        .orderBy("artifact.id", "ASC")
-        .limit(this.options.maxBatchSize)
-        .getMany();
-
-      count += page.length;
-      for (const artifact of page) {
-        const currentUpdatedAt = DateTime.fromJSDate(artifact.updatedAt);
-        if (currentUpdatedAt > lastUpdatedAt) {
-          lastUpdatedAt = currentUpdatedAt;
-        }
-        await this.saveArtifact(artifact);
-      }
-
-      if (page.length < this.options.maxBatchSize) {
-        cursor = undefined;
-      } else {
-        cursor = page.slice(-1)[0].id;
-        logger.debug(`next artifact page starting at ${cursor}`);
-      }
-    } while (cursor !== undefined);
+      await this.saveArtifact(artifact);
+    }
     loadArtifactsTimer();
 
     // If the lastUpdatedAt time is earlier than 1 min ago. Set the
@@ -737,11 +793,11 @@ export class ArtifactResolver {
     return this.getKey(this.options.metaKey);
   }
 
-  private getKeyByIncompleteArtifact(artifact: IncompleteArtifact) {
+  getKeyByIncompleteArtifact(artifact: IncompleteArtifact) {
     return this.getKey("incomplete", artifact.name, artifact.namespace);
   }
 
-  private getKeyById(id: number) {
+  getKeyById(id: number) {
     return this.getKey("id", `${id}`);
   }
 
@@ -749,39 +805,6 @@ export class ArtifactResolver {
     return this.localMap;
   }
 }
-
-// export interface RecordingTrackerOptions {
-//   prefix: string;
-//   separator: string;
-//   maxBatchSize: number;
-// }
-
-// const defaultRecordingTrackerOptions: RecordingTrackerOptions = {
-//   prefix: "recording-tracker",
-//   separator: ":::",
-//   maxBatchSize: 100000,
-// }
-
-// /**
-//  * Mostly internal class to track recordings in redis. We utilize a local redis due to
-//  * memory limitations in node.
-//  */
-// export class RecordingTracker {
-//   private redis: RedisClient;
-//   private dataSource: DataSource;
-//   private options: RecordingTrackerOptions;
-//   private name: string;
-
-//   constructor(name: string, dataSource: DataSource, redis: RedisClient, options: RecordingTrackerOptions) {
-//     this.name = name;
-//     this.dataSource = dataSource;
-//     this.redis = redis;
-//     this.options = options;
-//   }
-
-//   track(handle: RecordHandle) {
-//   }
-//}
 
 type BatchResult = EventWeakRef;
 
@@ -1096,7 +1119,7 @@ export class BatchEventRecorder implements IEventRecorder {
       const skippedRefs = skippedRedisMembers.map((s) => {
         return splitDbEventUniqueId(s);
       });
-      console.log("skipped refs %d", skippedRefs.length);
+      logger.debug("skipped refs %d", skippedRefs.length);
 
       tmCommitEvents();
 
@@ -1393,10 +1416,6 @@ export class BatchEventRecorder implements IEventRecorder {
   }
 
   async record(input: IncompleteEvent): Promise<RecordHandle> {
-    if (input.sourceId === "b2abd62e09e5a5c1b1f61b34d552cd288b7a6873") {
-      console.log("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-      console.log("%j", input);
-    }
     if (this.committing) {
       throw new RecorderError("recorder is committing. writes disallowed");
     }

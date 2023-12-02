@@ -149,7 +149,7 @@ export function GithubCollectorMixins<TBase extends Constructor>(Base: TBase) {
             this._resetTime = DateTime.fromISO(rateLimit.resetAt);
           } else {
             // Artificially rate limit to 5reqs/second
-            this._resetTime = DateTime.now().plus(500);
+            this._resetTime = DateTime.now().plus(100);
           }
           release();
           return response;
@@ -161,7 +161,7 @@ export function GithubCollectorMixins<TBase extends Constructor>(Base: TBase) {
               logger.error("hit a github 500 error. waiting for some period");
               this.debugLogAnError("github 500 error:", err);
               this._resetTime = DateTime.now().plus({
-                milliseconds: 5000 * (i + 1),
+                milliseconds: 2500 * (i + 1),
               });
               continue;
             }
