@@ -7,6 +7,9 @@ import {
 } from "../db/entities.js";
 import { CommonArgs } from "../utils/api.js";
 import { logger } from "../utils/logger.js";
+import { CollectionRepository } from "../db/collection.js";
+import { In, IsNull } from "typeorm";
+import _ from "lodash";
 
 /**
  * Entrypoint arguments
@@ -47,6 +50,33 @@ export async function importOssDirectory(
       );
     }
   }
+
+  logger.info("remove deleted collections");
+  const currentCollections = await CollectionRepository.find({
+    where: {
+      type: { name: "OSS_DIRECTORY" },
+      deletedAt: IsNull(),
+    },
+  });
+
+  // Calculate the removed collections
+  const removedCollections = _.differenceWith(
+    currentCollections,
+    collections,
+    (a, b) => {
+      return a.slug === b.slug;
+    },
+  );
+
+  // Mark the collections as deleted
+  await CollectionRepository.update(
+    {
+      id: In(removedCollections.map((c) => c.id)),
+    },
+    {
+      deletedAt: Date.now(),
+    },
+  );
 
   logger.info("Upserting collections...");
   for (let i = 0; i < collections.length; i++) {
