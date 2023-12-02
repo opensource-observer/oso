@@ -110,6 +110,7 @@ export class NpmDownloadCollector extends BatchedProjectArtifactsCollector {
           npmPackage.name,
           download.day,
         ]);
+
         handles.push(
           await this.recorder.record({
             time: DateTime.fromISO(download.day),
