@@ -349,6 +349,7 @@ export async function configure(args: SchedulerArgs) {
   scheduler.registerPeriodicCollector({
     create: async (_config, _cache) => {
       return new DependentsPeriodicCollector(
+        AppDataSource,
         eventPointerManager,
         AppDataSource.getRepository(RepoDependency),
         ArtifactRepository,
