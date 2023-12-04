@@ -20,6 +20,8 @@ import { GithubBaseMixin } from "./github/common.js";
 import { MultiplexGithubGraphQLRequester } from "./github/multiplex-graphql.js";
 import { IEventPointerManager } from "../scheduler/pointers.js";
 import { DateTime } from "luxon";
+import { Brand } from "utility-types";
+import { DataSource } from "typeorm/browser";
 
 type DependentRawRow = {
   package_name: string;
@@ -60,12 +62,18 @@ function repositoryDependencies() {
   };
 }
 
+type TempCollectionType = { artifactOwnerId: number; id: number };
+
 class DependentsRecorder extends Writable {
   private collectionRepository: Repository<Collection>;
   private collectionTypeRepository: Repository<CollectionType>;
   private projectRepository: Repository<Project>;
   private batchSize: number;
-  private batch: DependentRawRow[];
+  private batch: {
+    packageNames: string[];
+    dependentNames: string[];
+    minimumDepths: number[];
+  };
   private packages: Artifact[];
   private uuid: string;
   private packageMap: Record<string, Artifact>;
@@ -74,9 +82,12 @@ class DependentsRecorder extends Writable {
   private artifactNameToProjectsMap: Record<string, UniqueArray<Project>>;
   private repoDeps: Record<number, UniqueArray<Project>>;
   private count: number;
+  private initialized: boolean;
+  private dataSource: DataSource;
 
   constructor(
     packages: Artifact[],
+    dataSource: DataSource,
     collectionRepository: Repository<Collection>,
     collectionTypeRepository: Repository<CollectionType>,
     projectRepository: Repository<Project>,
@@ -93,10 +104,11 @@ class DependentsRecorder extends Writable {
       ...opts,
     });
     this.batchSize = batchSize;
+    this.dataSource = dataSource;
     this.collectionRepository = collectionRepository;
     this.collectionTypeRepository = collectionTypeRepository;
     this.projectRepository = projectRepository;
-    this.batch = [];
+    this.resetBatch();
     this.packages = packages;
     this.uuid = randomUUID();
     this.tempCollectionQueue = {};
@@ -105,6 +117,17 @@ class DependentsRecorder extends Writable {
     this.packageMap = _.keyBy(packages, "name");
     this.repoDeps = {};
     this.count = 0;
+    this.initialized = false;
+  }
+
+  addRow(row: DependentRawRow) {
+    this.batch.packageNames.push(row.package_name);
+    this.batch.dependentNames.push(row.dependent_name);
+    this.batch.minimumDepths.push(row.minimum_depth);
+  }
+
+  get batchLength() {
+    return this.batch.packageNames.length;
   }
 
   _write(
@@ -116,10 +139,10 @@ class DependentsRecorder extends Writable {
       `[DEPS: ${this.count++}] ${row.package_name} -> ${row.dependent_name}`,
     );
     if (row !== null) {
-      this.batch.push(row);
+      this.addRow(row);
     }
 
-    if (this.batch.length < this.batchSize && row !== null) {
+    if (this.batchLength < this.batchSize && row !== null) {
       done();
       return;
     } else {
@@ -146,7 +169,10 @@ class DependentsRecorder extends Writable {
 
   _final(done: (error?: Error | null | undefined) => void): void {
     logger.debug("Committing all temporary collections");
-    this.commitAll()
+    this.writeBatch()
+      .then(() => {
+        return this.commitAll();
+      })
       .then(() => {
         done();
       })
@@ -156,10 +182,217 @@ class DependentsRecorder extends Writable {
   }
 
   async commitAll() {
+    // Many of the things in this method would be much faster if we just added
+    // the artifact/collection/project table to bigquery. For now, this is a
+    // punt until we figure out the proper design for that architecture.
+
+    // Start calculating the artifact ids
+    await this.dataSource.query(`
+      CREATE TABLE ${this.dependentsToArtifactTable} (
+        package_artifact_id int,
+        dependent_artifact_id int
+      )
+    `);
+
+    logger.debug(`materialize deps as artifacts`);
+    await this.dataSource.query(`
+      INSERT INTO ${this.dependentsToArtifactTable} ("package_artifact_id", "dependent_artifact_id") 
+      SELECT DISTINCT
+        a_p.id AS package_artifact_id,
+        a_d.id AS dependent_artifact_id
+      FROM 
+        ${this.importedTableName} d 
+      INNER JOIN artifact a_p ON a_p."namespace" = 'NPM_REGISTRY' AND a_p."name" = d.dependent_name 
+      INNER JOIN artifact a_d ON a_d."namespace" = 'NPM_REGISTRY' AND a_d."name" = d.package_name 
+    `);
+
+    logger.debug(
+      `resolving from repo dependencies to higher order dependencies. this will take a while`,
+    );
+    await this.dataSource.query(`
+      INSERT INTO ${this.dependentsToArtifactTable} ("package_artifact_id", "dependent_artifact_id")
+      SELECT 
+        dta.package_artifact_id as package_artifact_id,
+        rd."repoId" as dependent_artifact_id
+      FROM repo_dependency rd 
+      INNER JOIN ${this.dependentsToArtifactTable} dta ON dta.dependent_artifact_id = rd."dependencyId" 
+    `);
+
+    logger.debug(`copy deps from repo_dependency table`);
+    await this.dataSource.query(`
+      INSERT INTO ${this.dependentsToArtifactTable} ("package_artifact_id", "dependent_artifact_id")
+      SELECT
+        rd."dependencyId" AS package_artifact_id,
+        rd."repoId" AS dependent_artifact_id
+      FROM repo_dependency rd 
+    `);
+
+    // Creating temporary collections
+    logger.debug(`create dependent temp collections`);
+    const convertTempCollectionTypeToDBInput = (
+      input: TempCollectionType[],
+    ) => {
+      return input.reduce<{ artifactOwnerIds: number[]; ids: number[] }>(
+        (a, c) => {
+          a.artifactOwnerIds.push(c.artifactOwnerId);
+          a.ids.push(c.id);
+          return a;
+        },
+        { artifactOwnerIds: [], ids: [] },
+      );
+    };
+
+    const dependenciesCollections = (await this.dataSource.query(
+      `
+      WITH distinct_dependents AS (
+        SELECT DISTINCT 
+          dtp.dependent_artifact_id AS dependent_artifact_id,
+          a.id AS "name" 
+        FROM ${this.dependentsToArtifactTable} dtp
+        INNER JOIN artifact a ON dtp.dependent_artifact_id = a.id
+      )
+      INSERT INTO collection("name", "slug", "artifactOwnerId", "typeId")
+      SELECT 
+        FORMAT('temp-%s-%s-%s', $1::text, $2::text, dd."name"),
+        FORMAT('temp-%s-%s-%s', $1::text, $2::text, dd."name"),
+        dd.dependent_artifact_id,
+        $3::int
+      FROM distinct_dependents dd
+      RETURNING "id", "artifactOwnerId"
+    `,
+      [
+        this.uuid,
+        // The naming of things is opposite of what it might seem. If it showing
+        // up as a dependent in the DB that means it has dependencies. Hence this
+        // being DEPENDENCIES
+        "ARTIFACT_DEPENDENCIES",
+        this.collectionTypes["ARTIFACT_DEPENDENCIES"].id,
+      ],
+    )) as TempCollectionType[];
+    const dependenciesCollectionsDBInput = convertTempCollectionTypeToDBInput(
+      dependenciesCollections,
+    );
+
+    logger.debug(`create dependencies temp collections`);
+    const dependentsCollections = (await this.dataSource.query(
+      `
+      WITH distinct_dependencies AS (
+        SELECT DISTINCT 
+          dtp.package_artifact_id AS package_artifact_id,
+          a.id AS "name" 
+        FROM ${this.dependentsToArtifactTable} dtp
+        INNER JOIN artifact a ON dtp.package_artifact_id = a.id
+      )
+      INSERT INTO collection("name", "slug", "artifactOwnerId", "typeId")
+      SELECT 
+        FORMAT('temp-%s-%s-%s', $1::text, $2::text, dd."name"),
+        FORMAT('temp-%s-%s-%s', $1::text, $2::text, dd."name"),
+        dd.package_artifact_id,
+        $3::int
+      FROM distinct_dependencies dd
+      RETURNING "id", "artifactOwnerId"
+    `,
+      [
+        this.uuid,
+        // The naming of things is opposite of what it might seem. If it showing
+        // up as a dependency in the DB that means it has dependents. Hence this
+        // being DEPENDENTS
+        "ARTIFACT_DEPENDENTS",
+        this.collectionTypes["ARTIFACT_DEPENDENTS"].id,
+      ],
+    )) as { artifactOwnerId: number; id: number }[];
+    const dependentsCollectionsDBInput = convertTempCollectionTypeToDBInput(
+      dependentsCollections,
+    );
+
+    logger.debug("writing dependents to collections");
+    await this.dataSource.query(
+      `
+      WITH dependents_to_projects AS (
+        SELECT
+          paa_p."projectId" as package_project_id,
+          dta."package_artifact_id",
+          paa_d."projectId" as dependent_project_id,
+          dta."dependent_artifact_id"
+        from ${this.dependentsToArtifactTable} dta
+        inner join project_artifacts_artifact paa_p on paa_p."artifactId" = dta.package_artifact_id
+        inner join project_artifacts_artifact paa_d on paa_d."artifactId" = dta.dependent_artifact_id
+      ), dependent_collections AS (
+        SELECT * FROM UNNEST(
+          $1::int[],
+          $2::int[]
+        ) AS t(artifact_id, collection_id)
+      ), insert_dependents AS (
+        INSERT INTO collection_projects_project ("collectionId", "projectId")
+        SELECT DISTINCT dc.collection_id, dtp.dependent_project_id 
+        FROM dependent_collections dc
+        INNER JOIN dependents_to_projects dtp ON dtp.package_artifact_id = dc.artifact_id
+        RETURNING "collectionId", "projectId"
+      )
+      select count(*) from insert_dependents
+    `,
+      [
+        dependentsCollectionsDBInput.artifactOwnerIds,
+        dependentsCollectionsDBInput.ids,
+      ],
+    );
+
+    logger.debug("writing dependencies to collections");
+    await this.dataSource.query(
+      `
+      WITH dependents_to_projects AS (
+        SELECT
+          paa_p."projectId" as package_project_id,
+          dta."package_artifact_id",
+          paa_d."projectId" as dependent_project_id,
+          dta."dependent_artifact_id"
+        from ${this.dependentsToArtifactTable} dta
+        inner join project_artifacts_artifact paa_p on paa_p."artifactId" = dta.package_artifact_id
+        inner join project_artifacts_artifact paa_d on paa_d."artifactId" = dta.dependent_artifact_id
+      ), dependency_collections AS (
+        SELECT * FROM UNNEST(
+          $1::int[],
+          $2::int[]
+        ) AS t(artifact_id, collection_id)
+      ), insert_dependencies AS (
+        INSERT INTO collection_projects_project ("collectionId", "projectId")
+        SELECT DISTINCT dc.collection_id, dtp.package_project_id 
+        FROM dependency_collections dc
+        INNER JOIN dependents_to_projects dtp ON dtp.dependent_artifact_id = dc.artifact_id
+        RETURNING "collectionId", "projectId"
+      )
+      select count(*) from insert_dependencies
+    `,
+      [
+        dependenciesCollectionsDBInput.artifactOwnerIds,
+        dependenciesCollectionsDBInput.ids,
+      ],
+    );
+
     // In a transaction delete the old collection if it exists and rename the current one
-    for (const name in this.tempCollectionQueue) {
-      const queueStorage = this.tempCollectionQueue[name];
-      const collection = queueStorage.collection;
+    await this.commitCollections(dependenciesCollections);
+    await this.commitCollections(dependentsCollections);
+
+    // Drop temp tables
+    await this.dataSource.query(`
+      DROP TABLE ${this.dependentsToArtifactTable}
+    `);
+    await this.dataSource.query(`
+      DROP TABLE ${this.importedTableName}
+    `);
+  }
+
+  async commitCollections(tempCollections: TempCollectionType[]) {
+    for (const { id } of tempCollections) {
+      const collection = await this.collectionRepository.findOneOrFail({
+        relations: {
+          artifactOwner: true,
+          type: true,
+        },
+        where: {
+          id: id as Brand<number, "CollectionId">,
+        },
+      });
 
       await this.collectionRepository.manager.transaction(async (manager) => {
         const repo = manager.withRepository(this.collectionRepository);
@@ -278,12 +511,38 @@ class DependentsRecorder extends Writable {
     return map;
   }
 
+  get importedTableName() {
+    return `bq_npm_dependents_${this.uuid.replace(/-/g, "_")}`;
+  }
+
+  get dependentsToArtifactTable() {
+    return `npm_dependents_as_artifacts_${this.uuid.replace(/-/g, "_")}`;
+  }
+
+  resetBatch() {
+    this.batch = {
+      packageNames: [],
+      dependentNames: [],
+      minimumDepths: [],
+    };
+  }
+
   async writeBatch() {
     logger.debug("writing a batch of dependencies");
     const toWrite = this.batch;
-    this.batch = [];
+    this.resetBatch();
 
-    // Retrieve collection types if they haven't already been retrieved
+    if (!this.initialized) {
+      await this.dataSource.query(`
+        CREATE TABLE ${this.importedTableName} (
+          package_name text,
+          dependent_name text,
+          minimum_depth smallint
+        )
+      `);
+      this.initialized = true;
+    }
+
     if (Object.keys(this.collectionTypes).length === 0) {
       // Get the collection types
       const types = await this.collectionTypeRepository.find({
@@ -297,76 +556,15 @@ class DependentsRecorder extends Writable {
       this.collectionTypes = _.keyBy(types, "name");
     }
 
-    const writeQueue: Record<string, CollectionQueueStorage> = {};
-
-    for (const row of toWrite) {
-      const dependency = this.packageMap[row.package_name];
-      const dependent = this.packageMap[row.dependent_name];
-      // Skip if the dependent or dependency doesn't exist (we are ignoring those values)
-      if (!dependency || !dependent) {
-        continue;
-      }
-
-      const dependentsCollectionQueueStorage =
-        await this.getTemporaryDependentsCollection(dependency);
-      const dependenciesCollectionQueueStorage =
-        await this.getTemporaryDependenciesCollection(dependent);
-
-      const dependentsProjects = await this.resolveDepToProjects(dependent);
-
-      // If the dependency appears in the repo dependency then we have an
-      // artifact that is used by something that _might_ not be a package.
-      // resolve all those projects and add them to dependentsProjects
-      const additionalDependentProjects = await this.getProjectsForRepos(
-        dependency,
-      );
-
-      const dependencysProjects = await this.resolveDepToProjects(dependency);
-
-      dependencysProjects.items().forEach((dp) => {
-        dependenciesCollectionQueueStorage.relations.push(dp);
-      });
-
-      dependentsProjects.items().forEach((dp) => {
-        dependentsCollectionQueueStorage.relations.push(dp);
-      });
-
-      additionalDependentProjects.forEach((p) => {
-        dependentsCollectionQueueStorage.relations.push(p);
-      });
-
-      writeQueue[dependenciesCollectionQueueStorage.name] =
-        dependenciesCollectionQueueStorage;
-      writeQueue[dependentsCollectionQueueStorage.name] =
-        dependentsCollectionQueueStorage;
-    }
-
-    for (const name in writeQueue) {
-      // Clear queue storage
-      const queueStorage = writeQueue[name];
-      const queuedProjects = queueStorage.relations.items();
-
-      const collection = await this.collectionRepository.findOneOrFail({
-        relations: {
-          projects: true,
-        },
-        where: {
-          id: queueStorage.collection.id,
-        },
-      });
-
-      const newProjects = _.differenceBy(
-        queuedProjects,
-        collection.projects,
-        "id",
-      );
-
-      await this.collectionRepository
-        .createQueryBuilder()
-        .relation(Collection, "projects")
-        .of(queueStorage.collection.id)
-        .add(newProjects);
-    }
+    await this.dataSource.query(
+      `
+      INSERT INTO ${this.importedTableName} ("package_name", "dependent_name", "minimum_depth")
+      SELECT * FROM unnest(
+        $1::text[], $2::text[], $3::smallint[]
+      )
+    `,
+      [toWrite.packageNames, toWrite.dependentNames, toWrite.minimumDepths],
+    );
   }
 
   async getTemporaryCollection(
@@ -454,8 +652,10 @@ export class DependentsPeriodicCollector
   private datasetId: string;
   private options: DependentsPeriodicCollectorOptions;
   private eventPointerManager: IEventPointerManager;
+  private dataSource: DataSource;
 
   constructor(
+    dataSource: DataSource,
     eventPointerManager: IEventPointerManager,
     repoDepsRepository: Repository<RepoDependency>,
     artifactRepository: Repository<Artifact>,
@@ -478,6 +678,7 @@ export class DependentsPeriodicCollector
     this.datasetId = datasetId;
     this.bq = bq;
     this.gcs = gcs;
+    this.dataSource = dataSource;
     this.gcsBucket = gcsBucket;
     this.options = _.merge({}, options);
   }
@@ -650,7 +851,6 @@ export class DependentsPeriodicCollector
         `completed dependency collection [${count}/${missingArtifacts.length}]`,
       );
     });
-    throw new Error("test");
   }
 
   async collect(): Promise<CollectResponse> {
@@ -678,10 +878,11 @@ export class DependentsPeriodicCollector
           .pipe(
             new DependentsRecorder(
               npmPackages,
+              this.dataSource,
               this.collectionRepository,
               this.collectionTypeRepository,
               this.projectRepository,
-              1000000,
+              100000,
             ),
           )
           .on("close", () => {
