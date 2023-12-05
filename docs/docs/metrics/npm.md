@@ -7,14 +7,17 @@ For information about package data, also see: [Dependencies and Dependents](./de
 ## npm Metrics
 
 ### Packages
+
 Number of total packages released by the project (version-agnostic).
 
 ### Downloads
+
 Number of times a packages has been downloaded over a given time period.
 
 ## API Reference
 
 The following event `typeId`s are relevant to npm metrics:
+
 ```
 'DOWNLOADS': 9
 ```
