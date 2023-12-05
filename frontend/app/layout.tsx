@@ -22,6 +22,7 @@ export default function RootLayout({
     <html lang="en">
       <head>
         <script dangerouslySetInnerHTML={{ __html: renderSnippet() }} />
+        <link rel="icon" href="/img/oso-emblem-black.svg" />
       </head>
       <body>
         <ApolloWrapper>{children}</ApolloWrapper>

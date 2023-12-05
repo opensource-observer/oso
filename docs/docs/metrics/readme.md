@@ -15,24 +15,31 @@ The following categories of metrics are available:
 ## Key Terms
 
 ### Artifact
+
 An artifact is a single entity that can be tracked by Open Source Observer. For example, a GitHub repo, a smart contract, or an npm package. An artifact can only belong to one project. However, not all artifacts must belong to a project. Information about artifacts is contained in their `name`, `namespace`, and `type`.
 
 ### Project
+
 A project is a collection of related artifacts. For example, the Uniswap project includes the Uniswap v2 and Uniswap v3 artifacts. A project must contain at least one GitHub repo in order to be instantiated. A project is referred to by its slug, which is usually the name of the project in lowercase and without spaces.
 
 ### Collection
+
 A collection is a group of related projects. For example, a DeFi collection might include the Uniswap, Compound, and Aave projects. A collection must contain at least one project in order to be instantiated.
 
 ### Event
+
 An event is a single action between artifiacts that is tracked by Open Source Observer. For example, a commit, a pull request, or a transaction. Every event must have a `typeId` (see definations below), a `time`, a `fromId` (pointing to an artifact), and a `toId` (pointing to another artifact)
 
 ## Artifact Types
+
 The following are some of the artifact types tracked by Open Source Observer:
+
 - Onchain: 'EOA_ADDRESS', 'SAFE_ADDRESS', 'CONTRACT_ADDRESS', 'FACTORY_ADDRESS'
 - GitHub: 'GIT_REPOSITORY', 'GITHUB_ORG', 'GITHUB_USER'
 - npm: 'NPM_PACKAGE'
 
 ## Event Types
+
 The following event `typeId`s are most commonly used:
 
 ```

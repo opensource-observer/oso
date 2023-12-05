@@ -7,6 +7,7 @@ A **dependency** is a software package, module, or project that another project 
 ## Direct vs. Indirect Dependents
 
 Dependents can be categorized as:
+
 - **Direct Dependents**: Projects that directly include the parent package in their list of dependencies.
 - **Indirect Dependents**: Projects that rely on the parent package through an intermediary package. For example, if Package A depends on Package B, and Package B relies on Package C, then Package A is an indirect dependent of Package C.
 
@@ -50,7 +51,7 @@ Ecosystems: Ethereum Developer Tools & Optimism Applications
     |----> Project: ethers
     |          |
     |          |----> Dependent: velodrome-finance
-    |          |----> Dependent: zora    
+    |          |----> Dependent: zora
     |
     |----> Project: wagmi
                |
@@ -62,18 +63,23 @@ Ecosystems: Ethereum Developer Tools & Optimism Applications
 In addition to mapping projects and their dependents, we also capture the following data about a project's dependents:
 
 ### Current Dependents
+
 Count of dependent projects as of the most recent indexing run. These may also be referred to as "downstream dependencies" or "reverse dependencies".
 
 ### Current Dependencies
+
 Count of dependencies as of the most recent indexing run. These may also be referred to as "upstream dependencies".
 
 ### Active Developer Dependents
+
 Count of active developers of all dependent projects in the same collection.
 
 ### Active User Dependents
+
 Count of active users of all dependent projects in the same collection.
 
 ### Fees Dependents
+
 Total sequencer fees of all dependent projects in the same collection.
 
 ## API Reference

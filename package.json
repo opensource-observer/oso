@@ -20,6 +20,7 @@
     "copy:html": "find build/ -name '*.html' -type f | grep -v index.html | sed s/\\.html$// | xargs -I _ bash -c 'mkdir -p _ && cp -v _.html _/index.html'",
     "deploy:indexer": "turbo run deploy --filter=@opensource-observer/indexer --parallel",
     "deploy:site": "turbo run build --filter=@opensource-observer/docs --filter=@opensource-observer/frontend && turbo run deploy --filter=@opensource-observer/frontend && yarn copy",
+    "dev:docs": "turbo run dev --filter=@opensource-observer/docs --parallel",
     "dev:frontend": "turbo run dev --filter=@opensource-observer/frontend --parallel",
     "format:staged": "lint-staged",
     "lint": "turbo run lint --concurrency=100%",
