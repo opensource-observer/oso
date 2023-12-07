@@ -111,6 +111,12 @@ def fetch_json_data(url):
         return None
 
 
+def dump_json(data, path):
+    path = f"data/lists/{path}.json"
+    with open(path, "w") as json_file:
+        json.dump(data, json_file, indent=4)
+
+
 def request_json_data(attestations):
     """
     Request and insert the JSON data for each attestation.
@@ -118,14 +124,16 @@ def request_json_data(attestations):
 
     for a in attestations:
         url = a["data"][2]["value"]["value"]
+        gateway = "https://cloudflare-ipfs.com"
         if isinstance(url, str):
-            url = url.replace("https://w3s.link", "https://ipfs.io")
+            url = url.replace("https://w3s.link", gateway)
             if "https://" not in url:
-                url = f"https://ipfs.io/ipfs/{url}"
+                url = f"{gateway}/ipfs/{url}"
             print(url)
             json_data = fetch_json_data(url)
             if json_data:
                 a.update({"json_data": json_data})
+                dump_json(json_data, a["id"])
 
 
 def generate_csv(voting_lists):
@@ -135,12 +143,12 @@ def generate_csv(voting_lists):
         attester = vlist['attester']
         list_name = vlist['data'][0]['value']['value']
         time_created = vlist['timeCreated']
+
+        if 'json_data' not in vlist:
+            print(f"Missing data for list {list_id}")
+            continue
         allocations = {item['RPGF3_Application_UID']: item['OPAmount'] for item in vlist['json_data']['listContent']}
-
-        # special case for go-ethereum
-        if '0x779573aacec94452e1cc6fe2708ece867a8c056b5e5a02c003c53f650ee08ddc' in allocations:
-            allocations['0x5b5cb12df644ca17fabd91825886b5491d1526befaec2924315b8e5971d26cf8'] = allocations.pop('0x779573aacec94452e1cc6fe2708ece867a8c056b5e5a02c003c53f650ee08ddc')
-
+        
         impact_category = vlist['json_data']['impactCategory']
         if not isinstance(impact_category, list):
             continue
