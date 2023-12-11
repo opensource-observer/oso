@@ -32,7 +32,7 @@
     "migration:generate": "typeorm-ts-node-esm migration:generate -d ./src/db/data-source.ts",
     "migration:run": "typeorm-ts-node-esm migration:run -d ./src/db/data-source.ts",
     "migration:revert": "typeorm-ts-node-esm migration:revert -d ./src/db/data-source.ts",
-    "start": "ts-node --esm src/cli.ts",
+    "start": "node --loader ts-node/esm src/cli.ts",
     "test": "NODE_OPTIONS=\"--no-warnings --experimental-vm-modules\" jest",
     "typeorm": "typeorm-ts-node-commonjs"
   },
