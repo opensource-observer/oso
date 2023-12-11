@@ -3,6 +3,7 @@ version: '3'
 volumes:
   node_modules:
   indexer_modules:
+  docs_modules:
   indexer_dist:
   frontend_modules:
   frontend_next:
@@ -26,6 +27,7 @@ services:
       - indexer_dist:/usr/src/app/indexer/dist
       - frontend_next:/usr/src/app/frontend/.next
       - frontend_modules:/usr/src/app/frontend/node_modules
+      - docs_modules:/usr/src/app/docs/node_modules
       - pnpm_home:/pnpm
     environment:
       - PNPM_HOME=/pnpm
@@ -105,4 +107,5 @@ services:
       - indexer_dist:/usr/src/app/indexer/dist
       - frontend_next:/usr/src/app/frontend/.next
       - frontend_modules:/usr/src/app/frontend/node_modules
+      - docs_modules:/usr/src/app/docs/node_modules
       - pnpm_home:/pnpm
