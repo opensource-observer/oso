@@ -51,7 +51,6 @@ export async function importOssDirectory(
     }
   }
 
-  logger.info("remove deleted collections");
   const currentCollections = await CollectionRepository.find({
     where: {
       type: { name: "OSS_DIRECTORY" },
@@ -68,15 +67,19 @@ export async function importOssDirectory(
     },
   );
 
-  // Mark the collections as deleted
-  await CollectionRepository.update(
-    {
-      id: In(removedCollections.map((c) => c.id)),
-    },
-    {
-      deletedAt: Date.now(),
-    },
-  );
+  if (removedCollections.length > 0) {
+    logger.info(`removing ${removedCollections.length} deleted collections`);
+
+    // Mark the collections as deleted
+    await CollectionRepository.update(
+      {
+        id: In(removedCollections.map((c) => c.id)),
+      },
+      {
+        deletedAt: new Date(),
+      },
+    );
+  }
 
   logger.info("Upserting collections...");
   for (let i = 0; i < collections.length; i++) {
