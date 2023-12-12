@@ -171,7 +171,7 @@ export function parseDuneContractUsageCSVRow(row: string[]): DuneRawRow {
       u[1] === "<nil>" ? null : (u[1] as string),
       u[2] as string,
       u[3] as string,
-      parseInt(u[4] as string),
+      stringToInt(u[4] as string),
     ];
   });
   return {
@@ -504,7 +504,7 @@ export class DailyContractUsageClient implements IDailyContractUsageClientV2 {
               safeAddress: chunk[3] === "" ? null : chunk[3],
               l2GasUsed: chunk[4],
               l1GasUsed: chunk[5],
-              txCount: parseInt(chunk[6], 10),
+              txCount: stringToInt(chunk[6]),
             };
             rows.push(row);
           })
