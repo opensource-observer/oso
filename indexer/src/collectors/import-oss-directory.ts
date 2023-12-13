@@ -7,6 +7,9 @@ import {
 } from "../db/entities.js";
 import { CommonArgs } from "../utils/api.js";
 import { logger } from "../utils/logger.js";
+import { CollectionRepository } from "../db/collection.js";
+import { In, IsNull } from "typeorm";
+import _ from "lodash";
 
 /**
  * Entrypoint arguments
@@ -46,6 +49,36 @@ export async function importOssDirectory(
         `projects[${i}]: error occured processing project ${p.slug}. Skipping with error: ${e}`,
       );
     }
+  }
+
+  const currentCollections = await CollectionRepository.find({
+    where: {
+      type: { name: "OSS_DIRECTORY" },
+      deletedAt: IsNull(),
+    },
+  });
+
+  // Calculate the removed collections
+  const removedCollections = _.differenceWith(
+    currentCollections,
+    collections,
+    (a, b) => {
+      return a.slug === b.slug;
+    },
+  );
+
+  if (removedCollections.length > 0) {
+    logger.info(`removing ${removedCollections.length} deleted collections`);
+
+    // Mark the collections as deleted
+    await CollectionRepository.update(
+      {
+        id: In(removedCollections.map((c) => c.id)),
+      },
+      {
+        deletedAt: new Date(),
+      },
+    );
   }
 
   logger.info("Upserting collections...");
