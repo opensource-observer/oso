@@ -1,11 +1,7 @@
 ---
 slug: open-source-open-data-open-infra
 title: Open Source, Open Data, Open Infra
-authors:
-  name: Raymond Cheng
-  title: Open Source, Open Data, Open Infra
-  url: https://kariba.substack.com/p/open-source-open-data-open-infra
-  image_url: https://github.com/wgao19.png
+authors: [Raymond Cheng]
 tags: [kariba, open source, open data, open infra]
 ---
 
