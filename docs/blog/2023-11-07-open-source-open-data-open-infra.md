@@ -1,7 +1,7 @@
 ---
 slug: open-source-open-data-open-infra
 title: Open Source, Open Data, Open Infra
-authors: [Raymond Cheng]
+authors: [ryscheng]
 tags: [kariba, open source, open data, open infra]
 ---
 
