@@ -2,7 +2,7 @@
 slug: retropgf3-ecosystem-analysis
 title: Analysis on the 300+ OSS projects applying for RetroPGF 3 
 authors: [ccerv1]
-tags: [optimism, retropgf, data visualization]
+tags: [optimism, retropgf, ecosystem reports, data visualization]
 ---
 
 [Open Source Observer](https://www.opensource.observer/) is a platform for measuring the impact of open source software (OSS) contributions. We launched a few months ago with a commitment to [open source everything](https://docs.opensource.observer/blog/open-source-open-data-open-infra)*.* Here is our [hello world post](https://gov.optimism.io/t/introducing-open-source-observer-measuring-impact-of-oss-contributions-to-the-op-superchain/7071/1) on the forum ICYMI.
