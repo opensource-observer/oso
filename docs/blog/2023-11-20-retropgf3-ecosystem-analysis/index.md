@@ -22,11 +22,11 @@ Over 600 projects and individuals applied for RetroPGF 3. This report only inclu
 
 We also have data on projects that applied for previous RetroPGF rounds (but not the current one). A total of 366 OSS projects are represented in the Venn diagram below, of which 205 have no prior experience with RetroPGF.
 
-![venn|690x750](./venn-diagram.png)
+![image|690x750](./venn-diagram.png)
 
 These projects have lots of shared contributors too — a theme will explore further later on in this doc!
 
-![network-graph|690x690](./network-graph-big.png)
+![image|690x690](./network-graph-big.png)
 
 # Developer activity before and after RetroPGF
 
@@ -86,11 +86,11 @@ One of the most straightforward ways of measuring a project’s impact on OP Mai
 
 The treemap below shows both cohorts and the most active contributors in terms of sequencer fees. [Perpetual Protocol](https://www.opensource.observer/project/perpetual-protocol) has the largest contribution in our dataset of all projects on OP Mainnet.
 
-![newplot (8)|690x372](./fees-all.png)
+![image|690x372](./fees-all.png)
 
 If we just zoom in on the RetroPGF 3 portion, here’s what it looks like. [Infinitism (ERC-4337) - Account Abstraction](https://www.opensource.observer/project/eth-infinitism-account-abstraction) is an important case study because its primary users are other projects providing account abstraction services, not individuals. 
 
-![newplot (9)|690x372](./fees-zoom.png)
+![image|690x372](./fees-zoom.png)
 
 It’s also important to look upstream of these protocols and capture the impact of the libraries and projects they depend on, which make it easy to deploy or improve UX.
 
@@ -98,7 +98,7 @@ Our first attempt at this is something we call “downstream impact” — a way
 
 Our first version looks solely at package data from npm, a small slice of the actual dependency graph among projects. For instance, [ethers.js](https://www.opensource.observer/project/ethers-io) and [web3.js](https://www.opensource.observer/project/web3) are two very popular npm packages in the dependency graph of other onchain projects.
 
-![newplot (14)|690x570](./fees-rpgf3.png)
+![image|690x570](./fees-rpgf3.png)
 
 Soon, we hope to be able to surface the downstream impact via a far more robust graph.
 
