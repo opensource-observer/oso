@@ -13,7 +13,7 @@ It might not be the sexiest form of contribution, but it's the most important. W
 
 Anyone can add a new project or update project information by submitting a PR to the [OSS Directory](https://github.com/opensource-observer/oss-directory).
 
-For more information on how to contribute to the OSS Directory, check out the [Add/Update Project Information](./contributing/add-update/intro) section.
+For more information on how to contribute to the OSS Directory, check out the [Add/Update Project Information](./add-update/intro) section.
 
 ## Analysis and Data Science
 
@@ -21,7 +21,7 @@ We are building the place to do impact data science for open source ecosystems. 
 
 Our [insights repo](https://github.com/opensource-observer/insights) is the place to share your analysis and visualizations.
 
-For more information on how to contribute meaningful open source insights, check out the [Analysis and Data Science](./contributing/data-science/intro) section.
+For more information on how to contribute meaningful open source insights, check out the [Analysis and Data Science](./data-science/intro) section.
 
 ## Data Engineering
 
@@ -29,4 +29,4 @@ You have ideas for new data sources and want to help us connect them? You see a 
 
 Our [OSO mono repo](https://github.com/opensource-observer/oso) is the place for data engineers who want to contribute to our core mission.
 
-For more information on how to contribute to our data engineering efforts, check out the [Data Engineering](./contributing/data-engineering/intro) section.
+For more information on how to contribute to our data engineering efforts, check out the [Data Engineering](./data-engineering/intro) section.
