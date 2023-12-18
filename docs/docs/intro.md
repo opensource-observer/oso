@@ -2,46 +2,31 @@
 sidebar_position: 1
 ---
 
-# Tutorial Intro
+# Open Source Observer
 
-Let's discover **Docusaurus in less than 5 minutes**.
+Open Source Observer (sometimes OSO for short) is the [Open Source, Open Data, Open
+Infrastructure](../blog/2023-11-07-open-source-open-data-open-infra) tool
+dedicated to data collection and analytics for the purpose of understanding the
+impact of any given open source project.
 
-## Getting Started
+As part of our mission, this tool is inherently and intentionally developed in
+the open so that we can build a community that is focused on the open source
+software that has shaped all of our lives in the modern age. Pull requests are
+welcome!
 
-Get started by **creating a new site**.
+## Ways to interact Open Source Observer
 
-Or **try Docusaurus immediately** with **[docusaurus.new](https://docusaurus.new)**.
+There are likely any number of ways to one could use OSO, however, we generally
+imagine that an individual may fall into the following categories of interaction:
 
-### What you'll need
-
-- [Node.js](https://nodejs.org/en/download/) version 18.0 or above:
-  - When installing Node.js, you are recommended to check all checkboxes related to dependencies.
-
-## Generate a new site
-
-Generate a new Docusaurus site using the **classic template**.
-
-The classic template will automatically be added to your project after you run the command:
-
-```bash
-npm init docusaurus@latest my-website classic
-```
-
-You can type this command into Command Prompt, Powershell, Terminal, or any other integrated terminal of your code editor.
-
-The command also installs all necessary dependencies you need to run Docusaurus.
-
-## Start your site
-
-Run the development server:
-
-```bash
-cd my-website
-npm run start
-```
-
-The `cd` command changes the directory you're working with. In order to work with your newly created Docusaurus site, you'll need to navigate the terminal there.
-
-The `npm run start` command builds your website locally and serves it through a development server, ready for you to view at http://localhost:3000/.
-
-Open `docs/intro.md` (this page) and edit some lines: the site **reloads automatically** and displays your changes.
+- Users and casual explorers
+  - You've just arrived or you just like looking at pretty data! Head over to
+    [https://opensource.observer](https://opensource.observer) to view our
+    curated insights.
+- Data Scientist
+  - You want to explore the data and would like to contribute useful insights on
+    the data. Start at the [Contributors Overview](./contributors/overview)
+- Engineers
+  - You would like to connect new data sources or help us build better tools in
+    our mission to provide the best open source insights. You, too, should
+    continue to the [Contributors Overview](./contributors/overview)
