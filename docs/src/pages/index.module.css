@@ -18,6 +18,19 @@
 
 .buttons {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: center;
+  gap: 1rem; 
+  padding: 2rem;
+}
+
+.button {
+  margin: 0.5rem;
+}
+
+@media screen and (max-width: 768px) {
+  .buttons {
+    justify-content: space-around;
+  }
 }

@@ -1,0 +1,9 @@
+{
+  "label": "Data Science",
+  "position": 3,
+  "link": {
+    "type": "generated-index",
+    "title": "Analysis and Data Science",
+    "description": "We are building the place to do impact data science for open source ecosystems. We know how hard it is to get clean data ready to analyze in a Jupyter Notebook or whatever you platform you prefer for doing exploratory data analysis and visualizations. We want to remove those barriers and grow a decentralized data science community that believes in open source, open data, and open infrastructure."
+  }
+}

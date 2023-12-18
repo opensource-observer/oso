@@ -2,46 +2,34 @@
 sidebar_position: 1
 ---
 
-# Tutorial Intro
+# About
 
-Let's discover **Docusaurus in less than 5 minutes**.
+Open Source Observer is an open source public good.
 
-## Getting Started
+**Our goal is to help internet economies measure the impact of open source software contributions to the growth and adoption of their platform.**
 
-Get started by **creating a new site**.
+### Why does this matter?
 
-Or **try Docusaurus immediately** with **[docusaurus.new](https://docusaurus.new)**.
+Every open source community or ecosystem is a distinct internet economy. Its citizens include developers, users, and governance participants. Like any economy, strategic investment is critical for sustaining growth, innovation, and maintenance.
 
-### What you'll need
+However, current approaches to bootstrapping economic activity aren't very effective. Projects are rewarded for marketing and grant writing ability over impact. Foundations and ecosystem funds don't have the data they need to make smarter funding allocations.
 
-- [Node.js](https://nodejs.org/en/download/) version 18.0 or above:
-  - When installing Node.js, you are recommended to check all checkboxes related to dependencies.
+### How are you helping?
 
-## Generate a new site
+We believe better visibility leads to better funding allocations. Open Source Observer gives funders the metrics they need to allocate funding based on impact.
 
-Generate a new Docusaurus site using the **classic template**.
+Specifically, we help ecosystem funds:
 
-The classic template will automatically be added to your project after you run the command:
+- Track the full downstream impact of grants programs on key ecosystem metrics like user growth and developer activity over time
+- Create reward functions that allocate funding to projects based on impact analysis
+- Deep dive well-known projects and discover hidden gems
 
-```bash
-npm init docusaurus@latest my-website classic
-```
+We're putting all the metrics that funders need to inform better decision-making in one place, including:
 
-You can type this command into Command Prompt, Powershell, Terminal, or any other integrated terminal of your code editor.
+- Impact: trace a project's downstream contribution to end users, revenue, ecosystem growth, and sustainability by linking it to platform metrics
+- Activity: graph a project's team, momentum, and dependencies from GitHub and package managers
+- Financing: estimate funding and burn rates from grant metadata and analysis of public financial reports
 
-The command also installs all necessary dependencies you need to run Docusaurus.
+### How can I contribute?
 
-## Start your site
-
-Run the development server:
-
-```bash
-cd my-website
-npm run start
-```
-
-The `cd` command changes the directory you're working with. In order to work with your newly created Docusaurus site, you'll need to navigate the terminal there.
-
-The `npm run start` command builds your website locally and serves it through a development server, ready for you to view at http://localhost:3000/.
-
-Open `docs/intro.md` (this page) and edit some lines: the site **reloads automatically** and displays your changes.
+We were hoping you'd ask! There are a variety of ways to contribute to Open Source Observer. Go [here](/docs/contributing/intro) to learn more. You can also join our [Telegram](https://t.me/opensourceobserver) to and our [Discord](https://www.opensource.observer/discord).

@@ -19,9 +19,39 @@ function HomepageHeader() {
         <div className={styles.buttons}>
           <Link
             className="button button--secondary button--lg"
+            to="/docs/contributing/intro"
+          >
+            Contribute to OSO
+          </Link>
+          <Link
+            className="button button--secondary button--lg"
+            to="/docs/datasets/intro"
+          >
+            Explore OSO Datasets
+          </Link>
+          <Link
+            className="button button--secondary button--lg"
+            to="/docs/api/intro"
+          >
+            Get API Access
+          </Link>
+          <Link
+            className="button button--secondary button--lg"
+            to="/docs/metrics/intro"
+          >
+            Learn About OSO Impact Metrics
+          </Link>
+          <Link
+            className="button button--secondary button--lg"
+            to="/docs/ecosystems/intro"
+          >
+            See OSO Coverage by Ecosystem
+          </Link>
+          <Link
+            className="button button--secondary button--lg"
             to="/docs/intro"
           >
-            Docusaurus Tutorial - 5min ⏱️
+            Read More About OSO
           </Link>
         </div>
       </div>
@@ -34,7 +64,7 @@ export default function Home(): JSX.Element {
   return (
     <Layout
       title={`Hello from ${siteConfig.title}`}
-      description="Description will go into a meta tag in <head />"
+      description="This the OSO documentation site."
     >
       <HomepageHeader />
       <main>
