@@ -1,6 +1,10 @@
-# Metrics
+---
+sidebar_position: 1
+---
 
-> This document provides details on Open Source Observer's metrics. Metrics are typically queried by project (eg, `uniswap`), although they can also be queried by individual artifact.
+# Impact Metrics
+
+> This document provides details on Open Source Observer's impact metrics. Metrics are typically queried by project (eg, `uniswap`), although they can also be queried by individual artifact.
 
 ## Categories
 

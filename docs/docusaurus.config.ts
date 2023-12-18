@@ -69,6 +69,11 @@ const config: Config = {
           position: "left",
         },
         {
+          href: "https://www.opensource.observer",
+          label: "Website",
+          position: "left",
+        },
+        {
           href: "https://github.com/opensource-observer/oso",
           label: "GitHub",
           position: "right",
@@ -82,8 +87,24 @@ const config: Config = {
           title: "Docs",
           items: [
             {
-              label: "Tutorial",
-              to: "/docs/intro",
+              label: "Contributing",
+              to: "/docs/contributing/intro",
+            },
+            {
+              label: "Data",
+              to: "/docs/data/intro",
+            },
+            {
+              label: "API",
+              to: "/docs/api/intro",
+            },
+            {
+              label: "Impact Metrics",
+              to: "/docs/metrics/intro",
+            },
+            {
+              label: "Ecosystems",
+              to: "/docs/ecosystems/intro",
             },
           ],
         },
@@ -110,6 +131,10 @@ const config: Config = {
             {
               label: "Blog",
               to: "/blog",
+            },
+            {
+              label: "Website",
+              href: "https://www.opensource.observer",
             },
             {
               label: "GitHub",
