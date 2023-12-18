@@ -16,7 +16,7 @@ However, current approaches to bootstrapping economic activity aren't very effec
 
 ### How are you helping?
 
-We believe better visibility leads to better funding allocations. Open Source Observer gives funders the metrics they need to allocate funding based on impact. 
+We believe better visibility leads to better funding allocations. Open Source Observer gives funders the metrics they need to allocate funding based on impact.
 
 Specifically, we help ecosystem funds:
 
@@ -26,7 +26,7 @@ Specifically, we help ecosystem funds:
 
 We're putting all the metrics that funders need to inform better decision-making in one place, including:
 
- -Impact: trace a project's downstream contribution to end users, revenue, ecosystem growth, and sustainability by linking it to platform metrics
+- Impact: trace a project's downstream contribution to end users, revenue, ecosystem growth, and sustainability by linking it to platform metrics
 - Activity: graph a project's team, momentum, and dependencies from GitHub and package managers
 - Financing: estimate funding and burn rates from grant metadata and analysis of public financial reports
 
