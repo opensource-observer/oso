@@ -92,7 +92,7 @@ const config: Config = {
             },
             {
               label: "Data",
-              to: "/docs/data/intro",
+              to: "/docs/datasets/intro",
             },
             {
               label: "API",

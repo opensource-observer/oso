@@ -25,7 +25,7 @@ function HomepageHeader() {
           </Link>
           <Link
             className="button button--secondary button--lg"
-            to="/docs/data/intro"
+            to="/docs/datasets/intro"
           >
             Explore OSO Datasets
           </Link>
@@ -39,7 +39,7 @@ function HomepageHeader() {
             className="button button--secondary button--lg"
             to="/docs/metrics/intro"
           >
-            Learn About OSO's Impact Metrics
+            Learn About OSO Impact Metrics
           </Link>
           <Link
             className="button button--secondary button--lg"
