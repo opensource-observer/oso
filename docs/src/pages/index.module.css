@@ -26,11 +26,16 @@
 }
 
 .button {
+  flex: 1 0 calc(33.33% - 1rem);
+  max-width: calc(33.33% - 1rem);
   margin: 0.5rem;
+  padding: 1.5rem 0;
+  text-align: center;
 }
 
 @media screen and (max-width: 768px) {
-  .buttons {
-    justify-content: space-around;
+  .button {
+    flex-basis: calc(50% - 1rem);
+    max-width: calc(50% - 1rem);
   }
 }
