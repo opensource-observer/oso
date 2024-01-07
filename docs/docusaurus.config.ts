@@ -149,6 +149,19 @@ const config: Config = {
       theme: prismThemes.github,
       darkTheme: prismThemes.dracula,
     },
+    algolia: {
+      appId: "6X4LRNM0D7",
+      apiKey: "b1bdd9545c709afa27237441349164b1",
+      // todo: this needs to be indexed
+      indexName: "docs",
+      contextualSearch: true,
+      replaceSearchResultPathname: {
+        from: "/docs/",
+        to: "/",
+      },
+      searchParameters: {},
+      searchPagePath: "search",
+    },
   } satisfies Preset.ThemeConfig,
 };
 
