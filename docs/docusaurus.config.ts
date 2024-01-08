@@ -88,7 +88,7 @@ const config: Config = {
           items: [
             {
               label: "Data",
-              to: "/docs/datasets/intro",
+              to: "/docs/data/intro",
             },
             {
               label: "API",
