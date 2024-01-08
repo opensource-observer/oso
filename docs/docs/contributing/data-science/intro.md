@@ -37,7 +37,7 @@ The [analysis folder](https://github.com/opensource-observer/insights/tree/main/
 
 The community folder contains datasets and [notebook templates](./notebooks) that may be useful to new contributors. These provide sample queries and visualization tools, as well as steps for reproducing analysis that goes into the ecosystem reports.
 
-The community folder also contains our [data bounties](./bounties).
+The community folder also contains our [data bounties](./ds-bounties).
 
 ## Scripts
 
