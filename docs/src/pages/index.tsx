@@ -25,7 +25,7 @@ function HomepageHeader() {
 
           <Link
             className="button button--secondary button--lg"
-            to="/docs/datasets/intro"
+            to="/docs/data/intro"
           >
             Explore OSO Datasets
           </Link>
