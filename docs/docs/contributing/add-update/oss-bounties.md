@@ -1,6 +1,6 @@
 ---
-title: OSS Directory Bounty Program
-sidebar_position: 5
+title: Bounty Program
+sidebar_position: 3
 ---
 
 ## Overview

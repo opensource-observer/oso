@@ -1,6 +1,6 @@
 ---
 title: Tips for Bulk Updates
-sidebar_position: 4
+sidebar_position: 2
 ---
 
 # Tips for Making Bulk Updates to OSS Directory

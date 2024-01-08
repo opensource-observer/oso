@@ -95,7 +95,7 @@ const config: Config = {
               to: "/docs/api/intro",
             },
             {
-              label: "Impact metrics",
+              label: "Impact Metrics",
               to: "/docs/metrics/intro",
             },
             {
@@ -103,7 +103,7 @@ const config: Config = {
               to: "/docs/ecosystems/intro",
             },
             {
-              label: "How OSO works",
+              label: "How OSO Works",
               to: "/docs/how-oso-works/intro",
             },
           ],
