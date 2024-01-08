@@ -87,10 +87,6 @@ const config: Config = {
           title: "Docs",
           items: [
             {
-              label: "Contributing",
-              to: "/docs/contributing/intro",
-            },
-            {
               label: "Data",
               to: "/docs/datasets/intro",
             },
@@ -105,6 +101,10 @@ const config: Config = {
             {
               label: "Ecosystems",
               to: "/docs/ecosystems/intro",
+            },
+            {
+              label: "Contributing",
+              to: "/docs/contributing/intro",
             },
           ],
         },
