@@ -5,7 +5,7 @@ sidebar_position: 1
 
 OSO is looking for contributions to add/update information about open source projects, to explore the data and generate useful insights, and to connect new data sources and build better tools on top of OSO.
 
-![image](data-scientist-meme.png)
+If you are interested in joining the Data Collective, your first step is to apply [here](https://www.opensource.observer/data-collective).
 
 ## Project Information
 

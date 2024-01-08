@@ -29,24 +29,24 @@ scripts
 visualizations
 ```
 
-### Analysis
+## Analysis
 
 The [analysis folder](https://github.com/opensource-observer/insights/tree/main/analysis) contains the bulk of the analysis and insights, mostly in the form of Jupyter Notebooks that leverage the OSO data warehouse and API. These are mainly provided for reference and to provide inspiration for others. They are not actively maintained and links will go stale over time. The dependencies folder contains scripts that are used to generate the dependency graph visualizations. The ecosystem_reports folder contains reports that are generated on a regular basis and published to the OSO blog.
 
-### Community
+## Community
 
 The community folder contains datasets and [notebook templates](./notebooks) that may be useful to new contributors. These provide sample queries and visualization tools, as well as steps for reproducing analysis that goes into the ecosystem reports.
 
-The community folder also contains our [data bounties](./bounties).
+The community folder also contains our [data bounties](./ds-bounties).
 
-### Scripts
+## Scripts
 
 The scripts folder contains scripts for fetching data from the OSO API and data warehouse. It also includes some scripts for fetching GitHub or blockchain data on an ad hoc basis.
 
-### Visualizations
+## Visualizations
 
 The visualizations folder contains visualizations that are used in many of the reports, such as sankeys and heatmaps. Most of our visualizations are generated in Python using matplotlib, seaborn, and plotly.
 
-# API Access
+## API Access
 
-In order to use OSO the data warehouse, you will need to request an API key. Please apply to join to the Kariba Data Collective [here](https://www.opensource.observer/data-collective).
+In order to use OSO the data warehouse, you will need to request an API key. Please apply to join to the Data Collective [here](https://www.opensource.observer/data-collective).
