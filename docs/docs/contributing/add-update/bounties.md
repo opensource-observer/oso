@@ -7,7 +7,7 @@ sidebar_position: 5
 
 The aim of our bounty program is to encourage and reward the community for contributing to the growth and accuracy of our OSS Directory. Bounties are only available to members of the Data Collective.
 
-If you interested in joining the Data Collective, please go [here](https://www.opensource.observer/data-collective).
+If you are interested in joining the Data Collective, please go [here](https://www.opensource.observer/data-collective).
 
 Below are the details on how you can participate and earn bounties for your valuable contributions.
 
