@@ -87,15 +87,15 @@ const config: Config = {
           title: "Docs",
           items: [
             {
-              label: "Data",
-              to: "/docs/data/intro",
+              label: "Contributing",
+              to: "/docs/contributing/intro",
             },
             {
               label: "API",
               to: "/docs/api/intro",
             },
             {
-              label: "Impact Metrics",
+              label: "Impact metrics",
               to: "/docs/metrics/intro",
             },
             {
@@ -103,8 +103,8 @@ const config: Config = {
               to: "/docs/ecosystems/intro",
             },
             {
-              label: "Contributing",
-              to: "/docs/contributing/intro",
+              label: "How OSO works",
+              to: "/docs/how-oso-works/intro",
             },
           ],
         },
