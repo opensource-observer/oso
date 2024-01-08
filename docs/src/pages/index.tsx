@@ -22,36 +22,29 @@ function HomepageHeader() {
           >
             Contribute to OSO
           </Link>
-
-          <Link
-            className="button button--secondary button--lg"
-            to="/docs/datasets/intro"
-          >
-            Explore OSO Datasets
-          </Link>
           <Link
             className="button button--secondary button--lg"
             to="/docs/api/intro"
           >
-            Get API Access
+            Get API access
           </Link>
           <Link
             className="button button--secondary button--lg"
             to="/docs/metrics/intro"
           >
-            Learn About OSO Impact Metrics
+            Learn about OSO impact metrics
           </Link>
           <Link
             className="button button--secondary button--lg"
             to="/docs/ecosystems/intro"
           >
-            See OSO Coverage by Ecosystem
+            See OSO coverage by ecosystem
           </Link>
           <Link
             className="button button--secondary button--lg"
-            to="/docs/intro"
+            to="/docs/how-oso-works/intro"
           >
-            Read More About OSO
+            Understand how OSO works
           </Link>
         </div>
       </div>

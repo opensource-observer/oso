@@ -91,10 +91,6 @@ const config: Config = {
               to: "/docs/contributing/intro",
             },
             {
-              label: "Data",
-              to: "/docs/datasets/intro",
-            },
-            {
               label: "API",
               to: "/docs/api/intro",
             },
@@ -105,6 +101,10 @@ const config: Config = {
             {
               label: "Ecosystems",
               to: "/docs/ecosystems/intro",
+            },
+            {
+              label: "How OSO Works",
+              to: "/docs/how-oso-works/intro",
             },
           ],
         },

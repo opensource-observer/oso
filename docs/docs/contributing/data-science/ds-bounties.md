@@ -1,5 +1,5 @@
 ---
-title: Data Bounties
+title: Bounty Program
 sidebar_position: 4
 ---
 
