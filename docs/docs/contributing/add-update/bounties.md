@@ -3,17 +3,19 @@ title: OSS Directory Bounty Program
 sidebar_position: 5
 ---
 
-# Overview
+## Overview
 
-The aim of our bounty program is to encourage and reward the community for contributing to the growth and accuracy of our OSS Directory. Bounties are only available to members of the Data Collective. For more information on how to join, please go [here](https://www.opensource.observer/data-collective).
+The aim of our bounty program is to encourage and reward the community for contributing to the growth and accuracy of our OSS Directory. Bounties are only available to members of the Data Collective.
+
+If you interested in joining the Data Collective, please go [here](https://www.opensource.observer/data-collective).
 
 Below are the details on how you can participate and earn bounties for your valuable contributions.
 
-# Contribution Types
-
 ## Adding a New Project
 
-We will award 1.00 USDC per new project successfully added to the OSS Directory. The new entry must include a project slug (unique identifier), name, and an initial GitHub organization or repository.
+> 💰 1.00 USDC per new project successfully added to the OSS Directory.
+
+The new entry must include a project slug (unique identifier), name, and an initial GitHub organization or repository.
 
 Example:
 
@@ -35,7 +37,7 @@ The following is the current list of available bounties:
 
 ### URL of a GitHub organization
 
-0.50 USDC (up to a max of 2.00 USDC per project).
+> 💰 0.50 USDC (up to a max of 2.00 USDC per project).
 
 Example:
 
@@ -47,7 +49,7 @@ github:
 
 ### URL of a GitHub repository
 
-0.10 USDC (up to a max of 1.00 USDC per project).
+> 💰 0.10 USDC (up to a max of 1.00 USDC per project).
 
 Note: the repo cannot already be contained in the project’s GitHub organization.
 
@@ -61,7 +63,7 @@ github:
 
 ### URL of an NPM package
 
-0.10 USDC (up to a max of 1.00 USDC per project).
+> 💰 0.10 USDC (up to a max of 1.00 USDC per project).
 
 Example:
 
@@ -72,7 +74,7 @@ npm:
 
 ### Blockchain wallet address
 
-0.50 USDC per address (up to a max of 5.00 USDC per project).
+> 💰 0.50 USDC per address (up to a max of 5.00 USDC per project).
 
 The entry must include the network(s) and the `wallet` tag; it should also tag whether the wallet is an `EOA` or a `safe`. Where possible, a name for the address is appreciated.
 
@@ -92,7 +94,7 @@ blockchain:
 
 ### Deployer address
 
-0.50 USDC per address (up to a max of 5.00 USDC per project).
+> 💰 0.50 USDC per address (up to a max of 5.00 USDC per project).
 
 The entry must include the network(s) and the tags `EOA` and `deployer`.
 
@@ -110,7 +112,7 @@ blockchain:
 
 ### Contract or factory address
 
-0.10 USDC per address (up to a max of 5.00 USDC per project).
+> 💰 0.10 USDC per address (up to a max of 5.00 USDC per project).
 
 The entry must include the network and that tags `contract` or `factory`. Where possible, a name for the contract or factory is appreciated.
 
@@ -129,7 +131,9 @@ blockchain:
 
 ### Network tag for a blockchain address
 
-0.05 USDC per address (up to a max of 1.00 USDC per project). This bounty is only awarded for addresses that already have at least one network tag and the update includes an additional network with transaction activity on it.
+> 💰 0.05 USDC per address (up to a max of 1.00 USDC per project).
+
+This bounty is only awarded for addresses that already have at least one network tag and the update includes an additional network with transaction activity on it.
 
 Example:
 
@@ -144,7 +148,7 @@ blockchain:
       - optimism # additional network
 ```
 
-# Reviewing Contributions
+## Reviewing Contributions
 
 All contributions will be reviewed by the maintainers of the OSS Directory. We will do our best to review contributions in a timely manner, but please be patient with us. We will reach out to you via GitHub if we have any questions or concerns about your contribution.
 
