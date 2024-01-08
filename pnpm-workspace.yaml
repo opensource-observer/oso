@@ -2,3 +2,5 @@ packages:
   - "docs"
   - "frontend"
   - "indexer"
+  - "connectors/oss-directory"
+  - "connectors/github-resolve-repos"

@@ -47,3 +47,9 @@ graph/.test.subgraph.yaml
 playwright-report/
 node_modules
 .pnpm-store
+test_only.*
+**/test_only.*
+Dockerfile
+*.Dockerfile
+**/Dockerfile
+**/*.Dockerfile
