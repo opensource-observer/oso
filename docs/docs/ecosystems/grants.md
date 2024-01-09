@@ -1,6 +1,8 @@
 # Grants Registry
 
-> This is a working -- and very incomplete -- registry of onchain ecosystem grant funds.
+:::warning
+This is a working -- and very incomplete -- registry of onchain ecosystem grant funds.
+:::
 
 ## Ethereum Ecosystem
 
