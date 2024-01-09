@@ -145,7 +145,7 @@ blockchain:
       - wallet
     networks:
       - mainnet
-      - optimism # additional network
+      - new-network # additional network
 ```
 
 ## Reviewing Contributions
