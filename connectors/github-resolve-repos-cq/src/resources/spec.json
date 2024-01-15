@@ -1,0 +1,25 @@
+{
+  "documentationUrl": "https://docs.faros.ai",
+  "connectionSpecification": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "OSS Directory",
+    "type": "object",
+    "required": ["github_token", "urls"],
+    "additionalProperties": true,
+    "properties": {
+      "github_token": {
+        "type": "string",
+        "title": "Github Token",
+        "description": "A personal access token for github that has public repository access. The oss-directory source needs to pull data from Github"
+      },
+      "urls": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "title": "URLs",
+        "description": "A personal access token for github that has public repository access. The oss-directory source needs to pull data from Github"
+      }
+    }
+  }
+}

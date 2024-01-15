@@ -1,0 +1,20 @@
+kind: source
+spec:
+  name: "oss-directory"
+  registry: "grpc"
+  path: "localhost:7777"
+  version: "v0.0.1"
+  tables:
+    ["*"]
+  destinations:
+    - "file"
+---
+kind: destination
+spec:
+  name: file 
+  path: cloudquery/file
+  registry: cloudquery
+  version: "v3.4.16"
+  spec:
+    path: "test_only/{{TABLE}}/{{UUID}}.{{FORMAT}}"
+    format: json

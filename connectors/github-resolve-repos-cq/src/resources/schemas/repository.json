@@ -1,0 +1,20 @@
+{
+  "$id": "repository.json",
+  "title": "Repository",
+  "type": "object",
+  "description": "A github repository",
+  "properties": {
+    "url": {
+      "type": "string",
+      "format": "uri"
+    },
+    "owner": {
+      "type": "string",
+      "format": "uri"
+    },
+    "name": {
+      "type": "string"
+    }
+  },
+  "required": ["url", "owner", "name"]
+}

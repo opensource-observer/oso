@@ -1,0 +1,12 @@
+{
+  "extends": ["../../.eslintrc.js"],
+  "root": false,
+  "parserOptions": {
+    "ecmaFeatures": {
+      "jsx": true
+    },
+    "ecmaVersion": "latest",
+    "sourceType": "module",
+    "project": ["./connectors/oss-directory/tsconfig.json"]
+  }
+}
