@@ -146,9 +146,9 @@ const config: Config = {
       copyright: `Copyright © ${new Date().getFullYear()} Kariba Labs, Inc.`,
     },
     algolia: {
-      appId: "6X4LRNM0D7",
-      apiKey: "594ca35ee2baeca936fcd9f64fa66eb2",
-      indexName: "docs",
+      appId: "4321D3E0I0",
+      apiKey: "d812cd291bb7bcb57f710a569668761d",
+      indexName: "opensource",
       contextualSearch: true,
     },
     prism: {
