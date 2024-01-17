@@ -149,7 +149,7 @@ const config: Config = {
       appId: "4321D3E0I0",
       apiKey: "d812cd291bb7bcb57f710a569668761d",
       indexName: "opensource",
-      contextualSearch: true,
+      contextualSearch: false,
     },
     prism: {
       theme: prismThemes.github,
