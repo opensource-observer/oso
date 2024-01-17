@@ -82,7 +82,7 @@
     "npm-registry-fetch": "^15.0.0",
     "octokit": "^3.1.0",
     "ora": "^7.0.1",
-    "oss-directory": "^0.0.5",
+    "oss-directory": "^0.0.7",
     "pg": "^8.4.0",
     "redis": "^4.6.11",
     "reflect-metadata": "^0.1.13",
