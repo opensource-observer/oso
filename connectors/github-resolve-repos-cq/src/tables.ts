@@ -19,7 +19,6 @@ import fs from "fs";
 import readline from "readline";
 import { getReposFromUrls } from "./streams/repositories.js";
 
-
 /* eslint-disable import/no-named-as-default-member */
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -35,7 +34,10 @@ const getColumnResolver = (c: string): ColumnResolver => {
 };
 
 // eslint-disable-next-line @typescript-eslint/require-await
-const getRepositories = async (input: readline.Interface, client: GraphQLClient): Promise<Table> => {
+const getRepositories = async (
+  input: () => readline.Interface,
+  client: GraphQLClient,
+): Promise<Table> => {
   const columnDefinitions: Column[] = [
     newColumn("url", {
       primaryKey: true,
@@ -48,31 +50,31 @@ const getRepositories = async (input: readline.Interface, client: GraphQLClient)
     newColumn("owner", {
       notNull: true,
     }),
-  ]
+  ];
 
   const tableResolver: TableResolver = async (clientMeta, parent, stream) => {
-    for await (const line of input) {
-      const project = JSON.parse(line) as { slug: string, github: Array<{ url: string }> }
+    for await (const line of input()) {
+      const project = JSON.parse(line) as {
+        slug: string;
+        github: Array<{ url: string }>;
+      };
       console.log(`Loading ${project.slug}`);
-      const repos = await getReposFromUrls(client, project.github.map((p) => p.url));
+      const repos = await getReposFromUrls(
+        client,
+        project.github.map((p) => p.url),
+      );
       for (const repo of repos) {
         stream.write(repo);
       }
     }
     return;
   };
-  return createTable({ name: "repositories", columns: columnDefinitions, resolver: tableResolver });
+  return createTable({
+    name: "repositories",
+    columns: columnDefinitions,
+    resolver: tableResolver,
+  });
 };
-
-async function ossDataToTable<T>(name: string, data: T[], columnDefs: Column[]): Promise<Table> {
-  const tableResolver: TableResolver = (clientMeta, parent, stream) => {
-    for (const d of data) {
-      stream.write(d);
-    }
-    return Promise.resolve();
-  }
-  return createTable({ name: name, columns: columnDefs, resolver: tableResolver });
-}
 
 function newColumn(name: string, opts?: Partial<Column>): Column {
   const options = opts || {};
@@ -85,21 +87,23 @@ function newColumn(name: string, opts?: Partial<Column>): Column {
     incrementalKey: options.incrementalKey || false,
     unique: options.unique || false,
     ignoreInTests: options.ignoreInTests || false,
-    resolver: getColumnResolver(name)
+    resolver: getColumnResolver(name),
   };
 }
 
-export const getTables = async (inputPath: string, client: GraphQLClient): Promise<Table[]> => {
-  // Load the project names from the input path. 
-  const fileStream = fs.createReadStream(inputPath);
-
-  const rl = readline.createInterface({
-    input: fileStream,
-    crlfDelay: Infinity
-  });
-
+export const getTables = async (
+  inputPath: string,
+  client: GraphQLClient,
+): Promise<Table[]> => {
   const tables = [
-    await getRepositories(rl, client),
+    await getRepositories(() => {
+      const fileStream = fs.createReadStream(inputPath);
+
+      return readline.createInterface({
+        input: fileStream,
+        crlfDelay: Infinity,
+      });
+    }, client),
   ];
 
   return tables;

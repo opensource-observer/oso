@@ -7,6 +7,6 @@
     },
     "ecmaVersion": "latest",
     "sourceType": "module",
-    "project": ["./connectors/oss-directory/tsconfig.json"]
+    "project": ["./connectors/oss-directory-cq/tsconfig.json"]
   }
 }

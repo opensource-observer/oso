@@ -7,6 +7,6 @@
     },
     "ecmaVersion": "latest",
     "sourceType": "module",
-    "project": ["./connectors/oss-directory/tsconfig.json"]
+    "project": ["./connectors/github-resolve-repos-cq/tsconfig.json"]
   }
 }
