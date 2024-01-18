@@ -1,4 +1,4 @@
-# oss-directory Airbyte Connector
+# oss-directory Cloudquery Source Plugin
 
-Creates an Airbyte Source connector of
+Provides a reusable data source for
 [oss-directory](https://github.com/opensource-observer/oss-directory).
