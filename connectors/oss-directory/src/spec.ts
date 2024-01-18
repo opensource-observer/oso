@@ -21,8 +21,6 @@ export const parseSpec = (spec: string): Spec => {
   if (!valid) {
     throw new Error(`Invalid spec: ${JSON.stringify(validate.errors)}`);
   }
-  const {
-    concurrency = 10_000,
-  } = camelcaseKeys(parsed);
+  const { concurrency = 10_000 } = camelcaseKeys(parsed);
   return { concurrency };
 };
