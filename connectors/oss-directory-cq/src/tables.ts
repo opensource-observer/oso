@@ -1,5 +1,10 @@
 /* eslint-disable @typescript-eslint/naming-convention */
-import { Utf8, Int64, List, Field } from "@cloudquery/plugin-sdk-javascript/arrow";
+import {
+  Utf8,
+  Int64,
+  List,
+  Field,
+} from "@cloudquery/plugin-sdk-javascript/arrow";
 import { JSONType } from "@cloudquery/plugin-sdk-javascript/types/json";
 import type {
   Column,
@@ -30,7 +35,7 @@ const getColumnResolver = (c: string): ColumnResolver => {
     try {
       resource.setColumData(c, columnData);
     } catch (e) {
-      console.log('caught error');
+      console.log("caught error");
       console.log(e);
       throw e;
     }
@@ -38,14 +43,22 @@ const getColumnResolver = (c: string): ColumnResolver => {
   };
 };
 
-async function ossDataToTable<T>(name: string, data: T[], columnDefs: Column[]): Promise<Table> {
-  const tableResolver: TableResolver = (clientMeta, parent, stream) => {
+async function ossDataToTable<T>(
+  name: string,
+  data: T[],
+  columnDefs: Column[],
+): Promise<Table> {
+  const tableResolver: TableResolver = (_clientMeta, _parent, stream) => {
     for (const d of data) {
       stream.write(d);
     }
     return Promise.resolve();
-  }
-  return createTable({ name: name, columns: columnDefs, resolver: tableResolver });
+  };
+  return createTable({
+    name: name,
+    columns: columnDefs,
+    resolver: tableResolver,
+  });
 }
 
 function newColumn(name: string, opts?: Partial<Column>): Column {
@@ -59,15 +72,14 @@ function newColumn(name: string, opts?: Partial<Column>): Column {
     incrementalKey: options.incrementalKey || false,
     unique: options.unique || false,
     ignoreInTests: options.ignoreInTests || false,
-    resolver: getColumnResolver(name)
+    resolver: getColumnResolver(name),
   };
 }
 
-export const getTables = async (
-): Promise<Table[]> => {
+export const getTables = async (): Promise<Table[]> => {
   const { collections, projects } = await fetchData();
   const tables = [
-    await ossDataToTable('collections', collections, [
+    await ossDataToTable("collections", collections, [
       newColumn("slug", {
         primaryKey: true,
         unique: true,
@@ -80,10 +92,10 @@ export const getTables = async (
         type: new Int64(),
       }),
       newColumn("projects", {
-        type: new List(new Field("projects", new Utf8()))
-      })
+        type: new List(new Field("projects", new Utf8())),
+      }),
     ]),
-    await ossDataToTable('projects', projects, [
+    await ossDataToTable("projects", projects, [
       newColumn("slug", {
         primaryKey: true,
         unique: true,
@@ -93,18 +105,18 @@ export const getTables = async (
         notNull: true,
       }),
       newColumn("github", {
-        type: new JSONType()
+        type: new JSONType(),
         // Ideally we'd be able to use structs to more precisely specify the
         //types on the data. However, there seems to be issues with this on the
         //JS SDK. Will need to check the python/go sdk for cloudquery type: new
         //List(new Field("_blockchain", new JSONType())),
       }),
       newColumn("npm", {
-        type: new JSONType()
+        type: new JSONType(),
       }),
       newColumn("blockchain", {
-        type: new JSONType()
-      })
+        type: new JSONType(),
+      }),
     ]),
   ];
 

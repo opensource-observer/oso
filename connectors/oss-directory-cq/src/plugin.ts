@@ -3,38 +3,28 @@ import type {
   TableOptions,
   SyncOptions,
   Plugin,
-  SourceClient
-} from '@cloudquery/plugin-sdk-javascript/plugin/plugin';
-import { newPlugin, newUnimplementedDestination } from '@cloudquery/plugin-sdk-javascript/plugin/plugin';
-import { sync } from '@cloudquery/plugin-sdk-javascript/scheduler';
-import type { Table } from '@cloudquery/plugin-sdk-javascript/schema/table';
-import { filterTables } from '@cloudquery/plugin-sdk-javascript/schema/table';
+} from "@cloudquery/plugin-sdk-javascript/plugin/plugin";
+import {
+  newPlugin,
+  newUnimplementedDestination,
+} from "@cloudquery/plugin-sdk-javascript/plugin/plugin";
+import { sync } from "@cloudquery/plugin-sdk-javascript/scheduler";
+import type { Table } from "@cloudquery/plugin-sdk-javascript/schema/table";
+import { filterTables } from "@cloudquery/plugin-sdk-javascript/schema/table";
 import { parseSpec } from "./spec.js";
 import type { Spec } from "./spec.js";
 import { getTables } from "./tables.js";
 
-class OssDirectorySourceClient implements SourceClient {
-  sync(options: SyncOptions) {
-
-  }
-
-  async tables(options: TableOptions): Promise<Table[]> {
-    // Collection and projects tables
-    return [];
-  }
-}
-
-
-type FileClient = {
+type NoopClient = {
   id: () => string;
 };
 
-export const newSamplePlugin = () => {
+export const newOssDirectoryPlugin = () => {
   const pluginClient = {
     ...newUnimplementedDestination(),
     plugin: null as unknown as Plugin,
     spec: null as unknown as Spec,
-    client: null as unknown as FileClient | null,
+    client: null as unknown as NoopClient | null,
     allTables: null as unknown as Table[],
     close: () => Promise.resolve(),
     tables: ({ tables, skipTables, skipDependentTables }: TableOptions) => {
@@ -100,6 +90,6 @@ export const newSamplePlugin = () => {
     return pluginClient;
   };
 
-  pluginClient.plugin = newPlugin("oss-directory", '0.0.1', newClient);
+  pluginClient.plugin = newPlugin("oss-directory", "0.0.1", newClient);
   return pluginClient.plugin;
 };

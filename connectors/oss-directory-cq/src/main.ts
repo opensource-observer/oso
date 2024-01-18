@@ -1,9 +1,16 @@
 import { createServeCommand } from "@cloudquery/plugin-sdk-javascript/plugin/serve";
 
-import { newSamplePlugin } from "./plugin.js";
+import { newOssDirectoryPlugin } from "./plugin.js";
 
 const main = () => {
-  createServeCommand(newSamplePlugin()).parse();
+  createServeCommand(newOssDirectoryPlugin())
+    .parse()
+    .catch((err: any) => {
+      console.log("caught a plugin error");
+      // eslint-disable-next-line no-restricted-properties
+      console.error(err);
+      process.exit(1);
+    });
 };
 
 main();
