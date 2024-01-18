@@ -3,14 +3,9 @@ import { createServeCommand } from "@cloudquery/plugin-sdk-javascript/plugin/ser
 import { newOssDirectoryPlugin } from "./plugin.js";
 
 const main = () => {
-  createServeCommand(newOssDirectoryPlugin())
-    .parse()
-    .catch((err: any) => {
-      console.log("caught a plugin error");
-      // eslint-disable-next-line no-restricted-properties
-      console.error(err);
-      process.exit(1);
-    });
+  // Interestingly this isn't actually a promise but it's not being interpreted correctly
+  // eslint-disable-next-line @typescript-eslint/no-floating-promises
+  createServeCommand(newOssDirectoryPlugin()).parse();
 };
 
 main();
