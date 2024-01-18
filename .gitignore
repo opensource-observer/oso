@@ -47,3 +47,6 @@ graph/.test.subgraph.yaml
 playwright-report/
 node_modules
 .pnpm-store
+
+# cloudquery
+.cq/
