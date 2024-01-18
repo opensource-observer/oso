@@ -8,6 +8,7 @@ spec:
     ["*"]
   destinations:
     - "file"
+    - "bigquery"
 ---
 kind: destination
 spec:
@@ -18,3 +19,14 @@ spec:
   spec:
     path: "test_only/{{TABLE}}/{{UUID}}.{{FORMAT}}"
     format: json
+---
+kind: destination
+spec:
+  name: bigquery
+  path: cloudquery/bigquery
+  registry: cloudquery
+  version: "v3.3.13"
+  write_mode: "append"
+  spec:
+    project_id: oso-production
+    dataset_id: opensource_observer
