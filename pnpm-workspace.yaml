@@ -2,5 +2,5 @@ packages:
   - "docs"
   - "frontend"
   - "indexer"
-  - "connectors/oss-directory"
-  - "connectors/github-resolve-repos"
+  - "cloudquery/oss-directory"
+  - "cloudquery/github-resolve-repos"
