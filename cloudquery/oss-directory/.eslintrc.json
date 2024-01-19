@@ -8,5 +8,8 @@
     "ecmaVersion": "latest",
     "sourceType": "module",
     "project": ["./cloudquery/oss-directory/tsconfig.json"]
+  },
+  "rules": {
+    "@next/next/no-html-link-for-pages": "off"
   }
 }
