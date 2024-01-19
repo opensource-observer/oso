@@ -1,5 +1,5 @@
 {
-  "name": "oss-directory-cloudquery-plugin",
+  "name": "@opensource-observer/github-resolve-repos-cloudquery-plugin",
   "version": "1.0.0",
   "description": "",
   "bin": "dist/main.js",
@@ -22,19 +22,14 @@
     "@apidevtools/json-schema-ref-parser": "^11.1.0",
     "@cloudquery/plugin-sdk-javascript": "^0.1.4",
     "@types/lodash": "^4.14.196",
-    "@types/verror": "^1.10.9",
     "ajv": "^8.12.0",
     "camelcase-keys": "^9.1.2",
-    "commander": "^9.3.0",
     "dayjs": "^1.11.9",
-    "faros-airbyte-cdk": "^0.8.3",
     "graphql-request": "^6.1.0",
     "lodash": "^4.17.21",
     "oss-directory": "^0.0.7",
     "read-pkg-up": "^11.0.0",
-    "ts-essentials": "^9.4.1",
-    "typescript": "^5.2.2",
-    "verror": "^1.10.1"
+    "typescript": "^5.2.2"
   },
   "devDependencies": {
     "json-schema-to-typescript": "^13.1.1",

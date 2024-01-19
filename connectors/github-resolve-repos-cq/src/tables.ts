@@ -17,7 +17,7 @@ import utc from "dayjs/plugin/utc.js";
 import { GraphQLClient } from "graphql-request";
 import fs from "fs";
 import readline from "readline";
-import { getReposFromUrls } from "./streams/repositories.js";
+import { getReposFromUrls } from "./github/repositories.js";
 
 /* eslint-disable import/no-named-as-default-member */
 dayjs.extend(utc);

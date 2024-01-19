@@ -2,23 +2,34 @@ import type {
   NewClientFunction,
   TableOptions,
   SyncOptions,
-  Plugin
-} from '@cloudquery/plugin-sdk-javascript/plugin/plugin';
-import { newPlugin, newUnimplementedDestination } from '@cloudquery/plugin-sdk-javascript/plugin/plugin';
-import { sync } from '@cloudquery/plugin-sdk-javascript/scheduler';
-import type { Table } from '@cloudquery/plugin-sdk-javascript/schema/table';
-import { filterTables } from '@cloudquery/plugin-sdk-javascript/schema/table';
+  Plugin,
+} from "@cloudquery/plugin-sdk-javascript/plugin/plugin";
+import {
+  newPlugin,
+  newUnimplementedDestination,
+} from "@cloudquery/plugin-sdk-javascript/plugin/plugin";
+import { sync } from "@cloudquery/plugin-sdk-javascript/scheduler";
+import type { Table } from "@cloudquery/plugin-sdk-javascript/schema/table";
+import { filterTables } from "@cloudquery/plugin-sdk-javascript/schema/table";
 import { parseSpec } from "./spec.js";
 import type { Spec } from "./spec.js";
 import { getTables } from "./tables.js";
-import _ from "lodash";
 import { GraphQLClient } from "graphql-request";
-import { graphQLClient } from './streams/graphql-client.js';
+
+export function graphQLClient(
+  token: string,
+  graphQLApiUrl: string = "https://api.github.com/graphql",
+) {
+  return new GraphQLClient(graphQLApiUrl, {
+    headers: {
+      authorization: `Bearer ${token}`,
+    },
+  });
+}
 
 interface GithubGraphqlClient {
   id(): string;
-  client(): GraphQLClient;
-};
+}
 
 export const newGithubResolveReposPlugin = () => {
   const pluginClient = {
@@ -76,30 +87,31 @@ export const newGithubResolveReposPlugin = () => {
   };
 
   const newClient: NewClientFunction = async (
-    logger,
+    _logger,
     spec,
     { noConnection },
   ) => {
     const parsedSpec = parseSpec(spec);
     pluginClient.spec = parsedSpec;
 
-
     const gqlClient = graphQLClient(parsedSpec.token);
     const client: GithubGraphqlClient = {
-      id: () => 'github-resolve-repos',
-      client: () => gqlClient
-    }
+      id: () => "github-resolve-repos",
+    };
 
     pluginClient.client = client;
     if (noConnection) {
       pluginClient.allTables = [];
       return pluginClient;
     }
-    pluginClient.allTables = await getTables(parsedSpec.projectsInputPath, gqlClient);
+    pluginClient.allTables = await getTables(
+      parsedSpec.projectsInputPath,
+      gqlClient,
+    );
 
     return pluginClient;
   };
 
-  pluginClient.plugin = newPlugin("github-resolve-repos", '0.0.1', newClient);
+  pluginClient.plugin = newPlugin("github-resolve-repos", "0.0.1", newClient);
   return pluginClient.plugin;
 };

@@ -1,13 +1,5 @@
-import {
-  StreamKey,
-  SyncMode,
-  AirbyteStreamBase,
-  AirbyteLogger,
-} from "faros-airbyte-cdk";
 import path from "path";
-import { Dictionary } from "ts-essentials";
 import _ from "lodash";
-import repositorySchema from "../resources/schemas/repository.json" assert { type: "json" };
 import { GraphQLClient } from "graphql-request";
 import { getOwnerRepos } from "./get-org-repos.js";
 
@@ -87,9 +79,12 @@ export type Repository = {
   url: string;
   name: string;
   owner: string;
-}
+};
 
-export async function getReposFromUrls(client: GraphQLClient, urls: string[]): Promise<Repository[]> {
+export async function getReposFromUrls(
+  client: GraphQLClient,
+  urls: string[],
+): Promise<Repository[]> {
   // Make github requests to find all of the github projects
 
   const repoUrls = urls.filter(isGitHubRepo);
@@ -101,7 +96,7 @@ export async function getReposFromUrls(client: GraphQLClient, urls: string[]): P
       (u) => !isGitHubOrg(u) && !isGitHubRepo(u),
     );
     const sep = "\n\t";
-    console.log(`Invalid GitHub URLs:${sep}${nonConfirmingUrls.join(sep)}`)
+    console.log(`Invalid GitHub URLs:${sep}${nonConfirmingUrls.join(sep)}`);
     // this.logger.warn(
     //   `Invalid GitHub URLs:${sep}${nonConfirmingUrls.join(sep)}`,
     // );
@@ -117,81 +112,14 @@ export async function getReposFromUrls(client: GraphQLClient, urls: string[]): P
   const orgRepoUrls = orgRepos.filter((r) => !r.isFork).map((r) => r.url);
   const allRepos = [...repoUrls, ...orgRepoUrls];
   const parsedRepos = allRepos.map(parseGitHubUrl);
-  return parsedRepos.filter((r) => r !== undefined || r !== null).map((r) => {
-    const repo = r!;
-    return {
-      name: repo.slug.toLowerCase(),
-      owner: `https://github.com/${repo.owner.toLowerCase()}`,
-      url: repo.url
-    }
-  })
-}
-
-export class Repositories extends AirbyteStreamBase {
-  private urls: readonly string[];
-  private client: GraphQLClient;
-
-  constructor(
-    client: GraphQLClient,
-    urls: readonly string[],
-    logger: AirbyteLogger,
-  ) {
-    super(logger);
-
-    this.urls = urls;
-    this.client = client;
-  }
-
-  getJsonSchema(): Dictionary<any, string> {
-    return repositorySchema;
-  }
-
-  get primaryKey(): StreamKey {
-    return ["url"];
-  }
-
-  async *readRecords(
-    _syncMode: SyncMode,
-    _cursorField?: string[],
-    _streamSlice?: Dictionary<any>,
-    _streamState?: Dictionary<any>,
-  ): AsyncGenerator<Dictionary<any, string>, any, unknown> {
-    // Make github requests to find all of the github projects
-
-    const urls = this.urls;
-    const repoUrls = urls.filter(isGitHubRepo);
-    const orgUrls = urls.filter(isGitHubOrg);
-
-    // Check for invalid URLs
-    if (orgUrls.length + repoUrls.length !== urls.length) {
-      const nonConfirmingUrls = urls.filter(
-        (u) => !isGitHubOrg(u) && !isGitHubRepo(u),
-      );
-      const sep = "\n\t";
-      this.logger.warn(
-        `Invalid GitHub URLs:${sep}${nonConfirmingUrls.join(sep)}`,
-      );
-    }
-
-    // Flatten all GitHub orgs
-    const orgNames = filterFalsy(
-      orgUrls.map(parseGitHubUrl).map((p) => p?.owner),
-    );
-    const orgRepos = _.flatten(
-      await Promise.all(orgNames.map((o) => getOwnerRepos(this.client, o))),
-    );
-    const orgRepoUrls = orgRepos.filter((r) => !r.isFork).map((r) => r.url);
-    const allRepos = [...repoUrls, ...orgRepoUrls];
-    const parsedRepos = allRepos.map(parseGitHubUrl);
-    for (const repo of parsedRepos) {
-      if (!repo) {
-        continue;
-      }
-      yield {
-        owner: `https://github.com/${repo.owner}`,
+  return parsedRepos
+    .filter((r) => r !== undefined || r !== null)
+    .map((r) => {
+      const repo = r!;
+      return {
         name: repo.slug.toLowerCase(),
+        owner: `https://github.com/${repo.owner.toLowerCase()}`,
         url: repo.url,
       };
-    }
-  }
+    });
 }

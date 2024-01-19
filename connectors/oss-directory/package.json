@@ -22,7 +22,6 @@
     "@cloudquery/plugin-sdk-javascript": "^0.1.4",
     "ajv": "^8.12.0",
     "camelcase-keys": "^9.1.2",
-    "commander": "^9.3.0",
     "dayjs": "^1.11.9",
     "oss-directory": "^0.0.7",
     "read-pkg-up": "^11.0.0",
