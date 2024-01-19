@@ -1,0 +1,36 @@
+{
+  "name": "@opensource-observer/github-resolve-repos-cloudquery-plugin",
+  "version": "1.0.0",
+  "description": "",
+  "bin": "dist/main.js",
+  "type": "module",
+  "scripts": {
+    "dev": "ts-node --esm src/main.ts serve",
+    "build": "tsc",
+    "clean": "rm -rf lib node_modules out",
+    "fix": "prettier --write 'src/**/*.ts' 'test/**/*.ts' && npm run lint -- --fix",
+    "lint": "eslint 'src/**/*.ts'",
+    "prepare": "npm run build",
+    "watch": "tsc -b -w src test"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "Apache 2.0",
+  "dependencies": {
+    "@apidevtools/json-schema-ref-parser": "^11.1.0",
+    "@cloudquery/plugin-sdk-javascript": "^0.1.4",
+    "@types/lodash": "^4.14.196",
+    "ajv": "^8.12.0",
+    "camelcase-keys": "^9.1.2",
+    "dayjs": "^1.11.9",
+    "graphql-request": "^6.1.0",
+    "lodash": "^4.17.21",
+    "oss-directory": "^0.0.7",
+    "read-pkg-up": "^11.0.0",
+    "typescript": "^5.2.2"
+  },
+  "devDependencies": {
+    "json-schema-to-typescript": "^13.1.1",
+    "ts-node": "^10.9.1"
+  }
+}

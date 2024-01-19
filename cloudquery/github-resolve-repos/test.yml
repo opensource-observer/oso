@@ -1,0 +1,35 @@
+kind: source
+spec:
+  name: "github-resolve-repos"
+  registry: "grpc"
+  path: "localhost:7777"
+  version: "v0.0.1"
+  tables:
+    ["*"]
+  destinations:
+    - "bigquery"
+    - "file"
+  spec:
+    projectsInputPath: "test_only.projects.json"
+    token: ${GITHUB_TOKEN}
+---
+kind: destination
+spec:
+  name: file 
+  path: cloudquery/file
+  registry: cloudquery
+  version: "v3.4.16"
+  spec:
+    path: "test_only/{{TABLE}}/{{UUID}}.{{FORMAT}}"
+    format: json
+---
+kind: destination
+spec:
+  name: bigquery
+  path: cloudquery/bigquery
+  registry: cloudquery
+  version: "v3.3.13"
+  write_mode: "append"
+  spec:
+    project_id: oso-production
+    dataset_id: opensource_observer
