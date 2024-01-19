@@ -6,9 +6,9 @@ const spec = {
   properties: {
     concurrency: { type: "integer" },
     token: { type: "string" },
-    projectsInputPath: { type: "string" }
+    projectsInputPath: { type: "string" },
   },
-  required: ["token"]
+  required: ["token"],
 };
 
 const ajv = new Ajv.default();
@@ -28,8 +28,8 @@ export const parseSpec = (spec: string): Spec => {
   }
   const {
     concurrency = 10_000,
-    token = '',
-    projectsInputPath = '',
+    token = "",
+    projectsInputPath = "",
   } = camelcaseKeys(parsed);
   return { concurrency, token, projectsInputPath };
 };
