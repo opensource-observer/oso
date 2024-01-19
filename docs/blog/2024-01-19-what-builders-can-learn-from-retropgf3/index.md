@@ -265,5 +265,3 @@ That’s the Optimism Collective’s primary objective between now and the start
 If you’re interested in working on this problem directly or helping shape the research dialogue around measuring open source impact, please reach out.
 
 You can explore and fork my analysis [here](https://github.com/opensource-observer/insights/tree/main/community/datasets/retropgf3_results).
-
-I don’t think the finding that superficial metrics like downloads and stars changes the incentive landscape too much ... yet. OSS projects have always been looking at and reporting these indicators.
