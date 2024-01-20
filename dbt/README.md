@@ -81,9 +81,22 @@ You should now be logged into BigQuery!
 
 ## Usage
 
-After you've updated any models you can run dbt _within the poetry environment_
+For now we have to set some environment variables before we run the models. These
+are related to the github events from gharchive. So you'll need to set two 
+variables:
+
+* `GITHUB_ARCHIVE_PARTITION_TYPE` - This can be `year`, `month`, `day`. If you're
+  only testing it's suggested to use `day` because it's costly to query `month` or
+  `year` partitions.
+* `GITHUB_ARCHIVE_PARTITION_KEY` - This value is the key for the partition type.
+    * `YYYY` for `year` partition type
+    * `YYYYMM` for `month` partition type
+    * `YYYYMMDD` for day partition type
+
+Once you've updated any models you can run dbt _within the poetry environment_
 from the `dbt/` directory.
 
 ```bash
-$ dbt run
+# This will query gharchive for events from 2023-12-15
+$ GITHUB_ARCHIVE_PARTITION_TYPE=day GITHUB_ARCHIVE_PARTITION_KEY=20231215 dbt run
 ```
