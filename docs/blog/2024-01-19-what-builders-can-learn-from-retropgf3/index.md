@@ -27,11 +27,11 @@ Nevertheless, perfect allocation is an elusive goal. Good governance means quick
 
 Now let’s explore the data. (You can explore and fork my analysis [here](https://github.com/opensource-observer/insights/tree/main/community/datasets/retropgf3_results).)
 
-# The 30,000 foot view
+## The 30,000 foot view
 
 As move into the next phase, these are the signals that everyone in the ecosystem should pick up on.
 
-## The timing was incredible
+### The timing was incredible
 
 The OP token price surged immediately after the round closed in early December. Basically, every project ended up getting 2-3x the USD value of what badgeholders thought it deserved during the voting process.
 
@@ -39,7 +39,7 @@ The OP token price surged immediately after the round closed in early December. 
 
 The price increase gives an already highly visible program a huge tailwind. That said, the coincidental market action will make it much harder to interpret the long-term impact of the allocations from this round.
 
-## Every project is already thinking about the next round
+### Every project is already thinking about the next round
 
 The distribution pattern for RetroPGF3 is pretty different than RetroPGF2. It is more of what Owocki would call a [peanut butter spread](https://gov.gitcoin.co/t/long-tail-public-goods-funding/17318) rather than a power law distribution.
 
@@ -63,7 +63,7 @@ The message many builders in the crypto universe will take away from this distri
 
 If you want to explore other token allocation simulations, check out this post Amy and I co-authored [here](https://gov.optimism.io/t/simulating-retropgf3-voting-and-funding-allocations/7274). None of our simulations predicted a distribution that was this flat in the middle.
 
-## Open source software is the real winner
+### Open source software is the real winner
 
 Projects with at least some OSS component to their work represented 50% of the applicant pool but 80% of the funding distribution.
 
@@ -83,7 +83,7 @@ I’d be negligent if I didn’t mention that open vs closed source isn’t a bi
 
 Despite these nuances, RetroPGF 3 should send a very strong signal to builders that open source is deeply valued.
 
-# Box seat view: the signals that badgeholders and engaged community members should pick up on
+## Box seat view: the signals that badgeholders and engaged community members should pick up on
 
 Now let’s apply this same type of distribution analysis to some more specific domains. One of the best places to look for signal is in the public artifacts that projects are leaving behind.
 
@@ -202,7 +202,7 @@ Even if we believe that impact should be evaluated independent of the team size 
 
 This isn’t a new phenomenon; I [wrote](https://gov.optimism.io/t/a-review-of-rpgf2-and-ideas-for-how-data-can-improve-future-iterations/6438) about the same thing after RetroPGF 2.
 
-# In the arena view: the signals that live players and builders should pick up on
+## In the arena view: signals that live players and builders should pick up on
 
 As a badgeholder, I used Open Source Observer to experiment with a variety of **metrics-driven Lists**. (You can see a full list of Lists and a retro on how they performed [here](https://gov.optimism.io/t/retro-on-oso-s-retropgf-lists/7187).)
 
@@ -242,7 +242,7 @@ However, badgeholders tended to reward projects that had steady, well-establishe
 
 I would expect this balance to shift over time. Some experimentation is needed, but it should be possible to define vectors that reward projects that onboard new developers who stick around in the ecosystem.
 
-## Strong signals
+### Strong signals
 
 The strongest predictors of RetroPGF distributions for OSS projects were … drum roll please … NPM downloads. You can read our critique of downloads as a metric and a proposal for three better metrics for developer libraries [here](https://docs.opensource.observer/blog/fund-your-dependencies).
 
@@ -254,7 +254,7 @@ However, it reveals a simple truth that it was easy for badgeholders to achieve 
 
 If that’s the intended outcome, great. These are amazing projects. Although we probably don’t need all this governance and complex voting to achieve it.
 
-# Finding new signals
+## Finding new signals
 
 If it were easy and all we had to do was figure out how to count GitHub stars, then this whole economic and governance experiment wouldn’t matter. But it does matter. And it won’t be easy.
 
@@ -265,5 +265,3 @@ That’s the Optimism Collective’s primary objective between now and the start
 If you’re interested in working on this problem directly or helping shape the research dialogue around measuring open source impact, please reach out.
 
 You can explore and fork my analysis [here](https://github.com/opensource-observer/insights/tree/main/community/datasets/retropgf3_results).
-
-I don’t think the finding that superficial metrics like downloads and stars changes the incentive landscape too much ... yet. OSS projects have always been looking at and reporting these indicators.
