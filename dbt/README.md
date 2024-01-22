@@ -12,7 +12,7 @@ _At this time the dataset isn't public. This will change in the near future._
 
 ### Install dependencies
 
-Install the dependencies by running poetry to install.
+From inside the `dbt` directory, run poetry to install the dependencies.
 
 ```bash
 $ poetry install
