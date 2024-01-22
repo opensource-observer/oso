@@ -5,7 +5,6 @@ description = ""
 authors = ["Kariba Labs"]
 license = "Apache 2.0"
 readme = "README.md"
-packages = [{include = "oso_dbt"}]
 
 [tool.poetry.dependencies]
 python = "^3.11"
