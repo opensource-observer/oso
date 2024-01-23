@@ -40,6 +40,8 @@ const config: Config = {
         blog: {
           showReadingTime: true,
           editUrl: "https://github.com/opensource-observer/oso/tree/main/docs/",
+          blogSidebarTitle: "All posts",
+          blogSidebarCount: "ALL",
         },
         theme: {
           customCss: "./src/css/custom.css",
