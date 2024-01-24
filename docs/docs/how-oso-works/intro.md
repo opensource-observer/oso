@@ -9,8 +9,8 @@ This page is a work in progress.
 
 We believe that the only way we can surface the best data for the open source
 community is to build tools and collect data in the open. However, before
-starting any contribution to OSO, it is important to understand some of the building blocks and general
-architecture of our dataset.
+starting any contribution to OSO, it is important to understand some of the
+building blocks and general architecture of our dataset.
 
 ## Building Blocks
 
@@ -21,31 +21,34 @@ We have four primary building blocks that we use to organize our data:
   a particular ecosystem or all projects that are dependent on a given developer
   library.
 - [Projects](./project-schema). Projects are used to group artifacts together.
-  For example, a project may include a GitHub organization, a blockchain
-  address used for holding funds, and a NPM package.
+  For example, a project may include a GitHub organization, a blockchain address
+  used for holding funds, and a NPM package.
 - [Artifacts](./artifact-schemas). Artifacts are used to store information about
   work artifacts created by open source projects in the OSS Directory. For
   example, a GitHub organization artifact would be identified by a `url` field
-  that is a valid GitHub organization URL (eg, `https://github.com/opensource-observer`)
-  and a blockchain address artifact would be identified by an `address` field that is
-  a valid blockchain address (eg, `0x1234567890123456789012345678901234567890`).
-- [Events](./events). Events are used to store information about transactions or other
-  activities involving a project's artifacts. These could include a code commit,
-  a package download, or a smart contract interaction.
+  that is a valid GitHub organization URL (eg,
+  `https://github.com/opensource-observer`) and a blockchain address artifact
+  would be identified by an `address` field that is a valid blockchain address
+  (eg, `0x1234567890123456789012345678901234567890`).
+- [Events](./events). Events are used to store information about transactions or
+  other activities involving a project's artifacts. These could include a code
+  commit, a package download, or a smart contract interaction.
 
-It is easy to define new collections, projects, and artifacts in our
-[OSS Directory](https://github.com/opensource-oberver/oss-directory). Once these exist,
-we will automatically start collecting event data for them.
+It is easy to define new collections, projects, and artifacts in our [OSS
+Directory](https://github.com/opensource-oberver/oss-directory). Once these
+exist, we will automatically start collecting event data for them.
 
-## General Architecture
+## Architecture
+
+### Diagram
 
 > As part of our dedication to our promise of Open Infrastructure, all of the
 > code for this architecture is available to view/copy/redeploy [in our
 > monorepo](https://github.com/opensource-observer/oso).
 
-_(TODO Architectural Diagram)_
+[![OSO Architecture Diagram](https://mermaid.ink/img/pako:eNqNVMtu2zAQ_BWCJxuI0rsPAfLorU4cuO3F7GFFbS0iEinwYcUN8u9dSpQly00RHiRqNcNZzi72jUtTIF_xLMuE9spXuGKCPzWo2dYEK5E95Q7tAS27tbJUHqUPFgUXuqMI_bsyrSzBevb9TmhGy4V8b6EpWRPySsmd4LfSG-vY4tHoDF9LCM6rAy4F_9Uz4gok4wj7I77P_hR4iD8ewAP7qvdK4xwBGqqj8yfUViqk21DkBENd9JtOh2UZXfOnwpZ9Yc8B7VFwit0w40yLeY-Muj1whoBGzRH3Rnur8uCRRUcTVukCX9H24CHJC8L2-VvCS1M3FMnBy3Lm5QsQGnb_rk13y9GOsQCqwYr8ItoalGadOZsUPHMwrpTtYKI0VYWpcPeVCUXnwvKC1oLF0pCtu0ViniJscaf2A205400vu0ses8Yaic51okXuz9VONYxr3KW8L3wtKJdk7CmjkdVXmoTbtr02ZKrrPL02U0_Pwf9vhoSjbzqUnp85lGCXh8a8c5jmOkQGh-OeLTbG-b1Fap-Zu-Nu6nEvtAaPVkGl_uCHcp9hTRwdiWPhO9amL-aHzU315Fe8RluDKmgIvcWw4L7EmmTiICrAvsRZ8044CN5sj1rylbcBr3hoKHN8UEC9Xg9BLBR17Lofat1se_8LDu-M4g?type=png)](https://mermaid.live/edit#pako:eNqNVMtu2zAQ_BWCJxuI0rsPAfLorU4cuO3F7GFFbS0iEinwYcUN8u9dSpQly00RHiRqNcNZzi72jUtTIF_xLMuE9spXuGKCPzWo2dYEK5E95Q7tAS27tbJUHqUPFgUXuqMI_bsyrSzBevb9TmhGy4V8b6EpWRPySsmd4LfSG-vY4tHoDF9LCM6rAy4F_9Uz4gok4wj7I77P_hR4iD8ewAP7qvdK4xwBGqqj8yfUViqk21DkBENd9JtOh2UZXfOnwpZ9Yc8B7VFwit0w40yLeY-Muj1whoBGzRH3Rnur8uCRRUcTVukCX9H24CHJC8L2-VvCS1M3FMnBy3Lm5QsQGnb_rk13y9GOsQCqwYr8ItoalGadOZsUPHMwrpTtYKI0VYWpcPeVCUXnwvKC1oLF0pCtu0ViniJscaf2A205400vu0ses8Yaic51okXuz9VONYxr3KW8L3wtKJdk7CmjkdVXmoTbtr02ZKrrPL02U0_Pwf9vhoSjbzqUnp85lGCXh8a8c5jmOkQGh-OeLTbG-b1Fap-Zu-Nu6nEvtAaPVkGl_uCHcp9hTRwdiWPhO9amL-aHzU315Fe8RluDKmgIvcWw4L7EmmTiICrAvsRZ8044CN5sj1rylbcBr3hoKHN8UEC9Xg9BLBR17Lofat1se_8LDu-M4g)
 
-## Major Components
+### Major Components
 
 The architecture has the following major components
 
@@ -55,8 +58,11 @@ The architecture has the following major components
     aggregated views used by OSO is also made publicly available here (if it is
     not already a public dataset on BigQuery). External integrators can opt to
     use this data as they wish.
-- [Connectors](./connectors)
-  - aka Data Oracles
+- [Data Collectors](./data-collection)
+  - Data collection for the data warehouse is handled by plugins that are
+    currently executed based on a set schedule or some event in the data
+    pipelines. In the future, we will allow execution to occur in a more event
+    driven manner. This would reduce any computing overhead required.
 - [Query Processors](./query-processors)
   - Query processors are either single SQL queries or an entire data pipeline
     run against data in the data warehouse that is then materialized and
@@ -70,7 +76,7 @@ The architecture has the following major components
     [https://www.opensource.observer](https://www.opensource.observer). This website
     provides an easy to use public view into the data.
 
-## Dependent Technologies
+### Dependent Technologies
 
 Our infrastructure is based on many wonderful existing tools. Our major
 dependencies are:
@@ -81,17 +87,36 @@ dependencies are:
 - dbt
   - This is used for data transformations to turn collected data into useful
     materializations for the OSO website.
-- airbyte
-  - Moves data from and to or inside and outside the OSO platform. All of our
-    data collectors are written as [airbyte](https://docs.airbyte.com/)
-    connectors and published to the [airbyte connector
-    registry](https://connectors.airbyte.com/files/generated_reports/connector_registry_report.html).
-    In general, data movement outside of the OSO website and API are handled by
-    airbyte.
-- dagster
-  - Combines dbt transformations and airbyte connectors into pipelines that make
-    up all transformations from the original data source to the either the data
-    oracles or the database used to power the OSO website.
+- CloudQuery
+  - CloudQuery enables the collection of data from external sources as well as
+    handling the flow of data through the main data pipeline. Any data from and to
+    or inside and outside the "Main Data Pipeline" is managed by cloudquery. All of our
+    data collectors are written as [CloudQuery](https://docs.airbyte.com/)
+    plugins.
 - PostgreSQL
   - Used mostly as a host of the materialized views from the Query Processors
-    that is used to power the OSO website.
+    that is used to power the OSO website. This is used to offload querying of
+    the most used views from bigquery as using bigquery to serve the OSO website
+    would become cost prohibitive.
+
+## Open Architecture for Open Source Data
+
+The architecture is designed to accomodate a collaborative data pipeline that
+can be used to formulate a better understanding of a project's impact. The data
+collected and the code used to build the system are all built in the open with a
+goal of transparency for costs and development. As illustrated in the
+architectural diagram, the Main Data Pipeline feeds into a PostgreSQL database
+that is used to enable the OSO website, but the materialized data within the data
+warehouse of that pipeline can be used by any external system as well.
+
+Our goal is to make it simple to contribute by providing an automatically
+deployed data pipeline so that the community can build this open data warehouse
+together. The main units of contribution are described as the actions available
+to `Data Scientists` and `Data Engineers`. Data Engineers can easily contribute
+by building more cloudquery plugins for data collection. Data Scientists can
+help by contributing additional data transformations to the query processors.
+With the infrastructure automation in the OSO repository, either contribution
+will be automatically deployed once merged into the `main` branch. If for
+whatever reason none of these options fit an engineer's/analyst's needs, there
+is also the option to extract data from the platform entirely. This option will
+likely incur additional costs for the individual on their GCP account.
