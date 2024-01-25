@@ -9,11 +9,10 @@ packages = [{ include = "oso_dbt" }]
 
 [tool.poetry.dependencies]
 python = "^3.11"
-dbt-bigquery = "^1.7.2"
-
+dbt-bigquery = "^1.7.0"
 
 [tool.poetry.group.dev.dependencies]
-shandy-sqlfmt = {extras = ["jinjafmt"], version = "^0.21.1"}
+shandy-sqlfmt = { extras = ["jinjafmt"], version = "^0.21.1" }
 
 [build-system]
 requires = ["poetry-core"]

@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "oso"
+version = "1.0.0"
+description = "Impact measurement for open source software"
+authors = ["Kariba Labs"]
+license = "Apache-2.0"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+oso-dbt = { path = "./dbt", develop = true }
+example-plugin = { path = "cloudquery/example-plugin", develop = true }
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
