@@ -255,10 +255,10 @@ const formatDataToBarList = (
     xAxis === "eventTime"
       ? x.date
       : xAxis === "entity"
-      ? x.id
-      : xAxis === "eventType"
-      ? x.typeName
-      : assertNever(xAxis),
+        ? x.id
+        : xAxis === "eventType"
+          ? x.typeName
+          : assertNever(xAxis),
   );
   const summed = _.mapValues(grouped, (x) => _.sumBy(x, (x) => x.amount));
   const result = _.toPairs(summed).map((x) => ({
@@ -266,10 +266,10 @@ const formatDataToBarList = (
       xAxis === "eventTime"
         ? eventTimeToLabel(x[0])
         : xAxis === "entity"
-        ? entityIdToLabel(x[0], entityData)
-        : xAxis === "eventType"
-        ? eventTypeToLabel(x[0])
-        : assertNever(xAxis),
+          ? entityIdToLabel(x[0], entityData)
+          : xAxis === "eventType"
+            ? eventTypeToLabel(x[0])
+            : assertNever(xAxis),
     value: x[1],
   }));
   return {
@@ -357,8 +357,8 @@ const formatData = (
           formatOpts,
         )
       : props.chartType === "barList"
-      ? formatDataToBarList(props.xAxis ?? DEFAULT_XAXIS, data, entityData)
-      : assertNever(props.chartType);
+        ? formatDataToBarList(props.xAxis ?? DEFAULT_XAXIS, data, entityData)
+        : assertNever(props.chartType);
   return formattedData;
 };
 
@@ -379,8 +379,8 @@ function ArtifactEventDataProvider(props: EventDataProviderProps) {
     bucketWidth === "month"
       ? GET_EVENTS_MONTHLY_TO_ARTIFACT
       : bucketWidth === "week"
-      ? GET_EVENTS_WEEKLY_TO_ARTIFACT
-      : GET_EVENTS_DAILY_TO_ARTIFACT;
+        ? GET_EVENTS_WEEKLY_TO_ARTIFACT
+        : GET_EVENTS_DAILY_TO_ARTIFACT;
   const {
     data: rawEventData,
     error: eventError,
@@ -451,8 +451,8 @@ function ProjectEventDataProvider(props: EventDataProviderProps) {
     bucketWidth === "month"
       ? GET_EVENTS_MONTHLY_TO_PROJECT
       : bucketWidth === "week"
-      ? GET_EVENTS_WEEKLY_TO_PROJECT
-      : GET_EVENTS_DAILY_TO_PROJECT;
+        ? GET_EVENTS_WEEKLY_TO_PROJECT
+        : GET_EVENTS_DAILY_TO_PROJECT;
   const {
     data: rawEventData,
     error: eventError,
@@ -523,8 +523,8 @@ function CollectionEventDataProvider(props: EventDataProviderProps) {
     bucketWidth === "month"
       ? GET_EVENTS_MONTHLY_TO_COLLECTION
       : bucketWidth === "week"
-      ? GET_EVENTS_WEEKLY_TO_COLLECTION
-      : GET_EVENTS_DAILY_TO_COLLECTION;
+        ? GET_EVENTS_WEEKLY_TO_COLLECTION
+        : GET_EVENTS_DAILY_TO_COLLECTION;
   const {
     data: rawEventData,
     error: eventError,
