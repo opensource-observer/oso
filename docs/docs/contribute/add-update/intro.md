@@ -58,7 +58,7 @@ blockchain:
 
 ### 3. Validate that your entry conforms to the schema and the registry rules
 
-- The latest version of the schema is Version 3. You can learn more about the schema [here](../../how-oso-works/project-schema).
+- The latest version of the schema is Version 3. You can learn more about the schema [here](../../how-oso-works/schema/project).
 - Entries that contain duplicate artifacts or that do not conform to the schema will be rejected.
 
 ### 4. Open a pull request from your fork to this repository

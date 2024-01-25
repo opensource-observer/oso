@@ -18,27 +18,15 @@ function HomepageHeader() {
         <div className={styles.buttons}>
           <Link
             className="button button--secondary button--lg"
-            to="/docs/contributing/intro"
+            to="/docs/contribute/intro"
           >
             Contribute to OSO
           </Link>
           <Link
             className="button button--secondary button--lg"
-            to="/docs/api/intro"
+            to="/docs/integrate/getting-started"
           >
             Get API access
-          </Link>
-          <Link
-            className="button button--secondary button--lg"
-            to="/docs/metrics/intro"
-          >
-            Learn about OSO impact metrics
-          </Link>
-          <Link
-            className="button button--secondary button--lg"
-            to="/docs/ecosystems/intro"
-          >
-            See OSO coverage by ecosystem
           </Link>
           <Link
             className="button button--secondary button--lg"

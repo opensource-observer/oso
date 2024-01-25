@@ -7,6 +7,6 @@ We are looking for contributors to add/update information about open source proj
 
 Membership is free but we want to keep the community close-knit and mission-aligned.
 
-If this interests you, please apply to join our [Data Collective](https://www.opensource.observer/data-collective).
+If this interests you, please apply to join our [Data Collective](https://www.kariba.network/).
 
 ![meme](data-scientist-meme.png)
