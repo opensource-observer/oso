@@ -30,6 +30,11 @@ const nextConfig = {
         async redirects() {
           return [
             {
+              source: "/data-collective",
+              destination: "https://www.kariba.network",
+              permanent: false,
+            },
+            {
               source: "/discord",
               destination: "https://discord.com/invite/NGEJ35aWsq",
               permanent: false,

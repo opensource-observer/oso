@@ -73,7 +73,7 @@ const config: Config = {
         {
           href: "https://www.opensource.observer",
           label: "Website",
-          position: "left",
+          position: "right",
         },
         {
           href: "https://github.com/opensource-observer/oso",
