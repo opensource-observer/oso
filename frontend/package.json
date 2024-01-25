@@ -15,6 +15,7 @@
     "lint:prettier": "prettier --ignore-path ../.gitignore --ignore-path .gitignore --log-level warn --check **/*.{js,jsx,ts,tsx,sol,md,json}",
     "prestart": "pnpm export",
     "start": "serve out",
+    "supabase:gentypes": "supabase gen types typescript --project-id 'dfjsvzdlhmtnsqbfmcpm' --schema public > lib/types/supabase.ts",
     "test": "jest --ci --passWithNoTests",
     "test:watch": "jest --watch"
   },
@@ -29,6 +30,9 @@
     "@mui/x-date-pickers": "^6.19.0",
     "@plasmicapp/loader-nextjs": "^1.0.357",
     "@segment/snippet": "^5.2.1",
+    "@supabase/auth-helpers-nextjs": "^0.8.7",
+    "@supabase/auth-ui-react": "^0.4.7",
+    "@supabase/auth-ui-shared": "^0.1.8",
     "@supabase/supabase-js": "^2.39.3",
     "@tremor/react": "^3.13.3",
     "add": "^2.0.6",
@@ -81,6 +85,7 @@
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0",
     "postcss": "^8.4.33",
+    "supabase": "^1.136.3",
     "tailwindcss": "^3.4.1",
     "typescript": "^5.3.3"
   }
