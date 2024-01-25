@@ -1,6 +1,6 @@
 ---
 title: Data Warehouse
-sidebar_position: 6
+sidebar_position: 4
 ---
 
 :::warning
@@ -16,4 +16,4 @@ A major dependency of the system is BigQuery. BigQuery is the main storage of th
 
 ## Contributing
 
-The data warehouse is shared infrastucture maintained by members of the Data Collective. To learn more about contributing to OSO's Data Engineering efforts, start [here](../contributing/data-engineering/intro). If you are interested in joining the Data Collective, you can apply [here](https://www.opensource.observer/data-collective).
+The data warehouse is shared infrastucture maintained by members of the Data Collective. To learn more about contributing to OSO's Data Engineering efforts, start [here](../../contribute/data-engineering/intro). If you are interested in joining the Data Collective, you can apply [here](https://www.kariba.network).

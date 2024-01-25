@@ -53,4 +53,4 @@ The event table is the largest table in the OSO Data Warehouse. It contains the 
 - `amount`: The amount of the event (default value is 1).
 - `details`: A JSON object containing additional details about the event (if applicable).
 
-As event queries may be slow, we recommend using aggregate tables whenever possible. Aggregate tables are generated for each event type at daily, weekly, and monthly intervals. See the [API documentation](../api/intro) for more information about querying event data.
+As event queries may be slow, we recommend using aggregate tables whenever possible. Aggregate tables are generated for each event type at daily, weekly, and monthly intervals. See the [API documentation](../../integrate/getting-started) for more information about querying event data.

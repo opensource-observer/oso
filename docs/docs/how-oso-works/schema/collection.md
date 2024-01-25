@@ -23,7 +23,7 @@ The `description` is an optional field used to store a short description of the 
 
 The `projects` field is a required field used to store an array of project slugs associated with the collection. Each item in the array must be a valid project slug. If one or more project slugs are not valid, the collection will not be added to the directory.
 
-You can learn more about adding and updating projects to the OSS Directory [here](./project-schema).
+You can learn more about adding and updating projects to the OSS Directory [here](./project).
 
 ## Full Schema
 
@@ -59,4 +59,4 @@ You can always access the most recent version of the schema [here](https://githu
 
 ## Contributing
 
-Collections are updated and added to the OSS Directory by members of the Data Collective. To learn more about contributing to the OSS Directory, start [here](../contributing/intro). If you are interested in joining the Data Collective, you can apply [here](https://www.opensource.observer/data-collective).
+Collections are updated and added to the OSS Directory by members of the Data Collective. To learn more about contributing to the OSS Directory, start [here](../../contribute/intro). If you are interested in joining the Data Collective, you can apply [here](https://www.kariba.network/).

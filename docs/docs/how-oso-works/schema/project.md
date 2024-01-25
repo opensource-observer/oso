@@ -21,7 +21,7 @@ The `description` is an optional field used to store a short description of the 
 
 ## Artifacts
 
-The `github`, `npm`, and `blockchain` fields are used to store arrays of artifacts associated with the project. Each item in an artifact array must contain either a `url` field that is a valid URL or an `address` representing a public key address on a blockchain. More information about artifact schemas can be found [here](./artifact-schemas).
+The `github`, `npm`, and `blockchain` fields are used to store arrays of artifacts associated with the project. Each item in an artifact array must contain either a `url` field that is a valid URL or an `address` representing a public key address on a blockchain. More information about artifact schemas can be found [here](./artifact).
 
 ## Full Schema
 
@@ -68,4 +68,4 @@ You can always access the most recent version of the schema [here](https://githu
 
 ## Contributing
 
-Projects are updated and added to the OSS Directory by members of the Data Collective. To learn more about contributing to the OSS Directory, start [here](../contributing/intro). If you are interested in joining the Data Collective, you can apply [here](https://www.opensource.observer/data-collective).
+Projects are updated and added to the OSS Directory by members of the Data Collective. To learn more about contributing to the OSS Directory, start [here](../../contribute/intro). If you are interested in joining the Data Collective, you can apply [here](https://www.kariba.network).

@@ -5,7 +5,7 @@ sidebar_position: 4
 
 The artifact schema is used to store information about work artifacts created by open source projects in the OSS Directory.
 
-Our Version 3 schema currently supports three types of artifacts: GitHub organizations and repositories, NPM packages, and blockchain addresses. The `github`, `npm`, and `blockchain` fields in the [project schema](./project-schema) are used to store arrays of artifacts associated with a particular project.
+Our Version 3 schema currently supports three types of artifacts: GitHub organizations and repositories, NPM packages, and blockchain addresses. The `github`, `npm`, and `blockchain` fields in the [project schema](./project) are used to store arrays of artifacts associated with a particular project.
 
 ## Artifact Identification
 
@@ -169,4 +169,4 @@ You can always access the most recent version of the schema [here](https://githu
 
 ## Contributing
 
-Artifacts are updated and added to the OSS Directory by members of the Data Collective. To learn more about contributing to the OSS Directory, start [here](../contributing/intro). If you are interested in joining the Data Collective, you can apply [here](https://www.opensource.observer/data-collective).
+Artifacts are updated and added to the OSS Directory by members of the Data Collective. To learn more about contributing to the OSS Directory, start [here](../../contribute/intro). If you are interested in joining the Data Collective, you can apply [here](https://www.kariba.network/).

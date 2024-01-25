@@ -16,21 +16,21 @@ building blocks and general architecture of our dataset.
 
 We have four primary building blocks that we use to organize our data:
 
-- [Collections](./collection-schema). Collections are used to group projects
+- [Collections](./schema/collection). Collections are used to group projects
   together. For example, a collection may include all projects that are part of
   a particular ecosystem or all projects that are dependent on a given developer
   library.
-- [Projects](./project-schema). Projects are used to group artifacts together.
+- [Projects](./schema/project). Projects are used to group artifacts together.
   For example, a project may include a GitHub organization, a blockchain address
   used for holding funds, and a NPM package.
-- [Artifacts](./artifact-schemas). Artifacts are used to store information about
+- [Artifacts](./schema/artifact). Artifacts are used to store information about
   work artifacts created by open source projects in the OSS Directory. For
   example, a GitHub organization artifact would be identified by a `url` field
   that is a valid GitHub organization URL (eg,
   `https://github.com/opensource-observer`) and a blockchain address artifact
   would be identified by an `address` field that is a valid blockchain address
   (eg, `0x1234567890123456789012345678901234567890`).
-- [Events](./events). Events are used to store information about transactions or
+- [Events](./schema/events). Events are used to store information about transactions or
   other activities involving a project's artifacts. These could include a code
   commit, a package download, or a smart contract interaction.
 
@@ -52,22 +52,22 @@ exist, we will automatically start collecting event data for them.
 
 The architecture has the following major components
 
-- [Data Warehouse](./warehouse)
+- [Data Warehouse](./architecture/warehouse)
   - A major dependency of the system is BigQuery. BigQuery is the main storage
     of the public data warehouse that OSO enables. All of the collected data or
     aggregated views used by OSO is also made publicly available here (if it is
     not already a public dataset on BigQuery). External integrators can opt to
     use this data as they wish.
-- [Data Collectors](./data-collection)
+- [Data Collectors](./architecture/data-collection)
   - Data collection for the data warehouse is handled by plugins that are
     currently executed based on a set schedule or some event in the data
     pipelines. In the future, we will allow execution to occur in a more event
     driven manner. This would reduce any computing overhead required.
-- [Query Processors](./query-processors)
+- [Query Processors](./architecture/query-processors)
   - Query processors are either single SQL queries or an entire data pipeline
     run against data in the data warehouse that is then materialized and
     stored for later querying.
-- [API](../api/intro)
+- [API](../integrate/getting-started)
   - The API can be used by external developers to integrate insights from OSO.
     Rate limits or cost sharing subscriptions may apply to it's usage depending
     on the systems used. This also powers the OSO website.

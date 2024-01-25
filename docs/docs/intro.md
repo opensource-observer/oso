@@ -31,4 +31,4 @@ We're putting all the metrics that funders need to inform better decision-making
 
 ### How can I contribute?
 
-We were hoping you'd ask! There are a variety of ways to contribute to Open Source Observer. The best place to start is [here](/docs/contributing/intro). If you are interested in joining the Data Collective, you can apply [here](https://www.opensource.observer/data-collective). You should also join our [Telegram](https://t.me/opensourceobserver) and our [Discord](https://www.opensource.observer/discord) communities to stay informed of the latest updates.
+We were hoping you'd ask! There are a variety of ways to contribute to Open Source Observer. The best place to start is [here](./contribute/intro). If you are interested in joining the Data Collective, you can apply [here](https://www.kariba.network). You should also join our [Telegram](https://t.me/opensourceobserver) and our [Discord](https://www.opensource.observer/discord) communities to stay informed of the latest updates.
