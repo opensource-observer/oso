@@ -11,17 +11,27 @@ const nextConfig = {
       }
     : {
         // Options for non-static-export
+        async rewrites() {
+          return [
+            {
+              source: "/docs/:path*",
+              destination: "https://docs.opensource.observer/docs/:path*",
+            },
+            {
+              source: "/blog/:path*",
+              destination: "https://docs.opensource.observer/blog/:path*",
+            },
+            {
+              source: "/assets/:path*",
+              destination: "https://docs.opensource.observer/assets/:path*",
+            },
+          ];
+        },
         async redirects() {
           return [
             {
               source: "/discord",
               destination: "https://discord.com/invite/NGEJ35aWsq",
-              permanent: false,
-            },
-            {
-              source: "/docs",
-              destination:
-                "https://github.com/opensource-observer/oso/tree/main/docs",
               permanent: false,
             },
             {

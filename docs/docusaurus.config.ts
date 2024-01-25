@@ -7,7 +7,7 @@ const config: Config = {
   tagline: "Measure impact on your platform.",
   favicon: "img/oso-emblem-black.svg",
 
-  url: "https://docs.opensource.observer",
+  url: "https://www.opensource.observer",
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
   baseUrl: "/",
