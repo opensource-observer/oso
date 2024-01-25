@@ -484,7 +484,6 @@ develop = true
 
 [package.dependencies]
 cloudquery-plugin-sdk = "^0.1.12"
-requests = "^2.31.0"
 
 [package.source]
 type = "directory"
