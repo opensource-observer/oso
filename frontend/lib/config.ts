@@ -6,6 +6,7 @@ export const requireEnv = (value: string | undefined, identifier: string) => {
 };
 
 export const NODE_ENV = process.env.NODE_ENV ?? "development";
+export const STATIC_EXPORT = !!process.env.STATIC_EXPORT;
 export const SEGMENT_KEY = process.env.SEGMENT_KEY ?? "";
 export const PLASMIC_PROJECT_ID = process.env.PLASMIC_PROJECT_ID ?? "MISSING";
 export const PLASMIC_PROJECT_API_TOKEN =

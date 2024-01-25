@@ -27,7 +27,6 @@
     "@mui/icons-material": "^5.14.3",
     "@mui/material": "^5.14.3",
     "@mui/x-date-pickers": "^6.12.0",
-    "@opensource-observer/indexer": "workspace:*",
     "@plasmicapp/loader-nextjs": "^1.0.344",
     "@segment/snippet": "^4.16.2",
     "@supabase/supabase-js": "^2.32.0",

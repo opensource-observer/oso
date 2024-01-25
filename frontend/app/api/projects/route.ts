@@ -4,7 +4,7 @@ import { logger } from "../../../lib/logger";
 import { cachedGetAllProjects } from "../../../lib/graphql/cached-queries";
 
 export const runtime = "edge"; // 'nodejs' (default) | 'edge'
-export const dynamic = "force-dynamic";
+//export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 /**
