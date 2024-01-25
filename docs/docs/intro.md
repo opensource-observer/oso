@@ -1,7 +1,8 @@
 ---
-title: Overview
 sidebar_position: 1
 ---
+
+# Overview
 
 Open Source Observer is an open source public good.
 
