@@ -10,7 +10,6 @@ packages = [{ include = "example_plugin" }]
 [tool.poetry.dependencies]
 python = "^3.11"
 cloudquery-plugin-sdk = "^0.1.12"
-requests = "^2.31.0"
 
 [tool.poetry.scripts]
 example_plugin = 'example_plugin.serve:run'
