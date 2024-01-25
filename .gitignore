@@ -50,3 +50,7 @@ node_modules
 
 # cloudquery
 .cq/
+
+# poetry.lock files outside of the root. This is to maintain the monorepo with
+# poetry.
+*/**/poetry.lock
