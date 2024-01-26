@@ -26,6 +26,11 @@ import {
 import { FormField, FormError } from "./components/forms/form-elements";
 import { VisualizationContext } from "./components/forms/visualization-context";
 import { BarList } from "./components/widgets/tremor";
+import { AuthForm } from "./components/widgets/auth-form";
+import {
+  AuthContext,
+  AuthContextRegistration,
+} from "./components/dataprovider/auth-context";
 
 /**
  * Plasmic component registration
@@ -240,6 +245,20 @@ PLASMIC.registerComponent(VisualizationContext, {
   },
   providesData: true,
   importPath: "./components/forms/visualization-context",
+});
+
+PLASMIC.registerComponent(AuthForm, {
+  name: "AuthForm",
+  description: "Supabase Auth Form",
+  props: {},
+  importPath: "./components/widgets/auth-form",
+});
+
+PLASMIC.registerComponent(AuthContext, {
+  name: "AuthContext",
+  props: { ...AuthContextRegistration },
+  providesData: true,
+  importPath: "./components/dataprovider/auth-context",
 });
 
 /**
