@@ -92,7 +92,7 @@ export function unpaginateIterator<T extends Record<string | number, any>>(
   };
 }
 
-function sleep(ms: number) {
+export function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
@@ -101,4 +101,39 @@ export interface RateLimit {
   cost: number;
   remaining: number;
   resetAt: string;
+}
+
+/**
+ * asyncBatch creates batches of a given array for processing. This function
+ * awaits the callback for every batch.
+ *
+ * @param arr - The array to process in batches
+ * @param batchSize - The batch size
+ * @param cb - The async callback
+ * @returns
+ */
+export async function asyncBatch<T, R>(
+  arr: T[],
+  batchSize: number,
+  cb: (batch: T[], batchLength: number, batchNumber: number) => Promise<R>,
+): Promise<R[]> {
+  let batch = [];
+  let batchNumber = 0;
+  const results: R[] = [];
+  for (const item of arr) {
+    batch.push(item);
+
+    if (batch.length >= batchSize) {
+      const batchResult = await cb(batch, batch.length, batchNumber);
+      results.push(batchResult);
+      batchNumber += 1;
+      batch = [];
+    }
+  }
+  if (batch.length > 0) {
+    const batchResult = await cb(batch, batch.length, batchNumber);
+    results.push(batchResult);
+    batch = [];
+  }
+  return results;
 }

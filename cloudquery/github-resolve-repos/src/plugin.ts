@@ -15,6 +15,8 @@ import { parseSpec } from "./spec.js";
 import type { Spec } from "./spec.js";
 import { getTables } from "./tables.js";
 import { GraphQLClient } from "graphql-request";
+import { Octokit } from "octokit";
+import { throttling } from "@octokit/plugin-throttling";
 
 export function graphQLClient(
   token: string,
@@ -95,6 +97,45 @@ export const newGithubResolveReposPlugin = () => {
     pluginClient.spec = parsedSpec;
 
     const gqlClient = graphQLClient(parsedSpec.token);
+
+    const AppOctoKit = Octokit.plugin(throttling);
+    const gh = new AppOctoKit({
+      auth: parsedSpec.token,
+      throttle: {
+        onRateLimit: (retryAfter, options, octokit, retryCount) => {
+          const opts = options as {
+            method: string;
+            url: string;
+          };
+          octokit.log.warn(
+            `Request quota exhausted for request ${opts.method} ${opts.url}`,
+          );
+          // Retry up to 50 times (that should hopefully be more than enough)
+          if (retryCount < 50) {
+            octokit.log.info(`Retrying after ${retryAfter} seconds!`);
+            return true;
+          } else {
+            octokit.log.error("failed too many times waiting for github quota");
+          }
+        },
+        onSecondaryRateLimit: (retryAfter, options, octokit, retryCount) => {
+          const opts = options as {
+            method: string;
+            url: string;
+          };
+          octokit.log.warn(
+            `Secondary rate limit detected for ${opts.method} ${opts.url}`,
+          );
+          if (retryCount < 3) {
+            octokit.log.info(`Retrying after ${retryAfter} seconds!`);
+            return true;
+          } else {
+            octokit.log.info(`Failing now`);
+          }
+        },
+      },
+    });
+
     const client: GithubGraphqlClient = {
       id: () => "github-resolve-repos",
     };
@@ -107,6 +148,7 @@ export const newGithubResolveReposPlugin = () => {
     pluginClient.allTables = await getTables(
       parsedSpec.projectsInputPath,
       gqlClient,
+      gh,
     );
 
     return pluginClient;
