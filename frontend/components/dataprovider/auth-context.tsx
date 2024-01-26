@@ -1,4 +1,3 @@
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { ReactNode } from "react";
 import { useAsync } from "react-use";
 import {
@@ -8,7 +7,7 @@ import {
 } from "./provider-view";
 import { RegistrationProps } from "../../lib/types/plasmic";
 import { logger } from "../../lib/logger";
-import { Database } from "../../lib/types/supabase";
+import { supabaseClient } from "../../lib/clients/supabase";
 
 const DEFAULT_PLASMIC_VARIABLE = "auth";
 
@@ -43,7 +42,6 @@ function AuthContext(props: AuthContextProps) {
     noAuthChildren,
     testNoAuth,
   } = props;
-  const supabase = createClientComponentClient<Database>();
   const key = variableName ?? DEFAULT_PLASMIC_VARIABLE;
 
   const { value, error, loading } = useAsync(async () => {
@@ -52,7 +50,7 @@ function AuthContext(props: AuthContextProps) {
     }
     const {
       data: { user },
-    } = await supabase.auth.getUser();
+    } = await supabaseClient.auth.getUser();
     return user;
   }, []);
 
