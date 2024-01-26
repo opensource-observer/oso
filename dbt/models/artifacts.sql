@@ -4,7 +4,7 @@ WITH
     projects.slug as project_slug,
     'GITHUB' AS namespace,
     'REPOSITORY' AS type,
-    LOWER(repos.name) AS name,
+    LOWER(repos.name_with_owner) AS name,
     LOWER(repos.url) AS url,
     repos.node_id AS source_id
   FROM
@@ -14,7 +14,7 @@ WITH
   JOIN
     `oso-production.opensource_observer.repositories` AS repos
   ON
-    LOWER(repos.owner) = LOWER(JSON_VALUE(github.url))
+    LOWER(CONCAT("https://github.com/", repos.owner)) = LOWER(JSON_VALUE(github.url))
     OR LOWER(repos.url) = LOWER(JSON_VALUE(github.url))
   GROUP BY
     1,
