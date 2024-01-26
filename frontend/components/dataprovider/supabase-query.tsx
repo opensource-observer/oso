@@ -1,12 +1,15 @@
+"use client";
 import React from "react";
 import useSWR from "swr";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { SupabaseQueryArgs, supabaseQuery } from "../../lib/clients/supabase";
+import { RegistrationProps } from "../../lib/types/plasmic";
+import { Database } from "../../lib/types/supabase";
 import {
   CommonDataProviderProps,
   CommonDataProviderRegistration,
   DataProviderView,
 } from "./provider-view";
-import { RegistrationProps } from "../../lib/types/plasmic";
 
 // The name used to pass data into the Plasmic DataProvider
 const KEY_PREFIX = "db";
@@ -70,6 +73,7 @@ const SupabaseQueryRegistration: RegistrationProps<SupabaseQueryProps> = {
 function SupabaseQuery(props: SupabaseQueryProps) {
   // These props are set in the Plasmic Studio
   const { variableName, tableName, useTestData, testData } = props;
+  const supabase = createClientComponentClient<Database>();
   const key = variableName ?? genKey(props);
   const { data, error, isLoading } = useSWR(key, async () => {
     if (useTestData) {
@@ -77,7 +81,7 @@ function SupabaseQuery(props: SupabaseQueryProps) {
     } else if (!tableName) {
       return;
     }
-    return await supabaseQuery({ ...props, tableName });
+    return await supabaseQuery(supabase, { ...props, tableName });
   });
 
   // Error messages are currently rendered in the component

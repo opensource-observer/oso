@@ -52,6 +52,7 @@
     "react-dom": "^18.2.0",
     "react-instantsearch": "^7.5.3",
     "react-instantsearch-nextjs": "^0.1.10",
+    "react-use": "^17.5.0",
     "serve": "^14.2.1",
     "swr": "^2.2.4",
     "uuid": "^9.0.1",

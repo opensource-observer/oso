@@ -3,7 +3,7 @@ import { ReactNode } from "react";
 import { RegistrationProps } from "../../lib/types/plasmic";
 
 // The name used to pass data into the Plasmic DataProvider
-const DEFAULT_VARIABLE_NAME = "eventData";
+const DEFAULT_VARIABLE_NAME = "data";
 
 type CommonDataProviderProps = {
   className?: string; // Plasmic CSS class
