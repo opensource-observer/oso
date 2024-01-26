@@ -1,7 +1,12 @@
 import path from "path";
 import _ from "lodash";
 import { GraphQLClient } from "graphql-request";
-import { getOwnerRepos } from "./get-org-repos.js";
+import {
+  getOwnerReposRest,
+  FullRepository,
+  resolveAllReposRest,
+} from "./get-org-repos.js";
+import { Octokit } from "octokit";
 
 type ParseGitHubUrlResult = {
   // e.g. https://github.com/hypercerts-org/oso
@@ -75,16 +80,15 @@ function filterFalsy<T>(xs: ReadonlyArray<T | null | undefined | false>): T[] {
   return xs.filter(isTruthy);
 }
 
-export type Repository = {
-  url: string;
-  name: string;
-  owner: string;
+export type RepositoryWithParsedUrl = FullRepository & {
+  parsedUrl: ParseGitHubUrlResult | null;
 };
 
 export async function getReposFromUrls(
-  client: GraphQLClient,
+  _client: GraphQLClient,
+  gh: Octokit,
   urls: string[],
-): Promise<Repository[]> {
+): Promise<RepositoryWithParsedUrl[]> {
   // Make github requests to find all of the github projects
 
   const repoUrls = urls.filter(isGitHubRepo);
@@ -107,19 +111,26 @@ export async function getReposFromUrls(
     orgUrls.map(parseGitHubUrl).map((p) => p?.owner),
   );
   const orgRepos = _.flatten(
-    await Promise.all(orgNames.map((o) => getOwnerRepos(client, o))),
+    await Promise.all(orgNames.map((o) => getOwnerReposRest(gh, o))),
   );
-  const orgRepoUrls = orgRepos.filter((r) => !r.isFork).map((r) => r.url);
-  const allRepos = [...repoUrls, ...orgRepoUrls];
-  const parsedRepos = allRepos.map(parseGitHubUrl);
-  return parsedRepos
+
+  const parsedRepoUrls = repoUrls.map(parseGitHubUrl);
+  const repoSlugs = parsedRepoUrls
     .filter((r) => r !== undefined || r !== null)
     .map((r) => {
       const repo = r!;
-      return {
-        name: repo.slug.toLowerCase(),
-        owner: `https://github.com/${repo.owner.toLowerCase()}`,
-        url: repo.url,
-      };
+      return repo.slug;
     });
+
+  const repos = await resolveAllReposRest(gh, repoSlugs);
+
+  const allRepos = [...repos, ...orgRepos];
+
+  return allRepos.map((r) => {
+    const parsed = parseGitHubUrl(r.url);
+    return {
+      ...r,
+      parsedUrl: parsed,
+    };
+  });
 }

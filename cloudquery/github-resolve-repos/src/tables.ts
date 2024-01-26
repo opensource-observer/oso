@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/naming-convention */
-import { Utf8 } from "@cloudquery/plugin-sdk-javascript/arrow";
+import { Utf8, Int64 } from "@cloudquery/plugin-sdk-javascript/arrow";
 import type {
   Column,
   ColumnResolver,
@@ -18,6 +18,7 @@ import { GraphQLClient } from "graphql-request";
 import fs from "fs";
 import readline from "readline";
 import { getReposFromUrls } from "./github/repositories.js";
+import { Octokit } from "octokit";
 
 /* eslint-disable import/no-named-as-default-member */
 dayjs.extend(utc);
@@ -37,17 +38,33 @@ const getColumnResolver = (c: string): ColumnResolver => {
 const getRepositories = async (
   input: () => readline.Interface,
   client: GraphQLClient,
+  gh: Octokit,
 ): Promise<Table> => {
   const columnDefinitions: Column[] = [
-    newColumn("url", {
+    newColumn("node_id", {
       primaryKey: true,
+      unique: true,
+      notNull: true,
+    }),
+    newColumn("id", {
+      type: new Int64(),
+      unique: true,
+      notNull: true,
+    }),
+    newColumn("url", {
       unique: true,
       notNull: true,
     }),
     newColumn("name", {
       notNull: true,
     }),
+    newColumn("name_with_owner", {
+      notNull: true,
+    }),
     newColumn("owner", {
+      notNull: true,
+    }),
+    newColumn("branch", {
       notNull: true,
     }),
   ];
@@ -61,10 +78,23 @@ const getRepositories = async (
       console.log(`Loading ${project.slug}`);
       const repos = await getReposFromUrls(
         client,
+        gh,
         project.github.map((p) => p.url),
       );
       for (const repo of repos) {
-        stream.write(repo);
+        //console.log(repo);
+        const record = {
+          id: repo.id,
+          node_id: repo.nodeId,
+          url: repo.url,
+          name: repo.name,
+          owner: repo.parsedUrl?.owner,
+          name_with_owner: repo.nameWithOwner,
+          branch: repo.defaultBranchRef?.name || "main",
+          //isFork: repo.isFork,
+        };
+        console.log(record);
+        stream.write(record);
       }
     }
     return;
@@ -83,7 +113,9 @@ function newColumn(name: string, opts?: Partial<Column>): Column {
     type: options.type || new Utf8(),
     description: options.description || "",
     primaryKey: options.primaryKey || false,
-    notNull: options.primaryKey || false,
+    // Not null doesn't seem to currently work
+    //notNull: options.notNull || false,
+    notNull: false,
     incrementalKey: options.incrementalKey || false,
     unique: options.unique || false,
     ignoreInTests: options.ignoreInTests || false,
@@ -94,16 +126,21 @@ function newColumn(name: string, opts?: Partial<Column>): Column {
 export const getTables = async (
   inputPath: string,
   client: GraphQLClient,
+  gh: Octokit,
 ): Promise<Table[]> => {
   const tables = [
-    await getRepositories(() => {
-      const fileStream = fs.createReadStream(inputPath);
+    await getRepositories(
+      () => {
+        const fileStream = fs.createReadStream(inputPath);
 
-      return readline.createInterface({
-        input: fileStream,
-        crlfDelay: Infinity,
-      });
-    }, client),
+        return readline.createInterface({
+          input: fileStream,
+          crlfDelay: Infinity,
+        });
+      },
+      client,
+      gh,
+    ),
   ];
 
   return tables;
