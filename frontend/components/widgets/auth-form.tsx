@@ -1,8 +1,7 @@
 "use client";
 import { Auth } from "@supabase/auth-ui-react";
 import { ThemeSupa } from "@supabase/auth-ui-shared";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
-import { Database } from "../../lib/types/supabase";
+import { supabaseClient } from "../../lib/clients/supabase";
 
 const REDIRECT_URL = "http://localhost:3000/";
 
@@ -12,12 +11,11 @@ type AuthFormProps = {
 
 export function AuthForm(props: AuthFormProps) {
   const { className } = props;
-  const supabase = createClientComponentClient<Database>();
 
   return (
     <div className={className}>
       <Auth
-        supabaseClient={supabase}
+        supabaseClient={supabaseClient}
         appearance={{ theme: ThemeSupa }}
         providers={["google"]}
         queryParams={{

@@ -1,7 +1,9 @@
-import { SupabaseClient } from "@supabase/supabase-js";
+import { createClient } from "@supabase/supabase-js";
 import { HttpError } from "../types/errors";
+import { Database } from "../types/supabase";
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from "../config";
 
-//const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const supabaseClient = createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 type SupabaseQueryArgs = {
   tableName: string; // table to query
@@ -14,12 +16,9 @@ type SupabaseQueryArgs = {
   orderAscending?: boolean; // True if ascending, false if descending
 };
 
-async function supabaseQuery(
-  client: SupabaseClient,
-  args: SupabaseQueryArgs,
-): Promise<any[]> {
+async function supabaseQuery(args: SupabaseQueryArgs): Promise<any[]> {
   const { tableName, columns, filters, limit, orderBy, orderAscending } = args;
-  let query = client.from(tableName).select(columns);
+  let query = supabaseClient.from(tableName).select(columns);
   // Iterate over the filters
   if (Array.isArray(filters)) {
     for (let i = 0; i < filters.length; i++) {
@@ -50,5 +49,5 @@ async function supabaseQuery(
   return data;
 }
 
-export { supabaseQuery };
+export { supabaseClient, supabaseQuery };
 export type { SupabaseQueryArgs };
