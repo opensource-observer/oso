@@ -9,16 +9,28 @@ import {
   catchallPathToString,
   pathToNamespaceEnum,
 } from "../../../../lib/paths";
+import { STATIC_EXPORT } from "../../../../lib/config";
 
 // Using incremental static regeneration, will invalidate this page
 // after this (no deploy webhooks needed)
+export const dynamic = STATIC_EXPORT ? "force-static" : "force-dynamic";
 export const revalidate = false; // 3600 = 1 hour
+const STATIC_EXPORT_PARAMS = [
+  {
+    namespace: "IGNORE",
+    name: ["IGNORE"],
+  },
+];
 const PLASMIC_COMPONENT = "ArtifactPage";
 
 const cachedFetchComponent = cache(async (componentName: string) => {
   const plasmicData = await PLASMIC.fetchComponentData(componentName);
   return plasmicData;
 });
+
+export async function generateStaticParams() {
+  return STATIC_EXPORT_PARAMS;
+}
 
 /**
  * This SSR route allows us to fetch the project from the database

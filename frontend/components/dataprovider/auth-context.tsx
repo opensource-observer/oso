@@ -53,6 +53,10 @@ function AuthContext(props: AuthContextProps) {
     } = await supabaseClient.auth.getUser();
     return user;
   }, []);
+  const data = {
+    user: value,
+    supabase: supabaseClient,
+  };
 
   // Error messages are currently silently logged
   if (!loading && error) {
@@ -68,7 +72,7 @@ function AuthContext(props: AuthContextProps) {
     <DataProviderView
       {...props}
       variableName={key}
-      formattedData={value}
+      formattedData={data}
       loading={loading}
       error={error}
     />
