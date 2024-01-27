@@ -40,11 +40,11 @@ type ArtifactPageProps = {
     namespace: string;
     name: string[];
   };
-  searchParams?: Record<string, string | string[]>;
+  //searchParams?: Record<string, string | string[]>;
 };
 
 export default async function ArtifactPage(props: ArtifactPageProps) {
-  const { params, searchParams } = props;
+  const { params } = props;
   const namespace = pathToNamespaceEnum(params.namespace);
   const name = catchallPathToString(params.name);
   if (
@@ -77,7 +77,6 @@ export default async function ArtifactPage(props: ArtifactPageProps) {
     <PlasmicClientRootProvider
       prefetchedData={plasmicData}
       pageParams={compMeta.params}
-      pageQuery={searchParams}
     >
       <PlasmicComponent
         component={compMeta.displayName}

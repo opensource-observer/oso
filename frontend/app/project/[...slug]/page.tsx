@@ -31,11 +31,11 @@ type ProjectPageProps = {
   params: {
     slug: string[];
   };
-  searchParams?: Record<string, string | string[]>;
+  //searchParams?: Record<string, string | string[]>;
 };
 
 export default async function ProjectPage(props: ProjectPageProps) {
-  const { params, searchParams } = props;
+  const { params } = props;
   const slugs = [catchallPathToString(params.slug)];
   if (!params.slug || !Array.isArray(params.slug) || params.slug.length < 1) {
     logger.warn("Invalid project page path", params);
@@ -58,7 +58,6 @@ export default async function ProjectPage(props: ProjectPageProps) {
     <PlasmicClientRootProvider
       prefetchedData={plasmicData}
       pageParams={compMeta.params}
-      pageQuery={searchParams}
     >
       <PlasmicComponent
         component={compMeta.displayName}
