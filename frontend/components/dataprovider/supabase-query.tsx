@@ -1,4 +1,3 @@
-"use client";
 import React from "react";
 import useSWR from "swr";
 import { SupabaseQueryArgs, supabaseQuery } from "../../lib/clients/supabase";

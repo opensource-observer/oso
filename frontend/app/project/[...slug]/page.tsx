@@ -8,12 +8,19 @@ import { logger } from "../../../lib/logger";
 import { catchallPathToString } from "../../../lib/paths";
 
 export const revalidate = false; // 3600 = 1 hour
+const STATIC_EXPORT_SLUGS = ["IGNORE"];
 const PLASMIC_COMPONENT = "ProjectPage";
 
 const cachedFetchComponent = cache(async (componentName: string) => {
   const plasmicData = await PLASMIC.fetchComponentData(componentName);
   return plasmicData;
 });
+
+export async function generateStaticParams() {
+  return STATIC_EXPORT_SLUGS.map((s) => ({
+    slug: [s],
+  }));
+}
 
 /**
  * This SSR route allows us to fetch the project from the database
