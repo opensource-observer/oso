@@ -9,8 +9,10 @@ export const revalidate = false; // 3600 = 1 hour
 
 export default async function PlasmicLoaderPage({
   params,
+  searchParams,
 }: {
   params?: { catchall: string[] | undefined };
+  searchParams?: Record<string, string | string[]>;
 }) {
   const plasmicComponentData = await fetchPlasmicComponentData(
     params?.catchall,
@@ -29,6 +31,7 @@ export default async function PlasmicLoaderPage({
     <PlasmicClientRootProvider
       prefetchedData={prefetchedData}
       pageParams={pageMeta.params}
+      pageQuery={searchParams}
     >
       <PlasmicComponent component={pageMeta.displayName} />
     </PlasmicClientRootProvider>

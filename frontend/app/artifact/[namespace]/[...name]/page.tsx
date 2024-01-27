@@ -9,9 +9,11 @@ import {
   catchallPathToString,
   pathToNamespaceEnum,
 } from "../../../../lib/paths";
+import { STATIC_EXPORT } from "../../../../lib/config";
 
 // Using incremental static regeneration, will invalidate this page
 // after this (no deploy webhooks needed)
+export const dynamic = STATIC_EXPORT ? "force-static" : "force-dynamic";
 export const revalidate = false; // 3600 = 1 hour
 const STATIC_EXPORT_PARAMS = [
   {
@@ -40,11 +42,11 @@ type ArtifactPageProps = {
     namespace: string;
     name: string[];
   };
-  //searchParams?: Record<string, string | string[]>;
+  searchParams?: Record<string, string | string[]>;
 };
 
 export default async function ArtifactPage(props: ArtifactPageProps) {
-  const { params } = props;
+  const { params, searchParams } = props;
   const namespace = pathToNamespaceEnum(params.namespace);
   const name = catchallPathToString(params.name);
   if (
@@ -77,6 +79,7 @@ export default async function ArtifactPage(props: ArtifactPageProps) {
     <PlasmicClientRootProvider
       prefetchedData={plasmicData}
       pageParams={compMeta.params}
+      pageQuery={searchParams}
     >
       <PlasmicComponent
         component={compMeta.displayName}
