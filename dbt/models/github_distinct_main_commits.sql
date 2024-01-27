@@ -1,11 +1,6 @@
 {#
   Gathers all github commits on the default branch of a repo that are distinct.
 #}
-{{
-  config(
-    materialized='incremental'
-  )
-}}
 
 SELECT
   ghc.*

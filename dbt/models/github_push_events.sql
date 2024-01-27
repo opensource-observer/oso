@@ -1,11 +1,6 @@
 {#
   Gathers all github events for all github artifacts
 #}
-{{
-  config(
-    materialized='incremental'
-  )
-}}
 
 SELECT
     ghe.created_at as created_at,

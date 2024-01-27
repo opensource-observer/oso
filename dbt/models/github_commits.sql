@@ -1,11 +1,6 @@
 {#
   Turns all push events into their commit objects
 #}
-{{
-  config(
-    materialized='incremental'
-  )
-}}
 
 SELECT
   ghpe.created_at as created_at,
