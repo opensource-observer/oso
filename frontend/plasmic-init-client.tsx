@@ -1,10 +1,10 @@
 "use client";
 
-import dynamic from "next/dynamic";
-import CircularProgress from "@mui/material/CircularProgress";
-import { AreaChart } from "@tremor/react";
 import { PlasmicRootProvider } from "@plasmicapp/loader-nextjs";
 import { PLASMIC } from "./plasmic-init";
+import CircularProgress from "@mui/material/CircularProgress";
+import { AreaChart } from "@tremor/react";
+import { AlgoliaSearchBox } from "./components/widgets/algolia";
 import { FeedbackWrapper } from "./components/widgets/feedback-farm";
 import { ProjectsClientProvider } from "./components/project-browser/project-client-provider";
 import { ProjectBrowser } from "./components/project-browser/project-browser";
@@ -23,8 +23,6 @@ import {
   TableDataProvider,
   TableDataProviderRegistration,
 } from "./components/dataprovider/table-data-provider";
-import { FormField, FormError } from "./components/forms/form-elements";
-import { VisualizationContext } from "./components/forms/visualization-context";
 import { BarList } from "./components/widgets/tremor";
 import { AuthForm } from "./components/widgets/auth-form";
 import {
@@ -105,7 +103,8 @@ PLASMIC.registerComponent(BarList, {
 });
 
 PLASMIC.registerComponent(
-  dynamic(() => import("./components/widgets/algolia"), { ssr: false }),
+  AlgoliaSearchBox,
+  //dynamic(() => import("./components/widgets/algolia"), { ssr: false }),
   {
     name: "AlgoliaSearchBox",
     description: "Algolia-powered search box",
@@ -159,13 +158,6 @@ PLASMIC.registerComponent(ProjectBrowser, {
   },
 });
 
-PLASMIC.registerComponent(SupabaseQuery, {
-  name: "SupabaseQuery",
-  props: { ...SupabaseQueryRegistration },
-  providesData: true,
-  importPath: "./components/dataprovider/supabase-query",
-});
-
 PLASMIC.registerComponent(CollectionEventDataProvider, {
   name: "CollectionEventDataProvider",
   props: { ...EventDataProviderRegistration },
@@ -201,6 +193,28 @@ PLASMIC.registerComponent(TableDataProvider, {
   importPath: "./components/dataprovider/table-data-provider",
 });
 
+PLASMIC.registerComponent(SupabaseQuery, {
+  name: "SupabaseQuery",
+  props: { ...SupabaseQueryRegistration },
+  providesData: true,
+  importPath: "./components/dataprovider/supabase-query",
+});
+
+PLASMIC.registerComponent(AuthForm, {
+  name: "AuthForm",
+  description: "Supabase Auth Form",
+  props: {},
+  importPath: "./components/widgets/auth-form",
+});
+
+PLASMIC.registerComponent(AuthContext, {
+  name: "AuthContext",
+  props: { ...AuthContextRegistration },
+  providesData: true,
+  importPath: "./components/dataprovider/auth-context",
+});
+
+/**
 PLASMIC.registerComponent(FormField, {
   name: "FormField",
   description: "General purpose form field that accepts an arbitrary input",
@@ -247,19 +261,8 @@ PLASMIC.registerComponent(VisualizationContext, {
   importPath: "./components/forms/visualization-context",
 });
 
-PLASMIC.registerComponent(AuthForm, {
-  name: "AuthForm",
-  description: "Supabase Auth Form",
-  props: {},
-  importPath: "./components/widgets/auth-form",
-});
 
-PLASMIC.registerComponent(AuthContext, {
-  name: "AuthContext",
-  props: { ...AuthContextRegistration },
-  providesData: true,
-  importPath: "./components/dataprovider/auth-context",
-});
+ */
 
 /**
  * PlasmicClientRootProvider is a Client Component that passes in the loader for you.

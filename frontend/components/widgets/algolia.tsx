@@ -109,4 +109,4 @@ function AlgoliaSearchBox(props: AlgoliaSearchBoxProps) {
   );
 }
 
-export default AlgoliaSearchBox;
+export { AlgoliaSearchBox };
