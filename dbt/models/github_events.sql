@@ -7,6 +7,6 @@
   )
 }}
 
-SELECT *
+SELECT gh.*
 FROM {{ source('github_archive', 'events')}} as gh
-JOIN  `oso-production.opensource_observer.repositories` as repos ON LOWER(gh.repo.name) = LOWER(repos.name)
+JOIN `oso-production.opensource_observer.repositories` as repos ON gh.repo.id = repos.id
