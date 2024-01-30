@@ -171,6 +171,8 @@ export interface Repository {
   defaultBranchRef: null | {
     name: string;
   };
+  starCount: number;
+  watcherCount: number;
 }
 
 export type FullRepository = Repository & {
@@ -233,6 +235,8 @@ export async function getOwnerReposRest(
         defaultBranchRef: {
           name: r.default_branch || "main",
         },
+        starCount: r.stargazers_count || 0,
+        watcherCount: r.watchers_count || 0,
       };
     });
   } catch (err) {
@@ -254,6 +258,8 @@ export async function getOwnerReposRest(
           defaultBranchRef: {
             name: r.default_branch || "main",
           },
+          starCount: r.stargazers_count || 0,
+          watcherCount: r.watchers_count || 0,
         };
       });
     } catch (tryUserErr) {
@@ -309,6 +315,8 @@ function restRepoDataToFullRepository(r: RestRepoData): FullRepository {
     defaultBranchRef: {
       name: r.default_branch || "main",
     },
+    starCount: r.stargazers_count || 0,
+    watcherCount: r.watchers_count || 0,
   };
 }
 
