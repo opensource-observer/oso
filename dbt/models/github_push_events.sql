@@ -14,3 +14,4 @@ SELECT
     ghe.actor.id as actor_id,
     ghe.actor.login as actor_login
 FROM {{ ref('github_events') }} as ghe
+WHERE ghe.type = "PushEvent"
