@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/naming-convention */
-import { Utf8, Int64 } from "@cloudquery/plugin-sdk-javascript/arrow";
+import { Utf8, Int64, Bool } from "@cloudquery/plugin-sdk-javascript/arrow";
 import type {
   Column,
   ColumnResolver,
@@ -67,6 +67,17 @@ const getRepositories = async (
     newColumn("branch", {
       notNull: true,
     }),
+    newColumn("star_count", {
+      type: new Int64(),
+      notNull: true,
+    }),
+    newColumn("watcher_count", {
+      type: new Int64(),
+      notNull: true,
+    }),
+    newColumn("is_fork", {
+      type: new Bool(),
+    }),
   ];
 
   const tableResolver: TableResolver = async (clientMeta, parent, stream) => {
@@ -91,9 +102,10 @@ const getRepositories = async (
           owner: repo.parsedUrl?.owner,
           name_with_owner: repo.nameWithOwner,
           branch: repo.defaultBranchRef?.name || "main",
-          //isFork: repo.isFork,
+          is_fork: repo.isFork,
+          watcher_count: repo.watcherCount,
+          star_count: repo.starCount,
         };
-        console.log(record);
         stream.write(record);
       }
     }

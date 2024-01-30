@@ -5,7 +5,7 @@
 SELECT
   ghpe.created_at as created_at,
   ghpe.repository_id as repository_id,
-  ghpe.name as name,
+  ghpe.repository_name as repository_name,
   ghpe.push_id as push_id,
   ghpe.ref as ref,
   ghpe.actor_id as actor_id,
@@ -14,6 +14,6 @@ SELECT
   JSON_VALUE(commit, "$.author.email") as author_email,
   JSON_VALUE(commit, "$.author.name") as author_name,
   CAST(JSON_VALUE(commit, "$.distinct") AS BOOL) as is_distinct,
-  JSON_VALUE(commit, "$.url") as api_url,
+  JSON_VALUE(commit, "$.url") as api_url
 FROM {{ ref('github_push_events') }} as ghpe
 CROSS JOIN UNNEST(ghpe.commits) as commit

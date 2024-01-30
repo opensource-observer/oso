@@ -3,10 +3,10 @@ WITH
   SELECT
     projects.slug as project_slug,
     'GITHUB' AS namespace,
-    'REPOSITORY' AS type,
+    'GIT_REPOSITORY' AS type,
     LOWER(repos.name_with_owner) AS name,
     LOWER(repos.url) AS url,
-    repos.node_id AS source_id
+    CAST(repos.id AS STRING) AS source_id
   FROM
     `oso-production.opensource_observer.projects` AS projects
   CROSS JOIN

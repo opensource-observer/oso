@@ -1,7 +1,7 @@
 sources:
   - name: github_archive
     database: githubarchive
-    schema: "{{ env_var('GITHUB_ARCHIVE_PARTITION_TYPE') }}"
+    schema: "{{ env_var('GITHUB_ARCHIVE_PARTITION_TYPE', 'disable') }}"
     tables:
       - name: events
-        identifier: "{{ env_var('GITHUB_ARCHIVE_PARTITION_KEY') }}"
+        identifier: "{{ env_var('GITHUB_ARCHIVE_PARTITION_KEY', 'disable') }}"
