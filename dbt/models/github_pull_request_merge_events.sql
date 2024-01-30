@@ -8,7 +8,7 @@ SELECT DISTINCT
   PARSE_TIMESTAMP('%Y-%m-%dT%H:%M:%E*SZ', JSON_VALUE(pre.payload, "$.pull_request.merged_at")) AS created_at,
   pre.repo.id AS repository_id,
   pre.repo.name AS repository_name,
-  JSON_VALUE(pre.payload, "$.pull_request.user.id") AS actor_id,
+  CAST(JSON_VALUE(pre.payload, "$.pull_request.user.id") AS INTEGER) AS actor_id,
   JSON_VALUE(pre.payload, "$.pull_request.user.login") AS actor_login,
   "PULL_REQUEST_MERGED" AS type,
   JSON_VALUE(pre.payload, "$.pull_request.state") as state,
