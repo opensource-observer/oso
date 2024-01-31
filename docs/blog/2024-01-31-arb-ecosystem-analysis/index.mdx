@@ -5,39 +5,39 @@ authors: [ccerv1]
 tags: [arbitrum, ecosystem reports, data visualization]
 ---
 
-We are excited to share our first report covering the open source software (OSS) projects building on Arbitrum. This report is the first of several we'll be sharing with the community, and focuses on **developer activity**.
+We are excited to present our inaugural report on the state of open source software (OSS) projects building on Arbitrum. This analysis is the first in a series aimed at providing the community with data and insights to assist with impact measurement and grantmaking.
 
 Some highlights:
 
-1. We are currently tracking over 300 OSS projects and over 13,000 code artifacts that are making an impact on the Arbitrum ecosystem. 
-2. There are currently around 1800 developers working on these projects. Our estimate is similar to the latest Electric Capital developer report, although we've included an additional 94 projects not yet captured in their registry. 
-3. Active developers is 18% lower than the peak of around 2200 in March 2023, however, this is driven mostly by reductions in a small number of projects, not a decline across the board. In fact, most projects have been relatively stable in terms of developer numbers over the past 12 months.
+1. We are currently tracking over 300 OSS projects and over 13,000 code artifacts that are making an impact on the Arbitrum ecosystem. These artifacts include both GitHub repos (~10,000) and smart contracts deployed on Arbitrum One (~3,000).
+2. Approximately 1,800 developers are actively engaged in these projects. This number aligns closely with the latest [Electric Capital Developer Report](https://www.developerreport.com/ecosystems/arbitrum). Our analysis, however, incorporates an additional 94 projects not currently captured in their registry.
+3. The number of active developers is 18% lower than the peak of around 2,200 in March 2023. It's important to note, however, that this reduction is primarily concentrated in a few projects rather than a general decline across the ecosystem. In fact, the majority of projects have maintained a stable developer count over the past year.
 
-This work has been funded by a grant from Plurality Labs. We will be releasing a follow-up report that covers the onchain contributions of ~200 of the 300+ projects included here. We will also leverage the data to propose an initial 4-5 “impact pools” of projects’ contributions that can inform future grantmaking efforts by Plurality Labs and the Arbitrum DAO.
+This report has been made possible through a grant from Plurality Labs. Following this initial analysis, we plan to release a subsequent report detailing the onchain contributions of roughly 200 out of the 300+ projects we've studied. Additionally, we aim to utilize this data to suggest 4-5 potential “impact pools” for measuring projects' contributions. These pools are intended to help guide future grantmaking initiatives by Plurality Labs and the Arbitrum DAO.
 
 <!-- truncate -->
 
-As always, you can explore the Python notebooks we use for processing and visualization the data in reports like this [here](https://github.com/opensource-observer/insights/). If you find any errors or want to improve our information about a specific project, go [here](https://github.com/opensource-observer/oss-directory) and make a PR to the relevant project entry. And if you’re a data enthusiast who wants to contribute or learn more about what we're building, please sign up to join our [data collective](https://www.opensource.observer/data-collective)!
+For those interested in a deeper dive, the Python notebooks used for data processing and visualization in this report are available [here](https://github.com/opensource-observer/insights/). We welcome contributions to improve our data accuracy on specific projects; please visit [here](https://github.com/opensource-observer/oss-directory) to submit a PR to the relevant project entry. Additionally, if you're passionate about data and wish to contribute or learn more about our endeavors, consider joining our [data collective](https://www.opensource.observer/data-collective)!
 
-## Coverage of Arbitrum OSS projects
+## In-Depth Coverage of Arbitrum OSS Projects
 
-This report features 345 OSS projects that are critical to the Arbitrum ecosystem. Their impact includes both open source code contributions and smart contracts deployed on Arbitrum One, driving millions of transactions and sequencer fees.
+In this report, we explore 345 OSS projects that are integral to the Arbitrum ecosystem. Their contributions range from open source code development to deploying smart contracts on Arbitrum One, thereby facilitating millions of transactions and generating significant sequencer fees.
 
-There is no single source of truth of all the projects and contributors in a decentralized network economy like Arbitrum. The next section describes the methodology we used to populate an initial directory. Please [help us](https://docs.opensource.observer/docs/contribute/add-update/intro) add to it!
+As there is no centralized repository of all the projects and contributors in a decentralized network economy like Arbitrum, we developed a unique methodology to compile an initial directory of these entities. We invite your contributions to enhance this directory; please visit [here](https://github.com/opensource-observer/oss-directory) to submit a PR or [here](https://docs.opensource.observer/docs/contribute/add-update/intro) to learn more about how to contribute data about projects and their code artifacts.
 
-### How these projects were identified
+### Methodology for project identification
 
-We first built out an initial collection of more othan 200 projects' GitHub organizations by leveraging [“Electric Capital Crypto Ecosystems Mapping”](https://github.com/electric-capital/crypto-ecosystems) list of Arbitrum sub-ecosystems. These included new projects as well as ones that were already in our OSS Directory through prior research. 
+We first built out an initial collection of more othan 200 projects' GitHub organizations by leveraging [“Electric Capital Crypto Ecosystems Mapping”](https://github.com/electric-capital/crypto-ecosystems) list of Arbitrum sub-ecosystems. This list included both new entrants and existing projects previously cataloged in our OSS Directory.
 
 Next, we identified decoded contracts for more than 180 projects on Dune. We then did the tedious but essential work of linking projects' GitHubs, deployer addresses, and smart contracts. There remains a long tail of contracts deployed by smaller projects that have not been matched to a GitHub org yet, although we believe we have excellent coverage of the larger and more active onchain projects. 
 
 Finally, we reviewed the grants data and tracking performed by other Plurality Labs partners including [Karma GAP](https://gap.karmahq.xyz/arbitrum/) and [OpenBlock Labs](https://www.openblocklabs.com/app/arbitrum/grantees) to identify any remaining onchain projects that have an active grant from Arbitrum.
 
-The following Venn diagram shows all 345 projects in our initial dataset and the overlap between the two registries:
+The following Venn diagram shows all 345 projects in our initial dataset, highlighting the intersections between different registries:
 
-- 188 OSS projects with contracts on Arbitrum One *and* a public GitHub org (“arb-onchain”)
-- 251 OSS projects with a public GitHub org from the latest Crypto Ecosystems mapping *but* not necessarily contracts on Arbitrum (“arbitrum-crypto-ecosystems”)
-- 94 OSS projects in both sets
+- 188 OSS projects with both contracts on Arbitrum One and a public GitHub organization (Onchain Mapping”)
+- 251 OSS projects identified from the latest Crypto Ecosystems mapping, not all with contracts on Arbitrum (“Crypto Ecosystems Mapping”)
+- 94 OSS projects featured in both categories.
 
 ![image](./venn.png)
 
@@ -48,29 +48,37 @@ We also performed our own desk research, project diligencing, and data audits fo
 
 ### Cataloging onchain vs offchain artifacts
 
-This is a massive corpus of work artifacts, as shown in the alluvial diagram below. We have omitted from this chart some of the contracts produced by Defi and NFT minting platforms, as well as Safe (multsigs), so this is an underestimation of the total number of contracts being indexed by OSO.
+The massive corpus of work artifacts is depicted in the alluvial diagram below. We have intentionally excluded some contracts produced by Defi and NFT minting platforms, as well as Safe (multisigs), leading to an underestimation of the total number of contracts indexed by OSO.
 
 ![image](./coverage-sankey.png)
 
-## Developer activity trends
+## Developer Activity Trends
 
-Developer activity on Arbitrum is tracking close to all-time highs. We estimate that there are currently around 1800 active developers (non-bot accounts who have committed code in a given month) working on Arbitrum projects. This figure excludes contributions from Offchain Labs as well as any contributions made to private or personal repos.
+Developer activity on Arbitrum is still tracking close to all-time highs. 
+
+We estimate that there are currently around 1,800 active developers (non-bot accounts who have committed code in a given month) working on Arbitrum projects. This figure excludes contributions from Offchain Labs as well as any contributions made to private or personal repos.
 
 ![image](./area-arbitrum-all.png)
 
+While our findings are closely correlated with Electric Capital's latest report, our project sets are different. We've identified a number of projects that have deployments on Arbitrum but are not yet reflected in their database. On the other hand, we omitted some contributions included in their database that were on personal repos or harder to trace to an ongoing project or organization. It is possible that through further reconciliation we may arrive at a larger estimate of active developers.
+
 ### Activity among onchain projects
 
-The decline is greatest among projects that are included in the Crypto Ecosystems mapping but that do not have onchain contracts that we are currently tracking. The following area chart only looks at the 188 projects that have contracts on Arbitrum One and a public GitHub org and splits them by "full-time" vs "part-time" developers. Full-time developers are ones who have made commits on at least 10 days in a given month.
+The number of active developers is down 18%, from a peak of around 2,200 in March 2023. The decline is greatest among projects that are included in the Crypto Ecosystems mapping but that do not have onchain contracts that we are currently tracking. We see a more stable number of developers working on onchain projects.
+
+The chart below filters on the 188 projects that have contracts on Arbitrum One and a public GitHub org. In addition, it splits them by "full-time" vs "part-time" developers. Full-time developers are ones who have made commits on at least 10 days in a given month. While the aggregate number of developers is stable, the ratio of part-time to full-time has increased. This could be noise or a sign that during the bear market developers are splitting their time across more than one project. We can also take a look at developer churn in a subsequent report.
 
 ![image](./area-arbitrum-onchain.png)
 
 ### Recent changes in developer numbers
 
-We can zoom in specifically on the question of net change in developer activity over the past four quarters. The chart below shows the vast majority of projects have developer numbers that are comparable to where they were last year during Q4. There are a few outliers that have significantly fewer contributors (eg, [Pyth Network](https://github.com/orgs/pyth-network/repositories) and [MakerDAO](https://github.com/orgs/makerdao/repositories)) but are very much still active, and several with a big surge (eg, Chainlink and DefiLlama).
+We can zoom in further on the question of net change in developer activity over the past four quarters among these projects to see how many projects are shrinking vs growing in size. 
+
+The chart below shows the vast majority of projects have developer numbers that are comparable to where they were last year during Q4. There are a few outliers that have significantly fewer contributors (eg, [Pyth Network](https://github.com/orgs/pyth-network/repositories) and [MakerDAO](https://github.com/orgs/makerdao/repositories)) but are very much still active. These changes could be explained by a shift in priorities or work shifting to private repos.
+
+There are also several projects in the ecosystem that have grown rapidly over the past year (eg, Chainlink and DefiLlama). Most projects, however, have remained within +/- 3 developers of their total last year. It's an encouraging sign that there has been remarkable consistency over the past year despite unfavorable market conditions.
 
 ![image](./developer-delta-distribution.png)
-
-If anything, the data shows that there has been remarkable consistency of the past year despite unfavorable market conditions.
 
 ### Full-time developers in the ecosystem
 
@@ -84,7 +92,7 @@ We can refine this type of analysis further and just look at the subset of oncha
 
 ![image](./heatmap-arb-stip.png)
 
-## What's next?
+## What's Next?
 
 Again, this was just a small taste of what's possible with the data we’re collecting. In early February, we will release a follow-up report that covers the onchain contributions of ~200 of the 300+ projects included here. At the end of February, we will leverage the data to propose an initial 4-5 “impact pools” that can inform future grantmaking efforts by Plurality Labs and the Arbitrum DAO.
 
