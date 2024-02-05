@@ -5,6 +5,12 @@ authors: [ryscheng]
 tags: [kariba, open source, open data, open infra]
 ---
 
+import Head from '@docusaurus/Head';
+
+<Head>
+  <link rel="canonical" href="https://kariba.substack.com/p/open-source-open-data-open-infra" />
+</Head>
+
 *How Open Source Observer commit to being the most open and reliable source of impact metrics out there*.
 
 At Kariba Labs, we believe deeply in the power of open source software. That is why we are building Open Source Observer (aka OSO), an open source tool for measuring the impact of open source projects. In order to achieve our goal of making open source better for everyone, we believe that OSO needs more than just open source code. We are committed to being the most open and reliable source of impact metrics out there. We will achieve this by committing the OSO project to the following practices:
@@ -14,6 +20,8 @@ At Kariba Labs, we believe deeply in the power of open source software. That is 
 - **Open data**: All collected and processed data will be openly shared with the community (to the extent allowed by terms of service)
 
 - **Open infrastructure**: We will open up our infrastructure for anyone to contribute or build upon our existing infrastructure at-cost.
+
+<!-- truncate -->
 
 # Open infra for mass experimentation
 Some data projects open source parts of their code base, allowing anyone to run the indexers or visualizations themselves. However, it is often not a trivial task to run the massive data pipeline jobs necessary to collect all of the data. In many cases, the costs can be prohibitive for individuals. For example in OSO, we collect data across all of GitHub, npm, and select blockchains. Some projects periodically release data snapshots, which easily enables users to run data processing jobs without running their own indexing infrastructure. However, the very nature of snapshots means things are getting out of date as soon as you get it. In the worst case, the data is locked behind proprietary services that impose extractive pricing.
