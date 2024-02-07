@@ -25,4 +25,7 @@ clean-targets:         # directories to be removed by `dbt clean`
 
 models:
   opensource_observer:
-    +materialized: table
+    +materialized: view
+    marts:
+      events:
+        +materialized: table

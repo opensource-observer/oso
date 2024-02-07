@@ -1,7 +1,8 @@
 sources:
+  # Github Archive environment variables can be overidden for backfilling data.
   - name: github_archive
     database: githubarchive
-    schema: "{{ env_var('GITHUB_ARCHIVE_PARTITION_TYPE', 'disable') }}"
+    schema: "{{ env_var('GITHUB_ARCHIVE_PARTITION_TYPE', 'day') }}"
     tables:
       - name: events
-        identifier: "{{ env_var('GITHUB_ARCHIVE_PARTITION_KEY', 'disable') }}"
+        identifier: "{{ env_var('GITHUB_ARCHIVE_PARTITION_KEY', '20*') }}"
