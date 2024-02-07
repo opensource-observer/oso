@@ -13,10 +13,11 @@ SELECT
   -- Determine the canonical `from` artifact name. However for uniqueness we
   -- actually need to use the `from_source_id` from the `all_events` table. 
   CASE 
-    WHEN a.name IS NULL THEN e.name 
+    WHEN a.name IS NULL THEN e.from_name 
     ELSE a.name
   END AS `from_name`,
   e.from_namespace,
+  e.from_type,
   e.from_source_id,
   e.amount
 FROM {{ ref('all_events') }} AS e
