@@ -26,9 +26,10 @@ import {
 import { BarList } from "./components/widgets/tremor";
 import { AuthForm } from "./components/widgets/auth-form";
 import {
-  AuthContext,
-  AuthContextRegistration,
-} from "./components/dataprovider/auth-context";
+  AuthRouter,
+  AuthRouterRegistration,
+} from "./components/dataprovider/auth-router";
+import { AuthGlobalContext } from "./components/dataprovider/auth-context";
 
 /**
  * Plasmic component registration
@@ -207,10 +208,32 @@ PLASMIC.registerComponent(AuthForm, {
   importPath: "./components/widgets/auth-form",
 });
 
-PLASMIC.registerComponent(AuthContext, {
-  name: "AuthContext",
-  props: { ...AuthContextRegistration },
+PLASMIC.registerComponent(AuthRouter, {
+  name: "AuthRouter",
+  props: { ...AuthRouterRegistration },
   providesData: true,
+  importPath: "./components/dataprovider/auth-router",
+});
+
+PLASMIC.registerGlobalContext(AuthGlobalContext, {
+  name: "AuthGlobalContext",
+  props: {},
+  providesData: true,
+  globalActions: {
+    signInWithOAuth: {
+      description: "Sign in with OAuth",
+      parameters: [
+        {
+          name: "provider",
+          type: "string",
+        },
+      ],
+    },
+    signOut: {
+      description: "Sign out",
+      parameters: [],
+    },
+  },
   importPath: "./components/dataprovider/auth-context",
 });
 
