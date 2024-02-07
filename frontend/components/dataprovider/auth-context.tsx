@@ -1,83 +1,54 @@
-import { ReactNode } from "react";
-import { useAsync } from "react-use";
-import {
-  CommonDataProviderProps,
-  CommonDataProviderRegistration,
-  DataProviderView,
-} from "./provider-view";
-import { RegistrationProps } from "../../lib/types/plasmic";
-import { logger } from "../../lib/logger";
+import React from "react";
+import { DataProvider, GlobalActionsProvider } from "@plasmicapp/host";
 import { supabaseClient } from "../../lib/clients/supabase";
 
-const DEFAULT_PLASMIC_VARIABLE = "auth";
+const CONTEXT_NAME = "auth";
+const DATA_NAME = "auth";
+type AuthGlobalContextProps = React.PropsWithChildren<{
+  testUser?: string;
+}>;
 
-type AuthContextProps = CommonDataProviderProps & {
-  noAuthChildren?: ReactNode;
-  testNoAuth?: boolean;
-};
+function AuthGlobalContext(props: AuthGlobalContextProps) {
+  const [user, setUser] = React.useState<any>(null);
+  const { children } = props;
+  const actions = React.useMemo(
+    () => ({
+      async signInWithOAuth(_provider: string) {
+        const { data, error } = await supabaseClient.auth.signInWithOAuth({
+          provider: "google",
+          options: {
+            queryParams: {
+              access_type: "offline",
+              prompt: "consent",
+            },
+          },
+        });
+        console.log("!!!");
+        console.log(data, error);
+        const {
+          data: { user },
+        } = await supabaseClient.auth.getUser();
+        setUser(user);
+      },
+      async signOut() {
+        await supabaseClient.auth.signOut();
+      },
+    }),
+    [],
+  );
 
-const AuthContextRegistration: RegistrationProps<AuthContextProps> = {
-  ...CommonDataProviderRegistration,
-  noAuthChildren: {
-    type: "slot",
-    defaultValue: {
-      type: "text",
-      value: "Placeholder",
-    },
-  },
-  testNoAuth: {
-    type: "boolean",
-    editOnly: true,
-    advanced: true,
-  },
-};
-
-function AuthContext(props: AuthContextProps) {
-  // These props are set in the Plasmic Studio
-  const {
-    className,
-    variableName,
-    useTestData,
-    testData,
-    noAuthChildren,
-    testNoAuth,
-  } = props;
-  const key = variableName ?? DEFAULT_PLASMIC_VARIABLE;
-
-  const { value, error, loading } = useAsync(async () => {
-    if (useTestData) {
-      return testData;
-    }
-    const {
-      data: { user },
-    } = await supabaseClient.auth.getUser();
-    return user;
-  }, []);
   const data = {
-    user: value,
+    user,
     supabase: supabaseClient,
   };
 
-  // Error messages are currently silently logged
-  if (!loading && error) {
-    logger.error(error);
-  }
-
-  // Show unauthenticated view
-  if (testNoAuth || (!loading && !value)) {
-    return <div className={className}>{noAuthChildren}</div>;
-  }
-
   return (
-    <DataProviderView
-      {...props}
-      variableName={key}
-      formattedData={data}
-      loading={loading}
-      error={error}
-    />
+    <GlobalActionsProvider contextName={CONTEXT_NAME} actions={actions}>
+      <DataProvider name={DATA_NAME} data={data}>
+        {children}
+      </DataProvider>
+    </GlobalActionsProvider>
   );
 }
 
-export { AuthContext, AuthContextRegistration };
-export type { AuthContextProps };
+export { AuthGlobalContext };
