@@ -54,3 +54,5 @@ node_modules
 # poetry.lock files outside of the root. This is to maintain the monorepo with
 # poetry.
 */**/poetry.lock
+target/
+dbt_packages/
