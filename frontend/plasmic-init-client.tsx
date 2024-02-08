@@ -29,7 +29,7 @@ import {
   AuthRouter,
   AuthRouterRegistration,
 } from "./components/dataprovider/auth-router";
-import { AuthGlobalContext } from "./components/dataprovider/auth-context";
+import { AuthActions } from "./components/widgets/auth-actions";
 
 /**
  * Plasmic component registration
@@ -215,26 +215,21 @@ PLASMIC.registerComponent(AuthRouter, {
   importPath: "./components/dataprovider/auth-router",
 });
 
-PLASMIC.registerGlobalContext(AuthGlobalContext, {
-  name: "AuthGlobalContext",
-  props: {},
-  providesData: true,
-  globalActions: {
-    signInWithOAuth: {
-      description: "Sign in with OAuth",
-      parameters: [
-        {
-          name: "provider",
-          type: "string",
-        },
-      ],
+PLASMIC.registerComponent(AuthActions, {
+  name: "AuthActions",
+  description: "Series of authentication-related click handlers",
+  props: {
+    children: "slot",
+    actionType: {
+      type: "choice",
+      options: ["signInWithOAuth", "signOut"],
     },
-    signOut: {
-      description: "Sign out",
-      parameters: [],
+    provider: {
+      type: "string",
+      helpText: "See Supabase provider type",
     },
   },
-  importPath: "./components/dataprovider/auth-context",
+  importPath: "./components/widgets/auth-actions",
 });
 
 /**

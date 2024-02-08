@@ -173,12 +173,9 @@ importers:
       '@mui/x-date-pickers':
         specifier: ^6.19.0
         version: 6.19.0(@emotion/react@11.11.3)(@emotion/styled@11.11.0)(@mui/material@5.15.6)(@mui/system@5.15.6)(@types/react@18.2.48)(date-fns@2.30.0)(dayjs@1.11.10)(react-dom@18.2.0)(react@18.2.0)
-      '@plasmicapp/host':
-        specifier: ^1.0.190
-        version: 1.0.190(react-dom@18.2.0)(react@18.2.0)
       '@plasmicapp/loader-nextjs':
-        specifier: ^1.0.357
-        version: 1.0.357(next@14.1.0)(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^1.0.360
+        version: 1.0.360(next@14.1.0)(react-dom@18.2.0)(react@18.2.0)
       '@segment/snippet':
         specifier: ^5.2.1
         version: 5.2.1
@@ -6524,26 +6521,13 @@ packages:
       tslib: 2.6.2
     dev: true
 
-  /@plasmicapp/data-sources-context@0.1.20(react@18.2.0):
-    resolution: {integrity: sha512-r+156StkG37WSXTGQSoihYjGLyKu1re+/ziD7GcPpP0VIHXtiUYC4XBINQa9jVer4hYZ54GItOdvUAZsxgCP/g==}
+  /@plasmicapp/data-sources-context@0.1.21(react@18.2.0):
+    resolution: {integrity: sha512-DF86rstDK2zs/aTbPOUTWwXiVmFG2GDxXYvztIfXUNtuCvNDJKAZK2thYaULv9bGTRitPKWlwcz0zAMjYRHavQ==}
     engines: {node: '>=10'}
     peerDependencies:
       react: '>=16.8.0'
     dependencies:
       react: 18.2.0
-    dev: false
-
-  /@plasmicapp/host@1.0.188(react-dom@18.2.0)(react@18.2.0):
-    resolution: {integrity: sha512-7KwV7VBagzejWHehwfGRlFmU2jpt+dRLu3btwmrievZzVRq+ek2cGyi5cLs6dP3G1bAl1E8Pg5um3tGcTzl13A==}
-    peerDependencies:
-      react: '>=16.8.0'
-      react-dom: '>=16.8.0'
-    dependencies:
-      '@plasmicapp/query': 0.1.77(react@18.2.0)
-      csstype: 3.1.3
-      react: 18.2.0
-      react-dom: 18.2.0(react@18.2.0)
-      window-or-global: 1.0.1
     dev: false
 
   /@plasmicapp/host@1.0.190(react-dom@18.2.0)(react@18.2.0):
@@ -6565,40 +6549,40 @@ packages:
       unfetch: 4.2.0
     dev: false
 
-  /@plasmicapp/loader-core@1.0.124:
-    resolution: {integrity: sha512-0BW9UuacmF+qUkP2MOK7bX0rDpWdnE2q57dL6Qc2Wt6Q1RMd3Z4sSpOPH2aWOsBVHfgzEYZ4TBU2id+Sqg3u1A==}
+  /@plasmicapp/loader-core@1.0.126:
+    resolution: {integrity: sha512-1jImgURmisC5qy9INB5wVOx438M4nUvwS6oTPp4ZOYUnTUXFwmGGo+x9sTM0CcSYJsfr58eHd2GXoghJKym90w==}
     engines: {node: '>=10'}
     dependencies:
       '@plasmicapp/isomorphic-unfetch': 1.0.3
-      '@plasmicapp/loader-fetcher': 1.0.46
+      '@plasmicapp/loader-fetcher': 1.0.48
     dev: false
 
-  /@plasmicapp/loader-edge@1.0.58:
-    resolution: {integrity: sha512-uP8DIqY5N1qb+gGlDSSaLHGMKs2zYta2hGMGSc24z+RIoMZfknJXWaY9+lwuwb4FESeEz+FajwEZDCmjzduOhA==}
+  /@plasmicapp/loader-edge@1.0.60:
+    resolution: {integrity: sha512-9upzmm09t8Muk5XayaJeisEmrAC0L7U/1KLECGhIJyx9N5SdOIsLm5dap8FtDdBTwcE9b3NgdMqNUFtYcRLqkw==}
     engines: {node: '>=10'}
     dependencies:
-      '@plasmicapp/loader-splits': 1.0.54
+      '@plasmicapp/loader-splits': 1.0.56
     dev: false
 
-  /@plasmicapp/loader-fetcher@1.0.46:
-    resolution: {integrity: sha512-WhH7UHnUrm2UO55kXVgMnp36jqR7mLo0WvjjoYaSdLXiZsVU+NvWsGBQue+X3k+MuL8xCf2YDnTNCmZ+DbjXZA==}
+  /@plasmicapp/loader-fetcher@1.0.48:
+    resolution: {integrity: sha512-mIpbuz5wLkrUUtmXU2eta9+lVPH3wy3ijx0UDV3YO12OUGG/dYkEaEL+RGGJvEmWYRRnPSmXJ/48gMzmxHbRig==}
     engines: {node: '>=10'}
     dependencies:
       '@plasmicapp/isomorphic-unfetch': 1.0.3
     dev: false
 
-  /@plasmicapp/loader-nextjs@1.0.357(next@14.1.0)(react-dom@18.2.0)(react@18.2.0):
-    resolution: {integrity: sha512-uVu+gVafmzyT/lCbs4Wx28IPm2Cn9IrFPCV0mGi2M669o4/gsvdbwhj0ZkqTLOc5ZdH/fA3n6NyrGno9ZUcgTg==}
+  /@plasmicapp/loader-nextjs@1.0.360(next@14.1.0)(react-dom@18.2.0)(react@18.2.0):
+    resolution: {integrity: sha512-w/b2BXSuzO74k/Mbv/28OZw9iEfQeKBYlwE/m3Ccne/vkiuN6m9ejG4RfNICDdoJ8qwKY7HD6dlMKKQNzuX4HA==}
     engines: {node: '>=10'}
     peerDependencies:
       next: '>=10.1.0'
       react: '>=16.8.0'
       react-dom: '>=16.8.0'
     dependencies:
-      '@plasmicapp/loader-core': 1.0.124
-      '@plasmicapp/loader-edge': 1.0.58
-      '@plasmicapp/loader-react': 1.0.335(react-dom@18.2.0)(react@18.2.0)
-      '@plasmicapp/watcher': 1.0.82
+      '@plasmicapp/loader-core': 1.0.126
+      '@plasmicapp/loader-edge': 1.0.60
+      '@plasmicapp/loader-react': 1.0.338(react-dom@18.2.0)(react@18.2.0)
+      '@plasmicapp/watcher': 1.0.83
       next: 14.1.0(@babel/core@7.23.7)(react-dom@18.2.0)(react@18.2.0)
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
@@ -6609,54 +6593,44 @@ packages:
       - utf-8-validate
     dev: false
 
-  /@plasmicapp/loader-react@1.0.335(react-dom@18.2.0)(react@18.2.0):
-    resolution: {integrity: sha512-yg8tORQezPKBOXiuTh+eA+YHirCsh7T4BeVSy6SncV7UuhDpOUPFfq4MQQi/qXoN3LCfIFOF3CS8MsNXU8K7Sg==}
+  /@plasmicapp/loader-react@1.0.338(react-dom@18.2.0)(react@18.2.0):
+    resolution: {integrity: sha512-3b1su9PsS1BPWq5MRrVvI0eJKO8UlzrKmk2n8xU8m2b4DiATJ2JuqJCz19U5jpd4CjQ0kScZShyYqsFu5e4agQ==}
     engines: {node: '>=12'}
     peerDependencies:
       react: '>=16.8.0'
       react-dom: '>=16.8.0'
     dependencies:
-      '@plasmicapp/data-sources-context': 0.1.20(react@18.2.0)
-      '@plasmicapp/host': 1.0.188(react-dom@18.2.0)(react@18.2.0)
-      '@plasmicapp/loader-core': 1.0.124
-      '@plasmicapp/loader-fetcher': 1.0.46
-      '@plasmicapp/loader-splits': 1.0.54
-      '@plasmicapp/prepass': 1.0.13(react-dom@18.2.0)(react@18.2.0)
-      '@plasmicapp/query': 0.1.77(react@18.2.0)
+      '@plasmicapp/data-sources-context': 0.1.21(react@18.2.0)
+      '@plasmicapp/host': 1.0.190(react-dom@18.2.0)(react@18.2.0)
+      '@plasmicapp/loader-core': 1.0.126
+      '@plasmicapp/loader-fetcher': 1.0.48
+      '@plasmicapp/loader-splits': 1.0.56
+      '@plasmicapp/prepass': 1.0.14(react-dom@18.2.0)(react@18.2.0)
+      '@plasmicapp/query': 0.1.78(react@18.2.0)
       pascalcase: 1.0.0
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
       server-only: 0.0.1
     dev: false
 
-  /@plasmicapp/loader-splits@1.0.54:
-    resolution: {integrity: sha512-xO9S6i6yWA+VGACPuMwTnAuihM7nM+eO98NG3j4uclqQHXrRqMz72QK4JdlzCzmeiJUjZewwtGIBbz86LAy6xw==}
+  /@plasmicapp/loader-splits@1.0.56:
+    resolution: {integrity: sha512-qk6i4YrQuiAVe88pygNZ3xcFdDqaZugkZq2eDlyd4sFIyBkhGpszPk6BRtj/2OgA5ceXEa6MBat7r8Ql1oVnTA==}
     engines: {node: '>=10'}
     dependencies:
       json-logic-js: 2.0.2
     dev: false
 
-  /@plasmicapp/prepass@1.0.13(react-dom@18.2.0)(react@18.2.0):
-    resolution: {integrity: sha512-Kh9lwlzQnOzKtHnDtzeSiupDvEYU9T6kq+XOQZ0+OR+r+IT60T1CMmFFWQP8ae/Z+m66U6ttonQrlw4vSP0rgw==}
+  /@plasmicapp/prepass@1.0.14(react-dom@18.2.0)(react@18.2.0):
+    resolution: {integrity: sha512-44gakTUs+yYS+ECBZFlbWulYP5p4aVipO6ZEwERcMiLhxIca7kUAzCvG6YPDEp+PJ6A+URK53CvJVmOs/YjKng==}
     engines: {node: '>=12'}
     peerDependencies:
       react: '>=16.8.0'
       react-dom: '>=16.8.0'
     dependencies:
-      '@plasmicapp/query': 0.1.77(react@18.2.0)
+      '@plasmicapp/query': 0.1.78(react@18.2.0)
       '@plasmicapp/react-ssr-prepass': 2.0.3(react@18.2.0)
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
-    dev: false
-
-  /@plasmicapp/query@0.1.77(react@18.2.0):
-    resolution: {integrity: sha512-46yTL/y1ys9erE5yDKAX7x/VSq16gNYxpAGm1HF+h0TrFoWyctvFEFsZdAGkrcqPgrp5AYHW71khYkMD1ES/5A==}
-    engines: {node: '>=10'}
-    peerDependencies:
-      react: '>=16.8.0'
-    dependencies:
-      react: 18.2.0
-      swr: 1.3.0(react@18.2.0)
     dev: false
 
   /@plasmicapp/query@0.1.78(react@18.2.0):
@@ -6677,8 +6651,8 @@ packages:
       react: 18.2.0
     dev: false
 
-  /@plasmicapp/watcher@1.0.82:
-    resolution: {integrity: sha512-B0Lx3wd/tsL1rZqqfe7YGPOjGQOfGFAY31CDQVXbi4fuygLzQ8zro1/RvHpIKt9+jANuThoVTOHYTofNwiEE0Q==}
+  /@plasmicapp/watcher@1.0.83:
+    resolution: {integrity: sha512-0XTCsTydTBfOE5al9QOyW89kigjzU9az2JL4n7e3+fVlStEqbhYSB9PIa+Bhiv1iVN91V7xjUSyVJXloWJgwPg==}
     engines: {node: '>=10'}
     dependencies:
       socket.io-client: 4.7.2
