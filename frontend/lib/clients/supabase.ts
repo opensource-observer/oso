@@ -1,9 +1,9 @@
 import { createClient } from "@supabase/supabase-js";
 import { HttpError } from "../types/errors";
-import { Database } from "../types/supabase";
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "../config";
+//import { Database } from "../types/supabase";
 
-const supabaseClient = createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY);
+const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 type SupabaseQueryArgs = {
   tableName: string; // table to query

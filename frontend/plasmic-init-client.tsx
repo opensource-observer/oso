@@ -2,6 +2,7 @@
 
 import { PlasmicRootProvider } from "@plasmicapp/loader-nextjs";
 import { PLASMIC } from "./plasmic-init";
+import generateApiKey from "generate-api-key";
 import CircularProgress from "@mui/material/CircularProgress";
 import { AreaChart } from "@tremor/react";
 import { AlgoliaSearchBox } from "./components/widgets/algolia";
@@ -12,6 +13,10 @@ import {
   SupabaseQuery,
   SupabaseQueryRegistration,
 } from "./components/dataprovider/supabase-query";
+import {
+  SupabaseWrite,
+  SupabaseWriteRegistration,
+} from "./components/widgets/supabase-write";
 import {
   EventDataProviderRegistration,
   CollectionEventDataProvider,
@@ -29,7 +34,10 @@ import {
   AuthRouter,
   AuthRouterRegistration,
 } from "./components/dataprovider/auth-router";
-import { AuthGlobalContext } from "./components/dataprovider/auth-context";
+import {
+  AuthActions,
+  AuthActionsRegistration,
+} from "./components/widgets/auth-actions";
 
 /**
  * Plasmic component registration
@@ -37,6 +45,22 @@ import { AuthGlobalContext } from "./components/dataprovider/auth-context";
  * For more details see:
  * https://docs.plasmic.app/learn/code-components-ref/
  */
+
+PLASMIC.registerFunction(generateApiKey, {
+  name: "generateApiKey",
+  params: [
+    {
+      name: "options",
+      type: "object",
+      description: "See https://www.npmjs.com/package/generate-api-key",
+    },
+  ],
+  returnValue: {
+    type: "string",
+    description: "the API key",
+  },
+  importPath: "generate-api-key",
+});
 
 PLASMIC.registerComponent(CircularProgress, {
   name: "CircularProgress",
@@ -201,6 +225,12 @@ PLASMIC.registerComponent(SupabaseQuery, {
   importPath: "./components/dataprovider/supabase-query",
 });
 
+PLASMIC.registerComponent(SupabaseWrite, {
+  name: "SupabaseWrite",
+  props: { ...SupabaseWriteRegistration },
+  importPath: "./components/widgets/supabase-write",
+});
+
 PLASMIC.registerComponent(AuthForm, {
   name: "AuthForm",
   description: "Supabase Auth Form",
@@ -215,26 +245,11 @@ PLASMIC.registerComponent(AuthRouter, {
   importPath: "./components/dataprovider/auth-router",
 });
 
-PLASMIC.registerGlobalContext(AuthGlobalContext, {
-  name: "AuthGlobalContext",
-  props: {},
-  providesData: true,
-  globalActions: {
-    signInWithOAuth: {
-      description: "Sign in with OAuth",
-      parameters: [
-        {
-          name: "provider",
-          type: "string",
-        },
-      ],
-    },
-    signOut: {
-      description: "Sign out",
-      parameters: [],
-    },
-  },
-  importPath: "./components/dataprovider/auth-context",
+PLASMIC.registerComponent(AuthActions, {
+  name: "AuthActions",
+  description: "Series of authentication-related click handlers",
+  props: { ...AuthActionsRegistration },
+  importPath: "./components/widgets/auth-actions",
 });
 
 /**
