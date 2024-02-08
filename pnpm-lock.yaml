@@ -218,6 +218,9 @@ importers:
       formik-mui-x-date-pickers:
         specifier: ^0.0.1
         version: 0.0.1(@emotion/react@11.11.3)(@emotion/styled@11.11.0)(@mui/material@5.15.6)(@mui/system@5.15.6)(@mui/x-date-pickers@6.19.0)(formik@2.4.5)(react@18.2.0)(tiny-warning@1.0.3)
+      generate-api-key:
+        specifier: ^1.0.2
+        version: 1.0.2
       graphql:
         specifier: ^16.8.1
         version: 16.8.1
@@ -9036,6 +9039,10 @@ packages:
       safe-buffer: 5.2.1
     dev: false
 
+  /base-x@4.0.0:
+    resolution: {integrity: sha512-FuwxlW4H5kh37X/oW59pwTzzTKRzfrrQwhmyspRM7swOEZcHtDZSCt45U6oKgtuFE+WYPblePMVIPR4RZrh/hw==}
+    dev: false
+
   /base64-js@1.5.1:
     resolution: {integrity: sha512-AKpaYlHn8t4SVbOHCy+b5+KKgvR4vrsD8vbvrbiQJps7fKDTkjkDry6ji0rUJjC0kzbNePLwzxq8iypo41qeWA==}
 
@@ -9504,6 +9511,10 @@ packages:
   /chalk@5.3.0:
     resolution: {integrity: sha512-dLitG79d+GV1Nb/VYcCDFivJeK1hiukt9QjRNVOsUtTy1rR1YJsmpGGTZ3qJos+uw7WmWF4wUwBd9jxjocFC2w==}
     engines: {node: ^12.17.0 || ^14.13 || >=16.0.0}
+
+  /chance@1.1.11:
+    resolution: {integrity: sha512-kqTg3WWywappJPqtgrdvbA380VoXO2eu9VCV895JgbyHsaErXdyHK9LOZ911OvAk6L0obK7kDk9CGs8+oBawVA==}
+    dev: false
 
   /change-case-all@1.0.15:
     resolution: {integrity: sha512-3+GIFhk3sNuvFAJKU46o26OdzudQlPNBCu1ZQi3cMeMHhty1bhDxu2WrEilVNYaGvqUtR1VSigFcJOiS13dRhQ==}
@@ -12566,6 +12577,16 @@ packages:
     transitivePeerDependencies:
       - encoding
       - supports-color
+    dev: false
+
+  /generate-api-key@1.0.2:
+    resolution: {integrity: sha512-4rPSpXyboIXfugOTN3/0Qaoqpzbk0sepzPS0XyxPh3UMuu+Trk+0JMyJ6mB/7FEgp7oZ1juqsRW+8wSYeKDbfA==}
+    engines: {node: '>=14'}
+    dependencies:
+      base-x: 4.0.0
+      chance: 1.1.11
+      rfc4648: 1.5.3
+      uuid: 8.3.2
     dev: false
 
   /generic-pool@3.9.0:
@@ -19385,6 +19406,10 @@ packages:
   /reusify@1.0.4:
     resolution: {integrity: sha512-U9nH88a3fc/ekCF1l0/UP1IosiuIjyTh7hBvXVMHYgVcfGvt897Xguj2UOLDeI5BG2m7/uwyaLVT6fbtCwTyzw==}
     engines: {iojs: '>=1.0.0', node: '>=0.10.0'}
+
+  /rfc4648@1.5.3:
+    resolution: {integrity: sha512-MjOWxM065+WswwnmNONOT+bD1nXzY9Km6u3kzvnx8F8/HXGZdz3T6e6vZJ8Q/RIMUSp/nxqjH3GwvJDy8ijeQQ==}
+    dev: false
 
   /rfdc@1.3.0:
     resolution: {integrity: sha512-V2hovdzFbOi77/WajaSMXk2OLm+xNIeQdMMuB7icj7bk6zi2F8GGAxigcnDFpJHbNyNcgyJDiP+8nOrY5cZGrA==}
