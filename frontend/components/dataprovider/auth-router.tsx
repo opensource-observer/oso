@@ -51,6 +51,7 @@ function AuthRouter(props: AuthRouterProps) {
     const {
       data: { user },
     } = await supabaseClient.auth.getUser();
+    console.log("User: ", user);
     return user;
   }, []);
   const data = {

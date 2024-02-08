@@ -1,22 +1,33 @@
 import React, { ReactNode } from "react";
 import { Provider } from "@supabase/supabase-js";
 import { supabaseClient } from "../../lib/clients/supabase";
+import { RegistrationProps } from "../../lib/types/plasmic";
 import { assertNever, spawn } from "../../lib/common";
 import { NODE_ENV, DOMAIN } from "../../lib/config";
 
 type AuthActionType = "signInWithOAuth" | "signOut";
 const DEFAULT_PROVIDER: Provider = "google";
-const URL_AFTER_LOGIN =
-  NODE_ENV === "production"
-    ? `https://${DOMAIN}/settings/profile`
-    : `http://${DOMAIN}/settings/profile`;
+const PROTOCOL = NODE_ENV === "production" ? "https" : "http";
+const URL_AFTER_LOGIN = `${PROTOCOL}://${DOMAIN}/settings/profile`;
 
-type AuthActionsProps = React.PropsWithChildren<{
+type AuthActionsProps = {
   className?: string; // Plasmic CSS class
   children?: ReactNode; // Show this
   actionType?: AuthActionType; // Selector for what to do on click
   provider?: Provider;
-}>;
+};
+
+const AuthActionsRegistration: RegistrationProps<AuthActionsProps> = {
+  children: "slot",
+  actionType: {
+    type: "choice",
+    options: ["signInWithOAuth", "signOut"],
+  },
+  provider: {
+    type: "string",
+    helpText: "See Supabase provider type",
+  },
+};
 
 function AuthActions(props: AuthActionsProps) {
   const { className, children, actionType, provider } = props;
@@ -66,4 +77,4 @@ function AuthActions(props: AuthActionsProps) {
   );
 }
 
-export { AuthActions };
+export { AuthActions, AuthActionsRegistration };
