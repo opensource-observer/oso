@@ -14,6 +14,10 @@ import {
   SupabaseQueryRegistration,
 } from "./components/dataprovider/supabase-query";
 import {
+  SupabaseWrite,
+  SupabaseWriteRegistration,
+} from "./components/widgets/supabase-write";
+import {
   EventDataProviderRegistration,
   CollectionEventDataProvider,
   ProjectEventDataProvider,
@@ -30,7 +34,10 @@ import {
   AuthRouter,
   AuthRouterRegistration,
 } from "./components/dataprovider/auth-router";
-import { AuthActions } from "./components/widgets/auth-actions";
+import {
+  AuthActions,
+  AuthActionsRegistration,
+} from "./components/widgets/auth-actions";
 
 /**
  * Plasmic component registration
@@ -218,6 +225,12 @@ PLASMIC.registerComponent(SupabaseQuery, {
   importPath: "./components/dataprovider/supabase-query",
 });
 
+PLASMIC.registerComponent(SupabaseWrite, {
+  name: "SupabaseWrite",
+  props: { ...SupabaseWriteRegistration },
+  importPath: "./components/widgets/supabase-write",
+});
+
 PLASMIC.registerComponent(AuthForm, {
   name: "AuthForm",
   description: "Supabase Auth Form",
@@ -235,17 +248,7 @@ PLASMIC.registerComponent(AuthRouter, {
 PLASMIC.registerComponent(AuthActions, {
   name: "AuthActions",
   description: "Series of authentication-related click handlers",
-  props: {
-    children: "slot",
-    actionType: {
-      type: "choice",
-      options: ["signInWithOAuth", "signOut"],
-    },
-    provider: {
-      type: "string",
-      helpText: "See Supabase provider type",
-    },
-  },
+  props: { ...AuthActionsRegistration },
   importPath: "./components/widgets/auth-actions",
 });
 
