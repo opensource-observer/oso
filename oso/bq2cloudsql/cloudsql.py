@@ -59,6 +59,7 @@ class CloudSQLClient(object):
         metadata.create_all(self.sql_conn)
         
     def import_csv(self, csv_uri: str, table: str, columns: None | List[str] = None):
+        print("importing into %s" % table)
         csv_import_options = dict(
             table=table
         )
@@ -91,3 +92,9 @@ class CloudSQLClient(object):
                 print('done importing')
                 return
             time.sleep(1)
+
+    def begin(self):
+        return self.sql_conn.begin()
+    
+    def conn(self):
+        return self.sql_conn.connect()
