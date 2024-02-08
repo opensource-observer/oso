@@ -2,6 +2,7 @@
 
 import { PlasmicRootProvider } from "@plasmicapp/loader-nextjs";
 import { PLASMIC } from "./plasmic-init";
+import generateApiKey from "generate-api-key";
 import CircularProgress from "@mui/material/CircularProgress";
 import { AreaChart } from "@tremor/react";
 import { AlgoliaSearchBox } from "./components/widgets/algolia";
@@ -37,6 +38,22 @@ import { AuthActions } from "./components/widgets/auth-actions";
  * For more details see:
  * https://docs.plasmic.app/learn/code-components-ref/
  */
+
+PLASMIC.registerFunction(generateApiKey, {
+  name: "generateApiKey",
+  params: [
+    {
+      name: "options",
+      type: "object",
+      description: "See https://www.npmjs.com/package/generate-api-key",
+    },
+  ],
+  returnValue: {
+    type: "string",
+    description: "the API key",
+  },
+  importPath: "generate-api-key",
+});
 
 PLASMIC.registerComponent(CircularProgress, {
   name: "CircularProgress",
