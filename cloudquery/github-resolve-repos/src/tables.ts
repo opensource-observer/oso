@@ -75,6 +75,10 @@ const getRepositories = async (
       type: new Int64(),
       notNull: true,
     }),
+    newColumn("fork_count", {
+      type: new Int64(),
+      notNull: true,
+    }),
     newColumn("is_fork", {
       type: new Bool(),
     }),
@@ -105,6 +109,7 @@ const getRepositories = async (
           is_fork: repo.isFork,
           watcher_count: repo.watcherCount,
           star_count: repo.starCount,
+          fork_count: repo.forkCount,
         };
         stream.write(record);
       }
