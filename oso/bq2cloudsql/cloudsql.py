@@ -5,8 +5,10 @@ import pg8000.native
 import sqlalchemy
 from sqlalchemy import Table, Column, MetaData
 from google.cloud.sql.connector import Connector
+from googleapiclient.errors import HttpError
 from googleapiclient.discovery import build
 from typing import Callable, List
+
 
 connector = Connector()
 
@@ -22,8 +24,31 @@ def get_connection(project_id: str, region: str, instance_id: str, db_user: str,
             password=db_password,
             db=db_name,
         )
-    return _get_conn    
+    return _get_conn
 
+
+def retry(callable: Callable, error_handler: Callable[[Exception], bool], retries: int = 10, wait_time: int = 2) -> Callable:
+    def call(*args, **kwargs):
+        wait = wait_time
+        exc = None
+        for _i in range(retries):
+            try:
+                return callable(*args, **kwargs)
+            except Exception as e:
+                exc = e
+                if not error_handler(e):
+                    raise e
+            print('retrying')
+            time.sleep(wait)
+            wait += wait
+        raise exc
+    return call
+
+
+def handle_cloudsql_error(e: Exception):
+    if isinstance(e, HttpError):
+        return True
+    return False
 
 class CloudSQLClient(object):
     @classmethod
@@ -75,7 +100,7 @@ class CloudSQLClient(object):
             csvImportOptions=csv_import_options,
         )
         request = self._client.instances().import_(project=self._project_id, instance=self._instance_id, body=dict(importContext=body))
-        response = request.execute()
+        response = retry(request.execute, handle_cloudsql_error)()
 
         print('resp')
         pp.pprint(response)
