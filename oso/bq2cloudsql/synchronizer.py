@@ -1,4 +1,5 @@
 import uuid
+import os
 from enum import Enum
 from dataclasses import dataclass
 from datetime import datetime
@@ -17,6 +18,7 @@ from sqlalchemy import (MetaData, Table,
 from sqlalchemy.dialects.postgresql import insert
 from google.cloud import bigquery, storage
 from google.cloud.bigquery import TableReference, ExtractJobConfig, Table as BQTable
+from google.cloud.storage import Bucket
 from googleapiclient.discovery import build
 
 from .cloudsql import CloudSQLClient
@@ -153,18 +155,22 @@ class BigQueryCloudSQLSynchronizer(object):
             for partition in queue:
                 self.extract_bq_table_to_gcs(destination_prefix, config.source_table, partition)
 
-            # Import into the table on CloudSQL
+            bucket = self._storage.bucket(self._bucket_name)
+
+            # Concat the CSV into fewer csvs
+            csvs = self.combine_csvs(bucket, destination_prefix)
+
             # List all of the files (in order)
-            for csv in self.list_csvs(destination_prefix):
-                uri = "gs://%s/%s" % (self._bucket_name, csv.name)
+            for csv in csvs:
+                uri = "gs://%s/%s" % (self._bucket_name, csv)
                 self._cloudsql.import_csv(uri, temp_dest)
 
             # Delete the gcs files
-            self._storage.bucket(self._bucket_name).delete_blobs(blobs=list(self.list_csvs(destination_prefix)))
+            self.delete_files_on_gcs(bucket, list(self.list_csvs(destination_prefix)))
 
             # Commit the table
             self.commit_table(temp_dest, config, latest_partition_date)
-
+    
     def extract_bq_table_to_gcs(self, destination_prefix: str, source_table_id: str, partition_decorator: str = ''):
         table_id = source_table_id
         if partition_decorator != '':
@@ -296,7 +302,56 @@ class BigQueryCloudSQLSynchronizer(object):
                 break
             queue.append(row.partition_id)
         return (queue, latest_datetime)
+    
+
+    def combine_csvs(self, bucket: Bucket, prefix: str, level: int = 0) -> List[str]:
+        """Combine csvs into batches of csvs so it can be ingested much faster"""
+        result: List[str] = []
+        src_filename_prefix = "export-"
+        if level > 0:
+            src_filename_prefix = f"batch-{level - 1:010d}-"
+        dest_filename_prefix = f"batch-{level:010d}-"
+        batch = []
+        batch_count = 0
+        for csv in self.list_csvs(prefix):
+            filename = os.path.basename(csv.name)
+            if not filename.startswith(src_filename_prefix):
+                continue
+
+            #uri = "gs://%s/%s" % (self._bucket_name, csv.name)
+            batch.append(csv.name)
+            if len(batch) == 32:
+                # Compose these files
+                destination_filename = f"{prefix}/{dest_filename_prefix}{batch_count:010d}.csv"
+                self.combine_and_delete_csvs(bucket, batch, destination_filename)
+                result.append(destination_filename)
+                batch_count += 1
+                batch = []
+        if len(batch) > 0:
+            destination_filename = f"{prefix}/{dest_filename_prefix}{batch_count:010d}.csv"
+            self.combine_and_delete_csvs(bucket, batch, destination_filename)
+            result.append(destination_filename)
+        # If there are more than 10 files. Let's recurse and combine files again
+        if len(result) > 10:
+            return self.combine_csvs(bucket, prefix, 1)
+        return result
+
+    
+    def combine_and_delete_csvs(self, bucket: Bucket, source_paths: List[str], destination_path: str):
+        source_blobs = list(map(lambda a: bucket.blob(a), source_paths))
+        destination_blob = bucket.blob(destination_path)
+        print(f"Combining {len(source_paths)} csvs into {destination_path}")
+
+        # Ensure that this file doesn't exist already
+        destination_generation_match_precondition = 0
+        destination_blob.compose(
+            sources=source_blobs, 
+            if_generation_match=destination_generation_match_precondition
+        )
+        self.delete_files_on_gcs(bucket, source_paths)
         
+    def delete_files_on_gcs(self, bucket: Bucket, paths: List[str]):
+        return bucket.delete_blobs(blobs=paths)
 
     def list_csvs(self, prefix: str):
         return self._storage.list_blobs(self._bucket_name, prefix=prefix)

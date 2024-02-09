@@ -30,62 +30,72 @@ def run():
             TableSyncConfig(
                 TableSyncMode.OVERWRITE,
                 'all_events_daily_to_project',
-                'events_daily_to_project'
+                'bq_events_daily_to_project'
             ),
             TableSyncConfig(
                 TableSyncMode.OVERWRITE,
                 'all_events_monthly_to_project',
-                'events_monthly_to_project'
+                'bq_events_monthly_to_project'
             ),
             TableSyncConfig(
                 TableSyncMode.OVERWRITE,
                 'all_events_weekly_to_project',
-                'events_weekly_to_project'
+                'bq_events_weekly_to_project'
             ),
             TableSyncConfig(
                 TableSyncMode.OVERWRITE,
                 'all_events_daily_from_project',
-                'events_daily_from_project'
+                'bq_events_daily_from_project'
             ),
             TableSyncConfig(
                 TableSyncMode.OVERWRITE,
                 'all_events_monthly_from_project',
-                'events_monthly_from_project'
+                'bq_events_monthly_from_project'
             ),
             TableSyncConfig(
                 TableSyncMode.OVERWRITE,
                 'all_events_weekly_from_project',
-                'events_weekly_from_project'
+                'bq_events_weekly_from_project'
             ),
             TableSyncConfig(
                 TableSyncMode.OVERWRITE,
                 'all_events_daily_to_artifact',
-                'events_daily_to_artifact'
+                'bq_events_daily_to_artifact'
             ),
             TableSyncConfig(
                 TableSyncMode.OVERWRITE,
                 'all_events_monthly_to_artifact',
-                'events_monthly_to_artifact'
+                'bq_events_monthly_to_artifact'
             ),
             TableSyncConfig(
                 TableSyncMode.OVERWRITE,
                 'all_events_weekly_to_artifact',
-                'events_weekly_to_artifact'
+                'bq_events_weekly_to_artifact'
             ),
             TableSyncConfig(
                 TableSyncMode.OVERWRITE,
                 'all_events_daily_from_artifact',
-                'events_daily_from_artifact'
+                'bq_events_daily_from_artifact'
             ),
             TableSyncConfig(
                 TableSyncMode.OVERWRITE,
                 'all_events_monthly_from_artifact',
-                'events_monthly_from_artifact'
+                'bq_events_monthly_from_artifact'
             ),
             TableSyncConfig(
                 TableSyncMode.OVERWRITE,
                 'all_events_weekly_from_artifact',
-                'events_weekly_from_artifact'
+                'bq_events_weekly_from_artifact'
+            ),
+            TableSyncConfig(
+                TableSyncMode.OVERWRITE,
+                'first_contribution_to_project',
+                'bq_first_contribution_to_project',
+            ),
+            TableSyncConfig(
+                TableSyncMode.OVERWRITE,
+                'last_contribution_to_project',
+                'bq_last_contribution_to_project',
             ),
         ],
         'oso-csv-exports'
