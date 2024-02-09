@@ -1,29 +1,20 @@
-WITH
-  all_repos AS (
+WITH all_repos AS (
   SELECT
-    projects.slug as project_slug,
+    repos.project_slug as project_slug,
     'GITHUB' AS namespace,
     'GIT_REPOSITORY' AS type,
     LOWER(repos.name_with_owner) AS name,
     LOWER(repos.url) AS url,
     CAST(repos.id AS STRING) AS source_id
-  FROM
-    `oso-production.opensource_observer.projects` AS projects
-  CROSS JOIN
-    UNNEST(JSON_QUERY_ARRAY(projects.github)) AS github
-  JOIN
-    `oso-production.opensource_observer.repositories` AS repos
-  ON
-    LOWER(CONCAT("https://github.com/", repos.owner)) = LOWER(JSON_VALUE(github.url))
-    OR LOWER(repos.url) = LOWER(JSON_VALUE(github.url))
+  FROM {{ ref('repositories_by_project') }} as repos
   GROUP BY
     1,
     2,
     3,
     4,
     5, 
-    6 ),
-  all_npm AS (
+    6 
+), all_npm AS (
   SELECT
     projects.slug,
     'NPM' AS namespace,

@@ -14,6 +14,7 @@ SELECT
   e.to_source_id,
   e.from_name,
   e.from_namespace,
+  e.from_type,
   e.from_source_id,
   e.amount
 FROM {{ ref('all_events') }} AS e
