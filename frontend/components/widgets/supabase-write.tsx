@@ -1,4 +1,5 @@
 import React, { ReactNode } from "react";
+import { redirect } from "next/navigation";
 import { RegistrationProps } from "../../lib/types/plasmic";
 import { HttpError } from "../../lib/types/errors";
 import { assertNever, spawn } from "../../lib/common";
@@ -23,6 +24,7 @@ type SupabaseWriteProps = {
   filters?: any; // A list of filters, where each filter is `[ column, operator, value ]`
   // See https://supabase.com/docs/reference/javascript/filter
   // e.g. [ [ "address", "eq", "0xabc123" ] ]
+  redirectOnComplete?: string; // URL to redirect to after completion;
 };
 
 const SupabaseWriteRegistration: RegistrationProps<SupabaseWriteProps> = {
@@ -47,11 +49,20 @@ const SupabaseWriteRegistration: RegistrationProps<SupabaseWriteProps> = {
     hidden: (props) =>
       props.actionType === "insert" || props.actionType === "upsert",
   },
+  redirectOnComplete: "string",
 };
 
 function SupabaseWrite(props: SupabaseWriteProps) {
   // These props are set in the Plasmic Studio
-  const { className, children, actionType, tableName, data, filters } = props;
+  const {
+    className,
+    children,
+    actionType,
+    tableName,
+    data,
+    filters,
+    redirectOnComplete,
+  } = props;
 
   const clickHandler = async () => {
     if (!actionType) {
@@ -95,6 +106,9 @@ function SupabaseWrite(props: SupabaseWriteProps) {
       throw error;
     } else if (status > 300) {
       throw new HttpError(`Invalid status code: ${status}`);
+    }
+    if (redirectOnComplete) {
+      redirect(redirectOnComplete);
     }
   };
 
