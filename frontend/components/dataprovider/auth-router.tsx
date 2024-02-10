@@ -44,20 +44,28 @@ function AuthRouter(props: AuthRouterProps) {
   } = props;
   const key = variableName ?? DEFAULT_PLASMIC_VARIABLE;
 
-  const { value, error, loading } = useAsync(async () => {
+  const {
+    value: data,
+    error,
+    loading,
+  } = useAsync(async () => {
     if (useTestData) {
       return testData;
     }
     const {
       data: { user },
     } = await supabaseClient.auth.getUser();
+    const {
+      data: { session },
+    } = await supabaseClient.auth.getSession();
     console.log("User: ", user);
-    return user;
+    console.log("Session: ", session);
+    return {
+      user,
+      session,
+      supabase: supabaseClient,
+    };
   }, []);
-  const data = {
-    user: value,
-    supabase: supabaseClient,
-  };
 
   // Error messages are currently silently logged
   if (!loading && error) {
@@ -65,7 +73,7 @@ function AuthRouter(props: AuthRouterProps) {
   }
 
   // Show unauthenticated view
-  if (testNoAuth || (!loading && !value)) {
+  if (testNoAuth || (!loading && !data?.user)) {
     return <div className={className}>{noAuthChildren}</div>;
   }
 
