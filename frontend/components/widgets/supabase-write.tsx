@@ -1,5 +1,5 @@
 import React, { ReactNode } from "react";
-import { redirect } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { RegistrationProps } from "../../lib/types/plasmic";
 import { HttpError } from "../../lib/types/errors";
 import { assertNever, spawn } from "../../lib/common";
@@ -63,6 +63,7 @@ function SupabaseWrite(props: SupabaseWriteProps) {
     filters,
     redirectOnComplete,
   } = props;
+  const router = useRouter();
 
   const clickHandler = async () => {
     if (!actionType) {
@@ -108,7 +109,9 @@ function SupabaseWrite(props: SupabaseWriteProps) {
       throw new HttpError(`Invalid status code: ${status}`);
     }
     if (redirectOnComplete) {
-      redirect(redirectOnComplete);
+      router.push(redirectOnComplete);
+    } else {
+      router.refresh();
     }
   };
 
