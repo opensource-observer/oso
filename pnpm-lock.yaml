@@ -257,6 +257,9 @@ importers:
       swr:
         specifier: ^2.2.4
         version: 2.2.4(react@18.2.0)
+      ts-adt:
+        specifier: ^2.1.2
+        version: 2.1.2
       uuid:
         specifier: ^9.0.1
         version: 9.0.1

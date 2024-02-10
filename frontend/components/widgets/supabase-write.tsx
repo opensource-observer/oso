@@ -1,13 +1,25 @@
 import React, { ReactNode } from "react";
 import { useRouter } from "next/navigation";
+import Snackbar from "@mui/material/Snackbar";
+import Alert from "@mui/material/Alert";
+import { ADT } from "ts-adt";
 import { RegistrationProps } from "../../lib/types/plasmic";
 import { HttpError } from "../../lib/types/errors";
 import { assertNever, spawn } from "../../lib/common";
 import { supabaseClient } from "../../lib/clients/supabase";
 
+type SnackbarState = ADT<{
+  closed: Record<string, unknown>;
+  success: Record<string, unknown>;
+  error: {
+    code: string;
+    message: string;
+  };
+}>;
 type DbActionType = "insert" | "update" | "upsert" | "delete";
 const REQUIRES_DATA: DbActionType[] = ["insert", "update", "upsert"];
 const REQUIRES_FILTERS: DbActionType[] = ["update", "delete"];
+const AUTO_HIDE_DURATION = 5000; // in milliseconds
 
 /**
  * Generic Supabase write component.
@@ -25,6 +37,7 @@ type SupabaseWriteProps = {
   // See https://supabase.com/docs/reference/javascript/filter
   // e.g. [ [ "address", "eq", "0xabc123" ] ]
   redirectOnComplete?: string; // URL to redirect to after completion;
+  errorCodeMap?: any; // Map of error codes to error messages
 };
 
 const SupabaseWriteRegistration: RegistrationProps<SupabaseWriteProps> = {
@@ -50,6 +63,11 @@ const SupabaseWriteRegistration: RegistrationProps<SupabaseWriteProps> = {
       props.actionType === "insert" || props.actionType === "upsert",
   },
   redirectOnComplete: "string",
+  errorCodeMap: {
+    type: "object",
+    defaultValue: {},
+    helpText: "Error code to message (e.g. {'23505': 'Duplicate username'})",
+  },
 };
 
 function SupabaseWrite(props: SupabaseWriteProps) {
@@ -62,9 +80,22 @@ function SupabaseWrite(props: SupabaseWriteProps) {
     data,
     filters,
     redirectOnComplete,
+    errorCodeMap,
   } = props;
   const router = useRouter();
+  const [snackbarState, setSnackbarState] = React.useState<SnackbarState>({
+    _type: "closed",
+  });
 
+  const handleClose = (
+    _event?: React.SyntheticEvent | Event,
+    reason?: string,
+  ) => {
+    if (reason === "clickaway") {
+      return;
+    }
+    setSnackbarState({ _type: "closed" });
+  };
   const clickHandler = async () => {
     if (!actionType) {
       return console.warn("SupabaseWrite: Select an actionType first");
@@ -104,10 +135,16 @@ function SupabaseWrite(props: SupabaseWriteProps) {
     // Execute query
     const { error, status } = await query;
     if (error) {
-      throw error;
+      console.warn("SupabaseWrite error: ", error);
+      setSnackbarState({ _type: "error", ...error });
+      return;
+      //throw error;
     } else if (status > 300) {
       throw new HttpError(`Invalid status code: ${status}`);
     }
+
+    // Success!
+    setSnackbarState({ _type: "success" });
     if (redirectOnComplete) {
       router.push(redirectOnComplete);
     } else {
@@ -116,8 +153,35 @@ function SupabaseWrite(props: SupabaseWriteProps) {
   };
 
   return (
-    <div className={className} onClick={() => spawn(clickHandler())}>
-      {children}
+    <div>
+      <div className={className} onClick={() => spawn(clickHandler())}>
+        {children}
+      </div>
+      <Snackbar
+        open={snackbarState._type !== "closed"}
+        autoHideDuration={AUTO_HIDE_DURATION}
+        onClose={handleClose}
+      >
+        <Alert
+          onClose={handleClose}
+          severity={
+            snackbarState._type === "success"
+              ? "success"
+              : snackbarState._type === "error"
+                ? "error"
+                : "info"
+          }
+          variant="filled"
+          sx={{ width: "100%" }}
+        >
+          {snackbarState._type === "success"
+            ? "Done!"
+            : snackbarState._type === "error"
+              ? errorCodeMap[snackbarState.code] ??
+                `${snackbarState.code}: ${snackbarState.message}`
+              : ""}
+        </Alert>
+      </Snackbar>
     </div>
   );
 }
