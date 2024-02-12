@@ -173,6 +173,7 @@ export interface Repository {
   };
   starCount: number;
   watcherCount: number;
+  forkCount: number;
 }
 
 export type FullRepository = Repository & {
@@ -237,6 +238,7 @@ export async function getOwnerReposRest(
         },
         starCount: r.stargazers_count || 0,
         watcherCount: r.watchers_count || 0,
+        forkCount: r.forks_count || 0,
       };
     });
   } catch (err) {
@@ -260,6 +262,7 @@ export async function getOwnerReposRest(
           },
           starCount: r.stargazers_count || 0,
           watcherCount: r.watchers_count || 0,
+          forkCount: r.forks_count || 0,
         };
       });
     } catch (tryUserErr) {
@@ -317,6 +320,7 @@ function restRepoDataToFullRepository(r: RestRepoData): FullRepository {
     },
     starCount: r.stargazers_count || 0,
     watcherCount: r.watchers_count || 0,
+    forkCount: r.forks_count || 0,
   };
 }
 
