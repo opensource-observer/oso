@@ -117,7 +117,7 @@ const getRepositories = async (
     return;
   };
   return createTable({
-    name: "repositories",
+    name: "repositories_ossd",
     columns: columnDefinitions,
     resolver: tableResolver,
   });
