@@ -3,7 +3,6 @@
 #}
 
 SELECT
-  e.from_name,
   e.from_namespace,
   e.from_type,
   e.from_source_id,
@@ -11,4 +10,4 @@ SELECT
   e.type,
   SUM(e.amount) AS amount
 FROM {{ ref('events_daily_from_artifact') }} AS e
-GROUP BY 1,2,3,4,5,6
+GROUP BY 1,2,3,4,5
