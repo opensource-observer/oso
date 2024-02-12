@@ -21,7 +21,7 @@ SELECT
   e.from_source_id,
   e.amount
 FROM {{ ref('all_events') }} AS e
-LEFT JOIN {{ ref('artifacts') }} AS a 
+LEFT JOIN {{ ref('project_artifacts') }} AS a 
   ON a.source_id = e.from_source_id 
     AND a.namespace = e.from_namespace 
     AND a.type = e.from_type

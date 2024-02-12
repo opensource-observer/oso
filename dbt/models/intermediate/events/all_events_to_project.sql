@@ -18,7 +18,7 @@ SELECT
   e.from_source_id,
   e.amount
 FROM {{ ref('all_events') }} AS e
-JOIN {{ ref('artifacts') }} AS a 
+JOIN {{ ref('project_artifacts') }} AS a 
   ON a.source_id = e.to_source_id 
     AND a.namespace = e.to_namespace 
     AND a.type = e.to_type

@@ -26,7 +26,7 @@ WITH all_repos AS (
     LOWER(JSON_VALUE(npm.url)) AS url,
     LOWER(JSON_VALUE(npm.url)) AS source_id,
   FROM
-    `oso-production.opensource_observer.projects` AS projects
+    `oso-production.opensource_observer.projects_ossd` AS projects
   CROSS JOIN
     UNNEST(JSON_QUERY_ARRAY(projects.npm)) AS npm ),
   all_blockchain AS (
@@ -38,7 +38,7 @@ WITH all_repos AS (
     JSON_VALUE(blockchains.address) AS url,
     JSON_VALUE(blockchains.address) AS source_id
   FROM
-    `oso-production.opensource_observer.projects` AS projects
+    `oso-production.opensource_observer.projects_ossd` AS projects
   CROSS JOIN
     UNNEST(JSON_QUERY_ARRAY(projects.blockchain)) AS blockchains
   CROSS JOIN
