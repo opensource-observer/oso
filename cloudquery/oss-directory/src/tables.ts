@@ -79,7 +79,7 @@ function newColumn(name: string, opts?: Partial<Column>): Column {
 export const getTables = async (): Promise<Table[]> => {
   const { collections, projects } = await fetchData();
   const tables = [
-    await ossDataToTable("collections", collections, [
+    await ossDataToTable("collections_ossd", collections, [
       newColumn("slug", {
         primaryKey: true,
         unique: true,
@@ -95,7 +95,7 @@ export const getTables = async (): Promise<Table[]> => {
         type: new List(new Field("projects", new Utf8())),
       }),
     ]),
-    await ossDataToTable("projects", projects, [
+    await ossDataToTable("projects_ossd", projects, [
       newColumn("slug", {
         primaryKey: true,
         unique: true,
