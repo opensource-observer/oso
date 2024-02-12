@@ -10,7 +10,7 @@ SELECT
     ELSE 'LOW_VALUE_USER'
   END AS segment_type,
   1 AS amount
-FROM {{ ref('all_events_to_project') }} as e
+FROM {{ ref('int_events_to_project') }} as e
 WHERE e.type = 'CONTRACT_INVOCATION_DAILY_COUNT'
 GROUP BY
   project_slug,

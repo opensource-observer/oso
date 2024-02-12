@@ -2,4 +2,4 @@ SELECT
   slug,
   name,
   version
-FROM `oso-production.opensource_observer.collections_ossd`
+FROM {{ ref('stg_ossd__current_collections') }}

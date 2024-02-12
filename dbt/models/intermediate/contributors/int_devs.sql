@@ -10,7 +10,7 @@ SELECT
     ELSE 'OTHER_CONTRIBUTOR'
   END AS segment_type,
   1 AS amount
-FROM {{ ref('all_events_to_project') }} as e
+FROM {{ ref('int_events_to_project') }} as e
 WHERE 
   e.type IN (
     'PULL_REQUEST_CREATED',

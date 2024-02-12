@@ -45,7 +45,7 @@ WITH arbitrum_contract_invocation_daily_count AS (
     acii.from_type,
     acii.from_source_id,
     acii.tx_count as `amount`
-  FROM {{ ref('arbitrum_contract_invocation') }} AS acii
+  FROM {{ ref('stg_dune__arbitrum_contract_invocation') }} AS acii
 ), arbitrum_contract_invocation_daily_l2_gas_used AS (
   SELECT 
     acii.time,
@@ -60,7 +60,7 @@ WITH arbitrum_contract_invocation_daily_count AS (
     acii.from_type,
     acii.from_source_id,
     acii.l2_gas as `amount`
-  FROM {{ ref('arbitrum_contract_invocation') }} AS acii
+  FROM {{ ref('stg_dune__arbitrum_contract_invocation') }} AS acii
 ), arbitrum_contract_invocation_daily_l1_gas_used AS (
   SELECT 
     acii.time,
@@ -75,7 +75,7 @@ WITH arbitrum_contract_invocation_daily_count AS (
     acii.from_type,
     acii.from_source_id,
     acii.l1_gas as `amount`
-  FROM {{ ref('arbitrum_contract_invocation') }} AS acii
+  FROM {{ ref('stg_dune__arbitrum_contract_invocation') }} AS acii
 ), github_commits AS (
   SELECT
     gc.created_at as `time`,
@@ -99,7 +99,7 @@ WITH arbitrum_contract_invocation_daily_count AS (
       ELSE gc.author_email
     END as `from_source_id`,
     CAST(1 AS FLOAT64) as `amount`
-  FROM {{ ref("github_distinct_commits_resolved_mergebot") }} as gc
+  FROM {{ ref('stg_github__distinct_commits_resolved_mergebot') }} as gc
 ), github_issues AS (
   SELECT
     gi.created_at as `time`,
@@ -114,7 +114,7 @@ WITH arbitrum_contract_invocation_daily_count AS (
     "GIT_USER" as `from_type`,
     CAST(gi.actor_id AS STRING) as `from_source_id`,
     CAST(1 AS FLOAT64) as `amount`
-  FROM {{ ref("github_issues") }} as gi
+  FROM {{ ref('stg_github__issues') }} as gi
 ), github_pull_requests AS (
   SELECT
     gh.created_at as `time`,
@@ -129,7 +129,7 @@ WITH arbitrum_contract_invocation_daily_count AS (
     "GIT_USER" as `from_type`,
     CAST(gh.actor_id AS STRING) as `from_source_id`,
     CAST(1 AS FLOAT64) as `amount`
-  FROM {{ ref("github_pull_requests") }} as gh
+  FROM {{ ref('stg_github__pull_requests') }} as gh
 ), github_pull_request_merge_events AS (
   SELECT
     gh.created_at as `time`,
@@ -144,7 +144,7 @@ WITH arbitrum_contract_invocation_daily_count AS (
     "GIT_USER" as `from_type`,
     CAST(gh.actor_id AS STRING) as `from_source_id`,
     CAST(1 AS FLOAT64) as `amount`
-  FROM {{ ref("github_pull_request_merge_events") }} as gh
+  FROM {{ ref('stg_github__pull_request_merge_events') }} as gh
 ), github_stars_and_forks AS (
     SELECT
     gh.created_at as `time`,
@@ -159,7 +159,7 @@ WITH arbitrum_contract_invocation_daily_count AS (
     "GIT_USER" as `from_type`,
     CAST(gh.actor_id AS STRING) as `from_source_id`,
     CAST(1 AS FLOAT64) as `amount`
-  FROM {{ ref("github_stars_and_forks") }} as gh
+  FROM {{ ref('stg_github__stars_and_forks') }} as gh
 )
 SELECT * FROM arbitrum_contract_invocation_daily_count
 UNION ALL

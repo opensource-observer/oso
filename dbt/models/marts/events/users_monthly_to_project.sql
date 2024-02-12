@@ -5,9 +5,9 @@ SELECT
   SUM(amount) AS amount
 FROM 
   (
-    SELECT * FROM {{ ref('devs') }}
+    SELECT * FROM {{ ref('int_devs') }}
     UNION ALL
-    SELECT * FROM {{ ref('users') }}
+    SELECT * FROM {{ ref('int_users') }}
   ) combined_data
 GROUP BY
   project_slug,
