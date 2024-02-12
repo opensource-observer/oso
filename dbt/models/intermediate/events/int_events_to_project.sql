@@ -14,10 +14,11 @@ SELECT
   e.to_source_id,
   e.from_name,
   e.from_namespace,
+  e.from_type,
   e.from_source_id,
   e.amount
-FROM {{ ref('all_events') }} AS e
-JOIN {{ ref('artifacts') }} AS a 
+FROM {{ ref('int_events') }} AS e
+JOIN {{ ref('stg_ossd__artifacts_to_project') }} AS a 
   ON a.source_id = e.to_source_id 
     AND a.namespace = e.to_namespace 
     AND a.type = e.to_type

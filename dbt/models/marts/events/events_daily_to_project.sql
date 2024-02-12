@@ -7,5 +7,5 @@ SELECT
   TIMESTAMP_TRUNC(e.time, DAY) as bucket_day,
   e.type,
   SUM(e.amount) AS amount
-FROM {{ ref('all_events_to_project') }} AS e
+FROM {{ ref('int_events_to_project') }} AS e
 GROUP BY 1,2,3

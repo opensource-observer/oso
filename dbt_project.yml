@@ -14,6 +14,8 @@ test-paths: ["dbt/tests"]
 seed-paths: ["dbt/seeds"]
 macro-paths: ["dbt/macros"]
 snapshot-paths: ["dbt/snapshots"]
+log-path: dbt/logs
+target-path: dbt/target
 
 clean-targets:         # directories to be removed by `dbt clean`
   - "target"
@@ -27,5 +29,4 @@ models:
   opensource_observer:
     +materialized: view
     marts:
-      events:
-        +materialized: table
+      +materialized: table

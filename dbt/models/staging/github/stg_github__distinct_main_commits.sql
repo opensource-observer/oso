@@ -4,7 +4,7 @@
 
 SELECT
   ghc.*
-FROM {{ ref('github_commits') }} as ghc
-JOIN `oso-production.opensource_observer.repositories` as repos 
+FROM {{ ref('stg_github__commits') }} as ghc
+JOIN {{ ref('stg_ossd__current_repositories') }} as repos 
   ON ghc.repository_id = repos.id
 WHERE ghc.ref = CONCAT("refs/heads/", repos.branch) AND ghc.is_distinct = TRUE

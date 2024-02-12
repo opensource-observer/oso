@@ -10,5 +10,5 @@ SELECT
   TIMESTAMP_TRUNC(e.bucket_day, MONTH) as bucket_month,
   e.type,
   SUM(e.amount) AS amount
-FROM {{ ref('all_events_daily_from_artifact') }} AS e
+FROM {{ ref('events_daily_from_artifact') }} AS e
 GROUP BY 1,2,3,4,5,6

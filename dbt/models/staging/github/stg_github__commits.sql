@@ -15,5 +15,5 @@ SELECT
   JSON_VALUE(commit, "$.author.name") as author_name,
   CAST(JSON_VALUE(commit, "$.distinct") AS BOOL) as is_distinct,
   JSON_VALUE(commit, "$.url") as api_url
-FROM {{ ref('github_push_events') }} as ghpe
+FROM {{ ref('stg_github__push_events') }} as ghpe
 CROSS JOIN UNNEST(ghpe.commits) as commit
