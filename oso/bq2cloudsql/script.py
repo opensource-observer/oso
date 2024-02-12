@@ -16,7 +16,7 @@ def run():
         os.environ.get('CLOUDSQL_REGION'), 
         os.environ.get('CLOUDSQL_INSTANCE_ID'), 
         os.environ.get('CLOUDSQL_DB_USER'), 
-        os.environ.get('CLOUDSQL_PASSWORD'), 
+        os.environ.get('CLOUDSQL_DB_PASSWORD'), 
         os.environ.get('CLOUDSQL_DB_NAME')
     )
 

@@ -3,7 +3,6 @@
 #}
 
 SELECT
-  e.to_name,
   e.to_namespace,
   e.to_type,
   e.to_source_id,
@@ -11,4 +10,4 @@ SELECT
   e.type,
   SUM(e.amount) AS amount
 FROM {{ ref('int_events_to_project') }} AS e
-GROUP BY 1,2,3,4,5,6
+GROUP BY 1,2,3,4,5
