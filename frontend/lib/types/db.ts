@@ -5,7 +5,7 @@
  **/
 type EventData = {
   typeName: string;
-  id: number;
+  id: string;
   date: string;
   amount: number;
 };
@@ -14,7 +14,7 @@ type EventData = {
  * Abstract entity data that could come from either an `Artifact` or `Project`
  */
 type EntityData = {
-  id: number;
+  id: string;
   name: string;
 };
 

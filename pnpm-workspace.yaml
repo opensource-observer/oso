@@ -1,6 +1,7 @@
 packages:
-  - "docs"
-  - "frontend"
-  - "indexer"
   - "cloudquery/oss-directory"
   - "cloudquery/github-resolve-repos"
+  - "docs"
+  - "frontend"
+  - "hasura"
+  - "indexer"

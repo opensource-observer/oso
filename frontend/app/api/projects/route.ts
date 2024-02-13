@@ -15,7 +15,7 @@ export const revalidate = 0;
  */
 export async function GET(_request: NextRequest) {
   // Get projects from database
-  const { project: projectArray } = await cachedGetAllProjects();
+  const { projects: projectArray } = await cachedGetAllProjects();
   if (!Array.isArray(projectArray) || projectArray.length < 1) {
     logger.warn(`Cannot find projects`);
     notFound();
