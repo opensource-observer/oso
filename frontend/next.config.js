@@ -40,6 +40,12 @@ const nextConfig = {
               permanent: false,
             },
             {
+              source: "/gather",
+              destination:
+                "https://app.gather.town/invite?token=o8uSbZC4S_CokNYto7sM",
+              permanent: false,
+            },
+            {
               source: "/forms/karibalabs-interest",
               destination: "https://tally.so/r/w7NDv6",
               permanent: false,
