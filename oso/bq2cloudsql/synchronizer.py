@@ -12,7 +12,7 @@ from sqlalchemy import (MetaData, Table,
                         Double, BigInteger, 
                         DateTime, Date, 
                         Boolean, LargeBinary, 
-                        Numeric, Time,
+                        Numeric, Time, JSON,
                         select, text
                         )
 from sqlalchemy.dialects.postgresql import insert
@@ -48,6 +48,7 @@ COLUMN_MAP = {
     'BIGNUMERIC': lambda: Numeric(77, 38),
     'BIGDECIMAL': lambda: Numeric(77, 38),
     'TIME': Time,
+    'JSON': JSON,
 }
 
 PARTITION_TYPE_STRING_PARSER = {
@@ -203,8 +204,12 @@ class BigQueryCloudSQLSynchronizer(object):
                 raise UnsupportedTableColumn(
                     'Field "%s" has unsupported type "%s"' % (field.name, field_type)
                 )
-            column_type = COLUMN_MAP[field_type]()
-            columns.append(Column(field.name, column_type))
+            column_type = COLUMN_MAP.get(field_type)
+            if not column_type:
+                raise UnsupportedTableColumn(
+                    'Field "%s" has unsupported type "%s"' % (field.name, field_type)
+                )
+            columns.append(Column(field.name, column_type()))
         
         self._cloudsql.ensure_table(table_name, columns)
 
