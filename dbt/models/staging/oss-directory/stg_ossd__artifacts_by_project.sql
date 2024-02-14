@@ -1,6 +1,6 @@
 WITH all_repos AS (
   SELECT
-    repos.project_slug as project_slug,
+    repos.project_id as project_id,
     'GITHUB' AS artifact_namespace,
     'GIT_REPOSITORY' AS artifact_type,
     LOWER(repos.name_with_owner) AS artifact_name,
@@ -16,7 +16,7 @@ WITH all_repos AS (
     6 
 ), all_npm AS (
   SELECT
-    projects.slug as project_slug,
+    projects.id as project_id,
     'NPM' AS artifact_namespace,
     'PACKAGE' AS artifact_type,
     CASE
@@ -31,7 +31,7 @@ WITH all_repos AS (
     UNNEST(JSON_QUERY_ARRAY(projects.npm)) AS npm ),
   all_blockchain AS (
   SELECT
-    projects.slug as project_slug,
+    projects.id as project_id,
     UPPER(network) AS artifact_namespace,
     UPPER(tag) AS artifact_type,
     JSON_VALUE(blockchains.address) AS artifact_name,
@@ -46,21 +46,24 @@ WITH all_repos AS (
   CROSS JOIN
     UNNEST(JSON_VALUE_ARRAY(blockchains.tags)) AS tag 
 ), all_artifacts AS (
-SELECT
-  *
-FROM
-  all_repos
-UNION ALL
-SELECT
-  *
-FROM
-  all_blockchain
-UNION ALL
-SELECT
-  *
-FROM
-  all_npm
+  SELECT
+    *
+  FROM
+    all_repos
+  UNION ALL
+  SELECT
+    *
+  FROM
+    all_blockchain
+  UNION ALL
+  SELECT
+    *
+  FROM
+    all_npm
 ), all_unique_artifacts AS (
-  select * from all_artifacts group by 1,2,3,4,5,6
+  SELECT * FROM all_artifacts GROUP BY 1,2,3,4,5,6
 )
-SELECT * FROM all_unique_artifacts
+SELECT 
+  a.*,
+  SHA256(CONCAT(a.artifact_namespace, a.artifact_type, a.artifact_source_id)) as `artifact_id`
+FROM all_unique_artifacts as a

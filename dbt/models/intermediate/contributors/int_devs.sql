@@ -1,8 +1,6 @@
 SELECT
-  e.project_slug,
-  e.from_source_id,
-  e.from_namespace,
-  e.from_type,
+  e.project_id,
+  e.from_id,
   TIMESTAMP_TRUNC(e.time, MONTH) AS bucket_month,
   CASE 
     WHEN COUNT(DISTINCT CASE WHEN e.event_type = 'COMMIT_CODE' THEN e.time END) >= 10 THEN 'FULL_TIME_DEV'
@@ -19,9 +17,4 @@ WHERE
     'ISSUE_CLOSED',
     'ISSUE_CREATED'
   )
-GROUP BY
-  project_slug,
-  from_source_id,
-  from_namespace,
-  from_type,
-  bucket_month
+GROUP BY 1,2,3

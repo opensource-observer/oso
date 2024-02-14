@@ -1,4 +1,6 @@
 SELECT
-  slug as collection_slug,
-  name as collection_name
+  id AS collection_id,
+  slug AS collection_slug,
+  name AS collection_name,
+  namespace AS user_namespace 
 FROM {{ ref('stg_ossd__current_collections') }}

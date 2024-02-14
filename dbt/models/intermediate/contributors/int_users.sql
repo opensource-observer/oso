@@ -1,8 +1,6 @@
 SELECT 
-  e.project_slug,
-  e.from_source_id,
-  e.from_namespace,
-  e.from_type,
+  e.project_id,
+  e.from_id,
   TIMESTAMP_TRUNC(e.time, MONTH) AS bucket_month,
   CASE 
     WHEN SUM(e.amount) >= 1000 THEN 'HIGH_FREQUENCY_USER'
@@ -12,9 +10,4 @@ SELECT
   1 AS amount
 FROM {{ ref('int_events_to_project') }} as e
 WHERE e.event_type = 'CONTRACT_INVOCATION_DAILY_COUNT'
-GROUP BY
-  project_slug,
-  from_source_id,
-  from_namespace,
-  from_type,
-  bucket_month
+GROUP BY 1,2,3

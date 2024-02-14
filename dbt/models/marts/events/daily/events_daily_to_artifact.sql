@@ -1,9 +1,9 @@
 {# 
-  All events daily to a project
+  All events daily to an artifact
 #}
 
 SELECT
-  e.project_slug,
+  e.to_id as artifact_id,
   TIMESTAMP_TRUNC(e.time, DAY) as bucket_day,
   e.event_type,
   SUM(e.amount) AS amount
