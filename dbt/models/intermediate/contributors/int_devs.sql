@@ -5,10 +5,10 @@ SELECT
   e.from_type,
   TIMESTAMP_TRUNC(e.time, MONTH) AS bucket_month,
   CASE 
-    WHEN COUNT(DISTINCT CASE WHEN e.type = 'COMMIT_CODE' THEN e.time END) >= 10 THEN 'FULL_TIME_DEV'
-    WHEN COUNT(DISTINCT CASE WHEN e.type = 'COMMIT_CODE' THEN e.time END) >= 1 THEN 'PART_TIME_DEV'
+    WHEN COUNT(DISTINCT CASE WHEN e.event_type = 'COMMIT_CODE' THEN e.time END) >= 10 THEN 'FULL_TIME_DEV'
+    WHEN COUNT(DISTINCT CASE WHEN e.event_type = 'COMMIT_CODE' THEN e.time END) >= 1 THEN 'PART_TIME_DEV'
     ELSE 'OTHER_CONTRIBUTOR'
-  END AS segment_type,
+  END AS user_segment_type,
   1 AS amount
 FROM {{ ref('int_events_to_project') }} as e
 WHERE 
