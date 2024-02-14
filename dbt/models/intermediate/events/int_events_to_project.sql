@@ -5,7 +5,7 @@
 SELECT
   a.project_slug,
   e.time,
-  e.type,
+  e.event_type,
   -- Determine the canonical `to` artifact name. However for uniqueness we
   -- actually need to use the `to_source_id` from the `all_events` table. 
   a.name as `to_name`,

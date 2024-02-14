@@ -1,6 +1,6 @@
 SELECT
   project_slug,
-  segment_type,
+  user_segment_type,
   bucket_month,
   SUM(amount) AS amount
 FROM 

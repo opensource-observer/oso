@@ -5,7 +5,7 @@
 SELECT
   a.project_slug,
   e.time,
-  e.type,
+  e.event_type,
   e.to_name,
   e.to_namespace,
   e.to_type,
