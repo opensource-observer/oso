@@ -11,5 +11,5 @@ FROM
   ) combined_data
 GROUP BY
   project_slug,
-  segment_type,
+  user_segment_type,
   bucket_month

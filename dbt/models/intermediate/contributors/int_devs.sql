@@ -12,7 +12,7 @@ SELECT
   1 AS amount
 FROM {{ ref('int_events_to_project') }} as e
 WHERE 
-  e.type IN (
+  e.event_type IN (
     'PULL_REQUEST_CREATED',
     'PULL_REQUEST_MERGED',
     'COMMIT_CODE',
