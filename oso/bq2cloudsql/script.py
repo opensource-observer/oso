@@ -154,13 +154,13 @@ def run():
             ),
             TableSyncConfig(
                 TableSyncMode.OVERWRITE,
-                "projects_by_collection_slugs",
-                "projects_by_collection_slugs",
+                "projects_by_collection",
+                "projects_by_collection",
             ),
             TableSyncConfig(
                 TableSyncMode.OVERWRITE,
-                "artifacts_by_project_slugs",
-                "artifacts_by_project_slugs",
+                "artifacts_by_project",
+                "artifacts_by_project",
             ),
         ],
         "oso-csv-exports",
