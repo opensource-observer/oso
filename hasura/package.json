@@ -5,6 +5,10 @@
   "author": "Kariba Labs",
   "license": "Apache-2.0",
   "private": true,
+  "bin": "./dist/src/genTables.js",
+  "main": "./dist/src/index.js",
+  "types": "./dist/src/index.d.ts",
+  "type": "module",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/opensource-observer/oso.git"
@@ -13,6 +17,11 @@
     "node": ">=20"
   },
   "scripts": {
+    "build": "tsc && pnpm metadata:genTables",
+    "lint": "tsc --noEmit && pnpm lint:eslint && pnpm lint:prettier",
+    "lint:eslint": "eslint --ignore-path ../.gitignore --max-warnings 0 .",
+    "lint:prettier": "prettier --ignore-path ../.gitignore --log-level warn --check **/*.{js,jsx,ts,tsx,sol,md,json}",
+    "metadata:genTables": "node --loader ts-node/esm src/genTables.ts",
     "metadata:pull": "hasura metadata export",
     "metadata:reload": "hasura metadata reload",
     "metadata:apply": "hasura metadata apply",
@@ -20,7 +29,13 @@
   },
   "keywords": [],
   "devDependencies": {
+    "@types/node": "^20.11.17",
     "dotenv-cli": "^7.3.0",
-    "hasura-cli": "^2.36.1"
+    "hasura-cli": "^2.36.1",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "yaml": "^2.3.1"
   }
 }
