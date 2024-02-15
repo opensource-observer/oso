@@ -1541,9 +1541,8 @@ export class BatchEventRecorder implements IEventRecorder {
     }
 
     // Get all of the unique artifacts
-    const [allArtifacts, newArtifacts] = await this.uniqArtifactsFromEvents(
-      newEvents,
-    );
+    const [allArtifacts, newArtifacts] =
+      await this.uniqArtifactsFromEvents(newEvents);
 
     const writeArtifacts = async () => {
       const tmWriteArtifacts = timer("writing new artifacts");
@@ -1747,9 +1746,8 @@ export class BatchEventRecorder implements IEventRecorder {
     inputs.toIds = (await this.artifactResolver.map.resolveToIds(
       toArtifacts,
     )) as number[];
-    inputs.fromIds = await this.artifactResolver.map.resolveToIds(
-      fromArtifacts,
-    );
+    inputs.fromIds =
+      await this.artifactResolver.map.resolveToIds(fromArtifacts);
 
     inputs.toIds.forEach((toId, i) => {
       inputs.uniqueIds.push(

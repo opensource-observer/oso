@@ -10,9 +10,8 @@ export function getPath<
 // Here there be dragons
 // https://www.calebpitan.com/blog/dot-notation-type-accessor-in-typescript
 
-type ExcludeArrayKeys<T> = T extends ArrayLike<any>
-  ? Exclude<keyof T, keyof any[]>
-  : keyof T;
+type ExcludeArrayKeys<T> =
+  T extends ArrayLike<any> ? Exclude<keyof T, keyof any[]> : keyof T;
 export type IsAny<T> = unknown extends T
   ? [keyof T] extends [never]
     ? false
@@ -25,10 +24,10 @@ type PathImpl<T, Key extends keyof T> = Key extends string
   ? IsAny<T[Key]> extends true
     ? never
     : T[Key] extends Record<string, any>
-    ?
-        | `${Key}.${PathImpl<T[Key], ExcludeArrayKeys<T[Key]>> & string}`
-        | `${Key}.${ExcludeArrayKeys<T[Key]> & string}`
-    : never
+      ?
+          | `${Key}.${PathImpl<T[Key], ExcludeArrayKeys<T[Key]>> & string}`
+          | `${Key}.${ExcludeArrayKeys<T[Key]> & string}`
+      : never
   : never;
 
 export type Path<T> = keyof T extends string

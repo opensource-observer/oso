@@ -1,12 +1,18 @@
 {
-  "extends": ["../.eslintrc.js"],
   "root": false,
+  "extends": ["../.eslintrc.js", "next/core-web-vitals"],
+  "parser": "@typescript-eslint/parser",
   "parserOptions": {
-    "ecmaFeatures": {
-      "jsx": true
-    },
-    "ecmaVersion": "latest",
-    "sourceType": "module",
     "project": ["./frontend/tsconfig.json"]
+  },
+  "rules": {
+    "react-hooks/exhaustive-deps": "off",
+    "no-restricted-syntax": [
+      "error",
+      {
+        "selector": "Property[key.name='preview'][value.value=true]",
+        "message": "Make sure to turn 'preview' off before committing."
+      }
+    ]
   }
 }

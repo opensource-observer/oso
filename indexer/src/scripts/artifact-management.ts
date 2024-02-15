@@ -50,12 +50,10 @@ export async function fixArtifactCasing(
     ArtifactType.GIT_EMAIL,
     ArtifactType.GIT_REPOSITORY,
   ];
-  const artifactDupes = await ArtifactRepository.duplicates(
-    caseInsensitiveTypes,
-  );
-  let artifactsNonCanonical = await ArtifactRepository.nonCanonical(
-    caseInsensitiveTypes,
-  );
+  const artifactDupes =
+    await ArtifactRepository.duplicates(caseInsensitiveTypes);
+  let artifactsNonCanonical =
+    await ArtifactRepository.nonCanonical(caseInsensitiveTypes);
   const projectsDupes = await ProjectRepository.duplicates();
   const projectsNonCanonical = await ProjectRepository.nonCanonical();
   const collectionsDupes = await CollectionRepository.duplicates();
@@ -112,9 +110,8 @@ export async function fixArtifactCasing(
   // Fix dupes first
   if (artifactDupes.length > 0) {
     await fixArtifactDuplicates(caseInsensitiveTypes);
-    artifactsNonCanonical = await ArtifactRepository.nonCanonical(
-      caseInsensitiveTypes,
-    );
+    artifactsNonCanonical =
+      await ArtifactRepository.nonCanonical(caseInsensitiveTypes);
   }
 
   if (artifactsNonCanonical.length > 0) {
