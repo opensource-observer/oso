@@ -16,6 +16,6 @@ SELECT
   from_namespace,
   from_type,
   from_source_id,
-  {{ oso_artifact_id("from") }} as to_id,
+  {{ oso_artifact_id("from") }} as from_id,
   amount
 FROM {{ ref('int_events') }}
