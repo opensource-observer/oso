@@ -35,7 +35,7 @@ We are building a suite of **impact vectors** that can be used to compare the im
 
 ### Jupyter Notebooks
 
-We are curating a library of Jupyter notebooks that can be used to explore and visualize the data on OSO. We are looking for contributions to help us build a library of Jupyter notebooks in our [insights repo](https://github.com/opensource-observer/insights). For more information on how to contribute, check out the [Jupyter Notebooks](./jupyter-notebooks) section.
+We are curating a library of Jupyter notebooks that can be used to explore and visualize the data on OSO. We are looking for contributions to help us build a library of Jupyter notebooks in our [insights repo](https://github.com/opensource-observer/insights). For more information on how to contribute, check out the [Jupyter Notebooks](./notebooks) section.
 
 ## Data Engineering
 

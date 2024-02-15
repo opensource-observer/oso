@@ -23,7 +23,7 @@ Choose a name that is descriptive and easy to remember.
 
 ### Define the metric and time period
 
-Choose a metric that is relevant to the vector and can be calculated via a [dbt transform](./dbt-transforms).
+Choose a metric that is relevant to the vector and can be calculated via a [dbt transform](./../contribute/dbt-transforms).
 
 Choose a period of time that is long enough to be meaningful and relevant to the analysis.
 

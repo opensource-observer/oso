@@ -11,6 +11,10 @@ There are three main types indexers that OSO maintains:
 2. Data Oracles
 3. Backfills
 
+:::warning
+This page is a work in progress.
+:::
+
 ## Import OSS Directory
 
 Whenever a project is added or updated in the OSS Directory, its artifacts are indexed and stored in the data warehouse. This includes traversing the project's GitHub repos and dependencies, and tracing all contracts downstream of its deployer addresses.
