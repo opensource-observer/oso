@@ -1,9 +1,9 @@
 ---
-title: Collections
+title: Collection
 sidebar_position: 2
 ---
 
-The collection schema is used to store information about a group of related open source projects in the OSS Directory.
+A collection is a group of related open source projects in the OSS Directory.
 
 We use the term **collection** to refer literally to a collection of projects. Projects may belong to multiple collections. For example, a collection may include all projects that are part of a particular ecosystem or all projects that are dependent on a given developer library.
 

@@ -1,9 +1,9 @@
 ---
-title: Projects
+title: Project
 sidebar_position: 3
 ---
 
-The project schema is used to store information about open source projects in the OSS Directory.
+A project is a group of artifacts owned by a project in the OSS Directory.
 
 We use the term **project** to refer to a collection of artifacts. For example, a project may include a GitHub organization, a blockchain address, and a NPM package.
 

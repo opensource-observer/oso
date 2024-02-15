@@ -1,6 +1,6 @@
 ---
 title: Schema Updates
-sidebar_position: 9
+sidebar_position: 6
 ---
 
 :::tip

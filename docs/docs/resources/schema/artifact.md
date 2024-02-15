@@ -1,9 +1,9 @@
 ---
-title: Artifacts
+title: Artifact
 sidebar_position: 4
 ---
 
-The artifact schema is used to store information about work artifacts created by open source projects in the OSS Directory.
+An artifact is a link or reference to work created by open source projects in the OSS Directory.
 
 Our Version 3 schema currently supports three types of artifacts: GitHub organizations and repositories, NPM packages, and blockchain addresses. The `github`, `npm`, and `blockchain` fields in the [project schema](./project) are used to store arrays of artifacts associated with a particular project.
 
