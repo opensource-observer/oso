@@ -1,5 +1,5 @@
 ---
-title: Jupyter Notebooks
+title: Data Science Notebooks
 sidebar_position: 5
 ---
 
@@ -9,7 +9,9 @@ Jupyter notebooks are a great way for data scientists to explore data, organize 
 
 ## Getting Started
 
-We will assume you have some familiarity with setting up a local Python environment and running Jupyter notebooks. If you need help getting started, check out the [Jupyter docs](https://jupyter-notebook-beginner-guide.readthedocs.io/en/latest/).
+---
+
+We will assume you have some familiarity with setting up a local Python environment and running Jupyter notebooks.
 
 In order to run the notebooks, you should have the following standard dependencies installed in your local environment:
 
@@ -26,7 +28,13 @@ We also recommend [dotenv](https://pypi.org/project/python-dotenv/) for managing
 
 In order to access OSO data directly, you will need an API key. Please apply to join our [Data Collective](https://www.opensource.observer/data-collective).
 
+:::tip
+If you need help getting started, check out the [Jupyter docs](https://jupyter-notebook-beginner-guide.readthedocs.io/en/latest/).
+:::
+
 ## Conducting Analysis
+
+---
 
 Once you have your local environment set up, you can fork any of the notebooks in the [community directory](https://github.com/opensource-observer/insights/tree/main/community/notebook_templates).
 
@@ -86,6 +94,8 @@ result = execute_query("""
 ```
 
 ## Sharing Analysis
+
+---
 
 Once you have completed your analysis, you can share it with the community by submitting a PR to the [insights repo](https://github.com/opensource-observer/insights).
 

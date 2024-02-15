@@ -1,9 +1,9 @@
 ---
-title: dbt Transforms
+title: Create Impact Metrics
 sidebar_position: 3
 ---
 
-Write dbt transforms to aggregate metrics in our data warehouse.
+Write dbt transforms to create new impact metrics in our data warehouse.
 
 [dbt (data build tool)](https://www.getdbt.com/blog/what-exactly-is-dbt) is a command line tool that enables data analysts and engineers to transform data in the OSO data warehouse more effectively. dbt transforms are written in SQL. We use them most often to define impact metrics and materialize aggregate data about projects.
 
@@ -12,6 +12,8 @@ At this time the dataset isn't public. This will change in the near future.
 :::
 
 ## Setting up
+
+---
 
 ### Prequisites
 
@@ -90,6 +92,8 @@ You should now be logged into BigQuery!
 
 ## Usage
 
+---
+
 Once you've updated any models you can run dbt _within the poetry environment_ by simply calling:
 
 ```bash
@@ -103,6 +107,8 @@ $ dbt run --select {name_of_the_model}
 ```
 
 ## Model Examples
+
+---
 
 Here are a few examples of dbt models currently in production:
 
