@@ -1,0 +1,8 @@
+{
+  "label": "Operations Guides",
+  "position": 10,
+  "link": {
+    "type": "generated-index",
+    "description": "The following pages cover how to setup our open infrastructure."
+  }
+}
