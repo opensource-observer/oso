@@ -1,5 +1,5 @@
 ---
-title: GraphQL
+title: Make GraphQL Queries
 sidebar_position: 2
 ---
 
@@ -9,7 +9,9 @@ Use our GraphQL endpoint to bring OSO data into your application.
 This page is a work in progress.
 :::
 
-## Make GraphQL queries
+## GraphQL Endoint
+
+---
 
 All API requests are sent to the following URL:
 
@@ -27,9 +29,13 @@ const headers = {
 
 ## Rate limiting
 
+---
+
 All requests are rate limited. There are separate rate limits for different resources:
 
 ## GraphQL Explorer
+
+---
 
 ```
 Coming soon...

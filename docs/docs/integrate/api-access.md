@@ -1,5 +1,5 @@
 ---
-title: API Access
+title: Access the API
 sidebar_position: 1
 ---
 
@@ -11,10 +11,14 @@ This page is a work in progress.
 
 ## Create an account
 
+---
+
 First, navigate to [www.opensource.observer](https://www.opensource.observer) and create a new account.
 If you already have an account, log in.
 
 ## Create a new personal API key
+
+---
 
 1. Go to [Account settings](https://www.opensource.observer/app/settings)
 2. In the "Personal API Keys" section, click "+ Create a Personal API Key"

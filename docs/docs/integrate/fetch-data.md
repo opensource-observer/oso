@@ -1,6 +1,6 @@
 ---
-title: Embed OSO Widgets
-sidebar_position: 3
+title: Fetch Static Data
+sidebar_position: 6
 ---
 
 Coming soon...

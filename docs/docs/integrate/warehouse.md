@@ -1,6 +1,6 @@
 ---
-title: Embed OSO Widgets
-sidebar_position: 3
+title: Access the Data Warehouse
+sidebar_position: 5
 ---
 
 Coming soon...

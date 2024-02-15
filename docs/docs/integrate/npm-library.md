@@ -1,5 +1,5 @@
 ---
-title: NPM Library
+title: Download the NPM Library
 sidebar_position: 4
 ---
 
