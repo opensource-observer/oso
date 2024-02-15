@@ -1,7 +1,10 @@
 ---
-sidebar_position: 2
+title: Embeddable Widgets
+sidebar_position: 3
 ---
 
-# Embeddable Widgets
-
 Coming soon...
+
+:::warning
+This page is a work in progress.
+:::

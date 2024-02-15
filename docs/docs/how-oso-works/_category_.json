@@ -1,8 +1,7 @@
 {
-  "label": "How OSO Works",
+  "label": "Learn How OSO Works",
   "position": 4,
   "link": {
-    "type": "generated-index",
-    "description": "The following pages in this section cover the building blocks and general architecture of our dataset, ingestion pipeline, and query processors."
+    "type": "generated-index"
   }
 }

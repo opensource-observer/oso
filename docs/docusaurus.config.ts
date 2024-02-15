@@ -94,7 +94,7 @@ const config: Config = {
             },
             {
               label: "Integrate",
-              to: "/docs/integrate/getting-started",
+              to: "/docs/integrate/api-access",
             },
             {
               label: "How OSO Works",

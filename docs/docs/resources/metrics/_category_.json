@@ -1,6 +1,6 @@
 {
-  "label": "Integrate With OSO",
-  "position": 3,
+  "label": "OSS Metrics",
+  "position": 1,
   "link": {
     "type": "generated-index"
   }
