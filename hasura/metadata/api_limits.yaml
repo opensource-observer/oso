@@ -1,0 +1,23 @@
+disabled: false
+node_limit:
+  global: 100
+  per_role:
+    anonymous: 10
+    user: 10
+    developer: 100
+rate_limit:
+  global:
+    max_reqs_per_min: 1000
+  per_role:
+    anonymous:
+      max_reqs_per_min: 10
+    user:
+      max_reqs_per_min: 60
+    developer:
+      max_reqs_per_min: 1000
+time_limit:
+  global: 60
+  per_role:
+    anonymous: 5
+    user: 10
+    developer: 60
