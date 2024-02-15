@@ -388,7 +388,9 @@ function ArtifactEventDataProvider(props: EventDataProviderProps) {
   const formattedData = formatData(props, normalizedEventData, entityData, {
     gapFill: bucketWidth === "day",
   });
-  console.log(props, rawEventData, formattedData);
+  if (!eventLoading) {
+    console.log(props, rawEventData, eventError, formattedData);
+  }
   return (
     <DataProviderView
       {...props}
@@ -452,7 +454,9 @@ function ProjectEventDataProvider(props: EventDataProviderProps) {
   const formattedData = formatData(props, normalizedData, entityData, {
     gapFill: bucketWidth === "day",
   });
-  console.log(props, rawEventData, formattedData);
+  if (!eventLoading) {
+    console.log(props, rawEventData, eventError, formattedData);
+  }
   return (
     <DataProviderView
       {...props}
@@ -519,7 +523,9 @@ function CollectionEventDataProvider(props: EventDataProviderProps) {
   const formattedData = formatData(props, normalizedData, entityData, {
     gapFill: bucketWidth === "day",
   });
-  console.log(props, rawEventData, formattedData);
+  if (!eventLoading) {
+    console.log(props, rawEventData, eventError, formattedData);
+  }
   return (
     <DataProviderView
       {...props}
@@ -562,7 +568,7 @@ function ProjectUserDataProvider(props: EventDataProviderProps) {
       x.user_segment_type,
       "Data missing 'user_segment_type'",
     ),
-    id: ensure<string>(x.project_slug, "Data missing 'project_slug'"),
+    id: ensure<string>(x.project_id, "Data missing 'project_id'"),
     date: ensure<string>(x.bucket_month, "Data missing time"),
     amount: ensure<number>(x.amount, "Data missing 'number'"),
   }));
@@ -571,7 +577,9 @@ function ProjectUserDataProvider(props: EventDataProviderProps) {
     name: ensure<string>(x.project_name, "project missing 'project_name'"),
   }));
   const formattedData = formatData(props, normalizedData, entityData);
-  console.log(props, rawEventData, formattedData);
+  if (!eventLoading) {
+    console.log(props, rawEventData, eventError, formattedData);
+  }
   return (
     <DataProviderView
       {...props}
