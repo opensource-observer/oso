@@ -1,12 +1,7 @@
 {
-  "extends": ["../.eslintrc.js"],
   "root": false,
+  "extends": ["../.eslintrc.js"],
   "parserOptions": {
-    "ecmaFeatures": {
-      "jsx": true
-    },
-    "ecmaVersion": "latest",
-    "sourceType": "module",
     "project": ["./docs/tsconfig.json"]
   }
 }

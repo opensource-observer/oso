@@ -2,6 +2,6 @@
   "extends": ["../.eslintrc.js"],
   "root": false,
   "parserOptions": {
-    "project": ["./indexer/tsconfig.json"]
+    "project": ["./hasura/tsconfig.json"]
   }
 }

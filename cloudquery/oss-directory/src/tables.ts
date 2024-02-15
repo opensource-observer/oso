@@ -22,7 +22,6 @@ import timezone from "dayjs/plugin/timezone.js";
 import utc from "dayjs/plugin/utc.js";
 import { fetchData } from "oss-directory";
 
-/* eslint-disable import/no-named-as-default-member */
 dayjs.extend(utc);
 dayjs.extend(timezone);
 dayjs.extend(customParseFormat);

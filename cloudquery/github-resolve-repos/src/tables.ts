@@ -20,7 +20,6 @@ import readline from "readline";
 import { getReposFromUrls } from "./github/repositories.js";
 import { Octokit } from "octokit";
 
-/* eslint-disable import/no-named-as-default-member */
 dayjs.extend(utc);
 dayjs.extend(timezone);
 dayjs.extend(customParseFormat);

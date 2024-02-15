@@ -408,8 +408,9 @@ export class DailyContractUsageCollector extends BaseEventCollector<object> {
       logger.debug(
         `duplicates for sourceId=${countEvent.sourceId} found for contract[${
           countEvent.to.name
-        }] from address[${countEvent.from
-          ?.name}] on ${countEvent.time.toISODate()}`,
+        }] from address[${
+          countEvent.from?.name
+        }] on ${countEvent.time.toISODate()}`,
       );
     }
     await groupRecorder.record(countEvent);
