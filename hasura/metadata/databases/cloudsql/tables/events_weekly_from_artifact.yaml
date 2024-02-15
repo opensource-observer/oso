@@ -1,0 +1,10 @@
+table:
+  name: events_weekly_from_artifact
+  schema: public
+select_permissions:
+  - role: anonymous
+    permission:
+      columns: "*"
+      filter: {}
+      allow_aggregations: false
+    comment: ""

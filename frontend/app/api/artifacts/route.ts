@@ -15,7 +15,7 @@ export const revalidate = 0;
  */
 export async function GET(_request: NextRequest) {
   // Get artifacts from database
-  const { artifact: artifactArray } = await cachedGetAllArtifacts();
+  const { artifacts: artifactArray } = await cachedGetAllArtifacts();
   if (!Array.isArray(artifactArray) || artifactArray.length < 1) {
     logger.warn(`Cannot find artifacts`);
     notFound();

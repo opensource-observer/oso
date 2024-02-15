@@ -1,0 +1,10 @@
+table:
+  name: events_daily_to_project
+  schema: public
+select_permissions:
+  - role: anonymous
+    permission:
+      columns: "*"
+      filter: {}
+      allow_aggregations: false
+    comment: ""

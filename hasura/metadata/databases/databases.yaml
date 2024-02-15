@@ -1,0 +1,12 @@
+- name: cloudsql
+  kind: postgres
+  configuration:
+    connection_info:
+      database_url:
+        from_env: HASURA_GRAPHQL_DATABASE_URL
+      isolation_level: read-committed
+      pool_settings:
+        connection_lifetime: 600
+        total_max_connections: 100
+      use_prepared_statements: false
+  tables: "!include cloudsql/tables/tables.yaml"

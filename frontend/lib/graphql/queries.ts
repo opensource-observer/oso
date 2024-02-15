@@ -9,32 +9,41 @@ import { gql } from "../__generated__/gql";
 
 const GET_ALL_ARTIFACTS = gql(`
   query Artifacts @cached (ttl: 300) {
-    artifact {
-      id
-      name
-      namespace
+    artifacts {
+      artifact_id
+      artifact_namespace
+      artifact_type
+      artifact_source_id
+      artifact_latest_name
+      artifact_names
     }
   }
 `);
 
-const GET_ARTIFACTS_BY_IDS = gql(`
-  query ArtifactsByIds($artifactIds: [Int!]) @cached (ttl: 300)  {
-    artifact(where: { id: { _in: $artifactIds } }) {
-      id
-      name
-      namespace
+const GET_ARTIFACT_BY_IDS = gql(`
+  query ArtifactByIds($artifact_ids: [String!]) @cached(ttl: 300) {
+    artifacts(where: { artifact_id: { _in: $artifact_ids }}) {
+      artifact_id
+      artifact_namespace
+      artifact_type
+      artifact_source_id
+      artifact_latest_name
+      artifact_names
+      artifact_url
     }
   }
 `);
 
 const GET_ARTIFACT_BY_NAME = gql(`
-  query ArtifactByName($namespace: artifact_namespace_enum!, $name: String!) @cached(ttl: 300) {
-    artifact(where: { name: { _eq: $name }, namespace: { _eq: $namespace } }) {
-      id
-      name
-      namespace
-      type
-      url
+  query ArtifactByName($artifact_namespace: String!, $artifact_type: String!, $artifact_name: String!) @cached(ttl: 300) {
+    artifacts(where: { artifact_namespace: { _eq: $artifact_namespace }, artifact_type: { _eq: $artifact_type }, artifact_latest_name: { _eq: $artifact_name } }) {
+      artifact_id
+      artifact_namespace
+      artifact_type
+      artifact_source_id
+      artifact_latest_name
+      artifact_names
+      artifact_url
     }
   }
 `);
@@ -45,44 +54,33 @@ const GET_ARTIFACT_BY_NAME = gql(`
 
 const GET_ALL_PROJECTS = gql(`
   query Projects @cached(ttl: 300) {
-    project {
-      id
-      name
-      slug
+    projects {
+      project_id
+      user_namespace
+      project_slug
+      project_name
     }
   }
 `);
 
 const GET_PROJECTS_BY_IDS = gql(`
-  query ProjectsByIds($projectIds: [Int!]) @cached(ttl: 300) {
-    project(where: { id: { _in: $projectIds } }) {
-      id
-      name
-      slug
+  query ProjectsByIds($project_ids: [String!]) @cached(ttl: 300) {
+    projects(where: { project_id: { _in: $project_ids }}) {
+      project_id
+      user_namespace
+      project_slug
+      project_name
     }
   }
 `);
 
 const GET_PROJECTS_BY_SLUGS = gql(`
-  query ProjectsBySlug($slugs: [String!]) @cached(ttl: 300) {
-    project(where: { slug: { _in: $slugs } }) {
-      id
-      name
-      slug
-      description
-      verified
-    }
-  }
-`);
-
-const GET_PROJECTS_BY_COLLECTION_SLUGS = gql(`
-  query ProjectsByCollectionSlugs($slugs: [String!]) @cached(ttl: 300) {
-    project(where: {collection_projects_projects: {collection: {slug: {_in: $slugs}}}}) {
-      id
-      name
-      slug
-      description
-      verified
+  query ProjectsBySlugs($project_slugs: [String!]) @cached(ttl: 300) {
+    projects(where: { project_slug: { _in: $project_slugs }, user_namespace: { _eq: "oso" } }) {
+      project_id
+      user_namespace
+      project_slug
+      project_name
     }
   }
 `);
@@ -93,32 +91,33 @@ const GET_PROJECTS_BY_COLLECTION_SLUGS = gql(`
 
 const GET_ALL_COLLECTIONS = gql(`
   query Collections @cached(ttl: 300) {
-    collection {
-      id
-      name
-      slug
+    collections {
+      collection_id
+      user_namespace
+      collection_slug
+      collection_name
     }
   }
 `);
 
 const GET_COLLECTIONS_BY_IDS = gql(`
-  query CollectionsByIds($collectionIds: [Int!]) @cached(ttl: 300) {
-    collection(where: { id: { _in: $collectionIds } }) {
-      id
-      name
-      slug
+  query CollectionsByIds($collection_ids: [String!]) @cached(ttl: 300) {
+    collections(where: { collection_id: { _in: $collection_ids }}) {
+      collection_id
+      user_namespace
+      collection_slug
+      collection_name
     }
   }
 `);
 
 const GET_COLLECTIONS_BY_SLUGS = gql(`
-  query CollectionsBySlug($slugs: [String!]) @cached(ttl: 300) {
-    collection(where: { slug: { _in: $slugs } }) {
-      id
-      name
-      slug
-      description
-      verified
+  query CollectionsBySlugs($collection_slugs: [String!]) @cached(ttl: 300) {
+    collections(where: { collection_slug: { _in: $collection_slugs }, user_namespace: { _eq: "oso" } }) {
+      collection_id
+      user_namespace
+      collection_slug
+      collection_name
     }
   }
 `);
@@ -129,97 +128,27 @@ const GET_COLLECTIONS_BY_SLUGS = gql(`
 
 const GET_ALL_EVENT_TYPES = gql(`
   query GetAllEventTypes @cached(ttl: 300) {
-    event_type {
-      id
-      name
-    }
-  }
-`);
-
-const GET_EVENT_TYPES_BY_IDS = gql(`
-  query EventTypesByIds($typeIds: [Int!]) @cached(ttl: 300) {
-    event_type(where: {id: {_in: $typeIds}}) {
-      id
-      name
-    }
-  }
-`);
-
-const GET_EVENTS_DAILY_TO_ARTIFACT = gql(`
-  query EventsDailyToArtifact(
-    $artifactIds: [Int!],
-    $typeIds: [Int!],
-    $startDate: timestamptz!,
-    $endDate: timestamptz!, 
-  ) {
-    events_daily_to_artifact(where: {
-      artifactId: { _in: $artifactIds },
-      typeId: { _in: $typeIds },
-      bucketDaily: { _gte: $startDate, _lte: $endDate }
-    }) {
-      typeId
-      artifactId
-      bucketDaily
-      amount
-    }
-  }
-`);
-
-const GET_EVENTS_WEEKLY_TO_ARTIFACT = gql(`
-  query EventsWeeklyToArtifact(
-    $artifactIds: [Int!],
-    $typeIds: [Int!],
-    $startDate: timestamptz!,
-    $endDate: timestamptz!, 
-  ) {
-    events_weekly_to_artifact(where: {
-      artifactId: { _in: $artifactIds },
-      typeId: { _in: $typeIds },
-      bucketWeekly: { _gte: $startDate, _lte: $endDate }
-    }) {
-      typeId
-      artifactId
-      bucketWeekly
-      amount
-    }
-  }
-`);
-
-const GET_EVENTS_MONTHLY_TO_ARTIFACT = gql(`
-  query EventsMonthlyToArtifact(
-    $artifactIds: [Int!],
-    $typeIds: [Int!],
-    $startDate: timestamptz!,
-    $endDate: timestamptz!, 
-  ) {
-    events_monthly_to_artifact(where: {
-      artifactId: { _in: $artifactIds },
-      typeId: { _in: $typeIds },
-      bucketMonthly: { _gte: $startDate, _lte: $endDate }
-    }) {
-      typeId
-      artifactId
-      bucketMonthly
-      amount
+    event_types {
+      event_type
     }
   }
 `);
 
 const GET_EVENTS_DAILY_TO_COLLECTION = gql(`
   query EventsDailyToCollection(
-    $collectionIds: [Int!],
-    $typeIds: [Int!],
-    $startDate: timestamptz!,
-    $endDate: timestamptz!, 
+    $collection_ids: [String!],
+    $event_types: [String!],
+    $start_date: timestamptz!,
+    $end_date: timestamptz!, 
   ) {
     events_daily_to_collection(where: {
-      collectionId: { _in: $collectionIds },
-      typeId: { _in: $typeIds },
-      bucketDay: { _gte: $startDate, _lte: $endDate }
+      collection_id: { _in: $collection_ids },
+      event_type: { _in: $event_types },
+      bucket_day: { _gte: $start_date, _lte: $end_date }
     }) {
-      typeId
-      collectionId
-      bucketDay
+      collection_id
+      event_type
+      bucket_day
       amount
     }
   }
@@ -227,19 +156,19 @@ const GET_EVENTS_DAILY_TO_COLLECTION = gql(`
 
 const GET_EVENTS_WEEKLY_TO_COLLECTION = gql(`
   query EventsWeeklyToCollection(
-    $collectionIds: [Int!],
-    $typeIds: [Int!],
-    $startDate: timestamptz!,
-    $endDate: timestamptz!, 
+    $collection_ids: [String!],
+    $event_types: [String!],
+    $start_date: timestamptz!,
+    $end_date: timestamptz!, 
   ) {
     events_weekly_to_collection(where: {
-      collectionId: { _in: $collectionIds },
-      typeId: { _in: $typeIds },
-      bucketWeekly: { _gte: $startDate, _lte: $endDate }
+      collection_id: { _in: $collection_ids },
+      event_type: { _in: $event_types },
+      bucket_week: { _gte: $start_date, _lte: $end_date }
     }) {
-      typeId
-      collectionId
-      bucketWeekly
+      collection_id
+      event_type
+      bucket_week
       amount
     }
   }
@@ -247,19 +176,19 @@ const GET_EVENTS_WEEKLY_TO_COLLECTION = gql(`
 
 const GET_EVENTS_MONTHLY_TO_COLLECTION = gql(`
   query EventsMonthlyToCollection(
-    $collectionIds: [Int!],
-    $typeIds: [Int!],
-    $startDate: timestamptz!,
-    $endDate: timestamptz!, 
+    $collection_ids: [String!],
+    $event_types: [String!],
+    $start_date: timestamptz!,
+    $end_date: timestamptz!, 
   ) {
     events_monthly_to_collection(where: {
-      collectionId: { _in: $collectionIds },
-      typeId: { _in: $typeIds },
-      bucketMonthly: { _gte: $startDate, _lte: $endDate }
+      collection_id: { _in: $collection_ids },
+      event_type: { _in: $event_types },
+      bucket_month: { _gte: $start_date, _lte: $end_date }
     }) {
-      typeId
-      collectionId
-      bucketMonthly
+      collection_id
+      event_type
+      bucket_month
       amount
     }
   }
@@ -267,19 +196,19 @@ const GET_EVENTS_MONTHLY_TO_COLLECTION = gql(`
 
 const GET_EVENTS_DAILY_TO_PROJECT = gql(`
   query EventsDailyToProject(
-    $projectIds: [Int!],
-    $typeIds: [Int!],
-    $startDate: timestamptz!,
-    $endDate: timestamptz!, 
+    $project_ids: [String!],
+    $event_types: [String!],
+    $start_date: timestamptz!,
+    $end_date: timestamptz!, 
   ) {
     events_daily_to_project(where: {
-      projectId: { _in: $projectIds },
-      typeId: { _in: $typeIds },
-      bucketDaily: { _gte: $startDate, _lte: $endDate }
+      project_id: { _in: $project_ids },
+      event_type: { _in: $event_types },
+      bucket_day: { _gte: $start_date, _lte: $end_date }
     }) {
-      typeId
-      projectId
-      bucketDaily
+      project_id
+      event_type
+      bucket_day
       amount
     }
   }
@@ -287,19 +216,19 @@ const GET_EVENTS_DAILY_TO_PROJECT = gql(`
 
 const GET_EVENTS_WEEKLY_TO_PROJECT = gql(`
   query EventsWeeklyToProject(
-    $projectIds: [Int!],
-    $typeIds: [Int!],
-    $startDate: timestamptz!,
-    $endDate: timestamptz!, 
+    $project_ids: [String!],
+    $event_types: [String!],
+    $start_date: timestamptz!,
+    $end_date: timestamptz!, 
   ) {
     events_weekly_to_project(where: {
-      projectId: { _in: $projectIds },
-      typeId: { _in: $typeIds },
-      bucketWeekly: { _gte: $startDate, _lte: $endDate }
+      project_id: { _in: $project_ids },
+      event_type: { _in: $event_types },
+      bucket_week: { _gte: $start_date, _lte: $end_date }
     }) {
-      typeId
-      projectId
-      bucketWeekly
+      project_id
+      event_type
+      bucket_week
       amount
     }
   }
@@ -307,19 +236,19 @@ const GET_EVENTS_WEEKLY_TO_PROJECT = gql(`
 
 const GET_EVENTS_MONTHLY_TO_PROJECT = gql(`
   query EventsMonthlyToProject(
-    $projectIds: [Int!],
-    $typeIds: [Int!],
-    $startDate: timestamptz!,
-    $endDate: timestamptz!, 
+    $project_ids: [String!],
+    $event_types: [String!],
+    $start_date: timestamptz!,
+    $end_date: timestamptz!, 
   ) {
     events_monthly_to_project(where: {
-      projectId: { _in: $projectIds },
-      typeId: { _in: $typeIds },
-      bucketMonthly: { _gte: $startDate, _lte: $endDate }
+      project_id: { _in: $project_ids },
+      event_type: { _in: $event_types },
+      bucket_month: { _gte: $start_date, _lte: $end_date }
     }) {
-      typeId
-      projectId
-      bucketMonthly
+      project_id
+      event_type
+      bucket_month
       amount
     }
   }
@@ -327,59 +256,95 @@ const GET_EVENTS_MONTHLY_TO_PROJECT = gql(`
 
 const GET_USERS_MONTHLY_TO_PROJECT = gql(`
   query UsersMonthlyToProject(
-    $projectIds: [Int!],
-    $segmentTypes: [String!],
-    $startDate: timestamptz!,
-    $endDate: timestamptz!, 
+    $project_ids: [String!],
+    $user_segment_types: [String!],
+    $start_date: timestamptz!,
+    $end_date: timestamptz!, 
   ) {
     users_monthly_to_project(where: {
-      projectId: { _in: $projectIds },
-      segmentType: { _in: $segmentTypes },
-      bucketMonthly: { _gte: $startDate, _lte: $endDate }
+      project_id: { _in: $project_ids },
+      user_segment_type: { _in: $user_segment_types },
+      bucket_month: { _gte: $start_date, _lte: $end_date }
     }) {
-      segmentType
-      projectId
-      bucketMonthly
+      project_id
+      user_segment_type
+      bucket_month
       amount
     }
   }
 `);
 
-const GET_EVENT_SUM = gql(`
-  query AggregateSum (
-    $projectIds: [Int!],
-    $typeIds: [Int!],
-    $startDate: timestamptz!,
-    $endDate: timestamptz!, 
-  ) @cached(ttl: 300) {
-    events_monthly_to_project_aggregate(
-      where: {
-        projectId: {_in: $projectIds},
-        typeId: {_in: $typeIds},
-        bucketMonthly: {_gte: $startDate, _lte: $endDate}}
-    ) {
-      aggregate {
-        sum {
-          amount
-        }
-      }
+const GET_EVENTS_DAILY_TO_ARTIFACT = gql(`
+  query EventsDailyToArtifact(
+    $artifact_ids: [String!],
+    $event_types: [String!],
+    $start_date: timestamptz!,
+    $end_date: timestamptz!, 
+  ) {
+    events_daily_to_artifact(where: {
+      artifact_id: { _in: $artifact_ids },
+      event_type: { _in: $event_types },
+      bucket_day: { _gte: $start_date, _lte: $end_date }
+    }) {
+      artifact_id
+      event_type
+      bucket_day
+      amount
+    }
+  }
+`);
+
+const GET_EVENTS_WEEKLY_TO_ARTIFACT = gql(`
+  query EventsWeeklyToArtifact(
+    $artifact_ids: [String!],
+    $event_types: [String!],
+    $start_date: timestamptz!,
+    $end_date: timestamptz!, 
+  ) {
+    events_weekly_to_artifact(where: {
+      artifact_id: { _in: $artifact_ids },
+      event_type: { _in: $event_types },
+      bucket_week: { _gte: $start_date, _lte: $end_date }
+    }) {
+      artifact_id
+      event_type
+      bucket_week
+      amount
+    }
+  }
+`);
+
+const GET_EVENTS_MONTHLY_TO_ARTIFACT = gql(`
+  query EventsMonthlyToArtifact(
+    $artifact_ids: [String!],
+    $event_types: [String!],
+    $start_date: timestamptz!,
+    $end_date: timestamptz!, 
+  ) {
+    events_monthly_to_artifact(where: {
+      artifact_id: { _in: $artifact_ids },
+      event_type: { _in: $event_types },
+      bucket_month: { _gte: $start_date, _lte: $end_date }
+    }) {
+      artifact_id
+      event_type
+      bucket_month
+      amount
     }
   }
 `);
 
 export {
   GET_ALL_ARTIFACTS,
-  GET_ARTIFACTS_BY_IDS,
+  GET_ARTIFACT_BY_IDS,
   GET_ARTIFACT_BY_NAME,
   GET_ALL_PROJECTS,
   GET_PROJECTS_BY_IDS,
   GET_PROJECTS_BY_SLUGS,
-  GET_PROJECTS_BY_COLLECTION_SLUGS,
   GET_ALL_COLLECTIONS,
   GET_COLLECTIONS_BY_IDS,
   GET_COLLECTIONS_BY_SLUGS,
   GET_ALL_EVENT_TYPES,
-  GET_EVENT_TYPES_BY_IDS,
   GET_EVENTS_DAILY_TO_ARTIFACT,
   GET_EVENTS_WEEKLY_TO_ARTIFACT,
   GET_EVENTS_MONTHLY_TO_ARTIFACT,
@@ -390,5 +355,4 @@ export {
   GET_EVENTS_WEEKLY_TO_COLLECTION,
   GET_EVENTS_MONTHLY_TO_COLLECTION,
   GET_USERS_MONTHLY_TO_PROJECT,
-  GET_EVENT_SUM,
 };

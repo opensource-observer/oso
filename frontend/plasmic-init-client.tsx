@@ -20,9 +20,9 @@ import {
 import {
   EventDataProviderRegistration,
   CollectionEventDataProvider,
+  ArtifactEventDataProvider,
   ProjectEventDataProvider,
   ProjectUserDataProvider,
-  ArtifactEventDataProvider,
 } from "./components/dataprovider/event-data-provider";
 import {
   TableDataProvider,

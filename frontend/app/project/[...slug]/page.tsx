@@ -45,7 +45,9 @@ export default async function ProjectPage(props: ProjectPageProps) {
   }
 
   // Get project metadata from the database
-  const { project: projectArray } = await cachedGetProjectsBySlugs({ slugs });
+  const { projects: projectArray } = await cachedGetProjectsBySlugs({
+    project_slugs: slugs,
+  });
   if (!Array.isArray(projectArray) || projectArray.length < 1) {
     logger.warn(`Cannot find project (slugs=${slugs})`);
     notFound();

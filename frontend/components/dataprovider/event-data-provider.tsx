@@ -4,8 +4,9 @@ import _ from "lodash";
 import React from "react";
 import { assertNever, ensure, uncheckedCast } from "../../lib/common";
 import {
-  GET_ALL_EVENT_TYPES,
-  GET_ARTIFACTS_BY_IDS,
+  GET_ARTIFACT_BY_IDS,
+  GET_PROJECTS_BY_IDS,
+  GET_COLLECTIONS_BY_IDS,
   GET_EVENTS_DAILY_TO_ARTIFACT,
   GET_EVENTS_WEEKLY_TO_ARTIFACT,
   GET_EVENTS_MONTHLY_TO_ARTIFACT,
@@ -13,17 +14,14 @@ import {
   GET_EVENTS_WEEKLY_TO_PROJECT,
   GET_EVENTS_MONTHLY_TO_PROJECT,
   GET_USERS_MONTHLY_TO_PROJECT,
-  GET_PROJECTS_BY_IDS,
   GET_EVENTS_MONTHLY_TO_COLLECTION,
   GET_EVENTS_WEEKLY_TO_COLLECTION,
   GET_EVENTS_DAILY_TO_COLLECTION,
-  GET_COLLECTIONS_BY_IDS,
 } from "../../lib/graphql/queries";
 import {
   entityIdToLabel,
   eventTimeToLabel,
   eventTypeToLabel,
-  stringToIntArray,
 } from "../../lib/parsing";
 import { RegistrationProps } from "../../lib/types/plasmic";
 import type { EntityData, EventData } from "../../lib/types/db";
@@ -107,36 +105,6 @@ const getBucketWidth = (props: EventDataProviderProps): BucketWidth => {
   } else {
     return "day";
   }
-};
-
-/**
- * EventType from GraphQL
- */
-type EventType = {
-  id: number;
-  name: string;
-};
-
-/**
- * Converts an event type from id to name
- * @param id
- * @param eventTypes
- * @returns
- */
-const eventTypeIdToName = (id: number, eventTypes: EventType[]) => {
-  const map = _.fromPairs(eventTypes.map((t) => [t.id, t.name]));
-  return map[id];
-};
-
-/**
- * Converts an event type from name to id
- * @param name
- * @param eventTypes
- * @returns
- */
-const eventTypeNameToId = (name: string, eventTypes: EventType[]) => {
-  const map = _.fromPairs(eventTypes.map((t) => [t.name, t.id]));
-  return map[name];
 };
 
 /**
@@ -291,7 +259,7 @@ type CategoryOpts = {
  * @returns
  */
 const createCategory = (
-  id: number,
+  id: string,
   type: string,
   entityData?: EntityData[],
   opts?: CategoryOpts,
@@ -312,7 +280,7 @@ const createCategories = (
   props: EventDataProviderProps,
   entityData?: EntityData[],
 ) => {
-  const ids = stringToIntArray(props.ids);
+  const ids = props.ids ?? [];
   const types = props.eventTypes ?? [];
   const results: string[] = [];
   const opts: CategoryOpts = {
@@ -369,12 +337,6 @@ const formatData = (
  */
 function ArtifactEventDataProvider(props: EventDataProviderProps) {
   const bucketWidth = getBucketWidth(props);
-  const {
-    data: eventTypeData,
-    error: eventTypeError,
-    loading: eventTypeLoading,
-  } = useQuery(GET_ALL_EVENT_TYPES);
-  const eventTypes = eventTypeData?.event_type ?? [];
   const query =
     bucketWidth === "month"
       ? GET_EVENTS_MONTHLY_TO_ARTIFACT
@@ -387,18 +349,20 @@ function ArtifactEventDataProvider(props: EventDataProviderProps) {
     loading: eventLoading,
   } = useQuery(query, {
     variables: {
-      artifactIds: stringToIntArray(props.ids),
-      typeIds: props.eventTypes?.map((n) => eventTypeNameToId(n, eventTypes)),
-      startDate: eventTimeToLabel(props.startDate ?? DEFAULT_START_DATE),
-      endDate: eventTimeToLabel(props.endDate),
+      artifact_ids: props.ids,
+      event_types: props.eventTypes ?? [],
+      start_date: eventTimeToLabel(props.startDate ?? DEFAULT_START_DATE),
+      end_date: eventTimeToLabel(props.endDate),
     },
   });
   const {
     data: artifactData,
     error: artifactError,
     loading: artifactLoading,
-  } = useQuery(GET_ARTIFACTS_BY_IDS, {
-    variables: { artifactIds: stringToIntArray(props.ids) },
+  } = useQuery(GET_ARTIFACT_BY_IDS, {
+    variables: {
+      artifact_ids: props.ids,
+    },
   });
   const normalizedEventData: EventData[] = (
     (rawEventData as any)?.events_monthly_to_artifact ??
@@ -406,30 +370,31 @@ function ArtifactEventDataProvider(props: EventDataProviderProps) {
     rawEventData?.events_daily_to_artifact ??
     []
   ).map((x: any) => ({
-    typeName: ensure<string>(
-      eventTypeIdToName(x.typeId, eventTypes),
-      "Data missing 'typeId'",
-    ),
-    id: ensure<number>(x.artifactId, "Data missing 'projectId'"),
+    typeName: ensure<string>(x.event_type, "Data missing 'event_type'"),
+    id: ensure<string>(x.artifact_id, "Data missing 'artifact_id'"),
     date: ensure<string>(
-      x.bucketDaily ?? x.bucketWeekly ?? x.bucketMonthly,
+      x.bucket_day ?? x.bucket_week ?? x.bucket_month,
       "Data missing time",
     ),
     amount: ensure<number>(x.amount, "Data missing 'number'"),
   }));
-  const formattedData = formatData(
-    props,
-    normalizedEventData,
-    artifactData?.artifact,
-    { gapFill: bucketWidth === "day" },
-  );
-  console.log(props.ids, rawEventData, formattedData);
+  const entityData = artifactData?.artifacts.map((x) => ({
+    id: ensure<string>(x.artifact_id, "artifact missing 'artifact_id'"),
+    name: ensure<string>(
+      x.artifact_latest_name,
+      "artifact missing 'artifact_latest_name'",
+    ),
+  }));
+  const formattedData = formatData(props, normalizedEventData, entityData, {
+    gapFill: bucketWidth === "day",
+  });
+  console.log(props, rawEventData, formattedData);
   return (
     <DataProviderView
       {...props}
       formattedData={formattedData}
-      loading={eventTypeLoading || eventLoading || artifactLoading}
-      error={eventTypeError ?? eventError ?? artifactError}
+      loading={eventLoading || artifactLoading}
+      error={eventError ?? artifactError}
     />
   );
 }
@@ -441,12 +406,6 @@ function ArtifactEventDataProvider(props: EventDataProviderProps) {
  */
 function ProjectEventDataProvider(props: EventDataProviderProps) {
   const bucketWidth = getBucketWidth(props);
-  const {
-    data: eventTypeData,
-    error: eventTypeError,
-    loading: eventTypeLoading,
-  } = useQuery(GET_ALL_EVENT_TYPES);
-  const eventTypes = eventTypeData?.event_type ?? [];
   const query =
     bucketWidth === "month"
       ? GET_EVENTS_MONTHLY_TO_PROJECT
@@ -459,10 +418,10 @@ function ProjectEventDataProvider(props: EventDataProviderProps) {
     loading: eventLoading,
   } = useQuery(query, {
     variables: {
-      projectIds: stringToIntArray(props.ids),
-      typeIds: props.eventTypes?.map((n) => eventTypeNameToId(n, eventTypes)),
-      startDate: eventTimeToLabel(props.startDate ?? DEFAULT_START_DATE),
-      endDate: eventTimeToLabel(props.endDate),
+      project_ids: props.ids,
+      event_types: props.eventTypes ?? [],
+      start_date: eventTimeToLabel(props.startDate ?? DEFAULT_START_DATE),
+      end_date: eventTimeToLabel(props.endDate),
     },
   });
   const {
@@ -470,7 +429,7 @@ function ProjectEventDataProvider(props: EventDataProviderProps) {
     error: projectError,
     loading: projectLoading,
   } = useQuery(GET_PROJECTS_BY_IDS, {
-    variables: { projectIds: stringToIntArray(props.ids) },
+    variables: { project_ids: props.ids },
   });
   const normalizedData: EventData[] = (
     (rawEventData as any)?.events_monthly_to_project ??
@@ -478,30 +437,28 @@ function ProjectEventDataProvider(props: EventDataProviderProps) {
     rawEventData?.events_daily_to_project ??
     []
   ).map((x: any) => ({
-    typeName: ensure<string>(
-      eventTypeIdToName(x.typeId, eventTypes),
-      "Data missing 'type'",
-    ),
-    id: ensure<number>(x.projectId, "Data missing 'projectId'"),
+    typeName: ensure<string>(x.event_type, "Data missing 'event_type'"),
+    id: ensure<string>(x.project_id, "Data missing 'project_id'"),
     date: ensure<string>(
-      x.bucketDaily ?? x.bucketWeekly ?? x.bucketMonthly,
+      x.bucket_day ?? x.bucket_week ?? x.bucket_month,
       "Data missing time",
     ),
     amount: ensure<number>(x.amount, "Data missing 'number'"),
   }));
-  const formattedData = formatData(
-    props,
-    normalizedData,
-    projectData?.project,
-    { gapFill: bucketWidth === "day" },
-  );
-  console.log(props.ids, rawEventData, formattedData);
+  const entityData = projectData?.projects.map((x) => ({
+    id: ensure<string>(x.project_id, "project missing 'project_id'"),
+    name: ensure<string>(x.project_name, "project missing 'project_name'"),
+  }));
+  const formattedData = formatData(props, normalizedData, entityData, {
+    gapFill: bucketWidth === "day",
+  });
+  console.log(props, rawEventData, formattedData);
   return (
     <DataProviderView
       {...props}
       formattedData={formattedData}
-      loading={eventTypeLoading || eventLoading || projectLoading}
-      error={eventTypeError ?? eventError ?? projectError}
+      loading={eventLoading || projectLoading}
+      error={eventError ?? projectError}
     />
   );
 }
@@ -513,12 +470,6 @@ function ProjectEventDataProvider(props: EventDataProviderProps) {
  */
 function CollectionEventDataProvider(props: EventDataProviderProps) {
   const bucketWidth = getBucketWidth(props);
-  const {
-    data: eventTypeData,
-    error: eventTypeError,
-    loading: eventTypeLoading,
-  } = useQuery(GET_ALL_EVENT_TYPES);
-  const eventTypes = eventTypeData?.event_type ?? [];
   const query =
     bucketWidth === "month"
       ? GET_EVENTS_MONTHLY_TO_COLLECTION
@@ -531,10 +482,10 @@ function CollectionEventDataProvider(props: EventDataProviderProps) {
     loading: eventLoading,
   } = useQuery(query, {
     variables: {
-      collectionIds: stringToIntArray(props.ids),
-      typeIds: props.eventTypes?.map((n) => eventTypeNameToId(n, eventTypes)),
-      startDate: eventTimeToLabel(props.startDate ?? DEFAULT_START_DATE),
-      endDate: eventTimeToLabel(props.endDate),
+      collection_ids: props.ids,
+      event_types: props.eventTypes ?? [],
+      start_date: eventTimeToLabel(props.startDate ?? DEFAULT_START_DATE),
+      end_date: eventTimeToLabel(props.endDate),
     },
   });
   const {
@@ -542,7 +493,7 @@ function CollectionEventDataProvider(props: EventDataProviderProps) {
     error: collectionError,
     loading: collectionLoading,
   } = useQuery(GET_COLLECTIONS_BY_IDS, {
-    variables: { collectionIds: stringToIntArray(props.ids) },
+    variables: { collection_ids: props.ids },
   });
   const normalizedData: EventData[] = (
     (rawEventData as any)?.events_monthly_to_collection ??
@@ -550,30 +501,31 @@ function CollectionEventDataProvider(props: EventDataProviderProps) {
     rawEventData?.events_daily_to_collection ??
     []
   ).map((x: any) => ({
-    typeName: ensure<string>(
-      eventTypeIdToName(x.typeId, eventTypes),
-      "Data missing 'type'",
-    ),
-    id: ensure<number>(x.collectionId, "Data missing 'collectionId'"),
+    typeName: ensure<string>(x.event_type, "Data missing 'event_type'"),
+    id: ensure<string>(x.collection_id, "Data missing 'collection_id'"),
     date: ensure<string>(
-      x.bucketDay ?? x.bucketWeekly ?? x.bucketMonthly,
+      x.bucket_day ?? x.bucket_week ?? x.bucket_month,
       "Data missing time",
     ),
     amount: ensure<number>(x.amount, "Data missing 'number'"),
   }));
-  const formattedData = formatData(
-    props,
-    normalizedData,
-    collectionData?.collection,
-    { gapFill: bucketWidth === "day" },
-  );
-  console.log(props.ids, rawEventData, formattedData);
+  const entityData = collectionData?.collections.map((x) => ({
+    id: ensure<string>(x.collection_id, "collection missing 'collection_id'"),
+    name: ensure<string>(
+      x.collection_name,
+      "collection missing 'collection_name'",
+    ),
+  }));
+  const formattedData = formatData(props, normalizedData, entityData, {
+    gapFill: bucketWidth === "day",
+  });
+  console.log(props, rawEventData, formattedData);
   return (
     <DataProviderView
       {...props}
       formattedData={formattedData}
-      loading={eventTypeLoading || eventLoading || collectionLoading}
-      error={eventTypeError ?? eventError ?? collectionError}
+      loading={eventLoading || collectionLoading}
+      error={eventError ?? collectionError}
     />
   );
 }
@@ -590,10 +542,10 @@ function ProjectUserDataProvider(props: EventDataProviderProps) {
     loading: eventLoading,
   } = useQuery(GET_USERS_MONTHLY_TO_PROJECT, {
     variables: {
-      projectIds: stringToIntArray(props.ids),
-      segmentTypes: props.eventTypes ?? [],
-      startDate: eventTimeToLabel(props.startDate ?? DEFAULT_START_DATE),
-      endDate: eventTimeToLabel(props.endDate),
+      project_ids: props.ids,
+      user_segment_types: props.eventTypes ?? [],
+      start_date: eventTimeToLabel(props.startDate ?? DEFAULT_START_DATE),
+      end_date: eventTimeToLabel(props.endDate),
     },
   });
   const {
@@ -601,18 +553,25 @@ function ProjectUserDataProvider(props: EventDataProviderProps) {
     error: projectError,
     loading: projectLoading,
   } = useQuery(GET_PROJECTS_BY_IDS, {
-    variables: { projectIds: stringToIntArray(props.ids) },
+    variables: { project_ids: props.ids },
   });
   const normalizedData: EventData[] = (
     rawEventData?.users_monthly_to_project ?? []
-  ).map((x) => ({
-    typeName: ensure<string>(x.segmentType, "Data missing 'segmentType'"),
-    id: ensure<number>(x.projectId, "Data missing 'projectId'"),
-    date: ensure<string>(x.bucketMonthly, "Data missing time"),
+  ).map((x: any) => ({
+    typeName: ensure<string>(
+      x.user_segment_type,
+      "Data missing 'user_segment_type'",
+    ),
+    id: ensure<string>(x.project_slug, "Data missing 'project_slug'"),
+    date: ensure<string>(x.bucket_month, "Data missing time"),
     amount: ensure<number>(x.amount, "Data missing 'number'"),
   }));
-  const formattedData = formatData(props, normalizedData, projectData?.project);
-  console.log(props.ids, rawEventData, formattedData);
+  const entityData = projectData?.projects.map((x) => ({
+    id: ensure<string>(x.project_id, "project missing 'project_id'"),
+    name: ensure<string>(x.project_name, "project missing 'project_name'"),
+  }));
+  const formattedData = formatData(props, normalizedData, entityData);
+  console.log(props, rawEventData, formattedData);
   return (
     <DataProviderView
       {...props}

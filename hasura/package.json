@@ -1,0 +1,26 @@
+{
+  "name": "@opensource-observer/hasura",
+  "version": "0.0.1",
+  "description": "API service for OSO",
+  "author": "Kariba Labs",
+  "license": "Apache-2.0",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/opensource-observer/oso.git"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "metadata:pull": "hasura metadata export",
+    "metadata:reload": "hasura metadata reload",
+    "metadata:apply": "hasura metadata apply",
+    "deploy": "pnpm metadata:reload && pnpm metadata:apply"
+  },
+  "keywords": [],
+  "devDependencies": {
+    "dotenv-cli": "^7.3.0",
+    "hasura-cli": "^2.36.1"
+  }
+}

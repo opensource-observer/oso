@@ -32,4 +32,16 @@ const pathToNamespaceEnum = (namespacePath: string) => {
   }
 };
 
-export { catchallPathToString, pathToNamespaceEnum };
+/**
+ * Converts a path string to an artifact type
+ */
+const pathToTypeEnum = (typePath: string) => {
+  switch (typePath) {
+    case "eoa":
+      return "EOA_ADDRESS";
+    default:
+      return null;
+  }
+};
+
+export { catchallPathToString, pathToNamespaceEnum, pathToTypeEnum };
