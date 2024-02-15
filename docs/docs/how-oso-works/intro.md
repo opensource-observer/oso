@@ -21,8 +21,10 @@ We have four primary building blocks that we use to organize our data:
   a particular ecosystem or all projects that are dependent on a given developer
   library.
 - [Projects](./schema/project). Projects are used to group artifacts together.
-  For example, a project may include a GitHub organization, a blockchain address
-  used for holding funds, and a NPM package.
+  For example, a project like Open Source Observer may include a GitHub organization,
+  various NPM packages, an API endpoint,
+  an Open Collective for raising funds for the project,
+  and a blockchain address used for holding crypto funds.
 - [Artifacts](./schema/artifact). Artifacts are used to store information about
   work artifacts created by open source projects in the OSS Directory. For
   example, a GitHub organization artifact would be identified by a `url` field
@@ -31,7 +33,7 @@ We have four primary building blocks that we use to organize our data:
   would be identified by an `address` field that is a valid blockchain address
   (eg, `0x1234567890123456789012345678901234567890`).
 - [Events](./schema/events). Events are used to store information about transactions or
-  other activities involving a project's artifacts. These could include a code
+  other activities involving artifacts. These could include a code
   commit, a package download, or a smart contract interaction.
 
 It is easy to define new collections, projects, and artifacts in our [OSS
@@ -98,6 +100,15 @@ dependencies are:
     that is used to power the OSO website. This is used to offload querying of
     the most used views from bigquery as using bigquery to serve the OSO website
     would become cost prohibitive.
+- [Hasura](https://hasura.io/)
+  - Hasura is used to provide a GraphQL API to the PostgreSQL database.
+    The API service is meant for powering live applications,
+    including the OSO website.
+- [Supabase](https://supabase.com/)
+  - We maintain a separate database via Supabase.
+    Supabase is used for user authentication, as well as storing sensitive user data.
+    While nearly every other part of the architecture will be
+    transparent and publicly readable, this database will be kept private.
 
 ## Open Architecture for Open Source Data
 
