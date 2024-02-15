@@ -1,6 +1,6 @@
 SELECT
-  project_slug,
-  segment_type,
+  project_id,
+  user_segment_type,
   bucket_month,
   SUM(amount) AS amount
 FROM 
@@ -10,6 +10,6 @@ FROM
     SELECT * FROM {{ ref('int_users') }}
   ) combined_data
 GROUP BY
-  project_slug,
-  segment_type,
+  project_id,
+  user_segment_type,
   bucket_month

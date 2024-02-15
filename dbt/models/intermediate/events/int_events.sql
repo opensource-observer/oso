@@ -34,8 +34,8 @@
 WITH arbitrum_contract_invocation_daily_count AS (
   SELECT 
     acii.time,
-    "CONTRACT_INVOCATION_DAILY_COUNT" AS `type`,
-    acii.source_id,
+    "CONTRACT_INVOCATION_DAILY_COUNT" AS `event_type`,
+    acii.source_id as event_source_id,
     acii.to_name,
     acii.to_namespace,
     acii.to_type,
@@ -49,8 +49,8 @@ WITH arbitrum_contract_invocation_daily_count AS (
 ), arbitrum_contract_invocation_daily_l2_gas_used AS (
   SELECT 
     acii.time,
-    "CONTRACT_INVOCATION_DAILY_L2_GAS_USED" AS `type`,
-    acii.source_id,
+    "CONTRACT_INVOCATION_DAILY_L2_GAS_USED" AS `event_type`,
+    acii.source_id as event_source_id,
     acii.to_name,
     acii.to_namespace,
     acii.to_type,
@@ -64,8 +64,8 @@ WITH arbitrum_contract_invocation_daily_count AS (
 ), arbitrum_contract_invocation_daily_l1_gas_used AS (
   SELECT 
     acii.time,
-    "CONTRACT_INVOCATION_DAILY_L1_GAS_USED" AS `type`,
-    acii.source_id,
+    "CONTRACT_INVOCATION_DAILY_L1_GAS_USED" AS `event_type`,
+    acii.source_id as event_source_id,
     acii.to_name,
     acii.to_namespace,
     acii.to_type,
@@ -79,8 +79,8 @@ WITH arbitrum_contract_invocation_daily_count AS (
 ), github_commits AS (
   SELECT
     gc.created_at as `time`,
-    "COMMIT_CODE" as `type`,
-    gc.push_id as `source_id`,
+    "COMMIT_CODE" as `event_type`,
+    gc.push_id as `event_source_id`,
     gc.repository_name as `to_name`,
     "GITHUB" as `to_namespace`,
     "GIT_REPOSITORY" as `to_type`,
@@ -103,8 +103,8 @@ WITH arbitrum_contract_invocation_daily_count AS (
 ), github_issues AS (
   SELECT
     gi.created_at as `time`,
-    gi.type as `type`,
-    CAST(gi.id AS STRING) as `source_id`,
+    gi.type as `event_type`,
+    CAST(gi.id AS STRING) as `event_source_id`,
     gi.repository_name as `to_name`,
     "GITHUB" as `to_namespace`,
     "GIT_REPOSITORY" as `to_type`,
@@ -118,8 +118,8 @@ WITH arbitrum_contract_invocation_daily_count AS (
 ), github_pull_requests AS (
   SELECT
     gh.created_at as `time`,
-    gh.type as `type`,
-    CAST(gh.id AS STRING) as `source_id`,
+    gh.type as `event_type`,
+    CAST(gh.id AS STRING) as `event_source_id`,
     gh.repository_name as `to_name`,
     "GITHUB" as `to_namespace`,
     "GIT_REPOSITORY" as `to_type`,
@@ -133,8 +133,8 @@ WITH arbitrum_contract_invocation_daily_count AS (
 ), github_pull_request_merge_events AS (
   SELECT
     gh.created_at as `time`,
-    gh.type as `type`,
-    CAST(gh.id AS STRING) as `source_id`,
+    gh.type as `event_type`,
+    CAST(gh.id AS STRING) as `event_source_id`,
     gh.repository_name as `to_name`,
     "GITHUB" as `to_namespace`,
     "GIT_REPOSITORY" as `to_type`,
@@ -148,8 +148,8 @@ WITH arbitrum_contract_invocation_daily_count AS (
 ), github_stars_and_forks AS (
     SELECT
     gh.created_at as `time`,
-    gh.type as `type`,
-    CAST(gh.id AS STRING) as `source_id`,
+    gh.type as `event_type`,
+    CAST(gh.id AS STRING) as `event_source_id`,
     gh.repository_name as `to_name`,
     "GITHUB" as `to_namespace`,
     "GIT_REPOSITORY" as `to_type`,
