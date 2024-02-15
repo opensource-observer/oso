@@ -1,12 +1,11 @@
 ---
+title: Mission
 sidebar_position: 1
 ---
 
-# Overview
-
 Open Source Observer is an open source public good.
 
-Our goal is to help internet economies measure the impact of open source software contributions to the growth and adoption of their platform.
+Our mission is to help internet economies measure the impact of open source software contributions to the growth and adoption of their platform.
 
 ### Why does this matter?
 

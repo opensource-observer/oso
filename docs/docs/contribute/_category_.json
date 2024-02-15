@@ -1,9 +1,8 @@
 {
-  "label": "Contribute",
+  "label": "Contribute To OSO",
   "position": 2,
   "link": {
     "type": "generated-index",
-    "title": "Contributing",
-    "description": "There are a variety of paths for contributing to Open Source Observer."
+    "title": "Contribute To OSO"
   }
 }
