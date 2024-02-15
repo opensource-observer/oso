@@ -1,5 +1,5 @@
 ---
-title: Funding Data
+title: Share Funding Data
 sidebar_position: 2
 ---
 
@@ -14,6 +14,8 @@ This page is a work in progress.
 :::
 
 ## Contributing Funding Data
+
+---
 
 If you have funding data you would like to contribute, please submit a pull request with a CSV file that includes the following columns:
 
@@ -33,6 +35,8 @@ If you have funding data you would like to contribute, please submit a pull requ
 
 ## Accessing Funding Data
 
+---
+
 We are currently collecting funding data from the following networks:
 
 - Arbitrum
@@ -49,6 +53,8 @@ We are looking for help with:
 - Open Collective
 
 ## Grants Registry
+
+---
 
 :::warning
 This is a working -- and very incomplete -- registry of onchain ecosystem grant funds.

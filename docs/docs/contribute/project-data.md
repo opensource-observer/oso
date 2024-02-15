@@ -1,5 +1,5 @@
 ---
-title: Project Data
+title: Maintain Project Data
 sidebar_position: 1
 ---
 
@@ -9,7 +9,9 @@ Contributing data about open source projects is one of the simplest and most imp
 
 Here are the steps to add or update project information:
 
-## Adding & Updating Project Data
+## Quick Steps
+
+---
 
 1. Fork [OSS Directory](https://github.com/opensource-observer/oss-directory/fork).
 2. Locate or create a new project `.yaml` file under `./data/projects/`.
@@ -17,6 +19,8 @@ Here are the steps to add or update project information:
 4. Submit a pull request from your fork back to [OSS Directory](https://github.com/opensource-observer/oss-directory).
 
 ## Detailed Steps
+
+---
 
 ### 1. Fork OSS Directory
 
@@ -110,17 +114,17 @@ Some projects may own a lot of blockchain addresses. The most important addresse
 ### 4. Submit a pull request from your fork to our repository
 
 - Save your changes and open a pull request from your fork to the [OSS Directory](https://github.com/opensource-observer/oss-directory).
-
-:::tip
-If you run into issues, check out [GitHub's instructions](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request-from-a-fork) for creating a pull request from a fork.
-:::
-
 - If you are adding multiple new projects, you can include them all in the same pull request, but please provide some comments to help us understand your changes.
 - Your submission will be reviewed by a maintainer before approving the pull request. If there are any issues, you will be notified in the pull request thread.
 - Your submission will be merged once it is approved by a maintainer. Merging the pull request will trigger automated validation of the artifacts you added. If there are any issues or duplicates found, the pull request will be rejected and you will be notified in the pull request thread.
 - Once the pull request is merged successfully, your project will be added to the indexing queue for inclusion in all subsequent data updates.
+  :::tip
+  If you run into issues, check out [GitHub's instructions](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request-from-a-fork) for creating a pull request from a fork.
+  :::
 
 ## Bulk Updates
+
+---
 
 To make bulk updates, we recommend cloning the [OSS Directory](https://github.com/opensource-observer/oss-directory) repo and making changes locally. Then, submit a complete set of project updates via one pull request.
 
