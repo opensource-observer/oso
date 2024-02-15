@@ -1,9 +1,7 @@
 SELECT 
-  type,
-  project_slug,
-  from_source_id,
-  from_type,
-  from_namespace,
-  MAX(time) as time
-FROM {{ ref('int_events_to_project') }}
-GROUP BY type, project_slug, from_source_id, from_type, from_namespace
+  e.event_type,
+  e.project_id,
+  e.from_id as artifact_id,
+  MAX(e.time) as event_time
+FROM {{ ref('int_events_to_project') }} as e
+GROUP BY 1,2,3

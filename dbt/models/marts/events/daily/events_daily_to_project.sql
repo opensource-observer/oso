@@ -1,13 +1,11 @@
 {# 
-  All events daily to an artifact
+  All events daily to a project
 #}
 
 SELECT
-  e.to_namespace,
-  e.to_type,
-  e.to_source_id,
+  e.project_id,
   TIMESTAMP_TRUNC(e.time, DAY) as bucket_day,
-  e.type,
+  e.event_type,
   SUM(e.amount) AS amount
 FROM {{ ref('int_events_to_project') }} AS e
-GROUP BY 1,2,3,4,5
+GROUP BY 1,2,3

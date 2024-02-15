@@ -1,5 +1,5 @@
 SELECT
-  projects.slug as project_slug,
+  projects.id as project_id,
   repos.*
 FROM
   {{ ref('stg_ossd__current_projects')}} AS projects

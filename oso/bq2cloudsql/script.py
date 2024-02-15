@@ -29,6 +29,36 @@ def run():
         [
             TableSyncConfig(
                 TableSyncMode.OVERWRITE,
+                "events_daily_to_collection",
+                "events_daily_to_collection",
+            ),
+            TableSyncConfig(
+                TableSyncMode.OVERWRITE,
+                "events_monthly_to_collection",
+                "events_monthly_to_collection",
+            ),
+            TableSyncConfig(
+                TableSyncMode.OVERWRITE,
+                "events_weekly_to_collection",
+                "events_weekly_to_collection",
+            ),
+            TableSyncConfig(
+                TableSyncMode.OVERWRITE,
+                "events_daily_from_collection",
+                "events_daily_from_collection",
+            ),
+            TableSyncConfig(
+                TableSyncMode.OVERWRITE,
+                "events_monthly_from_collection",
+                "events_monthly_from_collection",
+            ),
+            TableSyncConfig(
+                TableSyncMode.OVERWRITE,
+                "events_weekly_from_collection",
+                "events_weekly_from_collection",
+            ),
+            TableSyncConfig(
+                TableSyncMode.OVERWRITE,
                 "events_daily_to_project",
                 "events_daily_to_project",
             ),
@@ -124,15 +154,16 @@ def run():
             ),
             TableSyncConfig(
                 TableSyncMode.OVERWRITE,
-                "projects_by_collection_slugs",
-                "projects_by_collection_slugs",
+                "projects_by_collection",
+                "projects_by_collection",
             ),
             TableSyncConfig(
                 TableSyncMode.OVERWRITE,
-                "artifacts_by_project_slugs",
-                "artifacts_by_project_slugs",
+                "artifacts_by_project",
+                "artifacts_by_project",
             ),
         ],
+        "oso-csv-exports",
         "oso-csv-exports",
     )
     synchronizer.sync()
