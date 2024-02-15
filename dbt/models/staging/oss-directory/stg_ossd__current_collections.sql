@@ -12,7 +12,7 @@ SELECT
     "oso" for now but we are assuming we will allow users to add their on the
     OSO website
   #}
-  SHA256(CONCAT("oso", slug)) as id,
+  {{ oso_id('"oso"', 'slug') }} AS id,
   "oso" as namespace,
   c.* 
 FROM `oso-production.opensource_observer.collections_ossd` as c

@@ -65,5 +65,5 @@ WITH all_repos AS (
 )
 SELECT 
   a.*,
-  SHA256(CONCAT(a.artifact_namespace, a.artifact_type, a.artifact_source_id)) as `artifact_id`
+  {{ oso_artifact_id("artifact", "a") }} as `artifact_id`
 FROM all_unique_artifacts as a

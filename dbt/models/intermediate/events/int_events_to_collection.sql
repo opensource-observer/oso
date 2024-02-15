@@ -3,7 +3,7 @@
 #}
 
 SELECT
-  pbc.collection_id,
+  REPLACE(REPLACE(TO_BASE64(pbc.collection_id), '+', '-', '/', '_') as `collection_id`,
   e.time,
   e.event_type,
   e.to_id,
