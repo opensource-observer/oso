@@ -6,14 +6,9 @@ spec:
   version: "v0.0.1"
   tables:
     ["*"]
-  backend_options:
-    table_name: "test_sync"
-    connection: "@@plugins.postgresql.connection"
   destinations:
     - "file"
     - "bigquery"
-  spec:
-    access_token: blah
 ---
 kind: destination
 spec:
@@ -35,14 +30,3 @@ spec:
   spec:
     project_id: oso-production
     dataset_id: opensource_observer_staging
----
-kind: destination
-spec:
-  name: postgresql
-  path: cloudquery/postgresql
-  registry: cloudquery
-  version: "v7.3.3"
-  write_mode: "overwrite-delete-stale"
-  migrate_mode: forced
-  spec:
-    connection_string: "postgresql://postgres:postgres@localhost:5432/postgres?sslmode=disable"
