@@ -9,6 +9,8 @@ spec:
   destinations:
     - "file"
     - "bigquery"
+  spec:
+    table_suffix: "_temp" # this should be removed once the pipeline is ready
 ---
 kind: destination
 spec:
@@ -17,9 +19,8 @@ spec:
   registry: cloudquery
   version: "v3.4.16"
   spec:
-    path: "${CLOUDQUERY_FILE_DIRECTORY}/{{TABLE}}.{{FORMAT}}"
+    path: "${CLOUDQUERY_FILE_DIRECTORY}/{{TABLE}}/{{UUID}}.{{FORMAT}}"
     format: json
-    table_suffix: "_temp" # this should be removed once the pipeline is ready
 ---
 kind: destination
 spec:

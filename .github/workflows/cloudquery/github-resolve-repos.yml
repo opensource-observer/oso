@@ -7,10 +7,9 @@ spec:
   tables:
     ["*"]
   destinations:
-    - "file"
     - "bigquery"
   spec:
-    projects_input_path: "${CLOUDQUERY_FILE_DIRECTORY}/{{TABLE}}.{{FORMAT}}"
+    projects_input_path: "${CLOUDQUERY_FILE_DIRECTORY}/projects.json"
     token: ${GITHUB_TOKEN}
     table_suffix: "_temp" # This should be removed once the pipeline is ready
 ---
