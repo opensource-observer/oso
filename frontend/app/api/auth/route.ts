@@ -1,16 +1,16 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { verify } from "jsonwebtoken";
 import { supabasePrivileged } from "../../../lib/clients/supabase";
-import { SUPABASE_JWT_SECRET } from "../../../lib/config";
 //import { logger } from "../../../lib/logger";
 
 export const runtime = "edge"; // 'nodejs' (default) | 'edge'
 //export const dynamic = "force-dynamic";
 export const revalidate = 0;
+const DATA_COLLECTIVE_TABLE = "data_collective";
 const API_KEY_TABLE = "api_keys";
 const USER_ID_COLUMN = "user_id";
 const API_KEY_COLUMN = "api_key";
-const ALL_COLUMNS = `${USER_ID_COLUMN},${API_KEY_COLUMN}`;
+const DELETED_COLUMN = "deleted_at";
+const ALL_COLUMNS = `${USER_ID_COLUMN},${API_KEY_COLUMN},${DELETED_COLUMN}`;
 const makeAnonRole = () => ({
   "x-hasura-role": "anonymous",
 });
@@ -20,12 +20,12 @@ const makeUserRole = (userId: string) => ({
   "x-hasura-allowed-roles": ["user"],
   "x-hasura-user-id": userId,
 });
+**/
 const makeDevRole = (userId: string) => ({
   "x-hasura-default-role": "developer",
   "x-hasura-allowed-roles": ["developer", "user"],
   "x-hasura-user-id": userId,
 });
-**/
 
 /**
  * This will return an array of all artifacts
@@ -42,27 +42,48 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(makeAnonRole());
   }
 
+  // Get the token
   const trimmedAuth = auth.trim();
   const token = trimmedAuth.toLowerCase().startsWith("bearer")
     ? trimmedAuth.slice(6).trim()
     : trimmedAuth;
 
-  try {
-    const decoded = verify(token, SUPABASE_JWT_SECRET);
-    console.log("JWT decoded: ", decoded);
-    //const userId = decoded.sub;
-    //return NextResponse.json(makeUserRole(userId));
-  } catch (e) {
-    console.warn("Not a JWT token", e);
-  }
-
-  const { data, error } = await supabasePrivileged
+  // Get the user
+  const { data: keyData, error: keyError } = await supabasePrivileged
     .from(API_KEY_TABLE)
     .select(ALL_COLUMNS)
     .eq(API_KEY_COLUMN, token);
 
-  console.log(data, error);
+  if (keyError || !keyData) {
+    console.warn("Error retrieving API keys", keyError);
+    return NextResponse.json(makeAnonRole());
+  }
 
-  // Default to anonymous role
-  return NextResponse.json(makeAnonRole());
+  const activeKeys = keyData.filter((x) => !x.deleted_at);
+  if (activeKeys.length < 1) {
+    return NextResponse.json(makeAnonRole());
+  }
+
+  const userId = activeKeys[0].user_id;
+
+  // Check for data collective membership
+  const { data: collectiveData, error: collectiveError } =
+    await supabasePrivileged
+      .from(DATA_COLLECTIVE_TABLE)
+      .select(USER_ID_COLUMN)
+      .eq(USER_ID_COLUMN, userId);
+
+  if (collectiveError || !collectiveData) {
+    console.warn(
+      "Error retrieving data collective membership",
+      collectiveError,
+    );
+    return NextResponse.json(makeAnonRole());
+  } else if (collectiveData.length < 1) {
+    // Not a member
+    return NextResponse.json(makeAnonRole());
+  }
+
+  // Passes all checks, elevate to developer role
+  return NextResponse.json(makeDevRole(userId));
 }
