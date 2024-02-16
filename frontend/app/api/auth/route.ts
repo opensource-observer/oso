@@ -5,6 +5,7 @@ import { supabasePrivileged } from "../../../lib/clients/supabase";
 export const runtime = "edge"; // 'nodejs' (default) | 'edge'
 //export const dynamic = "force-dynamic";
 export const revalidate = 0;
+const CACHE_CONTROL = "max-age=3600"; // in seconds
 const DATA_COLLECTIVE_TABLE = "data_collective";
 const API_KEY_TABLE = "api_keys";
 const USER_ID_COLUMN = "user_id";
@@ -22,9 +23,9 @@ const makeUserRole = (userId: string) => ({
 });
 **/
 const makeDevRole = (userId: string) => ({
-  "x-hasura-default-role": "developer",
-  "x-hasura-allowed-roles": ["developer", "user"],
+  "x-hasura-role": "developer",
   "x-hasura-user-id": userId,
+  "cache-control": CACHE_CONTROL,
 });
 
 /**
