@@ -1,0 +1,26 @@
+kind: source
+spec:
+  name: github-resolve-repos
+  path: "ghcr.io/opensource-observer/cloudquery-oss-directory:${DOCKER_TAG}"
+  registry: "docker"
+  version: "v0.0.1"
+  tables:
+    ["*"]
+  destinations:
+    - "file"
+    - "bigquery"
+  spec:
+    projects_input_path: "${CLOUDQUERY_FILE_DIRECTORY}/{{TABLE}}.{{FORMAT}}"
+    token: ${GITHUB_TOKEN}
+    table_suffix: "_temp" # This should be removed once the pipeline is ready
+---
+kind: destination
+spec:
+  name: bigquery
+  path: cloudquery/bigquery
+  registry: cloudquery
+  version: "v3.3.13"
+  write_mode: "append"
+  spec:
+    project_id: oso-production
+    dataset_id: opensource_observer

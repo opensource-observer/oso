@@ -25,6 +25,10 @@ dayjs.extend(timezone);
 dayjs.extend(customParseFormat);
 dayjs.extend(localizedFormat);
 
+type TableOptions = {
+  suffix: string;
+};
+
 const getColumnResolver = (c: string): ColumnResolver => {
   return (meta, resource) => {
     const dataItem = resource.getItem();
@@ -38,6 +42,7 @@ const getRepositories = async (
   input: () => readline.Interface,
   client: GraphQLClient,
   gh: Octokit,
+  options: TableOptions,
 ): Promise<Table> => {
   const columnDefinitions: Column[] = [
     newColumn("node_id", {
@@ -116,7 +121,7 @@ const getRepositories = async (
     return;
   };
   return createTable({
-    name: "repositories_ossd",
+    name: `repositories${options.suffix}`,
     columns: columnDefinitions,
     resolver: tableResolver,
   });
@@ -143,6 +148,7 @@ export const getTables = async (
   inputPath: string,
   client: GraphQLClient,
   gh: Octokit,
+  options: TableOptions,
 ): Promise<Table[]> => {
   const tables = [
     await getRepositories(
@@ -156,6 +162,7 @@ export const getTables = async (
       },
       client,
       gh,
+      options,
     ),
   ];
 

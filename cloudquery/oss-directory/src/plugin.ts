@@ -85,7 +85,9 @@ export const newOssDirectoryPlugin = () => {
       pluginClient.allTables = [];
       return pluginClient;
     }
-    pluginClient.allTables = await getTables();
+    pluginClient.allTables = await getTables({
+      suffix: pluginClient.spec.tableSuffix,
+    });
 
     return pluginClient;
   };

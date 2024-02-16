@@ -10,7 +10,7 @@ spec:
     - "bigquery"
     - "file"
   spec:
-    projectsInputPath: "test_only.projects.json"
+    projects_input_path: "test_only.projects.json"
     token: ${GITHUB_TOKEN}
 ---
 kind: destination
@@ -32,4 +32,4 @@ spec:
   write_mode: "append"
   spec:
     project_id: oso-production
-    dataset_id: opensource_observer
+    dataset_id: opensource_observer_staging

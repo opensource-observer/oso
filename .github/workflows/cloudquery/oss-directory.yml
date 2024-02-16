@@ -1,8 +1,8 @@
 kind: source
 spec:
-  name: "oss-directory"
-  registry: "grpc"
-  path: "localhost:7777"
+  name: oss-directory
+  path: "ghcr.io/opensource-observer/cloudquery-oss-directory:${DOCKER_TAG}"
+  registry: "docker"
   version: "v0.0.1"
   tables:
     ["*"]
@@ -17,8 +17,9 @@ spec:
   registry: cloudquery
   version: "v3.4.16"
   spec:
-    path: "test_only/{{TABLE}}/{{UUID}}.{{FORMAT}}"
+    path: "${CLOUDQUERY_FILE_DIRECTORY}/{{TABLE}}.{{FORMAT}}"
     format: json
+    table_suffix: "_temp" # this should be removed once the pipeline is ready
 ---
 kind: destination
 spec:
@@ -29,4 +30,4 @@ spec:
   write_mode: "append"
   spec:
     project_id: oso-production
-    dataset_id: opensource_observer_staging
+    dataset_id: opensource_observer

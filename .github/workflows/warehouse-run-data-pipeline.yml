@@ -1,0 +1,76 @@
+name: warehouse-publish-cloudquery-plugins
+env:
+  X_GITHUB_GRAPHQL_API: ${{ vars.X_GITHUB_GRAPHQL_API }}
+  X_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  CLOUDQUERY_VERSION: 5.5.0
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+# For now this only runs on a schedule once a day. Once we have made some of the
+# plugin workflows more incremental we will run this on _every_ commit to main
+on:
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+  schedule:
+
+    # Schedule every day at 2AM UTC. This is so we ensure anything that is #
+    # commited daily has completed writing from whatever data source. This likely
+    # isn't necessary in the future if we do everything incrementally
+    - cron: '0 2 * * *'
+
+jobs:
+  warehouse-publish-cloudquery-plugins:
+    name: warehouse-publish-cloudquery-plugins
+    environment: indexer
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 1
+
+      - name: 'Login to GitHub Container Registry'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: 'google-github-actions/auth@v2'
+        with:
+          service_account: oso-github-actions@oso-production.iam.gserviceaccount.com 
+          workload_identity_provider: projects/1054148520225/locations/global/workloadIdentityPools/github/providers/oso-github-actions
+
+      - name: Download and install cloudquery
+        run: |
+          curl -L https://github.com/cloudquery/cloudquery/releases/download/cli-v${CLOUDQUERY_VERSION}/cloudquery_linux_amd64 -o cloudquery &&
+          chmod a+x cloudquery && 
+          mv cloudquery /usr/local/bin/cloudquery
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12' 
+
+      - name: Install python dependencies
+        run: |
+          pip install poetry &&
+          poetry install
+      
+      # For now this is a bit of a hack for the oss-directory plugins as the output from one plugin is the input to 
+      # another. Ideally we would simply tell whatever system to run and it will handle dependencies.
+      - name: Run cloudquery for oss-directory
+        run: |
+          cloudquery sync .github/workflows/cloudquery/oss-directory.yml
+
+      - name: Run cloudquery for github-resolve-directory
+        run: |
+          cloudquery sync .github/workflows/cloudquery/github-resolve-repos.yml
+
+      - name: Run dbt
+        run: |
+          dbt run
+
+      - name: Copy the bigquery tables to cloudsql
+        run: |
+          bq2cloudsql
