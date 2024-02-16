@@ -4,6 +4,7 @@ import {
   Int64,
   List,
   Field,
+  TimestampSecond,
 } from "@cloudquery/plugin-sdk-javascript/arrow";
 import { JSONType } from "@cloudquery/plugin-sdk-javascript/types/json";
 import type {
@@ -21,11 +22,16 @@ import localizedFormat from "dayjs/plugin/localizedFormat.js";
 import timezone from "dayjs/plugin/timezone.js";
 import utc from "dayjs/plugin/utc.js";
 import { fetchData } from "oss-directory";
+import _ from "lodash";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
 dayjs.extend(customParseFormat);
 dayjs.extend(localizedFormat);
+
+type TableOptions = {
+  suffix: string;
+};
 
 const getColumnResolver = (c: string): ColumnResolver => {
   return (_meta, resource) => {
@@ -57,6 +63,7 @@ async function ossDataToTable<T>(
     name: name,
     columns: columnDefs,
     resolver: tableResolver,
+    isIncremental: true,
   });
 }
 
@@ -75,48 +82,78 @@ function newColumn(name: string, opts?: Partial<Column>): Column {
   };
 }
 
-export const getTables = async (): Promise<Table[]> => {
+export const getTables = async (options: TableOptions): Promise<Table[]> => {
   const { collections, projects } = await fetchData();
   const tables = [
-    await ossDataToTable("collections_ossd", collections, [
-      newColumn("slug", {
-        primaryKey: true,
-        unique: true,
-        notNull: true,
+    await ossDataToTable(
+      `collections${options.suffix}`,
+      collections.map((c) => {
+        return _.merge(
+          {
+            sync_time: new Date(),
+          },
+          c,
+        );
       }),
-      newColumn("name", {
-        notNull: true,
+      [
+        newColumn("slug", {
+          primaryKey: true,
+          unique: true,
+          notNull: true,
+        }),
+        newColumn("name", {
+          notNull: true,
+        }),
+        newColumn("version", {
+          type: new Int64(),
+        }),
+        newColumn("projects", {
+          type: new List(new Field("projects", new Utf8())),
+        }),
+        newColumn("sync_time", {
+          type: new TimestampSecond("UTC"),
+          incrementalKey: true,
+        }),
+      ],
+    ),
+    await ossDataToTable(
+      `projects${options.suffix}`,
+      projects.map((p) => {
+        return _.merge(
+          {
+            sync_time: new Date(),
+          },
+          p,
+        );
       }),
-      newColumn("version", {
-        type: new Int64(),
-      }),
-      newColumn("projects", {
-        type: new List(new Field("projects", new Utf8())),
-      }),
-    ]),
-    await ossDataToTable("projects_ossd", projects, [
-      newColumn("slug", {
-        primaryKey: true,
-        unique: true,
-        notNull: true,
-      }),
-      newColumn("name", {
-        notNull: true,
-      }),
-      newColumn("github", {
-        type: new JSONType(),
-        // Ideally we'd be able to use structs to more precisely specify the
-        //types on the data. However, there seems to be issues with this on the
-        //JS SDK. Will need to check the python/go sdk for cloudquery type: new
-        //List(new Field("_blockchain", new JSONType())),
-      }),
-      newColumn("npm", {
-        type: new JSONType(),
-      }),
-      newColumn("blockchain", {
-        type: new JSONType(),
-      }),
-    ]),
+      [
+        newColumn("slug", {
+          primaryKey: true,
+          unique: true,
+          notNull: true,
+        }),
+        newColumn("name", {
+          notNull: true,
+        }),
+        newColumn("github", {
+          type: new JSONType(),
+          // Ideally we'd be able to use structs to more precisely specify the
+          //types on the data. However, there seems to be issues with this on the
+          //JS SDK. Will need to check the python/go sdk for cloudquery type: new
+          //List(new Field("_blockchain", new JSONType())),
+        }),
+        newColumn("npm", {
+          type: new JSONType(),
+        }),
+        newColumn("blockchain", {
+          type: new JSONType(),
+        }),
+        newColumn("sync_time", {
+          type: new TimestampSecond("UTC"),
+          incrementalKey: true,
+        }),
+      ],
+    ),
   ];
 
   return tables;

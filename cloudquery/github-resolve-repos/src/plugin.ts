@@ -149,6 +149,9 @@ export const newGithubResolveReposPlugin = () => {
       parsedSpec.projectsInputPath,
       gqlClient,
       gh,
+      {
+        suffix: parsedSpec.tableSuffix,
+      },
     );
 
     return pluginClient;

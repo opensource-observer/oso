@@ -6,7 +6,8 @@ const spec = {
   properties: {
     concurrency: { type: "integer" },
     token: { type: "string" },
-    projectsInputPath: { type: "string" },
+    projects_input_path: { type: "string" },
+    table_suffix: { type: "string" },
   },
   required: ["token"],
 };
@@ -18,6 +19,7 @@ export type Spec = {
   concurrency: number;
   token: string;
   projectsInputPath: string;
+  tableSuffix: string;
 };
 
 export const parseSpec = (spec: string): Spec => {
@@ -30,6 +32,7 @@ export const parseSpec = (spec: string): Spec => {
     concurrency = 10_000,
     token = "",
     projectsInputPath = "",
+    tableSuffix = "_ossd",
   } = camelcaseKeys(parsed);
-  return { concurrency, token, projectsInputPath };
+  return { concurrency, token, projectsInputPath, tableSuffix };
 };
