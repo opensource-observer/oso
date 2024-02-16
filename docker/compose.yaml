@@ -15,7 +15,7 @@ services:
   install:
     build:
       context: ..
-      dockerfile: docker/Dockerfile
+      dockerfile: docker/integration.Dockerfile
     working_dir: /usr/src/app
     command: bash docker/install.sh
     volumes:
@@ -74,7 +74,7 @@ services:
     privileged: true
     build:
       context: ..
-      dockerfile: docker/Dockerfile
+      dockerfile: docker/integration.Dockerfile
     working_dir: /usr/src/app
     command: bash docker/test.sh
     depends_on:
