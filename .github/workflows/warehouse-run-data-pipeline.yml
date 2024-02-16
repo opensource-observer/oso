@@ -10,6 +10,9 @@ env:
 on:
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
+    inputs:
+      docker_tag:
+        description: The docker tag to use for cloudquery plugins 
   schedule:
 
     # Schedule every day at 2AM UTC. This is so we ensure anything that is #
@@ -45,11 +48,21 @@ jobs:
           service_account: oso-github-actions@oso-production.iam.gserviceaccount.com 
           workload_identity_provider: projects/1054148520225/locations/global/workloadIdentityPools/github/providers/oso-github-actions
 
+      - name: If docker tag isn't set then use the latest git sha
+        run: |
+          echo "DOCKER_TAG=$(git rev-parse HEAD)" >> $GITHUB_ENV
+        if: !inputs.docker_tag
+      
+      - name: If the docker tag is set then use the docker tag
+        run: |
+          echo "DOCKER_TAG=${{ inputs.docker_tag }}" >> $GITHUB_ENV
+        if: inputs.docker_tag
+
       - name: Download and install cloudquery
         run: |
-          curl -L https://github.com/cloudquery/cloudquery/releases/download/cli-v${CLOUDQUERY_VERSION}/cloudquery_linux_amd64 -o cloudquery &&
-          chmod a+x cloudquery && 
-          mv cloudquery /usr/local/bin/cloudquery
+          curl -L https://github.com/cloudquery/cloudquery/releases/download/cli-v${CLOUDQUERY_VERSION}/cloudquery_linux_amd64 -o /tmp/cloudquery &&
+          chmod a+x /tmp/cloudquery && 
+          mv /tmp/cloudquery /usr/local/bin/cloudquery
 
       - name: Setup Python
         uses: actions/setup-python@v5
