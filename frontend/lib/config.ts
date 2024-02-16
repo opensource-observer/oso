@@ -32,15 +32,10 @@ export const SUPABASE_ANON_KEY = requireEnv(
   "NEXT_PUBLIC_SUPABASE_ANON_KEY",
 );
 
-export const SUPABASE_SERVICE_KEY = requireEnv(
-  process.env.SUPABASE_SERVICE_KEY,
-  "SUPABASE_SERVICE_KEY",
-);
-
-export const SUPABASE_JWT_SECRET = requireEnv(
-  process.env.SUPABASE_JWT_SECRET,
-  "SUPABASE_JWT_SECRET",
-);
+// Server-side only
+export const SUPABASE_SERVICE_KEY =
+  process.env.SUPABASE_SERVICE_KEY ?? "MISSING";
+export const SUPABASE_JWT_SECRET = process.env.SUPABASE_JWT_SECRET ?? "MISSING";
 
 export const ALGOLIA_APPLICATION_ID = requireEnv(
   process.env.NEXT_PUBLIC_ALGOLIA_APPLICATION_ID,
