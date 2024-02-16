@@ -30,6 +30,9 @@ jobs:
       contents: 'read'
       id-token: 'write'
 
+    env:
+      DOCKER_TAG: ${{ inputs.docker_tag == '' && inputs.docker_tag || github.sha }}
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -47,16 +50,6 @@ jobs:
         with:
           service_account: oso-github-actions@oso-production.iam.gserviceaccount.com 
           workload_identity_provider: projects/1054148520225/locations/global/workloadIdentityPools/github/providers/oso-github-actions
-
-      - name: If docker tag isn't set then use the latest git sha
-        run: |
-          echo "DOCKER_TAG=$(git rev-parse HEAD)" >> $GITHUB_ENV
-        if: !inputs.docker_tag
-      
-      - name: If the docker tag is set then use the docker tag
-        run: |
-          echo "DOCKER_TAG=${{ inputs.docker_tag }}" >> $GITHUB_ENV
-        if: inputs.docker_tag
 
       - name: Download and install cloudquery
         run: |
