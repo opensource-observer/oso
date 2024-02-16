@@ -47,9 +47,9 @@ jobs:
 
       - name: Download and install cloudquery
         run: |
-          curl -L https://github.com/cloudquery/cloudquery/releases/download/cli-v${CLOUDQUERY_VERSION}/cloudquery_linux_amd64 -o cloudquery &&
-          chmod a+x cloudquery && 
-          mv cloudquery /usr/local/bin/cloudquery
+          curl -L https://github.com/cloudquery/cloudquery/releases/download/cli-v${CLOUDQUERY_VERSION}/cloudquery_linux_amd64 -o /tmp/cloudquery &&
+          chmod a+x /tmp/cloudquery && 
+          mv /tmp/cloudquery /usr/local/bin/cloudquery
 
       - name: Setup Python
         uses: actions/setup-python@v5
