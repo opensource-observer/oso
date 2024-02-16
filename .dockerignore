@@ -53,3 +53,18 @@ Dockerfile
 *.Dockerfile
 **/Dockerfile
 **/*.Dockerfile
+
+# Python specific
+.venv
+*.pyc
+**/__pycache__
+
+# dbt
+target/
+dbt_packages/
+
+# Cloudquery
+.cq/
+
+# Github directory
+.github/scripts

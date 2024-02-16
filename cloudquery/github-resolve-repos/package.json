@@ -1,5 +1,5 @@
 {
-  "name": "@opensource-observer/github-resolve-repos-cloudquery-plugin",
+  "name": "@opensource-observer/cloudquery-github-resolve-repos",
   "version": "1.0.0",
   "description": "",
   "bin": "dist/main.js",
