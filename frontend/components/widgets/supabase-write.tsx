@@ -148,7 +148,9 @@ function SupabaseWrite(props: SupabaseWriteProps) {
     if (redirectOnComplete) {
       router.push(redirectOnComplete);
     } else {
-      router.refresh();
+      // router.refresh() will keep client-side state cached, and doesn't trigger refresh of queries
+      //router.refresh();
+      window.location.reload();
     }
   };
 
