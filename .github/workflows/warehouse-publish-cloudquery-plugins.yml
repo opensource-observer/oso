@@ -30,4 +30,4 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Clear cache
-        run: bash .github/scripts/package-cloudquery-plugins.sh
+        run: bash .github/scripts/publish-cloudquery-plugins.sh
