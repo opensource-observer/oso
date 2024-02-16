@@ -1,9 +1,17 @@
 import { createClient } from "@supabase/supabase-js";
 import { HttpError } from "../types/errors";
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from "../config";
-//import { Database } from "../types/supabase";
+import {
+  SUPABASE_URL,
+  SUPABASE_ANON_KEY,
+  SUPABASE_SERVICE_KEY,
+} from "../config";
+import { Database } from "../types/supabase";
 
 const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const supabasePrivileged = createClient<Database>(
+  SUPABASE_URL,
+  SUPABASE_SERVICE_KEY,
+);
 
 type SupabaseQueryArgs = {
   tableName: string; // table to query
@@ -49,5 +57,5 @@ async function supabaseQuery(args: SupabaseQueryArgs): Promise<any[]> {
   return data;
 }
 
-export { supabaseClient, supabaseQuery };
+export { supabaseClient, supabasePrivileged, supabaseQuery };
 export type { SupabaseQueryArgs };

@@ -13,6 +13,8 @@ env:
   NEXT_PUBLIC_DB_GRAPHQL_URL: ${{ vars.NEXT_PUBLIC_DB_GRAPHQL_URL }}
   NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
   NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+  SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+  SUPABASE_JWT_SECRET: ${{ secrets.SUPABASE_JWT_SECRET }}
   NEXT_PUBLIC_ALGOLIA_APPLICATION_ID: ${{ vars.NEXT_PUBLIC_ALGOLIA_APPLICATION_ID }}}
   NEXT_PUBLIC_ALGOLIA_API_KEY: ${{ secrets.NEXT_PUBLIC_ALGOLIA_API_KEY }}
   NEXT_PUBLIC_ALGOLIA_INDEX: ${{ vars.NEXT_PUBLIC_ALGOLIA_INDEX }}
@@ -29,7 +31,7 @@ env:
 
   # should not be set to a legitimate value for testing. This will use up API
   # quota otherwise
-  DUNE_API_KEY: "none" 
+  DUNE_API_KEY: "none"
 
 # Trigger the workflow when:
 on:
@@ -118,9 +120,9 @@ jobs:
         uses: pnpm/action-setup@v2
         with:
           version: 8
-          # no need to install just using to call docker through our 
+          # no need to install just using to call docker through our
           # shortcut in the package.json
-          run_install: false 
+          run_install: false
       - name: Integration Test
         run: |
           pnpm test:integration
