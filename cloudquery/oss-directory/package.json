@@ -1,5 +1,5 @@
 {
-  "name": "@opensource-observer/oss-directory-cloudquery-plugin",
+  "name": "@opensource-observer/cloudquery-oss-directory",
   "version": "1.0.0",
   "description": "",
   "bin": "dist/main.js",
