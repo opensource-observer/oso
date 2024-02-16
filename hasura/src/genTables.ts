@@ -30,7 +30,7 @@ type TableConfig = {
   select_permissions: {
     role: string;
     permission: {
-      columns: string;
+      columns: string | string[];
       filter: Record<string, unknown>;
       allow_aggregations: boolean;
     };
@@ -48,9 +48,28 @@ const createConfig = (name: string): TableConfig => ({
     {
       role: "anonymous",
       permission: {
+        // Anonymous cannot see any columns
         columns: "*",
         filter: {},
         allow_aggregations: false,
+      },
+      comment: "",
+    },
+    {
+      role: "user",
+      permission: {
+        columns: "*",
+        filter: {},
+        allow_aggregations: false,
+      },
+      comment: "",
+    },
+    {
+      role: "developer",
+      permission: {
+        columns: "*",
+        filter: {},
+        allow_aggregations: true,
       },
       comment: "",
     },
