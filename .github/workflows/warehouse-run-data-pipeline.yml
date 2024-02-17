@@ -91,7 +91,7 @@ jobs:
       # another. Ideally we would simply tell whatever system to run and it will handle dependencies.
       - name: Run cloudquery for oss-directory
         run: |
-          cloudquery sync .github/workflows/cloudquery/oss-directory.yml --log-level debug
+          cloudquery sync .github/workflows/cloudquery/oss-directory.yml --log-level debug --log-console
 
       - name: Concat the project jsonl files (if there are many)
         run: |
@@ -106,7 +106,7 @@ jobs:
 
       - name: Run cloudquery for github-resolve-directory
         run: |
-          cloudquery sync .github/workflows/cloudquery/github-resolve-repos.yml --log-level debug
+          cloudquery sync .github/workflows/cloudquery/github-resolve-repos.yml --log-level debug --log-console
 
       - name: Setup dbt
         run: |
