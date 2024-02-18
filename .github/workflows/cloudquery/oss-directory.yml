@@ -9,8 +9,6 @@ spec:
   destinations:
     - "file"
     - "bigquery"
-  spec:
-    table_suffix: "_temp" # this should be removed once the pipeline is ready
 ---
 kind: destination
 spec:

@@ -15,7 +15,6 @@ spec:
   spec:
     projects_input_path: "${CLOUDQUERY_FILE_DIRECTORY}/projects.json"
     token: ${GITHUB_TOKEN}
-    table_suffix: "_temp" # This should be removed once the pipeline is ready
 ---
 kind: destination
 spec:
