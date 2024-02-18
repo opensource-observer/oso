@@ -111,7 +111,7 @@ jobs:
       # Or potentially we use something else that can achieve a similar things
       - name: Run cloudquery for github-resolve-directory
         run: |
-          docker run --rm -p 7777:7777 \
+          docker run -d --rm -p 7777:7777 \
             -v ${CLOUDQUERY_FILE_DIRECTORY}:${CLOUDQUERY_FILE_DIRECTORY} \
             --name github-resolve-repos \
             ghcr.io/opensource-observer/cloudquery-github-resolve-repos:${DOCKER_TAG} \
