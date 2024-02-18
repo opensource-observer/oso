@@ -1,9 +1,13 @@
 kind: source
 spec:
   name: github-resolve-repos
-  path: "ghcr.io/opensource-observer/cloudquery-github-resolve-repos:${DOCKER_TAG}"
-  registry: "docker"
+  name: "github-resolve-repos"
+  registry: "grpc"
+  path: "localhost:7777"
   version: "v0.0.1"
+  # path: "ghcr.io/opensource-observer/cloudquery-github-resolve-repos:${DOCKER_TAG}"
+  # registry: "docker"
+  # version: "v0.0.1"
   tables:
     ["*"]
   destinations:
