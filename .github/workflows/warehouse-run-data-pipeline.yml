@@ -111,10 +111,10 @@ jobs:
       # Or potentially we use something else that can achieve a similar things
       - name: Run cloudquery for github-resolve-directory
         run: |
-          docker run --rm -p 7777:7777 
-            -v ${CLOUDQUERY_FILE_DIRECTORY}:${CLOUDQUERY_FILE_DIRECTORY}
-            --name github-resolve-repos 
-            ghcr.io/opensource-observer/cloudquery-github-resolve-repos:${DOCKER_TAG} 
+          docker run --rm -p 7777:7777 \
+            -v ${CLOUDQUERY_FILE_DIRECTORY}:${CLOUDQUERY_FILE_DIRECTORY} \
+            --name github-resolve-repos \
+            ghcr.io/opensource-observer/cloudquery-github-resolve-repos:${DOCKER_TAG} \
             serve --address 0.0.0.0:7777 &&
           cloudquery sync .github/workflows/cloudquery/github-resolve-repos.yml --log-level debug --log-console &&
           docker stop github-resolve-repos
