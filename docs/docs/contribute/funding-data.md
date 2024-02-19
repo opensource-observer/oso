@@ -5,19 +5,15 @@ sidebar_position: 2
 
 Upload CSV files that help us link funding data to OSS projects.
 
-We maintain a master CSV file that maps OSO project names to funding sources. It includes grants, direct donations, and other forms of financial support. We are looking for data from a variety of sources, including both crypto and non-crypto funding platforms.
+We maintain a [master CSV file](https://github.com/opensource-observer/insights/blob/main/community/datasets/funding_data/funding_data.csv) that maps OSO project names to funding sources. It includes grants, direct donations, and other forms of financial support. We are looking for data from a variety of sources, including both crypto and non-crypto funding platforms.
 
 We are coordinating with several efforts to collect, clean, and visualize this data, including [RegenData.xyz](https://regendata.xyz/), [Gitcoin Grants Data Portal](https://davidgasquez.github.io/gitcoin-grants-data-portal/), and [Crypto Data Bytes](https://dune.com/cryptodatabytes/crypto-grants-analysis).
-
-:::warning
-This page is a work in progress.
-:::
 
 ## Contributing Funding Data
 
 ---
 
-If you have funding data you would like to contribute, please submit a pull request with a CSV file that includes the following columns:
+If you have funding data you would like to contribute, please prepare a CSV file with the data you have (it doens't need to cover 100% of fields) and submit a pull request with a CSV file to be added to our [`funding_data/uploads` directory](https://github.com/opensource-observer/insights/tree/main/community/datasets/funding_data/uploads). Try to include as many of the following columns as possible:
 
 - `oso_slug`: The OSO project slug.
 - `project_name`: The name of the project (according to the funder's data).
