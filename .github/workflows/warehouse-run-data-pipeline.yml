@@ -96,7 +96,7 @@ jobs:
       - name: Concat the project jsonl files (if there are many)
         run: |
           ls -laht ${CLOUDQUERY_FILE_DIRECTORY}/ &&
-          find ${CLOUDQUERY_FILE_DIRECTORY}/projects_temp -name "*.json" -type f -exec cat {} \; > ${CLOUDQUERY_FILE_DIRECTORY}/projects.json &&
+          find ${CLOUDQUERY_FILE_DIRECTORY}/projects_ossd -name "*.json" -type f -exec cat {} \; > ${CLOUDQUERY_FILE_DIRECTORY}/projects.json &&
           head -n 5 ${CLOUDQUERY_FILE_DIRECTORY}/projects.json
 
       - uses: actions/upload-artifact@v4
