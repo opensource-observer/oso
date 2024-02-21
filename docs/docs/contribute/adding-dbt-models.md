@@ -101,7 +101,7 @@ Once you feel you've completed your model, submit a PR to the OSO repository.
 
 ## DBT model execution schedule
 
-After your PR has been accepted it will automatically be deployed into our data
+After your PR has been accepted, it will automatically be deployed into our data
 warehouse and available for querying. At this time, the data pipelines are
 executed once a day by the OSO CI at 02:00 UTC. The pipeline currently takes a
 number of hours and any materializations or views would likely be ready for use
