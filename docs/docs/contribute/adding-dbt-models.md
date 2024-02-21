@@ -4,10 +4,11 @@ sidebar_position: 6
 ---
 
 OSO uses dbt to analyze the data in our public data warehouse on BigQuery. This
-is all maintained within the [oso
-repository](https://github.com/opensource-observer/oso) and is open for
-contribution from the community. This guide will walk you through adding a DBT
-model to the repository.
+is all maintained within the [oso repository][oso] and is open for contribution
+from the community. This guide will walk you through adding a DBT model to the
+repository.
+
+[oso]: https://github.com/opensource-observer/oso
 
 ## Prerequisites
 
@@ -18,7 +19,11 @@ Before you begin you'll need the following
 - git
 - A github account
 - A basic understanding of dbt and SQL
-- If you'd like to test the models on your own, you'll also need a GCP account
+- While not strictly required, if you'd like to test the models on your own and
+  also do any exploratory queries, you'll need a GCP account. This is possible
+  by simply having a Google account and logging into the [GCP
+  console](https://console.cloud.google.com). If you would like to mostly query
+  our views, it is possible to stay under the 1TB free tier per month.
 
 ## Fork and clone the repo
 
@@ -66,43 +71,116 @@ OSO's repository organizes dbt models following the suggested directory
 structure from DBT's own best practices guides ([see
 here for a fuller explanation](https://docs.getdbt.com/best-practices/how-we-structure/1-guide-overview))
 
-- `staging` - This subdirectory contains models used to clean up source data.
+- `staging` - This directory contains models used to clean up source data.
   Unless cost prohitibitive, all of these models should be materialized as
-  views.
-- `intermediate` - This subdirectory contains models that transform staging data
+  views. Subdirectories within `staging` are organized by the source data.
+- `intermediate` - This directory contains models that transform staging data
   into useful representations of the raw warehouse data. These representations
   are not generally intended to be materialized as tables but instead as views.
-- `marts` - This subdirectory contains transformations that should be fairly
+- `marts` - This directory contains transformations that should be fairly
   minimal and mostly be aggregations. In general, `marts` shouldn't depend on
   other marts unless they're just coarser grained aggregations of an upstream
   mart. Marts are also automatically copied to the postgresql database that runs
   the OSO website.
 
-## Add your model!
+## OSO Data Sources
+
+This isn't an exhaustive list of all data sources but instead a list of data
+sources that OSO currently relies upon. If you wish to use other available
+public datsets on bigquery. Please feel free to add a model that references that
+data source! The titles for these sections reflect the directories available in
+the `staging` directory of our dbt models.
+
+### The `oss-directory` source
+
+The OSO community maintains a directory of collections and projects called
+[oss-directory](https://github.com/opensource-observer/oss-directory).
+Additionally, we use the list of project's repositories to gather additional
+information on each repository from github. The source data is referenced as `{{
+source('ossd', '{TABLE_NAME}') }}` where `{TABLE_NAME}` could be one of the
+following tables:
+
+- `collections` - This data is pulled directly from the [oss-directory
+  Repository](https://github.com/opensource-observer/oss-directory) and is
+  groups of projects. You can view this table
+  [here][collections_table]
+- `projects` - This data is also pulled directly from the oss-directory
+  Repository. It describes a project's repositories, blockchain addresses, and
+  public packages. You can view this table
+  [here][projects_table]
+- `repositories` - This data is derived by gathering repository data of all the
+  unique repositories present within the `projects` table. You can view this
+  table [here][repositories_table]
+
+[collections_table]: https://console.cloud.google.com/bigquery?project=oso-production&ws=!1m5!1m4!4m3!1soso-production!2sopensource_observer!3scollections_ossd
+[projects_table]: https://console.cloud.google.com/bigquery?project=oso-production&ws=!1m5!1m4!4m3!1soso-production!2sopensource_observer!3sprojects_ossd
+[repositories_table]: https://console.cloud.google.com/bigquery?project=oso-production&ws=!1m5!1m4!4m3!1soso-production!2sopensource_observer!3srepositories_ossd
+
+### The `github` source
+
+Referenced as `{{ source('github_archive', 'events') }}`, this data source is an
+external BigQuery dataset that is maintained by [GH
+Archive][gharchive]. If you wish to use this dataset directly,
+we would suggest ensuring that any materialization you use is either a view or
+is somehow incremental in nature otherwise it would become cost prohibitive. For
+more information on checking these out.
+
+For more information we suggest you read more at [GH
+Archive][gharchive]
+
+[gharchive]: https://www.gharchive.org
+
+### The `dune` source
+
+In order to have collected blockchain data, the OSO team has used dune in the
+past (we may not continue to use so into the future) to collect blockchain
+transaction and trace data related to the projects in oss-directory. Currently,
+the only data available in this dataset is `arbitrum` related transactions and
+traces. That collected data is available as a data source that can be referenced
+as `{{ source('dune', 'arbitrum') }}`. We also have Optimism data, but that is
+currently an export from our legacy data collection. We will expose that as well,
+so check back soon for more updates!
+
+## Adding your model
 
 Now you're armed with enough information to add your model! Add your model to
 the directory you deem fitting. Don't be afraid of getting it wrong, that's all
-part of our review process to guide you to the right place. Once you've
-developed your model you can either choose to test it on your own infrastructure
-or you can submit it as a PR to be tested by the OSO github CI workflows
-(_still under development_)
+part of our review process to guide you to the right place.
 
-## Connecting to OSO's staging environment
+### Using the BigQuery UI to check your Queries
 
-_WARNING: This will incur costs on your GCP account_
+During your development process, it may be useful to use the BigQuery UI to
+execute queries. In the future we will have a way to connect your own
+infrastructure so you can generate models from our staging repository, however,
+for now, it is best to compile the dbt models into their resulting BigQuery SQL
+and execute that on the bigquery UI. To do this, you'll need to run `dbt
+compile` from the root of the [oso Repository][oso] like so:
 
-If you wish to test your model on your own GCP. You can utilize our staging data warehouse as the source data for dbt models in your own GCP account.
+```bash
+$ dbt compile
+```
 
-...tbd
+_You'll want to make sure you're also in the `poetry shell` otherwise you won't
+use the right dbt binary_
+
+Once you've done so you will be able to find your model compiled in the
+`target/` directory. Your model's compiled sql can be found in the same relative
+path as it's location in `dbt/models` inside the `target/` directory.
 
 ## Submit a PR
 
-Once you feel you've completed your model, submit a PR to the OSO repository.
+Once you've developed your model you can submit it a PR to the [oso
+Repository][oso] to be tested by the OSO github CI workflows (_still under
+development_).
 
 ## DBT model execution schedule
 
-After your PR has been accepted, it will automatically be deployed into our data
-warehouse and available for querying. At this time, the data pipelines are
-executed once a day by the OSO CI at 02:00 UTC. The pipeline currently takes a
-number of hours and any materializations or views would likely be ready for use
-by 4-6 hours after that time.
+After your PR has been approved and merged, it will automatically be deployed
+into our BigQuery dataset and available for querying. At this time, the data
+pipelines are executed once a day by the OSO CI at 02:00 UTC. The pipeline
+currently takes a number of hours and any materializations or views would likely
+be ready for use by 4-6 hours after that time.
+
+## Happy contributing!
+
+Contributing to OSO's data warehouse and analysis are
