@@ -41,6 +41,10 @@ We are building a suite of **impact vectors** that can be used to compare the im
 
 We are curating a library of Jupyter notebooks that can be used to explore and visualize the data on OSO. We are looking for contributions to help us build a library of Jupyter notebooks in our [insights repo](https://github.com/opensource-observer/insights). For more information on how to contribute, check out the [Data Science Notebooks](./notebooks) section.
 
+### DBT Models
+
+Our data warehouse relies on dbt for cleaning and analyzing the data we gather from various sources. You can contribute to our analyses directly by forking our repository and adding your own dbt models or helping to correct the models already there. Check out the [Adding DBT Models](./adding-dbt-models) guide!
+
 ## Data Engineering
 
 ---
