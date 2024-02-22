@@ -141,6 +141,54 @@ as `{{ source('dune', 'arbitrum') }}`. We also have Optimism data, but that is
 currently an export from our legacy data collection. We will expose that as well,
 so check back soon for more updates!
 
+## A note about `_id`'s
+
+Due to the diversity of data sources and event types, the ID system used by the
+data warehouse might not be immediately obvious to anyone who's starting their
+journey with the OSO dbt models.
+
+As a general rule for our dataset, anything that is in the `marts` directory
+should that has an ID should generate the ID using the `oso_id()` macro. This
+macro generates a url safe base64 encoded identifier from a hash of the
+namespace of the identifier and the ID within that namespace. This is done to
+simplify some table joins at later stages (so you don't need to match on
+multiple dimensions). An example of using the macro within the `collections`
+namespace for a collection of the slug `foo` would be as follows:
+
+```jinja
+{{ oso_id('collection', 'foo')}}
+```
+
+### Special convenience for artifact IDs
+
+There is also an additional convenience macro `oso_artifact_id()` that is used
+specifically when dealing with artifacts. This macro automatically converts
+columns in a table that contains `artifact` data into an ID by searching along a
+specified prefix string for the column names. Specifically, the artifact table
+needs to have `namespace`, `type`, and `source_id` to be able to derive a proper
+artifact ID. So assuming you have a table that has the namespace prefix with
+`foo_` so that we have the columns `foo_namespace`, `foo_type`, and
+`foo_source_id` we would use the `artifact_id()` macro like so:
+
+```jinja
+{{ oso_artifact_id('foo') }}
+```
+
+You can also pass in a table alias by specifying it as the second parameter to
+the `oso_artifact_id()` macro:
+
+So assuming you had a SQL select query for a table aliased with `f` that
+contains the `foo_` prefixed artifact columns, you could do this:
+
+```jinja
+SELECT
+  {{ oso_artifact_id('foo', 'f')}} as `artifact_id`
+FROM foo_table as f
+```
+
+This will return a query of a single column `artifact_id` that is derived from
+the `foo_namespace`, `foo_type`, and `foo_source_id` of that table.
+
 ## Adding your model
 
 Now you're armed with enough information to add your model! Add your model to
