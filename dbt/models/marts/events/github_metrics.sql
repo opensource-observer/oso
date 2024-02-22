@@ -17,17 +17,15 @@
 -- CTE for aggregating stars, forks, and repository counts by project 
 WITH StarsForksRepos AS (
     SELECT
-        ap.project_id,
+        project_id,
         -- Count of distinct repositories associated with the project
-        COUNT(DISTINCT a.artifact_id) AS repos,
-        -- Count of unique stars by actor_id for the project
-        COUNT(DISTINCT CASE WHEN sf.type = 'STARRED' THEN sf.actor_id END) AS stars,
-        -- Count of unique forks by actor_id for the project
-        COUNT(DISTINCT CASE WHEN sf.type = 'FORKED' THEN sf.actor_id END) AS forks
-    FROM {{ ref('stg_github_stars_and_forks') }} AS sf
-    -- TODO: refactor this once the github_stars_and_forks model has the same id as the int_artifacts model
-    JOIN {{ ref('int_artifacts') }} AS a ON sf.repository_name = a.artifact_latest_name
-    JOIN {{ ref('artifacts_by_project') }} AS ap ON a.artifact_id = ap.artifact_id
+        COUNT(DISTINCT id) AS repos,
+        -- Sum of stars for the project
+        SUM(star_count) AS stars,
+        -- Sum of forks for the project
+        SUM(fork_count) AS forks
+    FROM {{ ref('stg_ossd__repositories_by_project') }}
+    WHERE is_fork = false
     GROUP BY ap.project_id
 ),
 -- CTE for calculating contributor counts, including active developers over the past 6 months
@@ -62,8 +60,8 @@ Activity AS (
         SUM(CASE WHEN event_type = 'ISSUE_CLOSED' THEN amount END) AS issues_closed,
         SUM(CASE WHEN event_type = 'PULL_REQUEST_OPENED' THEN amount END) AS pull_requests_opened,
         SUM(CASE WHEN event_type = 'PULL_REQUEST_MERGED' THEN amount END) AS pull_requests_merged
-    FROM {{ ref('int_events_daily_to_project') }}
-    WHERE DATE(bucket_day) >= DATE_ADD(CURRENT_DATE(), INTERVAL -180 DAY)
+    FROM {{ ref('int_events_to_project') }}
+    WHERE DATE(time) >= DATE_ADD(CURRENT_DATE(), INTERVAL -180 DAY)
     GROUP BY project_id
 )
 
