@@ -1,13 +1,11 @@
 ---
-title: Connect Your Data to OSO
-sidebar_position: 6
+title: Write a CloudQuery plugin
+sidebar_position: 2
 ---
 
 Write a plugin to bring an external data source into the Open Source Observer data warehouse.
 
 ## CloudQuery Plugins
-
----
 
 [CloudQuery](https://cloudquery.io) is used to integrate external data sources
 into the Open Source Observer platform. At this time we are limiting the
@@ -176,18 +174,3 @@ packaging all plugins in the `cloudquery` directory as long as they're python or
 typescript plugins. So, as long as you have followed this guide the automation
 in the repository will handle properly building, packaging, and publishing a
 docker image for your cloudquery plugin.
-
-## Airbyte Connectors
-
----
-
-Deploy Airbyte connectors to index data from new sources.
-
-:::warning
-This page is a work in progress.
-:::
-
-aka Data Oracles
-
-- Go over creating a simple airbyte connector to a sample API
-- Go over creating a simple airbyte connector to an already existing public dataset

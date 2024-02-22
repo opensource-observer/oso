@@ -25,7 +25,7 @@ function HomepageHeader() {
           </Link>
           <Link
             className="button button--secondary button--lg"
-            to="/docs/integrate/api-access"
+            to="/docs/integrate/getting-started"
           >
             Get API access
           </Link>
