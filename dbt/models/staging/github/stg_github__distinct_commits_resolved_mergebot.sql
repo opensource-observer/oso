@@ -1,5 +1,5 @@
 {#
-  Resolve merges
+  Resolve merges that were created by the mergebot
 #}
 
 WITH merge_bot_commits AS (
