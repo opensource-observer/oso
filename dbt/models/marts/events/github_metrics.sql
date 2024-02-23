@@ -26,7 +26,7 @@ WITH StarsForksRepos AS (
         SUM(fork_count) AS forks
     FROM {{ ref('stg_ossd__repositories_by_project') }}
     WHERE is_fork = false
-    GROUP BY ap.project_id
+    GROUP BY project_id
 ),
 -- CTE for calculating contributor counts, including active developers over the past 6 months
 Contributors AS (
@@ -54,7 +54,7 @@ Contributors AS (
 Activity AS (
     SELECT
         project_id,
-        MIN(CASE WHEN event_type = 'COMMIT_CODE' THEN bucket_day END) AS first_commit_date,
+        MIN(CASE WHEN event_type = 'COMMIT_CODE' THEN time END) AS first_commit_date,
         SUM(CASE WHEN event_type = 'COMMIT_CODE' THEN amount END) AS commits,
         SUM(CASE WHEN event_type = 'ISSUE_OPENED' THEN amount END) AS issues_opened,
         SUM(CASE WHEN event_type = 'ISSUE_CLOSED' THEN amount END) AS issues_closed,
