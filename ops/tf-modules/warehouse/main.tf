@@ -1,6 +1,4 @@
-# Terraform module for setting up the data warehouse. At this time, the "live"
-# instantiation of these modules in our infrastructure is not available for the
-# public for internal security purposes purposes. However, these modules
+# Terraform module for setting up the data warehouse. These modules
 # are provided so that one could easily replicate the infrastructure required to
 # run the data warehouse. 
 
