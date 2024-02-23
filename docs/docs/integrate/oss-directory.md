@@ -1,22 +1,25 @@
 ---
-title: Download the NPM Library
+title: oss-directory
 sidebar_position: 4
 ---
 
-OSS Directory is a library that you can use in your own projects.
+[OSS Directory](https://github.com/opensource-observer/oss-directory) contains structured data on as many open source projects as possible, enumerating all artifacts related to the project, from source code repositories to published packages and deployments.
 
-This may be useful if you want to build a tool that uses the data in this repository or perform your own custom analysis.
+## NPM Library
 
-## Installation
+OSS Directory is a library that you can use in your own projects. This may be useful if you want to build a tool that uses the data in this repository or perform your own custom analysis.
+
+### Installation
 
 Install the library
 
 ```bash
-npm install oss-directory
+npm install --save oss-directory
 # OR yarn add oss-directory
+# OR pnpm add oss-directory
 ```
 
-## Fetch all of the data
+### Fetch all of the data
 
 You can fetch all of the data in this repo with the following:
 
@@ -28,9 +31,23 @@ const projects: Project[] = data.projects;
 const collections: Collection[] = data.collections;
 ```
 
+:::note
 We don't store the entire dataset with the npm package. Under the hood, this will clone the repository into a temporary directory, read all the data files, validate the schema, and return the objects. This way, you know you're getting the latest data, even if the npm package hasn't been updated in a while.
+:::
 
-## Organization
+## Python library
+
+Coming soon...
+
+To track progress, see the [issue on GitHub](https://github.com/opensource-observer/oss-directory/issues/18).
+
+## Download the data from GitHub
+
+All of the data is accessible from directly GitHub. You can clone the repository and use the data in your own projects.
+
+[https://github.com/opensource-observer/oss-directory](https://github.com/opensource-observer/oss-directory)
+
+### Directory layout
 
 The OSS Directory is organized into two main folders:
 
@@ -41,4 +58,4 @@ The OSS Directory is organized into two main folders:
   - In most cases, we adopt the GitHub organization name as the slug. If the project is not associated with a GitHub organization, you try to use the project name followed by the repo owner as the slug.
 - `./data/collections` - each file represents a collection of projects that have some collective meaning (e.g. all projects in an ecosystem).
   - See `./src/resources/schema/collection.json` for the expected JSON schema
-  - Projects are identified by their unique slug
+  - Collections are identified by their unique slug

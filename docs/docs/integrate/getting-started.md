@@ -1,13 +1,11 @@
 ---
-title: Access the API
+title: Getting Started
 sidebar_position: 1
 ---
 
-Create an account and get started with the OSO API.
+Start here to learn about different ways of integrating OSO data into your workflow.
 
-:::warning
-This page is a work in progress.
-:::
+Create an account and get started with the OSO API.
 
 ## Create an account
 
