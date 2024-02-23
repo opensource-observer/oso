@@ -162,6 +162,11 @@ def run():
                 "artifacts_by_project",
                 "artifacts_by_project",
             ),
+            TableSyncConfig(
+                TableSyncMode.OVERWRITE,
+                "github_metrics",
+                "github_metrics",
+            ),
         ],
         "oso-csv-exports",
         "oso-csv-exports",
