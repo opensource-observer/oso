@@ -125,7 +125,7 @@ SELECT
   us.less_active_users
   
 FROM {{ ref('projects') }} AS p
-JOIN metrics_all_time AS ma ON p.project_id = ma.project_id
+INNER JOIN metrics_all_time AS ma ON p.project_id = ma.project_id
 INNER JOIN metrics_6_months AS m6 on p.project_id = m6.project_id
 INNER JOIN new_users AS nu on p.project_id = nu.project_id
 INNER JOIN user_segments AS us on p.project_id = us.project_id
