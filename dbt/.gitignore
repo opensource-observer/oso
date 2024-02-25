@@ -1,1 +1,3 @@
 target/
+.user.yml
+profiles.yml
