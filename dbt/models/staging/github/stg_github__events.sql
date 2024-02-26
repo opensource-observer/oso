@@ -35,7 +35,7 @@ WHERE gh.repo.id in (select id from {{ ref('stg_ossd__current_repositories') }} 
     If/when we do full refreshes we are currently only taking data from 2015
     onward due to schema changes of the github events in the githubarchive 
     #}
-    AND _TABLE_SUFFIX >= "20150101" 
+    AND _TABLE_SUFFIX >= "150101" 
   {% endif %}
 {% elif target.name in ['dev', 'playground'] %}
   {# If this is not production then we only copy the most recent number of days (default to 14) #}
