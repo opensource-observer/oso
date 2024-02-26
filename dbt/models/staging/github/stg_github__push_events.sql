@@ -13,5 +13,5 @@ SELECT
     CAST(JSON_VALUE(ghe.payload, "$.distinct_size") AS INT) as actual_commits_count,
     ghe.actor.id as actor_id,
     ghe.actor.login as actor_login
-FROM {{ ref('github_events') }} as ghe
+FROM {{ ref('stg_github__events') }} as ghe
 WHERE ghe.type = "PushEvent"

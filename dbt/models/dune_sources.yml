@@ -1,0 +1,18 @@
+sources:
+  - name: dune
+
+    database: opensource-observer
+
+    schema: |
+      {%- if target.name in ['playground', 'dev'] -%} oso
+      {%- elif target.name == 'production' -%} oso
+      {%- else -%} invalid_schema
+      {%- endif -%}
+    tables:
+      - name: arbitrum_contract_usage 
+        identifier: |
+          {%- if target.name in ['playground', 'dev'] -%} arbitrum_contract_usage
+          {%- elif target.name == 'production' -%} arbitrum_contract_usage
+          {%- else -%} invalid_table
+          {%- endif -%}
+        

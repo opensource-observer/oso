@@ -15,5 +15,5 @@ SELECT
   {{ oso_id('"oso"', 'slug') }} AS id,
   "oso" as namespace,
   p.* 
-FROM `oso-production.opensource_observer.projects_ossd` as p
+FROM {{ source('ossd', 'projects')}} as p
 WHERE _cq_sync_time = (SELECT * FROM most_recent_sync)
