@@ -174,3 +174,90 @@ packaging all plugins in the `cloudquery` directory as long as they're python or
 typescript plugins. So, as long as you have followed this guide the automation
 in the repository will handle properly building, packaging, and publishing a
 docker image for your cloudquery plugin.
+
+### Adding your plugin to the data pipeline
+
+In the future the data pipeline will likely be managed by dagster or something
+similar, however at this time the entire data pipeline lives in a single
+workflow on github and is run every 24 hours at 02:00 UTC.
+
+To add your plugin to that workflow you will need to do 2 things:
+
+- Add a cloudquery yml config file for your plugin
+- Add a step to execute your plugin in the github action
+
+#### Adding a CloudQuery yml config
+
+The configurations live in `.github/workflows/cloudquery`. Create a file for
+your workflow here that is named the same as your new plugin. It will need to
+use some environment variables so that our pipeline will be able to properly
+target both your plugin's docker deployment and also the correct bigquery
+dataset.
+
+It should look something like this:
+
+```
+kind: source
+spec:
+  name: my-plugin
+
+  # ${DOCKER_TAG} is automatically injected by the pipeline
+  # and will point to the latest build of the cloudquery plugin
+  path: "ghcr.io/opensource-observer/my-plugin:${DOCKER_TAG}"
+  registry: "docker"
+  version: "v0.0.1"
+  tables:
+    ["*"]
+  destinations:
+    - "bigquery"
+---
+# The destination section _must_ be configured minimally with these settings
+kind: destination
+spec:
+  name: bigquery
+  path: cloudquery/bigquery
+  registry: cloudquery
+  version: "v3.3.13"
+  write_mode: "append"
+  spec:
+    project_id: ${DESTINATION_PROJECT_ID}
+    dataset_id: ${DESTINATION_BIGQUERY_DATASET}
+```
+
+#### Adding a step in the data pipeline
+
+The data pipeline's github action can be found in
+`.github/workflows/warehouse-run-data-pipeline.yml`. Unless necessary to run
+before the oss-directory workflows, we suggest running any plugin _after_ the
+step named `Run cloudquery for github-resolve-directory` and it _must_ run
+before `Setup dbt`.
+
+So to add your step. You will simply need to add this section in between those
+two steps like so (make sure you're using the correct indentation)
+
+```yml
+- name: Run cloudquery for github-resolve-directory
+  run: |
+    docker run -d --rm -p 7777:7777 \
+      -v ${CLOUDQUERY_FILE_DIRECTORY}:${CLOUDQUERY_FILE_DIRECTORY} \
+      --name github-resolve-repos \
+      ghcr.io/opensource-observer/cloudquery-github-resolve-repos:${DOCKER_TAG} \
+      serve --address 0.0.0.0:7777 &&
+    cloudquery sync .github/workflows/cloudquery/github-resolve-repos.yml --log-level debug --log-console &&
+    docker stop github-resolve-repos
+
+# YOUR NEW PLUGIN GOES HERE
+- name: Run cloudquery for my-plugin
+  run: |
+    cloudquery sync .github/workflows/cloudquery/my-plugin.yml --log-level debug --log-console
+
+- name: Setup dbt
+  run: |
+    bash .github/scripts/create-dbt-profile.sh opensource_observer ${GOOGLE_APPLICATION_CREDENTIALS} &&
+    cat ~/.dbt/profiles.yml && 
+    gcloud auth list
+```
+
+In the future we intend to improve the experience of adding a plugin to the
+pipeline, but for now these docs are consistent with the current state of the
+pipeline.

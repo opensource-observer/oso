@@ -15,6 +15,7 @@
     - high_frequency_users: The number of users who have made 1000+ transactions with the collection in the last 3 months
     - more_active_users: The number of users who have made 10-999 transactions with the collection in the last 3 months
     - less_active_users: The number of users who have made 1-9 transactions with the collection in the last 3 months
+    - multi_project_users: The number of users who have interacted with 3+ projects in the last 3 months
 #}
 
 
@@ -81,22 +82,33 @@ user_txns_aggregated AS (
   WHERE bucket_month >= DATE_ADD(CURRENT_DATE(), INTERVAL -3 MONTH)
   GROUP BY collection_id, from_id
 ),
+multi_project_users AS (
+  SELECT
+    from_id,
+    COUNT(DISTINCT project_id) AS projects_transacted_on
+    FROM txns
+    WHERE bucket_month >= DATE_ADD(CURRENT_DATE(), INTERVAL -3 MONTH)
+    GROUP BY from_id
+),
 user_segments AS (
   SELECT
     collection_id,
     COUNT(DISTINCT CASE WHEN user_segment = 'HIGH_FREQUENCY_USER' THEN from_id END) AS high_frequency_users,
     COUNT(DISTINCT CASE WHEN user_segment = 'MORE_ACTIVE_USER' THEN from_id END) AS more_active_users,
-    COUNT(DISTINCT CASE WHEN user_segment = 'LESS_ACTIVE_USER' THEN from_id END) AS less_active_users
+    COUNT(DISTINCT CASE WHEN user_segment = 'LESS_ACTIVE_USER' THEN from_id END) AS less_active_users,
+    COUNT(DISTINCT CASE WHEN projects_transacted_on >= 3 THEN from_id END) AS multi_project_users
   FROM (
     SELECT
-      collection_id,
-      from_id,
+      uta.collection_id,
+      uta.from_id,
       CASE 
-        WHEN total_tx_count >= 1000 THEN 'HIGH_FREQUENCY_USER'
-        WHEN total_tx_count >= 10 THEN 'MORE_ACTIVE_USER'
+        WHEN uta.total_tx_count >= 1000 THEN 'HIGH_FREQUENCY_USER'
+        WHEN uta.total_tx_count >= 10 THEN 'MORE_ACTIVE_USER'
         ELSE 'LESS_ACTIVE_USER'
-      END AS user_segment
-    FROM user_txns_aggregated
+      END AS user_segment,
+        mpu.projects_transacted_on
+    FROM user_txns_aggregated AS uta
+    JOIN multi_project_users AS mpu ON uta.from_id = mpu.from_id
   )
   GROUP BY collection_id
 ),
@@ -128,7 +140,8 @@ SELECT
   (us.high_frequency_users + us.more_active_users + us.less_active_users) AS active_users,
   us.high_frequency_users,
   us.more_active_users,
-  us.less_active_users
+  us.less_active_users,
+  us.multi_project_users
   
 FROM {{ ref('collections') }} AS c
 INNER JOIN metrics_all_time AS ma ON c.collection_id = ma.collection_id

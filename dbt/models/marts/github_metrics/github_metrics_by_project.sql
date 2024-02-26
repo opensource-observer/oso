@@ -8,6 +8,7 @@
     - contributors: The number of contributors to the project
     - contributors_6_months: The number of contributors to the project in the last 6 months
     - new_contributors_6_months: The number of new contributors to the project in the last 6 months    
+    - avg_fulltime_devs_6_months: The number of full-time developers in the last 6 months
     - avg_active_devs_6_months: The average number of active developers in the last 6 months
     - commits_6_months: The number of commits to the project in the last 6 months
     - issues_opened_6_months: The number of issues opened in the project in the last 6 months
@@ -45,6 +46,7 @@ contributors_cte AS (
         project_id,
         COUNT(DISTINCT from_id) AS contributors,
         COUNT(DISTINCT CASE WHEN DATE(bucket_month) >= DATE_ADD(CURRENT_DATE(), INTERVAL -6 MONTH) THEN from_id END) AS contributors_6_months,
+        COUNT(DISTINCT CASE WHEN DATE(bucket_month) >= DATE_ADD(CURRENT_DATE(), INTERVAL -6 MONTH) AND user_segment_type = 'FULL_TIME_DEV' THEN CONCAT(from_id, '_', bucket_month) END) / 6 AS avg_fulltime_devs_6_months,
         COUNT(DISTINCT CASE WHEN DATE(bucket_month) >= DATE_ADD(CURRENT_DATE(), INTERVAL -6 MONTH) AND user_segment_type IN ('FULL_TIME_DEV', 'PART_TIME_DEV') THEN CONCAT(from_id, '_', bucket_month) END) / 6 AS avg_active_devs_6_months,
         COUNT(DISTINCT CASE WHEN first_contribution_date >= DATE_ADD(CURRENT_DATE(), INTERVAL -6 MONTH) THEN from_id END) AS new_contributors_6_months
     FROM (
@@ -85,6 +87,7 @@ SELECT
     c.contributors,
     c.contributors_6_months,
     c.new_contributors_6_months,
+    c.avg_fulltime_devs_6_months,
     c.avg_active_devs_6_months,    
     act.commits_6_months,
     act.issues_opened_6_months,
