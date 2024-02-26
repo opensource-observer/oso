@@ -10,7 +10,7 @@ models:
     description: "Arbitrum contract usage pulled from Dune."
     columns:
       - name: time
-        description: "data pull time"
+        description: "the time (start of a day UTC) of a contract's invocation"
         tests:
           - not_null
       - name: source_id
