@@ -1,10 +1,47 @@
 import os
+import json
+from typing import List
+
 from google.cloud import bigquery, storage
+from dbt.cli.main import dbtRunner, dbtRunnerResult
 
 from .synchronizer import BigQueryCloudSQLSynchronizer, TableSyncConfig, TableSyncMode
 from .cloudsql import CloudSQLClient
 
 from dotenv import load_dotenv
+
+
+def table_sync_config_from_dbt_marts(target: str) -> List[TableSyncConfig]:
+    dbt = dbtRunner()
+    r: dbtRunnerResult = dbt.invoke(
+        [
+            "ls",
+            "--output",
+            "json",
+            "--select",
+            "marts.*",
+            "--target",
+            target,
+            "--resource-type",
+            "model",
+        ]
+    )
+    if not r.success:
+        raise Exception("dbt listing failed")
+    if not isinstance(r.result, list):
+        raise Exception("Unexpected response from dbt")
+    model_configs = map(lambda a: json.loads(a), r.result)
+    sync_configs: List[TableSyncConfig] = []
+    for config in model_configs:
+        print(config["name"])
+        sync_configs.append(
+            TableSyncConfig(
+                TableSyncMode.OVERWRITE,
+                config["name"],
+                config["name"],
+            )
+        )
+    return sync_configs
 
 
 def run():
@@ -20,155 +57,16 @@ def run():
         os.environ.get("CLOUDSQL_DB_NAME"),
     )
 
+    # Automtically discover dbt marts
+    table_sync_configs = table_sync_config_from_dbt_marts(os.environ.get("DBT_TARGET"))
+
     synchronizer = BigQueryCloudSQLSynchronizer(
         bq,
         storage_client,
         cloudsql,
-        "oso-production",
-        "opensource_observer",
-        [
-            TableSyncConfig(
-                TableSyncMode.OVERWRITE,
-                "events_daily_to_collection",
-                "events_daily_to_collection",
-            ),
-            TableSyncConfig(
-                TableSyncMode.OVERWRITE,
-                "events_monthly_to_collection",
-                "events_monthly_to_collection",
-            ),
-            TableSyncConfig(
-                TableSyncMode.OVERWRITE,
-                "events_weekly_to_collection",
-                "events_weekly_to_collection",
-            ),
-            TableSyncConfig(
-                TableSyncMode.OVERWRITE,
-                "events_daily_from_collection",
-                "events_daily_from_collection",
-            ),
-            TableSyncConfig(
-                TableSyncMode.OVERWRITE,
-                "events_monthly_from_collection",
-                "events_monthly_from_collection",
-            ),
-            TableSyncConfig(
-                TableSyncMode.OVERWRITE,
-                "events_weekly_from_collection",
-                "events_weekly_from_collection",
-            ),
-            TableSyncConfig(
-                TableSyncMode.OVERWRITE,
-                "events_daily_to_project",
-                "events_daily_to_project",
-            ),
-            TableSyncConfig(
-                TableSyncMode.OVERWRITE,
-                "events_monthly_to_project",
-                "events_monthly_to_project",
-            ),
-            TableSyncConfig(
-                TableSyncMode.OVERWRITE,
-                "events_weekly_to_project",
-                "events_weekly_to_project",
-            ),
-            TableSyncConfig(
-                TableSyncMode.OVERWRITE,
-                "events_daily_from_project",
-                "events_daily_from_project",
-            ),
-            TableSyncConfig(
-                TableSyncMode.OVERWRITE,
-                "events_monthly_from_project",
-                "events_monthly_from_project",
-            ),
-            TableSyncConfig(
-                TableSyncMode.OVERWRITE,
-                "events_weekly_from_project",
-                "events_weekly_from_project",
-            ),
-            TableSyncConfig(
-                TableSyncMode.OVERWRITE,
-                "events_daily_to_artifact",
-                "events_daily_to_artifact",
-            ),
-            TableSyncConfig(
-                TableSyncMode.OVERWRITE,
-                "events_monthly_to_artifact",
-                "events_monthly_to_artifact",
-            ),
-            TableSyncConfig(
-                TableSyncMode.OVERWRITE,
-                "events_weekly_to_artifact",
-                "events_weekly_to_artifact",
-            ),
-            TableSyncConfig(
-                TableSyncMode.OVERWRITE,
-                "events_daily_from_artifact",
-                "events_daily_from_artifact",
-            ),
-            TableSyncConfig(
-                TableSyncMode.OVERWRITE,
-                "events_monthly_from_artifact",
-                "events_monthly_from_artifact",
-            ),
-            TableSyncConfig(
-                TableSyncMode.OVERWRITE,
-                "events_weekly_from_artifact",
-                "events_weekly_from_artifact",
-            ),
-            TableSyncConfig(
-                TableSyncMode.OVERWRITE,
-                "first_contribution_to_project",
-                "first_contribution_to_project",
-            ),
-            TableSyncConfig(
-                TableSyncMode.OVERWRITE,
-                "last_contribution_to_project",
-                "last_contribution_to_project",
-            ),
-            TableSyncConfig(
-                TableSyncMode.OVERWRITE,
-                "users_monthly_to_project",
-                "users_monthly_to_project",
-            ),
-            TableSyncConfig(
-                TableSyncMode.OVERWRITE,
-                "event_types",
-                "event_types",
-            ),
-            TableSyncConfig(
-                TableSyncMode.OVERWRITE,
-                "artifacts",
-                "artifacts",
-            ),
-            TableSyncConfig(
-                TableSyncMode.OVERWRITE,
-                "projects",
-                "projects",
-            ),
-            TableSyncConfig(
-                TableSyncMode.OVERWRITE,
-                "collections",
-                "collections",
-            ),
-            TableSyncConfig(
-                TableSyncMode.OVERWRITE,
-                "projects_by_collection",
-                "projects_by_collection",
-            ),
-            TableSyncConfig(
-                TableSyncMode.OVERWRITE,
-                "artifacts_by_project",
-                "artifacts_by_project",
-            ),
-            TableSyncConfig(
-                TableSyncMode.OVERWRITE,
-                "github_metrics",
-                "github_metrics",
-            ),
-        ],
-        "oso-csv-exports",
-        "oso-csv-exports",
+        os.environ.get("GOOGLE_PROJECT_ID"),
+        os.environ.get("BIGQUERY_DATASET_ID"),
+        table_sync_configs,
+        os.environ.get("CLOUDSTORAGE_BUCKET_NAME"),
     )
     synchronizer.sync()
