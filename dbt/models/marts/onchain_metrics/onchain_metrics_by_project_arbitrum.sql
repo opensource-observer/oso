@@ -76,22 +76,32 @@ user_txns_aggregated AS (
   WHERE bucket_month >= DATE_ADD(CURRENT_DATE(), INTERVAL -3 MONTH)
   GROUP BY project_id, from_id
 ),
+multi_project_users AS (
+  SELECT
+    from_id,
+    COUNT(DISTINCT project_id) AS projects_transacted_on
+  FROM user_txns_aggregated
+  GROUP BY from_id
+),
 user_segments AS (
   SELECT
     project_id,
     COUNT(DISTINCT CASE WHEN user_segment = 'HIGH_FREQUENCY_USER' THEN from_id END) AS high_frequency_users,
     COUNT(DISTINCT CASE WHEN user_segment = 'MORE_ACTIVE_USER' THEN from_id END) AS more_active_users,
-    COUNT(DISTINCT CASE WHEN user_segment = 'LESS_ACTIVE_USER' THEN from_id END) AS less_active_users
+    COUNT(DISTINCT CASE WHEN user_segment = 'LESS_ACTIVE_USER' THEN from_id END) AS less_active_users,
+    COUNT(DISTINCT CASE WHEN projects_transacted_on >= 3 THEN from_id END) AS multi_project_users
   FROM (
     SELECT
-      project_id,
-      from_id,
+      uta.project_id,
+      uta.from_id,
       CASE 
-        WHEN total_tx_count >= 1000 THEN 'HIGH_FREQUENCY_USER'
-        WHEN total_tx_count >= 10 THEN 'MORE_ACTIVE_USER'
+        WHEN uta.total_tx_count >= 1000 THEN 'HIGH_FREQUENCY_USER'
+        WHEN uta.total_tx_count >= 10 THEN 'MORE_ACTIVE_USER'
         ELSE 'LESS_ACTIVE_USER'
-      END AS user_segment
-    FROM user_txns_aggregated
+      END AS user_segment,
+      mpu.projects_transacted_on
+    FROM user_txns_aggregated AS uta
+    JOIN multi_project_users AS mpu ON uta.from_id = mpu.from_id
   )
   GROUP BY project_id
 ),
