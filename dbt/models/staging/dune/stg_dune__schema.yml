@@ -1,0 +1,63 @@
+version: 2
+
+models:
+  - name: stg_dune__arbitrum_contract_invocation
+    meta:
+      #...
+      contributors: oso-team, tomfutago
+    config:
+      tags: ['staging', 'dune', 'arbitrum']
+    description: "Arbitrum contract usage pulled from Dune."
+    columns:
+      - name: time
+        description: "data pull time"
+        tests:
+          - not_null
+      - name: source_id
+        description: "source id - hash derived from pull time, contract address and EOA address / safe address"
+        tests:
+          - not_null
+      - name: to_name
+        description: "recipient address"
+        tests:
+          - not_null
+      - name: to_namespace
+        description: "recipient namespace"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['ARBITRUM']
+      - name: to_type
+        description: "recipient address type"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['CONTRACT_ADDRESS']
+      - name: to_source_id
+        description: "recipient address"
+        tests:
+          - not_null
+      - name: from_name
+        description: "sender address"
+        tests:
+          - not_null
+      - name: from_namespace
+        description: "sender namespace"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['ARBITRUM']
+      - name: from_type
+        description: "sender address type"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['EOA_ADDRESS','SAFE_ADDRESS','unknown']
+      - name: from_source_id
+        description: "sender address"
+      - name: l1_gas
+        description: "L1 gas amount"
+      - name: l2_gas
+        description: "L2 gas amount"
+      - name: tx_count
+        description: "transaction count"

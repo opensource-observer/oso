@@ -152,32 +152,32 @@ models:
           - not_null
       - &id
         name: id
-        description: "reporsitory id"
+        description: "repository id"
         tests:
           - not_null
       - &url
         name: url
-        description: "reporsitory id"
+        description: "repository id"
         tests:
           - not_null
       - &name
         name: name
-        description: "reporsitory name"
+        description: "repository name"
         tests:
           - not_null
       - &name_with_owner
         name: name_with_owner
-        description: "reporsitory name and its owner, format: owner/repo_name"
+        description: "repository name and its owner, format: owner/repo_name"
         tests:
           - not_null
       - &owner
         name: owner
-        description: "reporsitory owner name"
+        description: "repository owner name"
         tests:
           - not_null
       - &branch
         name: branch
-        description: "reporsitory branch name"
+        description: "repository branch name"
         tests:
           - not_null
       - &star_count

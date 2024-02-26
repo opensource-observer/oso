@@ -1,0 +1,168 @@
+version: 2
+
+models:
+  - name: github_events
+    meta:
+      #...
+      contributors: oso-team, tomfutago
+    config:
+      tags: ['staging', 'github', 'events']
+    description: "GitHub events"
+    columns:
+      - name: type
+      - name: public
+      - name: payload
+      - name: repo
+      - name: actor
+      - name: org
+      - name: created_at
+      - name: id
+      - name: other
+
+  - name: stg_github__push_events
+    meta:
+      #...
+      contributors: oso-team, tomfutago
+    config:
+      tags: ['staging', 'github', 'events', 'push']
+    description: "GitHub push events"
+    columns:
+      - name: created_at
+      - name: repository_id
+      - name: repository_name
+      - name: push_id
+      - name: ref
+      - name: commits
+      - name: available_commits_count
+      - name: actual_commits_count
+      - name: actor_id
+      - name: actor_login
+
+  - name: stg_github__pull_requests
+    meta:
+      #...
+      contributors: oso-team, tomfutago
+    config:
+      tags: ['staging', 'github', 'events', 'pull']
+    description: "GitHub pull requests"
+    columns:
+      - name: id
+      - name: created_at
+      - name: repository_id
+      - name: repository_name
+      - name: actor_id
+      - name: actor_login
+      - name: type
+
+  - name: stg_github__pull_request_merge_events
+    meta:
+      #...
+      contributors: oso-team, tomfutago
+    config:
+      tags: ['staging', 'github', 'events', 'pull', 'merge']
+    description: "GitHub pull requests + merge events"
+    columns:
+      - name: id
+      - name: created_at
+      - name: repository_id
+      - name: repository_name
+      - name: actor_id
+      - name: actor_login
+      - name: type
+      - name: state
+      - name: merge_commit_sha
+
+  - name: stg_github__stars_and_forks
+    meta:
+      #...
+      contributors: oso-team, tomfutago
+    config:
+      tags: ['staging', 'github', 'events', 'stars', 'forks']
+    description: "GitHub starts and forks"
+    columns:
+      - name: id
+      - name: created_at
+      - name: repository_id
+      - name: repository_name
+      - name: actor_id
+      - name: actor_login
+      - name: type
+
+  - name: stg_github__issues
+    meta:
+      #...
+      contributors: oso-team, tomfutago
+    config:
+      tags: ['staging', 'github', 'events', 'issues']
+    description: "GitHub push events"
+    columns:
+      - name: id
+      - name: created_at
+      - name: repository_id
+      - name: repository_name
+      - name: actor_id
+      - name: actor_login
+      - name: type
+
+  - name: stg_github__commits
+    meta:
+      #...
+      contributors: oso-team, tomfutago
+    config:
+      tags: ['staging', 'github', 'events', 'commits']
+    description: "GitHub push events"
+    columns:
+      - name: created_at
+      - name: repository_id
+      - name: repository_name
+      - name: push_id
+      - name: ref
+      - name: actor_id
+      - name: actor_login
+      - name: sha
+      - name: author_email
+      - name: author_name
+      - name: is_distinct
+      - name: api_url
+
+  - name: stg_github__distinct_main_commits
+    meta:
+      #...
+      contributors: oso-team, tomfutago
+    config:
+      tags: ['staging', 'github', 'events', 'commits', 'main']
+    description: "GitHub push events"
+    columns:
+      - name: created_at
+      - name: repository_id
+      - name: repository_name
+      - name: push_id
+      - name: ref
+      - name: actor_id
+      - name: actor_login
+      - name: sha
+      - name: author_email
+      - name: author_name
+      - name: is_distinct
+      - name: api_url
+
+  - name: stg_github__distinct_commits_resolved_mergebot
+    meta:
+      #...
+      contributors: oso-team, tomfutago
+    config:
+      tags: ['staging', 'github', 'events', 'commits', 'merge']
+    description: "GitHub push events"
+    columns:
+      - name: created_at
+      - name: repository_id
+      - name: repository_name
+      - name: push_id
+      - name: ref
+      - name: actor_id
+      - name: actor_login
+      - name: sha
+      - name: author_email
+      - name: author_name
+      - name: is_distinct
+      - name: api_url
