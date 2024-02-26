@@ -14,6 +14,7 @@
     - high_frequency_users: The number of users who have made 1000+ transactions with the project in the last 3 months
     - more_active_users: The number of users who have made 10-999 transactions with the project in the last 3 months
     - less_active_users: The number of users who have made 1-9 transactions with the project in the last 3 months
+    - multi_project_users: The number of users who have interacted with 3+ projects in the last 3 months
 #}
 
 -- CTE for grabbing the onchain transaction data we care about
@@ -132,7 +133,8 @@ SELECT
   (us.high_frequency_users + us.more_active_users + us.less_active_users) AS active_users,
   us.high_frequency_users,
   us.more_active_users,
-  us.less_active_users
+  us.less_active_users,
+  us.multi_project_users
   
 FROM {{ ref('projects') }} AS p
 INNER JOIN metrics_all_time AS ma ON p.project_id = ma.project_id
