@@ -44,11 +44,11 @@ collection_stars_forks_repos AS (
 -- CTE for calculating contributor counts and new contributors in the last 6 months at collection level
 collection_contributors AS (
     SELECT
-        pbc.collection_id,
+        d.collection_id,
         COUNT(DISTINCT d.from_id) AS contributors,
-        COUNT(DISTINCT CASE WHEN d.bucket_month >= DATE_ADD(CURRENT_DATE(), INTERVAL -6 MONTH) THEN d.from_id END) AS contributors_6_months,
-        COUNT(DISTINCT CASE WHEN d.bucket_month >= DATE_ADD(CURRENT_DATE(), INTERVAL -6 MONTH) AND d.user_segment_type IN ('FULL_TIME_DEV', 'PART_TIME_DEV') THEN CONCAT(d.from_id, '_', d.bucket_month) END) / 6 AS avg_active_devs_6_months,
-        COUNT(DISTINCT CASE WHEN d.first_contribution_date >= DATE_ADD(CURRENT_DATE(), INTERVAL -6 MONTH) THEN d.from_id END) AS new_contributors_6_months
+        COUNT(DISTINCT CASE WHEN d.bucket_month >= CAST(DATE_ADD(CURRENT_DATE(), INTERVAL -6 MONTH) AS TIMESTAMP) THEN d.from_id END) AS contributors_6_months,
+        COUNT(DISTINCT CASE WHEN d.bucket_month >= CAST(DATE_ADD(CURRENT_DATE(), INTERVAL -6 MONTH) AS TIMESTAMP) AND d.user_segment_type IN ('FULL_TIME_DEV', 'PART_TIME_DEV') THEN CONCAT(d.from_id, '_', d.bucket_month) END) / 6 AS avg_active_devs_6_months,
+        COUNT(DISTINCT CASE WHEN d.first_contribution_date >= CAST(DATE_ADD(CURRENT_DATE(), INTERVAL -6 MONTH) AS TIMESTAMP) THEN d.from_id END) AS new_contributors_6_months
     FROM (
         SELECT
             d.from_id,
@@ -59,7 +59,7 @@ collection_contributors AS (
         FROM {{ ref('int_devs') }} AS d
         JOIN {{ ref('stg_ossd__projects_by_collection') }} AS pbc ON d.project_id = pbc.project_id
     ) AS d
-    GROUP BY pbc.collection_id
+    GROUP BY d.collection_id
 ),
 -- CTE for summarizing collection activity metrics over the past 6 months
 collection_activity AS (
@@ -72,7 +72,7 @@ collection_activity AS (
         SUM(CASE WHEN e.event_type = 'PULL_REQUEST_MERGED' THEN e.amount END) AS pull_requests_merged_6_months
     FROM {{ ref('int_events_to_project') }} AS e
     JOIN {{ ref('stg_ossd__projects_by_collection') }} AS pbc ON e.project_id = pbc.project_id
-    WHERE e.time >= DATE_ADD(CURRENT_DATE(), INTERVAL -6 MONTH)
+    WHERE e.time >= CAST(DATE_ADD(CURRENT_DATE(), INTERVAL -6 MONTH) AS TIMESTAMP)
     GROUP BY pbc.collection_id
 )
 
