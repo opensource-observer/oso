@@ -11,6 +11,8 @@ env:
   CLOUDSQL_REGION: us-central1
   CLOUDSQL_INSTANCE_ID: oso-dw-test
   GOOGLE_PROJECT_ID: oso-production
+  CLOUDSTORAGE_BUCKET_NAME: oso-csv-exports
+  BIGQUERY_DATASET_ID: opensource_observer
 
 # For now this only runs on a schedule once a day. Once we have made some of the
 # plugin workflows more incremental we will run this on _every_ commit to main
@@ -20,6 +22,10 @@ on:
     inputs:
       docker_tag:
         description: The docker tag to use for cloudquery plugins 
+      skip_cloudquery_plugins:
+        description: Skip CloudQuery plugins (run dbt only)
+        default: 'false'
+        required: false
   schedule:
 
     # Schedule every day at 2AM UTC. This is so we ensure anything that is #
@@ -82,6 +88,7 @@ jobs:
           version: '>= 363.0.0'
 
       - name: Download and install cloudquery
+        if: ${{ inputs.skip_cloudquery_plugins != 'true' }}
         run: |
           curl -L https://github.com/cloudquery/cloudquery/releases/download/cli-v${CLOUDQUERY_VERSION}/cloudquery_linux_amd64 -o /tmp/cloudquery &&
           chmod a+x /tmp/cloudquery && 
@@ -90,16 +97,19 @@ jobs:
       # For now this is a bit of a hack for the oss-directory plugins as the output from one plugin is the input to 
       # another. Ideally we would simply tell whatever system to run and it will handle dependencies.
       - name: Run cloudquery for oss-directory
+        if: ${{ inputs.skip_cloudquery_plugins != 'true' }}
         run: |
           cloudquery sync .github/workflows/cloudquery/oss-directory.yml --log-level debug --log-console
 
       - name: Concat the project jsonl files (if there are many)
+        if: ${{ inputs.skip_cloudquery_plugins != 'true' }}
         run: |
           ls -laht ${CLOUDQUERY_FILE_DIRECTORY}/ &&
           find ${CLOUDQUERY_FILE_DIRECTORY}/projects_ossd -name "*.json" -type f -exec cat {} \; > ${CLOUDQUERY_FILE_DIRECTORY}/projects.json &&
           head -n 5 ${CLOUDQUERY_FILE_DIRECTORY}/projects.json
 
       - uses: actions/upload-artifact@v4
+        if: ${{ inputs.skip_cloudquery_plugins != 'true' }}
         with:
           name: projects.json
           path: ${{ env.CLOUDQUERY_FILE_DIRECTORY }}/projects.json
@@ -110,6 +120,7 @@ jobs:
       # Ideally we'd either have a plugin that can act as both a destination/source (so we can chain multiple plugins)
       # Or potentially we use something else that can achieve a similar things
       - name: Run cloudquery for github-resolve-directory
+        if: ${{ inputs.skip_cloudquery_plugins != 'true' }}
         run: |
           docker run -d --rm -p 7777:7777 \
             -v ${CLOUDQUERY_FILE_DIRECTORY}:${CLOUDQUERY_FILE_DIRECTORY} \
