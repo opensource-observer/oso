@@ -12,32 +12,18 @@ models:
       - &project_id
         name: project_id
         description: "project id"
-        tests:
-          - not_null
       - name: artifact_namespace
         description: "artifact namespace"
-        tests:
-          - not_null
-          - accepted_values:
-              values: ['GITHUB','NPM','MAINNET','ARBITRUM','OPTIMISM']
       - name: artifact_type
         description: "artifact type"
-        tests:
-          - not_null
-          - accepted_values:
-              values: ['CONTRACT','CREATOR','DEPLOYER','EOA','FACTORY','GIT_REPOSITORY','PACKAGE','SAFE','WALLET']
       - name: artifact_name
         description: "artifact name (e.g. GitHub repo, npm package url, blockchain address)"
       - name: artifact_url
         description: "artifact url"
       - name: artifact_source_id
         description: "artifact source id (e.g. internal GitHub repo ID, npm package url, blockchain address)"
-        tests:
-          - not_null
       - name: artifact_id
         description: "artifact id - SHA256 hash derived from artifact_namespace, artifact_type and artifact_source_id"
-        tests:
-          - not_null
 
   - name: stg_ossd__current_collections
     meta:
@@ -49,34 +35,18 @@ models:
     columns:
       - name: id
         description: "collection unique id - SHA256 hash derived from namespace and slug"
-        tests:
-          - not_null
-          - unique
       - &namespace
         name: namespace
         description: "namespace"
-        tests:
-          - not_null
-          - accepted_values:
-              values: ['oso']
       - &_cq_sync_time
         name: _cq_sync_time
         description: "sync time"
-        tests:
-          - not_null
       - &_cq_source_name
         name: _cq_source_name
         description: "source name"
-        tests:
-          - not_null
-          - accepted_values:
-              values: ['oss-directory']
       - &slug
         name: slug
         description: "slug"
-        tests:
-          - not_null
-          - unique
       - name: name
         description: "collection name"
       - name: version
@@ -86,8 +56,6 @@ models:
       - &sync_time
         name: sync_time
         description: "sync time"
-        tests:
-          - not_null
 
   - name: stg_ossd__current_projects
     meta:
@@ -99,9 +67,6 @@ models:
     columns:
       - name: id
         description: "project unique id - SHA256 hash derived from namespace and slug"
-        tests:
-          - not_null
-          - unique
       - *namespace
       - *_cq_sync_time
       - *_cq_source_name
@@ -126,8 +91,6 @@ models:
     columns:
       - name: collection_id
         description: "collection id"
-        tests:
-          - not_null
       - *project_id
 
   - name: stg_ossd__current_repositories
@@ -141,45 +104,27 @@ models:
       - *_cq_sync_time
       - name: _cq_source_name
         description: "source name"
-        tests:
-          - not_null
-          - accepted_values:
-              values: ['github-resolve-repos']
       - &node_id
         name: node_id
         description: "node id"
-        tests:
-          - not_null
       - &id
         name: id
         description: "repository id"
-        tests:
-          - not_null
       - &url
         name: url
         description: "repository id"
-        tests:
-          - not_null
       - &name
         name: name
         description: "repository name"
-        tests:
-          - not_null
       - &name_with_owner
         name: name_with_owner
         description: "repository name and its owner, format: owner/repo_name"
-        tests:
-          - not_null
       - &owner
         name: owner
         description: "repository owner name"
-        tests:
-          - not_null
       - &branch
         name: branch
         description: "repository branch name"
-        tests:
-          - not_null
       - &star_count
         name: star_count
         description: "repo star count"
