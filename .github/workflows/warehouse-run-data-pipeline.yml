@@ -13,7 +13,6 @@ env:
   GOOGLE_PROJECT_ID: opensource-observer
   CLOUDSTORAGE_BUCKET_NAME: oso-dataset-transfer-bucket
   BIGQUERY_DATASET_ID: oso 
-  DBT_TARGET: production
 
 # For now this only runs on a schedule once a day. Once we have made some of the
 # plugin workflows more incremental we will run this on _every_ commit to main
@@ -136,10 +135,16 @@ jobs:
           bash .github/scripts/create-dbt-profile.sh ${GOOGLE_APPLICATION_CREDENTIALS} &&
           gcloud auth list
 
-      - name: Run dbt
+      - name: Run dbt for production
         run: |
-          poetry run dbt run --target $DBT_TARGET
+          poetry run dbt run --target production
+
+      - name: Run dbt for the playground
+        run: |
+          poetry run dbt run --target playground
 
       - name: Copy the bigquery tables to cloudsql
         run: |
           poetry run bq2cloudsql
+        env:
+          DBT_TARGET: production
