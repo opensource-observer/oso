@@ -4,7 +4,7 @@
 WITH most_recent_sync AS (
   SELECT 
     MAX(_cq_sync_time) AS sync_time
-  FROM `oso-production.opensource_observer.collections_ossd`
+  FROM {{ oso_source('ossd', 'collections') }}
 )
 SELECT 
   {# 
@@ -15,5 +15,5 @@ SELECT
   {{ oso_id('"oso"', 'slug') }} AS id,
   "oso" as namespace,
   c.* 
-FROM {{ source('ossd', 'collections')}} as c
+FROM {{ oso_source('ossd', 'collections')}} as c
 WHERE _cq_sync_time = (SELECT * FROM most_recent_sync)

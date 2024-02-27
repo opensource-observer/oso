@@ -45,4 +45,4 @@ SELECT
   CAST(cu.tx_count AS FLOAT64) AS `tx_count`
 
 {# FROM `oso-production.opensource_observer.contract_usage` as cu #}
-FROM {{ source('dune', 'arbitrum_contract_usage')}} as cu
+FROM {{ oso_source('dune', 'arbitrum_contract_usage')}} as cu
