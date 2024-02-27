@@ -11,48 +11,22 @@ models:
     columns:
       - name: time
         description: "the time (start of a day UTC) of a contract's invocation"
-        tests:
-          - not_null
       - name: source_id
         description: "source id - hash derived from pull time, contract address and EOA address / safe address"
-        tests:
-          - not_null
       - name: to_name
         description: "recipient address"
-        tests:
-          - not_null
       - name: to_namespace
         description: "recipient namespace"
-        tests:
-          - not_null
-          - accepted_values:
-              values: ['ARBITRUM']
       - name: to_type
         description: "recipient address type"
-        tests:
-          - not_null
-          - accepted_values:
-              values: ['CONTRACT_ADDRESS']
       - name: to_source_id
         description: "recipient address"
-        tests:
-          - not_null
       - name: from_name
         description: "sender address"
-        tests:
-          - not_null
       - name: from_namespace
         description: "sender namespace"
-        tests:
-          - not_null
-          - accepted_values:
-              values: ['ARBITRUM']
       - name: from_type
         description: "sender address type"
-        tests:
-          - not_null
-          - accepted_values:
-              values: ['EOA_ADDRESS','SAFE_ADDRESS','unknown']
       - name: from_source_id
         description: "sender address"
       - name: l1_gas

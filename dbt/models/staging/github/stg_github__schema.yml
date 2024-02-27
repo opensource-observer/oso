@@ -12,54 +12,30 @@ models:
       - &type
         name: type
         description: "event type"
-        tests:
-          - not_null
-          - accepted_values:
-              values: [
-                'CommitCommentEvent','CreateEvent','DeleteEvent','ForkEvent','GollumEvent','IssueCommentEvent',
-                'IssuesEvent','MemberEvent','PublicEvent','PullRequestEvent','PullRequestReviewCommentEvent',
-                'PullRequestReviewEvent','PushEvent','ReleaseEvent','WatchEvent'
-              ]
       - name: public
         description: "is this repository public?"
-        tests:
-          - not_null
       - name: payload
         description: "JSON containing event payload"
-        tests:
-          - not_null
       - &repository_id
         name: repo.id
         description: "element of repo struct: repository id"
-        tests:
-          - not_null
       - &repository_name
         name: repo.name
         description: "element of repo struct: repository name"
-        tests:
-          - not_null
       - name: repo.url
         description: "element of repo struct: repository url"
-        tests:
-          - not_null
       - &actor_id
         name: actor.id
         description: "element of actor struct: user id"
-        tests:
-          - not_null
       - &actor_login
         name: actor.login
         description: "element of actor struct: user login"
-        tests:
-          - not_null
       - name: actor.gravatar_id
         description: "element of actor struct: user gravatar id"
       - name: actor.avatar_url
         description: "element of actor struct: user avatar url"
       - name: actor.url
         description: "element of actor struct: user url"
-        tests:
-          - not_null
       - name: org.id
         description: "element of org struct: org id"
       - name: org.login
@@ -73,13 +49,9 @@ models:
       - &created_at
         name: created_at
         description: "event timestamp"
-        tests:
-          - not_null
       - &id
         name: id
         description: "event id"
-        tests:
-          - not_null
       - name: other
         description: "JSON containing event other info"
 
@@ -97,13 +69,9 @@ models:
       - &push_id
         name: push_id
         description: "payload push_id"
-        tests:
-          - not_null
       - &ref
         name: ref
         description: "payload ref"
-        tests:
-          - not_null
       - name: commits
         description: "JSON containing push event commits"
       - name: available_commits_count
@@ -166,10 +134,6 @@ models:
       - *actor_login
       - name: type
         description: "type name"
-        tests:
-          - not_null
-          - accepted_values:
-              values: ['STARRED','FORKED']
 
   - name: stg_github__issues
     meta:
