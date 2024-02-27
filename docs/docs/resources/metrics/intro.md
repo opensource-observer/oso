@@ -2,21 +2,26 @@
 sidebar_position: 1
 ---
 
-# Impact Metrics
+# Overview
 
-> This document provides details on Open Source Observer's impact metrics. Metrics are typically queried by project (eg, `uniswap`), although they can also be queried by individual artifact.
+Learn how Open Source Observer creates impact metrics.
+
+Metrics are most commonly queried by project (eg, `uniswap`), although they can also be queried by individual artifact or at the collection level.
 
 ## Categories
 
 The following categories of metrics are available:
 
-- [GitHub Code Contribution Metrics](./github_contributions), including commits, pull requests, issues, and stars for all repositories owned by the project.
-- [Developer Metrics](./developers), including the profile and activity of different types of contributors to the project.
-- [Onchain Metrics](./onchain), including transaction counts, fees, and users for all smart contracts deployed by the project across supported chains.
-- [Node Package Manager (npm) Metrics](./npm), including downloads for all packages released by the project.
-- [Dependency and Dependent Metrics](./dependents), including the number of dependencies and dependents for all packages released by the project.
+- [GitHub Activity](./github_activity), including commits, pull requests, issues, and stars for all repositories owned by the project.
+- [GitHub Contributors](./github_contributors), including the profile and activity of different types of contributors to the project.
+- [Onchain Activity](./onchain_activity), including transaction counts and fees for all smart contracts deployed by the project across supported chains.
+- [Onchain Users](./onchain_users), including the number and segmentation of unique addresses that have interacted with the project's smart contracts over different period of time.
+- [Node Package Manager (npm) Activity](./npm_activity), including downloads for all packages released by the project.
+- [Dependencies](./dependencies), including the number of dependencies and dependents for all packages released by the project.
 
 ## Key Terms
+
+The following terms are helpful in understanding how metrics are constructed. In general, a metric is an aggregation of events by artifact, project, or collection. For more details on how these databases are constructed, see here: [Schemas](../../category/schemas).
 
 ### Artifact
 
@@ -38,33 +43,49 @@ An event is a single action between artifiacts that is tracked by Open Source Ob
 
 The following are some of the artifact types tracked by Open Source Observer:
 
-- Onchain: 'EOA_ADDRESS', 'SAFE_ADDRESS', 'CONTRACT_ADDRESS', 'FACTORY_ADDRESS'
-- GitHub: 'GIT_REPOSITORY', 'GITHUB_ORG', 'GITHUB_USER'
-- npm: 'NPM_PACKAGE'
+### GitHub
+
+- GIT_REPOSITORY
+- GITHUB_ORG
+- GITHUB_USER
+
+### Onchain
+
+- EOA_ADDRESS
+- DEPLOYER_ADDRESS
+- SAFE_ADDRESS
+- CONTRACT_ADDRESS
+- FACTORY_ADDRESS
+
+### npm
+
+- NPM_PACKAGE
 
 ## Event Types
 
-The following event `typeId`s are most commonly used:
+The following event types are currently available:
 
-```
-'FUNDING': 1,
-'PULL_REQUEST_CREATED': 2,
-'PULL_REQUEST_MERGED': 3,
-'COMMIT_CODE': 4,
-'ISSUE_CLOSED': 6,
-'DOWNSTREAM_DEPENDENCY_COUNT': 7,
-'UPSTREAM_DEPENDENCY_COUNT': 8,
-'DOWNLOADS': 9,
-'CONTRACT_INVOKED': 10,
-'USERS_INTERACTED': 11,
-'CONTRACT_INVOKED_AGGREGATE_STATS': 12,
-'PULL_REQUEST_CLOSED': 13,
-'STAR_AGGREGATE_STATS': 14,
-'PULL_REQUEST_APPROVED': 17,
-'ISSUE_CREATED': 18,
-'STARRED': 21,
-'FORK_AGGREGATE_STATS': 22,
-'FORKED': 23,
-'CONTRACT_INVOCATION_DAILY_COUNT': 25,
-'CONTRACT_INVOCATION_DAILY_FEES': 26
-```
+### Github
+
+- COMMIT_CODE
+- ISSUE_CLOSED
+- ISSUE_OPENED
+- ISSUE_REOPENED
+- PULL_REQUEST_CLOSED
+- PULL_REQUEST_MERGED
+- PULL_REQUEST_OPENED
+- PULL_REQUEST_REOPENED
+
+### Onchain
+
+- CONTRACT_INVOCATION_DAILY_COUNT
+- CONTRACT_INVOCATION_DAILY_L1_GAS_USED
+- CONTRACT_INVOCATION_DAILY_L2_GAS_USED
+
+### npm
+
+- DOWNLOADS
+
+---
+
+To contribute new metrics, please see our guide [here](../../contribute/transform/create-impact-metrics)
