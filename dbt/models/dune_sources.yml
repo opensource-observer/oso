@@ -1,0 +1,10 @@
+sources:
+  - name: dune
+
+    database: opensource-observer
+
+    schema: oso
+    tables:
+      - name: arbitrum_contract_usage 
+        identifier: arbitrum_contract_usage
+        

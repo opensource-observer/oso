@@ -4,7 +4,7 @@
 
 WITH issue_events AS (
     SELECT * 
-    FROM {{ ref('github_events') }} as ghe
+    FROM {{ ref('stg_github__events') }} as ghe
     WHERE ghe.type = "IssuesEvent"
 )
 SELECT

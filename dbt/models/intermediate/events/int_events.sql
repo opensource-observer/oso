@@ -46,6 +46,10 @@ WITH arbitrum_contract_invocation_daily_count AS (
     acii.from_source_id,
     acii.tx_count as `amount`
   FROM {{ ref('stg_dune__arbitrum_contract_invocation') }} AS acii
+  {# a bit of a hack for now to keep this table small for dev and playground #}
+  {% if target.name in ['dev', 'playground'] %}
+  WHERE acii.time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {{ env_var("PLAYGROUND_DAYS", '14') }} DAY)
+  {% endif %}
 ), arbitrum_contract_invocation_daily_l2_gas_used AS (
   SELECT 
     acii.time,
@@ -61,6 +65,9 @@ WITH arbitrum_contract_invocation_daily_count AS (
     acii.from_source_id,
     acii.l2_gas as `amount`
   FROM {{ ref('stg_dune__arbitrum_contract_invocation') }} AS acii
+  {% if target.name in ['dev', 'playground'] %}
+  WHERE acii.time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {{ env_var("PLAYGROUND_DAYS", '14') }} DAY)
+  {% endif %}
 ), arbitrum_contract_invocation_daily_l1_gas_used AS (
   SELECT 
     acii.time,
@@ -76,6 +83,9 @@ WITH arbitrum_contract_invocation_daily_count AS (
     acii.from_source_id,
     acii.l1_gas as `amount`
   FROM {{ ref('stg_dune__arbitrum_contract_invocation') }} AS acii
+  {% if target.name in ['dev', 'playground'] %}
+  WHERE acii.time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {{ env_var("PLAYGROUND_DAYS", '14') }} DAY)
+  {% endif %}
 ), github_commits AS (
   SELECT
     gc.created_at as `time`,

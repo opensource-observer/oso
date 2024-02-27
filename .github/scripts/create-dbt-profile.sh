@@ -10,21 +10,30 @@ set -euo pipefail
 
 mkdir -p ~/.dbt
 
-dataset=$1
-service_account_path=$2
+service_account_path=$1
 
 cat <<EOF > ~/.dbt/profiles.yml
 opensource_observer:
-  target: release
+  target: production
   outputs:
-    release:
+    production:
       type: bigquery
-      dataset: ${dataset} 
+      dataset: oso
       job_execution_time_seconds: 300
       job_retries: 1
       location: US
       method: service-account
       keyfile: ${service_account_path}
-      project: oso-production
+      project: ${GOOGLE_PROJECT_ID}
+      threads: 1
+    playground:
+      type: bigquery
+      dataset: oso-playground
+      job_execution_time_seconds: 300
+      job_retries: 1
+      location: US
+      method: service-account
+      keyfile: ${service_account_path}
+      project: ${GOOGLE_PROJECT_ID}
       threads: 1
 EOF

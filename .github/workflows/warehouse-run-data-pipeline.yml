@@ -9,10 +9,10 @@ env:
   CLOUDSQL_DB_PASSWORD: ${{ secrets.CLOUDSQL_DB_PASSWORD }}
   CLOUDSQL_DB_NAME: postgres
   CLOUDSQL_REGION: us-central1
-  CLOUDSQL_INSTANCE_ID: oso-dw-test
-  GOOGLE_PROJECT_ID: oso-production
-  CLOUDSTORAGE_BUCKET_NAME: oso-csv-exports
-  BIGQUERY_DATASET_ID: opensource_observer
+  CLOUDSQL_INSTANCE_ID: oso-psql
+  GOOGLE_PROJECT_ID: opensource-observer
+  CLOUDSTORAGE_BUCKET_NAME: oso-dataset-transfer-bucket
+  BIGQUERY_DATASET_ID: oso 
 
 # For now this only runs on a schedule once a day. Once we have made some of the
 # plugin workflows more incremental we will run this on _every_ commit to main
@@ -21,7 +21,7 @@ on:
   workflow_dispatch:
     inputs:
       docker_tag:
-        description: The docker tag to use for cloudquery plugins 
+        description: The docker tag to use for cloudquery plugins (only)
       skip_cloudquery_plugins:
         description: Skip CloudQuery plugins (run dbt only)
         default: 'false'
@@ -132,15 +132,19 @@ jobs:
 
       - name: Setup dbt
         run: |
-          bash .github/scripts/create-dbt-profile.sh opensource_observer ${GOOGLE_APPLICATION_CREDENTIALS} &&
-          cat ~/.dbt/profiles.yml && 
+          bash .github/scripts/create-dbt-profile.sh ${GOOGLE_APPLICATION_CREDENTIALS} &&
           gcloud auth list
 
-      - name: Run dbt
+      - name: Run dbt for production
         run: |
-          poetry run python -c "import os; print(os.environ)" &&
-          poetry run dbt run
+          poetry run dbt run --target production
+
+      - name: Run dbt for the playground
+        run: |
+          poetry run dbt run --target playground
 
       - name: Copy the bigquery tables to cloudsql
         run: |
           poetry run bq2cloudsql
+        env:
+          DBT_TARGET: production

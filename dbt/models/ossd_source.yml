@@ -1,0 +1,18 @@
+sources:
+  - name: ossd
+    database: opensource-observer
+
+    schema: oso
+    tables:
+      - name: projects
+        identifier: projects_ossd
+      - name: collections
+        identifier: collections_ossd
+      - name: repositories
+        identifier: repositories_ossd
+      
+        
+        
+      
+        
+        

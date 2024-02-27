@@ -88,6 +88,15 @@ module "warehouse_cloudsql" {
 }
 
 ###
+# Add permissions for the cloudsql user to read from the bucket
+###
+resource "google_storage_bucket_iam_member" "cloudsql_member" {
+  bucket = google_storage_bucket.dataset_transfer.name
+  role   = "roles/storage.objectViewer"
+  member = "serviceAccount:${module.warehouse_cloudsql.instance_service_account_email_address}"
+}
+
+###
 # Service account permissions
 ###
 resource "google_project_iam_member" "service_account_binding" {
