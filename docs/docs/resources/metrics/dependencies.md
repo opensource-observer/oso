@@ -1,8 +1,16 @@
-# Dependencies and Dependents
+---
+sidebar_position: 7
+---
 
-> This document provides clear definitions and classifications of software package dependencies and dependents. These metrics can highlight the usefulness of a given open source software project to other projects in the ecosystem.
+# Dependencies
 
-A **dependency** is a software package, module, or project that another project requires to function properly. Conversely, a **dependent** is a project that includes a specific package as its dependency.
+OSO tracks the dependency graph among projects in a collection or ecosystem.
+
+A **dependency** is a software package, module, or project that another project requires to function properly. Conversely, a **dependent** is a project that includes a specific package as its dependency. These metrics can highlight the usefulness of a given open source software project to other projects in the ecosystem.
+
+:::tip
+These metrics are currently in developmnet.
+:::
 
 ## Direct vs. Indirect Dependents
 
@@ -82,11 +90,6 @@ Count of active users of all dependent projects in the same collection.
 
 Total sequencer fees of all dependent projects in the same collection.
 
-## API Reference
+---
 
-The following event `typeId`s are relevant to dependency metrics:
-
-```
-'DOWNSTREAM_DEPENDENCY_COUNT': 7,
-'UPSTREAM_DEPENDENCY_COUNT': 8
-```
+To contribute new metrics, please see our guide [here](../../contribute/transform/create-impact-metrics)
