@@ -9,6 +9,7 @@ from the community. This guide will walk you through adding a DBT model to the
 repository.
 
 [oso]: https://github.com/opensource-observer/oso
+[oss-directory]: https://github.com/opensource-observer/oss-directory
 
 ## Prerequisites
 
@@ -91,17 +92,24 @@ public datsets on bigquery. Please feel free to add a model that references that
 data source! The titles for these sections reflect the directories available in
 the `staging` directory of our dbt models.
 
+### Using the `oso_source` macro
+
+For referencing sources, you should use the `oso_source()` macro which has the
+same parameters as the built in `source()` macro from DBT. However, the
+`oso_source()` macro includes logic that is used to help manage our public
+playground dataset.
+
 ### The `oss-directory` source
 
 The OSO community maintains a directory of collections and projects called
-[oss-directory](https://github.com/opensource-observer/oss-directory).
+[oss-directory][oss-directory].
 Additionally, we use the list of project's repositories to gather additional
 information on each repository from github. The source data is referenced as `{{
-source('ossd', '{TABLE_NAME}') }}` where `{TABLE_NAME}` could be one of the
+oso_source('ossd', '{TABLE_NAME}') }}` where `{TABLE_NAME}` could be one of the
 following tables:
 
 - `collections` - This data is pulled directly from the [oss-directory
-  Repository](https://github.com/opensource-observer/oss-directory) and is
+  Repository][oss-directory] and is
   groups of projects. You can view this table
   [here][collections_table]
 - `projects` - This data is also pulled directly from the oss-directory
@@ -112,21 +120,21 @@ following tables:
   unique repositories present within the `projects` table. You can view this
   table [here][repositories_table]
 
-[collections_table]: https://console.cloud.google.com/bigquery?project=oso-production&ws=!1m5!1m4!4m3!1soso-production!2sopensource_observer!3scollections_ossd
-[projects_table]: https://console.cloud.google.com/bigquery?project=oso-production&ws=!1m5!1m4!4m3!1soso-production!2sopensource_observer!3sprojects_ossd
-[repositories_table]: https://console.cloud.google.com/bigquery?project=oso-production&ws=!1m5!1m4!4m3!1soso-production!2sopensource_observer!3srepositories_ossd
+[collections_table]: https://console.cloud.google.com/bigquery?project=opensource-observer&ws=!1m5!1m4!4m3!1sopensource-observer!2soso!3scollections_ossd
+[projects_table]: https://console.cloud.google.com/bigquery?project=opensource-observer&ws=!1m5!1m4!4m3!1sopensource-observer!2soso!3sprojects_ossd
+[repositories_table]: https://console.cloud.google.com/bigquery?project=oso-production&ws=!1m5!1m4!4m3!1sopensource-observer!2soso!3srepositories_ossd
 
-### The `github` source
+### The `github_archive` source
 
 Referenced as `{{ source('github_archive', 'events') }}`, this data source is an
-external BigQuery dataset that is maintained by [GH
-Archive][gharchive]. If you wish to use this dataset directly,
-we would suggest ensuring that any materialization you use is either a view or
-is somehow incremental in nature otherwise it would become cost prohibitive. For
-more information on checking these out.
+external BigQuery dataset that is maintained by [GH Archive][gharchive]. It is
+not suggest that you use this data source directly as doing so can be cost
+prohibitive. We would, instead, suggest that you use `{{
+ref('stg_github__events') }}` as this is the raw github archive data only for
+the projects within the [oss-directory][oss-directory].
 
-For more information we suggest you read more at [GH
-Archive][gharchive]
+For more information we on the GH Archive and what you might find in the raw
+data, we suggest you read more at [GH Archive][gharchive]
 
 [gharchive]: https://www.gharchive.org
 
@@ -137,7 +145,7 @@ past (we may not continue to use so into the future) to collect blockchain
 transaction and trace data related to the projects in oss-directory. Currently,
 the only data available in this dataset is `arbitrum` related transactions and
 traces. That collected data is available as a data source that can be referenced
-as `{{ source('dune', 'arbitrum') }}`. We also have Optimism data, but that is
+as `{{ oso_source('dune', 'arbitrum') }}`. We also have Optimism data, but that is
 currently an export from our legacy data collection. We will expose that as well,
 so check back soon for more updates!
 
