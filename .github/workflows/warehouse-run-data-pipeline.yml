@@ -7,12 +7,12 @@ env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   CLOUDSQL_DB_USER: ${{ secrets.CLOUDSQL_DB_USER }}
   CLOUDSQL_DB_PASSWORD: ${{ secrets.CLOUDSQL_DB_PASSWORD }}
-  CLOUDSQL_DB_NAME: postgres
-  CLOUDSQL_REGION: us-central1
-  CLOUDSQL_INSTANCE_ID: oso-psql
-  GOOGLE_PROJECT_ID: opensource-observer
-  CLOUDSTORAGE_BUCKET_NAME: oso-dataset-transfer-bucket
-  BIGQUERY_DATASET_ID: oso 
+  CLOUDSQL_DB_NAME: ${{ vars.CLOUDSQL_DB_NAME }}
+  CLOUDSQL_REGION: ${{ vars.CLOUDSQL_REGION }}
+  CLOUDSQL_INSTANCE_ID: ${{ secrets.CLOUDSQL_INSTANCE_ID }}
+  GOOGLE_PROJECT_ID: ${{ vars.GOOGLE_PROJECT_ID }}
+  CLOUDSTORAGE_BUCKET_NAME: ${{ vars.CLOUDSTORAGE_BUCKET_NAME }}
+  BIGQUERY_DATASET_ID: ${{ vars.BIGQUERY_DATASET_ID }}
 
 # For now this only runs on a schedule once a day. Once we have made some of the
 # plugin workflows more incremental we will run this on _every_ commit to main
