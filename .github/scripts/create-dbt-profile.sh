@@ -28,7 +28,7 @@ opensource_observer:
       threads: 1
     playground:
       type: bigquery
-      dataset: oso-playground
+      dataset: oso_playground
       job_execution_time_seconds: 300
       job_retries: 1
       location: US
