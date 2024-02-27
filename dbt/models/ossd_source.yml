@@ -2,11 +2,7 @@ sources:
   - name: ossd
     database: opensource-observer
 
-    schema: |
-      {%- if target.name in ['playground', 'dev'] -%} oso_playground
-      {%- elif target.name == 'production' -%} oso
-      {%- else -%} invalid_schema
-      {%- endif -%}
+    schema: oso
     tables:
       - name: projects
         identifier: projects_ossd

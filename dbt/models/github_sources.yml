@@ -5,7 +5,7 @@ sources:
     # If this is intended to build the oso playground or to be used in your own
     # dev environment on bigquery it will use the opensource-observer already
     # filtered stg_github__events (if this is the playground it will be restricted to
-    # the last 30 days)
+    # the last 14 days)
 
     database: |
       {%- if target.name in ['playground', 'dev'] -%} opensource-observer
@@ -14,7 +14,7 @@ sources:
       {%- endif -%}
 
     schema: |
-      {%- if target.name in ['playground', 'dev'] -%} oso 
+      {%- if target.name in ['playground', 'dev'] -%} oso_playground
       {%- elif target.name == 'production' -%} day
       {%- else -%} invalid_schema
       {%- endif -%}
