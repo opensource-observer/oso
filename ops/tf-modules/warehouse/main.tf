@@ -15,19 +15,29 @@
 data "google_project" "project" {}
 
 locals {
-  service_account_name = "${var.name}-admin"
-  cloudsql_name        = "${var.name}-psql"
-  cloudsql_db_user     = "${var.name}-admin"
-  dataset_id           = replace(var.name, "-", "_")
+  admin_service_account_name    = "${var.name}-admin"
+  readonly_service_account_name = "${var.name}-readonly"
+  cloudsql_name                 = "${var.name}-psql"
+  cloudsql_db_user              = "${var.name}-admin"
+  dataset_id                    = replace(var.name, "-", "_")
 }
 
 ###
 # Google service account to administer the data warehouse
 ###
 resource "google_service_account" "warehouse_admin" {
-  account_id   = local.service_account_name
+  account_id   = local.admin_service_account_name
   display_name = "Admin service account for ${var.name}"
 }
+
+###
+# Read only service account - for outside applications to use
+###
+resource "google_service_account" "warehouse_readonly" {
+  account_id   = local.readonly_service_account_name
+  display_name = "Read only service account for ${var.name}"
+}
+
 
 ###
 # BigQuery Dataset
@@ -116,4 +126,10 @@ resource "google_storage_bucket_iam_member" "member" {
   bucket = google_storage_bucket.dataset_transfer.name
   role   = "roles/storage.admin"
   member = "serviceAccount:${google_service_account.warehouse_admin.email}"
+}
+
+resource "google_bigquery_dataset_iam_member" "readonly" {
+  dataset_id = local.dataset_id
+  role       = "roles/bigquery.dataViewer"
+  member     = "serviceAccount:${google_service_account.warehouse_readonly.email}"
 }
