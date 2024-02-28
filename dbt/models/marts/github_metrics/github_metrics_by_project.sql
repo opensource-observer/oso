@@ -95,7 +95,7 @@ SELECT
     act.pull_requests_opened_6_months,
     act.pull_requests_merged_6_months    
 FROM {{ ref('projects') }} AS p
-INNER JOIN project_commit_dates AS pcd ON p.project_id = pcd.project_id
-INNER JOIN stars_forks_repos AS sfr ON p.project_id = sfr.project_id
-INNER JOIN contributors_cte AS c ON p.project_id = c.project_id
-INNER JOIN activity_cte AS act ON p.project_id = act.project_id
+LEFT JOIN project_commit_dates AS pcd ON p.project_id = pcd.project_id
+LEFT JOIN stars_forks_repos AS sfr ON p.project_id = sfr.project_id
+LEFT JOIN contributors_cte AS c ON p.project_id = c.project_id
+LEFT JOIN activity_cte AS act ON p.project_id = act.project_id

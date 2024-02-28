@@ -228,7 +228,7 @@ simply that it was rendered by `dbt` correctly. To test your model it's likely
 cheapest to copy the query into the [BigQuery
 Console](https://console.cloud.google.com/bigquery) and run that query there. However, if you need more
 validation you'll need to [Setup GCP with your own
-playground](./setting-up-gcp.md#setting-up-your-own-playground-copy-of-the-dataset)
+playground](./setting-up-gcp#setting-up-your-own-playground-copy-of-the-dataset)
 
 ## Submit a PR
 
