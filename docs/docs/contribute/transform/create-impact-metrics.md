@@ -51,19 +51,35 @@ If you have write access to the dataset then you can connect to it by setting
 the `opensource_observer` profile in `dbt`. Inside `~/.dbt/profiles.yml` (create
 it if it isn't there), add the following:
 
+:::warning
+If you target the `production` dataset you'll be editing the live
+production data. Do so with caution if you have write access to these datasets.
+:::
+
 ```yaml
 opensource_observer:
   outputs:
-    dev:
+    production:
       type: bigquery
-      dataset: opensource_observer
+      dataset: oso
       job_execution_time_seconds: 300
       job_retries: 1
       location: US
       method: oauth
-      project: oso-production
+      project: opensource-observer
       threads: 1
-  target: dev
+    playground:
+      type: bigquery
+      dataset: oso
+      job_execution_time_seconds: 300
+      job_retries: 1
+      location: US
+      method: oauth
+      project: opensource-observer
+      threads: 1
+  # By default we target the playground. it's less costly and also safer to write
+  # there while developing
+  target: playground
 ```
 
 If you don't have `gcloud` installed you'll need to do so as well. The
@@ -99,6 +115,9 @@ Once you've updated any models you can run dbt _within the poetry environment_ b
 ```bash
 $ dbt run
 ```
+
+_Note: If you configured the dbt profile as shown in this document, this `dbt
+run` will write to the `opensource-observer.oso_playground` dataset._
 
 It is likely best to target a specific model so things don't take so long on some of our materializations:
 
