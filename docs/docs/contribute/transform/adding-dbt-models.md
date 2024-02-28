@@ -122,7 +122,7 @@ following tables:
 
 [collections_table]: https://console.cloud.google.com/bigquery?project=opensource-observer&ws=!1m5!1m4!4m3!1sopensource-observer!2soso!3scollections_ossd
 [projects_table]: https://console.cloud.google.com/bigquery?project=opensource-observer&ws=!1m5!1m4!4m3!1sopensource-observer!2soso!3sprojects_ossd
-[repositories_table]: https://console.cloud.google.com/bigquery?project=oso-production&ws=!1m5!1m4!4m3!1sopensource-observer!2soso!3srepositories_ossd
+[repositories_table]: https://console.cloud.google.com/bigquery?project=opensource-observer&ws=!1m5!1m4!4m3!1sopensource-observer!2soso!3srepositories_ossd
 
 ### The `github_archive` source
 
@@ -223,11 +223,18 @@ Once you've done so you will be able to find your model compiled in the
 `target/` directory. Your model's compiled sql can be found in the same relative
 path as it's location in `dbt/models` inside the `target/` directory.
 
+The presence of the compiled model does not necessarily mean your SQL will work
+simply that it was rendered by `dbt` correctly. To test your model it's likely
+cheapest to copy the query into the [BigQuery
+Console](https://console.cloud.google.com/bigquery) and run that query there. However, if you need more
+validation you'll need to [Setup GCP with your own
+playground](./setting-up-gcp.md#setting-up-your-own-playground-copy-of-the-dataset)
+
 ## Submit a PR
 
-Once you've developed your model you can submit it a PR to the [oso
-Repository][oso] to be tested by the OSO github CI workflows (_still under
-development_).
+Once you've developed your model and you feel comfortable that it will properly
+run. you can submit it a PR to the [oso Repository][oso] to be tested by the OSO
+github CI workflows (_still under development_).
 
 ## DBT model execution schedule
 
