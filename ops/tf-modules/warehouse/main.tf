@@ -109,6 +109,31 @@ resource "google_storage_bucket_iam_member" "cloudsql_member" {
 ###
 # Service account permissions
 ###
+resource "google_project_iam_custom_role" "readonly_custom_role" {
+  role_id     = "${local.dataset_id}_readonly"
+  title       = "Read-Only Role for ${local.dataset_id}"
+  description = "Read-Only Role for ${local.dataset_id}"
+  permissions = [
+    "bigquery.datasets.get",
+    "bigquery.datasets.getIamPolicy",
+    "bigquery.jobs.create",
+    "bigquery.models.export",
+    "bigquery.models.getData",
+    "bigquery.models.getMetadata",
+    "bigquery.models.list",
+    "bigquery.routines.get",
+    "bigquery.routines.list",
+    "bigquery.tables.createSnapshot",
+    "bigquery.tables.export",
+    "bigquery.tables.get",
+    "bigquery.tables.getData",
+    "bigquery.tables.getIamPolicy",
+    "bigquery.tables.list",
+    "resourcemanager.projects.get",
+  ]
+}
+
+
 resource "google_project_iam_member" "service_account_binding" {
   project = data.google_project.project.project_id
   role    = "roles/cloudsql.admin"
@@ -132,4 +157,16 @@ resource "google_bigquery_dataset_iam_member" "readonly" {
   dataset_id = local.dataset_id
   role       = "roles/bigquery.dataViewer"
   member     = "serviceAccount:${google_service_account.warehouse_readonly.email}"
+}
+
+resource "google_project_iam_member" "readonly_custom_role" {
+  project = data.google_project.project.project_id
+  role    = google_project_iam_custom_role.readonly_custom_role.id
+  member  = "serviceAccount:${google_service_account.warehouse_readonly.email}"
+
+  condition {
+    expression  = "resource.name.startsWith('projects/${data.google_project.project.project_id}/datasets/${google_bigquery_dataset.dataset.dataset_id}')"
+    title       = "restrict_to_dataset"
+    description = "restrict bigquery readonly to ${local.dataset_id}"
+  }
 }
