@@ -126,9 +126,13 @@ users_pool = create_impact_pool(
 )
 ```
 
-
+Rabbithole is currently the top performing project in this pool, with high levels across all three major impact metrics (active users, multi-project users, and retained users). Rabbithole's Quests product is aimed at onboarding new users by encouraging them to interact with other dapps on the network, so the retained user numbers are probably more helpful to track over time than the multi-project users.
 
 ![](./user_growth_pool.png)
+
+If we zoom on two of the three metrics that comprise this pool - active users and retained users - it becomes easier to spot a cluster of currently high preforming projects in the upper right corner of the chart. As projects become larger and more mature, growing beyond the 100K active users mark, then a retention rate of ~40% like LI.FI's appears to be the benchmark to beat.  
+
+![](./user_growth_scatter.png)
 
 ### Developer growth
 
@@ -138,14 +142,20 @@ This pool highlights projects with the most developer activity and new contribut
 dev_growth_pool = create_impact_pool(
     df[df['first_commit_date'] < DATE_FILTER],
     impact_vectors={
-        'avg_fulltime_devs_6_months': ('linear', .6),
-        'avg_parttime_devs_6_months': ('linear', .2),        
-        'new_contributors_6_months': ('log', .2)
+        'avg_fulltime_devs_6_months': ('log', .5),
+        'avg_parttime_devs_6_months': ('log', .2),        
+        'new_contributors_6_months': ('log', .3)
     }
 )
 ```
 
+The top performing projects in terms of developer growth are mostly if not all well-established projects with large treasuries. MetaMask, DefiLlama, and Safe are some of the largest open source software teams in the Ethereum ecosystem, but not specific to Arbitrum. Further analysis can be done to hone in on projects that have concentrated their building activities on Arbitrum vs other chains. You have to look pretty far down the list to identify Arbitrum-native projects.
+
 ![](./dev_growth_pool.png)
+
+The scatter plot below helps differentiate projects that have large community contributors (such as DefiLlama) vs projects that have a large core team of full time time developers (such as Livepeer). Once again, it would be valuable to focus this analysis on Arbitrum-specific projects and niches.
+
+![](./dev_growth_scatter.png)
 
 ### Blockspace demand
 
@@ -161,7 +171,13 @@ blockspace_pool = create_impact_pool(
 )
 ```
 
+Rabbithole is once again the leader of this group, followed by a number of DeFi and crosschain messaging protocols. GMX and Vertex Protocol stand out as Arbitrum-native exchanges with high impact on these dimensions.
+
 ![](./blockspace_pool.png)
+
+The scatter plot below provides some indication of transaction efficiency, although there are likely some confounding factors. We see projects like Vertex being a proportionally high generator of sequencer fees whereas dForce is at the other end of the spectrum.
+
+![](./blockspace_scatter.png)
 
 ### Momentum
 
@@ -172,11 +188,27 @@ momentum_pool = create_impact_pool(
     df[df['first_txn_date'] < DATE_FILTER],
     impact_vectors={
         'active_users': ('log', 1/3),
-        'avg_active_devs_6_months': ('linear', 1/3),        
-        'commits_6_months': ('log', 1/6),        
+        'avg_active_devs_6_months': ('log', 1/6),        
+        'commits_6_months': ('log', 1/3),        
         'issues_closed_6_months': ('log', 1/6)
     }   
 )
 ```
 
+Over time, it is important for Arbitrum to grow both developer and user numbers. The momentum pool captures these metrics directly. Metamask is the leader, although few in the industry would probably view it as a fast mover. Perhaps a better name for this pool would be "clout" and momentum could be tracked between snapshots in time.
+
+In any case, Rainbow and Gitcoin are among the top projects, with high-ish scores across all four metrics. DeFi and interoperability protocols are also well-represented in this pool.
+
 ![](./momentum_pool.png)
+
+As shown in the plot below, there is no strong relationship between active users and commits. This is an important observation to bear in mind and we seek to go from capturing lagging indicators (like retained users and full-time developers) to ones that are more predictive of future growth and impact.
+
+![](./momentum_scatter.png)
+
+## Final thoughts
+
+At Open Source Observer, we are excited about putting the ability to do this type of analysis in the hands of as many citizen analysts and data scientists as possible. We share these four impact pools as inspiration for what becomes possible when you have well-labeled data that's easy to query. 
+
+We are seeking to grow a community of "impact data scientists" who can contribute directly to this type of analytical work and use it to improve capital allocation decisions. If you'd like to contribute to this mission, then we invite you to join [our data collective](https://www.kariba.network/). 
+
+We will also be re-launching our public dashboarding interface for projects and collections of projects on [opensource.observer](https://www.opensource.observer/) soon!
