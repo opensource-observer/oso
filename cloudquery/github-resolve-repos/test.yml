@@ -31,5 +31,5 @@ spec:
   version: "v3.3.13"
   write_mode: "append"
   spec:
-    project_id: oso-production
-    dataset_id: opensource_observer_staging
+    project_id: opensource-observer
+    dataset_id: oso_playground
