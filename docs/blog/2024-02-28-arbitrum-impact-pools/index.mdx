@@ -6,30 +6,30 @@ tags: [arbitrum, ecosystem reports, impact pools]
 image: ./user_growth_pool.png
 ---
 
-In our last past, we provided a snapshot on the [open source software projects building on Arbitrum](https://docs.opensource.observer/blog/arb-ecosystem-analysis). In this post, we will apply a series of experimental impact metrics to identify positive growth and network contribution trends across a cohort of more than 300 major projects on Arbitrum.
+In our last post, we provided a snapshot on the [open source software projects building on Arbitrum](https://docs.opensource.observer/blog/arb-ecosystem-analysis). In this post, we will apply a series of experimental impact metrics to identify positive growth and network contribution trends across a cohort of more than 300 major projects on Arbitrum.
 
 We believe impact metrics such as these are instrumental in helping the Arbitrum DAO better design incentives and allocate capital across its ecosystem. The metrics we've included are all derived from both onchain and off-chain project data. They include well-established crypto indicators like active users, sequencer fees, and transaction counts as well as common OSS metrics like full-time active developers, issues closed, and new contributors. 
 
 The real value, however, lies in combining simple metrics in novel ways to filter and benchmark projects' contributions. We introduce four "impact pools" that can assist with this type of analysis. The pools are:
 
-- Sustainable user growth: projects that not only bring large numbers of active users to the network but also retain and connect them easily to other dapps
-- Developer growth: projects with the most developer activity and new contributors to its GitHub repos in recent months
-- Blockspace demand: projects with the most transactions and sequencer fee contributions
-- Momentum: projects with a mix of positive developer and onchain user trends
-
-As described in [our previous post](https://docs.opensource.observer/blog/arb-ecosystem-analysis#methodology-for-project-identification), these projects were sourced from the most recent [“Electric Capital Crypto Ecosystems Mapping”](https://github.com/electric-capital/crypto-ecosystems), from Dune Analytics, and from Plurality Labs partners including [Karma GAP](https://gap.karmahq.xyz/arbitrum/) and [OpenBlock Labs](https://www.openblocklabs.com/app/arbitrum/grantees). We invite your contributions to enhance this directory; please visit [here](https://github.com/opensource-observer/oss-directory) to submit a PR or [here](https://docs.opensource.observer/docs/contribute/intro) to learn more about how to contribute data about projects and their code artifacts.
+- **Sustainable user growth**: projects that not only bring large numbers of active users to the network but also retain and connect them easily to other dapps
+- **Developer growth**: projects with the most developer activity and new contributors to its GitHub repos in recent months
+- **Blockspace demand**: projects with the most transactions and sequencer fee contributions
+- **Momentum**: projects with a mix of positive developer and onchain user trends
 
 <!-- truncate -->
+
+As described in [our previous post](https://docs.opensource.observer/blog/arb-ecosystem-analysis#methodology-for-project-identification), these projects were sourced primarily from the most recent [“Electric Capital Crypto Ecosystems Mapping”](https://github.com/electric-capital/crypto-ecosystems), from Dune Analytics, and from Plurality Labs partners including [Karma GAP](https://gap.karmahq.xyz/arbitrum/) and [OpenBlock Labs](https://www.openblocklabs.com/app/arbitrum/grantees). We invite your contributions to enhance this directory; please visit [here](https://github.com/opensource-observer/oss-directory) to submit a PR or [here](https://docs.opensource.observer/docs/contribute/intro) to learn more about how to contribute data about projects and their code artifacts.
 
 ## A word of caution
 
 Before getting into the numbers, we want to flag that this work is experimental in at least two ways.
 
-First, our data platform is still in active development. We just recently connected sources of onchain data for projects building on Arbitrum to our existing database of open source software development metrics. There are still some kinks we are ironing out and as result it's likely that some projects, contract addresses, and other types of data slipped through the cracks. Please let us know if you find any gaps or inconsistencies with the data.
+First, our data platform is still in active development. We just recently connected sources of onchain data for projects building on Arbitrum to our existing data warehouse of open source software development metrics. There are still some kinks we are ironing out and as result it's likely that some projects, contract addresses, and other types of data slipped through the cracks. Please let us know if you find any gaps or inconsistencies with the data.
 
-Second, we are continuously iterating on our impact metrics. The metrics included here are a starting point and should not be viewed as fully-formed. While our impact pool coefficients may not be ready for deploying funding against (yet), they should be helpful in quickly identifying trends among projects and relative performance levels. 
+Second, we are continuously iterating on our impact metrics. We hope the metrics included here illustrate what's possible to quickly identify trends among projects and relative performance levels. However, the metrics we chose should not be viewed as applicable to all projects or battle-tested against gamification. Similarly, the coefficients used to weight metrics in our impact pools are only intended to serve as starting points for further analysis.
 
-If you have ideas for how to test and iterate on these types of impact metrics, check out [our docs](https://docs.opensource.observer/docs/contribute/transform/create-impact-metrics) and send us a note.
+If you have ideas for how to test and iterate on these types of impact metrics and pools, check out [our docs](https://docs.opensource.observer/docs/contribute/transform/create-impact-metrics) and send us a note.
 
 ## How pools are constructed
 
@@ -127,6 +127,8 @@ users_pool = create_impact_pool(
 ```
 
 Rabbithole is currently the top performing project in this pool, with high levels across all three major impact metrics (active users, multi-project users, and retained users). Rabbithole's Quests product is aimed at onboarding new users by encouraging them to interact with other dapps on the network, so the retained user numbers are probably more helpful to track over time than the multi-project users.
+
+We are also in discussion with several partners about integrating address reputation metrics to further differentiate users on the basis of quality and uniqueness.
 
 ![](./user_growth_pool.png)
 
