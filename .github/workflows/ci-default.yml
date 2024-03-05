@@ -118,7 +118,7 @@ jobs:
   # job once all of the SQL queries pass
   temp-lint:
     # NOTE: This name appears in GitHub's Checks API.
-    name: test
+    name: temp-lint
     environment: testing
     runs-on: ubuntu-latest
     steps:
