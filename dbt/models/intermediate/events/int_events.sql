@@ -32,60 +32,17 @@
 }}
 
 WITH arbitrum_contract_invocation_daily_count AS (
-  SELECT 
-    acii.time,
-    "CONTRACT_INVOCATION_DAILY_COUNT" AS `event_type`,
-    acii.source_id as event_source_id,
-    acii.to_name,
-    acii.to_namespace,
-    acii.to_type,
-    acii.to_source_id,
-    acii.from_name,
-    acii.from_namespace,
-    acii.from_type,
-    acii.from_source_id,
-    acii.tx_count as `amount`
-  FROM {{ ref('stg_dune__arbitrum_contract_invocation') }} AS acii
-  {# a bit of a hack for now to keep this table small for dev and playground #}
-  {% if target.name in ['dev', 'playground'] %}
-  WHERE acii.time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {{ env_var("PLAYGROUND_DAYS", '14') }} DAY)
-  {% endif %}
+  {{ contract_invocation_daily_count("arbitrum")}}
 ), arbitrum_contract_invocation_daily_l2_gas_used AS (
-  SELECT 
-    acii.time,
-    "CONTRACT_INVOCATION_DAILY_L2_GAS_USED" AS `event_type`,
-    acii.source_id as event_source_id,
-    acii.to_name,
-    acii.to_namespace,
-    acii.to_type,
-    acii.to_source_id,
-    acii.from_name,
-    acii.from_namespace,
-    acii.from_type,
-    acii.from_source_id,
-    acii.l2_gas as `amount`
-  FROM {{ ref('stg_dune__arbitrum_contract_invocation') }} AS acii
-  {% if target.name in ['dev', 'playground'] %}
-  WHERE acii.time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {{ env_var("PLAYGROUND_DAYS", '14') }} DAY)
-  {% endif %}
+  {{ contract_invocation_daily_l2_gas_used("arbitrum") }}
 ), arbitrum_contract_invocation_daily_l1_gas_used AS (
-  SELECT 
-    acii.time,
-    "CONTRACT_INVOCATION_DAILY_L1_GAS_USED" AS `event_type`,
-    acii.source_id as event_source_id,
-    acii.to_name,
-    acii.to_namespace,
-    acii.to_type,
-    acii.to_source_id,
-    acii.from_name,
-    acii.from_namespace,
-    acii.from_type,
-    acii.from_source_id,
-    acii.l1_gas as `amount`
-  FROM {{ ref('stg_dune__arbitrum_contract_invocation') }} AS acii
-  {% if target.name in ['dev', 'playground'] %}
-  WHERE acii.time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {{ env_var("PLAYGROUND_DAYS", '14') }} DAY)
-  {% endif %}
+  {{ contract_invocation_daily_l1_gas_used("arbitrum") }}
+), optimism_contract_invocation_daily_count AS (
+  {{ contract_invocation_daily_count("optimism")}}
+), optimism_contract_invocation_daily_l2_gas_used AS (
+  {{ contract_invocation_daily_l2_gas_used("optimism") }}
+), optimism_contract_invocation_daily_l1_gas_used AS (
+  {{ contract_invocation_daily_l1_gas_used("optimism") }}
 ), github_commits AS (
   SELECT
     gc.created_at as `time`,
@@ -176,6 +133,12 @@ UNION ALL
 SELECT * FROM arbitrum_contract_invocation_daily_l1_gas_used
 UNION ALL
 SELECT * FROM arbitrum_contract_invocation_daily_l2_gas_used
+UNION ALL
+SELECT * FROM optimism_contract_invocation_daily_count
+UNION ALL
+SELECT * FROM optimism_contract_invocation_daily_l1_gas_used
+UNION ALL
+SELECT * FROM optimism_contract_invocation_daily_l2_gas_used
 UNION ALL
 SELECT * FROM github_commits
 UNION ALL
