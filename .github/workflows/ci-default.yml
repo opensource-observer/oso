@@ -97,7 +97,6 @@ jobs:
       - name: Build
         run: |
           pnpm build
-          && poetry install
         # Always run this step so that all linting errors can be seen at once.
         if: always()
 
