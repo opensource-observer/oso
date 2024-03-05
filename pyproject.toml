@@ -8,23 +8,45 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.11"
-oso-dbt = { path = "./dbt", develop = true }
 example-plugin = { path = "cloudquery/example-plugin", develop = true }
 dune-contract-usage = { path = "cloudquery/dune-contract-usage", develop = true }
 google-cloud-bigquery = "^3.17.1"
 pendulum = "^3.0.0"
 google-api-python-client = "^2.116.0"
-cloud-sql-python-connector = {extras = ["pg8000"], version = "^1.6.0"}
+cloud-sql-python-connector = { extras = ["pg8000"], version = "^1.6.0" }
 sqlalchemy = "^2.0.25"
 google-cloud-storage = "^2.14.0"
 python-dotenv = "^1.0.1"
+dbt-bigquery = "^1.7.0"
 
 [tool.poetry.scripts]
 bq2cloudsql = 'oso.bq2cloudsql.script:run'
 
 [tool.poetry.group.dev.dependencies]
 ipython = "^8.21.0"
+sqlfluff = "^2.3.5"
+sqlfluff-templater-dbt = "^2.3.5"
+shandy-sqlfmt = { extras = ["jinjafmt"], version = "^0.21.1" }
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.sqlfluff]
+max_line_length = 80
+
+[tool.sqlfluff.core]
+templater = "jinja"
+
+[tool.sqlfluff.indentation]
+indent_unit = "space"
+tab_space_size = 2
+
+[tool.sqlfluff.templater.jinja]
+load_macros_from_path = "dbt/macros/"
+apply_dbt_builtins = true
+library_path = "oso/dbtlintmock"
+
+[tool.sqlfluff.templater.dbt]
+project_dir = "."
+target = "dev"
