@@ -49,4 +49,4 @@ library_path = "oso/dbtlintmock"
 
 [tool.sqlfluff.templater.dbt]
 project_dir = "."
-target = "dev"
+target = "playground"
