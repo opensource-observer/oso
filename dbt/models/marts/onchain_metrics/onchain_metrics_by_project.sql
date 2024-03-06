@@ -19,38 +19,41 @@
 
 -- CTE for grabbing the onchain transaction data we care about
 WITH txns AS (
-  SELECT 
+  SELECT
     a.project_id,
     c.to_namespace AS network,
     c.from_source_id AS from_id,
-    DATE(TIMESTAMP_TRUNC(c.time, MONTH)) AS bucket_month,
-    l2_gas,
-    tx_count
+    c.l2_gas,
+    c.tx_count,
+    DATE(TIMESTAMP_TRUNC(c.time, MONTH)) AS bucket_month
   FROM {{ ref('stg_dune__contract_invocation') }} AS c
-  JOIN {{ ref('stg_ossd__artifacts_by_project') }} AS a ON c.to_source_id = a.artifact_source_id
+  INNER JOIN {{ ref('stg_ossd__artifacts_by_project') }} AS a
+    ON c.to_source_id = a.artifact_source_id
 ),
 
--- CTEs for calculating all time and 6 month project metrics across all contracts
+-- CTEs for calculating all time and 6 month project metrics across all 
+-- contracts
 metrics_all_time AS (
-  SELECT 
+  SELECT
     project_id,
     network,
     MIN(bucket_month) AS first_txn_date,
-    COUNT (DISTINCT from_id) AS total_users,
+    COUNT(DISTINCT from_id) AS total_users,
     SUM(l2_gas) AS total_l2_gas,
     SUM(tx_count) AS total_txns
   FROM txns
   GROUP BY project_id, network
 ),
+
 metrics_6_months AS (
-  SELECT 
+  SELECT
     project_id,
     network,
-    COUNT (DISTINCT from_id) AS users_6_months,
+    COUNT(DISTINCT from_id) AS users_6_months,
     SUM(l2_gas) AS l2_gas_6_months,
     SUM(tx_count) AS txns_6_months
   FROM txns
-  WHERE bucket_month >= DATE_ADD(CURRENT_DATE(), INTERVAL -6 MONTH) 
+  WHERE bucket_month >= DATE_ADD(CURRENT_DATE(), INTERVAL -6 MONTH)
   GROUP BY project_id, network
 ),
 
@@ -65,7 +68,12 @@ new_users AS (
       project_id,
       network,
       from_id,
-      CASE WHEN MIN(bucket_month) >= DATE_ADD(CURRENT_DATE(), INTERVAL -3 MONTH) THEN 1 END AS is_new_user
+      CASE
+        WHEN
+          MIN(bucket_month) >= DATE_ADD(CURRENT_DATE(), INTERVAL -3 MONTH)
+          THEN
+            1
+      END AS is_new_user
     FROM txns
     GROUP BY project_id, network, from_id
   )
@@ -83,6 +91,7 @@ user_txns_aggregated AS (
   WHERE bucket_month >= DATE_ADD(CURRENT_DATE(), INTERVAL -3 MONTH)
   GROUP BY project_id, network, from_id
 ),
+
 multi_project_users AS (
   SELECT
     network,
@@ -91,27 +100,37 @@ multi_project_users AS (
   FROM user_txns_aggregated
   GROUP BY network, from_id
 ),
+
 user_segments AS (
   SELECT
     project_id,
     network,
-    COUNT(DISTINCT CASE WHEN user_segment = 'HIGH_FREQUENCY_USER' THEN from_id END) AS high_frequency_users,
-    COUNT(DISTINCT CASE WHEN user_segment = 'MORE_ACTIVE_USER' THEN from_id END) AS more_active_users,
-    COUNT(DISTINCT CASE WHEN user_segment = 'LESS_ACTIVE_USER' THEN from_id END) AS less_active_users,
-    COUNT(DISTINCT CASE WHEN projects_transacted_on >= 3 THEN from_id END) AS multi_project_users
+    COUNT(DISTINCT CASE
+      WHEN user_segment = 'HIGH_FREQUENCY_USER' THEN from_id
+    END) AS high_frequency_users,
+    COUNT(DISTINCT CASE
+      WHEN user_segment = 'MORE_ACTIVE_USER' THEN from_id
+    END) AS more_active_users,
+    COUNT(DISTINCT CASE
+      WHEN user_segment = 'LESS_ACTIVE_USER' THEN from_id
+    END) AS less_active_users,
+    COUNT(DISTINCT CASE
+      WHEN projects_transacted_on >= 3 THEN from_id
+    END) AS multi_project_users
   FROM (
     SELECT
       uta.project_id,
       uta.network,
       uta.from_id,
-      CASE 
+      mpu.projects_transacted_on,
+      CASE
         WHEN uta.total_tx_count >= 1000 THEN 'HIGH_FREQUENCY_USER'
         WHEN uta.total_tx_count >= 10 THEN 'MORE_ACTIVE_USER'
         ELSE 'LESS_ACTIVE_USER'
-      END AS user_segment,
-      mpu.projects_transacted_on
+      END AS user_segment
     FROM user_txns_aggregated AS uta
-    JOIN multi_project_users AS mpu ON uta.from_id = mpu.from_id
+    INNER JOIN multi_project_users AS mpu
+      ON uta.from_id = mpu.from_id
   )
   GROUP BY project_id, network
 ),
@@ -124,15 +143,15 @@ contracts AS (
     COUNT(artifact_source_id) AS num_contracts
   FROM {{ ref('stg_ossd__artifacts_by_project') }}
   GROUP BY project_id, network
-), 
+),
 
 project_by_network AS (
-  SELECT 
+  SELECT
     p.project_id,
     ctx.network,
-    p.project_name,
+    p.project_name
   FROM {{ ref('projects') }} AS p
-  JOIN contracts AS ctx 
+  INNER JOIN contracts AS ctx
     ON p.project_id = ctx.project_id
 )
 
@@ -149,27 +168,33 @@ SELECT
   ma.total_users,
   m6.txns_6_months,
   m6.l2_gas_6_months,
-  m6.users_6_months,  
+  m6.users_6_months,
   nu.new_user_count,
-  (us.high_frequency_users + us.more_active_users + us.less_active_users) AS active_users,
   us.high_frequency_users,
   us.more_active_users,
   us.less_active_users,
-  us.multi_project_users
-  
+  us.multi_project_users,
+  (
+    us.high_frequency_users + us.more_active_users + us.less_active_users
+  ) AS active_users
 FROM project_by_network AS p
-LEFT JOIN metrics_all_time AS ma 
-  ON p.project_id = ma.project_id
+LEFT JOIN metrics_all_time AS ma
+  ON
+    p.project_id = ma.project_id
     AND p.network = ma.network
-LEFT JOIN metrics_6_months AS m6 
-  ON p.project_id = m6.project_id
+LEFT JOIN metrics_6_months AS m6
+  ON
+    p.project_id = m6.project_id
     AND p.network = m6.network
-LEFT JOIN new_users AS nu 
-  ON p.project_id = nu.project_id
+LEFT JOIN new_users AS nu
+  ON
+    p.project_id = nu.project_id
     AND p.network = nu.network
-LEFT JOIN user_segments AS us 
-  ON p.project_id = us.project_id
+LEFT JOIN user_segments AS us
+  ON
+    p.project_id = us.project_id
     AND p.network = us.network
-LEFT JOIN contracts AS c 
-  ON p.project_id = c.project_id
+LEFT JOIN contracts AS c
+  ON
+    p.project_id = c.project_id
     AND p.network = c.network
