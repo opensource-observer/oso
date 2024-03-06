@@ -138,10 +138,13 @@ jobs:
           python-version: 3.12
           poetry-version: 1.7.1
       
-      - name: Setup dbt with fake creds
+      - name: Create fake credentials file
         run: |
           echo "{}" > /tmp/fake.json
-          && bash .github/scripts/create-dbt-profile.sh /tmp/fake.json
+      
+      - name: Setup dbt with fake creds
+        run: |
+          bash .github/scripts/create-dbt-profile.sh /tmp/fake.json
 
       - name: Lint SQL
         run: |
