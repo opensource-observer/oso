@@ -23,12 +23,13 @@
 WITH txns AS (
   SELECT 
     pbc.collection_id,
+    c.to_namespace AS network,
     a.project_id,
     c.from_source_id AS from_id,
     DATE(TIMESTAMP_TRUNC(c.time, MONTH)) AS bucket_month,
     l2_gas,
     tx_count
-  FROM {{ ref('stg_dune__arbitrum_contract_invocation') }} AS c
+  FROM {{ ref('stg_dune__contract_invocation') }} AS c
   JOIN {{ ref('stg_ossd__artifacts_by_project') }} AS a ON c.to_source_id = a.artifact_source_id
   JOIN {{ ref('stg_ossd__projects_by_collection') }} AS pbc ON a.project_id = pbc.project_id
 ),
@@ -37,62 +38,69 @@ WITH txns AS (
 metrics_all_time AS (
   SELECT 
     collection_id,
+    network,
     COUNT(DISTINCT project_id) AS total_projects,
     MIN(bucket_month) AS first_txn_date,
     COUNT(DISTINCT from_id) AS total_users,
     SUM(l2_gas) AS total_l2_gas,
     SUM(tx_count) AS total_txns
   FROM txns
-  GROUP BY collection_id
+  GROUP BY collection_id, network
 ),
 metrics_6_months AS (
   SELECT 
     collection_id,
+    network,
     COUNT(DISTINCT from_id) AS users_6_months,
     SUM(l2_gas) AS l2_gas_6_months,
     SUM(tx_count) AS txns_6_months
   FROM txns
   WHERE bucket_month >= DATE_ADD(CURRENT_DATE(), INTERVAL -6 MONTH) 
-  GROUP BY collection_id
+  GROUP BY collection_id, network
 ),
 
 -- CTE for identifying new users to the collection in the last 3 months
 new_users AS (
   SELECT
     collection_id,
+    network,
     SUM(is_new_user) AS new_user_count
   FROM (
     SELECT
       collection_id,
+      network,
       from_id,
       CASE WHEN MIN(bucket_month) >= DATE_ADD(CURRENT_DATE(), INTERVAL -3 MONTH) THEN 1 ELSE 0 END AS is_new_user
     FROM txns
-    GROUP BY collection_id, from_id
+    GROUP BY collection_id, network, from_id
   )
-  GROUP BY collection_id
+  GROUP BY collection_id, network
 ),
 
 -- CTEs for segmenting different types of active users based on txn volume at collection level
 user_txns_aggregated AS (
   SELECT
     collection_id,
+    network,
     from_id,
     SUM(tx_count) AS total_tx_count
   FROM txns
   WHERE bucket_month >= DATE_ADD(CURRENT_DATE(), INTERVAL -3 MONTH)
-  GROUP BY collection_id, from_id
+  GROUP BY collection_id, network, from_id
 ),
 multi_project_users AS (
   SELECT
+    network,
     from_id,
     COUNT(DISTINCT project_id) AS projects_transacted_on
     FROM txns
     WHERE bucket_month >= DATE_ADD(CURRENT_DATE(), INTERVAL -3 MONTH)
-    GROUP BY from_id
+    GROUP BY network, from_id
 ),
 user_segments AS (
   SELECT
     collection_id,
+    network,
     COUNT(DISTINCT CASE WHEN user_segment = 'HIGH_FREQUENCY_USER' THEN from_id END) AS high_frequency_users,
     COUNT(DISTINCT CASE WHEN user_segment = 'MORE_ACTIVE_USER' THEN from_id END) AS more_active_users,
     COUNT(DISTINCT CASE WHEN user_segment = 'LESS_ACTIVE_USER' THEN from_id END) AS less_active_users,
@@ -100,6 +108,7 @@ user_segments AS (
   FROM (
     SELECT
       uta.collection_id,
+      uta.network,
       uta.from_id,
       CASE 
         WHEN uta.total_tx_count >= 1000 THEN 'HIGH_FREQUENCY_USER'
@@ -110,22 +119,33 @@ user_segments AS (
     FROM user_txns_aggregated AS uta
     JOIN multi_project_users AS mpu ON uta.from_id = mpu.from_id
   )
-  GROUP BY collection_id
+  GROUP BY collection_id, network
 ),
 
 -- CTE to count the number of contracts deployed by projects in a collection
 contracts AS (
   SELECT
     pbc.collection_id,
+    a.artifact_namespace as network,
     COUNT(DISTINCT a.artifact_source_id) AS num_contracts
   FROM {{ ref('stg_ossd__artifacts_by_project') }} AS a
   JOIN {{ ref('stg_ossd__projects_by_collection') }} AS pbc ON a.project_id = pbc.project_id
-  GROUP BY pbc.collection_id
+  GROUP BY pbc.collection_id, network
+), 
+collection_by_network AS (
+  SELECT 
+    c.collection_id,
+    ctx.network,
+    c.collection_name
+  FROM {{ ref('collections') }} AS c
+  JOIN contracts AS ctx 
+    ON c.collection_id = ctx.collection_id
 )
 
 -- Final query to join all the metrics together for collections
 SELECT
   c.collection_id,
+  c.network,
   c.collection_name,
   co.num_contracts,
   ma.total_projects,
@@ -142,10 +162,20 @@ SELECT
   us.more_active_users,
   us.less_active_users,
   us.multi_project_users
-  
-FROM {{ ref('collections') }} AS c
-INNER JOIN metrics_all_time AS ma ON c.collection_id = ma.collection_id
-INNER JOIN metrics_6_months AS m6 on c.collection_id = m6.collection_id
-INNER JOIN new_users AS nu on c.collection_id = nu.collection_id
-INNER JOIN user_segments AS us on c.collection_id = us.collection_id
-INNER JOIN contracts AS co on c.collection_id = co.collection_id
+
+FROM collection_by_network AS c
+INNER JOIN metrics_all_time AS ma 
+  ON c.collection_id = ma.collection_id 
+    AND c.network = ma.network
+INNER JOIN metrics_6_months AS m6 
+  ON c.collection_id = m6.collection_id 
+    AND c.network = m6.network
+INNER JOIN new_users AS nu 
+  ON c.collection_id = nu.collection_id
+    AND c.network = nu.network
+INNER JOIN user_segments AS us 
+  ON c.collection_id = us.collection_id
+    AND c.network = us.network
+INNER JOIN contracts AS co 
+  ON c.collection_id = co.collection_id
+    AND c.network = co.network
