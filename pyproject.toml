@@ -36,7 +36,7 @@ build-backend = "poetry.core.masonry.api"
 max_line_length = 80
 
 [tool.sqlfluff.core]
-templater = "jinja"
+templater = "dbt"
 
 [tool.sqlfluff.indentation]
 indent_unit = "space"

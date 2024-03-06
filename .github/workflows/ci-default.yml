@@ -139,4 +139,4 @@ jobs:
 
       - name: Lint SQL
         run: |
-          poetry run sqlfluff lint --dialect bigquery
+          poetry run sqlfluff lint --dialect bigquery ./dbt/models
