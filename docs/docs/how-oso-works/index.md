@@ -3,13 +3,7 @@ title: Core Concepts
 sidebar_position: 1
 ---
 
-OSO maintains an [ETL](https://en.wikipedia.org/wiki/Extract%2C_load%2C_transform) data pipeline that is continuously deployed from our [monorepo](https://github.com/opensource-observer/oso/) and regularly indexes all available data about projects in the [oss-directory](https://github.com/opensource-observer/oss-directory).
-
-- **Extract**: raw event data from a variety of public data sources (e.g., GitHub, blockchains, npm, Open Collective)
-- **Transform**: the raw data into impact metrics and impact vectors per project (e.g., # of active developers)
-- **Load**: the results into various OSO data products (e.g., our API, website, widgets)
-
-OSO datasets are built from four primary building blocks: `collections`, `projects`, `artifacts`, `events`.
+OSO datasets are built from four primary building blocks: **collections**, **projects**, **artifacts**, and **events**.
 
 A collection is a group of projects. A project is a group of artifacts. An event is an interaction with an artifact. These building blocks are used to create a data model that can be used to understand the impact of open source projects.
 
@@ -17,15 +11,17 @@ It is easy to define new collections, projects, and artifacts in our [OSS
 Directory](https://github.com/opensource-oberver/oss-directory). Once these
 exist, we will automatically start collecting event data for them.
 
-## Collections
+## Primary Datasets
+
+### Collections
 
 Collections are used to group projects together. For example, a collection may include all projects that are part of a particular ecosystem or all projects that are dependent on a given developer library.
 
 A collection is validated by confirming that all of its projects are valid.
 
-To learn more, check out the [collection schema](../resources/schema/collection) in our resources section.
+To learn more, check out the [collection schema](../how-oso-works/schema/collection) in our resources section.
 
-## Projects
+### Projects
 
 Projects are used to group artifacts together. For example, a project may include a GitHub organization, a blockchain address used for holding funds, and a NPM package.
 
@@ -33,9 +29,9 @@ In order to instantiate a project, we require a unique slug and a GitHub URL tha
 
 Critically, artifacts can only belong to one project. We run validation checks to ensure that artifacts are not duplicated across projects.
 
-To learn more, check out the [project schema](../resources/schema/project) in our resources section.
+To learn more, check out the [project schema](../how-oso-works/schema/project) in our resources section.
 
-## Artifacts
+### Artifacts
 
 Artifacts are used to store information about work artifacts created by open source projects in the OSS Directory. For example, a GitHub organization artifact would be identified by a `url` field that is a valid GitHub organization URL (eg,`https://github.com/opensource-observer`) and a blockchain address artifact would be identified by an `address` field that is a valid blockchain address (eg, `0x1234567890123456789012345678901234567890`).
 
@@ -45,19 +41,9 @@ Tags are also used to indicate the network the address is used on. For example, 
 
 OSO creates additional artifacts when a user interacts with a project. For example, when a user interacts with a project's GitHub repository, OSO creates a GitHub user artifact for that user. When a user interacts with a project's blockchain address, OSO creates a blockchain address artifact for that user.
 
-To learn more, check out the [artifact schema](../resources/schema/artifact) in our resources section.
+To learn more, check out the [artifact schema](../how-oso-works/schema/artifact) in our resources section.
 
-## Events
-
-Events are used to store information about transactions or other activities involving a project's artifacts. These could include a code commit, a package download, or a smart contract interaction.
-
-Every event is associated with an artifact that belongs to a single project. For example, a GitHub commit event is an event `from` a GitHub user artifact `to` a GitHub repo artifact owned by a single project. Similarly, a blockchain transaction event would be an event `from` a blockchain address artifact `to` another blockchain address artifact owned by a single project.
-
-The `to` and `from` relationships between artifacts in an event are critical to OSO's ability to understand the impact of a project's activities and situate it in the context of overall network / ecosystem activity.
-
-To learn more, check out the [event schema](../resources/schema/event) in our resources section.
-
-## Example
+### Example
 
 Here's an example of how these building blocks can be used to model a collection of projects:
 
@@ -72,3 +58,21 @@ Here's an example of how these building blocks can be used to model a collection
     - Artifact: https://github.com/ipld/ipld  # IPLD monorepo
     - Artifact: https://github.com/ipld/go-ipld-prime # go-ipld-prime
 ```
+
+## Event Datasets
+
+Events are used to store information about transactions or other activities involving a project's artifacts. These could include a code commit, a package download, or a smart contract interaction.
+
+Every event is associated with an artifact that belongs to a single project. For example, a GitHub commit event is an event `from` a GitHub user artifact `to` a GitHub repo artifact owned by a single project. Similarly, a blockchain transaction event would be an event `from` a blockchain address artifact `to` another blockchain address artifact owned by a single project.
+
+The `to` and `from` relationships between artifacts in an event are critical to OSO's ability to understand the impact of a project's activities and situate it in the context of overall network / ecosystem activity.
+
+To learn more, check out the [event schema](../how-oso-works/schema/event) in our resources section.
+
+## Event Data Indexers
+
+OSO maintains an [ETL](https://en.wikipedia.org/wiki/Extract%2C_load%2C_transform) data pipeline that is continuously deployed from our [monorepo](https://github.com/opensource-observer/oso/) and regularly indexes all available event data about projects in the [oss-directory](https://github.com/opensource-observer/oss-directory).
+
+- **Extract**: raw event data from a variety of public data sources (e.g., GitHub, blockchains, npm, Open Collective)
+- **Transform**: the raw data into impact metrics and impact vectors per project (e.g., # of active developers)
+- **Load**: the results into various OSO data products (e.g., our API, website, widgets)

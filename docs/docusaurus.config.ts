@@ -90,15 +90,15 @@ const config: Config = {
           items: [
             {
               label: "Contribute",
-              to: "/docs/contribute/intro",
+              to: "/docs/contribute/",
             },
             {
-              label: "Integrate",
-              to: "/docs/integrate/getting-started",
+              label: "Get Data",
+              to: "/docs/integrate/",
             },
             {
               label: "How OSO Works",
-              to: "/docs/how-oso-works/intro",
+              to: "/docs/how-oso-works/",
             },
           ],
         },

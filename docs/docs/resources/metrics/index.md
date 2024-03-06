@@ -88,4 +88,4 @@ The following event types are currently available:
 
 ---
 
-To contribute new metrics, please see our guide [here](../../contribute/transform/create-impact-metrics)
+To contribute new metrics, please see our guide [here](../../contribute/impact-models)

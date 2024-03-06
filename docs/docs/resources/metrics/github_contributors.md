@@ -42,4 +42,4 @@ The average number of active developers contributing to the project's repositori
 
 ---
 
-To contribute new metrics, please see our guide [here](../../contribute/transform/create-impact-metrics)
+To contribute new metrics, please see our guide [here](../../contribute/impact-models)

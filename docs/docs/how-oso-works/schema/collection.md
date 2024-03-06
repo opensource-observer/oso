@@ -59,4 +59,4 @@ You can always access the most recent version of the schema [here](https://githu
 
 ## Contributing
 
-Collections are updated and added to the OSS Directory by members of the Data Collective. To learn more about contributing to the OSS Directory, start [here](../../contribute/intro). If you are interested in joining the Data Collective, you can apply [here](https://www.kariba.network/).
+Collections are updated and added to the OSS Directory by members of the Data Collective. If you are interested in joining the Data Collective, you can apply [here](https://www.kariba.network/).

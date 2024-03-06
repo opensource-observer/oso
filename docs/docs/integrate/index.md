@@ -6,8 +6,8 @@ sidebar_position: 1
 The OSO API currently only allows read-only GraphQL queries.
 This API should only be used to fetch data to integrate into a live application.
 If you need to perform data science over a large dataset, see the guides on
-[using the data warehouse](../warehouse)
-and [downloading static data](../fetch-data).
+[doing data science](./data-science)
+and [downloading static data](./download-data).
 
 ## GraphQL Endpoint
 
@@ -50,7 +50,7 @@ query GetProjects {
 
 ## GraphQL Explorer
 
-The GraphQL schema is automatically generated from [`oso/dbt/models/marts`](https://github.com/opensource-observer/oso/tree/main/dbt/models/marts). Any dbt model defined there will automatically be exported to our GraphQL API. See the guide on [adding DBT models](../../contribute/transform/adding-dbt-models.md) for more information on contributing to our marts models.
+The GraphQL schema is automatically generated from [`oso/dbt/models/marts`](https://github.com/opensource-observer/oso/tree/main/dbt/models/marts). Any dbt model defined there will automatically be exported to our GraphQL API. See the guide on [adding DBT models](../contribute/impact-models) for more information on contributing to our marts models.
 
 :::warning
 Our data pipeline is under heavy development and all table schemas are subject to change until we introduce versioning to marts models.

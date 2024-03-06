@@ -105,7 +105,7 @@ If you have ideas for analysis that you would like to see or receive help on, pl
 
 Run statistical analysis to identify top performing OSS projects.
 
-An impact vector must meet the requirements in the [Impact Vector Specification](../../resources/impact-vector-spec).
+An impact vector must meet the requirements in the [Impact Vector Specification](../resources/impact-vector-spec).
 
 We would love to see people create their own impact vectors and distribution analyses!
 

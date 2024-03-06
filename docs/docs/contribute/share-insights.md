@@ -5,7 +5,7 @@ sidebar_position: 6
 
 ## Data Science Notebooks
 
-We are curating a library of Jupyter notebooks that can be used to explore and visualize the data on OSO. We are looking for contributions to help us build a library of Jupyter notebooks in our [insights repo](https://github.com/opensource-observer/insights). For more information on how to contribute, check out the [Data Science Notebooks](./data-science/notebooks) section.
+We are curating a library of Jupyter notebooks that can be used to explore and visualize the data on OSO. We are looking for contributions to help us build a library of Jupyter notebooks in our [insights repo](https://github.com/opensource-observer/insights). For more information on how to contribute, check out the [Data Science Notebooks](../integrate/data-science) section.
 
 ## Blog Posts
 
@@ -17,4 +17,4 @@ We love data visualizations. Browse our library of examples and collaborate with
 
 ## Impact Vectors
 
-We are building a suite of **impact vectors** that can be used to compare the impact of different open source projects. We are looking for contributions to help us build a library of impact vectors. For more information on how to contribute, check out the [Analyze Impact Vectors](./data-science/analyze-impact-vectors) section.
+We are building a suite of **impact vectors** that can be used to compare the impact of different open source projects. We are looking for contributions to help us build a library of impact vectors. For more information, check out the [Impact Vector Specification](../resources/impact-vector-spec).
