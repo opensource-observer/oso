@@ -7,15 +7,6 @@ sidebar_position: 1
 
 Start here to learn about different ways of contributing to OSO.
 
-OSO maintains an [ETL](https://en.wikipedia.org/wiki/Extract%2C_load%2C_transform) data pipeline that is continuously deployed from our [monorepo](https://github.com/opensource-observer/oso/). OSO is looking for contributions on all stages of this pipeline, including:
-
-- **Produce**: add/update information about open source projects
-  (e.g. via [oss-directory](https://github.com/opensource-observer/oss-directory))
-- **Extract**: ingest new data sources (e.g. Open Collective, GitHub, npm, analytics)
-- **Transform**: the raw data into impact metrics and impact vectors per project
-- **Load**: the results into different OSO integrations
-- **Data science**: share your analysis and insights with the OSO community!
-
 If you are interested in joining the Data Collective, your first step is to apply [here](https://www.kariba.network/). Membership is free but we want to keep the community close-knit and mission-aligned.
 
 ---

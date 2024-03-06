@@ -1,7 +1,15 @@
 ---
-title: Core Concepts
+title: Introduction
 sidebar_position: 1
 ---
+
+OSO maintains an [ETL](https://en.wikipedia.org/wiki/Extract%2C_load%2C_transform) data pipeline that is continuously deployed from our [monorepo](https://github.com/opensource-observer/oso/) and regularly indexes all available data about projects in the [oss-directory](https://github.com/opensource-observer/oss-directory).
+
+- **Extract**: raw event data from a variety of public data sources (e.g., GitHub, blockchains, npm, Open Collective)
+- **Transform**: the raw data into impact metrics and impact vectors per project (e.g., # of active developers)
+- **Load**: the results into various OSO data products (e.g., our API, website, widgets)
+
+## Core Concepts
 
 OSO datasets are built from four primary building blocks:
 
