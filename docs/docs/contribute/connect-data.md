@@ -1,6 +1,6 @@
 ---
-title: Write a CloudQuery plugin
-sidebar_position: 2
+title: Connect Your Data
+sidebar_position: 4
 ---
 
 Write a plugin to bring an external data source into the Open Source Observer data warehouse.
@@ -261,3 +261,16 @@ two steps like so (make sure you're using the correct indentation)
 In the future we intend to improve the experience of adding a plugin to the
 pipeline, but for now these docs are consistent with the current state of the
 pipeline.
+
+## Airbyte Connectors
+
+Deploy Airbyte connectors to index data from new sources.
+
+:::warning
+This section is a work in progress.
+:::
+
+aka Data Oracles
+
+- Go over creating a simple airbyte connector to a sample API
+- Go over creating a simple airbyte connector to an already existing public dataset

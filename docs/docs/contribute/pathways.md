@@ -1,7 +1,9 @@
 ---
-title: Contributing Overview
+title: Explore Ways of Contributing
 sidebar_position: 1
 ---
+
+# Contributor Pathways
 
 Start here to learn about different ways of contributing to OSO.
 

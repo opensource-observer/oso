@@ -1,6 +1,6 @@
 ---
-title: Create Impact Metrics
-sidebar_position: 3
+title: Propose an Impact Model
+sidebar_position: 5
 ---
 
 Write dbt transforms to create new impact metrics in our data warehouse.
@@ -312,3 +312,5 @@ LEFT JOIN new_users AS nu on p.project_id = nu.project_id
 LEFT JOIN user_segments AS us on p.project_id = us.project_id
 LEFT JOIN contracts AS c on p.project_id = c.project_id
 ```
+
+## Backup: Add dbt models

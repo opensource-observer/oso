@@ -1,6 +1,6 @@
 ---
-title: Adding DBT Models
-sidebar_position: 6
+title: Add a DBT Model
+sidebar_position: 4
 ---
 
 OSO uses dbt to analyze the data in our public data warehouse on BigQuery. This

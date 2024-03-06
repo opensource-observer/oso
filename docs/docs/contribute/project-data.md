@@ -1,6 +1,6 @@
 ---
-title: Maintain Project Data
-sidebar_position: 1
+title: Update Project Data
+sidebar_position: 2
 ---
 
 Add or update project data by making a pull request to [OSS Directory](https://github.com/opensource-observer/oss-directory).

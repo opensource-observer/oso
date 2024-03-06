@@ -1,6 +1,6 @@
 ---
-title: Share Funding Data
-sidebar_position: 2
+title: Add Funding Data
+sidebar_position: 3
 ---
 
 Upload CSV files that help us link funding data to OSS projects.
