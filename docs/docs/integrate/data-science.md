@@ -1,6 +1,6 @@
 ---
-title: Data Science Notebooks
-sidebar_position: 5
+title: Do Data Science
+sidebar_position: 4
 ---
 
 Share your analysis and visualizations with the OSO community.
@@ -100,3 +100,15 @@ result = execute_query("""
 Once you have completed your analysis, you can share it with the community by submitting a PR to the [insights repo](https://github.com/opensource-observer/insights).
 
 If you have ideas for analysis that you would like to see or receive help on, please [open an issue](https://github.com/opensource-observer/insights/issues) and tag one of the maintainers.
+
+## Creating Impact Vectors
+
+Run statistical analysis to identify top performing OSS projects.
+
+An impact vector must meet the requirements in the [Impact Vector Specification](../../resources/impact-vector-spec).
+
+We would love to see people create their own impact vectors and distribution analyses!
+
+---
+
+Fork [this notebook](https://github.com/opensource-observer/insights/blob/main/community/datasets/retropgf3_results/ImpactVectors%20vs%20DistributionResults.ipynb) and submit a PR with your impact vector.

@@ -1,6 +1,6 @@
 ---
-title: Download OSO data
-sidebar_position: 6
+title: Download OSO Data
+sidebar_position: 5
 ---
 
 :::warning

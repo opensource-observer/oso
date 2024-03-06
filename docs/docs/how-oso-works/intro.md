@@ -1,5 +1,5 @@
 ---
-title: Introduction
+title: Core Concepts
 sidebar_position: 1
 ---
 
@@ -9,14 +9,7 @@ OSO maintains an [ETL](https://en.wikipedia.org/wiki/Extract%2C_load%2C_transfor
 - **Transform**: the raw data into impact metrics and impact vectors per project (e.g., # of active developers)
 - **Load**: the results into various OSO data products (e.g., our API, website, widgets)
 
-## Core Concepts
-
-OSO datasets are built from four primary building blocks:
-
-- Collections
-- Projects
-- Artifacts
-- Events
+OSO datasets are built from four primary building blocks: `collections`, `projects`, `artifacts`, `events`.
 
 A collection is a group of projects. A project is a group of artifacts. An event is an interaction with an artifact. These building blocks are used to create a data model that can be used to understand the impact of open source projects.
 

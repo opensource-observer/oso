@@ -1,11 +1,9 @@
 ---
-title: Explore Ways of Contributing
-sidebar_position: 1
+title: Contributor Pathways
+sidebar_position: 6
 ---
 
-# Contributor Pathways
-
-Start here to learn about different ways of contributing to OSO.
+Learn about different ways of contributing to OSO.
 
 If you are interested in joining the Data Collective, your first step is to apply [here](https://www.kariba.network/). Membership is free but we want to keep the community close-knit and mission-aligned.
 

@@ -1,6 +1,6 @@
 ---
-title: oss-directory
-sidebar_position: 4
+title: Fetch Project Info
+sidebar_position: 2
 ---
 
 [OSS Directory](https://github.com/opensource-observer/oss-directory) contains structured data on as many open source projects as possible, enumerating all artifacts related to the project, from source code repositories to published packages and deployments.

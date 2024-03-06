@@ -1,6 +1,6 @@
 ---
-title: GraphQL API
-sidebar_position: 2
+title: Use the GraphQL API
+sidebar_position: 1
 ---
 
 The OSO API currently only allows read-only GraphQL queries.
