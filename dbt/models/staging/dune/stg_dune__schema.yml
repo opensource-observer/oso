@@ -7,12 +7,78 @@ models:
       contributors: oso-team, tomfutago
     config:
       tags: ['staging', 'dune', 'arbitrum']
-    description: "Arbitrum contract usage pulled from Dune."
+    description: "Arbitrum contract usage sourced from Dune."
     columns:
       - name: time
         description: "the time (start of a day UTC) of a contract's invocation"
       - name: source_id
-        description: "source id - hash derived from pull time, contract address and EOA address / safe address"
+        description: "source id - hash derived from time, contract address and EOA address / safe address"
+      - name: to_name
+        description: "recipient address"
+      - name: to_namespace
+        description: "recipient namespace"
+      - name: to_type
+        description: "recipient address type"
+      - name: to_source_id
+        description: "recipient address"
+      - name: from_name
+        description: "sender address"
+      - name: from_namespace
+        description: "sender namespace"
+      - name: from_type
+        description: "sender address type"
+      - name: from_source_id
+        description: "sender address"
+      - name: l1_gas
+        description: "L1 gas amount"
+      - name: l2_gas
+        description: "L2 gas amount"
+      - name: tx_count
+        description: "transaction count"
+  - name: stg_dune__optimism_contract_invocation
+    meta:
+      contributors: oso-team 
+    config:
+      tags: ['staging', 'dune', 'optimism']
+    description: "Optimism contract usage sourced from Dune."
+    columns:
+      - name: time
+        description: "the time (start of a day UTC) of a contract's invocation"
+      - name: source_id
+        description: "source id - hash derived from time, contract address and EOA address / safe address"
+      - name: to_name
+        description: "recipient address"
+      - name: to_namespace
+        description: "recipient namespace"
+      - name: to_type
+        description: "recipient address type"
+      - name: to_source_id
+        description: "recipient address"
+      - name: from_name
+        description: "sender address"
+      - name: from_namespace
+        description: "sender namespace"
+      - name: from_type
+        description: "sender address type"
+      - name: from_source_id
+        description: "sender address"
+      - name: l1_gas
+        description: "L1 gas amount"
+      - name: l2_gas
+        description: "L2 gas amount"
+      - name: tx_count
+        description: "transaction count"
+  - name: stg_dune__contract_invocation
+    meta:
+      contributors: oso-team 
+    config:
+      tags: ['staging', 'dune', 'optimism', 'arbitrum']
+    description: "All contract usage sourced from Dune."
+    columns:
+      - name: time
+        description: "the time (start of a day UTC) of a contract's invocation"
+      - name: source_id
+        description: "source id - hash derived from time, contract address and EOA address / safe address"
       - name: to_name
         description: "recipient address"
       - name: to_namespace

@@ -7,4 +7,6 @@ sources:
     tables:
       - name: arbitrum_contract_usage 
         identifier: arbitrum_contract_usage
-        
+      - name: optimism_contract_usage 
+        identifier: optimism_contract_usage
+ 
