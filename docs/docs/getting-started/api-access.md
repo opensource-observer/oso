@@ -1,6 +1,6 @@
 ---
-title: Getting Started
-sidebar_position: 1
+title: Get API Access
+sidebar_position: 2
 ---
 
 Start here to learn about different ways of integrating OSO data into your workflow.

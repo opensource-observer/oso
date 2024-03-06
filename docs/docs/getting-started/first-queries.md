@@ -1,6 +1,6 @@
 ---
-title: Query the Data Warehouse
-sidebar_position: 5
+title: Write Your First Queries
+sidebar_position: 3
 ---
 
 :::warning

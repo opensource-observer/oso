@@ -1,6 +1,6 @@
 ---
-title: Join the Data Collective!
-sidebar_position: 8
+title: Join the Data Collective
+sidebar_position: 1
 ---
 
 We are looking for contributors to add/update information about open source projects, to explore the data and generate useful insights, and to connect new data sources and build better tools on top of OSO.
