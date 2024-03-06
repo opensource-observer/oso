@@ -31,18 +31,61 @@
   )
 }}
 
-WITH arbitrum_contract_invocation_daily_count AS (
-  {{ contract_invocation_daily_count("arbitrum")}}
-), arbitrum_contract_invocation_daily_l2_gas_used AS (
-  {{ contract_invocation_daily_l2_gas_used("arbitrum") }}
-), arbitrum_contract_invocation_daily_l1_gas_used AS (
-  {{ contract_invocation_daily_l1_gas_used("arbitrum") }}
-), optimism_contract_invocation_daily_count AS (
-  {{ contract_invocation_daily_count("optimism")}}
-), optimism_contract_invocation_daily_l2_gas_used AS (
-  {{ contract_invocation_daily_l2_gas_used("optimism") }}
-), optimism_contract_invocation_daily_l1_gas_used AS (
-  {{ contract_invocation_daily_l1_gas_used("optimism") }}
+WITH contract_invocation_daily_count AS (
+  SELECT 
+    cii.time,
+    "CONTRACT_INVOCATION_DAILY_COUNT" AS `event_type`,
+    cii.source_id as event_source_id,
+    cii.to_name,
+    cii.to_namespace,
+    cii.to_type,
+    cii.to_source_id,
+    cii.from_name,
+    cii.from_namespace,
+    cii.from_type,
+    cii.from_source_id,
+    cii.tx_count as `amount`
+  FROM {{ ref('stg_dune__contract_invocation') }} AS cii
+  {# a bit of a hack for now to keep this table small for dev and playground #}
+  {% if target.name in ['dev', 'playground'] %}
+  WHERE cii.time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {{ env_var("PLAYGROUND_DAYS", '14') }} DAY)
+  {% endif %}
+), contract_invocation_daily_l2_gas_used AS (
+  SELECT 
+    cii.time,
+    "CONTRACT_INVOCATION_DAILY_L2_GAS_USED" AS `event_type`,
+    cii.source_id as event_source_id,
+    cii.to_name,
+    cii.to_namespace,
+    cii.to_type,
+    cii.to_source_id,
+    cii.from_name,
+    cii.from_namespace,
+    cii.from_type,
+    cii.from_source_id,
+    cii.l2_gas as `amount`
+  FROM {{ ref('stg_dune__contract_invocation') }} AS cii
+  {% if target.name in ['dev', 'playground'] %}
+  WHERE cii.time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {{ env_var("PLAYGROUND_DAYS", '14') }} DAY)
+  {% endif %}
+), contract_invocation_daily_l1_gas_used AS (
+  SELECT 
+    cii.time,
+    "CONTRACT_INVOCATION_DAILY_L1_GAS_USED" AS `event_type`,
+    cii.source_id as event_source_id,
+    cii.to_name,
+    cii.to_namespace,
+    cii.to_type,
+    cii.to_source_id,
+    cii.from_name,
+    cii.from_namespace,
+    cii.from_type,
+    cii.from_source_id,
+    cii.l1_gas as `amount`
+  FROM {{ ref('stg_dune__contract_invocation') }} AS cii
+  {% if target.name in ['dev', 'playground'] %}
+  WHERE cii.time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {{ env_var("PLAYGROUND_DAYS", '14') }} DAY)
+  {% endif %}
 ), github_commits AS (
   SELECT
     gc.created_at as `time`,
@@ -128,17 +171,11 @@ WITH arbitrum_contract_invocation_daily_count AS (
     CAST(1 AS FLOAT64) as `amount`
   FROM {{ ref('stg_github__stars_and_forks') }} as gh
 )
-SELECT * FROM arbitrum_contract_invocation_daily_count
+SELECT * FROM contract_invocation_daily_count
 UNION ALL
-SELECT * FROM arbitrum_contract_invocation_daily_l1_gas_used
+SELECT * FROM contract_invocation_daily_l1_gas_used
 UNION ALL
-SELECT * FROM arbitrum_contract_invocation_daily_l2_gas_used
-UNION ALL
-SELECT * FROM optimism_contract_invocation_daily_count
-UNION ALL
-SELECT * FROM optimism_contract_invocation_daily_l1_gas_used
-UNION ALL
-SELECT * FROM optimism_contract_invocation_daily_l2_gas_used
+SELECT * FROM contract_invocation_daily_l2_gas_used
 UNION ALL
 SELECT * FROM github_commits
 UNION ALL
