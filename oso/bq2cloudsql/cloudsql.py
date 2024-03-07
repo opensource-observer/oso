@@ -1,5 +1,6 @@
 import time
 import pprint
+import ssl
 
 import pg8000.native
 import sqlalchemy
@@ -61,6 +62,8 @@ def retry(
 
 def handle_cloudsql_error(e: Exception):
     if isinstance(e, HttpError):
+        return True
+    if isinstance(e, ssl.SSLEOFError):
         return True
     return False
 
@@ -148,7 +151,7 @@ class CloudSQLClient(object):
             req = self._client.operations().get(
                 project=self._project_id, operation=operation_id
             )
-            r = req.execute()
+            r = retry(req.execute, handle_cloudsql_error)()
             pp.pprint(r)
             if r["status"] not in ["PENDING", "RUNNING"]:
                 if r["status"] != "DONE":
