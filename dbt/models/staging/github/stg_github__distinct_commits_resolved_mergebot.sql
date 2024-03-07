@@ -10,14 +10,14 @@ WITH merge_bot_commits AS (
 
 resolved_merge_bot_commits AS (
   SELECT
-    mbc.created_at,
     mbc.repository_id,
+    mbc.sha,
+    mbc.created_at,
     mbc.repository_name,
     mbc.push_id,
     mbc.ref,
     ghprme.actor_id,
     ghprme.actor_login,
-    mbc.sha,
     mbc.author_email,
     mbc.author_name,
     mbc.is_distinct,
