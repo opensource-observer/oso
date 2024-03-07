@@ -95,10 +95,15 @@ jobs:
         with:
           version: nightly-87bc53fc6c874bd4c92d97ed180b949e3a36d78c
 
-      - uses: 'google-github-actions/auth@v2'
+      - name: Authenticate to google with a NOOP user
+        uses: 'google-github-actions/auth@v2'
         with:
           credentials_json: '${{ secrets.GOOGLE_NOOP_CREDENTIALS_JSON }}'
           create_credentials_file: true
+
+      - name: Setup dbt profile
+        run: |
+          bash .github/scripts/create-dbt-profile.sh ${GOOGLE_APPLICATION_CREDENTIALS}
 
       - name: Build
         run: |
