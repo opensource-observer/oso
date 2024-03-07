@@ -68,7 +68,7 @@ FROM placeholder
 
 Run statistical analysis to identify top performing OSS projects.
 
-An impact vector must meet the requirements in the [Impact Vector Specification](../resources/impact-vector-spec).
+An impact vector must meet the requirements in the [Impact Vector Specification](../how-oso-works/resources/impact-vector-spec).
 
 We would love to see people create their own impact vectors and distribution analyses!
 

@@ -1,6 +1,6 @@
 ---
 title: Impact Vector Specification
-sidebar_position: 4
+sidebar_position: 3
 ---
 
 An impact vector is a direction of positive impact that a collection of similar projects in an open source ecosystem should work towards. Each vector represents:

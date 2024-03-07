@@ -20,4 +20,4 @@ Number of times a packages has been downloaded over a given time period.
 
 ---
 
-To contribute new metrics, please see our guide [here](../../contribute/impact-models)
+To contribute new metrics, please see our guide [here](../../../contribute/impact-models)

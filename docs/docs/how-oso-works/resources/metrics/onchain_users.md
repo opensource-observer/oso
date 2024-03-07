@@ -52,4 +52,4 @@ On Ethereum, account abstraction is a feature that allows smart contracts to pay
 
 ---
 
-To contribute new metrics, please see our guide [here](../../contribute/impact-models)
+To contribute new metrics, please see our guide [here](../../../contribute/impact-models)
