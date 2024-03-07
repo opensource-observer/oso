@@ -3,14 +3,11 @@
 #}
 
 SELECT
-  a.project_id,
-  e.time,
-  e.event_type,
-  e.to_id,
-  e.from_id,
-  e.amount
+  e.*,
+  a.project_id
 FROM {{ ref('int_events_with_artifact_id') }} AS e
-LEFT JOIN {{ ref('stg_ossd__artifacts_by_project') }} AS a 
-  ON a.artifact_source_id = e.from_source_id 
-    AND a.artifact_namespace = e.from_namespace 
-    AND a.artifact_type = e.from_type
+LEFT JOIN {{ ref('stg_ossd__artifacts_by_project') }} AS a
+  ON
+    e.from_source_id = a.artifact_source_id
+    AND e.from_namespace = a.artifact_namespace
+    AND e.from_type = a.artifact_type

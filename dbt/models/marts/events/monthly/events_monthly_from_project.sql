@@ -4,9 +4,9 @@
 
 SELECT
   e.project_id,
-  TIMESTAMP_TRUNC(e.bucket_day, MONTH) as bucket_month,
   e.event_type,
+  TIMESTAMP_TRUNC(e.bucket_day, MONTH) AS bucket_month,
   SUM(e.amount) AS amount
 FROM {{ ref('events_daily_from_project') }} AS e
 WHERE e.project_id IS NOT NULL
-GROUP BY 1,2,3
+GROUP BY 1, 2, 3

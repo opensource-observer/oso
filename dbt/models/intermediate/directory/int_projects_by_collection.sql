@@ -1,9 +1,9 @@
 SELECT
   ptc.collection_id,
-  p.id as project_id,
-  p.slug as project_slug,
-  p.namespace as user_namespace,
-  p.name as project_name
-FROM {{ ref('stg_ossd__projects_by_collection') }} as ptc
-JOIN {{ ref('stg_ossd__current_projects')}} as p
-  ON p.id = ptc.project_id
+  p.id AS project_id,
+  p.slug AS project_slug,
+  p.namespace AS user_namespace,
+  p.name AS project_name
+FROM {{ ref('stg_ossd__projects_by_collection') }} AS ptc
+INNER JOIN {{ ref('stg_ossd__current_projects') }} AS p
+  ON ptc.project_id = p.id
