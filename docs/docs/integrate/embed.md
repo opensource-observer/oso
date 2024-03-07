@@ -1,5 +1,5 @@
 ---
-title: Embed OSO Widgets
+title: 🏗️ Embed OSO Widgets
 sidebar_position: 3
 ---
 

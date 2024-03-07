@@ -1,11 +1,17 @@
 ---
 title: Architecture
-sidebar_position: 2
+sidebar_position: 3
 ---
 
-All of the code for this architecture is available to view/copy/redeploy [in our monorepo](https://github.com/opensource-observer/oso).
+:::info
+OSO's goal is to make it simple to contribute by providing an automatically
+deployed data pipeline so that the community can build this open data warehouse
+together. All of the code for this architecture is available to view/copy/redeploy from the [OSO Monorepo](https://github.com/opensource-observer/oso).
+:::
 
 ## Diagram
+
+---
 
 The following diagram illustrates Open Source Observer's technical architecture.
 
@@ -13,7 +19,9 @@ The following diagram illustrates Open Source Observer's technical architecture.
 
 ## Major Components
 
-The architecture has the following major components
+---
+
+The architecture has the following major components.
 
 ### Data Warehouse
 
@@ -44,6 +52,8 @@ This is the OSO website at [https://www.opensource.observer](https://www.opensou
 
 ## Dependent Technologies
 
+---
+
 Our infrastructure is based on many wonderful existing tools. Our major
 dependencies are:
 
@@ -68,21 +78,19 @@ dependencies are:
 ## Open Architecture for Open Source Data
 
 The architecture is designed to accomodate a collaborative data pipeline that
-can be used to formulate a better understanding of a project's impact. The data
-collected and the code used to build the system are all built in the open with a
+can be used to formulate a better understanding of projects' impact across various dimensions.
+The data collected and the code used to build the system are all built in the open with a
 goal of transparency for costs and development. As illustrated in the
-architectural diagram, the Main Data Pipeline feeds into a PostgreSQL database
+architectural diagram, the main data pipeline feeds into a database
 that is used to enable the OSO website, but the materialized data within the data
 warehouse of that pipeline can be used by any external system as well.
 
-Our goal is to make it simple to contribute by providing an automatically
-deployed data pipeline so that the community can build this open data warehouse
-together. The main units of contribution are described as the actions available
+The main units of contribution are described as the actions available
 to **Impact Data Scientists** and **Data Engineers**. Data Engineers can easily contribute
 by building more CloudQuery plugins for data collection. Impact Data Scientists can
 help by contributing additional data transformations to the query processors.
 With the infrastructure automation in the OSO repository, either contribution
 will be automatically deployed once merged into the `main` branch. If for
-whatever reason none of these options fit an engineer's/analyst's needs, there
+whatever reason none of these options fit an engineer or analyst's needs, there
 is also the option to extract data from the platform entirely. This option will
 likely incur additional costs for the individual on their GCP account.
