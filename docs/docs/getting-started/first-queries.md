@@ -3,26 +3,28 @@ title: Write Your First Queries
 sidebar_position: 3
 ---
 
+:::info
 OSO's data warehouse is located on BigQuery and is available publicly by
 referencing it as `opensource-observer.oso`. If you're looking to explore the
 data, or to contribute to our public set of models you will need to have an
-account with GCP (Google Cloud). If you've never done this before, it can be a
-bit daunting to use the Google UI. This guide will walk you through the setting
-up GCP and copying the playground dataset to your own BigQuery dataset.
+account with GCP (Google Cloud).
+:::
 
-## Getting Started with GCP
+## Getting tarted with GCP
 
 If this is your first time getting into GCP, you can do so by going
-[here](https://cloud.google.com/). From there you'll want to click on "Try it
-free" or "Start free". Either option will initialize your GCP account and ask
-for a payment method. You can use the free trial, but that is only for limited
-usage. However, it is possible to stay in the free tier if you stay under the
+[here](https://cloud.google.com/).
+
+From there you'll want to click on "Try it free" or "Start free".
+Either option will initialize your GCP account and ask for a payment method.
+You can use the free trial, but that is only for limited usage.
+However, it is possible to stay in the free tier if you stay under the
 1TB free tier limit for BigQuery data processed (more on that later).
 
 Once you've completed those steps, you will then want to create a new project.
 Feel free to name this GCP project anything you'd like.
 
-### Querying the OSO or the OSO Playground dataset
+## Querying the `oso_playground` dataset
 
 Once you've setup your GCP account and project, you can simply go to the BigQuery Console and start querying. Access it [here](https://console.cloud.google.com/bigquery).
 
@@ -33,11 +35,9 @@ SELECT *
 FROM `opensource-observer.oso_playground.collections`
 ```
 
-To explore the datasets see here:
+To explore the datasets available, see [here](https://console.cloud.google.com/bigquery?project=opensource-observer).
 
-- https://console.cloud.google.com/bigquery?project=opensource-observer
-
-## Setting up your own playground copy of the dataset
+## Setting up your own copy of the `oso_playground` dataset
 
 For those of you that would like to test/develop your own models on the data we
 have available publicly, you can instantiate your own datasets in BigQuery and

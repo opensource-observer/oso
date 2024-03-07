@@ -3,20 +3,13 @@ title: Get API Access
 sidebar_position: 2
 ---
 
-Start here to learn about different ways of integrating OSO data into your workflow.
-
-Create an account and get started with the OSO API.
-
-## Create an account
-
----
+:::info
+Access to the OSO GraphQL API is necessary for any integration with OSO datasets. The API serves impact metrics for OSS projects, collections, and artifacts.
+:::
 
 First, navigate to [www.opensource.observer](https://www.opensource.observer) and create a new account.
-If you already have an account, log in.
 
-## Create a new personal API key
-
----
+If you already have an account, log in. Then create a new personal API key:
 
 1. Go to [Account settings](https://www.opensource.observer/app/settings)
 2. In the "Personal API Keys" section, click "+ Create a Personal API Key"

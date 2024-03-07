@@ -3,30 +3,29 @@ title: Propose an Impact Model
 sidebar_position: 5
 ---
 
-Write dbt transforms to create new impact metrics in our data warehouse.
-
-[dbt (data build tool)](https://www.getdbt.com/blog/what-exactly-is-dbt) is a command line tool that enables data analysts and engineers to transform data in the OSO data warehouse more effectively. dbt transforms are written in SQL. We use them most often to define impact metrics and materialize aggregate data about projects.
-
-:::warning
-At this time the dataset isn't public. This will change in the near future.
+:::info
+[dbt (data build tool)](https://www.getdbt.com/blog/what-exactly-is-dbt) is a command line tool that enables data analysts and engineers to transform data in the OSO data warehouse more effectively. dbt transforms are written in SQL. We use them most often to define impact metrics and materialize aggregate data about projects. You can contribute dbt transforms to create new impact metrics in our data warehouse.
 :::
 
 OSO uses dbt to analyze the data in our public data warehouse on BigQuery. This
-is all maintained within the [oso repository][oso] and is open for contribution
-from the community. This guide will walk you through adding a DBT model to the
-repository.
+is all maintained within the [OSO monorepo][oso] and is open for contribution
+from the community.
+
+This guide will walk you through adding a dbt model to the repository.
 
 [oso]: https://github.com/opensource-observer/oso
 [oss-directory]: https://github.com/opensource-observer/oss-directory
 
-## Prerequisites
+## Getting Started with dbt
+
+### Prerequisites
 
 Before you begin you'll need the following
 
 - Python 3.11 or higher
 - Python Poetry
 - git
-- A github account
+- A GitHub account
 - A basic understanding of dbt and SQL
 - While not strictly required, if you'd like to test the models on your own and
   also do any exploratory queries, you'll need a GCP account. This is possible
@@ -34,7 +33,7 @@ Before you begin you'll need the following
   console](https://console.cloud.google.com). If you would like to mostly query
   our views, it is possible to stay under the 1TB free tier per month.
 
-## Fork and clone the repo
+### Fork and clone the repo
 
 Once you've got everything you need to begin, you'll need to fork the [oso
 repository](https://github.com/opensource-observer/oso) and clone it to your
@@ -46,15 +45,13 @@ This would look something like:
 git clone git@github.com:your-github-username-here/oso.git
 ```
 
-## Installing tools locally
+### Using the poetry environment locally
 
 From inside the root of the repository, run poetry to install the dependencies.
 
 ```bash
 $ poetry install
 ```
-
-## Using the poetry environment
 
 Once installation has completed you can enter the poetry environment.
 
@@ -70,11 +67,85 @@ $ which dbt
 
 _This should return something like `opensource-observer/oso/.venv/bin/dbt`_
 
-## Locating the dbt models
+### Authenticating to BigQuery
+
+If you have write access to the dataset then you can connect to it by setting
+the `opensource_observer` profile in `dbt`. Inside `~/.dbt/profiles.yml` (create
+it if it isn't there), add the following:
+
+:::warning
+If you target the `production` dataset you'll be editing the live
+production data. Do so with caution if you have write access to these datasets.
+:::
+
+```yaml
+opensource_observer:
+  outputs:
+    production:
+      type: bigquery
+      dataset: oso
+      job_execution_time_seconds: 300
+      job_retries: 1
+      location: US
+      method: oauth
+      project: opensource-observer
+      threads: 1
+    playground:
+      type: bigquery
+      dataset: oso
+      job_execution_time_seconds: 300
+      job_retries: 1
+      location: US
+      method: oauth
+      project: opensource-observer
+      threads: 1
+  # By default we target the playground. it's less costly and also safer to write
+  # there while developing
+  target: playground
+```
+
+If you don't have `gcloud` installed you'll need to do so as well. The
+instructions are [here](https://cloud.google.com/sdk/docs/install).
+
+_For macOS users_: Instructions can be a bit clunky if you're on macOS, so we
+suggest using homebrew like this:
+
+```bash
+$ brew install --cask google-cloud-sdk
+```
+
+Finally, authenticate to Google by runnin the following:
+
+```bash
+$ gcloud auth application-default login
+```
+
+A browser window will pop up after this, so be sure to come back to the docs after you've completed the
+login.
+
+You'll need to re-authenticate once an hour. This is simplest to setup but can be a pain
+as you need to regularly re-auth. If you need longer access you can setup a
+service-account in GCP, but these docs will not cover that for now.
+
+You should now be logged into BigQuery!
+
+### Testing
+
+Test that everything is working by running the following command _within the poetry environment_:
+
+```bash
+$ dbt run --select projects
+```
+
+If the command executes properly, then you're ready to start creating your own dbt models!
+
+## Working with OSO dbt Models
+
+---
+
+### How OSO dbt models are organized
 
 From the root of the oso repository, dbt models can be found at `dbt/models`.
-
-## How OSO dbt models are organized
 
 OSO's repository organizes dbt models following the suggested directory
 structure from DBT's own best practices guides ([see
@@ -92,22 +163,24 @@ here for a fuller explanation](https://docs.getdbt.com/best-practices/how-we-str
   mart. Marts are also automatically copied to the postgresql database that runs
   the OSO website.
 
-## OSO Data Sources
+### OSO data sources
+
+The titles for these sections reflect the directories available in
+the `staging` directory of our dbt models.
 
 This isn't an exhaustive list of all data sources but instead a list of data
 sources that OSO currently relies upon. If you wish to use other available
 public datsets on bigquery. Please feel free to add a model that references that
-data source! The titles for these sections reflect the directories available in
-the `staging` directory of our dbt models.
+data source!
 
-### Using the `oso_source` macro
+#### The `oso_source` macro
 
 For referencing sources, you should use the `oso_source()` macro which has the
 same parameters as the built in `source()` macro from DBT. However, the
 `oso_source()` macro includes logic that is used to help manage our public
 playground dataset.
 
-### The `oss-directory` source
+#### The `oss-directory` source
 
 The OSO community maintains a directory of collections and projects called
 [oss-directory][oss-directory].
@@ -132,7 +205,7 @@ following tables:
 [projects_table]: https://console.cloud.google.com/bigquery?project=opensource-observer&ws=!1m5!1m4!4m3!1sopensource-observer!2soso!3sprojects_ossd
 [repositories_table]: https://console.cloud.google.com/bigquery?project=opensource-observer&ws=!1m5!1m4!4m3!1sopensource-observer!2soso!3srepositories_ossd
 
-### The `github_archive` source
+#### The `github_archive` source
 
 Referenced as `{{ source('github_archive', 'events') }}`, this data source is an
 external BigQuery dataset that is maintained by [GH Archive][gharchive]. It is
@@ -146,7 +219,7 @@ data, we suggest you read more at [GH Archive][gharchive]
 
 [gharchive]: https://www.gharchive.org
 
-### The `dune` source
+#### The `dune` source
 
 In order to have collected blockchain data, the OSO team has used dune in the
 past (we may not continue to use so into the future) to collect blockchain
@@ -157,7 +230,7 @@ as `{{ oso_source('dune', 'arbitrum') }}`. We also have Optimism data, but that 
 currently an export from our legacy data collection. We will expose that as well,
 so check back soon for more updates!
 
-## A note about `_id`'s
+### A note about `_id`'s
 
 Due to the diversity of data sources and event types, the ID system used by the
 data warehouse might not be immediately obvious to anyone who's starting their
@@ -205,19 +278,42 @@ FROM foo_table as f
 This will return a query of a single column `artifact_id` that is derived from
 the `foo_namespace`, `foo_type`, and `foo_source_id` of that table.
 
-## Adding your model
+## Adding Your dbt Model
+
+---
 
 Now you're armed with enough information to add your model! Add your model to
 the directory you deem fitting. Don't be afraid of getting it wrong, that's all
 part of our review process to guide you to the right place.
 
-### Using the BigQuery UI to check your Queries
+Your model can be written in SQL. We've included some examples to help you get started.
+
+### Running your model
+
+Once you've updated any models you can run dbt _within the poetry environment_ by simply calling:
+
+```bash
+$ dbt run
+```
+
+_Note: If you configured the dbt profile as shown in this document, this `dbt
+run` will write to the `opensource-observer.oso_playground` dataset._
+
+It is likely best to target a specific model so things don't take so long on some of our materializations:
+
+```
+$ dbt run --select {name_of_your_model}
+```
+
+### Using the BigQuery UI to check your queries
 
 During your development process, it may be useful to use the BigQuery UI to
-execute queries. In the future we will have a way to connect your own
-infrastructure so you can generate models from our staging repository, however,
+execute queries.
+
+In the future we will have a way to connect your own
+infrastructure so you can generate models from our staging repository. However,
 for now, it is best to compile the dbt models into their resulting BigQuery SQL
-and execute that on the bigquery UI. To do this, you'll need to run `dbt
+and execute that on the BigQuery UI. To do this, you'll need to run `dbt
 compile` from the root of the [oso Repository][oso] like so:
 
 ```bash
@@ -238,137 +334,19 @@ Console](https://console.cloud.google.com/bigquery) and run that query there. Ho
 validation you'll need to [Setup GCP with your own
 playground](https://docs.opensource.observer/docs/contribute/transform/setting-up-gcp.md#setting-up-your-own-playground-copy-of-the-dataset)
 
-## Submit a PR
+### Submit a PR
 
 Once you've developed your model and you feel comfortable that it will properly
 run. you can submit it a PR to the [oso Repository][oso] to be tested by the OSO
 github CI workflows (_still under development_).
 
-## DBT model execution schedule
+### DBT model execution schedule
 
 After your PR has been approved and merged, it will automatically be deployed
 into our BigQuery dataset and available for querying. At this time, the data
 pipelines are executed once a day by the OSO CI at 02:00 UTC. The pipeline
 currently takes a number of hours and any materializations or views would likely
 be ready for use by 4-6 hours after that time.
-
-## Happy contributing!
-
-Contributing to OSO's data warehouse and analysis are
-
-## Setting up
-
----
-
-### Prequisites
-
-- Python 3 (Tested on 3.11)
-- [poetry](https://python-poetry.org/)
-  - Install with pip: `pip install poetry`
-
-### Install dependencies
-
-From inside the `dbt` directory, run poetry to install the dependencies.
-
-```bash
-$ poetry install
-```
-
-### Using the poetry environment
-
-Once installation has completed you can enter the poetry environment.
-
-```bash
-$ poetry shell
-```
-
-From here you should have dbt on your path.
-
-```bash
-$ which dbt
-```
-
-_This should return something like `opensource-observer/oso/.venv/bin/dbt`_
-
-### Authenticating to bigquery
-
-If you have write access to the dataset then you can connect to it by setting
-the `opensource_observer` profile in `dbt`. Inside `~/.dbt/profiles.yml` (create
-it if it isn't there), add the following:
-
-:::warning
-If you target the `production` dataset you'll be editing the live
-production data. Do so with caution if you have write access to these datasets.
-:::
-
-```yaml
-opensource_observer:
-  outputs:
-    production:
-      type: bigquery
-      dataset: oso
-      job_execution_time_seconds: 300
-      job_retries: 1
-      location: US
-      method: oauth
-      project: opensource-observer
-      threads: 1
-    playground:
-      type: bigquery
-      dataset: oso
-      job_execution_time_seconds: 300
-      job_retries: 1
-      location: US
-      method: oauth
-      project: opensource-observer
-      threads: 1
-  # By default we target the playground. it's less costly and also safer to write
-  # there while developing
-  target: playground
-```
-
-If you don't have `gcloud` installed you'll need to do so as well. The
-instructions are [here](https://cloud.google.com/sdk/docs/install).
-
-_For macOS users_: Instructions can be a bit clunky if you're on macOS, so we
-suggest using homebrew like this:
-
-```bash
-$ brew install --cask google-cloud-sdk
-```
-
-Finally, authenticate to google run the following (a browser window will pop up
-after this so be sure to come back to the docs after you've completed the
-login):
-
-```bash
-$ gcloud auth application-default login
-```
-
-You'll need to do this once an hour. This is simplest to setup but can be a pain
-as you need to regularly reauth. If you need longer access you can setup a
-service-account in GCP, but these docs will not cover that for now.
-
-You should now be logged into BigQuery!
-
-## Usage
-
----
-
-Once you've updated any models you can run dbt _within the poetry environment_ by simply calling:
-
-```bash
-$ dbt run
-```
-
-_Note: If you configured the dbt profile as shown in this document, this `dbt
-run` will write to the `opensource-observer.oso_playground` dataset._
-
-It is likely best to target a specific model so things don't take so long on some of our materializations:
-
-```
-$ dbt run --select {name_of_the_model}
-```
 
 ## Model Examples
 
@@ -557,5 +535,3 @@ LEFT JOIN new_users AS nu on p.project_id = nu.project_id
 LEFT JOIN user_segments AS us on p.project_id = us.project_id
 LEFT JOIN contracts AS c on p.project_id = c.project_id
 ```
-
-## Backup: Add dbt models

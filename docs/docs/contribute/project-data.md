@@ -3,15 +3,15 @@ title: Update Project Data
 sidebar_position: 2
 ---
 
-Add or update project data by making a pull request to [OSS Directory](https://github.com/opensource-observer/oss-directory).
-
+:::info
 Contributing data about open source projects is one of the simplest and most important ways to help the OSO community. When a new project is added to our directory, we automatically index relevant data about its history and ongoing activity, and we generate a project page on the OSO website. This makes it easy for people to discover the project and analyze its data.
-
-Here are the steps to add or update project information:
+:::
 
 ## Quick Steps
 
 ---
+
+Add or update project data by making a pull request to [OSS Directory](https://github.com/opensource-observer/oss-directory).
 
 1. Fork [OSS Directory](https://github.com/opensource-observer/oss-directory/fork).
 2. Locate or create a new project `.yaml` file under `./data/projects/`.
@@ -21,6 +21,8 @@ Here are the steps to add or update project information:
 ## Detailed Steps
 
 ---
+
+Here's a more detailed set of instructions for first-time contributors.
 
 ### 1. Fork OSS Directory
 
@@ -118,9 +120,10 @@ Some projects may own a lot of blockchain addresses. The most important addresse
 - Your submission will be reviewed by a maintainer before approving the pull request. If there are any issues, you will be notified in the pull request thread.
 - Your submission will be merged once it is approved by a maintainer. Merging the pull request will trigger automated validation of the artifacts you added. If there are any issues or duplicates found, the pull request will be rejected and you will be notified in the pull request thread.
 - Once the pull request is merged successfully, your project will be added to the indexing queue for inclusion in all subsequent data updates.
-  :::tip
-  If you run into issues, check out [GitHub's instructions](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request-from-a-fork) for creating a pull request from a fork.
-  :::
+
+:::tip
+If you run into issues, check out [GitHub's instructions](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request-from-a-fork) for creating a pull request from a fork.
+:::
 
 ## Bulk Updates
 

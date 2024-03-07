@@ -3,11 +3,17 @@ title: Artifact
 sidebar_position: 4
 ---
 
-An artifact is a link or reference to work created by open source projects in the OSS Directory.
+:::info
+An **artifact** is a link or reference to work created by open source projects in the OSS Directory. An artifact can only belong to one project otherwise it will fail our validation checks.
+:::
 
+:::note
 Our Version 3 schema currently supports three types of artifacts: GitHub organizations and repositories, NPM packages, and blockchain addresses. The `github`, `npm`, and `blockchain` fields in the [project schema](./project) are used to store arrays of artifacts associated with a particular project.
+:::
 
 ## Artifact Identification
+
+---
 
 Each artifact is identified by either a `url` field representing a valid URL in the correct namespace or an `address` representing a public key address on a blockchain.
 
@@ -18,6 +24,8 @@ An artifact may only exist once and may only be assigned to a single project. Fo
 :::
 
 ## URL Schema
+
+---
 
 The URL schema is used to validate artifacts that contain public code contributions. Currently, the only supported URL-based artifacts are GitHub organizations and repositories and NPM packages.
 
@@ -42,6 +50,8 @@ You can view the schema for the URL field [here](https://github.com/opensource-o
 ```
 
 ## Blockchain Address Schema
+
+---
 
 The blockchain address schema is used to validate blockchain addresses for projects.
 
@@ -168,5 +178,7 @@ You can always access the most recent version of the schema [here](https://githu
 ```
 
 ## Contributing
+
+---
 
 Artifacts are updated and added to the OSS Directory by members of the Data Collective. To learn more about contributing to the OSS Directory, start [here](../../contribute/project-data). If you are interested in joining the Data Collective, you can apply [here](https://www.kariba.network/).

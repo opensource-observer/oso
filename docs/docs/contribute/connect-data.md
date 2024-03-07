@@ -3,14 +3,19 @@ title: Connect Your Data
 sidebar_position: 4
 ---
 
-Write a plugin to bring an external data source into the Open Source Observer data warehouse.
+:::info
+We're always looking for new data sources to integrate with OSO and deepen our community's understanding of open source impact. If you're a developer or data engineer, we'd love to partner with you to connect your database (or other external data sources) to the OSO data warehouse.
+:::
 
 ## CloudQuery Plugins
 
+---
+
 [CloudQuery](https://cloudquery.io) is used to integrate external data sources
 into the Open Source Observer platform. At this time we are limiting the
-cloudquery plugins in the OSO repository to Python or Typescript. This page will
-go over writing a plugin with python, which is our suggested plugin language.
+CloudQuery plugins in the OSO repository to Python or Typescript.
+
+This page will go over writing a plugin with Python, which is our suggested plugin language.
 
 ### Getting Started
 
@@ -21,7 +26,7 @@ one. To see the full documention for writing a plugin, use the [CloudQuery
 Docs](https://docs.cloudquery.io/docs/developers/creating-new-plugin/python-source).
 :::
 
-_This guide assumes some knowledge of python and the command line._
+_This guide assumes some knowledge of Python and the command line._
 
 Before we begin you'll need at least the following installed:
 
@@ -33,7 +38,7 @@ Before we begin you'll need at least the following installed:
   - All of our code has been tested on this version. Previous versions may
     work but this isn't suggested.
 - [Poetry](https://python-poetry.org/)
-  - We use this for managing dependencies of our python projects.
+  - We use this for managing dependencies of our Python projects.
 - CloudQuery CLI
   - [Linux](https://docs.cloudquery.io/docs/quickstart/linux)
   - [macOS](https://docs.cloudquery.io/docs/quickstart/macOS)
@@ -59,17 +64,17 @@ And, `cd` into the repository:
 $ cd oso
 ```
 
-### Install oso python dependencies
+### Install OSO Python dependencies
 
-For updating the data pipelines and cloudquery plugins, we only currently care
-about the python dependencies. To install these dependencies, we will use
-python's `poetry` from the root of the oso repository:
+For updating the data pipelines and CloudQuery plugins, we only currently care
+about the Python dependencies. To install these dependencies, we will use
+python's `poetry` from the root of the OSO repository:
 
 ```bash
 $ poetry install
 ```
 
-Once you've done this, let's enter the python virtual environment that `poetry`
+Once you've done this, let's enter the Python virtual environment that `poetry`
 created:
 
 ```bash
@@ -80,7 +85,7 @@ $ poetry shell
 
 To make this as simple as possible, we've created an example plugin that can be
 duplicated and used to create a new plugin. Let's do this by calling the
-following from the root of the oso repository (feel free to use a name besides
+following from the root of the OSO repository (feel free to use a name besides
 `my-plugin`):
 
 ```bash
@@ -122,7 +127,7 @@ build-backend = "poetry.core.masonry.api"
 
 ### Adding the plugin to the poetry configuration at the top of the repo
 
-The oso repository is structured as a monorepo (for both node and python
+The OSO repository is structured as a monorepo (for both node and python
 projects). So in order to properly manage the repo's dependencies you'll need to
 add your plugin to the monorepo at the root of the repository.
 
@@ -141,7 +146,7 @@ my-plugin = { path = "cloudquery/my-plugin", develop = true }
 ### Installing the dependencies for the new plugin
 
 To install the dependencies of the new plugin make sure you're in the root of
-the oso repository and run the following:
+the OSO repository and run the following:
 
 ```bash
 $ poetry update
@@ -170,10 +175,10 @@ Docs](https://docs.cloudquery.io/docs/developers/creating-new-plugin/python-sour
 
 Once you've finished developing the plugin, you'll need to package the plugin
 for use. Luckily, the `oso` repository is automatically configured to handle
-packaging all plugins in the `cloudquery` directory as long as they're python or
+packaging all plugins in the `cloudquery` directory as long as they're Python or
 typescript plugins. So, as long as you have followed this guide the automation
 in the repository will handle properly building, packaging, and publishing a
-docker image for your cloudquery plugin.
+docker image for your CloudQuery plugin.
 
 ### Adding your plugin to the data pipeline
 
@@ -183,7 +188,7 @@ workflow on github and is run every 24 hours at 02:00 UTC.
 
 To add your plugin to that workflow you will need to do 2 things:
 
-- Add a cloudquery yml config file for your plugin
+- Add a CloudQuery yml config file for your plugin
 - Add a step to execute your plugin in the github action
 
 #### Adding a CloudQuery yml config
@@ -202,7 +207,7 @@ spec:
   name: my-plugin
 
   # ${DOCKER_TAG} is automatically injected by the pipeline
-  # and will point to the latest build of the cloudquery plugin
+  # and will point to the latest build of the CloudQuery plugin
   path: "ghcr.io/opensource-observer/my-plugin:${DOCKER_TAG}"
   registry: "docker"
   version: "v0.0.1"
@@ -264,13 +269,13 @@ pipeline.
 
 ## Airbyte Connectors
 
+---
+
 Deploy Airbyte connectors to index data from new sources.
 
 :::warning
 This section is a work in progress.
 :::
-
-aka Data Oracles
 
 - Go over creating a simple airbyte connector to a sample API
 - Go over creating a simple airbyte connector to an already existing public dataset

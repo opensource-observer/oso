@@ -3,13 +3,17 @@ title: Use the GraphQL API
 sidebar_position: 1
 ---
 
+:::info
 The OSO API currently only allows read-only GraphQL queries.
 This API should only be used to fetch data to integrate into a live application.
 If you need to perform data science over a large dataset, see the guides on
 [doing data science](./data-science)
 and [downloading static data](./download-data).
+:::
 
 ## GraphQL Endpoint
+
+---
 
 All API requests are sent to the following URL:
 
@@ -18,6 +22,8 @@ https://opensource-observer.hasura.app/v1/graphql
 ```
 
 ## Authentication
+
+---
 
 In order to authenticate with the API service, you have to use the `Authorization` HTTP header and `Bearer` authentication on all HTTP requests, like so:
 
@@ -35,6 +41,8 @@ Our API opens a small rate limit for anonymous queries without authentication. F
 
 ## Example
 
+---
+
 This query will fetch the first 10 projects in OSS Directory.
 
 ```graphql
@@ -50,6 +58,8 @@ query GetProjects {
 
 ## GraphQL Explorer
 
+---
+
 The GraphQL schema is automatically generated from [`oso/dbt/models/marts`](https://github.com/opensource-observer/oso/tree/main/dbt/models/marts). Any dbt model defined there will automatically be exported to our GraphQL API. See the guide on [adding DBT models](../contribute/impact-models) for more information on contributing to our marts models.
 
 :::warning
@@ -61,7 +71,9 @@ You can navigate to our [public GraphQL explorer](https://cloud.hasura.io/public
 
 ![GraphQL explorer](./graphql-explorer.png)
 
-## Rate limiting
+## Rate Limits
+
+---
 
 All requests are rate limited. There are currently 2 separate rate limits for different resources:
 
