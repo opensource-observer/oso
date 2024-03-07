@@ -3,10 +3,11 @@
 #}
 
 WITH watch_events AS (
-    SELECT * 
-    FROM {{ ref('stg_github__events') }} as ghe
-    WHERE ghe.type IN ("WatchEvent", "ForkEvent")
+  SELECT *
+  FROM {{ ref('stg_github__events') }} AS ghe
+  WHERE ghe.type IN ("WatchEvent", "ForkEvent")
 )
+
 SELECT
   we.id AS id,
   we.created_at AS created_at,
@@ -17,5 +18,5 @@ SELECT
   CASE we.type
     WHEN "WatchEvent" THEN "STARRED"
     WHEN "ForkEvent" THEN "FORKED"
-  END as type
+  END AS `type`
 FROM watch_events AS we

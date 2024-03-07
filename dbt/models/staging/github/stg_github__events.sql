@@ -23,11 +23,12 @@
 }}
 
 SELECT gh.*
-FROM {{ source('github_archive', 'events')}} as gh
-WHERE gh.repo.id in (select id from {{ ref('stg_ossd__current_repositories') }} )
+FROM {{ source('github_archive', 'events') }} AS gh
+WHERE
+  gh.repo.id IN (SELECT id FROM {{ ref('stg_ossd__current_repositories') }})
 
-{# If this is production then make sure it's incremental #}
-{% if target.name == 'production' %}
+  {# If this is production then make sure it's incremental #}
+  {% if target.name == 'production' %}
   {% if is_incremental() %}
   AND _TABLE_SUFFIX > FORMAT_TIMESTAMP("%y%m%d", TIMESTAMP_SUB(_dbt_max_partition, INTERVAL 1 DAY))
   {% else %}
@@ -38,6 +39,12 @@ WHERE gh.repo.id in (select id from {{ ref('stg_ossd__current_repositories') }} 
     AND _TABLE_SUFFIX >= "150101" 
   {% endif %}
 {% elif target.name in ['dev', 'playground'] %}
-  {# If this is not production then we only copy the most recent number of days (default to 14) #}
-  AND created_at >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {{ env_var("PLAYGROUND_DAYS", '14') }} DAY)
-{% endif %}
+    {# 
+      If this is not production then we only copy the most recent number of days
+      (default to 14) 
+    #}
+    AND created_at
+    >= TIMESTAMP_SUB(
+      CURRENT_TIMESTAMP(), INTERVAL {{ env_var("PLAYGROUND_DAYS", '14') }} DAY
+    )
+  {% endif %}

@@ -28,7 +28,7 @@ env:
   DB_APPLICATION_NAME: oso-ci
   X_GITHUB_GRAPHQL_API: ${{ vars.X_GITHUB_GRAPHQL_API }}
   X_GITHUB_TOKEN: ${{ secrets.X_GITHUB_TOKEN }}
-  GOOGLE_PROJECT_ID: ""
+  GOOGLE_PROJECT_ID: "opensource-observer"
 
   # should not be set to a legitimate value for testing. This will use up API
   # quota otherwise
@@ -95,6 +95,16 @@ jobs:
         with:
           version: nightly-87bc53fc6c874bd4c92d97ed180b949e3a36d78c
 
+      - name: Authenticate to google with a NOOP user
+        uses: 'google-github-actions/auth@v2'
+        with:
+          credentials_json: '${{ secrets.GOOGLE_NOOP_CREDENTIALS_JSON }}'
+          create_credentials_file: true
+
+      - name: Setup dbt profile
+        run: |
+          bash .github/scripts/create-dbt-profile.sh ${GOOGLE_APPLICATION_CREDENTIALS}
+
       - name: Build
         run: |
           pnpm build
@@ -107,45 +117,14 @@ jobs:
         # Always run this step so that all linting errors can be seen at once.
         if: always()
 
+      # Temporarily include this separately. Eventually this should all be part of lint
+      - name: Lint SQL
+        run: |
+          poetry run sqlfluff lint --dialect bigquery ./dbt/models
+        if: always()
+
       - name: Test
         run: |
           pnpm test
         # Always run this step so that all linting errors can be seen at once.
         if: always()
-
-    
-  # This is a temporary job that we should merge with the lint-test 
-  # job once all of the SQL queries pass
-  temp-lint:
-    # NOTE: This name appears in GitHub's Checks API.
-    name: temp-lint
-    environment: testing
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-        with:
-          # Check out pull request's HEAD commit instead of the merge commit to
-          # prevent gitlint from failing due to too long commit message titles,
-          # e.g. "Merge 3e621938d65caaa67f8e35d145335d889d470fc8 into 19a39b2f66cd7a165082d1486b2f1eb36ec2354a".
-          ref: ${{ github.event.pull_request.head.sha }}
-          # Fetch all history so gitlint can check the relevant commits.
-          fetch-depth: "0"
-
-      - name: "Setup Python, Poetry and Dependencies"
-        uses: packetcoders/action-setup-cache-python-poetry@main
-        with:
-          python-version: 3.12
-          poetry-version: 1.7.1
-      
-      - name: Create fake credentials file
-        run: |
-          echo "{}" > /tmp/fake.json
-      
-      - name: Setup dbt with fake creds
-        run: |
-          bash .github/scripts/create-dbt-profile.sh /tmp/fake.json
-
-      - name: Lint SQL
-        run: |
-          poetry run sqlfluff lint --dialect bigquery ./dbt/models

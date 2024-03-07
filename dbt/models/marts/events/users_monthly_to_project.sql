@@ -3,12 +3,12 @@ SELECT
   user_segment_type,
   bucket_month,
   SUM(amount) AS amount
-FROM 
+FROM
   (
     SELECT * FROM {{ ref('int_devs') }}
     UNION ALL
     SELECT * FROM {{ ref('int_users') }}
-  ) combined_data
+  ) AS combined_data
 GROUP BY
   project_id,
   user_segment_type,

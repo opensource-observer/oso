@@ -25,7 +25,7 @@ opensource_observer:
       method: service-account
       keyfile: ${service_account_path}
       project: ${GOOGLE_PROJECT_ID}
-      threads: 1
+      threads: 32
     playground:
       type: bigquery
       dataset: oso_playground
@@ -35,5 +35,5 @@ opensource_observer:
       method: service-account
       keyfile: ${service_account_path}
       project: ${GOOGLE_PROJECT_ID}
-      threads: 1
+      threads: 32
 EOF
