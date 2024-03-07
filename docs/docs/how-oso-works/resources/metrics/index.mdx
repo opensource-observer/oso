@@ -1,0 +1,200 @@
+---
+title: Specification
+sidebar_position: 1
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+
+:::info
+An **impact metric** is a quantitative measure of impact over a discrete period of time. Impact metrics are most commonly queried by project (eg, `uniswap`), although they can also be queried by individual artifact or at the collection level.
+:::
+
+## Requirements
+
+---
+
+An impact metric must be:
+
+- A quantitative measure of impact on a continuous scale. Common examples include counts, sums, averages, and medians.
+- Available for all projects in the OSO database (even if many projects have a null value). Metrics should be extendable to any collection in the OSO database as well as any artifact in the same artifact namespace (eg, GitHub-related metrics, npm-related metrics, etc.).
+- Aggregated over a discrete period of time. Common time intervals include last 90 days, last 180 days, and since inception. OSO has already bucketed event data in daily, weekly, and monthly intervals to facilitate this.
+- Constructed from data that is available in one or more [mart models](https://github.com/opensource-observer/oso/tree/main/dbt/models/marts). Common mart models include `projects`, `events_monthly_to_project`, and `first_contribution_to_project`.
+
+## Sample Metrics
+
+---
+
+### Forks in the Last 6 Months (Project Level)
+
+The following is an example of a valid impact metric, expressed in SQL:
+
+<Tabs>
+  <TabItem value="query" label="Query" default>
+    ```sql
+      -- Sum of fork events to a project in the last 6 months
+      SELECT
+        project_id,
+        SUM(amount) AS forks_6_months
+      FROM `oso.events_monthly_to_project`
+      WHERE 
+        event_type = 'FORKED'
+        AND DATE(bucket_month) >= DATE_ADD(CURRENT_DATE(), INTERVAL -6 MONTH)
+      GROUP BY project_id
+      ```
+  </TabItem>
+  <TabItem value="response" label="Response">
+    ```json
+      [{
+        "project_id": "jUda1pi-FdNlaUmgKq51B4h8x4wX3QTN2fZkKq6N0vw\u003d",
+        "forks_6_months": "125.0"
+      }, {
+        "project_id": "wdBmT3yweChtV4g4qcc1NN1QtfnmMPAuCVxoPkiAowY\u003d",
+        "forks_6_months": "57.0"
+      }, {
+        "project_id": "HNv9-2g63oZCrLD2jDAIygVq7vQkn2iV2QGmEfcFsYk\u003d",
+        "forks_6_months": "13.0"
+      }]
+    ```
+  </TabItem>
+</Tabs>
+
+### Forks in the Last 6 Months (Artifact Level)
+
+Here is the same metric calculated at the **artifact** level:
+
+<Tabs>
+  <TabItem value="query" label="Query" default>
+    ```sql
+      -- Sum of fork events to an artifact in the last 6 months
+      SELECT
+        artifact_id,
+        SUM(amount) AS forks_6_months
+      FROM `oso.events_monthly_to_artifact`
+      WHERE 
+        event_type = 'FORKED'
+        AND DATE(bucket_month) >= DATE_ADD(CURRENT_DATE(), INTERVAL -6 MONTH)
+      GROUP BY artifact_id
+      ```
+  </TabItem>
+  <TabItem value="response" label="Response">
+    ```json
+      [{
+        "artifact_id": "vg-apoPrbCtAM4enk0Ar4tODrqTBi9ZDnNnTw-udjw4\u003d",
+        "forks_6_months": "1.0"
+      }, {
+        "artifact_id": "7ZqXfQTqiCHHcRw-THEsTgz8W1T0apGyLe7rE8n0NCs\u003d",
+        "forks_6_months": "5.0"
+      }, {
+        "artifact_id": "PM9tS7Fp_-LmYT8B-dx8FFBz7xa8rEwm9RFAZ6JehcI\u003d",
+        "forks_6_months": "1.0"
+      }]
+    ```
+  </TabItem>
+</Tabs>
+
+### Days from First Commit to First Onchain Transaction
+
+Here's a more complex impact metric that uses a CTE to calculate the number of days from the first commit to a project to its first onchain transaction. Note that this query returns null for projects that have not yet had an onchain transaction. It also returns a negative value for projects where the first onchain transaction occurred before the first commit to a public repo.
+
+<Tabs>
+  <TabItem value="query" label="Query" default>
+    ```sql
+      -- Number of days from the first commit to a project to its first onchain transaction
+      WITH first_events AS (
+        SELECT
+          project_id,
+          MIN(CASE WHEN event_type = 'COMMIT_CODE' THEN bucket_day END) AS first_commit,
+          MIN(CASE WHEN event_type = 'CONTRACT_INVOCATION_DAILY_COUNT' THEN bucket_day END) AS first_txn
+        FROM `oso.events_daily_to_project`
+        GROUP BY project_id
+      )
+      SELECT
+        project_id,
+        DATE_DIFF(first_txn, first_commit, DAY) AS days_from_first_commit_to_first_txn
+      FROM first_events
+    ```
+  </TabItem>
+  <TabItem value="response" label="Response">
+    ```json
+      [{
+        "project_id": "-A5N7DYgI4bDZZQaF_4SPw_qx6cv1BbfcoxJ7rZxig8\u003d",
+        "days_from_first_commit_to_first_txn": "554"
+      }, {
+        "project_id": "-KeRKHB_H0HcNkR2_SLUC1vLy46YWoaZSMrjpiW3d5s\u003d",
+        "days_from_first_commit_to_first_txn": null
+      }, {
+        "project_id": "-ceY1smj0ZhYH-JSMeK3opMBmLgc29Oe-m5cOd-KnjY\u003d",
+        "days_from_first_commit_to_first_txn": "412"
+      }, {
+        "project_id": "-cqm4kiQPXiAI9GserwK_Jf2AF05Ygc5Mcmf6S9igjk\u003d",
+        "days_from_first_commit_to_first_txn": null
+      }, {
+        "project_id": "03kU3p5lLpFpNokCY76xugHThITxzXmzVae__BGZKFc\u003d",
+        "days_from_first_commit_to_first_txn": "-47"
+      }]
+    ```
+  </TabItem>
+</Tabs>
+
+### Issues Closed to Full-Time Contributors in the Last 90 Days
+
+Finally, here's an example of a metric that utilizes one of the `users` mart models to calculate the ratio of issues closed to full-time contributors to a project in the last 90 days:
+
+<Tabs>
+  <TabItem value="query" label="Query" default>
+    ```sql
+      -- Ratio of issues closed to full-time contributors to a project in the last 90 days
+      WITH full_time_contributors AS (
+        SELECT
+          project_id,
+          SUM(amount) AS full_time_contributors
+        FROM `oso.users_monthly_to_project`
+        WHERE
+          user_segment_type = 'FULL_TIME_DEV'
+          AND DATE(bucket_month) >= DATE_ADD(CURRENT_DATE(), INTERVAL -90 DAY)
+        GROUP BY project_id
+      )
+      , issues_closed AS (
+        SELECT
+          project_id,
+          SUM(amount) AS issues_closed
+        FROM `oso.events_monthly_to_project`
+        WHERE
+          event_type = 'ISSUE_CLOSED'
+          AND DATE(bucket_month) >= DATE_ADD(CURRENT_DATE(), INTERVAL -90 DAY)
+        GROUP BY project_id
+      )
+      SELECT
+        ftc.project_id,
+        ic.issues_closed / ftc.full_time_contributors AS issues_closed_to_full_time_contributors_90_days
+      FROM full_time_contributors ftc
+      LEFT JOIN issues_closed ic ON ftc.project_id = ic.project_id
+    ```
+  </TabItem>
+  <TabItem value="response" label="Response">
+    ```json
+      [{
+        "project_id": "--IMjbfK8bKS7MWr-7g9HHKcKRI6BMVb6FX0oIP2QXc\u003d",
+        "issues_closed_to_full_time_contributors_90_days": "12.6"
+      }, {
+        "project_id": "-A5N7DYgI4bDZZQaF_4SPw_qx6cv1BbfcoxJ7rZxig8\u003d",
+        "issues_closed_to_full_time_contributors_90_days": "0.6"
+      }, {
+        "project_id": "-GaxcdxeEp_4kF03wAjs-aHrRoiGwl0BrK0cYYEU0o0\u003d",
+        "issues_closed_to_full_time_contributors_90_days": null
+      }, {
+        "project_id": "-Ne1fzPhJNWO4DD07pTXuFqfLwl3A_Zyq397l5W73s4\u003d",
+        "issues_closed_to_full_time_contributors_90_days": "3.0"
+      }, {
+        "project_id": "-XW3PLKpOAQWReyRlL30Ho_aYRYzHm3kVAG_5JAEtOQ\u003d",
+        "issues_closed_to_full_time_contributors_90_days": "1.0"
+      }]
+    ```
+  </TabItem>
+</Tabs>
+
+---
+
+To contribute new metrics, please see our guide [here](../../../contribute/impact-models).
