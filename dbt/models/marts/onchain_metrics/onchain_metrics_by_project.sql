@@ -21,7 +21,7 @@
 WITH txns AS (
   SELECT
     a.project_id,
-    c.to_namespace AS network,
+    c.to_namespace AS onchain_network,
     c.from_source_id AS from_id,
     c.l2_gas,
     c.tx_count,
@@ -36,37 +36,37 @@ WITH txns AS (
 metrics_all_time AS (
   SELECT
     project_id,
-    network,
+    onchain_network,
     MIN(bucket_month) AS first_txn_date,
     COUNT(DISTINCT from_id) AS total_users,
     SUM(l2_gas) AS total_l2_gas,
     SUM(tx_count) AS total_txns
   FROM txns
-  GROUP BY project_id, network
+  GROUP BY project_id, onchain_network
 ),
 
 metrics_6_months AS (
   SELECT
     project_id,
-    network,
+    onchain_network,
     COUNT(DISTINCT from_id) AS users_6_months,
     SUM(l2_gas) AS l2_gas_6_months,
     SUM(tx_count) AS txns_6_months
   FROM txns
   WHERE bucket_month >= DATE_ADD(CURRENT_DATE(), INTERVAL -6 MONTH)
-  GROUP BY project_id, network
+  GROUP BY project_id, onchain_network
 ),
 
 -- CTE for identifying new users to the project in the last 3 months
 new_users AS (
   SELECT
     project_id,
-    network,
+    onchain_network,
     SUM(is_new_user) AS new_user_count
   FROM (
     SELECT
       project_id,
-      network,
+      onchain_network,
       from_id,
       CASE
         WHEN
@@ -75,36 +75,36 @@ new_users AS (
             1
       END AS is_new_user
     FROM txns
-    GROUP BY project_id, network, from_id
+    GROUP BY project_id, onchain_network, from_id
   )
-  GROUP BY project_id, network
+  GROUP BY project_id, onchain_network
 ),
 
 -- CTEs for segmenting different types of active users based on txn volume
 user_txns_aggregated AS (
   SELECT
     project_id,
-    network,
+    onchain_network,
     from_id,
     SUM(tx_count) AS total_tx_count
   FROM txns
   WHERE bucket_month >= DATE_ADD(CURRENT_DATE(), INTERVAL -3 MONTH)
-  GROUP BY project_id, network, from_id
+  GROUP BY project_id, onchain_network, from_id
 ),
 
 multi_project_users AS (
   SELECT
-    network,
+    onchain_network,
     from_id,
     COUNT(DISTINCT project_id) AS projects_transacted_on
   FROM user_txns_aggregated
-  GROUP BY network, from_id
+  GROUP BY onchain_network, from_id
 ),
 
 user_segments AS (
   SELECT
     project_id,
-    network,
+    onchain_network,
     COUNT(DISTINCT CASE
       WHEN user_segment = 'HIGH_FREQUENCY_USER' THEN from_id
     END) AS high_frequency_users,
@@ -120,7 +120,7 @@ user_segments AS (
   FROM (
     SELECT
       uta.project_id,
-      uta.network,
+      uta.onchain_network,
       uta.from_id,
       mpu.projects_transacted_on,
       CASE
@@ -132,23 +132,23 @@ user_segments AS (
     INNER JOIN multi_project_users AS mpu
       ON uta.from_id = mpu.from_id
   )
-  GROUP BY project_id, network
+  GROUP BY project_id, onchain_network
 ),
 
 -- CTE to count the number of contracts deployed by a project
 contracts AS (
   SELECT
     project_id,
-    artifact_namespace AS network,
+    artifact_namespace AS onchain_network,
     COUNT(artifact_source_id) AS num_contracts
   FROM {{ ref('stg_ossd__artifacts_by_project') }}
-  GROUP BY project_id, network
+  GROUP BY project_id, onchain_network
 ),
 
 project_by_network AS (
   SELECT
     p.project_id,
-    ctx.network,
+    ctx.onchain_network,
     p.project_name
   FROM {{ ref('projects') }} AS p
   INNER JOIN contracts AS ctx
@@ -158,7 +158,7 @@ project_by_network AS (
 -- Final query to join all the metrics together
 SELECT
   p.project_id,
-  p.network,
+  p.onchain_network,
   p.project_name,
   -- TODO: add deployers owned by project
   c.num_contracts,
@@ -181,20 +181,20 @@ FROM project_by_network AS p
 LEFT JOIN metrics_all_time AS ma
   ON
     p.project_id = ma.project_id
-    AND p.network = ma.network
+    AND p.onchain_network = ma.onchain_network
 LEFT JOIN metrics_6_months AS m6
   ON
     p.project_id = m6.project_id
-    AND p.network = m6.network
+    AND p.onchain_network = m6.onchain_network
 LEFT JOIN new_users AS nu
   ON
     p.project_id = nu.project_id
-    AND p.network = nu.network
+    AND p.onchain_network = nu.onchain_network
 LEFT JOIN user_segments AS us
   ON
     p.project_id = us.project_id
-    AND p.network = us.network
+    AND p.onchain_network = us.onchain_network
 LEFT JOIN contracts AS c
   ON
     p.project_id = c.project_id
-    AND p.network = c.network
+    AND p.onchain_network = c.onchain_network
