@@ -181,20 +181,20 @@ FROM project_by_network AS p
 LEFT JOIN metrics_all_time AS ma
   ON
     p.project_id = ma.project_id
-    AND p.network = ma.network
+    AND p.onchain_network = ma.onchain_network
 LEFT JOIN metrics_6_months AS m6
   ON
     p.project_id = m6.project_id
-    AND p.network = m6.network
+    AND p.onchain_network = m6.onchain_network
 LEFT JOIN new_users AS nu
   ON
     p.project_id = nu.project_id
-    AND p.network = nu.network
+    AND p.onchain_network = nu.onchain_network
 LEFT JOIN user_segments AS us
   ON
     p.project_id = us.project_id
-    AND p.network = us.network
+    AND p.onchain_network = us.onchain_network
 LEFT JOIN contracts AS c
   ON
     p.project_id = c.project_id
-    AND p.network = c.network
+    AND p.onchain_network = c.onchain_network

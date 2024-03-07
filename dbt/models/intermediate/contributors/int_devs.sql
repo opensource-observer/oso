@@ -24,4 +24,4 @@ WHERE
     'ISSUE_CLOSED',
     'ISSUE_CREATED'
   )
-GROUP BY 1, 2, 3
+GROUP BY e.project_id, bucket_month, e.from_id, repository_source

@@ -46,7 +46,7 @@ project_repos_summary AS (
     SUM(r.fork_count) AS forks
   FROM {{ ref('stg_ossd__repositories_by_project') }} AS r
   INNER JOIN {{ ref('projects') }} AS p
-    ON p.project_id = r.project_id
+    ON r.project_id = p.project_id
   WHERE r.is_fork = false
   GROUP BY p.project_id, p.project_name, r.repository_source
 ),
@@ -132,9 +132,9 @@ SELECT
   p.repository_source,
   pcd.first_commit_date,
   pcd.last_commit_date,
-  sfr.repos,
-  sfr.stars,
-  sfr.forks,
+  p.repositories,
+  p.stars,
+  p.forks,
   c.contributors,
   c.contributors_6_months,
   c.new_contributors_6_months,
@@ -145,8 +145,16 @@ SELECT
   act.issues_closed_6_months,
   act.pull_requests_opened_6_months,
   act.pull_requests_merged_6_months
-FROM {{ ref('projects') }} AS p
-LEFT JOIN project_commit_dates AS pcd ON p.project_id = pcd.project_id
-LEFT JOIN project_repos_summary AS sfr ON p.project_id = sfr.project_id
-LEFT JOIN contributors_cte AS c ON p.project_id = c.project_id
-LEFT JOIN activity_cte AS act ON p.project_id = act.project_id
+FROM project_repos_summary AS p
+LEFT JOIN project_commit_dates AS pcd
+  ON
+    p.project_id = pcd.project_id
+    AND p.repository_source = pcd.repository_source
+LEFT JOIN contributors_cte AS c
+  ON
+    p.project_id = c.project_id
+    AND p.repository_source = c.repository_source
+LEFT JOIN activity_cte AS act
+  ON
+    p.project_id = act.project_id
+    AND p.repository_source = act.repository_source

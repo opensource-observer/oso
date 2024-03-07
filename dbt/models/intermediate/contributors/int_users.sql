@@ -11,4 +11,4 @@ SELECT
   END AS user_segment_type
 FROM {{ ref('int_events_to_project') }} AS e
 WHERE e.event_type = 'CONTRACT_INVOCATION_DAILY_COUNT'
-GROUP BY 1, 2, 3
+GROUP BY e.project_id, onchain_network, e.from_id, bucket_month
