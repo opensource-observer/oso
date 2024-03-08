@@ -129,7 +129,7 @@ activity_cte AS (
 SELECT
   p.project_id,
   p.project_name,
-  p.repository_source,
+  p.repository_source AS code_source,
   pcd.first_commit_date,
   pcd.last_commit_date,
   p.repositories,

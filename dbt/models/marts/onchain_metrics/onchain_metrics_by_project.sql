@@ -158,7 +158,7 @@ project_by_network AS (
 -- Final query to join all the metrics together
 SELECT
   p.project_id,
-  p.onchain_network,
+  p.onchain_network AS network,
   p.project_name,
   -- TODO: add deployers owned by project
   c.num_contracts,
