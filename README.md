@@ -59,7 +59,8 @@ For setup and common operations for each subproject, navigate into the respectiv
 
 ## dbt Start
 
-_At this time the dataset isn't public. This will change in the near future._
+Our dataset are public! If you'd like to use them as opposed to adding to our
+dbt models, checkout [our docs!](https://docs.opensource.observer/docs/getting-started/)
 
 ### Setting up
 
@@ -71,7 +72,7 @@ _At this time the dataset isn't public. This will change in the near future._
 
 #### Install dependencies
 
-From inside the `dbt` directory, run poetry to install the dependencies.
+From inside the root directory, run poetry to install the dependencies.
 
 ```bash
 $ poetry install
@@ -110,16 +111,16 @@ opensource_observer:
       location: US
       method: oauth
       project: opensource-observer
-      threads: 1
+      threads: 32
     playground:
       type: bigquery
-      dataset: oso
+      dataset: oso_playground
       job_execution_time_seconds: 300
       job_retries: 1
       location: US
       method: oauth
       project: opensource-observer
-      threads: 1
+      threads: 32
   # By default we target the playground. it's less costly and also safer to write
   # there while developing
   target: playground
