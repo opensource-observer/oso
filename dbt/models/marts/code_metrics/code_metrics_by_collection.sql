@@ -145,7 +145,7 @@ collection_activity AS (
 SELECT
   c.collection_id,
   c.collection_name,
-  c.repository_source AS source,
+  c.repository_source AS `source`,
   ccd.first_commit_date,
   ccd.last_commit_date,
   c.repositories,
