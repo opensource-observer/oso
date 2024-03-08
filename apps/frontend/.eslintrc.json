@@ -1,6 +1,6 @@
 {
   "root": false,
-  "extends": ["../.eslintrc.js", "next/core-web-vitals"],
+  "extends": ["../../.eslintrc.js", "next/core-web-vitals"],
   "parser": "@typescript-eslint/parser",
   "parserOptions": {
     "project": ["./frontend/tsconfig.json"]
