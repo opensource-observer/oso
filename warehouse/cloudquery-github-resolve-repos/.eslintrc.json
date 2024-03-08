@@ -1,5 +1,5 @@
 {
-  "extends": ["../../.eslintrc.js"],
+  "extends": ["../../../.eslintrc.js"],
   "root": false,
   "parserOptions": {
     "ecmaFeatures": {
@@ -7,7 +7,7 @@
     },
     "ecmaVersion": "latest",
     "sourceType": "module",
-    "project": ["./cloudquery/github-resolve-repos/tsconfig.json"]
+    "project": ["./warehouse/cloudquery-github-resolve-repos/tsconfig.json"]
   },
   "rules": {
     "@next/next/no-html-link-for-pages": "off"
