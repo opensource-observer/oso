@@ -11,19 +11,23 @@ Open Source Observer is a free analytics suite that helps funders measure the im
 
 ## Organization
 
-- `/docs`: documentation (Docusaurus)
-  - [on Vercel](https://www.opensource.observer/docs) - Production build
-- `/frontend`: frontend application (Next.js)
-  - [on Vercel](https://www.opensource.observer) - Production build
-- `/indexer`: Data indexer
-  - [on GitHub actions](https://github.com/opensource-observer/oso/actions/workflows/indexer-autocrawl.yml)
+- `/apps`: The OSO apps
+  - `/docs`: documentation (Docusaurus)
+    - [on Vercel](https://www.opensource.observer/docs) - Production build
+  - `/frontend`: frontend application (Next.js)
+    - [on Vercel](https://www.opensource.observer) - Production build
+- `/warehouse`: All code specific to the data warehouse
+  - `/dbt`: dbt configuration
+  - `/cloudquery-*`: cloudquery plugins (there are many)
+  - Also contains other tools to manage warehouse pipelines
+- `/ops`: Our ops related code (mostly terraform)
 
 ## Frontend Quickstart
 
 ### Setup and build the frontend
 
-First, make sure the environment variables are set for `./frontend`.
-Take a look at `./frontend/.env.local.example` for the complete list.
+First, make sure the environment variables are set for `./apps/frontend`.
+Take a look at `./apps/frontend/.env.local.example` for the complete list.
 
 - You can either set these yourself (e.g. in CI/CD)
 - or copy the file to `.env.local` and populate it.
