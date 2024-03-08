@@ -11,19 +11,23 @@ Open Source Observer is a free analytics suite that helps funders measure the im
 
 ## Organization
 
-- `/docs`: documentation (Docusaurus)
-  - [on Vercel](https://www.opensource.observer/docs) - Production build
-- `/frontend`: frontend application (Next.js)
-  - [on Vercel](https://www.opensource.observer) - Production build
-- `/indexer`: Data indexer
-  - [on GitHub actions](https://github.com/opensource-observer/oso/actions/workflows/indexer-autocrawl.yml)
+- `/apps`: The OSO apps
+  - `/docs`: documentation (Docusaurus)
+    - [on Vercel](https://www.opensource.observer/docs) - Production build
+  - `/frontend`: frontend application (Next.js)
+    - [on Vercel](https://www.opensource.observer) - Production build
+- `/warehouse`: All code specific to the data warehouse
+  - `/dbt`: dbt configuration
+  - `/cloudquery-*`: cloudquery plugins (there are many)
+  - Also contains other tools to manage warehouse pipelines
+- `/ops`: Our ops related code (mostly terraform)
 
 ## Frontend Quickstart
 
 ### Setup and build the frontend
 
-First, make sure the environment variables are set for `./frontend`.
-Take a look at `./frontend/.env.local.example` for the complete list.
+First, make sure the environment variables are set for `./apps/frontend`.
+Take a look at `./apps/frontend/.env.local.example` for the complete list.
 
 - You can either set these yourself (e.g. in CI/CD)
 - or copy the file to `.env.local` and populate it.
@@ -55,7 +59,8 @@ For setup and common operations for each subproject, navigate into the respectiv
 
 ## dbt Start
 
-_At this time the dataset isn't public. This will change in the near future._
+Our dataset are public! If you'd like to use them as opposed to adding to our
+dbt models, checkout [our docs!](https://docs.opensource.observer/docs/getting-started/)
 
 ### Setting up
 
@@ -67,7 +72,7 @@ _At this time the dataset isn't public. This will change in the near future._
 
 #### Install dependencies
 
-From inside the `dbt` directory, run poetry to install the dependencies.
+From inside the root directory, run poetry to install the dependencies.
 
 ```bash
 $ poetry install
@@ -106,16 +111,16 @@ opensource_observer:
       location: US
       method: oauth
       project: opensource-observer
-      threads: 1
+      threads: 32
     playground:
       type: bigquery
-      dataset: oso
+      dataset: oso_playground
       job_execution_time_seconds: 300
       job_retries: 1
       location: US
       method: oauth
       project: opensource-observer
-      threads: 1
+      threads: 32
   # By default we target the playground. it's less costly and also safer to write
   # there while developing
   target: playground

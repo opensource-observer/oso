@@ -6,8 +6,8 @@ authors = ["Kariba Labs"]
 license = "Apache-2.0"
 readme = "README.md"
 packages = [
-    { include = "bq2cloudsql", from = "warehouse/bq2cloudsql" },
-    { include = "warehouse_common", from = "warehouse/common" },
+    { include = "bq2cloudsql", from = "warehouse/" },
+    { include = "common", from = "warehouse/" },
 ]
 
 [tool.poetry.dependencies]
