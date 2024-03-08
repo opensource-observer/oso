@@ -1,0 +1,24 @@
+kind: source
+spec:
+  name: "contract-usage"
+  registry: "grpc"
+  path: "localhost:7777"
+  version: "v0.0.1"
+  tables:
+    ["*"]
+  destinations:
+    - "bigquery"
+  spec:
+    csv_folder_path: "/home/raven/optimism_all_contracts_20240305/"
+    chain: optimism
+---
+kind: destination
+spec:
+  name: bigquery
+  path: cloudquery/bigquery
+  registry: cloudquery
+  version: "v3.3.13"
+  write_mode: "append"
+  spec:
+    project_id: opensource-observer
+    dataset_id: oso

@@ -120,7 +120,7 @@ jobs:
       # Temporarily include this separately. Eventually this should all be part of lint
       - name: Lint SQL
         run: |
-          poetry run sqlfluff lint --dialect bigquery ./dbt/models
+          poetry run sqlfluff lint --dialect bigquery ./warehouse/dbt/models
         if: always()
 
       - name: Test

@@ -8,12 +8,12 @@ profile: 'opensource_observer'
 # These configurations specify where dbt should look for different types of files.
 # The `model-paths` config, for example, states that models in this project can be
 # found in the "models/" directory. You probably won't need to change these!
-model-paths: ["dbt/models"]
-analysis-paths: ["dbt/analyses"]
-test-paths: ["dbt/tests"]
-seed-paths: ["dbt/seeds"]
-macro-paths: ["dbt/macros"]
-snapshot-paths: ["dbt/snapshots"]
+model-paths: ["warehouse/dbt/models"]
+analysis-paths: ["warehouse/dbt/analyses"]
+test-paths: ["warehouse/dbt/tests"]
+seed-paths: ["warehouse/dbt/seeds"]
+macro-paths: ["warehouse/dbt/macros"]
+snapshot-paths: ["warehouse/dbt/snapshots"]
 
 clean-targets:         # directories to be removed by `dbt clean`
   - "target"
