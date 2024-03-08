@@ -8,7 +8,10 @@ const __dirname = path.dirname(__filename);
 // YAML file extension
 const EXTENSION = ".yaml";
 // Recursively scan this directory for database tables
-const modelDir = path.resolve(__dirname, "../../dbt/models/marts/");
+const modelDir = path.resolve(
+  __dirname,
+  "../../../warehouse/dbt/models/marts/",
+);
 // Where to store all table configs
 const tablesDir = path.resolve(
   __dirname,
