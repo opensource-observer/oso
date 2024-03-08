@@ -168,7 +168,7 @@ collection_by_network AS (
 -- Final query to join all the metrics together for collections
 SELECT
   c.collection_id,
-  c.onchain_network,
+  c.onchain_network AS network,
   c.collection_name,
   co.num_contracts,
   ma.total_projects,
