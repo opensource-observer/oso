@@ -10,7 +10,7 @@ Onchain metrics are typically queried by project (e.g., `uniswap`) and network (
 
 ## Addesses Owned
 
-For information about how addresses are tagged, please see: [Address Tagging](../../schema/artifact.md#tagging-addresses).
+For information about how addresses are tagged, please see: [Address Tagging](../schema/artifact.md#tagging-addresses).
 
 ### num_contracts
 
@@ -56,4 +56,4 @@ The total Layer 2 gas used by the project's contracts in the last 6 months.
 
 ---
 
-To contribute new metrics, please see our guide [here](../../../contribute/impact-models)
+To contribute new metrics, please see our guide [here](../../contribute/impact-models)

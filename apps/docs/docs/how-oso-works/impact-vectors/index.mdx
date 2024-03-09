@@ -1,0 +1,176 @@
+---
+title: Specification
+sidebar_position: 3
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+:::info
+An **impact vector** is a direction of positive impact that a collection of similar projects in an open source ecosystem should work towards. It encompasses a quantitative impact metric, measured over a discrete period of time, and normalized across a distribution of projects within the ecosystem. This specification outlines how to create, define, and submit impact vectors.
+:::
+
+## Requirements
+
+---
+
+An impact vector must be:
+
+- Derived from a quantitative [impact metric](../impact-metrics) that is relevant to the theme of the impact vector and the ecosystem it represents.
+- Measured over a discrete period of time, such as the last 6 months or since the project's inception.
+- Normalized across a distribution of set of projects within an open source ecosystem, using an appropriate method (e.g., Gaussian distribution, log scale). The selection criteria for the set of projects should be clearly defined.
+- Accompanied by reproducible code that describes how the metric is calculated and normalized.
+
+
+## Sample Vectors
+
+---
+
+Below are several examples of impact vectors that can be applied to assess the influence of open source software projects within a crypto ecosystem. These examples illustrate the breadth of metrics that can be leveraged to gauge various dimensions of impact.
+
+<Tabs>
+  <TabItem value="developers" label="Grow Full-Time OSS Developers">
+    
+    <li>**Name**: Grow Full-Time OSS Developers</li>
+    <li>**Tags**: `OSS`, `developers`</li>
+    <li>**Metric**: Number of Full-Time Developer Months</li>
+    <li>**Time Period**: Last 6 months</li>
+    <li>**Selection Filter**: Projects must have activity from at least two contributors in the last 90 days; projects must have a permissive open source license (e.g., MIT, Apache 2.0); projects must have a codebase that is at least 6 months old.</li>
+    <li>**Query Logic**: The following SQL query fetches the metric for each project in the selection set.</li>
+        ```sql
+        -- This is pseudocode and should be replaced with a real query
+        SELECT
+          project_id,
+          SUM(full_time_developer_months) AS full_time_developer_months
+        FROM
+          `oso.contributor_activity`
+          JOIN `oso.projects` USING (project_id)
+        WHERE
+          date >= DATE_SUB(CURRENT_DATE(), INTERVAL 6 MONTH)
+          AND license IN ('MIT', 'Apache 2.0')
+          AND codebase_age >= 180
+        GROUP BY
+          project_id
+        ```
+    <li>**Normalization Method**: The following Python code normalizes the metric data using a Gaussian distribution.</li>
+        ```python
+        # This is pseudocode and should be replaced with a real script
+        import numpy as np
+        import pandas as pd
+        from scipy.stats import norm
+
+        # Fetch the metric data using the SQL logic above
+        metric_data = fetch_metric_data(query)
+
+        # Normalize the metric data
+        normalized_data = norm.ppf((metric_data.rank() - 0.5) / len(metric_data))
+
+        # Create a table with the project, metric, and normalized metric
+        normalized_table = pd.DataFrame({
+          'project_id': metric_data.index,
+          'full_time_developer_months': metric_data.values,
+          'normalized_full_time_developer_months': normalized_data
+        })
+        ``` 
+
+  </TabItem>
+
+  <TabItem value="blockspace" label="Increase Demand for Layer 2 Blockspace">
+    <li>**Name**: Increase Demand for Layer 2 Blockspace</li>
+    <li>**Tags**: `onchain`, `L2`</li>
+    <li>**Metric**: Layer 2 Gas Fees</li>
+    <li>**Time Period**: Last 6 months</li>
+    <li>**Selection Filter**: Projects must be on an Ethereum Layer 2 network; projects must have onchain activity in the last 90 days; projects must have a deployer address included in OSS Directory and L2 contracts verified on Etherscan.</li>
+    <li>**Query Logic**: The following SQL query fetches the metric for each project in the selection set.</li>
+        ```sql
+        -- This is pseudocode and should be replaced with a real query
+        SELECT
+          project_id,
+          SUM(gas_fees) AS gas_fees
+        FROM
+          `oso.onchain_activity`
+          JOIN `oso.projects` USING (project_id)
+        WHERE
+          date >= DATE_SUB(CURRENT_DATE(), INTERVAL 6 MONTH)
+          AND network IN ('OPTIMISM', 'BASE', 'ZORA')
+          AND activity_date >= DATE_SUB(CURRENT_DATE(), INTERVAL 90 DAY)
+          AND deployer_address IN (SELECT address FROM `oso.oss_directory`)
+          AND contract_address IN (SELECT address FROM `oso.etherscan_contracts`)
+        GROUP BY
+          project_id
+        ```
+    <li>**Normalization Method**: The following Python code normalizes the metric data using a log scale and MinMax.</li>
+        ```python
+        # This is pseudocode and should be replaced with a real script
+        import numpy as np
+        import pandas as pd
+        from sklearn.preprocessing import MinMaxScaler
+
+        # Fetch the metric data using the SQL logic above
+        metric_data = fetch_metric_data(query)
+
+        # Normalize the metric data to a 0 to 1 scale
+        normalized_data = np.log(metric_data)
+        normalized_data = MinMaxScaler().fit_transform(normalized_data)
+
+        # Create a table with the project, metric, and normalized metric
+        normalized_table = pd.DataFrame({
+          'project_id': metric_data.index,
+          'gas_fees': metric_data.values,
+          'normalized_gas_fees': normalized_data
+        })
+        ```
+  </TabItem>
+
+  <TabItem value="new-users" label="Bring New Users to the Ecosystem">
+    <li>**Name**: Bring New Users to the Ecosystem</li>
+    <li>**Tags**: `onchain`, `L2`</li>
+    <li>**Metric**: Number of New Users</li>
+    <li>**Time Period**: Last 3 months</li>
+    <li>**Selection Filter**: Projects must have an onchain user-facing product; projects must have user activity in the last 90 days; projects cannot be bridging apps</li>
+    <li>**Query Logic**: The following SQL query fetches the metric for each project in the selection set.</li>
+        ```sql
+        -- This is pseudocode and should be replaced with a real query
+        SELECT
+          project_id,
+          SUM(new_users) AS new_users
+        FROM
+          `oso.user_activity`
+          JOIN `oso.projects` USING (project_id)
+        WHERE
+          activity_date >= DATE_SUB(CURRENT_DATE(), INTERVAL 90 DAY)
+          AND project_id NOT IN (SELECT project_id FROM `oso.collections.bridging_apps`)
+        GROUP BY
+          project_id
+        ```
+    <li>**Normalization Method**: The following Python code normalizes the metric data using a log scale and MinMax.</li>
+        ```python
+         # This is pseudocode and should be replaced with a real script
+        import numpy as np
+        import pandas as pd
+        from sklearn.preprocessing import MinMaxScaler
+
+        # Fetch the metric data using the SQL logic above
+        metric_data = fetch_metric_data(query)
+
+        # Normalize the metric data to a 0 to 1 scale
+        normalized_data = np.log(metric_data)
+        normalized_data = MinMaxScaler().fit_transform(normalized_data)
+
+        # Create a table with the project, metric, and normalized metric
+        normalized_table = pd.DataFrame({
+          'project_id': metric_data.index,
+          'gas_fees': metric_data.values,
+          'normalized_gas_fees': normalized_data
+        })
+        ```
+
+
+
+
+    
+  </TabItem>
+
+</Tabs>
+
+---
