@@ -1,5 +1,5 @@
 ---
-title: 🏗️ Dashboards
+title: 🏗️ No-Code Dashboards
 sidebar_position: 4
 ---
 

@@ -1,11 +1,11 @@
 ---
 title: Bounty Program
-sidebar_position: 7
+sidebar_position: 2
 ---
 
-## Overview
-
-The aim of our bounty program is to encourage and reward the community for contributing to the growth and experimentation on OSO. Bounties are only available to members of the [Data Collective](https://www.opensource.observer/data-collective).
+:::info
+The aim of our bounty program is to encourage and reward the community for contributing to the growth and experimentation on OSO. Bounties are only available to members of the [Kariba Data Collective](https://kariba.network).
+:::
 
 ## Competitive Bounties
 

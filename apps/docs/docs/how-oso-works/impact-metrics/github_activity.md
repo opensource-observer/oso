@@ -56,4 +56,4 @@ The number of pull requests merged in the project's repositories in the last 6 m
 
 ---
 
-To contribute new metrics, please see our guide [here](../../../contribute/impact-models)
+To contribute new metrics, please see our guide [here](../../contribute/impact-models)

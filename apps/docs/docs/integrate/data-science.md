@@ -1,6 +1,6 @@
 ---
 title: Do Data Science
-sidebar_position: 4
+sidebar_position: 2
 ---
 
 :::info
@@ -183,10 +183,6 @@ These notebooks typically have the following structure:
 
 This next section will help you create a notebook from scratch, performing each of these steps using the OSO playground dataset.
 
-The example below fetches the latest code metrics for all projects in the OSO data warehouse and generates a scatter plot of the number of forks vs the number of stars for each project.
-
-You can find the full notebook [here](https://github.com/opensource-observer/insights/blob/main/community/notebooks/oso_starter_tutorial.ipynb).
-
 ### Setup
 
 From the command line, create a new Jupyter notebook:
@@ -214,7 +210,15 @@ os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = '' # path to your service account
 client = bigquery.Client()
 ```
 
-### Query
+### Tutorial: GitHub Stars & Forks Analysis
+
+The example below fetches the latest code metrics for all projects in the OSO data warehouse and generates a scatter plot of the number of forks vs the number of stars for each project.
+
+Remember to follow the steps from the setup section above and authenticate with your BigQuery service account key.
+
+You can find the full notebook [here](https://github.com/opensource-observer/insights/blob/main/community/notebooks/oso_starter_tutorial.ipynb).
+
+#### Query
 
 In this example, we will fetch the latest code metrics for all projects in the OSO data warehouse.
 
@@ -233,7 +237,7 @@ We recommend exploring the data in [the BigQuery console](https://console.cloud.
 
 ---
 
-### Transform
+#### Transform
 
 Once you have fetched your data, you can transform it into a format that is ready for analysis.
 
@@ -254,7 +258,7 @@ dff = df[(df['forks']>0) & (df['stars']>0)].copy()
 dff['recent_activity'] = dff['commits_6_months'] > 0
 ```
 
-### Analyze
+#### Analyze
 
 Now that we have our data in a format that is ready for analysis, we can perform some basic analysis and generate visualizations.
 
@@ -314,7 +318,7 @@ At the time of writing, the crosstab shows 110 "stadium" projects with recent ac
 
 Some of the top projects in the OSO dataset by this categorization include [IPFS](https://github.com/ipfs), [Trail of Bits](https://github.com/trailofbits), and [Solidity](https://github.com/ethereum/solidity).
 
-### Export
+#### Export
 
 When working with smaller datasets like this one, it's helpful to export the results of your analysis to a CSV or JSON file. This preserves a snapshot of the data for further analysis or sharing with others.
 
@@ -326,13 +330,178 @@ dff.to_csv('code_metrics.csv', index=False)
 
 ---
 
-Run statistical analysis to identify top performing OSS projects.
+An **impact vector** is a direction of positive impact that a collection of similar projects in an open source ecosystem should work towards. It compares relative performance across a distribution of projects.
 
-An impact vector must meet the requirements in the [Impact Vector Specification](../how-oso-works/resources/impact-vector-spec).
+Consider a simple impact metric about a project: 50 forks. It would be difficult to interpret whether an absolute number like 50 forks is "good" or "bad" without context about the other projects in the ecosystem. However, if we know that the average number of forks for all projects in the ecosystem is 10, we might be able to say that a project with 50 forks is "exceptional".
 
-We would love to see people create their own impact vectors and distribution analyses!
+There are a variety of statistical techniques for normalizing data and setting performance benchmarks. This section provides a basic example of how to create an impact vector and run a distribution analysis.
 
-Fork [this notebook](https://github.com/opensource-observer/insights/blob/main/community/datasets/retropgf3_results/ImpactVectors%20vs%20DistributionResults.ipynb) and submit a PR with your impact vector.
+:::tip
+The complete specification for an impact vector is available [here](../how-oso-works/impact-vectors/).
+:::
+
+### Steps
+
+#### 1. Name and Tag the Vector
+
+- **Name**: Give the vector a descriptive name. The name should be concise and easy to associate with the underlying impact metric. Examples: "Grow Full-Time Developers," "Increase Demand for Layer 2 Blockspace", "Bring New Users to the Ecosystem", "Improve the Developer Experience for Consumer Apps".
+- **Tagging**: Assign keyword tags to the vector. Tags should represent the types of projects working towards impact in that area. Examples: "Onchain", "DeFi", "Consumer", "Developer Libraries", "Security".
+
+#### 2. Define the Metric and Selection Criteria
+
+- **Metric**: Select an existing [impact metric](../how-oso-works/impact-metrics) or [propose a new metric](../contribute/impact-models) that underlies the impact vector. Examples: "Number of Full-Time Developer Months", "Number of Dependent Onchain Apps", "Layer 2 Gas Fees", "Number of New Contributors".
+- **Time Period**: Specify a time interval for applying the metric. Examples: "Last 6 months", "Since the project's inception".
+- **Selection Filter**: Make explicit the criteria to identify which projects are eligible (or ineligible) to be included in the impact vector. Examples: "Projects with developer activity in the last 90 days", "Projects with NPM packages used by at least 5 onchain projects", "Projects with a permissive open source license (e.g., MIT, Apache 2.0) and a codebase that is at least 6 months old".
+
+#### 3. Normalize the Data
+
+- **Query Logic**: Provide the code that fetches the metrics for each project in the selection set. The query may only make use of datasets that are public and in the OSO data warehouse. (Contribute new pubic datasets [here](../contribute/connect-data).)
+- **Normalization Method**: Choose an appropriate method for normalizing the metric data (e.g., Gaussian distribution, log scale) that fits the metric characteristics. The script in the tutorial (see next section) includes an example of a normalization method you can start with.
+
+#### 4. Optional: Share Your Impact Vector
+
+If you'd like to share your impact vector with the OSO community, you can do so by opening an issue or pull request in the [Insights repository](https://github.com/opensource-observer/insights) with the script and visualization of the normalized data distribution. A maintainer will review and help gather feedback from the community. If the script is approved, it will be replicated in production and available on OSO and through the API. See [here](https://github.com/opensource-observer/insights/blob/main/community/notebooks/oso_impact_vector_starter.ipynb) for an example.
+
+### Tutorial: Be Forkable
+
+---
+
+This example will walk you through the process of creating an impact vector for the number of forks a project has.
+
+You can find the notebook shown in this tutorial [here](https://github.com/opensource-observer/insights/blob/main/community/notebooks/oso_impact_vector_starter.ipynb).
+
+#### Define the Impact Vector
+
+Choose a metric that is relevant to the vector and can be calculated via a [dbt transform](../how-oso-works/impact-metrics).
+
+In this example, we will use `forks` as our impact metric.
+
+We will apply a very liberal filter: any project with at least 1 fork in any of its repos will be included in the analysis.
+
+As we saw in [the first tutorial above](#analyze), forks have a wide range of values. Therefore, we will use a log scale to transform the distribution. We will also normalize to range of 0 to 1.
+
+#### Fetching the Data
+
+We will fetch the latest fork counts for all projects in the OSO data warehouse and store them in a dataframe. We also need to import `numpy` and `sklearn` for some of our processing.
+
+```python
+from google.cloud import bigquery
+import os
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.preprocessing import MinMaxScaler
+
+os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = '' # path to your service account key in your downloads folder
+client = bigquery.Client()
+
+query = """
+    SELECT
+        project_name,
+        forks
+    FROM `opensource-observer.oso_playground.code_metrics_by_project`
+    WHERE forks > 0
+"""
+results = client.query(query)
+
+df = results.to_dataframe()
+df.set_index('project_name', inplace=True)
+```
+
+---
+
+#### Normalizing the Data
+
+Now we have a dataframe with the latest fork counts for all projects in the OSO data warehouse. Next, we will normalize the fork column into an impact vector. We will use the [z-score](https://en.wikipedia.org/wiki/Standard_score) to measure how many standard deviations a project's forks are from the mean, and the normalize the z-scores to a 0-1 scale.
+
+```python
+# take the log of a project's forks
+df['log_forks'] = np.log(df['forks'])
+
+# get the zscore for each project
+logmean = df['log_forks'].mean()
+logstd  = df['log_forks'].std()
+df['zscore_forks'] = (df['log_forks'] - logmean) / logstd
+
+# normalize to a 0-1 scale
+minmax_scaler = MinMaxScaler(feature_range=(0, 1))
+df['vector_forks'] = minmax_scaler.fit_transform(np.array(df['zscore_forks']).reshape(-1, 1)).flatten()
+
+df.sort_values('vector_forks', inplace=True)
+```
+
+We can take a look at the distribution of the impact vector using a KDE plot. Fortunately, it looks like the distribution is fairly normal, so our model is working well.
+
+![KDE Plot](./iv_kde_plot.png)
+
+We can also take a look at the relationship between absolute forks and the impact vector. Given the exponential nature of the fork count, we should expect to see a logarithmic relationship.
+
+![Forks vs Impact Vector](./iv_pdf.png)
+
+:::warning
+Not all impact vectors will have a log normal distribution. It's important to understand the distribution of the impact vector and experiment with different models before setting performance targets.
+:::
+
+---
+
+#### Comparing Projects
+
+Now that we have our impact vector, we can compare projects to see how they perform relative to the distribution. We can also set performance targets based on the normalized distribution. For example, an "exceptional" project might be in the top 5% of the distribution and an "excellent" project might be in the top 20%.
+
+Here's one way of visualizing the impact vector for `forks`. The chart shows a random sample of 50 projects and plots the impact scores on the X axis. The absoluate number of forks is shown next to each point. The color of the points represents the zscore of the project's forks.
+
+![Impact Vector](./iv_distro.png)
+
+The script for rendering this chart is shown below:
+
+```python
+fig, ax = plt.subplots(figsize=(10,10), dpi=144)
+
+# take a sample of 50 projects (including the top 2)
+dff = (
+    pd.concat([
+        df.iloc[:-2,:].sample(48, weights='vector_forks'),
+        df.iloc[-2:,:]
+    ], axis=0)
+    .sort_values(by='vector_forks')
+)
+
+# create a scatter plot showing relative performance
+ax.scatter(
+    x=dff['vector_forks'],
+    y=[name[:25] for name in dff.index],
+    c=dff['zscore_forks'],
+    vmin=df['zscore_forks'].min(),
+    vmax=df['zscore_forks'].max(),
+    cmap='coolwarm',
+    lw=1,
+    edgecolor='black',
+    zorder=2
+)
+
+# add annotations that show the actual impact metric values
+for y,(_,row) in enumerate(dff.iterrows()):
+    ax.text(
+        s=f"{row['forks']:,.0f}",
+        x=row['vector_forks']+.0125,
+        y=y-.0875,
+        va='center',
+        fontsize=8,
+        zorder=2,
+        bbox=dict(facecolor='white', lw=0, pad=0.01)
+    )
+
+# provide gridlines for different performance levels
+ax.set_xlim(-0.025,1.1)
+ax.set_xticks([
+    df['vector_forks'].median(),
+    df['vector_forks'].quantile(.8),
+    df['vector_forks'].quantile(.95),
+    1
+], labels=['Average', 'Excellent', 'Exceptional', 'The Best'])
+ax.grid(which='major', axis='x', color='black', lw=.5)
+```
 
 ## Sharing Analysis
 
