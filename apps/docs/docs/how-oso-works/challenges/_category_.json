@@ -1,6 +1,6 @@
 {
-  "label": "Learn How OSO Works",
-  "position": 4,
+  "label": "Data Challenges",
+  "position": 6,
   "link": {
     "type": "doc",
     "id": "index"

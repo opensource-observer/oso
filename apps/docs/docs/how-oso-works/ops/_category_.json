@@ -1,6 +1,6 @@
 {
-  "label": "Learn How OSO Works",
-  "position": 4,
+  "label": "🏗️ Operations Guides",
+  "position": 8,
   "link": {
     "type": "doc",
     "id": "index"

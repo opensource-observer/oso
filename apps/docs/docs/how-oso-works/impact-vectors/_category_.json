@@ -2,6 +2,7 @@
   "label": "Impact Vectors",
   "position": 4,
   "link": {
-    "title": "Impact Vectors"
+    "type": "doc",
+    "id": "index"
   }
 }
