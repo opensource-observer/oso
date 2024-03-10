@@ -2,6 +2,7 @@
   "label": "Impact Metrics",
   "position": 3,
   "link": {
-    "title": "Impact Metrics"
+    "type": "doc",
+    "id": "index"
   }
 }

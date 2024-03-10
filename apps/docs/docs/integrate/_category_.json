@@ -2,6 +2,7 @@
   "label": "Get OSO Data",
   "position": 3,
   "link": {
-    "title": "Get OSO Data"
+    "type": "doc",
+    "id": "index"
   }
 }
