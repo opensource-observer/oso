@@ -1,9 +1,16 @@
 ---
 title: Overview
 sidebar_position: 0
+hide_title: true
 ---
 
 import Link from "@docusaurus/Link";
+import { PlasmicRootProvider } from "@plasmicapp/react-web";
+import Overview from "../src/components/plasmic/Overview";
+
+<PlasmicRootProvider>
+  <Overview />
+</PlasmicRootProvider>
 
 ## Join the Data Collective
 
