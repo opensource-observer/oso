@@ -3,5 +3,8 @@
   "extends": ["../../.eslintrc.js"],
   "parserOptions": {
     "project": ["./apps/docs/tsconfig.json"]
+  },
+  "rules": {
+    "@typescript-eslint/ban-ts-comment": "off"
   }
 }

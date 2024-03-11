@@ -1,0 +1,124 @@
+{
+  "platform": "react",
+  "code": {
+    "lang": "ts",
+    "scheme": "blackbox",
+    "reactRuntime": "classic"
+  },
+  "style": {
+    "scheme": "css-modules",
+    "defaultStyleCssFilePath": "generated/plasmic__default_style.module.css"
+  },
+  "images": {
+    "scheme": "public-files",
+    "publicDir": "../../../static/plasmic",
+    "publicUrlPrefix": "/plasmic/"
+  },
+  "tokens": {
+    "scheme": "theo",
+    "tokensFilePath": "plasmic-tokens.theo.json"
+  },
+  "srcDir": "src/components/plasmic",
+  "defaultPlasmicDir": "./generated",
+  "projects": [
+    {
+      "projectId": "2CtczDeUz9jL9qnFi6NWuQ",
+      "projectApiToken": "yvwjxyEJFxnaif4WsqfZHgYKCa3r2Q11QOnCLetiUMwl92qDANOAvfNfim9r7MyMaQi5Mnb752gNYFMfdng",
+      "projectName": "docs.opensource.observer",
+      "version": "latest",
+      "cssFilePath": "generated/docs_opensource_observer/plasmic.module.css",
+      "components": [
+        {
+          "id": "z50hW5Ihi9k5",
+          "name": "Overview",
+          "type": "managed",
+          "projectId": "2CtczDeUz9jL9qnFi6NWuQ",
+          "renderModuleFilePath": "generated/docs_opensource_observer/PlasmicOverview.tsx",
+          "importSpec": {
+            "modulePath": "Overview.tsx"
+          },
+          "cssFilePath": "generated/docs_opensource_observer/PlasmicOverview.module.css",
+          "scheme": "blackbox",
+          "componentType": "component"
+        },
+        {
+          "id": "8u0yNVg3vXsq",
+          "name": "Button",
+          "type": "managed",
+          "projectId": "2CtczDeUz9jL9qnFi6NWuQ",
+          "renderModuleFilePath": "generated/docs_opensource_observer/PlasmicButton.tsx",
+          "importSpec": {
+            "modulePath": "Button.tsx"
+          },
+          "cssFilePath": "generated/docs_opensource_observer/PlasmicButton.module.css",
+          "scheme": "blackbox",
+          "componentType": "component",
+          "plumeType": "button"
+        },
+        {
+          "id": "XdMR0R8lmSdz",
+          "name": "Card",
+          "type": "managed",
+          "projectId": "2CtczDeUz9jL9qnFi6NWuQ",
+          "renderModuleFilePath": "generated/docs_opensource_observer/PlasmicCard.tsx",
+          "importSpec": {
+            "modulePath": "Card.tsx"
+          },
+          "cssFilePath": "generated/docs_opensource_observer/PlasmicCard.module.css",
+          "scheme": "blackbox",
+          "componentType": "component"
+        }
+      ],
+      "icons": [
+        {
+          "id": "bBICBhwqdJEn",
+          "name": "ChecksvgIcon",
+          "moduleFilePath": "generated/docs_opensource_observer/icons/PlasmicIcon__Checksvg.tsx"
+        },
+        {
+          "id": "4hUpITJttWoK",
+          "name": "IconIcon",
+          "moduleFilePath": "generated/docs_opensource_observer/icons/PlasmicIcon__Icon.tsx"
+        }
+      ],
+      "images": [
+        {
+          "id": "cyI4ZarUDDWI",
+          "name": "OSO Key Visual",
+          "filePath": "../../../static/plasmic/plasmic/docs_opensource_observer/images/osoKeyVisual.svg"
+        }
+      ],
+      "indirect": false,
+      "globalContextsFilePath": "",
+      "splitsProviderFilePath": "",
+      "codeComponents": [
+        {
+          "id": "qCZKVku8zP6g",
+          "name": "PlasmicHead",
+          "displayName": "hostless-plasmic-head",
+          "componentImportPath": "@plasmicapp/react-web"
+        },
+        {
+          "id": "r72WM3m0Gnal",
+          "name": "Fetcher",
+          "displayName": "plasmic-data-source-fetcher",
+          "componentImportPath": "@plasmicapp/react-web/lib/data-sources"
+        }
+      ],
+      "customFunctions": []
+    }
+  ],
+  "globalVariants": {
+    "variantGroups": [
+      {
+        "id": "kb7NFax8VjYW",
+        "name": "Screen",
+        "projectId": "2CtczDeUz9jL9qnFi6NWuQ",
+        "contextFilePath": "generated/docs_opensource_observer/PlasmicGlobalVariant__Screen.tsx"
+      }
+    ]
+  },
+  "wrapPagesWithGlobalContexts": true,
+  "cliVersion": "0.1.327",
+  "$schema": "https://unpkg.com/@plasmicapp/cli@0.1.327/dist/plasmic.schema.json"
+}
