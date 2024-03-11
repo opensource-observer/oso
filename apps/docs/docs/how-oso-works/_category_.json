@@ -1,8 +1,7 @@
 {
-  "label": "Learn How OSO Works",
+  "label": "How OSO Works",
   "position": 4,
   "link": {
-    "type": "doc",
-    "id": "index"
+    "type": "generated-index"
   }
 }

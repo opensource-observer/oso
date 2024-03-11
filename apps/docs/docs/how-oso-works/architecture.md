@@ -1,5 +1,5 @@
 ---
-title: Architecture
+title: Technical Architecture
 sidebar_position: 5
 ---
 
@@ -74,6 +74,16 @@ dependencies are:
     that is used to power the OSO website. This is used to offload querying of
     the most used views from bigquery as using bigquery to serve the OSO website
     would become cost prohibitive.
+
+## Indexing Pipeline
+
+---
+
+OSO maintains an [ETL](https://en.wikipedia.org/wiki/Extract%2C_load%2C_transform) data pipeline that is continuously deployed from our [monorepo](https://github.com/opensource-observer/oso/) and regularly indexes all available event data about projects in the [oss-directory](https://github.com/opensource-observer/oss-directory).
+
+- **Extract**: raw event data from a variety of public data sources (e.g., GitHub, blockchains, npm, Open Collective)
+- **Transform**: the raw data into impact metrics and impact vectors per project (e.g., # of active developers)
+- **Load**: the results into various OSO data products (e.g., our API, website, widgets)
 
 ## Open Architecture for Open Source Data
 

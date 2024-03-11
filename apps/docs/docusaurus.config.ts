@@ -98,7 +98,7 @@ const config: Config = {
             },
             {
               label: "How OSO Works",
-              to: "/docs/how-oso-works/",
+              to: "/docs/category/how-oso-works/",
             },
           ],
         },
