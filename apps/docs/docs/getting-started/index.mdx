@@ -14,25 +14,25 @@ First, navigate to [www.opensource.observer](https://www.opensource.observer) an
 If you already have an account, log in. Then create a new personal API key:
 
 1. Go to [Account settings](https://www.opensource.observer/app/settings)
-2. In the "Personal API Keys" section, click "+ Create a Personal API Key"
+2. In the "API Keys" section, click "+ New"
 3. Give your key a label - this is just for you, usually to describe a key's purpose.
-4. At the top of your list, you should see your brand new key. **Immediately** copy its value, as you'll **never** see it again after refreshing the page.
+4. You should see your brand new key. **Immediately** save this value, as you'll **never** see it again after refreshing the page.
+5. Click "Create" to save the key.
 
 You can create as many keys as you like.
 
+![generate API key](./generate-api-key.png)
 
-## Write your first query
+
+## Getting started with GCP
 
 :::info
-OSO's data warehouse is located on BigQuery and is available publicly by
+OSO's data warehouse is currently located on BigQuery and is available publicly by
 referencing it as `opensource-observer.oso`. If you're looking to explore the
 data, or to contribute to our public set of models you will need to have an
 account with GCP (Google Cloud).
 :::
 
-## Getting started with GCP
-
----
 
 If this is your first time getting into GCP, you can do so by going
 [here](https://cloud.google.com/).
@@ -41,7 +41,6 @@ From there you'll want to click on "Start free" or "Get started for free". You w
 
 ![GCP Signup](./gcp_signup.png)
 
----
 
 Once you're logged in, you can then proceed to setting up your account. First, select a country and agree to the terms of service. Then, you need to enter your payment information for verification.
 
@@ -52,7 +51,6 @@ GCP offers a free tier that includes $300 in credits. After that, it is easy to 
 1TB per month limit for BigQuery data processed (more on that later).
 :::
 
----
 
 After you've created your account, you will then be asked a few marketing questions from Google. Fill these out as appropriate.
 
@@ -62,15 +60,12 @@ Navigate to **BigQuery** from the left-hand menu and then click on **BigQuery St
 
 ![GCP Admin](./gcp_admin.png)
 
----
-
 The console features an **Explorer** frame on the left-hand side, which lists all the datasets available to you, and a **Studio Console** which has tabs for organizing your work. This will be your workspace for querying the OSO dataset. If this is your first time, you will likely see a welcome message on the first tab in the Studio Console. Now you're ready to start exploring OSO datasets!
 
 ![GCP Welcome](./gcp_welcome.png)
 
 ## Querying the `oso_playground` dataset
 
----
 
 If you just created your GCP account by following the steps above, then you'll already be in the BigQuery Console. However, if you're just joining us because you already have an account, then go directly to the BigQuery Console by clicking [here](https://console.cloud.google.com/bigquery).
 
@@ -87,69 +82,22 @@ Click **Run** to execute your query. The results will appear in a table at the b
 
 ![GCP Query](./gcp_query.png)
 
----
 
 The console will help you complete your query as you type, and will also provide you with a preview of the results and computation time. You can save your queries, download the results, and even make simple visualizations directly from the console.
 
+:::tip
 To explore all the OSO datasets available, see [here](https://console.cloud.google.com/bigquery?project=opensource-observer).
 
-## Setting up your own copy of the `oso_playground` dataset
+- **oso** contains all production data. This can be quite large depending on the dataset.
+- **oso\_playground** contains only the last 2 weeks for every datast. We recommend using this for development and testing.
+:::
 
----
+🎉 **Congrats! You're ready to do some real impact data science!**  🥂
 
-For advanced users that would like to test/develop your own models on the data we
-have available publicly, you can instantiate your own datasets in BigQuery and
-configure a dbt profile that will automatically copy the same data used in the
-"playground" into your own dataset.
+## What next?
 
-In the future we will make it easy to use our terraform module to make
-initialize the dataset (even if you don't want it to be publicly available). For
-now, because that module also sets up other parts of our infrastructure the
-easiest method is to create a dataset in BigQuery UI.
+Now that you're set up, there are many ways to contribute to OSO and integrate the data with your application.
 
-To do this:
-
-1. Go to the [BigQuery UI](https://console.cloud.google.com/bigquery).
-2. Click on the vertical '...' near the name of your Project.
-3. Click `Create Dataset`
-4. Create a dataset in the US Multi-region (or anywhere but beaware that other
-   regions will incur further charges for egressing data). Be sure to remember
-   the dataset ID you used. We will use it soon.
-
-Once that's completed you can then create an authentication profile for dbt to
-connect to your dataset like the one below (replace the `dataset` and `project`
-sections with your own dataset ID and project ID):
-
-```yml
-opensource_observer:
-  outputs:
-    dev:
-      type: bigquery
-      # REPLACE
-      dataset: YOUR_DATA_SET_NAME
-      job_execution_time_seconds: 300
-      job_retries: 1
-      location: US
-      method: oauth
-      project: YOUR_PROJECT_ID
-      threads: 1
-  target: dev
-```
-
-_Note: For this guide to work you must use the `dev` target_
-
-Now that you have this you can log in to google:
-
-```bash
-$ gcloud auth application-default login
-```
-
-And from within the root of the oso repository you could run the dbt models to
-fill your profile:
-
-```bash
-$ poetry shell # this gets you into the right python environment
-$ dbt run
-```
-
-Once this is completed, you'll have a full "playground" of your own. Happy data sciencing!
+- [Do Data Science](../integrate/data-science) over OSO data sets
+- [Propose an impact model](../contribute/impact-models) to run in our data pipeline
+- [Query the OSO API](../integrate/api) for metrics and impact vectors from your web app
