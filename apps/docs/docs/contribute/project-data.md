@@ -4,7 +4,11 @@ sidebar_position: 2
 ---
 
 :::info
-Contributing data about open source projects is one of the simplest and most important ways to help the OSO community. When a new project is added to our directory, we automatically index relevant data about its history and ongoing activity, and we generate a project page on the OSO website. This makes it easy for people to discover the project and analyze its data.
+Contributing data about open source projects is one of the simplest and most
+important ways to help the OSO community. When a new project is added to our
+directory, we automatically index relevant data about its history and ongoing
+activity, and we generate a project page on the OSO website. This makes it easy
+for people to discover the project and analyze its data.
 :::
 
 ## Quick Steps

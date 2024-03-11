@@ -4,7 +4,12 @@ sidebar_position: 5
 ---
 
 :::info
-[dbt (data build tool)](https://www.getdbt.com/blog/what-exactly-is-dbt) is a command line tool that enables data analysts and engineers to transform data in the OSO data warehouse more effectively. dbt transforms are written in SQL. We use them most often to define impact metrics and materialize aggregate data about projects. You can contribute dbt transforms to create new impact metrics in our data warehouse.
+[dbt (data build tool)](https://www.getdbt.com/blog/what-exactly-is-dbt) is a
+command line tool that enables data analysts and engineers to transform data in
+the OSO data warehouse more effectively. dbt transforms are written in SQL. We
+use them most often to define impact metrics and materialize aggregate data
+about projects. You can contribute dbt transforms to create new impact metrics
+in our data warehouse.
 :::
 
 OSO uses dbt to analyze the data in our public data warehouse on BigQuery. This
@@ -131,13 +136,15 @@ You should now be logged into BigQuery!
 
 ### Testing
 
-Test that everything is working by running the following command _within the poetry environment_:
+Test that everything is working by running the following command _within the
+poetry environment_:
 
 ```bash
 $ dbt run --select projects
 ```
 
-If the command executes properly, then you're ready to start creating your own dbt models!
+If the command executes properly, then you're ready to start creating your own
+dbt models!
 
 ## Working with OSO dbt Models
 
@@ -145,7 +152,8 @@ If the command executes properly, then you're ready to start creating your own d
 
 ### How OSO dbt models are organized
 
-From the root of the oso repository, dbt models can be found at `dbt/models`.
+From the root of the oso repository, dbt models can be found at
+`warehouse/dbt/models`.
 
 OSO's repository organizes dbt models following the suggested directory
 structure from DBT's own best practices guides ([see
@@ -324,8 +332,9 @@ _You'll want to make sure you're also in the `poetry shell` otherwise you won't
 use the right dbt binary_
 
 Once you've done so you will be able to find your model compiled in the
-`target/` directory. Your model's compiled sql can be found in the same relative
-path as it's location in `dbt/models` inside the `target/` directory.
+`target/` directory (this is in the root of the repository). Your model's
+compiled sql can be found in the same relative path as it's location in
+`warehouse/dbt/models` inside the `target/` directory.
 
 The presence of the compiled model does not necessarily mean your SQL will work
 simply that it was rendered by `dbt` correctly. To test your model it's likely

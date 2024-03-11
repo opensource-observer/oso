@@ -89,7 +89,7 @@ following from the root of the OSO repository (feel free to use a name besides
 `my-plugin`):
 
 ```bash
-$ cp -r cloudquery/example-plugin cloudquery/my-plugin
+$ cp -r warehouse/cloudquery-example-plugin warehouse/cloudquery-my-plugin
 ```
 
 ### Update the `pyproject.toml` file
@@ -139,8 +139,8 @@ directory:
 [tool.poetry.dependencies]
 python = "^3.11"
 oso-dbt = { path = "./dbt", develop = true }
-example-plugin = { path = "cloudquery/example-plugin", develop = true }
-my-plugin = { path = "cloudquery/my-plugin", develop = true }
+example-plugin = { path = "warehouse/cloudquery-example-plugin", develop = true }
+my-plugin = { path = "warehouse/cloudquery-my-plugin", develop = true }
 ```
 
 ### Installing the dependencies for the new plugin
