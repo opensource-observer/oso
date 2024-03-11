@@ -10,7 +10,7 @@ Onchain metrics are typically queried by project (e.g., `uniswap`) and network (
 
 ## Addesses Owned
 
-For information about how addresses are tagged, please see: [Address Tagging](../schema/artifact.md#tagging-addresses).
+For information about how addresses are tagged, please see: [Address Tagging](../data-model/artifact.md#tagging-addresses).
 
 ### num_contracts
 
