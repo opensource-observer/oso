@@ -1,6 +1,7 @@
 {# 
-  Arbitrum Onchain Metrics
   Summary onchain metrics for a project:
+    - project_id: The unique identifier for the project
+    - network: The network the project is deployed on
     - num_contracts: The number of contracts in the project
     - first_txn_date: The date of the first transaction to the project
     - total_txns: The total number of transactions to the project

@@ -4,15 +4,17 @@ sidebar_position: 7
 
 # Dependencies
 
-OSO tracks the dependency graph among projects in a collection or ecosystem.
+:::info
+OSO tracks the dependency graph among projects in a collection or ecosystem. A **dependency** is a software package, module, or project that another project requires to function properly. Conversely, a **dependent** is a project that includes a specific package as its dependency. These metrics can highlight the usefulness of a given open source software project to other projects in the ecosystem.
+:::
 
-A **dependency** is a software package, module, or project that another project requires to function properly. Conversely, a **dependent** is a project that includes a specific package as its dependency. These metrics can highlight the usefulness of a given open source software project to other projects in the ecosystem.
-
-:::tip
+:::warning
 These metrics are currently in developmnet.
 :::
 
 ## Direct vs. Indirect Dependents
+
+---
 
 Dependents can be categorized as:
 
@@ -20,6 +22,8 @@ Dependents can be categorized as:
 - **Indirect Dependents**: Projects that rely on the parent package through an intermediary package. For example, if Package A depends on Package B, and Package B relies on Package C, then Package A is an indirect dependent of Package C.
 
 ## Developer Dependencies
+
+---
 
 Many package managers, such as npm and Crates, distinguish between production code dependencies and **developer dependencies** that are only needed for local development and testing.
 
@@ -40,6 +44,8 @@ Below is an example of an npm `package.json` file with developer dependencies:
 
 ## Constraints on Dependency Analysis
 
+---
+
 For Open Source Observer, we've set the following constraints for our dependency analysis:
 
 1. Only direct dependents are considered, excluding indirect ones.
@@ -47,7 +53,7 @@ For Open Source Observer, we've set the following constraints for our dependency
 
 Without such constraints, certain packages might appear as indirect dependents or dependencies for a vast majority of open source projects.
 
-### Example
+## Example
 
 > Note: This is a hypothetical example. Real-world examples based on actual dependency graphs will be added soon.
 
@@ -67,6 +73,8 @@ Ecosystems: Ethereum Developer Tools & Optimism Applications
 ```
 
 ## Dependent Metrics
+
+---
 
 In addition to mapping projects and their dependents, we also capture the following data about a project's dependents:
 

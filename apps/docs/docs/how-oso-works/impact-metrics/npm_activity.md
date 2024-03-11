@@ -4,11 +4,13 @@ sidebar_position: 6
 
 # npm Activity
 
-npm metrics are limited to package details and downloads.
-
-npm metrics are typically queried by project (eg, `uniswap`), although they can also be queried by package in the format (eg, `@project/package-name`). For information about package data, also see: [Dependencies](./dependencies)
+:::info
+npm metrics are limited to package details and downloads. npm metrics are typically queried by project (eg, `uniswap`), although they can also be queried by package in the format (eg, `@project/package-name`). For information about package data, also see: [Dependencies](./dependencies)
+:::
 
 ## npm Metrics
+
+---
 
 ### Packages
 

@@ -424,162 +424,186 @@ Here are a few examples of dbt models currently in production:
 
 ### Developers
 
+This is an intermediate model available in the data warehouse as `int_devs`.
+
 ```sql
 SELECT
-  e.project_slug,
-  e.from_source_id,
-  e.from_namespace,
-  e.from_type,
+  e.project_id,
+  e.to_namespace AS repository_source,
+  e.from_id,
+  1 AS amount,
   TIMESTAMP_TRUNC(e.time, MONTH) AS bucket_month,
   CASE
-    WHEN COUNT(DISTINCT CASE WHEN e.type = 'COMMIT_CODE' THEN e.time END) >= 10 THEN 'FULL_TIME_DEV'
-    WHEN COUNT(DISTINCT CASE WHEN e.type = 'COMMIT_CODE' THEN e.time END) >= 1 THEN 'PART_TIME_DEV'
+    WHEN
+      COUNT(DISTINCT CASE WHEN e.event_type = 'COMMIT_CODE' THEN e.time END)
+      >= 10
+      THEN 'FULL_TIME_DEV'
+    WHEN
+      COUNT(DISTINCT CASE WHEN e.event_type = 'COMMIT_CODE' THEN e.time END)
+      >= 1
+      THEN 'PART_TIME_DEV'
     ELSE 'OTHER_CONTRIBUTOR'
-  END AS segment_type,
-  1 AS amount
-FROM {{ ref('int_events_to_project') }} as e
+  END AS user_segment_type
+FROM {{ ref('int_events_to_project') }} AS e
 WHERE
-  e.type IN (
+  e.event_type IN (
     'PULL_REQUEST_CREATED',
     'PULL_REQUEST_MERGED',
     'COMMIT_CODE',
     'ISSUE_CLOSED',
     'ISSUE_CREATED'
   )
-GROUP BY
-  project_slug,
-  from_source_id,
-  from_namespace,
-  from_type,
-  bucket_month
+GROUP BY e.project_id, bucket_month, e.from_id, repository_source
 ```
 
 ### Events to a Project
 
-```sql
-{#
-  All events to a project
-#}
+This is an intermediate model available in the data warehouse as `int_events_to_project`.
 
+```sql
 SELECT
-  a.project_slug,
-  e.time,
-  e.type,
-  a.name as `to_name`,
-  e.to_namespace,
-  e.to_type,
-  e.to_source_id,
-  e.from_name,
-  e.from_namespace,
-  e.from_type,
-  e.from_source_id,
-  e.amount
-FROM {{ ref('int_events') }} AS e
-JOIN {{ ref('stg_ossd__artifacts_to_project') }} AS a
-  ON a.source_id = e.to_source_id
-    AND a.namespace = e.to_namespace
-    AND a.type = e.to_type
+  e.*,
+  a.project_id
+FROM {{ ref('int_events_with_artifact_id') }} AS e
+INNER JOIN {{ ref('stg_ossd__artifacts_by_project') }} AS a
+  ON
+    e.to_source_id = a.artifact_source_id
+    AND e.to_namespace = a.artifact_namespace
+    AND e.to_type = a.artifact_type
 ```
 
 ### Summary Onchain Metrics by Project
 
-```sql
-{#
-  Summary onchain metrics for a project on a specific chain
-#}
+This is a mart model available in the data warehouse as `onchain_metrics_by_project`.
 
+```sql
 WITH txns AS (
   SELECT
     a.project_id,
+    c.to_namespace AS onchain_network,
     c.from_source_id AS from_id,
-    DATE(TIMESTAMP_TRUNC(c.time, MONTH)) AS bucket_month,
-    l2_gas,
-    tx_count
-  FROM {{ ref('stg_dune__CHAIN_contract_invocation') }} AS c -- add the CHAIN namespace here
-  JOIN {{ ref('stg_ossd__artifacts_by_project') }} AS a ON c.to_source_id = a.artifact_source_id
+    c.l2_gas,
+    c.tx_count,
+    DATE(TIMESTAMP_TRUNC(c.time, MONTH)) AS bucket_month
+  FROM {{ ref('stg_dune__contract_invocation') }} AS c
+  INNER JOIN {{ ref('stg_ossd__artifacts_by_project') }} AS a
+    ON c.to_source_id = a.artifact_source_id
 ),
 metrics_all_time AS (
   SELECT
     project_id,
+    onchain_network,
     MIN(bucket_month) AS first_txn_date,
-    COUNT (DISTINCT from_id) AS total_users,
+    COUNT(DISTINCT from_id) AS total_users,
     SUM(l2_gas) AS total_l2_gas,
     SUM(tx_count) AS total_txns
   FROM txns
-  GROUP BY project_id
+  GROUP BY project_id, onchain_network
 ),
 metrics_6_months AS (
   SELECT
     project_id,
-    COUNT (DISTINCT from_id) AS users_6_months,
+    onchain_network,
+    COUNT(DISTINCT from_id) AS users_6_months,
     SUM(l2_gas) AS l2_gas_6_months,
     SUM(tx_count) AS txns_6_months
   FROM txns
   WHERE bucket_month >= DATE_ADD(CURRENT_DATE(), INTERVAL -6 MONTH)
-  GROUP BY project_id
+  GROUP BY project_id, onchain_network
 ),
 new_users AS (
   SELECT
     project_id,
+    onchain_network,
     SUM(is_new_user) AS new_user_count
   FROM (
     SELECT
       project_id,
+      onchain_network,
       from_id,
-      CASE WHEN MIN(bucket_month) >= DATE_ADD(CURRENT_DATE(), INTERVAL -3 MONTH) THEN 1 END AS is_new_user
+      CASE
+        WHEN
+          MIN(bucket_month) >= DATE_ADD(CURRENT_DATE(), INTERVAL -3 MONTH)
+          THEN
+            1
+      END AS is_new_user
     FROM txns
-    GROUP BY project_id, from_id
+    GROUP BY project_id, onchain_network, from_id
   )
-  GROUP BY project_id
+  GROUP BY project_id, onchain_network
 ),
 user_txns_aggregated AS (
   SELECT
     project_id,
+    onchain_network,
     from_id,
     SUM(tx_count) AS total_tx_count
   FROM txns
   WHERE bucket_month >= DATE_ADD(CURRENT_DATE(), INTERVAL -3 MONTH)
-  GROUP BY project_id, from_id
+  GROUP BY project_id, onchain_network, from_id
 ),
 multi_project_users AS (
   SELECT
+    onchain_network,
     from_id,
     COUNT(DISTINCT project_id) AS projects_transacted_on
   FROM user_txns_aggregated
-  GROUP BY from_id
+  GROUP BY onchain_network, from_id
 ),
 user_segments AS (
   SELECT
     project_id,
-    COUNT(DISTINCT CASE WHEN user_segment = 'HIGH_FREQUENCY_USER' THEN from_id END) AS high_frequency_users,
-    COUNT(DISTINCT CASE WHEN user_segment = 'MORE_ACTIVE_USER' THEN from_id END) AS more_active_users,
-    COUNT(DISTINCT CASE WHEN user_segment = 'LESS_ACTIVE_USER' THEN from_id END) AS less_active_users,
-    COUNT(DISTINCT CASE WHEN projects_transacted_on >= 3 THEN from_id END) AS multi_project_users
+    onchain_network,
+    COUNT(DISTINCT CASE
+      WHEN user_segment = 'HIGH_FREQUENCY_USER' THEN from_id
+    END) AS high_frequency_users,
+    COUNT(DISTINCT CASE
+      WHEN user_segment = 'MORE_ACTIVE_USER' THEN from_id
+    END) AS more_active_users,
+    COUNT(DISTINCT CASE
+      WHEN user_segment = 'LESS_ACTIVE_USER' THEN from_id
+    END) AS less_active_users,
+    COUNT(DISTINCT CASE
+      WHEN projects_transacted_on >= 3 THEN from_id
+    END) AS multi_project_users
   FROM (
     SELECT
       uta.project_id,
+      uta.onchain_network,
       uta.from_id,
+      mpu.projects_transacted_on,
       CASE
         WHEN uta.total_tx_count >= 1000 THEN 'HIGH_FREQUENCY_USER'
         WHEN uta.total_tx_count >= 10 THEN 'MORE_ACTIVE_USER'
         ELSE 'LESS_ACTIVE_USER'
-      END AS user_segment,
-      mpu.projects_transacted_on
+      END AS user_segment
     FROM user_txns_aggregated AS uta
-    JOIN multi_project_users AS mpu ON uta.from_id = mpu.from_id
+    INNER JOIN multi_project_users AS mpu
+      ON uta.from_id = mpu.from_id
   )
-  GROUP BY project_id
+  GROUP BY project_id, onchain_network
 ),
 contracts AS (
   SELECT
     project_id,
+    artifact_namespace AS onchain_network,
     COUNT(artifact_source_id) AS num_contracts
   FROM {{ ref('stg_ossd__artifacts_by_project') }}
-  GROUP BY project_id
+  GROUP BY project_id, onchain_network
+),
+project_by_network AS (
+  SELECT
+    p.project_id,
+    ctx.onchain_network,
+    p.project_name
+  FROM {{ ref('projects') }} AS p
+  INNER JOIN contracts AS ctx
+    ON p.project_id = ctx.project_id
 )
 
 SELECT
   p.project_id,
+  p.onchain_network AS network,
   p.project_name,
   c.num_contracts,
   ma.first_txn_date,
@@ -590,16 +614,32 @@ SELECT
   m6.l2_gas_6_months,
   m6.users_6_months,
   nu.new_user_count,
-  (us.high_frequency_users + us.more_active_users + us.less_active_users) AS active_users,
   us.high_frequency_users,
   us.more_active_users,
   us.less_active_users,
-  us.multi_project_users
-
-FROM {{ ref('projects') }} AS p
-LEFT JOIN metrics_all_time AS ma ON p.project_id = ma.project_id
-LEFT JOIN metrics_6_months AS m6 on p.project_id = m6.project_id
-LEFT JOIN new_users AS nu on p.project_id = nu.project_id
-LEFT JOIN user_segments AS us on p.project_id = us.project_id
-LEFT JOIN contracts AS c on p.project_id = c.project_id
+  us.multi_project_users,
+  (
+    us.high_frequency_users + us.more_active_users + us.less_active_users
+  ) AS active_users
+FROM project_by_network AS p
+LEFT JOIN metrics_all_time AS ma
+  ON
+    p.project_id = ma.project_id
+    AND p.onchain_network = ma.onchain_network
+LEFT JOIN metrics_6_months AS m6
+  ON
+    p.project_id = m6.project_id
+    AND p.onchain_network = m6.onchain_network
+LEFT JOIN new_users AS nu
+  ON
+    p.project_id = nu.project_id
+    AND p.onchain_network = nu.onchain_network
+LEFT JOIN user_segments AS us
+  ON
+    p.project_id = us.project_id
+    AND p.onchain_network = us.onchain_network
+LEFT JOIN contracts AS c
+  ON
+    p.project_id = c.project_id
+    AND p.onchain_network = c.onchain_network
 ```

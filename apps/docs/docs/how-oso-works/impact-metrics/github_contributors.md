@@ -4,15 +4,13 @@ sidebar_position: 3
 
 # GitHub Contributors
 
-OSO maintains categories for developers and other types of contributors, and assigns activity levels to them based on their contributions.
-
-GitHub metrics are typically queried by project (eg, `uniswap`), although they can also be queried by repo in the format (eg, `repo-owner/repo-name`). For information about GitHub data, also see: [Github Activity](./github_activity)
-
-## GitHub Contributor Metrics
-
-> Note: most of the metrics below are defined in the context of a "contributor" (the most general category of people working on a project), but definitions like "full-time" / "part-time" and "new" / "inactive" are also applicable to "developers" and "maintainers".
+:::info
+OSO maintains categories for developers and other types of contributors, and assigns activity levels to them based on their contributions. GitHub metrics are typically queried by project (eg, `uniswap`), although they can also be queried by repo in the format (eg, `repo-owner/repo-name`). For information about GitHub data, also see: [Github Activity](./github_activity).
+:::
 
 ## Contributors
+
+---
 
 Contributors are GitHub users who contribute commits, issues (opened/closed), and pull requests (opened/merged) to one or more of a project's code repositories.
 
@@ -29,6 +27,8 @@ The number of contributors who have contributed to the project's repositories in
 The number of new contributors to the project's repositories in the last 6 months.
 
 ## Developers
+
+---
 
 A developer is a contributor who commits code to the main branch of one or more of a project's repositories. Our definitions for full-time and part-time developers are intended to align with the methodology used by Electric Capital in their [Developer Report](https://www.developerreport.com/about).
 

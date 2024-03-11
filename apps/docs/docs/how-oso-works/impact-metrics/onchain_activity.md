@@ -4,11 +4,13 @@ sidebar_position: 4
 
 # Onchain Activity
 
-Onchain metrics include projects' smart contracts, transaction volumes, and sequencer fee contribution.
-
-Onchain metrics are typically queried by project (e.g., `uniswap`) and network (e.g., `optimism`), but they can also be queried by contract address (e.g., `0x123...`) and even across networks (e.g., `optimism` and `arbitrum`).
+:::info
+Onchain metrics include projects' smart contracts, transaction volumes, and sequencer fee contribution. Onchain metrics are typically queried by project (e.g., `uniswap`) and network (e.g., `optimism`), but they can also be queried by contract address (e.g., `0x123...`) and even across networks (e.g., `optimism` and `arbitrum`).
+:::
 
 ## Addesses Owned
+
+---
 
 For information about how addresses are tagged, please see: [Address Tagging](../data-model/artifact.md#tagging-addresses).
 
@@ -25,6 +27,8 @@ The number of addresses that have deployed contracts for the project. _Coming so
 The number of addresses that have custody of funds for the project. _Coming soon!_
 
 ## Transactions
+
+---
 
 Open Source Observer only tracks transactions that involve smart contracts, as most all smart contracts are open source and most widely-used smart contracts can be traced to projects with additional open source components.
 
@@ -45,6 +49,8 @@ The total number of onchain transactions with the project's contracts in the las
 The date of the first onchain transaction with the project's contracts.
 
 ## Gas Usage
+
+---
 
 ### total_l2_gas
 

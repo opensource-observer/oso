@@ -4,11 +4,13 @@ sidebar_position: 2
 
 # GitHub Activity
 
-GitHub metrics include repo histories, popularity indicators, and work activity.
-
-GitHub metrics may be queried by project (eg, `uniswap`) or by repo (as an artifact) in the format (eg, `repo-owner/repo-name`). For additional information about GitHub data, also see: [GitHub Contributors](./github_contributors)
+:::info
+GitHub metrics include repo histories, popularity indicators, and work activity. GitHub metrics may be queried by project (eg, `uniswap`) or by repo (as an artifact) in the format (eg, `repo-owner/repo-name`). For additional information about GitHub data, also see: [GitHub Contributors](./github_contributors)
+:::
 
 ## Repository Metrics
+
+---
 
 ### repos
 
@@ -24,6 +26,8 @@ The date of the last commit across all the project's repositories.
 
 ## Popularity Metrics
 
+---
+
 ### stars
 
 The total number of stars across all the project's repositories, indicating the project's popularity.
@@ -33,6 +37,8 @@ The total number of stars across all the project's repositories, indicating the 
 The total number of forks across all the project's repositories, reflecting the project's influence and community engagement.
 
 ## Development Activity
+
+---
 
 ### commits_6_months
 
