@@ -21,4 +21,4 @@ For a complete list of environment variables, see the
 
 Any configurations outside of environment variables should be set via metadata in the OSO repository.
 For more info on how to do this, check out the
-[README](https://github.com/opensource-observer/oso/tree/main/hasura) under `./hasura`.
+[README](https://github.com/opensource-observer/oso/tree/main/hasura) under `./apps/hasura`.
