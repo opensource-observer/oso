@@ -55,13 +55,13 @@ the infrastructure code and data pipelines live.
 Clone this with the following:
 
 ```bash
-$ git clone https://github.com/opensource-observer/oso.git
+git clone https://github.com/opensource-observer/oso.git
 ```
 
 And, `cd` into the repository:
 
 ```bash
-$ cd oso
+cd oso
 ```
 
 ### Install OSO Python dependencies
@@ -71,14 +71,14 @@ about the Python dependencies. To install these dependencies, we will use
 python's `poetry` from the root of the OSO repository:
 
 ```bash
-$ poetry install
+poetry install
 ```
 
 Once you've done this, let's enter the Python virtual environment that `poetry`
 created:
 
 ```bash
-$ poetry shell
+poetry shell
 ```
 
 ### Starting a new plugin
@@ -86,10 +86,10 @@ $ poetry shell
 To make this as simple as possible, we've created an example plugin that can be
 duplicated and used to create a new plugin. Let's do this by calling the
 following from the root of the OSO repository (feel free to use a name besides
-`my-plugin`):
+`cloudquery-my-plugin`):
 
 ```bash
-$ cp -r warehouse/cloudquery-example-plugin warehouse/cloudquery-my-plugin
+cp -r warehouse/cloudquery-example-plugin warehouse/cloudquery-my-plugin
 ```
 
 ### Update the `pyproject.toml` file
@@ -104,7 +104,7 @@ Assuming we need the `requests` added to the dependencies. This is what your
 
 ```toml
 [tool.poetry]
-name = "my-plugin" # Update this to the plugin name
+name = "cloudquery-my-plugin" # Update this to the plugin name
 version = "0.1.0"
 description = "Description for the plugin"
 authors = ["Kariba Labs"]
@@ -138,7 +138,6 @@ directory:
 ```toml
 [tool.poetry.dependencies]
 python = "^3.11"
-oso-dbt = { path = "./dbt", develop = true }
 example-plugin = { path = "warehouse/cloudquery-example-plugin", develop = true }
 my-plugin = { path = "warehouse/cloudquery-my-plugin", develop = true }
 ```
@@ -149,7 +148,7 @@ To install the dependencies of the new plugin make sure you're in the root of
 the OSO repository and run the following:
 
 ```bash
-$ poetry update
+poetry update
 ```
 
 This will add the new plugin and also will add a script on the `PATH` for the
@@ -160,7 +159,7 @@ new plugin at `my_plugin` (or whatever name you used).
 Any time you update dependencies in the plugin just run:
 
 ```bash
-$ poetry update
+poetry update
 ```
 
 ### Developing the plugin
@@ -176,15 +175,15 @@ Docs](https://docs.cloudquery.io/docs/developers/creating-new-plugin/python-sour
 Once you've finished developing the plugin, you'll need to package the plugin
 for use. Luckily, the `oso` repository is automatically configured to handle
 packaging all plugins in the `cloudquery` directory as long as they're Python or
-typescript plugins. So, as long as you have followed this guide the automation
+TypeScript plugins. So, as long as you have followed this guide the automation
 in the repository will handle properly building, packaging, and publishing a
 docker image for your CloudQuery plugin.
 
 ### Adding your plugin to the data pipeline
 
-In the future the data pipeline will likely be managed by dagster or something
+In the future the data pipeline will likely be managed by [Dagster](https://dagster.io/) or something
 similar, however at this time the entire data pipeline lives in a single
-workflow on github and is run every 24 hours at 02:00 UTC.
+[workflow on GitHub](https://github.com/opensource-observer/oso/actions/workflows/warehouse-run-data-pipeline.yml) and is run every 24 hours at 02:00 UTC.
 
 To add your plugin to that workflow you will need to do 2 things:
 
@@ -196,7 +195,7 @@ To add your plugin to that workflow you will need to do 2 things:
 The configurations live in `.github/workflows/cloudquery`. Create a file for
 your workflow here that is named the same as your new plugin. It will need to
 use some environment variables so that our pipeline will be able to properly
-target both your plugin's docker deployment and also the correct bigquery
+target both your plugin's Docker deployment and also the correct BigQuery
 dataset.
 
 It should look something like this:
