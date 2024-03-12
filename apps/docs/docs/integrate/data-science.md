@@ -50,7 +50,7 @@ $ pip install google-cloud-bigquery
 
 ---
 
-This section will walk you through the process of obtaining a GCP service account key and connecting to BigQuery from a Jupyter notebook. If you don't have a GCP account, you will need to create one (see [here](../getting-started) for instructions).
+This section will walk you through the process of obtaining a GCP service account key and connecting to BigQuery from a Jupyter notebook. If you don't have a GCP account, you will need to create one (see [here](../get-started) for instructions).
 
 ### Obtain a GCP Service Account Key
 

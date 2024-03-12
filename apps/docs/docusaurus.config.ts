@@ -89,15 +89,15 @@ const config: Config = {
           title: "Docs",
           items: [
             {
-              label: "Contribute",
+              label: "Contribute to OSO",
               to: "/docs/contribute/",
             },
             {
-              label: "Get Data",
+              label: "Get OSO Data",
               to: "/docs/integrate/",
             },
             {
-              label: "How OSO Works",
+              label: "Learn How OSO Works",
               to: "/docs/category/how-oso-works/",
             },
           ],
