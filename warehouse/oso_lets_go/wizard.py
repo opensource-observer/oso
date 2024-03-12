@@ -26,6 +26,8 @@ from google.cloud.service_usage import EnableServiceRequest
 from google.cloud import bigquery
 from google.cloud.bigquery import Dataset, DatasetReference
 from google.auth.exceptions import DefaultCredentialsError
+from google.iam.v1 import iam_policy_pb2  # type: ignore
+from google.iam.v1 import policy_pb2  # type: ignore
 
 
 LOGO = """
@@ -119,7 +121,10 @@ def create_key(service_account_email: str, write_path: str) -> None:
         service.projects()
         .serviceAccounts()
         .keys()
-        .create(name="projects/-/serviceAccounts/" + service_account_email, body={})
+        .create(
+            name=f"projects/-/serviceAccounts/{service_account_email}",
+            body={},
+        )
         .execute()
     )
 
@@ -131,6 +136,70 @@ def create_key(service_account_email: str, write_path: str) -> None:
 
     with open(write_path, "w") as f:
         f.write(json_key_file)
+
+
+def delete_key(service_account_email: str, key_id: str) -> None:
+    """Deletes a service account key."""
+
+    name = f"projects/-/serviceAccounts/{service_account_email}/keys/{key_id}"
+
+    credentials = Credentials.from_authorized_user_file(
+        filename=os.path.expanduser(
+            "~/.config/gcloud/application_default_credentials.json"
+        ),
+    )
+
+    service = googleapiclient.discovery.build("iam", "v1", credentials=credentials)
+
+    service.projects().serviceAccounts().keys().delete(name=name).execute()
+
+
+def get_iam_policy(client: ProjectsClient, project_id: str):
+    # Create a client
+
+    # Initialize request argument(s)
+    request = iam_policy_pb2.GetIamPolicyRequest(
+        resource=f"projects/{project_id}",
+    )
+
+    # Make the request
+    resp = client.get_iam_policy(request=request)
+    return resp
+
+
+def set_iam_policy(client: ProjectsClient, project_id: str, new_policy: dict):
+    request = iam_policy_pb2.SetIamPolicyRequest(
+        resource=f"projects/{project_id}", policy=new_policy
+    )
+
+    return client.set_iam_policy(request=request)
+
+
+def iam_policy_add_member(
+    client: ProjectsClient, project_id: str, role: str, member: str
+):
+    policy = get_iam_policy(client, project_id)
+    policy = modify_policy_add_role(policy, role, member)
+    return set_iam_policy(client, project_id, policy)
+
+
+def modify_policy_add_role(policy: dict, role: str, member: str) -> dict:
+    """Adds a new role binding to a policy."""
+
+    updated = False
+    print(policy.bindings)
+    for binding in policy.bindings:
+        print(binding)
+        if binding.role == role:
+            updated = True
+            if member in binding.members:
+                return policy
+    if not updated:
+        binding = policy_pb2.Binding()
+        binding.role = role
+        binding.members.append(member)
+        policy.bindings.append(binding)
+    return policy
 
 
 def wait_key():
@@ -377,7 +446,8 @@ def get_or_create_service_account(project_id: str, service_account_name: str) ->
 
 
 def run_dbt():
-    subprocess.Popen(["dbt", "run", "--target", "playground"])
+    p = subprocess.Popen(["dbt", "run", "--target", "playground"])
+    p.wait()
 
 
 def run():
@@ -437,12 +507,12 @@ def run():
 
     service_account_name = f"{dataset.dataset_id}-admin"
     service_account_name = service_account_name.replace("_", "-")
-    service_account_email = (
+    service_account_email_pre = (
         f"{service_account_name}@{project.project_id}.iam.gserviceaccount.com"
     )
 
     print(
-        f"Ensuring that dataset [yellow]{dataset_id}[/yellow] has a service account [yellow]{service_account_email}[/yellow]"
+        f"Ensuring that dataset [yellow]{dataset_id}[/yellow] has a service account [yellow]{service_account_email_pre}[/yellow]"
     )
 
     ref = DatasetReference(project.project_id, dataset_id=dataset_id)
@@ -460,8 +530,6 @@ def run():
     print("Service Usage API enabled")
 
     # Get or create a service account
-    service_account_name = f"{dataset.dataset_id}-admin"
-    service_account_name = service_account_name.replace("_", "-")
     service_account_email = get_or_create_service_account(
         project.project_id, service_account_name
     )
@@ -470,10 +538,35 @@ def run():
     access_entries = list(dataset.access_entries)
     access_entries.append(
         bigquery.AccessEntry(
-            role="OWNER",
+            role="roles/bigquery.dataEditor",
             entity_type="userByEmail",
             entity_id=service_account_email,
-        )
+        ),
+    )
+    access_entries.append(
+        bigquery.AccessEntry(
+            role="roles/bigquery.user",
+            entity_type="userByEmail",
+            entity_id=service_account_email,
+        ),
+    )
+
+    dataset.access_entries = access_entries
+    dataset = bq_client.update_dataset(dataset, ["access_entries"])
+
+    # Add the service account as a bigquery admin on the project
+    # reduce the scope of this later
+    iam_policy_add_member(
+        project_client,
+        project.project_id,
+        "roles/bigquery.dataEditor",
+        f"serviceAccount:{service_account_email}",
+    )
+    iam_policy_add_member(
+        project_client,
+        project.project_id,
+        "roles/bigquery.user",
+        f"serviceAccount:{service_account_email}",
     )
 
     # Download the service account key
@@ -482,13 +575,35 @@ def run():
     fileutils.mkdir_p(oso_home_dir)
     key_file_path = os.path.join(oso_home_dir, f"{dataset.dataset_id}-keyfile.json")
 
-    create_key(service_account_email, key_file_path)
+    if not os.path.exists(key_file_path):
+        create_key(service_account_email, key_file_path)
+    else:
+        # Automatically delete the key
+        import json
 
-    dataset.access_entries = access_entries
-    dataset = bq_client.update_dataset(dataset, ["access_entries"])
+        with open(key_file_path) as key_file:
+            key = json.load(key_file)
+            if key["project_id"] != project.project_id:
+                print(
+                    textwrap.dedent(
+                        """
+                    [yellow]WARNING:[/yellow]
+                    An existing keyfiles does not match the current
+                    project. Some GCP project may [red]lose[/red] a service account key
+                    """
+                    )
+                )
+                print("")
+                if Confirm.ask("[yellow]Continue?[/yellow]"):
+                    create_key(service_account_email, key_file_path)
+            else:
+                print("[yellow]Found existing key. Rotating[/yellow]")
+                private_key_id = key["private_key_id"]
+                delete_key(service_account_email, private_key_id)
+                create_key(service_account_email, key_file_path)
 
     # Setup the configuration for the playground
-    profiles_path = os.path.expanduser("~/.dbt/profiles.yml")
+    profiles_path = os.path.expanduser("~/.dbt/profiles-test.yml")
 
     profiles_yml = textwrap.dedent(
         f"""
