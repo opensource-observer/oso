@@ -23,76 +23,9 @@ This guide will walk you through adding a dbt model to the repository.
 
 ## Getting Started with dbt
 
-### Prerequisites
-
-Before you begin you'll need the following
-
-- Python 3.11 or higher
-- Python Poetry
-- git
-- A GitHub account
-- A basic understanding of dbt and SQL
-- (Optional) GCP account for exploratory queries. See the [Getting Started guide](../get-started/).
-
-### Install `gcloud`
-
-If you don't have `gcloud`, we need this to manage GCP from the command line.
-The instructions are [here](https://cloud.google.com/sdk/docs/install).
-
-_For macOS users_: Instructions can be a bit clunky if you're on macOS, so we
-suggest using homebrew like this:
-
-```bash
-$ brew install --cask google-cloud-sdk
-```
-
-### Fork and clone the repo
-
-Once you've got everything you need to begin, you'll need to fork the [oso
-repository](https://github.com/opensource-observer/oso) and clone it to your
-local system.
-
-This would look something like:
-
-```bash
-git clone git@github.com:your-github-username-here/oso.git
-```
-
-After that process, has completed. `cd` into the oso repository:
-
-```bash
-cd oso
-```
-
-### Running the Wizard
-
-The next step is to install the python dependencies and run the wizard which
-will ask you to run `dbt` at the end (Say yes if you'd like to copy the
-oso_playground dataset). Simply run:
-
-```bash
-$ poetry install && poetry run oso_lets_go
-```
-
-Once this is completed, you'll have a full "playground" of your own. If you make
-any changes and would like to rerun dbt simply do:
-
-```bash
-$ poetry run dbt run
-```
-
-:::info
-If you would like to remove the need to type `$ poetry run` all the time, you
-can do:
-
-```bash
-$ poetry shell
-```
-
-:::
-
-**Congratulations**! You are now ready to start doing some development with our dbt
-models!
+If you haven't already, checkout the [Getting Started
+Guide](../get-started/index.mdx#setting-up-for-contributing). Once you've
+completed that, you'll be ready to move on with the rest of this tutorial!
 
 ---
 
@@ -255,7 +188,8 @@ $ dbt run
 _Note: If you configured the dbt profile as shown in this document, this `dbt
 run` will write to the `opensource-observer.oso_playground` dataset._
 
-It is likely best to target a specific model so things don't take so long on some of our materializations:
+It is likely best to target a specific model so things don't take so long on
+some of our materializations:
 
 ```
 $ dbt run --select {name_of_your_model}
@@ -287,9 +221,21 @@ compiled sql can be found in the same relative path as it's location in
 The presence of the compiled model does not necessarily mean your SQL will work
 simply that it was rendered by `dbt` correctly. To test your model it's likely
 cheapest to copy the query into the [BigQuery
-Console](https://console.cloud.google.com/bigquery) and run that query there. However, if you need more
-validation you'll need to [Setup GCP with your own
+Console](https://console.cloud.google.com/bigquery) and run that query there.
+However, if you need more validation you'll need to [Setup GCP with your own
 playground](https://docs.opensource.observer/docs/contribute/transform/setting-up-gcp.md#setting-up-your-own-playground-copy-of-the-dataset)
+
+### Testing your dbt models
+
+When you're ready, you can test your dbt models against your playground by
+simply running dbt like so:
+
+```bash
+$ dbt run
+```
+
+If this runs without issue and you feel that you've completed something you'd
+like to contribute. It's time to open a PR!
 
 ### Submit a PR
 
@@ -304,71 +250,6 @@ into our BigQuery dataset and available for querying. At this time, the data
 pipelines are executed once a day by the OSO CI at 02:00 UTC. The pipeline
 currently takes a number of hours and any materializations or views would likely
 be ready for use by 4-6 hours after that time.
-
----
-
-## Setting up your own copy of the `oso_playground` dataset
-
-For advanced users that would like to test/develop your own models on the data we
-have available publicly, you can instantiate your own datasets in BigQuery and
-configure a dbt profile that will automatically copy the same data used in the
-"playground" into your own dataset.
-
-:::tip
-In the future we will make it easy to use our terraform module to make
-initialize the dataset (even if you don't want it to be publicly available). For
-now, because that module also sets up other parts of our infrastructure the
-easiest method is to create a dataset in BigQuery UI.
-:::
-
-To do this:
-
-1. Go to the [BigQuery UI](https://console.cloud.google.com/bigquery).
-2. Click on the vertical '...' near the name of your Project.
-3. Click `Create Dataset`
-4. Create a dataset in the US Multi-region (you can choose any region, but beware that other
-   regions will incur further charges for egressing data). Be sure to remember
-   the dataset ID you used. We will use it soon.
-
-Once that's completed you can then create an authentication profile for dbt to
-connect to your dataset like the one below (replace the `dataset` and `project`
-sections with your own dataset ID and project ID):
-
-```yml
-opensource_observer:
-  outputs:
-    dev:
-      type: bigquery
-      # REPLACE
-      dataset: YOUR_DATA_SET_NAME
-      job_execution_time_seconds: 300
-      job_retries: 1
-      location: US
-      method: oauth
-      project: YOUR_PROJECT_ID
-      threads: 1
-  target: dev
-```
-
-_Note: For this guide to work you must use the `dev` target_
-
-Now that you have this you can log in to google:
-
-```bash
-$ gcloud auth application-default login
-```
-
-And from within the root of the oso repository you could run the dbt models to
-fill your profile:
-
-```bash
-$ poetry shell # this gets you into the right python environment
-$ dbt run
-```
-
-Once this is completed, you'll have a full "playground" of your own. Happy data sciencing!
-
----
 
 ## Model Examples
 

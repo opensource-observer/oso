@@ -99,8 +99,78 @@ To explore all the OSO datasets available, see [here](https://console.cloud.goog
 - **oso\_playground** contains only the last 2 weeks for every datast. We recommend using this for development and testing.
 :::
 
-🎉 **Congrats! You're ready to do some real impact data science!**  🥂
+## Setting up for Contributing
 
+At some point, you will probably want to start doing more deep data science,
+contributing models, or even contributing data. Normally, there are quite a few
+steps to complete this task - setting up gcp service accounts, bigquery
+datasets, etc. This is usually a long process so we decided to automate much of
+that with our useful wizard. Let's get started!
+
+### System Prequisites
+
+Before you begin you'll need the following:
+
+- Python 3.11 or higher
+- Python Poetry
+- git
+- A GitHub account
+- A basic understanding of dbt and SQL
+- gcloud
+  - See the next section.
+
+### Install `gcloud`
+
+If you don't have `gcloud`, we need this to manage GCP from the command line.
+The instructions are [here](https://cloud.google.com/sdk/docs/install).
+
+_For macOS users_: Instructions can be a bit clunky if you're on macOS, so we
+suggest using homebrew like this:
+
+```bash
+$ brew install --cask google-cloud-sdk
+```
+
+### Fork and/or clone the repo
+
+Once you've got everything you need to begin, you'll need to get the [oso
+repository](https://github.com/opensource-observer/oso) and clone it to your
+local system (replace this url if you've forked the repository):
+
+```bash
+$ git clone https://github.com/opensource-observer/oso.git
+```
+
+After that process, has completed. `cd` into the oso repository:
+
+```bash
+$ cd oso
+```
+
+### Running the Wizard
+
+The next step is to install the python dependencies and run the wizard which
+will ask you to run `dbt` at the end (Say yes if you'd like to copy the
+oso_playground dataset). Simply run:
+
+```bash
+$ poetry install && poetry run oso_lets_go
+```
+
+Once this is completed, you'll have a full "playground" of your own. If you make
+any changes and would like to rerun dbt simply do:
+
+```bash
+$ poetry run dbt run
+```
+
+:::info
+If you would like to remove the need to type `$ poetry run` all the time, you
+can do:
+
+```bash
+$ poetry shell
+```
 
 ## Join the Kariba Data Collective
 
