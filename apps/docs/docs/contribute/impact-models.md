@@ -34,6 +34,18 @@ Before you begin you'll need the following
 - A basic understanding of dbt and SQL
 - (Optional) GCP account for exploratory queries. See the [Getting Started guide](../getting-started/).
 
+### Install `gcloud`
+
+If you don't have `gcloud`, we need this to manage GCP from the command line.
+The instructions are [here](https://cloud.google.com/sdk/docs/install).
+
+_For macOS users_: Instructions can be a bit clunky if you're on macOS, so we
+suggest using homebrew like this:
+
+```bash
+$ brew install --cask google-cloud-sdk
+```
+
 ### Fork and clone the repo
 
 Once you've got everything you need to begin, you'll need to fork the [oso
