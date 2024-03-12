@@ -1,6 +1,16 @@
 {
   "props": [
     {
+      "name": "background-gray",
+      "type": "color",
+      "value": "#272729",
+      "category": "color",
+      "meta": {
+        "projectId": "2CtczDeUz9jL9qnFi6NWuQ",
+        "id": "7AdcKFArKr7V"
+      }
+    },
+    {
       "name": "black",
       "type": "color",
       "value": "#000000",
