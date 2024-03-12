@@ -68,7 +68,7 @@ cd oso
 
 The next step is to install the python dependencies and run the wizard which
 will ask you to run `dbt` at the end (Say yes if you'd like to copy the
-oso_playground dataset). Simply do:
+oso_playground dataset). Simply run:
 
 ```bash
 $ poetry install && poetry run oso_lets_go
@@ -81,6 +81,7 @@ any changes and would like to rerun dbt simply do:
 $ poetry run dbt run
 ```
 
+:::info
 If you would like to remove the need to type `$ poetry run` all the time, you
 can do:
 
@@ -88,7 +89,10 @@ can do:
 $ poetry shell
 ```
 
-You should be ready to start doing some development with our dbt models!
+:::
+
+**Congratulations**! You are now ready to start doing some development with our dbt
+models!
 
 ---
 
