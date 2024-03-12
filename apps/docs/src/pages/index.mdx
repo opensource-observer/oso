@@ -1,66 +1,13 @@
 ---
-title: Start Here
+title: Open Source Observer (OSO) Docs
 description: "Open Source Observer (OSO) Documentation site"
 sidebar_position: 0
 ---
 
 import Link from "@docusaurus/Link";
+import { PlasmicRootProvider } from "@plasmicapp/react-web";
+import Overview from "../components/plasmic/Overview";
 
-# Open Source Observer (OSO)
-
-OSO is a community-led effort to curate, process, analyze, and visualize
-the data necessary to understand the impact of open source projects.
-This documentation will help you both contribute to OSO
-and share results with the commmunity.
-
-:::tip
-Open search with <kbd>/</kbd>, then <kbd>Tab</kbd> to search docs
-:::
-
-## Contribute To OSO
-
-Learn how to contribute to the OSO effort
-with new data sources, new data analysis, new visualizations, or source code.
-
-<Link to="/docs/contribute/" className="button button--secondary button--lg">Learn more</Link>
-
----
-
-## Integrate With OSO
-
-Pull data and visualizations from OSO to integrate into your site or app.
-
-<Link to="/docs/integrate/" className="button button--secondary button--lg">Learn more</Link>
-
----
-
-## Learn How OSO Works
-
-Learn the internal architecture of how OSO is put together.
-We are [open source, open data, and open infrastructure](/blog/open-source-open-data-open-infra).
-All code and devops is continuously-deployed and fully-transparent,
-constantly evolving with community contributions.
-
-<Link to="/docs/how-oso-works/" className="button button--secondary button--lg">Learn more</Link>
-
----
-
-## Blog
-
-Check out the blog for impact reports, thought pieces and updates from the OSO community.
-
-<Link to="/blog" className="button button--secondary button--lg">Read</Link>
-
----
-
-## Subscribe For Updates
-
-<iframe
-  src={"https://kariba.substack.com/embed"}
-  width={400}
-  height={150}
-  style={{
-    background: "white",
-  }}
-  scrolling={"no"}
-/>
+<PlasmicRootProvider>
+  <Overview /> 
+</PlasmicRootProvider>
