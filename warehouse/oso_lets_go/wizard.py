@@ -288,7 +288,10 @@ class StringValidate(PromptBase):
     ):
         self.validator = validator
         super().__init__(
-            prompt, console=console, password=password, show_default=show_default
+            prompt,
+            console=console,
+            password=password,
+            show_default=show_default,
         )
 
     def process_response(self, value: str) -> Any:
@@ -306,7 +309,13 @@ class StringValidate(PromptBase):
         default: Any = None,
         stream: Optional[TextIO] = None,
     ):
-        return cls(prompt, console, validator, password, show_default)()
+        return cls(
+            prompt,
+            console,
+            validator,
+            password,
+            show_default,
+        )(default=default, stream=stream)
 
 
 VALID_PROJECT_ID_RE = re.compile("^[a-z][A-Za-z0-9-]*$")
@@ -381,7 +390,10 @@ def create_new_dataset(
     def wrapped():
         print("[bold green]Let's create a new BigQuery Dataset")
         dataset_id = StringValidate.ask(
-            "[green]Enter a dataset id[/green]", None, validator=dataset_name_validator
+            "[green]Enter a dataset id[/green]",
+            None,
+            validator=dataset_name_validator,
+            default="oso_playground_copy",
         )
         dataset = bigquery.Dataset(f"{project_id}.{dataset_id}")
 
