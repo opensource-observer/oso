@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd "${SCRIPT_DIR}/../../"
@@ -6,8 +7,8 @@ REPO_DIR=$(pwd)
 
 # For now if a plugin has both a pyproject.toml and a package.json. The python
 # will be used by nature of the order of docker image publishing
-python_plugins="$(find ./cloudquery -type f -name 'pyproject.toml' -exec sh -c 'dirname $0' {} \;)"
-ts_plugins="$(find ./cloudquery -type f -name 'package.json' -exec sh -c 'dirname $0' {} \;)"
+python_plugins="$(find ./warehouse/cloudquery-* -type f -name 'pyproject.toml' -exec sh -c 'dirname $0' {} \;)"
+ts_plugins="$(find ./warehouse/cloudquery-* -type f -name 'package.json' -exec sh -c 'dirname $0' {} \;)"
 tag="$(git rev-parse HEAD)"
 
 build_base_image() {
