@@ -1,13 +1,19 @@
 ---
-title: Getting Started
+title: Get Started
 sidebar_position: 1
 ---
 
-## Generate an API key
+import Link from "@docusaurus/Link";
 
 :::info
-Access to the OSO GraphQL API is necessary for any integration with OSO datasets. The API serves impact metrics for OSS projects, collections, and artifacts.
+There are two easy ways of accessing OSO datasets: through our GraphQL API and through our data warehouse on BigQuery. For integrations, you'll need API access. For exploratory analysis and impact data science, it's best to go direct to the data warehouse. 
 :::
+
+## Generate an API key
+
+---
+
+The OSO GraphQL API serves impact metrics for OSS projects, collections, and artifacts. Access to the OSO GraphQL API is necessary for any integration with OSO datasets. 
 
 First, navigate to [www.opensource.observer](https://www.opensource.observer) and create a new account.
 
@@ -23,15 +29,17 @@ You can create as many keys as you like.
 
 ![generate API key](./generate-api-key.png)
 
+## Login to BigQuery
 
-## Getting started with GCP
+---
 
-:::info
 OSO's data warehouse is currently located on BigQuery and is available publicly by
 referencing it as `opensource-observer.oso`. If you're looking to explore the
-data, or to contribute to our public set of models you will need to have an
-account with GCP (Google Cloud).
-:::
+data, or to contribute to our public set of models, you will need to have an
+account with GCP (Google Cloud Platform).
+
+
+### Sign up free
 
 
 If this is your first time getting into GCP, you can do so by going
@@ -64,8 +72,7 @@ The console features an **Explorer** frame on the left-hand side, which lists al
 
 ![GCP Welcome](./gcp_welcome.png)
 
-## Querying the `oso_playground` dataset
-
+### Query the `oso_playground` dataset
 
 If you just created your GCP account by following the steps above, then you'll already be in the BigQuery Console. However, if you're just joining us because you already have an account, then go directly to the BigQuery Console by clicking [here](https://console.cloud.google.com/bigquery).
 
@@ -94,10 +101,19 @@ To explore all the OSO datasets available, see [here](https://console.cloud.goog
 
 🎉 **Congrats! You're ready to do some real impact data science!**  🥂
 
-## What next?
 
-Now that you're set up, there are many ways to contribute to OSO and integrate the data with your application.
+## Join the Kariba Data Collective
+
+---
+
+Now that you're set up, there are many ways to contribute to OSO and integrate the data with your application:
 
 - [Do Data Science](../integrate/data-science) over OSO data sets
 - [Propose an impact model](../contribute/impact-models) to run in our data pipeline
 - [Query the OSO API](../integrate/api) for metrics and impact vectors from your web app
+
+If you think you'll be an ongoing contributor to OSO, please apply to join the [Kariba Data Collective](https://kariba.network). 
+
+Membership is free but we want to keep the community close-knit and mission-aligned. As the community grows, we want to reward the most useful contributions and in so doing create a new job category for impact data science.
+
+<Link to="https://kariba.network" className="button button--secondary button--lg">Join the Data Collective</Link>

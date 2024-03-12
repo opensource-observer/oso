@@ -32,7 +32,7 @@ Before you begin you'll need the following
 - git
 - A GitHub account
 - A basic understanding of dbt and SQL
-- (Optional) GCP account for exploratory queries. See the [Getting Started guide](../getting-started/).
+- (Optional) GCP account for exploratory queries. See the [Getting Started guide](../get-started/).
 
 ### Install `gcloud`
 
