@@ -24,8 +24,9 @@ This guide will walk you through adding a dbt model to the repository.
 ## Getting Started with dbt
 
 If you haven't already, checkout the [Getting Started
-Guide](../get-started/index.mdx#setting-up-for-contributing). Once you've
-completed that, you'll be ready to move on with the rest of this tutorial!
+Guide](https://docs.opensource.observer/docs/get-started/index.mdx#setting-up-for-contributing).
+Once you've completed that, you'll be ready to move on with the rest of this
+tutorial!
 
 ---
 
