@@ -5,6 +5,7 @@ import {
   PlasmicOverview,
   DefaultOverviewProps,
 } from "./generated/docs_opensource_observer/PlasmicOverview";
+import { useColorMode } from "@docusaurus/theme-common";
 import { HTMLElementRefOf } from "@plasmicapp/react-web";
 
 // Your component props start with props for variants and slots you defined
@@ -20,9 +21,16 @@ import { HTMLElementRefOf } from "@plasmicapp/react-web";
 //
 // You can also stop extending from DefaultOverviewProps altogether and have
 // total control over the props for your component.
-export interface OverviewProps extends DefaultOverviewProps {}
+export interface OverviewProps extends DefaultOverviewProps {
+  theme?: string;
+}
 
 function Overview_(props: OverviewProps, ref: HTMLElementRefOf<"div">) {
+  const { theme, ...rest } = props;
+  const { colorMode } = useColorMode();
+  const chosenTheme = [theme, colorMode].includes("dark") ? "dark" : undefined;
+  console.log(colorMode);
+
   // Use PlasmicOverview to render this component as it was
   // designed in Plasmic, by activating the appropriate variants,
   // attaching the appropriate event handlers, etc.  You
@@ -38,7 +46,7 @@ function Overview_(props: OverviewProps, ref: HTMLElementRefOf<"div">) {
   // By default, we are just piping all OverviewProps here, but feel free
   // to do whatever works for you.
 
-  return <PlasmicOverview root={{ ref }} {...props} />;
+  return <PlasmicOverview root={{ ref }} {...rest} theme={chosenTheme} />;
 }
 
 const Overview = React.forwardRef(Overview_);

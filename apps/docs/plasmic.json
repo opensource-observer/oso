@@ -25,7 +25,7 @@
       "projectId": "2CtczDeUz9jL9qnFi6NWuQ",
       "projectApiToken": "yvwjxyEJFxnaif4WsqfZHgYKCa3r2Q11QOnCLetiUMwl92qDANOAvfNfim9r7MyMaQi5Mnb752gNYFMfdng",
       "projectName": "docs.opensource.observer",
-      "version": "latest",
+      "version": ">=0",
       "cssFilePath": "generated/docs_opensource_observer/plasmic.module.css",
       "components": [
         {
@@ -79,6 +79,11 @@
           "id": "4hUpITJttWoK",
           "name": "IconIcon",
           "moduleFilePath": "generated/docs_opensource_observer/icons/PlasmicIcon__Icon.tsx"
+        },
+        {
+          "id": "IUL_Z3b2VK27",
+          "name": "IdeaSvgrepoComsvgIcon",
+          "moduleFilePath": "generated/docs_opensource_observer/icons/PlasmicIcon__IdeaSvgrepoComsvg.tsx"
         }
       ],
       "images": [
