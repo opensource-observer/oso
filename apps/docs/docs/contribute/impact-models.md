@@ -46,101 +46,37 @@ This would look something like:
 git clone git@github.com:your-github-username-here/oso.git
 ```
 
-### Using the poetry environment locally
-
-From inside the root of the repository, run poetry to install the dependencies.
+After that process, has completed. `cd` into the oso repository:
 
 ```bash
-$ poetry install
+cd oso
 ```
 
-Once installation has completed you can enter the poetry environment.
+### Running the Wizard
+
+The next step is to install the python dependencies and run the wizard which
+will ask you to run `dbt` at the end (Say yes if you'd like to copy the
+oso_playground dataset). Simply do:
+
+```bash
+$ poetry install && poetry run oso_lets_go
+```
+
+Once this is completed, you'll have a full "playground" of your own. If you make
+any changes and would like to rerun dbt simply do:
+
+```bash
+$ poetry run dbt run
+```
+
+If you would like to remove the need to type `$ poetry run` all the time, you
+can do:
 
 ```bash
 $ poetry shell
 ```
 
-From here you should have dbt on your path.
-
-```bash
-$ which dbt
-```
-
-_This should return something like `opensource-observer/oso/.venv/bin/dbt`_
-
-### Authenticating to BigQuery
-
-If you have write access to the dataset then you can connect to it by setting
-the `opensource_observer` profile in `dbt`. Inside `~/.dbt/profiles.yml` (create
-it if it isn't there), add the following:
-
-:::warning
-If you target the `production` dataset you'll be editing the live
-production data. Do so with caution if you have write access to these datasets.
-:::
-
-```yaml
-opensource_observer:
-  outputs:
-    production:
-      type: bigquery
-      dataset: oso
-      job_execution_time_seconds: 300
-      job_retries: 1
-      location: US
-      method: oauth
-      project: opensource-observer
-      threads: 1
-    playground:
-      type: bigquery
-      dataset: oso
-      job_execution_time_seconds: 300
-      job_retries: 1
-      location: US
-      method: oauth
-      project: opensource-observer
-      threads: 1
-  # By default we target the playground. it's less costly and also safer to write
-  # there while developing
-  target: playground
-```
-
-If you don't have `gcloud` installed you'll need to do so as well. The
-instructions are [here](https://cloud.google.com/sdk/docs/install).
-
-_For macOS users_: Instructions can be a bit clunky if you're on macOS, so we
-suggest using homebrew like this:
-
-```bash
-$ brew install --cask google-cloud-sdk
-```
-
-Finally, authenticate to Google by runnin the following:
-
-```bash
-$ gcloud auth application-default login
-```
-
-A browser window will pop up after this, so be sure to come back to the docs after you've completed the
-login.
-
-You'll need to re-authenticate once an hour. This is simplest to setup but can be a pain
-as you need to regularly re-auth. If you need longer access you can setup a
-service-account in GCP, but these docs will not cover that for now.
-
-You should now be logged into BigQuery!
-
-### Testing
-
-Test that everything is working by running the following command _within the
-poetry environment_:
-
-```bash
-$ dbt run --select projects
-```
-
-If the command executes properly, then you're ready to start creating your own
-dbt models!
+You should be ready to start doing some development with our dbt models!
 
 ---
 
