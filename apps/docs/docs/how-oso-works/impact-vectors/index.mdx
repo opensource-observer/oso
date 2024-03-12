@@ -7,8 +7,14 @@ import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
 :::info
-An **impact vector** is a direction of positive impact that a collection of similar projects in an open source ecosystem should work towards. It encompasses a quantitative impact metric, measured over a discrete period of time, and normalized across a distribution of projects within the ecosystem. This specification outlines how to create, define, and submit impact vectors.
+An **impact vector** is a list of normalized impact metrics for a project at a discrete point in time. This specification outlines how to create, define, and submit impact vectors.
 :::
+
+Whereas an [impact metric](../impact-metrics) is a single, absolute measurement of a project's impact (e.g., a project's fork count), an **impact vector** is a series of related metrics about a project normalized to a 0-1 scale and captured at a discrete point in time. Thus, a project's impact at a given point in time may be derived from a set of metrics such as `fork_count`, `star_count`, `contributor_count`, etc. This approach is useful for estimating a project's overall impact in an ecosystem.
+
+Alternatively, an impact vector can also be represented from the perspective of the metric itself. In this case, the `fork_count` vector would represent the normalized `fork_count` of every project in the set of projects at a given point in time. This construction is useful for analyzing specific types of impact or ranking projects.
+
+ 
 
 ## Requirements
 
@@ -16,11 +22,10 @@ An **impact vector** is a direction of positive impact that a collection of simi
 
 An impact vector must be:
 
-- Derived from a quantitative [impact metric](../impact-metrics) that is relevant to the theme of the impact vector and the ecosystem it represents.
-- Measured over a discrete period of time, such as the last 6 months or since the project's inception.
-- Normalized across a distribution of set of projects within an open source ecosystem, using an appropriate method (e.g., Gaussian distribution, log scale). The selection criteria for the set of projects should be clearly defined.
-- Accompanied by reproducible code that describes how the metric is calculated and normalized.
-
+- Derived from a quantitative [impact metric](../impact-metrics) that is applied consistently to a set of open source projects.
+- Measured at a specific point in time (the same time for all projects in the set).
+- Normalized to a common scale (0 to 1) across the set of projects.
+- Accompanied by reproducible code that describes how the vector is calculated and normalized.
 
 ## Sample Vectors
 
