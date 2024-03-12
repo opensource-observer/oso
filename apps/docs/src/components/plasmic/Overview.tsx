@@ -29,7 +29,7 @@ function Overview_(props: OverviewProps, ref: HTMLElementRefOf<"div">) {
   const { theme, ...rest } = props;
   const { colorMode } = useColorMode();
   const chosenTheme = [theme, colorMode].includes("dark") ? "dark" : undefined;
-  console.log(colorMode);
+  console.log(chosenTheme, colorMode);
 
   // Use PlasmicOverview to render this component as it was
   // designed in Plasmic, by activating the appropriate variants,
@@ -46,7 +46,7 @@ function Overview_(props: OverviewProps, ref: HTMLElementRefOf<"div">) {
   // By default, we are just piping all OverviewProps here, but feel free
   // to do whatever works for you.
 
-  return <PlasmicOverview root={{ ref }} {...rest} theme={chosenTheme} />;
+  return <PlasmicOverview {...rest} root={{ ref }} theme={chosenTheme} />;
 }
 
 const Overview = React.forwardRef(Overview_);
