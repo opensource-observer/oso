@@ -23,9 +23,13 @@ build_base_image() {
 # Build the base images
 py_base_image=$(build_base_image py $tag)
 ts_base_image=$(build_base_image ts $tag)
+prefix="cloudquery-"
 
 for path in $ts_plugins; do
     plugin_name=$(basename $path)
+    # Remove the cloudquery prefix
+    plugin_name=${plugin_name#"$prefix"}
+
     plugin_image="ghcr.io/opensource-observer/cloudquery-${plugin_name}:${tag}"
 
     echo "Building ${plugin_name} plugin"
@@ -40,6 +44,9 @@ done
 
 for path in $python_plugins; do
     plugin_name=$(basename $path)
+    # Remove the cloudquery prefix
+    plugin_name=${plugin_name#"$prefix"}
+
     plugin_cmd=$(echo $plugin_name | sed "s/-/_/g")
     plugin_image="ghcr.io/opensource-observer/cloudquery-${plugin_name}:${tag}"
 
