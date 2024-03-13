@@ -11,40 +11,114 @@ Notebooks are a great way for data scientists to explore data, organize ad-hoc a
 
 ---
 
-We will assume you have some familiarity with setting up a local Python environment and running [Jupyter notebooks](https://jupyter.org/). We strongly recommend using Python >= 3.11. However, this guide should work for Python >= 3.7.
+### New users: install Jupyter using Anaconda
+
+For new users, we highly recommend [installing Anaconda](https://www.anaconda.com/download). Anaconda conveniently installs Python, the Jupyter Notebook, and other commonly used packages for working with data.
+
+Use the following installation steps:
+
+1. Download [Anaconda](https://www.anaconda.com/download). We recommend downloading Anaconda’s latest Python 3 version.
+
+2. Install the version of Anaconda which you downloaded, following the instructions on the download page.
+
+3. After the installation is completed, you are ready to run the notebook server. Open the terminal and execute:
+
+```bash
+jupyter notebook
+```
+
+4. This will print some information about the notebook server in your terminal, including the URL of the web application (by default, `http://localhost:8888)`). Then, your default web browser should open with a list of files in your current directory. Navigate to **new** and select the option to create a **Python 3 (ipykernel)** Notebook.
+
+![jupyter](./jupyter.png)
+
+Congratulations! You're in. You should have an empty Jupyter notebook on your computer, ready for data sciencing.
 
 :::tip
-If this is your first time setting up a data science workstation, we recommend [downloading Anaconda](https://www.anaconda.com/download) and following their instructions for installation. Then, check out the [Jupyter docs](https://jupyter-notebook-beginner-guide.readthedocs.io/en/latest/) to learn how to write your first notebooks.
+If you run into issues getting set up with Jupyter, check out the [Jupyter docs](https://docs.jupyter.org/en/latest/install.html).
 :::
 
-### Install Standard Dependencies
+### Experienced users: install standard dependencies
 
-You should have the following standard dependencies installed in your local environment. It is a best practice to use a Python virtual environment tool such as [virtualenv](https://virtualenv.pypa.io/en/latest/) to manage dependencies.
+If you're here, we will assume you have some familiarity with setting up a local Python environment and installing packages. We strongly recommend using Python >= 3.11. However, this guide should work for Python >= 3.7. The next section will ensure you have all the standard data science packages installed in your local environment.
+
+Remember, it is a best practice to use a Python virtual environment tool such as [virtualenv](https://virtualenv.pypa.io/en/latest/) to manage dependencies.
+
+#### Install pip and jupyter
+
+First, ensure that you have the latest pip; older versions may have trouble with some dependencies:
+
+```
+pip install --upgrade pip
+```
+
+Then install the Jupyter Notebook using:
+
+```
+pip install jupyter
+```
 
 #### For working with dataframes and vector operations
+
+The following packages are used in almost every Python data science application:
 
 - [pandas](https://pandas.pydata.org/)
 - [numpy](https://numpy.org/)
 
-#### For graph and statistical analysis
+Install them:
 
-- [networkx](https://networkx.org/)
+```
+pip install pandas numpy
+```
+
+#### For statistical analysis and vector operations
+
+The following packages are used for statistical analysis and vector operations:
+
 - [scikit-learn](https://scikit-learn.org/stable/)
 - [scipy](https://www.scipy.org/)
 
+Install them:
+
+```
+pip install scikit-learn scipy
+```
+
+#### For working with graph data
+
+If you plan on doing graph-based analysis, you may want to install [networkx](https://networkx.org/).
+
+```
+pip install networkx
+```
+
 #### For charting and data visualization
+
+These are the most popular packages for static data visualization:
 
 - [matplotlib](https://matplotlib.org/)
 - [seaborn](https://seaborn.pydata.org/)
-- [plotly](https://plotly.com/python/)
 
-### Install the BigQuery Python Client Library
+```
+pip install matplotlib seaborn
+```
+
+For interactive data visualization, you may want to install [plotly](https://plotly.com/python/).
+
+```
+pip install plotly
+```
+
+### All users: install the BigQuery Python Client Library
+
+We recommend using the [Google Cloud BigQuery Python Client Library](https://cloud.google.com/python/docs/reference/bigquery/latest/index.html) to connect to the OSO data warehouse. This library provides a convenient way to interact with BigQuery from your Jupyter notebook.
 
 From the command line, install **google-cloud-bigquery** either directly on your machine or in a new virtual environment:
 
-```bash
-$ pip install google-cloud-bigquery
 ```
+pip install google-cloud-bigquery
+```
+
+Alternatively, you can stick to static analysis and export your data from BigQuery to a CSV or JSON file and then import it into your notebook.
 
 ## Connecting to GCP
 
@@ -183,7 +257,7 @@ These notebooks typically have the following structure:
 
 This next section will help you create a notebook from scratch, performing each of these steps using the OSO playground dataset.
 
-### Setup
+### Prepare your notebook
 
 From the command line, create a new Jupyter notebook:
 
@@ -340,7 +414,7 @@ There are a variety of statistical techniques for normalizing data and setting p
 The complete specification for an impact vector is available [here](../how-oso-works/impact-vectors/).
 :::
 
-### Steps
+### General guide for creating an impact vector
 
 #### 1. Name and Tag the Vector
 
@@ -362,7 +436,7 @@ The complete specification for an impact vector is available [here](../how-oso-w
 
 If you'd like to share your impact vector with the OSO community, you can do so by opening an issue or pull request in the [Insights repository](https://github.com/opensource-observer/insights) with the script and visualization of the normalized data distribution. A maintainer will review and help gather feedback from the community. If the script is approved, it will be replicated in production and available on OSO and through the API. See [here](https://github.com/opensource-observer/insights/blob/main/community/notebooks/oso_impact_vector_starter.ipynb) for an example.
 
-### Tutorial: Be Forkable
+### Tutorial: create an impact vector derived from fork counts
 
 ---
 
@@ -380,9 +454,15 @@ We will apply a very liberal filter: any project with at least 1 fork in any of 
 
 As we saw in [the first tutorial above](#analyze), forks have a wide range of values. Therefore, we will use a log scale to transform the distribution. We will also normalize to range of 0 to 1.
 
-#### Fetching the Data
+#### Setup
 
-We will fetch the latest fork counts for all projects in the OSO data warehouse and store them in a dataframe. We also need to import `numpy` and `sklearn` for some of our processing.
+From the command line, create a new Jupyter notebook:
+
+```bash
+$ jupyter notebook
+```
+
+Import standard dependencies as well as `numpy` and `sklearn` for some of our processing. Authenticate with your service account key.
 
 ```python
 from google.cloud import bigquery
@@ -395,7 +475,13 @@ from sklearn.preprocessing import MinMaxScaler
 
 os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = '' # path to your service account key in your downloads folder
 client = bigquery.Client()
+```
 
+#### Fetching the Data
+
+We will fetch the latest fork counts for all projects in the OSO data warehouse and store them in a dataframe:
+
+```python
 query = """
     SELECT
         project_name,

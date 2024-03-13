@@ -21,6 +21,8 @@ All API requests are sent to the following URL:
 https://opensource-observer.hasura.app/v1/graphql
 ```
 
+You can navigate to our [public GraphQL explorer](https://cloud.hasura.io/public/graphiql?endpoint=https://opensource-observer.hasura.app/v1/graphql) to explore the schema and execute test queries.
+
 ## Authentication
 
 ---
@@ -52,6 +54,35 @@ query GetProjects {
     project_name
     project_slug
     user_namespace
+  }
+}
+```
+
+This query will fetch **code metrics** for 10 projects, ordered by `avg_active_devs_6_months`.
+
+```graphql
+query GetCodeMetrics {
+  code_metrics_by_project(
+    limit: 10
+    order_by: { avg_active_devs_6_months: desc_nulls_last }
+  ) {
+    project_id
+    project_name
+    repositories
+    avg_active_devs_6_months
+    avg_fulltime_devs_6_months
+    contributors
+    contributors_6_months
+    new_contributors_6_months
+    first_commit_date
+    last_commit_date
+    forks
+    stars
+    issues_closed_6_months
+    issues_opened_6_months
+    pull_requests_merged_6_months
+    pull_requests_opened_6_months
+    commits_6_months
   }
 }
 ```
