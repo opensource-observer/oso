@@ -4,6 +4,6 @@ FROM ${BASE_IMAGE}
 
 ARG PLUGIN_NAME
 
-WORKDIR /usr/src/app/cloudquery/${PLUGIN_NAME}
+WORKDIR /usr/src/app/warehouse/cloudquery-${PLUGIN_NAME}
 
 ENTRYPOINT [ "pnpm", "node", "--loader", "ts-node/esm", "src/main.ts" ]
