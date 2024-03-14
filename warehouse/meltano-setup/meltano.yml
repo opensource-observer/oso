@@ -1,0 +1,34 @@
+version: 1
+default_environment: dev
+project_id: 671eb7d0-5f9f-4fb0-a574-fade80e01401
+environments:
+- name: dev
+- name: staging
+- name: prod
+plugins:
+  extractors:
+  - name: tap-postgres
+    variant: airbyte
+    pip_url: git+https://github.com/MeltanoLabs/tap-airbyte-wrapper.git
+    config:
+      airbyte_config:
+        jdbc_url_params: "replication=postgres"
+        ssl_mode:
+          mode: require
+        schemas:
+        - public
+        replication_method:
+          plugin: pgoutput
+          method: CDC
+          publication: publication_name
+          replication_slot: airbyte_slot
+          initial_waiting_seconds: 5
+    select:
+    - test_table.id
+    - test_table.data
+    - test_table.created_at
+
+  loaders:
+  - name: target-jsonl
+    variant: andyh1203
+    pip_url: target-jsonl
