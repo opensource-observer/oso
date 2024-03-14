@@ -13,9 +13,9 @@ on:
   workflow_dispatch:
 
 jobs:
-  warehouse-run-data-pipeline:
-    name: warehouse-run-data-pipeline
-    environment: indexer
+  test-meltano-pipeline:
+    name: test-meltano-pipeline
+    environment: temporary-2024-03-13
     runs-on: ubuntu-latest
 
     permissions:
