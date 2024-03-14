@@ -31,7 +31,7 @@ type HitProps = {
 function Hit({ hit }: HitProps) {
   return (
     <Link
-      href={createLink(hit.slug)}
+      href={createLink(hit.project_slug)}
       style={{
         width: "100%",
       }}
@@ -44,7 +44,7 @@ function Hit({ hit }: HitProps) {
         }}
       >
         <ListItemText>
-          <Highlight attribute="name" hit={hit} />
+          <Highlight attribute="project_name" hit={hit} />
         </ListItemText>
       </ListItem>
     </Link>
