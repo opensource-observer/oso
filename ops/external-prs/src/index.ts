@@ -7,9 +7,11 @@ async function main() {
   const APP_TO_CHECK = process.env.APP_TO_CHECK;
   const SHA_TO_CHECK = process.env.SHA_TO_CHECK;
 
+  const buf = Buffer.from(process.env.APP_PRIVATE_KEY!, "base64"); // Ta-da
+
   const app = new App({
     appId: process.env.APP_ID!,
-    privateKey: process.env.PRIVATE_KEY!,
+    privateKey: buf.toString("utf-8"),
   });
 
   const { data } = await app.octokit.request("/app");
