@@ -28,6 +28,9 @@ $ meltano
 
 ## Settings up a postgresdb for replication
 
+All of these instructions should happen _after_ the table has already been
+created.
+
 Set `wal_level` to be `logical`
 
 ```SQL
