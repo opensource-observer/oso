@@ -59,3 +59,7 @@ dbt_packages/
 
 # Python
 *.pyc
+
+supabase/.temp/
+**/supabase/.temp/
+*/**/supabase/.temp/

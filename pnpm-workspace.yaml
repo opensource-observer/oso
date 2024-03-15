@@ -4,3 +4,4 @@ packages:
   - "apps/docs"
   - "apps/frontend"
   - "apps/hasura"
+  - "ops/external-prs"
