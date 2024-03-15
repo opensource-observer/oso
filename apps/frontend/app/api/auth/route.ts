@@ -42,6 +42,7 @@ export async function GET(request: NextRequest) {
 
   // If no token provided, then return anonymous role
   if (!auth) {
+    console.log(`/api/auth: No token => anon`);
     return NextResponse.json(makeAnonRole());
   }
 
@@ -54,9 +55,9 @@ export async function GET(request: NextRequest) {
   // Try JWT decoding
   try {
     const decoded = jwtDecode(token);
-    console.log("JWT token:", decoded);
+    console.log("JWT token: ", decoded);
   } catch (e) {
-    console.warn("JWT error: ", e);
+    console.warn("JWT decoding error: ", e);
   }
 
   // Get the user
@@ -66,12 +67,13 @@ export async function GET(request: NextRequest) {
     .eq(API_KEY_COLUMN, token);
 
   if (keyError || !keyData) {
-    console.warn("Error retrieving API keys", keyError);
+    console.warn(`/api/auth: Error retrieving API keys => anon`, keyError);
     return NextResponse.json(makeAnonRole());
   }
 
   const activeKeys = keyData.filter((x) => !x.deleted_at);
   if (activeKeys.length < 1) {
+    console.log(`/api/auth: API key not valid => anon`);
     return NextResponse.json(makeAnonRole());
   }
 
@@ -86,12 +88,13 @@ export async function GET(request: NextRequest) {
 
   if (collectiveError || !collectiveData) {
     console.warn(
-      "Error retrieving data collective membership",
+      `/api/auth: Valid key, error retrieving data collective membership => user`,
       collectiveError,
     );
     return NextResponse.json(makeUserRole(userId));
   } else if (collectiveData.length < 1) {
     // Not a member
+    console.log(`/api/auth: Valid key, not data collective member => user`);
     return NextResponse.json(makeUserRole(userId));
   }
 
