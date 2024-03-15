@@ -12,6 +12,7 @@
   "scripts": {
     "build": "turbo run build --concurrency=100%",
     "build:cloudquery": "turbo run build --filter=@opensource-observer/cloudquery-*",
+    "build:ops": "turbo run build --filter=@opensource-observer/ops-*",
     "build:docs": "turbo run build --filter=@opensource-observer/docs",
     "build:frontend": "turbo run build --filter=@opensource-observer/frontend",
     "build:hasura": "turbo run build --filter=@opensource-observer/hasura",
