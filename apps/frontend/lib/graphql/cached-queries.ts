@@ -1,10 +1,15 @@
 import { cache } from "react";
 import { getApolloClient } from "../clients/apollo";
+import { QueryOptions } from "@apollo/client";
 import {
-  GET_ALL_ARTIFACTS,
+  GET_ARTIFACTS_BY_IDS,
   GET_ARTIFACT_BY_NAME,
-  GET_ALL_PROJECTS,
+  GET_ARTIFACT_IDS_BY_PROJECT_IDS,
   GET_PROJECTS_BY_SLUGS,
+  GET_COLLECTIONS_BY_IDS,
+  GET_COLLECTION_IDS_BY_PROJECT_IDS,
+  GET_CODE_METRICS_BY_PROJECT,
+  GET_ONCHAIN_METRICS_BY_PROJECT,
   GET_ALL_EVENT_TYPES,
 } from "./queries";
 import { logger } from "../logger";
@@ -12,76 +17,98 @@ import { logger } from "../logger";
 // Revalidate the data at most every hour
 export const revalidate = false; // 3600 = 1 hour
 
-// Cached getters
-const cachedGetAllArtifacts = cache(async () => {
-  const { data, error } = await getApolloClient().query({
-    query: GET_ALL_ARTIFACTS,
-  });
+const queryWrapper = async (opts: QueryOptions) => {
+  const { data, error } = await getApolloClient().query(opts);
   if (error) {
     logger.error(error);
     throw error;
   }
   return data;
-});
+};
+
+// Cached getters
+const cachedGetAllEventTypes = cache(async () =>
+  queryWrapper({
+    query: GET_ALL_EVENT_TYPES,
+  }),
+);
+
+const cachedGetProjectsBySlugs = cache(
+  async (variables: { project_slugs: string[] }) =>
+    queryWrapper({
+      query: GET_PROJECTS_BY_SLUGS,
+      variables,
+    }),
+);
+
+const cachedGetArtifactsByIds = cache(
+  async (variables: { artifact_ids: string[] }) =>
+    queryWrapper({
+      query: GET_ARTIFACTS_BY_IDS,
+      variables,
+    }),
+);
 
 const cachedGetArtifactByName = cache(
   async (variables: {
     artifact_namespace: string;
     artifact_type: string;
     artifact_name: string;
-  }) => {
-    const { data, error } = await getApolloClient().query({
+  }) =>
+    queryWrapper({
       query: GET_ARTIFACT_BY_NAME,
       variables,
-    });
-    if (error) {
-      logger.error(error);
-      throw error;
-    }
-    return data;
-  },
+    }),
 );
 
-const cachedGetAllProjects = cache(async () => {
-  const { data, error } = await getApolloClient().query({
-    query: GET_ALL_PROJECTS,
-  });
-  if (error) {
-    logger.error(error);
-    throw error;
-  }
-  return data;
-});
-
-const cachedGetProjectsBySlugs = cache(
-  async (variables: { project_slugs: string[] }) => {
-    const { data, error } = await getApolloClient().query({
-      query: GET_PROJECTS_BY_SLUGS,
+const cachedGetArtifactIdsByProjectIds = cache(
+  async (variables: { project_ids: string[] }) =>
+    queryWrapper({
+      query: GET_ARTIFACT_IDS_BY_PROJECT_IDS,
       variables,
-    });
-    if (error) {
-      logger.error(error);
-      throw error;
-    }
-    return data;
-  },
+    }),
 );
 
-const cachedGetAllEventTypes = cache(async () => {
-  const { data, error } = await getApolloClient().query({
-    query: GET_ALL_EVENT_TYPES,
-  });
-  if (error) {
-    logger.error(error);
-    throw error;
-  }
-  return data;
-});
+const cachedGetCollectionsByIds = cache(
+  async (variables: { collection_ids: string[] }) =>
+    queryWrapper({
+      query: GET_COLLECTIONS_BY_IDS,
+      variables,
+    }),
+);
+
+const cachedGetCollectionIdsByProjectIds = cache(
+  async (variables: { project_ids: string[] }) =>
+    queryWrapper({
+      query: GET_COLLECTION_IDS_BY_PROJECT_IDS,
+      variables,
+    }),
+);
+
+const cachedGetCodeMetricsByProjectIds = cache(
+  async (variables: { project_ids: string[] }) =>
+    queryWrapper({
+      query: GET_CODE_METRICS_BY_PROJECT,
+      variables,
+    }),
+);
+
+const cachedGetOnchainMetricsByProjectIds = cache(
+  async (variables: { project_ids: string[] }) =>
+    queryWrapper({
+      query: GET_ONCHAIN_METRICS_BY_PROJECT,
+      variables,
+    }),
+);
 
 export {
-  cachedGetAllArtifacts,
+  cachedGetArtifactsByIds,
   cachedGetArtifactByName,
-  cachedGetAllProjects,
+  cachedGetArtifactIdsByProjectIds,
   cachedGetProjectsBySlugs,
+  cachedGetCollectionsByIds,
+  cachedGetCollectionIdsByProjectIds,
+  cachedGetCodeMetricsByProjectIds,
+  cachedGetOnchainMetricsByProjectIds,
   cachedGetAllEventTypes,
 };

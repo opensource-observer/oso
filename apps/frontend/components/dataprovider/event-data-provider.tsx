@@ -4,7 +4,7 @@ import _ from "lodash";
 import React from "react";
 import { assertNever, ensure, uncheckedCast } from "../../lib/common";
 import {
-  GET_ARTIFACT_BY_IDS,
+  GET_ARTIFACTS_BY_IDS,
   GET_PROJECTS_BY_IDS,
   GET_COLLECTIONS_BY_IDS,
   GET_EVENTS_DAILY_TO_ARTIFACT,
@@ -359,7 +359,7 @@ function ArtifactEventDataProvider(props: EventDataProviderProps) {
     data: artifactData,
     error: artifactError,
     loading: artifactLoading,
-  } = useQuery(GET_ARTIFACT_BY_IDS, {
+  } = useQuery(GET_ARTIFACTS_BY_IDS, {
     variables: {
       artifact_ids: props.ids,
     },
