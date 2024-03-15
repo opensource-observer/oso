@@ -14,14 +14,14 @@ plugins:
       airbyte_config:
         jdbc_url_params: "replication=postgres"
         ssl_mode:
-          mode: require
+          mode: disable
         schemas:
         - public
         replication_method:
           plugin: pgoutput
           method: CDC
           publication: publication_name
-          replication_slot: airbyte_slot
+          replication_slot: oso_slot
           initial_waiting_seconds: 5
     select:
     - test_table.id
