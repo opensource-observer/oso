@@ -21,17 +21,28 @@ async function main() {
     for await (const { octokit, repository } of app.eachRepository.iterator({
       installationId: installation.id,
     })) {
+      console.log(repository.name);
       if (repository.name !== APP_TO_CHECK) {
         continue;
       }
-      await octokit.request("POST /repos/{owner}/{repo}/check-runs", {
-        owner: repository.owner.login,
-        repo: repository.name,
-        body: {
-          name: "test-deployment",
-          head_sha: SHA_TO_CHECK,
+      const resp = await octokit.request(
+        "POST /repos/{owner}/{repo}/check-runs",
+        {
+          owner: repository.owner.login,
+          repo: repository.name,
+          data: {
+            name: "test-deployment2",
+            head_sha: SHA_TO_CHECK,
+            status: "completed",
+            conclusion: "success",
+            output: {
+              title: "test-deployment2",
+              summary: "This is some summary",
+            },
+          },
         },
-      });
+      );
+      console.log(resp);
     }
   }
 }
