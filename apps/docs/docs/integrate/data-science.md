@@ -7,13 +7,25 @@ sidebar_position: 2
 Notebooks are a great way for data scientists to explore data, organize ad-hoc analysis, and share insights. We've included several template notebooks to help you get started working with OSO data. You can find these in the [community directory](https://github.com/opensource-observer/insights/tree/main/community/notebook_templates) of our insights repo. We encourage you to share your analysis and visualizations with the OSO community.
 :::
 
-## Setting Up Your Environment
+## Use Google Collab
 
 ---
 
-### New users: install Jupyter using Anaconda
+The fastest way to get started with data science on OSO is to use Google Collab. You can run the following code in a new Collab notebook to authenticate with BigQuery and start querying the OSO data warehouse.
+
+```python
+
+```
+
+## Use Jupyter on Your Machine
+
+---
+
+### Install Anaconda
 
 For new users, we highly recommend [installing Anaconda](https://www.anaconda.com/download). Anaconda conveniently installs Python, the Jupyter Notebook, and other commonly used packages for working with data.
+
+If you already have Jupyter installed, you can skip this step.
 
 Use the following installation steps:
 
@@ -37,7 +49,11 @@ Congratulations! You're in. You should have an empty Jupyter notebook on your co
 If you run into issues getting set up with Jupyter, check out the [Jupyter docs](https://docs.jupyter.org/en/latest/install.html).
 :::
 
-### Experienced users: install standard dependencies
+### Install standard dependencies
+
+If you just installed Anaconda, you should have all the standard data science packages installed. Skip ahead to [the next section](#install-the-bigquery-python-client-library).
+
+If you're using a different Python environment, you may need to install the following packages:
 
 If you're here, we will assume you have some familiarity with setting up a local Python environment and installing packages. We strongly recommend using Python >= 3.11. However, this guide should work for Python >= 3.7. The next section will ensure you have all the standard data science packages installed in your local environment.
 
@@ -108,7 +124,7 @@ For interactive data visualization, you may want to install [plotly](https://plo
 pip install plotly
 ```
 
-### All users: install the BigQuery Python Client Library
+### Install the BigQuery Python Client Library
 
 We recommend using the [Google Cloud BigQuery Python Client Library](https://cloud.google.com/python/docs/reference/bigquery/latest/index.html) to connect to the OSO data warehouse. This library provides a convenient way to interact with BigQuery from your Jupyter notebook.
 
@@ -120,13 +136,9 @@ pip install google-cloud-bigquery
 
 Alternatively, you can stick to static analysis and export your data from BigQuery to a CSV or JSON file and then import it into your notebook.
 
-## Connecting to GCP
-
----
+### Obtain a GCP Service Account Key
 
 This section will walk you through the process of obtaining a GCP service account key and connecting to BigQuery from a Jupyter notebook. If you don't have a GCP account, you will need to create one (see [here](../get-started) for instructions).
-
-### Obtain a GCP Service Account Key
 
 From the [GCP Console](https://console.cloud.google.com/), navigate to the BigQuery API page by clicking **API & Services** > **Enabled APIs & services** > **BigQuery API**.
 
@@ -193,7 +205,7 @@ It will download the JSON file with your private key info. You should be able to
 
 Now you're ready to authenticate with BigQuery using your service account key.
 
-### Connect to BigQuery from a Jupyter Notebook
+### Connect to BigQuery from Jupyter
 
 From the command line, open a Jupyter notebook:
 
@@ -233,7 +245,7 @@ results.to_dataframe()
 
 If everything is working, you should see a dataframe with the results of your query.
 
-### Safekeeping Your Service Account Key
+### Keep your service account key safe
 
 You should never commit your service account key to a public repository. Instead, you can store it in a secure location on your local machine and reference it in your code using an environment variable.
 
