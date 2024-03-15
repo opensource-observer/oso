@@ -1,6 +1,8 @@
 --- Creates an auth hook to insert hasura custom claims into JWT tokens
 --- See https://supabase.com/docs/guides/auth/auth-hooks?language=add-admin-role#hook-custom-access-token
 
+create extension if not exists plv8;
+
 create or replace function public.hasura_token_hook(event jsonb)
 returns jsonb
 language plv8
