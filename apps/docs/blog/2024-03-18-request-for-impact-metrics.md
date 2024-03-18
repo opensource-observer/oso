@@ -15,7 +15,8 @@ If you'd like to get involved, here's what to do:
 
 1. Apply to [join the Data Collective](https://www.kariba.network/). It only takes a few minutes. We'll review, and reach out to schedule an onboarding call.
 2. Join our [Discord server](https://www.opensource.observer/discord) and say hello.
-3. Take a look at [our docs](https://docs.opensource.observer/docs/) and especially our [impact metric spec](https://docs.opensource.observer/docs/how-oso-works/impact-metrics/).
+3. Get inspiration from our Colab directory of [starter notebooks for impact metrics](https://drive.google.com/drive/folders/1I4exiLfZYgPwIGBEzuAMeGtJUhtS_DE7?usp=drive_link).
+4. Consult [our docs](https://docs.opensource.observer/docs/) and especially our [impact metric spec](https://docs.opensource.observer/docs/how-oso-works/impact-metrics/) as you prepare your analysis.
 
 The rest of this post includes more details on the types of impact metrics we're interested in.
 
@@ -44,8 +45,8 @@ Metrics that capture the momentum and activity of a project's contributor commun
 | :----------------- | :---------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------ | :-------------------------------------- |
 | Bus Factor         | How high is the risk to a project should the most active people leave?                                                                    | https://chaoss.community/kb/metric-bus-factor/          | Good first issue                        |
 | Burstiness         | How are short timeframes of intense activity, followed by a corresponding return to a typical pattern of activity, observed in a project? | https://chaoss.community/kb/metric-burstiness/          | Good first issue                        |
-| Self-merge rates   | What is the rate of self-merges in a project?                                                                                             | https://chaoss.community/kb/metric-self-merge-rates/    | Good first issue                        |
 | Velocity           | What is the development speed for an organization?                                                                                        | https://chaoss.community/kb/metric-project-velocity/    | Good first issue                        |
+| Self-merge rates   | What is the rate of self-merges in a project?                                                                                             | https://chaoss.community/kb/metric-self-merge-rates/    | Requires more indexing of PR threads    |
 | Issue Reponse Time | How much time passes between the opening of an issue and a response in the issue thread from another contributor?                         | https://chaoss.community/kb/metric-issue-response-time/ | Requires more indexing of issue threads |
 
 ### Project Metadata
