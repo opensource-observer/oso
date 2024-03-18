@@ -4,20 +4,66 @@ sidebar_position: 2
 ---
 
 :::info
-Notebooks are a great way for data scientists to explore data, organize ad-hoc analysis, and share insights. We've included several template notebooks to help you get started working with OSO data. You can find these in the [community directory](https://github.com/opensource-observer/insights/tree/main/community/notebook_templates) of our insights repo. We encourage you to share your analysis and visualizations with the OSO community.
+Notebooks are a great way for data scientists to explore data, organize ad-hoc analysis, and share insights. We've included several template notebooks to help you get started working with OSO data. You can find these on [Google Colab](https://drive.google.com/drive/folders/1mzqrSToxPaWhsoGOR-UVldIsaX1gqP0F?usp=drive_link) and in the [community directory](https://github.com/opensource-observer/insights/tree/main/community/notebooks) of our insights repo. We encourage you to share your analysis and visualizations with the OSO community.
 :::
 
-## Use Google Collab
+:::warning
+You will need access to the OSO data warehouse to do data science. See our getting started guide [here](../get-started/#login-to-bigquery).
+:::
+
+## Using Google Colab
 
 ---
 
-The fastest way to get started with data science on OSO is to use Google Collab. You can run the following code in a new Collab notebook to authenticate with BigQuery and start querying the OSO data warehouse.
+The fastest way to get started with data science on OSO is to copy one of our notebooks on [Google Colab](https://drive.google.com/drive/folders/1mzqrSToxPaWhsoGOR-UVldIsaX1gqP0F?usp=drive_link).
 
-```python
+You can also create a new notebook from scratch and run it in the cloud. Here's how to get started:
 
-```
+1. Create a new Collab notebook [here](https://colab.research.google.com/#create=true).
 
-## Use Jupyter on Your Machine
+2. Run the following code at the top of the Colab notebook to authenticate with BigQuery.
+
+   ```python
+   # @title Setup
+   from google.colab import auth
+   from google.cloud import bigquery
+
+   auth.authenticate_user()
+   ```
+
+   You will be prompted to give this notebook access to your Google account. Once you have authenticated, you can start querying the OSO data warehouse.
+
+3. Write your query. Here's an example of how to fetch the latest code metrics for all projects in the OSO data warehouse. Remember to replace `my-oso-playground` with your project id.
+
+   ```python
+   # replace 'my-oso-playground' with your project id
+   %%bigquery df --project my-oso-playground
+
+   SELECT *
+   FROM `opensource-observer.oso_playground.code_metrics_by_project`
+   ORDER BY last_commit_date DESC
+   ```
+
+   This query takes advantage of a magic command `%%bigquery` that allows you to run a SQL query and store the results in a dataframe (`df` in my example). You can then use the dataframe to perform analysis and generate visualizations.
+
+4. Move from the "playground" to the "production" dataset. Once you have a working query, you can replace `oso_playground` with `oso` to fetch data from the production dataset.
+
+   ```python
+   # replace 'my-oso-playground' with your project id
+   %%bigquery df --project my-oso-playground
+
+   SELECT *
+   FROM `opensource-observer.oso.code_metrics_by_project`
+   ORDER BY last_commit_date DESC
+   ```
+
+That's it! You're ready to start analyzing the OSO dataset in a Google Colab notebook.
+
+:::tip
+You can also download your Colab notebooks to your local machine and run them in Jupyter.
+:::
+
+## Using Jupyter on Your Machine
 
 ---
 
@@ -257,7 +303,9 @@ Always remember to add your `.env` or `credentials.json` file to your `.gitignor
 
 ---
 
-Once you have your local environment set up, you can fork any of the notebooks in the [community directory](https://github.com/opensource-observer/insights/tree/main/community/notebooks).
+Once you have your local environment set up, you can fork any of the notebooks in the [community GitHub directory](https://github.com/opensource-observer/insights/tree/main/community/notebooks).
+
+Or you can run them directly in the cloud through our [Community Colab directory](https://drive.google.com/drive/folders/1mzqrSToxPaWhsoGOR-UVldIsaX1gqP0F?usp=drive_link).
 
 These notebooks typically have the following structure:
 
@@ -268,6 +316,14 @@ These notebooks typically have the following structure:
 - **Export**: Export the results to a CSV or JSON file.
 
 This next section will help you create a notebook from scratch, performing each of these steps using the OSO playground dataset.
+
+### Follow the tutorial on Google Colab
+
+If you want to get going as quickly as possible, just copy and execute our [tutorial notebook](https://colab.research.google.com/drive/1v318jtHyuU55JMx2vR9QEXENwFCITBrh?usp=drive_link) on Google Colab.
+
+Remember to replace `opensource-observer` with the name of your project in the `%%bigquery` magic command.
+
+It's always a good idea to test your queries in the [BigQuery console](https://console.cloud.google.com/bigquery) and with the `oso_playground` dataset before running them in your notebook with the `oso` production dataset.
 
 ### Prepare your notebook
 
@@ -455,6 +511,8 @@ If you'd like to share your impact vector with the OSO community, you can do so 
 This example will walk you through the process of creating an impact vector for the number of forks a project has.
 
 You can find the notebook shown in this tutorial [here](https://github.com/opensource-observer/insights/blob/main/community/notebooks/oso_impact_vector_starter.ipynb).
+
+The Colab version is available [here](https://colab.research.google.com/drive/1D6VFWZxS8PDv8sbwu9eqNmlXedg7bcz1?usp=sharing).
 
 #### Define the Impact Vector
 
