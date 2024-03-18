@@ -1,3 +1,9 @@
+/**
+ * Mark an environment as required for the build.
+ * This is mostly used for convenience of debugging, so that things break early
+ * Note: this should only be used for environment variables prefixed with "NEXT_PUBLIC_".
+ *  Client-side bundles will be missing other env variables by definition
+ */
 export const requireEnv = (value: string | undefined, identifier: string) => {
   if (!value) {
     throw new Error(`Required env var ${identifier} does not exist`);
@@ -21,6 +27,8 @@ export const DB_GRAPHQL_URL = requireEnv(
   process.env.NEXT_PUBLIC_DB_GRAPHQL_URL,
   "NEXT_PUBLIC_DB_GRAPHQL_URL",
 );
+
+export const OSO_API_KEY = process.env.OSO_API_KEY ?? "MISSING";
 
 export const SUPABASE_URL = requireEnv(
   process.env.NEXT_PUBLIC_SUPABASE_URL,

@@ -54,9 +54,9 @@ jobs:
 
       - name: Run meltano
         run: |
-          cd warehouse/meltano-setup 
-          && poetry meltano install
-          && poetry meltano run tap-postgres target-jsonl
+          cd warehouse/meltano-setup &&
+          poetry run meltano install &&
+          poetry run meltano run tap-postgres target-jsonl
       
       # At this time this auth isn't working for dbt
       # - uses: 'google-github-actions/auth@v2'
