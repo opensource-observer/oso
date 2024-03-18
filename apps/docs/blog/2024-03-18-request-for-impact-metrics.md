@@ -49,6 +49,10 @@ Metrics that capture the momentum and activity of a project's contributor commun
 | Self-merge rates   | What is the rate of self-merges in a project?                                                                                             | https://chaoss.community/kb/metric-self-merge-rates/    | Requires more indexing of PR threads    |
 | Issue Reponse Time | How much time passes between the opening of an issue and a response in the issue thread from another contributor?                         | https://chaoss.community/kb/metric-issue-response-time/ | Requires more indexing of issue threads |
 
+:::tip
+Check out our [starter notebooks](https://drive.google.com/drive/folders/1I4exiLfZYgPwIGBEzuAMeGtJUhtS_DE7?usp=drive_link) for impact metrics including Bus Factor and Velocity.
+:::
+
 ### Project Metadata
 
 Metrics that capture relevant metadata about the licensing and open sourciness of a project.
@@ -65,11 +69,15 @@ Metrics that attempt to differentiate onchain users based on behavior and trust 
 
 | Impact Metric    | Description                                           | Inspiration                                                                      | Comments                                   |
 | :--------------- | :---------------------------------------------------- | :------------------------------------------------------------------------------- | :----------------------------------------- |
+| Onchain Activity | How active is the user onchain?                       | https://docs.opensource.observer/docs/how-oso-works/impact-metrics/onchain_users | Good first issue                           |
+| Network Loyalty  | How much of a user's activity is on a single network? | https://www.coinbase.com/blog/examining-layer-2-usage-using-onchain-data         | Good first issue                           |
+| User Segment     | What kind of dapps is the user most interested in?    | https://docs.regenscore.io/scoring-formula                                       | Good first issue                           |
 | ENS History      | Does the user have a rich profile on ENS?             | https://app.ens.domains/                                                         | Requires indexing of ENS data              |
 | Gitcoin Passport | Does the user have a high Gitcoin passport score?     | https://gitcoin.co/passport                                                      | Requires indexing of Gitcoin Passport data |
-| Onchain Activity | How active is the user onchain?                       | https://docs.opensource.observer/docs/how-oso-works/impact-metrics/onchain_users | Good first issue                           |
-| Network Loyalty  | How much of a user's activity is on a single network? | tbd                                                                              | Good first issue                           |
-| User Segment     | What kind of dapps is the user most interested in?    | tbd                                                                              | Good first issue                           |
+
+:::tip
+Check out our [starter notebooks](https://drive.google.com/drive/folders/1I4exiLfZYgPwIGBEzuAMeGtJUhtS_DE7?usp=drive_link) for impact metrics including onchain activity and network loyalty.
+:::
 
 ### Contributor Reputation
 
@@ -78,10 +86,14 @@ Metrics that attempt to differentiate code contributors based on behavior and Pa
 | Impact Metric             | Description                                                                       | Inspiration                                         | Comments                                            |
 | :------------------------ | :-------------------------------------------------------------------------------- | :-------------------------------------------------- | :-------------------------------------------------- |
 | Conversion Rate           | What are the rates at which new contributors become more sustained contributors?  | https://chaoss.community/kb/metric-conversion-rate/ | Good first issue                                    |
-| MVPR                      | What is the most valuable pull request?                                           | tbd                                                 | Requires more indexing of related GitHub event data |
 | Contributor Concentration | How much of a contributor's activity is on a single project?                      | tbd                                                 | Good first issue                                    |
 | Maintainer Score          | What characteristics of a contributor's activity make them a reliable maintainer? | tbd                                                 | Good first issue                                    |
 | PageRank                  | What is the PageRank of a contributor? Choose your own implementation!            | tbd                                                 | Good first issue                                    |
+| MVPR                      | What is the most valuable pull request?                                           | https://sourcecred.io/docs/beta/cred/               | Requires more indexing of related GitHub event data |
+
+:::tip
+Check out our [starter notebooks](https://drive.google.com/drive/folders/1I4exiLfZYgPwIGBEzuAMeGtJUhtS_DE7?usp=drive_link) for impact metrics including contributor concentration and page rank.
+:::
 
 ### Ecosystem Impact
 
@@ -96,6 +108,10 @@ Metrics that capture the impact of a project on the broader health of an open so
 | Downstream Users      | How many onchain users are using this project as a dependency?                              | tbd         | Good first issue |
 | Downstream Developers | How many developers are using this project as a dependency?                                 | tbd         | Good first issue |
 | Network Centrality    | How central is this project to the network?                                                 | tbd         | Good first issue |
+
+:::tip
+Check out our [starter notebooks](https://drive.google.com/drive/folders/1I4exiLfZYgPwIGBEzuAMeGtJUhtS_DE7?usp=drive_link) for user feeder and downstream users.
+:::
 
 ### Domain-specific Onchain Impact
 
