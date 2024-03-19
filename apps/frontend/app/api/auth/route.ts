@@ -3,17 +3,25 @@ import { supabasePrivileged } from "../../../lib/clients/supabase";
 import { jwtDecode } from "jwt-decode";
 //import { logger } from "../../../lib/logger";
 
+// Next.js route control
 export const runtime = "edge"; // 'nodejs' (default) | 'edge'
 //export const dynamic = "force-dynamic";
 export const revalidate = 0;
+
+// HTTP headers
 const CACHE_CONTROL = "max-age=3600"; // in seconds
+const HASURA_USER_ID_KEY = "x-hasura-user-id";
 const AUTH_PREFIX = "bearer";
+
+// Supabase schema
 const DATA_COLLECTIVE_TABLE = "data_collective";
 const API_KEY_TABLE = "api_keys";
 const USER_ID_COLUMN = "user_id";
 const API_KEY_COLUMN = "api_key";
 const DELETED_COLUMN = "deleted_at";
 const ALL_COLUMNS = `${USER_ID_COLUMN},${API_KEY_COLUMN},${DELETED_COLUMN}`;
+
+// Helper functions for creating responses suitable for Hasura
 const makeAnonRole = () => ({
   "x-hasura-role": "anonymous",
 });
@@ -31,9 +39,9 @@ const makeDevRole = (userId: string) => ({
 });
 
 /**
- * This will return an array of all artifacts
- * This is currently fetched by Algolia to build the search index
- * @param _request
+ * Authentication check for Hasura GraphQL API
+ * Hasura will check this webhook on inbound requests
+ * @param request
  * @returns
  */
 export async function GET(request: NextRequest) {
@@ -54,13 +62,20 @@ export async function GET(request: NextRequest) {
 
   // Try JWT decoding
   try {
-    const decoded = jwtDecode(token);
-    console.log("JWT token: ", decoded);
+    // @TODO replace this library with one that verifies.
+    // Other existing npm libraries seem to struggle in an edge runtime.
+    const decoded: any = jwtDecode(token);
+    //console.log("JWT token: ", decoded);
+    const userId = decoded.app_metadata?.[HASURA_USER_ID_KEY];
+    if (userId) {
+      console.log(`/api/auth: valid JWT token => user`);
+      return NextResponse.json(makeUserRole(userId));
+    }
   } catch (e) {
     console.warn("JWT decoding error: ", e);
   }
 
-  // Get the user
+  // Get the user by API token
   const { data: keyData, error: keyError } = await supabasePrivileged
     .from(API_KEY_TABLE)
     .select(ALL_COLUMNS)
@@ -71,15 +86,15 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(makeAnonRole());
   }
 
+  // Filter out inactive/deleted keys
   const activeKeys = keyData.filter((x) => !x.deleted_at);
   if (activeKeys.length < 1) {
     console.log(`/api/auth: API key not valid => anon`);
     return NextResponse.json(makeAnonRole());
   }
 
-  const userId = activeKeys[0].user_id;
-
   // Check for data collective membership
+  const userId = activeKeys[0].user_id;
   const { data: collectiveData, error: collectiveError } =
     await supabasePrivileged
       .from(DATA_COLLECTIVE_TABLE)
