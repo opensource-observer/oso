@@ -1,6 +1,6 @@
 "use client";
 
-import { ApolloLink, HttpLink } from "@apollo/client";
+import { ApolloLink, HttpLink, useApolloClient } from "@apollo/client";
 import {
   ApolloNextAppProvider,
   NextSSRInMemoryCache,
@@ -8,13 +8,34 @@ import {
   SSRMultipartLink,
 } from "@apollo/experimental-nextjs-app-support/ssr";
 import { DB_GRAPHQL_URL } from "../../lib/config";
+import { userToken } from "../../lib/clients/supabase";
 
-function makeClient() {
+// Supabase credentials get populated later on
+let initialized = false;
+const useEnsureAuth = () => {
+  const client = useApolloClient();
+  if (!initialized && userToken) {
+    client.setLink(makeLink());
+    initialized = true;
+  }
+};
+
+function makeLink() {
+  //console.log(userToken);
   const httpLink = new HttpLink({
     uri: DB_GRAPHQL_URL,
+    headers: userToken
+      ? {
+          Authorization: `Bearer ${userToken}`,
+        }
+      : {},
   });
+  return httpLink;
+}
 
-  return new NextSSRApolloClient({
+function makeClient() {
+  const httpLink = makeLink();
+  const client = new NextSSRApolloClient({
     cache: new NextSSRInMemoryCache(),
     link:
       typeof window === "undefined"
@@ -26,6 +47,7 @@ function makeClient() {
           ])
         : httpLink,
   });
+  return client;
 }
 
 function ApolloWrapper({ children }: React.PropsWithChildren) {
@@ -36,4 +58,4 @@ function ApolloWrapper({ children }: React.PropsWithChildren) {
   );
 }
 
-export { ApolloWrapper };
+export { ApolloWrapper, useEnsureAuth };

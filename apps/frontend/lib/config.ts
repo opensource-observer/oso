@@ -28,7 +28,7 @@ export const DB_GRAPHQL_URL = requireEnv(
   "NEXT_PUBLIC_DB_GRAPHQL_URL",
 );
 
-export const OSO_API_KEY = process.env.OSO_API_KEY ?? "MISSING";
+export const OSO_API_KEY = process.env.OSO_API_KEY;
 
 export const SUPABASE_URL = requireEnv(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
