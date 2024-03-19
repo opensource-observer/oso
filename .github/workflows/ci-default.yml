@@ -89,7 +89,7 @@ jobs:
       - name: Authenticate to google with a NOOP user
         uses: 'google-github-actions/auth@v2'
         with:
-          credentials_json: '${{ secrets.GOOGLE_TEST_DUMMY_CREDENTIALS_JSON }}'
+          credentials_json: '${{ vars.GOOGLE_TEST_DUMMY_CREDENTIALS_JSON }}'
           create_credentials_file: true
 
       - name: Setup dbt profile
