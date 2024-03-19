@@ -3,17 +3,17 @@ name: ci-default
 env:
   # CI variables
   DOCKER_PLATFORM: "amd64"
-  #TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
-  #TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+  TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+  TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
   # Frontend variables
   NODE_ENV: ${{ vars.NODE_ENV }}
   PLASMIC_PROJECT_ID: ${{ vars.PLASMIC_PROJECT_ID }}
   PLASMIC_PROJECT_API_TOKEN: ${{ vars.PLASMIC_PROJECT_API_TOKEN }}
   NEXT_PUBLIC_DOMAIN: ${{ vars.NEXT_PUBLIC_DOMAIN }}
   NEXT_PUBLIC_DB_GRAPHQL_URL: ${{ vars.NEXT_PUBLIC_DB_GRAPHQL_URL }}
-  #OSO_API_KEY: ${{ secrets.OSO_API_KEY }}
+  OSO_API_KEY: ${{ secrets.OSO_API_KEY }}
   NEXT_PUBLIC_ALGOLIA_APPLICATION_ID: ${{ vars.NEXT_PUBLIC_ALGOLIA_APPLICATION_ID }}
-  #NEXT_PUBLIC_ALGOLIA_API_KEY: ${{ secrets.NEXT_PUBLIC_ALGOLIA_API_KEY }}
+  NEXT_PUBLIC_ALGOLIA_API_KEY: ${{ secrets.NEXT_PUBLIC_ALGOLIA_API_KEY }}
   NEXT_PUBLIC_ALGOLIA_INDEX: ${{ vars.NEXT_PUBLIC_ALGOLIA_INDEX }}
   NEXT_PUBLIC_FEEDBACK_FARM_ID: ${{ vars.NEXT_PUBLIC_FEEDBACK_FARM_ID }}
   # Indexer variables
@@ -61,6 +61,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           # Fetch all history so gitlint can check the relevant commits.
           fetch-depth: "0"
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v2
         with:
@@ -86,7 +87,7 @@ jobs:
         with:
           version: nightly-87bc53fc6c874bd4c92d97ed180b949e3a36d78c
 
-      - name: Authenticate to google with a NOOP user
+      - name: Authenticate to google with a test-dummy user
         uses: 'google-github-actions/auth@v2'
         with:
           credentials_json: '${{ vars.GOOGLE_TEST_DUMMY_CREDENTIALS_JSON }}'
@@ -99,6 +100,11 @@ jobs:
       - name: Run supabase local
         run: |
           bash .github/scripts/run-supabase-local.sh apps/frontend 
+
+      - name: Check if algolia is empty, set the variable to some dummy value if it is
+        shell: bash
+        run: |
+          [[ -z $NEXT_PUBLIC_ALGOLIA_API_KEY ]] && echo "export NEXT_PUBLIC_ALGOLIA_API_KEY=xxxxx" >> "$GITHUB_ENV"
 
       - name: Build
         run: |

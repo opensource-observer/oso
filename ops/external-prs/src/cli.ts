@@ -193,6 +193,8 @@ async function refreshCredentials(args: RefreshGCPCredentials) {
   const creds = await fileToBase64(args.credsPath);
 
   if (args.secret) {
+    // The github secret must use libsodium's crypto_box_seal for the
+    // `encrypted_value`
     await _sodium.ready;
 
     const pkey = await octo.rest.actions.getEnvironmentPublicKey({
@@ -213,6 +215,22 @@ async function refreshCredentials(args: RefreshGCPCredentials) {
       key_id: pkey.data.key_id,
     });
   } else {
+    try {
+      const currentVar = await octo.rest.actions.getEnvironmentVariable({
+        repository_id: repo.data.id,
+        environment_name: args.environment,
+        name: args.name,
+      });
+      if (currentVar) {
+        await octo.rest.actions.deleteEnvironmentVariable({
+          repository_id: repo.data.id,
+          environment_name: args.environment,
+          name: args.name,
+        });
+      }
+    } catch (e) {
+      logger.info("no existing var found");
+    }
     await octo.rest.actions.createEnvironmentVariable({
       repository_id: repo.data.id,
       environment_name: args.environment,
