@@ -75,7 +75,8 @@ jobs:
             NEXT_PUBLIC_FEEDBACK_FARM_ID \
             GOOGLE_TEST_DUMMY_CREDENTIALS_JSON \
             X_GITHUB_GRAPHQL_API \
-            GOOGLE_PROJECT_ID
+            GOOGLE_PROJECT_ID \
+            PUBLIC_VARS_TEST
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v2

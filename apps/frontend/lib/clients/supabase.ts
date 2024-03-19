@@ -7,11 +7,24 @@ import {
 } from "../config";
 import { Database } from "../types/supabase";
 
+// Supabase unprivileged client
 const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// Supabase service account
 const supabasePrivileged = createClient<Database>(
   SUPABASE_URL,
   SUPABASE_SERVICE_KEY,
 );
+
+// Get the user JWT token
+let userToken: string | undefined;
+supabaseClient.auth
+  .getSession()
+  .then((data) => {
+    userToken = data.data.session?.access_token;
+  })
+  .catch((e) => {
+    console.warn("Failed to get Supabase session, ", e);
+  });
 
 type SupabaseQueryArgs = {
   tableName: string; // table to query
@@ -57,5 +70,5 @@ async function supabaseQuery(args: SupabaseQueryArgs): Promise<any[]> {
   return data;
 }
 
-export { supabaseClient, supabasePrivileged, supabaseQuery };
+export { supabaseClient, supabasePrivileged, supabaseQuery, userToken };
 export type { SupabaseQueryArgs };
