@@ -1,0 +1,26 @@
+# Generic worker executor. This is callable for use with cron scheduling.
+
+# Execute the worker for a specific group
+name: external-pr-test-deploy
+
+inputs:
+  sha:
+    description: 'The sha to deploy'
+    required: true
+  pr:
+    description: The pr number
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Set pr and sha in the environment
+      shell: bash
+      run: |
+        echo "PR_TOOLS_PR=${{ inputs.pr }}" >> "$GITHUB_ENV"
+        echo "PR_TOOLS_SHA=${{ inputs.sha }}" >> "$GITHUB_ENV"
+
+    - name: tbd... do some test-deployment
+      shell: bash
+      run: |
+        echo $PR_TOOLS_PR

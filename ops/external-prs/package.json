@@ -19,7 +19,8 @@
     "build": "tsc",
     "lint": "tsc --noEmit && pnpm lint:eslint && pnpm lint:prettier",
     "lint:eslint": "eslint --ignore-path ../../.gitignore --max-warnings 0 .",
-    "lint:prettier": "prettier --ignore-path ../../.gitignore --log-level warn --check **/*.{js,jsx,ts,tsx,sol,md,json}"
+    "lint:prettier": "prettier --ignore-path ../../.gitignore --log-level warn --check **/*.{js,jsx,ts,tsx,sol,md,json}",
+    "tools": "ts-node-esm src/cli.ts"
   },
   "keywords": [],
   "devDependencies": {

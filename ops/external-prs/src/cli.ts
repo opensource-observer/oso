@@ -2,10 +2,12 @@ import yargs from "yargs";
 import { Argv, ArgumentsCamelCase } from "yargs";
 import { hideBin } from "yargs/helpers";
 import { App, Octokit } from "octokit";
+import * as fsPromise from "fs/promises";
 
 import { logger } from "./utils/logger.js";
 import { handleError } from "./utils/error.js";
 import dotenv from "dotenv";
+import { CheckStatus, setCheckStatus } from "./checks.js";
 
 dotenv.config();
 
@@ -32,9 +34,15 @@ dotenv.config();
 //   }
 // }
 
+interface Repo {
+  name: string;
+  owner: string;
+}
+
 interface BaseArgs {
   githubAppPrivateKey: string;
   githubAppId: string;
+  repo: Repo;
   app: App;
 }
 
@@ -43,17 +51,13 @@ type BeforeClientArgs = ArgumentsCamelCase<{
   "github-app-id": unknown;
 }>;
 
-interface CheckArgs extends BaseArgs {
-  owner: string;
-  repo: string;
-}
-
-interface CommentCheckArgs extends CheckArgs {
+interface ParseCommentArgs extends BaseArgs {
   comment: number;
+  output: string;
 }
 
-interface PRCheckArgs extends CheckArgs {
-  pr: number;
+interface InitializePRCheck extends BaseArgs {
+  sha: string;
 }
 
 interface TestDeployArgs extends BaseArgs {}
@@ -62,16 +66,12 @@ interface TestDeploySetupArgs extends TestDeployArgs {}
 
 interface TestDeployTeardownArgs extends TestDeployArgs {}
 
-async function getOctokitFor(
-  app: App,
-  owner: string,
-  repo: string,
-): Promise<Octokit | void> {
+async function getOctokitFor(app: App, repo: Repo): Promise<Octokit | void> {
   for await (const { installation } of app.eachInstallation.iterator()) {
     for await (const { octokit, repository } of app.eachRepository.iterator({
       installationId: installation.id,
     })) {
-      if (repository.full_name === `${owner}/${repo}`) {
+      if (repository.full_name === `${repo.owner}/${repo.name}`) {
         return octokit;
       }
     }
@@ -79,19 +79,47 @@ async function getOctokitFor(
   return;
 }
 
-async function commentCheck(args: CommentCheckArgs) {
-  //console.log('comment');
+async function initializePrCheck(args: InitializePRCheck) {
+  logger.info({
+    message: 'initializing the PR check to "queued"',
+    repo: args.repo,
+    sha: args.sha,
+  });
+
+  const app = args.app;
+  const octo = await getOctokitFor(app, args.repo);
+  if (!octo) {
+    throw new Error("No repo found");
+  }
+
+  await setCheckStatus(octo, args.repo.owner, args.repo.name, {
+    name: "test-deploy",
+    head_sha: args.sha,
+    status: CheckStatus.Queued,
+    output: {
+      title: "Test Deployment",
+      summary: "Queued for deployment",
+    },
+  });
+}
+
+async function parseDeployComment(args: ParseCommentArgs) {
+  logger.info({
+    message: "checking for a /deploy message",
+    repo: args.repo,
+    commentId: args.comment,
+  });
 
   const app = args.app;
 
-  const octo = await getOctokitFor(app, args.owner, args.repo);
+  const octo = await getOctokitFor(app, args.repo);
   if (!octo) {
     throw new Error("No repo found");
   }
 
   const comment = await octo.rest.issues.getComment({
-    repo: args.repo,
-    owner: args.owner,
+    repo: args.repo.name,
+    owner: args.repo.owner,
     comment_id: args.comment,
   });
   const body = comment.data.body || "";
@@ -100,18 +128,27 @@ async function commentCheck(args: CommentCheckArgs) {
     process.exit(1);
   }
 
-  console.log(match[0]);
-}
+  const sha = match[1];
 
-async function prCheck(_args: PRCheckArgs) {
-  console.log("pr");
+  // Write the deploy commit sha to the
+  await fsPromise.writeFile(args.output, match[1]);
+
+  // Update the check for this PR
+  await setCheckStatus(octo, args.repo.owner, args.repo.name, {
+    name: "test-deploy",
+    head_sha: sha,
+    status: CheckStatus.Queued,
+    output: {
+      title: "Test Deployment",
+      summary: "Queued for deployment",
+    },
+  });
 }
 
 async function testDeploySetup(_args: TestDeployArgs) {
   console.log("setup");
   // This should create a new public dataset inside a "testing" project
   // specifically for a pull request
-
   //
   // This project is intended to be only used to push the last 2 days worth of
   // data into a dev environment
@@ -127,46 +164,30 @@ async function testDeployTeardown(_args: TestDeployArgs) {
   // This will delete a pull request
 }
 
-function checkCommandGroup(group: Argv) {
-  group.command<CommentCheckArgs>(
-    "comment <owner> <repo> <comment>",
-    "subcommand for comment check",
-    (yags) => {
-      yags.positional("comment", {
-        type: "number",
-        description: "Comment ID",
-      });
-    },
-    (args) => handleError(commentCheck(args)),
-  );
-  group.command<PRCheckArgs>(
-    "pr <owner> <repo> <pr>",
-    "subcommand for PR check",
-    (yags) => {
-      yags.positional("pr", {
-        type: "number",
-        description: "Pull Request ID",
-      });
-    },
-    (args) => handleError(prCheck(args)),
-  );
-  group.demandCommand();
-}
-
 function testDeployGroup(group: Argv) {
-  group.command<TestDeploySetupArgs>(
-    "setup",
-    "subcommand for a setting up a test deployment",
-    (_yags) => {},
-    (args) => handleError(testDeploySetup(args)),
-  );
-  group.command<TestDeployTeardownArgs>(
-    "teardown",
-    "subcommand for a setting up a test deployment",
-    (_yags) => {},
-    (args) => handleError(testDeployTeardown(args)),
-  );
-  group.demandCommand();
+  group
+    .option("project-id", {
+      description: "The google project id to deploy into",
+      type: "string",
+      demandOption: true,
+    })
+    .command<TestDeploySetupArgs>(
+      "setup <repo> <pr>",
+      "subcommand for a setting up a test deployment",
+      (yags) => {
+        yags.positional("pr", {
+          description: "The PR",
+        });
+      },
+      (args) => handleError(testDeploySetup(args)),
+    )
+    .command<TestDeployTeardownArgs>(
+      "teardown <repo> <pr>",
+      "subcommand for a setting up a test deployment",
+      (_yags) => {},
+      (args) => handleError(testDeployTeardown(args)),
+    )
+    .demandCommand();
 }
 
 /**
@@ -177,6 +198,20 @@ export const FETCHER_REGISTRY = [
 ];
 const cli = yargs(hideBin(process.argv))
   .env("PR_TOOLS")
+  .positional("repo", {
+    type: "string",
+    description: "The repo in the style owner/repo_name",
+  })
+  .coerce("repo", (v: string): Repo => {
+    const splitName = v.split("/");
+    if (splitName.length !== 2) {
+      throw new Error("Repo name must be an owner/repo_name pair");
+    }
+    return {
+      owner: splitName[0],
+      name: splitName[1],
+    };
+  })
   .option("github-app-private-key", {
     description: "The private key for the github app",
     type: "string",
@@ -199,9 +234,32 @@ const cli = yargs(hideBin(process.argv))
     const { data } = await app.octokit.request("/app");
     logger.debug(`Authenticated as ${data.name}`);
   })
-  .command<CheckArgs>("check", "Github Check related commands", (yags) => {
-    checkCommandGroup(yags);
-  })
+  .command<InitializePRCheck>(
+    "initialize-check <repo> <sha>",
+    "subcommand for initializing a check",
+    (yags) => {
+      yags.positional("sha", {
+        type: "string",
+        description: "The sha for the check to initialize",
+      });
+    },
+    (args) => handleError(initializePrCheck(args)),
+  )
+  .command<ParseCommentArgs>(
+    "parse-comment <repo> <comment> <output>",
+    "subcommand for parsing a deploy comment",
+    (yags) => {
+      yags.positional("comment", {
+        type: "number",
+        description: "Comment ID",
+      });
+      yags.positional("output", {
+        type: "string",
+        description: "The output file",
+      });
+    },
+    (args) => handleError(parseDeployComment(args)),
+  )
   .command<TestDeployArgs>(
     "test-deploy",
     "Test deployment commands",

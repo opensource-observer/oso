@@ -123,3 +123,24 @@ jobs:
           pnpm test
         # Always run this step so that all linting errors can be seen at once.
         if: always()
+
+  test-deploy:
+    name: owner-test-deploy
+    if: ${{ github.event.pull_request }}
+    environment: testing
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup external pr tools
+        uses: ./.github/workflows/setup-external-pr-tools
+      
+      - name: Initialize check
+        run: |
+          cd ops/external-prs &&
+          pnpm tools initialize-check ${{ github.repository }} $PR_TOOLS_SHA
+
+      - name: Run test-deploy
+        uses: ./.github/workflows/test-deploy
+        with:
+          sha: ${{ github.sha }}
+          pr: ${{ github.event.pull_request.id }}
+        if: ${{ contains(fromJson('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.pull_request.author_association) }}
