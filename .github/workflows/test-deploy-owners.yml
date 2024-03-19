@@ -62,7 +62,7 @@ jobs:
       - name: Run test-deploy
         uses: ./.github/workflows/test-deploy
         with:
-          sha: ${{ github.sha }}
+          sha: ${{ github.event.pull_request.head.sha }}
           pr: ${{ github.event.pull_request.id }}
 
         # This check isn't for security it's mostly a convenience so this won't
