@@ -1,0 +1,25 @@
+# Generic worker executor. This is callable for use with cron scheduling.
+
+# Execute the worker for a specific group
+name: setup-external-pr-tools
+
+runs:
+  using: "composite"
+  steps:
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v2
+      with:
+        version: 8
+        run_install: |
+          - recursive: true
+            args: [--frozen-lockfile, --strict-peer-dependencies]
+
+    - name: Set up Node.js 18
+      uses: actions/setup-node@v3
+      with:
+        cache: "pnpm"
+        node-version: "18.x"
+
+    - name: Build the ops tooling
+      shell: bash
+      run: pnpm build:ops

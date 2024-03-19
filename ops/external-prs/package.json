@@ -19,7 +19,8 @@
     "build": "tsc",
     "lint": "tsc --noEmit && pnpm lint:eslint && pnpm lint:prettier",
     "lint:eslint": "eslint --ignore-path ../../.gitignore --max-warnings 0 .",
-    "lint:prettier": "prettier --ignore-path ../../.gitignore --log-level warn --check **/*.{js,jsx,ts,tsx,sol,md,json}"
+    "lint:prettier": "prettier --ignore-path ../../.gitignore --log-level warn --check **/*.{js,jsx,ts,tsx,sol,md,json}",
+    "tools": "node --loader ts-node/esm src/cli.ts"
   },
   "keywords": [],
   "devDependencies": {
@@ -29,7 +30,11 @@
     "typescript": "^5.3.3"
   },
   "dependencies": {
+    "@types/yargs": "^17.0.32",
+    "chalk": "^5.3.0",
     "octokit": "^3.1.0",
-    "yaml": "^2.3.1"
+    "winston": "^3.11.0",
+    "yaml": "^2.3.1",
+    "yargs": "^17.7.2"
   }
 }

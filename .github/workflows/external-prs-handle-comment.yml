@@ -1,0 +1,26 @@
+# This is a test meltano pipeline
+name: external-prs-handle-comment
+
+on:
+  issue_comment:
+    types: 
+      - created
+      - edited
+
+jobs:
+  external-prs-handle-comment:
+    name: external-prs-handle-commit
+    environment: testing
+    runs-on: ubuntu-latest
+
+    # This job only runs for pull request comments
+    if: ${{ github.event.issue.pull_request }}
+    steps:
+      - run: |
+          echo "A comment by $SENDER on PR $NUMBER from on an ISSUE FROM $PR_AUTHOR with comment: $COMMENT "
+        env:
+          NUMBER: ${{ github.event.issue.number }}
+          ID: ${{ github.event.issue.id }}
+          COMMENT: ${{ github.event.issue.body }}
+          SENDER: ${{ github.event.sender }}
+          PR_AUTHOR: ${{ github.event.issue.author_association }}

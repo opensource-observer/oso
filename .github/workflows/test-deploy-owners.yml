@@ -1,0 +1,70 @@
+# NOTE: This name appears in GitHub's Checks API and in workflow's status badge.
+name: ci-default
+env:
+  # CI variables
+  DOCKER_PLATFORM: "amd64"
+  TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+  TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+  # Frontend variables
+  NODE_ENV: ${{ vars.NODE_ENV }}
+  PLASMIC_PROJECT_ID: ${{ vars.PLASMIC_PROJECT_ID }}
+  PLASMIC_PROJECT_API_TOKEN: ${{ vars.PLASMIC_PROJECT_API_TOKEN }}
+  NEXT_PUBLIC_DOMAIN: ${{ vars.NEXT_PUBLIC_DOMAIN }}
+  NEXT_PUBLIC_DB_GRAPHQL_URL: ${{ vars.NEXT_PUBLIC_DB_GRAPHQL_URL }}
+  OSO_API_KEY: ${{ secrets.OSO_API_KEY }}
+  NEXT_PUBLIC_ALGOLIA_APPLICATION_ID: ${{ vars.NEXT_PUBLIC_ALGOLIA_APPLICATION_ID }}
+  NEXT_PUBLIC_ALGOLIA_API_KEY: ${{ secrets.NEXT_PUBLIC_ALGOLIA_API_KEY }}
+  NEXT_PUBLIC_ALGOLIA_INDEX: ${{ vars.NEXT_PUBLIC_ALGOLIA_INDEX }}
+  NEXT_PUBLIC_FEEDBACK_FARM_ID: ${{ vars.NEXT_PUBLIC_FEEDBACK_FARM_ID }}
+  # Indexer variables
+  X_GITHUB_GRAPHQL_API: ${{ vars.X_GITHUB_GRAPHQL_API }}
+  X_GITHUB_TOKEN: ${{ secrets.X_GITHUB_TOKEN }}
+  GOOGLE_PROJECT_ID: "opensource-observer"
+
+  # should not be set to a legitimate value for testing. This will use up API
+  # quota otherwise
+  DUNE_API_KEY: "none"
+
+# Trigger the workflow when:
+on:
+  pull_request_target:
+    branches:
+      - main
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+  merge_group:
+
+# Cancel in progress jobs on new pushes.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test-deploy:
+    name: Test Deployment Initializer
+    if: ${{ github.event.pull_request }}
+    environment: testing
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 1
+
+      - name: Setup external pr tools
+        uses: ./.github/workflows/setup-external-pr-tools
+      
+      - name: Initialize check
+        run: |
+          cd ops/external-prs &&
+          pnpm tools initialize-check ${{ github.repository }} $PR_TOOLS_SHA
+
+      - name: Run test-deploy
+        uses: ./.github/workflows/test-deploy
+        with:
+          sha: ${{ github.event.pull_request.head.sha }}
+          pr: ${{ github.event.pull_request.id }}
+
+        # This check isn't for security it's mostly a convenience so this won't
+        # fail and muddy up the actions UI
+        if: ${{ contains(fromJson('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.pull_request.author_association) }}
