@@ -311,12 +311,18 @@ importers:
 
   ops/external-prs:
     dependencies:
+      '@types/libsodium-wrappers':
+        specifier: ^0.7.13
+        version: 0.7.13
       '@types/yargs':
         specifier: ^17.0.32
         version: 17.0.32
       chalk:
         specifier: ^5.3.0
         version: 5.3.0
+      libsodium-wrappers:
+        specifier: ^0.7.13
+        version: 0.7.13
       octokit:
         specifier: ^3.1.0
         version: 3.1.0
@@ -7736,6 +7742,10 @@ packages:
     dependencies:
       '@types/node': 20.11.17
 
+  /@types/libsodium-wrappers@0.7.13:
+    resolution: {integrity: sha512-KeAKtlObirLJk/na6jHBFEdTDjDfFS6Vcr0eG2FjiHKn3Nw8axJFfIu0Y9TpwaauRldQBj/pZm/MHtK76r6OWg==}
+    dev: false
+
   /@types/lodash.clonedeep@4.5.9:
     resolution: {integrity: sha512-19429mWC+FyaAhOLzsS8kZUsI+/GmBAQ0HFiCPsKGU+7pBXOQWhyrY6xNNDwUSX8SMZMJvuFVMF9O5dQOlQK9Q==}
     dependencies:
@@ -14722,6 +14732,16 @@ packages:
     dependencies:
       prelude-ls: 1.2.1
       type-check: 0.4.0
+
+  /libsodium-wrappers@0.7.13:
+    resolution: {integrity: sha512-kasvDsEi/r1fMzKouIDv7B8I6vNmknXwGiYodErGuESoFTohGSKZplFtVxZqHaoQ217AynyIFgnOVRitpHs0Qw==}
+    dependencies:
+      libsodium: 0.7.13
+    dev: false
+
+  /libsodium@0.7.13:
+    resolution: {integrity: sha512-mK8ju0fnrKXXfleL53vtp9xiPq5hKM0zbDQtcxQIsSmxNgSxqCj6R7Hl9PkrNe2j29T4yoDaF7DJLK9/i5iWUw==}
+    dev: false
 
   /lilconfig@2.1.0:
     resolution: {integrity: sha512-utWOt/GHzuUxnLKxB6dk81RoOeoNeHgbrXiuGk4yyF5qlRz+iIVWu56E2fqGHFrXz0QNUhLB/8nKqvRH66JKGQ==}
