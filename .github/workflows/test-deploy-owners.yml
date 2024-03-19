@@ -53,7 +53,7 @@ jobs:
       - name: Initialize check
         run: |
           cd ops/external-prs &&
-          pnpm tools initialize-check ${{ github.repository }} $PR_TOOLS_SHA
+          pnpm tools initialize-check ${{ github.repository }} ${{ github.event.pull_request.head.sha }}
 
       - name: Run test-deploy
         uses: ./.github/workflows/test-deploy
