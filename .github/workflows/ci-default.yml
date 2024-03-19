@@ -16,6 +16,7 @@ env:
   NEXT_PUBLIC_ALGOLIA_API_KEY: ${{ secrets.NEXT_PUBLIC_ALGOLIA_API_KEY }}
   NEXT_PUBLIC_ALGOLIA_INDEX: ${{ vars.NEXT_PUBLIC_ALGOLIA_INDEX }}
   NEXT_PUBLIC_FEEDBACK_FARM_ID: ${{ vars.NEXT_PUBLIC_FEEDBACK_FARM_ID }}
+  GOOGLE_TEST_DUMMY_CREDENTIALS_JSON: ${{ vars.GOOGLE_TEST_DUMMY_CREDENTIALS_JSON }}
   # Indexer variables
   X_GITHUB_GRAPHQL_API: ${{ vars.X_GITHUB_GRAPHQL_API }}
   X_GITHUB_TOKEN: ${{ secrets.X_GITHUB_TOKEN }}
@@ -62,6 +63,20 @@ jobs:
           # Fetch all history so gitlint can check the relevant commits.
           fetch-depth: "0"
 
+      - name: Load public vars
+        run: |
+          bash .github/scripts/load-public-vars.sh $GITHUB_ENV \
+            NODE_ENV PLASMIC_PROJECT_ID \
+            PLASMIC_PROJECT_API_TOKEN \
+            NEXT_PUBLIC_DOMAIN NEXT_PUBLIC_DB_GRAPHQL_URL \
+            NEXT_PUBLIC_ALGOLIA_APPLICATION_ID \
+            NEXT_PUBLIC_ALGOLIA_API_KEY \
+            NEXT_PUBLIC_ALGOLIA_INDEX \
+            NEXT_PUBLIC_FEEDBACK_FARM_ID \
+            GOOGLE_TEST_DUMMY_CREDENTIALS_JSON \
+            X_GITHUB_GRAPHQL_API \
+            GOOGLE_PROJECT_ID
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v2
         with:
@@ -90,7 +105,7 @@ jobs:
       - name: Authenticate to google with a test-dummy user
         uses: 'google-github-actions/auth@v2'
         with:
-          credentials_json: '${{ vars.GOOGLE_TEST_DUMMY_CREDENTIALS_JSON }}'
+          credentials_json: '${{ env.GOOGLE_TEST_DUMMY_CREDENTIALS_JSON }}'
           create_credentials_file: true
 
       - name: Setup dbt profile
