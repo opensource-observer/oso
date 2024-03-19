@@ -52,14 +52,16 @@ The inspiration for these metrics comes from the [CHAOSS Community](https://chao
 | Issue Response Time | How much time passes between the opening of an issue and a response in the issue thread from another contributor?                         | Requires more indexing of issue threads |
 
 :::tip
-Check out our [starter notebooks](https://drive.google.com/drive/folders/1I4exiLfZYgPwIGBEzuAMeGtJUhtS_DE7?usp=drive_link) for impact metrics including Bus Factor and Velocity. The current Bus Factor for Open Source Observer is 0.36 -- a good deal lower than the average in our dataset (0.60), but not as low as Ethereum / Protocol Build (0.05).
+Check out our [starter notebooks](https://drive.google.com/drive/folders/1I4exiLfZYgPwIGBEzuAMeGtJUhtS_DE7?usp=drive_link) for impact metrics including Bus Factor and Velocity. The current Bus Factor for Open Source Observer is 0.36 - a good deal lower than the average in our dataset (0.60), but not as low as Ethereum / Protocol Guild (0.05).
 :::
 
 ### Onchain Reputation
 
-Metrics that attempt to differentiate onchain users based on behavior and trust scores.
+_Metrics that attempt to differentiate onchain users based on behavior and trust scores._
 
-This is a hot topic right now, with a number of projects attempting to create reputation systems for onchain users. We're integrating with many of the leading projects and bringing the data they generate into the OSO data warehouse. From there, there are all sorts of directions you can take the analysis! The **Onchain Activity** metric is a good starting point for new analysts. Have a look at our working definitions for [onchain users](https://docs.opensource.observer/docs/how-oso-works/impact-metrics/onchain_users) and help us create some better ones. The **Network Loyalty** is a spicy metric that will get even spicier as we add more networks to the OSO dataset!
+This is a hot topic right now, with a number of projects attempting to create reputation systems for onchain users. We're integrating with many of the leading projects and bringing the data they generate into the OSO data warehouse. From there, there are all sorts of directions you can take the analysis!
+
+The **Onchain Activity** metric is a good starting point for new analysts. Have a look at our working definitions for [onchain users](https://docs.opensource.observer/docs/how-oso-works/impact-metrics/onchain_users) and help us create some better ones. The **Network Loyalty** is a spicy metric that will get even spicier as we add more networks to the OSO dataset!
 
 | Impact Metric    | Description                                           | Comments                                   |
 | :--------------- | :---------------------------------------------------- | :----------------------------------------- |
@@ -69,7 +71,7 @@ This is a hot topic right now, with a number of projects attempting to create re
 | ENS History      | Does the user have a rich profile on ENS?             | Requires indexing of ENS data              |
 | Gitcoin Passport | Does the user have a high Gitcoin passport score?     | Requires indexing of Gitcoin Passport data |
 
-For these metrics, it may be helpful to grab a bunch of data in a single request and then do further analysis in a notebook. For example, this query will grab each user's transactions with each project on each network in the last 90 days:
+When working with these metrics, because they deal with LOTS of transactions, it may be helpful to grab a bunch of data in a single query request and then do further analysis in a notebook. For example, this query will grab each user's transactions with each project on each network in the last 90 days:
 
 ```sql
 -- Get the number of txns by user / project / network / day
@@ -91,7 +93,7 @@ Check out our [starter notebooks](https://drive.google.com/drive/folders/1I4exiL
 
 ### Contributor Reputation
 
-Metrics that attempt to differentiate code contributors based on behavior and PageRank-style scoring.
+_Metrics that attempt to differentiate code contributors based on behavior and PageRank-style scoring._
 
 These metrics are useful for measuring impact _within_ a project and for measuring the influence of a contributor _across_ projects. For inspiration, check out the [CHAOSS Community](https://chaoss.community) and [SourceCred](https://sourcecred.io/docs).
 
@@ -110,14 +112,14 @@ The **Contributor Concentration** is a good first issue for new analysts, as it'
 SELECT
   project_id,
   from_id AS user_id,
-  SUM(CASE WHEN user_segment_type = 'FULL_TIME_DEV' THEN d.amount END) AS full_time_dev_months,
-  SUM(CASE WHEN user_segment_type = 'PART_TIME_DEV' THEN d.amount END) AS part_time_dev_months,
-  SUM(CASE WHEN user_segment_type = 'OTHER_CONTRIBUTOR' THEN d.amount END) AS other_contributor_months
+  SUM(CASE WHEN user_segment_type = 'FULL_TIME_DEV' THEN amount END) AS full_time_dev_months,
+  SUM(CASE WHEN user_segment_type = 'PART_TIME_DEV' THEN amount END) AS part_time_dev_months,
+  SUM(CASE WHEN user_segment_type = 'OTHER_CONTRIBUTOR' THEN amount END) AS other_contributor_months
 FROM `oso.int_devs`
 GROUP BY 1,2
 ```
 
-The **PageRank** metric is another fun rabbithole to go down. For inspiration, check out some of the work we've done previously in our [Insights repo](https://github.com/opensource-observer/insights/tree/main/community/bounties/page_rank_rpgf3).
+The **PageRank** metric is another fun rabbithole to go down. For inspiration, check out some of the work we've done previously in our [Insights repo](https://github.com/opensource-observer/insights/tree/main/community/bounties/page_rank_rpgf3) and the pioneering work of [SourceCred](https://sourcecred.io/docs).
 
 :::tip
 Check out our [starter notebooks](https://drive.google.com/drive/folders/1I4exiLfZYgPwIGBEzuAMeGtJUhtS_DE7?usp=drive_link) for impact metrics including contributor concentration and page rank.
@@ -125,9 +127,9 @@ Check out our [starter notebooks](https://drive.google.com/drive/folders/1I4exiL
 
 ### Ecosystem Impact
 
-Metrics that capture the impact of a project on the broader health of an open source ecosystem, ie, as a "talent feeder" or "dependency" for other projects.
+_Metrics that capture the impact of a project on the broader health of an open source ecosystem, ie, as a "talent feeder" or "dependency" for other projects._
 
-These metrics zoom out and seek to understand a project's influence within a broader open source ecosystem. One angle to consider is the role of "feeder" projects, ie, projects where users and/or contributors first enter the ecosystem and then go on to contribute to or use other projects. Another angle is the role of "dependency" projects, ie, projects that are imported by other projects in their dependency tree. As of now, we don't have our dependency data indexed, but we're working on it, but the contributor and user "feeder" metrics are good first issues for new analysts.
+These metrics zoom out and seek to understand a project's influence within a broader open source ecosystem. One angle to consider is the role of "feeder" projects, ie, projects where users and/or contributors first enter the ecosystem and then go on to contribute to or use other projects. Another angle is the role of "dependency" projects, ie, projects that are imported by other projects in their dependency tree. As of now, we don't have our dependency data indexed, but we're working on it!
 
 | Impact Metric         | Description                                                                                 | Comments                          |
 | :-------------------- | :------------------------------------------------------------------------------------------ | :-------------------------------- |
@@ -139,15 +141,17 @@ These metrics zoom out and seek to understand a project's influence within a bro
 | Downstream Developers | How many developers are using this project as a dependency?                                 | Requires indexing dependency data |
 | Network Centrality    | How central is this project to the network?                                                 | Requires indexing dependency data |
 
+The contributor and user "feeder" metrics are good first issues for new analysts.
+
 :::tip
 Check out our [starter notebooks](https://drive.google.com/drive/folders/1I4exiLfZYgPwIGBEzuAMeGtJUhtS_DE7?usp=drive_link) for contributor and user "feeders".
 :::
 
 ### Project Metadata
 
-Metrics that capture relevant metadata about the licensing and open sourciness of a project.
+_Metrics that capture relevant metadata about the licensing and open sourciness of a project._
 
-Project metadata metrics consider the licensing practices and the open source nature of projects. By examining **License Coverage**, **OSI Approved Licenses**, and **Drips Access**, we gain insights into a project's commitment to open source principles and its accessibility to the community. Learn more about [Drips](https://docs.drips.network/) and [OSI approved licenses](https://opensource.org/licenses).
+Project metadata metrics consider the [licensing practices](https://opensource.org/licenses) and the open source nature of projects. By examining **License Coverage**, **OSI Approved Licenses**, and **Drips Access**, we gain insights into a project's commitment to open source principles and its accessibility to the community. [Drips](https://docs.drips.network/) is an amazing new way of easily streaming money to any open source project if they have a `funding.json` file in their repo.
 
 | Impact Metric         | Description                                                                    | Comments                                |
 | :-------------------- | :----------------------------------------------------------------------------- | :-------------------------------------- |
@@ -157,7 +161,7 @@ Project metadata metrics consider the licensing practices and the open source na
 
 ### Domain-specific Impact
 
-Metrics that are relevant only to a specific domain, such as "DeFi" or "consumer", for onchain projects.
+_Metrics that are relevant only to a specific domain, such as "DeFi" or "consumer", for onchain projects._
 
 The first step in this process is to define a domain and create a list of projects that are relevant to that domain. For example:
 
