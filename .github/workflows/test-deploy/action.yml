@@ -23,4 +23,4 @@ runs:
     - name: tbd... do some test-deployment
       shell: bash
       run: |
-        echo $PR_TOOLS_PR
+        echo "SHA is $PR_TOOLS_SHA and PR is $PR_TOOLS_PR"
