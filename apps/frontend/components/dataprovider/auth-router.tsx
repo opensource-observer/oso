@@ -13,6 +13,7 @@ const DEFAULT_PLASMIC_VARIABLE = "auth";
 
 type AuthRouterProps = CommonDataProviderProps & {
   noAuthChildren?: ReactNode;
+  ignoreNoAuth?: boolean;
   testNoAuth?: boolean;
 };
 
@@ -24,6 +25,11 @@ const AuthRouterRegistration: RegistrationProps<AuthRouterProps> = {
       type: "text",
       value: "Placeholder",
     },
+  },
+  ignoreNoAuth: {
+    type: "boolean",
+    advanced: true,
+    helpText: "Always render children",
   },
   testNoAuth: {
     type: "boolean",
@@ -40,6 +46,7 @@ function AuthRouter(props: AuthRouterProps) {
     useTestData,
     testData,
     noAuthChildren,
+    ignoreNoAuth,
     testNoAuth,
   } = props;
   const key = variableName ?? DEFAULT_PLASMIC_VARIABLE;
@@ -73,7 +80,7 @@ function AuthRouter(props: AuthRouterProps) {
   }
 
   // Show unauthenticated view
-  if (testNoAuth || (!loading && !data?.user)) {
+  if (testNoAuth || (!loading && !ignoreNoAuth && !data?.user)) {
     return <div className={className}>{noAuthChildren}</div>;
   }
 
