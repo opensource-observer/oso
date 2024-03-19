@@ -30,6 +30,7 @@ import {
   CommonDataProviderRegistration,
 } from "./provider-view";
 import type { CommonDataProviderProps } from "./provider-view";
+import { useEnsureAuth } from "./apollo-wrapper";
 
 // Types used in the Plasmic registration
 type BucketWidth = "day" | "week" | "month";
@@ -336,6 +337,7 @@ const formatData = (
  * @returns
  */
 function ArtifactEventDataProvider(props: EventDataProviderProps) {
+  useEnsureAuth();
   const bucketWidth = getBucketWidth(props);
   const query =
     bucketWidth === "month"
@@ -388,9 +390,7 @@ function ArtifactEventDataProvider(props: EventDataProviderProps) {
   const formattedData = formatData(props, normalizedEventData, entityData, {
     gapFill: bucketWidth === "day",
   });
-  if (!eventLoading) {
-    console.log(props, rawEventData, eventError, formattedData);
-  }
+  !eventLoading && console.log(props, rawEventData, eventError, formattedData);
   return (
     <DataProviderView
       {...props}
@@ -407,6 +407,7 @@ function ArtifactEventDataProvider(props: EventDataProviderProps) {
  * @returns
  */
 function ProjectEventDataProvider(props: EventDataProviderProps) {
+  useEnsureAuth();
   const bucketWidth = getBucketWidth(props);
   const query =
     bucketWidth === "month"
@@ -454,9 +455,7 @@ function ProjectEventDataProvider(props: EventDataProviderProps) {
   const formattedData = formatData(props, normalizedData, entityData, {
     gapFill: bucketWidth === "day",
   });
-  if (!eventLoading) {
-    console.log(props, rawEventData, eventError, formattedData);
-  }
+  !eventLoading && console.log(props, rawEventData, eventError, formattedData);
   return (
     <DataProviderView
       {...props}
@@ -473,6 +472,7 @@ function ProjectEventDataProvider(props: EventDataProviderProps) {
  * @returns
  */
 function CollectionEventDataProvider(props: EventDataProviderProps) {
+  useEnsureAuth();
   const bucketWidth = getBucketWidth(props);
   const query =
     bucketWidth === "month"
@@ -523,9 +523,7 @@ function CollectionEventDataProvider(props: EventDataProviderProps) {
   const formattedData = formatData(props, normalizedData, entityData, {
     gapFill: bucketWidth === "day",
   });
-  if (!eventLoading) {
-    console.log(props, rawEventData, eventError, formattedData);
-  }
+  !eventLoading && console.log(props, rawEventData, eventError, formattedData);
   return (
     <DataProviderView
       {...props}
@@ -542,6 +540,7 @@ function CollectionEventDataProvider(props: EventDataProviderProps) {
  * @returns
  */
 function ProjectUserDataProvider(props: EventDataProviderProps) {
+  useEnsureAuth();
   const {
     data: rawEventData,
     error: eventError,
@@ -577,9 +576,7 @@ function ProjectUserDataProvider(props: EventDataProviderProps) {
     name: ensure<string>(x.project_name, "project missing 'project_name'"),
   }));
   const formattedData = formatData(props, normalizedData, entityData);
-  if (!eventLoading) {
-    console.log(props, rawEventData, eventError, formattedData);
-  }
+  !eventLoading && console.log(props, rawEventData, eventError, formattedData);
   return (
     <DataProviderView
       {...props}
