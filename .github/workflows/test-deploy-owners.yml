@@ -1,5 +1,5 @@
 # NOTE: This name appears in GitHub's Checks API and in workflow's status badge.
-name: ci-default
+name: test-deploy-owners
 env:
   # CI variables
   DOCKER_PLATFORM: "amd64"
@@ -28,11 +28,7 @@ env:
 # Trigger the workflow when:
 on:
   pull_request_target:
-    branches:
-      - main
-  # Allows you to run this workflow manually from the Actions tab
-  workflow_dispatch:
-  merge_group:
+    types: [assigned, opened, synchronize, reopened]
 
 # Cancel in progress jobs on new pushes.
 concurrency:
