@@ -10,17 +10,19 @@ on:
 jobs:
   external-prs-handle-comment:
     name: external-prs-handle-commit
-    environment: testing
+    environment: external-prs-app
     runs-on: ubuntu-latest
 
     # This job only runs for pull request comments
-    if: ${{ github.event.issue.pull_request }}
+    if: github.event.issue.pull_request && contains(fromJson('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association)
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 1
+
+      - name: Setup external pr tools
+        uses: ./.github/workflows/setup-external-pr-tools
+
       - run: |
-          echo "A comment by $SENDER on PR $NUMBER from on an ISSUE FROM $PR_AUTHOR with comment: $COMMENT "
-        env:
-          NUMBER: ${{ github.event.issue.number }}
-          ID: ${{ github.event.issue.id }}
-          COMMENT: ${{ github.event.issue.body }}
-          SENDER: ${{ github.event.sender }}
-          PR_AUTHOR: ${{ github.event.issue.author_association }}
+          cd ops/external-prs && pnpm tools parse-comment ${{ github.repository }} ${{ github.event.comment.id }} sha.out
