@@ -26,6 +26,8 @@ function cleanup {
 }
 trap cleanup EXIT
 
+docker pull ghcr.io/opensource-observer/oso-public-vars:latest
+
 # Download the public vars
 docker container create --name public-vars ghcr.io/opensource-observer/oso-public-vars:latest /bin/sh
 
@@ -35,9 +37,11 @@ docker cp public-vars:/public/. "${temp_dir}"
 
 docker rm public-vars
 
-export $(cat "${temp_dir}/vars.env" | xargs)
 
 set_if_not_exists() {
+    export $(cat "${temp_dir}/vars.env" | xargs)
+    env | grep PUBLIC
+
     var_name=$1
     dest=$2
     public_var_name="PUBLIC_${var_name}"
