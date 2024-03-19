@@ -130,6 +130,11 @@ jobs:
     environment: testing
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 1
+
       - name: Setup external pr tools
         uses: ./.github/workflows/setup-external-pr-tools
       
@@ -143,4 +148,7 @@ jobs:
         with:
           sha: ${{ github.sha }}
           pr: ${{ github.event.pull_request.id }}
+
+        # This check isn't for security it's mostly a convenience so this won't
+        # fail and muddy up the actions UI
         if: ${{ contains(fromJson('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.pull_request.author_association) }}
