@@ -4,11 +4,7 @@ import { PlasmicComponent } from "@plasmicapp/loader-nextjs";
 import { PLASMIC } from "../../../plasmic-init";
 import { PlasmicClientRootProvider } from "../../../plasmic-init-client";
 import {
-  cachedGetArtifactsByIds,
-  cachedGetArtifactIdsByProjectIds,
   cachedGetProjectsBySlugs,
-  cachedGetCollectionsByIds,
-  cachedGetCollectionIdsByProjectIds,
   cachedGetCodeMetricsByProjectIds,
   cachedGetOnchainMetricsByProjectIds,
   cachedGetAllEventTypes,
@@ -66,7 +62,7 @@ export default async function ProjectPage(props: ProjectPageProps) {
   //console.log("project", project);
 
   // Parallelize getting things related to the project
-  const p1 = await Promise.all([
+  const data = await Promise.all([
     cachedGetAllEventTypes(),
     cachedGetCodeMetricsByProjectIds({
       project_ids: [projectId],
@@ -74,30 +70,10 @@ export default async function ProjectPage(props: ProjectPageProps) {
     cachedGetOnchainMetricsByProjectIds({
       project_ids: [projectId],
     }),
-    cachedGetArtifactIdsByProjectIds({
-      project_ids: [projectId],
-    }),
-    cachedGetCollectionIdsByProjectIds({
-      project_ids: [projectId],
-    }),
   ]);
-  const { event_types: eventTypes } = p1[0];
-  const { code_metrics_by_project: codeMetrics } = p1[1];
-  const { onchain_metrics_by_project: onchainMetrics } = p1[2];
-  const { artifacts_by_project: artifactIds } = p1[3];
-  const { projects_by_collection: collectionIds } = p1[4];
-
-  // Parallelize getting artifacts and collections
-  const p2 = await Promise.all([
-    cachedGetArtifactsByIds({
-      artifact_ids: artifactIds.map((x: any) => x.artifact_id),
-    }),
-    cachedGetCollectionsByIds({
-      collection_ids: collectionIds.map((x: any) => x.collection_id),
-    }),
-  ]);
-  const { artifacts } = p2[0];
-  const { collections } = p2[1];
+  const { event_types: eventTypes } = data[0];
+  const { code_metrics_by_project: codeMetrics } = data[1];
+  const { onchain_metrics_by_project: onchainMetrics } = data[2];
 
   // Get Plasmic component
   const plasmicData = await cachedFetchComponent(PLASMIC_COMPONENT);
@@ -116,8 +92,6 @@ export default async function ProjectPage(props: ProjectPageProps) {
           codeMetrics,
           onchainMetrics,
           eventTypes,
-          artifacts,
-          collections,
         }}
       />
     </PlasmicClientRootProvider>
