@@ -122,6 +122,13 @@ async function parseDeployComment(args: ParseCommentArgs) {
     owner: args.repo.owner,
     comment_id: args.comment,
   });
+  if (
+    ["OWNER", "COLLABORATOR", "MEMBER"].indexOf(
+      comment.data.author_association,
+    ) === -1
+  ) {
+    process.exit(1);
+  }
   const body = comment.data.body || "";
   const match = body.match(/\/deploy\s+([0-9a-f]{6,40})/);
   if (!match) {
@@ -190,12 +197,6 @@ function testDeployGroup(group: Argv) {
     .demandCommand();
 }
 
-/**
- * When adding a new fetcher, please remember to add it to both this registry and yargs
- */
-export const FETCHER_REGISTRY = [
-  //NpmDownloadsInterface,
-];
 const cli = yargs(hideBin(process.argv))
   .env("PR_TOOLS")
   .positional("repo", {
