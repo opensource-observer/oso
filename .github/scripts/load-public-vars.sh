@@ -40,8 +40,6 @@ docker rm public-vars
 
 set_if_not_exists() {
     export $(cat "${temp_dir}/vars.env" | xargs)
-    env | grep PUBLIC
-
     var_name=$1
     dest=$2
     public_var_name="PUBLIC_${var_name}"
