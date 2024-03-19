@@ -3,6 +3,7 @@ import { Argv, ArgumentsCamelCase } from "yargs";
 import { hideBin } from "yargs/helpers";
 import { App, Octokit } from "octokit";
 import * as fsPromise from "fs/promises";
+import _sodium from "libsodium-wrappers";
 
 import { logger } from "./utils/logger.js";
 import { handleError } from "./utils/error.js";
@@ -58,6 +59,13 @@ interface ParseCommentArgs extends BaseArgs {
 
 interface InitializePRCheck extends BaseArgs {
   sha: string;
+}
+
+interface RefreshGCPCredentials extends BaseArgs {
+  environment: string;
+  credsPath: string;
+  secret: boolean;
+  name: string;
 }
 
 interface TestDeployArgs extends BaseArgs {}
@@ -122,6 +130,13 @@ async function parseDeployComment(args: ParseCommentArgs) {
     owner: args.repo.owner,
     comment_id: args.comment,
   });
+  if (
+    ["OWNER", "COLLABORATOR", "MEMBER"].indexOf(
+      comment.data.author_association,
+    ) === -1
+  ) {
+    process.exit(1);
+  }
   const body = comment.data.body || "";
   const match = body.match(/\/deploy\s+([0-9a-f]{6,40})/);
   if (!match) {
@@ -143,6 +158,86 @@ async function parseDeployComment(args: ParseCommentArgs) {
       summary: "Queued for deployment",
     },
   });
+}
+
+async function fileToBase64(filePath: string): Promise<string> {
+  try {
+    const fileBuffer = await fsPromise.readFile(filePath);
+    const base64String = fileBuffer.toString("base64");
+    return base64String;
+  } catch (error) {
+    logger.error("Error reading file:", error);
+    throw error;
+  }
+}
+
+async function refreshCredentials(args: RefreshGCPCredentials) {
+  logger.info({
+    message: "setting up credentials",
+    environment: args.environment,
+    name: args.name,
+  });
+
+  const app = args.app;
+
+  const octo = await getOctokitFor(app, args.repo);
+  if (!octo) {
+    throw new Error("No repo found");
+  }
+
+  const repo = await octo.rest.repos.get({
+    repo: args.repo.name,
+    owner: args.repo.owner,
+  });
+
+  const creds = await fileToBase64(args.credsPath);
+
+  if (args.secret) {
+    // The github secret must use libsodium's crypto_box_seal for the
+    // `encrypted_value`
+    await _sodium.ready;
+
+    const pkey = await octo.rest.actions.getEnvironmentPublicKey({
+      repository_id: repo.data.id,
+      environment_name: args.environment,
+    });
+
+    const messageBytes = Buffer.from(creds);
+    const keyBytes = Buffer.from(pkey.data.key, "base64");
+    const encryptedBytes = _sodium.crypto_box_seal(messageBytes, keyBytes);
+    const ciphertext = Buffer.from(encryptedBytes).toString("base64");
+
+    await octo.rest.actions.createOrUpdateEnvironmentSecret({
+      repository_id: repo.data.id,
+      environment_name: args.environment,
+      secret_name: args.name,
+      encrypted_value: ciphertext,
+      key_id: pkey.data.key_id,
+    });
+  } else {
+    try {
+      const currentVar = await octo.rest.actions.getEnvironmentVariable({
+        repository_id: repo.data.id,
+        environment_name: args.environment,
+        name: args.name,
+      });
+      if (currentVar) {
+        await octo.rest.actions.deleteEnvironmentVariable({
+          repository_id: repo.data.id,
+          environment_name: args.environment,
+          name: args.name,
+        });
+      }
+    } catch (e) {
+      logger.info("no existing var found");
+    }
+    await octo.rest.actions.createEnvironmentVariable({
+      repository_id: repo.data.id,
+      environment_name: args.environment,
+      name: args.name,
+      value: creds,
+    });
+  }
 }
 
 async function testDeploySetup(_args: TestDeployArgs) {
@@ -190,12 +285,6 @@ function testDeployGroup(group: Argv) {
     .demandCommand();
 }
 
-/**
- * When adding a new fetcher, please remember to add it to both this registry and yargs
- */
-export const FETCHER_REGISTRY = [
-  //NpmDownloadsInterface,
-];
 const cli = yargs(hideBin(process.argv))
   .env("PR_TOOLS")
   .positional("repo", {
@@ -259,6 +348,27 @@ const cli = yargs(hideBin(process.argv))
       });
     },
     (args) => handleError(parseDeployComment(args)),
+  )
+  .command<RefreshGCPCredentials>(
+    "refresh-gcp-credentials <repo> <environment> <creds-path> <name>",
+    "Refresh creds",
+    (yags) => {
+      yags.positional("environment", {
+        type: "string",
+      });
+      yags.positional("creds-path", {
+        type: "string",
+      });
+      yags.positional("name", {
+        type: "string",
+      });
+      yags.option("secret", {
+        type: "boolean",
+        default: true,
+      });
+      yags.boolean("secret");
+    },
+    (args) => handleError(refreshCredentials(args)),
   )
   .command<TestDeployArgs>(
     "test-deploy",
