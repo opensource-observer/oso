@@ -3,6 +3,7 @@ import { Argv, ArgumentsCamelCase } from "yargs";
 import { hideBin } from "yargs/helpers";
 import { App, Octokit } from "octokit";
 import * as fsPromise from "fs/promises";
+import _sodium from "libsodium-wrappers";
 
 import { logger } from "./utils/logger.js";
 import { handleError } from "./utils/error.js";
@@ -58,6 +59,13 @@ interface ParseCommentArgs extends BaseArgs {
 
 interface InitializePRCheck extends BaseArgs {
   sha: string;
+}
+
+interface RefreshGCPCredentials extends BaseArgs {
+  environment: string;
+  credsPath: string;
+  secret: boolean;
+  name: string;
 }
 
 interface TestDeployArgs extends BaseArgs {}
@@ -150,6 +158,68 @@ async function parseDeployComment(args: ParseCommentArgs) {
       summary: "Queued for deployment",
     },
   });
+}
+
+async function fileToBase64(filePath: string): Promise<string> {
+  try {
+    const fileBuffer = await fsPromise.readFile(filePath);
+    const base64String = fileBuffer.toString("base64");
+    return base64String;
+  } catch (error) {
+    logger.error("Error reading file:", error);
+    throw error;
+  }
+}
+
+async function refreshCredentials(args: RefreshGCPCredentials) {
+  logger.info({
+    message: "setting up credentials",
+    environment: args.environment,
+    name: args.name,
+  });
+
+  const app = args.app;
+
+  const octo = await getOctokitFor(app, args.repo);
+  if (!octo) {
+    throw new Error("No repo found");
+  }
+
+  const repo = await octo.rest.repos.get({
+    repo: args.repo.name,
+    owner: args.repo.owner,
+  });
+
+  const creds = await fileToBase64(args.credsPath);
+
+  if (args.secret) {
+    await _sodium.ready;
+
+    const pkey = await octo.rest.actions.getEnvironmentPublicKey({
+      repository_id: repo.data.id,
+      environment_name: args.environment,
+    });
+
+    const messageBytes = Buffer.from(creds);
+    const keyBytes = Buffer.from(pkey.data.key, "base64");
+    const encryptedBytes = _sodium.crypto_box_seal(messageBytes, keyBytes);
+    const ciphertext = Buffer.from(encryptedBytes).toString("base64");
+
+    await octo.rest.actions.createOrUpdateEnvironmentSecret({
+      repository_id: repo.data.id,
+      environment_name: args.environment,
+      secret_name: args.name,
+      encrypted_value: ciphertext,
+      key_id: pkey.data.key_id,
+    });
+  } else {
+    await octo.rest.actions.createEnvironmentVariable({
+      repository_id: repo.data.id,
+      environment_name: args.environment,
+      name: args.name,
+      value: creds,
+    });
+  }
 }
 
 async function testDeploySetup(_args: TestDeployArgs) {
@@ -260,6 +330,27 @@ const cli = yargs(hideBin(process.argv))
       });
     },
     (args) => handleError(parseDeployComment(args)),
+  )
+  .command<RefreshGCPCredentials>(
+    "refresh-gcp-credentials <repo> <environment> <creds-path> <name>",
+    "Refresh creds",
+    (yags) => {
+      yags.positional("environment", {
+        type: "string",
+      });
+      yags.positional("creds-path", {
+        type: "string",
+      });
+      yags.positional("name", {
+        type: "string",
+      });
+      yags.option("secret", {
+        type: "boolean",
+        default: true,
+      });
+      yags.boolean("secret");
+    },
+    (args) => handleError(refreshCredentials(args)),
   )
   .command<TestDeployArgs>(
     "test-deploy",
