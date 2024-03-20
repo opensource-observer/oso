@@ -10,6 +10,15 @@ inputs:
   pr:
     description: The pr number
     required: true
+  requester:
+    description: The user requesting the deploy
+    required: true
+  author:
+    description: The author of the pull
+    required: true
+  gcp_service_account_path:
+    description: The google service account
+    required: true
 
 runs:
   using: "composite"
@@ -20,7 +29,34 @@ runs:
         echo "PR_TOOLS_PR=${{ inputs.pr }}" >> "$GITHUB_ENV"
         echo "PR_TOOLS_SHA=${{ inputs.sha }}" >> "$GITHUB_ENV"
 
-    - name: tbd... do some test-deployment
-      shell: bash
+    # TODO: We should only deploy when data warehouse related files have changed. 
+    # - name: Get changed files and write the outputs to a JSON file
+    #   id: changed-files-write-output-files-json
+    #   uses: tj-actions/changed-files@v43
+    #   with:
+    #     json: true
+    #     write_output_files: true
+
+    # - name: Evaluate if this is eligible for deployment
+    #   id: is_eligible
+    #   run: |
+    #     cd ops/external-prs && pnpm tools test-deploy is-eligible $GITHUB_OUTPUT
+
+    - name: checkout the PR
+      uses: actions/checkout@v3
+      with:
+        # Check out pull request's HEAD commit instead of the merge commit to
+        # prevent gitlint from failing due to too long commit message titles,
+        # e.g. "Merge 3e621938d65caaa67f8e35d145335d889d470fc8 into 19a39b2f66cd7a165082d1486b2f1eb36ec2354a".
+        ref: ${{ inputs.sha }}
+        # Fetch all history so gitlint can check the relevant commits.
+        fetch-depth: "1"
+
+        path: "pr-clone/"
+
+    - name: Run test-deploy
       run: |
-        echo "SHA is $PR_TOOLS_SHA and PR is $PR_TOOLS_PR"
+        mkdir -p $HOME/.dbt &&
+        cd ops/external-prs && pnpm tools test-deploy ${{ github.repository }} ${{ inputs.pr }} $HOME/.dbt/profiles ${{ inputs.gcp_service_account_path }}
+      
+    
