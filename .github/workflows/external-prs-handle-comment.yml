@@ -33,6 +33,13 @@ jobs:
       #   run: |
       #     bashf
 
+      - name: Login to google
+        uses: 'google-github-actions/auth@v2'
+        with:
+          credentials_json: '${{ secrets.GOOGLE_BQ_ADMIN_CREDENTIALS_JSON }}'
+          create_credentials_file: true
+        if: ${{ steps.parse_comment.outputs.deploy == 'true' }}
+
       - name: Run test-deploy
         uses: ./.github/workflows/test-deploy
         with:
@@ -40,6 +47,7 @@ jobs:
           pr: ${{ steps.parse_comment.outputs.pr }}
           requester: ${{ steps.parse_comment.outputs.comment_author }}
           author: ${{ steps.parse_comment.outputs.issue_author }}
+          gcp_service_account_path: ${{ env.GOOGLE_APPLICATION_CREDENTIALS }}
 
         # This check isn't for security it's mostly a convenience so this won't
         # fail and muddy up the actions UI

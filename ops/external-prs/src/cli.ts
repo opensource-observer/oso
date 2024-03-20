@@ -52,10 +52,11 @@ interface TestDeployArgs extends BaseArgs {
 
 interface TestDeploySetupArgs extends TestDeployArgs {
   pr: number;
-  sha: number;
+  sha: string;
   profilePath: string;
   serviceAccountPath: string;
   projectId: string;
+  checkoutPath: string;
 }
 
 interface TestDeployPeriodicCleaningArgs extends TestDeployArgs {
@@ -273,9 +274,10 @@ async function refreshCredentials(args: RefreshGCPCredentials) {
 async function testDeploySetup(args: TestDeploySetupArgs) {
   return args.coordinator.setup(
     args.pr,
+    args.sha,
     args.profilePath,
     args.serviceAccountPath,
-    args.sha,
+    args.checkoutPath,
   );
 }
 
@@ -316,17 +318,23 @@ function testDeployGroup(group: Argv) {
       );
     })
     .command<TestDeploySetupArgs>(
-      "setup <repo> <pr> <profile-path> <service-account-path>",
+      "setup <repo> <pr> <sha> <profile-path> <service-account-path> <checkout-path>",
       "subcommand for a setting up a test deployment",
       (yags) => {
         yags.positional("pr", {
           description: "The PR",
+        });
+        yags.positional("sha", {
+          description: "the sha to deploy",
         });
         yags.positional("profile-path", {
           description: "the profile path to write to",
         });
         yags.positional("service-account-path", {
           description: "the profile path to write to",
+        });
+        yags.positional("checkout-path", {
+          description: "the path to the checked out code",
         });
       },
       (args) => handleError(testDeploySetup(args)),

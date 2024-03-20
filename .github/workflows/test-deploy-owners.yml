@@ -43,6 +43,13 @@ jobs:
           cd ops/external-prs &&
           pnpm tools initialize-check ${{ github.repository }} ${{ github.event.pull_request.head.sha }} ${{ github.event.sender.login }}
 
+      - name: Login to google
+        uses: 'google-github-actions/auth@v2'
+        with:
+          credentials_json: '${{ secrets.GOOGLE_BQ_ADMIN_CREDENTIALS_JSON }}'
+          create_credentials_file: true
+        if: ${{ contains(fromJson('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.pull_request.author_association) }}
+
       - name: Run test-deploy
         uses: ./.github/workflows/test-deploy
         with:
@@ -50,6 +57,7 @@ jobs:
           pr: ${{ github.event.pull_request.id }}
           requester: ${{ github.event.sender.login }}
           author: ${{ github.event.sender.login }}
+          gcp_service_account_path: ${{ env.GOOGLE_APPLICATION_CREDENTIALS }}
 
         # This check isn't for security it's mostly a convenience so this won't
         # fail and muddy up the actions UI
