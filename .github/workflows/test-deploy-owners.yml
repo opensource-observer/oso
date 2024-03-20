@@ -43,6 +43,10 @@ jobs:
           cd ops/external-prs &&
           pnpm tools initialize-check ${{ github.repository }} ${{ github.event.pull_request.head.sha }} ${{ github.event.sender.login }}
 
+      - name: Author association debug
+        run: |
+          echo "${{ github.event.pull_request.author_association }}"
+
       - name: Login to google
         uses: 'google-github-actions/auth@v2'
         with:
