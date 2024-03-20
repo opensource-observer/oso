@@ -4,41 +4,18 @@ import { hideBin } from "yargs/helpers";
 import { App, Octokit } from "octokit";
 import * as fsPromise from "fs/promises";
 import _sodium from "libsodium-wrappers";
+import { BigQuery } from "@google-cloud/bigquery";
+import { dedent } from "ts-dedent";
+import { URL } from "url";
 
 import { logger } from "./utils/logger.js";
 import { handleError } from "./utils/error.js";
 import dotenv from "dotenv";
-import { CheckStatus, setCheckStatus } from "./checks.js";
+import { CheckStatus, setCheckStatus, CheckConclusion } from "./checks.js";
+import { Repo, getOctokitFor } from "./github.js";
+import { PRTestDeployCoordinator } from "./deploy.js";
 
 dotenv.config();
-
-//const callLibrary = async <Args>(
-//  func: EventSourceFunction<Args>,
-//  args: Args,
-//): Promise<void> => {
-// TODO: handle ApiReturnType properly and generically here
-//  const result = await func(args);
-//  console.log(result);
-//};
-
-// function outputError(err: unknown) {
-//   logger.info(err);
-//   try {
-//     logger.error(JSON.stringify(err));
-//     // eslint-disable-next-line no-restricted-properties
-//     console.error(err);
-//   } catch (_e) {
-//     logger.error("Cannot stringify error.");
-//     logger.error(err);
-//     // eslint-disable-next-line no-restricted-properties
-//     console.error(err);
-//   }
-// }
-
-interface Repo {
-  name: string;
-  owner: string;
-}
 
 interface BaseArgs {
   githubAppPrivateKey: string;
@@ -59,6 +36,7 @@ interface ParseCommentArgs extends BaseArgs {
 
 interface InitializePRCheck extends BaseArgs {
   sha: string;
+  login: string;
 }
 
 interface RefreshGCPCredentials extends BaseArgs {
@@ -68,30 +46,32 @@ interface RefreshGCPCredentials extends BaseArgs {
   name: string;
 }
 
-interface TestDeployArgs extends BaseArgs {}
+interface TestDeployArgs extends BaseArgs {
+  coordinator: PRTestDeployCoordinator;
+}
 
-interface TestDeploySetupArgs extends TestDeployArgs {}
+interface TestDeploySetupArgs extends TestDeployArgs {
+  pr: number;
+  sha: number;
+  profilePath: string;
+  serviceAccountPath: string;
+  projectId: string;
+}
 
-interface TestDeployTeardownArgs extends TestDeployArgs {}
+interface TestDeployPeriodicCleaningArgs extends TestDeployArgs {
+  ttlSeconds: number;
+}
 
-async function getOctokitFor(app: App, repo: Repo): Promise<Octokit | void> {
-  for await (const { installation } of app.eachInstallation.iterator()) {
-    for await (const { octokit, repository } of app.eachRepository.iterator({
-      installationId: installation.id,
-    })) {
-      if (repository.full_name === `${repo.owner}/${repo.name}`) {
-        return octokit;
-      }
-    }
-  }
-  return;
+interface TestDeployTeardownArgs extends TestDeployArgs {
+  pr: number;
 }
 
 async function initializePrCheck(args: InitializePRCheck) {
   logger.info({
-    message: 'initializing the PR check to "queued"',
+    message: "initializing the PR check",
     repo: args.repo,
     sha: args.sha,
+    login: args.login,
   });
 
   const app = args.app;
@@ -100,20 +80,42 @@ async function initializePrCheck(args: InitializePRCheck) {
     throw new Error("No repo found");
   }
 
-  await setCheckStatus(octo, args.repo.owner, args.repo.name, {
-    name: "test-deploy",
-    head_sha: args.sha,
-    status: CheckStatus.Queued,
-    output: {
-      title: "Test Deployment",
-      summary: "Queued for deployment",
-    },
+  const permissions = await octo.rest.repos.getCollaboratorPermissionLevel({
+    owner: args.repo.owner,
+    repo: args.repo.name,
+    username: args.login,
   });
+
+  // If this user has write then we can show this as being queued
+  if (["admin", "write"].indexOf(permissions.data.permission) !== -1) {
+    await setCheckStatus(octo, args.repo.owner, args.repo.name, {
+      name: "test-deploy",
+      head_sha: args.sha,
+      status: CheckStatus.Queued,
+      output: {
+        title: "Test deployment queued",
+        summary: "Test deployment queued",
+      },
+    });
+  } else {
+    // The user is not a writer. Show that this needs to be approved.
+    await setCheckStatus(octo, args.repo.owner, args.repo.name, {
+      name: "test-deploy",
+      head_sha: args.sha,
+      status: CheckStatus.Completed,
+      conclusion: CheckConclusion.ActionRequired,
+      output: {
+        title: "Deployment approval required to deploy",
+        summary:
+          "Deployment pproval required to deploy. A valid user must comment `/test-deploy ${sha}` on the PR.",
+      },
+    });
+  }
 }
 
 async function parseDeployComment(args: ParseCommentArgs) {
   logger.info({
-    message: "checking for a /deploy message",
+    message: "checking for a /deploy-test message",
     repo: args.repo,
     commentId: args.comment,
   });
@@ -125,6 +127,15 @@ async function parseDeployComment(args: ParseCommentArgs) {
     throw new Error("No repo found");
   }
 
+  const noDeploy = async () => {
+    const output = dedent`
+    deploy=false
+    `;
+
+    // Write the deploy commit sha to the
+    await fsPromise.writeFile(args.output, output);
+  };
+
   const comment = await octo.rest.issues.getComment({
     repo: args.repo.name,
     owner: args.repo.owner,
@@ -135,18 +146,37 @@ async function parseDeployComment(args: ParseCommentArgs) {
       comment.data.author_association,
     ) === -1
   ) {
-    process.exit(1);
+    return await noDeploy();
   }
   const body = comment.data.body || "";
-  const match = body.match(/\/deploy\s+([0-9a-f]{6,40})/);
+  const match = body.match(/\/deploy-test\s+([0-9a-f]{6,40})/);
   if (!match) {
-    process.exit(1);
+    return await noDeploy();
   }
+
+  const issueUrl = comment.data.issue_url;
+  const url = new URL(issueUrl);
+  const issueNumber = parseInt(url.pathname.split("/").slice(-1)[0]);
 
   const sha = match[1];
 
+  const issue = await octo.rest.issues.get({
+    issue_number: issueNumber,
+    repo: args.repo.name,
+    owner: args.repo.owner,
+  });
+
+  // Output for GITHUB_OUTPUT for now.
+  const output = dedent`
+  deploy=true
+  sha=${sha}
+  pr=${issueNumber}
+  issue_author=${issue.data.user?.login}
+  comment_author=${comment.data.user?.login}
+  `;
+
   // Write the deploy commit sha to the
-  await fsPromise.writeFile(args.output, match[1]);
+  await fsPromise.writeFile(args.output, output);
 
   // Update the check for this PR
   await setCheckStatus(octo, args.repo.owner, args.repo.name, {
@@ -240,23 +270,23 @@ async function refreshCredentials(args: RefreshGCPCredentials) {
   }
 }
 
-async function testDeploySetup(_args: TestDeployArgs) {
-  console.log("setup");
-  // This should create a new public dataset inside a "testing" project
-  // specifically for a pull request
-  //
-  // This project is intended to be only used to push the last 2 days worth of
-  // data into a dev environment
-  //
-  // The service account associated with this account should only have access to
-  // bigquery no other resources. The service account should also continously be
-  // rotated. So the project in use should have a very short TTL on service
-  // account keys.
+async function testDeploySetup(args: TestDeploySetupArgs) {
+  return args.coordinator.setup(
+    args.pr,
+    args.profilePath,
+    args.serviceAccountPath,
+    args.sha,
+  );
 }
 
-async function testDeployTeardown(_args: TestDeployArgs) {
-  console.log("teardown");
-  // This will delete a pull request
+async function testDeployTeardown(args: TestDeployTeardownArgs) {
+  return args.coordinator.teardown(args.pr);
+}
+
+async function testDeployPeriodicCleaning(
+  args: TestDeployPeriodicCleaningArgs,
+) {
+  return args.coordinator.clean(args.ttlSeconds);
 }
 
 function testDeployGroup(group: Argv) {
@@ -266,12 +296,37 @@ function testDeployGroup(group: Argv) {
       type: "string",
       demandOption: true,
     })
+    .middleware(async (args: ArgumentsCamelCase) => {
+      logger.info({
+        message: "settings up Pull Request Test Deploy Coordinator",
+      });
+
+      const bq = new BigQuery();
+      const app = args.app as App;
+      const repo = args.repo as Repo;
+
+      const octo = await getOctokitFor(app, repo);
+
+      args.coordinator = new PRTestDeployCoordinator(
+        repo,
+        app,
+        octo as Octokit,
+        bq,
+        args.projectId as string,
+      );
+    })
     .command<TestDeploySetupArgs>(
-      "setup <repo> <pr>",
+      "setup <repo> <pr> <profile-path> <service-account-path>",
       "subcommand for a setting up a test deployment",
       (yags) => {
         yags.positional("pr", {
           description: "The PR",
+        });
+        yags.positional("profile-path", {
+          description: "the profile path to write to",
+        });
+        yags.positional("service-account-path", {
+          description: "the profile path to write to",
         });
       },
       (args) => handleError(testDeploySetup(args)),
@@ -279,8 +334,27 @@ function testDeployGroup(group: Argv) {
     .command<TestDeployTeardownArgs>(
       "teardown <repo> <pr>",
       "subcommand for a setting up a test deployment",
-      (_yags) => {},
+      (yags) => {
+        yags.positional("pr", {
+          description: "The PR",
+        });
+      },
       (args) => handleError(testDeployTeardown(args)),
+    )
+    .command<TestDeployPeriodicCleaningArgs>(
+      "clean <repo> <ttl-seconds>",
+      "subcommand for cleaning test deployments",
+      (yags) => {
+        yags.positional("pr", {
+          description: "The PR",
+        });
+        yags.positional("ttl-seconds", {
+          type: "number",
+          description: "TTL in seconds. Defaults to 1209600",
+          default: 1_209_600,
+        });
+      },
+      (args) => handleError(testDeployPeriodicCleaning(args)),
     )
     .demandCommand();
 }
@@ -324,12 +398,16 @@ const cli = yargs(hideBin(process.argv))
     logger.debug(`Authenticated as ${data.name}`);
   })
   .command<InitializePRCheck>(
-    "initialize-check <repo> <sha>",
+    "initialize-check <repo> <sha> <login>",
     "subcommand for initializing a check",
     (yags) => {
       yags.positional("sha", {
         type: "string",
         description: "The sha for the check to initialize",
+      });
+      yags.positional("login", {
+        type: "string",
+        description: "The login for the PR",
       });
     },
     (args) => handleError(initializePrCheck(args)),

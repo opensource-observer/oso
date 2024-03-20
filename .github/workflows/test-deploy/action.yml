@@ -10,6 +10,12 @@ inputs:
   pr:
     description: The pr number
     required: true
+  requester:
+    description: The user requesting the deploy
+    required: true
+  author:
+    description: The author of the pull
+    required: true
 
 runs:
   using: "composite"
@@ -20,7 +26,17 @@ runs:
         echo "PR_TOOLS_PR=${{ inputs.pr }}" >> "$GITHUB_ENV"
         echo "PR_TOOLS_SHA=${{ inputs.sha }}" >> "$GITHUB_ENV"
 
-    - name: tbd... do some test-deployment
-      shell: bash
-      run: |
-        echo "SHA is $PR_TOOLS_SHA and PR is $PR_TOOLS_PR"
+    # TODO: We should only deploy when data warehouse related files have changed. 
+    # - name: Get changed files and write the outputs to a JSON file
+    #   id: changed-files-write-output-files-json
+    #   uses: tj-actions/changed-files@v43
+    #   with:
+    #     json: true
+    #     write_output_files: true
+
+    # - name: Evaluate if this is eligible for deployment
+    #   id: is_eligible
+    #   run: |
+    #     cd ops/external-prs && pnpm tools test-deploy is-eligible $GITHUB_OUTPUT
+
+    
