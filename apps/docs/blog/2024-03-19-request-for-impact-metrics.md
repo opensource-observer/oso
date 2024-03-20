@@ -175,3 +175,18 @@ WHERE project_name IN ('Uniswap', '1inch', 'Sushi')
 From there, any of the above metrics (as well as our existing onchain impact metrics) can be applied to the projects in that domain.
 
 This is a good first issue for people with domain expertise who are able to curate a list of projects relevant to a specific domain.
+
+## Submitting Your Impact Metrics
+
+If you've created a new impact metric, we'd love to see it! We'll implement the best ones as new data models and make them available to everyone in the community.
+
+You can submit your impact metric to the OSO core team by posting it in our [Discussions forum](https://github.com/opensource-observer/oso/discussions/1090). Contributions should include the following:
+
+- Name of impact metric
+- Brief description of your calculation steps
+- Link to your code (eg, Colab or Jupyter notebook)
+- Chart or table showing the metric applied to a set of projects
+
+If you run into issues or have questions, let us know on [Discord](https://www.opensource.observer/discord).
+
+We're excited to see what you come up with!
