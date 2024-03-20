@@ -3,6 +3,7 @@ slug: request-for-impact-metrics
 title: "Request for Impact Metrics"
 authors: [ccerv1]
 tags: [data collective, impact data science, kariba]
+image: ./cycle.jpeg
 ---
 
 Over the past few months, we've been hard at work creating the infrastructure to collect and analyze impact metrics for open source projects. We're excited to announce that we're ready to start doing some new analysis on data from open source projects ... and we need your help!
