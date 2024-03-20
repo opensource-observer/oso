@@ -299,6 +299,24 @@ If you plan on sharing your notebook with others, you can use a package like [py
 
 Always remember to add your `.env` or `credentials.json` file to your `.gitignore` file to prevent it from being committed to your repository.
 
+## Downloading CSV / JSON Files from BigQuery
+
+If you prefer to work with static data, you can export your data from BigQuery to a CSV or JSON file and then import it into your notebook, spreadsheet, or other tool.
+
+From the BigQuery console, run your query and then click the **Save Results** button to export your data in your preferred format. Note that there are limits to the amount of data you can download locally vs the amount you can save on Google Drive. If you have a large dataset (above 10MB), you may need to save it to Google Drive and then download it from there.
+
+![GCP Save Results](./gcp_save_results.png)
+
+Then you can import your data right into your notebook:
+
+```python
+import pandas as pd
+
+df = pd.read_csv('path/to/your/file.csv')
+```
+
+If this is your preferred workflow, you can [skip the first part](./data-science#transform) of the next section.
+
 ## Running Your Own Analysis
 
 ---
