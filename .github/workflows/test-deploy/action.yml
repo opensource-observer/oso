@@ -19,6 +19,9 @@ inputs:
   gcp_service_account_path:
     description: The google service account
     required: true
+  google_project_id:
+    description: The google project id
+    required: true
 
 runs:
   using: "composite"
@@ -57,6 +60,6 @@ runs:
     - name: Run test-deploy
       run: |
         mkdir -p $HOME/.dbt &&
-        cd ops/external-prs && pnpm tools test-deploy ${{ github.repository }} ${{ inputs.pr }} ${{ inputs.sha}} $HOME/.dbt/profiles ${{ inputs.gcp_service_account_path }} pr-clone
+        cd ops/external-prs && pnpm tools test-deploy --project-id ${{ inputs.google_project_id }} setup ${{ github.repository }} ${{ inputs.pr }} ${{ inputs.sha }} $HOME/.dbt/profiles ${{ inputs.gcp_service_account_path }} pr-clone
       
     
