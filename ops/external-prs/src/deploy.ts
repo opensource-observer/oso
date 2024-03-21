@@ -192,7 +192,9 @@ export class PRTestDeployCoordinator {
       return;
     }
     try {
-      await datasetRef.delete();
+      await datasetRef.delete({
+        force: true,
+      });
     } catch (e) {
       // Errors are assumed to mean that the dataset doesn't exist for now
       logger.error({

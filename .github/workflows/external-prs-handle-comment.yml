@@ -3,6 +3,7 @@ name: external-prs-handle-comment
 env:
   PR_TOOLS_GITHUB_APP_PRIVATE_KEY: ${{ secrets.PR_TOOLS_GITHUB_APP_PRIVATE_KEY }}
   PR_TOOLS_GITHUB_APP_ID: ${{ secrets.PR_TOOLS_GITHUB_APP_ID }}
+  PR_TOOLS_PROJECT_ID: oso-pull-requests
 
 on:
   issue_comment:

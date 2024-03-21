@@ -1,0 +1,45 @@
+# NOTE: This name appears in GitHub's Checks API and in workflow's status badge.
+name: test-deploy-clean
+env:
+  # CI variables
+  DOCKER_PLATFORM: "amd64"
+  # Indexer variables
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  GOOGLE_PROJECT_ID: "opensource-observer"
+  PR_TOOLS_GITHUB_APP_PRIVATE_KEY: ${{ secrets.PR_TOOLS_GITHUB_APP_PRIVATE_KEY }}
+  PR_TOOLS_GITHUB_APP_ID: ${{ secrets.PR_TOOLS_GITHUB_APP_ID }}
+
+  # should not be set to a legitimate value for testing. This will use up API
+  # quota otherwise
+  DUNE_API_KEY: "none"
+  PR_TOOLS_PROJECT_ID: oso-pull-requests
+
+on:
+  schedule:
+    # Schedule every day at midnight utc
+    - cron: '0 0 * * *'
+
+jobs:
+  test-deploy-clean:
+    name: Test Deployment Cleaner
+    environment: external-prs-app
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 1
+
+      - name: Setup external pr tools
+        uses: ./.github/workflows/setup-external-pr-tools
+      
+      - name: Login to google
+        uses: 'google-github-actions/auth@v2'
+        with:
+          credentials_json: '${{ secrets.GOOGLE_BQ_ADMIN_CREDENTIALS_JSON }}'
+          create_credentials_file: true
+
+      - name: Clean up datasets that are older than 1 day
+        run: |
+          cd ops/external-ops && pnpm tools clean opensource-observer/oso 86400
+          
