@@ -55,6 +55,7 @@ runs:
         path: "pr-clone/"
 
     - name: Run test-deploy
+      shell: bash
       run: |
         mkdir -p $HOME/.dbt &&
         cd ops/external-prs && pnpm tools test-deploy ${{ github.repository }} ${{ inputs.pr }} ${{ inputs.sha}} $HOME/.dbt/profiles ${{ inputs.gcp_service_account_path }} pr-clone
