@@ -39,6 +39,7 @@ WITH project_commit_dates AS (
 project_repos_summary AS (
   SELECT
     p.project_id,
+    p.project_slug,
     p.project_name,
     r.repository_source,
     COUNT(DISTINCT r.id) AS repositories,
@@ -48,7 +49,7 @@ project_repos_summary AS (
   INNER JOIN {{ ref('projects') }} AS p
     ON r.project_id = p.project_id
   WHERE r.is_fork = false
-  GROUP BY p.project_id, p.project_name, r.repository_source
+  GROUP BY p.project_id, p.project_slug, p.project_name, r.repository_source
 ),
 
 -- CTE for calculating contributor counts and new contributors in the last 6 
@@ -128,6 +129,7 @@ activity_cte AS (
 -- Final query to join all the metrics together
 SELECT
   p.project_id,
+  p.project_slug,
   p.project_name,
   p.repository_source AS `source`,
   pcd.first_commit_date,
