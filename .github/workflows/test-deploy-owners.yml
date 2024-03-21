@@ -58,7 +58,7 @@ jobs:
         uses: ./.github/workflows/test-deploy
         with:
           sha: ${{ github.event.pull_request.head.sha }}
-          pr: ${{ github.event.pull_request.id }}
+          pr: ${{ github.event.pull_request.number }}
           requester: ${{ github.event.sender.login }}
           author: ${{ github.event.sender.login }}
           gcp_service_account_path: ${{ env.GOOGLE_APPLICATION_CREDENTIALS }}
