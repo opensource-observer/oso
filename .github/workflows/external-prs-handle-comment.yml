@@ -51,6 +51,7 @@ jobs:
           requester: ${{ steps.parse_comment.outputs.comment_author }}
           author: ${{ steps.parse_comment.outputs.issue_author }}
           gcp_service_account_path: ${{ env.GOOGLE_APPLICATION_CREDENTIALS }}
+          google_project_id: oso-pull-requests
 
         # This check isn't for security it's mostly a convenience so this won't
         # fail and muddy up the actions UI
