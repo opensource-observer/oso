@@ -163,6 +163,12 @@ export class PRTestDeployCoordinator {
       labels: {
         last_updated: this.generateLastUpdated(),
       },
+      access: [
+        {
+          role: "roles/bigquery.DataViewer",
+          specialGroup: "allAuthenticatedUsers",
+        },
+      ],
     });
     return;
   }
