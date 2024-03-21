@@ -52,7 +52,7 @@ jobs:
         with:
           credentials_json: '${{ secrets.GOOGLE_BQ_ADMIN_CREDENTIALS_JSON }}'
           create_credentials_file: true
-        if: ${{ contains(fromJson('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.pull_request.author_association) }}
+        if: ${{ contains(fromJson('["OWNER", "MEMBER", "COLLABORATOR", "CONTRIBUTOR"]'), github.event.pull_request.author_association) }}
 
       - name: Run test-deploy
         uses: ./.github/workflows/test-deploy
@@ -65,4 +65,4 @@ jobs:
 
         # This check isn't for security it's mostly a convenience so this won't
         # fail and muddy up the actions UI
-        if: ${{ contains(fromJson('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.pull_request.author_association) }}
+        if: ${{ contains(fromJson('["OWNER", "MEMBER", "COLLABORATOR", "CONTRIBUTOR"]'), github.event.pull_request.author_association) }}
