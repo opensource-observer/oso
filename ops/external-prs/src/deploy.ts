@@ -243,7 +243,7 @@ export class PRTestDeployCoordinator {
   }
 
   private async runDbt(path: string) {
-    await execPromise("poetry run dbt run", {
+    await execPromise(`${path}/.venv/bin/poetry run dbt run`, {
       cwd: path,
       env: {
         PLAYGROUND_DAYS: "1",
