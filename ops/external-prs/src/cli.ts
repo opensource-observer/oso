@@ -408,13 +408,9 @@ function testDeployGroup(group: Argv) {
       "clean <repo> <ttl-seconds>",
       "subcommand for cleaning test deployments",
       (yags) => {
-        yags.positional("pr", {
-          description: "The PR",
-        });
         yags.positional("ttl-seconds", {
           type: "number",
-          description: "TTL in seconds. Defaults to 1209600",
-          default: 1_209_600,
+          description: "TTL in seconds",
         });
       },
       (args) => handleError(testDeployPeriodicCleaning(args)),
