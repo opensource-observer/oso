@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
 
     # This job only runs for pull request comments
-    if: github.event.issue.pull_request && contains(fromJson('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association)
+    if: github.event.issue.pull_request
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -27,7 +27,7 @@ jobs:
       - name: Parse the comment to see if it's a deploy comment
         id: parse_comment
         run: |
-          cd ops/external-prs && pnpm tools parse-comment ${{ github.repository }} ${{ github.event.comment.id }} $GITHUB_OUTPUT 
+          cd ops/external-prs && pnpm tools parse-comment ${{ github.repository }} ${{ github.event.comment.id }} ${{ github.event.comment.user.login }} $GITHUB_OUTPUT 
 
       # - name: Deploy if the deployment is eligible
       #   run: |
