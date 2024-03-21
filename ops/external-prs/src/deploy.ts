@@ -159,6 +159,7 @@ export class PRTestDeployCoordinator {
     });
 
     await this.bq.createDataset(name, {
+      projectId: this.projectId,
       labels: {
         last_updated: this.generateLastUpdated(),
       },
