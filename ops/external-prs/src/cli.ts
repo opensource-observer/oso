@@ -32,6 +32,7 @@ type BeforeClientArgs = ArgumentsCamelCase<{
 interface ParseCommentArgs extends BaseArgs {
   comment: number;
   output: string;
+  login: string;
 }
 
 interface InitializePRCheck extends BaseArgs {
@@ -67,6 +68,15 @@ interface TestDeployTeardownArgs extends TestDeployArgs {
   pr: number;
 }
 
+async function getRepoPermissions(octo: Octokit, repo: Repo, login: string) {
+  const res = await octo.rest.repos.getCollaboratorPermissionLevel({
+    owner: repo.owner,
+    repo: repo.name,
+    username: login,
+  });
+  return res.data.permission;
+}
+
 async function initializePrCheck(args: InitializePRCheck) {
   logger.info({
     message: "initializing the PR check",
@@ -81,14 +91,10 @@ async function initializePrCheck(args: InitializePRCheck) {
     throw new Error("No repo found");
   }
 
-  const permissions = await octo.rest.repos.getCollaboratorPermissionLevel({
-    owner: args.repo.owner,
-    repo: args.repo.name,
-    username: args.login,
-  });
+  const permissions = await getRepoPermissions(octo, args.repo, args.login);
 
   // If this user has write then we can show this as being queued
-  if (["admin", "write"].indexOf(permissions.data.permission) !== -1) {
+  if (["admin", "write"].indexOf(permissions) !== -1) {
     await setCheckStatus(octo, args.repo.owner, args.repo.name, {
       name: "test-deploy",
       head_sha: args.sha,
@@ -142,29 +148,77 @@ async function parseDeployComment(args: ParseCommentArgs) {
     owner: args.repo.owner,
     comment_id: args.comment,
   });
-  if (
-    ["OWNER", "COLLABORATOR", "MEMBER"].indexOf(
-      comment.data.author_association,
-    ) === -1
-  ) {
+  logger.info("gathered the comment", {
+    commentId: comment.data.id,
+    authorAssosication: comment.data.author_association,
+    author: comment.data.user?.login,
+  });
+
+  const login = comment.data.user?.login;
+  if (!login) {
+    logger.error("No user for this comment (which is unexpected)");
+    throw new Error("No user for the comment");
+  }
+
+  // Get the author's permissions
+  const permissions = await getRepoPermissions(octo, args.repo, login);
+
+  logger.info({
+    message: "gathered the commentor's permissions",
+    login: login,
+    permissions: permissions,
+  });
+  // If this user doesn't have permissions then we don't deploy
+  if (["admin", "write"].indexOf(permissions) === -1) {
     return await noDeploy();
   }
+
   const body = comment.data.body || "";
-  const match = body.match(/\/deploy-test\s+([0-9a-f]{6,40})/);
+  const match = body.match(/^\/([a-z-]+)\s+([0-9a-f]{6,40})$/);
   if (!match) {
+    logger.error("command not found");
     return await noDeploy();
   }
+  if (match.length < 2) {
+    logger.error({
+      message: "proper command not found",
+      matches: match,
+    });
+    return await noDeploy();
+  }
+  const command = match[1];
+  const sha = match[2];
+
+  if (["test-deploy", "deploy-test"].indexOf(command) === -1) {
+    logger.error({
+      message: "invalid command",
+      command: command,
+    });
+    return await noDeploy();
+  }
+
+  logger.debug({
+    message: "command found",
+    command: command,
+  });
 
   const issueUrl = comment.data.issue_url;
   const url = new URL(issueUrl);
   const issueNumber = parseInt(url.pathname.split("/").slice(-1)[0]);
 
-  const sha = match[1];
-
   const issue = await octo.rest.issues.get({
     issue_number: issueNumber,
     repo: args.repo.name,
     owner: args.repo.owner,
+  });
+
+  logger.debug({
+    message: "deployment configuration",
+    deploy: true,
+    sha: sha,
+    pr: issueNumber,
+    issueAuthor: issue.data.user?.login,
+    commentAuthor: comment.data.user?.login,
   });
 
   // Output for GITHUB_OUTPUT for now.
@@ -421,7 +475,7 @@ const cli = yargs(hideBin(process.argv))
     (args) => handleError(initializePrCheck(args)),
   )
   .command<ParseCommentArgs>(
-    "parse-comment <repo> <comment> <output>",
+    "parse-comment <repo> <comment> <login> <output>",
     "subcommand for parsing a deploy comment",
     (yags) => {
       yags.positional("comment", {
@@ -429,6 +483,10 @@ const cli = yargs(hideBin(process.argv))
         description: "Comment ID",
       });
       yags.positional("output", {
+        type: "string",
+        description: "The output file",
+      });
+      yags.positional("login", {
         type: "string",
         description: "The output file",
       });
