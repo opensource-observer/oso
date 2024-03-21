@@ -57,6 +57,17 @@ runs:
 
         path: "pr-clone/"
 
+    - name: "Setup Python, Poetry and Dependencies"
+      uses: packetcoders/action-setup-cache-python-poetry@main
+      with:
+        python-version: 3.12
+        poetry-version: 1.7.1
+
+    - name: Install poetry deps in the pr-clone
+      shell: bash
+      run: |
+        cd pr-clone && poetry install
+
     - name: Run test-deploy
       shell: bash
       run: |
