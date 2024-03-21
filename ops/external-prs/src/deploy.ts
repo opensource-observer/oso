@@ -165,7 +165,7 @@ export class PRTestDeployCoordinator {
       },
       access: [
         {
-          role: "roles/bigquery.DataViewer",
+          role: "roles/bigquery.dataViewer",
           specialGroup: "allAuthenticatedUsers",
         },
       ],
