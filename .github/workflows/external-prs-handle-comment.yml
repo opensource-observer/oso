@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
 
     # This job only runs for pull request comments
-    if: github.event.issue.pull_request
+    if: github.event.issue.pull_request && contains(fromJson('["OWNER", "MEMBER", "COLLABORATOR", "CONTRIBUTOR"]'), github.event.comment.author_association)
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
