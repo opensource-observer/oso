@@ -14,7 +14,7 @@ sources:
       {%- endif -%}
 
     schema: |
-      {%- if target.name in ['playground', 'dev'] -%} oso_playground
+      {%- if target.name in ['playground', 'dev'] -%} oso
       {%- elif target.name == 'production' -%} day
       {%- else -%} invalid_schema
       {%- endif -%}
