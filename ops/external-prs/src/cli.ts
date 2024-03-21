@@ -357,7 +357,8 @@ function testDeployGroup(group: Argv) {
         message: "settings up Pull Request Test Deploy Coordinator",
       });
 
-      const bq = new BigQuery();
+      const projectId = args.projectId as string;
+      const bq = new BigQuery({ projectId: projectId });
       const app = args.app as App;
       const repo = args.repo as Repo;
 
@@ -368,7 +369,7 @@ function testDeployGroup(group: Argv) {
         app,
         octo as Octokit,
         bq,
-        args.projectId as string,
+        projectId,
       );
     })
     .command<TestDeploySetupArgs>(
