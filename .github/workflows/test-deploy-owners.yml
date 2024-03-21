@@ -62,6 +62,7 @@ jobs:
           requester: ${{ github.event.sender.login }}
           author: ${{ github.event.sender.login }}
           gcp_service_account_path: ${{ env.GOOGLE_APPLICATION_CREDENTIALS }}
+          google_project_id: oso-pull-requests
 
         # This check isn't for security it's mostly a convenience so this won't
         # fail and muddy up the actions UI
