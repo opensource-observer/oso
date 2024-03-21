@@ -475,7 +475,7 @@ const cli = yargs(hideBin(process.argv))
     (args) => handleError(initializePrCheck(args)),
   )
   .command<ParseCommentArgs>(
-    "parse-comment <repo> <comment> <login> <output>",
+    "parse-comment <repo> <comment> <output>",
     "subcommand for parsing a deploy comment",
     (yags) => {
       yags.positional("comment", {
@@ -483,10 +483,6 @@ const cli = yargs(hideBin(process.argv))
         description: "Comment ID",
       });
       yags.positional("output", {
-        type: "string",
-        description: "The output file",
-      });
-      yags.positional("login", {
         type: "string",
         description: "The output file",
       });
