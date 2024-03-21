@@ -3,7 +3,6 @@ name: external-prs-handle-comment
 env:
   PR_TOOLS_GITHUB_APP_PRIVATE_KEY: ${{ secrets.PR_TOOLS_GITHUB_APP_PRIVATE_KEY }}
   PR_TOOLS_GITHUB_APP_ID: ${{ secrets.PR_TOOLS_GITHUB_APP_ID }}
-  PR_TOOLS_PROJECT_ID: oso-pull-requests
 
 on:
   issue_comment:
@@ -52,7 +51,7 @@ jobs:
           requester: ${{ steps.parse_comment.outputs.comment_author }}
           author: ${{ steps.parse_comment.outputs.issue_author }}
           gcp_service_account_path: ${{ env.GOOGLE_APPLICATION_CREDENTIALS }}
-          google_project_id: oso-pull-requests
+          google_project_id: ${{ vars.GOOGLE_PROJECT_ID }}
 
         # This check isn't for security it's mostly a convenience so this won't
         # fail and muddy up the actions UI
