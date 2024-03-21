@@ -4,6 +4,7 @@ import { dedent } from "ts-dedent";
 import dayjs from "dayjs";
 import { exec } from "child_process";
 import * as util from "util";
+import * as path from "path";
 
 import { Repo } from "./github.js";
 import { logger } from "./utils/logger.js";
@@ -242,9 +243,10 @@ export class PRTestDeployCoordinator {
     return await fsPromise.writeFile(profilePath, contents);
   }
 
-  private async runDbt(path: string) {
-    await execPromise(`${path}/.venv/bin/dbt run`, {
-      cwd: path,
+  private async runDbt(p: string) {
+    const absPath = path.resolve(p);
+    await execPromise(`${absPath}/.venv/bin/dbt run`, {
+      cwd: absPath,
       env: {
         PLAYGROUND_DAYS: "1",
       },
