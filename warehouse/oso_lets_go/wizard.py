@@ -615,7 +615,7 @@ def run():
                 create_key(service_account_email, key_file_path)
 
     # Setup the configuration for the playground
-    profiles_path = os.path.expanduser("~/.dbt/profiles-test.yml")
+    profiles_path = os.path.expanduser("~/.dbt/profiles.yml")
 
     profiles_yml = textwrap.dedent(
         f"""
