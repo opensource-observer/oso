@@ -149,6 +149,7 @@ contracts AS (
 project_by_network AS (
   SELECT
     p.project_id,
+    p.project_slug,
     ctx.onchain_network,
     p.project_name
   FROM {{ ref('projects') }} AS p
@@ -159,6 +160,7 @@ project_by_network AS (
 -- Final query to join all the metrics together
 SELECT
   p.project_id,
+  p.project_slug,
   p.onchain_network AS network,
   p.project_name,
   -- TODO: add deployers owned by project
