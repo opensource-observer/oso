@@ -1,6 +1,11 @@
 {# 
   All events weekly to an artifact by source
 #}
+{{ 
+  config(meta = {
+    'sync_to_cloudsql': False
+  }) 
+}}
 
 SELECT
   e.artifact_id,
