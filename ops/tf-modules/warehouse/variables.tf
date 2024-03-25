@@ -31,6 +31,12 @@ variable "cloudsql_name" {
   description = "CloudSQL instance name"
 }
 
+variable "bucket_rw_principals" {
+  type        = list(string)
+  description = "List of principals to give rw on our data transfer bucket"
+  default     = []
+}
+
 variable "cloudsql_db_name" {
   type        = string
   default     = "postgres"

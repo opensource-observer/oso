@@ -107,6 +107,23 @@ resource "google_storage_bucket_iam_member" "cloudsql_member" {
 }
 
 ###
+# Add permissions for users to read/write 
+##
+resource "google_storage_bucket_iam_member" "bucket_rw_read" {
+  for_each = toset(var.bucket_rw_principals)
+  bucket   = google_storage_bucket.dataset_transfer.name
+  role     = "roles/storage.objectViewer"
+  member   = each.key
+}
+
+resource "google_storage_bucket_iam_member" "bucket_rw_write" {
+  for_each = toset(var.bucket_rw_principals)
+  bucket   = google_storage_bucket.dataset_transfer.name
+  role     = "roles/storage.objectCreator"
+  member   = each.key
+}
+
+###
 # Service account permissions
 ###
 resource "google_project_iam_custom_role" "readonly_custom_role" {
@@ -153,20 +170,8 @@ resource "google_storage_bucket_iam_member" "member" {
   member = "serviceAccount:${google_service_account.warehouse_admin.email}"
 }
 
-resource "google_bigquery_dataset_iam_member" "readonly" {
-  dataset_id = local.dataset_id
-  role       = "roles/bigquery.dataViewer"
-  member     = "serviceAccount:${google_service_account.warehouse_readonly.email}"
-}
-
 resource "google_project_iam_member" "readonly_custom_role" {
   project = data.google_project.project.project_id
   role    = google_project_iam_custom_role.readonly_custom_role.id
   member  = "serviceAccount:${google_service_account.warehouse_readonly.email}"
-
-  condition {
-    expression  = "resource.name.startsWith('projects/${data.google_project.project.project_id}/datasets/${google_bigquery_dataset.dataset.dataset_id}')"
-    title       = "restrict_to_dataset"
-    description = "restrict bigquery readonly to ${local.dataset_id}"
-  }
 }
