@@ -13,6 +13,7 @@
     materialized='table',
   )
 }}
+
 SELECT 
   block_timestamp,
   `hash` AS transaction_hash,
@@ -23,5 +24,10 @@ WHERE to_address IS NULL
   AND receipt_status = 1 
   AND receipt_contract_address IS NOT NULL
   {% if is_incremental() %}
-
+  WHERE 
+    TIMESTAMP_TRUNC(block_timestamp, DAY) >= (
+      SELECT TIMESTAMP_TRUNC(MAX(block_timestamp), DAY)
+      FROM {{ this }}
+    )
+    AND TIMESTAMP_TRUNC(block_timestamp, DAY) < CURRENT_TIMESTAMP()
   {% endif %}
