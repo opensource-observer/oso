@@ -37,7 +37,7 @@ all_npm AS (
     UNNEST(JSON_QUERY_ARRAY(projects.npm)) AS npm
 ),
 
-all_blockchain AS (
+ossd_blockchain AS (
   SELECT
     projects.id AS project_id,
     UPPER(network) AS artifact_namespace,
@@ -55,6 +55,33 @@ all_blockchain AS (
     UNNEST(JSON_VALUE_ARRAY(blockchains.tags)) AS tag
 ),
 
+all_deployers AS (
+  SELECT 
+    *,
+    "OPTIMISM" AS network
+  FROM {{ ref("stg_ethereum__deployers") }}
+  UNION ALL
+  SELECT
+    *,
+    "ETHEREUM" AS network
+  FROM {{ ref("stg_ethereum__deployers") }}
+)
+
+discovered_contracts AS (
+  SELECT
+    ob.project_id,
+    ob.artifact_namespace,
+    "CONTRACT" AS artifact_type,
+    ad.contract_address AS artifact_name,
+    ad.contract_address AS artifact_name,
+    ad.contract_address AS artifact_source_id
+  FROM ossd_blockchain AS ob
+  INNER JOIN all_deployers AS ad
+    ON ad.deployer_address = ob.artifact_source_id
+    AND ad.network = ob.artifact_namespace
+    AND ad.artifact_type IN ("EOA", "DEPLOYER", "FACTORY")
+)
+
 all_artifacts AS (
   SELECT *
   FROM
@@ -62,7 +89,11 @@ all_artifacts AS (
   UNION ALL
   SELECT *
   FROM
-    all_blockchain
+    ossd_blockchain
+  UNION ALL
+  SELECT *
+  FROM
+    discovered_contracts
   UNION ALL
   SELECT *
   FROM
