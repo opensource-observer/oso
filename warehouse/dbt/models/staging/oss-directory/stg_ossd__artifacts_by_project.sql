@@ -56,14 +56,14 @@ ossd_blockchain AS (
 ),
 
 all_deployers AS (
-  SELECT 
+  SELECT
     *,
-    "OPTIMISM" AS network
+    'OPTIMISM' AS network
   FROM {{ ref("stg_ethereum__deployers") }}
   UNION ALL
   SELECT
     *,
-    "ETHEREUM" AS network
+    'ETHEREUM' AS network
   FROM {{ ref("stg_ethereum__deployers") }}
 ),
 
@@ -71,15 +71,16 @@ discovered_contracts AS (
   SELECT
     ob.project_id,
     ob.artifact_namespace,
-    "CONTRACT" AS artifact_type,
+    'CONTRACT' AS artifact_type,
     ad.contract_address AS artifact_name,
-    ad.contract_address AS artifact_name,
+    ad.contract_address AS artifact_url,
     ad.contract_address AS artifact_source_id
   FROM ossd_blockchain AS ob
   INNER JOIN all_deployers AS ad
-    ON ad.deployer_address = ob.artifact_source_id
-    AND ad.network = ob.artifact_namespace
-    AND ob.artifact_type IN ("EOA", "DEPLOYER", "FACTORY")
+    ON
+      ob.artifact_source_id = ad.deployer_address
+      AND ob.artifact_namespace = ad.network
+      AND ob.artifact_type IN ('EOA', 'DEPLOYER', 'FACTORY')
 ),
 
 all_artifacts AS (
