@@ -79,7 +79,7 @@ discovered_contracts AS (
   INNER JOIN all_deployers AS ad
     ON ad.deployer_address = ob.artifact_source_id
     AND ad.network = ob.artifact_namespace
-    AND ad.artifact_type IN ("EOA", "DEPLOYER", "FACTORY")
+    AND ob.artifact_type IN ("EOA", "DEPLOYER", "FACTORY")
 ),
 
 all_artifacts AS (
