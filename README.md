@@ -166,3 +166,5 @@ It is likely best to target a specific model so things don't take so long on som
 ```
 $ dbt run --select {name_of_the_model}
 ```
+
+This is for a live demo
