@@ -32,13 +32,18 @@ def table_sync_config_from_dbt_marts(target: str) -> List[TableSyncConfig]:
         raise Exception("Unexpected response from dbt")
     model_configs = map(lambda a: json.loads(a), r.result)
     sync_configs: List[TableSyncConfig] = []
-    for config in model_configs:
-        print(config["name"])
+    for model_config in model_configs:
+        config = model_config.get("config", {})
+        meta = config.get("meta", {})
+        if not meta.get("sync_to_cloudsql", True):
+            print("Skipping %s" % model_config["name"])
+            continue
+        print(model_config["name"])
         sync_configs.append(
             TableSyncConfig(
                 TableSyncMode.OVERWRITE,
-                config["name"],
-                config["name"],
+                model_config["name"],
+                model_config["name"],
             )
         )
     return sync_configs

@@ -1,6 +1,11 @@
 {# 
   All events monthly to a project by source
 #}
+{{ 
+  config(meta = {
+    'sync_to_cloudsql': False
+  }) 
+}}
 
 SELECT
   e.project_id,

@@ -1,6 +1,11 @@
 {# 
   All events weekly to a collection by source
 #}
+{{ 
+  config(meta = {
+    'sync_to_cloudsql': False
+  }) 
+}}
 
 SELECT
   e.collection_id,
