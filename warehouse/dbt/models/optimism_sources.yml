@@ -1,0 +1,12 @@
+sources:
+  - name: optimism
+
+    database: bigquery-public-data
+
+    schema: goog_blockchain_optimism_mainnet_us
+    tables:
+      - name: transactions
+        identifier: transactions
+
+      - name: logs
+        identifier: logs

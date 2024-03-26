@@ -1,0 +1,10 @@
+sources:
+  - name: ethereum
+
+    database: bigquery-public-data
+
+    schema: crypto_ethereum
+    tables:
+      - name: transactions
+        identifier: transactions
+ 
