@@ -20,7 +20,7 @@ WITH {% if is_incremental() %} max_block_timestamp AS  (
 {% endif %}
 logs AS (
   -- transactions
-  SELECT * 
+  SELECT *
   FROM {{ oso_source("optimism", "logs") }}
   {% if is_incremental() %}
   WHERE 
@@ -31,17 +31,17 @@ logs AS (
   {% endif %}
 )
 
-SELECT 
+SELECT
   t.block_timestamp AS block_timestamp,
   t.transaction_hash AS transaction_hash,
-  t.from_address AS deployer_address, 
+  t.from_address AS deployer_address,
   l.address AS contract_address
 FROM {{ oso_source("optimism", "transactions") }} AS t
 INNER JOIN logs AS l
-  ON l.transaction_hash = t.transaction_hash
-WHERE 
-  t.to_address is null
-  {% if is_incremental() %}
+  ON t.transaction_hash = l.transaction_hash
+WHERE
+  t.to_address IS null
+{% if is_incremental() %}
   AND TIMESTAMP_TRUNC(block_timestamp, DAY) >= (
     SELECT * FROM max_block_timestamp
   )
