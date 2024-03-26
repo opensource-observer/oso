@@ -14,14 +14,30 @@ SELECT DISTINCT
   ) AS created_at,
   CAST(JSON_VALUE(pre.payload, "$.pull_request.user.id") AS INTEGER)
     AS actor_id,
-  JSON_VALUE(pre.payload, "$.pull_request.user.login") AS actor_login,
-  JSON_VALUE(pre.payload, "$.pull_request.state") AS state,
-  JSON_VALUE(pre.payload, "$.pull_request.merge_commit_sha") AS merge_commit_sha,
-  JSON_VALUE(pre.payload, "$.pull_request.changed_files") AS changed_files,
-  JSON_VALUE(pre.payload, "$.pull_request.additions") AS additions,
-  JSON_VALUE(pre.payload, "$.pull_request.deletions") AS deletions,
-  JSON_VALUE(pre.payload, "$.pull_request.review_comments") AS review_comments,
-  JSON_VALUE(pre.payload, "$.pull_request.author_association") AS author_association
+  JSON_VALUE(
+    pre.payload, "$.pull_request.user.login"
+  ) AS actor_login,
+  JSON_VALUE(
+    pre.payload, "$.pull_request.state"
+  ) AS state,
+  JSON_VALUE(
+    pre.payload, "$.pull_request.merge_commit_sha"
+  ) AS merge_commit_sha,
+  JSON_VALUE(
+    pre.payload, "$.pull_request.changed_files"
+  ) AS changed_files,
+  JSON_VALUE(
+    pre.payload, "$.pull_request.additions"
+  ) AS additions,
+  JSON_VALUE(
+    pre.payload, "$.pull_request.deletions"
+  ) AS deletions,
+  JSON_VALUE(
+    pre.payload, "$.pull_request.review_comments"
+  ) AS review_comments,
+  JSON_VALUE(
+    pre.payload, "$.pull_request.author_association"
+  ) AS author_association
 FROM pull_request_events AS pre
 WHERE
   JSON_VALUE(pre.payload, "$.pull_request.merged_at") IS NOT NULL
