@@ -41,7 +41,7 @@ INNER JOIN logs AS l
   ON t.transaction_hash = l.transaction_hash
 WHERE
   t.to_address IS null
-  {% if is_incremental() %}
+{% if is_incremental() %}
   AND TIMESTAMP_TRUNC(t.block_timestamp, DAY) >= (
     SELECT * FROM max_block_timestamp
   )
