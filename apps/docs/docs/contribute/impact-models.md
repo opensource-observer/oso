@@ -12,21 +12,86 @@ about projects. You can contribute dbt transforms to create new impact metrics
 in our data warehouse.
 :::
 
-OSO uses dbt to analyze the data in our public data warehouse on BigQuery. This
-is all maintained within the [OSO monorepo][oso] and is open for contribution
-from the community.
-
-This guide will walk you through adding a dbt model to the repository.
-
 [oso]: https://github.com/opensource-observer/oso
 [oss-directory]: https://github.com/opensource-observer/oss-directory
 
+At some point, you will probably want to start doing more deep data science,
+contributing models, or even contributing data. Normally, there are quite a few
+steps to complete this task - setting up GCP service accounts, connecting the BigQuery
+datasets, etc. We decided to automate much of that with our Wizard. Let's get started!
+
 ## Getting Started with dbt
 
-If you haven't already, checkout the [Getting Started
-Guide](https://docs.opensource.observer/docs/get-started/#setting-up-for-contributing).
-Once you've completed that, you'll be ready to move on with the rest of this
-tutorial!
+OSO uses dbt to analyze the data in our public data warehouse on BigQuery. This
+is all maintained within the [OSO monorepo][oso] and is open for contribution
+from the community. This guide will walk you through adding a dbt model to the repository.
+It assumes a basic understanding of SQL and the command line.
+
+### System Prequisites
+
+Before you begin you'll need the following on your system:
+
+- Python 3.11 or higher (see [here](https://www.python.org/downloads/) if you
+  don't have it installed)
+- Python Poetry (see [here](https://pypi.org/project/poetry/) to install it)
+- git (see [here](https://github.com/git-guides/install-git) if you don't have it installed)
+- A GitHub account (see [here](https://github.com/join) to open a new account)
+- BigQuery access (see [here](../get-started/#login-to-bigquery) if you don't have it setup already)
+
+### Install `gcloud`
+
+If you don't have `gcloud`, we need this to manage GCP from the command line.
+The instructions are [here](https://cloud.google.com/sdk/docs/install).
+
+_For macOS users_: Instructions can be a bit clunky if you're on macOS, so we
+suggest using homebrew like this:
+
+```bash
+brew install --cask google-cloud-sdk
+```
+
+### Fork and/or clone the OSO repo
+
+Once you've got everything you need to begin, you'll need to get the [OSO
+repository](https://github.com/opensource-observer/oso) and clone it to your
+local system (replace this url if you've forked the repository):
+
+```bash
+git clone https://github.com/opensource-observer/oso.git
+```
+
+After that process, has completed. `cd` into the oso repository:
+
+```bash
+cd oso
+```
+
+### Run the Wizard
+
+The next step is to install the python dependencies and run the wizard which
+will ask you to run `dbt` at the end (Say yes if you'd like to copy the
+oso_playground dataset). Simply run:
+
+```bash
+poetry install && poetry run oso_lets_go
+```
+
+Once this is completed, you'll have a full "playground" of your own. If you make
+any changes and would like to rerun dbt simply do:
+
+```bash
+poetry run dbt run
+```
+
+:::tip
+If you would like to remove the need to type `poetry run` all the time, you
+can do:
+
+```bash
+poetry shell
+```
+
+:::
 
 ---
 
@@ -183,7 +248,7 @@ Your model can be written in SQL. We've included some examples to help you get s
 Once you've updated any models you can run dbt _within the poetry environment_ by simply calling:
 
 ```bash
-$ dbt run
+dbt run
 ```
 
 _Note: If you configured the dbt profile as shown in this document, this `dbt
@@ -193,7 +258,7 @@ It is likely best to target a specific model so things don't take so long on
 some of our materializations:
 
 ```
-$ dbt run --select {name_of_your_model}
+dbt run --select {name_of_your_model}
 ```
 
 ### Using the BigQuery UI to check your queries
@@ -208,7 +273,7 @@ and execute that on the BigQuery UI. To do this, you'll need to run `dbt
 compile` from the root of the [oso Repository][oso] like so:
 
 ```bash
-$ dbt compile
+dbt compile
 ```
 
 _You'll want to make sure you're also in the `poetry shell` otherwise you won't
@@ -232,7 +297,7 @@ When you're ready, you can test your dbt models against your playground by
 simply running dbt like so:
 
 ```bash
-$ dbt run
+dbt run
 ```
 
 If this runs without issue and you feel that you've completed something you'd
