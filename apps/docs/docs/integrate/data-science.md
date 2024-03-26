@@ -11,7 +11,17 @@ Notebooks are a great way for data scientists to explore data, organize ad-hoc a
 You will need access to the OSO data warehouse to do data science. See our getting started guide [here](../get-started/#login-to-bigquery).
 :::
 
-## Using Google Colab
+## Fetching Data
+
+There are three common ways to fetch data from the OSO data warehouse so you can run analysis on it:
+
+1. **Google Colab**: Run your analysis in the cloud using Google Colab.
+2. **Jupyter on Your Machine**: Run your analysis locally using Jupyter.
+3. **Export to CSV / JSON**: Export your data from BigQuery to a CSV or JSON file and then import it into your preferred tool.
+
+The next section will walk you through each of these methods.
+
+### With Google Colab
 
 ---
 
@@ -21,7 +31,7 @@ You can also create a new notebook from scratch and run it in the cloud. Here's 
 
 1. Create a new Collab notebook [here](https://colab.research.google.com/#create=true).
 
-2. Run the following code at the top of the Colab notebook to authenticate with BigQuery.
+2. Authenticate with BigQuery. In the first block at the top of the Colab notebook, copy and execute the following code:
 
    ```python
    # @title Setup
@@ -33,7 +43,9 @@ You can also create a new notebook from scratch and run it in the cloud. Here's 
 
    You will be prompted to give this notebook access to your Google account. Once you have authenticated, you can start querying the OSO data warehouse.
 
-3. Write your query. Here's an example of how to fetch the latest code metrics for all projects in the OSO data warehouse. Remember to replace `my-oso-playground` with your project id.
+3. Create a new code block for your query. In this block, we will use the `%%bigquery` magic command to run a SQL query and store the results in a Pandas dataframe (named `df` in my example).
+
+   Here's an example of how to fetch the latest code metrics for all projects in the OSO data warehouse. **Remember to replace `my-oso-playground` with your project id.**
 
    ```python
    # replace 'my-oso-playground' with your project id
@@ -44,9 +56,17 @@ You can also create a new notebook from scratch and run it in the cloud. Here's 
    ORDER BY last_commit_date DESC
    ```
 
-   This query takes advantage of a magic command `%%bigquery` that allows you to run a SQL query and store the results in a dataframe (`df` in my example). You can then use the dataframe to perform analysis and generate visualizations.
+   Execute the code block. The query will run in a few seconds and the results will be stored in the `df` dataframe.
 
-4. Move from the "playground" to the "production" dataset. Once you have a working query, you can replace `oso_playground` with `oso` to fetch data from the production dataset.
+4. Create a new code block to preview the first few rows of your dataframe:
+
+   ```python
+   df.head()
+   ```
+
+   This will show you the first few rows of your dataframe so you can get a sense of the data you're working with.
+
+5. Move from the "playground" to the "production" dataset. Once you have a working query, you can replace `oso_playground` with `oso` to fetch data from the production dataset.
 
    ```python
    # replace 'my-oso-playground' with your project id
@@ -57,23 +77,34 @@ You can also create a new notebook from scratch and run it in the cloud. Here's 
    ORDER BY last_commit_date DESC
    ```
 
-That's it! You're ready to start analyzing the OSO dataset in a Google Colab notebook.
+6. Import other common data science libraries like `pandas`, `numpy`, `matplotlib`, and `seaborn` to help you analyze and visualize your data.
+
+   ```python
+   import pandas as pd
+   import numpy as np
+   import matplotlib.pyplot as plt
+   import seaborn as sns
+   ```
+
+You can execute these imports in a new code block after you've grabbed your data or back at the top of your notebook with the other imports.
+
+That's it! You're ready to start analyzing the OSO dataset in a Google Colab notebook. You can [skip ahead to the tutorial](./data-science#tutorial-github-stars--forks-analysis) to see an example of how to analyze the data.
 
 :::tip
 You can also download your Colab notebooks to your local machine and run them in Jupyter.
 :::
 
-## Using Jupyter on Your Machine
+### Using Jupyter on your machine
 
 ---
 
-### Install Anaconda
+This section will walk you through setting up a local Jupyter notebook environment, storing your GCP service account key on your machine, and connecting to the OSO data warehouse.
+
+#### Install Anaconda
 
 For new users, we highly recommend [installing Anaconda](https://www.anaconda.com/download). Anaconda conveniently installs Python, the Jupyter Notebook, and other commonly used packages for working with data.
 
-If you already have Jupyter installed, you can skip this step.
-
-Use the following installation steps:
+If you already have Jupyter installed, you can skip steps 1 and 2 below:
 
 1. Download [Anaconda](https://www.anaconda.com/download). We recommend downloading Anaconda’s latest Python 3 version.
 
@@ -95,7 +126,7 @@ Congratulations! You're in. You should have an empty Jupyter notebook on your co
 If you run into issues getting set up with Jupyter, check out the [Jupyter docs](https://docs.jupyter.org/en/latest/install.html).
 :::
 
-### Install standard dependencies
+#### Install standard dependencies
 
 If you just installed Anaconda, you should have all the standard data science packages installed. Skip ahead to [the next section](#install-the-bigquery-python-client-library).
 
@@ -105,7 +136,7 @@ If you're here, we will assume you have some familiarity with setting up a local
 
 Remember, it is a best practice to use a Python virtual environment tool such as [virtualenv](https://virtualenv.pypa.io/en/latest/) to manage dependencies.
 
-#### Install pip and jupyter
+##### Install pip and jupyter
 
 First, ensure that you have the latest pip; older versions may have trouble with some dependencies:
 
@@ -119,7 +150,7 @@ Then install the Jupyter Notebook using:
 pip install jupyter
 ```
 
-#### For working with dataframes and vector operations
+##### For working with dataframes and vector operations
 
 The following packages are used in almost every Python data science application:
 
@@ -132,7 +163,7 @@ Install them:
 pip install pandas numpy
 ```
 
-#### For statistical analysis and vector operations
+##### For statistical analysis and vector operations
 
 The following packages are used for statistical analysis and vector operations:
 
@@ -145,7 +176,7 @@ Install them:
 pip install scikit-learn scipy
 ```
 
-#### For working with graph data
+##### For working with graph data
 
 If you plan on doing graph-based analysis, you may want to install [networkx](https://networkx.org/).
 
@@ -153,7 +184,7 @@ If you plan on doing graph-based analysis, you may want to install [networkx](ht
 pip install networkx
 ```
 
-#### For charting and data visualization
+##### For charting and data visualization
 
 These are the most popular packages for static data visualization:
 
@@ -170,7 +201,7 @@ For interactive data visualization, you may want to install [plotly](https://plo
 pip install plotly
 ```
 
-### Install the BigQuery Python Client Library
+#### Install the BigQuery Python Client Library
 
 We recommend using the [Google Cloud BigQuery Python Client Library](https://cloud.google.com/python/docs/reference/bigquery/latest/index.html) to connect to the OSO data warehouse. This library provides a convenient way to interact with BigQuery from your Jupyter notebook.
 
@@ -182,7 +213,7 @@ pip install google-cloud-bigquery
 
 Alternatively, you can stick to static analysis and export your data from BigQuery to a CSV or JSON file and then import it into your notebook.
 
-### Obtain a GCP Service Account Key
+#### Obtain a GCP Service Account Key
 
 This section will walk you through the process of obtaining a GCP service account key and connecting to BigQuery from a Jupyter notebook. If you don't have a GCP account, you will need to create one (see [here](../get-started) for instructions).
 
@@ -251,7 +282,7 @@ It will download the JSON file with your private key info. You should be able to
 
 Now you're ready to authenticate with BigQuery using your service account key.
 
-### Connect to BigQuery from Jupyter
+#### Connect to BigQuery from Jupyter
 
 From the command line, open a Jupyter notebook:
 
@@ -283,7 +314,8 @@ Try a sample query to test your connection:
 ```python
 query = """
     SELECT *
-    FROM `opensource-observer.oso_playground.collections`
+    FROM `opensource-observer.oso_playground.code_metrics_by_project`
+    ORDER BY last_commit_date DESC
 """
 results = client.query(query)
 results.to_dataframe()
@@ -291,7 +323,7 @@ results.to_dataframe()
 
 If everything is working, you should see a dataframe with the results of your query.
 
-### Keep your service account key safe
+#### Keep your service account key safe
 
 You should never commit your service account key to a public repository. Instead, you can store it in a secure location on your local machine and reference it in your code using an environment variable.
 
@@ -299,21 +331,28 @@ If you plan on sharing your notebook with others, you can use a package like [py
 
 Always remember to add your `.env` or `credentials.json` file to your `.gitignore` file to prevent it from being committed to your repository.
 
-## Downloading CSV / JSON Files from BigQuery
+### Exporting CSV / JSON files from BigQuery
 
 If you prefer to work with static data, you can export your data from BigQuery to a CSV or JSON file and then import it into your notebook, spreadsheet, or other tool.
 
-From the BigQuery console, run your query and then click the **Save Results** button to export your data in your preferred format. Note that there are limits to the amount of data you can download locally vs the amount you can save on Google Drive. If you have a large dataset (above 10MB), you may need to save it to Google Drive and then download it from there.
+1. Navigate to the BigQuery console [here](https://console.cloud.google.com/bigquery).
+2. Try a sample query and click **Run** to execute it. For example, you can fetch the latest code metrics for all projects in the OSO data warehouse:
+   ```sql
+   SELECT *
+   FROM `opensource-observer.oso_playground.code_metrics_by_project`
+   ORDER BY last_commit_date DESC
+   ```
+3. Click the **Save Results** button to export your data in your preferred format. Note that there are limits to the amount of data you can download locally vs the amount you can save on Google Drive. If you have a large dataset (above 10MB), you may need to save it to Google Drive and then download it from there.
 
 ![GCP Save Results](./gcp_save_results.png)
 
-Then you can import your data right into your notebook:
+4. Finally, you can import your data into your analysis tool of choice. For example, you can import a CSV file into a Pandas dataframe in a Jupyter notebook:
 
-```python
-import pandas as pd
+   ```python
+   import pandas as pd
 
-df = pd.read_csv('path/to/your/file.csv')
-```
+   df = pd.read_csv('path/to/your/file.csv')
+   ```
 
 If this is your preferred workflow, you can [skip the first part](./data-science#transform) of the next section.
 
@@ -335,20 +374,12 @@ These notebooks typically have the following structure:
 
 This next section will help you create a notebook from scratch, performing each of these steps using the OSO playground dataset.
 
-### Follow the tutorial on Google Colab
-
-If you want to get going as quickly as possible, just copy and execute our [tutorial notebook](https://colab.research.google.com/drive/1v318jtHyuU55JMx2vR9QEXENwFCITBrh?usp=drive_link) on Google Colab.
-
-Remember to replace `opensource-observer` with the name of your project in the `%%bigquery` magic command.
-
-It's always a good idea to test your queries in the [BigQuery console](https://console.cloud.google.com/bigquery) and with the `oso_playground` dataset before running them in your notebook with the `oso` production dataset.
-
 ### Prepare your notebook
 
 From the command line, create a new Jupyter notebook:
 
 ```bash
-$ jupyter notebook
+jupyter notebook
 ```
 
 A Jupyter directory will open in your browser. Navigate to the directory where you want to store your notebook. Create a new notebook.
@@ -370,17 +401,9 @@ os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = '' # path to your service account
 client = bigquery.Client()
 ```
 
-### Tutorial: GitHub Stars & Forks Analysis
+Now you can fetch the data you want.
 
-The example below fetches the latest code metrics for all projects in the OSO data warehouse and generates a scatter plot of the number of forks vs the number of stars for each project.
-
-Remember to follow the steps from the setup section above and authenticate with your BigQuery service account key.
-
-You can find the full notebook [here](https://github.com/opensource-observer/insights/blob/main/community/notebooks/oso_starter_tutorial.ipynb).
-
-#### Query
-
-In this example, we will fetch the latest code metrics for all projects in the OSO data warehouse.
+In this example, we will fetch the latest code metrics for all projects on OSO.
 
 ```python
 query = """
@@ -391,16 +414,6 @@ query = """
 results = client.query(query)
 ```
 
-We recommend exploring the data in [the BigQuery console](https://console.cloud.google.com/bigquery) before running your query in your notebook. This will help you understand the structure of the data and the fields you want to fetch.
-
-[![GCP Playground](./gcp_playground.png)](https://console.cloud.google.com/bigquery)
-
----
-
-#### Transform
-
-Once you have fetched your data, you can transform it into a format that is ready for analysis.
-
 Store the results of your query in a dataframe and preview the first few rows:
 
 ```python
@@ -408,7 +421,19 @@ df = results.to_dataframe()
 df.head()
 ```
 
-Next, we will apply some basic cleaning and transformation to the data:
+### Tutorial: GitHub Stars & Forks Analysis
+
+The example below analyzes the latest code metrics for all projects in the OSO data warehouse and generates a scatter plot of the number of forks vs the number of stars for each project.
+
+If you're running locally, follow the earlier steps to authenticate with BigQuery and fetch your data. You can find the full notebook [here](https://github.com/opensource-observer/insights/blob/main/community/notebooks/oso_starter_tutorial.ipynb).
+
+If you're using Colab, you can copy and execute our [tutorial notebook](https://colab.research.google.com/drive/1v318jtHyuU55JMx2vR9QEXENwFCITBrh?usp=drive_link). Just remember to replace `opensource-observer` with the name of your project in the `%%bigquery` magic command.
+
+#### Transform
+
+Once you have fetched your data, you can transform it into a format that is ready for analysis.
+
+Let's apply some basic cleaning and transformation to the data. This block will:
 
 - Remove any rows where the number of forks or stars is 0; copy to a new dataframe
 - Create a new column to indicate whether the project has had recent activity (commits in the last 6 months)
