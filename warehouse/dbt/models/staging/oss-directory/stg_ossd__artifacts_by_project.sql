@@ -59,11 +59,11 @@ all_deployers AS (
   SELECT
     *,
     'OPTIMISM' AS network
-  FROM {{ ref("stg_ethereum__deployers") }}
+  FROM {{ ref("stg_optimism__deployers") }}
   UNION ALL
   SELECT
     *,
-    'ETHEREUM' AS network
+    'MAINNET' AS network
   FROM {{ ref("stg_ethereum__deployers") }}
 ),
 
