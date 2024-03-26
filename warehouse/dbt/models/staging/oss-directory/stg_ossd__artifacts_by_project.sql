@@ -65,7 +65,7 @@ all_deployers AS (
     *,
     "ETHEREUM" AS network
   FROM {{ ref("stg_ethereum__deployers") }}
-)
+),
 
 discovered_contracts AS (
   SELECT
