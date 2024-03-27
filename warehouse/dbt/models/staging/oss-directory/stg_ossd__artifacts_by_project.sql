@@ -65,6 +65,11 @@ all_deployers AS (
     *,
     'MAINNET' AS network
   FROM {{ ref("stg_ethereum__deployers") }}
+  UNION ALL
+  SELECT
+    *,
+    'ARBITRUM' AS network
+  FROM {{ ref("stg_arbitrum__deployers") }}
 ),
 
 discovered_contracts AS (

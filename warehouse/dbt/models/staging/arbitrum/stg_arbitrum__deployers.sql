@@ -13,4 +13,4 @@
     materialized='table',
   )
 }}
-{{ goog_blockchain_deployers("optimism") }}
+{{ goog_blockchain_deployers("arbitrum") }}
