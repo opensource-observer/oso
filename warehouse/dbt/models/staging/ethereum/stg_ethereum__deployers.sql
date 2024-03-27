@@ -25,9 +25,9 @@ WHERE
   AND receipt_status = 1
   AND receipt_contract_address IS NOT NULL
 {% if is_incremental() %}
-  AND TIMESTAMP_TRUNC(block_timestamp, DAY) >= (
-    SELECT TIMESTAMP_TRUNC(MAX(block_timestamp), DAY)
+  AND block_timestamp >= (
+    SELECT MAX(block_timestamp)
     FROM {{ this }}
   )
-  AND TIMESTAMP_TRUNC(block_timestamp, DAY) < CURRENT_TIMESTAMP()
+  AND block_timestamp < TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY)
 {% endif %}

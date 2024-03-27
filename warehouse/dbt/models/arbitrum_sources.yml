@@ -1,0 +1,12 @@
+sources:
+  - name: arbitrum
+
+    database: bigquery-public-data
+
+    schema: goog_blockchain_arbitrum_one_us
+    tables:
+      - name: transactions
+        identifier: transactions
+
+      - name: logs
+        identifier: logs
