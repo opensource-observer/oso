@@ -1,11 +1,19 @@
 ---
-title: Event
-sidebar_position: 5
+title: Event Data Indexers
+sidebar_position: 3
 ---
 
 :::info
 An **event** is a record of a transaction or other activity involving an artifact, or a snapshot of cumulative events at a given point in time. Events are used to track the history of an artifact.
 :::
+
+## Overview
+
+---
+
+Every event is associated with an artifact that belongs to a single project. For example, a GitHub commit event is an event `from` a GitHub user artifact `to` a GitHub repo artifact owned by a single project. Similarly, a blockchain transaction event would be an event `from` a blockchain address artifact `to` another blockchain address artifact owned by a single project.
+
+The `to` and `from` relationships between artifacts in an event are critical to OSO's ability to understand the impact of a project's activities and situate it in the context of overall network / ecosystem activity.
 
 ## Event Types
 
@@ -44,11 +52,3 @@ All blockchain events are associated with a unique blockchain address-network pa
 - Contract Invocation Daily Count: A snapshot of the number of transactions made with a contract address on a given date.
 - Contract Invocation Daily Fees: A snapshot of the fees paid for transactions made with a contract address on a given date.
 - Users Interacted: A snapshot of the number of unique users (addresses) transacting with a contract address on a given date.
-
-## Querying Event Data
-
----
-
-The event table is the largest table in the OSO Data Warehouse. As such, we have created data marts that aggregate event data at daily, weekly, and monthly intervals for artifacts, projects, and collections.
-
-As event queries may be slow, we recommend using these aggregate tables whenever possible. See the [API documentation](../../integrate) for more information about querying event data.
