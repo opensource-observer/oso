@@ -55,14 +55,14 @@ If you run into issues, check out [GitHub's instructions](https://docs.github.co
 - If the project doesn't exist, you can create a new `.yaml` file under `./data/projects/` In most cases, you should simply use the GitHub organization name (eg, `my-new-org`) as the slug and filename (eg, `./data/projectsm/my-new-org.yaml`).
 - If the project is not associated with a GitHub organization, you can use the project name followed by the repo owner as the slug, separated by hyphens (eg, `my-repo-my-org`), and the same convention for the filename (eg, `./data/projects/m/my-repo-my-org.yaml`).
 - Initialize the new project with the following fields:
-  - `version`: The version of the schema you are using. The latest version is Version 3. You can learn more about the schema [here](../how-oso-works/data-model/schema-updates).
+  - `version`: The version of the schema you are using. The latest version is Version 3. You can learn more about the schema [here](../how-oso-works/oss-directory/schema-updates).
   - `slug`: The unique identifier for the project. This is usually the GitHub organization name or the project name followed by the repo owner, separated by hyphens.
   - `name`: The name of the project.
   - `github`: The GitHub URL of the project. This is a list of URLs, as a project can have multiple GitHub URLs. In most cases, the first and only URL will be the main GitHub organization URL. You don't need to include all the repositories that belong to the organization, as we will automatically index all of them.
 
 ### 3. Link artifacts to the project
 
-- Add artifacts to the project file. Artifacts are the different types of data that we index for a project. You can find the list of artifacts in the [schema](../how-oso-works/data-model/artifact). Here's an example of a project file with artifacts:
+- Add artifacts to the project file. Artifacts are the different types of data that we index for a project. You can find the list of artifacts in the [schema](../how-oso-works/oss-directory/artifact). Here's an example of a project file with artifacts:
 
   ```yaml
   version:
