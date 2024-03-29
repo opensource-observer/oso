@@ -9,7 +9,7 @@
 
 SELECT
   e.collection_id,
-  e.from_id,
+  e.from_namespace,
   e.event_type,
   TIMESTAMP_TRUNC(e.time, DAY) AS bucket_day,
   SUM(e.amount) AS amount
