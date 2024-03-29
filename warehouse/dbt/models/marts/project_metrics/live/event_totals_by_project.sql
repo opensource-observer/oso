@@ -47,7 +47,7 @@ aggregated_data AS (
   GROUP BY 1, 2, 3, 4
 ),
 
-temp AS (
+temp1 AS (
   SELECT
     project_id,
     namespace,
@@ -56,11 +56,20 @@ temp AS (
     SUM(amount) AS amount
   FROM aggregated_data
   GROUP BY 1, 2, 3, 4
+),
+
+temp2 AS (
+  SELECT
+    project_id,
+    namespace,
+    amount,
+    CONCAT(event_type, '_TOTAL_', time_interval) AS impact_metric
+  FROM temp1
 )
 
 SELECT
   project_id,
   namespace,
-  CONCAT(event_type, '_TOTAL_', time_interval) AS impact_metric,
+  impact_metric,
   amount
-FROM temp
+FROM temp2
