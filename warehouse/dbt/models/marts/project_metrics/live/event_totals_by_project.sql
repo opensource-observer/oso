@@ -13,29 +13,48 @@
 }}
 
 WITH time_ranges AS (
-  SELECT '30D' AS time_interval, DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY) AS start_date UNION ALL
-  SELECT '90D' AS time_interval, DATE_SUB(CURRENT_DATE(), INTERVAL 90 DAY) UNION ALL
-  SELECT '6M' AS time_interval, DATE_SUB(CURRENT_DATE(), INTERVAL 6 MONTH) UNION ALL
-  SELECT '1Y' AS time_interval, DATE_SUB(CURRENT_DATE(), INTERVAL 1 YEAR) UNION ALL
-  SELECT 'ALL' AS time_interval, DATE('1970-01-01') 
+  SELECT
+    '30D' AS time_interval,
+    DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY) AS start_date
+    UNION ALL
+  SELECT
+    '90D' AS time_interval,
+    DATE_SUB(CURRENT_DATE(), INTERVAL 90 DAY) AS start_date
+    UNION ALL
+  SELECT
+    '6M' AS time_interval,
+    DATE_SUB(CURRENT_DATE(), INTERVAL 6 MONTH) AS start_date
+    UNION ALL
+  SELECT
+    '1Y' AS time_interval,
+    DATE_SUB(CURRENT_DATE(), INTERVAL 1 YEAR) AS start_date
+    UNION ALL
+  SELECT
+    'ALL' AS time_interval,
+    DATE('1970-01-01') AS start_date
 ),
+
 aggregated_data AS (
-  SELECT 
+  SELECT
     e.project_id,
     e.from_namespace AS namespace,
     e.event_type,
-    TR.time_interval,
-    SUM(e.amount) AS amount    
+    tr.time_interval,
+    SUM(e.amount) AS amount
   FROM {{ ref('events_daily_to_project_by_source') }} AS e
-  CROSS JOIN time_ranges AS TR
-  WHERE DATE(e.bucket_day) >= TR.start_date
+  CROSS JOIN time_ranges AS tr
+  WHERE DATE(e.bucket_day) >= tr.start_date
   GROUP BY 1, 2, 3, 4
 )
-SELECT 
+
+SELECT
   project_id,
   namespace,
   CONCAT(event_type, '_TOTAL_', time_interval) AS impact_metric,
   SUM(amount) AS amount
 FROM aggregated_data
-GROUP BY project_id, namespace, time_interval, event_type
-ORDER BY project_id, namespace, time_interval, event_type
+GROUP BY
+  project_id,
+  namespace,
+  event_type,
+  time_interval

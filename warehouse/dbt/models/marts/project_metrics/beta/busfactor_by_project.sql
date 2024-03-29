@@ -33,8 +33,9 @@ WITH contributions AS (
   GROUP BY
     project_id,
     from_id,
-    DATE_TRUNC(DATE(time), MONTH) 
-), 
+    DATE_TRUNC(DATE(time), MONTH)
+),
+
 project_periods AS (
   SELECT
     project_id,
@@ -43,14 +44,15 @@ project_periods AS (
   FROM contributions
   GROUP BY project_id
 ),
+
 aggregated_contributions AS (
   SELECT
     c.project_id,
     c.from_id,
     SUM(c.total_amount) AS total_amount,
     '90D' AS period
-  FROM contributions c
-  JOIN project_periods p ON c.project_id = p.project_id
+  FROM contributions AS c
+  INNER JOIN project_periods AS p ON c.project_id = p.project_id
   WHERE c.contribution_month > DATE_SUB(p.end_month, INTERVAL 3 MONTH)
   GROUP BY
     c.project_id,
@@ -59,10 +61,10 @@ aggregated_contributions AS (
   SELECT
     c.project_id,
     c.from_id,
-    SUM(c.total_amount),
-    '6M'
-  FROM contributions c
-  JOIN project_periods p ON c.project_id = p.project_id
+    SUM(c.total_amount) AS total_amount,
+    '6M' AS period
+  FROM contributions AS c
+  INNER JOIN project_periods AS p ON c.project_id = p.project_id
   WHERE c.contribution_month > DATE_SUB(p.end_month, INTERVAL 6 MONTH)
   GROUP BY
     c.project_id,
@@ -71,10 +73,10 @@ aggregated_contributions AS (
   SELECT
     c.project_id,
     c.from_id,
-    SUM(c.total_amount),
-    '1Y'
-  FROM contributions c
-  JOIN project_periods p ON c.project_id = p.project_id
+    SUM(c.total_amount) AS total_amount,
+    '1Y' AS period
+  FROM contributions AS c
+  INNER JOIN project_periods AS p ON c.project_id = p.project_id
   WHERE c.contribution_month > DATE_SUB(p.end_month, INTERVAL 12 MONTH)
   GROUP BY
     c.project_id,
@@ -83,32 +85,41 @@ aggregated_contributions AS (
   SELECT
     c.project_id,
     c.from_id,
-    SUM(c.total_amount),
-    'ALL'
-  FROM contributions c
+    SUM(c.total_amount) AS total_amount,
+    'ALL' AS period
+  FROM contributions AS c
   GROUP BY
     c.project_id,
     c.from_id
 ),
+
 ranked_contributions AS (
   SELECT
     project_id,
     period,
     from_id,
     total_amount,
-    RANK() OVER (PARTITION BY project_id, period ORDER BY total_amount DESC) AS rank,
-    SUM(total_amount) OVER (PARTITION BY project_id, period) AS total_project_amount,
-    SUM(total_amount) OVER (PARTITION BY project_id, period ORDER BY total_amount DESC ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS cumulative_amount
-  FROM aggregated_contributions 
+    RANK()
+      OVER (PARTITION BY project_id, period ORDER BY total_amount DESC)
+      AS rank,
+    SUM(total_amount)
+      OVER (PARTITION BY project_id, period)
+      AS total_project_amount,
+    SUM(total_amount)
+      OVER (
+        PARTITION BY project_id, period
+        ORDER BY total_amount DESC
+        ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+      ) AS cumulative_amount
+  FROM aggregated_contributions
 )
 
 SELECT
   project_id,
-  CONCAT("BUSFACTOR_", period) AS impact_metric,
+  CONCAT('BUSFACTOR_', period) AS impact_metric,
   MAX(rank) AS amount
 FROM
   ranked_contributions
 WHERE
   cumulative_amount >= total_project_amount * 0.5
-GROUP BY 1,2 
-ORDER BY 1,2
+GROUP BY project_id, period
