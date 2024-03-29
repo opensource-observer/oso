@@ -20,6 +20,7 @@ locals {
   cloudsql_name                 = "${var.name}-psql"
   cloudsql_db_user              = "${var.name}-admin"
   dataset_id                    = replace(var.name, "-", "_")
+  raw_dataset_id                = replace("${var.name}_raw_sources", "-", "_")
 }
 
 ###
@@ -46,6 +47,35 @@ resource "google_bigquery_dataset" "dataset" {
   dataset_id    = local.dataset_id
   friendly_name = var.dataset_name
   description   = var.dataset_description
+  location      = var.dataset_location
+
+  labels = {
+    environment = var.environment
+    dw_name     = var.name
+  }
+
+  access {
+    role          = "OWNER"
+    user_by_email = google_service_account.warehouse_admin.email
+  }
+
+  ###
+  # Allow public access
+  ###
+  access {
+    role          = "READER"
+    special_group = "allAuthenticatedUsers"
+  }
+}
+
+###
+# A dataset for receiving data from airbyte/cloudquery/or any other data
+# connections
+###
+resource "google_bigquery_dataset" "raw_dataset" {
+  dataset_id    = local.raw_dataset_id
+  friendly_name = "Raw data sources for: ${local.dataset_id}"
+  description   = "Raw data sources for: ${local.dataset_id}"
   location      = var.dataset_location
 
   labels = {
