@@ -9,7 +9,7 @@
 
 SELECT
   e.artifact_id,
-  e.from_id,
+  e.from_namespace,
   e.event_type,
   TIMESTAMP_TRUNC(e.bucket_day, MONTH) AS bucket_month,
   SUM(e.amount) AS amount
