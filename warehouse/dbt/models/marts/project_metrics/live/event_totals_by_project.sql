@@ -16,19 +16,19 @@ WITH time_ranges AS (
   SELECT
     '30D' AS time_interval,
     DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY) AS start_date
-    UNION ALL
+  UNION ALL
   SELECT
     '90D' AS time_interval,
     DATE_SUB(CURRENT_DATE(), INTERVAL 90 DAY) AS start_date
-    UNION ALL
+  UNION ALL
   SELECT
     '6M' AS time_interval,
     DATE_SUB(CURRENT_DATE(), INTERVAL 6 MONTH) AS start_date
-    UNION ALL
+  UNION ALL
   SELECT
     '1Y' AS time_interval,
     DATE_SUB(CURRENT_DATE(), INTERVAL 1 YEAR) AS start_date
-    UNION ALL
+  UNION ALL
   SELECT
     'ALL' AS time_interval,
     DATE('1970-01-01') AS start_date
@@ -45,12 +45,13 @@ aggregated_data AS (
   CROSS JOIN time_ranges AS tr
   WHERE DATE(e.bucket_day) >= tr.start_date
   GROUP BY 1, 2, 3, 4
-)
+),
 
-SELECT
+temp AS (
   project_id,
   namespace,
-  CONCAT(event_type, '_TOTAL_', time_interval) AS impact_metric,
+  event_type,
+  time_interval,
   SUM(amount) AS amount
 FROM aggregated_data
 GROUP BY
@@ -58,3 +59,11 @@ GROUP BY
   namespace,
   event_type,
   time_interval
+)
+
+SELECT
+  project_id,
+  namespace,
+  CONCAT(event_type, '_TOTAL_', time_interval) AS impact_metric,
+  amount
+FROM aggregated_data
