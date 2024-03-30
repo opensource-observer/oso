@@ -22,6 +22,19 @@ An impact metric must be:
 - Aggregated over a discrete period of time. Common time intervals include last 90 days, last 180 days, and since inception. OSO has already bucketed event data in daily, weekly, and monthly intervals to facilitate this.
 - Constructed from data that is available in one or more [intermediate or mart models](https://github.com/opensource-observer/oso/tree/main/warehouse/dbt/models). Common models include `projects`, `events_monthly_to_project`, `int_devs`, and `first_contribution_to_project`.
 
+## Schema
+
+Every impact metric must include the following fields: `project_id`, `impact_metric`, and `amount`. For example:
+```json
+{
+  "project_id": "jUda1pi-FdNlaUmgKq51B4h8x4wX3QTN2fZkKq6N0vw\u003d",
+  "impact_metric": "FORKED_6M",
+  "amount": 125
+}
+```
+
+Some may also include a `namespace` field to be explicit about the source of the event data to calculate the impact metric. This is useful, for instance, in the case of projects on multiple blockchain networks.
+
 ## Sample Metrics
 
 ---
@@ -36,11 +49,12 @@ The following is an example of a valid impact metric, expressed in SQL:
       -- Sum of fork events to a project in the last 6 months
       SELECT
         project_id,
-        SUM(amount) AS forks_6_months
+        'FORKED_6M' AS impact_metric,
+        SUM(amount) AS amount
       FROM `oso.events_monthly_to_project`
       WHERE 
         event_type = 'FORKED'
-        AND DATE(bucket_month) >= DATE_ADD(CURRENT_DATE(), INTERVAL -6 MONTH)
+        AND DATE(bucket_month) >= DATE_SUB(CURRENT_DATE(), INTERVAL 6 MONTH)
       GROUP BY project_id
       ```
   </TabItem>
@@ -48,13 +62,16 @@ The following is an example of a valid impact metric, expressed in SQL:
     ```json
       [{
         "project_id": "jUda1pi-FdNlaUmgKq51B4h8x4wX3QTN2fZkKq6N0vw\u003d",
-        "forks_6_months": "125.0"
+        "impact_metric": "FORKED_6M",
+        "amount": "125.0"
       }, {
         "project_id": "wdBmT3yweChtV4g4qcc1NN1QtfnmMPAuCVxoPkiAowY\u003d",
-        "forks_6_months": "57.0"
+        "impact_metric": "FORKED_6M",
+        "amount": "57.0"
       }, {
         "project_id": "HNv9-2g63oZCrLD2jDAIygVq7vQkn2iV2QGmEfcFsYk\u003d",
-        "forks_6_months": "13.0"
+        "impact_metric": "FORKED_6M",
+        "amount": "13.0"
       }]
     ```
   </TabItem>
@@ -70,11 +87,12 @@ Here is the same metric calculated at the **artifact** level:
       -- Sum of fork events to an artifact in the last 6 months
       SELECT
         artifact_id,
-        SUM(amount) AS forks_6_months
+        'FORKED_6M' AS impact_metric,
+        SUM(amount) AS amount
       FROM `oso.events_monthly_to_artifact`
       WHERE 
         event_type = 'FORKED'
-        AND DATE(bucket_month) >= DATE_ADD(CURRENT_DATE(), INTERVAL -6 MONTH)
+        AND DATE(bucket_month) >= DATE_SUB(CURRENT_DATE(), INTERVAL 6 MONTH)
       GROUP BY artifact_id
       ```
   </TabItem>
@@ -82,13 +100,16 @@ Here is the same metric calculated at the **artifact** level:
     ```json
       [{
         "artifact_id": "vg-apoPrbCtAM4enk0Ar4tODrqTBi9ZDnNnTw-udjw4\u003d",
-        "forks_6_months": "1.0"
+        "impact_metric": "FORKED_6M",
+        "amount": "1.0"
       }, {
         "artifact_id": "7ZqXfQTqiCHHcRw-THEsTgz8W1T0apGyLe7rE8n0NCs\u003d",
-        "forks_6_months": "5.0"
+        "impact_metric": "FORKED_6M",
+        "amount": "5.0"
       }, {
         "artifact_id": "PM9tS7Fp_-LmYT8B-dx8FFBz7xa8rEwm9RFAZ6JehcI\u003d",
-        "forks_6_months": "1.0"
+        "impact_metric": "FORKED_6M",
+        "amount": "1.0"
       }]
     ```
   </TabItem>
@@ -105,13 +126,16 @@ Here's a more complex impact metric that uses a CTE to calculate the number of d
       WITH first_events AS (
         SELECT
           project_id,
+          from_namespace AS namespace,
           MIN(CASE WHEN event_type = 'COMMIT_CODE' THEN bucket_day END) AS first_commit,
           MIN(CASE WHEN event_type = 'CONTRACT_INVOCATION_DAILY_COUNT' THEN bucket_day END) AS first_txn
-        FROM `oso.events_daily_to_project`
+        FROM `oso.events_daily_to_project_by_source`
         GROUP BY project_id
       )
       SELECT
         project_id,
+        namespace,
+        'DAYS_FROM_FIRST_COMMIT_TO_FIRST_TXN' AS impact_metric,
         DATE_DIFF(first_txn, first_commit, DAY) AS days_from_first_commit_to_first_txn
       FROM first_events
     ```
@@ -120,19 +144,24 @@ Here's a more complex impact metric that uses a CTE to calculate the number of d
     ```json
       [{
         "project_id": "-A5N7DYgI4bDZZQaF_4SPw_qx6cv1BbfcoxJ7rZxig8\u003d",
-        "days_from_first_commit_to_first_txn": "554"
+        "impact_metric": "DAYS_FROM_FIRST_COMMIT_TO_FIRST_TXN",
+        "namespace": "OPTIMISM",
+        "amount": "554"
       }, {
         "project_id": "-KeRKHB_H0HcNkR2_SLUC1vLy46YWoaZSMrjpiW3d5s\u003d",
-        "days_from_first_commit_to_first_txn": null
+        "impact_metric": "DAYS_FROM_FIRST_COMMIT_TO_FIRST_TXN",
+        "namespace": "ARBITRUM",
+        "amount": "224"
       }, {
         "project_id": "-ceY1smj0ZhYH-JSMeK3opMBmLgc29Oe-m5cOd-KnjY\u003d",
-        "days_from_first_commit_to_first_txn": "412"
+        "impact_metric": "DAYS_FROM_FIRST_COMMIT_TO_FIRST_TXN",
+        "namespace": "OPTIMISM",
+        "amount": "112"
       }, {
-        "project_id": "-cqm4kiQPXiAI9GserwK_Jf2AF05Ygc5Mcmf6S9igjk\u003d",
-        "days_from_first_commit_to_first_txn": null
-      }, {
-        "project_id": "03kU3p5lLpFpNokCY76xugHThITxzXmzVae__BGZKFc\u003d",
-        "days_from_first_commit_to_first_txn": "-47"
+        "project_id": "-ceY1smj0ZhYH-JSMeK3opMBmLgc29Oe-m5cOd-KnjY\u003d",
+        "impact_metric": "DAYS_FROM_FIRST_COMMIT_TO_FIRST_TXN",
+        "namespace": "ARBITRUM",
+        "amount": null
       }]
     ```
   </TabItem>
