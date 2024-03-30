@@ -22,18 +22,24 @@
   }) 
 }}
 
-WITH contributions AS (
+WITH all_contributions AS (
   SELECT
     project_id,
     from_id,
     SUM(amount) AS total_amount,
     DATE_TRUNC(DATE(time), MONTH) AS contribution_month
   FROM {{ ref('int_events_to_project') }}
-  WHERE event_type = 'COMMIT_CODE'
+  WHERE event_type = 'COMMIT_CODE' -- CONTRIBUTION FILTER
   GROUP BY
     project_id,
     from_id,
     DATE_TRUNC(DATE(time), MONTH)
+),
+
+contributions AS (
+  SELECT *
+  FROM all_contributions
+  WHERE total_amount < 1000 -- BOT FILTER
 ),
 
 project_periods AS (
@@ -100,11 +106,13 @@ ranked_contributions AS (
     from_id,
     total_amount,
     RANK()
-      OVER (PARTITION BY project_id, period ORDER BY total_amount DESC)
-      AS rank,
+      OVER (
+        PARTITION BY project_id, period ORDER BY total_amount DESC
+      ) AS rank,
     SUM(total_amount)
-      OVER (PARTITION BY project_id, period)
-      AS total_project_amount,
+      OVER (
+        PARTITION BY project_id, period
+      ) AS total_project_amount,
     SUM(total_amount)
       OVER (
         PARTITION BY project_id, period
@@ -117,9 +125,15 @@ ranked_contributions AS (
 SELECT
   project_id,
   CONCAT('BUSFACTOR_', period) AS impact_metric,
-  MAX(rank) AS amount
+  MAX(
+    CASE
+      WHEN cumulative_amount <= total_project_amount * 0.5
+        THEN rank
+      ELSE 1
+    END
+  ) AS amount
 FROM
   ranked_contributions
-WHERE
-  cumulative_amount >= total_project_amount * 0.5
-GROUP BY project_id, period
+GROUP BY
+  project_id,
+  period
