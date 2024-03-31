@@ -32,44 +32,14 @@ WITH time_ranges AS (
   SELECT
     'ALL' AS time_interval,
     DATE('1970-01-01') AS start_date
-),
-
-aggregated_data AS (
-  SELECT
-    e.project_id,
-    e.from_namespace AS namespace,
-    e.event_type,
-    tr.time_interval,
-    SUM(e.amount) AS amount
-  FROM {{ ref('events_daily_to_project_by_source') }} AS e
-  CROSS JOIN time_ranges AS tr
-  WHERE DATE(e.bucket_day) >= tr.start_date
-  GROUP BY 1, 2, 3, 4
-),
-
-temp1 AS (
-  SELECT
-    project_id,
-    namespace,
-    event_type,
-    time_interval,
-    SUM(amount) AS amount
-  FROM aggregated_data
-  GROUP BY 1, 2, 3, 4
-),
-
-temp2 AS (
-  SELECT
-    project_id,
-    namespace,
-    amount,
-    CONCAT(event_type, '_TOTAL_', time_interval) AS impact_metric
-  FROM temp1
 )
 
 SELECT
-  project_id,
-  namespace,
-  impact_metric,
-  amount
-FROM temp2
+  e.project_id,
+  e.from_namespace AS namespace,
+  CONCAT(e.event_type, '_TOTAL_', tr.time_interval) AS impact_metric,
+  SUM(e.amount) AS amount
+FROM {{ ref('events_daily_to_project_by_source') }} AS e
+CROSS JOIN time_ranges AS tr
+WHERE DATE(e.bucket_day) >= tr.start_date
+GROUP BY e.project_id, e.from_namespace, e.event_type, tr.time_interval
