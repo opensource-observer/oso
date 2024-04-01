@@ -68,30 +68,34 @@ cd oso
 
 ### Run the Wizard
 
-The next step is to install the python dependencies and run the wizard which
-will ask you to run `dbt` at the end (Say yes if you'd like to copy the
+First, authenticate with `gcloud`:
+
+```bash
+gcloud auth application-default login
+```
+
+Next, install the Python dependencies and run the wizard. It will ask you
+to run `dbt` at the end (Say yes if you'd like to copy the
 oso_playground dataset). Simply run:
 
 ```bash
 poetry install && poetry run oso_lets_go
 ```
 
-Once this is completed, you'll have a full "playground" of your own. If you make
-any changes and would like to rerun dbt simply do:
+Once this is completed, you'll have a full "playground" of your own.
 
-```bash
-poetry run dbt run
-```
-
-:::tip
-If you would like to remove the need to type `poetry run` all the time, you
-can do:
+We strongly recommend running everything in the `poetry shell` so you don't have to
+type `poetry run` all the time. You can do this by running:
 
 ```bash
 poetry shell
 ```
 
-:::
+Finally, you can test that everything is working by running the following command:
+
+```bash
+dbt run
+```
 
 ---
 
@@ -257,7 +261,7 @@ run` will write to the `opensource-observer.oso_playground` dataset._
 It is likely best to target a specific model so things don't take so long on
 some of our materializations:
 
-```
+```bash
 dbt run --select {name_of_your_model}
 ```
 
@@ -297,7 +301,7 @@ When you're ready, you can test your dbt models against your playground by
 simply running dbt like so:
 
 ```bash
-dbt run
+dbt run --select {name_of_your_model}
 ```
 
 If this runs without issue and you feel that you've completed something you'd
