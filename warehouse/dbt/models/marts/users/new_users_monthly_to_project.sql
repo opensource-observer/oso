@@ -8,14 +8,14 @@ WITH user_data AS (
     repository_source AS namespace,
     project_id,
     DATE_TRUNC(DATE(date_first_contribution), MONTH) AS month_first
-  FROM {{ ref('int_devs_to_project') }}
+  FROM {{ ref('int_devs') }}
   UNION ALL
   SELECT
     from_id,
     network AS namespace,
     project_id,
     DATE_TRUNC(DATE(date_first_txn), MONTH) AS month_first
-  FROM {{ ref('int_addresses_to_project') }}
+  FROM {{ ref('int_addresses') }}
 )
 
 SELECT

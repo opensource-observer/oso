@@ -8,7 +8,7 @@ SELECT
   project_id,
   MIN(time) AS date_first_contribution,
   MAX(time) AS date_last_contribution,
-  SUM(amount) AS total_amount
+  SUM(amount) AS count_events
 FROM {{ ref('int_events_to_project') }}
 WHERE
   event_type IN (

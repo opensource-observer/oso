@@ -19,10 +19,10 @@ WITH user_data AS (
     from_id,
     network,
     project_id,
-    total_amount AS total_activity,
+    count_events AS total_activity,
     DATE_DIFF(CURRENT_TIMESTAMP(), date_last_txn, DAY)
       AS days_since_last_activity
-  FROM {{ ref('int_addresses_to_project') }}
+  FROM {{ ref('int_addresses') }}
 ),
 
 user_project_count AS (
