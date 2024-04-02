@@ -1,10 +1,5 @@
 {# 
-  This model calculates the total man-months of developer activity
-  for each project in various time ranges.
-
-  The model uses the active_devs_monthly_to_project model to segment
-  developers based on monthly activity using the Electric Capital
-  Developer Report taxonomy.
+  
 #}
 {{ 
   config(meta = {
@@ -40,17 +35,16 @@ WITH time_ranges AS (
 )
 
 SELECT
-  e.project_id,
-  e.repository_source AS namespace,
-  CONCAT(e.user_segment_type, '_TOTAL_', tr.time_interval) AS impact_metric,
-  SUM(e.amount) AS amount
-FROM {{ ref('active_devs_monthly_to_project') }} AS e
+  d.project_id,
+  d.repository_source AS namespace,
+  CONCAT('NEW_CONTRIBUTORS_TOTAL_', tr.time_interval) AS impact_metric,
+  COUNT(DISTINCT CASE
+    WHEN DATE(d.date_first_contribution) >= tr.start_month
+      THEN d.from_id
+  END) AS amount
+FROM {{ ref('int_devs') }} AS d
 CROSS JOIN time_ranges AS tr
-WHERE
-  DATE(e.bucket_month) >= tr.start_month
-  AND DATE(e.bucket_month) < DATE_TRUNC(CURRENT_DATE(), MONTH)
 GROUP BY
-  e.project_id,
-  e.repository_source,
-  e.user_segment_type,
+  d.project_id,
+  d.repository_source,
   tr.time_interval
