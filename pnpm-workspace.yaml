@@ -5,3 +5,4 @@ packages:
   - "apps/frontend"
   - "apps/hasura"
   - "ops/external-prs"
+  - "ops/github-app-utils"
