@@ -1,7 +1,7 @@
-import { Repo, getOctokitFor, getRepoPermissions } from "./app";
-import { logger } from "./logger";
+import { Repo, getOctokitFor, getRepoPermissions } from "./app.js";
+import { logger } from "./logger.js";
 import { App } from "octokit";
-import { NoRepoError } from "./error";
+import { NoRepoError } from "./error.js";
 
 export interface CommentCommand {
   repo: Repo;
