@@ -17,39 +17,25 @@
     - pull_requests_merged_6_months: The number of pull requests merged in the project in the last 6 months
 #}
 
--- CTE for calculating the first and last commit date for each project,
--- ignoring forked repos
-WITH project_commit_dates AS (
+-- CTE for aggregating repo data for each project
+WITH project_repos_summary AS (
   SELECT
-    e.project_id,
-    r.repository_source,
-    MIN(e.time) AS first_commit_date,
-    MAX(e.time) AS last_commit_date
-  FROM {{ ref('int_events_to_project') }} AS e
-  INNER JOIN
-    {{ ref('stg_ossd__repositories_by_project') }} AS r
-    ON e.project_id = r.project_id
-  WHERE
-    e.event_type = 'COMMIT_CODE'
-    AND r.is_fork = false
-  GROUP BY e.project_id, r.repository_source
-),
-
--- CTE for aggregating stars, forks, and repository counts by project 
-project_repos_summary AS (
-  SELECT
-    p.project_id,
-    p.project_slug,
-    p.project_name,
-    r.repository_source,
-    COUNT(DISTINCT r.id) AS repositories,
-    SUM(r.star_count) AS stars,
-    SUM(r.fork_count) AS forks
-  FROM {{ ref('stg_ossd__repositories_by_project') }} AS r
-  INNER JOIN {{ ref('projects') }} AS p
-    ON r.project_id = p.project_id
-  WHERE r.is_fork = false
-  GROUP BY p.project_id, p.project_slug, p.project_name, r.repository_source
+    project_id,
+    project_slug,
+    project_name,
+    repository_source,
+    MIN(first_commit_date) AS first_commit_date,
+    MAX(last_commit_date) AS last_commit_date,
+    COUNT(DISTINCT artifact_id) AS repositories,
+    SUM(repo_star_count) AS stars,
+    SUM(repo_fork_count) AS forks
+  FROM {{ ref('github_repos_by_project') }}
+  --WHERE r.is_fork = false
+  GROUP BY
+    project_id,
+    project_slug,
+    project_name,
+    repository_source
 ),
 
 -- CTE for calculating contributor counts and new contributors in the last 6 
@@ -132,8 +118,8 @@ SELECT
   p.project_slug,
   p.project_name,
   p.repository_source AS `source`,
-  pcd.first_commit_date,
-  pcd.last_commit_date,
+  p.first_commit_date,
+  p.last_commit_date,
   p.repositories,
   p.stars,
   p.forks,
@@ -148,10 +134,6 @@ SELECT
   act.pull_requests_opened_6_months,
   act.pull_requests_merged_6_months
 FROM project_repos_summary AS p
-LEFT JOIN project_commit_dates AS pcd
-  ON
-    p.project_id = pcd.project_id
-    AND p.repository_source = pcd.repository_source
 LEFT JOIN contributors_cte AS c
   ON
     p.project_id = c.project_id
