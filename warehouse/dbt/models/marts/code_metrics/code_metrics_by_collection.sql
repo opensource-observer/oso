@@ -110,7 +110,7 @@ collection_contributors AS (
       MIN(d.bucket_month)
         OVER (PARTITION BY d.from_id, pbc.collection_id)
         AS first_contribution_date
-    FROM {{ ref('int_devs') }} AS d
+    FROM {{ ref('active_devs_monthly_to_collection') }}
     INNER JOIN
       {{ ref('stg_ossd__projects_by_collection') }} AS pbc
       ON d.project_id = pbc.project_id

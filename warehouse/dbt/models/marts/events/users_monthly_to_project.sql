@@ -1,15 +1,8 @@
 SELECT
   project_id,
-  user_segment_type,
+  from_namespace,
+  event_type,
   bucket_month,
-  SUM(amount) AS amount
-FROM
-  (
-    SELECT * FROM {{ ref('int_devs') }}
-    UNION ALL
-    SELECT * FROM {{ ref('int_users') }}
-  ) AS combined_data
-GROUP BY
-  project_id,
-  user_segment_type,
-  bucket_month
+  COUNT(DISTINCT from_id) AS amount
+FROM {{ ref('int_user_events_monthly_to_project') }}
+GROUP BY 1, 2, 3, 4

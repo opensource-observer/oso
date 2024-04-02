@@ -101,7 +101,7 @@ contributors_cte AS (
       MIN(DATE(bucket_month))
         OVER (PARTITION BY from_id, project_id)
         AS first_contribution_date
-    FROM {{ ref('int_devs') }}
+    FROM {{ ref('active_devs_monthly_to_project') }}
   )
   GROUP BY project_id, repository_source
 ),
