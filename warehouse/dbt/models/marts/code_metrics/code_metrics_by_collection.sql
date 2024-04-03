@@ -68,7 +68,7 @@ collection_contributors AS (
       DISTINCT CASE
         WHEN
           d.bucket_month
-          >= CAST(DATE_ADD(CURRENT_DATE(), INTERVAL -6 MONTH) AS TIMESTAMP)
+          >= DATE_SUB(CURRENT_DATE(), INTERVAL 6 MONTH)
           THEN d.from_id
       END
     ) AS contributors_6_months,
@@ -76,7 +76,7 @@ collection_contributors AS (
       DISTINCT CASE
         WHEN
           d.bucket_month
-          >= CAST(DATE_ADD(CURRENT_DATE(), INTERVAL -6 MONTH) AS TIMESTAMP)
+          >= DATE_SUB(CURRENT_DATE(), INTERVAL 6 MONTH)
           AND d.user_segment_type = 'FULL_TIME_DEV'
           THEN CONCAT(d.from_id, '_', d.bucket_month)
       END
@@ -86,7 +86,7 @@ collection_contributors AS (
       DISTINCT CASE
         WHEN
           d.bucket_month
-          >= CAST(DATE_ADD(CURRENT_DATE(), INTERVAL -6 MONTH) AS TIMESTAMP)
+          >= DATE_SUB(CURRENT_DATE(), INTERVAL 6 MONTH)
           AND d.user_segment_type IN ('FULL_TIME_DEV', 'PART_TIME_DEV')
           THEN CONCAT(d.from_id, '_', d.bucket_month)
       END
@@ -96,24 +96,21 @@ collection_contributors AS (
       DISTINCT CASE
         WHEN
           d.first_contribution_date
-          >= CAST(DATE_ADD(CURRENT_DATE(), INTERVAL -6 MONTH) AS TIMESTAMP)
+          >= DATE_SUB(CURRENT_DATE(), INTERVAL 6 MONTH)
           THEN d.from_id
       END
     ) AS new_contributors_6_months
   FROM (
     SELECT
-      d.from_id,
-      pbc.collection_id,
-      d.repository_source,
-      d.bucket_month,
-      d.user_segment_type,
-      MIN(d.bucket_month)
-        OVER (PARTITION BY d.from_id, pbc.collection_id)
+      from_id,
+      collection_id,
+      repository_source,
+      bucket_month,
+      user_segment_type,
+      MIN(bucket_month)
+        OVER (PARTITION BY from_id, collection_id)
         AS first_contribution_date
-    FROM {{ ref('int_devs') }} AS d
-    INNER JOIN
-      {{ ref('stg_ossd__projects_by_collection') }} AS pbc
-      ON d.project_id = pbc.project_id
+    FROM {{ ref('active_devs_monthly_to_collection') }}
   ) AS d
   GROUP BY d.collection_id, d.repository_source
 ),

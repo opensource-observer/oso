@@ -17,93 +17,73 @@
     - pull_requests_merged_6_months: The number of pull requests merged in the project in the last 6 months
 #}
 
--- CTE for calculating the first and last commit date for each project,
--- ignoring forked repos
-WITH project_commit_dates AS (
+-- CTE for aggregating repo data for each project
+WITH project_repos_summary AS (
   SELECT
-    e.project_id,
-    r.repository_source,
-    MIN(e.time) AS first_commit_date,
-    MAX(e.time) AS last_commit_date
-  FROM {{ ref('int_events_to_project') }} AS e
-  INNER JOIN
-    {{ ref('stg_ossd__repositories_by_project') }} AS r
-    ON e.project_id = r.project_id
-  WHERE
-    e.event_type = 'COMMIT_CODE'
-    AND r.is_fork = false
-  GROUP BY e.project_id, r.repository_source
-),
-
--- CTE for aggregating stars, forks, and repository counts by project 
-project_repos_summary AS (
-  SELECT
-    p.project_id,
-    p.project_slug,
-    p.project_name,
-    r.repository_source,
-    COUNT(DISTINCT r.id) AS repositories,
-    SUM(r.star_count) AS stars,
-    SUM(r.fork_count) AS forks
-  FROM {{ ref('stg_ossd__repositories_by_project') }} AS r
-  INNER JOIN {{ ref('projects') }} AS p
-    ON r.project_id = p.project_id
-  WHERE r.is_fork = false
-  GROUP BY p.project_id, p.project_slug, p.project_name, r.repository_source
+    project_id,
+    project_slug,
+    project_name,
+    repository_source,
+    MIN(first_commit_date) AS first_commit_date,
+    MAX(last_commit_date) AS last_commit_date,
+    COUNT(DISTINCT artifact_id) AS repositories,
+    SUM(repo_star_count) AS stars,
+    SUM(repo_fork_count) AS forks
+  FROM {{ ref('repos_by_project') }}
+  --WHERE r.is_fork = false
+  GROUP BY
+    project_id,
+    project_slug,
+    project_name,
+    repository_source
 ),
 
 -- CTE for calculating contributor counts and new contributors in the last 6 
 -- months
-contributors_cte AS (
+devs_cte AS (
   SELECT
     project_id,
-    repository_source,
-    COUNT(DISTINCT from_id) AS contributors,
-    COUNT(
-      DISTINCT CASE
-        WHEN
-          DATE(bucket_month) >= DATE_ADD(CURRENT_DATE(), INTERVAL -6 MONTH)
-          THEN from_id
+    namespace AS repository_source,
+    SUM(amount) / 6 AS contributors_6_months,
+    SUM(
+      CASE
+        WHEN CONTAINS_SUBSTR(impact_metric, 'FULL_TIME_DEV') THEN amount / 6
+        ELSE 0
       END
-    ) AS contributors_6_months,
-    COUNT(
-      DISTINCT CASE
-        WHEN
-          DATE(bucket_month) >= DATE_ADD(CURRENT_DATE(), INTERVAL -6 MONTH)
-          AND user_segment_type = 'FULL_TIME_DEV'
-          THEN CONCAT(from_id, '_', bucket_month)
+    ) AS avg_fulltime_devs_6_months,
+    SUM(
+      CASE
+        WHEN CONTAINS_SUBSTR(impact_metric, 'DEV') THEN amount / 6
+        ELSE 0
       END
-    )
-    / 6 AS avg_fulltime_devs_6_months,
-    COUNT(
-      DISTINCT CASE
-        WHEN
-          DATE(bucket_month) >= DATE_ADD(CURRENT_DATE(), INTERVAL -6 MONTH)
-          AND user_segment_type IN ('FULL_TIME_DEV', 'PART_TIME_DEV')
-          THEN CONCAT(from_id, '_', bucket_month)
+    ) AS avg_active_devs_6_months
+  FROM {{ ref('pm_dev_months') }}
+  WHERE CONTAINS_SUBSTR(impact_metric, '_6M')
+  GROUP BY
+    project_id,
+    namespace
+),
+
+contribs_cte AS (
+  SELECT
+    project_id,
+    namespace AS repository_source,
+    SUM(
+      CASE
+        WHEN CONTAINS_SUBSTR(impact_metric, '_ALL') THEN amount
+        ELSE 0
       END
-    )
-    / 6 AS avg_active_devs_6_months,
-    COUNT(
-      DISTINCT CASE
-        WHEN
-          first_contribution_date >= DATE_ADD(CURRENT_DATE(), INTERVAL -6 MONTH)
-          THEN from_id
+    ) AS contributors,
+    SUM(
+      CASE
+        WHEN CONTAINS_SUBSTR(impact_metric, '_6M') THEN amount
+        ELSE 0
       END
     ) AS new_contributors_6_months
-  FROM (
-    SELECT
-      from_id,
-      project_id,
-      repository_source,
-      user_segment_type,
-      DATE(bucket_month) AS bucket_month,
-      MIN(DATE(bucket_month))
-        OVER (PARTITION BY from_id, project_id)
-        AS first_contribution_date
-    FROM {{ ref('int_devs') }}
-  )
-  GROUP BY project_id, repository_source
+  FROM {{ ref('pm_new_contribs') }}
+  GROUP BY
+    project_id,
+    namespace
 ),
 
 -- CTE for summarizing project activity metrics over the past 6 months
@@ -132,27 +112,27 @@ SELECT
   p.project_slug,
   p.project_name,
   p.repository_source AS `source`,
-  pcd.first_commit_date,
-  pcd.last_commit_date,
+  p.first_commit_date,
+  p.last_commit_date,
   p.repositories,
   p.stars,
   p.forks,
   c.contributors,
-  c.contributors_6_months,
   c.new_contributors_6_months,
-  c.avg_fulltime_devs_6_months,
-  c.avg_active_devs_6_months,
+  d.contributors_6_months,
+  d.avg_fulltime_devs_6_months,
+  d.avg_active_devs_6_months,
   act.commits_6_months,
   act.issues_opened_6_months,
   act.issues_closed_6_months,
   act.pull_requests_opened_6_months,
   act.pull_requests_merged_6_months
 FROM project_repos_summary AS p
-LEFT JOIN project_commit_dates AS pcd
+LEFT JOIN devs_cte AS d
   ON
-    p.project_id = pcd.project_id
-    AND p.repository_source = pcd.repository_source
-LEFT JOIN contributors_cte AS c
+    p.project_id = d.project_id
+    AND p.repository_source = d.repository_source
+LEFT JOIN contribs_cte AS c
   ON
     p.project_id = c.project_id
     AND p.repository_source = c.repository_source

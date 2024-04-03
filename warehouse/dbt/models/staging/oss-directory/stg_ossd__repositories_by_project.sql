@@ -1,11 +1,14 @@
+{#
+  Currently this is just Github.
+  oss-directory needs some refactoring to support multiple repository providers
+#}
+
 SELECT
   repos.*,
-  {# 
-    Currently this is just Github. 
-    oss-directory needs some refactoring to support multiple repository providers 
-  #}
   projects.id AS project_id,
-  "GITHUB" AS repository_source
+  "GITHUB" AS repository_source,
+  {{ oso_id("'GITHUB'", "'GIT_REPOSITORY'", "CAST(repos.id AS STRING)") }}
+    AS artifact_id
 FROM
   {{ ref('stg_ossd__current_projects') }} AS projects
 CROSS JOIN
