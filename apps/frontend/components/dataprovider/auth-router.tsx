@@ -7,6 +7,7 @@ import {
 } from "./provider-view";
 import { RegistrationProps } from "../../lib/types/plasmic";
 import { logger } from "../../lib/logger";
+import { analytics } from "../../lib/clients/segment";
 import { supabaseClient } from "../../lib/clients/supabase";
 
 const DEFAULT_PLASMIC_VARIABLE = "auth";
@@ -65,6 +66,14 @@ function AuthRouter(props: AuthRouterProps) {
     const {
       data: { session },
     } = await supabaseClient.auth.getSession();
+    // Identify the user via Segment
+    if (user) {
+      await analytics.identify(user.id, {
+        name: user.user_metadata?.name,
+        email: user.email,
+      });
+    }
+
     console.log("User: ", user);
     console.log("Session: ", session);
     return {
