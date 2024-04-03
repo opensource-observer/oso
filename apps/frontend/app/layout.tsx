@@ -1,6 +1,5 @@
 import { ApolloWrapper } from "../components/dataprovider/apollo-wrapper";
-import * as snippet from "@segment/snippet";
-import { SEGMENT_KEY, NODE_ENV } from "../lib/config";
+import { Analytics } from "../components/widgets/analytics";
 import "./globals.css";
 
 export default function RootLayout({
@@ -8,25 +7,15 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const renderSnippet = () => {
-    const opts = {
-      apiKey: SEGMENT_KEY,
-      page: true,
-    };
-    if (NODE_ENV === "development") {
-      return snippet.max(opts);
-    }
-    return snippet.min(opts);
-  };
   return (
     <html lang="en">
       <head>
-        <script dangerouslySetInnerHTML={{ __html: renderSnippet() }} />
         <link rel="icon" href="/img/oso-emblem-black.svg" />
       </head>
       <body>
         <ApolloWrapper>{children}</ApolloWrapper>
       </body>
+      <Analytics />
     </html>
   );
 }

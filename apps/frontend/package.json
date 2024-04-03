@@ -28,7 +28,7 @@
     "@mui/material": "^5.15.6",
     "@mui/x-date-pickers": "^6.19.0",
     "@plasmicapp/loader-nextjs": "^1.0.360",
-    "@segment/snippet": "^5.2.1",
+    "@segment/analytics-next": "^1.66.0",
     "@supabase/auth-helpers-nextjs": "^0.8.7",
     "@supabase/auth-ui-react": "^0.4.7",
     "@supabase/auth-ui-shared": "^0.1.8",
