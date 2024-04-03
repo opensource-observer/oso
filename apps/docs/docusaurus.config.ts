@@ -1,13 +1,17 @@
 import { themes as prismThemes } from "prism-react-renderer";
 import type { Config } from "@docusaurus/types";
 import type * as Preset from "@docusaurus/preset-classic";
+import dotenv from "dotenv";
+const envPath = [__dirname, "./.env.local"].join("/");
+dotenv.config();
+dotenv.config({ path: envPath, override: true });
 
 const config: Config = {
   title: "Open Source Observer",
   tagline: "Measure impact on your platform.",
   favicon: "img/oso-emblem-black.svg",
 
-  url: "https://docs.opensource.observer",
+  url: process.env.DOCS_URL,
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
   baseUrl: "/",
@@ -140,10 +144,13 @@ const config: Config = {
       copyright: `Copyright © ${new Date().getFullYear()} Kariba Labs, Inc.`,
     },
     algolia: {
-      appId: "4321D3E0I0",
-      apiKey: "d812cd291bb7bcb57f710a569668761d",
-      indexName: "opensource",
+      appId: process.env.DOCS_ALGOLIA_APP_ID,
+      apiKey: process.env.DOCS_ALGOLIA_API_KEY,
+      indexName: process.env.DOCS_ALGOLIA_INDEX,
       contextualSearch: false,
+    },
+    segment: {
+      apiKey: process.env.DOCS_SEGMENT_WRITE_KEY,
     },
     prism: {
       theme: prismThemes.github,
