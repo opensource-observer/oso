@@ -149,14 +149,17 @@ const config: Config = {
       indexName: process.env.DOCS_ALGOLIA_INDEX,
       contextualSearch: false,
     },
-    segment: {
-      apiKey: process.env.DOCS_SEGMENT_WRITE_KEY,
-    },
     prism: {
       theme: prismThemes.github,
       darkTheme: prismThemes.dracula,
     },
   } satisfies Preset.ThemeConfig,
+  plugins: [
+    [
+      "@laxels/docusaurus-plugin-segment",
+      { apiKey: process.env.DOCS_SEGMENT_WRITE_KEY },
+    ],
+  ],
 };
 
 export default config;
