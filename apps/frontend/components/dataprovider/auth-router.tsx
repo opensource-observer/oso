@@ -7,6 +7,7 @@ import {
 } from "./provider-view";
 import { RegistrationProps } from "../../lib/types/plasmic";
 import { logger } from "../../lib/logger";
+import { spawn } from "../../lib/common";
 import { analytics } from "../../lib/clients/segment";
 import { supabaseClient } from "../../lib/clients/supabase";
 
@@ -68,10 +69,12 @@ function AuthRouter(props: AuthRouterProps) {
     } = await supabaseClient.auth.getSession();
     // Identify the user via Segment
     if (user) {
-      await analytics.identify(user.id, {
-        name: user.user_metadata?.name,
-        email: user.email,
-      });
+      spawn(
+        analytics.identify(user.id, {
+          name: user.user_metadata?.name,
+          email: user.email,
+        }),
+      );
     }
 
     console.log("User: ", user);
