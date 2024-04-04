@@ -1,6 +1,11 @@
 {# 
   All events weekly to a project
 #}
+{{ 
+  config(meta = {
+    'sync_to_cloudsql': True
+  }) 
+}}
 
 SELECT
   e.project_id,

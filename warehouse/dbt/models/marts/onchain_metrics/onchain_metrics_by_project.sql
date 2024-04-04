@@ -17,6 +17,11 @@
     - less_active_users: The number of users who have made 1-9 transactions with the project in the last 3 months
     - multi_project_users: The number of users who have interacted with 3+ projects in the last 3 months
 #}
+{{ 
+  config(meta = {
+    'sync_to_cloudsql': True
+  }) 
+}}
 
 -- CTE for grabbing the onchain transaction data we care about
 WITH txns AS (

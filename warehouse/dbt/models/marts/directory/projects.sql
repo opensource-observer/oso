@@ -1,3 +1,9 @@
+{{ 
+  config(meta = {
+    'sync_to_cloudsql': True
+  }) 
+}}
+
 SELECT
   id AS project_id,
   slug AS project_slug,

@@ -1,6 +1,11 @@
 {# 
   All events monthly to an artifact
 #}
+{{ 
+  config(meta = {
+    'sync_to_cloudsql': True
+  }) 
+}}
 
 SELECT
   e.artifact_id,

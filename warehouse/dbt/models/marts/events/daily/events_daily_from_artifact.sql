@@ -1,6 +1,11 @@
 {# 
   All events daily from an artifact
 #}
+{{ 
+  config(meta = {
+    'sync_to_cloudsql': True
+  }) 
+}}
 
 SELECT
   e.from_id AS artifact_id,

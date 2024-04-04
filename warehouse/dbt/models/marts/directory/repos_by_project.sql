@@ -2,6 +2,11 @@
   This model is a directory of all GitHub repositories that are associated with a project.
   It includes metadata about the repository, as well as the first and last commit dates.
 #}
+{{ 
+  config(meta = {
+    'sync_to_cloudsql': True
+  }) 
+}}
 
 WITH github_stats AS (
   SELECT

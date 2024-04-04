@@ -1,3 +1,9 @@
+{{ 
+  config(meta = {
+    'sync_to_cloudsql': True
+  }) 
+}}
+
 SELECT
   e.collection_id,
   e.event_type,

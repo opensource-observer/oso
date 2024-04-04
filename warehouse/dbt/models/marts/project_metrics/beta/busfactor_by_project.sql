@@ -16,11 +16,6 @@
   More information on the bus factor can be found here: https://chaoss.community/kb/metric-bus-factor/
 
 #}
-{{ 
-  config(meta = {
-    'sync_to_cloudsql': False
-  }) 
-}}
 
 WITH all_contributions AS (
   SELECT

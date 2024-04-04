@@ -16,6 +16,11 @@
     - pull_requests_opened_6_months: The number of pull requests opened in the collection in the last 6 months
     - pull_requests_merged_6_months: The number of pull requests merged in the collection in the last 6 months
 #}
+{{ 
+  config(meta = {
+    'sync_to_cloudsql': True
+  }) 
+}}
 
 -- CTE for calculating the first and last commit date for each collection, 
 -- ignoring forked repos
