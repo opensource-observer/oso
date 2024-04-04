@@ -1,0 +1,7 @@
+{
+  "extends": ["../../.eslintrc.js"],
+  "root": false,
+  "parserOptions": {
+    "project": ["./apps/oss-artifact-validators/tsconfig.json"]
+  }
+}

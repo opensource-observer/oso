@@ -4,5 +4,6 @@ packages:
   - "apps/docs"
   - "apps/frontend"
   - "apps/hasura"
+  - "apps/oss-artifact-validators"
   - "ops/external-prs"
   - "ops/github-app-utils"
