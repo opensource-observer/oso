@@ -1,6 +1,11 @@
 {# 
   All events monthly from a collection
 #}
+{{ 
+  config(meta = {
+    'sync_to_cloudsql': True
+  }) 
+}}
 
 SELECT
   e.collection_id,

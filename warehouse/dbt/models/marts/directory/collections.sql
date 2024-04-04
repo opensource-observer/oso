@@ -1,3 +1,9 @@
+{{ 
+  config(meta = {
+    'sync_to_cloudsql': True
+  }) 
+}}
+
 SELECT
   id AS collection_id,
   slug AS collection_slug,

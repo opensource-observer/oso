@@ -16,6 +16,11 @@
     - pull_requests_opened_6_months: The number of pull requests opened in the project in the last 6 months
     - pull_requests_merged_6_months: The number of pull requests merged in the project in the last 6 months
 #}
+{{ 
+  config(meta = {
+    'sync_to_cloudsql': True
+  }) 
+}}
 
 -- CTE for aggregating repo data for each project
 WITH project_repos_summary AS (

@@ -1,3 +1,9 @@
+{{ 
+  config(meta = {
+    'sync_to_cloudsql': True
+  }) 
+}}
+
 SELECT
   e.event_type,
   e.project_id,

@@ -1,3 +1,9 @@
+{{ 
+  config(meta = {
+    'sync_to_cloudsql': True
+  }) 
+}}
+
 SELECT
   project_id,
   from_namespace,
