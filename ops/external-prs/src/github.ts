@@ -5,10 +5,7 @@ export interface Repo {
   owner: string;
 }
 
-export async function getOctokitFor(
-  app: App,
-  repo: Repo,
-): Promise<Octokit | void> {
+export async function getOctokitFor(app: App, repo: Repo): Promise<Octokit> {
   for await (const { installation } of app.eachInstallation.iterator()) {
     for await (const { octokit, repository } of app.eachRepository.iterator({
       installationId: installation.id,
@@ -19,4 +16,17 @@ export async function getOctokitFor(
     }
   }
   throw new Error("invalid repo for this github app");
+}
+
+export async function getRepoPermissions(
+  octo: Octokit,
+  repo: Repo,
+  login: string,
+) {
+  const res = await octo.rest.repos.getCollaboratorPermissionLevel({
+    owner: repo.owner,
+    repo: repo.name,
+    username: login,
+  });
+  return res.data.permission;
 }

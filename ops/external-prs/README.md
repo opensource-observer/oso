@@ -3,3 +3,47 @@
 A Github App that allows us to accept external PRs by enabling PR checks by an
 out of band process. We need this because some of the checks require _some_ form
 of authentication.
+
+## Usage
+
+This is generally only supposed to be used on Github Actions. However, if you're
+developing this locally it's useful to know the available commands.
+
+### General commands
+
+```bash
+# Initialize a check with a given check name
+# If the user has write access then it automatically is listed as "queued"
+# If the user does not have write access then it automatically fails and waits for approval
+pnpm external-prs initialize-check {sha} {login} {check-name}
+```
+
+### OSO Specific
+
+```bash
+# Handle oso comments
+pnpm external-prs oso parse-comment {comment} {output}
+
+# Refresh gcp credentials for the test deployment infrastructure
+pnpm external-prs oso refresh-gcp-credentials {environment} {creds-path} {name}
+
+# Test deployment sub commands
+pnpm external-prs oso test-deploy --help
+
+# Test deployment setup
+pnpm external-prs oso test-deploy setup {pr} {sha} {profile-path} {service-account-path} {checkout-path}
+
+# Test deployment teardown
+pnpm external-prs oso test-deploy teardown {pr}
+
+# Test deployment clean
+pnpm external-prs oso test-deploy clean {ttl-seconds}
+```
+
+### OSS-Directory Specific
+
+```bash
+# Handle PR validations
+pnpm external-prs ossd validate-prs {pr} {sha} {main-path} {pr-path}
+
+```
