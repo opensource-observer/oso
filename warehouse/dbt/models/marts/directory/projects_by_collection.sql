@@ -3,7 +3,6 @@
     'sync_to_cloudsql': True
   }) 
 }}
-
 SELECT
   pbc.project_id,
   pbc.project_slug,
