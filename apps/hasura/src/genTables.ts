@@ -2,16 +2,15 @@ import path from "node:path";
 import fs from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import * as yaml from "yaml";
+import { exec } from "node:child_process";
+import * as util from "util";
+
+const execPromise = util.promisify(exec);
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 // YAML file extension
 const EXTENSION = ".yaml";
-// Recursively scan this directory for database tables
-const modelDir = path.resolve(
-  __dirname,
-  "../../../warehouse/dbt/models/marts/",
-);
 // Where to store all table configs
 const tablesDir = path.resolve(
   __dirname,
@@ -79,14 +78,63 @@ const createConfig = (name: string): TableConfig => ({
   ],
 });
 
+type ModelConfig = {
+  name: string;
+  config: {
+    meta: {
+      sync_to_cloudsql: boolean;
+    };
+  };
+};
+
 async function main(): Promise<void> {
-  console.log(`Generating tables from ${modelDir}`);
+  const target = process.env.DBT_TARGET;
+  if (!target) {
+    throw new Error("specify a DBT_TARGET");
+  }
+  console.log(`Generating tables from dbt`);
+
+  // FIXME... this isn't very portable
+  // Run dbt to get the json
+  const repoRoot = path.resolve("../../");
+  const modelsList = await execPromise(
+    `${repoRoot}/.venv/bin/dbt ls -q --output json --select marts.* --target ${target} --resource-type model`,
+    {
+      cwd: repoRoot,
+    },
+  );
+
+  const modelsConfigRaw = modelsList.stdout.split("\n");
+  const modelConfigs: ModelConfig[] = [];
+  for (const raw of modelsConfigRaw) {
+    const trimmed = raw.trim();
+    if (trimmed === "") {
+      continue;
+    }
+    const modelConfig = JSON.parse(trimmed) as {
+      name: string;
+      config: {
+        meta: {
+          sync_to_cloudsql: boolean;
+        };
+      };
+    };
+    modelConfigs.push(modelConfig);
+  }
+  const filteredConfigs = modelConfigs.filter((c) => {
+    return c.config.meta.sync_to_cloudsql === true;
+  });
+
+  const tableNames = filteredConfigs.map((c) => {
+    return c.name;
+  });
+
   // Recursively scan all files in the model directory
-  const allFiles = await fs.readdir(modelDir, { recursive: true });
+  //const allFiles = await fs.readdir(modelDir, { recursive: true });
   // Get the basename as the table name
-  const tableNames = allFiles
-    .filter((f) => f.endsWith(".sql"))
-    .map((f) => path.basename(f, ".sql"));
+  // const tableNames = allFiles
+  //   .filter((f) => f.endsWith(".sql"))
+  //   .map((f) => path.basename(f, ".sql"));
   console.log("Tables:");
   console.log(tableNames);
   // Write the list of tables

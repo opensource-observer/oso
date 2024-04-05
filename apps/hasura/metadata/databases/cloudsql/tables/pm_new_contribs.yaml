@@ -1,5 +1,5 @@
 table:
-  name: github_metrics_by_collection
+  name: pm_new_contribs
   schema: public
 select_permissions:
   - role: anonymous

@@ -1,5 +1,5 @@
 table:
-  name: github_metrics_by_project
+  name: repos_by_project
   schema: public
 select_permissions:
   - role: anonymous
