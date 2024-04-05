@@ -14,5 +14,5 @@ FROM {{ ref('int_events_to_project') }} AS e
 LEFT JOIN {{ ref('int_addresses') }} AS a
   ON e.from_id = a.from_id
 WHERE
-  event_type = 'CONTRACT_INVOCATION_DAILY_COUNT'
+  e.event_type = 'CONTRACT_INVOCATION_DAILY_COUNT'
 GROUP BY 1, 2, 3
