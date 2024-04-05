@@ -7,14 +7,14 @@ WITH user_data AS (
     from_id,
     repository_source AS namespace,
     project_id,
-    DATE_TRUNC(DATE(date_first_contribution), MONTH) AS month_first
+    TIMESTAMP_TRUNC(date_first_contribution, MONTH) AS month_first
   FROM {{ ref('int_devs') }}
   UNION ALL
   SELECT
     from_id,
     network AS namespace,
     project_id,
-    DATE_TRUNC(DATE(date_first_txn), MONTH) AS month_first
+    TIMESTAMP_TRUNC(date_first_txn, MONTH) AS month_first
   FROM {{ ref('int_addresses') }}
 )
 
