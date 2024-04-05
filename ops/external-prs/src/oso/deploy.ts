@@ -6,10 +6,10 @@ import { exec } from "child_process";
 import * as util from "util";
 import * as path from "path";
 
-import { Repo } from "./github.js";
-import { logger } from "./utils/logger.js";
+import { Repo } from "../github.js";
+import { logger } from "../utils/logger.js";
 import { App, Octokit } from "octokit";
-import { CheckConclusion, CheckStatus, setCheckStatus } from "./checks.js";
+import { CheckConclusion, CheckStatus, setCheckStatus } from "../checks.js";
 
 const execPromise = util.promisify(exec);
 

@@ -1,0 +1,13 @@
+opensource_observer:
+  target: playground
+  outputs:
+    playground:
+      type: bigquery
+      dataset: pr_1071
+      job_execution_time_seconds: 300
+      job_retries: 1
+      location: US
+      method: service-account
+      keyfile: /home/runner/work/oso/oso/gha-creds-aa5a4b1c1c73a543.json
+      project: oso-pull-requests
+      threads: 32

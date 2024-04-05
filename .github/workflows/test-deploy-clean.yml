@@ -39,5 +39,5 @@ jobs:
 
       - name: Clean up datasets that are older than 1 day
         run: |
-          cd ops/external-ops && pnpm tools test-deploy clean --project-id ${{ vars.GOOGLE_PROJECT_ID }} opensource-observer/oso 86400
+          cd ops/external-ops && pnpm tools oso test-deploy clean --project-id ${{ vars.GOOGLE_PROJECT_ID }} --repo opensource-observer/oso 86400
           
