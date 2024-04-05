@@ -11,6 +11,7 @@ env:
   # should not be set to a legitimate value for testing. This will use up API
   # quota otherwise
   DUNE_API_KEY: "none"
+  PR_TOOLS_REPO: ${{ github.repository }}
 
 # Trigger the workflow when:
 on:
@@ -40,7 +41,7 @@ jobs:
       - name: Initialize check
         run: |
           cd ops/external-prs &&
-          pnpm tools initialize-check ${{ github.repository }} ${{ github.event.pull_request.head.sha }} ${{ github.event.pull_request.user.login }}
+          pnpm tools oso initialize-check ${{ github.event.pull_request.head.sha }} ${{ github.event.pull_request.user.login }}
 
       - name: Author association debug
         run: |

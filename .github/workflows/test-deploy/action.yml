@@ -43,7 +43,7 @@ runs:
     # - name: Evaluate if this is eligible for deployment
     #   id: is_eligible
     #   run: |
-    #     cd ops/external-prs && pnpm tools test-deploy is-eligible $GITHUB_OUTPUT
+    #     cd ops/external-prs && pnpm tools oso test-deploy is-eligible $GITHUB_OUTPUT
 
     - name: checkout the PR
       uses: actions/checkout@v3
@@ -72,6 +72,8 @@ runs:
       shell: bash
       run: |
         mkdir -p $HOME/.dbt &&
-        cd ops/external-prs && pnpm tools test-deploy --project-id ${{ inputs.google_project_id }} setup ${{ github.repository }} ${{ inputs.pr }} ${{ inputs.sha }} $HOME/.dbt/profiles.yml ${{ inputs.gcp_service_account_path }} pr-clone
+        cd ops/external-prs && pnpm tools oso test-deploy --project-id ${{ inputs.google_project_id }} setup ${{ inputs.pr }} ${{ inputs.sha }} $HOME/.dbt/profiles.yml ${{ inputs.gcp_service_account_path }} pr-clone
+      env:
+        PR_TOOLS_REPO: ${{ github.repository }}
       
     
