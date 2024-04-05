@@ -73,7 +73,7 @@ collection_contributors AS (
       DISTINCT CASE
         WHEN
           d.bucket_month
-          >= DATE_SUB(CURRENT_DATE(), INTERVAL 6 MONTH)
+          >= CAST(DATE_SUB(CURRENT_DATE(), INTERVAL 6 MONTH) AS TIMESTAMP)
           THEN d.from_id
       END
     ) AS contributors_6_months,
@@ -81,7 +81,7 @@ collection_contributors AS (
       DISTINCT CASE
         WHEN
           d.bucket_month
-          >= DATE_SUB(CURRENT_DATE(), INTERVAL 6 MONTH)
+          >= CAST(DATE_SUB(CURRENT_DATE(), INTERVAL 6 MONTH) AS TIMESTAMP)
           AND d.user_segment_type = 'FULL_TIME_DEV'
           THEN CONCAT(d.from_id, '_', d.bucket_month)
       END
@@ -91,7 +91,7 @@ collection_contributors AS (
       DISTINCT CASE
         WHEN
           d.bucket_month
-          >= DATE_SUB(CURRENT_DATE(), INTERVAL 6 MONTH)
+          >= CAST(DATE_SUB(CURRENT_DATE(), INTERVAL 6 MONTH) AS TIMESTAMP)
           AND d.user_segment_type IN ('FULL_TIME_DEV', 'PART_TIME_DEV')
           THEN CONCAT(d.from_id, '_', d.bucket_month)
       END
@@ -101,7 +101,7 @@ collection_contributors AS (
       DISTINCT CASE
         WHEN
           d.first_contribution_date
-          >= DATE_SUB(CURRENT_DATE(), INTERVAL 6 MONTH)
+          >= CAST(DATE_SUB(CURRENT_DATE(), INTERVAL 6 MONTH) AS TIMESTAMP)
           THEN d.from_id
       END
     ) AS new_contributors_6_months
