@@ -1,5 +1,5 @@
 table:
-  name: onchain_metrics_by_collection_arbitrum
+  name: event_totals_by_project
   schema: public
 select_permissions:
   - role: anonymous
