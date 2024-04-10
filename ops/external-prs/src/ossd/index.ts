@@ -79,6 +79,11 @@ export function ossdSubcommands(yargs: Argv) {
           .option("duckdb-path", {
             type: "string",
             description: "The duckdb path. Defaults to using in memory storage",
+          })
+          .option("duckdb-memory-limit", {
+            type: "string",
+            description: "duckdb memory limit (needed for github actions)",
+            default: "",
           });
       },
       (args) => handleError(listPR(args)),
@@ -113,6 +118,11 @@ export function ossdSubcommands(yargs: Argv) {
           .option("duckdb-path", {
             type: "string",
             description: "The duckdb path. Defaults to using in memory storage",
+          })
+          .option("duckdb-memory-limit", {
+            type: "string",
+            description: "duckdb memory limit (needed for github actions)",
+            default: "",
           })
           .option("optimism-rpc-url", {
             type: "string",
@@ -151,6 +161,7 @@ interface OSSDirectoryPullRequestArgs extends BaseArgs {
   prPath: string;
   repl: boolean;
   duckdbPath: string;
+  duckdbMemoryLimit: string;
 }
 
 interface RpcUrlArgs {
@@ -355,6 +366,11 @@ class OSSDirectoryPullRequest {
       pr_collections: pr.collections,
     };
 
+    if (!args.duckdbMemoryLimit) {
+      await this.dbAll(`
+      SET memory_limit = '${args.duckdbMemoryLimit}';
+      `);
+    }
     return tmp.withDir(
       async (t) => {
         for (const table in tablesToCompare) {
