@@ -1,8 +1,8 @@
 WITH grouped_pr_addresses AS (
   SELECT
     b.address,
-    ARRAY_AGG(b.tag) AS tags,
-    ARRAY_AGG(b.network) AS networks,
+    ARRAY_AGG(DISTINCT b.tag) AS tags,
+    ARRAY_AGG(DISTINCT b.network) AS networks,
   FROM pr_blockchain_artifacts AS b
   GROUP BY 1
 )

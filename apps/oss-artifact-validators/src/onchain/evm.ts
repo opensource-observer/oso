@@ -7,7 +7,6 @@ export interface EVMNetworkValidator {
   isContract(addr: string): Promise<boolean>;
   isFactory(addr: string): Promise<boolean>;
   isDeployer(addr: string): Promise<boolean>;
-  //isSafe(addr: string): Promise<boolean>;
 }
 
 export interface GenericEVMNetworkValidtorOptions {
@@ -59,7 +58,7 @@ export class GenericEVMNetworkValidator implements EVMNetworkValidator {
     const query = `
     SELECT * 
     FROM ${this.deployerTable}
-    WHERE deployer_address = '${addr}'
+    WHERE LOWER(deployer_address) = '${addr}'
     `;
     const [job] = await this.bq.createQueryJob(query);
     const [results] = await job.getQueryResults();

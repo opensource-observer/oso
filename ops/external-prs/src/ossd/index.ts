@@ -13,6 +13,11 @@ import * as path from "path";
 import * as repl from "repl";
 import columnify from "columnify";
 import mustache from "mustache";
+import {
+  EVMNetworkValidator,
+  EthereumValidator,
+  OptimismValidator,
+} from "@opensource-observer/oss-artifact-validators";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -104,12 +109,16 @@ export function ossdSubcommands(yargs: Argv) {
 }
 
 interface OSSDirectoryPullRequestArgs extends BaseArgs {
-  pr: string;
+  pr: number;
   sha: string;
   mainPath: string;
   prPath: string;
   repl: boolean;
   duckdbPath: string;
+}
+
+function relativeDir(...args: string[]) {
+  return path.join(__dirname, ...args);
 }
 
 async function runParameterizedQuery(
@@ -118,11 +127,8 @@ async function runParameterizedQuery(
   params?: Record<string, unknown>,
 ) {
   params = params || {};
-  const raw = await fsPromise.readFile(
-    path.join(__dirname, "queries", `${name}.sql`),
-    "utf-8",
-  );
-  const query = mustache.render(raw, params);
+  const queryPath = relativeDir("queries", `${name}.sql`);
+  const query = await renderMustacheFromFile(queryPath, params);
   logger.info({
     message: "running query",
     query: query,
@@ -131,6 +137,15 @@ async function runParameterizedQuery(
   return dbAll(query);
 }
 
+async function renderMustacheFromFile(
+  filePath: string,
+  params?: Record<string, unknown>,
+) {
+  const raw = await fsPromise.readFile(filePath, "utf-8");
+  return mustache.render(raw, params);
+}
+
+// | Projects             | {{ projects.existing }} {{ projects.added }} | {{projects.removed}} | {{ projects.updated }}
 type ProjectSummary = {
   project_slug: string;
   status: string;
@@ -177,15 +192,33 @@ type BlockchainValidationItem = {
   networks: string[];
 };
 
+type Summary = {
+  added: number;
+  removed: number;
+  existing: number;
+};
+
+// type BlockchainSummary = Summary & {
+//   unique_added: number;
+//   removed_number: number;
+// }
+
 type ChangeSummary = {
   projects: ProjectSummary[];
   artifacts: {
-    blockchain: BlockchainStatus[];
-    package: PackageStatus[];
-    code: CodeStatus[];
-  };
-  toValidate: {
-    blockchain: BlockchainValidationItem[];
+    summary: {
+      blockchain: Summary;
+      package: Summary;
+      code: Summary;
+    };
+    status: {
+      blockchain: BlockchainStatus[];
+      package: PackageStatus[];
+      code: CodeStatus[];
+    };
+    toValidate: {
+      blockchain: BlockchainValidationItem[];
+    };
   };
 };
 
@@ -193,6 +226,7 @@ class OSSDirectoryPullRequest {
   private db: duckdb.Database;
   private args: OSSDirectoryPullRequestArgs;
   private changes: ChangeSummary;
+  private validators: Record<string, EVMNetworkValidator>;
 
   static async init(args: OSSDirectoryPullRequestArgs) {
     const pr = new OSSDirectoryPullRequest(args);
@@ -202,6 +236,58 @@ class OSSDirectoryPullRequest {
 
   private constructor(args: OSSDirectoryPullRequestArgs) {
     this.args = args;
+    this.validators = {};
+  }
+
+  async loadValidators() {
+    const optimismRpc = process.env.OPTIMISM_RPC_URL;
+    const mainnetRpc = process.env.MAINNET_RPC_URL;
+
+    if (!optimismRpc || !mainnetRpc) {
+      throw new Error("RPC URLs are required to do validation");
+    }
+
+    this.validators["optimism"] = OptimismValidator({
+      rpcUrl: optimismRpc,
+    });
+
+    this.validators["mainnet"] = EthereumValidator({
+      rpcUrl: mainnetRpc,
+    });
+  }
+
+  async dbAll(query: string) {
+    const dbAll = util.promisify(this.db.all.bind(this.db));
+    return await dbAll(query);
+  }
+
+  async runParameterizedQuery(name: string, params?: Record<string, unknown>) {
+    params = params || {};
+    const queryPath = relativeDir("queries", `${name}.sql`);
+    const query = await renderMustacheFromFile(queryPath, params);
+    logger.info({
+      message: "running query",
+      query: query,
+    });
+    return this.dbAll(query);
+  }
+
+  // Run query with pretty output
+  async runQuery(query: string, includeResponse: boolean = false) {
+    const res = await this.dbAll(query);
+    console.log("");
+    console.log(
+      columnify(res as Record<string, any>[], {
+        truncate: true,
+        maxWidth: 20,
+      }),
+    );
+    console.log("");
+    if (!includeResponse) {
+      return;
+    } else {
+      return res;
+    }
   }
 
   private async initialize() {
@@ -231,8 +317,6 @@ class OSSDirectoryPullRequest {
       pr_collections: pr.collections,
     };
 
-    const dbAll = util.promisify(db.all.bind(db));
-    console.log(__dirname);
     return tmp.withDir(
       async (t) => {
         for (const table in tablesToCompare) {
@@ -241,7 +325,7 @@ class OSSDirectoryPullRequest {
           // Dump the data into the work path as JSONL files
           //const arrowTable = arrow.tableFromJSON(JSON.parse(JSON.stringify(tablesToCompare[table])));
 
-          const res = await dbAll(`
+          const res = await this.dbAll(`
             CREATE TABLE ${table} AS
             SELECT *
             FROM read_json_auto('${dumpPath}');
@@ -256,57 +340,66 @@ class OSSDirectoryPullRequest {
         // Implement a poor man's dbt. We should just use dbt but this will work
         // for now without muddying up more things with python + javascript
         // requirements
-        await runParameterizedQuery(db, "projects_by_collection", {
+        await this.runParameterizedQuery("projects_by_collection", {
           source: "main",
         });
-        await runParameterizedQuery(db, "projects_by_collection", {
+        await this.runParameterizedQuery("projects_by_collection", {
           source: "pr",
         });
-        await runParameterizedQuery(db, "blockchain_artifacts", {
+        await this.runParameterizedQuery("blockchain_artifacts", {
           source: "main",
         });
-        await runParameterizedQuery(db, "blockchain_artifacts", {
+        await this.runParameterizedQuery("blockchain_artifacts", {
           source: "pr",
         });
-        await runParameterizedQuery(db, "code_artifacts", {
+        await this.runParameterizedQuery("code_artifacts", {
           source: "main",
         });
-        await runParameterizedQuery(db, "code_artifacts", {
+        await this.runParameterizedQuery("code_artifacts", {
           source: "pr",
         });
-        await runParameterizedQuery(db, "package_artifacts", {
+        await this.runParameterizedQuery("package_artifacts", {
           source: "main",
         });
-        await runParameterizedQuery(db, "package_artifacts", {
+        await this.runParameterizedQuery("package_artifacts", {
           source: "pr",
         });
 
-        await runParameterizedQuery(db, "project_status");
-        await runParameterizedQuery(db, "projects_by_collection_status");
-        await runParameterizedQuery(db, "blockchain_status");
-        await runParameterizedQuery(db, "package_status");
-        await runParameterizedQuery(db, "code_status");
-        await runParameterizedQuery(db, "project_summary");
+        await this.runParameterizedQuery("project_status");
+        await this.runParameterizedQuery("projects_by_collection_status");
+        await this.runParameterizedQuery("blockchain_status");
+        await this.runParameterizedQuery("package_status");
+        await this.runParameterizedQuery("code_status");
+        await this.runParameterizedQuery("artifacts_summary");
+        await this.runParameterizedQuery("project_summary");
 
-        const runQuery = async (
-          query: string,
-          includeResponse: boolean = false,
-        ) => {
-          const res = await dbAll(query);
-          console.log("");
-          console.log(
-            columnify(res as Record<string, any>[], {
-              truncate: true,
-              maxWidth: 20,
-            }),
-          );
-          console.log("");
-          if (!includeResponse) {
-            return;
+        const artifactsSummary = (await this.runQuery(
+          "SELECT * FROM artifacts_summary",
+          true,
+        )) as {
+          type: string;
+          status: string;
+          count: number;
+          unique_count: number;
+        }[];
+        const summaries: Record<string, Summary> = {};
+        for (const row of artifactsSummary) {
+          if (!summaries[row.type]) {
+            summaries[row.type] = {
+              added: row.status == "ADDED" ? row.count : 0,
+              removed: row.status == "REMOVED" ? row.count : 0,
+              existing: row.status == "EXISTING" ? row.count : 0,
+            };
           } else {
-            return res;
+            if (row.status == "ADDED") {
+              summaries[row.type].added = row.count;
+            } else if (row.type == "REMOVED") {
+              summaries[row.type].removed = row.count;
+            } else {
+              summaries[row.type].existing = row.count;
+            }
           }
-        };
+        }
 
         const changes: ChangeSummary = {
           projects: (await runParameterizedQuery(
@@ -314,24 +407,31 @@ class OSSDirectoryPullRequest {
             "changed_projects",
           )) as ProjectSummary[],
           artifacts: {
-            blockchain: (await runParameterizedQuery(
-              db,
-              "changed_blockchain_artifacts",
-            )) as BlockchainStatus[],
-            code: (await runParameterizedQuery(
-              db,
-              "changed_code_artifacts",
-            )) as CodeStatus[],
-            package: (await runParameterizedQuery(
-              db,
-              "changed_package_artifacts",
-            )) as PackageStatus[],
-          },
-          toValidate: {
-            blockchain: (await runParameterizedQuery(
-              db,
-              "changed_blockchain_artifacts_to_validate",
-            )) as BlockchainValidationItem[],
+            summary: {
+              blockchain: summaries["BLOCKCHAIN"],
+              code: summaries["CODE"],
+              package: summaries["PACKAGE"],
+            },
+            status: {
+              blockchain: (await runParameterizedQuery(
+                db,
+                "changed_blockchain_artifacts",
+              )) as BlockchainStatus[],
+              code: (await runParameterizedQuery(
+                db,
+                "changed_code_artifacts",
+              )) as CodeStatus[],
+              package: (await runParameterizedQuery(
+                db,
+                "changed_package_artifacts",
+              )) as PackageStatus[],
+            },
+            toValidate: {
+              blockchain: (await runParameterizedQuery(
+                db,
+                "changed_blockchain_artifacts_to_validate",
+              )) as BlockchainValidationItem[],
+            },
           },
         };
         this.changes = changes;
@@ -344,10 +444,10 @@ class OSSDirectoryPullRequest {
             raw: db,
             // Setup a convenience command that runs queries
             $: async (query: string) => {
-              await runQuery(query);
+              await this.runQuery(query);
             },
             $$: async (query: string) => {
-              return await runQuery(query, true);
+              return await this.runQuery(query, true);
             },
           };
           server.context.changes = changes;
@@ -369,15 +469,96 @@ class OSSDirectoryPullRequest {
     logger.info(
       "Enumerate the changes as a comment on the PR - without full bigquery access",
     );
+    const args = this.args;
+
+    const unchangedProjects = (await this.runParameterizedQuery(
+      "unchanged_projects",
+    )) as {
+      total: number;
+    }[];
+
+    const unchangedProjectsCount =
+      unchangedProjects.length === 0 ? 0 : unchangedProjects.length;
+    const updatedProjectsCount = this.changes.projects.length;
+
+    await args.appUtils.leaveCommentOnPr(
+      args.pr,
+      await renderMustacheFromFile(relativeDir("messages", "list-changes.md"), {
+        projects: {
+          added: updatedProjectsCount,
+          removed: 0,
+          unchanged: unchangedProjectsCount,
+        },
+        artifacts: this.changes.artifacts.summary,
+      }),
+    );
   }
 
   async validate() {
+    const args = this.args;
     logger.info({
       message: "validating the pull request",
-      repo: this.args.repo,
-      sha: this.args.sha,
-      pr: this.args.pr,
+      repo: args.repo,
+      sha: args.sha,
+      pr: args.pr,
     });
+    await this.loadValidators();
+
+    const validationErrors: { address: string; error: string }[] = [];
+
+    for (const item of this.changes.artifacts.toValidate.blockchain) {
+      const address = item.address;
+      for (const network of item.networks) {
+        const validator = this.validators[network];
+        logger.info({
+          message: "validating address",
+          address: address,
+          network: network,
+          tags: item.tags,
+        });
+        if (item.tags.indexOf("eoa") !== -1) {
+          if (!(await validator.isEOA(address))) {
+            validationErrors.push({
+              address: address,
+              error: "is not an EOA",
+            });
+          }
+        }
+        if (item.tags.indexOf("contract") !== -1) {
+          if (!(await validator.isContract(address))) {
+            validationErrors.push({
+              address: address,
+              error: "is not a Contract",
+            });
+          }
+        }
+        if (item.tags.indexOf("deployer") !== -1) {
+          if (!(await validator.isDeployer(address))) {
+            validationErrors.push({
+              address: address,
+              error: "is not a Deployer",
+            });
+          }
+        }
+      }
+    }
+
+    if (validationErrors.length !== 0) {
+      logger.info({
+        message: "found validation errors",
+        count: validationErrors.length,
+      });
+
+      await args.appUtils.leaveCommentOnPr(
+        args.pr,
+        await renderMustacheFromFile(
+          relativeDir("messages", "validation-errors.md"),
+          {
+            validationErrors: validationErrors,
+          },
+        ),
+      );
+    }
   }
 }
 
