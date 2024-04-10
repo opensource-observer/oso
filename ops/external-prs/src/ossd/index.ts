@@ -3,7 +3,7 @@ import { fileURLToPath } from "node:url";
 import { Argv } from "yargs";
 import { handleError } from "../utils/error.js";
 import { logger } from "../utils/logger.js";
-import { BaseArgs } from "../base.js";
+import { BaseArgs, CommmentCommandHandler } from "../base.js";
 import { loadData, Project, Collection } from "oss-directory";
 import duckdb from "duckdb";
 import * as util from "util";
@@ -18,6 +18,7 @@ import {
   EthereumValidator,
   OptimismValidator,
 } from "@opensource-observer/oss-artifact-validators";
+import { GithubOutput } from "../github.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -39,85 +40,107 @@ function jsonlExport<T>(path: string, arr: Array<T>): Promise<void> {
   });
 }
 
+interface ParseCommentArgs extends BaseArgs {
+  comment: number;
+  output: string;
+  login: string;
+}
+
 export function ossdSubcommands(yargs: Argv) {
-  yargs.command<OSSDirectoryPullRequestArgs>(
-    "list-changes <pr> <sha> <main-path> <pr-path>",
-    "list changes for an OSSD PR",
-    (yags) => {
-      yags
-        .positional("pr", {
+  yargs
+    .command<OSSDirectoryPullRequestArgs>(
+      "list-changes <pr> <sha> <main-path> <pr-path>",
+      "list changes for an OSSD PR",
+      (yags) => {
+        yags
+          .positional("pr", {
+            type: "number",
+            description: "pr number",
+          })
+          .positional("sha", {
+            type: "string",
+            description: "The sha of the pull request",
+          })
+          .positional("main-path", {
+            type: "string",
+            description: "The path to the main branch checkout",
+          })
+          .positional("path-path", {
+            type: "string",
+            description: "The path to the pr checkout",
+          })
+          .option("repl", {
+            type: "boolean",
+            description: "Start a repl for exploration on the data",
+            default: false,
+          })
+          .boolean("repl")
+          .option("duckdb-path", {
+            type: "string",
+            description: "The duckdb path. Defaults to using in memory storage",
+          });
+      },
+      (args) => handleError(listPR(args)),
+    )
+    .command<ValidatePRArgs>(
+      "validate-pr <pr> <sha> <main-path> <pr-path>",
+      "Validate changes for an OSSD PR",
+      (yags) => {
+        yags
+          .positional("pr", {
+            type: "number",
+            description: "pr number",
+          })
+          .positional("sha", {
+            type: "string",
+            description: "The sha of the pull request",
+          })
+          .positional("main-path", {
+            type: "string",
+            description: "The path to the main branch checkout",
+          })
+          .positional("path-path", {
+            type: "string",
+            description: "The path to the pr checkout",
+          })
+          .option("repl", {
+            type: "boolean",
+            description: "Start a repl for exploration on the data",
+            default: false,
+          })
+          .boolean("repl")
+          .option("duckdb-path", {
+            type: "string",
+            description: "The duckdb path. Defaults to using in memory storage",
+          })
+          .option("optimism-rpc-url", {
+            type: "string",
+            description: "Optimism RPC URL",
+            demandOption: true,
+          })
+          .option("mainnet-rpc-url", {
+            type: "string",
+            description: "Ethereum Mainnet RPC URL",
+            demandOption: true,
+          });
+      },
+      (args) => handleError(validatePR(args)),
+    )
+    .command<ParseCommentArgs>(
+      "parse-comment <comment> <output>",
+      "subcommand for parsing a deploy comment",
+      (yags) => {
+        yags.positional("comment", {
           type: "number",
-          description: "pr number",
-        })
-        .positional("sha", {
-          type: "string",
-          description: "The sha of the pull request",
-        })
-        .positional("main-path", {
-          type: "string",
-          description: "The path to the main branch checkout",
-        })
-        .positional("path-path", {
-          type: "string",
-          description: "The path to the pr checkout",
-        })
-        .option("repl", {
-          type: "boolean",
-          description: "Start a repl for exploration on the data",
-          default: false,
-        })
-        .boolean("repl")
-        .option("duckdb-path", {
-          type: "string",
-          description: "The duckdb path. Defaults to using in memory storage",
+          description: "Comment ID",
         });
-    },
-    (args) => handleError(listPR(args)),
-  );
-  yargs.command<ValidatePRArgs>(
-    "validate-pr <pr> <sha> <main-path> <pr-path>",
-    "Validate changes for an OSSD PR",
-    (yags) => {
-      yags
-        .positional("pr", {
-          type: "number",
-          description: "pr number",
-        })
-        .positional("sha", {
+        yags.positional("output", {
           type: "string",
-          description: "The sha of the pull request",
-        })
-        .positional("main-path", {
-          type: "string",
-          description: "The path to the main branch checkout",
-        })
-        .positional("path-path", {
-          type: "string",
-          description: "The path to the pr checkout",
-        })
-        .option("repl", {
-          type: "boolean",
-          description: "Start a repl for exploration on the data",
-          default: false,
-        })
-        .boolean("repl")
-        .option("duckdb-path", {
-          type: "string",
-          description: "The duckdb path. Defaults to using in memory storage",
-        })
-        .option("optimism-rpc-url", {
-          type: "string",
-          description: "Optimism RPC URL",
-          demandOption: true,
-        })
-        .option("mainnet-rpc-url", {
-          type: "string",
-          description: "Ethereum Mainnet RPC URL",
-          demandOption: true,
+          description: "The output file",
         });
-    },
-    (args) => handleError(validatePR(args)),
-  );
+      },
+      (args) => handleError(parseOSSDirectoryComments(args)),
+    );
 }
 
 interface OSSDirectoryPullRequestArgs extends BaseArgs {
@@ -584,4 +607,45 @@ async function listPR(args: OSSDirectoryPullRequestArgs) {
 async function validatePR(args: ValidatePRArgs) {
   const pr = await OSSDirectoryPullRequest.init(args);
   await pr.validate(args);
+}
+
+async function parseOSSDirectoryComments(args: ParseCommentArgs) {
+  const enableValidation: CommmentCommandHandler<GithubOutput> = async (
+    command,
+  ) => {
+    if (command.args.splitArgs.length < 1) {
+      throw new Error("sha required for validation");
+    }
+    const sha = command.args.splitArgs[0];
+
+    if (command.user.login === "") {
+      throw new Error("validation command requires a user");
+    }
+
+    if (["admin", "write"].indexOf(command.user.permissions || "") === -1) {
+      throw new Error("user not allowed to enable validation");
+    }
+
+    return new GithubOutput({
+      sha: sha,
+      deploy: "true",
+      pr: command.issue.id,
+      issueAuthor: command.issue.author,
+      commentAuthor: command.comment.author,
+    });
+  };
+
+  try {
+    const output = await args.appUtils.parseCommentForCommand<GithubOutput>(
+      args.comment,
+      {
+        validate: enableValidation,
+      },
+    );
+    await output.commit(args.output);
+  } catch (_e) {
+    await GithubOutput.write(args.output, {
+      deploy: "false",
+    });
+  }
 }

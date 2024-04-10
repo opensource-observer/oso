@@ -1,4 +1,6 @@
 import { App, Octokit } from "octokit";
+import { stringify } from "envfile";
+import * as fsPromise from "fs/promises";
 
 export interface Repo {
   name: string;
@@ -29,4 +31,27 @@ export async function getRepoPermissions(
     username: login,
   });
   return res.data.permission;
+}
+
+export class GithubOutput {
+  private outputObj: Record<string, unknown>;
+
+  constructor(outputObj: Record<string, unknown> = {}) {
+    this.outputObj = outputObj;
+  }
+
+  static async write(outputPath: string, obj: Record<string, unknown>) {
+    const output = new GithubOutput(obj);
+    await output.commit(outputPath);
+    return;
+  }
+
+  set(key: string, value: unknown) {
+    this.outputObj[key] = value;
+  }
+
+  async commit(outputPath: string) {
+    const outputStr = stringify(this.outputObj);
+    return await fsPromise.writeFile(outputPath, outputStr);
+  }
 }

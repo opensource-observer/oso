@@ -10,6 +10,8 @@ export class AssertionError extends Error {
   }
 }
 
+export class NoRepoError extends Error {}
+
 /**
  * Something is `null` or `undefined` when we don't expect it
  */
