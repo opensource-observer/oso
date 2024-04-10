@@ -26,7 +26,7 @@ export type CheckOutput = {
   summary: string;
 };
 
-type CheckRequest = {
+export type CheckRequest = {
   name: string;
   head_sha: string;
   status: string;

@@ -9,7 +9,7 @@ import dotenv from "dotenv";
 import { CheckStatus, setCheckStatus, CheckConclusion } from "./checks.js";
 import { Repo, getOctokitFor, getRepoPermissions } from "./github.js";
 import { osoSubcommands } from "./oso/index.js";
-import { BaseArgs } from "./base.js";
+import { BaseArgs, GHAppUtils } from "./base.js";
 import { ossdSubcommands } from "./ossd/index.js";
 
 dotenv.config();
@@ -102,6 +102,9 @@ const cli = yargs(hideBin(process.argv))
       privateKey: buf.toString("utf-8"),
     });
     args.app = app;
+    const repo = args.repo as Repo;
+    const octo = await getOctokitFor(app, repo);
+    args.appUtils = new GHAppUtils(app, repo, octo);
 
     const { data } = await app.octokit.request("/app");
     logger.debug(`Authenticated as ${data.name}`);
