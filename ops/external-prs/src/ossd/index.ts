@@ -19,6 +19,7 @@ import {
   OptimismValidator,
 } from "@opensource-observer/oss-artifact-validators";
 import { GithubOutput } from "../github.js";
+import { CheckConclusion, CheckStatus } from "../checks.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -595,6 +596,28 @@ class OSSDirectoryPullRequest {
           },
         ),
       );
+
+      await args.appUtils.setCheckStatus({
+        conclusion: CheckConclusion.Failure,
+        name: "validate",
+        head_sha: args.sha,
+        status: CheckStatus.Completed,
+        output: {
+          title: "PR Validation",
+          summary: `Failed to validate with ${validationErrors.length} errors`,
+        },
+      });
+    } else {
+      await args.appUtils.setCheckStatus({
+        conclusion: CheckConclusion.Success,
+        name: "validate",
+        head_sha: args.sha,
+        status: CheckStatus.Completed,
+        output: {
+          title: "PR Validation",
+          summary: "Successfully validated",
+        },
+      });
     }
   }
 }

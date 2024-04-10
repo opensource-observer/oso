@@ -63,7 +63,7 @@ export class GHAppUtils {
     });
   }
 
-  async setCheckStatus(checkName: string, request: CheckRequest) {
+  async setCheckStatus(request: CheckRequest) {
     return setCheckStatus(this.octo, this.repo.owner, this.repo.name, request);
   }
 
