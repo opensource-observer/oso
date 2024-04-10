@@ -41,7 +41,7 @@ jobs:
       - name: Initialize check
         run: |
           cd ops/external-prs &&
-          pnpm tools oso initialize-check ${{ github.event.pull_request.head.sha }} ${{ github.event.pull_request.user.login }}
+          pnpm tools initialize-check ${{ github.event.pull_request.head.sha }} ${{ github.event.pull_request.user.login }} test-deploy
 
       - name: Author association debug
         run: |
