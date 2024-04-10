@@ -44,65 +44,77 @@ export function ossdSubcommands(yargs: Argv) {
     "list-changes <pr> <sha> <main-path> <pr-path>",
     "list changes for an OSSD PR",
     (yags) => {
-      yags.positional("pr", {
-        type: "number",
-        description: "pr number",
-      });
-      yags.positional("sha", {
-        type: "string",
-        description: "The sha of the pull request",
-      });
-      yags.positional("main-path", {
-        type: "string",
-        description: "The path to the main branch checkout",
-      });
-      yags.positional("path-path", {
-        type: "string",
-        description: "The path to the pr checkout",
-      });
-      yags.option("repl", {
-        type: "boolean",
-        description: "Start a repl for exploration on the data",
-        default: false,
-      });
-      yags.boolean("repl");
-      yags.option("duckdb-path", {
-        type: "string",
-        description: "The duckdb path. Defaults to using in memory storage",
-      });
+      yags
+        .positional("pr", {
+          type: "number",
+          description: "pr number",
+        })
+        .positional("sha", {
+          type: "string",
+          description: "The sha of the pull request",
+        })
+        .positional("main-path", {
+          type: "string",
+          description: "The path to the main branch checkout",
+        })
+        .positional("path-path", {
+          type: "string",
+          description: "The path to the pr checkout",
+        })
+        .option("repl", {
+          type: "boolean",
+          description: "Start a repl for exploration on the data",
+          default: false,
+        })
+        .boolean("repl")
+        .option("duckdb-path", {
+          type: "string",
+          description: "The duckdb path. Defaults to using in memory storage",
+        });
     },
     (args) => handleError(listPR(args)),
   );
-  yargs.command<OSSDirectoryPullRequestArgs>(
+  yargs.command<ValidatePRArgs>(
     "validate-pr <pr> <sha> <main-path> <pr-path>",
     "Validate changes for an OSSD PR",
     (yags) => {
-      yags.positional("pr", {
-        type: "number",
-        description: "pr number",
-      });
-      yags.positional("sha", {
-        type: "string",
-        description: "The sha of the pull request",
-      });
-      yags.positional("main-path", {
-        type: "string",
-        description: "The path to the main branch checkout",
-      });
-      yags.positional("path-path", {
-        type: "string",
-        description: "The path to the pr checkout",
-      });
-      yags.option("repl", {
-        type: "boolean",
-        description: "Start a repl for exploration on the data",
-        default: false,
-      });
-      yags.boolean("repl");
-      yags.option("duckdb-path", {
-        type: "string",
-        description: "The duckdb path. Defaults to using in memory storage",
-      });
+      yags
+        .positional("pr", {
+          type: "number",
+          description: "pr number",
+        })
+        .positional("sha", {
+          type: "string",
+          description: "The sha of the pull request",
+        })
+        .positional("main-path", {
+          type: "string",
+          description: "The path to the main branch checkout",
+        })
+        .positional("path-path", {
+          type: "string",
+          description: "The path to the pr checkout",
+        })
+        .option("repl", {
+          type: "boolean",
+          description: "Start a repl for exploration on the data",
+          default: false,
+        })
+        .boolean("repl")
+        .option("duckdb-path", {
+          type: "string",
+          description: "The duckdb path. Defaults to using in memory storage",
+        })
+        .option("optimism-rpc-url", {
+          type: "string",
+          description: "Optimism RPC URL",
+          demandOption: true,
+        })
+        .option("mainnet-rpc-url", {
+          type: "string",
+          description: "Ethereum Mainnet RPC URL",
+          demandOption: true,
+        });
     },
     (args) => handleError(validatePR(args)),
   );
@@ -116,6 +128,13 @@ interface OSSDirectoryPullRequestArgs extends BaseArgs {
   repl: boolean;
   duckdbPath: string;
 }
+
+interface RpcUrlArgs {
+  optimismRpcUrl: string;
+  mainnetRpcUrl: string;
+}
+
+type ValidatePRArgs = OSSDirectoryPullRequestArgs & RpcUrlArgs;
 
 function relativeDir(...args: string[]) {
   return path.join(__dirname, ...args);
@@ -239,20 +258,15 @@ class OSSDirectoryPullRequest {
     this.validators = {};
   }
 
-  async loadValidators() {
-    const optimismRpc = process.env.OPTIMISM_RPC_URL;
-    const mainnetRpc = process.env.MAINNET_RPC_URL;
-
-    if (!optimismRpc || !mainnetRpc) {
-      throw new Error("RPC URLs are required to do validation");
-    }
-
+  async loadValidators(
+    urls: Pick<ValidatePRArgs, "mainnetRpcUrl" | "optimismRpcUrl">,
+  ) {
     this.validators["optimism"] = OptimismValidator({
-      rpcUrl: optimismRpc,
+      rpcUrl: urls.optimismRpcUrl,
     });
 
     this.validators["mainnet"] = EthereumValidator({
-      rpcUrl: mainnetRpc,
+      rpcUrl: urls.mainnetRpcUrl,
     });
   }
 
@@ -494,7 +508,7 @@ class OSSDirectoryPullRequest {
     );
   }
 
-  async validate() {
+  async validate(urls: RpcUrlArgs) {
     const args = this.args;
     logger.info({
       message: "validating the pull request",
@@ -502,7 +516,7 @@ class OSSDirectoryPullRequest {
       sha: args.sha,
       pr: args.pr,
     });
-    await this.loadValidators();
+    await this.loadValidators(urls);
 
     const validationErrors: { address: string; error: string }[] = [];
 
@@ -567,7 +581,7 @@ async function listPR(args: OSSDirectoryPullRequestArgs) {
   await pr.list();
 }
 
-async function validatePR(args: OSSDirectoryPullRequestArgs) {
+async function validatePR(args: ValidatePRArgs) {
   const pr = await OSSDirectoryPullRequest.init(args);
-  await pr.validate();
+  await pr.validate(args);
 }
