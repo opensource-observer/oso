@@ -84,6 +84,11 @@ export function ossdSubcommands(yargs: Argv) {
             type: "string",
             description: "duckdb memory limit (needed for github actions)",
             default: "",
+          })
+          .option("duckdb-memory-limit", {
+            type: "string",
+            description: "duckdb memory limit (needed for github actions)",
+            default: "",
           });
       },
       (args) => handleError(listPR(args)),
@@ -118,6 +123,11 @@ export function ossdSubcommands(yargs: Argv) {
           .option("duckdb-path", {
             type: "string",
             description: "The duckdb path. Defaults to using in memory storage",
+          })
+          .option("duckdb-memory-limit", {
+            type: "string",
+            description: "duckdb memory limit (needed for github actions)",
+            default: "",
           })
           .option("duckdb-memory-limit", {
             type: "string",
@@ -366,7 +376,11 @@ class OSSDirectoryPullRequest {
       pr_collections: pr.collections,
     };
 
-    if (!args.duckdbMemoryLimit) {
+    if (args.duckdbMemoryLimit !== "") {
+      logger.info({
+        message: "setting memory limit",
+        memoryLimit: args.duckdbMemoryLimit,
+      });
       await this.dbAll(`
       SET memory_limit = '${args.duckdbMemoryLimit}';
       `);
