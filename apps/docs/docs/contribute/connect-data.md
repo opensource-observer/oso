@@ -275,8 +275,9 @@ our system. Other databases or datasources should be similar.
 
 ### Settings up your postgres database for connection
 
-You will need to have the following in order to connect your postgres database
-to OSO for replication.
+We will setup the postgre connection to use Change Data Capture which is
+suggested for very large databases. You will need to have the following in order
+to connect your postgres database to OSO for replication.
 
 - `wal_level` must be set to `logical`
 - You need to create a username of your choosing and share the associated
@@ -292,7 +293,8 @@ Please ensure that you understand what changing the `wal_level` will do for your
 database system requirements and/or performance.
 :::
 
-Before you begin, it's possible your settings are already correct. To check your `wal_level` settings, run the following query:
+Before you begin, it's possible your settings are already correct. To check your
+`wal_level` settings, run the following query:
 
 ```SQL
 SHOW wal_level
@@ -391,9 +393,9 @@ extractors:
     config:
       airbyte_config:
         jdbc_url_params: "replication=postgres"
-        ssl_mode:
-          mode: disable
-        schemas:
+        ssl_mode: # Update with your SSL configuration
+          mode: enable
+        schemas: # Update with your schemas
           - public
         replication_method:
           plugin: pgoutput
