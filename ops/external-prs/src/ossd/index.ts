@@ -17,6 +17,7 @@ import {
   EVMNetworkValidator,
   EthereumValidator,
   OptimismValidator,
+  ArbitrumValidator,
 } from "@opensource-observer/oss-artifact-validators";
 import { GithubOutput } from "../github.js";
 import { CheckConclusion, CheckStatus } from "../checks.js";
@@ -139,6 +140,11 @@ export function ossdSubcommands(yargs: Argv) {
             description: "Optimism RPC URL",
             demandOption: true,
           })
+          .option("arbitrum-rpc-url", {
+            type: "string",
+            description: "Ethereum Mainnet RPC URL",
+            demandOption: true,
+          })
           .option("mainnet-rpc-url", {
             type: "string",
             description: "Ethereum Mainnet RPC URL",
@@ -177,6 +183,7 @@ interface OSSDirectoryPullRequestArgs extends BaseArgs {
 interface RpcUrlArgs {
   optimismRpcUrl: string;
   mainnetRpcUrl: string;
+  arbitrumRpcUrl: string;
 }
 
 type ValidatePRArgs = OSSDirectoryPullRequestArgs & RpcUrlArgs;
@@ -304,7 +311,10 @@ class OSSDirectoryPullRequest {
   }
 
   async loadValidators(
-    urls: Pick<ValidatePRArgs, "mainnetRpcUrl" | "optimismRpcUrl">,
+    urls: Pick<
+      ValidatePRArgs,
+      "mainnetRpcUrl" | "optimismRpcUrl" | "arbitrumRpcUrl"
+    >,
   ) {
     this.validators["optimism"] = OptimismValidator({
       rpcUrl: urls.optimismRpcUrl,
@@ -312,6 +322,10 @@ class OSSDirectoryPullRequest {
 
     this.validators["mainnet"] = EthereumValidator({
       rpcUrl: urls.mainnetRpcUrl,
+    });
+
+    this.validators["arbitrum"] = ArbitrumValidator({
+      rpcUrl: urls.arbitrumRpcUrl,
     });
   }
 
@@ -578,6 +592,13 @@ class OSSDirectoryPullRequest {
       const address = item.address;
       for (const network of item.networks) {
         const validator = this.validators[network];
+        if (!validator) {
+          logger.error({
+            message: "no validator found for network",
+            network: network,
+          });
+          throw new Error(`No validator found for network "${network}"`);
+        }
         logger.info({
           message: "validating address",
           address: address,
