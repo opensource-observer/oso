@@ -4,7 +4,7 @@
 
 {% macro goog_blockchain_deployers(network_name) %}
 WITH {% if is_incremental() %} max_block_timestamp AS  (
-  SELECT MAX(block_timestamp)
+  SELECT COALESCE(MAX(block_timestamp), '1970-01-01')  as ts
   FROM {{ this }}
 ),
 {% endif %}
