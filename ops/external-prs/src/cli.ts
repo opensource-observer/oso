@@ -135,7 +135,6 @@ const cli = yargs(hideBin(process.argv))
     (args) => handleError(initializePrCheck(args)),
   )
   .demandCommand()
-  .strict()
   .help("h")
   .alias("h", "help");
 
