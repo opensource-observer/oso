@@ -297,7 +297,7 @@ Before you begin, it's possible your settings are already correct. To check your
 `wal_level` settings, run the following query:
 
 ```SQL
-SHOW wal_level
+SHOW wal_level;
 ```
 
 The output would look something like this from `psql`:
@@ -356,14 +356,14 @@ create the publication:
 _This assumes that you're creating the publication for table1 and table2._
 
 ```SQL
-CREATE PUBLICATION oso_publication FOR TABLE table1, table2
+CREATE PUBLICATION oso_publication FOR TABLE table1, table2;
 ```
 
 You can also create a publication for _all_ tables. To do this run the following
 query:
 
 ```SQL
-CREATE PUBLICATION oso_publication FOR TABLE ALL TABLES
+CREATE PUBLICATION oso_publication FOR ALL TABLES;
 ```
 
 For more details about this command see: https://www.postgresql.org/docs/current/sql-createpublication.html
