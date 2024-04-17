@@ -17,7 +17,6 @@ build_base_image() {
     base_image="ghcr.io/opensource-observer/cloudquery-${language}-base:${tag}"
     dockerfile_path="./docker/cloudquery-${language}-base.Dockerfile"
     docker build -t "${base_image}" -f "${dockerfile_path}" .
-    docker push "${base_image}"
     echo $base_image
 }
 
