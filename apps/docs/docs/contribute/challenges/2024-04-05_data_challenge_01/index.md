@@ -21,20 +21,21 @@ This is the first of hopefully several data challenges focused on onchain impact
 
 An “impact metric” is essentially a SQL query made against the OSO dataset that enables a user to make objective comparisons of impact among projects.
 
-As an example, here’s a very simple onchain impact metric that sums all of a project’s transactions over the last 6 months.
+As an example, here’s a very simple onchain impact metric that sums all of a project’s transactions on OP Mainnet over the last 6 months.
 
 ```sql
 SELECT
   project_id,
   SUM(amount) AS txns_6_months
-FROM `opensource-observer.oso.events_monthly_to_project`
+FROM `opensource-observer.oso.events_monthly_to_project_by_source`
 WHERE
   event_type = 'CONTRACT_INVOCATION_DAILY_COUNT'
   AND DATE(bucket_month) >= DATE_SUB(CURRENT_DATE(), INTERVAL 6 MONTH)
+  AND from_namespace = 'OPTIMISM'
 GROUP BY project_id
 ```
 
-A valid impact metric response should contain a `project_id` and `impact_metric` value for each project (with a null value for non-evaluable projects). In the example above, the result would be a set of records containing `project_id` and `forks_6_months` values.
+A valid impact metric response should contain a `project_id` and `impact_metric` value for each project (with a null value for non-evaluable projects). In the example above, the result would be a set of records containing `project_id` and `txns_6_months` values.
 
 ## Challenge Description
 
@@ -45,8 +46,8 @@ This challenge is focused on creating impact metrics for projects that have cont
 Specifically, we care about impact metrics in the following focus areas:
 
 - **User quality**. Metrics that help measure the quality of a project’s user base, potentially derived from identity primitives (eg, [ENS](https://docs.ens.domains/registry/eth)), trust scores (eg, [Gitcoin Passport](https://docs.passport.gitcoin.co/building-with-passport/passport-api/overview), [EigenTrust](https://docs.karma3labs.com/eigentrust)), social graphs (eg, [Farcaster](https://docs.farcaster.xyz/), [Lens](https://docs.lens.xyz/docs/public-big-query), NFT communities), onchain transaction patterns (eg, frequency, volume of transactions), etc.
-- **User engagement**. Metrics that evaluate a project's effectiveness in onboarding new users, retaining users, enhancing daily / monthly active users, diversifying onchain activities, etc.
-- **Economic growth**. Metrics that consider a project’s contributions to sequencer fees, blockspace demand, assets remaining on L2s, etc.
+- **User growth**. Metrics that evaluate a project's effectiveness in onboarding new users, retaining users, enhancing daily / monthly active users, diversifying onchain activities, etc.
+- **Network growth**. Metrics that consider a project’s contributions to sequencer fees, blockspace demand, assets remaining on L2s, etc.
 - **Domain-specific performance**: Metrics that are only applicable to a subset of onchain projects in a related domain, such as defi, consumer, NFTs, gaming, etc.
 
 ### Requirements
@@ -72,7 +73,7 @@ Here’s what you need to do to participate in this (and future) data challenges
 
 1. Join the [Kariba Data Collective](https://www.kariba.network/). Participation is open to anyone in the data collective (free to join, but we review applications).
 2. Join our Discord and receive a **_data-collective_** role; ask questions and share code snippets in the **_#data-challenges_** channel.
-3. Bookmark [our docs and tutorials](https://docs.opensource.observer/docs/how-oso-works/impact-metrics/) for creating impact metrics.
+3. Bookmark [our docs and tutorials](https://docs.opensource.observer/docs/how-oso-works/impact-metrics/) for creating impact metrics. Also make sure to browse our [Colab Notebooks](https://drive.google.com/drive/folders/1mzqrSToxPaWhsoGOR-UVldIsaX1gqP0F) for examples and inspiration.
 4. Submit your impact metric(s) by opening an issue on our Insight repo [here](https://github.com/opensource-observer/insights/issues/new/choose).
 
 Every impact metric submission should include:
@@ -91,7 +92,7 @@ A total of **3000 OP** is available as retroactive rewards in the form of L2 tok
 
 The primary way to receive rewards is to submit an impact metric in the form described above. We will reward the contributors who come up with the best metrics with 20-50 OP tokens per metric (capped at 10 metrics per contributor). The actual amount of the reward will be a function of the complexity and utility of the metric. As a guiding principle, we want to incentivize contributors to work on hard but widely applicable metrics. (Basically, we don’t want to see 10 variants of daily active users.)
 
-In addition to direct work on impact metrics, we also have reward budgets for work on collections (defining a group of related projects) and adding/updating project data. We will reward collection creators 10-20 OP per new collection that gets added to oss-directory. We will reward contributors of project data at the rates described in our [bounty program](https://docs.opensource.observer/docs/contribute/challenges/bounties#ongoing-bounties) at an exchange rate of 3.5 USDC per 1 OP. These are capped at 250 OP per contributor.
+In addition to direct work on impact metrics, we also have reward budgets for work on collections (defining a group of related projects) and adding/updating project data. We will reward collection creators 10-20 OP per new collection that gets added to oss-directory. We will reward contributors of project data at the rates described in our [bounty program](https://docs.opensource.observer/docs/contribute/challenges/bounties#ongoing-bounties) at the prevailing OP-USDC dex rate on May 10. These are capped at 250 OP per contributor.
 
 Finally, we have a reward pool for other forms of contribution during the life of the challenge. This could include efforts to onboard or process new datasets, community activation, and improvements to OSO’s underlying infrastructure.
 
