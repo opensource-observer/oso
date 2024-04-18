@@ -64,7 +64,7 @@ runs:
       shell: bash
       # This is for testing for now
       run: |
-        cd ${{ inputs.meltano_path }} && poetry run meltano run ${{ inputs.tap}} ${{ inputs.target }}
+        env && cd ${{ inputs.meltano_path }} && poetry run meltano run ${{ inputs.tap}} ${{ inputs.target }}
       env:
         MELTANO_DATABASE_URI: postgresql+psycopg://${{ inputs.db_user }}:${{ inputs.db_password }}@127.0.0.1:5432/${{ inputs.db_name }}
         MELTANO_STATE_BACKEND_URI: ${{ inputs.meltano_state_backend_uri }}
