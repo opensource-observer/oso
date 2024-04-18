@@ -43,10 +43,11 @@ runs:
       with:
         version: '1.7.1'
 
-    - uses: mattes/gce-cloudsql-proxy-action@v1
-      with:
-        creds: ${{ inputs.google_credentials_path }}
-        instance: ${{ inputs.db_instance_id }}
+    - name: Run cloudsql proxy
+      run: |
+        curl -o cloud-sql-proxy https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.11.0/cloud-sql-proxy.linux.amd64 &&
+        chmod +x cloud-sql-proxy
+        ./cloud-sql-proxy ${{ inputs.db_instance_id }} &
 
     - name: Install poetry deps for meltano
       shell: bash
