@@ -19,6 +19,8 @@ locals {
   readonly_service_account_name = "${var.name}-readonly"
   cloudsql_name                 = "${var.name}-psql"
   cloudsql_db_user              = "${var.name}-admin"
+  metadata_db_name              = "${var.name}-metadata"
+  metadata_db_user              = "${var.name}-metadata-admin"
   dataset_id                    = replace(var.name, "-", "_")
   raw_dataset_id                = replace("${var.name}_raw_sources", "-", "_")
 }
@@ -108,6 +110,11 @@ resource "google_storage_bucket" "dataset_transfer" {
   uniform_bucket_level_access = true
 }
 
+resource "random_password" "metadata_user_temp_password" {
+  length  = 24
+  special = true
+}
+
 ###
 # CloudSQL instance
 ###
@@ -125,6 +132,24 @@ module "warehouse_cloudsql" {
     dw_name = var.name
   }
   ip_configuration = var.cloudsql_ip_configuration
+
+  additional_databases = [
+    {
+      name      = local.metadata_db_name
+      charset   = "UTF8"
+      collation = "en_US.UTF8"
+    },
+  ]
+
+  # At the moment this user needs to be manual configured with permissions to
+  # the metadata database
+  additional_users = [
+    {
+      name            = local.metadata_db_user,
+      password        = random_password.metadata_user_temp_password.result
+      random_password = false
+    }
+  ]
 }
 
 ###
