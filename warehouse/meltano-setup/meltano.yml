@@ -5,14 +5,22 @@ environments:
 - name: dev
 - name: staging
 - name: prod
+# state_backend:
+#   uri: gs://oso-playground-dataset-transfer-bucket/meltano/state.db
 plugins:
   extractors:
-  - name: tap-postgres
+  - name: tap-ecosystems-ost
+    inherit_from: tap-postgres
     variant: airbyte
-    pip_url: git+https://github.com/MeltanoLabs/tap-airbyte-wrapper.git
+    pip_url: git+https://github.com/opensource-observer/tap-airbyte-wrapper.git
     config:
+      nullable_generated_fields:
+        - "*._ab_cdc_deleted_at"
+      airbyte_spec:
+        image: airbyte/source-postgres
+        tag: 3.3.26
       airbyte_config:
-        jdbc_url_params: "replication=postgres"
+        jdbc_url_params: replication=postgres
         ssl_mode:
           mode: disable
         schemas:
@@ -20,15 +28,48 @@ plugins:
         replication_method:
           plugin: pgoutput
           method: CDC
-          publication: publication_name
+          publication: oso_publication
           replication_slot: oso_slot
-          initial_waiting_seconds: 5
+          initial_waiting_seconds: 10
     select:
-    - test_table.id
-    - test_table.data
-    - test_table.created_at
+    - projects.*
+    - issues.*
+    - collections.*
+    - votes.*
+
+  - name: tap-local-test
+    inherit_from: tap-postgres
+    variant: airbyte
+    pip_url: git+https://github.com/opensource-observer/tap-airbyte-wrapper.git
+    config:
+      nullable_generated_fields:
+        - "*._ab_cdc_deleted_at"
+      airbyte_spec:
+        image: airbyte/source-postgres
+        tag: 3.3.26
+      airbyte_config:
+        jdbc_url_params: replication=postgres
+        ssl_mode:
+          mode: disable
+        schemas:
+        - public
+        replication_method:
+          plugin: pgoutput
+          method: CDC
+          publication: oso_publication
+          replication_slot: oso_replication_slot
+          initial_waiting_seconds: 10
+    select:
+    - foo.*
+    - bar.*
 
   loaders:
-  - name: target-jsonl
-    variant: andyh1203
-    pip_url: target-jsonl
+  - name: target-bigquery
+    variant: z3z1ma
+    pip_url: git+https://github.com/z3z1ma/target-bigquery.git
+    config:
+      denormalized: true
+      method: gcs_stage
+
+elt:
+  buffer_size: 1073741824

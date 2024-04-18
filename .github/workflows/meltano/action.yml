@@ -1,0 +1,38 @@
+# Generic worker executor. This is callable for use with cron scheduling.
+
+# Execute the worker for a specific group
+name: warehouse-meltano-sync
+
+inputs:
+  tap:
+    description: The name of the tap
+    required: true
+  target:
+    description: The name of the target
+    required: true
+  meltano_path:
+    description: The path to meltano
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.10.13' 
+  
+    - uses: snok/install-poetry@v1
+      with:
+        version: '1.7.1'
+    - name: Install poetry deps for meltano
+      shell: bash
+      run: |
+        cd ${{ inputs.meltano_path }} && poetry install && meltano install
+
+    - name: Run tap:${{ inputs.tap }} into target:${{ inputs.target }}
+      shell: bash
+      # This is for testing for now
+      run: |
+        env
+      
+    
