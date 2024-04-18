@@ -27,7 +27,7 @@ runs:
     - name: Install poetry deps for meltano
       shell: bash
       run: |
-        cd ${{ inputs.meltano_path }} && poetry install && meltano install
+        cd ${{ inputs.meltano_path }} && poetry install && poetry run meltano install
 
     - name: Run tap:${{ inputs.tap }} into target:${{ inputs.target }}
       shell: bash
