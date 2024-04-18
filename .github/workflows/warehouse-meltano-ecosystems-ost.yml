@@ -39,6 +39,7 @@ jobs:
         with:
           tap: tap-ecosystems-ost
           target: target-bigquery
+          meltano_path: warehouse/meltano-setup
         env:
           TARGET_BIGQUERY_CREDENTIALS_PATH: ${{ env.GOOGLE_APPLICATION_CREDENTIALS }}
           TARGET_BIGQUERY_BUCKET: oso-dataset-transfer-bucket
