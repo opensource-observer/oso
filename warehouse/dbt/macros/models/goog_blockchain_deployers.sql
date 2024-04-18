@@ -19,6 +19,7 @@ SELECT
 FROM {{ oso_source(network_name, "receipts") }}
 WHERE
   to_address IS null
+  AND `status` = 1
   {% if is_incremental() %}
   AND block_timestamp >= (
     SELECT * FROM max_block_timestamp
