@@ -20,7 +20,7 @@ WITH user_data AS (
 
 SELECT
   e.from_id,
-  e.namespace,
+  u.namespace,
   e.project_id,
   e.bucket_month,
   CASE
