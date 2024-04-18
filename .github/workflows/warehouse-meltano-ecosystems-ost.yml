@@ -48,4 +48,4 @@ jobs:
         env:
           TARGET_BIGQUERY_CREDENTIALS_PATH: ${{ env.GOOGLE_APPLICATION_CREDENTIALS }}
           TARGET_BIGQUERY_BUCKET: oso-dataset-transfer-bucket
-          TARGET_BIGQUERY_DATASET: ecosystems-ost
+          TARGET_BIGQUERY_DATASET: ecosystems_ost
