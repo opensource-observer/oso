@@ -44,6 +44,7 @@ runs:
         version: '1.7.1'
 
     - name: Run cloudsql proxy
+      shell: bash
       run: |
         curl -o cloud-sql-proxy https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.11.0/cloud-sql-proxy.linux.amd64 &&
         chmod +x cloud-sql-proxy
