@@ -43,6 +43,11 @@ runs:
       with:
         version: '1.7.1'
 
+    - name: Runner temp
+      shell: bash
+      run: |
+        mkdir -p ${{ runner.temp }}/meltano-tmp
+
     - name: Run cloudsql proxy
       shell: bash
       run: |
@@ -63,4 +68,5 @@ runs:
       env:
         MELTANO_DATABASE_URI: postgresql+psycopg://${{ inputs.db_user }}:${{ inputs.db_password }}@127.0.0.1:5432/${{ inputs.db_name }}
         MELTANO_STATE_BACKEND_URI: ${{ inputs.meltano_state_backend_uri }}
+        TMPDIR: ${{ runner.temp }}/meltano-tmp
       
