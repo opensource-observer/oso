@@ -13,6 +13,24 @@ inputs:
   meltano_path:
     description: The path to meltano
     required: true
+  meltano_state_backend_uri:
+    description: The state backend uri for meltano
+    required: true
+  google_credentials_path:
+    description: The path to the application secrets
+    required: true
+  db_instance_id:
+    description: DB instance Id
+    required: true
+  db_user:
+    description: DB password
+    required: true
+  db_name:
+    description: DB password
+    required: true
+  db_password:
+    description: DB password
+    required: true
 
 runs:
   using: "composite"
@@ -24,6 +42,12 @@ runs:
     - uses: snok/install-poetry@v1
       with:
         version: '1.7.1'
+
+    - uses: mattes/gce-cloudsql-proxy-action@v1
+      with:
+        creds: ${{ inputs.google_credentials_path }}
+        instance: ${{ inputs.db_instance_id }}
+
     - name: Install poetry deps for meltano
       shell: bash
       run: |
@@ -33,6 +57,8 @@ runs:
       shell: bash
       # This is for testing for now
       run: |
-        env
+        cd ${{ inputs.meltano_path }} && poetry install && poetry run meltano run ${{ inputs.tap}} ${{ inputs.target }}
+      env:
+        MELTANO_DATABASE_URI: postgresql+psycopg://${{ inputs.db_user }}:${{ inputs.db_password }}@127.0.0.1:5432/${{ inputs.db_name }}
+        MELTANO_STATE_BACKEND_URI: ${{ inputs.meltano_state_backend_uri }}
       
-    
