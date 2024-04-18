@@ -8,7 +8,7 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.10,<3.13"
-meltano = "^3.3.2"
+meltano = {extras = ["gcs"], version = "^3.3.2"}
 psycopg = "^3.1.18"
 
 

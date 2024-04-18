@@ -1,0 +1,46 @@
+# This is a test meltano pipeline
+name: meltano-ecosystem-ost
+env:
+  X_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  TAP_ECOSYSTEMS_OST_AIRBYTE_CONFIG_PASSWORD: ${{ secrets.TAP_ECOSYSTEMS_OST_AIRBYTE_CONFIG_PASSWORD }}
+  TAP_ECOSYSTEMS_OST_AIRBYTE_CONFIG_HOST: ${{ secrets.TAP_ECOSYSTEMS_OST_AIRBYTE_CONFIG_HOST }}
+  TAP_ECOSYSTEMS_OST_AIRBYTE_CONFIG_DATABASE: ${{ secrets.TAP_ECOSYSTEMS_OST_AIRBYTE_CONFIG_DATABASE }}
+  TAP_ECOSYSTEMS_OST_AIRBYTE_CONFIG_PORT: ${{ secrets.TAP_ECOSYSTEMS_OST_AIRBYTE_CONFIG_PORT }}
+  TAP_ECOSYSTEMS_OST_AIRBYTE_CONFIG_USERNAME: ${{ secrets.TAP_ECOSYSTEMS_OST_AIRBYTE_CONFIG_USERNAME }}
+  MELTANO_STATE_BACKEND_URI: ${{ secrets.MELTANO_STATE_BACKEND_URI }}
+
+on:
+  workflow_dispatch:
+
+jobs:
+  meltano-ecosystem-ost:
+    name: meltano-ecosystem-ost
+    environment: indexer
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 1
+
+      - uses: 'google-github-actions/auth@v2'
+        with:
+          credentials_json: '${{ secrets.GOOGLE_CREDENTIALS_JSON }}'
+          create_credentials_file: true
+
+      - name: Run meltano
+        uses: ./.github/workflows/meltano
+        with:
+          tap: tap-ecosystems-ost
+          target: target-bigquery
+        env:
+          TARGET_BIGQUERY_CREDENTIALS_PATH: ${{ env.GOOGLE_APPLICATION_CREDENTIALS }}
+          TARGET_BIGQUERY_BUCKET: oso-dataset-transfer-bucket
+          TARGET_BIGQUERY_PROJECT: opensource-observer
+          TARGET_BIGQUERY_DATASET: ecosystems-ost
