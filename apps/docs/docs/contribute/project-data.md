@@ -21,6 +21,7 @@ Add or update project data by making a pull request to [OSS Directory](https://g
 2. Locate or create a new project `.yaml` file under `./data/projects/`.
 3. Link artifacts (ie, GitHubs, npm packages, blockchain addresses) in the project `.yaml` file.
 4. Submit a pull request from your fork back to [OSS Directory](https://github.com/opensource-observer/oss-directory).
+5. Once your pull request is approved, you can monitor how much of your project data has been indexed by querying the `event_indexing_status_by_project` through [our API](https://cloud.hasura.io/public/graphiql?endpoint=https://opensource-observer.hasura.app/v1/graphql).
 
 ## Detailed Steps
 
@@ -128,6 +129,14 @@ Some projects may own a lot of blockchain addresses. The most important addresse
 :::tip
 If you run into issues, check out [GitHub's instructions](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request-from-a-fork) for creating a pull request from a fork.
 :::
+
+### 5. Monitor indexing status of your project data
+
+Once your pull request is merged, you can monitor how much of your project data has been indexed by querying [our API](https://cloud.hasura.io/public/graphiql?endpoint=https://opensource-observer.hasura.app/v1/graphql).
+
+The `event_indexing_status_by_project` query takes a `project_slug` as an argument and returns the first, last, and total number of event days indexed for the project for each event type and event data provider.
+
+Note that our indexer currently runs every 24 hours at 02:00 UTC. Therefore, it may take up to 24 hours for your project data to be fully indexed. Backfills are run periodically to ensure that all data is indexed. If you don't see any historic event data for your project, than the most likely reason is that the backfill has not yet been run.
 
 ## Bulk Updates
 
