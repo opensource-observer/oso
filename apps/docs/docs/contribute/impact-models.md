@@ -31,9 +31,9 @@ It assumes a basic understanding of SQL and the command line.
 
 Before you begin you'll need the following on your system:
 
-- Python 3.11 or higher (see [here](https://www.python.org/downloads/) if you
+- Python >=3.11 (see [here](https://www.python.org/downloads/) if you
   don't have it installed)
-- Python Poetry (see [here](https://pypi.org/project/poetry/) to install it)
+- Python Poetry >= 1.8 (see [here](https://pypi.org/project/poetry/) to install it)
 - git (see [here](https://github.com/git-guides/install-git) if you don't have it installed)
 - A GitHub account (see [here](https://github.com/join) to open a new account)
 - BigQuery access (see [here](../get-started/#login-to-bigquery) if you don't have it setup already)
@@ -81,6 +81,16 @@ oso_playground dataset). Simply run:
 ```bash
 poetry install && poetry run oso_lets_go
 ```
+
+:::tip
+Under the hood, `oso_lets_go` will create a GCP project
+and BigQuery dataset if they don't already exist,
+and copy a small subset of the OSO data for you to develop against.
+It will also create a dbt profile to connect to this dataset
+(stored in `~/.dbt/profiles.yml`).
+The script is idempotent, so you can safely run it again
+if you encounter any issues.
+:::
 
 Once this is completed, you'll have a full "playground" of your own.
 
