@@ -119,7 +119,7 @@ metrics AS (
     n.* EXCEPT (project_id, network)
   FROM
     contracts AS c
-  RIGHT JOIN
+  INNER JOIN
     txns AS t
     ON c.project_id = t.project_id AND c.network = t.network
   LEFT JOIN
