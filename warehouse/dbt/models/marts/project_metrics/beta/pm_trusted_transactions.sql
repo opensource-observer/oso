@@ -18,7 +18,7 @@ FROM {{ ref('int_events_to_project') }} AS e
 CROSS JOIN {{ ref('time_ranges') }} AS tr
 WHERE
   DATE(e.time) >= tr.start_date
-  AND from_id IN (
+  AND e.from_id IN (
     SELECT user_id
     FROM {{ ref('users') }}
     WHERE is_trusted = TRUE
