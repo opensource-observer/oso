@@ -12,6 +12,9 @@ env:
 
 on:
   workflow_dispatch:
+  schedule:
+    # Run every 30 mins
+    - cron: '*/30 * * * *'
 
 jobs:
   meltano-ecosystem-ost:
