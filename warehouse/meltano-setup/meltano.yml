@@ -15,7 +15,7 @@ plugins:
     pip_url: git+https://github.com/opensource-observer/tap-airbyte-wrapper.git
     config:
       nullable_generated_fields:
-        - "*._ab_cdc_deleted_at"
+      - '*._ab_cdc_deleted_at'
       airbyte_spec:
         image: airbyte/source-postgres
         tag: 3.3.26
@@ -31,6 +31,7 @@ plugins:
           publication: oso_publication
           replication_slot: oso_slot
           initial_waiting_seconds: 10
+      force_docker_as_current_user: true
     select:
     - projects.*
     - issues.*
@@ -43,7 +44,7 @@ plugins:
     pip_url: git+https://github.com/opensource-observer/tap-airbyte-wrapper.git
     config:
       nullable_generated_fields:
-        - "*._ab_cdc_deleted_at"
+      - '*._ab_cdc_deleted_at'
       airbyte_spec:
         image: airbyte/source-postgres
         tag: 3.3.26

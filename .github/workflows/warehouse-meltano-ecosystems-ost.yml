@@ -8,7 +8,7 @@ env:
   TAP_ECOSYSTEMS_OST_AIRBYTE_CONFIG_DATABASE: ${{ secrets.TAP_ECOSYSTEMS_OST_AIRBYTE_CONFIG_DATABASE }}
   TAP_ECOSYSTEMS_OST_AIRBYTE_CONFIG_PORT: ${{ secrets.TAP_ECOSYSTEMS_OST_AIRBYTE_CONFIG_PORT }}
   TAP_ECOSYSTEMS_OST_AIRBYTE_CONFIG_USERNAME: ${{ secrets.TAP_ECOSYSTEMS_OST_AIRBYTE_CONFIG_USERNAME }}
-  MELTANO_STATE_BACKEND_URI: ${{ secrets.MELTANO_STATE_BACKEND_URI }}
+  TARGET_BIGQUERY_PROJECT: ${{ vars.TARGET_BIGQUERY_PROJECT }}
 
 on:
   workflow_dispatch:
@@ -39,8 +39,13 @@ jobs:
         with:
           tap: tap-ecosystems-ost
           target: target-bigquery
+          meltano_path: warehouse/meltano-setup
+          db_user: ${{ secrets.METADATA_DB_USER }}
+          db_name: ${{ secrets.METADATA_DB_NAME }}
+          db_password: ${{ secrets.METADATA_DB_PASSWORD }}
+          db_instance_id: ${{ secrets.METADATA_DB_INSTANCE_ID }}
+          meltano_state_backend_uri: ${{ secrets.MELTANO_STATE_BACKEND_URI }}
         env:
           TARGET_BIGQUERY_CREDENTIALS_PATH: ${{ env.GOOGLE_APPLICATION_CREDENTIALS }}
           TARGET_BIGQUERY_BUCKET: oso-dataset-transfer-bucket
-          TARGET_BIGQUERY_PROJECT: opensource-observer
-          TARGET_BIGQUERY_DATASET: ecosystems-ost
+          TARGET_BIGQUERY_DATASET: ecosystems_ost
