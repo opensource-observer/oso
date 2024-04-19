@@ -37,6 +37,12 @@ variable "bucket_rw_principals" {
   default     = []
 }
 
+variable "additional_bucket_rw_service_account_names" {
+  type        = list(string)
+  description = "List of names to use for new service accounts with rw access"
+  default     = []
+}
+
 variable "cloudsql_db_name" {
   type        = string
   default     = "postgres"

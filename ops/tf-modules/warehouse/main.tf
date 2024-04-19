@@ -41,6 +41,16 @@ resource "google_service_account" "warehouse_readonly" {
   display_name = "Read only service account for ${var.name}"
 }
 
+###
+# Additional bucket_rw users that are managed by this terraform module
+###
+resource "google_service_account" "managed_bucket_rw_user" {
+  for_each = toset(var.additional_bucket_rw_service_account_names)
+
+  account_id   = each.key
+  display_name = "A bucket rw service account ${each.key}"
+}
+
 
 ###
 # BigQuery Dataset
@@ -176,6 +186,20 @@ resource "google_storage_bucket_iam_member" "bucket_rw_write" {
   bucket   = google_storage_bucket.dataset_transfer.name
   role     = "roles/storage.objectCreator"
   member   = each.key
+}
+
+resource "google_storage_bucket_iam_member" "managed_bucket_rw_read" {
+  for_each = toset(var.additional_bucket_rw_service_account_names)
+  bucket   = google_storage_bucket.dataset_transfer.name
+  role     = "roles/storage.objectViewer"
+  member   = "serviceAccount:${google_service_account.managed_bucket_rw_user[each.key].email}"
+}
+
+resource "google_storage_bucket_iam_member" "managed_bucket_rw_write" {
+  for_each = toset(var.additional_bucket_rw_service_account_names)
+  bucket   = google_storage_bucket.dataset_transfer.name
+  role     = "roles/storage.objectCreator"
+  member   = "serviceAccount:${google_service_account.managed_bucket_rw_user[each.key].email}"
 }
 
 ###
