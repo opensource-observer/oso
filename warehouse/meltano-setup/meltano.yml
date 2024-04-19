@@ -31,6 +31,7 @@ plugins:
           publication: oso_publication
           replication_slot: oso_slot
           initial_waiting_seconds: 10
+      ignore_cleanup_errors: true
     select:
     - projects.*
     - issues.*
