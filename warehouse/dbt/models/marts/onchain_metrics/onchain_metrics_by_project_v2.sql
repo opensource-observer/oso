@@ -107,6 +107,9 @@ new_users AS (
     COUNT(DISTINCT from_id) AS active_users
   FROM
     {{ ref('new_users_monthly_to_project') }}
+  WHERE
+    DATE(bucket_month)
+    >= DATE_SUB(DATE_TRUNC(CURRENT_DATE(), MONTH), INTERVAL 3 MONTH)
   GROUP BY
     1, 2
 ),
