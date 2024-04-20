@@ -15,7 +15,7 @@ project_owners AS (
     project_id,
     count_github_owners,
     LOWER(owner) AS primary_github_owner
-    --TODO: is_git_organization
+  {# TODO: is_git_organization #}
   FROM ranked_repos
   WHERE row_number = 1
 )
@@ -23,7 +23,7 @@ project_owners AS (
 SELECT
   p.id AS project_id,
   p.slug AS project_slug,
-  -- description AS project_description,
+  {# TODO: description AS project_description #}
   p.name AS project_name,
   p.namespace AS namespace,
   po.primary_github_owner,
