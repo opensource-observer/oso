@@ -6,10 +6,10 @@ SELECT
   from_id,
   from_namespace AS repository_source,
   project_id,
-  MIN(time) AS date_first_contribution,
-  MAX(time) AS date_last_contribution,
+  MIN(bucket_day) AS date_first_contribution,
+  MAX(bucket_day) AS date_last_contribution,
   SUM(amount) AS count_events
-FROM {{ ref('int_events_to_project') }}
+FROM {{ ref('int_user_events_daily_to_project') }}
 WHERE
   event_type IN (
     'COMMIT_CODE',

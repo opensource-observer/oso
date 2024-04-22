@@ -9,13 +9,13 @@ SELECT
   from_namespace,
   collection_id,
   event_type,
-  TIMESTAMP_TRUNC(time, MONTH) AS bucket_month,
-  COUNT(DISTINCT TIMESTAMP_TRUNC(time, DAY)) AS count_days,
+  TIMESTAMP_TRUNC(bucket_day, MONTH) AS bucket_month,
+  COUNT(DISTINCT bucket_day) AS count_days,
   SUM(amount) AS total_amount
-FROM {{ ref('int_events_to_collection') }}
+FROM {{ ref('int_user_events_daily_to_collection') }}
 GROUP BY
   from_id,
   from_namespace,
   collection_id,
   event_type,
-  TIMESTAMP_TRUNC(time, MONTH)
+  TIMESTAMP_TRUNC(bucket_day, MONTH)
