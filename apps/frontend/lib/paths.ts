@@ -39,6 +39,8 @@ const pathToTypeEnum = (typePath: string) => {
   switch (typePath) {
     case "eoa":
       return "EOA_ADDRESS";
+    case "repo":
+      return "GIT_REPOSITORY";
     default:
       return null;
   }
