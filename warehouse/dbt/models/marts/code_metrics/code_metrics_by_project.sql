@@ -22,7 +22,6 @@
   }) 
 }}
 
--- CTE for aggregating repo data for each project
 WITH project_repos_summary AS (
   SELECT
     project_id,
@@ -43,105 +42,99 @@ WITH project_repos_summary AS (
     repository_source
 ),
 
--- CTE for calculating contributor counts and new contributors in the last 6 
--- months
-devs_cte AS (
+n_cte AS (
   SELECT
     project_id,
     namespace AS repository_source,
-    SUM(amount) / 6 AS contributors_6_months,
-    SUM(
-      CASE
-        WHEN CONTAINS_SUBSTR(impact_metric, 'FULL_TIME_DEV') THEN amount / 6
-        ELSE 0
-      END
-    ) AS avg_fulltime_devs_6_months,
-    SUM(
-      CASE
-        WHEN CONTAINS_SUBSTR(impact_metric, 'DEV') THEN amount / 6
-        ELSE 0
-      END
-    ) AS avg_active_devs_6_months
-  FROM {{ ref('pm_dev_months') }}
-  WHERE CONTAINS_SUBSTR(impact_metric, '_6M')
-  GROUP BY
+    CASE WHEN time_interval = 'ALL' THEN amount END AS contributors,
+    CASE WHEN time_interval = '6M' THEN amount END AS new_contributors_6_months
+  FROM {{ ref('pm_new_contribs') }}
+),
+
+c_cte AS (
+  SELECT
     project_id,
-    namespace
+    namespace AS repository_source,
+    amount AS contributors_6_months
+  FROM {{ ref('pm_contributors') }}
+  WHERE time_interval = '6M'
+),
+
+d_cte AS (
+  SELECT
+    project_id,
+    namespace AS repository_source,
+    CASE
+      WHEN impact_metric = 'FULL_TIME_DEV_TOTAL' THEN amount / 6 END
+      AS avg_fts_6_months,
+    CASE
+      WHEN impact_metric = 'PART_TIME_DEV_TOTAL' THEN amount / 6 END
+      AS avg_pts_6_months
+  FROM {{ ref('pm_dev_months') }}
+  WHERE time_interval = '6M'
 ),
 
 contribs_cte AS (
   SELECT
-    project_id,
-    namespace AS repository_source,
-    SUM(
-      CASE
-        WHEN CONTAINS_SUBSTR(impact_metric, '_ALL') THEN amount
-        ELSE 0
-      END
-    ) AS contributors,
-    SUM(
-      CASE
-        WHEN CONTAINS_SUBSTR(impact_metric, '_6M') THEN amount
-        ELSE 0
-      END
-    ) AS new_contributors_6_months
-  FROM {{ ref('pm_new_contribs') }}
-  GROUP BY
-    project_id,
-    namespace
+    n.project_id,
+    n.repository_source,
+    n.contributors,
+    n.new_contributors_6_months,
+    c.contributors_6_months,
+    d.avg_fts_6_months AS avg_fulltime_devs_6_months,
+    d.avg_fts_6_months + d.avg_pts_6_months AS avg_active_devs_6_months
+  FROM n_cte AS n
+  LEFT JOIN c_cte AS c
+    ON
+      n.project_id = c.project_id
+      AND n.repository_source = c.repository_source
+  LEFT JOIN d_cte AS d
+    ON
+      n.project_id = d.project_id
+      AND n.repository_source = d.repository_source
 ),
 
--- CTE for summarizing project activity metrics over the past 6 months
 activity_cte AS (
   SELECT
     project_id,
-    to_namespace AS repository_source,
-    SUM(CASE WHEN event_type = 'COMMIT_CODE' THEN amount END)
+    namespace AS repository_source,
+    CASE
+      WHEN impact_metric = 'COMMIT_CODE_TOTAL' THEN amount END
       AS commits_6_months,
-    SUM(CASE WHEN event_type = 'ISSUE_OPENED' THEN amount END)
+    CASE
+      WHEN impact_metric = 'ISSUE_OPENED_TOTAL' THEN amount END
       AS issues_opened_6_months,
-    SUM(CASE WHEN event_type = 'ISSUE_CLOSED' THEN amount END)
+    CASE
+      WHEN impact_metric = 'ISSUE_CLOSED_TOTAL' THEN amount END
       AS issues_closed_6_months,
-    SUM(CASE WHEN event_type = 'PULL_REQUEST_OPENED' THEN amount END)
+    CASE WHEN impact_metric = 'PULL_REQUEST_OPENED_TOTAL' THEN amount END
       AS pull_requests_opened_6_months,
-    SUM(CASE WHEN event_type = 'PULL_REQUEST_MERGED' THEN amount END)
+    CASE
+      WHEN impact_metric = 'PULL_REQUEST_MERGED_TOTAL' THEN amount END
       AS pull_requests_merged_6_months
-  FROM {{ ref('int_events_to_project') }}
-  WHERE DATE(time) >= DATE_ADD(CURRENT_DATE(), INTERVAL -180 DAY)
-  GROUP BY project_id, repository_source
+  FROM {{ ref('event_totals_by_project') }}
+  WHERE
+    time_interval = '6M'
+    AND impact_metric IN (
+      'COMMIT_CODE_TOTAL',
+      'ISSUE_OPENED_TOTAL',
+      'ISSUE_CLOSED_TOTAL',
+      'PULL_REQUEST_OPENED',
+      'PULL_REQUEST_MERGED'
+    )
 )
 
--- Final query to join all the metrics together
+
 SELECT
-  p.project_id,
-  p.project_slug,
-  p.project_name,
-  p.repository_source AS `source`,
-  p.first_commit_date,
-  p.last_commit_date,
-  p.repositories,
-  p.stars,
-  p.forks,
-  c.contributors,
-  c.new_contributors_6_months,
-  d.contributors_6_months,
-  d.avg_fulltime_devs_6_months,
-  d.avg_active_devs_6_months,
-  act.commits_6_months,
-  act.issues_opened_6_months,
-  act.issues_closed_6_months,
-  act.pull_requests_opened_6_months,
-  act.pull_requests_merged_6_months
+  p.*,
+  c.* EXCEPT (project_id, repository_source),
+  a.* EXCEPT (project_id, repository_source)
 FROM project_repos_summary AS p
-LEFT JOIN devs_cte AS d
-  ON
-    p.project_id = d.project_id
-    AND p.repository_source = d.repository_source
 LEFT JOIN contribs_cte AS c
   ON
     p.project_id = c.project_id
     AND p.repository_source = c.repository_source
-LEFT JOIN activity_cte AS act
+LEFT JOIN activity_cte AS a
   ON
-    p.project_id = act.project_id
-    AND p.repository_source = act.repository_source
+    p.project_id = a.project_id
+    AND p.repository_source = a.repository_source

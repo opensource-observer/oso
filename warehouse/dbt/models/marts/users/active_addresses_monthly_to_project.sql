@@ -39,4 +39,4 @@ GROUP BY
   project_id,
   network,
   bucket_month,
-  user_type
+  is_new_user
