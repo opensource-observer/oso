@@ -7,43 +7,84 @@
 WITH txns AS (
   SELECT
     project_id,
+    namespace AS network,
+    CASE
+      WHEN
+        impact_metric = 'CONTRACT_INVOCATION_DAILY_COUNT_TOTAL'
+        AND time_interval = 'ALL'
+        THEN amount
+    END AS total_txns,
+    CASE
+      WHEN
+        impact_metric = 'CONTRACT_INVOCATION_DAILY_L2_GAS_USED_TOTAL'
+        AND time_interval = 'ALL'
+        THEN amount
+    END AS total_l2_gas,
+    CASE
+      WHEN
+        impact_metric = 'CONTRACT_INVOCATION_DAILY_COUNT_TOTAL'
+        AND time_interval = '6M'
+        THEN amount
+    END AS txns_6_months,
+    CASE
+      WHEN
+        impact_metric = 'CONTRACT_INVOCATION_DAILY_L2_GAS_USED_TOTAL'
+        AND time_interval = '6M'
+        THEN amount
+    END AS l2_gas_6_months
+  FROM {{ ref('event_totals_by_project') }}
+),
+
+addresses AS (
+  SELECT
+    project_id,
+    network,
+    CASE
+      WHEN
+        impact_metric = 'NEW_ADDRESSES_TOTAL'
+        AND time_interval = 'ALL'
+        THEN amount
+    END AS total_addresses,
+    CASE
+      WHEN
+        impact_metric = 'NEW_ADDRESSES_TOTAL'
+        AND time_interval = '3M'
+        THEN amount
+    END AS new_addresses,
+    CASE
+      WHEN
+        impact_metric = 'RETURNING_ADDRESSES_TOTAL'
+        AND time_interval = '3M'
+        THEN amount
+    END AS returning_addresses,
+    CASE
+      WHEN
+        impact_metric = 'LOW_ACTIVITY_ADDRESSES_TOTAL'
+        AND time_interval = '3M'
+        THEN amount
+    END AS low_activity_addresses,
+    CASE
+      WHEN
+        impact_metric = 'MED_ACTIVITY_ADDRESSES_TOTAL'
+        AND time_interval = '3M'
+        THEN amount
+    END AS med_activity_addresses,
+    CASE
+      WHEN
+        impact_metric = 'HIGH_ACTIVITY_ADDRESSES_TOTAL'
+        AND time_interval = '3M'
+        THEN amount
+    END AS high_activity_addresses
+  FROM {{ ref('address_totals_by_project') }}
+),
+
+first_txn AS (
+  SELECT
+    project_id,
     from_namespace AS network,
-    MIN(bucket_day) AS first_txn_date,
-    SUM(
-      CASE
-        WHEN event_type = 'CONTRACT_INVOCATION_DAILY_COUNT' THEN amount
-      END
-    ) AS total_txns,
-    SUM(
-      CASE
-        WHEN event_type = 'CONTRACT_INVOCATION_DAILY_L2_GAS_USED' THEN amount
-      END
-    ) AS total_l2_gas,
-    SUM(
-      CASE
-        WHEN
-          event_type = 'CONTRACT_INVOCATION_DAILY_COUNT'
-          AND DATE(bucket_day) >= DATE_SUB(CURRENT_DATE(), INTERVAL 6 MONTH)
-          THEN amount
-      END
-    ) AS txns_6_months,
-    SUM(
-      CASE
-        WHEN
-          event_type = 'CONTRACT_INVOCATION_DAILY_L2_GAS_USED'
-          AND DATE(bucket_day) >= DATE_SUB(CURRENT_DATE(), INTERVAL 6 MONTH)
-          THEN amount
-      END
-    ) AS l2_gas_6_months
-  FROM
-    {{ ref('events_daily_to_project_by_source') }}
-  WHERE
-    event_type IN (
-      'CONTRACT_INVOCATION_DAILY_L2_GAS_USED',
-      'CONTRACT_INVOCATION_DAILY_COUNT'
-    )
-  GROUP BY
-    1, 2
+    MIN(bucket_day) AS date_first_txn
+  FROM {{ ref('int_addresses_daily_activity') }}
+  GROUP BY 1, 2
 ),
 
 contracts AS (
@@ -51,39 +92,15 @@ contracts AS (
     project_id,
     artifact_namespace AS network,
     COUNT(DISTINCT artifact_name) AS num_contracts
-  FROM
-    {{ ref('artifacts_by_project') }}
-  WHERE
-    artifact_type IN ('CONTRACT', 'FACTORY')
-  GROUP BY
-    1, 2
+  FROM {{ ref('artifacts_by_project') }}
+  WHERE artifact_type IN ('CONTRACT', 'FACTORY')
+  GROUP BY 1, 2
 ),
 
-users AS (
+multi_project_addresses AS (
   SELECT
     project_id,
     network,
-    COUNT(DISTINCT from_id) AS total_addresses,
-    COUNT(
-      DISTINCT CASE
-        WHEN rfm_recency >= 2 THEN from_id
-      END
-    ) AS addresses_6_months,
-    COUNT(
-      DISTINCT CASE
-        WHEN rfm_frequency >= 4 THEN from_id
-      END
-    ) AS high_activity_addresses,
-    COUNT(
-      DISTINCT CASE
-        WHEN rfm_frequency >= 2 AND rfm_frequency < 4 THEN from_id
-      END
-    ) AS med_activity_addresses,
-    COUNT(
-      DISTINCT CASE
-        WHEN rfm_frequency < 2 THEN from_id
-      END
-    ) AS low_activity_addresses,
     COUNT(
       DISTINCT CASE
         WHEN rfm_ecosystem > 2 THEN from_id
@@ -95,42 +112,27 @@ users AS (
     1, 2
 ),
 
-new_users AS (
-  SELECT
-    project_id,
-    namespace AS network,
-    COUNT(
-      DISTINCT CASE
-        WHEN user_status = 'new' THEN from_id
-      END
-    ) AS new_users,
-    COUNT(DISTINCT from_id) AS active_users
-  FROM
-    {{ ref('new_users_monthly_to_project') }}
-  WHERE
-    DATE(bucket_month)
-    >= DATE_SUB(DATE_TRUNC(CURRENT_DATE(), MONTH), INTERVAL 3 MONTH)
-  GROUP BY
-    1, 2
-),
-
 metrics AS (
   SELECT
     c.*,
+    f.* EXCEPT (project_id, network),
     t.* EXCEPT (project_id, network),
-    u.* EXCEPT (project_id, network),
-    n.* EXCEPT (project_id, network)
+    a.* EXCEPT (project_id, network),
+    m.* EXCEPT (project_id, network)
   FROM
     contracts AS c
   INNER JOIN
     txns AS t
     ON c.project_id = t.project_id AND c.network = t.network
   LEFT JOIN
-    users AS u
-    ON t.project_id = u.project_id AND t.network = u.network
+    first_txn AS f
+    ON t.project_id = f.project_id AND t.network = f.network
   LEFT JOIN
-    new_users AS n
-    ON t.project_id = n.project_id AND t.network = n.network
+    addresses AS a
+    ON t.project_id = a.project_id AND t.network = a.network
+  LEFT JOIN
+    multi_project_addresses AS m
+    ON t.project_id = m.project_id AND t.network = m.network
 )
 
 SELECT
