@@ -6,6 +6,7 @@
 
 SELECT
   project_id,
+  namespace AS user_namespace,
   project_slug,
   project_name,
   count_github_owners,
