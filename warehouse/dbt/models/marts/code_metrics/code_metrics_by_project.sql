@@ -46,32 +46,46 @@ n_cte AS (
   SELECT
     project_id,
     namespace AS repository_source,
-    CASE WHEN time_interval = 'ALL' THEN amount END AS contributors,
-    CASE WHEN time_interval = '6M' THEN amount END AS new_contributors_6_months
+    SUM(CASE WHEN time_interval = 'ALL' THEN amount END) AS contributors,
+    SUM(CASE WHEN time_interval = '6M' THEN amount END)
+      AS new_contributors_6_months
   FROM {{ ref('pm_new_contribs') }}
+  GROUP BY
+    project_id,
+    namespace
 ),
 
 c_cte AS (
   SELECT
     project_id,
     namespace AS repository_source,
-    amount AS contributors_6_months
+    SUM(amount) AS contributors_6_months
   FROM {{ ref('pm_contributors') }}
   WHERE time_interval = '6M'
+  GROUP BY
+    project_id,
+    namespace
 ),
 
 d_cte AS (
   SELECT
     project_id,
     namespace AS repository_source,
-    CASE
-      WHEN impact_metric = 'FULL_TIME_DEV_TOTAL' THEN amount / 6 END
-      AS avg_fts_6_months,
-    CASE
-      WHEN impact_metric = 'PART_TIME_DEV_TOTAL' THEN amount / 6 END
-      AS avg_pts_6_months
+    SUM(
+      CASE
+        WHEN impact_metric = 'FULL_TIME_DEV_TOTAL' THEN amount / 6
+      END
+    ) AS avg_fts_6_months,
+    SUM(
+      CASE
+        WHEN impact_metric = 'PART_TIME_DEV_TOTAL' THEN amount / 6
+      END
+    ) AS avg_pts_6_months
   FROM {{ ref('pm_dev_months') }}
   WHERE time_interval = '6M'
+  GROUP BY
+    project_id,
+    namespace
 ),
 
 contribs_cte AS (
@@ -98,20 +112,31 @@ activity_cte AS (
   SELECT
     project_id,
     namespace AS repository_source,
-    CASE
-      WHEN impact_metric = 'COMMIT_CODE_TOTAL' THEN amount END
-      AS commits_6_months,
-    CASE
-      WHEN impact_metric = 'ISSUE_OPENED_TOTAL' THEN amount END
-      AS issues_opened_6_months,
-    CASE
-      WHEN impact_metric = 'ISSUE_CLOSED_TOTAL' THEN amount END
-      AS issues_closed_6_months,
-    CASE WHEN impact_metric = 'PULL_REQUEST_OPENED_TOTAL' THEN amount END
-      AS pull_requests_opened_6_months,
-    CASE
-      WHEN impact_metric = 'PULL_REQUEST_MERGED_TOTAL' THEN amount END
-      AS pull_requests_merged_6_months
+    SUM(
+      CASE
+        WHEN impact_metric = 'COMMIT_CODE_TOTAL' THEN amount
+      END
+    ) AS commits_6_months,
+    SUM(
+      CASE
+        WHEN impact_metric = 'ISSUE_OPENED_TOTAL' THEN amount
+      END
+    ) AS issues_opened_6_months,
+    SUM(
+      CASE
+        WHEN impact_metric = 'ISSUE_CLOSED_TOTAL' THEN amount
+      END
+    ) AS issues_closed_6_months,
+    SUM(
+      CASE
+        WHEN impact_metric = 'PULL_REQUEST_OPENED_TOTAL' THEN amount
+      END
+    ) AS pull_requests_opened_6_months,
+    SUM(
+      CASE
+        WHEN impact_metric = 'PULL_REQUEST_MERGED_TOTAL' THEN amount
+      END
+    ) AS pull_requests_merged_6_months
   FROM {{ ref('event_totals_by_project') }}
   WHERE
     time_interval = '6M'
@@ -122,6 +147,9 @@ activity_cte AS (
       'PULL_REQUEST_OPENED',
       'PULL_REQUEST_MERGED'
     )
+  GROUP BY
+    project_id,
+    namespace
 )
 
 
