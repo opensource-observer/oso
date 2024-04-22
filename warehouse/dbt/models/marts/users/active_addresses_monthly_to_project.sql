@@ -22,6 +22,19 @@ activity_monthly AS (
     MAX(is_new_user) AS is_new_user
   FROM activity
   GROUP BY 1, 2, 3, 4
+),
+
+user_classification AS (
+  SELECT
+    project_id,
+    network,
+    bucket_month,
+    from_id,
+    CASE
+      WHEN is_new_user THEN 'NEW'
+      ELSE 'RETURNING'
+    END AS user_type
+  FROM activity_monthly
 )
 
 
@@ -29,14 +42,7 @@ SELECT
   project_id,
   network,
   bucket_month,
-  CASE
-    WHEN is_new_user THEN 'NEW'
-    ELSE 'RETURNING'
-  END AS user_type,
+  user_type,
   COUNT(DISTINCT from_id) AS amount
-FROM activity_monthly
-GROUP BY
-  project_id,
-  network,
-  bucket_month,
-  is_new_user
+FROM user_classification
+GROUP BY 1, 2, 3, 4
