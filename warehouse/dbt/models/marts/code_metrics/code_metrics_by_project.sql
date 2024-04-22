@@ -74,11 +74,13 @@ d_cte AS (
     SUM(
       CASE
         WHEN impact_metric = 'FULL_TIME_DEV_TOTAL' THEN amount / 6
+        ELSE 0
       END
     ) AS avg_fts_6_months,
     SUM(
       CASE
         WHEN impact_metric = 'PART_TIME_DEV_TOTAL' THEN amount / 6
+        ELSE 0
       END
     ) AS avg_pts_6_months
   FROM {{ ref('pm_dev_months') }}
@@ -144,8 +146,8 @@ activity_cte AS (
       'COMMIT_CODE_TOTAL',
       'ISSUE_OPENED_TOTAL',
       'ISSUE_CLOSED_TOTAL',
-      'PULL_REQUEST_OPENED',
-      'PULL_REQUEST_MERGED'
+      'PULL_REQUEST_OPENED_TOTAL',
+      'PULL_REQUEST_MERGED_TOTAL'
     )
   GROUP BY
     project_id,
