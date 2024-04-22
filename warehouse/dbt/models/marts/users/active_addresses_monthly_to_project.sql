@@ -37,7 +37,6 @@ user_classification AS (
   FROM activity_monthly
 )
 
-
 SELECT
   project_id,
   network,
