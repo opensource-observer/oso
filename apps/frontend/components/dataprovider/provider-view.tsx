@@ -19,7 +19,7 @@ type CommonDataProviderProps = {
 
 type DataProviderViewProps = CommonDataProviderProps & {
   formattedData: any;
-  loading: boolean;
+  loading?: boolean;
   error?: Error;
 };
 

@@ -7,6 +7,7 @@ import {
   NextSSRApolloClient,
   SSRMultipartLink,
 } from "@apollo/experimental-nextjs-app-support/ssr";
+import { onError } from "@apollo/client/link/error";
 import { DB_GRAPHQL_URL } from "../../lib/config";
 import { userToken } from "../../lib/clients/supabase";
 
@@ -21,17 +22,30 @@ const useEnsureAuth = () => {
 };
 
 function makeLink() {
+  const token = userToken;
   //console.log(userToken);
   const httpLink = new HttpLink({
     uri: DB_GRAPHQL_URL,
-    headers: userToken
+    headers: token
       ? {
-          Authorization: `Bearer ${userToken}`,
+          Authorization: `Bearer ${token}`,
         }
       : {},
   });
   return httpLink;
 }
+
+const errorLink = onError(({ graphQLErrors, networkError }) => {
+  if (graphQLErrors)
+    graphQLErrors.forEach(({ message, locations, path }) =>
+      console.log(
+        `[GraphQL error]: Message: ${message}, Location: ${locations}, Path: ${path}`,
+      ),
+    );
+  if (networkError) {
+    console.warn(`[Network error]: ${networkError}`);
+  }
+});
 
 function makeClient() {
   const httpLink = makeLink();
@@ -43,6 +57,7 @@ function makeClient() {
             new SSRMultipartLink({
               stripDefer: true,
             }),
+            errorLink,
             httpLink,
           ])
         : httpLink,

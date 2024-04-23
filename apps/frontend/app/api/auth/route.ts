@@ -114,5 +114,6 @@ export async function GET(request: NextRequest) {
   }
 
   // Passes all checks, elevate to developer role
+  console.log(`/api/auth: API key valid => developer`);
   return NextResponse.json(makeDevRole(userId));
 }

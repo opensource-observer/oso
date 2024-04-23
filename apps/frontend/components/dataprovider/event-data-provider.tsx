@@ -1,7 +1,8 @@
-import { useQuery } from "@apollo/experimental-nextjs-app-support/ssr";
+import { useSuspenseQuery } from "@apollo/experimental-nextjs-app-support/ssr";
 import dayjs from "dayjs";
 import _ from "lodash";
-import React from "react";
+import React, { Suspense } from "react";
+import { ErrorBoundary } from "react-error-boundary";
 import { assertNever, ensure, uncheckedCast } from "../../lib/common";
 import {
   GET_ARTIFACTS_BY_IDS,
@@ -336,7 +337,7 @@ const formatData = (
  * @param props
  * @returns
  */
-function ArtifactEventDataProvider(props: EventDataProviderProps) {
+function InnerArtifactEventDataProvider(props: EventDataProviderProps) {
   useEnsureAuth();
   const bucketWidth = getBucketWidth(props);
   const query =
@@ -345,11 +346,7 @@ function ArtifactEventDataProvider(props: EventDataProviderProps) {
       : bucketWidth === "week"
         ? GET_EVENTS_WEEKLY_TO_ARTIFACT
         : GET_EVENTS_DAILY_TO_ARTIFACT;
-  const {
-    data: rawEventData,
-    error: eventError,
-    loading: eventLoading,
-  } = useQuery(query, {
+  const { data: rawEventData, error: eventError } = useSuspenseQuery(query, {
     variables: {
       artifact_ids: props.ids,
       event_types: props.eventTypes ?? [],
@@ -357,15 +354,14 @@ function ArtifactEventDataProvider(props: EventDataProviderProps) {
       end_date: eventTimeToLabel(props.endDate),
     },
   });
-  const {
-    data: artifactData,
-    error: artifactError,
-    loading: artifactLoading,
-  } = useQuery(GET_ARTIFACTS_BY_IDS, {
-    variables: {
-      artifact_ids: props.ids,
+  const { data: artifactData, error: artifactError } = useSuspenseQuery(
+    GET_ARTIFACTS_BY_IDS,
+    {
+      variables: {
+        artifact_ids: props.ids,
+      },
     },
-  });
+  );
   const normalizedEventData: EventData[] = (
     (rawEventData as any)?.events_monthly_to_artifact ??
     (rawEventData as any)?.events_weekly_to_artifact ??
@@ -390,12 +386,11 @@ function ArtifactEventDataProvider(props: EventDataProviderProps) {
   const formattedData = formatData(props, normalizedEventData, entityData, {
     gapFill: bucketWidth === "day",
   });
-  !eventLoading && console.log(props, rawEventData, eventError, formattedData);
+  console.log(props, rawEventData, eventError, formattedData);
   return (
     <DataProviderView
       {...props}
       formattedData={formattedData}
-      loading={eventLoading || artifactLoading}
       error={eventError ?? artifactError}
     />
   );
@@ -406,7 +401,7 @@ function ArtifactEventDataProvider(props: EventDataProviderProps) {
  * @param props
  * @returns
  */
-function ProjectEventDataProvider(props: EventDataProviderProps) {
+function InnerProjectEventDataProvider(props: EventDataProviderProps) {
   useEnsureAuth();
   const bucketWidth = getBucketWidth(props);
   const query =
@@ -415,11 +410,7 @@ function ProjectEventDataProvider(props: EventDataProviderProps) {
       : bucketWidth === "week"
         ? GET_EVENTS_WEEKLY_TO_PROJECT
         : GET_EVENTS_DAILY_TO_PROJECT;
-  const {
-    data: rawEventData,
-    error: eventError,
-    loading: eventLoading,
-  } = useQuery(query, {
+  const { data: rawEventData, error: eventError } = useSuspenseQuery(query, {
     variables: {
       project_ids: props.ids,
       event_types: props.eventTypes ?? [],
@@ -427,13 +418,12 @@ function ProjectEventDataProvider(props: EventDataProviderProps) {
       end_date: eventTimeToLabel(props.endDate),
     },
   });
-  const {
-    data: projectData,
-    error: projectError,
-    loading: projectLoading,
-  } = useQuery(GET_PROJECTS_BY_IDS, {
-    variables: { project_ids: props.ids },
-  });
+  const { data: projectData, error: projectError } = useSuspenseQuery(
+    GET_PROJECTS_BY_IDS,
+    {
+      variables: { project_ids: props.ids },
+    },
+  );
   const normalizedData: EventData[] = (
     (rawEventData as any)?.events_monthly_to_project ??
     (rawEventData as any)?.events_weekly_to_project ??
@@ -455,12 +445,11 @@ function ProjectEventDataProvider(props: EventDataProviderProps) {
   const formattedData = formatData(props, normalizedData, entityData, {
     gapFill: bucketWidth === "day",
   });
-  !eventLoading && console.log(props, rawEventData, eventError, formattedData);
+  console.log(props, rawEventData, eventError, formattedData);
   return (
     <DataProviderView
       {...props}
       formattedData={formattedData}
-      loading={eventLoading || projectLoading}
       error={eventError ?? projectError}
     />
   );
@@ -471,7 +460,7 @@ function ProjectEventDataProvider(props: EventDataProviderProps) {
  * @param props
  * @returns
  */
-function CollectionEventDataProvider(props: EventDataProviderProps) {
+function InnerCollectionEventDataProvider(props: EventDataProviderProps) {
   useEnsureAuth();
   const bucketWidth = getBucketWidth(props);
   const query =
@@ -480,11 +469,7 @@ function CollectionEventDataProvider(props: EventDataProviderProps) {
       : bucketWidth === "week"
         ? GET_EVENTS_WEEKLY_TO_COLLECTION
         : GET_EVENTS_DAILY_TO_COLLECTION;
-  const {
-    data: rawEventData,
-    error: eventError,
-    loading: eventLoading,
-  } = useQuery(query, {
+  const { data: rawEventData, error: eventError } = useSuspenseQuery(query, {
     variables: {
       collection_ids: props.ids,
       event_types: props.eventTypes ?? [],
@@ -492,13 +477,12 @@ function CollectionEventDataProvider(props: EventDataProviderProps) {
       end_date: eventTimeToLabel(props.endDate),
     },
   });
-  const {
-    data: collectionData,
-    error: collectionError,
-    loading: collectionLoading,
-  } = useQuery(GET_COLLECTIONS_BY_IDS, {
-    variables: { collection_ids: props.ids },
-  });
+  const { data: collectionData, error: collectionError } = useSuspenseQuery(
+    GET_COLLECTIONS_BY_IDS,
+    {
+      variables: { collection_ids: props.ids },
+    },
+  );
   const normalizedData: EventData[] = (
     (rawEventData as any)?.events_monthly_to_collection ??
     (rawEventData as any)?.events_weekly_to_collection ??
@@ -523,12 +507,11 @@ function CollectionEventDataProvider(props: EventDataProviderProps) {
   const formattedData = formatData(props, normalizedData, entityData, {
     gapFill: bucketWidth === "day",
   });
-  !eventLoading && console.log(props, rawEventData, eventError, formattedData);
+  console.log(props, rawEventData, eventError, formattedData);
   return (
     <DataProviderView
       {...props}
       formattedData={formattedData}
-      loading={eventLoading || collectionLoading}
       error={eventError ?? collectionError}
     />
   );
@@ -539,27 +522,25 @@ function CollectionEventDataProvider(props: EventDataProviderProps) {
  * @param props
  * @returns
  */
-function ProjectUserDataProvider(props: EventDataProviderProps) {
+function InnerProjectUserDataProvider(props: EventDataProviderProps) {
   useEnsureAuth();
-  const {
-    data: rawEventData,
-    error: eventError,
-    loading: eventLoading,
-  } = useQuery(GET_USERS_MONTHLY_TO_PROJECT, {
-    variables: {
-      project_ids: props.ids,
-      user_segment_types: props.eventTypes ?? [],
-      start_date: eventTimeToLabel(props.startDate ?? DEFAULT_START_DATE),
-      end_date: eventTimeToLabel(props.endDate),
+  const { data: rawEventData, error: eventError } = useSuspenseQuery(
+    GET_USERS_MONTHLY_TO_PROJECT,
+    {
+      variables: {
+        project_ids: props.ids,
+        user_segment_types: props.eventTypes ?? [],
+        start_date: eventTimeToLabel(props.startDate ?? DEFAULT_START_DATE),
+        end_date: eventTimeToLabel(props.endDate),
+      },
     },
-  });
-  const {
-    data: projectData,
-    error: projectError,
-    loading: projectLoading,
-  } = useQuery(GET_PROJECTS_BY_IDS, {
-    variables: { project_ids: props.ids },
-  });
+  );
+  const { data: projectData, error: projectError } = useSuspenseQuery(
+    GET_PROJECTS_BY_IDS,
+    {
+      variables: { project_ids: props.ids },
+    },
+  );
   const normalizedData: EventData[] = (
     rawEventData?.users_monthly_to_project ?? []
   ).map((x: any) => ({
@@ -576,14 +557,53 @@ function ProjectUserDataProvider(props: EventDataProviderProps) {
     name: ensure<string>(x.project_name, "project missing 'project_name'"),
   }));
   const formattedData = formatData(props, normalizedData, entityData);
-  !eventLoading && console.log(props, rawEventData, eventError, formattedData);
+  console.log(props, rawEventData, eventError, formattedData);
   return (
     <DataProviderView
       {...props}
       formattedData={formattedData}
-      loading={eventLoading || projectLoading}
       error={eventError ?? projectError}
     />
+  );
+}
+
+function CollectionEventDataProvider(props: EventDataProviderProps) {
+  return (
+    <ErrorBoundary fallback={<div>{props.errorChildren}</div>}>
+      <Suspense fallback={<div>{props.loadingChildren}</div>}>
+        <InnerCollectionEventDataProvider {...props} />
+      </Suspense>
+    </ErrorBoundary>
+  );
+}
+
+function ProjectEventDataProvider(props: EventDataProviderProps) {
+  return (
+    <ErrorBoundary fallback={<div>{props.errorChildren}</div>}>
+      <Suspense fallback={<div>{props.loadingChildren}</div>}>
+        <InnerProjectEventDataProvider {...props} />
+      </Suspense>
+    </ErrorBoundary>
+  );
+}
+
+function ArtifactEventDataProvider(props: EventDataProviderProps) {
+  return (
+    <ErrorBoundary fallback={<div>{props.errorChildren}</div>}>
+      <Suspense fallback={<div>{props.loadingChildren}</div>}>
+        <InnerArtifactEventDataProvider {...props} />
+      </Suspense>
+    </ErrorBoundary>
+  );
+}
+
+function ProjectUserDataProvider(props: EventDataProviderProps) {
+  return (
+    <ErrorBoundary fallback={<div>{props.errorChildren}</div>}>
+      <Suspense fallback={<div>{props.loadingChildren}</div>}>
+        <InnerProjectUserDataProvider {...props} />
+      </Suspense>
+    </ErrorBoundary>
   );
 }
 
