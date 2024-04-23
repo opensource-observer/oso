@@ -42,38 +42,38 @@ addresses AS (
     network,
     SUM(CASE
       WHEN
-        impact_metric = 'NEW_ADDRESSES_TOTAL'
+        impact_metric = 'NEW_ADDRESSES'
         AND time_interval = 'ALL'
         THEN amount
     END) AS total_addresses,
     SUM(CASE
       WHEN
-        impact_metric = 'NEW_ADDRESSES_TOTAL'
-        AND time_interval = '3M'
+        impact_metric = 'NEW_ADDRESSES'
+        AND time_interval = '90D'
         THEN amount
     END) AS new_addresses,
     SUM(CASE
       WHEN
-        impact_metric = 'RETURNING_ADDRESSES_TOTAL'
-        AND time_interval = '3M'
+        impact_metric = 'RETURNING_ADDRESSES'
+        AND time_interval = '90D'
         THEN amount
     END) AS returning_addresses,
     SUM(CASE
       WHEN
-        impact_metric = 'LOW_ACTIVITY_ADDRESSES_TOTAL'
-        AND time_interval = '3M'
+        impact_metric = 'LOW_ACTIVITY_ADDRESSES'
+        AND time_interval = '90D'
         THEN amount
     END) AS low_activity_addresses,
     SUM(CASE
       WHEN
-        impact_metric = 'MED_ACTIVITY_ADDRESSES_TOTAL'
-        AND time_interval = '3M'
+        impact_metric = 'MEDIUM_ACTIVITY_ADDRESSES'
+        AND time_interval = '90D'
         THEN amount
     END) AS med_activity_addresses,
     SUM(CASE
       WHEN
-        impact_metric = 'HIGH_ACTIVITY_ADDRESSES_TOTAL'
-        AND time_interval = '3M'
+        impact_metric = 'HIGH_ACTIVITY_ADDRESSES'
+        AND time_interval = '90D'
         THEN amount
     END) AS high_activity_addresses
   FROM {{ ref('address_totals_by_project') }}

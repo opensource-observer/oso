@@ -25,16 +25,26 @@ WITH user_history AS (
   FROM {{ ref('int_addresses') }}
 ),
 
-user_stats AS (
+multi_project_addresses AS (
   SELECT
     from_id,
     network,
-    project_id,
-    total_activity,
-    days_since_last_activity,
     COUNT(DISTINCT project_id) AS project_count
   FROM user_history
-  GROUP BY 1, 2, 3, 4, 5
+  GROUP BY 1, 2
+),
+
+user_stats AS (
+  SELECT
+    u.from_id,
+    u.network,
+    u.project_id,
+    u.total_activity,
+    u.days_since_last_activity,
+    mpa.project_count
+  FROM user_history AS u
+  LEFT JOIN multi_project_addresses AS mpa
+    ON u.from_id = mpa.from_id AND u.network = mpa.network
 ),
 
 rfm_components AS (
