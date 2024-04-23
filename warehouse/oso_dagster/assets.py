@@ -1,9 +1,9 @@
 import os
 import re
 import arrow
-import heapq
-import duckdb
-from typing import Any, Mapping, List
+import asyncio
+import concurrent.futures
+from typing import Any, Mapping, List, Optional
 from enum import Enum
 from pathlib import Path
 from google.api_core.exceptions import BadRequest, NotFound
@@ -36,7 +36,14 @@ from dagster_gcp import BigQueryResource, GCSResource
 
 from dagster_dbt import DbtCliResource, dbt_assets, DagsterDbtTranslator
 from .constants import main_dbt_manifest_path
-from .goldsky import GoldskyDuckDB
+from .goldsky import (
+    GoldskyDuckDB,
+    GoldskyQueueItem,
+    GoldskyConfig,
+    GoldskyContext,
+    GoldskyQueue,
+    GoldskyQueues,
+)
 
 
 class Interval(Enum):
@@ -127,103 +134,8 @@ class AssetFactoryResponse:
     jobs: List[JobDefinition]
 
 
-@op
-def what(context: OpExecutionContext):
-    context.log.info("hi i'm in the what")
-
-
-@job
-def boop():
-    what()
-
-
 def parse_interval_prefix(interval: Interval, prefix: str) -> arrow.Arrow:
     return arrow.get(prefix, "YYYYMMDD")
-
-
-class GenericGCSAsset:
-    def clean_up(self):
-        raise NotImplementedError()
-
-    def sync(self):
-        raise NotImplementedError()
-
-
-class GoldskyAsset(GenericGCSAsset):
-    def clean_up(self):
-        pass
-
-
-@dataclass
-class GoldskyConfig:
-    project_id: str
-    bucket_name: str
-    dataset_name: str
-    table_name: str
-    partition_column_name: str
-    size: int
-    bucket_key_id: str
-    bucket_secret: str
-
-
-@dataclass
-class GoldskyContext:
-    bigquery: BigQueryResource
-    gcs: GCSResource
-
-
-@dataclass
-class GoldskyQueueItem:
-    checkpoint: int
-    blob_name: str
-
-    def __lt__(self, other):
-        return self.checkpoint < other.checkpoint
-
-
-class GoldskyQueue:
-    def __init__(self):
-        self.queue = []
-
-    def enqueue(self, item: GoldskyQueueItem):
-        heapq.heappush(self.queue, item)
-
-    def dequeue(self) -> GoldskyQueueItem | None:
-        try:
-            return heapq.heappop(self.queue)
-        except IndexError:
-            return None
-
-    def len(self):
-        return len(self.queue)
-
-
-class GoldskyQueues:
-    def __init__(self):
-        self.queues: Mapping[str, GoldskyQueue] = {}
-
-    def enqueue(self, worker: str, item: GoldskyQueueItem):
-        queue = self.queues.get(worker, GoldskyQueue())
-        queue.enqueue(item)
-        self.queues[worker] = queue
-
-    def dequeue(self, worker: str) -> GoldskyQueueItem | None:
-        queue = self.queues.get(worker, GoldskyQueue())
-        return queue.dequeue()
-
-    def workers(self):
-        return self.queues.keys()
-
-    def status(self):
-        status: Mapping[str, int] = {}
-        for worker, queue in self.queues.items():
-            status[worker] = queue.len()
-        return status
-
-
-class GoldskyWorkerLoader:
-    def __init__(self, worker: str):
-        pass
 
 
 def load_goldsky_worker(
@@ -234,12 +146,17 @@ def load_goldsky_worker(
     gs_duckdb: GoldskyDuckDB,
     worker: str,
     queue: GoldskyQueue,
+    last_checkpoint_from_previous_run: Optional[int] = None,
 ):
+    context.log.info(f"starting the worker for {worker}")
     item = queue.dequeue()
+    if not item:
+        context.log.info(f"nothing to load for worker {worker}")
+        return
     last_checkpoint = item.checkpoint - 1
-    batch_to_load: List[str] = []
-    batches: List[int] = []
+    batch_to_load: List[GoldskyQueueItem] = [item]
     current_batch = 0
+
     while item:
         if item.checkpoint > last_checkpoint:
             if item.checkpoint - 1 != last_checkpoint:
@@ -254,7 +171,10 @@ def load_goldsky_worker(
             context.log.info(f"Processing {item.blob_name}")
         last_checkpoint = item.checkpoint
 
-        batch_to_load.append(queue.dequeue())
+        item = queue.dequeue()
+        if not item:
+            break
+        batch_to_load.append(item)
 
         if len(batch_to_load) > config.size:
             gs_duckdb.load_and_merge(
@@ -262,7 +182,6 @@ def load_goldsky_worker(
                 current_batch,
                 batch_to_load,
             )
-            batches.append(current_batch)
             current_batch += 1
             batch_to_load = []
     if len(batch_to_load) > 0:
@@ -271,83 +190,73 @@ def load_goldsky_worker(
             current_batch,
             batch_to_load,
         )
-        batches.append(current_batch)
         current_batch += 1
         batch_to_load = []
 
-    # Reprocess each of the batches and delete using the deletion tables
-    gs_duckdb.remove_dupes(worker, batches)
-
-    # Load all of the tables into goldsky
+    # Load all of the tables into bigquery
     with gs_context.bigquery.get_client() as client:
-        client.query_and_wait(
-            f"""
-            BEGIN
-                BEGIN TRANSACTION
-                    LOAD DATA OVERWRITE `{config.project_id}.{config.dataset_name}.{config.table_name}_{job_id}`
-                    FROM FILES (
-                        format = "PARQUET",
-                        uris = ["{gs_duckdb.wildcard_deduped_path(worker)}"]
-                    );
-                    
-                    DELETE FROM `{config.project_id}.{config.dataset_name}.{config.table_name}` 
-                    WHERE id IN (
-                        SELECT id FROM `{config.project_id}.{config.dataset_name}.{config.table_name}_{job_id}`
-                    );
-
-                    INSERT INTO `{config.project_id}.{config.dataset_name}.{config.table_name}` 
-                    SELECT * FROM `{config.project_id}.{config.dataset_name}.{config.table_name}_{job_id}`;
-
-                    INSERT INTO `{config.project_id}.{config.dataset_name}.{config.table_name}_pointer_state` (worker, latest_checkpoint)
-                    VALUES ('{worker}', {last_checkpoint})
-                    
-                COMMIT TRANSACTION
-                EXCEPTION WHEN ERROR THEN
-                -- Roll back the transaction inside the exception handler.
-                SELECT @@error.message;
-                ROLLBACK TRANSACTION;
-            END
-        """
+        dest_table_ref = client.get_dataset(config.dataset_name).table(
+            f"{config.table_name}_{worker}"
         )
-
-
-def goldsky_into_worker_table(
-    context: AssetExecutionContext,
-    project_id: str,
-    bucket_name: str,
-    dataset_name: str,
-    table_name: str,
-    partition_column_name: str,
-    bigquery: BigQueryResource,
-    worker: str,
-    table_ref_to_merge: TableReference,
-):
-    with bigquery.get_client() as bq_client:
-        worker_table_name = f"{table_name}_worker_{worker}_checkpoint_premerge"
-        worker_table = f"{project_id}.{dataset_name}.{worker_table_name}"
+        new = last_checkpoint_from_previous_run is None
         try:
-            bq_client.get_table(worker_table)
+            client.get_table(dest_table_ref)
         except NotFound as exc:
-            if worker_table_name in exc.message:
-                # The table doesn't exist so we need to copy
-                job = bq_client.query(
-                    f"""
-                SELECT * 
-                FROM `{table_ref_to_merge.project}`.`{table_ref_to_merge.dataset_id}`.`{table_ref_to_merge.table_id}`
-                """,
-                    job_config=QueryJobConfig(
-                        range_partitioning=RangePartitioning(
-                            PartitionRange(
-                                0,
-                                1_200_000_000,
-                                250_000,
-                            )
-                        )
-                    ),
-                )
-                pass
-            else:
+            if last_checkpoint_from_previous_run is not None:
                 raise exc
+            new = True
+
+        if not new:
+            context.log.info("Merging into worker table")
+            client.query_and_wait(
+                f"""
+                LOAD DATA OVERWRITE `{config.project_id}.{config.dataset_name}.{config.table_name}_{worker}_{job_id}`
+                FROM FILES (
+                    format = "PARQUET",
+                    uris = ["{gs_duckdb.wildcard_path(worker)}"]
+                );
+            """
+            )
+            tx_query = f"""
+                BEGIN
+                    BEGIN TRANSACTION; 
+                        INSERT INTO `{config.project_id}.{config.dataset_name}.{config.table_name}_{worker}` 
+                        SELECT * FROM `{config.project_id}.{config.dataset_name}.{config.table_name}_{worker}_{job_id}`;
+
+                        INSERT INTO `{config.project_id}.{config.dataset_name}.{config.table_name}_pointer_state` (worker, last_checkpoint)
+                        VALUES ('{worker}', {last_checkpoint}); 
+                    COMMIT TRANSACTION;
+                    EXCEPTION WHEN ERROR THEN
+                    -- Roll back the transaction inside the exception handler.
+                    SELECT @@error.message;
+                    ROLLBACK TRANSACTION;
+                END;
+            """
+            context.log.debug(f"query: {tx_query}")
+            client.query_and_wait(tx_query)
+            client.query_and_wait(
+                f"""
+                DROP TABLE `{config.project_id}.{config.dataset_name}.{config.table_name}_{worker}_{job_id}`;
+            """
+            )
+        else:
+            context.log.info("Creating new worker table")
+            query1 = f"""
+                LOAD DATA OVERWRITE `{config.project_id}.{config.dataset_name}.{config.table_name}_{worker}`
+                FROM FILES (
+                    format = "PARQUET",
+                    uris = ["{gs_duckdb.wildcard_path(worker)}"]
+                );
+            """
+            context.log.debug(f"query: {query1}")
+            client.query_and_wait(query1)
+            rows = client.query_and_wait(
+                f"""
+                INSERT INTO `{config.project_id}.{config.dataset_name}.{config.table_name}_pointer_state` (worker, last_checkpoint)
+                VALUES ('{worker}', {last_checkpoint});
+            """
+            )
+            context.log.info(rows)
 
 
 def load_goldsky_queue_item(
@@ -376,21 +285,50 @@ def load_goldsky_queue_item(
         )
 
 
-@asset
-def testing_goldsky(
+@asset(key="optimism_traces")
+async def testing_goldsky(
     context: AssetExecutionContext, bigquery: BigQueryResource, gcs: GCSResource
 ) -> MaterializeResult:
     goldsky_re = re.compile(
         os.path.join("goldsky", "optimism-traces")
         + r"/(?P<job_id>\d+-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})-(?P<worker>\d+)-(?P<checkpoint>\d+).parquet"
     )
+    gs_config = GoldskyConfig(
+        "opensource-observer",
+        "oso-dataset-transfer-bucket",
+        "oso_raw_sources",
+        "optimism_traces",
+        "block_number",
+        int(os.environ.get("GOLDSKY_BATCH_SIZE", "40")),
+        int(os.environ.get("GOLDSKY_CHECKPOINT_SIZE", "1000")),
+        os.environ.get("DUCKDB_GCS_KEY_ID"),
+        os.environ.get("DUCKDB_GCS_SECRET"),
+    )
 
     gcs_client = gcs.get_client()
     blobs = gcs_client.list_blobs("oso-dataset-transfer-bucket", prefix="goldsky")
 
     parsed_files = []
-    job_ids = set()
-    queues = GoldskyQueues()
+    gs_job_ids = set()
+    queues = GoldskyQueues(max_size=int(os.environ.get("GOLDSKY_MAX_QUEUE_SIZE", 200)))
+
+    worker_status: Mapping[str, int] = {}
+    # Get the current state
+    with bigquery.get_client() as client:
+        try:
+            rows = client.query_and_wait(
+                f"""
+            SELECT worker, MAX(last_checkpoint) AS last_checkpoint
+            FROM `{gs_config.project_id}.{gs_config.dataset_name}.{gs_config.table_name}_pointer_state`
+            GROUP BY 1;
+            """
+            )
+            for row in rows:
+                context.log.debug(row)
+                worker_status[row.worker] = row.last_checkpoint
+        except NotFound:
+            context.log.info("No pointer status found. Will create the table later")
+
     for blob in blobs:
         match = goldsky_re.match(blob.name)
         if not match:
@@ -398,8 +336,11 @@ def testing_goldsky(
             continue
         parsed_files.append(match)
         worker = match.group("worker")
-        job_ids.add(match.group("job_id"))
+        gs_job_ids.add(match.group("job_id"))
         checkpoint = int(match.group("checkpoint"))
+        if checkpoint <= worker_status.get(worker, -1):
+            context.log.debug(f"skipping {blob.name} as it was already processed")
+            continue
         queues.enqueue(
             worker,
             GoldskyQueueItem(
@@ -408,7 +349,61 @@ def testing_goldsky(
             ),
         )
 
+    if len(gs_job_ids) > 1:
+        raise Exception("We aren't currently handling multiple job ids")
+
+    gs_context = GoldskyContext(bigquery, gcs)
+
+    job_id = arrow.now().format("YYYYMMDDHHmm")
+
+    pointer_table = f"{gs_config.project_id}.{gs_config.dataset_name}.{gs_config.table_name}_pointer_state"
+
+    with bigquery.get_client() as client:
+        dataset = client.get_dataset(gs_config.dataset_name)
+        table_name = f"{gs_config.table_name}_pointer_state"
+        pointer_table_ref = dataset.table(table_name)
+        try:
+            client.get_table(pointer_table_ref)
+        except NotFound as exc:
+            if table_name in exc.message:
+                context.log.info("Pointer table not found.")
+                client.query_and_wait(
+                    f"""
+                CREATE TABLE {pointer_table} (worker STRING, last_checkpoint INT64);
+                """
+                )
+            else:
+                raise exc
+
+    gs_duckdb = GoldskyDuckDB.connect(
+        f"_temp/{job_id}",
+        gs_config.bucket_name,
+        gs_config.bucket_key_id,
+        gs_config.bucket_secret,
+        os.environ.get("DAGSTER_DUCKDB_PATH"),
+        context.log,
+        os.environ.get("DUCKDB_MEMORY_LIMIT", "16GB"),
+    )
+
+    worker_coroutines = []
+
     # For each worker
+    for worker, queue in queues.worker_queues():
+        context.log.info(f"Creating coroutines for worker {worker}")
+        worker_coroutines.append(
+            load_goldsky_worker(
+                job_id,
+                context,
+                gs_config,
+                gs_context,
+                gs_duckdb,
+                worker,
+                queue,
+                last_checkpoint_from_previous_run=worker_status.get(worker, None),
+            )
+        )
+
+    await asyncio.gather(*worker_coroutines)
 
     # Create a temporary table to load the current checkpoint
 
@@ -423,28 +418,10 @@ def testing_goldsky(
     # TODOS
     # Move the data into cold storage
 
-    item = queues.dequeue("0")
-    last_checkpoint = item.checkpoint - 1
-    while item:
-        if item.checkpoint > last_checkpoint:
-            if item.checkpoint - 1 != last_checkpoint:
-                context.log.info("Missing or checkpoints number jumped")
-        else:
-            raise Exception(
-                f"Unexpected out of order checkpoints current: {item.checkpoint} last: {last_checkpoint}"
-            )
-        if item.checkpoint % 10 == 0:
-            context.log.info(f"Processing {item.blob_name}")
-        last_checkpoint = item.checkpoint
-        item = queues.dequeue("0")
-
-    if len(job_ids) > 1:
-        raise Exception("We aren't currently handling multiple job ids")
-
     return MaterializeResult(
         metadata=dict(
-            job_id_count=len(job_ids),
-            job_ids=list(job_ids),
+            job_id_count=len(gs_job_ids),
+            job_ids=list(gs_job_ids),
             worker_count=len(queues.workers()),
             workers=list(queues.workers()),
             status=queues.status(),
@@ -602,6 +579,19 @@ def interval_gcs_import_asset(key: str, config: IntervalGCSAsset, **kwargs):
         )
 
     return AssetFactoryResponse([gcs_asset], [gcs_clean_up_sensor], [gcs_clean_up_job])
+
+
+async def sleep_and_print(msg: str, sleep: float):
+    await asyncio.sleep(sleep)
+    print(msg)
+
+
+@asset
+async def async_asset() -> MaterializeResult:
+    m1 = sleep_and_print("message 1", 5)
+    m2 = sleep_and_print("message 2", 1)
+    await asyncio.gather(m1, m2)
+    return MaterializeResult(metadata={"boop": True})
 
 
 karma3_globaltrust = interval_gcs_import_asset(

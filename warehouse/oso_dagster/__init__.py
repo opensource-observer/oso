@@ -10,6 +10,7 @@ from .assets import (
     karma3_globaltrust_config,
     karma3_localtrust,
     testing_goldsky,
+    async_asset,
 )
 from .constants import main_dbt_project_dir
 from .schedules import schedules
@@ -19,7 +20,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 defs = Definitions(
-    assets=[main_dbt_assets, testing_goldsky]
+    assets=[main_dbt_assets, testing_goldsky, async_asset]
     + karma3_globaltrust.assets
     + karma3_globaltrust_config.assets
     + karma3_localtrust.assets,
