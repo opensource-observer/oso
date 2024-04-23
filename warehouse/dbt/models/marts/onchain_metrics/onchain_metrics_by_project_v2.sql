@@ -8,74 +8,76 @@ WITH txns AS (
   SELECT
     project_id,
     namespace AS network,
-    CASE
+    SUM(CASE
       WHEN
         impact_metric = 'CONTRACT_INVOCATION_DAILY_COUNT_TOTAL'
         AND time_interval = 'ALL'
         THEN amount
-    END AS total_txns,
-    CASE
+    END) AS total_txns,
+    SUM(CASE
       WHEN
         impact_metric = 'CONTRACT_INVOCATION_DAILY_L2_GAS_USED_TOTAL'
         AND time_interval = 'ALL'
         THEN amount
-    END AS total_l2_gas,
-    CASE
+    END) AS total_l2_gas,
+    SUM(CASE
       WHEN
         impact_metric = 'CONTRACT_INVOCATION_DAILY_COUNT_TOTAL'
         AND time_interval = '6M'
         THEN amount
-    END AS txns_6_months,
-    CASE
+    END) AS txns_6_months,
+    SUM(CASE
       WHEN
         impact_metric = 'CONTRACT_INVOCATION_DAILY_L2_GAS_USED_TOTAL'
         AND time_interval = '6M'
         THEN amount
-    END AS l2_gas_6_months
+    END) AS l2_gas_6_months
   FROM {{ ref('event_totals_by_project') }}
+  GROUP BY 1, 2
 ),
 
 addresses AS (
   SELECT
     project_id,
     network,
-    CASE
+    SUM(CASE
       WHEN
         impact_metric = 'NEW_ADDRESSES_TOTAL'
         AND time_interval = 'ALL'
         THEN amount
-    END AS total_addresses,
-    CASE
+    END) AS total_addresses,
+    SUM(CASE
       WHEN
         impact_metric = 'NEW_ADDRESSES_TOTAL'
         AND time_interval = '3M'
         THEN amount
-    END AS new_addresses,
-    CASE
+    END) AS new_addresses,
+    SUM(CASE
       WHEN
         impact_metric = 'RETURNING_ADDRESSES_TOTAL'
         AND time_interval = '3M'
         THEN amount
-    END AS returning_addresses,
-    CASE
+    END) AS returning_addresses,
+    SUM(CASE
       WHEN
         impact_metric = 'LOW_ACTIVITY_ADDRESSES_TOTAL'
         AND time_interval = '3M'
         THEN amount
-    END AS low_activity_addresses,
-    CASE
+    END) AS low_activity_addresses,
+    SUM(CASE
       WHEN
         impact_metric = 'MED_ACTIVITY_ADDRESSES_TOTAL'
         AND time_interval = '3M'
         THEN amount
-    END AS med_activity_addresses,
-    CASE
+    END) AS med_activity_addresses,
+    SUM(CASE
       WHEN
         impact_metric = 'HIGH_ACTIVITY_ADDRESSES_TOTAL'
         AND time_interval = '3M'
         THEN amount
-    END AS high_activity_addresses
+    END) AS high_activity_addresses
   FROM {{ ref('address_totals_by_project') }}
+  GROUP BY 1, 2
 ),
 
 first_txn AS (
