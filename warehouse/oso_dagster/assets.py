@@ -230,3 +230,35 @@ karma3_globaltrust = interval_gcs_import_asset(
         10,
     ),
 )
+
+karma3_globaltrust_config = interval_gcs_import_asset(
+    "karma3_globaltrust_config",
+    IntervalGCSAsset(
+        "opensource-observer",
+        "oso-dataset-transfer-bucket",
+        "openrank",
+        r"(?P<interval_timestamp>\d\d\d\d-\d\d-\d\d)/k3l_cast_globaltrust_config.csv.gz",
+        "karma3__globaltrust_config",
+        "oso_raw_sources",
+        "oso_sources",
+        Interval.Daily,
+        SourceMode.Overwrite,
+        10,
+    ),
+)
+
+karma3_localtrust = interval_gcs_import_asset(
+    "karma3_localtrust",
+    IntervalGCSAsset(
+        "opensource-observer",
+        "oso-dataset-transfer-bucket",
+        "openrank",
+        r"(?P<interval_timestamp>\d\d\d\d-\d\d-\d\d)/k3l_cast_localtrust.csv.gz",
+        "karma3__localtrust",
+        "oso_raw_sources",
+        "oso_sources",
+        Interval.Daily,
+        SourceMode.Overwrite,
+        10,
+    ),
+)
