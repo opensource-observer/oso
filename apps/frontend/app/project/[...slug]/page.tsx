@@ -11,23 +11,30 @@ import {
 } from "../../../lib/graphql/cached-queries";
 import { logger } from "../../../lib/logger";
 import { catchallPathToString } from "../../../lib/paths";
-import { STATIC_EXPORT } from "../../../lib/config";
 
-export const dynamic = STATIC_EXPORT ? "force-static" : "force-dynamic";
-export const revalidate = false; // 3600 = 1 hour
-const STATIC_EXPORT_SLUGS = ["IGNORE"];
 const PLASMIC_COMPONENT = "ProjectPage";
-
-const cachedFetchComponent = cache(async (componentName: string) => {
-  const plasmicData = await PLASMIC.fetchComponentData(componentName);
-  return plasmicData;
-});
-
+//export const dynamic = STATIC_EXPORT ? "force-static" : "force-dynamic";
+export const dynamic = "force-static";
+export const dynamicParams = true;
+export const revalidate = false; // 3600 = 1 hour
+// TODO: This cannot be empty due to this bug
+// https://github.com/vercel/next.js/issues/61213
+const STATIC_EXPORT_SLUGS: string[] = ["opensource-observer"];
 export async function generateStaticParams() {
   return STATIC_EXPORT_SLUGS.map((s) => ({
     slug: [s],
   }));
 }
+
+const cachedFetchComponent = cache(async (componentName: string) => {
+  try {
+    const plasmicData = await PLASMIC.fetchComponentData(componentName);
+    return plasmicData;
+  } catch (e) {
+    logger.warn(e);
+    return null;
+  }
+});
 
 /**
  * This SSR route allows us to fetch the project from the database
@@ -38,11 +45,10 @@ type ProjectPageProps = {
   params: {
     slug: string[];
   };
-  searchParams?: Record<string, string | string[]>;
 };
 
 export default async function ProjectPage(props: ProjectPageProps) {
-  const { params, searchParams } = props;
+  const { params } = props;
   const slugs = [catchallPathToString(params.slug)];
   if (!params.slug || !Array.isArray(params.slug) || params.slug.length < 1) {
     logger.warn("Invalid project page path", params);
@@ -77,13 +83,16 @@ export default async function ProjectPage(props: ProjectPageProps) {
 
   // Get Plasmic component
   const plasmicData = await cachedFetchComponent(PLASMIC_COMPONENT);
+  if (!plasmicData) {
+    logger.warn(`Unable to get componentName=${PLASMIC_COMPONENT}`);
+    notFound();
+  }
   const compMeta = plasmicData.entryCompMetas[0];
 
   return (
     <PlasmicClientRootProvider
       prefetchedData={plasmicData}
       pageParams={compMeta.params}
-      pageQuery={searchParams}
     >
       <PlasmicComponent
         component={compMeta.displayName}

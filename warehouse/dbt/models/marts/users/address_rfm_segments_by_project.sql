@@ -14,7 +14,7 @@
   metrics.
 #}
 
-WITH user_data AS (
+WITH user_history AS (
   SELECT
     from_id,
     network,
@@ -25,24 +25,16 @@ WITH user_data AS (
   FROM {{ ref('int_addresses') }}
 ),
 
-user_project_count AS (
+user_stats AS (
   SELECT
     from_id,
     network,
+    project_id,
+    total_activity,
+    days_since_last_activity,
     COUNT(DISTINCT project_id) AS project_count
-  FROM user_data
-  GROUP BY 1, 2
-),
-
-user_stats AS (
-  SELECT
-    ud.*,
-    upc.project_count
-  FROM user_data AS ud
-  LEFT JOIN user_project_count AS upc
-    ON
-      ud.from_id = upc.from_id
-      AND ud.network = upc.network
+  FROM user_history
+  GROUP BY 1, 2, 3, 4, 5
 ),
 
 rfm_components AS (
