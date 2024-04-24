@@ -18,12 +18,18 @@ import { logger } from "../logger";
 export const revalidate = false; // 3600 = 1 hour
 
 const queryWrapper = async (opts: QueryOptions) => {
-  const { data, error } = await getApolloClient().query(opts);
-  if (error) {
-    logger.error(error);
+  const client = getApolloClient();
+  try {
+    const { data, error } = await client.query(opts);
+    if (error) {
+      logger.error("Server-side Apollo Client error: ", error);
+      throw error;
+    }
+    return data;
+  } catch (error) {
+    logger.error("Server-side Apollo Client error: ", error);
     throw error;
   }
-  return data;
 };
 
 // Cached getters

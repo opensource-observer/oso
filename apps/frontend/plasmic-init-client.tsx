@@ -1,6 +1,7 @@
 "use client";
 
 import { PlasmicRootProvider } from "@plasmicapp/loader-nextjs";
+import dynamic from "next/dynamic";
 import { PLASMIC } from "./plasmic-init";
 import generateApiKey from "generate-api-key";
 import CircularProgress from "@mui/material/CircularProgress";
@@ -17,13 +18,7 @@ import {
   SupabaseWrite,
   SupabaseWriteRegistration,
 } from "./components/widgets/supabase-write";
-import {
-  EventDataProviderRegistration,
-  CollectionEventDataProvider,
-  ArtifactEventDataProvider,
-  ProjectEventDataProvider,
-  ProjectUserDataProvider,
-} from "./components/dataprovider/event-data-provider";
+import { EventDataProviderRegistration } from "./components/dataprovider/event-data-provider";
 import {
   TableDataProvider,
   TableDataProviderRegistration,
@@ -183,33 +178,73 @@ PLASMIC.registerComponent(ProjectBrowser, {
   },
 });
 
-PLASMIC.registerComponent(CollectionEventDataProvider, {
-  name: "CollectionEventDataProvider",
-  props: { ...EventDataProviderRegistration },
-  providesData: true,
-  importPath: "./components/dataprovider/event-data-provider",
-});
+PLASMIC.registerComponent(
+  //CollectionEventDataProvider,
+  dynamic(
+    () =>
+      import("./components/dataprovider/event-data-provider").then(
+        (m) => m.CollectionEventDataProvider,
+      ),
+    { ssr: false },
+  ),
+  {
+    name: "CollectionEventDataProvider",
+    props: { ...EventDataProviderRegistration },
+    providesData: true,
+    importPath: "./components/dataprovider/event-data-provider",
+  },
+);
 
-PLASMIC.registerComponent(ProjectEventDataProvider, {
-  name: "ProjectEventDataProvider",
-  props: { ...EventDataProviderRegistration },
-  providesData: true,
-  importPath: "./components/dataprovider/event-data-provider",
-});
+PLASMIC.registerComponent(
+  //ProjectEventDataProvider,
+  dynamic(
+    () =>
+      import("./components/dataprovider/event-data-provider").then(
+        (m) => m.ProjectEventDataProvider,
+      ),
+    { ssr: false },
+  ),
+  {
+    name: "ProjectEventDataProvider",
+    props: { ...EventDataProviderRegistration },
+    providesData: true,
+    importPath: "./components/dataprovider/event-data-provider",
+  },
+);
 
-PLASMIC.registerComponent(ArtifactEventDataProvider, {
-  name: "ArtifactEventDataProvider",
-  props: { ...EventDataProviderRegistration },
-  providesData: true,
-  importPath: "./components/dataprovider/event-data-provider",
-});
+PLASMIC.registerComponent(
+  //ArtifactEventDataProvider,
+  dynamic(
+    () =>
+      import("./components/dataprovider/event-data-provider").then(
+        (m) => m.ArtifactEventDataProvider,
+      ),
+    { ssr: false },
+  ),
+  {
+    name: "ArtifactEventDataProvider",
+    props: { ...EventDataProviderRegistration },
+    providesData: true,
+    importPath: "./components/dataprovider/event-data-provider",
+  },
+);
 
-PLASMIC.registerComponent(ProjectUserDataProvider, {
-  name: "ProjectUserDataProvider",
-  props: { ...EventDataProviderRegistration },
-  providesData: true,
-  importPath: "./components/dataprovider/event-data-provider",
-});
+PLASMIC.registerComponent(
+  //ProjectUserDataProvider,
+  dynamic(
+    () =>
+      import("./components/dataprovider/event-data-provider").then(
+        (m) => m.ProjectUserDataProvider,
+      ),
+    { ssr: false },
+  ),
+  {
+    name: "ProjectUserDataProvider",
+    props: { ...EventDataProviderRegistration },
+    providesData: true,
+    importPath: "./components/dataprovider/event-data-provider",
+  },
+);
 
 PLASMIC.registerComponent(TableDataProvider, {
   name: "TableDataProvider",
