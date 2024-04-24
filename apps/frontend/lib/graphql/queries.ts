@@ -149,7 +149,6 @@ const GET_CODE_METRICS_BY_PROJECT = gql(`
       project_id
       project_name
       stars
-      source
       repositories
       pull_requests_opened_6_months
       pull_requests_merged_6_months
