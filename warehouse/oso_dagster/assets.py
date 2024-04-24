@@ -1,4 +1,6 @@
+from concurrent.futures import ProcessPoolExecutor
 import os
+import uuid
 import re
 import arrow
 import asyncio
@@ -31,6 +33,7 @@ from dagster import (
     RunConfig,
     OpExecutionContext,
     DefaultSensorStatus,
+    DagsterLogManager,
 )
 from dagster_gcp import BigQueryResource, GCSResource
 
@@ -43,6 +46,7 @@ from .goldsky import (
     GoldskyContext,
     GoldskyQueue,
     GoldskyQueues,
+    mp_load_goldsky_worker,
 )
 
 
@@ -138,7 +142,7 @@ def parse_interval_prefix(interval: Interval, prefix: str) -> arrow.Arrow:
     return arrow.get(prefix, "YYYYMMDD")
 
 
-def load_goldsky_worker(
+async def load_goldsky_worker(
     job_id: str,
     context: AssetExecutionContext,
     config: GoldskyConfig,
@@ -375,35 +379,32 @@ async def testing_goldsky(
             else:
                 raise exc
 
-    gs_duckdb = GoldskyDuckDB.connect(
-        f"_temp/{job_id}",
-        gs_config.bucket_name,
-        gs_config.bucket_key_id,
-        gs_config.bucket_secret,
-        os.environ.get("DAGSTER_DUCKDB_PATH"),
-        context.log,
-        os.environ.get("DUCKDB_MEMORY_LIMIT", "16GB"),
-    )
+    # gs_duckdb = GoldskyDuckDB.connect(
+    #     f"_temp/{job_id}",
+    #     gs_config.bucket_name,
+    #     gs_config.bucket_key_id,
+    #     gs_config.bucket_secret,
+    #     os.environ.get("DAGSTER_DUCKDB_PATH"),
+    #     context.log,
+    #     os.environ.get("DUCKDB_MEMORY_LIMIT", "16GB"),
+    # )
 
     worker_coroutines = []
 
     # For each worker
     for worker, queue in queues.worker_queues():
         context.log.info(f"Creating coroutines for worker {worker}")
-        worker_coroutines.append(
-            load_goldsky_worker(
-                job_id,
-                context,
-                gs_config,
-                gs_context,
-                gs_duckdb,
-                worker,
-                queue,
-                last_checkpoint_from_previous_run=worker_status.get(worker, None),
-            )
+        await mp_load_goldsky_worker(
+            job_id,
+            context,
+            gs_config,
+            gs_context,
+            worker,
+            queue,
+            last_checkpoint_from_previous_run=worker_status.get(worker, None),
         )
 
-    await asyncio.gather(*worker_coroutines)
+    # await asyncio.gather(*worker_coroutines)
 
     # Create a temporary table to load the current checkpoint
 
@@ -586,11 +587,35 @@ async def sleep_and_print(msg: str, sleep: float):
     print(msg)
 
 
+@dataclass
+class Boop:
+    foo: str
+    bar: str
+
+
+official_name = None
+
+
+def mp_test(x: Boop, num: int):
+    print(f"hi from multiproc {num} {x} {official_name}")
+
+
+def mp_init(x: int):
+    global official_name
+    official_name = uuid.uuid4()
+    print(f"hi from the multiproc init {x} {official_name}")
+
+
 @asset
 async def async_asset() -> MaterializeResult:
-    m1 = sleep_and_print("message 1", 5)
-    m2 = sleep_and_print("message 2", 1)
-    await asyncio.gather(m1, m2)
+    with ProcessPoolExecutor(8, initializer=mp_init, initargs=(1,)) as executor:
+        futures = []
+        for i in range(10):
+            future = executor.submit(mp_test, Boop("a", "b"), i)
+            futures.append(asyncio.wrap_future(future))
+        print("wait for the pool to finish")
+        await asyncio.gather(*futures)
+
     return MaterializeResult(metadata={"boop": True})
 
 
