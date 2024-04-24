@@ -84,7 +84,7 @@ first_txn AS (
   SELECT
     project_id,
     from_namespace AS network,
-    MIN(bucket_day) AS date_first_txn
+    MIN(bucket_day) AS first_txn_date
   FROM {{ ref('int_addresses_daily_activity') }}
   GROUP BY 1, 2
 ),
@@ -138,11 +138,27 @@ metrics AS (
 )
 
 SELECT
-  metrics.*,
-  p.project_slug
+  metrics.project_id,
+  p.project_slug,
+  metrics.network,
+  p.project_name,
+  metrics.num_contracts,
+  metrics.first_txn_date,
+  metrics.total_txns,
+  metrics.total_l2_gas,
+  metrics.txns_6_months,
+  metrics.l2_gas_6_months,
+  metrics.total_addresses,
+  metrics.new_addresses,
+  metrics.returning_addresses,
+  metrics.low_activity_addresses,
+  metrics.med_activity_addresses,
+  metrics.high_activity_addresses,
+  metrics.multi_project_addresses,
+  (metrics.new_addresses + metrics.returning_addresses) AS active_addresses
 FROM
   {{ ref('projects') }} AS p
 LEFT JOIN
   metrics ON p.project_id = metrics.project_id
 WHERE
-  metrics.num_contracts IS NOT NULL
+  metrics.total_txns IS NOT NULL
