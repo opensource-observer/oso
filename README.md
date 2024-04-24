@@ -60,7 +60,7 @@ For setup and common operations for each subproject, navigate into the respectiv
 ## dbt Start
 
 Our dataset are public! If you'd like to use them as opposed to adding to our
-dbt models, checkout [our docs!](https://docs.opensource.observer/docs/getting-started/)
+dbt models, checkout [our docs!](https://docs.opensource.observer/docs/get-started/)
 
 ### Setting up
 
