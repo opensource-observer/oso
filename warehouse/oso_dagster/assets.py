@@ -600,15 +600,15 @@ def mp_test(x: Boop, num: int):
     print(f"hi from multiproc {num} {x} {official_name}")
 
 
-def mp_init(x: int):
+def mp_init(x: int, y: str):
     global official_name
     official_name = uuid.uuid4()
-    print(f"hi from the multiproc init {x} {official_name}")
+    print(f"hi from the multiproc init {x} {y} {official_name}")
 
 
 @asset
 async def async_asset() -> MaterializeResult:
-    with ProcessPoolExecutor(8, initializer=mp_init, initargs=(1,)) as executor:
+    with ProcessPoolExecutor(8, initializer=mp_init, initargs=(1, "hello")) as executor:
         futures = []
         for i in range(10):
             future = executor.submit(mp_test, Boop("a", "b"), i)
