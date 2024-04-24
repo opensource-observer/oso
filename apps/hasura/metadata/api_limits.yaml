@@ -19,5 +19,5 @@ time_limit:
   global: 60
   per_role:
     anonymous: 5
-    user: 10
+    user: 15
     developer: 60
