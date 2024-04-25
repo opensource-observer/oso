@@ -12,7 +12,6 @@ export interface AppMeta {
   id: number;
   appId: number;
   appSlug: string;
-  userId: number;
 }
 
 export interface OctokitAndAppMeta {
@@ -34,7 +33,6 @@ export async function getOctokitFor(
             id: installation.id,
             appId: installation.app_id,
             appSlug: installation.app_slug,
-            userId: installation.account?.id || 0,
           },
           octo: octokit,
         };
