@@ -366,7 +366,6 @@ class MPGoldskyDuckDB:
         checkpoint: int,
         log: MultiProcessLogger,
     ):
-        log.debug("LOADING THE CHECKPOINT------------")
         conn = self.conn
         bucket_name = self.bucket_name
 
@@ -379,8 +378,6 @@ class MPGoldskyDuckDB:
             FROM read_parquet('{base}/{blob_name}')
         ) TO '{self.full_dest_table_path(worker, batch_id)}';
         """
-
-        log.debug(f"Running query {query}")
         conn.sql(query)
 
         log.info(f"Completed load {blob_name}")
