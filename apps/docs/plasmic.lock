@@ -52,14 +52,14 @@
           "checksum": "be2769e464c565231e59eb1dbdcbc680"
         },
         {
-          "type": "image",
-          "assetId": "cyI4ZarUDDWI",
-          "checksum": "d4469b4760336bf35eefb3203c0813eb"
-        },
-        {
           "type": "icon",
           "assetId": "IUL_Z3b2VK27",
           "checksum": "f747464e248d0fd06360dae746c9d7f8"
+        },
+        {
+          "type": "image",
+          "assetId": "cyI4ZarUDDWI",
+          "checksum": "d4469b4760336bf35eefb3203c0813eb"
         },
         {
           "assetId": "2CtczDeUz9jL9qnFi6NWuQ",
