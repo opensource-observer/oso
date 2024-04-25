@@ -5,7 +5,7 @@ sidebar_position: 1
 
 :::info
 
-The [OSS Directory](https://github.com/opensource-oberver/oss-directory) serves as the "source of truth" for the projects and collections that are discoverable on Open Source Observer. While the directory may never be complete, it is actively maintained. We welcome community contributions of new projects and collections, as well as updates to existing entries. This directory is a public good, free to use and distribute.
+The [OSS Directory](https://github.com/opensource-observer/oss-directory) serves as the "source of truth" for the projects and collections that are discoverable on Open Source Observer. While the directory may never be complete, it is actively maintained. We welcome community contributions of new projects and collections, as well as updates to existing entries. This directory is a public good, free to use and distribute.
 :::
 
 ## Collections
