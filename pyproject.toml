@@ -8,10 +8,11 @@ readme = "README.md"
 packages = [
     { include = "bq2cloudsql", from = "warehouse/" },
     { include = "common", from = "warehouse/" },
+    { include = "oso_dagster", from = "warehouse/" },
 ]
 
 [tool.poetry.dependencies]
-python = "^3.11"
+python = "^3.11,<3.13"
 example-plugin = { path = "warehouse/cloudquery-example-plugin", develop = true }
 dune-contract-usage = { path = "warehouse/cloudquery-dune-contract-usage", develop = true }
 google-cloud-bigquery = "^3.17.1"
@@ -28,6 +29,11 @@ google-cloud-resource-manager = "^1.12.3"
 google-cloud-service-usage = "^1.10.3"
 boltons = "^23.1.1"
 ruamel-yaml = "^0.18.6"
+dagster = "^1.7.2"
+dagster-dbt = "^0.23.2"
+dagster-webserver = "^1.7.2"
+dagster-gcp = "^0.23.2"
+duckdb = "^0.10.2"
 
 
 [tool.poetry.scripts]
@@ -39,6 +45,7 @@ ipython = "^8.21.0"
 sqlfluff = "^2.3.5"
 sqlfluff-templater-dbt = "^2.3.5"
 shandy-sqlfmt = { extras = ["jinjafmt"], version = "^0.21.1" }
+dagster-webserver = "^1.7.2"
 
 [build-system]
 requires = ["poetry-core"]
@@ -62,3 +69,6 @@ library_path = "warehouse/common/dbtlintmock"
 [tool.sqlfluff.templater.dbt]
 project_dir = "."
 target = "playground"
+
+[tool.dagster]
+module_name = "oso_dagster"
