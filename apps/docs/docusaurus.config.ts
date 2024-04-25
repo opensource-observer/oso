@@ -1,17 +1,20 @@
 import { themes as prismThemes } from "prism-react-renderer";
 import type { Config } from "@docusaurus/types";
 import type * as Preset from "@docusaurus/preset-classic";
-import dotenv from "dotenv";
-const envPath = [__dirname, "./.env.local"].join("/");
-dotenv.config();
-dotenv.config({ path: envPath, override: true });
+import {
+  URL,
+  ALGOLIA_API_KEY,
+  ALGOLIA_APP_ID,
+  ALGOLIA_INDEX,
+  SEGMENT_WRITE_KEY,
+} from "./src/config";
 
 const config: Config = {
   title: "Open Source Observer",
   tagline: "Measure impact on your platform.",
   favicon: "img/oso-emblem-black.svg",
 
-  url: process.env.DOCS_URL,
+  url: URL,
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
   baseUrl: "/",
@@ -144,9 +147,9 @@ const config: Config = {
       copyright: `Copyright © ${new Date().getFullYear()} Kariba Labs, Inc.`,
     },
     algolia: {
-      appId: process.env.DOCS_ALGOLIA_APP_ID,
-      apiKey: process.env.DOCS_ALGOLIA_API_KEY,
-      indexName: process.env.DOCS_ALGOLIA_INDEX,
+      appId: ALGOLIA_APP_ID,
+      apiKey: ALGOLIA_API_KEY,
+      indexName: ALGOLIA_INDEX,
       contextualSearch: false,
     },
     prism: {
@@ -155,10 +158,7 @@ const config: Config = {
     },
   } satisfies Preset.ThemeConfig,
   plugins: [
-    [
-      "@laxels/docusaurus-plugin-segment",
-      { apiKey: process.env.DOCS_SEGMENT_WRITE_KEY },
-    ],
+    ["@laxels/docusaurus-plugin-segment", { apiKey: SEGMENT_WRITE_KEY }],
   ],
 };
 
