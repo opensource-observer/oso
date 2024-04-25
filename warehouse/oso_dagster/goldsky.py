@@ -331,6 +331,7 @@ class MPGoldskyDuckDB:
         """
         )
         conn.sql(f"SET memory_limit = '{memory_limit}';")
+        conn.sql(f"SET enable_progress_bar = false;")
         return cls(config.bucket_name, destination_path, conn)
 
     def __init__(
