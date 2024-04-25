@@ -66,11 +66,16 @@ export class PRTestDeployCoordinator {
     try {
       await this.runDbt(checkoutPath);
     } catch (e) {
+      const err = e as Error & {
+        stdout: string;
+        stderr: string;
+        code: number;
+        signal: string;
+      };
       logger.error({
         message: "error running dbt",
         error: e,
       });
-      const err = e as Error;
 
       await this.failCheckStatus(sha);
 
@@ -79,8 +84,19 @@ export class PRTestDeployCoordinator {
         dedent`
         Test deployment for PR #${pr} failed on comment \`${sha}\`. With error: 
 
+        Error stack:
         \`\`\`
         ${err.stack}
+        \`\`\`
+
+        DBT stdout:
+        \`\`\`
+        ${err.stdout}
+        \`\`\`
+        
+        DBT stderr:
+        \`\`\`
+        ${err.stderr}
         \`\`\`
       `,
       );
@@ -91,10 +107,12 @@ export class PRTestDeployCoordinator {
 
     await this.completeCheckStatus(sha, datasetFQN);
 
+    const datasetURL = `https://console.cloud.google.com/bigquery?project=oso-pull-requests&ws=!1m4!1m3!3m2!1soso-pull-requests!2spr_${pr}`;
+
     await this.leaveDeploymentComment(
       pr,
       dedent`
-      Test deployment for PR #${pr} successfully deployed to \`${datasetFQN}\`.
+      Test deployment for PR #${pr} successfully deployed to [\`${datasetFQN}\`](${datasetURL}).
     `,
     );
   }
@@ -254,7 +272,7 @@ export class PRTestDeployCoordinator {
 
   private async runDbt(p: string) {
     const absPath = path.resolve(p);
-    await execPromise(`${absPath}/.venv/bin/dbt run`, {
+    return await execPromise(`${absPath}/.venv/bin/dbt run`, {
       cwd: absPath,
       env: {
         PLAYGROUND_DAYS: "1",
