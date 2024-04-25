@@ -1,6 +1,7 @@
 import time
 import asyncio
 import os
+import arrow
 from concurrent.futures import ProcessPoolExecutor
 from queue import Empty
 import multiprocessing as mp
@@ -663,8 +664,6 @@ async def testing_goldsky(
     #     context.log,
     #     os.environ.get("DUCKDB_MEMORY_LIMIT", "16GB"),
     # )
-
-    worker_coroutines = []
 
     # For each worker
     for worker, queue in queues.worker_queues():
