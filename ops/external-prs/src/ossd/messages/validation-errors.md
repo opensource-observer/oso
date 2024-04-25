@@ -1,4 +1,4 @@
-Validation failed with the following errors:
+Validation of commit `{{sha}}` failed with the following errors:
 
 {{#validationErrors}}
 

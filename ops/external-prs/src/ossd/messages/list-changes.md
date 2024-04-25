@@ -1,4 +1,4 @@
-This pull request includes the following changes:
+This pull request includes the following changes for commit `{{sha}}`:
 
 |                      | Unchanged                           | Added                            | Removed                            | Updated                |
 | -------------------- | ----------------------------------- | -------------------------------- | ---------------------------------- | ---------------------- |

@@ -1,5 +1,10 @@
 import { CheckRequest, setCheckStatus } from "./checks.js";
-import { Repo, getRepoPermissions } from "./github.js";
+import {
+  AppMeta,
+  OctokitAndAppMeta,
+  Repo,
+  getRepoPermissions,
+} from "./github.js";
 import { App, Octokit } from "octokit";
 import { logger } from "./utils/logger.js";
 import { URL } from "url";
@@ -47,11 +52,13 @@ export class GHAppUtils {
   private app: App;
   private repo: Repo;
   private octo: Octokit;
+  private appMeta: AppMeta;
 
-  constructor(app: App, repo: Repo, octo: Octokit) {
+  constructor(app: App, repo: Repo, octoAndMeta: OctokitAndAppMeta) {
     this.app = app;
     this.repo = repo;
-    this.octo = octo;
+    this.octo = octoAndMeta.octo;
+    this.appMeta = octoAndMeta.meta;
   }
 
   async leaveCommentOnPr(pr: number, comment: string) {
@@ -60,6 +67,87 @@ export class GHAppUtils {
       repo: this.repo.name,
       body: comment,
       issue_number: pr,
+    });
+  }
+
+  async setStatusComment(pr: number, message: string, messageId?: string) {
+    messageId = messageId || "external-pr-status-comment";
+    const messageIdText = `<!-- ${messageId} -->`;
+    const taggedMessage = `${messageIdText}\n${message}`;
+
+    const appId = this.appMeta.appId;
+    console.log(`appId: ${appId}`);
+    // Search for a comment with the messageId
+    // If it doesn't exist, create a comment
+    // If it does exist update that comment
+    const allCommentRefs = await this.octo.rest.issues.listComments({
+      repo: this.repo.name,
+      owner: this.repo.owner,
+      issue_number: pr,
+    });
+
+    console.log(allCommentRefs.data.map((c) => c.user));
+    const appCommentRefs = allCommentRefs.data.filter((c) => {
+      return c.performed_via_github_app?.id === appId;
+    });
+    console.log(appCommentRefs);
+
+    if (appCommentRefs.length === 0) {
+      await this.octo.rest.issues.createComment({
+        owner: this.repo.owner,
+        repo: this.repo.name,
+        body: taggedMessage,
+        issue_number: pr,
+      });
+      return;
+    }
+
+    const comments: Awaited<
+      ReturnType<Octokit["rest"]["issues"]["getComment"]>
+    >[] = [];
+
+    // Get all app comments
+    for (const appCommentRef of appCommentRefs) {
+      const appComment = await this.octo.rest.issues.getComment({
+        repo: this.repo.name,
+        owner: this.repo.owner,
+        comment_id: appCommentRef.id,
+      });
+      comments.push(appComment);
+    }
+
+    const matchingComments = comments.filter((c) => {
+      const body = c.data.body || "";
+      return body.trimStart().indexOf(messageIdText) === 0;
+    });
+
+    if (matchingComments.length === 0) {
+      await this.octo.rest.issues.createComment({
+        owner: this.repo.owner,
+        repo: this.repo.name,
+        body: taggedMessage,
+        issue_number: pr,
+      });
+      return;
+    }
+    if (matchingComments.length > 1) {
+      logger.warn(
+        "multiple matching comments found. This isn't treated as an error. Deleting extra comments",
+      );
+    }
+    for (const matchingComment of matchingComments.slice(1)) {
+      await this.octo.rest.issues.deleteComment({
+        owner: this.repo.owner,
+        repo: this.repo.name,
+        comment_id: matchingComment.data.id,
+      });
+    }
+
+    await this.octo.rest.issues.updateComment({
+      owner: this.repo.owner,
+      repo: this.repo.name,
+      comment_id: matchingComments[0].data.id,
+      body: taggedMessage,
     });
   }
 
