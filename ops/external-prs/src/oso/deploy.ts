@@ -276,7 +276,7 @@ export class PRTestDeployCoordinator {
 
   private async runDbt(p: string) {
     const absPath = path.resolve(p);
-    return await execPromise(`${absPath}/.venv/bin/dbt run`, {
+    return await execPromise(`${absPath}/.venv/bin/dbt run --no-use-colors`, {
       cwd: absPath,
       env: {
         PLAYGROUND_DAYS: "1",
