@@ -34,8 +34,9 @@ async function initializePrCheck(args: InitializePRCheck) {
   });
 
   const app = args.app;
-  const octo = await getOctokitFor(app, args.repo);
-  if (!octo) {
+  const octokitAndAppMeta = await getOctokitFor(app, args.repo);
+  const octo = octokitAndAppMeta.octo;
+  if (!octokitAndAppMeta) {
     throw new Error("No repo found");
   }
 
@@ -103,8 +104,8 @@ const cli = yargs(hideBin(process.argv))
     });
     args.app = app;
     const repo = args.repo as Repo;
-    const octo = await getOctokitFor(app, repo);
-    args.appUtils = new GHAppUtils(app, repo, octo);
+    const octokitAndAppMeta = await getOctokitFor(app, repo);
+    args.appUtils = new GHAppUtils(app, repo, octokitAndAppMeta);
 
     const { data } = await app.octokit.request("/app");
     logger.debug(`Authenticated as ${data.name}`);

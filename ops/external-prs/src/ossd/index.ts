@@ -563,7 +563,7 @@ class OSSDirectoryPullRequest {
       unchangedProjects.length === 0 ? 0 : unchangedProjects.length;
     const updatedProjectsCount = this.changes.projects.length;
 
-    await args.appUtils.leaveCommentOnPr(
+    await args.appUtils.setStatusComment(
       args.pr,
       await renderMustacheFromFile(relativeDir("messages", "list-changes.md"), {
         projects: {
@@ -572,7 +572,9 @@ class OSSDirectoryPullRequest {
           unchanged: unchangedProjectsCount,
         },
         artifacts: this.changes.artifacts.summary,
+        sha: args.sha,
       }),
+      "external-pr-changes-list",
     );
   }
 
@@ -638,12 +640,13 @@ class OSSDirectoryPullRequest {
         count: validationErrors.length,
       });
 
-      await args.appUtils.leaveCommentOnPr(
+      await args.appUtils.setStatusComment(
         args.pr,
         await renderMustacheFromFile(
           relativeDir("messages", "validation-errors.md"),
           {
             validationErrors: validationErrors,
+            sha: args.sha,
           },
         ),
       );

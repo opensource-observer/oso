@@ -10,12 +10,14 @@ import { Repo } from "../github.js";
 import { logger } from "../utils/logger.js";
 import { App, Octokit } from "octokit";
 import { CheckConclusion, CheckStatus, setCheckStatus } from "../checks.js";
+import { GHAppUtils } from "../base.js";
 
 const execPromise = util.promisify(exec);
 
 export class PRTestDeployCoordinator {
   private bq: BigQuery;
   private repo: Repo;
+  private appUtils: GHAppUtils;
   private projectId: string;
   private app: App;
   private octo: Octokit;
@@ -23,6 +25,7 @@ export class PRTestDeployCoordinator {
   constructor(
     repo: Repo,
     app: App,
+    appUtils: GHAppUtils,
     octo: Octokit,
     bq: BigQuery,
     projectId: string,
@@ -32,6 +35,7 @@ export class PRTestDeployCoordinator {
     this.repo = repo;
     this.projectId = projectId;
     this.octo = octo;
+    this.appUtils = appUtils;
   }
 
   async setup(
@@ -66,21 +70,37 @@ export class PRTestDeployCoordinator {
     try {
       await this.runDbt(checkoutPath);
     } catch (e) {
+      const err = e as Error & {
+        stdout: string;
+        stderr: string;
+        code: number;
+        signal: string;
+      };
       logger.error({
         message: "error running dbt",
         error: e,
       });
-      const err = e as Error;
 
       await this.failCheckStatus(sha);
 
-      await this.leaveDeploymentComment(
+      await this.appUtils.setStatusComment(
         pr,
         dedent`
-        Test deployment for PR #${pr} failed on comment \`${sha}\`. With error: 
+        Test deployment for PR #${pr} failed on commit \`${sha}\`. With error: 
 
+        Error stack:
         \`\`\`
         ${err.stack}
+        \`\`\`
+
+        DBT stdout:
+        \`\`\`
+        ${err.stdout}
+        \`\`\`
+        
+        DBT stderr:
+        \`\`\`
+        ${err.stderr}
         \`\`\`
       `,
       );
@@ -91,10 +111,12 @@ export class PRTestDeployCoordinator {
 
     await this.completeCheckStatus(sha, datasetFQN);
 
-    await this.leaveDeploymentComment(
+    const datasetURL = `https://console.cloud.google.com/bigquery?project=oso-pull-requests&ws=!1m4!1m3!3m2!1soso-pull-requests!2spr_${pr}`;
+
+    await this.appUtils.setStatusComment(
       pr,
       dedent`
-      Test deployment for PR #${pr} successfully deployed to \`${datasetFQN}\`.
+      Test deployment for PR #${pr} successfully deployed to [\`${datasetFQN}\`](${datasetURL}).
     `,
     );
   }
@@ -254,7 +276,7 @@ export class PRTestDeployCoordinator {
 
   private async runDbt(p: string) {
     const absPath = path.resolve(p);
-    await execPromise(`${absPath}/.venv/bin/dbt run`, {
+    return await execPromise(`${absPath}/.venv/bin/dbt run --no-use-colors`, {
       cwd: absPath,
       env: {
         PLAYGROUND_DAYS: "1",

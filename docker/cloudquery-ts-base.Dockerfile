@@ -1,6 +1,6 @@
 FROM node:18 as build
 
-RUN npm install -g pnpm@^8.0.0
+RUN npm install -g pnpm@^9.0.0
 
 COPY . /usr/src/app
 

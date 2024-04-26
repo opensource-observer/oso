@@ -11,7 +11,7 @@ import { handleError } from "../utils/error.js";
 import { CheckStatus, setCheckStatus } from "../checks.js";
 import { Repo, getOctokitFor, getRepoPermissions } from "../github.js";
 import { PRTestDeployCoordinator } from "./deploy.js";
-import { BaseArgs } from "../base.js";
+import { BaseArgs, GHAppUtils } from "../base.js";
 
 interface ParseCommentArgs extends BaseArgs {
   comment: number;
@@ -104,7 +104,7 @@ async function parseDeployComment(args: ParseCommentArgs) {
 
   const app = args.app;
 
-  const octo = await getOctokitFor(app, args.repo);
+  const { octo } = await getOctokitFor(app, args.repo);
   if (!octo) {
     throw new Error("No repo found");
   }
@@ -240,7 +240,7 @@ async function refreshCredentials(args: RefreshGCPCredentials) {
 
   const app = args.app;
 
-  const octo = await getOctokitFor(app, args.repo);
+  const { octo } = await getOctokitFor(app, args.repo);
   if (!octo) {
     throw new Error("No repo found");
   }
@@ -336,12 +336,14 @@ function testDeployGroup(group: Argv) {
       const bq = new BigQuery({ projectId: projectId });
       const app = args.app as App;
       const repo = args.repo as Repo;
+      const appUtils = args.appUtils as GHAppUtils;
 
-      const octo = await getOctokitFor(app, repo);
+      const { octo } = await getOctokitFor(app, repo);
 
       args.coordinator = new PRTestDeployCoordinator(
         repo,
         app,
+        appUtils,
         octo as Octokit,
         bq,
         projectId,
