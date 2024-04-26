@@ -124,9 +124,14 @@ jobs:
         run: |
           echo "NEXT_PUBLIC_ALGOLIA_API_KEY=${NEXT_PUBLIC_ALGOLIA_API_KEY:-xxxx}" >> "$GITHUB_ENV"
 
+      # Automatically retry if the build fails
       - name: Build
-        run: |
-          pnpm build
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 5
+          max_attempts: 3
+          command: |
+            pnpm build
         # Always run this step so that all linting errors can be seen at once.
         if: always()
 
