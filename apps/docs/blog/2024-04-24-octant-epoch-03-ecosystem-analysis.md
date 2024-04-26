@@ -6,21 +6,21 @@ tags: [octant, ecosystem reports, open source]
 image: https://site-assets.plasmic.app/75a76e63b052ad2cf61265abb50d3f6e.png
 ---
 
-There are [30 projects in Octant's Epoch 3](https://octant.app/projects), the latest funding allocation. This round comes three months after the previous one, which saw a total of 24 projects. There are 19 projects continuing on from Epoch 2 into Epoch 3 -- including [Open Source Observer](https://octant.app/project/3/0x87fEEd6162CB7dFe6B62F64366742349bF4D1B05).
+Octant recently kicked off **Epoch 3**, its latest reward allocation round, featuring [30 projects](https://octant.app/projects). This round comes three months after Epoch 2, which had a total of 24 projects in it. There are 19 projects continuing on from Epoch 2 into Epoch 3 - including [Open Source Observer](https://octant.app/project/3/0x87fEEd6162CB7dFe6B62F64366742349bF4D1B05).
 
-During the last round, we published [A snapshot of the 20+ open source software projects in Octant's Epoch 2](./octant-epoch-02-ecosystem-analysis). In this post, we'll refresh that analysis and provide some new insights for the open source software (OSS) projects present in the current batch.
+During the last round, we published ["A snapshot of the 20+ open source software projects in Octant's Epoch 2"](https://docs.opensource.observer/blog/octant-epoch-02-ecosystem-analysis). In this post, we'll refresh that analysis and provide some new insights for the open source software (OSS) projects present in the current cohort.
 
 In Epoch 3, Octant is helping support:
 
 - 26 (out of 30) projects with at least some recent OSS component to their work
-- 338 GitHub repos with regular activity
-- 650 developers making regular code commits or reviews
+- 343 GitHub repos with regular activity
+- 651 developers making regular code commits or reviews
 
-In the last 6 months, these 28 projects:
+In the last 6 months, these 26 projects:
 
-- Attracted 869 first-time contributors
-- Closed over 4,749 issues (and created 4,951 new ones)
-- Merged over 10,050 pull requests (and opened 12,004 new ones)
+- Attracted 881 first-time contributors
+- Closed over 4,646 issues (and created 4,856 new ones)
+- Merged over 9,745 pull requests (and opened 11,534 new ones)
 
 <!-- truncate -->
 
@@ -32,11 +32,27 @@ Epoch 3 has a new cohort of popular, well-established OSS projects. [web3.js](ht
 OSO is onboarding [ecosyste.ms](https://ecosyste.ms/) dependency data right now!
 :::
 
-The [Ethereum Attestation Service](https://octant.app/project/3/0xBCA48834b3653ec795411EB0FCBE4038F8527d62) is another OSS project conceived of many years ago but reinvigorated over more recently. It has a fast-growing contributor community and onchain presence, but also maintains a lean developer team. [Gardens (fka 1Hive)](https://octant.app/project/3/0x809C9f8dd8CA93A41c3adca4972Fa234C28F7714) is another long-standing project with a large footprint of OSS code (more than 100 repos!). It's recent activity has been focused on releasing a Gardens v2. [MetaGov](https://octant.app/project/3/0x9be7267002CAD0b8501f7322d50612CB13788Bcf) is a community laboratory that conducts peer-reviewed research and develops technical standards for emerging technology. that's been steadily building since 2019. Currently, its most active repos are X and Y.
+The [Ethereum Attestation Service](https://octant.app/project/3/0xBCA48834b3653ec795411EB0FCBE4038F8527d62) is another OSS project conceived of many years ago but reinvigorated more recently. It has a lean team but a fast-growing contributor community and presence across various EVM chains. [Gardens (fka 1Hive)](https://octant.app/project/3/0x809C9f8dd8CA93A41c3adca4972Fa234C28F7714) is another long-standing project with a large footprint of OSS code (more than 100 repos!). It's recent activity has been focused on releasing a Gardens v2. [MetaGov](https://octant.app/project/3/0x9be7267002CAD0b8501f7322d50612CB13788Bcf) is a community laboratory that conducts peer-reviewed research and develops technical standards for emerging technology. It's's been steadily building since 2019.
 
 The three younger OSS projects that are new to Epoch 3 are all in the sweet spot for Octant's support: small teams, shipping fast. [growthepie](https://octant.app/project/3/0x9438b8B447179740cD97869997a2FCc9b4AA63a2) is a newer data platform as a public good. Check out their real-time charts including [this one](https://www.growthepie.xyz/fundamentals/profit) showing L2 onchain profits. It's quickly become a go-to source of market information for data nerds (like me), and they are expanding their impact via a new project called the [Open Labels Initiative](https://github.com/openlabelsinitiative). [NiceNode](https://octant.app/project/3/0x9cce47E9cF12C6147c9844adBB81fE85880c4df4) is a simple, open source, desktop app that does exactly what it sounds like: runs a nice node for you. The project has been around for at least 2 years, but its contributor community has doubled over the past 6 months. [StateOfEth (by Ether Alpha)](https://octant.app/project/3/0x0194325BF525Be0D4fBB0856894cEd74Da3B8356) monitors potential attack vectors on Ethereum, including centralization risks, and does outreach to rally the community when needed. The maintainer, Ether Alpha, hosts a bunch of projects on its GitHub and has had a flurry of activity (over 10K commits) in the last 6 months.
 
-[insert table]
+<p style={{fontSize: 'small'}}>
+
+| Project                                         | Gardens (1Hive) | StateOfEth (Ether Alpha) | EAS | growthepie | MetaGov | web3.js | web3.py |
+| :---------------------------------------------- | --------------: | -----------------------: | --: | ---------: | ------: | ------: | ------: |
+| Active Repos - Last 6 Months                    |               9 |                       13 |   8 |          4 |      21 |       5 |       1 |
+| Fork Count - Max of Active Repos                |              37 |                       21 |  55 |          5 |      20 |    4831 |    1620 |
+| Star Count - Max of Active Repos                |              28 |                       22 | 213 |         13 |      72 |   18764 |    4790 |
+| Commit Code - All Repos, Last 6 Months          |             139 |                    16217 | 275 |       1025 |     417 |     184 |     243 |
+| Issue Closed - All Repos, Last 6 Months         |              42 |                        1 |  20 |          1 |      20 |     203 |     137 |
+| Issue Created - All Repos, Last 6 Months        |              65 |                        1 |  24 |          0 |      31 |     222 |      65 |
+| Pull Request Created - All Repos, Last 6 Months |              88 |                       12 |  75 |         56 |      45 |     217 |     148 |
+| Pull Request Merged - All Repos, Last 6 Months  |              67 |                        8 |  42 |         54 |      43 |     156 |     121 |
+| Total Contributors - All Time                   |             326 |                       35 |  82 |          8 |      65 |    2308 |     949 |
+| New Contributors - Last 6 Months                |               2 |                        3 |  43 |          2 |       3 |     112 |      56 |
+| Total Developers - Avg Last 6 Months            |             2.2 |                      2.2 |   2 |          4 |     5.2 |     5.2 |     4.2 |
+
+</p>
 
 ## Non-OSS projects
 
@@ -50,7 +66,23 @@ There are also two new, non-OSS projects - [ETH Daily](https://octant.app/projec
 
 We won't go into detail of every returning project, but here are some high level metrics for the 18 OSS projects in Epoch 3 that we also covered in Epoch 2. I've put a flame emoji next to metrics with an increase of more than 20% in the last 3 months relative to the previous 3 months.
 
-[insert table]
+<p style={{fontSize: 'small'}}>
+
+| Project                                         | Drips | EthStaker | Ethereum Cat Herders | Gitcoin | Giveth | Glo Dollar | Hypercerts | L2BEAT | MetaGame | NiceNode | Open Source Observer | Pairwise | Praise | Protocol Guild | Revoke | Shutter Network | The Tor Project | rotki |
+| :---------------------------------------------- | ----: | --------: | -------------------: | ------: | -----: | ---------: | ---------: | -----: | -------: | -------: | -------------------: | -------: | -----: | -------------: | -----: | --------------: | --------------: | ----: |
+| Active Repos - Last 6 Months                    |     9 |         6 |                    1 |      47 |     22 |          2 |         10 |      8 |        8 |       11 |                    5 |        5 |      5 |             92 |      6 |              15 |              13 |    17 |
+| Fork Count - Max of Active Repos                |    17 |       187 |                 5040 |     422 |     31 |          1 |         24 |    329 |       76 |       26 |                   22 |        0 |     19 |          19417 |    208 |              14 |             926 |   475 |
+| Star Count - Max of Active Repos                |    58 |       426 |                12523 |     886 |     30 |          3 |         81 |    457 |      127 |      168 |                   37 |        7 |     32 |          46063 |    620 |              57 |            4304 |  2609 |
+| Commit Code - All Repos, Last 6 Months          |   382 |       430 |                  270 |    2877 |   2708 |         62 |        362 |    754 |      255 |      255 |                  678 |      330 |     24 |          11167 |    312 |             251 |             428 |  1937 |
+| Issue Closed - All Repos, Last 6 Months         |   137 |        46 |                   31 |     925 |    710 |          0 |        197 |     39 |       58 |       18 |                  332 |       89 |      0 |           1390 |     69 |               6 |               7 |   168 |
+| Issue Created - All Repos, Last 6 Months        |   148 |        54 |                   59 |    1007 |    563 |          2 |        132 |     34 |       35 |       35 |                  437 |      128 |      0 |           1528 |     67 |              16 |              15 |   188 |
+| Pull Request Created - All Repos, Last 6 Months |   173 |       277 |                  393 |    1102 |    612 |          6 |        192 |   1390 |       80 |      161 |                  505 |       76 |      3 |           4684 |     44 |              52 |              11 |  1111 |
+| Pull Request Merged - All Repos, Last 6 Months  |   160 |       276 |                  252 |     977 |    566 |          4 |        175 |   1255 |       61 |      121 |                  482 |       73 |      4 |           3688 |     43 |              42 |               2 |  1073 |
+| Total Contributors - All Time                   |    38 |       228 |                 1515 |    1807 |    314 |          8 |         25 |    276 |      145 |       23 |                   30 |       15 |     29 |          14721 |    162 |              22 |             741 |   493 |
+| New Contributors - Last 6 Months                |    13 |        40 |                  129 |      67 |      9 |          0 |          9 |     95 |        2 |       11 |                   25 |        6 |      0 |            890 |     66 |               6 |              26 |    62 |
+| Total Developers - Avg Last 6 Months            |   3.8 |       4.7 |                  2.8 |      17 |    9.7 |          1 |        2.7 |   12.5 |      3.2 |      1.3 |                  4.3 |      2.2 |    0.3 |           60.7 |      1 |             3.5 |             1.8 |   5.3 |
+
+</p>
 
 ## Make your allocations
 
