@@ -91,23 +91,80 @@ The three younger OSS projects that are new to Epoch 3 are all in the sweet spot
 
 We won't go into detail of every returning project, but here are some high level metrics for the 18 OSS projects in Epoch 3 that we also covered in Epoch 2.
 
-<p style={{fontSize: 'small'}}>
-
-| Project                                         | Drips | EthStaker | Ethereum Cat Herders | Gitcoin | Giveth | Glo Dollar | Hypercerts | L2BEAT | MetaGame | NiceNode | Open Source Observer | Pairwise | Praise | Protocol Guild | Revoke | Shutter Network | The Tor Project | rotki |
-| :---------------------------------------------- | ----: | --------: | -------------------: | ------: | -----: | ---------: | ---------: | -----: | -------: | -------: | -------------------: | -------: | -----: | -------------: | -----: | --------------: | --------------: | ----: |
-| Active Repos - Last 6 Months                    |     9 |         6 |                    1 |      47 |     22 |          2 |         10 |      8 |        8 |       11 |                    5 |        5 |      5 |             92 |      6 |              15 |              13 |    17 |
-| Fork Count - Max of Active Repos                |    17 |       187 |                 5040 |     422 |     31 |          1 |         24 |    329 |       76 |       26 |                   22 |        0 |     19 |          19417 |    208 |              14 |             926 |   475 |
-| Star Count - Max of Active Repos                |    58 |       426 |                12523 |     886 |     30 |          3 |         81 |    457 |      127 |      168 |                   37 |        7 |     32 |          46063 |    620 |              57 |            4304 |  2609 |
-| Commit Code - All Repos, Last 6 Months          |   382 |       430 |                  270 |    2877 |   2708 |         62 |        362 |    754 |      255 |      255 |                  678 |      330 |     24 |          11167 |    312 |             251 |             428 |  1937 |
-| Issue Closed - All Repos, Last 6 Months         |   137 |        46 |                   31 |     925 |    710 |          0 |        197 |     39 |       58 |       18 |                  332 |       89 |      0 |           1390 |     69 |               6 |               7 |   168 |
-| Issue Created - All Repos, Last 6 Months        |   148 |        54 |                   59 |    1007 |    563 |          2 |        132 |     34 |       35 |       35 |                  437 |      128 |      0 |           1528 |     67 |              16 |              15 |   188 |
-| Pull Request Created - All Repos, Last 6 Months |   173 |       277 |                  393 |    1102 |    612 |          6 |        192 |   1390 |       80 |      161 |                  505 |       76 |      3 |           4684 |     44 |              52 |              11 |  1111 |
-| Pull Request Merged - All Repos, Last 6 Months  |   160 |       276 |                  252 |     977 |    566 |          4 |        175 |   1255 |       61 |      121 |                  482 |       73 |      4 |           3688 |     43 |              42 |               2 |  1073 |
-| Total Contributors - All Time                   |    38 |       228 |                 1515 |    1807 |    314 |          8 |         25 |    276 |      145 |       23 |                   30 |       15 |     29 |          14721 |    162 |              22 |             741 |   493 |
-| New Contributors - Last 6 Months                |    13 |        40 |                  129 |      67 |      9 |          0 |          9 |     95 |        2 |       11 |                   25 |        6 |      0 |            890 |     66 |               6 |              26 |    62 |
-| Total Developers - Avg Last 6 Months            |   3.8 |       4.7 |                  2.8 |      17 |    9.7 |          1 |        2.7 |   12.5 |      3.2 |      1.3 |                  4.3 |      2.2 |    0.3 |           60.7 |      1 |             3.5 |             1.8 |   5.3 |
-
-</p>
+<Tabs>
+  <TabItem value="summary" label="Summary" default>
+    <p style={{fontSize: 'small'}}>
+    | Project                              |   Active Repos - Last 6 Months |   Fork Count - Max of Active Repos |   Star Count - Max of Active Repos |
+    |:-------------------------------------|-------------------------------:|-----------------------------------:|-----------------------------------:|
+    | Drips                                |                              9 |                                 17 |                                 58 |
+    | Ethereum Cat Herders                 |                              1 |                               5040 |                              12523 |
+    | EthStaker                            |                              6 |                                187 |                                426 |
+    | Gitcoin                              |                             47 |                                422 |                                886 |
+    | Giveth                               |                             22 |                                 31 |                                 30 |
+    | Glo Dollar                           |                              2 |                                  1 |                                  3 |
+    | Hypercerts                           |                             10 |                                 24 |                                 81 |
+    | L2BEAT                               |                              8 |                                329 |                                457 |
+    | MetaGame                             |                              8 |                                 76 |                                127 |
+    | NiceNode                             |                             11 |                                 26 |                                168 |
+    | Open Source Observer                 |                              5 |                                 22 |                                 37 |
+    | Pairwise                             |                              5 |                                  0 |                                  7 |
+    | Praise                               |                              5 |                                 19 |                                 32 |
+    | Protocol Guild                       |                             92 |                              19417 |                              46063 |
+    | Revoke                               |                              6 |                                208 |                                620 |
+    | rotki                                |                             17 |                                475 |                               2609 |
+    | Shielded Voting (by Shutter Network) |                             15 |                                 14 |                                 57 |
+    | The Tor Project                      |                             13 |                                926 |                               4304 |
+    </p>
+  </TabItem>
+  <TabItem value="contribs" label="Contributors">
+    <p style={{fontSize: 'small'}}>
+    | Project                              |   Total Contributors - All Time |   New Contributors - Last 6 Months |   Full-time Developers - Avg Last 6 Months |   Total Developers - Avg Last 6 Months |
+    |:-------------------------------------|--------------------------------:|-----------------------------------:|-------------------------------------------:|---------------------------------------:|
+    | Drips                                |                              38 |                                 13 |                                        1   |                                    3.8 |
+    | Ethereum Cat Herders                 |                            1515 |                                129 |                                        1   |                                    2.8 |
+    | EthStaker                            |                             228 |                                 40 |                                        1   |                                    4.7 |
+    | Gitcoin                              |                            1807 |                                 67 |                                        5   |                                   17   |
+    | Giveth                               |                             314 |                                  9 |                                        1.7 |                                    9.7 |
+    | Glo Dollar                           |                               8 |                                  0 |                                        0   |                                    1   |
+    | Hypercerts                           |                              25 |                                  9 |                                        0.3 |                                    2.7 |
+    | L2BEAT                               |                             276 |                                 95 |                                        1.5 |                                   12.5 |
+    | MetaGame                             |                             145 |                                  2 |                                        0.3 |                                    3.2 |
+    | NiceNode                             |                              23 |                                 11 |                                        0.8 |                                    1.3 |
+    | Open Source Observer                 |                              30 |                                 25 |                                        1.8 |                                    4.3 |
+    | Pairwise                             |                              15 |                                  6 |                                        0.2 |                                    2.2 |
+    | Praise                               |                              29 |                                  0 |                                        0   |                                    0.3 |
+    | Protocol Guild                       |                           14721 |                                890 |                                       11.3 |                                   60.7 |
+    | Revoke                               |                             162 |                                 66 |                                        0.8 |                                    1   |
+    | rotki                                |                             493 |                                 62 |                                        3.3 |                                    5.3 |
+    | Shielded Voting (by Shutter Network) |                              22 |                                  6 |                                        0   |                                    3.5 |
+    | The Tor Project                      |                             741 |                                 26 |                                        0.8 |                                    1.8 |
+    </p>
+  </TabItem>
+  <TabItem value="activity" label="Activity">
+    <p style={{fontSize: 'small'}}>
+    | Project                              |   Commit Code - All Repos, Last 6 Months |   Issue Closed - All Repos, Last 6 Months |   Issue Created - All Repos, Last 6 Months |   Pull Request Created - All Repos, Last 6 Months |   Pull Request Merged - All Repos, Last 6 Months |
+    |:-------------------------------------|-----------------------------------------:|------------------------------------------:|-------------------------------------------:|--------------------------------------------------:|-------------------------------------------------:|
+    | Drips                                |                                      382 |                                       137 |                                        148 |                                               173 |                                              160 |
+    | Ethereum Cat Herders                 |                                      270 |                                        31 |                                         59 |                                               393 |                                              252 |
+    | EthStaker                            |                                      430 |                                        46 |                                         54 |                                               277 |                                              276 |
+    | Gitcoin                              |                                     2877 |                                       925 |                                       1007 |                                              1102 |                                              977 |
+    | Giveth                               |                                     2708 |                                       710 |                                        563 |                                               612 |                                              566 |
+    | Glo Dollar                           |                                       62 |                                         0 |                                          2 |                                                 6 |                                                4 |
+    | Hypercerts                           |                                      362 |                                       197 |                                        132 |                                               192 |                                              175 |
+    | L2BEAT                               |                                      754 |                                        39 |                                         34 |                                              1390 |                                             1255 |
+    | MetaGame                             |                                      255 |                                        58 |                                         35 |                                                80 |                                               61 |
+    | NiceNode                             |                                      255 |                                        18 |                                         35 |                                               161 |                                              121 |
+    | Open Source Observer                 |                                      678 |                                       332 |                                        437 |                                               505 |                                              482 |
+    | Pairwise                             |                                      330 |                                        89 |                                        128 |                                                76 |                                               73 |
+    | Praise                               |                                       24 |                                         0 |                                          0 |                                                 3 |                                                4 |
+    | Protocol Guild                       |                                    11167 |                                      1390 |                                       1528 |                                              4684 |                                             3688 |
+    | Revoke                               |                                      312 |                                        69 |                                         67 |                                                44 |                                               43 |
+    | rotki                                |                                     1937 |                                       168 |                                        188 |                                              1111 |                                             1073 |
+    | Shielded Voting (by Shutter Network) |                                      251 |                                         6 |                                         16 |                                                52 |                                               42 |
+    | The Tor Project                      |                                      428 |                                         7 |                                         15 |                                                11 |                                                2 |
+    </p>
+  </TabItem>
+</Tabs>
 
 ## Make your allocations
 
