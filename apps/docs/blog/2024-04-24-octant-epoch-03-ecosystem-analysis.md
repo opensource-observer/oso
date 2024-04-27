@@ -32,39 +32,61 @@ Epoch 3 has a new cohort of popular, well-established OSS projects. [web3.js](ht
 OSO is onboarding [ecosyste.ms](https://ecosyste.ms/) dependency data right now!
 :::
 
-The [Ethereum Attestation Service](https://octant.app/project/3/0xBCA48834b3653ec795411EB0FCBE4038F8527d62) is another OSS project conceived of many years ago but reinvigorated more recently. It has a lean team but a fast-growing contributor community and presence across various EVM chains. [Gardens (fka 1Hive)](https://octant.app/project/3/0x809C9f8dd8CA93A41c3adca4972Fa234C28F7714) is another long-standing project with a large footprint of OSS code (more than 100 repos!). It's recent activity has been focused on releasing a Gardens v2. [MetaGov](https://octant.app/project/3/0x9be7267002CAD0b8501f7322d50612CB13788Bcf) is a community laboratory that conducts peer-reviewed research and develops technical standards for emerging technology. It's's been steadily building since 2019.
+The [Ethereum Attestation Service](https://octant.app/project/3/0xBCA48834b3653ec795411EB0FCBE4038F8527d62) is another OSS project conceived of many years ago but reinvigorated more recently. It has a lean team but a fast-growing contributor community and presence across various EVM chains. [Gardens (fka 1Hive)](https://octant.app/project/3/0x809C9f8dd8CA93A41c3adca4972Fa234C28F7714) is another long-standing project with a large footprint of OSS code (more than 100 repos!). It's recent activity has been focused on releasing a Gardens v2. [MetaGov](https://octant.app/project/3/0x9be7267002CAD0b8501f7322d50612CB13788Bcf) is a community laboratory that conducts peer-reviewed research and develops technical standards for emerging technology. It's been steadily building since 2019.
 
 The three younger OSS projects that are new to Epoch 3 are all in the sweet spot for Octant's support: small teams, shipping fast. [growthepie](https://octant.app/project/3/0x9438b8B447179740cD97869997a2FCc9b4AA63a2) is a newer data platform as a public good. Check out their real-time charts including [this one](https://www.growthepie.xyz/fundamentals/profit) showing L2 onchain profits. It's quickly become a go-to source of market information for data nerds (like me), and they are expanding their impact via a new project called the [Open Labels Initiative](https://github.com/openlabelsinitiative). [NiceNode](https://octant.app/project/3/0x9cce47E9cF12C6147c9844adBB81fE85880c4df4) is a simple, open source, desktop app that does exactly what it sounds like: runs a nice node for you. The project has been around for at least 2 years, but its contributor community has doubled over the past 6 months. [StateOfEth (by Ether Alpha)](https://octant.app/project/3/0x0194325BF525Be0D4fBB0856894cEd74Da3B8356) monitors potential attack vectors on Ethereum, including centralization risks, and does outreach to rally the community when needed. The maintainer, Ether Alpha, hosts a bunch of projects on its GitHub and has had a flurry of activity (over 10K commits) in the last 6 months.
 
-<p style={{fontSize: 'small'}}>
-
-| Project                                         | Gardens (1Hive) | StateOfEth (Ether Alpha) | EAS | growthepie | MetaGov | web3.js | web3.py |
-| :---------------------------------------------- | --------------: | -----------------------: | --: | ---------: | ------: | ------: | ------: |
-| Active Repos - Last 6 Months                    |               9 |                       13 |   8 |          4 |      21 |       5 |       1 |
-| Fork Count - Max of Active Repos                |              37 |                       21 |  55 |          5 |      20 |    4831 |    1620 |
-| Star Count - Max of Active Repos                |              28 |                       22 | 213 |         13 |      72 |   18764 |    4790 |
-| Commit Code - All Repos, Last 6 Months          |             139 |                    16217 | 275 |       1025 |     417 |     184 |     243 |
-| Issue Closed - All Repos, Last 6 Months         |              42 |                        1 |  20 |          1 |      20 |     203 |     137 |
-| Issue Created - All Repos, Last 6 Months        |              65 |                        1 |  24 |          0 |      31 |     222 |      65 |
-| Pull Request Created - All Repos, Last 6 Months |              88 |                       12 |  75 |         56 |      45 |     217 |     148 |
-| Pull Request Merged - All Repos, Last 6 Months  |              67 |                        8 |  42 |         54 |      43 |     156 |     121 |
-| Total Contributors - All Time                   |             326 |                       35 |  82 |          8 |      65 |    2308 |     949 |
-| New Contributors - Last 6 Months                |               2 |                        3 |  43 |          2 |       3 |     112 |      56 |
-| Total Developers - Avg Last 6 Months            |             2.2 |                      2.2 |   2 |          4 |     5.2 |     5.2 |     4.2 |
-
-</p>
+<Tabs>
+  <TabItem value="summary" label="Summary" default>
+    <p style={{fontSize: 'small'}}>
+    | Project                      |   Active Repos - Last 6 Months |   Fork Count - Max of Active Repos |   Star Count - Max of Active Repos |
+    |:-----------------------------|-------------------------------:|-----------------------------------:|-----------------------------------:|
+    | 1Hive Gardens                |                              9 |                                 37 |                                 28 |
+    | StateOfEth (by Ether Alpha)  |                             13 |                                 21 |                                 22 |
+    | Ethereum Attestation Service |                              8 |                                 55 |                                213 |
+    | growthepie                   |                              4 |                                  5 |                                 13 |
+    | MetaGov                      |                             21 |                                 20 |                                 72 |
+    | web3.js                      |                              5 |                               4831 |                              18764 |
+    | web3.py                      |                              1 |                               1620 |                               4790 |
+    </p>
+  </TabItem>
+  <TabItem value="contribs" label="Contributors">
+    <p style={{fontSize: 'small'}}>
+    | Project                      |   Total Contributors - All Time |   New Contributors - Last 6 Months |   Full-time Developers - Avg Last 6 Months |   Total Developers - Avg Last 6 Months |
+    |:-----------------------------|--------------------------------:|-----------------------------------:|-------------------------------------------:|---------------------------------------:|
+    | 1Hive Gardens                |                             326 |                                  2 |                                        0   |                                    2.2 |
+    | StateOfEth (by Ether Alpha)  |                              35 |                                  3 |                                        1.3 |                                    2.2 |
+    | Ethereum Attestation Service |                              82 |                                 43 |                                        0   |                                    2   |
+    | growthepie                   |                               8 |                                  2 |                                        1.2 |                                    4   |
+    | MetaGov                      |                              65 |                                  3 |                                        0   |                                    5.2 |
+    | web3.js                      |                            2308 |                                112 |                                        0.2 |                                    5.2 |
+    | web3.py                      |                             949 |                                 56 |                                        0   |                                    4.2 |
+    </p>
+  </TabItem>
+  <TabItem value="activity" label="Activity">
+    <p style={{fontSize: 'small'}}>
+    | Project                      |   Commit Code - All Repos, Last 6 Months |   Issue Closed - All Repos, Last 6 Months |   Issue Created - All Repos, Last 6 Months |   Pull Request Created - All Repos, Last 6 Months |   Pull Request Merged - All Repos, Last 6 Months |
+    |:-----------------------------|-----------------------------------------:|------------------------------------------:|-------------------------------------------:|--------------------------------------------------:|-------------------------------------------------:|
+    | 1Hive Gardens                |                                      139 |                                        42 |                                         65 |                                                88 |                                               67 |
+    | StateOfEth (by Ether Alpha)  |                                    16217 |                                         1 |                                          1 |                                                12 |                                                8 |
+    | Ethereum Attestation Service |                                      275 |                                        20 |                                         24 |                                                75 |                                               42 |
+    | growthepie                   |                                     1025 |                                         1 |                                          0 |                                                56 |                                               54 |
+    | MetaGov                      |                                      417 |                                        20 |                                         31 |                                                45 |                                               43 |
+    | web3.js                      |                                      184 |                                       203 |                                        222 |                                               217 |                                              156 |
+    | web3.py                      |                                      243 |                                       137 |                                         65 |                                               148 |                                              121 |
+    </p>
+  </TabItem>
+</Tabs>
 
 ## Non-OSS projects
 
 [Funding the Commons](https://octant.app/project/3/0x576edCed7475D8F64a5e2D5227c93Ca57d7f5d20/) is a returning project that acts as a generator function for all sorts of OSS projects and collaboration among projects. For instance, in April, FtC hosted a conference in Berkeley, California all about funding open source software - with representation from a number of the projects in Epoch 3 (Tor, growthepie, Drips, Hypercerts, Gitcoin, MetaGov, Open Source Observer...)
 
-[Boring Security](https://octant.app/project/3/0x52C45Bab6d0827F44a973899666D9Cd18Fd90bCF) is another project supporting the OSS community and Ethereum users, but more through its security-related efforts than through its code contributions.
-
-There are also two new, non-OSS projects - [ETH Daily](https://octant.app/project/3/0xEB40A065854bd90126A4E697aeA0976BA51b2eE7) and [RefiDAO](https://octant.app/project/3/0x7340F1a1e4e38F43d2FCC85cdb2b764de36B40c0) - joining the Epoch. Both are well-known fixtures in the Ethereum grantmaking community. ETH Daily provides a **daily** podcast and newsletter to a community of 2000+ subscribers. RefiDAO is a podcast, eventmaker, and DAO of DAOs ("local nodes") working on regenerative finance and other real world use cases. Check them out!
+[Boring Security](https://octant.app/project/3/0x52C45Bab6d0827F44a973899666D9Cd18Fd90bCF) is another project supporting the OSS community and Ethereum users, but more through its security-related efforts than through its code contributions. There are also two new, non-OSS projects - [ETH Daily](https://octant.app/project/3/0xEB40A065854bd90126A4E697aeA0976BA51b2eE7) and [RefiDAO](https://octant.app/project/3/0x7340F1a1e4e38F43d2FCC85cdb2b764de36B40c0) - joining the Epoch. Both are well-known fixtures in the Ethereum grantmaking community. ETH Daily provides a _daily_ podcast and newsletter to a community of 2000+ subscribers. RefiDAO is a podcast, eventmaker, and DAO of DAOs ("local nodes") working on regenerative finance and other real world use cases. Check them out!
 
 ## Returning OSS projects
 
-We won't go into detail of every returning project, but here are some high level metrics for the 18 OSS projects in Epoch 3 that we also covered in Epoch 2. I've put a flame emoji next to metrics with an increase of more than 20% in the last 3 months relative to the previous 3 months.
+We won't go into detail of every returning project, but here are some high level metrics for the 18 OSS projects in Epoch 3 that we also covered in Epoch 2.
 
 <p style={{fontSize: 'small'}}>
 
