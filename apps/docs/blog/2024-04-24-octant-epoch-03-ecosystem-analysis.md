@@ -6,6 +6,9 @@ tags: [octant, ecosystem reports, open source]
 image: https://site-assets.plasmic.app/75a76e63b052ad2cf61265abb50d3f6e.png
 ---
 
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
 Octant recently kicked off **Epoch 3**, its latest reward allocation round, featuring [30 projects](https://octant.app/projects). This round comes three months after Epoch 2, which had a total of 24 projects in it. There are 19 projects continuing on from Epoch 2 into Epoch 3 - including [Open Source Observer](https://octant.app/project/3/0x87fEEd6162CB7dFe6B62F64366742349bF4D1B05).
 
 During the last round, we published ["A snapshot of the 20+ open source software projects in Octant's Epoch 2"](https://docs.opensource.observer/blog/octant-epoch-02-ecosystem-analysis). In this post, we'll refresh that analysis and provide some new insights for the open source software (OSS) projects present in the current cohort.
