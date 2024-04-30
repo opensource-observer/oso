@@ -166,25 +166,25 @@ project_by_network AS (
 SELECT
   p.project_id,
   p.project_slug,
-  p.onchain_network AS network,
   p.project_name,
+  p.onchain_network AS `artifact_namespace`,
   -- TODO: add deployers owned by project
-  c.num_contracts,
-  ma.first_txn_date,
-  ma.total_txns,
+  c.num_contracts AS `total_contract_count`,
+  ma.first_txn_date AS `first_transaction_date`,
+  ma.total_txns AS `total_transaction_count`,
+  m6.txns_6_months AS `transaction_count_6_months`,
   ma.total_l2_gas,
-  ma.total_users,
-  m6.txns_6_months,
   m6.l2_gas_6_months,
-  m6.users_6_months,
-  nu.new_user_count,
-  us.high_frequency_users,
-  us.more_active_users,
-  us.less_active_users,
-  us.multi_project_users,
+  ma.total_users AS `total_user_address_count`,
+  m6.users_6_months AS `user_address_count_6_months`,
+  nu.new_user_count AS `new_user_count_3_months`,
+  us.high_frequency_users AS `high_frequency_address_count`,
+  us.more_active_users AS `more_active_user_address_count`,
+  us.less_active_users AS `less_active_user_address_count`,
+  us.multi_project_users AS `multi_project_user_address_count`,
   (
     us.high_frequency_users + us.more_active_users + us.less_active_users
-  ) AS active_users
+  ) AS `total_active_user_address_count`
 FROM project_by_network AS p
 LEFT JOIN metrics_all_time AS ma
   ON
