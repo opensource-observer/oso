@@ -82,7 +82,7 @@ type ModelConfig = {
   name: string;
   config: {
     meta: {
-      sync_to_cloudsql: boolean;
+      sync_to_db: boolean;
     };
   };
 };
@@ -115,14 +115,14 @@ async function main(): Promise<void> {
       name: string;
       config: {
         meta: {
-          sync_to_cloudsql: boolean;
+          sync_to_db: boolean;
         };
       };
     };
     modelConfigs.push(modelConfig);
   }
   const filteredConfigs = modelConfigs.filter((c) => {
-    return c.config.meta.sync_to_cloudsql === true;
+    return c.config.meta.sync_to_db === true;
   });
 
   const tableNames = filteredConfigs.map((c) => {

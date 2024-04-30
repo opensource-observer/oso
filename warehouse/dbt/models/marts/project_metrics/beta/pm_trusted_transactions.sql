@@ -4,7 +4,7 @@
 #}
 {{ 
   config(meta = {
-    'sync_to_cloudsql': False
+    'sync_to_db': False
   }) 
 }}
 

@@ -35,7 +35,7 @@ def table_sync_config_from_dbt_marts(target: str) -> List[TableSyncConfig]:
     for model_config in model_configs:
         config = model_config.get("config", {})
         meta = config.get("meta", {})
-        if not meta.get("sync_to_cloudsql", False):
+        if not meta.get("sync_to_db", False):
             print("Skipping %s" % model_config["name"])
             continue
         print(model_config["name"])
