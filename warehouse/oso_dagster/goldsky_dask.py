@@ -2,9 +2,8 @@ import time
 import asyncio
 import duckdb
 import copy
-import httpx_ws
 from dataclasses import dataclass, field
-from typing import Any, Optional, Callable, List
+from typing import Any
 from dask.distributed import (
     Client,
     Worker,
@@ -12,19 +11,9 @@ from dask.distributed import (
     get_worker,
     Future as DaskFuture,
 )
-from concurrent.futures import CancelledError
 from dask_kubernetes.operator import KubeCluster, make_cluster_spec
 from dagster import DagsterLogManager
-from queue import PriorityQueue, Empty
-from asyncio import Future as aioFuture
-
-
-@dataclass(order=True)
-class RetryQueueItem:
-    priority: int
-    type: str = field(compare=False)
-    retry_count: int = field(compare=False, default=0)
-    operation: Optional[Callable] = field(compare=False, default=None)
+from concurrent.futures import CancelledError
 
 
 class RetryTaskManager:
@@ -69,9 +58,7 @@ class RetryTaskManager:
         self.bucket_secret = bucket_secret
         self.cluster_spec = cluster_spec
         self.client = None
-        self._reconnection_queued = False
-        self.queue = PriorityQueue()
-        self._pause_interval = 2500
+        self._reconnection_time = 0
 
     def reconnect(self):
         self.log.debug("reconnecting")
@@ -113,121 +100,6 @@ class RetryTaskManager:
         f.add_done_callback(on_done)
         return aio_future
 
-    def attempt_reconnect(self) -> int:
-        now = time.time()
-        if now > self._reconnection_time + 120:
-            self.reconnect()
-            return 0
-        else:
-            return 0
-
-    def queue_reconnect(self):
-        now = time.time()
-        if self._reconnection_queued:
-            self.reconnection_queued = True
-            self.queue.put(RetryQueueItem(priority=1, type="RECONNECT"))
-        else:
-            return
-
-    def create_retry_future(
-        self,
-        func,
-        args: Any,
-        kwargs: Any,
-        pure: bool = True,
-        retries: int = 3,
-        retry_delay: float = 0.5,
-    ):
-        pass
-
-    def run(self, awaitable: Any):
-        self.loop.run_until_complete(self._run(awaitable))
-
-    async def _run(self, awaitable: Any):
-        self.loop.create_task(asyncio.to_thread(self.task_loop))
-        try:
-            await awaitable
-        finally:
-            self.queue.put(RetryQueueItem(priority=0, type="EXIT"))
-
-    async def task_loop(self):
-        """The dask task loop is potentially bad at retrying kubernetes connections
-
-        This task loop processes everything that is supposed to go to
-        """
-        normal_sleep_time = 0.1
-        long_sleep_time = 1
-        sleep_time = normal_sleep_time
-        submitted = 0
-        while True:
-            try:
-                item: RetryQueueItem = self.queue.get(block=False)
-                sleep_time = normal_sleep_time
-                if item.type == "EXIT":
-                    break
-                if item.type == "RECONNECT":
-                    self.reconnect()
-                    continue
-                self.loop.create_task(item.operation(item.retry_count))
-                if submitted % self._pause_interval == 0:
-                    await asyncio.sleep(10)
-                    continue
-            except Empty:
-                sleep_time += sleep_time
-            await asyncio.sleep(sleep_time)
-
-    def new_submit(
-        self,
-        func,
-        args: Any | None = None,
-        kwargs: Any | None = None,
-        pure: bool = True,
-        retries: int = 3,
-    ):
-        future = self.loop.create_future()
-
-        kwargs = kwargs or {}
-
-        async def run(retry_count: int):
-            try:
-                result = await self.wrap_future(
-                    self.client.submit(func, *args, **kwargs, pure=pure)
-                )
-                self.log.debug("completed task")
-                self.loop.call_soon_threadsafe(future.set_result, result)
-                return
-            except asyncio.CancelledError as e:
-                self.queue_reconnect()
-                last_err = e
-            except CancelledError as e:
-                self.queue_reconnect()
-                last_err = e
-            except Exception as e:
-                last_err = e
-            if retry_count > retries:
-                self.loop.call_soon_threadsafe(future.set_exception, last_err)
-                return
-            if retry_count > 1:
-                self.log.error(
-                    f"Caught an error on a worker. Retrying {last_err} {type(last_err)}"
-                )
-            self.queue.put(
-                RetryQueueItem(
-                    priority=100,
-                    type="SUBMIT",
-                    operation=run,
-                    retry_count=retry_count + 1,
-                )
-            )
-
-        item = RetryQueueItem(
-            priority=100,
-            type="SUBMIT",
-            operation=run,
-        )
-        self.queue.put(item)
-        return future
-
     async def submit(
         self,
         func,
@@ -246,6 +118,12 @@ class RetryTaskManager:
                 return await self.wrap_future(
                     self.client.submit(func, *args, **kwargs, pure=pure)
                 )
+            except CancelledError as e:
+                # If this is cancelled treat that as an immediate bail out
+                raise e
+            except asyncio.CancelledError as e:
+                # If this is cancelled treat that as an immediate bail out
+                raise e
             except Exception as e:
                 self.log.error(f"Caught an error on a worker. Retrying {e} {type(e)}")
                 last_err = e
@@ -257,7 +135,6 @@ class RetryTaskManager:
             retry_delay += retry_delay
 
     def close(self):
-        self.queue.put(RetryQueueItem(priority=0, type="EXIT"))
         if self.client:
             self.client.close()
         if self.cluster:
