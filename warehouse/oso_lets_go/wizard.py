@@ -615,8 +615,9 @@ def run():
                 create_key(service_account_email, key_file_path)
 
     # Setup the configuration for the playground
+    profiles_home_dir = os.path.expanduser("~/.dbt/")
+    fileutils.mkdir_p(profiles_home_dir)
     profiles_path = os.path.expanduser("~/.dbt/profiles.yml")
-
     profiles_yml = textwrap.dedent(
         f"""
         opensource_observer:
