@@ -156,9 +156,25 @@ activity_cte AS (
 
 
 SELECT
-  p.*,
-  c.* EXCEPT (project_id, repository_source),
-  a.* EXCEPT (project_id, repository_source)
+  p.project_id,
+  p.project_slug,
+  p.project_name,
+  p.repository_source AS `artifact_namespace`,
+  p.first_commit_date,
+  p.last_commit_date,
+  p.repositories AS `repository_count`,
+  p.stars AS `star_count`,
+  p.forks AS `fork_count`,
+  c.contributors AS `total_contributor_count`,
+  c.contributors_6_months AS `contributor_count_6_months`,
+  c.new_contributors_6_months AS `new_contributor_count_6_months`,
+  c.avg_fulltime_devs_6_months AS `avg_fulltime_developer_count_6_months`,
+  c.avg_active_devs_6_months AS `avg_active_developer_count_6_months`,
+  a.commits_6_months AS `commit_count_6_months`,
+  a.issues_opened_6_months AS `opened_issue_count_6_months`,
+  a.issues_closed_6_months AS `closed_issue_count_6_months`,
+  a.pull_requests_opened_6_months AS `opened_pull_request_count_6_months`,
+  a.pull_requests_merged_6_months AS `merged_pull_request_count_6_months`
 FROM project_repos_summary AS p
 LEFT JOIN contribs_cte AS c
   ON
