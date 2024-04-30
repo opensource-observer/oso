@@ -20,13 +20,13 @@ coverage/
 .eslintcache
 
 # builds
-out/
-build/
-dist/
-data/
-.turbo/
-.next/
-.docusaurus/
+**/out/
+**/build/
+**/dist/
+**/data/
+**/.turbo/
+**/.next/
+**/.docusaurus/
 
 # files
 .DS_Store
@@ -35,6 +35,12 @@ data/
 .env*.local
 *.log
 coverage.json
+
+**/.env
+**/.next
+**/.meltano
+
+**/.venv
 
 # typescript
 *.tsbuildinfo
@@ -46,9 +52,11 @@ graph/.test.subgraph.yaml
 # playwright
 playwright-report/
 node_modules
+target
 .pnpm-store
 test_only.*
 **/test_only.*
+**/test_only
 Dockerfile
 *.Dockerfile
 **/Dockerfile
@@ -60,11 +68,13 @@ Dockerfile
 **/__pycache__
 
 # dbt
-target/
-dbt_packages/
+**/target/
+**/dbt_packages/
 
 # Cloudquery
 .cq/
+**/.cq
 
 # Github directory
 .github/scripts
+.git

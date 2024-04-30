@@ -856,28 +856,30 @@ def blocking_update_pointer_table(
 
 class GoldskyAsset:
     @classmethod
-    def setup_asset(config: GoldskyConfig):
-        @asset(name=config.asset_name)
+    def setup_asset(cls, name: str, config: GoldskyConfig):
+        @asset(name=name)
         def goldsky_asset(
             context: AssetExecutionContext, bigquery: BigQueryResource, gcs: GCSResource
         ):
             loop = asyncio.new_event_loop()
+            context.log.info(f"Job name?: {context.job_name}")
 
             last_restart = time.time()
             retries = 0
             while True:
                 try:
-                    asset = GoldskyAsset(gcs, bigquery, config)
+                    gs_asset = cls(gcs, bigquery, config)
+                    context.log.info(gs_asset.cluster_spec)
                     task_manager = RetryTaskManager.setup(
                         loop,
                         config.bucket_key_id,
                         config.bucket_secret,
-                        asset.cluster_spec,
+                        gs_asset.cluster_spec,
                         context.log,
                     )
                     try:
                         loop.run_until_complete(
-                            asset.materialize(task_manager, context)
+                            gs_asset.materialize(task_manager, context)
                         )
                         return
                     finally:
@@ -985,7 +987,7 @@ class GoldskyAsset:
     @property
     def cluster_spec(self):
         spec = make_cluster_spec(
-            name=f"{self.config.asset_name}-{self._job_id}",
+            name=f"{self.config.asset_name.replace('_', '-')}-{self._job_id}",
             resources={
                 "requests": {"memory": self.config.scheduler_memory},
                 "limits": {"memory": self.config.scheduler_memory},
@@ -1045,7 +1047,7 @@ class GoldskyAsset:
         for blob in blobs:
             match = self.goldsky_re.match(blob.name)
             if not match:
-                context.log.debug(f"skipping {blob.name}")
+                # context.log.debug(f"skipping {blob.name}")
                 continue
             parsed_files.append(match)
             worker = match.group("worker")

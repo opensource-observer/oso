@@ -140,6 +140,7 @@ def parse_interval_prefix(interval: Interval, prefix: str) -> arrow.Arrow:
 
 
 optimism_traces_parallel = GoldskyAsset.setup_asset(
+    name="optimism_traces_parallel",
     config=GoldskyConfig(
         "optimism-traces",
         "opensource-observer",
@@ -151,7 +152,7 @@ optimism_traces_parallel = GoldskyAsset.setup_asset(
         int(os.environ.get("GOLDSKY_CHECKPOINT_SIZE", "100")),
         os.environ.get("DUCKDB_GCS_KEY_ID"),
         os.environ.get("DUCKDB_GCS_SECRET"),
-    )
+    ),
 )
 
 # @asset(key="optimism_traces_parallel")

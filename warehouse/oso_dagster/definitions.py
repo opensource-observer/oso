@@ -9,9 +9,6 @@ from .assets import (
     karma3_globaltrust,
     karma3_globaltrust_config,
     karma3_localtrust,
-    testing_goldsky,
-    other_test,
-    async_asset,
     optimism_traces_parallel,
 )
 from .constants import main_dbt_project_dir
@@ -24,10 +21,7 @@ load_dotenv()
 defs = Definitions(
     assets=[
         main_dbt_assets,
-        testing_goldsky,
-        async_asset,
         optimism_traces_parallel,
-        other_test,
     ]
     + karma3_globaltrust.assets
     + karma3_globaltrust_config.assets
