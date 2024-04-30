@@ -19,7 +19,7 @@
 #}
 {{ 
   config(meta = {
-    'sync_to_cloudsql': True
+    'sync_to_db': True
   }) 
 }}
 
