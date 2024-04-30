@@ -1,7 +1,7 @@
 sources:
   - name: lens
-    database: lens-public-data
-    schema: v2_polygon
+    database: opensource-observer
+    schema: lens_v2_polygon
     tables:
       - name: lens_owners
         identifier: profile_ownership_history
