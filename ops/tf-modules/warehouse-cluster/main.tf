@@ -7,13 +7,13 @@ locals {
   node_pools = concat([
     {
       name               = "${var.cluster_name}-default-node-pool"
-      machine_type       = "e2-medium"
+      machine_type       = "e2-standard-2"
       node_locations     = join(",", var.cluster_zones)
       min_count          = 0
       max_count          = 3
       local_ssd_count    = 0
       spot               = false
-      disk_size_gb       = 75
+      disk_size_gb       = 50
       disk_type          = "pd-standard"
       image_type         = "COS_CONTAINERD"
       enable_gcfs        = false
@@ -25,6 +25,7 @@ locals {
       preemptible        = false
       initial_node_count = 1
     },
+    # The spot pool is for workloads that need spot
     {
       name               = "${var.cluster_name}-spot-node-pool"
       machine_type       = "n1-standard-16"
@@ -45,9 +46,10 @@ locals {
       preemptible        = false
       initial_node_count = 0
     },
+    # The preemptible pool should be used only if spot can't be used
     {
       name               = "${var.cluster_name}-preemptible-node-pool"
-      machine_type       = "n1-standard-64"
+      machine_type       = "n1-standard-16"
       node_locations     = join(",", var.cluster_zones)
       min_count          = 0
       max_count          = 16
@@ -93,14 +95,14 @@ locals {
       {
         key    = "pool_type"
         value  = "spot"
-        effect = "PREFER_NO_SCHEDULE"
+        effect = "NO_SCHEDULE"
       },
     ]
     "${var.cluster_name}-preemptible-node-pool" = [
       {
         key    = "pool_type"
         value  = "preemptible"
-        effect = "PREFER_NO_SCHEDULE"
+        effect = "NO_SCHEDULE"
       },
     ]
   }, var.extra_node_taints)
