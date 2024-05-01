@@ -20,7 +20,7 @@ An impact metric must be:
 - A quantitative measure of impact on a continuous scale. Common examples include counts, sums, averages, and medians.
 - Available for all projects in the OSO database (even if many projects have a null value). Metrics should be extendable to any collection in the OSO database as well as any artifact in the same artifact namespace (eg, GitHub-related metrics, npm-related metrics, etc.).
 - Aggregated over a discrete period of time. Common time intervals include last 90 days, last 180 days, and since inception. OSO has already bucketed event data in daily, weekly, and monthly intervals to facilitate this.
-- Constructed from data that is available in one or more [intermediate or mart models](https://github.com/opensource-observer/oso/tree/main/warehouse/dbt/models). Common models include `projects`, `events_monthly_to_project`, `int_devs`, and `first_contribution_to_project`.
+- Constructed from data that is available in one or more [intermediate or mart models](https://github.com/opensource-observer/oso/tree/main/warehouse/dbt/models). Common models include `projects_v1`, `events_monthly_to_project`, `int_devs`, and `first_contribution_to_project_v1`.
 
 ## Schema
 
