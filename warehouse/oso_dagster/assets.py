@@ -61,15 +61,15 @@ optimism_traces_parallel = goldsky_asset(
     ),
 )
 
-optimism_test_merge = goldsky_asset(
-    "optimism_test_merge",
+base_test_merge = goldsky_asset(
+    "base_test_merge",
     GoldskyConfig(
-        source_name="optimism-traces",
+        source_name="base-traces",
         project_id="opensource-observer",
         destination_dataset_name="oso_raw_sources",
-        destination_table_name="optimism_test_merge",
+        destination_table_name="base_traces",
         partition_column_name="block_timestamp",
-        dedupe_model="optimism_dedupe.sql",
+        dedupe_model="dedupe.sql",
         pointer_size=int(os.environ.get("GOLDSKY_CHECKPOINT_SIZE", "500")),
         bucket_key_id=os.environ.get("DUCKDB_GCS_KEY_ID"),
         bucket_secret=os.environ.get("DUCKDB_GCS_SECRET"),

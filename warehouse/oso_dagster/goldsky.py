@@ -571,7 +571,7 @@ class GoldskyAsset:
             context.log.info("Caching blob list for processing")
             blobs = gcs_client.list_blobs(
                 self.config.source_bucket_name,
-                prefix=f"{self.config.source_goldsky_dir}/{self.config.source_name}/1714528926",
+                prefix=f"{self.config.source_goldsky_dir}/{self.config.source_name}",
             )
             self.cached_blobs_to_process = []
             for blob in blobs:
