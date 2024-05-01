@@ -12,5 +12,5 @@ SELECT
   atp.artifact_type AS artifact_type,
   atp.artifact_name AS artifact_name
 FROM {{ ref('stg_ossd__artifacts_by_project') }} AS atp
-LEFT JOIN {{ ref('projects') }} AS p
+LEFT JOIN {{ ref('projects_v1') }} AS p
   ON atp.project_id = p.project_id

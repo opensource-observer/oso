@@ -165,7 +165,7 @@ collection_by_network AS (
     c.collection_slug,
     c.collection_name,
     ctx.onchain_network
-  FROM {{ ref('collections') }} AS c
+  FROM {{ ref('collections_v1') }} AS c
   INNER JOIN contracts AS ctx
     ON c.collection_id = ctx.collection_id
 )

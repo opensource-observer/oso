@@ -387,7 +387,7 @@ INNER JOIN {{ ref('stg_ossd__artifacts_by_project') }} AS a
 
 ### Summary Onchain Metrics by Project
 
-This is a mart model available in the data warehouse as `onchain_metrics_by_project`.
+This is a mart model available in the data warehouse as `onchain_metrics_by_project_v1`.
 
 ```sql
 WITH txns AS (
@@ -509,7 +509,7 @@ project_by_network AS (
     p.project_id,
     ctx.onchain_network,
     p.project_name
-  FROM {{ ref('projects') }} AS p
+  FROM {{ ref('projects_v1') }} AS p
   INNER JOIN contracts AS ctx
     ON p.project_id = ctx.project_id
 )

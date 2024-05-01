@@ -62,27 +62,18 @@ This query will fetch **code metrics** for 10 projects, ordered by `avg_active_d
 
 ```graphql
 query GetCodeMetrics {
-  code_metrics_by_project(
+  code_metrics_by_project_v1(
     limit: 10
-    order_by: { avg_active_devs_6_months: desc_nulls_last }
+    order_by: { star_count: desc_nulls_last }
   ) {
     project_id
+    project_slug
     project_name
-    repositories
-    avg_active_devs_6_months
-    avg_fulltime_devs_6_months
-    contributors
-    contributors_6_months
-    new_contributors_6_months
-    first_commit_date
-    last_commit_date
-    forks
-    stars
-    issues_closed_6_months
-    issues_opened_6_months
-    pull_requests_merged_6_months
-    pull_requests_opened_6_months
-    commits_6_months
+    artifact_namespace
+    repository_count
+    star_count
+    fork_count
+    total_contributor_count
   }
 }
 ```

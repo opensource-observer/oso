@@ -8,9 +8,5 @@ SELECT
   project_id,
   namespace AS user_namespace,
   project_slug,
-  project_name,
-  count_github_owners,
-  count_github_artifacts,
-  count_blockchain_artifacts,
-  count_npm_artifacts
+  project_name
 FROM {{ ref('int_projects') }}
