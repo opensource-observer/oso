@@ -6,7 +6,7 @@
 
 SELECT
   id AS collection_id,
-  namespace AS user_namespace,
+  namespace AS collection_namespace,
   slug AS collection_slug,
   name AS collection_name
 FROM {{ ref('stg_ossd__current_collections') }}
