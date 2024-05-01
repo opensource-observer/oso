@@ -13,5 +13,5 @@ SELECT
   MAX(e.bucket_day) AS date_last_event,
   COUNT(DISTINCT e.bucket_day) AS count_days_with_event
 FROM {{ ref('events_daily_to_project_by_source') }} AS e
-INNER JOIN {{ ref('projects') }} AS p ON p.project_id = e.project_id
+INNER JOIN {{ ref('projects_v1') }} AS p ON p.project_id = e.project_id
 GROUP BY 1, 2, 3, 4

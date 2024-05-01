@@ -139,7 +139,7 @@ SELECT
   metrics.*,
   p.project_slug
 FROM
-  {{ ref('projects') }} AS p
+  {{ ref('projects_v1') }} AS p
 LEFT JOIN
   metrics ON p.project_id = metrics.project_id
 WHERE

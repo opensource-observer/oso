@@ -57,7 +57,7 @@ collection_repos_summary AS (
   INNER JOIN
     {{ ref('stg_ossd__projects_by_collection') }} AS pbc
     ON r.project_id = pbc.project_id
-  INNER JOIN {{ ref('collections') }} AS c
+  INNER JOIN {{ ref('collections_v1') }} AS c
     ON pbc.collection_id = c.collection_id
   WHERE r.is_fork = false
   GROUP BY

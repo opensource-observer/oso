@@ -157,7 +157,7 @@ project_by_network AS (
     p.project_slug,
     ctx.onchain_network,
     p.project_name
-  FROM {{ ref('projects') }} AS p
+  FROM {{ ref('projects_v1') }} AS p
   INNER JOIN contracts AS ctx
     ON p.project_id = ctx.project_id
 )
@@ -177,7 +177,7 @@ SELECT
   m6.l2_gas_6_months,
   ma.total_users AS `total_user_address_count`,
   m6.users_6_months AS `user_address_count_6_months`,
-  nu.new_user_count AS `new_user_count_3_months`,
+  nu.new_user_count AS `new_user_address_count_3_months`,
   us.high_frequency_users AS `high_frequency_address_count`,
   us.more_active_users AS `more_active_user_address_count`,
   us.less_active_users AS `less_active_user_address_count`,
