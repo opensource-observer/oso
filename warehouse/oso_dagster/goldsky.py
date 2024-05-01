@@ -7,14 +7,14 @@ import json
 from dask.distributed import get_worker
 from dask_kubernetes.operator import make_cluster_spec
 from dataclasses import dataclass
-from typing import List, Mapping, Tuple
+from typing import List, Mapping, Tuple, Callable
 import heapq
 from dagster import asset, AssetExecutionContext
 from dagster_gcp import BigQueryResource, GCSResource
 from google.api_core.exceptions import NotFound
 from google.cloud.bigquery import TableReference
 from .goldsky_dask import setup_kube_cluster_client, DuckDBGCSPlugin, RetryTaskManager
-from .cbt import CBTResource
+from .cbt import CBTResource, UpdateStrategy, TimePartitioning
 from .factories import AssetFactoryResponse
 
 
@@ -23,28 +23,91 @@ class GoldskyConfig:
     # This is the name of the asset within the goldsky directory path in gcs
     project_id: str
     source_name: str
-    destination_dataset_name: str
     destination_table_name: str
     pointer_size: int
     bucket_key_id: str
     bucket_secret: str
+
     max_objects_to_load: int = 200_000
-    source_bucket_name: str = "oso-dataset-transfer-bucket"
+
+    destination_dataset_name: str = "oso_sources"
     destination_bucket_name: str = "oso-dataset-transfer-bucket"
+
+    source_bucket_name: str = "oso-dataset-transfer-bucket"
     source_goldsky_dir: str = "goldsky"
+
     dask_worker_memory: str = "4096Mi"
     dask_scheduler_memory: str = "2560Mi"
-    destination_preload_path: str = "_temp"
-    dask_image: str = "ghcr.io/opensource-observer/dagster-dask:distributed-test-9"
-    dedupe_model: str = "dedupe.sql"
+    dask_image: str = "ghcr.io/opensource-observer/dagster-dask:distributed-test-10"
+
+    working_destination_dataset_name: str = "oso_raw_sources"
+    working_destination_preload_path: str = "_temp"
+
+    dedupe_model: str = "goldsky_dedupe.sql"
     dedupe_unique_column: str = "id"
-    dedupe_order_column: str = "_checkpoint"
+    dedupe_order_column: str = "ingestion_time"
+    merge_workers_model: str = "goldsky_merge_workers.sql"
+
     partition_column_name: str = ""
+    partition_column_type: str = "DAY"
+    partition_column_transform: Callable = lambda a: a
+
+    @property
+    def destination_table_fqdn(self):
+        return f"{self.project_id}.{self.destination_dataset_name}.{self.destination_table_name}"
+
+    def worker_raw_table_fqdn(self, worker: str):
+        return f"{self.project_id}.{self.working_destination_dataset_name}.{self.destination_table_name}_{worker}"
+
+    def worker_deduped_table_fqdn(self, worker: str):
+        return f"{self.project_id}.{self.working_destination_dataset_name}.{self.destination_table_name}_deduped_{worker}"
+
+
+@dataclass
+class GoldskyCheckpoint:
+    job_id: str
+    timestamp: int
+    worker_checkpoint: int
+
+    def __lt__(self, other):
+        if self.timestamp < other.timestamp:
+            return True
+        else:
+            if self.timestamp != other.timestamp:
+                return False
+            if self.job_id < other.job_id:
+                return True
+            else:
+                if self.job_id != other.job_id:
+                    return False
+                return self.worker_checkpoint < other.worker_checkpoint
+
+    def __le__(self, other):
+        if self == other:
+            return True
+        return self < other
+
+    def __eq__(self, other):
+        return (
+            self.timestamp == other.timestamp
+            and self.job_id == other.job_id
+            and self.worker_checkpoint == other.worker_checkpoint
+        )
+
+    def __gt__(self, other):
+        if self == other:
+            return False
+        return other < self
+
+    def __ge__(self, other):
+        if self == other:
+            return True
+        return self > other
 
 
 @dataclass
 class GoldskyQueueItem:
-    checkpoint: int
+    checkpoint: GoldskyCheckpoint
     blob_name: str
     blob_match: re.Match
 
@@ -74,6 +137,9 @@ class GoldskyQueue:
     def len(self):
         return len(self.queue)
 
+    def empty(self):
+        self.queue = []
+
 
 class GoldskyQueues:
     def __init__(self, max_size: int):
@@ -88,6 +154,15 @@ class GoldskyQueues:
     def dequeue(self, worker: str) -> GoldskyQueueItem | None:
         queue = self.queues.get(worker, GoldskyQueue(max_size=self.max_size))
         return queue.dequeue()
+
+    def empty(self, worker: str):
+        queue = self.queues.get(worker, None)
+        if queue:
+            queue.empty()
+
+    def empty_all(self):
+        for _, queue in self.queues.items():
+            queue.empty()
 
     def workers(self):
         return self.queues.keys()
@@ -130,14 +205,14 @@ class GoldskyWorker:
         worker: str,
         job_id: str,
         pointer_table: str,
-        latest_checkpoint: int | None,
+        latest_checkpoint: GoldskyCheckpoint | None,
         gcs: GCSResource,
         bigquery: BigQueryResource,
         config: GoldskyConfig,
         queue: GoldskyQueue,
         task_manager: RetryTaskManager,
     ):
-        self.worker = worker
+        self.name = worker
         self.config = config
         self.gcs = gcs
         self.queue = queue
@@ -151,14 +226,22 @@ class GoldskyWorker:
         return f"gs://{self.config.source_bucket_name}/{self.worker_destination_path(filename)}"
 
     def worker_destination_path(self, filename: str):
-        return f"{self.config.destination_preload_path}/{self.job_id}/{self.worker}/{filename}"
+        return f"{self.config.working_destination_preload_path}/{self.job_id}/{self.name}/{filename}"
 
     @property
-    def table(self) -> TableReference:
+    def raw_table(self) -> TableReference:
         with self.bigquery.get_client() as client:
             dest_table_ref = client.get_dataset(
-                self.config.destination_dataset_name
-            ).table(f"{self.config.destination_table_name}_{self.worker}")
+                self.config.working_destination_dataset_name
+            ).table(f"{self.config.destination_table_name}_{self.name}")
+            return dest_table_ref
+
+    @property
+    def deduped_table(self) -> TableReference:
+        with self.bigquery.get_client() as client:
+            dest_table_ref = client.get_dataset(
+                self.config.working_destination_dataset_name
+            ).table(f"{self.config.destination_table_name}_deduped_{self.name}")
             return dest_table_ref
 
     @property
@@ -180,7 +263,15 @@ class GoldskyWorker:
         while item is not None:
             source = f"gs://{self.config.source_bucket_name}/{item.blob_name}"
             destination = self.worker_destination_uri(
-                f"table_{item.checkpoint}.parquet"
+                f"table_{item.checkpoint.worker_checkpoint}.parquet"
+            )
+            context.log.debug(
+                dict(
+                    message="loading",
+                    source=source,
+                    destination=destination,
+                    worker=self.name,
+                )
             )
             in_flight.append(
                 self.task_manager.submit(
@@ -189,7 +280,7 @@ class GoldskyWorker:
                         GoldskyProcessItem(
                             source=source,
                             destination=destination,
-                            checkpoint=item.checkpoint,
+                            checkpoint=item.checkpoint.worker_checkpoint,
                         ),
                     ),
                     pure=False,
@@ -198,16 +289,16 @@ class GoldskyWorker:
             count += 1
             if count >= self.config.pointer_size:
                 context.log.debug(
-                    f"Worker {self.worker} waiting for {len(in_flight)} blobs to process"
+                    f"Worker {self.name} waiting for {len(in_flight)} blobs to process"
                 )
                 progress = 0
                 for coro in asyncio.as_completed(in_flight):
                     await coro
                     progress += 1
                     context.log.debug(
-                        f"Worker[{self.worker}] progress: {progress}/{count}"
+                        f"Worker[{self.name}] progress: {progress}/{count}"
                     )
-                context.log.debug(f"Worker[{self.worker}] done waiting for blobs")
+                context.log.debug(f"Worker[{self.name}] done waiting for blobs")
 
                 # Update the pointer table to the latest item's checkpoint
                 await self.update_pointer_table(context, current_checkpoint)
@@ -220,16 +311,16 @@ class GoldskyWorker:
 
         if len(in_flight) > 0:
             context.log.debug(
-                f"Finalizing worker {self.worker} waiting for {len(in_flight)} blobs to process. Last checkpoint {current_checkpoint}",
+                f"Finalizing worker {self.name} waiting for {len(in_flight)} blobs to process. Last checkpoint {current_checkpoint.worker_checkpoint}",
             )
             progress = 0
             for coro in asyncio.as_completed(in_flight):
                 await coro
                 progress += 1
-                context.log.debug(f"Worker[{self.worker}] progress: {progress}/{count}")
+                context.log.debug(f"Worker[{self.name}] progress: {progress}/{count}")
             await self.update_pointer_table(context, current_checkpoint)
 
-        return self.worker
+        return self.name
 
     async def clean_preload_files(self, context: AssetExecutionContext):
         await asyncio.to_thread(
@@ -241,7 +332,7 @@ class GoldskyWorker:
         )
 
     async def update_pointer_table(
-        self, context: AssetExecutionContext, checkpoint: int
+        self, context: AssetExecutionContext, checkpoint: GoldskyCheckpoint
     ):
         await asyncio.to_thread(
             blocking_update_pointer_table,
@@ -249,7 +340,7 @@ class GoldskyWorker:
             self.config,
             self.bigquery,
             self.job_id,
-            self.worker,
+            self.name,
             self.pointer_table,
             checkpoint,
             self.latest_checkpoint,
@@ -279,14 +370,14 @@ def blocking_update_pointer_table(
     job_id: str,
     worker: str,
     pointer_table: str,
-    new_checkpoint: int,
-    latest_checkpoint: int | None,
+    new_checkpoint: GoldskyCheckpoint,
+    latest_checkpoint: GoldskyCheckpoint | None,
     wildcard_path: str,
 ):
     with bigquery.get_client() as client:
-        dest_table_ref = client.get_dataset(config.destination_dataset_name).table(
-            f"{config.destination_table_name}_{worker}"
-        )
+        dest_table_ref = client.get_dataset(
+            config.working_destination_dataset_name
+        ).table(f"{config.destination_table_name}_{worker}")
         new = latest_checkpoint is None
         try:
             client.get_table(dest_table_ref)
@@ -299,7 +390,7 @@ def blocking_update_pointer_table(
             context.log.info("Merging into worker table")
             client.query_and_wait(
                 f"""
-                LOAD DATA OVERWRITE `{config.project_id}.{config.destination_dataset_name}.{config.destination_table_name}_{worker}_{job_id}`
+                LOAD DATA OVERWRITE `{config.project_id}.{config.working_destination_dataset_name}.{config.destination_table_name}_{worker}_{job_id}`
                 FROM FILES (
                     format = "PARQUET",
                     uris = ["{wildcard_path}"]
@@ -309,11 +400,13 @@ def blocking_update_pointer_table(
             tx_query = f"""
                 BEGIN
                     BEGIN TRANSACTION; 
-                        INSERT INTO `{config.project_id}.{config.destination_dataset_name}.{config.destination_table_name}_{worker}` 
-                        SELECT * FROM `{config.project_id}.{config.destination_dataset_name}.{config.destination_table_name}_{worker}_{job_id}`;
+                        INSERT INTO `{config.project_id}.{config.working_destination_dataset_name}.{config.destination_table_name}_{worker}` 
+                        SELECT * FROM `{config.project_id}.{config.working_destination_dataset_name}.{config.destination_table_name}_{worker}_{job_id}`;
 
-                        INSERT INTO `{pointer_table}` (worker, last_checkpoint)
-                        VALUES ('{worker}', {new_checkpoint}); 
+                        DELETE FROM `{pointer_table}` WHERE worker = '{worker}';
+
+                        INSERT INTO `{pointer_table}` (worker, job_id, timestamp, checkpoint)
+                        VALUES ('{worker}', '{new_checkpoint.job_id}', {new_checkpoint.timestamp}, {new_checkpoint.worker_checkpoint}); 
                     COMMIT TRANSACTION;
                     EXCEPTION WHEN ERROR THEN
                     -- Roll back the transaction inside the exception handler.
@@ -325,13 +418,13 @@ def blocking_update_pointer_table(
             client.query_and_wait(tx_query)
             client.query_and_wait(
                 f"""
-                DROP TABLE `{config.project_id}.{config.destination_dataset_name}.{config.destination_table_name}_{worker}_{job_id}`;
+                DROP TABLE `{config.project_id}.{config.working_destination_dataset_name}.{config.destination_table_name}_{worker}_{job_id}`;
             """
             )
         else:
             context.log.info("Creating new worker table")
             query1 = f"""
-                LOAD DATA OVERWRITE `{config.project_id}.{config.destination_dataset_name}.{config.destination_table_name}_{worker}`
+                LOAD DATA OVERWRITE `{config.project_id}.{config.working_destination_dataset_name}.{config.destination_table_name}_{worker}`
                 FROM FILES (
                     format = "PARQUET",
                     uris = ["{wildcard_path}"]
@@ -341,8 +434,8 @@ def blocking_update_pointer_table(
             client.query_and_wait(query1)
             rows = client.query_and_wait(
                 f"""
-                INSERT INTO `{pointer_table}` (worker, last_checkpoint)
-                VALUES ('{worker}', {new_checkpoint});
+                INSERT INTO `{pointer_table}` (worker, job_id, timestamp, checkpoint)
+                VALUES ('{worker}', '{new_checkpoint.job_id}', {new_checkpoint.timestamp}, {new_checkpoint.worker_checkpoint}); 
             """
             )
             context.log.info(rows)
@@ -357,7 +450,7 @@ def goldsky_asset(name: str, config: GoldskyConfig) -> AssetFactoryResponse:
         cbt: CBTResource,
     ):
         loop = asyncio.new_event_loop()
-        context.log.info(f"Job name?: {context.job_def}")
+        context.log.info(f"Run ID: {context.run_id}")
         gs_asset = GoldskyAsset(gcs, bigquery, cbt, config)
         loop.run_until_complete(gs_asset.materialize(loop, context))
 
@@ -388,9 +481,28 @@ class GoldskyAsset:
         context.log.info(
             {"info": "starting goldsky asset load", "name": self.config.source_name}
         )
+        self.ensure_datasets(context)
+
         workers = await self.load_worker_tables(loop, context)
+
         # Dedupe and partition the current worker table into a deduped and partitioned table
         await self.dedupe_worker_tables(context, workers)
+
+        await self.merge_worker_tables(context, workers)
+
+        await self.clean_working_destintation(context, workers)
+
+    def ensure_datasets(self, context: AssetExecutionContext):
+        self.ensure_dataset(context, self.config.destination_dataset_name)
+        self.ensure_dataset(context, self.config.working_destination_dataset_name)
+
+    def ensure_dataset(self, context: AssetExecutionContext, dataset_id: str):
+        with self.bigquery.get_client() as client:
+            try:
+                client.get_dataset(dataset_id)
+            except NotFound:
+                context.log.info(f"Creating dataset {dataset_id}")
+                client.create_dataset(dataset_id)
 
     async def load_worker_tables(
         self, loop: asyncio.AbstractEventLoop, context: AssetExecutionContext
@@ -453,56 +565,112 @@ class GoldskyAsset:
             workers.append(worker)
         for coro in asyncio.as_completed(worker_coroutines):
             worker: GoldskyWorker = await coro
-            context.log.info(f"Worker[{worker.worker}] Completed")
+            context.log.info(f"Worker[{worker.name}] Completed")
         return workers
 
     async def dedupe_worker_tables(
         self, context: AssetExecutionContext, workers: List[GoldskyWorker]
     ):
-        context.log.info("Deduplicating the worker table")
-        cbt = self.cbt.get()
+        cbt = self.cbt.get(context.log)
+        coroutines = []
         for worker in workers:
-            cbt.run_model(
-                self.config.dedupe_model,
-                worker.table,
-                time_partitioning_column=self.config.partition_column_name,
-                unique_column=self.config.dedupe_unique_column,
-                order_column=self.config.dedupe_order_column,
+            context.log.info(f"Deduplicating the Worker[{worker.name}] raw table")
+            time_partitioning = None
+            if self.config.partition_column_name:
+                time_partitioning = TimePartitioning(
+                    self.config.partition_column_name, self.config.partition_column_type
+                )
+            coroutines.append(
+                asyncio.to_thread(
+                    cbt.transform,
+                    self.config.dedupe_model,
+                    worker.deduped_table,
+                    time_partitioning=time_partitioning,
+                    unique_column=self.config.dedupe_unique_column,
+                    order_column=self.config.dedupe_order_column,
+                    partition_column_name=self.config.partition_column_name,
+                    partition_column_transform=self.config.partition_column_transform,
+                    raw_table=worker.raw_table,
+                )
+            )
+        completed = 0
+        for coro in asyncio.as_completed(coroutines):
+            await coro
+            completed += 1
+            context.log.info(f"Dedupe progress {completed}/{len(coroutines)}")
+
+    async def merge_worker_tables(
+        self, context: AssetExecutionContext, workers: List[GoldskyWorker]
+    ):
+        cbt = self.cbt.get(context.log)
+
+        context.log.info(
+            f"Merging all worker tables to final destination: {self.config.destination_table_fqdn}"
+        )
+        time_partitioning = None
+        if self.config.partition_column_name:
+            time_partitioning = TimePartitioning(
+                self.config.partition_column_name, self.config.partition_column_type
             )
 
+        cbt.transform(
+            self.config.merge_workers_model,
+            self.config.destination_table_fqdn,
+            update_strategy=UpdateStrategy.MERGE,
+            time_partitioning=time_partitioning,
+            partition_column_name=self.config.partition_column_name,
+            partition_column_transform=self.config.partition_column_transform,
+            unique_column=self.config.dedupe_unique_column,
+            order_column=self.config.dedupe_order_column,
+            workers=workers,
+        )
+
+    async def clean_working_destintation(
+        self, context: AssetExecutionContext, workers: List[GoldskyWorker]
+    ):
+        # For now we just need to be careful not to run this in multiple processes
+        with self.bigquery.get_client() as client:
+            for worker in workers:
+                context.log.debug(f"deleting Worker[{worker.name}] working tables")
+                client.delete_table(worker.raw_table)
+                client.delete_table(worker.deduped_table)
+
     def get_worker_status(self, context: AssetExecutionContext):
-        worker_status: Mapping[str, int] = {}
+        worker_status: Mapping[str, GoldskyCheckpoint] = {}
         # Get the current state
         with self.bigquery.get_client() as client:
             try:
                 rows = client.query_and_wait(
                     f"""
-                SELECT worker, MAX(last_checkpoint) AS last_checkpoint
+                SELECT worker, timestamp, job_id, checkpoint
                 FROM `{self.pointer_table}`
-                GROUP BY 1;
                 """
                 )
                 for row in rows:
                     context.log.debug(row)
-                    worker_status[row.worker] = row.last_checkpoint
+                    worker_status[row.worker] = GoldskyCheckpoint(
+                        job_id=row.job_id,
+                        timestamp=row.timestamp,
+                        worker_checkpoint=row.checkpoint,
+                    )
             except NotFound:
                 context.log.info("No pointer status found. Will create the table later")
         return worker_status
 
     @property
     def pointer_table(self):
-        return f"{self.config.project_id}.{self.config.destination_dataset_name}.{self.config.destination_table_name}_pointer_state"
+        return f"{self.config.project_id}.{self.config.working_destination_dataset_name}.{self.config.destination_table_name}_pointer_state"
 
     def ensure_pointer_table(self, context: AssetExecutionContext):
         config = self.config
         pointer_table_name = f"{config.destination_table_name}_pointer_state"
-        pointer_table = f"{config.project_id}.{config.destination_dataset_name}.{pointer_table_name}"
+        pointer_table = f"{config.project_id}.{config.working_destination_dataset_name}.{pointer_table_name}"
         context.log.info(
             f"ensuring that the sync pointer table exists at {pointer_table}"
         )
 
         with self.bigquery.get_client() as client:
-            dataset = client.get_dataset(config.destination_dataset_name)
+            dataset = client.get_dataset(config.working_destination_dataset_name)
             pointer_table_ref = dataset.table(pointer_table_name)
             try:
                 client.get_table(pointer_table_ref)
@@ -511,7 +679,7 @@ class GoldskyAsset:
                     context.log.info("Pointer table not found.")
                     client.query_and_wait(
                         f"""
-                    CREATE TABLE {pointer_table} (worker STRING, last_checkpoint INT64);
+                    CREATE TABLE {pointer_table} (worker STRING, timestamp INT64, job_id STRING, checkpoint INT64);
                     """
                     )
                 else:
@@ -564,7 +732,9 @@ class GoldskyAsset:
             + r"/(?P<timestamp>\d+)-(?P<job_id>[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})-(?P<worker>\d+)-(?P<checkpoint>\d+).parquet"
         )
 
-    def load_queues(self, context: AssetExecutionContext) -> Tuple[dict, GoldskyQueues]:
+    def load_queues(
+        self, context: AssetExecutionContext
+    ) -> Tuple[dict[str, GoldskyCheckpoint], GoldskyQueues]:
         gcs_client = self.gcs.get_client()
 
         if self.cached_blobs_to_process is None:
@@ -582,20 +752,26 @@ class GoldskyAsset:
         else:
             context.log.info("Using cached blob list for processing")
 
-        gs_job_ids = set()
         examples = dict()
         queues = GoldskyQueues(max_size=self.config.max_objects_to_load)
 
         # We should not cache the worker status as we may add unnecessary duplicate work
         worker_status = self.get_worker_status(context)
 
+        latest_timestamp = 0
+
         for match in self.cached_blobs_to_process:
             worker = match.group("worker")
             job_id = match.group("job_id")
-            gs_job_ids.add(job_id)
+            timestamp = int(match.group("timestamp"))
             examples[job_id] = match
-            checkpoint = int(match.group("checkpoint"))
-            if checkpoint <= worker_status.get(worker, -1):
+            worker_checkpoint = int(match.group("checkpoint"))
+            checkpoint = GoldskyCheckpoint(job_id, timestamp, worker_checkpoint)
+            if timestamp > latest_timestamp:
+                latest_timestamp = timestamp
+                # Empty the queue
+                queues.empty_all()
+            if checkpoint <= worker_status.get(worker, GoldskyCheckpoint("", 0, 0)):
                 continue
             queues.enqueue(
                 worker,
@@ -609,8 +785,4 @@ class GoldskyAsset:
         for worker, queue in queues.worker_queues():
             context.log.debug(f"Worker[{worker}] queue size: {queue.len()}")
 
-        if len(gs_job_ids) > 1:
-            context.log.error(examples)
-            context.log.error(queues.worker_queues())
-            raise Exception("We aren't currently handling multiple job ids")
         return (worker_status, queues)

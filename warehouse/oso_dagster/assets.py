@@ -51,7 +51,7 @@ optimism_traces_parallel = goldsky_asset(
     GoldskyConfig(
         source_name="optimism-traces",
         project_id="opensource-observer",
-        destination_dataset_name="oso_raw_sources",
+        working_destination_dataset_name="oso_raw_sources",
         destination_table_name="optimism_traces",
         partition_column_name="block_number",
         pointer_size=int(os.environ.get("GOLDSKY_CHECKPOINT_SIZE", "500")),
@@ -66,10 +66,11 @@ base_test_merge = goldsky_asset(
     GoldskyConfig(
         source_name="base-traces",
         project_id="opensource-observer",
-        destination_dataset_name="oso_raw_sources",
-        destination_table_name="base_traces",
+        destination_table_name="base_traces_test",
+        working_destination_dataset_name="deleteme_oso_raw_sources_test",
+        destination_dataset_name="deleteme_oso_sources_test",
         partition_column_name="block_timestamp",
-        dedupe_model="dedupe.sql",
+        partition_column_transform=lambda c: f"TIMESTAMP_SECONDS(`{c}`)",
         pointer_size=int(os.environ.get("GOLDSKY_CHECKPOINT_SIZE", "500")),
         bucket_key_id=os.environ.get("DUCKDB_GCS_KEY_ID"),
         bucket_secret=os.environ.get("DUCKDB_GCS_SECRET"),
