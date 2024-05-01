@@ -28,12 +28,12 @@ WITH project_repos_summary AS (
     project_slug,
     project_name,
     repository_source,
-    MIN(first_commit_date) AS first_commit_date,
-    MAX(last_commit_date) AS last_commit_date,
+    MIN(first_commit_time) AS first_commit_date,
+    MAX(last_commit_time) AS last_commit_date,
     COUNT(DISTINCT artifact_id) AS repositories,
     SUM(repo_star_count) AS stars,
     SUM(repo_fork_count) AS forks
-  FROM {{ ref('repos_by_project') }}
+  FROM {{ ref('int_repos_by_project') }}
   --WHERE r.is_fork = false
   GROUP BY
     project_id,
