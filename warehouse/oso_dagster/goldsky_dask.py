@@ -73,7 +73,7 @@ class RetryTaskManager:
 
         self.cluster = KubeCluster(custom_cluster_spec=self.cluster_spec)
         self.cluster.adapt(minimum=8, maximum=50)
-        self.client = Client(self.cluster)
+        self.client = Client(self.cluster, timeout=120)
         self.client.register_plugin(
             DuckDBGCSPlugin(
                 self.bucket_key_id,
