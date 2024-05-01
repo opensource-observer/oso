@@ -42,11 +42,13 @@ const config: Config = {
       {
         docs: {
           sidebarPath: "./sidebars.ts",
-          editUrl: "https://github.com/opensource-observer/oso/tree/main/docs/",
+          editUrl:
+            "https://github.com/opensource-observer/oso/tree/main/apps/docs/",
         },
         blog: {
           showReadingTime: true,
-          editUrl: "https://github.com/opensource-observer/oso/tree/main/docs/",
+          editUrl:
+            "https://github.com/opensource-observer/oso/tree/main/apps/docs/",
           blogSidebarTitle: "All posts",
           blogSidebarCount: "ALL",
         },
