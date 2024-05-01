@@ -378,12 +378,12 @@ def blocking_update_pointer_table(
         dest_table_ref = client.get_dataset(
             config.working_destination_dataset_name
         ).table(f"{config.destination_table_name}_{worker}")
-        new = latest_checkpoint is None
+        new = False
         try:
             client.get_table(dest_table_ref)
         except NotFound as exc:
-            if latest_checkpoint is not None:
-                raise exc
+            # If the table doesn't exist just create it. An existing table will
+            # be there if a previous run happened to fail midway.
             new = True
 
         if not new:
