@@ -78,8 +78,8 @@ export default async function ProjectPage(props: ProjectPageProps) {
     }),
   ]);
   const { event_types: eventTypes } = data[0];
-  const { code_metrics_by_project: codeMetrics } = data[1];
-  const { onchain_metrics_by_project: onchainMetrics } = data[2];
+  const { code_metrics_by_project_v1: codeMetrics } = data[1];
+  const { onchain_metrics_by_project_v1: onchainMetrics } = data[2];
 
   // Get Plasmic component
   const plasmicData = await cachedFetchComponent(PLASMIC_COMPONENT);

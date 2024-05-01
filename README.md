@@ -66,9 +66,9 @@ dbt models, checkout [our docs!](https://docs.opensource.observer/docs/get-start
 
 #### Prequisites
 
-- Python 3 (Tested on 3.11)
-- [poetry](https://python-poetry.org/)
-  - Install with pip: `pip install poetry`
+- Python >=3.11
+- [poetry](https://python-poetry.org/) >= 1.8
+  - Install with pipx: `pipx install poetry`
 
 #### Install dependencies
 
@@ -149,6 +149,25 @@ as you need to regularly reauth. If you need longer access you can setup a
 service-account in GCP, but these docs will not cover that for now.
 
 You should now be logged into BigQuery!
+
+#### Setting up VS Code
+
+The [Power User for dbt core](https://marketplace.visualstudio.com/items?itemName=innoverio.vscode-dbt-power-user) extension is pretty helpful.
+
+You'll need the path to your poetry environment, which you can get by running
+
+```bash
+poetry env info --path
+```
+
+Then in VS Code:
+
+- Install the extension
+- Open the command pallet, enter "Python: select interpreter"
+- Select "Enter interpreter path..."
+- Enter the path from the poetry command above
+
+Check that you have a little check mark next to "dbt" in the bottom bar.
 
 ## Usage
 

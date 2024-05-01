@@ -92,7 +92,7 @@ contracts AS (
     project_id,
     artifact_namespace AS network,
     COUNT(DISTINCT artifact_name) AS num_contracts
-  FROM {{ ref('artifacts_by_project') }}
+  FROM {{ ref('artifacts_by_project_v1') }}
   WHERE artifact_type IN ('CONTRACT', 'FACTORY')
   GROUP BY 1, 2
 ),
@@ -139,7 +139,7 @@ SELECT
   metrics.*,
   p.project_slug
 FROM
-  {{ ref('projects') }} AS p
+  {{ ref('projects_v1') }} AS p
 LEFT JOIN
   metrics ON p.project_id = metrics.project_id
 WHERE

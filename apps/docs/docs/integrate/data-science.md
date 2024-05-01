@@ -52,7 +52,7 @@ You can also create a new notebook from scratch and run it in the cloud. Here's 
    %%bigquery df --project my-oso-playground
 
    SELECT *
-   FROM `opensource-observer.oso_playground.code_metrics_by_project`
+   FROM `opensource-observer.oso_playground.code_metrics_by_project_v1`
    ORDER BY last_commit_date DESC
    ```
 
@@ -73,7 +73,7 @@ You can also create a new notebook from scratch and run it in the cloud. Here's 
    %%bigquery df --project my-oso-playground
 
    SELECT *
-   FROM `opensource-observer.oso.code_metrics_by_project`
+   FROM `opensource-observer.oso.code_metrics_by_project_v1`
    ORDER BY last_commit_date DESC
    ```
 
@@ -314,7 +314,7 @@ Try a sample query to test your connection:
 ```python
 query = """
     SELECT *
-    FROM `opensource-observer.oso_playground.code_metrics_by_project`
+    FROM `opensource-observer.oso_playground.code_metrics_by_project_v1`
     ORDER BY last_commit_date DESC
 """
 results = client.query(query)
@@ -339,7 +339,7 @@ If you prefer to work with static data, you can export your data from BigQuery t
 2. Try a sample query and click **Run** to execute it. For example, you can fetch the latest code metrics for all projects in the OSO data warehouse:
    ```sql
    SELECT *
-   FROM `opensource-observer.oso_playground.code_metrics_by_project`
+   FROM `opensource-observer.oso_playground.code_metrics_by_project_v1`
    ORDER BY last_commit_date DESC
    ```
 3. Click the **Save Results** button to export your data in your preferred format. Note that there are limits to the amount of data you can download locally vs the amount you can save on Google Drive. If you have a large dataset (above 10MB), you may need to save it to Google Drive and then download it from there.
@@ -408,7 +408,7 @@ In this example, we will fetch the latest code metrics for all projects on OSO.
 ```python
 query = """
     SELECT *
-    FROM `opensource-observer.oso_playground.code_metrics_by_project`
+    FROM `opensource-observer.oso_playground.code_metrics_by_project_v1`
     ORDER BY last_commit_date DESC
 """
 results = client.query(query)
@@ -594,9 +594,9 @@ We will fetch the latest fork counts for all projects in the OSO data warehouse 
 query = """
     SELECT
         project_name,
-        forks
-    FROM `opensource-observer.oso_playground.code_metrics_by_project`
-    WHERE forks > 0
+        fork_count
+    FROM `opensource-observer.oso_playground.code_metrics_by_project_v1`
+    WHERE fork_count > 0
 """
 results = client.query(query)
 

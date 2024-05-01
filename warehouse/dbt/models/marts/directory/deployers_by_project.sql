@@ -10,5 +10,5 @@ SELECT
   atp.artifact_id AS artifact_id,
   atp.artifact_namespace AS artifact_namespace,
   atp.artifact_name AS artifact_name
-FROM {{ ref('artifacts_by_project') }} AS atp
+FROM {{ ref('artifacts_by_project_v1') }} AS atp
 WHERE atp.artifact_type = 'DEPLOYER'

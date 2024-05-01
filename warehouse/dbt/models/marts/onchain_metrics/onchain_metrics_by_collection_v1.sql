@@ -162,9 +162,10 @@ contracts AS (
 collection_by_network AS (
   SELECT
     c.collection_id,
-    ctx.onchain_network,
-    c.collection_name
-  FROM {{ ref('collections') }} AS c
+    c.collection_slug,
+    c.collection_name,
+    ctx.onchain_network
+  FROM {{ ref('collections_v1') }} AS c
   INNER JOIN contracts AS ctx
     ON c.collection_id = ctx.collection_id
 )
@@ -172,25 +173,26 @@ collection_by_network AS (
 -- Final query to join all the metrics together for collections
 SELECT
   c.collection_id,
-  c.onchain_network AS network,
+  c.collection_slug,
   c.collection_name,
-  co.num_contracts,
-  ma.total_projects,
-  ma.first_txn_date,
-  ma.total_txns,
+  c.onchain_network AS `artifact_namespace`,
+  ma.total_projects AS `total_project_count`,
+  co.num_contracts AS `total_contract_count`,
+  ma.first_txn_date AS `first_transaction_date`,
+  ma.total_txns AS `total_transaction_count`,
+  m6.txns_6_months AS `transaction_count_6_months`,
   ma.total_l2_gas,
-  ma.total_users,
-  m6.txns_6_months,
   m6.l2_gas_6_months,
-  m6.users_6_months,
-  nu.new_user_count AS new_users,
-  us.high_frequency_users,
-  us.more_active_users,
-  us.less_active_users,
-  us.multi_project_users,
+  ma.total_users AS `total_user_address_count`,
+  m6.users_6_months AS `user_address_count_6_months`,
+  nu.new_user_count AS `new_user_count_3_months`,
+  us.high_frequency_users AS `high_frequency_address_count`,
+  us.more_active_users AS `more_active_user_address_count`,
+  us.less_active_users AS `less_active_user_address_count`,
+  us.multi_project_users AS `multi_project_user_address_count`,
   (
     us.high_frequency_users + us.more_active_users + us.less_active_users
-  ) AS active_users
+  ) AS `total_active_user_address_count`
 FROM collection_by_network AS c
 INNER JOIN metrics_all_time AS ma
   ON

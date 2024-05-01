@@ -31,7 +31,7 @@ SELECT
   s.last_commit_date,
   LOWER(r.name_with_owner) AS repo_name_with_owner
 FROM {{ ref('stg_ossd__repositories_by_project') }} AS r
-LEFT JOIN {{ ref('projects') }} AS p
+LEFT JOIN {{ ref('projects_v1') }} AS p
   ON r.project_id = p.project_id
 LEFT JOIN github_stats AS s
   ON r.artifact_id = s.artifact_id

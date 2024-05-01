@@ -169,7 +169,7 @@ The first step in this process is to define a domain and create a list of projec
 ```sql
 -- Sample of DeFi projects
 SELECT *
-FROM `oso.onchain_metrics_by_project`
+FROM `oso.onchain_metrics_by_project_v1`
 WHERE project_name IN ('Uniswap', '1inch', 'Sushi')
 ```
 
