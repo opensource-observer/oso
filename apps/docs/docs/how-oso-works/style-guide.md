@@ -18,4 +18,7 @@ In addition to the official guides, we follow these additional guidelines:
 
 - **Avoid complex marts**: Push all complexity to intermediate tables. Marts should simply be a direct copy or less granular version of an intermediate table.
 
-- **Enumerate all columns explicitly in marts**: Avoid using `*` statements in a mart model. This makes it easier to trace any changes through version control.
+- **Enumerate all columns explicitly in models**: concretely, this mean
+  - Avoid using `*` statements in a mart model. This makes it easier to trace any changes through version control.
+  - Avoid using positional arguments (i.e. `GROUP BY 1, 2, 3`). This can lead to easy bugs if columns get re-ordered
+  - Avoid using acronyms or single-letter names. Prioritize easy-to-understand names over speed.
