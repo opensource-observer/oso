@@ -6,7 +6,7 @@
 
 SELECT
   project_id,
-  namespace AS user_namespace,
+  namespace AS project_namespace,
   project_slug,
   project_name
 FROM {{ ref('int_projects') }}

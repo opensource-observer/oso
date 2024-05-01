@@ -36,6 +36,6 @@ SELECT
   a.project_id,
   COUNT(DISTINCT a.artifact_id) AS amount
 FROM valid_contracts AS v
-LEFT JOIN {{ ref('artifacts_by_project') }} AS a
+LEFT JOIN {{ ref('artifacts_by_project_v1') }} AS a
   ON v.artifact_id = a.artifact_id
 GROUP BY 1
