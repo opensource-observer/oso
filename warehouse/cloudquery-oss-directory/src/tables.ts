@@ -96,12 +96,12 @@ export const getTables = async (options: TableOptions): Promise<Table[]> => {
         );
       }),
       [
-        newColumn("slug", {
+        newColumn("name", {
           primaryKey: true,
           unique: true,
           notNull: true,
         }),
-        newColumn("name", {
+        newColumn("display_name", {
           notNull: true,
         }),
         newColumn("version", {
@@ -127,12 +127,12 @@ export const getTables = async (options: TableOptions): Promise<Table[]> => {
         );
       }),
       [
-        newColumn("slug", {
+        newColumn("name", {
           primaryKey: true,
           unique: true,
           notNull: true,
         }),
-        newColumn("name", {
+        newColumn("display_name", {
           notNull: true,
         }),
         newColumn("github", {
