@@ -22,160 +22,24 @@
   }) 
 }}
 
--- CTE for calculating the first and last commit date for each collection, 
--- ignoring forked repos
-WITH collection_commit_dates AS (
-  SELECT
-    pbc.collection_id,
-    r.repository_source,
-    MIN(e.time) AS first_commit_date,
-    MAX(e.time) AS last_commit_date
-  FROM {{ ref('int_events_to_project') }} AS e
-  INNER JOIN
-    {{ ref('stg_ossd__repositories_by_project') }} AS r
-    ON e.project_id = r.project_id
-  INNER JOIN
-    {{ ref('stg_ossd__projects_by_collection') }} AS pbc
-    ON r.project_id = pbc.project_id
-  WHERE
-    e.event_type = 'COMMIT_CODE'
-    AND r.is_fork = false
-  GROUP BY pbc.collection_id, r.repository_source
-),
-
--- CTE for aggregating stars, forks, and repository counts by collection
-collection_repos_summary AS (
-  SELECT
-    c.collection_id,
-    c.collection_slug,
-    c.collection_name,
-    r.repository_source,
-    COUNT(DISTINCT r.id) AS repositories,
-    SUM(r.star_count) AS stars,
-    SUM(r.fork_count) AS forks
-  FROM {{ ref('stg_ossd__repositories_by_project') }} AS r
-  INNER JOIN
-    {{ ref('stg_ossd__projects_by_collection') }} AS pbc
-    ON r.project_id = pbc.project_id
-  INNER JOIN {{ ref('collections_v1') }} AS c
-    ON pbc.collection_id = c.collection_id
-  WHERE r.is_fork = false
-  GROUP BY
-    c.collection_id, c.collection_slug, c.collection_name, r.repository_source
-),
-
--- CTE for calculating contributor counts and new contributors in the last 6 
--- months at collection level
-collection_contributors AS (
-  SELECT
-    d.collection_id,
-    d.repository_source,
-    COUNT(DISTINCT d.from_id) AS contributors,
-    COUNT(
-      DISTINCT CASE
-        WHEN
-          d.bucket_month
-          >= CAST(DATE_SUB(CURRENT_DATE(), INTERVAL 6 MONTH) AS TIMESTAMP)
-          THEN d.from_id
-      END
-    ) AS contributors_6_months,
-    COUNT(
-      DISTINCT CASE
-        WHEN
-          d.bucket_month
-          >= CAST(DATE_SUB(CURRENT_DATE(), INTERVAL 6 MONTH) AS TIMESTAMP)
-          AND d.user_segment_type = 'FULL_TIME_DEV'
-          THEN CONCAT(d.from_id, '_', d.bucket_month)
-      END
-    )
-    / 6 AS avg_fulltime_devs_6_months,
-    COUNT(
-      DISTINCT CASE
-        WHEN
-          d.bucket_month
-          >= CAST(DATE_SUB(CURRENT_DATE(), INTERVAL 6 MONTH) AS TIMESTAMP)
-          AND d.user_segment_type IN ('FULL_TIME_DEV', 'PART_TIME_DEV')
-          THEN CONCAT(d.from_id, '_', d.bucket_month)
-      END
-    )
-    / 6 AS avg_active_devs_6_months,
-    COUNT(
-      DISTINCT CASE
-        WHEN
-          d.first_contribution_date
-          >= CAST(DATE_SUB(CURRENT_DATE(), INTERVAL 6 MONTH) AS TIMESTAMP)
-          THEN d.from_id
-      END
-    ) AS new_contributors_6_months
-  FROM (
-    SELECT
-      from_id,
-      collection_id,
-      repository_source,
-      bucket_month,
-      user_segment_type,
-      MIN(bucket_month)
-        OVER (PARTITION BY from_id, collection_id)
-        AS first_contribution_date
-    FROM {{ ref('int_active_devs_monthly_to_collection') }}
-  ) AS d
-  GROUP BY d.collection_id, d.repository_source
-),
-
--- CTE for summarizing collection activity metrics over the past 6 months
-collection_activity AS (
-  SELECT
-    pbc.collection_id,
-    e.to_namespace AS repository_source,
-    SUM(CASE WHEN e.event_type = 'COMMIT_CODE' THEN e.amount END)
-      AS commits_6_months,
-    SUM(CASE WHEN e.event_type = 'ISSUE_OPENED' THEN e.amount END)
-      AS issues_opened_6_months,
-    SUM(CASE WHEN e.event_type = 'ISSUE_CLOSED' THEN e.amount END)
-      AS issues_closed_6_months,
-    SUM(CASE WHEN e.event_type = 'PULL_REQUEST_OPENED' THEN e.amount END)
-      AS pull_requests_opened_6_months,
-    SUM(CASE WHEN e.event_type = 'PULL_REQUEST_MERGED' THEN e.amount END)
-      AS pull_requests_merged_6_months
-  FROM {{ ref('int_events_to_project') }} AS e
-  INNER JOIN
-    {{ ref('stg_ossd__projects_by_collection') }} AS pbc
-    ON e.project_id = pbc.project_id
-  WHERE e.time >= CAST(DATE_ADD(CURRENT_DATE(), INTERVAL -6 MONTH) AS TIMESTAMP)
-  GROUP BY pbc.collection_id, repository_source
-)
-
--- Final query to join all the metrics together for collections
 SELECT
-  c.collection_id,
-  c.collection_slug,
-  c.collection_name,
-  c.repository_source AS `artifact_namespace`,
-  ccd.first_commit_date,
-  ccd.last_commit_date,
-  c.repositories AS `repository_count`,
-  c.stars AS `star_count`,
-  c.forks AS `fork_count`,
-  cc.contributors AS `total_contributor_count`,
-  cc.contributors_6_months AS `contributor_count_6_months`,
-  cc.new_contributors_6_months AS `new_contributor_count_6_months`,
-  cc.avg_fulltime_devs_6_months AS `avg_fulltime_developer_count_6_months`,
-  cc.avg_active_devs_6_months AS `avg_active_developer_count_6_months`,
-  ca.commits_6_months AS `commit_count_6_months`,
-  ca.issues_opened_6_months AS `opened_issue_count_6_months`,
-  ca.issues_closed_6_months AS `closed_issue_count_6_months`,
-  ca.pull_requests_opened_6_months AS `opened_pull_request_count_6_months`,
-  ca.pull_requests_merged_6_months AS `merged_pull_request_count_6_months`
-FROM collection_repos_summary AS c
-INNER JOIN collection_commit_dates AS ccd
-  ON
-    c.collection_id = ccd.collection_id
-    AND c.repository_source = ccd.repository_source
-INNER JOIN collection_contributors AS cc
-  ON
-    c.collection_id = cc.collection_id
-    AND c.repository_source = cc.repository_source
-INNER JOIN collection_activity AS ca
-  ON
-    c.collection_id = ca.collection_id
-    AND c.repository_source = ca.repository_source
+  collection_id,
+  collection_slug AS `collection_name`,
+  collection_name AS `collection_display_name`,
+  repository_source AS `artifact_namespace`,
+  first_commit_date AS `commit_min_date`,
+  last_commit_date AS `commit_max_date`,
+  repositories AS `repository_count_all`,
+  stars AS `stars_count_all`,
+  forks AS `forks_count_all`,
+  contributors AS `contributors_count_all`,
+  contributors_6_months AS `contributors_count_6m`,
+  new_contributors_6_months AS `new_contributors_count_6m`,
+  avg_fulltime_devs_6_months AS `fulltime_developer_months_avg_6m`,
+  avg_active_devs_6_months AS `active_developer_months_avg_6m`,
+  commits_6_months AS `commits_count_6m`,
+  issues_opened_6_months AS `issues_opened_count_6m`,
+  issues_closed_6_months AS `issues_closed_count_6m`,
+  pull_requests_opened_6_months AS `prs_opened_count_6m`,
+  pull_requests_merged_6_months AS `prs_merged_count_6m`
+FROM {{ ref('int_code_metrics_by_collection') }}
