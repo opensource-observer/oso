@@ -20,7 +20,8 @@
 WITH project_repos_summary AS (
   SELECT
     project_id,
-    project_slug,
+    project_source,
+    project_namespace,
     project_name,
     repository_source,
     MIN(first_commit_time) AS first_commit_date,
@@ -32,7 +33,8 @@ WITH project_repos_summary AS (
   --WHERE r.is_fork = false
   GROUP BY
     project_id,
-    project_slug,
+    project_source,
+    project_namespace,
     project_name,
     repository_source
 ),
@@ -152,9 +154,10 @@ activity_cte AS (
 
 SELECT
   p.project_id,
-  p.project_slug,
+  p.project_source,
+  p.project_namespace,
   p.project_name,
-  a.artifact_namespace,
+  p.repository_source AS `artifact_source`,
   p.first_commit_date,
   p.last_commit_date,
   p.repositories,

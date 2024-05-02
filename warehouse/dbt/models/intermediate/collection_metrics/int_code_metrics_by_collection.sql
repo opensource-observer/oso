@@ -42,7 +42,8 @@ WITH collection_commit_dates AS (
 collection_repos_summary AS (
   SELECT
     c.collection_id,
-    c.collection_slug,
+    c.collection_source,
+    c.collection_namespace,
     c.collection_name,
     r.repository_source,
     COUNT(DISTINCT r.id) AS repositories,
@@ -56,7 +57,11 @@ collection_repos_summary AS (
     ON pbc.collection_id = c.collection_id
   WHERE r.is_fork = false
   GROUP BY
-    c.collection_id, c.collection_slug, c.collection_name, r.repository_source
+    c.collection_id,
+    c.collection_source,
+    c.collection_namespace,
+    c.collection_name,
+    r.repository_source
 ),
 
 -- CTE for calculating contributor counts and new contributors in the last 6 
@@ -143,9 +148,10 @@ collection_activity AS (
 -- Final query to join all the metrics together for collections
 SELECT
   c.collection_id,
-  c.collection_slug,
+  c.collection_source,
+  c.collection_namespace,
   c.collection_name,
-  c.repository_source,
+  c.repository_source AS `artifact_source`,
   ccd.first_commit_date,
   ccd.last_commit_date,
   c.repositories,

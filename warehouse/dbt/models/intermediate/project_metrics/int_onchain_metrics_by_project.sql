@@ -87,15 +87,18 @@ first_txn AS (
   GROUP BY 1, 2
 ),
 
+{# This needs to be refactored to use a new `artifact_types` table #}
+{#
 contracts AS (
   SELECT
     project_id,
-    artifact_namespace AS network,
+    artifact_source AS network,
     COUNT(DISTINCT artifact_name) AS num_contracts
   FROM {{ ref('artifacts_by_project_v1') }}
   WHERE artifact_type IN ('CONTRACT', 'FACTORY')
   GROUP BY 1, 2
 ),
+#}
 
 multi_project_addresses AS (
   SELECT
@@ -117,16 +120,12 @@ multi_project_addresses AS (
 
 metrics AS (
   SELECT
-    c.*,
-    f.* EXCEPT (project_id, network),
+    f.*,
     t.* EXCEPT (project_id, network),
     a.* EXCEPT (project_id, network),
     m.* EXCEPT (project_id, network)
   FROM
-    contracts AS c
-  INNER JOIN
     txns AS t
-    ON c.project_id = t.project_id AND c.network = t.network
   LEFT JOIN
     first_txn AS f
     ON t.project_id = f.project_id AND t.network = f.network
@@ -139,12 +138,12 @@ metrics AS (
 )
 
 SELECT
-  metrics.*,
-  p.project_slug,
+  metrics.* EXCEPT (project_id),
+  p.project_id,
+  p.project_source,
+  p.project_namespace,
   p.project_name
 FROM
   {{ ref('projects_v1') }} AS p
 LEFT JOIN
   metrics ON p.project_id = metrics.project_id
-WHERE
-  metrics.num_contracts IS NOT NULL

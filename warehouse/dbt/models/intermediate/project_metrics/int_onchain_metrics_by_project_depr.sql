@@ -154,9 +154,10 @@ contracts AS (
 project_by_network AS (
   SELECT
     p.project_id,
-    p.project_slug,
-    ctx.onchain_network,
-    p.project_name
+    p.project_source,
+    p.project_namespace,
+    p.project_name,
+    ctx.onchain_network
   FROM {{ ref('projects_v1') }} AS p
   INNER JOIN contracts AS ctx
     ON p.project_id = ctx.project_id
@@ -165,9 +166,10 @@ project_by_network AS (
 -- Final query to join all the metrics together
 SELECT
   p.project_id,
-  p.project_slug,
+  p.project_source,
+  p.project_namespace,
   p.project_name,
-  p.onchain_network AS `artifact_namespace`,
+  p.onchain_network AS `artifact_source`,
   -- TODO: add deployers owned by project
   c.num_contracts AS `total_contract_count`,
   ma.first_txn_date AS `first_transaction_date`,

@@ -1,4 +1,5 @@
 {# 
+  TODO: this should go into a yml file for doc generation
   Summary GitHub metrics for a project:
     - first_commit_date: The date of the first commit to the project
     - last_commit_date: The date of the last commit to the project
@@ -24,9 +25,10 @@
 
 SELECT
   project_id,
-  project_slug AS `project_name`,
-  project_name AS `project_display_name`,
-  artifact_namespace,
+  project_source,
+  project_namespace,
+  project_name,
+  artifact_source,
   first_commit_date AS `commit_min_date`,
   last_commit_date AS `commit_max_date`,
   repositories AS `repository_count_all`,

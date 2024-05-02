@@ -22,10 +22,11 @@ project_owners AS (
 
 SELECT
   p.id AS project_id,
-  p.slug AS project_slug,
+  "OSS_DIRECTORY" AS project_source,
   {# TODO: description AS project_description #}
-  p.name AS project_name,
-  p.namespace AS namespace,
+  p.namespace AS project_namespace,
+  p.slug AS project_name,
+  p.name AS display_name,
   po.primary_github_owner,
   po.count_github_owners,
   ARRAY_LENGTH(JSON_EXTRACT_ARRAY(p.github)) AS count_github_artifacts,
