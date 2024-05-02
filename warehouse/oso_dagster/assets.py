@@ -46,36 +46,50 @@ def random_cbt(cbt: CBTResource):
     )
 
 
-optimism_traces_parallel = goldsky_asset(
-    "optimism_traces_parallel",
-    GoldskyConfig(
-        source_name="optimism-traces",
-        project_id="opensource-observer",
-        working_destination_dataset_name="oso_raw_sources",
-        destination_table_name="optimism_traces",
-        partition_column_name="block_number",
-        pointer_size=int(os.environ.get("GOLDSKY_CHECKPOINT_SIZE", "500")),
-        bucket_key_id=os.environ.get("DUCKDB_GCS_KEY_ID"),
-        bucket_secret=os.environ.get("DUCKDB_GCS_SECRET"),
-        max_objects_to_load=int(os.environ.get("GOLDSKY_BATCH_SIZE", "1000")),
-    ),
-)
+# optimism_traces_parallel = goldsky_asset(
+#     "optimism_traces_parallel",
+#     GoldskyConfig(
+#         source_name="optimism-traces",
+#         project_id="opensource-observer",
+#         working_destination_dataset_name="oso_raw_sources",
+#         destination_table_name="optimism_traces",
+#         partition_column_name="block_number",
+#         pointer_size=int(os.environ.get("GOLDSKY_CHECKPOINT_SIZE", "500")),
+#         bucket_key_id=os.environ.get("DUCKDB_GCS_KEY_ID"),
+#         bucket_secret=os.environ.get("DUCKDB_GCS_SECRET"),
+#         max_objects_to_load=int(os.environ.get("GOLDSKY_BATCH_SIZE", "1000")),
+#     ),
+# )
 
-base_test_merge = goldsky_asset(
-    "base_test_merge",
+base_traces = goldsky_asset(
+    "base_traces",
     GoldskyConfig(
         source_name="base-traces",
         project_id="opensource-observer",
-        destination_table_name="base_traces_test",
-        working_destination_dataset_name="deleteme_oso_raw_sources_test",
-        destination_dataset_name="deleteme_oso_sources_test",
+        destination_table_name="base_traces",
+        working_destination_dataset_name="oso_raw_sources",
+        destination_dataset_name="oso_sources",
         partition_column_name="block_timestamp",
         partition_column_transform=lambda c: f"TIMESTAMP_SECONDS(`{c}`)",
         pointer_size=int(os.environ.get("GOLDSKY_CHECKPOINT_SIZE", "20000")),
-        bucket_key_id=os.environ.get("DUCKDB_GCS_KEY_ID"),
-        bucket_secret=os.environ.get("DUCKDB_GCS_SECRET"),
         # uncomment the following value to test
         # max_objects_to_load=2,
+    ),
+)
+
+optimism_traces = goldsky_asset(
+    "optimism_traces",
+    GoldskyConfig(
+        source_name="optimism-traces",
+        project_id="opensource-observer",
+        destination_table_name="optimism_traces",
+        working_destination_dataset_name="oso_raw_sources",
+        destination_dataset_name="oso_sources",
+        partition_column_name="block_timestamp",
+        pointer_size=int(os.environ.get("GOLDSKY_CHECKPOINT_SIZE", "20000")),
+        dedupe_model="optimism_dedupe.sql",
+        # uncomment the following value to test
+        # max_objects_to_load=2000,
     ),
 )
 
