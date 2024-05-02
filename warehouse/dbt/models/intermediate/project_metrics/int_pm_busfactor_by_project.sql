@@ -51,7 +51,7 @@ aggregated_contributions AS (
     c.project_id,
     c.from_id,
     SUM(c.total_amount) AS total_amount,
-    '90D' AS period
+    '3M' AS period
   FROM contributions AS c
   INNER JOIN project_periods AS p ON c.project_id = p.project_id
   WHERE c.contribution_month > DATE_SUB(p.end_month, INTERVAL 3 MONTH)

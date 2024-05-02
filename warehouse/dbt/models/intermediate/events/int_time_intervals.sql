@@ -3,8 +3,8 @@ SELECT
   DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY) AS start_date
 UNION ALL
 SELECT
-  '90D' AS time_interval,
-  DATE_SUB(CURRENT_DATE(), INTERVAL 90 DAY) AS start_date
+  '3M' AS time_interval,
+  DATE_SUB(CURRENT_DATE(), INTERVAL 3 MONTH) AS start_date
 UNION ALL
 SELECT
   '6M' AS time_interval,
