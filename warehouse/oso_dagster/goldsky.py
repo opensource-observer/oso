@@ -4,6 +4,8 @@ import os
 import arrow
 import re
 import json
+import random
+import threading
 from dask.distributed import get_worker
 from dask_kubernetes.operator import make_cluster_spec
 from dataclasses import dataclass
@@ -30,8 +32,6 @@ class GoldskyConfig:
     source_name: str
     destination_table_name: str
     pointer_size: int
-    bucket_key_id: str
-    bucket_secret: str
 
     max_objects_to_load: int = 200_000
 
@@ -45,10 +45,12 @@ class GoldskyConfig:
     dask_scheduler_memory: str = "2560Mi"
     dask_image: str = "ghcr.io/opensource-observer/dagster-dask:distributed-test-10"
     dask_is_enabled: bool = False
+    dask_bucket_key_id: str = ""
+    dask_bucket_secret: str = ""
 
     # Allow 15 minute load table jobs
-    load_table_timeout_seconds: float = 900
-    transform_timeout_seconds: float = 900
+    load_table_timeout_seconds: float = 3600
+    transform_timeout_seconds: float = 3600
 
     working_destination_dataset_name: str = "oso_raw_sources"
     working_destination_preload_path: str = "_temp"
@@ -261,14 +263,23 @@ class GoldskyWorker:
 
 
 class DirectGoldskyWorker(GoldskyWorker):
-    async def process(self, context: AssetExecutionContext):
+    async def process(
+        self,
+        context: AssetExecutionContext,
+        pointer_table_mutex: threading.Lock,
+    ):
         await asyncio.to_thread(
             self.run_load_bigquery_load,
             context,
+            pointer_table_mutex,
         )
         return self
 
-    def run_load_bigquery_load(self, context: AssetExecutionContext):
+    def run_load_bigquery_load(
+        self,
+        context: AssetExecutionContext,
+        pointer_table_mutex: threading.Lock,
+    ):
         to_load: List[str] = []
         with self.bigquery.get_client() as client:
             item = self.queue.dequeue()
@@ -289,7 +300,9 @@ class DirectGoldskyWorker(GoldskyWorker):
                         job_config=job_config,
                         timeout=self.config.load_table_timeout_seconds,
                     )
-                    self.update_pointer_table(client, context, item.checkpoint)
+                    self.update_pointer_table(
+                        client, context, item.checkpoint, pointer_table_mutex
+                    )
                     load_job.result()
                     to_load = []
                 latest_checkpoint = item.checkpoint
@@ -305,7 +318,9 @@ class DirectGoldskyWorker(GoldskyWorker):
                     job_config=job_config,
                     timeout=self.config.load_table_timeout_seconds,
                 )
-                self.update_pointer_table(client, context, latest_checkpoint)
+                self.update_pointer_table(
+                    client, context, latest_checkpoint, pointer_table_mutex
+                )
                 load_job.result()
                 to_load = []
 
@@ -314,24 +329,29 @@ class DirectGoldskyWorker(GoldskyWorker):
         client: BQClient,
         context: AssetExecutionContext,
         new_checkpoint: GoldskyCheckpoint,
+        pointer_table_mutex: threading.Lock,
     ):
         pointer_table = self.pointer_table
-        tx_query = f"""
-            BEGIN
+        # Only one mutation on the table should be happening at a time
+        with pointer_table_mutex:
+            tx_query = f"""
                 BEGIN TRANSACTION; 
                     DELETE FROM `{pointer_table}` WHERE worker = '{self.name}';
 
                     INSERT INTO `{pointer_table}` (worker, job_id, timestamp, checkpoint)
                     VALUES ('{self.name}', '{new_checkpoint.job_id}', {new_checkpoint.timestamp}, {new_checkpoint.worker_checkpoint}); 
                 COMMIT TRANSACTION;
-                EXCEPTION WHEN ERROR THEN
-                -- Roll back the transaction inside the exception handler.
-                SELECT @@error.message;
-                ROLLBACK TRANSACTION;
-            END;
-        """
-        context.log.debug(f"query: {tx_query}")
-        return client.query_and_wait(tx_query)
+            """
+            for i in range(3):
+                try:
+                    resp = client.query_and_wait(tx_query)
+                    context.log.debug(f"TX response: {list(resp)}")
+                    return resp
+                except Exception as e:
+                    context.log.debug(f"Pointer update failed with `{e}`. Retrying.")
+                    time.sleep(1 * random.random())
+                    continue
+                break
 
 
 class DaskGoldskyWorker(GoldskyWorker):
@@ -611,6 +631,7 @@ class GoldskyAsset:
     async def load_worker_tables(
         self, loop: asyncio.AbstractEventLoop, context: AssetExecutionContext
     ):
+        self.ensure_pointer_table(context)
         if self.config.dask_is_enabled:
             return await self.dask_load_worker_tables(loop, context)
         return await self.direct_load_worker_tables(context)
@@ -621,6 +642,7 @@ class GoldskyAsset:
         worker_coroutines = []
         workers: List[GoldskyWorker] = []
         worker_status, queues = self.load_queues(context)
+        pointer_table_mutex = threading.Lock()
         for worker_name, queue in queues.worker_queues():
             worker = DirectGoldskyWorker(
                 worker_name,
@@ -632,7 +654,7 @@ class GoldskyAsset:
                 self.config,
                 queue,
             )
-            worker_coroutines.append(worker.process(context))
+            worker_coroutines.append(worker.process(context, pointer_table_mutex))
             workers.append(worker)
         for coro in asyncio.as_completed(worker_coroutines):
             worker: GoldskyWorker = await coro
@@ -674,8 +696,6 @@ class GoldskyAsset:
     async def parallel_load_worker_tables(
         self, task_manager: RetryTaskManager, context: AssetExecutionContext
     ):
-        self.ensure_pointer_table(context)
-
         worker_status, queues = self.load_queues(context)
 
         context.log.debug(f"spec: ${json.dumps(self.cluster_spec)}")
@@ -791,7 +811,9 @@ class GoldskyAsset:
                         worker_checkpoint=row.checkpoint,
                     )
             except NotFound:
-                context.log.info("No pointer status found. Will create the table later")
+                context.log.info(
+                    f"No pointer status found at {self.pointer_table}. Will create the table later"
+                )
         return worker_status
 
     @property
@@ -906,6 +928,7 @@ class GoldskyAsset:
             checkpoint = GoldskyCheckpoint(job_id, timestamp, worker_checkpoint)
             if timestamp > latest_timestamp:
                 latest_timestamp = timestamp
+
                 # Empty the queue
                 queues.empty_all()
             if checkpoint <= worker_status.get(worker, GoldskyCheckpoint("", 0, 0)):
@@ -917,6 +940,19 @@ class GoldskyAsset:
                     match.group(0),
                     match,
                 ),
+            )
+        keys = list(worker_status.keys())
+        expected_timestamp_of_worker_status = worker_status.get(keys[0])
+        if expected_timestamp_of_worker_status.timestamp != latest_timestamp:
+            context.log.error(
+                {
+                    "message": "Expected timestamp to be consistent",
+                    "expected": expected_timestamp_of_worker_status,
+                    "actual": latest_timestamp,
+                }
+            )
+            raise Exception(
+                "Inconsistent dump files with the pointer table. Requires manual intervention"
             )
 
         for worker, queue in queues.worker_queues():
