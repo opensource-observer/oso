@@ -49,7 +49,7 @@ n_cte AS (
     SUM(CASE WHEN time_interval = 'ALL' THEN amount END) AS contributors,
     SUM(CASE WHEN time_interval = '6M' THEN amount END)
       AS new_contributors_6_months
-  FROM {{ ref('pm_new_contribs') }}
+  FROM {{ ref('int_pm_new_contribs') }}
   GROUP BY
     project_id,
     namespace
@@ -60,7 +60,7 @@ c_cte AS (
     project_id,
     namespace AS repository_source,
     SUM(amount) AS contributors_6_months
-  FROM {{ ref('pm_contributors') }}
+  FROM {{ ref('int_pm_contributors') }}
   WHERE time_interval = '6M'
   GROUP BY
     project_id,
@@ -83,7 +83,7 @@ d_cte AS (
         ELSE 0
       END
     ) AS avg_pts_6_months
-  FROM {{ ref('pm_dev_months') }}
+  FROM {{ ref('int_pm_dev_months') }}
   WHERE time_interval = '6M'
   GROUP BY
     project_id,
@@ -139,7 +139,7 @@ activity_cte AS (
         WHEN impact_metric = 'PULL_REQUEST_MERGED_TOTAL' THEN amount
       END
     ) AS pull_requests_merged_6_months
-  FROM {{ ref('event_totals_by_project') }}
+  FROM {{ ref('int_event_totals_by_project') }}
   WHERE
     time_interval = '6M'
     AND impact_metric IN (

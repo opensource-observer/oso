@@ -32,7 +32,7 @@ WITH txns AS (
         AND time_interval = '6M'
         THEN amount
     END AS l2_gas_6_months
-  FROM {{ ref('event_totals_by_project') }}
+  FROM {{ ref('int_event_totals_by_project') }}
 ),
 
 addresses AS (
@@ -75,7 +75,7 @@ addresses AS (
         AND time_interval = '3M'
         THEN amount
     END AS high_activity_addresses
-  FROM {{ ref('address_totals_by_project') }}
+  FROM {{ ref('int_address_totals_by_project') }}
 ),
 
 first_txn AS (
@@ -107,7 +107,7 @@ multi_project_addresses AS (
       END
     ) AS multi_project_addresses
   FROM
-    {{ ref('address_rfm_segments_by_project') }}
+    {{ ref('int_address_rfm_segments_by_project') }}
   GROUP BY
     1, 2
 ),

@@ -8,7 +8,7 @@ WITH user_data AS (
     MAX(rfm_recency) AS r,
     MAX(rfm_frequency) AS f,
     MAX(rfm_ecosystem) AS e
-  FROM {{ ref('address_rfm_segments_by_project') }}
+  FROM {{ ref('int_address_rfm_segments_by_project') }}
   GROUP BY 1
 )
 

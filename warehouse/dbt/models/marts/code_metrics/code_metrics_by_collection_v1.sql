@@ -117,7 +117,7 @@ collection_contributors AS (
       MIN(bucket_month)
         OVER (PARTITION BY from_id, collection_id)
         AS first_contribution_date
-    FROM {{ ref('active_devs_monthly_to_collection') }}
+    FROM {{ ref('int_active_devs_monthly_to_collection') }}
   ) AS d
   GROUP BY d.collection_id, d.repository_source
 ),

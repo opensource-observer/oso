@@ -30,7 +30,7 @@ SELECT
   po.count_github_owners,
   ARRAY_LENGTH(JSON_EXTRACT_ARRAY(p.github)) AS count_github_artifacts,
   ARRAY_LENGTH(JSON_EXTRACT_ARRAY(p.blockchain)) AS count_blockchain_artifacts,
-  ARRAY_LENGTH(JSON_EXTRACT_ARRAY(p.npm)) AS count_npm_artifacts
+  ARRAY_LENGTH(JSON_EXTRACT_ARRAY(p.npm)) AS count_nint_pm_artifacts
 FROM {{ ref('stg_ossd__current_projects') }} AS p
 LEFT JOIN project_owners AS po
   ON p.id = po.project_id
