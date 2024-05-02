@@ -12,7 +12,12 @@ import heapq
 from dagster import asset, AssetExecutionContext
 from dagster_gcp import BigQueryResource, GCSResource
 from google.api_core.exceptions import NotFound
-from google.cloud.bigquery import TableReference
+from google.cloud.bigquery import (
+    TableReference,
+    LoadJobConfig,
+    SourceFormat,
+    Client as BQClient,
+)
 from .goldsky_dask import setup_kube_cluster_client, DuckDBGCSPlugin, RetryTaskManager
 from .cbt import CBTResource, UpdateStrategy, TimePartitioning
 from .factories import AssetFactoryResponse
@@ -39,6 +44,11 @@ class GoldskyConfig:
     dask_worker_memory: str = "4096Mi"
     dask_scheduler_memory: str = "2560Mi"
     dask_image: str = "ghcr.io/opensource-observer/dagster-dask:distributed-test-10"
+    dask_is_enabled: bool = False
+
+    # Allow 15 minute load table jobs
+    load_table_timeout_seconds: float = 900
+    transform_timeout_seconds: float = 900
 
     working_destination_dataset_name: str = "oso_raw_sources"
     working_destination_preload_path: str = "_temp"
@@ -202,7 +212,7 @@ def process_goldsky_file(item: GoldskyProcessItem):
 class GoldskyWorker:
     def __init__(
         self,
-        worker: str,
+        name: str,
         job_id: str,
         pointer_table: str,
         latest_checkpoint: GoldskyCheckpoint | None,
@@ -210,17 +220,15 @@ class GoldskyWorker:
         bigquery: BigQueryResource,
         config: GoldskyConfig,
         queue: GoldskyQueue,
-        task_manager: RetryTaskManager,
     ):
-        self.name = worker
-        self.config = config
-        self.gcs = gcs
-        self.queue = queue
-        self.bigquery = bigquery
-        self.task_manager = task_manager
+        self.name = name
         self.job_id = job_id
-        self.latest_checkpoint = latest_checkpoint
         self.pointer_table = pointer_table
+        self.latest_checkpoint = latest_checkpoint
+        self.gcs = gcs
+        self.bigquery = bigquery
+        self.config = config
+        self.queue = queue
 
     def worker_destination_uri(self, filename: str):
         return f"gs://{self.config.source_bucket_name}/{self.worker_destination_path(filename)}"
@@ -249,6 +257,102 @@ class GoldskyWorker:
         return self.worker_destination_uri("table_*.parquet")
 
     async def process(self, context: AssetExecutionContext):
+        raise NotImplementedError("process not implemented on the base class")
+
+
+class DirectGoldskyWorker(GoldskyWorker):
+    async def process(self, context: AssetExecutionContext):
+        await asyncio.to_thread(
+            self.run_load_bigquery_load,
+            context,
+        )
+        return self
+
+    def run_load_bigquery_load(self, context: AssetExecutionContext):
+        to_load: List[str] = []
+        with self.bigquery.get_client() as client:
+            item = self.queue.dequeue()
+            latest_checkpoint = item.checkpoint
+            while item is not None:
+                # For our own convenience we have the option to do a piecemeal
+                # loading. However, for direct loading this shouldn't be
+                # necessary
+                source = f"gs://{self.config.source_bucket_name}/{item.blob_name}"
+                to_load.append(source)
+                if len(to_load) >= self.config.pointer_size:
+                    job_config = LoadJobConfig(
+                        source_format=SourceFormat.PARQUET,
+                    )
+                    load_job = client.load_table_from_uri(
+                        to_load,
+                        self.raw_table,
+                        job_config=job_config,
+                        timeout=self.config.load_table_timeout_seconds,
+                    )
+                    self.update_pointer_table(client, context, item.checkpoint)
+                    load_job.result()
+                    to_load = []
+                latest_checkpoint = item.checkpoint
+                item = self.queue.dequeue()
+
+            if len(to_load) > 0:
+                job_config = LoadJobConfig(
+                    source_format=SourceFormat.PARQUET,
+                )
+                load_job = client.load_table_from_uri(
+                    to_load,
+                    self.raw_table,
+                    job_config=job_config,
+                    timeout=self.config.load_table_timeout_seconds,
+                )
+                self.update_pointer_table(client, context, latest_checkpoint)
+                load_job.result()
+                to_load = []
+
+    def update_pointer_table(
+        self,
+        client: BQClient,
+        context: AssetExecutionContext,
+        new_checkpoint: GoldskyCheckpoint,
+    ):
+        pointer_table = self.pointer_table
+        tx_query = f"""
+            BEGIN
+                BEGIN TRANSACTION; 
+                    DELETE FROM `{pointer_table}` WHERE worker = '{self.name}';
+
+                    INSERT INTO `{pointer_table}` (worker, job_id, timestamp, checkpoint)
+                    VALUES ('{self.name}', '{new_checkpoint.job_id}', {new_checkpoint.timestamp}, {new_checkpoint.worker_checkpoint}); 
+                COMMIT TRANSACTION;
+                EXCEPTION WHEN ERROR THEN
+                -- Roll back the transaction inside the exception handler.
+                SELECT @@error.message;
+                ROLLBACK TRANSACTION;
+            END;
+        """
+        context.log.debug(f"query: {tx_query}")
+        return client.query_and_wait(tx_query)
+
+
+class DaskGoldskyWorker(GoldskyWorker):
+    def __init__(
+        self,
+        name: str,
+        job_id: str,
+        pointer_table: str,
+        latest_checkpoint: GoldskyCheckpoint | None,
+        gcs: GCSResource,
+        bigquery: BigQueryResource,
+        config: GoldskyConfig,
+        queue: GoldskyQueue,
+        task_manager: RetryTaskManager,
+    ):
+        super().__init__(
+            name, job_id, pointer_table, latest_checkpoint, gcs, bigquery, config, queue
+        )
+        self.task_manager = task_manager
+
+    async def process(self, context: AssetExecutionContext):
         try:
             await self.process_all_files(context)
         finally:
@@ -258,7 +362,7 @@ class GoldskyWorker:
     async def process_all_files(self, context: AssetExecutionContext):
         count = 0
         item = self.queue.dequeue()
-        current_checkpoint = item.checkpoint
+        latest_checkpoint = item.checkpoint
         in_flight = []
         while item is not None:
             source = f"gs://{self.config.source_bucket_name}/{item.blob_name}"
@@ -301,24 +405,24 @@ class GoldskyWorker:
                 context.log.debug(f"Worker[{self.name}] done waiting for blobs")
 
                 # Update the pointer table to the latest item's checkpoint
-                await self.update_pointer_table(context, current_checkpoint)
+                await self.update_pointer_table(context, item.checkpoint)
 
                 in_flight = []
                 count = 0
 
-            current_checkpoint = item.checkpoint
+            latest_checkpoint = item.checkpoint
             item = self.queue.dequeue()
 
         if len(in_flight) > 0:
             context.log.debug(
-                f"Finalizing worker {self.name} waiting for {len(in_flight)} blobs to process. Last checkpoint {current_checkpoint.worker_checkpoint}",
+                f"Finalizing worker {self.name} waiting for {len(in_flight)} blobs to process. Last checkpoint {latest_checkpoint.worker_checkpoint}",
             )
             progress = 0
             for coro in asyncio.as_completed(in_flight):
                 await coro
                 progress += 1
                 context.log.debug(f"Worker[{self.name}] progress: {progress}/{count}")
-            await self.update_pointer_table(context, current_checkpoint)
+            await self.update_pointer_table(context, latest_checkpoint)
 
         return self.name
 
@@ -506,6 +610,37 @@ class GoldskyAsset:
 
     async def load_worker_tables(
         self, loop: asyncio.AbstractEventLoop, context: AssetExecutionContext
+    ):
+        if self.config.dask_is_enabled:
+            return await self.dask_load_worker_tables(loop, context)
+        return await self.direct_load_worker_tables(context)
+
+    async def direct_load_worker_tables(
+        self, context: AssetExecutionContext
+    ) -> GoldskyWorker:
+        worker_coroutines = []
+        workers: List[GoldskyWorker] = []
+        worker_status, queues = self.load_queues(context)
+        for worker_name, queue in queues.worker_queues():
+            worker = DirectGoldskyWorker(
+                worker_name,
+                self._job_id,
+                self.pointer_table,
+                worker_status.get(worker_name, None),
+                self.gcs,
+                self.bigquery,
+                self.config,
+                queue,
+            )
+            worker_coroutines.append(worker.process(context))
+            workers.append(worker)
+        for coro in asyncio.as_completed(worker_coroutines):
+            worker: GoldskyWorker = await coro
+            context.log.info(f"Worker[{worker.name}] completed latest data load")
+        return workers
+
+    async def dask_load_worker_tables(
+        self, loop: asyncio.AbstractEventLoop, context: AssetExecutionContext
     ) -> List[GoldskyWorker]:
         context.log.info("loading worker tables for goldsky asset")
         last_restart = time.time()
@@ -550,7 +685,7 @@ class GoldskyAsset:
         worker_coroutines = []
         workers: List[GoldskyWorker] = []
         for worker_name, queue in queues.worker_queues():
-            worker = GoldskyWorker(
+            worker = DaskGoldskyWorker(
                 worker_name,
                 job_id,
                 self.pointer_table,
@@ -591,6 +726,7 @@ class GoldskyAsset:
                     partition_column_name=self.config.partition_column_name,
                     partition_column_transform=self.config.partition_column_transform,
                     raw_table=worker.raw_table,
+                    timeout=self.config.transform_timeout_seconds,
                 )
             )
         completed = 0
@@ -623,6 +759,7 @@ class GoldskyAsset:
             unique_column=self.config.dedupe_unique_column,
             order_column=self.config.dedupe_order_column,
             workers=workers,
+            timeout=self.config.transform_timeout_seconds,
         )
 
     async def clean_working_destintation(

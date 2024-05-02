@@ -65,6 +65,7 @@ class CBT:
         update_strategy: UpdateStrategy = UpdateStrategy.REPLACE,
         time_partitioning: Optional[TimePartitioning] = None,
         unique_column: Optional[str] = None,
+        timeout: float = 300,
         **vars,
     ):
         with self.bigquery.get_client() as client:
@@ -81,6 +82,7 @@ class CBT:
                     destination_table,
                     time_partitioning=time_partitioning,
                     unique_column=unique_column,
+                    timeout=timeout,
                     **vars,
                 )
             return self._transform_existing(
@@ -89,6 +91,7 @@ class CBT:
                 destination_table,
                 update_strategy,
                 unique_column=unique_column,
+                timeout=timeout,
                 **vars,
             )
 
@@ -99,6 +102,7 @@ class CBT:
         destination_table: TableReference,
         update_strategy: UpdateStrategy,
         unique_column: Optional[str] = None,
+        timeout: float = 300,
         **vars,
     ):
         select_query = self.render_model(
@@ -122,7 +126,7 @@ class CBT:
             )
 
         self.log.debug({"message": "updating", "query": update_query})
-        job = client.query(update_query)
+        job = client.query(update_query, timeout=timeout)
         job.result()
 
     def _transform_replace(
@@ -132,6 +136,7 @@ class CBT:
         destination_table: TableReference,
         time_partitioning: Optional[TimePartitioning] = None,
         unique_column: Optional[str] = None,
+        timeout: float = 300,
         **vars,
     ):
         select_query = self.render_model(
@@ -146,7 +151,7 @@ class CBT:
             unique_column=unique_column,
             select_query=select_query,
         )
-        job = client.query(create_or_replace_query)
+        job = client.query(create_or_replace_query, timeout=timeout)
         self.log.debug(
             {"message": "replacing with query", "query": create_or_replace_query}
         )
