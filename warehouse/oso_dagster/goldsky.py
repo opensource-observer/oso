@@ -303,6 +303,7 @@ class DirectGoldskyWorker(GoldskyWorker):
                     self.update_pointer_table(
                         client, context, item.checkpoint, pointer_table_mutex
                     )
+                    context.log.debug("updated pointer table")
                     load_job.result()
                     to_load = []
                 latest_checkpoint = item.checkpoint
@@ -321,8 +322,11 @@ class DirectGoldskyWorker(GoldskyWorker):
                 self.update_pointer_table(
                     client, context, latest_checkpoint, pointer_table_mutex
                 )
+                context.log.debug("updated pointer table for final load")
                 load_job.result()
                 to_load = []
+
+        context.log.debug("I am done")
 
     def update_pointer_table(
         self,
@@ -333,25 +337,24 @@ class DirectGoldskyWorker(GoldskyWorker):
     ):
         pointer_table = self.pointer_table
         # Only one mutation on the table should be happening at a time
-        with pointer_table_mutex:
-            tx_query = f"""
-                BEGIN TRANSACTION; 
-                    DELETE FROM `{pointer_table}` WHERE worker = '{self.name}';
+        tx_query = f"""
+            BEGIN TRANSACTION; 
+                DELETE FROM `{pointer_table}` WHERE worker = '{self.name}';
 
-                    INSERT INTO `{pointer_table}` (worker, job_id, timestamp, checkpoint)
-                    VALUES ('{self.name}', '{new_checkpoint.job_id}', {new_checkpoint.timestamp}, {new_checkpoint.worker_checkpoint}); 
-                COMMIT TRANSACTION;
-            """
-            for i in range(3):
-                try:
+                INSERT INTO `{pointer_table}` (worker, job_id, timestamp, checkpoint)
+                VALUES ('{self.name}', '{new_checkpoint.job_id}', {new_checkpoint.timestamp}, {new_checkpoint.worker_checkpoint}); 
+            COMMIT TRANSACTION;
+        """
+        for i in range(3):
+            try:
+                with pointer_table_mutex:
                     resp = client.query_and_wait(tx_query)
-                    context.log.debug(f"TX response: {list(resp)}")
-                    return resp
-                except Exception as e:
-                    context.log.debug(f"Pointer update failed with `{e}`. Retrying.")
-                    time.sleep(1 * random.random())
-                    continue
-                break
+                context.log.debug(f"TX response: {list(resp)}")
+                return resp
+            except Exception as e:
+                context.log.debug(f"Pointer update failed with `{e}`. Retrying.")
+                time.sleep(1 * random.random())
+                continue
 
 
 class DaskGoldskyWorker(GoldskyWorker):
