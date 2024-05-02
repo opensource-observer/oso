@@ -7,5 +7,5 @@
   }) 
 }}
 
-SELECT DISTINCT e.event_type
-FROM {{ ref('int_events') }} AS e
+SELECT DISTINCT events.event_type
+FROM {{ ref('int_events') }} AS events

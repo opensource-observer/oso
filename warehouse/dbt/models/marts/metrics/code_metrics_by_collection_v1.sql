@@ -1,4 +1,5 @@
 {# 
+  TODO: this should go into a yml file for doc generation
   Summary GitHub metrics for a collection:
     - first_commit_date: The date of the first commit to the collection
     - last_commit_date: The date of the last commit to the collection
@@ -24,9 +25,10 @@
 
 SELECT
   collection_id,
-  collection_slug AS `collection_name`,
-  collection_name AS `collection_display_name`,
-  repository_source AS `artifact_namespace`,
+  collection_source,
+  collection_namespace,
+  collection_name,
+  artifact_source,
   first_commit_date AS `commit_min_date`,
   last_commit_date AS `commit_max_date`,
   repositories AS `repository_count_all`,

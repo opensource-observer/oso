@@ -1,4 +1,5 @@
 {# 
+  TODO: this should go into a yml file for doc generation
   Summary onchain metrics for a project:
     - project_id: The unique identifier for the project
     - network: The network the project is deployed on
@@ -25,10 +26,10 @@
 
 SELECT
   project_id,
-  project_slug AS `project_name`,
-  project_name AS `project_display_name`,
-  network AS `artifact_namespace`,
-  num_contracts AS `contract_count_all`,
+  project_source,
+  project_namespace,
+  project_name,
+  network AS `artifact_source`,
   date_first_txn AS `transaction_min_date`,
   total_txns AS `transactions_count_all`,
   txns_6_months AS `transactions_count_6m`,

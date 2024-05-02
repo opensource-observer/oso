@@ -162,7 +162,8 @@ contracts AS (
 collection_by_network AS (
   SELECT
     c.collection_id,
-    c.collection_slug,
+    c.collection_source,
+    c.collection_namespace,
     c.collection_name,
     ctx.onchain_network
   FROM {{ ref('collections_v1') }} AS c
@@ -173,9 +174,10 @@ collection_by_network AS (
 -- Final query to join all the metrics together for collections
 SELECT
   c.collection_id,
-  c.collection_slug,
+  c.collection_source,
+  c.collection_namespace,
   c.collection_name,
-  c.onchain_network AS `artifact_namespace`,
+  c.onchain_network AS `artifact_source`,
   ma.total_projects AS `total_project_count`,
   co.num_contracts AS `total_contract_count`,
   ma.first_txn_date AS `first_transaction_date`,

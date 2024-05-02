@@ -12,7 +12,8 @@ WITH github_stats AS (
 
 SELECT
   p.project_id,
-  p.project_slug,
+  p.project_source,
+  p.project_namespace,
   p.project_name,
   r.repository_source,
   r.artifact_id,
