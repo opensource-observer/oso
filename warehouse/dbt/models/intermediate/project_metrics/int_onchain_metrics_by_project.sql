@@ -7,7 +7,7 @@
 WITH txns AS (
   SELECT
     project_id,
-    namespace AS network,
+    artifact_namespace AS network,
     CASE
       WHEN
         impact_metric = 'CONTRACT_INVOCATION_DAILY_COUNT_TOTAL'
@@ -103,7 +103,10 @@ multi_project_addresses AS (
     network,
     COUNT(
       DISTINCT CASE
-        WHEN rfm_ecosystem > 2 THEN from_id
+        WHEN
+          rfm_ecosystem > 2
+          AND rfm_recency > 3
+          THEN from_id
       END
     ) AS multi_project_addresses
   FROM
@@ -137,7 +140,8 @@ metrics AS (
 
 SELECT
   metrics.*,
-  p.project_slug
+  p.project_slug,
+  p.project_name
 FROM
   {{ ref('projects_v1') }} AS p
 LEFT JOIN
