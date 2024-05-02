@@ -16,11 +16,6 @@
     - pull_requests_opened_6_months: The number of pull requests opened in the project in the last 6 months
     - pull_requests_merged_6_months: The number of pull requests merged in the project in the last 6 months
 #}
-{{ 
-  config(meta = {
-    'sync_to_db': True
-  }) 
-}}
 
 WITH project_repos_summary AS (
   SELECT
@@ -28,12 +23,12 @@ WITH project_repos_summary AS (
     project_slug,
     project_name,
     repository_source,
-    MIN(first_commit_date) AS first_commit_date,
-    MAX(last_commit_date) AS last_commit_date,
+    MIN(first_commit_time) AS first_commit_date,
+    MAX(last_commit_time) AS last_commit_date,
     COUNT(DISTINCT artifact_id) AS repositories,
     SUM(repo_star_count) AS stars,
     SUM(repo_fork_count) AS forks
-  FROM {{ ref('repos_by_project') }}
+  FROM {{ ref('int_repos_by_project') }}
   --WHERE r.is_fork = false
   GROUP BY
     project_id,
@@ -49,7 +44,7 @@ n_cte AS (
     SUM(CASE WHEN time_interval = 'ALL' THEN amount END) AS contributors,
     SUM(CASE WHEN time_interval = '6M' THEN amount END)
       AS new_contributors_6_months
-  FROM {{ ref('pm_new_contribs') }}
+  FROM {{ ref('int_pm_new_contribs') }}
   GROUP BY
     project_id,
     namespace
@@ -60,7 +55,7 @@ c_cte AS (
     project_id,
     namespace AS repository_source,
     SUM(amount) AS contributors_6_months
-  FROM {{ ref('pm_contributors') }}
+  FROM {{ ref('int_pm_contributors') }}
   WHERE time_interval = '6M'
   GROUP BY
     project_id,
@@ -83,7 +78,7 @@ d_cte AS (
         ELSE 0
       END
     ) AS avg_pts_6_months
-  FROM {{ ref('pm_dev_months') }}
+  FROM {{ ref('int_pm_dev_months') }}
   WHERE time_interval = '6M'
   GROUP BY
     project_id,
@@ -113,7 +108,7 @@ contribs_cte AS (
 activity_cte AS (
   SELECT
     project_id,
-    namespace AS repository_source,
+    artifact_namespace,
     SUM(
       CASE
         WHEN impact_metric = 'COMMIT_CODE_TOTAL' THEN amount
@@ -139,7 +134,7 @@ activity_cte AS (
         WHEN impact_metric = 'PULL_REQUEST_MERGED_TOTAL' THEN amount
       END
     ) AS pull_requests_merged_6_months
-  FROM {{ ref('event_totals_by_project') }}
+  FROM {{ ref('int_event_totals_by_project') }}
   WHERE
     time_interval = '6M'
     AND impact_metric IN (
@@ -151,7 +146,7 @@ activity_cte AS (
     )
   GROUP BY
     project_id,
-    namespace
+    artifact_namespace
 )
 
 
@@ -159,22 +154,22 @@ SELECT
   p.project_id,
   p.project_slug,
   p.project_name,
-  p.repository_source AS `artifact_namespace`,
+  a.artifact_namespace,
   p.first_commit_date,
   p.last_commit_date,
-  p.repositories AS `repository_count`,
-  p.stars AS `star_count`,
-  p.forks AS `fork_count`,
-  c.contributors AS `total_contributor_count`,
-  c.contributors_6_months AS `contributor_count_6_months`,
-  c.new_contributors_6_months AS `new_contributor_count_6_months`,
-  c.avg_fulltime_devs_6_months AS `avg_fulltime_developer_count_6_months`,
-  c.avg_active_devs_6_months AS `avg_active_developer_count_6_months`,
-  a.commits_6_months AS `commit_count_6_months`,
-  a.issues_opened_6_months AS `opened_issue_count_6_months`,
-  a.issues_closed_6_months AS `closed_issue_count_6_months`,
-  a.pull_requests_opened_6_months AS `opened_pull_request_count_6_months`,
-  a.pull_requests_merged_6_months AS `merged_pull_request_count_6_months`
+  p.repositories,
+  p.stars,
+  p.forks,
+  c.contributors,
+  c.contributors_6_months,
+  c.new_contributors_6_months,
+  c.avg_fulltime_devs_6_months,
+  c.avg_active_devs_6_months,
+  a.commits_6_months,
+  a.issues_opened_6_months,
+  a.issues_closed_6_months,
+  a.pull_requests_opened_6_months,
+  a.pull_requests_merged_6_months
 FROM project_repos_summary AS p
 LEFT JOIN contribs_cte AS c
   ON
@@ -183,4 +178,4 @@ LEFT JOIN contribs_cte AS c
 LEFT JOIN activity_cte AS a
   ON
     p.project_id = a.project_id
-    AND p.repository_source = a.repository_source
+    AND p.repository_source = a.artifact_namespace

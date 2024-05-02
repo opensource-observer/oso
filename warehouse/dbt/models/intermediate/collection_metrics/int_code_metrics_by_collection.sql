@@ -16,11 +16,6 @@
     - pull_requests_opened_6_months: The number of pull requests opened in the collection in the last 6 months
     - pull_requests_merged_6_months: The number of pull requests merged in the collection in the last 6 months
 #}
-{{ 
-  config(meta = {
-    'sync_to_db': True
-  }) 
-}}
 
 -- CTE for calculating the first and last commit date for each collection, 
 -- ignoring forked repos
@@ -117,7 +112,7 @@ collection_contributors AS (
       MIN(bucket_month)
         OVER (PARTITION BY from_id, collection_id)
         AS first_contribution_date
-    FROM {{ ref('active_devs_monthly_to_collection') }}
+    FROM {{ ref('int_active_devs_monthly_to_collection') }}
   ) AS d
   GROUP BY d.collection_id, d.repository_source
 ),
@@ -150,22 +145,22 @@ SELECT
   c.collection_id,
   c.collection_slug,
   c.collection_name,
-  c.repository_source AS `artifact_namespace`,
+  c.repository_source,
   ccd.first_commit_date,
   ccd.last_commit_date,
-  c.repositories AS `repository_count`,
-  c.stars AS `star_count`,
-  c.forks AS `fork_count`,
-  cc.contributors AS `total_contributor_count`,
-  cc.contributors_6_months AS `contributor_count_6_months`,
-  cc.new_contributors_6_months AS `new_contributor_count_6_months`,
-  cc.avg_fulltime_devs_6_months AS `avg_fulltime_developer_count_6_months`,
-  cc.avg_active_devs_6_months AS `avg_active_developer_count_6_months`,
-  ca.commits_6_months AS `commit_count_6_months`,
-  ca.issues_opened_6_months AS `opened_issue_count_6_months`,
-  ca.issues_closed_6_months AS `closed_issue_count_6_months`,
-  ca.pull_requests_opened_6_months AS `opened_pull_request_count_6_months`,
-  ca.pull_requests_merged_6_months AS `merged_pull_request_count_6_months`
+  c.repositories,
+  c.stars,
+  c.forks,
+  cc.contributors,
+  cc.contributors_6_months,
+  cc.new_contributors_6_months,
+  cc.avg_fulltime_devs_6_months,
+  cc.avg_active_devs_6_months,
+  ca.commits_6_months,
+  ca.issues_opened_6_months,
+  ca.issues_closed_6_months,
+  ca.pull_requests_opened_6_months,
+  ca.pull_requests_merged_6_months
 FROM collection_repos_summary AS c
 INNER JOIN collection_commit_dates AS ccd
   ON

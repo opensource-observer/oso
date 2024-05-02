@@ -2,11 +2,6 @@
   WIP: Still in Development
   Count the number of transaction from trusted users
 #}
-{{ 
-  config(meta = {
-    'sync_to_db': False
-  }) 
-}}
 
 SELECT
   e.project_id,
@@ -20,7 +15,7 @@ WHERE
   DATE(e.time) >= t.start_date
   AND e.from_id IN (
     SELECT user_id
-    FROM {{ ref('users') }}
+    FROM {{ ref('int_users') }}
     WHERE is_trusted = TRUE
   )
   AND e.event_type = 'CONTRACT_INVOCATION_DAILY_COUNT'

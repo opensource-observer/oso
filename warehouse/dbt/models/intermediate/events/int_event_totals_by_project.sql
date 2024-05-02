@@ -6,19 +6,14 @@
   for each project and namespace for each event type and time interval, creating a normalized
   table of impact metrics.
 #}
-{{ 
-  config(meta = {
-    'sync_to_db': True
-  }) 
-}}
 
 SELECT
   e.project_id,
-  e.from_namespace AS namespace,
+  e.to_namespace AS artifact_namespace,
   t.time_interval,
   CONCAT(e.event_type, '_TOTAL') AS impact_metric,
   SUM(e.amount) AS amount
-FROM {{ ref('events_daily_to_project_by_source') }} AS e
+FROM {{ ref('int_events_to_project') }} AS e
 CROSS JOIN {{ ref('int_time_intervals') }} AS t
-WHERE DATE(e.bucket_day) >= t.start_date
-GROUP BY e.project_id, e.from_namespace, t.time_interval, e.event_type
+WHERE DATE(e.time) >= t.start_date
+GROUP BY e.project_id, e.to_namespace, t.time_interval, e.event_type

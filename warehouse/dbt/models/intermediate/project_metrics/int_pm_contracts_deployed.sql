@@ -3,11 +3,6 @@
   Count the number of contracts deployed by a project
   that have more than 100 users
 #}
-{{ 
-  config(meta = {
-    'sync_to_db': False
-  }) 
-}}
 
 {% set min_trusted_users = 100 %}
 
@@ -19,7 +14,7 @@ WITH users_by_contract AS (
   WHERE
     from_id IN (
       SELECT user_id
-      FROM {{ ref('users') }}
+      FROM {{ ref('int_users') }}
       WHERE is_trusted = TRUE
     )
     AND event_type = 'CONTRACT_INVOCATION_DAILY_COUNT'
