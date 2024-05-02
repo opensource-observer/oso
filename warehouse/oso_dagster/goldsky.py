@@ -942,18 +942,19 @@ class GoldskyAsset:
                 ),
             )
         keys = list(worker_status.keys())
-        expected_timestamp_of_worker_status = worker_status.get(keys[0])
-        if expected_timestamp_of_worker_status.timestamp != latest_timestamp:
-            context.log.error(
-                {
-                    "message": "Expected timestamp to be consistent",
-                    "expected": expected_timestamp_of_worker_status,
-                    "actual": latest_timestamp,
-                }
-            )
-            raise Exception(
-                "Inconsistent dump files with the pointer table. Requires manual intervention"
-            )
+        if len(keys) > 0:
+            expected_timestamp_of_worker_status = worker_status.get(keys[0])
+            if expected_timestamp_of_worker_status.timestamp != latest_timestamp:
+                context.log.error(
+                    {
+                        "message": "Expected timestamp to be consistent",
+                        "expected": expected_timestamp_of_worker_status,
+                        "actual": latest_timestamp,
+                    }
+                )
+                raise Exception(
+                    "Inconsistent dump files with the pointer table. Requires manual intervention"
+                )
 
         for worker, queue in queues.worker_queues():
             context.log.debug(f"Worker[{worker}] queue size: {queue.len()}")

@@ -61,6 +61,36 @@ def random_cbt(cbt: CBTResource):
 #     ),
 # )
 
+base_blocks = goldsky_asset(
+    "base_blocks",
+    GoldskyConfig(
+        source_name="base-blocks",
+        project_id="opensource-observer",
+        destination_table_name="base_blocks",
+        working_destination_dataset_name="oso_raw_sources",
+        destination_dataset_name="superchain",
+        partition_column_name="timestamp",
+        partition_column_transform=lambda c: f"TIMESTAMP_SECONDS(`{c}`)",
+        pointer_size=int(os.environ.get("GOLDSKY_CHECKPOINT_SIZE", "20000")),
+        # uncomment the following value to test
+    ),
+)
+
+base_transactions = goldsky_asset(
+    "base_transactions",
+    GoldskyConfig(
+        source_name="base-enriched_transactions",
+        project_id="opensource-observer",
+        destination_table_name="base_transactions",
+        working_destination_dataset_name="oso_raw_sources",
+        destination_dataset_name="superchain",
+        partition_column_name="block_timestamp",
+        partition_column_transform=lambda c: f"TIMESTAMP_SECONDS(`{c}`)",
+        pointer_size=int(os.environ.get("GOLDSKY_CHECKPOINT_SIZE", "20000")),
+        # uncomment the following value to test
+    ),
+)
+
 base_traces = goldsky_asset(
     "base_traces",
     GoldskyConfig(
@@ -68,7 +98,100 @@ base_traces = goldsky_asset(
         project_id="opensource-observer",
         destination_table_name="base_traces",
         working_destination_dataset_name="oso_raw_sources",
+        # TODO... move this
         destination_dataset_name="oso_sources",
+        partition_column_name="block_timestamp",
+        partition_column_transform=lambda c: f"TIMESTAMP_SECONDS(`{c}`)",
+        pointer_size=int(os.environ.get("GOLDSKY_CHECKPOINT_SIZE", "20000")),
+        # uncomment the following value to test
+        # max_objects_to_load=2,
+    ),
+)
+
+frax_blocks = goldsky_asset(
+    "frax_blocks",
+    GoldskyConfig(
+        source_name="frax-blocks",
+        project_id="opensource-observer",
+        destination_table_name="frax_blocks",
+        working_destination_dataset_name="oso_raw_sources",
+        destination_dataset_name="superchain",
+        partition_column_name="timestamp",
+        partition_column_transform=lambda c: f"TIMESTAMP_SECONDS(`{c}`)",
+        pointer_size=int(os.environ.get("GOLDSKY_CHECKPOINT_SIZE", "20000")),
+        # uncomment the following value to test
+    ),
+)
+
+frax_transactions = goldsky_asset(
+    "frax_transactions",
+    GoldskyConfig(
+        source_name="frax-receipt_transactions",
+        project_id="opensource-observer",
+        destination_table_name="frax_transactions",
+        working_destination_dataset_name="oso_raw_sources",
+        destination_dataset_name="superchain",
+        partition_column_name="block_timestamp",
+        partition_column_transform=lambda c: f"TIMESTAMP_SECONDS(`{c}`)",
+        pointer_size=int(os.environ.get("GOLDSKY_CHECKPOINT_SIZE", "20000")),
+        # uncomment the following value to test
+    ),
+)
+
+frax_traces = goldsky_asset(
+    "frax_traces",
+    GoldskyConfig(
+        source_name="frax-traces",
+        project_id="opensource-observer",
+        destination_table_name="base_traces",
+        working_destination_dataset_name="oso_raw_sources",
+        destination_dataset_name="superchain",
+        partition_column_name="block_timestamp",
+        partition_column_transform=lambda c: f"TIMESTAMP_SECONDS(`{c}`)",
+        pointer_size=int(os.environ.get("GOLDSKY_CHECKPOINT_SIZE", "20000")),
+        # uncomment the following value to test
+        # max_objects_to_load=2,
+    ),
+)
+
+mode_blocks = goldsky_asset(
+    "mode_blocks",
+    GoldskyConfig(
+        source_name="mode-blocks",
+        project_id="opensource-observer",
+        destination_table_name="mode_blocks",
+        working_destination_dataset_name="oso_raw_sources",
+        destination_dataset_name="superchain",
+        partition_column_name="timestamp",
+        partition_column_transform=lambda c: f"TIMESTAMP_SECONDS(`{c}`)",
+        pointer_size=int(os.environ.get("GOLDSKY_CHECKPOINT_SIZE", "20000")),
+        # uncomment the following value to test
+    ),
+)
+
+mode_transactions = goldsky_asset(
+    "mode_transactions",
+    GoldskyConfig(
+        source_name="mode-receipt_transactions",
+        project_id="opensource-observer",
+        destination_table_name="mode_transactions",
+        working_destination_dataset_name="oso_raw_sources",
+        destination_dataset_name="superchain",
+        partition_column_name="block_timestamp",
+        partition_column_transform=lambda c: f"TIMESTAMP_SECONDS(`{c}`)",
+        pointer_size=int(os.environ.get("GOLDSKY_CHECKPOINT_SIZE", "20000")),
+        # uncomment the following value to test
+    ),
+)
+
+mode_traces = goldsky_asset(
+    "mode_traces",
+    GoldskyConfig(
+        source_name="mode-traces",
+        project_id="opensource-observer",
+        destination_table_name="base_traces",
+        working_destination_dataset_name="oso_raw_sources",
+        destination_dataset_name="superchain",
         partition_column_name="block_timestamp",
         partition_column_transform=lambda c: f"TIMESTAMP_SECONDS(`{c}`)",
         pointer_size=int(os.environ.get("GOLDSKY_CHECKPOINT_SIZE", "20000")),
@@ -92,6 +215,99 @@ optimism_traces = goldsky_asset(
         # max_objects_to_load=2000,
     ),
 )
+
+pgn_blocks = goldsky_asset(
+    "pgn_blocks",
+    GoldskyConfig(
+        source_name="pgn-blocks",
+        project_id="opensource-observer",
+        destination_table_name="pgn_blocks",
+        working_destination_dataset_name="oso_raw_sources",
+        destination_dataset_name="superchain",
+        partition_column_name="timestamp",
+        partition_column_transform=lambda c: f"TIMESTAMP_SECONDS(`{c}`)",
+        pointer_size=int(os.environ.get("GOLDSKY_CHECKPOINT_SIZE", "20000")),
+        # uncomment the following value to test
+    ),
+)
+
+pgn_transactions = goldsky_asset(
+    "pgn_transactions",
+    GoldskyConfig(
+        source_name="pgn-enriched_transactions",
+        project_id="opensource-observer",
+        destination_table_name="pgn_transactions",
+        working_destination_dataset_name="oso_raw_sources",
+        destination_dataset_name="superchain",
+        partition_column_name="block_timestamp",
+        partition_column_transform=lambda c: f"TIMESTAMP_SECONDS(`{c}`)",
+        pointer_size=int(os.environ.get("GOLDSKY_CHECKPOINT_SIZE", "20000")),
+        # uncomment the following value to test
+    ),
+)
+
+pgn_traces = goldsky_asset(
+    "pgn_traces",
+    GoldskyConfig(
+        source_name="pgn-traces",
+        project_id="opensource-observer",
+        destination_table_name="base_traces",
+        working_destination_dataset_name="oso_raw_sources",
+        destination_dataset_name="superchain",
+        partition_column_name="block_timestamp",
+        partition_column_transform=lambda c: f"TIMESTAMP_SECONDS(`{c}`)",
+        pointer_size=int(os.environ.get("GOLDSKY_CHECKPOINT_SIZE", "20000")),
+        # uncomment the following value to test
+        # max_objects_to_load=2,
+    ),
+)
+
+zora_blocks = goldsky_asset(
+    "zora_blocks",
+    GoldskyConfig(
+        source_name="zora-blocks",
+        project_id="opensource-observer",
+        destination_table_name="zora_blocks",
+        working_destination_dataset_name="oso_raw_sources",
+        destination_dataset_name="superchain",
+        partition_column_name="timestamp",
+        partition_column_transform=lambda c: f"TIMESTAMP_SECONDS(`{c}`)",
+        pointer_size=int(os.environ.get("GOLDSKY_CHECKPOINT_SIZE", "20000")),
+        # uncomment the following value to test
+    ),
+)
+
+zora_transactions = goldsky_asset(
+    "zora_transactions",
+    GoldskyConfig(
+        source_name="zora-enriched_transactions",
+        project_id="opensource-observer",
+        destination_table_name="zora_transactions",
+        working_destination_dataset_name="oso_raw_sources",
+        destination_dataset_name="superchain",
+        partition_column_name="block_timestamp",
+        partition_column_transform=lambda c: f"TIMESTAMP_SECONDS(`{c}`)",
+        pointer_size=int(os.environ.get("GOLDSKY_CHECKPOINT_SIZE", "20000")),
+        # uncomment the following value to test
+    ),
+)
+
+zora_traces = goldsky_asset(
+    "zora_traces",
+    GoldskyConfig(
+        source_name="zora-traces",
+        project_id="opensource-observer",
+        destination_table_name="base_traces",
+        working_destination_dataset_name="oso_raw_sources",
+        destination_dataset_name="superchain",
+        partition_column_name="block_timestamp",
+        partition_column_transform=lambda c: f"TIMESTAMP_SECONDS(`{c}`)",
+        pointer_size=int(os.environ.get("GOLDSKY_CHECKPOINT_SIZE", "20000")),
+        # uncomment the following value to test
+        # max_objects_to_load=2,
+    ),
+)
+
 
 karma3_globaltrust = interval_gcs_import_asset(
     "karma3_globaltrust",
