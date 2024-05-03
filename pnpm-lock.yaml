@@ -535,8 +535,8 @@ importers:
         specifier: ^4.17.21
         version: 4.17.21
       oss-directory:
-        specifier: ^0.0.9
-        version: 0.0.9(ts-node@10.9.1(@types/node@20.12.7)(typescript@5.3.3))(typescript@5.3.3)
+        specifier: ^0.0.12
+        version: 0.0.12(ts-node@10.9.1(@types/node@20.12.7)(typescript@5.3.3))(typescript@5.3.3)
       read-pkg-up:
         specifier: ^11.0.0
         version: 11.0.0
@@ -8880,13 +8880,13 @@ packages:
     engines: {node: '>=16'}
     hasBin: true
 
-  oss-directory@0.0.7:
-    resolution: {integrity: sha512-xIgkdK8IiI2ho5BX12HnspYDYO+c1CluASJdlIXGyaIWPHVftu6U3l3CeyZq+mMbPQFpvGgJCHCSoC+Ajo8dbw==}
+  oss-directory@0.0.12:
+    resolution: {integrity: sha512-mJQPVY5+St8LsKPeJ/IRZMPJD2xB+ZNbjekGOSFfUN/gd1+cOad6rvOJzr9vpIN6m8pLoU7ZwffKc/INs+EUdw==}
     engines: {node: '>=16'}
     hasBin: true
 
-  oss-directory@0.0.9:
-    resolution: {integrity: sha512-ttPufmtzcGpgJYAmJDuSAYPFpCqQV6cSFADZgLRKKoxQPruttmKtrRutyZVn22WHRhyLu94xyMfvWy1xdt59ag==}
+  oss-directory@0.0.7:
+    resolution: {integrity: sha512-xIgkdK8IiI2ho5BX12HnspYDYO+c1CluASJdlIXGyaIWPHVftu6U3l3CeyZq+mMbPQFpvGgJCHCSoC+Ajo8dbw==}
     engines: {node: '>=16'}
     hasBin: true
 
@@ -14615,7 +14615,7 @@ snapshots:
   '@grpc/grpc-js@1.9.14':
     dependencies:
       '@grpc/proto-loader': 0.7.10
-      '@types/node': 20.12.3
+      '@types/node': 20.12.7
 
   '@grpc/proto-loader@0.7.10':
     dependencies:
@@ -14692,7 +14692,7 @@ snapshots:
   '@jest/console@29.7.0':
     dependencies:
       '@jest/types': 29.6.3
-      '@types/node': 20.12.3
+      '@types/node': 20.12.7
       chalk: 4.1.2
       jest-message-util: 29.7.0
       jest-util: 29.7.0
@@ -14777,7 +14777,7 @@ snapshots:
       '@jest/transform': 29.7.0
       '@jest/types': 29.6.3
       '@jridgewell/trace-mapping': 0.3.25
-      '@types/node': 20.12.3
+      '@types/node': 20.12.7
       chalk: 4.1.2
       collect-v8-coverage: 1.0.2
       exit: 0.1.2
@@ -17166,20 +17166,20 @@ snapshots:
 
   '@types/bn.js@4.11.6':
     dependencies:
-      '@types/node': 20.12.3
+      '@types/node': 20.12.7
 
   '@types/bn.js@5.1.5':
     dependencies:
-      '@types/node': 20.12.3
+      '@types/node': 20.12.7
 
   '@types/body-parser@1.19.5':
     dependencies:
       '@types/connect': 3.4.38
-      '@types/node': 20.12.3
+      '@types/node': 20.12.7
 
   '@types/bonjour@3.5.13':
     dependencies:
-      '@types/node': 20.12.3
+      '@types/node': 20.12.7
 
   '@types/btoa-lite@1.0.0': {}
 
@@ -17194,11 +17194,11 @@ snapshots:
   '@types/connect-history-api-fallback@1.5.4':
     dependencies:
       '@types/express-serve-static-core': 4.17.41
-      '@types/node': 20.12.3
+      '@types/node': 20.12.7
 
   '@types/connect@3.4.38':
     dependencies:
-      '@types/node': 20.12.3
+      '@types/node': 20.12.7
 
   '@types/d3-array@3.0.7': {}
 
@@ -17248,7 +17248,7 @@ snapshots:
 
   '@types/express-serve-static-core@4.17.41':
     dependencies:
-      '@types/node': 20.12.3
+      '@types/node': 20.12.7
       '@types/qs': 6.9.11
       '@types/range-parser': 1.2.7
       '@types/send': 0.17.4
@@ -17263,13 +17263,13 @@ snapshots:
   '@types/glob@7.2.0':
     dependencies:
       '@types/minimatch': 5.1.2
-      '@types/node': 20.12.3
+      '@types/node': 20.12.7
 
   '@types/google.maps@3.54.3': {}
 
   '@types/graceful-fs@4.1.6':
     dependencies:
-      '@types/node': 20.12.3
+      '@types/node': 20.12.7
 
   '@types/gtag.js@0.0.12': {}
 
@@ -17294,7 +17294,7 @@ snapshots:
 
   '@types/http-proxy@1.17.14':
     dependencies:
-      '@types/node': 20.12.3
+      '@types/node': 20.12.7
 
   '@types/istanbul-lib-coverage@2.0.4': {}
 
@@ -17363,7 +17363,7 @@ snapshots:
 
   '@types/node-forge@1.3.10':
     dependencies:
-      '@types/node': 20.12.3
+      '@types/node': 20.12.7
 
   '@types/node@17.0.45': {}
 
@@ -17395,7 +17395,7 @@ snapshots:
 
   '@types/pbkdf2@3.1.2':
     dependencies:
-      '@types/node': 20.12.3
+      '@types/node': 20.12.7
 
   '@types/phoenix@1.6.0': {}
 
@@ -17455,13 +17455,13 @@ snapshots:
 
   '@types/readable-stream@2.3.15':
     dependencies:
-      '@types/node': 20.12.3
+      '@types/node': 20.12.7
       safe-buffer: 5.1.2
 
   '@types/request@2.48.12':
     dependencies:
       '@types/caseless': 0.12.5
-      '@types/node': 20.12.3
+      '@types/node': 20.12.7
       '@types/tough-cookie': 4.0.2
       form-data: 2.5.1
 
@@ -17469,7 +17469,7 @@ snapshots:
 
   '@types/sax@1.2.7':
     dependencies:
-      '@types/node': 20.12.3
+      '@types/node': 20.12.7
 
   '@types/scheduler@0.16.3': {}
 
@@ -17477,14 +17477,14 @@ snapshots:
 
   '@types/secp256k1@4.0.6':
     dependencies:
-      '@types/node': 20.12.3
+      '@types/node': 20.12.7
 
   '@types/semver@7.5.0': {}
 
   '@types/send@0.17.4':
     dependencies:
       '@types/mime': 1.3.5
-      '@types/node': 20.12.3
+      '@types/node': 20.12.7
 
   '@types/serve-index@1.9.4':
     dependencies:
@@ -17494,11 +17494,11 @@ snapshots:
     dependencies:
       '@types/http-errors': 2.0.4
       '@types/mime': 3.0.4
-      '@types/node': 20.12.3
+      '@types/node': 20.12.7
 
   '@types/sockjs@0.3.36':
     dependencies:
-      '@types/node': 20.12.3
+      '@types/node': 20.12.7
 
   '@types/stack-utils@2.0.1': {}
 
@@ -17518,11 +17518,11 @@ snapshots:
 
   '@types/ws@8.5.10':
     dependencies:
-      '@types/node': 20.12.3
+      '@types/node': 20.12.7
 
   '@types/ws@8.5.3':
     dependencies:
-      '@types/node': 20.12.3
+      '@types/node': 20.12.7
 
   '@types/yargs-parser@21.0.0': {}
 
@@ -20023,7 +20023,7 @@ snapshots:
 
   eval@0.1.8:
     dependencies:
-      '@types/node': 20.12.3
+      '@types/node': 20.12.7
       require-like: 0.1.2
 
   event-emitter@0.3.5:
@@ -21629,7 +21629,7 @@ snapshots:
       '@jest/expect': 29.7.0
       '@jest/test-result': 29.7.0
       '@jest/types': 29.6.3
-      '@types/node': 20.12.3
+      '@types/node': 20.12.7
       chalk: 4.1.2
       co: 4.6.0
       dedent: 1.5.1(babel-plugin-macros@3.1.0)
@@ -21769,7 +21769,7 @@ snapshots:
       '@jest/environment': 29.7.0
       '@jest/fake-timers': 29.7.0
       '@jest/types': 29.6.3
-      '@types/node': 20.12.3
+      '@types/node': 20.12.7
       jest-mock: 29.7.0
       jest-util: 29.7.0
 
@@ -21779,7 +21779,7 @@ snapshots:
     dependencies:
       '@jest/types': 29.6.3
       '@types/graceful-fs': 4.1.6
-      '@types/node': 20.12.3
+      '@types/node': 20.12.7
       anymatch: 3.1.3
       fb-watchman: 2.0.2
       graceful-fs: 4.2.11
@@ -21853,7 +21853,7 @@ snapshots:
       '@jest/test-result': 29.7.0
       '@jest/transform': 29.7.0
       '@jest/types': 29.6.3
-      '@types/node': 20.12.3
+      '@types/node': 20.12.7
       chalk: 4.1.2
       emittery: 0.13.1
       graceful-fs: 4.2.11
@@ -21881,7 +21881,7 @@ snapshots:
       '@jest/test-result': 29.7.0
       '@jest/transform': 29.7.0
       '@jest/types': 29.6.3
-      '@types/node': 20.12.3
+      '@types/node': 20.12.7
       chalk: 4.1.2
       cjs-module-lexer: 1.2.3
       collect-v8-coverage: 1.0.2
@@ -21946,7 +21946,7 @@ snapshots:
     dependencies:
       '@jest/test-result': 29.7.0
       '@jest/types': 29.6.3
-      '@types/node': 20.12.3
+      '@types/node': 20.12.7
       ansi-escapes: 4.3.2
       chalk: 4.1.2
       emittery: 0.13.1
@@ -21955,13 +21955,13 @@ snapshots:
 
   jest-worker@27.5.1:
     dependencies:
-      '@types/node': 20.12.3
+      '@types/node': 20.12.7
       merge-stream: 2.0.0
       supports-color: 8.1.1
 
   jest-worker@29.7.0:
     dependencies:
-      '@types/node': 20.12.3
+      '@types/node': 20.12.7
       jest-util: 29.7.0
       merge-stream: 2.0.0
       supports-color: 8.1.1
@@ -23468,7 +23468,7 @@ snapshots:
       - typescript
       - utf-8-validate
 
-  oss-directory@0.0.7(ts-node@10.9.1(@types/node@20.12.7)(typescript@5.3.3))(typescript@5.3.3):
+  oss-directory@0.0.12(ts-node@10.9.1(@types/node@20.12.7)(typescript@5.3.3))(typescript@5.3.3):
     dependencies:
       '@ethereum-attestation-service/eas-sdk': 1.4.0(ts-node@10.9.1(@types/node@20.12.7)(typescript@5.3.3))(typescript@5.3.3)
       ajv: 8.12.0
@@ -23492,7 +23492,7 @@ snapshots:
       - typescript
       - utf-8-validate
 
-  oss-directory@0.0.9(ts-node@10.9.1(@types/node@20.12.7)(typescript@5.3.3))(typescript@5.3.3):
+  oss-directory@0.0.7(ts-node@10.9.1(@types/node@20.12.7)(typescript@5.3.3))(typescript@5.3.3):
     dependencies:
       '@ethereum-attestation-service/eas-sdk': 1.4.0(ts-node@10.9.1(@types/node@20.12.7)(typescript@5.3.3))(typescript@5.3.3)
       ajv: 8.12.0
@@ -24048,7 +24048,7 @@ snapshots:
       '@protobufjs/path': 1.1.2
       '@protobufjs/pool': 1.1.0
       '@protobufjs/utf8': 1.1.0
-      '@types/node': 20.12.3
+      '@types/node': 20.12.7
       long: 5.2.3
 
   proxy-addr@2.0.7:
