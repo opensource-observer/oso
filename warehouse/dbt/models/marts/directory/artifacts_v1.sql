@@ -9,8 +9,8 @@
 select
   artifact_id,
   artifact_source_id,
-  artifact_source,
   artifact_namespace,
   artifact_name,
+  artifact_type,
   artifact_url
 from {{ ref('int_artifacts') }}

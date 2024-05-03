@@ -41,7 +41,7 @@ select
   artifact_namespace as artifact_namespace,
   artifact_type as artifact_type,
   artifact_url as artifact_url,
-  TO_JSON(ARRAY_AGG(distinct artifact_name)) as artifact_names,
-  MAX_BY(artifact_name, last_used) as artifact_latest_name
+  MAX_BY(artifact_name, last_used) as artifact_name,
+  TO_JSON(ARRAY_AGG(distinct artifact_name)) as artifact_name_array
 from all_artifacts
 group by 1, 2, 3, 4, 5

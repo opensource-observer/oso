@@ -39,4 +39,4 @@ select
     as npm_artifact_count
 from {{ ref('stg_ossd__current_projects') }} as projects
 left join project_owners as project_owners
-  on projects.id = project_owners.project_id
+  on projects.project_id = project_owners.project_id
