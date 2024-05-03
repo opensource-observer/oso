@@ -4,20 +4,20 @@
   }) 
 }}
 
-SELECT
+select
   events.project_id,
   projects.project_source,
   projects.project_namespace,
   projects.project_name,
-  events.from_namespace AS `artifact_source`,
+  events.from_namespace as `artifact_source`,
   events.event_type,
-  MIN(events.bucket_day) AS first_event_date,
-  MAX(events.bucket_day) AS last_event_date,
-  COUNT(DISTINCT events.bucket_day) AS eventful_day_count
-FROM {{ ref('events_daily_to_project_by_source') }} AS events
-INNER JOIN {{ ref('projects_v1') }} AS projects
-  ON projects.project_id = events.project_id
-GROUP BY
+  MIN(events.bucket_day) as first_event_date,
+  MAX(events.bucket_day) as last_event_date,
+  COUNT(distinct events.bucket_day) as eventful_day_count
+from {{ ref('events_daily_to_project_by_source') }} as events
+inner join {{ ref('projects_v1') }} as projects
+  on events.project_id = projects.project_id
+group by
   events.project_id,
   projects.project_source,
   projects.project_namespace,

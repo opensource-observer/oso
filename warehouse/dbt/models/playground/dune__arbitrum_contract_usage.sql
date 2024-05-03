@@ -6,6 +6,6 @@
   )
 }}
 {# Only get the last 3 months of contract events #}
-SELECT *
-FROM {{ source('dune', 'arbitrum_contract_usage') }}
-WHERE date >= DATE_ADD(CURRENT_DATE(), INTERVAL -3 MONTH)
+select *
+from {{ source('dune', 'arbitrum_contract_usage') }}
+where date >= DATE_ADD(CURRENT_DATE(), interval -3 month)

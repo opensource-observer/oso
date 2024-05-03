@@ -2,18 +2,18 @@
   Turns all watch events into push events
 #}
 
-WITH issue_events AS (
-  SELECT *
-  FROM {{ ref('stg_github__events') }} AS ghe
-  WHERE ghe.type = "IssuesEvent"
+with issue_events as (
+  select *
+  from {{ ref('stg_github__events') }} as ghe
+  where ghe.type = "IssuesEvent"
 )
 
-SELECT
-  ie.id AS id,
-  ie.created_at AS created_at,
-  ie.repo.id AS repository_id,
-  ie.repo.name AS repository_name,
-  ie.actor.id AS actor_id,
-  ie.actor.login AS actor_login,
-  CONCAT("ISSUE_", UPPER(JSON_VALUE(ie.payload, "$.action"))) AS `type`
-FROM issue_events AS ie
+select
+  ie.id as id,
+  ie.created_at as created_at,
+  ie.repo.id as repository_id,
+  ie.repo.name as repository_name,
+  ie.actor.id as actor_id,
+  ie.actor.login as actor_login,
+  CONCAT("ISSUE_", UPPER(JSON_VALUE(ie.payload, "$.action"))) as `type`
+from issue_events as ie

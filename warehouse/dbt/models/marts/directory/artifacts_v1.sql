@@ -6,11 +6,11 @@
 }}
 
 {# for now this just copies all of the artifacts data #}
-SELECT
+select
   artifact_id,
   artifact_source_id,
-  artifact_namespace AS artifact_source,
-  null AS artifact_namespace,
-  artifact_latest_name AS artifact_name,
+  artifact_source,
+  artifact_namespace,
+  artifact_name,
   artifact_url
-FROM {{ ref('int_artifacts') }}
+from {{ ref('int_artifacts') }}

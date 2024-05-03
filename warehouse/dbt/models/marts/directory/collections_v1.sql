@@ -4,10 +4,11 @@
   }) 
 }}
 
-SELECT
-  id AS collection_id,
-  "OSS_DIRECTORY" AS collection_source,
-  namespace AS collection_namespace,
-  slug AS collection_name,
-  name AS display_name
-FROM {{ ref('stg_ossd__current_collections') }}
+select
+  collections.collection_id,
+  collections.collection_source,
+  collections.collection_namespace,
+  collections.collection_name,
+  collections.display_name,
+  collections.description
+from {{ ref('int_collections') }} as collections

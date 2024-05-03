@@ -22,10 +22,10 @@
   )
 }}
 
-SELECT gh.*
-FROM {{ source('github_archive', 'events') }} AS gh
-WHERE
-  gh.repo.id IN (SELECT id FROM {{ ref('stg_ossd__current_repositories') }})
+select gh.*
+from {{ source('github_archive', 'events') }} as gh
+where
+  gh.repo.id in (select id from {{ ref('stg_ossd__current_repositories') }})
 
   {# If this is production then make sure it's incremental #}
   {% if target.name == 'production' %}
@@ -43,8 +43,8 @@ WHERE
       If this is not production then we only copy the most recent number of days
       (default to 14) 
     #}
-    AND created_at
+    and created_at
     >= TIMESTAMP_SUB(
-      CURRENT_TIMESTAMP(), INTERVAL {{ env_var("PLAYGROUND_DAYS", '14') }} DAY
+      CURRENT_TIMESTAMP(), interval {{ env_var("PLAYGROUND_DAYS", '14') }} day
     )
   {% endif %}

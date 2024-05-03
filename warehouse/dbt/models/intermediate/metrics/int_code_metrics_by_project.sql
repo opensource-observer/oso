@@ -17,21 +17,21 @@
     - pull_requests_merged_6_months: The number of pull requests merged in the project in the last 6 months
 #}
 
-WITH project_repos_summary AS (
-  SELECT
+with project_repos_summary as (
+  select
     project_id,
     project_source,
     project_namespace,
     project_name,
     repository_source,
-    MIN(first_commit_time) AS first_commit_date,
-    MAX(last_commit_time) AS last_commit_date,
-    COUNT(DISTINCT artifact_id) AS repositories,
-    SUM(repo_star_count) AS stars,
-    SUM(repo_fork_count) AS forks
-  FROM {{ ref('int_repos_by_project') }}
+    MIN(first_commit_time) as first_commit_date,
+    MAX(last_commit_time) as last_commit_date,
+    COUNT(distinct artifact_id) as repositories,
+    SUM(repo_star_count) as stars,
+    SUM(repo_fork_count) as forks
+  from {{ ref('int_repos_by_project') }}
   --WHERE r.is_fork = false
-  GROUP BY
+  group by
     project_id,
     project_source,
     project_namespace,
@@ -39,125 +39,125 @@ WITH project_repos_summary AS (
     repository_source
 ),
 
-n_cte AS (
-  SELECT
+n_cte as (
+  select
     project_id,
-    namespace AS repository_source,
-    SUM(CASE WHEN time_interval = 'ALL' THEN amount END) AS contributors,
-    SUM(CASE WHEN time_interval = '6M' THEN amount END)
-      AS new_contributors_6_months
-  FROM {{ ref('int_pm_new_contribs') }}
-  GROUP BY
-    project_id,
-    namespace
-),
-
-c_cte AS (
-  SELECT
-    project_id,
-    namespace AS repository_source,
-    SUM(amount) AS contributors_6_months
-  FROM {{ ref('int_pm_contributors') }}
-  WHERE time_interval = '6M'
-  GROUP BY
+    namespace as repository_source,
+    SUM(case when time_interval = 'ALL' then amount end) as contributors,
+    SUM(case when time_interval = '6M' then amount end)
+      as new_contributors_6_months
+  from {{ ref('int_pm_new_contribs') }}
+  group by
     project_id,
     namespace
 ),
 
-d_cte AS (
-  SELECT
+c_cte as (
+  select
     project_id,
-    namespace AS repository_source,
+    namespace as repository_source,
+    SUM(amount) as contributors_6_months
+  from {{ ref('int_pm_contributors') }}
+  where time_interval = '6M'
+  group by
+    project_id,
+    namespace
+),
+
+d_cte as (
+  select
+    project_id,
+    namespace as repository_source,
     SUM(
-      CASE
-        WHEN impact_metric = 'FULL_TIME_DEV_TOTAL' THEN amount / 6
-        ELSE 0
-      END
-    ) AS avg_fts_6_months,
+      case
+        when impact_metric = 'FULL_TIME_DEV_TOTAL' then amount / 6
+        else 0
+      end
+    ) as avg_fts_6_months,
     SUM(
-      CASE
-        WHEN impact_metric = 'PART_TIME_DEV_TOTAL' THEN amount / 6
-        ELSE 0
-      END
-    ) AS avg_pts_6_months
-  FROM {{ ref('int_pm_dev_months') }}
-  WHERE time_interval = '6M'
-  GROUP BY
+      case
+        when impact_metric = 'PART_TIME_DEV_TOTAL' then amount / 6
+        else 0
+      end
+    ) as avg_pts_6_months
+  from {{ ref('int_pm_dev_months') }}
+  where time_interval = '6M'
+  group by
     project_id,
     namespace
 ),
 
-contribs_cte AS (
-  SELECT
+contribs_cte as (
+  select
     n.project_id,
     n.repository_source,
     n.contributors,
     n.new_contributors_6_months,
     c.contributors_6_months,
-    d.avg_fts_6_months AS avg_fulltime_devs_6_months,
-    d.avg_fts_6_months + d.avg_pts_6_months AS avg_active_devs_6_months
-  FROM n_cte AS n
-  LEFT JOIN c_cte AS c
-    ON
+    d.avg_fts_6_months as avg_fulltime_devs_6_months,
+    d.avg_fts_6_months + d.avg_pts_6_months as avg_active_devs_6_months
+  from n_cte as n
+  left join c_cte as c
+    on
       n.project_id = c.project_id
-      AND n.repository_source = c.repository_source
-  LEFT JOIN d_cte AS d
-    ON
+      and n.repository_source = c.repository_source
+  left join d_cte as d
+    on
       n.project_id = d.project_id
-      AND n.repository_source = d.repository_source
+      and n.repository_source = d.repository_source
 ),
 
-activity_cte AS (
-  SELECT
+activity_cte as (
+  select
     project_id,
     artifact_namespace,
     SUM(
-      CASE
-        WHEN impact_metric = 'COMMIT_CODE_TOTAL' THEN amount
-      END
-    ) AS commits_6_months,
+      case
+        when impact_metric = 'COMMIT_CODE_TOTAL' then amount
+      end
+    ) as commits_6_months,
     SUM(
-      CASE
-        WHEN impact_metric = 'ISSUE_OPENED_TOTAL' THEN amount
-      END
-    ) AS issues_opened_6_months,
+      case
+        when impact_metric = 'ISSUE_OPENED_TOTAL' then amount
+      end
+    ) as issues_opened_6_months,
     SUM(
-      CASE
-        WHEN impact_metric = 'ISSUE_CLOSED_TOTAL' THEN amount
-      END
-    ) AS issues_closed_6_months,
+      case
+        when impact_metric = 'ISSUE_CLOSED_TOTAL' then amount
+      end
+    ) as issues_closed_6_months,
     SUM(
-      CASE
-        WHEN impact_metric = 'PULL_REQUEST_OPENED_TOTAL' THEN amount
-      END
-    ) AS pull_requests_opened_6_months,
+      case
+        when impact_metric = 'PULL_REQUEST_OPENED_TOTAL' then amount
+      end
+    ) as pull_requests_opened_6_months,
     SUM(
-      CASE
-        WHEN impact_metric = 'PULL_REQUEST_MERGED_TOTAL' THEN amount
-      END
-    ) AS pull_requests_merged_6_months
-  FROM {{ ref('int_event_totals_by_project') }}
-  WHERE
+      case
+        when impact_metric = 'PULL_REQUEST_MERGED_TOTAL' then amount
+      end
+    ) as pull_requests_merged_6_months
+  from {{ ref('int_event_totals_by_project') }}
+  where
     time_interval = '6M'
-    AND impact_metric IN (
+    and impact_metric in (
       'COMMIT_CODE_TOTAL',
       'ISSUE_OPENED_TOTAL',
       'ISSUE_CLOSED_TOTAL',
       'PULL_REQUEST_OPENED_TOTAL',
       'PULL_REQUEST_MERGED_TOTAL'
     )
-  GROUP BY
+  group by
     project_id,
     artifact_namespace
 )
 
 
-SELECT
+select
   p.project_id,
   p.project_source,
   p.project_namespace,
   p.project_name,
-  p.repository_source AS `artifact_source`,
+  p.repository_source as `artifact_source`,
   p.first_commit_date,
   p.last_commit_date,
   p.repositories,
@@ -173,12 +173,12 @@ SELECT
   a.issues_closed_6_months,
   a.pull_requests_opened_6_months,
   a.pull_requests_merged_6_months
-FROM project_repos_summary AS p
-LEFT JOIN contribs_cte AS c
-  ON
+from project_repos_summary as p
+left join contribs_cte as c
+  on
     p.project_id = c.project_id
-    AND p.repository_source = c.repository_source
-LEFT JOIN activity_cte AS a
-  ON
+    and p.repository_source = c.repository_source
+left join activity_cte as a
+  on
     p.project_id = a.project_id
-    AND p.repository_source = a.artifact_namespace
+    and p.repository_source = a.artifact_namespace

@@ -2,16 +2,17 @@
   Get the latest owners
 #}
 
-WITH lens_owners_ordered AS (
-  SELECT
+with lens_owners_ordered as (
+  select
     *,
-    ROW_NUMBER() OVER (PARTITION BY profile_id ORDER BY block_number DESC) AS rn
-  FROM {{ source("lens", "lens_owners") }}
+    ROW_NUMBER() over (partition by profile_id order by block_number desc)
+      as row_number
+  from {{ source("lens", "lens_owners") }}
 )
 
-SELECT
-  profile_id AS profile_id,
-  owned_by AS owned_by
-FROM lens_owners_ordered
-WHERE rn = 1
-ORDER BY profile_id
+select
+  lens_owners_ordered.profile_id,
+  lens_owners_ordered.owned_by
+from lens_owners_ordered
+where row_number = 1
+order by lens_owners_ordered.profile_id

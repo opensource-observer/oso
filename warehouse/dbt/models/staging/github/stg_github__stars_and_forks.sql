@@ -2,21 +2,21 @@
   Turns all watch events into push events
 #}
 
-WITH watch_events AS (
-  SELECT *
-  FROM {{ ref('stg_github__events') }} AS ghe
-  WHERE ghe.type IN ("WatchEvent", "ForkEvent")
+with watch_events as (
+  select *
+  from {{ ref('stg_github__events') }} as ghe
+  where ghe.type in ("WatchEvent", "ForkEvent")
 )
 
-SELECT
-  we.id AS id,
-  we.created_at AS created_at,
-  we.repo.id AS repository_id,
-  we.repo.name AS repository_name,
-  we.actor.id AS actor_id,
-  we.actor.login AS actor_login,
-  CASE we.type
-    WHEN "WatchEvent" THEN "STARRED"
-    WHEN "ForkEvent" THEN "FORKED"
-  END AS `type`
-FROM watch_events AS we
+select
+  we.id as id,
+  we.created_at as created_at,
+  we.repo.id as repository_id,
+  we.repo.name as repository_name,
+  we.actor.id as actor_id,
+  we.actor.login as actor_login,
+  case we.type
+    when "WatchEvent" then "STARRED"
+    when "ForkEvent" then "FORKED"
+  end as `type`
+from watch_events as we

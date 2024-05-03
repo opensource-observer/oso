@@ -1,37 +1,42 @@
-WITH ranked_repos AS (
-  SELECT
+with ranked_repos as (
+  select
     project_id,
     owner,
     star_count,
-    ROW_NUMBER() OVER (
-      PARTITION BY project_id ORDER BY star_count DESC
-    ) AS row_number,
-    COUNT(DISTINCT owner) OVER (PARTITION BY project_id) AS count_github_owners
-  FROM {{ ref('stg_ossd__repositories_by_project') }}
+    ROW_NUMBER() over (
+      partition by project_id order by star_count desc
+    ) as row_number,
+    COUNT(distinct owner)
+      over (partition by project_id)
+      as github_owners_count
+  from {{ ref('stg_ossd__repositories_by_project') }}
 ),
 
-project_owners AS (
-  SELECT
+project_owners as (
+  select
     project_id,
-    count_github_owners,
-    LOWER(owner) AS primary_github_owner
+    github_owners_count,
+    LOWER(owner) as primary_github_owner
   {# TODO: is_git_organization #}
-  FROM ranked_repos
-  WHERE row_number = 1
+  from ranked_repos
+  where row_number = 1
 )
 
-SELECT
-  p.id AS project_id,
-  "OSS_DIRECTORY" AS project_source,
-  {# TODO: description AS project_description #}
-  p.namespace AS project_namespace,
-  p.slug AS project_name,
-  p.name AS display_name,
-  po.primary_github_owner,
-  po.count_github_owners,
-  ARRAY_LENGTH(JSON_EXTRACT_ARRAY(p.github)) AS count_github_artifacts,
-  ARRAY_LENGTH(JSON_EXTRACT_ARRAY(p.blockchain)) AS count_blockchain_artifacts,
-  ARRAY_LENGTH(JSON_EXTRACT_ARRAY(p.npm)) AS count_npm_artifacts
-FROM {{ ref('stg_ossd__current_projects') }} AS p
-LEFT JOIN project_owners AS po
-  ON p.id = po.project_id
+select
+  projects.project_id,
+  projects.project_source,
+  projects.project_namespace,
+  projects.project_name,
+  projects.display_name,
+  projects.description,
+  project_owners.primary_github_owner,
+  project_owners.github_owners_count,
+  ARRAY_LENGTH(JSON_EXTRACT_ARRAY(projects.github))
+    as github_artifact_count,
+  ARRAY_LENGTH(JSON_EXTRACT_ARRAY(projects.blockchain))
+    as blockchain_artifact_count,
+  ARRAY_LENGTH(JSON_EXTRACT_ARRAY(projects.npm))
+    as npm_artifact_count
+from {{ ref('stg_ossd__current_projects') }} as projects
+left join project_owners as project_owners
+  on projects.id = project_owners.project_id

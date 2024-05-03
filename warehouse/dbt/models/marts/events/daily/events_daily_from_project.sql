@@ -7,11 +7,11 @@
   }) 
 }}
 
-SELECT
+select
   e.project_id,
   e.event_type,
-  TIMESTAMP_TRUNC(e.time, DAY) AS bucket_day,
-  SUM(e.amount) AS amount
-FROM {{ ref('int_events_from_project') }} AS e
-WHERE e.project_id IS NOT NULL
-GROUP BY 1, 2, 3
+  TIMESTAMP_TRUNC(e.time, day) as bucket_day,
+  SUM(e.amount) as amount
+from {{ ref('int_events_from_project') }} as e
+where e.project_id is not null
+group by 1, 2, 3

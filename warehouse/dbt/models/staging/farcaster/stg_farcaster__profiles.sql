@@ -2,12 +2,12 @@
   Get all farcaster profiles from the JSON
 #}
 
-SELECT
-  profiles.fid AS fid,
-  profiles.custody_address AS custody_address,
-  JSON_EXTRACT(profiles.data, "$.username") AS username,
-  JSON_EXTRACT(profiles.data, "$.display") AS display_name,
-  JSON_EXTRACT(profiles.data, "$.pfp") AS profile_picture_url,
-  JSON_EXTRACT(profiles.data, "$.bio") AS bio,
-  JSON_EXTRACT(profiles.data, "$.url") AS url
-FROM {{ source("farcaster", "farcaster_profiles") }} AS profiles
+select
+  profiles.fid as fid,
+  profiles.custody_address as custody_address,
+  JSON_EXTRACT(profiles.data, "$.username") as username,
+  JSON_EXTRACT(profiles.data, "$.display") as display_name,
+  JSON_EXTRACT(profiles.data, "$.pfp") as profile_picture_url,
+  JSON_EXTRACT(profiles.data, "$.bio") as bio,
+  JSON_EXTRACT(profiles.data, "$.url") as url
+from {{ source("farcaster", "farcaster_profiles") }} as profiles

@@ -7,18 +7,18 @@
   Developer Report taxonomy.
 #}
 
-SELECT
+select
   e.project_id,
-  e.repository_source AS namespace,
+  e.repository_source as namespace,
   t.time_interval,
-  CONCAT(e.user_segment_type, '_TOTAL') AS impact_metric,
-  SUM(e.amount) AS amount
-FROM {{ ref('int_active_devs_monthly_to_project') }} AS e
-CROSS JOIN {{ ref('int_time_intervals') }} AS t
-WHERE
-  DATE(e.bucket_month) >= DATE_TRUNC(t.start_date, MONTH)
-  AND DATE(e.bucket_month) < DATE_TRUNC(CURRENT_DATE(), MONTH)
-GROUP BY
+  CONCAT(e.user_segment_type, '_TOTAL') as impact_metric,
+  SUM(e.amount) as amount
+from {{ ref('int_active_devs_monthly_to_project') }} as e
+cross join {{ ref('int_time_intervals') }} as t
+where
+  DATE(e.bucket_month) >= DATE_TRUNC(t.start_date, month)
+  and DATE(e.bucket_month) < DATE_TRUNC(CURRENT_DATE(), month)
+group by
   e.project_id,
   e.repository_source,
   t.time_interval,

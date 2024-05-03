@@ -1,33 +1,33 @@
-WITH github_stats AS (
-  SELECT
-    to_id AS artifact_id,
-    MIN(time) AS first_commit_time,
-    MAX(time) AS last_commit_time,
-    COUNT(DISTINCT TIMESTAMP_TRUNC(time, DAY)) AS days_with_commits_count,
-    COUNT(DISTINCT from_id) AS contributors_to_repo_count
-  FROM {{ ref('int_events_to_project') }}
-  WHERE event_type = 'COMMIT_CODE'
-  GROUP BY to_id
+with github_stats as (
+  select
+    to_id as artifact_id,
+    MIN(time) as first_commit_time,
+    MAX(time) as last_commit_time,
+    COUNT(distinct TIMESTAMP_TRUNC(time, day)) as days_with_commits_count,
+    COUNT(distinct from_id) as contributors_to_repo_count
+  from {{ ref('int_events_to_project') }}
+  where event_type = 'COMMIT_CODE'
+  group by to_id
 )
 
-SELECT
+select
   p.project_id,
   p.project_source,
   p.project_namespace,
   p.project_name,
   r.repository_source,
   r.artifact_id,
-  r.is_fork AS repo_is_fork,
-  r.fork_count AS repo_fork_count,
-  r.star_count AS repo_star_count,
+  r.is_fork as repo_is_fork,
+  r.fork_count as repo_fork_count,
+  r.star_count as repo_star_count,
   s.first_commit_time,
   s.last_commit_time,
   s.days_with_commits_count,
   s.contributors_to_repo_count,
-  LOWER(r.name_with_owner) AS repo_name_with_owner
-FROM {{ ref('stg_ossd__repositories_by_project') }} AS r
-LEFT JOIN {{ ref('int_projects') }} AS p
-  ON r.project_id = p.project_id
-LEFT JOIN github_stats AS s
-  ON r.artifact_id = s.artifact_id
-WHERE r.repository_source = 'GITHUB'
+  LOWER(r.name_with_owner) as repo_name_with_owner
+from {{ ref('stg_ossd__repositories_by_project') }} as r
+left join {{ ref('int_projects') }} as p
+  on r.project_id = p.project_id
+left join github_stats as s
+  on r.artifact_id = s.artifact_id
+where r.repository_source = 'GITHUB'

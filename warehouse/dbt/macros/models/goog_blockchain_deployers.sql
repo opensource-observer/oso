@@ -3,7 +3,7 @@
 #}
 
 {% macro goog_blockchain_deployers(network_name) %}
-{% if is_incremental() %} 
+    {% if is_incremental() %} 
 WITH max_block_timestamp AS  (
   {# If there's no existing max time then we arbitrarily query at unix time 0 #}
   SELECT COALESCE(MAX(block_timestamp), '1970-01-01')  as ts

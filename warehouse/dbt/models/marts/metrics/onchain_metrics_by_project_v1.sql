@@ -24,23 +24,23 @@
   }) 
 }}
 
-SELECT
+select
   project_id,
   project_source,
   project_namespace,
   project_name,
-  network AS `artifact_source`,
-  date_first_txn AS `first_transaction_date`,
-  total_txns AS `transaction_count_all`,
-  txns_6_months AS `transaction_count_6_months`,
-  total_l2_gas AS `l2_gas_sum_all`,
-  l2_gas_6_months AS `l2_gas_sum_6_months`,
-  total_addresses AS `address_count_all`,
-  new_addresses AS `new_address_count_3_months`,
-  returning_addresses AS `returning_address_count_3_months`,
-  high_activity_addresses AS `high_activity_address_count_3_months`,
-  med_activity_addresses AS `medium_activity_address_count_3_months`,
-  low_activity_addresses AS `low_activity_address_count_3_months`,
-  multi_project_addresses AS `multi_project_address_count_3_months`,
-  (new_addresses + returning_addresses) AS `address_count_3_months`
-FROM {{ ref('int_onchain_metrics_by_project') }}
+  artifact_source,
+  date_first_txn as `first_transaction_date`,
+  total_txns as `transaction_count_all`,
+  txns_6_months as `transaction_count_6_months`,
+  total_l2_gas as `l2_gas_sum_all`,
+  l2_gas_6_months as `l2_gas_sum_6_months`,
+  total_addresses as `address_count_all`,
+  new_addresses as `new_address_count_3_months`,
+  returning_addresses as `returning_address_count_3_months`,
+  high_activity_addresses as `high_activity_address_count_3_months`,
+  med_activity_addresses as `medium_activity_address_count_3_months`,
+  low_activity_addresses as `low_activity_address_count_3_months`,
+  multi_project_addresses as `multi_project_address_count_3_months`,
+  (new_addresses + returning_addresses) as `address_count_3_months`
+from {{ ref('int_onchain_metrics_by_project') }}

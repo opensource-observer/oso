@@ -2,12 +2,12 @@
   All events to a project
 #}
 
-SELECT
+select
   e.*,
   a.project_id
-FROM {{ ref('int_events_with_artifact_id') }} AS e
-INNER JOIN {{ ref('stg_ossd__artifacts_by_project') }} AS a
-  ON
+from {{ ref('int_events_with_artifact_id') }} as e
+inner join {{ ref('stg_ossd__artifacts_by_project') }} as a
+  on
     e.to_source_id = a.artifact_source_id
-    AND e.to_namespace = a.artifact_namespace
-    AND e.to_type = a.artifact_type
+    and e.to_namespace = a.artifact_namespace
+    and e.to_type = a.artifact_type

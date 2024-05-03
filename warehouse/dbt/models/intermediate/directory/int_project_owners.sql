@@ -1,19 +1,21 @@
-WITH ranked_repos AS (
-  SELECT
+with ranked_repos as (
+  select
     project_id,
     owner,
     star_count,
-    ROW_NUMBER() OVER (
-      PARTITION BY project_id ORDER BY star_count DESC
-    ) AS row_number,
-    COUNT(DISTINCT owner) OVER (PARTITION BY project_id) AS count_github_owners
-  FROM {{ ref('stg_ossd__repositories_by_project') }}
+    ROW_NUMBER() over (
+      partition by project_id order by star_count desc
+    ) as row_number,
+    COUNT(distinct owner)
+      over (partition by project_id)
+      as count_github_owners
+  from {{ ref('stg_ossd__repositories_by_project') }}
 )
 
-SELECT
+select
   project_id,
   count_github_owners,
-  LOWER(owner) AS primary_github_owner
-  --TODO: is_git_organization
-FROM ranked_repos
-WHERE row_number = 1
+  LOWER(owner) as primary_github_owner
+--TODO: is_git_organization
+from ranked_repos
+where row_number = 1

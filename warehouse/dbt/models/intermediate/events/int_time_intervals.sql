@@ -1,19 +1,19 @@
-SELECT
-  '30D' AS time_interval,
-  DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY) AS start_date
-UNION ALL
-SELECT
-  '90D' AS time_interval,
-  DATE_SUB(CURRENT_DATE(), INTERVAL 90 DAY) AS start_date
-UNION ALL
-SELECT
-  '6M' AS time_interval,
-  DATE_SUB(CURRENT_DATE(), INTERVAL 6 MONTH) AS start_date
-UNION ALL
-SELECT
-  '1Y' AS time_interval,
-  DATE_SUB(CURRENT_DATE(), INTERVAL 1 YEAR) AS start_date
-UNION ALL
-SELECT
-  'ALL' AS time_interval,
-  DATE('1970-01-01') AS start_date
+select
+  '30D' as time_interval,
+  DATE_SUB(CURRENT_DATE(), interval 30 day) as start_date
+union all
+select
+  '90D' as time_interval,
+  DATE_SUB(CURRENT_DATE(), interval 90 day) as start_date
+union all
+select
+  '6M' as time_interval,
+  DATE_SUB(CURRENT_DATE(), interval 6 month) as start_date
+union all
+select
+  '1Y' as time_interval,
+  DATE_SUB(CURRENT_DATE(), interval 1 year) as start_date
+union all
+select
+  'ALL' as time_interval,
+  DATE('1970-01-01') as start_date
