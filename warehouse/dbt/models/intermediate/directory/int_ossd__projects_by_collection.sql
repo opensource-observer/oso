@@ -8,4 +8,4 @@ select
 from {{ ref('stg_ossd__current_collections') }} as collections
 cross join UNNEST(collections.projects) as project_name
 inner join {{ ref('stg_ossd__current_projects') }} as projects
-  on projects.name = project_name
+  on projects.project_name = project_name

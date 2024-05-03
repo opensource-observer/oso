@@ -6,7 +6,7 @@
 select
   repos.*,
   projects.project_id,
-  "GITHUB" as repository_source,
+  "GITHUB" as artifact_namespace,
   {{ oso_id("'GITHUB'", "'GIT_REPOSITORY'", "CAST(repos.id AS STRING)") }}
     as artifact_id
 from

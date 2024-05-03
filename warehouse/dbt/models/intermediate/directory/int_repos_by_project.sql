@@ -25,7 +25,7 @@ select
   s.days_with_commits_count,
   s.contributors_to_repo_count,
   LOWER(r.name_with_owner) as repo_name_with_owner
-from {{ ref('stg_ossd__repositories_by_project') }} as r
+from {{ ref('int_ossd__repositories_by_project') }} as r
 left join {{ ref('int_projects') }} as p
   on r.project_id = p.project_id
 left join github_stats as s

@@ -5,7 +5,7 @@ with ossd_artifacts as (
     artifact_type,
     artifact_url,
     LOWER(artifact_name) as artifact_name
-  from {{ ref('stg_ossd__artifacts_by_project') }}
+  from {{ ref('int_ossd__artifacts_by_project') }}
 ),
 
 from_artifacts as (

@@ -35,9 +35,9 @@ with txns as (
     c.tx_count,
     DATE(TIMESTAMP_TRUNC(c.time, month)) as bucket_month
   from {{ ref('stg_dune__contract_invocation') }} as c
-  inner join {{ ref('stg_ossd__artifacts_by_project') }} as a
+  inner join {{ ref('int_ossd__artifacts_by_project') }} as a
     on c.to_source_id = a.artifact_source_id
-  inner join {{ ref('stg_ossd__projects_by_collection') }} as pbc
+  inner join {{ ref('int_ossd__projects_by_collection') }} as pbc
     on a.project_id = pbc.project_id
 ),
 
@@ -155,8 +155,8 @@ contracts as (
     pbc.collection_id,
     a.artifact_namespace as onchain_network,
     COUNT(distinct a.artifact_source_id) as num_contracts
-  from {{ ref('stg_ossd__artifacts_by_project') }} as a
-  inner join {{ ref('stg_ossd__projects_by_collection') }} as pbc
+  from {{ ref('int_ossd__artifacts_by_project') }} as a
+  inner join {{ ref('int_ossd__projects_by_collection') }} as pbc
     on a.project_id = pbc.project_id
   group by pbc.collection_id, onchain_network
 ),

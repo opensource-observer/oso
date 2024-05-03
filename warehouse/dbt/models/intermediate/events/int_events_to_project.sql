@@ -6,7 +6,7 @@ select
   e.*,
   a.project_id
 from {{ ref('int_events_with_artifact_id') }} as e
-inner join {{ ref('stg_ossd__artifacts_by_project') }} as a
+inner join {{ ref('int_ossd__artifacts_by_project') }} as a
   on
     e.to_source_id = a.artifact_source_id
     and e.to_namespace = a.artifact_namespace

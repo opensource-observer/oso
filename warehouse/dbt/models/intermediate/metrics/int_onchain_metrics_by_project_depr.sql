@@ -33,7 +33,7 @@ with txns as (
     c.tx_count,
     DATE(TIMESTAMP_TRUNC(c.time, month)) as bucket_month
   from {{ ref('stg_dune__contract_invocation') }} as c
-  inner join {{ ref('stg_ossd__artifacts_by_project') }} as a
+  inner join {{ ref('int_ossd__artifacts_by_project') }} as a
     on c.to_source_id = a.artifact_source_id
 ),
 
@@ -148,7 +148,7 @@ contracts as (
     project_id,
     artifact_namespace as onchain_network,
     COUNT(artifact_source_id) as num_contracts
-  from {{ ref('stg_ossd__artifacts_by_project') }}
+  from {{ ref('int_ossd__artifacts_by_project') }}
   group by project_id, onchain_network
 ),
 

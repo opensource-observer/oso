@@ -6,7 +6,7 @@ with all_repos as (
     LOWER(repos.name_with_owner) as artifact_name,
     LOWER(repos.url) as artifact_url,
     CAST(repos.id as STRING) as artifact_source_id
-  from {{ ref('stg_ossd__repositories_by_project') }} as repos
+  from {{ ref('int_ossd__repositories_by_project') }} as repos
   group by
     1,
     2,
@@ -58,17 +58,17 @@ ossd_blockchain as (
 all_deployers as (
   select
     *,
-    'OPTIMISM' as network
+    'OPTIMISM' as artifact_namespace
   from {{ ref("stg_optimism__deployers") }}
   union all
   select
     *,
-    'MAINNET' as network
+    'MAINNET' as artifact_namespace
   from {{ ref("stg_ethereum__deployers") }}
   union all
   select
     *,
-    'ARBITRUM' as network
+    'ARBITRUM' as artifact_namespace
   from {{ ref("stg_arbitrum__deployers") }}
 ),
 
@@ -84,7 +84,7 @@ discovered_contracts as (
   inner join all_deployers as ad
     on
       ob.artifact_source_id = ad.deployer_address
-      and ob.artifact_namespace = ad.network
+      and ob.artifact_namespace = ad.artifact_namespace
       and ob.artifact_type in ('EOA', 'DEPLOYER', 'FACTORY')
 ),
 

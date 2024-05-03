@@ -27,10 +27,10 @@ with collection_commit_dates as (
     MAX(e.time) as last_commit_date
   from {{ ref('int_events_to_project') }} as e
   inner join
-    {{ ref('stg_ossd__repositories_by_project') }} as r
+    {{ ref('int_ossd__repositories_by_project') }} as r
     on e.project_id = r.project_id
   inner join
-    {{ ref('stg_ossd__projects_by_collection') }} as pbc
+    {{ ref('int_ossd__projects_by_collection') }} as pbc
     on r.project_id = pbc.project_id
   where
     e.event_type = 'COMMIT_CODE'
@@ -49,9 +49,9 @@ collection_repos_summary as (
     COUNT(distinct r.id) as repositories,
     SUM(r.star_count) as stars,
     SUM(r.fork_count) as forks
-  from {{ ref('stg_ossd__repositories_by_project') }} as r
+  from {{ ref('int_ossd__repositories_by_project') }} as r
   inner join
-    {{ ref('stg_ossd__projects_by_collection') }} as pbc
+    {{ ref('int_ossd__projects_by_collection') }} as pbc
     on r.project_id = pbc.project_id
   inner join {{ ref('collections_v1') }} as c
     on pbc.collection_id = c.collection_id
@@ -149,7 +149,7 @@ collection_activity as (
       as pull_requests_merged_6_months
   from {{ ref('int_events_to_project') }} as e
   inner join
-    {{ ref('stg_ossd__projects_by_collection') }} as pbc
+    {{ ref('int_ossd__projects_by_collection') }} as pbc
     on e.project_id = pbc.project_id
   where
     e.time >= CAST(DATE_ADD(CURRENT_DATE(), interval -6 month) as TIMESTAMP)
