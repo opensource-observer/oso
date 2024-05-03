@@ -3,7 +3,8 @@
 #}
 
 select
-  profiles.profile_id as profile_id,
+  {{ oso_id('"oso"', 'profile_id') }} as user_id,
+  profiles.profile_id as lens_profile_id,
   profiles.name as full_name,
   profiles.bio as bio,
   profiles.profile_picture_snapshot_location_url as profile_picture_url,
