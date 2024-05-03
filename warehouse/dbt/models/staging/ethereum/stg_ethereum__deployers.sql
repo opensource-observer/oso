@@ -14,20 +14,20 @@
   )
 }}
 
-SELECT
+select
   block_timestamp,
-  `hash` AS transaction_hash,
-  from_address AS deployer_address,
-  receipt_contract_address AS contract_address
-FROM {{ source("ethereum", "transactions") }}
-WHERE
-  to_address IS NULL
-  AND receipt_status = 1
-  AND receipt_contract_address IS NOT NULL
+  `hash` as transaction_hash,
+  from_address as deployer_address,
+  receipt_contract_address as contract_address
+from {{ source("ethereum", "transactions") }}
+where
+  to_address is null
+  and receipt_status = 1
+  and receipt_contract_address is not null
 {% if is_incremental() %}
-  AND block_timestamp >= (
-    SELECT MAX(block_timestamp)
-    FROM {{ this }}
-  )
-  AND block_timestamp < TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY)
-{% endif %}
+        AND block_timestamp >= (
+            SELECT MAX(block_timestamp)
+            FROM {{ this }}
+        )
+        AND block_timestamp < TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY)
+    {% endif %}

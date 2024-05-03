@@ -7,13 +7,13 @@
   table of impact metrics.
 #}
 
-SELECT
+select
   e.project_id,
-  e.to_namespace AS artifact_namespace,
+  e.to_namespace as artifact_namespace,
   t.time_interval,
-  CONCAT(e.event_type, '_TOTAL') AS impact_metric,
-  SUM(e.amount) AS amount
-FROM {{ ref('int_events_to_project') }} AS e
-CROSS JOIN {{ ref('int_time_intervals') }} AS t
-WHERE DATE(e.time) >= t.start_date
-GROUP BY e.project_id, e.to_namespace, t.time_interval, e.event_type
+  CONCAT(e.event_type, '_TOTAL') as impact_metric,
+  SUM(e.amount) as amount
+from {{ ref('int_events_to_project') }} as e
+cross join {{ ref('int_time_intervals') }} as t
+where DATE(e.time) >= t.start_date
+group by e.project_id, e.to_namespace, t.time_interval, e.event_type

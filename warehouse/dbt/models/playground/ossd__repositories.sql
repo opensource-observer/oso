@@ -5,5 +5,5 @@
     enabled=false,
   )
 }}
-SELECT *
-FROM {{ source('ossd', 'repositories') }}
+select *
+from {{ source('ossd', 'repositories') }}

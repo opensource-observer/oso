@@ -2,12 +2,12 @@
   All events from a project
 #}
 
-SELECT
+select
   e.*,
   a.project_id
-FROM {{ ref('int_events_with_artifact_id') }} AS e
-LEFT JOIN {{ ref('stg_ossd__artifacts_by_project') }} AS a
-  ON
+from {{ ref('int_events_with_artifact_id') }} as e
+left join {{ ref('stg_ossd__artifacts_by_project') }} as a
+  on
     e.from_source_id = a.artifact_source_id
-    AND e.from_namespace = a.artifact_namespace
-    AND e.from_type = a.artifact_type
+    and e.from_namespace = a.artifact_namespace
+    and e.from_type = a.artifact_type

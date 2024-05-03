@@ -2,16 +2,16 @@
   Developer stats by project and repo source
 #}
 
-SELECT
+select
   from_id,
-  from_namespace AS repository_source,
+  from_namespace as repository_source,
   project_id,
-  MIN(bucket_day) AS date_first_contribution,
-  MAX(bucket_day) AS date_last_contribution,
-  SUM(amount) AS count_events
-FROM {{ ref('int_user_events_daily_to_project') }}
-WHERE
-  event_type IN (
+  MIN(bucket_day) as date_first_contribution,
+  MAX(bucket_day) as date_last_contribution,
+  SUM(amount) as count_events
+from {{ ref('int_user_events_daily_to_project') }}
+where
+  event_type in (
     'COMMIT_CODE',
     'PULL_REQUEST_OPENED',
     'PULL_REQUEST_REOPENED',
@@ -21,4 +21,4 @@ WHERE
     'ISSUE_OPENED',
     'ISSUE_REOPENED'
   )
-GROUP BY 1, 2, 3
+group by 1, 2, 3

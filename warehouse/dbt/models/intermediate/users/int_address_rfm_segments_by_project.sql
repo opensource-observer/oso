@@ -14,93 +14,93 @@
   metrics.
 #}
 
-WITH user_history AS (
-  SELECT
+with user_history as (
+  select
     from_id,
     network,
     project_id,
-    count_events AS total_activity,
-    DATE_DIFF(CURRENT_TIMESTAMP(), date_last_txn, DAY)
-      AS days_since_last_activity
-  FROM {{ ref('int_addresses') }}
+    count_events as total_activity,
+    DATE_DIFF(CURRENT_TIMESTAMP(), date_last_txn, day)
+      as days_since_last_activity
+  from {{ ref('int_addresses') }}
 ),
 
-user_stats AS (
-  SELECT
+user_stats as (
+  select
     from_id,
     network,
     project_id,
     total_activity,
     days_since_last_activity,
-    COUNT(DISTINCT project_id) AS project_count
-  FROM user_history
-  GROUP BY 1, 2, 3, 4, 5
+    COUNT(distinct project_id) as project_count
+  from user_history
+  group by 1, 2, 3, 4, 5
 ),
 
-rfm_components AS (
-  SELECT
+rfm_components as (
+  select
     from_id,
     network,
     project_id,
-    CASE
-      WHEN days_since_last_activity < 7 THEN 5
-      WHEN days_since_last_activity < 30 THEN 4
-      WHEN days_since_last_activity < 90 THEN 3
-      WHEN days_since_last_activity < 180 THEN 2
-      ELSE 1
-    END AS rfm_recency,
-    CASE
-      WHEN total_activity = 1 THEN 1
-      WHEN total_activity < 10 THEN 2
-      WHEN total_activity < 100 THEN 3
-      WHEN total_activity < 1000 THEN 4
-      ELSE 5
-    END AS rfm_frequency,
-    CASE
-      WHEN project_count = 1 THEN 1
-      WHEN project_count <= 3 THEN 2
-      WHEN project_count <= 10 THEN 3
-      WHEN project_count <= 30 THEN 4
-      ELSE 5
-    END AS rfm_ecosystem
-  FROM user_stats
+    case
+      when days_since_last_activity < 7 then 5
+      when days_since_last_activity < 30 then 4
+      when days_since_last_activity < 90 then 3
+      when days_since_last_activity < 180 then 2
+      else 1
+    end as rfm_recency,
+    case
+      when total_activity = 1 then 1
+      when total_activity < 10 then 2
+      when total_activity < 100 then 3
+      when total_activity < 1000 then 4
+      else 5
+    end as rfm_frequency,
+    case
+      when project_count = 1 then 1
+      when project_count <= 3 then 2
+      when project_count <= 10 then 3
+      when project_count <= 30 then 4
+      else 5
+    end as rfm_ecosystem
+  from user_stats
 )
 
-SELECT
+select
   *,
-  CASE
-    WHEN rfm_frequency = 5
-      THEN
-        CASE
-          WHEN rfm_recency = 5 THEN 'Power'
-          WHEN rfm_recency = 4 THEN 'Loyal'
-          WHEN rfm_recency = 3 THEN 'At risk'
-          ELSE 'Churned'
-        END
-    WHEN rfm_frequency = 4
-      THEN
-        CASE
-          WHEN rfm_recency >= 4 THEN 'Loyal'
-          WHEN rfm_recency = 3 THEN 'At risk'
-          ELSE 'Churned'
-        END
-    WHEN rfm_frequency = 3
-      THEN
-        CASE
-          WHEN rfm_recency >= 4 THEN 'Promising'
-          WHEN rfm_recency = 3 THEN 'Needs attention'
-          ELSE 'Tourist'
-        END
-    WHEN rfm_frequency = 2
-      THEN
-        CASE
-          WHEN rfm_recency >= 4 THEN 'Noob'
-          ELSE 'Tourist'
-        END
-    WHEN rfm_frequency = 1 THEN
-      CASE
-        WHEN rfm_recency >= 3 THEN 'Noob'
-        ELSE 'One and done'
-      END
-  END AS user_segment
-FROM rfm_components
+  case
+    when rfm_frequency = 5
+      then
+        case
+          when rfm_recency = 5 then 'Power'
+          when rfm_recency = 4 then 'Loyal'
+          when rfm_recency = 3 then 'At risk'
+          else 'Churned'
+        end
+    when rfm_frequency = 4
+      then
+        case
+          when rfm_recency >= 4 then 'Loyal'
+          when rfm_recency = 3 then 'At risk'
+          else 'Churned'
+        end
+    when rfm_frequency = 3
+      then
+        case
+          when rfm_recency >= 4 then 'Promising'
+          when rfm_recency = 3 then 'Needs attention'
+          else 'Tourist'
+        end
+    when rfm_frequency = 2
+      then
+        case
+          when rfm_recency >= 4 then 'Noob'
+          else 'Tourist'
+        end
+    when rfm_frequency = 1 then
+      case
+        when rfm_recency >= 3 then 'Noob'
+        else 'One and done'
+      end
+  end as user_segment
+from rfm_components

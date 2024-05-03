@@ -7,10 +7,10 @@
   }) 
 }}
 
-SELECT
+select
   e.artifact_id,
   e.event_type,
-  TIMESTAMP_TRUNC(e.bucket_day, WEEK) AS bucket_week,
-  SUM(e.amount) AS amount
-FROM {{ ref('events_daily_from_artifact') }} AS e
-GROUP BY 1, 2, 3
+  TIMESTAMP_TRUNC(e.bucket_day, week) as bucket_week,
+  SUM(e.amount) as amount
+from {{ ref('events_daily_from_artifact') }} as e
+group by 1, 2, 3

@@ -3,11 +3,11 @@
 #}
 
 
-SELECT
+select
   project_id,
-  from_namespace AS network,
+  from_namespace as network,
   bucket_day,
-  address_type AS user_type,
-  COUNT(DISTINCT from_id) AS amount
-FROM {{ ref('int_addresses_daily_activity') }}
-GROUP BY 1, 2, 3, 4
+  address_type as user_type,
+  COUNT(distinct from_id) as amount
+from {{ ref('int_addresses_daily_activity') }}
+group by 1, 2, 3, 4

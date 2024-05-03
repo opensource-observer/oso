@@ -2,14 +2,14 @@
   Resolve merges that were created by the mergebot
 #}
 
-WITH merge_bot_commits AS (
-  SELECT *
-  FROM {{ ref('stg_github__distinct_main_commits') }}
-  WHERE actor_id = 118344674
+with merge_bot_commits as (
+  select *
+  from {{ ref('stg_github__distinct_main_commits') }}
+  where actor_id = 118344674
 ),
 
-resolved_merge_bot_commits AS (
-  SELECT
+resolved_merge_bot_commits as (
+  select
     mbc.repository_id,
     mbc.sha,
     mbc.created_at,
@@ -22,21 +22,21 @@ resolved_merge_bot_commits AS (
     mbc.author_name,
     mbc.is_distinct,
     mbc.api_url
-  FROM merge_bot_commits AS mbc
-  INNER JOIN
-    {{ ref('stg_github__pull_request_merge_events') }} AS ghprme
-    ON
+  from merge_bot_commits as mbc
+  inner join
+    {{ ref('stg_github__pull_request_merge_events') }} as ghprme
+    on
       mbc.repository_id = ghprme.repository_id
-      AND mbc.sha = ghprme.merge_commit_sha
+      and mbc.sha = ghprme.merge_commit_sha
 ),
 
-no_merge_bot_commits AS (
-  SELECT *
-  FROM {{ ref('stg_github__distinct_main_commits') }}
+no_merge_bot_commits as (
+  select *
+  from {{ ref('stg_github__distinct_main_commits') }}
   {# The following is the actor_id for the github merge bot #}
-  WHERE actor_id != 118344674
+  where actor_id != 118344674
 )
 
-SELECT * FROM resolved_merge_bot_commits
-UNION ALL
-SELECT * FROM no_merge_bot_commits
+select * from resolved_merge_bot_commits
+union all
+select * from no_merge_bot_commits

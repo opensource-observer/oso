@@ -9,24 +9,24 @@
   - Other contributor: A user who has not made any commits
 #}
 
-SELECT
+select
   collection_id,
   from_id,
-  from_namespace AS repository_source,
+  from_namespace as repository_source,
   bucket_month,
-  1 AS amount,
-  CASE
-    WHEN
-      event_type = 'COMMIT_CODE' AND count_days >= 10
-      THEN 'FULL_TIME_DEV'
-    WHEN
-      event_type = 'COMMIT_CODE' AND count_days < 10
-      THEN 'PART_TIME_DEV'
-    ELSE 'OTHER_CONTRIBUTOR'
-  END AS user_segment_type
-FROM {{ ref('int_user_events_monthly_to_collection') }}
-WHERE
-  event_type IN (
+  1 as amount,
+  case
+    when
+      event_type = 'COMMIT_CODE' and count_days >= 10
+      then 'FULL_TIME_DEV'
+    when
+      event_type = 'COMMIT_CODE' and count_days < 10
+      then 'PART_TIME_DEV'
+    else 'OTHER_CONTRIBUTOR'
+  end as user_segment_type
+from {{ ref('int_user_events_monthly_to_collection') }}
+where
+  event_type in (
     'COMMIT_CODE',
     'PULL_REQUEST_OPENED',
     'PULL_REQUEST_MERGED',

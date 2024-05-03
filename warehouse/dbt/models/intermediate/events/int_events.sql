@@ -31,11 +31,11 @@
   )
 }}
 
-WITH contract_invocation_daily_count AS (
-  SELECT
+with contract_invocation_daily_count as (
+  select
     cii.time,
-    "CONTRACT_INVOCATION_DAILY_COUNT" AS `event_type`,
-    cii.source_id AS event_source_id,
+    "CONTRACT_INVOCATION_DAILY_COUNT" as `event_type`,
+    cii.source_id as event_source_id,
     cii.to_name,
     cii.to_namespace,
     cii.to_type,
@@ -44,22 +44,22 @@ WITH contract_invocation_daily_count AS (
     cii.from_namespace,
     cii.from_type,
     cii.from_source_id,
-    cii.tx_count AS `amount`
-  FROM {{ ref('stg_dune__contract_invocation') }} AS cii
+    cii.tx_count as `amount`
+  from {{ ref('stg_dune__contract_invocation') }} as cii
   {# a bit of a hack for now to keep this table small for dev and playground #}
   {% if target.name in ['dev', 'playground'] %}
-    WHERE cii.time >= TIMESTAMP_SUB(
+    where cii.time >= TIMESTAMP_SUB(
       CURRENT_TIMESTAMP(),
-      INTERVAL {{ env_var("PLAYGROUND_DAYS", '14') }} DAY
+      interval {{ env_var("PLAYGROUND_DAYS", '14') }} day
     )
   {% endif %}
 ),
 
-contract_invocation_daily_l2_gas_used AS (
-  SELECT
+contract_invocation_daily_l2_gas_used as (
+  select
     cii.time,
-    "CONTRACT_INVOCATION_DAILY_L2_GAS_USED" AS `event_type`,
-    cii.source_id AS event_source_id,
+    "CONTRACT_INVOCATION_DAILY_L2_GAS_USED" as `event_type`,
+    cii.source_id as event_source_id,
     cii.to_name,
     cii.to_namespace,
     cii.to_type,
@@ -68,21 +68,21 @@ contract_invocation_daily_l2_gas_used AS (
     cii.from_namespace,
     cii.from_type,
     cii.from_source_id,
-    cii.l2_gas AS `amount`
-  FROM {{ ref('stg_dune__contract_invocation') }} AS cii
+    cii.l2_gas as `amount`
+  from {{ ref('stg_dune__contract_invocation') }} as cii
   {% if target.name in ['dev', 'playground'] %}
-    WHERE cii.time >= TIMESTAMP_SUB(
+    where cii.time >= TIMESTAMP_SUB(
       CURRENT_TIMESTAMP(),
-      INTERVAL {{ env_var("PLAYGROUND_DAYS", '14') }} DAY
+      interval {{ env_var("PLAYGROUND_DAYS", '14') }} day
     )
   {% endif %}
 ),
 
-contract_invocation_daily_l1_gas_used AS (
-  SELECT
+contract_invocation_daily_l1_gas_used as (
+  select
     cii.time,
-    "CONTRACT_INVOCATION_DAILY_L1_GAS_USED" AS `event_type`,
-    cii.source_id AS event_source_id,
+    "CONTRACT_INVOCATION_DAILY_L1_GAS_USED" as `event_type`,
+    cii.source_id as event_source_id,
     cii.to_name,
     cii.to_namespace,
     cii.to_type,
@@ -91,119 +91,119 @@ contract_invocation_daily_l1_gas_used AS (
     cii.from_namespace,
     cii.from_type,
     cii.from_source_id,
-    cii.l1_gas AS `amount`
-  FROM {{ ref('stg_dune__contract_invocation') }} AS cii
+    cii.l1_gas as `amount`
+  from {{ ref('stg_dune__contract_invocation') }} as cii
   {% if target.name in ['dev', 'playground'] %}
-    WHERE cii.time >= TIMESTAMP_SUB(
+    where cii.time >= TIMESTAMP_SUB(
       CURRENT_TIMESTAMP(),
-      INTERVAL {{ env_var("PLAYGROUND_DAYS", '14') }} DAY
+      interval {{ env_var("PLAYGROUND_DAYS", '14') }} day
     )
   {% endif %}
 ),
 
-github_commits AS (
-  SELECT -- noqa: ST06
-    gc.created_at AS `time`,
-    "COMMIT_CODE" AS `event_type`,
-    gc.push_id AS `event_source_id`,
-    gc.repository_name AS `to_name`,
-    "GITHUB" AS `to_namespace`,
-    "GIT_REPOSITORY" AS `to_type`,
-    CAST(gc.repository_id AS STRING) AS `to_source_id`,
-    COALESCE(gc.actor_login, gc.author_email) AS `from_name`,
-    "GITHUB" AS `from_namespace`,
-    CASE
-      WHEN gc.actor_login IS NOT NULL THEN "GIT_USER"
-      ELSE "GIT_EMAIL"
-    END AS `from_type`,
-    CASE
-      WHEN gc.actor_login IS NOT NULL THEN CAST(gc.actor_id AS STRING)
-      ELSE gc.author_email
-    END AS `from_source_id`,
-    CAST(1 AS FLOAT64) AS `amount`
-  FROM {{ ref('stg_github__distinct_commits_resolved_mergebot') }} AS gc
+github_commits as (
+  select -- noqa: ST06
+    gc.created_at as `time`,
+    "COMMIT_CODE" as `event_type`,
+    gc.push_id as `event_source_id`,
+    gc.repository_name as `to_name`,
+    "GITHUB" as `to_namespace`,
+    "GIT_REPOSITORY" as `to_type`,
+    CAST(gc.repository_id as STRING) as `to_source_id`,
+    COALESCE(gc.actor_login, gc.author_email) as `from_name`,
+    "GITHUB" as `from_namespace`,
+    case
+      when gc.actor_login is not null then "GIT_USER"
+      else "GIT_EMAIL"
+    end as `from_type`,
+    case
+      when gc.actor_login is not null then CAST(gc.actor_id as STRING)
+      else gc.author_email
+    end as `from_source_id`,
+    CAST(1 as FLOAT64) as `amount`
+  from {{ ref('stg_github__distinct_commits_resolved_mergebot') }} as gc
 ),
 
-github_issues AS (
-  SELECT -- noqa: ST06
-    gi.created_at AS `time`,
-    gi.type AS `event_type`,
-    CAST(gi.id AS STRING) AS `event_source_id`,
-    gi.repository_name AS `to_name`,
-    "GITHUB" AS `to_namespace`,
-    "GIT_REPOSITORY" AS `to_type`,
-    CAST(gi.repository_id AS STRING) AS `to_source_id`,
-    gi.actor_login AS `from_name`,
-    "GITHUB" AS `from_namespace`,
-    "GIT_USER" AS `from_type`,
-    CAST(gi.actor_id AS STRING) AS `from_source_id`,
-    CAST(1 AS FLOAT64) AS `amount`
-  FROM {{ ref('stg_github__issues') }} AS gi
+github_issues as (
+  select -- noqa: ST06
+    gi.created_at as `time`,
+    gi.type as `event_type`,
+    CAST(gi.id as STRING) as `event_source_id`,
+    gi.repository_name as `to_name`,
+    "GITHUB" as `to_namespace`,
+    "GIT_REPOSITORY" as `to_type`,
+    CAST(gi.repository_id as STRING) as `to_source_id`,
+    gi.actor_login as `from_name`,
+    "GITHUB" as `from_namespace`,
+    "GIT_USER" as `from_type`,
+    CAST(gi.actor_id as STRING) as `from_source_id`,
+    CAST(1 as FLOAT64) as `amount`
+  from {{ ref('stg_github__issues') }} as gi
 ),
 
-github_pull_requests AS (
-  SELECT -- noqa: ST06
-    gh.created_at AS `time`,
-    gh.type AS `event_type`,
-    CAST(gh.id AS STRING) AS `event_source_id`,
-    gh.repository_name AS `to_name`,
-    "GITHUB" AS `to_namespace`,
-    "GIT_REPOSITORY" AS `to_type`,
-    CAST(gh.repository_id AS STRING) AS `to_source_id`,
-    gh.actor_login AS `from_name`,
-    "GITHUB" AS `from_namespace`,
-    "GIT_USER" AS `from_type`,
-    CAST(gh.actor_id AS STRING) AS `from_source_id`,
-    CAST(1 AS FLOAT64) AS `amount`
-  FROM {{ ref('stg_github__pull_requests') }} AS gh
+github_pull_requests as (
+  select -- noqa: ST06
+    gh.created_at as `time`,
+    gh.type as `event_type`,
+    CAST(gh.id as STRING) as `event_source_id`,
+    gh.repository_name as `to_name`,
+    "GITHUB" as `to_namespace`,
+    "GIT_REPOSITORY" as `to_type`,
+    CAST(gh.repository_id as STRING) as `to_source_id`,
+    gh.actor_login as `from_name`,
+    "GITHUB" as `from_namespace`,
+    "GIT_USER" as `from_type`,
+    CAST(gh.actor_id as STRING) as `from_source_id`,
+    CAST(1 as FLOAT64) as `amount`
+  from {{ ref('stg_github__pull_requests') }} as gh
 ),
 
-github_pull_request_merge_events AS (
-  SELECT -- noqa: ST06
-    gh.created_at AS `time`,
-    gh.type AS `event_type`,
-    CAST(gh.id AS STRING) AS `event_source_id`,
-    gh.repository_name AS `to_name`,
-    "GITHUB" AS `to_namespace`,
-    "GIT_REPOSITORY" AS `to_type`,
-    CAST(gh.repository_id AS STRING) AS `to_source_id`,
-    gh.actor_login AS `from_name`,
-    "GITHUB" AS `from_namespace`,
-    "GIT_USER" AS `from_type`,
-    CAST(gh.actor_id AS STRING) AS `from_source_id`,
-    CAST(1 AS FLOAT64) AS `amount`
-  FROM {{ ref('stg_github__pull_request_merge_events') }} AS gh
+github_pull_request_merge_events as (
+  select -- noqa: ST06
+    gh.created_at as `time`,
+    gh.type as `event_type`,
+    CAST(gh.id as STRING) as `event_source_id`,
+    gh.repository_name as `to_name`,
+    "GITHUB" as `to_namespace`,
+    "GIT_REPOSITORY" as `to_type`,
+    CAST(gh.repository_id as STRING) as `to_source_id`,
+    gh.actor_login as `from_name`,
+    "GITHUB" as `from_namespace`,
+    "GIT_USER" as `from_type`,
+    CAST(gh.actor_id as STRING) as `from_source_id`,
+    CAST(1 as FLOAT64) as `amount`
+  from {{ ref('stg_github__pull_request_merge_events') }} as gh
 ),
 
-github_stars_and_forks AS (
-  SELECT -- noqa: ST06
-    gh.created_at AS `time`,
-    gh.type AS `event_type`,
-    CAST(gh.id AS STRING) AS `event_source_id`,
-    gh.repository_name AS `to_name`,
-    "GITHUB" AS `to_namespace`,
-    "GIT_REPOSITORY" AS `to_type`,
-    CAST(gh.repository_id AS STRING) AS `to_source_id`,
-    gh.actor_login AS `from_name`,
-    "GITHUB" AS `from_namespace`,
-    "GIT_USER" AS `from_type`,
-    CAST(gh.actor_id AS STRING) AS `from_source_id`,
-    CAST(1 AS FLOAT64) AS `amount`
-  FROM {{ ref('stg_github__stars_and_forks') }} AS gh
+github_stars_and_forks as (
+  select -- noqa: ST06
+    gh.created_at as `time`,
+    gh.type as `event_type`,
+    CAST(gh.id as STRING) as `event_source_id`,
+    gh.repository_name as `to_name`,
+    "GITHUB" as `to_namespace`,
+    "GIT_REPOSITORY" as `to_type`,
+    CAST(gh.repository_id as STRING) as `to_source_id`,
+    gh.actor_login as `from_name`,
+    "GITHUB" as `from_namespace`,
+    "GIT_USER" as `from_type`,
+    CAST(gh.actor_id as STRING) as `from_source_id`,
+    CAST(1 as FLOAT64) as `amount`
+  from {{ ref('stg_github__stars_and_forks') }} as gh
 )
 
-SELECT * FROM contract_invocation_daily_count
-UNION ALL
-SELECT * FROM contract_invocation_daily_l1_gas_used
-UNION ALL
-SELECT * FROM contract_invocation_daily_l2_gas_used
-UNION ALL
-SELECT * FROM github_commits
-UNION ALL
-SELECT * FROM github_issues
-UNION ALL
-SELECT * FROM github_pull_requests
-UNION ALL
-SELECT * FROM github_pull_request_merge_events
-UNION ALL
-SELECT * FROM github_stars_and_forks
+select * from contract_invocation_daily_count
+union all
+select * from contract_invocation_daily_l1_gas_used
+union all
+select * from contract_invocation_daily_l2_gas_used
+union all
+select * from github_commits
+union all
+select * from github_issues
+union all
+select * from github_pull_requests
+union all
+select * from github_pull_request_merge_events
+union all
+select * from github_stars_and_forks

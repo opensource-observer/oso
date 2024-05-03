@@ -23,7 +23,7 @@
   }) 
 }}
 
-SELECT
+select
   project_id,
   project_source,
   project_namespace,
@@ -31,17 +31,17 @@ SELECT
   artifact_source,
   first_commit_date,
   last_commit_date,
-  repositories AS `repository_count_all`,
-  stars AS `star_count_all`,
-  forks AS `fork_count_all`,
-  contributors AS `contributor_count_all`,
-  contributors_6_months AS `contributor_count_6_months`,
-  new_contributors_6_months AS `new_contributor_count_6_months`,
-  avg_fulltime_devs_6_months AS `fulltime_developer_count_6_months`,
-  avg_active_devs_6_months AS `active_developer_count_6_month`,
-  commits_6_months AS `commit_count_6_months`,
-  issues_opened_6_months AS `opened_issue_count_6m`,
-  issues_closed_6_months AS `closed_issue_count_6m`,
-  pull_requests_opened_6_months AS `opened_pull_request_count_6m`,
-  pull_requests_merged_6_months AS `merged_pull_request_count_6m`
-FROM {{ ref('int_code_metrics_by_project') }}
+  repositories as `repository_count_all`,
+  stars as `star_count_all`,
+  forks as `fork_count_all`,
+  contributors as `contributor_count_all`,
+  contributors_6_months as `contributor_count_6_months`,
+  new_contributors_6_months as `new_contributor_count_6_months`,
+  avg_fulltime_devs_6_months as `fulltime_developer_count_6_months`,
+  avg_active_devs_6_months as `active_developer_count_6_month`,
+  commits_6_months as `commit_count_6_months`,
+  issues_opened_6_months as `opened_issue_count_6m`,
+  issues_closed_6_months as `closed_issue_count_6m`,
+  pull_requests_opened_6_months as `opened_pull_request_count_6m`,
+  pull_requests_merged_6_months as `merged_pull_request_count_6m`
+from {{ ref('int_code_metrics_by_project') }}

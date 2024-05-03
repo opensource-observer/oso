@@ -10,77 +10,77 @@
 
 {% set activity_thresh = 10 %}
 
-WITH user_data AS (
-  SELECT
+with user_data as (
+  select
     a.project_id,
-    a.from_namespace AS network,
+    a.from_namespace as network,
     a.from_id,
     a.address_type,
     a.amount,
     t.time_interval,
     t.start_date,
-    DATE(a.bucket_day) AS bucket_day
-  FROM {{ ref('int_addresses_daily_activity') }} AS a
-  CROSS JOIN {{ ref('int_time_intervals') }} AS t
+    DATE(a.bucket_day) as bucket_day
+  from {{ ref('int_addresses_daily_activity') }} as a
+  cross join {{ ref('int_time_intervals') }} as t
 ),
 
-user_status AS (
-  SELECT
+user_status as (
+  select
     project_id,
     network,
     time_interval,
     from_id,
     amount,
-    CASE
-      WHEN bucket_day >= start_date THEN address_type
-      ELSE 'INACTIVE'
-    END AS address_status
-  FROM user_data
+    case
+      when bucket_day >= start_date then address_type
+      else 'INACTIVE'
+    end as address_status
+  from user_data
 ),
 
-user_activity_levels AS (
-  SELECT
+user_activity_levels as (
+  select
     project_id,
     network,
     time_interval,
     from_id,
-    CASE
-      WHEN SUM(amount) >= {{ activity_thresh }} THEN 'HIGH_ACTIVITY'
-      WHEN
+    case
+      when SUM(amount) >= {{ activity_thresh }} then 'HIGH_ACTIVITY'
+      when
         SUM(amount) > 1
-        AND SUM(amount) < {{ activity_thresh }}
-        THEN 'MEDIUM_ACTIVITY'
-      ELSE 'LOW_ACTIVITY'
-    END AS activity_level
-  FROM user_status
-  WHERE address_status != 'INACTIVE'
-  GROUP BY 1, 2, 3, 4
+        and SUM(amount) < {{ activity_thresh }}
+        then 'MEDIUM_ACTIVITY'
+      else 'LOW_ACTIVITY'
+    end as activity_level
+  from user_status
+  where address_status != 'INACTIVE'
+  group by 1, 2, 3, 4
 ),
 
-final_users AS (
-  SELECT
+final_users as (
+  select
     project_id,
     network,
     time_interval,
-    CONCAT(address_status, '_ADDRESSES') AS impact_metric,
-    COUNT(DISTINCT from_id) AS amount
-  FROM user_status
-  GROUP BY 1, 2, 3, 4
-  UNION ALL
-  SELECT
+    CONCAT(address_status, '_ADDRESSES') as impact_metric,
+    COUNT(distinct from_id) as amount
+  from user_status
+  group by 1, 2, 3, 4
+  union all
+  select
     project_id,
     network,
     time_interval,
-    CONCAT(activity_level, '_ADDRESSES') AS impact_metric,
-    COUNT(DISTINCT from_id) AS amount
-  FROM user_activity_levels
-  GROUP BY 1, 2, 3, 4
+    CONCAT(activity_level, '_ADDRESSES') as impact_metric,
+    COUNT(distinct from_id) as amount
+  from user_activity_levels
+  group by 1, 2, 3, 4
 )
 
-SELECT
+select
   project_id,
   network,
   time_interval,
   impact_metric,
   amount
-FROM final_users
+from final_users
