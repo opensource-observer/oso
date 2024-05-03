@@ -3,6 +3,7 @@ from typing import Any, Mapping
 from dagster import AssetExecutionContext, AssetKey, asset
 
 from dagster_dbt import DbtCliResource, dbt_assets, DagsterDbtTranslator
+from google.cloud.bigquery.schema import SchemaField
 from .constants import main_dbt_manifest_path
 from .goldsky import (
     GoldskyConfig,
@@ -56,7 +57,6 @@ base_blocks = goldsky_asset(
         destination_dataset_name="superchain",
         partition_column_name="timestamp",
         partition_column_transform=lambda c: f"TIMESTAMP_SECONDS(`{c}`)",
-        pointer_size=int(os.environ.get("GOLDSKY_CHECKPOINT_SIZE", "20000")),
         # uncomment the following value to test
     ),
 )
@@ -71,7 +71,7 @@ base_transactions = goldsky_asset(
         destination_dataset_name="superchain",
         partition_column_name="block_timestamp",
         partition_column_transform=lambda c: f"TIMESTAMP_SECONDS(`{c}`)",
-        pointer_size=int(os.environ.get("GOLDSKY_CHECKPOINT_SIZE", "20000")),
+        schema_overrides=[SchemaField(name="value", field_type="BYTES")],
         # uncomment the following value to test
     ),
 )
@@ -83,11 +83,9 @@ base_traces = goldsky_asset(
         project_id="opensource-observer",
         destination_table_name="base_traces",
         working_destination_dataset_name="oso_raw_sources",
-        # TODO... move this
-        destination_dataset_name="oso_sources",
+        destination_dataset_name="superchain",
         partition_column_name="block_timestamp",
         partition_column_transform=lambda c: f"TIMESTAMP_SECONDS(`{c}`)",
-        pointer_size=int(os.environ.get("GOLDSKY_CHECKPOINT_SIZE", "20000")),
         # uncomment the following value to test
         # max_objects_to_load=2,
     ),
@@ -103,7 +101,6 @@ frax_blocks = goldsky_asset(
         destination_dataset_name="superchain",
         partition_column_name="timestamp",
         partition_column_transform=lambda c: f"TIMESTAMP_SECONDS(`{c}`)",
-        pointer_size=int(os.environ.get("GOLDSKY_CHECKPOINT_SIZE", "20000")),
         # uncomment the following value to test
         # max_objects_to_load=1,
     ),
@@ -119,7 +116,7 @@ frax_transactions = goldsky_asset(
         destination_dataset_name="superchain",
         partition_column_name="block_timestamp",
         partition_column_transform=lambda c: f"TIMESTAMP_SECONDS(`{c}`)",
-        pointer_size=int(os.environ.get("GOLDSKY_CHECKPOINT_SIZE", "20000")),
+        schema_overrides=[SchemaField(name="value", field_type="BYTES")],
         # uncomment the following value to test
         # max_objects_to_load=1,
     ),
@@ -135,7 +132,6 @@ frax_traces = goldsky_asset(
         destination_dataset_name="superchain",
         partition_column_name="block_timestamp",
         partition_column_transform=lambda c: f"TIMESTAMP_SECONDS(`{c}`)",
-        pointer_size=int(os.environ.get("GOLDSKY_CHECKPOINT_SIZE", "20000")),
         # uncomment the following value to test
         # max_objects_to_load=1,
     ),
@@ -151,7 +147,6 @@ mode_blocks = goldsky_asset(
         destination_dataset_name="superchain",
         partition_column_name="timestamp",
         partition_column_transform=lambda c: f"TIMESTAMP_SECONDS(`{c}`)",
-        pointer_size=int(os.environ.get("GOLDSKY_CHECKPOINT_SIZE", "20000")),
         # uncomment the following value to test
         # max_objects_to_load=1,
     ),
@@ -167,7 +162,7 @@ mode_transactions = goldsky_asset(
         destination_dataset_name="superchain",
         partition_column_name="block_timestamp",
         partition_column_transform=lambda c: f"TIMESTAMP_SECONDS(`{c}`)",
-        pointer_size=int(os.environ.get("GOLDSKY_CHECKPOINT_SIZE", "20000")),
+        schema_overrides=[SchemaField(name="value", field_type="BYTES")],
         # uncomment the following value to test
         # max_objects_to_load=1,
     ),
@@ -183,7 +178,6 @@ mode_traces = goldsky_asset(
         destination_dataset_name="superchain",
         partition_column_name="block_timestamp",
         partition_column_transform=lambda c: f"TIMESTAMP_SECONDS(`{c}`)",
-        pointer_size=int(os.environ.get("GOLDSKY_CHECKPOINT_SIZE", "20000")),
         # uncomment the following value to test
         # max_objects_to_load=1,
     ),
@@ -196,9 +190,8 @@ optimism_traces = goldsky_asset(
         project_id="opensource-observer",
         destination_table_name="optimism_traces",
         working_destination_dataset_name="oso_raw_sources",
-        destination_dataset_name="oso_sources",
+        destination_dataset_name="superchain",
         partition_column_name="block_timestamp",
-        pointer_size=int(os.environ.get("GOLDSKY_CHECKPOINT_SIZE", "20000")),
         dedupe_model="optimism_dedupe.sql",
         # uncomment the following value to test
         # max_objects_to_load=2000,
@@ -215,7 +208,6 @@ pgn_blocks = goldsky_asset(
         destination_dataset_name="superchain",
         partition_column_name="timestamp",
         partition_column_transform=lambda c: f"TIMESTAMP_SECONDS(`{c}`)",
-        pointer_size=int(os.environ.get("GOLDSKY_CHECKPOINT_SIZE", "20000")),
         # uncomment the following value to test
         # max_objects_to_load=1,
     ),
@@ -231,7 +223,7 @@ pgn_transactions = goldsky_asset(
         destination_dataset_name="superchain",
         partition_column_name="block_timestamp",
         partition_column_transform=lambda c: f"TIMESTAMP_SECONDS(`{c}`)",
-        pointer_size=int(os.environ.get("GOLDSKY_CHECKPOINT_SIZE", "20000")),
+        schema_overrides=[SchemaField(name="value", field_type="BYTES")],
         # uncomment the following value to test
         # max_objects_to_load=1,
     ),
@@ -247,7 +239,6 @@ pgn_traces = goldsky_asset(
         destination_dataset_name="superchain",
         partition_column_name="block_timestamp",
         partition_column_transform=lambda c: f"TIMESTAMP_SECONDS(`{c}`)",
-        pointer_size=int(os.environ.get("GOLDSKY_CHECKPOINT_SIZE", "20000")),
         # uncomment the following value to test
         # max_objects_to_load=1,
     ),
@@ -263,7 +254,6 @@ zora_blocks = goldsky_asset(
         destination_dataset_name="superchain",
         partition_column_name="timestamp",
         partition_column_transform=lambda c: f"TIMESTAMP_SECONDS(`{c}`)",
-        pointer_size=int(os.environ.get("GOLDSKY_CHECKPOINT_SIZE", "20000")),
         # uncomment the following value to test
         # max_objects_to_load=1,
     ),
@@ -279,7 +269,7 @@ zora_transactions = goldsky_asset(
         destination_dataset_name="superchain",
         partition_column_name="block_timestamp",
         partition_column_transform=lambda c: f"TIMESTAMP_SECONDS(`{c}`)",
-        pointer_size=int(os.environ.get("GOLDSKY_CHECKPOINT_SIZE", "20000")),
+        schema_overrides=[SchemaField(name="value", field_type="BYTES")],
         # uncomment the following value to test
         # max_objects_to_load=1,
     ),
@@ -295,7 +285,6 @@ zora_traces = goldsky_asset(
         destination_dataset_name="superchain",
         partition_column_name="block_timestamp",
         partition_column_transform=lambda c: f"TIMESTAMP_SECONDS(`{c}`)",
-        pointer_size=int(os.environ.get("GOLDSKY_CHECKPOINT_SIZE", "20000")),
         # uncomment the following value to test
         # max_objects_to_load=1,
     ),
