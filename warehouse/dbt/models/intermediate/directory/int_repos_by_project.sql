@@ -15,19 +15,20 @@ select
   p.project_source,
   p.project_namespace,
   p.project_name,
-  r.repository_source,
   r.artifact_id,
-  r.is_fork as repo_is_fork,
-  r.fork_count as repo_fork_count,
-  r.star_count as repo_star_count,
+  'GITHUB' as artifact_namespace,
+  r.owner as repo_owner,
+  r.name as repo_name,
+  r.is_fork,
+  r.fork_count,
+  r.star_count,
   s.first_commit_time,
   s.last_commit_time,
   s.days_with_commits_count,
   s.contributors_to_repo_count,
-  LOWER(r.name_with_owner) as repo_name_with_owner
+  LOWER(r.name_with_owner) as artifact_name
 from {{ ref('int_ossd__repositories_by_project') }} as r
 left join {{ ref('int_projects') }} as p
   on r.project_id = p.project_id
 left join github_stats as s
   on r.artifact_id = s.artifact_id
-where r.repository_source = 'GITHUB'
