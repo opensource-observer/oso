@@ -9,7 +9,7 @@
     "prettier --ignore-path .gitignore --log-level warn --check"
   ],
   "warehouse/dbt/**/*.sql": [
-    "poetry run sqlfluff fix -f --dialect bigquery",
-    "poetry run sqlfluff lint --dialect bigquery"
+    "poetry run sqlfluff fix -f",
+    "poetry run sqlfluff lint"
   ]
 }
