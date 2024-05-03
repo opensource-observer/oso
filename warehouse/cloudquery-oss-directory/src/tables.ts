@@ -104,6 +104,7 @@ export const getTables = async (options: TableOptions): Promise<Table[]> => {
         newColumn("display_name", {
           notNull: true,
         }),
+        newColumn("description", {}),
         newColumn("version", {
           type: new Int64(),
         }),
@@ -135,6 +136,7 @@ export const getTables = async (options: TableOptions): Promise<Table[]> => {
         newColumn("display_name", {
           notNull: true,
         }),
+        newColumn("description", {}),
         newColumn("github", {
           type: new JSONType(),
           // Ideally we'd be able to use structs to more precisely specify the
