@@ -26,6 +26,7 @@
     "dev:frontend": "turbo run dev --filter=@opensource-observer/frontend --parallel",
     "format:staged": "lint-staged",
     "lint": "turbo run lint --concurrency=100%",
+    "lint:sql": "poetry run sqlfluff lint -v",
     "serve": "yarn serve build",
     "test": "turbo run test --concurrency=1",
     "test:integration": "(docker compose -f docker/compose.yaml down || true) && docker compose -f docker/compose.yaml run --rm test",

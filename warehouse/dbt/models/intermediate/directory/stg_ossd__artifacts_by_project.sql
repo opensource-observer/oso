@@ -26,7 +26,9 @@ all_npm as (
         LOWER(JSON_VALUE(npm.url)) like 'https://npmjs.com/package/%'
         then SUBSTR(LOWER(JSON_VALUE(npm.url)), 28)
       when
-        LOWER(JSON_VALUE(npm.url)) like 'https://www.npmjs.com/package/%'
+        LOWER(
+          JSON_VALUE(npm.url)
+        ) like 'https://www.npmjs.com/package/%'
         then SUBSTR(LOWER(JSON_VALUE(npm.url)), 31)
     end as artifact_name,
     LOWER(JSON_VALUE(npm.url)) as artifact_url,

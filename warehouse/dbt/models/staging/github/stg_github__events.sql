@@ -29,22 +29,27 @@ where
 
   {# If this is production then make sure it's incremental #}
   {% if target.name == 'production' %}
-  {% if is_incremental() %}
-  AND _TABLE_SUFFIX > FORMAT_TIMESTAMP("%y%m%d", TIMESTAMP_SUB(_dbt_max_partition, INTERVAL 1 DAY))
-  {% else %}
-    {# 
-    If/when we do full refreshes we are currently only taking data from 2015
-    onward due to schema changes of the github events in the githubarchive 
-    #}
-    AND _TABLE_SUFFIX >= "150101" 
-  {% endif %}
-{% elif target.name in ['dev', 'playground'] %}
+    {% if is_incremental() %}
+      and _table_suffix
+      > format_timestamp(
+        "%y%m%d",
+        timestamp_sub(_dbt_max_partition, interval 1 day)
+      )
+    {% else %}
+      {# 
+      If/when we do full refreshes we are currently only taking data from 2015
+      onward due to schema changes of the github events in the githubarchive 
+      #}
+      and _table_suffix >= "150101" 
+    {% endif %}
+  {% elif target.name in ['dev', 'playground'] %}
     {# 
       If this is not production then we only copy the most recent number of days
       (default to 14) 
     #}
     and created_at
-    >= TIMESTAMP_SUB(
-      CURRENT_TIMESTAMP(), interval {{ env_var("PLAYGROUND_DAYS", '14') }} day
+    >= timestamp_sub(
+      current_timestamp(),
+      interval {{ env_var("PLAYGROUND_DAYS", '14') }} day
     )
   {% endif %}
