@@ -33,20 +33,20 @@
 }}
 
 with contract_invocation_daily_count as (
-  select
+  select -- noqa: ST06
     time,
     "CONTRACT_INVOCATION_DAILY_COUNT" as event_type,
     "EVM" as event_source,
+    CAST(source_id as STRING) as event_source_id,
     to_name,
     to_namespace,
     to_type,
-    to_source_id,
+    CAST(to_source_id as STRING) as to_source_id,
     from_name,
     from_namespace,
     from_type,
-    from_source_id,
-    tx_count as amount,
-    CAST(source_id as STRING) as event_source_id
+    CAST(from_source_id as STRING) as from_source_id,
+    tx_count as amount
   from {{ ref('stg_dune__contract_invocation') }}
   {# a bit of a hack for now to keep this table small for dev and playground #}
   {% if target.name in ['dev', 'playground'] %}
@@ -58,20 +58,20 @@ with contract_invocation_daily_count as (
 ),
 
 contract_invocation_daily_l2_gas_used as (
-  select
+  select -- noqa: ST06
     time,
     "CONTRACT_INVOCATION_DAILY_L2_GAS_USED" as event_type,
+    CAST(source_id as STRING) as event_source_id,
     "EVM" as event_source,
     to_name,
     to_namespace,
     to_type,
-    to_source_id,
+    CAST(to_source_id as STRING) as to_source_id,
     from_name,
     from_namespace,
     from_type,
-    from_source_id,
-    l2_gas as amount,
-    CAST(source_id as STRING) as event_source_id
+    CAST(from_source_id as STRING) as from_source_id,
+    l2_gas as amount
   from {{ ref('stg_dune__contract_invocation') }}
   {% if target.name in ['dev', 'playground'] %}
     where time >= TIMESTAMP_SUB(
@@ -82,20 +82,20 @@ contract_invocation_daily_l2_gas_used as (
 ),
 
 contract_invocation_daily_l1_gas_used as (
-  select
+  select -- noqa: ST06
     time,
     "CONTRACT_INVOCATION_DAILY_L1_GAS_USED" as event_type,
     "EVM" as event_source,
+    CAST(source_id as STRING) as event_source_id,
     to_name,
     to_namespace,
     to_type,
-    to_source_id,
+    CAST(to_source_id as STRING) as to_source_id,
     from_name,
     from_namespace,
     from_type,
-    from_source_id,
-    l1_gas as amount,
-    CAST(source_id as STRING) as event_source_id
+    CAST(from_source_id as STRING) as from_source_id,
+    l1_gas as amount
   from {{ ref('stg_dune__contract_invocation') }}
   {% if target.name in ['dev', 'playground'] %}
     where time >= TIMESTAMP_SUB(
