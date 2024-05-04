@@ -107,7 +107,7 @@ contract_invocation_daily_l1_gas_used as (
 
 github_commits as (
   select -- noqa: ST06
-    created_at as time,
+    created_at as `time`,
     "COMMIT_CODE" as event_type,
     CAST(push_id as STRING) as event_source_id,
     "GITHUB" as event_source,
@@ -132,7 +132,7 @@ github_commits as (
 
 github_issues as (
   select -- noqa: ST06
-    created_at as time,
+    created_at as `time`,
     type as event_type,
     CAST(id as STRING) as event_source_id,
     "GITHUB" as event_source,
@@ -151,7 +151,7 @@ github_issues as (
 
 github_pull_requests as (
   select -- noqa: ST06
-    created_at as time,
+    created_at as `time`,
     type as event_type,
     CAST(id as STRING) as event_source_id,
     "GITHUB" as event_source,
@@ -170,7 +170,7 @@ github_pull_requests as (
 
 github_pull_request_merge_events as (
   select -- noqa: ST06
-    created_at as time,
+    created_at as `time`,
     type as event_type,
     CAST(id as STRING) as event_source_id,
     "GITHUB" as event_source,
@@ -189,7 +189,7 @@ github_pull_request_merge_events as (
 
 github_stars_and_forks as (
   select -- noqa: ST06
-    created_at as time,
+    created_at as `time`,
     type as event_type,
     CAST(id as STRING) as event_source_id,
     "GITHUB" as event_source,

@@ -78,7 +78,7 @@ all_deployers as (
   union all
   select
     *,
-    "ARBITRUM" as artifact_namespace,
+    "ARBITRUM-ONE" as artifact_namespace,
     "EVM" as artifact_source
   from {{ ref("stg_arbitrum__deployers") }}
 ),
