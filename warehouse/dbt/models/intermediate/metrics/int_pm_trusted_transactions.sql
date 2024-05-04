@@ -5,7 +5,7 @@
 
 select
   e.project_id,
-  e.from_namespace as namespace,
+  e.from_namespace as artifact_source,
   t.time_interval,
   'TRUSTED_TRANSACTIONS_TOTAL' as impact_metric,
   SUM(e.amount) as amount
@@ -16,7 +16,6 @@ where
   and e.from_id in (
     select user_id
     from {{ ref('int_users') }}
-    where is_trusted = true
   )
   and e.event_type = 'CONTRACT_INVOCATION_DAILY_COUNT'
 group by

@@ -1,24 +1,15 @@
-with ossd_artifacts as (
-  select distinct
-    artifact_source_id,
-    artifact_namespace,
-    artifact_type,
-    artifact_url,
-    LOWER(artifact_name) as artifact_name
-  from {{ ref('int_ossd__artifacts_by_project') }}
-),
-
-from_artifacts as (
+with from_artifacts as (
   {# `from` actor artifacts derived from all events #}
   select
     from_source_id as artifact_source_id,
-    from_namespace as artifact_namespace,
+    event_source as artifact_source,
     from_type as artifact_type,
+    from_namespace as artifact_namespace,
+    from_name as artifact_name,
     "" as artifact_url, {# for now this is blank #}
-    LOWER(from_name) as artifact_name,
-    MAX(e.time) as last_used
-  from {{ ref('int_events') }} as e
-  group by 1, 2, 3, 4, 5
+    MAX(time) as last_used
+  from {{ ref('int_events') }}
+  group by 1, 2, 3, 4, 5, 6
 ),
 
 all_artifacts as (
@@ -28,20 +19,26 @@ all_artifacts as (
     we will use those by setting `last_used` to be the current timestamp.
   #}
   select
-    oa.*,
+    artifact_source_id,
+    artifact_source,
+    artifact_type,
+    artifact_namespace,
+    artifact_name,
+    artifact_url,
     CURRENT_TIMESTAMP() as last_used
-  from ossd_artifacts as oa
+  from {{ ref('int_ossd__artifacts_by_project') }}
   union all
   select * from from_artifacts
 )
 
 select
   {{ oso_artifact_id("artifact") }} as artifact_id,
-  artifact_source_id as artifact_source_id,
-  artifact_namespace as artifact_namespace,
-  artifact_type as artifact_type,
-  artifact_url as artifact_url,
+  artifact_source_id,
+  artifact_source,
+  artifact_type,
+  artifact_namespace,
+  artifact_url,
   MAX_BY(artifact_name, last_used) as artifact_name,
   TO_JSON(ARRAY_AGG(distinct artifact_name)) as artifact_name_array
 from all_artifacts
-group by 1, 2, 3, 4, 5
+group by 1, 2, 3, 4, 5, 6

@@ -7,6 +7,7 @@ select
   time,
   event_type,
   event_source_id,
+  event_source,
   to_name,
   to_namespace,
   to_type,

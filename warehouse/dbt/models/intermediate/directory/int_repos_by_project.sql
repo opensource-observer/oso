@@ -16,7 +16,6 @@ select
   p.project_namespace,
   p.project_name,
   r.artifact_id,
-  'GITHUB' as artifact_namespace,
   r.owner as repo_owner,
   r.name as repo_name,
   r.is_fork,
@@ -26,6 +25,8 @@ select
   s.last_commit_time,
   s.days_with_commits_count,
   s.contributors_to_repo_count,
+  'GITHUB' as artifact_source,
+  LOWER(r.owner) as artifact_namespace,
   LOWER(r.name_with_owner) as artifact_name
 from {{ ref('int_ossd__repositories_by_project') }} as r
 left join {{ ref('int_projects') }} as p

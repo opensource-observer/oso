@@ -9,7 +9,7 @@
 
 select
   e.project_id,
-  e.repository_source as namespace,
+  e.repository_source as artifact_source,
   t.time_interval,
   CONCAT(e.user_segment_type, '_TOTAL') as impact_metric,
   SUM(e.amount) as amount

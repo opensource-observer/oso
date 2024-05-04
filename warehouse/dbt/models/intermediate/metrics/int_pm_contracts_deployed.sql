@@ -15,7 +15,6 @@ with users_by_contract as (
     from_id in (
       select user_id
       from {{ ref('int_users') }}
-      where is_trusted = true
     )
     and event_type = 'CONTRACT_INVOCATION_DAILY_COUNT'
   group by 1
