@@ -34,6 +34,7 @@ data/
 *.env
 .env*.local
 *.log
+logs/
 coverage.json
 
 # typescript
