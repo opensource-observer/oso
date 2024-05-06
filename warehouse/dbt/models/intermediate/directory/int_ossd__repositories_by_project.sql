@@ -7,7 +7,7 @@ select
   repos.*,
   projects.project_id,
   "GITHUB" as repository_source,
-  {{ oso_id("'GITHUB'", "'GIT_REPOSITORY'", "CAST(repos.id AS STRING)") }}
+  {{ oso_id("'GITHUB'", "'REPOSITORY'", "CAST(repos.id AS STRING)") }}
     as artifact_id
 from
   {{ ref('stg_ossd__current_projects') }} as projects

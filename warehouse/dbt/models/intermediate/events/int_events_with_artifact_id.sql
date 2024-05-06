@@ -1,8 +1,8 @@
-{{
+{#
   config(
     materialized='ephemeral',
   )
-}}
+#}
 select
   time,
   event_type,

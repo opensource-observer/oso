@@ -5,8 +5,8 @@
 #}
 
 select
-  from_id,
-  from_namespace,
+  from_artifact_id,
+  event_source,
   project_id,
   event_type,
   TIMESTAMP_TRUNC(bucket_day, month) as bucket_month,
@@ -14,8 +14,8 @@ select
   SUM(amount) as total_amount
 from {{ ref('int_user_events_daily_to_project') }}
 group by
-  from_id,
-  from_namespace,
+  from_artifact_id,
+  event_source,
   project_id,
   event_type,
   TIMESTAMP_TRUNC(bucket_day, month)

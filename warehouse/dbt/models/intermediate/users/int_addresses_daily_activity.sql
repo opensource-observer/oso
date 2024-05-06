@@ -3,20 +3,23 @@
 #}
 
 select
-  e.project_id,
-  e.from_namespace,
-  e.from_id,
-  e.bucket_day,
-  e.amount,
+  int_events_to_project.project_id,
+  int_events_to_project.from_artifact_id,
+  int_events_to_project.event_source,
+  int_events_to_project.amount,
+  DATE_TRUNC(int_events_to_project.time, day) as bucket_day,
   case
-    when e.bucket_day = a.date_first_txn then 'NEW'
+    when
+      int_events_to_project.time
+      = int_addresses_to_project.first_transaction_time
+      then 'NEW'
     else 'RETURNING'
   end as address_type
-from {{ ref('int_user_events_daily_to_project') }} as e
-left join {{ ref('int_addresses') }} as a
+from {{ ref('int_events_to_project') }}
+left join {{ ref('int_addresses_to_project') }}
   on
-    e.from_id = a.from_id
-    and e.from_namespace = a.network
-    and e.project_id = a.project_id
+    int_events_to_project.from_artifact_id
+    = int_addresses_to_project.artifact_id
+    and int_events_to_project.project_id = int_addresses_to_project.project_id
 where
-  e.event_type = 'CONTRACT_INVOCATION_DAILY_COUNT'
+  int_events_to_project.event_type = 'CONTRACT_INVOCATION_DAILY_COUNT'

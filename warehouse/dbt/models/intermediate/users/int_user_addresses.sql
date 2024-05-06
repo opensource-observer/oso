@@ -4,15 +4,15 @@
 
 with user_data as (
   select
-    from_id,
+    artifact_id,
     MAX(rfm_recency) as r,
     MAX(rfm_frequency) as f,
     MAX(rfm_ecosystem) as e
   from {{ ref('int_address_rfm_segments_by_project') }}
-  group by 1
+  group by artifact_id
 )
 
 select
-  from_id as user_id,
+  artifact_id as user_id,
   (r > 2 and f > 2 and e > 2) as is_trusted
 from user_data

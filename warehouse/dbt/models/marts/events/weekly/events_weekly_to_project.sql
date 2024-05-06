@@ -8,9 +8,12 @@
 }}
 
 select
-  e.project_id,
-  e.event_type,
-  TIMESTAMP_TRUNC(e.bucket_day, week) as bucket_week,
-  SUM(e.amount) as amount
-from {{ ref('events_daily_to_project') }} as e
-group by 1, 2, 3
+  project_id,
+  event_type,
+  TIMESTAMP_TRUNC(bucket_day, week) as bucket_week,
+  SUM(amount) as amount
+from {{ ref('events_daily_to_project') }}
+group by
+  project_id,
+  event_type,
+  TIMESTAMP_TRUNC(bucket_day, week)

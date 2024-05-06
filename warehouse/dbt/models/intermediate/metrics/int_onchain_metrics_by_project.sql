@@ -7,7 +7,7 @@
 with txns as (
   select
     project_id,
-    artifact_namespace,
+    event_source,
     SUM(case
       when
         impact_metric = 'CONTRACT_INVOCATION_DAILY_COUNT_TOTAL'
@@ -33,13 +33,15 @@ with txns as (
         then amount
     end) as l2_gas_6_months
   from {{ ref('int_event_totals_by_project') }}
-  group by 1, 2
+  group by
+    project_id,
+    event_source
 ),
 
 addresses as (
   select
     project_id,
-    network as artifact_namespace,
+    event_source,
     SUM(case
       when
         impact_metric = 'NEW_ADDRESSES'
@@ -77,81 +79,65 @@ addresses as (
         then amount
     end) as high_activity_addresses
   from {{ ref('int_address_totals_by_project') }}
-  group by 1, 2
+  group by
+    project_id,
+    event_source
 ),
 
 first_txn as (
   select
     project_id,
-    from_artifact_namespace as artifact_namespace,
+    event_source,
     MIN(bucket_day) as date_first_txn
   from {{ ref('int_addresses_daily_activity') }}
-  group by 1, 2
+  group by
+    project_id,
+    event_source
 ),
 
 contracts as (
   select
     project_id,
-    artifact_namespace,
+    artifact_namespace as event_source,
     COUNT(distinct artifact_name) as num_contracts
   from {{ ref('artifacts_by_project_v1') }}
   where artifact_type in ('CONTRACT', 'FACTORY')
-  group by 1, 2
-),
-
-multi_project_addresses as (
-  select
-    project_id,
-    network as artifact_namespace,
-    COUNT(
-      distinct case
-        when
-          rfm_ecosystem > 2
-          and rfm_recency > 3
-          then from_id
-      end
-    ) as multi_project_addresses
-  from
-    {{ ref('int_address_rfm_segments_by_project') }}
   group by
-    1, 2
+    project_id,
+    artifact_namespace
 ),
 
 metrics as (
   select
     c.*,
-    f.* except (project_id, artifact_namespace),
-    t.* except (project_id, artifact_namespace),
-    a.* except (project_id, artifact_namespace),
-    m.* except (project_id, artifact_namespace)
+    f.* except (project_id, event_source),
+    t.* except (project_id, event_source),
+    a.* except (project_id, event_source)
   from
     contracts as c
   inner join
     txns as t
     on
       c.project_id = t.project_id
-      and c.artifact_namespace = t.artifact_namespace
+      and c.event_source = t.event_source
   left join
     first_txn as f
     on
       t.project_id = f.project_id
-      and t.artifact_namespace = f.artifact_namespace
+      and t.event_source = f.event_source
   left join
     addresses as a
     on
       t.project_id = a.project_id
-      and t.artifact_namespace = a.artifact_namespace
-  left join
-    multi_project_addresses as m
-    on
-      t.project_id = m.project_id
-      and t.artifact_namespace = m.artifact_namespacek
+      and t.event_source = a.event_source
 )
 
 select
   metrics.*,
-  p.project_slug,
-  p.project_name
+  p.project_source,
+  p.project_namespace,
+  p.project_name,
+  p.display_name
 from
   {{ ref('projects_v1') }} as p
 left join
