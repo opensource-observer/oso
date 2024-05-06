@@ -4,7 +4,7 @@
 
 select
   e.project_id,
-  e.from_namespace,
+  e.event_source,
   e.event_type,
   TIMESTAMP_TRUNC(e.bucket_day, week) as bucket_week,
   SUM(e.amount) as amount

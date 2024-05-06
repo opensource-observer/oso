@@ -9,15 +9,15 @@
   source_id
   event_source
 
-  to_name
-  to_namespace
-  to_type
-  to_source_id
+  to_artifact_name
+  to_artifact_namespace
+  to_artifact_type
+  to_artifact_source_id
 
-  from_name
-  from_namespace
-  from_type
-  from_source_id
+  from_artifact_name
+  from_artifact_namespace
+  from_artifact_type
+  from_artifact_source_id
 
   amount
 #}
@@ -36,8 +36,8 @@ with contract_invocation_daily_count as (
   select -- noqa: ST06
     time,
     "CONTRACT_INVOCATION_DAILY_COUNT" as event_type,
-    "EVM" as event_source,
     CAST(source_id as STRING) as event_source_id,
+    from_namespace as event_source,
     to_name,
     to_namespace,
     to_type,
@@ -62,7 +62,7 @@ contract_invocation_daily_l2_gas_used as (
     time,
     "CONTRACT_INVOCATION_DAILY_L2_GAS_USED" as event_type,
     CAST(source_id as STRING) as event_source_id,
-    "EVM" as event_source,
+    from_namespace as event_source,
     to_name,
     to_namespace,
     to_type,
@@ -85,8 +85,8 @@ contract_invocation_daily_l1_gas_used as (
   select -- noqa: ST06
     time,
     "CONTRACT_INVOCATION_DAILY_L1_GAS_USED" as event_type,
-    "EVM" as event_source,
     CAST(source_id as STRING) as event_source_id,
+    from_namespace as event_source,
     to_name,
     to_namespace,
     to_type,
@@ -114,7 +114,7 @@ github_commits as (
     repository_name as to_name,
     SPLIT(REPLACE(repository_name, "@", ""), "/")[SAFE_OFFSET(0)]
       as to_namespace,
-    "GIT_REPOSITORY" as to_type,
+    "REPOSITORY" as to_type,
     CAST(repository_id as STRING) as to_source_id,
     COALESCE(actor_login, author_email) as from_name,
     COALESCE(actor_login, author_email) as from_namespace,
@@ -139,7 +139,7 @@ github_issues as (
     repository_name as to_name,
     SPLIT(REPLACE(repository_name, "@", ""), "/")[SAFE_OFFSET(0)]
       as to_namespace,
-    "GIT_REPOSITORY" as to_type,
+    "REPOSITORY" as to_type,
     CAST(repository_id as STRING) as to_source_id,
     actor_login as from_name,
     actor_login as from_namespace,
@@ -158,7 +158,7 @@ github_pull_requests as (
     repository_name as to_name,
     SPLIT(REPLACE(repository_name, "@", ""), "/")[SAFE_OFFSET(0)]
       as to_namespace,
-    "GIT_REPOSITORY" as to_type,
+    "REPOSITORY" as to_type,
     CAST(repository_id as STRING) as to_source_id,
     actor_login as from_name,
     actor_login as from_namespace,
@@ -177,7 +177,7 @@ github_pull_request_merge_events as (
     repository_name as to_name,
     SPLIT(REPLACE(repository_name, "@", ""), "/")[SAFE_OFFSET(0)]
       as to_namespace,
-    "GIT_REPOSITORY" as to_type,
+    "REPOSITORY" as to_type,
     CAST(repository_id as STRING) as to_source_id,
     actor_login as from_name,
     actor_login as from_namespace,
@@ -196,7 +196,7 @@ github_stars_and_forks as (
     repository_name as to_name,
     SPLIT(REPLACE(repository_name, "@", ""), "/")[SAFE_OFFSET(0)]
       as to_namespace,
-    "GIT_REPOSITORY" as to_type,
+    "REPOSITORY" as to_type,
     CAST(repository_id as STRING) as to_source_id,
     actor_login as from_name,
     actor_login as from_namespace,
@@ -229,13 +229,13 @@ select
   UPPER(event_type) as event_type,
   CAST(event_source_id as STRING) as event_source_id,
   UPPER(event_source) as event_source,
-  LOWER(to_name) as to_name,
-  UPPER(to_namespace) as to_namespace,
-  UPPER(to_type) as to_type,
-  CAST(to_source_id as STRING) as to_source_id,
-  LOWER(from_name) as from_name,
-  UPPER(from_namespace) as from_namespace,
-  UPPER(from_type) as from_type,
-  CAST(from_source_id as STRING) as from_source_id,
+  LOWER(to_name) as to_artifact_name,
+  UPPER(to_namespace) as to_artifact_namespace,
+  UPPER(to_type) as to_artifact_type,
+  CAST(to_source_id as STRING) as to_artifact_source_id,
+  LOWER(from_name) as from_artifact_name,
+  UPPER(from_namespace) as from_artifact_namespace,
+  UPPER(from_type) as from_artifact_type,
+  CAST(from_source_id as STRING) as from_artifact_source_id,
   CAST(amount as FLOAT64) as amount
 from all_events

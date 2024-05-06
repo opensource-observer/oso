@@ -1,7 +1,15 @@
+{#
+  This model is responsible for generating a list of all artifacts associated with a project.
+  This includes repositories, npm packages, blockchain addresses, and contracts.
+
+  Currently, the source and namespace for blockchain artifacts are the same. This may change
+  in the future.
+#}
+
 with all_repos as (
   select
     "GITHUB" as artifact_source,
-    "GIT_REPOSITORY" as artifact_type,
+    "REPOSITORY" as artifact_type,
     repos.project_id as project_id,
     repos.owner as artifact_namespace,
     repos.name_with_owner as artifact_name,
@@ -46,10 +54,10 @@ all_npm as (
 
 ossd_blockchain as (
   select
-    "EVM" as artifact_source,
     projects.project_id,
     tag as artifact_type,
     network as artifact_namespace,
+    network as artifact_source,
     JSON_VALUE(blockchains.address) as artifact_source_id,
     JSON_VALUE(blockchains.address) as artifact_name,
     JSON_VALUE(blockchains.address) as artifact_url
@@ -67,29 +75,29 @@ all_deployers as (
   select
     *,
     "OPTIMISM" as artifact_namespace,
-    "EVM" as artifact_source
+    "OPTIMISM" as artifact_source
   from {{ ref("stg_optimism__deployers") }}
   union all
   select
     *,
     "MAINNET" as artifact_namespace,
-    "EVM" as artifact_source
+    "MAINNET" as artifact_source
   from {{ ref("stg_ethereum__deployers") }}
   union all
   select
     *,
-    "ARBITRUM-ONE" as artifact_namespace,
-    "EVM" as artifact_source
+    "ARBITRUM_ONE" as artifact_namespace,
+    "ARBITRUM_ONE" as artifact_source
   from {{ ref("stg_arbitrum__deployers") }}
 ),
 
 discovered_contracts as (
   select
-    "EVM" as artifact_source,
     "CONTRACT" as artifact_type,
     ob.project_id,
     ad.contract_address as artifact_source_id,
     ob.artifact_namespace,
+    ob.artifact_namespace as artifact_source,
     ad.contract_address as artifact_name,
     ad.contract_address as artifact_url
   from ossd_blockchain as ob
@@ -101,19 +109,47 @@ discovered_contracts as (
 ),
 
 all_artifacts as (
-  select *
+  select
+    project_id,
+    artifact_source_id,
+    artifact_source,
+    artifact_type,
+    artifact_namespace,
+    artifact_name,
+    artifact_url
   from
     all_repos
   union all
-  select *
+  select
+    project_id,
+    artifact_source_id,
+    artifact_source,
+    artifact_type,
+    artifact_namespace,
+    artifact_name,
+    artifact_url
   from
     ossd_blockchain
   union all
-  select *
+  select
+    project_id,
+    artifact_source_id,
+    artifact_source,
+    artifact_type,
+    artifact_namespace,
+    artifact_name,
+    artifact_url
   from
     discovered_contracts
   union all
-  select *
+  select
+    project_id,
+    artifact_source_id,
+    artifact_source,
+    artifact_type,
+    artifact_namespace,
+    artifact_name,
+    artifact_url
   from
     all_npm
 ),
@@ -131,6 +167,12 @@ all_unique_artifacts as (
 )
 
 select
-  a.*,
+  project_id,
+  artifact_source_id,
+  artifact_source,
+  artifact_type,
+  artifact_namespace,
+  artifact_name,
+  artifact_url,
   {{ oso_artifact_id("artifact", "a") }} as `artifact_id`
 from all_unique_artifacts as a

@@ -9,7 +9,7 @@
 
 select
   e.collection_id,
-  e.from_namespace,
+  e.event_source,
   e.event_type,
   TIMESTAMP_TRUNC(e.bucket_day, month) as bucket_month,
   SUM(e.amount) as amount

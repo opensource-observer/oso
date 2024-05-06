@@ -28,7 +28,7 @@
 with txns as (
   select
     pbc.collection_id,
-    c.to_namespace as onchain_network,
+    c.to_artifact_namespace as onchain_network,
     a.project_id,
     c.from_source_id as from_id,
     c.l2_gas,

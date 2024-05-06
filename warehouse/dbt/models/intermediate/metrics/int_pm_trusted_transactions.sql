@@ -5,7 +5,6 @@
 
 select
   e.project_id,
-  e.from_namespace as artifact_source,
   t.time_interval,
   'TRUSTED_TRANSACTIONS_TOTAL' as impact_metric,
   SUM(e.amount) as amount
@@ -20,5 +19,4 @@ where
   and e.event_type = 'CONTRACT_INVOCATION_DAILY_COUNT'
 group by
   e.project_id,
-  e.from_namespace,
   t.time_interval

@@ -3,11 +3,13 @@
 #}
 
 select
-  e.*,
-  a.project_id
+  a.project_id,
+  e.from_artifact_id,
+  e.to_artifact_id,
+  e.time,
+  e.event_source,
+  e.event_type,
+  e.amount
 from {{ ref('int_events_with_artifact_id') }} as e
 inner join {{ ref('int_ossd__artifacts_by_project') }} as a
-  on
-    e.to_source_id = a.artifact_source_id
-    and e.to_namespace = a.artifact_namespace
-    and e.to_type = a.artifact_type
+  on e.to_artifact_id = a.artifact_id

@@ -27,7 +27,7 @@
 with txns as (
   select
     a.project_id,
-    c.to_namespace as onchain_network,
+    c.to_artifact_namespace as onchain_network,
     c.from_source_id as from_id,
     c.l2_gas,
     c.tx_count,

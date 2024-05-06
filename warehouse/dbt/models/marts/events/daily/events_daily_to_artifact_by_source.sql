@@ -9,7 +9,7 @@
 
 select
   e.to_id as artifact_id,
-  e.from_namespace,
+  e.event_source,
   e.event_type,
   TIMESTAMP_TRUNC(e.time, day) as bucket_day,
   SUM(e.amount) as amount

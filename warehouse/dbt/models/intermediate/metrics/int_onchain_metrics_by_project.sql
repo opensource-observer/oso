@@ -83,7 +83,7 @@ addresses as (
 first_txn as (
   select
     project_id,
-    from_namespace as artifact_namespace,
+    from_artifact_namespace as artifact_namespace,
     MIN(bucket_day) as date_first_txn
   from {{ ref('int_addresses_daily_activity') }}
   group by 1, 2
