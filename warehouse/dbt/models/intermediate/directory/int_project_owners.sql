@@ -9,7 +9,7 @@ with ranked_repos as (
     COUNT(distinct owner)
       over (partition by project_id)
       as count_github_owners
-  from {{ ref('stg_ossd__repositories_by_project') }}
+  from {{ ref('int_ossd__repositories_by_project') }}
 )
 
 select

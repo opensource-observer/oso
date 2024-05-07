@@ -29,7 +29,8 @@ select
   project_source,
   project_namespace,
   project_name,
-  artifact_source,
+  display_name,
+  event_source,
   date_first_txn as `first_transaction_date`,
   total_txns as `transaction_count_all`,
   txns_6_months as `transaction_count_6_months`,
@@ -41,6 +42,6 @@ select
   high_activity_addresses as `high_activity_address_count_3_months`,
   med_activity_addresses as `medium_activity_address_count_3_months`,
   low_activity_addresses as `low_activity_address_count_3_months`,
-  multi_project_addresses as `multi_project_address_count_3_months`,
+  --multi_project_addresses as `multi_project_address_count_3_months`,
   (new_addresses + returning_addresses) as `address_count_3_months`
 from {{ ref('int_onchain_metrics_by_project') }}

@@ -1,33 +1,27 @@
 with github_stats as (
   select
-    to_id as artifact_id,
+    to_artifact_id as artifact_id,
     MIN(time) as first_commit_time,
     MAX(time) as last_commit_time,
     COUNT(distinct TIMESTAMP_TRUNC(time, day)) as days_with_commits_count,
-    COUNT(distinct from_id) as contributors_to_repo_count
-  from {{ ref('int_events_to_project') }}
+    COUNT(distinct from_artifact_id) as contributors_to_repo_count
+  from {{ ref('int_events_with_artifact_id') }}
   where event_type = 'COMMIT_CODE'
-  group by to_id
+  group by to_artifact_id
 )
 
 select
-  p.project_id,
-  p.project_source,
-  p.project_namespace,
-  p.project_name,
-  r.repository_source,
-  r.artifact_id,
-  r.is_fork as repo_is_fork,
-  r.fork_count as repo_fork_count,
-  r.star_count as repo_star_count,
-  s.first_commit_time,
-  s.last_commit_time,
-  s.days_with_commits_count,
-  s.contributors_to_repo_count,
-  LOWER(r.name_with_owner) as repo_name_with_owner
-from {{ ref('stg_ossd__repositories_by_project') }} as r
-left join {{ ref('int_projects') }} as p
-  on r.project_id = p.project_id
-left join github_stats as s
-  on r.artifact_id = s.artifact_id
-where r.repository_source = 'GITHUB'
+  int_ossd__repositories_by_project.project_id,
+  int_ossd__repositories_by_project.artifact_id,
+  int_ossd__repositories_by_project.owner as repo_owner,
+  int_ossd__repositories_by_project.name as repo_name,
+  int_ossd__repositories_by_project.is_fork,
+  int_ossd__repositories_by_project.fork_count,
+  int_ossd__repositories_by_project.star_count,
+  github_stats.first_commit_time,
+  github_stats.last_commit_time,
+  github_stats.days_with_commits_count,
+  github_stats.contributors_to_repo_count
+from {{ ref('int_ossd__repositories_by_project') }}
+left join github_stats
+  on int_ossd__repositories_by_project.artifact_id = github_stats.artifact_id

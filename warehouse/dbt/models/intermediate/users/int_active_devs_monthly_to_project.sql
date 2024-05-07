@@ -11,8 +11,7 @@
 
 select
   project_id,
-  from_id,
-  from_namespace as repository_source,
+  from_artifact_id,
   bucket_month,
   1 as amount,
   case

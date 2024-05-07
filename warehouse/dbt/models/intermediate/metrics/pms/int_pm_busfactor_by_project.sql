@@ -20,14 +20,14 @@
 with all_contributions as (
   select
     project_id,
-    from_id,
+    from_artifact_id,
     SUM(amount) as total_amount,
     DATE_TRUNC(DATE(time), month) as contribution_month
   from {{ ref('int_events_to_project') }}
   where event_type = 'COMMIT_CODE' -- CONTRIBUTION FILTER
   group by
     project_id,
-    from_id,
+    from_artifact_id,
     DATE_TRUNC(DATE(time), month)
 ),
 
@@ -49,7 +49,7 @@ project_periods as (
 aggregated_contributions as (
   select
     c.project_id,
-    c.from_id,
+    c.from_artifact_id,
     SUM(c.total_amount) as total_amount,
     '90D' as period
   from contributions as c
@@ -57,11 +57,11 @@ aggregated_contributions as (
   where c.contribution_month > DATE_SUB(p.end_month, interval 3 month)
   group by
     c.project_id,
-    c.from_id
+    c.from_artifact_id
   union all
   select
     c.project_id,
-    c.from_id,
+    c.from_artifact_id,
     SUM(c.total_amount) as total_amount,
     '6M' as period
   from contributions as c
@@ -69,11 +69,11 @@ aggregated_contributions as (
   where c.contribution_month > DATE_SUB(p.end_month, interval 6 month)
   group by
     c.project_id,
-    c.from_id
+    c.from_artifact_id
   union all
   select
     c.project_id,
-    c.from_id,
+    c.from_artifact_id,
     SUM(c.total_amount) as total_amount,
     '1Y' as period
   from contributions as c
@@ -81,24 +81,24 @@ aggregated_contributions as (
   where c.contribution_month > DATE_SUB(p.end_month, interval 12 month)
   group by
     c.project_id,
-    c.from_id
+    c.from_artifact_id
   union all
   select
     c.project_id,
-    c.from_id,
+    c.from_artifact_id,
     SUM(c.total_amount) as total_amount,
     'ALL' as period
   from contributions as c
   group by
     c.project_id,
-    c.from_id
+    c.from_artifact_id
 ),
 
 ranked_contributions as (
   select
     project_id,
     period,
-    from_id,
+    from_artifact_id,
     total_amount,
     RANK()
       over (

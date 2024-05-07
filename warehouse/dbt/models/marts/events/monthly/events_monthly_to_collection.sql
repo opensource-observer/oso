@@ -8,9 +8,12 @@
 }}
 
 select
-  e.collection_id,
-  e.event_type,
-  TIMESTAMP_TRUNC(e.bucket_day, month) as bucket_month,
-  SUM(e.amount) as amount
-from {{ ref('events_daily_to_collection') }} as e
-group by 1, 2, 3
+  collection_id,
+  event_type,
+  TIMESTAMP_TRUNC(bucket_day, month) as bucket_month,
+  SUM(amount) as amount
+from {{ ref('events_daily_to_collection') }}
+group by
+  collection_id,
+  event_type,
+  TIMESTAMP_TRUNC(bucket_day, month)

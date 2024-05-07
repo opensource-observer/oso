@@ -8,14 +8,13 @@
 
 with users_by_contract as (
   select
-    to_id as artifact_id,
-    COUNT(distinct from_id) as num_users
+    to_artifact_id as artifact_id,
+    COUNT(distinct from_artifact_id) as num_users
   from {{ ref('int_events_with_artifact_id') }}
   where
-    from_id in (
+    from_artifact_id in (
       select user_id
       from {{ ref('int_users') }}
-      where is_trusted = true
     )
     and event_type = 'CONTRACT_INVOCATION_DAILY_COUNT'
   group by 1

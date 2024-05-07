@@ -9,7 +9,6 @@
 
 select
   e.project_id,
-  e.repository_source as namespace,
   t.time_interval,
   CONCAT(e.user_segment_type, '_TOTAL') as impact_metric,
   SUM(e.amount) as amount
@@ -20,6 +19,5 @@ where
   and DATE(e.bucket_month) < DATE_TRUNC(CURRENT_DATE(), month)
 group by
   e.project_id,
-  e.repository_source,
   t.time_interval,
   e.user_segment_type

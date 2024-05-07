@@ -5,8 +5,8 @@
 #}
 
 select
-  from_id,
-  from_namespace,
+  from_artifact_id,
+  event_source,
   project_id,
   event_type,
   TIMESTAMP_TRUNC(time, day) as bucket_day,
@@ -25,8 +25,8 @@ where
     'CONTRACT_INVOCATION_DAILY_COUNT'
   )
 group by
-  from_id,
-  from_namespace,
+  from_artifact_id,
+  event_source,
   project_id,
   event_type,
   TIMESTAMP_TRUNC(time, day)

@@ -1,7 +1,7 @@
 version: 2
 
 models:
-  - name: stg_ossd__artifacts_by_project
+  - name: int_ossd__artifacts_by_project
     meta:
       #...
       contributors: oso-team, tomfutago
@@ -81,7 +81,7 @@ models:
         description: "JSON array containing blockchain address(es)"
       - *sync_time
 
-  - name: stg_ossd__projects_by_collection
+  - name: int_ossd__projects_by_collection
     meta:
       #...
       contributors: oso-team, tomfutago
@@ -138,7 +138,7 @@ models:
         name: is_fork
         description: "is this repo a fork?"
 
-  - name: stg_ossd__repositories_by_project
+  - name: int_ossd__repositories_by_project
     meta:
       #...
       contributors: oso-team, tomfutago

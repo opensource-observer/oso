@@ -28,7 +28,6 @@ select
   project_source,
   project_namespace,
   project_name,
-  artifact_source,
   first_commit_date,
   last_commit_date,
   repositories as `repository_count_all`,

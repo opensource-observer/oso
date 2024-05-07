@@ -16,31 +16,32 @@
 
 with user_history as (
   select
-    from_id,
-    network,
+    artifact_id,
     project_id,
-    count_events as total_activity,
-    DATE_DIFF(CURRENT_TIMESTAMP(), date_last_txn, day)
+    transaction_count,
+    DATE_DIFF(CURRENT_TIMESTAMP(), last_transaction_time, day)
       as days_since_last_activity
-  from {{ ref('int_addresses') }}
+  from {{ ref('int_addresses_to_project') }}
 ),
 
 user_stats as (
   select
-    from_id,
-    network,
+    artifact_id,
     project_id,
-    total_activity,
+    transaction_count,
     days_since_last_activity,
     COUNT(distinct project_id) as project_count
   from user_history
-  group by 1, 2, 3, 4, 5
+  group by
+    artifact_id,
+    project_id,
+    transaction_count,
+    days_since_last_activity
 ),
 
 rfm_components as (
   select
-    from_id,
-    network,
+    artifact_id,
     project_id,
     case
       when days_since_last_activity < 7 then 5
@@ -50,10 +51,10 @@ rfm_components as (
       else 1
     end as rfm_recency,
     case
-      when total_activity = 1 then 1
-      when total_activity < 10 then 2
-      when total_activity < 100 then 3
-      when total_activity < 1000 then 4
+      when transaction_count = 1 then 1
+      when transaction_count < 10 then 2
+      when transaction_count < 100 then 3
+      when transaction_count < 1000 then 4
       else 5
     end as rfm_frequency,
     case
@@ -67,7 +68,11 @@ rfm_components as (
 )
 
 select
-  *,
+  artifact_id,
+  project_id,
+  rfm_recency,
+  rfm_frequency,
+  rfm_ecosystem,
   case
     when rfm_frequency = 5
       then

@@ -7,12 +7,16 @@
 with users as (
   select
     project_id,
-    from_namespace,
+    event_source,
     event_type,
     bucket_month,
-    COUNT(distinct from_id) as amount
+    COUNT(distinct from_artifact_id) as amount
   from {{ ref('int_user_events_monthly_to_project') }}
-  group by 1, 2, 3, 4
+  group by
+    project_id,
+    event_source,
+    event_type,
+    bucket_month
 )
 
 select

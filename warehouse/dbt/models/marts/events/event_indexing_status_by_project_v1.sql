@@ -9,7 +9,7 @@ select
   projects.project_source,
   projects.project_namespace,
   projects.project_name,
-  events.from_namespace as `artifact_source`,
+  events.event_source,
   events.event_type,
   MIN(events.bucket_day) as first_event_date,
   MAX(events.bucket_day) as last_event_date,
@@ -22,5 +22,5 @@ group by
   projects.project_source,
   projects.project_namespace,
   projects.project_name,
-  events.from_namespace,
+  events.event_source,
   events.event_type
