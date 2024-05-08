@@ -18,3 +18,4 @@
     {%- set source_id = "%s%s" % (_prefix, 'source_id') -%}
     {{- oso_id(artifact_source, namespace, source_id) -}}
 {%- endmacro %}
+
