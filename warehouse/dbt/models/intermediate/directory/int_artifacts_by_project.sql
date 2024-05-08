@@ -16,7 +16,7 @@ with all_repos as (
     "REPOSITORY" as artifact_type,
     projects.project_id,
     repos.owner as artifact_namespace,
-    repos.name_with_owner as artifact_name,
+    repos.name as artifact_name,
     repos.url as artifact_url,
     CAST(repos.id as STRING) as artifact_source_id
   from

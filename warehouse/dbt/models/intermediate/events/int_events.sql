@@ -111,7 +111,8 @@ github_commits as (
     "COMMIT_CODE" as event_type,
     CAST(push_id as STRING) as event_source_id,
     "GITHUB" as event_source,
-    repository_name as to_name,
+    SPLIT(REPLACE(repository_name, "@", ""), "/")[SAFE_OFFSET(1)]
+      as to_name,
     SPLIT(REPLACE(repository_name, "@", ""), "/")[SAFE_OFFSET(0)]
       as to_namespace,
     "REPOSITORY" as to_type,
@@ -232,10 +233,10 @@ select
   LOWER(to_name) as to_artifact_name,
   LOWER(to_namespace) as to_artifact_namespace,
   LOWER(to_type) as to_artifact_type,
-  CAST(to_source_id as STRING) as to_artifact_source_id,
+  LOWER(to_source_id) as to_artifact_source_id,
   LOWER(from_name) as from_artifact_name,
   LOWER(from_namespace) as from_artifact_namespace,
   LOWER(from_type) as from_artifact_type,
-  CAST(from_source_id as STRING) as from_artifact_source_id,
+  LOWER(from_source_id) as from_artifact_source_id,
   CAST(amount as FLOAT64) as amount
 from all_events
