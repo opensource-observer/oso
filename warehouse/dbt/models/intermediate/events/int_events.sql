@@ -232,7 +232,7 @@ select
   UPPER(event_source) as event_source,
   LOWER(to_name) as to_artifact_name,
   LOWER(to_namespace) as to_artifact_namespace,
-  LOWER(to_type) as to_artifact_type,
+  UPPER(to_type) as to_artifact_type,
   LOWER(to_source_id) as to_artifact_source_id,
   LOWER(from_name) as from_artifact_name,
   LOWER(from_namespace) as from_artifact_namespace,

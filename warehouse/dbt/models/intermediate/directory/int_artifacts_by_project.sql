@@ -171,8 +171,12 @@ all_unique_artifacts as (
   select distinct
     project_id,
     LOWER(artifact_source_id) as artifact_source_id,
+    {# 
+      artifact_source and artifact_type are considered internal constants hence
+      we apply an UPPER transform
+    #}
     UPPER(artifact_source) as artifact_source,
-    LOWER(artifact_type) as artifact_type,
+    UPPER(artifact_type) as artifact_type,
     LOWER(artifact_namespace) as artifact_namespace,
     LOWER(artifact_name) as artifact_name,
     LOWER(artifact_url) as artifact_url
