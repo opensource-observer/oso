@@ -94,7 +94,7 @@ all_deployers as (
   select
     *,
     "MAINNET" as artifact_namespace,
-    "MAINNET" as artifact_source
+    "ETHEREUM" as artifact_source
   from {{ ref("stg_ethereum__deployers") }}
   union all
   select
