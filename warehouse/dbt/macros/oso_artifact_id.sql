@@ -6,7 +6,7 @@
   namespace and source_id columns. If, for example, the prefix is "artifact"
   then the columns used are `artifact_namespace` and `artifact_source_id`.
 #}
-{% macro oso_artifact_id(prefix, table_alias="") -%}
+{% macro oso_artifact_id(artifact_source, prefix, table_alias="") -%}
     {%- set _prefix = prefix -%}
     {%- if not prefix.endswith('_') and prefix != "" %}
         {%- set _prefix = prefix + '_' -%}
@@ -16,5 +16,5 @@
     {% endif -%}
     {%- set namespace = "%s%s" % (_prefix, 'namespace') -%}
     {%- set source_id = "%s%s" % (_prefix, 'source_id') -%}
-    {{- oso_id(namespace, source_id) -}}
+    {{- oso_id(artifact_source, namespace, source_id) -}}
 {%- endmacro %}

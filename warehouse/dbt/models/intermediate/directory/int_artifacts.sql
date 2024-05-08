@@ -30,7 +30,7 @@ with all_artifacts as (
 )
 
 select distinct
-  {{ oso_artifact_id("artifact") }} as artifact_id,
+  {{ oso_artifact_id("artifact_source", "artifact") }} as artifact_id,
   artifact_source_id,
   artifact_source,
   artifact_type,
