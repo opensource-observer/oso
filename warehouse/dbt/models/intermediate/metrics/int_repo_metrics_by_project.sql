@@ -42,10 +42,10 @@ repo_stats as (
 
 
 select
-  repo_stats.project_id,
-  repo_stats.artifact_id,
-  repo_snapshot.artifact_namespace,
-  repo_snapshot.artifact_name,
+  int_artifacts_by_project.project_id,
+  int_artifacts_by_project.artifact_id,
+  int_artifacts_by_project.artifact_namespace,
+  int_artifacts_by_project.artifact_name,
   repo_snapshot.is_fork,
   repo_snapshot.fork_count,
   repo_snapshot.star_count,
@@ -54,6 +54,11 @@ select
   repo_stats.last_commit_time,
   repo_stats.days_with_commits_count,
   repo_stats.contributors_to_repo_count
-from repo_snapshot
+from {{ ref('int_artifacts_by_project') }}
+left join repo_snapshot
+  on int_artifacts_by_project.artifact_id = repo_snapshot.artifact_id
 left join repo_stats
-  on repo_snapshot.artifact_id = repo_stats.artifact_id
+  on int_artifacts_by_project.artifact_id = repo_stats.artifact_id
+where
+  int_artifacts_by_project.artifact_source = 'GITHUB'
+  and UPPER(int_artifacts_by_project.artifact_type) = 'REPOSITORY'
