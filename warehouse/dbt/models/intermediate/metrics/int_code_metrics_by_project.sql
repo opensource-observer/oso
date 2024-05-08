@@ -25,7 +25,7 @@ with repos as (
     COUNT(distinct artifact_id) as repositories,
     SUM(star_count) as stars,
     SUM(fork_count) as forks
-  from {{ ref('int_repos_by_project') }}
+  from {{ ref('int_repo_metrics_by_project') }}
   --WHERE r.is_fork = false
   group by project_id
 ),

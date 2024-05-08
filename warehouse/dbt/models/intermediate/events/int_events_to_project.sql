@@ -3,7 +3,7 @@
 #}
 
 select
-  int_ossd__artifacts_by_project.project_id,
+  int_artifacts_by_project.project_id,
   int_events_with_artifact_id.from_artifact_id,
   int_events_with_artifact_id.to_artifact_id,
   int_events_with_artifact_id.time,
@@ -11,7 +11,7 @@ select
   int_events_with_artifact_id.event_type,
   int_events_with_artifact_id.amount
 from {{ ref('int_events_with_artifact_id') }}
-inner join {{ ref('int_ossd__artifacts_by_project') }}
+inner join {{ ref('int_artifacts_by_project') }}
   on
     int_events_with_artifact_id.to_artifact_id
-    = int_ossd__artifacts_by_project.artifact_id
+    = int_artifacts_by_project.artifact_id
