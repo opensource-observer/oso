@@ -16,7 +16,7 @@ with all_repos as (
     "REPOSITORY" as artifact_type,
     projects.project_id,
     repos.owner as artifact_namespace,
-    repos.name_with_owner as artifact_name,
+    repos.name as artifact_name,
     repos.url as artifact_url,
     CAST(repos.id as STRING) as artifact_source_id
   from
@@ -94,7 +94,7 @@ all_deployers as (
   select
     *,
     "MAINNET" as artifact_namespace,
-    "MAINNET" as artifact_source
+    "ETHEREUM" as artifact_source
   from {{ ref("stg_ethereum__deployers") }}
   union all
   select
@@ -171,8 +171,12 @@ all_unique_artifacts as (
   select distinct
     project_id,
     LOWER(artifact_source_id) as artifact_source_id,
+    {# 
+      artifact_source and artifact_type are considered internal constants hence
+      we apply an UPPER transform
+    #}
     UPPER(artifact_source) as artifact_source,
-    LOWER(artifact_type) as artifact_type,
+    UPPER(artifact_type) as artifact_type,
     LOWER(artifact_namespace) as artifact_namespace,
     LOWER(artifact_name) as artifact_name,
     LOWER(artifact_url) as artifact_url
@@ -187,5 +191,5 @@ select
   artifact_namespace,
   artifact_name,
   artifact_url,
-  {{ oso_artifact_id("artifact_source", "artifact", "a") }} as `artifact_id`
+  {{ oso_id("a.artifact_source", "a.artifact_source_id") }} as `artifact_id`
 from all_unique_artifacts as a
