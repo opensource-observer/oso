@@ -1,5 +1,5 @@
 {# 
-  oso_artifact_id generates an id for an artifact by hashing the namespace and
+  oso_artifact_id generates an id for an artifact by hashing the source, namespace, and
   the source_id of the artifact and returning a urlsafe base64 value.
 
   This macro generates the hash input by using a prefix to reference the
