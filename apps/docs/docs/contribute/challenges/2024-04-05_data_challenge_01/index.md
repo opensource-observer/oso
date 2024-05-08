@@ -98,4 +98,4 @@ Finally, we have a reward pool for other forms of contribution during the life o
 
 ## Timing
 
-The window for participating in this challenge is open until May 5, 2024 11:59PM UTC. Work submitted after the deadline will NOT be reviewed. Feedback may be provided to work submitted before the deadline. Final reward amounts will be determined on May 10.
+The window for participating in this challenge is open until May 31, 2024 11:59PM UTC. Work submitted after the deadline will NOT be reviewed. Feedback may be provided to work submitted before the deadline. Final reward amounts will be determined on June 7.
