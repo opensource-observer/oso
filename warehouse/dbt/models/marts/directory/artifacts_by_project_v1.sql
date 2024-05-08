@@ -14,6 +14,6 @@ select
   projects.project_source,
   projects.project_namespace,
   projects.project_name
-from {{ ref('int_ossd__artifacts_by_project') }} as artifacts_by_project
+from {{ ref('int_artifacts_by_project') }} as artifacts_by_project
 left join {{ ref('int_projects') }} as projects
   on artifacts_by_project.project_id = projects.project_id

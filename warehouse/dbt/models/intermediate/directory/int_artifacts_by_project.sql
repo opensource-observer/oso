@@ -7,15 +7,28 @@
 #}
 
 with all_repos as (
+  {#
+    Currently this is just Github.
+    oss-directory needs some refactoring to support multiple repository providers
+  #}
   select
     "GITHUB" as artifact_source,
     "REPOSITORY" as artifact_type,
-    repos.project_id as project_id,
+    projects.project_id,
     repos.owner as artifact_namespace,
     repos.name_with_owner as artifact_name,
     repos.url as artifact_url,
     CAST(repos.id as STRING) as artifact_source_id
-  from {{ ref('int_ossd__repositories_by_project') }} as repos
+  from
+    {{ ref('stg_ossd__current_projects') }} as projects
+  cross join
+    UNNEST(JSON_QUERY_ARRAY(projects.github)) as github
+  inner join
+    {{ ref('stg_ossd__current_repositories') }} as repos
+    on
+      LOWER(CONCAT("https://github.com/", repos.owner))
+      = LOWER(JSON_VALUE(github.url))
+      or LOWER(repos.url) = LOWER(JSON_VALUE(github.url))
 ),
 
 all_npm_raw as (

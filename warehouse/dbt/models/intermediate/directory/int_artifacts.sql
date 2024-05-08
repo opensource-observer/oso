@@ -11,7 +11,7 @@ with all_artifacts as (
     artifact_namespace,
     artifact_url,
     artifact_name
-  from {{ ref('int_ossd__artifacts_by_project') }}
+  from {{ ref('int_artifacts_by_project') }}
   union all
   select
     artifact_source_id,

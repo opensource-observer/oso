@@ -1,12 +1,12 @@
 version: 2
 
 models:
-  - name: int_ossd__artifacts_by_project
+  - name: int_artifacts_by_project
     meta:
       #...
       contributors: oso-team, tomfutago
     config:
-      tags: ['staging', 'oss-directory', 'artifact', 'project']
+      tags: ['oss-directory', 'artifact', 'project']
     description: "Artifacts by associated list of projects"
     columns:
       - &project_id
@@ -81,7 +81,7 @@ models:
         description: "JSON array containing blockchain address(es)"
       - *sync_time
 
-  - name: int_ossd__projects_by_collection
+  - name: int_projects_by_collection
     meta:
       #...
       contributors: oso-team, tomfutago
@@ -137,26 +137,3 @@ models:
       - &is_fork
         name: is_fork
         description: "is this repo a fork?"
-
-  - name: int_ossd__repositories_by_project
-    meta:
-      #...
-      contributors: oso-team, tomfutago
-    config:
-      tags: ['staging', 'oss-directory', 'repository', 'project']
-    description: "Repositories by projects"
-    columns:
-      - *project_id
-      - *_cq_sync_time
-      - *_cq_source_name
-      - *node_id
-      - *id
-      - *url
-      - *name
-      - *name_with_owner
-      - *owner
-      - *branch
-      - *star_count
-      - *watcher_count
-      - *fork_count
-      - *is_fork

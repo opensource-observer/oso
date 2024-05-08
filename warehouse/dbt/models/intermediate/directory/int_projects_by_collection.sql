@@ -1,9 +1,17 @@
+{#
+  Many to many relationship table for collections
+#}
+
 select
-  projects_by_collection.collection_id,
-  projects.project_id,
-  projects.project_source,
-  projects.project_namespace,
-  projects.project_name
-from {{ ref('int_ossd__projects_by_collection') }} as projects_by_collection
-inner join {{ ref('stg_ossd__current_projects') }} as projects
-  on projects_by_collection.project_id = projects.project_id
+  stg_ossd__current_collections.collection_id,
+  stg_ossd__current_collections.collection_source,
+  stg_ossd__current_collections.collection_namespace,
+  stg_ossd__current_collections.collection_name,
+  stg_ossd__current_projects.project_id,
+  stg_ossd__current_projects.project_source,
+  stg_ossd__current_projects.project_namespace,
+  stg_ossd__current_projects.project_name
+from {{ ref('stg_ossd__current_collections') }}
+cross join UNNEST(stg_ossd__current_collections.projects) as project_name
+inner join {{ ref('stg_ossd__current_projects') }}
+  on stg_ossd__current_projects.project_name = project_name
