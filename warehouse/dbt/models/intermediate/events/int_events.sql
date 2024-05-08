@@ -230,12 +230,12 @@ select
   CAST(event_source_id as STRING) as event_source_id,
   UPPER(event_source) as event_source,
   LOWER(to_name) as to_artifact_name,
-  UPPER(to_namespace) as to_artifact_namespace,
-  UPPER(to_type) as to_artifact_type,
+  LOWER(to_namespace) as to_artifact_namespace,
+  LOWER(to_type) as to_artifact_type,
   CAST(to_source_id as STRING) as to_artifact_source_id,
   LOWER(from_name) as from_artifact_name,
-  UPPER(from_namespace) as from_artifact_namespace,
-  UPPER(from_type) as from_artifact_type,
+  LOWER(from_namespace) as from_artifact_namespace,
+  LOWER(from_type) as from_artifact_type,
   CAST(from_source_id as STRING) as from_artifact_source_id,
   CAST(amount as FLOAT64) as amount
 from all_events

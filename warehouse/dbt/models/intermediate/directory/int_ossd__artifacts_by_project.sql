@@ -159,8 +159,8 @@ all_unique_artifacts as (
     project_id,
     LOWER(artifact_source_id) as artifact_source_id,
     UPPER(artifact_source) as artifact_source,
-    UPPER(artifact_type) as artifact_type,
-    UPPER(artifact_namespace) as artifact_namespace,
+    LOWER(artifact_type) as artifact_type,
+    LOWER(artifact_namespace) as artifact_namespace,
     LOWER(artifact_name) as artifact_name,
     LOWER(artifact_url) as artifact_url
   from all_artifacts
@@ -174,5 +174,5 @@ select
   artifact_namespace,
   artifact_name,
   artifact_url,
-  {{ oso_artifact_id("artifact", "a") }} as `artifact_id`
+  {{ oso_artifact_id("artifact_source", "artifact", "a") }} as `artifact_id`
 from all_unique_artifacts as a
