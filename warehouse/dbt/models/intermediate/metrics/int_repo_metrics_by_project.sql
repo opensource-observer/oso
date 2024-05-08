@@ -14,7 +14,7 @@ with repo_artifact as (
 
 repo_snapshot as (
   select
-    {{ oso_artifact_id("artifact_source", "artifact", "a") }} as `artifact_id`,
+    {{ oso_id("a.artifact_source", "a.artifact_source_id") }} as `artifact_id`,
     artifact_namespace,
     artifact_name,
     --license,
