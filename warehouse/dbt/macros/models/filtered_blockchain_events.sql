@@ -2,7 +2,7 @@
 with known_addresses as (
   select distinct `artifact_source_id` as `address`
   from {{ ref("int_artifacts_by_project") }} 
-  where `artifact_namespace` = '{{ artifact_namespace }}'
+  where `artifact_source` = '{{ artifact_namespace }}'
 )
 select * 
 from {{ oso_source(source_name, source_table)}}

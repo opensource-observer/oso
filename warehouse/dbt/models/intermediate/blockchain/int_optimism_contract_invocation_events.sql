@@ -29,11 +29,11 @@ transactions as (
     "OPTIMISM" as event_source,
     LOWER(transactions.to_address) as to_name,
     "OPTIMISM" as to_namespace,
-    COALESCE(to_artifacts.artifact_type, "UNRESOLVED") as to_type,
+    COALESCE(to_artifacts.artifact_type, "CONTRACT") as to_type,
     CAST(to_artifacts.artifact_source_id as STRING) as to_source_id,
     LOWER(transactions.from_address) as from_name,
     "OPTIMISM" as from_namespace,
-    COALESCE(from_artifacts.artifact_type, "UNRESOLVED") as from_type,
+    COALESCE(from_artifacts.artifact_type, "EOA") as from_type,
     CAST(from_artifacts.artifact_source_id as STRING) as from_source_id,
     transactions.receipt_gas_used as l2_gas_used
   from {{ ref('int_optimism_transactions') }} as transactions
