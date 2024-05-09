@@ -1,5 +1,5 @@
 {# 
-  All events to a project, bucketed by month
+  All events to a project, cumulative (all time)
 #}
 
 select
@@ -8,7 +8,8 @@ select
   to_artifact_id,
   event_source,
   event_type,
-  TIMESTAMP_TRUNC(bucket_day, month) as bucket_month,
+  MIN(bucket_day) as first_event_time,
+  MAX(bucket_day) as last_event_time,
   SUM(amount) as amount
 from {{ ref('int_events_daily_to_project') }}
 group by
@@ -16,5 +17,4 @@ group by
   from_artifact_id,
   to_artifact_id,
   event_source,
-  event_type,
-  TIMESTAMP_TRUNC(bucket_day, month)
+  event_type
