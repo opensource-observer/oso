@@ -3,7 +3,7 @@
 #}
 
 select
-  v.fid as fid,
-  v.address as address
+  cast(v.fid as string) as fid,
+  lower(v.address) as address
 from {{ source("farcaster", "farcaster_verifications") }} as v
 where v.deleted_at is null
