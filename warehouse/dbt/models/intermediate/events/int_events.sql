@@ -137,7 +137,8 @@ github_issues as (
     type as event_type,
     CAST(id as STRING) as event_source_id,
     "GITHUB" as event_source,
-    repository_name as to_name,
+    SPLIT(REPLACE(repository_name, "@", ""), "/")[SAFE_OFFSET(1)]
+      as to_name,
     SPLIT(REPLACE(repository_name, "@", ""), "/")[SAFE_OFFSET(0)]
       as to_namespace,
     "REPOSITORY" as to_type,
@@ -156,7 +157,8 @@ github_pull_requests as (
     type as event_type,
     CAST(id as STRING) as event_source_id,
     "GITHUB" as event_source,
-    repository_name as to_name,
+    SPLIT(REPLACE(repository_name, "@", ""), "/")[SAFE_OFFSET(1)]
+      as to_name,
     SPLIT(REPLACE(repository_name, "@", ""), "/")[SAFE_OFFSET(0)]
       as to_namespace,
     "REPOSITORY" as to_type,
@@ -175,7 +177,8 @@ github_pull_request_merge_events as (
     type as event_type,
     CAST(id as STRING) as event_source_id,
     "GITHUB" as event_source,
-    repository_name as to_name,
+    SPLIT(REPLACE(repository_name, "@", ""), "/")[SAFE_OFFSET(1)]
+      as to_name,
     SPLIT(REPLACE(repository_name, "@", ""), "/")[SAFE_OFFSET(0)]
       as to_namespace,
     "REPOSITORY" as to_type,
@@ -194,7 +197,8 @@ github_stars_and_forks as (
     type as event_type,
     CAST(id as STRING) as event_source_id,
     "GITHUB" as event_source,
-    repository_name as to_name,
+    SPLIT(REPLACE(repository_name, "@", ""), "/")[SAFE_OFFSET(1)]
+      as to_name,
     SPLIT(REPLACE(repository_name, "@", ""), "/")[SAFE_OFFSET(0)]
       as to_namespace,
     "REPOSITORY" as to_type,
