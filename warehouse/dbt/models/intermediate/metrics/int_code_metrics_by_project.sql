@@ -108,39 +108,40 @@ activity_cte as (
     project_id,
     SUM(
       case
-        when impact_metric = 'COMMIT_CODE_TOTAL' then amount
+        when event_type = 'COMMIT_CODE' then amount
       end
     ) as commits_6_months,
     SUM(
       case
-        when impact_metric = 'ISSUE_OPENED_TOTAL' then amount
+        when event_type = 'ISSUE_OPENED' then amount
       end
     ) as issues_opened_6_months,
     SUM(
       case
-        when impact_metric = 'ISSUE_CLOSED_TOTAL' then amount
+        when event_type = 'ISSUE_CLOSED' then amount
       end
     ) as issues_closed_6_months,
     SUM(
       case
-        when impact_metric = 'PULL_REQUEST_OPENED_TOTAL' then amount
+        when event_type = 'PULL_REQUEST_OPENED' then amount
       end
     ) as pull_requests_opened_6_months,
     SUM(
       case
-        when impact_metric = 'PULL_REQUEST_MERGED_TOTAL' then amount
+        when event_type = 'PULL_REQUEST_MERGED' then amount
       end
     ) as pull_requests_merged_6_months
-  from {{ ref('int_event_totals_by_project') }}
+  from {{ ref('int_events_daily_to_project') }}
   where
-    time_interval = '6M'
-    and impact_metric in (
-      'COMMIT_CODE_TOTAL',
-      'ISSUE_OPENED_TOTAL',
-      'ISSUE_CLOSED_TOTAL',
-      'PULL_REQUEST_OPENED_TOTAL',
-      'PULL_REQUEST_MERGED_TOTAL'
+    event_source = 'GITHUB'
+    and event_type in (
+      'COMMIT_CODE',
+      'ISSUE_OPENED',
+      'ISSUE_CLOSED',
+      'PULL_REQUEST_OPENED',
+      'PULL_REQUEST_MERGED'
     )
+    and DATE_DIFF(CURRENT_DATE(), DATE(bucket_day), month) <= 6
   group by project_id
 )
 
