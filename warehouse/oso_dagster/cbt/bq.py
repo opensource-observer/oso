@@ -1,5 +1,8 @@
 # Query tools for bigquery tables
 from typing import List
+from functools import cache
+from dataclasses import dataclass
+
 from google.cloud.bigquery import Client, Table, TableReference
 
 

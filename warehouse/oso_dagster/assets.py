@@ -10,7 +10,6 @@ from .goldsky import (
     goldsky_asset,
 )
 from .factories import interval_gcs_import_asset, SourceMode, Interval, IntervalGCSAsset
-from .cbt import CBTResource
 
 
 class CustomDagsterDbtTranslator(DagsterDbtTranslator):
@@ -35,16 +34,6 @@ def main_dbt_assets(context: AssetExecutionContext, main_dbt: DbtCliResource):
 # )
 # def source_dbt_assets(context: AssetExecutionContext, source_dbt: DbtCliResource):
 #     yield from source_dbt.cli(["build"], context=context).stream()
-
-
-@asset
-def random_cbt(cbt: CBTResource):
-    print("here i am ")
-    print(cbt)
-    c = cbt.get()
-    print(
-        c.render_model("optimism_dedupe.sql", unique_column="hello", order_column="hi")
-    )
 
 
 base_blocks = goldsky_asset(
@@ -333,6 +322,22 @@ karma3_localtrust = interval_gcs_import_asset(
         "karma3__localtrust",
         "oso_raw_sources",
         "oso_sources",
+        Interval.Daily,
+        SourceMode.Overwrite,
+        10,
+    ),
+)
+
+gitcoin_passport_scores = interval_gcs_import_asset(
+    "gitcoin_passport_scores",
+    IntervalGCSAsset(
+        "opensource-observer",
+        "oso-dataset-transfer-bucket",
+        "passport",
+        r"(?P<interval_timestamp>\d\d\d\d-\d\d-\d\d)/scores.parquet",
+        "scores",
+        "oso_raw_sources",
+        "passport",
         Interval.Daily,
         SourceMode.Overwrite,
         10,
