@@ -37,20 +37,6 @@ def main_dbt_assets(context: AssetExecutionContext, main_dbt: DbtCliResource):
 #     yield from source_dbt.cli(["build"], context=context).stream()
 
 
-@asset
-def random_cbt(context: AssetExecutionContext, cbt: CBTResource):
-    c = cbt.get(context.log)
-    c.transform(
-        "test_select.sql",
-        "opensource-observer.ecosytems_meltano_test.frax_blocks_copy",
-        update_strategy=UpdateStrategy.MERGE,
-        source_table="opensource-observer.ecosytems_meltano_test.frax_blocks_copy",
-        time_partitioning=TimePartitioning("timestamp", "DAY"),
-        unique_column="id",
-        dry_run=True,
-    )
-
-
 base_blocks = goldsky_asset(
     "base_blocks",
     GoldskyConfig(
