@@ -10,7 +10,7 @@ from .goldsky import (
     goldsky_asset,
 )
 from .factories import interval_gcs_import_asset, SourceMode, Interval, IntervalGCSAsset
-from .cbt import CBTResource
+from .cbt import CBTResource, UpdateStrategy, TimePartitioning
 
 
 class CustomDagsterDbtTranslator(DagsterDbtTranslator):
@@ -38,12 +38,16 @@ def main_dbt_assets(context: AssetExecutionContext, main_dbt: DbtCliResource):
 
 
 @asset
-def random_cbt(cbt: CBTResource):
-    print("here i am ")
-    print(cbt)
-    c = cbt.get()
-    print(
-        c.render_model("optimism_dedupe.sql", unique_column="hello", order_column="hi")
+def random_cbt(context: AssetExecutionContext, cbt: CBTResource):
+    c = cbt.get(context.log)
+    c.transform(
+        "test_select.sql",
+        "opensource-observer.ecosytems_meltano_test.frax_blocks_copy",
+        update_strategy=UpdateStrategy.MERGE,
+        source_table="opensource-observer.ecosytems_meltano_test.frax_blocks_copy",
+        time_partitioning=TimePartitioning("timestamp", "DAY"),
+        unique_column="id",
+        dry_run=True,
     )
 
 
