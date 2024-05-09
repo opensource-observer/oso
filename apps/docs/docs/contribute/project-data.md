@@ -45,20 +45,20 @@ If you run into issues, check out [GitHub's instructions](https://docs.github.co
 
   ```yaml
   version:
-  slug:
   name:
+  display_name:
   github:
     - url:
   ```
 
-- The directory is organized by the first letter of the project name. For example, if the project slug is `my-project`, you can find it under `./data/projects/m/my-project.yaml`.
-- Our project slugs and filenames are derived from a project's GitHub organization or repository name. Therefore, the easiest way to see if a project already exists in our directory is to search for its GitHub organization name. For example, if you wanted to see if we are indexing repos that belong to https://github.com/opensource-observer, then you would search for `opensource-observer` and you would discover a project page at `./data/projects/o/opensource-observer.yaml`.
-- If the project doesn't exist, you can create a new `.yaml` file under `./data/projects/` In most cases, you should simply use the GitHub organization name (eg, `my-new-org`) as the slug and filename (eg, `./data/projectsm/my-new-org.yaml`).
-- If the project is not associated with a GitHub organization, you can use the project name followed by the repo owner as the slug, separated by hyphens (eg, `my-repo-my-org`), and the same convention for the filename (eg, `./data/projects/m/my-repo-my-org.yaml`).
+- The directory is organized by the first letter of the project name. For example, if the project name is `my-project`, you can find it under `./data/projects/m/my-project.yaml`.
+- Our project names and filenames are derived from a project's GitHub organization or repository name. Therefore, the easiest way to see if a project already exists in our directory is to search for its GitHub organization name. For example, if you wanted to see if we are indexing repos that belong to https://github.com/opensource-observer, then you would search for `opensource-observer` and you would discover a project page at `./data/projects/o/opensource-observer.yaml`.
+- If the project doesn't exist, you can create a new `.yaml` file under `./data/projects/` In most cases, you should simply use the GitHub organization name (eg, `my-new-org`) as the name and filename (eg, `./data/projectsm/my-new-org.yaml`).
+- If the project is not associated with a GitHub organization, you can use the project name followed by the repo owner as the name, separated by hyphens (eg, `my-repo-my-org`), and the same convention for the filename (eg, `./data/projects/m/my-repo-my-org.yaml`).
 - Initialize the new project with the following fields:
   - `version`: The version of the schema you are using. The latest version is Version 3. You can learn more about the schema [here](../how-oso-works/oss-directory/schema-updates).
-  - `slug`: The unique identifier for the project. This is usually the GitHub organization name or the project name followed by the repo owner, separated by hyphens.
-  - `name`: The name of the project.
+  - `name`: The unique identifier for the project. This is usually the GitHub organization name or the project name followed by the repo owner, separated by hyphens.
+  - `display_name`: The name of the project.
   - `github`: The GitHub URL of the project. This is a list of URLs, as a project can have multiple GitHub URLs. In most cases, the first and only URL will be the main GitHub organization URL. You don't need to include all the repositories that belong to the organization, as we will automatically index all of them.
 
 ### 3. Link artifacts to the project
@@ -67,8 +67,8 @@ If you run into issues, check out [GitHub's instructions](https://docs.github.co
 
   ```yaml
   version:
-  slug:
   name:
+  display_name:
   github:
     - url:
     - url:
@@ -87,8 +87,8 @@ If you run into issues, check out [GitHub's instructions](https://docs.github.co
 
   ```yaml
   version: 3
-  slug: opensource-observer
-  name: Open Source Observer
+  name: opensource-observer
+  display_name: Open Source Observer
   github:
   - url: https://github.com/opensource-observer
   npm:
@@ -134,7 +134,7 @@ If you run into issues, check out [GitHub's instructions](https://docs.github.co
 
 Once your pull request is merged, you can monitor how much of your project data has been indexed by querying [our API](https://cloud.hasura.io/public/graphiql?endpoint=https://opensource-observer.hasura.app/v1/graphql).
 
-The `event_indexing_status_by_project` query takes a `project_slug` as an argument and returns the first, last, and total number of event days indexed for the project for each event type and event data provider.
+The `event_indexing_status_by_project` query takes a `project_name` as an argument and returns the first, last, and total number of event days indexed for the project for each event type and event data provider.
 
 Note that our indexer currently runs every 24 hours at 02:00 UTC. Therefore, it may take up to 24 hours for your project data to be fully indexed. Backfills are run periodically to ensure that all data is indexed. If you don't see any historic event data for your project, than the most likely reason is that the backfill has not yet been run.
 
