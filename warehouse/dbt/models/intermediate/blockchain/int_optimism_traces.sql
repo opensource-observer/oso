@@ -2,7 +2,7 @@
   config(
     materialized='incremental',
     partition_by={
-      "field": "created_at",
+      "field": "block_timestamp",
       "data_type": "timestamp",
       "granularity": "day",
     },
@@ -14,7 +14,7 @@
   )
 }}
 {{ 
-  ossd_filtered_blockchain_events(
+  filtered_blockchain_events(
     "OPTIMISM", 
     "superchain", 
     "optimism_traces"

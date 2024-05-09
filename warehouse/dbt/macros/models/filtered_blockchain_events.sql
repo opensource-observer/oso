@@ -1,5 +1,5 @@
-{% macro ossd_filtered_blockchain_events(artifact_namespace, source_name, source_table) %}
-with ossd_addresses as (
+{% macro filtered_blockchain_events(artifact_namespace, source_name, source_table) %}
+with known_addresses as (
   select distinct `artifact_source_id` as `address`
   from {{ ref("int_artifacts_by_project") }} 
   where `artifact_namespace` = '{{ artifact_namespace }}'
@@ -7,8 +7,8 @@ with ossd_addresses as (
 select * 
 from {{ oso_source(source_name, source_table)}}
 where 
-  to_address in (select * from ossd_addresses) 
-  and from_address in (select * from ossd_addresses)
+  to_address in (select * from known_addresses) 
+  or from_address in (select * from known_addresses)
   {% if is_incremental() %}
     {# 
       We are using insert_overwrite so this will consistently select everything

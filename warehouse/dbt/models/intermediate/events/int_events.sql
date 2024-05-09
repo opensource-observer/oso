@@ -32,77 +32,40 @@
   )
 }}
 
-with contract_invocation_daily_count as (
+with contract_invocation as (
   select -- noqa: ST06
-    time,
-    "CONTRACT_INVOCATION_DAILY_COUNT" as event_type,
-    CAST(source_id as STRING) as event_source_id,
-    from_namespace as event_source,
-    to_name,
-    to_namespace,
-    to_type,
-    CAST(to_source_id as STRING) as to_source_id,
-    from_name,
-    from_namespace,
-    from_type,
-    CAST(from_source_id as STRING) as from_source_id,
-    tx_count as amount
-  from {{ ref('stg_dune__contract_invocation') }}
-  {# a bit of a hack for now to keep this table small for dev and playground #}
-  {% if target.name in ['dev', 'playground'] %}
-    where time >= TIMESTAMP_SUB(
-      CURRENT_TIMESTAMP(),
-      interval {{ env_var("PLAYGROUND_DAYS", '14') }} day
-    )
-  {% endif %}
+    `time`,
+    `event_type`,
+    `event_source_id`,
+    `event_source`,
+    `to_name`,
+    `to_namespace`,
+    `to_type`,
+    `to_source_id`,
+    `from_name`,
+    `from_namespace`,
+    `from_type`,
+    `from_source_id`,
+    1 as `amount`
+  from {{ ref('int_optimism_contract_invocation_events') }}
 ),
 
-contract_invocation_daily_l2_gas_used as (
+contract_invocation_l2_gas_used as (
   select -- noqa: ST06
-    time,
-    "CONTRACT_INVOCATION_DAILY_L2_GAS_USED" as event_type,
-    CAST(source_id as STRING) as event_source_id,
-    from_namespace as event_source,
-    to_name,
-    to_namespace,
-    to_type,
-    CAST(to_source_id as STRING) as to_source_id,
-    from_name,
-    from_namespace,
-    from_type,
-    CAST(from_source_id as STRING) as from_source_id,
-    l2_gas as amount
-  from {{ ref('stg_dune__contract_invocation') }}
-  {% if target.name in ['dev', 'playground'] %}
-    where time >= TIMESTAMP_SUB(
-      CURRENT_TIMESTAMP(),
-      interval {{ env_var("PLAYGROUND_DAYS", '14') }} day
-    )
-  {% endif %}
-),
-
-contract_invocation_daily_l1_gas_used as (
-  select -- noqa: ST06
-    time,
-    "CONTRACT_INVOCATION_DAILY_L1_GAS_USED" as event_type,
-    CAST(source_id as STRING) as event_source_id,
-    from_namespace as event_source,
-    to_name,
-    to_namespace,
-    to_type,
-    CAST(to_source_id as STRING) as to_source_id,
-    from_name,
-    from_namespace,
-    from_type,
-    CAST(from_source_id as STRING) as from_source_id,
-    l1_gas as amount
-  from {{ ref('stg_dune__contract_invocation') }}
-  {% if target.name in ['dev', 'playground'] %}
-    where time >= TIMESTAMP_SUB(
-      CURRENT_TIMESTAMP(),
-      interval {{ env_var("PLAYGROUND_DAYS", '14') }} day
-    )
-  {% endif %}
+    `time`,
+    `event_type`,
+    `event_source_id`,
+    `event_source`,
+    `to_name`,
+    `to_namespace`,
+    `to_type`,
+    `to_source_id`,
+    `from_name`,
+    `from_namespace`,
+    `from_type`,
+    `from_source_id`,
+    `l2_gas_used` as `amount`
+  from {{ ref('int_optimism_contract_invocation_events') }}
 ),
 
 github_commits as (
@@ -212,11 +175,9 @@ github_stars_and_forks as (
 ),
 
 all_events as (
-  select * from contract_invocation_daily_count
+  select * from contract_invocation
   union all
-  select * from contract_invocation_daily_l1_gas_used
-  union all
-  select * from contract_invocation_daily_l2_gas_used
+  select * from contract_invocation_l2_gas_used
   union all
   select * from github_commits
   union all
