@@ -1,7 +1,7 @@
 {% macro ossd_filtered_blockchain_events(artifact_namespace, source_name, source_table) %}
 with ossd_addresses as (
   select distinct `artifact_source_id` as `address`
-  from {{ ref("int_ossd__artifacts_by_project") }} 
+  from {{ ref("int_artifacts_by_project") }} 
   where `artifact_namespace` = '{{ artifact_namespace }}'
 )
 select * 
