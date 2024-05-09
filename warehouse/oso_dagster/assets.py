@@ -10,7 +10,6 @@ from .goldsky import (
     goldsky_asset,
 )
 from .factories import interval_gcs_import_asset, SourceMode, Interval, IntervalGCSAsset
-from .cbt import CBTResource, UpdateStrategy, TimePartitioning
 
 
 class CustomDagsterDbtTranslator(DagsterDbtTranslator):
@@ -323,6 +322,22 @@ karma3_localtrust = interval_gcs_import_asset(
         "karma3__localtrust",
         "oso_raw_sources",
         "oso_sources",
+        Interval.Daily,
+        SourceMode.Overwrite,
+        10,
+    ),
+)
+
+gitcoin_passport_scores = interval_gcs_import_asset(
+    "gitcoin_passport_scores",
+    IntervalGCSAsset(
+        "opensource-observer",
+        "oso-dataset-transfer-bucket",
+        "passport",
+        r"(?P<interval_timestamp>\d\d\d\d-\d\d-\d\d)/scores.parquet",
+        "scores",
+        "oso_raw_sources",
+        "passport",
         Interval.Daily,
         SourceMode.Overwrite,
         10,
