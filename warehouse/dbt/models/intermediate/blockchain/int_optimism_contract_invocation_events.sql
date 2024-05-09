@@ -25,7 +25,7 @@ transactions as (
   select -- noqa: ST06
     transactions.block_timestamp as `time`,
     "CONTRACT_INVOCATION" as event_type,
-    transactions.id as event_source_id,
+    transactions.transaction_hash as event_source_id,
     "OPTIMISM" as event_source,
     LOWER(transactions.to_address) as to_name,
     "OPTIMISM" as to_namespace,

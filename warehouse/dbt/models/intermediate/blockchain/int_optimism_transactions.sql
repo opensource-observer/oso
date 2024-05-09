@@ -32,7 +32,7 @@ select
   receipts.contract_address as receipt_contract_address,
   receipts.cumulative_gas_used as receipt_cumulative_gas_used,
   receipts.gas_used as receipt_gas_used,
-  receipts.effective_gas_prices as receipt_effective_gas_price,
+  receipts.effective_gas_price as receipt_effective_gas_price,
   receipts.root as receipt_root,
   receipts.status as receipt_status
 from {{ oso_source("optimism", "transactions") }} as transactions
