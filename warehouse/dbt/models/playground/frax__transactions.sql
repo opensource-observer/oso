@@ -6,7 +6,7 @@
   )
 }}
 select *
-from {{ source('mode', 'transactions') }}
+from {{ source('frax', 'transactions') }}
 where block_timestamp >= TIMESTAMP_TRUNC(
   TIMESTAMP_SUB(CURRENT_TIMESTAMP(), interval 1 day),
   day
