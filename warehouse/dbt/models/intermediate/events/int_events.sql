@@ -32,43 +32,7 @@
   )
 }}
 
-with contract_invocation as (
-  select -- noqa: ST06
-    `time`,
-    `event_type`,
-    `event_source_id`,
-    `event_source`,
-    `to_name`,
-    `to_namespace`,
-    `to_type`,
-    `to_source_id`,
-    `from_name`,
-    `from_namespace`,
-    `from_type`,
-    `from_source_id`,
-    1 as `amount`
-  from {{ ref('int_optimism_contract_invocation_events') }}
-),
-
-contract_invocation_l2_gas_used as (
-  select -- noqa: ST06
-    `time`,
-    `event_type`,
-    `event_source_id`,
-    `event_source`,
-    `to_name`,
-    `to_namespace`,
-    `to_type`,
-    `to_source_id`,
-    `from_name`,
-    `from_namespace`,
-    `from_type`,
-    `from_source_id`,
-    `l2_gas_used` as `amount`
-  from {{ ref('int_optimism_contract_invocation_events') }}
-),
-
-github_commits as (
+with github_commits as (
   select -- noqa: ST06
     created_at as `time`,
     "COMMIT_CODE" as event_type,
@@ -175,9 +139,17 @@ github_stars_and_forks as (
 ),
 
 all_events as (
-  select * from contract_invocation
+  select * from {{ ref('int_optimism_contract_invocation_events') }}
   union all
-  select * from contract_invocation_l2_gas_used
+  select * from {{ ref('int_base_contract_invocation_events') }}
+  union all
+  select * from {{ ref('int_frax_contract_invocation_events') }}
+  union all
+  select * from {{ ref('int_mode_contract_invocation_events') }}
+  union all
+  select * from {{ ref('int_pgn_contract_invocation_events') }}
+  union all
+  select * from {{ ref('int_zora_contract_invocation_events') }}
   union all
   select * from github_commits
   union all

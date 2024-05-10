@@ -1,8 +1,8 @@
-{% macro filtered_blockchain_events(artifact_namespace, source_name, source_table) %}
+{% macro filtered_blockchain_events(artifact_source, source_name, source_table) %}
 with known_addresses as (
   select distinct `artifact_source_id` as `address`
   from {{ ref("int_artifacts_by_project") }} 
-  where `artifact_source` = '{{ artifact_namespace }}'
+  where `artifact_source` = '{{ artifact_source }}'
 )
 select * 
 from {{ oso_source(source_name, source_table)}}
