@@ -1,4 +1,4 @@
-{% macro contract_invocation_events_with_l1(network_name) %}
+{% macro contract_invocation_events_with_l1(network_name, start) %}
 {% set lower_network_name = network_name.lower() %}
 {% set upper_network_name = network_name.upper() %}
 with internal_transactions as (
@@ -24,7 +24,7 @@ with internal_transactions as (
   left join {{ ref('int_artifacts_by_project') }} as from_artifacts
     on LOWER(traces.from_address) = LOWER(from_artifacts.artifact_source_id)
     and to_artifacts.artifact_source = "{{ upper_network_name }}"
-  where traces.input != "0x"
+  where traces.input != "0x" and traces.block_timestamp >= {{ start }}
 ),
 
 transactions as (
@@ -52,7 +52,7 @@ transactions as (
       LOWER(transactions.from_address)
       = LOWER(from_artifacts.artifact_source_id)
     and to_artifacts.artifact_source = "{{ upper_network_name }}"
-  where transactions.input != "0x"
+  where transactions.input != "0x" and transactions.block_timestamp >= {{ start }}
 ), all_transactions as (
   select * from transactions
   union all

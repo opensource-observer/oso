@@ -1,3 +1,21 @@
+{{
+  config(
+    materialized='incremental',
+    partition_by={
+      "field": "time",
+      "data_type": "timestamp",
+      "granularity": "day",
+    },
+    unique_id="id",
+    on_schema_change="append_new_columns",
+    incremental_strategy="insert_overwrite"
+  )
+}}
+{% if is_incremental() %}
+  {% set start = "TIMESTAMP_SUB(_dbt_max_partition, INTERVAL 1 DAY)" %}
+{% else %}
+  {% set start = "'1970-01-01'" %}
+{% endif %}
 with internal_transactions as (
   select -- noqa: ST06
     traces.block_timestamp as `time`,
@@ -22,7 +40,9 @@ with internal_transactions as (
     on
       LOWER(traces.from_address) = LOWER(from_artifacts.artifact_source_id)
       and to_artifacts.artifact_source = "OPTIMISM"
-  where traces.input != "0x"
+  where
+    traces.input != "0x"
+    and traces.block_timestamp >= {{ start }}
 ),
 
 transactions as (
@@ -50,7 +70,9 @@ transactions as (
       LOWER(transactions.from_address)
       = LOWER(from_artifacts.artifact_source_id)
       and to_artifacts.artifact_source = "OPTIMISM"
-  where transactions.input != "0x"
+  where
+    transactions.input != "0x"
+    and transactions.block_timestamp >= {{ start }}
 ),
 
 all_transactions as (
