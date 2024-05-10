@@ -38,7 +38,7 @@ class SourceMode(Enum):
     Overwrite = 1
 
 
-@dataclass
+@dataclass(kw_only=True)
 class BaseGCSAsset:
     project_id: str
     bucket_name: str
@@ -47,9 +47,10 @@ class BaseGCSAsset:
     destination_table: str
     raw_dataset_name: str
     clean_dataset_name: str
+    format: str = "CSV"
 
 
-@dataclass
+@dataclass(kw_only=True)
 class IntervalGCSAsset(BaseGCSAsset):
     interval: Interval
     mode: SourceMode
@@ -153,7 +154,7 @@ def interval_gcs_import_asset(key: str, config: IntervalGCSAsset, **kwargs):
                 f"""
             LOAD DATA OVERWRITE `{interval_table}`
             FROM FILES (
-                format = "CSV",
+                format = "{config.format}",
                 uris = ["gs://{config.bucket_name}/{blob_name}"]
             );
             """
