@@ -174,6 +174,10 @@ export interface Repository {
   starCount: number;
   watcherCount: number;
   forkCount: number;
+  license: {
+    name: string;
+    spdxId: string;
+  };
 }
 
 export type FullRepository = Repository & {
@@ -239,6 +243,10 @@ export async function getOwnerReposRest(
         starCount: r.stargazers_count || 0,
         watcherCount: r.watchers_count || 0,
         forkCount: r.forks_count || 0,
+        license: {
+          spdxId: r.license?.spdx_id || "",
+          name: r.license?.name || "",
+        },
       };
     });
   } catch (err) {
@@ -263,6 +271,10 @@ export async function getOwnerReposRest(
           starCount: r.stargazers_count || 0,
           watcherCount: r.watchers_count || 0,
           forkCount: r.forks_count || 0,
+          license: {
+            spdxId: r.license?.spdx_id || "",
+            name: r.license?.name || "",
+          },
         };
       });
     } catch (tryUserErr) {
@@ -321,6 +333,10 @@ function restRepoDataToFullRepository(r: RestRepoData): FullRepository {
     starCount: r.stargazers_count || 0,
     watcherCount: r.watchers_count || 0,
     forkCount: r.forks_count || 0,
+    license: {
+      spdxId: r.license?.spdx_id || "",
+      name: r.license?.name || "",
+    },
   };
 }
 

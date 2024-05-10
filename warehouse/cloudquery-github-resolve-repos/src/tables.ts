@@ -86,6 +86,12 @@ const getRepositories = async (
     newColumn("is_fork", {
       type: new Bool(),
     }),
+    newColumn("license_spdx_id", {
+      notNull: false,
+    }),
+    newColumn("license_name", {
+      notNull: false,
+    }),
   ];
 
   const tableResolver: TableResolver = async (clientMeta, parent, stream) => {
@@ -114,6 +120,9 @@ const getRepositories = async (
           watcher_count: repo.watcherCount,
           star_count: repo.starCount,
           fork_count: repo.forkCount,
+          license_spdx_id:
+            repo.license.spdxId == "" ? null : repo.license.spdxId,
+          license_name: repo.license.name == "" ? null : repo.license.name,
         };
         stream.write(record);
       }
