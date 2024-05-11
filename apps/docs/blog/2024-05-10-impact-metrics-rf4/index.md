@@ -28,6 +28,8 @@ At Open Source Observer, our objective is to help the Optimism community arrive 
 
 This page explains where the metrics come from and includes a working list of all metrics under consideration for badgeholders. We will update it regularly, at least until the start of voting (June 23), to reflect the evolution of metrics.
 
+<!-- truncate -->
+
 ## Data Model
 
 This section explains where the underlying data comes from and how it gets transformed.
