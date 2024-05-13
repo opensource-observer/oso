@@ -18,8 +18,7 @@
 {% endif %}
 with internal_transactions as (
   select -- noqa: ST06
-    traces.block_timestamp as `time`,
-    "CONTRACT_INVOCATION" as event_type,
+    TIMESTAMP_TRUNC(traces.block_timestamp, day) as `time`,
     traces.id as event_source_id,
     "OPTIMISM" as event_source,
     LOWER(traces.to_address) as to_name,
@@ -30,7 +29,11 @@ with internal_transactions as (
     "OPTIMISM" as from_namespace,
     COALESCE(from_artifacts.artifact_type, "UNRESOLVED") as from_type,
     CAST(from_artifacts.artifact_source_id as STRING) as from_source_id,
-    traces.gas_used as l2_gas_used
+    traces.gas_used as l2_gas_used,
+    --0 as l1_gas_used,
+    block_number,
+    status,
+    call_type
   from {{ ref('int_optimism_traces') }} as traces
   left join {{ ref('int_artifacts_by_project') }} as to_artifacts
     on
@@ -47,8 +50,7 @@ with internal_transactions as (
 
 transactions as (
   select -- noqa: ST06
-    transactions.block_timestamp as `time`,
-    "CONTRACT_INVOCATION" as event_type,
+    TIMESTAMP_TRUNC(transactions.block_timestamp, day) as `time`,
     transactions.transaction_hash as event_source_id,
     "OPTIMISM" as event_source,
     LOWER(transactions.to_address) as to_name,
@@ -59,7 +61,11 @@ transactions as (
     "OPTIMISM" as from_namespace,
     COALESCE(from_artifacts.artifact_type, "EOA") as from_type,
     CAST(from_artifacts.artifact_source_id as STRING) as from_source_id,
-    transactions.receipt_gas_used as l2_gas_used
+    transactions.receipt_gas_used as l2_gas_used,
+    --transactions.receipt_l1_gas_used as l1_gas_used,
+    block_number, -- #TODO: get from the receipt data
+    receipt_status as status,
+    null as call_type
   from {{ ref('int_optimism_transactions') }} as transactions
   left join {{ ref('int_artifacts_by_project') }} as to_artifacts
     on
@@ -81,11 +87,9 @@ all_transactions as (
   select * from internal_transactions
 ),
 
-contract_invocation as (
+contract_invocation_daily_l2_gas_used as (
   select
     `time`,
-    `event_type`,
-    `event_source_id`,
     `event_source`,
     `to_name`,
     `to_namespace`,
@@ -95,15 +99,26 @@ contract_invocation as (
     `from_namespace`,
     `from_type`,
     `from_source_id`,
-    1 as `amount`
+    --`event_source_id`,
+    "CONTRACT_INVOCATION_DAILY_L2_GAS_USED" as `event_type`,
+    SUM(`l2_gas_used`) as `amount`
   from all_transactions
+  group by
+    `time`,
+    `event_source`,
+    `to_name`,
+    `to_namespace`,
+    `to_type`,
+    `to_source_id`,
+    `from_name`,
+    `from_namespace`,
+    `from_type`,
+    `from_source_id`
 ),
 
-contract_invocation_l2_gas_used as (
+contract_invocation_daily_count as (
   select
     `time`,
-    `event_type`,
-    `event_source_id`,
     `event_source`,
     `to_name`,
     `to_namespace`,
@@ -113,10 +128,124 @@ contract_invocation_l2_gas_used as (
     `from_namespace`,
     `from_type`,
     `from_source_id`,
-    `l2_gas_used` as `amount`
+    --`event_source_id`,
+    "CONTRACT_INVOCATION_DAILY_COUNT" as `event_type`,
+    COUNT(*) as `amount`
   from all_transactions
+  group by
+    `time`,
+    `event_source`,
+    `to_name`,
+    `to_namespace`,
+    `to_type`,
+    `to_source_id`,
+    `from_name`,
+    `from_namespace`,
+    `from_type`,
+    `from_source_id`
+),
+
+contract_invocation_success_daily_count as (
+  select
+    `time`,
+    `event_source`,
+    `to_name`,
+    `to_namespace`,
+    `to_type`,
+    `to_source_id`,
+    `from_name`,
+    `from_namespace`,
+    `from_type`,
+    `from_source_id`,
+    --`event_source_id`,
+    "CONTRACT_INVOCATION_SUCCESS_DAILY_COUNT" as `event_type`,
+    COUNT(*) as `amount`
+  from all_transactions
+  where status = 1
+  group by
+    `time`,
+    `event_source`,
+    `to_name`,
+    `to_namespace`,
+    `to_type`,
+    `to_source_id`,
+    `from_name`,
+    `from_namespace`,
+    `from_type`,
+    `from_source_id`
+),
+
+qualified_transactions as (
+  select distinct
+    `time`,
+    `event_source`,
+    `to_name`,
+    `to_namespace`,
+    `to_type`,
+    `to_source_id`,
+    `from_name`,
+    `from_namespace`,
+    `from_type`,
+    `from_source_id`,
+    --`event_source_id`,
+    `block_number`
+  from all_transactions
+  where
+    status = 1
+    and call_type != "staticcall"
+),
+
+contract_invocation_qualified_daily_count as (
+  select
+    `time`,
+    `event_source`,
+    `to_name`,
+    `to_namespace`,
+    `to_type`,
+    `to_source_id`,
+    `from_name`,
+    `from_namespace`,
+    `from_type`,
+    `from_source_id`,
+    --`event_source_id`,
+    "CONTRACT_INVOCATION_QUALIFIED_DAILY_COUNT" as `event_type`,
+    COUNT(*) as `amount`
+  from qualified_transactions
+  group by
+    `time`,
+    `event_source`,
+    `to_name`,
+    `to_namespace`,
+    `to_type`,
+    `to_source_id`,
+    `from_name`,
+    `from_namespace`,
+    `from_type`,
+    `from_source_id`
+),
+
+all_events as (
+  select * from contract_invocation_daily_count
+  union all
+  select * from contract_invocation_daily_l2_gas_used
+  union all
+  select * from contract_invocation_success_daily_count
+  union all
+  select * from contract_invocation_qualified_daily_count
 )
 
-select * from contract_invocation
-union all
-select * from contract_invocation_l2_gas_used
+select
+  `time`,
+  `event_type`,
+  `event_source`,
+  --`event_source_id`,
+  `to_name`,
+  `to_namespace`,
+  `to_type`,
+  `to_source_id`,
+  `from_name`,
+  `from_namespace`,
+  `from_type`,
+  `from_source_id`,
+  `amount`
+from all_events

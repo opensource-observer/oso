@@ -3,7 +3,7 @@
 {% set upper_network_name = network_name.upper() %}
 with internal_transactions as (
   select -- noqa: ST06
-    TIMESTAMP_TRUNC(traces.block_timestamp, DAY) as `time`,
+    TIMESTAMP_TRUNC(traces.block_timestamp, day) as `time`,
     traces.id as event_source_id,
     "{{ upper_network_name }}" as event_source,
     LOWER(traces.to_address) as to_name,
@@ -31,7 +31,7 @@ with internal_transactions as (
 
 transactions as (
   select -- noqa: ST06
-    TIMESTAMP_TRUNC(transactions.block_timestamp, DAY) as `time`,
+    TIMESTAMP_TRUNC(transactions.block_timestamp, day) as `time`,
     transactions.hash as event_source_id,
     "{{ upper_network_name }}" as event_source,
     LOWER(transactions.to_address) as to_name,
@@ -67,7 +67,7 @@ all_transactions as (
 
 contract_invocation_daily_l2_gas_used as (
   select
-    `time`,    
+    `time`,
     `event_source`,
     `to_name`,
     `to_namespace`,
@@ -78,8 +78,8 @@ contract_invocation_daily_l2_gas_used as (
     `from_type`,
     `from_source_id`,
     --`event_source_id`,
-    SUM(`l2_gas_used`) as `amount`,
-    'CONTRACT_INVOCATION_DAILY_L2_GAS_USED' as `event_type`
+    "CONTRACT_INVOCATION_DAILY_L2_GAS_USED" as `event_type`,
+    SUM(`l2_gas_used`) as `amount`    
   from all_transactions
   group by
     `time`,
@@ -96,7 +96,7 @@ contract_invocation_daily_l2_gas_used as (
 
 contract_invocation_daily_l1_gas_used as (
   select
-    `time`,    
+    `time`,
     `event_source`,
     `to_name`,
     `to_namespace`,
@@ -107,8 +107,8 @@ contract_invocation_daily_l1_gas_used as (
     `from_type`,
     `from_source_id`,
     --`event_source_id`,
-    SUM(`l2_gas_used`) as `amount`,
-    'CONTRACT_INVOCATION_DAILY_L1_GAS_USED' as `event_type`
+    "CONTRACT_INVOCATION_DAILY_L1_GAS_USED" as `event_type`,
+    SUM(`l2_gas_used`) as `amount`    
   from all_transactions
   group by
     `time`,
@@ -125,7 +125,7 @@ contract_invocation_daily_l1_gas_used as (
 
 contract_invocation_daily_count as (
   select
-    `time`,    
+    `time`,
     `event_source`,
     `to_name`,
     `to_namespace`,
@@ -136,8 +136,8 @@ contract_invocation_daily_count as (
     `from_type`,
     `from_source_id`,
     --`event_source_id`,
-    COUNT(*) as `amount`,
-    'CONTRACT_INVOCATION_DAILY_COUNT' as `event_type`
+    "CONTRACT_INVOCATION_DAILY_COUNT" as `event_type`,
+    COUNT(*) as `amount`
   from all_transactions
   group by
     `time`,
@@ -154,7 +154,7 @@ contract_invocation_daily_count as (
 
 contract_invocation_success_daily_count as (
   select
-    `time`,    
+    `time`,
     `event_source`,
     `to_name`,
     `to_namespace`,
@@ -165,8 +165,8 @@ contract_invocation_success_daily_count as (
     `from_type`,
     `from_source_id`,
     --`event_source_id`,
-    COUNT(*) as `amount`,
-    'CONTRACT_INVOCATION_SUCCESS_DAILY_COUNT' as `event_type`
+    "CONTRACT_INVOCATION_SUCCESS_DAILY_COUNT" as `event_type`,
+    COUNT(*) as `amount`
   from all_transactions
   where status = 1
   group by
@@ -199,12 +199,12 @@ qualified_transactions as (
   from all_transactions
   where
     status = 1
-    and call_type != 'staticcall'
+    and call_type != "staticcall"
 ),
 
 contract_invocation_qualified_daily_count as (
   select
-    `time`,    
+    `time`,
     `event_source`,
     `to_name`,
     `to_namespace`,
@@ -215,8 +215,8 @@ contract_invocation_qualified_daily_count as (
     `from_type`,
     `from_source_id`,
     --`event_source_id`,
-    COUNT(*) as `amount`,
-    'CONTRACT_INVOCATION_QUALIFIED_DAILY_COUNT' as `event_type`
+    "CONTRACT_INVOCATION_QUALIFIED_DAILY_COUNT" as `event_type`,
+    COUNT(*) as `amount`    
   from qualified_transactions
   group by
     `time`,
