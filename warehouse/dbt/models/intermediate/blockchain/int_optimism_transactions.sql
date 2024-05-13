@@ -47,7 +47,7 @@ where
       that). It will overwrite any data in the partitions for which this select
       statement matches
     #}
-    block_timestamp > TIMESTAMP_SUB(_dbt_max_partition, INTERVAL 1 DAY)
+    transactions.block_timestamp > TIMESTAMP_SUB(_dbt_max_partition, INTERVAL 1 DAY)
     {{ playground_filter("block_timestamp", is_start=False) }}
 {% else %}
     {{ playground_filter("block_timestamp") }}
