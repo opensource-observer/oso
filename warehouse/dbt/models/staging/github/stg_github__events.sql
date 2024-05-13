@@ -17,20 +17,22 @@
     unique_id="id",
     on_schema_change="append_new_columns",
     incremental_strategy="insert_overwrite"
-  ) if target.name == 'production' else config(
-    materialized='table',
   )
 }}
 
 select gh.*
-from {{ source('github_archive', 'events') }} as gh
+from {{ oso_source('github_archive', 'events') }} as gh
 where
-  gh.repo.id in (select id from {{ ref('stg_ossd__current_repositories') }})
-
+  gh.repo.id in (
+    select id from {{ ref('stg_ossd__current_repositories') }}
+  )
   {# If this is production then make sure it's incremental #}
   {% if target.name == 'production' %}
   {% if is_incremental() %}
-  AND _TABLE_SUFFIX > FORMAT_TIMESTAMP("%y%m%d", TIMESTAMP_SUB(_dbt_max_partition, INTERVAL 1 DAY))
+  AND _TABLE_SUFFIX > FORMAT_TIMESTAMP(
+    "%y%m%d", 
+    TIMESTAMP_SUB(_dbt_max_partition, interval 1 day)
+  )
   {% else %}
     {# 
     If/when we do full refreshes we are currently only taking data from 2015
@@ -38,13 +40,11 @@ where
     #}
     AND _TABLE_SUFFIX >= "150101" 
   {% endif %}
-{% elif target.name in ['dev', 'playground'] %}
-    {# 
-      If this is not production then we only copy the most recent number of days
-      (default to 14) 
-    #}
-    and created_at
-    >= TIMESTAMP_SUB(
-      CURRENT_TIMESTAMP(), interval {{ env_var("PLAYGROUND_DAYS", '14') }} day
-    )
+  {% else %}
+    {% if is_incremental() %}
+      and created_at >= TIMESTAMP_SUB(_dbt_max_partition, interval 1 day)
+      {{ playground_filter("created_at", is_start=False) }}
+    {% else %}
+    {{ playground_filter("created_at", is_start=False) }}
+    {% endif %}
   {% endif %}

@@ -5,11 +5,20 @@ sources:
     schema: oso
     tables:
       - name: projects
-        identifier: projects_ossd
+        identifier: |
+          {%- if target.name == 'production' -%} projects_ossd
+          {%- else -%} base_playground__ossd_projects
+          {%- endif -%}
       - name: collections
-        identifier: collections_ossd
+        identifier: |
+          {%- if target.name == 'production' -%} collections_ossd
+          {%- else -%} base_playground__ossd_collections
+          {%- endif -%}
       - name: repositories
-        identifier: repositories_ossd
+        identifier: |
+          {%- if target.name == 'production' -%} repositories_ossd
+          {%- else -%} base_playground__ossd_repositories
+          {%- endif -%}
       
         
         
