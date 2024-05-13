@@ -53,7 +53,7 @@ For each data source, we are working with partners to create filters that can be
 
 For metrics that look at transactions, we are collaborating with the OP data team to define filters on “qualifying” transactions. For metrics that look at addresses, we are working on a definition of a “trusted” user, which considers reputation data from multiple platforms. For the projects themselves, there are filters to include only projects and contracts that are “approved” by the Foundation’s acceptance criteria and verified through the sign-up flow on Agora.
 
-<img src="./data-transformations.png" width="100%">
+![image|690x211](./data-transformations.png)
 
 The query logic for applying these transformations is available [here](https://github.com/opensource-observer/oso/tree/main/warehouse/dbt/models) and can be simulated in a data science environment by following the docs [here](https://docs.opensource.observer/docs/integrate/data-science).
 
@@ -63,7 +63,7 @@ Together with the Optimism badgeholder community, we are organizing metrics into
 
 These categories are illustrated in the matrix below, including some examples.
 
-<img src="./impact-matrix.png" width="100%">
+![image|690x647](./impact-matrix.png)
 
 These categories are intended to counterbalance each other. The optimal strategy for a project should be to excel on multiple dimensions, not just one.
 
