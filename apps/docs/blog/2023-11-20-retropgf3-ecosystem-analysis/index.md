@@ -2,7 +2,13 @@
 slug: retropgf3-ecosystem-analysis
 title: Analysis on the 300+ OSS projects applying for RetroPGF 3
 authors: [ccerv1]
-tags: [optimism, retropgf, ecosystem reports, data visualization]
+tags:
+  [
+    optimism,
+    retroactive public goods funding,
+    ecosystem reports,
+    data visualization,
+  ]
 ---
 
 import Head from '@docusaurus/Head';
