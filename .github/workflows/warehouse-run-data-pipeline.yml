@@ -143,8 +143,8 @@ jobs:
         run: |
           poetry run dbt run --target playground
 
-      - name: Copy the bigquery tables to cloudsql
-        run: |
-          poetry run bq2cloudsql
-        env:
-          DBT_TARGET: production
+      # - name: Copy the bigquery tables to cloudsql
+      #   run: |
+      #     poetry run bq2cloudsql
+      #   env:
+      #     DBT_TARGET: production
