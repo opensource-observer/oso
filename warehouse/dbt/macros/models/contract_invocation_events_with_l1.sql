@@ -8,23 +8,30 @@ with all_transactions as (
     LOWER(transactions.to_address) as to_name,
     "{{ lower_network_name }}" as to_namespace,
     COALESCE(to_artifacts.artifact_type, "CONTRACT") as to_type,
-    CAST(to_artifacts.artifact_source_id as STRING) as to_source_id,
+    LOWER(transactions.to_address) as to_source_id,
     LOWER(transactions.from_address) as from_name,
     "{{ lower_network_name }}" as from_namespace,
     COALESCE(from_artifacts.artifact_type, "EOA") as from_type,
     LOWER(transactions.from_address) as from_source_id,
     transactions.receipt_status,
-    (transactions.receipt_gas_used * transactions.receipt_effective_gas_price) as l2_gas_fee
+    (
+      transactions.receipt_gas_used
+      * transactions.receipt_effective_gas_price
+    ) as l2_gas_fee
   from {{ ref('int_%s_transactions' % lower_network_name) }} as transactions
   left join {{ ref('int_artifacts_by_project') }} as to_artifacts
-    on LOWER(transactions.to_address) = LOWER(to_artifacts.artifact_source_id)
+    on
+      LOWER(transactions.to_address)
+      = LOWER(to_artifacts.artifact_source_id)
     and to_artifacts.artifact_source = "{{ upper_network_name }}"
   left join {{ ref('int_artifacts_by_project') }} as from_artifacts
     on
       LOWER(transactions.from_address)
       = LOWER(from_artifacts.artifact_source_id)
     and to_artifacts.artifact_source = "{{ upper_network_name }}"
-  where transactions.input != "0x" and transactions.block_timestamp >= {{ start }}
+  where
+    transactions.input != "0x"
+    and transactions.block_timestamp >= {{ start }}
 ),
 
 contract_invocations as (
