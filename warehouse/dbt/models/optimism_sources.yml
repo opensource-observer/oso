@@ -13,3 +13,6 @@ sources:
 
       - name: receipts
         identifier: receipts
+      
+      - name: blocks
+        identifier: blocks

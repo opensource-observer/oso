@@ -22,10 +22,20 @@ receipts as (
   from {{ source("optimism", "receipts") }}
   {% if is_incremental() %}
   where block_timestamp > TIMESTAMP_SUB(_dbt_max_partition, INTERVAL 1 DAY)
-    {{ playground_filter("block_timestamp", is_start=True) }}
+    {{ playground_filter("block_timestamp", is_start=False) }}
   {% else %}
   {{ playground_filter("block_timestamp") }}
   {% endif %}
+), blocks as (
+  select *
+  from {{ source("optimism", "blocks") }}
+  {% if is_incremental() %}
+  where `timestamp` > TIMESTAMP_SUB(_dbt_max_partition, INTERVAL 1 DAY)
+    {{ playground_filter("`timestamp`", is_start=False) }}
+  {% else %}
+  {{ playground_filter("`timestamp`") }}
+  {% endif %}
+
 ), transactions_with_receipts as (
 
 select
@@ -40,7 +50,7 @@ select
 from {{ source("optimism", "transactions") }} as transactions
 inner join receipts as receipts
   on transactions.transaction_hash = receipts.transaction_hash
-inner join blocks as blocks
+inner join {{ source("optimism", "blocks") }} as blocks
   on transactions.block_hash = blocks.block_hash
 {% if is_incremental() %}
 where
