@@ -8,7 +8,7 @@ with user_model as (
   passport_scores.evidence_rawScore
     >= passport_scores.evidence_threshold as passport_verification  
   from {{ ref('int_artifacts_by_user') }} as artifacts_by_user
-  left {{ ref('stg_passport__scores') }} as passport_scores
+  left join {{ ref('stg_passport__scores') }} as passport_scores
     on artifacts_by_user.artifact_name = passport_scores.passport_address
 )
 
