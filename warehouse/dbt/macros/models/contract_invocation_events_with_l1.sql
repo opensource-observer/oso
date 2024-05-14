@@ -13,7 +13,7 @@ with all_transactions as (
     "{{ lower_network_name }}" as from_namespace,
     COALESCE(from_artifacts.artifact_type, "EOA") as from_type,
     CAST(from_artifacts.artifact_source_id as STRING) as from_source_id,
-    receipt_status as status,
+    transactions.receipt_status,
     (transactions.receipt_gas_used * transactions.receipt_effective_gas_price) as l2_gas_fee
   from {{ ref('int_%s_transactions' % lower_network_name) }} as transactions
   left join {{ ref('int_artifacts_by_project') }} as to_artifacts
@@ -41,7 +41,7 @@ contract_invocations as (
     from_source_id,
     SUM(l2_gas_fee) as total_l2_gas_used,
     COUNT(*) as total_count,
-    SUM(case when status = 1 then 1 else 0 end) as success_count
+    SUM(case when receipt_status = 1 then 1 else 0 end) as success_count
   from all_transactions
   group by
     time,
