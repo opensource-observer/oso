@@ -27,7 +27,7 @@ with all_transactions as (
     LOWER(transactions.from_address) as from_name,
     "OPTIMISM" as from_namespace,
     COALESCE(from_artifacts.artifact_type, "EOA") as from_type,
-    CAST(from_artifacts.artifact_source_id as STRING) as from_source_id,
+    LOWER(transactions.from_address) as from_source_id,
     transactions.receipt_status,
     (
       transactions.receipt_gas_used

@@ -12,7 +12,7 @@ with all_transactions as (
     LOWER(transactions.from_address) as from_name,
     "{{ lower_network_name }}" as from_namespace,
     COALESCE(from_artifacts.artifact_type, "EOA") as from_type,
-    CAST(from_artifacts.artifact_source_id as STRING) as from_source_id,
+    LOWER(transactions.from_address) as from_source_id,
     transactions.receipt_status,
     (transactions.receipt_gas_used * transactions.receipt_effective_gas_price) as l2_gas_fee
   from {{ ref('int_%s_transactions' % lower_network_name) }} as transactions
