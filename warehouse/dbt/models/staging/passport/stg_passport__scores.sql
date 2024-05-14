@@ -3,8 +3,8 @@
 #}
 
 select
-  lower(p.passport_address as string) as passport_address,
-  cast(p.evidence_rawScore as float) as evidence_rawScore,
-  cast(p.evidence_threshold as float) as evidence_threshold,
-  cast(p.last_score_update as timestamp) as last_score_update
+  LOWER(p.passport_address) as passport_address,
+  CAST(p.evidence_rawscore as numeric) as evidence_rawscore,
+  CAST(p.evidence_threshold as numeric) as evidence_threshold,
+  CAST(p.last_score_timestamp as timestamp) as last_score_timestamp
 from {{ source("gitcoin", "passport_scores") }} as p

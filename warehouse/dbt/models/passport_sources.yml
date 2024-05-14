@@ -1,5 +1,5 @@
 sources:
-  - name: passport_scores
+  - name: gitcoin
     database: opensource-observer
     schema: gitcoin
     tables:
