@@ -139,27 +139,59 @@ github_stars_and_forks as (
 ),
 
 all_events as (
-  select * from {{ ref('int_optimism_contract_invocation_events') }}
+  select
+    time,
+    event_type,
+    event_source_id,
+    event_source,
+    to_name,
+    to_namespace,
+    to_type,
+    to_source_id,
+    from_name,
+    from_namespace,
+    from_type,
+    from_source_id,
+    amount
+  from (
+    select * from {{ ref('int_optimism_contract_invocation_events') }}
+    union all
+    select * from {{ ref('int_base_contract_invocation_events') }}
+    union all
+    select * from {{ ref('int_frax_contract_invocation_events') }}
+    union all
+    select * from {{ ref('int_mode_contract_invocation_events') }}
+    union all
+    select * from {{ ref('int_pgn_contract_invocation_events') }}
+    union all
+    select * from {{ ref('int_zora_contract_invocation_events') }}
+  )
   union all
-  select * from {{ ref('int_base_contract_invocation_events') }}
-  union all
-  select * from {{ ref('int_frax_contract_invocation_events') }}
-  union all
-  select * from {{ ref('int_mode_contract_invocation_events') }}
-  union all
-  select * from {{ ref('int_pgn_contract_invocation_events') }}
-  union all
-  select * from {{ ref('int_zora_contract_invocation_events') }}
-  union all
-  select * from github_commits
-  union all
-  select * from github_issues
-  union all
-  select * from github_pull_requests
-  union all
-  select * from github_pull_request_merge_events
-  union all
-  select * from github_stars_and_forks
+  select
+    time,
+    event_type,
+    event_source_id,
+    event_source,
+    to_name,
+    to_namespace,
+    to_type,
+    to_source_id,
+    from_name,
+    from_namespace,
+    from_type,
+    from_source_id,
+    amount
+  from (
+    select * from github_commits
+    union all
+    select * from github_issues
+    union all
+    select * from github_pull_requests
+    union all
+    select * from github_pull_request_merge_events
+    union all
+    select * from github_stars_and_forks
+  )
 )
 
 select
