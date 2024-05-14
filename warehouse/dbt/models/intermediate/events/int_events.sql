@@ -205,7 +205,7 @@ select
   LOWER(to_source_id) as to_artifact_source_id,
   LOWER(from_name) as from_artifact_name,
   LOWER(from_namespace) as from_artifact_namespace,
-  LOWER(from_type) as from_artifact_type,
+  UPPER(from_type) as from_artifact_type,
   LOWER(from_source_id) as from_artifact_source_id,
   CAST(amount as FLOAT64) as amount
 from all_events
