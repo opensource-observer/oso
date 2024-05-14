@@ -30,6 +30,7 @@ receipts as (
 
 select
   transactions.*,
+  blocks.block_number as block_number,
   receipts.contract_address as receipt_contract_address,
   receipts.cumulative_gas_used as receipt_cumulative_gas_used,
   receipts.gas_used as receipt_gas_used,
@@ -39,6 +40,8 @@ select
 from {{ source("optimism", "transactions") }} as transactions
 inner join receipts as receipts
   on transactions.transaction_hash = receipts.transaction_hash
+inner join blocks as blocks
+  on transactions.block_hash = blocks.block_hash
 {% if is_incremental() %}
 where
     {# 
