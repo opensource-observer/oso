@@ -8,7 +8,7 @@ locals {
     {
       name               = "${var.cluster_name}-default-node-pool"
       machine_type       = "e2-standard-2"
-      node_locations     = join(",", var.cluster_zones)
+      node_locations     = join(",", var.default_node_pool_cluster_zones)
       min_count          = 0
       max_count          = 3
       local_ssd_count    = 0
