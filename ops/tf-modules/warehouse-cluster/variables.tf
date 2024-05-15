@@ -8,6 +8,12 @@ variable "cluster_name" {
   description = "Name for the gke cluster"
 }
 
+variable "default_node_pool_cluster_zones" {
+  type        = list(string)
+  description = "The default node pool is intended to be standard vms (non-volatile). This should be a smaller set of cluster zones"
+  default     = ["us-central1-a"]
+}
+
 variable "cluster_region" {
   type        = string
   description = "The region for the gke cluster"
