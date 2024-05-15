@@ -128,7 +128,7 @@ jobs:
             ghcr.io/opensource-observer/cloudquery-github-resolve-repos:${DOCKER_TAG} \
             serve --address 0.0.0.0:7777 &&
           cloudquery sync .github/workflows/cloudquery/github-resolve-repos.yml --log-level debug --log-console &&
-          docker log github-resolve-repos 2>&1 | tee ${CLOUDQUERY_FILE_DIRECTORY}/github-resolve-repos.log &&
+          docker logs github-resolve-repos 2>&1 | tee ${CLOUDQUERY_FILE_DIRECTORY}/github-resolve-repos.log &&
           docker stop github-resolve-repos
 
       - uses: actions/upload-artifact@v4
