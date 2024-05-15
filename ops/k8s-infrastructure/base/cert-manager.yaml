@@ -5,6 +5,7 @@ metadata:
   name: cert-manager
   labels:
     toolkit.fluxcd.io/tenant: ops
+    kube-secrets-init.doit-intl.com/disable-mutation: true
 ---
 apiVersion: source.toolkit.fluxcd.io/v1
 kind: HelmRepository
