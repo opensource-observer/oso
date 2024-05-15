@@ -39,3 +39,6 @@ spec:
       enabled: false
     serviceAccount:
       enabled: true
+    extraEnvs:
+      - name: CLOUDFLARE_SECRET
+        value: "gcp:secretmanager:projects/opensource-observer/cloudflare-api-token/versions/1"
