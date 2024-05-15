@@ -37,3 +37,5 @@ spec:
   values:
     ingress:
       enabled: false
+    serviceAccount:
+      enabled: true
