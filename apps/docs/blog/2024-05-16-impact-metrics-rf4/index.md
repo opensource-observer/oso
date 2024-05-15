@@ -55,7 +55,7 @@ For metrics that look at transactions, we are collaborating with the OP data tea
 
 ![image|690x211](./data-transformations.png)
 
-The query logic for applying these transformations is available [here](https://github.com/opensource-observer/oso/tree/main/warehouse/dbt/models) and can be simulated in a data science environment by following the docs [here](https://docs.opensource.observer/docs/integrate/data-science).
+The query logic for applying these transformations is available [here](https://github.com/opensource-observer/oso/tree/main/warehouse/dbt/models/marts/superchain) and can be simulated in a data science environment by following the docs [here](https://docs.opensource.observer/docs/integrate/data-science).
 
 ### Metrics Framework
 
@@ -75,23 +75,23 @@ As badgeholders will be voting on portfolios of metrics, not projects, the proje
 
 Each metric will be expressed as a SQL model running on top of the underlying data, with some intermediate models to improve readability.
 
-Here’s an example of gas fees:
+Here’s an example of [gas fees](https://github.com/opensource-observer/oso/blob/main/warehouse/dbt/models/marts/superchain/metrics/rf4_gas_fees.sql):
 
 ```sql
-SELECT
+select
   project_id,
-  SUM(amount) AS l2_gas_fee_sum_alltime
-FROM superchain_events
-WHERE
-  event_type = 'L2_GAS_FEE'
-  AND time < '2024-05-23'
-  AND project_id IN (SELECT project_id FROM op-rf4-projects)
-GROUP BY project_id
+  'gas_fees' as metric,
+  SUM(amount / 1e18) as amount
+from {{ ref('rf4_events_daily_to_project') }}
+where
+  event_type = 'CONTRACT_INVOCATION_DAILY_L2_GAS_USED'
+group by
+  project_id
 ```
 
 This query grabs all gas-generating events on the Superchain from before 2024-05-23 from RF4-approved projects and sums up their gas fees.
 
-Once again, all of the source code is available from our repo [here](https://github.com/opensource-observer/oso/tree/main/warehouse/dbt/models). We also have an active [data challenge](https://docs.opensource.observer/docs/contribute/challenges/2024-04-05_data_challenge_01/) to get analysts’ input and proposals on impact metrics.
+Once again, all of the source code is available from our repo [here](https://github.com/opensource-observer/oso/tree/main/warehouse/dbt/models/marts/superchain). We also have an active [data challenge](https://docs.opensource.observer/docs/contribute/challenges/2024-04-05_data_challenge_01/) to get analysts’ input and proposals on impact metrics.
 
 ## Current Metrics
 
