@@ -3,13 +3,17 @@
 #}
 
 with metrics as (
-  select * from {{ ref('rf4_gas_fees_by_project') }}
+  select * from {{ ref('rf4_gas_fees') }}
   union all
-  select * from {{ ref('rf4_total_transactions_by_project') }}
+  select * from {{ ref('rf4_total_transactions') }}
   union all
-  select * from {{ ref('rf4_total_trusted_transactions_by_project') }}
+  select * from {{ ref('rf4_total_trusted_transactions') }}
   union all
-  select * from {{ ref('rf4_trusted_users_share_of_transactions_by_project') }}
+  select * from {{ ref('rf4_trusted_users_share_of_transactions') }}
+  union all
+  select * from {{ ref('rf4_trusted_daily_active_users') }}
+  union all
+  select * from {{ ref('rf4_trusted_monthly_active_users') }}
 ),
 
 pivot_metrics as (
@@ -21,7 +25,13 @@ pivot_metrics as (
     MAX(case when metric = 'trusted_transaction_count' then amount else 0 end)
       as trusted_transaction_count,
     MAX(case when metric = 'trusted_transaction_share' then amount else 0 end)
-      as trusted_transaction_share
+      as trusted_transaction_share,
+    MAX(case when metric = 'trusted_daily_active_users' then amount else 0 end)
+      as trusted_daily_active_users,
+    MAX(
+      case when metric = 'trusted_monthly_active_users' then amount else 0 end
+    )
+      as trusted_monthly_active_users
   from metrics
   group by project_id
 )
