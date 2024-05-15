@@ -30,10 +30,10 @@ receipts as (
   select *
   from {{ source("optimism", "blocks") }}
   {% if is_incremental() %}
-  where `timestamp` > TIMESTAMP_SUB(_dbt_max_partition, INTERVAL 1 DAY)
-    {{ playground_filter("`timestamp`", is_start=False) }}
+  where `block_timestamp` > TIMESTAMP_SUB(_dbt_max_partition, INTERVAL 1 DAY)
+    {{ playground_filter("`block_timestamp`", is_start=False) }}
   {% else %}
-  {{ playground_filter("`timestamp`") }}
+  {{ playground_filter("`block_timestamp`") }}
   {% endif %}
 
 ), transactions_with_receipts as (
