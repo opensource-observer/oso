@@ -52,11 +52,9 @@ contract_invocations as (
   select
     time,
     to_name,
-    to_namespace,
     to_type,
     to_source_id,
     from_name,
-    from_namespace,
     from_type,
     from_source_id,
     "{{ upper_network_name }}" as event_source,
