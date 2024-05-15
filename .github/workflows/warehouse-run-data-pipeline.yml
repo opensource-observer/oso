@@ -138,10 +138,16 @@ jobs:
       - name: Run dbt for production
         run: |
           poetry run dbt run --target production
+      
+      - name: Run dbt for the base_playground
+        run: |
+          poetry run dbt run --target playground
 
       - name: Run dbt for the playground
         run: |
-          poetry run dbt run --target playground
+          poetry run dbt run --target playground --full-refresh
+        env:
+          PLAYGROUND_DAYS: 30
 
       # - name: Copy the bigquery tables to cloudsql
       #   run: |
