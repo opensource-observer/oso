@@ -73,8 +73,8 @@ contract_invocations as (
     from_type,
     from_source_id,
     'OPTIMISM' as event_source,
-    'OPTIMISM' as to_namespace,
-    'OPTIMISM' as from_namespace,
+    'optimism' as to_namespace,
+    'optimism' as from_namespace,
     SUM(l2_gas_fee) as total_l2_gas_used,
     COUNT(*) as total_count,
     SUM(case when receipt_status = 1 then 1 else 0 end) as success_count
