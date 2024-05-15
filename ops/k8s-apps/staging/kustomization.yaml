@@ -13,6 +13,10 @@ patchesJson6902:
       - op: replace
         path: /metadata/name
         value: staging-podinfo
+      
+      - op: replace
+        path: /metadata/namespace
+        value: staging-podinfo
 
   - target:
       kind: Namespace
@@ -34,5 +38,9 @@ patchesJson6902:
         value: staging-podinfo
       
       - op: replace
-        path: /spec/chart/sourceRef/name
+        path: /metadata/namespace
+        value: staging-podinfo
+      
+      - op: replace
+        path: /spec/chart/spec/sourceRef/name
         value: staging-podinfo
