@@ -16,17 +16,37 @@
 {% else %}
   {% set start = "'1970-01-01'" %}
 {% endif %}
-with all_transactions as (
+
+with blockchain_artifacts as (
+  select
+    artifact_source_id,
+    MAX_BY(artifact_type, artifact_rank) as artifact_type
+  from (
+    select
+      artifact_type,
+      LOWER(artifact_source_id) as artifact_source_id,
+      case
+        when artifact_type = 'SAFE' then 5
+        when artifact_type = 'FACTORY' then 4
+        when artifact_type = 'CONTRACT' then 3
+        when artifact_type = 'DEPLOYER' then 2
+        when artifact_type = 'EOA' then 1
+        else 0
+      end as artifact_rank
+    from {{ ref('int_artifacts_by_project') }}
+    where artifact_source = 'OPTIMISM'
+  )
+  group by artifact_source_id
+),
+
+all_transactions as (
   select -- noqa: ST06
     TIMESTAMP_TRUNC(transactions.block_timestamp, day) as `time`,
-    "OPTIMISM" as event_source,
     LOWER(transactions.to_address) as to_name,
-    "OPTIMISM" as to_namespace,
-    COALESCE(to_artifacts.artifact_type, "CONTRACT") as to_type,
+    COALESCE(to_artifacts.artifact_type, 'CONTRACT') as to_type,
     LOWER(transactions.to_address) as to_source_id,
     LOWER(transactions.from_address) as from_name,
-    "OPTIMISM" as from_namespace,
-    COALESCE(from_artifacts.artifact_type, "EOA") as from_type,
+    COALESCE(from_artifacts.artifact_type, 'EOA') as from_type,
     LOWER(transactions.from_address) as from_source_id,
     transactions.receipt_status,
     (
@@ -34,46 +54,37 @@ with all_transactions as (
       * transactions.receipt_effective_gas_price
     ) as l2_gas_fee
   from {{ ref('int_optimism_transactions') }} as transactions
-  left join {{ ref('int_artifacts_by_project') }} as to_artifacts
-    on
-      LOWER(transactions.to_address)
-      = LOWER(to_artifacts.artifact_source_id)
-      and to_artifacts.artifact_source = "OPTIMISM"
-  left join {{ ref('int_artifacts_by_project') }} as from_artifacts
-    on
-      LOWER(transactions.from_address)
-      = LOWER(from_artifacts.artifact_source_id)
-      and to_artifacts.artifact_source = "OPTIMISM"
+  left join blockchain_artifacts as to_artifacts
+    on LOWER(transactions.to_address) = to_artifacts.artifact_source_id
+  left join blockchain_artifacts as from_artifacts
+    on LOWER(transactions.from_address) = from_artifacts.artifact_source_id
   where
-    transactions.input != "0x"
+    transactions.input != '0x'
     and transactions.block_timestamp >= {{ start }}
 ),
 
 contract_invocations as (
   select
     time,
-    event_source,
     to_name,
-    to_namespace,
     to_type,
     to_source_id,
     from_name,
-    from_namespace,
     from_type,
     from_source_id,
+    'OPTIMISM' as event_source,
+    'optimism' as to_namespace,
+    'optimism' as from_namespace,
     SUM(l2_gas_fee) as total_l2_gas_used,
     COUNT(*) as total_count,
     SUM(case when receipt_status = 1 then 1 else 0 end) as success_count
   from all_transactions
   group by
     time,
-    event_source,
     to_name,
-    to_namespace,
     to_type,
     to_source_id,
     from_name,
-    from_namespace,
     from_type,
     from_source_id
 ),
@@ -81,7 +92,7 @@ contract_invocations as (
 all_events as (
   select
     time,
-    "CONTRACT_INVOCATION_DAILY_L2_GAS_USED" as event_type,
+    'CONTRACT_INVOCATION_DAILY_L2_GAS_USED' as event_type,
     event_source,
     to_name,
     to_namespace,
@@ -96,7 +107,7 @@ all_events as (
   union all
   select
     time,
-    "CONTRACT_INVOCATION_DAILY_COUNT" as event_type,
+    'CONTRACT_INVOCATION_DAILY_COUNT' as event_type,
     event_source,
     to_name,
     to_namespace,
@@ -111,7 +122,7 @@ all_events as (
   union all
   select
     time,
-    "CONTRACT_INVOCATION_SUCCESS_DAILY_COUNT" as event_type,
+    'CONTRACT_INVOCATION_SUCCESS_DAILY_COUNT' as event_type,
     event_source,
     to_name,
     to_namespace,

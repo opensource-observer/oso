@@ -1,0 +1,8 @@
+sources:
+  - name: gitcoin
+    database: opensource-observer
+    schema: gitcoin
+    tables:
+      - name: passport_scores
+        identifier: passport_scores
+      
