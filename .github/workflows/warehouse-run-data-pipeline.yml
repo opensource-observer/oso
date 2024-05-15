@@ -141,7 +141,7 @@ jobs:
       
       - name: Run dbt for the base_playground
         run: |
-          poetry run dbt run --target playground
+          poetry run dbt run --target base_playground
 
       - name: Run dbt for the playground
         run: |
