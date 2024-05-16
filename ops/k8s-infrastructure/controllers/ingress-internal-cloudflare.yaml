@@ -39,7 +39,7 @@ spec:
       tunnelName: gcp:secretmanager:cloudflare-internal-tunnel-name/versions/1
     image:
       repository: ghcr.io/opensource-observer/cloudflare-tunnel
-      tag: latest
+      tag: "0.0.9-oso1"
   postRenderers:
     - kustomize:
         patches:
