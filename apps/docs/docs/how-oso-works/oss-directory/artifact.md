@@ -67,9 +67,14 @@ If you are referencing a Safe multi-sig address, remember to remove the chain id
 
 The `networks` field is an array used to identify the blockchain network(s) that the address is associated with. Currently supported options are:
 
-- `mainnet`: Ethereum mainnet
-- `optimism`: Optimism mainnet
-- `arbitrum`: Arbitrum One mainnet
+- `mainnet`: The Ethereum mainnet.
+- `arbitrum-one`: The Arbitrum L2 network.
+- `optimism`: The Optimism L2 network.
+- `base`: The Base L2 network.
+- `metal`: The Metal L2 network.
+- `mode`: The Mode L2 network.
+- `frax`: The Frax L2 network.
+- `zora`: The Zora L2 network.
 
 We do not support testnets for any of these networks and do not intend to.
 
@@ -77,13 +82,19 @@ After an EVM blockchain address is validated and added to the directory, it will
 
 ### Tagging Addresses
 
-The `tags` field is an array used to classify the address. Currently supported options are `eoa`, `safe`, `creator`, `deployer`, `factory`, `proxy`, `contract`, and `wallet`. In most cases, an address will have more than one tag.
+The `tags` field is an array used to classify the address. Currently supported options are `eoa`, `safe`, `deployer`, `factory`, `contract`, and `wallet`. In most cases, an address will have more than one tag.
 
-- `eoa`, `contract`, `safe`: These tags are used to classify the address as an Externally Owned Account (EOA), a smart contract, or a Safe multi-sig wallet. We try to differentiate between smart contracts and Safe multi-sig wallets; with the former we seek to track event data and with the latter we seek to track funding data.
-- `wallet`: This tag is used to classify the address as a wallet that should be monitored for funding events. This tag is only associated with addresses that are also tagged as `eoa` or `safe`.
-- `creator`, `deployer`: These tags are interchangeable and used to classify an EOA address that is primarily used to for deploying smart contracts. We track these addresses to identify new smart contracts that are deployed by projects. We do not monitor them for funding events.
-- `factory`: This tag is used to classify a smart contract address that is used to deploy other smart contracts. We capture event data from all contracts deployed by a factory contract.
-- `proxy`: This tag is used to classify a proxy contract address. We currently do not handle proxy contracts differently from other smart contracts, therefore it is an optional tag.
+The following tags are most frequently used to describe blockchain addresses:
+
+- `deployer`: A deployer address.
+- `eoa`: An externally owned account (EOA) address.
+- `safe`: A multisig safe contract address.
+- `wallet`: A wallet address. This tag is used to classify the address as a wallet that should be monitored for funding events. This tag is only associated with addresses that are also tagged as `eoa` or `safe`.
+
+In previous versions of the schema, we enumerated contracts and factories with the following tags. These tags are still supported but no longer required since we index all contracts and factories associated with a project from its deployer(s).
+
+- `contract`: A smart contract address.
+- `factory`: A factory contract address.
 
 ### Examples
 
@@ -120,20 +131,11 @@ The `tags` field is an array used to classify the address. Currently supported o
 }
 ```
 
-#### Factory smart contract
-
-```json
-{
-  "address": "0x1234567890123456789012345678901234567890",
-  "tags": ["contract", "factory"],
-  "networks": ["mainnet"],
-  "name": "My Factory Contract"
-}
-```
-
 ### Full Schema
 
 You can always access the most recent version of the schema [here](https://github.com/opensource-observer/oss-directory/blob/main/src/resources/schema/blockchain-address.json).
+
+The full schema for the blockchain address field is as follows. Note that it includes `networks` that are not currently indexed but are planned for future versions.
 
 ```json
 {
@@ -150,13 +152,13 @@ You can always access the most recent version of the schema [here](https://githu
       "minItems": 1,
       "items": {
         "enum": [
-          "eoa",
-          "safe",
+          "contract",
           "creator",
           "deployer",
+          "eoa",
           "factory",
           "proxy",
-          "contract",
+          "safe",
           "wallet"
         ],
         "$comment": "Tags that classify the address. Options include: \n- 'eoa': Externally Owned Account \n- 'safe': Gnosis Safe or other multi-sig wallet \n- 'deployer' (or 'creator'): An address that should be monitored for contract deployment events \n- 'factory': A contract that deploys other contracts \n- 'proxy': Proxy contract \n- 'contract': A smart contract address \n- 'wallet': An address that should be monitored for funding events"
@@ -166,7 +168,23 @@ You can always access the most recent version of the schema [here](https://githu
       "type": "array",
       "minItems": 1,
       "items": {
-        "enum": ["mainnet", "optimism", "arbitrum"]
+        "enum": [
+          "arbitrum-one",
+          "base",
+          "frax",
+          "mainnet",
+          "matic",
+          "metal",
+          "mode",
+          "optimism",
+          "pgn",
+          "zora",
+          "linea",
+          "zksync-era",
+          "polygon-zkevm",
+          "scroll",
+          "mantle"
+        ]
       }
     },
     "name": {

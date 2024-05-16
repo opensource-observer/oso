@@ -15,12 +15,12 @@ The OSS Directory is organized into two main folders:
 
 - `./data/projects` - each file represents a single open source project and contains all of the artifacts for that project.
   - See `./src/resources/schema/project.json` for the expected JSON schema
-  - Files should be named by the project "slug"
-  - Project slugs must be globally unique. If there is a conflict in chosen slug, we will give priority to the project that has the associated GitHub organization
-  - In most cases, we adopt the GitHub organization name as the slug. If the project is not associated with a GitHub organization, you try to use the project name followed by the repo owner as the slug.
+  - Files should be named by the project `name`
+  - A project's `name` must be globally unique. If there is a conflict in chosen `name`, we will give priority to the project that has the associated GitHub organization
+  - In most cases, we adopt the GitHub organization name as the `name`. If the project is not associated with a GitHub organization, you try to use the project name followed by the repo owner as the `name`.
 - `./data/collections` - each file represents a collection of projects that have some collective meaning (e.g. all projects in an ecosystem).
   - See `./src/resources/schema/collection.json` for the expected JSON schema
-  - Collections are identified by their unique slug
+  - Collections are identified by their unique `name`
 
 ## NPM Library
 
