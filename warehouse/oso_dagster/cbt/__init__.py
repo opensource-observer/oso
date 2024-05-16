@@ -2,6 +2,7 @@
 #
 # A poor excuse for a dbt replacement when calling sql as a library
 import os
+import arrow
 from typing import List, Optional
 from dataclasses import dataclass
 from enum import Enum
@@ -31,6 +32,12 @@ class UpdateStrategy(Enum):
 class TimePartitioning:
     column: str
     type: str
+
+
+@dataclass
+class TimeRange:
+    start: arrow.Arrow
+    end: arrow.Arrow
 
 
 class MissingVars(Exception):
@@ -66,6 +73,7 @@ class CBT:
         time_partitioning: Optional[TimePartitioning] = None,
         unique_column: Optional[str] = None,
         timeout: float = 300,
+        dry_run: bool = False,
         **vars,
     ):
         with self.bigquery.get_client() as client:
@@ -83,6 +91,7 @@ class CBT:
                     time_partitioning=time_partitioning,
                     unique_column=unique_column,
                     timeout=timeout,
+                    dry_run=dry_run,
                     **vars,
                 )
             return self._transform_existing(
@@ -90,8 +99,10 @@ class CBT:
                 model_file,
                 destination_table,
                 update_strategy,
+                time_partitioning=time_partitioning,
                 unique_column=unique_column,
                 timeout=timeout,
+                dry_run=dry_run,
                 **vars,
             )
 
@@ -101,8 +112,10 @@ class CBT:
         model_file: str,
         destination_table: TableReference,
         update_strategy: UpdateStrategy,
+        time_partitioning: Optional[TimePartitioning] = None,
         unique_column: Optional[str] = None,
         timeout: float = 300,
+        dry_run: bool = False,
         **vars,
     ):
         select_query = self.render_model(
@@ -112,8 +125,36 @@ class CBT:
             "_cbt_append.sql",
             select_query=select_query,
             destination_table=destination_table,
+            time_partitioning=time_partitioning,
         )
+        time_range = None
         if update_strategy == UpdateStrategy.MERGE:
+            if time_partitioning:
+                time_range_query = self.render_model(
+                    "_cbt_time_range.sql",
+                    select_query=select_query,
+                    destination_table=destination_table,
+                    unique_column=unique_column,
+                    time_partitioning=time_partitioning,
+                )
+                self.log.debug({"message": "getting time range", "query": update_query})
+                job = client.query(time_range_query, timeout=timeout)
+                time_range_row_iter = job.result()
+                time_range_rows = list(time_range_row_iter)
+                if len(time_range_rows) != 1:
+                    raise Exception("time column might be wrong")
+                time_range = TimeRange(
+                    arrow.get(time_range_rows[0].start),
+                    arrow.get(time_range_rows[0].end),
+                )
+                self.log.debug(
+                    {
+                        "message": "time range for update",
+                        "start": time_range.start,
+                        "end": time_range.end,
+                    }
+                )
+
             if not unique_column:
                 raise Exception(
                     "UpdatedStrategy.MERGE strategy requires a unique field"
@@ -123,11 +164,16 @@ class CBT:
                 select_query=select_query,
                 destination_table=destination_table,
                 unique_column=unique_column,
+                time_partitioning=time_partitioning,
+                time_range=time_range,
             )
 
-        self.log.debug({"message": "updating", "query": update_query})
-        job = client.query(update_query, timeout=timeout)
-        job.result()
+        if not dry_run:
+            self.log.debug({"message": "updating", "query": update_query})
+            job = client.query(update_query, timeout=timeout)
+            job.result()
+        else:
+            self.log.debug(f"dry_run: {update_query}")
 
     def _transform_replace(
         self,
@@ -137,6 +183,7 @@ class CBT:
         time_partitioning: Optional[TimePartitioning] = None,
         unique_column: Optional[str] = None,
         timeout: float = 300,
+        dry_run: bool = False,
         **vars,
     ):
         select_query = self.render_model(
@@ -151,11 +198,14 @@ class CBT:
             unique_column=unique_column,
             select_query=select_query,
         )
-        job = client.query(create_or_replace_query, timeout=timeout)
-        self.log.debug(
-            {"message": "replacing with query", "query": create_or_replace_query}
-        )
-        job.result()
+        if not dry_run:
+            job = client.query(create_or_replace_query, timeout=timeout)
+            self.log.debug(
+                {"message": "replacing with query", "query": create_or_replace_query}
+            )
+            job.result()
+        else:
+            self.log.debug(f"dry_run: {create_or_replace_query}")
 
     def render_model(self, model_file: str, **vars):
         model_source = self.env.loader.get_source(self.env, model_file)

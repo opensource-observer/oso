@@ -26,6 +26,16 @@ opensource_observer:
       keyfile: ${service_account_path}
       project: ${GOOGLE_PROJECT_ID}
       threads: 32
+    base_playground:
+      type: bigquery
+      dataset: oso_base_playground
+      job_execution_time_seconds: 300
+      job_retries: 1
+      location: US
+      method: service-account
+      keyfile: ${service_account_path}
+      project: ${GOOGLE_PROJECT_ID}
+      threads: 32
     playground:
       type: bigquery
       dataset: oso_playground

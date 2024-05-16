@@ -128,7 +128,14 @@ jobs:
             ghcr.io/opensource-observer/cloudquery-github-resolve-repos:${DOCKER_TAG} \
             serve --address 0.0.0.0:7777 &&
           cloudquery sync .github/workflows/cloudquery/github-resolve-repos.yml --log-level debug --log-console &&
+          docker logs github-resolve-repos 2>&1 | tee ${CLOUDQUERY_FILE_DIRECTORY}/github-resolve-repos.log &&
           docker stop github-resolve-repos
+
+      - uses: actions/upload-artifact@v4
+        if: ${{ inputs.skip_cloudquery_plugins != 'true' }}
+        with:
+          name: github-resolve-repos.log
+          path: ${{ env.CLOUDQUERY_FILE_DIRECTORY }}/github-resolve-repos.log
 
       - name: Setup dbt
         run: |
@@ -138,13 +145,19 @@ jobs:
       - name: Run dbt for production
         run: |
           poetry run dbt run --target production
+      
+      - name: Run dbt for the base_playground
+        run: |
+          poetry run dbt run --target base_playground
 
       - name: Run dbt for the playground
         run: |
-          poetry run dbt run --target playground
-
-      - name: Copy the bigquery tables to cloudsql
-        run: |
-          poetry run bq2cloudsql
+          poetry run dbt run --target playground --full-refresh
         env:
-          DBT_TARGET: production
+          PLAYGROUND_DAYS: 30
+
+      # - name: Copy the bigquery tables to cloudsql
+      #   run: |
+      #     poetry run bq2cloudsql
+      #   env:
+      #     DBT_TARGET: production

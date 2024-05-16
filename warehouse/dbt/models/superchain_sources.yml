@@ -1,0 +1,7 @@
+sources:
+  - name: superchain
+    database: opensource-observer
+    schema: superchain
+    tables:
+      - name: optimism_traces
+        identifier: optimism_traces

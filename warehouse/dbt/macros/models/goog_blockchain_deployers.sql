@@ -3,14 +3,7 @@
 #}
 
 {% macro goog_blockchain_deployers(network_name) %}
-    {% if is_incremental() %} 
-WITH max_block_timestamp AS  (
-  {# If there's no existing max time then we arbitrarily query at unix time 0 #}
-  SELECT COALESCE(MAX(block_timestamp), '1970-01-01')  as ts
-  FROM {{ this }}
-)
-{% endif %}
-
+{% if target.name == 'production' %}
 SELECT
   block_timestamp AS block_timestamp,
   transaction_hash AS transaction_hash,
@@ -21,9 +14,20 @@ WHERE
   to_address IS null
   AND `status` = 1
   {% if is_incremental() %}
-  AND block_timestamp >= (
-    SELECT * FROM max_block_timestamp
-  )
-  AND block_timestamp < TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY)
+  AND block_timestamp > TIMESTAMP_SUB(_dbt_max_partition, INTERVAL 1 DAY)
   {% endif %}
+
+{% else %}
+select
+  *
+from {{ source("base_playground", "%s_deployers" % network_name) }}
+{% if is_incremental() %}
+where block_timestamp > TIMESTAMP_SUB(_dbt_max_partition, INTERVAL 1 DAY)
+  {{ playground_filter("block_timestamp", is_start=False) }}
+{% else %}
+{{ playground_filter("block_timestamp") }}
+{% endif %}
+
+{% endif %}
+
 {% endmacro %}

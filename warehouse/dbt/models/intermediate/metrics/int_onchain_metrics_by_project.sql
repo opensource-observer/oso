@@ -10,29 +10,27 @@ with txns as (
     event_source,
     SUM(case
       when
-        impact_metric = 'CONTRACT_INVOCATION_DAILY_COUNT_TOTAL'
-        and time_interval = 'ALL'
+        event_type = 'CONTRACT_INVOCATION_DAILY_COUNT'
         then amount
     end) as total_txns,
     SUM(case
       when
-        impact_metric = 'CONTRACT_INVOCATION_DAILY_L2_GAS_USED_TOTAL'
-        and time_interval = 'ALL'
+        event_type = 'CONTRACT_INVOCATION_DAILY_L2_GAS_USED'
         then amount
     end) as total_l2_gas,
     SUM(case
       when
-        impact_metric = 'CONTRACT_INVOCATION_DAILY_COUNT_TOTAL'
-        and time_interval = '6M'
+        event_type = 'CONTRACT_INVOCATION_DAILY_COUNT'
+        and DATE_DIFF(CURRENT_DATE(), DATE(bucket_day), month) <= 6
         then amount
     end) as txns_6_months,
     SUM(case
       when
-        impact_metric = 'CONTRACT_INVOCATION_DAILY_L2_GAS_USED_TOTAL'
-        and time_interval = '6M'
+        event_type = 'CONTRACT_INVOCATION_DAILY_L2_GAS_USED'
+        and DATE_DIFF(CURRENT_DATE(), DATE(bucket_day), month) <= 6
         then amount
     end) as l2_gas_6_months
-  from {{ ref('int_event_totals_by_project') }}
+  from {{ ref('int_events_daily_to_project') }}
   group by
     project_id,
     event_source

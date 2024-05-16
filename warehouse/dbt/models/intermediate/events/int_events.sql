@@ -32,80 +32,7 @@
   )
 }}
 
-with contract_invocation_daily_count as (
-  select -- noqa: ST06
-    time,
-    "CONTRACT_INVOCATION_DAILY_COUNT" as event_type,
-    CAST(source_id as STRING) as event_source_id,
-    from_namespace as event_source,
-    to_name,
-    to_namespace,
-    to_type,
-    CAST(to_source_id as STRING) as to_source_id,
-    from_name,
-    from_namespace,
-    from_type,
-    CAST(from_source_id as STRING) as from_source_id,
-    tx_count as amount
-  from {{ ref('stg_dune__contract_invocation') }}
-  {# a bit of a hack for now to keep this table small for dev and playground #}
-  {% if target.name in ['dev', 'playground'] %}
-    where time >= TIMESTAMP_SUB(
-      CURRENT_TIMESTAMP(),
-      interval {{ env_var("PLAYGROUND_DAYS", '14') }} day
-    )
-  {% endif %}
-),
-
-contract_invocation_daily_l2_gas_used as (
-  select -- noqa: ST06
-    time,
-    "CONTRACT_INVOCATION_DAILY_L2_GAS_USED" as event_type,
-    CAST(source_id as STRING) as event_source_id,
-    from_namespace as event_source,
-    to_name,
-    to_namespace,
-    to_type,
-    CAST(to_source_id as STRING) as to_source_id,
-    from_name,
-    from_namespace,
-    from_type,
-    CAST(from_source_id as STRING) as from_source_id,
-    l2_gas as amount
-  from {{ ref('stg_dune__contract_invocation') }}
-  {% if target.name in ['dev', 'playground'] %}
-    where time >= TIMESTAMP_SUB(
-      CURRENT_TIMESTAMP(),
-      interval {{ env_var("PLAYGROUND_DAYS", '14') }} day
-    )
-  {% endif %}
-),
-
-contract_invocation_daily_l1_gas_used as (
-  select -- noqa: ST06
-    time,
-    "CONTRACT_INVOCATION_DAILY_L1_GAS_USED" as event_type,
-    CAST(source_id as STRING) as event_source_id,
-    from_namespace as event_source,
-    to_name,
-    to_namespace,
-    to_type,
-    CAST(to_source_id as STRING) as to_source_id,
-    from_name,
-    from_namespace,
-    from_type,
-    CAST(from_source_id as STRING) as from_source_id,
-    l1_gas as amount
-  from {{ ref('stg_dune__contract_invocation') }}
-  {% if target.name in ['dev', 'playground'] %}
-    where time >= TIMESTAMP_SUB(
-      CURRENT_TIMESTAMP(),
-      interval {{ env_var("PLAYGROUND_DAYS", '14') }} day
-    )
-  {% endif %}
-),
-
-github_commits as (
+with github_commits as (
   select -- noqa: ST06
     created_at as `time`,
     "COMMIT_CODE" as event_type,
@@ -212,21 +139,59 @@ github_stars_and_forks as (
 ),
 
 all_events as (
-  select * from contract_invocation_daily_count
+  select
+    time,
+    event_type,
+    event_source_id,
+    event_source,
+    to_name,
+    to_namespace,
+    to_type,
+    to_source_id,
+    from_name,
+    from_namespace,
+    from_type,
+    from_source_id,
+    amount
+  from (
+    select * from {{ ref('int_optimism_contract_invocation_events') }}
+    union all
+    select * from {{ ref('int_base_contract_invocation_events') }}
+    union all
+    select * from {{ ref('int_frax_contract_invocation_events') }}
+    union all
+    select * from {{ ref('int_mode_contract_invocation_events') }}
+    union all
+    select * from {{ ref('int_pgn_contract_invocation_events') }}
+    union all
+    select * from {{ ref('int_zora_contract_invocation_events') }}
+  )
   union all
-  select * from contract_invocation_daily_l1_gas_used
-  union all
-  select * from contract_invocation_daily_l2_gas_used
-  union all
-  select * from github_commits
-  union all
-  select * from github_issues
-  union all
-  select * from github_pull_requests
-  union all
-  select * from github_pull_request_merge_events
-  union all
-  select * from github_stars_and_forks
+  select
+    time,
+    event_type,
+    event_source_id,
+    event_source,
+    to_name,
+    to_namespace,
+    to_type,
+    to_source_id,
+    from_name,
+    from_namespace,
+    from_type,
+    from_source_id,
+    amount
+  from (
+    select * from github_commits
+    union all
+    select * from github_issues
+    union all
+    select * from github_pull_requests
+    union all
+    select * from github_pull_request_merge_events
+    union all
+    select * from github_stars_and_forks
+  )
 )
 
 select
@@ -240,7 +205,7 @@ select
   LOWER(to_source_id) as to_artifact_source_id,
   LOWER(from_name) as from_artifact_name,
   LOWER(from_namespace) as from_artifact_namespace,
-  LOWER(from_type) as from_artifact_type,
+  UPPER(from_type) as from_artifact_type,
   LOWER(from_source_id) as from_artifact_source_id,
   CAST(amount as FLOAT64) as amount
 from all_events

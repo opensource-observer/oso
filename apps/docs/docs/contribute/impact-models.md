@@ -217,36 +217,6 @@ namespace for a collection of the slug `foo` would be as follows:
 {{ oso_id('collection', 'foo')}}
 ```
 
-### Special convenience for artifact IDs
-
-There is also an additional convenience macro `oso_artifact_id()` that is used
-specifically when dealing with artifacts. This macro automatically converts
-columns in a table that contains `artifact` data into an ID by searching along a
-specified prefix string for the column names. Specifically, the artifact table
-needs to have `namespace`, `type`, and `source_id` to be able to derive a proper
-artifact ID. So assuming you have a table that has the namespace prefix with
-`foo_` so that we have the columns `foo_namespace`, `foo_type`, and
-`foo_source_id` we would use the `artifact_id()` macro like so:
-
-```jinja
-{{ oso_artifact_id('foo') }}
-```
-
-You can also pass in a table alias by specifying it as the second parameter to
-the `oso_artifact_id()` macro:
-
-So assuming you had a SQL select query for a table aliased with `f` that
-contains the `foo_` prefixed artifact columns, you could do this:
-
-```jinja
-SELECT
-  {{ oso_artifact_id('foo', 'f')}} as `artifact_id`
-FROM foo_table as f
-```
-
-This will return a query of a single column `artifact_id` that is derived from
-the `foo_namespace`, `foo_type`, and `foo_source_id` of that table.
-
 ---
 
 ## Adding Your dbt Model

@@ -1,0 +1,100 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ingress-internal-cloudflare
+  labels:
+    toolkit.fluxcd.io/tenant: ops
+    kube-secrets-init.doit-intl.com/enable-mutation: "true"
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: ingress-internal-cloudflare
+  namespace: ingress-internal-cloudflare
+spec:
+  interval: 24h
+  url: https://helm.strrl.dev
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: ingress-internal-cloudflare
+  namespace: ingress-internal-cloudflare
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: cloudflare-tunnel-ingress-controller
+      version: "*"
+      sourceRef:
+        kind: HelmRepository
+        name: ingress-internal-cloudflare
+        namespace: ingress-internal-cloudflare
+      interval: 12h
+  values:
+    ingressClass:
+      name: ingress-internal-cloudflare
+    serviceAccount:
+      create: true
+      name: "ingress-internal-cloudflare"
+    cloudflare:
+      apiToken: gcp:secretmanager:cloudflare-api-token/versions/1
+      accountId: gcp:secretmanager:cloudflare-account-id/versions/1
+      tunnelName: gcp:secretmanager:cloudflare-internal-tunnel-name/versions/1
+    image:
+      repository: ghcr.io/opensource-observer/cloudflare-tunnel
+      tag: "0.0.9-oso1"
+  postRenderers:
+    - kustomize:
+        patches:
+          - target: 
+              group: apps
+              version: v1
+              kind: Deployment
+              name: ".*"
+            patch: |
+              - op: replace
+                path: /spec/template/spec/containers/0/command
+                value: ["/usr/bin/cloudflare-tunnel-ingress-controller"]
+              
+              - op: replace
+                path: /spec/template/spec/containers/0/env
+                value: [
+                  {
+                    "name": "CLOUDFLARE_API_TOKEN",
+                    "value": "gcp:secretmanager:cloudflare-api-token/versions/1"
+                  },
+                  {
+                    "name": "CLOUDFLARE_ACCOUNT_ID",
+                    "value": "gcp:secretmanager:cloudflare-account-id/versions/1"
+                  },
+                  {
+                    "name": "CLOUDFLARE_TUNNEL_NAME",
+                    "value": "gcp:secretmanager:cloudflare-internal-tunnel-name/versions/1"
+                  },
+                  {
+                    "name": "CLOUDFLARED_IMAGE",
+                    "value": "cloudflare/cloudflared:latest"
+                  },
+                  {
+                    "name": "CLOUDFLARED_IMAGE_PULL_POLICY",
+                    "value": "Always"
+                  },
+                  {
+                    "name": "CLOUDFLARED_REPLICA_COUNT",
+                    "value": "1"
+                  },
+                  {
+                    "name": "NAMESPACE",
+                    "value": "ingress-internal-cloudflare"
+                  },
+                  {
+                    "name": "INGRESS_CLASS",
+                    "value": "ingress-internal-cloudflare"
+                  },
+                  {
+                    "name": "CONTROLLER_CLASS",
+                    "value": "ingress-internal-cloudflare"
+                  }
+                ]

@@ -1013,13 +1013,9 @@ class GoldskyAsset:
             examples[job_id] = match
             worker_checkpoint = int(match.group("checkpoint"))
             checkpoint = GoldskyCheckpoint(job_id, timestamp, worker_checkpoint)
-            if timestamp > latest_timestamp:
-                latest_timestamp = timestamp
-
-                # Empty the queue
-                queues.empty_all()
             if checkpoint <= worker_status.get(worker, GoldskyCheckpoint("", 0, 0)):
                 continue
+            context.log.debug(f"Queuing {match.group()}")
             queues.enqueue(
                 worker,
                 GoldskyQueueItem(
@@ -1032,15 +1028,16 @@ class GoldskyAsset:
         if len(keys) > 0:
             expected_timestamp_of_worker_status = worker_status.get(keys[0])
             if expected_timestamp_of_worker_status.timestamp != latest_timestamp:
-                context.log.error(
+                context.log.info(
                     {
-                        "message": "Expected timestamp to be consistent",
+                        "message": (
+                            "Pipeline timestamp changed."
+                            " This is a normal part of the goldsky process."
+                            " Continuing to load chronologically"
+                        ),
                         "expected": expected_timestamp_of_worker_status,
                         "actual": latest_timestamp,
                     }
-                )
-                raise Exception(
-                    "Inconsistent dump files with the pointer table. Requires manual intervention"
                 )
 
         for worker, queue in queues.worker_queues():

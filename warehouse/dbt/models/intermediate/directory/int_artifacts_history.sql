@@ -3,7 +3,7 @@
   It does not capture git_repo naming histories.
 #}
 
-with git_user_events as (
+with user_events as (
   {# `from` actor artifacts derived from all events #}
   select
     event_source as artifact_source,
@@ -17,15 +17,15 @@ with git_user_events as (
 )
 
 select
-  artifact_source_id,
-  artifact_source,
-  artifact_type,
-  artifact_namespace,
-  artifact_url,
-  artifact_name,
+  LOWER(artifact_source_id) as artifact_source_id,
+  UPPER(artifact_source) as artifact_source,
+  UPPER(artifact_type) as artifact_type,
+  LOWER(artifact_namespace) as artifact_namespace,
+  LOWER(artifact_url) as artifact_url,
+  LOWER(artifact_name) as artifact_name,
   MAX(time) as last_used,
   MIN(time) as first_used
-from git_user_events
+from user_events
 group by
   artifact_source_id,
   artifact_source,

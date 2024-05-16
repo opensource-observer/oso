@@ -23,6 +23,7 @@ from dagster import (
 from dagster_gcp import BigQueryResource, GCSResource
 
 from .common import AssetFactoryResponse
+from ..utils.bq import ensure_dataset, DatasetOptions
 
 
 class Interval(Enum):
@@ -37,7 +38,7 @@ class SourceMode(Enum):
     Overwrite = 1
 
 
-@dataclass
+@dataclass(kw_only=True)
 class BaseGCSAsset:
     project_id: str
     bucket_name: str
@@ -46,9 +47,10 @@ class BaseGCSAsset:
     destination_table: str
     raw_dataset_name: str
     clean_dataset_name: str
+    format: str = "CSV"
 
 
-@dataclass
+@dataclass(kw_only=True)
 class IntervalGCSAsset(BaseGCSAsset):
     interval: Interval
     mode: SourceMode
@@ -71,6 +73,14 @@ def interval_gcs_import_asset(key: str, config: IntervalGCSAsset, **kwargs):
         # that are new than that). We continously store the imported data in
         # {project}.{dataset}.{table}_{interval_prefix}.
         with bigquery.get_client() as bq_client:
+            ensure_dataset(
+                bq_client,
+                DatasetOptions(
+                    dataset_ref=bq_client.dataset(dataset_id=config.clean_dataset_name),
+                    is_public=True,
+                ),
+            )
+
             clean_dataset = bq_client.get_dataset(config.clean_dataset_name)
             clean_table_ref = clean_dataset.table(config.destination_table)
 
@@ -144,7 +154,7 @@ def interval_gcs_import_asset(key: str, config: IntervalGCSAsset, **kwargs):
                 f"""
             LOAD DATA OVERWRITE `{interval_table}`
             FROM FILES (
-                format = "CSV",
+                format = "{config.format}",
                 uris = ["gs://{config.bucket_name}/{blob_name}"]
             );
             """
