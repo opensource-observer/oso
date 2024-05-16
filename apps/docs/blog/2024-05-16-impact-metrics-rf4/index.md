@@ -12,7 +12,7 @@ Open Source Observer is working with the Optimism Collective and its badgeholder
 
 Retro Funding 4 is the Optimism Collective’s first experiment with [Metrics-based Evaluation](https://gov.optimism.io/t/upcoming-retro-rounds-and-their-design/7861). The hypothesis is that by leveraging quantitative metrics, citizens are able to more accurately express their preferences for the types of impact they want to reward, as well as make more accurate judgements of the impact delivered by individual projects.
 
-In stark contrast to other Retro Funding experiments, _badgeholders will not vote on individual projects but will rather vote via selecting and weighting a number of metrics which measure different types of impact._
+In contrast to other Retro Funding experiments, _badgeholders will not vote on individual projects but will rather vote via selecting and weighting a number of metrics which measure different types of impact._
 
 The Optimism Foundation has published high level guidance on the types of impact that will be rewarded:
 
@@ -22,7 +22,7 @@ The Optimism Foundation has published high level guidance on the types of impact
 - Interactions of new Optimism users
 - Open source license of contract code
 
-The round is expected to receive applications from 100s of projects building on 6 Superchain networks (OP Mainnet, Base, Frax, Metal, Mode, and Zora). Details for the round can be found [here](https://gov.optimism.io/t/retro-funding-4-onchain-builders-round-details/7988).
+The round is expected to receive applications from hundreds of projects building on **six** Superchain networks (OP Mainnet, Base, Frax, Metal, Mode, and Zora). Details for the round can be found [here](https://gov.optimism.io/t/retro-funding-4-onchain-builders-round-details/7988).
 
 At Open Source Observer, our objective is to help the Optimism community arrive at up to 20 credible impact metrics that can be applied to projects with contracts on the Superchain.
 
@@ -40,10 +40,10 @@ One thing to make crystal clear is that Open Source Observer relies 100% on publ
 
 The following raw data sources will be used:
 
-- L2 Blockchain Transactions and Traces (OP Mainnet, Base, Frax, Metal, Mode, Zora), powered by GoldSky
+- L2 Blockchain Transactions and Traces (OP Mainnet, Base, Frax, Metal, Mode, Zora), powered by [GoldSky](https://goldsky.com/)
 - Web3 Social & Identity ([Farcaster](https://docs.farcaster.xyz/learn/architecture/hubs), [Passport](https://www.passport.xyz/), [EigenTrust by Karma3Labs](https://docs.karma3labs.com/eigentrust), and potentially other NFT or attestation-related credentials)
-- Open Source Code Contributions (GitHub, OSS Licenses)
-- Project Applications (submitted on Agora)
+- Open Source Code Contributions (GitHub, [OSS Licenses](https://spdx.org/licenses/))
+- Project Applications (submitted on [Agora](https://vote.optimism.io/))
 
 There is additional data available on OSO, including software dependencies, grant funding histories, data on other chains, etc, which is open for exploration but will not be incorporated into impact metrics for RF4.
 
@@ -73,7 +73,7 @@ As badgeholders will be voting on portfolios of metrics, not projects, the proje
 
 ### Metric Logic
 
-Each metric will be expressed as a SQL model running on top of the underlying data, with some intermediate models to improve readability.
+Each metric will be expressed as a SQL model running on top of the underlying data, with some intermediate models to improve readability. One of the core models is called `rf4_events_daily_to_project`, which is a daily snapshot of all events on the Superchain tagged by project up until the end of the RF4 window (2024-05-23).
 
 Here’s an example of [gas fees](https://github.com/opensource-observer/oso/blob/main/warehouse/dbt/models/marts/superchain/metrics/rf4_gas_fees.sql):
 
@@ -89,19 +89,37 @@ group by
   project_id
 ```
 
-This query grabs all gas-generating events on the Superchain from before 2024-05-23 from RF4-approved projects and sums up their gas fees.
+The query above grabs all gas-generating events on the Superchain from RF4-approved projects and sums up their gas fees.
+
+Onchain events are also tagged with a `trusted_user_id` if the address that triggered the event is considered a trusted user. As mentioned earlier, we are working with multiple partners to define what a trusted user is, and will finalize the logic after the RF4 window closes.
+
+Here is an example of a model that looks only at [successful transactions from trusted users](https://github.com/opensource-observer/oso/blob/main/warehouse/dbt/models/marts/superchain/metrics/rf4_trusted_transactions.sql) since 2023-10-01:
+
+```sql
+select
+  project_id,
+  'trusted_transaction_count' as metric,
+  SUM(amount) as amount
+from {{ ref('rf4_events_daily_to_project') }}
+where
+  event_type = 'CONTRACT_INVOCATION_SUCCESS_DAILY_COUNT'
+  and bucket_day >= '2023-10-01'
+  and trusted_user_id is not null
+group by
+  project_id
+```
 
 Once again, all of the source code is available from our repo [here](https://github.com/opensource-observer/oso/tree/main/warehouse/dbt/models/marts/superchain). We also have an active [data challenge](https://docs.opensource.observer/docs/contribute/challenges/2024-04-05_data_challenge_01/) to get analysts’ input and proposals on impact metrics.
 
 ## Current Metrics
 
-This section will be updated regularly to reflect the latest metrics under consideration for RF4.
+This section will be updated regularly to reflect the latest metrics under consideration for RF4. These metrics will be calculated for _all projects_ on the Superchain that verify at least one public GitHub repo and one deployer address (and that are approved in the application process).
 
 ### Gas Fees
 
 _Sum of a project's total contribution to gas fees across the Superchain._
 
-\*_Why this metric matters for the collective:_ \*Gas fees are the primary recurring revenue source for the Superchain and a key indicator of aggregate blockspace demand. A project’s gas fee contribution is influenced by its total volume of contract interactions, the computational complexity of those interactions, and the state of the underlying gas market at the time of those transactions. In the long run, gas fees are what will power Retro Funding and enable it to continue in perpetuity. All members of the Superchain have committed at least 15% of their gross profit from gas fees to Retro Funding. Supporting projects that generate revenue in the form of gas fees helps power the economic engine of the Superchain.
+**Why this metric matters for the collective:** Gas fees are the primary recurring revenue source for the Superchain and a key indicator of aggregate blockspace demand. A project’s gas fee contribution is influenced by its total volume of contract interactions, the computational complexity of those interactions, and the state of the underlying gas market at the time of those transactions. In the long run, gas fees are what will power Retro Funding and enable it to continue in perpetuity. All members of the Superchain have committed at least 15% of their gross profit from gas fees to Retro Funding. Supporting projects that generate revenue in the form of gas fees helps power the economic engine of the Superchain.
 
 ### Total Transactions
 
