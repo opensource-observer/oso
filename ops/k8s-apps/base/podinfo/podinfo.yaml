@@ -36,7 +36,10 @@ spec:
   # https://github.com/stefanprodan/podinfo/blob/master/charts/podinfo/values.yaml
   values:
     ingress:
-      enabled: false
+      enabled: true
+      className: ingress-internal-cloudflare
+      hosts:
+        - test-podinfo.opensource.observer
     serviceAccount:
       enabled: true
     extraEnvs:

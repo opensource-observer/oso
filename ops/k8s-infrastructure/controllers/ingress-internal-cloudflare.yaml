@@ -86,5 +86,13 @@ spec:
                   {
                     "name": "NAMESPACE",
                     "value": "ingress-internal-cloudflare"
+                  },
+                  {
+                    "name": "INGRESS_CLASS",
+                    "value": "ingress-internal-cloudflare"
+                  },
+                  {
+                    "name": "CONTROLLER_CLASS",
+                    "value": "ingress-internal-cloudflare"
                   }
                 ]
