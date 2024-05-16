@@ -33,6 +33,9 @@ spec:
         namespace: ingress-internal-cloudflare
       interval: 12h
   values:
+    serviceAccount:
+      create: true
+      name: "ingress-internal-cloudflare"
     cloudflare:
       apiToken: gcp:secretmanager:cloudflare-api-token/versions/1
       accountId: gcp:secretmanager:cloudflare-account-id/versions/1
