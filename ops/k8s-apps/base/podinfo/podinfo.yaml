@@ -39,7 +39,10 @@ spec:
       enabled: true
       className: ingress-internal-cloudflare
       hosts:
-        - test-podinfo.opensource.observer
+        - host: test-podinfo.opensource.observer
+          paths:
+            - path: /
+              pathType: Prefix
     serviceAccount:
       enabled: true
     extraEnvs:
