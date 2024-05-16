@@ -97,14 +97,19 @@ const getRepositories = async (
   const tableResolver: TableResolver = async (clientMeta, parent, stream) => {
     for await (const line of input()) {
       const project = JSON.parse(line) as {
-        slug: string;
+        name: string;
         github: Array<{ url: string }>;
       };
-      console.log(`Loading ${project.slug}`);
+      if (project.github == null) {
+        console.log(`skipping ${project.name}. null .github found`);
+        continue;
+      }
+      const projectGithub = project.github || [];
+
       const repos = await getReposFromUrls(
         client,
         gh,
-        project.github.map((p) => p.url),
+        projectGithub.map((p) => p.url),
       );
       for (const repo of repos) {
         //console.log(repo);
