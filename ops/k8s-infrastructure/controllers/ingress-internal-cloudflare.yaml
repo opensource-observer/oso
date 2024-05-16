@@ -37,3 +37,18 @@ spec:
       apiToken: gcp:secretmanager:cloudflare-api-token/versions/1
       accountId: gcp:secretmanager:cloudflare-account-id/versions/1
       tunnelName: gcp:secretmanager:cloudflare-internal-tunnel-name/versions/1
+    image:
+      repository: ghcr.io/opensource-observer/cloudflare-tunnel
+      tag: latest
+  postRenderers:
+    - kustomize:
+        patches:
+          - target: 
+              group: apps
+              version: v1
+              kind: Deployment
+              name: "*"
+            patch: |
+              - op: replace
+                path: /spec/template/spec/containers/0/command
+                value: ["/usr/bin/cloudflare-tunnel-ingress-controller"]
