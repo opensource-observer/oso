@@ -64,3 +64,8 @@ dbt_packages/
 supabase/.temp/
 **/supabase/.temp/
 */**/supabase/.temp/
+
+# Recce & DBT
+.recce/
+target/
+target-base/

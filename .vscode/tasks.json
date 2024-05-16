@@ -1,0 +1,40 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Check GitHub CodeSpace environment",
+            "type": "shell",
+            "command": "bash .devcontainer/github_codespace_env.sh",
+        },
+        {
+            "label": "Install Project dependencies",
+            "type": "shell",
+            "command": "poetry install && poetry env use python",
+        },
+        {
+            "label": "Setup required environment variables",
+            "type": "shell",
+            "command": "bash .devcontainer/setup_required_env.sh",
+        },
+        {
+            "label": "Run DBT",
+            "type": "shell",
+            "command": "poetry run dbt deps && poetry run dbt build && poetry run dbt docs generate",
+            "dependsOn": [
+                "Login Google Cloud for BigQuery",
+                "Check GitHub CodeSpace environment"
+            ],
+        },
+        {
+            "label": "Launch Recce server",
+            "type": "shell",
+            "command": "if [ -f '.recce/recce_state_file/recce_state.json' ]; then recce server --review .recce/recce_state_file/recce_state.json; else recce server; fi",
+            "dependsOn": ["Run DBT"],
+            "runOptions": {
+                "runOn": "folderOpen"
+            }
+        }
+    ]
+}
