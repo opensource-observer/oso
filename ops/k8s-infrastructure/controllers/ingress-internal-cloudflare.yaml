@@ -33,6 +33,8 @@ spec:
         namespace: ingress-internal-cloudflare
       interval: 12h
   values:
+    ingressClass:
+      name: ingress-internal-cloudflare
     serviceAccount:
       create: true
       name: "ingress-internal-cloudflare"
