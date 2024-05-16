@@ -58,18 +58,33 @@ spec:
               
               - op: replace
                 path: /spec/template/spec/containers/0/env
-                value:
-                  - name: CLOUDFLARE_API_TOKEN
-                    value: gcp:secretmanager:cloudflare-api-token/versions/1
-                  - name: CLOUDFLARE_ACCOUNT_ID
-                    value: gcp:secretmanager:cloudflare-account-id/versions/1
-                  - name: CLOUDFLARE_TUNNEL_NAME
-                    value: gcp:secretmanager:cloudflare-internal-tunnel-name/versions/1
-                  - name: CLOUDFLARED_IMAGE
-                    value: cloudflare/cloudflared:latest
-                  - name: CLOUDFLARED_IMAGE_PULL_POLICY
-                    value: always
-                  - name: CLOUDFLARED_REPLICA_COUNT
-                    value: 1
-                  - name: NAMESPACE
-                    value: ingress-internal-cloudflare
+                value: [
+                  {
+                    "name": "CLOUDFLARE_API_TOKEN",
+                    "value": "gcp:secretmanager:cloudflare-api-token/versions/1"
+                  },
+                  {
+                    "name": "CLOUDFLARE_ACCOUNT_ID",
+                    "value": "gcp:secretmanager:cloudflare-account-id/versions/1"
+                  },
+                  {
+                    "name": "CLOUDFLARE_TUNNEL_NAME",
+                    "value": "gcp:secretmanager:cloudflare-internal-tunnel-name/versions/1"
+                  },
+                  {
+                    "name": "CLOUDFLARED_IMAGE",
+                    "value": "cloudflare/cloudflared:latest"
+                  },
+                  {
+                    "name": "CLOUDFLARED_IMAGE_PULL_POLICY",
+                    "value": "Always"
+                  },
+                  {
+                    "name": "CLOUDFLARED_REPLICA_COUNT",
+                    "value": "1"
+                  },
+                  {
+                    "name": "NAMESPACE",
+                    "value": "ingress-internal-cloudflare"
+                  }
+                ]
