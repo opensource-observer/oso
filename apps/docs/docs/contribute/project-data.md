@@ -4,11 +4,10 @@ sidebar_position: 2
 ---
 
 :::info
-Contributing data about open source projects is one of the simplest and most
-important ways to help the OSO community. When a new project is added to our
-directory, we automatically index relevant data about its history and ongoing
-activity, and we generate a project page on the OSO website. This makes it easy
-for people to discover the project and analyze its data.
+Add or update data about a project by making a pull request to the OSS Directory.
+When a new project is added to OSS directory, we automatically index relevant
+data about its history and ongoing activity so it can be queried via our API, included
+in metrics dashboards, and analyzed by data scientists.
 :::
 
 ## Quick Steps
@@ -21,7 +20,58 @@ Add or update project data by making a pull request to [OSS Directory](https://g
 2. Locate or create a new project `.yaml` file under `./data/projects/`.
 3. Link artifacts (ie, GitHubs, npm packages, blockchain addresses) in the project `.yaml` file.
 4. Submit a pull request from your fork back to [OSS Directory](https://github.com/opensource-observer/oss-directory).
-5. Once your pull request is approved, you can monitor how much of your project data has been indexed by querying the `event_indexing_status_by_project` through [our API](https://cloud.hasura.io/public/graphiql?endpoint=https://opensource-observer.hasura.app/v1/graphql).
+5. Once your pull request is approved, your project will automatically be added to our daily indexers. It may take longer for some historical data (eg, GitHub events) to show up as we run backfill jobs less frequently.
+
+## Schema Overview
+
+---
+
+The latest schema version is Version 5. In this schema, we replace the field `slug` with `name` and the previous `name` field with `display_name`.
+
+:::important
+The `name` field is the unique identifier for the project and **must** match the name of the project file. For example, if the project file is `./data/projects/m/my-project.yaml`, then the `name` field should be `my-project`. As a convention, we usually take the GitHub organization name as the project `name`. If the project is a standalone repo within a larger GitHub organization or personal account, you can use the project name followed by the repo owner as the name, separated by hyphens.
+:::
+
+### Fields
+
+The schema currently contains the following fields:
+
+- `version`: The version of the schema you are using. The latest version is Version 5. This is a required field.
+- `name`: The unique identifier for the project. This is usually the GitHub organization name or the project name followed by the repo owner, separated by hyphens. This is a required field.
+- `display_name`: The name of the project. This is a required field.
+- `description`: A brief description of the project.
+- `github`: The GitHub URL of the project. This is a list of URLs, as a project can have multiple GitHub URLs. In most cases, the first and only URL will be the main GitHub organization URL. You don't need to include all the repositories that belong to the organization, as we will automatically index all of them.
+- `npm`: The npm URL of a package owned the project. This is a list of URLs, as a project can have multiple npm URLs.
+- `blockchain`: A list of blockchain addresses associated with the project. Each address should include the address itself, the networks it is associated with, and any tags that describe the address. The most important addresses to include are deployers and wallets. We use deployers to trace all contracts deployed by a project, and wallets to trace all transactions made by a project.
+
+### Supported Blockchain Networks and Tags
+
+The OSS Directory currently supports the following blockchain networks, which can be enumerated in the `networks` field of a blockchain address:
+
+- `mainnet`: The Ethereum mainnet.
+- `arbitrum-one`: The Arbitrum L2 network.
+- `optimism`: The Optimism L2 network.
+- `base`: The Base L2 network.
+- `metal`: The Metal L2 network.
+- `mode`: The Mode L2 network.
+- `frax`: The Frax L2 network.
+- `zora`: The Zora L2 network.
+
+We do not support testnets for any of these networks and do not intend to.
+
+The following tags can be used to describe blockchain addresses:
+
+- `deployer`: A deployer address.
+- `eoa`: An externally owned account (EOA) address.
+- `safe`: A multisig safe contract address.
+- `wallet`: A wallet address. This tag is used to classify the address as a wallet that should be monitored for funding events. This tag is only associated with addresses that are also tagged as `eoa` or `safe`.
+
+In previous versions of the schema, we enumerated contracts and factories with the following tags. These tags are still supported but no longer required since we index all contracts and factories associated with a project from its deployer(s).
+
+- `contract`: A smart contract address.
+- `factory`: A factory contract address.
+
+Read below for more detailed steps on how to add or update project data or consult the [schema](../how-oso-works/oss-directory/) for more information.
 
 ## Detailed Steps
 
@@ -86,7 +136,7 @@ If you run into issues, check out [GitHub's instructions](https://docs.github.co
 - Here's an example of a project `.yaml` file:
 
   ```yaml
-  version: 3
+  version: 5
   name: opensource-observer
   display_name: Open Source Observer
   github:
@@ -108,7 +158,7 @@ If you run into issues, check out [GitHub's instructions](https://docs.github.co
       - wallet
   - address: "0x5cBd6362e6F222D2A0Feb89f32566ebd27091B98"
       networks:
-      - arbitrum
+      - arbitrum-one
       tags:
       - safe
       - wallet
@@ -132,9 +182,7 @@ If you run into issues, check out [GitHub's instructions](https://docs.github.co
 
 ### 5. Monitor indexing status of your project data
 
-Once your pull request is merged, you can monitor how much of your project data has been indexed by querying [our API](https://cloud.hasura.io/public/graphiql?endpoint=https://opensource-observer.hasura.app/v1/graphql).
-
-The `event_indexing_status_by_project` query takes a `project_name` as an argument and returns the first, last, and total number of event days indexed for the project for each event type and event data provider.
+Once your pull request is merged, you can check whether your project data has been indexed by querying [our API](https://cloud.hasura.io/public/graphiql?endpoint=https://opensource-observer.hasura.app/v1/graphql).
 
 Note that our indexer currently runs every 24 hours at 02:00 UTC. Therefore, it may take up to 24 hours for your project data to be fully indexed. Backfills are run periodically to ensure that all data is indexed. If you don't see any historic event data for your project, than the most likely reason is that the backfill has not yet been run.
 

@@ -15,12 +15,12 @@ The [OSS Directory](https://github.com/opensource-observer/oss-directory) serves
 Collections are used to group projects together. For example, a collection may include all projects that are part of a particular ecosystem or all projects that are dependent on a given developer library.
 
 ```yaml
-slug: my-collection
-name: My Collection
+name: my-collection
+display_name: My Collection
 projects:
-  - project-slug1
-  - project-slug2
-  - project-slug3
+  - project-name1
+  - project-name2
+  - project-name3
 ```
 
 A collection is validated by confirming that all of its projects are valid. Please consult the [collection schema](./collection) for more information.
@@ -32,8 +32,8 @@ A collection is validated by confirming that all of its projects are valid. Plea
 Projects are used to group artifacts together. For example, a project may include a GitHub organization, an NPM package, and a blockchain address used for holding funds.
 
 ```yaml
-slug: opensource-observer
-name: Open Source Observer
+name: opensource-observer
+display_name: Open Source Observer
 github:
   - url: https://github.com/opensource-observer
 npm:
@@ -48,7 +48,7 @@ blockchain:
       - wallet
 ```
 
-In order to instantiate a project, we require a unique slug and a GitHub URL that is not owned by any other project. Project metadata, including its name and tagline, can also be be captured. Once instantiated, a project entry can be updated to include additional artifacts.
+In order to instantiate a project, we require a unique `name` and a GitHub URL that is not owned by any other project. Project metadata, including its `display_name` and `description`, can also be be captured. Once instantiated, a project entry can be updated to include additional artifacts.
 
 Critically, artifacts can only belong to one project. We run validation checks to ensure that artifacts are not duplicated across projects. Please consult the [project schema](./project) for more information.
 

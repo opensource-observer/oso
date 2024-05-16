@@ -211,7 +211,7 @@ macro generates a url safe base64 encoded identifier from a hash of the
 namespace of the identifier and the ID within that namespace. This is done to
 simplify some table joins at later stages (so you don't need to match on
 multiple dimensions). An example of using the macro within the `collections`
-namespace for a collection of the slug `foo` would be as follows:
+namespace for a collection named `foo` would be as follows:
 
 ```jinja
 {{ oso_id('collection', 'foo')}}
