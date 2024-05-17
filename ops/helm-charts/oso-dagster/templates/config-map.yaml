@@ -1,7 +1,9 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ .Release.Name }}-oso-extra-env
+  name: dagster-oso-extra-env
 data:
-  DAGSTER_PG_USER: {{ .Values.configMap.secretPrefix }}-{{ .Values.secretmanagerKeys.dbUser }}
-  DAGSTER_PG_DB_NAME: {{ .Values.configMap.secretPrefix }}-{{ .Values.secretmanagerKeys.dbName }}
+  DAGSTER_PG_USER: "{{ .Values.configMap.secretPrefix }}-{{ .Values.secretmanagerKeys.dbUser }}"
+  DAGSTER_PG_DB_NAME: "{{ .Values.configMap.secretPrefix }}-{{ .Values.secretmanagerKeys.dbName }}"
+  DAGSTER_PG_PORT: "{{ .Values.pg.port }}"
+  DAGSTER_PG_HOST: "{{ .Values.pg.host }}"

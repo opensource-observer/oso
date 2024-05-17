@@ -77,7 +77,7 @@ spec:
               apiVersion: apps/v1
               kind: Deployment
               metadata:
-                name: dagster-daemon
+                name: all-deployments
               spec:
                 template:
                   spec:
@@ -86,16 +86,6 @@ spec:
                         envFrom:
                           - configMapRef:
                               name: dagster-oso-extra-env
-          - patch: |
-              apiVersion: apps/v1
+            target:
               kind: Deployment
-              metadata:
-                name: dagster-webserver
-              spec:
-                template:
-                  spec:
-                    initContainers:
-                      - name: check-db-ready
-                        envFrom:
-                          - configMapRef:
-                              name: dagster-oso-extra-env
+              labelSelector: app.kubernetes.io/name=dagster

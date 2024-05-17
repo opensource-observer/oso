@@ -25,3 +25,11 @@ postgres_db:
   scheme: {{ .Values.postgresql.postgresqlScheme }}
   {{- end }}
 {{- end }}
+
+# Fix issues with the full name
+{{- define "dagster.webserver.fullname" -}}
+{{- $name := default "webserver" .Values.dagsterWebserver.nameOverride -}}
+{{- $fullname := include "dagster.fullname" . -}}
+{{- printf "%s-%s" $fullname  $name | trunc 63 | trimSuffix "-" -}}
+{{- if .webserverReadOnly -}} -read-only {{- end -}}
+{{- end -}}
