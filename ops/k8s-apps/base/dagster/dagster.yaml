@@ -25,6 +25,8 @@ spec:
     remediation:
       retries: 3
   values:
+    global:
+      serviceAccountName: base-dagster
     dagster:
       ingress:
         enabled: true
