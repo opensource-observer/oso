@@ -3,3 +3,7 @@ kind: Kustomization
 resources:
   - ../base/dagster
 namespace: production-dagster
+patches:
+  - path: ./custom-helm-values.yaml
+    target:
+      type: HelmRelease
