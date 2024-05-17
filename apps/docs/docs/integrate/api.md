@@ -52,7 +52,7 @@ query GetProjects {
   projects(limit: 10) {
     project_id
     project_name
-    project_slug
+    project_display_name
     user_namespace
   }
 }
@@ -67,7 +67,6 @@ query GetCodeMetrics {
     order_by: { star_count: desc_nulls_last }
   ) {
     project_id
-    project_slug
     project_name
     artifact_namespace
     repository_count
