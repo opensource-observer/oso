@@ -1,4 +1,4 @@
-{% set six_months_ago = "DATE_TRUNC(CURRENT_DATE(), month) - INTERVAL 6 MONTH" %}
+{% set date_6_months = "DATE_TRUNC(CURRENT_DATE(), month) - INTERVAL 6 MONTH" %}
 
 with repos as (
   select
@@ -37,12 +37,12 @@ dev_activity as (
     bucket_month,
     user_segment_type,
     case
-      when DATE(bucket_month) >= {{ six_months_ago }} then 1
+      when DATE(bucket_month) >= {{ date_6_months }} then 1
       else 0
     end as is_last_6_months,
     case
       when
-        DATE(bucket_month) >= {{ six_months_ago }}
+        DATE(bucket_month) >= {{ date_6_months }}
         and LAG(bucket_month) over (
           partition by project_id, from_artifact_id
           order by bucket_month

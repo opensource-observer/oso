@@ -11,7 +11,7 @@ select
   e.project_id,
   t.time_interval,
   CONCAT(e.user_segment_type, '_TOTAL') as impact_metric,
-  COUNT(distinct from_artifact_id) as amount
+  COUNT(distinct e.from_artifact_id) as amount
 from {{ ref('int_developer_status_monthly_by_project') }} as e
 cross join {{ ref('int_time_intervals') }} as t
 where
