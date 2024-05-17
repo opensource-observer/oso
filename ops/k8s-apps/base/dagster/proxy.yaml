@@ -10,9 +10,7 @@ spec:
         memory: "500Mi"
   workloadSelector:
     kind: "Deployment" # Applies to a "Deployment"
-    selector:
-      matchLabels:
-        app.kubernetes.io/name: dagster
+    name: dagster-daemon
   instances:
     - connectionString: "opensource-observer:us-central1:oso-psql"
       portEnvName: "DAGSTER_PG_PORT"
