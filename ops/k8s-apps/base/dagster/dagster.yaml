@@ -45,11 +45,29 @@ spec:
   postRenderers:
     - kustomize:
         patches:
-          - path: ./daemon-init-container.yaml
-            target:
+          - patch: | 
+              apiVersion: apps/v1
               kind: Deployment
-              name: dagster-daemon
-          - path: ./webserver-init-container.yaml
-            target:
+              metadata:
+                name: dagster-daemon
+              spec:
+                template:
+                  spec:
+                    initContainers:
+                      - name: check-db-ready
+                        envFrom:
+                          - configMapRef:
+                              name: dagster-oso-extra-env
+          - patch: |
+              apiVersion: apps/v1
               kind: Deployment
-              name: dagster-dagit
+              metadata:
+                name: dagster-dagit
+              spec:
+                template:
+                  spec:
+                    initContainers:
+                      - name: check-db-ready
+                        envFrom:
+                          - configMapRef:
+                              name: dagster-oso-extra-env
