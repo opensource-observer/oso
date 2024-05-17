@@ -42,3 +42,12 @@ spec:
       dagsterDaemon:
         envConfigMaps:
           - name: dagster-oso-extra-env
+  postRenderers:
+    - kustomize:
+        patches:
+          - path: ./daemon-init-container.yaml
+            target:
+              kind: Deployment
+          - path: ./webserver-init-container.yaml
+            target:
+              kind: Deployment
