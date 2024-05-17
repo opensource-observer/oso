@@ -4,4 +4,4 @@ resources:
 - cert-manager.yaml
 - kube-secrets-init.yaml
 - ingress-internal-cloudflare.yaml
-- cloudsql-proxy-operator/base.yaml
+- cloudsql-proxy-operator.yaml
