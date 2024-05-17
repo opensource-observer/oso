@@ -28,6 +28,7 @@ spec:
     global:
       serviceAccountName: base-dagster
     dagster:
+      nameOverride: "dagster"
       ingress:
         enabled: true
         ingressClassName: ingress-internal-cloudflare

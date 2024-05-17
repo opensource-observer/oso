@@ -9,7 +9,6 @@ dagster:
     enabled: false
     postgresqlPassword: "gcp:secretmanager:dagster-db-password/versions/1"
   enableReadOnly: true
-  nameOverride: "dagster"
 
   dagsterWebserver:
     env:
