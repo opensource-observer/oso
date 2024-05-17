@@ -11,7 +11,8 @@ spec:
   workloadSelector:
     kind: "Deployment" # Applies to a "Deployment"
     selector:
-      app.kubernetes.io/name: dagster
+      matchLabels:
+        app.kubernetes.io/name: dagster
   instances:
     - connectionString: "opensource-observer:us-central1:oso-psql"
       portEnvName: "DAGSTER_PG_PORT"
