@@ -1,0 +1,19 @@
+# Default values for oso-dagster.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+dagster:
+  global:
+    serviceAccountName: "staging-dagster"
+  postgresql:
+    enabled: false
+    postgresqlPassword: "gcp:secretmanager:dagster-db-password/versions/1"
+  enableReadOnly: true
+configMap:
+  name: "dagster-extra-env-config-map"
+  secretPrefix: "gcp:secretmanager:dagster"
+secretmanagerKeys: 
+  dbUser: "db-user/versions/1"
+  dbHost: "db-host/versions/1"
+  dbPort: "db-port/versions/1"
+  dbName: "db-name/versions/1"

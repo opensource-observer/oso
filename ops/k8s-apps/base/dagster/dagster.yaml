@@ -1,0 +1,40 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: base-dagster
+  labels:
+    toolkit.fluxcd.io/tenant: apps
+    ops.opensource.observer/environment: base
+    kube-secrets-init.doit-intl.com/enable-mutation: "true"
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: dagster
+  namespace: base-dagster
+spec:
+  chart:
+    spec:
+      chart: ./ops/helm-charts/oso-dagster
+      sourceRef:
+        kind: GitRepository
+        name: flux-system
+  interval: 50m
+  install:
+    remediation:
+      retries: 3
+  values:
+    dagster:
+      ingress:
+        enabled: true
+        ingressClassName: ingress-internal-cloudflare
+        dagsterWebserver:
+          host: base-admin-dagster.opensource.observer
+        readOnlyDagsterWebserver:
+          host: base-readonly-dagster.opensource.observer
+      dagsterWebserver:
+        envConfigMaps:
+          - name: dagster-oso-extra-env
+      dagsterDaemon:
+        envConfigMaps:
+          - name: dagster-oso-extra-env
