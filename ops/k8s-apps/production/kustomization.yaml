@@ -7,3 +7,6 @@ patches:
   - path: ./custom-helm-values.yaml
     target:
       type: HelmRelease
+  - path: ./init-container.yaml
+    target:
+      type: Deployment
