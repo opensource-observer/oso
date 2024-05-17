@@ -2,8 +2,10 @@
 Expand the name of the chart.
 */}}
 
+# Disable the pgisready check due to our use of cloudsql proxy injected into the
+pod.
 {{- define "dagster.postgresql.pgisready" -}}
-until pg_isready -h ${DAGSTER_PG_HOST} -p ${DAGSTER_PG_PORT} -U ${DAGSTER_PG_USER}; do echo waiting for database; sleep 2; done;
+sleep 5;
 {{- end }}
 
 {{- define "dagsterYaml.postgresql.config" }}
@@ -23,3 +25,11 @@ postgres_db:
   scheme: {{ .Values.postgresql.postgresqlScheme }}
   {{- end }}
 {{- end }}
+
+# Fix issues with the full name
+{{- define "dagster.webserver.fullname" -}}
+{{- $name := default "webserver" .Values.dagsterWebserver.nameOverride -}}
+{{- $fullname := include "dagster.fullname" . -}}
+{{- printf "%s-%s" $fullname  $name | trunc 63 | trimSuffix "-" -}}
+{{- if .webserverReadOnly -}} -read-only {{- end -}}
+{{- end -}}

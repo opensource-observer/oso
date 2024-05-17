@@ -1,0 +1,24 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: production-dagster
+spec:
+  values:
+    pg:
+      host: production-cloudsql-proxy-gcloud-sqlproxy.production-cloudsql-proxy.svc.cluster.local
+      port: "5432"
+    global:
+      serviceAccountName: production-dagster
+    configMap:
+      secretPrefix: "gcp:secretmanager:production-dagster"
+    dagster:
+      global: 
+        serviceAccountName: production-dagster
+      ingress:
+        enabled: true
+        ingressClassName: ingress-internal-cloudflare
+        dagsterWebserver:
+          host: admin-dagster.opensource.observer
+        readOnlyDagsterWebserver:
+          host: readonly-dagster.opensource.observer
+      

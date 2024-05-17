@@ -48,3 +48,7 @@ spec:
     extraEnvs:
       - name: CLOUDFLARE_SECRET
         value: "gcp:secretmanager:podinfo-test-secret/versions/1"
+    resources:
+      limits:
+        cpu: 50m
+        memory: 50Mi
