@@ -14,5 +14,6 @@ spec:
     kind: GitRepository
     name: flux-system
   path: ./ops/k8s-apps/staging
+  force: true
   prune: true
   wait: true

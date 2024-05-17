@@ -6,4 +6,4 @@ namespace: production-dagster
 patches:
   - path: ./custom-helm-values.yaml
     target:
-      type: HelmRelease
+      kind: HelmRelease

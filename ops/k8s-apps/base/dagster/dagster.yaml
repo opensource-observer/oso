@@ -36,12 +36,40 @@ spec:
           host: base-admin-dagster.opensource.observer
         readOnlyDagsterWebserver:
           host: base-readonly-dagster.opensource.observer
+      runLauncher:
+        config:
+          k8sRunLauncher:
+            envConfigMaps:
+              - name: dagster-oso-extra-env
+            # runK8sConfig:
+            #   podSpecConfig:
+            #     tolerations:
+            #       - key: pool_type
+            #         effect: NoSchedule
+            #         operator: Equal
+            #         value: spot
+            #     nodeSelector:
+            #       pool_type: spot
       dagsterWebserver:
         envConfigMaps:
           - name: dagster-oso-extra-env
+        resources:
+          limits:
+            cpu: 150m
+            memory: 128Mi
+          requests:
+            cpu: 100m
+            memory: 128Mi
       dagsterDaemon:
         envConfigMaps:
           - name: dagster-oso-extra-env
+        resources:
+          limits:
+            cpu: 500m
+            memory: 512Mi
+          requests:
+            cpu: 400m
+            memory: 256Mi
   postRenderers:
     - kustomize:
         patches:
@@ -62,7 +90,7 @@ spec:
               apiVersion: apps/v1
               kind: Deployment
               metadata:
-                name: dagster-dagit
+                name: dagster-webserver
               spec:
                 template:
                   spec:

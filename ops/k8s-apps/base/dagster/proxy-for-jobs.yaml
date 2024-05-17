@@ -1,0 +1,19 @@
+apiVersion: cloudsql.cloud.google.com/v1
+kind: AuthProxyWorkload
+metadata:
+  name: dagster-job-cloudsql-proxy
+spec:
+  authProxyContainer:
+    resources:
+      requests:
+        cpu: "50m"
+        memory: "64Mi"
+  workloadSelector:
+    kind: "Job"
+    selector:
+      matchLabels:
+        app.kubernetes.io/name: dagster
+  instances:
+    - connectionString: "opensource-observer:us-central1:oso-psql"
+      portEnvName: "DAGSTER_PG_PORT"
+      hostEnvName: "DAGSTER_PG_HOST"

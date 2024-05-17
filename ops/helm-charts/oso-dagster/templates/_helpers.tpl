@@ -2,8 +2,10 @@
 Expand the name of the chart.
 */}}
 
+# Disable the pgisready check due to our use of cloudsql proxy injected into the
+pod.
 {{- define "dagster.postgresql.pgisready" -}}
-until pg_isready -h ${DAGSTER_PG_HOST} -p ${DAGSTER_PG_PORT} -U ${DAGSTER_PG_USER}; do echo waiting for database; sleep 2; done;
+sleep 5;
 {{- end }}
 
 {{- define "dagsterYaml.postgresql.config" }}

@@ -3,6 +3,7 @@
 # Declare variables to be passed into your templates.
 
 dagster:
+  nameOverride: dagster
   global:
     serviceAccountName: "staging-dagster"
   postgresql:
@@ -11,6 +12,7 @@ dagster:
   enableReadOnly: true
 
   dagsterWebserver:
+    nameOverride: webserver
     env:
       - name: DAGSTER_PG_HOST
         value: set-by-proxy-operator

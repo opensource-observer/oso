@@ -11,3 +11,11 @@ spec:
     dagster:
       global: 
         serviceAccountName: production-dagster
+      ingress:
+        enabled: true
+        ingressClassName: ingress-internal-cloudflare
+        dagsterWebserver:
+          host: admin-dagster.opensource.observer
+        readOnlyDagsterWebserver:
+          host: readonly-dagster.opensource.observer
+      
