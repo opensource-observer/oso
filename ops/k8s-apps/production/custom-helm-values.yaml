@@ -6,3 +6,8 @@ spec:
   values:
     configMap:
       secretPrefix: "gcp:secretmanager:production-dagster"
+    dagster:
+      global: 
+        serviceAccountName: production-dagster
+    global:
+      serviceAccountName: production-dagster
