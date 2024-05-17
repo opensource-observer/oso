@@ -4,6 +4,8 @@ metadata:
   name: dagster
 spec:
   values:
+    global:
+      serviceAccountName: base-dagster
     configMap:
       secretPrefix: "gcp:secretmanager:production-dagster"
     dagster:

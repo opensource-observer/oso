@@ -48,6 +48,8 @@ spec:
           - path: ./daemon-init-container.yaml
             target:
               kind: Deployment
+              name: dagster-daemon
           - path: ./webserver-init-container.yaml
             target:
               kind: Deployment
+              name: dagster-dagit
