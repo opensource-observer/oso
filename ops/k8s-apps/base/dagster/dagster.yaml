@@ -13,7 +13,6 @@ metadata:
   name: dagster
   namespace: base-dagster
 spec:
-  releaseName: dagster
   chart:
     spec:
       chart: ./ops/helm-charts/oso-dagster
