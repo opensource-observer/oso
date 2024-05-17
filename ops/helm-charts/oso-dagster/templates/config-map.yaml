@@ -4,6 +4,4 @@ metadata:
   name: {{ .Release.Name }}-oso-extra-env
 data:
   DAGSTER_PG_USER: {{ .Values.configMap.secretPrefix }}-{{ .Values.secretmanagerKeys.dbUser }}
-  DAGSTER_PG_HOST: {{ .Values.configMap.secretPrefix }}-{{ .Values.secretmanagerKeys.dbHost }}
   DAGSTER_PG_DB_NAME: {{ .Values.configMap.secretPrefix }}-{{ .Values.secretmanagerKeys.dbName }}
-  DAGSTER_PG_PORT: {{ .Values.configMap.secretPrefix }}-{{ .Values.secretmanagerKeys.dbPort }}

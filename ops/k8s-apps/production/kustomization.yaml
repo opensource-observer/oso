@@ -10,3 +10,12 @@ patches:
   - path: ./init-container.yaml
     target:
       type: Deployment
+patchesJson6902:
+  - target:
+      kind: Namespace
+      version: v1
+      name: base-dagster
+    patch: |-
+      - op: replace
+        path: /metadata/name
+        value: production-dagster

@@ -9,6 +9,20 @@ dagster:
     enabled: false
     postgresqlPassword: "gcp:secretmanager:dagster-db-password/versions/1"
   enableReadOnly: true
+
+  dagsterWebserver:
+    env:
+      - name: DAGSTER_PG_HOST
+        value: set-by-proxy-operator
+      - name: DAGSTER_PG_PORT
+        value: set-by-proxy-operator
+
+  dagsterDaemon:
+    env:
+      - name: DAGSTER_PG_HOST
+        value: set-by-proxy-operator
+      - name: DAGSTER_PG_PORT
+        value: set-by-proxy-operator
 configMap:
   name: "dagster-extra-env-config-map"
   secretPrefix: "gcp:secretmanager:dagster"
