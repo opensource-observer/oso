@@ -1,0 +1,40 @@
+[0m01:07:33  Running with dbt=1.7.9
+[0m01:07:33  Registered adapter: bigquery=1.7.6
+[0m01:07:33  Found 112 models, 33 sources, 0 exposures, 0 metrics, 463 macros, 0 groups, 0 semantic models
+[0m01:07:33  
+[0m01:07:34  Concurrency: 32 threads (target='production')
+[0m01:07:34  
+[0m01:07:34  Compiled node 'playground__ossd_collections' is:
+
+
+with  __dbt__cte__playground__project_filter as (
+
+
+SELECT * FROM UNNEST([
+  "gitcoin",
+  "opensource-observer",
+  "uniswap",
+  "velodrome",
+  "ethereum-attestation-service",
+  "zora",
+  "libp2p",
+  "rabbit-hole",
+  "safe-global",
+  "aave"
+]) as project_slug
+), filtered_collections as (
+  select distinct 
+    collections.collection_name as `name`, 
+    collections.sync_time as `sync_time`
+  from `opensource-observer`.`oso`.`stg_ossd__current_collections` as collections
+  cross join UNNEST(collections.projects) as project_name
+  inner join `opensource-observer`.`oso`.`stg_ossd__current_projects` as projects
+    on projects.project_name = project_name
+  where project_name IN (select * from __dbt__cte__playground__project_filter)
+)
+
+select collections.*
+from `opensource-observer`.`oso`.`collections_ossd` as collections
+inner join filtered_collections as filtered
+  on filtered.name = collections.name
+    and collections._cq_sync_time = filtered.sync_time

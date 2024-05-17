@@ -9,5 +9,3 @@ spec:
     dagster:
       global: 
         serviceAccountName: production-dagster
-    global:
-      serviceAccountName: production-dagster
