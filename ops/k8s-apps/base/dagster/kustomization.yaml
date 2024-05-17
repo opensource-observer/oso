@@ -4,3 +4,6 @@ namespace: base-dagster
 resources:
   - dagster.yaml
   - proxy.yaml
+patchesStrategicMerge:
+  - ./daemon-init-container.yaml
+  - ./webserver-init-container.yaml
