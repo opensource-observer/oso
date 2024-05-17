@@ -3,3 +3,4 @@ kind: Kustomization
 namespace: base-dagster
 resources:
   - dagster.yaml
+  - proxy.yaml
