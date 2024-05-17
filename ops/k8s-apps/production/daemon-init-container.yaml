@@ -1,0 +1,12 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dagster-daemon
+spec:
+  template:
+    spec:
+      initContainers:
+        - name: check-db-ready
+          envFrom:
+            - configMapRef:
+                name: dagster-oso-extra-env
