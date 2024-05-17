@@ -14,8 +14,8 @@ tag="$(git rev-parse HEAD)"
 build_base_image() {
     language="$1"
     tag="$2"
-    base_image="ghcr.io/opensource-observer/cloudquery-${language}-base:${tag}"
-    dockerfile_path="./docker/cloudquery-${language}-base.Dockerfile"
+    base_image="ghcr.io/opensource-observer/${language}-base:${tag}"
+    dockerfile_path="./docker/cloudquery/${language}-base.Dockerfile"
     docker build -t "${base_image}" -f "${dockerfile_path}" .
     echo $base_image
 }
@@ -36,7 +36,7 @@ for path in $ts_plugins; do
     docker build -t ${plugin_image} \
         --build-arg PLUGIN_NAME=${plugin_name} \
         --build-arg BASE_IMAGE=${ts_base_image} \
-        -f docker/cloudquery-ts.Dockerfile \
+        -f docker/cloudquery/ts.Dockerfile \
         .
     echo "Publishing the plugin to ${plugin_image}"
     docker push ${plugin_image}
@@ -60,7 +60,7 @@ for path in $python_plugins; do
         --build-arg PLUGIN_NAME=${plugin_name} \
         --build-arg PLUGIN_CMD=${plugin_cmd} \
         --build-arg BASE_IMAGE=${ts_base_image} \
-        -f docker/cloudquery-py.Dockerfile \
+        -f docker/cloudquery/py.Dockerfile \
         .
 
     echo "Publishing the plugin to ${plugin_image}"
