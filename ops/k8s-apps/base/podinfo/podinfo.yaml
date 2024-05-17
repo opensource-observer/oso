@@ -10,7 +10,7 @@ metadata:
 apiVersion: source.toolkit.fluxcd.io/v1
 kind: HelmRepository
 metadata:
-  name: base-podinfo
+  name: podinfo
   namespace: base-podinfo
 spec:
   interval: 5m
@@ -19,7 +19,7 @@ spec:
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: base-podinfo
+  name: podinfo
   namespace: base-podinfo
 spec:
   chart:
@@ -27,7 +27,7 @@ spec:
       chart: podinfo
       sourceRef:
         kind: HelmRepository
-        name: base-podinfo
+        name: podinfo
   interval: 50m
   install:
     remediation:
