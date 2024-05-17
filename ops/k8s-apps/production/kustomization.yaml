@@ -7,9 +7,6 @@ patches:
   - path: ./custom-helm-values.yaml
     target:
       type: HelmRelease
-patchesStrategicMerge:
-  - ./daemon-init-container.yaml
-  - ./webserver-init-container.yaml
 patchesJson6902:
   - target:
       kind: Namespace
