@@ -80,6 +80,10 @@ spec:
             envConfigMaps:
               - name: dagster-oso-extra-env
             port: 3030
+            dagsterApiGrpcArgs:
+              - "-m"
+              - "oso_dagster.definitions"
+
   postRenderers:
     - kustomize:
         patches:
