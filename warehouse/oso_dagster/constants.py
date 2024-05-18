@@ -4,7 +4,6 @@ from pathlib import Path
 import requests
 from dagster_dbt import DbtCliResource
 
-
 main_dbt_project_dir = Path(__file__).joinpath("..", "..", "..").resolve()
 main_dbt = DbtCliResource(project_dir=os.fspath(main_dbt_project_dir))
 
@@ -51,8 +50,12 @@ opensource_observer:
 
 def generate_profile_and_auth():
     profiles_path = os.path.expanduser("~/.dbt/profiles.yml")
+    Path(os.path.dirname(profiles_path)).mkdir(parents=True, exist_ok=True)
+
     service_account_path = os.path.expanduser("~/service-account.json")
-    print(f"writing dbt profile to ${profiles_path}")
+    Path(os.path.dirname(service_account_path)).mkdir(parents=True, exist_ok=True)
+
+    print(f"writing dbt profile to {profiles_path}")
 
     token_url = "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token"
     r = requests.get(token_url, allow_redirects=True)
