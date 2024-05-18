@@ -80,7 +80,6 @@ spec:
             envConfigMaps:
               - name: dagster-oso-extra-env
             port: 3030
-
   postRenderers:
     - kustomize:
         patches:
