@@ -12,26 +12,28 @@ RUN apt-get install -y curl && \
 RUN pip3.12 install poetry
 
 
-RUN mkdir -p /usr/bin/app && \
-    bash -c "mkdir -p /usr/bin/app/warehouse/{bq2cloudsql,oso_dagster,oso_lets_go,common}" && \
-    touch /usr/bin/app/warehouse/bq2cloudsql/__init__.py && \
-    touch /usr/bin/app/warehouse/bq2cloudsql/script.py && \
-    touch /usr/bin/app/warehouse/oso_dagster/__init__.py && \
-    touch /usr/bin/app/warehouse/oso_lets_go/__init__.py && \
-    touch /usr/bin/app/warehouse/oso_lets_go/wizard.py && \
-    touch /usr/bin/app/warehouse/common/__init__.py
+RUN mkdir -p /usr/src/app && \
+    bash -c "mkdir -p /usr/src/app/warehouse/{bq2cloudsql,oso_dagster,oso_lets_go,common}" && \
+    touch /usr/src/app/warehouse/bq2cloudsql/__init__.py && \
+    touch /usr/src/app/warehouse/bq2cloudsql/script.py && \
+    touch /usr/src/app/warehouse/oso_dagster/__init__.py && \
+    touch /usr/src/app/warehouse/oso_lets_go/__init__.py && \
+    touch /usr/src/app/warehouse/oso_lets_go/wizard.py && \
+    touch /usr/src/app/warehouse/common/__init__.py
 
-WORKDIR /usr/bin/app
-COPY pyproject.toml poetry.lock /usr/bin/app/
-COPY warehouse/cloudquery-example-plugin /usr/bin/app/warehouse/cloudquery-example-plugin
+WORKDIR /usr/src/app
+COPY pyproject.toml poetry.lock /usr/src/app/
+COPY warehouse/cloudquery-example-plugin /usr/src/app/warehouse/cloudquery-example-plugin
 
 # Install everything onto the system path
 RUN poetry config virtualenvs.create false && \
     poetry install
 
-RUN rm -r /usr/bin/app/warehouse 
+RUN rm -r /usr/src/app/warehouse 
 
-COPY . /usr/bin/app
+COPY . /usr/src/app
 
 RUN poetry config virtualenvs.create false && \
     poetry install
+
+ENTRYPOINT [ "dagster", "api", "grpc", "-p", "3030" ]
