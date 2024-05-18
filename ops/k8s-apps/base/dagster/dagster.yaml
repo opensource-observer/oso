@@ -86,8 +86,6 @@ spec:
             env:
               - name: DAGSTER_DBT_GENERATE_AND_AUTH_GCP
                 value: "1"
-              - name: DAGSTER_DBT_PARSE_PROJECT_ON_LOAD
-                value: "1"
             envConfigMaps:
               - name: dagster-oso-extra-env
             port: 3030
