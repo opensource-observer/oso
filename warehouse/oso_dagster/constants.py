@@ -58,12 +58,16 @@ def generate_profile_and_auth():
     print(f"writing dbt profile to {profiles_path}")
 
     token_url = "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token"
-    r = requests.get(token_url, allow_redirects=True)
+    r = requests.get(
+        token_url, allow_redirects=True, headers={"Metadata-Flavor": "Google"}
+    )
     open(service_account_path, "wb").write(r.content)
     project_id_url = (
         "http://metadata.google.internal/computeMetadata/v1/project/project-id"
     )
-    project_id = requests.get(project_id_url, allow_redirects=True).content
+    project_id = requests.get(
+        project_id_url, allow_redirects=True, headers={"Metadata-Flavor": "Google"}
+    ).content
     with open(profiles_path, "w") as f:
         f.write(
             generated_profiles_yml
