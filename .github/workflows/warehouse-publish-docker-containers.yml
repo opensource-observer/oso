@@ -35,6 +35,6 @@ jobs:
       - name: Package and publish cloudquery plugins
         run: bash .github/scripts/publish-cloudquery-plugins.sh
 
-      # - name: Package and publish other docker containers
-      #   run: bash .github/scripts/publish-docker-containers-plugins.sh
+      - name: Package and publish other docker containers
+        run: bash .github/scripts/publish-docker-containers.sh
         

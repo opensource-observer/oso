@@ -23,7 +23,7 @@ locals {
       auto_upgrade       = true
       service_account    = local.node_service_account_email
       preemptible        = false
-      initial_node_count = 1
+      initial_node_count = 0
     },
     # The spot pool is for workloads that need spot
     {
@@ -200,4 +200,21 @@ module "gke" {
   node_pools_taints = local.node_pool_taints
 
   node_pools_tags = local.node_pool_tags
+}
+
+# Dagster bucket. In the future it would make more sense that this is managed at
+# the application level (e.g. some kubernetes operator)
+resource "google_storage_bucket" "dagster" {
+  name          = "${var.dagster_bucket_prefix}-dagster-bucket"
+  location      = var.dagster_bucket_location
+  force_destroy = true
+
+  uniform_bucket_level_access = true
+}
+
+resource "google_storage_bucket_iam_member" "dagster_bucket_admin" {
+  for_each = toset(var.dagster_bucket_rw_principals)
+  bucket   = google_storage_bucket.dagster.name
+  role     = "roles/storage.admin"
+  member   = each.key
 }

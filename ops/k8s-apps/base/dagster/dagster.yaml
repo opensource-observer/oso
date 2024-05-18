@@ -70,6 +70,16 @@ spec:
           requests:
             cpu: 400m
             memory: 256Mi
+      dagster-user-deployments:
+        deployments:
+          - name: "oso-dagster-latest"
+            image:
+              repository: "ghcr.io/opensource-observer/dagster-dask:latest"
+              tag: latest
+              pullPolicy: Always
+            envConfigMaps:
+              - name: dagster-oso-extra-env
+
   postRenderers:
     - kustomize:
         patches:

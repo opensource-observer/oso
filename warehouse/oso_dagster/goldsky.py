@@ -670,7 +670,7 @@ class GoldskyAsset:
 
         await self.merge_worker_tables(context, workers)
 
-        await self.clean_working_destintation(context, workers)
+        await self.clean_working_destination(context, workers)
 
     def load_schema(self, queues: GoldskyQueues):
         item = queues.peek()
@@ -869,7 +869,7 @@ class GoldskyAsset:
             timeout=self.config.transform_timeout_seconds,
         )
 
-    async def clean_working_destintation(
+    async def clean_working_destination(
         self, context: AssetExecutionContext, workers: List[GoldskyWorker]
     ):
         # For now we just need to be careful not to run this in multiple processes
