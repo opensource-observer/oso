@@ -11,8 +11,8 @@ select
   e.project_id,
   t.time_interval,
   CONCAT(e.user_segment_type, '_TOTAL') as impact_metric,
-  SUM(e.amount) as amount
-from {{ ref('int_active_devs_monthly_to_project') }} as e
+  COUNT(distinct e.from_artifact_id) as amount
+from {{ ref('int_developer_status_monthly_by_project') }} as e
 cross join {{ ref('int_time_intervals') }} as t
 where
   DATE(e.bucket_month) >= DATE_TRUNC(t.start_date, month)

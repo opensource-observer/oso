@@ -1,21 +1,4 @@
-{# 
-  Summary GitHub metrics for a project:
-    - first_commit_date: The date of the first commit to the project
-    - last_commit_date: The date of the last commit to the project
-    - repos: The number of repositories in the project
-    - stars: The number of stars the project has
-    - forks: The number of forks the project has
-    - contributors: The number of contributors to the project
-    - contributors_6_months: The number of contributors to the project in the last 6 months
-    - new_contributors_6_months: The number of new contributors to the project in the last 6 months    
-    - avg_fulltime_devs_6_months: The number of full-time developers in the last 6 months
-    - avg_active_devs_6_months: The average number of active developers in the last 6 months
-    - commits_6_months: The number of commits to the project in the last 6 months
-    - issues_opened_6_months: The number of issues opened in the project in the last 6 months
-    - issues_closed_6_months: The number of issues closed in the project in the last 6 months
-    - pull_requests_opened_6_months: The number of pull requests opened in the project in the last 6 months
-    - pull_requests_merged_6_months: The number of pull requests merged in the project in the last 6 months
-#}
+{% set date_6_months = "DATE_TRUNC(CURRENT_DATE(), month) - INTERVAL 6 MONTH" %}
 
 with repos as (
   select
@@ -47,60 +30,67 @@ project_repos_summary as (
     on repos.project_id = int_projects.project_id
 ),
 
-n_cte as (
+dev_activity as (
   select
     project_id,
-    SUM(case when time_interval = 'ALL' then amount end) as contributors,
-    SUM(case when time_interval = '6M' then amount end)
-      as new_contributors_6_months
-  from {{ ref('int_pm_new_contribs') }}
-  group by project_id
-),
-
-c_cte as (
-  select
-    project_id,
-    SUM(amount) as contributors_6_months
-  from {{ ref('int_pm_contributors') }}
-  where time_interval = '6M'
-  group by project_id
-),
-
-d_cte as (
-  select
-    project_id,
-    SUM(
-      case
-        when impact_metric = 'FULL_TIME_DEV_TOTAL' then amount / 6
-        else 0
-      end
-    ) as avg_fts_6_months,
-    SUM(
-      case
-        when impact_metric = 'PART_TIME_DEV_TOTAL' then amount / 6
-        else 0
-      end
-    ) as avg_pts_6_months
-  from {{ ref('int_pm_dev_months') }}
-  where time_interval = '6M'
-  group by project_id
+    from_artifact_id,
+    bucket_month,
+    user_segment_type,
+    case
+      when DATE(bucket_month) >= {{ date_6_months }} then 1
+      else 0
+    end as is_last_6_months,
+    case
+      when
+        DATE(bucket_month) >= {{ date_6_months }}
+        and LAG(bucket_month) over (
+          partition by project_id, from_artifact_id
+          order by bucket_month
+        ) is null
+        then 1
+      else 0
+    end as is_new_last_6_months
+  from {{ ref('int_developer_status_monthly_by_project') }}
 ),
 
 contribs_cte as (
   select
-    n.project_id,
-    n.contributors,
-    n.new_contributors_6_months,
-    c.contributors_6_months,
-    d.avg_fts_6_months as avg_fulltime_devs_6_months,
-    d.avg_fts_6_months + d.avg_pts_6_months as avg_active_devs_6_months
-  from n_cte as n
-  left join c_cte as c
-    on
-      n.project_id = c.project_id
-  left join d_cte as d
-    on
-      n.project_id = d.project_id
+    project_id,
+    COUNT(distinct from_artifact_id) as contributors,
+    COUNT(
+      distinct
+      case
+        when is_last_6_months = 1 then from_artifact_id
+      end
+    ) as contributors_6_months,
+    COUNT(
+      distinct
+      case
+        when is_new_last_6_months = 1 then from_artifact_id
+      end
+    ) as new_contributors_6_months,
+    AVG(
+      case
+        when
+          is_last_6_months = 1
+          and user_segment_type = 'FULL_TIME_DEVELOPER'
+          then 1
+        else 0
+      end
+    ) as avg_fulltime_devs_6_months,
+    AVG(
+      case
+        when
+          is_last_6_months = 1
+          and user_segment_type in (
+            'FULL_TIME_DEVELOPER',
+            'PART_TIME_DEVELOPER'
+          ) then 1
+        else 0
+      end
+    ) as avg_active_devs_6_months
+  from dev_activity
+  group by project_id
 ),
 
 activity_cte as (
