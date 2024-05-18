@@ -11,6 +11,8 @@ RUN apt-get install -y curl && \
     python3.12 get-pip.py
 RUN pip3.12 install poetry
 
+ENV DAGSTER_DBT_PARSE_PROJECT_ON_LOAD=1
+ENV DAGSTER_DBT_GENERATE_AND_AUTH_GCP=1
 
 RUN mkdir -p /usr/src/app && \
     bash -c "mkdir -p /usr/src/app/warehouse/{bq2cloudsql,oso_dagster,oso_lets_go,common}" && \
