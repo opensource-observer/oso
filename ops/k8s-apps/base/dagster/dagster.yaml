@@ -58,11 +58,11 @@ spec:
           - name: dagster-oso-extra-env
         resources:
           limits:
-            cpu: 150m
-            memory: 128Mi
+            cpu: 500m
+            memory: 768Mi
           requests:
-            cpu: 100m
-            memory: 128Mi
+            cpu: 250m
+            memory: 512Mi
       dagsterDaemon:
         env:
           - name: DAGSTER_DBT_GENERATE_AND_AUTH_GCP
