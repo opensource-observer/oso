@@ -8,6 +8,21 @@ variable "cluster_name" {
   description = "Name for the gke cluster"
 }
 
+variable "dagster_bucket_prefix" {
+  type = string
+}
+
+variable "dagster_bucket_location" {
+  type    = string
+  default = "US"
+}
+
+variable "dagster_bucket_rw_principals" {
+  type        = list(string)
+  description = "List of principals to give rw on our data transfer bucket"
+  default     = []
+}
+
 variable "default_node_pool_cluster_zones" {
   type        = list(string)
   description = "The default node pool is intended to be standard vms (non-volatile). This should be a smaller set of cluster zones"

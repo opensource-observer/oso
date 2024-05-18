@@ -162,6 +162,19 @@ module "warehouse_cloudsql" {
   ]
 }
 
+resource "google_project_iam_member" "project" {
+  for_each = toset(var.additional_cloudsql_client_principals)
+  project  = data.google_project.project.project_id
+  role     = "roles/cloudsql.client"
+  member   = each.value
+
+  condition {
+    title       = "only_${local.dataset_id}_db_client"
+    description = "Restrict access to a database instance: ${local.cloudsql_name}"
+    expression  = "resource.name.startsWith(\"projects/${data.google_project.project.project_id}/instances/${local.cloudsql_name}\")"
+  }
+}
+
 ###
 # Add permissions for the cloudsql user to read from the bucket
 ###
