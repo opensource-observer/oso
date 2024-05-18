@@ -40,3 +40,4 @@ spec:
           region: us-central1
           project: opensource-observer
           port: 5432
+      

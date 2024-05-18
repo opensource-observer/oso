@@ -41,15 +41,15 @@ spec:
           k8sRunLauncher:
             envConfigMaps:
               - name: dagster-oso-extra-env
-            # runK8sConfig:
-            #   podSpecConfig:
-            #     tolerations:
-            #       - key: pool_type
-            #         effect: NoSchedule
-            #         operator: Equal
-            #         value: spot
-            #     nodeSelector:
-            #       pool_type: spot
+            runK8sConfig:
+              podSpecConfig:
+                tolerations:
+                  - key: pool_type
+                    effect: NoSchedule
+                    operator: Equal
+                    value: spot
+                nodeSelector:
+                  pool_type: spot
       dagsterWebserver:
         env:
           - name: DAGSTER_DBT_GENERATE_AND_AUTH_GCP
