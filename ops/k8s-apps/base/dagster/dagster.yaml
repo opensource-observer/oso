@@ -72,7 +72,7 @@ spec:
             memory: 256Mi
       dagster-user-deployments:
         deployments:
-          - name: "oso-dagster-latest"
+          - name: "oso-dagster"
             image:
               repository: "ghcr.io/opensource-observer/dagster-dask"
               tag: latest
