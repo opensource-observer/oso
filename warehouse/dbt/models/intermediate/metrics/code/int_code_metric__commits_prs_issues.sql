@@ -1,6 +1,5 @@
 select
   events.project_id,
-  events.event_source as network,
   time_intervals.time_interval,
   CONCAT(LOWER(events.event_type), '_count') as metric,
   SUM(events.amount) as amount
@@ -17,6 +16,5 @@ where
   )
 group by
   events.project_id,
-  events.event_source,
   time_intervals.time_interval,
   events.event_type
