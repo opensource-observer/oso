@@ -21,12 +21,12 @@ with user_txn_totals as (
     time_intervals.time_interval
 ),
 
-high_values as (
+high_activity as (
   select
     project_id,
     network,
     time_interval,
-    'high_value_address_count' as metric,
+    'high_activity_address_count' as metric,
     COUNT(distinct from_artifact_id) as amount
   from user_txn_totals
   where amount >= {{ high_activity_thresh }}
@@ -36,12 +36,12 @@ high_values as (
     time_interval
 ),
 
-low_values as (
+low_activity as (
   select
     project_id,
     network,
     time_interval,
-    'low_value_address_count' as metric,
+    'low_activity_address_count' as metric,
     COUNT(distinct from_artifact_id) as amount
   from user_txn_totals
   where
@@ -53,12 +53,12 @@ low_values as (
     time_interval
 ),
 
-medium_values as (
+medium_activity as (
   select
     project_id,
     network,
     time_interval,
-    'medium_value_address_count' as metric,
+    'medium_activity_address_count' as metric,
     COUNT(distinct from_artifact_id) as amount
   from user_txn_totals
   where
@@ -70,8 +70,8 @@ medium_values as (
     time_interval
 )
 
-select * from high_values
+select * from high_activity
 union all
-select * from low_values
+select * from low_activity
 union all
-select * from medium_values
+select * from medium_activity
