@@ -12,6 +12,9 @@ with metrics as (
   select * from {{ ref('int_onchain_metric__gas_fees') }}
   union all
   select *
+  from {{ ref('int_onchain_metric__days_since_first_transaction') }}
+  union all
+  select *
   from {{ ref('int_onchain_metric__high_low_activity_addresses') }}
   union all
   select *
@@ -33,12 +36,21 @@ aggs as (
     SUM(
       case
         when
+          metric = 'days_since_first_transaction'
+          and time_interval = 'ALL'
+          then amount
+        else 0
+      end
+    ) as days_since_first_transaction,
+    SUM(
+      case
+        when
           metric = 'active_contract_count'
           and time_interval = '90 DAYS'
           then amount
         else 0
       end
-    ) as contract_count,
+    ) as active_contract_count_90_days,
     SUM(
       case
         when
@@ -51,12 +63,30 @@ aggs as (
     SUM(
       case
         when
+          metric = 'transaction_count'
+          and time_interval = '6 MONTHS'
+          then amount
+        else 0
+      end
+    ) as transaction_count_6_months,
+    SUM(
+      case
+        when
           metric = 'gas_fees'
           and time_interval = 'ALL'
           then amount
         else 0
       end
-    ) as total_l2_gas,
+    ) as gas_fees_sum,
+    SUM(
+      case
+        when
+          metric = 'gas_fees'
+          and time_interval = '6 MONTHS'
+          then amount
+        else 0
+      end
+    ) as gas_fees_sum_6_months,
     SUM(
       case
         when
@@ -65,7 +95,16 @@ aggs as (
           then amount
         else 0
       end
-    ) as total_addresses,
+    ) as address_count,
+    SUM(
+      case
+        when
+          metric = 'address_count'
+          and time_interval = '90 DAYS'
+          then amount
+        else 0
+      end
+    ) as address_count_90_days,
     SUM(
       case
         when
@@ -74,7 +113,7 @@ aggs as (
           then amount
         else 0
       end
-    ) as new_addresses,
+    ) as new_address_count_90_days,
     SUM(
       case
         when
@@ -83,7 +122,7 @@ aggs as (
           then amount
         else 0
       end
-    ) as returning_addresses,
+    ) as returning_address_count_90_days,
     SUM(
       case
         when
@@ -92,7 +131,7 @@ aggs as (
           then amount
         else 0
       end
-    ) as high_activity_addresses,
+    ) as high_activity_address_count_90_days,
     SUM(
       case
         when
@@ -101,7 +140,7 @@ aggs as (
           then amount
         else 0
       end
-    ) as medium_activity_addresses,
+    ) as medium_activity_address_count_90_days,
     SUM(
       case
         when
@@ -110,7 +149,7 @@ aggs as (
           then amount
         else 0
       end
-    ) as low_activity_addresses,
+    ) as low_activity_address_count_90_days,
     SUM(
       case
         when
@@ -119,7 +158,7 @@ aggs as (
           then amount
         else 0
       end
-    ) as multi_project_addresses
+    ) as multi_project_address_count_90_days
   from metrics
   group by
     project_id,
@@ -131,6 +170,7 @@ select
   p.project_source,
   p.project_namespace,
   p.project_name,
+  p.display_name,
   p.project_id
 from
   {{ ref('projects_v1') }} as p
