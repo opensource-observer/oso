@@ -1,162 +1,149 @@
-{% set date_6_months = "DATE_TRUNC(CURRENT_DATE(), month) - INTERVAL 6 MONTH" %}
+with metrics as (
+  select * from {{ ref('int_code_metric__active_developers') }}
+  union all
+  select * from {{ ref('int_code_metric__commits_prs_issues') }}
+  union all
+  select * from {{ ref('int_code_metric__contributors') }}
+  union all
+  select * from {{ ref('int_code_metric__fulltime_developers_avg') }}
+  union all
+  select * from {{ ref('int_code_metric__new_contributors') }}
+),
 
-with repos as (
+aggs as (
+  select
+    project_id,
+    SUM(
+      case
+        when
+          metric = 'commit_code_count'
+          and time_interval = '6 MONTHS'
+          then amount
+        else 0
+      end
+    ) as commit_count_6_months,
+    SUM(
+      case
+        when
+          metric = 'pull_request_opened_count'
+          and time_interval = '6 MONTHS'
+          then amount
+        else 0
+      end
+    ) as opened_pull_request_count_6_months,
+    SUM(
+      case
+        when
+          metric = 'pull_request_merged_count'
+          and time_interval = '6 MONTHS'
+          then amount
+        else 0
+      end
+    ) as merged_pull_request_count_6_months,
+    SUM(
+      case
+        when
+          metric = 'issue_opened_count'
+          and time_interval = '6 MONTHS'
+          then amount
+        else 0
+      end
+    ) as opened_issue_count_6_months,
+    SUM(
+      case
+        when
+          metric = 'issue_closed_count'
+          and time_interval = '6 MONTHS'
+          then amount
+        else 0
+      end
+    ) as closed_issue_count_6_months,
+    SUM(
+      case
+        when
+          metric = 'active_developer_count'
+          and time_interval = '6 MONTHS'
+          then amount
+        else 0
+      end
+    ) as active_developer_count_6_months,
+    SUM(
+      case
+        when
+          metric = 'contributor_count'
+          and time_interval = 'ALL'
+          then amount
+        else 0
+      end
+    ) as contributor_count,
+    SUM(
+      case
+        when
+          metric = 'contributor_count'
+          and time_interval = '6 MONTHS'
+          then amount
+        else 0
+      end
+    ) as contributor_count_6_months,
+    SUM(
+      case
+        when
+          metric = 'new_contributor_count'
+          and time_interval = '6 MONTHS'
+          then amount
+        else 0
+      end
+    ) as new_contributor_count_6_months,
+    SUM(
+      case
+        when
+          metric = 'fulltime_developer_avg'
+          and time_interval = '6 MONTHS'
+          then amount
+        else 0
+      end
+    ) as fulltime_developer_avg_6_months
+  from metrics
+  group by project_id
+),
+
+repos as (
   select
     project_id,
     MIN(first_commit_time) as first_commit_date,
     MAX(last_commit_time) as last_commit_date,
-    COUNT(distinct artifact_id) as repositories,
-    SUM(star_count) as stars,
-    SUM(fork_count) as forks
+    COUNT(distinct artifact_id) as repository_count,
+    SUM(star_count) as star_count,
+    SUM(fork_count) as fork_count
   from {{ ref('int_repo_metrics_by_project') }}
   --WHERE r.is_fork = false
-  group by project_id
-),
-
-project_repos_summary as (
-  select
-    repos.project_id,
-    repos.first_commit_date,
-    repos.last_commit_date,
-    repos.repositories,
-    repos.stars,
-    repos.forks,
-    int_projects.project_source,
-    int_projects.project_namespace,
-    int_projects.project_name,
-    int_projects.display_name
-  from repos
-  left join {{ ref('int_projects') }}
-    on repos.project_id = int_projects.project_id
-),
-
-dev_activity as (
-  select
-    project_id,
-    from_artifact_id,
-    bucket_month,
-    user_segment_type,
-    case
-      when DATE(bucket_month) >= {{ date_6_months }} then 1
-      else 0
-    end as is_last_6_months,
-    case
-      when
-        DATE(bucket_month) >= {{ date_6_months }}
-        and LAG(bucket_month) over (
-          partition by project_id, from_artifact_id
-          order by bucket_month
-        ) is null
-        then 1
-      else 0
-    end as is_new_last_6_months
-  from {{ ref('int_developer_status_monthly_by_project') }}
-),
-
-contribs_cte as (
-  select
-    project_id,
-    COUNT(distinct from_artifact_id) as contributors,
-    COUNT(
-      distinct
-      case
-        when is_last_6_months = 1 then from_artifact_id
-      end
-    ) as contributors_6_months,
-    COUNT(
-      distinct
-      case
-        when is_new_last_6_months = 1 then from_artifact_id
-      end
-    ) as new_contributors_6_months,
-    AVG(
-      case
-        when
-          is_last_6_months = 1
-          and user_segment_type = 'FULL_TIME_DEVELOPER'
-          then 1
-        else 0
-      end
-    ) as avg_fulltime_devs_6_months,
-    AVG(
-      case
-        when
-          is_last_6_months = 1
-          and user_segment_type in (
-            'FULL_TIME_DEVELOPER',
-            'PART_TIME_DEVELOPER'
-          ) then 1
-        else 0
-      end
-    ) as avg_active_devs_6_months
-  from dev_activity
-  group by project_id
-),
-
-activity_cte as (
-  select
-    project_id,
-    SUM(
-      case
-        when event_type = 'COMMIT_CODE' then amount
-      end
-    ) as commits_6_months,
-    SUM(
-      case
-        when event_type = 'ISSUE_OPENED' then amount
-      end
-    ) as issues_opened_6_months,
-    SUM(
-      case
-        when event_type = 'ISSUE_CLOSED' then amount
-      end
-    ) as issues_closed_6_months,
-    SUM(
-      case
-        when event_type = 'PULL_REQUEST_OPENED' then amount
-      end
-    ) as pull_requests_opened_6_months,
-    SUM(
-      case
-        when event_type = 'PULL_REQUEST_MERGED' then amount
-      end
-    ) as pull_requests_merged_6_months
-  from {{ ref('int_events_daily_to_project') }}
-  where
-    event_source = 'GITHUB'
-    and event_type in (
-      'COMMIT_CODE',
-      'ISSUE_OPENED',
-      'ISSUE_CLOSED',
-      'PULL_REQUEST_OPENED',
-      'PULL_REQUEST_MERGED'
-    )
-    and DATE_DIFF(CURRENT_DATE(), DATE(bucket_day), month) <= 6
   group by project_id
 )
 
 select
-  p.project_id,
-  p.project_source,
-  p.project_namespace,
-  p.project_name,
-  p.first_commit_date,
-  p.last_commit_date,
-  p.repositories,
-  p.stars,
-  p.forks,
-  c.contributors,
-  c.contributors_6_months,
-  c.new_contributors_6_months,
-  c.avg_fulltime_devs_6_months,
-  c.avg_active_devs_6_months,
-  a.commits_6_months,
-  a.issues_opened_6_months,
-  a.issues_closed_6_months,
-  a.pull_requests_opened_6_months,
-  a.pull_requests_merged_6_months
-from project_repos_summary as p
-left join contribs_cte as c
-  on p.project_id = c.project_id
-left join activity_cte as a
-  on p.project_id = a.project_id
+  int_projects.project_id,
+  int_projects.project_source,
+  int_projects.project_namespace,
+  int_projects.project_name,
+  int_projects.display_name,
+  repos.first_commit_date,
+  repos.last_commit_date,
+  repos.repository_count,
+  repos.star_count,
+  repos.fork_count,
+  aggs.contributor_count,
+  aggs.contributor_count_6_months,
+  aggs.new_contributor_count_6_months,
+  aggs.fulltime_developer_avg_6_months,
+  aggs.active_developer_count_6_months,
+  aggs.commit_count_6_months,
+  aggs.opened_pull_request_count_6_months,
+  aggs.merged_pull_request_count_6_months,
+  aggs.opened_issue_count_6_months,
+  aggs.closed_issue_count_6_months,
+  'GITHUB' as repository_source
+from {{ ref('int_projects') }}
+left join aggs
+  on int_projects.project_id = aggs.project_id
+left join repos
+  on int_projects.project_id = repos.project_id

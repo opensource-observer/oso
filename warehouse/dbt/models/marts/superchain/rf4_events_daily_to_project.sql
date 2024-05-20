@@ -50,3 +50,5 @@ left join {{ ref('projects_v1') }}
   on events.project_id = projects_v1.project_id
 left join {{ ref('rf4_trusted_users') }}
   on from_artifacts.artifact_name = rf4_trusted_users.artifact_name
+where
+  to_artifacts.artifact_type = 'CONTRACT'

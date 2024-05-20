@@ -19,7 +19,7 @@ with user_data as (
     int_addresses_daily_activity.amount,
     int_time_intervals.time_interval,
     int_time_intervals.start_date,
-    DATE(int_addresses_daily_activity.bucket_day) as bucket_day
+    int_addresses_daily_activity.bucket_day
   from {{ ref('int_addresses_daily_activity') }}
   left join {{ ref('int_addresses_to_project') }}
     on
