@@ -5,7 +5,8 @@ with metrics as (
   union all
   select * from {{ ref('int_code_metric__contributors') }}
   union all
-  select * from {{ ref('int_code_metric__fulltime_developers_avg') }}
+  select *
+  from {{ ref('int_code_metric__fulltime_developers_average') }}
   union all
   select * from {{ ref('int_code_metric__new_contributors') }}
 ),
@@ -13,6 +14,7 @@ with metrics as (
 aggs as (
   select
     project_id,
+    event_source,
     SUM(
       case
         when
@@ -97,19 +99,22 @@ aggs as (
     SUM(
       case
         when
-          metric = 'fulltime_developer_avg'
+          metric = 'fulltime_developer_average'
           and time_interval = '6 MONTHS'
           then amount
         else 0
       end
-    ) as fulltime_developer_avg_6_months
+    ) as fulltime_developer_average_6_months
   from metrics
-  group by project_id
+  group by
+    project_id,
+    event_source
 ),
 
 repos as (
   select
     project_id,
+    artifact_namespace as event_source,
     MIN(first_commit_time) as first_commit_date,
     MAX(last_commit_time) as last_commit_date,
     COUNT(distinct artifact_id) as repository_count,
@@ -117,33 +122,58 @@ repos as (
     SUM(fork_count) as fork_count
   from {{ ref('int_repo_metrics_by_project') }}
   --WHERE r.is_fork = false
-  group by project_id
+  group by
+    project_id,
+    artifact_namespace
+),
+
+code_metrics as (
+  select
+    repos.*,
+    aggs.* except (project_id, event_source)
+  from repos
+  left join aggs
+    on
+      repos.project_id = aggs.project_id
+      and repos.event_source = aggs.event_source
+),
+
+project_metadata as (
+  select
+    project_id,
+    project_source,
+    project_namespace,
+    project_name,
+    display_name,
+    'GITHUB' as event_source
+  from {{ ref('int_projects') }}
+
 )
 
 select
-  int_projects.project_id,
-  int_projects.project_source,
-  int_projects.project_namespace,
-  int_projects.project_name,
-  int_projects.display_name,
-  repos.first_commit_date,
-  repos.last_commit_date,
-  repos.repository_count,
-  repos.star_count,
-  repos.fork_count,
-  aggs.contributor_count,
-  aggs.contributor_count_6_months,
-  aggs.new_contributor_count_6_months,
-  aggs.fulltime_developer_avg_6_months,
-  aggs.active_developer_count_6_months,
-  aggs.commit_count_6_months,
-  aggs.opened_pull_request_count_6_months,
-  aggs.merged_pull_request_count_6_months,
-  aggs.opened_issue_count_6_months,
-  aggs.closed_issue_count_6_months,
-  'GITHUB' as repository_source
-from {{ ref('int_projects') }}
-left join aggs
-  on int_projects.project_id = aggs.project_id
-left join repos
-  on int_projects.project_id = repos.project_id
+  project_metadata.project_id,
+  project_metadata.project_source,
+  project_metadata.project_namespace,
+  project_metadata.project_name,
+  project_metadata.display_name,
+  project_metadata.event_source,
+  code_metrics.first_commit_date,
+  code_metrics.last_commit_date,
+  code_metrics.repository_count,
+  code_metrics.star_count,
+  code_metrics.fork_count,
+  code_metrics.contributor_count,
+  code_metrics.contributor_count_6_months,
+  code_metrics.new_contributor_count_6_months,
+  code_metrics.fulltime_developer_average_6_months,
+  code_metrics.active_developer_count_6_months,
+  code_metrics.commit_count_6_months,
+  code_metrics.opened_pull_request_count_6_months,
+  code_metrics.merged_pull_request_count_6_months,
+  code_metrics.opened_issue_count_6_months,
+  code_metrics.closed_issue_count_6_months
+from project_metadata
+left join code_metrics
+  on
+    project_metadata.project_id = code_metrics.project_id
+    and project_metadata.event_source = code_metrics.event_source
