@@ -385,8 +385,8 @@ importers:
         specifier: ^3.1.0
         version: 3.1.0
       oss-directory:
-        specifier: ^0.0.10
-        version: 0.0.10(ts-node@10.9.1(@types/node@20.11.17)(typescript@5.3.3))(typescript@5.3.3)
+        specifier: ^0.0.12
+        version: 0.0.12(ts-node@10.9.1(@types/node@20.11.17)(typescript@5.3.3))(typescript@5.3.3)
       tmp-promise:
         specifier: ^3.0.3
         version: 3.0.3
@@ -8875,11 +8875,6 @@ packages:
     resolution: {integrity: sha512-D2FR03Vir7FIu45XBY20mTb+/ZSWB00sjU9jdQXt83gDrI4Ztz5Fs7/yy74g2N5SVQY4xY1qDr4rNddwYRVX0g==}
     engines: {node: '>=0.10.0'}
 
-  oss-directory@0.0.10:
-    resolution: {integrity: sha512-pkfyLDAAQ2/ATda1cBvVxQbdGCsCc2D4ZvBPaladQYKnDjtIOmV/l4eks9zSGyLF1NlflHdfp89DVBniySTo4w==}
-    engines: {node: '>=16'}
-    hasBin: true
-
   oss-directory@0.0.12:
     resolution: {integrity: sha512-mJQPVY5+St8LsKPeJ/IRZMPJD2xB+ZNbjekGOSFfUN/gd1+cOad6rvOJzr9vpIN6m8pLoU7ZwffKc/INs+EUdw==}
     engines: {node: '>=16'}
@@ -13466,7 +13461,7 @@ snapshots:
 
   '@docusaurus/react-loadable@5.5.2(react@18.2.0)':
     dependencies:
-      '@types/react': 18.2.64
+      '@types/react': 18.2.79
       prop-types: 15.8.1
       react: 18.2.0
 
@@ -17283,7 +17278,7 @@ snapshots:
 
   '@types/hoist-non-react-statics@3.3.5':
     dependencies:
-      '@types/react': 18.2.48
+      '@types/react': 18.2.79
       hoist-non-react-statics: 3.3.2
 
   '@types/html-minifier-terser@6.1.0': {}
@@ -17430,7 +17425,7 @@ snapshots:
   '@types/react-router@5.1.20':
     dependencies:
       '@types/history': 4.7.11
-      '@types/react': 18.2.64
+      '@types/react': 18.2.79
 
   '@types/react-transition-group@4.4.10':
     dependencies:
@@ -23444,7 +23439,7 @@ snapshots:
 
   os-tmpdir@1.0.2: {}
 
-  oss-directory@0.0.10(ts-node@10.9.1(@types/node@20.11.17)(typescript@5.3.3))(typescript@5.3.3):
+  oss-directory@0.0.12(ts-node@10.9.1(@types/node@20.11.17)(typescript@5.3.3))(typescript@5.3.3):
     dependencies:
       '@ethereum-attestation-service/eas-sdk': 1.4.0(ts-node@10.9.1(@types/node@20.11.17)(typescript@5.3.3))(typescript@5.3.3)
       ajv: 8.12.0
