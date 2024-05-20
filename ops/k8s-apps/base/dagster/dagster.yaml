@@ -41,26 +41,32 @@ spec:
           k8sRunLauncher:
             envConfigMaps:
               - name: dagster-oso-extra-env
-            # runK8sConfig:
-            #   podSpecConfig:
-            #     tolerations:
-            #       - key: pool_type
-            #         effect: NoSchedule
-            #         operator: Equal
-            #         value: spot
-            #     nodeSelector:
-            #       pool_type: spot
+            runK8sConfig:
+              podSpecConfig:
+                tolerations:
+                  - key: pool_type
+                    effect: NoSchedule
+                    operator: Equal
+                    value: spot
+                nodeSelector:
+                  pool_type: spot
       dagsterWebserver:
+        env:
+          - name: DAGSTER_DBT_GENERATE_AND_AUTH_GCP
+            value: "1"
         envConfigMaps:
           - name: dagster-oso-extra-env
         resources:
           limits:
-            cpu: 150m
-            memory: 128Mi
+            cpu: 500m
+            memory: 768Mi
           requests:
-            cpu: 100m
-            memory: 128Mi
+            cpu: 250m
+            memory: 512Mi
       dagsterDaemon:
+        env:
+          - name: DAGSTER_DBT_GENERATE_AND_AUTH_GCP
+            value: "1"
         envConfigMaps:
           - name: dagster-oso-extra-env
         resources:
@@ -70,6 +76,23 @@ spec:
           requests:
             cpu: 400m
             memory: 256Mi
+      dagster-user-deployments:
+        deployments:
+          - name: "oso-dagster"
+            image:
+              repository: "ghcr.io/opensource-observer/dagster-dask"
+              tag: latest
+              pullPolicy: Always
+            env:
+              - name: DAGSTER_DBT_GENERATE_AND_AUTH_GCP
+                value: "1"
+            envConfigMaps:
+              - name: dagster-oso-extra-env
+            port: 3030
+            dagsterApiGrpcArgs:
+              - "-m"
+              - "oso_dagster.definitions"
+
   postRenderers:
     - kustomize:
         patches:
