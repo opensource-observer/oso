@@ -36,7 +36,8 @@ class GoldskyConfig:
     source_name: str
     destination_table_name: str
 
-    pointer_size: int = int(os.environ.get("GOLDSKY_CHECKPOINT_SIZE", "20000"))
+    # Maximum number of objects we can load into a load job is 10000 so the largest this can be is 10000
+    pointer_size: int = int(os.environ.get("GOLDSKY_CHECKPOINT_SIZE", "10000"))
 
     max_objects_to_load: int = 200_000
 
