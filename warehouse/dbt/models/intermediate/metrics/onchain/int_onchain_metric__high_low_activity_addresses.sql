@@ -39,7 +39,7 @@ high_activity as (
 low_activity as (
   select
     project_id,
-    network,
+    event_source,
     time_interval,
     'low_activity_address_count' as metric,
     COUNT(distinct from_artifact_id) as amount
@@ -49,14 +49,14 @@ low_activity as (
     and amount >= {{ low_activity_thresh }}
   group by
     project_id,
-    network,
+    event_source,
     time_interval
 ),
 
 medium_activity as (
   select
     project_id,
-    network,
+    event_source,
     time_interval,
     'medium_activity_address_count' as metric,
     COUNT(distinct from_artifact_id) as amount
@@ -66,7 +66,7 @@ medium_activity as (
     and amount >= {{ med_activity_thresh }}
   group by
     project_id,
-    network,
+    event_source,
     time_interval
 )
 
