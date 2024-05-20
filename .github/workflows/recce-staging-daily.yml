@@ -15,7 +15,6 @@ env:
   DBT_PROFILES_DIR: ./
   DBT_GOOGLE_PROJECT: ${{ vars.DBT_GOOGLE_PROJECT }}
   DBT_GOOGLE_DATASET: ${{ vars.DBT_GOOGLE_DATASET }}
-  DBT_GOOGLE_DEV_DATASET: ${{ vars.DBT_GOOGLE_DEV_DATASET }}
   DBT_GOOGLE_KEYFILE: /tmp/google/google-service-account.json
   PACKAGES_YAML: ${{ vars.PACKAGES_YAML }}
   KEYFILE_CONTENTS: ${{ secrets.KEYFILE_CONTENTS }}
@@ -27,8 +26,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
       
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -54,10 +51,8 @@ jobs:
       - name: Prepare dbt Base environment
         run: |
           source $(poetry env info --path)/bin/activate
-          git checkout ${{ github.event.pull_request.base.sha }}
           dbt deps
-          dbt seed --target ${{ env.DBT_BASE_TARGET }}
-          dbt run --target ${{ env.DBT_BASE_TARGET }}
+          dbt build --target ${{ env.DBT_BASE_TARGET }}
           dbt docs generate --target ${{ env.DBT_BASE_TARGET }}
         env:
           DBT_BASE_TARGET: "playground"
