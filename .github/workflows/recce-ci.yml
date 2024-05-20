@@ -3,6 +3,8 @@ name: OSO Recce CI
 on:
   pull_request:
     branches: [main, dev]
+    paths:
+      - warehouse/dbt/**
 
 env:
   # dbt env variables used in your dbt profiles.yml
