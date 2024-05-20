@@ -46,6 +46,7 @@ select
   int_artifacts_by_project.artifact_id,
   int_artifacts_by_project.artifact_namespace,
   int_artifacts_by_project.artifact_name,
+  int_artifacts_by_project.artifact_source,
   repo_snapshot.is_fork,
   repo_snapshot.fork_count,
   repo_snapshot.star_count,

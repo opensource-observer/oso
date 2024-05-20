@@ -1,5 +1,6 @@
 select
   events.project_id,
+  events.event_source,
   time_intervals.time_interval,
   'contributor_count' as metric,
   COUNT(distinct events.from_artifact_id) as amount
@@ -14,4 +15,5 @@ where
   and events.bucket_day >= time_intervals.start_date
 group by
   events.project_id,
+  events.event_source,
   time_intervals.time_interval

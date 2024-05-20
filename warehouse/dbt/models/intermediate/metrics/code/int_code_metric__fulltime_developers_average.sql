@@ -3,6 +3,7 @@
 with dev_stats as (
   select
     events.project_id,
+    events.event_source,
     time_intervals.time_interval,
     events.from_artifact_id,
     TIMESTAMP_TRUNC(events.bucket_day, month) as bucket_month,
@@ -14,6 +15,7 @@ with dev_stats as (
     and events.bucket_day >= time_intervals.start_date
   group by
     events.project_id,
+    events.event_source,
     time_intervals.time_interval,
     events.from_artifact_id,
     TIMESTAMP_TRUNC(events.bucket_day, month)
@@ -21,8 +23,9 @@ with dev_stats as (
 
 select
   project_id,
+  event_source,
   time_interval,
-  'fulltime_developer_avg' as metric,
+  'fulltime_developer_average' as metric,
   (
     COUNT(distinct from_artifact_id)
     / COUNT(distinct bucket_month)
@@ -31,4 +34,5 @@ from dev_stats
 where amount >= {{ fulltime_dev_days }}
 group by
   project_id,
+  event_source,
   time_interval

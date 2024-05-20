@@ -1,6 +1,6 @@
 select
   events.project_id,
-  events.event_source as network,
+  events.event_source,
   time_intervals.time_interval,
   'days_since_first_transaction' as metric,
   MAX(
