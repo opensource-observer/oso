@@ -1043,6 +1043,6 @@ class GoldskyAsset:
                 )
 
         for worker, queue in queues.worker_queues():
-            context.log.debug(f"Worker[{worker}] queue size: {queue.len()}")
+            context.log.info(f"Worker[{worker}] queue size: {queue.len()}")
 
         return (worker_status, queues)
