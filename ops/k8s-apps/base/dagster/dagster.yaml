@@ -28,12 +28,12 @@ spec:
     # For now let's ignore debug logs unless things become a problem. We need to
     # configure stdout logging and have the dagster logging handler ignore debug
     # log
-    pythonLogs:
-      pythonLogLevel: "INFO"
 
     global:
       serviceAccountName: base-dagster
     dagster:
+      pythonLogs:
+        pythonLogLevel: "INFO"
       nameOverride: "dagster"
       ingress:
         enabled: true
