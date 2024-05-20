@@ -121,10 +121,11 @@ repos as (
 )
 
 select
-  projects_v1.project_id,
-  projects_v1.project_source,
-  projects_v1.project_namespace,
-  projects_v1.project_name,
+  int_projects.project_id,
+  int_projects.project_source,
+  int_projects.project_namespace,
+  int_projects.project_name,
+  int_projects.display_name,
   repos.first_commit_date,
   repos.last_commit_date,
   repos.repository_count,
@@ -140,8 +141,8 @@ select
   aggs.merged_pull_request_count_6_months,
   aggs.opened_issue_count_6_months,
   aggs.closed_issue_count_6_months
-from {{ ref('projects_v1') }}
+from {{ ref('int_projects') }}
 left join aggs
-  on projects_v1.project_id = aggs.project_id
+  on int_projects.project_id = aggs.project_id
 left join repos
-  on projects_v1.project_id = repos.project_id
+  on int_projects.project_id = repos.project_id

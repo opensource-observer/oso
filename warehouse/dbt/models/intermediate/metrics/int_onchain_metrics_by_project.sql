@@ -167,12 +167,12 @@ aggs as (
 
 select
   aggs.* except (project_id),
-  p.project_source,
-  p.project_namespace,
-  p.project_name,
-  p.display_name,
-  p.project_id
+  int_projects.project_source,
+  int_projects.project_namespace,
+  int_projects.project_name,
+  int_projects.display_name,
+  int_projects.project_id
 from
-  {{ ref('projects_v1') }} as p
+  {{ ref('int_projects') }}
 left join aggs
-  on p.project_id = aggs.project_id
+  on int_projects.project_id = aggs.project_id
