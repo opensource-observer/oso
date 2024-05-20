@@ -92,6 +92,9 @@ const getRepositories = async (
     newColumn("license_name", {
       notNull: false,
     }),
+    newColumn("language", {
+      notNull: false,
+    }),
   ];
 
   const tableResolver: TableResolver = async (clientMeta, parent, stream) => {
@@ -128,6 +131,7 @@ const getRepositories = async (
           license_spdx_id:
             repo.license.spdxId == "" ? null : repo.license.spdxId,
           license_name: repo.license.name == "" ? null : repo.license.name,
+          language: repo.language,
         };
         stream.write(record);
       }
