@@ -1,0 +1,71 @@
+name: OSO Recce Staging CI
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 18 * * *' # run at 2 AM (UTC + 8) everyday
+  pull_request:
+    types: [closed]
+    branches: [main, dev]
+    paths:
+      - warehouse/dbt/**
+
+env:
+  # dbt env variables used in your dbt profiles.yml
+  DBT_PROFILES_DIR: ./
+  DBT_GOOGLE_PROJECT: ${{ vars.DBT_GOOGLE_PROJECT }}
+  DBT_GOOGLE_DATASET: ${{ vars.DBT_GOOGLE_DATASET }}
+  DBT_GOOGLE_DEV_DATASET: ${{ vars.DBT_GOOGLE_DEV_DATASET }}
+  DBT_GOOGLE_KEYFILE: /tmp/google/google-service-account.json
+  PACKAGES_YAML: ${{ vars.PACKAGES_YAML }}
+  KEYFILE_CONTENTS: ${{ secrets.KEYFILE_CONTENTS }}
+
+jobs:
+  prepare-recce-staging-env:
+    name: Prepare Recce staging env
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.12.x"
+      
+      - name: Install dependencies
+        run: |
+          pipx install poetry==1.7.1
+          poetry install
+          source $(poetry env info --path)/bin/activate
+          which dbt
+      
+      - name: Add packages.yml file
+        run: |
+          echo '${{ vars.PACKAGES_YAML }}' > packages.yml
+      
+      - name: Prep Google keyfile
+        run: | 
+          mkdir -p "$(dirname $DBT_GOOGLE_KEYFILE)" 
+          echo "$KEYFILE_CONTENTS" > $DBT_GOOGLE_KEYFILE
+      
+      - name: Prepare dbt Base environment
+        run: |
+          source $(poetry env info --path)/bin/activate
+          git checkout ${{ github.event.pull_request.base.sha }}
+          dbt deps
+          dbt seed --target ${{ env.DBT_BASE_TARGET }}
+          dbt run --target ${{ env.DBT_BASE_TARGET }}
+          dbt docs generate --target ${{ env.DBT_BASE_TARGET }}
+        env:
+          DBT_BASE_TARGET: "playground"
+      
+      - name: Archive DBT artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dbt-artifacts
+          path: |
+            target/manifest.json
+            target/catalog.json
