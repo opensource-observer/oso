@@ -178,6 +178,7 @@ export interface Repository {
     name: string;
     spdxId: string;
   };
+  language: string;
 }
 
 export type FullRepository = Repository & {
@@ -247,6 +248,7 @@ export async function getOwnerReposRest(
           spdxId: r.license?.spdx_id || "",
           name: r.license?.name || "",
         },
+        language: r.language || "",
       };
     });
   } catch (err) {
@@ -275,6 +277,7 @@ export async function getOwnerReposRest(
             spdxId: r.license?.spdx_id || "",
             name: r.license?.name || "",
           },
+          language: r.language || "",
         };
       });
     } catch (tryUserErr) {
@@ -337,6 +340,7 @@ function restRepoDataToFullRepository(r: RestRepoData): FullRepository {
       spdxId: r.license?.spdx_id || "",
       name: r.license?.name || "",
     },
+    language: r.language || "",
   };
 }
 

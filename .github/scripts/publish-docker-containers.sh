@@ -1,5 +1,5 @@
 #!/bin/bash
-set -euo pipefail
+set -euxo pipefail
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd "${SCRIPT_DIR}/../../"
@@ -22,8 +22,8 @@ for path in $images_to_build; do
         -t ${latest_image} \
         --label "org.opencontainers.image.source=https://github.com/opensource-observer/oso" \
         --label "observer.opensource.oso.sha=${tag}" \
-        --build-arg IMAGE_NAME=${image_name}
-        -f docker/images/${IMAGE_NAME} \
+        --build-arg IMAGE_NAME=${image_name} \
+        -f docker/images/${image_name}/Dockerfile \
         .
     echo "Publishing the image to ${sha_image}"
     docker push "${sha_image}"

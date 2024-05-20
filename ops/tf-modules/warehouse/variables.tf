@@ -31,6 +31,12 @@ variable "cloudsql_name" {
   description = "CloudSQL instance name"
 }
 
+variable "additional_cloudsql_client_principals" {
+  type        = list(string)
+  description = "List of principals to give client access to the cloudsql instance"
+  default     = []
+}
+
 variable "bucket_rw_principals" {
   type        = list(string)
   description = "List of principals to give rw on our data transfer bucket"

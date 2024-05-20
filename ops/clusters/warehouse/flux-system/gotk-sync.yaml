@@ -6,9 +6,9 @@ metadata:
   name: flux-system
   namespace: flux-system
 spec:
-  interval: 1m
+  interval: 15s
   ref:
-    branch: main
+    branch: ravenac95/test-flux-config
   secretRef:
     name: flux-system
   url: https://github.com/opensource-observer/oso.git
