@@ -10,7 +10,7 @@ select
   project_namespace,
   project_name,
   display_name,
-  network,
+  event_source,
   days_since_first_transaction,
   active_contract_count_90_days,
   transaction_count,

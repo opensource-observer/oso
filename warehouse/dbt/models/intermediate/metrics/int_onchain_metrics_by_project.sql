@@ -32,7 +32,7 @@ with metrics as (
 aggs as (
   select
     project_id,
-    network,
+    event_source,
     SUM(
       case
         when
@@ -162,7 +162,7 @@ aggs as (
   from metrics
   group by
     project_id,
-    network
+    event_source
 )
 
 select

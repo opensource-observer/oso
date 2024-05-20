@@ -1,6 +1,6 @@
 select
   events.project_id,
-  events.event_source as network,
+  events.event_source,
   time_intervals.time_interval,
   'transaction_count' as metric,
   SUM(events.amount) as amount

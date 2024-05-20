@@ -1,6 +1,6 @@
 select
   events.project_id,
-  events.event_source as network,
+  events.event_source,
   time_intervals.time_interval,
   'active_contract_count' as metric,
   COUNT(distinct events.to_artifact_id) as amount

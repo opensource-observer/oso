@@ -5,7 +5,7 @@
 with user_txn_totals as (
   select
     events.from_artifact_id,
-    events.event_source as network,
+    events.event_source,
     events.project_id,
     time_intervals.time_interval,
     SUM(events.amount) as amount
@@ -24,7 +24,7 @@ with user_txn_totals as (
 high_activity as (
   select
     project_id,
-    network,
+    event_source,
     time_interval,
     'high_activity_address_count' as metric,
     COUNT(distinct from_artifact_id) as amount
@@ -32,7 +32,7 @@ high_activity as (
   where amount >= {{ high_activity_thresh }}
   group by
     project_id,
-    network,
+    event_source,
     time_interval
 ),
 
