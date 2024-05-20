@@ -140,7 +140,8 @@ select
   aggs.opened_pull_request_count_6_months,
   aggs.merged_pull_request_count_6_months,
   aggs.opened_issue_count_6_months,
-  aggs.closed_issue_count_6_months
+  aggs.closed_issue_count_6_months,
+  'GITHUB' as repository_source
 from {{ ref('int_projects') }}
 left join aggs
   on int_projects.project_id = aggs.project_id
