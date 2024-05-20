@@ -114,7 +114,7 @@ aggs as (
 repos as (
   select
     project_id,
-    artifact_namespace as event_source,
+    artifact_source as event_source,
     MIN(first_commit_time) as first_commit_date,
     MAX(last_commit_time) as last_commit_date,
     COUNT(distinct artifact_id) as repository_count,
@@ -124,7 +124,7 @@ repos as (
   --WHERE r.is_fork = false
   group by
     project_id,
-    artifact_namespace
+    artifact_source
 ),
 
 code_metrics as (
