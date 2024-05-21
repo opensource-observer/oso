@@ -317,9 +317,13 @@ class DirectGoldskyWorker(GoldskyWorker):
                 job_config=job_config,
                 timeout=self.config.load_table_timeout_seconds,
             )
-            self.update_pointer_table(client, context, checkpoint, pointer_table_mutex)
-            context.log.debug("updated pointer table")
             load_job.result()
+            context.log.info(f"Worker[{self.name}] Data loaded into bigquery")
+
+            self.update_pointer_table(client, context, checkpoint, pointer_table_mutex)
+            context.log.info(
+                f"Worker[{self.name}] Pointer table updated to {checkpoint.worker_checkpoint}"
+            )
 
     def run_load_bigquery_load(
         self,
