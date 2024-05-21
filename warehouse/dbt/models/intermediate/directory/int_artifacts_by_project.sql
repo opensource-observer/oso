@@ -100,7 +100,7 @@ all_deployers as (
   select
     block_timestamp,
     transaction_hash,
-    deploy_address,
+    deployer_address,
     contract_address,
     UPPER(network) as artifact_namespace,
     UPPER(network) as artifact_source
