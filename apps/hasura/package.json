@@ -17,11 +17,12 @@
     "node": ">=20"
   },
   "scripts": {
-    "build": "tsc",
+    "build:ts": "tsc",
+    "build": "pnpm build:ts && pnpm metadata:genTables",
     "lint": "tsc --noEmit && pnpm lint:eslint && pnpm lint:prettier",
     "lint:eslint": "eslint --ignore-path ../../.gitignore --max-warnings 0 .",
     "lint:prettier": "prettier --ignore-path ../../.gitignore --log-level warn --check **/*.{js,jsx,ts,tsx,sol,md,json}",
-    "metadata:genTables": "node --loader ts-node/esm src/genTables.ts",
+    "metadata:genTables": "dotenv -- node --loader ts-node/esm src/genTables.ts",
     "metadata:pull": "hasura metadata export",
     "metadata:reload": "hasura metadata reload",
     "metadata:apply": "hasura metadata apply",
