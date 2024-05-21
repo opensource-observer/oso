@@ -21,16 +21,16 @@
         {
             "label": "Run DBT",
             "type": "shell",
-            "command": "poetry run dbt deps && poetry run dbt build && poetry run dbt docs generate",
+            "command": "dbt deps && dbt build && dbt docs generate",
             "dependsOn": [
-                "Login Google Cloud for BigQuery",
+                "Setup required environment variables",
                 "Check GitHub CodeSpace environment"
             ],
         },
         {
             "label": "Launch Recce server",
             "type": "shell",
-            "command": "if [ -f '.recce/recce_state_file/recce_state.json' ]; then recce server --review .recce/recce_state_file/recce_state.json; else recce server; fi",
+            "command": "bash .devcontainer/launch_recce_server.sh",
             "dependsOn": ["Run DBT"],
             "runOptions": {
                 "runOn": "folderOpen"

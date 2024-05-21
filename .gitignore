@@ -69,3 +69,4 @@ supabase/.temp/
 .recce/
 target/
 target-base/
+recce_state.json
