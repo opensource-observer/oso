@@ -342,7 +342,7 @@ class DirectGoldskyWorker(GoldskyWorker):
                 )
                 return load_job.result()
 
-            bq_retry(load_retry)
+            bq_retry(context, load_retry)
             context.log.info(f"Worker[{self.name}] Data loaded into bigquery")
 
             self.update_pointer_table(client, context, checkpoint, pointer_table_mutex)
