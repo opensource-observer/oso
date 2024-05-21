@@ -11,6 +11,7 @@ select
   --int_repo_metrics_by_project.last_commit_time,
   --int_repo_metrics_by_project.days_with_commits_count,
   --int_repo_metrics_by_project.contributors_to_repo_count,
+  int_repo_metrics_by_project.language,
   int_repo_metrics_by_project.license_spdx_id,
   case
     {# TODO: Review licenses https://spdx.org/licenses/ for OSI Approved #}
@@ -22,9 +23,11 @@ select
       'ISC', '0BSD', 'NCSA', 'Zlib'
     ) then 'Permissive'
     when int_repo_metrics_by_project.license_spdx_id in (
-      'BSD-4-Clause', 'WTFPL', 'NOASSERTION',
+      'BSD-4-Clause', 'WTFPL',
       'CC0-1.0', 'CC-BY-SA-4.0', 'CC-BY-4.0'
     ) then 'Restrictive'
+    when int_repo_metrics_by_project.license_spdx_id = 'NOASSERTION'
+      then 'Custom'
     else 'Unspecified'
   end as license_type
 from {{ ref('int_repo_metrics_by_project') }}
