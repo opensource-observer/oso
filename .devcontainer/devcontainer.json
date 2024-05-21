@@ -1,0 +1,22 @@
+{
+    "name": "Recce CodeSpace",
+    "image": "infuseai/oso-dev-container:3.11",
+    "containerEnv": {
+        "DBT_GOOGLE_PROJECT": "infuseai-dev",
+        "DBT_GOOGLE_DATASET": "oso_playground",
+        "DBT_GOOGLE_DEV_DATASET": "oso_playground_dev",
+        "DBT_GOOGLE_KEYFILE": "/home/vscode/.config/gcloud/google-service-account.json",
+        "RECCE_CI_WORKFLOW_NAME": "OSO Recce CI",
+        "RECCE_DAILY_CI_WORKFLOW_NAME": "OSO Recce Staging CI"
+    },
+    "customizations": {
+        "vscode": {
+            "settings": {
+                "terminal.integrated.shell.linux": "/bin/bash",
+                "python.terminal.activateEnvironment": true
+            }
+        },
+        "extensions": []
+        },
+    "forwardPorts": [8000]
+}
