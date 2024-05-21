@@ -19,16 +19,18 @@ An impact metric must be:
 
 - A quantitative measure of impact on a continuous scale. Common examples include counts, sums, averages, and medians.
 - Available for all projects in the OSO database (even if many projects have a null value). Metrics should be extendable to any collection in the OSO database as well as any artifact in the same artifact namespace (eg, GitHub-related metrics, npm-related metrics, etc.).
-- Aggregated over a discrete period of time. Common time intervals include last 90 days, last 180 days, and since inception. OSO has already bucketed event data in daily, weekly, and monthly intervals to facilitate this.
-- Constructed from data that is available in one or more [intermediate or mart models](https://github.com/opensource-observer/oso/tree/main/warehouse/dbt/models). Common models include `projects_v1`, `events_monthly_to_project`, `int_devs`, and `first_contribution_to_project_v1`.
+- Aggregated over a discrete period of time. Common time intervals include last 90 days (`90 DAYS`), last 6 months (`6 MONTHS`), and since inception (`ALL`). OSO has already bucketed event data in various time intervals to facilitate this.
+- Constructed from data that is available in one or more [intermediate or mart models](https://github.com/opensource-observer/oso/tree/main/warehouse/dbt/models). Most impact metrics are currently powered from the `int_events_daily_to_project` model.
 
 ## Schema
 
-Every impact metric must include the following fields: `project_id`, `impact_metric`, and `amount`. For example:
+Every impact metric must include the following fields: `project_id`, `event_source`, `time_interval`, `impact_metric`, and `amount`. For example:
 ```json
 {
   "project_id": "jUda1pi-FdNlaUmgKq51B4h8x4wX3QTN2fZkKq6N0vw\u003d",
-  "impact_metric": "FORKED_6M",
+  "event_source": "GITHUB",
+  "time_interval": "6 MONTHS",
+  "impact_metric": "fork_count",
   "amount": 125
 }
 ```
@@ -39,83 +41,56 @@ Some may also include a `namespace` field to be explicit about the source of the
 
 ---
 
-### Forks in the Last 6 Months (Project Level)
+### GitHub Forks (Project Level)
 
 The following is an example of a valid impact metric, expressed in SQL:
 
 <Tabs>
   <TabItem value="query" label="Query" default>
-    ```sql
-      -- Sum of fork events to a project in the last 6 months
-      SELECT
-        project_id,
-        'FORKED_6M' AS impact_metric,
-        SUM(amount) AS amount
-      FROM `oso.events_monthly_to_project`
-      WHERE 
-        event_type = 'FORKED'
-        AND DATE(bucket_month) >= DATE_SUB(CURRENT_DATE(), INTERVAL 6 MONTH)
-      GROUP BY project_id
-      ```
+    ```sql    
+      select
+        events.project_id,
+        events.event_source,
+        time_intervals.time_interval,
+        'fork_count' as metric,
+        SUM(events.amount) as amount
+      from `oso.int_events_daily_to_project` as events
+      cross join `oso.int_time_intervals` as time_intervals
+      where
+        events.bucket_day >= time_intervals.start_date
+        and events.event_type = 'FORKED'
+      group by
+        events.project_id,
+        events.event_source,
+        time_intervals.time_interval
+    ```
   </TabItem>
   <TabItem value="response" label="Response">
     ```json
       [{
         "project_id": "jUda1pi-FdNlaUmgKq51B4h8x4wX3QTN2fZkKq6N0vw\u003d",
-        "impact_metric": "FORKED_6M",
+        "event_source": "GITHUB",
+        "time_interval": "6 MONTHS",
+        "impact_metric": "fork_count",        
         "amount": "125.0"
       }, {
         "project_id": "wdBmT3yweChtV4g4qcc1NN1QtfnmMPAuCVxoPkiAowY\u003d",
-        "impact_metric": "FORKED_6M",
+        "event_source": "GITHUB",
+        "time_interval": "6 MONTHS",
+        "impact_metric": "fork_count",        
         "amount": "57.0"
       }, {
         "project_id": "HNv9-2g63oZCrLD2jDAIygVq7vQkn2iV2QGmEfcFsYk\u003d",
-        "impact_metric": "FORKED_6M",
+        "event_source": "GITHUB",
+        "time_interval": "6 MONTHS",
+        "impact_metric": "fork_count",        
         "amount": "13.0"
       }]
     ```
   </TabItem>
 </Tabs>
 
-### Forks in the Last 6 Months (Artifact Level)
-
-Here is the same metric calculated at the **artifact** level:
-
-<Tabs>
-  <TabItem value="query" label="Query" default>
-    ```sql
-      -- Sum of fork events to an artifact in the last 6 months
-      SELECT
-        artifact_id,
-        'FORKED_6M' AS impact_metric,
-        SUM(amount) AS amount
-      FROM `oso.events_monthly_to_artifact`
-      WHERE 
-        event_type = 'FORKED'
-        AND DATE(bucket_month) >= DATE_SUB(CURRENT_DATE(), INTERVAL 6 MONTH)
-      GROUP BY artifact_id
-      ```
-  </TabItem>
-  <TabItem value="response" label="Response">
-    ```json
-      [{
-        "artifact_id": "vg-apoPrbCtAM4enk0Ar4tODrqTBi9ZDnNnTw-udjw4\u003d",
-        "impact_metric": "FORKED_6M",
-        "amount": "1.0"
-      }, {
-        "artifact_id": "7ZqXfQTqiCHHcRw-THEsTgz8W1T0apGyLe7rE8n0NCs\u003d",
-        "impact_metric": "FORKED_6M",
-        "amount": "5.0"
-      }, {
-        "artifact_id": "PM9tS7Fp_-LmYT8B-dx8FFBz7xa8rEwm9RFAZ6JehcI\u003d",
-        "impact_metric": "FORKED_6M",
-        "amount": "1.0"
-      }]
-    ```
-  </TabItem>
-</Tabs>
-
-### Days from First Commit to First Onchain Transaction
+### Days from First Commit to First Onchain Transaction [DEPRECATED]
 
 Here's a more complex impact metric that uses a CTE to calculate the number of days from the first commit to a project to its first onchain transaction. Note that this query returns null for projects that have not yet had an onchain transaction. It also returns a negative value for projects where the first onchain transaction occurred before the first commit to a public repo.
 
@@ -167,7 +142,7 @@ Here's a more complex impact metric that uses a CTE to calculate the number of d
   </TabItem>
 </Tabs>
 
-### Issues Closed to Full-Time Contributors in the Last 90 Days
+### Issues Closed to Full-Time Contributors in the Last 90 Days [DEPRECATED]
 
 Finally, here's an example of a metric that utilizes one of the `users` mart models to calculate the ratio of issues closed to full-time contributors to a project in the last 90 days:
 

@@ -7,7 +7,7 @@ sidebar_position: 2
 A **collection** is a group of related open source projects in the OSS Directory. Projects may belong to multiple collections. For example, a collection may include all projects that are part of a particular ecosystem or all projects that are dependent on a given developer library.
 :::
 
-## Names
+## Collection Identification
 
 ---
 
@@ -30,6 +30,21 @@ The `description` is an optional field used to store a short description of the 
 The `projects` field is a required field used to store an array of project names associated with the collection. Each item in the array must be a valid project `name`. If one or more project names are not valid, the collection will not be added to the directory.
 
 You can learn more about adding and updating projects to the OSS Directory [here](./project).
+
+## Example
+
+---
+
+Here is a simple example of a collection YAML file in the OSS Directory:
+
+```yaml
+name: my-collection
+display_name: My Collection
+projects:
+  - project-name1
+  - project-name2
+  - project-name3
+```
 
 ## Full Schema
 

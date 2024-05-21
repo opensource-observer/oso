@@ -47,8 +47,6 @@ All NPM events are associated with a unique NPM package. The following NPM event
 
 All blockchain events are associated with a unique blockchain address-network pair. The following blockchain events are currently supported:
 
-- Funding: An event that records the transfer of grant funds to a blockchain `wallet` address, including the amount, sender address, timestamp, and other details.
-- Contract Invoked: An event that records a user transacting with a smart contract, including the number of transactions, user address, timestamp, and other details.
 - Contract Invocation Daily Count: A snapshot of the number of transactions made with a contract address on a given date.
-- Contract Invocation Daily Fees: A snapshot of the fees paid for transactions made with a contract address on a given date.
-- Users Interacted: A snapshot of the number of unique users (addresses) transacting with a contract address on a given date.
+- Contract Invocation Success Daily Count: A snapshot of the number of successful transactions made with a contract address on a given date.
+- Contract Invocation Daily L2 Gas Used: A snapshot of the fees paid for transactions made with a contract address on a given date.
