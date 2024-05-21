@@ -87,12 +87,6 @@ ossd_blockchain as (
 all_deployers as (
   select
     *,
-    "OPTIMISM" as artifact_namespace,
-    "OPTIMISM" as artifact_source
-  from {{ ref("stg_optimism__deployers") }}
-  union all
-  select
-    *,
     "MAINNET" as artifact_namespace,
     "ETHEREUM" as artifact_source
   from {{ ref("stg_ethereum__deployers") }}
@@ -102,6 +96,14 @@ all_deployers as (
     "ARBITRUM_ONE" as artifact_namespace,
     "ARBITRUM_ONE" as artifact_source
   from {{ ref("stg_arbitrum__deployers") }}
+  {% for network in ["optimism", "base", "frax", "mode", "pgn", "zora"] %}
+    union all
+    select
+      *,
+      "{{ network.upper() }}" as artifact_namespace,
+      "{{ network.upper() }}" as artifact_source
+    from {{ ref("stg_%s__deployers" % network) }}
+  {% endfor %}
 ),
 
 discovered_contracts as (
