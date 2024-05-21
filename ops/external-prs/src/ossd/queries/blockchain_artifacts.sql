@@ -1,6 +1,6 @@
 CREATE TABLE {{ source }}_blockchain_artifacts AS
 SELECT DISTINCT
-  p.slug AS project_slug,
+  p.name AS project_slug,
   LOWER(blockchains.blockchain.address) AS address,
   tag.tags AS tag,
   network.networks AS network
