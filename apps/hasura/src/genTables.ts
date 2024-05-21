@@ -163,5 +163,6 @@ async function main(): Promise<void> {
 main()
   .then(() => console.log("Done"))
   .catch((e) => {
-    console.warn(e);
+    //console.warn(e);
+    throw e;
   });

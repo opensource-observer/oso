@@ -1,0 +1,22 @@
+table:
+  name: collections_v1
+  schema: public
+select_permissions:
+  - role: anonymous
+    permission:
+      columns: "*"
+      filter: {}
+      allow_aggregations: false
+    comment: ""
+  - role: user
+    permission:
+      columns: "*"
+      filter: {}
+      allow_aggregations: false
+    comment: ""
+  - role: developer
+    permission:
+      columns: "*"
+      filter: {}
+      allow_aggregations: true
+    comment: ""
