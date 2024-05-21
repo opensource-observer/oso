@@ -16,7 +16,13 @@ from typing import List, Mapping, Tuple, Callable
 import heapq
 from dagster import asset, AssetExecutionContext
 from dagster_gcp import BigQueryResource, GCSResource
-from google.api_core.exceptions import NotFound
+from google.api_core.exceptions import (
+    NotFound,
+    InternalServerError,
+    BadRequest,
+    MethodNotAllowed,
+    ClientError,
+)
 from google.cloud.bigquery import (
     TableReference,
     LoadJobConfig,
@@ -283,6 +289,21 @@ class GoldskyWorker:
         raise NotImplementedError("process not implemented on the base class")
 
 
+def bq_retry(
+    context: AssetExecutionContext, f: Callable, retries: int = 5, min_wait: float = 1.0
+):
+    retry_wait = min_wait
+    for i in range(retries):
+        try:
+            return f()
+        except InternalServerError:
+            context.log.info("Server error encountered. waiting to retry")
+            time.sleep(retry_wait)
+            retry_wait += min_wait
+        except ClientError as e:
+            raise e
+
+
 class DirectGoldskyWorker(GoldskyWorker):
     async def process(
         self,
@@ -311,13 +332,17 @@ class DirectGoldskyWorker(GoldskyWorker):
                 context.log.debug("schema being overridden")
                 job_config_options["schema"] = self.schema
             job_config = LoadJobConfig(**job_config_options)
-            load_job = client.load_table_from_uri(
-                files_to_load,
-                self.raw_table,
-                job_config=job_config,
-                timeout=self.config.load_table_timeout_seconds,
-            )
-            load_job.result()
+
+            def load_retry():
+                load_job = client.load_table_from_uri(
+                    files_to_load,
+                    self.raw_table,
+                    job_config=job_config,
+                    timeout=self.config.load_table_timeout_seconds,
+                )
+                return load_job.result()
+
+            bq_retry(load_retry)
             context.log.info(f"Worker[{self.name}] Data loaded into bigquery")
 
             self.update_pointer_table(client, context, checkpoint, pointer_table_mutex)
