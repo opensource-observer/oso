@@ -96,14 +96,15 @@ all_deployers as (
     "ARBITRUM_ONE" as artifact_namespace,
     "ARBITRUM_ONE" as artifact_source
   from {{ ref("stg_arbitrum__deployers") }}
-  {% for network in ["optimism", "base", "frax", "mode", "pgn", "zora"] %}
-    union all
-    select
-      *,
-      "{{ network.upper() }}" as artifact_namespace,
-      "{{ network.upper() }}" as artifact_source
-    from {{ ref("stg_%s__deployers" % network) }}
-  {% endfor %}
+  union all
+  select
+    block_timestamp,
+    transaction_hash,
+    deployer_address,
+    contract_address,
+    UPPER(network) as artifact_namespace,
+    UPPER(network) as artifact_source
+  from {{ ref("int_derived_contracts") }}
 ),
 
 discovered_contracts as (
