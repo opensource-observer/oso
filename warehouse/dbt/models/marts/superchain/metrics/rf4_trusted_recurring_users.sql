@@ -30,6 +30,6 @@ select
 from user_stats
 where
   months >= 3
-  and last_day >= '2024-04-01'
+  -- and last_day >= '2024-04-01'
 group by
   project_id
