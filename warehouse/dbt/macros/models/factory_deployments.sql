@@ -18,6 +18,10 @@
     traces_table_transaction_hash_column,
   )
 %}
+{% set aliased_block_timestamp_column = "`traces`.%s" % (
+    block_timestamp_column,
+  )
+%}
 
 WITH transactions AS (
   SELECT *
@@ -48,9 +52,9 @@ inner join transactions as txs
 
 WHERE LOWER(trace_type) in ("create", "create2") and status = 1
 {% if is_incremental() %}
-  and {{ block_timestamp_column }} > TIMESTAMP_SUB(_dbt_max_partition, INTERVAL 1 DAY)
+  and {{ aliased_block_timestamp_column }} > TIMESTAMP_SUB(_dbt_max_partition, INTERVAL 1 DAY)
 {% else %}
-{{ playground_filter(block_timestamp_column, is_start=False) }}
+{{ playground_filter(aliased_block_timestamp_column, is_start=False) }}
 {% endif %}
 
 {% endmacro %}
