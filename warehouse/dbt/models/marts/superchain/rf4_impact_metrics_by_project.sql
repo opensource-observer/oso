@@ -79,11 +79,8 @@ select
   pivot_metrics.project_id,
   projects_v1.project_name,
   pivot_metrics.gas_fees,
-  log_metrics.log_gas_fees,
   pivot_metrics.transaction_count,
-  log_metrics.log_transaction_count,
   pivot_metrics.trusted_transaction_count,
-  log_metrics.log_trusted_transaction_count,
   pivot_metrics.trusted_transaction_share,
   pivot_metrics.trusted_users_onboarded,
   pivot_metrics.daily_active_addresses,
@@ -91,7 +88,10 @@ select
   pivot_metrics.monthly_active_addresses,
   pivot_metrics.trusted_monthly_active_users,
   pivot_metrics.recurring_addresses,
-  pivot_metrics.trusted_recurring_users
+  pivot_metrics.trusted_recurring_users,
+  log_metrics.log_gas_fees,
+  log_metrics.log_transaction_count,
+  log_metrics.log_trusted_transaction_count
 from pivot_metrics
 left join log_metrics
   on pivot_metrics.project_id = log_metrics.project_id
