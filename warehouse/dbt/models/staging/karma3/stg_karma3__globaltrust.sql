@@ -7,5 +7,5 @@ select
   strategy_id,
   CAST(i as string) as farcaster_id,
   CAST(v as numeric) as eigentrust_rank,
-  CAST(date as timestamp) as date
+  CAST(date as timestamp) as snapshot_time
 from {{ source("karma3", "globaltrust") }}

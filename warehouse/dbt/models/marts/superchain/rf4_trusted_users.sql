@@ -3,7 +3,7 @@ with eigentrust_top_users as (
   select farcaster_id
   from {{ ref('stg_karma3__globaltrust') }}
   where
-    date = '2024-05-01'
+    snapshot_time = '2024-05-01'
     and strategy_id = 1
   order by eigentrust_rank desc
   limit 50000
