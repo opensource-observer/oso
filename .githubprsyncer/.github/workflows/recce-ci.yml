@@ -1,0 +1,14 @@
+name: OSO Recce CI
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  print-hello-world:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Print Hello World
+        run: echo "Hello World"
