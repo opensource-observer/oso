@@ -25,7 +25,7 @@ WITH transactions AS (
   {% if is_incremental() %}
   WHERE {{ block_timestamp_column }} > TIMESTAMP_SUB(_dbt_max_partition, INTERVAL 1 DAY)
   {% else %}
-  {{ playground_filter(block_timestamp_column, is_start=False) }}
+  {{ playground_filter(block_timestamp_column, is_start=True) }}
   {% endif %}
 )
 
