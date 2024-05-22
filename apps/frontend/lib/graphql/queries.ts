@@ -9,40 +9,47 @@ import { gql } from "../__generated__/gql";
 
 const GET_ALL_ARTIFACTS = gql(`
   query Artifacts @cached (ttl: 300) {
-    artifacts {
+    artifacts_v1 {
       artifact_id
+      artifact_source
       artifact_namespace
-      artifact_type
-      artifact_source_id
-      artifact_latest_name
-      artifact_names
+      artifact_name
+      artifact_url
     }
   }
 `);
 
 const GET_ARTIFACTS_BY_IDS = gql(`
   query ArtifactByIds($artifact_ids: [String!]) @cached(ttl: 300) {
-    artifacts(where: { artifact_id: { _in: $artifact_ids }}) {
+    artifacts_v1(where: { artifact_id: { _in: $artifact_ids }}) {
       artifact_id
+      artifact_source
       artifact_namespace
-      artifact_type
-      artifact_source_id
-      artifact_latest_name
-      artifact_names
+      artifact_name
       artifact_url
     }
   }
 `);
 
-const GET_ARTIFACT_BY_NAME = gql(`
-  query ArtifactByName($artifact_namespace: String!, $artifact_type: String!, $artifact_name: String!) @cached(ttl: 300) {
-    artifacts(where: { artifact_namespace: { _eq: $artifact_namespace }, artifact_type: { _eq: $artifact_type }, artifact_latest_name: { _eq: $artifact_name } }) {
+const GET_ARTIFACT_BY_SOURCE_NAMESPACE_NAME = gql(`
+  query ArtifactBySourceNamespaceName($artifact_source: String!, $artifact_namespace: String!, $artifact_name: String!) @cached(ttl: 300) {
+    artifacts_v1(where: { artifact_source: { _eq: $artifact_source }, artifact_namespace: { _eq: $artifact_namespace }, artifact_name: { _eq: $artifact_name } }) {
       artifact_id
+      artifact_source
       artifact_namespace
-      artifact_type
-      artifact_source_id
-      artifact_latest_name
-      artifact_names
+      artifact_name
+      artifact_url
+    }
+  }
+`);
+
+const GET_ARTIFACT_BY_SOURCE_NAME = gql(`
+  query ArtifactBySourceName($artifact_source: String!, $artifact_name: String!) @cached(ttl: 300) {
+    artifacts_v1(where: { artifact_source: { _eq: $artifact_source }, artifact_name: { _eq: $artifact_name } }) {
+      artifact_id
+      artifact_source
+      artifact_namespace
+      artifact_name
       artifact_url
     }
   }
@@ -50,7 +57,7 @@ const GET_ARTIFACT_BY_NAME = gql(`
 
 const GET_ARTIFACT_IDS_BY_PROJECT_IDS = gql(`
   query ArtifactIdsByProjectIds($project_ids: [String!]) @cached(ttl: 300) {
-    artifacts_by_project(where: { project_id: { _in: $project_ids }}) {
+    artifacts_by_project_v1(where: { project_id: { _in: $project_ids }}) {
       artifact_id
     }
   }
@@ -62,30 +69,38 @@ const GET_ARTIFACT_IDS_BY_PROJECT_IDS = gql(`
 
 const GET_ALL_PROJECTS = gql(`
   query Projects @cached(ttl: 300) {
-    projects {
+    projects_v1 {
       project_id
-      project_slug
+      project_source
+      project_namespace
       project_name
+      display_name
     }
   }
 `);
 
 const GET_PROJECTS_BY_IDS = gql(`
   query ProjectsByIds($project_ids: [String!]) @cached(ttl: 300) {
-    projects(where: { project_id: { _in: $project_ids }}) {
+    projects_v1(where: { project_id: { _in: $project_ids }}) {
       project_id
-      project_slug
+      project_source
+      project_namespace
       project_name
+      display_name
+      description
     }
   }
 `);
 
-const GET_PROJECTS_BY_SLUGS = gql(`
-  query ProjectsBySlugs($project_slugs: [String!]) @cached(ttl: 300) {
-    projects(where: { project_slug: { _in: $project_slugs } }) {
+const GET_PROJECT_BY_NAME = gql(`
+  query ProjectByName($project_name: String!) @cached(ttl: 300) {
+    projects_v1(where: { project_name: { _eq: $project_name } }) {
       project_id
-      project_slug
+      project_source
+      project_namespace
       project_name
+      display_name
+      description
     }
   }
 `);
@@ -96,40 +111,45 @@ const GET_PROJECTS_BY_SLUGS = gql(`
 
 const GET_ALL_COLLECTIONS = gql(`
   query Collections @cached(ttl: 300) {
-    collections {
+    collections_v1 {
       collection_id
-      user_namespace
-      collection_slug
+      collection_source
+      collection_namespace
       collection_name
+      display_name
     }
   }
 `);
 
 const GET_COLLECTIONS_BY_IDS = gql(`
   query CollectionsByIds($collection_ids: [String!]) @cached(ttl: 300) {
-    collections(where: { collection_id: { _in: $collection_ids }}) {
+    collections_v1(where: { collection_id: { _in: $collection_ids }}) {
       collection_id
-      user_namespace
-      collection_slug
+      collection_source
+      collection_namespace
       collection_name
+      display_name
+      description
     }
   }
 `);
 
-const GET_COLLECTIONS_BY_SLUGS = gql(`
-  query CollectionsBySlugs($collection_slugs: [String!]) @cached(ttl: 300) {
-    collections(where: { collection_slug: { _in: $collection_slugs }, user_namespace: { _eq: "oso" } }) {
+const GET_COLLECTION_BY_NAME = gql(`
+  query CollectionByName($collection_name: String!) @cached(ttl: 300) {
+    collections_v1(where: { collection_name: { _eq: $collection_name } }) {
       collection_id
-      user_namespace
-      collection_slug
+      collection_source
+      collection_namespace
       collection_name
+      display_name
+      description
     }
   }
 `);
 
 const GET_COLLECTION_IDS_BY_PROJECT_IDS = gql(`
   query CollectionIdsByProjectIds($project_ids: [String!]) @cached(ttl: 300) {
-    projects_by_collection(where: { project_id: { _in: $project_ids }}) {
+    projects_by_collection_v1(where: { project_id: { _in: $project_ids }}) {
       collection_id
     }
   }
@@ -143,26 +163,30 @@ const GET_CODE_METRICS_BY_PROJECT = gql(`
   query CodeMetricsByProject(
     $project_ids: [String!],
   ) {
-    code_metrics_by_project(where: {
+    code_metrics_by_project_v1(where: {
       project_id: { _in: $project_ids },
     }) {
       project_id
+      project_source
+      project_namespace
       project_name
-      stars
-      repositories
-      pull_requests_opened_6_months
-      pull_requests_merged_6_months
-      new_contributors_6_months
-      last_commit_date
-      issues_opened_6_months
-      issues_closed_6_months
-      avg_active_devs_6_months
-      avg_fulltime_devs_6_months
-      commits_6_months
-      contributors
-      contributors_6_months
+      display_name
+      event_source
+      active_developer_count_6_months
+      closed_issue_count_6_months
+      commit_count_6_months
+      contributor_count
+      contributor_count_6_months
       first_commit_date
-      forks
+      fork_count
+      fulltime_developer_average_6_months
+      last_commit_date
+      merged_pull_request_count_6_months
+      new_contributor_count_6_months
+      opened_issue_count_6_months
+      opened_pull_request_count_6_months
+      repository_count
+      star_count
     }
   }
 `);
@@ -171,26 +195,29 @@ const GET_ONCHAIN_METRICS_BY_PROJECT = gql(`
   query OnchainMetricsByProject(
     $project_ids: [String!],
   ) {
-    onchain_metrics_by_project(where: {
+    onchain_metrics_by_project_v1(where: {
       project_id: { _in: $project_ids },
     }) {
       project_id
+      project_source
+      project_namespace
       project_name
-      active_users
-      first_txn_date
-      high_frequency_users
-      l2_gas_6_months
-      less_active_users
-      more_active_users
-      multi_project_users
-      network
-      new_user_count
-      num_contracts
-      total_l2_gas
-      total_txns
-      total_users
-      txns_6_months
-      users_6_months
+      display_name
+      event_source
+      active_contract_count_90_days
+      address_count
+      address_count_90_days
+      days_since_first_transaction
+      gas_fees_sum
+      gas_fees_sum_6_months
+      high_activity_address_count_90_days
+      low_activity_address_count_90_days
+      medium_activity_address_count_90_days
+      multi_project_address_count_90_days
+      new_address_count_90_days
+      returning_address_count_90_days
+      transaction_count
+      transaction_count_6_months
     }
   }
 `);
@@ -201,7 +228,7 @@ const GET_ONCHAIN_METRICS_BY_PROJECT = gql(`
 
 const GET_ALL_EVENT_TYPES = gql(`
   query GetAllEventTypes @cached(ttl: 300) {
-    event_types {
+    event_types_v1 {
       event_type
     }
   }
@@ -327,6 +354,7 @@ const GET_EVENTS_MONTHLY_TO_PROJECT = gql(`
   }
 `);
 
+/**
 const GET_USERS_MONTHLY_TO_PROJECT = gql(`
   query UsersMonthlyToProject(
     $project_ids: [String!],
@@ -346,6 +374,7 @@ const GET_USERS_MONTHLY_TO_PROJECT = gql(`
     }
   }
 `);
+*/
 
 const GET_EVENTS_DAILY_TO_ARTIFACT = gql(`
   query EventsDailyToArtifact(
@@ -410,14 +439,15 @@ const GET_EVENTS_MONTHLY_TO_ARTIFACT = gql(`
 export {
   GET_ALL_ARTIFACTS,
   GET_ARTIFACTS_BY_IDS,
-  GET_ARTIFACT_BY_NAME,
+  GET_ARTIFACT_BY_SOURCE_NAMESPACE_NAME,
+  GET_ARTIFACT_BY_SOURCE_NAME,
   GET_ARTIFACT_IDS_BY_PROJECT_IDS,
   GET_ALL_PROJECTS,
   GET_PROJECTS_BY_IDS,
-  GET_PROJECTS_BY_SLUGS,
+  GET_PROJECT_BY_NAME,
   GET_ALL_COLLECTIONS,
   GET_COLLECTIONS_BY_IDS,
-  GET_COLLECTIONS_BY_SLUGS,
+  GET_COLLECTION_BY_NAME,
   GET_COLLECTION_IDS_BY_PROJECT_IDS,
   GET_CODE_METRICS_BY_PROJECT,
   GET_ONCHAIN_METRICS_BY_PROJECT,
@@ -431,5 +461,5 @@ export {
   GET_EVENTS_DAILY_TO_COLLECTION,
   GET_EVENTS_WEEKLY_TO_COLLECTION,
   GET_EVENTS_MONTHLY_TO_COLLECTION,
-  GET_USERS_MONTHLY_TO_PROJECT,
+  //GET_USERS_MONTHLY_TO_PROJECT,
 };

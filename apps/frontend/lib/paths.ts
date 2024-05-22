@@ -9,30 +9,6 @@ const catchallPathToString = (parts: string[]) => {
 };
 
 /**
- * Converts a path string to an  enum
- * @param namespacePath
- * @returns
- */
-const pathToNamespaceEnum = (namespacePath: string) => {
-  switch (namespacePath) {
-    case "github":
-      return "GITHUB";
-    case "gitlab":
-      return "GITLAB";
-    case "npm":
-      return "NPM_REGISTRY";
-    case "ethereum":
-      return "ETHEREUM";
-    case "optimism":
-      return "OPTIMISM";
-    case "goerli":
-      return "GOERLI";
-    default:
-      return null;
-  }
-};
-
-/**
  * Converts a path string to an artifact type
  */
 const pathToTypeEnum = (typePath: string) => {
@@ -46,4 +22,4 @@ const pathToTypeEnum = (typePath: string) => {
   }
 };
 
-export { catchallPathToString, pathToNamespaceEnum, pathToTypeEnum };
+export { catchallPathToString, pathToTypeEnum };
