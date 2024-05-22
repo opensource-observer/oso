@@ -3,9 +3,10 @@ import { getApolloClient } from "../clients/apollo";
 import { QueryOptions } from "@apollo/client";
 import {
   GET_ARTIFACTS_BY_IDS,
-  GET_ARTIFACT_BY_NAME,
+  GET_ARTIFACT_BY_SOURCE_NAMESPACE_NAME,
+  GET_ARTIFACT_BY_SOURCE_NAME,
   GET_ARTIFACT_IDS_BY_PROJECT_IDS,
-  GET_PROJECTS_BY_SLUGS,
+  GET_PROJECT_BY_NAME,
   GET_COLLECTIONS_BY_IDS,
   GET_COLLECTION_IDS_BY_PROJECT_IDS,
   GET_CODE_METRICS_BY_PROJECT,
@@ -33,10 +34,10 @@ const cachedGetAllEventTypes = cache(async () =>
   }),
 );
 
-const cachedGetProjectsBySlugs = cache(
-  async (variables: { project_slugs: string[] }) =>
+const cachedGetProjectByName = cache(
+  async (variables: { project_name: string }) =>
     queryWrapper({
-      query: GET_PROJECTS_BY_SLUGS,
+      query: GET_PROJECT_BY_NAME,
       variables,
     }),
 );
@@ -51,14 +52,19 @@ const cachedGetArtifactsByIds = cache(
 
 const cachedGetArtifactByName = cache(
   async (variables: {
-    artifact_namespace: string;
-    artifact_type: string;
+    artifact_source: string;
+    artifact_namespace?: string;
     artifact_name: string;
   }) =>
-    queryWrapper({
-      query: GET_ARTIFACT_BY_NAME,
-      variables,
-    }),
+    variables.artifact_namespace
+      ? queryWrapper({
+          query: GET_ARTIFACT_BY_SOURCE_NAMESPACE_NAME,
+          variables,
+        })
+      : queryWrapper({
+          query: GET_ARTIFACT_BY_SOURCE_NAME,
+          variables,
+        }),
 );
 
 const cachedGetArtifactIdsByProjectIds = cache(
@@ -105,7 +111,7 @@ export {
   cachedGetArtifactsByIds,
   cachedGetArtifactByName,
   cachedGetArtifactIdsByProjectIds,
-  cachedGetProjectsBySlugs,
+  cachedGetProjectByName,
   cachedGetCollectionsByIds,
   cachedGetCollectionIdsByProjectIds,
   cachedGetCodeMetricsByProjectIds,

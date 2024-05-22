@@ -120,8 +120,8 @@ discovered_contracts as (
   inner join all_deployers as ad
     on
       ob.artifact_source_id = ad.deployer_address
-      and ob.artifact_namespace = ad.artifact_namespace
-      and ob.artifact_type in ("EOA", "DEPLOYER", "FACTORY")
+      and UPPER(ob.artifact_namespace) = UPPER(ad.artifact_namespace)
+      and UPPER(ob.artifact_type) in ("EOA", "DEPLOYER", "FACTORY")
 ),
 
 all_artifacts as (
