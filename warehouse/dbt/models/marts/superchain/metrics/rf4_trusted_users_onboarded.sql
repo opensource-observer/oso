@@ -25,7 +25,7 @@ first_txns as (
   where
     events.event_type = 'CONTRACT_INVOCATION_SUCCESS_DAILY_COUNT'
     and events.trusted_user_id is not null
-    and events.bucket_day <= DATE_ADD(user_stats.first_day, interval 7 day)
+    and events.bucket_day <= DATE_ADD(user_stats.first_day, interval 30 day)
 )
 
 select
