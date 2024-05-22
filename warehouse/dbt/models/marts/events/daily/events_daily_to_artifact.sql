@@ -8,7 +8,7 @@
 }}
 
 select
-  to_artifact_id,
+  to_artifact_id as artifact_id,
   event_type,
   TIMESTAMP_TRUNC(time, day) as bucket_day,
   SUM(amount) as amount
