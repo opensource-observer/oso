@@ -13,11 +13,17 @@ with metrics as (
   union all
   select * from {{ ref('rf4_trusted_daily_active_users') }}
   union all
+  select * from {{ ref('rf4_daily_active_addresses') }}
+  union all
   select * from {{ ref('rf4_trusted_monthly_active_users') }}
+  union all
+  select * from {{ ref('rf4_monthly_active_addresses') }}
   union all
   select * from {{ ref('rf4_trusted_users_onboarded') }}
   union all
   select * from {{ ref('rf4_trusted_recurring_users') }}
+  union all
+  select * from {{ ref('rf4_recurring_addresses') }}
 ),
 
 pivot_metrics as (
@@ -42,11 +48,20 @@ pivot_metrics as (
       case when metric = 'trusted_daily_active_users' then amount else 0 end
     ) as trusted_daily_active_users,
     MAX(
+      case when metric = 'daily_active_addresses' then amount else 0 end
+    ) as daily_active_addresses,
+    MAX(
       case when metric = 'trusted_monthly_active_users' then amount else 0 end
     ) as trusted_monthly_active_users,
     MAX(
+      case when metric = 'monthly_active_addresses' then amount else 0 end
+    ) as monthly_active_addresses,
+    MAX(
       case when metric = 'trusted_recurring_users' then amount else 0 end
-    ) as trusted_recurring_users
+    ) as trusted_recurring_users,
+    MAX(
+      case when metric = 'recurring_addresses' then amount else 0 end
+    ) as recurring_addresses
   from metrics
   group by project_id
 ),
@@ -71,8 +86,11 @@ select
   log_metrics.log_trusted_transaction_count,
   pivot_metrics.trusted_transaction_share,
   pivot_metrics.trusted_users_onboarded,
+  pivot_metrics.daily_active_addresses,
   pivot_metrics.trusted_daily_active_users,
+  pivot_metrics.monthly_active_addresses,
   pivot_metrics.trusted_monthly_active_users,
+  pivot_metrics.recurring_addresses,
   pivot_metrics.trusted_recurring_users
 from pivot_metrics
 left join log_metrics
