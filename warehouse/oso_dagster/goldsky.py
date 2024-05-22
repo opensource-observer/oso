@@ -12,7 +12,7 @@ import polars
 from dask.distributed import get_worker
 from dask_kubernetes.operator import make_cluster_spec
 from dataclasses import dataclass, field
-from typing import List, Mapping, Tuple, Callable
+from typing import List, Mapping, Tuple, Callable, Optional, Sequence
 import heapq
 from dagster import asset, AssetExecutionContext
 from dagster_gcp import BigQueryResource, GCSResource
@@ -38,6 +38,8 @@ from .factories import AssetFactoryResponse
 @dataclass(kw_only=True)
 class GoldskyConfig:
     # This is the name of the asset within the goldsky directory path in gcs
+    name: str
+    key_prefix: Optional[str | Sequence[str]] = ""
     project_id: str
     source_name: str
     destination_table_name: str
@@ -615,8 +617,8 @@ def blocking_update_pointer_table(
             context.log.info(rows)
 
 
-def goldsky_asset(name: str, config: GoldskyConfig) -> AssetFactoryResponse:
-    @asset(name=name)
+def goldsky_asset(config: GoldskyConfig) -> AssetFactoryResponse:
+    @asset(name=config.name, key_prefix=config.key_prefix)
     def generated_asset(
         context: AssetExecutionContext,
         bigquery: BigQueryResource,

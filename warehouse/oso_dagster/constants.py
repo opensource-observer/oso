@@ -4,8 +4,8 @@ from pathlib import Path
 import requests
 from dagster_dbt import DbtCliResource
 
-main_dbt_project_dir = Path(__file__).joinpath("..", "..", "..").resolve()
-main_dbt = DbtCliResource(project_dir=os.fspath(main_dbt_project_dir))
+production_dbt_project_dir = Path(__file__).joinpath("..", "..", "..").resolve()
+production_dbt = DbtCliResource(project_dir=os.fspath(production_dbt_project_dir))
 
 # Leaving this for now as it allows a separate source related dbt model
 # source_dbt_project_dir = Path(__file__).joinpath("..", "..", "source_dbt").resolve()
@@ -82,9 +82,9 @@ if os.getenv("DAGSTER_DBT_PARSE_PROJECT_ON_LOAD") or os.getenv(
 ):
     if os.getenv("DAGSTER_DBT_GENERATE_AND_AUTH_GCP"):
         generate_profile_and_auth()
-    main_dbt_manifest_path = (
-        main_dbt.cli(
-            ["--quiet", "parse"],
+    production_dbt_manifest_path = (
+        production_dbt.cli(
+            ["--quiet", "parse", "--target", "production"],
             target_path=Path("target"),
         )
         .wait()
@@ -100,7 +100,12 @@ if os.getenv("DAGSTER_DBT_PARSE_PROJECT_ON_LOAD") or os.getenv(
     # )
     # print(f"THE PATH {source_dbt_manifest_path}")
 else:
-    main_dbt_manifest_path = main_dbt_project_dir.joinpath("target", "manifest.json")
+    production_dbt_manifest_path = production_dbt_project_dir.joinpath(
+        "target", "manifest.json"
+    )
     # source_dbt_manifest_path = source_dbt_project_dir.joinpath(
     #     "target", "manifest.json"
     # )
+
+
+custom_dbt_mappings = {}

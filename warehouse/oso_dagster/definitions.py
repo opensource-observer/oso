@@ -5,7 +5,7 @@ from dagster import Definitions, load_assets_from_modules
 from dagster_dbt import DbtCliResource
 from dagster_gcp import BigQueryResource, GCSResource
 
-from .constants import main_dbt_project_dir
+from .constants import production_dbt_project_dir
 from .schedules import schedules
 from .cbt import CBTResource
 from .factories import load_assets_factories_from_modules
@@ -33,7 +33,9 @@ def load_definitions():
         jobs=asset_factories.jobs,
         sensors=asset_factories.sensors,
         resources={
-            "main_dbt": DbtCliResource(project_dir=os.fspath(main_dbt_project_dir)),
+            "main_dbt": DbtCliResource(
+                project_dir=os.fspath(production_dbt_project_dir)
+            ),
             "bigquery": bigquery,
             "gcs": gcs,
             "cbt": cbt,

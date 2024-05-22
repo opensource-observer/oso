@@ -1,11 +1,12 @@
 import re
 from enum import Enum
+from typing import Optional, Sequence
+from dataclasses import dataclass, field
 
 import arrow
 from google.api_core.exceptions import NotFound
 from google.cloud.bigquery.job import CopyJobConfig
 import pandas as pd
-from dataclasses import dataclass
 from dagster import (
     asset,
     asset_sensor,
@@ -40,6 +41,8 @@ class SourceMode(Enum):
 
 @dataclass(kw_only=True)
 class BaseGCSAsset:
+    name: str
+    key_prefix: Optional[str | Sequence[str]] = ""
     project_id: str
     bucket_name: str
     path_base: str
@@ -48,6 +51,7 @@ class BaseGCSAsset:
     raw_dataset_name: str
     clean_dataset_name: str
     format: str = "CSV"
+    asset_kwargs: dict = field(default_factory=lambda: {})
 
 
 @dataclass(kw_only=True)
@@ -61,11 +65,11 @@ def parse_interval_prefix(interval: Interval, prefix: str) -> arrow.Arrow:
     return arrow.get(prefix, "YYYYMMDD")
 
 
-def interval_gcs_import_asset(key: str, config: IntervalGCSAsset, **kwargs):
+def interval_gcs_import_asset(config: IntervalGCSAsset):
     # Find all of the "intervals" in the bucket and load them into the `raw_sources` dataset
     # Run these sources through a secondary dbt model into `clean_sources`
 
-    @asset(key=key, **kwargs)
+    @asset(name=config.name, key_prefix=config.key_prefix, **config.asset_kwargs)
     def gcs_asset(
         context: AssetExecutionContext, bigquery: BigQueryResource, gcs: GCSResource
     ) -> MaterializeResult:
@@ -192,18 +196,18 @@ def interval_gcs_import_asset(key: str, config: IntervalGCSAsset, **kwargs):
                 }
             )
 
-    @op(name=f"{key}_clean_up_op")
+    @op(name=f"{config.name}_clean_up_op")
     def gcs_clean_up_op(context: OpExecutionContext, config: dict):
         context.log.info(f"Running clean up for {key}")
         print(config)
 
-    @job(name=f"{key}_clean_up_job")
+    @job(name=f"{config.name}_clean_up_job")
     def gcs_clean_up_job():
         gcs_clean_up_op()
 
     @asset_sensor(
         asset_key=gcs_asset.key,
-        name=f"{key}_clean_up_sensor",
+        name=f"{config.name}_clean_up_sensor",
         job=gcs_clean_up_job,
         default_status=DefaultSensorStatus.RUNNING,
     )
@@ -214,7 +218,11 @@ def interval_gcs_import_asset(key: str, config: IntervalGCSAsset, **kwargs):
         yield RunRequest(
             run_key=context.cursor,
             run_config=RunConfig(
-                ops={f"{key}_clean_up_op": {"config": {"asset_event": asset_event}}}
+                ops={
+                    f"{config.name}_clean_up_op": {
+                        "config": {"asset_event": asset_event}
+                    }
+                }
             ),
         )
 

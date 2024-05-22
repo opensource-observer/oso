@@ -4,7 +4,7 @@ from dagster import AssetExecutionContext, AssetKey, asset
 
 from dagster_dbt import DbtCliResource, dbt_assets, DagsterDbtTranslator
 from google.cloud.bigquery.schema import SchemaField
-from .constants import main_dbt_manifest_path
+from .constants import production_dbt_manifest_path
 from .goldsky import (
     GoldskyConfig,
     goldsky_asset,
@@ -17,14 +17,17 @@ class CustomDagsterDbtTranslator(DagsterDbtTranslator):
         self._prefix = prefix
 
     def get_asset_key(self, dbt_resource_props: Mapping[str, Any]) -> AssetKey:
-        return super().get_asset_key(dbt_resource_props).with_prefix(self._prefix)
+        asset_key = super().get_asset_key(dbt_resource_props)
+        if dbt_resource_props["resource_type"] == "source":
+            return asset_key
+        return asset_key.with_prefix(self._prefix)
 
 
 @dbt_assets(
-    manifest=main_dbt_manifest_path,
-    dagster_dbt_translator=CustomDagsterDbtTranslator("main"),
+    manifest=production_dbt_manifest_path,
+    dagster_dbt_translator=CustomDagsterDbtTranslator("oso"),
 )
-def main_dbt_assets(context: AssetExecutionContext, main_dbt: DbtCliResource):
+def production_dbt_assets(context: AssetExecutionContext, main_dbt: DbtCliResource):
     yield from main_dbt.cli(["build"], context=context).stream()
 
 
@@ -37,8 +40,9 @@ def main_dbt_assets(context: AssetExecutionContext, main_dbt: DbtCliResource):
 
 
 base_blocks = goldsky_asset(
-    "base_blocks",
     GoldskyConfig(
+        key_prefix="base",
+        name="blocks",
         source_name="base-blocks",
         project_id="opensource-observer",
         destination_table_name="base_blocks",
@@ -51,8 +55,9 @@ base_blocks = goldsky_asset(
 )
 
 base_transactions = goldsky_asset(
-    "base_transactions",
     GoldskyConfig(
+        key_prefix="base",
+        name="transactions",
         source_name="base-enriched_transactions",
         project_id="opensource-observer",
         destination_table_name="base_transactions",
@@ -66,8 +71,9 @@ base_transactions = goldsky_asset(
 )
 
 base_traces = goldsky_asset(
-    "base_traces",
     GoldskyConfig(
+        key_prefix="base",
+        name="traces",
         source_name="base-traces",
         project_id="opensource-observer",
         destination_table_name="base_traces",
@@ -81,8 +87,9 @@ base_traces = goldsky_asset(
 )
 
 frax_blocks = goldsky_asset(
-    "frax_blocks",
     GoldskyConfig(
+        key_prefix="frax",
+        name="blocks",
         source_name="frax-blocks",
         project_id="opensource-observer",
         destination_table_name="frax_blocks",
@@ -96,8 +103,9 @@ frax_blocks = goldsky_asset(
 )
 
 frax_transactions = goldsky_asset(
-    "frax_transactions",
     GoldskyConfig(
+        key_prefix="frax",
+        name="transactions",
         source_name="frax-receipt_transactions",
         project_id="opensource-observer",
         destination_table_name="frax_transactions",
@@ -112,8 +120,9 @@ frax_transactions = goldsky_asset(
 )
 
 frax_traces = goldsky_asset(
-    "frax_traces",
     GoldskyConfig(
+        key_prefix="frax",
+        name="traces",
         source_name="frax-traces",
         project_id="opensource-observer",
         destination_table_name="frax_traces",
@@ -127,8 +136,9 @@ frax_traces = goldsky_asset(
 )
 
 mode_blocks = goldsky_asset(
-    "mode_blocks",
     GoldskyConfig(
+        key_prefix="mode",
+        name="blocks",
         source_name="mode-blocks",
         project_id="opensource-observer",
         destination_table_name="mode_blocks",
@@ -142,8 +152,9 @@ mode_blocks = goldsky_asset(
 )
 
 mode_transactions = goldsky_asset(
-    "mode_transactions",
     GoldskyConfig(
+        key_prefix="mode",
+        name="transactions",
         source_name="mode-receipt_transactions",
         project_id="opensource-observer",
         destination_table_name="mode_transactions",
@@ -158,8 +169,9 @@ mode_transactions = goldsky_asset(
 )
 
 mode_traces = goldsky_asset(
-    "mode_traces",
     GoldskyConfig(
+        key_prefix="mode",
+        name="traces",
         source_name="mode-traces",
         project_id="opensource-observer",
         destination_table_name="mode_traces",
@@ -173,8 +185,9 @@ mode_traces = goldsky_asset(
 )
 
 optimism_traces = goldsky_asset(
-    "optimism_traces",
     GoldskyConfig(
+        key_prefix="optimism",
+        name="traces",
         source_name="optimism-traces",
         project_id="opensource-observer",
         destination_table_name="optimism_traces",
@@ -188,8 +201,9 @@ optimism_traces = goldsky_asset(
 )
 
 pgn_blocks = goldsky_asset(
-    "pgn_blocks",
     GoldskyConfig(
+        key_prefix="pgn",
+        name="blocks",
         source_name="pgn-blocks",
         project_id="opensource-observer",
         destination_table_name="pgn_blocks",
@@ -203,8 +217,9 @@ pgn_blocks = goldsky_asset(
 )
 
 pgn_transactions = goldsky_asset(
-    "pgn_transactions",
     GoldskyConfig(
+        key_prefix="pgn",
+        name="transactions",
         source_name="pgn-enriched_transactions",
         project_id="opensource-observer",
         destination_table_name="pgn_transactions",
@@ -219,8 +234,9 @@ pgn_transactions = goldsky_asset(
 )
 
 pgn_traces = goldsky_asset(
-    "pgn_traces",
     GoldskyConfig(
+        key_prefix="pgn",
+        name="traces",
         source_name="pgn-traces",
         project_id="opensource-observer",
         destination_table_name="pgn_traces",
@@ -234,8 +250,9 @@ pgn_traces = goldsky_asset(
 )
 
 zora_blocks = goldsky_asset(
-    "zora_blocks",
     GoldskyConfig(
+        key_prefix="zora",
+        name="blocks",
         source_name="zora-blocks",
         project_id="opensource-observer",
         destination_table_name="zora_blocks",
@@ -249,8 +266,9 @@ zora_blocks = goldsky_asset(
 )
 
 zora_transactions = goldsky_asset(
-    "zora_transactions",
     GoldskyConfig(
+        key_prefix="zora",
+        name="transactions",
         source_name="zora-enriched_transactions",
         project_id="opensource-observer",
         destination_table_name="zora_transactions",
@@ -265,8 +283,9 @@ zora_transactions = goldsky_asset(
 )
 
 zora_traces = goldsky_asset(
-    "zora_traces",
     GoldskyConfig(
+        key_prefix="zora",
+        name="traces",
         source_name="zora-traces",
         project_id="opensource-observer",
         destination_table_name="zora_traces",
@@ -281,8 +300,9 @@ zora_traces = goldsky_asset(
 
 
 karma3_globaltrust = interval_gcs_import_asset(
-    "karma3_globaltrust",
     IntervalGCSAsset(
+        key_prefix="karma3",
+        name="globaltrust",
         project_id="opensource-observer",
         bucket_name="oso-dataset-transfer-bucket",
         path_base="openrank",
@@ -297,8 +317,9 @@ karma3_globaltrust = interval_gcs_import_asset(
 )
 
 karma3_globaltrust_config = interval_gcs_import_asset(
-    "karma3_globaltrust_config",
     IntervalGCSAsset(
+        key_prefix="karma3",
+        name="globaltrust_config",
         project_id="opensource-observer",
         bucket_name="oso-dataset-transfer-bucket",
         path_base="openrank",
@@ -313,8 +334,9 @@ karma3_globaltrust_config = interval_gcs_import_asset(
 )
 
 karma3_localtrust = interval_gcs_import_asset(
-    "karma3_localtrust",
     IntervalGCSAsset(
+        key_prefix="karma3",
+        name="localtrust",
         project_id="opensource-observer",
         bucket_name="oso-dataset-transfer-bucket",
         path_base="openrank",
@@ -329,8 +351,9 @@ karma3_localtrust = interval_gcs_import_asset(
 )
 
 gitcoin_passport_scores = interval_gcs_import_asset(
-    "gitcoin_passport_scores",
     IntervalGCSAsset(
+        key_prefix="gitcoin",
+        name="passport_scores",
         project_id="opensource-observer",
         bucket_name="oso-dataset-transfer-bucket",
         path_base="passport",
