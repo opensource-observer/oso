@@ -87,12 +87,6 @@ ossd_blockchain as (
 all_deployers as (
   select
     *,
-    "OPTIMISM" as artifact_namespace,
-    "OPTIMISM" as artifact_source
-  from {{ ref("stg_optimism__deployers") }}
-  union all
-  select
-    *,
     "MAINNET" as artifact_namespace,
     "ETHEREUM" as artifact_source
   from {{ ref("stg_ethereum__deployers") }}
@@ -102,6 +96,15 @@ all_deployers as (
     "ARBITRUM_ONE" as artifact_namespace,
     "ARBITRUM_ONE" as artifact_source
   from {{ ref("stg_arbitrum__deployers") }}
+  union all
+  select
+    block_timestamp,
+    transaction_hash,
+    deployer_address,
+    contract_address,
+    UPPER(network) as artifact_namespace,
+    UPPER(network) as artifact_source
+  from {{ ref("int_derived_contracts") }}
 ),
 
 discovered_contracts as (
@@ -117,8 +120,8 @@ discovered_contracts as (
   inner join all_deployers as ad
     on
       ob.artifact_source_id = ad.deployer_address
-      and ob.artifact_namespace = ad.artifact_namespace
-      and ob.artifact_type in ("EOA", "DEPLOYER", "FACTORY")
+      and UPPER(ob.artifact_namespace) = UPPER(ad.artifact_namespace)
+      and UPPER(ob.artifact_type) in ("EOA", "DEPLOYER", "FACTORY")
 ),
 
 all_artifacts as (

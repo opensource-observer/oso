@@ -7,4 +7,7 @@ sources:
     tables:
       - name: transactions
         identifier: transactions
+
+      - name: traces
+        identifier: traces
  
