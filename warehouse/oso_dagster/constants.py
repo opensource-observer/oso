@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 from typing import Dict, List
+import pathlib
 
 import requests
 from dagster_dbt import DbtCliResource
@@ -89,13 +90,17 @@ def load_dbt_manifests(targets: List[str]) -> Dict[str, str]:
         if os.getenv("DAGSTER_DBT_GENERATE_AND_AUTH_GCP"):
             generate_profile_and_auth()
         for target in targets:
+            target_path = Path(dbt_target_base_dir, target)
+            # Ensure the dbt_target_base_dir exists
+            pathlib.Path(dbt_target_base_dir).mkdir(parents=True, exist_ok=True)
+
             dbt = DbtCliResource(
                 project_dir=os.fspath(main_dbt_project_dir), target=target
             )
             manifests[target] = (
                 dbt.cli(
                     ["--quiet", "parse"],
-                    target_path=Path(dbt_target_base_dir, target),
+                    target_path=target_path,
                 )
                 .wait()
                 .target_path.joinpath("manifest.json")
