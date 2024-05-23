@@ -13,7 +13,7 @@ import {
   GET_EVENTS_DAILY_TO_PROJECT,
   GET_EVENTS_WEEKLY_TO_PROJECT,
   GET_EVENTS_MONTHLY_TO_PROJECT,
-  GET_USERS_MONTHLY_TO_PROJECT,
+  //GET_USERS_MONTHLY_TO_PROJECT,
   GET_EVENTS_MONTHLY_TO_COLLECTION,
   GET_EVENTS_WEEKLY_TO_COLLECTION,
   GET_EVENTS_DAILY_TO_COLLECTION,
@@ -380,12 +380,15 @@ function ArtifactEventDataProvider(props: EventDataProviderProps) {
     ),
     amount: ensure<number>(x.amount, "Data missing 'number'"),
   }));
-  const entityData = artifactData?.artifacts.map((x) => ({
+  const entityData = artifactData?.artifacts_v1.map((x) => ({
     id: ensure<string>(x.artifact_id, "artifact missing 'artifact_id'"),
-    name: ensure<string>(
-      x.artifact_latest_name,
-      "artifact missing 'artifact_latest_name'",
-    ),
+    name:
+      ensure<string>(
+        x.artifact_namespace,
+        "artifact missing 'artifact_namespace'",
+      ) +
+      "/" +
+      ensure<string>(x.artifact_name, "artifact missing 'artifact_name'"),
   }));
   const formattedData = formatData(props, normalizedEventData, entityData, {
     gapFill: bucketWidth === "day",
@@ -448,7 +451,7 @@ function ProjectEventDataProvider(props: EventDataProviderProps) {
     ),
     amount: ensure<number>(x.amount, "Data missing 'number'"),
   }));
-  const entityData = projectData?.projects.map((x) => ({
+  const entityData = projectData?.projects_v1.map((x) => ({
     id: ensure<string>(x.project_id, "project missing 'project_id'"),
     name: ensure<string>(x.project_name, "project missing 'project_name'"),
   }));
@@ -513,7 +516,7 @@ function CollectionEventDataProvider(props: EventDataProviderProps) {
     ),
     amount: ensure<number>(x.amount, "Data missing 'number'"),
   }));
-  const entityData = collectionData?.collections.map((x) => ({
+  const entityData = collectionData?.collections_v1.map((x) => ({
     id: ensure<string>(x.collection_id, "collection missing 'collection_id'"),
     name: ensure<string>(
       x.collection_name,
@@ -539,8 +542,9 @@ function CollectionEventDataProvider(props: EventDataProviderProps) {
  * @param props
  * @returns
  */
-function ProjectUserDataProvider(props: EventDataProviderProps) {
+function ProjectUserDataProvider(_props: EventDataProviderProps) {
   useEnsureAuth();
+  /**
   const {
     data: rawEventData,
     error: eventError,
@@ -585,6 +589,8 @@ function ProjectUserDataProvider(props: EventDataProviderProps) {
       error={eventError ?? projectError}
     />
   );
+  */
+  return <p>Unimplemented</p>;
 }
 
 export {

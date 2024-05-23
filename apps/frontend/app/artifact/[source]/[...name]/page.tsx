@@ -1,33 +1,29 @@
 import { notFound } from "next/navigation";
 import { cache } from "react";
 import { PlasmicComponent } from "@plasmicapp/loader-nextjs";
-import { PLASMIC } from "../../../../../plasmic-init";
-import { PlasmicClientRootProvider } from "../../../../../plasmic-init-client";
-import { cachedGetArtifactByName } from "../../../../../lib/graphql/cached-queries";
-import { logger } from "../../../../../lib/logger";
-import {
-  catchallPathToString,
-  pathToNamespaceEnum,
-  pathToTypeEnum,
-} from "../../../../../lib/paths";
+import { PLASMIC } from "../../../../plasmic-init";
+import { PlasmicClientRootProvider } from "../../../../plasmic-init-client";
+import { cachedGetArtifactByName } from "../../../../lib/graphql/cached-queries";
+import { logger } from "../../../../lib/logger";
 
 const PLASMIC_COMPONENT = "ArtifactPage";
 //export const dynamic = STATIC_EXPORT ? "force-static" : "force-dynamic";
 export const dynamic = "force-static";
 export const dynamicParams = true;
 export const revalidate = false; // 3600 = 1 hour
+/**
 // TODO: This cannot be empty due to this bug
 // https://github.com/vercel/next.js/issues/61213
-const STATIC_EXPORT_PARAMS = [
+const STATIC_EXPORT_PARAMS: ArtifactPagePath[] = [
   {
-    namespace: "github",
-    type: "repo",
+    source: "github",
     name: ["opensource-observer", "oso"],
   },
 ];
 export async function generateStaticParams() {
   return STATIC_EXPORT_PARAMS;
 }
+ */
 
 const cachedFetchComponent = cache(async (componentName: string) => {
   try {
@@ -44,40 +40,42 @@ const cachedFetchComponent = cache(async (componentName: string) => {
  * on the first HTTP request, which should be faster than fetching it client-side
  */
 
+type ArtifactPagePath = {
+  source: string;
+  name: string[];
+};
+
 type ArtifactPageProps = {
-  params: {
-    namespace: string;
-    type: string;
-    name: string[];
-  };
+  params: ArtifactPagePath;
 };
 
 export default async function ArtifactPage(props: ArtifactPageProps) {
   const { params } = props;
-  const namespace = pathToNamespaceEnum(params.namespace);
-  const type = pathToTypeEnum(params.type);
-  const name = catchallPathToString(params.name);
+
   if (
-    !params.namespace ||
-    !params.type ||
+    !params.source ||
     !params.name ||
     !Array.isArray(params.name) ||
-    params.name.length < 1 ||
-    !namespace ||
-    !type
+    params.name.length < 1
   ) {
     logger.warn("Invalid artifact page path", params);
     notFound();
   }
 
+  const source = params.source.toUpperCase();
+  const [namespace, name] =
+    params.name.length > 1 ? params.name : [undefined, params.name[0]];
+
   // Get artifact metadata from the database
-  const { artifacts: artifactArray } = await cachedGetArtifactByName({
+  const { artifacts_v1: artifactArray } = await cachedGetArtifactByName({
+    artifact_source: source,
     artifact_namespace: namespace,
-    artifact_type: type,
     artifact_name: name,
   });
   if (!Array.isArray(artifactArray) || artifactArray.length < 1) {
-    logger.warn(`Cannot find artifact (namespace=${namespace}, name=${name})`);
+    logger.warn(
+      `Cannot find artifact (source=${source}, namespace=${namespace}, name=${name})`,
+    );
     notFound();
   }
   const artifact = artifactArray[0];

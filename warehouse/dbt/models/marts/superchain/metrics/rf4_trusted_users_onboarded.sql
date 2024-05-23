@@ -1,9 +1,3 @@
-{# 
-  This model calculates the number of trusted users interacting with a project within their first week of appearing on the Superchain.
-  TODO: resolve whether this should consider RF4 projects only or all projects.
-  Currently, this is considers interactions with RF4 projects only.
-#}
-
 with user_stats as (
   select
     trusted_user_id,
@@ -25,7 +19,8 @@ first_txns as (
   where
     events.event_type = 'CONTRACT_INVOCATION_SUCCESS_DAILY_COUNT'
     and events.trusted_user_id is not null
-    and events.bucket_day <= DATE_ADD(user_stats.first_day, interval 7 day)
+    and events.bucket_day <= DATE_ADD(user_stats.first_day, interval 30 day)
+    and user_stats.first_day >= '2023-10-01'
 )
 
 select

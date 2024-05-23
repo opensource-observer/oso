@@ -16,13 +16,67 @@ Open Source Observer is a free analytics suite that helps funders measure the im
     - [on Vercel](https://www.opensource.observer/docs) - Production build
   - `/frontend`: frontend application (Next.js)
     - [on Vercel](https://www.opensource.observer) - Production build
+  - `/hasura`: API service (Hasura) - Production
+- `/docker`: Docker files
+- `/lib`: Common libraries
+  - `/oss-artifact-validators`: Simple library to validate different properties of an "artifact"
 - `/warehouse`: All code specific to the data warehouse
   - `/dbt`: dbt configuration
-  - `/cloudquery-*`: cloudquery plugins (there are many)
+  - `/cloudquery-*`: cloudquery plugins for ingesting data (there are many)
+  - `/oso_dagster`: Dagster configuration for orchestrating software-defined assets
+  - `/oso_lets_go`: Utility for setting up dbt with Google Cloud
   - Also contains other tools to manage warehouse pipelines
-- `/ops`: Our ops related code (mostly terraform)
+- `/ops`: Our ops related code
+  - `/external-prs`: GitHub app for validating pull requests
+  - `/k8s-*`: Kubernetes configuration
+  - `/tf-modules`: Terraform modules
 
-## Frontend Quickstart
+## Quickstart
+
+### System Prequisites
+
+Before you begin you'll need the following on your system:
+
+- Node >= 20 (we suggest installing with [nvm](https://github.com/nvm-sh/nvm))
+- pnpm >= 9 (see [here](https://pnpm.io/installation))
+- Python >=3.11 (see [here](https://www.python.org/downloads/))
+- Python Poetry >= 1.8 (see [here](https://pypi.org/project/poetry/))
+- git (see [here](https://github.com/git-guides/install-git))
+- BigQuery access (see [here](https://docs.opensource.observer/docs/get-started/#login-to-bigquery) if you don't have it setup already)
+- gcloud (see [here](https://cloud.google.com/sdk/docs/install))
+
+### Setup dependencies
+
+First, authenticate with `gcloud`:
+
+```bash
+gcloud auth application-default login
+```
+
+Then install Node.js dependencies
+
+```
+pnpm install
+```
+
+Also install the python dependencies
+
+```
+poetry install
+```
+
+You will also need to setup `dbt` to connect to Google BigQuery for running the data pipeline. The following wizard will copy a small playground dataset to your personal Google account and setup `dbt` for you.
+
+```bash
+poetry run oso_lets_go
+```
+
+:::tip
+The script is idempotent, so you can safely run it again
+if you encounter any issues.
+:::
+
+## Frontend Development
 
 ### Setup and build the frontend
 
@@ -53,32 +107,12 @@ To run a dev server that watches for changes across code and Plasmic, run:
 pnpm dev:frontend
 ```
 
-## Playbooks
+## dbt Development
 
-For setup and common operations for each subproject, navigate into the respective directory and check out the `README.md`.
-
-## dbt Start
-
-Our dataset are public! If you'd like to use them as opposed to adding to our
+Our datasets are public! If you'd like to use them directly as opposed to adding to our
 dbt models, checkout [our docs!](https://docs.opensource.observer/docs/get-started/)
 
-### Setting up
-
-#### Prequisites
-
-- Python >=3.11
-- [poetry](https://python-poetry.org/) >= 1.8
-  - Install with pipx: `pipx install poetry`
-
-#### Install dependencies
-
-From inside the root directory, run poetry to install the dependencies.
-
-```bash
-$ poetry install
-```
-
-#### Using the poetry environment
+### Using the poetry environment
 
 Once installation has completed you can enter the poetry environment.
 
@@ -94,7 +128,7 @@ $ which dbt
 
 _This should return something like `opensource-observer/oso/.venv/bin/dbt`_
 
-#### Authenticating to bigquery
+### Authenticating to bigquery
 
 If you have write access to the dataset then you can connect to it by setting
 the `opensource_observer` profile in `dbt`. Inside `~/.dbt/profiles.yml` (create
@@ -126,31 +160,7 @@ opensource_observer:
   target: playground
 ```
 
-If you don't have `gcloud` installed you'll need to do so as well. The
-instructions are [here](https://cloud.google.com/sdk/docs/install).
-
-_For macOS users_: Instructions can be a bit clunky if you're on macOS, so we
-suggest using homebrew like this:
-
-```bash
-$ brew install --cask google-cloud-sdk
-```
-
-Finally, authenticate to google run the following (a browser window will pop up
-after this so be sure to come back to the docs after you've completed the
-login):
-
-```bash
-$ gcloud auth application-default login
-```
-
-You'll need to do this once an hour. This is simplest to setup but can be a pain
-as you need to regularly reauth. If you need longer access you can setup a
-service-account in GCP, but these docs will not cover that for now.
-
-You should now be logged into BigQuery!
-
-#### Setting up VS Code
+### Setting up VS Code
 
 The [Power User for dbt core](https://marketplace.visualstudio.com/items?itemName=innoverio.vscode-dbt-power-user) extension is pretty helpful.
 
@@ -169,7 +179,7 @@ Then in VS Code:
 
 Check that you have a little check mark next to "dbt" in the bottom bar.
 
-## Usage
+### Running dbt
 
 Once you've updated any models you can run dbt _within the poetry environment_ by simply calling:
 
@@ -177,11 +187,19 @@ Once you've updated any models you can run dbt _within the poetry environment_ b
 $ dbt run
 ```
 
-_Note: If you configured the dbt profile as shown in this document, this `dbt
-run` will write to the `opensource-observer.oso_playground` dataset._
+:::tip
+Note: If you configured the dbt profile as shown in this document,
+this `dbt run` will write to the `opensource-observer.oso_playground` dataset.
+:::
 
 It is likely best to target a specific model so things don't take so long on some of our materializations:
 
 ```
 $ dbt run --select {name_of_the_model}
 ```
+
+## Reference Playbooks
+
+For setup and common operations for each subproject, navigate into the respective directory and check out the `README.md`.
+
+You can also find some operations guides on our [documentation](https://docs.opensource.observer/docs/how-oso-works/ops/).
