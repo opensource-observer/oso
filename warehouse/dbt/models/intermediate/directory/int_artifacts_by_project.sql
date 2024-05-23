@@ -97,10 +97,21 @@ all_deployers as (
     "ARBITRUM_ONE" as artifact_source
   from {{ ref("stg_arbitrum__deployers") }}
   union all
+  {# Includes all deployers of a contract #}
   select
     block_timestamp,
     transaction_hash,
     deployer_address,
+    contract_address,
+    UPPER(network) as artifact_namespace,
+    UPPER(network) as artifact_source
+  from {{ ref("int_derived_contracts") }}
+  union all
+  {# Includes all factory deployers of a contract #}
+  select
+    block_timestamp,
+    transaction_hash,
+    factory_deployer_address as deployer_address,
     contract_address,
     UPPER(network) as artifact_namespace,
     UPPER(network) as artifact_source
