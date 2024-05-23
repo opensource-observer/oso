@@ -58,7 +58,7 @@ export default async function ProjectPage(props: ProjectPageProps) {
 
   // Get project metadata from the database
   const name = catchallPathToString(params.name);
-  const { projects: projectArray } = await cachedGetProjectByName({
+  const { projects_v1: projectArray } = await cachedGetProjectByName({
     project_name: name,
   });
   if (!Array.isArray(projectArray) || projectArray.length < 1) {
@@ -79,7 +79,7 @@ export default async function ProjectPage(props: ProjectPageProps) {
       project_ids: [projectId],
     }),
   ]);
-  const { event_types: eventTypes } = data[0];
+  const { event_types_v1: eventTypes } = data[0];
   const { code_metrics_by_project_v1: codeMetrics } = data[1];
   const { onchain_metrics_by_project_v1: onchainMetrics } = data[2];
 
