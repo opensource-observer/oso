@@ -67,7 +67,7 @@ export default async function ArtifactPage(props: ArtifactPageProps) {
     params.name.length > 1 ? params.name : [undefined, params.name[0]];
 
   // Get artifact metadata from the database
-  const { artifacts: artifactArray } = await cachedGetArtifactByName({
+  const { artifacts_v1: artifactArray } = await cachedGetArtifactByName({
     artifact_source: source,
     artifact_namespace: namespace,
     artifact_name: name,
