@@ -1,12 +1,11 @@
-name: PR Sync
+# This workflow use the Github PR Syncer https://github.com/dataRecce/github-pr-syncer/
+# to sync the PRs from the upstream repository
+name: OSO Recce PR Sync
 
 on:
   workflow_dispatch:
-  pull_request:
-    branches:
-      - dev
-
-permissions: write-all
+  schedule:
+    - cron: '30 17 * * *' # run at 1:30 AM (UTC + 8) everyday
 
 jobs:
   prsync:
@@ -35,7 +34,7 @@ jobs:
     - name: Run pysync
       env:
         # GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        # We meed the "workflows" permission which teh github token for job cannot provide. Use the PersonalAccessToken instead.
+        # We need the "workflows" permission which the github token for job cannot provide. Use the PersonalAccessToken instead.
         GITHUB_TOKEN: ${{ secrets.GH_TOKEN_FOR_ADVANCED_PERMISSIONS }}    
       run: |
         prsync 'DataRecce/oso'
