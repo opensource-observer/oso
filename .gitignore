@@ -70,3 +70,5 @@ supabase/.temp/
 target/
 target-base/
 recce_state.json
+venv/
+.envrc

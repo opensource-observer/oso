@@ -1,0 +1,40 @@
+# This workflow use the Github PR Syncer https://github.com/dataRecce/github-pr-syncer/
+# to sync the PRs from the upstream repository
+name: OSO Recce PR Sync
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '30 17 * * *' # run at 1:30 AM (UTC + 8) everyday
+
+jobs:
+  prsync:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
+        cache: 'pip'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install git+https://github.com/DataRecce/github-pr-syncer.git
+
+    - name: Set up Git
+      run: |
+        git config --global user.name "prsync[bot]"
+        git config --global user.email "prsync[bot]@users.noreply.github.com"
+
+    - name: Run pysync
+      env:
+        # GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        # We need the "workflows" permission which the github token for job cannot provide. Use the PersonalAccessToken instead.
+        GITHUB_TOKEN: ${{ secrets.GH_TOKEN_FOR_ADVANCED_PERMISSIONS }}    
+      run: |
+        prsync 'DataRecce/oso'

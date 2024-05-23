@@ -1,0 +1,26 @@
+opensource_observer:
+  outputs:
+    playground:
+      type: bigquery
+      method: service-account
+      keyfile: "{{ env_var('DBT_GOOGLE_KEYFILE') }}"
+      project: "{{ env_var('DBT_GOOGLE_PROJECT') }}"
+      dataset: "{{ env_var('DBT_GOOGLE_DATASET') }}"
+      job_execution_time_seconds: 300
+      job_retries: 1
+      location: US
+      threads: 32
+    dev:
+      type: bigquery
+      method: service-account
+      keyfile: "{{ env_var('DBT_GOOGLE_KEYFILE') }}"
+      project: "{{ env_var('DBT_GOOGLE_PROJECT') }}"
+      dataset: "{{ env_var('DBT_GOOGLE_DEV_DATASET') }}"
+      job_execution_time_seconds: 300
+      job_retries: 1
+      location: US
+      threads: 32
+  # By default we target the playground. it's less costly and also safer to write
+  # there while developing
+  target: playground
+
