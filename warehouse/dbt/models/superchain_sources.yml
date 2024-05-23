@@ -5,3 +5,6 @@ sources:
     tables:
       - name: optimism_traces
         identifier: optimism_traces
+        meta:
+          dagster:
+            asset_key: ["optimism", "traces"]
