@@ -22,6 +22,8 @@ env:
   DOCS_ALGOLIA_API_KEY: "test"
   DOCS_ALGOLIA_INDEX: "test"
   DOCS_SEGMENT_WRITE_KEY: "test"
+  # Hasura variables
+  DBT_TARGET: "production"
   # Google variables
   GOOGLE_PROJECT_ID: "opensource-observer"
   GOOGLE_TEST_DUMMY_CREDENTIALS_JSON: ${{ vars.GOOGLE_TEST_DUMMY_CREDENTIALS_JSON }}
