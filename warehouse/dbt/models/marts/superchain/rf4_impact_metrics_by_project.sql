@@ -64,15 +64,6 @@ pivot_metrics as (
     ) as recurring_addresses
   from metrics
   group by project_id
-),
-
-log_metrics as (
-  select
-    project_id,
-    LOG10(gas_fees) as log_gas_fees,
-    LOG10(transaction_count) as log_transaction_count,
-    LOG10(trusted_transaction_count) as log_trusted_transaction_count
-  from pivot_metrics
 )
 
 select
@@ -81,6 +72,10 @@ select
   pivot_metrics.gas_fees,
   pivot_metrics.transaction_count,
   pivot_metrics.trusted_transaction_count,
+  -- LOG10(pivot_metrics.gas_fees) as log_gas_fees,
+  -- LOG10(pivot_metrics.transaction_count) as log_transaction_count,
+  -- LOG10(pivot_metrics.trusted_transaction_count)
+  --   as log_trusted_transaction_count,
   pivot_metrics.trusted_transaction_share,
   pivot_metrics.trusted_users_onboarded,
   pivot_metrics.daily_active_addresses,
@@ -88,12 +83,7 @@ select
   pivot_metrics.monthly_active_addresses,
   pivot_metrics.trusted_monthly_active_users,
   pivot_metrics.recurring_addresses,
-  pivot_metrics.trusted_recurring_users,
-  log_metrics.log_gas_fees,
-  log_metrics.log_transaction_count,
-  log_metrics.log_trusted_transaction_count
+  pivot_metrics.trusted_recurring_users
 from pivot_metrics
-left join log_metrics
-  on pivot_metrics.project_id = log_metrics.project_id
 left join {{ ref('projects_v1') }}
   on pivot_metrics.project_id = projects_v1.project_id
