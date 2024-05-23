@@ -1,10 +1,10 @@
 import os
-from typing import Any, Mapping
-from dagster import AssetExecutionContext, AssetKey, asset
+from typing import Any, Mapping, Dict, List
+from dagster import AssetExecutionContext, AssetKey, asset, AssetsDefinition
 
 from dagster_dbt import DbtCliResource, dbt_assets, DagsterDbtTranslator
 from google.cloud.bigquery.schema import SchemaField
-from .constants import production_dbt_manifest_path
+from .constants import main_dbt_manifests, main_dbt_project_dir
 from .goldsky import (
     GoldskyConfig,
     goldsky_asset,
@@ -13,22 +13,77 @@ from .factories import interval_gcs_import_asset, SourceMode, Interval, Interval
 
 
 class CustomDagsterDbtTranslator(DagsterDbtTranslator):
-    def __init__(self, prefix: str):
+    def __init__(
+        self,
+        prefix: str,
+        internal_schema_map: Dict[str, str],
+    ):
         self._prefix = prefix
+        self._internal_schema_map = internal_schema_map
 
     def get_asset_key(self, dbt_resource_props: Mapping[str, Any]) -> AssetKey:
         asset_key = super().get_asset_key(dbt_resource_props)
-        if dbt_resource_props["resource_type"] == "source":
+        final_key = asset_key.with_prefix(self._prefix)
+        # This is a temporary hack to get ossd as a top level item in production
+        if (
+            dbt_resource_props.get("source_name", "") == "ossd"
+            and dbt_resource_props["schema"] == "oso"
+            and dbt_resource_props.get("identifier", "").endswith("_ossd")
+        ):
             return asset_key
-        return asset_key.with_prefix(self._prefix)
+        if dbt_resource_props["resource_type"] == "source":
+            schema = dbt_resource_props["schema"]
+            if schema in self._internal_schema_map:
+                new_key = self._internal_schema_map[schema][:]
+                new_key.append(dbt_resource_props["identifier"])
+                final_key = AssetKey(new_key)
+            else:
+                final_key = asset_key
+        return final_key
 
 
-@dbt_assets(
-    manifest=production_dbt_manifest_path,
-    dagster_dbt_translator=CustomDagsterDbtTranslator("oso"),
+def dbt_assets_from_manifests_map(
+    project_dir: str,
+    manifests: Dict[str, str],
+    internal_map: Dict[str, List[str]] = None,
+) -> List[AssetsDefinition]:
+    if not internal_map:
+        internal_map = {}
+    assets: List[AssetsDefinition] = []
+    for target, manifest_path in manifests.items():
+
+        translator = CustomDagsterDbtTranslator(["dbt", target], internal_map)
+
+        @dbt_assets(
+            name=f"{target}_dbt",
+            manifest=manifest_path,
+            dagster_dbt_translator=translator,
+        )
+        def _generated_dbt_assets(context: AssetExecutionContext, **kwargs):
+            dbt = DbtCliResource(project_dir=os.fspath(project_dir), target=target)
+            yield from dbt.cli(["build"], context=context).stream()
+
+        assets.append(_generated_dbt_assets)
+
+    return assets
+
+
+# @dbt_assets(
+#     manifest=production_dbt_manifest_path,
+#     dagster_dbt_translator=CustomDagsterDbtTranslator("oso"),
+# )
+# def production_dbt_assets(context: AssetExecutionContext, main_dbt: DbtCliResource):
+#     yield from main_dbt.cli(["build"], context=context).stream()
+
+all_dbt_assets = dbt_assets_from_manifests_map(
+    main_dbt_project_dir,
+    main_dbt_manifests,
+    {
+        "oso": ["dbt", "production"],
+        "oso_base_playground": ["dbt", "base_playground"],
+        "oso_playground": ["dbt", "playground"],
+    },
 )
-def production_dbt_assets(context: AssetExecutionContext, main_dbt: DbtCliResource):
-    yield from main_dbt.cli(["build"], context=context).stream()
 
 
 # @dbt_assets(

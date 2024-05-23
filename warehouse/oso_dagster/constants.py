@@ -1,11 +1,11 @@
 import os
 from pathlib import Path
+from typing import Dict, List
 
 import requests
 from dagster_dbt import DbtCliResource
 
-production_dbt_project_dir = Path(__file__).joinpath("..", "..", "..").resolve()
-production_dbt = DbtCliResource(project_dir=os.fspath(production_dbt_project_dir))
+main_dbt_project_dir = Path(__file__).joinpath("..", "..", "..").resolve()
 
 # Leaving this for now as it allows a separate source related dbt model
 # source_dbt_project_dir = Path(__file__).joinpath("..", "..", "source_dbt").resolve()
@@ -75,37 +75,34 @@ def generate_profile_and_auth():
         )
 
 
-# If DAGSTER_DBT_PARSE_PROJECT_ON_LOAD is set, a manifest will be created at run time.
-# Otherwise, we expect a manifest to be present in the project's target directory.
-if os.getenv("DAGSTER_DBT_PARSE_PROJECT_ON_LOAD") or os.getenv(
-    "DAGSTER_DBT_GENERATE_AND_AUTH_GCP"
-):
-    if os.getenv("DAGSTER_DBT_GENERATE_AND_AUTH_GCP"):
-        generate_profile_and_auth()
-    production_dbt_manifest_path = (
-        production_dbt.cli(
-            ["--quiet", "parse", "--target", "production"],
-            target_path=Path("target"),
-        )
-        .wait()
-        .target_path.joinpath("manifest.json")
-    )
-    # source_dbt_manifest_path = (
-    #     source_dbt.cli(
-    #         ["--quiet", "parse"],
-    #         target_path=Path("target"),
-    #     )
-    #     .wait()
-    #     .target_path.joinpath("manifest.json")
-    # )
-    # print(f"THE PATH {source_dbt_manifest_path}")
-else:
-    production_dbt_manifest_path = production_dbt_project_dir.joinpath(
-        "target", "manifest.json"
-    )
-    # source_dbt_manifest_path = source_dbt_project_dir.joinpath(
-    #     "target", "manifest.json"
-    # )
+def load_dbt_manifests(targets: List[str]) -> Dict[str, str]:
+    manifests: Dict[str, str] = dict()
+    dbt_target_base_dir = os.getenv("DAGSTER_DBT_TARGET_BASE_DIR")
+
+    # If DAGSTER_DBT_PARSE_PROJECT_ON_LOAD is set, a manifest will be created at
+    # run time. Otherwise, we error for now. Eventually the manifests should be
+    # generated during container creation so this doesn't need to run every time
+    # a docker container loads.
+    if os.getenv("DAGSTER_DBT_PARSE_PROJECT_ON_LOAD") or os.getenv(
+        "DAGSTER_DBT_GENERATE_AND_AUTH_GCP"
+    ):
+        if os.getenv("DAGSTER_DBT_GENERATE_AND_AUTH_GCP"):
+            generate_profile_and_auth()
+        for target in targets:
+            dbt = DbtCliResource(
+                project_dir=os.fspath(main_dbt_project_dir), target=target
+            )
+            manifests[target] = (
+                dbt.cli(
+                    ["--quiet", "parse"],
+                    target_path=Path(dbt_target_base_dir, target),
+                )
+                .wait()
+                .target_path.joinpath("manifest.json")
+            )
+    else:
+        raise NotImplementedError("Currently we must generate dbt manifests")
+    return manifests
 
 
-custom_dbt_mappings = {}
+main_dbt_manifests = load_dbt_manifests(["production", "base_playground", "playground"])

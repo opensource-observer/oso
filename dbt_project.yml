@@ -28,3 +28,11 @@ models:
     +materialized: view
     marts:
       +materialized: table
+    
+
+sources:
+  opensource_observer:
+    playground:
+      +enabled: "{{ target.name in ['playground', 'dev'] | as_bool }}"
+    base_playground:
+      +enabled: "{{ target.name in ['base_playground'] | as_bool }}"
