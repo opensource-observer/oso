@@ -176,3 +176,4 @@ from
   {{ ref('int_projects') }}
 left join aggs
   on int_projects.project_id = aggs.project_id
+where aggs.event_source is not null
