@@ -53,6 +53,7 @@ optimist_nft_holders as (
 passport_scores as (
   select
     passport_address as address,
+    1 as passport_user,
     CAST(
       COALESCE(evidence_rawscore >= evidence_threshold, false) as int64
     ) as passport_verification
@@ -81,6 +82,8 @@ trusted_user_model as (
       as eigentrust_verification,
     COALESCE(web_of_trust.vitalik_verification, 0)
       as vitalik_verification,
+    COALESCE(passport_scores.passport_user, 0)
+      as passport_user,
     COALESCE(passport_scores.passport_verification, 0)
       as passport_verification,
     COALESCE(optimist_nft_holders.optimist_nft_verification, 0)
@@ -104,6 +107,7 @@ select
   farcaster_prepermissionless,
   eigentrust_verification,
   vitalik_verification,
+  passport_user,
   passport_verification,
   optimist_nft_verification,
   case
