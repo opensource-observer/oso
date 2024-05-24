@@ -1,59 +1,60 @@
 with deployers as (
   select
     *,
-    'OPTIMISM' as deployer_source
+    'OPTIMISM' as artifact_source
   from {{ ref('stg_optimism__deployers') }}
   union all
   select
     *,
-    'BASE' as deployer_source
+    'BASE' as artifact_source
   from {{ ref('stg_base__deployers') }}
   union all
   select
     *,
-    'FRAX' as deployer_source
+    'FRAX' as artifact_source
   from {{ ref('stg_frax__deployers') }}
   union all
   select
     *,
-    'MODE' as deployer_source
+    'MODE' as artifact_source
   from {{ ref('stg_mode__deployers') }}
   union all
   select
     *,
-    'ZORA' as deployer_source
+    'ZORA' as artifact_source
   from {{ ref('stg_zora__deployers') }}
 ),
 
 factories as (
   select
     *,
-    'OPTIMISM' as factory_source
+    'OPTIMISM' as artifact_source
   from {{ ref('stg_optimism__factories') }}
   union all
   select
     *,
-    'BASE' as factory_source
+    'BASE' as artifact_source
   from {{ ref('stg_base__factories') }}
   union all
   select
     *,
-    'FRAX' as factory_source
+    'FRAX' as artifact_source
   from {{ ref('stg_frax__factories') }}
   union all
   select
     *,
-    'MODE' as factory_source
+    'MODE' as artifact_source
   from {{ ref('stg_mode__factories') }}
   union all
   select
     *,
-    'ZORA' as factory_source
+    'ZORA' as artifact_source
   from {{ ref('stg_zora__factories') }}
 ),
 
 contract_deployments as (
   select
+    artifact_source,
     block_timestamp,
     deployer_address as root_deployer_address,
     deployer_address as created_by_address,
@@ -73,6 +74,7 @@ contract_deployments as (
 
 factory_deployments as (
   select
+    factories.artifact_source,
     factories.block_timestamp,
     deployers.deployer_address as root_deployer_address,
     factories.factory_address as created_by_address,

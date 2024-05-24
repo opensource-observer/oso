@@ -5,6 +5,7 @@
 }}
 
 select
+  artifact_source,
   transaction_hash,
   block_timestamp,
   root_deployer_address,
