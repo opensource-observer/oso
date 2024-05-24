@@ -20,7 +20,7 @@ jobs:
   build-deploy:
     # NOTE: This name appears in GitHub's Checks API.
     name: build-deploy
-    environment: deploy
+    environment: indexer
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -51,7 +51,7 @@ jobs:
       - name: Login to google
         uses: "google-github-actions/auth@v2"
         with:
-          credentials_json: "${{ secrets.GOOGLE_BQ_ADMIN_CREDENTIALS_JSON }}"
+          credentials_json: "${{ secrets.GOOGLE_CREDENTIALS_JSON }}"
           create_credentials_file: true
 
       - name: Setup dbt profile
