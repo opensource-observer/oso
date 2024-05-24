@@ -61,6 +61,9 @@ jobs:
       - name: Build
         run: pnpm build:dbt:docs
 
+      # This is necessary because wrangler tries to install at monorepo root
+      - run: echo "ignore-workspace-root-check=true" >> .npmrc
+
       - name: Publish
         uses: cloudflare/wrangler-action@v3
         with:
