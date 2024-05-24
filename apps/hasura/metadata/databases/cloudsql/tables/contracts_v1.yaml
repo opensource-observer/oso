@@ -1,5 +1,5 @@
 table:
-  name: deployers_v1
+  name: contracts_v1
   schema: public
 select_permissions:
   - role: anonymous
