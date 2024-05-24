@@ -55,12 +55,12 @@ factories as (
 contract_deployments as (
   select
     artifact_source,
+    transaction_hash,
     block_timestamp,
     deployer_address as root_deployer_address,
     deployer_address as created_by_address,
     contract_address,
     deployer_address as originating_eoa_address,
-    transaction_hash,
     'EOA' as creator_type,
     case
       when contract_address in (
@@ -75,11 +75,11 @@ contract_deployments as (
 factory_deployments as (
   select
     factories.artifact_source,
+    factories.transaction_hash,
     factories.block_timestamp,
     deployers.deployer_address as root_deployer_address,
     factories.factory_address as created_by_address,
     factories.contract_address,
-    factories.transaction_hash,
     'FACTORY' as creator_type,
     'CONTRACT' as contract_type,
     COALESCE(factories.originating_address, deployers.deployer_address)
