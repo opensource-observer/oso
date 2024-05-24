@@ -1,0 +1,7 @@
+sources:
+  - name: static_data_sources
+    database: opensource-observer
+    schema: static_data_sources
+    tables:
+      - name: optimist_nft_holders
+        identifier: optimist_nft_holders
