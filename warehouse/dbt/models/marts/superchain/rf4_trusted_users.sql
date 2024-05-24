@@ -1,13 +1,12 @@
 with farcaster_users as (
   select
-    user_source_id as farcaster_id,
-    artifact_name as address,
+    fid as farcaster_id,
+    address,
     CAST(
-      user_source_id < '20939'
+      fid < '20939'
       as int64
     ) as farcaster_prepermissionless
-  from {{ ref('int_artifacts_by_user') }}
-  where user_source = 'FARCASTER'
+  from {{ ref('stg_farcaster__addresses') }}
 ),
 
 eigentrust_top_users as (
