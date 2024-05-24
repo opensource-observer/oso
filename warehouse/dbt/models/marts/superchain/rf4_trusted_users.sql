@@ -115,16 +115,11 @@ select
       farcaster_prepermissionless
       + eigentrust_verification
       + vitalik_verification
-    ) > 0
-      then true
+    ) > 0 then true
     when (
-      farcaster_user = 1
-      and (
-        passport_verification
-        + optimist_nft_verification
-      ) > 0
-    ) then true
+      passport_verification
+      + optimist_nft_verification
+    ) > 1 then true
     else false
-  end
-    as is_trusted_user
+  end as is_trusted_user
 from trusted_user_model
