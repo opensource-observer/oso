@@ -110,16 +110,12 @@ select
   passport_user,
   passport_verification,
   optimist_nft_verification,
-  case
-    when (
-      farcaster_prepermissionless
-      + eigentrust_verification
-      + vitalik_verification
-    ) > 0 then true
-    when (
-      passport_verification
-      + optimist_nft_verification
-    ) > 1 then true
-    else false
-  end as is_trusted_user
+  (
+    farcaster_user
+    + farcaster_prepermissionless
+    + eigentrust_verification
+    + vitalik_verification
+    + passport_verification
+    + optimist_nft_verification
+  ) > 1 as is_trusted_user
 from trusted_user_model
