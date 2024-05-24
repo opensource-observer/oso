@@ -42,7 +42,7 @@ select
   events.amount,
   case
     when rf4_trusted_users.is_trusted_user is true
-      then rf4_trusted_users.user_id
+      then rf4_trusted_users.address
   end as trusted_user_id
 from events
 left join {{ ref('artifacts_v1') }} as to_artifacts
