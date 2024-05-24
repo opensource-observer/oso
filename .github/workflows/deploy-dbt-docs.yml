@@ -4,7 +4,6 @@ env:
   CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
   # Google variables
   GOOGLE_PROJECT_ID: "opensource-observer"
-  GOOGLE_TEST_DUMMY_CREDENTIALS_JSON: ${{ vars.GOOGLE_TEST_DUMMY_CREDENTIALS_JSON }}
 
 # Trigger the workflow when:
 on:
@@ -29,14 +28,6 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: Load public vars
-        run: |
-          bash .github/scripts/load-public-vars.sh $GITHUB_ENV \
-            NODE_ENV \
-            GOOGLE_PROJECT_ID \
-            GOOGLE_TEST_DUMMY_CREDENTIALS_JSON \
-            PUBLIC_VARS_TEST
-
       - name: Setup pnpm
         uses: pnpm/action-setup@v2
         with:
@@ -57,10 +48,10 @@ jobs:
           python-version: 3.12
           poetry-version: 1.7.1
 
-      - name: Authenticate to google with a test-dummy user
+      - name: Login to google
         uses: "google-github-actions/auth@v2"
         with:
-          credentials_json: "${{ env.GOOGLE_TEST_DUMMY_CREDENTIALS_JSON }}"
+          credentials_json: "${{ secrets.GOOGLE_BQ_ADMIN_CREDENTIALS_JSON }}"
           create_credentials_file: true
 
       - name: Setup dbt profile
