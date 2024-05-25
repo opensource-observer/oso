@@ -20,11 +20,19 @@ type BeforeClientArgs = ArgumentsCamelCase<{
 }>;
 
 interface InitializePRCheck extends BaseArgs {
+  // Commit SHA
   sha: string;
+  // GitHub user
   login: string;
   checkName: string;
 }
 
+/**
+ * Checks if the user has write access.
+ * If yes, we signal that we've already queued a job.
+ * Otherwise, signal that we need admin approval.
+ * This is typically run with the initiator of the pull request
+ **/
 async function initializePrCheck(args: InitializePRCheck) {
   logger.info({
     message: "initializing the PR check",
@@ -49,8 +57,9 @@ async function initializePrCheck(args: InitializePRCheck) {
       head_sha: args.sha,
       status: CheckStatus.Queued,
       output: {
-        title: "Test deployment queued",
-        summary: "Test deployment queued",
+        title: "Test workflow has been queued",
+        summary:
+          "Test workflow has been queued. Please check the corresponding owners workflow for the latest job status.",
       },
     });
   } else {
@@ -62,7 +71,7 @@ async function initializePrCheck(args: InitializePRCheck) {
       conclusion: CheckConclusion.ActionRequired,
       output: {
         title: `Approval required for ${args.checkName}`,
-        summary: `Approval required for the ${args.checkName} check.`,
+        summary: `Approval required for the ${args.checkName} check. Repo admins can run '/${args.checkName} LATEST_COMMIT_SHA'. Remember to use the latest commit SHA, or validation will fail.`,
       },
     });
   }
@@ -96,8 +105,9 @@ const cli = yargs(hideBin(process.argv))
     demandOption: true,
   })
   .middleware(async (args: BeforeClientArgs) => {
+    // Get base64-encoded private key from the environment
     const buf = Buffer.from(args.githubAppPrivateKey as string, "base64"); // Ta-da
-
+    // Log into GitHub Octokit
     const app = new App({
       appId: args.githubAppId as string,
       privateKey: buf.toString("utf-8"),
