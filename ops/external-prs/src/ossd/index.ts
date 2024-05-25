@@ -43,7 +43,9 @@ function jsonlExport<T>(path: string, arr: Array<T>): Promise<void> {
 }
 
 interface ParseCommentArgs extends BaseArgs {
+  // Comment ID
   comment: number;
+  // Output filename
   output: string;
   login: string;
 }
@@ -686,6 +688,11 @@ async function validatePR(args: ValidatePRArgs) {
   await pr.validate(args);
 }
 
+/**
+ * This command is called by external-prs-handle-comment as a check
+ * for whether we should run the validation logic,
+ * based on whether a valid command was called.
+ **/
 async function parseOSSDirectoryComments(args: ParseCommentArgs) {
   const enableValidation: CommmentCommandHandler<GithubOutput> = async (
     command,
@@ -712,15 +719,19 @@ async function parseOSSDirectoryComments(args: ParseCommentArgs) {
     });
   };
 
+  const commandHandlers = {
+    // /validate <sha>
+    validate: enableValidation,
+  };
+
   try {
     const output = await args.appUtils.parseCommentForCommand<GithubOutput>(
       args.comment,
-      {
-        validate: enableValidation,
-      },
+      commandHandlers,
     );
     await output.commit(args.output);
-  } catch (_e) {
+  } catch (e) {
+    logger.debug("Error", e);
     await GithubOutput.write(args.output, {
       deploy: "false",
     });

@@ -70,6 +70,11 @@ export class GHAppUtils {
     });
   }
 
+  /**
+   * Set a status comment on a PR
+   * This will try to keep updating the same comment if it exists
+   * You can have multiple comments by setting a `messageId`
+   **/
   async setStatusComment(pr: number, message: string, messageId?: string) {
     messageId = messageId || "external-pr-status-comment";
     const messageIdText = `<!-- ${messageId} -->`;
@@ -92,6 +97,7 @@ export class GHAppUtils {
     });
     console.log(appCommentRefs);
 
+    // If this app has never commented on this PR, just create it
     if (appCommentRefs.length === 0) {
       await this.octo.rest.issues.createComment({
         owner: this.repo.owner,
@@ -116,11 +122,13 @@ export class GHAppUtils {
       comments.push(appComment);
     }
 
+    // Look for the messageIdText
     const matchingComments = comments.filter((c) => {
       const body = c.data.body || "";
       return body.trimStart().indexOf(messageIdText) === 0;
     });
 
+    // Just create it if it doesn't exist yet
     if (matchingComments.length === 0) {
       await this.octo.rest.issues.createComment({
         owner: this.repo.owner,
@@ -130,6 +138,8 @@ export class GHAppUtils {
       });
       return;
     }
+
+    // Delete any duplicate comments with the same messageIdText
     if (matchingComments.length > 1) {
       logger.warn(
         "multiple matching comments found. This isn't treated as an error. Deleting extra comments",
@@ -143,6 +153,7 @@ export class GHAppUtils {
       });
     }
 
+    // Update the existing comment
     await this.octo.rest.issues.updateComment({
       owner: this.repo.owner,
       repo: this.repo.name,
@@ -169,6 +180,7 @@ export class GHAppUtils {
       commentId: comment.data.id,
       authorAssosication: comment.data.author_association,
       author: comment.data.user?.login,
+      content: comment.data.body,
     });
 
     const login = comment.data.user?.login;
@@ -200,7 +212,12 @@ export class GHAppUtils {
 
     const handler = handlers[match[1]];
     if (!handler) {
-      throw new NoCommandError(`invalid command "${match[1]}`);
+      logger.warn(
+        `Valid commands include ${Object.keys(handlers)
+          .map((x) => `'${x}'`)
+          .join(", ")}`,
+      );
+      throw new NoCommandError(`invalid command /${match[1]}`);
     }
     const issueUrl = comment.data.issue_url;
     const url = new URL(issueUrl);
