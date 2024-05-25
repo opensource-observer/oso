@@ -5,13 +5,9 @@
 }}
 
 select
-  artifact_source,
-  transaction_hash,
-  block_timestamp,
+  artifact_source as network,
   root_deployer_address,
-  created_by_address,
   contract_address,
-  originating_eoa_address,
-  creator_type,
   contract_type
 from {{ ref('int_contracts') }}
+where root_deployer_address is not null
