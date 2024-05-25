@@ -2,7 +2,6 @@
 - "!include artifacts_v1.yaml"
 - "!include code_metrics_by_project_v1.yaml"
 - "!include collections_v1.yaml"
-- "!include contracts_v1.yaml"
 - "!include event_indexing_status_by_project_v1.yaml"
 - "!include event_types_v1.yaml"
 - "!include events_daily_to_artifact.yaml"
