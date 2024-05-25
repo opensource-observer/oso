@@ -378,6 +378,9 @@ importers:
       libsodium-wrappers:
         specifier: ^0.7.13
         version: 0.7.13
+      lodash:
+        specifier: ^4.17.21
+        version: 4.17.21
       mustache:
         specifier: ^4.2.0
         version: 4.2.0
@@ -403,6 +406,9 @@ importers:
         specifier: ^17.7.2
         version: 17.7.2
     devDependencies:
+      '@types/lodash':
+        specifier: ^4.17.4
+        version: 4.17.4
       '@types/node':
         specifier: ^20.11.17
         version: 20.11.17
@@ -4234,6 +4240,9 @@ packages:
 
   '@types/lodash@4.17.0':
     resolution: {integrity: sha512-t7dhREVv6dbNj0q17X12j7yDG4bD/DHYX7o5/DbDxobP0HnGPgpRz2Ej77aL7TZT3DSw13fqUTj8J4mMnqa7WA==}
+
+  '@types/lodash@4.17.4':
+    resolution: {integrity: sha512-wYCP26ZLxaT3R39kiN2+HcJ4kTd3U1waI/cY7ivWYqFP6pW3ZNpvi6Wd6PHZx7T/t8z0vlkXMg3QYLa7DZ/IJQ==}
 
   '@types/lru-cache@5.1.1':
     resolution: {integrity: sha512-ssE3Vlrys7sdIzs5LOxCzTVMsU7i9oa/IaW92wF32JFb3CVczqOkru2xspuKczHEbG3nvmPY7IFqVmGGHdNbYw==}
@@ -17353,7 +17362,7 @@ snapshots:
 
   '@types/hoist-non-react-statics@3.3.5':
     dependencies:
-      '@types/react': 18.2.48
+      '@types/react': 18.3.3
       hoist-non-react-statics: 3.3.2
 
   '@types/html-minifier-terser@6.1.0': {}
@@ -17410,6 +17419,8 @@ snapshots:
   '@types/lodash@4.14.202': {}
 
   '@types/lodash@4.17.0': {}
+
+  '@types/lodash@4.17.4': {}
 
   '@types/lru-cache@5.1.1': {}
 
@@ -17496,11 +17507,11 @@ snapshots:
   '@types/react-router@5.1.20':
     dependencies:
       '@types/history': 4.7.11
-      '@types/react': 18.2.64
+      '@types/react': 18.3.3
 
   '@types/react-transition-group@4.4.10':
     dependencies:
-      '@types/react': 18.2.48
+      '@types/react': 18.3.3
 
   '@types/react@18.2.48':
     dependencies:
