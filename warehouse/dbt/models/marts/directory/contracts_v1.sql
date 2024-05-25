@@ -4,7 +4,7 @@
   }) 
 }}
 
-select
+select distinct
   artifact_source as network,
   root_deployer_address,
   contract_address,
