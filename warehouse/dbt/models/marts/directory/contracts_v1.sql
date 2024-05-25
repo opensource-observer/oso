@@ -5,7 +5,7 @@
 }}
 
 select distinct
-  artifact_source as network,
+  artifact_source,
   root_deployer_address,
   contract_address,
   contract_type
