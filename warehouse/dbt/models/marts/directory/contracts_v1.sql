@@ -1,6 +1,6 @@
 {{ 
   config(meta = {
-    'sync_to_db': False
+    'sync_to_db': True
   }) 
 }}
 
