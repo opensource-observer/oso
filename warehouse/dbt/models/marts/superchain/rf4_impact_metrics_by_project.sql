@@ -24,6 +24,8 @@ with metrics as (
   select * from {{ ref('rf4_trusted_recurring_users') }}
   union all
   select * from {{ ref('rf4_recurring_addresses') }}
+  union all
+  select * from {{ ref('rf4_power_user_addresses') }}
 ),
 
 pivot_metrics as (
@@ -61,7 +63,10 @@ pivot_metrics as (
     ) as trusted_recurring_users,
     MAX(
       case when metric = 'recurring_addresses' then amount else 0 end
-    ) as recurring_addresses
+    ) as recurring_addresses,
+    MAX(
+      case when metric = 'power_user_addresses' then amount else 0 end
+    ) as power_user_addresses
   from metrics
   group by project_id
 )
@@ -83,7 +88,8 @@ select
   pivot_metrics.monthly_active_addresses,
   pivot_metrics.trusted_monthly_active_users,
   pivot_metrics.recurring_addresses,
-  pivot_metrics.trusted_recurring_users
+  pivot_metrics.trusted_recurring_users,
+  pivot_metrics.power_user_addresses
 from pivot_metrics
 left join {{ ref('projects_v1') }}
   on pivot_metrics.project_id = projects_v1.project_id
