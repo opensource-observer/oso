@@ -89,6 +89,26 @@ factory_deployments as (
     on factories.factory_address = deployers.contract_address
 )
 
-select * from contract_deployments
+select
+  artifact_source,
+  root_deployer_address,
+  contract_address,
+  contract_type,
+  created_by_address,
+  creator_type,
+  originating_eoa_address,
+  transaction_hash,
+  block_timestamp
+from contract_deployments
 union all
-select * from factory_deployments
+select
+  artifact_source,
+  root_deployer_address,
+  contract_address,
+  contract_type,
+  created_by_address,
+  creator_type,
+  originating_eoa_address,
+  transaction_hash,
+  block_timestamp
+from factory_deployments
