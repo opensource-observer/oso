@@ -388,8 +388,8 @@ importers:
         specifier: ^3.1.0
         version: 3.1.0
       oss-directory:
-        specifier: ^0.0.12
-        version: 0.0.12(ts-node@10.9.1(@types/node@20.11.17)(typescript@5.3.3))(typescript@5.3.3)
+        specifier: ^0.0.13
+        version: 0.0.13(ts-node@10.9.1(@types/node@20.11.17)(typescript@5.3.3))(typescript@5.3.3)
       tmp-promise:
         specifier: ^3.0.3
         version: 3.0.3
@@ -1398,8 +1398,8 @@ packages:
     resolution: {integrity: sha512-Chk32uHMg6TnQdvw2e9IlqPpFX/6NLuK0Ys2PqLb7/gL5uFn9mXvK715FGLlOLQrcO4qIkNHkvPGktzzXexsFw==}
     engines: {node: '>=6.9.0'}
 
-  '@babel/runtime@7.24.5':
-    resolution: {integrity: sha512-Nms86NXrsaeU9vbBJKni6gXiEXZ4CVpYVzEjDH9Sb8vmZ3UljyA1GSOJl/6LGPO8EHLuSF9H+IxNXHPX8QHJ4g==}
+  '@babel/runtime@7.24.6':
+    resolution: {integrity: sha512-Ja18XcETdEl5mzzACGd+DKgaGJzPTCow7EglgwTmHdwokzDFYh/MHua6lU6DV/hjF2IaOJ4oX2nqnjG7RElKOw==}
     engines: {node: '>=6.9.0'}
 
   '@babel/template@7.22.15':
@@ -6873,6 +6873,7 @@ packages:
 
   glob@7.2.0:
     resolution: {integrity: sha512-lmLf6gtyrPq8tTjSmrO94wBeQbFR3HbLHbuyD69wuyQkImp2hWqMGB47OX65FBkPffO641IP9jWa1z4ivqG26Q==}
+    deprecated: Glob versions prior to v9 are no longer supported
 
   glob@7.2.3:
     resolution: {integrity: sha512-nFR0zLpU2YCaRxwoCJvL6UvCH2JFyFVIvwTLsIf21AuHlMskA1hhTdk+LlYJtOlYt9v6dvszD2BGRqBL+iQK9Q==}
@@ -6880,6 +6881,7 @@ packages:
   glob@8.1.0:
     resolution: {integrity: sha512-r8hpEjiQEYlF2QU0df3dS+nxxSIreXQS1qRhMJM0Q5NDdR386C7jb7Hwwod8Fgiuex+k0GFjgft18yvxm5XoCQ==}
     engines: {node: '>=12'}
+    deprecated: Glob versions prior to v9 are no longer supported
 
   global-dirs@3.0.1:
     resolution: {integrity: sha512-NBcGGFbBA9s1VzD41QXDG+3++t9Mn5t1FpLdhESY6oKY4gYTFpX4wO3sqGUa0Srjtbfj3szX0RnemmrVRUdULA==}
@@ -8924,6 +8926,11 @@ packages:
 
   oss-directory@0.0.12:
     resolution: {integrity: sha512-mJQPVY5+St8LsKPeJ/IRZMPJD2xB+ZNbjekGOSFfUN/gd1+cOad6rvOJzr9vpIN6m8pLoU7ZwffKc/INs+EUdw==}
+    engines: {node: '>=16'}
+    hasBin: true
+
+  oss-directory@0.0.13:
+    resolution: {integrity: sha512-jSAGOAq2m9HcnpL1v0Wk5WKLQe4ZsIAFHWpbbdrfbsEG/M2cSsMzTkxVXSHKI8ex7eHYMie8LPnhR9Um27w7pQ==}
     engines: {node: '>=16'}
     hasBin: true
 
@@ -12944,7 +12951,7 @@ snapshots:
     dependencies:
       regenerator-runtime: 0.14.1
 
-  '@babel/runtime@7.24.5':
+  '@babel/runtime@7.24.6':
     dependencies:
       regenerator-runtime: 0.14.1
 
@@ -15074,7 +15081,7 @@ snapshots:
 
   '@mui/private-theming@5.15.14(@types/react@18.2.48)(react@18.2.0)':
     dependencies:
-      '@babel/runtime': 7.24.5
+      '@babel/runtime': 7.24.6
       '@mui/utils': 5.15.14(@types/react@18.2.48)(react@18.2.0)
       prop-types: 15.8.1
       react: 18.2.0
@@ -15092,7 +15099,7 @@ snapshots:
 
   '@mui/styled-engine@5.15.14(@emotion/react@11.11.3(@types/react@18.2.48)(react@18.2.0))(@emotion/styled@11.11.0(@emotion/react@11.11.3(@types/react@18.2.48)(react@18.2.0))(@types/react@18.2.48)(react@18.2.0))(react@18.2.0)':
     dependencies:
-      '@babel/runtime': 7.24.5
+      '@babel/runtime': 7.24.6
       '@emotion/cache': 11.11.0
       csstype: 3.1.3
       prop-types: 15.8.1
@@ -15114,7 +15121,7 @@ snapshots:
 
   '@mui/system@5.15.15(@emotion/react@11.11.3(@types/react@18.2.48)(react@18.2.0))(@emotion/styled@11.11.0(@emotion/react@11.11.3(@types/react@18.2.48)(react@18.2.0))(@types/react@18.2.48)(react@18.2.0))(@types/react@18.2.48)(react@18.2.0)':
     dependencies:
-      '@babel/runtime': 7.24.5
+      '@babel/runtime': 7.24.6
       '@mui/private-theming': 5.15.14(@types/react@18.2.48)(react@18.2.0)
       '@mui/styled-engine': 5.15.14(@emotion/react@11.11.3(@types/react@18.2.48)(react@18.2.0))(@emotion/styled@11.11.0(@emotion/react@11.11.3(@types/react@18.2.48)(react@18.2.0))(@types/react@18.2.48)(react@18.2.0))(react@18.2.0)
       '@mui/types': 7.2.14(@types/react@18.2.48)
@@ -15154,7 +15161,7 @@ snapshots:
 
   '@mui/utils@5.15.14(@types/react@18.2.48)(react@18.2.0)':
     dependencies:
-      '@babel/runtime': 7.24.5
+      '@babel/runtime': 7.24.6
       '@types/prop-types': 15.7.12
       prop-types: 15.8.1
       react: 18.2.0
@@ -17362,7 +17369,7 @@ snapshots:
 
   '@types/hoist-non-react-statics@3.3.5':
     dependencies:
-      '@types/react': 18.3.3
+      '@types/react': 18.2.48
       hoist-non-react-statics: 3.3.2
 
   '@types/html-minifier-terser@6.1.0': {}
@@ -17511,7 +17518,7 @@ snapshots:
 
   '@types/react-transition-group@4.4.10':
     dependencies:
-      '@types/react': 18.3.3
+      '@types/react': 18.2.48
 
   '@types/react@18.2.48':
     dependencies:
@@ -23550,9 +23557,9 @@ snapshots:
 
   os-tmpdir@1.0.2: {}
 
-  oss-directory@0.0.12(ts-node@10.9.1(@types/node@20.11.17)(typescript@5.3.3))(typescript@5.3.3):
+  oss-directory@0.0.12(ts-node@10.9.1(@types/node@20.12.7)(typescript@5.3.3))(typescript@5.3.3):
     dependencies:
-      '@ethereum-attestation-service/eas-sdk': 1.4.0(ts-node@10.9.1(@types/node@20.11.17)(typescript@5.3.3))(typescript@5.3.3)
+      '@ethereum-attestation-service/eas-sdk': 1.4.0(ts-node@10.9.1(@types/node@20.12.7)(typescript@5.3.3))(typescript@5.3.3)
       ajv: 8.12.0
       ajv-formats: 2.1.1(ajv@8.12.0)
       chalk: 5.3.0
@@ -23574,9 +23581,9 @@ snapshots:
       - typescript
       - utf-8-validate
 
-  oss-directory@0.0.12(ts-node@10.9.1(@types/node@20.12.7)(typescript@5.3.3))(typescript@5.3.3):
+  oss-directory@0.0.13(ts-node@10.9.1(@types/node@20.11.17)(typescript@5.3.3))(typescript@5.3.3):
     dependencies:
-      '@ethereum-attestation-service/eas-sdk': 1.4.0(ts-node@10.9.1(@types/node@20.12.7)(typescript@5.3.3))(typescript@5.3.3)
+      '@ethereum-attestation-service/eas-sdk': 1.4.0(ts-node@10.9.1(@types/node@20.11.17)(typescript@5.3.3))(typescript@5.3.3)
       ajv: 8.12.0
       ajv-formats: 2.1.1(ajv@8.12.0)
       chalk: 5.3.0
