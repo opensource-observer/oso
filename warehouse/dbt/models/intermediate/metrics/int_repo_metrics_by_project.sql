@@ -34,7 +34,8 @@ repo_stats as (
     MIN(time) as first_commit_time,
     MAX(time) as last_commit_time,
     COUNT(distinct TIMESTAMP_TRUNC(time, day)) as days_with_commits_count,
-    COUNT(distinct from_artifact_id) as contributors_to_repo_count
+    COUNT(distinct from_artifact_id) as contributors_to_repo_count,
+    SUM(amount) as commit_count
   from {{ ref('int_events_to_project') }}
   where event_type = 'COMMIT_CODE'
   group by
@@ -58,7 +59,8 @@ select
   repo_stats.first_commit_time,
   repo_stats.last_commit_time,
   repo_stats.days_with_commits_count,
-  repo_stats.contributors_to_repo_count
+  repo_stats.contributors_to_repo_count,
+  repo_stats.commit_count
 from {{ ref('int_artifacts_by_project') }}
 left join repo_snapshot
   on int_artifacts_by_project.artifact_id = repo_snapshot.artifact_id
