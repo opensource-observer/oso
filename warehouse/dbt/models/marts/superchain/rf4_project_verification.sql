@@ -5,7 +5,6 @@
   - Review thresholds for unique_addresses, date_first_transaction, and
     days_with_onchain_activity_in_range.
   - Filter on contracts that are linked to Retro Funding applications (from Agora data)
-  - Integrate with repo_stats_by_project to check licensing and other repo requirements.
 #}
 
 with repo_stats as (
@@ -19,6 +18,7 @@ with repo_stats as (
     from {{ ref('rf4_repo_stats_by_project') }}
     where approval_status = 'approved'
   )
+  group by project_id
 ),
 
 onchain_stats as (
