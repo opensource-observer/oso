@@ -26,7 +26,7 @@ The round is expected to receive applications from hundreds of projects building
 
 At Open Source Observer, our objective is to help the Optimism community arrive at up to 20 credible impact metrics that can be applied to projects with contracts on the Superchain.
 
-This page explains where the metrics come from and includes a working list of all metrics under consideration for badgeholders. We will update it regularly, at least until the start of voting (June 23), to reflect the evolution of metrics. The first version metrics was released on 2024-05-16 and the most recent version (below) was released on 2024-05-22.
+This page explains where the metrics come from and includes a working list of all metrics under consideration for badgeholders. We will update it regularly, at least until the start of voting (June 23), to reflect the evolution of metrics. The first version metrics was released on 2024-05-16 and the most recent version (below) was released on 2024-05-26.
 
 <!-- truncate -->
 
@@ -180,3 +180,9 @@ Recurring addresses are a proxy for recurring users. It is especially relevant t
 Count of trusted users who have interacted with the project in at least 3 separate months over the RF4 scope period (October 2023 - June 2024).
 
 Many crypto natives are curious to try out new protocols. But churn and user retention are major issues. Recurring users represent the most loyal and committed segment of a project's user base. This metric considers users who have interacted with a project over the course of at least three distinct calendar months during the RF4 scope period. Thus, it is intended to reflect sustained interest and ongoing engagement over time. A high count of recurring users signals strong project loyalty and a good user experience, and helps separate the fads from the future.
+
+### Power User Addresses
+
+Count of 'power user' addresses that have interacted with the project over the RF4 scope period (October 2023 - June 2024).
+
+This metric reflects the degree which a project has attracted attention from the most active and engaged users on the Superchain. A `power user` is defined as an address that has made at least 100 transactions, across at least 10 different projects, on at least 30 days, over the RF4 scope period. A project is counted by this metric if has at least one interaction from a power user. Power users are critical early adopters for the ecosystem.
