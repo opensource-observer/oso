@@ -45,7 +45,7 @@ onchain_stats as (
 project_stats as (
   select
     onchain_stats.*,
-    repo_stats.eligible_repos
+    COALESCE(repo_stats.eligible_repos, array<STRING>[]) as eligible_repos
   from onchain_stats
   left join repo_stats
     on onchain_stats.project_id = repo_stats.project_id
