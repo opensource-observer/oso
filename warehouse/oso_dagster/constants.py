@@ -4,6 +4,7 @@ from typing import Dict, List
 import pathlib
 
 import requests
+from dagster import DefaultSensorStatus
 from dagster_dbt import DbtCliResource
 
 main_dbt_project_dir = Path(__file__).joinpath("..", "..", "..").resolve()
@@ -111,3 +112,7 @@ def load_dbt_manifests(targets: List[str]) -> Dict[str, str]:
 
 
 main_dbt_manifests = load_dbt_manifests(["production", "base_playground", "playground"])
+
+default_sensor_status = DefaultSensorStatus.STOPPED
+if os.getenv("DAGSTER_INSTANCE_ENV", "none") == "production":
+    default_sensor_status = DefaultSensorStatus.RUNNING
