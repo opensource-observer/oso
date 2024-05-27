@@ -55,8 +55,8 @@ select
       and repo_snapshot.first_commit_time < '2024-05-01'
       and repo_snapshot.star_count >= 10
       and repo_snapshot.language in ('Solidity', 'JavaScript', 'TypeScript')
-    ) then 'Approve'
-    else 'Review'
+    ) then 'approved'
+    else 'review'
   end as approval_status
 from repo_snapshot
 left join {{ ref('projects_v1') }}
