@@ -11,7 +11,7 @@ with txns as (
 ),
 
 address_stats as (
-  select    
+  select
     from_artifact_name,
     COUNT(distinct bucket_day) as days_count,
     COUNT(distinct project_id) as project_count,
@@ -22,8 +22,7 @@ address_stats as (
 ),
 
 power_users as (
-  select
-    from_artifact_name
+  select from_artifact_name
   from address_stats
   where
     days_count >= 30
@@ -36,7 +35,9 @@ select
   'power_user_addresses' as metric,
   COUNT(distinct txns.from_artifact_name) as amount
 from txns
-right join power_users
-  on txns.from_artifact_name = power_users.from_artifact_name  
+left join power_users
+  on txns.from_artifact_name = power_users.from_artifact_name
+where
+  power_users.from_artifact_name is not null
 group by
   txns.project_id
