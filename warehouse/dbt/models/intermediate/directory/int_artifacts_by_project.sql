@@ -123,15 +123,22 @@ discovered_contracts as (
     "CONTRACT" as artifact_type,
     ob.project_id,
     ad.contract_address as artifact_source_id,
+    ob.artifact_source,
     ob.artifact_namespace,
-    ob.artifact_namespace as artifact_source,
     ad.contract_address as artifact_name,
     ad.contract_address as artifact_url
   from ossd_blockchain as ob
   inner join all_deployers as ad
     on
       ob.artifact_source_id = ad.deployer_address
-      and UPPER(ob.artifact_namespace) = UPPER(ad.artifact_namespace)
+      {#
+        We currently do not really have a notion of namespace in
+        oss-directory. We may need to change this when that time comes
+      #}
+      and UPPER(ob.artifact_source) in (UPPER(ad.artifact_source), "ANY_EVM")
+      and UPPER(ob.artifact_namespace) in (
+        UPPER(ad.artifact_namespace), "ANY_EVM"
+      )
       and UPPER(ob.artifact_type) in ("EOA", "DEPLOYER", "FACTORY")
 ),
 
