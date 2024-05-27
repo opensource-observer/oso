@@ -1,7 +1,7 @@
 {% macro filtered_blockchain_events(artifact_source, source_name, source_table) %}
 with known_addresses as (
   select distinct `artifact_source_id` as `address`
-  from {{ ref("int_artifacts_by_project") }} 
+  from {{ ref("int_all_artifacts") }} 
   where LOWER(artifact_source) = LOWER('{{ artifact_source }}')
 ), known_to as (
 select events.* 

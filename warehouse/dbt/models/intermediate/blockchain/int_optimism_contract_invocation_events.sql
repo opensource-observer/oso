@@ -33,7 +33,7 @@ with blockchain_artifacts as (
         when artifact_type = 'EOA' then 1
         else 0
       end as artifact_rank
-    from {{ ref('int_artifacts_by_project') }}
+    from {{ ref('int_all_artifacts') }}
     where LOWER(artifact_source) = LOWER('OPTIMISM')
   )
   group by artifact_source_id
