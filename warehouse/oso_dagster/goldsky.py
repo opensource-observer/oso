@@ -26,13 +26,12 @@ from dagster import (
     RunConfig,
     OpExecutionContext,
     DagsterLogManager,
+    DefaultSensorStatus,
 )
 from dagster_gcp import BigQueryResource, GCSResource
 from google.api_core.exceptions import (
     NotFound,
     InternalServerError,
-    BadRequest,
-    MethodNotAllowed,
     ClientError,
 )
 from google.cloud.bigquery import (
@@ -45,7 +44,6 @@ from google.cloud.bigquery.schema import SchemaField
 from .goldsky_dask import setup_kube_cluster_client, DuckDBGCSPlugin, RetryTaskManager
 from .cbt import CBTResource, UpdateStrategy, TimePartitioning
 from .factories import AssetFactoryResponse
-from .constants import default_sensor_status
 from .utils.gcs import batch_delete_blobs
 
 
@@ -148,6 +146,25 @@ class GoldskyCheckpoint:
         if self == other:
             return True
         return self > other
+
+
+class GoldskyCheckpointRange:
+    def __init__(
+        self,
+        start: Optional[GoldskyCheckpoint] = None,
+        end: Optional[GoldskyCheckpoint] = None,
+    ):
+        self._start = start or GoldskyCheckpoint("0", 0, 0)
+        self._end = end
+
+    def in_range(self, checkpoint: GoldskyCheckpoint) -> bool:
+        if checkpoint >= self._start:
+            if self._end is None:
+                return True
+            else:
+                return checkpoint < self._end
+        else:
+            return False
 
 
 @dataclass
@@ -633,64 +650,6 @@ def blocking_update_pointer_table(
             context.log.info(rows)
 
 
-def goldsky_asset(asset_config: GoldskyConfig) -> AssetFactoryResponse:
-    @asset(name=asset_config.name, key_prefix=asset_config.key_prefix)
-    def generated_asset(
-        context: AssetExecutionContext,
-        bigquery: BigQueryResource,
-        gcs: GCSResource,
-        cbt: CBTResource,
-    ):
-        loop = asyncio.new_event_loop()
-        context.log.info(f"Run ID: {context.run_id} AssetKey: {context.asset_key}")
-        gs_asset = GoldskyAsset(gcs, bigquery, cbt, asset_config)
-        loop.run_until_complete(gs_asset.materialize(loop, context))
-
-    related_ops_prefix = "_".join(generated_asset.key.path)
-
-    @op(name=f"{related_ops_prefix}_clean_up_op")
-    def goldsky_clean_up_op(
-        context: OpExecutionContext,
-        bigquery: BigQueryResource,
-        gcs: GCSResource,
-        cbt: CBTResource,
-        config: dict,
-    ):
-        print(config)
-        gs_asset = GoldskyAsset(gcs, bigquery, cbt, asset_config)
-        gs_asset.clean_up(context.log)
-
-    @job(name=f"{related_ops_prefix}_clean_up_job")
-    def goldsky_clean_up_job():
-        goldsky_clean_up_op()
-
-    @asset_sensor(
-        asset_key=generated_asset.key,
-        name=f"{related_ops_prefix}_clean_up_sensor",
-        job=goldsky_clean_up_job,
-        default_status=default_sensor_status,
-    )
-    def goldsky_clean_up_sensor(
-        context: SensorEvaluationContext, asset_event: EventLogEntry
-    ):
-        yield RunRequest(
-            run_key=context.cursor,
-            run_config=RunConfig(
-                ops={
-                    f"{related_ops_prefix}_clean_up_op": {
-                        "config": {"asset_event": asset_event}
-                    }
-                }
-            ),
-        )
-
-    return AssetFactoryResponse(
-        [generated_asset],
-        [goldsky_clean_up_sensor],
-        [goldsky_clean_up_job],
-    )
-
-
 def decimal_convert(name: str, field: polars.Decimal):
     if field.precision == 100 and field.scale == 0:
         return SchemaField(name, field_type="NUMERIC")
@@ -734,6 +693,7 @@ class GoldskyAsset:
         bigquery: BigQueryResource,
         cbt: CBTResource,
         config: GoldskyConfig,
+        pointer_table_suffix: str = "",
     ):
         self.config = config
         self.gcs = gcs
@@ -743,16 +703,20 @@ class GoldskyAsset:
         self._job_id = arrow.now().format("YYYYMMDDHHmm")
         self.cached_blobs_to_process: List[re.Match[str]] | None = None
         self.schema = None
+        self.pointer_table_suffix = pointer_table_suffix
 
     async def materialize(
-        self, loop: asyncio.AbstractEventLoop, context: AssetExecutionContext
+        self,
+        loop: asyncio.AbstractEventLoop,
+        context: AssetExecutionContext,
+        checkpoint_range: Optional[GoldskyCheckpointRange] = None,
     ):
         context.log.info(
             {"info": "starting goldsky asset load", "name": self.config.source_name}
         )
         self.ensure_datasets(context)
 
-        workers = await self.load_worker_tables(loop, context)
+        workers = await self.load_worker_tables(loop, context, checkpoint_range)
 
         # Dedupe and partition the current worker table into a deduped and partitioned table
         await self.dedupe_worker_tables(context, workers)
@@ -800,19 +764,26 @@ class GoldskyAsset:
                 client.create_dataset(dataset_id)
 
     async def load_worker_tables(
-        self, loop: asyncio.AbstractEventLoop, context: AssetExecutionContext
+        self,
+        loop: asyncio.AbstractEventLoop,
+        context: AssetExecutionContext,
+        checkpoint_range: GoldskyCheckpointRange,
     ):
         self.ensure_pointer_table(context)
         if self.config.dask_is_enabled:
             return await self.dask_load_worker_tables(loop, context)
-        return await self.direct_load_worker_tables(context)
+        return await self.direct_load_worker_tables(context, checkpoint_range)
 
     async def direct_load_worker_tables(
-        self, context: AssetExecutionContext
+        self,
+        context: AssetExecutionContext,
+        checkpoint_range: GoldskyCheckpointRange,
     ) -> GoldskyWorker:
         worker_coroutines = []
         workers: List[GoldskyWorker] = []
-        worker_status, queues = self.load_queues_to_process(context.log)
+        worker_status, queues = self.load_queues_to_process(
+            context.log, checkpoint_range
+        )
 
         if len(self.config.schema_overrides) > 0:
             self.load_schema(queues)
@@ -838,7 +809,10 @@ class GoldskyAsset:
         return workers
 
     async def dask_load_worker_tables(
-        self, loop: asyncio.AbstractEventLoop, context: AssetExecutionContext
+        self,
+        loop: asyncio.AbstractEventLoop,
+        context: AssetExecutionContext,
+        checkpoint_range: Optional[GoldskyCheckpointRange],
     ) -> List[GoldskyWorker]:
         context.log.info("loading worker tables for goldsky asset")
         last_restart = time.time()
@@ -853,7 +827,9 @@ class GoldskyAsset:
                     context.log,
                 )
                 try:
-                    return await self.parallel_load_worker_tables(task_manager, context)
+                    return await self.parallel_load_worker_tables(
+                        task_manager, context, checkpoint_range
+                    )
                 finally:
                     task_manager.close()
             except Exception as e:
@@ -870,9 +846,14 @@ class GoldskyAsset:
                 retries += 1
 
     async def parallel_load_worker_tables(
-        self, task_manager: RetryTaskManager, context: AssetExecutionContext
+        self,
+        task_manager: RetryTaskManager,
+        context: AssetExecutionContext,
+        checkpoint_range: Optional[GoldskyCheckpointRange],
     ):
-        worker_status, queues = self.load_queues_to_process(context.log)
+        worker_status, queues = self.load_queues_to_process(
+            context.log, checkpoint_range
+        )
 
         context.log.debug(f"spec: ${json.dumps(self.cluster_spec)}")
 
@@ -996,12 +977,19 @@ class GoldskyAsset:
 
     @property
     def pointer_table(self):
-        return f"{self.config.project_id}.{self.config.working_destination_dataset_name}.{self.config.destination_table_name}_pointer_state"
+        return f"{self.config.project_id}.{self.config.working_destination_dataset_name}.{self.pointer_table_name}"
+
+    @property
+    def pointer_table_name(self):
+        pointer_table_suffix = self.pointer_table_suffix
+        if pointer_table_suffix != "" and not pointer_table_suffix.startswith("_"):
+            pointer_table_suffix = f"_{pointer_table_suffix}"
+        return f"{self.config.destination_table_name}_pointer_state{self.pointer_table_suffix}"
 
     def ensure_pointer_table(self, context: AssetExecutionContext):
         config = self.config
-        pointer_table_name = f"{config.destination_table_name}_pointer_state"
-        pointer_table = f"{config.project_id}.{config.working_destination_dataset_name}.{pointer_table_name}"
+        pointer_table_name = self.pointer_table_name
+        pointer_table = self.pointer_table
         context.log.info(
             f"ensuring that the sync pointer table exists at {pointer_table}"
         )
@@ -1071,12 +1059,17 @@ class GoldskyAsset:
 
     def clean_up(self, log: DagsterLogManager):
         worker_status = self.get_worker_status(log)
-        queues = self.load_queues_from_worker_status(
+
+        end_checkpoint = worker_status.get("0")
+        for worker, checkpoint in worker_status.items():
+            if checkpoint < end_checkpoint:
+                end_checkpoint = checkpoint
+
+        queues = self.load_queues(
             log,
-            worker_status,
-            max_objects_to_load=1_000_000,
+            checkpoint_range=GoldskyCheckpointRange(end=end_checkpoint),
+            max_objects_to_load=100_000,
             blobs_loader=self._uncached_blobs_loader,
-            is_delete_queue=True,
         )
 
         for worker, queue in queues.worker_queues():
@@ -1116,13 +1109,13 @@ class GoldskyAsset:
             log.info("using cached blobs")
         return self.cached_blobs_to_process
 
-    def load_queues_from_worker_status(
+    def load_queues(
         self,
         log: DagsterLogManager,
-        worker_status: Dict[str, GoldskyCheckpoint],
+        worker_status: Dict[str, GoldskyCheckpoint] = None,
         max_objects_to_load: Optional[int] = None,
         blobs_loader: Callable[[DagsterLogManager], List[re.Match[str]]] = None,
-        is_delete_queue: bool = False,
+        checkpoint_range: Optional[GoldskyCheckpointRange] = None,
     ) -> GoldskyQueues:
         latest_timestamp = 0
         if not max_objects_to_load:
@@ -1133,15 +1126,16 @@ class GoldskyAsset:
             blobs_loader = self._cached_blobs_loader
 
         # The default filter condition is to skip things that are _before_ the worker
-        skip_condition = (
-            lambda worker_checkpoint, checkpoint: worker_checkpoint >= checkpoint
-        )
-        # if this is a deletion queue then we skip things that are after the checkpoint
-        if is_delete_queue:
-            skip_condition = (
-                lambda worker_checkpoint, checkpoint: worker_checkpoint < checkpoint
-            )
         blobs_to_process = blobs_loader(log)
+
+        if checkpoint_range:
+            log.info(
+                {
+                    "message": "Using a checkpoint range",
+                    "end": checkpoint_range._end,
+                    "start": checkpoint_range._start,
+                }
+            )
 
         for match in blobs_to_process:
             worker = match.group("worker")
@@ -1151,12 +1145,22 @@ class GoldskyAsset:
                 latest_timestamp = timestamp
             worker_checkpoint = int(match.group("checkpoint"))
             checkpoint = GoldskyCheckpoint(job_id, timestamp, worker_checkpoint)
-            worker_checkpoint = worker_status.get(worker, GoldskyCheckpoint("", 0, 0))
 
-            if skip_condition(worker_checkpoint, checkpoint):
-                continue
+            # If there's a checkpoint range only queue checkpoints within that range
+            if checkpoint_range:
+                if not checkpoint_range.in_range(checkpoint):
+                    continue
 
-            # log.debug(f"Queuing {match.group()}")
+            # If there's a worker status then queue if the current checkpoint is
+            # greater than or equal to it
+            if worker_status:
+                worker_checkpoint = worker_status.get(
+                    worker, GoldskyCheckpoint("", 0, 0)
+                )
+                if worker_checkpoint >= checkpoint:
+                    continue
+
+            log.debug(f"Queueing {match.group()}")
             queues.enqueue(
                 worker,
                 GoldskyQueueItem(
@@ -1168,6 +1172,10 @@ class GoldskyAsset:
         keys = list(worker_status.keys())
         if len(keys) > 0:
             expected_timestamp_of_worker_status = worker_status.get(keys[0])
+            # Originally multiple timestamp values keys was considered an error
+            # but it turns out that this is a normal part of the process. This
+            # check is just to get a log for when it does change which might be
+            # useful for our own tracing/debugging purposes.
             if expected_timestamp_of_worker_status.timestamp != latest_timestamp:
                 log.info(
                     {
@@ -1186,12 +1194,131 @@ class GoldskyAsset:
     def load_queues_to_process(
         self,
         log: DagsterLogManager,
+        checkpoint_range: Optional[GoldskyCheckpointRange],
     ) -> Tuple[dict[str, GoldskyCheckpoint], GoldskyQueues]:
         worker_status = self.get_worker_status(log)
 
-        queues = self.load_queues_from_worker_status(log, worker_status)
+        queues = self.load_queues(
+            log, worker_status=worker_status, checkpoint_range=checkpoint_range
+        )
 
         for worker, queue in queues.worker_queues():
             log.info(f"Worker[{worker}] queue size: {queue.len()}")
 
         return (worker_status, queues)
+
+
+@dataclass
+class GoldskyBackfillOpInput:
+    backfill_label: str
+    start_checkpoint: Optional[GoldskyCheckpoint]
+    end_checkpoint: Optional[GoldskyCheckpoint]
+
+
+def goldsky_asset(asset_config: GoldskyConfig) -> AssetFactoryResponse:
+    def materialize_asset(
+        context: OpExecutionContext,
+        bigquery: BigQueryResource,
+        gcs: GCSResource,
+        cbt: CBTResource,
+        checkpoint_range: Optional[GoldskyCheckpointRange] = None,
+        pointer_table_suffix: str = "",
+    ):
+        loop = asyncio.new_event_loop()
+        gs_asset = GoldskyAsset(
+            gcs, bigquery, cbt, asset_config, pointer_table_suffix=pointer_table_suffix
+        )
+        loop.run_until_complete(
+            gs_asset.materialize(loop, context, checkpoint_range=checkpoint_range)
+        )
+
+    @asset(name=asset_config.name, key_prefix=asset_config.key_prefix)
+    def generated_asset(
+        context: AssetExecutionContext,
+        bigquery: BigQueryResource,
+        gcs: GCSResource,
+        cbt: CBTResource,
+    ):
+        context.log.info(f"Run ID: {context.run_id} AssetKey: {context.asset_key}")
+        materialize_asset(context, bigquery, gcs, cbt)
+
+    related_ops_prefix = "_".join(generated_asset.key.path)
+
+    @op(name=f"{related_ops_prefix}_clean_up_op")
+    def goldsky_clean_up_op(
+        context: OpExecutionContext,
+        bigquery: BigQueryResource,
+        gcs: GCSResource,
+        cbt: CBTResource,
+        config: dict,
+    ):
+        print(config)
+        gs_asset = GoldskyAsset(gcs, bigquery, cbt, asset_config)
+        gs_asset.clean_up(context.log)
+
+    @op(name=f"{related_ops_prefix}_backfill_op")
+    def goldsky_backfill_op(
+        context: OpExecutionContext,
+        bigquery: BigQueryResource,
+        gcs: GCSResource,
+        cbt: CBTResource,
+        config: dict,
+    ):
+        start_checkpoint = None
+        end_checkpoint = None
+        if "start" in config:
+            start_checkpoint = GoldskyCheckpoint(*config["start"])
+        if "end" in config:
+            end_checkpoint = GoldskyCheckpoint(*config["end"])
+        op_input = GoldskyBackfillOpInput(
+            backfill_label=config["backfill_label"],
+            start_checkpoint=start_checkpoint,
+            end_checkpoint=end_checkpoint,
+        )
+        context.log.info("Starting a backfill")
+        materialize_asset(
+            context,
+            bigquery,
+            gcs,
+            cbt,
+            checkpoint_range=GoldskyCheckpointRange(
+                start=op_input.start_checkpoint, end=op_input.end_checkpoint
+            ),
+            pointer_table_suffix=op_input.backfill_label,
+        )
+        # Hack for now.
+        return "Done"
+
+    @job(name=f"{related_ops_prefix}_clean_up_job")
+    def goldsky_clean_up_job():
+        goldsky_clean_up_op()
+
+    @job(name=f"{related_ops_prefix}_backfill_job")
+    def goldsky_backfill_job():
+        goldsky_backfill_op()
+
+    @asset_sensor(
+        asset_key=generated_asset.key,
+        name=f"{related_ops_prefix}_clean_up_sensor",
+        job=goldsky_clean_up_job,
+        default_status=DefaultSensorStatus.STOPPED,
+    )
+    def goldsky_clean_up_sensor(
+        context: SensorEvaluationContext, asset_event: EventLogEntry
+    ):
+        yield RunRequest(
+            run_key=context.cursor,
+            run_config=RunConfig(
+                ops={
+                    f"{related_ops_prefix}_clean_up_op": {
+                        "config": {"asset_event": asset_event}
+                    }
+                }
+            ),
+        )
+
+    return AssetFactoryResponse(
+        [generated_asset],
+        [goldsky_clean_up_sensor],
+        [goldsky_clean_up_job, goldsky_backfill_job],
+    )

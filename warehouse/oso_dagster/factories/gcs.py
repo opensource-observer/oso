@@ -211,7 +211,7 @@ def interval_gcs_import_asset(config: IntervalGCSAsset):
         asset_key=gcs_asset.key,
         name=f"{config.name}_clean_up_sensor",
         job=gcs_clean_up_job,
-        default_status=DefaultSensorStatus.RUNNING,
+        default_status=DefaultSensorStatus.STOPPED,
     )
     def gcs_clean_up_sensor(
         context: SensorEvaluationContext, gcs: GCSResource, asset_event: EventLogEntry
