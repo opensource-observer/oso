@@ -196,9 +196,11 @@ def interval_gcs_import_asset(config: IntervalGCSAsset):
                 }
             )
 
+    asset_config = config
+
     @op(name=f"{config.name}_clean_up_op")
     def gcs_clean_up_op(context: OpExecutionContext, config: dict):
-        context.log.info(f"Running clean up for {key}")
+        context.log.info(f"Running clean up for {asset_config.name}")
         print(config)
 
     @job(name=f"{config.name}_clean_up_job")
@@ -209,7 +211,7 @@ def interval_gcs_import_asset(config: IntervalGCSAsset):
         asset_key=gcs_asset.key,
         name=f"{config.name}_clean_up_sensor",
         job=gcs_clean_up_job,
-        default_status=DefaultSensorStatus.RUNNING,
+        default_status=DefaultSensorStatus.STOPPED,
     )
     def gcs_clean_up_sensor(
         context: SensorEvaluationContext, gcs: GCSResource, asset_event: EventLogEntry
@@ -220,7 +222,7 @@ def interval_gcs_import_asset(config: IntervalGCSAsset):
             run_config=RunConfig(
                 ops={
                     f"{config.name}_clean_up_op": {
-                        "config": {"asset_event": asset_event}
+                        "op_config": {"asset_event": asset_event}
                     }
                 }
             ),

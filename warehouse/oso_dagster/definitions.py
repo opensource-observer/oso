@@ -42,6 +42,7 @@ def load_definitions():
         assets=asset_defs + asset_factories.assets,
         schedules=schedules,
         jobs=asset_factories.jobs,
+        asset_checks=asset_factories.checks,
         sensors=asset_factories.sensors,
         resources=resources,
     )

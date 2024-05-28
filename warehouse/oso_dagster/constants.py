@@ -4,6 +4,7 @@ from typing import Dict, List
 import pathlib
 
 import requests
+from dagster import DefaultSensorStatus
 from dagster_dbt import DbtCliResource
 
 main_dbt_project_dir = Path(__file__).joinpath("..", "..", "..").resolve()
