@@ -32,9 +32,9 @@ The new entry must include a project slug (unique identifier), name, and an init
 Example:
 
 ```
-version: 3
-slug: my-project
-name: My Project
+version: 7 # ensure you are using the latest version
+name: my-project
+display_name: My Project
 github:
   - url: https://github.com/myproject
 ```
@@ -116,7 +116,7 @@ Example:
 blockchain:
   - address: "0x1234567890ABCDEFFEDCBA098765432123456789" # addition
     tags:
-      - EOA
+      - eoa
       - deployer
     networks:
       - mainnet
@@ -153,7 +153,7 @@ Example:
 blockchain:
   - address: "0x1234567890ABCDEFFEDCBA098765432123456789"
     tags:
-      - EOA
+      - eoa
       - wallet
     networks:
       - mainnet

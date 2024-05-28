@@ -31,16 +31,18 @@ An impact metric must be:
 
 - A quantitative measure of impact on a continuous scale. Common examples include counts, sums, averages, and medians.
 - Available for all projects in the OSO database (even if many projects have a null value). Metrics should be extendable to any collection in the OSO database as well as any artifact in the same artifact namespace (eg, GitHub-related metrics, npm-related metrics, etc.).
-- Aggregated over a discrete period of time. Common time intervals include last 90 days, last 180 days, and since inception. OSO has already bucketed event data in daily, weekly, and monthly intervals to facilitate this.
-- Constructed from data that is available in one or more [intermediate or mart models](https://github.com/opensource-observer/oso/tree/main/warehouse/dbt/models). Common models include `projects_v1`, `events_monthly_to_project`, `int_devs`, and `first_contribution_to_project_v1`.
+- Aggregated over a discrete period of time. Common time intervals include last 90 days (`90 DAYS`), last 6 months (`6 MONTHS`), and since inception (`ALL`). OSO has already bucketed event data in various time intervals to facilitate this.
+- Constructed from data that is available in one or more [intermediate or mart models](https://github.com/opensource-observer/oso/tree/main/warehouse/dbt/models). Most impact metrics are currently powered from the `int_events_daily_to_project` model.
 
 ## Schema
 
-Every impact metric must include the following fields: `project_id`, `impact_metric`, and `amount`. For example:
+Every impact metric must include the following fields: `project_id`, `event_source`, `time_interval`, `impact_metric`, and `amount`. For example:
 ```json
 {
   "project_id": "jUda1pi-FdNlaUmgKq51B4h8x4wX3QTN2fZkKq6N0vw\u003d",
-  "impact_metric": "FORKED_6M",
+  "event_source": "GITHUB",
+  "time_interval": "6 MONTHS",
+  "impact_metric": "fork_count",
   "amount": 125
 }
 ```
@@ -69,7 +71,7 @@ The following is an example of a valid impact metric, expressed in SQL:
         event_type = 'FORKED'
         and DATE(bucket_month) >= DATE_SUB(CURRENT_DATE(), INTERVAL 6 MONTH)
       group by project_id
-      ```
+    ```
   </TabItem>
   <TabItem value="response" label="Response">
     ```json
@@ -114,7 +116,7 @@ Here's an example of an impact metric that calculates the sum of gas fees contri
         "impact_metric": "gas_fees",
         "amount": "0.04893"
       }, {
-        "projectt_id": "7ZqXfQTqiCHHcRw-THEsTgz8W1T0apGyLe7rE8n0NCs\u003d",
+        "project_id": "7ZqXfQTqiCHHcRw-THEsTgz8W1T0apGyLe7rE8n0NCs\u003d",
         "impact_metric": "gas_fees",
         "amount": "5.03892"
       }, {
@@ -126,9 +128,9 @@ Here's an example of an impact metric that calculates the sum of gas fees contri
   </TabItem>
 </Tabs>
 
-### Daily Active Addresses
+### Daily Active Addresses in the Last 6 Months (Project Level)
 
-Here's a more complex impact metric that uses a CTE to calculate the number of daily active addresses for a project:
+Here's a more complex impact metric that uses several CTEs to calculate the number of daily active addresses for a project:
 
 <Tabs>
   <TabItem value="query" label="Query" default>
@@ -141,9 +143,8 @@ Here's a more complex impact metric that uses a CTE to calculate the number of d
         from `oso.int_events_daily_to_project`
         where
           event_type = 'CONTRACT_INVOCATION_SUCCESS_DAILY_COUNT'
-          and bucket_day >= '2023-10-01'
+          and DATE(bucket_day) >= DATE_SUB(CURRENT_DATE(), INTERVAL 6 MONTH)
       ),
-
       daas as (
         select
           project_id,
@@ -154,7 +155,6 @@ Here's a more complex impact metric that uses a CTE to calculate the number of d
           project_id,
           bucket_day
       ),
-
       total_days as (
         select DATE_DIFF(max_day, min_day, day) + 1 as days
         from (
@@ -167,7 +167,7 @@ Here's a more complex impact metric that uses a CTE to calculate the number of d
 
       select
         project_id,
-        'daily_active_addresses' as metric,
+        'daily_active_addresses_6_months' as metric,
         SUM(active_addresses) / (select days from total_days) as amount
       from daas
       group by
@@ -178,19 +178,19 @@ Here's a more complex impact metric that uses a CTE to calculate the number of d
     ```json
       [{
         "project_id": "-A5N7DYgI4bDZZQaF_4SPw_qx6cv1BbfcoxJ7rZxig8\u003d",
-        "impact_metric": "daily_active_addresses",
+        "impact_metric": "daily_active_addresses_6_months",
         "amount": "554.5"
       }, {
         "project_id": "-KeRKHB_H0HcNkR2_SLUC1vLy46YWoaZSMrjpiW3d5s\u003d",
-        "impact_metric": "daily_active_addresses",
+        "impact_metric": "daily_active_addresses_6_months",
         "amount": "224.2"
       }, {
         "project_id": "-ceY1smj0ZhYH-JSMeK3opMBmLgc29Oe-m5cOd-KnjY\u003d",
-        "impact_metric": "daily_active_addresses",
+        "impact_metric": "daily_active_addresses_6_months",
         "amount": "112.9"
       }, {
         "project_id": "-ceY1smj0ZhYH-JSMeK3opMBmLgc29Oe-m5cOd-KnjY\u003d",
-        "impact_metric": "daily_active_addresses",
+        "impact_metric": "daily_active_addresses_6_months",
         "amount": null
       }]
     ```

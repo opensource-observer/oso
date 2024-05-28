@@ -68,11 +68,10 @@ query GetCodeMetrics {
   ) {
     project_id
     project_name
-    artifact_namespace
-    repository_count
+    event_source
     star_count
     fork_count
-    total_contributor_count
+    contributor_count
   }
 }
 ```

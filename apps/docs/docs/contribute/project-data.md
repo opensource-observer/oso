@@ -26,7 +26,7 @@ Add or update project data by making a pull request to [OSS Directory](https://g
 
 ---
 
-The latest schema version is Version 5. In this schema, we replace the field `slug` with `name` and the previous `name` field with `display_name`.
+Make sure to use the latest version of the OSS Directory schema. You can see the latest version by opening any project YAML file and getting the version from the top of file. Note, since Version 3, we have replace the field `slug` with `name` and the previous `name` field with `display_name`.
 
 :::important
 The `name` field is the unique identifier for the project and **must** match the name of the project file. For example, if the project file is `./data/projects/m/my-project.yaml`, then the `name` field should be `my-project`. As a convention, we usually take the GitHub organization name as the project `name`. If the project is a standalone repo within a larger GitHub organization or personal account, you can use the project name followed by the repo owner as the name, separated by hyphens.
@@ -136,7 +136,7 @@ If you run into issues, check out [GitHub's instructions](https://docs.github.co
 - Here's an example of a project `.yaml` file:
 
   ```yaml
-  version: 5
+  version: 7 # Ensure this is the latest version
   name: opensource-observer
   display_name: Open Source Observer
   github:
