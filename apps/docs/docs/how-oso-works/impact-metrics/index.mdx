@@ -36,18 +36,17 @@ An impact metric must be:
 
 ## Schema
 
-Every impact metric must include the following fields: `project_id`, `event_source`, `time_interval`, `impact_metric`, and `amount`. For example:
+Every impact metric must include the following fields: `project_id`, `impact_metric`, and `amount`. For example:
 ```json
 {
   "project_id": "jUda1pi-FdNlaUmgKq51B4h8x4wX3QTN2fZkKq6N0vw\u003d",
-  "event_source": "GITHUB",
-  "time_interval": "6 MONTHS",
-  "impact_metric": "fork_count",
-  "amount": 125
+  "impact_metric": "fork_count_6_months",
+  "amount": "125.0"
 }
 ```
 
-Some may also include a `namespace` field to be explicit about the source of the event data to calculate the impact metric. This is useful, for instance, in the case of projects on multiple blockchain networks.
+Currently all intermediate metrics are calculated [here](https://github.com/opensource-observer/oso/tree/main/warehouse/dbt/models/intermediate/metrics) and consolidated metrics are available as metrics marts [here](https://github.com/opensource-observer/oso/tree/main/warehouse/dbt/models/marts/metrics).
+
 
 ## Sample Metrics
 
