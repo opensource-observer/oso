@@ -116,7 +116,7 @@ Here's an example of an impact metric that calculates the sum of gas fees contri
         "impact_metric": "gas_fees",
         "amount": "0.04893"
       }, {
-        "projectt_id": "7ZqXfQTqiCHHcRw-THEsTgz8W1T0apGyLe7rE8n0NCs\u003d",
+        "project_id": "7ZqXfQTqiCHHcRw-THEsTgz8W1T0apGyLe7rE8n0NCs\u003d",
         "impact_metric": "gas_fees",
         "amount": "5.03892"
       }, {
@@ -128,9 +128,9 @@ Here's an example of an impact metric that calculates the sum of gas fees contri
   </TabItem>
 </Tabs>
 
-### Daily Active Addresses
+### Daily Active Addresses in the Last 6 Months (Project Level)
 
-Here's a more complex impact metric that uses a CTE to calculate the number of daily active addresses for a project:
+Here's a more complex impact metric that uses several CTEs to calculate the number of daily active addresses for a project:
 
 <Tabs>
   <TabItem value="query" label="Query" default>
@@ -143,7 +143,7 @@ Here's a more complex impact metric that uses a CTE to calculate the number of d
         from `oso.int_events_daily_to_project`
         where
           event_type = 'CONTRACT_INVOCATION_SUCCESS_DAILY_COUNT'
-          and bucket_day >= '2023-10-01'
+          and DATE(bucket_day) >= DATE_SUB(CURRENT_DATE(), INTERVAL 6 MONTH)
       ),
       daas as (
         select
@@ -167,7 +167,7 @@ Here's a more complex impact metric that uses a CTE to calculate the number of d
 
       select
         project_id,
-        'daily_active_addresses' as metric,
+        'daily_active_addresses_6_months' as metric,
         SUM(active_addresses) / (select days from total_days) as amount
       from daas
       group by
@@ -178,19 +178,19 @@ Here's a more complex impact metric that uses a CTE to calculate the number of d
     ```json
       [{
         "project_id": "-A5N7DYgI4bDZZQaF_4SPw_qx6cv1BbfcoxJ7rZxig8\u003d",
-        "impact_metric": "daily_active_addresses",
+        "impact_metric": "daily_active_addresses_6_months",
         "amount": "554.5"
       }, {
         "project_id": "-KeRKHB_H0HcNkR2_SLUC1vLy46YWoaZSMrjpiW3d5s\u003d",
-        "impact_metric": "daily_active_addresses",
+        "impact_metric": "daily_active_addresses_6_months",
         "amount": "224.2"
       }, {
         "project_id": "-ceY1smj0ZhYH-JSMeK3opMBmLgc29Oe-m5cOd-KnjY\u003d",
-        "impact_metric": "daily_active_addresses",
+        "impact_metric": "daily_active_addresses_6_months",
         "amount": "112.9"
       }, {
         "project_id": "-ceY1smj0ZhYH-JSMeK3opMBmLgc29Oe-m5cOd-KnjY\u003d",
-        "impact_metric": "daily_active_addresses",
+        "impact_metric": "daily_active_addresses_6_months",
         "amount": null
       }]
     ```
