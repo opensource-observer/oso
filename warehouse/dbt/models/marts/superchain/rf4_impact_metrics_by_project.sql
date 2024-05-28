@@ -74,6 +74,7 @@ pivot_metrics as (
 select
   pivot_metrics.project_id,
   projects_v1.project_name,
+  rf4_project_verification.check_oss_requirements,
   pivot_metrics.gas_fees,
   pivot_metrics.transaction_count,
   pivot_metrics.trusted_transaction_count,
@@ -93,3 +94,5 @@ select
 from pivot_metrics
 left join {{ ref('projects_v1') }}
   on pivot_metrics.project_id = projects_v1.project_id
+left join {{ ref('rf4_project_verification') }}
+  on pivot_metrics.project_id = rf4_project_verification.project_id

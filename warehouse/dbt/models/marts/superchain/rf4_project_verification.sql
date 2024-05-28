@@ -63,7 +63,7 @@ checks as (
     unique_addresses,
     date_first_transaction,
     days_with_onchain_activity_in_range,
-    ARRAY_LENGTH(eligible_repos) >= 1 as check_eligible_repos,
+    ARRAY_LENGTH(eligible_repos) >= 1 as check_oss_requirements,
     unique_addresses >= 420 as check_unique_addresses,
     date_first_transaction < '2024-03-01' as check_date_first_transaction,
     days_with_onchain_activity_in_range >= 10
@@ -77,13 +77,12 @@ select
   unique_addresses,
   date_first_transaction,
   days_with_onchain_activity_in_range,
-  check_eligible_repos,
+  check_oss_requirements,
   check_unique_addresses,
   check_date_first_transaction,
   check_days_with_onchain_activity_in_range,
   (
-    check_eligible_repos
-    and check_unique_addresses
+    check_unique_addresses
     and check_date_first_transaction
     and check_days_with_onchain_activity_in_range
   ) as meets_all_requirements
