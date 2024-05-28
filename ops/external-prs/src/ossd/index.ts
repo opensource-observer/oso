@@ -6,6 +6,7 @@ import { logger } from "../utils/logger.js";
 import { BaseArgs, CommmentCommandHandler } from "../base.js";
 import { loadData, Project, Collection } from "oss-directory";
 import duckdb from "duckdb";
+import _ from "lodash";
 import * as util from "util";
 import * as fs from "fs";
 import * as fsPromise from "fs/promises";
@@ -43,7 +44,9 @@ function jsonlExport<T>(path: string, arr: Array<T>): Promise<void> {
 }
 
 interface ParseCommentArgs extends BaseArgs {
+  // Comment ID
   comment: number;
+  // Output filename
   output: string;
   login: string;
 }
@@ -588,8 +591,38 @@ class OSSDirectoryPullRequest {
     });
     await this.loadValidators(urls);
 
-    const validationErrors: { address: string; error: string }[] = [];
+    // Embedded data structure for storing validation results
+    type ValidationItem = {
+      name: string;
+      messages: string[];
+      errors: string[];
+    };
+    const results: Record<string, ValidationItem> = {};
+    // Add a name to the results
+    const ensureNameInResult = (name: string) => {
+      const item = results[name];
+      if (!item) {
+        results[name] = {
+          name,
+          messages: [],
+          errors: [],
+        };
+      }
+    };
+    // Add an informational message
+    /**
+    const addMessageToResult = (name: string, message: string) => {
+      ensureNameInResult(name);
+      results[name].messages.push(message);
+    };
+    */
+    // Add an error
+    const addErrorToResult = (name: string, message: string) => {
+      ensureNameInResult(name);
+      results[name].errors.push(message);
+    };
 
+    // Run on-chain validations
     for (const item of this.changes.artifacts.toValidate.blockchain) {
       const address = item.address;
       for (const network of item.networks) {
@@ -609,70 +642,58 @@ class OSSDirectoryPullRequest {
         });
         if (item.tags.indexOf("eoa") !== -1) {
           if (!(await validator.isEOA(address))) {
-            validationErrors.push({
-              address: address,
-              error: "is not an EOA",
-            });
+            addErrorToResult(address, "is not an EOA");
           }
         }
         if (item.tags.indexOf("contract") !== -1) {
           if (!(await validator.isContract(address))) {
-            validationErrors.push({
-              address: address,
-              error: "is not a Contract",
-            });
+            addErrorToResult(address, "is not a Contract");
           }
         }
         if (item.tags.indexOf("deployer") !== -1) {
           if (!(await validator.isDeployer(address))) {
-            validationErrors.push({
-              address: address,
-              error: "is not a Deployer",
-            });
+            addErrorToResult(address, "is not a Deployer");
           }
         }
       }
     }
 
-    if (validationErrors.length !== 0) {
-      logger.info({
-        message: "found validation errors",
-        count: validationErrors.length,
-      });
+    // Summarize results
+    const items: ValidationItem[] = _.values(results);
+    const numErrors = _.sumBy(
+      items,
+      (item: ValidationItem) => item.errors.length,
+    );
+    const summaryMessage =
+      numErrors > 0
+        ? `⛔ Found ${numErrors} errors ⛔`
+        : items.length > 0
+          ? "⚠️ Please review validation items before approving ⚠️"
+          : "✅ Good to go as long as status checks pass";
+    const commentBody = await renderMustacheFromFile(
+      relativeDir("messages", "validation-message.md"),
+      {
+        sha: args.sha,
+        summaryMessage,
+        validationItems: items,
+      },
+    );
 
-      await args.appUtils.setStatusComment(
-        args.pr,
-        await renderMustacheFromFile(
-          relativeDir("messages", "validation-errors.md"),
-          {
-            validationErrors: validationErrors,
-            sha: args.sha,
-          },
-        ),
-      );
-
-      await args.appUtils.setCheckStatus({
-        conclusion: CheckConclusion.Failure,
-        name: "validate",
-        head_sha: args.sha,
-        status: CheckStatus.Completed,
-        output: {
-          title: "PR Validation",
-          summary: `Failed to validate with ${validationErrors.length} errors`,
-        },
-      });
-    } else {
-      await args.appUtils.setCheckStatus({
-        conclusion: CheckConclusion.Success,
-        name: "validate",
-        head_sha: args.sha,
-        status: CheckStatus.Completed,
-        output: {
-          title: "PR Validation",
-          summary: "Successfully validated",
-        },
-      });
-    }
+    // Update the PR comment
+    await args.appUtils.setStatusComment(args.pr, commentBody);
+    // Update the PR status
+    await args.appUtils.setCheckStatus({
+      conclusion:
+        numErrors > 0 ? CheckConclusion.Failure : CheckConclusion.Success,
+      name: "validate",
+      head_sha: args.sha,
+      status: CheckStatus.Completed,
+      output: {
+        title:
+          numErrors > 0 ? summaryMessage : "Successfully validated all items",
+        summary: commentBody,
+      },
+    });
   }
 }
 
@@ -686,6 +707,11 @@ async function validatePR(args: ValidatePRArgs) {
   await pr.validate(args);
 }
 
+/**
+ * This command is called by external-prs-handle-comment as a check
+ * for whether we should run the validation logic,
+ * based on whether a valid command was called.
+ **/
 async function parseOSSDirectoryComments(args: ParseCommentArgs) {
   const enableValidation: CommmentCommandHandler<GithubOutput> = async (
     command,
@@ -712,15 +738,19 @@ async function parseOSSDirectoryComments(args: ParseCommentArgs) {
     });
   };
 
+  const commandHandlers = {
+    // /validate <sha>
+    validate: enableValidation,
+  };
+
   try {
     const output = await args.appUtils.parseCommentForCommand<GithubOutput>(
       args.comment,
-      {
-        validate: enableValidation,
-      },
+      commandHandlers,
     );
     await output.commit(args.output);
-  } catch (_e) {
+  } catch (e) {
+    logger.debug("Error", e);
     await GithubOutput.write(args.output, {
       deploy: "false",
     });

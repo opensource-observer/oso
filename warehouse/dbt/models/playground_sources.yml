@@ -1,5 +1,9 @@
 sources:
   - name: playground
+    # +enabled: |
+    #   {%- if target.name in ['playground', 'dev'] -%} true
+    #   {%- else -%} false
+    #   {%- endif -%}
 
     database: opensource-observer
 

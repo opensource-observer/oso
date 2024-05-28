@@ -1,12 +1,9 @@
 # NOTE: This name appears in GitHub's Checks API and in workflow's status badge.
-name: deploy-hasura
+name: deploy-dbt-docs
 env:
-  HASURA_GRAPHQL_ADMIN_SECRET: ${{ secrets.HASURA_GRAPHQL_ADMIN_SECRET }}
-  HASURA_GRAPHQL_ENDPOINT: ${{ vars.HASURA_GRAPHQL_ENDPOINT }}
-  HASURA_GRAPHQL_DATABASE_URL: ${{ secrets.HASURA_GRAPHQL_DATABASE_URL }}
-  DBT_TARGET: "production"
-  GOOGLE_CREDENTIALS_JSON: ${{ vars.GOOGLE_TEST_DUMMY_CREDENTIALS_JSON }}
-  GOOGLE_PROJECT_ID: opensource-observer
+  CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+  # Google variables
+  GOOGLE_PROJECT_ID: "opensource-observer"
 
 # Trigger the workflow when:
 on:
@@ -15,15 +12,15 @@ on:
     branches:
       - main
     paths:
-      - apps/hasura/**
+      - warehouse/dbt/**
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
 jobs:
-  deploy-hasura:
+  build-deploy:
     # NOTE: This name appears in GitHub's Checks API.
-    name: deploy-hasura
-    environment: deploy
+    name: build-deploy
+    environment: indexer
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -52,9 +49,9 @@ jobs:
           poetry-version: 1.7.1
 
       - name: Login to google
-        uses: 'google-github-actions/auth@v2'
+        uses: "google-github-actions/auth@v2"
         with:
-          credentials_json: '${{ secrets.GOOGLE_BQ_ADMIN_CREDENTIALS_JSON }}'
+          credentials_json: "${{ secrets.GOOGLE_CREDENTIALS_JSON }}"
           create_credentials_file: true
 
       - name: Setup dbt profile
@@ -62,7 +59,13 @@ jobs:
           bash .github/scripts/create-dbt-profile.sh ${GOOGLE_APPLICATION_CREDENTIALS}
 
       - name: Build
-        run: pnpm build:hasura
+        run: pnpm build:dbt:docs
 
-      - name: Deploy
-        run: pnpm deploy:hasura
+      # This is necessary because wrangler tries to install at monorepo root
+      - run: echo "ignore-workspace-root-check=true" >> .npmrc
+
+      - name: Publish
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          command: pages deploy target --project-name=models-opensource-observer

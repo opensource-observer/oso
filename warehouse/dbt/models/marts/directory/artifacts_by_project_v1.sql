@@ -7,9 +7,9 @@
 select
   artifacts_by_project.artifact_id,
   artifacts_by_project.artifact_source_id,
+  artifacts_by_project.artifact_source,
   artifacts_by_project.artifact_namespace,
   artifacts_by_project.artifact_name,
-  artifacts_by_project.artifact_type,
   projects.project_id,
   projects.project_source,
   projects.project_namespace,

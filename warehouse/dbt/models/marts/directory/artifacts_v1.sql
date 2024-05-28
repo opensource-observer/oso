@@ -10,7 +10,6 @@ select
   artifact_id,
   artifact_source_id,
   artifact_source,
-  artifact_type,
   artifact_namespace,
   artifact_name,
   artifact_url

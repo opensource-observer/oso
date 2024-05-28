@@ -177,3 +177,4 @@ left join code_metrics
   on
     project_metadata.project_id = code_metrics.project_id
     and project_metadata.event_source = code_metrics.event_source
+where code_metrics.event_source is not null

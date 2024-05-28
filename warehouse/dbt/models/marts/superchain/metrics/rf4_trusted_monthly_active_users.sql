@@ -1,3 +1,4 @@
+{# TODO: double check the math on total_months #}
 with txns as (
   select
     project_id,
@@ -22,9 +23,7 @@ maus as (
 ),
 
 total_months as (
-  select
-    {# TODO: double check this math #}
-    (DATE_DIFF(max_month, min_month, day) + 30) / 30 as months
+  select (DATE_DIFF(max_month, min_month, day) + 30) / 30 as months
   from (
     select
       MIN(bucket_month) as min_month,

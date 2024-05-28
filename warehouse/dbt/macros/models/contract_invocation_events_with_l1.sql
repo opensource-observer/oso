@@ -18,7 +18,7 @@ with blockchain_artifacts as (
         when artifact_type = 'EOA' then 1
         else 0
       end as artifact_rank
-    from {{ ref('int_artifacts_by_project') }}
+    from {{ ref('int_all_artifacts') }}
     where artifact_source = "{{ upper_network_name }}"
   )
   group by artifact_source_id

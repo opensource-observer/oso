@@ -9,7 +9,8 @@ with {% for network in networks %}
     select
       factories.block_timestamp as block_timestamp,
       factories.transaction_hash as transaction_hash,
-      deployers.deployer_address as deployer_address,
+      factories.originating_address as deployer_address,
+      deployers.deployer_address as factory_deployer_address,
       factories.contract_address as contract_address
     from {{ ref("stg_%s__factories" % network) }} as factories
     inner join {{ ref("stg_%s__deployers" % network) }} as deployers
@@ -19,6 +20,7 @@ with {% for network in networks %}
       block_timestamp,
       transaction_hash,
       deployer_address,
+      null as factory_deployer_address,
       contract_address
     from {{ ref("stg_%s__deployers" % network) }}
   ){% if not loop.last %},{% endif %}
@@ -32,6 +34,7 @@ with {% for network in networks %}
     transaction_hash,
     "{{ network.upper() }}" as network,
     deployer_address,
+    factory_deployer_address,
     contract_address
   from {{ network }}_factories_and_deployers
 {% endfor %}
