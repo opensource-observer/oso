@@ -7,7 +7,6 @@ with all_artifacts as (
   select
     artifact_source_id,
     artifact_source,
-    artifact_type,
     artifact_namespace,
     artifact_url,
     artifact_name
@@ -16,7 +15,6 @@ with all_artifacts as (
   select
     artifact_source_id,
     artifact_source,
-    artifact_type,
     artifact_namespace,
     artifact_url,
     MAX_BY(artifact_name, last_used) as artifact_name
@@ -24,7 +22,6 @@ with all_artifacts as (
   group by
     artifact_source_id,
     artifact_source,
-    artifact_type,
     artifact_namespace,
     artifact_url
 )
@@ -33,7 +30,6 @@ select distinct
   {{ oso_id("artifact_source", "artifact_source_id") }} as artifact_id,
   artifact_source_id,
   artifact_source,
-  artifact_type,
   artifact_namespace,
   artifact_name,
   artifact_url

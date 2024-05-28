@@ -60,7 +60,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           # Check out pull request's HEAD commit instead of the merge commit to
           # prevent gitlint from failing due to too long commit message titles,
@@ -83,7 +83,7 @@ jobs:
             PUBLIC_VARS_TEST
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v2
+        uses: pnpm/action-setup@v4
         with:
           version: 9
           run_install: |
@@ -91,7 +91,7 @@ jobs:
               args: [--frozen-lockfile, --strict-peer-dependencies]
 
       - name: Set up Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: "20.x"
           cache: "pnpm"

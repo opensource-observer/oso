@@ -67,9 +67,3 @@ $ git clone https://github.com/opensource-observer/oss-directory.git
 ```
 
 Feel free to use the data in your own projects!
-
-## Python Library
-
-:::warning
-Coming soon... To track progress, see the [issue on GitHub](https://github.com/opensource-observer/oss-directory/issues/18).
-:::

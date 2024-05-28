@@ -42,16 +42,16 @@ select
   events.amount,
   case
     when rf4_trusted_users.is_trusted_user is true
-      then rf4_trusted_users.user_id
+      then rf4_trusted_users.address
   end as trusted_user_id
 from events
-left join {{ ref('artifacts_v1') }} as to_artifacts
+left join {{ ref('int_artifact_types') }} as to_artifacts
   on events.to_artifact_id = to_artifacts.artifact_id
 left join {{ ref('artifacts_v1') }} as from_artifacts
   on events.from_artifact_id = from_artifacts.artifact_id
 left join {{ ref('projects_v1') }}
   on events.project_id = projects_v1.project_id
 left join {{ ref('rf4_trusted_users') }}
-  on from_artifacts.artifact_name = rf4_trusted_users.artifact_name
+  on from_artifacts.artifact_name = rf4_trusted_users.address
 where
   to_artifacts.artifact_type = 'CONTRACT'

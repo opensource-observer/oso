@@ -31,13 +31,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 1
 
       - name: Setup external pr tools
         uses: ./.github/workflows/setup-external-pr-tools
-      
+
       - name: Initialize check
         run: |
           cd ops/external-prs &&
@@ -48,9 +48,9 @@ jobs:
           echo "${{ github.event.pull_request.author_association }}"
 
       - name: Login to google
-        uses: 'google-github-actions/auth@v2'
+        uses: "google-github-actions/auth@v2"
         with:
-          credentials_json: '${{ secrets.GOOGLE_BQ_ADMIN_CREDENTIALS_JSON }}'
+          credentials_json: "${{ secrets.GOOGLE_BQ_ADMIN_CREDENTIALS_JSON }}"
           create_credentials_file: true
         if: ${{ contains(fromJson('["OWNER", "MEMBER", "COLLABORATOR", "CONTRIBUTOR"]'), github.event.pull_request.author_association) }}
 

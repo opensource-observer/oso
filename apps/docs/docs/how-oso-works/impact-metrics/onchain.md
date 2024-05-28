@@ -5,98 +5,70 @@ sidebar_position: 3
 # Onchain
 
 :::info
-Onchain metrics include projects' smart contracts, transaction volumes, and sequencer fee contribution. Onchain metrics are typically queried by project (e.g., `uniswap`) and network (e.g., `optimism`), but they can also be queried by contract address (e.g., `0x123...`) and even across networks (e.g., `optimism` and `arbitrum`).
+Onchain metrics include projects' smart contracts, transaction volumes, and sequencer fee contribution. Onchain metrics are typically queried by project (e.g., `uniswap`) and network (e.g., `OPTIMISM`), but they can also be queried by contract address (e.g., `0x123...`) and even across networks (e.g., `OPTIMISM` and `BASE`).
 :::
 
-## Addesses Owned
+## Current Metrics
 
 ---
 
-For information about how addresses are tagged, please see: [Address Tagging](../oss-directory/artifact.md#tagging-addresses).
+The latest version of our code metrics model can be viewed [here](https://models.opensource.observer/#!/model/model.opensource_observer.onchain_metrics_by_project_v1#description). For information about how addresses are tagged, please see: [Address Tagging](../oss-directory/artifact.md#tagging-addresses).
 
-### num_contracts
+### days_since_first_transaction
 
-The number of contracts directly associated with the project.
+**Days Since First Transaction**: Number of days since the project's first transaction.
 
-### num_deployers
+### active_contract_count_90_days
 
-The number of addresses that have deployed contracts for the project. _Coming soon!_
+**Active Contract Count (90 Days)**: Number of active contracts in the last 90 days.
 
-### num_wallets
+### transaction_count
 
-The number of addresses that have custody of funds for the project. _Coming soon!_
+**Transaction Count**: Total number of transactions.
 
-## Transactions
+### transaction_count_6_months
 
----
+**Transaction Count (6 Months)**: Total transactions in the last 6 months.
 
-Open Source Observer only tracks transactions that involve smart contracts, as most all smart contracts are open source and most widely-used smart contracts can be traced to projects with additional open source components.
+### gas_fees_sum
 
-Our primary focus is on transactions between externally owned account (EOA) addresses and smart contracts. We do not currently track the internal transactions between smart contracts, although their effects are captured in the aggregate transaction costs of the EOA to smart contract transactions. We also do not track transactions between EOAs, even though these are often facilitated by a frontend or wallet interface, because that information is not captured onchain.
+**Gas Fees Sum**: Total gas fees incurred by the project.
 
-### total_txns
+### gas_fees_sum_6_months
 
-The total number of onchain transactions with the project's contracts.
+**Gas Fees Sum (6 Months)**: Total gas fees incurred in the last 6 months.
 
-### txns_6_months
+### address_count
 
-The total number of onchain transactions with the project's contracts in the last 6 months.
+**Address Count**: Total number of unique addresses interacting with the project.
 
-### first_txn_date
+### address_count_90_days
 
-The date of the first onchain transaction with the project's contracts.
+**Address Count (90 Days)**: Number of unique addresses interacting in the last 90 days.
 
-## Gas Usage
+### new_address_count_90_days
 
----
+**New Address Count (90 Days)**: Number of new addresses in the last 90 days.
 
-### total_l2_gas
+### returning_address_count_90_days
 
-The total Layer 2 gas used by the project's contracts.
+**Returning Address Count (90 Days)**: Number of returning addresses in the last 90 days.
 
-### l2_gas_6_months
+### high_activity_address_count_90_days
 
-The total Layer 2 gas used by the project's contracts in the last 6 months.
+**High Activity Address Count (90 Days)**: Number of high activity addresses in the last 90 days.
 
-## Users
+### medium_activity_address_count_90_days
 
----
+**Medium Activity Address Count (90 Days)**: Number of medium activity addresses in the last 90 days.
 
-### total_users
+### low_activity_address_count_90_days
 
-The number of unique addresses interacting with the project's contracts.
+**Low Activity Address Count (90 Days)**: Number of low activity addresses in the last 90 days.
 
-### users_6_months
+### multi_project_address_count_90_days
 
-The number of unique users interacting with the project's contracts in the last 6 months.
-
-### new_users
-
-The number of users interacting with the project's contracts for the first time in the last 3 months.
-
-## Active Users
-
----
-
-### active_users
-
-The number of users interacting with the project's contracts in the last 3 months.
-
-### high_frequency_users
-
-The number of active users who have made 1000+ transactions with the project's contracts in the last 3 months.
-
-### more_active_users
-
-The number of active users who have made 10-999 transactions with the project's contracts in the last 3 months.
-
-### less_active_users
-
-The number of active users who have made 1-9 transactions with the project's contracts in the last 3 months.
-
-### multi_project_users
-
-The number of users who have interacted with 3+ projects' contracts in the last 3 months.
+**Multi-Project Address Count (90 Days)**: Number of addresses interacting with multiple projects in the last 90 days.
 
 ---
 

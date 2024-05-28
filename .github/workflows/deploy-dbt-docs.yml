@@ -20,7 +20,7 @@ jobs:
   build-deploy:
     # NOTE: This name appears in GitHub's Checks API.
     name: build-deploy
-    environment: deploy
+    environment: indexer
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -29,7 +29,7 @@ jobs:
           fetch-depth: 1
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v2
+        uses: pnpm/action-setup@v4
         with:
           version: 9
           run_install: |
@@ -37,7 +37,7 @@ jobs:
               args: [--frozen-lockfile, --strict-peer-dependencies]
 
       - name: Set up Node.js 20
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           cache: "pnpm"
           node-version: "20.x"
@@ -51,7 +51,7 @@ jobs:
       - name: Login to google
         uses: "google-github-actions/auth@v2"
         with:
-          credentials_json: "${{ secrets.GOOGLE_BQ_ADMIN_CREDENTIALS_JSON }}"
+          credentials_json: "${{ secrets.GOOGLE_CREDENTIALS_JSON }}"
           create_credentials_file: true
 
       - name: Setup dbt profile
@@ -60,6 +60,9 @@ jobs:
 
       - name: Build
         run: pnpm build:dbt:docs
+
+      # This is necessary because wrangler tries to install at monorepo root
+      - run: echo "ignore-workspace-root-check=true" >> .npmrc
 
       - name: Publish
         uses: cloudflare/wrangler-action@v3

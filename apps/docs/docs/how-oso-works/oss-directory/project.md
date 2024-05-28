@@ -7,7 +7,7 @@ sidebar_position: 3
 A **project** is a group of artifacts owned by a project in the OSS Directory. For example, a project may include a GitHub organization, a blockchain address, and a NPM package. An artifact can only belong to one project.
 :::
 
-## Slugs
+## Project Identification
 
 ---
 
@@ -30,6 +30,29 @@ The `description` is an optional field used to store a short description of the 
 The `github`, `npm`, and `blockchain` fields are used to store arrays of artifacts associated with the project. Each item in an artifact array must contain either a `url` field that is a valid URL or an `address` representing a public key address on a blockchain. More information about artifact schemas can be found [here](./artifact).
 
 As of Version 5, you can also include `websites` as artifacts. This field is used to store an array of URLs that are associated with the project. Each item in the array must contain a `url` field that is a valid URL.
+
+## Example
+
+---
+
+Here is a simple example of a project YAML file in the OSS Directory:
+
+```yaml
+name: my-project
+display_name: My Project
+github:
+  - url: https://github.com/my-project
+websites:
+  - url: https://my-project.com
+blockchain:
+  - address: "0x87feed6162cb7dfe6b62f64366742349bf4d1b05"
+    networks:
+      - mainnet
+      - optimism
+    tags:
+      - eoa
+      - wallet
+```
 
 ## Full Schema
 

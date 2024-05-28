@@ -27,12 +27,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 1
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v2
+        uses: pnpm/action-setup@v4
         with:
           version: 9
           run_install: |
@@ -40,10 +40,16 @@ jobs:
               args: [--frozen-lockfile, --strict-peer-dependencies]
 
       - name: Set up Node.js 20
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           cache: "pnpm"
           node-version: "20.x"
+
+      - name: "Setup Python, Poetry and Dependencies"
+        uses: packetcoders/action-setup-cache-python-poetry@main
+        with:
+          python-version: 3.12
+          poetry-version: 1.7.1
 
       - name: Login to google
         uses: 'google-github-actions/auth@v2'
@@ -57,5 +63,6 @@ jobs:
 
       - name: Build
         run: pnpm build:hasura
+
       - name: Deploy
         run: pnpm deploy:hasura

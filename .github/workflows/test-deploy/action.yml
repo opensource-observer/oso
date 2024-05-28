@@ -46,7 +46,7 @@ runs:
     #     cd ops/external-prs && pnpm tools oso test-deploy is-eligible $GITHUB_OUTPUT
 
     - name: checkout the PR
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         # Check out pull request's HEAD commit instead of the merge commit to
         # prevent gitlint from failing due to too long commit message titles,
