@@ -5,9 +5,12 @@ from dagster import AssetExecutionContext, AssetKey, asset, AssetsDefinition
 from dagster_dbt import DbtCliResource, dbt_assets, DagsterDbtTranslator
 from google.cloud.bigquery.schema import SchemaField
 from .constants import main_dbt_manifests, main_dbt_project_dir
-from .goldsky import (
+from .factories.goldsky import (
     GoldskyConfig,
     goldsky_asset,
+    traces_checks,
+    transactions_checks,
+    blocks_checks,
 )
 from .factories import interval_gcs_import_asset, SourceMode, Interval, IntervalGCSAsset
 
@@ -105,7 +108,7 @@ base_blocks = goldsky_asset(
         destination_dataset_name="superchain",
         partition_column_name="timestamp",
         partition_column_transform=lambda c: f"TIMESTAMP_SECONDS(`{c}`)",
-        # uncomment the following value to test
+        checks=[blocks_checks()],
     ),
 )
 
@@ -121,7 +124,7 @@ base_transactions = goldsky_asset(
         partition_column_name="block_timestamp",
         partition_column_transform=lambda c: f"TIMESTAMP_SECONDS(`{c}`)",
         schema_overrides=[SchemaField(name="value", field_type="BYTES")],
-        # uncomment the following value to test
+        checks=[transactions_checks()],
     ),
 )
 
@@ -136,8 +139,7 @@ base_traces = goldsky_asset(
         destination_dataset_name="superchain",
         partition_column_name="block_timestamp",
         partition_column_transform=lambda c: f"TIMESTAMP_SECONDS(`{c}`)",
-        # uncomment the following value to test
-        # max_objects_to_load=2,
+        checks=[traces_checks()],
     ),
 )
 
@@ -152,6 +154,7 @@ frax_blocks = goldsky_asset(
         destination_dataset_name="superchain",
         partition_column_name="timestamp",
         partition_column_transform=lambda c: f"TIMESTAMP_SECONDS(`{c}`)",
+        checks=[blocks_checks()],
         # uncomment the following value to test
         # max_objects_to_load=1,
     ),
@@ -169,6 +172,7 @@ frax_transactions = goldsky_asset(
         partition_column_name="block_timestamp",
         partition_column_transform=lambda c: f"TIMESTAMP_SECONDS(`{c}`)",
         schema_overrides=[SchemaField(name="value", field_type="BYTES")],
+        checks=[transactions_checks()],
         # uncomment the following value to test
         # max_objects_to_load=1,
     ),
@@ -185,6 +189,7 @@ frax_traces = goldsky_asset(
         destination_dataset_name="superchain",
         partition_column_name="block_timestamp",
         partition_column_transform=lambda c: f"TIMESTAMP_SECONDS(`{c}`)",
+        checks=[traces_checks()],
         # uncomment the following value to test
         # max_objects_to_load=1,
     ),
@@ -201,6 +206,7 @@ mode_blocks = goldsky_asset(
         destination_dataset_name="superchain",
         partition_column_name="timestamp",
         partition_column_transform=lambda c: f"TIMESTAMP_SECONDS(`{c}`)",
+        checks=[blocks_checks()],
         # uncomment the following value to test
         # max_objects_to_load=1,
     ),
@@ -218,6 +224,7 @@ mode_transactions = goldsky_asset(
         partition_column_name="block_timestamp",
         partition_column_transform=lambda c: f"TIMESTAMP_SECONDS(`{c}`)",
         schema_overrides=[SchemaField(name="value", field_type="BYTES")],
+        checks=[transactions_checks()],
         # uncomment the following value to test
         # max_objects_to_load=1,
     ),
@@ -234,6 +241,7 @@ mode_traces = goldsky_asset(
         destination_dataset_name="superchain",
         partition_column_name="block_timestamp",
         partition_column_transform=lambda c: f"TIMESTAMP_SECONDS(`{c}`)",
+        checks=[traces_checks()],
         # uncomment the following value to test
         # max_objects_to_load=1,
     ),
@@ -250,6 +258,7 @@ optimism_traces = goldsky_asset(
         destination_dataset_name="superchain",
         partition_column_name="block_timestamp",
         dedupe_model="optimism_dedupe.sql",
+        checks=[traces_checks()],
         # uncomment the following value to test
         # max_objects_to_load=2000,
     ),
@@ -266,6 +275,7 @@ pgn_blocks = goldsky_asset(
         destination_dataset_name="superchain",
         partition_column_name="timestamp",
         partition_column_transform=lambda c: f"TIMESTAMP_SECONDS(`{c}`)",
+        checks=[blocks_checks()],
         # uncomment the following value to test
         # max_objects_to_load=1,
     ),
@@ -283,6 +293,7 @@ pgn_transactions = goldsky_asset(
         partition_column_name="block_timestamp",
         partition_column_transform=lambda c: f"TIMESTAMP_SECONDS(`{c}`)",
         schema_overrides=[SchemaField(name="value", field_type="BYTES")],
+        checks=[transactions_checks()],
         # uncomment the following value to test
         # max_objects_to_load=1,
     ),
@@ -299,6 +310,7 @@ pgn_traces = goldsky_asset(
         destination_dataset_name="superchain",
         partition_column_name="block_timestamp",
         partition_column_transform=lambda c: f"TIMESTAMP_SECONDS(`{c}`)",
+        checks=[traces_checks()],
         # uncomment the following value to test
         # max_objects_to_load=1,
     ),
@@ -315,6 +327,7 @@ zora_blocks = goldsky_asset(
         destination_dataset_name="superchain",
         partition_column_name="timestamp",
         partition_column_transform=lambda c: f"TIMESTAMP_SECONDS(`{c}`)",
+        checks=[blocks_checks()],
         # uncomment the following value to test
         # max_objects_to_load=1,
     ),
@@ -332,6 +345,7 @@ zora_transactions = goldsky_asset(
         partition_column_name="block_timestamp",
         partition_column_transform=lambda c: f"TIMESTAMP_SECONDS(`{c}`)",
         schema_overrides=[SchemaField(name="value", field_type="BYTES")],
+        checks=[transactions_checks()],
         # uncomment the following value to test
         # max_objects_to_load=1,
     ),
@@ -348,6 +362,7 @@ zora_traces = goldsky_asset(
         destination_dataset_name="superchain",
         partition_column_name="block_timestamp",
         partition_column_transform=lambda c: f"TIMESTAMP_SECONDS(`{c}`)",
+        checks=[traces_checks()],
         # uncomment the following value to test
         # max_objects_to_load=1,
     ),

@@ -56,14 +56,31 @@ class CBT:
         search_paths: List[str],
     ):
         self.bigquery = bigquery
-        search_paths.append(
+        self.search_paths = [
             os.path.join(os.path.abspath(os.path.dirname(__file__)), "operations"),
-        )
-        loader = FileSystemLoader(search_paths)
+        ]
+        self.add_search_paths(search_paths)
+
+        self.log = log
+        self.load_env()
+
+    def load_env(self):
+        loader = FileSystemLoader(self.search_paths)
         self.env = Environment(
             loader=loader,
         )
-        self.log = log
+
+    def add_search_paths(self, search_paths: List[str]):
+        for p in search_paths:
+            if not p in self.search_paths:
+                self.search_paths.append(p)
+        self.load_env()
+
+    def query(self, model_file: str, timeout: float = 300, **vars):
+        with self.bigquery.get_client() as client:
+            rendered = self.render_model(model_file, **vars)
+            job = client.query(rendered)
+            return job.result()
 
     def transform(
         self,

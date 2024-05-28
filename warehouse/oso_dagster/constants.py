@@ -112,7 +112,3 @@ def load_dbt_manifests(targets: List[str]) -> Dict[str, str]:
 
 
 main_dbt_manifests = load_dbt_manifests(["production", "base_playground", "playground"])
-
-default_sensor_status = DefaultSensorStatus.STOPPED
-if os.getenv("DAGSTER_INSTANCE_ENV", "none") == "production":
-    default_sensor_status = DefaultSensorStatus.RUNNING
