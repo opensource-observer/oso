@@ -8,89 +8,71 @@ sidebar_position: 2
 GitHub metrics include repo histories, popularity indicators, and work activity. GitHub metrics may be queried by project (eg, `uniswap`) or by repo (as an artifact) in the format (eg, `repo-owner/repo-name`).
 :::
 
-## Repository Metrics
+## Current Metrics
 
 ---
 
-### repos
+The latest version of our code metrics model can be viewed [here](https://models.opensource.observer/#!/model/model.opensource_observer.code_metrics_by_project_v1#description).
 
-The total number of repositories owned by the project (excluded forks).
+### repository_count
+
+**Repository Count**: Number of repositories in the project.
 
 ### first_commit_date
 
-The date of the first commit across all the project's repositories (excluding commits from forked repos).
+**First Commit Date**: The date of the first commit across all of its repos.
 
 ### last_commit_date
 
-The date of the last commit across all the project's repositories.
+**Last Commit Date**: The date of the last commit across all of its repos.
 
-## Popularity Metrics
+### star_count
 
----
+**Star Count**: Total number of stars the project has received.
 
-### stars
+### fork_count
 
-The total number of stars across all the project's repositories, indicating the project's popularity.
+**Fork Count**: Total number of forks of the project's repos.
 
-### forks
+### contributor_count
 
-The total number of forks across all the project's repositories, reflecting the project's influence and community engagement.
+**Contributor Count**: Total number of distinct contributors to the project.
 
-## Development Activity
+### contributor_count_6_months
 
----
+**Contributor Count (6 Months)**: Contributors in the last 6 months.
 
-### commits_6_months
+### new_contributor_count_6_months
 
-The total number of commits made to the project's repositories (main branch) in the last 6 months.
+**New Contributor Count (6 Months)**: New contributors in the last 6 months.
 
-### issues_opened_6_months
+### fulltime_developer_average_6_months
 
-The number of issues opened in the project's repositories in the last 6 months.
+**Fulltime Developer Average (6 Months)**: Average number of full-time developers in the last 6 months. A full-time developer is defined as a contributor who has made commits on at least 10 days in a given month.
 
-### issues_closed_6_months
+### active_developer_count_6_months
 
-The number of issues closed in the project's repositories in the last 6 months.
+**Active Developer Count (6 Months)**: Active developers in the last 6 months. A developer is considered active if they have made a commit to main over the period.
 
-### pull_requests_opened_6_months
+### commit_count_6_months
 
-The number of pull requests opened in the project's repositories in the last 6 months.
+**Commit Count (6 Months)**: Total commits in the last 6 months.
 
-### pull_requests_merged_6_months
+### opened_pull_request_count_6_months
 
-The number of pull requests merged in the project's repositories in the last 6 months.
+**Opened Pull Request Count (6 Months)**: Pull requests opened in the last 6 months.
 
-## Contributors
+### merged_pull_request_count_6_months
 
----
+**Merged Pull Request Count (6 Months)**: Pull requests merged to main in the last 6 months.
 
-Contributors are GitHub users who contribute commits, issues (opened/closed), and pull requests (opened/merged) to one or more of a project's code repositories.
+### opened_issue_count_6_months
 
-### contributors
+**Opened Issue Count (6 Months)**: Issues opened in the last 6 months.
 
-The total number of contributors across all the project's repositories.
+### closed_issue_count_6_months
 
-### contributors_6_months
-
-The number of contributors who have contributed to the project's repositories in the last 6 months.
-
-### new_contributors_6_months
-
-The number of new contributors to the project's repositories in the last 6 months.
-
-## Developers
-
----
-
-A developer is a contributor who commits code to the main branch of one or more of a project's repositories. Our definitions for full-time and part-time developers are intended to align with the methodology used by Electric Capital in their [Developer Report](https://www.developerreport.com/about).
-
-### avg_fulltime_devs_6_months
-
-The average number of full-time developers working on the project's repositories in the last 6 months. A full-time developer is defined as a contributor who has made commits to main on at least 10 days in a given month.
-
-### avg_active_devs_6_months
-
-The average number of active developers contributing to the project's repositories in the last 6 months, including both full-time and part-time developers. An active developer is defined as a contributor who has made commits to main on at least 1 day in a given month.
+**Closed Issue Count (6 Months)**: Issues closed in the last 6 months.
 
 ---
 
