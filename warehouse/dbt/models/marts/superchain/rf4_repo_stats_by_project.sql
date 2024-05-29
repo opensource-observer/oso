@@ -64,5 +64,4 @@ left join {{ ref('projects_v1') }}
 left join {{ ref('projects_by_collection_v1') }}
   on repo_snapshot.project_id = projects_by_collection_v1.project_id
 where
-  projects_by_collection_v1.collection_name = 'op-onchain'
-  and repo_snapshot.license_type != 'Unspecified'
+  repo_snapshot.license_type != 'Unspecified'
