@@ -23,7 +23,7 @@
     "camelcase-keys": "^9.1.2",
     "dayjs": "^1.11.9",
     "lodash": "^4.17.21",
-    "oss-directory": "^0.0.12",
+    "oss-directory": "^0.0.13",
     "read-pkg-up": "^11.0.0",
     "ts-essentials": "^9.4.1",
     "typescript": "^5.2.2"

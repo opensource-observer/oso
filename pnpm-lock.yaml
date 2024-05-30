@@ -541,8 +541,8 @@ importers:
         specifier: ^4.17.21
         version: 4.17.21
       oss-directory:
-        specifier: ^0.0.12
-        version: 0.0.12(ts-node@10.9.1(@types/node@20.12.7)(typescript@5.3.3))(typescript@5.3.3)
+        specifier: ^0.0.13
+        version: 0.0.13(ts-node@10.9.1(@types/node@20.12.7)(typescript@5.3.3))(typescript@5.3.3)
       read-pkg-up:
         specifier: ^11.0.0
         version: 11.0.0
@@ -8923,11 +8923,6 @@ packages:
   os-tmpdir@1.0.2:
     resolution: {integrity: sha512-D2FR03Vir7FIu45XBY20mTb+/ZSWB00sjU9jdQXt83gDrI4Ztz5Fs7/yy74g2N5SVQY4xY1qDr4rNddwYRVX0g==}
     engines: {node: '>=0.10.0'}
-
-  oss-directory@0.0.12:
-    resolution: {integrity: sha512-mJQPVY5+St8LsKPeJ/IRZMPJD2xB+ZNbjekGOSFfUN/gd1+cOad6rvOJzr9vpIN6m8pLoU7ZwffKc/INs+EUdw==}
-    engines: {node: '>=16'}
-    hasBin: true
 
   oss-directory@0.0.13:
     resolution: {integrity: sha512-jSAGOAq2m9HcnpL1v0Wk5WKLQe4ZsIAFHWpbbdrfbsEG/M2cSsMzTkxVXSHKI8ex7eHYMie8LPnhR9Um27w7pQ==}
@@ -23557,9 +23552,9 @@ snapshots:
 
   os-tmpdir@1.0.2: {}
 
-  oss-directory@0.0.12(ts-node@10.9.1(@types/node@20.12.7)(typescript@5.3.3))(typescript@5.3.3):
+  oss-directory@0.0.13(ts-node@10.9.1(@types/node@20.11.17)(typescript@5.3.3))(typescript@5.3.3):
     dependencies:
-      '@ethereum-attestation-service/eas-sdk': 1.4.0(ts-node@10.9.1(@types/node@20.12.7)(typescript@5.3.3))(typescript@5.3.3)
+      '@ethereum-attestation-service/eas-sdk': 1.4.0(ts-node@10.9.1(@types/node@20.11.17)(typescript@5.3.3))(typescript@5.3.3)
       ajv: 8.12.0
       ajv-formats: 2.1.1(ajv@8.12.0)
       chalk: 5.3.0
@@ -23581,9 +23576,9 @@ snapshots:
       - typescript
       - utf-8-validate
 
-  oss-directory@0.0.13(ts-node@10.9.1(@types/node@20.11.17)(typescript@5.3.3))(typescript@5.3.3):
+  oss-directory@0.0.13(ts-node@10.9.1(@types/node@20.12.7)(typescript@5.3.3))(typescript@5.3.3):
     dependencies:
-      '@ethereum-attestation-service/eas-sdk': 1.4.0(ts-node@10.9.1(@types/node@20.11.17)(typescript@5.3.3))(typescript@5.3.3)
+      '@ethereum-attestation-service/eas-sdk': 1.4.0(ts-node@10.9.1(@types/node@20.12.7)(typescript@5.3.3))(typescript@5.3.3)
       ajv: 8.12.0
       ajv-formats: 2.1.1(ajv@8.12.0)
       chalk: 5.3.0
