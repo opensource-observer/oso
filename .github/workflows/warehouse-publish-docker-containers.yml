@@ -1,4 +1,4 @@
-name: warehouse-publish-cloudquery-plugins
+name: warehouse-publish-docker-containers
 env:
   X_GITHUB_GRAPHQL_API: ${{ vars.X_GITHUB_GRAPHQL_API }}
   X_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
