@@ -2,7 +2,7 @@
 with known_addresses as (
   select distinct `artifact_source_id` as `address`
   from {{ ref("int_all_artifacts") }} 
-  where LOWER(artifact_source) = LOWER('{{ artifact_source }}')
+  where UPPER(artifact_source) in (UPPER('{{ artifact_source }}'), 'ANY_EVM')
 ), known_to as (
 select events.* 
 from {{ oso_source(source_name, source_table)}} as events
