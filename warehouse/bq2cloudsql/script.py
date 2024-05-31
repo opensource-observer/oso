@@ -10,8 +10,9 @@ from .cloudsql import CloudSQLClient
 
 from dotenv import load_dotenv
 
-
 def table_sync_config_from_dbt_marts(target: str) -> List[TableSyncConfig]:
+    # Run dbt to get model meta
+    print("Loading config from dbt mart models...")
     dbt = dbtRunner()
     r: dbtRunnerResult = dbt.invoke(
         [
@@ -30,29 +31,41 @@ def table_sync_config_from_dbt_marts(target: str) -> List[TableSyncConfig]:
         raise Exception("dbt listing failed")
     if not isinstance(r.result, list):
         raise Exception("Unexpected response from dbt")
+
+    # Load the model metadata
+    print("Results from loading dbt model config:")
     model_configs = map(lambda a: json.loads(a), r.result)
     sync_configs: List[TableSyncConfig] = []
+    skipped_tables: List[str] = []
     for model_config in model_configs:
         config = model_config.get("config", {})
         meta = config.get("meta", {})
         if not meta.get("sync_to_db", False):
-            print("Skipping %s" % model_config["name"])
+            skipped_tables.append(model_config["name"])
             continue
-        print(model_config["name"])
+        print(f"Queuing {model_config["name"]}")
         sync_configs.append(
             TableSyncConfig(
                 TableSyncMode.OVERWRITE,
                 model_config["name"],
                 model_config["name"],
+                meta.get("index"),
             )
         )
+    print(f"Skipping {skipped_tables}")
     return sync_configs
 
-
+# Main function
 def run():
     load_dotenv()
-    bq = bigquery.Client()
-    storage_client = storage.Client()
+    print("Running bq2cloudsql...")
+    # Initialize clients
+    bq = bigquery.Client(
+        project=os.environ.get("GOOGLE_PROJECT_ID")
+    )
+    storage_client = storage.Client(
+        project=os.environ.get("GOOGLE_PROJECT_ID")
+    )
     cloudsql = CloudSQLClient.connect(
         os.environ.get("GOOGLE_PROJECT_ID"),
         os.environ.get("CLOUDSQL_REGION"),
@@ -62,9 +75,10 @@ def run():
         os.environ.get("CLOUDSQL_DB_NAME"),
     )
 
-    # Automtically discover dbt marts
+    # Automatically discover dbt marts
     table_sync_configs = table_sync_config_from_dbt_marts(os.environ.get("DBT_TARGET"))
 
+    # Run sync
     synchronizer = BigQueryCloudSQLSynchronizer(
         bq,
         storage_client,
@@ -75,3 +89,4 @@ def run():
         os.environ.get("CLOUDSTORAGE_BUCKET_NAME"),
     )
     synchronizer.sync()
+    print("...done")

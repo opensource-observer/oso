@@ -1,6 +1,10 @@
 {{ 
   config(meta = {
-    'sync_to_db': True
+    'sync_to_db': True,
+    'index': {
+      'idx_user_id': ["user_id"],
+      'idx_source_id': ["user_source", "user_source_id"],
+    }
   }) 
 }}
 

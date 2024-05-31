@@ -1,7 +1,10 @@
 {{ 
   config(meta = {
-    'sync_to_db': True
-
+    'sync_to_db': True,
+    'index': {
+      'idx_artifact_id': ["artifact_id"],
+      'idx_artifact_name': ["artifact_source", "artifact_namespace", "artifact_name"],
+    }
   }) 
 }}
 
