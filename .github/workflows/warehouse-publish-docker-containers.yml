@@ -58,6 +58,7 @@ jobs:
         with:
           cluster_name: ${{ secrets.GKE_CLUSTER_NAME }}
           location: ${{ secrets.GKE_CLUSTER_REGION }}
+          project_id: ${{ vars.GOOGLE_PROJECT_ID }}
 
       - name: Delete pod for dagster
         run: kubectl delete pods --namespace production-dagster -l app.kubernetes.io/instance=production-dagster,component=user-deployments
