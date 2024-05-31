@@ -19,7 +19,7 @@ with blockchain_artifacts as (
         else 0
       end as artifact_rank
     from {{ ref('int_all_artifacts') }}
-    where artifact_source = "{{ upper_network_name }}"
+    where artifact_source in ("{{ upper_network_name }}", "ANY_EVM")
   )
   group by artifact_source_id
 ),
