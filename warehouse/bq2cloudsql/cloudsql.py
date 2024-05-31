@@ -4,17 +4,14 @@ import ssl
 
 import pg8000.native
 import sqlalchemy
-from sqlalchemy import Table, Column, MetaData
+from sqlalchemy import Table, Column, MetaData, text
 from google.cloud.sql.connector import Connector
 from googleapiclient.errors import HttpError
 from googleapiclient.discovery import build
-from typing import Callable, List
-
+from typing import Callable, List, Dict, Optional
 
 connector = Connector()
-
 pp = pprint.PrettyPrinter(indent=4)
-
 
 def get_connection(
     project_id: str,
@@ -120,6 +117,24 @@ class CloudSQLClient(object):
 
         Table(table_name, metadata, *columns)
         metadata.create_all(self.sql_conn)
+
+    def build_index(self, table_name: str, index_names: Optional[Dict[str, List[str]]]):
+        print(f"Building indices for {table_name}:")
+
+        # Check that the table exists
+        if not sqlalchemy.inspect(self.sql_conn).has_table(table_name):
+            raise Exception(f"Failed to build indices for {table_name}: the table does not exist")
+        elif index_names is None:
+            print(f"No indices found for {table_name}")
+            return
+
+        for key in index_names:
+            column_names = index_names[key]
+            print(f"- creating Index({key}) as {column_names}")
+            with self.begin() as conn:
+                sql_str = f"CREATE INDEX IF NOT EXISTS {key} ON {table_name}({','.join(column_names)})"
+                print(sql_str)
+                conn.execute(text(sql_str))
 
     def import_csv(self, csv_uri: str, table: str, columns: None | List[str] = None):
         print("importing into %s" % table)

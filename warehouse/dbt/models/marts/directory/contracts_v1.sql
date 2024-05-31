@@ -1,6 +1,9 @@
 {{ 
   config(meta = {
-    'sync_to_db': True
+    'sync_to_db': True,
+    'index': {
+      'idx_deployer': ["root_deployer_address"],
+    }
   }) 
 }}
 

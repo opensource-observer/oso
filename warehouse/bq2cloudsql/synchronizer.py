@@ -4,7 +4,7 @@ from enum import Enum
 from dataclasses import dataclass
 from datetime import datetime
 import textwrap
-from typing import List, Dict, Union, Tuple
+from typing import List, Dict, Union, Tuple, Optional
 
 import pendulum
 from sqlalchemy import (
@@ -75,12 +75,17 @@ class TableSyncMode(Enum):
     OVERWRITE = 3
 
 
+# There is a TableSyncConfig per table that we want to copy
 @dataclass
 class TableSyncConfig:
+    # Whether it's incremental or overwrite
     mode: TableSyncMode
+    # The name of the table in source database
     source_table: str
+    # The name of the table in destination database
     destination_table: str
-
+    # index_name => list of column names to index
+    index: Optional[Dict[str, List[str]]]
 
 class BigQueryCloudSQLSynchronizer(object):
     def __init__(
@@ -262,8 +267,12 @@ class BigQueryCloudSQLSynchronizer(object):
         config: TableSyncConfig,
         last_partition_date: pendulum.DateTime | None,
     ):
+        # Build the index in the temporary table
+        self._cloudsql.build_index(temp_dest_table, config.index)
+
         # Creates a transaction to rename the new table to the old table.
         # Currently if there are schema changes those changes are simply forced
+        print(f"Moving {temp_dest_table} to {config.destination_table}")
         with self._cloudsql.begin() as conn:
             update_data = dict(last_sync_at=pendulum.now("UTC"), is_incremental=False)
             insert_stmt = insert(self._sync_state_table).values(

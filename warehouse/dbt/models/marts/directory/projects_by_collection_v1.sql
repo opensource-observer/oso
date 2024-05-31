@@ -1,6 +1,11 @@
 {{ 
   config(meta = {
-    'sync_to_db': True
+    'sync_to_db': True,
+    'index': {
+      'idx_collection_id': ["collection_id"],
+      'idx_collection_name': ["collection_source", "collection_namespace", "collection_name"],
+      'idx_project_id': ["project_id"],
+    }
   }) 
 }}
 select

@@ -1,6 +1,11 @@
 {{ 
   config(meta = {
-    'sync_to_db': True
+    'sync_to_db': True,
+    'index': {
+      'idx_project_id': ["project_id"],
+      'idx_project_name': ["project_source", "project_namespace", "project_name"],
+      'idx_artifact_id': ["artifact_id"],
+    }
   }) 
 }}
 
