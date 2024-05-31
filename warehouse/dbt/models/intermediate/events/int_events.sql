@@ -43,7 +43,7 @@ with github_commits as (
     SPLIT(REPLACE(repository_name, "@", ""), "/")[SAFE_OFFSET(0)]
       as to_namespace,
     "REPOSITORY" as to_type,
-    CAST(repository_id as STRING) as to_source_id,
+    CAST(repository_id as STRING) as to_artifact_source_id,
     COALESCE(actor_login, author_email) as from_name,
     COALESCE(actor_login, author_email) as from_namespace,
     case
@@ -53,7 +53,7 @@ with github_commits as (
     case
       when actor_login is not null then CAST(actor_id as STRING)
       else author_email
-    end as from_source_id,
+    end as from_artifact_source_id,
     CAST(1 as FLOAT64) as amount
   from {{ ref('stg_github__distinct_commits_resolved_mergebot') }}
 ),
@@ -69,11 +69,11 @@ github_issues as (
     SPLIT(REPLACE(repository_name, "@", ""), "/")[SAFE_OFFSET(0)]
       as to_namespace,
     "REPOSITORY" as to_type,
-    CAST(repository_id as STRING) as to_source_id,
+    CAST(repository_id as STRING) as to_artifact_source_id,
     actor_login as from_name,
     actor_login as from_namespace,
     "GIT_USER" as from_type,
-    CAST(actor_id as STRING) as from_source_id,
+    CAST(actor_id as STRING) as from_artifact_source_id,
     CAST(1 as FLOAT64) as amount
   from {{ ref('stg_github__issues') }}
 ),
@@ -89,11 +89,11 @@ github_pull_requests as (
     SPLIT(REPLACE(repository_name, "@", ""), "/")[SAFE_OFFSET(0)]
       as to_namespace,
     "REPOSITORY" as to_type,
-    CAST(repository_id as STRING) as to_source_id,
+    CAST(repository_id as STRING) as to_artifact_source_id,
     actor_login as from_name,
     actor_login as from_namespace,
     "GIT_USER" as from_type,
-    CAST(actor_id as STRING) as from_source_id,
+    CAST(actor_id as STRING) as from_artifact_source_id,
     CAST(1 as FLOAT64) as amount
   from {{ ref('stg_github__pull_requests') }}
 ),
@@ -109,11 +109,11 @@ github_pull_request_merge_events as (
     SPLIT(REPLACE(repository_name, "@", ""), "/")[SAFE_OFFSET(0)]
       as to_namespace,
     "REPOSITORY" as to_type,
-    CAST(repository_id as STRING) as to_source_id,
+    CAST(repository_id as STRING) as to_artifact_source_id,
     actor_login as from_name,
     actor_login as from_namespace,
     "GIT_USER" as from_type,
-    CAST(actor_id as STRING) as from_source_id,
+    CAST(actor_id as STRING) as from_artifact_source_id,
     CAST(1 as FLOAT64) as amount
   from {{ ref('stg_github__pull_request_merge_events') }}
 ),
@@ -129,11 +129,11 @@ github_stars_and_forks as (
     SPLIT(REPLACE(repository_name, "@", ""), "/")[SAFE_OFFSET(0)]
       as to_namespace,
     "REPOSITORY" as to_type,
-    CAST(repository_id as STRING) as to_source_id,
+    CAST(repository_id as STRING) as to_artifact_source_id,
     actor_login as from_name,
     actor_login as from_namespace,
     "GIT_USER" as from_type,
-    CAST(actor_id as STRING) as from_source_id,
+    CAST(actor_id as STRING) as from_artifact_source_id,
     CAST(1 as FLOAT64) as amount
   from {{ ref('stg_github__stars_and_forks') }}
 ),
@@ -144,14 +144,16 @@ all_events as (
     event_type,
     event_source_id,
     event_source,
-    to_name,
-    to_namespace,
-    to_type,
-    to_source_id,
-    from_name,
-    from_namespace,
-    from_type,
-    from_source_id,
+    to_artifact_id,
+    to_artifact_name,
+    to_artifact_namespace,
+    to_artifact_type,
+    to_artifact_source_id,
+    from_artifact_id,
+    from_artifact_name,
+    from_artifact_namespace,
+    from_artifact_type,
+    from_artifact_source_id,
     amount
   from (
     select * from {{ ref('int_optimism_contract_invocation_events') }}
@@ -172,14 +174,16 @@ all_events as (
     event_type,
     event_source_id,
     event_source,
-    to_name,
-    to_namespace,
-    to_type,
-    to_source_id,
-    from_name,
-    from_namespace,
-    from_type,
-    from_source_id,
+    {{ oso_id("event_source", "to_artifact_source_id") }} as to_artifact_id,
+    to_name as to_artifact_name,
+    to_namespace as to_artifact_namespace,
+    to_type as to_artifact_type,
+    to_artifact_source_id,
+    {{ oso_id("event_source", "from_artifact_source_id") }} as from_artifact_id,
+    from_name as from_artifact_name,
+    from_namespace as from_artifact_namespace,
+    from_type as from_artifact_type,
+    from_artifact_source_id,
     amount
   from (
     select * from github_commits
@@ -196,16 +200,18 @@ all_events as (
 
 select
   time,
+  to_artifact_id,
+  from_artifact_id,
   UPPER(event_type) as event_type,
   CAST(event_source_id as STRING) as event_source_id,
   UPPER(event_source) as event_source,
-  LOWER(to_name) as to_artifact_name,
-  LOWER(to_namespace) as to_artifact_namespace,
-  UPPER(to_type) as to_artifact_type,
-  LOWER(to_source_id) as to_artifact_source_id,
-  LOWER(from_name) as from_artifact_name,
-  LOWER(from_namespace) as from_artifact_namespace,
-  UPPER(from_type) as from_artifact_type,
-  LOWER(from_source_id) as from_artifact_source_id,
+  LOWER(to_artifact_name) as to_artifact_name,
+  LOWER(to_artifact_namespace) as to_artifact_namespace,
+  UPPER(to_artifact_type) as to_artifact_type,
+  LOWER(to_artifact_source_id) as to_artifact_source_id,
+  LOWER(from_artifact_name) as from_artifact_name,
+  LOWER(from_artifact_namespace) as from_artifact_namespace,
+  UPPER(from_artifact_type) as from_artifact_type,
+  LOWER(from_artifact_source_id) as from_artifact_source_id,
   CAST(amount as FLOAT64) as amount
 from all_events
