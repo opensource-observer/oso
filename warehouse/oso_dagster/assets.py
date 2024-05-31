@@ -4,7 +4,7 @@ from dagster import AssetExecutionContext, AssetKey, asset, AssetsDefinition
 
 from dagster_dbt import DbtCliResource, dbt_assets, DagsterDbtTranslator
 from google.cloud.bigquery.schema import SchemaField
-from .constants import main_dbt_manifests, main_dbt_project_dir
+from .constants import main_dbt_manifests, main_dbt_project_dir, dbt_profiles_dir
 from .factories.goldsky import (
     GoldskyConfig,
     goldsky_asset,
@@ -54,6 +54,7 @@ def dbt_assets_from_manifests_map(
         internal_map = {}
     assets: List[AssetsDefinition] = []
     for target, manifest_path in manifests.items():
+        print(f"Target[{target}] using profiles dir {dbt_profiles_dir}")
 
         translator = CustomDagsterDbtTranslator(["dbt", target], internal_map)
 
@@ -63,20 +64,18 @@ def dbt_assets_from_manifests_map(
             dagster_dbt_translator=translator,
         )
         def _generated_dbt_assets(context: AssetExecutionContext, **kwargs):
-            dbt = DbtCliResource(project_dir=os.fspath(project_dir), target=target)
+            print(f"using profiles dir {dbt_profiles_dir}")
+            dbt = DbtCliResource(
+                project_dir=os.fspath(project_dir),
+                target=target,
+                profiles_dir=dbt_profiles_dir,
+            )
             yield from dbt.cli(["build"], context=context).stream()
 
         assets.append(_generated_dbt_assets)
 
     return assets
 
-
-# @dbt_assets(
-#     manifest=production_dbt_manifest_path,
-#     dagster_dbt_translator=CustomDagsterDbtTranslator("oso"),
-# )
-# def production_dbt_assets(context: AssetExecutionContext, main_dbt: DbtCliResource):
-#     yield from main_dbt.cli(["build"], context=context).stream()
 
 all_dbt_assets = dbt_assets_from_manifests_map(
     main_dbt_project_dir,
@@ -87,14 +86,6 @@ all_dbt_assets = dbt_assets_from_manifests_map(
         "oso_playground": ["dbt", "playground"],
     },
 )
-
-
-# @dbt_assets(
-#     manifest=source_dbt_manifest_path,
-#     dagster_dbt_translator=CustomDagsterDbtTranslator("sources"),
-# )
-# def source_dbt_assets(context: AssetExecutionContext, source_dbt: DbtCliResource):
-#     yield from source_dbt.cli(["build"], context=context).stream()
 
 
 base_blocks = goldsky_asset(

@@ -23,8 +23,7 @@ opensource_observer:
       job_execution_time_seconds: 300
       job_retries: 1
       location: US
-      method: service-account
-      keyfile: %(service_account_path)s
+      method: oauth
       project: %(project_id)s
       threads: 32
     base_playground:
@@ -33,8 +32,7 @@ opensource_observer:
       job_execution_time_seconds: 300
       job_retries: 1
       location: US
-      method: service-account
-      keyfile: %(service_account_path)s
+      method: oauth
       project: %(project_id)s
       threads: 32
     playground:
@@ -43,15 +41,19 @@ opensource_observer:
       job_execution_time_seconds: 300
       job_retries: 1
       location: US
-      method: service-account
-      keyfile: %(service_account_path)s
+      method: oauth
       project: %(project_id)s
       threads: 32
 """
 
 
+def get_profiles_dir():
+    return os.environ.get("DBT_PROFILES_DIR", os.path.expanduser("~/.dbt"))
+
+
 def generate_profile_and_auth():
-    profiles_path = os.path.expanduser("~/.dbt/profiles.yml")
+    profiles_path = os.path.join(get_profiles_dir(), "profiles.yml")
+
     Path(os.path.dirname(profiles_path)).mkdir(parents=True, exist_ok=True)
 
     service_account_path = os.path.expanduser("~/service-account.json")
@@ -59,17 +61,12 @@ def generate_profile_and_auth():
 
     print(f"writing dbt profile to {profiles_path}")
 
-    token_url = "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token"
-    r = requests.get(
-        token_url, allow_redirects=True, headers={"Metadata-Flavor": "Google"}
-    )
-    open(service_account_path, "wb").write(r.content)
     project_id_url = (
         "http://metadata.google.internal/computeMetadata/v1/project/project-id"
     )
     project_id = requests.get(
         project_id_url, allow_redirects=True, headers={"Metadata-Flavor": "Google"}
-    ).content
+    ).content.decode("utf-8")
     with open(profiles_path, "w") as f:
         f.write(
             generated_profiles_yml
@@ -111,4 +108,5 @@ def load_dbt_manifests(targets: List[str]) -> Dict[str, str]:
     return manifests
 
 
+dbt_profiles_dir = get_profiles_dir()
 main_dbt_manifests = load_dbt_manifests(["production", "base_playground", "playground"])

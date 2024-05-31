@@ -1,5 +1,7 @@
 FROM ubuntu:jammy
 
+ARG GCLOUD_VERSION=478.0.0
+
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && \
     apt-get install -y software-properties-common && \
@@ -10,6 +12,12 @@ RUN apt-get install -y curl && \
     curl -o get-pip.py https://bootstrap.pypa.io/get-pip.py && \
     python3.12 get-pip.py
 RUN pip3.12 install poetry
+RUN curl -o gcloud.tar.gz https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-${GCLOUD_VERSION}-linux-x86_64.tar.gz && \
+    tar xvf gcloud.tar.gz && \
+    bash ./google-cloud-sdk/install.sh && \
+    rm gcloud.tar.gz && true
+ENV PATH $PATH:/google-cloud-sdk/bin
+
 
 ENV DAGSTER_DBT_PARSE_PROJECT_ON_LOAD=1
 ENV DAGSTER_DBT_GENERATE_AND_AUTH_GCP=1
