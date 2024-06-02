@@ -17,7 +17,7 @@ all_transactions as (
     LOWER(transactions.to_address) as to_artifact_name,
     "CONTRACT" as to_artifact_type,
     LOWER(transactions.to_address) as to_artifact_source_id,
-    COALESCE(to_artifacts.artifact_id, {{ oso_id("'%s'" % upper_network_name, "transactions.from_address") }}) as from_artifact_id,
+    COALESCE(from_artifacts.artifact_id, {{ oso_id("'%s'" % upper_network_name, "transactions.from_address") }}) as from_artifact_id,
     LOWER(transactions.from_address) as from_artifact_name,
     "EOA" as from_artifact_type,
     LOWER(transactions.from_address) as from_artifact_source_id,
