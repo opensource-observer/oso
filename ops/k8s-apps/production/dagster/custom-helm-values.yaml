@@ -20,5 +20,5 @@ spec:
         dagsterWebserver:
           host: admin-dagster.opensource.observer
         readOnlyDagsterWebserver:
-          host: readonly-dagster.opensource.observer
+          host: dagster.opensource.observer
       
