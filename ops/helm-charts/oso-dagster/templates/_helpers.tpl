@@ -31,5 +31,5 @@ postgres_db:
 {{- $name := default "webserver" .Values.dagsterWebserver.nameOverride -}}
 {{- $fullname := include "dagster.fullname" . -}}
 {{- printf "%s-%s" $fullname  $name | trunc 63 | trimSuffix "-" -}}
-{{- if .webserverReadOnly -}} -read-only {{- end -}}
+{{- if .webserverReadOnly -}} --read-only {{- end -}}
 {{- end -}}
