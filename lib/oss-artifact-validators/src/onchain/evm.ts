@@ -83,19 +83,6 @@ export function EthereumValidator(options: EthereumOptions) {
   );
 }
 
-export type OptimismOptions = Omit<
-  GenericEVMNetworkValidtorOptions,
-  "deployerTable"
->;
-
-export function OptimismValidator(options: OptimismOptions) {
-  return GenericEVMNetworkValidator.create(
-    _.merge(options, {
-      deployerTable: "`opensource-observer.oso.stg_optimism__deployers`",
-    }),
-  );
-}
-
 export type ArbitrumOptions = Omit<
   GenericEVMNetworkValidtorOptions,
   "deployerTable"
@@ -105,6 +92,32 @@ export function ArbitrumValidator(options: ArbitrumOptions) {
   return GenericEVMNetworkValidator.create(
     _.merge(options, {
       deployerTable: "`opensource-observer.oso.stg_arbitrum__deployers`",
+    }),
+  );
+}
+
+export type BaseOptions = Omit<
+  GenericEVMNetworkValidtorOptions,
+  "deployerTable"
+>;
+
+export function BaseValidator(options: BaseOptions) {
+  return GenericEVMNetworkValidator.create(
+    _.merge(options, {
+      deployerTable: "`opensource-observer.oso.stg_base__deployers`",
+    }),
+  );
+}
+
+export type OptimismOptions = Omit<
+  GenericEVMNetworkValidtorOptions,
+  "deployerTable"
+>;
+
+export function OptimismValidator(options: OptimismOptions) {
+  return GenericEVMNetworkValidator.create(
+    _.merge(options, {
+      deployerTable: "`opensource-observer.oso.stg_optimism__deployers`",
     }),
   );
 }
