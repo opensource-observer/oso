@@ -49,6 +49,7 @@ select
 from {{ source(network_name, traces) }} as traces
 inner join transactions as txs
   on {{ transactions_table_hash_value }} = {{ traces_table_hash_value }}
+where traces.from_address != '0x3fab184622dc19b6109349b94811493bf2a45362'
 
 WHERE LOWER(trace_type) in ("create", "create2") and status = 1
 {% if is_incremental() %}
