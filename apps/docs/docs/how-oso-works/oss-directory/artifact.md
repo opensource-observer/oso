@@ -68,7 +68,7 @@ If you are referencing a Safe multi-sig address, remember to remove the chain id
 The `networks` field is an array used to identify the blockchain network(s) that the address is associated with. Currently supported options are:
 
 - `mainnet`: The Ethereum mainnet.
-- `arbitrum-one`: The Arbitrum L2 network.
+- `arbitrum_one`: The Arbitrum L2 network.
 - `optimism`: The Optimism L2 network.
 - `base`: The Base L2 network.
 - `metal`: The Metal L2 network.
@@ -169,7 +169,8 @@ The full schema for the blockchain address field is as follows. Note that it inc
       "minItems": 1,
       "items": {
         "enum": [
-          "arbitrum-one",
+          "any_evm",
+          "arbitrum_one",
           "base",
           "frax",
           "mainnet",
@@ -180,8 +181,8 @@ The full schema for the blockchain address field is as follows. Note that it inc
           "pgn",
           "zora",
           "linea",
-          "zksync-era",
-          "polygon-zkevm",
+          "zksync_era",
+          "polygon_zkevm",
           "scroll",
           "mantle"
         ]
