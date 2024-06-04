@@ -9,7 +9,7 @@ export interface EVMNetworkValidator {
   isDeployer(addr: string): Promise<boolean>;
 }
 
-export interface GenericEVMNetworkValidtorOptions {
+interface GenericEVMNetworkValidatorOptions {
   rpcUrl: string;
   deployerTable: string;
   bqOptions?: BigQueryOptions;
@@ -24,7 +24,7 @@ export class GenericEVMNetworkValidator implements EVMNetworkValidator {
   private deployerTable: string;
 
   static create(
-    options: GenericEVMNetworkValidtorOptions,
+    options: GenericEVMNetworkValidatorOptions,
   ): EVMNetworkValidator {
     const web3 = new Web3(options.rpcUrl);
     const bq = new BigQuery(options.bqOptions);
@@ -71,7 +71,7 @@ export class GenericEVMNetworkValidator implements EVMNetworkValidator {
 }
 
 export type EthereumOptions = Omit<
-  GenericEVMNetworkValidtorOptions,
+  GenericEVMNetworkValidatorOptions,
   "deployerTable"
 >;
 
@@ -84,7 +84,7 @@ export function EthereumValidator(options: EthereumOptions) {
 }
 
 export type ArbitrumOptions = Omit<
-  GenericEVMNetworkValidtorOptions,
+  GenericEVMNetworkValidatorOptions,
   "deployerTable"
 >;
 
@@ -97,7 +97,7 @@ export function ArbitrumValidator(options: ArbitrumOptions) {
 }
 
 export type BaseOptions = Omit<
-  GenericEVMNetworkValidtorOptions,
+  GenericEVMNetworkValidatorOptions,
   "deployerTable"
 >;
 
@@ -110,7 +110,7 @@ export function BaseValidator(options: BaseOptions) {
 }
 
 export type OptimismOptions = Omit<
-  GenericEVMNetworkValidtorOptions,
+  GenericEVMNetworkValidatorOptions,
   "deployerTable"
 >;
 

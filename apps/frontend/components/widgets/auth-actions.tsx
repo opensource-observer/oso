@@ -1,9 +1,9 @@
 import React, { ReactNode } from "react";
 import { Provider } from "@supabase/supabase-js";
 import { useRouter, usePathname } from "next/navigation";
+import { assertNever, spawn } from "@opensource-observer/utils";
 import { supabaseClient } from "../../lib/clients/supabase";
 import { RegistrationProps } from "../../lib/types/plasmic";
-import { assertNever, spawn } from "../../lib/common";
 import { NODE_ENV, DOMAIN } from "../../lib/config";
 
 type AuthActionType = "signInWithOAuth" | "signOut";

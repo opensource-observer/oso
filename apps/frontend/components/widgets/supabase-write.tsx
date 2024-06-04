@@ -3,9 +3,8 @@ import { useRouter } from "next/navigation";
 import Snackbar from "@mui/material/Snackbar";
 import Alert from "@mui/material/Alert";
 import { ADT } from "ts-adt";
+import { HttpError, assertNever, spawn } from "@opensource-observer/utils";
 import { RegistrationProps } from "../../lib/types/plasmic";
-import { HttpError } from "../../lib/types/errors";
-import { assertNever, spawn } from "../../lib/common";
 import { supabaseClient } from "../../lib/clients/supabase";
 
 type SnackbarState = ADT<{
