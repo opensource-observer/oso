@@ -162,6 +162,8 @@ all_events as (
     union all
     select * from {{ ref('int_frax_contract_invocation_events') }}
     union all
+    select * from {{ ref('int_metal_contract_invocation_events') }}
+    union all
     select * from {{ ref('int_mode_contract_invocation_events') }}
     union all
     select * from {{ ref('int_pgn_contract_invocation_events') }}

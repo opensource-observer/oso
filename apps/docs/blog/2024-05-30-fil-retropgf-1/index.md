@@ -98,7 +98,11 @@ The Sankey graph below takes the same data as the one above, but weights it by �
 
 ![image](./sankey-devs.png)
 
-Whereas the first Sankey, which is weighted by FIL allocation, shows a fairly uniform distribution by project, the second Sankey, which is weighted by developer months, looks very different. There’s little correlation between FIL RetroPGF and developer months by project or GitHub org space.
+Note that some GitHub orgs, such as `filecoin-project`, have various repos that are claimed by different projects. This means that the “developer months” metric is not always additive across projects. The figure below zooms in on the `filecoin-project` org space (and several adjacent ones) to illustrate this overlap.
+
+![image](./sankey-devs-zoom.png)
+
+Whereas the first Sankey, which is weighted by FIL allocation, shows a fairly uniform distribution by project, the second and third Sankeys, which are weighted by developer months, look very different. There’s little correlation between FIL RetroPGF and developer months by project or GitHub org space.
 
 What we see is that smaller projects had a much higher ROI. This is the opposite of what normally happens with organizations. Impact tends to compound with scale, not decay.
 

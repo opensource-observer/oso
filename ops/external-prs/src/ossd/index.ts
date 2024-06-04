@@ -17,8 +17,9 @@ import mustache from "mustache";
 import {
   EVMNetworkValidator,
   EthereumValidator,
-  OptimismValidator,
   ArbitrumValidator,
+  BaseValidator,
+  OptimismValidator,
 } from "@opensource-observer/oss-artifact-validators";
 import { GithubOutput } from "../github.js";
 import { CheckConclusion, CheckStatus } from "../checks.js";
@@ -138,9 +139,9 @@ export function ossdSubcommands(yargs: Argv) {
             description: "duckdb memory limit (needed for github actions)",
             default: "",
           })
-          .option("optimism-rpc-url", {
+          .option("mainnet-rpc-url", {
             type: "string",
-            description: "Optimism RPC URL",
+            description: "Ethereum Mainnet RPC URL",
             demandOption: true,
           })
           .option("arbitrum-rpc-url", {
@@ -148,9 +149,14 @@ export function ossdSubcommands(yargs: Argv) {
             description: "Ethereum Mainnet RPC URL",
             demandOption: true,
           })
-          .option("mainnet-rpc-url", {
+          .option("base-rpc-url", {
             type: "string",
-            description: "Ethereum Mainnet RPC URL",
+            description: "Base RPC URL",
+            demandOption: true,
+          })
+          .option("optimism-rpc-url", {
+            type: "string",
+            description: "Optimism RPC URL",
             demandOption: true,
           });
       },
@@ -184,9 +190,10 @@ interface OSSDirectoryPullRequestArgs extends BaseArgs {
 }
 
 interface RpcUrlArgs {
-  optimismRpcUrl: string;
   mainnetRpcUrl: string;
   arbitrumRpcUrl: string;
+  baseRpcUrl: string;
+  optimismRpcUrl: string;
 }
 
 type ValidatePRArgs = OSSDirectoryPullRequestArgs & RpcUrlArgs;
@@ -313,14 +320,9 @@ class OSSDirectoryPullRequest {
     this.validators = {};
   }
 
-  async loadValidators(
-    urls: Pick<
-      ValidatePRArgs,
-      "mainnetRpcUrl" | "optimismRpcUrl" | "arbitrumRpcUrl"
-    >,
-  ) {
-    this.validators["optimism"] = OptimismValidator({
-      rpcUrl: urls.optimismRpcUrl,
+  async loadValidators(urls: RpcUrlArgs) {
+    this.validators["any_evm"] = EthereumValidator({
+      rpcUrl: urls.mainnetRpcUrl,
     });
 
     this.validators["mainnet"] = EthereumValidator({
@@ -329,6 +331,14 @@ class OSSDirectoryPullRequest {
 
     this.validators["arbitrum"] = ArbitrumValidator({
       rpcUrl: urls.arbitrumRpcUrl,
+    });
+
+    this.validators["base"] = BaseValidator({
+      rpcUrl: urls.baseRpcUrl,
+    });
+
+    this.validators["optimism"] = OptimismValidator({
+      rpcUrl: urls.optimismRpcUrl,
     });
   }
 

@@ -16,6 +16,11 @@ with deployers as (
   union all
   select
     *,
+    'METAL' as artifact_source
+  from {{ ref('stg_metal__deployers') }}
+  union all
+  select
+    *,
     'MODE' as artifact_source
   from {{ ref('stg_mode__deployers') }}
   union all
@@ -40,6 +45,11 @@ factories as (
     *,
     'FRAX' as artifact_source
   from {{ ref('stg_frax__factories') }}
+  union all
+  select
+    *,
+    'METAL' as artifact_source
+  from {{ ref('stg_metal__factories') }}
   union all
   select
     *,

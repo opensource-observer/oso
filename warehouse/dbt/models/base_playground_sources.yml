@@ -38,6 +38,15 @@ sources:
       - name: metal_deployers
         identifier: stg_metal__deployers
  
+      - name: metal_traces
+        identifier: int_metal_traces
+      
+      - name: metal_transactions
+        identifier: int_metal_transactions
+      
+      - name: metal_deployers
+        identifier: stg_metal__deployers        
+
       - name: mode_traces
         identifier: int_mode_traces
       

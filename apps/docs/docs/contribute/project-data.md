@@ -46,10 +46,15 @@ The schema currently contains the following fields:
 
 ### Supported Blockchain Networks and Tags
 
+:::tip
+The simplest way to add all contracts and factories associated with your project is to just add the deployer address in the project file. We will then automatically index all contracts and factories associated with the deployer address. If the deployer is on multiple EVM networks, you can use the `any_evm` tag instead of listing each network individually.
+:::
+
 The OSS Directory currently supports the following blockchain networks, which can be enumerated in the `networks` field of a blockchain address:
 
+- `any_evm`: Any Ethereum Virtual Machine (EVM) network. This is the recommended tag for EOAs that deploy contracts on multiple EVM networks.
 - `mainnet`: The Ethereum mainnet.
-- `arbitrum-one`: The Arbitrum L2 network.
+- `arbitrum_one`: The Arbitrum L2 network.
 - `optimism`: The Optimism L2 network.
 - `base`: The Base L2 network.
 - `metal`: The Metal L2 network.
@@ -158,7 +163,7 @@ If you run into issues, check out [GitHub's instructions](https://docs.github.co
       - wallet
   - address: "0x5cBd6362e6F222D2A0Feb89f32566ebd27091B98"
       networks:
-      - arbitrum-one
+      - arbitrum_one
       tags:
       - safe
       - wallet
