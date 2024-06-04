@@ -2,8 +2,8 @@
 
 import { useEffect } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
+import { spawn } from "@opensource-observer/utils";
 import { analytics } from "../../lib/clients/segment";
-import { spawn } from "../../lib/common";
 
 function Analytics() {
   const pathname = usePathname();

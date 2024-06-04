@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import { HttpError } from "../types/errors";
+import { HttpError } from "@opensource-observer/utils";
 import {
   SUPABASE_URL,
   SUPABASE_ANON_KEY,

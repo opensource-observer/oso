@@ -1,7 +1,7 @@
 import * as _ from "lodash";
 import { generate } from "random-words";
 import { v4 as uuid4 } from "uuid";
-import { safeCast } from "./common";
+import { safeCast } from "@opensource-observer/utils";
 import {
   Collection,
   NullSortingState,

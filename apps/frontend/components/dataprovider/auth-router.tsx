@@ -5,9 +5,9 @@ import {
   CommonDataProviderRegistration,
   DataProviderView,
 } from "./provider-view";
+import { spawn } from "@opensource-observer/utils";
 import { RegistrationProps } from "../../lib/types/plasmic";
 import { logger } from "../../lib/logger";
-import { spawn } from "../../lib/common";
 import { analytics } from "../../lib/clients/segment";
 import { supabaseClient } from "../../lib/clients/supabase";
 

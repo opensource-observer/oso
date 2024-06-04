@@ -27,6 +27,7 @@ import {
   BaseValidator,
   OptimismValidator,
 } from "@opensource-observer/oss-artifact-validators";
+import { uncheckedCast } from "@opensource-observer/utils";
 import { GithubOutput } from "../github.js";
 import { CheckConclusion, CheckStatus } from "../checks.js";
 
@@ -642,7 +643,8 @@ class OSSDirectoryPullRequest {
     for (const item of this.changes.artifacts.toValidate.blockchain) {
       const address = item.address;
       for (const network of item.networks) {
-        const validator = this.validators[network as BlockchainNetwork];
+        const validator =
+          this.validators[uncheckedCast<BlockchainNetwork>(network)];
         if (!validator) {
           logger.error({
             message: "no validator found for network",

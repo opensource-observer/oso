@@ -2,7 +2,7 @@ import { useQuery } from "@apollo/experimental-nextjs-app-support/ssr";
 import dayjs from "dayjs";
 import _ from "lodash";
 import React from "react";
-import { assertNever, ensure, uncheckedCast } from "../../lib/common";
+import { assertNever, ensure, uncheckedCast } from "@opensource-observer/utils";
 import {
   GET_ARTIFACTS_BY_IDS,
   GET_PROJECTS_BY_IDS,
