@@ -4,7 +4,12 @@ import { Argv } from "yargs";
 import { handleError } from "../utils/error.js";
 import { logger } from "../utils/logger.js";
 import { BaseArgs, CommmentCommandHandler } from "../base.js";
-import { loadData, Project, Collection } from "oss-directory";
+import {
+  loadData,
+  Project,
+  Collection,
+  BlockchainAddress,
+} from "oss-directory";
 import duckdb from "duckdb";
 import _ from "lodash";
 import * as util from "util";
@@ -23,6 +28,15 @@ import {
 } from "@opensource-observer/oss-artifact-validators";
 import { GithubOutput } from "../github.js";
 import { CheckConclusion, CheckStatus } from "../checks.js";
+
+// This is only used to get the type of `networks`
+const EXAMPLE_ADDRESS: BlockchainAddress = {
+  address: "0x123",
+  networks: ["mainnet"],
+  tags: ["eoa"],
+};
+type NetworkTuple = typeof EXAMPLE_ADDRESS.networks;
+type Network = NetworkTuple[number];
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -307,7 +321,7 @@ class OSSDirectoryPullRequest {
   private db: duckdb.Database;
   private args: OSSDirectoryPullRequestArgs;
   private changes: ChangeSummary;
-  private validators: Record<string, EVMNetworkValidator>;
+  private validators: Partial<Record<Network, EVMNetworkValidator>>;
 
   static async init(args: OSSDirectoryPullRequestArgs) {
     const pr = new OSSDirectoryPullRequest(args);
@@ -329,7 +343,7 @@ class OSSDirectoryPullRequest {
       rpcUrl: urls.mainnetRpcUrl,
     });
 
-    this.validators["arbitrum"] = ArbitrumValidator({
+    this.validators["arbitrum_one"] = ArbitrumValidator({
       rpcUrl: urls.arbitrumRpcUrl,
     });
 
@@ -636,7 +650,7 @@ class OSSDirectoryPullRequest {
     for (const item of this.changes.artifacts.toValidate.blockchain) {
       const address = item.address;
       for (const network of item.networks) {
-        const validator = this.validators[network];
+        const validator = this.validators[network as Network];
         if (!validator) {
           logger.error({
             message: "no validator found for network",
