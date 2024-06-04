@@ -8,7 +8,8 @@ import {
   loadData,
   Project,
   Collection,
-  BlockchainAddress,
+  BlockchainNetwork,
+  BlockchainTag,
 } from "oss-directory";
 import duckdb from "duckdb";
 import _ from "lodash";
@@ -28,15 +29,6 @@ import {
 } from "@opensource-observer/oss-artifact-validators";
 import { GithubOutput } from "../github.js";
 import { CheckConclusion, CheckStatus } from "../checks.js";
-
-// This is only used to get the type of `networks`
-const EXAMPLE_ADDRESS: BlockchainAddress = {
-  address: "0x123",
-  networks: ["mainnet"],
-  tags: ["eoa"],
-};
-type NetworkTuple = typeof EXAMPLE_ADDRESS.networks;
-type Network = NetworkTuple[number];
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -321,7 +313,7 @@ class OSSDirectoryPullRequest {
   private db: duckdb.Database;
   private args: OSSDirectoryPullRequestArgs;
   private changes: ChangeSummary;
-  private validators: Partial<Record<Network, EVMNetworkValidator>>;
+  private validators: Partial<Record<BlockchainNetwork, EVMNetworkValidator>>;
 
   static async init(args: OSSDirectoryPullRequestArgs) {
     const pr = new OSSDirectoryPullRequest(args);
@@ -650,7 +642,7 @@ class OSSDirectoryPullRequest {
     for (const item of this.changes.artifacts.toValidate.blockchain) {
       const address = item.address;
       for (const network of item.networks) {
-        const validator = this.validators[network as Network];
+        const validator = this.validators[network as BlockchainNetwork];
         if (!validator) {
           logger.error({
             message: "no validator found for network",
@@ -658,25 +650,40 @@ class OSSDirectoryPullRequest {
           });
           throw new Error(`No validator found for network "${network}"`);
         }
+        const createValidatorMapping = (
+          validator: EVMNetworkValidator,
+        ): Partial<
+          Record<BlockchainTag, (name: string) => Promise<boolean>>
+        > => {
+          const mapping = {
+            eoa: validator.isEOA,
+            contract: validator.isContract,
+            deployer: validator.isDeployer,
+          };
+          return mapping;
+        };
+        const validatorMappings = createValidatorMapping(validator);
+
         logger.info({
           message: "validating address",
           address: address,
           network: network,
           tags: item.tags,
         });
-        if (item.tags.indexOf("eoa") !== -1) {
-          if (!(await validator.isEOA(address))) {
-            addErrorToResult(address, "is not an EOA");
-          }
-        }
-        if (item.tags.indexOf("contract") !== -1) {
-          if (!(await validator.isContract(address))) {
-            addErrorToResult(address, "is not a Contract");
-          }
-        }
-        if (item.tags.indexOf("deployer") !== -1) {
-          if (!(await validator.isDeployer(address))) {
-            addErrorToResult(address, "is not a Deployer");
+
+        for (const [tag, validatorFn] of Object.entries(validatorMappings)) {
+          if (item.tags.includes(tag)) {
+            if (!validatorFn) {
+              logger.error(
+                `ERROR: missing validator for ${tag} on network=${network}`,
+              );
+            } else if (!(await validatorFn(address))) {
+              addErrorToResult(address, `is not a '${tag}' on ${network}`);
+            } else {
+              logger.debug(
+                `validation okay: ${address} is a ${tag} on ${network}`,
+              );
+            }
           }
         }
       }
