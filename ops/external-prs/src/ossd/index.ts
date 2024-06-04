@@ -218,7 +218,7 @@ async function runParameterizedQuery(
   const queryPath = relativeDir("queries", `${name}.sql`);
   const query = await renderMustacheFromFile(queryPath, params);
   logger.info({
-    message: "running query",
+    message: `running query: ${query}`,
     query: query,
   });
   const dbAll = util.promisify(db.all.bind(db));
@@ -359,7 +359,7 @@ class OSSDirectoryPullRequest {
     const queryPath = relativeDir("queries", `${name}.sql`);
     const query = await renderMustacheFromFile(queryPath, params);
     logger.info({
-      message: "running query",
+      message: `running query: ${query}`,
       query: query,
     });
     return this.dbAll(query);
@@ -387,7 +387,7 @@ class OSSDirectoryPullRequest {
     const args = this.args;
 
     logger.info({
-      message: "setting up the pull request for comparison",
+      message: `setting up the pull request for comparison`,
       repo: args.repo,
       sha: args.sha,
       pr: args.pr,
@@ -412,7 +412,7 @@ class OSSDirectoryPullRequest {
 
     if (args.duckdbMemoryLimit !== "") {
       logger.info({
-        message: "setting memory limit",
+        message: `setting memory limit to ${args.duckdbMemoryLimit}`,
         memoryLimit: args.duckdbMemoryLimit,
       });
       await this.dbAll(`
@@ -433,7 +433,7 @@ class OSSDirectoryPullRequest {
             FROM read_json_auto('${dumpPath}');
           `);
           logger.info({
-            message: "created table",
+            message: `created table ${table}`,
             tableName: table,
             queryResponse: res,
           });
@@ -639,6 +639,13 @@ class OSSDirectoryPullRequest {
       results[name].errors.push(message);
     };
 
+    const addressesToValidate =
+      this.changes.artifacts.toValidate.blockchain.map((b) => b.address);
+    logger.info({
+      message: `Starting validations for ${addressesToValidate}`,
+      addresses: addressesToValidate,
+    });
+
     // Run on-chain validations
     for (const item of this.changes.artifacts.toValidate.blockchain) {
       const address = item.address;
@@ -658,16 +665,16 @@ class OSSDirectoryPullRequest {
           Record<BlockchainTag, (name: string) => Promise<boolean>>
         > => {
           const mapping = {
-            eoa: validator.isEOA,
-            contract: validator.isContract,
-            deployer: validator.isDeployer,
+            eoa: (addr: string) => validator.isEOA(addr),
+            contract: (addr: string) => validator.isContract(addr),
+            deployer: (addr: string) => validator.isDeployer(addr),
           };
           return mapping;
         };
         const validatorMappings = createValidatorMapping(validator);
 
         logger.info({
-          message: "validating address",
+          message: `validating address ${address} on ${network} for [${item.tags}]`,
           address: address,
           network: network,
           tags: item.tags,
@@ -676,15 +683,20 @@ class OSSDirectoryPullRequest {
         for (const [tag, validatorFn] of Object.entries(validatorMappings)) {
           if (item.tags.includes(tag)) {
             if (!validatorFn) {
-              logger.error(
-                `ERROR: missing validator for ${tag} on network=${network}`,
-              );
+              logger.error({
+                message: `ERROR: missing validator for ${tag} on network=${network}`,
+                tag,
+                network,
+              });
             } else if (!(await validatorFn(address))) {
               addErrorToResult(address, `is not a '${tag}' on ${network}`);
             } else {
-              logger.debug(
-                `validation okay: ${address} is a ${tag} on ${network}`,
-              );
+              logger.debug({
+                message: `validation okay: ${address} is a ${tag} on ${network}`,
+                address,
+                tag,
+                network,
+              });
             }
           }
         }
