@@ -78,6 +78,9 @@ def run():
     # Automatically discover dbt marts
     table_sync_configs = table_sync_config_from_dbt_marts(os.environ.get("DBT_TARGET"))
 
+    ### Testing
+    #table_sync_configs = table_sync_configs[3:4]
+
     # Run sync
     synchronizer = BigQueryCloudSQLSynchronizer(
         bq,
