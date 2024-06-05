@@ -36,7 +36,7 @@ The `name` field is the unique identifier for the project and **must** match the
 
 The schema currently contains the following fields:
 
-- `version`: The version of the schema you are using. The latest version is Version 5. This is a required field.
+- `version`: The latest version of the OSS Directory schema. This is a required field. To find the latest version, open any project YAML file and get the version from the top of the file. As of writing (2024-06-05), the latest version is Version 7.
 - `name`: The unique identifier for the project. This is usually the GitHub organization name or the project name followed by the repo owner, separated by hyphens. This is a required field.
 - `display_name`: The name of the project. This is a required field.
 - `description`: A brief description of the project.
