@@ -636,6 +636,8 @@ class OSSDirectoryPullRequest {
       name: string;
       messages: string[];
       errors: string[];
+      warnings: string[];
+      successes: string[];
     };
     const results: Record<string, ValidationItem> = {};
     // Add a name to the results
@@ -646,18 +648,11 @@ class OSSDirectoryPullRequest {
           name,
           messages: [],
           errors: [],
+          warnings: [],
+          successes: [],
         };
       }
-    };
-    // Add an informational message
-    const addMessageToResult = (name: string, message: string) => {
-      ensureNameInResult(name);
-      results[name].messages.push(message);
-    };
-    // Add an error
-    const addErrorToResult = (name: string, message: string) => {
-      ensureNameInResult(name);
-      results[name].errors.push(message);
+      return results[name];
     };
 
     const addressesToValidate =
@@ -678,8 +673,7 @@ class OSSDirectoryPullRequest {
             message: `no validator found for network ${network}`,
             network: network,
           });
-          addMessageToResult(
-            address,
+          ensureNameInResult(address).warnings.push(
             `no automated validators exist on ${network} to check tags=[${item.tags}]. Please check manually.`,
           );
           //throw new Error(`No validator found for network "${network}"`);
@@ -706,24 +700,26 @@ class OSSDirectoryPullRequest {
           tags: item.tags,
         });
 
-        for (const [tag, validatorFn] of Object.entries(validatorMappings)) {
-          if (item.tags.includes(tag)) {
-            if (!validatorFn) {
-              logger.error({
-                message: `ERROR: missing validator for ${tag} on network=${network}`,
-                tag,
-                network,
-              });
-            } else if (!(await validatorFn(address))) {
-              addErrorToResult(address, `is not a '${tag}' on ${network}`);
-            } else {
-              logger.debug({
-                message: `validation okay: ${address} is a ${tag} on ${network}`,
-                address,
-                tag,
-                network,
-              });
-            }
+        for (const rawTag of item.tags) {
+          const tag = uncheckedCast<BlockchainTag>(rawTag);
+          const validatorFn = validatorMappings[tag];
+          if (!validatorFn) {
+            logger.error({
+              message: `ERROR: missing validator for ${tag} on network=${network}`,
+              tag,
+              network,
+            });
+            ensureNameInResult(address).warnings.push(
+              `missing validator for ${tag} on network=${network}`,
+            );
+          } else if (!(await validatorFn(address))) {
+            ensureNameInResult(address).errors.push(
+              `is not a '${tag}' on ${network}`,
+            );
+          } else {
+            ensureNameInResult(address).successes.push(
+              `is a '${tag}' on ${network}`,
+            );
           }
         }
       }
@@ -735,11 +731,15 @@ class OSSDirectoryPullRequest {
       items,
       (item: ValidationItem) => item.errors.length,
     );
+    const numWarningsMessages = _.sumBy(
+      items,
+      (item: ValidationItem) => item.warnings.length + item.messages.length,
+    );
     const summaryMessage =
       numErrors > 0
         ? `⛔ Found ${numErrors} errors ⛔`
-        : items.length > 0
-          ? "⚠️ Please review validation items before approving ⚠️"
+        : numWarningsMessages > 0
+          ? "⚠️ Please review messages before approving ⚠️"
           : "✅ Good to go as long as status checks pass";
     const commentBody = await renderMustacheFromFile(
       relativeDir("messages", "validation-message.md"),

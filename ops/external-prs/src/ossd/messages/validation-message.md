@@ -10,14 +10,24 @@ commit `{{sha}}`
 
 ### {{name}}
 
+{{#messages}}
+
+- 👉 {{.}}
+  {{/messages}}
+
 {{#errors}}
 
 - ❌ {{.}}
   {{/errors}}
 
-{{#messages}}
+{{#warnings}}
 
-- 👉 {{.}}
-  {{/messages}}
+- ⚠️ {{.}}
+  {{/warnings}}
+
+{{#successes}}
+
+- ✅ {{.}}
+  {{/successes}}
 
 {{/validationItems}}
