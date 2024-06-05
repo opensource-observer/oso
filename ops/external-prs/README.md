@@ -9,6 +9,8 @@ of authentication.
 This is generally only supposed to be used on Github Actions. However, if you're
 developing this locally it's useful to know the available commands.
 
+Remember to populate `.env` first.
+
 ### General commands
 
 ```bash
@@ -45,5 +47,4 @@ pnpm external-prs oso test-deploy clean {ttl-seconds}
 ```bash
 # Handle PR validations
 pnpm external-prs ossd validate-prs {pr} {sha} {main-path} {pr-path}
-
 ```
