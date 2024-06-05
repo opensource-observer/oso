@@ -20,6 +20,7 @@ import * as path from "path";
 import * as repl from "repl";
 import columnify from "columnify";
 import mustache from "mustache";
+import { BigQueryOptions } from "@google-cloud/bigquery";
 import {
   EVMNetworkValidator,
   EthereumValidator,
@@ -218,7 +219,7 @@ async function runParameterizedQuery(
   const queryPath = relativeDir("queries", `${name}.sql`);
   const query = await renderMustacheFromFile(queryPath, params);
   logger.info({
-    message: `running query: ${query}`,
+    message: `running query: ${name}`,
     query: query,
   });
   const dbAll = util.promisify(db.all.bind(db));
@@ -328,24 +329,33 @@ class OSSDirectoryPullRequest {
   }
 
   async loadValidators(urls: RpcUrlArgs) {
+    const googleProjectId = process.env.GOOGLE_PROJECT_ID;
+    const bqOptions: BigQueryOptions = {
+      ...(googleProjectId ? { projectId: googleProjectId } : {}),
+    };
     this.validators["any_evm"] = EthereumValidator({
       rpcUrl: urls.mainnetRpcUrl,
+      bqOptions,
     });
 
     this.validators["mainnet"] = EthereumValidator({
       rpcUrl: urls.mainnetRpcUrl,
+      bqOptions,
     });
 
     this.validators["arbitrum_one"] = ArbitrumValidator({
       rpcUrl: urls.arbitrumRpcUrl,
+      bqOptions,
     });
 
     this.validators["base"] = BaseValidator({
       rpcUrl: urls.baseRpcUrl,
+      bqOptions,
     });
 
     this.validators["optimism"] = OptimismValidator({
       rpcUrl: urls.optimismRpcUrl,
+      bqOptions,
     });
   }
 
@@ -359,7 +369,7 @@ class OSSDirectoryPullRequest {
     const queryPath = relativeDir("queries", `${name}.sql`);
     const query = await renderMustacheFromFile(queryPath, params);
     logger.info({
-      message: `running query: ${query}`,
+      message: `running query: ${name}`,
       query: query,
     });
     return this.dbAll(query);
@@ -540,7 +550,11 @@ class OSSDirectoryPullRequest {
 
         // For simple debugging purposes we provide a REPL to explore the data.
         if (args.repl) {
-          const server = repl.start();
+          console.log("\nTry a query like this:");
+          console.log(
+            "  $db.$('SELECT DISTINCT COUNT(address) FROM pr_blockchain_artifacts')",
+          );
+          const server = repl.start("> ");
           server.context.$db = {
             // Setup raw access to the duckdb api via db
             raw: db,
@@ -550,6 +564,15 @@ class OSSDirectoryPullRequest {
             },
             $$: async (query: string) => {
               return await this.runQuery(query, true);
+            },
+            runQuery: async (query: string) => {
+              return await this.runQuery(query, true);
+            },
+            runParameterizedQuery: async (
+              name: string,
+              params?: Record<string, unknown>,
+            ) => {
+              return await this.runParameterizedQuery(name, params);
             },
           };
           server.context.changes = changes;
@@ -627,12 +650,10 @@ class OSSDirectoryPullRequest {
       }
     };
     // Add an informational message
-    /**
     const addMessageToResult = (name: string, message: string) => {
       ensureNameInResult(name);
       results[name].messages.push(message);
     };
-    */
     // Add an error
     const addErrorToResult = (name: string, message: string) => {
       ensureNameInResult(name);
@@ -642,7 +663,7 @@ class OSSDirectoryPullRequest {
     const addressesToValidate =
       this.changes.artifacts.toValidate.blockchain.map((b) => b.address);
     logger.info({
-      message: `Starting validations for ${addressesToValidate}`,
+      message: `Starting validations for [${addressesToValidate}]. ${addressesToValidate.length} total`,
       addresses: addressesToValidate,
     });
 
@@ -653,11 +674,16 @@ class OSSDirectoryPullRequest {
         const validator =
           this.validators[uncheckedCast<BlockchainNetwork>(network)];
         if (!validator) {
-          logger.error({
-            message: "no validator found for network",
+          logger.warn({
+            message: `no validator found for network ${network}`,
             network: network,
           });
-          throw new Error(`No validator found for network "${network}"`);
+          addMessageToResult(
+            address,
+            `no automated validators exist on ${network} to check tags=[${item.tags}]. Please check manually.`,
+          );
+          //throw new Error(`No validator found for network "${network}"`);
+          continue;
         }
         const createValidatorMapping = (
           validator: EVMNetworkValidator,

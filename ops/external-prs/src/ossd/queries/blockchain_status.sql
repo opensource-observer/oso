@@ -20,7 +20,9 @@ WITH address_by_tag_by_network_by_project_status AS (
     CASE
       WHEN main.address IS NOT NULL AND pr.address IS NOT NULL THEN 'EXISTING'
       WHEN main.address IS NOT NULL AND pr.address IS NULL THEN 'REMOVED'
-      ELSE 'ADDED'
+      WHEN main.address IS NULL AND pr.address IS NOT NULL THEN 'ADDED'
+      WHEN main.address IS NULL AND pr.address IS NULL THEN 'IGNORED'
+      ELSE 'UNKNOWN'
     END AS status
   FROM main_blockchain_artifacts AS main
   FULL OUTER JOIN pr_blockchain_artifacts AS pr
@@ -120,5 +122,3 @@ INNER JOIN address_by_network AS by_network
 INNER JOIN address_status AS by_addr
   ON 
     by_project.address = by_addr.address
-
-
