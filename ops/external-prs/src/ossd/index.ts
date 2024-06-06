@@ -12,14 +12,11 @@ import {
   BlockchainTag,
 } from "oss-directory";
 import duckdb from "duckdb";
-import _ from "lodash";
 import * as util from "util";
 import * as fs from "fs";
-import * as fsPromise from "fs/promises";
 import * as path from "path";
 import * as repl from "repl";
 import columnify from "columnify";
-import mustache from "mustache";
 import { BigQueryOptions } from "@google-cloud/bigquery";
 import {
   EVMNetworkValidator,
@@ -29,13 +26,18 @@ import {
   OptimismValidator,
 } from "@opensource-observer/oss-artifact-validators";
 import { uncheckedCast } from "@opensource-observer/utils";
-import { GithubOutput } from "../github.js";
 import { CheckConclusion, CheckStatus } from "../checks.js";
+import { GithubOutput } from "../github.js";
+import { renderMustacheFromFile } from "./templating.js";
+import { ValidationResults } from "./validation-results.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-// Should map to the tables field in ./metadata/databases/databases.yaml
+function relativeDir(...args: string[]) {
+  return path.join(__dirname, ...args);
+}
 
+// Should map to the tables field in ./metadata/databases/databases.yaml
 function jsonlExport<T>(path: string, arr: Array<T>): Promise<void> {
   return new Promise((resolve, reject) => {
     const stream = fs.createWriteStream(path, "utf-8");
@@ -206,10 +208,6 @@ interface RpcUrlArgs {
 
 type ValidatePRArgs = OSSDirectoryPullRequestArgs & RpcUrlArgs;
 
-function relativeDir(...args: string[]) {
-  return path.join(__dirname, ...args);
-}
-
 async function runParameterizedQuery(
   db: duckdb.Database,
   name: string,
@@ -224,14 +222,6 @@ async function runParameterizedQuery(
   });
   const dbAll = util.promisify(db.all.bind(db));
   return dbAll(query);
-}
-
-async function renderMustacheFromFile(
-  filePath: string,
-  params?: Record<string, unknown>,
-) {
-  const raw = await fsPromise.readFile(filePath, "utf-8");
-  return mustache.render(raw, params);
 }
 
 // | Projects             | {{ projects.existing }} {{ projects.added }} | {{projects.removed}} | {{ projects.updated }}
@@ -631,30 +621,7 @@ class OSSDirectoryPullRequest {
     });
     await this.loadValidators(urls);
 
-    // Embedded data structure for storing validation results
-    type ValidationItem = {
-      name: string;
-      messages: string[];
-      errors: string[];
-      warnings: string[];
-      successes: string[];
-    };
-    const results: Record<string, ValidationItem> = {};
-    // Add a name to the results
-    const ensureNameInResult = (name: string) => {
-      const item = results[name];
-      if (!item) {
-        results[name] = {
-          name,
-          messages: [],
-          errors: [],
-          warnings: [],
-          successes: [],
-        };
-      }
-      return results[name];
-    };
-
+    const results = await ValidationResults.create();
     const addressesToValidate =
       this.changes.artifacts.toValidate.blockchain.map((b) => b.address);
     logger.info({
@@ -669,29 +636,14 @@ class OSSDirectoryPullRequest {
         const validator =
           this.validators[uncheckedCast<BlockchainNetwork>(network)];
         if (!validator) {
-          logger.warn({
-            message: `no validator found for network ${network}`,
-            network: network,
-          });
-          ensureNameInResult(address).warnings.push(
+          results.addWarning(
             `no automated validators exist on ${network} to check tags=[${item.tags}]. Please check manually.`,
+            address,
+            { network },
           );
           //throw new Error(`No validator found for network "${network}"`);
           continue;
         }
-        const createValidatorMapping = (
-          validator: EVMNetworkValidator,
-        ): Partial<
-          Record<BlockchainTag, (name: string) => Promise<boolean>>
-        > => {
-          const mapping = {
-            eoa: (addr: string) => validator.isEOA(addr),
-            contract: (addr: string) => validator.isContract(addr),
-            deployer: (addr: string) => validator.isDeployer(addr),
-          };
-          return mapping;
-        };
-        const validatorMappings = createValidatorMapping(validator);
 
         logger.info({
           message: `validating address ${address} on ${network} for [${item.tags}]`,
@@ -702,54 +654,50 @@ class OSSDirectoryPullRequest {
 
         for (const rawTag of item.tags) {
           const tag = uncheckedCast<BlockchainTag>(rawTag);
-          const validatorFn = validatorMappings[tag];
-          if (!validatorFn) {
-            logger.error({
-              message: `ERROR: missing validator for ${tag} on network=${network}`,
-              tag,
-              network,
-            });
-            ensureNameInResult(address).warnings.push(
-              `missing validator for ${tag} on network=${network}`,
-            );
-          } else if (!(await validatorFn(address))) {
-            ensureNameInResult(address).errors.push(
-              `is not a '${tag}' on ${network}`,
-            );
+          const genericChecker = async (fn: () => Promise<boolean>) => {
+            if (!(await fn())) {
+              results.addError(
+                `${address} is not a ${tag} on ${network}`,
+                address,
+                { address, tag, network },
+              );
+            } else {
+              results.addSuccess(
+                `${address} is a '${tag}' on ${network}`,
+                address,
+                { address, tag, network },
+              );
+            }
+          };
+          if (tag === "eoa") {
+            await genericChecker(() => validator.isEOA(address));
+          } else if (tag === "contract") {
+            if (network === "any_evm") {
+              results.addWarning(
+                `addresses with the 'contract' tag should enumerate all networks that it is deployed on, rather than use 'any_evm'`,
+                address,
+                { address, tag, network },
+              );
+            } else {
+              await genericChecker(() => validator.isContract(address));
+            }
+          } else if (tag === "deployer") {
+            await genericChecker(() => validator.isDeployer(address));
           } else {
-            ensureNameInResult(address).successes.push(
-              `is a '${tag}' on ${network}`,
+            results.addWarning(
+              `missing validator for ${tag} on ${network}`,
+              address,
+              { tag, network },
             );
           }
         }
       }
     }
 
-    // Summarize results
-    const items: ValidationItem[] = _.values(results);
-    const numErrors = _.sumBy(
-      items,
-      (item: ValidationItem) => item.errors.length,
+    // Render the results to GitHub PR
+    const { numErrors, summaryMessage, commentBody } = await results.render(
+      args.sha,
     );
-    const numWarningsMessages = _.sumBy(
-      items,
-      (item: ValidationItem) => item.warnings.length + item.messages.length,
-    );
-    const summaryMessage =
-      numErrors > 0
-        ? `⛔ Found ${numErrors} errors ⛔`
-        : numWarningsMessages > 0
-          ? "⚠️ Please review messages before approving ⚠️"
-          : "✅ Good to go as long as status checks pass";
-    const commentBody = await renderMustacheFromFile(
-      relativeDir("messages", "validation-message.md"),
-      {
-        sha: args.sha,
-        summaryMessage,
-        validationItems: items,
-      },
-    );
-
     // Update the PR comment
     await args.appUtils.setStatusComment(args.pr, commentBody);
     // Update the PR status
