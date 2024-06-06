@@ -24,14 +24,13 @@ def ensure_dataset(client: BQClient, options: DatasetOptions):
     access_entries = dataset.access_entries
     new_entries: List[AccessEntry] = []
     if options.is_public:
-        if len(access_entries) == 0:
-            new_entries.append(
-                AccessEntry(
-                    role="READER",
-                    entity_type=EntityTypes.SPECIAL_GROUP,
-                    entity_id="allAuthenticatedUsers",
-                )
+        new_entries.append(
+            AccessEntry(
+                role="READER",
+                entity_type=EntityTypes.SPECIAL_GROUP.value,
+                entity_id="allAuthenticatedUsers",
             )
+        )
     for entry in access_entries:
         if entry.entity_id == "allAuthenticatedUsers":
             continue
