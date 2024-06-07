@@ -1,6 +1,4 @@
-{% macro known_proxies(network_name, start, traces_source_name, traces_source_table) %}
-{% set lower_network_name = network_name.lower() %}
-{% set upper_network_name = network_name.upper() %}
+{% macro known_proxies(network_name, start, traces="traces") %}
 
 {# 
   Important information
@@ -57,12 +55,13 @@ with proxy_contracts as (
 ),
 proxy_txns as (
   select 
+    traces.id,
     traces.block_timestamp, 
     traces.transaction_hash, 
     proxies.proxy_type,
     traces.from_address as proxy_address,
     traces.to_address
-  from {{ oso_source(traces_source_name, traces_source_table) }} as traces
+  from {{ source(network_name, traces) }} as traces
   inner join proxy_contracts as proxies
     on lower(traces.from_address) = lower(proxies.factory_address)
   where
@@ -70,11 +69,13 @@ proxy_txns as (
     and traces.trace_type = 'call'
     and traces.from_address != traces.to_address
 )
-select distinct
+select
+  id,
   block_timestamp,
   transaction_hash,
   proxy_type,
   proxy_address,
   to_address
 from proxy_txns
+
 {% endmacro %}

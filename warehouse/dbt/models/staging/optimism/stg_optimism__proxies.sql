@@ -2,11 +2,11 @@
   config(
     materialized='incremental',
     partition_by={
-      "field": "time",
+      "field": "block_timestamp",
       "data_type": "timestamp",
       "granularity": "day",
     },
-    unique_id="id",
+    unique_key="id",
     on_schema_change="append_new_columns",
     incremental_strategy="insert_overwrite"
   )
@@ -16,4 +16,4 @@
 {% else %}
   {% set start = "'1970-01-01'" %}
 {% endif %}
-{{ known_proxies("optimism", start) }}
+{{ known_proxies("superchain", start, traces="optimism_traces") }}
