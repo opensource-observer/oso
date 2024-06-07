@@ -1,20 +1,9 @@
 {% macro known_proxies(network_name, start, traces="traces") %}
 
 {# 
-  Important information
   
-  CHAIN IDs:
-    * Optimism: 10
-    * Frax: 252
-    * Base: 8453
-    * Metal: 1750
-    * Mode: 34443
-    * PGN: 424
-    * Zora: 7777777
-
-  This is the 4337 contract address for Safe4337Module
-  - 0xa581c4A4DB7175302464fF3C06380BC3270b4037
-  https://docs.safe.global/home/4337-supported-networks
+  This model is used to help identify smart contract accounts by looking for transactions that interact with the most widespread proxy contracts.
+  
 #}
 
 with proxy_contracts as (
@@ -57,16 +46,26 @@ proxy_txns as (
   select 
     traces.id,
     traces.block_timestamp, 
-    traces.transaction_hash, 
+    traces.transaction_hash,     
+    traces.from_address,
+    traces.to_address,
     proxies.proxy_type,
-    traces.from_address as proxy_address,
-    traces.to_address
+    case
+      when lower(traces.from_address) = lower(proxies.factory_address)
+      then traces.from_address
+      when lower(traces.to_address) = lower(proxies.factory_address)
+      then traces.to_address
+      else null
+    end as proxy_address
   from {{ source(network_name, traces) }} as traces
   inner join proxy_contracts as proxies
     on lower(traces.from_address) = lower(proxies.factory_address)
+    or lower(traces.to_address) = lower(proxies.factory_address)
   where
-    traces.block_timestamp >= {{ start }}
+    traces.block_timestamp >= {{ start }}    
+    and traces.status = 1
     and traces.trace_type = 'call'
+    and traces.call_type != 'staticcall'
     and traces.from_address != traces.to_address
 )
 select
@@ -75,7 +74,9 @@ select
   transaction_hash,
   proxy_type,
   proxy_address,
+  from_address,
   to_address
 from proxy_txns
+where proxy_address is not null
 
 {% endmacro %}
