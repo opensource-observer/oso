@@ -81,7 +81,7 @@ export class GHAppUtils {
     const taggedMessage = `${messageIdText}\n${message}`;
 
     const appId = this.appMeta.appId;
-    console.log(`appId: ${appId}`);
+    logger.info(`Setting status comment with appId: ${appId}`);
     // Search for a comment with the messageId
     // If it doesn't exist, create a comment
     // If it does exist update that comment
@@ -91,11 +91,11 @@ export class GHAppUtils {
       issue_number: pr,
     });
 
-    console.log(allCommentRefs.data.map((c) => c.user));
+    //console.log(allCommentRefs.data.map((c) => c.user));
     const appCommentRefs = allCommentRefs.data.filter((c) => {
       return c.performed_via_github_app?.id === appId;
     });
-    console.log(appCommentRefs);
+    //console.log(appCommentRefs);
 
     // If this app has never commented on this PR, just create it
     if (appCommentRefs.length === 0) {

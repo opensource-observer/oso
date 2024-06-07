@@ -44,7 +44,18 @@ pnpm external-prs oso test-deploy clean {ttl-seconds}
 
 ### OSS-Directory Specific
 
+First configure `.env`.
+
+Then `git clone` to 2 different paths on your filesystem,
+the oss-directory main branch
+and the PR branch to compare.
+
+You can run the app via:
+
 ```bash
 # Handle PR validations
-pnpm external-prs ossd validate-prs {pr} {sha} {main-path} {pr-path}
+pnpm external-prs ossd validate-prs {pr_number} {commit_sha} {main_path} {pr_path}
 ```
+
+If you've configured your GitHub secrets correctly,
+this should post a comment in the PR with the results

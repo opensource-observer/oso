@@ -413,8 +413,8 @@ importers:
         specifier: ^3.1.0
         version: 3.1.0
       oss-directory:
-        specifier: ^0.0.14
-        version: 0.0.14(ts-node@10.9.1(@types/node@20.11.17)(typescript@5.3.3))(typescript@5.3.3)
+        specifier: ^0.0.15
+        version: 0.0.15(ts-node@10.9.1(@types/node@20.11.17)(typescript@5.3.3))(typescript@5.3.3)
       tmp-promise:
         specifier: ^3.0.3
         version: 3.0.3
@@ -566,8 +566,8 @@ importers:
         specifier: ^4.17.21
         version: 4.17.21
       oss-directory:
-        specifier: ^0.0.13
-        version: 0.0.13(ts-node@10.9.1(@types/node@20.14.1)(typescript@5.3.3))(typescript@5.3.3)
+        specifier: ^0.0.15
+        version: 0.0.15(ts-node@10.9.1(@types/node@20.14.1)(typescript@5.3.3))(typescript@5.3.3)
       read-pkg-up:
         specifier: ^11.0.0
         version: 11.0.0
@@ -6905,6 +6905,7 @@ packages:
 
   glob@7.2.3:
     resolution: {integrity: sha512-nFR0zLpU2YCaRxwoCJvL6UvCH2JFyFVIvwTLsIf21AuHlMskA1hhTdk+LlYJtOlYt9v6dvszD2BGRqBL+iQK9Q==}
+    deprecated: Glob versions prior to v9 are no longer supported
 
   glob@8.1.0:
     resolution: {integrity: sha512-r8hpEjiQEYlF2QU0df3dS+nxxSIreXQS1qRhMJM0Q5NDdR386C7jb7Hwwod8Fgiuex+k0GFjgft18yvxm5XoCQ==}
@@ -8952,13 +8953,8 @@ packages:
     resolution: {integrity: sha512-D2FR03Vir7FIu45XBY20mTb+/ZSWB00sjU9jdQXt83gDrI4Ztz5Fs7/yy74g2N5SVQY4xY1qDr4rNddwYRVX0g==}
     engines: {node: '>=0.10.0'}
 
-  oss-directory@0.0.13:
-    resolution: {integrity: sha512-jSAGOAq2m9HcnpL1v0Wk5WKLQe4ZsIAFHWpbbdrfbsEG/M2cSsMzTkxVXSHKI8ex7eHYMie8LPnhR9Um27w7pQ==}
-    engines: {node: '>=16'}
-    hasBin: true
-
-  oss-directory@0.0.14:
-    resolution: {integrity: sha512-8KlwavAOto7VR4IuO1RuNk8Q2DxQq74aOvEhCRFSkgzoxffdc9/jikRaGZ1IqAGTNMTHL2K4GDKKHZKj8yoRpw==}
+  oss-directory@0.0.15:
+    resolution: {integrity: sha512-DAQtoaYvDGr7kPGcXTe1I02g/X3W2bdoxf+CKsnHlun5MlGRocAqUlT86g/hrZ0i7tI9QPcPAQs0V1M+5+5Y5w==}
     engines: {node: '>=16'}
     hasBin: true
 
@@ -10042,6 +10038,7 @@ packages:
 
   rimraf@2.7.1:
     resolution: {integrity: sha512-uWjbaKIK3T1OSVptzX7Nl6PvQ3qAGtKEtVRjRuazjfL3Bx5eI409VZSqgND+4UNnmzLVdPj9FqFJNPqBZFve4w==}
+    deprecated: Rimraf versions prior to v4 are no longer supported
     hasBin: true
 
   rimraf@3.0.2:
@@ -23608,9 +23605,9 @@ snapshots:
 
   os-tmpdir@1.0.2: {}
 
-  oss-directory@0.0.13(ts-node@10.9.1(@types/node@20.14.1)(typescript@5.3.3))(typescript@5.3.3):
+  oss-directory@0.0.15(ts-node@10.9.1(@types/node@20.11.17)(typescript@5.3.3))(typescript@5.3.3):
     dependencies:
-      '@ethereum-attestation-service/eas-sdk': 1.4.0(ts-node@10.9.1(@types/node@20.14.1)(typescript@5.3.3))(typescript@5.3.3)
+      '@ethereum-attestation-service/eas-sdk': 1.4.0(ts-node@10.9.1(@types/node@20.11.17)(typescript@5.3.3))(typescript@5.3.3)
       ajv: 8.12.0
       ajv-formats: 2.1.1(ajv@8.12.0)
       chalk: 5.3.0
@@ -23632,9 +23629,9 @@ snapshots:
       - typescript
       - utf-8-validate
 
-  oss-directory@0.0.14(ts-node@10.9.1(@types/node@20.11.17)(typescript@5.3.3))(typescript@5.3.3):
+  oss-directory@0.0.15(ts-node@10.9.1(@types/node@20.14.1)(typescript@5.3.3))(typescript@5.3.3):
     dependencies:
-      '@ethereum-attestation-service/eas-sdk': 1.4.0(ts-node@10.9.1(@types/node@20.11.17)(typescript@5.3.3))(typescript@5.3.3)
+      '@ethereum-attestation-service/eas-sdk': 1.4.0(ts-node@10.9.1(@types/node@20.14.1)(typescript@5.3.3))(typescript@5.3.3)
       ajv: 8.12.0
       ajv-formats: 2.1.1(ajv@8.12.0)
       chalk: 5.3.0
