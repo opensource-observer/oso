@@ -52,6 +52,10 @@ contract_invocations as (
     COUNT(*) as total_count,
     SUM(case when receipt_status = 1 then 1 else 0 end) as success_count
   from all_transactions
+  where to_artifact_id not in (
+    select artifact_id
+    from {{ ref('int_safes') }}
+  )
   group by
     time,
     to_artifact_id,
