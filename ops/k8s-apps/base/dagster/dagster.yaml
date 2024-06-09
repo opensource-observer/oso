@@ -35,6 +35,8 @@ spec:
       pythonLogs:
         pythonLogLevel: "INFO"
       nameOverride: "dagster"
+      dagsterWebserver:
+        enableReadOnly: true
       ingress:
         enabled: true
         ingressClassName: ingress-internal-cloudflare
