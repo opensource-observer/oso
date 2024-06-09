@@ -8,6 +8,11 @@ dagster:
   postgresql:
     enabled: false
     postgresqlPassword: "gcp:secretmanager:dagster-db-password/versions/1"
+  dagsterWebserver:
+    enableReadOnly: true
+
+global:
+  dagsterInternalName: "dagster"
 
 configMap:
   name: "dagster-extra-env-config-map"
