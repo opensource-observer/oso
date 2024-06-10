@@ -87,14 +87,14 @@ app_contracts as (
     application_id,
     network,
     contract_address,
-    'oso' as source
+    'oso' as contract_source
   from oso_contracts
   union all
   select
     application_id,
     network,
     contract_address,
-    'agora' as source
+    'agora' as contract_source
   from agora_contracts
 ),
 
@@ -103,7 +103,7 @@ discovered_contracts as (
     app_contracts.application_id,
     factories.contract_address,
     factories.network,
-    'discovered' as source
+    'discovered' as contract_source
   from factories
   left join app_contracts
     on
@@ -117,14 +117,14 @@ contracts as (
     application_id,
     contract_address,
     network,
-    source
+    contract_source
   from discovered_contracts
   union all
   select
     application_id,
     contract_address,
     network,
-    source
+    contract_source
   from app_contracts
 )
 
