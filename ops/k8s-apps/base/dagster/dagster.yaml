@@ -57,6 +57,7 @@ spec:
                 nodeSelector:
                   pool_type: spot
       dagsterWebserver:
+        enableReadOnly: true
         env:
           - name: DAGSTER_DBT_GENERATE_AND_AUTH_GCP
             value: "1"
