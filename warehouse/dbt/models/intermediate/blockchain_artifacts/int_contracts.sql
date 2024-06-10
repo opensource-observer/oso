@@ -1,3 +1,7 @@
+{#
+  TODO: This needs to be refactored or deprecated.
+#}
+
 with deployers as (
   select
     *,

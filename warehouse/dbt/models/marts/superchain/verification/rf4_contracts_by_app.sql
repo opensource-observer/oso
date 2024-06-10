@@ -1,27 +1,9 @@
-{% set networks = ["optimism", "base", "frax", "metal", "mode", "zora"] %}
-
-{% set union_factory_queries = [] %}
-
-{% for network in networks %}
-
-  {% set network_upper = network.upper() %}
-
-  {% set factory_table = "stg_" ~ network ~ "__factories" %}
-  {% set query %}
+with factories as (
   select
     factory_address,
     contract_address,
-    '{{ network_upper }}' as network
-  from {{ ref(factory_table) }}
-  {% endset %}
-  {% do union_factory_queries.append(query) %}
-
-{% endfor %}
-
-{% set all_factories = union_factory_queries | join(' union all ') %}
-
-with factories as (
-  {{ all_factories }}
+    network
+  from {{ ref('int_factories') }}
 ),
 
 app_contracts as (
