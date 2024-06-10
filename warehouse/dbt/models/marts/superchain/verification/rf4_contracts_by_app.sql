@@ -132,6 +132,6 @@ select distinct
   application_id,
   contract_address,
   network,
-  source
+  contract_source
 from contracts
 where application_id is not null
