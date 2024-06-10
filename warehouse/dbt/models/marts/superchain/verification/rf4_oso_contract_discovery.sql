@@ -1,7 +1,7 @@
 with projects as (
   select
     apps.application_id,
-    current_projects.project_name,
+    apps.project_name,
     current_projects.blockchain
   from {{ source('static_data_sources', 'agora_rf4_applications') }} as apps
   left join
