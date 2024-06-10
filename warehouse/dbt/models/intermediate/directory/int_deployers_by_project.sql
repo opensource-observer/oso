@@ -35,7 +35,7 @@ known_deployers as (
     project_id,
     artifact_source,
     artifact_name
-  from {{ ref('stg_ossd__current_artifacts') }}
+  from {{ ref('int_artifacts_in_ossd_by_project') }}
   where artifact_type = 'DEPLOYER'
 ),
 

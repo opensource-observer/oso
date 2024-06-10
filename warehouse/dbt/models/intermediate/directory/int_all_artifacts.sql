@@ -18,7 +18,7 @@ with ossd_artifacts as (
     artifact_namespace,
     artifact_name,
     artifact_url
-  from {{ ref("stg_ossd__current_artifacts") }}
+  from {{ ref("int_artifacts_in_ossd_by_project") }}
 ),
 
 verified_deployers as (
