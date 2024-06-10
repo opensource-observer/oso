@@ -22,27 +22,6 @@ eigentrust_top_users as (
   limit 50000
 ),
 
-web_of_trust as (
-  {# draft model for testing #}
-  select
-    1 as vitalik_verification,
-    CAST(fof_id as string) as farcaster_id
-  from (
-    select
-      l2.peer_farcaster_id as fof_id,
-      COUNT(distinct l1.peer_farcaster_id) as edge_count
-    from {{ ref('stg_karma3__localtrust') }} as l1
-    left join {{ ref('stg_karma3__localtrust') }} as l2
-      on l1.peer_farcaster_id = l2.farcaster_id
-    where
-      l1.farcaster_id = 5650
-      and l1.strategy_id = 1
-      and l2.strategy_id = 1
-    group by l2.peer_farcaster_id
-  )
-  where edge_count > 1
-),
-
 optimist_nft_holders as (
   select
     optimist_address as address,
@@ -80,8 +59,6 @@ trusted_user_model as (
       as farcaster_prepermissionless,
     COALESCE(eigentrust_top_users.eigentrust_verification, 0)
       as eigentrust_verification,
-    COALESCE(web_of_trust.vitalik_verification, 0)
-      as vitalik_verification,
     COALESCE(passport_scores.passport_user, 0)
       as passport_user,
     COALESCE(passport_scores.passport_verification, 0)
@@ -93,8 +70,6 @@ trusted_user_model as (
     on all_addresses.address = farcaster_users.address
   left join eigentrust_top_users
     on farcaster_users.farcaster_id = eigentrust_top_users.farcaster_id
-  left join web_of_trust
-    on farcaster_users.farcaster_id = web_of_trust.farcaster_id
   left join passport_scores
     on all_addresses.address = passport_scores.address
   left join optimist_nft_holders
@@ -106,7 +81,6 @@ select
   farcaster_user,
   farcaster_prepermissionless,
   eigentrust_verification,
-  vitalik_verification,
   passport_user,
   passport_verification,
   optimist_nft_verification,
@@ -114,7 +88,6 @@ select
     farcaster_user
     + farcaster_prepermissionless
     + eigentrust_verification
-    + vitalik_verification
     + passport_verification
     + optimist_nft_verification
   ) > 1 as is_trusted_user
