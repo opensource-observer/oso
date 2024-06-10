@@ -5,3 +5,7 @@ sources:
     tables:
       - name: optimist_nft_holders
         identifier: optimist_nft_holders
+      - name: agora_rf4_applications
+        identifier: agora_rf4_applications
+      - name: agora_rf4_artifacts_by_app
+        identifier: agora_rf4_artifacts_by_app
