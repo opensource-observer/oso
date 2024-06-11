@@ -1,9 +1,9 @@
 with projects as (
   select
     apps.application_id,
-    apps.project_name,
+    apps.oso_project_name as project_name,
     current_projects.blockchain
-  from {{ source('static_data_sources', 'agora_rf4_applications') }} as apps
+  from {{ source('static_data_sources', 'agora_rf4_to_ossd') }} as apps
   left join
     {{ ref('stg_ossd__current_projects') }} as current_projects
     on apps.oso_project_name = current_projects.project_name
