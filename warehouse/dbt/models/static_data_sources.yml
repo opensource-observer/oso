@@ -9,3 +9,5 @@ sources:
         identifier: agora_rf4_applications
       - name: agora_rf4_artifacts_by_app
         identifier: agora_rf4_artifacts_by_app
+      - name: agora_rf4_to_ossd
+        identifier: agora_rf4_to_ossd
