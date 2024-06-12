@@ -1,11 +1,6 @@
 {{
   config(
-    materialized='incremental',
-    partition_by={
-      "field": "block_timestamp",
-      "data_type": "timestamp",
-      "granularity": "day",
-    }
+    materialized='table',
   )
 }}
 
