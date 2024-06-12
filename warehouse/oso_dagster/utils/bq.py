@@ -36,4 +36,5 @@ def ensure_dataset(client: BQClient, options: DatasetOptions):
             continue
         new_entries.append(entry)
     dataset.access_entries = new_entries
+
     client.update_dataset(dataset, ["access_entries"])
