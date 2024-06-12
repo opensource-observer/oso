@@ -46,4 +46,4 @@ COPY . /usr/src/app
 RUN poetry config virtualenvs.create false && \
     poetry install
 
-ENTRYPOINT [ "dagster", "api", "grpc", "-p", "3030"]
+ENTRYPOINT  []
