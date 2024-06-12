@@ -26,6 +26,8 @@ with metrics as (
   select * from {{ ref('rf4_recurring_addresses') }}
   union all
   select * from {{ ref('rf4_power_user_addresses') }}
+  union all
+  select * from {{ ref('rf4_openrank_trusted_users') }}
 ),
 
 pivot_metrics as (
@@ -66,7 +68,10 @@ pivot_metrics as (
     ) as recurring_addresses,
     MAX(
       case when metric = 'power_user_addresses' then amount else 0 end
-    ) as power_user_addresses
+    ) as power_user_addresses,
+    MAX(
+      case when metric = 'openrank_trusted_users_count' then amount else 0 end
+    ) as openrank_trusted_users_count
   from metrics
   group by project_id
 )
@@ -78,10 +83,6 @@ select
   pivot_metrics.gas_fees,
   pivot_metrics.transaction_count,
   pivot_metrics.trusted_transaction_count,
-  -- LOG10(pivot_metrics.gas_fees) as log_gas_fees,
-  -- LOG10(pivot_metrics.transaction_count) as log_transaction_count,
-  -- LOG10(pivot_metrics.trusted_transaction_count)
-  --   as log_trusted_transaction_count,
   pivot_metrics.trusted_transaction_share,
   pivot_metrics.trusted_users_onboarded,
   pivot_metrics.daily_active_addresses,
@@ -90,7 +91,8 @@ select
   pivot_metrics.trusted_monthly_active_users,
   pivot_metrics.recurring_addresses,
   pivot_metrics.trusted_recurring_users,
-  pivot_metrics.power_user_addresses
+  pivot_metrics.power_user_addresses,
+  pivot_metrics.openrank_trusted_users_count
 from pivot_metrics
 left join {{ ref('projects_v1') }}
   on pivot_metrics.project_id = projects_v1.project_id
