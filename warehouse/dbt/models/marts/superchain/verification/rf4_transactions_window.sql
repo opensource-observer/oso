@@ -1,6 +1,6 @@
 {{
   config(
-    materialized='table',
+    materialized='incremental',
     partition_by={
       "field": "txn_date",
       "data_type": "timestamp",
