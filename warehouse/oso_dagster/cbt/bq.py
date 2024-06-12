@@ -1,9 +1,12 @@
 # Query tools for bigquery tables
-from typing import List
+from typing import List, Dict, Optional
 from functools import cache
 from dataclasses import dataclass
 
 from google.cloud.bigquery import Client, Table, TableReference
+from google.cloud.bigquery.table import RowIterator
+from sqlglot import expressions as exp
+from .context import Connector, ColumnList
 
 
 class TableLoader:
@@ -110,3 +113,34 @@ class BigQueryTableQueryHelper:
             lambda c: f"`{self_prefix}`.`{c}` = `{other_prefix}`.`{c}`", ordered_columns
         )
         return ", ".join(set_columns)
+
+
+class BigQueryConnector(Connector[RowIterator]):
+    dialect = "bigquery"
+
+    def __init__(self, bq: Client):
+        self._bq = bq
+        self._table_columns: Optional[ColumnList] = None
+
+    def get_table_columns(self, table: exp.Table) -> ColumnList:
+        project = table.catalog or self._bq.project
+
+        return self._cached_get_table_columns(project, table.db, table.name)
+
+    @cache
+    def _cached_get_table_columns(
+        self, project: str, dataset: str, table_name: str
+    ) -> ColumnList:
+
+        column_list_query = f"""
+        SELECT column_name, data_type
+        FROM `{project}`.`{dataset}`.INFORMATION_SCHEMA.COLUMNS
+        WHERE table_name = '{table_name}'
+        """
+
+        result = self._bq.query_and_wait(column_list_query)
+        return list(result)
+
+    def execute_expression(self, exp: exp.Expression):
+        query = exp.sql(self.dialect)
+        return self._bq.query_and_wait(query)

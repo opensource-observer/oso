@@ -11,8 +11,12 @@ from dagster import (
     AssetCheckResult,
     AssetCheckSeverity,
 )
+import arrow
 from dagster_gcp import BigQueryResource
+import sqlglot as sql
+
 from ...cbt import CBTResource
+from ...cbt.macros import time_constrain
 
 
 def generated_asset_prefix(asset: AssetsDefinition):
@@ -20,7 +24,11 @@ def generated_asset_prefix(asset: AssetsDefinition):
 
 
 def block_number_check(
-    block_number_column_name: str, config: GoldskyConfig, asset: AssetsDefinition
+    block_number_column_name: str,
+    block_timestamp_column_name: str,
+    config: GoldskyConfig,
+    asset: AssetsDefinition,
+    full_check: bool = False,
 ) -> AssetChecksDefinition:
     prefix = generated_asset_prefix(asset)
 
@@ -34,9 +42,18 @@ def block_number_check(
             [os.path.join(os.path.abspath(os.path.dirname(__file__)), "queries")]
         )
 
+        now = arrow.now()
+
         block_number_results = list(
-            c.query(
+            c.hybrid_query(
                 "block_number_check.sql",
+                transformations=[
+                    time_constrain(
+                        block_timestamp_column_name,
+                        start=now.shift(days=-5),
+                        end=now.shift(days=-1),
+                    )
+                ],
                 block_number_column_name=block_number_column_name,
                 table=config.destination_table_fqdn,
             )
@@ -78,30 +95,45 @@ def block_number_check(
 
 def traces_checks(
     block_number_column_name: str = "block_number",
+    block_timestamp_column_name: str = "block_timestamp",
 ) -> CheckFactory[GoldskyConfig]:
     def check_factory(
         config: GoldskyConfig, asset: AssetsDefinition
     ) -> List[AssetChecksDefinition]:
         # TODO add a check to check traces exist for all transaction_ids
-        return [block_number_check(block_number_column_name, config, asset)]
+        return [
+            block_number_check(
+                block_number_column_name, block_timestamp_column_name, config, asset
+            )
+        ]
 
     return check_factory
 
 
 def transactions_checks(
     block_number_column_name: str = "block_number",
+    block_timestamp_column_name: str = "block_timestamp",
 ) -> CheckFactory[GoldskyConfig]:
     def check_factory(config: GoldskyConfig, asset: AssetsDefinition):
         # TODO add a check to check ensure that transactions exist for all blocks
-        return [block_number_check(block_number_column_name, config, asset)]
+        return [
+            block_number_check(
+                block_number_column_name, block_timestamp_column_name, config, asset
+            )
+        ]
 
     return check_factory
 
 
 def blocks_checks(
     block_number_column_name: str = "number",
+    block_timestamp_column_name: str = "timestamp",
 ) -> CheckFactory[GoldskyConfig]:
     def check_factory(config: GoldskyConfig, asset: AssetsDefinition):
-        return [block_number_check(block_number_column_name, config, asset)]
+        return [
+            block_number_check(
+                block_number_column_name, block_timestamp_column_name, config, asset
+            )
+        ]
 
     return check_factory
