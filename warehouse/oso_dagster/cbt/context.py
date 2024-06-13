@@ -1,5 +1,5 @@
 from functools import cache
-from typing import Callable, TypeVar, List, Sequence, Tuple, Optional
+from typing import Callable, TypeVar, List, Sequence, Tuple, Optional, cast
 from collections import OrderedDict
 
 import sqlglot as sql
@@ -54,17 +54,28 @@ class DataContext[T]:
         )
         return self.get_table_columns(table_expr)
 
-    def execute_query(
+    def transform_query(
         self,
-        query: ContextQuery | str,
+        query: ContextQuery | str | exp.Expression,
         transformations: Optional[Sequence[Transformation]] = None,
-    ) -> T:
+    ):
+        transformations = transformations or []
         if type(query) == str:
             query = context_query_from_str(query)
+        elif isinstance(query, exp.Expression):
+            query = context_query_from_expr(query)
         for transformation in transformations:
             query = transformation(query)
-        exp = query(self)
+        query = cast(ContextQuery, query)
+        return query(self)
 
+    def execute_query(
+        self,
+        query: ContextQuery | str | exp.Expression,
+        transformations: Optional[Sequence[Transformation]] = None,
+    ) -> T:
+        exp = self.transform_query(query, transformations)
+        print(exp.sql())
         return self._connector.execute_expression(exp)
 
     # def examine_query(self, query: ContextQuery):
@@ -75,5 +86,12 @@ class DataContext[T]:
 def context_query_from_str(s: str):
     def _context(_ctx: ContextQuery):
         return sql.parse_one(s)
+
+    return _context
+
+
+def context_query_from_expr(e: exp.Expression):
+    def _context(_ctx: ContextQuery):
+        return e
 
     return _context

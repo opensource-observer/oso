@@ -22,7 +22,8 @@ SELECT * FROM cte
 """
 
 SELECT_WITH_JOIN = """
-SELECT * 
+SELECT
+  t1.*
 FROM time_and_id t1
 INNER JOIN time_id_and_name t2
   ON t1.id = t2.id
@@ -66,11 +67,6 @@ def db():
             dict(start=arrow.get("2024-02-01")),
             3,
         ),
-        (
-            SELECT_WITH_JOIN,
-            dict(start=arrow.get("2024-02-01")),
-            3,
-        ),
     ],
 )
 def test_time_constrain_succeed(
@@ -83,5 +79,31 @@ def test_time_constrain_succeed(
     result = context.execute_query(
         query,
         [time_constrain("time", **time_constrain_args)],
+    )
+    assert len(result.fetchall()) == expected_len
+
+
+@pytest.mark.parametrize(
+    "query,table_name,time_constrain_args,expected_len",
+    [
+        (
+            SELECT_WITH_JOIN,
+            "time_id_and_name",
+            dict(start=arrow.get("2024-02-01"), end=arrow.get("2024-04-01")),
+            5,
+        ),
+    ],
+)
+def test_time_constrain_table_succeed(
+    db: duckdb.DuckDBPyConnection,
+    query: str,
+    table_name: str,
+    time_constrain_args: dict,
+    expected_len: int,
+):
+    context = DataContext(DuckDbConnector(db))
+    result = context.execute_query(
+        query,
+        [time_constrain_table("time", table_name, **time_constrain_args)],
     )
     assert len(result.fetchall()) == expected_len
