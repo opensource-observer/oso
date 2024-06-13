@@ -14,9 +14,7 @@ def test_replace_table():
     result3 = sql.parse_one(
         "select * from noreplace as nr inner join test as t on t.t_id = nr.nr_id"
     ).transform(replace)
-    assert (
-        sql.parse_one(
-            "select * from noreplace as nr inner join replacement as t on t.t_id = nr.nr_id"
-        )
-        == result3
+    expected = sql.parse_one(
+        "select * from noreplace as nr inner join replacement as t on t.t_id = nr.nr_id"
     )
+    assert is_same_sql(result3, expected)

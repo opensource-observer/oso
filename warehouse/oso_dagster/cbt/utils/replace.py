@@ -7,8 +7,6 @@ def replace_source_tables(search: exp.Table, replace: exp.Table):
         if type(expression) not in [exp.Table]:
             return expression
         if not is_same_source_table(search, expression):
-            print("not the right source")
-            print(repr(expression))
             return expression
         replacement = replace.copy()
         if expression.alias:

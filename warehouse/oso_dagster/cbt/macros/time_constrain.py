@@ -67,25 +67,12 @@ def time_constrain_table(
             cte_name = f"generated_{table_to_find.name}_{_random_suffix()}"
             cte_table_reference = sql.to_table(cte_name)
 
-            # find all of the matching from expressions
-            # from_matches = filter(
-            #     lambda f: is_same_source_table(f.this, table_to_find),
-            #     expression.find_all(exp.From),
-            # )
-            # join_matches = filter(
-            #     lambda f: is_same_source_table(f.this, table_to_find),
-            #     expression.find_all(exp.Join),
-            # )
-
             expression = expression.transform(
                 replace_source_tables(
                     table_to_find,
                     cte_table_reference,
                 )
             )
-            print(repr(cte_table_reference))
-            print(repr(table_to_find))
-            print(expression.sql())
 
             # Add the cte for the table
             cte_select = sql.select("*").from_(table_to_find)

@@ -12,7 +12,7 @@ import polars
 from dask.distributed import get_worker
 from dask_kubernetes.operator import make_cluster_spec
 from dataclasses import dataclass, field
-from typing import List, Mapping, Tuple, Dict, Callable, Optional, Sequence
+from typing import List, Mapping, Tuple, Dict, Callable, Optional, Sequence, Iterable
 import heapq
 from dagster import (
     asset,
@@ -29,12 +29,14 @@ from dagster import (
     DagsterLogManager,
     DefaultSensorStatus,
     AssetsDefinition,
+    AssetDep,
     AssetChecksDefinition,
     TableRecord,
     MetadataValue, 
     TableColumn, 
     TableSchema,
 )
+
 from dagster_gcp import BigQueryResource, GCSResource
 from google.api_core.exceptions import (
     NotFound,
@@ -875,7 +877,7 @@ class GoldskyAsset:
         cbt = self.cbt.get(context.log)
 
         context.log.info(
-            f"Merging all worker tables to final destination: {self.config.destination_table_fqdn}"
+            f"Merging all worker tables to final destination: {self.config.destination_table_fqn}"
         )
         time_partitioning = None
         if self.config.partition_column_name:
@@ -885,7 +887,7 @@ class GoldskyAsset:
 
         cbt.transform(
             self.config.merge_workers_model,
-            self.config.destination_table_fqdn,
+            self.config.destination_table_fqn,
             update_strategy=UpdateStrategy.MERGE,
             time_partitioning=time_partitioning,
             partition_column_name=self.config.partition_column_name,
@@ -1197,7 +1199,7 @@ class GoldskyBackfillOpInput:
     end_checkpoint: Optional[GoldskyCheckpoint]
 
 
-def goldsky_asset(asset_config: GoldskyConfig) -> AssetFactoryResponse:
+def goldsky_asset(asset_config: GoldskyConfig, deps: Optional[Iterable[AssetDep]] = None) -> AssetFactoryResponse:
     def materialize_asset(
         context: OpExecutionContext,
         bigquery: BigQueryResource,
@@ -1214,7 +1216,8 @@ def goldsky_asset(asset_config: GoldskyConfig) -> AssetFactoryResponse:
             gs_asset.materialize(loop, context, checkpoint_range=checkpoint_range)
         )
 
-    @asset(name=asset_config.name, key_prefix=asset_config.key_prefix)
+    deps = deps or []
+    @asset(name=asset_config.name, key_prefix=asset_config.key_prefix, deps=deps)
     def generated_asset(
         context: AssetExecutionContext,
         bigquery: BigQueryResource,

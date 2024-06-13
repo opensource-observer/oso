@@ -83,15 +83,28 @@ class DataContext[T]:
     #     result.columns
 
 
-def context_query_from_str(s: str):
-    def _context(_ctx: ContextQuery):
+def context_query_from_str(s: str) -> ContextQuery:
+    def _context(_ctx: DataContext):
         return sql.parse_one(s)
 
     return _context
 
 
-def context_query_from_expr(e: exp.Expression):
-    def _context(_ctx: ContextQuery):
+def context_query_from_expr(e: exp.Expression) -> ContextQuery:
+    def _context(_ctx: DataContext):
         return e
 
     return _context
+
+
+def wrap_basic_transform(
+    transform: Callable[[exp.Expression], exp.Expression]
+) -> Transformation:
+    def _transform(query: ContextQuery) -> ContextQuery:
+        def _cq(ctx: DataContext):
+            expression = query(ctx)
+            return expression.transform(transform)
+
+        return _cq
+
+    return _transform

@@ -60,7 +60,7 @@ class GoldskyConfig:
     checks: List[CheckFactory["GoldskyConfig"]] = field(default_factory=lambda: [])
 
     @property
-    def destination_table_fqdn(self):
+    def destination_table_fqn(self):
         return f"{self.project_id}.{self.destination_dataset_name}.{self.destination_table_name}"
 
     def worker_raw_table_fqdn(self, worker: str):
