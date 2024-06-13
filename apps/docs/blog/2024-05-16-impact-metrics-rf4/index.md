@@ -26,7 +26,7 @@ The round is expected to receive applications from hundreds of projects building
 
 At Open Source Observer, our objective is to help the Optimism community arrive at up to 20 credible impact metrics that can be applied to projects with contracts on the Superchain.
 
-This page explains where the metrics come from and includes a working list of all metrics under consideration for badgeholders. We will update it regularly, at least until the start of voting (June 23), to reflect the evolution of metrics. The first version metrics was released on 2024-05-16 and the most recent version (below) was released on 2024-05-26.
+This page explains where the metrics come from and includes a working list of all metrics under consideration for badgeholders. We will update it regularly, at least until the start of voting (June 23), to reflect the evolution of metrics. The first version metrics was released on 2024-05-16 and the most recent version (below) was released on 2024-06-12.
 
 <!-- truncate -->
 
@@ -55,7 +55,7 @@ For metrics that look at transactions, we are collaborating with the OP data tea
 
 ![image|690x211](./data-transformations.png)
 
-The query logic for applying these transformations is available [here](https://github.com/opensource-observer/oso/tree/main/warehouse/dbt/models/marts/superchain) and can be simulated in a data science environment by following the docs [here](https://docs.opensource.observer/docs/integrate/data-science).
+The definitions and query logic for each impact model is available [here](https://models.opensource.observer/#!/model/model.opensource_observer.rf4_impact_metrics_by_project). The underlying SQL/dbt is available on our GitHub [here](https://github.com/opensource-observer/oso/tree/main/warehouse/dbt/models/marts/superchain) and can be simulated in a data science environment by following the docs [here](https://docs.opensource.observer/docs/integrate/data-science).
 
 ### Metrics Framework
 
@@ -75,14 +75,14 @@ As badgeholders will be voting on portfolios of metrics, not projects, the proje
 
 Each metric will be expressed as a SQL model running on top of the underlying data, with some intermediate models to improve readability. One of the core models is called `rf4_events_daily_to_project`, which is a daily snapshot of all events on the Superchain tagged by project up until the end of the RF4 window (2024-05-23).
 
-Here’s an example of [gas fees](https://github.com/opensource-observer/oso/blob/main/warehouse/dbt/models/marts/superchain/metrics/rf4_gas_fees.sql):
+Here’s an example of [gas fees](https://models.opensource.observer/#!/model/model.opensource_observer.rf4_gas_fees):
 
 ```sql
 select
   project_id,
   'gas_fees' as metric,
   SUM(amount / 1e18) as amount
-from {{ ref('rf4_events_daily_to_project') }}
+from `opensource-observer`.`oso`.`rf4_events_daily_to_project`
 where
   event_type = 'CONTRACT_INVOCATION_DAILY_L2_GAS_USED'
 group by
@@ -91,16 +91,20 @@ group by
 
 The query above grabs all gas-generating events on the Superchain from RF4-approved projects and sums up their gas fees.
 
-Onchain events are also tagged with a `trusted_user_id` if the address that triggered the event is considered a trusted user. As mentioned earlier, we are working with multiple partners to define what a trusted user is, and will finalize the logic after the RF4 window closes.
+### Trusted User Model
 
-Here is an example of a model that looks only at [successful transactions from trusted users](https://github.com/opensource-observer/oso/blob/main/warehouse/dbt/models/marts/superchain/metrics/rf4_trusted_transactions.sql) since 2023-10-01:
+Onchain events are also tagged with a `trusted_user_id` if the address that triggered the event is considered a trusted user.
+
+A "trusted user" represents an address linked to an account the meets a certain threshold of reputation. Currently, there are several teams in the Optimism ecosystem building reputation models in a privacy-preserving way. This metric aggregates reputation data from multiple platforms ([Farcaster](https://docs.farcaster.xyz/learn/architecture/hubs), [Passport](https://www.passport.xyz/), [EigenTrust by Karma3Labs](https://docs.karma3labs.com/eigentrust)), and the [Optimist NFT collection](https://app.optimism.io/optimist-nft). In order to be consider a trusted user, an address must meet at least two of the following requirements as of 2024-05-21: have a Farcaster ID of 20939, have a Passport score of 20 points or higher, have a Karma3Labs EigenTrust GlobalRank in the top 50,000 of Farcaster users, or hold an Optimist NFT in their wallet.
+
+Here is an example of a model that looks only at [successful transactions from trusted users](https://models.opensource.observer/#!/model/model.opensource_observer.rf4_trusted_transactions) since 2023-10-01:
 
 ```sql
 select
   project_id,
   'trusted_transaction_count' as metric,
   SUM(amount) as amount
-from {{ ref('rf4_events_daily_to_project') }}
+from `opensource-observer`.`oso`.`rf4_events_daily_to_project`
 where
   event_type = 'CONTRACT_INVOCATION_SUCCESS_DAILY_COUNT'
   and bucket_day >= '2023-10-01'
@@ -109,7 +113,7 @@ group by
   project_id
 ```
 
-Once again, all of the source code is available from our repo [here](https://github.com/opensource-observer/oso/tree/main/warehouse/dbt/models/marts/superchain). We also have an active [data challenge](https://docs.opensource.observer/docs/contribute/challenges/2024-04-05_data_challenge_01/) to get analysts’ input and proposals on impact metrics.
+Once again, all of the source code is available from our repo [here](https://github.com/opensource-observer/oso/tree/main/warehouse/dbt/models/marts/superchain). We recently wrapped a [data challenge](https://docs.opensource.observer/docs/contribute/challenges/2024-04-05_data_challenge_01/) to get analysts’ input and additional proposals for impact metrics.
 
 ## Current Metrics
 
@@ -131,7 +135,9 @@ Optimism is a Layer 2 roll-up designed to improve the transaction throughput and
 
 Count of a project’s transactions performed by trusted users, over the RF4 scope period October 2023 - June 2024.
 
-Bots, airdrop farming, and sybil attacks are longstanding problems in crypto. There are several teams in the Optimism ecosystem building reputation models for labeling “trusted users” in a privacy-preserving way. This metric aggregates reputation data from multiple platforms ([Farcaster](https://docs.farcaster.xyz/learn/architecture/hubs), [Passport](https://www.passport.xyz/), [EigenTrust by Karma3Labs](https://docs.karma3labs.com/eigentrust)) and only considers transactions that come from trusted users, a small subset of all active addresses on the Superchain. By tracking interactions specifically from trusted users, we gain a picture of blockspace demand that is less influenced by the effects of bots / farmers / sybils.
+Bots, airdrop farming, and sybil attacks are longstanding problems in crypto. This metric is designed to filter out these types of interactions and focus on the activity of a small subset of trusted users (less than 5% of all active addresses on the Superchain). By tracking interactions specifically from trusted users, we gain a picture of blockspace demand that is less influenced by the effects of bots / farmers / sybils.
+
+See the [Trusted User Model](#trusted-user-model) section above for more information on how trusted users are defined.
 
 ### Trusted Optimism Users' Share of Total Interactions
 
@@ -139,11 +145,15 @@ Percentage of a project's total transactions that were made by trusted users ove
 
 This metric expresses Interactions from Trusted Optimism Users and Total Transactions as a simple ratio. Using a ratio makes it easier to compare trusted user levels across big projects and small projects side-by-side. For example, a project with 10K trusted transactions out of 20K total transactions would score better than a project with 10K trusted transactions out of 50K total transactions. This indicator is nuanced because it recognizes that minimizing bot / farming / sybil activity might go against economic incentives in the short term but is important for network quality in the long term. Given that this indicator is calculated on a percentage basis, projects with fewer than 100 users are not evaluated.
 
+See the [Trusted User Model](#trusted-user-model) section above for more information on how trusted users are defined.
+
 ### Users Onboarded
 
 Count of trusted users to the Superchain who were onboarded over the RF4 scope period (October 2023 - June 2024) and who interacted with a project within their first 30 days on the Superchain.
 
-Getting 1 billion users onchain won’t be easy. It will require better onramps and onchain UX than crypto natives are accustomed to. This metric identifies projects that helped onboard new users to the Superchain since October 2023. In order to qualify, a new user has to also be in the set of trusted users. Then, any project on any chain that a user interacted with in their first month on the Superchain is counted. This is often multiple projects per new user. Supporting projects that are the first port of call for new users is essential for expanding the size and reach of the Superchain user’s base.
+Getting 1 billion users onchain won’t be easy. It will require better onramps and onchain UX than crypto natives are accustomed to. This metric identifies projects that helped onboard new, "trusted users" to the Superchain since October 2023. In order to qualify, a new user has to also be in the set of trusted users. Then, any project on any chain that a user interacted with in their first month on the Superchain is counted. This is often multiple projects per new user. Supporting projects that are the first port of call for new users is essential for expanding the size and reach of the Superchain user’s base.
+
+See the [Trusted User Model](#trusted-user-model) section above for more information on how trusted users are defined.
 
 ### Average Daily Active Addresses (DAAs)
 
@@ -157,6 +167,8 @@ Average of a project’s daily active users (trusted users only) over the RF4 sc
 
 Daily Active Users (DAUs) is a more granular view of a project's daily user activity and engagement levels than MAUs (Monthly Active Users). A high number of trusted DAUs would be a sign that Layer 2s have widespread adoption. The reality today is that there are very few apps that generate high levels of daily, revenue-generating activity from users. By averaging the number of active users on a daily basis over the RF4 period, this metric smooths out some of the blips and spikes in the data. New projects receive 0s for the days before they launched. Indeed, trusted DAUs is a hard metric to crack, but it truly hones in on projects that give their users a reason to come back frequently.
 
+See the [Trusted User Model](#trusted-user-model) section above for more information on how trusted users are defined.
+
 ### Average Monthly Active Addresses (MAAs)
 
 Average of a project’s monthly active addresses over the RF4 scope period (October 2023 - June 2024).
@@ -168,6 +180,8 @@ Not all projects have lots of daily users. Some projects are more like utilities
 Average of a project’s monthly active users (trusted users only) over the RF4 scope period (October 2023 - June 2024).
 
 We all know that attention is fleeting, especially in crypto. MAUs is one of the most important metrics for any project looking to grow a large user base. A project’s average MAUs also provides insights into its ongoing popularity and relevance within the Optimism ecosystem. The metric is calculated by counting the number of distinct trusted users for each month included in the RF4 scope period and then averaging the monthly totals. Newer projects receive 0s for the months before they launched. A consistent or growing base of trusted MAUs is a sign that there is a healthy, thriving community around a project.
+
+See the [Trusted User Model](#trusted-user-model) section above for more information on how trusted users are defined.
 
 ### Recurring Addresses
 
@@ -181,8 +195,16 @@ Count of trusted users who have interacted with the project in at least 3 separa
 
 Many crypto natives are curious to try out new protocols. But churn and user retention are major issues. Recurring users represent the most loyal and committed segment of a project's user base. This metric considers users who have interacted with a project over the course of at least three distinct calendar months during the RF4 scope period. Thus, it is intended to reflect sustained interest and ongoing engagement over time. A high count of recurring users signals strong project loyalty and a good user experience, and helps separate the fads from the future.
 
+See the [Trusted User Model](#trusted-user-model) section above for more information on how trusted users are defined.
+
 ### Power User Addresses
 
 Count of 'power user' addresses that have interacted with the project over the RF4 scope period (October 2023 - June 2024).
 
 This metric reflects the degree which a project has attracted attention from the most active and engaged users on the Superchain. A `power user` is defined as an address that has made at least 100 transactions, across at least 10 different projects, on at least 30 days, over the RF4 scope period. A project is counted by this metric if has at least one interaction from a power user. Power users are critical early adopters for the ecosystem.
+
+### OpenRank Trusted Users
+
+Count of addresses in the badgeholder "web of trust" who have interacted with the project over the RF4 scope period (October 2023 - June 2024).
+
+[EigenTrust](https://docs.karma3labs.com/eigentrust), aka OpenRank, is a reputation algorithm being applied by Karma3Labs to the Farcaster social graph. To seed the "web of trust", we begin with a list of 132 badgeholder addresses, look up their Farcaster IDs (present for 68 of the 132 addresses), and use OpenRank to identify those users' 100 closest connections. The result is a set of around 5000 addresses that have the closest social connection to the badgeholder community. Finally, we counts the number of addresses in the web of trust who have interacted with a given project. Note: this is an experimental metric designed and results in an even smaller but potentiall higher signal subset of users than the "trusted user" model applied elsewhere.
