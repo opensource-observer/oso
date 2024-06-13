@@ -3,7 +3,7 @@
 # A poor excuse for a dbt replacement when calling sql as a library
 import os
 import arrow
-from typing import List, Optional
+from typing import List, Optional, Sequence
 from dataclasses import dataclass
 from enum import Enum
 from functools import cache
@@ -18,8 +18,10 @@ from google.cloud.bigquery import (
 )
 from google.cloud.exceptions import NotFound
 from jinja2 import Environment, FileSystemLoader, select_autoescape, meta
+from sqlglot import expressions as exp
 
-from .bq import BigQueryTableQueryHelper
+from .bq import BigQueryTableQueryHelper, BigQueryConnector
+from .context import DataContext, ContextQuery, Transformation
 
 
 class UpdateStrategy(Enum):
@@ -81,6 +83,29 @@ class CBT:
             rendered = self.render_model(model_file, **vars)
             job = client.query(rendered)
             return job.result()
+
+    # we should transition to this instead of using jinja
+    def query_with_sqlglot(
+        self,
+        query: ContextQuery,
+        transformations: Optional[Sequence[Transformation]] = None,
+    ):
+        with self.bigquery.get_client() as client:
+            connector = BigQueryConnector(client)
+            context = DataContext(connector)
+            return context.execute_query(query, transformations)
+
+    def hybrid_query(
+        self,
+        model_file: str,
+        transformations: Optional[Sequence[Transformation]] = None,
+        **vars,
+    ):
+        with self.bigquery.get_client() as client:
+            rendered = self.render_model(model_file, **vars)
+            connector = BigQueryConnector(client)
+            context = DataContext(connector)
+            return context.execute_query(rendered, transformations)
 
     def transform(
         self,

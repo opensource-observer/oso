@@ -115,8 +115,9 @@ base_transactions = goldsky_asset(
         partition_column_name="block_timestamp",
         partition_column_transform=lambda c: f"TIMESTAMP_SECONDS(`{c}`)",
         schema_overrides=[SchemaField(name="value", field_type="BYTES")],
-        checks=[transactions_checks()],
+        checks=[transactions_checks("opensource-observer.superchain.base_blocks")],
     ),
+    deps=base_blocks.assets,
 )
 
 base_traces = goldsky_asset(
@@ -130,8 +131,9 @@ base_traces = goldsky_asset(
         destination_dataset_name="superchain",
         partition_column_name="block_timestamp",
         partition_column_transform=lambda c: f"TIMESTAMP_SECONDS(`{c}`)",
-        checks=[traces_checks()],
+        checks=[traces_checks("opensource-observer.superchain.base_transactions")],
     ),
+    deps=base_transactions.assets,
 )
 
 frax_blocks = goldsky_asset(
@@ -163,10 +165,11 @@ frax_transactions = goldsky_asset(
         partition_column_name="block_timestamp",
         partition_column_transform=lambda c: f"TIMESTAMP_SECONDS(`{c}`)",
         schema_overrides=[SchemaField(name="value", field_type="BYTES")],
-        checks=[transactions_checks()],
+        checks=[transactions_checks("opensource-observer.superchain.frax_blocks")],
         # uncomment the following value to test
         # max_objects_to_load=1,
     ),
+    deps=frax_blocks.assets,
 )
 
 frax_traces = goldsky_asset(
@@ -180,10 +183,11 @@ frax_traces = goldsky_asset(
         destination_dataset_name="superchain",
         partition_column_name="block_timestamp",
         partition_column_transform=lambda c: f"TIMESTAMP_SECONDS(`{c}`)",
-        checks=[traces_checks()],
+        checks=[traces_checks("opensource-observer.superchain.frax_transactions")],
         # uncomment the following value to test
         # max_objects_to_load=1,
     ),
+    deps=frax_transactions.assets,
 )
 
 mode_blocks = goldsky_asset(
@@ -215,10 +219,11 @@ mode_transactions = goldsky_asset(
         partition_column_name="block_timestamp",
         partition_column_transform=lambda c: f"TIMESTAMP_SECONDS(`{c}`)",
         schema_overrides=[SchemaField(name="value", field_type="BYTES")],
-        checks=[transactions_checks()],
+        checks=[transactions_checks("opensource-observer.superchain.mode_blocks")],
         # uncomment the following value to test
         # max_objects_to_load=1,
     ),
+    deps=mode_blocks.assets,
 )
 
 mode_traces = goldsky_asset(
@@ -232,10 +237,11 @@ mode_traces = goldsky_asset(
         destination_dataset_name="superchain",
         partition_column_name="block_timestamp",
         partition_column_transform=lambda c: f"TIMESTAMP_SECONDS(`{c}`)",
-        checks=[traces_checks()],
+        checks=[traces_checks("opensource-observer.superchain.mode_transactions")],
         # uncomment the following value to test
         # max_objects_to_load=1,
     ),
+    deps=mode_transactions.assets,
 )
 
 metal_blocks = goldsky_asset(
@@ -265,8 +271,9 @@ metal_transactions = goldsky_asset(
         partition_column_name="block_timestamp",
         partition_column_transform=lambda c: f"TIMESTAMP_SECONDS(`{c}`)",
         schema_overrides=[SchemaField(name="value", field_type="BYTES")],
-        checks=[transactions_checks()],
+        checks=[transactions_checks("opensource-observer.superchain.metal_blocks")],
     ),
+    deps=metal_blocks.assets,
 )
 
 
@@ -281,8 +288,9 @@ metal_traces = goldsky_asset(
         destination_dataset_name="superchain",
         partition_column_name="block_timestamp",
         partition_column_transform=lambda c: f"TIMESTAMP_SECONDS(`{c}`)",
-        checks=[traces_checks()],
+        checks=[traces_checks("opensource-observer.superchain.metal_transactions")],
     ),
+    deps=metal_transactions.assets,
 )
 
 optimism_traces = goldsky_asset(
@@ -296,7 +304,12 @@ optimism_traces = goldsky_asset(
         destination_dataset_name="superchain",
         partition_column_name="block_timestamp",
         dedupe_model="optimism_dedupe.sql",
-        checks=[traces_checks()],
+        checks=[
+            traces_checks(
+                "bigquery-public-data.goog_blockchain_optimism_mainnet_us.transactions",
+                transactions_transaction_hash_column_name="transaction_hash",
+            )
+        ],
         # uncomment the following value to test
         # max_objects_to_load=2000,
     ),
@@ -331,10 +344,11 @@ pgn_transactions = goldsky_asset(
         partition_column_name="block_timestamp",
         partition_column_transform=lambda c: f"TIMESTAMP_SECONDS(`{c}`)",
         schema_overrides=[SchemaField(name="value", field_type="BYTES")],
-        checks=[transactions_checks()],
+        checks=[transactions_checks("opensource-observer.superchain.pgn_blocks")],
         # uncomment the following value to test
         # max_objects_to_load=1,
     ),
+    deps=pgn_blocks.assets,
 )
 
 pgn_traces = goldsky_asset(
@@ -348,10 +362,11 @@ pgn_traces = goldsky_asset(
         destination_dataset_name="superchain",
         partition_column_name="block_timestamp",
         partition_column_transform=lambda c: f"TIMESTAMP_SECONDS(`{c}`)",
-        checks=[traces_checks()],
+        checks=[traces_checks("opensource-observer.superchain.pgn_transactions")],
         # uncomment the following value to test
         # max_objects_to_load=1,
     ),
+    deps=pgn_transactions.assets,
 )
 
 zora_blocks = goldsky_asset(
@@ -383,10 +398,11 @@ zora_transactions = goldsky_asset(
         partition_column_name="block_timestamp",
         partition_column_transform=lambda c: f"TIMESTAMP_SECONDS(`{c}`)",
         schema_overrides=[SchemaField(name="value", field_type="BYTES")],
-        checks=[transactions_checks()],
+        checks=[transactions_checks("opensource-observer.superchain.zora_blocks")],
         # uncomment the following value to test
         # max_objects_to_load=1,
     ),
+    deps=zora_blocks.assets,
 )
 
 zora_traces = goldsky_asset(
@@ -400,10 +416,11 @@ zora_traces = goldsky_asset(
         destination_dataset_name="superchain",
         partition_column_name="block_timestamp",
         partition_column_transform=lambda c: f"TIMESTAMP_SECONDS(`{c}`)",
-        checks=[traces_checks()],
+        checks=[traces_checks("opensource-observer.superchain.zora_transactions")],
         # uncomment the following value to test
         # max_objects_to_load=1,
     ),
+    deps=zora_transactions.assets,
 )
 
 
