@@ -1,0 +1,54 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: production-temp-postgres
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: temp-postgres
+  labels:
+    app: temp-postgres
+spec:
+  containers:
+    - image: postgres:16-bullseye
+      imagePullPolicy: IfNotPresent
+      name: postgres
+      command: ['sh', '-c', 'echo The Bench Container 1 is Running ; sleep 3600']
+      env:
+        - name: POSTGRES_PASSWORD
+          value: "PASSWORD"
+      volumeMounts:
+        - mountPath: /demo1
+          name: local-storage
+  volumes:
+    - name: local-storage
+      emptyDir: {}
+  tolerations:
+    - key: pool_type
+      value: spot-ssd
+      operator: "Equal"
+      effect: "NoSchedule"
+  nodeSelector:
+    pool_type: spot-ssd
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: temp-postgres
+spec:
+  selector:
+    app: temp-postgres
+  ports:
+    - port: 5432
+      targetPort: 5432
+---
+apiVersion: networking.cfargotunnel.com/v1alpha1
+kind: TunnelBinding
+metadata:
+  name: temp-postgres-cluster-tun
+subjects:
+  - name: temp-postgres
+tunnelRef:
+  kind: ClusterTunnel
+  name: managed-tunnel
