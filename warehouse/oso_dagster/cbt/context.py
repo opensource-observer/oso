@@ -75,12 +75,8 @@ class DataContext[T]:
         transformations: Optional[Sequence[Transformation]] = None,
     ) -> T:
         exp = self.transform_query(query, transformations)
-        print(exp.sql())
+        print(exp.sql(dialect="bigquery"))
         return self._connector.execute_expression(exp)
-
-    # def examine_query(self, query: ContextQuery):
-    #     result = executor.execute(exp, self.schema)
-    #     result.columns
 
 
 def context_query_from_str(s: str) -> ContextQuery:
