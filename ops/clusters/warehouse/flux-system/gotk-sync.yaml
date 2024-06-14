@@ -9,8 +9,6 @@ spec:
   interval: 15s
   ref:
     branch: ravenac95/test-cloudflare-operator
-  secretRef:
-    name: flux-system
   url: https://github.com/opensource-observer/oso.git
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1

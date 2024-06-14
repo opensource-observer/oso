@@ -1,0 +1,34 @@
+# https://github.com/opensource-observer/cloudflare-operator
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cloudflare-operator
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata:
+  name: cloudflare-operator
+  namespace: cloudflare-operator
+spec:
+  interval: 5m0s
+  url: https://github.com/opensource-observer/cloudflare-operator
+  ref:
+    branch: main
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: cloudflare-operator
+  namespace: cloudflare-operator
+spec:
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  sourceRef:
+    kind: GitRepository
+    name: cloudflare-operator
+  path: ./config/default
+  targetNamespace: cloudflare-operator
+  force: true
+  prune: true
+  wait: true
