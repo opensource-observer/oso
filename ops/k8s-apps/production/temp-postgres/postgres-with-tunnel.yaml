@@ -47,7 +47,13 @@ kind: TunnelBinding
 metadata:
   name: temp-postgres-cluster-tun
 subjects:
-  - name: temp-postgres
+  - kind: Service
+    name: temp-postgres
+    spec:
+      fqdn: temp-postgres.opensource.observer
+      protocol: tcp
+      target: tcp://temp-postgres.production-temp-postgres.svc.cluster.local:5432
+      noTlsVerify: true
 tunnelRef:
   kind: ClusterTunnel
   name: managed-tunnel
