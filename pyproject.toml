@@ -49,8 +49,8 @@ oso_lets_go = 'oso_lets_go.wizard:run'
 
 [tool.poetry.group.dev.dependencies]
 ipython = "^8.21.0"
-sqlfluff = "^2.3.5"
-sqlfluff-templater-dbt = "^2.3.5"
+sqlfluff = "^3.0.7"
+sqlfluff-templater-dbt = "^3.0.7"
 shandy-sqlfmt = { extras = ["jinjafmt"], version = "^0.21.1" }
 dagster-webserver = "^1.7.2"
 
