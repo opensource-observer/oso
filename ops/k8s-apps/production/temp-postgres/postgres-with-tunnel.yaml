@@ -41,6 +41,7 @@ spec:
   ports:
     - port: 5432
       targetPort: 5432
+  type: LoadBalancer
 ---
 apiVersion: networking.cfargotunnel.com/v1alpha1
 kind: TunnelBinding
