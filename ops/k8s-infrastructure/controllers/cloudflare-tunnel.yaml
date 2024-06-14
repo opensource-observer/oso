@@ -1,0 +1,14 @@
+apiVersion: networking.cfargotunnel.com/v1alpha1
+kind: ClusterTunnel
+metadata:
+  name: managed-tunnel
+  namespace: cloudflare-operator-system
+spec:
+  newTunnel:
+    name: managed-tunnel
+  size: 2                       # This is the number of replicas for cloudflared
+  cloudflare:
+    email: email@example.com
+    domain: opensource.observer
+    secret: cloudflare-secrets
+    accountId: PLACEHOLDER
