@@ -87,7 +87,8 @@ locals {
       service_account                   = local.node_service_account_email
       preemptible                       = true
       initial_node_count                = 0
-      local_ssd_ephemeral_storage_count = 2
+      local_ssd_ephemeral_storage_count = 1
+      local_ssd_count                   = 1
     },
   ], var.extra_node_pools)
 
