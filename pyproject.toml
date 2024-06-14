@@ -21,6 +21,7 @@ sqlalchemy = "^2.0.25"
 google-cloud-storage = "^2.14.0"
 python-dotenv = "^1.0.1"
 dbt-bigquery = "^1.7.0"
+dbt-core = "^1.8.2"
 textual = "^0.52.1"
 google-cloud-service-management = "^1.8.3"
 google-cloud-resource-manager = "^1.12.3"
@@ -40,7 +41,6 @@ polars = "^0.20.23"
 requests = "^2.31.0"
 dagster-postgres = "^0.23.6"
 pytest = "^8.2.1"
-dbt-core = "^1.8.2"
 
 
 [tool.poetry.scripts]
@@ -49,8 +49,8 @@ oso_lets_go = 'oso_lets_go.wizard:run'
 
 [tool.poetry.group.dev.dependencies]
 ipython = "^8.21.0"
-sqlfluff = "^2.3.5"
-sqlfluff-templater-dbt = "^2.3.5"
+sqlfluff = "^3.0.7"
+sqlfluff-templater-dbt = "^3.0.7"
 shandy-sqlfmt = { extras = ["jinjafmt"], version = "^0.21.1" }
 dagster-webserver = "^1.7.2"
 
