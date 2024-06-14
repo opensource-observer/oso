@@ -13,7 +13,7 @@ seeds:
         f_op_repeat: float64
         num_categories_if_op_user: integer
         g_overlap_bonus: float64
-        total_op_eligible_to_claim: float64
+        op_amount_raw: float64
 
   - name: op_airdrop2_addresses_detailed_list
     config:
@@ -27,7 +27,7 @@ seeds:
         attr4_gas_rebate_points: integer
         num_bonus_categories: integer
         op_multiplier_bonus: float64
-        total_op_eligible_to_claim: float64
+        op_amount_raw: float64
 
   - name: op_airdrop3_addresses_detailed_list
     config:
