@@ -49,7 +49,7 @@ jobs:
         uses: packetcoders/action-setup-cache-python-poetry@main
         with:
           python-version: 3.12
-          poetry-version: 1.7.1
+          poetry-version: 1.8.2
 
       - name: Login to google
         uses: 'google-github-actions/auth@v2'
