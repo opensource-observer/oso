@@ -1,0 +1,54 @@
+version: 2
+
+seeds:
+  - name: op_airdrop1_addresses_detailed_list
+    config:
+      column_types:
+        address: string
+        a_is_voter: float64
+        b_is_multisig_signer: float64
+        c_is_gitcoin: float64
+        d_is_price_out: float64
+        e_op_user: float64
+        f_op_repeat: float64
+        num_categories_if_op_user: integer
+        g_overlap_bonus: float64
+        total_op_eligible_to_claim: float64
+
+  - name: op_airdrop2_addresses_detailed_list
+    config:
+      column_types:
+        address: string
+        a_op_delelgated_airdrop: float64
+        b_gas_rebate_airdrop: float64
+        attr1_currently_delegating_points: integer
+        attr2_op_delelgated_points: integer
+        attr3_mo_active_points: integer
+        attr4_gas_rebate_points: integer
+        num_bonus_categories: integer
+        op_multiplier_bonus: float64
+        total_op_eligible_to_claim: float64
+
+  - name: op_airdrop3_addresses_detailed_list
+    config:
+      column_types:
+        address: string
+        gov_delegation: float64
+        active_gov_delegation: float64
+        drop2_mod: float64
+        op_amount_decimal_adjusted: float64
+        op_amount_raw: float64
+
+  - name: op_airdrop4_addresses_detailed_list
+    config:
+      column_types:
+        address: string
+        is_eligible_l1_gas: boolean
+        is_eligible_opc_gas: boolean
+        a_min_contract_created_at: boolean
+        b_last_transfers_in_days: boolean
+        c_last_active_in_days: boolean
+        d_gas_fee_eth_last_180days_threshold: boolean
+        e_is_wlta_creator: boolean
+        multipliers: float64
+        op_amount_raw: float64
