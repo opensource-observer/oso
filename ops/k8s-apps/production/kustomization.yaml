@@ -3,4 +3,4 @@ kind: Kustomization
 resources:
   - ./dagster
   - ./cloudsql-proxy
-  - ./temp-postgres
+  #- ./temp-postgres
