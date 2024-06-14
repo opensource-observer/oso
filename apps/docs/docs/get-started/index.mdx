@@ -6,51 +6,32 @@ sidebar_position: 1
 import Link from "@docusaurus/Link";
 
 :::info
-There are two easy ways of accessing OSO datasets: through our GraphQL API and through our data warehouse on BigQuery. For integrations, you'll need API access. For exploratory analysis and impact data science, it's best to go direct to the data warehouse. 
+There are two easy ways of accessing OSO datasets: through our GraphQL API
+and through our data warehouse on BigQuery. 
+For live integrations, you'll want [API access](../integrate/api.md).
+For exploratory analysis and impact data science,
+it's best to go direct to the data warehouse. 
 :::
 
-## Generate an API key
+OSO's data warehouse is currently located in BigQuery on Google Cloud (GCP).
+Every data model is made publicly available by a BigQuery dataset.
 
----
+See our [data exchange](https://console.cloud.google.com/bigquery/analytics-hub/exchanges/projects/87806073973/locations/us/dataExchanges/open_source_observer_190181416ae)
+on Google Analytics Hub for a full list of public data sets. 
 
-The OSO GraphQL API serves impact metrics for OSS projects, collections, and artifacts. Access to the OSO GraphQL API is necessary for any integration with OSO datasets. 
+## Sign up for Google Cloud
 
-First, navigate to [www.opensource.observer](https://www.opensource.observer) and create a new account.
-
-If you already have an account, log in. Then create a new personal API key:
-
-1. Go to [Account settings](https://www.opensource.observer/app/settings)
-2. In the "API Keys" section, click "+ New"
-3. Give your key a label - this is just for you, usually to describe a key's purpose.
-4. You should see your brand new key. **Immediately** save this value, as you'll **never** see it again after refreshing the page.
-5. Click "Create" to save the key.
-
-You can create as many keys as you like.
-
-![generate API key](./generate-api-key.png)
-
-## Login to BigQuery
-
----
-
-OSO's data warehouse is currently located on BigQuery and is available publicly by
-referencing it as `opensource-observer.oso`. If you're looking to explore the
-data, or to contribute to our public set of models, you will need to have an
-account with GCP (Google Cloud Platform).
-
-
-### Sign up free
-
-
-If this is your first time getting into GCP, you can do so by going
-[here](https://cloud.google.com/).
-
-From there you'll want to click on "Start free" or "Get started for free". You will then be prompted to login with your Google account.
+Navigate to [Google Cloud](https://cloud.google.com/) and log in.
+If this is your first time here, you can sign up for a free cloud account
+using your existing Google account.
+If you already have a GCP account,
+[skip to the query](#make-your-first-query).
 
 ![GCP Signup](./gcp_signup.png)
 
-
-Once you're logged in, you can then proceed to setting up your account. First, select a country and agree to the terms of service. Then, you need to enter your payment information for verification.
+First, select a country and agree to the terms of service.
+Then, you need to enter your payment information for verification
+and answer a few marketing questions.
 
 ![GCP Billing](./gcp_billing.png)
 
@@ -59,49 +40,52 @@ GCP offers a free tier that includes $300 in credits. After that, it is easy to 
 1TB per month limit for BigQuery data processed (more on that later).
 :::
 
+Finally, you will be brought to the admin console where you can create a new project.
+Feel free to name this GCP project anything you'd like.
+(Or you can simply leave the default project name 'My First Project'.)
 
-After you've created your account, you will then be asked a few marketing questions from Google. Fill these out as appropriate.
+## Make your first query
 
-Finally, you will be brought to the admin console where you can create a new project. Feel free to name this GCP project anything you'd like. (Or you can simply leave the default project name 'My First Project'.)
-
-Navigate to **BigQuery** from the left-hand menu and then click on **BigQuery Studio** from the hover menu. This will take you to the BigQuery Console.
+Go to the [BigQuery Console](https://console.cloud.google.com/bigquery).
+Navigate to **BigQuery** from the left-hand menu and
+then click on **BigQuery Studio** from the hover menu.
 
 ![GCP Admin](./gcp_admin.png)
 
-The console features an **Explorer** frame on the left-hand side, which lists all the datasets available to you, and a **Studio Console** which has tabs for organizing your work. This will be your workspace for querying the OSO dataset. If this is your first time, you will likely see a welcome message on the first tab in the Studio Console. Now you're ready to start exploring OSO datasets!
+The console features an **Explorer** frame on the left-hand side,
+which lists all the datasets available to you,
+and a **Studio Console** which has tabs for organizing your work.
+This will be your workspace for querying the OSO dataset.
 
 ![GCP Welcome](./gcp_welcome.png)
 
-### Query the `oso_playground` dataset
+Open a new tab by clicking on the `+` icon
+on the top right of the console to `Create SQL Query`.
 
-If you just created your GCP account by following the steps above, then you'll already be in the BigQuery Console. However, if you're just joining us because you already have an account, then go directly to the BigQuery Console by clicking [here](https://console.cloud.google.com/bigquery).
-
-Close the first tab on the console or simply navigate to the second tab, which should display a blank query editor. Alternatively, you can open a new tab by clicking on the `+` icon on the top right of the console to `Create SQL Query`.
-
-From here you will be able to write any SQL you'd like against the OSO dataset. For example, you can query the `oso_playground` dataset for all the collections in that dataset like this:
+From here you will be able to write any SQL you'd like any OSO dataset.
+For example, you can query the `oso_playground` dataset for 
+a sample of collections like this:
 
 ```sql
 SELECT *
-FROM `opensource-observer.oso_playground.collections`
+FROM `opensource-observer.oso_playground.collections_v1`
 ```
 
-Click **Run** to execute your query. The results will appear in a table at the bottom of the console.
+Click **Run** to execute your query.
+The results will appear in a table at the bottom of the console.
 
 ![GCP Query](./gcp_query.png)
-
 
 The console will help you complete your query as you type, and will also provide you with a preview of the results and computation time. You can save your queries, download the results, and even make simple visualizations directly from the console.
 
 :::tip
-To explore all the OSO datasets available, see [here](https://console.cloud.google.com/bigquery?project=opensource-observer).
+To explore all the OSO datasets available, see [here](https://console.cloud.google.com/bigquery/analytics-hub/exchanges/projects/87806073973/locations/us/dataExchanges/open_source_observer_190181416ae).
 
 - **oso** contains all production data. This can be quite large depending on the dataset.
-- **oso\_playground** contains only the last 2 weeks for every datast. We recommend using this for development and testing.
+- **oso\_playground** contains only the last 2 weeks for every dataset. We recommend using this for development and testing.
 :::
 
-## Join the Kariba Data Collective
-
----
+## Next steps
 
 Now that you're set up, there are many ways to contribute to OSO and integrate the data with your application:
 
@@ -109,8 +93,11 @@ Now that you're set up, there are many ways to contribute to OSO and integrate t
 - [Propose an impact model](../contribute/impact-models) to run in our data pipeline
 - [Query the OSO API](../integrate/api) for metrics and impact vectors from your web app
 
-If you think you'll be an ongoing contributor to OSO, please apply to join the [Kariba Data Collective](https://kariba.network). 
+If you think you'll be an ongoing contributor to OSO,
+please apply to join the [Kariba Data Collective](https://www.kariba.network). 
 
-Membership is free but we want to keep the community close-knit and mission-aligned. As the community grows, we want to reward the most useful contributions and in so doing create a new job category for impact data science.
+Membership is free but we want to keep the community close-knit and mission-aligned.
+As the community grows, we want to reward the most useful contributions and
+in so doing create a [new job category for impact data science](https://docs.opensource.observer/blog/impact-data-scientists).
 
-<Link to="https://kariba.network" className="button button--secondary button--lg">Join the Data Collective</Link>
+<Link to="https://www.kariba.network" className="button button--secondary button--lg">Join the Data Collective</Link>
