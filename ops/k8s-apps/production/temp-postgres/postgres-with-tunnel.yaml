@@ -14,7 +14,6 @@ spec:
     - image: postgres:16-bullseye
       imagePullPolicy: IfNotPresent
       name: postgres
-      command: ['sh', '-c', 'echo The Bench Container 1 is Running ; sleep 3600']
       env:
         - name: POSTGRES_PASSWORD
           value: "PASSWORD"
