@@ -17,7 +17,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-def load_definitions():
+def load_resources():
     bigquery = BigQueryResource(project=os.environ.get("GOOGLE_PROJECT_ID"))
     gcs = GCSResource(project=os.environ.get("GOOGLE_PROJECT_ID"))
     cbt = CBTResource(
@@ -37,6 +37,11 @@ def load_definitions():
         resources[f"{target}_dbt"] = DbtCliResource(
             project_dir=os.fspath(main_dbt_project_dir), target=target
         )
+    return (asset_factories, asset_defs, resources)
+
+
+def load_definitions():
+    asset_factories, asset_defs, resources = load_resources()
 
     return Definitions(
         assets=asset_defs + asset_factories.assets,

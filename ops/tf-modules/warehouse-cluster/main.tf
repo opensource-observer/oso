@@ -67,6 +67,28 @@ locals {
       preemptible        = true
       initial_node_count = 0
     },
+    # The spot pool with local ssd should be used for things that need fast 
+    {
+      name                              = "${var.cluster_name}-spot-ssd-node-pool"
+      machine_type                      = "n1-standard-16"
+      node_locations                    = join(",", var.cluster_zones)
+      min_count                         = 0
+      max_count                         = 2
+      local_ssd_count                   = 0
+      spot                              = false
+      disk_size_gb                      = 100
+      disk_type                         = "pd-standard"
+      image_type                        = "COS_CONTAINERD"
+      enable_gcfs                       = false
+      enable_gvnic                      = false
+      logging_variant                   = "DEFAULT"
+      auto_repair                       = true
+      auto_upgrade                      = true
+      service_account                   = local.node_service_account_email
+      preemptible                       = true
+      initial_node_count                = 0
+      local_ssd_ephemeral_storage_count = 2
+    },
   ], var.extra_node_pools)
 
   node_pool_labels = merge({
@@ -81,6 +103,10 @@ locals {
     "${var.cluster_name}-preemptible-node-pool" = {
       default_node_pool = false
       pool_type         = "preemptible"
+    }
+    "${var.cluster_name}-spot-ssd-node-pool" = {
+      default_node_pool = false
+      pool_type         = "spot-ssd"
     }
   }, var.extra_node_labels)
 
@@ -105,6 +131,13 @@ locals {
         effect = "NO_SCHEDULE"
       },
     ]
+    "${var.cluster_name}-spot-ssd-node-pool" = [
+      {
+        key    = "pool_type"
+        value  = "spot-ssd"
+        effect = "NO_SCHEDULE"
+      },
+    ]
   }, var.extra_node_taints)
 
   node_pool_tags = merge({
@@ -116,6 +149,9 @@ locals {
     ]
     "${var.cluster_name}-preemptible-node-pool" = [
       "preemptible",
+    ]
+    "${var.cluster_name}-spot-ssd-node-pool" = [
+      "spot-ssd",
     ]
   }, var.extra_node_tags)
 

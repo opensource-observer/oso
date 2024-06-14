@@ -35,6 +35,7 @@ from dagster import (
     MetadataValue, 
     TableColumn, 
     TableSchema,
+    Config
 )
 
 from dagster_gcp import BigQueryResource, GCSResource
@@ -1359,6 +1360,16 @@ def goldsky_asset(asset_config: GoldskyConfig, deps: Optional[Iterable[AssetDep]
         # Log the metadata
         context.add_output_metadata({"schema": table_metadata})
 
+    # Hack for now this is only for transactions
+    @op(name=f"{related_ops_prefix}_find_missing_data_op")
+    def goldsky_find_missing_data_op(
+        context: OpExecutionContext,
+        bigquery: BigQueryResource,
+        gcs: GCSResource,
+        cbt: CBTResource,
+    ):
+        pass
+
 
     @job(name=f"{related_ops_prefix}_clean_up_job")
     def goldsky_clean_up_job():
@@ -1375,6 +1386,10 @@ def goldsky_asset(asset_config: GoldskyConfig, deps: Optional[Iterable[AssetDep]
     @job(name=f"{related_ops_prefix}_backfill_job")
     def goldsky_backfill_job():
         goldsky_backfill_op()
+
+    @job(name=f"{related_ops_prefix}_find_missing_data_job")
+    def goldsky_find_missing_data_job():
+        goldsky_find_missing_data_op()
 
     @asset_sensor(
         asset_key=generated_asset.key,

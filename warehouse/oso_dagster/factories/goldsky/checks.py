@@ -32,7 +32,8 @@ class BlockchainCheckConfig(Config):
     def get_range(self) -> Tuple[arrow.Arrow | None, arrow.Arrow | None]:
         now = arrow.now()
         if self.full_refresh:
-            return [None, now.shift(days=-1)]
+            # Only do checks up to two days ago to ensure completeness
+            return [None, now.shift(days=-2)]
         if self.start or self.end:
             start = arrow.get(self.start) if self.start is not None else None
             end = arrow.get(self.end) if self.end is not None else None
@@ -183,7 +184,10 @@ def transactions_check(
             )
         missing_block_hashes = block_number_results[0].missing_block_hashes
         # Add one to include the min block in the count
-        metadata = dict(missing_block_hashes=missing_block_hashes)
+        metadata = dict(
+            missing_block_hashes=missing_block_hashes,
+        )
+
         return AssetCheckResult(
             passed=missing_block_hashes == 0,
             severity=AssetCheckSeverity.WARN,
@@ -271,6 +275,7 @@ def block_number_check(
 
 def traces_checks(
     transactions_table_fqn: str,
+    block_number_column_name: str = "block_number",
     traces_transaction_hash_column_name: str = "transaction_hash",
     traces_block_timestamp_column_name: str = "block_timestamp",
     transactions_transaction_hash_column_name: str = "hash",
@@ -289,7 +294,13 @@ def traces_checks(
                 transactions_block_timestamp_column_name,
                 config,
                 asset,
-            )
+            ),
+            block_number_check(
+                block_number_column_name,
+                transactions_block_timestamp_column_name,
+                config,
+                asset,
+            ),
         ]
 
     return check_factory
@@ -297,6 +308,7 @@ def traces_checks(
 
 def transactions_checks(
     blocks_table_fqn: str,
+    block_number_column_name: str = "block_number",
     transactions_block_hash_column_name: str = "block_hash",
     transactions_block_timestamp_column_name: str = "block_timestamp",
     blocks_block_hash_column_name: str = "hash",
@@ -313,7 +325,13 @@ def transactions_checks(
                 blocks_block_timestamp_column_name,
                 config,
                 asset,
-            )
+            ),
+            block_number_check(
+                block_number_column_name,
+                transactions_block_timestamp_column_name,
+                config,
+                asset,
+            ),
         ]
 
     return check_factory
