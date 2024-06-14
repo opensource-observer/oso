@@ -21,6 +21,7 @@ sqlalchemy = "^2.0.25"
 google-cloud-storage = "^2.14.0"
 python-dotenv = "^1.0.1"
 dbt-bigquery = "^1.7.0"
+dbt-core = "^1.8.2"
 textual = "^0.52.1"
 google-cloud-service-management = "^1.8.3"
 google-cloud-resource-manager = "^1.12.3"
@@ -40,7 +41,6 @@ polars = "^0.20.23"
 requests = "^2.31.0"
 dagster-postgres = "^0.23.6"
 pytest = "^8.2.1"
-dbt-core = "^1.8.2"
 
 
 [tool.poetry.scripts]

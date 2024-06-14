@@ -117,6 +117,10 @@ jobs:
         run: |
           bash .github/scripts/create-dbt-profile.sh ${GOOGLE_APPLICATION_CREDENTIALS}
 
+      - name: Run dbt compile
+        run: |
+          poetry run dbt compile --target playground
+
       - name: Run supabase local
         run: |
           bash .github/scripts/run-supabase-local.sh apps/frontend
