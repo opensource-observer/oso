@@ -1,6 +1,6 @@
 ---
 title: Add Funding Data
-sidebar_position: 3
+sidebar_position: 10
 ---
 
 :::info
@@ -11,12 +11,12 @@ We are coordinating with several efforts to collect, clean, and visualize OSS fu
 
 ---
 
-Add or update OSS funding data by making a pull request to [OSS Funding](https://github.com/opensource-observer/oss-funding).
+Add or update funding data by making a pull request to [oss-funding](https://github.com/opensource-observer/oss-funding).
 
-1. Fork [OSS Funding](https://github.com/opensource-observer/oss-funding/fork).
+1. Fork [oss-funding](https://github.com/opensource-observer/oss-funding/fork).
 2. Add static data in CSV (or JSON) format to `./uploads/`.
 3. Ensure the data contains links to one or more project artifacts such as GitHub repos or wallet addresses. This is necessary in order for one of the repo maintainers to link funding events to OSS projects.
-4. Submit a pull request from your fork back to [OSS Funding](https://github.com/opensource-observer/oss-funding).
+4. Submit a pull request from your fork back to [oss-funding](https://github.com/opensource-observer/oss-funding).
 
 ## Contributing Clean Data
 
@@ -28,7 +28,7 @@ Submissions will be validated to ensure they conform to the schema and don't con
 
 Additions to the `./clean/` directory should include as many of the following columns as possible:
 
-- `oso_slug`: The OSO project slug (leave blank or null if the project doesn't exist yet).
+- `oso_slug`: The OSO project name (leave blank or null if the project doesn't exist yet).
 - `project_name`: The name of the project (according to the funder's data).
 - `project_id`: The unique identifier for the project (according to the funder's data).
 - `project_url`: The URL of the project's grant application or profile.
@@ -46,6 +46,6 @@ Additions to the `./clean/` directory should include as many of the following co
 
 ---
 
-You can read or copy the latest version of the funding data directly from the [OSS Funding](https://github.com/opensource-observer/oss-funding) repo.
+You can read or copy the latest version of the funding data directly from the [oss-funding](https://github.com/opensource-observer/oss-funding) repo.
 
 If you do something cool with the data (eg, a visualization or analysis), please share it with us!
