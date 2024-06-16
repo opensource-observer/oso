@@ -3,33 +3,34 @@ title: Update Project Data
 sidebar_position: 2
 ---
 
-:::info
-Add or update data about a project by making a pull request to the OSS Directory.
-When a new project is added to OSS directory, we automatically index relevant
-data about its history and ongoing activity so it can be queried via our API, included
-in metrics dashboards, and analyzed by data scientists.
-:::
+We maintain a repository of open source projects called
+[oss-directory](https://github.com/opensource-observer/oss-directory).
+Think of it as an awesome list of reputable open source
+projects that lists all known 'artifacts' related to a project,
+from GitHub repos, to social media profiles, to software deployments.
+We use this as the starting point of the OSO data pipeline,
+which is run automatically daily to produce metrics
+for our API and dashboards.
 
 ## Quick Steps
 
----
+Add or update project data by making a pull request to
+[oss-directory](https://github.com/opensource-observer/oss-directory).
 
-Add or update project data by making a pull request to [OSS Directory](https://github.com/opensource-observer/oss-directory).
-
-1. Fork [OSS Directory](https://github.com/opensource-observer/oss-directory/fork).
+1. Fork [oss-directory](https://github.com/opensource-observer/oss-directory/fork).
 2. Locate or create a new project `.yaml` file under `./data/projects/`.
-3. Link artifacts (ie, GitHubs, npm packages, blockchain addresses) in the project `.yaml` file.
-4. Submit a pull request from your fork back to [OSS Directory](https://github.com/opensource-observer/oss-directory).
-5. Once your pull request is approved, your project will automatically be added to our daily indexers. It may take longer for some historical data (eg, GitHub events) to show up as we run backfill jobs less frequently.
+3. Link artifacts (ie, GitHub repositories, npm packages, blockchain addresses) in the project `.yaml` file.
+4. Submit a pull request from your fork back to [oss-directory](https://github.com/opensource-observer/oss-directory).
+5. Once your pull request is approved, your project will automatically be added to our daily indexers. It may take longer for some historical data (e.g. GitHub events) to show up as we run backfill jobs less frequently.
 
 ## Schema Overview
 
----
-
-Make sure to use the latest version of the OSS Directory schema. You can see the latest version by opening any project YAML file and getting the version from the top of file. Note, since Version 3, we have replace the field `slug` with `name` and the previous `name` field with `display_name`.
+Make sure to use the latest version of the oss-directory schema. You can see the latest version by opening any project YAML file and getting the version from the top of file.
 
 :::important
 The `name` field is the unique identifier for the project and **must** match the name of the project file. For example, if the project file is `./data/projects/m/my-project.yaml`, then the `name` field should be `my-project`. As a convention, we usually take the GitHub organization name as the project `name`. If the project is a standalone repo within a larger GitHub organization or personal account, you can use the project name followed by the repo owner as the name, separated by hyphens.
+
+Note: since version 3, we have replaced the `slug` field with `name` and the previous `name` field with `display_name`.
 :::
 
 ### Fields
@@ -38,11 +39,16 @@ The schema currently contains the following fields:
 
 - `version`: The latest version of the OSS Directory schema. This is a required field. To find the latest version, open any project YAML file and get the version from the top of the file. As of writing (2024-06-05), the latest version is Version 7.
 - `name`: The unique identifier for the project. This is usually the GitHub organization name or the project name followed by the repo owner, separated by hyphens. This is a required field.
-- `display_name`: The name of the project. This is a required field.
+- `display_name`: The display name of the project. This is a required field.
 - `description`: A brief description of the project.
+- `websites`: A list of associated websites
+- `social`: A list of social channels (e.g. Twitter, Telegram, Discord)
 - `github`: The GitHub URL of the project. This is a list of URLs, as a project can have multiple GitHub URLs. In most cases, the first and only URL will be the main GitHub organization URL. You don't need to include all the repositories that belong to the organization, as we will automatically index all of them.
-- `npm`: The npm URL of a package owned the project. This is a list of URLs, as a project can have multiple npm URLs.
+- `npm`: The npm URL of a package owned the project. This is a list of URLs, as a project can have multiple npm packages.
 - `blockchain`: A list of blockchain addresses associated with the project. Each address should include the address itself, the networks it is associated with, and any tags that describe the address. The most important addresses to include are deployers and wallets. We use deployers to trace all contracts deployed by a project, and wallets to trace all transactions made by a project.
+- `comments`: Feel free to store any useful comments for maintainers here.
+
+For the latest fields, see the [project schema](https://github.com/opensource-observer/oss-directory/blob/main/src/resources/schema/project.json)
 
 ### Supported Blockchain Networks and Tags
 
@@ -50,19 +56,19 @@ The schema currently contains the following fields:
 The simplest way to add all contracts and factories associated with your project is to just add the deployer address in the project file. We will then automatically index all contracts and factories associated with the deployer address. If the deployer is on multiple EVM networks, you can use the `any_evm` tag instead of listing each network individually.
 :::
 
-The OSS Directory currently supports the following blockchain networks, which can be enumerated in the `networks` field of a blockchain address:
+OSO currently supports the following blockchain networks, which can be enumerated in the `networks` field of a blockchain address:
 
 - `any_evm`: Any Ethereum Virtual Machine (EVM) network. This is the recommended tag for EOAs that deploy contracts on multiple EVM networks.
 - `mainnet`: The Ethereum mainnet.
 - `arbitrum_one`: The Arbitrum L2 network.
-- `optimism`: The Optimism L2 network.
 - `base`: The Base L2 network.
+- `frax`: The Frax L2 network.
 - `metal`: The Metal L2 network.
 - `mode`: The Mode L2 network.
-- `frax`: The Frax L2 network.
+- `optimism`: The Optimism L2 network.
 - `zora`: The Zora L2 network.
 
-We do not support testnets for any of these networks and do not intend to.
+Note: We do not support testnets for any of these networks and do not intend to.
 
 The following tags can be used to describe blockchain addresses:
 
@@ -80,13 +86,11 @@ Read below for more detailed steps on how to add or update project data or consu
 
 ## Detailed Steps
 
----
-
 Here's a more detailed set of instructions for first-time contributors.
 
-### 1. Fork OSS Directory
+### 1. Fork oss-directory
 
-- Navigate to the [OSS Directory](https://github.com/opensource-observer/oss-directory) repo.
+- Navigate to the [oss-directory](https://github.com/opensource-observer/oss-directory) repo.
 
 - Click the "Fork" button in the upper right corner of this page. This will create a copy of the repository in your GitHub account. It's best practice to keep the same repository name, but you can change it if you want.
 
@@ -175,10 +179,11 @@ Some projects may own a lot of blockchain addresses. The most important addresse
 
 ### 4. Submit a pull request from your fork to our repository
 
-- Save your changes and open a pull request from your fork to the [OSS Directory](https://github.com/opensource-observer/oss-directory).
+- Save your changes and open a pull request from your fork to [oss-directory](https://github.com/opensource-observer/oss-directory).
 - If you are adding multiple new projects, you can include them all in the same pull request, but please provide some comments to help us understand your changes.
+- Opening the pull request will trigger automated validation of the artifacts you added. If there are any issues or duplicates found, the pull request will be rejected and you will be notified in the pull request thread.
 - Your submission will be reviewed by a maintainer before approving the pull request. If there are any issues, you will be notified in the pull request thread.
-- Your submission will be merged once it is approved by a maintainer. Merging the pull request will trigger automated validation of the artifacts you added. If there are any issues or duplicates found, the pull request will be rejected and you will be notified in the pull request thread.
+- Your submission will be merged once it is approved by a maintainer.
 - Once the pull request is merged successfully, your project will be added to the indexing queue for inclusion in all subsequent data updates.
 
 :::tip
@@ -193,9 +198,7 @@ Note that our indexer currently runs every 24 hours at 02:00 UTC. Therefore, it 
 
 ## Bulk Updates
 
----
-
-To make bulk updates, we recommend cloning the [OSS Directory](https://github.com/opensource-observer/oss-directory) repo and making changes locally. Then, submit a complete set of project updates via one pull request.
+To make bulk updates, we recommend cloning the [oss-directory](https://github.com/opensource-observer/oss-directory) repo and making changes locally. Then, submit a complete set of project updates via one pull request.
 
 Given that the project data may come in all sorts of formats, we have not included a script that will work for all cases. We have included a [few scripts](https://github.com/opensource-observer/oss-directory/tree/main/src/scripts) as examples. These take CSV, TOML, or JSON files that contain a list of projects and associated artifacts.
 
