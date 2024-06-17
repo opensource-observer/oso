@@ -8,7 +8,7 @@ Every schema in the OSS Directory has a `version` field. This field is used to t
 :::
 
 :::tip
-The current version of the OSS Directory schema is **Version 3**.
+The current version of the OSS Directory schema is **Version 7**.
 :::
 
 All files under `./data` must conform to schemas defined in `./src/resources/schema`.
