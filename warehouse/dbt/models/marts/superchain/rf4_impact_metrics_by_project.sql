@@ -103,4 +103,4 @@ left join {{ ref('projects_v1') }}
   on pivot_metrics.project_id = projects_v1.project_id
 left join {{ source("static_data_sources", "agora_rf4_to_ossd") }}
   on projects_v1.project_name = agora_rf4_to_ossd.oso_project_name
-where projects_v1.project_name is not null
+where agora_rf4_to_ossd.application_id is not null
