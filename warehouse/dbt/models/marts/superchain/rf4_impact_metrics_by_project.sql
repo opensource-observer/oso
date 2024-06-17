@@ -82,8 +82,8 @@ pivot_metrics as (
 )
 
 select
-  pivot_metrics.project_id,
-  projects_v1.project_name,
+  agora_rf4_to_ossd.application_id,
+  agora_rf4_to_ossd.oso_project_name,
   pivot_metrics.check_oss_requirements,
   pivot_metrics.gas_fees,
   pivot_metrics.transaction_count,
@@ -101,3 +101,6 @@ select
 from pivot_metrics
 left join {{ ref('projects_v1') }}
   on pivot_metrics.project_id = projects_v1.project_id
+left join {{ source("static_data_sources", "agora_rf4_to_ossd") }}
+  on projects_v1.project_name = agora_rf4_to_ossd.oso_project_name
+where projects_v1.project_name is not null

@@ -21,7 +21,6 @@ with events as (
       'MODE',
       'ZORA'
     )
-    and time > '2023-10-01'
     and time < '2024-06-01'
   group by
     project_id,
