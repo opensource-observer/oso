@@ -7,4 +7,5 @@ sidebar_position: 4
 This page is a work in progress.
 :::
 
-Coming soon...
+Excited for this feature? Tell us on the
+[GitHub issue](https://github.com/opensource-observer/oso/issues/623)

@@ -69,7 +69,7 @@ query GetProjects {
 }
 ```
 
-This query will fetch **code metrics** for 10 projects, ordered by `avg_active_devs_6_months`.
+This query will fetch **code metrics** for 10 projects, ordered by `star_count`.
 
 ```graphql
 query GetCodeMetrics {

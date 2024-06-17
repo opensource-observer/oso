@@ -45,7 +45,7 @@ You can also create a new notebook from scratch and run it in the cloud. Here's 
 
 3. Create a new code block for your query. In this block, we will use the `%%bigquery` magic command to run a SQL query and store the results in a Pandas dataframe (named `df` in my example).
 
-   Here's an example of how to fetch the latest code metrics for all projects in the OSO data warehouse. **Remember to replace `my-oso-playground` with your project id.**
+   Here's an example of how to fetch the latest code metrics for all projects in the OSO data warehouse.
 
    ```python
    # replace 'my-oso-playground' with your project id
@@ -55,6 +55,9 @@ You can also create a new notebook from scratch and run it in the cloud. Here's 
    FROM `opensource-observer.oso_playground.code_metrics_by_project_v1`
    ORDER BY last_commit_date DESC
    ```
+
+   **Remember to replace `my-oso-playground` with your project id.**:
+   This will attach the query to your billing account.
 
    Execute the code block. The query will run in a few seconds and the results will be stored in the `df` dataframe.
 

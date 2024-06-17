@@ -9,7 +9,7 @@ OSO tracks the dependency graph among projects in a collection or ecosystem. A *
 :::
 
 :::warning
-These metrics are currently in developmnet.
+These metrics are currently in development.
 :::
 
 ## Direct vs. Indirect Dependents
