@@ -21,7 +21,7 @@ with events as (
       'MODE',
       'ZORA'
     )
-    and time < '2024-05-23'
+    and time < '2024-06-01'
   group by
     project_id,
     from_artifact_id,
@@ -29,6 +29,13 @@ with events as (
     event_source,
     event_type,
     TIMESTAMP_TRUNC(time, day)
+),
+
+artifacts as (
+  select distinct
+    artifact_id,
+    artifact_name
+  from {{ ref('artifacts_v1') }}
 )
 
 select
@@ -45,13 +52,12 @@ select
       then rf4_trusted_users.address
   end as trusted_user_id
 from events
-left join {{ ref('int_artifact_types') }} as to_artifacts
+left join artifacts as to_artifacts
   on events.to_artifact_id = to_artifacts.artifact_id
-left join {{ ref('artifacts_v1') }} as from_artifacts
+left join artifacts as from_artifacts
   on events.from_artifact_id = from_artifacts.artifact_id
 left join {{ ref('projects_v1') }}
   on events.project_id = projects_v1.project_id
 left join {{ ref('rf4_trusted_users') }}
   on from_artifacts.artifact_name = rf4_trusted_users.address
-where
-  to_artifacts.artifact_type = 'CONTRACT'
+where events.amount > 0
