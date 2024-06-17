@@ -11,9 +11,25 @@ If you need to perform data science over a large dataset, see the guides on
 and [downloading static data](./download-data).
 :::
 
-## GraphQL Endpoint
+The OSO GraphQL API serves impact metrics for OSS projects, collections, and artifacts. Access to the OSO GraphQL API is necessary for any integration with OSO datasets.
 
----
+## Generate an API key
+
+First, navigate to [www.opensource.observer](https://www.opensource.observer) and create a new account.
+
+If you already have an account, log in. Then create a new personal API key:
+
+1. Go to [Account settings](https://www.opensource.observer/app/settings)
+2. In the "API Keys" section, click "+ New"
+3. Give your key a label - this is just for you, usually to describe a key's purpose.
+4. You should see your brand new key. **Immediately** save this value, as you'll **never** see it again after refreshing the page.
+5. Click "Create" to save the key.
+
+You can create as many keys as you like.
+
+![generate API key](./generate-api-key.png)
+
+## GraphQL Endpoint
 
 All API requests are sent to the following URL:
 
@@ -25,8 +41,6 @@ You can navigate to our [public GraphQL explorer](https://cloud.hasura.io/public
 
 ## Authentication
 
----
-
 In order to authenticate with the API service, you have to use the `Authorization` HTTP header and `Bearer` authentication on all HTTP requests, like so:
 
 ```js
@@ -35,30 +49,27 @@ const headers = {
 };
 ```
 
-See the Getting Started guide on how to get your developer API key.
-
 :::tip
 Our API opens a small rate limit for anonymous queries without authentication. Feel free to use for low volume queries.
 :::
 
 ## Example
 
----
-
-This query will fetch the first 10 projects in OSS Directory.
+This query will fetch the first 10 projects in
+[oss-directory](https://github.com/opensource-observer/oss-directory).
 
 ```graphql
 query GetProjects {
-  projects(limit: 10) {
+  projects_v1(limit: 10) {
     project_id
     project_name
-    project_display_name
-    user_namespace
+    display_name
+    description
   }
 }
 ```
 
-This query will fetch **code metrics** for 10 projects, ordered by `avg_active_devs_6_months`.
+This query will fetch **code metrics** for 10 projects, ordered by `star_count`.
 
 ```graphql
 query GetCodeMetrics {
@@ -78,8 +89,6 @@ query GetCodeMetrics {
 
 ## GraphQL Explorer
 
----
-
 The GraphQL schema is automatically generated from [`oso/dbt/models/marts`](https://github.com/opensource-observer/oso/tree/main/dbt/models/marts). Any dbt model defined there will automatically be exported to our GraphQL API. See the guide on [adding DBT models](../contribute/impact-models) for more information on contributing to our marts models.
 
 :::warning
@@ -92,8 +101,6 @@ You can navigate to our [public GraphQL explorer](https://cloud.hasura.io/public
 ![GraphQL explorer](./graphql-explorer.png)
 
 ## Rate Limits
-
----
 
 All requests are rate limited. There are currently 2 separate rate limits for different resources:
 

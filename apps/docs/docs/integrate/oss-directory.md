@@ -4,7 +4,7 @@ sidebar_position: 3
 ---
 
 :::info
-[OSS Directory](https://github.com/opensource-observer/oss-directory) contains structured data on as many open source projects as possible, enumerating all artifacts related to the project, from source code repositories to published packages and deployments. You can get the data via our npm library or downloading the data directly from GitHub.
+[oss-directory](https://github.com/opensource-observer/oss-directory) contains structured data on as many open source projects as possible, enumerating all artifacts related to the project, from source code repositories to published packages and deployments. You can get the data via our npm library or downloading the data directly from GitHub.
 :::
 
 ## Directory Structure
@@ -22,11 +22,14 @@ The OSS Directory is organized into two main folders:
   - See `./src/resources/schema/collection.json` for the expected JSON schema
   - Collections are identified by their unique `name`
 
-## NPM Library
+## npm library
 
 ---
 
-OSS Directory is a library that you can use in your own projects. This may be useful if you want to build a tool that uses the data in this repository or perform your own custom analysis.
+[oss-directory](https://www.npmjs.com/package/oss-directory)
+is a library that you can use in your own projects.
+This may be useful if you want to build a tool that uses the data
+in this repository or perform your own custom analysis.
 
 ### Installation
 
@@ -52,13 +55,19 @@ const collections: Collection[] = data.collections;
 
 :::note
 We don't store the entire dataset with the npm package. Under the hood, this will clone the repository into a temporary directory, read all the data files, validate the schema, and return the objects. This way, you know you're getting the latest data, even if the npm package hasn't been updated in a while.
+If we make a breaking change in a
+[schema update](../how-oso-works/oss-directory/schema-updates.md)
+you will need to update this library or an exception will throw
+due to a typing mismatch with the old library version.
 :::
 
 ## Direct Download from GitHub
 
 ---
 
-All of the data is accessible from directly GitHub. You can download [OSS Directory](https://github.com/opensource-observer/oss-directory) directly from GitHub.
+All of the data is accessible from directly GitHub. You can download
+[oss-directory](https://github.com/opensource-observer/oss-directory)
+directly from GitHub.
 
 Or, clone the repository from the command line:
 

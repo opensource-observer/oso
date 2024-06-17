@@ -1,5 +1,5 @@
 ---
-title: Propose an Impact Model
+title: Write a Data Model
 sidebar_position: 5
 ---
 
@@ -85,7 +85,8 @@ poetry install && poetry run oso_lets_go
 :::tip
 Under the hood, `oso_lets_go` will create a GCP project
 and BigQuery dataset if they don't already exist,
-and copy a small subset of the OSO data for you to develop against.
+and copy a small subset of the OSO data for you to develop against,
+called `playground`.
 It will also create a dbt profile to connect to this dataset
 (stored in `~/.dbt/profiles.yml`).
 The script is idempotent, so you can safely run it again
@@ -107,7 +108,8 @@ Finally, you can test that everything is working by running the following comman
 dbt run
 ```
 
----
+This will run the full dbt pipeline against your own
+copy of the OSO playground dataset.
 
 ## Working with OSO dbt Models
 
@@ -129,8 +131,8 @@ here for a fuller explanation](https://docs.getdbt.com/best-practices/how-we-str
 - `marts` - This directory contains transformations that should be fairly
   minimal and mostly be aggregations. In general, `marts` shouldn't depend on
   other marts unless they're just coarser grained aggregations of an upstream
-  mart. Marts are also automatically copied to the postgresql database that runs
-  the OSO website.
+  mart. Marts are also automatically copied to the frontend database that
+  powers the OSO API and website.
 
 ### OSO data sources
 
@@ -159,11 +161,11 @@ oso_source('ossd', '{TABLE_NAME}') }}` where `{TABLE_NAME}` could be one of the
 following tables:
 
 - `collections` - This data is pulled directly from the [oss-directory
-  Repository][oss-directory] and is
+  repository][oss-directory] and is
   groups of projects. You can view this table
   [here][collections_table]
 - `projects` - This data is also pulled directly from the oss-directory
-  Repository. It describes a project's repositories, blockchain addresses, and
+  repository. It describes a project's repositories, blockchain addresses, and
   public packages. You can view this table
   [here][projects_table]
 - `repositories` - This data is derived by gathering repository data of all the
@@ -217,8 +219,6 @@ namespace for a collection named `foo` would be as follows:
 {{ oso_id('collection', 'foo')}}
 ```
 
----
-
 ## Adding Your dbt Model
 
 Now you're armed with enough information to add your model! Add your model to
@@ -238,12 +238,15 @@ dbt run
 _Note: If you configured the dbt profile as shown in this document, this `dbt
 run` will write to the `opensource-observer.oso_playground` dataset._
 
-It is likely best to target a specific model so things don't take so long on
-some of our materializations:
+It is likely best to target a specific model when developing
+so things don't take so long on some of our materializations:
 
 ```bash
 dbt run --select {name_of_your_model}
 ```
+
+If `dbt run` runs without issue and you feel that you've completed something you'd
+like to contribute. It's time to open a PR!
 
 ### Using the BigQuery UI to check your queries
 
@@ -272,26 +275,12 @@ The presence of the compiled model does not necessarily mean your SQL will work
 simply that it was rendered by `dbt` correctly. To test your model it's likely
 cheapest to copy the query into the [BigQuery
 Console](https://console.cloud.google.com/bigquery) and run that query there.
-However, if you need more validation you'll need to [Setup GCP with your own
-playground](https://docs.opensource.observer/docs/contribute/transform/setting-up-gcp.md#setting-up-your-own-playground-copy-of-the-dataset)
-
-### Testing your dbt models
-
-When you're ready, you can test your dbt models against your playground by
-simply running dbt like so:
-
-```bash
-dbt run --select {name_of_your_model}
-```
-
-If this runs without issue and you feel that you've completed something you'd
-like to contribute. It's time to open a PR!
 
 ### Submit a PR
 
 Once you've developed your model and you feel comfortable that it will properly
-run. you can submit it a PR to the [oso Repository][oso] to be tested by the OSO
-github CI workflows (_still under development_).
+run, you can submit it a PR to the [oso repository][oso] to be tested by the OSO
+GitHub CI workflows.
 
 ### DBT model execution schedule
 
@@ -301,228 +290,13 @@ pipelines are executed once a day by the OSO CI at 02:00 UTC. The pipeline
 currently takes a number of hours and any materializations or views would likely
 be ready for use by 4-6 hours after that time.
 
-## Model Examples
+You can monitor all pipeline runs in
+[GitHub actions](https://github.com/opensource-observer/oso/actions/workflows/warehouse-run-data-pipeline.yml).
 
-Here are a few examples of dbt models currently in production:
+## Model References
 
-### Developers
+All OSO models can be found in
+[`warehouse/dbt/models`](https://github.com/opensource-observer/oso/tree/main/warehouse/dbt/models).
 
-This is an intermediate model available in the data warehouse as `int_devs`.
-
-```sql
-SELECT
-  e.project_id,
-  e.to_namespace AS repository_source,
-  e.from_id,
-  1 AS amount,
-  TIMESTAMP_TRUNC(e.time, MONTH) AS bucket_month,
-  CASE
-    WHEN
-      COUNT(DISTINCT CASE WHEN e.event_type = 'COMMIT_CODE' THEN e.time END)
-      >= 10
-      THEN 'FULL_TIME_DEV'
-    WHEN
-      COUNT(DISTINCT CASE WHEN e.event_type = 'COMMIT_CODE' THEN e.time END)
-      >= 1
-      THEN 'PART_TIME_DEV'
-    ELSE 'OTHER_CONTRIBUTOR'
-  END AS user_segment_type
-FROM {{ ref('int_events_to_project') }} AS e
-WHERE
-  e.event_type IN (
-    'PULL_REQUEST_CREATED',
-    'PULL_REQUEST_MERGED',
-    'COMMIT_CODE',
-    'ISSUE_CLOSED',
-    'ISSUE_CREATED'
-  )
-GROUP BY e.project_id, bucket_month, e.from_id, repository_source
-```
-
-### Events to a Project
-
-This is an intermediate model available in the data warehouse as `int_events_to_project`.
-
-```sql
-SELECT
-  e.*,
-  a.project_id
-FROM {{ ref('int_events_with_artifact_id') }} AS e
-INNER JOIN {{ ref('stg_ossd__artifacts_by_project') }} AS a
-  ON
-    e.to_source_id = a.artifact_source_id
-    AND e.to_namespace = a.artifact_namespace
-    AND e.to_type = a.artifact_type
-```
-
-### Summary Onchain Metrics by Project
-
-This is a mart model available in the data warehouse as `onchain_metrics_by_project_v1`.
-
-```sql
-WITH txns AS (
-  SELECT
-    a.project_id,
-    c.to_namespace AS onchain_network,
-    c.from_source_id AS from_id,
-    c.l2_gas,
-    c.tx_count,
-    DATE(TIMESTAMP_TRUNC(c.time, MONTH)) AS bucket_month
-  FROM {{ ref('stg_dune__contract_invocation') }} AS c
-  INNER JOIN {{ ref('stg_ossd__artifacts_by_project') }} AS a
-    ON c.to_source_id = a.artifact_source_id
-),
-metrics_all_time AS (
-  SELECT
-    project_id,
-    onchain_network,
-    MIN(bucket_month) AS first_txn_date,
-    COUNT(DISTINCT from_id) AS total_users,
-    SUM(l2_gas) AS total_l2_gas,
-    SUM(tx_count) AS total_txns
-  FROM txns
-  GROUP BY project_id, onchain_network
-),
-metrics_6_months AS (
-  SELECT
-    project_id,
-    onchain_network,
-    COUNT(DISTINCT from_id) AS users_6_months,
-    SUM(l2_gas) AS l2_gas_6_months,
-    SUM(tx_count) AS txns_6_months
-  FROM txns
-  WHERE bucket_month >= DATE_ADD(CURRENT_DATE(), INTERVAL -6 MONTH)
-  GROUP BY project_id, onchain_network
-),
-new_users AS (
-  SELECT
-    project_id,
-    onchain_network,
-    SUM(is_new_user) AS new_user_count
-  FROM (
-    SELECT
-      project_id,
-      onchain_network,
-      from_id,
-      CASE
-        WHEN
-          MIN(bucket_month) >= DATE_ADD(CURRENT_DATE(), INTERVAL -3 MONTH)
-          THEN
-            1
-      END AS is_new_user
-    FROM txns
-    GROUP BY project_id, onchain_network, from_id
-  )
-  GROUP BY project_id, onchain_network
-),
-user_txns_aggregated AS (
-  SELECT
-    project_id,
-    onchain_network,
-    from_id,
-    SUM(tx_count) AS total_tx_count
-  FROM txns
-  WHERE bucket_month >= DATE_ADD(CURRENT_DATE(), INTERVAL -3 MONTH)
-  GROUP BY project_id, onchain_network, from_id
-),
-multi_project_users AS (
-  SELECT
-    onchain_network,
-    from_id,
-    COUNT(DISTINCT project_id) AS projects_transacted_on
-  FROM user_txns_aggregated
-  GROUP BY onchain_network, from_id
-),
-user_segments AS (
-  SELECT
-    project_id,
-    onchain_network,
-    COUNT(DISTINCT CASE
-      WHEN user_segment = 'HIGH_FREQUENCY_USER' THEN from_id
-    END) AS high_frequency_users,
-    COUNT(DISTINCT CASE
-      WHEN user_segment = 'MORE_ACTIVE_USER' THEN from_id
-    END) AS more_active_users,
-    COUNT(DISTINCT CASE
-      WHEN user_segment = 'LESS_ACTIVE_USER' THEN from_id
-    END) AS less_active_users,
-    COUNT(DISTINCT CASE
-      WHEN projects_transacted_on >= 3 THEN from_id
-    END) AS multi_project_users
-  FROM (
-    SELECT
-      uta.project_id,
-      uta.onchain_network,
-      uta.from_id,
-      mpu.projects_transacted_on,
-      CASE
-        WHEN uta.total_tx_count >= 1000 THEN 'HIGH_FREQUENCY_USER'
-        WHEN uta.total_tx_count >= 10 THEN 'MORE_ACTIVE_USER'
-        ELSE 'LESS_ACTIVE_USER'
-      END AS user_segment
-    FROM user_txns_aggregated AS uta
-    INNER JOIN multi_project_users AS mpu
-      ON uta.from_id = mpu.from_id
-  )
-  GROUP BY project_id, onchain_network
-),
-contracts AS (
-  SELECT
-    project_id,
-    artifact_namespace AS onchain_network,
-    COUNT(artifact_source_id) AS num_contracts
-  FROM {{ ref('stg_ossd__artifacts_by_project') }}
-  GROUP BY project_id, onchain_network
-),
-project_by_network AS (
-  SELECT
-    p.project_id,
-    ctx.onchain_network,
-    p.project_name
-  FROM {{ ref('projects_v1') }} AS p
-  INNER JOIN contracts AS ctx
-    ON p.project_id = ctx.project_id
-)
-
-SELECT
-  p.project_id,
-  p.onchain_network AS network,
-  p.project_name,
-  c.num_contracts,
-  ma.first_txn_date,
-  ma.total_txns,
-  ma.total_l2_gas,
-  ma.total_users,
-  m6.txns_6_months,
-  m6.l2_gas_6_months,
-  m6.users_6_months,
-  nu.new_user_count,
-  us.high_frequency_users,
-  us.more_active_users,
-  us.less_active_users,
-  us.multi_project_users,
-  (
-    us.high_frequency_users + us.more_active_users + us.less_active_users
-  ) AS active_users
-FROM project_by_network AS p
-LEFT JOIN metrics_all_time AS ma
-  ON
-    p.project_id = ma.project_id
-    AND p.onchain_network = ma.onchain_network
-LEFT JOIN metrics_6_months AS m6
-  ON
-    p.project_id = m6.project_id
-    AND p.onchain_network = m6.onchain_network
-LEFT JOIN new_users AS nu
-  ON
-    p.project_id = nu.project_id
-    AND p.onchain_network = nu.onchain_network
-LEFT JOIN user_segments AS us
-  ON
-    p.project_id = us.project_id
-    AND p.onchain_network = us.onchain_network
-LEFT JOIN contracts AS c
-  ON
-    p.project_id = c.project_id
-    AND p.onchain_network = c.onchain_network
-```
+We also continuously deploy model reference documentation at
+[https://models.opensource.observer/](https://models.opensource.observer/)

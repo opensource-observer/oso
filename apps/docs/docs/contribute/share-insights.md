@@ -9,8 +9,6 @@ OSO is building a network of impact data scientists and curating a community lib
 
 ## Community Data Science
 
----
-
 Share your work analyzing and visualizing OSS data by contributing to the [Insights repo](https://github.com/opensource-observer/insights). In general, the steps are:
 
 1. Fork the [Insights repo](https://github.com/opensource-observer/insights/fork).
@@ -45,8 +43,6 @@ Our best blog posts typically focus on specific communities and use a mix of sto
 
 ## Best Practices
 
----
-
 - Ensure your contributions are original, well-documented, and provide clear value to the OSO community.
 - For Jupyter notebooks and data visualizations, include source data or instructions on how to replicate the scripts.
 - Review existing contributions to avoid duplicating efforts and to build upon existing work.
@@ -57,8 +53,6 @@ Your insights and contributions are vital to growing our collective understandin
 :::
 
 ## Promoting Your Work
-
----
 
 Once your contribution is accepted and merged, it will be featured in our library and may be highlighted in our community channels and outreach efforts.
 
