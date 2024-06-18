@@ -49,6 +49,36 @@ class DBTConfig(Config):
     full_refresh: bool = False
 
 
+def generate_dbt_asset(
+    project_dir: str,
+    dbt_profiles_dir: str,
+    target: str,
+    manifest_path: str,
+    internal_map: Dict[str, List[str]],
+):
+    print(f"Target[{target}] using profiles dir {dbt_profiles_dir}")
+    translator = CustomDagsterDbtTranslator(["dbt", target], internal_map)
+
+    @dbt_assets(
+        name=f"{target}_dbt",
+        manifest=manifest_path,
+        dagster_dbt_translator=translator,
+    )
+    def _generated_dbt_assets(context: AssetExecutionContext, config: DBTConfig):
+        print(f"using profiles dir {dbt_profiles_dir}")
+        dbt = DbtCliResource(
+            project_dir=os.fspath(project_dir),
+            target=target,
+            profiles_dir=dbt_profiles_dir,
+        )
+        build_args = ["build"]
+        if config.full_refresh:
+            build_args += ["--full-refresh"]
+        yield from dbt.cli(build_args, context=context).stream()
+
+    return _generated_dbt_assets
+
+
 def dbt_assets_from_manifests_map(
     project_dir: str,
     manifests: Dict[str, str],
@@ -58,28 +88,11 @@ def dbt_assets_from_manifests_map(
         internal_map = {}
     assets: List[AssetsDefinition] = []
     for target, manifest_path in manifests.items():
-        print(f"Target[{target}] using profiles dir {dbt_profiles_dir}")
-
-        translator = CustomDagsterDbtTranslator(["dbt", target], internal_map)
-
-        @dbt_assets(
-            name=f"{target}_dbt",
-            manifest=manifest_path,
-            dagster_dbt_translator=translator,
-        )
-        def _generated_dbt_assets(context: AssetExecutionContext, config: DBTConfig):
-            print(f"using profiles dir {dbt_profiles_dir}")
-            dbt = DbtCliResource(
-                project_dir=os.fspath(project_dir),
-                target=target,
-                profiles_dir=dbt_profiles_dir,
+        assets.append(
+            generate_dbt_asset(
+                project_dir, dbt_profiles_dir, target, manifest_path, internal_map
             )
-            build_args = ["build"]
-            if config.full_refresh:
-                build_args += ["--full-refresh"]
-            yield from dbt.cli(build_args, context=context).stream()
-
-        assets.append(_generated_dbt_assets)
+        )
 
     return assets
 
