@@ -8,9 +8,7 @@
 }}
 
 select distinct
-  artifact_source,
-  root_deployer_address,
-  contract_address,
-  contract_type
-from {{ ref('int_contracts') }}
-where root_deployer_address is not null
+  network as artifact_source,
+  deployer_address as root_deployer_address,
+  contract_address
+from {{ ref('int_derived_contracts') }}
