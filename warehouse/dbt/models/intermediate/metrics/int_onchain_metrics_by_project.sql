@@ -1,7 +1,7 @@
 {{ 
-  config(meta = {
-    'sync_to_db': False
-  }) 
+  config(
+    materialized='table'
+  )
 }}
 
 with metrics as (

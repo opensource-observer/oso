@@ -1,3 +1,9 @@
+{{
+  config(
+    materialized='table'
+  )
+}}
+
 with metrics as (
   select * from {{ ref('int_code_metric__active_developers') }}
   union all
