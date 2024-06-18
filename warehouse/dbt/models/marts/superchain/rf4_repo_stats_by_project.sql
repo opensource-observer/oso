@@ -33,43 +33,47 @@ with repo_snapshot as (
       when (
         commit_count >= 10
         and days_with_commits_count >= 3
-        and first_commit_time < '2024-05-01'
         and star_count >= 10
         and language in ('Solidity', 'JavaScript', 'TypeScript')
       ) then 'OK'
       else 'Review'
     end as repo_activity_check,
-    concat(artifact_namespace, '/', artifact_name) as url
+    (first_commit_time < '2024-05-01') as repo_older_than_1_month,
+    concat(artifact_namespace, '/', artifact_name) as repo
   from {{ ref('int_repo_metrics_by_project') }}
 ),
 
-rf4_repos as (
-  select lower(replace(artifact, 'https://github.com/', '')) as url
-  from {{ source("static_data_sources", "agora_rf4_repos_with_contracts") }}
-),
-
 filtered_repos as (
-  select * from repo_snapshot
-  where url in (select url from rf4_repos)
+  select
+    application_id,
+    project_name,
+    repo,
+    url,
+    has_contracts
+  from {{ ref('rf4_repos_by_app') }}
+  where scan = true
 )
 
 select
-  filtered_repos.project_id,
-  projects_v1.project_name,
-  filtered_repos.artifact_namespace,
-  filtered_repos.artifact_name,
+  filtered_repos.application_id,
+  filtered_repos.project_name,
   filtered_repos.url,
-  filtered_repos.is_fork,
-  filtered_repos.fork_count,
-  filtered_repos.star_count,
-  filtered_repos.first_commit_time,
-  filtered_repos.last_commit_time,
-  filtered_repos.days_with_commits_count,
-  filtered_repos.commit_count,
-  filtered_repos.language,
-  filtered_repos.license_spdx_id,
-  filtered_repos.license_check,
-  filtered_repos.repo_activity_check
+  filtered_repos.has_contracts,
+  repo_snapshot.artifact_namespace,
+  repo_snapshot.artifact_name,
+  repo_snapshot.is_fork,
+  repo_snapshot.fork_count,
+  repo_snapshot.star_count,
+  repo_snapshot.first_commit_time,
+  repo_snapshot.last_commit_time,
+  repo_snapshot.days_with_commits_count,
+  repo_snapshot.commit_count,
+  repo_snapshot.language,
+  repo_snapshot.license_spdx_id,
+  repo_snapshot.license_check,
+  repo_snapshot.repo_older_than_1_month,
+  repo_snapshot.repo_activity_check,
+  repo_snapshot.project_id
 from filtered_repos
-left join {{ ref('projects_v1') }}
-  on filtered_repos.project_id = projects_v1.project_id
+left join repo_snapshot
+  on lower(filtered_repos.repo) = lower(repo_snapshot.repo)

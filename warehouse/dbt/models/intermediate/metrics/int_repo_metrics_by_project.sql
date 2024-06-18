@@ -1,3 +1,9 @@
+{{
+  config(
+    materialized='table'
+  )
+}}
+
 with repo_artifact as (
   select
     'GITHUB' as artifact_source,
