@@ -11,3 +11,5 @@ sources:
         identifier: agora_rf4_artifacts_by_app
       - name: agora_rf4_to_ossd
         identifier: agora_rf4_to_ossd
+      - name: agora_rf4_repos_with_contracts
+        identifier: agora_rf4_repos_with_contracts
