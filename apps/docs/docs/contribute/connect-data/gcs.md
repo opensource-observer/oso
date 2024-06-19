@@ -1,5 +1,5 @@
 ---
-title: Connect via Google Cloud Storage (GCS)
+title: 🏗️ Connect via Google Cloud Storage (GCS)
 sidebar_position: 4
 ---
 

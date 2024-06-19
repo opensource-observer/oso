@@ -1,15 +1,11 @@
 ---
-title: Do Data Science
-sidebar_position: 2
+title: Write Python notebooks
+sidebar_position: 3
 ---
 
-:::info
 Notebooks are a great way for data scientists to explore data, organize ad-hoc analysis, and share insights. We've included several template notebooks to help you get started working with OSO data. You can find these on [Google Colab](https://drive.google.com/drive/folders/1mzqrSToxPaWhsoGOR-UVldIsaX1gqP0F?usp=drive_link) and in the [community directory](https://github.com/opensource-observer/insights/tree/main/community/notebooks) of our insights repo. We encourage you to share your analysis and visualizations with the OSO community.
-:::
 
-:::warning
-You will need access to the OSO data warehouse to do data science. See our getting started guide [here](../get-started/#login-to-bigquery).
-:::
+You will need access to the OSO data warehouse to do data science. See our getting started guide [here](../get-started).
 
 ## Fetching Data
 
@@ -22,8 +18,6 @@ There are three common ways to fetch data from the OSO data warehouse so you can
 The next section will walk you through each of these methods.
 
 ### With Google Colab
-
----
 
 The fastest way to get started with data science on OSO is to copy one of our notebooks on [Google Colab](https://drive.google.com/drive/folders/1mzqrSToxPaWhsoGOR-UVldIsaX1gqP0F?usp=drive_link).
 
@@ -91,15 +85,13 @@ You can also create a new notebook from scratch and run it in the cloud. Here's 
 
 You can execute these imports in a new code block after you've grabbed your data or back at the top of your notebook with the other imports.
 
-That's it! You're ready to start analyzing the OSO dataset in a Google Colab notebook. You can [skip ahead to the tutorial](./data-science#tutorial-github-stars--forks-analysis) to see an example of how to analyze the data.
+That's it! You're ready to start analyzing the OSO dataset in a Google Colab notebook. You can [skip ahead to the tutorial](#tutorial-github-stars--forks-analysis) to see an example of how to analyze the data.
 
 :::tip
 You can also download your Colab notebooks to your local machine and run them in Jupyter.
 :::
 
 ### Using Jupyter on your machine
-
----
 
 This section will walk you through setting up a local Jupyter notebook environment, storing your GCP service account key on your machine, and connecting to the OSO data warehouse.
 
@@ -226,13 +218,9 @@ You can also go there directly by following [this link](https://console.cloud.go
 
 ![GCP APIs](./gcp_apis.png)
 
----
-
 Click the **Create Credentials** button.
 
 ![GCP Credentials](./gcp_credentials.png)
-
----
 
 You will prompted to configure your credentials:
 
@@ -240,8 +228,6 @@ You will prompted to configure your credentials:
 - **What data will you be accessing**: Application data (Note: this will create a service account)
 
 Click **Next**.
-
----
 
 You will be prompted to create a service account:
 
@@ -251,8 +237,6 @@ You will be prompted to create a service account:
 
 Click **Create and continue**.
 
----
-
 You will be prompted to grant your service account access to your project.
 
 - **Select a role**: BigQuery > BigQuery Admin
@@ -261,23 +245,17 @@ You will be prompted to grant your service account access to your project.
 
 Click **Continue**.
 
----
-
 You can skip the final step by clicking **Done**. Or, you may grant additional users access to your service account by adding their emails (this is not required).
 
 You should now see the new service account under the **Credentials** screen.
 
 ![GCP Credentials Keys](./gcp_credentials_keys.png)
 
----
-
 Click the pencil icon under **Actions** in the **Service Accounts** table.
 
 Then navigate to the **Keys** tab and click **Add Key** > **Create new key**.
 
 ![GCP Add Key](./gcp_add_key.png)
-
----
 
 Choose **JSON** and click **Create**.
 
@@ -296,8 +274,6 @@ $ jupyter notebook
 A Jupyter directory will open in your browser. Navigate to the directory where you want to store your notebook.
 
 Click **New** > **Python 3** to open a new notebook. (Use your virtual environment if you have one.)
-
----
 
 You should have a blank notebook open.
 
@@ -357,11 +333,9 @@ If you prefer to work with static data, you can export your data from BigQuery t
    df = pd.read_csv('path/to/your/file.csv')
    ```
 
-If this is your preferred workflow, you can [skip the first part](./data-science#transform) of the next section.
+If this is your preferred workflow, you can [skip the first part](#transform) of the next section.
 
 ## Running Your Own Analysis
-
----
 
 Once you have your local environment set up, you can fork any of the notebooks in the [community GitHub directory](https://github.com/opensource-observer/insights/tree/main/community/notebooks).
 
@@ -516,8 +490,6 @@ dff.to_csv('code_metrics.csv', index=False)
 
 ## Creating Impact Metrics
 
----
-
 An **impact metric** is essentially a SQL query made against the OSO dataset that enables a user to make objective comparisons of impact among projects.
 
 There are a variety of statistical techniques for analyzing data about impact metrics and identifying trends. This section provides a basic example of how to create an impact metric and run a distribution analysis.
@@ -549,8 +521,6 @@ The complete specification for an impact metric is available [here](../how-oso-w
 If you'd like to share your impact metric analysis with the OSO community, you can do so by opening an issue or pull request in the [Insights repository](https://github.com/opensource-observer/insights) with the script and visualization of the normalized data distribution. A maintainer will review and help gather feedback from the community. If the script is approved, it will be replicated in production and available on OSO and through the API. See [here](https://github.com/opensource-observer/insights/blob/main/community/notebooks/oso_impact_vector_starter.ipynb) for an example.
 
 ### Tutorial: analyze fork count distributions
-
----
 
 This example will walk you through the process of normalizing the distribution for the number of forks a project has.
 
@@ -607,8 +577,6 @@ df = results.to_dataframe()
 df.set_index('project_name', inplace=True)
 ```
 
----
-
 #### Normalizing the Data
 
 Now we have a dataframe with the latest fork counts for all projects in the OSO data warehouse. Next, we will normalize the fork column through some vector math. We will use the [z-score](https://en.wikipedia.org/wiki/Standard_score) to measure how many standard deviations a project's forks are from the mean, and the normalize the z-scores to a 0-1 scale.
@@ -640,8 +608,6 @@ We can also take a look at the relationship between absolute forks and the norma
 :::warning
 Not all datasets will have a log normal distribution. It's important to understand the distribution of the underlying impact metric and experiment with different models before setting performance targets.
 :::
-
----
 
 #### Comparing Projects
 
@@ -702,8 +668,6 @@ ax.grid(which='major', axis='x', color='black', lw=.5)
 ```
 
 ## Sharing Analysis
-
----
 
 Once you have completed your analysis, you can share it with the community by submitting a PR to the [insights repo](https://github.com/opensource-observer/insights).
 

@@ -1,5 +1,5 @@
 ---
-title: Connect via Airbyte
+title: 🏗️ Connect via Airbyte
 sidebar_position: 2
 ---
 

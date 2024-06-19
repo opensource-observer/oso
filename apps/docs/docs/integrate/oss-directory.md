@@ -1,6 +1,6 @@
 ---
 title: Fetch Project Info
-sidebar_position: 3
+sidebar_position: 12
 ---
 
 :::info

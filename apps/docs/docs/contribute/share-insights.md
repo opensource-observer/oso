@@ -19,7 +19,7 @@ Share your work analyzing and visualizing OSS data by contributing to the [Insig
 
 We've included some starter notebooks to help data scientists get going with OSO datasets. You can find templates and community notebooks [here](https://github.com/opensource-observer/insights/blob/main/community/notebooks).
 
-Also check out our playbook for [doing data science](../integrate/data-science) with OSO data.
+Also check out our playbook for [doing data science](../integrate/python-notebooks) with OSO data.
 
 If you've created a notebook that you think our community can learn from, submit a PR to the `./community/notebooks/` directory in the Insights repo. Please include markdown in your notebook to explain your work.
 
