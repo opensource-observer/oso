@@ -36,7 +36,7 @@ Before you begin you'll need the following on your system:
 - Python Poetry >= 1.8 (see [here](https://pypi.org/project/poetry/) to install it)
 - git (see [here](https://github.com/git-guides/install-git) if you don't have it installed)
 - A GitHub account (see [here](https://github.com/join) to open a new account)
-- BigQuery access (see [here](../get-started/#login-to-bigquery) if you don't have it setup already)
+- BigQuery access (see [here](../get-started) if you don't have it setup already)
 
 ### Install `gcloud`
 

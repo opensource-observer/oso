@@ -1,0 +1,267 @@
+---
+title: Data Overview
+sidebar_position: 1
+---
+
+import Button from "../../../src/components/plasmic/Button";
+import OsoLogo from "./oso-primary.png";
+import GithubLogo from "./github.png";
+import EthereumLogo from "./ethereum.png";
+import SuperchainLogo from "./superchain.png";
+import FarcasterLogo from "./farcaster.jpg";
+import LensLogo from "./lens-protocol.png";
+import GitcoinLogo from "./gitcoin.png";
+import OpenrankLogo from "./openrank.png";
+
+
+## OSO Data Pipeline
+
+<img src={OsoLogo} width="200"/>
+
+<Button
+  size={"compact"}
+  color={"blue"}
+  target={"_blank"}
+  link={"https://console.cloud.google.com/bigquery/analytics-hub/exchanges/projects/87806073973/locations/us/dataExchanges/open_source_observer_190181416ae/listings/oso_data_pipeline_190187c6517"}
+  children={"Subscribe on BigQuery"}
+/>  
+
+Every stage of the OSO data pipeline is queryable and downloadable.
+Like most dbt-based pipelines, we split the pipeline stages into
+[staging, intermediate, and mart models](https://docs.getdbt.com/best-practices/how-we-structure/1-guide-overview).
+
+You can find the reference documentation on every data model on  
+[https://models.opensource.observer/](https://models.opensource.observer/)
+
+### OSO Mart Models
+
+These are the final product from the data pipeline,
+which is served from our [API](../api).
+
+For example, you can get a list of
+[oss-directory projects](https://models.opensource.observer/#!/model/model.opensource_observer.projects_v1)
+
+```sql
+select
+  project_id,
+  project_name,
+  display_name,
+  description
+from `opensource-observer.oso.projects_v1` LIMIT 10
+```
+
+or [code metrics by project](https://models.opensource.observer/#!/model/model.opensource_observer.code_metrics_by_project_v1).
+
+```sql
+select *
+from `opensource-observer.oso.code_metrics_by_project_v1`
+where project_name = 'uniswap'
+```
+
+*Note: Unless the model name is versioned, expect that the model is unstable and should not depended on
+in a live production application.*
+
+
+### OSO Staging / Intermediate Models
+
+From source data, we produce a "universal event table", currently stored at
+[`int_events`](https://models.opensource.observer/#!/model/model.opensource_observer.int_events).
+Each event consists of an [event_type](../../how-oso-works/event)
+(e.g. a git commit or contract invocation),
+[to/from artifacts](../../how-oso-works/oss-directory/artifact),
+a timestamp, and an amount.
+
+From this event table, we aggregate events in downstream models to produce our metrics.
+For example, you may find it cheaper to run queries against
+[`int_events_daily_to_project`](https://models.opensource.observer/#!/model/model.opensource_observer.int_events_daily_to_project).
+
+```sql
+SELECT event_source, SUM(amount) FROM `opensource-observer.oso.int_events_daily_to_project` 
+WHERE project_id = 'XSDgPwFuQVcj57ARcKTGrm2w80KKlqJxaBWF6jZqe7w=' AND event_type = 'CONTRACT_INVOCATION_DAILY_COUNT'
+GROUP BY project_id, event_source
+```
+
+### OSO Playground
+
+<Button
+  size={"compact"}
+  color={"blue"}
+  target={"_blank"}
+  link={"https://console.cloud.google.com/bigquery/analytics-hub/exchanges/projects/87806073973/locations/us/dataExchanges/open_source_observer_190181416ae/listings/oso_playground_1901889910d"}
+  children={"Subscribe on BigQuery"}
+/>  
+
+We maintain a subset of projects and events in a playground dataset for testing and development.
+All of the production models are mirrored in this environment.
+
+## Source Data
+
+### GitHub Data
+
+<img src={GithubLogo} width="100"/>
+
+<Button
+  size={"compact"}
+  color={"blue"}
+  target={"_blank"}
+  link={"https://console.cloud.google.com/bigquery?project=githubarchive&page=project"}
+  children={"View on BigQuery"}
+/>  
+
+[Reference documentation](https://models.opensource.observer/#!/source_list/github_archive)
+
+GitHub data is predominantly provided by the incredible
+[GH Archive](https://www.gharchive.org/) project, which
+maintains a BigQuery public dataset that is refreshed every hour.
+
+For example, to count the number of issues opened, closed, and reopened on 2020/01/01:
+
+```sql
+SELECT event as issue_status, COUNT(*) as cnt FROM (
+  SELECT type, repo.name, actor.login,
+    JSON_EXTRACT(payload, '$.action') as event, 
+  FROM `githubarchive.day.20200101`
+  WHERE type = 'IssuesEvent'
+)
+GROUP by issue_status;
+```
+
+The underlying GitHub data is governed by the GitHub
+[terms of service](https://docs.github.com/en/site-policy/github-terms/github-terms-of-service).
+GH Archive code and documentation are covered by the
+[MIT license](https://github.com/igrigorik/gharchive.org/blob/master/LICENSE.md).
+
+### Ethereum Data
+
+<img src={EthereumLogo} width="100"/>
+
+<Button
+  size={"compact"}
+  color={"blue"}
+  target={"_blank"}
+  link={"https://console.cloud.google.com/marketplace/product/bigquery-public-data/blockchain-analytics-ethereum-mainnet-us?project=opensource-observer"}
+  children={"View on BigQuery"}
+/>  
+
+[Reference documentation](https://models.opensource.observer/#!/source_list/ethereum)
+
+The Google Cloud team maintains a public
+[Ethereum dataset](https://cloud.google.com/blog/products/data-analytics/ethereum-bigquery-public-dataset-smart-contract-analytics).
+This is backed by the [ethereum-etl](https://github.com/blockchain-etl/ethereum-etl) project.
+
+For example, to get 10 transactions from the latest block
+
+```sql
+select
+  `hash`,
+  block_number,
+  from_address,
+  to_address,
+  value,
+  gas,
+  gas_price
+from `bigquery-public-data.crypto_ethereum.transactions` as transactions
+order by block_number desc
+limit 10
+```
+
+ethereum-etl code is covered by the
+[MIT license](https://github.com/blockchain-etl/ethereum-etl/blob/develop/LICENSE).
+
+### Superchain Data
+
+<img src={SuperchainLogo} width="200"/>
+
+<Button
+  size={"compact"}
+  color={"blue"}
+  target={"_blank"}
+  link={"https://console.cloud.google.com/bigquery/analytics-hub/exchanges/projects/87806073973/locations/us/dataExchanges/open_source_observer_190181416ae/listings/superchain_data_19018918042"}
+  children={"Subscribe on BigQuery"}
+/>  
+
+OSO maintains public datasets for the Superchain,
+backed by our partners at
+[Goldsky](https://goldsky.com/).
+
+We currently have coverage for:
+- [Optimism mainnet](https://models.opensource.observer/#!/source_list/superchain)
+- [Base](https://models.opensource.observer/#!/source_list/base)
+- [Frax](https://models.opensource.observer/#!/source_list/frax)
+- [Metal](https://models.opensource.observer/#!/source_list/metal)
+- [Mode](https://models.opensource.observer/#!/source_list/mode)
+- [PGN](https://models.opensource.observer/#!/source_list/pgn)
+- [Zora](https://models.opensource.observer/#!/source_list/zora)
+
+### Farcaster Data
+
+<img src={FarcasterLogo} width="100"/>
+
+<Button
+  size={"compact"}
+  color={"blue"}
+  target={"_blank"}
+  link={""}
+  children={"Subscribe on BigQuery"}
+/>  
+
+[Reference documentation](https://models.opensource.observer/#!/source_list/farcaster)
+
+:::warning
+Coming soon...
+:::
+
+### Lens Data
+
+<img src={LensLogo} width="200"/>
+
+<Button
+  size={"compact"}
+  color={"blue"}
+  target={"_blank"}
+  link={""}
+  children={"Subscribe on BigQuery"}
+/>  
+
+[Reference documentation](https://models.opensource.observer/#!/source_list/lens)
+
+:::warning
+Coming soon...
+:::
+
+### Gitcoin Passport Data
+
+<img src={GitcoinLogo} width="200"/>
+
+<Button
+  size={"compact"}
+  color={"blue"}
+  target={"_blank"}
+  link={""}
+  children={"Subscribe on BigQuery"}
+/>  
+
+[Reference documentation](https://models.opensource.observer/#!/source_list/gitcoin)
+
+:::warning
+Coming soon...
+:::
+
+
+### OpenRank Data
+
+<img src={OpenrankLogo} width="200"/>
+
+<Button
+  size={"compact"}
+  color={"blue"}
+  target={"_blank"}
+  link={""}
+  children={"Subscribe on BigQuery"}
+/>  
+
+[Reference documentation](https://models.opensource.observer/#!/source_list/karma3)
+
+:::warning
+Coming soon...
+:::

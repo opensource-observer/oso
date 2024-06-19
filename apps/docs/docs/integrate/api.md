@@ -1,17 +1,14 @@
 ---
 title: Use the GraphQL API
-sidebar_position: 1
+sidebar_position: 10
 ---
 
-:::info
-The OSO API currently only allows read-only GraphQL queries.
-This API should only be used to fetch data to integrate into a live application.
-If you need to perform data science over a large dataset, see the guides on
-[doing data science](./data-science)
-and [downloading static data](./download-data).
-:::
-
-The OSO GraphQL API serves impact metrics for OSS projects, collections, and artifacts. Access to the OSO GraphQL API is necessary for any integration with OSO datasets.
+The OSO API currently only allows read-only GraphQL queries against OSO mart models
+(e.g. impact metrics, project info).
+This API should only be used to fetch data to integrate into a live application in production.
+For data exploration, check out the guides on
+[performing queries](./query-data.md)
+and [Python notebooks](./python-notebooks.md).
 
 ## Generate an API key
 
