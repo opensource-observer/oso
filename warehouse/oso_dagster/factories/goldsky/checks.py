@@ -183,9 +183,11 @@ def transactions_check(
                 description="No block results. Is this table empty?",
             )
         missing_block_hashes = block_number_results[0].missing_block_hashes
+        missing_transactions = block_number_results[0].missing_transactions
         # Add one to include the min block in the count
         metadata = dict(
             missing_block_hashes=missing_block_hashes,
+            missing_transactions=missing_transactions,
         )
 
         return AssetCheckResult(

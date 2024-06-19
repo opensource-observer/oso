@@ -5,4 +5,4 @@ SELECT
 FROM blocks as blocks
 LEFT JOIN transactions txs
   ON txs.{{ transactions_block_hash_column_name }} = blocks.{{ blocks_block_hash_column_name }}
-WHERE txs.{{ transactions_block_hash_column_name }} is null
+WHERE txs.{{ transactions_block_hash_column_name }} is null and blocks.transaction_count != 0

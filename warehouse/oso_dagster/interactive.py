@@ -8,6 +8,7 @@ load_dotenv()
 
 print(os.path.abspath("."))
 from .definitions import load_resources
+from .factories import AssetFactoryResponse
 from .assets import *
 from dagster import build_asset_context, AssetCheckResult
 from functools import reduce
@@ -20,29 +21,7 @@ def main():
     embed(header="Interactive oso_dagster loader")
 
 
-def run_full_checks(resources: dict):
-    asset_factories = [
-        optimism_traces,
-        # base_blocks,
-        # base_transactions,
-        # base_traces,
-        # frax_blocks,
-        # frax_transactions,
-        # frax_traces,
-        # metal_blocks,
-        # metal_transactions,
-        # metal_traces,
-        # mode_blocks,
-        # mode_transactions,
-        # mode_traces,
-        # pgn_blocks,
-        # pgn_transactions,
-        # pgn_traces,
-        # zora_blocks,
-        # zora_transactions,
-        # zora_traces,
-    ]
-
+def run_full_checks(resources: dict, asset_factories: List[AssetFactoryResponse]):
     checks_to_run = reduce(lambda x, y: x + y.checks, asset_factories, [])
     config = BlockchainCheckConfig(full_refresh=True)
     responses: Dict[str, AssetCheckResult] = {}
@@ -50,17 +29,6 @@ def run_full_checks(resources: dict):
         name = list(check.asset_and_check_keys)[0].name
         response = check(build_asset_context(), cbt=resources["cbt"], config=config)
         responses[name] = response
-
-    # cbt: CBTResource = resources["cbt"]
-    # context = build_asset_context()
-    # c = cbt.get(context.log)
-    # c.add_search_paths(
-    #     [
-    #         os.path.join(
-    #             os.path.abspath(os.path.dirname(__file__)), "factories/goldsky/queries"
-    #         )
-    #     ]
-    # )
 
     for check_name, response in responses.items():
         if response.passed:
