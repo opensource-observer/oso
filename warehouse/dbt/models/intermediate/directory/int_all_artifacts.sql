@@ -8,211 +8,90 @@
   in the future.
 #}
 
-with all_repos as (
-  {#
-    Currently this is just Github.
-    oss-directory needs some refactoring to support multiple repository providers
-  #}
-  select
-    "GITHUB" as artifact_source,
-    "REPOSITORY" as artifact_type,
-    projects.project_id,
-    repos.owner as artifact_namespace,
-    repos.name as artifact_name,
-    repos.url as artifact_url,
-    CAST(repos.id as STRING) as artifact_source_id
-  from
-    {{ ref('stg_ossd__current_projects') }} as projects
-  cross join
-    UNNEST(JSON_QUERY_ARRAY(projects.github)) as github
-  inner join
-    {{ ref('stg_ossd__current_repositories') }} as repos
-    on
-      LOWER(CONCAT("https://github.com/", repos.owner))
-      = LOWER(JSON_VALUE(github.url))
-      or LOWER(repos.url) = LOWER(JSON_VALUE(github.url))
-),
-
-all_npm_raw as (
-  select
-    "NPM" as artifact_source,
-    "PACKAGE" as artifact_type,
-    projects.project_id,
-    JSON_VALUE(npm.url) as artifact_source_id,
-    case
-      when
-        JSON_VALUE(npm.url) like "https://npmjs.com/package/%"
-        then SUBSTR(JSON_VALUE(npm.url), 28)
-      when
-        JSON_VALUE(npm.url) like "https://www.npmjs.com/package/%"
-        then SUBSTR(JSON_VALUE(npm.url), 31)
-    end as artifact_name,
-    JSON_VALUE(npm.url) as artifact_url
-  from
-    {{ ref('stg_ossd__current_projects') }} as projects
-  cross join
-    UNNEST(JSON_QUERY_ARRAY(projects.npm)) as npm
-),
-
-all_npm as (
+with ossd_artifacts as (
   select
     project_id,
-    artifact_source_id,
-    artifact_source,
-    artifact_type,
-    artifact_name,
-    artifact_url,
-    SPLIT(REPLACE(artifact_name, "@", ""), "/")[SAFE_OFFSET(0)]
-      as artifact_namespace
-  from all_npm_raw
-),
-
-ossd_blockchain as (
-  select
-    projects.project_id,
-    tag as artifact_type,
-    network as artifact_namespace,
-    network as artifact_source,
-    JSON_VALUE(blockchains.address) as artifact_source_id,
-    JSON_VALUE(blockchains.address) as artifact_name,
-    JSON_VALUE(blockchains.address) as artifact_url
-  from
-    {{ ref('stg_ossd__current_projects') }} as projects
-  cross join
-    UNNEST(JSON_QUERY_ARRAY(projects.blockchain)) as blockchains
-  cross join
-    UNNEST(JSON_VALUE_ARRAY(blockchains.networks)) as network
-  cross join
-    UNNEST(JSON_VALUE_ARRAY(blockchains.tags)) as tag
-),
-
-all_deployers as (
-  select
-    *,
-    "MAINNET" as artifact_namespace,
-    "ETHEREUM" as artifact_source
-  from {{ ref("stg_ethereum__deployers") }}
-  union all
-  select
-    *,
-    "ARBITRUM_ONE" as artifact_namespace,
-    "ARBITRUM_ONE" as artifact_source
-  from {{ ref("stg_arbitrum__deployers") }}
-  union all
-  {# Includes all deployers of a contract #}
-  select
-    block_timestamp,
-    transaction_hash,
-    deployer_address,
-    contract_address,
-    UPPER(network) as artifact_namespace,
-    UPPER(network) as artifact_source
-  from {{ ref("int_derived_contracts") }}
-  union all
-  {# Includes all factory deployers of a contract #}
-  select
-    block_timestamp,
-    transaction_hash,
-    factory_deployer_address as deployer_address,
-    contract_address,
-    UPPER(network) as artifact_namespace,
-    UPPER(network) as artifact_source
-  from {{ ref("int_derived_contracts") }}
-),
-
-discovered_contracts as (
-  select
-    "CONTRACT" as artifact_type,
-    ob.project_id,
-    ad.contract_address as artifact_source_id,
-    ob.artifact_source,
-    ob.artifact_namespace,
-    ad.contract_address as artifact_name,
-    ad.contract_address as artifact_url
-  from ossd_blockchain as ob
-  inner join all_deployers as ad
-    on
-      ob.artifact_source_id = ad.deployer_address
-      {#
-        We currently do not really have a notion of namespace in
-        oss-directory. We may need to change this when that time comes
-      #}
-      and UPPER(ob.artifact_source) in (UPPER(ad.artifact_source), "ANY_EVM")
-      and UPPER(ob.artifact_namespace) in (
-        UPPER(ad.artifact_namespace), "ANY_EVM"
-      )
-      and UPPER(ob.artifact_type) in ("EOA", "DEPLOYER", "FACTORY")
-),
-
-all_artifacts as (
-  select
-    project_id,
+    artifact_id,
     artifact_source_id,
     artifact_source,
     artifact_type,
     artifact_namespace,
     artifact_name,
     artifact_url
-  from
-    all_repos
-  union all
+  from {{ ref("int_artifacts_in_ossd_by_project") }}
+  where
+    artifact_type != 'DEPLOYER'
+    and artifact_source != 'ANY_EVM'
+),
+
+verified_deployers as (
   select
     project_id,
+    artifact_id,
     artifact_source_id,
     artifact_source,
-    artifact_type,
+    'DEPLOYER' as artifact_type,
     artifact_namespace,
     artifact_name,
-    artifact_url
-  from
-    ossd_blockchain
-  union all
+    artifact_name as artifact_url
+  from {{ ref("int_deployers_by_project") }}
+),
+
+verified_contracts as (
   select
     project_id,
+    artifact_id,
     artifact_source_id,
     artifact_source,
-    artifact_type,
+    'CONTRACT' as artifact_type,
     artifact_namespace,
     artifact_name,
-    artifact_url
-  from
-    discovered_contracts
-  union all
-  select
-    project_id,
-    artifact_source_id,
-    artifact_source,
-    artifact_type,
-    artifact_namespace,
-    artifact_name,
-    artifact_url
-  from
-    all_npm
+    artifact_name as artifact_url
+  from {{ ref("int_contracts_by_project") }}
 ),
 
 all_normalized_artifacts as (
-  select distinct
+  select
     project_id,
-    LOWER(artifact_source_id) as artifact_source_id,
-    {# 
-      artifact_source and artifact_type are considered internal constants hence
-      we apply an UPPER transform
-    #}
-    UPPER(artifact_source) as artifact_source,
-    UPPER(artifact_type) as artifact_type,
-    LOWER(artifact_namespace) as artifact_namespace,
-    LOWER(artifact_name) as artifact_name,
-    LOWER(artifact_url) as artifact_url
-  from all_artifacts
+    artifact_id,
+    artifact_source_id,
+    artifact_source,
+    artifact_type,
+    artifact_namespace,
+    artifact_name,
+    artifact_url
+  from ossd_artifacts
+  union all
+  select
+    project_id,
+    artifact_id,
+    artifact_source_id,
+    artifact_source,
+    artifact_type,
+    artifact_namespace,
+    artifact_name,
+    artifact_url
+  from verified_deployers
+  union all
+  select
+    project_id,
+    artifact_id,
+    artifact_source_id,
+    artifact_source,
+    artifact_type,
+    artifact_namespace,
+    artifact_name,
+    artifact_url
+  from verified_contracts
 )
 
-select
+select distinct
   project_id,
-  {{ oso_id("a.artifact_source", "a.artifact_source_id") }} as `artifact_id`,
+  artifact_id,
   artifact_source_id,
   artifact_source,
   artifact_namespace,
   artifact_name,
   artifact_url,
   artifact_type
-from all_normalized_artifacts as a
+from all_normalized_artifacts
