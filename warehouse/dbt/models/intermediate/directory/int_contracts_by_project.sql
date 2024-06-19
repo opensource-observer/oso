@@ -1,35 +1,75 @@
-with contracts as (
-  select
-    block_timestamp,
-    transaction_hash,
-    network,
-    deployer_address,
-    contract_address
-  from {{ ref('int_derived_contracts') }}
-),
-
-deployers as (
+{{
+  config(
+    materialized="table"
+  )
+}}
+with contracts_in_ossd as (
   select
     project_id,
-    artifact_name as deployer_address,
-    artifact_source as network
-  from {{ ref('int_deployers_by_project') }}
+    artifact_source as network,
+    artifact_name as contract_address
+  from {{ ref('int_artifacts_in_ossd_by_project') }}
+  where artifact_type = 'CONTRACT'
+),
+
+derived_contracts_by_project as (
+  select
+    deployers_by_project.project_id,
+    derived_contracts.network,
+    derived_contracts.contract_address
+  from {{ ref('int_derived_contracts') }} as derived_contracts
+  left join {{ ref('int_deployers_by_project') }} as deployers_by_project
+    on
+      derived_contracts.deployer_address = deployers_by_project.artifact_name
+      and derived_contracts.network = deployers_by_project.artifact_source
+  where deployers_by_project.artifact_name is not null
+),
+
+unified_contracts as (
+  select distinct *
+  from (
+    select
+      project_id,
+      network,
+      contract_address
+    from contracts_in_ossd
+    union all
+    select
+      project_id,
+      network,
+      contract_address
+    from derived_contracts_by_project
+  )
 ),
 
 discovered_contracts as (
   select
-    deployers.project_id,
-    contracts.block_timestamp,
-    contracts.transaction_hash,
-    contracts.network,
-    contracts.deployer_address,
-    contracts.contract_address
-  from contracts
-  left join deployers
+    unified_contracts.project_id,
+    unified_contracts.network,
+    factories.contract_address
+  from {{ ref('int_factories') }} as factories
+  left join unified_contracts
     on
-      contracts.deployer_address = deployers.deployer_address
-      and contracts.network = deployers.network
-  where deployers.deployer_address is not null
+      factories.factory_address = unified_contracts.contract_address
+      and factories.network = unified_contracts.network
+  where unified_contracts.project_id is not null
+),
+
+contracts_by_project as (
+  select distinct *
+  from (
+    select
+      project_id,
+      network,
+      contract_address
+    from discovered_contracts
+    union all
+    select
+      project_id,
+      network,
+      contract_address
+    from unified_contracts
+  )
 )
 
 select
@@ -39,4 +79,4 @@ select
   contract_address as artifact_source_id,
   LOWER(network) as artifact_namespace,
   contract_address as artifact_name
-from discovered_contracts
+from contracts_by_project
