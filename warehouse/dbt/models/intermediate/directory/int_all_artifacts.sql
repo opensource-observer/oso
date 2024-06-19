@@ -19,9 +19,7 @@ with ossd_artifacts as (
     artifact_name,
     artifact_url
   from {{ ref("int_artifacts_in_ossd_by_project") }}
-  where
-    artifact_type != 'DEPLOYER'
-    and artifact_source != 'ANY_EVM'
+  where artifact_type not in ('DEPLOYER', 'CONTRACT')
 ),
 
 verified_deployers as (
@@ -50,18 +48,7 @@ verified_contracts as (
   from {{ ref("int_contracts_by_project") }}
 ),
 
-all_normalized_artifacts as (
-  select
-    project_id,
-    artifact_id,
-    artifact_source_id,
-    artifact_source,
-    artifact_type,
-    artifact_namespace,
-    artifact_name,
-    artifact_url
-  from ossd_artifacts
-  union all
+onchain_artifacts as (
   select
     project_id,
     artifact_id,
@@ -83,6 +70,44 @@ all_normalized_artifacts as (
     artifact_name,
     artifact_url
   from verified_contracts
+),
+
+other_artifacts as (
+  select
+    project_id,
+    artifact_id,
+    artifact_source_id,
+    artifact_source,
+    artifact_type,
+    artifact_namespace,
+    artifact_name,
+    artifact_url
+  from ossd_artifacts
+  where artifact_id not in (select artifact_id from onchain_artifacts)
+),
+
+all_normalized_artifacts as (
+  select
+    project_id,
+    artifact_id,
+    artifact_source_id,
+    artifact_source,
+    artifact_type,
+    artifact_namespace,
+    artifact_name,
+    artifact_url
+  from other_artifacts
+  union all
+  select
+    project_id,
+    artifact_id,
+    artifact_source_id,
+    artifact_source,
+    artifact_type,
+    artifact_namespace,
+    artifact_name,
+    artifact_url
+  from onchain_artifacts
 )
 
 select distinct
