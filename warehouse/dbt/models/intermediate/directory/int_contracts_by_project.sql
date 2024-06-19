@@ -1,3 +1,8 @@
+{{
+  config(
+    materialized="table"
+  )
+}}
 with contracts_in_ossd as (
   select
     project_id,
