@@ -1,16 +1,7 @@
-with factories_and_deployers as (
-  select
-    factories.block_timestamp,
-    factories.transaction_hash,
-    factories.network,
-    factories.originating_address as deployer_address,
-    factories.contract_address as contract_address
-  from {{ ref("int_factories") }} as factories
-  inner join {{ ref("int_deployers") }} as deployers
-    on
-      factories.factory_address = deployers.contract_address
-      and factories.network = deployers.network
-  union all
+with contracts_deployed_no_factory as (
+  {#
+    This gets all of the contracts that weren't deployed with a factory
+  #}
   select
     block_timestamp,
     transaction_hash,
@@ -18,9 +9,31 @@ with factories_and_deployers as (
     deployer_address,
     contract_address
   from {{ ref("int_deployers") }}
+  where contract_address is not null
 ),
 
-factories_and_proxies as (
+contracts_deployed_via_factory as (
+  {# 
+    This gets all of the contracts deployed by any factory.
+
+    Deployer Address is the EOA address that started the transaction
+  #}
+  select
+    block_timestamp,
+    transaction_hash,
+    network,
+    originating_address as deployer_address,
+    contract_address as contract_address
+  from {{ ref("int_factories") }}
+  where contract_address is not null
+),
+
+contracts_deployed_by_safe_or_known_proxy as (
+  {# 
+    This gets all of the contracts deployed by a safe or other known proxy
+
+    Deployer address is a proxy (safe or other known proxy) that deployed the contract
+  #}
   select
     factories.block_timestamp,
     factories.transaction_hash,
@@ -30,22 +43,16 @@ factories_and_proxies as (
   from {{ ref("int_factories") }} as factories
   inner join {{ ref("int_proxies") }} as proxies
     on
-      factories.originating_address = proxies.address
+      factories.originating_contract = proxies.address
       and factories.network = proxies.network
+  where contract_address is not null
 )
 
-select
-  block_timestamp,
-  transaction_hash,
-  network,
-  deployer_address,
-  contract_address
-from factories_and_deployers
+select *
+from contracts_deployed_no_factory
 union all
-select
-  block_timestamp,
-  transaction_hash,
-  network,
-  deployer_address,
-  contract_address
-from factories_and_proxies
+select *
+from contracts_deployed_via_factory
+union all
+select *
+from contracts_deployed_by_safe_or_known_proxy
