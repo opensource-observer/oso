@@ -1,3 +1,6 @@
+FROM ghcr.io/opensource-observer/oso-public-vars:latest AS public_vars
+
+
 FROM ubuntu:jammy
 
 ARG GCLOUD_VERSION=478.0.0
@@ -18,9 +21,6 @@ RUN curl -o gcloud.tar.gz https://dl.google.com/dl/cloudsdk/channels/rapid/downl
     rm gcloud.tar.gz && true
 ENV PATH $PATH:/google-cloud-sdk/bin
 
-
-ENV DAGSTER_DBT_PARSE_PROJECT_ON_LOAD=1
-ENV DAGSTER_DBT_GENERATE_AND_AUTH_GCP=1
 
 RUN mkdir -p /usr/src/app && \
     bash -c "mkdir -p /usr/src/app/warehouse/{bq2cloudsql,oso_dagster,oso_lets_go,common}" && \
@@ -45,5 +45,11 @@ COPY . /usr/src/app
 
 RUN poetry config virtualenvs.create false && \
     poetry install
+
+ENV DAGSTER_DBT_TARGET_BASE_DIR=/dbt_targets
+
+COPY --from=public_vars ./public/vars.env /usr/src/app/vars.env
+RUN mkdir -p ${DAGSTER_DBT_TARGET_BASE_DIR} && \
+    python3.12 -m oso_dagster.compile --additional-vars /usr/src/app/vars.env
 
 ENTRYPOINT  []
