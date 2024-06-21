@@ -61,8 +61,6 @@ spec:
         env:
           - name: DAGSTER_DBT_GENERATE_AND_AUTH_GCP
             value: "1"
-          - name: DAGSTER_DBT_TARGET_BASE_DIR
-            value: /tmp/dbt-targets
         envConfigMaps:
           - name: dagster-oso-extra-env
         resources:
@@ -76,8 +74,6 @@ spec:
         env:
           - name: DAGSTER_DBT_GENERATE_AND_AUTH_GCP
             value: "1"
-          - name: DAGSTER_DBT_TARGET_BASE_DIR
-            value: /tmp/dbt-targets
         envConfigMaps:
           - name: dagster-oso-extra-env
         resources:
@@ -97,8 +93,6 @@ spec:
             env:
               - name: DAGSTER_DBT_GENERATE_AND_AUTH_GCP
                 value: "1"
-              - name: DAGSTER_DBT_TARGET_BASE_DIR
-                value: /tmp/dbt-targets
             envConfigMaps:
               - name: dagster-oso-extra-env
             port: 3030
