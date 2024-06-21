@@ -262,6 +262,12 @@ resource "google_storage_bucket_iam_member" "member" {
   member = "serviceAccount:${google_service_account.warehouse_admin.email}"
 }
 
+resource "google_project_iam_member" "bq_admin" {
+  project = data.google_project.project.project_id
+  role    = "roles/bigquery.admin"
+  member  = "serviceAccount:${google_service_account.warehouse_admin.email}"
+}
+
 resource "google_project_iam_member" "readonly_custom_role" {
   project = data.google_project.project.project_id
   role    = google_project_iam_custom_role.readonly_custom_role.id
