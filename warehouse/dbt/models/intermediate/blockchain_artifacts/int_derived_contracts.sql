@@ -48,13 +48,17 @@ derived_contracts as (
     deployer_address,
     contract_address
   from contracts_deployed_no_factory
+
   union all
+
   select
     network,
     deployer_address,
     contract_address
   from contracts_deployed_via_factory
+
   union all
+
   select
     network,
     deployer_address,
