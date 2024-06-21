@@ -71,8 +71,6 @@ def write_dbt_profile(
         project_id, profile_name, targets, template
     )
 
-    print(generated_profiles_yml)
-
     with open(profile_path, "w") as f:
         f.write(generated_profiles_yml)
 
