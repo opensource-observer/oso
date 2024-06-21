@@ -14,7 +14,7 @@
 -- Loop through each suffix and generate the full table reference
 {% for suffix in suffixes %}
     {% set table_name = 'op_airdrop' ~ suffix ~ '_addresses_detailed_list' %}
-    {% set query = "select address, op_amount_raw/1e18 as op_amount, '" ~ suffix ~ "' as airdrop_round from " ~ source('static_data_sources', table_name) %}
+    {% set query = "select address, op_amount_raw/1e18 as op_amount, cast('" ~ suffix ~ "' as int) as airdrop_round from " ~ source('static_data_sources', table_name) %}
     {% do queries.append(query) %}
 {% endfor %}
 
