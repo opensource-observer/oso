@@ -39,6 +39,22 @@ passport_scores as (
   from {{ ref('stg_passport__scores') }}
 ),
 
+airdrop_recipients as (
+  select
+    address,
+    1 as airdrop_recipient,
+    CAST(
+      COALESCE(count_drops > 1, false) as int64
+    ) as airdrop_verification
+  from (
+    select
+      LOWER(address) as address,
+      COUNT(distinct airdrop_round) as count_drops
+    from {{ ref('stg_optimism_airdrop_addresses') }}
+    group by LOWER(address)
+  )
+),
+
 all_addresses as (
   select distinct address
   from (
@@ -47,6 +63,8 @@ all_addresses as (
     select address from passport_scores
     union all
     select address from optimist_nft_holders
+    union all
+    select address from airdrop_recipients
   )
 ),
 
@@ -64,7 +82,11 @@ trusted_user_model as (
     COALESCE(passport_scores.passport_verification, 0)
       as passport_verification,
     COALESCE(optimist_nft_holders.optimist_nft_verification, 0)
-      as optimist_nft_verification
+      as optimist_nft_verification,
+    COALESCE(airdrop_recipients.airdrop_recipient, 0)
+      as airdrop_recipient,
+    COALESCE(airdrop_recipients.airdrop_verification, 0)
+      as airdrop_verification
   from all_addresses
   left join farcaster_users
     on all_addresses.address = farcaster_users.address
@@ -74,6 +96,8 @@ trusted_user_model as (
     on all_addresses.address = passport_scores.address
   left join optimist_nft_holders
     on all_addresses.address = optimist_nft_holders.address
+  left join airdrop_recipients
+    on all_addresses.address = airdrop_recipients.address
 )
 
 select
@@ -84,11 +108,14 @@ select
   passport_user,
   passport_verification,
   optimist_nft_verification,
+  airdrop_recipient,
+  airdrop_verification,
   (
     farcaster_user
     + farcaster_prepermissionless
     + eigentrust_verification
     + passport_verification
     + optimist_nft_verification
+    + airdrop_verification
   ) > 1 as is_trusted_user
 from trusted_user_model
