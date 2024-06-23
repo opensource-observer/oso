@@ -19,7 +19,7 @@ eigentrust_top_users as (
     snapshot_time = '2024-05-21'
     and strategy_id = 1
   order by eigentrust_rank desc
-  limit 50000
+  limit 42000
 ),
 
 optimist_nft_holders as (
