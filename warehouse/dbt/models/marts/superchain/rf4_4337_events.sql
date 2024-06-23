@@ -45,13 +45,24 @@
 
 with txns as (
   {{ final_query }}
+),
+
+tagged_txns as (
+  select
+    txns.*,
+    {{ oso_id("network", "address") }} as artifact_id
+  from txns
 )
 
 select distinct
-  {{ oso_id("network", "address") }} as artifact_id,
-  network,
-  block_timestamp,
-  transaction_hash,
-  address,
-  type
-from txns
+  artifacts_by_project_v1.project_id,
+  tagged_txns.artifact_id,
+  tagged_txns.network,
+  tagged_txns.block_timestamp,
+  tagged_txns.transaction_hash,
+  tagged_txns.address,
+  tagged_txns.type
+from tagged_txns
+left join {{ ref('artifacts_by_project_v1') }}
+  on tagged_txns.artifact_id = artifacts_by_project_v1.artifact_id
+where artifacts_by_project_v1.project_id is not null
