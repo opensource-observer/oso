@@ -1,13 +1,13 @@
 ---
 title: Use the GraphQL API
-sidebar_position: 10
+sidebar_position: 2
 ---
 
 The OSO API currently only allows read-only GraphQL queries against OSO mart models
 (e.g. impact metrics, project info).
 This API should only be used to fetch data to integrate into a live application in production.
 For data exploration, check out the guides on
-[performing queries](./query-data.md)
+[performing queries](./query-data.mdx)
 and [Python notebooks](./python-notebooks.md).
 
 ## Generate an API key
@@ -34,7 +34,9 @@ All API requests are sent to the following URL:
 https://opensource-observer.hasura.app/v1/graphql
 ```
 
-You can navigate to our [public GraphQL explorer](https://cloud.hasura.io/public/graphiql?endpoint=https://opensource-observer.hasura.app/v1/graphql) to explore the schema and execute test queries.
+You can navigate to our
+[public GraphQL explorer](https://cloud.hasura.io/public/graphiql?endpoint=https://opensource-observer.hasura.app/v1/graphql)
+to explore the schema and execute test queries.
 
 ## Authentication
 
@@ -86,7 +88,7 @@ query GetCodeMetrics {
 
 ## GraphQL Explorer
 
-The GraphQL schema is automatically generated from [`oso/dbt/models/marts`](https://github.com/opensource-observer/oso/tree/main/dbt/models/marts). Any dbt model defined there will automatically be exported to our GraphQL API. See the guide on [adding DBT models](../contribute/impact-models) for more information on contributing to our marts models.
+The GraphQL schema is automatically generated from [`oso/dbt/models/marts`](https://github.com/opensource-observer/oso/tree/main/dbt/models/marts). Any dbt model defined there will automatically be exported to our GraphQL API. See the guide on [adding DBT models](../contribute/impact-models.md) for more information on contributing to our marts models.
 
 :::warning
 Our data pipeline is under heavy development and all table schemas are subject to change until we introduce versioning to marts models.

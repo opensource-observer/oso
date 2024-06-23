@@ -13,8 +13,16 @@ import LensLogo from "./lens-protocol.png";
 import GitcoinLogo from "./gitcoin.png";
 import OpenrankLogo from "./openrank.png";
 
+First, go to the
+[Get Started](../../get-started/index.mdx)
+page to setup your BigQuery account.
 
-## OSO Data Pipeline
+## OSO Data Exchange on Analytics Hub
+
+To explore all the OSO datasets available on our BigQuery data exchange,
+see [here](https://console.cloud.google.com/bigquery/analytics-hub/exchanges/projects/87806073973/locations/us/dataExchanges/open_source_observer_190181416ae).
+
+## OSO Production Data Pipeline
 
 <img src={OsoLogo} width="200"/>
 
@@ -36,7 +44,7 @@ You can find the reference documentation on every data model on
 ### OSO Mart Models
 
 These are the final product from the data pipeline,
-which is served from our [API](../api).
+which is served from our [API](../api.md).
 
 For example, you can get a list of
 [oss-directory projects](https://models.opensource.observer/#!/model/model.opensource_observer.projects_v1)
@@ -47,16 +55,18 @@ select
   project_name,
   display_name,
   description
-from `opensource-observer.oso.projects_v1` LIMIT 10
+from `YOUR_PROJECT_NAME.oso_production.projects_v1` LIMIT 10
 ```
 
 or [code metrics by project](https://models.opensource.observer/#!/model/model.opensource_observer.code_metrics_by_project_v1).
 
 ```sql
 select *
-from `opensource-observer.oso.code_metrics_by_project_v1`
+from `YOUR_PROJECT_NAME.oso_production.code_metrics_by_project_v1`
 where project_name = 'uniswap'
 ```
+
+**Remember to update the project name in the query.**
 
 *Note: Unless the model name is versioned, expect that the model is unstable and should not depended on
 in a live production application.*
@@ -66,9 +76,9 @@ in a live production application.*
 
 From source data, we produce a "universal event table", currently stored at
 [`int_events`](https://models.opensource.observer/#!/model/model.opensource_observer.int_events).
-Each event consists of an [event_type](../../how-oso-works/event)
+Each event consists of an [event_type](../../how-oso-works/event.md)
 (e.g. a git commit or contract invocation),
-[to/from artifacts](../../how-oso-works/oss-directory/artifact),
+[to/from artifacts](../../how-oso-works/oss-directory/artifact.md),
 a timestamp, and an amount.
 
 From this event table, we aggregate events in downstream models to produce our metrics.
@@ -76,7 +86,8 @@ For example, you may find it cheaper to run queries against
 [`int_events_daily_to_project`](https://models.opensource.observer/#!/model/model.opensource_observer.int_events_daily_to_project).
 
 ```sql
-SELECT event_source, SUM(amount) FROM `opensource-observer.oso.int_events_daily_to_project` 
+SELECT event_source, SUM(amount)
+FROM `YOUR_PROJECT_NAME.oso_production.int_events_daily_to_project` 
 WHERE project_id = 'XSDgPwFuQVcj57ARcKTGrm2w80KKlqJxaBWF6jZqe7w=' AND event_type = 'CONTRACT_INVOCATION_DAILY_COUNT'
 GROUP BY project_id, event_source
 ```
@@ -180,7 +191,7 @@ ethereum-etl code is covered by the
   children={"Subscribe on BigQuery"}
 />  
 
-OSO maintains public datasets for the Superchain,
+OSO is proud to provide public datasets for the Superchain,
 backed by our partners at
 [Goldsky](https://goldsky.com/).
 
@@ -193,17 +204,12 @@ We currently have coverage for:
 - [PGN](https://models.opensource.observer/#!/source_list/pgn)
 - [Zora](https://models.opensource.observer/#!/source_list/zora)
 
+For term of use, please see the OSO
+[terms and conditions](https://www.opensource.observer/terms).
+
 ### Farcaster Data
 
 <img src={FarcasterLogo} width="100"/>
-
-<Button
-  size={"compact"}
-  color={"blue"}
-  target={"_blank"}
-  link={""}
-  children={"Subscribe on BigQuery"}
-/>  
 
 [Reference documentation](https://models.opensource.observer/#!/source_list/farcaster)
 
@@ -215,14 +221,6 @@ Coming soon...
 
 <img src={LensLogo} width="200"/>
 
-<Button
-  size={"compact"}
-  color={"blue"}
-  target={"_blank"}
-  link={""}
-  children={"Subscribe on BigQuery"}
-/>  
-
 [Reference documentation](https://models.opensource.observer/#!/source_list/lens)
 
 :::warning
@@ -233,35 +231,72 @@ Coming soon...
 
 <img src={GitcoinLogo} width="200"/>
 
-<Button
-  size={"compact"}
-  color={"blue"}
-  target={"_blank"}
-  link={""}
-  children={"Subscribe on BigQuery"}
-/>  
-
 [Reference documentation](https://models.opensource.observer/#!/source_list/gitcoin)
 
-:::warning
-Coming soon...
-:::
+[Gitcoin Passport](https://passport.gitcoin.co/)
+is a web3 identity verification protocol.
+OSO and Gitcoin have collaborated to make this dataset
+of address scores available for use in understanding user reputations.
 
+For example, you can can vitalik.eth's passport score:
+
+```sql
+select
+  passport_address,
+  last_score_timestamp,
+  evidence_rawScore,
+  evidence_threshold,
+from opensource-observer.gitcoin.passport_scores
+where passport_address = '0xd8da6bf26964af9d7eed9e03e53415d37aa96045'
+```
 
 ### OpenRank Data
 
 <img src={OpenrankLogo} width="200"/>
 
-<Button
-  size={"compact"}
-  color={"blue"}
-  target={"_blank"}
-  link={""}
-  children={"Subscribe on BigQuery"}
-/>  
-
 [Reference documentation](https://models.opensource.observer/#!/source_list/karma3)
 
-:::warning
-Coming soon...
-:::
+[OpenRank](https://openrank.com/) is a decentralized reputation protocol based on
+[Eigentrust](https://en.wikipedia.org/wiki/EigenTrust).
+In this dataset, we scored Farcaster IDs.
+
+For example, you can get the reputational score of vitalik.eth
+
+```sql
+select
+  strategy_id,
+  i,
+  v,
+  date
+from opensource-observer.karma3.globaltrust
+where i = 5650
+```
+
+## Subscribe to a dataset
+
+### 1. Data exchange listings
+
+For datasets listed on the OSO public data exchange,
+click on the "Subscribe on BigQuery" button to create a new
+dataset that is linked to OSO.
+
+![subscribe](./bigquery_subscribe.png)
+
+This has a few benefits:
+
+- Data is automatically kept live and real-time with OSO
+- You keep a reference to the data in your own GCP project
+- This gives OSO the ability to track public usage of models
+
+### 2. Direct access to datasets
+
+For datasets without a listing on the OSO public data exchange,
+we make the dataset open to public queries for direct queries.
+Click on the "View on BigQuery" button to go straight
+to the dataset.
+
+You can star the dataset to keep it in your project.
+
+![star](./bigquery_starred_datasets.png)
+
+
