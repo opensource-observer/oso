@@ -8,7 +8,7 @@ with transactions as (
     LOWER(to_address) as to_artifact_source_id,    
     LOWER(from_address) as from_artifact_source_id,
     receipt_status,
-    (receipt_gas_used * receipt_gas_price) as l2_gas_fee
+    (receipt_gas_used * gas_price) as l2_gas_fee
   from {{ ref('int_%s_transactions' % lower_network_name) }}
   where
     input != "0x"
