@@ -78,7 +78,6 @@ raw_4337_events as (
     on relevant_txns.transaction_hash = txns.transaction_hash
   where
     txns.transaction_type = 'from'
-    and project_id is not null
 )
 
 select
@@ -91,6 +90,7 @@ select
   '4337 INTERACTION' as event_type,
   count(distinct transaction_hash) as amount
 from raw_4337_events
+where project_id is not null
 group by
   bucket_day,
   project_id,
