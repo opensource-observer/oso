@@ -30,7 +30,7 @@
     case
       when proxy_address = from_address then 'to'
       else 'from'
-    end as type
+    end as transaction_type
   from {{ ref(table_name) }}
   where
     proxy_type = 'ENTRYPOINT'
@@ -50,19 +50,62 @@ with txns as (
 tagged_txns as (
   select
     txns.*,
-    {{ oso_id("network", "address") }} as artifact_id
+    artifacts_by_project_v1.project_id,
+    artifacts_by_project_v1.project_name
   from txns
+  left join {{ ref('artifacts_by_project_v1') }}
+    on
+      txns.address = artifacts_by_project_v1.artifact_name
+      and txns.network = artifacts_by_project_v1.artifact_source
+),
+
+relevant_txns as (
+  select tagged_txns.*
+  from tagged_txns
+  where transaction_hash in (
+    select distinct transaction_hash
+    from tagged_txns
+    where
+      project_id is not null
+      and transaction_type = 'to'
+      and address not in (
+        lower('0x0000000071727De22E5E9d8BAf0edAc6f37da032'),
+        lower('0x5ff137d4b0fdcd49dca30c7cf57e578a026d2789')
+      )
+  )
+),
+
+raw_4337_events as (
+  select
+    relevant_txns.project_id,
+    relevant_txns.project_name,
+    relevant_txns.transaction_hash,
+    relevant_txns.network as event_source,
+    relevant_txns.address as to_artifact_name,
+    txns.address as from_artifact_name,
+    timestamp_trunc(relevant_txns.block_timestamp, day) as bucket_day
+  from relevant_txns
+  left join txns
+    on relevant_txns.transaction_hash = txns.transaction_hash
+  where
+    txns.transaction_type = 'from'
+    and project_id is not null
 )
 
-select distinct
-  artifacts_by_project_v1.project_id,
-  tagged_txns.artifact_id,
-  tagged_txns.network,
-  tagged_txns.block_timestamp,
-  tagged_txns.transaction_hash,
-  tagged_txns.address,
-  tagged_txns.type
-from tagged_txns
-left join {{ ref('artifacts_by_project_v1') }}
-  on tagged_txns.artifact_id = artifacts_by_project_v1.artifact_id
-where artifacts_by_project_v1.project_id is not null
+select
+  bucket_day,
+  project_id,
+  project_name,
+  from_artifact_name,
+  to_artifact_name,
+  event_source,
+  '4337 INTERACTION' as event_type,
+  count(distinct transaction_hash) as amount
+from raw_4337_events
+group by
+  bucket_day,
+  project_id,
+  project_name,
+  from_artifact_name,
+  to_artifact_name,
+  event_source
