@@ -1,14 +1,3 @@
-{{
-  config(
-    materialized='incremental',
-    partition_by={
-      "field": "block_timestamp",
-      "data_type": "timestamp",
-      "granularity": "day",
-    }
-  )
-}}
-
 {% set networks = ["optimism", "base", "frax", "metal", "mode", "zora"] %}
 {% set start_date = '2023-10-01' %}
 {% set end_date = '2024-06-01' %}
