@@ -34,7 +34,7 @@ with sender_transfer_rates as (
 ,aggregated_data as (
   select 
     chain_name,
-    sender,
+    sender as address,
     max(wk_txs) as max_wk_txs,
     max(max_hr_txs) as max_hr_txs,
     avg(wk_txs) as avg_wk_txs,
