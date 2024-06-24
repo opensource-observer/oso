@@ -27,7 +27,7 @@ with metrics as (
   union all
   select * from {{ ref('rf4_power_user_addresses') }}
   union all
-  select * from {{ ref('rf4_openrank_trusted_users') }}
+  select * from {{ ref('rf4_openrank_trusted_users_count') }}
 ),
 
 pivot_metrics as (
