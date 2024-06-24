@@ -2,12 +2,12 @@
 
 with sender_transfer_rates as (
     select 
-        network_name as chain_name
+        '{{ network_name }}' as chain_name
         ,date_trunc(block_timestamp, hour) as hr
         ,from_address as sender
         ,min(block_timestamp) as min_block_time
         ,max(block_timestamp) as max_block_time
-        ,count(*) as hr_tx
+        ,count(*) as hr_txs
     from {{ source(network_name, "transactions") }}
     where 
         gas_price > 0 
