@@ -2,9 +2,10 @@ with projects as (
   select
     app.application_id,
     app.project_name,
-    ossd.oso_project_name
+    ossd.oso_name as oso_project_name
   from {{ source('static_data_sources', 'agora_rf4_applications') }} as app
-  left join {{ source('static_data_sources', 'agora_rf4_to_ossd') }} as ossd
+  left join
+    {{ source('static_data_sources', 'rf4_project_eligibility') }} as ossd
     on app.application_id = ossd.application_id
 ),
 
