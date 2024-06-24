@@ -53,7 +53,7 @@ models:
           **Project Name**: *A unique human-readable project name.*
       - name: gas_fees
         description: >
-          **Gas Fees**: Sum of a project's total contribution to gas fees across the Superchain.
+          **Gas Fees**: Sum of a project's total contribution to gas fees across the Superchain over the RF4 scope period October 2023 - June 2024.
           
           Gas fees are the primary recurring revenue source for the Superchain and a key indicator of aggregate blockspace demand. A project’s gas fee contribution is influenced by its total volume of contract interactions, the computational complexity of those interactions, and the state of the underlying gas market at the time of those transactions. In the long run, gas fees are what will power Retro Funding and enable it to continue in perpetuity. All members of the Superchain have committed at least 15% of their gross profit from gas fees to Retro Funding. Supporting projects that generate revenue in the form of gas fees helps power the economic engine of the Superchain.
       - name: transaction_count
@@ -65,7 +65,7 @@ models:
           This indicator includes successful transactions with a `to_address` owned by the project, as well as internal transactions that originate from one of the project's contracts and interact with the canonical EntryPoint ([EIP 4337](https://eips.ethereum.org/EIPS/eip-4337)) contracts.
       - name: trusted_transaction_count
         description: >
-          **Interactions from Trusted Optimism Users**: Count of a project’s transactions performed by trusted users, over the RF4 scope period October 2023 - June 2024.
+          **Interactions from Trusted Optimism Users**: Count of a project’s transactions performed by trusted users over the RF4 scope period October 2023 - June 2024.
           
           Bots, airdrop farming, and sybil attacks are longstanding problems in crypto. This metric is designed to filter out these types of interactions and focus on the activity of a small subset of trusted users (less than 5% of all active addresses on the Superchain). By tracking interactions specifically from trusted users, we gain a picture of blockspace demand that is less influenced by the effects of bots / farmers / sybils.
           
@@ -136,4 +136,28 @@ models:
           **OpenRank Trusted Users**: Count of addresses in the badgeholder "web of trust" who have interacted with the project over the RF4 scope period (October 2023 - June 2024).
           
           [EigenTrust](https://docs.karma3labs.com/eigentrust), aka OpenRank, is a reputation algorithm being applied by Karma3Labs to the Farcaster social graph. To seed the "web of trust", we begin with a list of 132 badgeholder addresses, look up their Farcaster IDs (present for 68 of the 132 addresses), and use OpenRank to identify those users' 100 closest connections. The result is a set of around 5000 addresses that have the closest social connection to the badgeholder community. Finally, we counts the number of addresses in the web of trust who have interacted with a given project. Note: this is an experimental metric designed and results in an even smaller but potentially higher signal subset of users than the "trusted user" model applied elsewhere.
-      
+      - name: log_gas_fees
+        description: >
+          **LOGSCALE: Gas Fees**: Sum of a project's total contribution to gas fees across the Superchain over the RF4 scope period October 2023 - June 2024, adjusted to a logarithmic scale.
+          
+          Gas fees are the primary recurring revenue source for the Superchain and a key indicator of aggregate blockspace demand. A project’s gas fee contribution is influenced by its total volume of contract interactions, the computational complexity of those interactions, and the state of the underlying gas market at the time of those transactions. In the long run, gas fees are what will power Retro Funding and enable it to continue in perpetuity. All members of the Superchain have committed at least 15% of their gross profit from gas fees to Retro Funding. Supporting projects that generate revenue in the form of gas fees helps power the economic engine of the Superchain.
+
+          This indicator is transformed to a logarithmic scale (`log10(gas_fees + 1)`). Logarithmic scales are useful for metrics that span several orders of magnitude such as gas fees and transactions and have strong compounding effects. On a log scale, a project with an impact metric value of 100 (10^2) is 2X more impactful than one with a value of 10 (10^1), not 10X. Badgeholders are advised to use either a log scale or a normal (linear) scale in their ballots, not both.
+      - name: log_transaction_count
+        description: >
+          **LOGSCALE: Total Transactions**: Count of a project’s transactions over the RF4 scope period October 2023 - June 2024, adjusted to a logarithmic scale.
+          
+          Optimism is a Layer 2 roll-up designed to improve the transaction throughput and reduce the fees on Ethereum. Layer 2s are crucial for scaling Ethereum because they help address the network's congestion issues without compromising its security or decentralization. Transaction counts are an important indicator for assessing the adoption and usage of all the new blockspace made available by the Superchain. Projects that have a sustained, high transaction count provide a clear signal of network growth and blockspace demand.
+
+          This indicator includes successful transactions with a `to_address` owned by the project, as well as internal transactions that originate from one of the project's contracts and interact with the canonical EntryPoint ([EIP 4337](https://eips.ethereum.org/EIPS/eip-4337)) contracts.
+
+          This indicator is transformed to a logarithmic scale (`log10(gas_fees + 1)`). Logarithmic scales are useful for metrics that span several orders of magnitude such as gas fees and transactions and have strong compounding effects. On a log scale, a project with an impact metric value of 100 (10^2) is 2X more impactful than one with a value of 10 (10^1), not 10X. Badgeholders are advised to use either a log scale or a normal (linear) scale in their ballots, not both.
+      - name: log_trusted_transaction_count
+        description: >
+          **LOGSCALE: Interactions from Trusted Optimism Users**: Count of a project’s transactions performed by trusted users over the RF4 scope period October 2023 - June 2024, adjusted to a logarithmic scale.
+          
+          Bots, airdrop farming, and sybil attacks are longstanding problems in crypto. This metric is designed to filter out these types of interactions and focus on the activity of a small subset of trusted users (less than 5% of all active addresses on the Superchain). By tracking interactions specifically from trusted users, we gain a picture of blockspace demand that is less influenced by the effects of bots / farmers / sybils.
+          
+          A "trusted user" represents an address linked to an account the meets a certain threshold of reputation. Currently, there are several teams in the Optimism ecosystem building reputation models in a privacy-preserving way. This metric aggregates reputation data from multiple platforms ([Farcaster](https://docs.farcaster.xyz/learn/architecture/hubs), [Passport](https://www.passport.xyz/), [EigenTrust by Karma3Labs](https://docs.karma3labs.com/eigentrust)), and the [Optimist NFT collection](https://app.optimism.io/optimist-nft). In order to be consider a trusted user, an address must meet at least two of the following requirements as of 2024-05-21: have a Farcaster ID of 20939, have a Passport score of 20 points or higher, have a Karma3Labs EigenTrust GlobalRank in the top 42,000 of Farcaster users, hold an Optimist NFT in their wallet, or qualified for at least two (out of four) Optimism airdrops.
+          
+          This indicator is transformed to a logarithmic scale (`log10(gas_fees + 1)`). Logarithmic scales are useful for metrics that span several orders of magnitude such as gas fees and transactions and have strong compounding effects. On a log scale, a project with an impact metric value of 100 (10^2) is 2X more impactful than one with a value of 10 (10^1), not 10X. Badgeholders are advised to use either a log scale or a normal (linear) scale in their ballots, not both.      
