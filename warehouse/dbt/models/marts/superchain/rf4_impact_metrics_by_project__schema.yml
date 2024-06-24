@@ -53,19 +53,19 @@ models:
           **Eligible for OSS Multiplier**: *Whether the project's contract code and GitHub repo(s) were approved by the review committee as meeting open source software (OSS) requirements.*
       - name: gas_fees
         description: >
-          **Gas Fees**: Sum of a project's total contribution to gas fees across the Superchain over the RF4 scope period October 2023 - June 2024.
+          **Gas Fees**: Sum of a project's total contribution to gas fees across the Superchain over the RF4 scope period (October 2023 - June 2024).
           
           Gas fees are the primary recurring revenue source for the Superchain and a key indicator of aggregate blockspace demand. A project’s gas fee contribution is influenced by its total volume of contract interactions, the computational complexity of those interactions, and the state of the underlying gas market at the time of those transactions. In the long run, gas fees are what will power Retro Funding and enable it to continue in perpetuity. All members of the Superchain have committed at least 15% of their gross profit from gas fees to Retro Funding. Supporting projects that generate revenue in the form of gas fees helps power the economic engine of the Superchain.
       - name: transaction_count
         description: >
-          **Total Transactions**: Count of a project’s transactions over the RF4 scope period October 2023 - June 2024.
+          **Total Transactions**: Count of a project’s transactions over the RF4 scope period (October 2023 - June 2024).
           
           Optimism is a Layer 2 roll-up designed to improve the transaction throughput and reduce the fees on Ethereum. Layer 2s are crucial for scaling Ethereum because they help address the network's congestion issues without compromising its security or decentralization. Transaction counts are an important indicator for assessing the adoption and usage of all the new blockspace made available by the Superchain. Projects that have a sustained, high transaction count provide a clear signal of network growth and blockspace demand.
 
           This indicator includes successful transactions with a `to_address` owned by the project, as well as internal transactions that originate from one of the project's contracts and interact with the canonical EntryPoint ([EIP 4337](https://eips.ethereum.org/EIPS/eip-4337)) contracts.
       - name: trusted_transaction_count
         description: >
-          **Interactions from Trusted Optimism Users**: Count of a project’s transactions performed by trusted users over the RF4 scope period October 2023 - June 2024.
+          **Interactions from Trusted Optimism Users**: Count of a project’s transactions performed by trusted users over the RF4 scope period (October 2023 - June 2024).
           
           Bots, airdrop farming, and sybil attacks are longstanding problems in crypto. This metric is designed to filter out these types of interactions and focus on the activity of a small subset of trusted users (less than 5% of all active addresses on the Superchain). By tracking interactions specifically from trusted users, we gain a picture of blockspace demand that is less influenced by the effects of bots / farmers / sybils.
           
