@@ -2,7 +2,15 @@
 {% set lower_network_name = network_name.lower() %}
 {% set upper_network_name = network_name.upper() %}
 
-with transactions as (
+with bridges as (
+  select distinct artifact_source_id
+  from {{ ref('int_artifacts_in_ossd_by_project') }}
+  where
+    artifact_type = 'BRIDGE'
+    and artifact_type = 'EOA'
+),
+
+transactions as (
   select -- noqa: ST06
     TIMESTAMP_TRUNC(block_timestamp, day) as `time`,
     LOWER(to_address) as to_artifact_source_id,    
@@ -11,8 +19,11 @@ with transactions as (
     (receipt_gas_used * receipt_effective_gas_price) as l2_gas_fee
   from {{ ref('int_%s_transactions' % lower_network_name) }}
   where
-    input != "0x"
-    and block_timestamp >= {{ start }}
+    block_timestamp >= {{ start }}
+    and (
+      input != "0x"
+      or LOWER(to_address) in (select * from bridges)
+    )
 ),
 
 contract_invocations as (
