@@ -26,7 +26,7 @@ The round is expected to receive applications from hundreds of projects building
 
 At Open Source Observer, our objective is to help the Optimism community arrive at up to 20 credible impact metrics that can be applied to projects with contracts on the Superchain.
 
-This page explains where the metrics come from and includes a working list of all metrics under consideration for badgeholders. We will update it regularly, at least until the start of voting (June 23), to reflect the evolution of metrics. The first version metrics was released on 2024-05-16 and the most recent version (below) was released on 2024-06-12.
+This page explains where the metrics come from and includes a working list of all metrics under consideration for badgeholders. We will update it regularly, at least until the start of voting (June 23), to reflect the evolution of metrics. The first version metrics was released on 2024-05-16 and the most recent version (below) was released on 2024-06-24.
 
 <!-- truncate -->
 
@@ -73,7 +73,7 @@ As badgeholders will be voting on portfolios of metrics, not projects, the proje
 
 ### Metric Logic
 
-Each metric will be expressed as a SQL model running on top of the underlying data, with some intermediate models to improve readability. One of the core models is called `rf4_events_daily_to_project`, which is a daily snapshot of all events on the Superchain tagged by project up until the end of the RF4 window (2024-05-23).
+Each metric will be expressed as a SQL model running on top of the underlying data, with some intermediate models to improve readability. One of the core models is called `rf4_events_daily_to_project`, which is a daily snapshot of all events on the Superchain tagged by project up until the end of the RF4 window (2024-06-01).
 
 Here’s an example of [gas fees](https://models.opensource.observer/#!/model/model.opensource_observer.rf4_gas_fees):
 
@@ -95,7 +95,7 @@ The query above grabs all gas-generating events on the Superchain from RF4-appro
 
 Onchain events are also tagged with a `trusted_user_id` if the address that triggered the event is considered a trusted user.
 
-A "trusted user" represents an address linked to an account the meets a certain threshold of reputation. Currently, there are several teams in the Optimism ecosystem building reputation models in a privacy-preserving way. This metric aggregates reputation data from multiple platforms ([Farcaster](https://docs.farcaster.xyz/learn/architecture/hubs), [Passport](https://www.passport.xyz/), [EigenTrust by Karma3Labs](https://docs.karma3labs.com/eigentrust)), and the [Optimist NFT collection](https://app.optimism.io/optimist-nft). In order to be consider a trusted user, an address must meet at least two of the following requirements as of 2024-05-21: have a Farcaster ID of 20939, have a Passport score of 20 points or higher, have a Karma3Labs EigenTrust GlobalRank in the top 50,000 of Farcaster users, or hold an Optimist NFT in their wallet.
+A "trusted user" represents an address linked to an account the meets a certain threshold of reputation. Currently, there are several teams in the Optimism ecosystem building reputation models in a privacy-preserving way. This metric aggregates reputation data from multiple platforms ([Farcaster](https://docs.farcaster.xyz/learn/architecture/hubs), [Passport](https://www.passport.xyz/), [EigenTrust by Karma3Labs](https://docs.karma3labs.com/eigentrust)), and the [Optimist NFT collection](https://app.optimism.io/optimist-nft). In order to be consider a trusted user, an address must meet at least two of the following requirements as of 2024-05-21: have a Farcaster ID of 20939, have a Passport score of 20 points or higher, have a Karma3Labs EigenTrust GlobalRank in the top 42,000 of Farcaster users, hold an Optimist NFT in their wallet, or qualified for at least two (out of four) Optimism airdrops.
 
 Here is an example of a model that looks only at [successful transactions from trusted users](https://models.opensource.observer/#!/model/model.opensource_observer.rf4_trusted_transactions) since 2023-10-01:
 
@@ -121,19 +121,19 @@ This section will be updated regularly to reflect the latest metrics under consi
 
 ### Gas Fees
 
-Sum of a project's total contribution to gas fees across the Superchain.
+Sum of a project's total contribution to gas fees across the Superchain over the RF4 scope period (October 2023 - June 2024).
 
 Gas fees are the primary recurring revenue source for the Superchain and a key indicator of aggregate blockspace demand. A project’s gas fee contribution is influenced by its total volume of contract interactions, the computational complexity of those interactions, and the state of the underlying gas market at the time of those transactions. In the long run, gas fees are what will power Retro Funding and enable it to continue in perpetuity. All members of the Superchain have committed at least 15% of their gross profit from gas fees to Retro Funding. Supporting projects that generate revenue in the form of gas fees helps power the economic engine of the Superchain.
 
 ### Total Transactions
 
-Count of a project’s transactions over the RF4 scope period October 2023 - June 2024.
+Count of a project’s transactions over the RF4 scope period (October 2023 - June 2024).
 
 Optimism is a Layer 2 roll-up designed to improve the transaction throughput and reduce the fees on Ethereum. Layer 2s are crucial for scaling Ethereum because they help address the network's congestion issues without compromising its security or decentralization. Transaction counts are an important indicator for assessing the adoption and usage of all the new blockspace made available by the Superchain. Projects that have a sustained, high transaction count provide a clear signal of network growth and blockspace demand.
 
 ### Interactions from Trusted Optimism Users
 
-Count of a project’s transactions performed by trusted users, over the RF4 scope period October 2023 - June 2024.
+Count of a project’s transactions performed by trusted users over the RF4 scope period (October 2023 - June 2024).
 
 Bots, airdrop farming, and sybil attacks are longstanding problems in crypto. This metric is designed to filter out these types of interactions and focus on the activity of a small subset of trusted users (less than 5% of all active addresses on the Superchain). By tracking interactions specifically from trusted users, we gain a picture of blockspace demand that is less influenced by the effects of bots / farmers / sybils.
 
@@ -208,3 +208,17 @@ This metric reflects the degree which a project has attracted attention from the
 Count of addresses in the badgeholder "web of trust" who have interacted with the project over the RF4 scope period (October 2023 - June 2024).
 
 [EigenTrust](https://docs.karma3labs.com/eigentrust), aka OpenRank, is a reputation algorithm being applied by Karma3Labs to the Farcaster social graph. To seed the "web of trust", we begin with a list of 132 badgeholder addresses, look up their Farcaster IDs (present for 68 of the 132 addresses), and use OpenRank to identify those users' 100 closest connections. The result is a set of around 5000 addresses that have the closest social connection to the badgeholder community. Finally, we counts the number of addresses in the web of trust who have interacted with a given project. Note: this is an experimental metric designed and results in an even smaller but potentially higher signal subset of users than the "trusted user" model applied elsewhere.
+
+## Logarithmic Metrics
+
+In order to provide an additional option for voters, we are offering a logarithmic scale variant for some metrics. This adjustment involves taking the base 10 logarithm of the raw metric value plus 1 (to avoid having n/a and negative values), ie: `log10(metric + 1)`.
+
+Logarithmic scales are useful for metrics that span several orders of magnitude such as gas fees and transactions and have strong compounding effects. On a log scale, a project with an impact metric value of 100 (10^2) is 2X more impactful than one with a value of 10 (10^1), not 10X.
+
+The metrics that include this transformation are:
+
+- Gas Fees
+- Total Transactions
+- Interactions from Trusted Optimism Users
+
+Badgeholders are advised to use either a log scale or a normal (linear) scale in their ballots, not both.

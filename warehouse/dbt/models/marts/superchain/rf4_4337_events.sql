@@ -87,7 +87,7 @@ select
   from_artifact_name,
   to_artifact_name,
   event_source,
-  '4337 INTERACTION' as event_type,
+  '4337_INTERACTION' as event_type,
   count(distinct transaction_hash) as amount
 from raw_4337_events
 where project_id is not null

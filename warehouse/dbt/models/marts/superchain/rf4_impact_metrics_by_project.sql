@@ -27,7 +27,7 @@ with metrics as (
   union all
   select * from {{ ref('rf4_power_user_addresses') }}
   union all
-  select * from {{ ref('rf4_openrank_trusted_users') }}
+  select * from {{ ref('rf4_openrank_trusted_users_count') }}
 ),
 
 pivot_metrics as (
@@ -91,7 +91,12 @@ select
   pivot_metrics.recurring_addresses,
   pivot_metrics.trusted_recurring_users,
   pivot_metrics.power_user_addresses,
-  pivot_metrics.openrank_trusted_users_count
+  pivot_metrics.openrank_trusted_users_count,
+  COALESCE(LOG10(pivot_metrics.gas_fees + 1), 0) as log_gas_fees,
+  COALESCE(LOG10(pivot_metrics.transaction_count + 1), 0)
+    as log_transaction_count,
+  COALESCE(LOG10(pivot_metrics.trusted_transaction_count + 1), 0)
+    as log_trusted_transaction_count
 from pivot_metrics
 left join {{ ref('projects_v1') }}
   on pivot_metrics.project_id = projects_v1.project_id
