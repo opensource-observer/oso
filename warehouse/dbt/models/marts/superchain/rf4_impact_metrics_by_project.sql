@@ -7,7 +7,7 @@ with metrics as (
   union all
   select * from {{ ref('rf4_transactions') }}
   union all
-  select * from {{ ref('rf4_trusted_transactions') }}
+  select * from {{ ref('rf4_trusted_transaction_count') }}
   union all
   select * from {{ ref('rf4_trusted_users_share_of_transactions') }}
   union all
