@@ -116,6 +116,10 @@ jobs:
           credentials_json: "${{ env.GOOGLE_TEST_DUMMY_CREDENTIALS_JSON }}"
           create_credentials_file: true
 
+      - name: Setup dbt profile
+        run: |
+          bash .github/scripts/create-dbt-profile.sh ${GOOGLE_APPLICATION_CREDENTIALS}
+
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
         with:
@@ -150,11 +154,6 @@ jobs:
         # Always run this step so that all linting errors can be seen at once.
         if: ${{ always() && matrix.component == 'node' }}
 
-      - name: Setup dbt profile
-        run: |
-          bash .github/scripts/create-dbt-profile.sh ${GOOGLE_APPLICATION_CREDENTIALS}
-        if: ${{ matrix.component == 'dbt' }}
-      
       # Temporarily include this separately. Eventually this should all be part of lint
       - name: Lint SQL (dbt)
         run: |
