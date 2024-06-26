@@ -3,8 +3,9 @@ import os
 from dagster import Definitions, load_assets_from_modules
 from dagster_dbt import DbtCliResource
 from dagster_gcp import BigQueryResource, GCSResource
+from dagster_polars import PolarsBigQueryIOManager
 
-from .constants import main_dbt_project_dir, main_dbt_manifests
+from . import constants
 from .schedules import schedules
 from .cbt import CBTResource
 from .factories import load_assets_factories_from_modules
@@ -26,14 +27,19 @@ def load_definitions():
     asset_factories = load_assets_factories_from_modules([assets])
     asset_defs = load_assets_from_modules([assets])
 
+    io_manager = PolarsBigQueryIOManager(project=constants.project_id)
+
+    # Each of the dbt environments needs to be setup as a resource to be used in
+    # the dbt assets
     resources = {
         "gcs": gcs,
         "cbt": cbt,
         "bigquery": bigquery,
+        "io_manager": io_manager,
     }
-    for target in main_dbt_manifests:
+    for target in constants.main_dbt_manifests:
         resources[f"{target}_dbt"] = DbtCliResource(
-            project_dir=os.fspath(main_dbt_project_dir), target=target
+            project_dir=os.fspath(constants.main_dbt_project_dir), target=target
         )
 
     return Definitions(
