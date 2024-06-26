@@ -5,9 +5,7 @@
 with bridges as (
   select distinct artifact_source_id
   from {{ ref('int_artifacts_in_ossd_by_project') }}
-  where
-    artifact_type = 'BRIDGE'
-    and artifact_type = 'EOA'
+  where artifact_type = 'BRIDGE'
 ),
 
 transactions as (
