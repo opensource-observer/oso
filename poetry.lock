@@ -743,10 +743,7 @@ grpcio = ">=1.44.0"
 grpcio-health-checking = ">=1.44.0"
 Jinja2 = "*"
 packaging = ">=20.9"
-pendulum = [
-    {version = ">=0.7.0,<4", markers = "python_version >= \"3.9\" and python_version < \"3.12\""},
-    {version = ">=3,<4", markers = "python_version >= \"3.12\""},
-]
+pendulum = {version = ">=3,<4", markers = "python_version >= \"3.12\""}
 protobuf = {version = ">=4,<5", markers = "python_version >= \"3.11\""}
 psutil = {version = ">=1.0", markers = "platform_system == \"Windows\""}
 pydantic = ">1.10.0,<1.10.7 || >1.10.7,<3"
@@ -765,10 +762,7 @@ tomli = "<3"
 toposort = ">=1.0"
 tqdm = "<5"
 typing-extensions = ">=4.4.0,<5"
-universal-pathlib = [
-    {version = "*", markers = "python_version < \"3.12\""},
-    {version = ">=0.2.0", markers = "python_version >= \"3.12\""},
-]
+universal-pathlib = {version = ">=0.2.0", markers = "python_version >= \"3.12\""}
 watchdog = ">=0.8.3"
 
 [package.extras]
@@ -924,7 +918,6 @@ click = ">=8.1"
 cloudpickle = ">=1.5.0"
 distributed = {version = "2024.5.2", optional = true, markers = "extra == \"distributed\""}
 fsspec = ">=2021.09.0"
-importlib-metadata = {version = ">=4.13.0", markers = "python_version < \"3.12\""}
 packaging = ">=20.0"
 partd = ">=1.2.0"
 pyyaml = ">=5.3.1"
@@ -1249,20 +1242,6 @@ files = [
     {file = "duckdb-0.10.3-cp39-cp39-win_amd64.whl", hash = "sha256:372b6e3901d85108cafe5df03c872dfb6f0dbff66165a0cf46c47246c1957aa0"},
     {file = "duckdb-0.10.3.tar.gz", hash = "sha256:c5bd84a92bc708d3a6adffe1f554b94c6e76c795826daaaf482afc3d9c636971"},
 ]
-
-[[package]]
-name = "exceptiongroup"
-version = "1.2.1"
-description = "Backport of PEP 654 (exception groups)"
-optional = false
-python-versions = ">=3.7"
-files = [
-    {file = "exceptiongroup-1.2.1-py3-none-any.whl", hash = "sha256:5258b9ed329c5bbdd31a309f53cbfb0b155341807f6ff7606a1e801a891b29ad"},
-    {file = "exceptiongroup-1.2.1.tar.gz", hash = "sha256:a4785e48b045528f5bfe627b6ad554ff32def154f42372786903b7abcfe1aa16"},
-]
-
-[package.extras]
-test = ["pytest (>=6)"]
 
 [[package]]
 name = "executing"
@@ -2255,7 +2234,6 @@ prompt-toolkit = ">=3.0.41,<3.1.0"
 pygments = ">=2.4.0"
 stack-data = "*"
 traitlets = ">=5.13.0"
-typing-extensions = {version = ">=4.6", markers = "python_version < \"3.12\""}
 
 [package.extras]
 all = ["ipython[black,doc,kernel,matplotlib,nbconvert,nbformat,notebook,parallel,qtconsole]", "ipython[test,test-extra]"]
@@ -2393,10 +2371,7 @@ files = [
 ]
 
 [package.dependencies]
-aiohttp = [
-    {version = "*", markers = "python_version < \"3.12\""},
-    {version = ">=3.9.0", markers = "python_version >= \"3.12\""},
-]
+aiohttp = {version = ">=3.9.0", markers = "python_version >= \"3.12\""}
 click = "*"
 iso8601 = "*"
 python-json-logger = "*"
@@ -2423,7 +2398,6 @@ files = [
 anyio = ">=3.7.0"
 asyncache = ">=0.3.1"
 cryptography = ">=35"
-exceptiongroup = {version = ">=1.2.0", markers = "python_version < \"3.12\""}
 httpx = ">=0.24.1"
 httpx-ws = ">=0.5.2"
 python-box = ">=7.0.1"
@@ -3201,10 +3175,7 @@ files = [
 ]
 
 [package.dependencies]
-numpy = [
-    {version = ">=1.23.2", markers = "python_version == \"3.11\""},
-    {version = ">=1.26.0", markers = "python_version >= \"3.12\""},
-]
+numpy = {version = ">=1.26.0", markers = "python_version >= \"3.12\""}
 python-dateutil = ">=2.8.2"
 pytz = ">=2020.1"
 tzdata = ">=2022.7"
@@ -5622,5 +5593,5 @@ test = ["big-O", "importlib-resources", "jaraco.functools", "jaraco.itertools", 
 
 [metadata]
 lock-version = "2.0"
-python-versions = "^3.11,<3.13"
-content-hash = "b691475b21d613e8217132ebf39b45616b81fc1b5d0b9a5702476ef710a32eb5"
+python-versions = "^3.12,<3.13"
+content-hash = "5eb4e3dd5d44111becf39ff72a0220dddf14b4223fbfbdbcd4367d9ad73053bb"
