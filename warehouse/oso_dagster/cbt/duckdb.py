@@ -1,4 +1,3 @@
-from typing import List, Any
 
 from sqlglot import expressions as exp
 from .context import Connector, ColumnList

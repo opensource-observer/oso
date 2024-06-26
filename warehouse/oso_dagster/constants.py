@@ -1,10 +1,7 @@
 import os
 from pathlib import Path
-from typing import Dict, List, Tuple
 
 import requests
-from dagster import DefaultSensorStatus
-from dagster_dbt import DbtCliResource
 
 from .utils.dbt import (
     get_profiles_dir,
@@ -34,7 +31,7 @@ project_id = os.getenv("GOOGLE_PROJECT_ID")
 if not project_id:
     try:
         project_id = get_project_id()
-    except:
+    except Exception:
         raise Exception("GOOGLE_PROJECT_ID must be set if you're not in GCP")
 
 

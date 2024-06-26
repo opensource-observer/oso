@@ -1,5 +1,5 @@
 from typing import List
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 from google.cloud.bigquery import DatasetReference, AccessEntry, Client as BQClient
 from google.cloud.bigquery.enums import EntityTypes
