@@ -9,7 +9,7 @@
     "prettier --ignore-path .gitignore --log-level warn --check"
   ],
   "**/*.py": [
-    "pnpm pyright-lint-staged"
+    "pnpm pyright"
   ],
   "warehouse/dbt/**/*.sql": [
     "poetry run sqlfluff fix -f",
