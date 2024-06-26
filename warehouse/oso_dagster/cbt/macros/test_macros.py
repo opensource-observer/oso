@@ -47,6 +47,7 @@ def db():
                 [arrow.get("2024-02-01").datetime, 2, "bravo"],
                 [arrow.get("2024-03-01").datetime, 3, "charlie"],
                 [arrow.get("2024-04-01").datetime, 4, "delta"],
+                [arrow.get("2024-02-01").datetime, 5, "foxtrot"],
             ],
         }
     )
@@ -90,7 +91,7 @@ def test_time_constrain_succeed(
             SELECT_WITH_JOIN,
             "time_id_and_name",
             dict(start=arrow.get("2024-02-01"), end=arrow.get("2024-04-01")),
-            5,
+            2,
         ),
     ],
 )
