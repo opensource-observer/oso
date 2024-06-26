@@ -58,6 +58,9 @@ jobs:
     name: test
     environment: testing
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        component: ["node", "python", "dbt"]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -82,6 +85,11 @@ jobs:
             GOOGLE_TEST_DUMMY_CREDENTIALS_JSON \
             PUBLIC_VARS_TEST
 
+      - name: Check if algolia is empty, set the variable to some dummy value if it is
+        shell: bash
+        run: |
+          echo "NEXT_PUBLIC_ALGOLIA_API_KEY=${NEXT_PUBLIC_ALGOLIA_API_KEY:-xxxx}" >> "$GITHUB_ENV"
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
@@ -102,11 +110,6 @@ jobs:
           python-version: 3.12
           poetry-version: 1.8.2
 
-      - name: Install Foundry
-        uses: foundry-rs/foundry-toolchain@v1
-        with:
-          version: nightly-87bc53fc6c874bd4c92d97ed180b949e3a36d78c
-
       - name: Authenticate to google with a test-dummy user
         uses: "google-github-actions/auth@v2"
         with:
@@ -117,17 +120,20 @@ jobs:
         run: |
           bash .github/scripts/create-dbt-profile.sh ${GOOGLE_APPLICATION_CREDENTIALS}
 
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly-87bc53fc6c874bd4c92d97ed180b949e3a36d78c
+        if: ${{ matrix.component == 'node' }}
+
       - name: Run supabase local
+        id: supabase
         run: |
           bash .github/scripts/run-supabase-local.sh apps/frontend
-
-      - name: Check if algolia is empty, set the variable to some dummy value if it is
-        shell: bash
-        run: |
-          echo "NEXT_PUBLIC_ALGOLIA_API_KEY=${NEXT_PUBLIC_ALGOLIA_API_KEY:-xxxx}" >> "$GITHUB_ENV"
+        if: ${{ matrix.component == 'node' }}
 
       # Automatically retry if the build fails
-      - name: Build
+      - name: Build (Node)
         uses: nick-fields/retry@v3
         with:
           timeout_minutes: 5
@@ -135,22 +141,35 @@ jobs:
           command: |
             pnpm build
         # Always run this step so that all linting errors can be seen at once.
-        if: always()
+        if: ${{ matrix.component == 'node' }}
 
-      - name: Lint
+      - name: Lint (Node)
         run: |
           pnpm lint
         # Always run this step so that all linting errors can be seen at once.
-        if: always()
+        if: ${{ always() && steps.supabase.conclusion == 'success' && matrix.component == 'node' }}
 
-      # Temporarily include this separately. Eventually this should all be part of lint
-      - name: Lint SQL
-        run: |
-          poetry run sqlfluff lint --dialect bigquery ./warehouse/dbt/models
-        if: always()
-
-      - name: Test
+      - name: Test (Node)
         run: |
           pnpm test
         # Always run this step so that all linting errors can be seen at once.
-        if: always()
+        if: ${{ always() && steps.supabase.conclusion == 'success' &&  matrix.component == 'node' }}
+
+      # Temporarily include this separately. Eventually this should all be part of lint
+      - name: Lint SQL (dbt)
+        run: |
+          poetry run sqlfluff lint --dialect bigquery ./warehouse/dbt/models
+        if: ${{ always() && matrix.component == 'dbt' }}
+
+      - name: Static Analysis (Python)
+        run: |
+          pnpm pyright
+        if: ${{ always() && matrix.component == 'python' }}
+
+      # Temporarily include this separately. Eventually this should all be part of lint
+      - name: Test (Python)
+        run: |
+          poetry run pytest
+        if: ${{ always() && matrix.component == 'python' }}
+
+
