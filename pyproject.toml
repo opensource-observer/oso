@@ -80,3 +80,14 @@ target = "playground"
 
 [tool.dagster]
 module_name = "oso_dagster.definitions"
+
+[tool.pyright]
+pythonVersion = "3.12"
+typeCheckingMode = "standard"
+ignore = [
+    "warehouse/cloudquery-example-plugin",
+    "warehouse/cloudquery-dune-contract-usage",
+    "warehouse/bq2cloudsql",
+    "warehouse/meltano-setup",
+    "warehouse/oso_lets_go",
+]

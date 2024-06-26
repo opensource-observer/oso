@@ -1,6 +1,6 @@
 import pytest
 import sqlglot as sql
-from oso_dagster.cbt.utils import *
+from oso_dagster.cbt.utils import *  # type: ignore
 
 
 def test_replace_table():
