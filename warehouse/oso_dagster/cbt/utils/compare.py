@@ -1,10 +1,20 @@
+from typing import cast
+
 import sqlglot as sql
 from sqlglot.optimizer.qualify import qualify
 from sqlglot.diff import Keep
 from sqlglot import expressions as exp
 
 
-def is_same_identifier(a: exp.Identifier, b: exp.Identifier):
+def is_same_identifier(a: exp.Identifier | str, b: exp.Identifier | str):
+    if type(a) == str:
+        a = sql.to_identifier(a)
+    a = cast(exp.Identifier, a)
+
+    if type(b) == str:
+        b = sql.to_identifier(b)
+    b = cast(exp.Identifier, b)
+
     return qualify(a) == qualify(b)
 
 

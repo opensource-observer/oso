@@ -1,5 +1,5 @@
 from functools import cache
-from typing import Callable, TypeVar, List, Sequence, Tuple, Optional, cast
+from typing import Callable, TypeVar, List, Sequence, Tuple, Optional, cast, Dict
 from collections import OrderedDict
 
 import sqlglot as sql
@@ -20,8 +20,8 @@ class Connector[T]:
         raise NotImplementedError()
 
 
-ContextQuery = Callable[["DataContext"], exp.Expression]
-Transformation = Callable[[ContextQuery], ContextQuery]
+type ContextQuery[T] = Callable[["DataContext[T]"], exp.Expression]
+type Transformation[T] = Callable[[ContextQuery[T]], ContextQuery[T]]
 
 
 class Columns:
@@ -44,7 +44,7 @@ class DataContext[T]:
     def __init__(self, connector: Connector[T]):
         self._connector = connector
 
-    def get_table_columns(self, table: exp.Table) -> Columns:
+    def get_table_columns(self, table: exp.Table) -> ColumnList:
         return self._connector.get_table_columns(table)
 
     def get_table_columns_from_str(self, table_str: str):
@@ -56,22 +56,25 @@ class DataContext[T]:
 
     def transform_query(
         self,
-        query: ContextQuery | str | exp.Expression,
+        query: ContextQuery[T] | str | exp.Expression,
         transformations: Optional[Sequence[Transformation]] = None,
     ):
         transformations = transformations or []
         if type(query) == str:
+            query = cast(str, query)
             query = context_query_from_str(query)
         elif isinstance(query, exp.Expression):
             query = context_query_from_expr(query)
+
         for transformation in transformations:
+            query = cast(ContextQuery[T], query)
             query = transformation(query)
-        query = cast(ContextQuery, query)
+        query = cast(ContextQuery[T], query)
         return query(self)
 
     def execute_query(
         self,
-        query: ContextQuery | str | exp.Expression,
+        query: ContextQuery[T] | str | exp.Expression,
         transformations: Optional[Sequence[Transformation]] = None,
     ) -> T:
         exp = self.transform_query(query, transformations)
@@ -83,25 +86,25 @@ class DataContext[T]:
     #     result.columns
 
 
-def context_query_from_str(s: str) -> ContextQuery:
-    def _context(_ctx: DataContext):
+def context_query_from_str[T](s: str) -> ContextQuery[T]:
+    def _context(_ctx: DataContext[T]):
         return sql.parse_one(s)
 
     return _context
 
 
-def context_query_from_expr(e: exp.Expression) -> ContextQuery:
-    def _context(_ctx: DataContext):
+def context_query_from_expr[T](e: exp.Expression) -> ContextQuery[T]:
+    def _context(_ctx: DataContext[T]):
         return e
 
     return _context
 
 
-def wrap_basic_transform(
-    transform: Callable[[exp.Expression], exp.Expression]
-) -> Transformation:
-    def _transform(query: ContextQuery) -> ContextQuery:
-        def _cq(ctx: DataContext):
+def wrap_basic_transform[
+    T
+](transform: Callable[[exp.Expression], exp.Expression]) -> Transformation[T]:
+    def _transform(query: ContextQuery[T]) -> ContextQuery[T]:
+        def _cq(ctx: DataContext[T]):
             expression = query(ctx)
             return expression.transform(transform)
 

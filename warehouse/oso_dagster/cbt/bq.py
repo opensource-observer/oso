@@ -1,7 +1,6 @@
 # Query tools for bigquery tables
-from typing import List, Dict, Optional
+from typing import List, cast, Optional
 from functools import cache
-from dataclasses import dataclass
 
 from google.cloud.bigquery import Client, Table, TableReference
 from google.cloud.bigquery.table import RowIterator
@@ -22,16 +21,20 @@ class BigQueryTableQueryHelper:
     def load_by_table(cls, bq: Client, table_ref: TableReference | Table | str):
         if type(table_ref) == str:
             table_ref = TableReference.from_string(table_ref)
+        table_ref = cast(TableReference, table_ref)
         helper = cls(bq, table_ref)
         return helper
 
     def __init__(self, bq: Client, table_ref: TableReference):
         self._bq = bq
-        self._table_ref = table_ref
+        self._table_ref: TableReference = table_ref
         self._column_list = None
 
     def select_columns(
-        self, prefix: str = "", exclude: List[str] = None, include: List[str] = None
+        self,
+        prefix: str = "",
+        exclude: Optional[List[str]] = None,
+        include: Optional[List[str]] = None,
     ):
         columns = self.filtered_columns(exclude=exclude, include=include)
         ordered_columns = map(lambda c: c.column_name, columns)
@@ -57,7 +60,9 @@ class BigQueryTableQueryHelper:
         self._column_list = list(result)
         return self._column_list
 
-    def filtered_columns(self, exclude: List[str] = None, include: List[str] = None):
+    def filtered_columns(
+        self, exclude: Optional[List[str]] = None, include: Optional[List[str]] = None
+    ):
         exclude = exclude or []
         include = include or []
 
@@ -103,8 +108,8 @@ class BigQueryTableQueryHelper:
         self,
         self_prefix: str,
         other_prefix: str,
-        exclude: List[str] = None,
-        include: List[str] = None,
+        exclude: Optional[List[str]] = None,
+        include: Optional[List[str]] = None,
     ):
         columns = self.filtered_columns(exclude=exclude, include=include)
         ordered_columns = map(lambda c: c.column_name, columns)

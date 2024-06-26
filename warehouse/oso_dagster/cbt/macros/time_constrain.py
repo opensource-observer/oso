@@ -1,24 +1,29 @@
 import random
 import string
-from typing import Optional, cast
+from typing import Optional, cast, TypeVar
 
 import arrow
 import sqlglot as sql
 from sqlglot import expressions as exp
 from sqlglot.optimizer.qualify import qualify
-from ..context import DataContext, ContextQuery, context_query_from_expr
+from ..context import DataContext, ContextQuery, Transformation, context_query_from_expr
 from ..utils import is_same_source_table, replace_source_tables
 
 
-def time_constrain(
+T = TypeVar("T")
+
+
+def time_constrain[
+    T
+](
     time_column: str,
     start: Optional[arrow.Arrow] = None,
     end: Optional[arrow.Arrow] = None,
-) -> ContextQuery:
+) -> Transformation[T]:
     """Transforms any query into a time constrained query for the matching tables"""
 
-    def _transform(query: ContextQuery) -> ContextQuery:
-        def _cq(ctx: DataContext) -> exp.Expression:
+    def _transform(query: ContextQuery[T]) -> ContextQuery[T]:
+        def _cq(ctx: DataContext[T]) -> exp.Expression:
             expression = query(ctx)
             if type(expression) != exp.Select:
                 raise Exception("Can only transform a select statement")
@@ -46,16 +51,18 @@ def _random_suffix():
     )
 
 
-def time_constrain_table(
+def time_constrain_table[
+    T
+](
     time_column: str,
     table_name: str,
     start: Optional[arrow.Arrow] = None,
     end: Optional[arrow.Arrow] = None,
-):
+) -> Transformation[T]:
     # General strategy is to create a CTE for the table to be constrained and
     # then replace all occurrences of it
-    def _transform(query: ContextQuery) -> ContextQuery:
-        def _cq(ctx: DataContext):
+    def _transform(query: ContextQuery[T]) -> ContextQuery[T]:
+        def _cq(ctx: DataContext[T]):
             expression = query(ctx)
 
             assert type(expression) == exp.Select
@@ -67,11 +74,14 @@ def time_constrain_table(
             cte_name = f"generated_{table_to_find.name}_{_random_suffix()}"
             cte_table_reference = sql.to_table(cte_name)
 
-            expression = expression.transform(
-                replace_source_tables(
-                    table_to_find,
-                    cte_table_reference,
-                )
+            expression = cast(
+                exp.Select,
+                expression.transform(
+                    replace_source_tables(
+                        table_to_find,
+                        cte_table_reference,
+                    )
+                ),
             )
 
             # Add the cte for the table
@@ -79,6 +89,7 @@ def time_constrain_table(
             cte_select = ctx.transform_query(
                 cte_select, [time_constrain(time_column, start=start, end=end)]
             )
+
             expression = expression.with_(cte_name, as_=cte_select)
 
             return expression

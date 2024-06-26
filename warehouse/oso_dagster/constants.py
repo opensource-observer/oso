@@ -1,7 +1,6 @@
 import os
 from pathlib import Path
 from typing import Dict, List, Tuple
-import pathlib
 
 import requests
 from dagster import DefaultSensorStatus
@@ -42,7 +41,7 @@ if not project_id:
 profile_name = os.getenv("DAGSTER_DBT_PROFILE_NAME", "opensource_observer")
 
 dbt_profiles_dir = get_profiles_dir()
-dbt_target_base_dir = os.getenv("DAGSTER_DBT_TARGET_BASE_DIR")
+dbt_target_base_dir = os.getenv("DAGSTER_DBT_TARGET_BASE_DIR") or ""
 main_dbt_manifests = load_dbt_manifests(
     dbt_target_base_dir,
     main_dbt_project_dir,

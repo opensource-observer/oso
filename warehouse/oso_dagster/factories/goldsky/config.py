@@ -1,5 +1,16 @@
 import os
-from typing import Optional, Callable, List, Sequence, TypeVar
+from typing import (
+    Optional,
+    Callable,
+    List,
+    Sequence,
+    TypeVar,
+    Tuple,
+    Union,
+    TypedDict,
+    get_type_hints,
+    NotRequired,
+)
 from dataclasses import dataclass, field
 
 from google.cloud.bigquery.schema import SchemaField
@@ -7,6 +18,42 @@ from dagster import AssetChecksDefinition, AssetsDefinition
 
 T = TypeVar("T")
 CheckFactory = Callable[[T, AssetsDefinition], List[AssetChecksDefinition]]
+
+
+class SchemaDict(TypedDict):
+    name: str
+    field_type: str
+
+
+Schema = Union[SchemaDict, SchemaField]
+
+
+class GoldskyConfigInterface(TypedDict):
+    name: str
+    key_prefix: NotRequired[str | Sequence[str]]
+    project_id: str
+    source_name: str
+    destination_table_name: str
+    pointer_size: NotRequired[int]
+    max_objects_to_load: NotRequired[int]
+    destination_dataset_name: NotRequired[str]
+    destination_bucket_name: NotRequired[str]
+    source_bucket_name: NotRequired[str]
+    source_goldsky_dir: NotRequired[str]
+    load_table_timeout_seconds: NotRequired[float]
+    transform_timeout_seconds: NotRequired[float]
+    working_destination_dataset_name: NotRequired[str]
+    working_destination_preload_path: NotRequired[str]
+    dedupe_model: NotRequired[str]
+    dedupe_unique_column: NotRequired[str]
+    dedupe_order_column: NotRequired[str]
+    merge_workers_model: NotRequired[str]
+    partition_column_name: NotRequired[str]
+    partition_column_type: NotRequired[str]
+    partition_column_transform: NotRequired[Callable]
+    schema_overrides: NotRequired[List[Schema]]
+    retention_files: NotRequired[int]
+    checks: NotRequired[List[CheckFactory["GoldskyConfig"]]]
 
 
 @dataclass(kw_only=True)
@@ -30,13 +77,6 @@ class GoldskyConfig:
     source_bucket_name: str = "oso-dataset-transfer-bucket"
     source_goldsky_dir: str = "goldsky"
 
-    dask_worker_memory: str = "4096Mi"
-    dask_scheduler_memory: str = "2560Mi"
-    dask_image: str = "ghcr.io/opensource-observer/dagster-dask:distributed-test-10"
-    dask_is_enabled: bool = False
-    dask_bucket_key_id: str = ""
-    dask_bucket_secret: str = ""
-
     # Allow 15 minute load table jobs
     load_table_timeout_seconds: float = 3600
     transform_timeout_seconds: float = 3600
@@ -53,7 +93,7 @@ class GoldskyConfig:
     partition_column_type: str = "DAY"
     partition_column_transform: Callable = lambda a: a
 
-    schema_overrides: List[SchemaField] = field(default_factory=lambda: [])
+    schema_overrides: List[Schema] = field(default_factory=lambda: [])
 
     retention_files: int = 10000
 
