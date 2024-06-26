@@ -1004,7 +1004,7 @@ def goldsky_asset(deps: Optional[Iterable[AssetDep] | Iterable[AssetsDefinition]
     deps = deps or []
     @asset(name=asset_config.name, key_prefix=asset_config.key_prefix, deps=deps)
     def generated_asset(
-        context: GenericExecutionContext,
+        context: AssetExecutionContext,
         bigquery: BigQueryResource,
         gcs: GCSResource,
         cbt: CBTResource,
