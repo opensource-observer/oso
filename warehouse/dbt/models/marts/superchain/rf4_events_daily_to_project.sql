@@ -74,7 +74,7 @@ duped_contracts as (
 ),
 
 filtered_events as (
-  select events_to_project.* 
+  select events_to_project.*
   from events_to_project
   left join duped_contracts
     on
