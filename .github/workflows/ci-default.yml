@@ -127,6 +127,7 @@ jobs:
         if: ${{ matrix.component == 'node' }}
 
       - name: Run supabase local
+        id: supabase
         run: |
           bash .github/scripts/run-supabase-local.sh apps/frontend
         if: ${{ matrix.component == 'node' }}
@@ -140,19 +141,19 @@ jobs:
           command: |
             pnpm build
         # Always run this step so that all linting errors can be seen at once.
-        if: ${{ always() && matrix.component == 'node' }}
+        if: ${{ matrix.component == 'node' }}
 
       - name: Lint (Node)
         run: |
           pnpm lint
         # Always run this step so that all linting errors can be seen at once.
-        if: ${{ always() && matrix.component == 'node' }}
+        if: ${{ always() && steps.supabase.conclusion == 'success' && matrix.component == 'node' }}
 
       - name: Test (Node)
         run: |
           pnpm test
         # Always run this step so that all linting errors can be seen at once.
-        if: ${{ always() && matrix.component == 'node' }}
+        if: ${{ always() && steps.supabase.conclusion == 'success' &&  matrix.component == 'node' }}
 
       # Temporarily include this separately. Eventually this should all be part of lint
       - name: Lint SQL (dbt)
