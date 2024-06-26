@@ -1,5 +1,4 @@
 import os
-from typing import List
 
 from dagster import Definitions, load_assets_from_modules
 from dagster_dbt import DbtCliResource
@@ -10,7 +9,6 @@ from .schedules import schedules
 from .cbt import CBTResource
 from .factories import load_assets_factories_from_modules
 from . import assets
-from .assets import all_dbt_assets
 
 from dotenv import load_dotenv
 

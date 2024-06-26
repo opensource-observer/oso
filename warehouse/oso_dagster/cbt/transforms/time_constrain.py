@@ -6,8 +6,8 @@ import arrow
 import sqlglot as sql
 from sqlglot import expressions as exp
 from sqlglot.optimizer.qualify import qualify
-from ..context import DataContext, ContextQuery, Transformation, context_query_from_expr
-from ..utils import is_same_source_table, replace_source_tables
+from ..context import DataContext, ContextQuery, Transformation
+from ..utils import replace_source_tables
 
 
 T = TypeVar("T")

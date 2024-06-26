@@ -7,11 +7,11 @@ from sqlglot import expressions as exp
 
 
 def is_same_identifier(a: exp.Identifier | str, b: exp.Identifier | str):
-    if type(a) == str:
+    if isinstance(a, str):
         a = sql.to_identifier(a)
     a = cast(exp.Identifier, a)
 
-    if type(b) == str:
+    if isinstance(b, str):
         b = sql.to_identifier(b)
     b = cast(exp.Identifier, b)
 

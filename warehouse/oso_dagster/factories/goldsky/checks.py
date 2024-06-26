@@ -1,6 +1,5 @@
 import os
 from typing import List, Optional, Tuple
-from dataclasses import dataclass
 
 from .config import GoldskyConfig, CheckFactory
 from dagster import (
@@ -13,11 +12,10 @@ from dagster import (
     Config,
 )
 import arrow
-from dagster_gcp import BigQueryResource
 import sqlglot as sql
 
 from ...cbt import CBTResource, Transformation
-from ...cbt.macros import time_constrain_table, context_query_replace_source_tables
+from ...cbt.transforms import time_constrain_table, context_query_replace_source_tables
 
 
 def generated_asset_prefix(asset: AssetsDefinition):

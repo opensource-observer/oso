@@ -161,15 +161,19 @@ jobs:
           poetry run sqlfluff lint --dialect bigquery ./warehouse/dbt/models
         if: ${{ always() && matrix.component == 'dbt' }}
 
-      - name: Static Analysis (Python)
+      - name: Type Check (Python)
         run: |
           pnpm pyright
         if: ${{ always() && matrix.component == 'python' }}
 
-      # Temporarily include this separately. Eventually this should all be part of lint
+      - name: Lint (Python)
+        run: |
+          poetry run ruff check
+        if: ${{ always() && matrix.component == 'python' }}
+
       - name: Test (Python)
         run: |
           poetry run pytest
         if: ${{ always() && matrix.component == 'python' }}
-
-
+      
+     

@@ -4,21 +4,19 @@ import os
 import arrow
 import re
 import io
-import json
 import random
 import threading
 
 import polars
 from polars.type_aliases import PolarsDataType
-from dataclasses import dataclass, field
-from typing import List, Mapping, Tuple, Dict, Callable, Optional, Sequence, Iterable, Any, cast
+from dataclasses import dataclass
+from typing import List, Mapping, Tuple, Dict, Callable, Optional, Iterable, Any, cast, Unpack
 import heapq
 from dagster import (
     asset,
     op,
     job,
     asset_sensor,
-    asset_check,
     AssetExecutionContext,
     RunRequest,
     SensorEvaluationContext,
@@ -51,15 +49,21 @@ from google.cloud.bigquery import (
 from google.cloud.bigquery.schema import SchemaField
 from ...cbt import CBTResource, UpdateStrategy, TimePartitioning
 from .. import AssetFactoryResponse
-from ...utils.gcs import batch_delete_blobs
 from .config import GoldskyConfig, GoldskyConfigInterface, SchemaDict
-
-from typing import Unpack
+from ...utils.gcs import batch_delete_blobs
 
 GenericExecutionContext = AssetExecutionContext | OpExecutionContext
 
 @dataclass
 class GoldskyCheckpoint:
+    """Orderable representation of the components of the file names for goldsky
+    parquet files.
+
+    The file names are in the form: 
+    
+    * {timestamp}-{job_id}-{worker_number}-{checkpoint}.parquet
+    """
+
     job_id: str
     timestamp: int
     worker_checkpoint: int
@@ -422,7 +426,7 @@ def blocking_update_pointer_table(
         new = False
         try:
             client.get_table(dest_table_ref)
-        except NotFound as exc:
+        except NotFound:
             # If the table doesn't exist just create it. An existing table will
             # be there if a previous run happened to fail midway.
             new = True
@@ -584,10 +588,10 @@ class GoldskyAsset:
             schema: List[SchemaField] = []
             overrides_lookup = dict()
             for override in self.config.schema_overrides:
-                if type(override) == dict:
+                if isinstance(override, dict):
                     override = cast(SchemaDict, override)
                     overrides_lookup[override["name"]] = SchemaField(**override)
-                elif type(override) == SchemaField:
+                elif isinstance(override, SchemaField):
                     overrides_lookup[override.name] = override
                 else:
                     raise Exception("unexpected input for schema override")
@@ -823,7 +827,7 @@ class GoldskyAsset:
             last_blob = blobs[-1]
             log.info(f"would delete up to {last_blob}")
             gcs_client = self.gcs.get_client()
-            # batch_delete_blobs(gcs_client, self.config.source_bucket_name, blobs, 1000)
+            batch_delete_blobs(gcs_client, self.config.source_bucket_name, blobs, 1000)
 
     def gather_stats(self, log: DagsterLogManager):
         self.load_queues_to_process(
@@ -856,7 +860,7 @@ class GoldskyAsset:
 
     def record_bucket_stats_from_match(self, match: re.Match[str]):
         key = f"{match.group("job_id")}-{match.group("timestamp")}"
-        if not key in self.bucket_stats:
+        if key not in self.bucket_stats:
             self.bucket_stats[key] = dict(
                 job_id=match.group("job_id"),
                 timestamp=int(match.group("timestamp")), 
@@ -866,7 +870,7 @@ class GoldskyAsset:
         else:
             self.bucket_stats[key]["count"] += 1
             worker = match.group("worker")
-            if not worker in self.bucket_stats[key]["workers"]:
+            if worker not in self.bucket_stats[key]["workers"]:
                 self.bucket_stats[key]["workers"].append(worker)
 
 

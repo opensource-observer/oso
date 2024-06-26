@@ -1,3 +1,4 @@
+# ruff: noqa: E402
 """
 Tool for handling dbt compilation in a docker container
 """

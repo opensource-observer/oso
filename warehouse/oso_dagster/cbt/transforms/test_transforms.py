@@ -1,11 +1,14 @@
-import sqlglot as sql
+# ruff: noqa: F403
+
 import arrow
 import duckdb
-import pandas as pd
 import pytest
-from oso_dagster.cbt.context import context_query_from_str, DataContext
+from oso_dagster.cbt.context import DataContext
 from oso_dagster.cbt.duckdb import DuckDbConnector
-from oso_dagster.cbt.macros.time_constrain import *  # type: ignore
+from oso_dagster.cbt.transforms.time_constrain import (
+    time_constrain,
+    time_constrain_table,
+)
 from oso_dagster.utils.testing.duckdb import DuckDbFixture
 
 SELECT_NO_CTE = """

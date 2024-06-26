@@ -2,7 +2,7 @@ from pathlib import Path
 import os
 from typing import Any, Mapping, Dict, List, Sequence, Optional
 
-from dagster import AssetExecutionContext, AssetKey, asset, AssetsDefinition, Config
+from dagster import AssetExecutionContext, AssetKey, AssetsDefinition, Config
 from dagster_dbt import DbtCliResource, dbt_assets, DagsterDbtTranslator
 
 from ..constants import main_dbt_manifests, main_dbt_project_dir, dbt_profiles_dir

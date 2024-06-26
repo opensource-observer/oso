@@ -19,7 +19,7 @@ class TableLoader:
 class BigQueryTableQueryHelper:
     @classmethod
     def load_by_table(cls, bq: Client, table_ref: TableReference | Table | str):
-        if type(table_ref) == str:
+        if isinstance(table_ref, str):
             table_ref = TableReference.from_string(table_ref)
         table_ref = cast(TableReference, table_ref)
         helper = cls(bq, table_ref)

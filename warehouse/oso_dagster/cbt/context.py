@@ -1,5 +1,4 @@
-from functools import cache
-from typing import Callable, TypeVar, List, Sequence, Tuple, Optional, cast, Dict
+from typing import Callable, TypeVar, List, Sequence, Tuple, Optional, cast
 from collections import OrderedDict
 
 import sqlglot as sql
@@ -60,7 +59,7 @@ class DataContext[T]:
         transformations: Optional[Sequence[Transformation]] = None,
     ):
         transformations = transformations or []
-        if type(query) == str:
+        if isinstance(query, str):
             query = cast(str, query)
             query = context_query_from_str(query)
         elif isinstance(query, exp.Expression):
