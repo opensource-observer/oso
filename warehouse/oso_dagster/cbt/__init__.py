@@ -13,7 +13,6 @@ from dagster_gcp import BigQueryResource
 from google.cloud.bigquery import (
     TableReference,
     QueryJobConfig,
-    TimePartitioning,
     Client,
 )
 from google.cloud.exceptions import NotFound
@@ -110,7 +109,7 @@ class CBT:
     def transform(
         self,
         model_file: str,
-        destination_table: TableReference,
+        destination_table: str | TableReference,
         update_strategy: UpdateStrategy = UpdateStrategy.REPLACE,
         time_partitioning: Optional[TimePartitioning] = None,
         unique_column: Optional[str] = None,
@@ -152,7 +151,7 @@ class CBT:
         self,
         client: Client,
         model_file: str,
-        destination_table: TableReference,
+        destination_table: str | TableReference,
         update_strategy: UpdateStrategy,
         time_partitioning: Optional[TimePartitioning] = None,
         unique_column: Optional[str] = None,
@@ -221,7 +220,7 @@ class CBT:
         self,
         client: Client,
         model_file: str,
-        destination_table: TableReference,
+        destination_table: str | TableReference,
         time_partitioning: Optional[TimePartitioning] = None,
         unique_column: Optional[str] = None,
         timeout: float = 300,
@@ -250,7 +249,8 @@ class CBT:
             self.log.debug(f"dry_run: {create_or_replace_query}")
 
     def render_model(self, model_file: str, **vars):
-        model_source = self.env.loader.get_source(self.env, model_file)
+        assert self.env.loader
+        model_source, _, _ = self.env.loader.get_source(self.env, model_file)
         ast = self.env.parse(model_source)
         expected_vars = meta.find_undeclared_variables(ast)
         declared_vars = set(vars.keys())

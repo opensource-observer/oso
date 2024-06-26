@@ -32,12 +32,12 @@ class BlockchainCheckConfig(Config):
     def get_range(self) -> Tuple[arrow.Arrow | None, arrow.Arrow | None]:
         now = arrow.now()
         if self.full_refresh:
-            return [None, now.shift(days=-1)]
+            return (None, now.shift(days=-1))
         if self.start or self.end:
             start = arrow.get(self.start) if self.start is not None else None
             end = arrow.get(self.end) if self.end is not None else None
-            return [start, end]
-        return [now.shift(days=-6), now.shift(days=-1)]
+            return (start, end)
+        return (now.shift(days=-6), now.shift(days=-1))
 
 
 def traces_check(

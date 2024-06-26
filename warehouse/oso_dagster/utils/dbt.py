@@ -76,16 +76,16 @@ def write_dbt_profile(
 
 
 def load_dbt_manifests(
-    dbt_target_base_dir: str,
-    dbt_project_dir: str,
+    dbt_target_base_dir: str | Path,
+    dbt_project_dir: str | Path,
     project_id: str,
     profile_name: str,
     targets: List[Tuple[str, str]],
     template: BQTargetConfigTemplate,
     parse_projects: bool = False,
     force_auth: bool = False,
-) -> Dict[str, str]:
-    manifests: Dict[str, str] = dict()
+) -> Dict[str, Path]:
+    manifests: Dict[str, Path] = dict()
     print(f"checking for profile {default_profiles_path()}")
 
     if not os.path.isfile(default_profiles_path()) or force_auth:
@@ -114,7 +114,5 @@ def load_dbt_manifests(
             )
     else:
         for target, _ in targets:
-            manifests[target] = os.path.join(
-                dbt_target_base_dir, target, "manifest.json"
-            )
+            manifests[target] = Path(dbt_target_base_dir, target, "manifest.json")
     return manifests

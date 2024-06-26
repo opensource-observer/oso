@@ -41,6 +41,7 @@ polars = "^0.20.23"
 requests = "^2.31.0"
 dagster-postgres = "^0.23.6"
 pytest = "^8.2.1"
+oss-directory = "^0.0.1"
 
 
 [tool.poetry.scripts]

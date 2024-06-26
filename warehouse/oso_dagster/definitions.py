@@ -39,7 +39,7 @@ def load_definitions():
         )
 
     return Definitions(
-        assets=asset_defs + asset_factories.assets,
+        assets=list(asset_defs) + asset_factories.assets,
         schedules=schedules,
         jobs=asset_factories.jobs,
         asset_checks=asset_factories.checks,
