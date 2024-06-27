@@ -14,7 +14,11 @@ import arrow
 
 
 class OSSDirectoryConfig(Config):
-    force: bool = False
+    # By default, the oss-directory asset doesn't write anything if there aren't
+    # any changes from the previous materialization. This happens by comparing
+    # the sha of the current fetch_data and the sha stored in the metadata of
+    # the last materialization
+    force_write: bool = False
 
 
 @multi_asset(
@@ -25,7 +29,9 @@ class OSSDirectoryConfig(Config):
     can_subset=True,
 )
 def ossdirectory_repo(context: AssetExecutionContext, config: OSSDirectoryConfig):
-
+    """Materializes both the projects/collections from the oss-directory repo
+    into separate dataframe assets.
+    """
     data = fetch_data()
 
     if not data.meta:
@@ -36,10 +42,13 @@ def ossdirectory_repo(context: AssetExecutionContext, config: OSSDirectoryConfig
         latest_materialization = context.instance.get_latest_materialization_event(
             asset_key=asset_key
         )
+
+        # Check if there's a previous materialization. We can choose not to add
+        # any data to the database
         if (
             latest_materialization
             and latest_materialization.asset_materialization
-            and not config.force
+            and not config.force_write
         ):
             repo_meta = latest_materialization.asset_materialization.metadata.get(
                 "repo_meta", {}
@@ -53,16 +62,21 @@ def ossdirectory_repo(context: AssetExecutionContext, config: OSSDirectoryConfig
                         "repo_meta": repo_meta_dict,
                     }
                 )
+                # The previous sha for this asset and the current sha match. No
+                # need to update anything
                 if repo_meta_dict.get("sha", "") == data.meta.sha:
                     context.log.info(f"no changes for {output}")
                     continue
-        context.log.debug(data.meta.committed_datetime)
-        context.log.debug(type(data.meta.committed_datetime))
         committed_dt = data.meta.committed_datetime
 
         df = pl.from_dicts(getattr(data, output))
+        # Add sync time and commit sha to the dataframe
         df = df.with_columns(
             sha=pl.lit(bytes.fromhex(data.meta.sha)),
+            # We need to instantiate the datetime here using this pl.datetime
+            # constructor due to an issue with the datetime that's returned from
+            # ossdirectory that has a timezone type that seems to be
+            # incompatible with polars.
             committed_time=pl.datetime(
                 committed_dt.year,
                 committed_dt.month,
@@ -73,7 +87,6 @@ def ossdirectory_repo(context: AssetExecutionContext, config: OSSDirectoryConfig
             ),
         )
 
-        # Add sync time and commit sha to the dataframe
         yield Output(
             df,
             output,
