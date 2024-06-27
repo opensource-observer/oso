@@ -1,6 +1,7 @@
 ---
 title: Connect via CloudQuery
-sidebar_position: 3
+sidebar_position: 8
+sidebar_class_name: hidden
 ---
 
 [CloudQuery](https://cloudquery.io) can be used to integrate external data sources
