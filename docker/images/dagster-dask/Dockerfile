@@ -10,17 +10,16 @@ RUN apt-get update && \
     apt-get install -y software-properties-common && \
     add-apt-repository ppa:deadsnakes/ppa && \
     apt-get update && \
-    apt-get install -y python3.12
-RUN apt-get install -y curl && \
+    apt-get install -y python3.12 && \
+    apt-get install -y curl git && \
     curl -o get-pip.py https://bootstrap.pypa.io/get-pip.py && \
-    python3.12 get-pip.py
-RUN pip3.12 install poetry
-RUN curl -o gcloud.tar.gz https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-${GCLOUD_VERSION}-linux-x86_64.tar.gz && \
+    python3.12 get-pip.py && \
+    pip3.12 install poetry && \
+    curl -o gcloud.tar.gz https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-${GCLOUD_VERSION}-linux-x86_64.tar.gz && \
     tar xvf gcloud.tar.gz && \
     bash ./google-cloud-sdk/install.sh && \
     rm gcloud.tar.gz && true
 ENV PATH $PATH:/google-cloud-sdk/bin
-
 
 RUN mkdir -p /usr/src/app && \
     bash -c "mkdir -p /usr/src/app/warehouse/{bq2cloudsql,oso_dagster,oso_lets_go,common}" && \
