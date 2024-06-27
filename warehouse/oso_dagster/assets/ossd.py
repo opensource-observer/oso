@@ -1,4 +1,5 @@
 from typing import cast
+
 from dagster import (
     multi_asset,
     Output,
@@ -8,7 +9,6 @@ from dagster import (
     Config,
 )
 from ossdirectory import fetch_data
-
 import polars as pl
 import arrow
 
