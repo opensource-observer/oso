@@ -6,7 +6,6 @@ from dataclasses import dataclass, field
 import arrow
 from google.api_core.exceptions import NotFound
 from google.cloud.bigquery.job import CopyJobConfig
-import pandas as pd
 from dagster import (
     asset,
     asset_sensor,

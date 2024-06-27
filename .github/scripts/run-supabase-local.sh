@@ -3,7 +3,7 @@ set -euo pipefail
 
 cd "$1"
 
-pnpm supabase start
+pnpm supabase start -x realtime,imgproxy,studio,edge-runtime,logflare,vector
 export $(pnpm supabase status -o env | xargs)
 echo "SUPABASE_SERVICE_KEY=$SERVICE_ROLE_KEY" >> $GITHUB_ENV
 echo "SUPABASE_JWT_SECRET=$JWT_SECRET" >> $GITHUB_ENV 

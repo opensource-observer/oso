@@ -1,7 +1,4 @@
 with contracts_deployed_no_factory as (
-  {#
-    This gets all of the contracts that weren't deployed with a factory
-  #}
   select
     network,
     deployer_address,

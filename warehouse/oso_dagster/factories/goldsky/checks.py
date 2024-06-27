@@ -1,6 +1,5 @@
 import os
 from typing import List, Optional, Tuple
-from dataclasses import dataclass
 
 from .config import GoldskyConfig, CheckFactory
 from dagster import (
@@ -13,11 +12,10 @@ from dagster import (
     Config,
 )
 import arrow
-from dagster_gcp import BigQueryResource
 import sqlglot as sql
 
 from ...cbt import CBTResource, Transformation
-from ...cbt.macros import time_constrain_table, context_query_replace_source_tables
+from ...cbt.transforms import time_constrain_table, context_query_replace_source_tables
 
 
 def generated_asset_prefix(asset: AssetsDefinition):
@@ -32,12 +30,12 @@ class BlockchainCheckConfig(Config):
     def get_range(self) -> Tuple[arrow.Arrow | None, arrow.Arrow | None]:
         now = arrow.now()
         if self.full_refresh:
-            return [None, now.shift(days=-1)]
+            return (None, now.shift(days=-1))
         if self.start or self.end:
             start = arrow.get(self.start) if self.start is not None else None
             end = arrow.get(self.end) if self.end is not None else None
-            return [start, end]
-        return [now.shift(days=-6), now.shift(days=-1)]
+            return (start, end)
+        return (now.shift(days=-6), now.shift(days=-1))
 
 
 def traces_check(

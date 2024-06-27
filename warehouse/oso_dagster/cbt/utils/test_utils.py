@@ -1,6 +1,5 @@
-import pytest
 import sqlglot as sql
-from oso_dagster.cbt.utils import *
+from oso_dagster.cbt.utils import replace_source_tables, is_same_sql
 
 
 def test_replace_table():
