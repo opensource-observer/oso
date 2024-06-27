@@ -3134,13 +3134,13 @@ files = [
 
 [[package]]
 name = "oss-directory"
-version = "0.1.0"
+version = "0.2.0"
 description = "Open source software directory"
 optional = false
 python-versions = "<3.13,>=3.11"
 files = [
-    {file = "oss_directory-0.1.0-py3-none-any.whl", hash = "sha256:5623e2bea9a1b96a32d976de99819075c925178c1bf201f5345bbd54bf6f6f74"},
-    {file = "oss_directory-0.1.0.tar.gz", hash = "sha256:55e547dbe3d34b9a8997e4eb7edf15aab58f5b02959e93d4685c9c12def46e79"},
+    {file = "oss_directory-0.2.0-py3-none-any.whl", hash = "sha256:6c1127c8e8e929a09306c8b6a87af2a52bf0a7c689ded5239e41f5aa79841e42"},
+    {file = "oss_directory-0.2.0.tar.gz", hash = "sha256:b0b4f82b5bdccdd3c083c46f6530c082dd61fb8829231f6eeed74dcb55ca4481"},
 ]
 
 [package.dependencies]
@@ -5644,4 +5644,4 @@ test = ["big-O", "importlib-resources", "jaraco.functools", "jaraco.itertools", 
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12,<3.13"
-content-hash = "54cd7d58d3be277786b2a9f613ce459ebd541bd09056b8f9fa44c365d141aae1"
+content-hash = "c272d0b98f287a5f847057d20107a1c6ac727584ddcdedfe1e5dab5b3d772423"
