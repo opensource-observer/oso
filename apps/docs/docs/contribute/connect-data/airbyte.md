@@ -1,6 +1,7 @@
 ---
 title: 🏗️ Connect via Airbyte
-sidebar_position: 2
+sidebar_position: 7
+sidebar_class_name: hidden
 ---
 
 ## Replicating external databases
