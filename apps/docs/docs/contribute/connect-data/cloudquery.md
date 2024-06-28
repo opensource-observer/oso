@@ -4,6 +4,14 @@ sidebar_position: 8
 sidebar_class_name: hidden
 ---
 
+:::warning
+While it is possible to run CloudQuery plugins
+[inside Dagster embedded-elt](https://www.cloudquery.io/blog/how-to-run-efficient-embedded-elt-cloudquery-workflows-inside-dagster),
+we haven't done it ourselves yet.
+If you have tips on how to get this going with
+embedded-elt, please send us a PR!
+:::
+
 [CloudQuery](https://cloudquery.io) can be used to integrate external data sources
 into the OSO platform. At this time we are limiting the
 CloudQuery plugins in the OSO repository to Python or Typescript.
@@ -262,14 +270,10 @@ pipeline.
 ### Adding to Dagster
 
 :::warning
-Coming soon... This section is a work in progress.
-To track progress, see this
-[GitHub issue](https://github.com/opensource-observer/oso/issues/1325)
+This section is a work in progress.
+We are in the process of moving everything to Dagster embedded-elt.
+If you want to help, check out this
+[blog](https://www.cloudquery.io/blog/how-to-run-efficient-embedded-elt-cloudquery-workflows-inside-dagster)
+and track in this
+[GitHub issue](https://github.com/opensource-observer/oso/issues/1325).
 :::
-
-## CloudQuery examples in OSO
-
-Here are a few examples of CloudQuery plugins currently in use:
-
-- [Importing oss-directory](https://github.com/opensource-observer/oso/tree/main/warehouse/cloudquery-oss-directory)
-- [Fetch GitHub data missing from GHArchive](https://github.com/opensource-observer/oso/tree/main/warehouse/cloudquery-github-resolve-repos)

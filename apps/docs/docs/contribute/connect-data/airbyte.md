@@ -4,15 +4,28 @@ sidebar_position: 7
 sidebar_class_name: hidden
 ---
 
+:::warning
+While Dagster does have support for integrating with
+[Airbyte](https://docs.dagster.io/integrations/airbyte),
+we do not currently run an Airbyte server.
+We prefer using Dagster
+[embedded-elt](https://docs.dagster.io/_apidocs/libraries/dagster-embedded-elt).
+If you have tips on how to run Airbyte plugins within
+embedded-elt, please send us a PR!
+:::
+
 ## Replicating external databases
 
 If your data exists in an off-the-shelf database,
 you can replicate data to OSO via an AirByte Connector or
-Singer.io Tap integration through Meltano. This section provides the details
+Singer.io Tap integration through Meltano, which is run in a GitHub action.
+This configuration does not require running an Airbyte server.
+
+This section provides the details
 necessary to add a connector or a tap from an existing Postgres database into
 our system. Other databases or datasources should be similar.
 
-### Settings up your postgres database for connection
+### Settings up your Postgres database for connection
 
 We will setup the postgre connection to use Change Data Capture which is
 suggested for very large databases. You will need to have the following in order
@@ -107,10 +120,10 @@ CREATE PUBLICATION oso_publication FOR ALL TABLES;
 
 For more details about this command see: https://www.postgresql.org/docs/current/sql-createpublication.html
 
-### Adding your postgres replication data to the OSO meltano configuration
+### Adding your postgres replication data to the OSO Meltano configuration
 
-Assuming that you've created the publication you're now ready to connect your
-postgres data source to OSO.
+In the future we will move everything over to our Dagster setup.
+For now, we will run Airbyte plugins via Meltano in a GitHub actions workflow.
 
 #### Add the extractor to `meltano.yml`
 
@@ -149,14 +162,6 @@ extractors:
 For now, once this is all completed it is best to open a pull request and an OSO
 maintainer will reach out with a method to accept the read only credentials.
 
-### Adding to Dagster
-
-:::warning
-Coming soon... This section is a work in progress.
-To track progress, see this
-[GitHub issue](https://github.com/opensource-observer/oso/issues/1318)
-:::
-
 ## Writing a new Airbyte connector
 
 Airbyte provides one of the best ways to write data connectors
@@ -164,11 +169,15 @@ that ingest data from HTTP APIs and other Python sources via the
 [Airbyte Python CDK](https://docs.airbyte.com/connector-development/cdk-python/).
 
 :::warning
-Coming soon... This section is a work in progress.
+This section is a work in progress.
 :::
 
-## Airbyte examples in OSO
+## Adding to Dagster
 
 :::warning
-Coming soon... This section is a work in progress.
+This section is a work in progress.
+We would love to see a way to integrate Airbyte plugins
+into a Dagster asset (possibly via Meltano).
+To track progress, see this
+[GitHub issue](https://github.com/opensource-observer/oso/issues/1318).
 :::
