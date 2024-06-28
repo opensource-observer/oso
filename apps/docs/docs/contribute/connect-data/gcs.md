@@ -3,6 +3,8 @@ title: 🏗️ Connect via Google Cloud Storage (GCS)
 sidebar_position: 4
 ---
 
+import NextSteps from "./dagster-config.mdx"
+
 Depending on the data, we may accept data dumps
 into our Google Cloud Storage (GCS).
 If you believe your data storage qualifies to be sponsored
@@ -35,3 +37,5 @@ see the [Dagster tutorial](https://docs.dagster.io/tutorial).
 - [Superchain data](https://github.com/opensource-observer/oso/blob/main/warehouse/oso_dagster/assets.py)
 - [Gitcoin Passport scores](https://github.com/opensource-observer/oso/blob/main/warehouse/oso_dagster/assets.py)
 - [OpenRank reputations on Farcaster](https://github.com/opensource-observer/oso/blob/main/warehouse/oso_dagster/assets.py)
+
+<NextSteps components={props.components}/>
