@@ -50,7 +50,7 @@ airdrop_recipients as (
     select
       LOWER(address) as address,
       COUNT(distinct airdrop_round) as count_drops
-    from {{ ref('stg_optimism_airdrop_addresses') }}
+    from {{ ref('stg_optimism__airdrop_addresses') }}
     group by LOWER(address)
   )
 ),

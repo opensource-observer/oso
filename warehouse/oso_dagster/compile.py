@@ -1,6 +1,7 @@
 # ruff: noqa: E402
 """
-Tool for handling dbt compilation in a docker container
+Tool for handling dbt compilation in a docker container. This should not be used
+locally. This is truly only for docker.
 """
 
 import click
