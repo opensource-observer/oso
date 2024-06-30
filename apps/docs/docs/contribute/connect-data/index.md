@@ -10,7 +10,7 @@ We're always looking for new data sources to integrate with OSO and deepen our c
 There are currently the following patterns for integrating new data sources into OSO,
 in order of preference:
 
-1. [**BigQuery public datasets**](./bigquery.md): If you can maintain a BigQuery public dataset, this is the preferred and easiest route.
+1. [**BigQuery public datasets**](./bigquery/index.md): If you can maintain a BigQuery public dataset, this is the preferred and easiest route.
 2. [**Database replication**](./database.md): Replicate your database into an OSO dataset (e.g. from Postgres).
 3. [**API crawling**](./api.md): Crawl an API by writing a plugin.
 4. [**Files into Google Cloud Storage (GCS)**](./gcs.md): You can drop Parquet/CSV files in our GCS bucket for loading into BigQuery.
