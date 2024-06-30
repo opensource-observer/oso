@@ -74,7 +74,7 @@ As described in [our docs](https://docs.opensource.observer/docs/how-oso-works/o
 
 ![image](./oss-directory.png)
 
-You can get the data by cloning the repo, through [our API](link), and as an [NPM package](link). We also quietly released a Python package last week! You can install it with `pip install oss-directory`.
+You can get the data by cloning the repo, through [our API](https://docs.opensource.observer/docs/integrate/api), and as an [NPM package](https://docs.opensource.observer/docs/integrate/oss-directory#npm-library). We also quietly released a [Python package](https://pypi.org/project/oss-directory/) last week! You can install it with `pip install oss-directory`.
 
 ### Contract discovery model
 
@@ -116,7 +116,7 @@ We're excited to see how this type of model evolves and is extended for future u
 
 ### Principles
 
-The following design principles guide the development and evolution of [impact metrics](link to docs):
+The following design principles guide the development and evolution of [impact metrics](https://docs.opensource.observer/docs/how-oso-works/impact-metrics/#principles):
 
 - Verifiability: Metrics should be based on public data that can be independently verified. They should not rely on proprietary data sources or private APIs.
 - Reproducibility: Metrics should be easy to reproduce, simulate, and audit to ensure they are achieving the intended results. They should not have a "black box" element that makes them difficult to understand or replicate.
