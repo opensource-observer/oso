@@ -12,6 +12,8 @@ As discussed in our companion post, [Impact Metrics for Optimism Retro Funding 4
 
 This post is a deeper dive on the work we did at Open Source Observer to help organize data about projects and prepare Optimism badgeholders for voting.
 
+<!-- truncate -->
+
 ## Where the metrics come from
 
 We built a first-of-its-kind data pipeline for the Superchain: not only the data but also all source code, query logic, and underlying infrastructure is publicly available for use. We aren’t aware of any other fully open data pipelines of this size or complexity built this way.
@@ -113,8 +115,6 @@ A total of 83K addresses met these requirements. A complete list is available as
 We're excited to see how this type of model evolves and is extended for future use cases.
 
 ## Developing the impact metrics
-
-### Principles
 
 The following design principles guide the development and evolution of [impact metrics](https://docs.opensource.observer/docs/how-oso-works/impact-metrics/#principles):
 
