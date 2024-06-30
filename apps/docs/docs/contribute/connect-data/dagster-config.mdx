@@ -10,13 +10,14 @@ sidebar_class_name: hidden
 When you are ready to deploy,
 submit a pull request of your changes to
 [OSO](https://github.com/opensource-observer/oso).
-OSO maintainers will work with you to get the code In shape for merging.
+OSO maintainers will work with you to get the code in shape for merging.
 For more details on contributing to OSO, check out
 [CONTRIBUTING.md](https://github.com/opensource-observer/oso/blob/main/CONTRIBUTING.md).
 
 ### Verify deployment
 
-Give our Dagster deployment 24 hours after your pull request merges to reload.
+Our Dagster deployment should automatically recognize the asset
+after merging your pull request to the main branch.
 You should be able to find your new asset
 in the [global asset list](https://dagster.opensource.observer/assets).
 
@@ -29,6 +30,7 @@ For example, if your code has a bug and leads to a loading error,
 it may look like this:
 
 ![Dagster deployment](./dagster_deployments.png)
+
 
 ### Run it!
 
@@ -62,7 +64,9 @@ increased infrastructure instability or unexpected costs.
 
 ## Defining a dbt source
 
-In this example, we create a dbt source in `oso/warehouse/dbt/models/`
+In order to make the new dataset available to the data pipeline,
+you need to add it as a dbt source.
+In this example, we create a source in `oso/warehouse/dbt/models/`
 (see [source](https://github.com/opensource-observer/oso/blob/main/warehouse/dbt/models/ethereum_sources.yml))
 for the Ethereum mainnet
 [public dataset](https://cloud.google.com/blog/products/data-analytics/ethereum-bigquery-public-dataset-smart-contract-analytics).
@@ -79,7 +83,6 @@ sources:
         identifier: traces
 ```
 
-This will make it clear to OSO dbt users that the data is available for use.
 We can then reference these tables in downstream models with
 the `source` macro:
 
