@@ -5,7 +5,11 @@ sidebar_position: 1
 
 BigQuery's built-in data-sharing capabilities make it
 trivially easy to integrate any public dataset into
-the OSO data pipeline.
+the OSO data pipeline, provided the dataset exists in
+the US multi-region.
+
+If the dataset needs to be replicated, see our guide on
+[BigQuery Data Transfer Service](./replication.md).
 
 ## Make the data available in the US region
 
@@ -22,9 +26,9 @@ you can do this directly from the
 [BigQuery Studio](https://console.cloud.google.com/bigquery/transfers?project=opensource-observer).
 
 OSO will also copy certain valuable datasets into the
-`opensource-observer` project via Dagster assets.
-See the [Dataset replication](#oso-dataset-replication)
-section below to add a Dagster asset to OSO.
+`opensource-observer` project via the BigQuery Data Transfer Service
+See the guide on [BigQuery Data Transfer Service](./replication.md)
+add dataset replication as a Dagster asset to OSO.
 
 ## Make the data accessible to our Google service account
 
@@ -123,17 +127,3 @@ Coming soon... This section is a work in progress.
 :::warning
 Coming soon... This section is a work in progress.
 :::
-
-## OSO Dataset Replication
-
-In order to make the OSO data pipeline more robust,
-we can copy datasets into the `opensource-observer` Google Cloud project.
-
-:::warning
-Coming soon... This section is a work in progress.
-To track progress, see this
-[GitHub issue](https://github.com/opensource-observer/oso/issues/1311).
-:::
-
-Dagster also has an excellent tutorial on integrating
-[BigQuery with Dagster](https://docs.dagster.io/integrations/bigquery/using-bigquery-with-dagster).
