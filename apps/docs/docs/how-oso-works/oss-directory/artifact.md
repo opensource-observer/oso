@@ -8,7 +8,7 @@ An **artifact** is a link or reference to work created by open source projects i
 :::
 
 :::note
-Our Version 3 schema currently supports three types of artifacts: GitHub organizations and repositories, NPM packages, and blockchain addresses. The `github`, `npm`, and `blockchain` fields in the [project schema](./project) are used to store arrays of artifacts associated with a particular project.
+Our current schema only indexed data from three types of artifacts: GitHub organizations and repositories, NPM packages, and blockchain addresses. The `github`, `npm`, and `blockchain` fields in the [project schema](./project) are used to store arrays of artifacts associated with a particular project.
 :::
 
 ## Artifact Identification
