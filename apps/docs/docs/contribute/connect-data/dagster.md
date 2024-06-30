@@ -36,9 +36,10 @@ At a high-level, there are 2 possible pathways:
   easily fit in memory.
 
 Assets should be added to
-`warehouse/oso_dagster/assets/`.
-All assets defined in this directory are automatically
-loaded into Dagster.
+`warehouse/oso_dagster/assets/` and then imported in
+`warehouse/oso_dagster/assets/__init__.py`.
+All assets defined in this module are automatically
+loaded into Dagster from the main branch of the git repository.
 
 For an example of a custom Dagster asset, check out the
 [asset for oss-directory](https://github.com/opensource-observer/oso/blob/main/warehouse/oso_dagster/assets/ossd.py),

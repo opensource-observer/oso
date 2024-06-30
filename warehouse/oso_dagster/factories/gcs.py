@@ -25,16 +25,18 @@ from dagster_gcp import BigQueryResource, GCSResource
 from .common import AssetFactoryResponse
 from ..utils.bq import ensure_dataset, DatasetOptions
 
-
+# An enum for specifying time intervals
 class Interval(Enum):
     Hourly = 0
     Daily = 1
     Weekly = 2
     Monthly = 3
 
-
+# Configures how we should handle incoming data
 class SourceMode(Enum):
+    # Add new time-partitioned data incrementally
     Incremental = 0
+    # Overwrite the entire dataset on each import
     Overwrite = 1
 
 
@@ -42,21 +44,31 @@ class SourceMode(Enum):
 class BaseGCSAsset:
     name: str
     key_prefix: Optional[str | Sequence[str]] = ""
+    # GCP project ID (usually opensource-observer)
     project_id: str
+    # GCS bucket name
     bucket_name: str
     path_base: str
+    # Regex for incoming files
     file_match: str
+    # Table name nested under the dataset
     destination_table: str
+    # BigQuery temporary staging dataset for imports
     raw_dataset_name: str
+    # BigQuery destination dataset
     clean_dataset_name: str
+    # Format of incoming files (PARQUET preferred)
     format: str = "CSV"
     asset_kwargs: dict = field(default_factory=lambda: {})
 
 
 @dataclass(kw_only=True)
 class IntervalGCSAsset(BaseGCSAsset):
+    # How often we should run this job
     interval: Interval
+    # Incremental or overwrite
     mode: SourceMode
+    # Retention time before deleting GCS files
     retention_days: int
 
 
