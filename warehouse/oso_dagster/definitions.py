@@ -11,7 +11,7 @@ from .cbt import CBTResource
 from .factories import load_assets_factories_from_modules
 from . import assets
 
-# from dagster_embedded_elt.dlt import DagsterDltResource
+from dagster_embedded_elt.dlt import DagsterDltResource
 
 from dotenv import load_dotenv
 
@@ -19,7 +19,7 @@ load_dotenv()
 
 
 def load_definitions():
-    # dlt = DagsterDltResource()
+    dlt = DagsterDltResource()
     bigquery = BigQueryResource(project=os.environ.get("GOOGLE_PROJECT_ID"))
     gcs = GCSResource(project=os.environ.get("GOOGLE_PROJECT_ID"))
     cbt = CBTResource(
@@ -39,7 +39,7 @@ def load_definitions():
         "cbt": cbt,
         "bigquery": bigquery,
         "io_manager": io_manager,
-        # "dlt": dlt,
+        "dlt": dlt,
     }
     for target in constants.main_dbt_manifests:
         resources[f"{target}_dbt"] = DbtCliResource(
