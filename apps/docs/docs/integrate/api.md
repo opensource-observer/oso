@@ -10,9 +10,9 @@ For data exploration, check out the guides on
 [performing queries](./query-data.mdx)
 and [Python notebooks](./python-notebooks.md).
 
-## Generate an API key
+## How to Generate an API key
 
-First, navigate to [www.opensource.observer](https://www.opensource.observer) and create a new account.
+First, go to [www.opensource.observer](https://www.opensource.observer) and create a new account.
 
 If you already have an account, log in. Then create a new personal API key:
 
@@ -22,7 +22,7 @@ If you already have an account, log in. Then create a new personal API key:
 4. You should see your brand new key. **Immediately** save this value, as you'll **never** see it again after refreshing the page.
 5. Click "Create" to save the key.
 
-You can create as many keys as you like.
+**You can create as many keys as you like.**
 
 ![generate API key](./generate-api-key.png)
 
@@ -38,7 +38,7 @@ You can navigate to our
 [public GraphQL explorer](https://cloud.hasura.io/public/graphiql?endpoint=https://opensource-observer.hasura.app/v1/graphql)
 to explore the schema and execute test queries.
 
-## Authentication
+## How to Authenticate
 
 In order to authenticate with the API service, you have to use the `Authorization` HTTP header and `Bearer` authentication on all HTTP requests, like so:
 
