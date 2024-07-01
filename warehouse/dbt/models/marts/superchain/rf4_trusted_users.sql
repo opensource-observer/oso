@@ -10,7 +10,6 @@ with farcaster_users as (
 ),
 
 eigentrust_top_users as (
-  {# draft model for testing #}
   select
     1 as eigentrust_verification,
     CAST(farcaster_id as string) as farcaster_id
