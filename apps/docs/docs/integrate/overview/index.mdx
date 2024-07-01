@@ -13,9 +13,9 @@ import LensLogo from "./lens-protocol.png";
 import GitcoinLogo from "./gitcoin.png";
 import OpenrankLogo from "./openrank.png";
 
-First, go to the
+First, you need to set up your BigQuery account. You can do this by going to the 
 [Get Started](../../get-started/index.mdx)
-page to setup your BigQuery account.
+page.
 
 ## OSO Data Exchange on Analytics Hub
 
@@ -41,7 +41,7 @@ Like most dbt-based pipelines, we split the pipeline stages into
 You can find the reference documentation on every data model on  
 [https://models.opensource.observer/](https://models.opensource.observer/)
 
-Data produced by the OSO data pipeline is released under the
+The data produced by the OSO data pipeline is released under the
 [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)
 license.
 
@@ -70,9 +70,9 @@ from `YOUR_PROJECT_NAME.oso_production.code_metrics_by_project_v1`
 where project_name = 'uniswap'
 ```
 
-**Remember to update the project name in the query.**
+**Remember to replace 'YOUR_PROJECT_NAME' with the name of your project in the query.**
 
-*Note: Unless the model name is versioned, expect that the model is unstable and should not depended on
+*Note: Unless the model name is versioned, expect that the model is unstable and should not be depended on
 in a live production application.*
 
 
