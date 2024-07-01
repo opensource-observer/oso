@@ -14,4 +14,4 @@ from .pgn import *
 from .zora import *
 from .ossd import *
 
-# from .ecosystems import *
+from .ecosystems import *

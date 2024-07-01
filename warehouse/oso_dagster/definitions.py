@@ -12,13 +12,13 @@ from .factories import load_assets_factories_from_modules
 from .resources import BigQueryDataTransferResource
 from . import assets
 
-# from dagster_embedded_elt.dlt import DagsterDltResource
+from dagster_embedded_elt.dlt import DagsterDltResource
 
 from dotenv import load_dotenv
 load_dotenv()
 
 def load_definitions():
-    # dlt = DagsterDltResource()
+    dlt = DagsterDltResource()
     bigquery = BigQueryResource(project=os.environ.get("GOOGLE_PROJECT_ID"))
     bigquery_datatransfer = BigQueryDataTransferResource(project=os.environ.get("GOOGLE_PROJECT_ID"))
     gcs = GCSResource(project=os.environ.get("GOOGLE_PROJECT_ID"))
@@ -40,7 +40,7 @@ def load_definitions():
         "bigquery": bigquery,
         "bigquery_datatransfer": bigquery_datatransfer,
         "io_manager": io_manager,
-        # "dlt": dlt,
+        "dlt": dlt,
     }
     for target in constants.main_dbt_manifests:
         resources[f"{target}_dbt"] = DbtCliResource(
