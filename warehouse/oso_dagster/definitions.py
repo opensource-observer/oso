@@ -9,15 +9,15 @@ from . import constants
 from .schedules import schedules
 from .cbt import CBTResource
 from .factories import load_assets_factories_from_modules
+from .resources import BigQueryDataTransferResource
 from . import assets
 
 from dotenv import load_dotenv
-
 load_dotenv()
-
 
 def load_definitions():
     bigquery = BigQueryResource(project=os.environ.get("GOOGLE_PROJECT_ID"))
+    bigquery_datatransfer = BigQueryDataTransferResource(project=os.environ.get("GOOGLE_PROJECT_ID"))
     gcs = GCSResource(project=os.environ.get("GOOGLE_PROJECT_ID"))
     cbt = CBTResource(
         bigquery=bigquery,
@@ -35,6 +35,7 @@ def load_definitions():
         "gcs": gcs,
         "cbt": cbt,
         "bigquery": bigquery,
+        "bigquery_datatransfer": bigquery_datatransfer,
         "io_manager": io_manager,
     }
     for target in constants.main_dbt_manifests:
