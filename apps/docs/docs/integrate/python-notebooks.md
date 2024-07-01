@@ -3,14 +3,14 @@ title: Write Python notebooks
 sidebar_position: 4
 ---
 
-Notebooks are a great way for data scientists to explore data, organize ad-hoc analysis, and share insights. We've included several template notebooks to help you get started working with OSO data. You can find these on [Google Colab](https://drive.google.com/drive/folders/1mzqrSToxPaWhsoGOR-UVldIsaX1gqP0F?usp=drive_link) and in the [community directory](https://github.com/opensource-observer/insights/tree/main/community/notebooks) of our insights repo. We encourage you to share your analysis and visualizations with the OSO community.
+Python notebooks are a great way for data scientists to explore data, organize ad-hoc analysis, and share insights. We've included several template notebooks to help you get started working with OSO data. You can find these on [Google Colab](https://drive.google.com/drive/folders/1mzqrSToxPaWhsoGOR-UVldIsaX1gqP0F?usp=drive_link) and in the [community directory](https://github.com/opensource-observer/insights/tree/main/community/notebooks) of our insights repo. We encourage you to share your analysis and visualizations with the OSO community.
 
 You will need access to the OSO data warehouse to do data science.
 See our getting started guide [here](../get-started/index.mdx).
 
 ## Fetching Data
 
-There are three common ways to fetch data from the OSO data warehouse so you can run analysis on it:
+There are three common ways to fetch data from a data warehouse for analysis:
 
 1. **Google Colab**: Run your analysis in the cloud using Google Colab.
 2. **Jupyter on Your Machine**: Run your analysis locally using Jupyter.
@@ -18,9 +18,9 @@ There are three common ways to fetch data from the OSO data warehouse so you can
 
 The next section will walk you through each of these methods.
 
-### With Google Colab
+### Using Google Colab
 
-The fastest way to get started with data science on OSO is to copy one of our notebooks on [Google Colab](https://drive.google.com/drive/folders/1mzqrSToxPaWhsoGOR-UVldIsaX1gqP0F?usp=drive_link).
+Google Colab is a cloud-based Python notebook that allows you to run your analysis without having to install anything on your local machine. The fastest way to get started with data science on OSO is to copy one of our notebooks on [Google Colab](https://drive.google.com/drive/folders/1mzqrSToxPaWhsoGOR-UVldIsaX1gqP0F?usp=drive_link).
 
 You can also create a new notebook from scratch and run it in the cloud. Here's how to get started:
 
@@ -54,9 +54,9 @@ You can also create a new notebook from scratch and run it in the cloud. Here's 
    **Remember to replace `my-oso-playground` with your project id.**:
    This will attach the query to your billing account.
 
-   Execute the code block. The query will run in a few seconds and the results will be stored in the `df` dataframe.
+4. Execute the code block. The query will run in a few seconds and the results will be stored in the `df` dataframe.
 
-4. Create a new code block to preview the first few rows of your dataframe:
+5. Create a new code block to preview the first few rows of your dataframe:
 
    ```python
    df.head()
@@ -64,7 +64,7 @@ You can also create a new notebook from scratch and run it in the cloud. Here's 
 
    This will show you the first few rows of your dataframe so you can get a sense of the data you're working with.
 
-5. Move from the "playground" to the "production" dataset. Once you have a working query, you can replace `oso_playground` with `oso` to fetch data from the production dataset.
+6. Move from the "playground" to the "production" dataset. Once you have a working query, you can replace `oso_playground` with `oso` to fetch data from the production dataset.
 
    ```python
    # replace 'my-oso-playground' with your project id
@@ -75,7 +75,7 @@ You can also create a new notebook from scratch and run it in the cloud. Here's 
    ORDER BY last_commit_date DESC
    ```
 
-6. Import other common data science libraries like `pandas`, `numpy`, `matplotlib`, and `seaborn` to help you analyze and visualize your data.
+7. Import other common data science libraries like `pandas`, `numpy`, `matplotlib`, and `seaborn` to help you analyze and visualize your data.
 
    ```python
    import pandas as pd
@@ -94,13 +94,13 @@ You can also download your Colab notebooks to your local machine and run them in
 
 ### Using Jupyter on your machine
 
-This section will walk you through setting up a local Jupyter notebook environment, storing your GCP service account key on your machine, and connecting to the OSO data warehouse.
+Jupyter is a Python notebook that you can run on your local machine. This section will walk you through setting up a local Jupyter notebook environment, storing your GCP service account key on your machine, and connecting to the OSO data warehouse.
 
 #### Install Anaconda
 
 For new users, we highly recommend [installing Anaconda](https://www.anaconda.com/download). Anaconda conveniently installs Python, the Jupyter Notebook, and other commonly used packages for working with data.
 
-If you already have Jupyter installed, you can skip steps 1 and 2 below:
+**If you already have Jupyter installed, you can skip steps 1 and 2 below:**
 
 1. Download [Anaconda](https://www.anaconda.com/download). We recommend downloading Anaconda’s latest Python 3 version.
 
@@ -128,7 +128,7 @@ If you just installed Anaconda, you should have all the standard data science pa
 
 If you're using a different Python environment, you may need to install the following packages:
 
-If you're here, we will assume you have some familiarity with setting up a local Python environment and installing packages. We strongly recommend using Python >= 3.11. However, this guide should work for Python >= 3.7. The next section will ensure you have all the standard data science packages installed in your local environment.
+Once you've reached this part, we will assume you have some familiarity with setting up a local Python environment and installing packages. We strongly recommend using Python >= 3.11. However, this guide should work for Python >= 3.7. The next section will ensure you have all the standard data science packages installed in your local environment.
 
 Remember, it is a best practice to use a Python virtual environment tool such as [virtualenv](https://virtualenv.pypa.io/en/latest/) to manage dependencies.
 
@@ -523,7 +523,7 @@ If you'd like to share your impact metric analysis with the OSO community, you c
 
 ### Tutorial: analyze fork count distributions
 
-This example will walk you through the process of normalizing the distribution for the number of forks a project has.
+This example will show you how to normalize the distribution for the number of forks a project has.
 
 You can find the notebook shown in this tutorial [here](https://github.com/opensource-observer/insights/blob/main/community/notebooks/oso_impact_vector_starter.ipynb).
 
@@ -562,7 +562,7 @@ client = bigquery.Client()
 
 #### Fetching the Data
 
-We will fetch the latest fork counts for all projects in the OSO data warehouse and store them in a dataframe:
+Next, we will fetch the latest fork counts for all projects in the OSO data warehouse and store them in a dataframe:
 
 ```python
 query = """
