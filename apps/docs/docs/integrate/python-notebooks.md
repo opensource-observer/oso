@@ -3,14 +3,14 @@ title: Write Python notebooks
 sidebar_position: 4
 ---
 
-Notebooks are a great way for data scientists to explore data, organize ad-hoc analysis, and share insights. We've included several template notebooks to help you get started working with OSO data. You can find these on [Google Colab](https://drive.google.com/drive/folders/1mzqrSToxPaWhsoGOR-UVldIsaX1gqP0F?usp=drive_link) and in the [community directory](https://github.com/opensource-observer/insights/tree/main/community/notebooks) of our insights repo. We encourage you to share your analysis and visualizations with the OSO community.
+Python notebooks are a great way for data scientists to explore data, organize ad-hoc analysis, and share insights. We've included several template notebooks to help you get started working with OSO data. You can find these on [Google Colab](https://drive.google.com/drive/folders/1mzqrSToxPaWhsoGOR-UVldIsaX1gqP0F?usp=drive_link) and in the [community directory](https://github.com/opensource-observer/insights/tree/main/community/notebooks) of our insights repo. We encourage you to share your analysis and visualizations with the OSO community.
 
 You will need access to the OSO data warehouse to do data science.
 See our getting started guide [here](../get-started/index.mdx).
 
 ## Fetching Data
 
-There are three common ways to fetch data from the OSO data warehouse so you can run analysis on it:
+There are three common ways to fetch data from a data warehouse for analysis:
 
 1. **Google Colab**: Run your analysis in the cloud using Google Colab.
 2. **Jupyter on Your Machine**: Run your analysis locally using Jupyter.
@@ -20,7 +20,7 @@ The next section will walk you through each of these methods.
 
 ### With Google Colab
 
-The fastest way to get started with data science on OSO is to copy one of our notebooks on [Google Colab](https://drive.google.com/drive/folders/1mzqrSToxPaWhsoGOR-UVldIsaX1gqP0F?usp=drive_link).
+Google Colab is a cloud-based Python notebook that allows you to run your analysis without having to install anything on your local machine. The fastest way to get started with data science on OSO is to copy one of our notebooks on [Google Colab](https://drive.google.com/drive/folders/1mzqrSToxPaWhsoGOR-UVldIsaX1gqP0F?usp=drive_link).
 
 You can also create a new notebook from scratch and run it in the cloud. Here's how to get started:
 
@@ -54,9 +54,9 @@ You can also create a new notebook from scratch and run it in the cloud. Here's 
    **Remember to replace `my-oso-playground` with your project id.**:
    This will attach the query to your billing account.
 
-   Execute the code block. The query will run in a few seconds and the results will be stored in the `df` dataframe.
+4. Execute the code block. The query will run in a few seconds and the results will be stored in the `df` dataframe.
 
-4. Create a new code block to preview the first few rows of your dataframe:
+5. Create a new code block to preview the first few rows of your dataframe:
 
    ```python
    df.head()
@@ -64,7 +64,7 @@ You can also create a new notebook from scratch and run it in the cloud. Here's 
 
    This will show you the first few rows of your dataframe so you can get a sense of the data you're working with.
 
-5. Move from the "playground" to the "production" dataset. Once you have a working query, you can replace `oso_playground` with `oso` to fetch data from the production dataset.
+6. Move from the "playground" to the "production" dataset. Once you have a working query, you can replace `oso_playground` with `oso` to fetch data from the production dataset.
 
    ```python
    # replace 'my-oso-playground' with your project id
@@ -75,7 +75,7 @@ You can also create a new notebook from scratch and run it in the cloud. Here's 
    ORDER BY last_commit_date DESC
    ```
 
-6. Import other common data science libraries like `pandas`, `numpy`, `matplotlib`, and `seaborn` to help you analyze and visualize your data.
+7. Import other common data science libraries like `pandas`, `numpy`, `matplotlib`, and `seaborn` to help you analyze and visualize your data.
 
    ```python
    import pandas as pd
@@ -326,7 +326,7 @@ If you prefer to work with static data, you can export your data from BigQuery t
 
 ![GCP Save Results](./gcp_save_results.png)
 
-4. Finally, you can import your data into your analysis tool of choice. For example, you can import a CSV file into a Pandas dataframe in a Jupyter notebook:
+4. Finally, import your data into your analysis tool of choice. For example, you can import a CSV file into a Pandas dataframe in a Jupyter notebook:
 
    ```python
    import pandas as pd
@@ -562,7 +562,7 @@ client = bigquery.Client()
 
 #### Fetching the Data
 
-We will fetch the latest fork counts for all projects in the OSO data warehouse and store them in a dataframe:
+Next, we will fetch the latest fork counts for all projects in the OSO data warehouse and store them in a dataframe:
 
 ```python
 query = """
@@ -612,7 +612,7 @@ Not all datasets will have a log normal distribution. It's important to understa
 
 #### Comparing Projects
 
-Now that we have our distribution, we can compare projects to see how they perform relative to others in our collection. We can also set performance targets based on the normalized distribution. For example, an "exceptional" project might be in the top 5% of the distribution and an "excellent" project might be in the top 20%.
+With your distribution, we can compare projects to see how they perform relative to others in our collection. We can also set performance targets based on the normalized distribution. For example, an "exceptional" project might be in the top 5% of the distribution and an "excellent" project might be in the top 20%.
 
 Here's one way of visualizing the normalized values for `forks`. The chart shows a random sample of 50 projects and plots the impact scores on the X axis. The absoluate number of forks is shown next to each point. The color of the points represents the zscore of the project's forks.
 
@@ -670,6 +670,6 @@ ax.grid(which='major', axis='x', color='black', lw=.5)
 
 ## Sharing Analysis
 
-Once you have completed your analysis, you can share it with the community by submitting a PR to the [insights repo](https://github.com/opensource-observer/insights).
+Once you have completed your analysis, share it with the community by submitting a PR to the [insights repo](https://github.com/opensource-observer/insights).
 
 If you have ideas for analysis that you would like to see or receive help on, please [open an issue](https://github.com/opensource-observer/insights/issues) and tag one of the maintainers.
