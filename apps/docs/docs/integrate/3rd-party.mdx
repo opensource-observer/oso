@@ -10,7 +10,7 @@ OSO datasets and models are public and can be accessed on BigQuery. This allows 
 ## Subscribe to an OSO dataset
 
 First, we need to subscribe to an OSO dataset in your own
-Google Cloud account. 
+Google Cloud account.
 You can see all of our available datasets in the
 [Data Overview](./overview/index.mdx).
 
@@ -20,7 +20,9 @@ We recommend starting with the OSO production data pipeline here:
   size={"compact"}
   color={"blue"}
   target={"_blank"}
-  link={"https://console.cloud.google.com/bigquery/analytics-hub/exchanges/projects/87806073973/locations/us/dataExchanges/open_source_observer_190181416ae/listings/oso_data_pipeline_190187c6517"}
+  link={
+    "https://console.cloud.google.com/bigquery/analytics-hub/exchanges/projects/87806073973/locations/us/dataExchanges/open_source_observer_190181416ae/listings/oso_data_pipeline_190187c6517"
+  }
   children={"Subscribe on BigQuery"}
 />
 
@@ -41,7 +43,7 @@ check out a specific guide:
 
 For the rest of this guide, we'll use Hex as a running example.
 
-First, you'll need to 
+First, you'll need to
 [create a service account](https://cloud.google.com/iam/docs/creating-managing-service-account-keys#creating)
 in GCP and download the JSON key file.
 Click [here](https://console.cloud.google.com/iam-admin/serviceaccounts?walkthrough_id=iam--create-service-account-keys&start_index=1#step_index=1)
@@ -51,7 +53,7 @@ Click "+ Create Service Account":
 
 ![create service account](./gcp_service_account_create.png)
 
-Grant this new service account the "BigQuery User" 
+Grant this new service account the "BigQuery User"
 and "BigQuery Data Viewer" roles:
 
 ![permission service account](./gcp_service_account_perm.png)
@@ -82,7 +84,6 @@ the OSO datasets in the "Data browser" pane.
 Now try running a query on the OSO dataset!
 
 ![Hex query](./hex_query.png)
-
 
 ## Share your work!
 

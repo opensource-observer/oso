@@ -13,7 +13,7 @@ import LensLogo from "./lens-protocol.png";
 import GitcoinLogo from "./gitcoin.png";
 import OpenrankLogo from "./openrank.png";
 
-First, you need to set up your BigQuery account. You can do this by going to the 
+First, you need to set up your BigQuery account. You can do this by going to the
 [Get Started](../../get-started/index.mdx)
 page.
 
@@ -24,15 +24,17 @@ see [here](https://console.cloud.google.com/bigquery/analytics-hub/exchanges/pro
 
 ## OSO Production Data Pipeline
 
-<img src={OsoLogo} width="200"/>
+<img src={OsoLogo} width="200" />
 
 <Button
   size={"compact"}
   color={"blue"}
   target={"_blank"}
-  link={"https://console.cloud.google.com/bigquery/analytics-hub/exchanges/projects/87806073973/locations/us/dataExchanges/open_source_observer_190181416ae/listings/oso_data_pipeline_190187c6517"}
+  link={
+    "https://console.cloud.google.com/bigquery/analytics-hub/exchanges/projects/87806073973/locations/us/dataExchanges/open_source_observer_190181416ae/listings/oso_data_pipeline_190187c6517"
+  }
   children={"Subscribe on BigQuery"}
-/>  
+/>{" "}
 
 Every stage of the OSO data pipeline is queryable and downloadable.
 Like most dbt-based pipelines, we split the pipeline stages into
@@ -72,9 +74,8 @@ where project_name = 'uniswap'
 
 **Remember to replace 'YOUR_PROJECT_NAME' with the name of your project in the query.**
 
-*Note: Unless the model name is versioned, expect that the model is unstable and should not be depended on
-in a live production application.*
-
+_Note: Unless the model name is versioned, expect that the model is unstable and should not be depended on
+in a live production application._
 
 ### OSO Staging / Intermediate Models
 
@@ -91,7 +92,7 @@ For example, you may find it cheaper to run queries against
 
 ```sql
 SELECT event_source, SUM(amount)
-FROM `YOUR_PROJECT_NAME.oso_production.int_events_daily_to_project` 
+FROM `YOUR_PROJECT_NAME.oso_production.int_events_daily_to_project`
 WHERE project_id = 'XSDgPwFuQVcj57ARcKTGrm2w80KKlqJxaBWF6jZqe7w=' AND event_type = 'CONTRACT_INVOCATION_DAILY_COUNT'
 GROUP BY project_id, event_source
 ```
@@ -102,9 +103,11 @@ GROUP BY project_id, event_source
   size={"compact"}
   color={"blue"}
   target={"_blank"}
-  link={"https://console.cloud.google.com/bigquery/analytics-hub/exchanges/projects/87806073973/locations/us/dataExchanges/open_source_observer_190181416ae/listings/oso_playground_1901889910d"}
+  link={
+    "https://console.cloud.google.com/bigquery/analytics-hub/exchanges/projects/87806073973/locations/us/dataExchanges/open_source_observer_190181416ae/listings/oso_playground_1901889910d"
+  }
   children={"Subscribe on BigQuery"}
-/>  
+/>{" "}
 
 We maintain a subset of projects and events in a playground dataset for testing and development.
 All of the production models are mirrored in this environment.
@@ -113,15 +116,17 @@ All of the production models are mirrored in this environment.
 
 ### GitHub Data
 
-<img src={GithubLogo} width="100"/>
+<img src={GithubLogo} width="100" />
 
 <Button
   size={"compact"}
   color={"blue"}
   target={"_blank"}
-  link={"https://console.cloud.google.com/bigquery?project=githubarchive&page=project"}
+  link={
+    "https://console.cloud.google.com/bigquery?project=githubarchive&page=project"
+  }
   children={"View on BigQuery"}
-/>  
+/>{" "}
 
 [Reference documentation](https://models.opensource.observer/#!/source_list/github_archive)
 
@@ -134,7 +139,7 @@ For example, to count the number of issues opened, closed, and reopened on 2020/
 ```sql
 SELECT event as issue_status, COUNT(*) as cnt FROM (
   SELECT type, repo.name, actor.login,
-    JSON_EXTRACT(payload, '$.action') as event, 
+    JSON_EXTRACT(payload, '$.action') as event,
   FROM `githubarchive.day.20200101`
   WHERE type = 'IssuesEvent'
 )
@@ -148,15 +153,17 @@ GH Archive code and documentation are covered by the
 
 ### Ethereum Data
 
-<img src={EthereumLogo} width="100"/>
+<img src={EthereumLogo} width="100" />
 
 <Button
   size={"compact"}
   color={"blue"}
   target={"_blank"}
-  link={"https://console.cloud.google.com/marketplace/product/bigquery-public-data/blockchain-analytics-ethereum-mainnet-us?project=opensource-observer"}
+  link={
+    "https://console.cloud.google.com/marketplace/product/bigquery-public-data/blockchain-analytics-ethereum-mainnet-us?project=opensource-observer"
+  }
   children={"View on BigQuery"}
-/>  
+/>{" "}
 
 [Reference documentation](https://models.opensource.observer/#!/source_list/ethereum)
 
@@ -185,21 +192,24 @@ ethereum-etl code is covered by the
 
 ### Superchain Data
 
-<img src={SuperchainLogo} width="200"/>
+<img src={SuperchainLogo} width="200" />
 
 <Button
   size={"compact"}
   color={"blue"}
   target={"_blank"}
-  link={"https://console.cloud.google.com/bigquery/analytics-hub/exchanges/projects/87806073973/locations/us/dataExchanges/open_source_observer_190181416ae/listings/superchain_data_19018918042"}
+  link={
+    "https://console.cloud.google.com/bigquery/analytics-hub/exchanges/projects/87806073973/locations/us/dataExchanges/open_source_observer_190181416ae/listings/superchain_data_19018918042"
+  }
   children={"Subscribe on BigQuery"}
-/>  
+/>{" "}
 
 OSO is proud to provide public datasets for the Superchain,
 backed by our partners at
 [Goldsky](https://goldsky.com/).
 
 We currently have coverage for:
+
 - [Optimism mainnet](https://models.opensource.observer/#!/source_list/superchain)
 - [Base](https://models.opensource.observer/#!/source_list/base)
 - [Frax](https://models.opensource.observer/#!/source_list/frax)
@@ -213,7 +223,7 @@ For terms of use, please see the OSO
 
 ### Farcaster Data
 
-<img src={FarcasterLogo} width="100"/>
+<img src={FarcasterLogo} width="100" />
 
 [Reference documentation](https://models.opensource.observer/#!/source_list/farcaster)
 
@@ -223,7 +233,7 @@ Coming soon...
 
 ### Lens Data
 
-<img src={LensLogo} width="200"/>
+<img src={LensLogo} width="200" />
 
 [Reference documentation](https://models.opensource.observer/#!/source_list/lens)
 
@@ -233,7 +243,7 @@ Coming soon...
 
 ### Gitcoin Passport Data
 
-<img src={GitcoinLogo} width="200"/>
+<img src={GitcoinLogo} width="200" />
 
 [Reference documentation](https://models.opensource.observer/#!/source_list/gitcoin)
 
@@ -256,7 +266,7 @@ where passport_address = '0xd8da6bf26964af9d7eed9e03e53415d37aa96045'
 
 ### OpenRank Data
 
-<img src={OpenrankLogo} width="200"/>
+<img src={OpenrankLogo} width="200" />
 
 [Reference documentation](https://models.opensource.observer/#!/source_list/karma3)
 
@@ -302,7 +312,6 @@ to the dataset.
 You can star the dataset to keep it in your project.
 
 ![star](./bigquery_starred_datasets.png)
-
 
 ## Next steps
 

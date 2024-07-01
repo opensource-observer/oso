@@ -54,7 +54,7 @@ You can also create a new notebook from scratch and run it in the cloud. Here's 
    **Remember to replace `my-oso-playground` with your project id.**:
    This will attach the query to your billing account.
 
-4.  Execute the code block. The query will run in a few seconds and the results will be stored in the `df` dataframe.
+4. Execute the code block. The query will run in a few seconds and the results will be stored in the `df` dataframe.
 
 5. Create a new code block to preview the first few rows of your dataframe:
 
