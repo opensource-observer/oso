@@ -42,7 +42,7 @@ For example, you can see this in action for
 from ..factories import (
     interval_gcs_import_asset,
     SourceMode,
-    Interval,
+    TimeInterval,
     IntervalGCSAsset,
 )
 
@@ -57,7 +57,7 @@ gitcoin_passport_scores = interval_gcs_import_asset(
         destination_table="passport_scores",
         raw_dataset_name="oso_raw_sources",
         clean_dataset_name="gitcoin",
-        interval=Interval.Daily,
+        interval=TimeInterval.Daily,
         mode=SourceMode.Overwrite,
         retention_days=10,
         format="PARQUET",
@@ -88,8 +88,8 @@ In the
 [OSO monorepo](https://github.com/opensource-observer/oso),
 you will find a few examples of using the GCS asset factory:
 
-- [Superchain data](https://github.com/opensource-observer/oso/blob/main/warehouse/oso_dagster/assets.py)
-- [Gitcoin Passport scores](https://github.com/opensource-observer/oso/blob/main/warehouse/oso_dagster/assets.py)
-- [OpenRank reputations on Farcaster](https://github.com/opensource-observer/oso/blob/main/warehouse/oso_dagster/assets.py)
+- [Superchain data](https://github.com/opensource-observer/oso/blob/main/warehouse/oso_dagster/assets/__init__.py)
+- [Gitcoin Passport scores](https://github.com/opensource-observer/oso/blob/main/warehouse/oso_dagster/assets/gitcoin.py)
+- [OpenRank reputations on Farcaster](https://github.com/opensource-observer/oso/blob/main/warehouse/oso_dagster/assets/karma3.py)
 
 <NextSteps components={props.components}/>
