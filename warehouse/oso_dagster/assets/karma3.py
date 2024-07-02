@@ -1,9 +1,8 @@
 from ..factories import (
     interval_gcs_import_asset,
-    SourceMode,
-    Interval,
     IntervalGCSAsset,
 )
+from ..utils.common import TimeInterval, SourceMode
 
 karma3_globaltrust = interval_gcs_import_asset(
     IntervalGCSAsset(
@@ -16,7 +15,7 @@ karma3_globaltrust = interval_gcs_import_asset(
         destination_table="globaltrust",
         raw_dataset_name="oso_raw_sources",
         clean_dataset_name="karma3",
-        interval=Interval.Daily,
+        interval=TimeInterval.Daily,
         mode=SourceMode.Overwrite,
         retention_days=10,
     ),
@@ -33,7 +32,7 @@ karma3_globaltrust_config = interval_gcs_import_asset(
         destination_table="globaltrust_config",
         raw_dataset_name="oso_raw_sources",
         clean_dataset_name="karma3",
-        interval=Interval.Daily,
+        interval=TimeInterval.Daily,
         mode=SourceMode.Overwrite,
         retention_days=10,
     ),
@@ -50,7 +49,7 @@ karma3_localtrust = interval_gcs_import_asset(
         destination_table="localtrust",
         raw_dataset_name="oso_raw_sources",
         clean_dataset_name="karma3",
-        interval=Interval.Daily,
+        interval=TimeInterval.Daily,
         mode=SourceMode.Overwrite,
         retention_days=10,
     ),

@@ -1,9 +1,8 @@
 from ..factories import (
     interval_gcs_import_asset,
-    SourceMode,
-    Interval,
     IntervalGCSAsset,
 )
+from ..utils.common import TimeInterval, SourceMode
 
 gitcoin_passport_scores = interval_gcs_import_asset(
     IntervalGCSAsset(
@@ -16,7 +15,7 @@ gitcoin_passport_scores = interval_gcs_import_asset(
         destination_table="passport_scores",
         raw_dataset_name="oso_raw_sources",
         clean_dataset_name="gitcoin",
-        interval=Interval.Daily,
+        interval=TimeInterval.Daily,
         mode=SourceMode.Overwrite,
         retention_days=10,
         format="PARQUET",

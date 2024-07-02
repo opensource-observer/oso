@@ -9,14 +9,12 @@ from dagster import (
     AssetChecksDefinition,
 )
 
-
 class GenericGCSAsset:
     def clean_up(self):
         raise NotImplementedError()
 
     def sync(self):
         raise NotImplementedError()
-
 
 @dataclass
 class AssetFactoryResponse:
