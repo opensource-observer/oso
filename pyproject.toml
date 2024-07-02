@@ -45,6 +45,9 @@ ruff = "^0.4.10"
 dagster-polars = "^0.23.10"
 click = "^8.1.7"
 oss-directory = "^0.2.0"
+dagster-embedded-elt = "^0.23.11"
+google-cloud-secret-manager = "^2.20.0"
+dlt = "^0.4.12"
 
 
 [tool.poetry.scripts]
@@ -93,6 +96,7 @@ ignore = [
     "warehouse/bq2cloudsql",
     "warehouse/meltano-setup",
     "warehouse/oso_lets_go",
+    "warehouse/oso_dagster/dlt_sources",
 ]
 
 [tool.ruff]
@@ -102,4 +106,13 @@ exclude = [
     "warehouse/bq2cloudsql",
     "warehouse/meltano-setup",
     "warehouse/oso_lets_go",
+    "warehouse/oso_dagster/dlt_sources",
+    "warehouse/oso_dagster/dlt_sources/**/*.py",
+    "warehouse/oso_dagster/dlt_sources/*.py",
+]
+
+[tool.ruff.lint]
+exclude = [
+    "warehouse/oso_dagster/dlt_sources/**/*.py",
+    "warehouse/oso_dagster/dlt_sources/*.py",
 ]
