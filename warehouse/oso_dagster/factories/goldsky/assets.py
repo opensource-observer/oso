@@ -10,7 +10,7 @@ import threading
 import polars
 from polars.type_aliases import PolarsDataType
 from dataclasses import dataclass
-from typing import List, Mapping, Tuple, Dict, Callable, Optional, Iterable, Any, cast, Unpack
+from typing import List, Mapping, Tuple, Dict, Callable, Optional, Any, cast, Unpack
 import heapq
 from dagster import (
     asset,
@@ -25,8 +25,6 @@ from dagster import (
     OpExecutionContext,
     DagsterLogManager,
     DefaultSensorStatus,
-    AssetsDefinition,
-    AssetDep,
     AssetChecksDefinition,
     TableRecord,
     MetadataValue, 
@@ -50,6 +48,7 @@ from google.cloud.bigquery.schema import SchemaField
 from ...cbt import CBTResource, UpdateStrategy, TimePartitioning
 from .. import AssetFactoryResponse
 from .config import GoldskyConfig, GoldskyConfigInterface, SchemaDict
+from ..common import AssetDeps, AssetList
 from ...utils.gcs import batch_delete_blobs
 
 GenericExecutionContext = AssetExecutionContext | OpExecutionContext
@@ -987,7 +986,7 @@ class GoldskyBackfillOpInput:
     end_checkpoint: Optional[GoldskyCheckpoint]
 
 
-def goldsky_asset(deps: Optional[Iterable[AssetDep] | Iterable[AssetsDefinition]] = None, **kwargs: Unpack[GoldskyConfigInterface]) -> AssetFactoryResponse:
+def goldsky_asset(deps: Optional[AssetDeps | AssetList] = None, **kwargs: Unpack[GoldskyConfigInterface]) -> AssetFactoryResponse:
     asset_config = GoldskyConfig(**kwargs)
     def materialize_asset(
         context: OpExecutionContext,
@@ -1006,6 +1005,7 @@ def goldsky_asset(deps: Optional[Iterable[AssetDep] | Iterable[AssetsDefinition]
         )
 
     deps = deps or []
+    deps = cast(AssetDeps, deps)
     @asset(name=asset_config.name, key_prefix=asset_config.key_prefix, deps=deps)
     def generated_asset(
         context: AssetExecutionContext,

@@ -50,6 +50,8 @@ dagster-polars = "^0.23.10"
 click = "^8.1.7"
 oss-directory = "^0.2.0"
 dagster-embedded-elt = "^0.23.11"
+google-cloud-secret-manager = "^2.20.0"
+dlt = "^0.4.12"
 
 
 [tool.poetry.scripts]

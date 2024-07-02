@@ -2,4 +2,5 @@
 
 from .bq_dts import *
 from .common import *
+from .loader import *
 from .gcs import *
