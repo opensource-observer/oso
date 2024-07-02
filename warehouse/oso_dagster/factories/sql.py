@@ -23,6 +23,8 @@ from dagster_embedded_elt.dlt import (
 )
 
 from ..dlt_sources.sql_database import sql_table, TableBackend
+from .common import early_resources_asset_factory
+from ..utils.secrets import SecretReference, SecretResolver
 
 
 class SQLTableOptions(TypedDict):
@@ -43,7 +45,7 @@ class SQLTableOptions(TypedDict):
 
 def sql_assets(
     source_name: str,
-    source_credential_reference: str,
+    source_credential_reference: SecretReference,
     sql_tables: List[SQLTableOptions],
 ):
     """A convenience sql asset factory that should handle any basic time series
@@ -51,33 +53,36 @@ def sql_assets(
     data warehouse (bigquery at this time)
     """
 
-    translator = PrefixedDltTranslator(source_name)
-    pipeline = dlt.pipeline(
-        pipeline_name=f"{source_name}_to_bigquery",
-        destination="bigquery",
-        dataset_name=source_name,
-        progress="log",
-    )
+    @early_resources_asset_factory
+    def factory(secrets: SecretResolver):
+        translator = PrefixedDltTranslator(source_name)
+        pipeline = dlt.pipeline(
+            pipeline_name=f"{source_name}_to_bigquery",
+            destination="bigquery",
+            dataset_name=source_name,
+            progress="log",
+        )
 
-    credentials = ConnectionStringCredentials(
-        connection_string=source_credential_reference
-    )
+        connection_string = secrets.resolve_as_str(source_credential_reference)
+        credentials = ConnectionStringCredentials(connection_string)
 
-    @dlt.source
-    def _source():
-        for table in sql_tables:
-            yield sql_table(credentials, **table)
+        @dlt.source
+        def _source():
+            for table in sql_tables:
+                yield sql_table(credentials, **table)
 
-    @dlt_assets(
-        name=source_name,
-        dlt_source=_source(),
-        dlt_pipeline=pipeline,
-        dlt_dagster_translator=translator,
-    )
-    def _asset(context: AssetExecutionContext, dlt: DagsterDltResource):
-        yield from dlt.run(context=context)
+        @dlt_assets(
+            name=source_name,
+            dlt_source=_source(),
+            dlt_pipeline=pipeline,
+            dlt_dagster_translator=translator,
+        )
+        def _asset(context: AssetExecutionContext, dlt: DagsterDltResource):
+            yield from dlt.run(context=context)
 
-    return _asset
+        return _asset
+
+    return factory
 
 
 class PrefixedDltTranslator(DagsterDltTranslator):
