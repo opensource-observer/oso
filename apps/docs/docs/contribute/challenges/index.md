@@ -9,9 +9,11 @@ We are partnering with several ecosystems to expand project coverage, create new
 
 ## Active challenges
 
-We currently have no active challenges.
+We currently have one active challenge:
 
-We have [ongoing bounties](./bounties) for adding/updating projects and artifacts.
+- [Audit of RF4 Impact Metric Calculations](./2024-07-02-rf4-metrics-audit)
+
+We also have [ongoing bounties](./bounties) for adding/updating projects and artifacts.
 
 ## Terms and Conditions
 
