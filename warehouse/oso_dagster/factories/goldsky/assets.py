@@ -29,7 +29,7 @@ from dagster import (
     TableRecord,
     MetadataValue, 
     TableColumn,
-    TableSchema,
+    TableSchema
 )
 
 from dagster_gcp import BigQueryResource, GCSResource
@@ -1019,7 +1019,7 @@ def goldsky_asset(deps: Optional[AssetDeps | AssetList] = None, **kwargs: Unpack
         bigquery: BigQueryResource,
         gcs: GCSResource,
         cbt: CBTResource,
-    ):
+    ) -> None:
         context.log.info(f"Run ID: {context.run_id} AssetKey: {context.asset_key}")
         materialize_asset(context, bigquery, gcs, cbt)
 
@@ -1032,7 +1032,7 @@ def goldsky_asset(deps: Optional[AssetDeps | AssetList] = None, **kwargs: Unpack
         gcs: GCSResource,
         cbt: CBTResource,
         config: dict,
-    ):
+    ) -> None:
         print(config)
         gs_asset = GoldskyAsset(gcs, bigquery, cbt, asset_config)
         gs_asset.clean_up(context.log)
@@ -1044,7 +1044,7 @@ def goldsky_asset(deps: Optional[AssetDeps | AssetList] = None, **kwargs: Unpack
         gcs: GCSResource,
         cbt: CBTResource,
         config: dict,
-    ):
+    ) -> None:
         start_checkpoint = None
         end_checkpoint = None
         if "start" in config:
@@ -1067,8 +1067,6 @@ def goldsky_asset(deps: Optional[AssetDeps | AssetList] = None, **kwargs: Unpack
             ),
             pointer_table_suffix=op_input.backfill_label,
         )
-        # Hack for now.
-        return "Done"
 
     @op(name=f"{related_ops_prefix}_files_stats_op")
     def goldsky_files_stats_op(
@@ -1137,7 +1135,7 @@ def goldsky_asset(deps: Optional[AssetDeps | AssetList] = None, **kwargs: Unpack
         gcs: GCSResource, 
         cbt: CBTResource,
         config: dict
-    ):
+    ) -> None:
         table_schema = TableSchema(
             columns=[
                 TableColumn(
