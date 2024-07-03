@@ -1,7 +1,6 @@
 ---
 title: Audit of RF4 Impact Metric Calculations
 sidebar_position: 3
-sidebar_class_name: hidden
 ---
 
 ## Objective
