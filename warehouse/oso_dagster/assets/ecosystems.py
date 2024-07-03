@@ -21,7 +21,7 @@ from oso_dagster.utils import SecretReference
 
 ecosystems_advisories = sql_assets(
     "ecosystems",
-    SecretReference(group_name="ecosystems", key="advisories_databae"),
+    SecretReference(group_name="ecosystems", key="advisories_database"),
     [
         {
             "table": "advisories",
