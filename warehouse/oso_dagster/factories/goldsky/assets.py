@@ -10,7 +10,7 @@ import threading
 import polars
 from polars.type_aliases import PolarsDataType
 from dataclasses import dataclass
-from typing import List, Mapping, Tuple, Dict, Callable, Optional, Iterable, Any, cast, Unpack
+from typing import List, Mapping, Tuple, Dict, Callable, Optional, Any, cast, Unpack
 import heapq
 from dagster import (
     asset,
@@ -25,8 +25,6 @@ from dagster import (
     OpExecutionContext,
     DagsterLogManager,
     DefaultSensorStatus,
-    AssetsDefinition,
-    AssetDep,
     AssetChecksDefinition,
     TableRecord,
     MetadataValue, 
@@ -50,6 +48,7 @@ from google.cloud.bigquery.schema import SchemaField
 from ...cbt import CBTResource, UpdateStrategy, TimePartitioning
 from .. import AssetFactoryResponse
 from .config import GoldskyConfig, GoldskyConfigInterface, SchemaDict
+from ..common import AssetDeps, AssetList
 from ...utils.gcs import batch_delete_blobs
 
 GenericExecutionContext = AssetExecutionContext | OpExecutionContext
@@ -542,6 +541,7 @@ class GoldskyAsset:
         self.schema: List[SchemaField] = []
         self.pointer_table_suffix = pointer_table_suffix
         self.bucket_stats = {}
+        self.total_files_count = 0
 
     async def materialize(
         self,
@@ -834,7 +834,10 @@ class GoldskyAsset:
             log,
             None
         )
-        return self.bucket_stats
+        return {
+            "total_files_count": self.total_files_count,
+            "bucket_stats": self.bucket_stats
+        }
 
     def _uncached_blobs_loader(self, log: DagsterLogManager):
         log.info("Loading blobs list for processing")
@@ -844,11 +847,14 @@ class GoldskyAsset:
             prefix=f"{self.config.source_goldsky_dir}/{self.config.source_name}",
         )
         blobs_to_process = []
+        total_files_count = 0
         for blob in blobs:
             match = self.goldsky_re.match(blob.name)
+            total_files_count += 1
             if not match:
                 continue
             blobs_to_process.append(match)
+        self.total_files_count = total_files_count
         return blobs_to_process
 
     def _cached_blobs_loader(self, log: DagsterLogManager):
@@ -987,7 +993,7 @@ class GoldskyBackfillOpInput:
     end_checkpoint: Optional[GoldskyCheckpoint]
 
 
-def goldsky_asset(deps: Optional[Iterable[AssetDep] | Iterable[AssetsDefinition]] = None, **kwargs: Unpack[GoldskyConfigInterface]) -> AssetFactoryResponse:
+def goldsky_asset(deps: Optional[AssetDeps | AssetList] = None, **kwargs: Unpack[GoldskyConfigInterface]) -> AssetFactoryResponse:
     asset_config = GoldskyConfig(**kwargs)
     def materialize_asset(
         context: OpExecutionContext,
@@ -1006,6 +1012,7 @@ def goldsky_asset(deps: Optional[Iterable[AssetDep] | Iterable[AssetsDefinition]
         )
 
     deps = deps or []
+    deps = cast(AssetDeps, deps)
     @asset(name=asset_config.name, key_prefix=asset_config.key_prefix, deps=deps)
     def generated_asset(
         context: AssetExecutionContext,
@@ -1069,7 +1076,7 @@ def goldsky_asset(deps: Optional[Iterable[AssetDep] | Iterable[AssetsDefinition]
         bigquery: BigQueryResource, 
         gcs: GCSResource, 
         cbt: CBTResource
-    ):
+    ) -> None:
         table_schema = TableSchema(
             columns=[
                 TableColumn(
@@ -1096,11 +1103,14 @@ def goldsky_asset(deps: Optional[Iterable[AssetDep] | Iterable[AssetsDefinition]
             ]
         )
         gs_asset = GoldskyAsset(gcs, bigquery, cbt, asset_config)
-        bucket_stats = gs_asset.gather_stats(context.log)
+        asset_stats = gs_asset.gather_stats(context.log)
+        bucket_stats = asset_stats["bucket_stats"]
 
         records = []
         job_stats = bucket_stats.values()
         job_stats = sorted(job_stats, key=lambda a: a['timestamp'])
+
+        context.log.info(f"Total files in the bucket {asset_stats["total_files_count"]}")
 
         for _, job_stats in bucket_stats.items():
             worker_count = len(job_stats["workers"])
