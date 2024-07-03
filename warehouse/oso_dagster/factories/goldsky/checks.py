@@ -35,7 +35,8 @@ class BlockchainCheckConfig(Config):
             start = arrow.get(self.start) if self.start is not None else None
             end = arrow.get(self.end) if self.end is not None else None
             return (start, end)
-        return (now.shift(days=-6), now.shift(days=-1))
+        # By default check the last 2 weeks of data
+        return (now.shift(days=-15), now.shift(days=-1))
 
 
 def traces_check(
