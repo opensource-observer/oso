@@ -69,15 +69,8 @@ For the latest documentation on configuration parameters,
 check out the comments in the
 [GCS factory](https://github.com/opensource-observer/oso/blob/main/warehouse/oso_dagster/factories/gcs.py).
 
-In order for our Dagster deployment to recognize this asset,
-you need to import it in
-`warehouse/oso_dagster/assets/__init__.py`.
-
-```python
-from .dbt import *
-from .gitcoin import *
-...
-```
+In order for our Dagster deployment to recognize this asset, you must ensure
+that it is a python file in the directory `warehouse/oso_dagster/assets/`.
 
 For more details on defining Dagster assets,
 see the [Dagster tutorial](https://docs.dagster.io/tutorial).
