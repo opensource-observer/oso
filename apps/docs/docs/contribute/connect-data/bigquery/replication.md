@@ -55,16 +55,6 @@ For the latest documentation on configuration parameters,
 check out the comments in the
 [BigQuery Data Transfer factory](https://github.com/opensource-observer/oso/blob/main/warehouse/oso_dagster/factories/bq_dts.py).
 
-In order for our Dagster deployment to recognize this asset,
-you need to import it in
-`warehouse/oso_dagster/assets/__init__.py`.
-
-```python
-...
-from .lens import *
-...
-```
-
 For more details on defining Dagster assets,
 see the [Dagster tutorial](https://docs.dagster.io/tutorial).
 
