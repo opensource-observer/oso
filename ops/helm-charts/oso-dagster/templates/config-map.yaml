@@ -8,3 +8,6 @@ data:
   DAGSTER_DBT_IMPERSONATE_SERVICE_ACCOUNT: "{{ .Values.configMap.secretPrefix }}-{{ .Values.secretmanagerKeys.impersonateServiceAccount }}"
   DAGSTER_PG_PORT: "{{ .Values.pg.port }}"
   DAGSTER_PG_HOST: "{{ .Values.pg.host }}"
+  DAGSTER_USE_LOCAL_SECRETS: "False"
+  DAGSTER_GCP_SECRETS_PREFIX: "{{ .Values.global.serviceAccountName }}"
+  DAGSTER_STAGING_BUCKET_URL: "{{ .Values.configMap.secretPrefix }}-{{ .Values.secretmanagerKeys.stagingBucketUrl }}"
