@@ -23,6 +23,7 @@ secretmanagerKeys:
   dbPort: "db-port/versions/1"
   dbName: "db-name/versions/1"
   impersonateServiceAccount: "dbt-impersonate-service-account/versions/1"
+  stagingBucketUrl: "staging-bucket-url/versions/latest"
 pg:
   port: "5432"
   host: "127.0.0.1"
