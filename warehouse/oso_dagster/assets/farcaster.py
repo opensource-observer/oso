@@ -7,8 +7,8 @@ from ..utils.common import TimeInterval, SourceMode
 
 farcaster_data = create_bq_dts_asset(
     BqDtsAssetConfig(
-        key_prefix="bigquery",
-        asset_name="farcaster_source",
+        key_prefix="farcaster",
+        asset_name="bq_dts_source",
         display_name="farcaster",
         destination_project_id="opensource-observer",
         destination_dataset_name="farcaster",
