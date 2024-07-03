@@ -38,6 +38,14 @@ artifacts as (
   from {{ ref('artifacts_v1') }}
 ),
 
+{# use snapshot instead of live model as farcaster addresses may change #}
+rf4_trusted_users as (
+  select
+    address,
+    true as is_trusted_user
+  from {{ source('static_data_sources', 'op_rf4_trusted_addresses') }}
+),
+
 events_to_project as (
   select
     events.bucket_day,
@@ -59,7 +67,7 @@ events_to_project as (
     on events.from_artifact_id = from_artifacts.artifact_id
   left join {{ ref('projects_v1') }}
     on events.project_id = projects_v1.project_id
-  left join {{ ref('rf4_trusted_users') }}
+  left join rf4_trusted_users
     on from_artifacts.artifact_name = rf4_trusted_users.address
   where events.amount > 0
 ),
