@@ -19,8 +19,9 @@ page.
 
 ## OSO Data Exchange on Analytics Hub
 
-To explore all the OSO datasets available on our BigQuery data exchange,
-see [here](https://console.cloud.google.com/bigquery/analytics-hub/exchanges/projects/87806073973/locations/us/dataExchanges/open_source_observer_190181416ae).
+To explore all the OSO datasets available,
+check out our
+[BigQuery data exchange](https://console.cloud.google.com/bigquery/analytics-hub/exchanges/projects/87806073973/locations/us/dataExchanges/open_source_observer_190181416ae).
 
 ## OSO Production Data Pipeline
 
@@ -36,16 +37,16 @@ see [here](https://console.cloud.google.com/bigquery/analytics-hub/exchanges/pro
   children={"Subscribe on BigQuery"}
 />{" "}
 
+- [Reference documentation](https://models.opensource.observer/#!/model/model.opensource_observer.code_metrics_by_project_v1)
+- [License: CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)
+- [Updated daily](https://dagster.opensource.observer/assets/dbt/production)
+
 Every stage of the OSO data pipeline is queryable and downloadable.
 Like most dbt-based pipelines, we split the pipeline stages into
 [staging, intermediate, and mart models](https://docs.getdbt.com/best-practices/how-we-structure/1-guide-overview).
 
 You can find the reference documentation on every data model on  
 [https://models.opensource.observer/](https://models.opensource.observer/)
-
-The data produced by the OSO data pipeline is released under the
-[CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)
-license.
 
 ### OSO Mart Models
 
@@ -109,6 +110,10 @@ GROUP BY project_id, event_source
   children={"Subscribe on BigQuery"}
 />{" "}
 
+- [Reference documentation](https://models.opensource.observer/#!/model/model.opensource_observer.code_metrics_by_project_v1)
+- [License: CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)
+- [Updated daily](https://dagster.opensource.observer/assets/dbt/playground)
+
 We maintain a subset of projects and events in a playground dataset for testing and development.
 All of the production models are mirrored in this environment.
 
@@ -128,11 +133,15 @@ All of the production models are mirrored in this environment.
   children={"View on BigQuery"}
 />{" "}
 
-[Reference documentation](https://models.opensource.observer/#!/source_list/github_archive)
+- [Reference documentation](https://models.opensource.observer/#!/source_list/github_archive)
+- Code License: [MIT](https://github.com/igrigorik/gharchive.org/blob/master/LICENSE.md).
+- Data governed by the GitHub
+[terms of service](https://docs.github.com/en/site-policy/github-terms/github-terms-of-service).
+- [Updated hourly](https://github.com/igrigorik/gharchive.org/blob/master/bigquery/README.md)
 
 GitHub data is predominantly provided by the incredible
-[GH Archive](https://www.gharchive.org/) project, which
-maintains a BigQuery public dataset that is refreshed every hour.
+[GH Archive](https://www.gharchive.org/) project, which publishes a public
+archive of historical events to GitHub.
 
 For example, to count the number of issues opened, closed, and reopened on 2020/01/01:
 
@@ -146,10 +155,6 @@ SELECT event as issue_status, COUNT(*) as cnt FROM (
 GROUP by issue_status;
 ```
 
-The underlying GitHub data is governed by the GitHub
-[terms of service](https://docs.github.com/en/site-policy/github-terms/github-terms-of-service).
-GH Archive code and documentation are covered by the
-[MIT license](https://github.com/igrigorik/gharchive.org/blob/master/LICENSE.md).
 
 ### Ethereum Data
 
@@ -165,7 +170,8 @@ GH Archive code and documentation are covered by the
   children={"View on BigQuery"}
 />{" "}
 
-[Reference documentation](https://models.opensource.observer/#!/source_list/ethereum)
+- [Reference documentation](https://models.opensource.observer/#!/source_list/ethereum)
+- Code License: [MIT](https://github.com/blockchain-etl/ethereum-etl/blob/develop/LICENSE).
 
 The Google Cloud team maintains a public
 [Ethereum dataset](https://cloud.google.com/blog/products/data-analytics/ethereum-bigquery-public-dataset-smart-contract-analytics).
@@ -187,8 +193,6 @@ order by block_number desc
 limit 10
 ```
 
-ethereum-etl code is covered by the
-[MIT license](https://github.com/blockchain-etl/ethereum-etl/blob/develop/LICENSE).
 
 ### Superchain Data
 
@@ -204,55 +208,142 @@ ethereum-etl code is covered by the
   children={"Subscribe on BigQuery"}
 />{" "}
 
+- Code License: [Apache-2.0](https://github.com/opensource-observer/oso/blob/main/LICENSE)
+- Data governed by the OSO
+[terms of service](https://www.opensource.observer/terms)
+- [Updated daily](https://github.com/igrigorik/gharchive.org/blob/master/bigquery/README.md)
+
 OSO is proud to provide public datasets for the Superchain,
 backed by our partners at
 [Goldsky](https://goldsky.com/).
 
-We currently have coverage for:
+We currently provide blocks, transactions, and traces for the following networks:
 
-- [Optimism mainnet](https://models.opensource.observer/#!/source_list/superchain)
-- [Base](https://models.opensource.observer/#!/source_list/base)
-- [Frax](https://models.opensource.observer/#!/source_list/frax)
-- [Metal](https://models.opensource.observer/#!/source_list/metal)
-- [Mode](https://models.opensource.observer/#!/source_list/mode)
-- [PGN](https://models.opensource.observer/#!/source_list/pgn)
-- [Zora](https://models.opensource.observer/#!/source_list/zora)
+- [Optimism mainnet](https://www.optimism.io/)
+([Reference docs](https://models.opensource.observer/#!/source_list/superchain)
+, [Updated daily](https://dagster.opensource.observer/assets/optimism))
+- [Base](https://www.base.org/)
+([Reference docs](https://models.opensource.observer/#!/source_list/base)
+, [Updated daily](https://dagster.opensource.observer/assets/base))
+- [Frax](https://www.frax.com/)
+([Reference docs](https://models.opensource.observer/#!/source_list/frax)
+, [Updated daily](https://dagster.opensource.observer/assets/frax))
+- [Metal](https://metall2.com/)
+([Reference docs](https://models.opensource.observer/#!/source_list/metal)
+, [Updated daily](https://dagster.opensource.observer/assets/metal))
+- [Mode](https://www.mode.network/)
+([Reference docs](https://models.opensource.observer/#!/source_list/mode)
+, [Updated daily](https://dagster.opensource.observer/assets/mode))
+- [PGN](https://publicgoods.network/)
+([Reference docs](https://models.opensource.observer/#!/source_list/pgn)
+, [Updated daily](https://dagster.opensource.observer/assets/pgn))
+- [Zora](https://zora.co/)
+([Reference docs](https://models.opensource.observer/#!/source_list/zora)
+, [Updated daily](https://dagster.opensource.observer/assets/zora))
 
-For terms of use, please see the OSO
-[terms and conditions](https://www.opensource.observer/terms).
+
+For example, to get deployed contracts from a particular address on the Base network:
+
+```sql
+select 
+  traces.block_timestamp, 
+  traces.transaction_hash,   
+  txs.from_address as originating_address, 
+  txs.to_address as originating_contract,
+  traces.from_address as factory_address, 
+  traces.to_address as contract_address
+from `YOUR_PROJECT_NAME.superchain.base_traces` as traces
+inner join transactions as txs
+  on txs.hash = traces.transaction_hash
+where
+  LOWER(traces.from_address) != "0x3fab184622dc19b6109349b94811493bf2a45362"
+  and LOWER(trace_type) in ("create", "create2")
+```
+
+**Remember to replace 'YOUR_PROJECT_NAME' with the name of your project in the query.**
 
 ### Farcaster Data
 
 <img src={FarcasterLogo} width="100" />
 
-[Reference documentation](https://models.opensource.observer/#!/source_list/farcaster)
+<Button
+  size={"compact"}
+  color={"blue"}
+  target={"_blank"}
+  link={
+    "https://console.cloud.google.com/bigquery/analytics-hub/exchanges/projects/87806073973/locations/us/dataExchanges/open_source_observer_190181416ae/listings/farcaster_19076cb8a53"
+  }
+  children={"Subscribe on BigQuery"}
+/>{" "}
 
-:::warning
-Coming soon...
-:::
+- [Reference documentation](https://models.opensource.observer/#!/source_list/farcaster)
+- [Updated weekly](https://github.com/opensource-observer/oso/blob/main/warehouse/oso_dagster/assets/farcaster.py)
+
+[Farcaster](https://www.farcaster.xyz/) is a decentralized social network built on Ethereum.
+This dataset mirrors the dataset offered by [Indexing](https://blog.indexing.co/posts/IaPkkuevwwfgBWtZ3F7eg5oQUqyV_o6sLDo28oEV8Tg)
+for use in the OSO data pipeline.
+It includes casts, links, reactions, verifications, and profiles.
+
+For example, to get the users with the most lifetime reactions:
+
+```sql
+SELECT
+  r.target_cast_fid as fid,
+  json_value(p.data, "$.display") as display_name,
+  COUNT(*) as reaction_count
+FROM `YOUR_PROJECT_NAME.farcaster.reactions` as r
+LEFT JOIN `YOUR_PROJECT_NAME.farcaster.profiles` as p ON r.target_cast_fid = p.fid
+GROUP BY fid, display_name
+ORDER BY reaction_count DESC
+```
+
+**Remember to replace 'YOUR_PROJECT_NAME' with the name of your project in the query.**
 
 ### Lens Data
 
 <img src={LensLogo} width="200" />
 
-[Reference documentation](https://models.opensource.observer/#!/source_list/lens)
+<Button
+  size={"compact"}
+  color={"blue"}
+  target={"_blank"}
+  link={
+    "https://console.cloud.google.com/bigquery/analytics-hub/exchanges/projects/87806073973/locations/us/dataExchanges/open_source_observer_190181416ae/listings/lens_19077b0822c"
+  }
+  children={"Subscribe on BigQuery"}
+/>{" "}
 
-:::warning
-Coming soon...
-:::
+- [Reference documentation](https://models.opensource.observer/#!/source_list/lens)
+- [Updated weekly](https://github.com/opensource-observer/oso/blob/main/warehouse/oso_dagster/assets/lens.py)
+
+[Lens Protocol](https://www.lens.xyz/) is an open social network.
+This dataset mirrors the dataset offered by [Lens](https://www.lens.xyz/docs/tools/bigquery)
+for use in the OSO data pipeline.
+It includes data from the Polygon network.
 
 ### Gitcoin Passport Data
 
 <img src={GitcoinLogo} width="200" />
 
-[Reference documentation](https://models.opensource.observer/#!/source_list/gitcoin)
+<Button
+  size={"compact"}
+  color={"blue"}
+  target={"_blank"}
+  link={
+    "https://console.cloud.google.com/bigquery/analytics-hub/exchanges/projects/87806073973/locations/us/dataExchanges/open_source_observer_190181416ae/listings/gitcoin_passport_19077b6ad59"
+  }
+  children={"Subscribe on BigQuery"}
+/>{" "}
+
+- [Reference documentation](https://models.opensource.observer/#!/source_list/gitcoin)
+- [Updated daily](https://dagster.opensource.observer/assets/gitcoin)
 
 [Gitcoin Passport](https://passport.gitcoin.co/)
 is a web3 identity verification protocol.
 OSO and Gitcoin have collaborated to make this dataset
 of address scores available for use in understanding user reputations.
 
-For example, you can can vitalik.eth's passport score:
+For example, you can can **vitalik.eth's** passport score:
 
 ```sql
 select
@@ -260,21 +351,36 @@ select
   last_score_timestamp,
   evidence_rawScore,
   evidence_threshold,
-from opensource-observer.gitcoin.passport_scores
+from YOUR_PROJECT_NAME.gitcoin.passport_scores
 where passport_address = '0xd8da6bf26964af9d7eed9e03e53415d37aa96045'
 ```
+
+**Remember to replace 'YOUR_PROJECT_NAME' with the name of your project in the query.**
 
 ### OpenRank Data
 
 <img src={OpenrankLogo} width="200" />
 
-[Reference documentation](https://models.opensource.observer/#!/source_list/karma3)
+<Button
+  size={"compact"}
+  color={"blue"}
+  target={"_blank"}
+  link={
+    "https://console.cloud.google.com/bigquery/analytics-hub/exchanges/projects/87806073973/locations/us/dataExchanges/open_source_observer_190181416ae/listings/openrank_19077ba1f3f"
+  }
+  children={"Subscribe on BigQuery"}
+/>{" "}
+
+- [Reference documentation](https://models.opensource.observer/#!/source_list/karma3)
+- [Updated daily](https://dagster.opensource.observer/assets/karma3)
 
 [OpenRank](https://openrank.com/) is a decentralized reputation protocol based on
 [Eigentrust](https://en.wikipedia.org/wiki/EigenTrust).
-In this dataset, we scored Farcaster IDs.
+In this dataset, Farcaster users reputations are scored in 2 ways:
+- With `globaltrust`, we calculate global reputation scores, seeded by the trust of Optimism badgeholders.
+- With `localtrust`, you can get reputation scores of other users relative to specified user.
 
-For example, you can get the reputational score of vitalik.eth
+For example, you can get the globaltrust reputation score of **vitalik.eth**
 
 ```sql
 select
@@ -282,9 +388,11 @@ select
   i,
   v,
   date
-from opensource-observer.karma3.globaltrust
+from YOUR_PROJECT_NAME.karma3.globaltrust
 where i = 5650
 ```
+
+**Remember to replace 'YOUR_PROJECT_NAME' with the name of your project in the query.**
 
 ## Subscribe to a dataset
 
