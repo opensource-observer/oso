@@ -23,7 +23,6 @@ def load_all_assets_from_package(
 
     for module_info in pkgutil.walk_packages(package_path, package.__name__ + "."):
         module_name = module_info.name
-        print(module_info.name)
         module = importlib.import_module(module_name)
         modules.append(module)
     factories = load_assets_factories_from_modules(modules, early_resources)

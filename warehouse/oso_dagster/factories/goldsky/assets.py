@@ -541,6 +541,7 @@ class GoldskyAsset:
         self.schema: List[SchemaField] = []
         self.pointer_table_suffix = pointer_table_suffix
         self.bucket_stats = {}
+        self.total_files_count = 0
 
     async def materialize(
         self,
@@ -833,7 +834,10 @@ class GoldskyAsset:
             log,
             None
         )
-        return self.bucket_stats
+        return {
+            "total_files_count": self.total_files_count,
+            "bucket_stats": self.bucket_stats
+        }
 
     def _uncached_blobs_loader(self, log: DagsterLogManager):
         log.info("Loading blobs list for processing")
@@ -843,11 +847,14 @@ class GoldskyAsset:
             prefix=f"{self.config.source_goldsky_dir}/{self.config.source_name}",
         )
         blobs_to_process = []
+        total_files_count = 0
         for blob in blobs:
             match = self.goldsky_re.match(blob.name)
+            total_files_count += 1
             if not match:
                 continue
             blobs_to_process.append(match)
+        self.total_files_count = total_files_count
         return blobs_to_process
 
     def _cached_blobs_loader(self, log: DagsterLogManager):
@@ -1069,7 +1076,7 @@ def goldsky_asset(deps: Optional[AssetDeps | AssetList] = None, **kwargs: Unpack
         bigquery: BigQueryResource, 
         gcs: GCSResource, 
         cbt: CBTResource
-    ):
+    ) -> None:
         table_schema = TableSchema(
             columns=[
                 TableColumn(
@@ -1096,11 +1103,14 @@ def goldsky_asset(deps: Optional[AssetDeps | AssetList] = None, **kwargs: Unpack
             ]
         )
         gs_asset = GoldskyAsset(gcs, bigquery, cbt, asset_config)
-        bucket_stats = gs_asset.gather_stats(context.log)
+        asset_stats = gs_asset.gather_stats(context.log)
+        bucket_stats = asset_stats["bucket_stats"]
 
         records = []
         job_stats = bucket_stats.values()
         job_stats = sorted(job_stats, key=lambda a: a['timestamp'])
+
+        context.log.info(f"Total files in the bucket {asset_stats["total_files_count"]}")
 
         for _, job_stats in bucket_stats.items():
             worker_count = len(job_stats["workers"])

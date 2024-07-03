@@ -34,7 +34,7 @@ if not project_id:
     except Exception:
         raise Exception("GOOGLE_PROJECT_ID must be set if you're not in GCP")
 
-
+staging_bucket_url = os.getenv("DAGSTER_STAGING_BUCKET_URL")
 profile_name = os.getenv("DAGSTER_DBT_PROFILE_NAME", "opensource_observer")
 gcp_secrets_prefix = os.getenv("DAGSTER_GCP_SECRETS_PREFIX", "")
 use_local_secrets = os.getenv("DAGSTER_USE_LOCAL_SECRETS", "True") == "True"

@@ -51,7 +51,8 @@ click = "^8.1.7"
 oss-directory = "^0.2.0"
 dagster-embedded-elt = "^0.23.11"
 google-cloud-secret-manager = "^2.20.0"
-dlt = "^0.4.12"
+dlt = {extras = ["filesystem"], version = "^0.4.12"}
+gcsfs = "^2024.6.1"
 
 
 [tool.poetry.scripts]

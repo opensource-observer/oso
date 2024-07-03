@@ -1,3 +1,4 @@
+import logging
 from typing import List, Iterable, Union, Callable, Any, Dict
 from dataclasses import dataclass, field
 
@@ -17,6 +18,8 @@ from dagster._core.definitions.asset_dep import CoercibleToAssetDep
 type GenericAsset = Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]
 type AssetList = Iterable[GenericAsset]
 type AssetDeps = Iterable[CoercibleToAssetDep]
+
+logger = logging.getLogger(__name__)
 
 
 class GenericGCSAsset:
@@ -53,10 +56,17 @@ class EarlyResourcesAssetFactory:
         args: Dict[str, Any] = dict()
         for key, value in annotations.items():
             if key not in early_resources:
-                raise Exception(f"Failed to set early resource {key} or type {value}")
+                raise Exception(
+                    f"Failed to set early resource '{key}' for type {repr(value)}"
+                )
             args[key] = early_resources[key]
 
-        res = self._f(**args)
+        try:
+            res = self._f(**args)
+        except Exception:
+            logger.error("skipping failed asset factories", exc_info=True)
+            return AssetFactoryResponse(assets=[])
+
         if isinstance(res, AssetFactoryResponse):
             return res
         elif isinstance(res, AssetsDefinition):

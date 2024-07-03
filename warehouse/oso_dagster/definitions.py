@@ -4,6 +4,7 @@ from dagster import Definitions
 from dagster_dbt import DbtCliResource
 from dagster_gcp import BigQueryResource, GCSResource
 from dagster_polars import PolarsBigQueryIOManager
+from dlt.destinations import filesystem
 
 from . import constants
 from .schedules import schedules
@@ -28,6 +29,10 @@ def load_definitions():
             project_id, constants.gcp_secrets_prefix
         )
 
+    # A dlt destination for gcs staging to bigquery
+    assert constants.staging_bucket_url is not None
+    dlt_gcs_staging = filesystem(bucket_url=constants.staging_bucket_url)
+
     dlt = DagsterDltResource()
     bigquery = BigQueryResource(project=project_id)
     bigquery_datatransfer = BigQueryDataTransferResource(
@@ -39,7 +44,11 @@ def load_definitions():
         search_paths=[os.path.join(os.path.dirname(__file__), "models")],
     )
 
-    asset_factories = load_all_assets_from_package(assets, {"secrets": secret_resolver})
+    early_resources = dict(
+        project_id=project_id, dlt_gcs_staging=dlt_gcs_staging, secrets=secret_resolver
+    )
+
+    asset_factories = load_all_assets_from_package(assets, early_resources)
 
     io_manager = PolarsBigQueryIOManager(project=project_id)
 
@@ -53,6 +62,8 @@ def load_definitions():
         "io_manager": io_manager,
         "dlt": dlt,
         "secrets": secret_resolver,
+        "dlt_gcs_staging": dlt_gcs_staging,
+        "project_id": project_id,
     }
     for target in constants.main_dbt_manifests:
         resources[f"{target}_dbt"] = DbtCliResource(
