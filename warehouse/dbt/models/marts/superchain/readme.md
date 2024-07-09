@@ -19,3 +19,4 @@ Note: The `rf4_repo_stats_by_project` model is a temporary model used to assist 
 ## Change log
 - [2024-07-02](https://github.com/opensource-observer/oss-directory/commit/bd68bc42af89d08a38553bf1e83deff95342df3a): three contracts included in applications that were not identified from their deployers were directly added to OSS Directory; one contract that had been mis-attributed to a project prior to the round was removed.
 - [2024-07-02](https://docs.google.com/spreadsheets/d/1f6zQCCR2OmaM7bsjVU22YcVP4J_JmLaEKLc-YIDjCkw/edit?usp=sharing): one project was granted OS status and four projects had OS status removed.
+- [2024-07-09](https://docs.google.com/spreadsheets/d/1f6zQCCR2OmaM7bsjVU22YcVP4J_JmLaEKLc-YIDjCkw/edit?usp=sharing): four projects had OS status removed.
