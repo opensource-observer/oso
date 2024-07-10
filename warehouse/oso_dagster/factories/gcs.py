@@ -22,7 +22,14 @@ from dagster import (
 from dagster_gcp import BigQueryResource, GCSResource
 
 from .common import AssetFactoryResponse
-from ..utils import ensure_dataset, DatasetOptions, TimeInterval, SourceMode, add_tags
+from ..utils import (
+    ensure_dataset,
+    DatasetOptions,
+    TimeInterval,
+    SourceMode,
+    add_tags,
+    add_key_prefix_as_tag,
+)
 
 
 @dataclass(kw_only=True)
@@ -80,6 +87,8 @@ def interval_gcs_import_asset(config: IntervalGCSAsset):
     # Extend with additional tags
     tags.update(config.tags)
 
+    tags = add_key_prefix_as_tag(tags, config.key_prefix)
+
     @asset(
         name=config.name,
         key_prefix=config.key_prefix,
@@ -89,6 +98,7 @@ def interval_gcs_import_asset(config: IntervalGCSAsset):
                 "opensource.observer/type": "source",
             },
         ),
+        compute_kind="gcs",
         **config.asset_kwargs,
     )
     def gcs_asset(
