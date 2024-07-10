@@ -23,7 +23,7 @@ github_repos as (
     {{ ref('stg_ossd__current_repositories') }} as repos
     on
       LOWER(CONCAT("https://github.com/", repos.owner))
-      = LOWER(JSON_VALUE(github.url))
+      = LOWER(RTRIM(JSON_VALUE(github.url), "/"))
       or LOWER(repos.url) = LOWER(JSON_VALUE(github.url))
 ),
 
