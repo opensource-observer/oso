@@ -22,9 +22,13 @@ github_repos as (
   inner join
     {{ ref('stg_ossd__current_repositories') }} as repos
     on
+      {# 
+        We join on either the repo url or the user/org url.
+        The RTRIMs are to ensure we match even if there are trailing slashes 
+      #}
       LOWER(CONCAT("https://github.com/", repos.owner))
       = LOWER(RTRIM(JSON_VALUE(github.url), "/"))
-      or LOWER(repos.url) = LOWER(JSON_VALUE(github.url))
+      or LOWER(repos.url) = LOWER(RTRIM(JSON_VALUE(github.url), "/"))
 ),
 
 all_npm_raw as (
