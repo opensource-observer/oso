@@ -24,20 +24,20 @@
   },
   "keywords": [],
   "devDependencies": {
-    "@types/node": "^20.11.17",
-    "dotenv": "^16.4.1",
-    "ts-node": "^10.9.1",
-    "typescript": "^5.3.3"
+    "@types/node": "^20.14.10",
+    "dotenv": "^16.4.5",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.5.3"
   },
   "dependencies": {
-    "@types/libsodium-wrappers": "^0.7.13",
+    "@types/libsodium-wrappers": "^0.7.14",
     "@types/yargs": "^17.0.32",
     "chalk": "^5.3.0",
-    "libsodium-wrappers": "^0.7.13",
-    "octokit": "^3.1.0",
+    "libsodium-wrappers": "^0.7.14",
+    "octokit": "^3.2.1",
     "ts-dedent": "^2.2.0",
-    "winston": "^3.11.0",
-    "yaml": "^2.3.1",
+    "winston": "^3.13.1",
+    "yaml": "^2.4.5",
     "yargs": "^17.7.2"
   }
 }

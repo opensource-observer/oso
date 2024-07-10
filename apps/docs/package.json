@@ -18,7 +18,7 @@
     "lint": "pnpm lint:eslint && pnpm lint:prettier",
     "lint:eslint": "eslint --ignore-path ../../.gitignore --ignore-path .gitignore --max-warnings 0 .",
     "lint:prettier": "prettier --ignore-path ../../.gitignore --ignore-path .gitignore --ignore-path .prettierignore --log-level warn --check **/*.{js,jsx,ts,tsx,sol,md,json}",
-    "plasmic:update": "pnpm update @plasmicapp/cli @plasmicapp/react-web",
+    "plasmic:update": "pnpm install && pnpm update @plasmicapp/cli @plasmicapp/react-web",
     "plasmic:sync": "pnpm plasmic sync --yes --force"
   },
   "dependencies": {
@@ -26,19 +26,19 @@
     "@docusaurus/preset-classic": "3.1.1",
     "@docusaurus/theme-common": "3.1.1",
     "@laxels/docusaurus-plugin-segment": "^1.0.6",
-    "@mdx-js/react": "^3.0.0",
-    "@plasmicapp/react-web": "^0.2.341",
-    "clsx": "^2.1.0",
+    "@mdx-js/react": "^3.0.1",
+    "@plasmicapp/react-web": "^0.2.343",
+    "clsx": "^2.1.1",
     "prism-react-renderer": "^2.3.1",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
   },
   "devDependencies": {
     "@docusaurus/module-type-aliases": "3.1.1",
     "@docusaurus/tsconfig": "3.1.1",
     "@docusaurus/types": "3.1.1",
     "@plasmicapp/cli": "^0.1.330",
-    "dotenv": "^16.4.1",
+    "dotenv": "^16.4.5",
     "typescript": "~5.3.3"
   },
   "browserslist": {

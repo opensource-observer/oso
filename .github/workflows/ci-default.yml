@@ -2,11 +2,11 @@
 name: ci-default
 env:
   # CI variables
+  NODE_ENV: ${{ vars.NODE_ENV }}
   DOCKER_PLATFORM: "amd64"
   TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
   TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
   # Frontend variables
-  NODE_ENV: ${{ vars.NODE_ENV }}
   PLASMIC_PROJECT_ID: ${{ vars.PLASMIC_PROJECT_ID }}
   PLASMIC_PROJECT_API_TOKEN: ${{ vars.PLASMIC_PROJECT_API_TOKEN }}
   NEXT_PUBLIC_DOMAIN: "www.opensource.observer"
@@ -78,31 +78,29 @@ jobs:
             NODE_ENV \
             PLASMIC_PROJECT_ID \
             PLASMIC_PROJECT_API_TOKEN \
-            NEXT_PUBLIC_DOMAIN \
             NEXT_PUBLIC_DB_GRAPHQL_URL \
             OSO_API_KEY \
-            GOOGLE_PROJECT_ID \
             GOOGLE_TEST_DUMMY_CREDENTIALS_JSON \
             PUBLIC_VARS_TEST
-
-      - name: Check if algolia is empty, set the variable to some dummy value if it is
-        shell: bash
-        run: |
-          echo "NEXT_PUBLIC_ALGOLIA_API_KEY=${NEXT_PUBLIC_ALGOLIA_API_KEY:-xxxx}" >> "$GITHUB_ENV"
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 9
-          run_install: |
-            - recursive: true
-              args: [--frozen-lockfile, --strict-peer-dependencies]
+          version: "9.5.0"
+          run_install: false
+          #run_install: |
+          #  - recursive: true
+          #    args: [--frozen-lockfile, --strict-peer-dependencies]
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "20.x"
           cache: "pnpm"
+
+      # Install after we've setup the node/pnpm cache
+      - name: Install dependencies
+        run: pnpm install --recursive --frozen-lockfile --strict-peer-dependencies
 
       - name: "Setup Python, Poetry and Dependencies"
         uses: packetcoders/action-setup-cache-python-poetry@main
@@ -134,12 +132,13 @@ jobs:
 
       # Automatically retry if the build fails
       - name: Build (Node)
-        uses: nick-fields/retry@v3
-        with:
-          timeout_minutes: 5
-          max_attempts: 3
-          command: |
-            pnpm build
+        run: pnpm build
+        #uses: nick-fields/retry@v3
+        #with:
+        #  timeout_minutes: 5
+        #  max_attempts: 3
+        #  command: |
+        #    pnpm build
         # Always run this step so that all linting errors can be seen at once.
         if: ${{ matrix.component == 'node' }}
 

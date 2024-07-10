@@ -259,6 +259,8 @@ async function refreshCredentials(args: RefreshGCPCredentials) {
 
     const pkey = await octo.rest.actions.getEnvironmentPublicKey({
       repository_id: repo.data.id,
+      owner: args.repo.owner,
+      repo: args.repo.name,
       environment_name: args.environment,
     });
 
@@ -269,6 +271,8 @@ async function refreshCredentials(args: RefreshGCPCredentials) {
 
     await octo.rest.actions.createOrUpdateEnvironmentSecret({
       repository_id: repo.data.id,
+      owner: args.repo.owner,
+      repo: args.repo.name,
       environment_name: args.environment,
       secret_name: args.name,
       encrypted_value: ciphertext,
@@ -278,12 +282,16 @@ async function refreshCredentials(args: RefreshGCPCredentials) {
     try {
       const currentVar = await octo.rest.actions.getEnvironmentVariable({
         repository_id: repo.data.id,
+        owner: args.repo.owner,
+        repo: args.repo.name,
         environment_name: args.environment,
         name: args.name,
       });
       if (currentVar) {
         await octo.rest.actions.deleteEnvironmentVariable({
           repository_id: repo.data.id,
+          owner: args.repo.owner,
+          repo: args.repo.name,
           environment_name: args.environment,
           name: args.name,
         });
@@ -293,6 +301,8 @@ async function refreshCredentials(args: RefreshGCPCredentials) {
     }
     await octo.rest.actions.createEnvironmentVariable({
       repository_id: repo.data.id,
+      owner: args.repo.owner,
+      repo: args.repo.name,
       environment_name: args.environment,
       name: args.name,
       value: creds,

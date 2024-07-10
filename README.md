@@ -76,6 +76,26 @@ The script is idempotent, so you can safely run it again
 if you encounter any issues.
 :::
 
+### Environment variables
+
+As a matter of convention, we typically maintain a `.env.example`
+file in each package that enumerates environment variables used in each package.
+
+Whenever you make updates to required environment variables,
+make sure that you also update the following:
+
+- `turbo.json`: Turborepo 2 runs in strict mode,
+  which means it will filter out anything not in this file
+- `.github/workflows/**`: GitHub actions require that we enumerate each
+  environment variable. The most important of which is `ci-default.yml`,
+  which runs our build, lint, and test jobs.
+  - If the environment variable can be safely hard-coded,
+    feel free to just add it to the file (e.g. with a dummy value).
+  - If the environment variable must be set dynamically,
+    then you must update `ci-default.yml` and `refresh-test-credentials.yml`
+    to read and write the environment variable from the docker container.
+- Vercel: currently only used for frontend builds
+
 ## Frontend Development
 
 ### Setup and build the frontend

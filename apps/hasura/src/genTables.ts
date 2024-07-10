@@ -90,7 +90,7 @@ type ModelConfig = {
 async function main(): Promise<void> {
   const target = process.env.DBT_TARGET;
   if (!target) {
-    throw new Error("specify a DBT_TARGET");
+    throw new Error(`specify a valid DBT_TARGET, currently set to "${target}"`);
   }
   console.log(`Generating tables from dbt`);
 

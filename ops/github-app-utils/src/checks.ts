@@ -46,6 +46,8 @@ export async function setCheckStatus(
   return await gh.request("POST /repos/{owner}/{repo}/check-runs", {
     owner: owner,
     repo: repo,
+    name: request.name,
+    head_sha: request.head_sha,
     data: request,
   });
 }
