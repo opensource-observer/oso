@@ -10,9 +10,15 @@ from . import constants
 from .schedules import schedules
 from .cbt import CBTResource
 from .factories import load_all_assets_from_package
-from .utils.secrets import LocalSecretResolver, GCPSecretResolver
+from .utils import (
+    LocalSecretResolver,
+    GCPSecretResolver,
+    LogAlertManager,
+    DiscordWebhookAlertManager,
+)
 from .resources import BigQueryDataTransferResource
 from . import assets
+from .factories.alerts import setup_alert_sensor
 
 from dagster_embedded_elt.dlt import DagsterDltResource
 
@@ -51,6 +57,18 @@ def load_definitions():
     asset_factories = load_all_assets_from_package(assets, early_resources)
 
     io_manager = PolarsBigQueryIOManager(project=project_id)
+
+    # Setup an alert sensor
+    alert_manager = LogAlertManager()
+    if constants.discord_webhook_url:
+        alert_manager = DiscordWebhookAlertManager(constants.discord_webhook_url)
+    alerts = setup_alert_sensor(
+        "alerts",
+        constants.dagster_alerts_base_url,
+        alert_manager,
+    )
+
+    asset_factories = asset_factories + alerts
 
     # Each of the dbt environments needs to be setup as a resource to be used in
     # the dbt assets

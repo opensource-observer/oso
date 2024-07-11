@@ -37,7 +37,13 @@ if not project_id:
 staging_bucket_url = os.getenv("DAGSTER_STAGING_BUCKET_URL")
 profile_name = os.getenv("DAGSTER_DBT_PROFILE_NAME", "opensource_observer")
 gcp_secrets_prefix = os.getenv("DAGSTER_GCP_SECRETS_PREFIX", "")
-use_local_secrets = os.getenv("DAGSTER_USE_LOCAL_SECRETS", "True") == "True"
+use_local_secrets = os.getenv("DAGSTER_USE_LOCAL_SECRETS", "true").lower() in [
+    "true",
+    "1",
+]
+discord_webhook_url = os.getenv("DAGSTER_DISCORD_WEBHOOK_URL")
+enable_tests = os.getenv("DAGSTER_ENABLE_TESTS", "false").lower() in ["true", "1"]
+dagster_alerts_base_url = os.getenv("DAGSTER_ALERTS_BASE_URL", "")
 
 dbt_profiles_dir = get_profiles_dir()
 dbt_target_base_dir = os.getenv("DAGSTER_DBT_TARGET_BASE_DIR") or ""

@@ -50,6 +50,7 @@ dagster-embedded-elt = "^0.23.11"
 google-cloud-secret-manager = "^2.20.0"
 dlt = { extras = ["filesystem"], version = "^0.4.12" }
 gcsfs = "^2024.6.1"
+discord-webhook = "^1.3.1"
 
 
 [tool.poetry.scripts]
