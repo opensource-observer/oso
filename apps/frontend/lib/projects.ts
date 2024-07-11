@@ -311,8 +311,8 @@ export class RandomTestProjectsClient implements IProjectsClient {
   }
 
   randomProjectField() {
-    const name = generate(1 + randomInt(2)).join(" ");
-    const repo = generate(2).join("/");
+    const name = generate({ exactly: 1 + randomInt(2), join: " " });
+    const repo = generate({ exactly: 2, join: "/" });
     return {
       name: name,
       repo: repo,
@@ -858,8 +858,8 @@ export function fakeDataGenerator(
     dependsOn = _.uniq(dependsOn);
     const fakeProject: FakeProjectConfig = {
       project: {
-        name: generate(1).join("/"),
-        repo: generate(1 + randomInt(1)).join("/"),
+        name: generate({ exactly: 1, join: "/" }),
+        repo: generate({ exactly: 1 + randomInt(1), join: "/" }),
       },
       status: ProjectStatus.Unknown,
       dependencies: 100,
