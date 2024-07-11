@@ -121,7 +121,10 @@ PLASMIC.registerComponent(BarList, {
       type: "array",
       defaultValue: [],
     },
-    color: "string",
+    colors: {
+      type: "array",
+      defaultValue: ["blue"],
+    },
     showAnimation: "boolean",
   },
   importPath: "./components/widgets/tremor",
