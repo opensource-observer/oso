@@ -52,7 +52,7 @@ class GCPSecretResolver(SecretResolver):
             resp = self._client.access_secret_version(request={"name": name})
         except Exception as e:
             raise SecretInaccessibleError(
-                "Error retrieve secret from gcp", wrapped_error=e
+                "Error retrieving secret from gcp", wrapped_error=e
             )
         return resp.payload.data
 
