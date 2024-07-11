@@ -31,6 +31,11 @@ class BqDtsAssetConfig(BqDtsTransferConfig):
 
 @unpack_config(BqDtsAssetConfig)
 def bq_dts_asset(asset_config: BqDtsAssetConfig):
+    """
+    This is a factory for creating a Dagster asset
+    that configures a BigQuery Data Transfer Service job
+    """
+
     tags = {
         "opensource.observer/factory": "bigquery_dts",
         "opensource.observer/environment": asset_config.environment,
@@ -49,6 +54,7 @@ def bq_dts_asset(asset_config: BqDtsAssetConfig):
         bigquery: BigQueryResource,
         bigquery_datatransfer: BigQueryDataTransferResource,
     ) -> MaterializeResult:
+
         context.log.info(
             f"Materializing a BigQuery Data Transfer asset called {asset_config.asset_name}"
         )
