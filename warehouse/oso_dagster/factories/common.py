@@ -1,5 +1,6 @@
 import logging
-from typing import List, Iterable, Union, Callable, Any, Dict
+import inspect
+from typing import List, Iterable, Union, Callable, Any, Dict, Optional
 from dataclasses import dataclass, field
 
 from dagster import (
@@ -48,8 +49,13 @@ class EarlyResourcesAssetFactory:
     is most useful for asset factories that require some form of secret and use
     the secret resolver."""
 
-    def __init__(self, f: EarlyResourcesAssetDecoratedFunction):
+    def __init__(
+        self,
+        f: EarlyResourcesAssetDecoratedFunction,
+        caller: Optional[inspect.FrameInfo] = None,
+    ):
         self._f = f
+        self._caller = caller
 
     def __call__(self, **early_resources) -> AssetFactoryResponse:
         annotations = self._f.__annotations__
@@ -64,7 +70,14 @@ class EarlyResourcesAssetFactory:
         try:
             res = self._f(**args)
         except Exception:
-            logger.error("skipping failed asset factories", exc_info=True)
+            if self._caller:
+                logger.error(
+                    f"Skipping failed asset factories from {self._caller.filename}"
+                )
+            else:
+                logger.error(
+                    f"Skipping failed asset factories from {self._f.__module__}.{self._f.__name__}"
+                )
             return AssetFactoryResponse(assets=[])
 
         if isinstance(res, AssetFactoryResponse):
@@ -75,5 +88,10 @@ class EarlyResourcesAssetFactory:
             raise Exception("Invalid early resource factory")
 
 
-def early_resources_asset_factory(f: EarlyResourcesAssetDecoratedFunction):
-    return EarlyResourcesAssetFactory(f)
+def early_resources_asset_factory(*, caller_depth: int = 1):
+    caller = inspect.stack()[caller_depth]
+
+    def _decorator(f: EarlyResourcesAssetDecoratedFunction):
+        return EarlyResourcesAssetFactory(f, caller=caller)
+
+    return _decorator

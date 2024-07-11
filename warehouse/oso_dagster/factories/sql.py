@@ -91,7 +91,7 @@ def sql_assets(
     default oso data warehouse (bigquery at this time)
     """
 
-    @early_resources_asset_factory
+    @early_resources_asset_factory(caller_depth=2)
     def factory(
         secrets: SecretResolver,
         project_id: str,
