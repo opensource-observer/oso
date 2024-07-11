@@ -3,7 +3,7 @@ Tools for dealing with secret management.
 """
 
 import os
-from typing import Dict
+from typing import Dict, Optional
 from dataclasses import dataclass
 from google.cloud import secretmanager
 
@@ -12,6 +12,12 @@ from google.cloud import secretmanager
 class SecretReference:
     group_name: str
     key: str
+
+
+class SecretInaccessibleError(Exception):
+    def __init__(self, message: str, wrapped_error: Optional[Exception] = None):
+        super().__init__(message)
+        self.wrapped_error = wrapped_error
 
 
 class SecretResolver:
@@ -42,7 +48,12 @@ class GCPSecretResolver(SecretResolver):
 
     def resolve(self, ref: SecretReference):
         name = f"projects/{self._project_id}/secrets/{self._prefix}__{ref.group_name}__{ref.key}/versions/latest"
-        resp = self._client.access_secret_version(request={"name": name})
+        try:
+            resp = self._client.access_secret_version(request={"name": name})
+        except Exception as e:
+            raise SecretInaccessibleError(
+                "Error retrieving secret from gcp", wrapped_error=e
+            )
         return resp.payload.data
 
 
@@ -53,7 +64,12 @@ class LocalSecretResolver(SecretResolver):
         self._prefix = prefix
 
     def resolve(self, ref: SecretReference):
-        secret = os.environ[f"{self._prefix}__{ref.group_name}__{ref.key}".upper()]
+        secret_env_var = f"{self._prefix}__{ref.group_name}__{ref.key}".upper()
+        secret = os.environ.get(secret_env_var)
+        if not secret:
+            raise SecretInaccessibleError(
+                f"Cannot access {secret_env_var} in the environment"
+            )
         return secret.encode("utf-8")
 
 
