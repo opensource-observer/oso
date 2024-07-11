@@ -30,13 +30,13 @@
   },
   "keywords": [],
   "devDependencies": {
-    "@types/node": "^20.11.17",
-    "dotenv-cli": "^7.3.0",
+    "@types/node": "^20.14.10",
+    "dotenv-cli": "^7.4.2",
     "hasura-cli": "^2.36.1",
-    "ts-node": "^10.9.1",
-    "typescript": "^5.3.3"
+    "ts-node": "^10.9.2",
+    "typescript": "^5.5.3"
   },
   "dependencies": {
-    "yaml": "^2.3.1"
+    "yaml": "^2.4.5"
   }
 }

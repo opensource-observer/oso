@@ -22,23 +22,23 @@
     "plasmic:sync": "pnpm plasmic sync --yes --force"
   },
   "dependencies": {
-    "@docusaurus/core": "3.1.1",
-    "@docusaurus/preset-classic": "3.1.1",
-    "@docusaurus/theme-common": "3.1.1",
+    "@docusaurus/core": "3.4.0",
+    "@docusaurus/preset-classic": "3.4.0",
+    "@docusaurus/theme-common": "3.4.0",
     "@laxels/docusaurus-plugin-segment": "^1.0.6",
-    "@mdx-js/react": "^3.0.0",
-    "@plasmicapp/react-web": "^0.2.341",
-    "clsx": "^2.1.0",
+    "@mdx-js/react": "^3.0.1",
+    "@plasmicapp/react-web": "^0.2.343",
+    "clsx": "^2.1.1",
     "prism-react-renderer": "^2.3.1",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
   },
   "devDependencies": {
-    "@docusaurus/module-type-aliases": "3.1.1",
-    "@docusaurus/tsconfig": "3.1.1",
-    "@docusaurus/types": "3.1.1",
+    "@docusaurus/module-type-aliases": "3.4.0",
+    "@docusaurus/tsconfig": "3.4.0",
+    "@docusaurus/types": "3.4.0",
     "@plasmicapp/cli": "^0.1.330",
-    "dotenv": "^16.4.1",
+    "dotenv": "^16.4.5",
     "typescript": "~5.3.3"
   },
   "browserslist": {
