@@ -43,7 +43,7 @@ use_local_secrets = os.getenv("DAGSTER_USE_LOCAL_SECRETS", "true").lower() in [
 ]
 discord_webhook_url = os.getenv("DAGSTER_DISCORD_WEBHOOK_URL")
 enable_tests = os.getenv("DAGSTER_ENABLE_TESTS", "false").lower() in ["true", "1"]
-dagster_base_url = os.getenv("DAGSTER_BASE_URL")
+dagster_alerts_base_url = os.getenv("DAGSTER_ALERTS_BASE_URL", "")
 
 dbt_profiles_dir = get_profiles_dir()
 dbt_target_base_dir = os.getenv("DAGSTER_DBT_TARGET_BASE_DIR") or ""

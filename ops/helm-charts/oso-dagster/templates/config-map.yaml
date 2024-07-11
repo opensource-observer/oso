@@ -11,3 +11,5 @@ data:
   DAGSTER_USE_LOCAL_SECRETS: "False"
   DAGSTER_GCP_SECRETS_PREFIX: "{{ .Values.global.serviceAccountName }}"
   DAGSTER_STAGING_BUCKET_URL: "{{ .Values.configMap.secretPrefix }}-{{ .Values.secretmanagerKeys.stagingBucketUrl }}"
+  DAGSTER_DISCORD_WEBHOOK_URL: "{{ .Values.configMap.secretPrefix }}-{{ .Values.secretmanagerKeys.discordWebhookUrl }}"
+  DAGSTER_ALERTS_BASE_URL: "{{ .Values.alerts.baseUrl }}"

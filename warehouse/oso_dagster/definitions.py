@@ -63,7 +63,9 @@ def load_definitions():
     if constants.discord_webhook_url:
         alert_manager = DiscordWebhookAlertManager(constants.discord_webhook_url)
     alerts = setup_alert_sensor(
-        "alerts", constants.dagster_base_url or "http://127.0.0.1:3000", alert_manager
+        "alerts",
+        constants.dagster_alerts_base_url,
+        alert_manager,
     )
 
     asset_factories = asset_factories + alerts

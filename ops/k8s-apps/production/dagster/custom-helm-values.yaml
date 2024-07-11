@@ -11,6 +11,8 @@ spec:
       serviceAccountName: production-dagster
     configMap:
       secretPrefix: "gcp:secretmanager:production-dagster"
+    alerts:
+      baseUrl: "https://dagster.opensource.observer"
     dagster:
       global: 
         serviceAccountName: production-dagster
