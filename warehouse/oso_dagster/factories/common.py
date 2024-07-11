@@ -37,6 +37,14 @@ class AssetFactoryResponse:
     jobs: List[JobDefinition] = field(default_factory=lambda: [])
     checks: List[AssetChecksDefinition] = field(default_factory=lambda: [])
 
+    def __add__(self, other: "AssetFactoryResponse") -> "AssetFactoryResponse":
+        return AssetFactoryResponse(
+            assets=list(self.assets) + list(other.assets),
+            sensors=list(self.sensors) + list(other.sensors),
+            checks=list(self.checks) + list(other.checks),
+            jobs=list(self.jobs) + list(other.jobs),
+        )
+
 
 type EarlyResourcesAssetDecoratedFunction[**P] = Callable[
     P, AssetFactoryResponse | AssetsDefinition
