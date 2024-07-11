@@ -17,7 +17,7 @@ will be overwritten by the build step.
 
 ## Build
 
-This will generate table configurations for all tables found in `../dbt/`.
+This will generate table configurations for all tables found in `/warehouse/dbt/models/`.
 This needs to be run every time the schema changes.
 For more information, see `./src/genTables.ts`.
 
