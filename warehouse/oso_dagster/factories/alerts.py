@@ -18,20 +18,6 @@ class AlertOpConfig(Config):
     run_id: str
 
 
-
-# def get_dagster_events_for_run(run_id: str):
-#     # Get the DagsterInstance
-#     instance = DagsterInstance.get()
-
-#     # Fetch event records for the specified run ID
-#     event_records = instance.get_records_for_run(run_id=run_id).records
-
-#     # Extract DagsterEvent objects from the event records
-#     dagster_events = [record. for record in event_records if record.dagster_event]
-
-#     return dagster_events
-
-
 def setup_alert_sensor(name: str, base_url: str, alert_manager: AlertManager):
     @op(name=f"{name}_alert_op")
     def failure_op(context: OpExecutionContext, config: AlertOpConfig) -> None:
@@ -57,11 +43,6 @@ def setup_alert_sensor(name: str, base_url: str, alert_manager: AlertManager):
         alert_manager.alert(
             f"{len(step_failures)} failed steps in run ({base_url}/runs/{config.run_id})"
         )
-
-        # if config.failure_event.asset_key:
-        #     alert_manager.alert(
-        #         f"Asset {config.failure_event.asset_key} failed to materialize"
-        #     )
 
     @job(name=f"{name}_alert_job")
     def failure_job():
