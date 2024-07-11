@@ -49,7 +49,7 @@ from ...cbt import CBTResource, UpdateStrategy, TimePartitioning
 from .. import AssetFactoryResponse
 from .config import GoldskyConfig, GoldskyConfigInterface, SchemaDict
 from ..common import AssetDeps, AssetList
-from ...utils.gcs import batch_delete_blobs
+from ...utils import batch_delete_blobs, add_tags
 
 GenericExecutionContext = AssetExecutionContext | OpExecutionContext
 
@@ -405,78 +405,6 @@ def delete_all_gcs_files_in_prefix(
     finally:
         client.close()
     return
-
-
-def blocking_update_pointer_table(
-    context: GenericExecutionContext,
-    config: GoldskyConfig,
-    bigquery: BigQueryResource,
-    job_id: str,
-    worker: str,
-    pointer_table: str,
-    new_checkpoint: GoldskyCheckpoint,
-    latest_checkpoint: GoldskyCheckpoint | None,
-    wildcard_path: str,
-):
-    with bigquery.get_client() as client:
-        dest_table_ref = client.get_dataset(
-            config.working_destination_dataset_name
-        ).table(f"{config.destination_table_name}_{worker}")
-        new = False
-        try:
-            client.get_table(dest_table_ref)
-        except NotFound:
-            # If the table doesn't exist just create it. An existing table will
-            # be there if a previous run happened to fail midway.
-            new = True
-
-        if not new:
-            context.log.info("Merging into worker table")
-            client.query_and_wait(
-                f"""
-                LOAD DATA OVERWRITE `{config.project_id}.{config.working_destination_dataset_name}.{config.destination_table_name}_{worker}_{job_id}`
-                FROM FILES (
-                    format = "PARQUET",
-                    uris = ["{wildcard_path}"]
-                );
-            """
-            )
-            tx_query = f"""
-                BEGIN TRANSACTION; 
-                    INSERT INTO `{config.project_id}.{config.working_destination_dataset_name}.{config.destination_table_name}_{worker}` 
-                    SELECT * FROM `{config.project_id}.{config.working_destination_dataset_name}.{config.destination_table_name}_{worker}_{job_id}`;
-
-                    DELETE FROM `{pointer_table}` WHERE worker = '{worker}';
-
-                    INSERT INTO `{pointer_table}` (worker, job_id, timestamp, checkpoint)
-                    VALUES ('{worker}', '{new_checkpoint.job_id}', {new_checkpoint.timestamp}, {new_checkpoint.worker_checkpoint}); 
-                COMMIT TRANSACTION;
-            """
-            context.log.debug(f"query: {tx_query}")
-            client.query_and_wait(tx_query)
-            client.query_and_wait(
-                f"""
-                DROP TABLE `{config.project_id}.{config.working_destination_dataset_name}.{config.destination_table_name}_{worker}_{job_id}`;
-            """
-            )
-        else:
-            context.log.info("Creating new worker table")
-            query1 = f"""
-                LOAD DATA OVERWRITE `{config.project_id}.{config.working_destination_dataset_name}.{config.destination_table_name}_{worker}`
-                FROM FILES (
-                    format = "PARQUET",
-                    uris = ["{wildcard_path}"]
-                );
-            """
-            context.log.debug(f"query: {query1}")
-            client.query_and_wait(query1)
-            rows = client.query_and_wait(
-                f"""
-                INSERT INTO `{pointer_table}` (worker, job_id, timestamp, checkpoint)
-                VALUES ('{worker}', '{new_checkpoint.job_id}', {new_checkpoint.timestamp}, {new_checkpoint.worker_checkpoint}); 
-            """
-            )
-            context.log.info(rows)
 
 
 def decimal_convert(name: str, field: PolarsDataType):
@@ -1013,7 +941,21 @@ def goldsky_asset(deps: Optional[AssetDeps | AssetList] = None, **kwargs: Unpack
 
     deps = deps or []
     deps = cast(AssetDeps, deps)
-    @asset(name=asset_config.name, key_prefix=asset_config.key_prefix, deps=deps)
+
+    key_prefix = asset_config.key_prefix
+
+    tags: Dict[str, str] = {
+        "opensource.observer/factory": "goldsky",
+        "opensource.observer/environment": asset_config.environment,
+    }
+
+    if key_prefix:
+        group_name = key_prefix if isinstance(key_prefix, str) else "__".join(list(key_prefix))
+        tags["opensource.observer/group"] = group_name
+
+    @asset(name=asset_config.name, key_prefix=asset_config.key_prefix, deps=deps, compute_kind="goldsky", tags=add_tags(tags, {
+        "opensource.observer/type": "source", 
+    }))
     def generated_asset(
         context: AssetExecutionContext,
         bigquery: BigQueryResource,
@@ -1025,7 +967,9 @@ def goldsky_asset(deps: Optional[AssetDeps | AssetList] = None, **kwargs: Unpack
 
     related_ops_prefix = "_".join(generated_asset.key.path)
 
-    @op(name=f"{related_ops_prefix}_clean_up_op")
+    @op(name=f"{related_ops_prefix}_clean_up_op", tags=add_tags(tags, {
+        "opensource.observer/op-type": "clean-up"
+    }))
     def goldsky_clean_up_op(
         context: OpExecutionContext,
         bigquery: BigQueryResource,
@@ -1037,7 +981,9 @@ def goldsky_asset(deps: Optional[AssetDeps | AssetList] = None, **kwargs: Unpack
         gs_asset = GoldskyAsset(gcs, bigquery, cbt, asset_config)
         gs_asset.clean_up(context.log)
 
-    @op(name=f"{related_ops_prefix}_backfill_op")
+    @op(name=f"{related_ops_prefix}_backfill_op", tags=add_tags(tags, {
+        "opensource.observer/op-type": "manual-backfill"
+    }))
     def goldsky_backfill_op(
         context: OpExecutionContext,
         bigquery: BigQueryResource,
@@ -1068,7 +1014,9 @@ def goldsky_asset(deps: Optional[AssetDeps | AssetList] = None, **kwargs: Unpack
             pointer_table_suffix=op_input.backfill_label,
         )
 
-    @op(name=f"{related_ops_prefix}_files_stats_op")
+    @op(name=f"{related_ops_prefix}_files_stats_op", tags=add_tags(tags,{
+        "opensource.observer/op-type": "debug"
+    }))
     def goldsky_files_stats_op(
         context: OpExecutionContext, 
         bigquery: BigQueryResource, 
@@ -1128,7 +1076,9 @@ def goldsky_asset(deps: Optional[AssetDeps | AssetList] = None, **kwargs: Unpack
         # Log the metadata
         context.add_output_metadata({"bucket_stats": table_metadata})
 
-    @op(name=f"{related_ops_prefix}_load_schema_op")
+    @op(name=f"{related_ops_prefix}_load_schema_op", tags=add_tags(tags, {
+        "opensource.observer/op-type": "debug"
+    }))
     def goldsky_load_schema_op(
         context: OpExecutionContext, 
         bigquery: BigQueryResource, 
@@ -1157,19 +1107,19 @@ def goldsky_asset(deps: Optional[AssetDeps | AssetList] = None, **kwargs: Unpack
         context.add_output_metadata({"schema": table_metadata})
 
 
-    @job(name=f"{related_ops_prefix}_clean_up_job")
+    @job(name=f"{related_ops_prefix}_clean_up_job", tags=tags)
     def goldsky_clean_up_job():
         goldsky_clean_up_op()
 
-    @job(name=f"{related_ops_prefix}_files_stats_job")
+    @job(name=f"{related_ops_prefix}_files_stats_job", tags=tags)
     def goldsky_files_stats_job():
         goldsky_files_stats_op()
 
-    @job(name=f"{related_ops_prefix}_load_schema_job")
+    @job(name=f"{related_ops_prefix}_load_schema_job", tags=tags)
     def goldsky_load_schema_job():
         goldsky_load_schema_op()
 
-    @job(name=f"{related_ops_prefix}_backfill_job")
+    @job(name=f"{related_ops_prefix}_backfill_job", tags=tags)
     def goldsky_backfill_job():
         goldsky_backfill_op()
 

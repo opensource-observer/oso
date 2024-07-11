@@ -32,6 +32,7 @@ class GoldskyConfigInterface(TypedDict):
     project_id: str
     source_name: str
     destination_table_name: str
+    environment: NotRequired[str]
     pointer_size: NotRequired[int]
     max_objects_to_load: NotRequired[int]
     destination_dataset_name: NotRequired[str]
@@ -62,6 +63,7 @@ class GoldskyConfig:
     project_id: str
     source_name: str
     destination_table_name: str
+    environment: str = "production"
 
     # Maximum number of objects we can load into a load job is 10000 so the
     # largest this can be is 10000.

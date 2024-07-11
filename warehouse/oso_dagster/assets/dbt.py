@@ -2,7 +2,12 @@ from pathlib import Path
 import os
 from typing import Any, Mapping, Dict, List, Sequence, Optional
 
-from dagster import AssetExecutionContext, AssetKey, AssetsDefinition, Config
+from dagster import (
+    AssetExecutionContext,
+    AssetKey,
+    AssetsDefinition,
+    Config,
+)
 from dagster_dbt import DbtCliResource, dbt_assets, DagsterDbtTranslator
 
 from ..constants import main_dbt_manifests, main_dbt_project_dir, dbt_profiles_dir
@@ -11,11 +16,13 @@ from ..constants import main_dbt_manifests, main_dbt_project_dir, dbt_profiles_d
 class CustomDagsterDbtTranslator(DagsterDbtTranslator):
     def __init__(
         self,
+        environment: str,
         prefix: Sequence[str],
         internal_schema_map: Dict[str, List[str]],
     ):
         self._prefix = prefix
         self._internal_schema_map = internal_schema_map
+        self._environment = environment
 
     def get_asset_key(self, dbt_resource_props: Mapping[str, Any]) -> AssetKey:
         asset_key = super().get_asset_key(dbt_resource_props)
@@ -37,6 +44,14 @@ class CustomDagsterDbtTranslator(DagsterDbtTranslator):
                 final_key = asset_key
         return final_key
 
+    def get_tags(self, dbt_resource_props: Mapping[str, Any]) -> Mapping[str, str]:
+        tags: Dict[str, str] = dict()
+        materialization = dbt_resource_props.get("config", {}).get("materialized")
+        if materialization:
+            tags["dbt/materialized"] = materialization
+            tags["opensource.observer/environment"] = self._environment
+        return tags
+
 
 class DBTConfig(Config):
     full_refresh: bool = False
@@ -50,7 +65,7 @@ def generate_dbt_asset(
     internal_map: Dict[str, List[str]],
 ):
     print(f"Target[{target}] using profiles dir {dbt_profiles_dir}")
-    translator = CustomDagsterDbtTranslator(["dbt", target], internal_map)
+    translator = CustomDagsterDbtTranslator(target, ["dbt", target], internal_map)
 
     @dbt_assets(
         name=f"{target}_dbt",

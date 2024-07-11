@@ -83,6 +83,8 @@ def sql_assets(
     source_credential_reference: SecretReference,
     sql_tables: List[TopLevelSQLTableOptions],
     group_name: str = "",
+    environment: str = "production",
+    asset_type: str = "source"
 ):
     """A convenience sql asset factory that should handle any basic incremental
     table or or full refresh sql source and configure a destination to the
@@ -95,7 +97,13 @@ def sql_assets(
         project_id: str,
         dlt_gcs_staging: dlt.destinations.filesystem,
     ):
-        translator = PrefixedDltTranslator(source_name) 
+        
+        tags = {
+            "opensource.observer/environment": environment,
+            "opensource.observer/factory": "sql_dlt",
+            "opensource.observer/type": asset_type,
+        }
+        translator = PrefixedDltTranslator(source_name, tags) 
 
         connection_string = secrets.resolve_as_str(source_credential_reference)
         credentials = ConnectionStringCredentials(connection_string)
@@ -119,10 +127,11 @@ def sql_assets(
                 staging=dlt_gcs_staging,
                 progress="log",
             )
+            asset_def = _generate_asset_for_table(
+                source_name, credentials, pipeline, table, translator
+            )
             assets.append(
-                _generate_asset_for_table(
-                    source_name, credentials, pipeline, table, translator
-                )
+                asset_def
             )
 
         return AssetFactoryResponse(assets=assets)
@@ -136,12 +145,14 @@ class PrefixedDltTranslator(DagsterDltTranslator):
     def __init__(
         self,
         source_name: str,
+        tags: Dict[str, str],
         prefix: Optional[Sequence[str]] = None,
         include_deps: bool = False,
     ):
         self._prefix = prefix or cast(Sequence[str], [])
         self._source_name = source_name
         self._include_deps = include_deps
+        self._tags = tags.copy()
 
     def get_asset_key(self, resource: DltResource) -> AssetKey:
         key: List[str] = []
@@ -160,3 +171,7 @@ class PrefixedDltTranslator(DagsterDltTranslator):
         key.append("sources")
         key.append(resource.name)
         return [AssetKey(key)]
+    
+    def get_tags(self, resource: DltResource):
+        # As of 2024-07-10 This doesn't work. We will make a PR upstream
+        return self._tags

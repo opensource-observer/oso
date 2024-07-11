@@ -1,5 +1,5 @@
 import re
-from typing import Optional, Sequence
+from typing import Optional, Sequence, Dict
 from dataclasses import dataclass, field
 
 import arrow
@@ -22,8 +22,14 @@ from dagster import (
 from dagster_gcp import BigQueryResource, GCSResource
 
 from .common import AssetFactoryResponse
-from ..utils.bq import ensure_dataset, DatasetOptions
-from ..utils.common import TimeInterval, SourceMode
+from ..utils import (
+    ensure_dataset,
+    DatasetOptions,
+    TimeInterval,
+    SourceMode,
+    add_tags,
+    add_key_prefix_as_tag,
+)
 
 
 @dataclass(kw_only=True)
@@ -50,6 +56,10 @@ class BaseGCSAsset:
     # Dagster remaining arguments
     asset_kwargs: dict = field(default_factory=lambda: {})
 
+    tags: Dict[str, str] = field(default_factory=lambda: {})
+
+    environment: str = "production"
+
 
 @dataclass(kw_only=True)
 class IntervalGCSAsset(BaseGCSAsset):
@@ -69,7 +79,28 @@ def interval_gcs_import_asset(config: IntervalGCSAsset):
     # Find all of the "intervals" in the bucket and load them into the `raw_sources` dataset
     # Run these sources through a secondary dbt model into `clean_sources`
 
-    @asset(name=config.name, key_prefix=config.key_prefix, **config.asset_kwargs)
+    tags = {
+        "opensource.observer/factory": "gcs",
+        "opensource.observer/environment": config.environment,
+    }
+
+    # Extend with additional tags
+    tags.update(config.tags)
+
+    tags = add_key_prefix_as_tag(tags, config.key_prefix)
+
+    @asset(
+        name=config.name,
+        key_prefix=config.key_prefix,
+        tags=add_tags(
+            tags,
+            {
+                "opensource.observer/type": "source",
+            },
+        ),
+        compute_kind="gcs",
+        **config.asset_kwargs,
+    )
     def gcs_asset(
         context: AssetExecutionContext, bigquery: BigQueryResource, gcs: GCSResource
     ) -> MaterializeResult:
@@ -198,12 +229,12 @@ def interval_gcs_import_asset(config: IntervalGCSAsset):
 
     asset_config = config
 
-    @op(name=f"{config.name}_clean_up_op")
+    @op(name=f"{config.name}_clean_up_op", tags=tags)
     def gcs_clean_up_op(context: OpExecutionContext, config: dict):
         context.log.info(f"Running clean up for {asset_config.name}")
         print(config)
 
-    @job(name=f"{config.name}_clean_up_job")
+    @job(name=f"{config.name}_clean_up_job", tags=tags)
     def gcs_clean_up_job():
         gcs_clean_up_op()
 
@@ -216,7 +247,6 @@ def interval_gcs_import_asset(config: IntervalGCSAsset):
     def gcs_clean_up_sensor(
         context: SensorEvaluationContext, gcs: GCSResource, asset_event: EventLogEntry
     ):
-        print("EVENT!!!!!!")
         yield RunRequest(
             run_key=context.cursor,
             run_config=RunConfig(
