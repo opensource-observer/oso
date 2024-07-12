@@ -16,6 +16,8 @@ from dagster import (
 from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
 from dagster._core.definitions.asset_dep import CoercibleToAssetDep
 
+from oso_dagster import constants
+
 type GenericAsset = Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]
 type AssetList = Iterable[GenericAsset]
 type AssetDeps = Iterable[CoercibleToAssetDep]
@@ -80,11 +82,13 @@ class EarlyResourcesAssetFactory:
         except Exception:
             if self._caller:
                 logger.error(
-                    f"Skipping failed asset factories from {self._caller.filename}"
+                    f"Skipping failed asset factories from {self._caller.filename}",
+                    exc_info=constants.verbose_logs,
                 )
             else:
                 logger.error(
-                    f"Skipping failed asset factories from {self._f.__module__}.{self._f.__name__}"
+                    f"Skipping failed asset factories from {self._f.__module__}.{self._f.__name__}",
+                    exc_info=constants.verbose_logs,
                 )
             return AssetFactoryResponse(assets=[])
 
