@@ -20,7 +20,7 @@ WHERE
 {% else %}
 select
   *
-from {{ source("base_playground", "%s_deployers" % network_name) }}
+from {{ oso_source(network_name, "deployers") }}
 {% if is_incremental() %}
 where block_timestamp > TIMESTAMP_SUB(_dbt_max_partition, INTERVAL 1 DAY)
   {{ playground_filter("block_timestamp", is_start=False) }}

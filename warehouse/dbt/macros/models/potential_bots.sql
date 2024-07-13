@@ -8,7 +8,7 @@ with sender_transfer_rates as (
         ,min(block_timestamp) as min_block_time
         ,max(block_timestamp) as max_block_time
         ,count(*) as hr_txs
-    from {{ source(network_name, "transactions") }}
+    from {{ oso_source(network_name, "transactions") }}
     where 
         gas_price > 0 
         and receipt_gas_used > 0
