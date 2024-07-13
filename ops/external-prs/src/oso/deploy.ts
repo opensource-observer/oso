@@ -147,6 +147,12 @@ export class PRTestDeployCoordinator {
     headSha: string,
     checkoutPath: string,
   ): Promise<boolean> {
+    logger.info({
+      message: `running a git diff in ${checkoutPath}`,
+      base: baseSha,
+      headSha: headSha,
+    });
+
     const git = simpleGit({ baseDir: checkoutPath });
     const diffResult = await git.diffSummary([baseSha, headSha]);
     const dbtFiles = diffResult.files.filter((f) => {
