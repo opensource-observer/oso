@@ -21,7 +21,7 @@ from (
         ,min_by(to_address, block_number) as first_tx_to
         ,min_by(`hash`, block_number) as first_tx_hash
         ,min_by(substring(input, 1, 10), block_number) as first_method_id
-    from {{ source(network_name, "transactions") }}
+    from {{ oso_source(network_name, "transactions") }}
     {% if is_incremental() %}
     where {{ block_timestamp_column }} > TIMESTAMP_SUB(_dbt_max_partition, INTERVAL 1 DAY)
     {% else %}

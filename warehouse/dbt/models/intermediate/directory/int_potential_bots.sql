@@ -1,12 +1,15 @@
 {% set network_names = [
     'base',
-    'ethereum',
     'frax',
     'metal',
     'mode',
     'pgn',
     'zora'
 ] %}  --
+{% if target.name == 'production' %}
+{# This is a temporary measure for now to cut costs on the playground #}
+{% set network_names = network_names + ['ethereum'] %}
+{% endif %}
 
 {% for network_name in network_names %}
 

@@ -1,10 +1,12 @@
 {% macro known_proxies(network_name, start, traces="traces") %}
 
 {# 
-  
   This model is used to help identify smart contract accounts by looking for transactions that interact with the most widespread proxy contracts.
-  
 #}
+
+{% if target.name == 'playground' %}
+{% set start = "TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL %s DAY)" % env_var('PLAYGROUND_DAYS', '90') %}
+{% endif %}
 
 with proxy_contracts as (
   select * 
@@ -57,7 +59,7 @@ proxy_txns as (
       then traces.to_address
       else null
     end as proxy_address
-  from {{ source(network_name, traces) }} as traces
+  from {{ oso_source(network_name, traces) }} as traces
   inner join proxy_contracts as proxies
     on lower(traces.from_address) = lower(proxies.factory_address)
     or lower(traces.to_address) = lower(proxies.factory_address)

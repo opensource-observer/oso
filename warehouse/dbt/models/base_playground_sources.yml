@@ -19,6 +19,9 @@ sources:
       
       - name: ethereum_deployers
         identifier: stg_ethereum__deployers
+
+      - name: ethereum_transactions
+        identifier: int_ethereum_transactions
       
       - name: frax_traces
         identifier: int_frax_traces

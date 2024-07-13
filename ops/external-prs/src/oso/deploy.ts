@@ -5,6 +5,8 @@ import dayjs from "dayjs";
 import { exec } from "child_process";
 import * as util from "util";
 import * as path from "path";
+import { simpleGit } from "simple-git";
+import _ from "lodash";
 
 import { Repo } from "../github.js";
 import { logger } from "../utils/logger.js";
@@ -60,6 +62,25 @@ export class PRTestDeployCoordinator {
       pr: pr,
       repo: this.repo,
     });
+
+    const prInfo = await this.octo.rest.pulls.get({
+      owner: this.repo.owner,
+      repo: this.repo.name,
+      pull_number: pr,
+    });
+    const baseSha = prInfo.data.base.sha;
+
+    // Compare the baseSha and the current sha to see if anything has changed in the dbt directory.
+    // If not then report a success and that this check is not needed for this PR.
+    if (!(await this.hasDbtChanges(baseSha, sha, checkoutPath))) {
+      await this.noRelevantChanges(sha);
+      await this.appUtils.setStatusComment(
+        pr,
+        dedent`
+        Test deployment unnecessary, no dbt files have been changed.
+        `,
+      );
+    }
 
     const datasetName = this.datasetNameFromPR(pr);
 
@@ -119,6 +140,19 @@ export class PRTestDeployCoordinator {
       Test deployment for PR #${pr} successfully deployed to [\`${datasetFQN}\`](${datasetURL}).
     `,
     );
+  }
+
+  async hasDbtChanges(
+    baseSha: string,
+    headSha: string,
+    checkoutPath: string,
+  ): Promise<boolean> {
+    const git = simpleGit({ baseDir: checkoutPath });
+    const diffResult = await git.diffSummary([baseSha, headSha]);
+    const dbtFiles = diffResult.files.filter((f) => {
+      return _.startsWith(f.file, "warehouse/dbt");
+    });
+    return dbtFiles.length > 0;
   }
 
   async teardown(pr: number) {
@@ -302,6 +336,19 @@ export class PRTestDeployCoordinator {
       output: {
         title: "Test Deployment Complete",
         summary: `Test deployment available at ${datasetFQN}`,
+      },
+    });
+  }
+
+  private async noRelevantChanges(sha: string) {
+    return setCheckStatus(this.octo, this.repo.owner, this.repo.name, {
+      name: "test-deploy",
+      head_sha: sha,
+      status: CheckStatus.Completed,
+      conclusion: CheckConclusion.Success,
+      output: {
+        title: "Test Deployment Skipped",
+        summary: `No dbt changes to deploy`,
       },
     });
   }

@@ -23,7 +23,7 @@
     lower(from_address) as from_address,
     lower(to_address) as to_address,
     '{{ network_upper }}' as network,
-  from {{ source(network, "transactions") }}
+  from {{ oso_source(network, "transactions") }}
   where
     block_timestamp > '{{ start_date }}'
     and block_timestamp < '{{ end_date }}'

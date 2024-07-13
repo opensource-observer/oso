@@ -8,7 +8,7 @@
 %}
 
 {% if not transactions_source %}
-{% set transactions_source = source(network_name, "transactions") %}
+{% set transactions_source = oso_source(network_name, "transactions") %}
 {% endif %}
 {% set transactions_table_hash_value = "`txs`.`%s`" % (
     transactions_table_transaction_hash_column,
@@ -46,7 +46,7 @@ select
   txs.to_address as originating_contract,
   traces.from_address as factory_address, 
   traces.to_address as contract_address
-from {{ source(network_name, traces) }} as traces
+from {{ oso_source(network_name, traces) }} as traces
 inner join transactions as txs
   on {{ transactions_table_hash_value }} = {{ traces_table_hash_value }}
 where

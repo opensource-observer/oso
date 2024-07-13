@@ -419,6 +419,9 @@ importers:
       oss-directory:
         specifier: ^0.0.15
         version: 0.0.15(ts-node@10.9.1(@types/node@20.11.17)(typescript@5.3.3))(typescript@5.3.3)
+      simple-git:
+        specifier: ^3.25.0
+        version: 3.25.0
       tmp-promise:
         specifier: ^3.0.3
         version: 3.0.3
@@ -10258,6 +10261,9 @@ packages:
 
   simple-git@3.22.0:
     resolution: {integrity: sha512-6JujwSs0ac82jkGjMHiCnTifvf1crOiY/+tfs/Pqih6iow7VrpNKRRNdWm6RtaXpvvv/JGNYhlUtLhGFqHF+Yw==}
+
+  simple-git@3.25.0:
+    resolution: {integrity: sha512-KIY5sBnzc4yEcJXW7Tdv4viEz8KyG+nU0hay+DWZasvdFOYKeUZ6Xc25LUHHjw0tinPT7O1eY6pzX7pRT1K8rw==}
 
   simple-swizzle@0.2.2:
     resolution: {integrity: sha512-JA//kQgZtbuY83m+xT+tXJkmJncGMTFT+C+g2h2R9uxkYIrE2yy9sgmcLhCnw57/WSD+Eh3J97FPEDFnbXnDUg==}
@@ -23356,7 +23362,7 @@ snapshots:
       ethers: 6.10.0
       glob: 10.3.10
       lodash: 4.17.21
-      simple-git: 3.22.0
+      simple-git: 3.25.0
       tmp-promise: 3.0.3
       ts-adt: 2.1.2
       winston: 3.13.1
@@ -23380,7 +23386,7 @@ snapshots:
       ethers: 6.10.0
       glob: 10.3.10
       lodash: 4.17.21
-      simple-git: 3.22.0
+      simple-git: 3.25.0
       tmp-promise: 3.0.3
       ts-adt: 2.1.2
       winston: 3.13.1
@@ -24871,6 +24877,14 @@ snapshots:
   signedsource@1.0.0: {}
 
   simple-git@3.22.0:
+    dependencies:
+      '@kwsites/file-exists': 1.1.1
+      '@kwsites/promise-deferred': 1.1.1
+      debug: 4.3.5
+    transitivePeerDependencies:
+      - supports-color
+
+  simple-git@3.25.0:
     dependencies:
       '@kwsites/file-exists': 1.1.1
       '@kwsites/promise-deferred': 1.1.1

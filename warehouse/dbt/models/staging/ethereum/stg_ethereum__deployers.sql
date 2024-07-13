@@ -31,7 +31,7 @@ where
   {% endif %}
 {% else %}
   select *
-  from {{ source("base_playground", "ethereum_deployers") }}
+  from {{ source(current_playground(), "ethereum_deployers") }}
   {% if is_incremental() %}
     where
       block_timestamp > TIMESTAMP_SUB(_dbt_max_partition, interval 1 day)
