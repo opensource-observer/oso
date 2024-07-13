@@ -14,7 +14,8 @@ from dagster import AssetKey
 import dlt
 from dlt.pipeline.pipeline import Pipeline
 from dlt.extract.resource import DltResource
-from dlt.sources.credentials import ConnectionStringCredentials
+from dlt.sources.credentials import ConnectionStringCredentials, GcpServiceAccountCredentials
+from dlt.destinations import bigquery
 from sqlalchemy import MetaData, Table
 from dagster import AssetExecutionContext
 from dagster_embedded_elt.dlt import (
@@ -119,10 +120,9 @@ def sql_assets(
 
             pipeline = dlt.pipeline(
                 pipeline_name=pipeline_name,
-                destination="bigquery",
-                credentials={
-                    "project_id": project_id,
-                },
+                destination=bigquery(
+                    credentials=GcpServiceAccountCredentials(project_id=project_id)
+                ),
                 dataset_name=source_name,
                 staging=dlt_gcs_staging,
                 progress="log",

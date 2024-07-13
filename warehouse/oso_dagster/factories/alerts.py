@@ -21,12 +21,8 @@ class AlertOpConfig(Config):
 def setup_alert_sensor(name: str, base_url: str, alert_manager: AlertManager):
     @op(name=f"{name}_alert_op")
     def failure_op(context: OpExecutionContext, config: AlertOpConfig) -> None:
-        context.log.info(config.run_id)
         instance = context.instance
-        stats = instance.get_run_stats(config.run_id)
-        context.log.info(stats)
         records = instance.get_records_for_run(config.run_id).records
-        context.log.info(records)
         events = [
             record.event_log_entry for record in records if record.event_log_entry
         ]

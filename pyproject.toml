@@ -52,6 +52,8 @@ ruamel-yaml = "^0.18.6"
 ruff = "^0.4.10"
 sqlalchemy = "^2.0.25"
 textual = "^0.52.1"
+redis = "^5.0.7"
+githubkit = "^0.11.6"
 
 
 [tool.poetry.scripts]
@@ -100,7 +102,7 @@ ignore = [
     "warehouse/bq2cloudsql",
     "warehouse/meltano-setup",
     "warehouse/oso_lets_go",
-    "warehouse/oso_dagster/dlt_sources",
+    "warehouse/oso_dagster/dlt_sources/sql_database",
 ]
 
 [tool.ruff]
@@ -111,12 +113,12 @@ exclude = [
     "warehouse/meltano-setup",
     "warehouse/oso_lets_go",
     "warehouse/oso_dagster/dlt_sources",
-    "warehouse/oso_dagster/dlt_sources/**/*.py",
-    "warehouse/oso_dagster/dlt_sources/*.py",
+    "warehouse/oso_dagster/dlt_sources/sql_database/**/*.py",
+    "warehouse/oso_dagster/dlt_sources/sql_database/*.py",
 ]
 
 [tool.ruff.lint]
 exclude = [
-    "warehouse/oso_dagster/dlt_sources/**/*.py",
-    "warehouse/oso_dagster/dlt_sources/*.py",
+    "warehouse/oso_dagster/dlt_sources/sql_database/**/*.py",
+    "warehouse/oso_dagster/dlt_sources/sql_database/*.py",
 ]

@@ -1,4 +1,4 @@
-from typing import cast
+from typing import cast, Optional
 
 from dagster import (
     multi_asset,
@@ -7,10 +7,28 @@ from dagster import (
     AssetExecutionContext,
     JsonMetadataValue,
     Config,
+    asset,
+    AssetIn,
+    MaterializeResult,
+    ResourceParam,
 )
+from dagster_embedded_elt.dlt import DagsterDltResource
 from ossdirectory import fetch_data
+from ossdirectory.fetch import OSSDirectory
 import polars as pl
 import arrow
+import dlt
+import dlt as dltlib
+from dlt.destinations import bigquery
+from dlt.sources.credentials import GcpServiceAccountCredentials
+
+from oso_dagster.dlt_sources.github_repos import (
+    oss_directory_github_repositories_resource,
+)
+from oso_dagster.factories import (
+    PrefixedDltTranslator,
+)
+from oso_dagster.utils import SecretResolver, SecretReference
 
 
 class OSSDirectoryConfig(Config):
@@ -21,6 +39,32 @@ class OSSDirectoryConfig(Config):
     force_write: bool = False
 
 
+def oss_directory_to_dataframe(output: str, data: Optional[OSSDirectory] = None):
+    if not data:
+        data = fetch_data()
+    assert data.meta is not None
+    committed_dt = data.meta.committed_datetime
+
+    df = pl.from_dicts(getattr(data, output))
+    # Add sync time and commit sha to the dataframe
+    df = df.with_columns(
+        sha=pl.lit(bytes.fromhex(data.meta.sha)),
+        # We need to instantiate the datetime here using this pl.datetime
+        # constructor due to an issue with the datetime that's returned from
+        # ossdirectory that has a timezone type that seems to be
+        # incompatible with polars.
+        committed_time=pl.datetime(
+            committed_dt.year,
+            committed_dt.month,
+            committed_dt.day,
+            committed_dt.hour,
+            committed_dt.minute,
+            committed_dt.second,
+        ),
+    )
+    return df
+
+
 @multi_asset(
     outs={
         "projects": AssetOut(is_required=False, key_prefix="ossd"),
@@ -28,7 +72,9 @@ class OSSDirectoryConfig(Config):
     },
     can_subset=True,
 )
-def ossdirectory_repo(context: AssetExecutionContext, config: OSSDirectoryConfig):
+def projects_and_collections(
+    context: AssetExecutionContext, config: OSSDirectoryConfig
+):
     """Materializes both the projects/collections from the oss-directory repo
     into separate dataframe assets.
     """
@@ -67,25 +113,7 @@ def ossdirectory_repo(context: AssetExecutionContext, config: OSSDirectoryConfig
                 if repo_meta_dict.get("sha", "") == data.meta.sha:
                     context.log.info(f"no changes for {output}")
                     continue
-        committed_dt = data.meta.committed_datetime
-
-        df = pl.from_dicts(getattr(data, output))
-        # Add sync time and commit sha to the dataframe
-        df = df.with_columns(
-            sha=pl.lit(bytes.fromhex(data.meta.sha)),
-            # We need to instantiate the datetime here using this pl.datetime
-            # constructor due to an issue with the datetime that's returned from
-            # ossdirectory that has a timezone type that seems to be
-            # incompatible with polars.
-            committed_time=pl.datetime(
-                committed_dt.year,
-                committed_dt.month,
-                committed_dt.day,
-                committed_dt.hour,
-                committed_dt.minute,
-                committed_dt.second,
-            ),
-        )
+        df = oss_directory_to_dataframe(output, data)
 
         yield Output(
             df,
@@ -98,3 +126,61 @@ def ossdirectory_repo(context: AssetExecutionContext, config: OSSDirectoryConfig
                 }
             },
         )
+
+
+@dlt.source
+def oss_directory_github_repositories_from_df(gh_token: str, projects_df: pl.DataFrame):
+    return oss_directory_github_repositories_resource(
+        projects_df,
+        gh_token,
+    )
+
+
+project_key = projects_and_collections.keys_by_output_name["projects"]
+
+
+class RepositoriesDltConfig(Config):
+    limit: Optional[int] = None
+
+
+@asset(key_prefix="ossd", ins={"projects_df": AssetIn(project_key)}, compute_kind="dlt")
+def repositories(
+    context: AssetExecutionContext,
+    dlt: DagsterDltResource,
+    projects_df: pl.DataFrame,
+    secrets: ResourceParam[SecretResolver],
+    project_id: ResourceParam[str],
+    dlt_gcs_staging: ResourceParam[dlt.destinations.filesystem],
+    config: RepositoriesDltConfig,
+) -> MaterializeResult:
+
+    pipeline = dltlib.pipeline(
+        "ossd_repositories",
+        destination=bigquery(
+            credentials=GcpServiceAccountCredentials(project_id=project_id)
+        ),
+        staging=dlt_gcs_staging,
+        dataset_name="ossd",
+    )
+    gh_token = secrets.resolve_as_str(
+        SecretReference(group_name="ossd", key="github_token")
+    )
+
+    context.log.info(f"length of the dataframe {projects_df.shape[0]}")
+
+    source = oss_directory_github_repositories_from_df(gh_token, projects_df)
+    if config.limit:
+        source = source.add_limit(config.limit)
+
+    results = list(
+        dlt.run(
+            context=context,
+            dlt_source=source,
+            dlt_pipeline=pipeline,
+            dagster_dlt_translator=PrefixedDltTranslator("ossd", {}),
+            loader_file_format="jsonl",
+        )
+    )
+    if len(results) != 1:
+        raise Exception("something happened")
+    return cast(MaterializeResult, results[0])

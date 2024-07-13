@@ -45,6 +45,9 @@ discord_webhook_url = os.getenv("DAGSTER_DISCORD_WEBHOOK_URL")
 enable_tests = os.getenv("DAGSTER_ENABLE_TESTS", "false").lower() in ["true", "1"]
 dagster_alerts_base_url = os.getenv("DAGSTER_ALERTS_BASE_URL", "")
 
+# This is mostly used for caching http requests
+redis_cache = os.getenv("DAGSTER_REDIS_CACHE")
+
 dbt_profiles_dir = get_profiles_dir()
 dbt_target_base_dir = os.getenv("DAGSTER_DBT_TARGET_BASE_DIR") or ""
 main_dbt_manifests = load_dbt_manifests(
@@ -64,3 +67,5 @@ main_dbt_manifests = load_dbt_manifests(
     ),
     parse_projects=os.getenv("DAGSTER_DBT_PARSE_PROJECT_ON_LOAD", "0") == "1",
 )
+
+verbose_logs = os.getenv("DAGSTER_VERBOSE_LOGS", "false").lower() in ["true", "1"]
