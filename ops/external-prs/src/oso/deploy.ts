@@ -80,6 +80,7 @@ export class PRTestDeployCoordinator {
         Test deployment unnecessary, no dbt files have been changed.
         `,
       );
+      return;
     }
 
     const datasetName = this.datasetNameFromPR(pr);
