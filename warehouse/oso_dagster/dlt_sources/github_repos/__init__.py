@@ -1,10 +1,17 @@
 import re
 import logging
 from dataclasses import dataclass
-from pydantic import BaseModel
 from enum import Enum
-from typing import Optional, Iterable, TypedDict, cast
+from typing import Optional, Iterable, TypedDict, cast, ParamSpec, Any
+from pathlib import Path
 
+import httpx
+import hishel
+import dlt
+import redis
+from dlt.common.libs.pydantic import pydantic_to_table_schema_columns
+import polars as pl
+from pydantic import BaseModel
 from githubkit import GitHub
 from githubkit.exception import RequestFailed
 from githubkit.versions.latest.models import (
@@ -13,8 +20,7 @@ from githubkit.versions.latest.models import (
     MinimalRepositoryPropLicense,
 )
 
-import polars as pl
-import dlt
+from oso_dagster import constants
 
 GH_URL_RE = re.compile(
     r"^https?://github\.com/(?P<owner>[^/]+)(/(?P<repository>[^/]*))?/?$"
@@ -34,15 +40,6 @@ class ParsedGithubURL:
     type: GithubURLType
 
 
-class BranchRef(BaseModel):
-    name: str
-
-
-class License(BaseModel):
-    name: str
-    spdx_id: str
-
-
 class Repository(BaseModel):
     id: int
     node_id: str
@@ -50,11 +47,12 @@ class Repository(BaseModel):
     url: str
     name: str
     is_fork: bool
-    default_branch_ref: Optional[BranchRef] = None
+    branch: str
     fork_count: int
     star_count: int
     watcher_count: int
-    license: Optional[License] = None
+    license_spdx_id: str
+    license_name: str
     language: str
 
 
@@ -67,28 +65,61 @@ class GithubRepositoryResolverRequest:
         pass
 
 
+class CachedGithub(GitHub):
+    """This configures the github sdk with a caching system of our choice"""
+
+    def __init__(
+        self,
+        auth: Any = None,
+        sync_storage: Optional[hishel.BaseStorage] = None,
+        async_storage: Optional[hishel.AsyncBaseStorage] = None,
+        **kwargs,
+    ):
+        super().__init__(auth, **kwargs)
+        self._cache_sync_storage = sync_storage
+        self._cache_async_storage = async_storage
+
+    def _create_sync_client(self) -> httpx.Client:
+        if not self._cache_sync_storage:
+            return super()._create_sync_client()
+        transport = hishel.CacheTransport(
+            httpx.HTTPTransport(), storage=self._cache_sync_storage
+        )
+        return httpx.Client(**self._get_client_defaults(), transport=transport)
+
+    def _create_async_client(self) -> httpx.AsyncClient:
+        if not self._cache_async_storage:
+            return super()._create_async_client()
+        transport = hishel.AsyncCacheTransport(
+            httpx.AsyncHTTPTransport(), storage=self._cache_async_storage
+        )
+        return httpx.AsyncClient(**self._get_client_defaults(), transport=transport)
+
+
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
 
 
 def gh_repository_to_repository(
     repo: MinimalRepository | FullRepository,
 ) -> Repository:
-    license: Optional[License] = None
+    license_spdx_id: str = ""
+    license_name: str = ""
     if repo.license_:
         l = cast(MinimalRepositoryPropLicense, repo.license_).model_dump()
-        license = License(spdx_id=l.get("spdx_id", ""), name=l.get("name", ""))
+        license_spdx_id = l.get("spdx_id", "")
+        license_name = l.get("name", "")
 
     return Repository(
         id=repo.id,
         node_id=repo.node_id,
         name_with_owner=repo.full_name,
         name=repo.name,
-        default_branch_ref=BranchRef(name=repo.default_branch or "main"),
+        branch=repo.default_branch or "main",
         star_count=repo.stargazers_count or 0,
         watcher_count=repo.watchers_count or 0,
         fork_count=repo.forks_count or 0,
-        license=license,
+        license_name=license_name,
+        license_spdx_id=license_spdx_id,
         url=repo.html_url,
         is_fork=repo.fork,
         language=repo.language or "",
@@ -104,7 +135,6 @@ class GithubRepositoryResolver:
         # Process all of the urls and resolve repos based on the urls
         urls = self.github_urls_from_df(projects_df)
         logger.debug(f"URLS loaded: {len(urls)}")
-        print(f"URLS loaded: {len(urls)}")
         for url in urls["url"]:
             if not url:
                 continue
@@ -208,13 +238,32 @@ class GithubRepositoryResolver:
         return all_github_urls
 
 
-@dlt.resource(table_name="repositories", columns=Repository)  # type: ignore
+@dlt.resource(
+    name="repositories",
+    table_name="repositories",
+    columns=pydantic_to_table_schema_columns(Repository),
+    write_disposition="merge",
+    primary_key="id",
+    merge_key="node_id",
+)
 def oss_directory_github_repositories_resource(
     projects_df: pl.DataFrame, gh_token: str = dlt.secrets.value
 ):
     """Based on the oss_directory data we resolve repositories"""
     logger.debug("starting github repo resolver")
-    gh = GitHub(gh_token)
+
+    if constants.redis_cache:
+        gh = CachedGithub(
+            gh_token,
+            sync_storage=hishel.RedisStorage(
+                client=redis.Redis(
+                    constants.redis_cache,
+                ),
+                ttl=3600,
+            ),
+        )
+    else:
+        gh = GitHub(gh_token)
 
     resolver = GithubRepositoryResolver(gh)
     for repo in resolver.resolve_repos(projects_df):

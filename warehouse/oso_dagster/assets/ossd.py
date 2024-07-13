@@ -139,6 +139,10 @@ def oss_directory_github_repositories_from_df(gh_token: str, projects_df: pl.Dat
 project_key = projects_and_collections.keys_by_output_name["projects"]
 
 
+class RepositoriesDltConfig(Config):
+    limit: Optional[int] = None
+
+
 @asset(key_prefix="ossd", ins={"projects_df": AssetIn(project_key)}, compute_kind="dlt")
 def repositories(
     context: AssetExecutionContext,
@@ -147,6 +151,7 @@ def repositories(
     secrets: ResourceParam[SecretResolver],
     project_id: ResourceParam[str],
     dlt_gcs_staging: ResourceParam[dlt.destinations.filesystem],
+    config: RepositoriesDltConfig,
 ) -> MaterializeResult:
 
     pipeline = dltlib.pipeline(
@@ -163,12 +168,17 @@ def repositories(
 
     context.log.info(f"length of the dataframe {projects_df.shape[0]}")
 
+    source = oss_directory_github_repositories_from_df(gh_token, projects_df)
+    if config.limit:
+        source = source.add_limit(config.limit)
+
     results = list(
         dlt.run(
             context=context,
-            dlt_source=oss_directory_github_repositories_from_df(gh_token, projects_df),
+            dlt_source=source,
             dlt_pipeline=pipeline,
-            dagster_dlt_translator=PrefixedDltTranslator("repos", {}),
+            dagster_dlt_translator=PrefixedDltTranslator("ossd", {}),
+            loader_file_format="jsonl",
         )
     )
     if len(results) != 1:

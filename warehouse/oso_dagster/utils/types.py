@@ -4,8 +4,10 @@ type ConfigCallable[T, **P] = Callable[P, T]
 
 
 def unpack_config[
-    R, T, **P
-](conf: ConfigCallable[T, P]) -> Callable[[Callable[[T], R]], Callable[P, R]]:
+    Decorated, OriginalReturn, **Params
+](conf: ConfigCallable[OriginalReturn, Params]) -> Callable[
+    [Callable[[OriginalReturn], Decorated]], Callable[Params, Decorated]
+]:
     """This decorator allows a short hand method to create a simple interface to
     a function such that all arguments and keyword arguments are derived from
     some kind of configuration callable. Generally this would be something like
@@ -44,8 +46,8 @@ def unpack_config[
         ex.show() # should output foo and bar
     """
 
-    def _wrapper(f: Callable[[T], R]):
-        def _inner(*args: P.args, **kwargs: P.kwargs):
+    def _wrapper(f: Callable[[OriginalReturn], Decorated]):
+        def _inner(*args: Params.args, **kwargs: Params.kwargs):
             config = conf(*args, **kwargs)
             return f(config)
 
