@@ -1,18 +1,22 @@
 from ..factories import (
     bq_dts_asset,
 )
-from ..utils.bq_dts import BigQuerySourceConfig
+from ..utils.bq import BigQueryDatasetConfig
+from ..utils.bq_dts import BqDtsSourceConfig
 from ..utils.common import TimeInterval, SourceMode
 
 farcaster_data = bq_dts_asset(
     key_prefix="lens",
     asset_name="bq_dts_source",
     display_name="lens",
-    destination_project_id="opensource-observer",
-    destination_dataset_name="lens_v2_polygon",
-    source_config=BigQuerySourceConfig(
-        source_project_id="lens-public-data",
-        source_dataset_name="v2_polygon",
+    destination_config=BigQueryDatasetConfig(
+        project_id="opensource-observer",
+        dataset_name="lens_v2_polygon",
+        service_account=None,
+    ),
+    source_config=BqDtsSourceConfig(
+        project_id="lens-public-data",
+        dataset_name="v2_polygon",
         service_account=None,
     ),
     copy_interval=TimeInterval.Weekly,

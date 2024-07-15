@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from enum import Enum
-from typing import Optional
 
 from dagster import DagsterLogManager
 from google.cloud.bigquery_datatransfer import (
@@ -13,26 +12,23 @@ from google.cloud.bigquery_datatransfer import (
     EmailPreferences,
 )
 from google.protobuf.struct_pb2 import Struct
-
+from .bq import BigQueryDatasetConfig
 from .common import TimeInterval, SourceMode
 
 # An enum for types of source data
 # The value is the `data_source_id` used in Google TransferConfig
 # https://cloud.google.com/python/docs/reference/bigquerydatatransfer/latest/google.cloud.bigquery_datatransfer_v1.types.TransferConfig
-class DataSource(Enum):
+class BqDtsDataSource(Enum):
     BigQuery = "cross_region_copy"
 
 # Configuration for a BigQuery source
 @dataclass(kw_only=True)
-class BigQuerySourceConfig:
+class BqDtsBigQuerySourceConfig(BigQueryDatasetConfig):
     # Discriminator field
-    source_type: DataSource = DataSource.BigQuery
-    # Source GCP project ID
-    source_project_id: str
-    # Source BigQuery dataset
-    source_dataset_name: str
-    # Service account
-    service_account: Optional[str]
+    source_type: BqDtsDataSource = BqDtsDataSource.BigQuery
+
+# Union type for all the types of source configs
+BqDtsSourceConfig = BqDtsBigQuerySourceConfig
 
 # Configuration for BigQuery Data Transfer Service
 # Use `to_transfer_config` to convert this to the
@@ -41,13 +37,11 @@ class BigQuerySourceConfig:
 class BqDtsTransferConfig:
     # Name to display in BigQuery console
     display_name: str
-    # Destination GCP project ID (usually opensource-observer)
-    destination_project_id: str
     # Destination BigQuery dataset
-    destination_dataset_name: str
+    destination_config: BigQueryDatasetConfig
     # Source config
     # future: support other source types supported by BQ DTS
-    source_config: BigQuerySourceConfig
+    source_config: BqDtsSourceConfig
     # How often we should run this job
     copy_interval: TimeInterval
     # Incremental or overwrite
@@ -56,10 +50,10 @@ class BqDtsTransferConfig:
 # Used to convert a `BqDtsTransferConfig` to the type expected by Google APIs
 def to_transfer_config_params(config: BqDtsTransferConfig):
     params = Struct()
-    if config.source_config.source_type == DataSource.BigQuery:
+    if config.source_config.source_type == BqDtsDataSource.BigQuery:
         params.update({
-            "source_project_id": config.source_config.source_project_id,
-            "source_dataset_id": config.source_config.source_dataset_name,
+            "source_project_id": config.source_config.project_id,
+            "source_dataset_id": config.source_config.dataset_name,
             "overwrite_destination_table": config.copy_mode == SourceMode.Overwrite,
         })
     # Add parameters for other source_type values here
@@ -72,7 +66,7 @@ def to_transfer_config_params(config: BqDtsTransferConfig):
 # `match_params` controls whether we only match on destination dataset name or on all parameters
 def compare_transfer_config(existing: TransferConfig, to_compare: BqDtsTransferConfig, match_params: bool = False):
     # If we're not operating on the same dataset, then shortcut out
-    if existing.destination_dataset_id != to_compare.destination_dataset_name:
+    if existing.destination_dataset_id != to_compare.destination_config.dataset_name:
         return False
 
     # If we don't care to match further fields/params, then let's assume this TransferConfig
@@ -110,7 +104,7 @@ def list_transfer_config(client: DataTransferServiceClient, project_id: str):
 def list_data_source_ids(client: DataTransferServiceClient, config: BqDtsTransferConfig, logger: DagsterLogManager):
     # Initialize request argument(s)
     request = ListDataSourcesRequest(
-        parent=f"projects/{config.destination_project_id}",
+        parent=f"projects/{config.destination_config.project_id}",
     )
     # Make the request
     page_result = client.list_data_sources(request=request)
@@ -121,7 +115,7 @@ def list_data_source_ids(client: DataTransferServiceClient, config: BqDtsTransfe
 # Call this to update or create the BigQuery Data Transfer job
 def ensure_bq_dts_transfer(client: DataTransferServiceClient, config: BqDtsTransferConfig, logger: DagsterLogManager):
     #list_data_source_ids(client, config, logger)
-    all_existing_configs = list_transfer_config(client, config.destination_project_id)
+    all_existing_configs = list_transfer_config(client, config.destination_config.project_id)
     #logger.debug(all_existing_configs)
     related_existing_configs = list(filter(lambda x: compare_transfer_config(x, config, False), all_existing_configs))
     #logger.debug(related_existing_configs)
@@ -142,9 +136,9 @@ def ensure_bq_dts_transfer(client: DataTransferServiceClient, config: BqDtsTrans
     # and create instead.
     logger.info("Creating new transfer config")
     request = CreateTransferConfigRequest(
-        parent=f"projects/{config.destination_project_id}",
+        parent=f"projects/{config.destination_config.project_id}",
         transfer_config=TransferConfig(
-            destination_dataset_id=config.destination_dataset_name,
+            destination_dataset_id=config.destination_config.dataset_name,
             display_name=config.display_name,
             data_source_id=config.source_config.source_type.value,
             params=to_transfer_config_params(config),

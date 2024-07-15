@@ -1,7 +1,6 @@
-from pathlib import Path
 import os
+from pathlib import Path
 from typing import Any, Mapping, Dict, List, Sequence, Optional
-
 from dagster import (
     AssetExecutionContext,
     AssetKey,
@@ -64,7 +63,28 @@ def generate_dbt_asset(
     manifest_path: Path | str,
     internal_map: Dict[str, List[str]],
 ):
-    print(f"Target[{target}] using profiles dir {dbt_profiles_dir}")
+    """Generates a single Dagster dbt asset
+
+    Parameters
+    ----------
+    project_dir: Path | str
+        Absolute path to the repo root
+    dbt_profiles_dir: Path | str
+        Path to the dbt profiles directory (e.g. `~/.dbt`)
+    target: str
+        dbt target (e.g. "production" or "playground")
+    manifest_path: Path | str
+        Path to the manifest.json for a dbt target
+    internal_map: Dict[str, List[str]]
+        Something related to `CustomDagsterDbtTranslator`
+
+    Returns
+    -------
+    AssetsDefinition
+        a single Dagster dbt asset
+    """
+    print(f"Target[{target}] using profiles_dir({dbt_profiles_dir})")
+    print(f"\tmanifest_path({manifest_path})")
     translator = CustomDagsterDbtTranslator(target, ["dbt", target], internal_map)
 
     @dbt_assets(
@@ -92,6 +112,24 @@ def dbt_assets_from_manifests_map(
     manifests: Dict[str, Path],
     internal_map: Optional[Dict[str, List[str]]] = None,
 ) -> List[AssetsDefinition]:
+    """Creates all Dagster dbt assets from a map of manifests
+
+    Parameters
+    ----------
+    project_dir: Path | str
+        Absolute path to the repo root
+    manifests: Dict[str, Path]
+        Result from `load_dbt_manifests()`
+        dbt_target => manifest_path
+    internal_map: Optional[Dict[str, List[str]]]
+        Something related to `CustomDagsterDbtTranslator`
+
+    Returns
+    -------
+    List[AssetsDefinition]
+        a list of Dagster assets
+    """
+
     if not internal_map:
         internal_map = {}
     assets: List[AssetsDefinition] = []
