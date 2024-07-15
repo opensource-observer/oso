@@ -63,13 +63,13 @@ def bq_dts_asset(asset_config: BqDtsAssetConfig):
                 bq_client,
                 DatasetOptions(
                     dataset_ref=bq_client.dataset(
-                        dataset_id=asset_config.destination_dataset_name
+                        dataset_id=asset_config.destination_config.dataset_name
                     ),
                     is_public=True,
                 ),
             )
             context.log.info(
-                f"Ensured dataset named {asset_config.destination_dataset_name}"
+                f"Ensured dataset named {asset_config.destination_config.dataset_name}"
             )
 
         with bigquery_datatransfer.get_client() as bq_dts_client:
@@ -81,6 +81,7 @@ def bq_dts_asset(asset_config: BqDtsAssetConfig):
         return MaterializeResult(
             metadata={
                 "success": True,
+                "name": asset_config.asset_name,
             }
         )
 

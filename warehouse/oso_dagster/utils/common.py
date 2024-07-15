@@ -1,4 +1,8 @@
 from enum import Enum
+from typing import TypeVar, Never, Optional
+from .errors import NullOrUndefinedValueError
+
+T = TypeVar("T")
 
 # An enum for specifying time intervals
 class TimeInterval(Enum):
@@ -23,3 +27,42 @@ def to_lower_camel_case(snake_str):
     # with the 'capitalize' method and join them together.
     camel_string = to_camel_case(snake_str)
     return snake_str[0].lower() + camel_string[1:]
+
+def safeCast[T](x: T) -> T:
+    """
+    Explicitly mark that a cast is safe.
+    e.g. `safeCast(x as string[])`.
+    """
+    y: T = x
+    return y
+
+def assertNever(_x: Never) -> Never:
+    """
+    Asserts that a branch is never taken.
+    Useful for exhaustiveness checking.
+    """
+    raise Exception("unexpected branch taken")
+
+def ensure[T](x: Optional[T], msg: str) -> T:
+    """
+    Asserts that a value is not null or undefined.
+
+    Parameters
+    ----------
+    x: Optional[T]
+        The object to ensure
+    msg: str
+        The message to print if None
+
+    Returns
+    -------
+    T
+        the ensured value
+    """
+    if x is None:
+        raise NullOrUndefinedValueError(
+            f"Value must not be undefined or null{f" - {msg}" if msg else ""}"
+        )
+    else:
+        y: T = x
+        return y
