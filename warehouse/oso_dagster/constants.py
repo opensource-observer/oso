@@ -1,8 +1,7 @@
 import os
 from pathlib import Path
-
 import requests
-
+from .utils.common import ensure
 from .utils.dbt import (
     get_profiles_dir,
     load_dbt_manifests,
@@ -34,7 +33,7 @@ if not project_id:
     except Exception:
         raise Exception("GOOGLE_PROJECT_ID must be set if you're not in GCP")
 
-staging_bucket_url = os.getenv("DAGSTER_STAGING_BUCKET_URL")
+staging_bucket = ensure(os.getenv("DAGSTER_STAGING_BUCKET_URL"), "Missing DAGSTER_STAGING_BUCKET_URL")
 profile_name = os.getenv("DAGSTER_DBT_PROFILE_NAME", "opensource_observer")
 gcp_secrets_prefix = os.getenv("DAGSTER_GCP_SECRETS_PREFIX", "")
 use_local_secrets = os.getenv("DAGSTER_USE_LOCAL_SECRETS", "true").lower() in [
@@ -50,6 +49,7 @@ redis_cache = os.getenv("DAGSTER_REDIS_CACHE")
 
 dbt_profiles_dir = get_profiles_dir()
 dbt_target_base_dir = os.getenv("DAGSTER_DBT_TARGET_BASE_DIR") or ""
+PRODUCTION_DBT_TARGET = "production"
 main_dbt_manifests = load_dbt_manifests(
     dbt_target_base_dir,
     main_dbt_project_dir,
@@ -67,5 +67,7 @@ main_dbt_manifests = load_dbt_manifests(
     ),
     parse_projects=os.getenv("DAGSTER_DBT_PARSE_PROJECT_ON_LOAD", "0") == "1",
 )
-
 verbose_logs = os.getenv("DAGSTER_VERBOSE_LOGS", "false").lower() in ["true", "1"]
+CLICKHOUSE_HOST = os.getenv("CLICKHOUSE_HOST")
+CLICKHOUSE_USER = os.getenv("CLICKHOUSE_USER")
+CLICKHOUSE_PASSWORD = os.getenv("CLICKHOUSE_PASSWORD")
