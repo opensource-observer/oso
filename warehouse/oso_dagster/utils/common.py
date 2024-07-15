@@ -40,16 +40,24 @@ def assertNever(_x: Never) -> Never:
     """
     Asserts that a branch is never taken.
     Useful for exhaustiveness checking.
-    @param _x
     """
     raise Exception("unexpected branch taken")
 
 def ensure[T](x: Optional[T], msg: str) -> T:
     """
     Asserts that a value is not null or undefined.
-    @param x
-    @param msg
-    @returns
+
+    Parameters
+    ----------
+    x: Optional[T]
+        The object to ensure
+    msg: str
+        The message to print if None
+
+    Returns
+    -------
+    T
+        the ensured value
     """
     if x is None:
         raise NullOrUndefinedValueError(
