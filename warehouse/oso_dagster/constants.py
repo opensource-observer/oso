@@ -44,8 +44,8 @@ discord_webhook_url = os.getenv("DAGSTER_DISCORD_WEBHOOK_URL")
 enable_tests = os.getenv("DAGSTER_ENABLE_TESTS", "false").lower() in ["true", "1"]
 dagster_alerts_base_url = os.getenv("DAGSTER_ALERTS_BASE_URL", "")
 
-# This is mostly used for caching http requests
-redis_cache = os.getenv("DAGSTER_REDIS_CACHE")
+# We can enable an HTTP caching mechanism. It can be one of the
+http_cache = os.getenv("DAGSTER_HTTP_CACHE")
 
 dbt_profiles_dir = get_profiles_dir()
 dbt_target_base_dir = os.getenv("DAGSTER_DBT_TARGET_BASE_DIR") or ""

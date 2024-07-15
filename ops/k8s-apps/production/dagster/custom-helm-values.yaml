@@ -13,6 +13,8 @@ spec:
       secretPrefix: "gcp:secretmanager:production-dagster"
     alerts:
       baseUrl: "https://dagster.opensource.observer"
+    cache:
+      uri: "redis://redis.production-redis.svc.cluster.local:6379?ttl=3600"
     dagster:
       global: 
         serviceAccountName: production-dagster

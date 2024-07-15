@@ -1,9 +1,10 @@
-import re
+import os
 import logging
 from dataclasses import dataclass
 from enum import Enum
-from typing import Optional, Iterable, TypedDict, cast, ParamSpec, Any
+from typing import Optional, Iterable, cast, ParamSpec, Any
 from pathlib import Path
+from urllib.parse import urlparse, ParseResult
 
 import httpx
 import hishel
@@ -19,12 +20,14 @@ from githubkit.versions.latest.models import (
     FullRepository,
     MinimalRepositoryPropLicense,
 )
+from githubkit.retry import RetryRateLimit, RetryChainDecision, RetryServerError
+
 
 from oso_dagster import constants
+from oso_dagster.utils import get_async_http_cache_storage, get_sync_http_cache_storage
 
-GH_URL_RE = re.compile(
-    r"^https?://github\.com/(?P<owner>[^/]+)(/(?P<repository>[^/]*))?/?$"
-)
+
+logger = logging.getLogger(__name__)
 
 
 class GithubURLType(Enum):
@@ -34,6 +37,7 @@ class GithubURLType(Enum):
 
 @dataclass(kw_only=True)
 class ParsedGithubURL:
+    parsed_url: ParseResult
     url: str
     owner: str
     repository: Optional[str] = None
@@ -94,9 +98,6 @@ class CachedGithub(GitHub):
             httpx.AsyncHTTPTransport(), storage=self._cache_async_storage
         )
         return httpx.AsyncClient(**self._get_client_defaults(), transport=transport)
-
-
-logger = logging.getLogger(__name__)
 
 
 def gh_repository_to_repository(
@@ -209,21 +210,35 @@ class GithubRepositoryResolver:
         return [gh_repository_to_repository(repo.parsed_data)]
 
     def parse_url(self, url: str) -> ParsedGithubURL:
-        match = GH_URL_RE.match(url)
-        if not match:
+        parsed_url = urlparse(url)
+
+        logger.debug(f"parsed url {parsed_url}")
+
+        if parsed_url.netloc != "github.com":
+            raise InvalidGithubURL(f"{url} is not a valid github url")
+
+        if not parsed_url.path.startswith("/"):
+            raise InvalidGithubURL(f"{url} is not a valid github url")
+
+        # Match the path of the url after the first slash and removing any
+        # trailing slashes
+        match = parsed_url.path[1:].rstrip("/").split("/")
+        if len(match) not in [1, 2]:
             raise InvalidGithubURL(
                 f"{url} is not a valid github repository, user, or organization url"
             )
-        if match.group("repository"):
+        if len(match) == 2:
             return ParsedGithubURL(
+                parsed_url=parsed_url,
                 url=url,
-                owner=match.group("owner"),
-                repository=match.group("repository"),
+                owner=match[0],
+                repository=match[1],
                 type=GithubURLType.REPOSITORY,
             )
         return ParsedGithubURL(
+            parsed_url=parsed_url,
             url=url,
-            owner=match.group("owner"),
+            owner=match[0],
             type=GithubURLType.ENTITY,
         )
 
@@ -247,23 +262,33 @@ class GithubRepositoryResolver:
     merge_key="node_id",
 )
 def oss_directory_github_repositories_resource(
-    projects_df: pl.DataFrame, gh_token: str = dlt.secrets.value
+    projects_df: pl.DataFrame,
+    gh_token: str = dlt.secrets.value,
+    rate_limit_max_retry: int = 5,
+    server_error_max_rety: int = 3,
 ):
     """Based on the oss_directory data we resolve repositories"""
-    logger.debug("starting github repo resolver")
 
-    if constants.redis_cache:
+    if constants.http_cache:
+        logger.debug(f"Using the cache at: {constants.http_cache}")
         gh = CachedGithub(
             gh_token,
-            sync_storage=hishel.RedisStorage(
-                client=redis.Redis(
-                    constants.redis_cache,
-                ),
-                ttl=3600,
+            sync_storage=get_sync_http_cache_storage(constants.http_cache),
+            async_storage=get_async_http_cache_storage(constants.http_cache),
+            auto_retry=RetryChainDecision(
+                RetryRateLimit(max_retry=rate_limit_max_retry),
+                RetryServerError(max_retry=server_error_max_rety),
             ),
         )
     else:
-        gh = GitHub(gh_token)
+        logger.debug(f"Loading github client without a cache")
+        gh = GitHub(
+            gh_token,
+            auto_retry=RetryChainDecision(
+                RetryRateLimit(max_retry=rate_limit_max_retry),
+                RetryServerError(max_retry=server_error_max_rety),
+            ),
+        )
 
     resolver = GithubRepositoryResolver(gh)
     for repo in resolver.resolve_repos(projects_df):
