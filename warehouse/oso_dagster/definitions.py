@@ -16,7 +16,7 @@ from .utils import (
     LogAlertManager,
     DiscordWebhookAlertManager,
 )
-from .resources import BigQueryDataTransferResource
+from .resources import BigQueryDataTransferResource, ClickhouseResource
 from . import assets
 from .factories.alerts import setup_alert_sensor
 
@@ -36,14 +36,15 @@ def load_definitions():
         )
 
     # A dlt destination for gcs staging to bigquery
-    assert constants.staging_bucket_url is not None
-    dlt_gcs_staging = filesystem(bucket_url=constants.staging_bucket_url)
+    assert constants.staging_bucket is not None
+    dlt_gcs_staging = filesystem(bucket_url=constants.staging_bucket)
 
     dlt = DagsterDltResource()
     bigquery = BigQueryResource(project=project_id)
     bigquery_datatransfer = BigQueryDataTransferResource(
         project=os.environ.get("GOOGLE_PROJECT_ID")
     )
+    clickhouse = ClickhouseResource()
     gcs = GCSResource(project=project_id)
     cbt = CBTResource(
         bigquery=bigquery,
@@ -77,6 +78,7 @@ def load_definitions():
         "cbt": cbt,
         "bigquery": bigquery,
         "bigquery_datatransfer": bigquery_datatransfer,
+        "clickhouse": clickhouse,
         "io_manager": io_manager,
         "dlt": dlt,
         "secrets": secret_resolver,
