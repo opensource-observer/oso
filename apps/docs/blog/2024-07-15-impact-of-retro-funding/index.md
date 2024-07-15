@@ -6,7 +6,7 @@ tags: [optimism, impact data science, retroactive public goods funding]
 image: ./output_10_1.png
 ---
 
-This post is a quick exploration of the before-after impact of Optimism’s Retro Funding (RF) on open source software (OSS) projects. For context, see some of our previous work on the [Optimism ecosystem](https://docs.opensource.observer/blog/tags/optimism) and especially [this one](https://docs.opensource.observer/blog/retropgf3-ecosystem-analysis) from the start of RF3 in November 2023.
+This post is a brief exploration of the before-after impact of Optimism’s Retro Funding (RF) on open source software (OSS) projects. For context, see some of our previous work on the [Optimism ecosystem](https://docs.opensource.observer/blog/tags/optimism) and especially [this one](https://docs.opensource.observer/blog/retropgf3-ecosystem-analysis) from the start of RF3 in November 2023.
 
 We explore:
 
@@ -15,15 +15,17 @@ We explore:
 3. **Onchain activity before/after RF3.** Activity is increasing for most onchain projects, especially returning ones. However, RF impact is hard to isolate because L2 activity is rising everywhere.
 4. **Open source incentives.** Over 50 projects turned their GitHubs public to apply for RF4. Will building in public become the norm or were they just trying to get into the round?
 
-:::warning
-Remember: _correlation is not causation_. While there are numerous signs of positive momentum in the wake of RF3, we can’t say for sure that RF caused these changes. We've included [source code](https://github.com/opensource-observer/insights/tree/main/analysis/optimism/longitudinal) of all our analysis (and even CSV dumps of the underlying data) so you can check our work and draw your own conclusions.
-:::
+As always, we've included [source code](https://github.com/opensource-observer/insights/tree/main/analysis/optimism/longitudinal) for all our analysis (and even CSV dumps of the underlying data), so you can check our work and draw your own conclusions.
 
 <!-- truncate -->
 
+:::warning
+Remember: _correlation is not causation_. While there are numerous signs of positive momentum in the wake of RF3, we can’t say for sure that RF caused these changes.
+:::
+
 ## Cohort Analysis
 
-At the time of writing, there are 23 [collections](https://docs.opensource.observer/docs/how-oso-works/oss-directory/collection) in the [OSS Directory](https://github.com/opensource-observer/oss-directory/tree/main/data/collections) we maintain, with a total of 1506 distinct projects. Of these, 546 have applied for or received Retro Funding at some point.
+At the time of writing, there are 23 [collections](https://docs.opensource.observer/docs/how-oso-works/oss-directory/collection) in the [OSS Directory](https://github.com/opensource-observer/oss-directory/tree/main/data/collections) we maintain, with a total of 1506 distinct projects with relevant activity in the last 6 months. Of these, 546 have applied for or received Retro Funding at some point.
 
 The breakdown of RF projects by cohort is as follows:
 
@@ -65,7 +67,7 @@ These observations suggest that the longer a project has been participating in R
 
 ### Comparison with Baseline
 
-To get a sense for what the baseline might be, we looked to the 960 projects that have been tagged as being part of other open source ecosystems but that have never received RF. This group includes projects from the broader Ethereum community as well as some non-crypto open source projects that have received grants from crypto foundations.
+To get a sense for what the baseline might be, we looked to the 960 projects that have been tagged as being part of other open source ecosystems but that have never received RF. This group includes projects from the broader Ethereum community as well as some non-crypto open source projects that have received grants from crypto foundations. All of these projects were screened for developer activity in the last 6 months before being added to OSS Directory.
 
 Although this group grew relatively fast in the first half of 2022, growth has slowed down and turned slightly negative over the past year. The overall growth is -0.4% over the past year, a net difference of 14.3% compared to the RF3 cohort.
 
@@ -74,6 +76,8 @@ We can also add the 174 "new" projects that are applying for RF4 as a third comp
 ![Comparison with Control](output_11_1.png)
 
 Although these results are promising, we should once again be cautious about attributing causality to RF3. The RF3 cohort is not a random sample of OSS projects, and there are many other factors that could be driving the observed growth in developer activity.
+
+As an additional benchmark, the Developer Report maintained by Electric Capital [estimates](https://www.developerreport.com/) shows an 11% yoy decline for "full-time developers" in the broader crypto ecosystem. Note that this is a much larger group of projects than the 960 in our baseline.
 
 ### Project Level Changes in Developer Activity
 
@@ -95,12 +99,12 @@ We can also plot the absoluate differences in developer numbers before/after RF3
 
 Finally, we explore the hypothesis that changes in developer activity are correlated with the amount of OP tokens received in RF3.
 
-To do this, we take the total amount of tokens projects were granted in RF3 and divide it by the number of full-time active developers in the 6 months _before_ RF3. This gives us a rough estimate of the amount of funding per developer. We then use this to create four sub-cohorts of projects based on the amount of funding per developer received:
+To do this, we take the total amount of tokens projects were granted in RF3 and divide it by the number of full-time active developers in the 6 months _before_ RF3. This gives us a rough estimate of the amount of funding per developer. We then use this to create four roughly comparable sub-cohorts of projects based on the amount of funding per developer received:
 
-- Below 5K OP per developer
-- 5-10K OP per developer
-- 10-20K OP per developer
-- Over 20K OP per developer
+- Below 5K OP per developer (47 projects)
+- 5-10K OP per developer (43 projects)
+- 10-20K OP per developer (60 projects)
+- Over 20K OP per developer (51 projecs)
 
 We then calculate the net change in developer activity for each sub-cohort and the mean across each distribution. These results are shown in the chart below.
 
