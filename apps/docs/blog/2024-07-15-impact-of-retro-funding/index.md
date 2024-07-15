@@ -29,9 +29,9 @@ At the time of writing, there are 23 [collections](https://docs.opensource.obser
 
 The breakdown of RF projects by cohort is as follows:
 
-- Never received RF: 960 (other OSS projects)
+- Never received RF: 852 (other OSS projects)
 - Total RF projects in OSO: 546
-  - Past RF projects: 316 (present in rounds RF1, RF2, or RF3, but not RF4)
+  - Past RF projects: 315 (present in rounds RF1, RF2, or RF3, but not RF4)
   - First-time RF projects: 178 (new to RF in RF4)
   - Returning RF projects: 52 (present in RF4 as well as one or more previous rounds)
 
@@ -39,7 +39,7 @@ You can see a breakdown of the RF projects by cohort in the Venn diagram below.
 
 ![venn-diagram](output_5_1.png)
 
-Most of the analysis in this post focuses on the 315 OSS projects that participated in RF3. However, we also draw comparisons with the 178 projects that are applying for the first time in RF4, and create a baseline group from the 960 projects that have never received RF.
+Most of the analysis in this post focuses on the 315 OSS projects that participated in RF3. However, we also draw comparisons with the 178 projects that are applying for the first time in RF4, and created a baseline group of 852 projects that have never received RF.
 
 ## Trends in Developer Activity Before/After RF3
 
@@ -67,7 +67,7 @@ These observations suggest that the longer a project has been participating in R
 
 ### Comparison with Baseline
 
-To get a sense for what the baseline might be, we looked to the 960 projects that have been tagged as being part of other open source ecosystems but that have never received RF. This group includes projects from the broader Ethereum community as well as some non-crypto open source projects that have received grants from crypto foundations. All of these projects were screened for developer activity in the last 6 months before being added to OSS Directory.
+To get a sense for what the baseline might be, we looked to the 852 projects that have been tagged as being part of other open source ecosystems but that have never received RF. This group includes projects from the broader Ethereum community as well as some non-crypto open source projects that have received grants from crypto foundations. All of these projects were screened for developer activity in the last 6 months before being added to OSS Directory.
 
 Although this group grew relatively fast in the first half of 2022, growth has slowed down and turned slightly negative over the past year. Overall, growth among projects in the "baseline" cohort was -0.4% over the past year, a net difference of 14.3% compared to the RF3 cohort. While these results are promising, we should once again be cautious about attributing causality to RF3. The RF3 cohort is not a random sample of OSS projects, and there are many other factors that could be driving the observed growth in developer activity.
 
@@ -76,7 +76,7 @@ Finally, we can also add the 174 "new" projects that are applying for RF4 as a t
 ![Comparison with Control](output_11_1.png)
 
 :::info
-As an additional benchmark, the [Developer Report maintained by Electric Capital](https://www.developerreport.com/) shows ~11% yoy decline for "full-time developers" in the broader crypto ecosystem and a 10% decline for Ethereum. Note that this is a much larger group of projects than the 960 in our baseline.
+As an additional benchmark, the [Developer Report maintained by Electric Capital](https://www.developerreport.com/) shows ~11% yoy decline for "full-time developers" in the broader crypto ecosystem and a 10% decline for Ethereum. Note that this is a much larger group of projects than the 852 in our baseline.
 :::
 
 ### Project Level Changes in Developer Activity
