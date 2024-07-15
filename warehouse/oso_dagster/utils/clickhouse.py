@@ -1,6 +1,5 @@
 from typing import Dict, List, Tuple, Optional
 
-
 def create_table(
     client, 
     table_name: str, 
