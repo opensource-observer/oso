@@ -69,15 +69,15 @@ These observations suggest that the longer a project has been participating in R
 
 To get a sense for what the baseline might be, we looked to the 960 projects that have been tagged as being part of other open source ecosystems but that have never received RF. This group includes projects from the broader Ethereum community as well as some non-crypto open source projects that have received grants from crypto foundations. All of these projects were screened for developer activity in the last 6 months before being added to OSS Directory.
 
-Although this group grew relatively fast in the first half of 2022, growth has slowed down and turned slightly negative over the past year. The overall growth is -0.4% over the past year, a net difference of 14.3% compared to the RF3 cohort.
+Although this group grew relatively fast in the first half of 2022, growth has slowed down and turned slightly negative over the past year. Overall, growth among projects in the "baseline" cohort was -0.4% over the past year, a net difference of 14.3% compared to the RF3 cohort. While these results are promising, we should once again be cautious about attributing causality to RF3. The RF3 cohort is not a random sample of OSS projects, and there are many other factors that could be driving the observed growth in developer activity.
 
-We can also add the 174 "new" projects that are applying for RF4 as a third comparison group. These projects have fewer full-time active developers overall (around 100), but an even faster growth rate of +18.4% over the past year.
+Finally, we can also add the 174 "new" projects that are applying for RF4 as a third comparison group. These projects have fewer full-time active developers overall (around 100), but an even faster growth rate of +18.4% over the past year.
 
 ![Comparison with Control](output_11_1.png)
 
-Although these results are promising, we should once again be cautious about attributing causality to RF3. The RF3 cohort is not a random sample of OSS projects, and there are many other factors that could be driving the observed growth in developer activity.
-
-As an additional benchmark, the Developer Report maintained by Electric Capital [estimates](https://www.developerreport.com/) shows an 11% yoy decline for "full-time developers" in the broader crypto ecosystem. Note that this is a much larger group of projects than the 960 in our baseline.
+:::info
+As an additional benchmark, the [Developer Report maintained by Electric Capital](https://www.developerreport.com/) shows ~11% yoy decline for "full-time developers" in the broader crypto ecosystem and a 10% decline for Ethereum. Note that this is a much larger group of projects than the 960 in our baseline.
+:::
 
 ### Project Level Changes in Developer Activity
 
@@ -164,9 +164,9 @@ One somewhat concerning sign is that many of these projects had deployments mont
 
 The chart below is a bit complex, but shows the days between the first public commit and the first onchain transaction for each project in the RF4 cohort. The x-axis is the date of the first commit and the y-axis is the timedelta between the first onchain transaction and first commit. A large, positive number like 200 means that the first transaction was 200 days before the first commit. The colors also correspond to the timedelta: red circles are ones that had their first transaction many months before their code was on GitHub; blue circles are ones that had their first transaction many months after their code was on GitHub. The size of the circle represents that number of transactions the project had across all its contracts over the period.
 
-Without getting into the details, we can see that there are many projects that had onchain deployments months or even years before they made their code public. This is a concerning sign for the health of the ecosystem, as it suggests that many projects are not following good practices for open source development, regardless of whether they decide to apply a permissive license to their code or not.
+Without getting into the details, we can see that there are many projects that had onchain deployments months or even years before they made their code public. This is a concerning sign for the health of the ecosystem, as it suggests that many projects are not following good practices for open source development, regardless of whether they decide to apply a permissive license to their code or not. It will be interesting to monitor these repos over time to see if they continue to be active and/or they were only made public for a brief period so as to qualify for retro funding.
 
-It will be interesting to monitor these repos over time to see if they continue to be active and/or they were only made public for a brief period so as to qualify for retro funding.
+We can also analyze the same data to see how many RF4 projects had their first public commit and their first onchain transaction _before_ the start of RF3 voting (in November 2023), but that did not apply for RF3. In total, there were 75 projects that met these criteria, including many well-known protocols like Layer Zero, 0x, LI.FI, Odos, and Superfluid.
 
 ![Commit vs. Transaction Timing](output_28_1.png)
 
