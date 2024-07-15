@@ -172,15 +172,16 @@ def repositories(
     if config.limit:
         source = source.add_limit(config.limit)
 
-    results = list(
-        dlt.run(
-            context=context,
-            dlt_source=source,
-            dlt_pipeline=pipeline,
-            dagster_dlt_translator=PrefixedDltTranslator("ossd", {}),
-            loader_file_format="jsonl",
-        )
+    results = dlt.run(
+        context=context,
+        dlt_source=source,
+        dlt_pipeline=pipeline,
+        dagster_dlt_translator=PrefixedDltTranslator("ossd", {}),
+        loader_file_format="jsonl",
     )
-    if len(results) != 1:
+    result_list = []
+    for result in results:
+        result_list.append(result)
+    if len(result_list) != 1:
         raise Exception("something happened")
-    return cast(MaterializeResult, results[0])
+    return cast(MaterializeResult, result_list[0])
