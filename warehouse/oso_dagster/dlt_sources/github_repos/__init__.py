@@ -27,6 +27,9 @@ from oso_dagster import constants
 from oso_dagster.utils import get_async_http_cache_storage, get_sync_http_cache_storage
 
 
+logger = logging.getLogger(__name__)
+
+
 class GithubURLType(Enum):
     REPOSITORY = 1
     ENTITY = 2
@@ -95,9 +98,6 @@ class CachedGithub(GitHub):
             httpx.AsyncHTTPTransport(), storage=self._cache_async_storage
         )
         return httpx.AsyncClient(**self._get_client_defaults(), transport=transport)
-
-
-logger = logging.getLogger(__name__)
 
 
 def gh_repository_to_repository(
@@ -270,6 +270,7 @@ def oss_directory_github_repositories_resource(
     """Based on the oss_directory data we resolve repositories"""
 
     if constants.http_cache:
+        logger.debug(f"Using the cache at: {constants.http_cache}")
         gh = CachedGithub(
             gh_token,
             sync_storage=get_sync_http_cache_storage(constants.http_cache),
@@ -280,6 +281,7 @@ def oss_directory_github_repositories_resource(
             ),
         )
     else:
+        logger.debug(f"Loading github client without a cache")
         gh = GitHub(
             gh_token,
             auto_retry=RetryChainDecision(

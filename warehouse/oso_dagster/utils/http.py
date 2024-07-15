@@ -7,7 +7,6 @@ from redis import Redis
 import hishel
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
 
 
 def file_factory(t: Type[hishel.FileStorage | hishel.AsyncFileStorage]):
