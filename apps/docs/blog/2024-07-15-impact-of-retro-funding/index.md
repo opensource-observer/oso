@@ -32,14 +32,14 @@ The breakdown of RF projects by cohort is as follows:
 - Never received RF: 852 (other OSS projects)
 - Total RF projects in OSO: 546
   - Past RF projects: 315 (present in rounds RF1, RF2, or RF3, but not RF4)
-  - First-time RF projects: 178 (new to RF in RF4)
-  - Returning RF projects: 52 (present in RF4 as well as one or more previous rounds)
+  - First-time RF projects: 176 (new to RF in RF4)
+  - Returning RF projects: 54 (present in RF4 as well as one or more previous rounds)
 
 You can see a breakdown of the RF projects by cohort in the Venn diagram below.
 
 ![venn-diagram](output_5_1.png)
 
-Most of the analysis in this post focuses on the 315 OSS projects that participated in RF3. However, we also draw comparisons with the 178 projects that are applying for the first time in RF4, and created a baseline group of 852 projects that have never received RF.
+Most of the analysis in this post focuses on the 315 OSS projects that participated in RF3. However, we also draw comparisons with the 176 projects that are applying for the first time in RF4, and created a baseline group of 852 projects that have never received RF.
 
 ## Trends in Developer Activity Before/After RF3
 
@@ -71,7 +71,7 @@ To get a sense for what the baseline might be, we looked to the 852 projects tha
 
 Although this group grew relatively fast in the first half of 2022, growth has slowed down and turned slightly negative over the past year. Overall, growth among projects in the "baseline" cohort was -0.4% over the past year, a net difference of 14.3% compared to the RF3 cohort. While these results are promising, we should once again be cautious about attributing causality to RF3. The RF3 cohort is not a random sample of OSS projects, and there are many other factors that could be driving the observed growth in developer activity.
 
-Finally, we can also add the 174 "new" projects that are applying for RF4 as a third comparison group. These projects have fewer full-time active developers overall (around 100), but an even faster growth rate of +18.4% over the past year.
+Finally, we can also add the "new" projects that are applying for RF4 as a third comparison group. These projects have fewer full-time active developers overall (around 100), but an even faster growth rate of +18% over the past year. (Note: 4/176 "new" projects don't show up in the graph because they didn't have any public developer activity during the analysis window.)
 
 ![Comparison with Control](output_11_1.png)
 
@@ -108,7 +108,7 @@ To do this, we take the total amount of tokens projects were granted in RF3 and 
 
 We then calculate the net change in developer activity for each sub-cohort and the mean across each distribution. These results are shown in the chart below.
 
-![Funding Impact](output_16_0.png)
+![Funding Impact](output_16_1.png)
 
 As one might expect, there is a positive correlation between the amount of funding received per developer and the net change in developer activity. However, the correlation is not very strong, and there are still projects that received a relatively high amount of funding per developer but still saw a decrease in developer activity. The strongest correlation is between the 10-20K OP per developer sub-cohort. Projects that received less than 5K OP per developer saw a slight decrease in developer activity.
 
@@ -116,7 +116,7 @@ As one might expect, there is a positive correlation between the amount of fundi
 
 Retro Funding 3 was not designed to reward onchain activity. In fact, projects that had onchain deployments [underperformed](https://docs.opensource.observer/blog/what-builders-can-learn-from-retropgf3#in-the-arena-view-signals-that-live-players-and-builders-should-pick-up-on) in the round overall. RF4, on the other hand, was designed explicitly to reward onchain activity.
 
-This next section includes comparison of onchain activity before and after RF3, but also includes the projects that were eligible for RF4. As mentioned previously, 174 projects in RF4 will be first-time recipients. In addition, there were 52 projects that were eligible for RF4 and had participated in one or more previous RF rounds.
+This next section includes comparison of onchain activity before and after RF3, but also includes the projects that were eligible for RF4. As mentioned previously, 176 projects in RF4 will be first-time recipients. In addition, there were 54 projects that were eligible for RF4 and had participated in one or more previous RF rounds.
 
 ### Superchain Transactions by Cohort
 
@@ -172,6 +172,6 @@ We can also analyze the same data to see how many RF4 projects had their first p
 
 ## Bonus: Project Activity Heatmap
 
-You've made it this far, so here's some bonus dataviz for you! It's a heatmap of developer activity for every project that's received Retro Funding since 2022. You can see the full-time active developers for each project in each month, with the color of the cell representing the number of developers (max of 10). If you notice anything off with your project, send us a pull request [here](https://github.com/opensource-observer/oss-directory)!
+You've made it this far, so here's some bonus dataviz for you! It's a heatmap of developer activity for every project that's received Retro Funding since 2022. You can see the full-time active developers for the top 200 projects in each month (based on mean activity over the period), with the color of the cell representing the number of developers (max of 10). If you notice anything off with your project, send us a pull request [here](https://github.com/opensource-observer/oss-directory)!
 
 ![Contribution Heatmap](output_30_1.png)
