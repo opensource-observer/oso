@@ -17,7 +17,6 @@ in order of preference:
 5. [**Custom Dagster assets**](./dagster.md): Write a custom Dagster asset for other unique data sources.
 6. **Static files**: If the data is high quality and can only be imported via static files, please reach out to us on [Discord](https://www.opensource.observer/discord) to coordinate hand-off. This path is predominantly used for [grant funding data](./funding-data.md).
 7. (deprecated) [Airbyte](./airbyte.md): a modern ELT tool
-8. (deprecated) [CloudQuery](./cloudquery.md): a modern ELT tool
 
 We generally prefer to work with data partners that can help us regularly
 index live data that can feed our daily data pipeline.
