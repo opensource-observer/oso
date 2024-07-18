@@ -2,7 +2,9 @@ from ..factories import (
     interval_gcs_import_asset,
     IntervalGCSAsset,
 )
+from ..factories.sql import sql_assets
 from ..utils.common import TimeInterval, SourceMode
+from ..utils.secrets import SecretReference
 
 gitcoin_passport_scores = interval_gcs_import_asset(
     IntervalGCSAsset(
@@ -20,4 +22,17 @@ gitcoin_passport_scores = interval_gcs_import_asset(
         retention_days=10,
         format="PARQUET",
     ),
+)
+
+regendata_xyz = sql_assets(
+    "gitcoin",
+    SecretReference(
+        key="db_connection_string",
+        group_name="regendata_xyz_database",
+    ),
+    [
+        {
+            "table": "grants",
+        },
+    ],
 )
