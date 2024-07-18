@@ -22,14 +22,15 @@ from (
         ,min_by(`hash`, block_number) as first_tx_hash
         ,min_by(substring(input, 1, 10), block_number) as first_method_id
     from {{ oso_source(network_name, "transactions") }}
+    where 
+      gas_price > 0
+      and receipt_status = 1
+      and receipt_gas_used > 0
     {% if is_incremental() %}
-    where {{ block_timestamp_column }} > TIMESTAMP_SUB(_dbt_max_partition, INTERVAL 1 DAY)
+      {{ block_timestamp_column }} > TIMESTAMP_SUB(_dbt_max_partition, INTERVAL 1 DAY)
     {% else %}
-    {{ playground_filter(block_timestamp_column, is_start=True) }}
+      {{ playground_filter(block_timestamp_column, is_start=False) }}
     {% endif %}
-    and gas_price > 0
-    and receipt_status = 1
-    and receipt_gas_used > 0
     group by 1, 2
 )
 {% endmacro %}
