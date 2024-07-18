@@ -96,7 +96,7 @@ def sql_assets(
     def factory(
         secrets: SecretResolver,
         project_id: str,
-        dlt_gcs_staging: dlt.destinations.filesystem,
+        dlt_staging_destination: dlt.destinations.filesystem,
     ):
         
         tags = {
@@ -124,7 +124,7 @@ def sql_assets(
                     credentials=GcpServiceAccountCredentials(project_id=project_id)
                 ),
                 dataset_name=source_name,
-                staging=dlt_gcs_staging,
+                staging=dlt_staging_destination,
                 progress="log",
             )
             asset_def = _generate_asset_for_table(

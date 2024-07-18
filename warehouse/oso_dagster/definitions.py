@@ -4,8 +4,10 @@ from dagster import Definitions
 from dagster_dbt import DbtCliResource
 from dagster_gcp import BigQueryResource, GCSResource
 from dagster_polars import PolarsBigQueryIOManager
-from dlt.destinations import filesystem
-
+from dlt.destinations import filesystem, bigquery as dlt_bigquery
+from dlt.sources.credentials import GcpServiceAccountCredentials
+from dagster_embedded_elt.dlt import DagsterDltResource
+from dotenv import load_dotenv
 from . import constants
 from .schedules import schedules
 from .cbt import CBTResource
@@ -20,10 +22,6 @@ from .resources import BigQueryDataTransferResource, ClickhouseResource
 from . import assets
 from .factories.alerts import setup_alert_sensor
 
-from dagster_embedded_elt.dlt import DagsterDltResource
-
-from dotenv import load_dotenv
-
 load_dotenv()
 
 
@@ -37,7 +35,11 @@ def load_definitions():
 
     # A dlt destination for gcs staging to bigquery
     assert constants.staging_bucket is not None
-    dlt_gcs_staging = filesystem(bucket_url=constants.staging_bucket)
+    dlt_staging_destination = filesystem(bucket_url=constants.staging_bucket)
+
+    dlt_warehouse_destination = dlt_bigquery(
+        credentials=GcpServiceAccountCredentials(project_id=project_id)
+    )
 
     dlt = DagsterDltResource()
     bigquery = BigQueryResource(project=project_id)
@@ -52,7 +54,10 @@ def load_definitions():
     )
 
     early_resources = dict(
-        project_id=project_id, dlt_gcs_staging=dlt_gcs_staging, secrets=secret_resolver
+        project_id=project_id,
+        dlt_staging_destination=dlt_staging_destination,
+        dlt_warehouse_destination=dlt_warehouse_destination,
+        secrets=secret_resolver,
     )
 
     asset_factories = load_all_assets_from_package(assets, early_resources)
@@ -82,7 +87,8 @@ def load_definitions():
         "io_manager": io_manager,
         "dlt": dlt,
         "secrets": secret_resolver,
-        "dlt_gcs_staging": dlt_gcs_staging,
+        "dlt_staging_destination": dlt_staging_destination,
+        "dlt_warehouse_destination": dlt_warehouse_destination,
         "project_id": project_id,
     }
     for target in constants.main_dbt_manifests:

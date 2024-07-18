@@ -2,7 +2,6 @@
 To add a daily schedule that materializes your dbt assets, uncomment the following lines.
 """
 
-
 schedules = [
     #     build_schedule_from_dbt_selection(
     #         [opensource_observer_dbt_assets],

@@ -3,15 +3,24 @@ Tools for dealing with secret management.
 """
 
 import os
-from typing import Dict, Optional
+import inspect
+from typing import Dict, Optional, Any, Callable
 from dataclasses import dataclass
 from google.cloud import secretmanager
+from .types import unpack_config
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, frozen=True)
 class SecretReference:
     group_name: str
     key: str
+
+
+@unpack_config(SecretReference)
+def secret_ref_arg(
+    config: SecretReference,
+) -> Any:  # any is returned so this can be used in arg definitions
+    return config
 
 
 class SecretInaccessibleError(Exception):
@@ -81,3 +90,14 @@ class SimpleSecretResolver(SecretResolver):
 
     def resolve(self, ref: SecretReference):
         return self._secrets[f"{ref.group_name}__{ref.key}"]
+
+
+def resolve_secrets_for_func(resolver: SecretResolver, f: Callable) -> Dict[str, str]:
+    signature = inspect.signature(f)
+    secrets: Dict[str, str] = {}
+    for k, v in signature.parameters.items():
+        if not v.default:
+            continue
+        if isinstance(v.default, SecretReference):
+            secrets[k] = resolver.resolve_as_str(v.default)
+    return secrets
