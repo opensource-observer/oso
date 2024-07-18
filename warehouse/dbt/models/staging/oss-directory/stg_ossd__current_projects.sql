@@ -16,6 +16,6 @@ select
   projects.github,
   projects.npm,
   projects.blockchain,
-  projects.sha as committed_sha,
-  projects.committed_time as sync_time
+  projects.sha,
+  projects.committed_time
 from {{ oso_source('ossd', 'projects') }} as projects

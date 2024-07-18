@@ -15,6 +15,6 @@ select
   collections.display_name,
   collections.description,
   collections.projects,
-  collections.sha as committed_sha,
-  collections.committed_time as sync_time
+  collections.sha,
+  collections.committed_time
 from {{ oso_source('ossd', 'collections') }} as collections

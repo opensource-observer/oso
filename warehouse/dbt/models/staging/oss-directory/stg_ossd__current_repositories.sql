@@ -21,6 +21,6 @@ select
   repositories.license_name,
   repositories.license_spdx_id,
   repositories.language,
-  repositories.ingestion_time as `sync_time`
+  repositories.ingestion_time
 from {{ oso_source('ossd', 'repositories') }} as repositories
 where repositories.ingestion_time = (select * from most_recent_sync)
