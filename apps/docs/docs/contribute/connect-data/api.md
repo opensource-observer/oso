@@ -62,11 +62,11 @@ deployment involves just writing a [DLT Resource][DltResource] and using
 
 ### Basic Example
 
-The following is a simple example that uses an example derived from an [example
-on dlt's
+The following is a simple example that uses an example derived from [dlt's
 docs](https://dlthub.com/docs/general-usage/http/overview#explicitly-specifying-pagination-parameters)
 
 ```python
+# This file should be in warehouse/oso_dagster/assets/name_of_asset_group.py
 import dlt
 from dlt.sources.helpers.rest_client import RESTClient
 from dlt.sources.helpers.rest_client.paginators import JSONResponsePaginator
