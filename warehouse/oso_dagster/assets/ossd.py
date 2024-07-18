@@ -7,28 +7,19 @@ from dagster import (
     AssetExecutionContext,
     JsonMetadataValue,
     Config,
-    asset,
     AssetIn,
-    MaterializeResult,
-    ResourceParam,
 )
-from dagster_embedded_elt.dlt import DagsterDltResource
 from ossdirectory import fetch_data
 from ossdirectory.fetch import OSSDirectory
 import polars as pl
 import arrow
 import dlt
-import dlt as dltlib
-from dlt.destinations import bigquery
-from dlt.sources.credentials import GcpServiceAccountCredentials
 
 from oso_dagster.dlt_sources.github_repos import (
     oss_directory_github_repositories_resource,
 )
-from oso_dagster.factories import (
-    PrefixedDltTranslator,
-)
-from oso_dagster.utils import SecretResolver, SecretReference
+from oso_dagster.factories import dlt_factory
+from oso_dagster.utils import secret_ref_arg
 
 
 class OSSDirectoryConfig(Config):
@@ -139,49 +130,9 @@ def oss_directory_github_repositories_from_df(gh_token: str, projects_df: pl.Dat
 project_key = projects_and_collections.keys_by_output_name["projects"]
 
 
-class RepositoriesDltConfig(Config):
-    limit: Optional[int] = None
-
-
-@asset(key_prefix="ossd", ins={"projects_df": AssetIn(project_key)}, compute_kind="dlt")
+@dlt_factory(key_prefix="ossd", ins={"projects_df": AssetIn(project_key)})
 def repositories(
-    context: AssetExecutionContext,
-    dlt: DagsterDltResource,
     projects_df: pl.DataFrame,
-    secrets: ResourceParam[SecretResolver],
-    project_id: ResourceParam[str],
-    dlt_gcs_staging: ResourceParam[dlt.destinations.filesystem],
-    config: RepositoriesDltConfig,
-) -> MaterializeResult:
-
-    pipeline = dltlib.pipeline(
-        "ossd_repositories",
-        destination=bigquery(
-            credentials=GcpServiceAccountCredentials(project_id=project_id)
-        ),
-        staging=dlt_gcs_staging,
-        dataset_name="ossd",
-    )
-    gh_token = secrets.resolve_as_str(
-        SecretReference(group_name="ossd", key="github_token")
-    )
-
-    context.log.info(f"length of the dataframe {projects_df.shape[0]}")
-
-    source = oss_directory_github_repositories_from_df(gh_token, projects_df)
-    if config.limit:
-        source = source.add_limit(config.limit)
-
-    results = dlt.run(
-        context=context,
-        dlt_source=source,
-        dlt_pipeline=pipeline,
-        dagster_dlt_translator=PrefixedDltTranslator("ossd", {}),
-        loader_file_format="jsonl",
-    )
-    result_list = []
-    for result in results:
-        result_list.append(result)
-    if len(result_list) != 1:
-        raise Exception("something happened")
-    return cast(MaterializeResult, result_list[0])
+    gh_token: str = secret_ref_arg(group_name="ossd", key="github_token"),
+):
+    yield oss_directory_github_repositories_resource(projects_df, gh_token)

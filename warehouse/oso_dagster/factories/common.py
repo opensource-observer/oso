@@ -15,12 +15,14 @@ from dagster import (
 # Continuous deployment will have to save us here.
 from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
 from dagster._core.definitions.asset_dep import CoercibleToAssetDep
+from dagster._core.definitions.asset_key import CoercibleToAssetKeyPrefix
 
 from oso_dagster import constants
 
 type GenericAsset = Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]
 type AssetList = Iterable[GenericAsset]
 type AssetDeps = Iterable[CoercibleToAssetDep]
+type AssetKeyPrefixParam = CoercibleToAssetKeyPrefix
 
 logger = logging.getLogger(__name__)
 
@@ -63,12 +65,15 @@ class EarlyResourcesAssetFactory:
         self,
         f: EarlyResourcesAssetDecoratedFunction,
         caller: Optional[inspect.FrameInfo] = None,
+        additional_annotations: Optional[Dict[str, Any]] = None,
     ):
         self._f = f
         self._caller = caller
+        self.additional_annotations = additional_annotations or {}
 
     def __call__(self, **early_resources) -> AssetFactoryResponse:
-        annotations = self._f.__annotations__
+        annotations = self._f.__annotations__.copy()
+        annotations.update(self.additional_annotations)
         args: Dict[str, Any] = dict()
         for key, value in annotations.items():
             if key not in early_resources:
@@ -100,10 +105,14 @@ class EarlyResourcesAssetFactory:
             raise Exception("Invalid early resource factory")
 
 
-def early_resources_asset_factory(*, caller_depth: int = 1):
+def early_resources_asset_factory(
+    *, caller_depth: int = 1, additional_annotations: Optional[Dict[str, Any]] = None
+):
     caller = inspect.stack()[caller_depth]
 
     def _decorator(f: EarlyResourcesAssetDecoratedFunction):
-        return EarlyResourcesAssetFactory(f, caller=caller)
+        return EarlyResourcesAssetFactory(
+            f, caller=caller, additional_annotations=additional_annotations
+        )
 
     return _decorator

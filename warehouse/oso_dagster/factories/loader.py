@@ -33,7 +33,8 @@ def load_assets_factories_from_modules(
 ) -> AssetFactoryResponse:
     all = AssetFactoryResponse([])
     for module in modules:
-        for _, obj in module.__dict__.items():
+        module_dict = module.__dict__.copy()
+        for _, obj in module_dict.items():
             if isinstance(obj, EarlyResourcesAssetFactory):
                 resp = obj(**early_resources)
                 all = all + resp

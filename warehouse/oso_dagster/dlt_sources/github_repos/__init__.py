@@ -1,5 +1,6 @@
-import os
 import logging
+import arrow
+from datetime import datetime, UTC
 from dataclasses import dataclass
 from enum import Enum
 from typing import Optional, Iterable, cast, ParamSpec, Any
@@ -9,7 +10,6 @@ from urllib.parse import urlparse, ParseResult
 import httpx
 import hishel
 import dlt
-import redis
 from dlt.common.libs.pydantic import pydantic_to_table_schema_columns
 import polars as pl
 from pydantic import BaseModel
@@ -45,6 +45,7 @@ class ParsedGithubURL:
 
 
 class Repository(BaseModel):
+    ingestion_time: Optional[datetime]
     id: int
     node_id: str
     name_with_owner: str
@@ -101,6 +102,7 @@ class CachedGithub(GitHub):
 
 
 def gh_repository_to_repository(
+    ingestion_time: datetime,
     repo: MinimalRepository | FullRepository,
 ) -> Repository:
     license_spdx_id: str = ""
@@ -111,6 +113,7 @@ def gh_repository_to_repository(
         license_name = l.get("name", "")
 
     return Repository(
+        ingestion_time=ingestion_time,
         id=repo.id,
         node_id=repo.node_id,
         name_with_owner=repo.full_name,
@@ -130,6 +133,7 @@ def gh_repository_to_repository(
 class GithubRepositoryResolver:
     def __init__(self, gh: GitHub):
         self._gh = gh
+        self._ingestion_time = datetime.now(UTC)
 
     def resolve_repos(self, projects_df: pl.DataFrame):
         # Unnest all of the urls to get
@@ -170,11 +174,11 @@ class GithubRepositoryResolver:
         try:
             repos = self.get_repos_for_org(parsed)
             for repo in repos:
-                yield gh_repository_to_repository(repo)
+                yield gh_repository_to_repository(self._ingestion_time, repo)
         except:
             repos = self.get_repos_for_user(parsed)
             for repo in repos:
-                yield gh_repository_to_repository(repo)
+                yield gh_repository_to_repository(self._ingestion_time, repo)
 
     def get_repos_for_org(self, parsed: ParsedGithubURL):
         repos = self._gh.paginate(
@@ -207,7 +211,7 @@ class GithubRepositoryResolver:
                 return []
             else:
                 raise e
-        return [gh_repository_to_repository(repo.parsed_data)]
+        return [gh_repository_to_repository(self._ingestion_time, repo.parsed_data)]
 
     def parse_url(self, url: str) -> ParsedGithubURL:
         parsed_url = urlparse(url)
@@ -253,11 +257,19 @@ class GithubRepositoryResolver:
         return all_github_urls
 
 
+def repository_columns():
+    table_schema_columns = pydantic_to_table_schema_columns(Repository)
+    for column in table_schema_columns.values():
+        column["nullable"] = True
+    print(table_schema_columns)
+    return table_schema_columns
+
+
 @dlt.resource(
     name="repositories",
     table_name="repositories",
-    columns=pydantic_to_table_schema_columns(Repository),
-    write_disposition="merge",
+    columns=repository_columns(),
+    write_disposition="append",
     primary_key="id",
     merge_key="node_id",
 )
