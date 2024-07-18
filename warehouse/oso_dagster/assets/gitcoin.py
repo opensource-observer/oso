@@ -26,9 +26,9 @@ gitcoin_passport_scores = interval_gcs_import_asset(
 
 regendata_xyz = sql_assets(
     "gitcoin",
-    SecretReference(
-        key="db_connection_string",
-        group_name="regendata_xyz_database",
+    SecretReference(        
+        group_name="gitcoin",
+        key="regendata_xyz_database",
     ),
     [
         {
