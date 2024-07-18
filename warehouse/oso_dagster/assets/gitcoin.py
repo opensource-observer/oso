@@ -6,6 +6,8 @@ from ..factories.sql import sql_assets
 from ..utils.common import TimeInterval, SourceMode
 from ..utils.secrets import SecretReference
 
+from dlt.sources import incremental
+
 gitcoin_passport_scores = interval_gcs_import_asset(
     IntervalGCSAsset(
         key_prefix="gitcoin",
@@ -31,8 +33,18 @@ regendata_xyz = sql_assets(
         key="regendata_xyz_database",
     ),
     [
-        {
-            "table": "grants",
+        {   
+            "table": "all_donations",
+            "incremental": incremental("timestamp")
+        },
+        {   
+            "table": "project_groups_summary"
+        },
+        {   
+            "table": "project_lookup"
+        },
+        {   
+            "table": "all_matching"
         },
     ],
 )
