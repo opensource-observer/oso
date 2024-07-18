@@ -31,4 +31,4 @@ select
 from {{ oso_source("ossd", "repositories") }} as repos
 inner join filtered_repositories as filtered
   on filtered.id = repos.id
-    and repos._cq_sync_time = filtered.sync_time
+    and repos.ingestion_time = filtered.sync_time

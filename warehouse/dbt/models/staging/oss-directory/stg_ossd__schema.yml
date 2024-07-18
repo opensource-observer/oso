@@ -38,12 +38,9 @@ models:
       - &namespace
         name: namespace
         description: "namespace"
-      - &_cq_sync_time
-        name: _cq_sync_time
-        description: "sync time"
-      - &_cq_source_name
-        name: _cq_source_name
-        description: "source name"
+      - &committed_sha
+        name: committed_sha
+        description: "the oss-directory sha"
       - &slug
         name: slug
         description: "slug"
@@ -68,8 +65,7 @@ models:
       - name: id
         description: "project unique id - SHA256 hash derived from namespace and slug"
       - *namespace
-      - *_cq_sync_time
-      - *_cq_source_name
+      - *committed_sha
       - *slug
       - name: name
         description: "project name"
@@ -101,9 +97,6 @@ models:
       tags: ['staging', 'oss-directory', 'repository']
     description: "GitHub repositories"
     columns:
-      - *_cq_sync_time
-      - name: _cq_source_name
-        description: "source name"
       - &node_id
         name: node_id
         description: "node id"

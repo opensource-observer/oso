@@ -22,4 +22,4 @@ select projects.*
 from {{ oso_source("ossd", "projects") }} as projects
 inner join filtered_projects as filtered
   on filtered.name = projects.name
-    and projects.sync_time = filtered.sync_time
+    and projects.committed_time = filtered.sync_time

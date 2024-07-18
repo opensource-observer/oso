@@ -24,4 +24,4 @@ select collections.*
 from {{ oso_source("ossd", "collections") }} as collections
 inner join filtered_collections as filtered
   on filtered.name = collections.name
-    and collections.sync_time = filtered.sync_time
+    and collections.committed_time = filtered.sync_time

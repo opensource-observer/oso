@@ -2,7 +2,7 @@
   The most recent view of repositories from the github-resolve-repos cloudquery plugin.
 #}
 with most_recent_sync as (
-  select MAX(_cq_sync_time) as sync_time
+  select MAX(ingestion_time) as ingestion_time
   from {{ oso_source('ossd', 'repositories') }}
 )
 
@@ -21,6 +21,6 @@ select
   repositories.license_name,
   repositories.license_spdx_id,
   repositories.language,
-  repositories._cq_sync_time as `sync_time`
+  repositories.ingestion_time as `sync_time`
 from {{ oso_source('ossd', 'repositories') }} as repositories
-where _cq_sync_time = (select * from most_recent_sync)
+where repositories.ingestion_time = (select * from most_recent_sync)
