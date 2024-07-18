@@ -1,4 +1,4 @@
-from typing import cast, Optional
+from typing import cast, Optional, Dict
 
 from dagster import (
     multi_asset,
@@ -13,13 +13,18 @@ from ossdirectory import fetch_data
 from ossdirectory.fetch import OSSDirectory
 import polars as pl
 import arrow
-import dlt
 
 from oso_dagster.dlt_sources.github_repos import (
     oss_directory_github_repositories_resource,
 )
 from oso_dagster.factories import dlt_factory
 from oso_dagster.utils import secret_ref_arg
+
+common_tags: Dict[str, str] = {
+    "opensource.observer/environment": "production",
+    "opensource.observer/group": "ossd",
+    "opensource.observer/type": "source",
+}
 
 
 class OSSDirectoryConfig(Config):
@@ -58,9 +63,10 @@ def oss_directory_to_dataframe(output: str, data: Optional[OSSDirectory] = None)
 
 @multi_asset(
     outs={
-        "projects": AssetOut(is_required=False, key_prefix="ossd"),
-        "collections": AssetOut(is_required=False, key_prefix="ossd"),
+        "projects": AssetOut(is_required=False, key_prefix="ossd", tags=common_tags),
+        "collections": AssetOut(is_required=False, key_prefix="ossd", tags=common_tags),
     },
+    compute_kind="dataframe",
     can_subset=True,
 )
 def projects_and_collections(
@@ -119,18 +125,14 @@ def projects_and_collections(
         )
 
 
-@dlt.source
-def oss_directory_github_repositories_from_df(gh_token: str, projects_df: pl.DataFrame):
-    return oss_directory_github_repositories_resource(
-        projects_df,
-        gh_token,
-    )
-
-
 project_key = projects_and_collections.keys_by_output_name["projects"]
 
 
-@dlt_factory(key_prefix="ossd", ins={"projects_df": AssetIn(project_key)})
+@dlt_factory(
+    key_prefix="ossd",
+    ins={"projects_df": AssetIn(project_key)},
+    tags=common_tags,
+)
 def repositories(
     projects_df: pl.DataFrame,
     gh_token: str = secret_ref_arg(group_name="ossd", key="github_token"),

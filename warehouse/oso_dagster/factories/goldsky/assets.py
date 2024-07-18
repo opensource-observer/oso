@@ -952,8 +952,9 @@ def goldsky_asset(deps: Optional[AssetDeps | AssetList] = None, **kwargs: Unpack
     if key_prefix:
         group_name = key_prefix if isinstance(key_prefix, str) else "__".join(list(key_prefix))
         tags["opensource.observer/group"] = group_name
+        tags["dagster/concurrency_key"] = group_name
 
-    @asset(name=asset_config.name, key_prefix=asset_config.key_prefix, deps=deps, compute_kind="goldsky", tags=add_tags(tags, {
+    @asset(name=asset_config.name, key_prefix=asset_config.key_prefix, deps=deps, group_name="goldsky", compute_kind="goldsky", tags=add_tags(tags, {
         "opensource.observer/type": "source", 
     }))
     def generated_asset(

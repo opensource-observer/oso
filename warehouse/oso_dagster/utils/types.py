@@ -1,4 +1,4 @@
-from typing import Callable
+from typing import Callable, Any
 
 type ConfigCallable[T, **P] = Callable[P, T]
 
@@ -36,7 +36,7 @@ def unpack_config[
                 print(self.foo)
                 print(self.bar)
 
-        @config_function(FactoryConfig)
+        @unpack_config(FactoryConfig)
         def my_factory(config: FactoryConfig):
             # do something with the config
             return
@@ -54,3 +54,13 @@ def unpack_config[
         return _inner
 
     return _wrapper
+
+
+def params_from[**P](c: Callable[P, Any]):
+    def _decorator[R](f: Callable[..., R]) -> Callable[P, R]:
+        def _wrapper(*args: P.args, **kwargs: P.kwargs):
+            return f(*args, **kwargs)
+
+        return _wrapper
+
+    return _decorator
