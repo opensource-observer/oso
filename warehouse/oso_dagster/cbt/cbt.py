@@ -25,6 +25,7 @@ class UpdateStrategy(Enum):
     REPLACE = 0
     APPEND = 1
     MERGE = 2
+    REPLACE_PARTITIONS = 3
 
 
 @dataclass
