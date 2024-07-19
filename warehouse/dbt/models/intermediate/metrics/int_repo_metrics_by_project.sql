@@ -1,7 +1,7 @@
-{{
+{{ 
   config(
     materialized='table'
-  )
+  ) 
 }}
 
 with repo_artifact as (
@@ -20,7 +20,7 @@ with repo_artifact as (
 ),
 
 repo_snapshot as (
-  select
+  select distinct
     {{ oso_id("a.artifact_source", "a.artifact_source_id") }} as `artifact_id`,
     artifact_namespace,
     artifact_name,
@@ -47,15 +47,28 @@ repo_stats as (
   group by
     project_id,
     to_artifact_id
+),
+
+artifacts_project as (
+  select distinct
+    project_id,
+    artifact_id,
+    artifact_namespace,
+    artifact_name,
+    artifact_source,
+    artifact_type
+  from {{ ref('int_artifacts_in_ossd_by_project') }}
+  where
+    artifact_source = 'GITHUB'
+    and artifact_type = 'REPOSITORY'
 )
 
-
 select
-  int_artifacts_in_ossd_by_project.project_id,
-  int_artifacts_in_ossd_by_project.artifact_id,
-  int_artifacts_in_ossd_by_project.artifact_namespace,
-  int_artifacts_in_ossd_by_project.artifact_name,
-  int_artifacts_in_ossd_by_project.artifact_source,
+  artifacts_project.project_id,
+  artifacts_project.artifact_id,
+  artifacts_project.artifact_namespace,
+  artifacts_project.artifact_name,
+  artifacts_project.artifact_source,
   repo_snapshot.is_fork,
   repo_snapshot.fork_count,
   repo_snapshot.star_count,
@@ -67,11 +80,8 @@ select
   repo_stats.days_with_commits_count,
   repo_stats.contributors_to_repo_count,
   repo_stats.commit_count
-from {{ ref('int_artifacts_in_ossd_by_project') }}
+from artifacts_project
 left join repo_snapshot
-  on int_artifacts_in_ossd_by_project.artifact_id = repo_snapshot.artifact_id
+  on artifacts_project.artifact_id = repo_snapshot.artifact_id
 left join repo_stats
-  on int_artifacts_in_ossd_by_project.artifact_id = repo_stats.artifact_id
-where
-  int_artifacts_in_ossd_by_project.artifact_source = 'GITHUB'
-  and int_artifacts_in_ossd_by_project.artifact_type = 'REPOSITORY'
+  on artifacts_project.artifact_id = repo_stats.artifact_id
