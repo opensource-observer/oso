@@ -24,6 +24,21 @@ with ranked_repositories as (
   from {{ oso_source('ossd', 'repositories') }}
 )
 
-select *
+select
+  node_id,
+  id,
+  url,
+  name,
+  name_with_owner,
+  owner,
+  branch,
+  star_count,
+  watcher_count,
+  fork_count,
+  is_fork,
+  license_name,
+  license_spdx_id,
+  language,
+  ingestion_time
 from ranked_repositories
 where row_num = 1
