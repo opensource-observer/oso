@@ -7,6 +7,9 @@ from .utils.dbt import (
     load_dbt_manifests,
     BQTargetConfigTemplate,
 )
+from dotenv import load_dotenv
+
+load_dotenv()
 
 main_dbt_project_dir = Path(__file__).joinpath("..", "..", "..").resolve()
 
