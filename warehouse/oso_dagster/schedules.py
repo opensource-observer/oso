@@ -4,11 +4,13 @@ To add a daily schedule that materializes your dbt assets, uncomment the followi
 
 from dagster import define_asset_job, ScheduleDefinition, AssetSelection
 
-full_sync = define_asset_job("run_everything_job", AssetSelection.all())
+materialize_all_assets = define_asset_job(
+    "materialize_all_assets_job", AssetSelection.all()
+)
 
 schedules = [
     ScheduleDefinition(
-        job=full_sync,
+        job=materialize_all_assets,
         cron_schedule="@daily",
     )
 ]
