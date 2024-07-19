@@ -7,6 +7,9 @@ from .utils.dbt import (
     load_dbt_manifests,
     BQTargetConfigTemplate,
 )
+from dotenv import load_dotenv
+
+load_dotenv()
 
 main_dbt_project_dir = Path(__file__).joinpath("..", "..", "..").resolve()
 
@@ -33,7 +36,9 @@ if not project_id:
     except Exception:
         raise Exception("GOOGLE_PROJECT_ID must be set if you're not in GCP")
 
-staging_bucket = ensure(os.getenv("DAGSTER_STAGING_BUCKET_URL"), "Missing DAGSTER_STAGING_BUCKET_URL")
+staging_bucket = ensure(
+    os.getenv("DAGSTER_STAGING_BUCKET_URL"), "Missing DAGSTER_STAGING_BUCKET_URL"
+)
 profile_name = os.getenv("DAGSTER_DBT_PROFILE_NAME", "opensource_observer")
 gcp_secrets_prefix = os.getenv("DAGSTER_GCP_SECRETS_PREFIX", "")
 use_local_secrets = os.getenv("DAGSTER_USE_LOCAL_SECRETS", "true").lower() in [
@@ -71,3 +76,5 @@ verbose_logs = os.getenv("DAGSTER_VERBOSE_LOGS", "false").lower() in ["true", "1
 CLICKHOUSE_HOST = os.getenv("CLICKHOUSE_HOST")
 CLICKHOUSE_USER = os.getenv("CLICKHOUSE_USER")
 CLICKHOUSE_PASSWORD = os.getenv("CLICKHOUSE_PASSWORD")
+
+env = os.getenv("DAGSTER_ENV", "dev")

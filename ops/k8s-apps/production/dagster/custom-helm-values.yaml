@@ -25,4 +25,7 @@ spec:
           host: admin-dagster.opensource.observer
         readOnlyDagsterWebserver:
           host: dagster.opensource.observer
-      
+      dagsterDaemon:
+        runRetries:
+          enabled: true
+          maxRetries: 3
