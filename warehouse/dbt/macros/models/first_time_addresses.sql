@@ -27,7 +27,7 @@ from (
       and receipt_status = 1
       and receipt_gas_used > 0
     {% if is_incremental() %}
-      {{ block_timestamp_column }} > TIMESTAMP_SUB(_dbt_max_partition, INTERVAL 1 DAY)
+      and {{ block_timestamp_column }} > TIMESTAMP_SUB(_dbt_max_partition, INTERVAL 1 DAY)
     {% else %}
       {{ playground_filter(block_timestamp_column, is_start=False) }}
     {% endif %}
