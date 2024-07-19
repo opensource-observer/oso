@@ -27,7 +27,6 @@ env:
   # Google variables
   GOOGLE_PROJECT_ID: "opensource-observer"
   GOOGLE_TEST_DUMMY_CREDENTIALS_JSON: ${{ vars.GOOGLE_TEST_DUMMY_CREDENTIALS_JSON }}
-  DAGSGTER_STAGING_BUCKET_URL: "fake-for-tests"
 
   # should not be set to a legitimate value for testing. This will use up API
   # quota otherwise
