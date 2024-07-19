@@ -6,6 +6,5 @@
 # materializations to manage schedules
 
 
-
-def all(self):
+def all():
     pass
