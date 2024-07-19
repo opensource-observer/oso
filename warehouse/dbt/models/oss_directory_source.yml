@@ -2,23 +2,14 @@ sources:
   - name: ossd
     database: opensource-observer
 
-    schema: oso
+    schema: ossd
     tables:
       - name: projects
-        identifier: |
-          {%- if target.name == 'production' -%} projects_ossd
-          {%- else -%} base_playground__ossd_projects
-          {%- endif -%}
+        identifier: projects
       - name: collections
-        identifier: |
-          {%- if target.name == 'production' -%} collections_ossd
-          {%- else -%} base_playground__ossd_collections
-          {%- endif -%}
+        identifier: collections
       - name: repositories
-        identifier: |
-          {%- if target.name == 'production' -%} repositories_ossd
-          {%- else -%} base_playground__ossd_repositories
-          {%- endif -%}
+        identifier: repositories
       
         
         

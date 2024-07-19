@@ -16,14 +16,14 @@ oso_blockchain_artifacts as (
     'oso_verification' as discovery_method,
     UPPER(tag) as artifact_type,
     UPPER(network) as network,
-    LOWER(JSON_VALUE(blockchains.address)) as address
+    LOWER(blockchains.address) as address
   from projects
   cross join
-    UNNEST(JSON_QUERY_ARRAY(projects.blockchain)) as blockchains
+    UNNEST(projects.blockchain) as blockchains
   cross join
-    UNNEST(JSON_VALUE_ARRAY(blockchains.networks)) as network
+    UNNEST(blockchains.networks) as network
   cross join
-    UNNEST(JSON_VALUE_ARRAY(blockchains.tags)) as tag
+    UNNEST(blockchains.tags) as tag
   where tag in ('contract', 'deployer')
 ),
 

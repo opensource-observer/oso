@@ -48,6 +48,7 @@ class Repository(BaseModel):
     ingestion_time: Optional[datetime]
     id: int
     node_id: str
+    owner: str
     name_with_owner: str
     url: str
     name: str
@@ -118,6 +119,7 @@ def gh_repository_to_repository(
         node_id=repo.node_id,
         name_with_owner=repo.full_name,
         name=repo.name,
+        owner=repo.owner.login,
         branch=repo.default_branch or "main",
         star_count=repo.stargazers_count or 0,
         watcher_count=repo.watchers_count or 0,

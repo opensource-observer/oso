@@ -1,10 +1,6 @@
 {# 
   The most recent view of collections from the ossd cloudquery plugin.
 #}
-with most_recent_sync as (
-  select MAX(_cq_sync_time) as sync_time
-  from {{ oso_source('ossd', 'collections') }}
-)
 
 select
   {# 
@@ -19,6 +15,6 @@ select
   collections.display_name,
   collections.description,
   collections.projects,
-  collections.sync_time
+  collections.sha,
+  collections.committed_time
 from {{ oso_source('ossd', 'collections') }} as collections
-where _cq_sync_time = (select * from most_recent_sync)
