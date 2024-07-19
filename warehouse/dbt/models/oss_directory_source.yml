@@ -6,19 +6,10 @@ sources:
     tables:
       - name: projects
         identifier: projects
-          # {%- if target.name == 'production' -%} projects_ossd
-          # {%- else -%} base_playground__ossd_projects
-          # {%- endif -%}
       - name: collections
         identifier: collections
-          # {%- if target.name == 'production' -%} collections_ossd
-          # {%- else -%} base_playground__ossd_collections
-          # {%- endif -%}
       - name: repositories
         identifier: repositories
-          # {%- if target.name == 'production' -%} repositories_ossd
-          # {%- else -%} base_playground__ossd_repositories
-          # {%- endif -%}
       
         
         
