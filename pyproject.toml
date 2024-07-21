@@ -54,6 +54,7 @@ sqlalchemy = "^2.0.25"
 textual = "^0.52.1"
 redis = "^5.0.7"
 githubkit = "^0.11.6"
+sqlmesh = "^0.113.0"
 
 
 [tool.poetry.scripts]
