@@ -321,7 +321,7 @@ This dataset mirrors the dataset offered by [Lens](https://www.lens.xyz/docs/too
 for use in the OSO data pipeline.
 It includes data from the Polygon network.
 
-### Gitcoin Passport Data
+### Gitcoin and Passport Data
 
 <img src={GitcoinLogo} width="200" />
 
@@ -338,7 +338,36 @@ It includes data from the Polygon network.
 - [Reference documentation](https://models.opensource.observer/#!/source_list/gitcoin)
 - [Updated daily](https://dagster.opensource.observer/assets/gitcoin)
 
-[Gitcoin Passport](https://passport.gitcoin.co/)
+[Gitcoin](https://gitcoin.co/) is the hub of grantmaking in the Ethereum ecosystem. All project, round, and donation data from [regendata.xyz](https://regendata.xyz) is available in this dataset and updated daily.
+
+For example, you can get the total amount of donations mapped to projects in OSO:
+
+```sql
+with project_mapping as (
+  select distinct
+    gitcoin_lookup.project_id as gitcoin_id,
+    oso_projects.project_name as oso_name,
+    oso_projects.display_name as display_name
+  from `opensource-observer`.`gitcoin`.`project_groups_summary` as gitcoin_groups
+  left join `opensource-observer`.`gitcoin`.`project_lookup` as gitcoin_lookup
+    on gitcoin_groups.group_id = gitcoin_lookup.group_id
+  join `opensource-observer`.`oso`.`int_artifacts_in_ossd_by_project` as oso_artifacts
+    on gitcoin_groups.latest_project_github = oso_artifacts.artifact_namespace
+  join `opensource-observer`.`oso`.`projects_v1` as oso_projects
+    on oso_artifacts.project_id = oso_projects.project_id
+)
+select
+  donations.timestamp,
+  donations.donor_address,
+  project_mapping.oso_name,
+  project_mapping.display_name,
+  donations.amount_in_usd  
+from `opensource-observer`.`gitcoin`.`all_donations` as donations
+join project_mapping
+  on donations.project_id = project_mapping.gitcoin_id
+```  
+
+[Passport](https://passport.xyz/)
 is a web3 identity verification protocol.
 OSO and Gitcoin have collaborated to make this dataset
 of address scores available for use in understanding user reputations.

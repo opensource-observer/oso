@@ -18,7 +18,7 @@ In addition to sharing every model in the
 we are sharing source data for blocks/transactions/traces across
 [7 chains in the OP Superchain](https://docs.opensource.observer/docs/integrate/overview/#superchain-data)
 (including Optimism, Base, Frax, Metal, Mode, PGN, Zora),
-[Gitcoin Passport scores](https://docs.opensource.observer/docs/integrate/overview/#gitcoin-passport-data),
+[Gitcoin Data](https://docs.opensource.observer/docs/integrate/overview/#gitcoin-and-passport-data),
 and [OpenRank](https://docs.opensource.observer/docs/integrate/overview/#openrank-data).
 This builds on the existing BigQuery public data ecosystem that includes
 [GitHub](https://docs.opensource.observer/docs/integrate/overview/#github-data),
