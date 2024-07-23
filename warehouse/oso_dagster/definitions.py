@@ -28,7 +28,7 @@ load_dotenv()
 
 def load_definitions():
     project_id = constants.project_id
-    secret_resolver = LocalSecretResolver("dagster")
+    secret_resolver = LocalSecretResolver(prefix="DAGSTER")
     if not constants.use_local_secrets:
         secret_resolver = GCPSecretResolver.connect_with_default_creds(
             project_id, constants.gcp_secrets_prefix
