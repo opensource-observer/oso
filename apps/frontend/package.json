@@ -19,8 +19,8 @@
     "test:watch": "jest --watch"
   },
   "dependencies": {
-    "@apollo/client": "^3.10.8",
-    "@apollo/experimental-nextjs-app-support": "^0.10.1",
+    "@apollo/client": "^3.11.0",
+    "@apollo/experimental-nextjs-app-support": "^0.11.2",
     "@emotion/react": "^11.11.4",
     "@emotion/styled": "^11.11.5",
     "@feedbackfarm/react": "^4.0.10",
