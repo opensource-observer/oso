@@ -18,7 +18,7 @@ You can find links to our work [here](https://github.com/opensource-observer/ins
 
 Before getting into the data, here’s a quick overview of the results and round mechanics. A total of 10M OP tokens were distributed across 230 projects. Each project was scored ahead of time against 16 different impact metrics. These metrics ranged from onboarding new users to generating gas fees. A group of 108 (out of ~130 eligible) badgeholders showed up to vote on the metrics that they believed were most useful at assessing impact on the Superchain. Each ballot was scored and included in the overall distribution of tokens.
 
-![midwit](midwit.png)
+![midwit](midwit.jpg)
 
 ## High-level observations
 
