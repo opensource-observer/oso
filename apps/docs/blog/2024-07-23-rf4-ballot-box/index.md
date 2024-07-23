@@ -40,6 +40,12 @@ Previous rounds, including [Optimism’s RF3](https://docs.opensource.observer/b
 
 ![distro-all](output_13_1.png)
 
+**The metric that correlated most with overall allocation was... `trusted_monthly_active_users`.**
+
+The chart below shows the correlation between each metric and the overall allocation. `trusted_monthly_active_users` had the highest correlation coefficient, followed by `power_user_addresses` and `trusted_recurring_users`. The good news for Goodhart’s Law enthusiasts is that `trusted_monthly_active_users` is probably one of the hardest metrics to game. Meanwhile, transaction count metrics had some of the lowest correlations with overall token allocation.
+
+![correlation-all](correlation.png)
+
 ## Expressed vs revealed preferences
 
 We have some insight into voters' preferences from a survey that was conducted before the voting phase. We can compare these expressed preferences against the revealed preferences from the voting data to see how well they align.
@@ -61,8 +67,6 @@ In contrast to the user metrics, voters showed a stronger preference for network
 2. Change of mind: Voters may have adjusted preferences after reviewing specific metrics, reading [others’ strategies](https://gov.optimism.io/t/retro-funding-4-voting-rationale-thread/8396), or seeing the actual project mix in the voting UI. There was over a month between the survey and voting phases.
 
 3. Weak metrics: Network quality metrics might have been perceived as less impactful. Metrics like gas efficiency and novel implementations, discussed earlier, did not make the final cut. This likely contributed to the discrepancy, suggesting a need for better quality metrics in future rounds.
-
-![midwit](midwit.jpg)
 
 **Voters’ preferences remained consistent around specific metrics and the open source multiplier.**
 
