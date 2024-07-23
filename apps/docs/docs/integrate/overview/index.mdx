@@ -403,8 +403,13 @@ where passport_address = '0xd8da6bf26964af9d7eed9e03e53415d37aa96045'
 - [Reference documentation](https://models.opensource.observer/#!/source_list/karma3)
 - [Updated daily](https://dagster.opensource.observer/assets/karma3)
 
-[OpenRank](https://openrank.com/) is a decentralized reputation protocol based on
-[Eigentrust](https://en.wikipedia.org/wiki/EigenTrust).
+[OpenRank](https://openrank.com/) is a reputation protocol that enables
+verifiable compute for a large class of reputation algorithms,
+in particular those that (a) operate on a graph,
+(b) are iterative in nature and (c) have a tendency toward convergence.
+Such algorithms include EigenTrust, Collaborative Filtering, Hubs and Authorities,
+Latent Semantic Analysis, etc.
+
 In this dataset, Farcaster users reputations are scored in 2 ways:
 - With `globaltrust`, we calculate global reputation scores, seeded by the trust of Optimism badgeholders.
 - With `localtrust`, you can get reputation scores of other users relative to specified user.
