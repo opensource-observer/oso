@@ -193,6 +193,63 @@ def transactions_check(
     return _transactions_check
 
 
+def missing_blocks_model(
+    block_number_column_name: str,
+    block_timestamp_column_name: str,
+    gs_config: GoldskyConfig,
+    asset: AssetsDefinition,
+):
+    prefix = generated_asset_prefix(asset)
+
+    @asset_check(name=f"{prefix}_missing_blocks_model", asset=asset)
+    def _missing_blocks_model(
+        context: AssetCheckExecutionContext,
+        cbt: CBTResource,
+        config: BlockchainCheckConfig,
+    ):
+        c = cbt.get(context.log)
+        c.add_search_paths(
+            [os.path.join(os.path.abspath(os.path.dirname(__file__)), "queries")]
+        )
+
+        start, end = config.get_range()
+
+        transformations: List[Transformation] = [
+            time_constrain_table(
+                block_timestamp_column_name,
+                table_name="blocks",
+                start=start,
+                end=end,
+            ),
+            context_query_replace_source_tables(
+                sql.to_table("blocks"),
+                sql.to_table(gs_config.destination_table_fqn, dialect="bigquery"),
+            ),
+        ]
+
+        try:
+            c.hybrid_transform(
+                "blocks_missing_block_numbers.sql",
+                gs_config.destination_table_fqn,
+                transformations=transformations,
+                block_number_column_name=block_number_column_name,
+            )
+        except Exception:
+            return AssetCheckResult(
+                passed=False,
+                severity=AssetCheckSeverity.WARN,
+                description="Did not succeed to update the blocks missing",
+            )
+
+        return AssetCheckResult(
+            passed=True,
+            severity=AssetCheckSeverity.WARN,
+            description="Successfully update missing block numbers",
+        )
+
+    return _missing_blocks_model
+
+
 def block_number_check(
     block_number_column_name: str,
     block_timestamp_column_name: str,

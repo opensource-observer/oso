@@ -105,6 +105,57 @@ class CBT:
             context = DataContext(connector)
             return context.execute_query(rendered, transformations)
 
+    def hybrid_render(
+        self,
+        model_file: str,
+        transformations: Optional[Sequence[Transformation]] = None,
+        **vars,
+    ):
+        pass
+
+    def hybrid_transform(
+        self,
+        model_file: str,
+        destination_table: str | TableReference,
+        update_strategy: UpdateStrategy = UpdateStrategy.REPLACE_PARTITIONS,
+        transformations: Optional[Sequence[Transformation]] = None,
+        time_partitioning: Optional[TimePartitioning] = None,
+        unique_column: Optional[str] = None,
+        timeout: float = 300,
+        dry_run: bool = False,
+        **vars,
+    ):
+        with self.bigquery.get_client() as client:
+            table_exists = True
+            try:
+                client.get_table(destination_table)
+            except NotFound:
+                table_exists = False
+
+            if update_strategy == UpdateStrategy.REPLACE_PARTITIONS or not table_exists:
+                return self._transform_replace(
+                    client,
+                    model_file,
+                    destination_table,
+                    transformations=transformations,
+                    time_partitioning=time_partitioning,
+                    unique_column=unique_column,
+                    timeout=timeout,
+                    dry_run=dry_run,
+                    **vars,
+                )
+            return self._transform_replace_partition(
+                client,
+                model_file,
+                destination_table,
+                transformations=transformations,
+                time_partitioning=time_partitioning,
+                unique_column=unique_column,
+                timeout=timeout,
+                dry_run=dry_run,
+                **vars,
+            )
+
     def transform(
         self,
         model_file: str,
@@ -221,6 +272,7 @@ class CBT:
         model_file: str,
         destination_table: str | TableReference,
         time_partitioning: Optional[TimePartitioning] = None,
+        transformations: Optional[Sequence[Transformation]] = None,
         unique_column: Optional[str] = None,
         timeout: float = 300,
         dry_run: bool = False,
@@ -229,6 +281,14 @@ class CBT:
         select_query = self.render_model(
             model_file=model_file, unique_column=unique_column, **vars
         )
+        if transformations:
+            connector = BigQueryConnector(client)
+            context = DataContext(connector)
+            select_query = context.transform_query(select_query, transformations).sql(
+                dialect="bigquery"
+            )
+            print(select_query)
+
         if time_partitioning:
             self.log.debug("creating table with a time partition")
         create_or_replace_query = self.render_model(
@@ -246,6 +306,52 @@ class CBT:
             job.result()
         else:
             self.log.debug(f"dry_run: {create_or_replace_query}")
+
+    def _transform_replace_partition(
+        self,
+        client: Client,
+        model_file: str,
+        destination_table: str | TableReference,
+        time_partitioning: Optional[TimePartitioning] = None,
+        transformations: Optional[Sequence[Transformation]] = None,
+        unique_column: Optional[str] = None,
+        timeout: float = 300,
+        dry_run: bool = False,
+        **vars,
+    ):
+        select_query = self.render_model(
+            model_file=model_file, unique_column=unique_column, **vars
+        )
+        if transformations:
+            connector = BigQueryConnector(client)
+            context = DataContext(connector)
+            select_query = context.transform_query(select_query, transformations).sql(
+                dialect="bigquery"
+            )
+
+        if not time_partitioning:
+            raise Exception(
+                "time partitioning is required for a REPLACE_PARTITIONS update"
+            )
+        replace_partition_query = self.render_model(
+            "_cbt_replace_partition.sql",
+            destination_table=destination_table,
+            time_partitioning=time_partitioning,
+            unique_column=unique_column,
+            select_query=select_query,
+        )
+
+        if not dry_run:
+            job = client.query(replace_partition_query, timeout=timeout)
+            self.log.debug(
+                {
+                    "message": "replacing partitions with query",
+                    "query": replace_partition_query,
+                }
+            )
+            job.result()
+        else:
+            self.log.debug(f"dry_run: {replace_partition_query}")
 
     def render_model(self, model_file: str, **vars):
         assert self.env.loader

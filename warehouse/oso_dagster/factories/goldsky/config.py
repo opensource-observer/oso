@@ -12,10 +12,12 @@ from typing import (
 from dataclasses import dataclass, field
 
 from google.cloud.bigquery.schema import SchemaField
-from dagster import AssetChecksDefinition, AssetsDefinition
+from dagster import AssetChecksDefinition, AssetsDefinition, JobDefinition
 
 T = TypeVar("T")
 CheckFactory = Callable[[T, AssetsDefinition], List[AssetChecksDefinition]]
+AdditionalAssetFactory = Callable[[T, AssetsDefinition], List[AssetsDefinition]]
+AdditionalJobFactory = Callable[[T, AssetsDefinition], List[JobDefinition]]
 
 
 class SchemaDict(TypedDict):
@@ -53,6 +55,8 @@ class GoldskyConfigInterface(TypedDict):
     schema_overrides: NotRequired[List[Schema]]
     retention_files: NotRequired[int]
     checks: NotRequired[List[CheckFactory["GoldskyConfig"]]]
+    additional_assets: NotRequired[List[AdditionalAssetFactory["GoldskyConfig"]]]
+    additional_jobs: NotRequired[List[AdditionalJobFactory["GoldskyConfig"]]]
 
 
 @dataclass(kw_only=True)
@@ -98,6 +102,13 @@ class GoldskyConfig:
     retention_files: int = 10000
 
     checks: List[CheckFactory["GoldskyConfig"]] = field(default_factory=lambda: [])
+
+    additional_assets: List[AdditionalAssetFactory["GoldskyConfig"]] = field(
+        default_factory=lambda: []
+    )
+    additional_jobs: List[AdditionalJobFactory["GoldskyConfig"]] = field(
+        default_factory=lambda: []
+    )
 
     @property
     def destination_table_fqn(self):

@@ -3,6 +3,7 @@ from ..factories.goldsky import (
     traces_checks,
     transactions_checks,
     blocks_checks,
+    blocks_additional_jobs,
 )
 
 frax_blocks = goldsky_asset(
@@ -18,6 +19,7 @@ frax_blocks = goldsky_asset(
     checks=[blocks_checks()],
     # uncomment the following value to test
     # max_objects_to_load=1,
+    additional_jobs=[blocks_additional_jobs()],
 )
 
 frax_transactions = goldsky_asset(

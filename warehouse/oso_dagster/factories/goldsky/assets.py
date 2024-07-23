@@ -17,6 +17,8 @@ from dagster import (
     op,
     job,
     asset_sensor,
+    AssetsDefinition,
+    JobDefinition,
     AssetExecutionContext,
     RunRequest,
     SensorEvaluationContext,
@@ -1148,9 +1150,17 @@ def goldsky_asset(deps: Optional[AssetDeps | AssetList] = None, **kwargs: Unpack
     for check in asset_config.checks:
         checks.extend(check(asset_config, generated_asset))
 
+    additional_assets: List[AssetsDefinition] = []
+    for asset_factory in asset_config.additional_assets:
+        additional_assets.extend(asset_factory(asset_config, generated_asset))
+    
+    additional_jobs: List[JobDefinition] = []
+    for job_factory in asset_config.additional_jobs:
+        additional_jobs.extend(job_factory(asset_config, generated_asset))
+        
     return AssetFactoryResponse(
-        assets=[generated_asset],
+        assets=[generated_asset] + additional_assets,
         sensors=[goldsky_clean_up_sensor],
-        jobs=[goldsky_clean_up_job, goldsky_backfill_job, goldsky_files_stats_job, goldsky_load_schema_job],
+        jobs=additional_jobs + [goldsky_clean_up_job, goldsky_backfill_job, goldsky_files_stats_job, goldsky_load_schema_job],
         checks=checks,
     )
