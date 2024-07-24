@@ -25,7 +25,6 @@ class BqDtsAssetConfig(BqDtsTransferConfig):
     asset_name: str
     # Dagster remaining args
     asset_kwargs: dict = field(default_factory=lambda: {})
-
     environment: str = "production"
 
 

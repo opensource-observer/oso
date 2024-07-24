@@ -25,6 +25,8 @@ class Bq2ClickhouseAssetConfig:
     key_prefix: Optional[str | Sequence[str]] = ""
     # Dagster asset name
     asset_name: str
+    # Dagster deps
+    deps: List[str]
     # Unique ID for this sync
     sync_id: str
     # Source config from BigQuery
@@ -39,6 +41,7 @@ class Bq2ClickhouseAssetConfig:
     copy_mode: SourceMode
     # Dagster remaining args
     asset_kwargs: dict = field(default_factory=lambda: {})
+    environment: str = "production"
 
 # Map BigQuery column types to Clickhouse
 COLUMN_MAP = {
@@ -105,7 +108,19 @@ def create_bq2clickhouse_asset(asset_config: Bq2ClickhouseAssetConfig):
     that copies a BigQuery table into Clickhouse
     """
 
-    @asset(name=asset_config.asset_name, key_prefix=asset_config.key_prefix, **asset_config.asset_kwargs)
+    tags = {
+        "opensource.observer/factory": "bq2clickhouse",
+        "opensource.observer/environment": asset_config.environment,
+        "opensource.observer/type": "source",
+    }
+
+    @asset(
+        name=asset_config.asset_name,
+        key_prefix=asset_config.key_prefix,
+        tags=tags,
+        deps=asset_config.deps,
+        **asset_config.asset_kwargs
+    )
     def bq2clickhouse_asset(
         context: AssetExecutionContext,
         bigquery: BigQueryResource,
