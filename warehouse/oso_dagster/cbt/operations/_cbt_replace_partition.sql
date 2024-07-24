@@ -4,8 +4,11 @@ USING (
 ) AS source
 ON destination.{{ unique_column }} = source.{{ unique_column }}
   AND TIMESTAMP_TRUNC(destination.{{ time_partitioning.column }}, DAY) = TIMESTAMP_TRUNC(source.{{ time_partitioning.column }}, DAY)
+{% set update_str = source(destination_table).update_columns_with("destination", "source", exclude=[unique_column]) %}
+{% if update_str != "" %}
 WHEN MATCHED THEN
-  UPDATE SET {{ source(destination_table).update_columns_with("destination", "source", exclude=[unique_column]) }}
+  UPDATE SET {{ update_str }}
+{% endif %}
 WHEN NOT MATCHED THEN 
   INSERT ({{ source(destination_table).select_columns() }}) 
   VALUES ({{ source(destination_table).select_columns(prefix="source") }})

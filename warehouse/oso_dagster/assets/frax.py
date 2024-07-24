@@ -4,6 +4,7 @@ from ..factories.goldsky import (
     transactions_checks,
     blocks_checks,
     blocks_additional_jobs,
+    transactions_additional_jobs,
 )
 
 frax_blocks = goldsky_asset(
@@ -37,6 +38,11 @@ frax_transactions = goldsky_asset(
     # uncomment the following value to test
     # max_objects_to_load=1,
     deps=frax_blocks.assets,
+    additional_jobs=[
+        transactions_additional_jobs(
+            blocks_table_fqn="opensource-observer.superchain.frax_blocks"
+        )
+    ],
 )
 
 frax_traces = goldsky_asset(

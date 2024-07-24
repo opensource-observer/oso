@@ -101,6 +101,7 @@ class CBT:
     ):
         with self.bigquery.get_client() as client:
             rendered = self.render_model(model_file, **vars)
+            self.log.debug(rendered)
             connector = BigQueryConnector(client)
             context = DataContext(connector)
             return context.execute_query(rendered, transformations)
@@ -117,7 +118,7 @@ class CBT:
         self,
         model_file: str,
         destination_table: str | TableReference,
-        update_strategy: UpdateStrategy = UpdateStrategy.REPLACE_PARTITIONS,
+        update_strategy: UpdateStrategy = UpdateStrategy.APPEND,
         transformations: Optional[Sequence[Transformation]] = None,
         time_partitioning: Optional[TimePartitioning] = None,
         unique_column: Optional[str] = None,
@@ -132,7 +133,7 @@ class CBT:
             except NotFound:
                 table_exists = False
 
-            if update_strategy == UpdateStrategy.REPLACE_PARTITIONS or not table_exists:
+            if update_strategy == UpdateStrategy.REPLACE or not table_exists:
                 return self._transform_replace(
                     client,
                     model_file,
@@ -144,10 +145,11 @@ class CBT:
                     dry_run=dry_run,
                     **vars,
                 )
-            return self._transform_replace_partition(
+            return self._transform_existing(
                 client,
                 model_file,
                 destination_table,
+                update_strategy,
                 transformations=transformations,
                 time_partitioning=time_partitioning,
                 unique_column=unique_column,
@@ -203,6 +205,7 @@ class CBT:
         model_file: str,
         destination_table: str | TableReference,
         update_strategy: UpdateStrategy,
+        transformations: Optional[Sequence[Transformation]] = None,
         time_partitioning: Optional[TimePartitioning] = None,
         unique_column: Optional[str] = None,
         timeout: float = 300,
@@ -212,6 +215,15 @@ class CBT:
         select_query = self.render_model(
             model_file=model_file, unique_column=unique_column, **vars
         )
+
+        if transformations:
+            connector = BigQueryConnector(client)
+            context = DataContext(connector)
+            select_query = context.transform_query(select_query, transformations).sql(
+                dialect="bigquery"
+            )
+            print(select_query)
+
         update_query = self.render_model(
             "_cbt_append.sql",
             select_query=select_query,
