@@ -114,8 +114,9 @@ def create_bq2clickhouse_asset(asset_config: Bq2ClickhouseAssetConfig):
     ) -> MaterializeResult:
         context.log.info(f"Materializing a Clickhouse asset called {asset_config.asset_name}")
         bq_source = asset_config.source_config
-        # "gs://bucket_name"
-        gcs_bucket_url = asset_config.staging_bucket if asset_config.staging_bucket.startswith(GCS_PROTOCOL) else "%s/%s" % (GCS_PROTOCOL, asset_config.staging_bucket)
+        # "gs://bucket_name", removing trailing slash
+        gcs_bucket_url = asset_config.staging_bucket if asset_config.staging_bucket.startswith(GCS_PROTOCOL) else GCS_PROTOCOL + asset_config.staging_bucket
+        gcs_bucket_url = gcs_bucket_url.rstrip("/")
         # "bucket_name"
         gcs_bucket_name = gcs_bucket_url.replace(GCS_PROTOCOL, "")
         # "bq2clickhouse/sync_id/destination_table_name"
@@ -125,9 +126,8 @@ def create_bq2clickhouse_asset(asset_config: Bq2ClickhouseAssetConfig):
             asset_config.destination_table_name
         )
         # "gs://bucket_name/bq2clickhouse/sync_id/destination_table_name"
-        gcs_path = "%s/%s/%s" % (
-            GCS_PROTOCOL,
-            gcs_bucket_name,
+        gcs_path = "%s/%s" % (
+            gcs_bucket_url,
             gcs_relative_dir
         )
         context.log.debug(f"Exporting {bq_source.project_id}:{bq_source.dataset_name}.{bq_source.table_name} to {gcs_path}")
