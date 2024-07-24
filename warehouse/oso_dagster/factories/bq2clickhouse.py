@@ -17,6 +17,7 @@ from ..utils.common import SourceMode
 
 # This is the folder in the GCS bucket where we will stage the data
 GCS_BUCKET_DIRECTORY = "bq2clickhouse"
+GCS_PROTOCOL = "gs://"
 
 @dataclass(kw_only=True)
 class Bq2ClickhouseAssetConfig:
@@ -113,17 +114,22 @@ def create_bq2clickhouse_asset(asset_config: Bq2ClickhouseAssetConfig):
     ) -> MaterializeResult:
         context.log.info(f"Materializing a Clickhouse asset called {asset_config.asset_name}")
         bq_source = asset_config.source_config
-        gcs_bucket = asset_config.staging_bucket
+        # "gs://bucket_name"
+        gcs_bucket_url = asset_config.staging_bucket if asset_config.staging_bucket.startswith(GCS_PROTOCOL) else "%s/%s" % (GCS_PROTOCOL, asset_config.staging_bucket)
+        # "bucket_name"
+        gcs_bucket_name = gcs_bucket_url.replace(GCS_PROTOCOL, "")
+        # "bq2clickhouse/sync_id/destination_table_name"
         gcs_relative_dir = "%s/%s/%s" % (
             GCS_BUCKET_DIRECTORY,
             asset_config.sync_id,
             asset_config.destination_table_name
         )
-        gcs_relative_dir_with_bucket = "%s/%s" % (
-            gcs_bucket,
-            gcs_relative_dir,
+        # "gs://bucket_name/bq2clickhouse/sync_id/destination_table_name"
+        gcs_path = "%s/%s/%s" % (
+            GCS_PROTOCOL,
+            gcs_bucket_name,
+            gcs_relative_dir
         )
-        gcs_path = gcs_relative_dir_with_bucket if gcs_relative_dir_with_bucket.startswith("gs://") else f"gs://{gcs_relative_dir_with_bucket}"
         context.log.debug(f"Exporting {bq_source.project_id}:{bq_source.dataset_name}.{bq_source.table_name} to {gcs_path}")
 
         # Export BigQuery table to GCS
@@ -158,7 +164,7 @@ def create_bq2clickhouse_asset(asset_config: Bq2ClickhouseAssetConfig):
 
         # Delete the gcs files
         gcs_client = gcs.get_client()
-        batch_delete_folder(gcs_client, gcs_bucket, gcs_relative_dir)
+        batch_delete_folder(gcs_client, gcs_bucket_name, gcs_relative_dir)
         context.log.info(f"Deleted GCS folder {gcs_path}")
 
         return MaterializeResult(
