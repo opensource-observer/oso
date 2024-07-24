@@ -119,10 +119,11 @@ def create_bq2clickhouse_asset(asset_config: Bq2ClickhouseAssetConfig):
             asset_config.sync_id,
             asset_config.destination_table_name
         )
-        gcs_path = "gs://%s/%s" % (
+        gcs_relative_dir_with_bucket = "%s/%s" % (
             gcs_bucket,
             gcs_relative_dir,
         )
+        gcs_path = gcs_relative_dir_with_bucket if gcs_relative_dir_with_bucket.startswith("gs://") else f"gs://{gcs_relative_dir_with_bucket}"
         context.log.debug(f"Exporting {bq_source.project_id}:{bq_source.dataset_name}.{bq_source.table_name} to {gcs_path}")
 
         # Export BigQuery table to GCS
