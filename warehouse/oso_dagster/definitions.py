@@ -17,6 +17,7 @@ from .utils import (
     GCPSecretResolver,
     LogAlertManager,
     DiscordWebhookAlertManager,
+    SecretReference,
 )
 from .resources import BigQueryDataTransferResource, ClickhouseResource
 from . import assets
@@ -27,7 +28,7 @@ load_dotenv()
 
 def load_definitions():
     project_id = constants.project_id
-    secret_resolver = LocalSecretResolver("dagster")
+    secret_resolver = LocalSecretResolver(prefix="DAGSTER")
     if not constants.use_local_secrets:
         secret_resolver = GCPSecretResolver.connect_with_default_creds(
             project_id, constants.gcp_secrets_prefix
@@ -46,7 +47,19 @@ def load_definitions():
     bigquery_datatransfer = BigQueryDataTransferResource(
         project=os.environ.get("GOOGLE_PROJECT_ID")
     )
-    clickhouse = ClickhouseResource()
+
+    clickhouse = ClickhouseResource(
+        host=secret_resolver.resolve_as_str(
+            SecretReference(group_name="clickhouse", key="host")
+        ),
+        user=secret_resolver.resolve_as_str(
+            SecretReference(group_name="clickhouse", key="user")
+        ),
+        password=secret_resolver.resolve_as_str(
+            SecretReference(group_name="clickhouse", key="password")
+        ),
+    )
+
     gcs = GCSResource(project=project_id)
     cbt = CBTResource(
         bigquery=bigquery,

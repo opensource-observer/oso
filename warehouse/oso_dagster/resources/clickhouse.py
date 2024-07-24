@@ -6,13 +6,13 @@ from dagster import (
     resource,
 )
 from pydantic import Field
-from ..constants import CLICKHOUSE_HOST, CLICKHOUSE_USER, CLICKHOUSE_PASSWORD
 from ..utils.common import ensure
 
 """
 Note: This code is predominantly copied from the BigQueryResource
 It simply returns a Clickhouse Connect Client
 """
+
 
 class ClickhouseResource(ConfigurableResource):
     """Resource for interacting with Clickhouse.
@@ -50,17 +50,15 @@ class ClickhouseResource(ConfigurableResource):
 
     @contextmanager
     def get_client(self):
-        #Context manager to create a Clickhouse Client.
-        host = ensure(self.host or CLICKHOUSE_HOST, "Missing CLICKHOUSE_HOST")
-        username = ensure(self.user or CLICKHOUSE_USER, "Missing CLICKHOUSE_USER")
-        password = ensure(self.password or CLICKHOUSE_PASSWORD, "Missing CLICKHOUSE_PASSWORD")
+        # Context manager to create a Clickhouse Client.
+        host = ensure(self.host, "Missing DAGSTER__CLICKHOUSE_HOST")
+        username = ensure(self.user, "Missing DAGSTER__CLICKHOUSE__USER")
+        password = ensure(self.password, "Missing DAGSTER__CLICKHOUSE__PASSWORD")
         client = clickhouse_connect.get_client(
-            host=host, 
-            username=username,
-            password=password,
-            secure=True
+            host=host, username=username, password=password, secure=True
         )
         yield client
+
 
 @resource(
     config_schema=ClickhouseResource.to_config_schema(),
