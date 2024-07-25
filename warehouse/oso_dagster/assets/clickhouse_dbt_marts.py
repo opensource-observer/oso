@@ -61,7 +61,7 @@ def clickhouse_assets_from_manifests_map(
                     Bq2ClickhouseAssetConfig(
                         key_prefix="clickhouse",
                         asset_name=table_name,
-                        deps=["production_dbt"],
+                        deps=[f"dbt/production/{table_name}"],
                         sync_id=str(uuid.uuid4()),
                         source_config=BigQueryTableConfig(
                             project_id=n.get("database"),
