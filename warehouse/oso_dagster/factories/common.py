@@ -1,6 +1,6 @@
 import logging
 import inspect
-from typing import List, Iterable, Union, Callable, Any, Dict, Optional
+from typing import List, Iterable, Union, Callable, Any, Dict, Optional, cast
 from dataclasses import dataclass, field
 
 from dagster import (
@@ -20,6 +20,7 @@ from dagster._core.definitions.asset_key import CoercibleToAssetKeyPrefix
 from oso_dagster import constants
 
 type GenericAsset = Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]
+type NonCacheableAssetsDefinition = Union[AssetsDefinition, SourceAsset]
 type AssetList = Iterable[GenericAsset]
 type AssetDeps = Iterable[CoercibleToAssetDep]
 type AssetKeyPrefixParam = CoercibleToAssetKeyPrefix
@@ -49,6 +50,23 @@ class AssetFactoryResponse:
             checks=list(self.checks) + list(other.checks),
             jobs=list(self.jobs) + list(other.jobs),
         )
+
+    def filter_assets(
+        self, f: Callable[[NonCacheableAssetsDefinition], bool]
+    ) -> Iterable[NonCacheableAssetsDefinition]:
+        """Due to limitations of docs on CacheableAssetsDefinitions, we filter
+        out any CacheableAssetsDefinitions as they cannot be compared against
+        for filtering"""
+        no_cacheable_assets = cast(
+            List[NonCacheableAssetsDefinition],
+            filter(lambda a: not isinstance(a, CacheableAssetsDefinition), self.assets),
+        )
+        return filter(f, no_cacheable_assets)
+
+    def filter_assets_by_name(self, name: str):
+        """The asset "name" in this context is the final part of the asset key."""
+        filtered = self.filter_assets(lambda a: a.key.path[-1] == name)
+        return filtered
 
 
 type EarlyResourcesAssetDecoratedFunction[**P] = Callable[

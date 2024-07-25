@@ -88,7 +88,7 @@ def goldsky_network_assets(config: GoldskyNetworkConfig):
                 destination_bucket_name=staging_bucket_name,
                 # uncomment the following value to test
                 # max_objects_to_load=1,
-                deps=blocks.assets,
+                deps=blocks.filter_assets_by_name("blocks"),
                 additional_factories=[
                     # transactions_checks(blocks_table_fqn=blocks_table_fqn),
                     transactions_extensions(
@@ -132,7 +132,7 @@ def goldsky_network_assets(config: GoldskyNetworkConfig):
                 destination_bucket_name=staging_bucket_name,
                 # uncomment the following value to test
                 # max_objects_to_load=1,
-                deps=transactions.assets,
+                deps=transactions.filter_assets_by_name("transactions"),
                 additional_factories=[
                     # traces_checks(transactions_table_fqn=transactions_table_fqn),
                     traces_extensions(transactions_table_fqn=transactions_table_fqn),
