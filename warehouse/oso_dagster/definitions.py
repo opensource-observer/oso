@@ -17,7 +17,6 @@ from .utils import (
     GCPSecretResolver,
     LogAlertManager,
     DiscordWebhookAlertManager,
-    SecretReference,
 )
 from .resources import BigQueryDataTransferResource, ClickhouseResource
 from . import assets
@@ -49,15 +48,7 @@ def load_definitions():
     )
 
     clickhouse = ClickhouseResource(
-        host=secret_resolver.resolve_as_str(
-            SecretReference(group_name="clickhouse", key="host")
-        ),
-        user=secret_resolver.resolve_as_str(
-            SecretReference(group_name="clickhouse", key="user")
-        ),
-        password=secret_resolver.resolve_as_str(
-            SecretReference(group_name="clickhouse", key="password")
-        ),
+        secrets=secret_resolver, secret_group_name="clickhouse"
     )
 
     gcs = GCSResource(project=project_id)
@@ -82,6 +73,7 @@ def load_definitions():
     alert_manager = LogAlertManager()
     if constants.discord_webhook_url:
         alert_manager = DiscordWebhookAlertManager(constants.discord_webhook_url)
+
     alerts = setup_alert_sensor(
         "alerts",
         constants.dagster_alerts_base_url,

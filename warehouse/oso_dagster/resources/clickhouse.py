@@ -1,12 +1,13 @@
 import clickhouse_connect
 from contextlib import contextmanager
-from typing import Optional
 from dagster import (
     ConfigurableResource,
     resource,
+    ResourceDependency,
 )
 from pydantic import Field
 from ..utils.common import ensure
+from ..utils import SecretResolver, SecretReference
 
 """
 Note: This code is predominantly copied from the BigQueryResource
@@ -33,27 +34,42 @@ class ClickhouseResource(ConfigurableResource):
             )
     """
 
-    host: Optional[str] = Field(
-        default=None,
+    secrets: ResourceDependency[SecretResolver]
+
+    secret_group_name: str
+
+    host: str = Field(
+        default="host",
         description="Clickhouse host.",
     )
 
-    user: Optional[str] = Field(
-        default=None,
+    user: str = Field(
+        default="user",
         description="Clickhouse username.",
     )
 
-    password: Optional[str] = Field(
-        default=None,
+    password: str = Field(
+        default="password",
         description="Clickhouse password.",
     )
 
     @contextmanager
     def get_client(self):
+        host = self.secrets.resolve_as_str(
+            SecretReference(group_name=self.secret_group_name, key=self.host)
+        )
+        username = self.secrets.resolve_as_str(
+            SecretReference(group_name=self.secret_group_name, key=self.user)
+        )
+        password = self.secrets.resolve_as_str(
+            SecretReference(group_name=self.secret_group_name, key=self.password)
+        )
         # Context manager to create a Clickhouse Client.
-        host = ensure(self.host, "Missing DAGSTER__CLICKHOUSE_HOST")
-        username = ensure(self.user, "Missing DAGSTER__CLICKHOUSE__USER")
-        password = ensure(self.password, "Missing DAGSTER__CLICKHOUSE__PASSWORD")
+        ensure(host, "Missing DAGSTER__CLICKHOUSE_HOST (if using local secrets)")
+        ensure(username, "Missing DAGSTER__CLICKHOUSE__USER (if using local secrets)")
+        ensure(
+            password, "Missing DAGSTER__CLICKHOUSE__PASSWORD (if using local secrets)"
+        )
         client = clickhouse_connect.get_client(
             host=host, username=username, password=password, secure=True
         )
