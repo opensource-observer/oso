@@ -25,6 +25,7 @@ class UpdateStrategy(Enum):
     REPLACE = 0
     APPEND = 1
     MERGE = 2
+    REPLACE_PARTITIONS = 3
 
 
 @dataclass
@@ -100,9 +101,62 @@ class CBT:
     ):
         with self.bigquery.get_client() as client:
             rendered = self.render_model(model_file, **vars)
+            self.log.debug(rendered)
             connector = BigQueryConnector(client)
             context = DataContext(connector)
             return context.execute_query(rendered, transformations)
+
+    def hybrid_render(
+        self,
+        model_file: str,
+        transformations: Optional[Sequence[Transformation]] = None,
+        **vars,
+    ):
+        pass
+
+    def hybrid_transform(
+        self,
+        model_file: str,
+        destination_table: str | TableReference,
+        update_strategy: UpdateStrategy = UpdateStrategy.APPEND,
+        transformations: Optional[Sequence[Transformation]] = None,
+        time_partitioning: Optional[TimePartitioning] = None,
+        unique_column: Optional[str] = None,
+        timeout: float = 300,
+        dry_run: bool = False,
+        **vars,
+    ):
+        with self.bigquery.get_client() as client:
+            table_exists = True
+            try:
+                client.get_table(destination_table)
+            except NotFound:
+                table_exists = False
+
+            if update_strategy == UpdateStrategy.REPLACE or not table_exists:
+                return self._transform_replace(
+                    client,
+                    model_file,
+                    destination_table,
+                    transformations=transformations,
+                    time_partitioning=time_partitioning,
+                    unique_column=unique_column,
+                    timeout=timeout,
+                    dry_run=dry_run,
+                    **vars,
+                )
+            return self._transform_existing(
+                client,
+                model_file,
+                destination_table,
+                update_strategy,
+                transformations=transformations,
+                time_partitioning=time_partitioning,
+                unique_column=unique_column,
+                timeout=timeout,
+                dry_run=dry_run,
+                **vars,
+            )
 
     def transform(
         self,
@@ -151,6 +205,7 @@ class CBT:
         model_file: str,
         destination_table: str | TableReference,
         update_strategy: UpdateStrategy,
+        transformations: Optional[Sequence[Transformation]] = None,
         time_partitioning: Optional[TimePartitioning] = None,
         unique_column: Optional[str] = None,
         timeout: float = 300,
@@ -160,6 +215,19 @@ class CBT:
         select_query = self.render_model(
             model_file=model_file, unique_column=unique_column, **vars
         )
+
+        source_table_fqn = None
+        if "source_table_fqn" in vars:
+            source_table_fqn = vars["source_table_fqn"]
+
+        if transformations:
+            connector = BigQueryConnector(client)
+            context = DataContext(connector)
+            select_query = context.transform_query(select_query, transformations).sql(
+                dialect="bigquery"
+            )
+            self.log.debug(select_query)
+
         update_query = self.render_model(
             "_cbt_append.sql",
             select_query=select_query,
@@ -168,6 +236,7 @@ class CBT:
         )
         time_range = None
         if update_strategy == UpdateStrategy.MERGE:
+            self.log.debug("Using merge strategy")
             if time_partitioning:
                 time_range_query = self.render_model(
                     "_cbt_time_range.sql",
@@ -176,7 +245,9 @@ class CBT:
                     unique_column=unique_column,
                     time_partitioning=time_partitioning,
                 )
-                self.log.debug({"message": "getting time range", "query": update_query})
+                self.log.debug(
+                    {"message": "getting time range", "query": time_range_query}
+                )
                 job = client.query(time_range_query, timeout=timeout)
                 time_range_row_iter = job.result()
                 time_range_rows = list(time_range_row_iter)
@@ -205,7 +276,9 @@ class CBT:
                 unique_column=unique_column,
                 time_partitioning=time_partitioning,
                 time_range=time_range,
+                source_table_fqn=source_table_fqn,
             )
+            self.log.debug({"message": "rendering merge query", "query": update_query})
 
         if not dry_run:
             self.log.debug({"message": "updating", "query": update_query})
@@ -220,6 +293,7 @@ class CBT:
         model_file: str,
         destination_table: str | TableReference,
         time_partitioning: Optional[TimePartitioning] = None,
+        transformations: Optional[Sequence[Transformation]] = None,
         unique_column: Optional[str] = None,
         timeout: float = 300,
         dry_run: bool = False,
@@ -228,6 +302,14 @@ class CBT:
         select_query = self.render_model(
             model_file=model_file, unique_column=unique_column, **vars
         )
+        if transformations:
+            connector = BigQueryConnector(client)
+            context = DataContext(connector)
+            select_query = context.transform_query(select_query, transformations).sql(
+                dialect="bigquery"
+            )
+            print(select_query)
+
         if time_partitioning:
             self.log.debug("creating table with a time partition")
         create_or_replace_query = self.render_model(
@@ -246,6 +328,52 @@ class CBT:
         else:
             self.log.debug(f"dry_run: {create_or_replace_query}")
 
+    def _transform_replace_partition(
+        self,
+        client: Client,
+        model_file: str,
+        destination_table: str | TableReference,
+        time_partitioning: Optional[TimePartitioning] = None,
+        transformations: Optional[Sequence[Transformation]] = None,
+        unique_column: Optional[str] = None,
+        timeout: float = 300,
+        dry_run: bool = False,
+        **vars,
+    ):
+        select_query = self.render_model(
+            model_file=model_file, unique_column=unique_column, **vars
+        )
+        if transformations:
+            connector = BigQueryConnector(client)
+            context = DataContext(connector)
+            select_query = context.transform_query(select_query, transformations).sql(
+                dialect="bigquery"
+            )
+
+        if not time_partitioning:
+            raise Exception(
+                "time partitioning is required for a REPLACE_PARTITIONS update"
+            )
+        replace_partition_query = self.render_model(
+            "_cbt_replace_partition.sql",
+            destination_table=destination_table,
+            time_partitioning=time_partitioning,
+            unique_column=unique_column,
+            select_query=select_query,
+        )
+
+        if not dry_run:
+            job = client.query(replace_partition_query, timeout=timeout)
+            self.log.debug(
+                {
+                    "message": "replacing partitions with query",
+                    "query": replace_partition_query,
+                }
+            )
+            job.result()
+        else:
+            self.log.debug(f"dry_run: {replace_partition_query}")
+
     def render_model(self, model_file: str, **vars):
         assert self.env.loader
         model_source, _, _ = self.env.loader.get_source(self.env, model_file)
@@ -255,7 +383,10 @@ class CBT:
         declared_vars.add("source")
         missing_vars = expected_vars - declared_vars
         if len(missing_vars) > 0:
-            raise MissingVars(list(missing_vars))
+            self.log.warn(
+                "potentially missing variables",
+                exc_info=MissingVars(list(missing_vars)),
+            )
         return self.env.get_template(model_file).render(
             source=SourceTableLoader(self.bigquery), **vars
         )

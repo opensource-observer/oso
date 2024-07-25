@@ -57,11 +57,12 @@ class DataContext[T]:
         self,
         query: ContextQuery[T] | str | exp.Expression,
         transformations: Optional[Sequence[Transformation]] = None,
+        dialect: str = "bigquery",
     ):
         transformations = transformations or []
         if isinstance(query, str):
             query = cast(str, query)
-            query = context_query_from_str(query)
+            query = context_query_from_str(query, dialect=dialect)
         elif isinstance(query, exp.Expression):
             query = context_query_from_expr(query)
 
@@ -75,8 +76,9 @@ class DataContext[T]:
         self,
         query: ContextQuery[T] | str | exp.Expression,
         transformations: Optional[Sequence[Transformation]] = None,
+        dialect: str = "bigquery",
     ) -> T:
-        exp = self.transform_query(query, transformations)
+        exp = self.transform_query(query, transformations, dialect=dialect)
         print(exp.sql())
         return self._connector.execute_expression(exp)
 
@@ -85,9 +87,9 @@ class DataContext[T]:
     #     result.columns
 
 
-def context_query_from_str[T](s: str) -> ContextQuery[T]:
+def context_query_from_str[T](s: str, dialect: str) -> ContextQuery[T]:
     def _context(_ctx: DataContext[T]):
-        return sql.parse_one(s)
+        return sql.parse_one(s, dialect=dialect)
 
     return _context
 

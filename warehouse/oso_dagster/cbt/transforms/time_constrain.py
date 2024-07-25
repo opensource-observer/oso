@@ -1,6 +1,6 @@
 import random
 import string
-from typing import Optional, cast, TypeVar
+from typing import Optional, cast, TypeVar, List
 
 import arrow
 import sqlglot as sql
@@ -65,7 +65,7 @@ def time_constrain_table[
         def _cq(ctx: DataContext[T]):
             expression = query(ctx)
 
-            assert type(expression) == exp.Select
+            assert isinstance(expression, exp.Select)
 
             # Ensure that everything in this query is qualified
             expression = cast(exp.Select, qualify(expression))
@@ -90,7 +90,14 @@ def time_constrain_table[
                 cte_select, [time_constrain(time_column, start=start, end=end)]
             )
 
-            expression = expression.with_(cte_name, as_=cte_select)
+            ctes = expression.find(exp.With)
+            if ctes:
+                original_expressions = cast(List[exp.CTE], ctes.expressions)
+                expression = expression.with_(cte_name, as_=cte_select, append=False)
+                for e in original_expressions:
+                    expression = expression.with_(e.alias, as_=e.this)
+            else:
+                expression = expression.with_(cte_name, as_=cte_select)
 
             return expression
 

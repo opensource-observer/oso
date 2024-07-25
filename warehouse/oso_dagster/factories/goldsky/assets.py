@@ -25,7 +25,6 @@ from dagster import (
     OpExecutionContext,
     DagsterLogManager,
     DefaultSensorStatus,
-    AssetChecksDefinition,
     TableRecord,
     MetadataValue, 
     TableColumn,
@@ -154,7 +153,7 @@ class GoldskyQueue:
     def len(self):
         return len(self.queue)
 
-    def empty(self):
+    def clear(self):
         self.queue = []
 
 
@@ -185,15 +184,20 @@ class GoldskyQueues:
             queue.enqueue(item)
             return item
         return None
+    
+    def is_empty(self):
+        if not self.peek():
+            return True
+        return False
 
-    def empty(self, worker: str):
+    def clear(self, worker: str):
         queue = self.queues.get(worker, None)
         if queue:
-            queue.empty()
+            queue.clear()
 
-    def empty_all(self):
+    def clear_all(self):
         for _, queue in self.queues.items():
-            queue.empty()
+            queue.clear()
 
     def workers(self):
         return self.queues.keys()
@@ -482,7 +486,11 @@ class GoldskyAsset:
         )
         self.ensure_datasets(context)
 
-        workers = await self.load_worker_tables(loop, context, checkpoint_range)
+        workers = await self.load_worker_tables(context, checkpoint_range)
+
+        if len(workers) == 0:
+            context.log.warn("Nothing to materialize. This is likely an error on the goldsky connection to gcs.")
+            return
 
         # Dedupe and partition the current worker table into a deduped and partitioned table
         await self.dedupe_worker_tables(context, workers)
@@ -548,45 +556,66 @@ class GoldskyAsset:
 
     async def load_worker_tables(
         self,
-        loop: asyncio.AbstractEventLoop,
         context: GenericExecutionContext,
         checkpoint_range: Optional[GoldskyCheckpointRange],
     ):
         self.ensure_pointer_table(context)
-        return await self.direct_load_worker_tables(context, checkpoint_range)
-
-    async def direct_load_worker_tables(
-        self,
-        context: GenericExecutionContext,
-        checkpoint_range: Optional[GoldskyCheckpointRange],
-    ) -> List[GoldskyWorker]:
         worker_coroutines = []
         workers: List[GoldskyWorker] = []
         worker_status, queues = self.load_queues_to_process(
             context.log, checkpoint_range
         )
 
-        if len(self.config.schema_overrides) > 0:
-            self.load_schema(queues)
+        if not queues.is_empty():
+            if len(self.config.schema_overrides) > 0:
+                self.load_schema(queues)
 
-        pointer_table_mutex = threading.Lock()
-        for worker_name, queue in queues.worker_queues():
-            worker = DirectGoldskyWorker(
-                worker_name,
-                self._job_id,
-                self.pointer_table,
-                worker_status.get(worker_name, None),
-                self.gcs,
-                self.bigquery,
-                self.config,
-                queue,
-                self.schema,
-            )
-            worker_coroutines.append(worker.process(context, pointer_table_mutex))
-            workers.append(worker)
-        for coro in asyncio.as_completed(worker_coroutines):
-            worker: GoldskyWorker = await coro
-            context.log.info(f"Worker[{worker.name}] completed latest data load")
+            pointer_table_mutex = threading.Lock()
+            for worker_name, queue in queues.worker_queues():
+                worker = DirectGoldskyWorker(
+                    worker_name,
+                    self._job_id,
+                    self.pointer_table,
+                    worker_status.get(worker_name, None),
+                    self.gcs,
+                    self.bigquery,
+                    self.config,
+                    queue,
+                    self.schema,
+                )
+                worker_coroutines.append(worker.process(context, pointer_table_mutex))
+                workers.append(worker)
+            for coro in asyncio.as_completed(worker_coroutines):
+                worker: GoldskyWorker = await coro
+                context.log.info(f"Worker[{worker.name}] completed latest data load")
+        else:
+            # Check if there are existing worker table. If so we continue from
+            # there because likely some failures occured but new data isn't
+            # coming in.
+            with self.bigquery.get_client() as client:
+                # WARNING hardcoded for now to 8 workers as this seems to be the standard
+                for worker_id in range(8):
+                    worker_name = str(worker_id)
+                    # Create a worker with an empty queue
+                    worker = DirectGoldskyWorker(
+                        worker_name,
+                        self._job_id,
+                        self.pointer_table,
+                        worker_status.get(worker_name, None),
+                        self.gcs,
+                        self.bigquery,
+                        self.config,
+                        GoldskyQueue(10),
+                        self.schema,
+                    )
+                    try:
+                        client.get_table(worker.raw_table)
+                    except NotFound:
+                        continue
+                    workers.append(worker)
+            if len(workers) == 0:
+                context.log.debug('Queue empty and no workers found')
+
         return workers
 
     async def dedupe_worker_tables(
@@ -635,6 +664,10 @@ class GoldskyAsset:
                 self.config.partition_column_name, self.config.partition_column_type
             )
 
+        worker_deduped_table = self.config.worker_deduped_table_fqdn(workers[0].name)
+
+        context.log.warn(f"Worker table to use for schema {worker_deduped_table}")
+
         cbt.transform(
             self.config.merge_workers_model,
             self.config.destination_table_fqn,
@@ -646,6 +679,7 @@ class GoldskyAsset:
             order_column=self.config.dedupe_order_column,
             workers=workers,
             timeout=self.config.transform_timeout_seconds,
+            source_table_fqn=worker_deduped_table,
         )
 
     async def clean_working_destination(
@@ -1144,13 +1178,11 @@ def goldsky_asset(deps: Optional[AssetDeps | AssetList] = None, **kwargs: Unpack
             ),
         )
 
-    checks: List[AssetChecksDefinition] = []
-    for check in asset_config.checks:
-        checks.extend(check(asset_config, generated_asset))
-
-    return AssetFactoryResponse(
+    response = AssetFactoryResponse(
         assets=[generated_asset],
         sensors=[goldsky_clean_up_sensor],
         jobs=[goldsky_clean_up_job, goldsky_backfill_job, goldsky_files_stats_job, goldsky_load_schema_job],
-        checks=checks,
     )
+    for asset_factory in asset_config.additional_factories:
+        response = response + asset_factory(asset_config, generated_asset)
+    return response

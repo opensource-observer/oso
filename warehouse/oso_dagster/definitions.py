@@ -68,6 +68,7 @@ def load_definitions():
 
     early_resources = dict(
         project_id=project_id,
+        staging_bucket=constants.staging_bucket,
         dlt_staging_destination=dlt_staging_destination,
         dlt_warehouse_destination=dlt_warehouse_destination,
         secrets=secret_resolver,
