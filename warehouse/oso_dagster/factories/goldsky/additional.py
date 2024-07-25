@@ -141,6 +141,11 @@ def blocks_missing_block_number_model(
         key_prefix=gs_config.key_prefix,
         deps=[generated_asset],
         op_tags=base_tags,
+        tags={
+            "opensource.observer/type": "goldsky-qa",
+            "opensource.observer/kind": "missing-blocks-qa",
+        },
+        compute_kind="goldsky-qa",
     )
     def missing_blocks_asset(
         context: AssetExecutionContext, cbt: CBTResource, config: MissingBlocksConfig
@@ -270,6 +275,11 @@ def transactions_missing_block_number_model(
         key_prefix=gs_config.key_prefix,
         deps=[generated_asset],
         op_tags=base_tags,
+        tags={
+            "opensource.observer/type": "goldsky-qa",
+            "opensource.observer/kind": "missing-blocks-qa",
+        },
+        compute_kind="goldsky-qa",
     )
     def missing_blocks_asset(
         context: AssetExecutionContext, cbt: CBTResource, config: MissingBlocksConfig
@@ -408,6 +418,11 @@ def traces_missing_block_number_model(
         key_prefix=gs_config.key_prefix,
         deps=[generated_asset],
         op_tags=base_tags,
+        tags={
+            "opensource.observer/type": "goldsky-qa",
+            "opensource.observer/kind": "missing-blocks-qa",
+        },
+        compute_kind="goldsky-qa",
     )
     def missing_blocks_asset(
         context: AssetExecutionContext, cbt: CBTResource, config: MissingBlocksConfig
