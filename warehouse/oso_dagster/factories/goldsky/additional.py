@@ -22,8 +22,6 @@ def generated_asset_prefix(asset: AssetsDefinition):
 
 
 base_tags = {
-    "opensource.observer/type": "goldsky-qa",
-    "opensource.observer/kind": "missing-blocks-qa",
     "dagster-k8s/config": {
         "pod_spec_config": {
             "tolerations": [
@@ -35,7 +33,7 @@ base_tags = {
                 }
             ],
         }
-    },
+    }
 }
 
 
@@ -143,7 +141,10 @@ def blocks_missing_block_number_model(
         key_prefix=gs_config.key_prefix,
         deps=[generated_asset],
         op_tags=base_tags,
-        tags=base_tags,
+        tags={
+            "opensource.observer/type": "goldsky-qa",
+            "opensource.observer/kind": "missing-blocks-qa",
+        },
         compute_kind="goldsky-qa",
     )
     def missing_blocks_asset(
@@ -274,7 +275,10 @@ def transactions_missing_block_number_model(
         key_prefix=gs_config.key_prefix,
         deps=[generated_asset],
         op_tags=base_tags,
-        tags=base_tags,
+        tags={
+            "opensource.observer/type": "goldsky-qa",
+            "opensource.observer/kind": "missing-blocks-qa",
+        },
         compute_kind="goldsky-qa",
     )
     def missing_blocks_asset(
@@ -414,7 +418,10 @@ def traces_missing_block_number_model(
         key_prefix=gs_config.key_prefix,
         deps=[generated_asset],
         op_tags=base_tags,
-        tags=base_tags,
+        tags={
+            "opensource.observer/type": "goldsky-qa",
+            "opensource.observer/kind": "missing-blocks-qa",
+        },
         compute_kind="goldsky-qa",
     )
     def missing_blocks_asset(
