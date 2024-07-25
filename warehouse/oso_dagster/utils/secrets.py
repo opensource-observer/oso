@@ -5,6 +5,8 @@ Tools for dealing with secret management.
 import os
 import inspect
 from typing import Dict, Optional, Any, Callable
+from dagster import EnvVar
+
 from dataclasses import dataclass
 from google.cloud import secretmanager
 from .types import unpack_config
@@ -29,6 +31,36 @@ class SecretInaccessibleError(Exception):
         self.wrapped_error = wrapped_error
 
 
+class HiddenVar(EnvVar):
+    @classmethod
+    def create(cls, resolver: "SecretResolver", ref: SecretReference):
+        hidden = cls(f"{ref.__repr__()}")
+        hidden.setup_resolver(resolver, ref)
+        return hidden
+
+    # def __init__(self, resolver: "SecretResolver", ref: SecretReference):
+    #     super().__init__(str(uuid.uuid4()))
+    #     self._resolver = resolver
+    #     self._ref = ref
+
+    def setup_resolver(self, resolver: "SecretResolver", ref: SecretReference):
+        self._resolver = resolver
+        self._ref = ref
+
+    # @property
+    # def env_var_name(self) -> str:
+    #     """Returns the name of the environment variable."""
+    #     return list(os.environ.keys())[0]
+
+    def get_value(self, default: str | None = None) -> str | None:
+        try:
+            return self._resolver.resolve_as_str(self._ref)
+        except SecretInaccessibleError:
+            raise
+        except Exception:
+            return default
+
+
 class SecretResolver:
     """Resolves secrets given a specific secret reference"""
 
@@ -37,6 +69,9 @@ class SecretResolver:
 
     def resolve_as_str(self, ref: SecretReference) -> str:
         return self.resolve(ref).decode("utf-8")
+
+    def resolve_as_hidden_var(self, ref: SecretReference) -> HiddenVar:
+        return HiddenVar.create(self, ref)
 
 
 class GCPSecretResolver(SecretResolver):
