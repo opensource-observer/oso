@@ -2,23 +2,37 @@ from google.cloud.storage import Client
 from typing import List
 from .errors import MalformedUrl
 
+
+GCS_URL_PREFIX = "gs://"
+
+
 def gcs_to_http_url(gcs_path: str) -> str:
     """
-    Converts a `gcs://` url to a `https://storage.googleapis.com/` url
+    Converts a `gs://` url to a `https://storage.googleapis.com/` url
 
     Parameters
     ----------
     gcs_path: str
-        URL prefixed with gcs://
-    
+        URL prefixed with gs://
+
     Returns
     -------
     str
         HTTPS URL to the GCS object
     """
-    if not gcs_path.startswith("gs://"):
+    if not gcs_path.startswith(GCS_URL_PREFIX):
         raise MalformedUrl(f"Expected gs:// prefix in {gcs_path}")
     return gcs_path.replace("gs://", "https://storage.googleapis.com/")
+
+
+def gcs_to_bucket_name(gcs_path: str) -> str:
+    """
+    Converts a `gs://` to just the name of the bucket in the url
+    """
+    if not gcs_path.startswith(GCS_URL_PREFIX):
+        raise MalformedUrl(f"Expected gs:// prefix in {gcs_path}")
+    return gcs_path[len(GCS_URL_PREFIX) :]
+
 
 def batch_delete_blobs(
     gcs_client: Client, bucket_name: str, blobs: List[str], batch_size: int
@@ -47,6 +61,7 @@ def batch_delete_blobs(
             bucket.delete_blobs(blobs=batch)
     if len(batch) > 0:
         bucket.delete_blobs(blobs=batch)
+
 
 def batch_delete_folder(gcs_client: Client, bucket_name: str, prefix: str):
     """

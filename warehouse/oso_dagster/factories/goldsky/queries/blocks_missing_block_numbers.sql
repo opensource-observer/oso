@@ -1,4 +1,5 @@
--- This finds any missing block numbers for a blocks tables on a given day.
+-- This finds any missing block numbers for a blocks tables on a given range.
+-- It's best to use this in a sliding fashion over the course of a few days.
 
 with continous_block_number_series (
   SELECT `block_number`

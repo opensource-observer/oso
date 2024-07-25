@@ -216,13 +216,17 @@ class CBT:
             model_file=model_file, unique_column=unique_column, **vars
         )
 
+        source_table_fqn = None
+        if "source_table_fqn" in vars:
+            source_table_fqn = vars["source_table_fqn"]
+
         if transformations:
             connector = BigQueryConnector(client)
             context = DataContext(connector)
             select_query = context.transform_query(select_query, transformations).sql(
                 dialect="bigquery"
             )
-            print(select_query)
+            self.log.debug(select_query)
 
         update_query = self.render_model(
             "_cbt_append.sql",
@@ -232,6 +236,7 @@ class CBT:
         )
         time_range = None
         if update_strategy == UpdateStrategy.MERGE:
+            self.log.debug("Using merge strategy")
             if time_partitioning:
                 time_range_query = self.render_model(
                     "_cbt_time_range.sql",
@@ -240,7 +245,9 @@ class CBT:
                     unique_column=unique_column,
                     time_partitioning=time_partitioning,
                 )
-                self.log.debug({"message": "getting time range", "query": update_query})
+                self.log.debug(
+                    {"message": "getting time range", "query": time_range_query}
+                )
                 job = client.query(time_range_query, timeout=timeout)
                 time_range_row_iter = job.result()
                 time_range_rows = list(time_range_row_iter)
@@ -269,7 +276,9 @@ class CBT:
                 unique_column=unique_column,
                 time_partitioning=time_partitioning,
                 time_range=time_range,
+                source_table_fqn=source_table_fqn,
             )
+            self.log.debug({"message": "rendering merge query", "query": update_query})
 
         if not dry_run:
             self.log.debug({"message": "updating", "query": update_query})
@@ -374,7 +383,10 @@ class CBT:
         declared_vars.add("source")
         missing_vars = expected_vars - declared_vars
         if len(missing_vars) > 0:
-            raise MissingVars(list(missing_vars))
+            self.log.warn(
+                "potentially missing variables",
+                exc_info=MissingVars(list(missing_vars)),
+            )
         return self.env.get_template(model_file).render(
             source=SourceTableLoader(self.bigquery), **vars
         )
