@@ -140,6 +140,7 @@ def blocks_missing_block_number_model(
         name="blocks_missing_block_numbers",
         key_prefix=gs_config.key_prefix,
         deps=[generated_asset],
+        op_tags=base_tags,
     )
     def missing_blocks_asset(
         context: AssetExecutionContext, cbt: CBTResource, config: MissingBlocksConfig
