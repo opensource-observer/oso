@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Dict, List
 import uuid
 from ..constants import main_dbt_manifests, staging_bucket, PRODUCTION_DBT_TARGET
+from dagster import AssetKey
 from ..factories import (
     create_bq2clickhouse_asset,
     Bq2ClickhouseAssetConfig,
@@ -14,6 +15,7 @@ from ..utils.common import SourceMode
 
 MART_DIRECTORY = "marts"
 SYNC_KEY = "sync_to_db"
+
 
 def clickhouse_assets_from_manifests_map(
     manifests: Dict[str, Path],
@@ -34,7 +36,9 @@ def clickhouse_assets_from_manifests_map(
 
     # We only care about mart models from production
     if PRODUCTION_DBT_TARGET not in manifests:
-        raise Exception(f"Expected {PRODUCTION_DBT_TARGET} in dbt manifests({manifests.keys()})")
+        raise Exception(
+            f"Expected {PRODUCTION_DBT_TARGET} in dbt manifests({manifests.keys()})"
+        )
 
     # Load the manifest
     manifest_path = manifests[PRODUCTION_DBT_TARGET]
@@ -61,7 +65,7 @@ def clickhouse_assets_from_manifests_map(
                     Bq2ClickhouseAssetConfig(
                         key_prefix="clickhouse",
                         asset_name=table_name,
-                        deps=[f"dbt/production/{table_name}"],
+                        deps=[AssetKey(["dbt", "production", table_name])],
                         sync_id=str(uuid.uuid4()),
                         source_config=BigQueryTableConfig(
                             project_id=n.get("database"),
@@ -78,8 +82,13 @@ def clickhouse_assets_from_manifests_map(
             # Track which marts were skipped
             else:
                 skipped_mart_names.append(table_name)
-        print(f"...queued {str(len(copied_mart_names))} marts, skipping {str(len(skipped_mart_names))}")
-        #print(skipped_mart_names)
+        print(
+            f"...queued {str(len(copied_mart_names))} marts, skipping {str(len(skipped_mart_names))}"
+        )
+        # print(skipped_mart_names)
         return result
 
-all_clickhouse_dbt_mart_assets = clickhouse_assets_from_manifests_map(main_dbt_manifests)
+
+all_clickhouse_dbt_mart_assets = clickhouse_assets_from_manifests_map(
+    main_dbt_manifests
+)
