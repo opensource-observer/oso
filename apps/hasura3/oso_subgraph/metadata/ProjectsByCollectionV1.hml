@@ -1,0 +1,159 @@
+---
+kind: ObjectType
+version: v1
+definition:
+  name: ProjectsByCollectionV1
+  fields:
+    - name: collectionId
+      type: String!
+    - name: collectionName
+      type: String!
+    - name: collectionNamespace
+      type: String!
+    - name: collectionSource
+      type: String!
+    - name: projectId
+      type: String!
+    - name: projectName
+      type: String!
+    - name: projectNamespace
+      type: String!
+    - name: projectSource
+      type: String!
+  graphql:
+    typeName: OsoSubgraph_ProjectsByCollectionV1
+    inputTypeName: OsoSubgraph_ProjectsByCollectionV1Input
+  dataConnectorTypeMapping:
+    - dataConnectorName: oso_clickhouse
+      dataConnectorObjectType: projects_by_collection_v1
+      fieldMapping:
+        collectionId:
+          column:
+            name: collection_id
+        collectionName:
+          column:
+            name: collection_name
+        collectionNamespace:
+          column:
+            name: collection_namespace
+        collectionSource:
+          column:
+            name: collection_source
+        projectId:
+          column:
+            name: project_id
+        projectName:
+          column:
+            name: project_name
+        projectNamespace:
+          column:
+            name: project_namespace
+        projectSource:
+          column:
+            name: project_source
+
+---
+kind: TypePermissions
+version: v1
+definition:
+  typeName: ProjectsByCollectionV1
+  permissions:
+    - role: admin
+      output:
+        allowedFields:
+          - collectionId
+          - collectionName
+          - collectionNamespace
+          - collectionSource
+          - projectId
+          - projectName
+          - projectNamespace
+          - projectSource
+
+---
+kind: ObjectBooleanExpressionType
+version: v1
+definition:
+  name: ProjectsByCollectionV1BoolExp
+  objectType: ProjectsByCollectionV1
+  dataConnectorName: oso_clickhouse
+  dataConnectorObjectType: projects_by_collection_v1
+  comparableFields:
+    - fieldName: collectionId
+      operators:
+        enableAll: true
+    - fieldName: collectionName
+      operators:
+        enableAll: true
+    - fieldName: collectionNamespace
+      operators:
+        enableAll: true
+    - fieldName: collectionSource
+      operators:
+        enableAll: true
+    - fieldName: projectId
+      operators:
+        enableAll: true
+    - fieldName: projectName
+      operators:
+        enableAll: true
+    - fieldName: projectNamespace
+      operators:
+        enableAll: true
+    - fieldName: projectSource
+      operators:
+        enableAll: true
+  graphql:
+    typeName: OsoSubgraph_ProjectsByCollectionV1BoolExp
+
+---
+kind: Model
+version: v1
+definition:
+  name: ProjectsByCollectionV1
+  objectType: ProjectsByCollectionV1
+  source:
+    dataConnectorName: oso_clickhouse
+    collection: projects_by_collection_v1
+  filterExpressionType: ProjectsByCollectionV1BoolExp
+  orderableFields:
+    - fieldName: collectionId
+      orderByDirections:
+        enableAll: true
+    - fieldName: collectionName
+      orderByDirections:
+        enableAll: true
+    - fieldName: collectionNamespace
+      orderByDirections:
+        enableAll: true
+    - fieldName: collectionSource
+      orderByDirections:
+        enableAll: true
+    - fieldName: projectId
+      orderByDirections:
+        enableAll: true
+    - fieldName: projectName
+      orderByDirections:
+        enableAll: true
+    - fieldName: projectNamespace
+      orderByDirections:
+        enableAll: true
+    - fieldName: projectSource
+      orderByDirections:
+        enableAll: true
+  graphql:
+    selectMany:
+      queryRootField: osoSubgraph_projectsByCollectionV1
+    selectUniques: []
+    orderByExpressionType: OsoSubgraph_ProjectsByCollectionV1OrderBy
+
+---
+kind: ModelPermissions
+version: v1
+definition:
+  modelName: ProjectsByCollectionV1
+  permissions:
+    - role: admin
+      select:
+        filter: null
+
