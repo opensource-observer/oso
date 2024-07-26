@@ -3,7 +3,7 @@ with farcaster_users as (
     fid as farcaster_id,
     address,
     CAST(
-      fid < '20939'
+      CAST(fid as int64) < 20939
       as int64
     ) as farcaster_prepermissionless
   from {{ ref('stg_farcaster__addresses') }}
