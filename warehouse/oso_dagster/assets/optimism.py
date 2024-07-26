@@ -1,4 +1,4 @@
-from ..factories.goldsky import goldsky_asset, traces_checks, traces_extensions
+from ..factories.goldsky import goldsky_asset, traces_extensions
 from ..constants import staging_bucket
 from oso_dagster.utils import gcs_to_bucket_name
 
@@ -21,10 +21,6 @@ optimism_traces = goldsky_asset(
     source_bucket_name=staging_bucket_name,
     destination_bucket_name=staging_bucket_name,
     additional_factories=[
-        traces_checks(
-            transactions_table_fqn,
-            transactions_transaction_hash_column_name="transaction_hash",
-        ),
         traces_extensions(
             transactions_table_fqn=transactions_table_fqn,
             transactions_transaction_hash_column_name="transaction_hash",
