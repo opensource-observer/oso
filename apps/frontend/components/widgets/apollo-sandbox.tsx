@@ -5,7 +5,7 @@ import { DOMAIN } from "../../lib/config";
 
 const API_PROTOCOL = "https://";
 const API_BASE = API_PROTOCOL + DOMAIN;
-const API_PATH = "/api/graphql";
+const API_PATH = "/api/v1/graphql";
 const API_URL = new URL(API_PATH, API_BASE);
 
 type EmbeddedSandboxProps = {
