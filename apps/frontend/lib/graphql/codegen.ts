@@ -1,11 +1,5 @@
 import { CodegenConfig } from "@graphql-codegen/cli";
-import dotenv from "dotenv";
-const envPath = [__dirname, "./.env.local"].join("/");
-dotenv.config();
-dotenv.config({ path: envPath, override: true });
-
-const DB_GRAPHQL_URL = process.env.NEXT_PUBLIC_DB_GRAPHQL_URL!;
-const OSO_API_KEY = process.env.OSO_API_KEY;
+import { DB_GRAPHQL_URL, OSO_API_KEY } from "../config";
 console.log(DB_GRAPHQL_URL);
 
 const SCHEMA: Record<string, any> = {};
