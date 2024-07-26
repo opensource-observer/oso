@@ -1,0 +1,147 @@
+---
+kind: ObjectType
+version: v1
+definition:
+  name: UsersV1
+  fields:
+    - name: bio
+      type: String!
+    - name: displayName
+      type: String!
+    - name: profilePictureUrl
+      type: String!
+    - name: url
+      type: String!
+    - name: userId
+      type: String!
+    - name: userSource
+      type: String!
+    - name: userSourceId
+      type: String!
+  graphql:
+    typeName: OsoSubgraph_UsersV1
+    inputTypeName: OsoSubgraph_UsersV1Input
+  dataConnectorTypeMapping:
+    - dataConnectorName: oso_clickhouse
+      dataConnectorObjectType: users_v1
+      fieldMapping:
+        bio:
+          column:
+            name: bio
+        displayName:
+          column:
+            name: display_name
+        profilePictureUrl:
+          column:
+            name: profile_picture_url
+        url:
+          column:
+            name: url
+        userId:
+          column:
+            name: user_id
+        userSource:
+          column:
+            name: user_source
+        userSourceId:
+          column:
+            name: user_source_id
+
+---
+kind: TypePermissions
+version: v1
+definition:
+  typeName: UsersV1
+  permissions:
+    - role: admin
+      output:
+        allowedFields:
+          - bio
+          - displayName
+          - profilePictureUrl
+          - url
+          - userId
+          - userSource
+          - userSourceId
+
+---
+kind: ObjectBooleanExpressionType
+version: v1
+definition:
+  name: UsersV1BoolExp
+  objectType: UsersV1
+  dataConnectorName: oso_clickhouse
+  dataConnectorObjectType: users_v1
+  comparableFields:
+    - fieldName: bio
+      operators:
+        enableAll: true
+    - fieldName: displayName
+      operators:
+        enableAll: true
+    - fieldName: profilePictureUrl
+      operators:
+        enableAll: true
+    - fieldName: url
+      operators:
+        enableAll: true
+    - fieldName: userId
+      operators:
+        enableAll: true
+    - fieldName: userSource
+      operators:
+        enableAll: true
+    - fieldName: userSourceId
+      operators:
+        enableAll: true
+  graphql:
+    typeName: OsoSubgraph_UsersV1BoolExp
+
+---
+kind: Model
+version: v1
+definition:
+  name: UsersV1
+  objectType: UsersV1
+  source:
+    dataConnectorName: oso_clickhouse
+    collection: users_v1
+  filterExpressionType: UsersV1BoolExp
+  orderableFields:
+    - fieldName: bio
+      orderByDirections:
+        enableAll: true
+    - fieldName: displayName
+      orderByDirections:
+        enableAll: true
+    - fieldName: profilePictureUrl
+      orderByDirections:
+        enableAll: true
+    - fieldName: url
+      orderByDirections:
+        enableAll: true
+    - fieldName: userId
+      orderByDirections:
+        enableAll: true
+    - fieldName: userSource
+      orderByDirections:
+        enableAll: true
+    - fieldName: userSourceId
+      orderByDirections:
+        enableAll: true
+  graphql:
+    selectMany:
+      queryRootField: osoSubgraph_usersV1
+    selectUniques: []
+    orderByExpressionType: OsoSubgraph_UsersV1OrderBy
+
+---
+kind: ModelPermissions
+version: v1
+definition:
+  modelName: UsersV1
+  permissions:
+    - role: admin
+      select:
+        filter: null
+

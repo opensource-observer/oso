@@ -33,6 +33,7 @@ data/
 *.pem
 *.env
 .env*.local
+.env*.cloud
 *.log
 logs/
 coverage.json

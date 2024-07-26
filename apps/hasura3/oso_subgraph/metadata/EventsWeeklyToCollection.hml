@@ -1,0 +1,111 @@
+---
+kind: ObjectType
+version: v1
+definition:
+  name: EventsWeeklyToCollection
+  fields:
+    - name: amount
+      type: Float32!
+    - name: bucketWeek
+      type: DateTime!
+    - name: collectionId
+      type: String!
+    - name: eventType
+      type: String!
+  graphql:
+    typeName: OsoSubgraph_EventsWeeklyToCollection
+    inputTypeName: OsoSubgraph_EventsWeeklyToCollectionInput
+  dataConnectorTypeMapping:
+    - dataConnectorName: oso_clickhouse
+      dataConnectorObjectType: events_weekly_to_collection
+      fieldMapping:
+        amount:
+          column:
+            name: amount
+        bucketWeek:
+          column:
+            name: bucket_week
+        collectionId:
+          column:
+            name: collection_id
+        eventType:
+          column:
+            name: event_type
+
+---
+kind: TypePermissions
+version: v1
+definition:
+  typeName: EventsWeeklyToCollection
+  permissions:
+    - role: admin
+      output:
+        allowedFields:
+          - amount
+          - bucketWeek
+          - collectionId
+          - eventType
+
+---
+kind: ObjectBooleanExpressionType
+version: v1
+definition:
+  name: EventsWeeklyToCollectionBoolExp
+  objectType: EventsWeeklyToCollection
+  dataConnectorName: oso_clickhouse
+  dataConnectorObjectType: events_weekly_to_collection
+  comparableFields:
+    - fieldName: amount
+      operators:
+        enableAll: true
+    - fieldName: bucketWeek
+      operators:
+        enableAll: true
+    - fieldName: collectionId
+      operators:
+        enableAll: true
+    - fieldName: eventType
+      operators:
+        enableAll: true
+  graphql:
+    typeName: OsoSubgraph_EventsWeeklyToCollectionBoolExp
+
+---
+kind: Model
+version: v1
+definition:
+  name: EventsWeeklyToCollection
+  objectType: EventsWeeklyToCollection
+  source:
+    dataConnectorName: oso_clickhouse
+    collection: events_weekly_to_collection
+  filterExpressionType: EventsWeeklyToCollectionBoolExp
+  orderableFields:
+    - fieldName: amount
+      orderByDirections:
+        enableAll: true
+    - fieldName: bucketWeek
+      orderByDirections:
+        enableAll: true
+    - fieldName: collectionId
+      orderByDirections:
+        enableAll: true
+    - fieldName: eventType
+      orderByDirections:
+        enableAll: true
+  graphql:
+    selectMany:
+      queryRootField: osoSubgraph_eventsWeeklyToCollection
+    selectUniques: []
+    orderByExpressionType: OsoSubgraph_EventsWeeklyToCollectionOrderBy
+
+---
+kind: ModelPermissions
+version: v1
+definition:
+  modelName: EventsWeeklyToCollection
+  permissions:
+    - role: admin
+      select:
+        filter: null
+
