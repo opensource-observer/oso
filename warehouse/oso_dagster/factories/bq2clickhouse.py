@@ -7,7 +7,7 @@ from dagster import (
 )
 from dagster_gcp import BigQueryResource, GCSResource
 from google.cloud.bigquery import Client as BQClient
-from .common import AssetFactoryResponse
+from .common import AssetFactoryResponse, AssetDeps
 from ..resources import ClickhouseResource
 from ..utils.bq import BigQueryTableConfig, export_to_gcs
 from ..utils.errors import UnsupportedTableColumn
@@ -19,6 +19,7 @@ from ..utils.common import SourceMode
 GCS_BUCKET_DIRECTORY = "bq2clickhouse"
 GCS_PROTOCOL = "gs://"
 
+
 @dataclass(kw_only=True)
 class Bq2ClickhouseAssetConfig:
     # Dagster key prefix
@@ -26,7 +27,7 @@ class Bq2ClickhouseAssetConfig:
     # Dagster asset name
     asset_name: str
     # Dagster deps
-    deps: List[str]
+    deps: AssetDeps
     # Unique ID for this sync
     sync_id: str
     # Source config from BigQuery
@@ -42,6 +43,7 @@ class Bq2ClickhouseAssetConfig:
     # Dagster remaining args
     asset_kwargs: dict = field(default_factory=lambda: {})
     environment: str = "production"
+
 
 # Map BigQuery column types to Clickhouse
 COLUMN_MAP = {
@@ -65,7 +67,9 @@ COLUMN_MAP = {
 }
 
 
-def get_bq_table_columns(bq_client: BQClient, bq_table_config: BigQueryTableConfig) -> List[Tuple[str, str]]:
+def get_bq_table_columns(
+    bq_client: BQClient, bq_table_config: BigQueryTableConfig
+) -> List[Tuple[str, str]]:
     """
     Get the columns of a BigQuery table as Clickhouse Types
     See https://clickhouse.com/docs/en/sql-reference/data-types
@@ -76,7 +80,7 @@ def get_bq_table_columns(bq_client: BQClient, bq_table_config: BigQueryTableConf
         BigQuery client
     bq_table_config: BigQueryTableConfig
         BigQuery table configuration
-    
+
     Returns
     -------
     List[Tuple[str, str]]
@@ -119,7 +123,7 @@ def create_bq2clickhouse_asset(asset_config: Bq2ClickhouseAssetConfig):
         key_prefix=asset_config.key_prefix,
         tags=tags,
         deps=asset_config.deps,
-        **asset_config.asset_kwargs
+        **asset_config.asset_kwargs,
     )
     def bq2clickhouse_asset(
         context: AssetExecutionContext,
@@ -127,10 +131,16 @@ def create_bq2clickhouse_asset(asset_config: Bq2ClickhouseAssetConfig):
         clickhouse: ClickhouseResource,
         gcs: GCSResource,
     ) -> MaterializeResult:
-        context.log.info(f"Materializing a Clickhouse asset called {asset_config.asset_name}")
+        context.log.info(
+            f"Materializing a Clickhouse asset called {asset_config.asset_name}"
+        )
         bq_source = asset_config.source_config
         # "gs://bucket_name", removing trailing slash
-        gcs_bucket_url = asset_config.staging_bucket if asset_config.staging_bucket.startswith(GCS_PROTOCOL) else GCS_PROTOCOL + asset_config.staging_bucket
+        gcs_bucket_url = (
+            asset_config.staging_bucket
+            if asset_config.staging_bucket.startswith(GCS_PROTOCOL)
+            else GCS_PROTOCOL + asset_config.staging_bucket
+        )
         gcs_bucket_url = gcs_bucket_url.rstrip("/")
         # "bucket_name"
         gcs_bucket_name = gcs_bucket_url.replace(GCS_PROTOCOL, "")
@@ -138,14 +148,13 @@ def create_bq2clickhouse_asset(asset_config: Bq2ClickhouseAssetConfig):
         gcs_relative_dir = "%s/%s/%s" % (
             GCS_BUCKET_DIRECTORY,
             asset_config.sync_id,
-            asset_config.destination_table_name
+            asset_config.destination_table_name,
         )
         # "gs://bucket_name/bq2clickhouse/sync_id/destination_table_name"
-        gcs_path = "%s/%s" % (
-            gcs_bucket_url,
-            gcs_relative_dir
+        gcs_path = "%s/%s" % (gcs_bucket_url, gcs_relative_dir)
+        context.log.debug(
+            f"Exporting {bq_source.project_id}:{bq_source.dataset_name}.{bq_source.table_name} to {gcs_path}"
         )
-        context.log.debug(f"Exporting {bq_source.project_id}:{bq_source.dataset_name}.{bq_source.table_name} to {gcs_path}")
 
         # Export BigQuery table to GCS
         with bigquery.get_client() as bq_client:
@@ -161,12 +170,17 @@ def create_bq2clickhouse_asset(asset_config: Bq2ClickhouseAssetConfig):
         source_url = gcs_to_http_url(gcs_glob)
         with clickhouse.get_client() as ch_client:
             # Create a temporary table that we will use to write
-            temp_dest = "%s_%s" % (destination_table_name, asset_config.sync_id.replace("-", "_"))
+            temp_dest = "%s_%s" % (
+                destination_table_name,
+                asset_config.sync_id.replace("-", "_"),
+            )
             if len(temp_dest) > 63:
                 temp_dest = temp_dest[0:63].rstrip("_")
             # Also ensure that the expected destination exists. Even if we
             # will delete this keeps the `OVERWRITE` mode logic simple
-            create_table(ch_client, destination_table_name, columns, index, if_not_exists=True)
+            create_table(
+                ch_client, destination_table_name, columns, index, if_not_exists=True
+            )
             context.log.info(f"Ensured destination table {destination_table_name}")
             create_table(ch_client, temp_dest, columns, index, if_not_exists=False)
             context.log.info(f"Created temporary table {temp_dest}")
