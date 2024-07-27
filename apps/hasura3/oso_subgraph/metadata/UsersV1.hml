@@ -19,8 +19,8 @@ definition:
     - name: userSourceId
       type: String!
   graphql:
-    typeName: OsoSubgraph_UsersV1
-    inputTypeName: OsoSubgraph_UsersV1Input
+    typeName: Oso_UsersV1
+    inputTypeName: Oso_UsersV1Input
   dataConnectorTypeMapping:
     - dataConnectorName: oso_clickhouse
       dataConnectorObjectType: users_v1
@@ -95,7 +95,7 @@ definition:
       operators:
         enableAll: true
   graphql:
-    typeName: OsoSubgraph_UsersV1BoolExp
+    typeName: Oso_UsersV1BoolExp
 
 ---
 kind: Model
@@ -131,9 +131,9 @@ definition:
         enableAll: true
   graphql:
     selectMany:
-      queryRootField: osoSubgraph_usersV1
+      queryRootField: oso_usersV1
     selectUniques: []
-    orderByExpressionType: OsoSubgraph_UsersV1OrderBy
+    orderByExpressionType: Oso_UsersV1OrderBy
 
 ---
 kind: ModelPermissions

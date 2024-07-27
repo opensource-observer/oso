@@ -7,8 +7,8 @@ definition:
     - name: eventType
       type: String!
   graphql:
-    typeName: OsoSubgraph_EventTypesV1
-    inputTypeName: OsoSubgraph_EventTypesV1Input
+    typeName: Oso_EventTypesV1
+    inputTypeName: Oso_EventTypesV1Input
   dataConnectorTypeMapping:
     - dataConnectorName: oso_clickhouse
       dataConnectorObjectType: event_types_v1
@@ -41,7 +41,7 @@ definition:
       operators:
         enableAll: true
   graphql:
-    typeName: OsoSubgraph_EventTypesV1BoolExp
+    typeName: Oso_EventTypesV1BoolExp
 
 ---
 kind: Model
@@ -59,9 +59,9 @@ definition:
         enableAll: true
   graphql:
     selectMany:
-      queryRootField: osoSubgraph_eventTypesV1
+      queryRootField: oso_eventTypesV1
     selectUniques: []
-    orderByExpressionType: OsoSubgraph_EventTypesV1OrderBy
+    orderByExpressionType: Oso_EventTypesV1OrderBy
 
 ---
 kind: ModelPermissions

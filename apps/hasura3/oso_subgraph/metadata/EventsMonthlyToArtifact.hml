@@ -13,8 +13,8 @@ definition:
     - name: eventType
       type: String!
   graphql:
-    typeName: OsoSubgraph_EventsMonthlyToArtifact
-    inputTypeName: OsoSubgraph_EventsMonthlyToArtifactInput
+    typeName: Oso_EventsMonthlyToArtifact
+    inputTypeName: Oso_EventsMonthlyToArtifactInput
   dataConnectorTypeMapping:
     - dataConnectorName: oso_clickhouse
       dataConnectorObjectType: events_monthly_to_artifact
@@ -68,7 +68,7 @@ definition:
       operators:
         enableAll: true
   graphql:
-    typeName: OsoSubgraph_EventsMonthlyToArtifactBoolExp
+    typeName: Oso_EventsMonthlyToArtifactBoolExp
 
 ---
 kind: Model
@@ -95,9 +95,9 @@ definition:
         enableAll: true
   graphql:
     selectMany:
-      queryRootField: osoSubgraph_eventsMonthlyToArtifact
+      queryRootField: oso_eventsMonthlyToArtifact
     selectUniques: []
-    orderByExpressionType: OsoSubgraph_EventsMonthlyToArtifactOrderBy
+    orderByExpressionType: Oso_EventsMonthlyToArtifactOrderBy
 
 ---
 kind: ModelPermissions

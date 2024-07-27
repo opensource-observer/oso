@@ -6,7 +6,7 @@ definition:
   dataConnectorScalarType: String
   representation: String
   graphql:
-    comparisonExpressionTypeName: OsoSubgraph_StringComparisonExp
+    comparisonExpressionTypeName: Oso_StringComparisonExp
 
 ---
 kind: ScalarType
@@ -14,7 +14,7 @@ version: v1
 definition:
   name: Float32
   graphql:
-    typeName: OsoSubgraph_Float32
+    typeName: Oso_Float32
 
 ---
 kind: ScalarType
@@ -22,7 +22,7 @@ version: v1
 definition:
   name: DateTime
   graphql:
-    typeName: OsoSubgraph_DateTime
+    typeName: Oso_DateTime
 
 ---
 kind: ScalarType
@@ -30,7 +30,7 @@ version: v1
 definition:
   name: Int64
   graphql:
-    typeName: OsoSubgraph_Int64
+    typeName: Oso_Int64
 
 ---
 kind: DataConnectorScalarRepresentation
@@ -40,7 +40,7 @@ definition:
   dataConnectorScalarType: Float32
   representation: Float32
   graphql:
-    comparisonExpressionTypeName: OsoSubgraph_Float32ComparisonExp
+    comparisonExpressionTypeName: Oso_Float32ComparisonExp
 
 ---
 kind: DataConnectorScalarRepresentation
@@ -50,7 +50,7 @@ definition:
   dataConnectorScalarType: DateTime
   representation: DateTime
   graphql:
-    comparisonExpressionTypeName: OsoSubgraph_DateTimeComparisonExp
+    comparisonExpressionTypeName: Oso_DateTimeComparisonExp
 
 ---
 kind: DataConnectorScalarRepresentation
@@ -60,5 +60,5 @@ definition:
   dataConnectorScalarType: Int64
   representation: Int64
   graphql:
-    comparisonExpressionTypeName: OsoSubgraph_Int64ComparisonExp
+    comparisonExpressionTypeName: Oso_Int64ComparisonExp
 

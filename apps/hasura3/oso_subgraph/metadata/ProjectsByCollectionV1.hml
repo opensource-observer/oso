@@ -21,8 +21,8 @@ definition:
     - name: projectSource
       type: String!
   graphql:
-    typeName: OsoSubgraph_ProjectsByCollectionV1
-    inputTypeName: OsoSubgraph_ProjectsByCollectionV1Input
+    typeName: Oso_ProjectsByCollectionV1
+    inputTypeName: Oso_ProjectsByCollectionV1Input
   dataConnectorTypeMapping:
     - dataConnectorName: oso_clickhouse
       dataConnectorObjectType: projects_by_collection_v1
@@ -104,7 +104,7 @@ definition:
       operators:
         enableAll: true
   graphql:
-    typeName: OsoSubgraph_ProjectsByCollectionV1BoolExp
+    typeName: Oso_ProjectsByCollectionV1BoolExp
 
 ---
 kind: Model
@@ -143,9 +143,9 @@ definition:
         enableAll: true
   graphql:
     selectMany:
-      queryRootField: osoSubgraph_projectsByCollectionV1
+      queryRootField: oso_projectsByCollectionV1
     selectUniques: []
-    orderByExpressionType: OsoSubgraph_ProjectsByCollectionV1OrderBy
+    orderByExpressionType: Oso_ProjectsByCollectionV1OrderBy
 
 ---
 kind: ModelPermissions

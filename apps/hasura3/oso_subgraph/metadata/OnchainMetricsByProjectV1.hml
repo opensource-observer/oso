@@ -45,8 +45,8 @@ definition:
     - name: transactionCount6Months
       type: Float32!
   graphql:
-    typeName: OsoSubgraph_OnchainMetricsByProjectV1
-    inputTypeName: OsoSubgraph_OnchainMetricsByProjectV1Input
+    typeName: Oso_OnchainMetricsByProjectV1
+    inputTypeName: Oso_OnchainMetricsByProjectV1Input
   dataConnectorTypeMapping:
     - dataConnectorName: oso_clickhouse
       dataConnectorObjectType: onchain_metrics_by_project_v1
@@ -212,7 +212,7 @@ definition:
       operators:
         enableAll: true
   graphql:
-    typeName: OsoSubgraph_OnchainMetricsByProjectV1BoolExp
+    typeName: Oso_OnchainMetricsByProjectV1BoolExp
 
 ---
 kind: Model
@@ -287,9 +287,9 @@ definition:
         enableAll: true
   graphql:
     selectMany:
-      queryRootField: osoSubgraph_onchainMetricsByProjectV1
+      queryRootField: oso_onchainMetricsByProjectV1
     selectUniques: []
-    orderByExpressionType: OsoSubgraph_OnchainMetricsByProjectV1OrderBy
+    orderByExpressionType: Oso_OnchainMetricsByProjectV1OrderBy
 
 ---
 kind: ModelPermissions

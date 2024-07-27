@@ -13,8 +13,8 @@ definition:
     - name: projectId
       type: String!
   graphql:
-    typeName: OsoSubgraph_EventsWeeklyToProject
-    inputTypeName: OsoSubgraph_EventsWeeklyToProjectInput
+    typeName: Oso_EventsWeeklyToProject
+    inputTypeName: Oso_EventsWeeklyToProjectInput
   dataConnectorTypeMapping:
     - dataConnectorName: oso_clickhouse
       dataConnectorObjectType: events_weekly_to_project
@@ -68,7 +68,7 @@ definition:
       operators:
         enableAll: true
   graphql:
-    typeName: OsoSubgraph_EventsWeeklyToProjectBoolExp
+    typeName: Oso_EventsWeeklyToProjectBoolExp
 
 ---
 kind: Model
@@ -95,9 +95,9 @@ definition:
         enableAll: true
   graphql:
     selectMany:
-      queryRootField: osoSubgraph_eventsWeeklyToProject
+      queryRootField: oso_eventsWeeklyToProject
     selectUniques: []
-    orderByExpressionType: OsoSubgraph_EventsWeeklyToProjectOrderBy
+    orderByExpressionType: Oso_EventsWeeklyToProjectOrderBy
 
 ---
 kind: ModelPermissions

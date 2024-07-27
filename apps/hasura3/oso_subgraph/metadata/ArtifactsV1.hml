@@ -17,8 +17,8 @@ definition:
     - name: artifactUrl
       type: String!
   graphql:
-    typeName: OsoSubgraph_ArtifactsV1
-    inputTypeName: OsoSubgraph_ArtifactsV1Input
+    typeName: Oso_ArtifactsV1
+    inputTypeName: Oso_ArtifactsV1Input
   dataConnectorTypeMapping:
     - dataConnectorName: oso_clickhouse
       dataConnectorObjectType: artifacts_v1
@@ -86,7 +86,7 @@ definition:
       operators:
         enableAll: true
   graphql:
-    typeName: OsoSubgraph_ArtifactsV1BoolExp
+    typeName: Oso_ArtifactsV1BoolExp
 
 ---
 kind: Model
@@ -119,9 +119,9 @@ definition:
         enableAll: true
   graphql:
     selectMany:
-      queryRootField: osoSubgraph_artifactsV1
+      queryRootField: oso_artifactsV1
     selectUniques: []
-    orderByExpressionType: OsoSubgraph_ArtifactsV1OrderBy
+    orderByExpressionType: Oso_ArtifactsV1OrderBy
 
 ---
 kind: ModelPermissions
