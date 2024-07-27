@@ -180,8 +180,8 @@
             "globalIdFields": null,
             "graphql": {
               "apolloFederation": null,
-              "inputTypeName": "OsoSubgraph_ArtifactsByProjectV1Input",
-              "typeName": "OsoSubgraph_ArtifactsByProjectV1"
+              "inputTypeName": "Oso_ArtifactsByProjectV1Input",
+              "typeName": "Oso_ArtifactsByProjectV1"
             },
             "name": "ArtifactsByProjectV1"
           },
@@ -250,9 +250,7 @@
             ],
             "dataConnectorName": "oso_clickhouse",
             "dataConnectorObjectType": "artifacts_by_project_v1",
-            "graphql": {
-              "typeName": "OsoSubgraph_ArtifactsByProjectV1BoolExp"
-            },
+            "graphql": { "typeName": "Oso_ArtifactsByProjectV1BoolExp" },
             "name": "ArtifactsByProjectV1BoolExp",
             "objectType": "ArtifactsByProjectV1"
           },
@@ -271,11 +269,11 @@
               "apolloFederation": null,
               "argumentsInputType": null,
               "filterInputTypeName": null,
-              "orderByExpressionType": "OsoSubgraph_ArtifactsByProjectV1OrderBy",
+              "orderByExpressionType": "Oso_ArtifactsByProjectV1OrderBy",
               "selectMany": {
                 "deprecated": null,
                 "description": null,
-                "queryRootField": "osoSubgraph_artifactsByProjectV1"
+                "queryRootField": "oso_artifactsByProjectV1"
               },
               "selectUniques": []
             },
@@ -432,8 +430,8 @@
             "globalIdFields": null,
             "graphql": {
               "apolloFederation": null,
-              "inputTypeName": "OsoSubgraph_ArtifactsV1Input",
-              "typeName": "OsoSubgraph_ArtifactsV1"
+              "inputTypeName": "Oso_ArtifactsV1Input",
+              "typeName": "Oso_ArtifactsV1"
             },
             "name": "ArtifactsV1"
           },
@@ -487,7 +485,7 @@
             ],
             "dataConnectorName": "oso_clickhouse",
             "dataConnectorObjectType": "artifacts_v1",
-            "graphql": { "typeName": "OsoSubgraph_ArtifactsV1BoolExp" },
+            "graphql": { "typeName": "Oso_ArtifactsV1BoolExp" },
             "name": "ArtifactsV1BoolExp",
             "objectType": "ArtifactsV1"
           },
@@ -506,11 +504,11 @@
               "apolloFederation": null,
               "argumentsInputType": null,
               "filterInputTypeName": null,
-              "orderByExpressionType": "OsoSubgraph_ArtifactsV1OrderBy",
+              "orderByExpressionType": "Oso_ArtifactsV1OrderBy",
               "selectMany": {
                 "deprecated": null,
                 "description": null,
-                "queryRootField": "osoSubgraph_artifactsV1"
+                "queryRootField": "oso_artifactsV1"
               },
               "selectUniques": []
             },
@@ -844,8 +842,8 @@
             "globalIdFields": null,
             "graphql": {
               "apolloFederation": null,
-              "inputTypeName": "OsoSubgraph_CodeMetricsByProjectV1Input",
-              "typeName": "OsoSubgraph_CodeMetricsByProjectV1"
+              "inputTypeName": "Oso_CodeMetricsByProjectV1Input",
+              "typeName": "Oso_CodeMetricsByProjectV1"
             },
             "name": "CodeMetricsByProjectV1"
           },
@@ -971,9 +969,7 @@
             ],
             "dataConnectorName": "oso_clickhouse",
             "dataConnectorObjectType": "code_metrics_by_project_v1",
-            "graphql": {
-              "typeName": "OsoSubgraph_CodeMetricsByProjectV1BoolExp"
-            },
+            "graphql": { "typeName": "Oso_CodeMetricsByProjectV1BoolExp" },
             "name": "CodeMetricsByProjectV1BoolExp",
             "objectType": "CodeMetricsByProjectV1"
           },
@@ -992,11 +988,11 @@
               "apolloFederation": null,
               "argumentsInputType": null,
               "filterInputTypeName": null,
-              "orderByExpressionType": "OsoSubgraph_CodeMetricsByProjectV1OrderBy",
+              "orderByExpressionType": "Oso_CodeMetricsByProjectV1OrderBy",
               "selectMany": {
                 "deprecated": null,
                 "description": null,
-                "queryRootField": "osoSubgraph_codeMetricsByProjectV1"
+                "queryRootField": "oso_codeMetricsByProjectV1"
               },
               "selectUniques": []
             },
@@ -1201,8 +1197,8 @@
             "globalIdFields": null,
             "graphql": {
               "apolloFederation": null,
-              "inputTypeName": "OsoSubgraph_CollectionsV1Input",
-              "typeName": "OsoSubgraph_CollectionsV1"
+              "inputTypeName": "Oso_CollectionsV1Input",
+              "typeName": "Oso_CollectionsV1"
             },
             "name": "CollectionsV1"
           },
@@ -1259,7 +1255,7 @@
             ],
             "dataConnectorName": "oso_clickhouse",
             "dataConnectorObjectType": "collections_v1",
-            "graphql": { "typeName": "OsoSubgraph_CollectionsV1BoolExp" },
+            "graphql": { "typeName": "Oso_CollectionsV1BoolExp" },
             "name": "CollectionsV1BoolExp",
             "objectType": "CollectionsV1"
           },
@@ -1278,11 +1274,11 @@
               "apolloFederation": null,
               "argumentsInputType": null,
               "filterInputTypeName": null,
-              "orderByExpressionType": "OsoSubgraph_CollectionsV1OrderBy",
+              "orderByExpressionType": "Oso_CollectionsV1OrderBy",
               "selectMany": {
                 "deprecated": null,
                 "description": null,
-                "queryRootField": "osoSubgraph_collectionsV1"
+                "queryRootField": "oso_collectionsV1"
               },
               "selectUniques": []
             },
@@ -1391,8 +1387,8 @@
             "globalIdFields": null,
             "graphql": {
               "apolloFederation": null,
-              "inputTypeName": "OsoSubgraph_ContractsV0Input",
-              "typeName": "OsoSubgraph_ContractsV0"
+              "inputTypeName": "Oso_ContractsV0Input",
+              "typeName": "Oso_ContractsV0"
             },
             "name": "ContractsV0"
           },
@@ -1437,7 +1433,7 @@
             ],
             "dataConnectorName": "oso_clickhouse",
             "dataConnectorObjectType": "contracts_v0",
-            "graphql": { "typeName": "OsoSubgraph_ContractsV0BoolExp" },
+            "graphql": { "typeName": "Oso_ContractsV0BoolExp" },
             "name": "ContractsV0BoolExp",
             "objectType": "ContractsV0"
           },
@@ -1456,11 +1452,11 @@
               "apolloFederation": null,
               "argumentsInputType": null,
               "filterInputTypeName": null,
-              "orderByExpressionType": "OsoSubgraph_ContractsV0OrderBy",
+              "orderByExpressionType": "Oso_ContractsV0OrderBy",
               "selectMany": {
                 "deprecated": null,
                 "description": null,
-                "queryRootField": "osoSubgraph_contractsV0"
+                "queryRootField": "oso_contractsV0"
               },
               "selectUniques": []
             },
@@ -1629,8 +1625,8 @@
             "globalIdFields": null,
             "graphql": {
               "apolloFederation": null,
-              "inputTypeName": "OsoSubgraph_EventIndexingStatusByProjectV1Input",
-              "typeName": "OsoSubgraph_EventIndexingStatusByProjectV1"
+              "inputTypeName": "Oso_EventIndexingStatusByProjectV1Input",
+              "typeName": "Oso_EventIndexingStatusByProjectV1"
             },
             "name": "EventIndexingStatusByProjectV1"
           },
@@ -1700,7 +1696,7 @@
             "dataConnectorName": "oso_clickhouse",
             "dataConnectorObjectType": "event_indexing_status_by_project_v1",
             "graphql": {
-              "typeName": "OsoSubgraph_EventIndexingStatusByProjectV1BoolExp"
+              "typeName": "Oso_EventIndexingStatusByProjectV1BoolExp"
             },
             "name": "EventIndexingStatusByProjectV1BoolExp",
             "objectType": "EventIndexingStatusByProjectV1"
@@ -1720,11 +1716,11 @@
               "apolloFederation": null,
               "argumentsInputType": null,
               "filterInputTypeName": null,
-              "orderByExpressionType": "OsoSubgraph_EventIndexingStatusByProjectV1OrderBy",
+              "orderByExpressionType": "Oso_EventIndexingStatusByProjectV1OrderBy",
               "selectMany": {
                 "deprecated": null,
                 "description": null,
-                "queryRootField": "osoSubgraph_eventIndexingStatusByProjectV1"
+                "queryRootField": "oso_eventIndexingStatusByProjectV1"
               },
               "selectUniques": []
             },
@@ -1816,8 +1812,8 @@
             "globalIdFields": null,
             "graphql": {
               "apolloFederation": null,
-              "inputTypeName": "OsoSubgraph_EventTypesV1Input",
-              "typeName": "OsoSubgraph_EventTypesV1"
+              "inputTypeName": "Oso_EventTypesV1Input",
+              "typeName": "Oso_EventTypesV1"
             },
             "name": "EventTypesV1"
           },
@@ -1845,7 +1841,7 @@
             ],
             "dataConnectorName": "oso_clickhouse",
             "dataConnectorObjectType": "event_types_v1",
-            "graphql": { "typeName": "OsoSubgraph_EventTypesV1BoolExp" },
+            "graphql": { "typeName": "Oso_EventTypesV1BoolExp" },
             "name": "EventTypesV1BoolExp",
             "objectType": "EventTypesV1"
           },
@@ -1864,11 +1860,11 @@
               "apolloFederation": null,
               "argumentsInputType": null,
               "filterInputTypeName": null,
-              "orderByExpressionType": "OsoSubgraph_EventTypesV1OrderBy",
+              "orderByExpressionType": "Oso_EventTypesV1OrderBy",
               "selectMany": {
                 "deprecated": null,
                 "description": null,
-                "queryRootField": "osoSubgraph_eventTypesV1"
+                "queryRootField": "oso_eventTypesV1"
               },
               "selectUniques": []
             },
@@ -1958,8 +1954,8 @@
             "globalIdFields": null,
             "graphql": {
               "apolloFederation": null,
-              "inputTypeName": "OsoSubgraph_EventsDailyToArtifactInput",
-              "typeName": "OsoSubgraph_EventsDailyToArtifact"
+              "inputTypeName": "Oso_EventsDailyToArtifactInput",
+              "typeName": "Oso_EventsDailyToArtifact"
             },
             "name": "EventsDailyToArtifact"
           },
@@ -1997,9 +1993,7 @@
             ],
             "dataConnectorName": "oso_clickhouse",
             "dataConnectorObjectType": "events_daily_to_artifact",
-            "graphql": {
-              "typeName": "OsoSubgraph_EventsDailyToArtifactBoolExp"
-            },
+            "graphql": { "typeName": "Oso_EventsDailyToArtifactBoolExp" },
             "name": "EventsDailyToArtifactBoolExp",
             "objectType": "EventsDailyToArtifact"
           },
@@ -2018,11 +2012,11 @@
               "apolloFederation": null,
               "argumentsInputType": null,
               "filterInputTypeName": null,
-              "orderByExpressionType": "OsoSubgraph_EventsDailyToArtifactOrderBy",
+              "orderByExpressionType": "Oso_EventsDailyToArtifactOrderBy",
               "selectMany": {
                 "deprecated": null,
                 "description": null,
-                "queryRootField": "osoSubgraph_eventsDailyToArtifact"
+                "queryRootField": "oso_eventsDailyToArtifact"
               },
               "selectUniques": []
             },
@@ -2127,8 +2121,8 @@
             "globalIdFields": null,
             "graphql": {
               "apolloFederation": null,
-              "inputTypeName": "OsoSubgraph_EventsDailyToCollectionInput",
-              "typeName": "OsoSubgraph_EventsDailyToCollection"
+              "inputTypeName": "Oso_EventsDailyToCollectionInput",
+              "typeName": "Oso_EventsDailyToCollection"
             },
             "name": "EventsDailyToCollection"
           },
@@ -2169,9 +2163,7 @@
             ],
             "dataConnectorName": "oso_clickhouse",
             "dataConnectorObjectType": "events_daily_to_collection",
-            "graphql": {
-              "typeName": "OsoSubgraph_EventsDailyToCollectionBoolExp"
-            },
+            "graphql": { "typeName": "Oso_EventsDailyToCollectionBoolExp" },
             "name": "EventsDailyToCollectionBoolExp",
             "objectType": "EventsDailyToCollection"
           },
@@ -2190,11 +2182,11 @@
               "apolloFederation": null,
               "argumentsInputType": null,
               "filterInputTypeName": null,
-              "orderByExpressionType": "OsoSubgraph_EventsDailyToCollectionOrderBy",
+              "orderByExpressionType": "Oso_EventsDailyToCollectionOrderBy",
               "selectMany": {
                 "deprecated": null,
                 "description": null,
-                "queryRootField": "osoSubgraph_eventsDailyToCollection"
+                "queryRootField": "oso_eventsDailyToCollection"
               },
               "selectUniques": []
             },
@@ -2296,8 +2288,8 @@
             "globalIdFields": null,
             "graphql": {
               "apolloFederation": null,
-              "inputTypeName": "OsoSubgraph_EventsDailyToProjectInput",
-              "typeName": "OsoSubgraph_EventsDailyToProject"
+              "inputTypeName": "Oso_EventsDailyToProjectInput",
+              "typeName": "Oso_EventsDailyToProject"
             },
             "name": "EventsDailyToProject"
           },
@@ -2335,9 +2327,7 @@
             ],
             "dataConnectorName": "oso_clickhouse",
             "dataConnectorObjectType": "events_daily_to_project",
-            "graphql": {
-              "typeName": "OsoSubgraph_EventsDailyToProjectBoolExp"
-            },
+            "graphql": { "typeName": "Oso_EventsDailyToProjectBoolExp" },
             "name": "EventsDailyToProjectBoolExp",
             "objectType": "EventsDailyToProject"
           },
@@ -2356,11 +2346,11 @@
               "apolloFederation": null,
               "argumentsInputType": null,
               "filterInputTypeName": null,
-              "orderByExpressionType": "OsoSubgraph_EventsDailyToProjectOrderBy",
+              "orderByExpressionType": "Oso_EventsDailyToProjectOrderBy",
               "selectMany": {
                 "deprecated": null,
                 "description": null,
-                "queryRootField": "osoSubgraph_eventsDailyToProject"
+                "queryRootField": "oso_eventsDailyToProject"
               },
               "selectUniques": []
             },
@@ -2465,8 +2455,8 @@
             "globalIdFields": null,
             "graphql": {
               "apolloFederation": null,
-              "inputTypeName": "OsoSubgraph_EventsMonthlyToArtifactInput",
-              "typeName": "OsoSubgraph_EventsMonthlyToArtifact"
+              "inputTypeName": "Oso_EventsMonthlyToArtifactInput",
+              "typeName": "Oso_EventsMonthlyToArtifact"
             },
             "name": "EventsMonthlyToArtifact"
           },
@@ -2507,9 +2497,7 @@
             ],
             "dataConnectorName": "oso_clickhouse",
             "dataConnectorObjectType": "events_monthly_to_artifact",
-            "graphql": {
-              "typeName": "OsoSubgraph_EventsMonthlyToArtifactBoolExp"
-            },
+            "graphql": { "typeName": "Oso_EventsMonthlyToArtifactBoolExp" },
             "name": "EventsMonthlyToArtifactBoolExp",
             "objectType": "EventsMonthlyToArtifact"
           },
@@ -2528,11 +2516,11 @@
               "apolloFederation": null,
               "argumentsInputType": null,
               "filterInputTypeName": null,
-              "orderByExpressionType": "OsoSubgraph_EventsMonthlyToArtifactOrderBy",
+              "orderByExpressionType": "Oso_EventsMonthlyToArtifactOrderBy",
               "selectMany": {
                 "deprecated": null,
                 "description": null,
-                "queryRootField": "osoSubgraph_eventsMonthlyToArtifact"
+                "queryRootField": "oso_eventsMonthlyToArtifact"
               },
               "selectUniques": []
             },
@@ -2640,8 +2628,8 @@
             "globalIdFields": null,
             "graphql": {
               "apolloFederation": null,
-              "inputTypeName": "OsoSubgraph_EventsMonthlyToCollectionInput",
-              "typeName": "OsoSubgraph_EventsMonthlyToCollection"
+              "inputTypeName": "Oso_EventsMonthlyToCollectionInput",
+              "typeName": "Oso_EventsMonthlyToCollection"
             },
             "name": "EventsMonthlyToCollection"
           },
@@ -2685,9 +2673,7 @@
             ],
             "dataConnectorName": "oso_clickhouse",
             "dataConnectorObjectType": "events_monthly_to_collection",
-            "graphql": {
-              "typeName": "OsoSubgraph_EventsMonthlyToCollectionBoolExp"
-            },
+            "graphql": { "typeName": "Oso_EventsMonthlyToCollectionBoolExp" },
             "name": "EventsMonthlyToCollectionBoolExp",
             "objectType": "EventsMonthlyToCollection"
           },
@@ -2706,11 +2692,11 @@
               "apolloFederation": null,
               "argumentsInputType": null,
               "filterInputTypeName": null,
-              "orderByExpressionType": "OsoSubgraph_EventsMonthlyToCollectionOrderBy",
+              "orderByExpressionType": "Oso_EventsMonthlyToCollectionOrderBy",
               "selectMany": {
                 "deprecated": null,
                 "description": null,
-                "queryRootField": "osoSubgraph_eventsMonthlyToCollection"
+                "queryRootField": "oso_eventsMonthlyToCollection"
               },
               "selectUniques": []
             },
@@ -2815,8 +2801,8 @@
             "globalIdFields": null,
             "graphql": {
               "apolloFederation": null,
-              "inputTypeName": "OsoSubgraph_EventsMonthlyToProjectInput",
-              "typeName": "OsoSubgraph_EventsMonthlyToProject"
+              "inputTypeName": "Oso_EventsMonthlyToProjectInput",
+              "typeName": "Oso_EventsMonthlyToProject"
             },
             "name": "EventsMonthlyToProject"
           },
@@ -2857,9 +2843,7 @@
             ],
             "dataConnectorName": "oso_clickhouse",
             "dataConnectorObjectType": "events_monthly_to_project",
-            "graphql": {
-              "typeName": "OsoSubgraph_EventsMonthlyToProjectBoolExp"
-            },
+            "graphql": { "typeName": "Oso_EventsMonthlyToProjectBoolExp" },
             "name": "EventsMonthlyToProjectBoolExp",
             "objectType": "EventsMonthlyToProject"
           },
@@ -2878,11 +2862,11 @@
               "apolloFederation": null,
               "argumentsInputType": null,
               "filterInputTypeName": null,
-              "orderByExpressionType": "OsoSubgraph_EventsMonthlyToProjectOrderBy",
+              "orderByExpressionType": "Oso_EventsMonthlyToProjectOrderBy",
               "selectMany": {
                 "deprecated": null,
                 "description": null,
-                "queryRootField": "osoSubgraph_eventsMonthlyToProject"
+                "queryRootField": "oso_eventsMonthlyToProject"
               },
               "selectUniques": []
             },
@@ -2984,8 +2968,8 @@
             "globalIdFields": null,
             "graphql": {
               "apolloFederation": null,
-              "inputTypeName": "OsoSubgraph_EventsWeeklyToArtifactInput",
-              "typeName": "OsoSubgraph_EventsWeeklyToArtifact"
+              "inputTypeName": "Oso_EventsWeeklyToArtifactInput",
+              "typeName": "Oso_EventsWeeklyToArtifact"
             },
             "name": "EventsWeeklyToArtifact"
           },
@@ -3023,9 +3007,7 @@
             ],
             "dataConnectorName": "oso_clickhouse",
             "dataConnectorObjectType": "events_weekly_to_artifact",
-            "graphql": {
-              "typeName": "OsoSubgraph_EventsWeeklyToArtifactBoolExp"
-            },
+            "graphql": { "typeName": "Oso_EventsWeeklyToArtifactBoolExp" },
             "name": "EventsWeeklyToArtifactBoolExp",
             "objectType": "EventsWeeklyToArtifact"
           },
@@ -3044,11 +3026,11 @@
               "apolloFederation": null,
               "argumentsInputType": null,
               "filterInputTypeName": null,
-              "orderByExpressionType": "OsoSubgraph_EventsWeeklyToArtifactOrderBy",
+              "orderByExpressionType": "Oso_EventsWeeklyToArtifactOrderBy",
               "selectMany": {
                 "deprecated": null,
                 "description": null,
-                "queryRootField": "osoSubgraph_eventsWeeklyToArtifact"
+                "queryRootField": "oso_eventsWeeklyToArtifact"
               },
               "selectUniques": []
             },
@@ -3153,8 +3135,8 @@
             "globalIdFields": null,
             "graphql": {
               "apolloFederation": null,
-              "inputTypeName": "OsoSubgraph_EventsWeeklyToCollectionInput",
-              "typeName": "OsoSubgraph_EventsWeeklyToCollection"
+              "inputTypeName": "Oso_EventsWeeklyToCollectionInput",
+              "typeName": "Oso_EventsWeeklyToCollection"
             },
             "name": "EventsWeeklyToCollection"
           },
@@ -3195,9 +3177,7 @@
             ],
             "dataConnectorName": "oso_clickhouse",
             "dataConnectorObjectType": "events_weekly_to_collection",
-            "graphql": {
-              "typeName": "OsoSubgraph_EventsWeeklyToCollectionBoolExp"
-            },
+            "graphql": { "typeName": "Oso_EventsWeeklyToCollectionBoolExp" },
             "name": "EventsWeeklyToCollectionBoolExp",
             "objectType": "EventsWeeklyToCollection"
           },
@@ -3216,11 +3196,11 @@
               "apolloFederation": null,
               "argumentsInputType": null,
               "filterInputTypeName": null,
-              "orderByExpressionType": "OsoSubgraph_EventsWeeklyToCollectionOrderBy",
+              "orderByExpressionType": "Oso_EventsWeeklyToCollectionOrderBy",
               "selectMany": {
                 "deprecated": null,
                 "description": null,
-                "queryRootField": "osoSubgraph_eventsWeeklyToCollection"
+                "queryRootField": "oso_eventsWeeklyToCollection"
               },
               "selectUniques": []
             },
@@ -3322,8 +3302,8 @@
             "globalIdFields": null,
             "graphql": {
               "apolloFederation": null,
-              "inputTypeName": "OsoSubgraph_EventsWeeklyToProjectInput",
-              "typeName": "OsoSubgraph_EventsWeeklyToProject"
+              "inputTypeName": "Oso_EventsWeeklyToProjectInput",
+              "typeName": "Oso_EventsWeeklyToProject"
             },
             "name": "EventsWeeklyToProject"
           },
@@ -3361,9 +3341,7 @@
             ],
             "dataConnectorName": "oso_clickhouse",
             "dataConnectorObjectType": "events_weekly_to_project",
-            "graphql": {
-              "typeName": "OsoSubgraph_EventsWeeklyToProjectBoolExp"
-            },
+            "graphql": { "typeName": "Oso_EventsWeeklyToProjectBoolExp" },
             "name": "EventsWeeklyToProjectBoolExp",
             "objectType": "EventsWeeklyToProject"
           },
@@ -3382,11 +3360,11 @@
               "apolloFederation": null,
               "argumentsInputType": null,
               "filterInputTypeName": null,
-              "orderByExpressionType": "OsoSubgraph_EventsWeeklyToProjectOrderBy",
+              "orderByExpressionType": "Oso_EventsWeeklyToProjectOrderBy",
               "selectMany": {
                 "deprecated": null,
                 "description": null,
-                "queryRootField": "osoSubgraph_eventsWeeklyToProject"
+                "queryRootField": "oso_eventsWeeklyToProject"
               },
               "selectUniques": []
             },
@@ -3705,8 +3683,8 @@
             "globalIdFields": null,
             "graphql": {
               "apolloFederation": null,
-              "inputTypeName": "OsoSubgraph_OnchainMetricsByProjectV1Input",
-              "typeName": "OsoSubgraph_OnchainMetricsByProjectV1"
+              "inputTypeName": "Oso_OnchainMetricsByProjectV1Input",
+              "typeName": "Oso_OnchainMetricsByProjectV1"
             },
             "name": "OnchainMetricsByProjectV1"
           },
@@ -3830,9 +3808,7 @@
             ],
             "dataConnectorName": "oso_clickhouse",
             "dataConnectorObjectType": "onchain_metrics_by_project_v1",
-            "graphql": {
-              "typeName": "OsoSubgraph_OnchainMetricsByProjectV1BoolExp"
-            },
+            "graphql": { "typeName": "Oso_OnchainMetricsByProjectV1BoolExp" },
             "name": "OnchainMetricsByProjectV1BoolExp",
             "objectType": "OnchainMetricsByProjectV1"
           },
@@ -3851,11 +3827,11 @@
               "apolloFederation": null,
               "argumentsInputType": null,
               "filterInputTypeName": null,
-              "orderByExpressionType": "OsoSubgraph_OnchainMetricsByProjectV1OrderBy",
+              "orderByExpressionType": "Oso_OnchainMetricsByProjectV1OrderBy",
               "selectMany": {
                 "deprecated": null,
                 "description": null,
-                "queryRootField": "osoSubgraph_onchainMetricsByProjectV1"
+                "queryRootField": "oso_onchainMetricsByProjectV1"
               },
               "selectUniques": []
             },
@@ -4082,8 +4058,8 @@
             "globalIdFields": null,
             "graphql": {
               "apolloFederation": null,
-              "inputTypeName": "OsoSubgraph_ProjectsByCollectionV1Input",
-              "typeName": "OsoSubgraph_ProjectsByCollectionV1"
+              "inputTypeName": "Oso_ProjectsByCollectionV1Input",
+              "typeName": "Oso_ProjectsByCollectionV1"
             },
             "name": "ProjectsByCollectionV1"
           },
@@ -4150,9 +4126,7 @@
             ],
             "dataConnectorName": "oso_clickhouse",
             "dataConnectorObjectType": "projects_by_collection_v1",
-            "graphql": {
-              "typeName": "OsoSubgraph_ProjectsByCollectionV1BoolExp"
-            },
+            "graphql": { "typeName": "Oso_ProjectsByCollectionV1BoolExp" },
             "name": "ProjectsByCollectionV1BoolExp",
             "objectType": "ProjectsByCollectionV1"
           },
@@ -4171,11 +4145,11 @@
               "apolloFederation": null,
               "argumentsInputType": null,
               "filterInputTypeName": null,
-              "orderByExpressionType": "OsoSubgraph_ProjectsByCollectionV1OrderBy",
+              "orderByExpressionType": "Oso_ProjectsByCollectionV1OrderBy",
               "selectMany": {
                 "deprecated": null,
                 "description": null,
-                "queryRootField": "osoSubgraph_projectsByCollectionV1"
+                "queryRootField": "oso_projectsByCollectionV1"
               },
               "selectUniques": []
             },
@@ -4325,8 +4299,8 @@
             "globalIdFields": null,
             "graphql": {
               "apolloFederation": null,
-              "inputTypeName": "OsoSubgraph_ProjectsV1Input",
-              "typeName": "OsoSubgraph_ProjectsV1"
+              "inputTypeName": "Oso_ProjectsV1Input",
+              "typeName": "Oso_ProjectsV1"
             },
             "name": "ProjectsV1"
           },
@@ -4383,7 +4357,7 @@
             ],
             "dataConnectorName": "oso_clickhouse",
             "dataConnectorObjectType": "projects_v1",
-            "graphql": { "typeName": "OsoSubgraph_ProjectsV1BoolExp" },
+            "graphql": { "typeName": "Oso_ProjectsV1BoolExp" },
             "name": "ProjectsV1BoolExp",
             "objectType": "ProjectsV1"
           },
@@ -4402,11 +4376,11 @@
               "apolloFederation": null,
               "argumentsInputType": null,
               "filterInputTypeName": null,
-              "orderByExpressionType": "OsoSubgraph_ProjectsV1OrderBy",
+              "orderByExpressionType": "Oso_ProjectsV1OrderBy",
               "selectMany": {
                 "deprecated": null,
                 "description": null,
-                "queryRootField": "osoSubgraph_projectsV1"
+                "queryRootField": "oso_projectsV1"
               },
               "selectUniques": []
             },
@@ -4555,8 +4529,8 @@
             "globalIdFields": null,
             "graphql": {
               "apolloFederation": null,
-              "inputTypeName": "OsoSubgraph_UsersV1Input",
-              "typeName": "OsoSubgraph_UsersV1"
+              "inputTypeName": "Oso_UsersV1Input",
+              "typeName": "Oso_UsersV1"
             },
             "name": "UsersV1"
           },
@@ -4609,7 +4583,7 @@
             ],
             "dataConnectorName": "oso_clickhouse",
             "dataConnectorObjectType": "users_v1",
-            "graphql": { "typeName": "OsoSubgraph_UsersV1BoolExp" },
+            "graphql": { "typeName": "Oso_UsersV1BoolExp" },
             "name": "UsersV1BoolExp",
             "objectType": "UsersV1"
           },
@@ -4628,11 +4602,11 @@
               "apolloFederation": null,
               "argumentsInputType": null,
               "filterInputTypeName": null,
-              "orderByExpressionType": "OsoSubgraph_UsersV1OrderBy",
+              "orderByExpressionType": "Oso_UsersV1OrderBy",
               "selectMany": {
                 "deprecated": null,
                 "description": null,
-                "queryRootField": "osoSubgraph_usersV1"
+                "queryRootField": "oso_usersV1"
               },
               "selectUniques": []
             },
@@ -4695,7 +4669,7 @@
             "dataConnectorName": "oso_clickhouse",
             "dataConnectorScalarType": "String",
             "graphql": {
-              "comparisonExpressionTypeName": "OsoSubgraph_StringComparisonExp"
+              "comparisonExpressionTypeName": "Oso_StringComparisonExp"
             },
             "representation": "String"
           },
@@ -4705,7 +4679,7 @@
         {
           "definition": {
             "description": null,
-            "graphql": { "typeName": "OsoSubgraph_Float32" },
+            "graphql": { "typeName": "Oso_Float32" },
             "name": "Float32"
           },
           "kind": "ScalarType",
@@ -4714,7 +4688,7 @@
         {
           "definition": {
             "description": null,
-            "graphql": { "typeName": "OsoSubgraph_DateTime" },
+            "graphql": { "typeName": "Oso_DateTime" },
             "name": "DateTime"
           },
           "kind": "ScalarType",
@@ -4723,7 +4697,7 @@
         {
           "definition": {
             "description": null,
-            "graphql": { "typeName": "OsoSubgraph_Int64" },
+            "graphql": { "typeName": "Oso_Int64" },
             "name": "Int64"
           },
           "kind": "ScalarType",
@@ -4734,7 +4708,7 @@
             "dataConnectorName": "oso_clickhouse",
             "dataConnectorScalarType": "Float32",
             "graphql": {
-              "comparisonExpressionTypeName": "OsoSubgraph_Float32ComparisonExp"
+              "comparisonExpressionTypeName": "Oso_Float32ComparisonExp"
             },
             "representation": "Float32"
           },
@@ -4746,7 +4720,7 @@
             "dataConnectorName": "oso_clickhouse",
             "dataConnectorScalarType": "DateTime",
             "graphql": {
-              "comparisonExpressionTypeName": "OsoSubgraph_DateTimeComparisonExp"
+              "comparisonExpressionTypeName": "Oso_DateTimeComparisonExp"
             },
             "representation": "DateTime"
           },
@@ -4758,7 +4732,7 @@
             "dataConnectorName": "oso_clickhouse",
             "dataConnectorScalarType": "Int64",
             "graphql": {
-              "comparisonExpressionTypeName": "OsoSubgraph_Int64ComparisonExp"
+              "comparisonExpressionTypeName": "Oso_Int64ComparisonExp"
             },
             "representation": "Int64"
           },

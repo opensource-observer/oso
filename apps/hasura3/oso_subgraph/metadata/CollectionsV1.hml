@@ -17,8 +17,8 @@ definition:
     - name: displayName
       type: String!
   graphql:
-    typeName: OsoSubgraph_CollectionsV1
-    inputTypeName: OsoSubgraph_CollectionsV1Input
+    typeName: Oso_CollectionsV1
+    inputTypeName: Oso_CollectionsV1Input
   dataConnectorTypeMapping:
     - dataConnectorName: oso_clickhouse
       dataConnectorObjectType: collections_v1
@@ -86,7 +86,7 @@ definition:
       operators:
         enableAll: true
   graphql:
-    typeName: OsoSubgraph_CollectionsV1BoolExp
+    typeName: Oso_CollectionsV1BoolExp
 
 ---
 kind: Model
@@ -119,9 +119,9 @@ definition:
         enableAll: true
   graphql:
     selectMany:
-      queryRootField: osoSubgraph_collectionsV1
+      queryRootField: oso_collectionsV1
     selectUniques: []
-    orderByExpressionType: OsoSubgraph_CollectionsV1OrderBy
+    orderByExpressionType: Oso_CollectionsV1OrderBy
 
 ---
 kind: ModelPermissions

@@ -11,8 +11,8 @@ definition:
     - name: rootDeployerAddress
       type: String!
   graphql:
-    typeName: OsoSubgraph_ContractsV0
-    inputTypeName: OsoSubgraph_ContractsV0Input
+    typeName: Oso_ContractsV0
+    inputTypeName: Oso_ContractsV0Input
   dataConnectorTypeMapping:
     - dataConnectorName: oso_clickhouse
       dataConnectorObjectType: contracts_v0
@@ -59,7 +59,7 @@ definition:
       operators:
         enableAll: true
   graphql:
-    typeName: OsoSubgraph_ContractsV0BoolExp
+    typeName: Oso_ContractsV0BoolExp
 
 ---
 kind: Model
@@ -83,9 +83,9 @@ definition:
         enableAll: true
   graphql:
     selectMany:
-      queryRootField: osoSubgraph_contractsV0
+      queryRootField: oso_contractsV0
     selectUniques: []
-    orderByExpressionType: OsoSubgraph_ContractsV0OrderBy
+    orderByExpressionType: Oso_ContractsV0OrderBy
 
 ---
 kind: ModelPermissions
