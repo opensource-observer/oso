@@ -1,0 +1,8 @@
+kind: Connector
+version: v1
+definition:
+  name: oso_clickhouse
+  subgraph: oso_subgraph
+  source: hasura/clickhouse:v0.2.9
+  context: .
+  envFile: .env.local
