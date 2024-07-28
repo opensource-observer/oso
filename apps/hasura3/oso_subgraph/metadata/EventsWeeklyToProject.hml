@@ -45,6 +45,13 @@ definition:
           - bucketWeek
           - eventType
           - projectId
+    - role: anonymous
+      output:
+        allowedFields:
+          - amount
+          - bucketWeek
+          - eventType
+          - projectId
 
 ---
 kind: ObjectBooleanExpressionType
@@ -108,4 +115,6 @@ definition:
     - role: admin
       select:
         filter: null
-
+    - role: anonymous
+      select:
+        filter: null
