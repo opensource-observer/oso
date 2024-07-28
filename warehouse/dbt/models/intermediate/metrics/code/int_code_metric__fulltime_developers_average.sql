@@ -41,7 +41,7 @@ ftdevs as (
     bucket_day,
     COUNT(distinct from_artifact_id) as amount
   from rolling_commit_days
-  where num_commit_days >= 10
+  where num_commit_days >= {{ fulltime_dev_days }}
   group by
     project_id,
     event_source,
