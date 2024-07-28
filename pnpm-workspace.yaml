@@ -3,7 +3,7 @@ packages:
   - "warehouse/cloudquery-github-resolve-repos"
   - "apps/docs"
   - "apps/frontend"
-  - "apps/hasura"
+  - "apps/hasura3"
   - "lib/oss-artifact-validators"
   - "lib/utils"
   - "ops/external-prs"

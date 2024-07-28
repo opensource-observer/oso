@@ -5,9 +5,9 @@ definition:
   url:
     readWriteUrls:
       read:
-        valueFromEnv: OSO_SUBGRAPH_OSO_CLICKHOUSE_READ_URL
+        valueFromEnv: OSO__OSO_CLICKHOUSE_READ_URL
       write:
-        valueFromEnv: OSO_SUBGRAPH_OSO_CLICKHOUSE_WRITE_URL
+        valueFromEnv: OSO__OSO_CLICKHOUSE_WRITE_URL
   schema:
     version: v0.1
     schema:

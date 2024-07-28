@@ -4,5 +4,5 @@ definition:
   allowRoleEmulationBy: admin
   mode:
     webhook:
-      url: http://auth-hook.default:8080/webhook/ddn?role=admin
-      method: Post
+      url: https://www.opensource.observer/api/v1/auth
+      method: GET

@@ -23,8 +23,8 @@ definition:
     - name: projectSource
       type: String!
   graphql:
-    typeName: OsoSubgraph_EventIndexingStatusByProjectV1
-    inputTypeName: OsoSubgraph_EventIndexingStatusByProjectV1Input
+    typeName: Oso_EventIndexingStatusByProjectV1
+    inputTypeName: Oso_EventIndexingStatusByProjectV1Input
   dataConnectorTypeMapping:
     - dataConnectorName: oso_clickhouse
       dataConnectorObjectType: event_indexing_status_by_project_v1
@@ -113,7 +113,7 @@ definition:
       operators:
         enableAll: true
   graphql:
-    typeName: OsoSubgraph_EventIndexingStatusByProjectV1BoolExp
+    typeName: Oso_EventIndexingStatusByProjectV1BoolExp
 
 ---
 kind: Model
@@ -155,9 +155,9 @@ definition:
         enableAll: true
   graphql:
     selectMany:
-      queryRootField: osoSubgraph_eventIndexingStatusByProjectV1
+      queryRootField: oso_eventIndexingStatusByProjectV1
     selectUniques: []
-    orderByExpressionType: OsoSubgraph_EventIndexingStatusByProjectV1OrderBy
+    orderByExpressionType: Oso_EventIndexingStatusByProjectV1OrderBy
 
 ---
 kind: ModelPermissions

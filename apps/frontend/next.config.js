@@ -15,8 +15,8 @@ const nextConfig = {
           return [
             {
               // matching all API routes
-              //source: "/api/:path*",
-              source: "/api/graphql",
+              source: "/api/:path*",
+              //source: "/api/v1/graphql",
               headers: [
                 { key: "Access-Control-Allow-Credentials", value: "true" },
                 { key: "Access-Control-Allow-Origin", value: "*" }, // replace this your actual origin
@@ -35,6 +35,10 @@ const nextConfig = {
         },
         async rewrites() {
           return [
+            {
+              source: "/api/auth",
+              destination: "/api/v1/auth",
+            },
             {
               source: "/docs/:path*",
               destination: "https://docs.opensource.observer/docs/:path*",
