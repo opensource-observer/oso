@@ -8,6 +8,16 @@ _Note: This only works for Hasura version 3 (aka DDN)._
 
 ## Setup
 
+### Install `ddn`
+
+First install the `ddn` CLI tool from Hasura
+
+```bash
+curl -L https://graphql-engine-cdn.hasura.io/ddn/cli/v3/get.sh | bash
+```
+
+### Configure environment
+
 Copy `.env.example` to `.env` and set the environment variables as needed.
 You can get your Hasura PAT by running
 
@@ -19,33 +29,54 @@ In `./oso_subgraph/`, copy `.env.oso_subgraph.example` to `.env.oso_subgraph.clo
 
 In `./oso_subgraph/connector/oso_clickhouse`, copy `.env.example` to `.env.cloud` and `.env.local`. Populate with Clickhouse credentials.
 
+### Build
+
+```bash
+pnpm install
+pnpm build
+```
+
 ## Sync schema with Clickhouse
 
-## Configure
+First, start a local Hasura instance. This is required to run the Clickhouse connector.
 
-You can modify any files to update the Hasura configuration.
+```bash
+pnpm start
+```
+
+In a separate terminal, pull the latest Clickhouse schema
+
+```bash
+pnpm sync
+```
+
+## Configure metadata
+
+From here, you can modify any files to update the Hasura configuration.
 See the
 [Hasura docs](https://hasura.io/docs/3.0/) to learn more.
 
-Note that anything in `./oso_subgraph/metadata/` will be overwritten by the build step.
+We include a script for automatically modifying the metadata
+in `./src/cli.ts`. This will currently just make all models
+publicly available.
 
-## Build
-
-This will idempotently update table configurations for all tables found in the Clickhouse database.
-This needs to be run every time the schema changes.
-For more information, see `./src/cli.ts`.
+To run this script
 
 ```bash
-pnpm build
+pnpm metadata:update
 ```
 
 ## Deploy
 
-To reload the database schemas and apply the metadata configurations, run:
+To apply the metadata configurations to Hasura cloud, run:
 
 ```bash
 pnpm run deploy
 ```
 
-For more information on how to manage metadata, see the
-[Hasura guide](https://hasura.io/docs/latest/migrations-metadata-seeds/manage-metadata/#reload-metadata).
+This will output a build ID, which you'll need to apply as default:
+
+```bash
+ddn supergraph build apply BUILD_ID
+# ddn supergraph build apply 030c5f3ce0
+```

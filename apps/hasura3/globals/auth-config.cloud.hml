@@ -5,4 +5,4 @@ definition:
   mode:
     webhook:
       url: https://www.opensource.observer/api/v1/auth
-      method: GET
+      method: Get
