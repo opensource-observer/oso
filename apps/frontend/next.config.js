@@ -36,6 +36,10 @@ const nextConfig = {
         async rewrites() {
           return [
             {
+              source: "/api/auth",
+              destination: "/api/v1/auth",
+            },
+            {
               source: "/docs/:path*",
               destination: "https://docs.opensource.observer/docs/:path*",
             },
