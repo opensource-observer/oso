@@ -141,6 +141,29 @@ definition:
           - returningAddressCount90Days
           - transactionCount
           - transactionCount6Months
+    - role: anonymous
+      output:
+        allowedFields:
+          - activeContractCount90Days
+          - addressCount
+          - addressCount90Days
+          - daysSinceFirstTransaction
+          - displayName
+          - eventSource
+          - gasFeesSum
+          - gasFeesSum6Months
+          - highActivityAddressCount90Days
+          - lowActivityAddressCount90Days
+          - mediumActivityAddressCount90Days
+          - multiProjectAddressCount90Days
+          - newAddressCount90Days
+          - projectId
+          - projectName
+          - projectNamespace
+          - projectSource
+          - returningAddressCount90Days
+          - transactionCount
+          - transactionCount6Months
 
 ---
 kind: ObjectBooleanExpressionType
@@ -300,4 +323,6 @@ definition:
     - role: admin
       select:
         filter: null
-
+    - role: anonymous
+      select:
+        filter: null

@@ -57,6 +57,15 @@ definition:
           - artifactSource
           - artifactSourceId
           - artifactUrl
+    - role: anonymous
+      output:
+        allowedFields:
+          - artifactId
+          - artifactName
+          - artifactNamespace
+          - artifactSource
+          - artifactSourceId
+          - artifactUrl
 
 ---
 kind: ObjectBooleanExpressionType
@@ -132,4 +141,6 @@ definition:
     - role: admin
       select:
         filter: null
-
+    - role: anonymous
+      select:
+        filter: null

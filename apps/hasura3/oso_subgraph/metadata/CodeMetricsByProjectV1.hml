@@ -147,6 +147,30 @@ definition:
           - projectSource
           - repositoryCount
           - starCount
+    - role: anonymous
+      output:
+        allowedFields:
+          - activeDeveloperCount6Months
+          - closedIssueCount6Months
+          - commitCount6Months
+          - contributorCount
+          - contributorCount6Months
+          - displayName
+          - eventSource
+          - firstCommitDate
+          - forkCount
+          - fulltimeDeveloperAverage6Months
+          - lastCommitDate
+          - mergedPullRequestCount6Months
+          - newContributorCount6Months
+          - openedIssueCount6Months
+          - openedPullRequestCount6Months
+          - projectId
+          - projectName
+          - projectNamespace
+          - projectSource
+          - repositoryCount
+          - starCount
 
 ---
 kind: ObjectBooleanExpressionType
@@ -312,4 +336,6 @@ definition:
     - role: admin
       select:
         filter: null
-
+    - role: anonymous
+      select:
+        filter: null

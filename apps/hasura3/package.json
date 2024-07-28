@@ -18,7 +18,7 @@
   },
   "scripts": {
     "build:ts": "tsc",
-    "build": "pnpm build:ts && pnpm metadata:update",
+    "build": "pnpm build:ts",
     "lint": "tsc --noEmit && pnpm lint:eslint && pnpm lint:prettier",
     "lint:eslint": "eslint --ignore-path ../../.gitignore --max-warnings 0 .",
     "lint:prettier": "prettier --ignore-path ../../.gitignore --log-level warn --check **/*.{js,jsx,ts,tsx,sol,md,json}",
@@ -28,7 +28,8 @@
     "metadata:build:local": "ddn supergraph build local --output-dir engine --subgraph-env-file oso_subgraph:oso_subgraph/.env.oso_subgraph.local",
     "metadata:deploy:cloud": "ddn supergraph build create --supergraph supergraph.cloud.yaml --subgraph-env-file oso_subgraph:oso_subgraph/.env.oso_subgraph.cloud",
     "start": "dotenv -- docker compose up --build --watch",
-    "deploy": "pnpm metadata:update"
+    "sync": "pnpm metadata:introspect:db && pnpm metadata:sync:db ",
+    "deploy": "pnpm metadata:deploy:cloud"
   },
   "keywords": [],
   "devDependencies": {
