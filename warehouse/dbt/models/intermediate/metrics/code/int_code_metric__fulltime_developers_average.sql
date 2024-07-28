@@ -55,7 +55,7 @@ select
   'fulltime_developer_average' as metric,
   (
     SUM(ftdevs.amount)
-    / DATEDIFF(time_intervals.end_date, time_intervals.start_date)
+    / DATE_DIFF(CURRENT_DATE(), MAX(DATE(time_intervals.start_date)), day)
   ) as amount
 from ftdevs
 cross join {{ ref('int_time_intervals') }} as time_intervals
