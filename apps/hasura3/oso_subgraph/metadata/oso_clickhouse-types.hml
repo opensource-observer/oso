@@ -61,4 +61,3 @@ definition:
   representation: Int64
   graphql:
     comparisonExpressionTypeName: Oso_Int64ComparisonExp
-

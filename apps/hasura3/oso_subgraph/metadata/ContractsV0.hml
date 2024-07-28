@@ -39,6 +39,12 @@ definition:
           - artifactSource
           - contractAddress
           - rootDeployerAddress
+    - role: anonymous
+      output:
+        allowedFields:
+          - artifactSource
+          - contractAddress
+          - rootDeployerAddress
 
 ---
 kind: ObjectBooleanExpressionType
@@ -96,4 +102,6 @@ definition:
     - role: admin
       select:
         filter: null
-
+    - role: anonymous
+      select:
+        filter: null

@@ -45,6 +45,13 @@ definition:
           - artifactId
           - bucketDay
           - eventType
+    - role: anonymous
+      output:
+        allowedFields:
+          - amount
+          - artifactId
+          - bucketDay
+          - eventType
 
 ---
 kind: ObjectBooleanExpressionType
@@ -108,4 +115,6 @@ definition:
     - role: admin
       select:
         filter: null
-
+    - role: anonymous
+      select:
+        filter: null

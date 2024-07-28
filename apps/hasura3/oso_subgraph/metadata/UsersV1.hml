@@ -63,6 +63,16 @@ definition:
           - userId
           - userSource
           - userSourceId
+    - role: anonymous
+      output:
+        allowedFields:
+          - bio
+          - displayName
+          - profilePictureUrl
+          - url
+          - userId
+          - userSource
+          - userSourceId
 
 ---
 kind: ObjectBooleanExpressionType
@@ -144,4 +154,6 @@ definition:
     - role: admin
       select:
         filter: null
-
+    - role: anonymous
+      select:
+        filter: null

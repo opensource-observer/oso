@@ -27,6 +27,10 @@ definition:
       output:
         allowedFields:
           - eventType
+    - role: anonymous
+      output:
+        allowedFields:
+          - eventType
 
 ---
 kind: ObjectBooleanExpressionType
@@ -72,4 +76,6 @@ definition:
     - role: admin
       select:
         filter: null
-
+    - role: anonymous
+      select:
+        filter: null

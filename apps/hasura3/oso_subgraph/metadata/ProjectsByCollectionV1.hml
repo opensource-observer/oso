@@ -69,6 +69,17 @@ definition:
           - projectName
           - projectNamespace
           - projectSource
+    - role: anonymous
+      output:
+        allowedFields:
+          - collectionId
+          - collectionName
+          - collectionNamespace
+          - collectionSource
+          - projectId
+          - projectName
+          - projectNamespace
+          - projectSource
 
 ---
 kind: ObjectBooleanExpressionType
@@ -156,4 +167,6 @@ definition:
     - role: admin
       select:
         filter: null
-
+    - role: anonymous
+      select:
+        filter: null
