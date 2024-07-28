@@ -1,0 +1,44 @@
+{
+  "name": "@opensource-observer/hasura3",
+  "version": "0.0.1",
+  "description": "API service for OSO",
+  "author": "Kariba Labs",
+  "license": "Apache-2.0",
+  "private": true,
+  "bin": "./dist/src/cli.js",
+  "main": "./dist/src/index.js",
+  "types": "./dist/src/index.d.ts",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/opensource-observer/oso.git"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build:ts": "tsc",
+    "build": "pnpm build:ts && pnpm metadata:update",
+    "lint": "tsc --noEmit && pnpm lint:eslint && pnpm lint:prettier",
+    "lint:eslint": "eslint --ignore-path ../../.gitignore --max-warnings 0 .",
+    "lint:prettier": "prettier --ignore-path ../../.gitignore --log-level warn --check **/*.{js,jsx,ts,tsx,sol,md,json}",
+    "metadata:update": "dotenv -- node --loader ts-node/esm src/cli.ts",
+    "metadata:introspect:db": "ddn connector introspect --connector oso_subgraph/connector/oso_clickhouse/connector.local.yaml",
+    "metadata:sync:db": "ddn connector-link update oso_clickhouse --subgraph oso_subgraph/subgraph.yaml --env-file oso_subgraph/.env.oso_subgraph.local --add-all-resources",
+    "metadata:build:local": "ddn supergraph build local --output-dir engine --subgraph-env-file oso_subgraph:oso_subgraph/.env.oso_subgraph.local",
+    "metadata:deploy:cloud": "ddn supergraph build create --supergraph supergraph.cloud.yaml --subgraph-env-file oso_subgraph:oso_subgraph/.env.oso_subgraph.cloud",
+    "start": "dotenv -- docker compose up --build --watch",
+    "deploy": "pnpm metadata:update"
+  },
+  "keywords": [],
+  "devDependencies": {
+    "@types/node": "^20.14.12",
+    "dotenv-cli": "^7.4.2",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.5.4"
+  },
+  "dependencies": {
+    "glob": "^11.0.0",
+    "yaml": "^2.5.0"
+  }
+}
