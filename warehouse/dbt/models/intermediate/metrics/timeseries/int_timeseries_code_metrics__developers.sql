@@ -38,7 +38,7 @@ calendar as (
       GENERATE_ARRAY(
         0,
         DATE_DIFF(
-          (select MAX(bucket_day) from commits),
+          (select MAX(bucket_day) as last_commit_date from commits),
           first_commit_date, day
         )
       )
@@ -47,12 +47,15 @@ calendar as (
 
 developer_project_dates as (
   select
-    developer_id,
-    project_id,
-    bucket_day,
-    event_source
+    devs.developer_id,
+    calendar.project_id,
+    calendar.bucket_day,
+    calendar.event_source
   from calendar
-  cross join (select distinct developer_id from commits) as devs
+  cross join (
+    select distinct developer_id
+    from commits
+  ) as devs
 ),
 
 filled_data as (
