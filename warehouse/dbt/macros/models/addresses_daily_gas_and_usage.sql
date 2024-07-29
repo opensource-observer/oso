@@ -35,7 +35,11 @@ with daily_gas_fees as (
     from {{ ref('stg_%s__first_time_addresses' % lower_network_name)}} as ft 
     join {{ ref('stg_utility__calendar')}} as c 
         on c.date_timestamp >= ft.first_block_timestamp
-        and c.date_timestamp < TIMESTAMP_SUB(_dbt_max_partition, INTERVAL 0 DAY)
+        {% if is_incremental() %}
+            and c.date_timestamp < TIMESTAMP_SUB(_dbt_max_partition, INTERVAL 0 DAY)
+        {% else %}
+            c.date_timestamp < CURRENT_TIMESTAMP()
+        {% endif %}
     where
         true
         {% if is_incremental() %}
