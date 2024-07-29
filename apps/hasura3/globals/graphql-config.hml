@@ -28,3 +28,5 @@ definition:
           typeName: OrderBy
   mutation:
     rootOperationTypeName: Mutation
+  apolloFederation:
+    enableRootFields: true

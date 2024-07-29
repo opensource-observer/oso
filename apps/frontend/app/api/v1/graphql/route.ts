@@ -1,23 +1,20 @@
 import { ApolloServer } from "@apollo/server";
+import { ApolloGateway, IntrospectAndCompose } from "@apollo/gateway";
 import { startServerAndCreateNextHandler } from "@as-integrations/next";
 import { NextRequest } from "next/server";
-import { gql } from "graphql-tag";
+import { HASURA_URL } from "../../../../lib/config";
 
-const resolvers = {
-  Query: {
-    hello: () => "world",
-  },
-};
-
-const typeDefs = gql`
-  type Query {
-    hello: String
-  }
-`;
+const gateway = new ApolloGateway({
+  supergraphSdl: new IntrospectAndCompose({
+    subgraphs: [
+      { name: "hasura", url: HASURA_URL },
+      //{ name: 'products', url: 'http://localhost:4002' },
+    ],
+  }),
+});
 
 const server = new ApolloServer({
-  resolvers,
-  typeDefs,
+  gateway,
   introspection: true,
 });
 

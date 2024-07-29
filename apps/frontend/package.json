@@ -22,8 +22,10 @@
   "dependencies": {
     "@apollo/client": "^3.11.0",
     "@apollo/experimental-nextjs-app-support": "^0.11.2",
+    "@apollo/gateway": "^2.8.4",
     "@apollo/sandbox": "^2.6.0",
     "@apollo/server": "^4.10.5",
+    "@apollo/subgraph": "^2.8.4",
     "@as-integrations/next": "^3.0.0",
     "@clickhouse/client": "^1.4.0",
     "@emotion/react": "^11.11.4",
