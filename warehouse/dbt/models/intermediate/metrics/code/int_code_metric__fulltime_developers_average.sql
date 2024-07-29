@@ -1,38 +1,68 @@
 {% set fulltime_dev_days = 10 %}
 
-with dev_stats as (
+
+with developer_commit_days as (
   select
-    events.project_id,
-    events.event_source,
-    time_intervals.time_interval,
-    events.from_artifact_id,
-    TIMESTAMP_TRUNC(events.bucket_day, month) as bucket_month,
-    COUNT(distinct events.bucket_day) as amount
-  from {{ ref('int_events_daily_to_project') }} as events
-  cross join {{ ref('int_time_intervals') }} as time_intervals
-  where
-    events.event_type = 'COMMIT_CODE'
-    and events.bucket_day >= time_intervals.start_date
+    project_id,
+    event_source,
+    from_artifact_id,
+    bucket_day
+  from {{ ref('int_events_daily_to_project') }}
+  where event_type = 'COMMIT_CODE'
+),
+
+rolling_commit_days as (
+  select
+    d1.project_id,
+    d1.event_source,
+    d1.from_artifact_id,
+    d1.bucket_day,
+    COUNT(distinct d2.bucket_day) as num_commit_days
+  from developer_commit_days as d1
+  inner join developer_commit_days as d2
+    on
+      d1.project_id = d2.project_id
+      and d1.from_artifact_id = d2.from_artifact_id
+      and (
+        d2.bucket_day between
+        DATE_SUB(d1.bucket_day, interval 30 day) and d1.bucket_day
+      )
   group by
-    events.project_id,
-    events.event_source,
-    time_intervals.time_interval,
-    events.from_artifact_id,
-    TIMESTAMP_TRUNC(events.bucket_day, month)
+    d1.project_id,
+    d1.event_source,
+    d1.from_artifact_id,
+    d1.bucket_day
+),
+
+ftdevs as (
+  select
+    project_id,
+    event_source,
+    bucket_day,
+    COUNT(distinct from_artifact_id) as amount
+  from rolling_commit_days
+  where num_commit_days >= {{ fulltime_dev_days }}
+  group by
+    project_id,
+    event_source,
+    bucket_day
 )
 
 select
-  project_id,
-  event_source,
-  time_interval,
+  ftdevs.project_id,
+  ftdevs.event_source,
+  time_intervals.time_interval,
   'fulltime_developer_average' as metric,
   (
-    COUNT(distinct from_artifact_id)
-    / COUNT(distinct bucket_month)
+    SUM(ftdevs.amount)
+    / DATE_DIFF(CURRENT_DATE(), MAX(DATE(time_intervals.start_date)), day)
   ) as amount
-from dev_stats
-where amount >= {{ fulltime_dev_days }}
+from ftdevs
+cross join {{ ref('int_time_intervals') }} as time_intervals
+where
+  ftdevs.bucket_day >= time_intervals.start_date
+  and time_intervals.time_interval != 'ALL'
 group by
-  project_id,
-  event_source,
-  time_interval
+  ftdevs.project_id,
+  ftdevs.event_source,
+  time_intervals.time_interval
