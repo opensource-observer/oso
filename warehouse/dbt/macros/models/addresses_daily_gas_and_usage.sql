@@ -1,14 +1,14 @@
-{% macro addresses_daily_gas_and_usage(network_name) %}
+{% macro addresses_daily_gas_and_usage(network_name, block_timestamp_column="block_timestamp", date_timestamp_column="date_timestamp") %}
 {% set lower_network_name = network_name.lower() %}
 
 with daily_gas_fees as (
     select 
-        address
+        from_address as address
         ,date_trunc(block_timestamp, day) as date_timestamp
         ,sum( (gas_price * receipt_gas_used) / 1e18) as l2_gas_paid
         ,sum(receipt_l1_fee / 1e18) as l1_gas_paid
         ,sum(receipt_l1_fee / 1e18 + (gas_price * receipt_gas_used) / 1e18) as total_gas_fees_paid
-        ,count(hash) as num_txs
+        ,count("hash") as num_txs
         ,1 as num_days_active
     from {{ oso_source(lower_network_name, "transactions") }}
     where
@@ -19,7 +19,7 @@ with daily_gas_fees as (
         {% if is_incremental() %}
         and block_timestamp > TIMESTAMP_SUB(_dbt_max_partition, INTERVAL 1 DAY)
         {% else %}
-        {{ playground_filter(block_timestamp, is_start=False) }}
+        {{ playground_filter(block_timestamp_column, is_start=False) }}
         {% endif %}
     group by 1, 2, 7
 )
@@ -40,14 +40,14 @@ with daily_gas_fees as (
         ,date_diff(c.date_timestamp, ft.first_active_day, DAY) as days_since_first_active
     from {{ ref('stg_%s__first_time_addresses' % lower_network_name)}} as ft 
     join {{ ref('stg_utility__calendar')}} as c 
-        on c.date_timestamp >= ft.first_active_day
+        on c.date_timestamp >= ft.first_block_timestamp
         and c.date_timestamp < (select max_date from max_timestamp)
     where
         true
         {% if is_incremental() %}
             and c.date_timestamp > TIMESTAMP_SUB(_dbt_max_partition, INTERVAL 1 DAY)
         {% else %}
-            {{ playground_filter(date_timestamp, is_start=False) }}
+            {{ playground_filter(date_timestamp_column, is_start=False) }}
         {% endif %}
 )
 
