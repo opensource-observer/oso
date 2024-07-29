@@ -31,11 +31,11 @@ If you already have an account, log in. Then create a new personal API key:
 All API requests are sent to the following URL:
 
 ```
-https://opensource-observer.hasura.app/v1/graphql
+https://www.opensource.observer/api/v1/graphql
 ```
 
 You can navigate to our
-[public GraphQL explorer](https://cloud.hasura.io/public/graphiql?endpoint=https://opensource-observer.hasura.app/v1/graphql)
+[public GraphQL explorer](https://www.opensource.observer/graphql)
 to explore the schema and execute test queries.
 
 ## How to Authenticate
@@ -59,34 +59,41 @@ This query will fetch the first 10 projects in
 
 ```graphql
 query GetProjects {
-  projects_v1(limit: 10) {
-    project_id
-    project_name
-    display_name
+  oso_projectsV1(limit: 10) {
     description
+    displayName
+    projectId
+    projectName
+    projectNamespace
+    projectSource
   }
 }
 ```
 
-This query will fetch **code metrics** for 10 projects, ordered by `star_count`.
+This query will fetch **code metrics** for 10 projects, ordered by `starCount`.
 
 ```graphql
 query GetCodeMetrics {
-  code_metrics_by_project_v1(
-    limit: 10
-    order_by: { star_count: desc_nulls_last }
-  ) {
-    project_id
-    project_name
-    event_source
-    star_count
-    fork_count
-    contributor_count
+  oso_codeMetricsByProjectV1(limit: 10, order_by: [{ starCount: Desc }]) {
+    projectId
+    projectName
+    eventSource
+    starCount
+    forkCount
+    contributorCount
   }
 }
 ```
 
 ## GraphQL Explorer
+
+You can navigate to our [public GraphQL explorer](https://www.opensource.observer/graphql) to explore the schema and execute test queries.
+
+![GraphQL explorer](./api-explorer.gif)
+
+:::tip
+As shown in the video, you must "Inline Variables" in order for queries to run in the explorer.
+:::
 
 The GraphQL schema is automatically generated from [`oso/dbt/models/marts`](https://github.com/opensource-observer/oso/tree/main/dbt/models/marts). Any dbt model defined there will automatically be exported to our GraphQL API. See the guide on [adding DBT models](../contribute/impact-models.md) for more information on contributing to our marts models.
 
@@ -94,10 +101,6 @@ The GraphQL schema is automatically generated from [`oso/dbt/models/marts`](http
 Our data pipeline is under heavy development and all table schemas are subject to change until we introduce versioning to marts models.
 Please join us on [Discord](https://www.opensource.observer/discord) to stay up to date on updates.
 :::
-
-You can navigate to our [public GraphQL explorer](https://cloud.hasura.io/public/graphiql?endpoint=https://opensource-observer.hasura.app/v1/graphql) to explore the schema and execute test queries.
-
-![GraphQL explorer](./graphql-explorer.png)
 
 ## Rate Limits
 
