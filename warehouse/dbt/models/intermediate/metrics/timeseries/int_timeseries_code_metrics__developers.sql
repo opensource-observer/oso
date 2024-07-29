@@ -8,7 +8,7 @@ with commits as (
     DATE(bucket_day) as bucket_day,
     CAST(SUM(amount) > 0 as int64) as commit_count
   from {{ ref('int_events_daily_to_project') }}
-  where event_type = 'commit_code'
+  where event_type = 'COMMIT_CODE'
   group by
     from_artifact_id,
     project_id,
