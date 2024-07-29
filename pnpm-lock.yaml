@@ -87,16 +87,22 @@ importers:
         version: 3.11.0(@types/react@18.3.3)(graphql-ws@5.16.0(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(subscriptions-transport-ws@0.11.0(graphql@16.9.0))
       '@apollo/experimental-nextjs-app-support':
         specifier: ^0.11.2
-        version: 0.11.2(@apollo/client@3.11.0(@types/react@18.3.3)(graphql-ws@5.16.0(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(subscriptions-transport-ws@0.11.0(graphql@16.9.0)))(next@14.2.5(@babel/core@7.24.8)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)
+        version: 0.11.2(@apollo/client@3.11.0(@types/react@18.3.3)(graphql-ws@5.16.0(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(subscriptions-transport-ws@0.11.0(graphql@16.9.0)))(next@14.2.5(@babel/core@7.24.8)(@opentelemetry/api@1.9.0)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)
+      '@apollo/gateway':
+        specifier: ^2.8.4
+        version: 2.8.4(encoding@0.1.13)(graphql@16.9.0)
       '@apollo/sandbox':
         specifier: ^2.6.0
         version: 2.6.0(graphql@16.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@apollo/server':
         specifier: ^4.10.5
         version: 4.10.5(encoding@0.1.13)(graphql@16.9.0)
+      '@apollo/subgraph':
+        specifier: ^2.8.4
+        version: 2.8.4(graphql@16.9.0)
       '@as-integrations/next':
         specifier: ^3.0.0
-        version: 3.0.0(@apollo/server@4.10.5(encoding@0.1.13)(graphql@16.9.0))(next@14.2.5(@babel/core@7.24.8)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))
+        version: 3.0.0(@apollo/server@4.10.5(encoding@0.1.13)(graphql@16.9.0))(next@14.2.5(@babel/core@7.24.8)(@opentelemetry/api@1.9.0)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))
       '@clickhouse/client':
         specifier: ^1.4.0
         version: 1.4.0
@@ -123,7 +129,7 @@ importers:
         version: link:../../lib/utils
       '@plasmicapp/loader-nextjs':
         specifier: ^1.0.398
-        version: 1.0.398(next@14.2.5(@babel/core@7.24.8)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 1.0.398(next@14.2.5(@babel/core@7.24.8)(@opentelemetry/api@1.9.0)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@segment/analytics-next':
         specifier: ^1.70.0
         version: 1.70.0(encoding@0.1.13)
@@ -180,7 +186,7 @@ importers:
         version: 4.0.0
       next:
         specifier: ^14.2.5
-        version: 14.2.5(@babel/core@7.24.8)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 14.2.5(@babel/core@7.24.8)(@opentelemetry/api@1.9.0)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       qs:
         specifier: ^6.12.3
         version: 6.12.3
@@ -198,7 +204,7 @@ importers:
         version: 7.12.1(algoliasearch@4.24.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       react-instantsearch-nextjs:
         specifier: ^0.1.14
-        version: 0.1.14(next@14.2.5(@babel/core@7.24.8)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-instantsearch@7.12.1(algoliasearch@4.24.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))
+        version: 0.1.14(next@14.2.5(@babel/core@7.24.8)(@opentelemetry/api@1.9.0)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-instantsearch@7.12.1(algoliasearch@4.24.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))
       react-use:
         specifier: ^17.5.0
         version: 17.5.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -737,6 +743,12 @@ packages:
       subscriptions-transport-ws:
         optional: true
 
+  '@apollo/composition@2.8.4':
+    resolution: {integrity: sha512-x8USTfHAtauW2BrXZo10gFV9yoF3TIfKUu+s5tJVm/vX/zgw3OG54TC34v5c/5pMsStcZu/aYFnMkeZ54Ay7tQ==}
+    engines: {node: '>=14.15.0'}
+    peerDependencies:
+      graphql: ^16.5.0
+
   '@apollo/experimental-nextjs-app-support@0.11.2':
     resolution: {integrity: sha512-HRQ8/Ux/tM2pezrhZeoHsJs55+nJvJZRV1B21QwEVtWhslQXjT5gqs5nKw86KURF0xR7gX18Nyy659NzJ09Pmw==}
     peerDependencies:
@@ -744,9 +756,33 @@ packages:
       next: ^13.4.1 || ^14.0.0 || 15.0.0-rc.0
       react: ^18
 
+  '@apollo/federation-internals@2.8.4':
+    resolution: {integrity: sha512-m/vFu5btNfmvxZfe8B1m8jjCN/NxCYctxjdhXgQD4WGbDwtUk59+i7NuVMtX5IfmFMKycwqnbihkv5w2E00XDA==}
+    engines: {node: '>=14.15.0'}
+    peerDependencies:
+      graphql: ^16.5.0
+
+  '@apollo/gateway@2.8.4':
+    resolution: {integrity: sha512-KxYRvRfSLDMqyOlUu9ZuOaqZLvKwGHR3F6XSw8JmHvMUjcRzVeAY6U9821ruM9g+SdYYdm0q2jYJf4/iYPAcow==}
+    engines: {node: '>=14.15.0'}
+    peerDependencies:
+      graphql: ^16.5.0
+
   '@apollo/protobufjs@1.2.7':
     resolution: {integrity: sha512-Lahx5zntHPZia35myYDBRuF58tlwPskwHc5CWBZC/4bMKB6siTBWwtMrkqXcsNwQiFSzSx5hKdRPUmemrEp3Gg==}
     hasBin: true
+
+  '@apollo/query-graphs@2.8.4':
+    resolution: {integrity: sha512-X2Y79efZh1RQ8aNi9iI+3ePWvyBm+oNW83P1xyxy3qBGFOBFne+YnoADK9tHM1FXLJ34cK03xxTdxY76V2Tteg==}
+    engines: {node: '>=14.15.0'}
+    peerDependencies:
+      graphql: ^16.5.0
+
+  '@apollo/query-planner@2.8.4':
+    resolution: {integrity: sha512-HNIyYeaIvj9/5Qem7p7w5we3SEaNJeTO77tpP7jkaaYxd+FOHtlwfMM0/5X814kl2eiaMposz78Kv+JF2582Gg==}
+    engines: {node: '>=14.15.0'}
+    peerDependencies:
+      graphql: ^16.5.0
 
   '@apollo/sandbox@2.6.0':
     resolution: {integrity: sha512-VPaVWt75Pi/G5W/QjxXB5PzgV/k7XTRIo/sb5aaEzTZQAekHzI2nbqh0bCe6YqTqof0SnOj+I1QD+g7ruL+/WQ==}
@@ -769,6 +805,12 @@ packages:
     engines: {node: '>=14.16.0'}
     peerDependencies:
       graphql: ^16.6.0
+
+  '@apollo/subgraph@2.8.4':
+    resolution: {integrity: sha512-+NMhY2PHrb1C28A3Osns98HWCQ5nlhYv0CSpdSkzY2OOdepaBnzC6btXKZB8J61FaMBmEgL+j2/5uAXJGmS1cQ==}
+    engines: {node: '>=14.15.0'}
+    peerDependencies:
+      graphql: ^16.5.0
 
   '@apollo/usage-reporting-protobuf@4.1.1':
     resolution: {integrity: sha512-u40dIUePHaSKVshcedO7Wp+mPiZsaU6xjv9J+VyxpoU/zL6Jle+9zWeG98tr/+SZ0nZ4OXhrbb8SNr0rAPpIDA==}
@@ -2391,6 +2433,9 @@ packages:
     resolution: {integrity: sha512-u3UPsIilWKOM3F9CXtrG8LEJmNxwoCQC/XVj4IKYXvvpx7QIi/Kg1LI5uDmDpKlac62NUtX7eLjRh+jVZcLOzw==}
     engines: {node: ^14.15.0 || ^16.10.0 || >=18.0.0}
 
+  '@josephg/resolvable@1.0.1':
+    resolution: {integrity: sha512-CtzORUwWTTOTqfVtHaKRJ0I1kNQd1bpn3sUh8I3nJDVY+5/M/Oe1DnEWzPQvqq/xPIIkzzzIP7mfCoAjFRvDhg==}
+
   '@jridgewell/gen-mapping@0.3.5':
     resolution: {integrity: sha512-IzL8ZoEDIBRWEzlCcRhOaCupYyN5gdIK+Q6fbFdPDg6HqX6jpkItn7DFIpW9LQzXG6Df9sA7+OKnq0qlz/GaQg==}
     engines: {node: '>=6.0.0'}
@@ -2806,6 +2851,10 @@ packages:
     resolution: {integrity: sha512-yOJKRvohFOaLqipNtwYB9WugyZKhC/DZC4VYPmpaCzDBrA8YpK3qHZ8/HGscMnE4GqbkLNuVcCnxkeQEdGt6LQ==}
     engines: {node: ^12.13.0 || ^14.15.0 || >=16.0.0}
 
+  '@npmcli/fs@3.1.1':
+    resolution: {integrity: sha512-q9CRWjpHCMIh5sVyefoD1cA7PkvILqCZsnSOEUUivORLjxCO/Irmue2DprETiNgEqktDBZaM1Bi+jrarx1XdCg==}
+    engines: {node: ^14.17.0 || ^16.13.0 || >=18.0.0}
+
   '@npmcli/move-file@2.0.1':
     resolution: {integrity: sha512-mJd2Z5TjYWq/ttPLLGqArdtnC74J6bOzg4rMDnN+p1xTacZ2yPRCk2y0oSWQtygLR9YVQXgOcONrwtnk3JupxQ==}
     engines: {node: ^12.13.0 || ^14.15.0 || >=16.0.0}
@@ -2929,6 +2978,10 @@ packages:
   '@octokit/webhooks@12.0.3':
     resolution: {integrity: sha512-8iG+/yza7hwz1RrQ7i7uGpK2/tuItZxZq1aTmeg2TNp2xTUB8F8lZF/FcZvyyAxT8tpDMF74TjFGCDACkf1kAQ==}
     engines: {node: '>= 18'}
+
+  '@opentelemetry/api@1.9.0':
+    resolution: {integrity: sha512-3giAOQvZiH5F9bMlMiv8+GSPMeqg0dbaeo58/0SlA9sxSqZhnUtxzX9/2FzyhS9sWQf5S0GJE0AKBrFqjpeYcg==}
+    engines: {node: '>=8.0.0'}
 
   '@parcel/watcher-android-arm64@2.4.1':
     resolution: {integrity: sha512-LOi/WTbbh3aTn2RYddrO8pnapixAziFl6SMxHM69r3tvdSm94JtCenaKgk1GRg5FJ5wpMCpHeW+7yqPlvZv7kg==}
@@ -5257,6 +5310,10 @@ packages:
     resolution: {integrity: sha512-/+Emcj9DAXxX4cwlLmRI9c166RuL3w30zp4R7Joiv2cQTtTtA+jeuCAjH3ZlGnYS3tKENSrKhAzVVP9GVyzeYQ==}
     engines: {node: ^12.13.0 || ^14.15.0 || >=16.0.0}
 
+  cacache@17.1.4:
+    resolution: {integrity: sha512-/aJwG2l3ZMJ1xNAnqbMpA40of9dj/pIH3QfiuQSqjfPJF747VR0J/bHn+/KdNnHKc6XQcWt/AfRSBft82W1d2A==}
+    engines: {node: ^14.17.0 || ^16.13.0 || >=18.0.0}
+
   cacheable-lookup@7.0.0:
     resolution: {integrity: sha512-+qJyx4xiKra8mZrcwhjMRMUhD5NR1R8esPkzIYxX96JiecFoxAXFuz/GpR3+ev4PE1WamHip78wV0vcmPQtp8w==}
     engines: {node: '>=14.16'}
@@ -6940,6 +6997,10 @@ packages:
     resolution: {integrity: sha512-V/JgOLFCS+R6Vcq0slCuaeWEdNC3ouDlJMNIsacH2VtALiu9mV4LPrHc5cDl8k5aw6J8jwgWWpiTo5RYhmIzvg==}
     engines: {node: '>= 8'}
 
+  fs-minipass@3.0.3:
+    resolution: {integrity: sha512-XUBA9XClHbnJWSfBzjkm6RvPsyg3sryZt06BEQoXcF7EK/xpGaQYJgQKDJSUH5SGZ76Y7pFx1QBnXz09rU5Fbw==}
+    engines: {node: ^14.17.0 || ^16.13.0 || >=18.0.0}
+
   fs-monkey@1.0.6:
     resolution: {integrity: sha512-b1FMfwetIKymC0eioW7mTywihSQE4oLzQn1dB6rZB5fx/3NpNEdAWeCSMB+60/AeT0TCXsxzAlcYVEFCTAksWg==}
 
@@ -8069,6 +8130,10 @@ packages:
     resolution: {integrity: sha512-+0rgsUXZu4ncpPxRL+lNEptWMOWl9etvPHc/koSRp6MPwpRYAhmk0dUG00J4bxVV3r9uUzfo24wW0knS07SKSw==}
     engines: {node: '>=12'}
 
+  js-levenshtein@1.1.6:
+    resolution: {integrity: sha512-X2BB11YZtrRqY4EnQcLX5Rh373zbK4alC1FW7D7MBhL2gtcC17cTnr6DmfHZeS0s2rTHjUTMMHfG7gO8SSdw+g==}
+    engines: {node: '>=0.10.0'}
+
   js-sdsl@4.4.2:
     resolution: {integrity: sha512-dwXFwByc/ajSV6m5bcKAPwe4yDDF6D614pxmIi5odytzxRlwqF6nwoiCek80Ixc7Cvma5awClxrzFtxCQvcM8w==}
 
@@ -8426,6 +8491,10 @@ packages:
     resolution: {integrity: sha512-NgOPbRiaQM10DYXvN3/hhGVI2M5MtITFryzBGxHM5p4wnFxsVCbxkrBrDsk+EZ5OB4jEOT7AjDxtdF+KVEFT7w==}
     engines: {node: ^12.13.0 || ^14.15.0 || >=16.0.0}
 
+  make-fetch-happen@11.1.1:
+    resolution: {integrity: sha512-rLWS7GCSTcEujjVBs2YqG7Y4643u8ucvCJeSRqiLYhesrDuzeuFIk37xREzAsfQaqzl8b9rNCE4m6J8tvX4Q8w==}
+    engines: {node: ^14.17.0 || ^16.13.0 || >=18.0.0}
+
   makeerror@1.0.12:
     resolution: {integrity: sha512-JmqCvUhmt43madlpFzG4BQzG2Z3m6tvQDNKdClZnO3VbIudJYmxsT0FNJMeiB2+JTSlTQTSbU8QdesVmwJcmLg==}
 
@@ -8781,6 +8850,10 @@ packages:
   minipass-fetch@2.1.2:
     resolution: {integrity: sha512-LT49Zi2/WMROHYoqGgdlQIZh8mLPZmOrN2NdJjMXxYe4nkN6FUyuPuOAOedNJDrx0IRGg9+4guZewtp8hE6TxA==}
     engines: {node: ^12.13.0 || ^14.15.0 || >=16.0.0}
+
+  minipass-fetch@3.0.5:
+    resolution: {integrity: sha512-2N8elDQAtSnFV0Dk7gt15KHsS0Fyz6CbYZ360h0WTYV1Ty46li3rAXVOQj1THMNLdmrD9Vt5pBPtWtVkpwGBqg==}
+    engines: {node: ^14.17.0 || ^16.13.0 || >=18.0.0}
 
   minipass-flush@1.0.5:
     resolution: {integrity: sha512-JmQSYYpPUqX5Jyn1mXaRwOda1uQ8HP5KAT/oDSLCzt1BYRhQU0/hDtsB1ufZfEEzMZ9aAVmsBw8+FWsIXlClWw==}
@@ -10653,6 +10726,10 @@ packages:
     resolution: {integrity: sha512-wvLeHgcVHKO8Sc/H/5lkGreJQVeYMm9rlmt8PuR1xE31rIuXhuzznUUqAt8MqLhB3MqJdFzlNAfpcWnxiFUcPw==}
     engines: {node: '>=12'}
 
+  ssri@10.0.6:
+    resolution: {integrity: sha512-MGrFH9Z4NP9Iyhqn16sDtBpRRNJ0Y2hNa6D65h736fVSaPCHr4DM4sWUNvVaSuC+0OBGhwsrydQwmgfg5LncqQ==}
+    engines: {node: ^14.17.0 || ^16.13.0 || >=18.0.0}
+
   ssri@9.0.1:
     resolution: {integrity: sha512-o57Wcn66jMQvfHG1FlYbWeZWW/dHZhJXjpIcTfXldXEk5nz5lStPo3mK0OJQfGR3RbZUlbISexbljkJzuEj/8Q==}
     engines: {node: ^12.13.0 || ^14.15.0 || >=16.0.0}
@@ -11087,6 +11164,10 @@ packages:
       typescript:
         optional: true
 
+  ts-graphviz@1.8.2:
+    resolution: {integrity: sha512-5YhbFoHmjxa7pgQLkB07MtGnGJ/yhvjmc9uhsnDBEICME6gkPf83SBwLDQqGDoCa3XzUMWLk1AU2Wn1u1naDtA==}
+    engines: {node: '>=14.16'}
+
   ts-interface-checker@0.1.13:
     resolution: {integrity: sha512-Y/arvbn+rrz3JCKl9C4kVNfTfSm2/mEp5FSz5EsZSANGPSlQrpRI5M4PKF+mJnE52jOO90PnPSc3Ur3bTQw0gA==}
 
@@ -11322,9 +11403,17 @@ packages:
     resolution: {integrity: sha512-ODWHtkkdx3IAR+veKxFV+VBkUMcN+FaqzUUd7IZzt+0zhDZFPFxhlqwPF3YQvMHx1TD0tdgYl+kuPnJ8E6ql7A==}
     engines: {node: ^12.13.0 || ^14.15.0 || >=16.0.0}
 
+  unique-filename@3.0.0:
+    resolution: {integrity: sha512-afXhuC55wkAmZ0P18QsVE6kp8JaxrEokN2HGIoIVv2ijHQd419H0+6EigAFcIzXeMIkcIkNBpB3L/DXB3cTS/g==}
+    engines: {node: ^14.17.0 || ^16.13.0 || >=18.0.0}
+
   unique-slug@3.0.0:
     resolution: {integrity: sha512-8EyMynh679x/0gqE9fT9oilG+qEt+ibFyqjuVTsZn1+CMxH+XLlpvr2UZx4nVcCwTpx81nICr2JQFkM+HPLq4w==}
     engines: {node: ^12.13.0 || ^14.15.0 || >=16.0.0}
+
+  unique-slug@4.0.0:
+    resolution: {integrity: sha512-WrcA6AyEfqDX5bWige/4NQfPZMtASNVxdmWR76WESYQVAACSgWcR6e9i0mofqqBxYFtL4oAxPIptY73/0YE1DQ==}
+    engines: {node: ^14.17.0 || ^16.13.0 || >=18.0.0}
 
   unique-string@3.0.0:
     resolution: {integrity: sha512-VGXBUVwxKMBUznyffQweQABPRRW1vHZAbadFZud4pLFAqRGvv/96vafgjWFqzourzr8YonlQiPgH0YCJfawoGQ==}
@@ -12144,12 +12233,51 @@ snapshots:
     transitivePeerDependencies:
       - '@types/react'
 
-  '@apollo/experimental-nextjs-app-support@0.11.2(@apollo/client@3.11.0(@types/react@18.3.3)(graphql-ws@5.16.0(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(subscriptions-transport-ws@0.11.0(graphql@16.9.0)))(next@14.2.5(@babel/core@7.24.8)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)':
+  '@apollo/composition@2.8.4(graphql@16.9.0)':
+    dependencies:
+      '@apollo/federation-internals': 2.8.4(graphql@16.9.0)
+      '@apollo/query-graphs': 2.8.4(graphql@16.9.0)
+      graphql: 16.9.0
+
+  '@apollo/experimental-nextjs-app-support@0.11.2(@apollo/client@3.11.0(@types/react@18.3.3)(graphql-ws@5.16.0(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(subscriptions-transport-ws@0.11.0(graphql@16.9.0)))(next@14.2.5(@babel/core@7.24.8)(@opentelemetry/api@1.9.0)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@apollo/client': 3.11.0(@types/react@18.3.3)(graphql-ws@5.16.0(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(subscriptions-transport-ws@0.11.0(graphql@16.9.0))
       '@apollo/client-react-streaming': 0.11.2(@apollo/client@3.11.0(@types/react@18.3.3)(graphql-ws@5.16.0(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(subscriptions-transport-ws@0.11.0(graphql@16.9.0)))(react@18.3.1)
-      next: 14.2.5(@babel/core@7.24.8)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      next: 14.2.5(@babel/core@7.24.8)(@opentelemetry/api@1.9.0)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       react: 18.3.1
+
+  '@apollo/federation-internals@2.8.4(graphql@16.9.0)':
+    dependencies:
+      '@types/uuid': 9.0.8
+      chalk: 4.1.2
+      graphql: 16.9.0
+      js-levenshtein: 1.1.6
+      uuid: 9.0.1
+
+  '@apollo/gateway@2.8.4(encoding@0.1.13)(graphql@16.9.0)':
+    dependencies:
+      '@apollo/composition': 2.8.4(graphql@16.9.0)
+      '@apollo/federation-internals': 2.8.4(graphql@16.9.0)
+      '@apollo/query-planner': 2.8.4(graphql@16.9.0)
+      '@apollo/server-gateway-interface': 1.1.1(graphql@16.9.0)
+      '@apollo/usage-reporting-protobuf': 4.1.1
+      '@apollo/utils.createhash': 2.0.1
+      '@apollo/utils.fetcher': 2.0.1
+      '@apollo/utils.isnodelike': 2.0.1
+      '@apollo/utils.keyvaluecache': 2.1.1
+      '@apollo/utils.logger': 2.0.1
+      '@josephg/resolvable': 1.0.1
+      '@opentelemetry/api': 1.9.0
+      '@types/node-fetch': 2.6.11
+      async-retry: 1.3.3
+      graphql: 16.9.0
+      loglevel: 1.9.1
+      make-fetch-happen: 11.1.1
+      node-abort-controller: 3.1.1
+      node-fetch: 2.7.0(encoding@0.1.13)
+    transitivePeerDependencies:
+      - encoding
+      - supports-color
 
   '@apollo/protobufjs@1.2.7':
     dependencies:
@@ -12165,6 +12293,24 @@ snapshots:
       '@protobufjs/utf8': 1.1.0
       '@types/long': 4.0.2
       long: 4.0.0
+
+  '@apollo/query-graphs@2.8.4(graphql@16.9.0)':
+    dependencies:
+      '@apollo/federation-internals': 2.8.4(graphql@16.9.0)
+      deep-equal: 2.2.3
+      graphql: 16.9.0
+      ts-graphviz: 1.8.2
+      uuid: 9.0.1
+
+  '@apollo/query-planner@2.8.4(graphql@16.9.0)':
+    dependencies:
+      '@apollo/federation-internals': 2.8.4(graphql@16.9.0)
+      '@apollo/query-graphs': 2.8.4(graphql@16.9.0)
+      '@apollo/utils.keyvaluecache': 2.1.1
+      chalk: 4.1.2
+      deep-equal: 2.2.3
+      graphql: 16.9.0
+      pretty-format: 29.7.0
 
   '@apollo/sandbox@2.6.0(graphql@16.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
@@ -12220,6 +12366,12 @@ snapshots:
     transitivePeerDependencies:
       - encoding
       - supports-color
+
+  '@apollo/subgraph@2.8.4(graphql@16.9.0)':
+    dependencies:
+      '@apollo/cache-control-types': 1.0.3(graphql@16.9.0)
+      '@apollo/federation-internals': 2.8.4(graphql@16.9.0)
+      graphql: 16.9.0
 
   '@apollo/usage-reporting-protobuf@4.1.1':
     dependencies:
@@ -12304,10 +12456,10 @@ snapshots:
     transitivePeerDependencies:
       - encoding
 
-  '@as-integrations/next@3.0.0(@apollo/server@4.10.5(encoding@0.1.13)(graphql@16.9.0))(next@14.2.5(@babel/core@7.24.8)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))':
+  '@as-integrations/next@3.0.0(@apollo/server@4.10.5(encoding@0.1.13)(graphql@16.9.0))(next@14.2.5(@babel/core@7.24.8)(@opentelemetry/api@1.9.0)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))':
     dependencies:
       '@apollo/server': 4.10.5(encoding@0.1.13)(graphql@16.9.0)
-      next: 14.2.5(@babel/core@7.24.8)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      next: 14.2.5(@babel/core@7.24.8)(@opentelemetry/api@1.9.0)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
 
   '@babel/code-frame@7.24.7':
     dependencies:
@@ -15196,6 +15348,8 @@ snapshots:
       '@types/yargs': 17.0.32
       chalk: 4.1.2
 
+  '@josephg/resolvable@1.0.1': {}
+
   '@jridgewell/gen-mapping@0.3.5':
     dependencies:
       '@jridgewell/set-array': 1.2.1
@@ -15666,6 +15820,10 @@ snapshots:
       '@gar/promisify': 1.1.3
       semver: 7.6.2
 
+  '@npmcli/fs@3.1.1':
+    dependencies:
+      semver: 7.6.2
+
   '@npmcli/move-file@2.0.1':
     dependencies:
       mkdirp: 1.0.4
@@ -15839,6 +15997,8 @@ snapshots:
       '@octokit/webhooks-types': 7.1.0
       aggregate-error: 3.1.0
 
+  '@opentelemetry/api@1.9.0': {}
+
   '@parcel/watcher-android-arm64@2.4.1':
     optional: true
 
@@ -15977,14 +16137,14 @@ snapshots:
     dependencies:
       '@plasmicapp/isomorphic-unfetch': 1.0.3
 
-  '@plasmicapp/loader-nextjs@1.0.398(next@14.2.5(@babel/core@7.24.8)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@plasmicapp/loader-nextjs@1.0.398(next@14.2.5(@babel/core@7.24.8)(@opentelemetry/api@1.9.0)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@plasmicapp/loader-core': 1.0.135
       '@plasmicapp/loader-edge': 1.0.67
       '@plasmicapp/loader-react': 1.0.361(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@plasmicapp/nextjs-app-router': 1.0.11(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@plasmicapp/watcher': 1.0.83
-      next: 14.2.5(@babel/core@7.24.8)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      next: 14.2.5(@babel/core@7.24.8)(@opentelemetry/api@1.9.0)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
       server-only: 0.0.1
@@ -17528,7 +17688,7 @@ snapshots:
 
   '@types/connect@3.4.38':
     dependencies:
-      '@types/node': 20.14.10
+      '@types/node': 20.14.12
 
   '@types/d3-array@3.2.1': {}
 
@@ -17599,7 +17759,7 @@ snapshots:
 
   '@types/graceful-fs@4.1.9':
     dependencies:
-      '@types/node': 20.14.10
+      '@types/node': 20.14.12
 
   '@types/gtag.js@0.0.12': {}
 
@@ -17693,7 +17853,7 @@ snapshots:
 
   '@types/node-fetch@2.6.11':
     dependencies:
-      '@types/node': 20.14.10
+      '@types/node': 20.14.12
       form-data: 4.0.0
 
   '@types/node-forge@1.3.11':
@@ -17782,7 +17942,7 @@ snapshots:
   '@types/request@2.48.12':
     dependencies:
       '@types/caseless': 0.12.5
-      '@types/node': 20.14.10
+      '@types/node': 20.14.12
       '@types/tough-cookie': 4.0.5
       form-data: 2.5.1
 
@@ -17790,7 +17950,7 @@ snapshots:
 
   '@types/sax@1.2.7':
     dependencies:
-      '@types/node': 17.0.45
+      '@types/node': 20.14.12
 
   '@types/secp256k1@4.0.6':
     dependencies:
@@ -17841,7 +18001,7 @@ snapshots:
 
   '@types/ws@8.5.3':
     dependencies:
-      '@types/node': 20.14.10
+      '@types/node': 20.14.12
 
   '@types/yargs-parser@21.0.0': {}
 
@@ -18764,6 +18924,21 @@ snapshots:
       unique-filename: 2.0.1
     transitivePeerDependencies:
       - bluebird
+
+  cacache@17.1.4:
+    dependencies:
+      '@npmcli/fs': 3.1.1
+      fs-minipass: 3.0.3
+      glob: 10.4.5
+      lru-cache: 7.18.3
+      minipass: 7.1.2
+      minipass-collect: 1.0.2
+      minipass-flush: 1.0.5
+      minipass-pipeline: 1.2.4
+      p-map: 4.0.0
+      ssri: 10.0.6
+      tar: 6.2.1
+      unique-filename: 3.0.0
 
   cacheable-lookup@7.0.0: {}
 
@@ -20833,6 +21008,10 @@ snapshots:
     dependencies:
       minipass: 3.3.6
 
+  fs-minipass@3.0.3:
+    dependencies:
+      minipass: 7.1.2
+
   fs-monkey@1.0.6: {}
 
   fs.realpath@1.0.0: {}
@@ -22048,7 +22227,7 @@ snapshots:
       '@jest/expect': 29.7.0
       '@jest/test-result': 29.7.0
       '@jest/types': 29.6.3
-      '@types/node': 20.14.10
+      '@types/node': 20.14.12
       chalk: 4.1.2
       co: 4.6.0
       dedent: 1.5.3(babel-plugin-macros@3.1.0)
@@ -22157,7 +22336,7 @@ snapshots:
       '@jest/environment': 29.7.0
       '@jest/fake-timers': 29.7.0
       '@jest/types': 29.6.3
-      '@types/node': 20.14.10
+      '@types/node': 20.14.12
       jest-mock: 29.7.0
       jest-util: 29.7.0
 
@@ -22385,6 +22564,8 @@ snapshots:
   js-cookie@2.2.1: {}
 
   js-cookie@3.0.1: {}
+
+  js-levenshtein@1.1.6: {}
 
   js-sdsl@4.4.2: {}
 
@@ -22805,6 +22986,26 @@ snapshots:
       ssri: 9.0.1
     transitivePeerDependencies:
       - bluebird
+      - supports-color
+
+  make-fetch-happen@11.1.1:
+    dependencies:
+      agentkeepalive: 4.5.0
+      cacache: 17.1.4
+      http-cache-semantics: 4.1.1
+      http-proxy-agent: 5.0.0
+      https-proxy-agent: 5.0.1
+      is-lambda: 1.0.1
+      lru-cache: 7.18.3
+      minipass: 5.0.0
+      minipass-fetch: 3.0.5
+      minipass-flush: 1.0.5
+      minipass-pipeline: 1.2.4
+      negotiator: 0.6.3
+      promise-retry: 2.0.1
+      socks-proxy-agent: 7.0.0
+      ssri: 10.0.6
+    transitivePeerDependencies:
       - supports-color
 
   makeerror@1.0.12:
@@ -23444,6 +23645,14 @@ snapshots:
     optionalDependencies:
       encoding: 0.1.13
 
+  minipass-fetch@3.0.5:
+    dependencies:
+      minipass: 7.1.2
+      minipass-sized: 1.0.3
+      minizlib: 2.1.2
+    optionalDependencies:
+      encoding: 0.1.13
+
   minipass-flush@1.0.5:
     dependencies:
       minipass: 3.3.6
@@ -23582,7 +23791,7 @@ snapshots:
 
   next-tick@1.1.0: {}
 
-  next@14.2.5(@babel/core@7.24.8)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
+  next@14.2.5(@babel/core@7.24.8)(@opentelemetry/api@1.9.0)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
     dependencies:
       '@next/env': 14.2.5
       '@swc/helpers': 0.5.5
@@ -23603,6 +23812,7 @@ snapshots:
       '@next/swc-win32-arm64-msvc': 14.2.5
       '@next/swc-win32-ia32-msvc': 14.2.5
       '@next/swc-win32-x64-msvc': 14.2.5
+      '@opentelemetry/api': 1.9.0
     transitivePeerDependencies:
       - '@babel/core'
       - babel-plugin-macros
@@ -24648,9 +24858,9 @@ snapshots:
       react: 18.3.1
       use-sync-external-store: 1.2.2(react@18.3.1)
 
-  react-instantsearch-nextjs@0.1.14(next@14.2.5(@babel/core@7.24.8)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-instantsearch@7.12.1(algoliasearch@4.24.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)):
+  react-instantsearch-nextjs@0.1.14(next@14.2.5(@babel/core@7.24.8)(@opentelemetry/api@1.9.0)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-instantsearch@7.12.1(algoliasearch@4.24.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)):
     dependencies:
-      next: 14.2.5(@babel/core@7.24.8)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      next: 14.2.5(@babel/core@7.24.8)(@opentelemetry/api@1.9.0)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       react-instantsearch: 7.12.1(algoliasearch@4.24.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
 
   react-instantsearch@7.12.1(algoliasearch@4.24.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
@@ -25584,6 +25794,10 @@ snapshots:
 
   srcset@4.0.0: {}
 
+  ssri@10.0.6:
+    dependencies:
+      minipass: 7.1.2
+
   ssri@9.0.1:
     dependencies:
       minipass: 3.3.6
@@ -26047,6 +26261,8 @@ snapshots:
     optionalDependencies:
       typescript: 5.3.3
 
+  ts-graphviz@1.8.2: {}
+
   ts-interface-checker@0.1.13: {}
 
   ts-invariant@0.10.3:
@@ -26298,7 +26514,15 @@ snapshots:
     dependencies:
       unique-slug: 3.0.0
 
+  unique-filename@3.0.0:
+    dependencies:
+      unique-slug: 4.0.0
+
   unique-slug@3.0.0:
+    dependencies:
+      imurmurhash: 0.1.4
+
+  unique-slug@4.0.0:
     dependencies:
       imurmurhash: 0.1.4
 
