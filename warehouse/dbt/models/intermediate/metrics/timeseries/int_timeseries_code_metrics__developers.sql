@@ -45,6 +45,11 @@ calendar as (
     ) as day_offset
 ),
 
+devs as (
+  select distinct developer_id
+  from commits
+),
+
 developer_project_dates as (
   select
     devs.developer_id,
@@ -52,10 +57,7 @@ developer_project_dates as (
     calendar.bucket_day,
     calendar.event_source
   from calendar
-  cross join (
-    select distinct developer_id
-    from commits
-  ) as devs
+  cross join devs
 ),
 
 filled_data as (
