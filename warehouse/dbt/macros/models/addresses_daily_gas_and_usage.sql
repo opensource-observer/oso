@@ -24,12 +24,6 @@ with daily_gas_fees as (
     group by 1, 2, 7
 )
 
-,max_timestamp as (
-    select 
-        max(date_timestamp) as max_date
-    from daily_gas_fees
-)
-
 -- generating daily record for each address that has ever been active
 ,addition as (
     select 
@@ -41,7 +35,7 @@ with daily_gas_fees as (
     from {{ ref('stg_%s__first_time_addresses' % lower_network_name)}} as ft 
     join {{ ref('stg_utility__calendar')}} as c 
         on c.date_timestamp >= ft.first_block_timestamp
-        and c.date_timestamp < (select max_date from max_timestamp)
+        and c.date_timestamp < TIMESTAMP_SUB(_dbt_max_partition, INTERVAL 0 DAY)
     where
         true
         {% if is_incremental() %}
