@@ -38,7 +38,7 @@ with daily_gas_fees as (
         {% if is_incremental() %}
             and c.date_timestamp < TIMESTAMP_SUB(_dbt_max_partition, INTERVAL 0 DAY)
         {% else %}
-            c.date_timestamp < CURRENT_TIMESTAMP()
+            and c.date_timestamp < CURRENT_TIMESTAMP()
         {% endif %}
     where
         true
