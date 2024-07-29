@@ -47,7 +47,7 @@ with daily_gas_fees as (
         {% if is_incremental() %}
             and c.date_timestamp > TIMESTAMP_SUB(_dbt_max_partition, INTERVAL 1 DAY)
         {% else %}
-            {{ playground_filter(c.date_timestamp, is_start=False) }}
+            {{ playground_filter(date_timestamp, is_start=False) }}
         {% endif %}
 )
 
