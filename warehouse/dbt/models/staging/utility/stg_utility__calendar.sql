@@ -21,7 +21,8 @@ with date_range as (
 )
 
 select
-  date(date_timestamp) as date_timestamp,
+  cast(date_timestamp as timestamp) as date_timestamp,
+  date(date_timestamp) as date_day,
   date_trunc(date_timestamp, month) as first_day_of_month,
   last_day(date_timestamp, month) as last_day_of_month,
   format_date('%A', date_timestamp) as day_of_week,
