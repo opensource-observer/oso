@@ -18,3 +18,5 @@ group by
   event_source,
   event_type,
   TIMESTAMP_TRUNC(time, day)
+order by bucket_day
+limit 10
