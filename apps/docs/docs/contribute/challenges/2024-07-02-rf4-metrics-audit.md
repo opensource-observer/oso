@@ -1,7 +1,9 @@
 ---
-title: Audit of RF4 Impact Metric Calculations
-sidebar_position: 3
+title: OSO Data Challenge 02
+sidebar_position: 7
 ---
+
+# Audit of RF4 Impact Metric Calculations
 
 ## Objective
 

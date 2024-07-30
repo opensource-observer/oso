@@ -1,7 +1,6 @@
 ---
 title: OSO Data Challenge 01
-sidebar_position: 2
-sidebar_class_name: hidden
+sidebar_position: 8
 ---
 
 # Earn OP rewards for proposing onchain impact metrics
