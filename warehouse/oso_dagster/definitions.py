@@ -96,6 +96,7 @@ def load_definitions():
         "dlt_staging_destination": dlt_staging_destination,
         "dlt_warehouse_destination": dlt_warehouse_destination,
         "project_id": project_id,
+        "alert_manager": alert_manager,
     }
     for target in constants.main_dbt_manifests:
         resources[f"{target}_dbt"] = DbtCliResource(

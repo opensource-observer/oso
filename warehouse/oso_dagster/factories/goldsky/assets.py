@@ -28,7 +28,8 @@ from dagster import (
     TableRecord,
     MetadataValue, 
     TableColumn,
-    TableSchema
+    TableSchema, 
+    ResourceParam
 )
 
 from dagster_gcp import BigQueryResource, GCSResource
@@ -48,7 +49,8 @@ from ...cbt import CBTResource, UpdateStrategy, TimePartitioning
 from .. import AssetFactoryResponse
 from .config import GoldskyConfig, GoldskyConfigInterface, SchemaDict
 from ..common import AssetDeps, AssetList
-from ...utils import batch_delete_blobs, add_tags
+from ...utils import batch_delete_blobs, add_tags, AlertManager
+from .errors import NoNewData
 
 GenericExecutionContext = AssetExecutionContext | OpExecutionContext
 
@@ -489,8 +491,7 @@ class GoldskyAsset:
         workers = await self.load_worker_tables(context, checkpoint_range)
 
         if len(workers) == 0:
-            context.log.warn("Nothing to materialize. This is likely an error on the goldsky connection to gcs.")
-            return
+            raise NoNewData("Nothing to materialize. This might not be expected but intentionally an error is thrown.")
 
         # Dedupe and partition the current worker table into a deduped and partitioned table
         await self.dedupe_worker_tables(context, workers)
@@ -614,7 +615,7 @@ class GoldskyAsset:
                         continue
                     workers.append(worker)
             if len(workers) == 0:
-                context.log.debug('Queue empty and no workers found')
+                raise NoNewData('Nothing to materialize. Queue empty and no in progress workers found')
 
         return workers
 
@@ -996,9 +997,14 @@ def goldsky_asset(deps: Optional[AssetDeps | AssetList] = None, **kwargs: Unpack
         bigquery: BigQueryResource,
         gcs: GCSResource,
         cbt: CBTResource,
+        alert_manager: ResourceParam[AlertManager]
     ) -> None:
         context.log.info(f"Run ID: {context.run_id} AssetKey: {context.asset_key}")
-        materialize_asset(context, bigquery, gcs, cbt)
+        try:
+            materialize_asset(context, bigquery, gcs, cbt)
+        except NoNewData:
+            alert_manager.alert(f"Goldsky Asset {context.asset_key.to_user_string()} has no new data.")
+
 
     related_ops_prefix = "_".join(generated_asset.key.path)
 
