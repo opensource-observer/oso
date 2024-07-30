@@ -1031,6 +1031,7 @@ def goldsky_asset(deps: Optional[AssetDeps | AssetList] = None, **kwargs: Unpack
         gcs: GCSResource,
         cbt: CBTResource,
         config: dict,
+        alert_manager: ResourceParam[AlertManager],
     ) -> None:
         start_checkpoint = None
         end_checkpoint = None
@@ -1044,16 +1045,19 @@ def goldsky_asset(deps: Optional[AssetDeps | AssetList] = None, **kwargs: Unpack
             end_checkpoint=end_checkpoint,
         )
         context.log.info("Starting a backfill")
-        materialize_asset(
-            context,
-            bigquery,
-            gcs,
-            cbt,
-            checkpoint_range=GoldskyCheckpointRange(
-                start=op_input.start_checkpoint, end=op_input.end_checkpoint
-            ),
-            pointer_table_suffix=op_input.backfill_label,
-        )
+        try:
+            materialize_asset(
+                context,
+                bigquery,
+                gcs,
+                cbt,
+                checkpoint_range=GoldskyCheckpointRange(
+                    start=op_input.start_checkpoint, end=op_input.end_checkpoint
+                ),
+                pointer_table_suffix=op_input.backfill_label,
+            )
+        except NoNewData:
+            alert_manager.alert(f"Goldsky Asset {context.asset_key.to_user_string()} has no new data.")
 
     @op(name=f"{related_ops_prefix}_files_stats_op", tags=add_tags(tags,{
         "opensource.observer/op-type": "debug"
