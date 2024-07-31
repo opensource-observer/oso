@@ -112,7 +112,7 @@ def projects_and_collections(
                 # if possible. For now we cannot, see:
                 # https://github.com/dagster-io/dagster/discussions/19403
                 if repo_meta_dict.get("sha", "") == data.meta.sha:
-                    context.log.info(f"no changes for {output}. Materializing anyway")
+                    context.log.warn(f"no changes for {output}. Materializing anyway")
         df = oss_directory_to_dataframe(output, data)
 
         yield Output(
