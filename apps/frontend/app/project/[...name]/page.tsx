@@ -14,7 +14,8 @@ import { catchallPathToString } from "../../../lib/paths";
 
 const PLASMIC_COMPONENT = "ProjectPage";
 //export const dynamic = STATIC_EXPORT ? "force-static" : "force-dynamic";
-export const dynamic = "force-static";
+//export const dynamic = "force-static";
+export const dynamic = "force-dynamic";
 export const dynamicParams = true;
 export const revalidate = false; // 3600 = 1 hour
 // TODO: This cannot be empty due to this bug

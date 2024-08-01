@@ -8,7 +8,7 @@ import { logger } from "../../../../lib/logger";
 
 const PLASMIC_COMPONENT = "ArtifactPage";
 //export const dynamic = STATIC_EXPORT ? "force-static" : "force-dynamic";
-export const dynamic = "force-static";
+export const dynamic = "force-dynamic";
 export const dynamicParams = true;
 export const revalidate = false; // 3600 = 1 hour
 /**
