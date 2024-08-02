@@ -32,7 +32,6 @@ RUN mkdir -p /usr/src/app && \
 
 WORKDIR /usr/src/app
 COPY pyproject.toml poetry.lock /usr/src/app/
-COPY warehouse/cloudquery-example-plugin /usr/src/app/warehouse/cloudquery-example-plugin
 
 # Install everything onto the system path
 RUN poetry config virtualenvs.create false && \

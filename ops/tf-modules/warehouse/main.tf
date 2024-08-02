@@ -81,8 +81,7 @@ resource "google_bigquery_dataset" "dataset" {
 }
 
 ###
-# A dataset for receiving data from airbyte/cloudquery/or any other data
-# connections
+# A dataset for receiving data
 ###
 resource "google_bigquery_dataset" "raw_dataset" {
   dataset_id    = local.raw_dataset_id
