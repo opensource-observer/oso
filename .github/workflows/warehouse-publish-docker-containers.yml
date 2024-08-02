@@ -34,9 +34,6 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Package and publish cloudquery plugins
-        run: bash .github/scripts/publish-cloudquery-plugins.sh
-
       - name: Package and publish other docker containers
         run: bash .github/scripts/publish-docker-containers.sh
 
