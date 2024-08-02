@@ -1,5 +1,5 @@
 {# 
-  The most recent view of projects from the ossd cloudquery plugin.
+  The most recent view of projects from the ossd dagster source.
 #}
 select
   {# 
