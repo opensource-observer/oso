@@ -86,7 +86,7 @@ const nextConfig = {
       }),
   productionBrowserSourceMaps: true,
   experimental: {
-    serverComponentsExternalPackages: ["typeorm"],
+    serverComponentsExternalPackages: ["typeorm", "graphql"],
   },
   webpack: (config, { isServer }) => {
     if (isServer) {

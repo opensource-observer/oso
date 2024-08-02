@@ -45,5 +45,8 @@
   },
   "dependencies": {
     "pyright": "^1.1.371"
+  },
+  "resolutions": {
+    "graphql": "^16.9.0"
   }
 }
