@@ -27,7 +27,6 @@ export async function generateStaticParams() {
 }
 
 const cachedFetchComponent = cache(async (componentName: string) => {
-  logger.debug("WHAT IS HAPPENING I AM HERE");
   try {
     const plasmicData = await PLASMIC.fetchComponentData(componentName);
     return plasmicData;
