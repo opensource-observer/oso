@@ -15,6 +15,7 @@
     "lint:eslint": "eslint --ignore-path ../../.gitignore --ignore-path .gitignore --max-warnings 0 .",
     "lint:prettier": "prettier --ignore-path ../../.gitignore --ignore-path .gitignore --log-level warn --check **/*.{js,jsx,ts,tsx,sol,md,json}",
     "start": "next start",
+    "start-debug": "NODE_OPTIONS='--inspect' next dev",
     "supabase:gentypes": "supabase gen types typescript --project-id 'dfjsvzdlhmtnsqbfmcpm' --schema public > lib/types/supabase.ts",
     "test": "jest --ci --passWithNoTests",
     "test:watch": "jest --watch"
