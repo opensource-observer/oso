@@ -15,19 +15,26 @@ import {
 } from "./queries";
 import { getClickhouseClient } from "../clients/clickhouse";
 
-interface QueryOptions {
-  query: string;
+interface QueryOptions<T> {
+  query: {
+    sql: string;
+    rowType: T;
+  };
   variables?: Record<string, any>;
 }
 
-const queryWrapper = async (opts: QueryOptions) => {
+async function queryWrapper<T>(opts: QueryOptions<T>): Promise<T[]> {
   const client = getClickhouseClient();
   const rows = await client.query({
-    query: opts.query,
+    query: opts.query.sql,
     query_params: opts.variables,
   });
-  return rows.json();
-};
+  console.log("CLICKHOUSE RESPONSE");
+  console.log(opts.query);
+  const resultSet = await rows.json();
+  console.log(resultSet);
+  return resultSet.data as T[];
+}
 
 // Cached getters
 const cachedGetAllEventTypes = cache(async () =>
