@@ -22,7 +22,6 @@ Open Source Observer is a free analytics suite that helps funders measure the im
   - `/oss-artifact-validators`: Simple library to validate different properties of an "artifact"
 - `/warehouse`: All code specific to the data warehouse
   - `/dbt`: dbt configuration
-  - `/cloudquery-*`: cloudquery plugins for ingesting data (there are many)
   - `/oso_dagster`: Dagster configuration for orchestrating software-defined assets
   - `/oso_lets_go`: Utility for setting up dbt with Google Cloud
   - Also contains other tools to manage warehouse pipelines
