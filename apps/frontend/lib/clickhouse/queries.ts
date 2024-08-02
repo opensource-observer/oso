@@ -1,4 +1,7 @@
 import _ from "lodash";
+
+// Not ideal, but this was a hack to get the data type out of the sql by hand
+// easily. Will refactor on a subsequent change.
 function define<T>(sql: string, rowType: T): { sql: string; rowType: T } {
   return {
     sql: sql,
@@ -304,10 +307,10 @@ const GET_CODE_METRICS_BY_PROJECT = define(
     commit_count_6_months: 0,
     contributor_count: 0,
     contributor_count_6_months: 0,
-    first_commit_date: new Date(),
+    first_commit_date: "",
     fork_count: 0,
     fulltime_developer_average_6_months: 0,
-    last_commit_date: 0,
+    last_commit_date: "",
     merged_pull_request_count_6_months: 0,
     new_contributor_count_6_months: 0,
     opened_issue_count_6_months: 0,
@@ -400,7 +403,7 @@ const GET_EVENTS_DAILY_TO_COLLECTION = define(
   {
     collection_id: "",
     event_type: "",
-    bucket_day: new Date(),
+    bucket_day: "",
     amount: 0,
   },
 );
@@ -422,7 +425,7 @@ const GET_EVENTS_WEEKLY_TO_COLLECTION = define(
   {
     collection_id: "",
     event_type: "",
-    bucket_week: new Date(),
+    bucket_week: "",
     amount: 0,
   },
 );
@@ -444,7 +447,7 @@ const GET_EVENTS_MONTHLY_TO_COLLECTION = define(
   {
     collection_id: "",
     event_type: "",
-    bucket_month: new Date(),
+    bucket_month: "",
     amount: 0,
   },
 );
@@ -466,7 +469,7 @@ const GET_EVENTS_DAILY_TO_PROJECT = define(
   {
     project_id: "",
     event_type: "",
-    bucket_day: new Date(),
+    bucket_day: "",
     amount: 0,
   },
 );
@@ -488,7 +491,7 @@ const GET_EVENTS_WEEKLY_TO_PROJECT = define(
   {
     project_id: "",
     event_type: "",
-    bucket_week: new Date(),
+    bucket_week: "",
     amount: 0,
   },
 );
@@ -510,7 +513,7 @@ const GET_EVENTS_MONTHLY_TO_PROJECT = define(
   {
     project_id: "",
     event_type: "",
-    bucket_month: new Date(),
+    bucket_month: "",
     amount: 0,
   },
 );
@@ -532,7 +535,7 @@ const GET_EVENTS_DAILY_TO_ARTIFACT = define(
   {
     artifact_id: "",
     event_type: "",
-    bucket_day: new Date(),
+    bucket_day: "",
     amount: 0,
   },
 );
@@ -554,7 +557,7 @@ const GET_EVENTS_WEEKLY_TO_ARTIFACT = define(
   {
     artifact_id: "",
     event_type: "",
-    bucket_week: new Date(),
+    bucket_week: "",
     amount: 0,
   },
 );
@@ -576,7 +579,7 @@ const GET_EVENTS_MONTHLY_TO_ARTIFACT = define(
   {
     artifact_id: "",
     event_type: "",
-    bucket_month: new Date(),
+    bucket_month: "",
     amount: 0,
   },
 );

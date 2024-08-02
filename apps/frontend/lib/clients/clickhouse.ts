@@ -12,5 +12,8 @@ export function getClickhouseClient() {
     username: CLICKHOUSE_USERNAME,
     password: CLICKHOUSE_PASSWORD,
     database: CLICKHOUSE_DB_NAME,
+    clickhouse_settings: {
+      date_time_output_format: "iso",
+    },
   });
 }

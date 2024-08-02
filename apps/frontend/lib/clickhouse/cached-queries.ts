@@ -29,10 +29,7 @@ async function queryWrapper<T>(opts: QueryOptions<T>): Promise<T[]> {
     query: opts.query.sql,
     query_params: opts.variables,
   });
-  console.log("CLICKHOUSE RESPONSE");
-  console.log(opts.query);
   const resultSet = await rows.json();
-  console.log(resultSet);
   return resultSet.data as T[];
 }
 
