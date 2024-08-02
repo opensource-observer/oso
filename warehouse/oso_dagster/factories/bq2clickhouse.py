@@ -115,7 +115,7 @@ def create_bq2clickhouse_asset(asset_config: Bq2ClickhouseAssetConfig):
     tags = {
         "opensource.observer/factory": "bq2clickhouse",
         "opensource.observer/environment": asset_config.environment,
-        "opensource.observer/type": "source",
+        "opensource.observer/type": "mart",
     }
 
     @asset(
