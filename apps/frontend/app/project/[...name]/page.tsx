@@ -8,13 +8,14 @@ import {
   cachedGetCodeMetricsByProjectIds,
   cachedGetOnchainMetricsByProjectIds,
   cachedGetAllEventTypes,
-} from "../../../lib/graphql/cached-queries";
+} from "../../../lib/clickhouse/cached-queries";
 import { logger } from "../../../lib/logger";
 import { catchallPathToString } from "../../../lib/paths";
 
 const PLASMIC_COMPONENT = "ProjectPage";
 //export const dynamic = STATIC_EXPORT ? "force-static" : "force-dynamic";
-export const dynamic = "force-static";
+//export const dynamic = "force-static";
+export const dynamic = "force-dynamic";
 export const dynamicParams = true;
 export const revalidate = false; // 3600 = 1 hour
 // TODO: This cannot be empty due to this bug
@@ -58,8 +59,8 @@ export default async function ProjectPage(props: ProjectPageProps) {
 
   // Get project metadata from the database
   const name = catchallPathToString(params.name);
-  const { projects_v1: projectArray } = await cachedGetProjectByName({
-    project_name: name,
+  const projectArray = await cachedGetProjectByName({
+    projectName: name,
   });
   if (!Array.isArray(projectArray) || projectArray.length < 1) {
     logger.warn(`Cannot find project (name=${name})`);
@@ -73,15 +74,15 @@ export default async function ProjectPage(props: ProjectPageProps) {
   const data = await Promise.all([
     cachedGetAllEventTypes(),
     cachedGetCodeMetricsByProjectIds({
-      project_ids: [projectId],
+      projectIds: [projectId],
     }),
     cachedGetOnchainMetricsByProjectIds({
-      project_ids: [projectId],
+      projectIds: [projectId],
     }),
   ]);
-  const { event_types_v1: eventTypes } = data[0];
-  const { code_metrics_by_project_v1: codeMetrics } = data[1];
-  const { onchain_metrics_by_project_v1: onchainMetrics } = data[2];
+  const eventTypes = data[0];
+  const codeMetrics = data[1];
+  const onchainMetrics = data[2];
 
   // Get Plasmic component
   const plasmicData = await cachedFetchComponent(PLASMIC_COMPONENT);
