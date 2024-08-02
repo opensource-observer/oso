@@ -1,0 +1,16 @@
+import { createClient } from "@clickhouse/client";
+import {
+  CLICKHOUSE_DB_NAME,
+  CLICKHOUSE_PASSWORD,
+  CLICKHOUSE_URL,
+  CLICKHOUSE_USERNAME,
+} from "../config";
+
+export function getClickhouseClient() {
+  return createClient({
+    url: CLICKHOUSE_URL,
+    username: CLICKHOUSE_USERNAME,
+    password: CLICKHOUSE_PASSWORD,
+    database: CLICKHOUSE_DB_NAME,
+  });
+}
