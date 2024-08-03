@@ -57,7 +57,7 @@ const GET_ARTIFACT_BY_SOURCE_NAMESPACE_NAME = define(
   WHERE 
     artifact_source = {artifactSource: String}
     and artifact_name = {artifactName: String} 
-    and artifact_namespace {artifactNamespace: String}
+    and artifact_namespace = {artifactNamespace: String}
 `,
   artifactResponse,
 );
