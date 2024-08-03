@@ -12,6 +12,7 @@ import {
   GET_CODE_METRICS_BY_PROJECT,
   GET_ONCHAIN_METRICS_BY_PROJECT,
   GET_ALL_EVENT_TYPES,
+  GET_CODE_METRICS_BY_ARTIFACT,
 } from "./queries";
 import { getClickhouseClient } from "../clients/clickhouse";
 
@@ -113,6 +114,14 @@ const cachedGetOnchainMetricsByProjectIds = cache(
     }),
 );
 
+const cachedGetCodeMetricsByArtifactIds = cache(
+  async (variables: { artifactIds: string[] }) =>
+    queryWrapper({
+      query: GET_CODE_METRICS_BY_ARTIFACT,
+      variables,
+    }),
+);
+
 export {
   cachedGetArtifactsByIds,
   cachedGetArtifactByName,
@@ -123,4 +132,5 @@ export {
   cachedGetCodeMetricsByProjectIds,
   cachedGetOnchainMetricsByProjectIds,
   cachedGetAllEventTypes,
+  cachedGetCodeMetricsByArtifactIds,
 };
