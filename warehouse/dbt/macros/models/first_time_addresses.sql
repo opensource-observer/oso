@@ -1,4 +1,7 @@
 {% macro first_time_addresses(network_name, block_timestamp_column="block_timestamp") %}
+
+{% set lower_network_name = network_name.lower() %}
+
 -- todo:
 -- 1. add first funded by
 -- 2. most funded by
@@ -15,13 +18,13 @@ select
 from (
     select 
         from_address as address
-        ,'{{ network_name }}' as chain_name
+        ,'{{ lower_network_name }}' as chain_name
         ,min(block_timestamp) as first_block_timestamp
         ,min(block_number) as first_block_number
         ,min_by(to_address, block_number) as first_tx_to
         ,min_by(`hash`, block_number) as first_tx_hash
         ,min_by(substring(input, 1, 10), block_number) as first_method_id
-    from {{ oso_source(network_name, "transactions") }}
+    from {{ ref('int_%s_transactions' % lower_network_name) }}
     where 
       gas_price > 0
       and receipt_status = 1
