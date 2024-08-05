@@ -22,11 +22,11 @@ from (
         ,min(block_timestamp) as first_block_timestamp
         ,min(block_number) as first_block_number
         ,min_by(to_address, block_number) as first_tx_to
-        ,min_by(`hash`, block_number) as first_tx_hash
+        ,min_by(block_hash, block_number) as first_tx_hash
         ,min_by(substring(input, 1, 10), block_number) as first_method_id
     from {{ ref('int_%s_transactions' % lower_network_name) }}
     where 
-      gas_price > 0
+      receipt_effective_gas_price > 0
       and receipt_status = 1
       and receipt_gas_used > 0
     {% if is_incremental() %}
