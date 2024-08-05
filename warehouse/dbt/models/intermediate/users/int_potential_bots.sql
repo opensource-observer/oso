@@ -3,7 +3,7 @@
     'frax',
     'metal',
     'mode',
-    'pgn',
+    'optimism',
     'zora'
 ] %}  --
 {% if target.name == 'production' %}
