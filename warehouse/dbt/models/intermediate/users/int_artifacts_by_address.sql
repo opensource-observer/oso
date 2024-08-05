@@ -1,12 +1,12 @@
 with addresses as (
   select distinct
-    LOWER(address) as address,
-    UPPER(chain_name) as chain
+    UPPER(chain_name) as artifact_namespace,
+    LOWER(address) as artifact_name
   from {{ ref('int_first_time_addresses') }}
 )
 
 select
-  {{ oso_id("chain", "address") }} as artifact_id,
-  chain as artifact_namespace,
-  address as artifact_name
+  {{ oso_id("artifact_namespace", "artifact_name") }} as artifact_id,
+  artifact_namespace,
+  artifact_name
 from addresses
