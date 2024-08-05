@@ -1,6 +1,6 @@
 {% set metric = {
-    "metric_name": "monthly_active_addresses_avg_6_months",
-    "metric_unit": "addresses",
+    "metric_name": "trusted_monthly_active_users_avg_6_months",
+    "metric_unit": "trusted user addresses",
     "event_sources": [
         "OPTIMISM", 
         "BASE", 
@@ -25,14 +25,17 @@ agg_events as (
     events.sample_date,
     events.event_source,
     artifacts_by_project.project_id,
-    COUNT(distinct artifacts_by_address.artifact_name) as amount
+    COUNT(distinct trusted_users.address) as amount
   from timeseries_events as events
   inner join {{ ref('artifacts_by_project_v1') }} as artifacts_by_project
     on events.to_artifact_id = artifacts_by_project.artifact_id
   inner join {{ ref('int_artifacts_by_address') }} as artifacts_by_address
     on events.from_artifact_id = artifacts_by_address.artifact_id
+  inner join {{ ref('int_superchain_trusted_users') }} as trusted_users
+    on artifacts_by_address.artifact_name = trusted_users.address
   where
     events.sample_date < TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), month)
+    and trusted_users.is_trusted_user = true
   group by
     events.sample_date,
     events.event_source,
