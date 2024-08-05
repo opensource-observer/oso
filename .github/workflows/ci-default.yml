@@ -28,6 +28,9 @@ env:
   # Google variables
   GOOGLE_PROJECT_ID: "opensource-observer"
   GOOGLE_TEST_DUMMY_CREDENTIALS_JSON: ${{ vars.GOOGLE_TEST_DUMMY_CREDENTIALS_JSON }}
+  CLICKHOUSE_URL: "http://127.0.0.1:8123" # dummy value
+  CLICKHOUSE_USERNAME: "username"
+  CLICKHOUSE_PASSWORD: "password"
 
   # should not be set to a legitimate value for testing. This will use up API
   # quota otherwise

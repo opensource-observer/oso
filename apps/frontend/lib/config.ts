@@ -54,3 +54,7 @@ export const FEEDBACK_FARM_ID = requireEnv(
   process.env.NEXT_PUBLIC_FEEDBACK_FARM_ID,
   "NEXT_PUBLIC_FEEDBACK_FARM_ID",
 );
+export const CLICKHOUSE_URL = process.env.CLICKHOUSE_URL ?? "MISSING";
+export const CLICKHOUSE_USERNAME = process.env.CLICKHOUSE_USERNAME ?? "MISSING";
+export const CLICKHOUSE_PASSWORD = process.env.CLICKHOUSE_PASSWORD ?? "MISSING";
+export const CLICKHOUSE_DB_NAME = process.env.CLICKHOUSE_DB_NAME ?? "default";

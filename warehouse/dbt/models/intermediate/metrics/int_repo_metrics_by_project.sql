@@ -63,7 +63,7 @@ artifacts_project as (
     and artifact_type = 'REPOSITORY'
 )
 
-select
+select distinct
   artifacts_project.project_id,
   artifacts_project.artifact_id,
   artifacts_project.artifact_namespace,
