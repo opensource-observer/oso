@@ -11,4 +11,11 @@
     incremental_strategy="insert_overwrite"
   ) 
 }}
+
+{% set unique_key_col = config.get('unique_id') %}
+
 {{ first_time_addresses("metal") }}
+{% if is_incremental() %}
+  where
+    {{ unique_key_col }} not in (select {{ unique_key_col }} from {{ this }})
+{% endif %}
