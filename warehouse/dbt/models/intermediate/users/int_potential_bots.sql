@@ -8,7 +8,7 @@
 ] %}  --
 {% if target.name == 'production' %}
 {# This is a temporary measure for now to cut costs on the playground #}
-{% set network_names = network_names + ['ethereum'] %}
+{% set network_names = network_names %}
 {% endif %}
 
 {% for network_name in network_names %}
