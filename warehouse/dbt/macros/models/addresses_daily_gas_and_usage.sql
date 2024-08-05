@@ -34,7 +34,7 @@ with daily_gas_fees as (
         ,date_diff(c.date_timestamp, ft.first_active_day, DAY) as days_since_first_active
     from {{ ref('stg_%s__first_time_addresses' % lower_network_name)}} as ft 
     join {{ ref('stg_utility__calendar')}} as c 
-        on c.date_timestamp >= ft.first_block_timestamp
+        on c.date_timestamp >= ft.first_active_day
         {% if is_incremental() %}
             and c.date_timestamp < TIMESTAMP_SUB(_dbt_max_partition, INTERVAL 0 DAY)
         {% else %}

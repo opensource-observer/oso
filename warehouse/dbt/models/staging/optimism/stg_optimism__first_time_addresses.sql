@@ -14,7 +14,8 @@
 
 {% set unique_key_col = config.get('unique_id') %}
 
-{{ first_time_addresses("pgn") }}
+{{ first_time_addresses("optimism") }}
+
 {% if is_incremental() %}
   where
     {{ unique_key_col }} not in (select {{ unique_key_col }} from {{ this }})

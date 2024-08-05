@@ -1,16 +1,18 @@
 {% macro potential_bots(network_name) %}
+{% set lower_network_name = network_name.lower() %}
+{% set upper_network_name = network_name.upper() %}
 
 with sender_transfer_rates as (
     select 
-        '{{ network_name }}' as chain_name
+        '{{ lower_network_name }}' as chain_name
         ,date_trunc(block_timestamp, hour) as hr
         ,from_address as sender
         ,min(block_timestamp) as min_block_time
         ,max(block_timestamp) as max_block_time
         ,count(*) as hr_txs
-    from {{ oso_source(network_name, "transactions") }}
+    from {{ ref('int_%s_transactions' % lower_network_name) }}
     where 
-        gas_price > 0 
+        receipt_effective_gas_price > 0 
         and receipt_gas_used > 0
     group by 1, 2, 3
 )
