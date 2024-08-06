@@ -10,15 +10,24 @@
         "ZORA"
     ],
     "event_types": ["CONTRACT_INVOCATION_SUCCESS_DAILY_COUNT"],
-    "to_types": ["CONTRACT"],
-    "from_types": ["EOA", "SAFE"],
+    "to_artifact_types": ["CONTRACT"],
+    "from_artifact_types": ["EOA", "SAFE"],
     "window_interval": "DAY",
     "window_size": 180,
     "window_missing_dates": "ignore",
     "sampling_interval": "daily"
 } %}
 
-{{ timeseries_events(metric) }},
+with events as (
+  {{ timeseries_events(
+      metric.event_sources,
+      metric.event_types,
+      metric.to_artifact_types,
+      metric.from_artifact_types,
+      time_interval=metric.window_interval,
+      missing_dates=metric.window_missing_dates
+  ) }}
+),
 
 agg_events as (
   select
@@ -26,7 +35,7 @@ agg_events as (
     events.event_source,
     artifacts_by_project.project_id,
     SUM(events.amount) as amount
-  from timeseries_events as events
+  from events
   inner join {{ ref('artifacts_by_project_v1') }} as artifacts_by_project
     on events.to_artifact_id = artifacts_by_project.artifact_id
   inner join {{ ref('int_superchain_trusted_users') }} as trusted_users
@@ -38,18 +47,9 @@ agg_events as (
     artifacts_by_project.project_id
 ),
 
-windowed_events as (
-  select
-    project_id,
-    sample_date,
-    event_source,
-    SUM(amount) over (
-      partition by project_id, event_source
-      order by sample_date
-      rows between {{ metric.window_size-1 }} preceding and current row
-    ) as amount
-  from agg_events
-)
+windowed_events as ({{
+  window_events('agg_events', 'SUM', metric.window_size, 'project')
+}})
 
 select
   project_id,

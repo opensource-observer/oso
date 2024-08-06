@@ -10,15 +10,24 @@
         "ZORA"
     ],
     "event_types": ["CONTRACT_INVOCATION_SUCCESS_DAILY_COUNT"],
-    "to_types": ["CONTRACT"],
-    "from_types": ["EOA"],
+    "to_artifact_types": ["CONTRACT"],
+    "from_artifact_types": ["EOA"],
     "window_interval": "DAY",
     "window_size": 180,
     "window_missing_dates": "fill_with_zero",
     "sampling_interval": "daily"
 } %}
 
-{{ timeseries_events(metric) }},
+with events as (
+  {{ timeseries_events(
+      metric.event_sources,
+      metric.event_types,
+      metric.to_artifact_types,
+      metric.from_artifact_types,
+      time_interval=metric.window_interval,
+      missing_dates=metric.window_missing_dates
+  ) }}
+),
 
 agg_events as (
   select
@@ -37,18 +46,9 @@ agg_events as (
     artifacts_by_project.project_id
 ),
 
-windowed_events as (
-  select
-    project_id,
-    sample_date,
-    event_source,
-    AVG(amount) over (
-      partition by project_id, event_source
-      order by sample_date
-      rows between {{ metric.window_size-1 }} preceding and current row
-    ) as amount
-  from agg_events
-)
+windowed_events as ({{
+  window_events('agg_events', 'AVG', metric.window_size, 'project')
+}})
 
 select
   project_id,

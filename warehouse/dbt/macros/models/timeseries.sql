@@ -6,22 +6,30 @@
     {{ return("(" ~ formatted_list | join(', ') ~ ")") }}
 {% endmacro %}
 
-{% macro timeseries_events(metric) %}
+{% macro timeseries_events(
+  event_sources,
+  event_types,
+  to_artifact_types,
+  from_artifact_types,
+  time_interval='DAY',
+  missing_dates='ignore',
+  event_model='int_events'
+) %}
 
 with filtered_events as (
   select
-    TIMESTAMP_TRUNC(`time`, {{ metric.window_interval }}) as sample_date,
+    TIMESTAMP_TRUNC(`time`, {{ time_interval }}) as sample_date,
     from_artifact_id,
     to_artifact_id,
     event_source,
     amount
-  from {{ ref('int_events') }}
+  from {{ ref(event_model) }}
   where
-    event_type in {{ to_sql_array(metric.event_types) }}    
-    and event_source in {{ to_sql_array(metric.event_sources) }}
-    and to_artifact_type in {{ to_sql_array(metric.to_types) }}
-    and from_artifact_type in {{ to_sql_array(metric.from_types) }}
-    and `time` < TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), {{ metric.window_interval }})
+    event_type in {{ to_sql_array(event_types) }}    
+    and event_source in {{ to_sql_array(event_sources) }}
+    and to_artifact_type in {{ to_sql_array(to_artifact_types) }}
+    and from_artifact_type in {{ to_sql_array(from_artifact_types) }}
+    and `time` < TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), {{ time_interval }})
 ),
 
 grouped_events as (
@@ -39,11 +47,11 @@ grouped_events as (
     event_source
 ),
 
-{% if metric.window_missing_dates == "fill_with_zero" %}
+{% if missing_dates == "fill_with_zero" %}
 
   calendar as (
     select distinct
-      TIMESTAMP_TRUNC(date_timestamp, {{ metric.window_interval }}) as calendar_time
+      TIMESTAMP_TRUNC(date_timestamp, {{ time_interval }}) as calendar_time
     from {{ ref('stg_utility__calendar') }}
     where TIMESTAMP(date_timestamp) <= CURRENT_TIMESTAMP()
   ),
@@ -102,5 +110,33 @@ grouped_events as (
   )
 
 {% endif %}
+
+select
+  sample_date,
+  from_artifact_id,
+  to_artifact_id,
+  event_source,
+  amount
+from timeseries_events
+
+{% endmacro %}
+
+{% macro window_events(
+  agg_events_table,
+  agg_func,
+  window_size,
+  entity_type
+) %}
+
+select
+  {{ entity_type }}_id,
+  sample_date,
+  event_source,
+  {{ agg_func }}(amount) over (
+    partition by {{entity_type}}_id, event_source
+    order by sample_date
+    rows between {{ window_size-1 }} preceding and current row
+  ) as amount
+from {{ agg_events_table }}
 
 {% endmacro %}
