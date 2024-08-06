@@ -41,8 +41,8 @@ definition:
     - name: starCount
       type: Int64!
   graphql:
-    typeName: OsoSubgraph_CodeMetricsByArtifactV0
-    inputTypeName: OsoSubgraph_CodeMetricsByArtifactV0Input
+    typeName: Oso_CodeMetricsByArtifactV0
+    inputTypeName: Oso_CodeMetricsByArtifactV0Input
   dataConnectorTypeMapping:
     - dataConnectorName: oso_clickhouse
       dataConnectorObjectType: code_metrics_by_artifact_v0
@@ -215,7 +215,7 @@ definition:
       operators:
         enableAll: true
   graphql:
-    typeName: OsoSubgraph_CodeMetricsByArtifactV0BoolExp
+    typeName: Oso_CodeMetricsByArtifactV0BoolExp
 
 ---
 kind: Model
@@ -284,9 +284,9 @@ definition:
         enableAll: true
   graphql:
     selectMany:
-      queryRootField: osoSubgraph_codeMetricsByArtifactV0
+      queryRootField: oso_codeMetricsByArtifactV0
     selectUniques: []
-    orderByExpressionType: OsoSubgraph_CodeMetricsByArtifactV0OrderBy
+    orderByExpressionType: Oso_CodeMetricsByArtifactV0OrderBy
 
 ---
 kind: ModelPermissions

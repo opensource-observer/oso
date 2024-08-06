@@ -23,8 +23,8 @@ definition:
     - name: rawDefinition
       type: Int64!
   graphql:
-    typeName: OsoSubgraph_MetricsV0
-    inputTypeName: OsoSubgraph_MetricsV0Input
+    typeName: Oso_MetricsV0
+    inputTypeName: Oso_MetricsV0Input
   dataConnectorTypeMapping:
     - dataConnectorName: oso_clickhouse
       dataConnectorObjectType: metrics_v0
@@ -125,7 +125,7 @@ definition:
       operators:
         enableAll: true
   graphql:
-    typeName: OsoSubgraph_MetricsV0BoolExp
+    typeName: Oso_MetricsV0BoolExp
 
 ---
 kind: Model
@@ -167,9 +167,9 @@ definition:
         enableAll: true
   graphql:
     selectMany:
-      queryRootField: osoSubgraph_metricsV0
+      queryRootField: oso_metricsV0
     selectUniques: []
-    orderByExpressionType: OsoSubgraph_MetricsV0OrderBy
+    orderByExpressionType: Oso_MetricsV0OrderBy
 
 ---
 kind: ModelPermissions
