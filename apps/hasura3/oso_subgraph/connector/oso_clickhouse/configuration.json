@@ -36,6 +36,34 @@
         }
       }
     },
+    "code_metrics_by_artifact_v0": {
+      "name": "code_metrics_by_artifact_v0",
+      "schema": "default",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "active_developer_count_6_months": "Float32",
+          "artifact_id": "String",
+          "artifact_name": "String",
+          "artifact_namespace": "String",
+          "closed_issue_count_6_months": "Float32",
+          "commit_count_6_months": "Float32",
+          "contributor_count": "Float32",
+          "contributor_count_6_months": "Float32",
+          "event_source": "String",
+          "first_commit_date": "DateTime",
+          "fork_count": "Int64",
+          "fulltime_developer_average_6_months": "Float32",
+          "last_commit_date": "DateTime",
+          "merged_pull_request_count_6_months": "Float32",
+          "new_contributor_count_6_months": "Float32",
+          "opened_issue_count_6_months": "Float32",
+          "opened_pull_request_count_6_months": "Float32",
+          "star_count": "Int64"
+        }
+      }
+    },
     "code_metrics_by_project_v1": {
       "name": "code_metrics_by_project_v1",
       "schema": "default",
@@ -252,6 +280,25 @@
         }
       }
     },
+    "metrics_v0": {
+      "name": "metrics_v0",
+      "schema": "default",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "aggregation_function": "String",
+          "definition_ref": "String",
+          "description": "String",
+          "display_name": "String",
+          "metric_id": "String",
+          "metric_name": "String",
+          "metric_namespace": "String",
+          "metric_source": "String",
+          "raw_definition": "Int64"
+        }
+      }
+    },
     "onchain_metrics_by_project_v1": {
       "name": "onchain_metrics_by_project_v1",
       "schema": "default",
@@ -313,6 +360,36 @@
           "project_name": "String",
           "project_namespace": "String",
           "project_source": "String"
+        }
+      }
+    },
+    "timeseries_metrics_by_artifact_v0": {
+      "name": "timeseries_metrics_by_artifact_v0",
+      "schema": "default",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "amount": "Int64",
+          "artifact_id": "String",
+          "metric_id": "String",
+          "sample_date": "DateTime",
+          "unit": "Int64"
+        }
+      }
+    },
+    "timeseries_metrics_by_project_v0": {
+      "name": "timeseries_metrics_by_project_v0",
+      "schema": "default",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "amount": "Int64",
+          "metric_id": "String",
+          "project_id": "String",
+          "sample_date": "DateTime",
+          "unit": "Int64"
         }
       }
     },

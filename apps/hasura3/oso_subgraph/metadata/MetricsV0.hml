@@ -1,0 +1,185 @@
+---
+kind: ObjectType
+version: v1
+definition:
+  name: MetricsV0
+  fields:
+    - name: aggregationFunction
+      type: String!
+    - name: definitionRef
+      type: String!
+    - name: description
+      type: String!
+    - name: displayName
+      type: String!
+    - name: metricId
+      type: String!
+    - name: metricName
+      type: String!
+    - name: metricNamespace
+      type: String!
+    - name: metricSource
+      type: String!
+    - name: rawDefinition
+      type: Int64!
+  graphql:
+    typeName: Oso_MetricsV0
+    inputTypeName: Oso_MetricsV0Input
+  dataConnectorTypeMapping:
+    - dataConnectorName: oso_clickhouse
+      dataConnectorObjectType: metrics_v0
+      fieldMapping:
+        aggregationFunction:
+          column:
+            name: aggregation_function
+        definitionRef:
+          column:
+            name: definition_ref
+        description:
+          column:
+            name: description
+        displayName:
+          column:
+            name: display_name
+        metricId:
+          column:
+            name: metric_id
+        metricName:
+          column:
+            name: metric_name
+        metricNamespace:
+          column:
+            name: metric_namespace
+        metricSource:
+          column:
+            name: metric_source
+        rawDefinition:
+          column:
+            name: raw_definition
+
+---
+kind: TypePermissions
+version: v1
+definition:
+  typeName: MetricsV0
+  permissions:
+    - role: admin
+      output:
+        allowedFields:
+          - aggregationFunction
+          - definitionRef
+          - description
+          - displayName
+          - metricId
+          - metricName
+          - metricNamespace
+          - metricSource
+          - rawDefinition
+    - role: anonymous
+      output:
+        allowedFields:
+          - aggregationFunction
+          - definitionRef
+          - description
+          - displayName
+          - metricId
+          - metricName
+          - metricNamespace
+          - metricSource
+          - rawDefinition
+
+---
+kind: ObjectBooleanExpressionType
+version: v1
+definition:
+  name: MetricsV0BoolExp
+  objectType: MetricsV0
+  dataConnectorName: oso_clickhouse
+  dataConnectorObjectType: metrics_v0
+  comparableFields:
+    - fieldName: aggregationFunction
+      operators:
+        enableAll: true
+    - fieldName: definitionRef
+      operators:
+        enableAll: true
+    - fieldName: description
+      operators:
+        enableAll: true
+    - fieldName: displayName
+      operators:
+        enableAll: true
+    - fieldName: metricId
+      operators:
+        enableAll: true
+    - fieldName: metricName
+      operators:
+        enableAll: true
+    - fieldName: metricNamespace
+      operators:
+        enableAll: true
+    - fieldName: metricSource
+      operators:
+        enableAll: true
+    - fieldName: rawDefinition
+      operators:
+        enableAll: true
+  graphql:
+    typeName: Oso_MetricsV0BoolExp
+
+---
+kind: Model
+version: v1
+definition:
+  name: MetricsV0
+  objectType: MetricsV0
+  source:
+    dataConnectorName: oso_clickhouse
+    collection: metrics_v0
+  filterExpressionType: MetricsV0BoolExp
+  orderableFields:
+    - fieldName: aggregationFunction
+      orderByDirections:
+        enableAll: true
+    - fieldName: definitionRef
+      orderByDirections:
+        enableAll: true
+    - fieldName: description
+      orderByDirections:
+        enableAll: true
+    - fieldName: displayName
+      orderByDirections:
+        enableAll: true
+    - fieldName: metricId
+      orderByDirections:
+        enableAll: true
+    - fieldName: metricName
+      orderByDirections:
+        enableAll: true
+    - fieldName: metricNamespace
+      orderByDirections:
+        enableAll: true
+    - fieldName: metricSource
+      orderByDirections:
+        enableAll: true
+    - fieldName: rawDefinition
+      orderByDirections:
+        enableAll: true
+  graphql:
+    selectMany:
+      queryRootField: oso_metricsV0
+    selectUniques: []
+    orderByExpressionType: Oso_MetricsV0OrderBy
+
+---
+kind: ModelPermissions
+version: v1
+definition:
+  modelName: MetricsV0
+  permissions:
+    - role: admin
+      select:
+        filter: null
+    - role: anonymous
+      select:
+        filter: null

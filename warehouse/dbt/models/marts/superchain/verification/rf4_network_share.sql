@@ -1,4 +1,4 @@
-{% set networks = ["base", "frax", "metal", "mode", "zora"] %}
+{% set networks = ["base", "frax", "metal", "mode", "optimism", "zora"] %}
 {% set start_date = '2023-10-01' %}
 {% set end_date = '2024-06-01' %}
 {% set union_queries = [] %}
@@ -29,20 +29,6 @@ with superchain_txns as (
   {{ final_query }}
 ),
 
-op_txns as (
-  select
-    'OPTIMISM' as network,
-    lower(to_address) as to_address,
-    count(*) as total_txns,
-    sum(gas_used / 1e18 * effective_gas_price) as gas_fees
-  from {{ source("optimism", "receipts") }}
-  where
-    block_timestamp > '{{ start_date }}'
-    and block_timestamp < '{{ end_date }}'
-    and status = 1
-  group by lower(to_address)
-),
-
 txns as (
   select
     to_address,
@@ -50,13 +36,6 @@ txns as (
     total_txns,
     gas_fees
   from superchain_txns
-  union all
-  select
-    to_address,
-    network,
-    total_txns,
-    gas_fees
-  from op_txns
 )
 
 select

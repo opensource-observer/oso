@@ -62,6 +62,7 @@ def generate_dbt_asset(
     target: str,
     manifest_path: Path | str,
     internal_map: Dict[str, List[str]],
+    op_tags: Optional[Mapping[str, Any]] = None,
 ):
     """Generates a single Dagster dbt asset
 
@@ -91,6 +92,7 @@ def generate_dbt_asset(
         name=f"{target}_dbt",
         manifest=manifest_path,
         dagster_dbt_translator=translator,
+        op_tags=op_tags,
     )
     def _generated_dbt_assets(context: AssetExecutionContext, config: DBTConfig):
         print(f"using profiles dir {dbt_profiles_dir}")
@@ -111,6 +113,7 @@ def dbt_assets_from_manifests_map(
     project_dir: Path | str,
     manifests: Dict[str, Path],
     internal_map: Optional[Dict[str, List[str]]] = None,
+    op_tags: Optional[Mapping[str, Any]] = None,
 ) -> List[AssetsDefinition]:
     """Creates all Dagster dbt assets from a map of manifests
 
@@ -136,12 +139,32 @@ def dbt_assets_from_manifests_map(
     for target, manifest_path in manifests.items():
         assets.append(
             generate_dbt_asset(
-                project_dir, dbt_profiles_dir, target, manifest_path, internal_map
+                project_dir,
+                dbt_profiles_dir,
+                target,
+                manifest_path,
+                internal_map,
+                op_tags,
             )
         )
 
     return assets
 
+
+op_tags = {
+    "dagster-k8s/config": {
+        "pod_spec_config": {
+            "tolerations": [
+                {
+                    "key": "pool_type",
+                    "operator": "Equal",
+                    "value": "persistent",
+                    "effect": "PreferNoSchedule",
+                }
+            ],
+        }
+    }
+}
 
 all_dbt_assets = dbt_assets_from_manifests_map(
     main_dbt_project_dir,
@@ -151,4 +174,7 @@ all_dbt_assets = dbt_assets_from_manifests_map(
         "oso_base_playground": ["dbt", "base_playground"],
         "oso_playground": ["dbt", "playground"],
     },
+    # For now dbt should run on non-spot nodes because we sometimes need to do
+    # full-refreshes which should not be killed randomly (or as randomly)
+    op_tags=op_tags,
 )
