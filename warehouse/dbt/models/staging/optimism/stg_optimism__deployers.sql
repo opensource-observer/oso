@@ -11,4 +11,4 @@
     incremental_strategy="insert_overwrite"
   )
 }}
-{{ goog_blockchain_deployers("optimism") }}
+{{ transactions_with_receipts_deployers("optimism") }}
