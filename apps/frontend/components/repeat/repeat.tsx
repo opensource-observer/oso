@@ -2,8 +2,7 @@ import { repeatedElement } from "@plasmicapp/loader-nextjs";
 import React, { ReactNode } from "react";
 import _ from "lodash";
 import { plasmicRegistration } from "../../lib/plasmic-register";
-
-const RepeatContext = React.createContext<any | undefined>(undefined);
+import { DataProvider } from "@plasmicapp/loader-nextjs";
 
 export interface MaxWidthRepeatProps {
   className?: string;
@@ -35,9 +34,9 @@ export function MaxWidthRepeat(props: MaxWidthRepeatProps) {
             {chunk.map((data, columnIndex) => {
               const elementIndex = rowIndex * columnSize + columnIndex;
               return (
-                <RepeatContext.Provider value={data} key={elementIndex}>
+                <DataProvider name="current" data={data} key={elementIndex}>
                   {repeatedElement(elementIndex, children)}
-                </RepeatContext.Provider>
+                </DataProvider>
               );
             })}
           </div>
@@ -50,6 +49,7 @@ export function MaxWidthRepeat(props: MaxWidthRepeatProps) {
 export const MaxWidthRepeatRegistration = plasmicRegistration(MaxWidthRepeat, {
   name: "MaxWithRepeat",
   description: "A component that repeats an internal component",
+  providesData: true,
   props: {
     children: "slot",
     columnSize: {
