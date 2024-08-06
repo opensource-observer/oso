@@ -9,7 +9,7 @@
   )
 }}
 
-{% set networks = ["base", "frax", "metal", "mode", "zora"] %}
+{% set networks = ["base", "frax", "metal", "mode", "optimism", "zora"] %}
 {% set start_date = '2023-10-01' %}
 {% set end_date = '2024-06-01' %}
 {% set union_queries = [] %}
