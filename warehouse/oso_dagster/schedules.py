@@ -10,7 +10,8 @@ materialize_all_assets = define_asset_job(
 
 materialize_source_assets = define_asset_job(
     "materialize_source_assets_job",
-    AssetSelection.tag("opensource.observer/type", "source"),
+    AssetSelection.tag("opensource.observer/type", "source")
+    | AssetSelection.tag("opensource.observer/type", "source-qa"),
 )
 
 schedules = [
