@@ -142,7 +142,7 @@ def blocks_missing_block_number_model(
         deps=[generated_asset],
         op_tags=base_tags,
         tags={
-            "opensource.observer/type": "goldsky-qa",
+            "opensource.observer/type": "source-qa",
             "opensource.observer/kind": "missing-blocks-qa",
         },
         compute_kind="goldsky-qa",
@@ -276,7 +276,7 @@ def transactions_missing_block_number_model(
         deps=[generated_asset],
         op_tags=base_tags,
         tags={
-            "opensource.observer/type": "goldsky-qa",
+            "opensource.observer/type": "source-qa",
             "opensource.observer/kind": "missing-blocks-qa",
         },
         compute_kind="goldsky-qa",
@@ -419,7 +419,7 @@ def traces_missing_block_number_model(
         deps=[generated_asset],
         op_tags=base_tags,
         tags={
-            "opensource.observer/type": "goldsky-qa",
+            "opensource.observer/type": "source-qa",
             "opensource.observer/kind": "missing-blocks-qa",
         },
         compute_kind="goldsky-qa",
