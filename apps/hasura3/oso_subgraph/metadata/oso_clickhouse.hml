@@ -341,6 +341,81 @@ definition:
               type:
                 type: named
                 name: String
+        code_metrics_by_artifact_v0:
+          description: ""
+          fields:
+            active_developer_count_6_months:
+              type:
+                type: named
+                name: Float32
+            artifact_id:
+              type:
+                type: named
+                name: String
+            artifact_name:
+              type:
+                type: named
+                name: String
+            artifact_namespace:
+              type:
+                type: named
+                name: String
+            closed_issue_count_6_months:
+              type:
+                type: named
+                name: Float32
+            commit_count_6_months:
+              type:
+                type: named
+                name: Float32
+            contributor_count:
+              type:
+                type: named
+                name: Float32
+            contributor_count_6_months:
+              type:
+                type: named
+                name: Float32
+            event_source:
+              type:
+                type: named
+                name: String
+            first_commit_date:
+              type:
+                type: named
+                name: DateTime
+            fork_count:
+              type:
+                type: named
+                name: Int64
+            fulltime_developer_average_6_months:
+              type:
+                type: named
+                name: Float32
+            last_commit_date:
+              type:
+                type: named
+                name: DateTime
+            merged_pull_request_count_6_months:
+              type:
+                type: named
+                name: Float32
+            new_contributor_count_6_months:
+              type:
+                type: named
+                name: Float32
+            opened_issue_count_6_months:
+              type:
+                type: named
+                name: Float32
+            opened_pull_request_count_6_months:
+              type:
+                type: named
+                name: Float32
+            star_count:
+              type:
+                type: named
+                name: Int64
         code_metrics_by_project_v1:
           description: ""
           fields:
@@ -687,6 +762,45 @@ definition:
               type:
                 type: named
                 name: String
+        metrics_v0:
+          description: ""
+          fields:
+            aggregation_function:
+              type:
+                type: named
+                name: String
+            definition_ref:
+              type:
+                type: named
+                name: String
+            description:
+              type:
+                type: named
+                name: String
+            display_name:
+              type:
+                type: named
+                name: String
+            metric_id:
+              type:
+                type: named
+                name: String
+            metric_name:
+              type:
+                type: named
+                name: String
+            metric_namespace:
+              type:
+                type: named
+                name: String
+            metric_source:
+              type:
+                type: named
+                name: String
+            raw_definition:
+              type:
+                type: named
+                name: Int64
         onchain_metrics_by_project_v1:
           description: ""
           fields:
@@ -832,6 +946,52 @@ definition:
               type:
                 type: named
                 name: String
+        timeseries_metrics_by_artifact_v0:
+          description: ""
+          fields:
+            amount:
+              type:
+                type: named
+                name: Int64
+            artifact_id:
+              type:
+                type: named
+                name: String
+            metric_id:
+              type:
+                type: named
+                name: String
+            sample_date:
+              type:
+                type: named
+                name: DateTime
+            unit:
+              type:
+                type: named
+                name: Int64
+        timeseries_metrics_by_project_v0:
+          description: ""
+          fields:
+            amount:
+              type:
+                type: named
+                name: Int64
+            metric_id:
+              type:
+                type: named
+                name: String
+            project_id:
+              type:
+                type: named
+                name: String
+            sample_date:
+              type:
+                type: named
+                name: DateTime
+            unit:
+              type:
+                type: named
+                name: Int64
         users_v1:
           description: ""
           fields:
@@ -874,6 +1034,12 @@ definition:
           description: ""
           arguments: {}
           type: artifacts_v1
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: code_metrics_by_artifact_v0
+          description: ""
+          arguments: {}
+          type: code_metrics_by_artifact_v0
           uniqueness_constraints: {}
           foreign_keys: {}
         - name: code_metrics_by_project_v1
@@ -960,6 +1126,12 @@ definition:
           type: events_weekly_to_project
           uniqueness_constraints: {}
           foreign_keys: {}
+        - name: metrics_v0
+          description: ""
+          arguments: {}
+          type: metrics_v0
+          uniqueness_constraints: {}
+          foreign_keys: {}
         - name: onchain_metrics_by_project_v1
           description: ""
           arguments: {}
@@ -976,6 +1148,18 @@ definition:
           description: ""
           arguments: {}
           type: projects_v1
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: timeseries_metrics_by_artifact_v0
+          description: ""
+          arguments: {}
+          type: timeseries_metrics_by_artifact_v0
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: timeseries_metrics_by_project_v0
+          description: ""
+          arguments: {}
+          type: timeseries_metrics_by_project_v0
           uniqueness_constraints: {}
           foreign_keys: {}
         - name: users_v1

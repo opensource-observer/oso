@@ -1,0 +1,133 @@
+---
+kind: ObjectType
+version: v1
+definition:
+  name: TimeseriesMetricsByProjectV0
+  fields:
+    - name: amount
+      type: Int64!
+    - name: metricId
+      type: String!
+    - name: projectId
+      type: String!
+    - name: sampleDate
+      type: DateTime!
+    - name: unit
+      type: Int64!
+  graphql:
+    typeName: OsoSubgraph_TimeseriesMetricsByProjectV0
+    inputTypeName: OsoSubgraph_TimeseriesMetricsByProjectV0Input
+  dataConnectorTypeMapping:
+    - dataConnectorName: oso_clickhouse
+      dataConnectorObjectType: timeseries_metrics_by_project_v0
+      fieldMapping:
+        amount:
+          column:
+            name: amount
+        metricId:
+          column:
+            name: metric_id
+        projectId:
+          column:
+            name: project_id
+        sampleDate:
+          column:
+            name: sample_date
+        unit:
+          column:
+            name: unit
+
+---
+kind: TypePermissions
+version: v1
+definition:
+  typeName: TimeseriesMetricsByProjectV0
+  permissions:
+    - role: admin
+      output:
+        allowedFields:
+          - amount
+          - metricId
+          - projectId
+          - sampleDate
+          - unit
+    - role: anonymous
+      output:
+        allowedFields:
+          - amount
+          - metricId
+          - projectId
+          - sampleDate
+          - unit
+
+---
+kind: ObjectBooleanExpressionType
+version: v1
+definition:
+  name: TimeseriesMetricsByProjectV0BoolExp
+  objectType: TimeseriesMetricsByProjectV0
+  dataConnectorName: oso_clickhouse
+  dataConnectorObjectType: timeseries_metrics_by_project_v0
+  comparableFields:
+    - fieldName: amount
+      operators:
+        enableAll: true
+    - fieldName: metricId
+      operators:
+        enableAll: true
+    - fieldName: projectId
+      operators:
+        enableAll: true
+    - fieldName: sampleDate
+      operators:
+        enableAll: true
+    - fieldName: unit
+      operators:
+        enableAll: true
+  graphql:
+    typeName: OsoSubgraph_TimeseriesMetricsByProjectV0BoolExp
+
+---
+kind: Model
+version: v1
+definition:
+  name: TimeseriesMetricsByProjectV0
+  objectType: TimeseriesMetricsByProjectV0
+  source:
+    dataConnectorName: oso_clickhouse
+    collection: timeseries_metrics_by_project_v0
+  filterExpressionType: TimeseriesMetricsByProjectV0BoolExp
+  orderableFields:
+    - fieldName: amount
+      orderByDirections:
+        enableAll: true
+    - fieldName: metricId
+      orderByDirections:
+        enableAll: true
+    - fieldName: projectId
+      orderByDirections:
+        enableAll: true
+    - fieldName: sampleDate
+      orderByDirections:
+        enableAll: true
+    - fieldName: unit
+      orderByDirections:
+        enableAll: true
+  graphql:
+    selectMany:
+      queryRootField: osoSubgraph_timeseriesMetricsByProjectV0
+    selectUniques: []
+    orderByExpressionType: OsoSubgraph_TimeseriesMetricsByProjectV0OrderBy
+
+---
+kind: ModelPermissions
+version: v1
+definition:
+  modelName: TimeseriesMetricsByProjectV0
+  permissions:
+    - role: admin
+      select:
+        filter: null
+    - role: anonymous
+      select:
+        filter: null
