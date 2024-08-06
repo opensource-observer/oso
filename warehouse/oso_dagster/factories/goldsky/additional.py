@@ -6,6 +6,7 @@ from dagster import (
     AssetExecutionContext,
     Config,
     asset,
+    define_asset_job,
     MaterializeResult,
 )
 import arrow
@@ -33,8 +34,9 @@ base_tags = {
                     "effect": "PreferNoSchedule",
                 }
             ],
-        }
-    }
+        },
+        "merge_behavior": "SHALLOW",
+    },
 }
 
 
@@ -66,6 +68,10 @@ def blocks_missing_block_number_model(
         cbt: CBTResource,
         config: MissingBlocksConfig,
     ) -> str:
+        context.log.info("run tags")
+        context.log.info(context.run.tags)
+        context.log.info("op tags")
+        context.log.info(context.op.tags)
         c = cbt.get(context.log)
         c.add_search_paths(
             [os.path.join(os.path.abspath(os.path.dirname(__file__)), "queries")]
@@ -158,7 +164,15 @@ def blocks_missing_block_number_model(
             }
         )
 
-    return AssetFactoryResponse([missing_blocks_asset])
+    job_name = f"{gs_config.key_prefix_as_str}_missing_blocks_test_job"
+    print(job_name)
+
+    missing_blocks_job = define_asset_job(
+        name=job_name,
+        selection=[missing_blocks_asset.key],
+    )
+
+    return AssetFactoryResponse([missing_blocks_asset], jobs=[missing_blocks_job])
 
 
 def blocks_extensions(

@@ -16,6 +16,9 @@ from dagster import (
 from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
 from dagster._core.definitions.asset_dep import CoercibleToAssetDep
 from dagster._core.definitions.asset_key import CoercibleToAssetKeyPrefix
+from dagster._core.definitions.unresolved_asset_job_definition import (
+    UnresolvedAssetJobDefinition,
+)
 
 from oso_dagster import constants
 
@@ -40,7 +43,9 @@ class GenericGCSAsset:
 class AssetFactoryResponse:
     assets: AssetList
     sensors: List[SensorDefinition] = field(default_factory=lambda: [])
-    jobs: List[JobDefinition] = field(default_factory=lambda: [])
+    jobs: List[JobDefinition | UnresolvedAssetJobDefinition] = field(
+        default_factory=lambda: []
+    )
     checks: List[AssetChecksDefinition] = field(default_factory=lambda: [])
 
     def __add__(self, other: "AssetFactoryResponse") -> "AssetFactoryResponse":
