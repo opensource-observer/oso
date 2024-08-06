@@ -49,6 +49,11 @@ export const MaxWidthRepeatRegistration = plasmicRegistration(MaxWidthRepeat, {
   description: "A component that repeats an internal component",
   props: {
     children: "slot",
+    columnSize: {
+      type: "number",
+      defaultValue: 1,
+      helpText: "Max number of columns",
+    },
     data: {
       type: "object",
       defaultValue: [],
