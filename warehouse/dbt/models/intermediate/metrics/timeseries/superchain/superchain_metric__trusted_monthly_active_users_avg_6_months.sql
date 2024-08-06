@@ -13,7 +13,7 @@
     "to_types": ["CONTRACT"],
     "from_types": ["EOA"],
     "window_interval": "MONTH",
-    "window_size": 7,
+    "window_size": 6,
     "window_missing_dates": "fill_with_zero",
     "sampling_interval": "daily"
 } %}
@@ -31,9 +31,7 @@ agg_events as (
     on events.to_artifact_id = artifacts_by_project.artifact_id
   inner join {{ ref('int_superchain_trusted_users') }} as trusted_users
     on events.from_artifact_id = trusted_users.artifact_id
-  where
-    events.sample_date < TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), month)
-    and trusted_users.is_trusted_user = true
+  where trusted_users.is_trusted_user = true
   group by
     events.sample_date,
     events.event_source,
@@ -48,7 +46,7 @@ windowed_events as (
     AVG(amount) over (
       partition by project_id, event_source
       order by sample_date
-      rows between {{ metric.window_size-2 }} preceding and current row
+      rows between {{ metric.window_size-1 }} preceding and current row
     ) as amount
   from agg_events
 )

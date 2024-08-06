@@ -21,6 +21,7 @@ with filtered_events as (
     and event_source in {{ to_sql_array(metric.event_sources) }}
     and to_artifact_type in {{ to_sql_array(metric.to_types) }}
     and from_artifact_type in {{ to_sql_array(metric.from_types) }}
+    and `time` < TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), {{ metric.window_interval }})
 ),
 
 grouped_events as (
