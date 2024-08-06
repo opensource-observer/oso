@@ -29,10 +29,8 @@ agg_events as (
   from timeseries_events as events
   inner join {{ ref('artifacts_by_project_v1') }} as artifacts_by_project
     on events.to_artifact_id = artifacts_by_project.artifact_id
-  inner join {{ ref('int_artifacts_by_address') }} as artifacts_by_address
-    on events.from_artifact_id = artifacts_by_address.artifact_id
   inner join {{ ref('int_superchain_trusted_users') }} as trusted_users
-    on artifacts_by_address.artifact_name = trusted_users.address
+    on events.from_artifact_id = trusted_users.artifact_id
   where
     events.sample_date < TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), month)
     and trusted_users.is_trusted_user = true

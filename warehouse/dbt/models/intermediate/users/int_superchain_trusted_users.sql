@@ -28,7 +28,7 @@ user_model as (
     on addresses.address = optimist_nft_holders.address
   left join airdrop_recipients
     on addresses.address = airdrop_recipients.address
-  right join {{ ref('int_artifacts_by_address') }} as artifacts_by_address
+  left join {{ ref('int_artifacts_by_address') }} as artifacts_by_address
     on addresses.address = artifacts_by_address.artifact_name
 )
 
