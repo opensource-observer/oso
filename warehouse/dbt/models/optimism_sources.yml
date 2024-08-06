@@ -1,18 +1,13 @@
 sources:
   - name: optimism
-
-    database: bigquery-public-data
-
-    schema: goog_blockchain_optimism_mainnet_us
+    database: opensource-observer
+    schema: superchain
     tables:
-      - name: transactions
-        identifier: transactions
-
-      - name: logs
-        identifier: logs
-
-      - name: receipts
-        identifier: receipts
-      
       - name: blocks
-        identifier: blocks
+        identifier: optimism_blocks
+
+      - name: transactions
+        identifier: optimism_transactions
+
+      - name: traces
+        identifier: optimism_traces
