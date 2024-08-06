@@ -15,8 +15,8 @@ definition:
     - name: unit
       type: Int64!
   graphql:
-    typeName: OsoSubgraph_TimeseriesMetricsByProjectV0
-    inputTypeName: OsoSubgraph_TimeseriesMetricsByProjectV0Input
+    typeName: Oso_TimeseriesMetricsByProjectV0
+    inputTypeName: Oso_TimeseriesMetricsByProjectV0Input
   dataConnectorTypeMapping:
     - dataConnectorName: oso_clickhouse
       dataConnectorObjectType: timeseries_metrics_by_project_v0
@@ -85,7 +85,7 @@ definition:
       operators:
         enableAll: true
   graphql:
-    typeName: OsoSubgraph_TimeseriesMetricsByProjectV0BoolExp
+    typeName: Oso_TimeseriesMetricsByProjectV0BoolExp
 
 ---
 kind: Model
@@ -115,9 +115,9 @@ definition:
         enableAll: true
   graphql:
     selectMany:
-      queryRootField: osoSubgraph_timeseriesMetricsByProjectV0
+      queryRootField: oso_timeseriesMetricsByProjectV0
     selectUniques: []
-    orderByExpressionType: OsoSubgraph_TimeseriesMetricsByProjectV0OrderBy
+    orderByExpressionType: Oso_TimeseriesMetricsByProjectV0OrderBy
 
 ---
 kind: ModelPermissions
