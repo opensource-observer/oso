@@ -14,6 +14,7 @@ airdrop_recipients as (
 user_model as (
   select
     addresses.address,
+    artifacts_by_address.artifact_id,
     COALESCE(optimist_nft_holders.address is not null, false)
       as is_optimist_nft_holder,
     COALESCE(airdrop_recipients.num_airdrops, 0) as num_optimism_airdrops,
@@ -27,10 +28,13 @@ user_model as (
     on addresses.address = optimist_nft_holders.address
   left join airdrop_recipients
     on addresses.address = airdrop_recipients.address
+  right join {{ ref('int_artifacts_by_address') }} as artifacts_by_address
+    on addresses.address = artifacts_by_address.artifact_name
 )
 
 select
   address,
+  artifact_id,
   num_optimism_airdrops,
   is_optimist_nft_holder,
   is_potential_bot,
