@@ -10,9 +10,9 @@ with sender_transfer_rates as (
         ,min(block_timestamp) as min_block_time
         ,max(block_timestamp) as max_block_time
         ,count(*) as hr_txs
-    from {{ ref('int_%s_transactions' % lower_network_name) }}
+    from {{ oso_source(lower_network_name, "transactions") }}
     where 
-        receipt_effective_gas_price > 0 
+        gas_price > 0 
         and receipt_gas_used > 0
     group by 1, 2, 3
 )
