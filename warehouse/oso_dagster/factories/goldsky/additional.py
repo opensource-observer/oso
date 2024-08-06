@@ -24,6 +24,7 @@ def generated_asset_prefix(asset: AssetsDefinition):
 base_tags = {
     "dagster-k8s/config": {
         "pod_spec_config": {
+            "node_selector": {"pool_type": "persistent"},
             "tolerations": [
                 {
                     "key": "pool_type",
