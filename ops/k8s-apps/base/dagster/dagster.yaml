@@ -90,15 +90,14 @@ spec:
               repository: "ghcr.io/opensource-observer/dagster-dask"
               tag: latest
               pullPolicy: Always
-            env:
-              - name: DAGSTER_DBT_GENERATE_AND_AUTH_GCP
-                value: "1"
             envConfigMaps:
               - name: dagster-oso-extra-env
             port: 3030
             dagsterApiGrpcArgs:
               - "-m"
               - "oso_dagster.definitions"
+            includeConfigInLaunchedRuns:
+              enabled: false
 
   postRenderers:
     - kustomize:
