@@ -21,8 +21,11 @@ export interface MaxWidthRepeatProps {
  * @returns
  */
 export function MaxWidthRepeat(props: MaxWidthRepeatProps) {
-  const { className, data, columnSize, children } = props;
-  const chunked = _.chunk(data, columnSize);
+  const { className, data, columnSize, children, testData, useTestData } =
+    props;
+  const chunked = useTestData
+    ? _.chunk(testData, columnSize)
+    : _.chunk(data, columnSize);
 
   return (
     <div className={className}>
