@@ -38,6 +38,7 @@ import {
   AuthActions,
   AuthActionsRegistration,
 } from "./components/widgets/auth-actions";
+import { MaxWidthRepeatRegistration } from "./components/repeat/repeat";
 
 /**
  * Plasmic component registration
@@ -254,6 +255,8 @@ PLASMIC.registerComponent(AuthActions, {
   props: { ...AuthActionsRegistration },
   importPath: "./components/widgets/auth-actions",
 });
+
+MaxWidthRepeatRegistration(PLASMIC);
 
 /**
 PLASMIC.registerComponent(FormField, {
