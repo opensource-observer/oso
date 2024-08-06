@@ -14,7 +14,7 @@
 {{ 
   filtered_blockchain_events(
     "OPTIMISM", 
-    "superchain", 
-    "optimism_traces"
+    "optimism", 
+    "traces"
   ) 
 }}
