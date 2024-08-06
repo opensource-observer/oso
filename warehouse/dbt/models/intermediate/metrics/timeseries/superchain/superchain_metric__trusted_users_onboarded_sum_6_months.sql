@@ -46,19 +46,17 @@ user_stats as (
 new_users as (
   select
     events.event_source,
-    artifacts_by_project.project_id,
+    events.project_id,
     user_stats.address,
     MIN(events.sample_date) as onboarding_date
   from events
-  inner join {{ ref('artifacts_by_project_v1') }} as artifacts_by_project
-    on events.to_artifact_id = artifacts_by_project.artifact_id
   inner join user_stats
     on events.from_artifact_id = user_stats.artifact_id
   where
     events.sample_date <= DATE_ADD(user_stats.first_day, interval 30 day)
   group by
     events.event_source,
-    artifacts_by_project.project_id,
+    events.project_id,
     user_stats.address
 ),
 
@@ -68,7 +66,7 @@ agg_events as (
     events.event_source,
     new_users.project_id,
     COUNT(distinct new_users.address) as amount
-  from events as events
+  from events
   inner join new_users
     on
       events.sample_date = new_users.onboarding_date

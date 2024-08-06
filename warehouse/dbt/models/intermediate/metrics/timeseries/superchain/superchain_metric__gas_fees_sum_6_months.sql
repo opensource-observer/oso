@@ -33,15 +33,13 @@ agg_events as (
   select
     events.sample_date,
     events.event_source,
-    artifacts_by_project.project_id,
+    events.project_id,
     SUM(events.amount / 1e18) as amount
-  from timeseries_events as events
-  inner join {{ ref('artifacts_by_project_v1') }} as artifacts_by_project
-    on events.to_artifact_id = artifacts_by_project.artifact_id
+  from events
   group by
     events.sample_date,
     events.event_source,
-    artifacts_by_project.project_id
+    events.project_id
 ),
 
 windowed_events as ({{

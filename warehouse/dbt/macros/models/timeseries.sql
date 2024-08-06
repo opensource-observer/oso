@@ -112,12 +112,15 @@ grouped_events as (
 {% endif %}
 
 select
-  sample_date,
-  from_artifact_id,
-  to_artifact_id,
-  event_source,
-  amount
+  timeseries_events.sample_date,
+  timeseries_events.from_artifact_id,
+  timeseries_events.to_artifact_id,
+  artifacts_by_project.project_id,
+  timeseries_events.event_source,
+  timeseries_events.amount
 from timeseries_events
+inner join {{ ref('artifacts_by_project_v1')}} as artifacts_by_project
+  on timeseries_events.to_artifact_id = artifacts_by_project.artifact_id
 
 {% endmacro %}
 
