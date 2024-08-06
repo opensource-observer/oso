@@ -25,7 +25,7 @@ agg_events as (
     events.sample_date,
     events.event_source,
     artifacts_by_project.project_id,
-    COUNT(distinct trusted_users.artifact_name) as amount
+    COUNT(distinct trusted_users.address) as amount
   from timeseries_events as events
   inner join {{ ref('artifacts_by_project_v1') }} as artifacts_by_project
     on events.to_artifact_id = artifacts_by_project.artifact_id
