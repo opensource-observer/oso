@@ -62,9 +62,6 @@ sources:
 
       - name: optimism_traces
         identifier: int_optimism_traces
-      
-      - name: superchain_optimism_traces
-        identifier: int_optimism_traces
 
       - name: optimism_transactions
         identifier: int_optimism_transactions

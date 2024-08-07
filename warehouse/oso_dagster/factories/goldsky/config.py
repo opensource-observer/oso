@@ -113,6 +113,14 @@ class GoldskyConfig:
     def worker_deduped_table_fqdn(self, worker: str):
         return f"{self.project_id}.{self.working_destination_dataset_name}.{self.destination_table_name}_deduped_{worker}"
 
+    @property
+    def key_prefix_as_str(self):
+        if not self.key_prefix:
+            return ""
+        if isinstance(self.key_prefix, str):
+            return self.key_prefix
+        return "_".join(self.key_prefix)
+
 
 class NetworkAssetSourceConfigDict(TypedDict):
     source_name: NotRequired[str]

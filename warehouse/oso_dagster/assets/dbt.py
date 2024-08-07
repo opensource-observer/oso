@@ -154,6 +154,7 @@ def dbt_assets_from_manifests_map(
 op_tags = {
     "dagster-k8s/config": {
         "pod_spec_config": {
+            "node_selector": {"pool_type": "persistent"},
             "tolerations": [
                 {
                     "key": "pool_type",
@@ -162,7 +163,8 @@ op_tags = {
                     "effect": "PreferNoSchedule",
                 }
             ],
-        }
+        },
+        "merge_behavior": "SHALLOW",
     }
 }
 
