@@ -16,4 +16,4 @@
 {% else %}
   {% set start = "'1970-01-01'" %}
 {% endif %}
-{{ known_proxies("superchain", start, traces="optimism_traces") }}
+{{ known_proxies("optimism", start) }}
