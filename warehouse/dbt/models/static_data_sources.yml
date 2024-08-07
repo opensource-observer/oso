@@ -3,6 +3,8 @@ sources:
     database: opensource-observer
     schema: static_data_sources
     tables:
+      - name: oss_funding
+        identifier: oss_funding
       - name: op_rf4_trusted_addresses
         identifier: op_rf4_trusted_addresses
       - name: optimist_nft_holders
