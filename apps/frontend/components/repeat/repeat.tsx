@@ -1,5 +1,5 @@
 import { repeatedElement } from "@plasmicapp/loader-nextjs";
-import React, { ReactNode } from "react";
+import React, { ReactElement, ReactNode } from "react";
 import _ from "lodash";
 import { plasmicRegistration } from "../../lib/plasmic-register";
 import { DataProvider } from "@plasmicapp/loader-nextjs";
@@ -9,6 +9,7 @@ export interface MaxWidthRepeatProps {
   data: Array<any>;
   columnSize: number;
   children?: ReactNode;
+  horizontal?: ReactElement;
   useTestData: boolean;
   testData: Array<any>;
 }
@@ -26,21 +27,29 @@ export function MaxWidthRepeat(props: MaxWidthRepeatProps) {
     ? _.chunk(testData, columnSize)
     : _.chunk(data, columnSize);
 
+  const horizontal = !props.horizontal ? <div></div> : props.horizontal;
+
+  const horizontalCreate = (children: ReactNode) => {
+    return React.cloneElement(horizontal, [], children);
+  };
+
+  const rowRender = (chunk: Array<any>, rowIndex: number) => (
+    <>
+      {chunk.map((data, columnIndex) => {
+        const elementIndex = rowIndex * columnSize + columnIndex;
+        return (
+          <DataProvider name="current" data={data} key={elementIndex}>
+            {repeatedElement(elementIndex, children)}
+          </DataProvider>
+        );
+      })}
+    </>
+  );
+
   return (
     <div className={className}>
       {chunked.map((chunk, rowIndex) => {
-        return (
-          <div key={rowIndex}>
-            {chunk.map((data, columnIndex) => {
-              const elementIndex = rowIndex * columnSize + columnIndex;
-              return (
-                <DataProvider name="current" data={data} key={elementIndex}>
-                  {repeatedElement(elementIndex, children)}
-                </DataProvider>
-              );
-            })}
-          </div>
-        );
+        return horizontalCreate(rowRender(chunk, rowIndex));
       })}
     </div>
   );
@@ -52,6 +61,7 @@ export const MaxWidthRepeatRegistration = plasmicRegistration(MaxWidthRepeat, {
   providesData: true,
   props: {
     children: "slot",
+    horizontal: "slot",
     columnSize: {
       type: "number",
       defaultValue: 1,
@@ -68,5 +78,8 @@ export const MaxWidthRepeatRegistration = plasmicRegistration(MaxWidthRepeat, {
       editOnly: true,
     },
     testData: "object",
+  },
+  defaultStyles: {
+    layout: "hbox",
   },
 });

@@ -128,8 +128,8 @@ importers:
         specifier: workspace:*
         version: link:../../lib/utils
       '@plasmicapp/loader-nextjs':
-        specifier: ^1.0.398
-        version: 1.0.398(next@14.2.5(@babel/core@7.24.8)(@opentelemetry/api@1.9.0)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        specifier: ^1.0.401
+        version: 1.0.401(next@14.2.5(@babel/core@7.24.8)(@opentelemetry/api@1.9.0)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@segment/analytics-next':
         specifier: ^1.70.0
         version: 1.70.0(encoding@0.1.13)
@@ -2962,12 +2962,6 @@ packages:
     peerDependencies:
       react: '>=16.8.0'
 
-  '@plasmicapp/host@1.0.200':
-    resolution: {integrity: sha512-zpYiTzGUflK8ji4SVkWWHfoMVJuGlCnKSnfWcYZ8Xo96DO6XtEb7FuYMwR3AI3lolqS6yZAVcnb85k/CmpypmA==}
-    peerDependencies:
-      react: '>=16.8.0'
-      react-dom: '>=16.8.0'
-
   '@plasmicapp/host@1.0.203':
     resolution: {integrity: sha512-MPRypNz8xihrtVmbCkBj5qePdhSNBNERwJcX29v5aA4pcmC1jV+tNAQPmlwJv5OprHvh5nhVRoy12LVqIE5isg==}
     peerDependencies:
@@ -2989,16 +2983,16 @@ packages:
     resolution: {integrity: sha512-zR3ivU2vPtMmOm7Tgzp/Zf70I7Lh7hdgPWCEoqXjRdjd0C32ZWrT09W8J1IUJzPQ2/i+OPIcCphcy7QkTymAaA==}
     engines: {node: '>=10'}
 
-  '@plasmicapp/loader-nextjs@1.0.398':
-    resolution: {integrity: sha512-QXRXZYEBXk5WfD0/ZBFE8yp5UGURzg23w9SR00MNC1q9/FBs94ecJksDQOXGcG9jakehsztSwiYVdiglp+sJcg==}
+  '@plasmicapp/loader-nextjs@1.0.401':
+    resolution: {integrity: sha512-5z0OZzJuaByTdyYZezre/RyXG3jgIgCcgBWD0eWu8/w2YrNZUBf8fZhvAREqXts2uxyCeveZp4EBqXQZWG3AeA==}
     engines: {node: '>=10'}
     peerDependencies:
       next: '>=10.1.0'
       react: '>=16.8.0'
       react-dom: '>=16.8.0'
 
-  '@plasmicapp/loader-react@1.0.361':
-    resolution: {integrity: sha512-E+aYYsLIqovGB8RHep02vybYIsqpV729bcSMU91I8wHWlTeolA1q/UcEc9T8xPIu2eKgiHe3M8KothxXa96yNg==}
+  '@plasmicapp/loader-react@1.0.364':
+    resolution: {integrity: sha512-3E4d+FOmMC2p7WBjL72Jb7KCg+wvurc+n4W0rnPmF9FWWsjh8vAkOUBysC808Q0VqEUV8DzCC6MfPxmEZxEw4w==}
     engines: {node: '>=12'}
     peerDependencies:
       react: '>=16.8.0'
@@ -15487,14 +15481,6 @@ snapshots:
     transitivePeerDependencies:
       - react-dom
 
-  '@plasmicapp/host@1.0.200(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
-    dependencies:
-      '@plasmicapp/query': 0.1.79(react@18.3.1)
-      csstype: 3.1.3
-      react: 18.3.1
-      react-dom: 18.3.1(react@18.3.1)
-      window-or-global: 1.0.1
-
   '@plasmicapp/host@1.0.203(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@plasmicapp/query': 0.1.79(react@18.3.1)
@@ -15520,11 +15506,11 @@ snapshots:
     dependencies:
       '@plasmicapp/isomorphic-unfetch': 1.0.3
 
-  '@plasmicapp/loader-nextjs@1.0.398(next@14.2.5(@babel/core@7.24.8)(@opentelemetry/api@1.9.0)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@plasmicapp/loader-nextjs@1.0.401(next@14.2.5(@babel/core@7.24.8)(@opentelemetry/api@1.9.0)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@plasmicapp/loader-core': 1.0.135
       '@plasmicapp/loader-edge': 1.0.67
-      '@plasmicapp/loader-react': 1.0.361(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@plasmicapp/loader-react': 1.0.364(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@plasmicapp/nextjs-app-router': 1.0.11(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@plasmicapp/watcher': 1.0.83
       next: 14.2.5(@babel/core@7.24.8)(@opentelemetry/api@1.9.0)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -15536,10 +15522,10 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  '@plasmicapp/loader-react@1.0.361(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@plasmicapp/loader-react@1.0.364(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@plasmicapp/data-sources-context': 0.1.21(react@18.3.1)
-      '@plasmicapp/host': 1.0.200(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@plasmicapp/host': 1.0.203(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@plasmicapp/loader-core': 1.0.135
       '@plasmicapp/loader-fetcher': 1.0.54
       '@plasmicapp/loader-splits': 1.0.62

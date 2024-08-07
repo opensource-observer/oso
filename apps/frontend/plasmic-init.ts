@@ -13,10 +13,14 @@ assert(
 
 export const PLASMIC = initPlasmicLoader({
   projects: _.zip(ids, tokens).map(([id, token]) => {
-    return {
+    const project: { id: string; token: string; version?: string } = {
       id: ensure(id, "Plasmic Project ID is required"),
       token: ensure(token, "Plasmic Project API token is required"),
     };
+    if (process.env.PLASMIC_BRANCH !== "") {
+      project.version = process.env.PLASMIC_BRANCH;
+    }
+    return project;
   }),
   // Fetches the latest revisions, whether or not they were unpublished!
   // Disable for production to ensure you render only published changes.
