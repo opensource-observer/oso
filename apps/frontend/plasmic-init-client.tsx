@@ -17,17 +17,6 @@ import {
   SupabaseWrite,
   SupabaseWriteRegistration,
 } from "./components/widgets/supabase-write";
-import {
-  EventDataProviderRegistration,
-  CollectionEventDataProvider,
-  ArtifactEventDataProvider,
-  ProjectEventDataProvider,
-  ProjectUserDataProvider,
-} from "./components/dataprovider/event-data-provider";
-import {
-  TableDataProvider,
-  TableDataProviderRegistration,
-} from "./components/dataprovider/table-data-provider";
 import { BarList } from "./components/widgets/tremor";
 import { AuthForm } from "./components/widgets/auth-form";
 import {
@@ -184,41 +173,6 @@ PLASMIC.registerComponent(ProjectBrowser, {
     width: "100%",
     minHeight: 300,
   },
-});
-
-PLASMIC.registerComponent(CollectionEventDataProvider, {
-  name: "CollectionEventDataProvider",
-  props: { ...EventDataProviderRegistration },
-  providesData: true,
-  importPath: "./components/dataprovider/event-data-provider",
-});
-
-PLASMIC.registerComponent(ProjectEventDataProvider, {
-  name: "ProjectEventDataProvider",
-  props: { ...EventDataProviderRegistration },
-  providesData: true,
-  importPath: "./components/dataprovider/event-data-provider",
-});
-
-PLASMIC.registerComponent(ArtifactEventDataProvider, {
-  name: "ArtifactEventDataProvider",
-  props: { ...EventDataProviderRegistration },
-  providesData: true,
-  importPath: "./components/dataprovider/event-data-provider",
-});
-
-PLASMIC.registerComponent(ProjectUserDataProvider, {
-  name: "ProjectUserDataProvider",
-  props: { ...EventDataProviderRegistration },
-  providesData: true,
-  importPath: "./components/dataprovider/event-data-provider",
-});
-
-PLASMIC.registerComponent(TableDataProvider, {
-  name: "TableDataProvider",
-  props: { ...TableDataProviderRegistration },
-  providesData: true,
-  importPath: "./components/dataprovider/table-data-provider",
 });
 
 PLASMIC.registerComponent(SupabaseQuery, {
