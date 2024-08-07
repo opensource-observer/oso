@@ -1,3 +1,9 @@
+{#
+  config(
+    materialized='ephemeral',
+  )
+#}
+
 {% set metric = {
     "metric_name": "gas_fees_sum_6_months",
     "metric_unit": "L2 ETH",

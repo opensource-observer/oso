@@ -1,3 +1,9 @@
+{#
+  config(
+    materialized='ephemeral',
+  )
+#}
+
 {% set metric = {
     "metric_name": "trusted_users_onboarded_sum_6_months",
     "metric_unit": "trusted user addresses",

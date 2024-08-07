@@ -1,3 +1,9 @@
+{#
+  config(
+    materialized='ephemeral',
+  )
+#}
+
 {% set metric = {
     "metric_name": "trusted_transactions_sum_6_months",
     "metric_unit": "successful transactions",

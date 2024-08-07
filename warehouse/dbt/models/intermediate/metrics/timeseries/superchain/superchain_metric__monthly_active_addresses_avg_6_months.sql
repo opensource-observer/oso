@@ -1,3 +1,9 @@
+{#
+  config(
+    materialized='ephemeral',
+  )
+#}
+
 {% set metric = {
     "metric_name": "monthly_active_addresses_avg_6_months",
     "metric_unit": "addresses",

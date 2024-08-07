@@ -1,3 +1,9 @@
+{#
+  config(
+    materialized='ephemeral',
+  )
+#}
+
 {% set metric = {
     "metric_name": "trusted_daily_active_users_avg_6_months",
     "metric_unit": "trusted user addresses",
