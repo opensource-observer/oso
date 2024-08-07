@@ -12,3 +12,11 @@ select
   metrics.amount as amount,
   null as unit
 from {{ ref('int_timeseries_code_metrics__developers') }} as metrics
+union all
+select
+  {{ oso_id('"OSO"', '"oso"', 'metric') }} as metric_id,
+  project_id,
+  sample_date,
+  amount,
+  unit
+from {{ ref('int_funding_metric__grants_received_usd') }}
