@@ -20,13 +20,13 @@ export function registerComponent<P>(
   };
 }
 
-type RegisterFuncArgs = Parameters<
-  typeof NextJsPlasmicComponentLoader.prototype.registerFunction
+type RegisterFuncArgs<F extends (...args: any[]) => any> = Parameters<
+  typeof NextJsPlasmicComponentLoader.prototype.registerFunction<F>
 >;
 
-export function registerFunction<P extends (...args: any) => any>(
-  fn: P,
-  meta: RegisterFuncArgs[1],
+export function registerFunction<F extends (...args: any) => any>(
+  fn: F,
+  meta: RegisterFuncArgs<F>[1],
 ): Registration {
   return (PLASMIC: NextJsPlasmicComponentLoader) => {
     PLASMIC.registerFunction(fn, meta);

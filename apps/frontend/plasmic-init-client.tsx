@@ -27,6 +27,7 @@ import {
   AuthActions,
   AuthActionsRegistration,
 } from "./components/widgets/auth-actions";
+import { register as registerMetricsUtils } from "./lib/metrics-utils";
 
 /**
  * Plasmic component registration
@@ -50,6 +51,8 @@ PLASMIC.registerFunction(generateApiKey, {
   },
   importPath: "generate-api-key",
 });
+
+registerMetricsUtils(PLASMIC);
 
 PLASMIC.registerComponent(CircularProgress, {
   name: "CircularProgress",
