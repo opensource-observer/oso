@@ -31,7 +31,10 @@ function summarizeForCards(
   cards: CardSummaryOptions[],
 ): CardSummary[] {
   return cards.map((card) => {
-    const value = card.operation(metrics, card.column);
+    let value = card.operation(metrics, card.column);
+    if (typeof value === "number") {
+      value = value.toLocaleString();
+    }
     return {
       title: card.title,
       subtitle: card.subtitle,
