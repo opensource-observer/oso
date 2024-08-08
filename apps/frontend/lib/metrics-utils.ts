@@ -1,6 +1,7 @@
 /**
  * Various utilities for using metrics on the frontend
  */
+import { logger } from "./logger";
 import { groupRegistrations, registerFunction } from "./plasmic-register";
 
 type ColumnReferenceFunc = (...args: any) => any;
@@ -30,17 +31,27 @@ function summarizeForCards(
   metrics: Record<string, string>[],
   cards: CardSummaryOptions[],
 ): CardSummary[] {
-  return cards.map((card) => {
-    let value = card.operation(metrics, card.column);
-    if (typeof value === "number") {
-      value = value.toLocaleString();
+  const summary: CardSummary[] = [];
+  cards.forEach((card) => {
+    try {
+      let value = card.operation(metrics, card.column);
+      console.log(metrics);
+      if (typeof value === "number") {
+        value = value.toLocaleString();
+      }
+      summary.push({
+        title: card.title,
+        subtitle: card.subtitle,
+        value: value,
+      });
+    } catch (e) {
+      logger.warn(
+        `error processing column ${card.column} for card rendering. skipping`,
+      );
+      return;
     }
-    return {
-      title: card.title,
-      subtitle: card.subtitle,
-      value: value,
-    };
   });
+  return summary;
 }
 
 export const register = groupRegistrations(
