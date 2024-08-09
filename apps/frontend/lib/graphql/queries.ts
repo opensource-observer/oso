@@ -8,38 +8,38 @@ import { gql } from "../__generated__/gql";
  **********************/
 
 const GET_ARTIFACTS_BY_IDS = gql(`
-  query ArtifactByIds($artifact_ids: [String!]) @cached(ttl: 300) {
-    artifacts_v1(where: { artifact_id: { _in: $artifact_ids }}) {
-      artifact_id
-      artifact_source
-      artifact_namespace
-      artifact_name
-      artifact_url
+  query ArtifactByIds($artifactIds: [String!]) {
+    oso_artifactsV1(where: { artifactId: { _in: $artifactIds }}) {
+      artifactId
+      artifactSource
+      artifactNamespace
+      artifactName
+      artifactUrl
     }
   }
 `);
 
 const GET_PROJECTS_BY_IDS = gql(`
-  query ProjectsByIds($project_ids: [String!]) @cached(ttl: 300) {
-    projects_v1(where: { project_id: { _in: $project_ids }}) {
-      project_id
-      project_source
-      project_namespace
-      project_name
-      display_name
+  query ProjectsByIds($projectIds: [String!]) @cached(ttl: 300) {
+    oso_projectsV1(where: { projectId: { _in: $projectIds }}) {
+      projectId
+      projectSource
+      projectNamespace
+      projectName
+      displayName
       description
     }
   }
 `);
 
 const GET_COLLECTIONS_BY_IDS = gql(`
-  query CollectionsByIds($collection_ids: [String!]) @cached(ttl: 300) {
-    collections_v1(where: { collection_id: { _in: $collection_ids }}) {
-      collection_id
-      collection_source
-      collection_namespace
-      collection_name
-      display_name
+  query CollectionsByIds($collectionIds: [String!]) @cached(ttl: 300) {
+    oso_collectionsV1(where: { collectionId: { _in: $collectionIds }}) {
+      collectionId
+      collectionSource
+      collectionNamespace
+      collectionName
+      displayName
       description
     }
   }
@@ -47,8 +47,8 @@ const GET_COLLECTIONS_BY_IDS = gql(`
 
 const GET_ALL_EVENT_TYPES = gql(`
   query GetAllEventTypes @cached(ttl: 300) {
-    event_types_v1 {
-      event_type
+    oso_eventTypesV1 {
+      eventType
     }
   }
 `);
