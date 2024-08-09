@@ -26,7 +26,7 @@ class DuckDbFixture:
         for table_name, table in tables.items():
             columns = table[0]
             rows = table[1:]
-            df = pandas.DataFrame(rows, columns=columns)
+            df = pandas.DataFrame(rows, columns=columns)  # noqa: F841
             self._db.sql(
                 f"""
             CREATE TABLE {table_name} AS SELECT * FROM df

@@ -3,13 +3,11 @@
 #}
 
 with metrics as (
-  select * from {{ ref('rf4_check_oss_requirements') }}
-  union all
   select * from {{ ref('rf4_gas_fees') }}
   union all
   select * from {{ ref('rf4_transactions') }}
   union all
-  select * from {{ ref('rf4_trusted_transactions') }}
+  select * from {{ ref('rf4_trusted_transaction_count') }}
   union all
   select * from {{ ref('rf4_trusted_users_share_of_transactions') }}
   union all
@@ -29,15 +27,12 @@ with metrics as (
   union all
   select * from {{ ref('rf4_power_user_addresses') }}
   union all
-  select * from {{ ref('rf4_openrank_trusted_users') }}
+  select * from {{ ref('rf4_openrank_trusted_users_count') }}
 ),
 
 pivot_metrics as (
   select
     project_id,
-    MAX(
-      case when metric = 'check_oss_requirements' then amount else 0 end
-    ) as check_oss_requirements,
     MAX(
       case when metric = 'gas_fees' then amount else 0 end
     ) as gas_fees,
@@ -82,9 +77,8 @@ pivot_metrics as (
 )
 
 select
-  agora_rf4_to_ossd.application_id,
-  agora_rf4_to_ossd.oso_project_name,
-  pivot_metrics.check_oss_requirements,
+  rf4_project_eligibility.application_id,
+  rf4_project_eligibility.is_oss,
   pivot_metrics.gas_fees,
   pivot_metrics.transaction_count,
   pivot_metrics.trusted_transaction_count,
@@ -97,10 +91,15 @@ select
   pivot_metrics.recurring_addresses,
   pivot_metrics.trusted_recurring_users,
   pivot_metrics.power_user_addresses,
-  pivot_metrics.openrank_trusted_users_count
+  pivot_metrics.openrank_trusted_users_count,
+  COALESCE(LOG10(pivot_metrics.gas_fees + 1), 0) as log_gas_fees,
+  COALESCE(LOG10(pivot_metrics.transaction_count + 1), 0)
+    as log_transaction_count,
+  COALESCE(LOG10(pivot_metrics.trusted_transaction_count + 1), 0)
+    as log_trusted_transaction_count
 from pivot_metrics
 left join {{ ref('projects_v1') }}
   on pivot_metrics.project_id = projects_v1.project_id
-left join {{ source("static_data_sources", "agora_rf4_to_ossd") }}
-  on projects_v1.project_name = agora_rf4_to_ossd.oso_project_name
-where agora_rf4_to_ossd.application_id is not null
+left join {{ source("static_data_sources", "rf4_project_eligibility") }}
+  on projects_v1.project_name = rf4_project_eligibility.oso_name
+where rf4_project_eligibility.is_approved is true

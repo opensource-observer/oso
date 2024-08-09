@@ -1,0 +1,81 @@
+---
+kind: ObjectType
+version: v1
+definition:
+  name: EventTypesV1
+  fields:
+    - name: eventType
+      type: String!
+  graphql:
+    typeName: Oso_EventTypesV1
+    inputTypeName: Oso_EventTypesV1Input
+  dataConnectorTypeMapping:
+    - dataConnectorName: oso_clickhouse
+      dataConnectorObjectType: event_types_v1
+      fieldMapping:
+        eventType:
+          column:
+            name: event_type
+
+---
+kind: TypePermissions
+version: v1
+definition:
+  typeName: EventTypesV1
+  permissions:
+    - role: admin
+      output:
+        allowedFields:
+          - eventType
+    - role: anonymous
+      output:
+        allowedFields:
+          - eventType
+
+---
+kind: ObjectBooleanExpressionType
+version: v1
+definition:
+  name: EventTypesV1BoolExp
+  objectType: EventTypesV1
+  dataConnectorName: oso_clickhouse
+  dataConnectorObjectType: event_types_v1
+  comparableFields:
+    - fieldName: eventType
+      operators:
+        enableAll: true
+  graphql:
+    typeName: Oso_EventTypesV1BoolExp
+
+---
+kind: Model
+version: v1
+definition:
+  name: EventTypesV1
+  objectType: EventTypesV1
+  source:
+    dataConnectorName: oso_clickhouse
+    collection: event_types_v1
+  filterExpressionType: EventTypesV1BoolExp
+  orderableFields:
+    - fieldName: eventType
+      orderByDirections:
+        enableAll: true
+  graphql:
+    selectMany:
+      queryRootField: oso_eventTypesV1
+    selectUniques: []
+    orderByExpressionType: Oso_EventTypesV1OrderBy
+
+---
+kind: ModelPermissions
+version: v1
+definition:
+  modelName: EventTypesV1
+  permissions:
+    - role: admin
+      select:
+        filter: null
+    - role: anonymous
+      select:
+        filter: null

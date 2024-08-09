@@ -1,0 +1,52 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: base-redis
+  labels:
+    toolkit.fluxcd.io/tenant: apps
+    ops.opensource.observer/environment: base
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+      - name: redis
+        image: redis:latest
+        ports:
+        - containerPort: 6379
+        resources:
+          requests:
+            memory: "2048Mi"
+            cpu: "100m"
+          limits:
+            memory: "2048Mi"
+            cpu: "200m"
+        env:
+        - name: REDIS_MAXMEMORY
+          value: "1024mb"
+        - name: REDIS_MAXMEMORY_POLICY
+          value: "allkeys-lru"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+spec:
+  selector:
+    app: redis
+  ports:
+    - protocol: TCP
+      port: 6379
+      targetPort: 6379
+  type: ClusterIP

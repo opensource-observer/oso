@@ -1,0 +1,63 @@
+---
+kind: DataConnectorScalarRepresentation
+version: v1
+definition:
+  dataConnectorName: oso_clickhouse
+  dataConnectorScalarType: String
+  representation: String
+  graphql:
+    comparisonExpressionTypeName: Oso_StringComparisonExp
+
+---
+kind: ScalarType
+version: v1
+definition:
+  name: Float32
+  graphql:
+    typeName: Oso_Float32
+
+---
+kind: ScalarType
+version: v1
+definition:
+  name: DateTime
+  graphql:
+    typeName: Oso_DateTime
+
+---
+kind: ScalarType
+version: v1
+definition:
+  name: Int64
+  graphql:
+    typeName: Oso_Int64
+
+---
+kind: DataConnectorScalarRepresentation
+version: v1
+definition:
+  dataConnectorName: oso_clickhouse
+  dataConnectorScalarType: Float32
+  representation: Float32
+  graphql:
+    comparisonExpressionTypeName: Oso_Float32ComparisonExp
+
+---
+kind: DataConnectorScalarRepresentation
+version: v1
+definition:
+  dataConnectorName: oso_clickhouse
+  dataConnectorScalarType: DateTime
+  representation: DateTime
+  graphql:
+    comparisonExpressionTypeName: Oso_DateTimeComparisonExp
+
+---
+kind: DataConnectorScalarRepresentation
+version: v1
+definition:
+  dataConnectorName: oso_clickhouse
+  dataConnectorScalarType: Int64
+  representation: Int64
+  graphql:
+    comparisonExpressionTypeName: Oso_Int64ComparisonExp

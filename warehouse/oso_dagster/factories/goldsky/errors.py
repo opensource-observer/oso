@@ -1,0 +1,2 @@
+class NoNewData(Exception):
+    pass

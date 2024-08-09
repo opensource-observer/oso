@@ -22,7 +22,6 @@ Open Source Observer is a free analytics suite that helps funders measure the im
   - `/oss-artifact-validators`: Simple library to validate different properties of an "artifact"
 - `/warehouse`: All code specific to the data warehouse
   - `/dbt`: dbt configuration
-  - `/cloudquery-*`: cloudquery plugins for ingesting data (there are many)
   - `/oso_dagster`: Dagster configuration for orchestrating software-defined assets
   - `/oso_lets_go`: Utility for setting up dbt with Google Cloud
   - Also contains other tools to manage warehouse pipelines
@@ -203,3 +202,14 @@ $ dbt run --select {name_of_the_model}
 For setup and common operations for each subproject, navigate into the respective directory and check out the `README.md`.
 
 You can also find some operations guides on our [documentation](https://docs.opensource.observer/docs/how-oso-works/ops/).
+
+## License
+
+The code and documentation in this repository
+is released under Apache 2.0
+(see [LICENSE](./LICENSE)).
+
+This repository does not contain data.
+Datasets may include material that may be subject to third party rights.
+For details on each dataset, see
+the [Data Overview](https://docs.opensource.observer/docs/integrate/overview/).

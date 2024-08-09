@@ -28,12 +28,12 @@
   },
   "keywords": [],
   "devDependencies": {
-    "@types/node": "^20.14.1",
+    "@types/node": "^20.14.10",
     "ts-node": "^10.9.2",
-    "typescript": "^5.4.5"
+    "typescript": "^5.5.3"
   },
   "dependencies": {
-    "@types/lodash": "^4.17.4",
+    "@types/lodash": "^4.17.6",
     "lodash": "^4.17.21"
   }
 }

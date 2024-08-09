@@ -1,0 +1,185 @@
+---
+kind: ObjectType
+version: v1
+definition:
+  name: EventIndexingStatusByProjectV1
+  fields:
+    - name: eventSource
+      type: String!
+    - name: eventType
+      type: String!
+    - name: eventfulDayCount
+      type: Int64!
+    - name: firstEventDate
+      type: DateTime!
+    - name: lastEventDate
+      type: DateTime!
+    - name: projectId
+      type: String!
+    - name: projectName
+      type: String!
+    - name: projectNamespace
+      type: String!
+    - name: projectSource
+      type: String!
+  graphql:
+    typeName: Oso_EventIndexingStatusByProjectV1
+    inputTypeName: Oso_EventIndexingStatusByProjectV1Input
+  dataConnectorTypeMapping:
+    - dataConnectorName: oso_clickhouse
+      dataConnectorObjectType: event_indexing_status_by_project_v1
+      fieldMapping:
+        eventSource:
+          column:
+            name: event_source
+        eventType:
+          column:
+            name: event_type
+        eventfulDayCount:
+          column:
+            name: eventful_day_count
+        firstEventDate:
+          column:
+            name: first_event_date
+        lastEventDate:
+          column:
+            name: last_event_date
+        projectId:
+          column:
+            name: project_id
+        projectName:
+          column:
+            name: project_name
+        projectNamespace:
+          column:
+            name: project_namespace
+        projectSource:
+          column:
+            name: project_source
+
+---
+kind: TypePermissions
+version: v1
+definition:
+  typeName: EventIndexingStatusByProjectV1
+  permissions:
+    - role: admin
+      output:
+        allowedFields:
+          - eventSource
+          - eventType
+          - eventfulDayCount
+          - firstEventDate
+          - lastEventDate
+          - projectId
+          - projectName
+          - projectNamespace
+          - projectSource
+    - role: anonymous
+      output:
+        allowedFields:
+          - eventSource
+          - eventType
+          - eventfulDayCount
+          - firstEventDate
+          - lastEventDate
+          - projectId
+          - projectName
+          - projectNamespace
+          - projectSource
+
+---
+kind: ObjectBooleanExpressionType
+version: v1
+definition:
+  name: EventIndexingStatusByProjectV1BoolExp
+  objectType: EventIndexingStatusByProjectV1
+  dataConnectorName: oso_clickhouse
+  dataConnectorObjectType: event_indexing_status_by_project_v1
+  comparableFields:
+    - fieldName: eventSource
+      operators:
+        enableAll: true
+    - fieldName: eventType
+      operators:
+        enableAll: true
+    - fieldName: eventfulDayCount
+      operators:
+        enableAll: true
+    - fieldName: firstEventDate
+      operators:
+        enableAll: true
+    - fieldName: lastEventDate
+      operators:
+        enableAll: true
+    - fieldName: projectId
+      operators:
+        enableAll: true
+    - fieldName: projectName
+      operators:
+        enableAll: true
+    - fieldName: projectNamespace
+      operators:
+        enableAll: true
+    - fieldName: projectSource
+      operators:
+        enableAll: true
+  graphql:
+    typeName: Oso_EventIndexingStatusByProjectV1BoolExp
+
+---
+kind: Model
+version: v1
+definition:
+  name: EventIndexingStatusByProjectV1
+  objectType: EventIndexingStatusByProjectV1
+  source:
+    dataConnectorName: oso_clickhouse
+    collection: event_indexing_status_by_project_v1
+  filterExpressionType: EventIndexingStatusByProjectV1BoolExp
+  orderableFields:
+    - fieldName: eventSource
+      orderByDirections:
+        enableAll: true
+    - fieldName: eventType
+      orderByDirections:
+        enableAll: true
+    - fieldName: eventfulDayCount
+      orderByDirections:
+        enableAll: true
+    - fieldName: firstEventDate
+      orderByDirections:
+        enableAll: true
+    - fieldName: lastEventDate
+      orderByDirections:
+        enableAll: true
+    - fieldName: projectId
+      orderByDirections:
+        enableAll: true
+    - fieldName: projectName
+      orderByDirections:
+        enableAll: true
+    - fieldName: projectNamespace
+      orderByDirections:
+        enableAll: true
+    - fieldName: projectSource
+      orderByDirections:
+        enableAll: true
+  graphql:
+    selectMany:
+      queryRootField: oso_eventIndexingStatusByProjectV1
+    selectUniques: []
+    orderByExpressionType: Oso_EventIndexingStatusByProjectV1OrderBy
+
+---
+kind: ModelPermissions
+version: v1
+definition:
+  modelName: EventIndexingStatusByProjectV1
+  permissions:
+    - role: admin
+      select:
+        filter: null
+    - role: anonymous
+      select:
+        filter: null

@@ -1,0 +1,120 @@
+---
+kind: ObjectType
+version: v1
+definition:
+  name: EventsMonthlyToArtifact
+  fields:
+    - name: amount
+      type: Float32!
+    - name: artifactId
+      type: String!
+    - name: bucketMonth
+      type: DateTime!
+    - name: eventType
+      type: String!
+  graphql:
+    typeName: Oso_EventsMonthlyToArtifact
+    inputTypeName: Oso_EventsMonthlyToArtifactInput
+  dataConnectorTypeMapping:
+    - dataConnectorName: oso_clickhouse
+      dataConnectorObjectType: events_monthly_to_artifact
+      fieldMapping:
+        amount:
+          column:
+            name: amount
+        artifactId:
+          column:
+            name: artifact_id
+        bucketMonth:
+          column:
+            name: bucket_month
+        eventType:
+          column:
+            name: event_type
+
+---
+kind: TypePermissions
+version: v1
+definition:
+  typeName: EventsMonthlyToArtifact
+  permissions:
+    - role: admin
+      output:
+        allowedFields:
+          - amount
+          - artifactId
+          - bucketMonth
+          - eventType
+    - role: anonymous
+      output:
+        allowedFields:
+          - amount
+          - artifactId
+          - bucketMonth
+          - eventType
+
+---
+kind: ObjectBooleanExpressionType
+version: v1
+definition:
+  name: EventsMonthlyToArtifactBoolExp
+  objectType: EventsMonthlyToArtifact
+  dataConnectorName: oso_clickhouse
+  dataConnectorObjectType: events_monthly_to_artifact
+  comparableFields:
+    - fieldName: amount
+      operators:
+        enableAll: true
+    - fieldName: artifactId
+      operators:
+        enableAll: true
+    - fieldName: bucketMonth
+      operators:
+        enableAll: true
+    - fieldName: eventType
+      operators:
+        enableAll: true
+  graphql:
+    typeName: Oso_EventsMonthlyToArtifactBoolExp
+
+---
+kind: Model
+version: v1
+definition:
+  name: EventsMonthlyToArtifact
+  objectType: EventsMonthlyToArtifact
+  source:
+    dataConnectorName: oso_clickhouse
+    collection: events_monthly_to_artifact
+  filterExpressionType: EventsMonthlyToArtifactBoolExp
+  orderableFields:
+    - fieldName: amount
+      orderByDirections:
+        enableAll: true
+    - fieldName: artifactId
+      orderByDirections:
+        enableAll: true
+    - fieldName: bucketMonth
+      orderByDirections:
+        enableAll: true
+    - fieldName: eventType
+      orderByDirections:
+        enableAll: true
+  graphql:
+    selectMany:
+      queryRootField: oso_eventsMonthlyToArtifact
+    selectUniques: []
+    orderByExpressionType: Oso_EventsMonthlyToArtifactOrderBy
+
+---
+kind: ModelPermissions
+version: v1
+definition:
+  modelName: EventsMonthlyToArtifact
+  permissions:
+    - role: admin
+      select:
+        filter: null
+    - role: anonymous
+      select:
+        filter: null

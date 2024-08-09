@@ -1,0 +1,8 @@
+kind: AuthConfig
+version: v1
+definition:
+  allowRoleEmulationBy: admin
+  mode:
+    webhook:
+      url: https://www.opensource.observer/api/v1/auth
+      method: Get

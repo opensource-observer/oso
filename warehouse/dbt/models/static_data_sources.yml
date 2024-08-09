@@ -3,14 +3,18 @@ sources:
     database: opensource-observer
     schema: static_data_sources
     tables:
+      - name: oss_funding
+        identifier: oss_funding
+      - name: op_rf4_trusted_addresses
+        identifier: op_rf4_trusted_addresses
       - name: optimist_nft_holders
         identifier: optimist_nft_holders
       - name: agora_rf4_applications
         identifier: agora_rf4_applications
       - name: agora_rf4_artifacts_by_app
         identifier: agora_rf4_artifacts_by_app
-      - name: agora_rf4_to_ossd
-        identifier: agora_rf4_to_ossd
+      - name: rf4_project_eligibility
+        identifier: rf4_project_eligibility
       - name: agora_rf4_repos_with_contracts
         identifier: agora_rf4_repos_with_contracts
       - name: op_airdrop1_addresses_detailed_list

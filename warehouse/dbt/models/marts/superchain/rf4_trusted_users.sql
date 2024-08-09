@@ -3,14 +3,13 @@ with farcaster_users as (
     fid as farcaster_id,
     address,
     CAST(
-      fid < '20939'
+      CAST(fid as int64) < 20939
       as int64
     ) as farcaster_prepermissionless
   from {{ ref('stg_farcaster__addresses') }}
 ),
 
 eigentrust_top_users as (
-  {# draft model for testing #}
   select
     1 as eigentrust_verification,
     CAST(farcaster_id as string) as farcaster_id
@@ -50,7 +49,7 @@ airdrop_recipients as (
     select
       LOWER(address) as address,
       COUNT(distinct airdrop_round) as count_drops
-    from {{ ref('stg_optimism_airdrop_addresses') }}
+    from {{ ref('stg_optimism__airdrop_addresses') }}
     group by LOWER(address)
   )
 ),

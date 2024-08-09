@@ -1,12 +1,12 @@
 with projects as (
   select
     apps.application_id,
-    apps.oso_project_name as project_name,
+    apps.oso_name as project_name,
     current_projects.blockchain
-  from {{ source('static_data_sources', 'agora_rf4_to_ossd') }} as apps
+  from {{ source('static_data_sources', 'rf4_project_eligibility') }} as apps
   left join
     {{ ref('stg_ossd__current_projects') }} as current_projects
-    on apps.oso_project_name = current_projects.project_name
+    on apps.oso_name = current_projects.project_name
 ),
 
 oso_blockchain_artifacts as (
@@ -16,14 +16,14 @@ oso_blockchain_artifacts as (
     'oso_verification' as discovery_method,
     UPPER(tag) as artifact_type,
     UPPER(network) as network,
-    LOWER(JSON_VALUE(blockchains.address)) as address
+    LOWER(blockchains.address) as address
   from projects
   cross join
-    UNNEST(JSON_QUERY_ARRAY(projects.blockchain)) as blockchains
+    UNNEST(projects.blockchain) as blockchains
   cross join
-    UNNEST(JSON_VALUE_ARRAY(blockchains.networks)) as network
+    UNNEST(blockchains.networks) as network
   cross join
-    UNNEST(JSON_VALUE_ARRAY(blockchains.tags)) as tag
+    UNNEST(blockchains.tags) as tag
   where tag in ('contract', 'deployer')
 ),
 

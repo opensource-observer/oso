@@ -3,12 +3,16 @@ import { cache } from "react";
 import { PlasmicComponent } from "@plasmicapp/loader-nextjs";
 import { PLASMIC } from "../../../../plasmic-init";
 import { PlasmicClientRootProvider } from "../../../../plasmic-init-client";
-import { cachedGetArtifactByName } from "../../../../lib/graphql/cached-queries";
+import {
+  cachedGetAllEventTypes,
+  cachedGetArtifactByName,
+  cachedGetCodeMetricsByArtifactIds,
+} from "../../../../lib/clickhouse/cached-queries";
 import { logger } from "../../../../lib/logger";
 
 const PLASMIC_COMPONENT = "ArtifactPage";
 //export const dynamic = STATIC_EXPORT ? "force-static" : "force-dynamic";
-export const dynamic = "force-static";
+export const dynamic = "force-dynamic";
 export const dynamicParams = true;
 export const revalidate = false; // 3600 = 1 hour
 /**
@@ -67,10 +71,10 @@ export default async function ArtifactPage(props: ArtifactPageProps) {
     params.name.length > 1 ? params.name : [undefined, params.name[0]];
 
   // Get artifact metadata from the database
-  const { artifacts_v1: artifactArray } = await cachedGetArtifactByName({
-    artifact_source: source,
-    artifact_namespace: namespace,
-    artifact_name: name,
+  const artifactArray = await cachedGetArtifactByName({
+    artifactSource: source,
+    artifactNamespace: namespace,
+    artifactName: name,
   });
   if (!Array.isArray(artifactArray) || artifactArray.length < 1) {
     logger.warn(
@@ -79,6 +83,16 @@ export default async function ArtifactPage(props: ArtifactPageProps) {
     notFound();
   }
   const artifact = artifactArray[0];
+  const artifactId = artifact.artifact_id;
+
+  const data = await Promise.all([
+    cachedGetAllEventTypes(),
+    cachedGetCodeMetricsByArtifactIds({
+      artifactIds: [artifactId],
+    }),
+  ]);
+  const eventTypes = data[0];
+  const codeMetrics = data[1];
 
   //console.log(artifact);
   const plasmicData = await cachedFetchComponent(PLASMIC_COMPONENT);
@@ -97,6 +111,8 @@ export default async function ArtifactPage(props: ArtifactPageProps) {
         component={compMeta.displayName}
         componentProps={{
           metadata: artifact,
+          eventTypes: eventTypes,
+          codeMetrics: codeMetrics,
         }}
       />
     </PlasmicClientRootProvider>

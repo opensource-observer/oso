@@ -1,0 +1,120 @@
+---
+kind: ObjectType
+version: v1
+definition:
+  name: EventsWeeklyToArtifact
+  fields:
+    - name: amount
+      type: Float32!
+    - name: artifactId
+      type: String!
+    - name: bucketWeek
+      type: DateTime!
+    - name: eventType
+      type: String!
+  graphql:
+    typeName: Oso_EventsWeeklyToArtifact
+    inputTypeName: Oso_EventsWeeklyToArtifactInput
+  dataConnectorTypeMapping:
+    - dataConnectorName: oso_clickhouse
+      dataConnectorObjectType: events_weekly_to_artifact
+      fieldMapping:
+        amount:
+          column:
+            name: amount
+        artifactId:
+          column:
+            name: artifact_id
+        bucketWeek:
+          column:
+            name: bucket_week
+        eventType:
+          column:
+            name: event_type
+
+---
+kind: TypePermissions
+version: v1
+definition:
+  typeName: EventsWeeklyToArtifact
+  permissions:
+    - role: admin
+      output:
+        allowedFields:
+          - amount
+          - artifactId
+          - bucketWeek
+          - eventType
+    - role: anonymous
+      output:
+        allowedFields:
+          - amount
+          - artifactId
+          - bucketWeek
+          - eventType
+
+---
+kind: ObjectBooleanExpressionType
+version: v1
+definition:
+  name: EventsWeeklyToArtifactBoolExp
+  objectType: EventsWeeklyToArtifact
+  dataConnectorName: oso_clickhouse
+  dataConnectorObjectType: events_weekly_to_artifact
+  comparableFields:
+    - fieldName: amount
+      operators:
+        enableAll: true
+    - fieldName: artifactId
+      operators:
+        enableAll: true
+    - fieldName: bucketWeek
+      operators:
+        enableAll: true
+    - fieldName: eventType
+      operators:
+        enableAll: true
+  graphql:
+    typeName: Oso_EventsWeeklyToArtifactBoolExp
+
+---
+kind: Model
+version: v1
+definition:
+  name: EventsWeeklyToArtifact
+  objectType: EventsWeeklyToArtifact
+  source:
+    dataConnectorName: oso_clickhouse
+    collection: events_weekly_to_artifact
+  filterExpressionType: EventsWeeklyToArtifactBoolExp
+  orderableFields:
+    - fieldName: amount
+      orderByDirections:
+        enableAll: true
+    - fieldName: artifactId
+      orderByDirections:
+        enableAll: true
+    - fieldName: bucketWeek
+      orderByDirections:
+        enableAll: true
+    - fieldName: eventType
+      orderByDirections:
+        enableAll: true
+  graphql:
+    selectMany:
+      queryRootField: oso_eventsWeeklyToArtifact
+    selectUniques: []
+    orderByExpressionType: Oso_EventsWeeklyToArtifactOrderBy
+
+---
+kind: ModelPermissions
+version: v1
+definition:
+  modelName: EventsWeeklyToArtifact
+  permissions:
+    - role: admin
+      select:
+        filter: null
+    - role: anonymous
+      select:
+        filter: null

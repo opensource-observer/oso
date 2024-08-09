@@ -1,5 +1,7 @@
+# ruff: noqa: E402
 """
-Tool for handling dbt compilation in a docker container
+Tool for handling dbt compilation in a docker container. This should not be used
+locally. This is truly only for docker.
 """
 
 import click
@@ -33,6 +35,8 @@ def main(additional_vars: str):
 
     main_dbt_project_dir = Path(__file__).joinpath("..", "..", "..").resolve()
     dbt_target_base_dir = os.getenv("DAGSTER_DBT_TARGET_BASE_DIR")
+    if not dbt_target_base_dir:
+        raise Exception("dbt target base directory must be set")
     load_dbt_manifests(
         dbt_target_base_dir,
         main_dbt_project_dir,

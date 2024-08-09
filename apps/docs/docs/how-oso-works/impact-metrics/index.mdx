@@ -3,9 +3,8 @@ title: Specification
 sidebar_position: 1
 ---
 
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
-
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
 
 :::info
 An **impact metric** is a quantitative measure of impact over a discrete period of time. Impact metrics are most commonly queried by project (eg, `uniswap`), although they can also be queried by individual artifact or at the collection level.
@@ -19,7 +18,7 @@ Impact metrics should be designed with the following principles in mind:
 
 - **Verifiability**: Metrics should be based on public data that can be independently verified. They should not rely on proprietary data sources or private APIs.
 - **Reproducibility**: Metrics should be easy to reproduce, simulate, and audit to ensure they are achieving the intended results. They should not have a "black box" element that makes them difficult to understand or replicate.
-- **Consistency**: Metrics should be consistent across projects and artifacts. They should be calculated using the same methodology and data sources to ensure that they are comparable.  
+- **Consistency**: Metrics should be consistent across projects and artifacts. They should be calculated using the same methodology and data sources to ensure that they are comparable.
 - **Completeness**: Metrics should be comprehensive and cover all projects and artifacts in the OSO database that fulfill basic requirements. They should not be highly sector-specific.
 - **Simplicity**: Metrics should have business logic that is easy to understand. They should not require a deep understanding of the underlying data or complex statistical methods to interpret.
 
@@ -37,6 +36,7 @@ An impact metric must be:
 ## Schema
 
 Every impact metric must include the following fields: `project_id`, `impact_metric`, and `amount`. For example:
+
 ```json
 {
   "project_id": "jUda1pi-FdNlaUmgKq51B4h8x4wX3QTN2fZkKq6N0vw\u003d",
@@ -46,7 +46,6 @@ Every impact metric must include the following fields: `project_id`, `impact_met
 ```
 
 Currently all intermediate metrics are calculated [here](https://github.com/opensource-observer/oso/tree/main/warehouse/dbt/models/intermediate/metrics) and consolidated metrics are available as metrics marts [here](https://github.com/opensource-observer/oso/tree/main/warehouse/dbt/models/marts/metrics).
-
 
 ## Sample Metrics
 
@@ -172,6 +171,7 @@ Here's a more complex impact metric that uses several CTEs to calculate the numb
       group by
         project_id
     ```
+
   </TabItem>
   <TabItem value="response" label="Response">
     ```json

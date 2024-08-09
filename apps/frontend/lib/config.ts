@@ -25,6 +25,7 @@ export const DB_GRAPHQL_URL = requireEnv(
   process.env.NEXT_PUBLIC_DB_GRAPHQL_URL,
   "NEXT_PUBLIC_DB_GRAPHQL_URL",
 );
+export const HASURA_URL = process.env.HASURA_URL;
 export const OSO_API_KEY = process.env.OSO_API_KEY;
 export const SUPABASE_URL = requireEnv(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -53,3 +54,7 @@ export const FEEDBACK_FARM_ID = requireEnv(
   process.env.NEXT_PUBLIC_FEEDBACK_FARM_ID,
   "NEXT_PUBLIC_FEEDBACK_FARM_ID",
 );
+export const CLICKHOUSE_URL = process.env.CLICKHOUSE_URL ?? "MISSING";
+export const CLICKHOUSE_USERNAME = process.env.CLICKHOUSE_USERNAME ?? "MISSING";
+export const CLICKHOUSE_PASSWORD = process.env.CLICKHOUSE_PASSWORD ?? "MISSING";
+export const CLICKHOUSE_DB_NAME = process.env.CLICKHOUSE_DB_NAME ?? "default";

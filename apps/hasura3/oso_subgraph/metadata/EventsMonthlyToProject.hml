@@ -1,0 +1,120 @@
+---
+kind: ObjectType
+version: v1
+definition:
+  name: EventsMonthlyToProject
+  fields:
+    - name: amount
+      type: Float32!
+    - name: bucketMonth
+      type: DateTime!
+    - name: eventType
+      type: String!
+    - name: projectId
+      type: String!
+  graphql:
+    typeName: Oso_EventsMonthlyToProject
+    inputTypeName: Oso_EventsMonthlyToProjectInput
+  dataConnectorTypeMapping:
+    - dataConnectorName: oso_clickhouse
+      dataConnectorObjectType: events_monthly_to_project
+      fieldMapping:
+        amount:
+          column:
+            name: amount
+        bucketMonth:
+          column:
+            name: bucket_month
+        eventType:
+          column:
+            name: event_type
+        projectId:
+          column:
+            name: project_id
+
+---
+kind: TypePermissions
+version: v1
+definition:
+  typeName: EventsMonthlyToProject
+  permissions:
+    - role: admin
+      output:
+        allowedFields:
+          - amount
+          - bucketMonth
+          - eventType
+          - projectId
+    - role: anonymous
+      output:
+        allowedFields:
+          - amount
+          - bucketMonth
+          - eventType
+          - projectId
+
+---
+kind: ObjectBooleanExpressionType
+version: v1
+definition:
+  name: EventsMonthlyToProjectBoolExp
+  objectType: EventsMonthlyToProject
+  dataConnectorName: oso_clickhouse
+  dataConnectorObjectType: events_monthly_to_project
+  comparableFields:
+    - fieldName: amount
+      operators:
+        enableAll: true
+    - fieldName: bucketMonth
+      operators:
+        enableAll: true
+    - fieldName: eventType
+      operators:
+        enableAll: true
+    - fieldName: projectId
+      operators:
+        enableAll: true
+  graphql:
+    typeName: Oso_EventsMonthlyToProjectBoolExp
+
+---
+kind: Model
+version: v1
+definition:
+  name: EventsMonthlyToProject
+  objectType: EventsMonthlyToProject
+  source:
+    dataConnectorName: oso_clickhouse
+    collection: events_monthly_to_project
+  filterExpressionType: EventsMonthlyToProjectBoolExp
+  orderableFields:
+    - fieldName: amount
+      orderByDirections:
+        enableAll: true
+    - fieldName: bucketMonth
+      orderByDirections:
+        enableAll: true
+    - fieldName: eventType
+      orderByDirections:
+        enableAll: true
+    - fieldName: projectId
+      orderByDirections:
+        enableAll: true
+  graphql:
+    selectMany:
+      queryRootField: oso_eventsMonthlyToProject
+    selectUniques: []
+    orderByExpressionType: Oso_EventsMonthlyToProjectOrderBy
+
+---
+kind: ModelPermissions
+version: v1
+definition:
+  modelName: EventsMonthlyToProject
+  permissions:
+    - role: admin
+      select:
+        filter: null
+    - role: anonymous
+      select:
+        filter: null

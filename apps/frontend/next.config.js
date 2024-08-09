@@ -11,8 +11,34 @@ const nextConfig = {
       }
     : {
         // Options for non-static-export
+        async headers() {
+          return [
+            {
+              // matching all API routes
+              source: "/api/:path*",
+              //source: "/api/v1/graphql",
+              headers: [
+                { key: "Access-Control-Allow-Credentials", value: "true" },
+                { key: "Access-Control-Allow-Origin", value: "*" }, // replace this your actual origin
+                {
+                  key: "Access-Control-Allow-Methods",
+                  value: "GET,DELETE,PATCH,POST,PUT",
+                },
+                {
+                  key: "Access-Control-Allow-Headers",
+                  value:
+                    "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version",
+                },
+              ],
+            },
+          ];
+        },
         async rewrites() {
           return [
+            {
+              source: "/api/auth",
+              destination: "/api/v1/auth",
+            },
             {
               source: "/docs/:path*",
               destination: "https://docs.opensource.observer/docs/:path*",
@@ -60,7 +86,7 @@ const nextConfig = {
       }),
   productionBrowserSourceMaps: true,
   experimental: {
-    serverComponentsExternalPackages: ["typeorm"],
+    serverComponentsExternalPackages: ["typeorm", "graphql"],
   },
   webpack: (config, { isServer }) => {
     if (isServer) {

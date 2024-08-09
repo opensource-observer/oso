@@ -18,13 +18,17 @@ github_repos as (
     CAST(repos.id as STRING) as artifact_source_id
   from projects
   cross join
-    UNNEST(JSON_QUERY_ARRAY(projects.github)) as github
+    UNNEST(projects.github) as github
   inner join
     {{ ref('stg_ossd__current_repositories') }} as repos
     on
+      {# 
+        We join on either the repo url or the user/org url.
+        The RTRIMs are to ensure we match even if there are trailing slashes 
+      #}
       LOWER(CONCAT("https://github.com/", repos.owner))
-      = LOWER(JSON_VALUE(github.url))
-      or LOWER(repos.url) = LOWER(JSON_VALUE(github.url))
+      = LOWER(RTRIM(github.url, "/"))
+      or LOWER(repos.url) = LOWER(RTRIM(github.url, "/"))
 ),
 
 all_npm_raw as (
@@ -32,19 +36,19 @@ all_npm_raw as (
     "NPM" as artifact_source,
     "PACKAGE" as artifact_type,
     projects.project_id,
-    JSON_VALUE(npm.url) as artifact_source_id,
+    npm.url as artifact_source_id,
+    npm.url as artifact_url,
     case
       when
-        JSON_VALUE(npm.url) like "https://npmjs.com/package/%"
-        then SUBSTR(JSON_VALUE(npm.url), 28)
+        npm.url like "https://npmjs.com/package/%"
+        then SUBSTR(npm.url, 28)
       when
-        JSON_VALUE(npm.url) like "https://www.npmjs.com/package/%"
-        then SUBSTR(JSON_VALUE(npm.url), 31)
-    end as artifact_name,
-    JSON_VALUE(npm.url) as artifact_url
+        npm.url like "https://www.npmjs.com/package/%"
+        then SUBSTR(npm.url, 31)
+    end as artifact_name
   from projects
   cross join
-    UNNEST(JSON_QUERY_ARRAY(projects.npm)) as npm
+    UNNEST(projects.npm) as npm
 ),
 
 all_npm as (
@@ -66,16 +70,16 @@ ossd_blockchain as (
     tag as artifact_type,
     network as artifact_namespace,
     network as artifact_source,
-    JSON_VALUE(blockchains.address) as artifact_source_id,
-    JSON_VALUE(blockchains.address) as artifact_name,
-    JSON_VALUE(blockchains.address) as artifact_url
+    blockchains.address as artifact_source_id,
+    blockchains.address as artifact_name,
+    blockchains.address as artifact_url
   from projects
   cross join
-    UNNEST(JSON_QUERY_ARRAY(projects.blockchain)) as blockchains
+    UNNEST(projects.blockchain) as blockchains
   cross join
-    UNNEST(JSON_VALUE_ARRAY(blockchains.networks)) as network
+    UNNEST(blockchains.networks) as network
   cross join
-    UNNEST(JSON_VALUE_ARRAY(blockchains.tags)) as tag
+    UNNEST(blockchains.tags) as tag
 ),
 
 all_artifacts as (

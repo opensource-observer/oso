@@ -1,7 +1,6 @@
 # Query tools for bigquery tables
-from typing import List, Dict, Optional
+from typing import List, cast, Optional
 from functools import cache
-from dataclasses import dataclass
 
 from google.cloud.bigquery import Client, Table, TableReference
 from google.cloud.bigquery.table import RowIterator
@@ -14,27 +13,40 @@ class TableLoader:
         self.bq = bq
 
     def __call__(self, table_ref: TableReference | Table | str):
+        print(table_ref)
         return BigQueryTableQueryHelper.load_by_table(self.bq, table_ref)
 
 
 class BigQueryTableQueryHelper:
     @classmethod
     def load_by_table(cls, bq: Client, table_ref: TableReference | Table | str):
-        if type(table_ref) == str:
+        if isinstance(table_ref, str):
             table_ref = TableReference.from_string(table_ref)
+        table_ref = cast(TableReference, table_ref)
         helper = cls(bq, table_ref)
         return helper
 
     def __init__(self, bq: Client, table_ref: TableReference):
         self._bq = bq
-        self._table_ref = table_ref
+        self._table_ref: TableReference = table_ref
         self._column_list = None
 
     def select_columns(
-        self, prefix: str = "", exclude: List[str] = None, include: List[str] = None
+        self,
+        prefix: str = "",
+        intersect_columns_with: Optional["BigQueryTableQueryHelper"] = None,
+        exclude: Optional[List[str]] = None,
+        include: Optional[List[str]] = None,
     ):
         columns = self.filtered_columns(exclude=exclude, include=include)
         ordered_columns = map(lambda c: c.column_name, columns)
+
+        if intersect_columns_with is not None:
+            intersect_column_names = set(
+                map(lambda c: c.column_name, intersect_columns_with.columns)
+            )
+            ordered_columns = set(ordered_columns).intersection(intersect_column_names)
+
         if prefix != "":
             ordered_columns = map(lambda a: f"`{prefix}`.`{a}`", ordered_columns)
         else:
@@ -57,7 +69,9 @@ class BigQueryTableQueryHelper:
         self._column_list = list(result)
         return self._column_list
 
-    def filtered_columns(self, exclude: List[str] = None, include: List[str] = None):
+    def filtered_columns(
+        self, exclude: Optional[List[str]] = None, include: Optional[List[str]] = None
+    ):
         exclude = exclude or []
         include = include or []
 
@@ -102,15 +116,40 @@ class BigQueryTableQueryHelper:
     def update_columns_with(
         self,
         self_prefix: str,
-        other_prefix: str,
-        exclude: List[str] = None,
-        include: List[str] = None,
+        source_prefix: str,
+        source_table: Optional["BigQueryTableQueryHelper"] = None,
+        exclude: Optional[List[str]] = None,
+        include: Optional[List[str]] = None,
+        fail_with_additional_columns: bool = False,
     ):
         columns = self.filtered_columns(exclude=exclude, include=include)
         ordered_columns = map(lambda c: c.column_name, columns)
 
+        # If the other table is included then we can ensure only matching fields are contained
+        if source_table is not None:
+            print("WHAT IS THIS")
+            print(source_table._table_ref)
+            source_column_names = set(
+                map(lambda c: c.column_name, source_table.columns)
+            )
+            ordered_columns = set(ordered_columns).intersection(source_column_names)
+
+            if fail_with_additional_columns:
+                additional_columns = (
+                    set(source_column_names) - set(ordered_columns) - set(exclude or [])
+                )
+                print("source")
+                print(list(source_column_names))
+                print("ordered")
+                print(list(ordered_columns))
+                if len(additional_columns) > 0:
+                    raise Exception(
+                        f"more columns in the source table than the destination `{additional_columns}`"
+                    )
+
         set_columns = map(
-            lambda c: f"`{self_prefix}`.`{c}` = `{other_prefix}`.`{c}`", ordered_columns
+            lambda c: f"`{self_prefix}`.`{c}` = `{source_prefix}`.`{c}`",
+            ordered_columns,
         )
         return ", ".join(set_columns)
 

@@ -1,0 +1,120 @@
+---
+kind: ObjectType
+version: v1
+definition:
+  name: EventsDailyToCollection
+  fields:
+    - name: amount
+      type: Float32!
+    - name: bucketDay
+      type: DateTime!
+    - name: collectionId
+      type: String!
+    - name: eventType
+      type: String!
+  graphql:
+    typeName: Oso_EventsDailyToCollection
+    inputTypeName: Oso_EventsDailyToCollectionInput
+  dataConnectorTypeMapping:
+    - dataConnectorName: oso_clickhouse
+      dataConnectorObjectType: events_daily_to_collection
+      fieldMapping:
+        amount:
+          column:
+            name: amount
+        bucketDay:
+          column:
+            name: bucket_day
+        collectionId:
+          column:
+            name: collection_id
+        eventType:
+          column:
+            name: event_type
+
+---
+kind: TypePermissions
+version: v1
+definition:
+  typeName: EventsDailyToCollection
+  permissions:
+    - role: admin
+      output:
+        allowedFields:
+          - amount
+          - bucketDay
+          - collectionId
+          - eventType
+    - role: anonymous
+      output:
+        allowedFields:
+          - amount
+          - bucketDay
+          - collectionId
+          - eventType
+
+---
+kind: ObjectBooleanExpressionType
+version: v1
+definition:
+  name: EventsDailyToCollectionBoolExp
+  objectType: EventsDailyToCollection
+  dataConnectorName: oso_clickhouse
+  dataConnectorObjectType: events_daily_to_collection
+  comparableFields:
+    - fieldName: amount
+      operators:
+        enableAll: true
+    - fieldName: bucketDay
+      operators:
+        enableAll: true
+    - fieldName: collectionId
+      operators:
+        enableAll: true
+    - fieldName: eventType
+      operators:
+        enableAll: true
+  graphql:
+    typeName: Oso_EventsDailyToCollectionBoolExp
+
+---
+kind: Model
+version: v1
+definition:
+  name: EventsDailyToCollection
+  objectType: EventsDailyToCollection
+  source:
+    dataConnectorName: oso_clickhouse
+    collection: events_daily_to_collection
+  filterExpressionType: EventsDailyToCollectionBoolExp
+  orderableFields:
+    - fieldName: amount
+      orderByDirections:
+        enableAll: true
+    - fieldName: bucketDay
+      orderByDirections:
+        enableAll: true
+    - fieldName: collectionId
+      orderByDirections:
+        enableAll: true
+    - fieldName: eventType
+      orderByDirections:
+        enableAll: true
+  graphql:
+    selectMany:
+      queryRootField: oso_eventsDailyToCollection
+    selectUniques: []
+    orderByExpressionType: Oso_EventsDailyToCollectionOrderBy
+
+---
+kind: ModelPermissions
+version: v1
+definition:
+  modelName: EventsDailyToCollection
+  permissions:
+    - role: admin
+      select:
+        filter: null
+    - role: anonymous
+      select:
+        filter: null

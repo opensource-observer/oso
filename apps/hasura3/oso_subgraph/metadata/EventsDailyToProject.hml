@@ -1,0 +1,120 @@
+---
+kind: ObjectType
+version: v1
+definition:
+  name: EventsDailyToProject
+  fields:
+    - name: amount
+      type: Float32!
+    - name: bucketDay
+      type: DateTime!
+    - name: eventType
+      type: String!
+    - name: projectId
+      type: String!
+  graphql:
+    typeName: Oso_EventsDailyToProject
+    inputTypeName: Oso_EventsDailyToProjectInput
+  dataConnectorTypeMapping:
+    - dataConnectorName: oso_clickhouse
+      dataConnectorObjectType: events_daily_to_project
+      fieldMapping:
+        amount:
+          column:
+            name: amount
+        bucketDay:
+          column:
+            name: bucket_day
+        eventType:
+          column:
+            name: event_type
+        projectId:
+          column:
+            name: project_id
+
+---
+kind: TypePermissions
+version: v1
+definition:
+  typeName: EventsDailyToProject
+  permissions:
+    - role: admin
+      output:
+        allowedFields:
+          - amount
+          - bucketDay
+          - eventType
+          - projectId
+    - role: anonymous
+      output:
+        allowedFields:
+          - amount
+          - bucketDay
+          - eventType
+          - projectId
+
+---
+kind: ObjectBooleanExpressionType
+version: v1
+definition:
+  name: EventsDailyToProjectBoolExp
+  objectType: EventsDailyToProject
+  dataConnectorName: oso_clickhouse
+  dataConnectorObjectType: events_daily_to_project
+  comparableFields:
+    - fieldName: amount
+      operators:
+        enableAll: true
+    - fieldName: bucketDay
+      operators:
+        enableAll: true
+    - fieldName: eventType
+      operators:
+        enableAll: true
+    - fieldName: projectId
+      operators:
+        enableAll: true
+  graphql:
+    typeName: Oso_EventsDailyToProjectBoolExp
+
+---
+kind: Model
+version: v1
+definition:
+  name: EventsDailyToProject
+  objectType: EventsDailyToProject
+  source:
+    dataConnectorName: oso_clickhouse
+    collection: events_daily_to_project
+  filterExpressionType: EventsDailyToProjectBoolExp
+  orderableFields:
+    - fieldName: amount
+      orderByDirections:
+        enableAll: true
+    - fieldName: bucketDay
+      orderByDirections:
+        enableAll: true
+    - fieldName: eventType
+      orderByDirections:
+        enableAll: true
+    - fieldName: projectId
+      orderByDirections:
+        enableAll: true
+  graphql:
+    selectMany:
+      queryRootField: oso_eventsDailyToProject
+    selectUniques: []
+    orderByExpressionType: Oso_EventsDailyToProjectOrderBy
+
+---
+kind: ModelPermissions
+version: v1
+definition:
+  modelName: EventsDailyToProject
+  permissions:
+    - role: admin
+      select:
+        filter: null
+    - role: anonymous
+      select:
+        filter: null

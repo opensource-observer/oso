@@ -9,7 +9,7 @@
   )
 }}
 
-{% set networks = ["base", "frax", "metal", "mode", "zora"] %}
+{% set networks = ["base", "frax", "metal", "mode", "optimism", "zora"] %}
 {% set start_date = '2023-10-01' %}
 {% set end_date = '2024-06-01' %}
 {% set union_queries = [] %}
@@ -23,7 +23,7 @@
     lower(from_address) as from_address,
     lower(to_address) as to_address,
     '{{ network_upper }}' as network,
-  from {{ source(network, "transactions") }}
+  from {{ oso_source(network, "transactions") }}
   where
     block_timestamp > '{{ start_date }}'
     and block_timestamp < '{{ end_date }}'
@@ -39,19 +39,6 @@ with superchain_txns as (
   {{ final_query }}
 ),
 
-op_txns as (
-  select
-    'OPTIMISM' as network,
-    lower(from_address) as from_address,
-    lower(to_address) as to_address,
-    date_trunc(block_timestamp, day) as txn_date
-  from {{ source("optimism", "receipts") }}
-  where
-    block_timestamp > '{{ start_date }}'
-    and block_timestamp < '{{ end_date }}'
-    and status = 1
-),
-
 txns as (
   select
     txn_date,
@@ -59,13 +46,6 @@ txns as (
     to_address,
     network
   from superchain_txns
-  union all
-  select
-    txn_date,
-    from_address,
-    to_address,
-    network
-  from op_txns
 )
 
 select distinct

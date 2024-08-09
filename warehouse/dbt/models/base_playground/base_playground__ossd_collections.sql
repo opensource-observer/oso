@@ -12,7 +12,7 @@
 with filtered_collections as (
   select distinct 
     collections.collection_name as `name`, 
-    collections.sync_time as `sync_time`
+    collections.committed_time as `committed_time`
   from {{ ref('stg_ossd__current_collections') }} as collections
   cross join UNNEST(collections.projects) as project_name
   inner join {{ ref('stg_ossd__current_projects') }} as projects
@@ -24,4 +24,4 @@ select collections.*
 from {{ oso_source("ossd", "collections") }} as collections
 inner join filtered_collections as filtered
   on filtered.name = collections.name
-    and collections.sync_time = filtered.sync_time
+    and collections.committed_time = filtered.committed_time

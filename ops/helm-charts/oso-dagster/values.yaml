@@ -18,11 +18,17 @@ configMap:
   name: "dagster-extra-env-config-map"
   secretPrefix: "gcp:secretmanager:dagster"
 secretmanagerKeys: 
-  dbUser: "db-user/versions/1"
-  dbHost: "db-host/versions/1"
-  dbPort: "db-port/versions/1"
-  dbName: "db-name/versions/1"
-  impersonateServiceAccount: "dbt-impersonate-service-account/versions/1"
+  dbUser: "db-user/versions/latest"
+  dbHost: "db-host/versions/latest"
+  dbPort: "db-port/versions/latest"
+  dbName: "db-name/versions/latest"
+  impersonateServiceAccount: "dbt-impersonate-service-account/versions/latest"
+  stagingBucketUrl: "staging-bucket-url/versions/latest"
+  discordWebhookUrl: "discord-webhook-url/versions/latest"
 pg:
   port: "5432"
   host: "127.0.0.1"
+alerts:
+  baseUrl: ""
+cache:
+  uri: ""

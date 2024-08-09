@@ -5,10 +5,10 @@ select
   project_name,
   display_name,
   description,
-  ARRAY_LENGTH(JSON_EXTRACT_ARRAY(github))
+  ARRAY_LENGTH(github)
     as github_artifact_count,
-  ARRAY_LENGTH(JSON_EXTRACT_ARRAY(blockchain))
+  ARRAY_LENGTH(blockchain)
     as blockchain_artifact_count,
-  ARRAY_LENGTH(JSON_EXTRACT_ARRAY(npm))
+  ARRAY_LENGTH(npm)
     as npm_artifact_count
 from {{ ref('stg_ossd__current_projects') }}

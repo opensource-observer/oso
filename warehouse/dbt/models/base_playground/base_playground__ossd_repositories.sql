@@ -18,7 +18,7 @@ with filtered_project_ids as (
 ), filtered_repositories as (
   select distinct 
     repos.id as `id`, 
-    repos.sync_time as `sync_time`
+    repos.ingestion_time as `ingestion_time`
   from {{ ref("stg_ossd__current_repositories") }} as repos
   inner join {{ ref("int_artifacts_by_project") }} as artifacts_by_project
     on CAST(repos.id as string) = artifacts_by_project.artifact_source_id
@@ -31,4 +31,4 @@ select
 from {{ oso_source("ossd", "repositories") }} as repos
 inner join filtered_repositories as filtered
   on filtered.id = repos.id
-    and repos._cq_sync_time = filtered.sync_time
+    and repos.ingestion_time = filtered.ingestion_time

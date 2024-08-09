@@ -3,16 +3,16 @@ title: Use the GraphQL API
 sidebar_position: 10
 ---
 
-The OSO API currently only allows read-only GraphQL queries against OSO mart models
-(e.g. impact metrics, project info).
+The OSO API currently only allows read-only GraphQL queries against a subset
+of OSO data (i.e. only mart models like impact metrics, project info).
 This API should only be used to fetch data to integrate into a live application in production.
-For data exploration, check out the guides on
-[performing queries](./query-data.md)
+If you want access to the full dataset for data exploration, check out the guides on
+[performing queries](./query-data.mdx)
 and [Python notebooks](./python-notebooks.md).
 
-## Generate an API key
+## How to Generate an API key
 
-First, navigate to [www.opensource.observer](https://www.opensource.observer) and create a new account.
+First, go to [www.opensource.observer](https://www.opensource.observer) and create a new account.
 
 If you already have an account, log in. Then create a new personal API key:
 
@@ -22,7 +22,7 @@ If you already have an account, log in. Then create a new personal API key:
 4. You should see your brand new key. **Immediately** save this value, as you'll **never** see it again after refreshing the page.
 5. Click "Create" to save the key.
 
-You can create as many keys as you like.
+**You can create as many keys as you like.**
 
 ![generate API key](./generate-api-key.png)
 
@@ -31,12 +31,14 @@ You can create as many keys as you like.
 All API requests are sent to the following URL:
 
 ```
-https://opensource-observer.hasura.app/v1/graphql
+https://www.opensource.observer/api/v1/graphql
 ```
 
-You can navigate to our [public GraphQL explorer](https://cloud.hasura.io/public/graphiql?endpoint=https://opensource-observer.hasura.app/v1/graphql) to explore the schema and execute test queries.
+You can navigate to our
+[public GraphQL explorer](https://www.opensource.observer/graphql)
+to explore the schema and execute test queries.
 
-## Authentication
+## How to Authenticate
 
 In order to authenticate with the API service, you have to use the `Authorization` HTTP header and `Bearer` authentication on all HTTP requests, like so:
 
@@ -57,45 +59,48 @@ This query will fetch the first 10 projects in
 
 ```graphql
 query GetProjects {
-  projects_v1(limit: 10) {
-    project_id
-    project_name
-    display_name
+  oso_projectsV1(limit: 10) {
     description
+    displayName
+    projectId
+    projectName
+    projectNamespace
+    projectSource
   }
 }
 ```
 
-This query will fetch **code metrics** for 10 projects, ordered by `star_count`.
+This query will fetch **code metrics** for 10 projects, ordered by `starCount`.
 
 ```graphql
 query GetCodeMetrics {
-  code_metrics_by_project_v1(
-    limit: 10
-    order_by: { star_count: desc_nulls_last }
-  ) {
-    project_id
-    project_name
-    event_source
-    star_count
-    fork_count
-    contributor_count
+  oso_codeMetricsByProjectV1(limit: 10, order_by: [{ starCount: Desc }]) {
+    projectId
+    projectName
+    eventSource
+    starCount
+    forkCount
+    contributorCount
   }
 }
 ```
 
 ## GraphQL Explorer
 
-The GraphQL schema is automatically generated from [`oso/dbt/models/marts`](https://github.com/opensource-observer/oso/tree/main/dbt/models/marts). Any dbt model defined there will automatically be exported to our GraphQL API. See the guide on [adding DBT models](../contribute/impact-models) for more information on contributing to our marts models.
+You can navigate to our [public GraphQL explorer](https://www.opensource.observer/graphql) to explore the schema and execute test queries.
+
+![GraphQL explorer](./api-explorer.gif)
+
+:::tip
+As shown in the video, you must "Inline Variables" in order for queries to run in the explorer.
+:::
+
+The GraphQL schema is automatically generated from [`oso/dbt/models/marts`](https://github.com/opensource-observer/oso/tree/main/dbt/models/marts). Any dbt model defined there will automatically be exported to our GraphQL API. See the guide on [adding DBT models](../contribute/impact-models.md) for more information on contributing to our marts models.
 
 :::warning
 Our data pipeline is under heavy development and all table schemas are subject to change until we introduce versioning to marts models.
 Please join us on [Discord](https://www.opensource.observer/discord) to stay up to date on updates.
 :::
-
-You can navigate to our [public GraphQL explorer](https://cloud.hasura.io/public/graphiql?endpoint=https://opensource-observer.hasura.app/v1/graphql) to explore the schema and execute test queries.
-
-![GraphQL explorer](./graphql-explorer.png)
 
 ## Rate Limits
 

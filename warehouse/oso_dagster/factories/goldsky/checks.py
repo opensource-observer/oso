@@ -1,8 +1,8 @@
 import os
 from typing import List, Optional, Tuple
-from dataclasses import dataclass
 
-from .config import GoldskyConfig, CheckFactory
+from .config import GoldskyConfig, AdditionalAssetFactory
+from ..common import AssetFactoryResponse
 from dagster import (
     AssetsDefinition,
     asset_check,
@@ -13,11 +13,10 @@ from dagster import (
     Config,
 )
 import arrow
-from dagster_gcp import BigQueryResource
 import sqlglot as sql
 
 from ...cbt import CBTResource, Transformation
-from ...cbt.macros import time_constrain_table, context_query_replace_source_tables
+from ...cbt.transforms import time_constrain_table, context_query_replace_source_tables
 
 
 def generated_asset_prefix(asset: AssetsDefinition):
@@ -32,12 +31,13 @@ class BlockchainCheckConfig(Config):
     def get_range(self) -> Tuple[arrow.Arrow | None, arrow.Arrow | None]:
         now = arrow.now()
         if self.full_refresh:
-            return [None, now.shift(days=-1)]
+            return (None, now.shift(days=-1))
         if self.start or self.end:
             start = arrow.get(self.start) if self.start is not None else None
             end = arrow.get(self.end) if self.end is not None else None
-            return [start, end]
-        return [now.shift(days=-6), now.shift(days=-1)]
+            return (start, end)
+        # By default check the last 2 weeks of data
+        return (now.shift(days=-15), now.shift(days=-1))
 
 
 def traces_check(
@@ -194,6 +194,63 @@ def transactions_check(
     return _transactions_check
 
 
+def missing_blocks_model(
+    block_number_column_name: str,
+    block_timestamp_column_name: str,
+    gs_config: GoldskyConfig,
+    asset: AssetsDefinition,
+):
+    prefix = generated_asset_prefix(asset)
+
+    @asset_check(name=f"{prefix}_missing_blocks_model", asset=asset)
+    def _missing_blocks_model(
+        context: AssetCheckExecutionContext,
+        cbt: CBTResource,
+        config: BlockchainCheckConfig,
+    ):
+        c = cbt.get(context.log)
+        c.add_search_paths(
+            [os.path.join(os.path.abspath(os.path.dirname(__file__)), "queries")]
+        )
+
+        start, end = config.get_range()
+
+        transformations: List[Transformation] = [
+            time_constrain_table(
+                block_timestamp_column_name,
+                table_name="blocks",
+                start=start,
+                end=end,
+            ),
+            context_query_replace_source_tables(
+                sql.to_table("blocks"),
+                sql.to_table(gs_config.destination_table_fqn, dialect="bigquery"),
+            ),
+        ]
+
+        try:
+            c.hybrid_transform(
+                "blocks_missing_block_numbers.sql",
+                gs_config.destination_table_fqn,
+                transformations=transformations,
+                block_number_column_name=block_number_column_name,
+            )
+        except Exception:
+            return AssetCheckResult(
+                passed=False,
+                severity=AssetCheckSeverity.WARN,
+                description="Did not succeed to update the blocks missing",
+            )
+
+        return AssetCheckResult(
+            passed=True,
+            severity=AssetCheckSeverity.WARN,
+            description="Successfully update missing block numbers",
+        )
+
+    return _missing_blocks_model
+
+
 def block_number_check(
     block_number_column_name: str,
     block_timestamp_column_name: str,
@@ -275,22 +332,23 @@ def traces_checks(
     traces_block_timestamp_column_name: str = "block_timestamp",
     transactions_transaction_hash_column_name: str = "hash",
     transactions_block_timestamp_column_name: str = "block_timestamp",
-) -> CheckFactory[GoldskyConfig]:
-    def check_factory(
-        config: GoldskyConfig, asset: AssetsDefinition
-    ) -> List[AssetChecksDefinition]:
+) -> AdditionalAssetFactory[GoldskyConfig]:
+    def check_factory(config: GoldskyConfig, asset: AssetsDefinition):
         # TODO add a check to check traces exist for all transaction_ids
-        return [
-            traces_check(
-                traces_transaction_hash_column_name,
-                traces_block_timestamp_column_name,
-                transactions_table_fqn,
-                transactions_transaction_hash_column_name,
-                transactions_block_timestamp_column_name,
-                config,
-                asset,
-            )
-        ]
+        return AssetFactoryResponse(
+            [],
+            checks=[
+                traces_check(
+                    traces_transaction_hash_column_name,
+                    traces_block_timestamp_column_name,
+                    transactions_table_fqn,
+                    transactions_transaction_hash_column_name,
+                    transactions_block_timestamp_column_name,
+                    config,
+                    asset,
+                )
+            ],
+        )
 
     return check_factory
 
@@ -301,20 +359,23 @@ def transactions_checks(
     transactions_block_timestamp_column_name: str = "block_timestamp",
     blocks_block_hash_column_name: str = "hash",
     blocks_block_timestamp_column_name: str = "timestamp",
-) -> CheckFactory[GoldskyConfig]:
+) -> AdditionalAssetFactory[GoldskyConfig]:
     def check_factory(config: GoldskyConfig, asset: AssetsDefinition):
         # TODO add a check to check ensure that transactions exist for all blocks
-        return [
-            transactions_check(
-                transactions_block_hash_column_name,
-                transactions_block_timestamp_column_name,
-                blocks_table_fqn,
-                blocks_block_hash_column_name,
-                blocks_block_timestamp_column_name,
-                config,
-                asset,
-            )
-        ]
+        return AssetFactoryResponse(
+            [],
+            checks=[
+                transactions_check(
+                    transactions_block_hash_column_name,
+                    transactions_block_timestamp_column_name,
+                    blocks_table_fqn,
+                    blocks_block_hash_column_name,
+                    blocks_block_timestamp_column_name,
+                    config,
+                    asset,
+                )
+            ],
+        )
 
     return check_factory
 
@@ -322,12 +383,15 @@ def transactions_checks(
 def blocks_checks(
     block_number_column_name: str = "number",
     block_timestamp_column_name: str = "timestamp",
-) -> CheckFactory[GoldskyConfig]:
+) -> AdditionalAssetFactory[GoldskyConfig]:
     def check_factory(config: GoldskyConfig, asset: AssetsDefinition):
-        return [
-            block_number_check(
-                block_number_column_name, block_timestamp_column_name, config, asset
-            )
-        ]
+        return AssetFactoryResponse(
+            [],
+            checks=[
+                block_number_check(
+                    block_number_column_name, block_timestamp_column_name, config, asset
+                )
+            ],
+        )
 
     return check_factory

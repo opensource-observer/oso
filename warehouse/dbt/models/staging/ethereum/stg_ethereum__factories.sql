@@ -1,5 +1,6 @@
 {{
   config(
+    enabled=target.name == 'production',
     materialized='incremental',
     partition_by={
       "field": "block_timestamp",
