@@ -86,5 +86,5 @@ verbose_logs = os.getenv("DAGSTER_VERBOSE_LOGS", "false").lower() in ["true", "1
 
 env = os.getenv("DAGSTER_ENV", "dev")
 
-enable_bigquery = os.getenv("DAGSTER_ENABLE_BIGQUERY", "fals").lower() in ["true", "1"]
+enable_bigquery = os.getenv("DAGSTER_ENABLE_BIGQUERY", "false").lower() in ["true", "1"]
 

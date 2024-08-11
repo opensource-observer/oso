@@ -14,4 +14,4 @@ data:
   DAGSTER_DISCORD_WEBHOOK_URL: "{{ .Values.configMap.secretPrefix }}-{{ .Values.secretmanagerKeys.discordWebhookUrl }}"
   DAGSTER_ALERTS_BASE_URL: "{{ .Values.alerts.baseUrl }}"
   DAGSTER_HTTP_CACHE: "{{ .Values.cache.uri }}"
-  DAGSTER_ENABLE_BIQUERY: "1"
+  DAGSTER_ENABLE_BIGQUERY: "1"
