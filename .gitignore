@@ -65,3 +65,6 @@ dbt_packages/
 supabase/.temp/
 **/supabase/.temp/
 */**/supabase/.temp/
+
+# local dagster home
+.dagster_local_home
