@@ -4,7 +4,6 @@
   )
 }}
 
-
 select
   {{ oso_id('"OSO"', '"oso"', 'metric') }} as metric_id,
   metrics.project_id as project_id,
@@ -20,3 +19,11 @@ select
   amount,
   unit
 from {{ ref('int_funding_metric__grants_received_usd') }}
+union all
+select
+  {{ oso_id('"OSO"', '"oso"', 'metric', 'event_source') }} as metric_id,
+  project_id,
+  sample_date,
+  amount,
+  unit
+from {{ ref('int_timeseries_superchain_metrics__all') }}
