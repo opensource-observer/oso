@@ -39,6 +39,7 @@ if not project_id:
 staging_bucket = ensure(
     os.getenv("DAGSTER_STAGING_BUCKET_URL"), "Missing DAGSTER_STAGING_BUCKET_URL"
 )
+
 profile_name = os.getenv("DAGSTER_DBT_PROFILE_NAME", "opensource_observer")
 gcp_secrets_prefix = os.getenv("DAGSTER_GCP_SECRETS_PREFIX", "")
 use_local_secrets = os.getenv("DAGSTER_USE_LOCAL_SECRETS", "true").lower() in [
@@ -48,6 +49,7 @@ use_local_secrets = os.getenv("DAGSTER_USE_LOCAL_SECRETS", "true").lower() in [
 discord_webhook_url = os.getenv("DAGSTER_DISCORD_WEBHOOK_URL")
 enable_tests = os.getenv("DAGSTER_ENABLE_TESTS", "false").lower() in ["true", "1"]
 dagster_alerts_base_url = os.getenv("DAGSTER_ALERTS_BASE_URL", "")
+dagster_home = os.getenv("DAGSTER_HOME", "")
 
 # We can enable an HTTP caching mechanism. It can be one of the
 http_cache = os.getenv("DAGSTER_HTTP_CACHE")
@@ -75,3 +77,9 @@ main_dbt_manifests = load_dbt_manifests(
 verbose_logs = os.getenv("DAGSTER_VERBOSE_LOGS", "false").lower() in ["true", "1"]
 
 env = os.getenv("DAGSTER_ENV", "dev")
+
+enable_bigquery = os.getenv("DAGSTER_ENABLE_BIGQUERY", "fals").lower() in ["true", "1"]
+
+local_duckdb = os.getenv(
+    "DAGSTER_LOCAL_DUCKDB_PATH", os.path.join(dagster_home, "local.duckdb")
+)

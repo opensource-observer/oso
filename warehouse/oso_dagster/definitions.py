@@ -4,8 +4,6 @@ from dagster import Definitions
 from dagster_dbt import DbtCliResource
 from dagster_gcp import BigQueryResource, GCSResource
 from dagster_polars import PolarsBigQueryIOManager
-from dlt.destinations import filesystem, bigquery as dlt_bigquery
-from dlt.sources.credentials import GcpServiceAccountCredentials
 from dagster_embedded_elt.dlt import DagsterDltResource
 from dotenv import load_dotenv
 from . import constants
@@ -18,9 +16,15 @@ from .utils import (
     LogAlertManager,
     DiscordWebhookAlertManager,
 )
-from .resources import BigQueryDataTransferResource, ClickhouseResource
+from .resources import (
+    BigQueryDataTransferResource,
+    ClickhouseResource,
+    load_dlt_staging,
+    load_dlt_warehouse_destination,
+)
 from . import assets
 from .factories.alerts import setup_alert_sensor
+
 
 load_dotenv()
 
@@ -34,14 +38,12 @@ def load_definitions():
         )
 
     # A dlt destination for gcs staging to bigquery
-    assert constants.staging_bucket is not None
-    dlt_staging_destination = filesystem(bucket_url=constants.staging_bucket)
+    dlt_staging_destination = load_dlt_staging()
 
-    dlt_warehouse_destination = dlt_bigquery(
-        credentials=GcpServiceAccountCredentials(project_id=project_id)
-    )
+    dlt_warehouse_destination = load_dlt_warehouse_destination()
 
     dlt = DagsterDltResource()
+
     bigquery = BigQueryResource(project=project_id)
     bigquery_datatransfer = BigQueryDataTransferResource(
         project=os.environ.get("GOOGLE_PROJECT_ID")
