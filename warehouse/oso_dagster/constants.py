@@ -1,7 +1,6 @@
 import os
 from pathlib import Path
 import requests
-from .utils.common import ensure
 from .utils.dbt import (
     get_profiles_dir,
     load_dbt_manifests,
@@ -12,6 +11,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 main_dbt_project_dir = Path(__file__).joinpath("..", "..", "..").resolve()
+repo_dir = main_dbt_project_dir
 
 # Leaving this for now as it allows a separate source related dbt model
 # source_dbt_project_dir = Path(__file__).joinpath("..", "..", "source_dbt").resolve()
@@ -36,9 +36,19 @@ if not project_id:
     except Exception:
         raise Exception("GOOGLE_PROJECT_ID must be set if you're not in GCP")
 
-staging_bucket = ensure(
-    os.getenv("DAGSTER_STAGING_BUCKET_URL"), "Missing DAGSTER_STAGING_BUCKET_URL"
-)
+dagster_home = os.getenv("DAGSTER_HOME", os.path.join(repo_dir, ".dagster_local_home"))
+
+# Ensure the dagster_home path exists
+Path(dagster_home).mkdir(parents=True, exist_ok=True)
+
+staging_bucket = os.getenv("DAGSTER_STAGING_BUCKET_URL")
+if not staging_bucket:
+    staging_bucket = f"file://{os.path.join(dagster_home, "staging")}"
+
+local_duckdb = os.getenv("DAGSTER_LOCAL_DUCKDB_PATH")
+if not local_duckdb:
+    local_duckdb = os.path.join(dagster_home, "local.duckdb")
+
 profile_name = os.getenv("DAGSTER_DBT_PROFILE_NAME", "opensource_observer")
 gcp_secrets_prefix = os.getenv("DAGSTER_GCP_SECRETS_PREFIX", "")
 use_local_secrets = os.getenv("DAGSTER_USE_LOCAL_SECRETS", "true").lower() in [
@@ -75,3 +85,6 @@ main_dbt_manifests = load_dbt_manifests(
 verbose_logs = os.getenv("DAGSTER_VERBOSE_LOGS", "false").lower() in ["true", "1"]
 
 env = os.getenv("DAGSTER_ENV", "dev")
+
+enable_bigquery = os.getenv("DAGSTER_ENABLE_BIGQUERY", "false").lower() in ["true", "1"]
+
