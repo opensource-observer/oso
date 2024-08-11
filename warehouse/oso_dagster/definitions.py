@@ -3,7 +3,6 @@ import os
 from dagster import Definitions
 from dagster_dbt import DbtCliResource
 from dagster_gcp import BigQueryResource, GCSResource
-from dagster_polars import PolarsBigQueryIOManager
 from dagster_embedded_elt.dlt import DagsterDltResource
 from dotenv import load_dotenv
 from . import constants
@@ -21,6 +20,7 @@ from .resources import (
     ClickhouseResource,
     load_dlt_staging,
     load_dlt_warehouse_destination,
+    load_io_manager,
 )
 from . import assets
 from .factories.alerts import setup_alert_sensor
@@ -69,7 +69,8 @@ def load_definitions():
 
     asset_factories = load_all_assets_from_package(assets, early_resources)
 
-    io_manager = PolarsBigQueryIOManager(project=project_id)
+    # io_manager = PolarsBigQueryIOManager(project=project_id)
+    io_manager = load_io_manager()
 
     # Setup an alert sensor
     alert_manager = LogAlertManager()
