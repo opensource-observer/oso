@@ -105,6 +105,9 @@ def _dlt_factory[
                     - set(asset_ins.keys())
                 )
 
+                if "context" in extra_resources:
+                    extra_resources.discard("context")
+
                 @asset(
                     name=asset_name,
                     key_prefix=key_prefix,
