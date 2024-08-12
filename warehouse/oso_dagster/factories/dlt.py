@@ -35,6 +35,7 @@ from .common import (
 )
 from ..utils import SecretResolver, resolve_secrets_for_func
 from .sql import PrefixedDltTranslator
+from .. import constants
 
 
 class DltAssetConfig(Config):
@@ -118,12 +119,22 @@ def _dlt_factory[
                     config: config_type,
                     **extra_source_args,
                 ) -> Iterable[R]:
+                    # Hack for now. Staging cannot be used if running locally.
+                    # We need to change this interface. Instead of being reliant
+                    # on the constant defining bigquery we should use some kind
+                    # of generic function to wire this pipeline together.
                     pipeline = dltlib.pipeline(
                         f"{key_prefix_str}_{name}",
                         destination=dlt_warehouse_destination,
-                        staging=dlt_staging_destination,
                         dataset_name=dataset_name,
                     )
+                    if constants.enable_bigquery:
+                        pipeline = dltlib.pipeline(
+                            f"{key_prefix_str}_{name}",
+                            destination=dlt_warehouse_destination,
+                            staging=dlt_staging_destination,
+                            dataset_name=dataset_name,
+                        )
 
                     dlt = cast(DagsterDltResource, getattr(context.resources, "dlt"))
 
