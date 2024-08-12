@@ -68,3 +68,6 @@ supabase/.temp/
 
 # local dagster home
 .dagster_local_home
+base_playground/
+playground/
+production/
