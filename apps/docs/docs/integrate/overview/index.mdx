@@ -347,12 +347,12 @@ with project_mapping as (
     gitcoin_lookup.project_id as gitcoin_id,
     oso_projects.project_name as oso_name,
     oso_projects.display_name as display_name
-  from `opensource-observer`.`gitcoin`.`project_groups_summary` as gitcoin_groups
-  left join `opensource-observer`.`gitcoin`.`project_lookup` as gitcoin_lookup
+  from `YOUR_PROJECT_NAME.gitcoin.project_groups_summary` as gitcoin_groups
+  left join `YOUR_PROJECT_NAME.gitcoin.project_lookup` as gitcoin_lookup
     on gitcoin_groups.group_id = gitcoin_lookup.group_id
-  join `opensource-observer`.`oso`.`int_artifacts_in_ossd_by_project` as oso_artifacts
+  join `YOUR_PROJECT_NAME.oso_production.int_artifacts_in_ossd_by_project` as oso_artifacts
     on gitcoin_groups.latest_project_github = oso_artifacts.artifact_namespace
-  join `opensource-observer`.`oso`.`projects_v1` as oso_projects
+  join `YOUR_PROJECT_NAME.oso_production.projects_v1` as oso_projects
     on oso_artifacts.project_id = oso_projects.project_id
 )
 select
@@ -361,7 +361,7 @@ select
   project_mapping.oso_name,
   project_mapping.display_name,
   donations.amount_in_usd  
-from `opensource-observer`.`gitcoin`.`all_donations` as donations
+from `YOUR_PROJECT_NAME.gitcoin.all_donations` as donations
 join project_mapping
   on donations.project_id = project_mapping.gitcoin_id
 ```  
