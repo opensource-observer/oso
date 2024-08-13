@@ -12,7 +12,7 @@ Now, let’s apply this concept to decentralized networks like Ethereum or its L
 
 Just as baseball teams aim to build the best roster, ecosystem funds and crypto foundations strive to create the strongest community of developers and users within their networks. They attract these participants through incentive programs like grants and airdrops.
 
-But how can the success of these initiatives be effectively measured? One approach is to evaluate how well these programs retain community members and generate compounding network effects compared to the average across the broader crypto landscape. The best networks are the ones that achieve the highest WAR outright or per unit of capital allocated.
+_But how can the success of these initiatives be effectively measured?_ One approach is to evaluate how well these programs retain community members and generate compounding network effects compared to the average across the broader crypto landscape. The best networks are the ones that achieve the highest WAR outright or per unit of capital allocated.
 
 This post explores how an empirically-derived metric similar to WAR might be applied to ecosystem grants programs as a way of measuring ROI. It includes some use case ideas (like a WAR oracle) and strawman WAR formulas for protocols and open source software (OSS) projects. It concludes with some ideas for getting started.
 
@@ -83,7 +83,7 @@ In baseball, teams use WAR to determine which players to pursue and how much to 
 
 Crypto ecosystems could benefit from adopting a similar level of rigor. Once we've established a metric similar to WAR, we can retrospectively analyze specific projects, protocols, and grant programs to assess their true impact. By evaluating past performance through this lens, we can identify which projects and protocols have genuinely driven the most significant incremental growth.
 
-But WAR isn’t just about looking back —- it’s also a tool for shaping the future. Just as baseball teams refine their recruiting goals based on WAR, crypto ecosystems should update their capital allocation strategies. WAR could help identify not only successful projects but also weak points within an ecosystem —- whether in developer tooling, user engagement, or protocol innovation —- that need more investment. It could be used to determine eligibility for grant rounds or power oracles that allocate ongoing funding streams to high-performing projects.
+But WAR isn’t just about looking back. It’s also a tool for shaping the future. Just as baseball teams refine their recruiting goals based on WAR, crypto ecosystems should update their capital allocation strategies. WAR could help identify not only successful projects but also weak points within an ecosystem — whether in developer tooling, user engagement, or protocol innovation — that need more investment. It could be used to determine eligibility for grant rounds or power oracles that allocate ongoing funding streams to high-performing projects.
 
 Putting funding on the line in this way would encourage greater accountability. Ecosystem funds would need to justify their investments with data, ensuring that resources are being used effectively to promote growth and sustainability. It would also push projects and protocols to focus on consistently delivering real value, knowing that their future funding might be linked to their “ecosystem WAR.”
 
