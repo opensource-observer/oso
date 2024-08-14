@@ -4,6 +4,17 @@
   we need to select distinct first and then do the grouping
 #}
 
+{{
+  config(
+    materialized='table',
+    partition_by={
+      "field": "time",
+      "data_type": "timestamp",
+      "granularity": "day",
+    }
+  )
+}}
+
 with events as (
   select distinct
     from_artifact_id,
