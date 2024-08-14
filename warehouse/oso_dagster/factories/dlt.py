@@ -132,6 +132,7 @@ def _dlt_factory[
                         dataset_name=dataset_name,
                     )
                     if constants.enable_bigquery:
+                        context.log.debug("dlt pipeline setup to use staging")
                         pipeline = dltlib.pipeline(
                             f"{key_prefix_str}_{name}",
                             destination=dlt_warehouse_destination,
@@ -165,6 +166,11 @@ def _dlt_factory[
                     if len(config.with_resources) > 0:
                         dlt_source.with_resources(*config.with_resources)
 
+                    dlt_run_options: Dict[str, Any] = {}
+                    if constants.enable_bigquery:
+                        context.log.debug("dlt pipeline setup with bigquery and jsonl")
+                        dlt_run_options["loader_file_format"] = "jsonl"
+
                     results = dlt.run(
                         context=context,
                         dlt_source=dlt_source,
@@ -172,10 +178,13 @@ def _dlt_factory[
                         dagster_dlt_translator=PrefixedDltTranslator(
                             source_name=key_prefix_str, tags=dict(tags)
                         ),
-                        loader_file_format="jsonl",
+                        **dlt_run_options,
                     )
                     for result in results:
                         yield cast(R, result)
+                    # else:
+                    #     # If an empty set is returned we need to return something
+                    #     return MaterializeResult(metadata={})
 
                 return AssetFactoryResponse([_dlt_asset])
 
