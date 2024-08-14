@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from typing import TypedDict
+from typing import Optional
 
 import dlt
 from dagster import AssetExecutionContext, WeeklyPartitionsDefinition
@@ -7,48 +7,96 @@ from gql import Client, gql
 from gql.transport.requests import RequestsHTTPTransport
 from oso_dagster.factories import dlt_factory, pydantic_to_dlt_nullable_columns
 from oso_dagster.utils.secrets import secret_ref_arg
-from pydantic import BaseModel
+from pydantic import UUID4, BaseModel
 
 
-class Host(TypedDict):
-    id: str
+class Host(BaseModel):
+    id: UUID4
     type: str
     slug: str
     name: str
-    legalName: str
+    legalName: Optional[str] = None
     description: str
     currency: str
-    longDescription: str
 
 
-class Expense(BaseModel):
-    id: str
+class Transaction(BaseModel):
+    id: UUID4
     legacyId: int
-    group: str
+    group: UUID4
     type: str
     kind: str
-    hostCurrencyFxRate: int
-    createdAt: str
-    updatedAt: str
+    hostCurrencyFxRate: float
+    createdAt: datetime
+    updatedAt: datetime
     isRefunded: bool
     isRefund: bool
     isDisputed: bool
     isInReview: bool
     isOrderRejected: bool
-    merchantId: str
-    invoiceTemplate: str
-    host: Host
+    merchantId: Optional[UUID4] = None
+    invoiceTemplate: Optional[str] = None
+    host: Optional[Host] = None
 
 
-def generate_steps(total, step):
+# The first transaction on Open Collective was on January 23, 2015
+OPEN_COLLECTIVE_TX_EPOCH = "2015-01-23T05:00:00.000Z"
+
+# The maximum number of nodes that can be retrieved per page
+OPEN_COLLECTIVE_MAX_NODES_PER_PAGE = 1000
+
+
+def generate_steps(total: int, step: int):
+    """
+    Generates a sequence of numbers from 0 up to the specified total, incrementing by the specified step.
+    If the total is not divisible by the step, the last iteration will yield the remaining value.
+
+    Args:
+        total (int): The desired total value.
+        step (int): The increment value for each iteration.
+
+    Yields:
+        int: The next number in the sequence.
+
+    Example:
+        >>> for num in generate_steps(10, 3):
+        ...     print(num)
+        0
+        3
+        6
+        9
+        10
+    """
+
     for i in range(0, total, step):
         yield i
     if total % step != 0:
         yield total
 
 
-def get_open_collective_data(client: Client, type: str, dateFrom: str, dateTo: str):
-    MAX_PER_PAGE = 100
+def get_open_collective_data(
+    context: AssetExecutionContext,
+    client: Client,
+    type: str,
+    dateFrom: str,
+    dateTo: str,
+):
+    """
+    Retrieves Open Collective data using the provided client and query parameters.
+
+    Args:
+        context (AssetExecutionContext): The execution context of the asset.
+        client (Client): The client object used to execute the GraphQL queries.
+        type (str): The transaction type. Either "DEBIT" or "CREDIT".
+        dateFrom (str): The start date for the query.
+        dateTo (str): The end date for the query.
+
+    Yields:
+        list: A list of transaction nodes retrieved from Open Collective.
+
+    Returns:
+        list: An empty list if an exception occurs during the query execution.
+    """
 
     total_query = gql(
         """
@@ -83,8 +131,6 @@ def get_open_collective_data(client: Client, type: str, dateFrom: str, dateTo: s
             dateFrom: $dateFrom
             dateTo: $dateTo
           ) {
-            offset
-            limit
             totalCount
             nodes {
               id
@@ -119,45 +165,74 @@ def get_open_collective_data(client: Client, type: str, dateFrom: str, dateTo: s
 
     total_count = total["transactions"]["totalCount"]
 
-    for step in generate_steps(total_count, MAX_PER_PAGE):
+    context.log.info(f"Total count of transactions: {total_count}")
+
+    for step in generate_steps(total_count, OPEN_COLLECTIVE_MAX_NODES_PER_PAGE):
         try:
             query = client.execute(
                 expense_query,
                 variable_values={
-                    "limit": MAX_PER_PAGE,
+                    "limit": OPEN_COLLECTIVE_MAX_NODES_PER_PAGE,
                     "offset": step,
                     "type": type,
                     "dateFrom": dateFrom,
                     "dateTo": dateTo,
                 },
             )
-            yield query["expenses"]["nodes"]
-        except Exception as _exception:
-            # TODO(jabolo): Use sensors to add delay between
-            # calls so as to account for rate limiting instead
-            # of aborting the whole process
+            context.log.info(
+                f"Fetching transaction {step}/{total_count} for type '{type}'"
+            )
+            yield query["transactions"]["nodes"]
+        except Exception as exception:
+            # TODO(jabolo): Implement a retry mechanism
+            context.log.warning(
+                f"An error occurred while fetching Open Collective data: '{exception}'. "
+                "We will stop this materialization instead of retrying for now."
+            )
             return []
 
 
 @dlt.resource(
     name="open_collective",
-    columns=pydantic_to_dlt_nullable_columns(Expense),
+    columns=pydantic_to_dlt_nullable_columns(Transaction),
 )
 def get_open_collective_expenses(
     context: AssetExecutionContext,
     client: Client,
     kind: str,
 ):
+    """
+    Get open collective expenses.
+
+    Args:
+        context (AssetExecutionContext): The asset execution context.
+        client (Client): The client object.
+        kind (str): The kind of expenses. Either "DEBIT" or "CREDIT".
+
+    Yields:
+        Generator: A generator that yields open collective data.
+    """
+
     start = datetime.strptime(context.partition_key, "%Y-%m-%d")
     end = start + timedelta(weeks=1)
 
     start_date = f"{start.isoformat().split(".")[0]}Z"
     end_date = f"{end.isoformat().split(".")[0]}Z"
 
-    yield get_open_collective_data(client, kind, start_date, end_date)
+    yield from get_open_collective_data(context, client, kind, start_date, end_date)
 
 
 def base_open_collective_client(personal_token: str):
+    """
+    Creates and returns a client for interacting with the Open Collective API.
+
+    Args:
+        personal_token (str): The personal token used for authentication.
+
+    Returns:
+        Client: The Open Collective client.
+    """
+
     transport = RequestsHTTPTransport(
         url="https://api.opencollective.com/graphql/v2",
         use_json=True,
@@ -177,7 +252,7 @@ def base_open_collective_client(personal_token: str):
 @dlt_factory(
     key_prefix="open_collective",
     partitions_def=WeeklyPartitionsDefinition(
-        start_date=(datetime.now() - timedelta(weeks=5)).isoformat().split("T")[0],
+        start_date=OPEN_COLLECTIVE_TX_EPOCH.split("T")[0],
         end_date=(datetime.now()).isoformat().split("T")[0],
     ),
 )
@@ -187,14 +262,25 @@ def expenses(
         group_name="open_collective", key="personal_token"
     ),
 ):
+    """
+    Create and register a Dagster asset that materializes Open Collective expenses.
+
+    Args:
+        context (AssetExecutionContext): The execution context of the asset.
+        personal_token (str): The personal token for authentication.
+
+    Yields:
+        Generator: A generator that yields Open Collective expenses.
+    """
+
     client = base_open_collective_client(personal_token)
-    yield from get_open_collective_expenses(context, client, "DEBIT")
+    yield get_open_collective_expenses(context, client, "DEBIT")
 
 
 @dlt_factory(
     key_prefix="open_collective",
     partitions_def=WeeklyPartitionsDefinition(
-        start_date=(datetime.now() - timedelta(weeks=5)).isoformat().split("T")[0],
+        start_date=OPEN_COLLECTIVE_TX_EPOCH.split("T")[0],
         end_date=(datetime.now()).isoformat().split("T")[0],
     ),
 )
@@ -204,5 +290,16 @@ def deposits(
         group_name="open_collective", key="personal_token"
     ),
 ):
+    """
+    Create and register a Dagster asset that materializes Open Collective deposits.
+
+    Args:
+        context (AssetExecutionContext): The execution context of the asset.
+        personal_token (str): The personal token for authentication.
+
+    Yields:
+        Generator: A generator that yields Open Collective deposits.
+    """
+
     client = base_open_collective_client(personal_token)
-    yield from get_open_collective_expenses(context, client, "CREDIT")
+    yield get_open_collective_expenses(context, client, "CREDIT")
