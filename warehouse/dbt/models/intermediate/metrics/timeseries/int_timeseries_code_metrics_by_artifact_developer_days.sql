@@ -38,7 +38,7 @@ calendar as (
 devs as (
   select distinct developer_id
   from {{ ref("int_timeseries_code_metrics_commits") }}
-),
+)
 
 select
   devs.developer_id,
