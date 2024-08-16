@@ -182,9 +182,6 @@ def _dlt_factory[
                     )
                     for result in results:
                         yield cast(R, result)
-                    # else:
-                    #     # If an empty set is returned we need to return something
-                    #     return MaterializeResult(metadata={})
 
                 return AssetFactoryResponse([_dlt_asset])
 
