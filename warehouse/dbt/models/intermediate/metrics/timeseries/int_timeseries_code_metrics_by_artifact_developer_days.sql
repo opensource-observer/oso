@@ -1,6 +1,11 @@
 {{
   config(
-    materialized='table'
+    materialized='table',
+    partition_by={
+      "field": "bucket_day",
+      "data_type": "timestamp",
+      "granularity": "day",
+    }
   )
 }}
 
