@@ -10,7 +10,14 @@
 ] %}
 
 {% for model in models %}
-  select * from {{ ref('superchain_metric__%s_6_months' % model) }}
+  select
+    project_id,
+    sample_date,
+    event_source,
+    metric,
+    unit,
+    amount
+  from {{ ref('superchain_metric__%s_6_months' % model) }}
   {% if not loop.last %}
     union all
   {% endif %}
