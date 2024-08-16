@@ -28,7 +28,10 @@ calendar as (
       GENERATE_ARRAY(
         0,
         TIMESTAMP_DIFF(
-          (select MAX(bucket_day) as last_commit_date from commits),
+          (
+            select MAX(bucket_day) as last_commit_date
+            from {{ ref("int_timeseries_code_metrics_commits") }}
+          ),
           first_commit_date, day
         )
       )
