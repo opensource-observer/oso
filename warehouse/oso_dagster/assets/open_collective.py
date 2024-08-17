@@ -14,10 +14,10 @@ class Host(BaseModel):
     id: UUID4
     type: str
     slug: str
-    name: str
+    name: Optional[str] = None
     legalName: Optional[str] = None
-    description: str
-    currency: str
+    description: Optional[str] = None
+    currency: Optional[str] = None
 
 
 class Transaction(BaseModel):
@@ -25,14 +25,14 @@ class Transaction(BaseModel):
     legacyId: int
     group: UUID4
     type: str
-    kind: str
-    hostCurrencyFxRate: float
-    createdAt: datetime
-    updatedAt: datetime
-    isRefunded: bool
-    isRefund: bool
-    isDisputed: bool
-    isInReview: bool
+    kind: Optional[str] = None
+    hostCurrencyFxRate: Optional[float] = None
+    createdAt: Optional[datetime] = None
+    updatedAt: Optional[datetime] = None
+    isRefunded: Optional[bool] = None
+    isRefund: Optional[bool] = None
+    isDisputed: Optional[bool] = None
+    isInReview: Optional[bool] = None
     isOrderRejected: bool
     merchantId: Optional[UUID4] = None
     invoiceTemplate: Optional[str] = None
@@ -123,7 +123,7 @@ def get_open_collective_data(
 
     expense_query = gql(
         """
-        query ($limit: Int!, $offset: Int!, $type: TransactionType, $dateFrom: DateTime!, $dateTo: DateTime!) {
+        query ($limit: Int!, $offset: Int!, $type: TransactionType!, $dateFrom: DateTime!, $dateTo: DateTime!) {
           transactions(
             limit: $limit
             offset: $offset
@@ -192,10 +192,6 @@ def get_open_collective_data(
             return []
 
 
-@dlt.resource(
-    name="open_collective",
-    columns=pydantic_to_dlt_nullable_columns(Transaction),
-)
 def get_open_collective_expenses(
     context: AssetExecutionContext,
     client: Client,
@@ -274,7 +270,12 @@ def expenses(
     """
 
     client = base_open_collective_client(personal_token)
-    yield get_open_collective_expenses(context, client, "DEBIT")
+    yield dlt.resource(
+        get_open_collective_expenses(context, client, "DEBIT"),
+        name="expenses",
+        columns=pydantic_to_dlt_nullable_columns(Transaction),
+        primary_key="id",
+    )
 
 
 @dlt_factory(
@@ -302,4 +303,9 @@ def deposits(
     """
 
     client = base_open_collective_client(personal_token)
-    yield get_open_collective_expenses(context, client, "CREDIT")
+    yield dlt.resource(
+        get_open_collective_expenses(context, client, "CREDIT"),
+        name="funds",
+        columns=pydantic_to_dlt_nullable_columns(Transaction),
+        primary_key="id",
+    )
