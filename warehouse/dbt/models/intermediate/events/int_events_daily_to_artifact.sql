@@ -8,7 +8,7 @@
   config(
     materialized='table',
     partition_by={
-      "field": "time",
+      "field": "bucket_day",
       "data_type": "timestamp",
       "granularity": "day",
     }
