@@ -9,9 +9,11 @@ We are partnering with several ecosystems to expand project coverage, create new
 
 ## Active challenges
 
-We currently have one active challenge:
+We currently do not have any active challenges, but view some of our past challenges below.
 
 - [Run OpenRank on the Events Table](./2024-07-30-openrank)
+- [Audit of RF4 Impact Metric Calculations](./2024-07-02-rf4-metrics-audit)
+- [Earn OP rewards for proposing onchain impact metrics](./2024-04-05-data-challenge-01)
 
 We also have [ongoing bounties](./bounties) for adding/updating projects and artifacts.
 
