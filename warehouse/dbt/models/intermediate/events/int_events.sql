@@ -28,6 +28,9 @@
       "field": "time",
       "data_type": "timestamp",
       "granularity": "day",
+    },
+    meta={
+      'sync_to_db': True
     }
   )
 }}

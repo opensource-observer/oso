@@ -14,6 +14,7 @@ from ..utils.bq import BigQueryTableConfig
 from ..utils.common import SourceMode
 
 MART_DIRECTORY = "marts"
+INTERMEDIATE_DIRECTORY = "intermediate"
 SYNC_KEY = "sync_to_db"
 
 
@@ -51,6 +52,13 @@ def clickhouse_assets_from_manifests_map(
         nodes = manifest["nodes"].values()
         # Get manifests of mart models to copy
         marts = list(filter(lambda n: MART_DIRECTORY in n.get("fqn"), nodes))
+
+        # TEMPORARY HACKY CHANGE TO GET INT_EVENTS COPIED TO CLICKHOUSE
+        intermediates = list(
+            filter(lambda n: INTERMEDIATE_DIRECTORY in n.get("fqn"), nodes)
+        )
+        marts.extend(intermediates)
+
         copied_mart_names: List[str] = []
         skipped_mart_names: List[str] = []
         result = AssetFactoryResponse([])
