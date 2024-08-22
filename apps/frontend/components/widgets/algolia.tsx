@@ -63,12 +63,12 @@ function HitsContainer() {
   );
 }
 
-export type AlgoliaSearchBoxProps = {
+export type AlgoliaSearchModalProps = {
   className?: string; // Plasmic CSS class
   children?: ReactElement; // Show this
 };
 
-function AlgoliaSearchBox(props: AlgoliaSearchBoxProps) {
+function AlgoliaSearchModal(props: AlgoliaSearchModalProps) {
   const { className, children: rawChildren } = props;
   const children = rawChildren ?? <SearchIcon />;
   const [open, setOpen] = React.useState(false);
@@ -109,4 +109,4 @@ function AlgoliaSearchBox(props: AlgoliaSearchBoxProps) {
   );
 }
 
-export { AlgoliaSearchBox };
+export { AlgoliaSearchModal };

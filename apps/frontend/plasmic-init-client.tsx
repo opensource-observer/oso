@@ -5,7 +5,7 @@ import { PLASMIC } from "./plasmic-init";
 import generateApiKey from "generate-api-key";
 import CircularProgress from "@mui/material/CircularProgress";
 import { AreaChart } from "@tremor/react";
-import { AlgoliaSearchBox } from "./components/widgets/algolia";
+import { AlgoliaSearchModal } from "./components/widgets/algolia";
 import { FeedbackWrapper } from "./components/widgets/feedback-farm";
 import { ProjectsClientProvider } from "./components/project-browser/project-client-provider";
 import { ProjectBrowser } from "./components/project-browser/project-browser";
@@ -123,11 +123,11 @@ PLASMIC.registerComponent(BarList, {
 });
 
 PLASMIC.registerComponent(
-  AlgoliaSearchBox,
+  AlgoliaSearchModal,
   //dynamic(() => import("./components/widgets/algolia"), { ssr: false }),
   {
-    name: "AlgoliaSearchBox",
-    description: "Algolia-powered search box",
+    name: "AlgoliaSearchModal",
+    description: "Algolia-powered search modal",
     props: {
       children: "slot",
     },
