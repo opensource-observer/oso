@@ -4,18 +4,12 @@
  * data formatters (for charts)
  **/
 type EventData = {
-  typeName: string;
-  id: string;
+  metricId: string;
+  metricName: string;
+  entityId: string;
+  entityName: string;
   date: string;
   amount: number;
 };
 
-/**
- * Abstract entity data that could come from either an `Artifact` or `Project`
- */
-type EntityData = {
-  id: string;
-  name: string;
-};
-
-export type { EventData, EntityData };
+export type { EventData };
