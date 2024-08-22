@@ -84,6 +84,7 @@ def clickhouse_assets_from_manifests_map(
                         staging_bucket=staging_bucket,
                         destination_table_name=table_name,
                         index=n.get("meta").get("index"),
+                        order_by=n.get("meta").get("order_by"),
                         copy_mode=SourceMode.Overwrite,
                     ),
                 )
