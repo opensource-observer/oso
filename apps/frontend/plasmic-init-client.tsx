@@ -136,6 +136,7 @@ PLASMIC.registerComponent(
         defaultValue: ALGOLIA_INDEX,
         helpText: "Algolia index",
       },
+      placeholder: "string",
       showResultsOnEmptyQuery: {
         type: "boolean",
         helpText: "Show some results even if user has no query",

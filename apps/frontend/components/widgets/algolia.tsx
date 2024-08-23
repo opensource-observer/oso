@@ -2,8 +2,8 @@
 
 import "instantsearch.css/themes/algolia.css";
 import algoliasearch from "algoliasearch/lite";
-import React, { ReactElement } from "react";
-import { SearchBox, useHits } from "react-instantsearch";
+import React, { ReactElement, useEffect, useRef } from "react";
+import { SearchBox, useInfiniteHits } from "react-instantsearch";
 import { InstantSearchNext } from "react-instantsearch-nextjs";
 import { DataProvider } from "@plasmicapp/loader-nextjs";
 import {
@@ -14,26 +14,46 @@ import {
 
 const searchClient = algoliasearch(ALGOLIA_APPLICATION_ID, ALGOLIA_API_KEY);
 const PLASMIC_KEY = "searchItem";
+const DEFAULT_PLACEHOLDER = "Search...";
 
 type AlgoliaSearchListProps = {
   className?: string; // Plasmic CSS class
   children?: ReactElement; // Show this per item
   indexName?: string; // Choose a custom Algolia index
+  placeholder?: string; // Placeholder for search box
   showResultsOnEmptyQuery?: boolean; // Show some results even if no query
 };
 
 function HitsContainer(props: AlgoliaSearchListProps) {
-  const { children } = props;
-  const { hits, results } = useHits();
-  //console.log(hits);
+  const { children, showResultsOnEmptyQuery } = props;
+  const { results, items, isLastPage, showMore } = useInfiniteHits();
+  const sentinelRef = useRef(null);
+  //console.log(results);
+
+  useEffect(() => {
+    if (sentinelRef.current !== null) {
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && !isLastPage) {
+            showMore();
+          }
+        });
+      });
+      observer.observe(sentinelRef.current);
+      return () => {
+        observer.disconnect();
+      };
+    }
+  }, [isLastPage, showMore]);
 
   return (
     <div>
-      {results?.query &&
-        hits.map((hit) => (
+      {(showResultsOnEmptyQuery || results?.query) &&
+        items.map((hit) => (
           <div key={hit.objectID}>
             <DataProvider name={PLASMIC_KEY} data={hit}>
               {children}
+              <div ref={sentinelRef} aria-hidden="true" />
             </DataProvider>
           </div>
         ))}
@@ -47,12 +67,11 @@ function HitsContainer(props: AlgoliaSearchListProps) {
 function AlgoliaSearchList(props: AlgoliaSearchListProps) {
   const {
     className,
-    //children: rawChildren,
     indexName: rawIndexName,
-    //showResultsOnEmptyQuery,
+    placeholder: rawPlaceholder,
   } = props;
-  //const children = rawChildren ?? <SearchIcon />;
   const indexName = rawIndexName ?? ALGOLIA_INDEX;
+  const placeholder = rawPlaceholder ?? DEFAULT_PLACEHOLDER;
 
   return (
     <div className={className}>
@@ -61,7 +80,7 @@ function AlgoliaSearchList(props: AlgoliaSearchListProps) {
         indexName={indexName}
         insights
       >
-        <SearchBox placeholder={"Search projects..."} autoFocus={true} />
+        <SearchBox placeholder={placeholder} autoFocus={true} />
         <HitsContainer {...props} />
       </InstantSearchNext>
     </div>
