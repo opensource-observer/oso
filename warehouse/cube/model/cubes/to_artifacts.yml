@@ -1,0 +1,3 @@
+cubes:
+  - name: to_artifacts
+    extends: artifacts
