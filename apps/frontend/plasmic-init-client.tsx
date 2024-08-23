@@ -1,11 +1,12 @@
 "use client";
 
 import { PlasmicRootProvider } from "@plasmicapp/loader-nextjs";
+import { ALGOLIA_INDEX } from "./lib/config";
 import { PLASMIC } from "./plasmic-init";
 import generateApiKey from "generate-api-key";
 import CircularProgress from "@mui/material/CircularProgress";
 import { AreaChart } from "@tremor/react";
-import { AlgoliaSearchModal } from "./components/widgets/algolia";
+import { AlgoliaSearchList } from "./components/widgets/algolia";
 import { FeedbackWrapper } from "./components/widgets/feedback-farm";
 import { ProjectsClientProvider } from "./components/project-browser/project-client-provider";
 import { ProjectBrowser } from "./components/project-browser/project-browser";
@@ -123,14 +124,24 @@ PLASMIC.registerComponent(BarList, {
 });
 
 PLASMIC.registerComponent(
-  AlgoliaSearchModal,
+  AlgoliaSearchList,
   //dynamic(() => import("./components/widgets/algolia"), { ssr: false }),
   {
-    name: "AlgoliaSearchModal",
-    description: "Algolia-powered search modal",
+    name: "AlgoliaSearchList",
+    description: "Algolia-powered search list",
     props: {
       children: "slot",
+      indexName: {
+        type: "string",
+        defaultValue: ALGOLIA_INDEX,
+        helpText: "Algolia index",
+      },
+      showResultsOnEmptyQuery: {
+        type: "boolean",
+        helpText: "Show some results even if user has no query",
+      },
     },
+    providesData: true,
     importPath: "./components/widgets/algolia",
   },
 );
