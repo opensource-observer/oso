@@ -59,11 +59,11 @@ cubes:
         sql: amount
         type: sum
 
-      - name: active_days_in_last_30
-        sql: "COUNT(DISTINCT DATE_TRUNC('day', {CUBE}.time))"
-        type: number
-        rolling_window:
-          trailing: 30 day
+      # - name: active_days_in_last_30
+      #   sql: "COUNT(DISTINCT DATE_TRUNC('day', {CUBE}.time))"
+      #   type: number
+      #   rolling_window:
+      #     trailing: 30 day
 
       # - name: activity_classification_in_last_30
       #   sql: "CASE WHEN {CUBE.active_days_in_last_30} >= 10 THEN 'full-time' ELSE 'part-time' END"
@@ -100,31 +100,31 @@ cubes:
           every: 1 day
           incremental: true
 
-      - name: timeseries_last_30_active_days
-        measures:
-          - CUBE.active_days_in_last_30
-        dimensions:
-          - CUBE.to_artifact_id
-          - CUBE.from_artifact_id
-          - CUBE.event_type
-          - CUBE.event_source
-        time_dimension: CUBE.time
-        granularity: day
-        partition_granularity: day
-        indexes:
-          - name: event_type_index
-            columns:
-              - event_type
-          - name: to_artifact_index
-            columns:
-              - to_artifact_id
-          - name: to_artifact_and_event_type_index
-            columns:
-              - event_type
-              - to_artifact_id
-        refresh_key:
-          every: 1 day
-          incremental: true
+      # - name: timeseries_last_30_active_days
+      #   measures:
+      #     - CUBE.active_days_in_last_30
+      #   dimensions:
+      #     - CUBE.to_artifact_id
+      #     - CUBE.from_artifact_id
+      #     - CUBE.event_type
+      #     - CUBE.event_source
+      #   time_dimension: CUBE.time
+      #   granularity: day
+      #   partition_granularity: day
+      #   indexes:
+      #     - name: event_type_index
+      #       columns:
+      #         - event_type
+      #     - name: to_artifact_index
+      #       columns:
+      #         - to_artifact_id
+      #     - name: to_artifact_and_event_type_index
+      #       columns:
+      #         - event_type
+      #         - to_artifact_id
+      #   refresh_key:
+      #     every: 1 day
+      #     incremental: true
 
       # - name: timeseries_last_30_activity_classification
       #   measures:
