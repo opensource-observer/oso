@@ -71,3 +71,6 @@ supabase/.temp/
 base_playground/
 playground/
 production/
+
+# sqlmesh
+.cache/

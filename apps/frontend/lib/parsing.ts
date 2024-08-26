@@ -1,6 +1,5 @@
 import dayjs from "dayjs";
 import _ from "lodash";
-import type { EntityData } from "./types/db";
 
 /**
  * Parse a comma-separated list into a string array
@@ -30,17 +29,4 @@ const eventTimeToLabel = (t: any) => dayjs(t).format("YYYY-MM-DD");
  */
 const eventTypeToLabel = (t: string) => _.capitalize(t.replace(/_/g, " "));
 
-/**
- * Given an id, try to find the id in EntityData[] and return the name
- * Note: the `==` is intentional here, since we may be comparing a string to a number
- */
-const entityIdToLabel = (id: number | string, entityData?: EntityData[]) =>
-  entityData?.find((x) => x.id == id)?.name ?? id;
-
-export {
-  csvToArray,
-  stringToIntArray,
-  eventTimeToLabel,
-  eventTypeToLabel,
-  entityIdToLabel,
-};
+export { csvToArray, stringToIntArray, eventTimeToLabel, eventTypeToLabel };

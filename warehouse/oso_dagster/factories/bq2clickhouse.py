@@ -38,6 +38,8 @@ class Bq2ClickhouseAssetConfig:
     destination_table_name: str
     # index_name => list of column names to index
     index: Optional[Dict[str, List[str]]]
+    # order_by => list of column names to order by
+    order_by: Optional[List[str]]
     # Incremental or overwrite
     copy_mode: SourceMode
     # Dagster remaining args
@@ -167,6 +169,7 @@ def create_bq2clickhouse_asset(asset_config: Bq2ClickhouseAssetConfig):
         # Create the Clickhouse tables and import the data
         destination_table_name = asset_config.destination_table_name
         index = asset_config.index
+        order_by = asset_config.order_by
         source_url = gcs_to_http_url(gcs_glob)
         with clickhouse.get_client() as ch_client:
             # Create a temporary table that we will use to write
@@ -179,7 +182,7 @@ def create_bq2clickhouse_asset(asset_config: Bq2ClickhouseAssetConfig):
             # Also ensure that the expected destination exists. Even if we
             # will delete this keeps the `OVERWRITE` mode logic simple
             create_table(
-                ch_client, destination_table_name, columns, index, if_not_exists=True
+                ch_client, destination_table_name, columns, index, order_by, if_not_exists=True
             )
             context.log.info(f"Ensured destination table {destination_table_name}")
             create_table(ch_client, temp_dest, columns, index, if_not_exists=False)
