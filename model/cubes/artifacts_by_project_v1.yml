@@ -1,0 +1,52 @@
+cubes:
+  - name: artifacts_by_project_v1
+    sql_table: default.artifacts_by_project_v1
+    data_source: default
+
+    joins: []
+
+    dimensions:
+      - name: artifact_id
+        sql: artifact_id
+        type: string
+
+      - name: artifact_source_id
+        sql: artifact_source_id
+        type: string
+
+      - name: artifact_source
+        sql: artifact_source
+        type: string
+
+      - name: artifact_namespace
+        sql: artifact_namespace
+        type: string
+
+      - name: artifact_name
+        sql: artifact_name
+        type: string
+
+      - name: project_id
+        sql: project_id
+        type: string
+
+      - name: project_source
+        sql: project_source
+        type: string
+
+      - name: project_namespace
+        sql: project_namespace
+        type: string
+
+      - name: project_name
+        sql: project_name
+        type: string
+
+    measures:
+      - name: count
+        type: count
+
+    pre_aggregations:
+      # Pre-aggregation definitions go here.
+      # Learn more in the documentation: https://cube.dev/docs/caching/pre-aggregations/getting-started
+
