@@ -3,7 +3,10 @@ cubes:
     sql_table: default.artifacts_by_project_v1
     data_source: default
 
-    joins: []
+    joins:
+      - name: projects
+        sql: '{CUBE}.project_id = {projects.project_id}'
+        relationship: many_to_one
 
     dimensions:
       # Composite primary key

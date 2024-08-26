@@ -3,12 +3,17 @@ cubes:
     sql_table: default.projects_v1
     data_source: default
 
-    joins: []
+    joins:
+      - name: projects_by_collection
+        sql: '{CUBE}.project_id = {projects_by_collection.project_id}'
+        relationship: one_to_many 
 
     dimensions:
       - name: project_id
         sql: project_id
         type: string
+        primary_key: true
+        public: true
 
       - name: project_source
         sql: project_source

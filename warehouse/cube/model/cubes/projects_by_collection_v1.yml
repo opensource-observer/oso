@@ -3,7 +3,10 @@ cubes:
     sql_table: default.projects_by_collection_v1
     data_source: default
 
-    joins: []
+    joins:
+      - name: collections
+        sql: '{CUBE}.collection_id = {collections.collection_id}'
+        relationship: many_to_one
 
     dimensions:
       - name: id
