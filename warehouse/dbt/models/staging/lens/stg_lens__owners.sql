@@ -12,7 +12,7 @@ with lens_owners_ordered as (
 
 select
   lens_owners_ordered.profile_id,
-  lens_owners_ordered.owned_by
+  LOWER(lens_owners_ordered.owned_by) as owned_by
 from lens_owners_ordered
 where row_number = 1
 order by lens_owners_ordered.profile_id
