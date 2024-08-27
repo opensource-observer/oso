@@ -1,12 +1,13 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { PlasmicRootProvider } from "@plasmicapp/loader-nextjs";
 import { ALGOLIA_INDEX } from "./lib/config";
 import { PLASMIC } from "./plasmic-init";
 import generateApiKey from "generate-api-key";
 import CircularProgress from "@mui/material/CircularProgress";
 import { AreaChart } from "@tremor/react";
-import { AlgoliaSearchList } from "./components/widgets/algolia";
+//import { AlgoliaSearchList } from "./components/widgets/algolia";
 import { FeedbackWrapper } from "./components/widgets/feedback-farm";
 import { ProjectsClientProvider } from "./components/project-browser/project-client-provider";
 import { ProjectBrowser } from "./components/project-browser/project-browser";
@@ -124,8 +125,8 @@ PLASMIC.registerComponent(BarList, {
 });
 
 PLASMIC.registerComponent(
-  AlgoliaSearchList,
-  //dynamic(() => import("./components/widgets/algolia"), { ssr: false }),
+  //AlgoliaSearchList,
+  dynamic(() => import("./components/widgets/algolia"), { ssr: false }),
   {
     name: "AlgoliaSearchList",
     description: "Algolia-powered search list",
