@@ -27,10 +27,10 @@ farcaster_users as (
       'FARCASTER_USER' as user_type,
       farcaster_profiles.username as user_name,
       UPPER(first_time_addresses.chain_name) as chain_name
-    from `oso.int_first_time_addresses` as first_time_addresses
-    inner join `oso.stg_farcaster__addresses` as farcaster_addresses
+    from {{ ref ("int_first_time_addresses") }} as first_time_addresses
+    inner join {{ ref ("stg_farcaster__addresses") }} as farcaster_addresses
       on first_time_addresses.address = farcaster_addresses.address
-    inner join `oso.stg_farcaster__profiles` as farcaster_profiles
+    inner join {{ ref ("stg_farcaster__profiles") }} as farcaster_profiles
       on farcaster_addresses.fid = farcaster_profiles.farcaster_id
   )
 
@@ -56,10 +56,10 @@ lens_users as (
       'LENS_USER' as user_type,
       lens_profiles.full_name as user_name,
       UPPER(first_time_addresses.chain_name) as chain_name
-    from `oso.int_first_time_addresses` as first_time_addresses
-    inner join `oso.stg_lens__owners` as lens_owners
+    from {{ ref ("int_first_time_addresses") }} as first_time_addresses
+    inner join {{ ref ("stg_lens__owners") }} as lens_owners
       on first_time_addresses.address = lens_owners.owned_by
-    inner join `oso.stg_lens__profiles` as lens_profiles
+    inner join {{ ref ("stg_lens__profiles") }} as lens_profiles
       on lens_owners.profile_id = lens_profiles.lens_profile_id
   )
 
