@@ -74,3 +74,7 @@ production/
 
 # sqlmesh
 .cache/
+
+# cube.dev
+core.1
+.cubecloud
