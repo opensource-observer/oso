@@ -53,10 +53,20 @@ function HitsContainer(props: AlgoliaSearchListProps) {
           <div key={hit.objectID}>
             <DataProvider name={PLASMIC_KEY} data={hit}>
               {children}
-              <div ref={sentinelRef} aria-hidden="true" />
             </DataProvider>
           </div>
         ))}
+      <div
+        ref={sentinelRef}
+        tabIndex={0}
+        aria-hidden="true"
+        style={{
+          width: "0px",
+          height: "0px",
+          overflow: "hidden",
+          outline: "none",
+        }}
+      ></div>
     </div>
   );
 }
@@ -79,6 +89,9 @@ function AlgoliaSearchList(props: AlgoliaSearchListProps) {
         searchClient={searchClient}
         indexName={indexName}
         insights
+        future={{
+          preserveSharedStateOnUnmount: true,
+        }}
       >
         <SearchBox placeholder={placeholder} autoFocus={true} />
         <HitsContainer {...props} />
@@ -87,4 +100,5 @@ function AlgoliaSearchList(props: AlgoliaSearchListProps) {
   );
 }
 
-export { AlgoliaSearchList };
+//export { AlgoliaSearchList };
+export default AlgoliaSearchList;
