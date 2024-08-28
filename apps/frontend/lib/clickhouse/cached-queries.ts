@@ -7,7 +7,9 @@ import {
   GET_ARTIFACT_BY_SOURCE_NAME,
   GET_ARTIFACT_IDS_BY_PROJECT_IDS,
   GET_PROJECT_BY_NAME,
+  GET_PROJECT_IDS_BY_COLLECTION_NAME,
   GET_COLLECTIONS_BY_IDS,
+  GET_COLLECTION_BY_NAME,
   GET_COLLECTION_IDS_BY_PROJECT_IDS,
   GET_CODE_METRICS_BY_PROJECT,
   GET_ONCHAIN_METRICS_BY_PROJECT,
@@ -45,6 +47,18 @@ const cachedGetProjectByName = cache(
   async (variables: { projectName: string }) =>
     queryWrapper({
       query: GET_PROJECT_BY_NAME,
+      variables,
+    }),
+);
+
+const cachedGetProjectIdsByCollectionName = cache(
+  async (variables: {
+    collectionSource: string;
+    collectionNamespace: string;
+    collectionName: string;
+  }) =>
+    queryWrapper({
+      query: GET_PROJECT_IDS_BY_COLLECTION_NAME,
       variables,
     }),
 );
@@ -90,6 +104,18 @@ const cachedGetCollectionsByIds = cache(
     }),
 );
 
+const cachedGetCollectionByName = cache(
+  async (variables: {
+    collectionSource: string;
+    collectionNamespace: string;
+    collectionName: string;
+  }) =>
+    queryWrapper({
+      query: GET_COLLECTION_BY_NAME,
+      variables,
+    }),
+);
+
 const cachedGetCollectionIdsByProjectIds = cache(
   async (variables: { projectIds: string[] }) =>
     queryWrapper({
@@ -127,6 +153,8 @@ export {
   cachedGetArtifactByName,
   cachedGetArtifactIdsByProjectIds,
   cachedGetProjectByName,
+  cachedGetProjectIdsByCollectionName,
+  cachedGetCollectionByName,
   cachedGetCollectionsByIds,
   cachedGetCollectionIdsByProjectIds,
   cachedGetCodeMetricsByProjectIds,

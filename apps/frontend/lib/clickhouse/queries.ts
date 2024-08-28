@@ -146,6 +146,19 @@ const GET_PROJECT_BY_NAME = define(
   projectResponseWithDescription,
 );
 
+const GET_PROJECT_IDS_BY_COLLECTION_NAME = define(
+  `
+  SELECT
+    project_id,
+  FROM projects_by_collection_v1
+  WHERE
+    collection_source = {collectionSource: String}
+    AND collection_namespace = {collectionNamespace: String}
+    AND collection_name = {collectionName: String};
+  `,
+  { project_id: "" },
+);
+
 const collectionResponse = {
   collection_id: "",
   collection_source: "",
@@ -201,7 +214,9 @@ const GET_COLLECTION_BY_NAME = define(
   FROM 
     collections_v1
   WHERE 
-    collection_name = {collectionName: String};
+    collection_source = {collectionSource: String}
+    AND collection_namespace = {collectionNamespace: String}
+    AND collection_name = {collectionName: String};
 `,
   collectionResponseWithDescription,
 );
@@ -593,6 +608,7 @@ export {
   GET_ALL_PROJECTS,
   GET_PROJECTS_BY_IDS,
   GET_PROJECT_BY_NAME,
+  GET_PROJECT_IDS_BY_COLLECTION_NAME,
   GET_ALL_COLLECTIONS,
   GET_COLLECTIONS_BY_IDS,
   GET_COLLECTION_BY_NAME,
