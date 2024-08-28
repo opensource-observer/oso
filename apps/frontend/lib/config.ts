@@ -45,19 +45,10 @@ export const CLICKHOUSE_USERNAME = process.env.CLICKHOUSE_USERNAME ?? "MISSING";
 export const CLICKHOUSE_PASSWORD = process.env.CLICKHOUSE_PASSWORD ?? "MISSING";
 export const CLICKHOUSE_DB_NAME = process.env.CLICKHOUSE_DB_NAME ?? "default";
 
-export const ALGOLIA_APPLICATION_ID = requireEnv(
-  process.env.NEXT_PUBLIC_ALGOLIA_APPLICATION_ID,
-  "NEXT_PUBLIC_ALGOLIA_APPLICATION_ID",
-);
-export const ALGOLIA_API_KEY = requireEnv(
-  process.env.NEXT_PUBLIC_ALGOLIA_API_KEY,
-  "NEXT_PUBLIC_ALGOLIA_API_KEY",
-);
-export const ALGOLIA_INDEX = requireEnv(
-  process.env.NEXT_PUBLIC_ALGOLIA_INDEX,
-  "NEXT_PUBLIC_ALGOLIA_INDEX",
-);
-export const FEEDBACK_FARM_ID = requireEnv(
-  process.env.NEXT_PUBLIC_FEEDBACK_FARM_ID,
-  "NEXT_PUBLIC_FEEDBACK_FARM_ID",
-);
+export const ALGOLIA_APPLICATION_ID =
+  process.env.NEXT_PUBLIC_ALGOLIA_APPLICATION_ID ?? "MISSING";
+export const ALGOLIA_API_KEY =
+  process.env.NEXT_PUBLIC_ALGOLIA_API_KEY ?? "MISSING";
+export const ALGOLIA_INDEX = process.env.NEXT_PUBLIC_ALGOLIA_INDEX ?? "MISSING";
+export const FEEDBACK_FARM_ID =
+  process.env.NEXT_PUBLIC_FEEDBACK_FARM_ID ?? "MISSING";
