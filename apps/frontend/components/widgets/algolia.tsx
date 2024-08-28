@@ -3,7 +3,7 @@
 import "instantsearch.css/themes/algolia.css";
 import algoliasearch from "algoliasearch/lite";
 import React, { ReactElement, useEffect, useRef } from "react";
-import { SearchBox, useInfiniteHits } from "react-instantsearch";
+import { Index, SearchBox, useInfiniteHits } from "react-instantsearch";
 import { InstantSearchNext } from "react-instantsearch-nextjs";
 import { DataProvider } from "@plasmicapp/loader-nextjs";
 import {
@@ -15,6 +15,8 @@ import {
 const searchClient = algoliasearch(ALGOLIA_APPLICATION_ID, ALGOLIA_API_KEY);
 const PLASMIC_KEY = "searchItem";
 const DEFAULT_PLACEHOLDER = "Search...";
+const DEFAULT_INDEX = "projects";
+const INDEX_DELIMITER = ",";
 
 type AlgoliaSearchListProps = {
   className?: string; // Plasmic CSS class
@@ -80,21 +82,26 @@ function AlgoliaSearchList(props: AlgoliaSearchListProps) {
     indexName: rawIndexName,
     placeholder: rawPlaceholder,
   } = props;
-  const indexName = rawIndexName ?? ALGOLIA_INDEX;
+  const indices = (rawIndexName ?? ALGOLIA_INDEX).split(INDEX_DELIMITER);
+  const rootIndex = indices.length > 0 ? indices[0] : DEFAULT_INDEX;
   const placeholder = rawPlaceholder ?? DEFAULT_PLACEHOLDER;
 
   return (
     <div className={className}>
       <InstantSearchNext
         searchClient={searchClient}
-        indexName={indexName}
+        indexName={rootIndex}
         insights
         future={{
           preserveSharedStateOnUnmount: true,
         }}
       >
         <SearchBox placeholder={placeholder} autoFocus={true} />
-        <HitsContainer {...props} />
+        {indices.map((i) => (
+          <Index key={i} indexName={i}>
+            <HitsContainer {...props} />
+          </Index>
+        ))}
       </InstantSearchNext>
     </div>
   );

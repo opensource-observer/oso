@@ -135,7 +135,7 @@ PLASMIC.registerComponent(
       indexName: {
         type: "string",
         defaultValue: ALGOLIA_INDEX,
-        helpText: "Algolia index",
+        helpText: "Comma-separated Algolia index names",
       },
       placeholder: "string",
       showResultsOnEmptyQuery: {
