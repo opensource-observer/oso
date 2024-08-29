@@ -1,0 +1,7 @@
+gateway: local 
+sources:
+  oso:
+    - schema_name: sources 
+      name: int_events
+    - schema_name: sources
+      name: int_artifacts_by_project
