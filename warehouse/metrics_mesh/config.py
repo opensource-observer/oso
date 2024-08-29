@@ -12,7 +12,7 @@ from sqlmesh.core.config.connection import ClickhouseConnectionConfig
 dotenv.load_dotenv()
 
 config = Config(
-    model_defaults=ModelDefaultsConfig(dialect="clickhouse", start="2024-08-01"),
+    model_defaults=ModelDefaultsConfig(dialect="postgres", start="2024-08-01"),
     gateways={
         "local": GatewayConfig(
             connection=DuckDBConnectionConfig(
