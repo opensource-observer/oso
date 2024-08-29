@@ -6,12 +6,17 @@ MODEL (
   ),
   start '2024-08-01',
   cron '@daily',
-  grain (bucket_day, event_type)
+  dialect 'clickhouse',
+  columns (
+    bucket_day Date, 
+    event_type String,
+    events Int64,
+  )
 );
 
 SELECT
-  time_bucket(INTERVAL 1 DAY, @start_date) as bucket_day,
-  event_type,
+  @day_bucket(@start_date) as bucket_day,
+  CASE WHEN event_type IS NULL THEN '' ELSE event_type END as event_type,
   count(event_type) as events,
 FROM
   @source("oso", "int_events") as test

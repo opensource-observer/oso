@@ -77,20 +77,19 @@ def read_yaml_files(glob_pattern) -> List[SourcesFile]:
     return sources_files
 
 
-def generate_source_map(sources_files: List[SourcesFile]) -> EnvSourceMap:
+def generate_source_map(parsed_sources_files: List[SourcesFile]) -> EnvSourceMap:
     env_source_map: EnvSourceMap = {}
-    for sources_file in sources_files:
+    for sources_file in parsed_sources_files:
         if sources_file.gateway not in env_source_map:
             env_source_map[sources_file.gateway] = {}
         source_map = env_source_map[sources_file.gateway]
-        for sources in map(lambda s: s.sources, sources_files):
-            for key, table_refs in sources.items():
-                if key not in source_map:
-                    source_map[key] = {}
-                for table_ref in table_refs:
-                    if table_ref.name in source_map[key]:
-                        print("WARNING: table annotated multiple times")
-                    source_map[key][table_ref.name] = table_ref
+        for key, table_refs in sources_file.sources.items():
+            if key not in source_map:
+                source_map[key] = {}
+            for table_ref in table_refs:
+                if table_ref.name in source_map[key]:
+                    print("WARNING: table annotated multiple times")
+                source_map[key][table_ref.name] = table_ref
     return env_source_map
 
 
@@ -100,8 +99,13 @@ def source(evaluator: MacroEvaluator, ref: str, table: str):
     source_map = generate_source_map(read_yaml_files(SOURCE_YAML_GLOB))
     # print(ENV_SOURCE_MAP)
     print(evaluator.env["SQL"])
+    print(evaluator.gateway)
+    print("ddddddddddddddddddddddddddddddddd")
+    print("ddddddddddddddddddddddddddddddddd")
+    print("ddddddddddddddddddddddddddddddddd")
 
     gateway = evaluator.gateway
+    print(source_map)
     if not gateway:
         return ""
     table_ref = source_map[gateway][ref][table]

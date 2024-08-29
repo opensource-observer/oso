@@ -6,7 +6,17 @@ MODEL (
   ),
   start '2024-08-01',
   cron '@daily',
-  grain (bucket_day, event_source, to_artifact_id, metric)
+  dialect 'clickhouse',
+  grain (bucket_day, event_source, to_artifact_id, metric),
+  -- For now it seems clickhouse _must_ have the columns and their types
+  -- explicitly set.
+  columns (
+    bucket_day Date, 
+    event_source String,
+    to_artifact_id String,
+    metric String,
+    amount Int64
+  )
 );
 
 with daily_commits_in_last_window as (
@@ -18,7 +28,7 @@ with daily_commits_in_last_window as (
     CAST(SUM(amount) > 0 as int64) as commit_count
   from metrics.int_events_daily_to_artifact
   where event_type = 'COMMIT_CODE' and
-    bucket_day BETWEEN (@end_dt - INTERVAL @VAR('activity_window') DAY) AND @end_dt
+    bucket_day BETWEEN (@end_date - INTERVAL @VAR('activity_window') DAY) AND @end_date
   group by
     from_artifact_id,
     to_artifact_id,
