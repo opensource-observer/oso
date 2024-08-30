@@ -27,6 +27,8 @@ export const DB_GRAPHQL_URL = requireEnv(
 );
 export const HASURA_URL = process.env.HASURA_URL ?? "MISSING";
 export const HASURA_PAT = process.env.HASURA_PAT;
+export const CUBE_URL = process.env.NEXT_PUBLIC_CUBE_URL ?? "MISSING";
+export const CUBE_TOKEN = process.env.NEXT_PUBLIC_CUBE_TOKEN ?? "MISSING";
 export const OSO_API_KEY = process.env.OSO_API_KEY;
 
 export const SUPABASE_URL = requireEnv(
