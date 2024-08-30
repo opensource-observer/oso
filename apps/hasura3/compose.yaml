@@ -1,22 +1,16 @@
 include:
   - path: oso_subgraph/connector/oso_clickhouse/compose.yaml
 services:
-  auth_hook:
-    image: ghcr.io/hasura/v3-dev-auth-webhook
   engine:
     build:
       context: engine
       dockerfile_inline: |-
         FROM ghcr.io/hasura/v3-engine
-        COPY ./ /md/
-    depends_on:
-      auth_hook:
-        condition: service_started
-        required: false
+        COPY ./build /md/
     develop:
       watch:
         - action: sync+restart
-          path: engine
+          path: engine/build
           target: /md/
     env_file:
       - engine/.env.engine

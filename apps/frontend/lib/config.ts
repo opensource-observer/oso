@@ -25,7 +25,7 @@ export const DB_GRAPHQL_URL = requireEnv(
   process.env.NEXT_PUBLIC_DB_GRAPHQL_URL,
   "NEXT_PUBLIC_DB_GRAPHQL_URL",
 );
-export const HASURA_URL = process.env.HASURA_URL;
+export const HASURA_URL = process.env.HASURA_URL ?? "MISSING";
 export const HASURA_PAT = process.env.HASURA_PAT;
 export const OSO_API_KEY = process.env.OSO_API_KEY;
 

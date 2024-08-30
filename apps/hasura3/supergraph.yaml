@@ -2,5 +2,6 @@ kind: Supergraph
 version: v2
 definition:
   subgraphs:
-    - globals/subgraph.local.yaml
+    - globals/subgraph.yaml
+    - app/subgraph.yaml
     - oso_subgraph/subgraph.yaml

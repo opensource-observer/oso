@@ -280,6 +280,99 @@
         }
       }
     },
+    "metrics__dev_int_events_daily_to_artifact": {
+      "name": "int_events_daily_to_artifact",
+      "schema": "metrics__dev",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "amount": "Int64",
+          "bucket_day": "Date",
+          "event_source": "String",
+          "event_type": "String",
+          "from_artifact_id": "String",
+          "to_artifact_id": "String"
+        }
+      }
+    },
+    "metrics__dev_int_timeseries_metrics_by_artifact_developers": {
+      "name": "int_timeseries_metrics_by_artifact_developers",
+      "schema": "metrics__dev",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "amount": "Int64",
+          "bucket_day": "Date",
+          "event_source": "String",
+          "metric": "String",
+          "to_artifact_id": "String"
+        }
+      }
+    },
+    "metrics__run_int_events_daily_to_artifact": {
+      "name": "int_events_daily_to_artifact",
+      "schema": "metrics__run",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "amount": "Int64",
+          "bucket_day": "Date",
+          "event_source": "String",
+          "event_type": "String",
+          "from_artifact_id": "String",
+          "to_artifact_id": "String"
+        }
+      }
+    },
+    "metrics__run_int_timeseries_metrics_by_artifact_developers": {
+      "name": "int_timeseries_metrics_by_artifact_developers",
+      "schema": "metrics__run",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "amount": "Int64",
+          "bucket_day": "Date",
+          "event_source": "String",
+          "metric": "String",
+          "to_artifact_id": "String"
+        }
+      }
+    },
+    "metrics_int_events_daily_to_artifact": {
+      "name": "int_events_daily_to_artifact",
+      "schema": "metrics",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "amount": "Int64",
+          "bucket_day": "Date",
+          "event_source": "String",
+          "event_type": "String",
+          "from_artifact_id": "String",
+          "to_artifact_id": "String"
+        }
+      }
+    },
+    "metrics_int_timeseries_metrics_by_artifact_developers": {
+      "name": "int_timeseries_metrics_by_artifact_developers",
+      "schema": "metrics",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "amount": "Int64",
+          "bucket_day": "Date",
+          "event_source": "String",
+          "metric": "String",
+          "to_artifact_id": "String"
+        }
+      }
+    },
     "metrics_v0": {
       "name": "metrics_v0",
       "schema": "default",
@@ -363,6 +456,400 @@
         }
       }
     },
+    "sqlmesh__metrics_metrics__incremental_model__3929117331": {
+      "name": "metrics__incremental_model__3929117331",
+      "schema": "sqlmesh__metrics",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "bucket_day": "Date",
+          "event_type": "String",
+          "events": "Int64"
+        }
+      }
+    },
+    "sqlmesh__metrics_metrics__incremental_model__3929117331__temp": {
+      "name": "metrics__incremental_model__3929117331__temp",
+      "schema": "sqlmesh__metrics",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "bucket_day": "Date",
+          "event_type": "String",
+          "events": "Int64"
+        }
+      }
+    },
+    "sqlmesh__metrics_metrics__int_events_daily_to_artifact__1260655920": {
+      "name": "metrics__int_events_daily_to_artifact__1260655920",
+      "schema": "sqlmesh__metrics",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "amount": "Int64",
+          "bucket_day": "Date",
+          "event_source": "String",
+          "event_type": "String",
+          "from_artifact_id": "String",
+          "to_artifact_id": "String"
+        }
+      }
+    },
+    "sqlmesh__metrics_metrics__int_events_daily_to_artifact__1260655920__temp": {
+      "name": "metrics__int_events_daily_to_artifact__1260655920__temp",
+      "schema": "sqlmesh__metrics",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "amount": "Int64",
+          "bucket_day": "Date",
+          "event_source": "String",
+          "event_type": "String",
+          "from_artifact_id": "String",
+          "to_artifact_id": "String"
+        }
+      }
+    },
+    "sqlmesh__metrics_metrics__int_events_daily_to_artifact__1838358350": {
+      "name": "metrics__int_events_daily_to_artifact__1838358350",
+      "schema": "sqlmesh__metrics",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "amount": "Int64",
+          "bucket_day": "Date",
+          "event_source": "String",
+          "event_type": "String",
+          "from_artifact_id": "String",
+          "to_artifact_id": "String"
+        }
+      }
+    },
+    "sqlmesh__metrics_metrics__int_events_daily_to_artifact__1838358350__temp": {
+      "name": "metrics__int_events_daily_to_artifact__1838358350__temp",
+      "schema": "sqlmesh__metrics",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "amount": "Int64",
+          "bucket_day": "Date",
+          "event_source": "String",
+          "event_type": "String",
+          "from_artifact_id": "String",
+          "to_artifact_id": "String"
+        }
+      }
+    },
+    "sqlmesh__metrics_metrics__int_events_daily_to_artifact__2071704967__temp": {
+      "name": "metrics__int_events_daily_to_artifact__2071704967__temp",
+      "schema": "sqlmesh__metrics",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "amount": "Int64",
+          "bucket_day": "Date",
+          "event_source": "String",
+          "event_type": "String",
+          "from_artifact_id": "String",
+          "to_artifact_id": "String"
+        }
+      }
+    },
+    "sqlmesh__metrics_metrics__int_events_daily_to_artifact__3344974993": {
+      "name": "metrics__int_events_daily_to_artifact__3344974993",
+      "schema": "sqlmesh__metrics",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "amount": "Int64",
+          "bucket_day": "Date",
+          "event_source": "String",
+          "event_type": "String",
+          "from_artifact_id": "String",
+          "to_artifact_id": "String"
+        }
+      }
+    },
+    "sqlmesh__metrics_metrics__int_events_daily_to_artifact__3344974993__temp": {
+      "name": "metrics__int_events_daily_to_artifact__3344974993__temp",
+      "schema": "sqlmesh__metrics",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "amount": "Int64",
+          "bucket_day": "Date",
+          "event_source": "String",
+          "event_type": "String",
+          "from_artifact_id": "String",
+          "to_artifact_id": "String"
+        }
+      }
+    },
+    "sqlmesh__metrics_metrics__int_events_daily_to_artifact__3515096595": {
+      "name": "metrics__int_events_daily_to_artifact__3515096595",
+      "schema": "sqlmesh__metrics",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "amount": "Int64",
+          "bucket_day": "Date",
+          "event_source": "String",
+          "event_type": "String",
+          "from_artifact_id": "String",
+          "to_artifact_id": "String"
+        }
+      }
+    },
+    "sqlmesh__metrics_metrics__int_events_daily_to_artifact__3515096595__temp": {
+      "name": "metrics__int_events_daily_to_artifact__3515096595__temp",
+      "schema": "sqlmesh__metrics",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "amount": "Int64",
+          "bucket_day": "Date",
+          "event_source": "String",
+          "event_type": "String",
+          "from_artifact_id": "String",
+          "to_artifact_id": "String"
+        }
+      }
+    },
+    "sqlmesh__metrics_metrics__int_events_daily_to_artifact__3571639471": {
+      "name": "metrics__int_events_daily_to_artifact__3571639471",
+      "schema": "sqlmesh__metrics",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "bucket_day": "Date",
+          "event_source": "String",
+          "event_type": "String",
+          "events": "Int64",
+          "from_artifact_id": "String",
+          "to_artifact_id": "String"
+        }
+      }
+    },
+    "sqlmesh__metrics_metrics__int_events_daily_to_artifact__3571639471__temp": {
+      "name": "metrics__int_events_daily_to_artifact__3571639471__temp",
+      "schema": "sqlmesh__metrics",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "bucket_day": "Date",
+          "event_source": "String",
+          "event_type": "String",
+          "events": "Int64",
+          "from_artifact_id": "String",
+          "to_artifact_id": "String"
+        }
+      }
+    },
+    "sqlmesh__metrics_metrics__int_timeseries_metrics_by_artifact_developers__2126831521": {
+      "name": "metrics__int_timeseries_metrics_by_artifact_developers__2126831521",
+      "schema": "sqlmesh__metrics",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "bucket_day": "Date",
+          "event_source": "String",
+          "metric": "Int64",
+          "to_artifact_id": "String"
+        }
+      }
+    },
+    "sqlmesh__metrics_metrics__int_timeseries_metrics_by_artifact_developers__2126831521__temp": {
+      "name": "metrics__int_timeseries_metrics_by_artifact_developers__2126831521__temp",
+      "schema": "sqlmesh__metrics",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "bucket_day": "Date",
+          "event_source": "String",
+          "metric": "Int64",
+          "to_artifact_id": "String"
+        }
+      }
+    },
+    "sqlmesh__metrics_metrics__int_timeseries_metrics_by_artifact_developers__2219676454": {
+      "name": "metrics__int_timeseries_metrics_by_artifact_developers__2219676454",
+      "schema": "sqlmesh__metrics",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "amount": "Int64",
+          "bucket_day": "Date",
+          "event_source": "String",
+          "metric": "String",
+          "to_artifact_id": "String"
+        }
+      }
+    },
+    "sqlmesh__metrics_metrics__int_timeseries_metrics_by_artifact_developers__2219676454__temp": {
+      "name": "metrics__int_timeseries_metrics_by_artifact_developers__2219676454__temp",
+      "schema": "sqlmesh__metrics",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "amount": "Int64",
+          "bucket_day": "Date",
+          "event_source": "String",
+          "metric": "String",
+          "to_artifact_id": "String"
+        }
+      }
+    },
+    "sqlmesh__metrics_metrics__int_timeseries_metrics_by_artifact_developers__4026028341": {
+      "name": "metrics__int_timeseries_metrics_by_artifact_developers__4026028341",
+      "schema": "sqlmesh__metrics",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "amount": "Int64",
+          "bucket_day": "Date",
+          "event_source": "String",
+          "metric": "String",
+          "to_artifact_id": "String"
+        }
+      }
+    },
+    "sqlmesh__metrics_metrics__int_timeseries_metrics_by_artifact_developers__4026028341__temp": {
+      "name": "metrics__int_timeseries_metrics_by_artifact_developers__4026028341__temp",
+      "schema": "sqlmesh__metrics",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "amount": "Int64",
+          "bucket_day": "Date",
+          "event_source": "String",
+          "metric": "String",
+          "to_artifact_id": "String"
+        }
+      }
+    },
+    "sqlmesh__metrics_metrics__int_timeseries_metrics_by_artifact_developers__4060035978__temp": {
+      "name": "metrics__int_timeseries_metrics_by_artifact_developers__4060035978__temp",
+      "schema": "sqlmesh__metrics",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "bucket_day": "Date",
+          "event_source": "String",
+          "metric": "Int64",
+          "to_artifact_id": "String"
+        }
+      }
+    },
+    "sqlmesh__metrics_metrics__int_timeseries_metrics_by_artifact_developers__4120769275": {
+      "name": "metrics__int_timeseries_metrics_by_artifact_developers__4120769275",
+      "schema": "sqlmesh__metrics",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "bucket_day": "Date",
+          "event_source": "String",
+          "metric": "String",
+          "to_artifact_id": "String"
+        }
+      }
+    },
+    "sqlmesh__metrics_metrics__int_timeseries_metrics_by_artifact_developers__4120769275__temp": {
+      "name": "metrics__int_timeseries_metrics_by_artifact_developers__4120769275__temp",
+      "schema": "sqlmesh__metrics",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "bucket_day": "Date",
+          "event_source": "String",
+          "metric": "String",
+          "to_artifact_id": "String"
+        }
+      }
+    },
+    "sqlmesh__metrics_metrics__testing_metrics__292628068__temp": {
+      "name": "metrics__testing_metrics__292628068__temp",
+      "schema": "sqlmesh__metrics",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "amount": "Int64",
+          "bucket_day": "Date",
+          "event_source": "String",
+          "from_artifact_id": "String",
+          "to_artifact_id": "String"
+        }
+      }
+    },
+    "sqlmesh__metrics_metrics__testing_metrics__638047893__temp": {
+      "name": "metrics__testing_metrics__638047893__temp",
+      "schema": "sqlmesh__metrics",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "active_days": "Nullable(Int64)",
+          "bucket_day": "Date",
+          "event_source": "String",
+          "from_artifact_id": "String",
+          "to_artifact_id": "String"
+        }
+      }
+    },
+    "sqlmesh__metrics_metrics__testing_metrics__958077468__temp": {
+      "name": "metrics__testing_metrics__958077468__temp",
+      "schema": "sqlmesh__metrics",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "active_days": "Nullable(Int64)",
+          "bucket_day": "Date",
+          "event_source": "String",
+          "from_artifact_id": "String",
+          "to_artifact_id": "String"
+        }
+      }
+    },
+    "timeseries_events_by_artifact_v0": {
+      "name": "timeseries_events_by_artifact_v0",
+      "schema": "default",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "amount": "Float32",
+          "event_source": "String",
+          "event_source_id": "String",
+          "event_type": "String",
+          "from_artifact_id": "String",
+          "time": "DateTime",
+          "to_artifact_id": "String"
+        }
+      }
+    },
     "timeseries_metrics_by_artifact_v0": {
       "name": "timeseries_metrics_by_artifact_v0",
       "schema": "default",
@@ -385,11 +872,11 @@
       "return_type": {
         "kind": "definition",
         "columns": {
-          "amount": "Int64",
+          "amount": "Float32",
           "metric_id": "String",
           "project_id": "String",
           "sample_date": "DateTime",
-          "unit": "Int64"
+          "unit": "String"
         }
       }
     },

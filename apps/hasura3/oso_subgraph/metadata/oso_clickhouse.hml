@@ -6,13 +6,65 @@ definition:
   url:
     readWriteUrls:
       read:
-        valueFromEnv: OSO__OSO_CLICKHOUSE_READ_URL
+        valueFromEnv: OSO_SUBGRAPH_OSO_CLICKHOUSE_READ_URL
       write:
-        valueFromEnv: OSO__OSO_CLICKHOUSE_WRITE_URL
+        valueFromEnv: OSO_SUBGRAPH_OSO_CLICKHOUSE_WRITE_URL
+  headers:
+    Authorization:
+      valueFromEnv: OSO_SUBGRAPH_OSO_CLICKHOUSE_AUTHORIZATION_HEADER
   schema:
     version: v0.1
     schema:
       scalar_types:
+        Date:
+          representation:
+            type: string
+          aggregate_functions:
+            max:
+              result_type:
+                type: named
+                name: Date
+            min:
+              result_type:
+                type: named
+                name: Date
+          comparison_operators:
+            _eq:
+              type: equal
+            _gt:
+              type: custom
+              argument_type:
+                type: named
+                name: Date
+            _gte:
+              type: custom
+              argument_type:
+                type: named
+                name: Date
+            _in:
+              type: in
+            _lt:
+              type: custom
+              argument_type:
+                type: named
+                name: Date
+            _lte:
+              type: custom
+              argument_type:
+                type: named
+                name: Date
+            _neq:
+              type: custom
+              argument_type:
+                type: named
+                name: Date
+            _nin:
+              type: custom
+              argument_type:
+                type: array
+                element_type:
+                  type: named
+                  name: Date
         DateTime:
           representation:
             type: string
@@ -64,7 +116,7 @@ definition:
                   name: DateTime
         Float32:
           representation:
-            type: number
+            type: float32
           aggregate_functions:
             avg:
               result_type:
@@ -137,7 +189,7 @@ definition:
                   name: Float32
         Int64:
           representation:
-            type: integer
+            type: int64
           aggregate_functions:
             avg:
               result_type:
@@ -762,6 +814,156 @@ definition:
               type:
                 type: named
                 name: String
+        metrics__dev_int_events_daily_to_artifact:
+          description: ""
+          fields:
+            amount:
+              type:
+                type: named
+                name: Int64
+            bucket_day:
+              type:
+                type: named
+                name: Date
+            event_source:
+              type:
+                type: named
+                name: String
+            event_type:
+              type:
+                type: named
+                name: String
+            from_artifact_id:
+              type:
+                type: named
+                name: String
+            to_artifact_id:
+              type:
+                type: named
+                name: String
+        metrics__dev_int_timeseries_metrics_by_artifact_developers:
+          description: ""
+          fields:
+            amount:
+              type:
+                type: named
+                name: Int64
+            bucket_day:
+              type:
+                type: named
+                name: Date
+            event_source:
+              type:
+                type: named
+                name: String
+            metric:
+              type:
+                type: named
+                name: String
+            to_artifact_id:
+              type:
+                type: named
+                name: String
+        metrics__run_int_events_daily_to_artifact:
+          description: ""
+          fields:
+            amount:
+              type:
+                type: named
+                name: Int64
+            bucket_day:
+              type:
+                type: named
+                name: Date
+            event_source:
+              type:
+                type: named
+                name: String
+            event_type:
+              type:
+                type: named
+                name: String
+            from_artifact_id:
+              type:
+                type: named
+                name: String
+            to_artifact_id:
+              type:
+                type: named
+                name: String
+        metrics__run_int_timeseries_metrics_by_artifact_developers:
+          description: ""
+          fields:
+            amount:
+              type:
+                type: named
+                name: Int64
+            bucket_day:
+              type:
+                type: named
+                name: Date
+            event_source:
+              type:
+                type: named
+                name: String
+            metric:
+              type:
+                type: named
+                name: String
+            to_artifact_id:
+              type:
+                type: named
+                name: String
+        metrics_int_events_daily_to_artifact:
+          description: ""
+          fields:
+            amount:
+              type:
+                type: named
+                name: Int64
+            bucket_day:
+              type:
+                type: named
+                name: Date
+            event_source:
+              type:
+                type: named
+                name: String
+            event_type:
+              type:
+                type: named
+                name: String
+            from_artifact_id:
+              type:
+                type: named
+                name: String
+            to_artifact_id:
+              type:
+                type: named
+                name: String
+        metrics_int_timeseries_metrics_by_artifact_developers:
+          description: ""
+          fields:
+            amount:
+              type:
+                type: named
+                name: Int64
+            bucket_day:
+              type:
+                type: named
+                name: Date
+            event_source:
+              type:
+                type: named
+                name: String
+            metric:
+              type:
+                type: named
+                name: String
+            to_artifact_id:
+              type:
+                type: named
+                name: String
         metrics_v0:
           description: ""
           fields:
@@ -946,6 +1148,624 @@ definition:
               type:
                 type: named
                 name: String
+        sqlmesh__metrics_metrics__incremental_model__3929117331:
+          description: ""
+          fields:
+            bucket_day:
+              type:
+                type: named
+                name: Date
+            event_type:
+              type:
+                type: named
+                name: String
+            events:
+              type:
+                type: named
+                name: Int64
+        sqlmesh__metrics_metrics__incremental_model__3929117331__temp:
+          description: ""
+          fields:
+            bucket_day:
+              type:
+                type: named
+                name: Date
+            event_type:
+              type:
+                type: named
+                name: String
+            events:
+              type:
+                type: named
+                name: Int64
+        sqlmesh__metrics_metrics__int_events_daily_to_artifact__1260655920:
+          description: ""
+          fields:
+            amount:
+              type:
+                type: named
+                name: Int64
+            bucket_day:
+              type:
+                type: named
+                name: Date
+            event_source:
+              type:
+                type: named
+                name: String
+            event_type:
+              type:
+                type: named
+                name: String
+            from_artifact_id:
+              type:
+                type: named
+                name: String
+            to_artifact_id:
+              type:
+                type: named
+                name: String
+        sqlmesh__metrics_metrics__int_events_daily_to_artifact__1260655920__temp:
+          description: ""
+          fields:
+            amount:
+              type:
+                type: named
+                name: Int64
+            bucket_day:
+              type:
+                type: named
+                name: Date
+            event_source:
+              type:
+                type: named
+                name: String
+            event_type:
+              type:
+                type: named
+                name: String
+            from_artifact_id:
+              type:
+                type: named
+                name: String
+            to_artifact_id:
+              type:
+                type: named
+                name: String
+        sqlmesh__metrics_metrics__int_events_daily_to_artifact__1838358350:
+          description: ""
+          fields:
+            amount:
+              type:
+                type: named
+                name: Int64
+            bucket_day:
+              type:
+                type: named
+                name: Date
+            event_source:
+              type:
+                type: named
+                name: String
+            event_type:
+              type:
+                type: named
+                name: String
+            from_artifact_id:
+              type:
+                type: named
+                name: String
+            to_artifact_id:
+              type:
+                type: named
+                name: String
+        sqlmesh__metrics_metrics__int_events_daily_to_artifact__1838358350__temp:
+          description: ""
+          fields:
+            amount:
+              type:
+                type: named
+                name: Int64
+            bucket_day:
+              type:
+                type: named
+                name: Date
+            event_source:
+              type:
+                type: named
+                name: String
+            event_type:
+              type:
+                type: named
+                name: String
+            from_artifact_id:
+              type:
+                type: named
+                name: String
+            to_artifact_id:
+              type:
+                type: named
+                name: String
+        sqlmesh__metrics_metrics__int_events_daily_to_artifact__2071704967__temp:
+          description: ""
+          fields:
+            amount:
+              type:
+                type: named
+                name: Int64
+            bucket_day:
+              type:
+                type: named
+                name: Date
+            event_source:
+              type:
+                type: named
+                name: String
+            event_type:
+              type:
+                type: named
+                name: String
+            from_artifact_id:
+              type:
+                type: named
+                name: String
+            to_artifact_id:
+              type:
+                type: named
+                name: String
+        sqlmesh__metrics_metrics__int_events_daily_to_artifact__3344974993:
+          description: ""
+          fields:
+            amount:
+              type:
+                type: named
+                name: Int64
+            bucket_day:
+              type:
+                type: named
+                name: Date
+            event_source:
+              type:
+                type: named
+                name: String
+            event_type:
+              type:
+                type: named
+                name: String
+            from_artifact_id:
+              type:
+                type: named
+                name: String
+            to_artifact_id:
+              type:
+                type: named
+                name: String
+        sqlmesh__metrics_metrics__int_events_daily_to_artifact__3344974993__temp:
+          description: ""
+          fields:
+            amount:
+              type:
+                type: named
+                name: Int64
+            bucket_day:
+              type:
+                type: named
+                name: Date
+            event_source:
+              type:
+                type: named
+                name: String
+            event_type:
+              type:
+                type: named
+                name: String
+            from_artifact_id:
+              type:
+                type: named
+                name: String
+            to_artifact_id:
+              type:
+                type: named
+                name: String
+        sqlmesh__metrics_metrics__int_events_daily_to_artifact__3515096595:
+          description: ""
+          fields:
+            amount:
+              type:
+                type: named
+                name: Int64
+            bucket_day:
+              type:
+                type: named
+                name: Date
+            event_source:
+              type:
+                type: named
+                name: String
+            event_type:
+              type:
+                type: named
+                name: String
+            from_artifact_id:
+              type:
+                type: named
+                name: String
+            to_artifact_id:
+              type:
+                type: named
+                name: String
+        sqlmesh__metrics_metrics__int_events_daily_to_artifact__3515096595__temp:
+          description: ""
+          fields:
+            amount:
+              type:
+                type: named
+                name: Int64
+            bucket_day:
+              type:
+                type: named
+                name: Date
+            event_source:
+              type:
+                type: named
+                name: String
+            event_type:
+              type:
+                type: named
+                name: String
+            from_artifact_id:
+              type:
+                type: named
+                name: String
+            to_artifact_id:
+              type:
+                type: named
+                name: String
+        sqlmesh__metrics_metrics__int_events_daily_to_artifact__3571639471:
+          description: ""
+          fields:
+            bucket_day:
+              type:
+                type: named
+                name: Date
+            event_source:
+              type:
+                type: named
+                name: String
+            event_type:
+              type:
+                type: named
+                name: String
+            events:
+              type:
+                type: named
+                name: Int64
+            from_artifact_id:
+              type:
+                type: named
+                name: String
+            to_artifact_id:
+              type:
+                type: named
+                name: String
+        sqlmesh__metrics_metrics__int_events_daily_to_artifact__3571639471__temp:
+          description: ""
+          fields:
+            bucket_day:
+              type:
+                type: named
+                name: Date
+            event_source:
+              type:
+                type: named
+                name: String
+            event_type:
+              type:
+                type: named
+                name: String
+            events:
+              type:
+                type: named
+                name: Int64
+            from_artifact_id:
+              type:
+                type: named
+                name: String
+            to_artifact_id:
+              type:
+                type: named
+                name: String
+        sqlmesh__metrics_metrics__int_timeseries_metrics_by_artifact_developers__2126831521:
+          description: ""
+          fields:
+            bucket_day:
+              type:
+                type: named
+                name: Date
+            event_source:
+              type:
+                type: named
+                name: String
+            metric:
+              type:
+                type: named
+                name: Int64
+            to_artifact_id:
+              type:
+                type: named
+                name: String
+        sqlmesh__metrics_metrics__int_timeseries_metrics_by_artifact_developers__2126831521__temp:
+          description: ""
+          fields:
+            bucket_day:
+              type:
+                type: named
+                name: Date
+            event_source:
+              type:
+                type: named
+                name: String
+            metric:
+              type:
+                type: named
+                name: Int64
+            to_artifact_id:
+              type:
+                type: named
+                name: String
+        sqlmesh__metrics_metrics__int_timeseries_metrics_by_artifact_developers__2219676454:
+          description: ""
+          fields:
+            amount:
+              type:
+                type: named
+                name: Int64
+            bucket_day:
+              type:
+                type: named
+                name: Date
+            event_source:
+              type:
+                type: named
+                name: String
+            metric:
+              type:
+                type: named
+                name: String
+            to_artifact_id:
+              type:
+                type: named
+                name: String
+        sqlmesh__metrics_metrics__int_timeseries_metrics_by_artifact_developers__2219676454__temp:
+          description: ""
+          fields:
+            amount:
+              type:
+                type: named
+                name: Int64
+            bucket_day:
+              type:
+                type: named
+                name: Date
+            event_source:
+              type:
+                type: named
+                name: String
+            metric:
+              type:
+                type: named
+                name: String
+            to_artifact_id:
+              type:
+                type: named
+                name: String
+        sqlmesh__metrics_metrics__int_timeseries_metrics_by_artifact_developers__4026028341:
+          description: ""
+          fields:
+            amount:
+              type:
+                type: named
+                name: Int64
+            bucket_day:
+              type:
+                type: named
+                name: Date
+            event_source:
+              type:
+                type: named
+                name: String
+            metric:
+              type:
+                type: named
+                name: String
+            to_artifact_id:
+              type:
+                type: named
+                name: String
+        sqlmesh__metrics_metrics__int_timeseries_metrics_by_artifact_developers__4026028341__temp:
+          description: ""
+          fields:
+            amount:
+              type:
+                type: named
+                name: Int64
+            bucket_day:
+              type:
+                type: named
+                name: Date
+            event_source:
+              type:
+                type: named
+                name: String
+            metric:
+              type:
+                type: named
+                name: String
+            to_artifact_id:
+              type:
+                type: named
+                name: String
+        sqlmesh__metrics_metrics__int_timeseries_metrics_by_artifact_developers__4060035978__temp:
+          description: ""
+          fields:
+            bucket_day:
+              type:
+                type: named
+                name: Date
+            event_source:
+              type:
+                type: named
+                name: String
+            metric:
+              type:
+                type: named
+                name: Int64
+            to_artifact_id:
+              type:
+                type: named
+                name: String
+        sqlmesh__metrics_metrics__int_timeseries_metrics_by_artifact_developers__4120769275:
+          description: ""
+          fields:
+            bucket_day:
+              type:
+                type: named
+                name: Date
+            event_source:
+              type:
+                type: named
+                name: String
+            metric:
+              type:
+                type: named
+                name: String
+            to_artifact_id:
+              type:
+                type: named
+                name: String
+        sqlmesh__metrics_metrics__int_timeseries_metrics_by_artifact_developers__4120769275__temp:
+          description: ""
+          fields:
+            bucket_day:
+              type:
+                type: named
+                name: Date
+            event_source:
+              type:
+                type: named
+                name: String
+            metric:
+              type:
+                type: named
+                name: String
+            to_artifact_id:
+              type:
+                type: named
+                name: String
+        sqlmesh__metrics_metrics__testing_metrics__292628068__temp:
+          description: ""
+          fields:
+            amount:
+              type:
+                type: named
+                name: Int64
+            bucket_day:
+              type:
+                type: named
+                name: Date
+            event_source:
+              type:
+                type: named
+                name: String
+            from_artifact_id:
+              type:
+                type: named
+                name: String
+            to_artifact_id:
+              type:
+                type: named
+                name: String
+        sqlmesh__metrics_metrics__testing_metrics__638047893__temp:
+          description: ""
+          fields:
+            active_days:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: Int64
+            bucket_day:
+              type:
+                type: named
+                name: Date
+            event_source:
+              type:
+                type: named
+                name: String
+            from_artifact_id:
+              type:
+                type: named
+                name: String
+            to_artifact_id:
+              type:
+                type: named
+                name: String
+        sqlmesh__metrics_metrics__testing_metrics__958077468__temp:
+          description: ""
+          fields:
+            active_days:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: Int64
+            bucket_day:
+              type:
+                type: named
+                name: Date
+            event_source:
+              type:
+                type: named
+                name: String
+            from_artifact_id:
+              type:
+                type: named
+                name: String
+            to_artifact_id:
+              type:
+                type: named
+                name: String
+        timeseries_events_by_artifact_v0:
+          description: ""
+          fields:
+            amount:
+              type:
+                type: named
+                name: Float32
+            event_source:
+              type:
+                type: named
+                name: String
+            event_source_id:
+              type:
+                type: named
+                name: String
+            event_type:
+              type:
+                type: named
+                name: String
+            from_artifact_id:
+              type:
+                type: named
+                name: String
+            time:
+              type:
+                type: named
+                name: DateTime
+            to_artifact_id:
+              type:
+                type: named
+                name: String
         timeseries_metrics_by_artifact_v0:
           description: ""
           fields:
@@ -975,7 +1795,7 @@ definition:
             amount:
               type:
                 type: named
-                name: Int64
+                name: Float32
             metric_id:
               type:
                 type: named
@@ -991,7 +1811,7 @@ definition:
             unit:
               type:
                 type: named
-                name: Int64
+                name: String
         users_v1:
           description: ""
           fields:
@@ -1126,6 +1946,42 @@ definition:
           type: events_weekly_to_project
           uniqueness_constraints: {}
           foreign_keys: {}
+        - name: metrics__dev_int_events_daily_to_artifact
+          description: ""
+          arguments: {}
+          type: metrics__dev_int_events_daily_to_artifact
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: metrics__dev_int_timeseries_metrics_by_artifact_developers
+          description: ""
+          arguments: {}
+          type: metrics__dev_int_timeseries_metrics_by_artifact_developers
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: metrics__run_int_events_daily_to_artifact
+          description: ""
+          arguments: {}
+          type: metrics__run_int_events_daily_to_artifact
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: metrics__run_int_timeseries_metrics_by_artifact_developers
+          description: ""
+          arguments: {}
+          type: metrics__run_int_timeseries_metrics_by_artifact_developers
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: metrics_int_events_daily_to_artifact
+          description: ""
+          arguments: {}
+          type: metrics_int_events_daily_to_artifact
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: metrics_int_timeseries_metrics_by_artifact_developers
+          description: ""
+          arguments: {}
+          type: metrics_int_timeseries_metrics_by_artifact_developers
+          uniqueness_constraints: {}
+          foreign_keys: {}
         - name: metrics_v0
           description: ""
           arguments: {}
@@ -1150,6 +2006,162 @@ definition:
           type: projects_v1
           uniqueness_constraints: {}
           foreign_keys: {}
+        - name: sqlmesh__metrics_metrics__incremental_model__3929117331
+          description: ""
+          arguments: {}
+          type: sqlmesh__metrics_metrics__incremental_model__3929117331
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: sqlmesh__metrics_metrics__incremental_model__3929117331__temp
+          description: ""
+          arguments: {}
+          type: sqlmesh__metrics_metrics__incremental_model__3929117331__temp
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: sqlmesh__metrics_metrics__int_events_daily_to_artifact__1260655920
+          description: ""
+          arguments: {}
+          type: sqlmesh__metrics_metrics__int_events_daily_to_artifact__1260655920
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: sqlmesh__metrics_metrics__int_events_daily_to_artifact__1260655920__temp
+          description: ""
+          arguments: {}
+          type: sqlmesh__metrics_metrics__int_events_daily_to_artifact__1260655920__temp
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: sqlmesh__metrics_metrics__int_events_daily_to_artifact__1838358350
+          description: ""
+          arguments: {}
+          type: sqlmesh__metrics_metrics__int_events_daily_to_artifact__1838358350
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: sqlmesh__metrics_metrics__int_events_daily_to_artifact__1838358350__temp
+          description: ""
+          arguments: {}
+          type: sqlmesh__metrics_metrics__int_events_daily_to_artifact__1838358350__temp
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: sqlmesh__metrics_metrics__int_events_daily_to_artifact__2071704967__temp
+          description: ""
+          arguments: {}
+          type: sqlmesh__metrics_metrics__int_events_daily_to_artifact__2071704967__temp
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: sqlmesh__metrics_metrics__int_events_daily_to_artifact__3344974993
+          description: ""
+          arguments: {}
+          type: sqlmesh__metrics_metrics__int_events_daily_to_artifact__3344974993
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: sqlmesh__metrics_metrics__int_events_daily_to_artifact__3344974993__temp
+          description: ""
+          arguments: {}
+          type: sqlmesh__metrics_metrics__int_events_daily_to_artifact__3344974993__temp
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: sqlmesh__metrics_metrics__int_events_daily_to_artifact__3515096595
+          description: ""
+          arguments: {}
+          type: sqlmesh__metrics_metrics__int_events_daily_to_artifact__3515096595
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: sqlmesh__metrics_metrics__int_events_daily_to_artifact__3515096595__temp
+          description: ""
+          arguments: {}
+          type: sqlmesh__metrics_metrics__int_events_daily_to_artifact__3515096595__temp
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: sqlmesh__metrics_metrics__int_events_daily_to_artifact__3571639471
+          description: ""
+          arguments: {}
+          type: sqlmesh__metrics_metrics__int_events_daily_to_artifact__3571639471
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: sqlmesh__metrics_metrics__int_events_daily_to_artifact__3571639471__temp
+          description: ""
+          arguments: {}
+          type: sqlmesh__metrics_metrics__int_events_daily_to_artifact__3571639471__temp
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: sqlmesh__metrics_metrics__int_timeseries_metrics_by_artifact_developers__2126831521
+          description: ""
+          arguments: {}
+          type: sqlmesh__metrics_metrics__int_timeseries_metrics_by_artifact_developers__2126831521
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: sqlmesh__metrics_metrics__int_timeseries_metrics_by_artifact_developers__2126831521__temp
+          description: ""
+          arguments: {}
+          type: sqlmesh__metrics_metrics__int_timeseries_metrics_by_artifact_developers__2126831521__temp
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: sqlmesh__metrics_metrics__int_timeseries_metrics_by_artifact_developers__2219676454
+          description: ""
+          arguments: {}
+          type: sqlmesh__metrics_metrics__int_timeseries_metrics_by_artifact_developers__2219676454
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: sqlmesh__metrics_metrics__int_timeseries_metrics_by_artifact_developers__2219676454__temp
+          description: ""
+          arguments: {}
+          type: sqlmesh__metrics_metrics__int_timeseries_metrics_by_artifact_developers__2219676454__temp
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: sqlmesh__metrics_metrics__int_timeseries_metrics_by_artifact_developers__4026028341
+          description: ""
+          arguments: {}
+          type: sqlmesh__metrics_metrics__int_timeseries_metrics_by_artifact_developers__4026028341
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: sqlmesh__metrics_metrics__int_timeseries_metrics_by_artifact_developers__4026028341__temp
+          description: ""
+          arguments: {}
+          type: sqlmesh__metrics_metrics__int_timeseries_metrics_by_artifact_developers__4026028341__temp
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: sqlmesh__metrics_metrics__int_timeseries_metrics_by_artifact_developers__4060035978__temp
+          description: ""
+          arguments: {}
+          type: sqlmesh__metrics_metrics__int_timeseries_metrics_by_artifact_developers__4060035978__temp
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: sqlmesh__metrics_metrics__int_timeseries_metrics_by_artifact_developers__4120769275
+          description: ""
+          arguments: {}
+          type: sqlmesh__metrics_metrics__int_timeseries_metrics_by_artifact_developers__4120769275
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: sqlmesh__metrics_metrics__int_timeseries_metrics_by_artifact_developers__4120769275__temp
+          description: ""
+          arguments: {}
+          type: sqlmesh__metrics_metrics__int_timeseries_metrics_by_artifact_developers__4120769275__temp
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: sqlmesh__metrics_metrics__testing_metrics__292628068__temp
+          description: ""
+          arguments: {}
+          type: sqlmesh__metrics_metrics__testing_metrics__292628068__temp
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: sqlmesh__metrics_metrics__testing_metrics__638047893__temp
+          description: ""
+          arguments: {}
+          type: sqlmesh__metrics_metrics__testing_metrics__638047893__temp
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: sqlmesh__metrics_metrics__testing_metrics__958077468__temp
+          description: ""
+          arguments: {}
+          type: sqlmesh__metrics_metrics__testing_metrics__958077468__temp
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: timeseries_events_by_artifact_v0
+          description: ""
+          arguments: {}
+          type: timeseries_events_by_artifact_v0
+          uniqueness_constraints: {}
+          foreign_keys: {}
         - name: timeseries_metrics_by_artifact_v0
           description: ""
           arguments: {}
@@ -1171,12 +2183,13 @@ definition:
       functions: []
       procedures: []
     capabilities:
-      version: ^0.1.1
+      version: 0.1.4
       capabilities:
         query:
           aggregates: {}
           variables: {}
           explain: {}
+          nested_fields: {}
         mutation: {}
         relationships:
           relation_comparisons: {}

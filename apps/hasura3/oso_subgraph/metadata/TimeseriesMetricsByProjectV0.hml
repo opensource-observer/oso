@@ -5,7 +5,7 @@ definition:
   name: TimeseriesMetricsByProjectV0
   fields:
     - name: amount
-      type: Int64!
+      type: Float32!
     - name: metricId
       type: String!
     - name: projectId
@@ -13,7 +13,7 @@ definition:
     - name: sampleDate
       type: DateTime!
     - name: unit
-      type: Int64!
+      type: String!
   graphql:
     typeName: Oso_TimeseriesMetricsByProjectV0
     inputTypeName: Oso_TimeseriesMetricsByProjectV0Input
