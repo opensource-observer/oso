@@ -1,9 +1,9 @@
 import { CodegenConfig } from "@graphql-codegen/cli";
-import { DB_GRAPHQL_URL, OSO_API_KEY } from "../config";
-console.log(DB_GRAPHQL_URL);
+import { HASURA_URL, OSO_API_KEY } from "../config";
+console.log(HASURA_URL);
 
 const SCHEMA: Record<string, any> = {};
-SCHEMA[DB_GRAPHQL_URL] = {
+SCHEMA[HASURA_URL] = {
   headers: {
     Authorization: `Bearer ${OSO_API_KEY}`,
   },

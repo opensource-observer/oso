@@ -1,8 +1,20 @@
 kind: Subgraph
-version: v1
+version: v2
 definition:
+  name: oso_subgraph
   generator:
     rootPath: .
+    graphqlRootFieldPrefix: oso_
+    graphqlTypeNamePrefix: Oso_
   includePaths:
     - metadata
-  name: oso_subgraph
+  envMapping:
+    OSO_SUBGRAPH_OSO_CLICKHOUSE_AUTHORIZATION_HEADER:
+      fromEnv: OSO_SUBGRAPH_OSO_CLICKHOUSE_AUTHORIZATION_HEADER
+    OSO_SUBGRAPH_OSO_CLICKHOUSE_READ_URL:
+      fromEnv: OSO_SUBGRAPH_OSO_CLICKHOUSE_READ_URL
+    OSO_SUBGRAPH_OSO_CLICKHOUSE_WRITE_URL:
+      fromEnv: OSO_SUBGRAPH_OSO_CLICKHOUSE_WRITE_URL
+  connectors:
+    - path: connector/oso_clickhouse/connector.yaml
+      connectorLinkName: oso_clickhouse
