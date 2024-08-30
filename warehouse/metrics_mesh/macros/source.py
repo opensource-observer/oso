@@ -99,7 +99,6 @@ def source(evaluator: MacroEvaluator, ref: str, table: str):
     source_map = generate_source_map(read_yaml_files(SOURCE_YAML_GLOB))
 
     gateway = evaluator.gateway
-    print(source_map)
     if not gateway:
         return ""
     table_ref = source_map[gateway][ref][table]
