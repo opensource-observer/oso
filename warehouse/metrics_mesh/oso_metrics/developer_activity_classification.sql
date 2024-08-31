@@ -2,7 +2,7 @@ select
   active.bucket_day,
   active.event_source,
   active.to_artifact_id,
-  'NONE' as from_artifact_id,
+  '' as from_artifact_id,
   'full_time_developers' as metric,
   COUNT(DISTINCT active.from_artifact_id) as amount
 from peer.developer_active_days as active
@@ -18,7 +18,7 @@ select
   active.bucket_day,
   active.event_source,
   active.to_artifact_id,
-  'NONE' as from_artifact_id,
+  '' as from_artifact_id,
   'part_time_developers' as metric,
   COUNT(DISTINCT active.from_artifact_id) as amount
 from peer.developer_active_days as active
@@ -34,7 +34,7 @@ select
   active.bucket_day,
   active.event_source,
   active.to_artifact_id,
-  'NONE' as from_artifact_id,
+  '' as from_artifact_id,
   'active_developers' as metric,
   COUNT(DISTINCT active.from_artifact_id) as amount
 from peer.developer_active_days as active
