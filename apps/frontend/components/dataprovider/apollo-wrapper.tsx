@@ -3,10 +3,10 @@
 import { ApolloLink, HttpLink, useApolloClient } from "@apollo/client";
 import {
   ApolloNextAppProvider,
-  NextSSRInMemoryCache,
-  NextSSRApolloClient,
+  InMemoryCache,
+  ApolloClient,
   SSRMultipartLink,
-} from "@apollo/experimental-nextjs-app-support/ssr";
+} from "@apollo/experimental-nextjs-app-support";
 import { DB_GRAPHQL_URL } from "../../lib/config";
 import { userToken } from "../../lib/clients/supabase";
 
@@ -35,8 +35,8 @@ function makeLink() {
 
 function makeClient() {
   const httpLink = makeLink();
-  const client = new NextSSRApolloClient({
-    cache: new NextSSRInMemoryCache(),
+  const client = new ApolloClient({
+    cache: new InMemoryCache(),
     link:
       typeof window === "undefined"
         ? ApolloLink.from([

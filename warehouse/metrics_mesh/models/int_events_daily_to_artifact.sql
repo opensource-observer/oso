@@ -35,7 +35,7 @@ select
   to_artifact_id,
   event_source,
   event_type,
-  TIMESTAMP_TRUNC(time, day) as bucket_day,
+  DATE_TRUNC('day', time) as bucket_day,
   SUM(amount) as amount
 from events
 group by
@@ -43,4 +43,4 @@ group by
   to_artifact_id,
   event_source,
   event_type,
-  TIMESTAMP_TRUNC(time, day)
+  DATE_TRUNC('day', time)

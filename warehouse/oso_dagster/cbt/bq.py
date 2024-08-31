@@ -1,11 +1,20 @@
 # Query tools for bigquery tables
-from typing import List, cast, Optional
+from typing import List, cast, Optional, Dict, NotRequired, TypedDict
 from functools import cache
 
 from google.cloud.bigquery import Client, Table, TableReference
 from google.cloud.bigquery.table import RowIterator
 from sqlglot import expressions as exp
 from .context import Connector, ColumnList
+
+type ExtraVarType = str | int
+
+
+class MetricQueryInput(TypedDict):
+    ref: str
+    # Additional vars
+    vars: Dict[str, ExtraVarType]
+    name: NotRequired[str]
 
 
 class TableLoader:

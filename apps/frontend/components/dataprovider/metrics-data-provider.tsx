@@ -258,7 +258,11 @@ const createCategory = (
 /**
  * Create all categories
  */
-const createCategories = (props: MetricsDataProviderProps) => {
+const createCategories = (
+  props: MetricsDataProviderProps,
+  getEntityName: (id: string) => string,
+  getMetricName: (id: string) => string,
+) => {
   const entityIds = props.entityIds ?? [];
   const metricIds = props.metricIds ?? [];
   const results: string[] = [];
@@ -268,7 +272,9 @@ const createCategories = (props: MetricsDataProviderProps) => {
   };
   for (const entityId of entityIds) {
     for (const metricId of metricIds) {
-      results.push(createCategory(entityId, metricId, opts));
+      results.push(
+        createCategory(getEntityName(entityId), getMetricName(metricId), opts),
+      );
     }
   }
   return {
@@ -286,6 +292,7 @@ const createCategories = (props: MetricsDataProviderProps) => {
 const formatData = (
   props: MetricsDataProviderProps,
   rawData: EventData[],
+  categories: { results: string[]; opts: CategoryOpts },
   formatOpts?: FormatOpts,
 ) => {
   //const checkedData = rawData as unknown as EventData[];
@@ -296,7 +303,7 @@ const formatData = (
 
   const formattedData =
     props.chartType === "areaChart"
-      ? formatDataToAreaChart(data, createCategories(props), formatOpts)
+      ? formatDataToAreaChart(data, categories, formatOpts)
       : props.chartType === "barList"
         ? formatDataToBarList(props.xAxis ?? DEFAULT_XAXIS, data)
         : assertNever(props.chartType);
@@ -363,7 +370,10 @@ function ArtifactMetricsDataProvider(props: MetricsDataProviderProps) {
     date: ensure<string>(x.sampleDate, "Data missing 'sampleDate'"),
     amount: ensure<number>(x.amount, "Data missing 'amount'"),
   }));
-  const formattedData = formatData(props, normalizedData, {
+  const getEntityName = (id: string) => entityIdToName[id];
+  const getMetricName = (id: string) => metricIdToName[id];
+  const categories = createCategories(props, getEntityName, getMetricName);
+  const formattedData = formatData(props, normalizedData, categories, {
     gapFill: bucketWidth === "day",
   });
   !dataLoading && console.log(props, rawData, dataError, formattedData);
@@ -394,20 +404,19 @@ function ProjectMetricsDataProvider(props: MetricsDataProviderProps) {
   });
 
   const metricIdToName: Record<string, string> = _.fromPairs(
-    rawData?.oso_metricsV0?.map((x: any) => [
+    (rawData?.oso_metricsV0 ?? []).map((x: any) => [
       ensure<string>(x.metricId, "Missing metricId"),
       ensure<string>(x.metricName, "Missing metricName"),
     ]),
   );
   const entityIdToName: Record<string, string> = _.fromPairs(
-    rawData?.oso_projectsV1?.map((x: any) => [
+    (rawData?.oso_projectsV1 ?? []).map((x: any) => [
       ensure<string>(x.projectId, "Missing projectId"),
       ensure<string>(x.projectName, "Missing projectName"),
     ]),
   );
-  const normalizedData: EventData[] = ensure(
-    rawData?.oso_timeseriesMetricsByProjectV0,
-    "Data missing time series metrics",
+  const normalizedData: EventData[] = (
+    rawData?.oso_timeseriesMetricsByProjectV0 ?? []
   ).map((x: any) => ({
     metricId: ensure<string>(x.metricId, "Data missing 'metricId'"),
     metricName: ensure<string>(
@@ -422,7 +431,10 @@ function ProjectMetricsDataProvider(props: MetricsDataProviderProps) {
     date: ensure<string>(x.sampleDate, "Data missing 'sampleDate'"),
     amount: ensure<number>(x.amount, "Data missing 'amount'"),
   }));
-  const formattedData = formatData(props, normalizedData, {
+  const getEntityName = (id: string) => entityIdToName[id];
+  const getMetricName = (id: string) => metricIdToName[id];
+  const categories = createCategories(props, getEntityName, getMetricName);
+  const formattedData = formatData(props, normalizedData, categories, {
     gapFill: bucketWidth === "day",
   });
   !dataLoading && console.log(props, rawData, dataError, formattedData);

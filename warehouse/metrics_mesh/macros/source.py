@@ -97,15 +97,8 @@ def generate_source_map(parsed_sources_files: List[SourcesFile]) -> EnvSourceMap
 def source(evaluator: MacroEvaluator, ref: str, table: str):
     """Allows us to change the location of a source when the gateway changes."""
     source_map = generate_source_map(read_yaml_files(SOURCE_YAML_GLOB))
-    # print(ENV_SOURCE_MAP)
-    print(evaluator.env["SQL"])
-    print(evaluator.gateway)
-    print("ddddddddddddddddddddddddddddddddd")
-    print("ddddddddddddddddddddddddddddddddd")
-    print("ddddddddddddddddddddddddddddddddd")
 
     gateway = evaluator.gateway
-    print(source_map)
     if not gateway:
         return ""
     table_ref = source_map[gateway][ref][table]

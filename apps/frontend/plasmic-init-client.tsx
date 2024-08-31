@@ -7,10 +7,16 @@ import { PLASMIC } from "./plasmic-init";
 import generateApiKey from "generate-api-key";
 import CircularProgress from "@mui/material/CircularProgress";
 import { AreaChart } from "@tremor/react";
+import {
+  CubeDataProvider,
+  CubeDataProviderRegistration,
+} from "./components/dataprovider/cube-data-provider";
+import {
+  MetricsDataProvider,
+  MetricsDataProviderRegistration,
+} from "./components/dataprovider/metrics-data-provider";
 //import { AlgoliaSearchList } from "./components/widgets/algolia";
 import { FeedbackWrapper } from "./components/widgets/feedback-farm";
-import { ProjectsClientProvider } from "./components/project-browser/project-client-provider";
-import { ProjectBrowser } from "./components/project-browser/project-browser";
 import {
   SupabaseQuery,
   SupabaseQueryRegistration,
@@ -61,6 +67,22 @@ PLASMIC.registerComponent(CircularProgress, {
   description: "Circular loading widget",
   props: {},
   importPath: "@mui/material/CircularProgress",
+});
+
+PLASMIC.registerComponent(MetricsDataProvider, {
+  name: "MetricsDataProvider",
+  description: "Data context for metrics",
+  props: { ...MetricsDataProviderRegistration },
+  providesData: true,
+  importPath: "./components/dataprovider/metrics-data-provider",
+});
+
+PLASMIC.registerComponent(CubeDataProvider, {
+  name: "CubeDataProvider",
+  description: "Data context for Cube.dev",
+  props: { ...CubeDataProviderRegistration },
+  providesData: true,
+  importPath: "./components/dataprovider/cube-data-provider",
 });
 
 PLASMIC.registerComponent(AreaChart, {
@@ -157,40 +179,6 @@ PLASMIC.registerComponent(FeedbackWrapper, {
   importPath: "./components/widgets/feedback-farm",
 });
 
-PLASMIC.registerComponent(ProjectsClientProvider, {
-  name: "ProjectsClientProvider",
-  description: "Provides the client for OS Observer",
-  props: {
-    children: "slot",
-    variableName: {
-      type: "string",
-      defaultValue: "projectsClient",
-      helpText: "Name to use in Plasmic data picker",
-    },
-    useTestData: {
-      type: "boolean",
-      helpText: "Render with test data",
-      editOnly: true,
-    },
-    testData: "object",
-  },
-  providesData: true,
-  defaultStyles: {
-    width: "Full bleed",
-  },
-});
-
-PLASMIC.registerComponent(ProjectBrowser, {
-  name: "ProjectBrowser",
-  description: "Project browser",
-  props: {},
-  importPath: "./components/project-browser",
-  defaultStyles: {
-    width: "100%",
-    minHeight: 300,
-  },
-});
-
 PLASMIC.registerComponent(SupabaseQuery, {
   name: "SupabaseQuery",
   props: { ...SupabaseQueryRegistration },
@@ -272,6 +260,39 @@ PLASMIC.registerComponent(VisualizationContext, {
   importPath: "./components/forms/visualization-context",
 });
 
+PLASMIC.registerComponent(ProjectsClientProvider, {
+  name: "ProjectsClientProvider",
+  description: "Provides the client for OS Observer",
+  props: {
+    children: "slot",
+    variableName: {
+      type: "string",
+      defaultValue: "projectsClient",
+      helpText: "Name to use in Plasmic data picker",
+    },
+    useTestData: {
+      type: "boolean",
+      helpText: "Render with test data",
+      editOnly: true,
+    },
+    testData: "object",
+  },
+  providesData: true,
+  defaultStyles: {
+    width: "Full bleed",
+  },
+});
+
+PLASMIC.registerComponent(ProjectBrowser, {
+  name: "ProjectBrowser",
+  description: "Project browser",
+  props: {},
+  importPath: "./components/project-browser",
+  defaultStyles: {
+    width: "100%",
+    minHeight: 300,
+  },
+});
 
  */
 

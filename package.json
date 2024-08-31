@@ -44,6 +44,6 @@
     "pnpm": ">=8"
   },
   "dependencies": {
-    "pyright": "^1.1.371"
+    "pyright": "^1.1.378"
   }
 }
