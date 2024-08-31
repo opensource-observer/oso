@@ -138,7 +138,7 @@ def arbitrum_assets(config: GoldskyNetworkConfig):
 
 arbitrum_network = arbitrum_assets(
     network_name="arbitrum",
-    destination_dataset_name="arbitrum",
+    destination_dataset_name="arbitrum_one",
     working_destination_dataset_name="oso_raw_sources",
     transactions_enabled=False,
 )
