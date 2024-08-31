@@ -20,7 +20,7 @@ type CommonDataProviderProps = {
 type DataProviderViewProps = CommonDataProviderProps & {
   formattedData: any;
   loading: boolean;
-  error?: Error;
+  error?: Error | null;
 };
 
 const CommonDataProviderRegistration: RegistrationProps<CommonDataProviderProps> =
