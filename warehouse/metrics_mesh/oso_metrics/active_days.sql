@@ -6,7 +6,7 @@ select
   @metric_name as metric,
   COUNT(DISTINCT events.bucket_day) amount,
 from metrics.int_events_daily_to_artifact as events
-where event_type = @activity_event_type and
+where event_type in @activity_event_types and
   events.bucket_day BETWEEN (@end_date - INTERVAL @trailing_days DAY) AND @end_date
 group by
   1,
