@@ -5,18 +5,18 @@ from ..utils.bq import BigQueryDatasetConfig
 from ..utils.bq_dts import BqDtsSourceConfig
 from ..utils.common import TimeInterval, SourceMode
 
-lens_data = bq_dts_asset(
-    key_prefix="lens",
+filecoin_data = bq_dts_asset(
+    key_prefix="filecoin",
     asset_name="bq_dts_source",
-    display_name="lens",
+    display_name="filecoin",
     destination_config=BigQueryDatasetConfig(
         project_id="opensource-observer",
-        dataset_name="lens_v2_polygon",
+        dataset_name="filecoin_lily",
         service_account=None,
     ),
     source_config=BqDtsSourceConfig(
-        project_id="lens-public-data",
-        dataset_name="v2_polygon",
+        project_id="lily-data",
+        dataset_name="lily",
         service_account=None,
     ),
     copy_interval=TimeInterval.Weekly,
