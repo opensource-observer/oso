@@ -83,6 +83,11 @@ spec:
           requests:
             cpu: 400m
             memory: 256Mi
+        runCoordinator:
+          type: QueuedRunCoordinator
+          config:
+            queuedRunCoordinator:
+              maxConcurrentRuns: 30
       dagster-user-deployments:
         deployments:
           - name: "oso-dagster"
@@ -102,7 +107,7 @@ spec:
   postRenderers:
     - kustomize:
         patches:
-          - patch: | 
+          - patch: |
               apiVersion: apps/v1
               kind: Deployment
               metadata:
