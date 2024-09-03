@@ -72,8 +72,8 @@
       "icons": [
         {
           "id": "bBICBhwqdJEn",
-          "name": "ChecksvgIcon",
-          "moduleFilePath": "generated/docs_opensource_observer/icons/PlasmicIcon__Checksvg.tsx"
+          "name": "CheckSvgIcon",
+          "moduleFilePath": "generated/docs_opensource_observer/icons/PlasmicIcon__CheckSvg.tsx"
         },
         {
           "id": "4hUpITJttWoK",
@@ -82,8 +82,8 @@
         },
         {
           "id": "IUL_Z3b2VK27",
-          "name": "IdeaSvgrepoComsvgIcon",
-          "moduleFilePath": "generated/docs_opensource_observer/icons/PlasmicIcon__IdeaSvgrepoComsvg.tsx"
+          "name": "IdeaSvgrepoComSvgIcon",
+          "moduleFilePath": "generated/docs_opensource_observer/icons/PlasmicIcon__IdeaSvgrepoComSvg.tsx"
         }
       ],
       "images": [

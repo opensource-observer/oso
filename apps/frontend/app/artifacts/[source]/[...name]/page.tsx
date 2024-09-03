@@ -1,4 +1,4 @@
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { cache } from "react";
 import { PlasmicComponent } from "@plasmicapp/loader-nextjs";
 import { PLASMIC } from "../../../../plasmic-init";
@@ -10,7 +10,6 @@ import {
 } from "../../../../lib/clickhouse/cached-queries";
 import { logger } from "../../../../lib/logger";
 
-const RETRY_URL = "/retry";
 const PLASMIC_COMPONENT = "ArtifactPage";
 //export const dynamic = STATIC_EXPORT ? "force-static" : "force-dynamic";
 export const dynamic = "force-dynamic";
@@ -71,56 +70,51 @@ export default async function ArtifactPage(props: ArtifactPageProps) {
   const [namespace, name] =
     params.name.length > 1 ? params.name : [undefined, params.name[0]];
 
-  try {
-    // Get artifact metadata from the database
-    const artifactArray = await cachedGetArtifactByName({
-      artifactSource: source,
-      artifactNamespace: namespace,
-      artifactName: name,
-    });
-    if (!Array.isArray(artifactArray) || artifactArray.length < 1) {
-      logger.warn(
-        `Cannot find artifact (source=${source}, namespace=${namespace}, name=${name})`,
-      );
-      notFound();
-    }
-    const artifact = artifactArray[0];
-    const artifactId = artifact.artifact_id;
-
-    const data = await Promise.all([
-      cachedGetAllEventTypes(),
-      cachedGetCodeMetricsByArtifactIds({
-        artifactIds: [artifactId],
-      }),
-    ]);
-    const eventTypes = data[0];
-    const codeMetrics = data[1];
-
-    //console.log(artifact);
-    const plasmicData = await cachedFetchComponent(PLASMIC_COMPONENT);
-    if (!plasmicData) {
-      logger.warn(`Unable to get componentName=${PLASMIC_COMPONENT}`);
-      notFound();
-    }
-    const compMeta = plasmicData.entryCompMetas[0];
-
-    return (
-      <PlasmicClientRootProvider
-        prefetchedData={plasmicData}
-        pageParams={compMeta.params}
-      >
-        <PlasmicComponent
-          component={compMeta.displayName}
-          componentProps={{
-            metadata: artifact,
-            eventTypes: eventTypes,
-            codeMetrics: codeMetrics,
-          }}
-        />
-      </PlasmicClientRootProvider>
+  // Get artifact metadata from the database
+  const artifactArray = await cachedGetArtifactByName({
+    artifactSource: source,
+    artifactNamespace: namespace,
+    artifactName: name,
+  });
+  if (!Array.isArray(artifactArray) || artifactArray.length < 1) {
+    logger.warn(
+      `Cannot find artifact (source=${source}, namespace=${namespace}, name=${name})`,
     );
-  } catch (_e) {
-    // Most likely caused by database timing out
-    redirect(RETRY_URL);
+    notFound();
   }
+  const artifact = artifactArray[0];
+  const artifactId = artifact.artifact_id;
+
+  const data = await Promise.all([
+    cachedGetAllEventTypes(),
+    cachedGetCodeMetricsByArtifactIds({
+      artifactIds: [artifactId],
+    }),
+  ]);
+  const eventTypes = data[0];
+  const codeMetrics = data[1];
+
+  //console.log(artifact);
+  const plasmicData = await cachedFetchComponent(PLASMIC_COMPONENT);
+  if (!plasmicData) {
+    logger.warn(`Unable to get componentName=${PLASMIC_COMPONENT}`);
+    notFound();
+  }
+  const compMeta = plasmicData.entryCompMetas[0];
+
+  return (
+    <PlasmicClientRootProvider
+      prefetchedData={plasmicData}
+      pageParams={compMeta.params}
+    >
+      <PlasmicComponent
+        component={compMeta.displayName}
+        componentProps={{
+          metadata: artifact,
+          eventTypes: eventTypes,
+          codeMetrics: codeMetrics,
+        }}
+      />
+    </PlasmicClientRootProvider>
+  );
 }
