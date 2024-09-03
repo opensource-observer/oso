@@ -42,11 +42,6 @@ spec:
           host: base-admin-dagster.opensource.observer
         readOnlyDagsterWebserver:
           host: base-readonly-dagster.opensource.observer
-      runCoordinator:
-        module: dagster.core.run_coordinator
-        class: QueuedRunCoordinator
-        config:
-          max_concurrent_runs: 30
       runLauncher:
         config:
           k8sRunLauncher:
@@ -88,6 +83,11 @@ spec:
           requests:
             cpu: 400m
             memory: 256Mi
+        runCoordinator:
+          type: QueuedRunCoordinator
+          config:
+            queuedRunCoordinator:
+              maxConcurrentRuns: 30
       dagster-user-deployments:
         deployments:
           - name: "oso-dagster"
