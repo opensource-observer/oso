@@ -42,6 +42,11 @@ spec:
           host: base-admin-dagster.opensource.observer
         readOnlyDagsterWebserver:
           host: base-readonly-dagster.opensource.observer
+      runCoordinator:
+        module: dagster.core.run_coordinator
+        class: QueuedRunCoordinator
+        config:
+          max_concurrent_runs: 30
       runLauncher:
         config:
           k8sRunLauncher:
@@ -102,7 +107,7 @@ spec:
   postRenderers:
     - kustomize:
         patches:
-          - patch: | 
+          - patch: |
               apiVersion: apps/v1
               kind: Deployment
               metadata:
