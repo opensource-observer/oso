@@ -6,6 +6,7 @@ from typing import List, Tuple, Dict
 import pathlib
 import yaml
 
+
 @dataclass(kw_only=True)
 class BQTargetConfigTemplate:
     job_execution_time_seconds: int = 3600
@@ -32,9 +33,11 @@ def get_profiles_dir():
     # Gets the path to dbt profiles
     return os.environ.get("DBT_PROFILES_DIR", os.path.expanduser("~/.dbt"))
 
+
 def default_profiles_path():
     # Gets the default path for the dbt `profiles.yml` file
     return os.path.join(get_profiles_dir(), "profiles.yml")
+
 
 def generate_dbt_profile(
     project_id: str,
@@ -118,6 +121,7 @@ def load_dbt_manifests(
         )
 
     if parse_projects:
+        print("generating dbt manifests")
         for target, _ in targets:
             target_path = Path(dbt_target_base_dir, target)
             # Ensure the dbt_target_base_dir exists

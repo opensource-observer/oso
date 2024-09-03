@@ -2,6 +2,6 @@ gateway: local
 sources:
   oso:
     - schema_name: sources 
-      name: int_events
+      name: timeseries_events_by_artifact_v0
     - schema_name: sources
-      name: int_artifacts_by_project
+      name: artifact_by_project_v1

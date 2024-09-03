@@ -168,6 +168,7 @@ class DailyTimeseriesRollingWindowOptions(t.TypedDict):
     model_name: str
     metric_queries: t.Dict[str, MetricQuery]
     trailing_days: int
+    model_options: t.NotRequired[t.Dict[str, t.Any]]
 
 
 def daily_timeseries_rolling_window_model(
@@ -199,6 +200,7 @@ def daily_timeseries_rolling_window_model(
             "metric": "String",
             "amount": "Int64",
         },
+        **(raw_options.get("model_options", {})),
     )
     def generated_model(evaluator: MacroEvaluator):
         # Given a set of rolling metrics together. This will also ensure that
