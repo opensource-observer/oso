@@ -53,9 +53,9 @@ spec:
                   - key: pool_type
                     effect: NoSchedule
                     operator: Equal
-                    value: persistent
+                    value: spot 
                 nodeSelector:
-                  pool_type: persistent
+                  pool_type: spot
       dagsterWebserver:
         enableReadOnly: true
         env:
