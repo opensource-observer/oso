@@ -34,6 +34,7 @@ spec:
     remediation:
       retries: 3
   values:
+    replicasCount: 4
     cloudsql:
       instances:
         - instance: oso-playground-psql
