@@ -2,7 +2,7 @@
 slug: war-for-public-goods
 title: "WAR for public goods, or why we need more advanced metrics in crypto"
 authors: [ccerv1]
-tags: [open source, impact data science, advanced metrics]
+tags: [featured, open source, impact data science, advanced metrics]
 image: ./WAR.png
 ---
 
