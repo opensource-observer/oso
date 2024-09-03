@@ -1,4 +1,4 @@
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { cache } from "react";
 import { PlasmicComponent } from "@plasmicapp/loader-nextjs";
 import { PLASMIC } from "../../../plasmic-init";
@@ -12,7 +12,6 @@ import {
 import { logger } from "../../../lib/logger";
 import { catchallPathToString } from "../../../lib/paths";
 
-const RETRY_URL = "/retry";
 const PLASMIC_COMPONENT = "ProjectPage";
 //export const dynamic = STATIC_EXPORT ? "force-static" : "force-dynamic";
 //export const dynamic = "force-static";
@@ -58,60 +57,55 @@ export default async function ProjectPage(props: ProjectPageProps) {
     notFound();
   }
 
-  try {
-    // Get project metadata from the database
-    const name = catchallPathToString(params.name);
-    const projectArray = await cachedGetProjectByName({
-      projectName: name,
-    });
-    if (!Array.isArray(projectArray) || projectArray.length < 1) {
-      logger.warn(`Cannot find project (name=${name})`);
-      notFound();
-    }
-    const project = projectArray[0];
-    const projectId = project.project_id;
-    //console.log("project", project);
-
-    // Parallelize getting things related to the project
-    const data = await Promise.all([
-      cachedGetAllEventTypes(),
-      cachedGetCodeMetricsByProjectIds({
-        projectIds: [projectId],
-      }),
-      cachedGetOnchainMetricsByProjectIds({
-        projectIds: [projectId],
-      }),
-    ]);
-    const eventTypes = data[0];
-    const codeMetrics = data[1];
-    const onchainMetrics = data[2];
-
-    // Get Plasmic component
-    const plasmicData = await cachedFetchComponent(PLASMIC_COMPONENT);
-    if (!plasmicData) {
-      logger.warn(`Unable to get componentName=${PLASMIC_COMPONENT}`);
-      notFound();
-    }
-    const compMeta = plasmicData.entryCompMetas[0];
-
-    return (
-      <PlasmicClientRootProvider
-        prefetchedData={plasmicData}
-        pageParams={compMeta.params}
-      >
-        <PlasmicComponent
-          component={compMeta.displayName}
-          componentProps={{
-            metadata: project,
-            codeMetrics,
-            onchainMetrics,
-            eventTypes,
-          }}
-        />
-      </PlasmicClientRootProvider>
-    );
-  } catch (_e) {
-    // Most likely caused by database timing out
-    redirect(RETRY_URL);
+  // Get project metadata from the database
+  const name = catchallPathToString(params.name);
+  const projectArray = await cachedGetProjectByName({
+    projectName: name,
+  });
+  if (!Array.isArray(projectArray) || projectArray.length < 1) {
+    logger.warn(`Cannot find project (name=${name})`);
+    notFound();
   }
+  const project = projectArray[0];
+  const projectId = project.project_id;
+  //console.log("project", project);
+
+  // Parallelize getting things related to the project
+  const data = await Promise.all([
+    cachedGetAllEventTypes(),
+    cachedGetCodeMetricsByProjectIds({
+      projectIds: [projectId],
+    }),
+    cachedGetOnchainMetricsByProjectIds({
+      projectIds: [projectId],
+    }),
+  ]);
+  const eventTypes = data[0];
+  const codeMetrics = data[1];
+  const onchainMetrics = data[2];
+
+  // Get Plasmic component
+  const plasmicData = await cachedFetchComponent(PLASMIC_COMPONENT);
+  if (!plasmicData) {
+    logger.warn(`Unable to get componentName=${PLASMIC_COMPONENT}`);
+    notFound();
+  }
+  const compMeta = plasmicData.entryCompMetas[0];
+
+  return (
+    <PlasmicClientRootProvider
+      prefetchedData={plasmicData}
+      pageParams={compMeta.params}
+    >
+      <PlasmicComponent
+        component={compMeta.displayName}
+        componentProps={{
+          metadata: project,
+          codeMetrics,
+          onchainMetrics,
+          eventTypes,
+        }}
+      />
+    </PlasmicClientRootProvider>
+  );
 }
