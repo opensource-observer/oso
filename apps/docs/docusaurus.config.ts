@@ -76,7 +76,7 @@ const config: Config = {
           label: "Docs",
         },
         {
-          to: "/blog",
+          to: "/blog/tags/featured",
           label: "Blog",
           position: "left",
         },
