@@ -9,11 +9,21 @@ daily_timeseries_rolling_window_model(
         "developer_active_days": MetricQuery(
             ref="active_days.sql",
             vars={
-                "activity_event_type": "COMMIT_CODE",
+                "activity_event_types": "('COMMIT_CODE')",
             },
         ),
         "developer_classifications": MetricQuery(
             ref="developer_activity_classification.sql",
+            vars={"full_time_days": 10},
+        ),
+        "contributor_active_days": MetricQuery(
+            ref="active_days.sql",
+            vars={
+                "activity_event_types": "('COMMIT_CODE', 'ISSUE_OPENED', 'PULL_REQUEST_OPENED')",
+            },
+        ),
+        "contributor_classifications": MetricQuery(
+            ref="contributor_activity_classification.sql",
             vars={"full_time_days": 10},
         ),
     },
