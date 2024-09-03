@@ -51,6 +51,7 @@ const config: Config = {
             "https://github.com/opensource-observer/oso/tree/main/apps/docs/",
           blogSidebarTitle: "All posts",
           blogSidebarCount: "ALL",
+          blogTagsPostsComponent: "@site/src/components/BlogTagsPostsPage.tsx",
         },
         theme: {
           customCss: "./src/css/custom.css",
