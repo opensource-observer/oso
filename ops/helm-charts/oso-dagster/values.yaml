@@ -27,6 +27,10 @@ secretmanagerKeys:
   sqlmeshPostgresUser: "sqlmesh-postgres-user/versions/latest"
   sqlmeshPostgresPassword: "sqlmesh-postgres-password/versions/latest"
   sqlmeshPostgresDb: "sqlmesh-postgres-db/versions/latest"
+  sqlmeshClickhouseHost: "sqlmesh-clickhouse-host/versions/latest"
+  sqlmeshClickhouseUsername: "sqlmesh-clickhouse-username/versions/latest"
+  sqlmeshClickhousePassword: "sqlmesh-clickhouse-password/versions/latest"
+  sqlmeshClickhousePort: "sqlmesh-clickouse-port/versions/latest"
   stagingBucketUrl: "staging-bucket-url/versions/latest"
   discordWebhookUrl: "discord-webhook-url/versions/latest"
 pg:

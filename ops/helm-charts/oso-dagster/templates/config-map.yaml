@@ -20,3 +20,7 @@ data:
   SQLMESH_POSTGRES_USER: "{{ .Values.configMap.secretPrefix }}-{{ .Values.secretmanagerKeys.sqlmeshPostgresUser }}"
   SQLMESH_POSTGRES_PASSWORD: "{{ .Values.configMap.secretPrefix }}-{{ .Values.secretmanagerKeys.sqlmeshPostgresPassword }}"
   SQLMESH_POSTGRES_DB: "{{ .Values.configMap.secretPrefix }}-{{ .Values.secretmanagerKeys.sqlmeshPostgresDb }}"
+  SQLMESH_CLICKHOUSE_HOST: "{{ .Values.configMap.secretPrefix }}-{{ .Values.secretmanagerKeys.sqlmeshClickhouseHost }}"
+  SQLMESH_CLICKHOUSE_USERNAME: "{{ .Values.configMap.secretPrefix }}-{{ .Values.secretmanagerKeys.sqlmeshClickhouseUsername }}"
+  SQLMESH_CLICKHOUSE_PASSWORD: "{{ .Values.configMap.secretPrefix }}-{{ .Values.secretmanagerKeys.sqlmeshClickhousePassword }}"
+  SQLMESH_CLICKHOUSE_PORT: "{{ .Values.configMap.secretPrefix }}-{{ .Values.secretmanagerKeys.sqlmeshClickhousePort }}"
