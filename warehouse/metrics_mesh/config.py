@@ -7,7 +7,10 @@ from sqlmesh.core.config import (
     GatewayConfig,
     DuckDBConnectionConfig,
 )
-from sqlmesh.core.config.connection import ClickhouseConnectionConfig
+from sqlmesh.core.config.connection import (
+    ClickhouseConnectionConfig,
+    GCPPostgresConnectionConfig,
+)
 
 dotenv.load_dotenv()
 
@@ -26,8 +29,14 @@ config = Config(
                 password=os.environ["SQLMESH_CLICKHOUSE_PASSWORD"],
                 port=int(os.environ["SQLMESH_CLICKHOUSE_PORT"]),
             ),
-            state_connection=DuckDBConnectionConfig(
-                database=os.environ["SQLMESH_DUCKDB_STATE_PATH"]
+            state_connection=GCPPostgresConnectionConfig(
+                instance_connection_string=os.environ.get(
+                    "SQLMESH_POSTGRES_INSTANCE_CONNECTION_STRING", ""
+                ),
+                enable_iam_auth=True,
+                user=os.environ.get("SQLMESH_POSTGRES_USER", ""),
+                password=os.environ.get("SQLMESH_POSTGRES_PASSWORD", ""),
+                db=os.environ.get("SQLMESH_POSTGRES_DB", ""),
             ),
         ),
     },

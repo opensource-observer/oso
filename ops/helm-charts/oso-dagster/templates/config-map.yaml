@@ -15,3 +15,8 @@ data:
   DAGSTER_ALERTS_BASE_URL: "{{ .Values.alerts.baseUrl }}"
   DAGSTER_HTTP_CACHE: "{{ .Values.cache.uri }}"
   DAGSTER_ENABLE_BIGQUERY: "1"
+  DAGSTER_SQLMESH_GATEWAY: production
+  SQLMESH_POSTGRES_INSTANCE_CONNECTION_STRING: "{{ .Values.configMap.secretPrefix }}-{{ .Values.secretmanagerKeys.sqlmeshPostgresInstanceStringConnectionString }}"
+  SQLMESH_POSTGRES_USER: "{{ .Values.configMap.secretPrefix }}-{{ .Values.secretmanagerKeys.sqlmeshPostgresUser }}"
+  SQLMESH_POSTGRES_PASSWORD: "{{ .Values.configMap.secretPrefix }}-{{ .Values.secretmanagerKeys.sqlmeshPostgresPassword }}"
+  SQLMESH_POSTGRES_DB: "{{ .Values.configMap.secretPrefix }}-{{ .Values.secretmanagerKeys.sqlmeshPostgresDb }}"

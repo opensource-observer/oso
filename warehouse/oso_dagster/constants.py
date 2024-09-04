@@ -89,3 +89,4 @@ env = os.getenv("DAGSTER_ENV", "dev")
 enable_bigquery = os.getenv("DAGSTER_ENABLE_BIGQUERY", "false").lower() in ["true", "1"]
 
 sqlmesh_dir = os.getenv("DAGSTER_SQLMESH_DIR", str(repo_dir.joinpath("warehouse/metrics_mesh")))
+sqlmesh_gateway = os.getenv("DAGSTER_SQLMESH_GATEWAY", "local")

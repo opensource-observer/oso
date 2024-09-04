@@ -60,7 +60,9 @@ def load_definitions():
         search_paths=[os.path.join(os.path.dirname(__file__), "models")],
     )
 
-    sqlmesh_config = SQLMeshContextConfig(path=constants.sqlmesh_dir, gateway="local")
+    sqlmesh_config = SQLMeshContextConfig(
+        path=constants.sqlmesh_dir, gateway=constants.sqlmesh_gateway
+    )
 
     early_resources = dict(
         project_id=project_id,
