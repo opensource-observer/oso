@@ -1,4 +1,4 @@
-select STR_TO_DATE(@end_ds, '%Y-%m-%d') as bucket_day,
+select STR_TO_DATE(@end_ds, '%Y-%m-%d') as metrics_bucket_date,
   events.event_source,
   events.to_artifact_id,
   events.from_artifact_id,

@@ -221,7 +221,7 @@ def daily_timeseries_rolling_window_model(
 
         union_cte: t.Optional[exp.Query] = None
         top_level_select = exp.select(
-            "bucket_day",
+            "metrics_bucket_date as bucket_day",
             "to_artifact_id",
             "from_artifact_id",
             "event_source",

@@ -34,7 +34,7 @@ config = Config(
                     "SQLMESH_POSTGRES_INSTANCE_CONNECTION_STRING", ""
                 ),
                 user=os.environ.get("SQLMESH_POSTGRES_USER", ""),
-                password=os.environ.get("SQLMESH_POSTGRES_PASSWORD", ""),
+                password=os.environ.get("SQLMESH_POSTGRES_PASSWORD", "placeholder"),
                 db=os.environ.get("SQLMESH_POSTGRES_DB", ""),
             ),
         ),

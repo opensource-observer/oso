@@ -30,6 +30,10 @@ daily_timeseries_rolling_window_model(
             ref="contributor_activity_classification.sql",
             vars={"full_time_days": 10},
         ),
+        "stars": MetricQuery(
+            ref="stars.sql",
+            vars={},
+        ),
     },
     trailing_days=30,
 )
