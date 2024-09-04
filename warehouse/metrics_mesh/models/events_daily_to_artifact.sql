@@ -31,7 +31,7 @@ with events as (
     time,
     amount
   from @source("oso", "timeseries_events_by_artifact_v0")
-  where CAST(time AS DATE) between @start_date and @end_date
+  where CAST(time AS DATE) between STR_TO_DATE(@start_ds, '%Y-%m-%d') and STR_TO_DATE(@end_ds, '%Y-%m-%d')
 )
 select from_artifact_id,
   to_artifact_id,

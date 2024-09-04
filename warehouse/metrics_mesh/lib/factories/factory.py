@@ -14,7 +14,8 @@ from oso_dagster.cbt.utils import replace_source_tables
 CURR_DIR = os.path.dirname(__file__)
 QUERIES_DIR = os.path.abspath(os.path.join(CURR_DIR, "../../oso_metrics"))
 
-type ExtraVarType = str | int | float
+type ExtraVarBaseType = str | int | float
+type ExtraVarType = ExtraVarBaseType | t.List[ExtraVarBaseType]
 
 
 @dataclass
@@ -193,7 +194,7 @@ def daily_timeseries_rolling_window_model(
         },
         dialect="clickhouse",
         columns={
-            "bucket_day": "Date",
+            "bucket_day": exp.DataType.build("DATE"),
             "event_source": "String",
             "to_artifact_id": "String",
             "from_artifact_id": "String",

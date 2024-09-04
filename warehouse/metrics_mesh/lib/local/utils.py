@@ -27,21 +27,23 @@ def bq_to_duckdb(table_mapping: t.Dict[str, str], duckdb_path: str):
         )
 
 
-def initialize_local_duckdb():
-    import os
-    import dotenv
-
-    dotenv.load_dotenv()
-
+def initialize_local_duckdb(path: str):
     bq_to_duckdb(
         {
             # We need to rename this once we run the oso_playground dbt again
             "opensource-observer.oso_playground.int_events": "sources.timeseries_events_by_artifact_v0",
             "opensource-observer.oso_playground.artifacts_by_project_v1": "sources.artifacts_by_project_v1",
         },
-        os.environ["SQLMESH_DUCKDB_LOCAL_PATH"],
+        path,
     )
 
 
-if __name__ == "__main__":
-    initialize_local_duckdb()
+def reset_local_duckdb(path: str):
+    conn = duckdb.connect(path)
+
+    response = conn.query("SHOW ALL TABLES")
+    schema_names = response.df()["schema"].unique().tolist()
+    for schema_name in schema_names:
+        if schema_name != "sources":
+            print(f"dropping schema {schema_name}")
+            conn.query(f"DROP schema {schema_name} cascade")

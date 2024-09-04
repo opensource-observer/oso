@@ -54,16 +54,19 @@ sqlalchemy = "^2.0.25"
 textual = "^0.52.1"
 redis = "^5.0.7"
 githubkit = "^0.11.6"
-sqlmesh = {extras = ["gcppostgres"], version = "^0.119.0"}
+sqlmesh = { git = "https://github.com/opensource-observer/sqlmesh.git", extras = [
+    "gcppostgres",
+] }
 dagster-duckdb = "^0.24.0"
 dagster-duckdb-polars = "^0.24.0"
 google-cloud-bigquery-storage = "^2.25.0"
-dagster-sqlmesh = { path = "../dagster-sqlmesh", develop = true }
+dagster-sqlmesh = "0.2.0.dev1"
 
 
 [tool.poetry.scripts]
 bq2cloudsql = 'bq2cloudsql.script:run'
 oso_lets_go = 'oso_lets_go.wizard:run'
+oso = 'oso_lets_go.cli:cli'
 
 [tool.poetry.group.dev.dependencies]
 dagster-webserver = "^1.7.2"

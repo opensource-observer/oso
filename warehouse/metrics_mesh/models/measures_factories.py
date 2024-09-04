@@ -9,7 +9,7 @@ daily_timeseries_rolling_window_model(
         "developer_active_days": MetricQuery(
             ref="active_days.sql",
             vars={
-                "activity_event_types": "('COMMIT_CODE')",
+                "activity_event_types": ["COMMIT_CODE"],
             },
         ),
         "developer_classifications": MetricQuery(
@@ -19,7 +19,11 @@ daily_timeseries_rolling_window_model(
         "contributor_active_days": MetricQuery(
             ref="active_days.sql",
             vars={
-                "activity_event_types": "('COMMIT_CODE', 'ISSUE_OPENED', 'PULL_REQUEST_OPENED')",
+                "activity_event_types": [
+                    "COMMIT_CODE",
+                    "ISSUE_OPENED",
+                    "PULL_REQUEST_OPENED",
+                ],
             },
         ),
         "contributor_classifications": MetricQuery(

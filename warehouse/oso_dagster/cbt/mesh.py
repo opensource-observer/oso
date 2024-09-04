@@ -38,3 +38,13 @@ def render_with_sqlmesh(
     if len(rendered) > 1:
         raise Exception("Unexpected number of returned expressions")
     return rendered[0]
+
+
+def render_sqlmesh(query: str, *, dialect: str, **render_vars):
+    parsed_query = parse_one(query, dialect=dialect)
+    rendered = ExpressionRenderer(parsed_query, dialect, []).render(**render_vars)
+    if not rendered:
+        raise Exception("Nothing rendered")
+    if len(rendered) > 1:
+        raise Exception("Unexpected number of returned expressions")
+    return rendered[0]
