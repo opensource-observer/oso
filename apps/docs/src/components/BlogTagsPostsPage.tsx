@@ -35,7 +35,7 @@ function BlogTagsPostsPageContent({
   const title = _.capitalize(tag.label);
   return (
     <BlogLayout sidebar={sidebar}>
-      <header className="margin-bottom--xl">
+      <header className="margin-bottom--md">
         <Heading as="h1">{title}</Heading>
         {tag.description && <p>{tag.description}</p>}
         <Link href={tag.allTagsPath}>
