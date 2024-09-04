@@ -23,6 +23,10 @@ secretmanagerKeys:
   dbPort: "db-port/versions/latest"
   dbName: "db-name/versions/latest"
   impersonateServiceAccount: "dbt-impersonate-service-account/versions/latest"
+  sqlmeshPostgresInstanceStringConnectionString: "sqlmesh-postgres-instance-connection-string/versions/latest"
+  sqlmeshPostgresUser: "sqlmesh-postgres-user/versions/latest"
+  sqlmeshPostgresPassword: "sqlmesh-postgres-password/versions/latest"
+  sqlmeshPostgresDb: "sqlmesh-postgres-db/versions/latest"
   stagingBucketUrl: "staging-bucket-url/versions/latest"
   discordWebhookUrl: "discord-webhook-url/versions/latest"
 pg:

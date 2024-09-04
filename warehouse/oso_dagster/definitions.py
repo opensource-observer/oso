@@ -3,6 +3,7 @@ import os
 from dagster import Definitions
 from dagster_dbt import DbtCliResource
 from dagster_gcp import BigQueryResource, GCSResource
+from dagster_sqlmesh import SQLMeshContextConfig, SQLMeshResource
 from dagster_embedded_elt.dlt import DagsterDltResource
 from dotenv import load_dotenv
 from . import constants
@@ -59,12 +60,17 @@ def load_definitions():
         search_paths=[os.path.join(os.path.dirname(__file__), "models")],
     )
 
+    sqlmesh_config = SQLMeshContextConfig(
+        path=constants.sqlmesh_dir, gateway=constants.sqlmesh_gateway
+    )
+
     early_resources = dict(
         project_id=project_id,
         staging_bucket=constants.staging_bucket,
         dlt_staging_destination=dlt_staging_destination,
         dlt_warehouse_destination=dlt_warehouse_destination,
         secrets=secret_resolver,
+        sqlmesh_config=sqlmesh_config,
     )
 
     asset_factories = load_all_assets_from_package(assets, early_resources)
@@ -100,6 +106,8 @@ def load_definitions():
         "dlt_warehouse_destination": dlt_warehouse_destination,
         "project_id": project_id,
         "alert_manager": alert_manager,
+        "sqlmesh_config": sqlmesh_config,
+        "sqlmesh": SQLMeshResource(config=sqlmesh_config),
     }
     for target in constants.main_dbt_manifests:
         resources[f"{target}_dbt"] = DbtCliResource(

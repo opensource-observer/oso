@@ -1,15 +1,16 @@
-select
-  @end_date as bucket_day,
+select STR_TO_DATE(@end_ds, '%Y-%m-%d') as bucket_day,
   events.event_source,
   events.to_artifact_id,
   events.from_artifact_id,
   @metric_name as metric,
   COUNT(DISTINCT events.bucket_day) amount,
-from metrics.int_events_daily_to_artifact as events
-where event_type in @activity_event_types and
-  events.bucket_day BETWEEN (@end_date - INTERVAL @trailing_days DAY) AND @end_date
-group by
-  1,
+  from metrics.events_daily_to_artifact as events
+where event_type in @activity_event_types
+  and events.bucket_day BETWEEN (
+    STR_TO_DATE(@end_ds, '%Y-%m-%d') - INTERVAL @trailing_days DAY
+  )
+  AND STR_TO_DATE(@end_ds, '%Y-%m-%d')
+group by 1,
   metric,
   from_artifact_id,
   to_artifact_id,
