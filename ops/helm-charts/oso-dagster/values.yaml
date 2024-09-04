@@ -30,7 +30,7 @@ secretmanagerKeys:
   sqlmeshClickhouseHost: "sqlmesh-clickhouse-host/versions/latest"
   sqlmeshClickhouseUsername: "sqlmesh-clickhouse-username/versions/latest"
   sqlmeshClickhousePassword: "sqlmesh-clickhouse-password/versions/latest"
-  sqlmeshClickhousePort: "sqlmesh-clickouse-port/versions/latest"
+  sqlmeshClickhousePort: "sqlmesh-clickhouse-port/versions/latest"
   stagingBucketUrl: "staging-bucket-url/versions/latest"
   discordWebhookUrl: "discord-webhook-url/versions/latest"
 pg:
