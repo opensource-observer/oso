@@ -108,7 +108,7 @@ def generate_dbt_asset(
         yield from dbt.cli(build_args, context=context).stream()
 
     run_dbt_assets_job = define_asset_job(
-        name=f"run_{target}_dbt_job", selection=[_generated_dbt_assets]
+        name=f"{target}_dbt_run_job", selection=[_generated_dbt_assets]
     )
 
     return AssetFactoryResponse(
