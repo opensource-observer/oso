@@ -1,11 +1,14 @@
 {{ 
-  config(meta = {
-    'sync_to_db': True,
-    'index': {
-      'idx_metric_id': ["metric_id"],
-      'idx_metric_name': ["metric_source", "metric_namespace", "metric_name"],
-    }
-  }) 
+  config(
+    meta={
+      'sync_to_db': True,
+      'index': {
+        'idx_metric_id': ["metric_id"],
+        'idx_metric_name': ["metric_source", "metric_namespace", "metric_name"],
+      },
+    },
+    enabled=False,
+  )
 }}
 
 select
