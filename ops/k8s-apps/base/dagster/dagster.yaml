@@ -56,7 +56,6 @@ spec:
                     value: persistent
                 nodeSelector:
                   pool_type: persistent
-                      resources:
                 containerConfig:
                   resources:
                     limits:
