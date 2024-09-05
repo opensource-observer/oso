@@ -1,10 +1,67 @@
 with projects as (
   select
     project_id,
+    websites,
+    social,
     github,
     npm,
     blockchain
   from {{ ref('stg_ossd__current_projects') }}
+),
+
+all_websites as (
+  select
+    projects.project_id,
+    websites.url as artifact_source_id,
+    "WWW" as artifact_source,
+    "WWW" as artifact_namespace,
+    websites.url as artifact_name,
+    websites.url as artifact_url,
+    "WEBSITE" as artifact_type
+  from projects
+  cross join
+    UNNEST(projects.websites) as websites
+),
+
+all_farcaster as (
+  select
+    projects.project_id,
+    farcaster.url as artifact_source_id,
+    "FARCASTER" as artifact_source,
+    "FARCASTER" as artifact_namespace,
+    farcaster.url as artifact_url,
+    "SOCIAL_HANDLE" as artifact_type,
+    case
+      when
+        farcaster.url like "https://warpcast.com/%"
+        then SUBSTR(farcaster.url, 22)
+      else farcaster.url
+    end as artifact_name
+  from projects
+  cross join
+    UNNEST(projects.social.farcaster) as farcaster
+),
+
+all_twitter as (
+  select
+    projects.project_id,
+    twitter.url as artifact_source_id,
+    "TWITTER" as artifact_source,
+    "TWITTER" as artifact_namespace,
+    twitter.url as artifact_url,
+    "SOCIAL_HANDLE" as artifact_type,
+    case
+      when
+        twitter.url like "https://twitter.com/%"
+        then SUBSTR(twitter.url, 21)
+      when
+        twitter.url like "https://x.com/%"
+        then SUBSTR(twitter.url, 15)
+      else twitter.url
+    end as artifact_name
+  from projects
+  cross join
+    UNNEST(projects.social.twitter) as twitter
 ),
 
 github_repos as (
@@ -41,10 +98,11 @@ all_npm_raw as (
     case
       when
         npm.url like "https://npmjs.com/package/%"
-        then SUBSTR(npm.url, 28)
+        then SUBSTR(npm.url, 27)
       when
         npm.url like "https://www.npmjs.com/package/%"
         then SUBSTR(npm.url, 31)
+      else npm.url
     end as artifact_name
   from projects
   cross join
@@ -83,6 +141,39 @@ ossd_blockchain as (
 ),
 
 all_artifacts as (
+  select
+    project_id,
+    artifact_source_id,
+    artifact_source,
+    artifact_type,
+    artifact_namespace,
+    artifact_name,
+    artifact_url
+  from
+    all_websites
+  union all
+  select
+    project_id,
+    artifact_source_id,
+    artifact_source,
+    artifact_type,
+    artifact_namespace,
+    artifact_name,
+    artifact_url
+  from
+    all_farcaster
+  union all
+  select
+    project_id,
+    artifact_source_id,
+    artifact_source,
+    artifact_type,
+    artifact_namespace,
+    artifact_name,
+    artifact_url
+  from
+    all_twitter
+  union all
   select
     project_id,
     artifact_source_id,
