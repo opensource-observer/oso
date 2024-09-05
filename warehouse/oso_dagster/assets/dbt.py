@@ -4,11 +4,12 @@ from typing import Any, Mapping, Dict, List, Sequence, Optional
 from dagster import (
     AssetExecutionContext,
     AssetKey,
-    AssetsDefinition,
     Config,
+    define_asset_job,
 )
 from dagster_dbt import DbtCliResource, dbt_assets, DagsterDbtTranslator
 
+from ..factories import AssetFactoryResponse
 from ..constants import main_dbt_manifests, main_dbt_project_dir, dbt_profiles_dir
 
 
@@ -106,7 +107,13 @@ def generate_dbt_asset(
             build_args += ["--full-refresh"]
         yield from dbt.cli(build_args, context=context).stream()
 
-    return _generated_dbt_assets
+    run_dbt_assets_job = define_asset_job(
+        name=f"{target}_dbt_run_job", selection=[_generated_dbt_assets]
+    )
+
+    return AssetFactoryResponse(
+        assets=[_generated_dbt_assets], jobs=[run_dbt_assets_job]
+    )
 
 
 def dbt_assets_from_manifests_map(
@@ -114,7 +121,7 @@ def dbt_assets_from_manifests_map(
     manifests: Dict[str, Path],
     internal_map: Optional[Dict[str, List[str]]] = None,
     op_tags: Optional[Mapping[str, Any]] = None,
-) -> List[AssetsDefinition]:
+) -> AssetFactoryResponse:
     """Creates all Dagster dbt assets from a map of manifests
 
     Parameters
@@ -135,17 +142,17 @@ def dbt_assets_from_manifests_map(
 
     if not internal_map:
         internal_map = {}
-    assets: List[AssetsDefinition] = []
+    assets: AssetFactoryResponse = AssetFactoryResponse(
+        assets=[],
+    )
     for target, manifest_path in manifests.items():
-        assets.append(
-            generate_dbt_asset(
-                project_dir,
-                dbt_profiles_dir,
-                target,
-                manifest_path,
-                internal_map,
-                op_tags,
-            )
+        assets += generate_dbt_asset(
+            project_dir,
+            dbt_profiles_dir,
+            target,
+            manifest_path,
+            internal_map,
+            op_tags,
         )
 
     return assets
