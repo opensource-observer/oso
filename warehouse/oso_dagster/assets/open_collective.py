@@ -3,8 +3,10 @@ from typing import Optional
 
 import dlt
 from dagster import AssetExecutionContext, WeeklyPartitionsDefinition
+from dlt.destinations.adapters import bigquery_adapter
 from gql import Client, gql
 from gql.transport.requests import RequestsHTTPTransport
+from oso_dagster import constants
 from oso_dagster.factories import dlt_factory, pydantic_to_dlt_nullable_columns
 from oso_dagster.utils.secrets import secret_ref_arg
 from pydantic import UUID4, BaseModel
@@ -270,12 +272,20 @@ def expenses(
     """
 
     client = base_open_collective_client(personal_token)
-    yield dlt.resource(
+    resource = dlt.resource(
         get_open_collective_expenses(context, client, "DEBIT"),
         name="expenses",
         columns=pydantic_to_dlt_nullable_columns(Transaction),
         primary_key="id",
     )
+
+    if constants.enable_bigquery:
+        bigquery_adapter(
+            resource,
+            partition="created_at",
+        )
+
+    yield resource
 
 
 @dlt_factory(
@@ -303,9 +313,17 @@ def deposits(
     """
 
     client = base_open_collective_client(personal_token)
-    yield dlt.resource(
+    resource = dlt.resource(
         get_open_collective_expenses(context, client, "CREDIT"),
         name="funds",
         columns=pydantic_to_dlt_nullable_columns(Transaction),
         primary_key="id",
     )
+
+    if constants.enable_bigquery:
+        bigquery_adapter(
+            resource,
+            partition="created_at",
+        )
+
+    yield resource
