@@ -48,7 +48,9 @@ class MetricQuery:
 
     name: t.Optional[str] = None
 
-    def load_exp(self) -> t.List[exp.Expression]:
+    dialect: t.Optional[str] = None
+
+    def load_exp(self, default_dialect: str) -> t.List[exp.Expression]:
         """Loads the queries sql file as a sqlglot expression"""
         raw_sql = open(os.path.join(QUERIES_DIR, self.ref)).read()
         return t.cast(
@@ -89,8 +91,8 @@ class MetricQuery:
 
 class Subquery:
     @classmethod
-    def load(cls, *, name: str, source: MetricQuery):
-        subquery = cls(name, source, source.load_exp())
+    def load(cls, *, name: str, default_dialect: str, source: MetricQuery):
+        subquery = cls(name, source, source.load_exp(default_dialect))
         subquery.validate()
         return subquery
 
@@ -216,12 +218,22 @@ def daily_timeseries_rolling_window_model(
         for query_name, query_input in metric_queries.items():
             query = MetricQuery.from_input(query_input)
             subquery = subqueries[query_name] = Subquery.load(
-                name=query_name, source=query
+                name=query_name, default_dialect="clickhouse", source=query
             )
 
         union_cte: t.Optional[exp.Query] = None
-        top_level_select = exp.select(
+
+        cte_column_select = [
             "metrics_bucket_date as bucket_day",
+            "to_artifact_id as to_artifact_id",
+            "from_artifact_id as from_artifact_id",
+            "event_source as event_source",
+            "metric as metric",
+            "CAST(amount AS Int64) as amount",
+        ]
+
+        top_level_select = exp.select(
+            "bucket_day",
             "to_artifact_id",
             "from_artifact_id",
             "event_source",
@@ -248,7 +260,7 @@ def daily_timeseries_rolling_window_model(
                 evaluator, extra_vars=dict(trailing_days=trailing_days)
             )
             top_level_select = top_level_select.with_(cte_name, as_=evaluated)
-            unionable_select = sqlglot.select("*").from_(cte_name)
+            unionable_select = sqlglot.select(*cte_column_select).from_(cte_name)
             if not union_cte:
                 union_cte = unionable_select
             else:
