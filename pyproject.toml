@@ -61,6 +61,7 @@ dagster-duckdb = "^0.24.0"
 dagster-duckdb-polars = "^0.24.0"
 google-cloud-bigquery-storage = "^2.25.0"
 dagster-sqlmesh = "0.2.0.dev2"
+google-auth = "^2.34.0"
 
 
 [tool.poetry.scripts]
