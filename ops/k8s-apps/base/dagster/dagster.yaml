@@ -56,6 +56,15 @@ spec:
                     value: persistent
                 nodeSelector:
                   pool_type: persistent
+                      resources:
+                containerConfig:
+                  resources:
+                    limits:
+                      cpu: 500m
+                      memory: 650Mi
+                    requests:
+                      cpu: 300m
+                      memory: 512Mi
       dagsterWebserver:
         enableReadOnly: true
         env:
