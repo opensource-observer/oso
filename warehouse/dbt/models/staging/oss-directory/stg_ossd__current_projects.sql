@@ -13,6 +13,8 @@ select
   projects.name as project_name,
   projects.display_name,
   projects.description,
+  projects.websites,
+  projects.social,
   projects.github,
   projects.npm,
   projects.blockchain,
