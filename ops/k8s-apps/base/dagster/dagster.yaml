@@ -53,17 +53,17 @@ spec:
                   - key: pool_type
                     effect: NoSchedule
                     operator: Equal
-                    value: persistent
+                    value: spot
                 nodeSelector:
-                  pool_type: persistent
+                  pool_type: spot
               containerConfig:
                 resources:
                   limits:
-                    cpu: 500m
-                    memory: 650Mi
+                    cpu: 1000m
+                    memory: 2048Mi
                   requests:
-                    cpu: 300m
-                    memory: 512Mi
+                    cpu: 1000m
+                    memory: 2048Mi
       dagsterWebserver:
         enableReadOnly: true
         env:
