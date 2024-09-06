@@ -15,33 +15,33 @@ MODEL (
     to_artifact_id
   ),
   columns (
-    bucket_day Date,
+    bucket_day DATE,
     event_source String,
     event_type String,
     from_artifact_id String,
     to_artifact_id String,
-    amount Int64
-  ),
+    amount Float64
+  )
 );
-with events as (
-  select distinct from_artifact_id,
+WITH events AS (
+  SELECT DISTINCT from_artifact_id,
     to_artifact_id,
     event_source,
     event_type,
     time,
     amount
-  from @source("oso", "timeseries_events_by_artifact_v0")
-  where CAST(time AS DATE) between STR_TO_DATE(@start_ds, '%Y-%m-%d') and STR_TO_DATE(@end_ds, '%Y-%m-%d')
+  from @oso_source.timeseries_events_by_artifact_v0
+  where CAST(time AS DATE) between STR_TO_DATE(@start_ds, '%Y-%m-%d')::Date and STR_TO_DATE(@end_ds, '%Y-%m-%d')::Date
 )
-select from_artifact_id,
+SELECT from_artifact_id,
   to_artifact_id,
   event_source,
   event_type,
-  DATE_TRUNC('day', CAST(time AS DATE)) as bucket_day,
-  SUM(amount) as amount
-from events
-group by from_artifact_id,
+  DATE_TRUNC('DAY', time::DATE) AS bucket_day,
+  SUM(amount) AS amount
+FROM events
+GROUP BY from_artifact_id,
   to_artifact_id,
   event_source,
   event_type,
-  DATE_TRUNC('day', CAST(time AS DATE))
+  DATE_TRUNC('DAY', time::DATE)

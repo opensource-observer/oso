@@ -3,8 +3,9 @@ from metrics_mesh.lib.factories import (
     MetricQuery,
 )
 
+
 daily_timeseries_rolling_window_model(
-    model_name="metrics.timeseries_code_metrics_by_artifact_over_30_days",
+    model_name="metrics.timeseries_metrics_by_artifact_over_30_days",
     metric_queries={
         "developer_active_days": MetricQuery(
             ref="active_days.sql",
@@ -36,4 +37,8 @@ daily_timeseries_rolling_window_model(
         ),
     },
     trailing_days=30,
+    model_options=dict(
+        start="2015-01-01",
+        cron="@daily",
+    ),
 )
