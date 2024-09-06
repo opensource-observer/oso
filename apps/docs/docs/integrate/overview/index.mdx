@@ -8,6 +8,7 @@ import OsoLogo from "./oso-primary.png";
 import GithubLogo from "./github.png";
 import EthereumLogo from "./ethereum.png";
 import SuperchainLogo from "./superchain.png";
+import FilecoinLogo from "./filecoin.png";
 import FarcasterLogo from "./farcaster.jpg";
 import LensLogo from "./lens-protocol.png";
 import GitcoinLogo from "./gitcoin.png";
@@ -260,6 +261,31 @@ where
 ```
 
 **Remember to replace 'YOUR_PROJECT_NAME' with the name of your project in the query.**
+
+### Filecoin Data
+
+<img src={FilecoinLogo} width="100" />
+
+<Button
+  size={"compact"}
+  color={"blue"}
+  target={"_blank"}
+  link={
+    "https://console.cloud.google.com/bigquery/analytics-hub/exchanges/projects/87806073973/locations/us/dataExchanges/open_source_observer_190181416ae/listings/filecoin_191c7f4bd01"
+  }
+  children={"Subscribe on BigQuery"}
+/>{" "}
+
+- [Reference documentation](https://models.opensource.observer/#!/source_list/filecoin)
+- [Source documentation](https://lilium.sh/data/)
+- [Updated weekly](https://github.com/opensource-observer/oso/blob/main/warehouse/oso_dagster/assets/filecoin.py)
+
+[Filecoin](https://filecoin.io/) is a decentralized storage network designed to
+store humanity's most important information.
+This dataset mirrors the dataset offered by [Lily](https://lilium.sh/data/)
+for use in the OSO data pipeline.
+It includes storage deals, miners, FVM transactions, and much more.
+
 
 ### Farcaster Data
 

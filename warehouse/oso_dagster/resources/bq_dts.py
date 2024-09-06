@@ -12,7 +12,12 @@ from google.cloud.bigquery_datatransfer import DataTransferServiceClient
 from pydantic import Field
 from ..constants import impersonate_service_account
 
-IMPERSONATE_SCOPES = ["bigquery.admin"]
+IMPERSONATE_SCOPES = [
+    "https://www.googleapis.com/auth/cloud-platform",
+    "https://www.googleapis.com/auth/cloud-platform.read-only",
+    "https://www.googleapis.com/auth/bigquery",
+    "https://www.googleapis.com/auth/bigquery.insertdata",
+]
 IMPERSONATE_LIFETIME = 300
 
 """
@@ -71,17 +76,19 @@ class BigQueryDataTransferResource(ConfigurableResource):
             with setup_gcp_creds(self.gcp_credentials):
                 yield DataTransferServiceClient()
 
-        else:
+        elif impersonate_service_account != "":
             # By default, create an impersonated credential for a service account.
             # This is necessary to create BigQuery DataTransfer jobs
-            credentials = auth.default()
+            credentials, project_id = auth.default()
             target_credentials = impersonated_credentials.Credentials(
                 source_credentials=credentials,
                 target_principal=impersonate_service_account,
-                delegates=[],
                 target_scopes=IMPERSONATE_SCOPES,
-                lifetime=IMPERSONATE_LIFETIME)
+                lifetime=IMPERSONATE_LIFETIME
+            )
             yield DataTransferServiceClient(credentials=target_credentials)
+        else:
+            yield DataTransferServiceClient()
 
     def get_object_to_set_on_execution_context(self) -> Any:
         with self.get_client() as client:
