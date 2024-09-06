@@ -12,7 +12,7 @@ from google.cloud.bigquery_datatransfer import DataTransferServiceClient
 from pydantic import Field
 from ..constants import impersonate_service_account
 
-IMPERSONATE_SCOPES = ["bigquery.admin"]
+IMPERSONATE_SCOPES = ["https://www.googleapis.com/auth/bigquery"]
 IMPERSONATE_LIFETIME = 300
 
 """
