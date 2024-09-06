@@ -22,7 +22,7 @@ from (
         ,min(block_timestamp) as first_block_timestamp
         ,min(block_number) as first_block_number
         ,min_by(to_address, block_number) as first_tx_to
-        ,min_by(block_hash, block_number) as first_tx_hash
+        ,min_by(`hash`, block_number) as first_tx_hash
         ,min_by(substring(input, 1, 10), block_number) as first_method_id
     from {{ oso_source(lower_network_name, "transactions") }}
     where 
