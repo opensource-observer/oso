@@ -99,9 +99,18 @@ def source(evaluator: MacroEvaluator, ref: str, table: str):
     source_map = generate_source_map(read_yaml_files(SOURCE_YAML_GLOB))
 
     gateway = evaluator.gateway
+    print(source_map)
     if not gateway:
         return ""
-    table_ref = source_map[gateway][ref][table]
+
+    print(type(source_map))
+    print(f"source[{gateway}][{ref}][{table}]")
+    print(list(source_map.keys()))
+    try:
+        table_ref = source_map[gateway][ref][table]
+    except KeyError as e:
+        raise e
+
     if not table_ref.catalog:
         return to_table(f'"{table_ref.schema_name}"."{table_ref.table_name}"')
     return to_table(
