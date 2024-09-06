@@ -2,14 +2,12 @@
 A catchall for development environment tools related to the python tooling.
 """
 
-import os
-
-import click
 import dotenv
-
-from metrics_mesh.lib.local.utils import initialize_local_duckdb, reset_local_duckdb
-
 dotenv.load_dotenv()
+
+import os
+import click
+from metrics_mesh.lib.local.utils import initialize_local_duckdb, reset_local_duckdb
 
 
 @click.group()

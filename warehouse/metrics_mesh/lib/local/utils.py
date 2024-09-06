@@ -1,14 +1,16 @@
 import typing as t
 import duckdb
+import os
 from google.cloud import bigquery
 
+project_id = os.getenv("GOOGLE_PROJECT_ID")
 
 def bq_to_duckdb(table_mapping: t.Dict[str, str], duckdb_path: str):
     """Copies the tables in table_mapping to tables in duckdb
 
     The table_mapping is in the form { "bigquery_table_fqn": "duckdb_table_fqn" }
     """
-    bqclient = bigquery.Client()
+    bqclient = bigquery.Client(project=project_id)
     conn = duckdb.connect(duckdb_path)
 
     conn.sql("CREATE SCHEMA IF NOT EXISTS sources;")
