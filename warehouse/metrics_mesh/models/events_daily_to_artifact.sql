@@ -30,8 +30,8 @@ WITH events AS (
     event_type,
     time,
     amount
-  FROM @source("oso", "timeseries_events_by_artifact_v0")
-  WHERE time::DATE BETWEEN STR_TO_DATE(@start_ds, '%Y-%m-%d')::Nullable(DateTime)::Nullable(DateTime)::Nullable(DateTime)::Nullable(DateTime)::Nullable(DateTime)::Nullable(DateTime)::Nullable(DateTime) AND STR_TO_DATE(@end_ds, '%Y-%m-%d')::Nullable(DateTime)::Nullable(DateTime)::Nullable(DateTime)::Nullable(DateTime)::Nullable(DateTime)::Nullable(DateTime)::Nullable(DateTime)
+  from @oso_source.timeseries_events_by_artifact_v0
+  where CAST(time AS DATE) between STR_TO_DATE(@start_ds, '%Y-%m-%d')::Date and STR_TO_DATE(@end_ds, '%Y-%m-%d')::Date
 )
 SELECT from_artifact_id,
   to_artifact_id,

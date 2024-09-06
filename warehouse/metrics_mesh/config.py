@@ -21,6 +21,9 @@ config = Config(
             connection=DuckDBConnectionConfig(
                 database=os.environ.get("SQLMESH_DUCKDB_LOCAL_PATH")
             ),
+            variables={
+                "oso_source": "sources",
+            },
         ),
         "clickhouse": GatewayConfig(
             connection=ClickhouseConnectionConfig(
@@ -37,6 +40,7 @@ config = Config(
                 password=os.environ.get("SQLMESH_POSTGRES_PASSWORD", "placeholder"),
                 db=os.environ.get("SQLMESH_POSTGRES_DB", ""),
             ),
+            variables={"oso_source": "default"},
         ),
     },
     default_gateway="local",

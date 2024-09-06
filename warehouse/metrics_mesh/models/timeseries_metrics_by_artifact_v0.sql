@@ -21,5 +21,5 @@ SELECT metric_id::String,
   artifact_id::String,
   sample_date::Date,
   amount::Float64,
-  unit
+  unit::Nullable(String)
 FROM all_timeseries_metrics_by_artifact
