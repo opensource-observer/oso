@@ -1,9 +1,0 @@
-gateway: clickhouse
-sources:
-  oso:
-    - schema_name: default
-      name: timeseries_events_by_artifact_v0
-      table_name: timeseries_events_by_artifact_v0
-    - schema_name: default
-      name: artifacts_by_project_v1
-      table_name: artifacts_by_project_v1

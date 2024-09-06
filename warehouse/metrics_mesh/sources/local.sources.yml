@@ -1,7 +1,0 @@
-gateway: local 
-sources:
-  oso:
-    - schema_name: sources 
-      name: timeseries_events_by_artifact_v0
-    - schema_name: sources
-      name: artifact_by_project_v1

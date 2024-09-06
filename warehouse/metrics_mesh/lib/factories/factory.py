@@ -196,13 +196,14 @@ def daily_timeseries_rolling_window_model(
         },
         dialect="clickhouse",
         columns={
-            "bucket_day": exp.DataType.build("DATE"),
-            "event_source": "String",
-            "to_artifact_id": "String",
-            "from_artifact_id": "String",
-            "metric": "String",
-            "amount": "Int64",
+            "bucket_day": exp.DataType.build("DATE", dialect="clickhouse"),
+            "event_source": exp.DataType.build("String", dialect="clickhouse"),
+            "to_artifact_id": exp.DataType.build("String", dialect="clickhouse"),
+            "from_artifact_id": exp.DataType.build("String", dialect="clickhouse"),
+            "metric": exp.DataType.build("String", dialect="clickhouse"),
+            "amount": exp.DataType.build("Float64", dialect="clickhouse"),
         },
+        grain=["metric", "to_artifact_id", "from_artifact_id", "bucket_day"],
         **(raw_options.get("model_options", {})),
     )
     def generated_model(evaluator: MacroEvaluator):
