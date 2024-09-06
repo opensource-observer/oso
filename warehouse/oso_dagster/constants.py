@@ -65,6 +65,7 @@ http_cache = os.getenv("DAGSTER_HTTP_CACHE")
 dbt_profiles_dir = get_profiles_dir()
 dbt_target_base_dir = os.getenv("DAGSTER_DBT_TARGET_BASE_DIR") or ""
 PRODUCTION_DBT_TARGET = "production"
+impersonate_service_account = os.getenv("DAGSTER_DBT_IMPERSONATE_SERVICE_ACCOUNT", "")
 main_dbt_manifests = load_dbt_manifests(
     dbt_target_base_dir,
     main_dbt_project_dir,
@@ -75,11 +76,7 @@ main_dbt_manifests = load_dbt_manifests(
         ("base_playground", "oso_base_playground"),
         ("playground", "oso_playground"),
     ],
-    BQTargetConfigTemplate(
-        impersonate_service_account=os.getenv(
-            "DAGSTER_DBT_IMPERSONATE_SERVICE_ACCOUNT", ""
-        )
-    ),
+    BQTargetConfigTemplate(impersonate_service_account=impersonate_service_account),
     parse_projects=os.getenv("DAGSTER_DBT_PARSE_PROJECT_ON_LOAD", "0") == "1",
 )
 verbose_logs = os.getenv("DAGSTER_VERBOSE_LOGS", "false").lower() in ["true", "1"]
@@ -88,3 +85,5 @@ env = os.getenv("DAGSTER_ENV", "dev")
 
 enable_bigquery = os.getenv("DAGSTER_ENABLE_BIGQUERY", "false").lower() in ["true", "1"]
 
+sqlmesh_dir = os.getenv("DAGSTER_SQLMESH_DIR", str(repo_dir.joinpath("warehouse/metrics_mesh")))
+sqlmesh_gateway = os.getenv("DAGSTER_SQLMESH_GATEWAY", "local")

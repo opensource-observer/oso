@@ -14,7 +14,8 @@ from oso_dagster.cbt.utils import replace_source_tables
 CURR_DIR = os.path.dirname(__file__)
 QUERIES_DIR = os.path.abspath(os.path.join(CURR_DIR, "../../oso_metrics"))
 
-type ExtraVarType = str | int | float
+type ExtraVarBaseType = str | int | float
+type ExtraVarType = ExtraVarBaseType | t.List[ExtraVarBaseType]
 
 
 @dataclass
@@ -47,7 +48,9 @@ class MetricQuery:
 
     name: t.Optional[str] = None
 
-    def load_exp(self) -> t.List[exp.Expression]:
+    dialect: t.Optional[str] = None
+
+    def load_exp(self, default_dialect: str) -> t.List[exp.Expression]:
         """Loads the queries sql file as a sqlglot expression"""
         raw_sql = open(os.path.join(QUERIES_DIR, self.ref)).read()
         return t.cast(
@@ -88,8 +91,8 @@ class MetricQuery:
 
 class Subquery:
     @classmethod
-    def load(cls, *, name: str, source: MetricQuery):
-        subquery = cls(name, source, source.load_exp())
+    def load(cls, *, name: str, default_dialect: str, source: MetricQuery):
+        subquery = cls(name, source, source.load_exp(default_dialect))
         subquery.validate()
         return subquery
 
@@ -168,6 +171,7 @@ class DailyTimeseriesRollingWindowOptions(t.TypedDict):
     model_name: str
     metric_queries: t.Dict[str, MetricQuery]
     trailing_days: int
+    model_options: t.NotRequired[t.Dict[str, t.Any]]
 
 
 def daily_timeseries_rolling_window_model(
@@ -192,13 +196,14 @@ def daily_timeseries_rolling_window_model(
         },
         dialect="clickhouse",
         columns={
-            "bucket_day": "Date",
+            "bucket_day": exp.DataType.build("DATE"),
             "event_source": "String",
             "to_artifact_id": "String",
             "from_artifact_id": "String",
             "metric": "String",
             "amount": "Int64",
         },
+        **(raw_options.get("model_options", {})),
     )
     def generated_model(evaluator: MacroEvaluator):
         # Given a set of rolling metrics together. This will also ensure that
@@ -213,10 +218,20 @@ def daily_timeseries_rolling_window_model(
         for query_name, query_input in metric_queries.items():
             query = MetricQuery.from_input(query_input)
             subquery = subqueries[query_name] = Subquery.load(
-                name=query_name, source=query
+                name=query_name, default_dialect="clickhouse", source=query
             )
 
         union_cte: t.Optional[exp.Query] = None
+
+        cte_column_select = [
+            "metrics_bucket_date as bucket_day",
+            "to_artifact_id as to_artifact_id",
+            "from_artifact_id as from_artifact_id",
+            "event_source as event_source",
+            "metric as metric",
+            "CAST(amount AS Int64) as amount",
+        ]
+
         top_level_select = exp.select(
             "bucket_day",
             "to_artifact_id",
@@ -245,7 +260,7 @@ def daily_timeseries_rolling_window_model(
                 evaluator, extra_vars=dict(trailing_days=trailing_days)
             )
             top_level_select = top_level_select.with_(cte_name, as_=evaluated)
-            unionable_select = sqlglot.select("*").from_(cte_name)
+            unionable_select = sqlglot.select(*cte_column_select).from_(cte_name)
             if not union_cte:
                 union_cte = unionable_select
             else:
