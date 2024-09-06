@@ -7,6 +7,7 @@ from dagster import (
 )
 from dagster_gcp import BigQueryResource
 from .common import AssetFactoryResponse
+from ..constants import impersonate_service_account
 from ..resources import BigQueryDataTransferResource
 from ..utils import (
     ensure_dataset,
@@ -72,6 +73,9 @@ def bq_dts_asset(asset_config: BqDtsAssetConfig):
             )
 
         with bigquery_datatransfer.get_client() as bq_dts_client:
+            context.log.info(
+                f"Ensuring BigQuery Data Transfer asset by impersonating {impersonate_service_account}"
+            )
             ensure_bq_dts_transfer(bq_dts_client, asset_config, context.log)
             context.log.info(
                 f"Ensured transfer config named {asset_config.display_name}"
