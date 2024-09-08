@@ -3,7 +3,7 @@
 #}
 {{ 
   config(meta = {
-    'sync_to_db': True
+    'sync_to_db': False
   }) 
 }}
 
