@@ -8,6 +8,7 @@ MODEL (
   start "2015-01-01",
   dialect "clickhouse",
   grain (metric_id, artifact_id, sample_date),
+  enabled false,
 );
 WITH all_timeseries_metrics_by_artifact AS (
   SELECT @oso_id('OSO', 'oso', metric) AS metric_id,
