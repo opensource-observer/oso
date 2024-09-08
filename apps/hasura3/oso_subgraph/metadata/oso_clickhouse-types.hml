@@ -79,3 +79,21 @@ definition:
   representation: Date
   graphql:
     comparisonExpressionTypeName: Oso_DateComparisonExp
+
+---
+kind: ScalarType
+version: v1
+definition:
+  name: Float64
+  graphql:
+    typeName: Oso_Float64
+
+---
+kind: DataConnectorScalarRepresentation
+version: v1
+definition:
+  dataConnectorName: oso_clickhouse
+  dataConnectorScalarType: Float64
+  representation: Float64
+  graphql:
+    comparisonExpressionTypeName: Oso_Float64ComparisonExp

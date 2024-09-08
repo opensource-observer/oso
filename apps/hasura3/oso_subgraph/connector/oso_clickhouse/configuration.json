@@ -280,14 +280,14 @@
         }
       }
     },
-    "metrics__dev_int_events_daily_to_artifact": {
-      "name": "int_events_daily_to_artifact",
+    "metrics__dev_events_daily_to_artifact": {
+      "name": "events_daily_to_artifact",
       "schema": "metrics__dev",
       "comment": "",
       "return_type": {
         "kind": "definition",
         "columns": {
-          "amount": "Int64",
+          "amount": "Float64",
           "bucket_day": "Date",
           "event_source": "String",
           "event_type": "String",
@@ -296,29 +296,63 @@
         }
       }
     },
-    "metrics__dev_int_timeseries_metrics_by_artifact_developers": {
-      "name": "int_timeseries_metrics_by_artifact_developers",
+    "metrics__dev_metrics_v0": {
+      "name": "metrics_v0",
       "schema": "metrics__dev",
       "comment": "",
       "return_type": {
         "kind": "definition",
         "columns": {
-          "amount": "Int64",
+          "aggregation_function": "Nullable(String)",
+          "definition_ref": "Nullable(String)",
+          "description": "Nullable(String)",
+          "display_name": "String",
+          "metric_id": "String",
+          "metric_name": "String",
+          "metric_source": "String",
+          "raw_definition": "Nullable(String)"
+        }
+      }
+    },
+    "metrics__dev_timeseries_metrics_by_artifact_over_30_days": {
+      "name": "timeseries_metrics_by_artifact_over_30_days",
+      "schema": "metrics__dev",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "amount": "Float64",
           "bucket_day": "Date",
           "event_source": "String",
+          "from_artifact_id": "String",
           "metric": "String",
           "to_artifact_id": "String"
         }
       }
     },
-    "metrics__run_int_events_daily_to_artifact": {
-      "name": "int_events_daily_to_artifact",
-      "schema": "metrics__run",
+    "metrics__dev_timeseries_metrics_by_artifact_v0": {
+      "name": "timeseries_metrics_by_artifact_v0",
+      "schema": "metrics__dev",
       "comment": "",
       "return_type": {
         "kind": "definition",
         "columns": {
-          "amount": "Int64",
+          "amount": "Float64",
+          "artifact_id": "String",
+          "metric_id": "String",
+          "sample_date": "Date",
+          "unit": "Nullable(String)"
+        }
+      }
+    },
+    "metrics_events_daily_to_artifact": {
+      "name": "events_daily_to_artifact",
+      "schema": "metrics",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "amount": "Float64",
           "bucket_day": "Date",
           "event_source": "String",
           "event_type": "String",
@@ -327,49 +361,52 @@
         }
       }
     },
-    "metrics__run_int_timeseries_metrics_by_artifact_developers": {
-      "name": "int_timeseries_metrics_by_artifact_developers",
-      "schema": "metrics__run",
-      "comment": "",
-      "return_type": {
-        "kind": "definition",
-        "columns": {
-          "amount": "Int64",
-          "bucket_day": "Date",
-          "event_source": "String",
-          "metric": "String",
-          "to_artifact_id": "String"
-        }
-      }
-    },
-    "metrics_int_events_daily_to_artifact": {
-      "name": "int_events_daily_to_artifact",
+    "metrics_metrics_v0": {
+      "name": "metrics_v0",
       "schema": "metrics",
       "comment": "",
       "return_type": {
         "kind": "definition",
         "columns": {
-          "amount": "Int64",
+          "aggregation_function": "Nullable(String)",
+          "definition_ref": "Nullable(String)",
+          "description": "Nullable(String)",
+          "display_name": "String",
+          "metric_id": "String",
+          "metric_name": "String",
+          "metric_source": "String",
+          "raw_definition": "Nullable(String)"
+        }
+      }
+    },
+    "metrics_timeseries_metrics_by_artifact_over_30_days": {
+      "name": "timeseries_metrics_by_artifact_over_30_days",
+      "schema": "metrics",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "amount": "Float64",
           "bucket_day": "Date",
           "event_source": "String",
-          "event_type": "String",
           "from_artifact_id": "String",
+          "metric": "String",
           "to_artifact_id": "String"
         }
       }
     },
-    "metrics_int_timeseries_metrics_by_artifact_developers": {
-      "name": "int_timeseries_metrics_by_artifact_developers",
+    "metrics_timeseries_metrics_by_artifact_v0": {
+      "name": "timeseries_metrics_by_artifact_v0",
       "schema": "metrics",
       "comment": "",
       "return_type": {
         "kind": "definition",
         "columns": {
-          "amount": "Int64",
-          "bucket_day": "Date",
-          "event_source": "String",
-          "metric": "String",
-          "to_artifact_id": "String"
+          "amount": "Float64",
+          "artifact_id": "String",
+          "metric_id": "String",
+          "sample_date": "Date",
+          "unit": "Nullable(String)"
         }
       }
     },
@@ -456,34 +493,40 @@
         }
       }
     },
-    "sqlmesh__metrics_metrics__incremental_model__3929117331": {
-      "name": "metrics__incremental_model__3929117331",
+    "sqlmesh__metrics_metrics__events_daily_to_artifact__1469322421": {
+      "name": "metrics__events_daily_to_artifact__1469322421",
       "schema": "sqlmesh__metrics",
       "comment": "",
       "return_type": {
         "kind": "definition",
         "columns": {
+          "amount": "Float64",
           "bucket_day": "Date",
+          "event_source": "String",
           "event_type": "String",
-          "events": "Int64"
+          "from_artifact_id": "String",
+          "to_artifact_id": "String"
         }
       }
     },
-    "sqlmesh__metrics_metrics__incremental_model__3929117331__temp": {
-      "name": "metrics__incremental_model__3929117331__temp",
+    "sqlmesh__metrics_metrics__events_daily_to_artifact__1469322421__temp": {
+      "name": "metrics__events_daily_to_artifact__1469322421__temp",
       "schema": "sqlmesh__metrics",
       "comment": "",
       "return_type": {
         "kind": "definition",
         "columns": {
+          "amount": "Float64",
           "bucket_day": "Date",
+          "event_source": "String",
           "event_type": "String",
-          "events": "Int64"
+          "from_artifact_id": "String",
+          "to_artifact_id": "String"
         }
       }
     },
-    "sqlmesh__metrics_metrics__int_events_daily_to_artifact__1260655920": {
-      "name": "metrics__int_events_daily_to_artifact__1260655920",
+    "sqlmesh__metrics_metrics__events_daily_to_artifact__753507400": {
+      "name": "metrics__events_daily_to_artifact__753507400",
       "schema": "sqlmesh__metrics",
       "comment": "",
       "return_type": {
@@ -498,8 +541,8 @@
         }
       }
     },
-    "sqlmesh__metrics_metrics__int_events_daily_to_artifact__1260655920__temp": {
-      "name": "metrics__int_events_daily_to_artifact__1260655920__temp",
+    "sqlmesh__metrics_metrics__events_daily_to_artifact__753507400__temp": {
+      "name": "metrics__events_daily_to_artifact__753507400__temp",
       "schema": "sqlmesh__metrics",
       "comment": "",
       "return_type": {
@@ -514,322 +557,661 @@
         }
       }
     },
-    "sqlmesh__metrics_metrics__int_events_daily_to_artifact__1838358350": {
-      "name": "metrics__int_events_daily_to_artifact__1838358350",
+    "sqlmesh__metrics_metrics__metrics_v0__1122994148": {
+      "name": "metrics__metrics_v0__1122994148",
       "schema": "sqlmesh__metrics",
       "comment": "",
       "return_type": {
         "kind": "definition",
         "columns": {
-          "amount": "Int64",
+          "aggregation_function": "Nullable(String)",
+          "definition_ref": "Nullable(String)",
+          "description": "Nullable(String)",
+          "display_name": "String",
+          "metric_id": "String",
+          "metric_name": "String",
+          "metric_source": "String",
+          "raw_definition": "Nullable(String)"
+        }
+      }
+    },
+    "sqlmesh__metrics_metrics__metrics_v0__1122994148__temp": {
+      "name": "metrics__metrics_v0__1122994148__temp",
+      "schema": "sqlmesh__metrics",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "aggregation_function": "Nullable(String)",
+          "definition_ref": "Nullable(String)",
+          "description": "Nullable(String)",
+          "display_name": "String",
+          "metric_id": "String",
+          "metric_name": "String",
+          "metric_source": "String",
+          "raw_definition": "Nullable(String)"
+        }
+      }
+    },
+    "sqlmesh__metrics_metrics__metrics_v0__1989478904": {
+      "name": "metrics__metrics_v0__1989478904",
+      "schema": "sqlmesh__metrics",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "aggregation_function": "Nullable(String)",
+          "definition_ref": "Nullable(String)",
+          "description": "Nullable(String)",
+          "display_name": "String",
+          "metric_id": "String",
+          "metric_name": "String",
+          "metric_source": "String",
+          "raw_definition": "Nullable(String)"
+        }
+      }
+    },
+    "sqlmesh__metrics_metrics__metrics_v0__1989478904__temp": {
+      "name": "metrics__metrics_v0__1989478904__temp",
+      "schema": "sqlmesh__metrics",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "aggregation_function": "Nullable(String)",
+          "definition_ref": "Nullable(String)",
+          "description": "Nullable(String)",
+          "display_name": "String",
+          "metric_id": "String",
+          "metric_name": "String",
+          "metric_source": "String",
+          "raw_definition": "Nullable(String)"
+        }
+      }
+    },
+    "sqlmesh__metrics_metrics__metrics_v0__3641251458": {
+      "name": "metrics__metrics_v0__3641251458",
+      "schema": "sqlmesh__metrics",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "aggregation_function": "Nullable(String)",
+          "definition_ref": "Nullable(String)",
+          "description": "Nullable(String)",
+          "display_name": "String",
+          "metric_id": "String",
+          "metric_name": "String",
+          "metric_source": "String",
+          "raw_definition": "Nullable(String)"
+        }
+      }
+    },
+    "sqlmesh__metrics_metrics__metrics_v0__3641251458__temp": {
+      "name": "metrics__metrics_v0__3641251458__temp",
+      "schema": "sqlmesh__metrics",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "aggregation_function": "Nullable(String)",
+          "definition_ref": "Nullable(String)",
+          "description": "Nullable(String)",
+          "display_name": "String",
+          "metric_id": "String",
+          "metric_name": "String",
+          "metric_source": "String",
+          "raw_definition": "Nullable(String)"
+        }
+      }
+    },
+    "sqlmesh__metrics_metrics__metrics_v0__4156811425": {
+      "name": "metrics__metrics_v0__4156811425",
+      "schema": "sqlmesh__metrics",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "aggregation_function": "Nullable(String)",
+          "definition_ref": "Nullable(String)",
+          "description": "Nullable(String)",
+          "display_name": "String",
+          "metric_id": "String",
+          "metric_name": "String",
+          "metric_source": "String",
+          "raw_definition": "Nullable(String)"
+        }
+      }
+    },
+    "sqlmesh__metrics_metrics__metrics_v0__4156811425__temp": {
+      "name": "metrics__metrics_v0__4156811425__temp",
+      "schema": "sqlmesh__metrics",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "aggregation_function": "Nullable(String)",
+          "definition_ref": "Nullable(String)",
+          "description": "Nullable(String)",
+          "display_name": "String",
+          "metric_id": "String",
+          "metric_name": "String",
+          "metric_source": "String",
+          "raw_definition": "Nullable(String)"
+        }
+      }
+    },
+    "sqlmesh__metrics_metrics__metrics_v0__698231123": {
+      "name": "metrics__metrics_v0__698231123",
+      "schema": "sqlmesh__metrics",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "aggregation_function": "Nullable(String)",
+          "definition_ref": "Nullable(String)",
+          "description": "Nullable(String)",
+          "display_name": "String",
+          "metric_id": "String",
+          "metric_name": "String",
+          "metric_source": "String",
+          "raw_definition": "Nullable(String)"
+        }
+      }
+    },
+    "sqlmesh__metrics_metrics__metrics_v0__698231123__temp": {
+      "name": "metrics__metrics_v0__698231123__temp",
+      "schema": "sqlmesh__metrics",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "aggregation_function": "Nullable(String)",
+          "definition_ref": "Nullable(String)",
+          "description": "Nullable(String)",
+          "display_name": "String",
+          "metric_id": "String",
+          "metric_name": "String",
+          "metric_source": "String",
+          "raw_definition": "Nullable(String)"
+        }
+      }
+    },
+    "sqlmesh__metrics_metrics__metrics_v0__741092249": {
+      "name": "metrics__metrics_v0__741092249",
+      "schema": "sqlmesh__metrics",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "aggregation_function": "Nullable(String)",
+          "definition_ref": "Nullable(String)",
+          "description": "Nullable(String)",
+          "display_name": "String",
+          "metric_id": "String",
+          "metric_name": "String",
+          "metric_source": "String",
+          "raw_definition": "Nullable(String)"
+        }
+      }
+    },
+    "sqlmesh__metrics_metrics__metrics_v0__741092249__temp": {
+      "name": "metrics__metrics_v0__741092249__temp",
+      "schema": "sqlmesh__metrics",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "aggregation_function": "Nullable(String)",
+          "definition_ref": "Nullable(String)",
+          "description": "Nullable(String)",
+          "display_name": "String",
+          "metric_id": "String",
+          "metric_name": "String",
+          "metric_source": "String",
+          "raw_definition": "Nullable(String)"
+        }
+      }
+    },
+    "sqlmesh__metrics_metrics__metrics_v0__885103174": {
+      "name": "metrics__metrics_v0__885103174",
+      "schema": "sqlmesh__metrics",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "aggregation_function": "String",
+          "definition_ref": "String",
+          "description": "String",
+          "display_name": "String",
+          "metric_id": "FixedString(32)",
+          "metric_name": "String",
+          "metric_namespace": "String",
+          "metric_source": "String",
+          "raw_definition": "Nullable(String)"
+        }
+      }
+    },
+    "sqlmesh__metrics_metrics__metrics_v0__885103174__temp": {
+      "name": "metrics__metrics_v0__885103174__temp",
+      "schema": "sqlmesh__metrics",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "aggregation_function": "String",
+          "definition_ref": "String",
+          "description": "String",
+          "display_name": "String",
+          "metric_id": "FixedString(32)",
+          "metric_name": "String",
+          "metric_namespace": "String",
+          "metric_source": "String",
+          "raw_definition": "Nullable(String)"
+        }
+      }
+    },
+    "sqlmesh__metrics_metrics__timeseries_code_metrics_by_artifact_over_30_days__7598012": {
+      "name": "metrics__timeseries_code_metrics_by_artifact_over_30_days__7598012",
+      "schema": "sqlmesh__metrics",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "amount": "Nullable(Int64)",
+          "bucket_day": "Nullable(Date)",
+          "event_source": "Nullable(String)",
+          "from_artifact_id": "Nullable(String)",
+          "metric": "Nullable(String)",
+          "to_artifact_id": "Nullable(String)"
+        }
+      }
+    },
+    "sqlmesh__metrics_metrics__timeseries_code_metrics_by_artifact_over_30_days__7598012__temp": {
+      "name": "metrics__timeseries_code_metrics_by_artifact_over_30_days__7598012__temp",
+      "schema": "sqlmesh__metrics",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "amount": "Nullable(Int64)",
+          "bucket_day": "Nullable(Date)",
+          "event_source": "Nullable(String)",
+          "from_artifact_id": "Nullable(String)",
+          "metric": "Nullable(String)",
+          "to_artifact_id": "Nullable(String)"
+        }
+      }
+    },
+    "sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_over_30_days__2202426059": {
+      "name": "metrics__timeseries_metrics_by_artifact_over_30_days__2202426059",
+      "schema": "sqlmesh__metrics",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "amount": "Float64",
           "bucket_day": "Date",
           "event_source": "String",
-          "event_type": "String",
           "from_artifact_id": "String",
-          "to_artifact_id": "String"
-        }
-      }
-    },
-    "sqlmesh__metrics_metrics__int_events_daily_to_artifact__1838358350__temp": {
-      "name": "metrics__int_events_daily_to_artifact__1838358350__temp",
-      "schema": "sqlmesh__metrics",
-      "comment": "",
-      "return_type": {
-        "kind": "definition",
-        "columns": {
-          "amount": "Int64",
-          "bucket_day": "Date",
-          "event_source": "String",
-          "event_type": "String",
-          "from_artifact_id": "String",
-          "to_artifact_id": "String"
-        }
-      }
-    },
-    "sqlmesh__metrics_metrics__int_events_daily_to_artifact__2071704967__temp": {
-      "name": "metrics__int_events_daily_to_artifact__2071704967__temp",
-      "schema": "sqlmesh__metrics",
-      "comment": "",
-      "return_type": {
-        "kind": "definition",
-        "columns": {
-          "amount": "Int64",
-          "bucket_day": "Date",
-          "event_source": "String",
-          "event_type": "String",
-          "from_artifact_id": "String",
-          "to_artifact_id": "String"
-        }
-      }
-    },
-    "sqlmesh__metrics_metrics__int_events_daily_to_artifact__3344974993": {
-      "name": "metrics__int_events_daily_to_artifact__3344974993",
-      "schema": "sqlmesh__metrics",
-      "comment": "",
-      "return_type": {
-        "kind": "definition",
-        "columns": {
-          "amount": "Int64",
-          "bucket_day": "Date",
-          "event_source": "String",
-          "event_type": "String",
-          "from_artifact_id": "String",
-          "to_artifact_id": "String"
-        }
-      }
-    },
-    "sqlmesh__metrics_metrics__int_events_daily_to_artifact__3344974993__temp": {
-      "name": "metrics__int_events_daily_to_artifact__3344974993__temp",
-      "schema": "sqlmesh__metrics",
-      "comment": "",
-      "return_type": {
-        "kind": "definition",
-        "columns": {
-          "amount": "Int64",
-          "bucket_day": "Date",
-          "event_source": "String",
-          "event_type": "String",
-          "from_artifact_id": "String",
-          "to_artifact_id": "String"
-        }
-      }
-    },
-    "sqlmesh__metrics_metrics__int_events_daily_to_artifact__3515096595": {
-      "name": "metrics__int_events_daily_to_artifact__3515096595",
-      "schema": "sqlmesh__metrics",
-      "comment": "",
-      "return_type": {
-        "kind": "definition",
-        "columns": {
-          "amount": "Int64",
-          "bucket_day": "Date",
-          "event_source": "String",
-          "event_type": "String",
-          "from_artifact_id": "String",
-          "to_artifact_id": "String"
-        }
-      }
-    },
-    "sqlmesh__metrics_metrics__int_events_daily_to_artifact__3515096595__temp": {
-      "name": "metrics__int_events_daily_to_artifact__3515096595__temp",
-      "schema": "sqlmesh__metrics",
-      "comment": "",
-      "return_type": {
-        "kind": "definition",
-        "columns": {
-          "amount": "Int64",
-          "bucket_day": "Date",
-          "event_source": "String",
-          "event_type": "String",
-          "from_artifact_id": "String",
-          "to_artifact_id": "String"
-        }
-      }
-    },
-    "sqlmesh__metrics_metrics__int_events_daily_to_artifact__3571639471": {
-      "name": "metrics__int_events_daily_to_artifact__3571639471",
-      "schema": "sqlmesh__metrics",
-      "comment": "",
-      "return_type": {
-        "kind": "definition",
-        "columns": {
-          "bucket_day": "Date",
-          "event_source": "String",
-          "event_type": "String",
-          "events": "Int64",
-          "from_artifact_id": "String",
-          "to_artifact_id": "String"
-        }
-      }
-    },
-    "sqlmesh__metrics_metrics__int_events_daily_to_artifact__3571639471__temp": {
-      "name": "metrics__int_events_daily_to_artifact__3571639471__temp",
-      "schema": "sqlmesh__metrics",
-      "comment": "",
-      "return_type": {
-        "kind": "definition",
-        "columns": {
-          "bucket_day": "Date",
-          "event_source": "String",
-          "event_type": "String",
-          "events": "Int64",
-          "from_artifact_id": "String",
-          "to_artifact_id": "String"
-        }
-      }
-    },
-    "sqlmesh__metrics_metrics__int_timeseries_metrics_by_artifact_developers__2126831521": {
-      "name": "metrics__int_timeseries_metrics_by_artifact_developers__2126831521",
-      "schema": "sqlmesh__metrics",
-      "comment": "",
-      "return_type": {
-        "kind": "definition",
-        "columns": {
-          "bucket_day": "Date",
-          "event_source": "String",
-          "metric": "Int64",
-          "to_artifact_id": "String"
-        }
-      }
-    },
-    "sqlmesh__metrics_metrics__int_timeseries_metrics_by_artifact_developers__2126831521__temp": {
-      "name": "metrics__int_timeseries_metrics_by_artifact_developers__2126831521__temp",
-      "schema": "sqlmesh__metrics",
-      "comment": "",
-      "return_type": {
-        "kind": "definition",
-        "columns": {
-          "bucket_day": "Date",
-          "event_source": "String",
-          "metric": "Int64",
-          "to_artifact_id": "String"
-        }
-      }
-    },
-    "sqlmesh__metrics_metrics__int_timeseries_metrics_by_artifact_developers__2219676454": {
-      "name": "metrics__int_timeseries_metrics_by_artifact_developers__2219676454",
-      "schema": "sqlmesh__metrics",
-      "comment": "",
-      "return_type": {
-        "kind": "definition",
-        "columns": {
-          "amount": "Int64",
-          "bucket_day": "Date",
-          "event_source": "String",
           "metric": "String",
           "to_artifact_id": "String"
         }
       }
     },
-    "sqlmesh__metrics_metrics__int_timeseries_metrics_by_artifact_developers__2219676454__temp": {
-      "name": "metrics__int_timeseries_metrics_by_artifact_developers__2219676454__temp",
+    "sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_over_30_days__2202426059__temp": {
+      "name": "metrics__timeseries_metrics_by_artifact_over_30_days__2202426059__temp",
       "schema": "sqlmesh__metrics",
       "comment": "",
       "return_type": {
         "kind": "definition",
         "columns": {
-          "amount": "Int64",
-          "bucket_day": "Date",
-          "event_source": "String",
-          "metric": "String",
-          "to_artifact_id": "String"
-        }
-      }
-    },
-    "sqlmesh__metrics_metrics__int_timeseries_metrics_by_artifact_developers__4026028341": {
-      "name": "metrics__int_timeseries_metrics_by_artifact_developers__4026028341",
-      "schema": "sqlmesh__metrics",
-      "comment": "",
-      "return_type": {
-        "kind": "definition",
-        "columns": {
-          "amount": "Int64",
-          "bucket_day": "Date",
-          "event_source": "String",
-          "metric": "String",
-          "to_artifact_id": "String"
-        }
-      }
-    },
-    "sqlmesh__metrics_metrics__int_timeseries_metrics_by_artifact_developers__4026028341__temp": {
-      "name": "metrics__int_timeseries_metrics_by_artifact_developers__4026028341__temp",
-      "schema": "sqlmesh__metrics",
-      "comment": "",
-      "return_type": {
-        "kind": "definition",
-        "columns": {
-          "amount": "Int64",
-          "bucket_day": "Date",
-          "event_source": "String",
-          "metric": "String",
-          "to_artifact_id": "String"
-        }
-      }
-    },
-    "sqlmesh__metrics_metrics__int_timeseries_metrics_by_artifact_developers__4060035978__temp": {
-      "name": "metrics__int_timeseries_metrics_by_artifact_developers__4060035978__temp",
-      "schema": "sqlmesh__metrics",
-      "comment": "",
-      "return_type": {
-        "kind": "definition",
-        "columns": {
-          "bucket_day": "Date",
-          "event_source": "String",
-          "metric": "Int64",
-          "to_artifact_id": "String"
-        }
-      }
-    },
-    "sqlmesh__metrics_metrics__int_timeseries_metrics_by_artifact_developers__4120769275": {
-      "name": "metrics__int_timeseries_metrics_by_artifact_developers__4120769275",
-      "schema": "sqlmesh__metrics",
-      "comment": "",
-      "return_type": {
-        "kind": "definition",
-        "columns": {
-          "bucket_day": "Date",
-          "event_source": "String",
-          "metric": "String",
-          "to_artifact_id": "String"
-        }
-      }
-    },
-    "sqlmesh__metrics_metrics__int_timeseries_metrics_by_artifact_developers__4120769275__temp": {
-      "name": "metrics__int_timeseries_metrics_by_artifact_developers__4120769275__temp",
-      "schema": "sqlmesh__metrics",
-      "comment": "",
-      "return_type": {
-        "kind": "definition",
-        "columns": {
-          "bucket_day": "Date",
-          "event_source": "String",
-          "metric": "String",
-          "to_artifact_id": "String"
-        }
-      }
-    },
-    "sqlmesh__metrics_metrics__testing_metrics__292628068__temp": {
-      "name": "metrics__testing_metrics__292628068__temp",
-      "schema": "sqlmesh__metrics",
-      "comment": "",
-      "return_type": {
-        "kind": "definition",
-        "columns": {
-          "amount": "Int64",
+          "amount": "Float64",
           "bucket_day": "Date",
           "event_source": "String",
           "from_artifact_id": "String",
+          "metric": "String",
           "to_artifact_id": "String"
         }
       }
     },
-    "sqlmesh__metrics_metrics__testing_metrics__638047893__temp": {
-      "name": "metrics__testing_metrics__638047893__temp",
+    "sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_over_30_days__2705758559": {
+      "name": "metrics__timeseries_metrics_by_artifact_over_30_days__2705758559",
       "schema": "sqlmesh__metrics",
       "comment": "",
       "return_type": {
         "kind": "definition",
         "columns": {
-          "active_days": "Nullable(Int64)",
+          "amount": "Float64",
           "bucket_day": "Date",
           "event_source": "String",
           "from_artifact_id": "String",
+          "metric": "String",
           "to_artifact_id": "String"
         }
       }
     },
-    "sqlmesh__metrics_metrics__testing_metrics__958077468__temp": {
-      "name": "metrics__testing_metrics__958077468__temp",
+    "sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_over_30_days__2705758559__temp": {
+      "name": "metrics__timeseries_metrics_by_artifact_over_30_days__2705758559__temp",
       "schema": "sqlmesh__metrics",
       "comment": "",
       "return_type": {
         "kind": "definition",
         "columns": {
-          "active_days": "Nullable(Int64)",
+          "amount": "Float64",
           "bucket_day": "Date",
           "event_source": "String",
           "from_artifact_id": "String",
+          "metric": "String",
           "to_artifact_id": "String"
+        }
+      }
+    },
+    "sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_over_30_days__3629470274": {
+      "name": "metrics__timeseries_metrics_by_artifact_over_30_days__3629470274",
+      "schema": "sqlmesh__metrics",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "amount": "Float64",
+          "bucket_day": "Date",
+          "event_source": "String",
+          "from_artifact_id": "String",
+          "metric": "String",
+          "to_artifact_id": "String"
+        }
+      }
+    },
+    "sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_over_30_days__3629470274__temp": {
+      "name": "metrics__timeseries_metrics_by_artifact_over_30_days__3629470274__temp",
+      "schema": "sqlmesh__metrics",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "amount": "Float64",
+          "bucket_day": "Date",
+          "event_source": "String",
+          "from_artifact_id": "String",
+          "metric": "String",
+          "to_artifact_id": "String"
+        }
+      }
+    },
+    "sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_over_30_days__3782520343": {
+      "name": "metrics__timeseries_metrics_by_artifact_over_30_days__3782520343",
+      "schema": "sqlmesh__metrics",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "amount": "Float64",
+          "bucket_day": "Date",
+          "event_source": "String",
+          "from_artifact_id": "String",
+          "metric": "String",
+          "to_artifact_id": "String"
+        }
+      }
+    },
+    "sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_over_30_days__3782520343__temp": {
+      "name": "metrics__timeseries_metrics_by_artifact_over_30_days__3782520343__temp",
+      "schema": "sqlmesh__metrics",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "amount": "Float64",
+          "bucket_day": "Date",
+          "event_source": "String",
+          "from_artifact_id": "String",
+          "metric": "String",
+          "to_artifact_id": "String"
+        }
+      }
+    },
+    "sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_over_30_days__4007628622": {
+      "name": "metrics__timeseries_metrics_by_artifact_over_30_days__4007628622",
+      "schema": "sqlmesh__metrics",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "amount": "Float64",
+          "bucket_day": "Date",
+          "event_source": "String",
+          "from_artifact_id": "String",
+          "metric": "String",
+          "to_artifact_id": "String"
+        }
+      }
+    },
+    "sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_over_30_days__4007628622__temp": {
+      "name": "metrics__timeseries_metrics_by_artifact_over_30_days__4007628622__temp",
+      "schema": "sqlmesh__metrics",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "amount": "Float64",
+          "bucket_day": "Date",
+          "event_source": "String",
+          "from_artifact_id": "String",
+          "metric": "String",
+          "to_artifact_id": "String"
+        }
+      }
+    },
+    "sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_over_30_days__411625291": {
+      "name": "metrics__timeseries_metrics_by_artifact_over_30_days__411625291",
+      "schema": "sqlmesh__metrics",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "amount": "Float64",
+          "bucket_day": "Date",
+          "event_source": "String",
+          "from_artifact_id": "String",
+          "metric": "String",
+          "to_artifact_id": "String"
+        }
+      }
+    },
+    "sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_over_30_days__411625291__temp": {
+      "name": "metrics__timeseries_metrics_by_artifact_over_30_days__411625291__temp",
+      "schema": "sqlmesh__metrics",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "amount": "Float64",
+          "bucket_day": "Date",
+          "event_source": "String",
+          "from_artifact_id": "String",
+          "metric": "String",
+          "to_artifact_id": "String"
+        }
+      }
+    },
+    "sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_v0__2123659464": {
+      "name": "metrics__timeseries_metrics_by_artifact_v0__2123659464",
+      "schema": "sqlmesh__metrics",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "amount": "Float64",
+          "artifact_id": "String",
+          "metric_id": "String",
+          "sample_date": "Date",
+          "unit": "Nullable(String)"
+        }
+      }
+    },
+    "sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_v0__2123659464__temp": {
+      "name": "metrics__timeseries_metrics_by_artifact_v0__2123659464__temp",
+      "schema": "sqlmesh__metrics",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "amount": "Float64",
+          "artifact_id": "String",
+          "metric_id": "String",
+          "sample_date": "Date",
+          "unit": "Nullable(String)"
+        }
+      }
+    },
+    "sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_v0__2343650771": {
+      "name": "metrics__timeseries_metrics_by_artifact_v0__2343650771",
+      "schema": "sqlmesh__metrics",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "amount": "Float64",
+          "artifact_id": "String",
+          "metric_id": "String",
+          "sample_date": "Date",
+          "unit": "Nullable(String)"
+        }
+      }
+    },
+    "sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_v0__2343650771__temp": {
+      "name": "metrics__timeseries_metrics_by_artifact_v0__2343650771__temp",
+      "schema": "sqlmesh__metrics",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "amount": "Float64",
+          "artifact_id": "String",
+          "metric_id": "String",
+          "sample_date": "Date",
+          "unit": "Nullable(String)"
+        }
+      }
+    },
+    "sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_v0__274191541": {
+      "name": "metrics__timeseries_metrics_by_artifact_v0__274191541",
+      "schema": "sqlmesh__metrics",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "amount": "Float64",
+          "artifact_id": "String",
+          "metric_id": "String",
+          "sample_date": "Date",
+          "unit": "Nullable(String)"
+        }
+      }
+    },
+    "sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_v0__274191541__temp": {
+      "name": "metrics__timeseries_metrics_by_artifact_v0__274191541__temp",
+      "schema": "sqlmesh__metrics",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "amount": "Float64",
+          "artifact_id": "String",
+          "metric_id": "String",
+          "sample_date": "Date",
+          "unit": "Nullable(String)"
+        }
+      }
+    },
+    "sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_v0__2787405387": {
+      "name": "metrics__timeseries_metrics_by_artifact_v0__2787405387",
+      "schema": "sqlmesh__metrics",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "amount": "Float64",
+          "artifact_id": "String",
+          "metric_id": "String",
+          "sample_date": "Date",
+          "unit": "Nullable(String)"
+        }
+      }
+    },
+    "sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_v0__2787405387__temp": {
+      "name": "metrics__timeseries_metrics_by_artifact_v0__2787405387__temp",
+      "schema": "sqlmesh__metrics",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "amount": "Float64",
+          "artifact_id": "String",
+          "metric_id": "String",
+          "sample_date": "Date",
+          "unit": "Nullable(String)"
+        }
+      }
+    },
+    "sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_v0__4180627168": {
+      "name": "metrics__timeseries_metrics_by_artifact_v0__4180627168",
+      "schema": "sqlmesh__metrics",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "amount": "Float64",
+          "artifact_id": "String",
+          "metric_id": "String",
+          "sample_date": "Date",
+          "unit": "Nullable(String)"
+        }
+      }
+    },
+    "sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_v0__4180627168__temp": {
+      "name": "metrics__timeseries_metrics_by_artifact_v0__4180627168__temp",
+      "schema": "sqlmesh__metrics",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "amount": "Float64",
+          "artifact_id": "String",
+          "metric_id": "String",
+          "sample_date": "Date",
+          "unit": "Nullable(String)"
+        }
+      }
+    },
+    "sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_v0__661819154": {
+      "name": "metrics__timeseries_metrics_by_artifact_v0__661819154",
+      "schema": "sqlmesh__metrics",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "amount": "Float64",
+          "artifact_id": "String",
+          "metric_id": "String",
+          "sample_date": "Date",
+          "unit": "Nullable(String)"
+        }
+      }
+    },
+    "sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_v0__661819154__temp": {
+      "name": "metrics__timeseries_metrics_by_artifact_v0__661819154__temp",
+      "schema": "sqlmesh__metrics",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "amount": "Float64",
+          "artifact_id": "String",
+          "metric_id": "String",
+          "sample_date": "Date",
+          "unit": "Nullable(String)"
         }
       }
     },

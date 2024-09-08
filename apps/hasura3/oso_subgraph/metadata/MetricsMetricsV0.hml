@@ -2,32 +2,30 @@
 kind: ObjectType
 version: v1
 definition:
-  name: MetricsV0
+  name: MetricsMetricsV0
   fields:
     - name: aggregationFunction
-      type: String!
+      type: String
     - name: definitionRef
-      type: String!
+      type: String
     - name: description
-      type: String!
+      type: String
     - name: displayName
       type: String!
     - name: metricId
       type: String!
     - name: metricName
       type: String!
-    - name: metricNamespace
-      type: String!
     - name: metricSource
       type: String!
     - name: rawDefinition
-      type: Int64!
+      type: String
   graphql:
-    typeName: Oso_MetricsV0
-    inputTypeName: Oso_MetricsV0Input
+    typeName: Oso_MetricsMetricsV0
+    inputTypeName: Oso_MetricsMetricsV0Input
   dataConnectorTypeMapping:
     - dataConnectorName: oso_clickhouse
-      dataConnectorObjectType: metrics_v0
+      dataConnectorObjectType: metrics_metrics_v0
       fieldMapping:
         aggregationFunction:
           column:
@@ -47,9 +45,6 @@ definition:
         metricName:
           column:
             name: metric_name
-        metricNamespace:
-          column:
-            name: metric_namespace
         metricSource:
           column:
             name: metric_source
@@ -61,7 +56,7 @@ definition:
 kind: TypePermissions
 version: v1
 definition:
-  typeName: MetricsV0
+  typeName: MetricsMetricsV0
   permissions:
     - role: admin
       output:
@@ -72,7 +67,6 @@ definition:
           - displayName
           - metricId
           - metricName
-          - metricNamespace
           - metricSource
           - rawDefinition
     - role: anonymous
@@ -84,7 +78,6 @@ definition:
           - displayName
           - metricId
           - metricName
-          - metricNamespace
           - metricSource
           - rawDefinition
 
@@ -92,10 +85,10 @@ definition:
 kind: ObjectBooleanExpressionType
 version: v1
 definition:
-  name: MetricsV0BoolExp
-  objectType: MetricsV0
+  name: MetricsMetricsV0BoolExp
+  objectType: MetricsMetricsV0
   dataConnectorName: oso_clickhouse
-  dataConnectorObjectType: metrics_v0
+  dataConnectorObjectType: metrics_metrics_v0
   comparableFields:
     - fieldName: aggregationFunction
       operators:
@@ -115,9 +108,6 @@ definition:
     - fieldName: metricName
       operators:
         enableAll: true
-    - fieldName: metricNamespace
-      operators:
-        enableAll: true
     - fieldName: metricSource
       operators:
         enableAll: true
@@ -125,18 +115,18 @@ definition:
       operators:
         enableAll: true
   graphql:
-    typeName: Oso_MetricsV0BoolExp
+    typeName: Oso_MetricsMetricsV0BoolExp
 
 ---
 kind: Model
 version: v1
 definition:
-  name: MetricsV0
-  objectType: MetricsV0
+  name: MetricsMetricsV0
+  objectType: MetricsMetricsV0
   source:
     dataConnectorName: oso_clickhouse
-    collection: metrics_v0
-  filterExpressionType: MetricsV0BoolExp
+    collection: metrics_metrics_v0
+  filterExpressionType: MetricsMetricsV0BoolExp
   orderableFields:
     - fieldName: aggregationFunction
       orderByDirections:
@@ -156,9 +146,6 @@ definition:
     - fieldName: metricName
       orderByDirections:
         enableAll: true
-    - fieldName: metricNamespace
-      orderByDirections:
-        enableAll: true
     - fieldName: metricSource
       orderByDirections:
         enableAll: true
@@ -169,13 +156,13 @@ definition:
     selectMany:
       queryRootField: oso_metricsV0
     selectUniques: []
-    orderByExpressionType: Oso_MetricsV0OrderBy
+    orderByExpressionType: Oso_MetricsMetricsV0OrderBy
 
 ---
 kind: ModelPermissions
 version: v1
 definition:
-  modelName: MetricsV0
+  modelName: MetricsMetricsV0
   permissions:
     - role: admin
       select:
