@@ -24,6 +24,7 @@ metrics_v0_no_casting AS (
 select 
   metric_id::String,
   metric_source::String,
+  metric_namespace::String,
   metric_name::String,
   display_name::String,
   description::Nullable(String),
