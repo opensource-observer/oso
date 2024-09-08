@@ -35,6 +35,10 @@ daily_timeseries_rolling_window_model(
             ref="stars.sql",
             vars={},
         ),
+        "forks": MetricQuery(
+            ref="forks.sql",
+            vars={},
+        ),
     },
     trailing_days=30,
     model_options=dict(
