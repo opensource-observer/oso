@@ -20,6 +20,8 @@ definition:
       type: String!
     - name: rawDefinition
       type: String
+    - name: metricNamespace
+      type: String!
   graphql:
     typeName: Oso_MetricsMetricsV0
     inputTypeName: Oso_MetricsMetricsV0Input
@@ -51,6 +53,9 @@ definition:
         rawDefinition:
           column:
             name: raw_definition
+        metricNamespace:
+          column:
+            name: metric_namespace
 
 ---
 kind: TypePermissions
@@ -69,6 +74,7 @@ definition:
           - metricName
           - metricSource
           - rawDefinition
+          - metricNamespace
     - role: anonymous
       output:
         allowedFields:
@@ -114,6 +120,9 @@ definition:
     - fieldName: rawDefinition
       operators:
         enableAll: true
+    - fieldName: metricNamespace
+      operators:
+        enableAll: true
   graphql:
     typeName: Oso_MetricsMetricsV0BoolExp
 
@@ -152,6 +161,9 @@ definition:
     - fieldName: rawDefinition
       orderByDirections:
         enableAll: true
+    - fieldName: metricNamespace
+      orderByDirections:
+        enableAll: true
   graphql:
     selectMany:
       queryRootField: oso_metricsV0
@@ -170,3 +182,4 @@ definition:
     - role: anonymous
       select:
         filter: null
+
