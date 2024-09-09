@@ -11,6 +11,7 @@ import {
   GET_COLLECTIONS_BY_IDS,
   GET_COLLECTION_BY_NAME,
   GET_COLLECTION_IDS_BY_PROJECT_IDS,
+  GET_METRIC_BY_NAME,
   GET_CODE_METRICS_BY_PROJECT,
   GET_ONCHAIN_METRICS_BY_PROJECT,
   GET_ALL_EVENT_TYPES,
@@ -124,6 +125,18 @@ const cachedGetCollectionIdsByProjectIds = cache(
     }),
 );
 
+const cachedGetMetricByName = cache(
+  async (variables: {
+    metricSource: string;
+    metricNamespace: string;
+    metricName: string;
+  }) =>
+    queryWrapper({
+      query: GET_METRIC_BY_NAME,
+      variables,
+    }),
+);
+
 const cachedGetCodeMetricsByProjectIds = cache(
   async (variables: { projectIds: string[] }) =>
     queryWrapper({
@@ -157,6 +170,7 @@ export {
   cachedGetCollectionByName,
   cachedGetCollectionsByIds,
   cachedGetCollectionIdsByProjectIds,
+  cachedGetMetricByName,
   cachedGetCodeMetricsByProjectIds,
   cachedGetOnchainMetricsByProjectIds,
   cachedGetAllEventTypes,
