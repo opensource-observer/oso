@@ -3,9 +3,9 @@ select STR_TO_DATE(@end_ds, '%Y-%m-%d') as metrics_bucket_date,
   events.to_artifact_id,
   '' as from_artifact_id,
   @metric_name as metric,
-  SUM(events.amount) as amount
+  COUNT(distinct events.from_artifact_id) as amount
 from metrics.events_daily_to_artifact as events
-where event_type in ('ISSUE_CLOSED')
+where event_type in ('CONTRACT_INVOCATION_SUCCESS_DAILY_COUNT')
   and events.bucket_day BETWEEN STR_TO_DATE(@start_ds, '%Y-%m-%d') AND STR_TO_DATE(@end_ds, '%Y-%m-%d')
 group by 1,
   metric,

@@ -67,6 +67,10 @@ daily_timeseries_rolling_window_model(
             ref="gas_fees.sql",
             vars={},
         ),
+        "active_addresses": MetricQuery(
+            ref="active_addresses.sql",
+            vars={},
+        ),
     },
     trailing_days=30,
     model_options=dict(
