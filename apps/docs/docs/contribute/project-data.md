@@ -25,20 +25,55 @@ Add or update project data by making a pull request to
 
 ## Schema Overview
 
-Make sure to use the latest version of the oss-directory schema. You can see the latest version by opening any project YAML file and getting the version from the top of file.
+Make sure to use the latest version of the oss-directory schema. You can see the latest version by opening any project YAML file and getting the version from the top of file. Note: since version 3, we have replaced the `slug` field with `name` and the previous `name` field with `display_name`.
+
+### Project Names
 
 :::important
-The `name` field is the unique identifier for the project and **must** match the name of the project file. For example, if the project file is `./data/projects/m/my-project.yaml`, then the `name` field should be `my-project`. As a convention, we usually take the GitHub organization name as the project `name`. If the project is a standalone repo within a larger GitHub organization or personal account, you can use the project name followed by the repo owner as the name, separated by hyphens.
-
-Note: since version 3, we have replaced the `slug` field with `name` and the previous `name` field with `display_name`.
+The `name` field is the unique identifier for the project and **must** match the name of the YAML project file. For example, if the project file is `./data/projects/m/my-project.yaml`, then the `name` field should be `my-project`.
 :::
+
+Most projects are instantiated with the GitHub organization name as the project `name`. For example, the project for https://github.com/opensource-observer is named `opensource-observer` and located at `./data/projects/o/opensource-observer.yaml`.
+
+Here is an example of a project file instantiated with the GitHub organization name as the project `name`:
+
+```yaml
+name: my-project
+display_name: My Project
+github:
+  - url: https://github.com/my-project
+```
+
+If the project is a monorepo within a larger GitHub organization or personal account, you can use the project name followed by the repo owner as the name, separated by hyphens. For example, the project for https://github.com/my-org/my-repo is named `my-repo-my-org` and located at `./data/projects/m/my-repo-my-org.yaml`. Here is what the YAML file might look like:
+
+```yaml
+name: my-repo-my-org
+display_name: My Repo
+github:
+  - url: https://github.com/my-org/my-repo
+```
+
+If the project is a collection of repos -- but you don't want to use the GitHub organization name as the project name -- then you can use your discretion to pick an appropriate name. Here is an example of a project file instantiated with a custom project name:
+
+```yaml
+name: projectx-my-space
+display_name: Project X
+github:
+  - url: https://github.com/my-space/projectx-frontend
+  - url: https://github.com/my-space/projectx-backend
+  - url: https://github.com/my-space/projectx-docs
+```
+
+This project would be located at `./data/projects/p/projectx-my-space.yaml`.
+
+This construction is useful for projects that are kept in a personal GitHub account or across multiple GitHub organizations.
 
 ### Fields
 
 The schema currently contains the following fields:
 
 - `version`: The latest version of the OSS Directory schema. This is a required field. To find the latest version, open any project YAML file and get the version from the top of the file. As of writing (2024-06-05), the latest version is Version 7.
-- `name`: The unique identifier for the project. This is usually the GitHub organization name or the project name followed by the repo owner, separated by hyphens. This is a required field.
+- `name`: The unique identifier for the project. See [Project Names](#project-names) for more information. This is a required field and must match the name of the YAML project file.
 - `display_name`: The display name of the project. This is a required field.
 - `description`: A brief description of the project.
 - `websites`: A list of associated websites
@@ -116,7 +151,7 @@ If you run into issues, check out [GitHub's instructions](https://docs.github.co
 - If the project is not associated with a GitHub organization, you can use the project name followed by the repo owner as the name, separated by hyphens (eg, `my-repo-my-org`), and the same convention for the filename (eg, `./data/projects/m/my-repo-my-org.yaml`).
 - Initialize the new project with the following fields:
   - `version`: The version of the schema you are using. The latest version is Version 3. You can learn more about the schema [here](../how-oso-works/oss-directory/schema-updates).
-  - `name`: The unique identifier for the project. This is usually the GitHub organization name or the project name followed by the repo owner, separated by hyphens.
+  - `name`: The unique identifier for the project. See [Project Names](#project-names) for more information.
   - `display_name`: The name of the project.
   - `github`: The GitHub URL of the project. This is a list of URLs, as a project can have multiple GitHub URLs. In most cases, the first and only URL will be the main GitHub organization URL. You don't need to include all the repositories that belong to the organization, as we will automatically index all of them.
 
