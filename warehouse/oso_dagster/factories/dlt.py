@@ -12,6 +12,7 @@ from typing import (
     Type,
 )
 
+from uuid import uuid4
 from dagster import (
     asset,
     AssetIn,
@@ -122,19 +123,21 @@ def _dlt_factory[
                     config: config_type,
                     **extra_source_args,
                 ) -> Iterable[R]:
+                    pipeline_name = f"{key_prefix_str}_{name}_{uuid4()}"
+
                     # Hack for now. Staging cannot be used if running locally.
                     # We need to change this interface. Instead of being reliant
                     # on the constant defining bigquery we should use some kind
                     # of generic function to wire this pipeline together.
                     pipeline = dltlib.pipeline(
-                        f"{key_prefix_str}_{name}",
+                        pipeline_name,
                         destination=dlt_warehouse_destination,
                         dataset_name=dataset_name,
                     )
                     if constants.enable_bigquery:
                         context.log.debug("dlt pipeline setup to use staging")
                         pipeline = dltlib.pipeline(
-                            f"{key_prefix_str}_{name}",
+                            pipeline_name,
                             destination=dlt_warehouse_destination,
                             staging=dlt_staging_destination,
                             dataset_name=dataset_name,
