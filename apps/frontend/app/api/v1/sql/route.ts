@@ -15,13 +15,16 @@ const makeError = (errorMsg: string) => ({
   error: errorMsg,
 });
 
-async function doQuery(query: string) {
+async function doQuery(rawQuery: string) {
+  const query = decodeURIComponent(rawQuery);
+  console.log(`Running query: ${query}`);
   const client = getClickhouseClient();
-  const rows = await client.query({
-    query: query,
-  });
+  const rows = await client.query({ query });
   const resultSet = await rows.json();
-  return resultSet;
+  // resultSet includes query statistics and metadata
+  //console.log(JSON.stringify(resultSet, null, 2));
+  const data = resultSet.data;
+  return data;
 }
 
 /**
@@ -41,7 +44,7 @@ export async function GET(request: NextRequest) {
     console.log(`/api/sql: Missing query`);
     return NextResponse.json(makeError("Please provide a 'query' parameter"));
   }
-  const result = doQuery(query);
+  const result = await doQuery(query);
   return NextResponse.json(result);
 }
 
@@ -55,6 +58,6 @@ export async function POST(request: NextRequest) {
     console.log(`/api/sql: Missing query`);
     return NextResponse.json(makeError("Please provide a 'query' parameter"));
   }
-  const result = doQuery(query);
+  const result = await doQuery(query);
   return NextResponse.json(result);
 }
