@@ -1,12 +1,13 @@
 from datetime import datetime, timedelta
-from typing import Optional
 
 import dlt
 from dagster import AssetExecutionContext, WeeklyPartitionsDefinition
 from gql import Client, gql
-from gql.transport.requests import AIOHTTPTransport
+from gql.transport.aiohttp import AIOHTTPTransport
 from oso_dagster.factories import dlt_factory, pydantic_to_dlt_nullable_columns
 from pydantic import BaseModel
+
+from .open_collective import generate_steps
 
 
 class Attestation(BaseModel):
@@ -25,26 +26,33 @@ class Attestation(BaseModel):
     schemaId: str
     time: int
     txid: str
-    
+
 
 # The first attestation on EAS Optimism was created on the 07/28/2023 9:22:35 am
-EAS_OPTIMISM_FIRST_ATTESTATION = 1690524000
+EAS_OPTIMISM_FIRST_ATTESTATION = datetime.fromtimestamp(1690557755)
 
-# The maximum number of nodes that can be retrieved per page
-EAS_OPTIMISM_MAX_NODES_PER_PAGE = 1000
-
-def generate_steps(total: int, step: int):
-
-    for i in range(0, total, step):
-        yield i
-    if total % step != 0:
-        yield total
+# A sensible limit for the number of nodes to fetch per page
+EAS_OPTIMISM_STEP_NODES_PER_PAGE = 10_000
 
 
-def get_optimism_eas_data(dateFrom: int, dateTo: int):
+def get_optimism_eas_data(
+    context: AssetExecutionContext, client: Client, date_from: float, date_to: float
+):
+    """
+    Retrieves the attestation data from the EAS Optimism GraphQL API.
 
-    transport = AIOHTTPTransport(url="https://optimism.easscan.org/graphql")
-    client = Client(transport=transport, fetch_schema_from_transport=True)
+    Args:
+        context (AssetExecutionContext): The asset execution context.
+        client (Client): The GraphQL client.
+        date_from (float): The start date in timestamp format.
+        date_to (float): The end date in timestamp format.
+
+    Yields:
+        list: A list of attestation nodes retrieved from EAS Optimism.
+
+    Returns:
+        list: An empty list if an exception occurs during the query execution.
+    """
 
     total_query = gql(
         """
@@ -63,16 +71,16 @@ def get_optimism_eas_data(dateFrom: int, dateTo: int):
         variable_values={
             "where": {
                 "time": {
-                    "gte": dateFrom,
-                    "lte": dateTo
+                    "gte": date_from,
+                    "lte": date_to,
                 }
-            }
+            },
         },
     )
 
     total_count = total["aggregateAttestation"]["_count"]["_all"]
 
-    #context.log.info(f"Total count of attestations: {total_count}")
+    context.log.info(f"Total count of attestations: {total_count}")
 
     attestations_query = gql(
         """
@@ -95,35 +103,29 @@ def get_optimism_eas_data(dateFrom: int, dateTo: int):
                 txid
             }
         }
-    """
+        """
     )
 
-    for step in generate_steps(total_count, EAS_OPTIMISM_MAX_NODES_PER_PAGE):
+    for step in generate_steps(total_count, EAS_OPTIMISM_STEP_NODES_PER_PAGE):
         try:
             query = client.execute(
                 attestations_query,
                 variable_values={
-                    "take": EAS_OPTIMISM_MAX_NODES_PER_PAGE,
+                    "take": EAS_OPTIMISM_STEP_NODES_PER_PAGE,
                     "skip": step,
                     "where": {
                         "time": {
-                            "gte": dateFrom,
-                            "lte": dateTo
-                        }
-                    }
+                            "gte": date_from,
+                            "lte": date_to,
+                        },
+                    },
                 },
             )
-
-            
             context.log.info(
-                f"Fetching attestation {step}/{total_count}"
+                f"Fetching attestation {step}/{total_count}",
             )
-            
-            
             yield query["attestations"]
-
         except Exception as exception:
-
             context.log.warning(
                 f"An error occurred while fetching EAS data: '{exception}'. "
                 "We will stop this materialization instead of retrying for now."
@@ -131,28 +133,50 @@ def get_optimism_eas_data(dateFrom: int, dateTo: int):
             return []
 
 
-def get_optimism_eas(context: AssetExecutionContext):
+def get_optimism_eas(context: AssetExecutionContext, client: Client):
+    """
+    Get the attestation data from the EAS Optimism GraphQL API.
+
+    Args:
+        context (AssetExecutionContext): The asset execution context.
+        client (Client): The GraphQL client.
+
+    Yields:
+        Generator: A generator that yields the attestation data.
+    """
 
     start = datetime.strptime(context.partition_key, "%Y-%m-%d")
-    end = start + timedelta(weeks=1) 
+    end = start + timedelta(weeks=1)
 
-    start_date = start.timestamp() 
-    end_date = end.timestamp()
+    yield from get_optimism_eas_data(
+        context, client, start.timestamp(), end.timestamp()
+    )
 
-    yield from get_optimism_eas_data(context, start_date, end_date)
 
 @dlt_factory(
     key_prefix="ethereum_attestation_service_optimism",
     partitions_def=WeeklyPartitionsDefinition(
-        start_date=EAS_OPTIMISM_FIRST_ATTESTATION,
-        end_date=datetime.now().timestamp(), 
+        start_date=EAS_OPTIMISM_FIRST_ATTESTATION.isoformat().split("T")[0],
+        end_date=(datetime.now()).isoformat().split("T")[0],
     ),
 )
 def attestations(context: AssetExecutionContext):
+    """
+    Create an asset that retrieves the attestation data from the EAS Optimism GraphQL API.
+
+    Args:
+        context (AssetExecutionContext): The asset execution context.
+
+    Yields:
+        Asset: The asset that retrieves the attestation data.
+    """
+
+    transport = AIOHTTPTransport(url="https://optimism.easscan.org/graphql")
+    client = Client(transport=transport, fetch_schema_from_transport=True)
+
     yield dlt.resource(
-        get_optimism_eas(context),
+        get_optimism_eas(context, client),
         name="attestations",
         columns=pydantic_to_dlt_nullable_columns(Attestation),
         primary_key="id",
     )
-    
