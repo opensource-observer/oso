@@ -11,8 +11,8 @@ const GET_TIMESERIES_METRICS_BY_ARTIFACT = gql(`
   query TimeseriesMetricsByArtifact(
     $artifactIds: [String!],
     $metricIds: [String!],
-    $startDate: Oso_DateTime!,
-    $endDate: Oso_DateTime!, 
+    $startDate: Oso_Date!,
+    $endDate: Oso_Date!, 
   ) {
     oso_timeseriesMetricsByArtifactV0(where: {
       artifactId: {_in: $artifactIds},
@@ -43,6 +43,7 @@ const GET_TIMESERIES_METRICS_BY_ARTIFACT = gql(`
   }
 `);
 
+/**
 const GET_TIMESERIES_METRICS_BY_PROJECT = gql(`
   query TimeseriesMetricsByProject(
     $projectIds: [String!],
@@ -79,8 +80,9 @@ const GET_TIMESERIES_METRICS_BY_PROJECT = gql(`
     }
   }
 `);
+ */
 
 export {
   GET_TIMESERIES_METRICS_BY_ARTIFACT,
-  GET_TIMESERIES_METRICS_BY_PROJECT,
+  //GET_TIMESERIES_METRICS_BY_PROJECT,
 };

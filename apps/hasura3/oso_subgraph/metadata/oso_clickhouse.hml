@@ -1,4 +1,3 @@
----
 kind: DataConnectorLink
 version: v1
 definition:
@@ -187,6 +186,79 @@ definition:
                 element_type:
                   type: named
                   name: Float32
+        Float64:
+          representation:
+            type: float64
+          aggregate_functions:
+            avg:
+              result_type:
+                type: named
+                name: Float64
+            max:
+              result_type:
+                type: named
+                name: Float64
+            min:
+              result_type:
+                type: named
+                name: Float64
+            stddev_pop:
+              result_type:
+                type: named
+                name: Float64
+            stddev_samp:
+              result_type:
+                type: named
+                name: Float64
+            sum:
+              result_type:
+                type: named
+                name: Float64
+            var_pop:
+              result_type:
+                type: named
+                name: Float64
+            var_samp:
+              result_type:
+                type: named
+                name: Float64
+          comparison_operators:
+            _eq:
+              type: equal
+            _gt:
+              type: custom
+              argument_type:
+                type: named
+                name: Float64
+            _gte:
+              type: custom
+              argument_type:
+                type: named
+                name: Float64
+            _in:
+              type: in
+            _lt:
+              type: custom
+              argument_type:
+                type: named
+                name: Float64
+            _lte:
+              type: custom
+              argument_type:
+                type: named
+                name: Float64
+            _neq:
+              type: custom
+              argument_type:
+                type: named
+                name: Float64
+            _nin:
+              type: custom
+              argument_type:
+                type: array
+                element_type:
+                  type: named
+                  name: Float64
         Int64:
           representation:
             type: int64
@@ -643,184 +715,13 @@ definition:
               type:
                 type: named
                 name: String
-        events_daily_to_artifact:
+        metrics__dev_events_daily_to_artifact:
           description: ""
           fields:
             amount:
               type:
                 type: named
-                name: Float32
-            artifact_id:
-              type:
-                type: named
-                name: String
-            bucket_day:
-              type:
-                type: named
-                name: DateTime
-            event_type:
-              type:
-                type: named
-                name: String
-        events_daily_to_collection:
-          description: ""
-          fields:
-            amount:
-              type:
-                type: named
-                name: Float32
-            bucket_day:
-              type:
-                type: named
-                name: DateTime
-            collection_id:
-              type:
-                type: named
-                name: String
-            event_type:
-              type:
-                type: named
-                name: String
-        events_daily_to_project:
-          description: ""
-          fields:
-            amount:
-              type:
-                type: named
-                name: Float32
-            bucket_day:
-              type:
-                type: named
-                name: DateTime
-            event_type:
-              type:
-                type: named
-                name: String
-            project_id:
-              type:
-                type: named
-                name: String
-        events_monthly_to_artifact:
-          description: ""
-          fields:
-            amount:
-              type:
-                type: named
-                name: Float32
-            artifact_id:
-              type:
-                type: named
-                name: String
-            bucket_month:
-              type:
-                type: named
-                name: DateTime
-            event_type:
-              type:
-                type: named
-                name: String
-        events_monthly_to_collection:
-          description: ""
-          fields:
-            amount:
-              type:
-                type: named
-                name: Float32
-            bucket_month:
-              type:
-                type: named
-                name: DateTime
-            collection_id:
-              type:
-                type: named
-                name: String
-            event_type:
-              type:
-                type: named
-                name: String
-        events_monthly_to_project:
-          description: ""
-          fields:
-            amount:
-              type:
-                type: named
-                name: Float32
-            bucket_month:
-              type:
-                type: named
-                name: DateTime
-            event_type:
-              type:
-                type: named
-                name: String
-            project_id:
-              type:
-                type: named
-                name: String
-        events_weekly_to_artifact:
-          description: ""
-          fields:
-            amount:
-              type:
-                type: named
-                name: Float32
-            artifact_id:
-              type:
-                type: named
-                name: String
-            bucket_week:
-              type:
-                type: named
-                name: DateTime
-            event_type:
-              type:
-                type: named
-                name: String
-        events_weekly_to_collection:
-          description: ""
-          fields:
-            amount:
-              type:
-                type: named
-                name: Float32
-            bucket_week:
-              type:
-                type: named
-                name: DateTime
-            collection_id:
-              type:
-                type: named
-                name: String
-            event_type:
-              type:
-                type: named
-                name: String
-        events_weekly_to_project:
-          description: ""
-          fields:
-            amount:
-              type:
-                type: named
-                name: Float32
-            bucket_week:
-              type:
-                type: named
-                name: DateTime
-            event_type:
-              type:
-                type: named
-                name: String
-            project_id:
-              type:
-                type: named
-                name: String
-        metrics__dev_int_events_daily_to_artifact:
-          description: ""
-          fields:
-            amount:
-              type:
-                type: named
-                name: Int64
+                name: Float64
             bucket_day:
               type:
                 type: named
@@ -841,144 +742,149 @@ definition:
               type:
                 type: named
                 name: String
-        metrics__dev_int_timeseries_metrics_by_artifact_developers:
-          description: ""
-          fields:
-            amount:
-              type:
-                type: named
-                name: Int64
-            bucket_day:
-              type:
-                type: named
-                name: Date
-            event_source:
-              type:
-                type: named
-                name: String
-            metric:
-              type:
-                type: named
-                name: String
-            to_artifact_id:
-              type:
-                type: named
-                name: String
-        metrics__run_int_events_daily_to_artifact:
-          description: ""
-          fields:
-            amount:
-              type:
-                type: named
-                name: Int64
-            bucket_day:
-              type:
-                type: named
-                name: Date
-            event_source:
-              type:
-                type: named
-                name: String
-            event_type:
-              type:
-                type: named
-                name: String
-            from_artifact_id:
-              type:
-                type: named
-                name: String
-            to_artifact_id:
-              type:
-                type: named
-                name: String
-        metrics__run_int_timeseries_metrics_by_artifact_developers:
-          description: ""
-          fields:
-            amount:
-              type:
-                type: named
-                name: Int64
-            bucket_day:
-              type:
-                type: named
-                name: Date
-            event_source:
-              type:
-                type: named
-                name: String
-            metric:
-              type:
-                type: named
-                name: String
-            to_artifact_id:
-              type:
-                type: named
-                name: String
-        metrics_int_events_daily_to_artifact:
-          description: ""
-          fields:
-            amount:
-              type:
-                type: named
-                name: Int64
-            bucket_day:
-              type:
-                type: named
-                name: Date
-            event_source:
-              type:
-                type: named
-                name: String
-            event_type:
-              type:
-                type: named
-                name: String
-            from_artifact_id:
-              type:
-                type: named
-                name: String
-            to_artifact_id:
-              type:
-                type: named
-                name: String
-        metrics_int_timeseries_metrics_by_artifact_developers:
-          description: ""
-          fields:
-            amount:
-              type:
-                type: named
-                name: Int64
-            bucket_day:
-              type:
-                type: named
-                name: Date
-            event_source:
-              type:
-                type: named
-                name: String
-            metric:
-              type:
-                type: named
-                name: String
-            to_artifact_id:
-              type:
-                type: named
-                name: String
-        metrics_v0:
+        metrics__dev_metrics_v0:
           description: ""
           fields:
             aggregation_function:
               type:
-                type: named
-                name: String
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
             definition_ref:
               type:
-                type: named
-                name: String
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
             description:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+            display_name:
               type:
                 type: named
                 name: String
+            metric_id:
+              type:
+                type: named
+                name: String
+            metric_name:
+              type:
+                type: named
+                name: String
+            metric_source:
+              type:
+                type: named
+                name: String
+            raw_definition:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+        metrics__dev_timeseries_metrics_by_artifact_over_30_days:
+          description: ""
+          fields:
+            amount:
+              type:
+                type: named
+                name: Float64
+            bucket_day:
+              type:
+                type: named
+                name: Date
+            event_source:
+              type:
+                type: named
+                name: String
+            from_artifact_id:
+              type:
+                type: named
+                name: String
+            metric:
+              type:
+                type: named
+                name: String
+            to_artifact_id:
+              type:
+                type: named
+                name: String
+        metrics__dev_timeseries_metrics_by_artifact_v0:
+          description: ""
+          fields:
+            amount:
+              type:
+                type: named
+                name: Float64
+            artifact_id:
+              type:
+                type: named
+                name: String
+            metric_id:
+              type:
+                type: named
+                name: String
+            sample_date:
+              type:
+                type: named
+                name: Date
+            unit:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+        metrics_events_daily_to_artifact:
+          description: ""
+          fields:
+            amount:
+              type:
+                type: named
+                name: Float64
+            bucket_day:
+              type:
+                type: named
+                name: Date
+            event_source:
+              type:
+                type: named
+                name: String
+            event_type:
+              type:
+                type: named
+                name: String
+            from_artifact_id:
+              type:
+                type: named
+                name: String
+            to_artifact_id:
+              type:
+                type: named
+                name: String
+        metrics_metrics_v0:
+          description: ""
+          fields:
+            aggregation_function:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+            definition_ref:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+            description:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
             display_name:
               type:
                 type: named
@@ -1001,8 +907,62 @@ definition:
                 name: String
             raw_definition:
               type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+        metrics_timeseries_metrics_by_artifact_over_30_days:
+          description: ""
+          fields:
+            amount:
+              type:
                 type: named
-                name: Int64
+                name: Float64
+            bucket_day:
+              type:
+                type: named
+                name: Date
+            event_source:
+              type:
+                type: named
+                name: String
+            from_artifact_id:
+              type:
+                type: named
+                name: String
+            metric:
+              type:
+                type: named
+                name: String
+            to_artifact_id:
+              type:
+                type: named
+                name: String
+        metrics_timeseries_metrics_by_artifact_v0:
+          description: ""
+          fields:
+            amount:
+              type:
+                type: named
+                name: Float64
+            artifact_id:
+              type:
+                type: named
+                name: String
+            metric_id:
+              type:
+                type: named
+                name: String
+            sample_date:
+              type:
+                type: named
+                name: Date
+            unit:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
         onchain_metrics_by_project_v1:
           description: ""
           fields:
@@ -1148,37 +1108,7 @@ definition:
               type:
                 type: named
                 name: String
-        sqlmesh__metrics_metrics__incremental_model__3929117331:
-          description: ""
-          fields:
-            bucket_day:
-              type:
-                type: named
-                name: Date
-            event_type:
-              type:
-                type: named
-                name: String
-            events:
-              type:
-                type: named
-                name: Int64
-        sqlmesh__metrics_metrics__incremental_model__3929117331__temp:
-          description: ""
-          fields:
-            bucket_day:
-              type:
-                type: named
-                name: Date
-            event_type:
-              type:
-                type: named
-                name: String
-            events:
-              type:
-                type: named
-                name: Int64
-        sqlmesh__metrics_metrics__int_events_daily_to_artifact__1260655920:
+        sqlmesh__metrics_metrics__events_daily_to_artifact__753507400:
           description: ""
           fields:
             amount:
@@ -1205,7 +1135,7 @@ definition:
               type:
                 type: named
                 name: String
-        sqlmesh__metrics_metrics__int_events_daily_to_artifact__1260655920__temp:
+        sqlmesh__metrics_metrics__events_daily_to_artifact__753507400__temp:
           description: ""
           fields:
             amount:
@@ -1232,13 +1162,13 @@ definition:
               type:
                 type: named
                 name: String
-        sqlmesh__metrics_metrics__int_events_daily_to_artifact__1838358350:
+        sqlmesh__metrics_metrics__events_daily_to_artifact__1469322421:
           description: ""
           fields:
             amount:
               type:
                 type: named
-                name: Int64
+                name: Float64
             bucket_day:
               type:
                 type: named
@@ -1259,13 +1189,13 @@ definition:
               type:
                 type: named
                 name: String
-        sqlmesh__metrics_metrics__int_events_daily_to_artifact__1838358350__temp:
+        sqlmesh__metrics_metrics__events_daily_to_artifact__1469322421__temp:
           description: ""
           fields:
             amount:
               type:
                 type: named
-                name: Int64
+                name: Float64
             bucket_day:
               type:
                 type: named
@@ -1286,409 +1216,1172 @@ definition:
               type:
                 type: named
                 name: String
-        sqlmesh__metrics_metrics__int_events_daily_to_artifact__2071704967__temp:
+        sqlmesh__metrics_metrics__metrics_v0__472213919:
+          description: ""
+          fields:
+            aggregation_function:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+            definition_ref:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+            description:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+            display_name:
+              type:
+                type: named
+                name: String
+            metric_id:
+              type:
+                type: named
+                name: String
+            metric_name:
+              type:
+                type: named
+                name: String
+            metric_namespace:
+              type:
+                type: named
+                name: String
+            metric_source:
+              type:
+                type: named
+                name: String
+            raw_definition:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+        sqlmesh__metrics_metrics__metrics_v0__472213919__temp:
+          description: ""
+          fields:
+            aggregation_function:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+            definition_ref:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+            description:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+            display_name:
+              type:
+                type: named
+                name: String
+            metric_id:
+              type:
+                type: named
+                name: String
+            metric_name:
+              type:
+                type: named
+                name: String
+            metric_namespace:
+              type:
+                type: named
+                name: String
+            metric_source:
+              type:
+                type: named
+                name: String
+            raw_definition:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+        sqlmesh__metrics_metrics__metrics_v0__698231123:
+          description: ""
+          fields:
+            aggregation_function:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+            definition_ref:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+            description:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+            display_name:
+              type:
+                type: named
+                name: String
+            metric_id:
+              type:
+                type: named
+                name: String
+            metric_name:
+              type:
+                type: named
+                name: String
+            metric_source:
+              type:
+                type: named
+                name: String
+            raw_definition:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+        sqlmesh__metrics_metrics__metrics_v0__698231123__temp:
+          description: ""
+          fields:
+            aggregation_function:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+            definition_ref:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+            description:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+            display_name:
+              type:
+                type: named
+                name: String
+            metric_id:
+              type:
+                type: named
+                name: String
+            metric_name:
+              type:
+                type: named
+                name: String
+            metric_source:
+              type:
+                type: named
+                name: String
+            raw_definition:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+        sqlmesh__metrics_metrics__metrics_v0__741092249:
+          description: ""
+          fields:
+            aggregation_function:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+            definition_ref:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+            description:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+            display_name:
+              type:
+                type: named
+                name: String
+            metric_id:
+              type:
+                type: named
+                name: String
+            metric_name:
+              type:
+                type: named
+                name: String
+            metric_source:
+              type:
+                type: named
+                name: String
+            raw_definition:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+        sqlmesh__metrics_metrics__metrics_v0__741092249__temp:
+          description: ""
+          fields:
+            aggregation_function:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+            definition_ref:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+            description:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+            display_name:
+              type:
+                type: named
+                name: String
+            metric_id:
+              type:
+                type: named
+                name: String
+            metric_name:
+              type:
+                type: named
+                name: String
+            metric_source:
+              type:
+                type: named
+                name: String
+            raw_definition:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+        sqlmesh__metrics_metrics__metrics_v0__885103174:
+          description: ""
+          fields:
+            aggregation_function:
+              type:
+                type: named
+                name: String
+            definition_ref:
+              type:
+                type: named
+                name: String
+            description:
+              type:
+                type: named
+                name: String
+            display_name:
+              type:
+                type: named
+                name: String
+            metric_id:
+              type:
+                type: named
+                name: String
+            metric_name:
+              type:
+                type: named
+                name: String
+            metric_namespace:
+              type:
+                type: named
+                name: String
+            metric_source:
+              type:
+                type: named
+                name: String
+            raw_definition:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+        sqlmesh__metrics_metrics__metrics_v0__885103174__temp:
+          description: ""
+          fields:
+            aggregation_function:
+              type:
+                type: named
+                name: String
+            definition_ref:
+              type:
+                type: named
+                name: String
+            description:
+              type:
+                type: named
+                name: String
+            display_name:
+              type:
+                type: named
+                name: String
+            metric_id:
+              type:
+                type: named
+                name: String
+            metric_name:
+              type:
+                type: named
+                name: String
+            metric_namespace:
+              type:
+                type: named
+                name: String
+            metric_source:
+              type:
+                type: named
+                name: String
+            raw_definition:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+        sqlmesh__metrics_metrics__metrics_v0__1027447929:
+          description: ""
+          fields:
+            aggregation_function:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+            definition_ref:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+            description:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+            display_name:
+              type:
+                type: named
+                name: String
+            metric_id:
+              type:
+                type: named
+                name: String
+            metric_name:
+              type:
+                type: named
+                name: String
+            metric_namespace:
+              type:
+                type: named
+                name: String
+            metric_source:
+              type:
+                type: named
+                name: String
+            raw_definition:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+        sqlmesh__metrics_metrics__metrics_v0__1027447929__temp:
+          description: ""
+          fields:
+            aggregation_function:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+            definition_ref:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+            description:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+            display_name:
+              type:
+                type: named
+                name: String
+            metric_id:
+              type:
+                type: named
+                name: String
+            metric_name:
+              type:
+                type: named
+                name: String
+            metric_namespace:
+              type:
+                type: named
+                name: String
+            metric_source:
+              type:
+                type: named
+                name: String
+            raw_definition:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+        sqlmesh__metrics_metrics__metrics_v0__1122994148:
+          description: ""
+          fields:
+            aggregation_function:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+            definition_ref:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+            description:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+            display_name:
+              type:
+                type: named
+                name: String
+            metric_id:
+              type:
+                type: named
+                name: String
+            metric_name:
+              type:
+                type: named
+                name: String
+            metric_source:
+              type:
+                type: named
+                name: String
+            raw_definition:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+        sqlmesh__metrics_metrics__metrics_v0__1122994148__temp:
+          description: ""
+          fields:
+            aggregation_function:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+            definition_ref:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+            description:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+            display_name:
+              type:
+                type: named
+                name: String
+            metric_id:
+              type:
+                type: named
+                name: String
+            metric_name:
+              type:
+                type: named
+                name: String
+            metric_source:
+              type:
+                type: named
+                name: String
+            raw_definition:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+        sqlmesh__metrics_metrics__metrics_v0__1931009280:
+          description: ""
+          fields:
+            aggregation_function:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+            definition_ref:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+            description:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+            display_name:
+              type:
+                type: named
+                name: String
+            metric_id:
+              type:
+                type: named
+                name: String
+            metric_name:
+              type:
+                type: named
+                name: String
+            metric_namespace:
+              type:
+                type: named
+                name: String
+            metric_source:
+              type:
+                type: named
+                name: String
+            raw_definition:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+        sqlmesh__metrics_metrics__metrics_v0__1931009280__temp:
+          description: ""
+          fields:
+            aggregation_function:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+            definition_ref:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+            description:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+            display_name:
+              type:
+                type: named
+                name: String
+            metric_id:
+              type:
+                type: named
+                name: String
+            metric_name:
+              type:
+                type: named
+                name: String
+            metric_namespace:
+              type:
+                type: named
+                name: String
+            metric_source:
+              type:
+                type: named
+                name: String
+            raw_definition:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+        sqlmesh__metrics_metrics__metrics_v0__1972836302:
+          description: ""
+          fields:
+            aggregation_function:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+            definition_ref:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+            description:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+            display_name:
+              type:
+                type: named
+                name: String
+            metric_id:
+              type:
+                type: named
+                name: String
+            metric_name:
+              type:
+                type: named
+                name: String
+            metric_namespace:
+              type:
+                type: named
+                name: String
+            metric_source:
+              type:
+                type: named
+                name: String
+            raw_definition:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+        sqlmesh__metrics_metrics__metrics_v0__1972836302__temp:
+          description: ""
+          fields:
+            aggregation_function:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+            definition_ref:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+            description:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+            display_name:
+              type:
+                type: named
+                name: String
+            metric_id:
+              type:
+                type: named
+                name: String
+            metric_name:
+              type:
+                type: named
+                name: String
+            metric_namespace:
+              type:
+                type: named
+                name: String
+            metric_source:
+              type:
+                type: named
+                name: String
+            raw_definition:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+        sqlmesh__metrics_metrics__metrics_v0__1989478904:
+          description: ""
+          fields:
+            aggregation_function:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+            definition_ref:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+            description:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+            display_name:
+              type:
+                type: named
+                name: String
+            metric_id:
+              type:
+                type: named
+                name: String
+            metric_name:
+              type:
+                type: named
+                name: String
+            metric_source:
+              type:
+                type: named
+                name: String
+            raw_definition:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+        sqlmesh__metrics_metrics__metrics_v0__1989478904__temp:
+          description: ""
+          fields:
+            aggregation_function:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+            definition_ref:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+            description:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+            display_name:
+              type:
+                type: named
+                name: String
+            metric_id:
+              type:
+                type: named
+                name: String
+            metric_name:
+              type:
+                type: named
+                name: String
+            metric_source:
+              type:
+                type: named
+                name: String
+            raw_definition:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+        sqlmesh__metrics_metrics__metrics_v0__2384275897:
+          description: ""
+          fields:
+            aggregation_function:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+            definition_ref:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+            description:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+            display_name:
+              type:
+                type: named
+                name: String
+            metric_id:
+              type:
+                type: named
+                name: String
+            metric_name:
+              type:
+                type: named
+                name: String
+            metric_namespace:
+              type:
+                type: named
+                name: String
+            metric_source:
+              type:
+                type: named
+                name: String
+            raw_definition:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+        sqlmesh__metrics_metrics__metrics_v0__2384275897__temp:
+          description: ""
+          fields:
+            aggregation_function:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+            definition_ref:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+            description:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+            display_name:
+              type:
+                type: named
+                name: String
+            metric_id:
+              type:
+                type: named
+                name: String
+            metric_name:
+              type:
+                type: named
+                name: String
+            metric_namespace:
+              type:
+                type: named
+                name: String
+            metric_source:
+              type:
+                type: named
+                name: String
+            raw_definition:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+        sqlmesh__metrics_metrics__metrics_v0__3641251458:
+          description: ""
+          fields:
+            aggregation_function:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+            definition_ref:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+            description:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+            display_name:
+              type:
+                type: named
+                name: String
+            metric_id:
+              type:
+                type: named
+                name: String
+            metric_name:
+              type:
+                type: named
+                name: String
+            metric_source:
+              type:
+                type: named
+                name: String
+            raw_definition:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+        sqlmesh__metrics_metrics__metrics_v0__3641251458__temp:
+          description: ""
+          fields:
+            aggregation_function:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+            definition_ref:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+            description:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+            display_name:
+              type:
+                type: named
+                name: String
+            metric_id:
+              type:
+                type: named
+                name: String
+            metric_name:
+              type:
+                type: named
+                name: String
+            metric_source:
+              type:
+                type: named
+                name: String
+            raw_definition:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+        sqlmesh__metrics_metrics__metrics_v0__3889562040:
+          description: ""
+          fields:
+            aggregation_function:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+            definition_ref:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+            description:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+            display_name:
+              type:
+                type: named
+                name: String
+            metric_id:
+              type:
+                type: named
+                name: String
+            metric_name:
+              type:
+                type: named
+                name: String
+            metric_namespace:
+              type:
+                type: named
+                name: String
+            metric_source:
+              type:
+                type: named
+                name: String
+            raw_definition:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+        sqlmesh__metrics_metrics__metrics_v0__3889562040__temp:
+          description: ""
+          fields:
+            aggregation_function:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+            definition_ref:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+            description:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+            display_name:
+              type:
+                type: named
+                name: String
+            metric_id:
+              type:
+                type: named
+                name: String
+            metric_name:
+              type:
+                type: named
+                name: String
+            metric_namespace:
+              type:
+                type: named
+                name: String
+            metric_source:
+              type:
+                type: named
+                name: String
+            raw_definition:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+        sqlmesh__metrics_metrics__metrics_v0__4156811425:
+          description: ""
+          fields:
+            aggregation_function:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+            definition_ref:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+            description:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+            display_name:
+              type:
+                type: named
+                name: String
+            metric_id:
+              type:
+                type: named
+                name: String
+            metric_name:
+              type:
+                type: named
+                name: String
+            metric_source:
+              type:
+                type: named
+                name: String
+            raw_definition:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+        sqlmesh__metrics_metrics__metrics_v0__4156811425__temp:
+          description: ""
+          fields:
+            aggregation_function:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+            definition_ref:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+            description:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+            display_name:
+              type:
+                type: named
+                name: String
+            metric_id:
+              type:
+                type: named
+                name: String
+            metric_name:
+              type:
+                type: named
+                name: String
+            metric_source:
+              type:
+                type: named
+                name: String
+            raw_definition:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+        sqlmesh__metrics_metrics__timeseries_code_metrics_by_artifact_over_30_days__7598012:
           description: ""
           fields:
             amount:
-              type:
-                type: named
-                name: Int64
-            bucket_day:
-              type:
-                type: named
-                name: Date
-            event_source:
-              type:
-                type: named
-                name: String
-            event_type:
-              type:
-                type: named
-                name: String
-            from_artifact_id:
-              type:
-                type: named
-                name: String
-            to_artifact_id:
-              type:
-                type: named
-                name: String
-        sqlmesh__metrics_metrics__int_events_daily_to_artifact__3344974993:
-          description: ""
-          fields:
-            amount:
-              type:
-                type: named
-                name: Int64
-            bucket_day:
-              type:
-                type: named
-                name: Date
-            event_source:
-              type:
-                type: named
-                name: String
-            event_type:
-              type:
-                type: named
-                name: String
-            from_artifact_id:
-              type:
-                type: named
-                name: String
-            to_artifact_id:
-              type:
-                type: named
-                name: String
-        sqlmesh__metrics_metrics__int_events_daily_to_artifact__3344974993__temp:
-          description: ""
-          fields:
-            amount:
-              type:
-                type: named
-                name: Int64
-            bucket_day:
-              type:
-                type: named
-                name: Date
-            event_source:
-              type:
-                type: named
-                name: String
-            event_type:
-              type:
-                type: named
-                name: String
-            from_artifact_id:
-              type:
-                type: named
-                name: String
-            to_artifact_id:
-              type:
-                type: named
-                name: String
-        sqlmesh__metrics_metrics__int_events_daily_to_artifact__3515096595:
-          description: ""
-          fields:
-            amount:
-              type:
-                type: named
-                name: Int64
-            bucket_day:
-              type:
-                type: named
-                name: Date
-            event_source:
-              type:
-                type: named
-                name: String
-            event_type:
-              type:
-                type: named
-                name: String
-            from_artifact_id:
-              type:
-                type: named
-                name: String
-            to_artifact_id:
-              type:
-                type: named
-                name: String
-        sqlmesh__metrics_metrics__int_events_daily_to_artifact__3515096595__temp:
-          description: ""
-          fields:
-            amount:
-              type:
-                type: named
-                name: Int64
-            bucket_day:
-              type:
-                type: named
-                name: Date
-            event_source:
-              type:
-                type: named
-                name: String
-            event_type:
-              type:
-                type: named
-                name: String
-            from_artifact_id:
-              type:
-                type: named
-                name: String
-            to_artifact_id:
-              type:
-                type: named
-                name: String
-        sqlmesh__metrics_metrics__int_events_daily_to_artifact__3571639471:
-          description: ""
-          fields:
-            bucket_day:
-              type:
-                type: named
-                name: Date
-            event_source:
-              type:
-                type: named
-                name: String
-            event_type:
-              type:
-                type: named
-                name: String
-            events:
-              type:
-                type: named
-                name: Int64
-            from_artifact_id:
-              type:
-                type: named
-                name: String
-            to_artifact_id:
-              type:
-                type: named
-                name: String
-        sqlmesh__metrics_metrics__int_events_daily_to_artifact__3571639471__temp:
-          description: ""
-          fields:
-            bucket_day:
-              type:
-                type: named
-                name: Date
-            event_source:
-              type:
-                type: named
-                name: String
-            event_type:
-              type:
-                type: named
-                name: String
-            events:
-              type:
-                type: named
-                name: Int64
-            from_artifact_id:
-              type:
-                type: named
-                name: String
-            to_artifact_id:
-              type:
-                type: named
-                name: String
-        sqlmesh__metrics_metrics__int_timeseries_metrics_by_artifact_developers__2126831521:
-          description: ""
-          fields:
-            bucket_day:
-              type:
-                type: named
-                name: Date
-            event_source:
-              type:
-                type: named
-                name: String
-            metric:
-              type:
-                type: named
-                name: Int64
-            to_artifact_id:
-              type:
-                type: named
-                name: String
-        sqlmesh__metrics_metrics__int_timeseries_metrics_by_artifact_developers__2126831521__temp:
-          description: ""
-          fields:
-            bucket_day:
-              type:
-                type: named
-                name: Date
-            event_source:
-              type:
-                type: named
-                name: String
-            metric:
-              type:
-                type: named
-                name: Int64
-            to_artifact_id:
-              type:
-                type: named
-                name: String
-        sqlmesh__metrics_metrics__int_timeseries_metrics_by_artifact_developers__2219676454:
-          description: ""
-          fields:
-            amount:
-              type:
-                type: named
-                name: Int64
-            bucket_day:
-              type:
-                type: named
-                name: Date
-            event_source:
-              type:
-                type: named
-                name: String
-            metric:
-              type:
-                type: named
-                name: String
-            to_artifact_id:
-              type:
-                type: named
-                name: String
-        sqlmesh__metrics_metrics__int_timeseries_metrics_by_artifact_developers__2219676454__temp:
-          description: ""
-          fields:
-            amount:
-              type:
-                type: named
-                name: Int64
-            bucket_day:
-              type:
-                type: named
-                name: Date
-            event_source:
-              type:
-                type: named
-                name: String
-            metric:
-              type:
-                type: named
-                name: String
-            to_artifact_id:
-              type:
-                type: named
-                name: String
-        sqlmesh__metrics_metrics__int_timeseries_metrics_by_artifact_developers__4026028341:
-          description: ""
-          fields:
-            amount:
-              type:
-                type: named
-                name: Int64
-            bucket_day:
-              type:
-                type: named
-                name: Date
-            event_source:
-              type:
-                type: named
-                name: String
-            metric:
-              type:
-                type: named
-                name: String
-            to_artifact_id:
-              type:
-                type: named
-                name: String
-        sqlmesh__metrics_metrics__int_timeseries_metrics_by_artifact_developers__4026028341__temp:
-          description: ""
-          fields:
-            amount:
-              type:
-                type: named
-                name: Int64
-            bucket_day:
-              type:
-                type: named
-                name: Date
-            event_source:
-              type:
-                type: named
-                name: String
-            metric:
-              type:
-                type: named
-                name: String
-            to_artifact_id:
-              type:
-                type: named
-                name: String
-        sqlmesh__metrics_metrics__int_timeseries_metrics_by_artifact_developers__4060035978__temp:
-          description: ""
-          fields:
-            bucket_day:
-              type:
-                type: named
-                name: Date
-            event_source:
-              type:
-                type: named
-                name: String
-            metric:
-              type:
-                type: named
-                name: Int64
-            to_artifact_id:
-              type:
-                type: named
-                name: String
-        sqlmesh__metrics_metrics__int_timeseries_metrics_by_artifact_developers__4120769275:
-          description: ""
-          fields:
-            bucket_day:
-              type:
-                type: named
-                name: Date
-            event_source:
-              type:
-                type: named
-                name: String
-            metric:
-              type:
-                type: named
-                name: String
-            to_artifact_id:
-              type:
-                type: named
-                name: String
-        sqlmesh__metrics_metrics__int_timeseries_metrics_by_artifact_developers__4120769275__temp:
-          description: ""
-          fields:
-            bucket_day:
-              type:
-                type: named
-                name: Date
-            event_source:
-              type:
-                type: named
-                name: String
-            metric:
-              type:
-                type: named
-                name: String
-            to_artifact_id:
-              type:
-                type: named
-                name: String
-        sqlmesh__metrics_metrics__testing_metrics__292628068__temp:
-          description: ""
-          fields:
-            amount:
-              type:
-                type: named
-                name: Int64
-            bucket_day:
-              type:
-                type: named
-                name: Date
-            event_source:
-              type:
-                type: named
-                name: String
-            from_artifact_id:
-              type:
-                type: named
-                name: String
-            to_artifact_id:
-              type:
-                type: named
-                name: String
-        sqlmesh__metrics_metrics__testing_metrics__638047893__temp:
-          description: ""
-          fields:
-            active_days:
               type:
                 type: nullable
                 underlying_type:
@@ -1696,29 +2389,80 @@ definition:
                   name: Int64
             bucket_day:
               type:
-                type: named
-                name: Date
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: Date
             event_source:
               type:
-                type: named
-                name: String
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
             from_artifact_id:
               type:
-                type: named
-                name: String
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+            metric:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
             to_artifact_id:
               type:
-                type: named
-                name: String
-        sqlmesh__metrics_metrics__testing_metrics__958077468__temp:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+        sqlmesh__metrics_metrics__timeseries_code_metrics_by_artifact_over_30_days__7598012__temp:
           description: ""
           fields:
-            active_days:
+            amount:
               type:
                 type: nullable
                 underlying_type:
                   type: named
                   name: Int64
+            bucket_day:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: Date
+            event_source:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+            from_artifact_id:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+            metric:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+            to_artifact_id:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+        sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_over_30_days__411625291:
+          description: ""
+          fields:
+            amount:
+              type:
+                type: named
+                name: Float64
             bucket_day:
               type:
                 type: named
@@ -1731,10 +2475,1235 @@ definition:
               type:
                 type: named
                 name: String
+            metric:
+              type:
+                type: named
+                name: String
             to_artifact_id:
               type:
                 type: named
                 name: String
+        sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_over_30_days__411625291__temp:
+          description: ""
+          fields:
+            amount:
+              type:
+                type: named
+                name: Float64
+            bucket_day:
+              type:
+                type: named
+                name: Date
+            event_source:
+              type:
+                type: named
+                name: String
+            from_artifact_id:
+              type:
+                type: named
+                name: String
+            metric:
+              type:
+                type: named
+                name: String
+            to_artifact_id:
+              type:
+                type: named
+                name: String
+        sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_over_30_days__1052226158:
+          description: ""
+          fields:
+            amount:
+              type:
+                type: named
+                name: Float64
+            bucket_day:
+              type:
+                type: named
+                name: Date
+            event_source:
+              type:
+                type: named
+                name: String
+            from_artifact_id:
+              type:
+                type: named
+                name: String
+            metric:
+              type:
+                type: named
+                name: String
+            to_artifact_id:
+              type:
+                type: named
+                name: String
+        sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_over_30_days__1052226158__temp:
+          description: ""
+          fields:
+            amount:
+              type:
+                type: named
+                name: Float64
+            bucket_day:
+              type:
+                type: named
+                name: Date
+            event_source:
+              type:
+                type: named
+                name: String
+            from_artifact_id:
+              type:
+                type: named
+                name: String
+            metric:
+              type:
+                type: named
+                name: String
+            to_artifact_id:
+              type:
+                type: named
+                name: String
+        sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_over_30_days__1641497371:
+          description: ""
+          fields:
+            amount:
+              type:
+                type: named
+                name: Float64
+            bucket_day:
+              type:
+                type: named
+                name: Date
+            event_source:
+              type:
+                type: named
+                name: String
+            from_artifact_id:
+              type:
+                type: named
+                name: String
+            metric:
+              type:
+                type: named
+                name: String
+            to_artifact_id:
+              type:
+                type: named
+                name: String
+        sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_over_30_days__1641497371__temp:
+          description: ""
+          fields:
+            amount:
+              type:
+                type: named
+                name: Float64
+            bucket_day:
+              type:
+                type: named
+                name: Date
+            event_source:
+              type:
+                type: named
+                name: String
+            from_artifact_id:
+              type:
+                type: named
+                name: String
+            metric:
+              type:
+                type: named
+                name: String
+            to_artifact_id:
+              type:
+                type: named
+                name: String
+        sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_over_30_days__2141203280:
+          description: ""
+          fields:
+            amount:
+              type:
+                type: named
+                name: Float64
+            bucket_day:
+              type:
+                type: named
+                name: Date
+            event_source:
+              type:
+                type: named
+                name: String
+            from_artifact_id:
+              type:
+                type: named
+                name: String
+            metric:
+              type:
+                type: named
+                name: String
+            to_artifact_id:
+              type:
+                type: named
+                name: String
+        sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_over_30_days__2141203280__temp:
+          description: ""
+          fields:
+            amount:
+              type:
+                type: named
+                name: Float64
+            bucket_day:
+              type:
+                type: named
+                name: Date
+            event_source:
+              type:
+                type: named
+                name: String
+            from_artifact_id:
+              type:
+                type: named
+                name: String
+            metric:
+              type:
+                type: named
+                name: String
+            to_artifact_id:
+              type:
+                type: named
+                name: String
+        sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_over_30_days__2202426059:
+          description: ""
+          fields:
+            amount:
+              type:
+                type: named
+                name: Float64
+            bucket_day:
+              type:
+                type: named
+                name: Date
+            event_source:
+              type:
+                type: named
+                name: String
+            from_artifact_id:
+              type:
+                type: named
+                name: String
+            metric:
+              type:
+                type: named
+                name: String
+            to_artifact_id:
+              type:
+                type: named
+                name: String
+        sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_over_30_days__2202426059__temp:
+          description: ""
+          fields:
+            amount:
+              type:
+                type: named
+                name: Float64
+            bucket_day:
+              type:
+                type: named
+                name: Date
+            event_source:
+              type:
+                type: named
+                name: String
+            from_artifact_id:
+              type:
+                type: named
+                name: String
+            metric:
+              type:
+                type: named
+                name: String
+            to_artifact_id:
+              type:
+                type: named
+                name: String
+        sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_over_30_days__2705758559:
+          description: ""
+          fields:
+            amount:
+              type:
+                type: named
+                name: Float64
+            bucket_day:
+              type:
+                type: named
+                name: Date
+            event_source:
+              type:
+                type: named
+                name: String
+            from_artifact_id:
+              type:
+                type: named
+                name: String
+            metric:
+              type:
+                type: named
+                name: String
+            to_artifact_id:
+              type:
+                type: named
+                name: String
+        sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_over_30_days__2705758559__temp:
+          description: ""
+          fields:
+            amount:
+              type:
+                type: named
+                name: Float64
+            bucket_day:
+              type:
+                type: named
+                name: Date
+            event_source:
+              type:
+                type: named
+                name: String
+            from_artifact_id:
+              type:
+                type: named
+                name: String
+            metric:
+              type:
+                type: named
+                name: String
+            to_artifact_id:
+              type:
+                type: named
+                name: String
+        sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_over_30_days__3060931431:
+          description: ""
+          fields:
+            amount:
+              type:
+                type: named
+                name: Float64
+            bucket_day:
+              type:
+                type: named
+                name: Date
+            event_source:
+              type:
+                type: named
+                name: String
+            from_artifact_id:
+              type:
+                type: named
+                name: String
+            metric:
+              type:
+                type: named
+                name: String
+            to_artifact_id:
+              type:
+                type: named
+                name: String
+        sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_over_30_days__3060931431__temp:
+          description: ""
+          fields:
+            amount:
+              type:
+                type: named
+                name: Float64
+            bucket_day:
+              type:
+                type: named
+                name: Date
+            event_source:
+              type:
+                type: named
+                name: String
+            from_artifact_id:
+              type:
+                type: named
+                name: String
+            metric:
+              type:
+                type: named
+                name: String
+            to_artifact_id:
+              type:
+                type: named
+                name: String
+        sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_over_30_days__3629470274:
+          description: ""
+          fields:
+            amount:
+              type:
+                type: named
+                name: Float64
+            bucket_day:
+              type:
+                type: named
+                name: Date
+            event_source:
+              type:
+                type: named
+                name: String
+            from_artifact_id:
+              type:
+                type: named
+                name: String
+            metric:
+              type:
+                type: named
+                name: String
+            to_artifact_id:
+              type:
+                type: named
+                name: String
+        sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_over_30_days__3629470274__temp:
+          description: ""
+          fields:
+            amount:
+              type:
+                type: named
+                name: Float64
+            bucket_day:
+              type:
+                type: named
+                name: Date
+            event_source:
+              type:
+                type: named
+                name: String
+            from_artifact_id:
+              type:
+                type: named
+                name: String
+            metric:
+              type:
+                type: named
+                name: String
+            to_artifact_id:
+              type:
+                type: named
+                name: String
+        sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_over_30_days__3716588191:
+          description: ""
+          fields:
+            amount:
+              type:
+                type: named
+                name: Float64
+            bucket_day:
+              type:
+                type: named
+                name: Date
+            event_source:
+              type:
+                type: named
+                name: String
+            from_artifact_id:
+              type:
+                type: named
+                name: String
+            metric:
+              type:
+                type: named
+                name: String
+            to_artifact_id:
+              type:
+                type: named
+                name: String
+        sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_over_30_days__3716588191__temp:
+          description: ""
+          fields:
+            amount:
+              type:
+                type: named
+                name: Float64
+            bucket_day:
+              type:
+                type: named
+                name: Date
+            event_source:
+              type:
+                type: named
+                name: String
+            from_artifact_id:
+              type:
+                type: named
+                name: String
+            metric:
+              type:
+                type: named
+                name: String
+            to_artifact_id:
+              type:
+                type: named
+                name: String
+        sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_over_30_days__3782520343:
+          description: ""
+          fields:
+            amount:
+              type:
+                type: named
+                name: Float64
+            bucket_day:
+              type:
+                type: named
+                name: Date
+            event_source:
+              type:
+                type: named
+                name: String
+            from_artifact_id:
+              type:
+                type: named
+                name: String
+            metric:
+              type:
+                type: named
+                name: String
+            to_artifact_id:
+              type:
+                type: named
+                name: String
+        sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_over_30_days__3782520343__temp:
+          description: ""
+          fields:
+            amount:
+              type:
+                type: named
+                name: Float64
+            bucket_day:
+              type:
+                type: named
+                name: Date
+            event_source:
+              type:
+                type: named
+                name: String
+            from_artifact_id:
+              type:
+                type: named
+                name: String
+            metric:
+              type:
+                type: named
+                name: String
+            to_artifact_id:
+              type:
+                type: named
+                name: String
+        sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_over_30_days__4007628622:
+          description: ""
+          fields:
+            amount:
+              type:
+                type: named
+                name: Float64
+            bucket_day:
+              type:
+                type: named
+                name: Date
+            event_source:
+              type:
+                type: named
+                name: String
+            from_artifact_id:
+              type:
+                type: named
+                name: String
+            metric:
+              type:
+                type: named
+                name: String
+            to_artifact_id:
+              type:
+                type: named
+                name: String
+        sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_over_30_days__4007628622__temp:
+          description: ""
+          fields:
+            amount:
+              type:
+                type: named
+                name: Float64
+            bucket_day:
+              type:
+                type: named
+                name: Date
+            event_source:
+              type:
+                type: named
+                name: String
+            from_artifact_id:
+              type:
+                type: named
+                name: String
+            metric:
+              type:
+                type: named
+                name: String
+            to_artifact_id:
+              type:
+                type: named
+                name: String
+        sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_over_30_days__4285487256:
+          description: ""
+          fields:
+            amount:
+              type:
+                type: named
+                name: Float64
+            bucket_day:
+              type:
+                type: named
+                name: Date
+            event_source:
+              type:
+                type: named
+                name: String
+            from_artifact_id:
+              type:
+                type: named
+                name: String
+            metric:
+              type:
+                type: named
+                name: String
+            to_artifact_id:
+              type:
+                type: named
+                name: String
+        sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_over_30_days__4285487256__temp:
+          description: ""
+          fields:
+            amount:
+              type:
+                type: named
+                name: Float64
+            bucket_day:
+              type:
+                type: named
+                name: Date
+            event_source:
+              type:
+                type: named
+                name: String
+            from_artifact_id:
+              type:
+                type: named
+                name: String
+            metric:
+              type:
+                type: named
+                name: String
+            to_artifact_id:
+              type:
+                type: named
+                name: String
+        sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_v0__274191541:
+          description: ""
+          fields:
+            amount:
+              type:
+                type: named
+                name: Float64
+            artifact_id:
+              type:
+                type: named
+                name: String
+            metric_id:
+              type:
+                type: named
+                name: String
+            sample_date:
+              type:
+                type: named
+                name: Date
+            unit:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+        sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_v0__274191541__temp:
+          description: ""
+          fields:
+            amount:
+              type:
+                type: named
+                name: Float64
+            artifact_id:
+              type:
+                type: named
+                name: String
+            metric_id:
+              type:
+                type: named
+                name: String
+            sample_date:
+              type:
+                type: named
+                name: Date
+            unit:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+        sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_v0__594520992:
+          description: ""
+          fields:
+            amount:
+              type:
+                type: named
+                name: Float64
+            artifact_id:
+              type:
+                type: named
+                name: String
+            metric_id:
+              type:
+                type: named
+                name: String
+            sample_date:
+              type:
+                type: named
+                name: Date
+            unit:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+        sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_v0__594520992__temp:
+          description: ""
+          fields:
+            amount:
+              type:
+                type: named
+                name: Float64
+            artifact_id:
+              type:
+                type: named
+                name: String
+            metric_id:
+              type:
+                type: named
+                name: String
+            sample_date:
+              type:
+                type: named
+                name: Date
+            unit:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+        sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_v0__635461998:
+          description: ""
+          fields:
+            amount:
+              type:
+                type: named
+                name: Float64
+            artifact_id:
+              type:
+                type: named
+                name: String
+            metric_id:
+              type:
+                type: named
+                name: String
+            sample_date:
+              type:
+                type: named
+                name: Date
+            unit:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+        sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_v0__635461998__temp:
+          description: ""
+          fields:
+            amount:
+              type:
+                type: named
+                name: Float64
+            artifact_id:
+              type:
+                type: named
+                name: String
+            metric_id:
+              type:
+                type: named
+                name: String
+            sample_date:
+              type:
+                type: named
+                name: Date
+            unit:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+        sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_v0__661819154:
+          description: ""
+          fields:
+            amount:
+              type:
+                type: named
+                name: Float64
+            artifact_id:
+              type:
+                type: named
+                name: String
+            metric_id:
+              type:
+                type: named
+                name: String
+            sample_date:
+              type:
+                type: named
+                name: Date
+            unit:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+        sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_v0__661819154__temp:
+          description: ""
+          fields:
+            amount:
+              type:
+                type: named
+                name: Float64
+            artifact_id:
+              type:
+                type: named
+                name: String
+            metric_id:
+              type:
+                type: named
+                name: String
+            sample_date:
+              type:
+                type: named
+                name: Date
+            unit:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+        sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_v0__1280450367:
+          description: ""
+          fields:
+            amount:
+              type:
+                type: named
+                name: Float64
+            artifact_id:
+              type:
+                type: named
+                name: String
+            metric_id:
+              type:
+                type: named
+                name: String
+            sample_date:
+              type:
+                type: named
+                name: Date
+            unit:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+        sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_v0__1280450367__temp:
+          description: ""
+          fields:
+            amount:
+              type:
+                type: named
+                name: Float64
+            artifact_id:
+              type:
+                type: named
+                name: String
+            metric_id:
+              type:
+                type: named
+                name: String
+            sample_date:
+              type:
+                type: named
+                name: Date
+            unit:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+        sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_v0__1833626329:
+          description: ""
+          fields:
+            amount:
+              type:
+                type: named
+                name: Float64
+            artifact_id:
+              type:
+                type: named
+                name: String
+            metric_id:
+              type:
+                type: named
+                name: String
+            sample_date:
+              type:
+                type: named
+                name: Date
+            unit:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+        sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_v0__1833626329__temp:
+          description: ""
+          fields:
+            amount:
+              type:
+                type: named
+                name: Float64
+            artifact_id:
+              type:
+                type: named
+                name: String
+            metric_id:
+              type:
+                type: named
+                name: String
+            sample_date:
+              type:
+                type: named
+                name: Date
+            unit:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+        sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_v0__2123659464:
+          description: ""
+          fields:
+            amount:
+              type:
+                type: named
+                name: Float64
+            artifact_id:
+              type:
+                type: named
+                name: String
+            metric_id:
+              type:
+                type: named
+                name: String
+            sample_date:
+              type:
+                type: named
+                name: Date
+            unit:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+        sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_v0__2123659464__temp:
+          description: ""
+          fields:
+            amount:
+              type:
+                type: named
+                name: Float64
+            artifact_id:
+              type:
+                type: named
+                name: String
+            metric_id:
+              type:
+                type: named
+                name: String
+            sample_date:
+              type:
+                type: named
+                name: Date
+            unit:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+        sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_v0__2343650771:
+          description: ""
+          fields:
+            amount:
+              type:
+                type: named
+                name: Float64
+            artifact_id:
+              type:
+                type: named
+                name: String
+            metric_id:
+              type:
+                type: named
+                name: String
+            sample_date:
+              type:
+                type: named
+                name: Date
+            unit:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+        sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_v0__2343650771__temp:
+          description: ""
+          fields:
+            amount:
+              type:
+                type: named
+                name: Float64
+            artifact_id:
+              type:
+                type: named
+                name: String
+            metric_id:
+              type:
+                type: named
+                name: String
+            sample_date:
+              type:
+                type: named
+                name: Date
+            unit:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+        sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_v0__2513542600:
+          description: ""
+          fields:
+            amount:
+              type:
+                type: named
+                name: Float64
+            artifact_id:
+              type:
+                type: named
+                name: String
+            metric_id:
+              type:
+                type: named
+                name: String
+            sample_date:
+              type:
+                type: named
+                name: Date
+            unit:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+        sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_v0__2513542600__temp:
+          description: ""
+          fields:
+            amount:
+              type:
+                type: named
+                name: Float64
+            artifact_id:
+              type:
+                type: named
+                name: String
+            metric_id:
+              type:
+                type: named
+                name: String
+            sample_date:
+              type:
+                type: named
+                name: Date
+            unit:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+        sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_v0__2787405387:
+          description: ""
+          fields:
+            amount:
+              type:
+                type: named
+                name: Float64
+            artifact_id:
+              type:
+                type: named
+                name: String
+            metric_id:
+              type:
+                type: named
+                name: String
+            sample_date:
+              type:
+                type: named
+                name: Date
+            unit:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+        sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_v0__2787405387__temp:
+          description: ""
+          fields:
+            amount:
+              type:
+                type: named
+                name: Float64
+            artifact_id:
+              type:
+                type: named
+                name: String
+            metric_id:
+              type:
+                type: named
+                name: String
+            sample_date:
+              type:
+                type: named
+                name: Date
+            unit:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+        sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_v0__4180627168:
+          description: ""
+          fields:
+            amount:
+              type:
+                type: named
+                name: Float64
+            artifact_id:
+              type:
+                type: named
+                name: String
+            metric_id:
+              type:
+                type: named
+                name: String
+            sample_date:
+              type:
+                type: named
+                name: Date
+            unit:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+        sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_v0__4180627168__temp:
+          description: ""
+          fields:
+            amount:
+              type:
+                type: named
+                name: Float64
+            artifact_id:
+              type:
+                type: named
+                name: String
+            metric_id:
+              type:
+                type: named
+                name: String
+            sample_date:
+              type:
+                type: named
+                name: Date
+            unit:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+        sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_v0__4229608905:
+          description: ""
+          fields:
+            amount:
+              type:
+                type: named
+                name: Float64
+            artifact_id:
+              type:
+                type: named
+                name: String
+            metric_id:
+              type:
+                type: named
+                name: String
+            sample_date:
+              type:
+                type: named
+                name: Date
+            unit:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+        sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_v0__4229608905__temp:
+          description: ""
+          fields:
+            amount:
+              type:
+                type: named
+                name: Float64
+            artifact_id:
+              type:
+                type: named
+                name: String
+            metric_id:
+              type:
+                type: named
+                name: String
+            sample_date:
+              type:
+                type: named
+                name: Date
+            unit:
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
         timeseries_events_by_artifact_v0:
           description: ""
           fields:
@@ -1763,52 +3732,6 @@ definition:
                 type: named
                 name: DateTime
             to_artifact_id:
-              type:
-                type: named
-                name: String
-        timeseries_metrics_by_artifact_v0:
-          description: ""
-          fields:
-            amount:
-              type:
-                type: named
-                name: Int64
-            artifact_id:
-              type:
-                type: named
-                name: String
-            metric_id:
-              type:
-                type: named
-                name: String
-            sample_date:
-              type:
-                type: named
-                name: DateTime
-            unit:
-              type:
-                type: named
-                name: Int64
-        timeseries_metrics_by_project_v0:
-          description: ""
-          fields:
-            amount:
-              type:
-                type: named
-                name: Float32
-            metric_id:
-              type:
-                type: named
-                name: String
-            project_id:
-              type:
-                type: named
-                name: String
-            sample_date:
-              type:
-                type: named
-                name: DateTime
-            unit:
               type:
                 type: named
                 name: String
@@ -1892,100 +3815,52 @@ definition:
           type: event_types_v1
           uniqueness_constraints: {}
           foreign_keys: {}
-        - name: events_daily_to_artifact
+        - name: metrics__dev_events_daily_to_artifact
           description: ""
           arguments: {}
-          type: events_daily_to_artifact
+          type: metrics__dev_events_daily_to_artifact
           uniqueness_constraints: {}
           foreign_keys: {}
-        - name: events_daily_to_collection
+        - name: metrics__dev_metrics_v0
           description: ""
           arguments: {}
-          type: events_daily_to_collection
+          type: metrics__dev_metrics_v0
           uniqueness_constraints: {}
           foreign_keys: {}
-        - name: events_daily_to_project
+        - name: metrics__dev_timeseries_metrics_by_artifact_over_30_days
           description: ""
           arguments: {}
-          type: events_daily_to_project
+          type: metrics__dev_timeseries_metrics_by_artifact_over_30_days
           uniqueness_constraints: {}
           foreign_keys: {}
-        - name: events_monthly_to_artifact
+        - name: metrics__dev_timeseries_metrics_by_artifact_v0
           description: ""
           arguments: {}
-          type: events_monthly_to_artifact
+          type: metrics__dev_timeseries_metrics_by_artifact_v0
           uniqueness_constraints: {}
           foreign_keys: {}
-        - name: events_monthly_to_collection
+        - name: metrics_events_daily_to_artifact
           description: ""
           arguments: {}
-          type: events_monthly_to_collection
+          type: metrics_events_daily_to_artifact
           uniqueness_constraints: {}
           foreign_keys: {}
-        - name: events_monthly_to_project
+        - name: metrics_metrics_v0
           description: ""
           arguments: {}
-          type: events_monthly_to_project
+          type: metrics_metrics_v0
           uniqueness_constraints: {}
           foreign_keys: {}
-        - name: events_weekly_to_artifact
+        - name: metrics_timeseries_metrics_by_artifact_over_30_days
           description: ""
           arguments: {}
-          type: events_weekly_to_artifact
+          type: metrics_timeseries_metrics_by_artifact_over_30_days
           uniqueness_constraints: {}
           foreign_keys: {}
-        - name: events_weekly_to_collection
+        - name: metrics_timeseries_metrics_by_artifact_v0
           description: ""
           arguments: {}
-          type: events_weekly_to_collection
-          uniqueness_constraints: {}
-          foreign_keys: {}
-        - name: events_weekly_to_project
-          description: ""
-          arguments: {}
-          type: events_weekly_to_project
-          uniqueness_constraints: {}
-          foreign_keys: {}
-        - name: metrics__dev_int_events_daily_to_artifact
-          description: ""
-          arguments: {}
-          type: metrics__dev_int_events_daily_to_artifact
-          uniqueness_constraints: {}
-          foreign_keys: {}
-        - name: metrics__dev_int_timeseries_metrics_by_artifact_developers
-          description: ""
-          arguments: {}
-          type: metrics__dev_int_timeseries_metrics_by_artifact_developers
-          uniqueness_constraints: {}
-          foreign_keys: {}
-        - name: metrics__run_int_events_daily_to_artifact
-          description: ""
-          arguments: {}
-          type: metrics__run_int_events_daily_to_artifact
-          uniqueness_constraints: {}
-          foreign_keys: {}
-        - name: metrics__run_int_timeseries_metrics_by_artifact_developers
-          description: ""
-          arguments: {}
-          type: metrics__run_int_timeseries_metrics_by_artifact_developers
-          uniqueness_constraints: {}
-          foreign_keys: {}
-        - name: metrics_int_events_daily_to_artifact
-          description: ""
-          arguments: {}
-          type: metrics_int_events_daily_to_artifact
-          uniqueness_constraints: {}
-          foreign_keys: {}
-        - name: metrics_int_timeseries_metrics_by_artifact_developers
-          description: ""
-          arguments: {}
-          type: metrics_int_timeseries_metrics_by_artifact_developers
-          uniqueness_constraints: {}
-          foreign_keys: {}
-        - name: metrics_v0
-          description: ""
-          arguments: {}
-          type: metrics_v0
+          type: metrics_timeseries_metrics_by_artifact_v0
           uniqueness_constraints: {}
           foreign_keys: {}
         - name: onchain_metrics_by_project_v1
@@ -2006,172 +3881,490 @@ definition:
           type: projects_v1
           uniqueness_constraints: {}
           foreign_keys: {}
-        - name: sqlmesh__metrics_metrics__incremental_model__3929117331
+        - name: sqlmesh__metrics_metrics__events_daily_to_artifact__1469322421
           description: ""
           arguments: {}
-          type: sqlmesh__metrics_metrics__incremental_model__3929117331
+          type: sqlmesh__metrics_metrics__events_daily_to_artifact__1469322421
           uniqueness_constraints: {}
           foreign_keys: {}
-        - name: sqlmesh__metrics_metrics__incremental_model__3929117331__temp
+        - name: sqlmesh__metrics_metrics__events_daily_to_artifact__1469322421__temp
           description: ""
           arguments: {}
-          type: sqlmesh__metrics_metrics__incremental_model__3929117331__temp
+          type: sqlmesh__metrics_metrics__events_daily_to_artifact__1469322421__temp
           uniqueness_constraints: {}
           foreign_keys: {}
-        - name: sqlmesh__metrics_metrics__int_events_daily_to_artifact__1260655920
+        - name: sqlmesh__metrics_metrics__events_daily_to_artifact__753507400
           description: ""
           arguments: {}
-          type: sqlmesh__metrics_metrics__int_events_daily_to_artifact__1260655920
+          type: sqlmesh__metrics_metrics__events_daily_to_artifact__753507400
           uniqueness_constraints: {}
           foreign_keys: {}
-        - name: sqlmesh__metrics_metrics__int_events_daily_to_artifact__1260655920__temp
+        - name: sqlmesh__metrics_metrics__events_daily_to_artifact__753507400__temp
           description: ""
           arguments: {}
-          type: sqlmesh__metrics_metrics__int_events_daily_to_artifact__1260655920__temp
+          type: sqlmesh__metrics_metrics__events_daily_to_artifact__753507400__temp
           uniqueness_constraints: {}
           foreign_keys: {}
-        - name: sqlmesh__metrics_metrics__int_events_daily_to_artifact__1838358350
+        - name: sqlmesh__metrics_metrics__metrics_v0__1027447929
           description: ""
           arguments: {}
-          type: sqlmesh__metrics_metrics__int_events_daily_to_artifact__1838358350
+          type: sqlmesh__metrics_metrics__metrics_v0__1027447929
           uniqueness_constraints: {}
           foreign_keys: {}
-        - name: sqlmesh__metrics_metrics__int_events_daily_to_artifact__1838358350__temp
+        - name: sqlmesh__metrics_metrics__metrics_v0__1027447929__temp
           description: ""
           arguments: {}
-          type: sqlmesh__metrics_metrics__int_events_daily_to_artifact__1838358350__temp
+          type: sqlmesh__metrics_metrics__metrics_v0__1027447929__temp
           uniqueness_constraints: {}
           foreign_keys: {}
-        - name: sqlmesh__metrics_metrics__int_events_daily_to_artifact__2071704967__temp
+        - name: sqlmesh__metrics_metrics__metrics_v0__1122994148
           description: ""
           arguments: {}
-          type: sqlmesh__metrics_metrics__int_events_daily_to_artifact__2071704967__temp
+          type: sqlmesh__metrics_metrics__metrics_v0__1122994148
           uniqueness_constraints: {}
           foreign_keys: {}
-        - name: sqlmesh__metrics_metrics__int_events_daily_to_artifact__3344974993
+        - name: sqlmesh__metrics_metrics__metrics_v0__1122994148__temp
           description: ""
           arguments: {}
-          type: sqlmesh__metrics_metrics__int_events_daily_to_artifact__3344974993
+          type: sqlmesh__metrics_metrics__metrics_v0__1122994148__temp
           uniqueness_constraints: {}
           foreign_keys: {}
-        - name: sqlmesh__metrics_metrics__int_events_daily_to_artifact__3344974993__temp
+        - name: sqlmesh__metrics_metrics__metrics_v0__1931009280
           description: ""
           arguments: {}
-          type: sqlmesh__metrics_metrics__int_events_daily_to_artifact__3344974993__temp
+          type: sqlmesh__metrics_metrics__metrics_v0__1931009280
           uniqueness_constraints: {}
           foreign_keys: {}
-        - name: sqlmesh__metrics_metrics__int_events_daily_to_artifact__3515096595
+        - name: sqlmesh__metrics_metrics__metrics_v0__1931009280__temp
           description: ""
           arguments: {}
-          type: sqlmesh__metrics_metrics__int_events_daily_to_artifact__3515096595
+          type: sqlmesh__metrics_metrics__metrics_v0__1931009280__temp
           uniqueness_constraints: {}
           foreign_keys: {}
-        - name: sqlmesh__metrics_metrics__int_events_daily_to_artifact__3515096595__temp
+        - name: sqlmesh__metrics_metrics__metrics_v0__1972836302
           description: ""
           arguments: {}
-          type: sqlmesh__metrics_metrics__int_events_daily_to_artifact__3515096595__temp
+          type: sqlmesh__metrics_metrics__metrics_v0__1972836302
           uniqueness_constraints: {}
           foreign_keys: {}
-        - name: sqlmesh__metrics_metrics__int_events_daily_to_artifact__3571639471
+        - name: sqlmesh__metrics_metrics__metrics_v0__1972836302__temp
           description: ""
           arguments: {}
-          type: sqlmesh__metrics_metrics__int_events_daily_to_artifact__3571639471
+          type: sqlmesh__metrics_metrics__metrics_v0__1972836302__temp
           uniqueness_constraints: {}
           foreign_keys: {}
-        - name: sqlmesh__metrics_metrics__int_events_daily_to_artifact__3571639471__temp
+        - name: sqlmesh__metrics_metrics__metrics_v0__1989478904
           description: ""
           arguments: {}
-          type: sqlmesh__metrics_metrics__int_events_daily_to_artifact__3571639471__temp
+          type: sqlmesh__metrics_metrics__metrics_v0__1989478904
           uniqueness_constraints: {}
           foreign_keys: {}
-        - name: sqlmesh__metrics_metrics__int_timeseries_metrics_by_artifact_developers__2126831521
+        - name: sqlmesh__metrics_metrics__metrics_v0__1989478904__temp
           description: ""
           arguments: {}
-          type: sqlmesh__metrics_metrics__int_timeseries_metrics_by_artifact_developers__2126831521
+          type: sqlmesh__metrics_metrics__metrics_v0__1989478904__temp
           uniqueness_constraints: {}
           foreign_keys: {}
-        - name: sqlmesh__metrics_metrics__int_timeseries_metrics_by_artifact_developers__2126831521__temp
+        - name: sqlmesh__metrics_metrics__metrics_v0__2384275897
           description: ""
           arguments: {}
-          type: sqlmesh__metrics_metrics__int_timeseries_metrics_by_artifact_developers__2126831521__temp
+          type: sqlmesh__metrics_metrics__metrics_v0__2384275897
           uniqueness_constraints: {}
           foreign_keys: {}
-        - name: sqlmesh__metrics_metrics__int_timeseries_metrics_by_artifact_developers__2219676454
+        - name: sqlmesh__metrics_metrics__metrics_v0__2384275897__temp
           description: ""
           arguments: {}
-          type: sqlmesh__metrics_metrics__int_timeseries_metrics_by_artifact_developers__2219676454
+          type: sqlmesh__metrics_metrics__metrics_v0__2384275897__temp
           uniqueness_constraints: {}
           foreign_keys: {}
-        - name: sqlmesh__metrics_metrics__int_timeseries_metrics_by_artifact_developers__2219676454__temp
+        - name: sqlmesh__metrics_metrics__metrics_v0__3641251458
           description: ""
           arguments: {}
-          type: sqlmesh__metrics_metrics__int_timeseries_metrics_by_artifact_developers__2219676454__temp
+          type: sqlmesh__metrics_metrics__metrics_v0__3641251458
           uniqueness_constraints: {}
           foreign_keys: {}
-        - name: sqlmesh__metrics_metrics__int_timeseries_metrics_by_artifact_developers__4026028341
+        - name: sqlmesh__metrics_metrics__metrics_v0__3641251458__temp
           description: ""
           arguments: {}
-          type: sqlmesh__metrics_metrics__int_timeseries_metrics_by_artifact_developers__4026028341
+          type: sqlmesh__metrics_metrics__metrics_v0__3641251458__temp
           uniqueness_constraints: {}
           foreign_keys: {}
-        - name: sqlmesh__metrics_metrics__int_timeseries_metrics_by_artifact_developers__4026028341__temp
+        - name: sqlmesh__metrics_metrics__metrics_v0__3889562040
           description: ""
           arguments: {}
-          type: sqlmesh__metrics_metrics__int_timeseries_metrics_by_artifact_developers__4026028341__temp
+          type: sqlmesh__metrics_metrics__metrics_v0__3889562040
           uniqueness_constraints: {}
           foreign_keys: {}
-        - name: sqlmesh__metrics_metrics__int_timeseries_metrics_by_artifact_developers__4060035978__temp
+        - name: sqlmesh__metrics_metrics__metrics_v0__3889562040__temp
           description: ""
           arguments: {}
-          type: sqlmesh__metrics_metrics__int_timeseries_metrics_by_artifact_developers__4060035978__temp
+          type: sqlmesh__metrics_metrics__metrics_v0__3889562040__temp
           uniqueness_constraints: {}
           foreign_keys: {}
-        - name: sqlmesh__metrics_metrics__int_timeseries_metrics_by_artifact_developers__4120769275
+        - name: sqlmesh__metrics_metrics__metrics_v0__4156811425
           description: ""
           arguments: {}
-          type: sqlmesh__metrics_metrics__int_timeseries_metrics_by_artifact_developers__4120769275
+          type: sqlmesh__metrics_metrics__metrics_v0__4156811425
           uniqueness_constraints: {}
           foreign_keys: {}
-        - name: sqlmesh__metrics_metrics__int_timeseries_metrics_by_artifact_developers__4120769275__temp
+        - name: sqlmesh__metrics_metrics__metrics_v0__4156811425__temp
           description: ""
           arguments: {}
-          type: sqlmesh__metrics_metrics__int_timeseries_metrics_by_artifact_developers__4120769275__temp
+          type: sqlmesh__metrics_metrics__metrics_v0__4156811425__temp
           uniqueness_constraints: {}
           foreign_keys: {}
-        - name: sqlmesh__metrics_metrics__testing_metrics__292628068__temp
+        - name: sqlmesh__metrics_metrics__metrics_v0__472213919
           description: ""
           arguments: {}
-          type: sqlmesh__metrics_metrics__testing_metrics__292628068__temp
+          type: sqlmesh__metrics_metrics__metrics_v0__472213919
           uniqueness_constraints: {}
           foreign_keys: {}
-        - name: sqlmesh__metrics_metrics__testing_metrics__638047893__temp
+        - name: sqlmesh__metrics_metrics__metrics_v0__472213919__temp
           description: ""
           arguments: {}
-          type: sqlmesh__metrics_metrics__testing_metrics__638047893__temp
+          type: sqlmesh__metrics_metrics__metrics_v0__472213919__temp
           uniqueness_constraints: {}
           foreign_keys: {}
-        - name: sqlmesh__metrics_metrics__testing_metrics__958077468__temp
+        - name: sqlmesh__metrics_metrics__metrics_v0__698231123
           description: ""
           arguments: {}
-          type: sqlmesh__metrics_metrics__testing_metrics__958077468__temp
+          type: sqlmesh__metrics_metrics__metrics_v0__698231123
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: sqlmesh__metrics_metrics__metrics_v0__698231123__temp
+          description: ""
+          arguments: {}
+          type: sqlmesh__metrics_metrics__metrics_v0__698231123__temp
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: sqlmesh__metrics_metrics__metrics_v0__741092249
+          description: ""
+          arguments: {}
+          type: sqlmesh__metrics_metrics__metrics_v0__741092249
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: sqlmesh__metrics_metrics__metrics_v0__741092249__temp
+          description: ""
+          arguments: {}
+          type: sqlmesh__metrics_metrics__metrics_v0__741092249__temp
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: sqlmesh__metrics_metrics__metrics_v0__885103174
+          description: ""
+          arguments: {}
+          type: sqlmesh__metrics_metrics__metrics_v0__885103174
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: sqlmesh__metrics_metrics__metrics_v0__885103174__temp
+          description: ""
+          arguments: {}
+          type: sqlmesh__metrics_metrics__metrics_v0__885103174__temp
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: sqlmesh__metrics_metrics__timeseries_code_metrics_by_artifact_over_30_days__7598012
+          description: ""
+          arguments: {}
+          type: sqlmesh__metrics_metrics__timeseries_code_metrics_by_artifact_over_30_days__7598012
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: sqlmesh__metrics_metrics__timeseries_code_metrics_by_artifact_over_30_days__7598012__temp
+          description: ""
+          arguments: {}
+          type: sqlmesh__metrics_metrics__timeseries_code_metrics_by_artifact_over_30_days__7598012__temp
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_over_30_days__1052226158
+          description: ""
+          arguments: {}
+          type: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_over_30_days__1052226158
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_over_30_days__1052226158__temp
+          description: ""
+          arguments: {}
+          type: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_over_30_days__1052226158__temp
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_over_30_days__1641497371
+          description: ""
+          arguments: {}
+          type: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_over_30_days__1641497371
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_over_30_days__1641497371__temp
+          description: ""
+          arguments: {}
+          type: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_over_30_days__1641497371__temp
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_over_30_days__2141203280
+          description: ""
+          arguments: {}
+          type: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_over_30_days__2141203280
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_over_30_days__2141203280__temp
+          description: ""
+          arguments: {}
+          type: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_over_30_days__2141203280__temp
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_over_30_days__2202426059
+          description: ""
+          arguments: {}
+          type: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_over_30_days__2202426059
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_over_30_days__2202426059__temp
+          description: ""
+          arguments: {}
+          type: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_over_30_days__2202426059__temp
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_over_30_days__2705758559
+          description: ""
+          arguments: {}
+          type: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_over_30_days__2705758559
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_over_30_days__2705758559__temp
+          description: ""
+          arguments: {}
+          type: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_over_30_days__2705758559__temp
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_over_30_days__3060931431
+          description: ""
+          arguments: {}
+          type: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_over_30_days__3060931431
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_over_30_days__3060931431__temp
+          description: ""
+          arguments: {}
+          type: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_over_30_days__3060931431__temp
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_over_30_days__3629470274
+          description: ""
+          arguments: {}
+          type: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_over_30_days__3629470274
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_over_30_days__3629470274__temp
+          description: ""
+          arguments: {}
+          type: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_over_30_days__3629470274__temp
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_over_30_days__3716588191
+          description: ""
+          arguments: {}
+          type: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_over_30_days__3716588191
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_over_30_days__3716588191__temp
+          description: ""
+          arguments: {}
+          type: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_over_30_days__3716588191__temp
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_over_30_days__3782520343
+          description: ""
+          arguments: {}
+          type: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_over_30_days__3782520343
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_over_30_days__3782520343__temp
+          description: ""
+          arguments: {}
+          type: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_over_30_days__3782520343__temp
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_over_30_days__4007628622
+          description: ""
+          arguments: {}
+          type: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_over_30_days__4007628622
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_over_30_days__4007628622__temp
+          description: ""
+          arguments: {}
+          type: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_over_30_days__4007628622__temp
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_over_30_days__411625291
+          description: ""
+          arguments: {}
+          type: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_over_30_days__411625291
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_over_30_days__411625291__temp
+          description: ""
+          arguments: {}
+          type: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_over_30_days__411625291__temp
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_over_30_days__4285487256
+          description: ""
+          arguments: {}
+          type: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_over_30_days__4285487256
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_over_30_days__4285487256__temp
+          description: ""
+          arguments: {}
+          type: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_over_30_days__4285487256__temp
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_v0__1280450367
+          description: ""
+          arguments: {}
+          type: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_v0__1280450367
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_v0__1280450367__temp
+          description: ""
+          arguments: {}
+          type: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_v0__1280450367__temp
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_v0__1833626329
+          description: ""
+          arguments: {}
+          type: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_v0__1833626329
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_v0__1833626329__temp
+          description: ""
+          arguments: {}
+          type: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_v0__1833626329__temp
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_v0__2123659464
+          description: ""
+          arguments: {}
+          type: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_v0__2123659464
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_v0__2123659464__temp
+          description: ""
+          arguments: {}
+          type: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_v0__2123659464__temp
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_v0__2343650771
+          description: ""
+          arguments: {}
+          type: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_v0__2343650771
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_v0__2343650771__temp
+          description: ""
+          arguments: {}
+          type: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_v0__2343650771__temp
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_v0__2513542600
+          description: ""
+          arguments: {}
+          type: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_v0__2513542600
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_v0__2513542600__temp
+          description: ""
+          arguments: {}
+          type: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_v0__2513542600__temp
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_v0__274191541
+          description: ""
+          arguments: {}
+          type: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_v0__274191541
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_v0__274191541__temp
+          description: ""
+          arguments: {}
+          type: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_v0__274191541__temp
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_v0__2787405387
+          description: ""
+          arguments: {}
+          type: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_v0__2787405387
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_v0__2787405387__temp
+          description: ""
+          arguments: {}
+          type: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_v0__2787405387__temp
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_v0__4180627168
+          description: ""
+          arguments: {}
+          type: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_v0__4180627168
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_v0__4180627168__temp
+          description: ""
+          arguments: {}
+          type: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_v0__4180627168__temp
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_v0__4229608905
+          description: ""
+          arguments: {}
+          type: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_v0__4229608905
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_v0__4229608905__temp
+          description: ""
+          arguments: {}
+          type: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_v0__4229608905__temp
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_v0__594520992
+          description: ""
+          arguments: {}
+          type: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_v0__594520992
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_v0__594520992__temp
+          description: ""
+          arguments: {}
+          type: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_v0__594520992__temp
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_v0__635461998
+          description: ""
+          arguments: {}
+          type: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_v0__635461998
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_v0__635461998__temp
+          description: ""
+          arguments: {}
+          type: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_v0__635461998__temp
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_v0__661819154
+          description: ""
+          arguments: {}
+          type: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_v0__661819154
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_v0__661819154__temp
+          description: ""
+          arguments: {}
+          type: sqlmesh__metrics_metrics__timeseries_metrics_by_artifact_v0__661819154__temp
           uniqueness_constraints: {}
           foreign_keys: {}
         - name: timeseries_events_by_artifact_v0
           description: ""
           arguments: {}
           type: timeseries_events_by_artifact_v0
-          uniqueness_constraints: {}
-          foreign_keys: {}
-        - name: timeseries_metrics_by_artifact_v0
-          description: ""
-          arguments: {}
-          type: timeseries_metrics_by_artifact_v0
-          uniqueness_constraints: {}
-          foreign_keys: {}
-        - name: timeseries_metrics_by_project_v0
-          description: ""
-          arguments: {}
-          type: timeseries_metrics_by_project_v0
           uniqueness_constraints: {}
           foreign_keys: {}
         - name: users_v1

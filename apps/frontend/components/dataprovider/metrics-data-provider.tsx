@@ -10,7 +10,7 @@ import {
 } from "@opensource-observer/utils";
 import {
   GET_TIMESERIES_METRICS_BY_ARTIFACT,
-  GET_TIMESERIES_METRICS_BY_PROJECT,
+  //GET_TIMESERIES_METRICS_BY_PROJECT,
 } from "../../lib/graphql/queries";
 import { eventTimeToLabel } from "../../lib/parsing";
 import { RegistrationProps } from "../../lib/types/plasmic";
@@ -319,7 +319,8 @@ function MetricsDataProvider(props: MetricsDataProviderProps) {
   return props.entityType === "artifact" ? (
     <ArtifactMetricsDataProvider {...props} />
   ) : props.entityType === "project" ? (
-    <ProjectMetricsDataProvider {...props} />
+    //<ProjectMetricsDataProvider {...props} />
+    <>{props.children}</>
   ) : (
     assertNever(props.entityType)
   );
@@ -387,6 +388,7 @@ function ArtifactMetricsDataProvider(props: MetricsDataProviderProps) {
   );
 }
 
+/**
 function ProjectMetricsDataProvider(props: MetricsDataProviderProps) {
   useEnsureAuth();
   const bucketWidth = getBucketWidth(props);
@@ -447,6 +449,7 @@ function ProjectMetricsDataProvider(props: MetricsDataProviderProps) {
     />
   );
 }
+*/
 
 export { MetricsDataProviderRegistration, MetricsDataProvider };
 export type { MetricsDataProviderProps };

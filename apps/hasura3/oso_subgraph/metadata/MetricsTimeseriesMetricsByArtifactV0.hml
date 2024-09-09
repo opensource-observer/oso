@@ -2,22 +2,24 @@
 kind: ObjectType
 version: v1
 definition:
-  name: EventsDailyToArtifact
+  name: MetricsTimeseriesMetricsByArtifactV0
   fields:
     - name: amount
-      type: Float32!
+      type: Float64!
     - name: artifactId
       type: String!
-    - name: bucketDay
-      type: DateTime!
-    - name: eventType
+    - name: metricId
       type: String!
+    - name: sampleDate
+      type: Date!
+    - name: unit
+      type: String
   graphql:
-    typeName: Oso_EventsDailyToArtifact
-    inputTypeName: Oso_EventsDailyToArtifactInput
+    typeName: Oso_MetricsTimeseriesMetricsByArtifactV0
+    inputTypeName: Oso_MetricsTimeseriesMetricsByArtifactV0Input
   dataConnectorTypeMapping:
     - dataConnectorName: oso_clickhouse
-      dataConnectorObjectType: events_daily_to_artifact
+      dataConnectorObjectType: metrics_timeseries_metrics_by_artifact_v0
       fieldMapping:
         amount:
           column:
@@ -25,42 +27,47 @@ definition:
         artifactId:
           column:
             name: artifact_id
-        bucketDay:
+        metricId:
           column:
-            name: bucket_day
-        eventType:
+            name: metric_id
+        sampleDate:
           column:
-            name: event_type
+            name: sample_date
+        unit:
+          column:
+            name: unit
 
 ---
 kind: TypePermissions
 version: v1
 definition:
-  typeName: EventsDailyToArtifact
+  typeName: MetricsTimeseriesMetricsByArtifactV0
   permissions:
     - role: admin
       output:
         allowedFields:
           - amount
           - artifactId
-          - bucketDay
-          - eventType
+          - metricId
+          - sampleDate
+          - unit
     - role: anonymous
       output:
         allowedFields:
           - amount
           - artifactId
-          - bucketDay
-          - eventType
+          - metricId
+          - sampleDate
+          - unit
 
 ---
 kind: ObjectBooleanExpressionType
 version: v1
 definition:
-  name: EventsDailyToArtifactBoolExp
-  objectType: EventsDailyToArtifact
+  name: MetricsTimeseriesMetricsByArtifactV0BoolExp
+  objectType: MetricsTimeseriesMetricsByArtifactV0
   dataConnectorName: oso_clickhouse
-  dataConnectorObjectType: events_daily_to_artifact
+  dataConnectorObjectType: metrics_timeseries_metrics_by_artifact_v0
   comparableFields:
     - fieldName: amount
       operators:
@@ -68,25 +75,28 @@ definition:
     - fieldName: artifactId
       operators:
         enableAll: true
-    - fieldName: bucketDay
+    - fieldName: metricId
       operators:
         enableAll: true
-    - fieldName: eventType
+    - fieldName: sampleDate
+      operators:
+        enableAll: true
+    - fieldName: unit
       operators:
         enableAll: true
   graphql:
-    typeName: Oso_EventsDailyToArtifactBoolExp
+    typeName: Oso_MetricsTimeseriesMetricsByArtifactV0BoolExp
 
 ---
 kind: Model
 version: v1
 definition:
-  name: EventsDailyToArtifact
-  objectType: EventsDailyToArtifact
+  name: MetricsTimeseriesMetricsByArtifactV0
+  objectType: MetricsTimeseriesMetricsByArtifactV0
   source:
     dataConnectorName: oso_clickhouse
-    collection: events_daily_to_artifact
-  filterExpressionType: EventsDailyToArtifactBoolExp
+    collection: metrics_timeseries_metrics_by_artifact_v0
+  filterExpressionType: MetricsTimeseriesMetricsByArtifactV0BoolExp
   orderableFields:
     - fieldName: amount
       orderByDirections:
@@ -94,23 +104,26 @@ definition:
     - fieldName: artifactId
       orderByDirections:
         enableAll: true
-    - fieldName: bucketDay
+    - fieldName: metricId
       orderByDirections:
         enableAll: true
-    - fieldName: eventType
+    - fieldName: sampleDate
+      orderByDirections:
+        enableAll: true
+    - fieldName: unit
       orderByDirections:
         enableAll: true
   graphql:
     selectMany:
-      queryRootField: oso_eventsDailyToArtifact
+      queryRootField: oso_timeseriesMetricsByArtifactV0
     selectUniques: []
-    orderByExpressionType: Oso_EventsDailyToArtifactOrderBy
+    orderByExpressionType: Oso_MetricsTimeseriesMetricsByArtifactV0OrderBy
 
 ---
 kind: ModelPermissions
 version: v1
 definition:
-  modelName: EventsDailyToArtifact
+  modelName: MetricsTimeseriesMetricsByArtifactV0
   permissions:
     - role: admin
       select:
