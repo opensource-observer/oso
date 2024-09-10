@@ -39,6 +39,38 @@ daily_timeseries_rolling_window_model(
             ref="forks.sql",
             vars={},
         ),
+        "commits": MetricQuery(
+            ref="commits.sql",
+            vars={},
+        ),
+        "pull_requests_opened": MetricQuery(
+            ref="prs_opened.sql",
+            vars={},
+        ),
+        "issues_opened": MetricQuery(
+            ref="issues_opened.sql",
+            vars={},
+        ),
+        "pull_requests_merged": MetricQuery(
+            ref="prs_merged.sql",
+            vars={},
+        ),
+        "issues_closed": MetricQuery(
+            ref="issues_closed.sql",
+            vars={},
+        ),
+        "transactions": MetricQuery(
+            ref="transactions.sql",
+            vars={},
+        ),
+        "gas_fees": MetricQuery(
+            ref="gas_fees.sql",
+            vars={},
+        ),
+        "active_addresses": MetricQuery(
+            ref="active_addresses.sql",
+            vars={},
+        ),
     },
     trailing_days=30,
     model_options=dict(
