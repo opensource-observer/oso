@@ -60,7 +60,7 @@ timeseries_metrics(
             entity_types=[
                 "artifact",
                 "project",
-                # "collection",
+                "collection",
             ],  # This is the default value
         ),
         # This defines something with a rolling option that allows you to look back

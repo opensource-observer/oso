@@ -341,32 +341,6 @@ class MetricQuery:
         name = self._source.name or self._name
         return reference_to_str(ref, name)
 
-    @property
-    def peer_dependencies(self) -> t.Set[str]:
-        # Find all dependencies
-        table_expressions: t.List[exp.Table] = t.cast(
-            t.List[exp.Table], self.query_expression.find_all(exp.Table)
-        )
-
-        deps: t.Set[str] = set()
-
-        for table in table_expressions:
-            if isinstance(table.this, exp.Anonymous):
-                anon = table.this
-                if anon.this != "__peer_ref":
-                    continue
-                # Turn the peer ref function into a PeerMetricDependencyRef object
-                # send_anonymous_to_callable(
-                #     anon,
-                # )
-
-            # if table.db is not None:
-            #     db = sqlglot.to_identifier(table.db)
-            #     table_name = sqlglot.to_identifier(table.this)
-            #     if db.this == "peer":
-            #         deps.add(table_name.this)
-        return deps
-
     def generate_dependency_refs_for_name(self, name: str):
         refs: t.List[PeerMetricDependencyRef] = []
         for entity in self._source.entity_types or DEFAULT_ENTITY_TYPES:
@@ -417,13 +391,16 @@ class MetricQuery:
                 unit=ref.get("unit"),
                 rollup=ref.get("rollup"),
             )
-        raise Exception("what?")
-
-    def find_all_aggregating_selects(self, expression: exp.Expression):
-        selects = expression.find_all(exp.Select)
-        for select in selects:
-            if select.args.get("group"):
-                yield select
+        elif ref["entity_type"] == "collection":
+            return self.generate_collection_query(
+                evaluator,
+                ref["name"],
+                peer_table_map,
+                window=ref.get("window"),
+                unit=ref.get("unit"),
+                rollup=ref.get("rollup"),
+            )
+        raise Exception(f"Invalid entity_type {ref["entity_type"]}")
 
     def generate_metrics_query(
         self,
@@ -498,61 +475,83 @@ class MetricQuery:
         top_level_select = top_level_select.with_("metrics_query", as_=metrics_query)
         return top_level_select
 
-    def artifact_to_project_transform(
-        self, node: exp.Expression
-    ) -> exp.Expression | None:
-        if not isinstance(node, exp.Select):
-            return node
-        select = node
-        for i in range(len(select.expressions)):
-            ex = select.expressions[i]
-            if not isinstance(ex, exp.Alias):
+    def artifact_to_upstream_entity_transform(
+        self,
+        entity_type: str,
+    ) -> t.Callable[[exp.Expression], exp.Expression | None]:
+        def _transform(node: exp.Expression):
+            if not isinstance(node, exp.Select):
                 return node
-            # If to_artifact_id is being aggregated then it's time to rewrite
-            if isinstance(ex.this, exp.Column) and isinstance(
-                ex.this.this, exp.Identifier
-            ):
-                if ex.this.this.this == "to_artifact_id":
-                    updated_select = select.copy()
-                    current_from = t.cast(exp.From, updated_select.args.get("from"))
-                    assert isinstance(current_from.this, exp.Table)
-                    current_table = current_from.this
-                    current_alias = current_table.alias
+            select = node
+            for i in range(len(select.expressions)):
+                ex = select.expressions[i]
+                if not isinstance(ex, exp.Alias):
+                    return node
+                # If to_artifact_id is being aggregated then it's time to rewrite
+                if isinstance(ex.this, exp.Column) and isinstance(
+                    ex.this.this, exp.Identifier
+                ):
+                    if ex.this.this.this == "to_artifact_id":
+                        updated_select = select.copy()
+                        current_from = t.cast(exp.From, updated_select.args.get("from"))
+                        assert isinstance(current_from.this, exp.Table)
+                        current_table = current_from.this
+                        current_alias = current_table.alias
 
-                    # Add a join to this select
-                    updated_select = updated_select.join(
-                        "sources.artifacts_by_project_v1",
-                        on=f"{current_alias}.to_artifact_id = artifacts_by_project_v1.artifact_id",
-                        join_type="inner",
-                    )
-                    # replace the select and the grouping with the project id in the joined table
-                    to_artifact_id_col_sel = t.cast(
-                        exp.Alias, updated_select.expressions[i]
-                    )
-                    current_to_artifact_id_col = t.cast(
-                        exp.Column, to_artifact_id_col_sel.this
-                    )
-                    new_to_project_id_col = exp.to_column(
-                        "artifacts_by_project_v1.project_id", quoted=True
-                    )
-
-                    to_artifact_id_col_sel.replace(
-                        exp.alias_(
-                            new_to_project_id_col,
-                            alias=exp.to_identifier("to_project_id", quoted=True),
+                        # Add a join to this select
+                        updated_select = updated_select.join(
+                            "sources.artifacts_by_project_v1",
+                            on=f"{current_alias}.to_artifact_id = artifacts_by_project_v1.artifact_id",
+                            join_type="inner",
                         )
-                    )
 
-                    group = t.cast(exp.Group, updated_select.args.get("group"))
-                    for group_idx in range(len(group.expressions)):
-                        group_col = t.cast(exp.Column, group.expressions[group_idx])
-                        if group_col == current_to_artifact_id_col:
-                            group_col.replace(new_to_project_id_col)
+                        new_to_entity_id_col = exp.to_column(
+                            "artifacts_by_project_v1.project_id", quoted=True
+                        )
+                        new_to_entity_alias = exp.to_identifier(
+                            "to_project_id", quoted=True
+                        )
 
-                    return updated_select
-        # If nothing happens in the for loop then we didn't find the kind of
-        # expected select statement
-        return node
+                        if entity_type == "collection":
+                            updated_select = updated_select.join(
+                                "sources.projects_by_collection_v1",
+                                on="artifacts_by_project_v1.project_id = projects_by_collection_v1.project_id",
+                            )
+
+                            new_to_entity_id_col = exp.to_column(
+                                "projects_by_collection_v1.collection_id", quoted=True
+                            )
+                            new_to_entity_alias = exp.to_identifier(
+                                "to_collection_id", quoted=True
+                            )
+
+                        # replace the select and the grouping with the project id in the joined table
+                        to_artifact_id_col_sel = t.cast(
+                            exp.Alias, updated_select.expressions[i]
+                        )
+                        current_to_artifact_id_col = t.cast(
+                            exp.Column, to_artifact_id_col_sel.this
+                        )
+
+                        to_artifact_id_col_sel.replace(
+                            exp.alias_(
+                                new_to_entity_id_col,
+                                alias=new_to_entity_alias,
+                            )
+                        )
+
+                        group = t.cast(exp.Group, updated_select.args.get("group"))
+                        for group_idx in range(len(group.expressions)):
+                            group_col = t.cast(exp.Column, group.expressions[group_idx])
+                            if group_col == current_to_artifact_id_col:
+                                group_col.replace(new_to_entity_id_col)
+
+                        return updated_select
+            # If nothing happens in the for loop then we didn't find the kind of
+            # expected select statement
+            return node
+
+        return _transform
 
     def transform_aggregating_selects(
         self,
@@ -583,60 +582,8 @@ class MetricQuery:
         metrics_query = qualify(metrics_query)
 
         metrics_query = self.transform_aggregating_selects(
-            metrics_query, self.artifact_to_project_transform
+            metrics_query, self.artifact_to_upstream_entity_transform("project")
         )
-
-        # # Find all of the queries that group by the `to_artifact_id`
-        # for select in self.find_all_aggregating_selects(metrics_query):
-        #     for i in range(len(select.expressions)):
-        #         ex = select.expressions[i]
-        #         if not isinstance(ex, exp.Alias):
-        #             continue
-        #         # If to_artifact_id is being aggregated then it's time to rewrite
-        #         if isinstance(ex.this, exp.Column) and isinstance(
-        #             ex.this.this, exp.Identifier
-        #         ):
-        #             if ex.this.this.this == "to_artifact_id":
-        #                 updated_select = select.copy()
-        #                 current_from = t.cast(exp.From, updated_select.args.get("from"))
-        #                 assert isinstance(current_from.this, exp.Table)
-        #                 current_table = current_from.this
-        #                 current_alias = current_table.alias
-
-        #                 # Add a join to this select
-        #                 updated_select = updated_select.join(
-        #                     "artifacts_by_project_v1",
-        #                     on=f"{current_alias}.to_artifact_id = artifacts_by_project_v1.artifact_id",
-        #                     join_type="inner",
-        #                 )
-        #                 # replace the select and the grouping with the project id in the joined table
-        #                 to_artifact_id_col_sel = t.cast(
-        #                     exp.Alias, updated_select.expressions[i]
-        #                 )
-        #                 current_to_artifact_id_col = t.cast(
-        #                     exp.Column, to_artifact_id_col_sel.this
-        #                 )
-        #                 new_to_project_id_col = exp.to_column(
-        #                     "artifacts_by_project_v1.project_id", quoted=True
-        #                 )
-
-        #                 to_artifact_id_col_sel.replace(
-        #                     exp.alias_(
-        #                         new_to_project_id_col,
-        #                         alias=exp.to_identifier("to_project_id", quoted=True),
-        #                     )
-        #                 )
-
-        #                 group = t.cast(exp.Group, updated_select.args.get("group"))
-        #                 for group_idx in range(len(group.expressions)):
-        #                     group_col = t.cast(exp.Column, group.expressions[group_idx])
-        #                     if group_col == current_to_artifact_id_col:
-        #                         group_col.replace(new_to_project_id_col)
-
-        #                 print("REPLACING________________")
-        #                 print(updated_select.sql())
-
-        #                 select.replace(updated_select)
 
         top_level_select = exp.select(
             "metrics_bucket_date as bucket_day",
@@ -667,6 +614,12 @@ class MetricQuery:
             window,
             unit,
             rollup,
+        )
+
+        metrics_query = qualify(metrics_query)
+
+        metrics_query = self.transform_aggregating_selects(
+            metrics_query, self.artifact_to_upstream_entity_transform("collection")
         )
 
         top_level_select = exp.select(

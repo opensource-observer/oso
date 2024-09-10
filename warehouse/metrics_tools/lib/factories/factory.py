@@ -106,40 +106,34 @@ def generate_models_from_query(
                 grain=["metric", "to_project_id", "from_artifact_id", "bucket_day"],
                 cron=cron,
             )
-
-        #     @model(
-        #         name=f"metrics.{query.table_name(ref)}",
-        #         kind={
-        #             "name": ModelKindName.INCREMENTAL_BY_TIME_RANGE,
-        #             "time_column": "bucket_day",
-        #             "batch_size": 1,
-        #         },
-        #         is_sql=True,
-        #         dialect="clickhouse",
-        #         columns={
-        #             "bucket_day": exp.DataType.build("DATE", dialect="clickhouse"),
-        #             "event_source": exp.DataType.build("String", dialect="clickhouse"),
-        #             "project_id": exp.DataType.build("String", dialect="clickhouse"),
-        #             "from_artifact_id": exp.DataType.build(
-        #                 "String", dialect="clickhouse"
-        #             ),
-        #             "metric": exp.DataType.build("String", dialect="clickhouse"),
-        #             "amount": exp.DataType.build("Float64", dialect="clickhouse"),
-        #         },
-        #         grain=["metric", "to_artifact_id", "from_artifact_id", "bucket_day"],
-        #     )
-        #     def _generated_to_project(evaluator: MacroEvaluator, **kwargs):
-        #         return generated_project(
-        #             evaluator,
-        #             query_reference_name,
-        #             query_def_as_input,
-        #             default_dialect,
-        #             peer_table_map,
-        #             ref,
-        #         )
-
-        # if ref["entity_type"] == "collection":
-        #     pass
+        if ref["entity_type"] == "collection":
+            GeneratedModel.create(
+                func_name="generated_entity",
+                import_module="metrics_tools.lib.factories.definition",
+                entrypoint_path=calling_file,
+                config=config,
+                name=f"metrics.{query.table_name(ref)}",
+                kind={
+                    "name": ModelKindName.INCREMENTAL_BY_TIME_RANGE,
+                    "time_column": "bucket_day",
+                    "batch_size": 1,
+                },
+                dialect="clickhouse",
+                columns={
+                    "bucket_day": exp.DataType.build("DATE", dialect="clickhouse"),
+                    "event_source": exp.DataType.build("String", dialect="clickhouse"),
+                    "to_collection_id": exp.DataType.build(
+                        "String", dialect="clickhouse"
+                    ),
+                    "from_artifact_id": exp.DataType.build(
+                        "String", dialect="clickhouse"
+                    ),
+                    "metric": exp.DataType.build("String", dialect="clickhouse"),
+                    "amount": exp.DataType.build("Float64", dialect="clickhouse"),
+                },
+                grain=["metric", "to_collection_id", "from_artifact_id", "bucket_day"],
+                cron=cron,
+            )
 
 
 def timeseries_metrics(
