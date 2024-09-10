@@ -7,7 +7,7 @@ select STR_TO_DATE(@end_ds, '%Y-%m-%d') as metrics_bucket_date,
 from metrics.events_daily_to_artifact as events
 where event_type in @activity_event_types
   and events.bucket_day BETWEEN (
-    STR_TO_DATE(@end_ds, '%Y-%m-%d') - INTERVAL @trailing_days DAY
+    STR_TO_DATE(@end_ds, '%Y-%m-%d') - INTERVAL @rolling_window DAY
   )
   AND STR_TO_DATE(@end_ds, '%Y-%m-%d')
 group by 1,

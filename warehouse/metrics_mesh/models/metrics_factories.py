@@ -1,6 +1,7 @@
 from metrics_tools.lib.factories import (
     MetricQueryDef,
     timeseries_metrics,
+    RollingConfig,
 )
 
 
@@ -58,11 +59,6 @@ timeseries_metrics(
         "stars": MetricQueryDef(
             ref="stars.sql",
             time_aggregations=["daily", "weekly", "monthly"],
-            entity_types=[
-                "artifact",
-                "project",
-                "collection",
-            ],  # This is the default value
         ),
         # This defines something with a rolling option that allows you to look back
         # to some arbitrary window. So you specify the window and specify the unit.
@@ -70,14 +66,18 @@ timeseries_metrics(
         # up to the query to actually query the correct window.
         # The resultant models are named as such
         # `metrics.timeseries_active_days_to_{entity_type}_over_{window}_{unit}`
-        # "active_days": MetricQueryDef(
-        #     ref="active_days.sql",
-        #     rolling=RollingConfig(
-        #         windows=[30, 60, 90],
-        #         unit="day",
-        #         cron="0 0 1 */6 *",  # This determines how often this is calculated
-        #     ),
-        # ),
+        "active_days": MetricQueryDef(
+            ref="active_days.sql",
+            vars={
+                "activity_event_types": ["COMMIT_CODE"],
+            },
+            rolling=RollingConfig(
+                windows=[30, 60, 90],
+                unit="day",
+                cron="@daily",  # This determines how often this is calculated
+            ),
+            entity_types=["artifact", "project", "collection"],
+        ),
     },
     default_dialect="clickhouse",
 )

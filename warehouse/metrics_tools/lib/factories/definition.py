@@ -356,6 +356,7 @@ class MetricQuery:
                             name=name,
                             entity_type=entity,
                             window=window,
+                            unit=self._source.rolling.get('unit'),
                         )
                     )
             for time_aggregation in self._source.time_aggregations or []:
@@ -425,7 +426,7 @@ class MetricQuery:
         if window:
             extra_vars["rolling_window"] = window
         if unit:
-            extra_vars["unit"] = unit
+            extra_vars["rolling_unit"] = unit
         if time_aggregation:
             extra_vars["time_aggregation"] = time_aggregation
 
