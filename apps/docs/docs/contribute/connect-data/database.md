@@ -1,6 +1,6 @@
 ---
 title: Replicate a Database
-sidebar_position: 2
+sidebar_position: 3
 ---
 
 import NextSteps from "./dagster-config.mdx"

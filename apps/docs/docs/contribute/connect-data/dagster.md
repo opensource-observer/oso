@@ -1,6 +1,6 @@
 ---
 title: Writing Custom Dagster Assets
-sidebar_position: 5
+sidebar_position: 6
 ---
 
 import NextSteps from "./dagster-config.mdx"
