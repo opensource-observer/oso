@@ -1,4 +1,4 @@
-select STR_TO_DATE(@end_ds, '%Y-%m-%d') as metrics_bucket_date,
+select @ROLLUP_BUCKET(@end_ds, @rollup) as metrics_bucket_date,
   events.event_source,
   events.to_artifact_id,
   '' as from_artifact_id,

@@ -3,11 +3,13 @@ A catchall for development environment tools related to the python tooling.
 """
 
 import dotenv
+
 dotenv.load_dotenv()
 
 import os
 import click
-from metrics_mesh.lib.local.utils import initialize_local_duckdb, reset_local_duckdb
+
+from metrics_tools.lib.local.utils import initialize_local_duckdb, reset_local_duckdb
 
 
 @click.group()
