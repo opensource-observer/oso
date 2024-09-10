@@ -163,9 +163,13 @@ class MetricQueryDef:
 
     rollups: t.Optional[t.List[str]] = None
 
+    @property
+    def raw_sql(self):
+        return open(os.path.join(QUERIES_DIR, self.ref)).read()
+
     def load_exp(self, default_dialect: str) -> t.List[exp.Expression]:
         """Loads the queries sql file as a sqlglot expression"""
-        raw_sql = open(os.path.join(QUERIES_DIR, self.ref)).read()
+        raw_sql = self.raw_sql
 
         dialect = self.dialect or default_dialect
         return t.cast(
@@ -687,6 +691,13 @@ class DailyTimeseriesRollingWindowOptions(t.TypedDict):
 
 #     if "collection" in query_def.entity_types:
 #         pass
+
+
+def join_all_of_entity_type(evaluator: MacroEvaluator, *, db: str, tables: t.List[str], columns: t.List[str]):
+    query = exp.select(*columns).from_(sqlglot.to_table(f"{db}.{tables[0]}"))
+    for table in tables[1:]:
+        query.union(exp.select(*columns).from_(sqlglot.to_table(f"{db}.{table}")), distinct=False)
+    return query
 
 
 class TimeseriesMetricsOptions(t.TypedDict):

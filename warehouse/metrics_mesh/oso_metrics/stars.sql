@@ -2,9 +2,9 @@ select @ROLLUP_BUCKET(@end_ds, @rollup) as metrics_bucket_date,
   events.event_source,
   events.to_artifact_id,
   '' as from_artifact_id,
-  @metric_name as metric,
-  SUM(events.amount) as amount,
-  from metrics.events_daily_to_artifact as events
+  CONCAT(@metric_name, @rollup) as metric,
+  SUM(events.amount) as amount
+from metrics.events_daily_to_artifact as events
 where event_type in ('STARRED')
   and events.bucket_day BETWEEN STR_TO_DATE(@start_ds, '%Y-%m-%d') AND STR_TO_DATE(@end_ds, '%Y-%m-%d')
 group by 1,

@@ -3,6 +3,7 @@ from sqlmesh.core.model.decorator import model
 
 import logging
 import typing as t
+import inspect
 from pathlib import Path
 
 from sqlglot import exp
@@ -262,26 +263,37 @@ class GeneratedModel:
     def create(
         cls,
         *,
-        func_name: str,
-        import_module: str,
+        func: t.Callable[..., t.Any],
         config: t.Mapping[str, t.Any],
         name: str,
         columns: t.Dict[str, exp.DataType],
         entrypoint_path: str,
+        source: t.Optional[str] = None,
+        source_loader: t.Optional[t.Callable[[], str]] = None,
         **kwargs,
     ):
+        if not source and not source_loader:
+            try:
+                source = inspect.getsource(func)
+            except:  # noqa: E722
+                pass
+
+        assert (
+            source is not None or source_loader is not None
+        ), "Must have a way to load the source for state diffs"
+
         instance = cls(
-            func_name=func_name,
-            import_module=import_module,
+            func_name=func.__name__,
+            import_module=func.__module__,
             config=config,
             name=name,
             columns=columns,
             entrypoint_path=entrypoint_path,
+            source=source,
+            source_loader=source_loader,
             **kwargs,
         )
         registry = model.registry()
-        print("HERE I AM")
-        print(registry)
         registry[name] = instance
         return instance
 
@@ -294,6 +306,8 @@ class GeneratedModel:
         name: str,
         columns: t.Dict[str, exp.DataType],
         entrypoint_path: str,
+        source: t.Optional[str] = None,
+        source_loader: t.Optional[t.Callable[[], str]] = None,
         **kwargs,
     ):
         self.kwargs = kwargs
@@ -303,6 +317,8 @@ class GeneratedModel:
         self.name = name
         self.columns = columns
         self.entrypoint_path = entrypoint_path
+        self.source_loader = source_loader
+        self.source = source
 
     def model(
         self,
@@ -333,6 +349,13 @@ class GeneratedModel:
             variables=variables,
             **self.kwargs,
         )
+
+        source = self.source
+        if not source:
+            if self.source_loader:
+                source = self.source_loader()
+        assert source is not None, "source cannot be empty"
+
         # env = macros.copy()
         env = {}
 
@@ -340,6 +363,7 @@ class GeneratedModel:
             self.func_name,
             self.import_module,
             self.config,
+            source,
             env,
             fake_module_path,
             project_path=module_path,
@@ -360,10 +384,17 @@ class GeneratedModel:
         )
 
 
+def escape_triple_quotes(input_string: str) -> str:
+    escaped_string = input_string.replace("'''", "\\'\\'\\'")
+    escaped_string = escaped_string.replace('"""', '\\"\\"\\"')
+    return escaped_string
+
+
 def create_import_call_env(
     name: str,
     import_module: str,
     config: t.Mapping[str, t.Any],
+    source: str,
     env: t.Dict[str, t.Any],
     path: Path,
     project_path: Path,
@@ -377,7 +408,11 @@ def create_import_call_env(
     entrypoint_as_str = textwrap.dedent(
         f"""
     def macro_entrypoint(evaluator):
-        print("LOOK AT ME I'M IN THE GENERATED CONTEXT")
+        '''
+        Source: 
+        
+        {textwrap.indent("\n" + escape_triple_quotes(source), "        ")}
+        '''
         return {name}(evaluator, **entrypoint_config)
     """
     )

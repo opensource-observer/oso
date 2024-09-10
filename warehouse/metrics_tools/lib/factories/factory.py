@@ -9,6 +9,8 @@ from metrics_tools.lib.factories.definition import (
     TimeseriesMetricsOptions,
     reference_to_str,
     GeneratedArtifactConfig,
+    generated_entity,
+    join_all_of_entity_type,
 )
 from metrics_tools.models import GeneratedModel
 
@@ -20,6 +22,32 @@ type ExtraVarType = ExtraVarBaseType | t.List[ExtraVarBaseType]
 
 
 ROLLUP_TO_CRON = {"daily": "@daily", "monthly": "@monthly", "weekly": "@weekly"}
+METRICS_COLUMNS_BY_ENTITY: t.Dict[str, t.Dict[str, exp.DataType]] = {
+    "artifact": {
+        "bucket_day": exp.DataType.build("DATE", dialect="clickhouse"),
+        "event_source": exp.DataType.build("String", dialect="clickhouse"),
+        "to_artifact_id": exp.DataType.build("String", dialect="clickhouse"),
+        "from_artifact_id": exp.DataType.build("String", dialect="clickhouse"),
+        "metric": exp.DataType.build("String", dialect="clickhouse"),
+        "amount": exp.DataType.build("Float64", dialect="clickhouse"),
+    },
+    "project": {
+        "bucket_day": exp.DataType.build("DATE", dialect="clickhouse"),
+        "event_source": exp.DataType.build("String", dialect="clickhouse"),
+        "to_project_id": exp.DataType.build("String", dialect="clickhouse"),
+        "from_artifact_id": exp.DataType.build("String", dialect="clickhouse"),
+        "metric": exp.DataType.build("String", dialect="clickhouse"),
+        "amount": exp.DataType.build("Float64", dialect="clickhouse"),
+    },
+    "collection": {
+        "bucket_day": exp.DataType.build("DATE", dialect="clickhouse"),
+        "event_source": exp.DataType.build("String", dialect="clickhouse"),
+        "to_collection_id": exp.DataType.build("String", dialect="clickhouse"),
+        "from_artifact_id": exp.DataType.build("String", dialect="clickhouse"),
+        "metric": exp.DataType.build("String", dialect="clickhouse"),
+        "amount": exp.DataType.build("Float64", dialect="clickhouse"),
+    },
+}
 
 
 def generate_models_from_query(
@@ -32,6 +60,13 @@ def generate_models_from_query(
     query_def_as_input = query._source.to_input()
     query_reference_name = query.reference_name
     refs = query.provided_dependency_refs
+
+    all_tables: t.Dict[str, t.List[str]] = {
+        "artifact": [],
+        "project": [],
+        "collection": [],
+    }
+
     for ref in refs:
         cron = "@daily"
         rollup = ref.get("rollup")
@@ -51,89 +86,65 @@ def generate_models_from_query(
             peer_table_map=peer_table_map,
             ref=ref,
         )
+
+        table_name = query.table_name(ref)
+        all_tables[ref["entity_type"]].append(table_name)
+        columns = METRICS_COLUMNS_BY_ENTITY[ref["entity_type"]]
+
         if ref["entity_type"] == "artifact":
             GeneratedModel.create(
-                func_name="generated_entity",
-                import_module="metrics_tools.lib.factories.definition",
+                func=generated_entity,
+                source=query._source.raw_sql,
                 entrypoint_path=calling_file,
                 config=config,
-                name=f"metrics.{query.table_name(ref)}",
+                name=f"metrics.{table_name}",
                 kind={
                     "name": ModelKindName.INCREMENTAL_BY_TIME_RANGE,
                     "time_column": "bucket_day",
                     "batch_size": 1,
                 },
                 dialect="clickhouse",
-                columns={
-                    "bucket_day": exp.DataType.build("DATE", dialect="clickhouse"),
-                    "event_source": exp.DataType.build("String", dialect="clickhouse"),
-                    "to_artifact_id": exp.DataType.build(
-                        "String", dialect="clickhouse"
-                    ),
-                    "from_artifact_id": exp.DataType.build(
-                        "String", dialect="clickhouse"
-                    ),
-                    "metric": exp.DataType.build("String", dialect="clickhouse"),
-                    "amount": exp.DataType.build("Float64", dialect="clickhouse"),
-                },
+                columns=columns,
                 grain=["metric", "to_artifact_id", "from_artifact_id", "bucket_day"],
                 cron=cron,
             )
 
         if ref["entity_type"] == "project":
             GeneratedModel.create(
-                func_name="generated_entity",
-                import_module="metrics_tools.lib.factories.definition",
+                func=generated_entity,
+                source=query._source.raw_sql,
                 entrypoint_path=calling_file,
                 config=config,
-                name=f"metrics.{query.table_name(ref)}",
+                name=f"metrics.{table_name}",
                 kind={
                     "name": ModelKindName.INCREMENTAL_BY_TIME_RANGE,
                     "time_column": "bucket_day",
                     "batch_size": 1,
                 },
                 dialect="clickhouse",
-                columns={
-                    "bucket_day": exp.DataType.build("DATE", dialect="clickhouse"),
-                    "event_source": exp.DataType.build("String", dialect="clickhouse"),
-                    "to_project_id": exp.DataType.build("String", dialect="clickhouse"),
-                    "from_artifact_id": exp.DataType.build(
-                        "String", dialect="clickhouse"
-                    ),
-                    "metric": exp.DataType.build("String", dialect="clickhouse"),
-                    "amount": exp.DataType.build("Float64", dialect="clickhouse"),
-                },
+                columns=columns,
                 grain=["metric", "to_project_id", "from_artifact_id", "bucket_day"],
                 cron=cron,
             )
         if ref["entity_type"] == "collection":
             GeneratedModel.create(
-                func_name="generated_entity",
-                import_module="metrics_tools.lib.factories.definition",
+                func=generated_entity,
+                source=query._source.raw_sql,
                 entrypoint_path=calling_file,
                 config=config,
-                name=f"metrics.{query.table_name(ref)}",
+                name=f"metrics.{table_name}",
                 kind={
                     "name": ModelKindName.INCREMENTAL_BY_TIME_RANGE,
                     "time_column": "bucket_day",
                     "batch_size": 1,
                 },
                 dialect="clickhouse",
-                columns={
-                    "bucket_day": exp.DataType.build("DATE", dialect="clickhouse"),
-                    "event_source": exp.DataType.build("String", dialect="clickhouse"),
-                    "to_collection_id": exp.DataType.build(
-                        "String", dialect="clickhouse"
-                    ),
-                    "from_artifact_id": exp.DataType.build(
-                        "String", dialect="clickhouse"
-                    ),
-                    "metric": exp.DataType.build("String", dialect="clickhouse"),
-                    "amount": exp.DataType.build("Float64", dialect="clickhouse"),
-                },
+                columns=columns,
                 grain=["metric", "to_collection_id", "from_artifact_id", "bucket_day"],
                 cron=cron,
             )
+
+    return all_tables
 
 
 def timeseries_metrics(
@@ -157,16 +168,38 @@ def timeseries_metrics(
         for ref in provided_refs:
             peer_table_map[reference_to_str(ref)] = query.table_name(ref)
 
+    all_tables: t.Dict[str, t.List[str]] = {
+        "artifact": [],
+        "project": [],
+        "collection": [],
+    }
+
     # Generate the models
     for query in metrics_queries:
-        generate_models_from_query(
+        tables = generate_models_from_query(
             calling_file,
             query,
             default_dialect=raw_options.get("default_dialect", "clickhouse"),
             peer_table_map=peer_table_map,
         )
+        for entity_type in all_tables.keys():
+            all_tables[entity_type] = all_tables[entity_type] + tables[entity_type]
 
-    # Join all of the models of the same entity type into the same
+    # Join all of the models of the same entity type into the same view model
+    for entity_type, tables in all_tables.items():
+        GeneratedModel.create(
+            func=join_all_of_entity_type,
+            entrypoint_path=calling_file,
+            config={
+                "db": "metrics",
+                "tables": tables,
+                "columns": list(METRICS_COLUMNS_BY_ENTITY[entity_type].keys()),
+            },
+            name=f"metrics.timeseries_metrics_to_{entity_type}",
+            kind="VIEW",
+            dialect="clickhouse",
+            columns=METRICS_COLUMNS_BY_ENTITY[entity_type],
+        )
 
 
 # def daily_timeseries_rolling_window_model(
