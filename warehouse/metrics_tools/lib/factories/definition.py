@@ -60,15 +60,15 @@ class MetricQueryInput(t.TypedDict):
     # this input.
     name: t.NotRequired[t.Optional[str]]
 
-    # Setting rollups aggregates a metric over a specific time period. This is
-    # similar to trailing windows but the meaning is semantically differnt in
-    # that the aggregation is assumed to be an additive aggregation. So if the
-    # buckets of daily and monthly are used it is assumed you can add the daily
-    # aggregation within that month and get the value. At this bucket
+    # Setting time_aggregations aggregates a metric over a specific time period.
+    # This is similar to trailing windows but the meaning is semantically
+    # differnt in that the aggregation is assumed to be an additive aggregation.
+    # So if the buckets of daily and monthly are used it is assumed you can add
+    # the daily aggregation within that month and get the value. At this bucket
     # aggregations cannot be combined with trailing windows.
     #
     # Available options are daily, weekly, monthly, yearly
-    rollups: t.NotRequired[t.Optional[t.List[str]]]
+    time_aggregations: t.NotRequired[t.Optional[t.List[str]]]
 
     # If windows is specified then this metric is calculated within the given
     # windows of trailing days. Cannot be set if buckets is set
@@ -86,7 +86,7 @@ class PeerMetricDependencyRef(t.TypedDict):
     entity_type: str
     window: t.NotRequired[t.Optional[int]]
     unit: t.NotRequired[t.Optional[str]]
-    rollup: t.NotRequired[t.Optional[str]]
+    time_aggregation: t.NotRequired[t.Optional[str]]
 
 
 class MetricModelRef(t.TypedDict):
@@ -94,7 +94,7 @@ class MetricModelRef(t.TypedDict):
     entity_type: str
     window: t.NotRequired[t.Optional[int]]
     unit: t.NotRequired[t.Optional[str]]
-    rollup: t.NotRequired[t.Optional[str]]
+    time_aggregation: t.NotRequired[t.Optional[str]]
 
 
 def model_meta_matches_peer_dependency(meta: MetricModelRef, dep: MetricModelRef):
@@ -120,7 +120,7 @@ class PeerMetricDependencyDataClass:
 
     window: t.Optional[int] = None
     unit: t.Optional[str] = None
-    rollup: t.Optional[str] = None
+    time_aggregation: t.Optional[str] = None
 
 
 def to_actual_table_name(
@@ -135,8 +135,8 @@ def reference_to_str(ref: PeerMetricDependencyRef, actual_name: str = ""):
     result = f"{name}_to_{ref['entity_type']}"
     if ref.get("window"):
         result = f"{result}_over_{ref.get('window')}{ref.get('unit')}"
-    if ref.get("rollup"):
-        result = f"{result}_{ref.get('rollup')}"
+    if ref.get("time_aggregation"):
+        result = f"{result}_{ref.get('time_aggregation')}"
     return result
 
 
@@ -161,7 +161,7 @@ class MetricQueryDef:
 
     rolling: t.Optional[RollingConfig] = None
 
-    rollups: t.Optional[t.List[str]] = None
+    time_aggregations: t.Optional[t.List[str]] = None
 
     @property
     def raw_sql(self):
@@ -201,17 +201,17 @@ class MetricQueryDef:
         if not self.entity_types:
             self.entity_types = DEFAULT_ENTITY_TYPES
         # Validate the given input
-        if self.rollups and self.rolling:
+        if self.time_aggregations and self.rolling:
             raise Exception(
-                "Invalid metric query definition. Only one of rollups or trailing_windows can be used"
+                "Invalid metric query definition. Only one of time_aggregations or trailing_windows can be used"
             )
-        if self.rollups is not None and self.rolling is not None:
+        if self.time_aggregations is not None and self.rolling is not None:
             raise Exception(
-                "Invalid metric query definition. One of rollups or trailing_windows must be set"
+                "Invalid metric query definition. One of time_aggregations or trailing_windows must be set"
             )
         assert_allowed_items_in_list(self.entity_types, VALID_ENTITY_TYPES)
         assert_allowed_items_in_list(
-            self.rollups or [], ["daily", "weekly", "monthly", "yearly"]
+            self.time_aggregations or [], ["daily", "weekly", "monthly", "yearly"]
         )
 
     @classmethod
@@ -242,14 +242,14 @@ class PeerRefHandler(CustomFuncHandler[PeerMetricDependencyRef]):
         entity_type: t.Optional[str] = None,
         window: t.Optional[int] = None,
         unit: t.Optional[str] = None,
-        rollup: t.Optional[str] = None,
+        time_aggregation: t.Optional[str] = None,
     ) -> PeerMetricDependencyRef:
         return PeerMetricDependencyRef(
             name=name,
             entity_type=entity_type or "",
             window=window,
             unit=unit,
-            rollup=rollup,
+            time_aggregation=time_aggregation,
         )
 
     def transform(
@@ -357,12 +357,12 @@ class MetricQuery:
                             window=window,
                         )
                     )
-            for rollup in self._source.rollups or []:
+            for time_aggregation in self._source.time_aggregations or []:
                 refs.append(
                     PeerMetricDependencyRef(
                         name=name,
                         entity_type=entity,
-                        rollup=rollup,
+                        time_aggregation=time_aggregation,
                     )
                 )
         return refs
@@ -384,7 +384,7 @@ class MetricQuery:
                 peer_table_map,
                 window=ref.get("window"),
                 unit=ref.get("unit"),
-                rollup=ref.get("rollup"),
+                time_aggregation=ref.get("time_aggregation"),
             )
         elif ref["entity_type"] == "project":
             return self.generate_project_query(
@@ -393,7 +393,7 @@ class MetricQuery:
                 peer_table_map,
                 window=ref.get("window"),
                 unit=ref.get("unit"),
-                rollup=ref.get("rollup"),
+                time_aggregation=ref.get("time_aggregation"),
             )
         elif ref["entity_type"] == "collection":
             return self.generate_collection_query(
@@ -402,7 +402,7 @@ class MetricQuery:
                 peer_table_map,
                 window=ref.get("window"),
                 unit=ref.get("unit"),
-                rollup=ref.get("rollup"),
+                time_aggregation=ref.get("time_aggregation"),
             )
         raise Exception(f"Invalid entity_type {ref["entity_type"]}")
 
@@ -414,7 +414,7 @@ class MetricQuery:
         entity_type: str,
         window: t.Optional[int] = None,
         unit: t.Optional[str] = None,
-        rollup: t.Optional[str] = None,
+        time_aggregation: t.Optional[str] = None,
     ):
         context = self.expression_context()
 
@@ -425,8 +425,8 @@ class MetricQuery:
             extra_vars["rolling_window"] = window
         if unit:
             extra_vars["unit"] = unit
-        if rollup:
-            extra_vars["rollup"] = rollup
+        if time_aggregation:
+            extra_vars["time_aggregation"] = time_aggregation
 
         metrics_query = context.evaluate(
             name,
@@ -455,7 +455,7 @@ class MetricQuery:
         peer_table_map: t.Dict[str, str],
         window: t.Optional[int] = None,
         unit: t.Optional[str] = None,
-        rollup: t.Optional[str] = None,
+        time_aggregation: t.Optional[str] = None,
     ):
         metrics_query = self.generate_metrics_query(
             evaluator,
@@ -464,7 +464,7 @@ class MetricQuery:
             "artifact",
             window,
             unit,
-            rollup,
+            time_aggregation,
         )
 
         top_level_select = exp.select(
@@ -571,7 +571,7 @@ class MetricQuery:
         peer_table_map: t.Dict[str, str],
         window: t.Optional[int] = None,
         unit: t.Optional[str] = None,
-        rollup: t.Optional[str] = None,
+        time_aggregation: t.Optional[str] = None,
     ):
         metrics_query = self.generate_metrics_query(
             evaluator,
@@ -580,7 +580,7 @@ class MetricQuery:
             "artifact",
             window,
             unit,
-            rollup,
+            time_aggregation,
         )
 
         metrics_query = qualify(metrics_query)
@@ -608,7 +608,7 @@ class MetricQuery:
         peer_table_map: t.Dict[str, str],
         window: t.Optional[int] = None,
         unit: t.Optional[str] = None,
-        rollup: t.Optional[str] = None,
+        time_aggregation: t.Optional[str] = None,
     ):
         metrics_query = self.generate_metrics_query(
             evaluator,
@@ -617,7 +617,7 @@ class MetricQuery:
             "artifact",
             window,
             unit,
-            rollup,
+            time_aggregation,
         )
 
         metrics_query = qualify(metrics_query)

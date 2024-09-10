@@ -21,7 +21,11 @@ type ExtraVarBaseType = str | int | float
 type ExtraVarType = ExtraVarBaseType | t.List[ExtraVarBaseType]
 
 
-ROLLUP_TO_CRON = {"daily": "@daily", "monthly": "@monthly", "weekly": "@weekly"}
+TIME_AGGREGATION_TO_CRON = {
+    "daily": "@daily",
+    "monthly": "@monthly",
+    "weekly": "@weekly",
+}
 METRICS_COLUMNS_BY_ENTITY: t.Dict[str, t.Dict[str, exp.DataType]] = {
     "artifact": {
         "bucket_day": exp.DataType.build("DATE", dialect="clickhouse"),
@@ -69,13 +73,13 @@ def generate_models_from_query(
 
     for ref in refs:
         cron = "@daily"
-        rollup = ref.get("rollup")
+        time_aggregation = ref.get("time_aggregation")
         window = ref.get("window")
-        if rollup:
-            cron = ROLLUP_TO_CRON[rollup]
+        if time_aggregation:
+            cron = TIME_AGGREGATION_TO_CRON[time_aggregation]
         else:
             if not window:
-                raise Exception("window or rollup must be set")
+                raise Exception("window or time_aggregation must be set")
             assert query._source.rolling
             cron = query._source.rolling["cron"]
 
@@ -90,6 +94,7 @@ def generate_models_from_query(
         table_name = query.table_name(ref)
         all_tables[ref["entity_type"]].append(table_name)
         columns = METRICS_COLUMNS_BY_ENTITY[ref["entity_type"]]
+        start = "2015-01-01"
 
         if ref["entity_type"] == "artifact":
             GeneratedModel.create(
@@ -107,6 +112,7 @@ def generate_models_from_query(
                 columns=columns,
                 grain=["metric", "to_artifact_id", "from_artifact_id", "bucket_day"],
                 cron=cron,
+                start=start,
             )
 
         if ref["entity_type"] == "project":
@@ -125,6 +131,7 @@ def generate_models_from_query(
                 columns=columns,
                 grain=["metric", "to_project_id", "from_artifact_id", "bucket_day"],
                 cron=cron,
+                start=start,
             )
         if ref["entity_type"] == "collection":
             GeneratedModel.create(
@@ -142,6 +149,7 @@ def generate_models_from_query(
                 columns=columns,
                 grain=["metric", "to_collection_id", "from_artifact_id", "bucket_day"],
                 cron=cron,
+                start=start,
             )
 
     return all_tables

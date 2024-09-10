@@ -47,16 +47,16 @@ timeseries_metrics(
     model_prefix="timeseries",
     metric_queries={
         # This will automatically generate star counts for the given roll up periods.
-        # A rollup is just a simple addition of the aggregation. So basically we
-        # calculate the daily rollup every day by getting the count of the day.
+        # A time_aggregation is just a simple addition of the aggregation. So basically we
+        # calculate the daily time_aggregation every day by getting the count of the day.
         # Then the weekly every week by getting the count of the week and
         # monthly by getting the count of the month.
         # Additionally this will also create this along the dimensions (entity_types) of
         # project/collection so the resulting models will be named as follows
-        # `metrics.timeseries_stars_to_{entity_type}_{rollup}`
+        # `metrics.timeseries_stars_to_{entity_type}_{time_aggregation}`
         "stars": MetricQueryDef(
             ref="stars.sql",
-            rollups=["daily", "weekly", "monthly"],
+            time_aggregations=["daily", "weekly", "monthly"],
             entity_types=[
                 "artifact",
                 "project",

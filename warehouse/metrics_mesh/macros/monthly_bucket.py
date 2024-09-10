@@ -4,7 +4,9 @@ from sqlglot import expressions as exp
 
 
 @macro()
-def rollup_bucket(evaluator: MacroEvaluator, timeExp: exp.Expression, rollup: str):
+def time_aggregation_bucket(
+    evaluator: MacroEvaluator, timeExp: exp.Expression, rollup: str
+):
     from sqlmesh.core.dialect import parse_one
 
     if evaluator.runtime_stage in ["loading", "creating"]:
