@@ -7,6 +7,7 @@ from enum import Enum
 import sqlglot
 from sqlglot import exp
 from sqlglot.optimizer.qualify import qualify
+from sqlmesh.utils.date import TimeLike
 from sqlmesh.core.macros import MacroEvaluator
 from metrics_tools.dialect.translate import (
     CustomFuncHandler,
@@ -705,6 +706,7 @@ class TimeseriesMetricsOptions(t.TypedDict):
     metric_queries: t.Dict[str, MetricQueryDef]
     default_dialect: t.NotRequired[str]
     model_options: t.NotRequired[t.Dict[str, t.Any]]
+    start: TimeLike
 
 
 class GeneratedArtifactConfig(t.TypedDict):
@@ -716,55 +718,6 @@ class GeneratedArtifactConfig(t.TypedDict):
 
 
 def generated_entity(
-    evaluator: MacroEvaluator,
-    query_reference_name: str,
-    query_def_as_input: MetricQueryInput,
-    default_dialect: str,
-    peer_table_map: t.Dict[str, str],
-    ref: PeerMetricDependencyRef,
-):
-    query_def = MetricQueryDef.from_input(query_def_as_input)
-    query = MetricQuery.load(
-        name=query_reference_name,
-        default_dialect=default_dialect,
-        source=query_def,
-    )
-    e = query.generate_query_ref(
-        ref,
-        evaluator,
-        peer_table_map=peer_table_map,
-    )
-    print(e.sql())
-    if not e:
-        raise Exception("failed to generate query ref")
-    return e
-
-
-def generated_project(
-    evaluator: MacroEvaluator,
-    query_reference_name: str,
-    query_def_as_input: MetricQueryInput,
-    default_dialect: str,
-    peer_table_map: t.Dict[str, str],
-    ref: PeerMetricDependencyRef,
-):
-    query_def = MetricQueryDef.from_input(query_def_as_input)
-    query = MetricQuery.load(
-        name=query_reference_name,
-        default_dialect=default_dialect,
-        source=query_def,
-    )
-    e = query.generate_query_ref(
-        ref,
-        evaluator,
-        peer_table_map=peer_table_map,
-    )
-    if not e:
-        raise Exception("failed to generate query ref")
-    return e
-
-
-def generated_collection(
     evaluator: MacroEvaluator,
     query_reference_name: str,
     query_def_as_input: MetricQueryInput,

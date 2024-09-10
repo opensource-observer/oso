@@ -441,6 +441,5 @@ def create_import_call_env(
             build_env(used_macro.func, env=python_env, name=name, path=path)
 
     serialized.update(serialize_env(python_env, project_path))
-    print(serialized)
 
     return (entrypoint_name, serialized)

@@ -3,6 +3,7 @@ import os
 import inspect
 
 from sqlglot import exp
+from sqlmesh.utils.date import TimeLike
 from sqlmesh.core.model import ModelKindName
 from metrics_tools.lib.factories.definition import (
     MetricQuery,
@@ -59,6 +60,7 @@ def generate_models_from_query(
     query: MetricQuery,
     default_dialect: str,
     peer_table_map: t.Dict[str, str],
+    start: TimeLike,
 ):
     # Turn the source into a dict so it can be used in the sqlmesh context
     query_def_as_input = query._source.to_input()
@@ -94,7 +96,6 @@ def generate_models_from_query(
         table_name = query.table_name(ref)
         all_tables[ref["entity_type"]].append(table_name)
         columns = METRICS_COLUMNS_BY_ENTITY[ref["entity_type"]]
-        start = "2015-01-01"
 
         if ref["entity_type"] == "artifact":
             GeneratedModel.create(
@@ -189,6 +190,7 @@ def timeseries_metrics(
             query,
             default_dialect=raw_options.get("default_dialect", "clickhouse"),
             peer_table_map=peer_table_map,
+            start=raw_options["start"],
         )
         for entity_type in all_tables.keys():
             all_tables[entity_type] = all_tables[entity_type] + tables[entity_type]
