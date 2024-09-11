@@ -98,6 +98,22 @@ timeseries_metrics(
                 cron="@daily",
             ),
         ),
+        "active_addresses": MetricQueryDef(
+            ref="active_addresses.sql",
+            time_aggregations=["daily", "weekly", "monthly"],
+        ),
+        "commits": MetricQueryDef(
+            ref="commits.sql",
+            time_aggregations=["daily", "weekly", "monthly"],
+        ),
+        "forks": MetricQueryDef(
+            ref="forks.sql",
+            time_aggregations=["daily", "weekly", "monthly"],
+        ),
+        "gas_fees": MetricQueryDef(
+            ref="gas_fees.sql",
+            time_aggregations=["daily", "weekly", "monthly"],
+        ),
     },
     default_dialect="clickhouse",
 )
