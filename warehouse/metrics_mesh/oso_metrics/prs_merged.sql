@@ -1,8 +1,8 @@
-select STR_TO_DATE(@end_ds, '%Y-%m-%d') as metrics_bucket_date,
+select STR_TO_DATE(@end_ds, '%Y-%m-%d') as metrics_sample_date,
   events.event_source,
   events.to_artifact_id,
   '' as from_artifact_id,
-  @metric_name as metric,
+  @metric_name() as metric,
   SUM(events.amount) as amount
 from metrics.events_daily_to_artifact as events
 where event_type in ('PULL_REQUEST_MERGED')

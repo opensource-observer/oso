@@ -1,40 +1,52 @@
-select active.metrics_bucket_date,
+select active.metrics_sample_date,
   active.event_source,
-  active.to_artifact_id,
+  @entity_type_col('to_%s_id', table_alias := active),
   '' as from_artifact_id,
-  'full_time_developers' as metric,
+  @metric_name('full_time_developers') as metric,
   COUNT(DISTINCT active.from_artifact_id) as amount
-from peer.developer_active_days as active
-where active.amount >= @full_time_days
+from metrics_peer_ref(
+    developer_active_days,
+    window := @rolling_window,
+    unit := @rolling_unit
+  ) as active
+where active.amount / @rolling_window >= @full_time_ratio
 group by metric,
   from_artifact_id,
-  to_artifact_id,
+  @entity_type_col('to_%s_id', table_alias := active),
   event_source,
-  metrics_bucket_date
+  metrics_sample_date
 union all
-select active.metrics_bucket_date,
+select active.metrics_sample_date,
   active.event_source,
-  active.to_artifact_id,
+  @entity_type_col('to_%s_id', table_alias := active),
   '' as from_artifact_id,
-  'part_time_developers' as metric,
+  @metric_name('part_time_developers') as metric,
   COUNT(DISTINCT active.from_artifact_id) as amount
-from peer.developer_active_days as active
-where active.amount < @full_time_days
+from metrics_peer_ref(
+    developer_active_days,
+    window := @rolling_window,
+    unit := @rolling_unit
+  ) as active
+where active.amount / @rolling_window < @full_time_ratio
 group by metric,
   from_artifact_id,
-  to_artifact_id,
+  @entity_type_col('to_%s_id', table_alias := active),
   event_source,
-  metrics_bucket_date
+  metrics_sample_date
 union all
-select active.metrics_bucket_date,
+select active.metrics_sample_date,
   active.event_source,
-  active.to_artifact_id,
+  @entity_type_col('to_%s_id', table_alias := active),
   '' as from_artifact_id,
-  'active_developers' as metric,
+  @metric_name('active_developers') as metric,
   COUNT(DISTINCT active.from_artifact_id) as amount
-from peer.developer_active_days as active
+from metrics_peer_ref(
+    developer_active_days,
+    window := @rolling_window,
+    unit := @rolling_unit
+  ) as active
 group by metric,
   from_artifact_id,
-  to_artifact_id,
+  @entity_type_col('to_%s_id', table_alias := active),
   event_source,
-  metrics_bucket_date
+  metrics_sample_date

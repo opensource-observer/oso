@@ -35,6 +35,7 @@ def initialize_local_duckdb(path: str):
             # We need to rename this once we run the oso_playground dbt again
             "opensource-observer.oso_playground.int_events": "sources.timeseries_events_by_artifact_v0",
             "opensource-observer.oso_playground.artifacts_by_project_v1": "sources.artifacts_by_project_v1",
+            "opensource-observer.oso_playground.projects_by_collection_v1": "sources.projects_by_collection_v1",
         },
         path,
     )
