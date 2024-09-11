@@ -1,12 +1,21 @@
 MODEL (
   name metrics.metrics_v0,
   kind FULL,
-  dialect "clickhouse",
-  enabled false,
+  dialect "clickhouse"
 );
-WITH all_timeseries_metric_names AS (
+WITH unioned_metric_names AS (
   SELECT DISTINCT metric
-  FROM metrics.timeseries_metrics_by_artifact_over_30_days
+  FROM metrics.timeseries_metrics_to_artifact
+  UNION ALL
+  SELECT DISTINCT metric
+  FROM metrics.timeseries_metrics_to_project
+  UNION ALL
+  SELECT DISTINCT metric
+  FROM metrics.timeseries_metrics_to_collection
+),
+all_timeseries_metric_names AS (
+  SELECT DISTINCT metric
+  FROM unioned_metric_names
 ),
 metrics_v0_no_casting AS (
   SELECT @oso_id('OSO', 'oso', metric) AS metric_id,
