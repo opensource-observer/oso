@@ -290,7 +290,7 @@ def timeseries_metrics(
 #         union_cte: t.Optional[exp.Query] = None
 
 #         cte_column_select = [
-#             "metrics_bucket_date as bucket_day",
+#             "metrics_sample_date as bucket_day",
 #             "to_artifact_id as to_artifact_id",
 #             "from_artifact_id as from_artifact_id",
 #             "event_source as event_source",
