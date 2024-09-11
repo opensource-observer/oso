@@ -3,14 +3,22 @@ MODEL (
   kind FULL,
   dialect "clickhouse"
 );
-WITH all_timeseries_metric_names AS (
-  SELECT DISTINCT 
-    metric
-  FROM metrics.timeseries_metrics_by_artifact_over_30_days
+WITH unioned_metric_names AS (
+  SELECT DISTINCT metric
+  FROM metrics.timeseries_metrics_to_artifact
+  UNION ALL
+  SELECT DISTINCT metric
+  FROM metrics.timeseries_metrics_to_project
+  UNION ALL
+  SELECT DISTINCT metric
+  FROM metrics.timeseries_metrics_to_collection
+),
+all_timeseries_metric_names AS (
+  SELECT DISTINCT metric
+  FROM unioned_metric_names
 ),
 metrics_v0_no_casting AS (
-  SELECT 
-    @oso_id('OSO', 'oso', metric) AS metric_id,
+  SELECT @oso_id('OSO', 'oso', metric) AS metric_id,
     'OSO' AS metric_source,
     'oso' AS metric_namespace,
     metric AS metric_name,
@@ -21,8 +29,7 @@ metrics_v0_no_casting AS (
     'UNKNOWN' AS aggregation_function
   FROM all_timeseries_metric_names
 )
-select 
-  metric_id::String,
+select metric_id::String,
   metric_source::String,
   metric_namespace::String,
   metric_name::String,
