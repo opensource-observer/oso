@@ -4,6 +4,7 @@ from sqlmesh.core.model.decorator import model
 import logging
 import typing as t
 import inspect
+import textwrap
 from pathlib import Path
 
 from sqlglot import exp
@@ -12,7 +13,7 @@ from sqlmesh.core.macros import MacroRegistry
 from sqlmesh.utils.jinja import JinjaMacroRegistry
 from sqlmesh.core import constants as c
 from sqlmesh.core.dialect import MacroFunc
-from sqlmesh.core.macros import macro
+from sqlmesh.core.macros import macro, ExecutableOrMacro
 from sqlmesh.core.model.definition import (
     create_sql_model,
 )
@@ -308,6 +309,7 @@ class GeneratedModel:
         entrypoint_path: str,
         source: t.Optional[str] = None,
         source_loader: t.Optional[t.Callable[[], str]] = None,
+        additional_macros: t.Optional[t.List[t.Callable[[], str]]] = None,
         **kwargs,
     ):
         self.kwargs = kwargs
@@ -319,6 +321,7 @@ class GeneratedModel:
         self.entrypoint_path = entrypoint_path
         self.source_loader = source_loader
         self.source = source
+        self.additional_macros = additional_macros or []
 
     def model(
         self,
@@ -338,6 +341,11 @@ class GeneratedModel:
     ):
         macros = macros or macro.get_registry()
         fake_module_path = Path(self.entrypoint_path)
+
+        if self.additional_macros:
+            macros = t.cast(MacroRegistry, macros.copy())
+            for additional_macro in self.additional_macros:
+                macros.update(create_unregistered_macro(additional_macro))
 
         common_kwargs: t.Dict[str, t.Any] = dict(
             defaults=defaults,
@@ -390,6 +398,40 @@ def escape_triple_quotes(input_string: str) -> str:
     return escaped_string
 
 
+def create_unregistered_macro(func: t.Callable) -> t.Dict[str, ExecutableOrMacro]:
+    entrypoint_name = func.__name__
+    import_module = func.__module__
+    delegated_name = f"_wrapped_{entrypoint_name}"
+
+    source = inspect.getsource(func)
+
+    entrypoint_as_str = textwrap.dedent(
+        f"""
+    def {entrypoint_name}(evaluator, *args, **kwargs):
+        '''
+        Source: 
+        
+        {textwrap.indent("\n" + escape_triple_quotes(source), "        ")}
+        '''
+        return {delegated_name}(evaluator, *args, **kwargs)
+    """
+    )
+    return {
+        delegated_name: Executable(
+            payload=f"from {import_module} import {func.__name__} as {delegated_name}",
+            kind=ExecutableKind.IMPORT,
+        ),
+        entrypoint_name: Executable(
+            name=entrypoint_name,
+            payload=entrypoint_as_str,
+            kind=ExecutableKind.DEFINITION,
+            path=f"/temp/macro/{entrypoint_name}.py",
+            alias=entrypoint_name,
+            is_metadata=False,
+        ),
+    }
+
+
 def create_import_call_env(
     name: str,
     import_module: str,
@@ -399,15 +441,20 @@ def create_import_call_env(
     path: Path,
     project_path: Path,
     macros: t.Optional[MacroRegistry] = None,
+    entrypoint_name: str = "macro_entrypoint",
+    additional_macros: t.Optional[MacroRegistry] = None,
 ):
-    import textwrap
 
     serialized = env.copy()
     macros = macros or macro.get_registry()
 
+    if additional_macros:
+        macros = t.cast(MacroRegistry, macros.copy())
+        macros.update(additional_macros)
+
     entrypoint_as_str = textwrap.dedent(
         f"""
-    def macro_entrypoint(evaluator):
+    def {entrypoint_name}(evaluator):
         '''
         Source: 
         
@@ -416,7 +463,6 @@ def create_import_call_env(
         return {name}(evaluator, **entrypoint_config)
     """
     )
-    entrypoint_name = "macro_entrypoint"
     entrypoint_config_name = "entrypoint_config"
     serialized[entrypoint_name] = Executable(
         name=entrypoint_name,
@@ -441,5 +487,6 @@ def create_import_call_env(
             build_env(used_macro.func, env=python_env, name=name, path=path)
 
     serialized.update(serialize_env(python_env, project_path))
+    print(serialized)
 
     return (entrypoint_name, serialized)

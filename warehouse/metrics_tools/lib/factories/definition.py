@@ -134,11 +134,15 @@ def to_actual_table_name(
 def reference_to_str(ref: PeerMetricDependencyRef, actual_name: str = ""):
     name = actual_name or ref["name"]
     result = f"{name}_to_{ref['entity_type']}"
-    if ref.get("window"):
-        result = f"{result}_over_{ref.get('window')}{ref.get('unit')}"
-    if ref.get("time_aggregation"):
-        result = f"{result}_{ref.get('time_aggregation')}"
-    return result
+    suffix= time_suffix(ref.get('time_aggregation'), ref.get('window'), ref.get('unit'))
+    return f"{result}_{suffix}"
+
+
+def time_suffix(time_aggregation: t.Optional[str], window: t.Optional[int | str], unit: t.Optional[str]):
+    if window:
+        return f"over_{window}_{unit}"
+    if time_aggregation:
+        return time_aggregation
 
 
 def assert_allowed_items_in_list[T](to_validate: t.List[T], allowed_items: t.List[T]):
@@ -231,26 +235,37 @@ class MetricQueryDef:
         if suffix:
             model_name = f"{model_name}_{suffix}"
         return model_name
+    
 
+def exp_literal_to_py_literal(glot_literal: exp.Expression) -> t.Any:
+    # Don't error by default let it pass
+    if not isinstance(glot_literal, exp.Literal):
+        return glot_literal
+    return glot_literal.this
+    
 
 class PeerRefHandler(CustomFuncHandler[PeerMetricDependencyRef]):
-    name = "__peer_ref"
+    name = "metrics_peer_ref"
 
     def to_obj(
         self,
         name,
         *,
-        entity_type: t.Optional[str] = None,
-        window: t.Optional[int] = None,
-        unit: t.Optional[str] = None,
-        time_aggregation: t.Optional[str] = None,
+        entity_type: t.Optional[exp.Expression] = None,
+        window: t.Optional[exp.Expression] = None,
+        unit: t.Optional[exp.Expression] = None,
+        time_aggregation: t.Optional[exp.Expression] = None,
     ) -> PeerMetricDependencyRef:
+        entity_type_val = t.cast(str, exp_literal_to_py_literal(entity_type)) if entity_type else "" 
+        window_val = int(exp_literal_to_py_literal(window)) if window else None
+        unit_val = t.cast(str, exp_literal_to_py_literal(unit)) if unit else None
+        time_aggregation_val = t.cast(str, exp_literal_to_py_literal(time_aggregation)) if time_aggregation else None
         return PeerMetricDependencyRef(
             name=name,
-            entity_type=entity_type or "",
-            window=window,
-            unit=unit,
-            time_aggregation=time_aggregation,
+            entity_type=entity_type_val,
+            window=window_val,
+            unit=unit_val,
+            time_aggregation=time_aggregation_val,
         )
 
     def transform(
@@ -263,6 +278,7 @@ class PeerRefHandler(CustomFuncHandler[PeerMetricDependencyRef]):
             obj["entity_type"] = context["entity_type"]
         peer_table_map = context["peer_table_map"]
         return sqlglot.to_table(f"metrics.{to_actual_table_name(obj, peer_table_map)}")
+
 
 
 class MetricQueryContext:
@@ -293,7 +309,7 @@ class MetricQueryContext:
         select_to_return: t.Optional[exp.Query] = None
         if not extra_vars:
             extra_vars = {}
-        extra_vars["metric_name"] = self._source.name or name
+        extra_vars["generated_metric_name"] = self._source.name or name
 
         with self._source.query_vars(evaluator, extra_vars=extra_vars):
             for expression in self._expressions:
@@ -470,7 +486,7 @@ class MetricQuery:
         )
 
         top_level_select = exp.select(
-            "metrics_bucket_date as bucket_day",
+            "metrics_sample_date as metrics_sample_date",
             "to_artifact_id as to_artifact_id",
             "from_artifact_id as from_artifact_id",
             "event_source as event_source",
@@ -489,10 +505,20 @@ class MetricQuery:
             if not isinstance(node, exp.Select):
                 return node
             select = node
+
+            # Check if this using the timeseries source tables as a join or the from
+            is_using_timeseries_source = False
+            for table in select.find_all(exp.Table):
+                if table.this.this in ['events_daily_to_artifact']:
+                    is_using_timeseries_source = True
+            if not is_using_timeseries_source:
+                return node
+
             for i in range(len(select.expressions)):
                 ex = select.expressions[i]
                 if not isinstance(ex, exp.Alias):
-                    return node
+                    continue
+                
                 # If to_artifact_id is being aggregated then it's time to rewrite
                 if isinstance(ex.this, exp.Column) and isinstance(
                     ex.this.this, exp.Identifier
@@ -522,6 +548,7 @@ class MetricQuery:
                             updated_select = updated_select.join(
                                 "sources.projects_by_collection_v1",
                                 on="artifacts_by_project_v1.project_id = projects_by_collection_v1.project_id",
+                                join_type="inner"
                             )
 
                             new_to_entity_id_col = exp.to_column(
@@ -579,7 +606,7 @@ class MetricQuery:
             evaluator,
             name,
             peer_table_map,
-            "artifact",
+            "project",
             window,
             unit,
             time_aggregation,
@@ -592,7 +619,7 @@ class MetricQuery:
         )
 
         top_level_select = exp.select(
-            "metrics_bucket_date as bucket_day",
+            "metrics_sample_date as metrics_sample_date",
             "to_project_id as to_project_id",
             "from_artifact_id as from_artifact_id",
             "event_source as event_source",
@@ -616,7 +643,7 @@ class MetricQuery:
             evaluator,
             name,
             peer_table_map,
-            "artifact",
+            "collection",
             window,
             unit,
             time_aggregation,
@@ -629,7 +656,7 @@ class MetricQuery:
         )
 
         top_level_select = exp.select(
-            "metrics_bucket_date as bucket_day",
+            "metrics_sample_date as metrics_sample_date",
             "to_collection_id as to_collection_id",
             "from_artifact_id as from_artifact_id",
             "event_source as event_source",
@@ -708,6 +735,7 @@ class TimeseriesMetricsOptions(t.TypedDict):
     default_dialect: t.NotRequired[str]
     model_options: t.NotRequired[t.Dict[str, t.Any]]
     start: TimeLike
+    timeseries_sources: t.NotRequired[t.Optional[t.List[str]]]
 
 
 class GeneratedArtifactConfig(t.TypedDict):
@@ -716,6 +744,7 @@ class GeneratedArtifactConfig(t.TypedDict):
     default_dialect: str
     peer_table_map: t.Dict[str, str]
     ref: PeerMetricDependencyRef
+    timeseries_sources: t.List[str]
 
 
 def generated_entity(
@@ -725,6 +754,7 @@ def generated_entity(
     default_dialect: str,
     peer_table_map: t.Dict[str, str],
     ref: PeerMetricDependencyRef,
+    timeseries_sources: t.List[str],
 ):
     query_def = MetricQueryDef.from_input(query_def_as_input)
     query = MetricQuery.load(

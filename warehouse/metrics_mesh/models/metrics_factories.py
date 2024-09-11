@@ -66,7 +66,7 @@ timeseries_metrics(
         # up to the query to actually query the correct window.
         # The resultant models are named as such
         # `metrics.timeseries_active_days_to_{entity_type}_over_{window}_{unit}`
-        "active_days": MetricQueryDef(
+        "developer_active_days": MetricQueryDef(
             ref="active_days.sql",
             vars={
                 "activity_event_types": ["COMMIT_CODE"],
@@ -77,6 +77,26 @@ timeseries_metrics(
                 cron="@daily",  # This determines how often this is calculated
             ),
             entity_types=["artifact", "project", "collection"],
+        ),
+        "developer_classifications": MetricQueryDef(
+            ref="developer_activity_classification.sql",
+            vars={
+                "full_time_ratio": 10 / 30,
+            },
+            rolling=RollingConfig(
+                windows=[30, 60, 90],
+                unit="day",
+                cron="@daily",
+            ),
+        ),
+        "contributor_classifications": MetricQueryDef(
+            ref="contributor_activity_classification.sql",
+            vars={"full_time_ratio": 10 / 30},
+            rolling=RollingConfig(
+                windows=[30, 60, 90],
+                unit="day",
+                cron="@daily",
+            ),
         ),
     },
     default_dialect="clickhouse",

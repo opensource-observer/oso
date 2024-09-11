@@ -13,6 +13,7 @@ from metrics_tools.lib.factories.definition import (
     generated_entity,
     join_all_of_entity_type,
 )
+from .macros import entity_type_col, metric_name
 from metrics_tools.models import GeneratedModel
 
 CURR_DIR = os.path.dirname(__file__)
@@ -29,7 +30,7 @@ TIME_AGGREGATION_TO_CRON = {
 }
 METRICS_COLUMNS_BY_ENTITY: t.Dict[str, t.Dict[str, exp.DataType]] = {
     "artifact": {
-        "bucket_day": exp.DataType.build("DATE", dialect="clickhouse"),
+        "metrics_sample_date": exp.DataType.build("DATE", dialect="clickhouse"),
         "event_source": exp.DataType.build("String", dialect="clickhouse"),
         "to_artifact_id": exp.DataType.build("String", dialect="clickhouse"),
         "from_artifact_id": exp.DataType.build("String", dialect="clickhouse"),
@@ -37,7 +38,7 @@ METRICS_COLUMNS_BY_ENTITY: t.Dict[str, t.Dict[str, exp.DataType]] = {
         "amount": exp.DataType.build("Float64", dialect="clickhouse"),
     },
     "project": {
-        "bucket_day": exp.DataType.build("DATE", dialect="clickhouse"),
+        "metrics_sample_date": exp.DataType.build("DATE", dialect="clickhouse"),
         "event_source": exp.DataType.build("String", dialect="clickhouse"),
         "to_project_id": exp.DataType.build("String", dialect="clickhouse"),
         "from_artifact_id": exp.DataType.build("String", dialect="clickhouse"),
@@ -45,7 +46,7 @@ METRICS_COLUMNS_BY_ENTITY: t.Dict[str, t.Dict[str, exp.DataType]] = {
         "amount": exp.DataType.build("Float64", dialect="clickhouse"),
     },
     "collection": {
-        "bucket_day": exp.DataType.build("DATE", dialect="clickhouse"),
+        "metrics_sample_date": exp.DataType.build("DATE", dialect="clickhouse"),
         "event_source": exp.DataType.build("String", dialect="clickhouse"),
         "to_collection_id": exp.DataType.build("String", dialect="clickhouse"),
         "from_artifact_id": exp.DataType.build("String", dialect="clickhouse"),
@@ -61,6 +62,7 @@ def generate_models_from_query(
     default_dialect: str,
     peer_table_map: t.Dict[str, str],
     start: TimeLike,
+    timeseries_sources: t.List[str],
 ):
     # Turn the source into a dict so it can be used in the sqlmesh context
     query_def_as_input = query._source.to_input()
@@ -91,11 +93,13 @@ def generate_models_from_query(
             default_dialect=default_dialect,
             peer_table_map=peer_table_map,
             ref=ref,
+            timeseries_sources=timeseries_sources,
         )
 
         table_name = query.table_name(ref)
         all_tables[ref["entity_type"]].append(table_name)
         columns = METRICS_COLUMNS_BY_ENTITY[ref["entity_type"]]
+        additional_macros = [entity_type_col, metric_name]
 
         if ref["entity_type"] == "artifact":
             GeneratedModel.create(
@@ -106,14 +110,20 @@ def generate_models_from_query(
                 name=f"metrics.{table_name}",
                 kind={
                     "name": ModelKindName.INCREMENTAL_BY_TIME_RANGE,
-                    "time_column": "bucket_day",
+                    "time_column": "metrics_sample_date",
                     "batch_size": 1,
                 },
                 dialect="clickhouse",
                 columns=columns,
-                grain=["metric", "to_artifact_id", "from_artifact_id", "bucket_day"],
+                grain=[
+                    "metric",
+                    "to_artifact_id",
+                    "from_artifact_id",
+                    "metrics_sample_date",
+                ],
                 cron=cron,
                 start=start,
+                additional_macros=additional_macros,
             )
 
         if ref["entity_type"] == "project":
@@ -125,14 +135,20 @@ def generate_models_from_query(
                 name=f"metrics.{table_name}",
                 kind={
                     "name": ModelKindName.INCREMENTAL_BY_TIME_RANGE,
-                    "time_column": "bucket_day",
+                    "time_column": "metrics_sample_date",
                     "batch_size": 1,
                 },
                 dialect="clickhouse",
                 columns=columns,
-                grain=["metric", "to_project_id", "from_artifact_id", "bucket_day"],
+                grain=[
+                    "metric",
+                    "to_project_id",
+                    "from_artifact_id",
+                    "metrics_sample_date",
+                ],
                 cron=cron,
                 start=start,
+                additional_macros=additional_macros,
             )
         if ref["entity_type"] == "collection":
             GeneratedModel.create(
@@ -143,14 +159,20 @@ def generate_models_from_query(
                 name=f"metrics.{table_name}",
                 kind={
                     "name": ModelKindName.INCREMENTAL_BY_TIME_RANGE,
-                    "time_column": "bucket_day",
+                    "time_column": "metrics_sample_date",
                     "batch_size": 1,
                 },
                 dialect="clickhouse",
                 columns=columns,
-                grain=["metric", "to_collection_id", "from_artifact_id", "bucket_day"],
+                grain=[
+                    "metric",
+                    "to_collection_id",
+                    "from_artifact_id",
+                    "metrics_sample_date",
+                ],
                 cron=cron,
                 start=start,
+                additional_macros=additional_macros,
             )
 
     return all_tables
@@ -160,6 +182,10 @@ def timeseries_metrics(
     **raw_options: t.Unpack[TimeseriesMetricsOptions],
 ):
     calling_file = inspect.stack()[1].filename
+    timeseries_sources = raw_options.get(
+        "timeseries_sources", ["events_daily_to_artifact"]
+    )
+    assert timeseries_sources is not None
 
     metrics_queries = [
         MetricQuery.load(
@@ -191,6 +217,7 @@ def timeseries_metrics(
             default_dialect=raw_options.get("default_dialect", "clickhouse"),
             peer_table_map=peer_table_map,
             start=raw_options["start"],
+            timeseries_sources=timeseries_sources,
         )
         for entity_type in all_tables.keys():
             all_tables[entity_type] = all_tables[entity_type] + tables[entity_type]
