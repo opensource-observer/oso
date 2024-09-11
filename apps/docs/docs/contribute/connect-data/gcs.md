@@ -1,6 +1,6 @@
 ---
 title: Connect via Google Cloud Storage (GCS)
-sidebar_position: 4
+sidebar_position: 5
 ---
 
 import NextSteps from "./dagster-config.mdx"
