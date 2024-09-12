@@ -3,6 +3,7 @@ from typing import (
     Dict,
     Any,
     Mapping,
+    MutableMapping,
     Optional,
     Callable,
     Iterator,
@@ -12,13 +13,16 @@ from typing import (
     Type,
 )
 
+from uuid import uuid4
 from dagster import (
+    PartitionsDefinition,
     asset,
     AssetIn,
     AssetExecutionContext,
     MaterializeResult,
     Config,
     AssetMaterialization,
+    define_asset_job,
 )
 import dlt as dltlib
 from dlt.sources import DltResource
@@ -62,7 +66,7 @@ def _dlt_factory[
         key_prefix: Optional[AssetKeyPrefixParam] = None,
         deps: Optional[AssetDeps] = None,
         ins: Optional[Mapping[str, AssetIn]] = None,
-        tags: Optional[Mapping[str, str]] = None,
+        tags: Optional[MutableMapping[str, str]] = None,
         *args: P.args,
         **kwargs: P.kwargs,
     ):
@@ -75,6 +79,9 @@ def _dlt_factory[
         related dagster configuration.
         """
         tags = tags or {}
+
+        if "partitions_def" in kwargs:
+            tags["opensource.observer/extra"] = "partitioned-assets"
 
         key_prefix_str = ""
         if key_prefix:
@@ -122,19 +129,21 @@ def _dlt_factory[
                     config: config_type,
                     **extra_source_args,
                 ) -> Iterable[R]:
+                    pipeline_name = f"{key_prefix_str}_{name}_{uuid4()}"
+
                     # Hack for now. Staging cannot be used if running locally.
                     # We need to change this interface. Instead of being reliant
                     # on the constant defining bigquery we should use some kind
                     # of generic function to wire this pipeline together.
                     pipeline = dltlib.pipeline(
-                        f"{key_prefix_str}_{name}",
+                        pipeline_name,
                         destination=dlt_warehouse_destination,
                         dataset_name=dataset_name,
                     )
                     if constants.enable_bigquery:
                         context.log.debug("dlt pipeline setup to use staging")
                         pipeline = dltlib.pipeline(
-                            f"{key_prefix_str}_{name}",
+                            pipeline_name,
                             destination=dlt_warehouse_destination,
                             staging=dlt_staging_destination,
                             dataset_name=dataset_name,
@@ -183,7 +192,18 @@ def _dlt_factory[
                     for result in results:
                         yield cast(R, result)
 
-                return AssetFactoryResponse([_dlt_asset])
+                asset_partitions = cast(
+                    Optional[PartitionsDefinition[str]],
+                    kwargs["partitions_def"] if "partitions_def" in kwargs else None,
+                )
+
+                _asset_job = define_asset_job(
+                    name=f"{key_prefix_str}_{asset_name}_job",
+                    selection=[_dlt_asset],
+                    partitions_def=asset_partitions,
+                )
+
+                return AssetFactoryResponse([_dlt_asset], [], [_asset_job])
 
             return _factory
 

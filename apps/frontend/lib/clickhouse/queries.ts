@@ -237,6 +237,37 @@ const GET_COLLECTION_IDS_BY_PROJECT_IDS = define(
  * METRICS
  **********************/
 
+const metricResponse = {
+  metric_id: "",
+  metric_source: "",
+  metric_namespace: "",
+  metric_name: "",
+  display_name: "",
+};
+
+const metricResponseWithDescription = _.merge(metricResponse, {
+  description: "",
+});
+
+const GET_METRIC_BY_NAME = define(
+  `
+  SELECT 
+    metric_id, 
+    metric_source, 
+    metric_namespace, 
+    metric_name, 
+    display_name, 
+    description
+  FROM 
+    metrics.metrics_v0
+  WHERE 
+    metric_source = {metricSource: String}
+    AND metric_namespace = {metricNamespace: String}
+    AND metric_name = {metricName: String};
+`,
+  metricResponseWithDescription,
+);
+
 const GET_CODE_METRICS_BY_ARTIFACT = define(
   `
   SELECT 
@@ -613,6 +644,7 @@ export {
   GET_COLLECTIONS_BY_IDS,
   GET_COLLECTION_BY_NAME,
   GET_COLLECTION_IDS_BY_PROJECT_IDS,
+  GET_METRIC_BY_NAME,
   GET_CODE_METRICS_BY_ARTIFACT,
   GET_CODE_METRICS_BY_PROJECT,
   GET_ONCHAIN_METRICS_BY_PROJECT,
