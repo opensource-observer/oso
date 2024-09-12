@@ -1,29 +1,22 @@
-from sqlmesh.core.model.decorator import model
-
-
-import logging
-import typing as t
 import inspect
+import logging
 import textwrap
+import typing as t
 from pathlib import Path
 
 from sqlglot import exp
-
-from sqlmesh.core.macros import MacroRegistry
-from sqlmesh.utils.jinja import JinjaMacroRegistry
 from sqlmesh.core import constants as c
 from sqlmesh.core.dialect import MacroFunc
-from sqlmesh.core.macros import macro, ExecutableOrMacro
-from sqlmesh.core.model.definition import (
-    create_sql_model,
-)
+from sqlmesh.core.macros import ExecutableOrMacro, MacroRegistry, macro
+from sqlmesh.core.model.decorator import model
+from sqlmesh.core.model.definition import create_sql_model
+from sqlmesh.utils.jinja import JinjaMacroRegistry
 from sqlmesh.utils.metaprogramming import (
-    build_env,
-    serialize_env,
     Executable,
     ExecutableKind,
+    build_env,
+    serialize_env,
 )
-
 
 logger = logging.getLogger(__name__)
 
@@ -309,7 +302,9 @@ class GeneratedModel:
         entrypoint_path: str,
         source: t.Optional[str] = None,
         source_loader: t.Optional[t.Callable[[], str]] = None,
-        additional_macros: t.Optional[t.List[t.Callable[[], str]]] = None,
+        additional_macros: t.Optional[
+            t.List[t.Callable | t.Tuple[t.Callable, t.List[str]]]
+        ] = None,
         **kwargs,
     ):
         self.kwargs = kwargs
@@ -345,7 +340,10 @@ class GeneratedModel:
         if self.additional_macros:
             macros = t.cast(MacroRegistry, macros.copy())
             for additional_macro in self.additional_macros:
-                macros.update(create_unregistered_macro(additional_macro))
+                if isinstance(additional_macro, tuple):
+                    macros.update(create_unregistered_macro(*additional_macro))
+                else:
+                    macros.update(create_unregistered_macro(additional_macro))
 
         common_kwargs: t.Dict[str, t.Any] = dict(
             defaults=defaults,
@@ -376,6 +374,7 @@ class GeneratedModel:
             fake_module_path,
             project_path=module_path,
             macros=macros,
+            variables=variables,
         )
         common_kwargs["python_env"] = env
 
@@ -398,38 +397,46 @@ def escape_triple_quotes(input_string: str) -> str:
     return escaped_string
 
 
-def create_unregistered_macro(func: t.Callable) -> t.Dict[str, ExecutableOrMacro]:
+def create_unregistered_macro(
+    func: t.Callable, aliases: t.Optional[t.List[str]] = None
+) -> t.Dict[str, ExecutableOrMacro]:
+    aliases = aliases or []
     entrypoint_name = func.__name__
     import_module = func.__module__
     delegated_name = f"_wrapped_{entrypoint_name}"
 
     source = inspect.getsource(func)
 
-    entrypoint_as_str = textwrap.dedent(
-        f"""
-    def {entrypoint_name}(evaluator, *args, **kwargs):
-        '''
-        Source: 
-        
-        {textwrap.indent("\n" + escape_triple_quotes(source), "        ")}
-        '''
-        return {delegated_name}(evaluator, *args, **kwargs)
-    """
-    )
-    return {
+    all_aliases = [entrypoint_name] + aliases
+
+    registry: t.Dict[str, ExecutableOrMacro] = {
         delegated_name: Executable(
             payload=f"from {import_module} import {func.__name__} as {delegated_name}",
             kind=ExecutableKind.IMPORT,
         ),
-        entrypoint_name: Executable(
-            name=entrypoint_name,
-            payload=entrypoint_as_str,
-            kind=ExecutableKind.DEFINITION,
-            path=f"/temp/macro/{entrypoint_name}.py",
-            alias=entrypoint_name,
-            is_metadata=False,
-        ),
     }
+
+    for alias_name in all_aliases:
+        alias_as_str = textwrap.dedent(
+            f"""
+        def {alias_name}(evaluator, *args, **kwargs):
+            '''
+            Source: 
+            
+            {textwrap.indent("\n" + escape_triple_quotes(source), "        ")}
+            '''
+            return {delegated_name}(evaluator, *args, **kwargs)
+        """
+        )
+        registry[alias_name] = Executable(
+            name=alias_name,
+            payload=alias_as_str,
+            kind=ExecutableKind.DEFINITION,
+            path=f"/__generated/macro/{entrypoint_name}.py",
+            alias=None,
+            is_metadata=False,
+        )
+    return registry
 
 
 def create_import_call_env(
@@ -443,6 +450,7 @@ def create_import_call_env(
     macros: t.Optional[MacroRegistry] = None,
     entrypoint_name: str = "macro_entrypoint",
     additional_macros: t.Optional[MacroRegistry] = None,
+    variables: t.Optional[t.Dict[str, t.Any]] = None,
 ):
 
     serialized = env.copy()
@@ -485,6 +493,10 @@ def create_import_call_env(
             serialized[name] = used_macro
         elif not hasattr(used_macro, c.SQLMESH_BUILTIN):
             build_env(used_macro.func, env=python_env, name=name, path=path)
+
+    if variables:
+        for name, value in variables.items():
+            serialized[name] = Executable.value(value)
 
     serialized.update(serialize_env(python_env, project_path))
 

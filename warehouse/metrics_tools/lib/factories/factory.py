@@ -1,20 +1,27 @@
-import typing as t
-import os
 import inspect
+import os
+import typing as t
 
-from sqlglot import exp
-from sqlmesh.utils.date import TimeLike
-from sqlmesh.core.model import ModelKindName
 from metrics_tools.lib.factories.definition import (
+    GeneratedArtifactConfig,
     MetricQuery,
     TimeseriesMetricsOptions,
-    reference_to_str,
-    GeneratedArtifactConfig,
     generated_entity,
     join_all_of_entity_type,
+    reference_to_str,
 )
-from .macros import entity_type_col, metric_name
 from metrics_tools.models import GeneratedModel
+from sqlglot import exp
+from sqlmesh.core.model import ModelKindName
+from sqlmesh.utils.date import TimeLike
+
+from .macros import (
+    metrics_end,
+    metrics_entity_type_col,
+    metrics_name,
+    metrics_sample_date,
+    metrics_start,
+)
 
 CURR_DIR = os.path.dirname(__file__)
 QUERIES_DIR = os.path.abspath(os.path.join(CURR_DIR, "../../oso_metrics"))
@@ -99,7 +106,13 @@ def generate_models_from_query(
         table_name = query.table_name(ref)
         all_tables[ref["entity_type"]].append(table_name)
         columns = METRICS_COLUMNS_BY_ENTITY[ref["entity_type"]]
-        additional_macros = [entity_type_col, metric_name]
+        additional_macros = [
+            metrics_entity_type_col,
+            (metrics_name, ["metric_name"]),
+            metrics_sample_date,
+            metrics_end,
+            metrics_start,
+        ]
 
         if ref["entity_type"] == "artifact":
             GeneratedModel.create(

@@ -1,19 +1,17 @@
-import typing as t
 import os
-from dataclasses import dataclass, asdict
+import typing as t
 from contextlib import contextmanager
+from dataclasses import asdict, dataclass
 from enum import Enum
 
 import sqlglot
+from metrics_tools.dialect.translate import (CustomFuncHandler,
+                                             CustomFuncRegistry)
+from metrics_tools.evaluator import FunctionsTransformer
 from sqlglot import exp
 from sqlglot.optimizer.qualify import qualify
-from sqlmesh.utils.date import TimeLike
 from sqlmesh.core.macros import MacroEvaluator
-from metrics_tools.dialect.translate import (
-    CustomFuncHandler,
-    CustomFuncRegistry,
-)
-from metrics_tools.evaluator import FunctionsTransformer
+from sqlmesh.utils.date import TimeLike
 
 CURR_DIR = os.path.dirname(__file__)
 QUERIES_DIR = os.path.abspath(
@@ -395,6 +393,7 @@ class MetricQuery:
         evaluator: MacroEvaluator,
         peer_table_map: t.Dict[str, str],
     ):
+        sources_database = evaluator.locals.get('oso_source') or 'default'
         if ref["entity_type"] == "artifact":
             return self.generate_artifact_query(
                 evaluator,
@@ -408,6 +407,7 @@ class MetricQuery:
             return self.generate_project_query(
                 evaluator,
                 ref["name"],
+                sources_database,
                 peer_table_map,
                 window=ref.get("window"),
                 unit=ref.get("unit"),
@@ -417,6 +417,7 @@ class MetricQuery:
             return self.generate_collection_query(
                 evaluator,
                 ref["name"],
+                sources_database,
                 peer_table_map,
                 window=ref.get("window"),
                 unit=ref.get("unit"),
@@ -500,6 +501,7 @@ class MetricQuery:
     def artifact_to_upstream_entity_transform(
         self,
         entity_type: str,
+        sources_database: str,
     ) -> t.Callable[[exp.Expression], exp.Expression | None]:
         def _transform(node: exp.Expression):
             if not isinstance(node, exp.Select):
@@ -532,7 +534,7 @@ class MetricQuery:
 
                         # Add a join to this select
                         updated_select = updated_select.join(
-                            "sources.artifacts_by_project_v1",
+                            f"{sources_database}.artifacts_by_project_v1",
                             on=f"{current_alias}.to_artifact_id = artifacts_by_project_v1.artifact_id",
                             join_type="inner",
                         )
@@ -546,7 +548,7 @@ class MetricQuery:
 
                         if entity_type == "collection":
                             updated_select = updated_select.join(
-                                "sources.projects_by_collection_v1",
+                                f"{sources_database}.projects_by_collection_v1",
                                 on="artifacts_by_project_v1.project_id = projects_by_collection_v1.project_id",
                                 join_type="inner"
                             )
@@ -597,6 +599,7 @@ class MetricQuery:
         self,
         evaluator: MacroEvaluator,
         name: str,
+        sources_database: str,
         peer_table_map: t.Dict[str, str],
         window: t.Optional[int] = None,
         unit: t.Optional[str] = None,
@@ -615,7 +618,7 @@ class MetricQuery:
         metrics_query = qualify(metrics_query)
 
         metrics_query = self.transform_aggregating_selects(
-            metrics_query, self.artifact_to_upstream_entity_transform("project")
+            metrics_query, self.artifact_to_upstream_entity_transform("project", sources_database)
         )
 
         top_level_select = exp.select(
@@ -634,6 +637,7 @@ class MetricQuery:
         self,
         evaluator: MacroEvaluator,
         name: str,
+        sources_database: str,
         peer_table_map: t.Dict[str, str],
         window: t.Optional[int] = None,
         unit: t.Optional[str] = None,
@@ -652,7 +656,7 @@ class MetricQuery:
         metrics_query = qualify(metrics_query)
 
         metrics_query = self.transform_aggregating_selects(
-            metrics_query, self.artifact_to_upstream_entity_transform("collection")
+            metrics_query, self.artifact_to_upstream_entity_transform("collection", sources_database)
         )
 
         top_level_select = exp.select(
