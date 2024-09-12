@@ -11,21 +11,22 @@ from .open_collective import generate_steps
 
 
 class Attestation(BaseModel):
-    attester: str
+    id: str
     data: str
     decodedDataJson: str
-    expirationTime: int
-    id: str
-    ipfsHash: str
-    isOffchain: bool
     recipient: str
+    attester: str
+    time: int
+    timeCreated: int
+    expirationTime: int
+    revocationTime: int
     refUID: str
     revocable: bool
-    revocationTime: int
     revoked: bool
-    schemaId: str
-    time: int
     txid: str
+    schemaId: str
+    ipfsHash: str
+    isOffchain: bool
 
 
 # The first attestation on EAS Optimism was created on the 07/28/2023 9:22:35 am
@@ -86,21 +87,22 @@ def get_optimism_eas_data(
         """
         query Attestations($take: Int, $skip: Int, $where: AttestationWhereInput) {
             attestations(take: $take, skip: $skip, where: $where) {
-                attester
+                id
                 data
                 decodedDataJson
-                expirationTime
-                id
-                ipfsHash
-                isOffchain
                 recipient
+                attester
+                time
+                timeCreated
+                expirationTime
+                revocationTime
                 refUID
                 revocable
-                revocationTime
                 revoked
-                schemaId
-                time
                 txid
+                schemaId
+                ipfsHash
+                isOffchain
             }
         }
         """
