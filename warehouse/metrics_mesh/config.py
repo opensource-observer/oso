@@ -1,11 +1,11 @@
 import os
-import dotenv
 
+import dotenv
 from sqlmesh.core.config import (
     Config,
-    ModelDefaultsConfig,
-    GatewayConfig,
     DuckDBConnectionConfig,
+    GatewayConfig,
+    ModelDefaultsConfig,
 )
 from sqlmesh.core.config.connection import (
     ClickhouseConnectionConfig,
@@ -31,6 +31,9 @@ config = Config(
                 username=os.environ.get("SQLMESH_CLICKHOUSE_USERNAME", ""),
                 password=os.environ.get("SQLMESH_CLICKHOUSE_PASSWORD", ""),
                 port=int(os.environ.get("SQLMESH_CLICKHOUSE_PORT", "443")),
+                concurrent_tasks=int(
+                    os.environ.get("SQLMESH_CLICKHOUSE_CONCURRENT_TASKS", "8")
+                ),
             ),
             state_connection=GCPPostgresConnectionConfig(
                 instance_connection_string=os.environ.get(
