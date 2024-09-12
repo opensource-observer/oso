@@ -73,6 +73,11 @@ class AssetFactoryResponse:
         filtered = self.filter_assets(lambda a: a.key.path[-1] == name)
         return filtered
 
+    def find_job_by_name(
+        self, name: str
+    ) -> Optional[Union[JobDefinition, UnresolvedAssetJobDefinition]]:
+        return next((job for job in self.jobs if job.name == name), None)
+
 
 type EarlyResourcesAssetDecoratedFunction[**P] = Callable[
     P, AssetFactoryResponse | AssetsDefinition
