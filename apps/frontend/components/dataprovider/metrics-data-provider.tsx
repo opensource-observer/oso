@@ -354,9 +354,8 @@ function ArtifactMetricsDataProvider(props: MetricsDataProviderProps) {
       ensure<string>(x.artifactName, "Missing artifactName"),
     ]),
   );
-  const normalizedData: EventData[] = ensure(
-    rawData?.oso_timeseriesMetricsByArtifactV0,
-    "Data missing time series metrics",
+  const normalizedData: EventData[] = (
+    rawData?.oso_timeseriesMetricsByArtifactV0 ?? []
   ).map((x: any) => ({
     metricId: ensure<string>(x.metricId, "Data missing 'metricId'"),
     metricName: ensure<string>(

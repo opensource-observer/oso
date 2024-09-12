@@ -1,10 +1,10 @@
 import { notFound } from "next/navigation";
+import _ from "lodash";
 import { cache } from "react";
 import { PlasmicComponent } from "@plasmicapp/loader-nextjs";
 import { PLASMIC } from "../../../../plasmic-init";
 import { PlasmicClientRootProvider } from "../../../../plasmic-init-client";
 import {
-  cachedGetAllEventTypes,
   cachedGetArtifactByName,
   cachedGetCodeMetricsByArtifactIds,
 } from "../../../../lib/clickhouse/cached-queries";
@@ -28,6 +28,78 @@ export async function generateStaticParams() {
   return STATIC_EXPORT_PARAMS;
 }
  */
+
+async function getDefaultProps() {
+  return {
+    keyMetrics: [],
+    metricChoices: [],
+  };
+}
+
+async function getCodeProps(artifactId: string) {
+  const codeMetrics = await cachedGetCodeMetricsByArtifactIds({
+    artifactIds: [artifactId],
+  });
+  const keyMetrics = [
+    {
+      title: "Star Count",
+      subtitle: "For the repository",
+      value: _.sumBy(codeMetrics, "star_count"),
+    },
+    {
+      title: "Forks",
+      subtitle: "For the repository",
+      value: _.sumBy(codeMetrics, "fork_count"),
+    },
+    {
+      title: "Total Contributors",
+      subtitle: "All time",
+      value: _.sumBy(codeMetrics, "contributor_count"),
+    },
+    {
+      title: "Active Contributors",
+      subtitle: "Who have been active in last 6 months",
+      value: _.sumBy(codeMetrics, "contributor_count_6_months"),
+    },
+    {
+      title: "New Contributors",
+      subtitle: "Who joined in last 6 months",
+      value: _.sumBy(codeMetrics, "new_contributor_count_6_months"),
+    },
+    {
+      title: "Active Developers",
+      subtitle: "Who committed code in last 6 months",
+      value: _.sumBy(codeMetrics, "active_developer_count_6_months"),
+    },
+    {
+      title: "Recent Commits",
+      subtitle: "Commits within the last 6 months",
+      value: _.sumBy(codeMetrics, "commit_count_6_months"),
+    },
+  ];
+  const metricChoices = [
+    {
+      label: "Active Developers",
+      value: "x2DaEzZwvlBELMm0uontbOLjS1aEg-UOMDsjL9A9Hl8=",
+      selected: true,
+    },
+    {
+      label: "Parttime Developers",
+      value: "V_3j9dJk7TriUvlv--1S0VzkzEg3UMjQyUr8gk-dj2E=",
+      selected: false,
+    },
+    {
+      label: "Fulltime Developers",
+      value: "Nx_6k7abdZnb8RbnjKSQS__cdqayTX2VtBOvrGWjGDs=",
+      selected: true,
+    },
+  ];
+
+  return {
+    keyMetrics,
+    metricChoices,
+  };
+}
 
 const cachedFetchComponent = cache(async (componentName: string) => {
   try {
@@ -84,15 +156,10 @@ export default async function ArtifactPage(props: ArtifactPageProps) {
   }
   const artifact = artifactArray[0];
   const artifactId = artifact.artifact_id;
-
-  const data = await Promise.all([
-    cachedGetAllEventTypes(),
-    cachedGetCodeMetricsByArtifactIds({
-      artifactIds: [artifactId],
-    }),
-  ]);
-  const eventTypes = data[0];
-  const codeMetrics = data[1];
+  const metricProps =
+    source === "GITHUB"
+      ? await getCodeProps(artifactId)
+      : await getDefaultProps();
 
   //console.log(artifact);
   const plasmicData = await cachedFetchComponent(PLASMIC_COMPONENT);
@@ -111,8 +178,7 @@ export default async function ArtifactPage(props: ArtifactPageProps) {
         component={compMeta.displayName}
         componentProps={{
           metadata: artifact,
-          eventTypes: eventTypes,
-          codeMetrics: codeMetrics,
+          ...metricProps,
         }}
       />
     </PlasmicClientRootProvider>
