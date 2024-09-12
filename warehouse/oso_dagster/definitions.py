@@ -7,7 +7,7 @@ from dagster_sqlmesh import SQLMeshContextConfig, SQLMeshResource
 from dagster_embedded_elt.dlt import DagsterDltResource
 from dotenv import load_dotenv
 from . import constants
-from .schedules import schedules
+from .schedules import schedules, get_partitioned_schedules
 from .cbt import CBTResource
 from .factories import load_all_assets_from_package
 from .utils import (
@@ -91,6 +91,8 @@ def load_definitions():
 
     asset_factories = asset_factories + alerts
 
+    all_schedules = schedules + get_partitioned_schedules(asset_factories)
+
     # Each of the dbt environments needs to be setup as a resource to be used in
     # the dbt assets
     resources = {
@@ -116,7 +118,7 @@ def load_definitions():
 
     return Definitions(
         assets=asset_factories.assets,
-        schedules=schedules,
+        schedules=all_schedules,
         jobs=asset_factories.jobs,
         asset_checks=asset_factories.checks,
         sensors=asset_factories.sensors,
