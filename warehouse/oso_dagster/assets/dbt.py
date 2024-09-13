@@ -110,7 +110,7 @@ def generate_dbt_asset(
     )
 
     run_dbt_assets_full_refresh_job = define_asset_job(
-        name="f{target}_dbt_full_refresh_job",
+        name=f"{target}_dbt_full_refresh_job",
         selection=[_generated_dbt_assets],
         config=RunConfig(
             {
