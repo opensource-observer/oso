@@ -1,12 +1,8 @@
-from ..factories import (
-    interval_gcs_import_asset,
-    IntervalGCSAsset,
-)
-from ..factories.sql import sql_assets
-from ..utils.common import TimeInterval, SourceMode
-from ..utils.secrets import SecretReference
 
-from dlt.sources import incremental
+from ..factories import IntervalGCSAsset, interval_gcs_import_asset
+from ..factories.sql import sql_assets
+from ..utils.common import SourceMode, TimeInterval
+from ..utils.secrets import SecretReference
 
 gitcoin_passport_scores = interval_gcs_import_asset(
     IntervalGCSAsset(
@@ -28,23 +24,23 @@ gitcoin_passport_scores = interval_gcs_import_asset(
 
 regendata_xyz = sql_assets(
     "gitcoin",
-    SecretReference(        
+    SecretReference(
         group_name="gitcoin",
         key="regendata_xyz_database",
     ),
     [
-        {   
+        {
             "table": "all_donations",
-            "incremental": incremental("timestamp")
+            "write_disposition": "replace",
         },
-        {   
-            "table": "project_groups_summary"
+        {
+            "table": "project_groups_summary",
         },
-        {   
-            "table": "project_lookup"
+        {
+            "table": "project_lookup",
         },
-        {   
-            "table": "all_matching"
+        {
+            "table": "all_matching",
         },
     ],
 )
