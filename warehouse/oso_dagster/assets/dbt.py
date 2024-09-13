@@ -114,9 +114,7 @@ def generate_dbt_asset(
         selection=[_generated_dbt_assets],
         config=RunConfig(
             {
-                "ops": {
-                    asset_name: DBTConfig(full_refresh=True),
-                },
+                asset_name: DBTConfig(full_refresh=True),
             }
         ),
     )
