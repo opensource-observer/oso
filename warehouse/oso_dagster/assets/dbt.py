@@ -1,16 +1,12 @@
 import os
 from pathlib import Path
-from typing import Any, Mapping, Dict, List, Sequence, Optional
-from dagster import (
-    AssetExecutionContext,
-    AssetKey,
-    Config,
-    define_asset_job,
-)
-from dagster_dbt import DbtCliResource, dbt_assets, DagsterDbtTranslator
+from typing import Any, Dict, List, Mapping, Optional, Sequence
 
+from dagster import AssetExecutionContext, AssetKey, Config, RunConfig, define_asset_job
+from dagster_dbt import DagsterDbtTranslator, DbtCliResource, dbt_assets
+
+from ..constants import dbt_profiles_dir, main_dbt_manifests, main_dbt_project_dir
 from ..factories import AssetFactoryResponse
-from ..constants import main_dbt_manifests, main_dbt_project_dir, dbt_profiles_dir
 
 
 class CustomDagsterDbtTranslator(DagsterDbtTranslator):
@@ -89,8 +85,10 @@ def generate_dbt_asset(
     print(f"\tmanifest_path({manifest_path})")
     translator = CustomDagsterDbtTranslator(target, ["dbt", target], internal_map)
 
+    asset_name = f"{target}_dbt"
+
     @dbt_assets(
-        name=f"{target}_dbt",
+        name=asset_name,
         manifest=manifest_path,
         dagster_dbt_translator=translator,
         op_tags=op_tags,
@@ -111,8 +109,19 @@ def generate_dbt_asset(
         name=f"{target}_dbt_run_job", selection=[_generated_dbt_assets]
     )
 
+    run_dbt_assets_full_refresh_job = define_asset_job(
+        name=f"{target}_dbt_full_refresh_job",
+        selection=[_generated_dbt_assets],
+        config=RunConfig(
+            {
+                asset_name: DBTConfig(full_refresh=True),
+            }
+        ),
+    )
+
     return AssetFactoryResponse(
-        assets=[_generated_dbt_assets], jobs=[run_dbt_assets_job]
+        assets=[_generated_dbt_assets],
+        jobs=[run_dbt_assets_job, run_dbt_assets_full_refresh_job],
     )
 
 

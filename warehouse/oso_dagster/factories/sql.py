@@ -50,11 +50,15 @@ def _generate_asset_for_table(
     table_options: TopLevelSQLTableOptions,
     translator: DagsterDltTranslator,
 ):
+    all_table_options = table_options.copy()
     @dlt.source(name=f"{source_name}_{table_options["table"]}")
     def _source():
         destination_table_name = table_options.get("destination_table_name")
+        write_disposition = table_options.get("write_disposition")
         if destination_table_name:
             del table_options["destination_table_name"]
+        if write_disposition:
+            del table_options["write_disposition"]
         table = t.cast(SQLTableOptions, table_options)
         resource = sql_table(credentials, **table)
         if destination_table_name:
@@ -69,7 +73,7 @@ def _generate_asset_for_table(
     )
     def _asset(context: AssetExecutionContext, dlt: DagsterDltResource):
         kwargs = {}
-        write_disposition = table_options.get("write_disposition")
+        write_disposition = all_table_options.get("write_disposition")
         if write_disposition:
             kwargs['write_disposition'] = write_disposition
 
