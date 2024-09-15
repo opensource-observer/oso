@@ -14,7 +14,7 @@ from .utils import (
     LocalSecretResolver,
     GCPSecretResolver,
     LogAlertManager,
-    DiscordWebhookAlertManager,
+    CanvasDiscordWebhookAlertManager,
 )
 from .resources import (
     BigQueryDataTransferResource,
@@ -81,7 +81,7 @@ def load_definitions():
     # Setup an alert sensor
     alert_manager = LogAlertManager()
     if constants.discord_webhook_url:
-        alert_manager = DiscordWebhookAlertManager(constants.discord_webhook_url)
+        alert_manager = CanvasDiscordWebhookAlertManager(constants.discord_webhook_url)
 
     alerts = setup_alert_sensor(
         "alerts",

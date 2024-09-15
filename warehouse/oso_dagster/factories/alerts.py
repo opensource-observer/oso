@@ -1,44 +1,22 @@
 from dagster import (
-    run_failure_sensor,
-    RunFailureSensorContext,
     DefaultSensorStatus,
-    op,
-    job,
-    RunRequest,
-    RunConfig,
-    Config,
     OpExecutionContext,
-    DagsterEventType,
+    RunConfig,
+    RunFailureSensorContext,
+    RunRequest,
+    job,
+    op,
+    run_failure_sensor,
 )
-from ..utils import AlertManager
+
+from ..utils import AlertManager, AlertOpConfig
 from .common import AssetFactoryResponse
-
-
-class AlertOpConfig(Config):
-    run_id: str
 
 
 def setup_alert_sensor(name: str, base_url: str, alert_manager: AlertManager):
     @op(name=f"{name}_alert_op")
     def failure_op(context: OpExecutionContext, config: AlertOpConfig) -> None:
-        instance = context.instance
-        records = instance.get_records_for_run(config.run_id).records
-        events = [
-            record.event_log_entry for record in records if record.event_log_entry
-        ]
-        dagster_events = [
-            event.dagster_event for event in events if event.dagster_event
-        ]
-        failures = [event for event in dagster_events if event.is_failure]
-        step_failures = [
-            failure
-            for failure in failures
-            if failure.event_type in [DagsterEventType.STEP_FAILURE]
-        ]
-
-        alert_manager.alert(
-            f"{len(step_failures)} failed steps in run ({base_url}/runs/{config.run_id})"
-        )
+        alert_manager.failure_op(base_url, context, config)
 
     @job(name=f"{name}_alert_job")
     def failure_job():
