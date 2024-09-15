@@ -124,7 +124,7 @@ models:
       contributors: oso-team, tomfutago
     config:
       tags: ['staging', 'github', 'events', 'stars', 'forks']
-    description: "GitHub starts and forks"
+    description: "GitHub stars and forks"
     columns:
       - *id
       - *created_at
@@ -224,3 +224,20 @@ models:
       - *author_name
       - *is_distinct
       - *api_url
+
+  - name: stg_github__releases
+    meta:
+      #...
+      contributors: oso-team
+    config:
+      tags: ['staging', 'github', 'events', 'releases']
+    description: "GitHub releases"
+    columns:
+      - *id
+      - *created_at
+      - *repository_id
+      - *repository_name
+      - *actor_id
+      - *actor_login
+      - name: type
+        description: "release publishedevent type"
