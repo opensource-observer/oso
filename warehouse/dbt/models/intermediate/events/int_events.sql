@@ -98,7 +98,8 @@ github_comments as (
     "GIT_USER" as from_type,
     CAST(actor_id as STRING) as from_artifact_source_id,
     CAST(1 as FLOAT64) as amount
-  from {{ ref('stg_github__comments') }},
+  from {{ ref('stg_github__comments') }}
+),
 
 github_issues as (
   select -- noqa: ST06
