@@ -240,4 +240,24 @@ models:
       - *actor_id
       - *actor_login
       - name: type
-        description: "release publishedevent type"
+        description: "release published event type"
+
+
+  - name: stg_github__comments
+    meta:
+      #...
+      contributors: oso-team
+    config:
+      tags: ['staging', 'github', 'events', 'comments']
+    description: "GitHub comments"
+    columns:
+      - *id
+      - *created_at
+      - *repository_id
+      - *repository_name
+      - *actor_id
+      - *actor_login
+      - name: type
+        description: "issue or pull request comment type"
+      - name: number
+        description: "payload number"

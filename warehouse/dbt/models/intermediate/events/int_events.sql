@@ -81,6 +81,25 @@ github_releases as (
   from {{ ref('stg_github__releases') }}
 ),
 
+github_comments as (
+  select -- noqa: ST06
+    created_at as `time`,
+    type as event_type,
+    CAST(id as STRING) as event_source_id,
+    "GITHUB" as event_source,
+    SPLIT(REPLACE(repository_name, "@", ""), "/")[SAFE_OFFSET(1)]
+      as to_name,
+    SPLIT(REPLACE(repository_name, "@", ""), "/")[SAFE_OFFSET(0)]
+      as to_namespace,
+    "REPOSITORY" as to_type,
+    CAST(repository_id as STRING) as to_artifact_source_id,
+    actor_login as from_name,
+    actor_login as from_namespace,
+    "GIT_USER" as from_type,
+    CAST(actor_id as STRING) as from_artifact_source_id,
+    CAST(1 as FLOAT64) as amount
+  from {{ ref('stg_github__comments') }},
+
 github_issues as (
   select -- noqa: ST06
     created_at as `time`,
@@ -222,6 +241,8 @@ all_events as (
     select * from github_releases
     union all
     select * from github_stars_and_forks
+    union all
+    select * from github_comments
   )
 )
 
