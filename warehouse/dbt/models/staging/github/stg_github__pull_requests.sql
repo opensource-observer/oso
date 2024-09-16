@@ -17,5 +17,5 @@ select
   pre.actor.login as actor_login,
   CONCAT("PULL_REQUEST_", UPPER(JSON_VALUE(pre.payload, "$.action")))
     as `type`,
-  JSON_VALUE(ie.payload, "$.number") as `number`
+  JSON_VALUE(pre.payload, "$.number") as `number`
 from pull_request_events as pre
