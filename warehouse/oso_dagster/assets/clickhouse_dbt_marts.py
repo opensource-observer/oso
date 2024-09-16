@@ -86,6 +86,35 @@ def clickhouse_assets_from_manifests_map(
                         index=n.get("meta").get("index"),
                         order_by=n.get("meta").get("order_by"),
                         copy_mode=SourceMode.Overwrite,
+                        asset_kwargs={
+                            "op_tags": {
+                                "dagster-k8s/config": {
+                                    "resources": {
+                                        "requests": {
+                                            "cpu": "1000m",
+                                            "memory": "1024i",
+                                        },
+                                        "limits": {
+                                            "cpu": "1000m",
+                                            "memory": "1024Mi",
+                                        },
+                                    },
+                                },
+                                "pod_spec_config": {
+                                    "node_selector": {
+                                        "pool_type": "spot",
+                                    },
+                                    "tolerations": [
+                                        {
+                                            "key": "pool_type",
+                                            "operator": "Equal",
+                                            "value": "spot",
+                                            "effect": "PreferNoSchedule",
+                                        }
+                                    ],
+                                },
+                            }
+                        },
                     ),
                 )
             # Track which marts were skipped
