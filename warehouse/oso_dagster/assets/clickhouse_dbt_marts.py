@@ -88,6 +88,7 @@ def clickhouse_assets_from_manifests_map(
                         asset_kwargs={
                             "op_tags": {
                                 "dagster-k8s/config": {
+                                    "merge_behavior": "SHALLOW",
                                     "resources": {
                                         "requests": {
                                             "cpu": "1000m",
@@ -98,19 +99,19 @@ def clickhouse_assets_from_manifests_map(
                                             "memory": "1024Mi",
                                         },
                                     },
-                                },
-                                "pod_spec_config": {
-                                    "node_selector": {
-                                        "pool_type": "spot",
+                                    "pod_spec_config": {
+                                        "node_selector": {
+                                            "pool_type": "spot",
+                                        },
+                                        "tolerations": [
+                                            {
+                                                "key": "pool_type",
+                                                "operator": "Equal",
+                                                "value": "spot",
+                                                "effect": "NoSchedule",
+                                            }
+                                        ],
                                     },
-                                    "tolerations": [
-                                        {
-                                            "key": "pool_type",
-                                            "operator": "Equal",
-                                            "value": "spot",
-                                            "effect": "NoSchedule",
-                                        }
-                                    ],
                                 },
                             }
                         },

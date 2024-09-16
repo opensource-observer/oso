@@ -966,6 +966,7 @@ def goldsky_asset(deps: Optional[AssetDeps | AssetList] = None, **kwargs: Unpack
 
     op_tags: Dict[str, Any] = {
         "dagster-k8s/config": {
+            "merge_behavior": "SHALLOW",
             "container_config": {
                 "resources": {
                     "requests": {"cpu": "2000m", "memory": "3584Mi"},
