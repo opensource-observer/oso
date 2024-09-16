@@ -4,6 +4,7 @@ from dagster import Definitions
 from dagster_dbt import DbtCliResource
 from dagster_gcp import BigQueryResource, GCSResource
 from dagster_sqlmesh import SQLMeshContextConfig, SQLMeshResource
+from dagster_k8s import k8s_job_executor
 from dagster_embedded_elt.dlt import DagsterDltResource
 from dotenv import load_dotenv
 from . import constants
@@ -116,6 +117,10 @@ def load_definitions():
             project_dir=os.fspath(constants.main_dbt_project_dir), target=target
         )
 
+    extra_kwargs = {}
+    if constants.enable_k8s_executor:
+        extra_kwargs["executor"] = k8s_job_executor
+
     return Definitions(
         assets=asset_factories.assets,
         schedules=all_schedules,
@@ -123,6 +128,7 @@ def load_definitions():
         asset_checks=asset_factories.checks,
         sensors=asset_factories.sensors,
         resources=resources,
+        **extra_kwargs,
     )
 
 

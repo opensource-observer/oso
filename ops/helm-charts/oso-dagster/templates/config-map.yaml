@@ -15,6 +15,7 @@ data:
   DAGSTER_ALERTS_BASE_URL: "{{ .Values.alerts.baseUrl }}"
   DAGSTER_HTTP_CACHE: "{{ .Values.cache.uri }}"
   DAGSTER_ENABLE_BIGQUERY: "1"
+  DAGSTER_ENABLE_K8S_EXECUTOR: "1"
   DAGSTER_SQLMESH_GATEWAY: clickhouse
   SQLMESH_POSTGRES_INSTANCE_CONNECTION_STRING: "{{ .Values.configMap.secretPrefix }}-{{ .Values.secretmanagerKeys.sqlmeshPostgresInstanceStringConnectionString }}"
   SQLMESH_POSTGRES_USER: "{{ .Values.configMap.secretPrefix }}-{{ .Values.secretmanagerKeys.sqlmeshPostgresUser }}"

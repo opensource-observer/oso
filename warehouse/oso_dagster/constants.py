@@ -87,3 +87,5 @@ enable_bigquery = os.getenv("DAGSTER_ENABLE_BIGQUERY", "false").lower() in ["tru
 
 sqlmesh_dir = os.getenv("DAGSTER_SQLMESH_DIR", str(repo_dir.joinpath("warehouse/metrics_mesh")))
 sqlmesh_gateway = os.getenv("DAGSTER_SQLMESH_GATEWAY", "local")
+
+enable_k8s_executor = os.getenv("DAGSTER_ENABLE_K8S_EXECUTOR", "false").lower() in ["true", "1"]
