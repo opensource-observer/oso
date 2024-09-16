@@ -294,6 +294,27 @@ def expenses(
         start_date=OPEN_COLLECTIVE_TX_EPOCH.split("T")[0],
         end_date=(datetime.now()).isoformat().split("T")[0],
     ),
+    op_tags={
+        "dagster-k8s/config": {
+            "container_config": {
+                "resources": {
+                    "requests": {"cpu": "2000m", "memory": "3584Mi"},
+                    "limits": {"cpu": "2000m", "memory": "3584Mi"},
+                },
+            },
+            "pod_spec_config": {
+                "node_selector": {"pool_type": "spot",},
+                "tolerations": [
+                    {
+                        "key": "pool_type",
+                        "operator": "Equal",
+                        "value": "spot",
+                        "effect": "PreferNoSchedule",
+                    }
+                ],
+            },
+        }
+    }
 )
 def deposits(
     context: AssetExecutionContext,
