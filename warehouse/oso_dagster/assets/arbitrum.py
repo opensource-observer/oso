@@ -1,11 +1,9 @@
-from oso_dagster.utils import unpack_config, gcs_to_bucket_name
-from ..factories.goldsky.config import GoldskyNetworkConfig, NetworkAssetSourceConfig
+from oso_dagster.utils import gcs_to_bucket_name, unpack_config
+
+from ..factories.common import AssetFactoryResponse, early_resources_asset_factory
+from ..factories.goldsky.additional import blocks_extensions, transactions_extensions
 from ..factories.goldsky.assets import goldsky_asset
-from ..factories.common import early_resources_asset_factory, AssetFactoryResponse
-from ..factories.goldsky.additional import (
-    blocks_extensions,
-    transactions_extensions,
-)
+from ..factories.goldsky.config import GoldskyNetworkConfig, NetworkAssetSourceConfig
 
 
 @unpack_config(GoldskyNetworkConfig)
@@ -97,7 +95,9 @@ def arbitrum_assets(config: GoldskyNetworkConfig):
                 source_name=f"{config.network_name}-traces",
                 partition_column_name="block_timestamp",
                 partition_column_transform=lambda t: f"TIMESTAMP_SECONDS(`{t}`)",
-                schema_overrides=[],
+                schema_overrides=[
+                    {"name": "value", "field_type": "BYTES"},
+                ],
                 external_reference="",
             ),
             config.traces_config,
