@@ -1,16 +1,16 @@
-from typing import Mapping, Sequence
+import typing as t
 
 
 def add_tags(
-    tags: Mapping[str, str], additional_tags: Mapping[str, str]
-) -> Mapping[str, str]:
+    tags: t.Mapping[str, t.Any], additional_tags: t.Mapping[str, t.Any]
+) -> t.Mapping[str, t.Any]:
     new_tags = dict(tags)
     new_tags.update(additional_tags)
     return new_tags
 
 
 def add_key_prefix_as_tag(
-    tags: Mapping[str, str], key_prefix: Sequence[str] | str | None
+    tags: t.Mapping[str, t.Any], key_prefix: t.Sequence[str] | str | None
 ):
     if key_prefix:
         return add_tags(
@@ -19,5 +19,5 @@ def add_key_prefix_as_tag(
     return add_tags(tags, {})
 
 
-def key_prefix_to_group_name(key_prefix: Sequence[str] | str):
+def key_prefix_to_group_name(key_prefix: t.Sequence[str] | str):
     return key_prefix if isinstance(key_prefix, str) else "__".join(list(key_prefix))

@@ -984,7 +984,27 @@ def goldsky_asset(deps: Optional[AssetDeps | AssetList] = None, **kwargs: Unpack
         "opensource.observer/environment": asset_config.environment,
     }
 
-    op_tags: Dict[str, str] = {}
+    op_tags: Dict[str, Any] = {
+        "dagster-k8s/config": {
+            "container_config": {
+                "resources": {
+                    "requests": {"cpu": "2000m", "memory": "3584Mi"},
+                    "limits": {"cpu": "2000m", "memory": "3584Mi"},
+                },
+            },
+            "pod_spec_config": {
+                "node_selector": {"pool_type": "spot",},
+                "tolerations": [
+                    {
+                        "key": "pool_type",
+                        "operator": "Equal",
+                        "value": "spot",
+                        "effect": "PreferNoSchedule",
+                    }
+                ],
+            },
+        }
+    }
 
     if key_prefix:
         group_name = key_prefix if isinstance(key_prefix, str) else "__".join(list(key_prefix))
