@@ -7,6 +7,7 @@ MODEL (
   start '2015-01-01',
   cron '@daily',
   dialect 'clickhouse',
+  partitioned_by (event_type, DATE_TRUNC('MONTH', bucket_day)),
   grain (
     bucket_day,
     event_type,
@@ -21,6 +22,15 @@ MODEL (
     from_artifact_id String,
     to_artifact_id String,
     amount Float64
+  ),
+  physical_properties (
+    ORDER_BY = (
+      event_type,
+      event_source,
+      from_artifact_id,
+      to_artifact_id,
+      bucket_day
+    )
   )
 );
 WITH events AS (
