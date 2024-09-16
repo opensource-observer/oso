@@ -296,6 +296,7 @@ def expenses(
     ),
     op_tags={
         "dagster-k8s/config": {
+                                    "merge_behavior": "SHALLOW",
             "container_config": {
                 "resources": {
                     "requests": {"cpu": "2000m", "memory": "3584Mi"},

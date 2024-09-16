@@ -24,6 +24,7 @@ def generated_asset_prefix(asset: AssetsDefinition):
 
 base_tags = {
     "dagster-k8s/config": {
+        "merge_behavior": "SHALLOW",
         "pod_spec_config": {
             "node_selector": {"pool_type": "standard"},
             "tolerations": [
@@ -35,7 +36,6 @@ base_tags = {
                 }
             ],
         },
-        "merge_behavior": "SHALLOW",
     },
 }
 
