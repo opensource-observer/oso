@@ -1,6 +1,7 @@
 import asyncio
 import heapq
 import io
+import logging
 import os
 import random
 import re
@@ -23,6 +24,7 @@ from google.api_core.exceptions import (ClientError, InternalServerError,
 from google.cloud.bigquery import Client as BQClient
 from google.cloud.bigquery import LoadJobConfig, SourceFormat, TableReference
 from google.cloud.bigquery.schema import SchemaField
+from oso_dagster.utils.bq import compare_schemas, get_table_schema
 from polars.type_aliases import PolarsDataType
 
 from ...cbt import CBTResource, TimePartitioning, UpdateStrategy
@@ -523,6 +525,11 @@ class GoldskyAsset:
         finally:
             client.close()
 
+    def load_schema_for_bq_table(self, table_ref: str):
+        with self.bigquery.get_client() as client:
+            return get_table_schema(client, table_ref)
+        
+
     def ensure_datasets(self, context: GenericExecutionContext):
         self.ensure_dataset(context, self.config.destination_dataset_name)
         self.ensure_dataset(context, self.config.working_destination_dataset_name)
@@ -647,7 +654,10 @@ class GoldskyAsset:
 
         worker_deduped_table = self.config.worker_deduped_table_fqdn(workers[0].name)
 
-        context.log.warn(f"Worker table to use for schema {worker_deduped_table}")
+        context.log.warning(f"Worker table to use for schema {worker_deduped_table}")
+
+        # check the schema of the destination and the worker table. if it's only new rows then add those rose
+        self.ensure_schema_or_fail(context.log, worker_deduped_table, self.config.destination_table_fqn)
 
         cbt.transform(
             self.config.merge_workers_model,
@@ -662,6 +672,43 @@ class GoldskyAsset:
             timeout=self.config.transform_timeout_seconds,
             source_table_fqn=worker_deduped_table,
         )
+
+    def ensure_schema_or_fail(self, log: logging.Logger, source_table: str, destination_table: str):
+        source_schema = self.load_schema_for_bq_table(source_table)
+        destination_schema = self.load_schema_for_bq_table(destination_table)
+
+        source_only, destination_only, modified = compare_schemas(source_schema, destination_schema)
+        if len(modified) > 0:
+            log.error(dict(
+                msg=f"cannot merge automatically into {destination_table} schema has been altered:",
+                destination_only=destination_only,
+                source_only=source_only,
+                modified=modified,
+            ))
+            raise Exception(f"cannot merge, schemas incompatible in {source_schema} and {destination_table}")
+        # IF things are only in the destination that just means the new data removed a column. We can log and ignore. 
+        if len(destination_only) > 0:
+            log.warning(dict(
+                msg="new data no longer has some columns",
+                columns=destination_only,
+            ))
+        # If only the source or only the destination are different then we can update
+        if len(source_only) > 0:
+            log.info("updating table to include new columns from the source data")
+            with self.bigquery.get_client() as client:
+                table = client.get_table(destination_table)
+                updated_schema = table.schema[:]
+                # Force all of the fields to be nullable
+                new_fields: List[SchemaField] = []
+                for field in source_only.values():
+                    if field.mode != "NULLABLE":
+                        field_dict = field.to_api_repr()
+                        field_dict["mode"] = "NULLABLE"
+                        new_fields.append(SchemaField.from_api_repr(field_dict))
+                    else:
+                        new_fields.append(field)
+                updated_schema.extend(new_fields)
+        
 
     async def clean_working_destination(
         self, context: GenericExecutionContext, workers: List[GoldskyWorker]
