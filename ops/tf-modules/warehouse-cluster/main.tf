@@ -25,6 +25,27 @@ locals {
       preemptible        = false
       initial_node_count = 0
     },
+    # A non-spot non-preemptible set of nodes for job execution. Normally nothing is scheduled here
+    {
+      name               = "${var.cluster_name}-standard-node-pool"
+      machine_type       = "e2-standard-4"
+      node_locations     = join(",", var.cluster_zones)
+      min_count          = 0
+      max_count          = 4
+      local_ssd_count    = 0
+      spot               = false
+      disk_size_gb       = 100
+      disk_type          = "pd-standard"
+      image_type         = "COS_CONTAINERD"
+      enable_gcfs        = false
+      enable_gvnic       = false
+      logging_variant    = "DEFAULT"
+      auto_repair        = true
+      auto_upgrade       = true
+      service_account    = local.node_service_account_email
+      preemptible        = false
+      initial_node_count = 0
+    },
     # The spot pool is for workloads that need spot
     {
       name               = "${var.cluster_name}-spot-node-pool"
@@ -74,6 +95,10 @@ locals {
       default_node_pool = true
       pool_type         = "persistent"
     }
+    "${var.cluster_name}-standard-node-pool" = {
+      default_node_pool = false
+      pool_type         = "standard"
+    }
     "${var.cluster_name}-spot-node-pool" = {
       default_node_pool = false
       pool_type         = "spot"
@@ -91,6 +116,13 @@ locals {
   }, var.extra_node_metadata)
 
   node_pool_taints = merge({
+    "${var.cluster_name}-standard-node-pool" = [
+      {
+        key    = "pool_type"
+        value  = "standard"
+        effect = "NO_SCHEDULE"
+      },
+    ]
     "${var.cluster_name}-spot-node-pool" = [
       {
         key    = "pool_type"
@@ -110,6 +142,9 @@ locals {
   node_pool_tags = merge({
     "${var.cluster_name}-default-node-pool" = [
       "default-node-pool",
+    ]
+    "${var.cluster_name}-standard-node-pool" = [
+      "standard",
     ]
     "${var.cluster_name}-spot-node-pool" = [
       "spot",
