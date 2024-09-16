@@ -1,26 +1,30 @@
-from typing import cast, Optional, Dict
+import typing as t
 
-from dagster import (
-    multi_asset,
-    Output,
-    AssetOut,
-    AssetExecutionContext,
-    JsonMetadataValue,
-    Config,
-    AssetIn,
-)
-from ossdirectory import fetch_data
-from ossdirectory.fetch import OSSDirectory
-import polars as pl
 import arrow
-
+import polars as pl
+from dagster import (
+    AssetExecutionContext,
+    AssetIn,
+    AssetOut,
+    AssetsDefinition,
+    AssetSelection,
+    Config,
+    JsonMetadataValue,
+    Output,
+    define_asset_job,
+    multi_asset,
+)
 from oso_dagster.dlt_sources.github_repos import (
     oss_directory_github_repositories_resource,
 )
 from oso_dagster.factories import dlt_factory
+from oso_dagster.factories.common import AssetFactoryResponse
+from oso_dagster.factories.jobs import discoverable_jobs
 from oso_dagster.utils import secret_ref_arg
+from ossdirectory import fetch_data
+from ossdirectory.fetch import OSSDirectory
 
-common_tags: Dict[str, str] = {
+common_tags: t.Dict[str, str] = {
     "opensource.observer/environment": "production",
     "opensource.observer/group": "ossd",
     "opensource.observer/type": "source",
@@ -35,7 +39,7 @@ class OSSDirectoryConfig(Config):
     force_write: bool = False
 
 
-def oss_directory_to_dataframe(output: str, data: Optional[OSSDirectory] = None):
+def oss_directory_to_dataframe(output: str, data: t.Optional[OSSDirectory] = None):
     if not data:
         data = fetch_data()
     assert data.meta is not None
@@ -97,8 +101,8 @@ def projects_and_collections(
                 "repo_meta", {}
             )
             if repo_meta:
-                repo_meta = cast(JsonMetadataValue, repo_meta)
-                repo_meta_dict = cast(dict, repo_meta.data)
+                repo_meta = t.cast(JsonMetadataValue, repo_meta)
+                repo_meta_dict = t.cast(dict, repo_meta.data)
                 context.log.debug(
                     {
                         "message": "repo_meta",
@@ -141,3 +145,15 @@ def repositories(
     gh_token: str = secret_ref_arg(group_name="ossd", key="github_token"),
 ):
     yield oss_directory_github_repositories_resource(projects_df, gh_token)
+
+
+@discoverable_jobs(dependencies=[repositories])
+def ossd_jobs(dependencies: t.List[AssetFactoryResponse]):
+    repositories = t.cast(AssetsDefinition, list(dependencies[0].assets)[0])
+    return [
+        define_asset_job(
+            name="oss_directory_sync",
+            selection=AssetSelection.assets(projects_and_collections)
+            | AssetSelection.assets(repositories),
+        )
+    ]
