@@ -46,7 +46,7 @@ Every stage of the OSO data pipeline is queryable and downloadable.
 Like most dbt-based pipelines, we split the pipeline stages into
 [staging, intermediate, and mart models](https://docs.getdbt.com/best-practices/how-we-structure/1-guide-overview).
 
-You can find the reference documentation on every data model on  
+You can find the reference documentation on every data model on
 [https://models.opensource.observer/](https://models.opensource.observer/)
 
 ### OSO Mart Models
@@ -245,12 +245,12 @@ We currently provide blocks, transactions, and traces for the following networks
 For example, to get deployed contracts from a particular address on the Base network:
 
 ```sql
-select 
-  traces.block_timestamp, 
-  traces.transaction_hash,   
-  txs.from_address as originating_address, 
+select
+  traces.block_timestamp,
+  traces.transaction_hash,
+  txs.from_address as originating_address,
   txs.to_address as originating_contract,
-  traces.from_address as factory_address, 
+  traces.from_address as factory_address,
   traces.to_address as contract_address
 from `YOUR_PROJECT_NAME.superchain.base_traces` as traces
 inner join transactions as txs
@@ -285,6 +285,16 @@ store humanity's most important information.
 This dataset mirrors the dataset offered by [Lily](https://lilium.sh/data/)
 for use in the OSO data pipeline.
 It includes storage deals, miners, FVM transactions, and much more.
+
+For example, this is how to get how many messages were sent to the network in the last month:
+
+```sql
+select
+  count(cid) as total_messages
+from `YOUR_PROJECT_NAME.filecoin_lily.parsed_messages`
+where
+  cast(timestamp_seconds((height * 30) + 1598306400) as date) > current_date() - interval 1 month
+```
 
 
 ### Farcaster Data
@@ -386,11 +396,11 @@ select
   donations.donor_address,
   project_mapping.oso_name,
   project_mapping.display_name,
-  donations.amount_in_usd  
+  donations.amount_in_usd
 from `YOUR_PROJECT_NAME.gitcoin.all_donations` as donations
 join project_mapping
   on donations.project_id = project_mapping.gitcoin_id
-```  
+```
 
 [Passport](https://passport.xyz/)
 is a web3 identity verification protocol.
