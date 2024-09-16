@@ -15,5 +15,6 @@ select
   ie.repo.name as repository_name,
   ie.actor.id as actor_id,
   ie.actor.login as actor_login,
-  CONCAT("ISSUE_", UPPER(JSON_VALUE(ie.payload, "$.action"))) as `type`
+  CONCAT("ISSUE_", UPPER(JSON_VALUE(ie.payload, "$.action"))) as `type`,
+  JSON_VALUE(ie.payload, "$.issue.number") as `number`
 from issue_events as ie
