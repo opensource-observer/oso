@@ -63,6 +63,7 @@ google-cloud-bigquery-storage = "^2.25.0"
 dagster-sqlmesh = "0.2.0.dev3"
 google-auth = "^2.34.0"
 pillow = "^10.4.0"
+dagster-k8s = "^0.24.7"
 
 
 [tool.poetry.scripts]
