@@ -1,21 +1,21 @@
 import os
 from typing import List, Optional, Tuple
 
-from dagster import (
-    AssetsDefinition,
-    AssetExecutionContext,
-    Config,
-    asset,
-    define_asset_job,
-    MaterializeResult,
-)
 import arrow
 import sqlglot as sql
+from dagster import (
+    AssetExecutionContext,
+    AssetsDefinition,
+    Config,
+    MaterializeResult,
+    asset,
+    define_asset_job,
+)
 
-from .config import GoldskyConfig
-from ..common import AssetFactoryResponse
 from ...cbt import CBTResource, Transformation, UpdateStrategy
-from ...cbt.transforms import time_constrain_table, context_query_replace_source_tables
+from ...cbt.transforms import context_query_replace_source_tables, time_constrain_table
+from ..common import AssetFactoryResponse
+from .config import GoldskyConfig
 
 
 def generated_asset_prefix(asset: AssetsDefinition):
@@ -25,13 +25,13 @@ def generated_asset_prefix(asset: AssetsDefinition):
 base_tags = {
     "dagster-k8s/config": {
         "pod_spec_config": {
-            "node_selector": {"pool_type": "persistent"},
+            "node_selector": {"pool_type": "standard"},
             "tolerations": [
                 {
                     "key": "pool_type",
                     "operator": "Equal",
-                    "value": "persistent",
-                    "effect": "PreferNoSchedule",
+                    "value": "standard",
+                    "effect": "NoSchedule",
                 }
             ],
         },

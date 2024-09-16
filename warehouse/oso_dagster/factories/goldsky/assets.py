@@ -1,55 +1,35 @@
-import time
 import asyncio
-import os
-import arrow
-import re
-import io
-import random
-import threading
-
-import polars
-from polars.type_aliases import PolarsDataType
-from dataclasses import dataclass
-from typing import List, Mapping, Tuple, Dict, Callable, Optional, Any, cast, Unpack
 import heapq
-from dagster import (
-    asset,
-    op,
-    job,
-    asset_sensor,
-    AssetExecutionContext,
-    RunRequest,
-    SensorEvaluationContext,
-    EventLogEntry,
-    RunConfig,
-    OpExecutionContext,
-    DagsterLogManager,
-    DefaultSensorStatus,
-    TableRecord,
-    MetadataValue, 
-    TableColumn,
-    TableSchema, 
-    ResourceParam
-)
+import io
+import os
+import random
+import re
+import threading
+import time
+from dataclasses import dataclass
+from typing import (Any, Callable, Dict, List, Mapping, Optional, Tuple,
+                    Unpack, cast)
 
+import arrow
+import polars
+from dagster import (AssetExecutionContext, DagsterLogManager,
+                     DefaultSensorStatus, EventLogEntry, MetadataValue,
+                     OpExecutionContext, ResourceParam, RunConfig, RunRequest,
+                     SensorEvaluationContext, TableColumn, TableRecord,
+                     TableSchema, asset, asset_sensor, job, op)
 from dagster_gcp import BigQueryResource, GCSResource
-from google.api_core.exceptions import (
-    NotFound,
-    InternalServerError,
-    ClientError,
-)
-from google.cloud.bigquery import (
-    TableReference,
-    LoadJobConfig,
-    SourceFormat,
-    Client as BQClient,
-)
+from google.api_core.exceptions import (ClientError, InternalServerError,
+                                        NotFound)
+from google.cloud.bigquery import Client as BQClient
+from google.cloud.bigquery import LoadJobConfig, SourceFormat, TableReference
 from google.cloud.bigquery.schema import SchemaField
-from ...cbt import CBTResource, UpdateStrategy, TimePartitioning
+from polars.type_aliases import PolarsDataType
+
+from ...cbt import CBTResource, TimePartitioning, UpdateStrategy
+from ...utils import AlertManager, add_tags, batch_delete_blobs
 from .. import AssetFactoryResponse
-from .config import GoldskyConfig, GoldskyConfigInterface, SchemaDict
 from ..common import AssetDeps, AssetList
-from ...utils import batch_delete_blobs, add_tags, AlertManager
+from .config import GoldskyConfig, GoldskyConfigInterface, SchemaDict
 from .errors import NoNewData
 
 GenericExecutionContext = AssetExecutionContext | OpExecutionContext
@@ -999,7 +979,7 @@ def goldsky_asset(deps: Optional[AssetDeps | AssetList] = None, **kwargs: Unpack
                         "key": "pool_type",
                         "operator": "Equal",
                         "value": "spot",
-                        "effect": "PreferNoSchedule",
+                        "effect": "NoSchedule",
                     }
                 ],
             },

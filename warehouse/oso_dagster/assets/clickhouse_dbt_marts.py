@@ -1,14 +1,13 @@
-import os
 import json
+import os
+import uuid
 from pathlib import Path
 from typing import Dict, List
-import uuid
-from ..constants import main_dbt_manifests, staging_bucket, PRODUCTION_DBT_TARGET
+
 from dagster import AssetKey
-from ..factories import (
-    create_bq2clickhouse_asset,
-    Bq2ClickhouseAssetConfig,
-)
+
+from ..constants import PRODUCTION_DBT_TARGET, main_dbt_manifests, staging_bucket
+from ..factories import Bq2ClickhouseAssetConfig, create_bq2clickhouse_asset
 from ..factories.common import AssetFactoryResponse
 from ..utils.bq import BigQueryTableConfig
 from ..utils.common import SourceMode
@@ -109,7 +108,7 @@ def clickhouse_assets_from_manifests_map(
                                             "key": "pool_type",
                                             "operator": "Equal",
                                             "value": "spot",
-                                            "effect": "PreferNoSchedule",
+                                            "effect": "NoSchedule",
                                         }
                                     ],
                                 },

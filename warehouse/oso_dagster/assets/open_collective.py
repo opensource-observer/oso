@@ -309,7 +309,7 @@ def expenses(
                         "key": "pool_type",
                         "operator": "Equal",
                         "value": "spot",
-                        "effect": "PreferNoSchedule",
+                        "effect": "NoSchedule",
                     }
                 ],
             },
