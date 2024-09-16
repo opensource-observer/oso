@@ -25,7 +25,7 @@ locals {
       preemptible        = false
       initial_node_count = 0
     },
-    # A non-spot non-preemptible set of nodes for job execution. Normally nothing is scheduled here
+    # A non-spot non-preemptible set of nodes for job execution. Nothing should run here except temporary jobs
     {
       name               = "${var.cluster_name}-standard-node-pool"
       machine_type       = "e2-standard-4"
