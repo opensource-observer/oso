@@ -1,45 +1,46 @@
 from typing import (
-    List,
-    Dict,
     Any,
+    Callable,
+    Dict,
+    Iterable,
+    Iterator,
+    List,
     Mapping,
     MutableMapping,
     Optional,
-    Callable,
-    Iterator,
-    Iterable,
-    cast,
-    Union,
     Type,
+    Union,
+    cast,
 )
-
 from uuid import uuid4
+
+import dlt as dltlib
 from dagster import (
+    AssetExecutionContext,
+    AssetIn,
+    AssetMaterialization,
+    Config,
+    MaterializeResult,
     PartitionsDefinition,
     asset,
-    AssetIn,
-    AssetExecutionContext,
-    MaterializeResult,
-    Config,
-    AssetMaterialization,
     define_asset_job,
 )
-import dlt as dltlib
-from dlt.sources import DltResource
+from dagster_embedded_elt.dlt import DagsterDltResource
 from dlt.common.destination import Destination
 from dlt.common.libs.pydantic import pydantic_to_table_schema_columns
-from dagster_embedded_elt.dlt import DagsterDltResource
-from pydantic import Field, BaseModel
+from dlt.sources import DltResource
+from pydantic import BaseModel, Field
 
+from .. import constants
+from ..utils import SecretResolver, resolve_secrets_for_func
 from .common import (
     AssetDeps,
-    AssetKeyPrefixParam,
-    early_resources_asset_factory,
     AssetFactoryResponse,
+    AssetKeyPrefixParam,
+    EarlyResourcesAssetFactory,
+    early_resources_asset_factory,
 )
-from ..utils import SecretResolver, resolve_secrets_for_func
 from .sql import PrefixedDltTranslator
-from .. import constants
 
 
 class DltAssetConfig(Config):
@@ -91,7 +92,9 @@ def _dlt_factory[
                 key_prefix_str = "_".join(key_prefix)
         dataset_name = dataset_name or key_prefix_str
 
-        def _decorator(f: Callable[..., Iterator[DltResource]]):
+        def _decorator(
+            f: Callable[..., Iterator[DltResource]]
+        ) -> EarlyResourcesAssetFactory:
             asset_name = name or f.__name__
 
             @early_resources_asset_factory(caller_depth=2)

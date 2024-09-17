@@ -1,32 +1,32 @@
-import logging
 import inspect
-from typing import List, Iterable, Union, Callable, Any, Dict, Optional, cast
+import logging
+import typing as t
 from dataclasses import dataclass, field
 
 from dagster import (
-    SensorDefinition,
+    AssetChecksDefinition,
     AssetsDefinition,
     JobDefinition,
-    AssetChecksDefinition,
+    SensorDefinition,
     SourceAsset,
 )
+from dagster._core.definitions.asset_dep import CoercibleToAssetDep
+from dagster._core.definitions.asset_key import CoercibleToAssetKeyPrefix
 
 # This import is fragile but it can't be helped for the current typing.
 # Continuous deployment will have to save us here.
 from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
-from dagster._core.definitions.asset_dep import CoercibleToAssetDep
-from dagster._core.definitions.asset_key import CoercibleToAssetKeyPrefix
 from dagster._core.definitions.unresolved_asset_job_definition import (
     UnresolvedAssetJobDefinition,
 )
-
 from oso_dagster import constants
 
-type GenericAsset = Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]
-type NonCacheableAssetsDefinition = Union[AssetsDefinition, SourceAsset]
-type AssetList = Iterable[GenericAsset]
-type AssetDeps = Iterable[CoercibleToAssetDep]
+type GenericAsset = t.Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]
+type NonCacheableAssetsDefinition = t.Union[AssetsDefinition, SourceAsset]
+type AssetList = t.Iterable[GenericAsset]
+type AssetDeps = t.Iterable[CoercibleToAssetDep]
 type AssetKeyPrefixParam = CoercibleToAssetKeyPrefix
+type FactoryJobDefinition = JobDefinition | UnresolvedAssetJobDefinition
 
 logger = logging.getLogger(__name__)
 
@@ -42,11 +42,9 @@ class GenericGCSAsset:
 @dataclass
 class AssetFactoryResponse:
     assets: AssetList
-    sensors: List[SensorDefinition] = field(default_factory=lambda: [])
-    jobs: List[JobDefinition | UnresolvedAssetJobDefinition] = field(
-        default_factory=lambda: []
-    )
-    checks: List[AssetChecksDefinition] = field(default_factory=lambda: [])
+    sensors: t.List[SensorDefinition] = field(default_factory=lambda: [])
+    jobs: t.List[FactoryJobDefinition] = field(default_factory=lambda: [])
+    checks: t.List[AssetChecksDefinition] = field(default_factory=lambda: [])
 
     def __add__(self, other: "AssetFactoryResponse") -> "AssetFactoryResponse":
         return AssetFactoryResponse(
@@ -57,13 +55,13 @@ class AssetFactoryResponse:
         )
 
     def filter_assets(
-        self, f: Callable[[NonCacheableAssetsDefinition], bool]
-    ) -> Iterable[NonCacheableAssetsDefinition]:
+        self, f: t.Callable[[NonCacheableAssetsDefinition], bool]
+    ) -> t.Iterable[NonCacheableAssetsDefinition]:
         """Due to limitations of docs on CacheableAssetsDefinitions, we filter
         out any CacheableAssetsDefinitions as they cannot be compared against
         for filtering"""
-        no_cacheable_assets = cast(
-            List[NonCacheableAssetsDefinition],
+        no_cacheable_assets = t.cast(
+            t.List[NonCacheableAssetsDefinition],
             filter(lambda a: not isinstance(a, CacheableAssetsDefinition), self.assets),
         )
         return filter(f, no_cacheable_assets)
@@ -75,11 +73,11 @@ class AssetFactoryResponse:
 
     def find_job_by_name(
         self, name: str
-    ) -> Optional[Union[JobDefinition, UnresolvedAssetJobDefinition]]:
+    ) -> t.Optional[t.Union[JobDefinition, UnresolvedAssetJobDefinition]]:
         return next((job for job in self.jobs if job.name == name), None)
 
 
-type EarlyResourcesAssetDecoratedFunction[**P] = Callable[
+type EarlyResourcesAssetDecoratedFunction[**P] = t.Callable[
     P, AssetFactoryResponse | AssetsDefinition
 ]
 
@@ -92,17 +90,22 @@ class EarlyResourcesAssetFactory:
     def __init__(
         self,
         f: EarlyResourcesAssetDecoratedFunction,
-        caller: Optional[inspect.FrameInfo] = None,
-        additional_annotations: Optional[Dict[str, Any]] = None,
+        caller: t.Optional[inspect.FrameInfo] = None,
+        additional_annotations: t.Optional[t.Dict[str, t.Any]] = None,
+        dependencies: t.Optional[t.List["EarlyResourcesAssetFactory"]] = None,
     ):
         self._f = f
         self._caller = caller
         self.additional_annotations = additional_annotations or {}
+        self._dependencies = dependencies or []
 
-    def __call__(self, **early_resources) -> AssetFactoryResponse:
+    def __call__(
+        self, dependencies: t.List[AssetFactoryResponse], **early_resources
+    ) -> AssetFactoryResponse:
         annotations = self._f.__annotations__.copy()
         annotations.update(self.additional_annotations)
-        args: Dict[str, Any] = dict()
+        early_resources["dependencies"] = dependencies
+        args: t.Dict[str, t.Any] = dict()
         for key, value in annotations.items():
             if key not in early_resources:
                 raise Exception(
@@ -132,15 +135,25 @@ class EarlyResourcesAssetFactory:
         else:
             raise Exception("Invalid early resource factory")
 
+    @property
+    def dependencies(self):
+        return self._dependencies[:]
+
 
 def early_resources_asset_factory(
-    *, caller_depth: int = 1, additional_annotations: Optional[Dict[str, Any]] = None
+    *,
+    caller_depth: int = 1,
+    additional_annotations: t.Optional[t.Dict[str, t.Any]] = None,
+    dependencies: t.Optional[t.List[EarlyResourcesAssetFactory]] = None,
 ):
     caller = inspect.stack()[caller_depth]
 
     def _decorator(f: EarlyResourcesAssetDecoratedFunction):
         return EarlyResourcesAssetFactory(
-            f, caller=caller, additional_annotations=additional_annotations
+            f,
+            caller=caller,
+            additional_annotations=additional_annotations,
+            dependencies=dependencies,
         )
 
     return _decorator
