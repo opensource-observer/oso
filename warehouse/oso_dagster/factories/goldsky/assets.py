@@ -694,20 +694,26 @@ class GoldskyAsset:
             ))
         # If only the source or only the destination are different then we can update
         if len(source_only) > 0:
-            log.info("updating table to include new columns from the source data")
+            log.info(dict(
+                msg="updating table to include new columns from the source data", 
+                columns=source_only,
+            ))
             with self.bigquery.get_client() as client:
                 table = client.get_table(destination_table)
                 updated_schema = table.schema[:]
                 # Force all of the fields to be nullable
                 new_fields: List[SchemaField] = []
                 for field in source_only.values():
-                    if field.mode != "NULLABLE":
+                    if field.mode not in ["NULLABLE", "REPEATED"]:
                         field_dict = field.to_api_repr()
                         field_dict["mode"] = "NULLABLE"
                         new_fields.append(SchemaField.from_api_repr(field_dict))
                     else:
                         new_fields.append(field)
                 updated_schema.extend(new_fields)
+                table.schema = updated_schema
+
+                client.update_table(table, ["schema"])
         
 
     async def clean_working_destination(
