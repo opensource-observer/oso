@@ -18,7 +18,7 @@ boltons = "^24.0.0"
 click = "^8.1.7"
 clickhouse-connect = "^0.7.16"
 cloud-sql-python-connector = { extras = ["pg8000"], version = "^1.6.0" }
-dagster = "^1.8.0"
+dagster = "1.8.6"
 dagster-dbt = "^0.24.0"
 dagster-embedded-elt = "^0.24.0"
 dagster-gcp = "^0.24.0"
@@ -63,7 +63,7 @@ google-cloud-bigquery-storage = "^2.25.0"
 dagster-sqlmesh = "0.2.0.dev3"
 google-auth = "^2.34.0"
 pillow = "^10.4.0"
-dagster-k8s = "^0.24.7"
+dagster-k8s = "0.24.6"
 
 
 [tool.poetry.scripts]
