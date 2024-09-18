@@ -193,12 +193,17 @@ def compare_schemas_and_ignore_safe_changes(
 ]:
     schema1_only, schema2_only, modified = compare_schemas(schema1, schema2)
 
+    delete_queue = []
+
     for field_name, modifications in modified.items():
         schema1_field = modifications["schema1"]
         schema2_field = modifications["schema2"]
         safe_group = SAFE_SCHEMA_MODIFICATIONS_MAP[schema1_field.field_type]
         if schema2_field.field_type in safe_group:
-            del modified[field_name]
+            delete_queue.append(field_name)
+
+    for field_name in delete_queue:
+        del modified[field_name]
 
     return schema1_only, schema2_only, modified
 
