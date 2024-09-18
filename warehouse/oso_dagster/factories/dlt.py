@@ -68,6 +68,7 @@ def _dlt_factory[
         deps: Optional[AssetDeps] = None,
         ins: Optional[Mapping[str, AssetIn]] = None,
         tags: Optional[MutableMapping[str, str]] = None,
+        op_tags: Optional[MutableMapping[str, Any]] = None,
         *args: P.args,
         **kwargs: P.kwargs,
     ):
@@ -80,9 +81,11 @@ def _dlt_factory[
         related dagster configuration.
         """
         tags = tags or {}
+        op_tags = op_tags or {}
 
         if "partitions_def" in kwargs:
             tags["opensource.observer/extra"] = "partitioned-assets"
+            op_tags["dagster/concurrency_key"] = "dlt_partitioned_assets"
 
         key_prefix_str = ""
         if key_prefix:
@@ -125,6 +128,7 @@ def _dlt_factory[
                     deps=deps,
                     ins=asset_ins,
                     tags=tags,
+                    op_tags=op_tags,
                     **kwargs,
                 )
                 def _dlt_asset(
