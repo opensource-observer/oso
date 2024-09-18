@@ -48,6 +48,9 @@ def get_partitioned_schedules(
                 RunRequest(
                     run_key=f"{asset_path}_{partition_key}",
                     partition_key=partition_key,
+                    tags={
+                        "dagster/priority": "-1",
+                    },
                 )
                 for partition_key in factory_job.partitions_def.get_partition_keys()
                 if partition_key not in materialized_partitions
@@ -80,10 +83,16 @@ schedules: list[ScheduleDefinition] = [
     ScheduleDefinition(
         job=materialize_all_assets,
         cron_schedule="0 0 * * 0",
+        tags={
+            "dagster/priority": "-1",
+        },
     ),
     # Run only source data every day (exclude sunday as it's already in the schedule above)
     ScheduleDefinition(
         job=materialize_source_assets,
         cron_schedule="0 0 * * 1-6",
+        tags={
+            "dagster/priority": "-1",
+        },
     ),
 ]
