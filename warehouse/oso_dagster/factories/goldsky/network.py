@@ -3,15 +3,12 @@ This generates the whole set of goldsky assets for all network assets. This is
 to simplify the management of these things into a single place.
 """
 
-from oso_dagster.utils import unpack_config, gcs_to_bucket_name
-from .config import GoldskyNetworkConfig, NetworkAssetSourceConfig
+from oso_dagster.utils import gcs_to_bucket_name, unpack_config
+
+from ..common import AssetFactoryResponse, early_resources_asset_factory
+from .additional import blocks_extensions, traces_extensions, transactions_extensions
 from .assets import goldsky_asset
-from ..common import early_resources_asset_factory, AssetFactoryResponse
-from .additional import (
-    blocks_extensions,
-    transactions_extensions,
-    traces_extensions,
-)
+from .config import GoldskyNetworkConfig, NetworkAssetSourceConfig
 
 
 @unpack_config(GoldskyNetworkConfig)
@@ -47,6 +44,7 @@ def goldsky_network_assets(config: GoldskyNetworkConfig):
                 partition_column_transform=blocks_asset_config.partition_column_transform,
                 source_bucket_name=staging_bucket_name,
                 destination_bucket_name=staging_bucket_name,
+                schema_overrides=blocks_asset_config.schema_overrides,
                 # uncomment the following value to test
                 # max_objects_to_load=1,
                 additional_factories=[blocks_extensions()],
@@ -130,6 +128,7 @@ def goldsky_network_assets(config: GoldskyNetworkConfig):
                 partition_column_transform=traces_asset_config.partition_column_transform,
                 source_bucket_name=staging_bucket_name,
                 destination_bucket_name=staging_bucket_name,
+                schema_overrides=traces_asset_config.schema_overrides,
                 # uncomment the following value to test
                 # max_objects_to_load=1,
                 deps=transactions.filter_assets_by_name("transactions"),

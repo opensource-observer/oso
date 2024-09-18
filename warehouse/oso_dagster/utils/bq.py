@@ -130,6 +130,16 @@ def get_table_schema(
     return table.schema
 
 
+SAFE_SCHEMA_MODIFICATIONS = [
+    {"NUMERIC", "FLOAT", "DOUBLE"},
+]
+
+SAFE_SCHEMA_MODIFICATIONS_MAP: t.Dict[str, t.Set[str]] = {}
+for group in SAFE_SCHEMA_MODIFICATIONS:
+    for schema_type in group:
+        SAFE_SCHEMA_MODIFICATIONS_MAP[schema_type] = group
+
+
 def compare_schemas(
     schema1: t.List[SchemaField], schema2: t.List[SchemaField]
 ) -> t.Tuple[
@@ -172,6 +182,25 @@ def compare_schemas(
                 }
 
     return schema1_only, schema2_only, modified_fields
+
+
+def compare_schemas_and_ignore_safe_changes(
+    schema1: t.List[SchemaField], schema2: t.List[SchemaField]
+) -> t.Tuple[
+    t.Dict[str, SchemaField],
+    t.Dict[str, SchemaField],
+    t.Dict[str, t.Dict[str, SchemaField]],
+]:
+    schema1_only, schema2_only, modified = compare_schemas(schema1, schema2)
+
+    for field_name, modifications in modified.items():
+        schema1_field = modifications["schema1"]
+        schema2_field = modifications["schema2"]
+        safe_group = SAFE_SCHEMA_MODIFICATIONS_MAP[schema1_field.field_type]
+        if schema2_field.field_type in safe_group:
+            del modified[field_name]
+
+    return schema1_only, schema2_only, modified
 
 
 def print_schema_diff(
