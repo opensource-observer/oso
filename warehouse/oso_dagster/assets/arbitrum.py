@@ -122,6 +122,7 @@ def arbitrum_assets(config: GoldskyNetworkConfig):
                 partition_column_transform=traces_asset_config.partition_column_transform,
                 source_bucket_name=staging_bucket_name,
                 destination_bucket_name=staging_bucket_name,
+                schema_overrides=traces_asset_config.schema_overrides,
                 # uncomment the following value to test
                 # max_objects_to_load=1,
                 deps=transactions.filter_assets_by_name("transactions"),
