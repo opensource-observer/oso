@@ -8,23 +8,38 @@ import re
 import threading
 import time
 from dataclasses import dataclass
-from typing import (Any, Callable, Dict, List, Mapping, Optional, Tuple,
-                    Unpack, cast)
+from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple, Unpack, cast
 
 import arrow
 import polars
-from dagster import (AssetExecutionContext, DagsterLogManager,
-                     DefaultSensorStatus, EventLogEntry, MetadataValue,
-                     OpExecutionContext, ResourceParam, RunConfig, RunRequest,
-                     SensorEvaluationContext, TableColumn, TableRecord,
-                     TableSchema, asset, asset_sensor, job, op)
+from dagster import (
+    AssetExecutionContext,
+    DagsterLogManager,
+    DefaultSensorStatus,
+    EventLogEntry,
+    MetadataValue,
+    OpExecutionContext,
+    ResourceParam,
+    RunConfig,
+    RunRequest,
+    SensorEvaluationContext,
+    TableColumn,
+    TableRecord,
+    TableSchema,
+    asset,
+    asset_sensor,
+    job,
+    op,
+)
 from dagster_gcp import BigQueryResource, GCSResource
-from google.api_core.exceptions import (ClientError, InternalServerError,
-                                        NotFound)
+from google.api_core.exceptions import ClientError, InternalServerError, NotFound
 from google.cloud.bigquery import Client as BQClient
 from google.cloud.bigquery import LoadJobConfig, SourceFormat, TableReference
 from google.cloud.bigquery.schema import SchemaField
-from oso_dagster.utils.bq import compare_schemas, get_table_schema
+from oso_dagster.utils.bq import (
+    compare_schemas_and_ignore_safe_changes,
+    get_table_schema,
+)
 from polars.type_aliases import PolarsDataType
 
 from ...cbt import CBTResource, TimePartitioning, UpdateStrategy
@@ -677,7 +692,7 @@ class GoldskyAsset:
         source_schema = self.load_schema_for_bq_table(source_table)
         destination_schema = self.load_schema_for_bq_table(destination_table)
 
-        source_only, destination_only, modified = compare_schemas(source_schema, destination_schema)
+        source_only, destination_only, modified = compare_schemas_and_ignore_safe_changes(source_schema, destination_schema)
         if len(modified) > 0:
             log.error(dict(
                 msg=f"cannot merge automatically into {destination_table} schema has been altered:",
