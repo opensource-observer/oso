@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from typing import Optional
+from typing import Optional, Literal
 
 import dlt
 from dagster import AssetExecutionContext, WeeklyPartitionsDefinition
@@ -47,6 +47,30 @@ OPEN_COLLECTIVE_TX_EPOCH = "2015-01-23T05:00:00.000Z"
 # The maximum number of nodes that can be retrieved per page
 OPEN_COLLECTIVE_MAX_NODES_PER_PAGE = 1000
 
+# Kubernetes configuration for the asset materialization
+K8S_CONFIG = {
+    "merge_behavior": "SHALLOW",
+    "container_config": {
+        "resources": {
+            "requests": {"cpu": "2000m", "memory": "3584Mi"},
+            "limits": {"cpu": "2000m", "memory": "3584Mi"},
+        },
+    },
+    "pod_spec_config": {
+        "node_selector": {
+            "pool_type": "spot",
+        },
+        "tolerations": [
+            {
+                "key": "pool_type",
+                "operator": "Equal",
+                "value": "spot",
+                "effect": "NoSchedule",
+            }
+        ],
+    },
+}
+
 
 def generate_steps(total: int, step: int):
     """
@@ -79,9 +103,9 @@ def generate_steps(total: int, step: int):
 def get_open_collective_data(
     context: AssetExecutionContext,
     client: Client,
-    type: str,
-    dateFrom: str,
-    dateTo: str,
+    kind: Literal["DEBIT", "CREDIT"],
+    date_from: str,
+    date_to: str,
 ):
     """
     Retrieves Open Collective data using the provided client and query parameters.
@@ -89,9 +113,9 @@ def get_open_collective_data(
     Args:
         context (AssetExecutionContext): The execution context of the asset.
         client (Client): The client object used to execute the GraphQL queries.
-        type (str): The transaction type. Either "DEBIT" or "CREDIT".
-        dateFrom (str): The start date for the query.
-        dateTo (str): The end date for the query.
+        kind (str): The transaction type. Either "DEBIT" or "CREDIT".
+        date_from (str): The start date for the query.
+        date_to (str): The end date for the query.
 
     Yields:
         list: A list of transaction nodes retrieved from Open Collective.
@@ -117,9 +141,9 @@ def get_open_collective_data(
     total = client.execute(
         total_query,
         variable_values={
-            "type": type,
-            "dateFrom": dateFrom,
-            "dateTo": dateTo,
+            "type": kind,
+            "dateFrom": date_from,
+            "dateTo": date_to,
         },
     )
 
@@ -176,13 +200,13 @@ def get_open_collective_data(
                 variable_values={
                     "limit": OPEN_COLLECTIVE_MAX_NODES_PER_PAGE,
                     "offset": step,
-                    "type": type,
-                    "dateFrom": dateFrom,
-                    "dateTo": dateTo,
+                    "type": kind,
+                    "dateFrom": date_from,
+                    "dateTo": date_to,
                 },
             )
             context.log.info(
-                f"Fetching transaction {step}/{total_count} for type '{type}'"
+                f"Fetching transaction {step}/{total_count} for type '{kind}'"
             )
             yield query["transactions"]["nodes"]
         except Exception as exception:
@@ -197,7 +221,7 @@ def get_open_collective_data(
 def get_open_collective_expenses(
     context: AssetExecutionContext,
     client: Client,
-    kind: str,
+    kind: Literal["DEBIT", "CREDIT"],
 ):
     """
     Get open collective expenses.
@@ -250,9 +274,12 @@ def base_open_collective_client(personal_token: str):
 @dlt_factory(
     key_prefix="open_collective",
     partitions_def=WeeklyPartitionsDefinition(
-        start_date=OPEN_COLLECTIVE_TX_EPOCH.split("T")[0],
+        start_date=OPEN_COLLECTIVE_TX_EPOCH.split("T", maxsplit=1)[0],
         end_date=(datetime.now()).isoformat().split("T")[0],
     ),
+    op_tags={
+        "dagster-k8s/config": K8S_CONFIG,
+    },
 )
 def expenses(
     context: AssetExecutionContext,
@@ -291,31 +318,12 @@ def expenses(
 @dlt_factory(
     key_prefix="open_collective",
     partitions_def=WeeklyPartitionsDefinition(
-        start_date=OPEN_COLLECTIVE_TX_EPOCH.split("T")[0],
+        start_date=OPEN_COLLECTIVE_TX_EPOCH.split("T", maxsplit=1)[0],
         end_date=(datetime.now()).isoformat().split("T")[0],
     ),
     op_tags={
-        "dagster-k8s/config": {
-            "merge_behavior": "SHALLOW",
-            "container_config": {
-                "resources": {
-                    "requests": {"cpu": "2000m", "memory": "3584Mi"},
-                    "limits": {"cpu": "2000m", "memory": "3584Mi"},
-                },
-            },
-            "pod_spec_config": {
-                "node_selector": {"pool_type": "spot",},
-                "tolerations": [
-                    {
-                        "key": "pool_type",
-                        "operator": "Equal",
-                        "value": "spot",
-                        "effect": "NoSchedule",
-                    }
-                ],
-            },
-        }
-    }
+        "dagster-k8s/config": K8S_CONFIG,
+    },
 )
 def deposits(
     context: AssetExecutionContext,
@@ -337,7 +345,7 @@ def deposits(
     client = base_open_collective_client(personal_token)
     resource = dlt.resource(
         get_open_collective_expenses(context, client, "CREDIT"),
-        name="funds",
+        name="deposits",
         columns=pydantic_to_dlt_nullable_columns(Transaction),
         primary_key="id",
     )
