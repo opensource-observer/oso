@@ -345,7 +345,7 @@ def deposits(
     client = base_open_collective_client(personal_token)
     resource = dlt.resource(
         get_open_collective_expenses(context, client, "CREDIT"),
-        name="funds",
+        name="deposits",
         columns=pydantic_to_dlt_nullable_columns(Transaction),
         primary_key="id",
     )
