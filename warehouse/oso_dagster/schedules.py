@@ -4,6 +4,7 @@ from dagster import (
     AssetKey,
     AssetSelection,
     AssetsDefinition,
+    DefaultScheduleStatus,
     RunRequest,
     ScheduleDefinition,
     ScheduleEvaluationContext,
@@ -62,6 +63,7 @@ def get_partitioned_schedules(
             cron_schedule="0 0 * * 0",
             name=f"materialize_{asset_path}_schedule",
             execution_fn=execution_fn,
+            default_status=DefaultScheduleStatus.RUNNING,
         )
 
     return [create_schedule(asset_key) for asset_key in resolved_assets]
