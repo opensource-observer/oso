@@ -14,6 +14,16 @@ from sqlmesh.core.config.connection import (
 
 dotenv.load_dotenv()
 
+
+def pool_manager_factory(config: ClickhouseConnectionConfig):
+    from clickhouse_connect.driver import httputil
+
+    return httputil.get_pool_manager(
+        num_pools=config.concurrent_tasks,
+        max_size=config.concurrent_tasks,
+    )
+
+
 config = Config(
     model_defaults=ModelDefaultsConfig(dialect="clickhouse", start="2024-08-01"),
     gateways={
@@ -32,8 +42,14 @@ config = Config(
                 password=os.environ.get("SQLMESH_CLICKHOUSE_PASSWORD", ""),
                 port=int(os.environ.get("SQLMESH_CLICKHOUSE_PORT", "443")),
                 concurrent_tasks=int(
-                    os.environ.get("SQLMESH_CLICKHOUSE_CONCURRENT_TASKS", "8")
+                    os.environ.get("SQLMESH_CLICKHOUSE_CONCURRENT_TASKS", "16")
                 ),
+                send_receive_timeout=1800,
+                connection_settings={"allow_nondeterministic_mutations": 1},
+                connection_pool_options={
+                    "maxsize": 24,
+                    "retries": 3,
+                },
             ),
             state_connection=GCPPostgresConnectionConfig(
                 instance_connection_string=os.environ.get(
