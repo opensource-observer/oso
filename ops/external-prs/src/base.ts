@@ -15,6 +15,7 @@ export interface BaseArgs {
   repo: Repo;
   app: App;
   appUtils: GHAppUtils;
+  adminTeamName: string;
 }
 
 export interface CommentCommand {
@@ -51,13 +52,20 @@ export type CommmentCommandHandler<T> = (command: CommentCommand) => Promise<T>;
 export class GHAppUtils {
   private app: App;
   private repo: Repo;
+  private adminTeamName: string;
   private octo: Octokit;
   private appMeta: AppMeta;
 
-  constructor(app: App, repo: Repo, octoAndMeta: OctokitAndAppMeta) {
+  constructor(
+    app: App,
+    repo: Repo,
+    adminTeamName: string,
+    octoAndMeta: OctokitAndAppMeta,
+  ) {
     this.app = app;
     this.repo = repo;
     this.octo = octoAndMeta.octo;
+    this.adminTeamName = adminTeamName;
     this.appMeta = octoAndMeta.meta;
   }
 
@@ -160,6 +168,27 @@ export class GHAppUtils {
       comment_id: matchingComments[0].data.id,
       body: taggedMessage,
     });
+  }
+
+  async isLoginOnTeam(login: string, team: string) {
+    const teamMembers = await this.octo.rest.teams.listMembersInOrg({
+      team_slug: team,
+      org: this.repo.owner,
+    });
+
+    const teamLogins = teamMembers.data.map((member) =>
+      member.login.toLowerCase(),
+    );
+
+    // Check the user's membership on the team
+    return teamLogins.indexOf(login.toLowerCase()) !== -1;
+  }
+
+  async isLoginOnAdminTeam(login: string) {
+    logger.info({
+      message: "checking admin team membership",
+    });
+    return this.isLoginOnTeam(login, this.adminTeamName);
   }
 
   async setCheckStatus(request: CheckRequest) {
