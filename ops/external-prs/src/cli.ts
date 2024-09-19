@@ -11,12 +11,14 @@ import { Repo, getOctokitFor, getRepoPermissions } from "./github.js";
 import { osoSubcommands } from "./oso/index.js";
 import { BaseArgs, GHAppUtils } from "./base.js";
 import { ossdSubcommands } from "./ossd/index.js";
+import { commonSubcommands } from "./common/index.js";
 
 dotenv.config();
 
 type BeforeClientArgs = ArgumentsCamelCase<{
   "github-app-private-key": unknown;
   "github-app-id": unknown;
+  "admin-team-name": string;
 }>;
 
 interface InitializePRCheck extends BaseArgs {
@@ -104,6 +106,12 @@ const cli = yargs(hideBin(process.argv))
     type: "string",
     demandOption: true,
   })
+  .option("admin-team-name", {
+    description: "The admin team within the repo's organization",
+    type: "string",
+    default: "",
+    demandOption: false,
+  })
   .middleware(async (args: BeforeClientArgs) => {
     // Get base64-encoded private key from the environment
     const buf = Buffer.from(args.githubAppPrivateKey as string, "base64"); // Ta-da
@@ -115,10 +123,18 @@ const cli = yargs(hideBin(process.argv))
     args.app = app;
     const repo = args.repo as Repo;
     const octokitAndAppMeta = await getOctokitFor(app, repo);
-    args.appUtils = new GHAppUtils(app, repo, octokitAndAppMeta);
+    args.appUtils = new GHAppUtils(
+      app,
+      repo,
+      args.adminTeamName,
+      octokitAndAppMeta,
+    );
 
     const { data } = await app.octokit.request("/app");
     logger.debug(`Authenticated as ${data.name}`);
+  })
+  .command("common", "common commands", (yags) => {
+    commonSubcommands(yags);
   })
   .command("oso", "oso related commands", (yags) => {
     osoSubcommands(yags);
