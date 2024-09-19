@@ -96,9 +96,11 @@ spec:
           config:
             queuedRunCoordinator:
               maxConcurrentRuns: 30
-              blockOpConcurrencyLimitedRuns:
-                enabled: true
-                opConcurrencySlotBuffer: 1
+              tagConcurrencyLimits:
+                - key: "dagster/concurrency_key"
+                  value:
+                    applyLimitPerUniqueValue: true
+                  limit: 1
       dagster-user-deployments:
         deployments:
           - name: "oso-dagster"
