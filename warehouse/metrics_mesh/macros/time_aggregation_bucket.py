@@ -1,11 +1,11 @@
+from sqlglot import expressions as exp
 from sqlmesh import macro
 from sqlmesh.core.macros import MacroEvaluator
-from sqlglot import expressions as exp
 
 
 @macro()
 def time_aggregation_bucket(
-    evaluator: MacroEvaluator, timeExp: exp.Expression, rollup: str
+    evaluator: MacroEvaluator, time_exp: exp.Expression, rollup: str
 ):
     from sqlmesh.core.dialect import parse_one
 
@@ -25,7 +25,7 @@ def time_aggregation_bucket(
                     unit=exp.Var(this=rollup_to_interval[rollup]),
                 ),
                 exp.Cast(
-                    this=timeExp,
+                    this=time_exp,
                     to=exp.DataType(this=exp.DataType.Type.DATE, nested=False),
                 ),
             ],
@@ -38,6 +38,6 @@ def time_aggregation_bucket(
     return exp.Anonymous(
         this=rollup_to_clickhouse_function[rollup],
         expressions=[
-            timeExp,
+            time_exp,
         ],
     )
