@@ -35,6 +35,30 @@ EAS_OPTIMISM_FIRST_ATTESTATION = datetime.fromtimestamp(1690557755)
 # A sensible limit for the number of nodes to fetch per page
 EAS_OPTIMISM_STEP_NODES_PER_PAGE = 10_000
 
+# Kubernetes configuration for the asset materialization
+K8S_CONFIG = {
+    "merge_behavior": "SHALLOW",
+    "container_config": {
+        "resources": {
+            "requests": {"cpu": "2000m", "memory": "3584Mi"},
+            "limits": {"cpu": "2000m", "memory": "3584Mi"},
+        },
+    },
+    "pod_spec_config": {
+        "node_selector": {
+            "pool_type": "spot",
+        },
+        "tolerations": [
+            {
+                "key": "pool_type",
+                "operator": "Equal",
+                "value": "spot",
+                "effect": "NoSchedule",
+            }
+        ],
+    },
+}
+
 
 def get_optimism_eas_data(
     context: AssetExecutionContext, client: Client, date_from: float, date_to: float
@@ -158,9 +182,12 @@ def get_optimism_eas(context: AssetExecutionContext, client: Client):
 @dlt_factory(
     key_prefix="ethereum_attestation_service_optimism",
     partitions_def=WeeklyPartitionsDefinition(
-        start_date=EAS_OPTIMISM_FIRST_ATTESTATION.isoformat().split("T")[0],
-        end_date=(datetime.now()).isoformat().split("T")[0],
+        start_date=EAS_OPTIMISM_FIRST_ATTESTATION.isoformat().split("T", maxsplit=1)[0],
+        end_date=(datetime.now()).isoformat().split("T", maxsplit=1)[0],
     ),
+    op_tags={
+        "dagster-k8s/config": K8S_CONFIG,
+    },
 )
 def attestations(context: AssetExecutionContext):
     """
