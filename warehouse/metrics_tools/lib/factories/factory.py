@@ -125,6 +125,7 @@ def generate_models_from_query(
                     "name": ModelKindName.INCREMENTAL_BY_TIME_RANGE,
                     "time_column": "metrics_sample_date",
                     "batch_size": 1,
+                    "batch_concurrency": 1,
                 },
                 dialect="clickhouse",
                 columns=columns,
@@ -348,4 +349,5 @@ def timeseries_metrics(
 #         if not union_cte:
 #             raise Exception("no queries generated from the evaluated queries")
 #         top_level_select = top_level_select.with_(f"all_{cte_suffix}", union_cte)
+#         return top_level_select
 #         return top_level_select
