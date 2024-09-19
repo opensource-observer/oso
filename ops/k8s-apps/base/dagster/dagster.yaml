@@ -59,7 +59,7 @@ spec:
               containerConfig:
                 resources:
                   limits:
-                    cpu: 500m 
+                    cpu: 500m
                     memory: 1024Mi
                   requests:
                     cpu: 500m
@@ -96,6 +96,11 @@ spec:
           config:
             queuedRunCoordinator:
               maxConcurrentRuns: 30
+              tagConcurrencyLimits:
+                - key: "dagster/concurrency_key"
+                  value:
+                    applyLimitPerUniqueValue: true
+                  limit: 1
       dagster-user-deployments:
         deployments:
           - name: "oso-dagster"
