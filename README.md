@@ -5,7 +5,7 @@
 [gha]: https://github.com/opensource-observer/oso/actions/workflows/ci-default.yml
 [gha-badge]: https://github.com/opensource-observer/oso/actions/workflows/ci-default.yml/badge.svg
 
-Open Source Observer is a free analytics suite that helps funders measure the impact of open source software contributions to the health of their ecosystem.
+Open Source Observer is a free analytics suite that helps funders measure the impact of open source software contributions to the health of their .
 
 [opensource.observer](https://www.opensource.observer)
 
