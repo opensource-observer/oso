@@ -83,10 +83,6 @@ def _dlt_factory[
         tags = tags or {}
         op_tags = op_tags or {}
 
-        if "partitions_def" in kwargs:
-            tags["opensource.observer/extra"] = "partitioned-assets"
-            op_tags["dagster/concurrency_key"] = "dlt_partitioned_assets"
-
         key_prefix_str = ""
         if key_prefix:
             if isinstance(key_prefix, str):
@@ -120,6 +116,14 @@ def _dlt_factory[
 
                 if "context" in extra_resources:
                     extra_resources.discard("context")
+
+                if "partitions_def" in kwargs:
+                    tags["opensource.observer/extra"] = "partitioned-assets"
+                    # we specify these two times, one for the asset, the other for the job itself
+                    tags["dagster/concurrency_key"] = f"{key_prefix_str}_{asset_name}"
+                    op_tags["dagster/concurrency_key"] = (
+                        f"{key_prefix_str}_{asset_name}"
+                    )
 
                 @asset(
                     name=asset_name,
@@ -208,6 +212,7 @@ def _dlt_factory[
                     name=f"{key_prefix_str}_{asset_name}_job",
                     selection=[_dlt_asset],
                     partitions_def=asset_partitions,
+                    tags=tags,
                 )
 
                 return AssetFactoryResponse([_dlt_asset], [], [_asset_job])
