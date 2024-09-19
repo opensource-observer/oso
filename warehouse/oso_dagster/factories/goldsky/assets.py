@@ -36,11 +36,12 @@ from google.api_core.exceptions import ClientError, InternalServerError, NotFoun
 from google.cloud.bigquery import Client as BQClient
 from google.cloud.bigquery import LoadJobConfig, SourceFormat, TableReference
 from google.cloud.bigquery.schema import SchemaField
+from polars.type_aliases import PolarsDataType
+
 from oso_dagster.utils.bq import (
     compare_schemas_and_ignore_safe_changes,
     get_table_schema,
 )
-from polars.type_aliases import PolarsDataType
 
 from ...cbt import CBTResource, TimePartitioning, UpdateStrategy
 from ...utils import AlertManager, add_tags, batch_delete_blobs
@@ -51,13 +52,14 @@ from .errors import NoNewData
 
 GenericExecutionContext = AssetExecutionContext | OpExecutionContext
 
+
 @dataclass
 class GoldskyCheckpoint:
     """Orderable representation of the components of the file names for goldsky
     parquet files.
 
-    The file names are in the form: 
-    
+    The file names are in the form:
+
     * {timestamp}-{job_id}-{worker_number}-{checkpoint}.parquet
     """
 
@@ -183,7 +185,7 @@ class GoldskyQueues:
             queue.enqueue(item)
             return item
         return None
-    
+
     def is_empty(self):
         if not self.peek():
             return True
@@ -267,12 +269,17 @@ class GoldskyWorker:
     def worker_wildcard_uri(self):
         return self.worker_destination_uri("table_*.parquet")
 
-    async def process(self, context: GenericExecutionContext, pointer_table_mutex: threading.Lock):
+    async def process(
+        self, context: GenericExecutionContext, pointer_table_mutex: threading.Lock
+    ):
         raise NotImplementedError("process not implemented on the base class")
 
 
 def bq_retry(
-    context: GenericExecutionContext, f: Callable, retries: int = 5, min_wait: float = 1.0
+    context: GenericExecutionContext,
+    f: Callable,
+    retries: int = 5,
+    min_wait: float = 1.0,
 ):
     retry_wait = min_wait
     for i in range(retries):
@@ -395,7 +402,6 @@ class DirectGoldskyWorker(GoldskyWorker):
                 continue
 
 
-
 def delete_all_gcs_files_in_prefix(
     context: GenericExecutionContext, gcs: GCSResource, bucket_name: str, prefix: str
 ):
@@ -414,7 +420,7 @@ def decimal_convert(name: str, field: PolarsDataType):
     field = cast(polars.Decimal, field)
     if field.precision == 100 and field.scale == 0:
         return SchemaField(name, field_type="NUMERIC")
-    
+
     if not field.precision:
         raise Exception("no precision given")
 
@@ -439,7 +445,9 @@ def list_type_convert(name: str, field: PolarsDataType):
     return SchemaField(name, field_type=inner_type.field_type, mode="REPEATED")
 
 
-PARQUET_TO_BQ_FIELD_TYPES: Dict[PolarsDataType, Callable[[str, PolarsDataType], SchemaField]] = {
+PARQUET_TO_BQ_FIELD_TYPES: Dict[
+    PolarsDataType, Callable[[str, PolarsDataType], SchemaField]
+] = {
     polars.Boolean: basic_type_convert("BOOLEAN"),
     polars.Int64: basic_type_convert("INT64"),
     polars.Int32: basic_type_convert("INT64"),
@@ -488,7 +496,9 @@ class GoldskyAsset:
         workers = await self.load_worker_tables(context, checkpoint_range)
 
         if len(workers) == 0:
-            raise NoNewData("Nothing to materialize. This might not be expected but intentionally an error is thrown.")
+            raise NoNewData(
+                "Nothing to materialize. This might not be expected but intentionally an error is thrown."
+            )
 
         # Dedupe and partition the current worker table into a deduped and partitioned table
         await self.dedupe_worker_tables(context, workers)
@@ -497,10 +507,16 @@ class GoldskyAsset:
 
         await self.clean_working_destination(context, workers)
 
-    def load_schema_from_job_id(self, log: DagsterLogManager, job_id: str, timestamp: int):
-        queues = self.load_queues(log, max_objects_to_load=1, checkpoint_range=GoldskyCheckpointRange(
-            start=GoldskyCheckpoint(job_id, timestamp, 0),
-        ))
+    def load_schema_from_job_id(
+        self, log: DagsterLogManager, job_id: str, timestamp: int
+    ):
+        queues = self.load_queues(
+            log,
+            max_objects_to_load=1,
+            checkpoint_range=GoldskyCheckpointRange(
+                start=GoldskyCheckpoint(job_id, timestamp, 0),
+            ),
+        )
         self.load_schema(queues)
         return self.schema
 
@@ -543,7 +559,6 @@ class GoldskyAsset:
     def load_schema_for_bq_table(self, table_ref: str):
         with self.bigquery.get_client() as client:
             return get_table_schema(client, table_ref)
-        
 
     def ensure_datasets(self, context: GenericExecutionContext):
         self.ensure_dataset(context, self.config.destination_dataset_name)
@@ -617,7 +632,9 @@ class GoldskyAsset:
                         continue
                     workers.append(worker)
             if len(workers) == 0:
-                raise NoNewData('Nothing to materialize. Queue empty and no in progress workers found')
+                raise NoNewData(
+                    "Nothing to materialize. Queue empty and no in progress workers found"
+                )
 
         return workers
 
@@ -672,7 +689,10 @@ class GoldskyAsset:
         context.log.warning(f"Worker table to use for schema {worker_deduped_table}")
 
         # check the schema of the destination and the worker table. if it's only new rows then add those rose
-        self.ensure_schema_or_fail(context.log, worker_deduped_table, self.config.destination_table_fqn)
+        if self.destination_exists:
+            self.ensure_schema_or_fail(
+                context.log, worker_deduped_table, self.config.destination_table_fqn
+            )
 
         cbt.transform(
             self.config.merge_workers_model,
@@ -688,31 +708,52 @@ class GoldskyAsset:
             source_table_fqn=worker_deduped_table,
         )
 
-    def ensure_schema_or_fail(self, log: logging.Logger, source_table: str, destination_table: str):
+    @property
+    def destination_exists(self):
+        with self.bigquery.get_client() as client:
+            try:
+                client.get_table(self.config.destination_table_fqn)
+                return True
+            except NotFound:
+                return False
+
+    def ensure_schema_or_fail(
+        self, log: logging.Logger, source_table: str, destination_table: str
+    ):
         source_schema = self.load_schema_for_bq_table(source_table)
         destination_schema = self.load_schema_for_bq_table(destination_table)
 
-        source_only, destination_only, modified = compare_schemas_and_ignore_safe_changes(source_schema, destination_schema)
+        source_only, destination_only, modified = (
+            compare_schemas_and_ignore_safe_changes(source_schema, destination_schema)
+        )
         if len(modified) > 0:
-            log.error(dict(
-                msg=f"cannot merge automatically into {destination_table} schema has been altered:",
-                destination_only=destination_only,
-                source_only=source_only,
-                modified=modified,
-            ))
-            raise Exception(f"cannot merge, schemas incompatible in {source_schema} and {destination_table}")
-        # IF things are only in the destination that just means the new data removed a column. We can log and ignore. 
+            log.error(
+                dict(
+                    msg=f"cannot merge automatically into {destination_table} schema has been altered:",
+                    destination_only=destination_only,
+                    source_only=source_only,
+                    modified=modified,
+                )
+            )
+            raise Exception(
+                f"cannot merge, schemas incompatible in {source_schema} and {destination_table}"
+            )
+        # IF things are only in the destination that just means the new data removed a column. We can log and ignore.
         if len(destination_only) > 0:
-            log.warning(dict(
-                msg="new data no longer has some columns",
-                columns=destination_only,
-            ))
+            log.warning(
+                dict(
+                    msg="new data no longer has some columns",
+                    columns=destination_only,
+                )
+            )
         # If only the source or only the destination are different then we can update
         if len(source_only) > 0:
-            log.info(dict(
-                msg="updating table to include new columns from the source data", 
-                columns=source_only,
-            ))
+            log.info(
+                dict(
+                    msg="updating table to include new columns from the source data",
+                    columns=source_only,
+                )
+            )
             with self.bigquery.get_client() as client:
                 table = client.get_table(destination_table)
                 updated_schema = table.schema[:]
@@ -729,7 +770,6 @@ class GoldskyAsset:
                 table.schema = updated_schema
 
                 client.update_table(table, ["schema"])
-        
 
     async def clean_working_destination(
         self, context: GenericExecutionContext, workers: List[GoldskyWorker]
@@ -841,13 +881,10 @@ class GoldskyAsset:
             batch_delete_blobs(gcs_client, self.config.source_bucket_name, blobs, 1000)
 
     def gather_stats(self, log: DagsterLogManager):
-        self.load_queues_to_process(
-            log,
-            None
-        )
+        self.load_queues_to_process(log, None)
         return {
             "total_files_count": self.total_files_count,
-            "bucket_stats": self.bucket_stats
+            "bucket_stats": self.bucket_stats,
         }
 
     def _uncached_blobs_loader(self, log: DagsterLogManager):
@@ -880,7 +917,7 @@ class GoldskyAsset:
         if key not in self.bucket_stats:
             self.bucket_stats[key] = dict(
                 job_id=match.group("job_id"),
-                timestamp=int(match.group("timestamp")), 
+                timestamp=int(match.group("timestamp")),
                 count=1,
                 workers=[match.group("worker")],
             )
@@ -890,13 +927,14 @@ class GoldskyAsset:
             if worker not in self.bucket_stats[key]["workers"]:
                 self.bucket_stats[key]["workers"].append(worker)
 
-
     def load_queues(
         self,
         log: DagsterLogManager,
         worker_status: Optional[Dict[str, GoldskyCheckpoint]] = None,
         max_objects_to_load: Optional[int] = None,
-        blobs_loader: Optional[Callable[[DagsterLogManager], List[re.Match[str]]]] = None,
+        blobs_loader: Optional[
+            Callable[[DagsterLogManager], List[re.Match[str]]]
+        ] = None,
         checkpoint_range: Optional[GoldskyCheckpointRange] = None,
     ) -> GoldskyQueues:
         latest_timestamp = 0
@@ -1004,8 +1042,12 @@ class GoldskyBackfillOpInput:
     end_checkpoint: Optional[GoldskyCheckpoint]
 
 
-def goldsky_asset(deps: Optional[AssetDeps | AssetList] = None, **kwargs: Unpack[GoldskyConfigInterface]) -> AssetFactoryResponse:
+def goldsky_asset(
+    deps: Optional[AssetDeps | AssetList] = None,
+    **kwargs: Unpack[GoldskyConfigInterface],
+) -> AssetFactoryResponse:
     asset_config = GoldskyConfig(**kwargs)
+
     def materialize_asset(
         context: OpExecutionContext,
         bigquery: BigQueryResource,
@@ -1042,7 +1084,9 @@ def goldsky_asset(deps: Optional[AssetDeps | AssetList] = None, **kwargs: Unpack
                 },
             },
             "pod_spec_config": {
-                "node_selector": {"pool_type": "spot",},
+                "node_selector": {
+                    "pool_type": "spot",
+                },
                 "tolerations": [
                     {
                         "key": "pool_type",
@@ -1056,32 +1100,46 @@ def goldsky_asset(deps: Optional[AssetDeps | AssetList] = None, **kwargs: Unpack
     }
 
     if key_prefix:
-        group_name = key_prefix if isinstance(key_prefix, str) else "__".join(list(key_prefix))
+        group_name = (
+            key_prefix if isinstance(key_prefix, str) else "__".join(list(key_prefix))
+        )
         tags["opensource.observer/group"] = group_name
         op_tags["dagster/concurrency_key"] = group_name
 
-    @asset(name=asset_config.name, key_prefix=asset_config.key_prefix, deps=deps, compute_kind="goldsky", tags=add_tags(tags, {
-        "opensource.observer/type": "source", 
-    }), op_tags=op_tags)
+    @asset(
+        name=asset_config.name,
+        key_prefix=asset_config.key_prefix,
+        deps=deps,
+        compute_kind="goldsky",
+        tags=add_tags(
+            tags,
+            {
+                "opensource.observer/type": "source",
+            },
+        ),
+        op_tags=op_tags,
+    )
     def generated_asset(
         context: AssetExecutionContext,
         bigquery: BigQueryResource,
         gcs: GCSResource,
         cbt: CBTResource,
-        alert_manager: ResourceParam[AlertManager]
+        alert_manager: ResourceParam[AlertManager],
     ) -> None:
         context.log.info(f"Run ID: {context.run_id} AssetKey: {context.asset_key}")
         try:
             materialize_asset(context, bigquery, gcs, cbt)
         except NoNewData:
-            alert_manager.alert(f"Goldsky Asset {context.asset_key.to_user_string()} has no new data.")
-
+            alert_manager.alert(
+                f"Goldsky Asset {context.asset_key.to_user_string()} has no new data."
+            )
 
     related_ops_prefix = "_".join(generated_asset.key.path)
 
-    @op(name=f"{related_ops_prefix}_clean_up_op", tags=add_tags(tags, {
-        "opensource.observer/op-type": "clean-up"
-    }))
+    @op(
+        name=f"{related_ops_prefix}_clean_up_op",
+        tags=add_tags(tags, {"opensource.observer/op-type": "clean-up"}),
+    )
     def goldsky_clean_up_op(
         context: OpExecutionContext,
         bigquery: BigQueryResource,
@@ -1093,9 +1151,10 @@ def goldsky_asset(deps: Optional[AssetDeps | AssetList] = None, **kwargs: Unpack
         gs_asset = GoldskyAsset(gcs, bigquery, cbt, asset_config)
         gs_asset.clean_up(context.log)
 
-    @op(name=f"{related_ops_prefix}_backfill_op", tags=add_tags(tags, {
-        "opensource.observer/op-type": "manual-backfill"
-    }))
+    @op(
+        name=f"{related_ops_prefix}_backfill_op",
+        tags=add_tags(tags, {"opensource.observer/op-type": "manual-backfill"}),
+    )
     def goldsky_backfill_op(
         context: OpExecutionContext,
         bigquery: BigQueryResource,
@@ -1128,16 +1187,19 @@ def goldsky_asset(deps: Optional[AssetDeps | AssetList] = None, **kwargs: Unpack
                 pointer_table_suffix=op_input.backfill_label,
             )
         except NoNewData:
-            alert_manager.alert(f"Goldsky Asset {context.asset_key.to_user_string()} has no new data.")
+            alert_manager.alert(
+                f"Goldsky Asset {context.asset_key.to_user_string()} has no new data."
+            )
 
-    @op(name=f"{related_ops_prefix}_files_stats_op", tags=add_tags(tags,{
-        "opensource.observer/op-type": "debug"
-    }))
+    @op(
+        name=f"{related_ops_prefix}_files_stats_op",
+        tags=add_tags(tags, {"opensource.observer/op-type": "debug"}),
+    )
     def goldsky_files_stats_op(
-        context: OpExecutionContext, 
-        bigquery: BigQueryResource, 
-        gcs: GCSResource, 
-        cbt: CBTResource
+        context: OpExecutionContext,
+        bigquery: BigQueryResource,
+        gcs: GCSResource,
+        cbt: CBTResource,
     ) -> None:
         table_schema = TableSchema(
             columns=[
@@ -1170,20 +1232,24 @@ def goldsky_asset(deps: Optional[AssetDeps | AssetList] = None, **kwargs: Unpack
 
         records = []
         job_stats = bucket_stats.values()
-        job_stats = sorted(job_stats, key=lambda a: a['timestamp'])
+        job_stats = sorted(job_stats, key=lambda a: a["timestamp"])
 
-        context.log.info(f"Total files in the bucket {asset_stats["total_files_count"]}")
+        context.log.info(
+            f"Total files in the bucket {asset_stats["total_files_count"]}"
+        )
 
         for _, job_stats in bucket_stats.items():
             worker_count = len(job_stats["workers"])
             records.append(
-                TableRecord(dict(
-                    job_id=job_stats["job_id"],
-                    worker_count=worker_count,
-                    timestamp=job_stats["timestamp"],
-                    avg_files_per_worker=job_stats["count"]/worker_count,
-                    total_files=job_stats["count"],
-                ))
+                TableRecord(
+                    dict(
+                        job_id=job_stats["job_id"],
+                        worker_count=worker_count,
+                        timestamp=job_stats["timestamp"],
+                        avg_files_per_worker=job_stats["count"] / worker_count,
+                        total_files=job_stats["count"],
+                    )
+                )
             )
 
         # Create a TableMetadataValue
@@ -1192,36 +1258,38 @@ def goldsky_asset(deps: Optional[AssetDeps | AssetList] = None, **kwargs: Unpack
         # Log the metadata
         context.add_output_metadata({"bucket_stats": table_metadata})
 
-    @op(name=f"{related_ops_prefix}_load_schema_op", tags=add_tags(tags, {
-        "opensource.observer/op-type": "debug"
-    }))
+    @op(
+        name=f"{related_ops_prefix}_load_schema_op",
+        tags=add_tags(tags, {"opensource.observer/op-type": "debug"}),
+    )
     def goldsky_load_schema_op(
-        context: OpExecutionContext, 
-        bigquery: BigQueryResource, 
-        gcs: GCSResource, 
+        context: OpExecutionContext,
+        bigquery: BigQueryResource,
+        gcs: GCSResource,
         cbt: CBTResource,
-        config: dict
+        config: dict,
     ) -> None:
         table_schema = TableSchema(
             columns=[
                 TableColumn(
                     name="column_name", type="string", description="The column name"
                 ),
-                TableColumn(
-                    name="column_type", type="string", description="The type"
-                ),
+                TableColumn(name="column_type", type="string", description="The type"),
             ]
         )
         gs_asset = GoldskyAsset(gcs, bigquery, cbt, asset_config)
-        schema: List[SchemaField] = gs_asset.load_schema_from_job_id(context.log, config["job_id"], config["timestamp"])
+        schema: List[SchemaField] = gs_asset.load_schema_from_job_id(
+            context.log, config["job_id"], config["timestamp"]
+        )
         records = []
         for field in schema:
-            records.append(TableRecord(dict(column_name=field.name, column_type=field.field_type)))
+            records.append(
+                TableRecord(dict(column_name=field.name, column_type=field.field_type))
+            )
 
         table_metadata = MetadataValue.table(records=records, schema=table_schema)
         # Log the metadata
         context.add_output_metadata({"schema": table_metadata})
-
 
     @job(name=f"{related_ops_prefix}_clean_up_job", tags=tags)
     def goldsky_clean_up_job():
@@ -1262,8 +1330,14 @@ def goldsky_asset(deps: Optional[AssetDeps | AssetList] = None, **kwargs: Unpack
     response = AssetFactoryResponse(
         assets=[generated_asset],
         sensors=[goldsky_clean_up_sensor],
-        jobs=[goldsky_clean_up_job, goldsky_backfill_job, goldsky_files_stats_job, goldsky_load_schema_job],
+        jobs=[
+            goldsky_clean_up_job,
+            goldsky_backfill_job,
+            goldsky_files_stats_job,
+            goldsky_load_schema_job,
+        ],
     )
     for asset_factory in asset_config.additional_factories:
         response = response + asset_factory(asset_config, generated_asset)
+    return response
     return response
