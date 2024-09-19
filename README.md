@@ -34,7 +34,7 @@ Open Source Observer is a free analytics suite that helps funders measure the im
 
 ### System Prequisites
 
-Before you begin you'll need the following on your system:
+Before you you'll need the following on your system:
 
 - Node >= 20 (we suggest installing with [nvm](https://github.com/nvm-sh/nvm))
 - pnpm >= 9 (see [here](https://pnpm.io/installation))
