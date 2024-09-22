@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from typing import Optional, Literal
+from typing import List, Literal, Optional
 
 import dlt
 from dagster import AssetExecutionContext, WeeklyPartitionsDefinition
@@ -22,19 +22,175 @@ class Host(BaseModel):
     currency: Optional[str] = None
 
 
+class Amount(BaseModel):
+    value: float
+    currency: str
+    valueInCents: float
+
+
+class TaxInfo(BaseModel):
+    id: str
+    type: str
+    rate: float
+    idNumber: str
+
+
+class Location(BaseModel):
+    id: str
+    name: str
+    address: str
+    country: str
+    lat: float
+    long: float
+
+
+class ShallowAccount(BaseModel):
+    id: str
+    slug: str
+    type: str
+    name: Optional[str] = None
+    legalName: Optional[str] = None
+
+
+class PaymentMethod(BaseModel):
+    id: str
+    type: str
+    name: Optional[str] = None
+    data: Optional[str] = None
+    balance: Optional[Amount] = None
+    account: Optional[ShallowAccount] = None
+
+
+class SocialLink(BaseModel):
+    type: str
+    url: str
+    createdAt: datetime
+    updatedAt: datetime
+
+
+class Account(BaseModel):
+    id: str
+    slug: str
+    type: str
+    name: Optional[str] = None
+    legalName: Optional[str] = None
+    description: Optional[str] = None
+    longDescription: Optional[str] = None
+    tags: Optional[List[str]] = None
+    socialLinks: Optional[List[SocialLink]] = None
+    expensePolicy: Optional[str] = None
+    isIncognito: Optional[bool] = None
+    imageUrl: Optional[str] = None
+    backgroundImageUrl: Optional[str] = None
+    createdAt: Optional[datetime] = None
+    updatedAt: Optional[datetime] = None
+    isArchived: Optional[bool] = None
+    isFrozen: Optional[bool] = None
+    isAdmin: Optional[bool] = None
+    isHost: Optional[bool] = None
+    emails: Optional[List[str]] = None
+    location: Optional[Location] = None
+
+
+class PayoutMethod(BaseModel):
+    id: str
+    type: str
+    name: Optional[str] = None
+    data: Optional[str] = None
+
+
+class VirtualCard(BaseModel):
+    id: str
+    account: Optional[ShallowAccount] = None
+    name: Optional[str] = None
+    last4: Optional[str] = None
+    status: Optional[str] = None
+    currency: Optional[str] = None
+    provider: Optional[str] = None
+    createdAt: Optional[datetime] = None
+    updatedAt: Optional[datetime] = None
+
+
+class Item(BaseModel):
+    id: str
+    amountV2: Optional[Amount] = None
+    createdAt: Optional[datetime] = None
+    updatedAt: Optional[datetime] = None
+    incurredAt: Optional[datetime] = None
+    description: Optional[str] = None
+    url: Optional[str] = None
+
+
+class Expense(BaseModel):
+    id: str
+    legacyId: int
+    description: str
+    longDescription: Optional[str] = None
+    reference: Optional[str] = None
+    taxes: Optional[TaxInfo] = None
+    createdAt: Optional[datetime] = None
+    currency: Optional[str] = None
+    type: Optional[str] = None
+    status: Optional[str] = None
+    approvedBy: Optional[ShallowAccount] = None
+    paidBy: Optional[ShallowAccount] = None
+    onHold: Optional[bool] = None
+    account: Optional[ShallowAccount] = None
+    payee: Optional[ShallowAccount] = None
+    payeeLocation: Optional[Location] = None
+    createdByAccount: Optional[ShallowAccount] = None
+    host: Optional[Host] = None
+    payoutMethod: Optional[PayoutMethod] = None
+    paymentMethod: Optional[PaymentMethod] = None
+    virtualCard: Optional[VirtualCard] = None
+    items: Optional[List[Item]] = None
+    invoiceInfo: Optional[str] = None
+    merchantId: Optional[str] = None
+    requestedByAccount: Optional[ShallowAccount] = None
+    requiredLegalDocuments: Optional[List[str]] = None
+
+
+class Order(BaseModel):
+    id: str
+    legacyId: int
+    description: Optional[str] = None
+    amount: Optional[Amount] = None
+    taxAmount: Optional[Amount] = None
+    totalAmount: Optional[Amount] = None
+    quantity: Optional[int] = None
+    status: Optional[str] = None
+
+
 class Transaction(BaseModel):
     id: UUID4
     legacyId: int
     group: UUID4
     type: str
     kind: Optional[str] = None
+    description: str
+    amount: Optional[Amount] = None
+    amountInHostCurrency: Optional[Amount] = None
     hostCurrencyFxRate: Optional[float] = None
+    netAmount: Optional[Amount] = None
+    netAmountInHostCurrency: Optional[Amount] = None
+    taxAmount: Optional[Amount] = None
+    taxInfo: Optional[TaxInfo] = None
+    platformFee: Optional[Amount] = None
+    hostFee: Optional[Amount] = None
+    paymentProcessorFee: Optional[Amount] = None
+    account: Optional[Account] = None
+    fromAccount: Optional[ShallowAccount] = None
+    toAccount: Optional[ShallowAccount] = None
+    expense: Optional[Expense] = None
+    order: Optional[Order] = None
     createdAt: Optional[datetime] = None
     updatedAt: Optional[datetime] = None
     isRefunded: Optional[bool] = None
     isRefund: Optional[bool] = None
     isDisputed: Optional[bool] = None
     isInReview: Optional[bool] = None
+    paymentMethod: Optional[PaymentMethod] = None
+    payoutMethod: Optional[PayoutMethod] = None
     isOrderRejected: bool
     merchantId: Optional[UUID4] = None
     invoiceTemplate: Optional[str] = None
@@ -100,6 +256,85 @@ def generate_steps(total: int, step: int):
         yield total
 
 
+def open_collective_graphql_amount(key: str):
+    """Returns a GraphQL query string for amount information."""
+    return f"""
+    {key} {{
+        value
+        currency
+        valueInCents
+    }}
+    """
+
+
+def open_collective_graphql_tax_info(key: str):
+    """Returns a GraphQL query string for tax information."""
+    return f"""
+    {key} {{
+        id
+        type
+        rate
+        idNumber
+    }}
+    """
+
+
+def open_collective_graphql_location(key: str):
+    """Returns a GraphQL query string for location information."""
+    return f"""
+    {key} {{
+        id
+        name
+        address
+        country
+        lat
+        long
+    }}
+    """
+
+
+def open_collective_graphql_shallow_account(key: str):
+    """Returns a GraphQL query string for shallow account information."""
+    return f"""
+    {key} {{
+        id
+        slug
+        type
+        name
+        legalName
+    }}
+    """
+
+
+def open_collective_graphql_host(key: str):
+    """Returns a GraphQL query string for host information."""
+    return f"""
+    {key} {{
+        id
+        type
+        slug
+        name
+        legalName
+        description
+        currency
+    }}
+    """
+
+
+def open_collective_graphql_payment_method(key: str):
+    """Returns a GraphQL query string for payment method information."""
+    return f"""
+    {key} {{
+        id
+        type
+        name
+        data
+        {open_collective_graphql_amount("balance")}
+        {open_collective_graphql_shallow_account("account")}
+    }}
+    """
+
+
 def get_open_collective_data(
     context: AssetExecutionContext,
     client: Client,
@@ -148,44 +383,152 @@ def get_open_collective_data(
     )
 
     expense_query = gql(
-        """
-        query ($limit: Int!, $offset: Int!, $type: TransactionType!, $dateFrom: DateTime!, $dateTo: DateTime!) {
-          transactions(
+        f"""
+    query (
+        $limit: Int!,
+        $offset: Int!,
+        $type: TransactionType!,
+        $dateFrom: DateTime!,
+        $dateTo: DateTime!
+    ) {{
+        transactions(
             limit: $limit
             offset: $offset
             type: $type
             dateFrom: $dateFrom
             dateTo: $dateTo
-          ) {
+        ) {{
             totalCount
-            nodes {
-              id
-              legacyId
-              group
-              type
-              kind
-              hostCurrencyFxRate
-              createdAt
-              updatedAt
-              isRefunded
-              isRefund
-              isDisputed
-              isInReview
-              isOrderRejected
-              merchantId
-              invoiceTemplate
-              host {
+            nodes {{
                 id
+                legacyId
+                group
                 type
-                slug
-                name
-                legalName
+                kind
                 description
-                currency
-              }
-            }
-          }
-        }
+                {open_collective_graphql_amount("amount")}
+                {open_collective_graphql_amount("amountInHostCurrency")}
+                hostCurrencyFxRate
+                {open_collective_graphql_amount("netAmount")}
+                {open_collective_graphql_amount("netAmountInHostCurrency")}
+                {open_collective_graphql_amount("taxAmount")}
+                {open_collective_graphql_tax_info("taxInfo")}
+                {open_collective_graphql_amount("platformFee")}
+                {open_collective_graphql_amount("hostFee")}
+                {open_collective_graphql_amount("paymentProcessorFee")}
+                account {{
+                    id
+                    slug
+                    type
+                    name
+                    legalName
+                    description
+                    longDescription
+                    tags
+                    socialLinks {{
+                        type
+                        url
+                        createdAt
+                        updatedAt
+                    }}
+                    expensePolicy
+                    isIncognito
+                    imageUrl
+                    backgroundImageUrl
+                    createdAt
+                    updatedAt
+                    isArchived
+                    isFrozen
+                    isAdmin
+                    isHost
+                    isAdmin
+                    emails
+                    {open_collective_graphql_location("location")}
+                }}
+                {open_collective_graphql_shallow_account("fromAccount")}
+                {open_collective_graphql_shallow_account("toAccount")}
+                expense {{
+                    id
+                    legacyId
+                    description
+                    longDescription
+                    reference
+                    {open_collective_graphql_tax_info("taxes")}
+                    createdAt
+                    currency
+                    type
+                    status
+                    {open_collective_graphql_shallow_account("approvedBy")}
+                    {open_collective_graphql_shallow_account("paidBy")}
+                    onHold
+                    {open_collective_graphql_shallow_account("account")}
+                    {open_collective_graphql_shallow_account("payee")}
+                    {open_collective_graphql_location("payeeLocation")}
+                    {open_collective_graphql_shallow_account("createdByAccount")}
+                    {open_collective_graphql_host("host")}
+                    payoutMethod {{
+                        id
+                        type
+                        name
+                        isSaved
+                        data
+                    }}
+                    {open_collective_graphql_payment_method("paymentMethod")}
+                    virtualCard {{
+                        id
+                        {open_collective_graphql_shallow_account("account")}
+                        name
+                        last4
+                        status
+                        currency
+                        provider
+                        createdAt
+                        updatedAt
+                    }}
+                    items {{
+                        id
+                        {open_collective_graphql_amount("amountV2")}
+                        createdAt
+                        updatedAt
+                        incurredAt
+                        description
+                        url
+                    }}
+                    invoiceInfo
+                    merchantId
+                    {open_collective_graphql_shallow_account("requestedByAccount")}
+                    requiredLegalDocuments
+                }}
+                order {{
+                    id
+                    legacyId
+                    description
+                    {open_collective_graphql_amount("amount")}
+                    {open_collective_graphql_amount("taxAmount")}
+                    {open_collective_graphql_amount("totalAmount")}
+                    quantity
+                    status
+                }}
+                createdAt
+                updatedAt
+                isRefunded
+                isRefund
+                isDisputed
+                isInReview
+                {open_collective_graphql_payment_method("paymentMethod")}
+                payoutMethod {{
+                    id
+                    type
+                    name
+                    data
+                }}
+                isOrderRejected
+                merchantId
+                invoiceTemplate
+                {open_collective_graphql_host("host")}
+                }}
+            }}
+        }}
         """
     )
 
