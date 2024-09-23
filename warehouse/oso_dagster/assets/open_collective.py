@@ -1,15 +1,17 @@
 from datetime import datetime, timedelta
-from typing import List, Literal, Optional
+from time import sleep
+from typing import Any, Dict, Generator, List, Literal, Optional
 
 import dlt
 from dagster import AssetExecutionContext, WeeklyPartitionsDefinition
 from dlt.destinations.adapters import bigquery_adapter
 from gql import Client, gql
 from gql.transport.requests import RequestsHTTPTransport
+from graphql import DocumentNode
 from oso_dagster import constants
 from oso_dagster.factories import dlt_factory, pydantic_to_dlt_nullable_columns
 from oso_dagster.utils.secrets import secret_ref_arg
-from pydantic import UUID4, BaseModel
+from pydantic import UUID4, BaseModel, Field
 
 
 class Host(BaseModel):
@@ -197,11 +199,30 @@ class Transaction(BaseModel):
     host: Optional[Host] = None
 
 
+class QueryParameters(BaseModel):
+    limit: int = Field(
+        ...,
+        gt=0,
+        description="Number of nodes to fetch per query.",
+    )
+    offset: int = Field(
+        ...,
+        ge=0,
+        description="Offset for pagination.",
+    )
+    type: str
+    dateFrom: str
+    dateTo: str
+
+
 # The first transaction on Open Collective was on January 23, 2015
 OPEN_COLLECTIVE_TX_EPOCH = "2015-01-23T05:00:00.000Z"
 
-# The maximum are 1000 per page, we will use half since their API throws 503s sporadically
-OPEN_COLLECTIVE_MAX_NODES_PER_PAGE = 500
+# The maximum is 1000 nodes per page, we will retry until a minimum of 100 nodes per page is reached
+OPEN_COLLECTIVE_MAX_NODES_PER_PAGE = 1000
+
+# The minimum number of nodes per page, if this threshold is reached, the query will fail
+OPEN_COLLECTIVE_MIN_NODES_PER_PAGE = 100
 
 # Kubernetes configuration for the asset materialization
 K8S_CONFIG = {
@@ -331,6 +352,73 @@ def open_collective_graphql_payment_method(key: str):
         {open_collective_graphql_shallow_account("account")}
     }}
     """
+
+
+def query_with_retry(
+    client: Client,
+    context: AssetExecutionContext,
+    expense_query: DocumentNode,
+    total_count: int,
+    kind: Literal["DEBIT", "CREDIT"],
+    date_from: str,
+    date_to: str,
+) -> Generator[Dict[str, Any], None, None]:
+    """
+    Queries Open Collective data with a retry mechanism, reducing the
+    limit by half on each retry. If the limit reaches the minimum threshold,
+    the query will fail.
+
+    Args:
+        client (Client): The client object used to execute the GraphQL queries.
+        context (AssetExecutionContext): The execution context of the asset.
+        expense_query (DocumentNode): The GraphQL query document.
+        total_count (int): The total count of transactions.
+        kind (str): The transaction type. Either "DEBIT" or "CREDIT".
+        date_from (str): The start date for the query.
+        date_to (str): The end date for the query.
+
+    Yields:
+        Dict[str, Any]: A dictionary containing the transaction nodes.
+    """
+
+    current_index = 0
+    limit = OPEN_COLLECTIVE_MAX_NODES_PER_PAGE
+    steps = list(generate_steps(total_count, limit))
+
+    while limit >= OPEN_COLLECTIVE_MIN_NODES_PER_PAGE:
+        while current_index < len(steps):
+            offset = steps[current_index]
+            params = QueryParameters(
+                limit=limit,
+                offset=offset,
+                type=kind,
+                dateFrom=date_from,
+                dateTo=date_to,
+            )
+
+            try:
+                query = client.execute(
+                    expense_query, variable_values=params.model_dump()
+                )
+                context.log.info(
+                    f"Fetching transaction {offset}/{total_count} for type '{kind}'"
+                )
+                current_index += 1
+                yield query["transactions"]["nodes"]
+            except Exception as exception:
+                context.log.error(f"Query failed with error: {exception}")
+                if "429" in str(exception):
+                    context.log.info("Got rate limited, retrying in 65 seconds.")
+                    sleep(65)
+                    continue
+                limit //= 2
+                steps = list(generate_steps(total_count, limit))
+                if limit < OPEN_COLLECTIVE_MIN_NODES_PER_PAGE:
+                    raise ValueError(
+                        f"Query failed after reaching the minimum limit of {limit}."
+                    ) from exception
+                context.log.info(f"Retrying with limit: {limit}")
+        break
 
 
 def get_open_collective_data(
@@ -534,19 +622,15 @@ def get_open_collective_data(
 
     context.log.info(f"Total count of transactions: {total_count}")
 
-    for step in generate_steps(total_count, OPEN_COLLECTIVE_MAX_NODES_PER_PAGE):
-        query = client.execute(
-            expense_query,
-            variable_values={
-                "limit": OPEN_COLLECTIVE_MAX_NODES_PER_PAGE,
-                "offset": step,
-                "type": kind,
-                "dateFrom": date_from,
-                "dateTo": date_to,
-            },
-        )
-        context.log.info(f"Fetching transaction {step}/{total_count} for type '{kind}'")
-        yield query["transactions"]["nodes"]
+    yield from query_with_retry(
+        client,
+        context,
+        expense_query,
+        total_count,
+        kind,
+        date_from,
+        date_to,
+    )
 
 
 def get_open_collective_expenses(
