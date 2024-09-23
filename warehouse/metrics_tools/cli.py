@@ -45,5 +45,12 @@ class State[S](abc.ABC):
 
 
 def apply_metrics(state_storage: str = ""):
-    # For any given
-    pass
+    # Load all of the metrics
+    from sqlmesh.core.model import model
+
+    from . import metrics_factories  # noqa
+
+    registry = model.get_registry()
+
+    for name, model_def in registry.items():
+        model_def.model()
