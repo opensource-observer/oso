@@ -10,4 +10,10 @@ arbitrum_network = goldsky_network_assets(
             {"name": "value", "field_type": "BYTES"},
         ]
     ),
+    transactions_config=NetworkAssetSourceConfigDict(
+        schema_overrides=[
+            {"name": "value", "field_type": "BYTES"},
+            {"name": "gas_price", "field_type": "BYTES"},
+        ]
+    ),
 )
