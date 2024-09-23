@@ -200,8 +200,8 @@ class Transaction(BaseModel):
 # The first transaction on Open Collective was on January 23, 2015
 OPEN_COLLECTIVE_TX_EPOCH = "2015-01-23T05:00:00.000Z"
 
-# The maximum number of nodes that can be retrieved per page
-OPEN_COLLECTIVE_MAX_NODES_PER_PAGE = 1000
+# The maximum are 1000 per page, we will use half since their API throws 503s sporadically
+OPEN_COLLECTIVE_MAX_NODES_PER_PAGE = 500
 
 # Kubernetes configuration for the asset materialization
 K8S_CONFIG = {
@@ -327,8 +327,6 @@ def open_collective_graphql_payment_method(key: str):
     {key} {{
         id
         type
-        name
-        data
         {open_collective_graphql_amount("balance")}
         {open_collective_graphql_shallow_account("account")}
     }}
@@ -537,28 +535,18 @@ def get_open_collective_data(
     context.log.info(f"Total count of transactions: {total_count}")
 
     for step in generate_steps(total_count, OPEN_COLLECTIVE_MAX_NODES_PER_PAGE):
-        try:
-            query = client.execute(
-                expense_query,
-                variable_values={
-                    "limit": OPEN_COLLECTIVE_MAX_NODES_PER_PAGE,
-                    "offset": step,
-                    "type": kind,
-                    "dateFrom": date_from,
-                    "dateTo": date_to,
-                },
-            )
-            context.log.info(
-                f"Fetching transaction {step}/{total_count} for type '{kind}'"
-            )
-            yield query["transactions"]["nodes"]
-        except Exception as exception:
-            # TODO(jabolo): Implement a retry mechanism
-            context.log.warning(
-                f"An error occurred while fetching Open Collective data: '{exception}'. "
-                "We will stop this materialization instead of retrying for now."
-            )
-            return []
+        query = client.execute(
+            expense_query,
+            variable_values={
+                "limit": OPEN_COLLECTIVE_MAX_NODES_PER_PAGE,
+                "offset": step,
+                "type": kind,
+                "dateFrom": date_from,
+                "dateTo": date_to,
+            },
+        )
+        context.log.info(f"Fetching transaction {step}/{total_count} for type '{kind}'")
+        yield query["transactions"]["nodes"]
 
 
 def get_open_collective_expenses(
@@ -647,6 +635,7 @@ def expenses(
         name="expenses",
         columns=pydantic_to_dlt_nullable_columns(Transaction),
         primary_key="id",
+        write_disposition="merge",
     )
 
     if constants.enable_bigquery:
@@ -691,6 +680,7 @@ def deposits(
         name="deposits",
         columns=pydantic_to_dlt_nullable_columns(Transaction),
         primary_key="id",
+        write_disposition="merge",
     )
 
     if constants.enable_bigquery:

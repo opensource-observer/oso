@@ -133,30 +133,23 @@ def get_optimism_eas_data(
     )
 
     for step in generate_steps(total_count, EAS_OPTIMISM_STEP_NODES_PER_PAGE):
-        try:
-            query = client.execute(
-                attestations_query,
-                variable_values={
-                    "take": EAS_OPTIMISM_STEP_NODES_PER_PAGE,
-                    "skip": step,
-                    "where": {
-                        "time": {
-                            "gte": date_from,
-                            "lte": date_to,
-                        },
+        query = client.execute(
+            attestations_query,
+            variable_values={
+                "take": EAS_OPTIMISM_STEP_NODES_PER_PAGE,
+                "skip": step,
+                "where": {
+                    "time": {
+                        "gte": date_from,
+                        "lte": date_to,
                     },
                 },
-            )
-            context.log.info(
-                f"Fetching attestation {step}/{total_count}",
-            )
-            yield query["attestations"]
-        except Exception as exception:
-            context.log.warning(
-                f"An error occurred while fetching EAS data: '{exception}'. "
-                "We will stop this materialization instead of retrying for now."
-            )
-            return []
+            },
+        )
+        context.log.info(
+            f"Fetching attestation {step}/{total_count}",
+        )
+        yield query["attestations"]
 
 
 def get_optimism_eas(context: AssetExecutionContext, client: Client):
@@ -208,4 +201,5 @@ def attestations(context: AssetExecutionContext):
         name="attestations",
         columns=pydantic_to_dlt_nullable_columns(Attestation),
         primary_key="id",
+        write_disposition="merge",
     )
