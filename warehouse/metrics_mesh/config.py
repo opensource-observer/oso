@@ -45,10 +45,10 @@ config = Config(
                     os.environ.get("SQLMESH_CLICKHOUSE_CONCURRENT_TASKS", "16")
                 ),
                 send_receive_timeout=1800,
-                connection_settings={"allow_nondeterministic_mutations": 1},
+                # connection_settings={"allow_nondeterministic_mutations": 1},
                 connection_pool_options={
                     "maxsize": 24,
-                    "retries": 3,
+                    "retries": 0,
                 },
             ),
             state_connection=GCPPostgresConnectionConfig(
