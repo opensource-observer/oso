@@ -46,23 +46,6 @@ class Location(BaseModel):
     long: float
 
 
-class ShallowAccount(BaseModel):
-    id: str
-    slug: str
-    type: str
-    name: Optional[str] = None
-    legalName: Optional[str] = None
-
-
-class PaymentMethod(BaseModel):
-    id: str
-    type: str
-    name: Optional[str] = None
-    data: Optional[str] = None
-    balance: Optional[Amount] = None
-    account: Optional[ShallowAccount] = None
-
-
 class SocialLink(BaseModel):
     type: str
     url: str
@@ -94,6 +77,15 @@ class Account(BaseModel):
     location: Optional[Location] = None
 
 
+class PaymentMethod(BaseModel):
+    id: str
+    type: str
+    name: Optional[str] = None
+    data: Optional[str] = None
+    balance: Optional[Amount] = None
+    account: Optional[Account] = None
+
+
 class PayoutMethod(BaseModel):
     id: str
     type: str
@@ -103,7 +95,7 @@ class PayoutMethod(BaseModel):
 
 class VirtualCard(BaseModel):
     id: str
-    account: Optional[ShallowAccount] = None
+    account: Optional[Account] = None
     name: Optional[str] = None
     last4: Optional[str] = None
     status: Optional[str] = None
@@ -134,13 +126,13 @@ class Expense(BaseModel):
     currency: Optional[str] = None
     type: Optional[str] = None
     status: Optional[str] = None
-    approvedBy: Optional[ShallowAccount] = None
-    paidBy: Optional[ShallowAccount] = None
+    approvedBy: Optional[Account] = None
+    paidBy: Optional[Account] = None
     onHold: Optional[bool] = None
-    account: Optional[ShallowAccount] = None
-    payee: Optional[ShallowAccount] = None
+    account: Optional[Account] = None
+    payee: Optional[Account] = None
     payeeLocation: Optional[Location] = None
-    createdByAccount: Optional[ShallowAccount] = None
+    createdByAccount: Optional[Account] = None
     host: Optional[Host] = None
     payoutMethod: Optional[PayoutMethod] = None
     paymentMethod: Optional[PaymentMethod] = None
@@ -148,7 +140,7 @@ class Expense(BaseModel):
     items: Optional[List[Item]] = None
     invoiceInfo: Optional[str] = None
     merchantId: Optional[str] = None
-    requestedByAccount: Optional[ShallowAccount] = None
+    requestedByAccount: Optional[Account] = None
     requiredLegalDocuments: Optional[List[str]] = None
 
 
@@ -181,8 +173,8 @@ class Transaction(BaseModel):
     hostFee: Optional[Amount] = None
     paymentProcessorFee: Optional[Amount] = None
     account: Optional[Account] = None
-    fromAccount: Optional[ShallowAccount] = None
-    toAccount: Optional[ShallowAccount] = None
+    fromAccount: Optional[Account] = None
+    toAccount: Optional[Account] = None
     expense: Optional[Expense] = None
     order: Optional[Order] = None
     createdAt: Optional[datetime] = None
@@ -284,19 +276,6 @@ def open_collective_graphql_location(key: str):
     """
 
 
-def open_collective_graphql_shallow_account(key: str):
-    """Returns a GraphQL query string for shallow account information."""
-    return f"""
-    {key} {{
-        id
-        slug
-        type
-        name
-        legalName
-    }}
-    """
-
-
 def open_collective_graphql_host(key: str):
     """Returns a GraphQL query string for host information."""
     return f"""
@@ -319,7 +298,42 @@ def open_collective_graphql_payment_method(key: str):
         id
         type
         {open_collective_graphql_amount("balance")}
-        {open_collective_graphql_shallow_account("account")}
+        {open_collective_graphql_account("account")}
+    }}
+    """
+
+
+def open_collective_graphql_account(key: str):
+    """Returns a GraphQL query string for account information."""
+    return f"""
+    {key} {{
+        id
+        slug
+        type
+        name
+        legalName
+        description
+        longDescription
+        tags
+        socialLinks {{
+            type
+            url
+            createdAt
+            updatedAt
+        }}
+        expensePolicy
+        isIncognito
+        imageUrl
+        backgroundImageUrl
+        createdAt
+        updatedAt
+        isArchived
+        isFrozen
+        isAdmin
+        isHost
+        isAdmin
+        emails
+        {open_collective_graphql_location("location")}
     }}
     """
 
@@ -405,37 +419,9 @@ def get_open_collective_data(
                 {open_collective_graphql_amount("platformFee")}
                 {open_collective_graphql_amount("hostFee")}
                 {open_collective_graphql_amount("paymentProcessorFee")}
-                account {{
-                    id
-                    slug
-                    type
-                    name
-                    legalName
-                    description
-                    longDescription
-                    tags
-                    socialLinks {{
-                        type
-                        url
-                        createdAt
-                        updatedAt
-                    }}
-                    expensePolicy
-                    isIncognito
-                    imageUrl
-                    backgroundImageUrl
-                    createdAt
-                    updatedAt
-                    isArchived
-                    isFrozen
-                    isAdmin
-                    isHost
-                    isAdmin
-                    emails
-                    {open_collective_graphql_location("location")}
-                }}
-                {open_collective_graphql_shallow_account("fromAccount")}
-                {open_collective_graphql_shallow_account("toAccount")}
+                {open_collective_graphql_account("account")}
+                {open_collective_graphql_account("fromAccount")}
+                {open_collective_graphql_account("toAccount")}
                 expense {{
                     id
                     legacyId
@@ -447,13 +433,13 @@ def get_open_collective_data(
                     currency
                     type
                     status
-                    {open_collective_graphql_shallow_account("approvedBy")}
-                    {open_collective_graphql_shallow_account("paidBy")}
+                    {open_collective_graphql_account("approvedBy")}
+                    {open_collective_graphql_account("paidBy")}
                     onHold
-                    {open_collective_graphql_shallow_account("account")}
-                    {open_collective_graphql_shallow_account("payee")}
+                    {open_collective_graphql_account("account")}
+                    {open_collective_graphql_account("payee")}
                     {open_collective_graphql_location("payeeLocation")}
-                    {open_collective_graphql_shallow_account("createdByAccount")}
+                    {open_collective_graphql_account("createdByAccount")}
                     {open_collective_graphql_host("host")}
                     payoutMethod {{
                         id
@@ -465,7 +451,7 @@ def get_open_collective_data(
                     {open_collective_graphql_payment_method("paymentMethod")}
                     virtualCard {{
                         id
-                        {open_collective_graphql_shallow_account("account")}
+                        {open_collective_graphql_account("account")}
                         name
                         last4
                         status
@@ -485,7 +471,7 @@ def get_open_collective_data(
                     }}
                     invoiceInfo
                     merchantId
-                    {open_collective_graphql_shallow_account("requestedByAccount")}
+                    {open_collective_graphql_account("requestedByAccount")}
                     requiredLegalDocuments
                 }}
                 order {{
