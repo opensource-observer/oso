@@ -13,6 +13,7 @@ import FarcasterLogo from "./farcaster.jpg";
 import LensLogo from "./lens-protocol.png";
 import GitcoinLogo from "./gitcoin.png";
 import OpenrankLogo from "./openrank.png";
+import ArbitrumLogo from "./arbitrum.png";
 
 First, you need to set up your BigQuery account. You can do this by going to the
 [Get Started](../../get-started/index.mdx)
@@ -261,6 +262,40 @@ where
 ```
 
 **Remember to replace 'YOUR_PROJECT_NAME' with the name of your project in the query.**
+
+### Arbitrum Data
+
+<img src={ArbitrumLogo} width="100" />
+
+<Button
+  size={"compact"}
+  color={"blue"}
+  target={"_blank"}
+  link={
+    "https://console.cloud.google.com/bigquery/analytics-hub/exchanges/projects/87806073973/locations/us/dataExchanges/open_source_observer_190181416ae/listings/arbitrum_one_192256411b6"
+  }
+  children={"Subscribe on BigQuery"}
+/>{" "}
+
+- [Reference documentation](https://models.opensource.observer/#!/source_list/arbitrum_one)
+- [Source documentation](https://docs.goldsky.com/introduction)
+- [Updated weekly](https://github.com/opensource-observer/oso/blob/main/warehouse/oso_dagster/assets/arbitrum.py)
+
+[Arbitrum](https://arbitrum.foundation/) is a Layer 2 scaling solution for Ethereum. We currently provide blocks, transactions, and traces for Arbitrum's flagship network, Arbitrum One.
+
+For example, to get the average gas per transaction for each block on Arbitrum One on September 1st, 2024:
+
+```sql
+select
+  number,
+  gas_used / transaction_count as gas_per_txn
+from `YOUR_PROJECT_NAME.arbitrum_one.arbitrum_blocks`
+where timestamp between '2024-09-01' and '2024-09-02'
+order by number
+```
+
+**Remember to replace 'YOUR_PROJECT_NAME' with the name of your project in the query.**
+
 
 ### Filecoin Data
 
