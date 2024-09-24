@@ -332,6 +332,41 @@ GROUP BY fid, display_name
 ORDER BY reaction_count DESC
 ```
 
+Here's another use case, showing how to derive all the verified Ethereum addresses owned by a Farcaster user:
+
+```sql
+WITH
+  profiles AS (
+    SELECT
+      v.fid,
+      v.address,
+      p.custody_address,
+      JSON_VALUE(p.data, "$.username") AS username,
+    FROM `YOUR_PROJECT_NAME.farcaster.verifications` v
+    JOIN `YOUR_PROJECT_NAME.farcaster.profiles` p ON v.fid = p.fid
+    WHERE v.deleted_at IS NULL
+  ),
+  eth_addresses AS (
+    SELECT
+      fid,
+      username,
+      address
+    FROM profiles
+    WHERE LENGTH(address) = 42
+    UNION ALL
+    SELECT
+      fid,
+      username,
+      custody_address AS address
+    FROM profiles
+  )
+SELECT DISTINCT
+  fid,
+  username,
+  address
+FROM eth_addresses
+```
+
 **Remember to replace 'YOUR_PROJECT_NAME' with the name of your project in the query.**
 
 ### Lens Data

@@ -9,7 +9,9 @@ from gql.transport.requests import RequestsHTTPTransport
 from oso_dagster import constants
 from oso_dagster.factories import dlt_factory, pydantic_to_dlt_nullable_columns
 from oso_dagster.utils.secrets import secret_ref_arg
-from pydantic import UUID4, BaseModel
+from pydantic import UUID4, BaseModel, Field
+
+from ..utils.common import QueryArguments, QueryConfig, query_with_retry
 
 
 class Host(BaseModel):
@@ -44,23 +46,6 @@ class Location(BaseModel):
     long: float
 
 
-class ShallowAccount(BaseModel):
-    id: str
-    slug: str
-    type: str
-    name: Optional[str] = None
-    legalName: Optional[str] = None
-
-
-class PaymentMethod(BaseModel):
-    id: str
-    type: str
-    name: Optional[str] = None
-    data: Optional[str] = None
-    balance: Optional[Amount] = None
-    account: Optional[ShallowAccount] = None
-
-
 class SocialLink(BaseModel):
     type: str
     url: str
@@ -92,6 +77,15 @@ class Account(BaseModel):
     location: Optional[Location] = None
 
 
+class PaymentMethod(BaseModel):
+    id: str
+    type: str
+    name: Optional[str] = None
+    data: Optional[str] = None
+    balance: Optional[Amount] = None
+    account: Optional[Account] = None
+
+
 class PayoutMethod(BaseModel):
     id: str
     type: str
@@ -101,7 +95,7 @@ class PayoutMethod(BaseModel):
 
 class VirtualCard(BaseModel):
     id: str
-    account: Optional[ShallowAccount] = None
+    account: Optional[Account] = None
     name: Optional[str] = None
     last4: Optional[str] = None
     status: Optional[str] = None
@@ -132,13 +126,13 @@ class Expense(BaseModel):
     currency: Optional[str] = None
     type: Optional[str] = None
     status: Optional[str] = None
-    approvedBy: Optional[ShallowAccount] = None
-    paidBy: Optional[ShallowAccount] = None
+    approvedBy: Optional[Account] = None
+    paidBy: Optional[Account] = None
     onHold: Optional[bool] = None
-    account: Optional[ShallowAccount] = None
-    payee: Optional[ShallowAccount] = None
+    account: Optional[Account] = None
+    payee: Optional[Account] = None
     payeeLocation: Optional[Location] = None
-    createdByAccount: Optional[ShallowAccount] = None
+    createdByAccount: Optional[Account] = None
     host: Optional[Host] = None
     payoutMethod: Optional[PayoutMethod] = None
     paymentMethod: Optional[PaymentMethod] = None
@@ -146,7 +140,7 @@ class Expense(BaseModel):
     items: Optional[List[Item]] = None
     invoiceInfo: Optional[str] = None
     merchantId: Optional[str] = None
-    requestedByAccount: Optional[ShallowAccount] = None
+    requestedByAccount: Optional[Account] = None
     requiredLegalDocuments: Optional[List[str]] = None
 
 
@@ -179,8 +173,8 @@ class Transaction(BaseModel):
     hostFee: Optional[Amount] = None
     paymentProcessorFee: Optional[Amount] = None
     account: Optional[Account] = None
-    fromAccount: Optional[ShallowAccount] = None
-    toAccount: Optional[ShallowAccount] = None
+    fromAccount: Optional[Account] = None
+    toAccount: Optional[Account] = None
     expense: Optional[Expense] = None
     order: Optional[Order] = None
     createdAt: Optional[datetime] = None
@@ -200,8 +194,14 @@ class Transaction(BaseModel):
 # The first transaction on Open Collective was on January 23, 2015
 OPEN_COLLECTIVE_TX_EPOCH = "2015-01-23T05:00:00.000Z"
 
-# The maximum number of nodes that can be retrieved per page
+# The maximum is 1000 nodes per page, we will retry until a minimum of 100 nodes per page is reached
 OPEN_COLLECTIVE_MAX_NODES_PER_PAGE = 1000
+
+# The minimum number of nodes per page, if this threshold is reached, the query will fail
+OPEN_COLLECTIVE_MIN_NODES_PER_PAGE = 100
+
+# The rate limit wait time in seconds
+OPEN_COLLECTIVE_RATELIMIT_WAIT_SECONDS = 65
 
 # Kubernetes configuration for the asset materialization
 K8S_CONFIG = {
@@ -228,32 +228,15 @@ K8S_CONFIG = {
 }
 
 
-def generate_steps(total: int, step: int):
-    """
-    Generates a sequence of numbers from 0 up to the specified total, incrementing by the specified step.
-    If the total is not divisible by the step, the last iteration will yield the remaining value.
-
-    Args:
-        total (int): The desired total value.
-        step (int): The increment value for each iteration.
-
-    Yields:
-        int: The next number in the sequence.
-
-    Example:
-        >>> for num in generate_steps(10, 3):
-        ...     print(num)
-        0
-        3
-        6
-        9
-        10
-    """
-
-    for i in range(0, total, step):
-        yield i
-    if total % step != 0:
-        yield total
+class OpenCollectiveParameters(QueryArguments):
+    limit: int = Field(
+        ...,
+        gt=0,
+        description="Number of nodes to fetch per query.",
+    )
+    type: str
+    dateFrom: str
+    dateTo: str
 
 
 def open_collective_graphql_amount(key: str):
@@ -293,19 +276,6 @@ def open_collective_graphql_location(key: str):
     """
 
 
-def open_collective_graphql_shallow_account(key: str):
-    """Returns a GraphQL query string for shallow account information."""
-    return f"""
-    {key} {{
-        id
-        slug
-        type
-        name
-        legalName
-    }}
-    """
-
-
 def open_collective_graphql_host(key: str):
     """Returns a GraphQL query string for host information."""
     return f"""
@@ -327,10 +297,43 @@ def open_collective_graphql_payment_method(key: str):
     {key} {{
         id
         type
-        name
-        data
         {open_collective_graphql_amount("balance")}
-        {open_collective_graphql_shallow_account("account")}
+        {open_collective_graphql_account("account")}
+    }}
+    """
+
+
+def open_collective_graphql_account(key: str):
+    """Returns a GraphQL query string for account information."""
+    return f"""
+    {key} {{
+        id
+        slug
+        type
+        name
+        legalName
+        description
+        longDescription
+        tags
+        socialLinks {{
+            type
+            url
+            createdAt
+            updatedAt
+        }}
+        expensePolicy
+        isIncognito
+        imageUrl
+        backgroundImageUrl
+        createdAt
+        updatedAt
+        isArchived
+        isFrozen
+        isAdmin
+        isHost
+        isAdmin
+        emails
+        {open_collective_graphql_location("location")}
     }}
     """
 
@@ -416,37 +419,9 @@ def get_open_collective_data(
                 {open_collective_graphql_amount("platformFee")}
                 {open_collective_graphql_amount("hostFee")}
                 {open_collective_graphql_amount("paymentProcessorFee")}
-                account {{
-                    id
-                    slug
-                    type
-                    name
-                    legalName
-                    description
-                    longDescription
-                    tags
-                    socialLinks {{
-                        type
-                        url
-                        createdAt
-                        updatedAt
-                    }}
-                    expensePolicy
-                    isIncognito
-                    imageUrl
-                    backgroundImageUrl
-                    createdAt
-                    updatedAt
-                    isArchived
-                    isFrozen
-                    isAdmin
-                    isHost
-                    isAdmin
-                    emails
-                    {open_collective_graphql_location("location")}
-                }}
-                {open_collective_graphql_shallow_account("fromAccount")}
-                {open_collective_graphql_shallow_account("toAccount")}
+                {open_collective_graphql_account("account")}
+                {open_collective_graphql_account("fromAccount")}
+                {open_collective_graphql_account("toAccount")}
                 expense {{
                     id
                     legacyId
@@ -458,13 +433,13 @@ def get_open_collective_data(
                     currency
                     type
                     status
-                    {open_collective_graphql_shallow_account("approvedBy")}
-                    {open_collective_graphql_shallow_account("paidBy")}
+                    {open_collective_graphql_account("approvedBy")}
+                    {open_collective_graphql_account("paidBy")}
                     onHold
-                    {open_collective_graphql_shallow_account("account")}
-                    {open_collective_graphql_shallow_account("payee")}
+                    {open_collective_graphql_account("account")}
+                    {open_collective_graphql_account("payee")}
                     {open_collective_graphql_location("payeeLocation")}
-                    {open_collective_graphql_shallow_account("createdByAccount")}
+                    {open_collective_graphql_account("createdByAccount")}
                     {open_collective_graphql_host("host")}
                     payoutMethod {{
                         id
@@ -476,7 +451,7 @@ def get_open_collective_data(
                     {open_collective_graphql_payment_method("paymentMethod")}
                     virtualCard {{
                         id
-                        {open_collective_graphql_shallow_account("account")}
+                        {open_collective_graphql_account("account")}
                         name
                         last4
                         status
@@ -496,7 +471,7 @@ def get_open_collective_data(
                     }}
                     invoiceInfo
                     merchantId
-                    {open_collective_graphql_shallow_account("requestedByAccount")}
+                    {open_collective_graphql_account("requestedByAccount")}
                     requiredLegalDocuments
                 }}
                 order {{
@@ -536,29 +511,28 @@ def get_open_collective_data(
 
     context.log.info(f"Total count of transactions: {total_count}")
 
-    for step in generate_steps(total_count, OPEN_COLLECTIVE_MAX_NODES_PER_PAGE):
-        try:
-            query = client.execute(
-                expense_query,
-                variable_values={
-                    "limit": OPEN_COLLECTIVE_MAX_NODES_PER_PAGE,
-                    "offset": step,
-                    "type": kind,
-                    "dateFrom": date_from,
-                    "dateTo": date_to,
-                },
-            )
-            context.log.info(
-                f"Fetching transaction {step}/{total_count} for type '{kind}'"
-            )
-            yield query["transactions"]["nodes"]
-        except Exception as exception:
-            # TODO(jabolo): Implement a retry mechanism
-            context.log.warning(
-                f"An error occurred while fetching Open Collective data: '{exception}'. "
-                "We will stop this materialization instead of retrying for now."
-            )
-            return []
+    config = QueryConfig(
+        limit=OPEN_COLLECTIVE_MAX_NODES_PER_PAGE,
+        minimum_limit=OPEN_COLLECTIVE_MIN_NODES_PER_PAGE,
+        query_arguments=OpenCollectiveParameters(
+            limit=OPEN_COLLECTIVE_MAX_NODES_PER_PAGE,
+            offset=0,
+            type=kind,
+            dateFrom=date_from,
+            dateTo=date_to,
+        ),
+        step_key="offset",
+        extract_fn=lambda query: query["transactions"]["nodes"],
+        ratelimit_wait_seconds=OPEN_COLLECTIVE_RATELIMIT_WAIT_SECONDS,
+    )
+
+    yield from query_with_retry(
+        client,
+        context,
+        expense_query,
+        total_count,
+        config,
+    )
 
 
 def get_open_collective_expenses(
@@ -647,6 +621,7 @@ def expenses(
         name="expenses",
         columns=pydantic_to_dlt_nullable_columns(Transaction),
         primary_key="id",
+        write_disposition="merge",
     )
 
     if constants.enable_bigquery:
@@ -691,6 +666,7 @@ def deposits(
         name="deposits",
         columns=pydantic_to_dlt_nullable_columns(Transaction),
         primary_key="id",
+        write_disposition="merge",
     )
 
     if constants.enable_bigquery:

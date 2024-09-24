@@ -729,7 +729,7 @@ class DailyTimeseriesRollingWindowOptions(t.TypedDict):
 def join_all_of_entity_type(evaluator: MacroEvaluator, *, db: str, tables: t.List[str], columns: t.List[str]):
     query = exp.select(*columns).from_(sqlglot.to_table(f"{db}.{tables[0]}"))
     for table in tables[1:]:
-        query.union(exp.select(*columns).from_(sqlglot.to_table(f"{db}.{table}")), distinct=False)
+        query = query.union(exp.select(*columns).from_(sqlglot.to_table(f"{db}.{table}")), distinct=False)
     return query
 
 
