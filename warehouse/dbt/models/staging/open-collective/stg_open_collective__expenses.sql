@@ -1,43 +1,23 @@
+{% set columns = [
+    "id", "legacy_id", "group", "type", "kind", "description", "amount", 
+    "amount_in_host_currency", "host_currency_fx_rate", "net_amount", 
+    "net_amount_in_host_currency", "tax_amount", "tax_info", "platform_fee", 
+    "host_fee", "payment_processor_fee", "account", "from_account", 
+    "to_account", "expense", "order", "created_at", "updated_at", 
+    "is_refunded", "is_refund", "is_disputed", "is_in_review", 
+    "payment_method", "payout_method", "is_order_rejected", "merchant_id", 
+    "invoice_template", "host"
+] %}
+
 with source as (
   select * from {{ source('open_collective', 'expenses') }}
 ),
 
 renamed as (
   select
-    {{ adapter.quote("id") }},
-    {{ adapter.quote("legacy_id") }},
-    {{ adapter.quote("group") }},
-    {{ adapter.quote("type") }},
-    {{ adapter.quote("kind") }},
-    {{ adapter.quote("description") }},
-    {{ adapter.quote("amount") }},
-    {{ adapter.quote("amount_in_host_currency") }},
-    {{ adapter.quote("host_currency_fx_rate") }},
-    {{ adapter.quote("net_amount") }},
-    {{ adapter.quote("net_amount_in_host_currency") }},
-    {{ adapter.quote("tax_amount") }},
-    {{ adapter.quote("tax_info") }},
-    {{ adapter.quote("platform_fee") }},
-    {{ adapter.quote("host_fee") }},
-    {{ adapter.quote("payment_processor_fee") }},
-    {{ adapter.quote("account") }},
-    {{ adapter.quote("from_account") }},
-    {{ adapter.quote("to_account") }},
-    {{ adapter.quote("expense") }},
-    {{ adapter.quote("order") }},
-    {{ adapter.quote("created_at") }},
-    {{ adapter.quote("updated_at") }},
-    {{ adapter.quote("is_refunded") }},
-    {{ adapter.quote("is_refund") }},
-    {{ adapter.quote("is_disputed") }},
-    {{ adapter.quote("is_in_review") }},
-    {{ adapter.quote("payment_method") }},
-    {{ adapter.quote("payout_method") }},
-    {{ adapter.quote("is_order_rejected") }},
-    {{ adapter.quote("merchant_id") }},
-    {{ adapter.quote("invoice_template") }},
-    {{ adapter.quote("host") }}
-
+  {% for column in columns %}
+    {{ adapter.quote(column) }}{% if not loop.last %},{% endif %}
+  {% endfor %}
   from source
 )
 
