@@ -11,4 +11,4 @@
     incremental_strategy="insert_overwrite"
   )
 }}
-{{ filtered_blockchain_events("BASE", "base", "traces") }}
+{{ filtered_blockchain_events("ARBITRUM_ONE", "arbitrum_one", "traces") }}
