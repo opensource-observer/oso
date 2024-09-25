@@ -21,9 +21,16 @@ LANGUAGE js AS r"""
 }}
 
 with filtered_transactions as (
-  {{ filtered_blockchain_events("ARBITRUM_ONE", "arbitrum_one", "transactions") }}
+  {{ 
+    filtered_blockchain_events(
+      "ARBITRUM_ONE", 
+      "arbitrum_one", 
+      "transactions"
+    )
+  }}
 )
-select 
+
+select
   id,
   `hash`,
   nonce,
@@ -34,10 +41,19 @@ select
   to_address,
   `value`,
   gas,
-  -- We need to convert the arbitrum gas_price from bytes to a double. We
-  -- intentionally lose some precision by doing this. The gas_price is 
-  -- actually a utf-8 string. So we convert this to a string which is a string of the integer
+  {% if target.name == 'production' %}
+  {#
+    We need to convert the arbitrum gas_price from bytes to a double. We
+    intentionally lose some precision by doing this. The gas_price is 
+    actually a utf-8 string. So we convert this to a string which is a 
+    string of the integer. This transformation should only happen on 
+    production and not on the playgrounds as the playgrounds source their 
+    data originally from production
+  #}
   from_string_to_double(CAST(gas_price AS STRING FORMAT 'UTF-8')) as gas_price,
+  {% else %}
+    gas_price,
+  {% endif %}
   input,
   max_fee_per_gas,
   max_priority_fee_per_gas,

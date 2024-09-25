@@ -8,6 +8,15 @@ sources:
       - name: arbitrum_deployers
         identifier: stg_arbitrum__deployers
 
+      - name: arbitrum_one_traces
+        identifier: int_arbitrum_one_traces
+      
+      - name: arbitrum_one_transactions
+        identifier: int_arbitrum_one_transactions
+
+      - name: arbitrum_one_deployers
+        identifier: stg_arbitrum_one__deployers
+
       - name: base_traces
         identifier: int_base_traces
       
