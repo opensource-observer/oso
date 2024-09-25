@@ -27,6 +27,7 @@
         JSON_VALUE(from_account, "$.id") as from_artifact_source_id,
         ABS(CAST(JSON_VALUE(amount, "$.value") as FLOAT64)) as amount
       from {{ ref(source_ref) }}
+      where JSON_VALUE(amount, "$.currency") = "USD"
     )
   {% endset %}
 
