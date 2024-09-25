@@ -2,7 +2,7 @@ name: 'Retro Funding'
 description: A community-submitted issue related to Optimism Retro Funding
 title: 'RF: '
 assignees: ccerv1
-labels: ''
+labels: []
 body:
   - type: textarea
     attributes:
