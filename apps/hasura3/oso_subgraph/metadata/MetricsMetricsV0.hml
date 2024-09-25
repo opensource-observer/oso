@@ -86,45 +86,7 @@ definition:
           - metricName
           - metricSource
           - rawDefinition
-
----
-kind: ObjectBooleanExpressionType
-version: v1
-definition:
-  name: MetricsMetricsV0BoolExp
-  objectType: MetricsMetricsV0
-  dataConnectorName: oso_clickhouse
-  dataConnectorObjectType: metrics_metrics_v0
-  comparableFields:
-    - fieldName: aggregationFunction
-      operators:
-        enableAll: true
-    - fieldName: definitionRef
-      operators:
-        enableAll: true
-    - fieldName: description
-      operators:
-        enableAll: true
-    - fieldName: displayName
-      operators:
-        enableAll: true
-    - fieldName: metricId
-      operators:
-        enableAll: true
-    - fieldName: metricName
-      operators:
-        enableAll: true
-    - fieldName: metricSource
-      operators:
-        enableAll: true
-    - fieldName: rawDefinition
-      operators:
-        enableAll: true
-    - fieldName: metricNamespace
-      operators:
-        enableAll: true
-  graphql:
-    typeName: Oso_MetricsMetricsV0BoolExp
+          - metricNamespace
 
 ---
 kind: Model
@@ -169,6 +131,10 @@ definition:
       queryRootField: oso_metricsV0
     selectUniques: []
     orderByExpressionType: Oso_MetricsMetricsV0OrderBy
+    filterInputTypeName: Oso_MetricsMetricsV0FilterInput
+    aggregate:
+      queryRootField: oso_metricsV0Aggregate
+  aggregateExpression: MetricsMetricsV0AggExp
 
 ---
 kind: ModelPermissions
@@ -182,4 +148,71 @@ definition:
     - role: anonymous
       select:
         filter: null
+
+---
+kind: BooleanExpressionType
+version: v1
+definition:
+  name: MetricsMetricsV0BoolExp
+  operand:
+    object:
+      type: MetricsMetricsV0
+      comparableFields:
+        - fieldName: aggregationFunction
+          booleanExpressionType: StringBoolExp
+        - fieldName: definitionRef
+          booleanExpressionType: StringBoolExp
+        - fieldName: description
+          booleanExpressionType: StringBoolExp
+        - fieldName: displayName
+          booleanExpressionType: StringBoolExp
+        - fieldName: metricId
+          booleanExpressionType: StringBoolExp
+        - fieldName: metricName
+          booleanExpressionType: StringBoolExp
+        - fieldName: metricNamespace
+          booleanExpressionType: StringBoolExp
+        - fieldName: metricSource
+          booleanExpressionType: StringBoolExp
+        - fieldName: rawDefinition
+          booleanExpressionType: StringBoolExp
+      comparableRelationships: []
+  logicalOperators:
+    enable: true
+  isNull:
+    enable: true
+  graphql:
+    typeName: Oso_MetricsMetricsV0BoolExp
+
+---
+kind: AggregateExpression
+version: v1
+definition:
+  name: MetricsMetricsV0AggExp
+  operand:
+    object:
+      aggregatedType: MetricsMetricsV0
+      aggregatableFields:
+        - fieldName: aggregationFunction
+          aggregateExpression: StringAggExp
+        - fieldName: definitionRef
+          aggregateExpression: StringAggExp
+        - fieldName: description
+          aggregateExpression: StringAggExp
+        - fieldName: displayName
+          aggregateExpression: StringAggExp
+        - fieldName: metricId
+          aggregateExpression: StringAggExp
+        - fieldName: metricName
+          aggregateExpression: StringAggExp
+        - fieldName: metricNamespace
+          aggregateExpression: StringAggExp
+        - fieldName: metricSource
+          aggregateExpression: StringAggExp
+        - fieldName: rawDefinition
+          aggregateExpression: StringAggExp
+  count:
+    enable: true
+  graphql:
+    selectTypeName: Oso_MetricsMetricsV0AggExp
 

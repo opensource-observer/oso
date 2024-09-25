@@ -3,7 +3,7 @@ version: v2
 definition:
   name: oso_clickhouse
   subgraph: oso_subgraph
-  source: hasura/clickhouse:v1.0.0
+  source: hasura/clickhouse:v1.0.2
   context: .
   envMapping:
     CLICKHOUSE_PASSWORD:
