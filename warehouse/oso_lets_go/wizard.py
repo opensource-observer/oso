@@ -1,34 +1,34 @@
-import time
-import sys, os
+import base64
+import os
 import re
 import subprocess
-import textwrap
-import base64
-from io import StringIO
-from ruamel.yaml import YAML
-from typing import Any, Union, Optional, Callable, TextIO, Dict
+import sys
 import termios
+import textwrap
+import time
+from io import StringIO
+from typing import Any, Callable, Dict, Optional, TextIO, Union
 
-from boltons import fileutils
-from rich.text import Text
-from rich import print
-from rich.live import Live
-from rich.table import Table
-from rich.console import Console
-from rich.prompt import PromptBase, Prompt, InvalidResponse, Confirm
-from rich.syntax import Syntax
-from rich.align import Align
-from google.oauth2.credentials import Credentials  # type: ignore
 import googleapiclient.discovery  # type: ignore
-from google.cloud.resourcemanager import ProjectsClient, Project, GetProjectRequest
-from google.cloud import service_usage
-from google.cloud.service_usage import EnableServiceRequest
-from google.cloud import bigquery
-from google.cloud.bigquery import Dataset, DatasetReference
+from boltons import fileutils
 from google.auth.exceptions import DefaultCredentialsError
+from google.cloud import bigquery, service_usage
+from google.cloud.bigquery import Dataset, DatasetReference
+from google.cloud.resourcemanager import GetProjectRequest, Project, ProjectsClient
+from google.cloud.service_usage import EnableServiceRequest
 from google.iam.v1 import iam_policy_pb2  # type: ignore
 from google.iam.v1 import policy_pb2  # type: ignore
-
+from google.oauth2.credentials import Credentials  # type: ignore
+from google.oauth2.service_account import Credentials as SACredentials  # type: ignore
+from rich import print
+from rich.align import Align
+from rich.console import Console
+from rich.live import Live
+from rich.prompt import Confirm, InvalidResponse, Prompt, PromptBase
+from rich.syntax import Syntax
+from rich.table import Table
+from rich.text import Text
+from ruamel.yaml import YAML
 
 LOGO = """
                   .*#%&&&#/,            
@@ -62,11 +62,18 @@ NEW_PROJECT_OPTION_KEY = "zzzzzz__new__"
 def create_service_account(project_id: str, name: str, display_name: str) -> dict:
     """Creates a service account."""
 
-    credentials = Credentials.from_authorized_user_file(
-        filename=os.path.expanduser(
-            "~/.config/gcloud/application_default_credentials.json"
-        ),
-    )
+    if os.getenv("GOOGLE_APPLICATION_CREDENTIALS"):
+        credentials = SACredentials.from_service_account_file(
+            filename=os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+        )
+    else:
+        credentials = Credentials.from_authorized_user_file(
+            filename=os.path.expanduser(
+                "~/.config/gcloud/application_default_credentials.json"
+            ),
+        )
+
+    print("ASDF1")
 
     service = googleapiclient.discovery.build("iam", "v1", credentials=credentials)
 
@@ -87,11 +94,16 @@ def create_service_account(project_id: str, name: str, display_name: str) -> dic
 def get_service_account(project_id: str, name: str, display_name: str) -> dict:
     """Gets a service account."""
 
-    credentials = Credentials.from_authorized_user_file(
-        filename=os.path.expanduser(
-            "~/.config/gcloud/application_default_credentials.json"
-        ),
-    )
+    if os.getenv("GOOGLE_APPLICATION_CREDENTIALS"):
+        credentials = SACredentials.from_service_account_file(
+            filename=os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+        )
+    else:
+        credentials = Credentials.from_authorized_user_file(
+            filename=os.path.expanduser(
+                "~/.config/gcloud/application_default_credentials.json"
+            ),
+        )
 
     service = googleapiclient.discovery.build("iam", "v1", credentials=credentials)
 
@@ -109,11 +121,16 @@ def get_service_account(project_id: str, name: str, display_name: str) -> dict:
 def create_key(service_account_email: str, write_path: str) -> None:
     """Creates a key for a service account."""
 
-    credentials = Credentials.from_authorized_user_file(
-        filename=os.path.expanduser(
-            "~/.config/gcloud/application_default_credentials.json"
-        ),
-    )
+    if os.getenv("GOOGLE_APPLICATION_CREDENTIALS"):
+        credentials = SACredentials.from_service_account_file(
+            filename=os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+        )
+    else:
+        credentials = Credentials.from_authorized_user_file(
+            filename=os.path.expanduser(
+                "~/.config/gcloud/application_default_credentials.json"
+            ),
+        )
 
     service = googleapiclient.discovery.build("iam", "v1", credentials=credentials)
 
@@ -143,11 +160,16 @@ def delete_key(service_account_email: str, key_id: str) -> None:
 
     name = f"projects/-/serviceAccounts/{service_account_email}/keys/{key_id}"
 
-    credentials = Credentials.from_authorized_user_file(
-        filename=os.path.expanduser(
-            "~/.config/gcloud/application_default_credentials.json"
-        ),
-    )
+    if os.getenv("GOOGLE_APPLICATION_CREDENTIALS"):
+        credentials = SACredentials.from_service_account_file(
+            filename=os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+        )
+    else:
+        credentials = Credentials.from_authorized_user_file(
+            filename=os.path.expanduser(
+                "~/.config/gcloud/application_default_credentials.json"
+            ),
+        )
 
     service = googleapiclient.discovery.build("iam", "v1", credentials=credentials)
 
@@ -442,6 +464,7 @@ def initiate_login_to_google():
 
 
 def get_or_create_service_account(project_id: str, service_account_name: str) -> str:
+    print(f"service account name?? {service_account_name}")
     try:
         service_account = get_service_account(
             project_id, service_account_name, service_account_name
@@ -449,6 +472,7 @@ def get_or_create_service_account(project_id: str, service_account_name: str) ->
         if service_account["email"]:
             return service_account["email"]
     except:
+        print("making service account")
         # If we fail let's try making the service account
         service_account = create_service_account(
             project_id, service_account_name, service_account_name
