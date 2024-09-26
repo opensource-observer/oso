@@ -1,10 +1,9 @@
-from typing import Any, Callable, Dict, Optional
 from dataclasses import dataclass
+from typing import Any, Callable, Concatenate, Dict, Optional
 
 import dlt
 from gql import Client, gql
 from gql.transport.requests import RequestsHTTPTransport
-
 
 # The maximum depth of the introspection query.
 FRAGMENT_MAX_DEPTH = 10
@@ -140,9 +139,50 @@ def get_grapqhl_introspection(config: GraphQLResourceConfig) -> Dict[str, Any]:
         ) from exception
 
 
+@dataclass(frozen=True)
+class _TypeToPython:
+    String = "str"
+    Int = "int"
+    Float = "float"
+    Boolean = "bool"
+    Date = "date"
+    DateTime = "datetime"
+
+
+class TypeToPython:
+    def __init__(self, available_types):
+        self.available_types = available_types
+
+    def __getitem__(self, name: str) -> str:
+        if name in _TypeToPython.__dict__:
+            return _TypeToPython.__dict__[name]
+
+        is_object = next(
+            (type for type in self.available_types if type["name"] == name),
+            None,
+        )
+
+        return f'"{name}"' if is_object else "Any"
+
+
+def resolve_type(graphql_type, instance: TypeToPython):
+    if graphql_type["kind"] == "NON_NULL":
+        return resolve_type(graphql_type["ofType"], instance)
+    if graphql_type["kind"] == "LIST":
+        return (
+            f"List[{resolve_type(graphql_type["ofType"], instance)}]"
+            if "ofType" in graphql_type
+            else "Any"
+        )
+    if graphql_type["kind"] == "ENUM":
+        return "str"
+
+    return instance[graphql_type["name"]]
+
+
 def _graphql_resource[
     T, **P
-](resource: Callable[P, T]) -> Callable[[GraphQLResourceConfig], Callable[P, T]]:
+](resource: Callable[P, T]) -> Callable[Concatenate[GraphQLResourceConfig, P], T]:
     """
     This factory is a wrapper of the `dlt.resource` decorator.
 
@@ -150,35 +190,55 @@ def _graphql_resource[
         resource: The function to decorate.
     """
 
-    def _factory(config: GraphQLResourceConfig) -> Callable[P, T]:
-        def _decorator(*args: P.args, **kwargs: P.kwargs) -> T:
-            if not config.target_query:
-                raise ValueError(
-                    "Target query not specified in the GraphQL resource config."
-                )
+    def _factory(config: GraphQLResourceConfig, *args: P.args, **kwargs: P.kwargs) -> T:
+        if not config.target_query:
+            raise ValueError(
+                "Target query not specified in the GraphQL resource config."
+            )
 
-            _introspection = get_grapqhl_introspection(config)
+        introspection = get_grapqhl_introspection(config) or {}
+        available_types = introspection["__schema"]["types"]
 
-            # TODO: Build pydantic model from introspection.
-            #   - Use the introspection to build a schema of the
-            #     root query type, since nested types are `JSON` by
-            #     default.
+        if not available_types:
+            raise ValueError(
+                "Malfomed introspection query, no types found.",
+            )
 
-            # TODO: Build query from introspection.
-            #   - Use the introspection to build a query for the
-            #     target query, using the root query type.
+        target_object = next(
+            (type for type in available_types if type["name"] == config.target_query),
+            None,
+        )
 
-            # TODO: Execute the query.
-            #   - Execute the query using the introspection and
-            #     the target query.
+        if not target_object:
+            raise ValueError(
+                f"Target query '{config.target_query}' not found in the introspection query.",
+            )
 
-            # TODO: Handle pagination.
+        type_to_python = TypeToPython(available_types)
 
-            # TODO: Yield the results.
+        _all_types = [
+            (field["name"], resolve_type(field["type"], type_to_python))
+            for field in target_object["fields"]
+        ]
 
-            return resource(*args, **kwargs)
+        # TODO: Build pydantic model from introspection.
+        #   - Use the introspection to build a schema of the
+        #     root query type, since nested types are `JSON` by
+        #     default.
 
-        return _decorator
+        # TODO: Build query from introspection.
+        #   - Use the introspection to build a query for the
+        #     target query, using the root query type.
+
+        # TODO: Execute the query.
+        #   - Execute the query using the introspection and
+        #     the target query.
+
+        # TODO: Handle pagination.
+
+        # TODO: Yield the results.
+
+        return resource(*args, **kwargs)
 
     return _factory
 
@@ -200,18 +260,17 @@ Example:
             group_name="open_collective", key="personal_token"
         ),
     ):
-        open_collective_resource = graphql_resource(
-            GraphQLResourceConfig(
-                endpoint="https://api.opencollective.com/graphql/v2",
-                max_depth=5,
-                target_query="Transactions",
-                headers={
-                    "Personal-Token": personal_token,
-                },
-            ),
+        config = GraphQLResourceConfig(
+            endpoint="https://api.opencollective.com/graphql/v2",
+            max_depth=5,
+            target_query="Transactions",
+            headers={
+                "Personal-Token": personal_token,
+            },
         )
 
-        yield open_collective_resource(
+        yield graphql_resource(
+            config,
             name="expenses",
             primary_key="id",
             write_disposition="merge",
