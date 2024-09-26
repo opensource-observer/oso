@@ -33,21 +33,6 @@ definition:
           - eventType
 
 ---
-kind: ObjectBooleanExpressionType
-version: v1
-definition:
-  name: EventTypesV1BoolExp
-  objectType: EventTypesV1
-  dataConnectorName: oso_clickhouse
-  dataConnectorObjectType: event_types_v1
-  comparableFields:
-    - fieldName: eventType
-      operators:
-        enableAll: true
-  graphql:
-    typeName: Oso_EventTypesV1BoolExp
-
----
 kind: Model
 version: v1
 definition:
@@ -66,6 +51,10 @@ definition:
       queryRootField: oso_eventTypesV1
     selectUniques: []
     orderByExpressionType: Oso_EventTypesV1OrderBy
+    filterInputTypeName: Oso_EventTypesV1FilterInput
+    aggregate:
+      queryRootField: oso_eventTypesV1Aggregate
+  aggregateExpression: EventTypesV1AggExp
 
 ---
 kind: ModelPermissions
@@ -79,3 +68,39 @@ definition:
     - role: anonymous
       select:
         filter: null
+
+---
+kind: BooleanExpressionType
+version: v1
+definition:
+  name: EventTypesV1BoolExp
+  operand:
+    object:
+      type: EventTypesV1
+      comparableFields:
+        - fieldName: eventType
+          booleanExpressionType: StringBoolExp
+      comparableRelationships: []
+  logicalOperators:
+    enable: true
+  isNull:
+    enable: true
+  graphql:
+    typeName: Oso_EventTypesV1BoolExp
+
+---
+kind: AggregateExpression
+version: v1
+definition:
+  name: EventTypesV1AggExp
+  operand:
+    object:
+      aggregatedType: EventTypesV1
+      aggregatableFields:
+        - fieldName: eventType
+          aggregateExpression: StringAggExp
+  count:
+    enable: true
+  graphql:
+    selectTypeName: Oso_EventTypesV1AggExp
+

@@ -75,39 +75,6 @@ definition:
           - toArtifactId
 
 ---
-kind: ObjectBooleanExpressionType
-version: v1
-definition:
-  name: TimeseriesEventsByArtifactV0BoolExp
-  objectType: TimeseriesEventsByArtifactV0
-  dataConnectorName: oso_clickhouse
-  dataConnectorObjectType: timeseries_events_by_artifact_v0
-  comparableFields:
-    - fieldName: amount
-      operators:
-        enableAll: true
-    - fieldName: eventSource
-      operators:
-        enableAll: true
-    - fieldName: eventSourceId
-      operators:
-        enableAll: true
-    - fieldName: eventType
-      operators:
-        enableAll: true
-    - fieldName: fromArtifactId
-      operators:
-        enableAll: true
-    - fieldName: time
-      operators:
-        enableAll: true
-    - fieldName: toArtifactId
-      operators:
-        enableAll: true
-  graphql:
-    typeName: Oso_TimeseriesEventsByArtifactV0BoolExp
-
----
 kind: Model
 version: v1
 definition:
@@ -144,6 +111,10 @@ definition:
       queryRootField: oso_timeseriesEventsByArtifactV0
     selectUniques: []
     orderByExpressionType: Oso_TimeseriesEventsByArtifactV0OrderBy
+    filterInputTypeName: Oso_TimeseriesEventsByArtifactV0FilterInput
+    aggregate:
+      queryRootField: oso_timeseriesEventsByArtifactV0Aggregate
+  aggregateExpression: TimeseriesEventsByArtifactV0AggExp
 
 ---
 kind: ModelPermissions
@@ -157,3 +128,63 @@ definition:
     - role: anonymous
       select:
         filter: null
+
+---
+kind: BooleanExpressionType
+version: v1
+definition:
+  name: TimeseriesEventsByArtifactV0BoolExp
+  operand:
+    object:
+      type: TimeseriesEventsByArtifactV0
+      comparableFields:
+        - fieldName: amount
+          booleanExpressionType: Float32BoolExp
+        - fieldName: eventSource
+          booleanExpressionType: StringBoolExp
+        - fieldName: eventSourceId
+          booleanExpressionType: StringBoolExp
+        - fieldName: eventType
+          booleanExpressionType: StringBoolExp
+        - fieldName: fromArtifactId
+          booleanExpressionType: StringBoolExp
+        - fieldName: time
+          booleanExpressionType: DateTimeBoolExp
+        - fieldName: toArtifactId
+          booleanExpressionType: StringBoolExp
+      comparableRelationships: []
+  logicalOperators:
+    enable: true
+  isNull:
+    enable: true
+  graphql:
+    typeName: Oso_TimeseriesEventsByArtifactV0BoolExp
+
+---
+kind: AggregateExpression
+version: v1
+definition:
+  name: TimeseriesEventsByArtifactV0AggExp
+  operand:
+    object:
+      aggregatedType: TimeseriesEventsByArtifactV0
+      aggregatableFields:
+        - fieldName: amount
+          aggregateExpression: Float32AggExp
+        - fieldName: eventSource
+          aggregateExpression: StringAggExp
+        - fieldName: eventSourceId
+          aggregateExpression: StringAggExp
+        - fieldName: eventType
+          aggregateExpression: StringAggExp
+        - fieldName: fromArtifactId
+          aggregateExpression: StringAggExp
+        - fieldName: time
+          aggregateExpression: DateTimeAggExp
+        - fieldName: toArtifactId
+          aggregateExpression: StringAggExp
+  count:
+    enable: true
+  graphql:
+    selectTypeName: Oso_TimeseriesEventsByArtifactV0AggExp
+

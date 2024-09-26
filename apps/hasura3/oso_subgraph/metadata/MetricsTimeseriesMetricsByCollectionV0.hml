@@ -2,11 +2,11 @@
 kind: ObjectType
 version: v1
 definition:
-  name: MetricsTimeseriesMetricsByArtifactV0
+  name: MetricsTimeseriesMetricsByCollectionV0
   fields:
     - name: amount
       type: Float64!
-    - name: artifactId
+    - name: collectionId
       type: String!
     - name: metricId
       type: String!
@@ -15,18 +15,18 @@ definition:
     - name: unit
       type: String
   graphql:
-    typeName: Oso_MetricsTimeseriesMetricsByArtifactV0
-    inputTypeName: Oso_MetricsTimeseriesMetricsByArtifactV0Input
+    typeName: Oso_MetricsTimeseriesMetricsByCollectionV0
+    inputTypeName: Oso_MetricsTimeseriesMetricsByCollectionV0Input
   dataConnectorTypeMapping:
     - dataConnectorName: oso_clickhouse
-      dataConnectorObjectType: metrics_timeseries_metrics_by_artifact_v0
+      dataConnectorObjectType: metrics_timeseries_metrics_by_collection_v0
       fieldMapping:
         amount:
           column:
             name: amount
-        artifactId:
+        collectionId:
           column:
-            name: artifact_id
+            name: collection_id
         metricId:
           column:
             name: metric_id
@@ -41,13 +41,13 @@ definition:
 kind: TypePermissions
 version: v1
 definition:
-  typeName: MetricsTimeseriesMetricsByArtifactV0
+  typeName: MetricsTimeseriesMetricsByCollectionV0
   permissions:
     - role: admin
       output:
         allowedFields:
           - amount
-          - artifactId
+          - collectionId
           - metricId
           - sampleDate
           - unit
@@ -55,7 +55,7 @@ definition:
       output:
         allowedFields:
           - amount
-          - artifactId
+          - collectionId
           - metricId
           - sampleDate
           - unit
@@ -64,17 +64,17 @@ definition:
 kind: Model
 version: v1
 definition:
-  name: MetricsTimeseriesMetricsByArtifactV0
-  objectType: MetricsTimeseriesMetricsByArtifactV0
+  name: MetricsTimeseriesMetricsByCollectionV0
+  objectType: MetricsTimeseriesMetricsByCollectionV0
   source:
     dataConnectorName: oso_clickhouse
-    collection: metrics_timeseries_metrics_by_artifact_v0
-  filterExpressionType: MetricsTimeseriesMetricsByArtifactV0BoolExp
+    collection: metrics_timeseries_metrics_by_collection_v0
+  filterExpressionType: MetricsTimeseriesMetricsByCollectionV0BoolExp
   orderableFields:
     - fieldName: amount
       orderByDirections:
         enableAll: true
-    - fieldName: artifactId
+    - fieldName: collectionId
       orderByDirections:
         enableAll: true
     - fieldName: metricId
@@ -88,19 +88,19 @@ definition:
         enableAll: true
   graphql:
     selectMany:
-      queryRootField: oso_timeseriesMetricsByArtifactV0
+      queryRootField: oso_timeseriesMetricsByCollectionV0
     selectUniques: []
-    orderByExpressionType: Oso_MetricsTimeseriesMetricsByArtifactV0OrderBy
-    filterInputTypeName: Oso_MetricsTimeseriesMetricsByArtifactV0FilterInput
+    orderByExpressionType: Oso_MetricsTimeseriesMetricsByCollectionV0OrderBy
+    filterInputTypeName: Oso_MetricsTimeseriesMetricsByCollectionV0FilterInput
     aggregate:
-      queryRootField: oso_timeseriesMetricsByArtifactV0Aggregate
-  aggregateExpression: MetricsTimeseriesMetricsByArtifactV0AggExp
+      queryRootField: oso_timeseriesMetricsByCollectionV0Aggregate
+  aggregateExpression: MetricsTimeseriesMetricsByCollectionV0AggExp
 
 ---
 kind: ModelPermissions
 version: v1
 definition:
-  modelName: MetricsTimeseriesMetricsByArtifactV0
+  modelName: MetricsTimeseriesMetricsByCollectionV0
   permissions:
     - role: admin
       select:
@@ -113,14 +113,14 @@ definition:
 kind: BooleanExpressionType
 version: v1
 definition:
-  name: MetricsTimeseriesMetricsByArtifactV0BoolExp
+  name: MetricsTimeseriesMetricsByCollectionV0BoolExp
   operand:
     object:
-      type: MetricsTimeseriesMetricsByArtifactV0
+      type: MetricsTimeseriesMetricsByCollectionV0
       comparableFields:
         - fieldName: amount
           booleanExpressionType: Float64BoolExp
-        - fieldName: artifactId
+        - fieldName: collectionId
           booleanExpressionType: StringBoolExp
         - fieldName: metricId
           booleanExpressionType: StringBoolExp
@@ -134,20 +134,20 @@ definition:
   isNull:
     enable: true
   graphql:
-    typeName: Oso_MetricsTimeseriesMetricsByArtifactV0BoolExp
+    typeName: Oso_MetricsTimeseriesMetricsByCollectionV0BoolExp
 
 ---
 kind: AggregateExpression
 version: v1
 definition:
-  name: MetricsTimeseriesMetricsByArtifactV0AggExp
+  name: MetricsTimeseriesMetricsByCollectionV0AggExp
   operand:
     object:
-      aggregatedType: MetricsTimeseriesMetricsByArtifactV0
+      aggregatedType: MetricsTimeseriesMetricsByCollectionV0
       aggregatableFields:
         - fieldName: amount
           aggregateExpression: Float64AggExp
-        - fieldName: artifactId
+        - fieldName: collectionId
           aggregateExpression: StringAggExp
         - fieldName: metricId
           aggregateExpression: StringAggExp
@@ -158,5 +158,5 @@ definition:
   count:
     enable: true
   graphql:
-    selectTypeName: Oso_MetricsTimeseriesMetricsByArtifactV0AggExp
+    selectTypeName: Oso_MetricsTimeseriesMetricsByCollectionV0AggExp
 
