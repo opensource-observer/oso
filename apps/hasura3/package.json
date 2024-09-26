@@ -26,7 +26,7 @@
     "metadata:introspect": "ddn connector introspect oso_clickhouse",
     "metadata:build:local": "ddn supergraph build local",
     "metadata:deploy:cloud": "ddn supergraph build create",
-    "start": "dotenv -- docker compose up --build --watch",
+    "start": "ddn run docker-start",
     "sync": "pnpm metadata:introspect",
     "deploy": "pnpm metadata:deploy:cloud"
   },

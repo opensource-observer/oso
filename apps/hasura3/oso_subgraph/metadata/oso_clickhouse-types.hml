@@ -152,7 +152,7 @@ definition:
         - name: _ilike
           argumentType: String!
         - name: _in
-          argumentType: String!
+          argumentType: "[String!]!"
         - name: _like
           argumentType: String!
         - name: _lt
@@ -216,7 +216,7 @@ definition:
         - name: _gte
           argumentType: Float32!
         - name: _in
-          argumentType: Float32!
+          argumentType: "[Float32!]!"
         - name: _lt
           argumentType: Float32!
         - name: _lte
@@ -252,7 +252,7 @@ definition:
         - name: _gte
           argumentType: DateTime!
         - name: _in
-          argumentType: DateTime!
+          argumentType: "[DateTime!]!"
         - name: _lt
           argumentType: DateTime!
         - name: _lte
@@ -288,7 +288,7 @@ definition:
         - name: _gte
           argumentType: Float64!
         - name: _in
-          argumentType: Float64!
+          argumentType: "[Float64!]!"
         - name: _lt
           argumentType: Float64!
         - name: _lte
@@ -404,7 +404,7 @@ definition:
         - name: _gte
           argumentType: Date!
         - name: _in
-          argumentType: Date!
+          argumentType: "[Date!]!"
         - name: _lt
           argumentType: Date!
         - name: _lte
@@ -520,7 +520,7 @@ definition:
         - name: _gte
           argumentType: Int64!
         - name: _in
-          argumentType: Int64!
+          argumentType: "[Int64!]!"
         - name: _lt
           argumentType: Int64!
         - name: _lte
