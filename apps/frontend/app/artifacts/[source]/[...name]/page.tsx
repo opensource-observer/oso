@@ -27,7 +27,7 @@ const STATIC_EXPORT_PARAMS: ArtifactPagePath[] = [
 export async function generateStaticParams() {
   return STATIC_EXPORT_PARAMS;
 }
- */
+*/
 
 async function getDefaultProps() {
   return {
