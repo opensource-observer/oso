@@ -247,6 +247,26 @@ all_events as (
     union all
     select * from github_comments
   )
+  union all
+  select
+    time,
+    event_type,
+    event_source_id,
+    event_source,
+    to_artifact_id,
+    to_name,
+    to_namespace,
+    to_type,
+    to_artifact_source_id,
+    from_artifact_id,
+    from_name,
+    from_namespace,
+    from_type,
+    from_artifact_source_id,
+    amount
+  from (
+    select * from {{ ref("stg_open_collective__events") }}
+  )
 )
 
 select
