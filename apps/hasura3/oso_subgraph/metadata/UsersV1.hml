@@ -75,39 +75,6 @@ definition:
           - userSourceId
 
 ---
-kind: ObjectBooleanExpressionType
-version: v1
-definition:
-  name: UsersV1BoolExp
-  objectType: UsersV1
-  dataConnectorName: oso_clickhouse
-  dataConnectorObjectType: users_v1
-  comparableFields:
-    - fieldName: bio
-      operators:
-        enableAll: true
-    - fieldName: displayName
-      operators:
-        enableAll: true
-    - fieldName: profilePictureUrl
-      operators:
-        enableAll: true
-    - fieldName: url
-      operators:
-        enableAll: true
-    - fieldName: userId
-      operators:
-        enableAll: true
-    - fieldName: userSource
-      operators:
-        enableAll: true
-    - fieldName: userSourceId
-      operators:
-        enableAll: true
-  graphql:
-    typeName: Oso_UsersV1BoolExp
-
----
 kind: Model
 version: v1
 definition:
@@ -144,6 +111,10 @@ definition:
       queryRootField: oso_usersV1
     selectUniques: []
     orderByExpressionType: Oso_UsersV1OrderBy
+    filterInputTypeName: Oso_UsersV1FilterInput
+    aggregate:
+      queryRootField: oso_usersV1Aggregate
+  aggregateExpression: UsersV1AggExp
 
 ---
 kind: ModelPermissions
@@ -157,3 +128,63 @@ definition:
     - role: anonymous
       select:
         filter: null
+
+---
+kind: BooleanExpressionType
+version: v1
+definition:
+  name: UsersV1BoolExp
+  operand:
+    object:
+      type: UsersV1
+      comparableFields:
+        - fieldName: bio
+          booleanExpressionType: StringBoolExp
+        - fieldName: displayName
+          booleanExpressionType: StringBoolExp
+        - fieldName: profilePictureUrl
+          booleanExpressionType: StringBoolExp
+        - fieldName: url
+          booleanExpressionType: StringBoolExp
+        - fieldName: userId
+          booleanExpressionType: StringBoolExp
+        - fieldName: userSource
+          booleanExpressionType: StringBoolExp
+        - fieldName: userSourceId
+          booleanExpressionType: StringBoolExp
+      comparableRelationships: []
+  logicalOperators:
+    enable: true
+  isNull:
+    enable: true
+  graphql:
+    typeName: Oso_UsersV1BoolExp
+
+---
+kind: AggregateExpression
+version: v1
+definition:
+  name: UsersV1AggExp
+  operand:
+    object:
+      aggregatedType: UsersV1
+      aggregatableFields:
+        - fieldName: bio
+          aggregateExpression: StringAggExp
+        - fieldName: displayName
+          aggregateExpression: StringAggExp
+        - fieldName: profilePictureUrl
+          aggregateExpression: StringAggExp
+        - fieldName: url
+          aggregateExpression: StringAggExp
+        - fieldName: userId
+          aggregateExpression: StringAggExp
+        - fieldName: userSource
+          aggregateExpression: StringAggExp
+        - fieldName: userSourceId
+          aggregateExpression: StringAggExp
+  count:
+    enable: true
+  graphql:
+    selectTypeName: Oso_UsersV1AggExp
+

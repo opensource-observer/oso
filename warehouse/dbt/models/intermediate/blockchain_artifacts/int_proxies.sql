@@ -1,6 +1,6 @@
 {# any from address coming out of a proxy #}
 
-{% set networks = ["optimism", "base", "frax", "metal", "mode", "zora"] %}
+{% set networks = ["optimism", "base", "frax", "metal", "mode", "zora", "arbitrum_one"] %}
 
 {% set union_queries = [] %}
 

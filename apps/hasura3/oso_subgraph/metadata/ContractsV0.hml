@@ -47,27 +47,6 @@ definition:
           - rootDeployerAddress
 
 ---
-kind: ObjectBooleanExpressionType
-version: v1
-definition:
-  name: ContractsV0BoolExp
-  objectType: ContractsV0
-  dataConnectorName: oso_clickhouse
-  dataConnectorObjectType: contracts_v0
-  comparableFields:
-    - fieldName: artifactSource
-      operators:
-        enableAll: true
-    - fieldName: contractAddress
-      operators:
-        enableAll: true
-    - fieldName: rootDeployerAddress
-      operators:
-        enableAll: true
-  graphql:
-    typeName: Oso_ContractsV0BoolExp
-
----
 kind: Model
 version: v1
 definition:
@@ -92,6 +71,10 @@ definition:
       queryRootField: oso_contractsV0
     selectUniques: []
     orderByExpressionType: Oso_ContractsV0OrderBy
+    filterInputTypeName: Oso_ContractsV0FilterInput
+    aggregate:
+      queryRootField: oso_contractsV0Aggregate
+  aggregateExpression: ContractsV0AggExp
 
 ---
 kind: ModelPermissions
@@ -105,3 +88,47 @@ definition:
     - role: anonymous
       select:
         filter: null
+
+---
+kind: BooleanExpressionType
+version: v1
+definition:
+  name: ContractsV0BoolExp
+  operand:
+    object:
+      type: ContractsV0
+      comparableFields:
+        - fieldName: artifactSource
+          booleanExpressionType: StringBoolExp
+        - fieldName: contractAddress
+          booleanExpressionType: StringBoolExp
+        - fieldName: rootDeployerAddress
+          booleanExpressionType: StringBoolExp
+      comparableRelationships: []
+  logicalOperators:
+    enable: true
+  isNull:
+    enable: true
+  graphql:
+    typeName: Oso_ContractsV0BoolExp
+
+---
+kind: AggregateExpression
+version: v1
+definition:
+  name: ContractsV0AggExp
+  operand:
+    object:
+      aggregatedType: ContractsV0
+      aggregatableFields:
+        - fieldName: artifactSource
+          aggregateExpression: StringAggExp
+        - fieldName: contractAddress
+          aggregateExpression: StringAggExp
+        - fieldName: rootDeployerAddress
+          aggregateExpression: StringAggExp
+  count:
+    enable: true
+  graphql:
+    selectTypeName: Oso_ContractsV0AggExp
+

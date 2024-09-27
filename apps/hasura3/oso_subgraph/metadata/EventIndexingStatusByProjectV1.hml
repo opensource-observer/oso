@@ -89,45 +89,6 @@ definition:
           - projectSource
 
 ---
-kind: ObjectBooleanExpressionType
-version: v1
-definition:
-  name: EventIndexingStatusByProjectV1BoolExp
-  objectType: EventIndexingStatusByProjectV1
-  dataConnectorName: oso_clickhouse
-  dataConnectorObjectType: event_indexing_status_by_project_v1
-  comparableFields:
-    - fieldName: eventSource
-      operators:
-        enableAll: true
-    - fieldName: eventType
-      operators:
-        enableAll: true
-    - fieldName: eventfulDayCount
-      operators:
-        enableAll: true
-    - fieldName: firstEventDate
-      operators:
-        enableAll: true
-    - fieldName: lastEventDate
-      operators:
-        enableAll: true
-    - fieldName: projectId
-      operators:
-        enableAll: true
-    - fieldName: projectName
-      operators:
-        enableAll: true
-    - fieldName: projectNamespace
-      operators:
-        enableAll: true
-    - fieldName: projectSource
-      operators:
-        enableAll: true
-  graphql:
-    typeName: Oso_EventIndexingStatusByProjectV1BoolExp
-
----
 kind: Model
 version: v1
 definition:
@@ -170,6 +131,10 @@ definition:
       queryRootField: oso_eventIndexingStatusByProjectV1
     selectUniques: []
     orderByExpressionType: Oso_EventIndexingStatusByProjectV1OrderBy
+    filterInputTypeName: Oso_EventIndexingStatusByProjectV1FilterInput
+    aggregate:
+      queryRootField: oso_eventIndexingStatusByProjectV1Aggregate
+  aggregateExpression: EventIndexingStatusByProjectV1AggExp
 
 ---
 kind: ModelPermissions
@@ -183,3 +148,71 @@ definition:
     - role: anonymous
       select:
         filter: null
+
+---
+kind: BooleanExpressionType
+version: v1
+definition:
+  name: EventIndexingStatusByProjectV1BoolExp
+  operand:
+    object:
+      type: EventIndexingStatusByProjectV1
+      comparableFields:
+        - fieldName: eventSource
+          booleanExpressionType: StringBoolExp
+        - fieldName: eventType
+          booleanExpressionType: StringBoolExp
+        - fieldName: eventfulDayCount
+          booleanExpressionType: Int64BoolExp
+        - fieldName: firstEventDate
+          booleanExpressionType: DateTimeBoolExp
+        - fieldName: lastEventDate
+          booleanExpressionType: DateTimeBoolExp
+        - fieldName: projectId
+          booleanExpressionType: StringBoolExp
+        - fieldName: projectName
+          booleanExpressionType: StringBoolExp
+        - fieldName: projectNamespace
+          booleanExpressionType: StringBoolExp
+        - fieldName: projectSource
+          booleanExpressionType: StringBoolExp
+      comparableRelationships: []
+  logicalOperators:
+    enable: true
+  isNull:
+    enable: true
+  graphql:
+    typeName: Oso_EventIndexingStatusByProjectV1BoolExp
+
+---
+kind: AggregateExpression
+version: v1
+definition:
+  name: EventIndexingStatusByProjectV1AggExp
+  operand:
+    object:
+      aggregatedType: EventIndexingStatusByProjectV1
+      aggregatableFields:
+        - fieldName: eventSource
+          aggregateExpression: StringAggExp
+        - fieldName: eventType
+          aggregateExpression: StringAggExp
+        - fieldName: eventfulDayCount
+          aggregateExpression: Int64AggExp
+        - fieldName: firstEventDate
+          aggregateExpression: DateTimeAggExp
+        - fieldName: lastEventDate
+          aggregateExpression: DateTimeAggExp
+        - fieldName: projectId
+          aggregateExpression: StringAggExp
+        - fieldName: projectName
+          aggregateExpression: StringAggExp
+        - fieldName: projectNamespace
+          aggregateExpression: StringAggExp
+        - fieldName: projectSource
+          aggregateExpression: StringAggExp
+  count:
+    enable: true
+  graphql:
+    selectTypeName: Oso_EventIndexingStatusByProjectV1AggExp
+
