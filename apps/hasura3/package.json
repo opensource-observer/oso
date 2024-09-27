@@ -27,6 +27,7 @@
     "metadata:build:local": "ddn supergraph build local",
     "metadata:deploy:cloud": "ddn supergraph build create",
     "start": "ddn run docker-start",
+    "stop": "ddn run docker-stop",
     "sync": "pnpm metadata:introspect",
     "deploy": "pnpm metadata:deploy:cloud"
   },
