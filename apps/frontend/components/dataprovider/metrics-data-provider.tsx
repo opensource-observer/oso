@@ -1,6 +1,6 @@
 import { useQuery } from "@apollo/client";
 import dayjs from "dayjs";
-import _ from "lodash";
+import _, { Dictionary } from "lodash";
 import React from "react";
 import {
   assertNever,
@@ -29,8 +29,8 @@ type XAxis = "date" | "entity" | "metric";
 type EntityType = "artifact" | "project" | "collection";
 
 // Ideal minimum number of data points in an area chart
-type BucketWidth = "day" | "week" | "month";
-const MIN_DATA_POINTS = 20;
+//type BucketWidth = "day" | "week" | "month";
+//const MIN_DATA_POINTS = 20;
 // Default start time
 const DEFAULT_START_DATE = 0;
 // Default XAxis if not specified
@@ -90,7 +90,6 @@ const MetricsDataProviderRegistration: RegistrationProps<MetricsDataProviderProp
 
 /**
  * Choose a bucket width based on the number of data points
- */
 const getBucketWidth = (props: MetricsDataProviderProps): BucketWidth => {
   const startDate = dayjs(props.startDate ?? DEFAULT_START_DATE);
   const endDate = dayjs(props.endDate);
@@ -102,6 +101,7 @@ const getBucketWidth = (props: MetricsDataProviderProps): BucketWidth => {
     return "day";
   }
 };
+*/
 
 /**
  * Used in formatting chart data
@@ -122,10 +122,12 @@ const formatDataToAreaChart = (
   formatOpts?: FormatOpts,
 ) => {
   // Start with an empty data point for each available date
-  const emptyDataPoint = _.fromPairs(categories.results.map((c) => [c, 0]));
-  const datesWithData = _.uniq(data.map((x) => eventTimeToLabel(x.date)));
+  const emptyDataPoint: Dictionary<null | number> = _.fromPairs(
+    categories.results.map((c) => [c, null]),
+  );
+  const uniqueDates = _.uniq(data.map((x) => eventTimeToLabel(x.date)));
   const groupedByDate = _.fromPairs(
-    datesWithData.map((d) => [d, _.clone(emptyDataPoint)]),
+    uniqueDates.map((d) => [d, _.clone(emptyDataPoint)]),
   );
   //console.log(groupedByDate);
 
@@ -137,7 +139,11 @@ const formatDataToAreaChart = (
       d.metricName,
       categories.opts,
     );
-    groupedByDate[dateLabel][category] += d.amount;
+    if (groupedByDate[dateLabel][category]) {
+      groupedByDate[dateLabel][category] += d.amount;
+    } else {
+      groupedByDate[dateLabel][category] = d.amount;
+    }
   });
   //console.log(groupedByDate);
 
@@ -330,7 +336,6 @@ function MetricsDataProvider(props: MetricsDataProviderProps) {
 
 function ArtifactMetricsDataProvider(props: MetricsDataProviderProps) {
   useEnsureAuth();
-  const bucketWidth = getBucketWidth(props);
   const {
     data: rawData,
     error: dataError,
@@ -376,7 +381,8 @@ function ArtifactMetricsDataProvider(props: MetricsDataProviderProps) {
   const getMetricName = (id: string) => metricIdToName[id];
   const categories = createCategories(props, getEntityName, getMetricName);
   const formattedData = formatData(props, normalizedData, categories, {
-    gapFill: bucketWidth === "day",
+    //gapFill: getBucketWidth(props) === "day",
+    gapFill: false,
   });
   !dataLoading && console.log(props, rawData, dataError, formattedData);
   return (
@@ -391,7 +397,6 @@ function ArtifactMetricsDataProvider(props: MetricsDataProviderProps) {
 
 function ProjectMetricsDataProvider(props: MetricsDataProviderProps) {
   useEnsureAuth();
-  const bucketWidth = getBucketWidth(props);
   const {
     data: rawData,
     error: dataError,
@@ -437,7 +442,8 @@ function ProjectMetricsDataProvider(props: MetricsDataProviderProps) {
   const getMetricName = (id: string) => metricIdToName[id];
   const categories = createCategories(props, getEntityName, getMetricName);
   const formattedData = formatData(props, normalizedData, categories, {
-    gapFill: bucketWidth === "day",
+    //gapFill: getBucketWidth(props) === "day",
+    gapFill: false,
   });
   !dataLoading && console.log(props, rawData, dataError, formattedData);
   return (
@@ -452,7 +458,6 @@ function ProjectMetricsDataProvider(props: MetricsDataProviderProps) {
 
 function CollectionMetricsDataProvider(props: MetricsDataProviderProps) {
   useEnsureAuth();
-  const bucketWidth = getBucketWidth(props);
   const {
     data: rawData,
     error: dataError,
@@ -486,7 +491,7 @@ function CollectionMetricsDataProvider(props: MetricsDataProviderProps) {
       metricIdToName[x.metricId],
       "Data missing 'metricName'",
     ),
-    entityId: ensure<string>(x.projectId, "Data missing 'collectionId'"),
+    entityId: ensure<string>(x.collectionId, "Data missing 'collectionId'"),
     entityName: ensure<string>(
       entityIdToName[x.collectionId],
       "Data missing 'collectionName'",
@@ -498,7 +503,8 @@ function CollectionMetricsDataProvider(props: MetricsDataProviderProps) {
   const getMetricName = (id: string) => metricIdToName[id];
   const categories = createCategories(props, getEntityName, getMetricName);
   const formattedData = formatData(props, normalizedData, categories, {
-    gapFill: bucketWidth === "day",
+    //gapFill: getBucketWidth(props) === "day",
+    gapFill: false,
   });
   !dataLoading && console.log(props, rawData, dataError, formattedData);
   return (
