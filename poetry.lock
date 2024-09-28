@@ -5821,13 +5821,13 @@ sqlfluff = "3.2.0"
 
 [[package]]
 name = "sqlglot"
-version = "25.21.3"
+version = "25.24.0"
 description = "An easily customizable SQL parser and transpiler"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "sqlglot-25.21.3-py3-none-any.whl", hash = "sha256:dc63b429b80a69f2240ef892f776830883667fc9d978984ab98e7ce07edb7057"},
-    {file = "sqlglot-25.21.3.tar.gz", hash = "sha256:273a447f71434ab2f9a36b81a6327706369735a0756a61cd576ac6896a5086a4"},
+    {file = "sqlglot-25.24.0-py3-none-any.whl", hash = "sha256:c53101d966e79248b667fa2e00d17db57a5188e595065b164b52c77767cbcb7b"},
+    {file = "sqlglot-25.24.0.tar.gz", hash = "sha256:6a270ef55da3cbf10cf49e886b2e9d37bdf7309700f5a294f20017227d378cea"},
 ]
 
 [package.dependencies]
@@ -5909,17 +5909,18 @@ files = [
 
 [[package]]
 name = "sqlmesh"
-version = "0.1.dev2814"
+version = "0.125.0"
 description = ""
 optional = false
 python-versions = "*"
-files = []
-develop = false
+files = [
+    {file = "sqlmesh-0.125.0-py3-none-any.whl", hash = "sha256:6d867448c08af82b72c19b935ab14ec64b0d7738daa3fc6d04bb0ab27d106ba9"},
+    {file = "sqlmesh-0.125.0.tar.gz", hash = "sha256:f70f308b70fe2ee7b421bb768794668ed7f5a3cf0f48cb44e2c724218526d2e9"},
+]
 
 [package.dependencies]
 astor = "*"
 click = "*"
-cloud-sql-python-connector = {version = "*", extras = ["pg8000"], optional = true, markers = "extra == \"gcppostgres\""}
 croniter = "*"
 dateparser = "*"
 duckdb = "!=0.10.3"
@@ -5932,9 +5933,10 @@ pydantic = "*"
 requests = "*"
 rich = {version = "*", extras = ["jupyter"]}
 "ruamel.yaml" = "*"
-sqlglot = {version = ">=25.21.3,<25.22.0", extras = ["rs"]}
+sqlglot = {version = ">=25.24.0,<25.25.0", extras = ["rs"]}
 
 [package.extras]
+athena = ["PyAthena[pandas]"]
 bigquery = ["google-cloud-bigquery-storage", "google-cloud-bigquery[pandas]"]
 cicdtest = ["dbt-databricks", "dbt-redshift", "dbt-sqlserver (>=1.7.0)", "dbt-trino"]
 clickhouse = ["clickhouse-connect"]
@@ -5953,12 +5955,6 @@ slack = ["slack-sdk"]
 snowflake = ["cryptography (>=42.0.4,<42.1.0)", "snowflake-connector-python[pandas,secure-local-storage]", "snowflake-snowpark-python"]
 trino = ["trino"]
 web = ["fastapi (==0.110.2)", "pyarrow", "sse-starlette (>=0.2.2)", "uvicorn[standard] (==0.22.0)", "watchfiles (>=0.19.0)"]
-
-[package.source]
-type = "git"
-url = "https://github.com/opensource-observer/sqlmesh.git"
-reference = "test-clickhouse-engine-updates"
-resolved_reference = "30b23ab11463cf8b9d634e1d751167be1b1944ea"
 
 [[package]]
 name = "sqlparse"
@@ -6974,4 +6970,4 @@ cffi = ["cffi (>=1.11)"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12,<3.13"
-content-hash = "3ccf8078c5dce4020763a0f0f88cc42326cf02fda743899d84692f5ad87bc6a1"
+content-hash = "0002e9034efa57cb8dad547a5996cb61582a41372c6b8b83e47f0dfbfaddb21e"
