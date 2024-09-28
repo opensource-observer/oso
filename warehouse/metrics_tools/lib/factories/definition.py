@@ -5,13 +5,13 @@ from dataclasses import asdict, dataclass
 from enum import Enum
 
 import sqlglot
-from metrics_tools.dialect.translate import (CustomFuncHandler,
-                                             CustomFuncRegistry)
-from metrics_tools.evaluator import FunctionsTransformer
 from sqlglot import exp
 from sqlglot.optimizer.qualify import qualify
 from sqlmesh.core.macros import MacroEvaluator
 from sqlmesh.utils.date import TimeLike
+
+from metrics_tools.dialect.translate import CustomFuncHandler, CustomFuncRegistry
+from metrics_tools.evaluator import FunctionsTransformer
 
 CURR_DIR = os.path.dirname(__file__)
 QUERIES_DIR = os.path.abspath(
