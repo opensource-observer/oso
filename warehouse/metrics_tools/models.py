@@ -382,13 +382,15 @@ class GeneratedModel:
         if self.columns:
             common_kwargs["columns"] = self.columns
 
-        return create_sql_model(
+        ret = create_sql_model(
             self.name,
             query,
             module_path=fake_module_path,
             jinja_macros=jinja_macros,
             **common_kwargs,
         )
+        print(f"model={ret.name} cron={ret.cron}")
+        return ret
 
 
 def escape_triple_quotes(input_string: str) -> str:

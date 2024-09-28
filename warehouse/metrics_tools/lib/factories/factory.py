@@ -115,6 +115,7 @@ def generate_models_from_query(
         ]
 
         if ref["entity_type"] == "artifact":
+            print(f"CRON====={table_name}====={cron}")
             GeneratedModel.create(
                 func=generated_entity,
                 source=query._source.raw_sql,
@@ -141,6 +142,7 @@ def generate_models_from_query(
             )
 
         if ref["entity_type"] == "project":
+            print(f"CRON====={table_name}====={cron}")
             GeneratedModel.create(
                 func=generated_entity,
                 source=query._source.raw_sql,
@@ -151,6 +153,7 @@ def generate_models_from_query(
                     "name": ModelKindName.INCREMENTAL_BY_TIME_RANGE,
                     "time_column": "metrics_sample_date",
                     "batch_size": 1,
+                    "batch_concurrency": 1,
                 },
                 dialect="clickhouse",
                 columns=columns,
@@ -165,6 +168,7 @@ def generate_models_from_query(
                 additional_macros=additional_macros,
             )
         if ref["entity_type"] == "collection":
+            print(f"CRON====={table_name}====={cron}")
             GeneratedModel.create(
                 func=generated_entity,
                 source=query._source.raw_sql,
@@ -175,6 +179,7 @@ def generate_models_from_query(
                     "name": ModelKindName.INCREMENTAL_BY_TIME_RANGE,
                     "time_column": "metrics_sample_date",
                     "batch_size": 1,
+                    "batch_concurrency": 1,
                 },
                 dialect="clickhouse",
                 columns=columns,
