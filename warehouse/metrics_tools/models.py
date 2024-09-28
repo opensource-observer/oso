@@ -1,5 +1,6 @@
 import inspect
 import logging
+import re
 import textwrap
 import typing as t
 from pathlib import Path
@@ -328,7 +329,7 @@ class GeneratedModel:
         jinja_macros: t.Optional[JinjaMacroRegistry] = None,
         dialect: t.Optional[str] = None,
         time_column_format: str = c.DEFAULT_TIME_COLUMN_FORMAT,
-        physical_schema_override: t.Optional[t.Dict[str, str]] = None,
+        physical_schema_mapping: t.Optional[t.Dict[re.Pattern, str]] = None,
         project: str = "",
         default_catalog: t.Optional[str] = None,
         variables: t.Optional[t.Dict[str, t.Any]] = None,
@@ -349,7 +350,7 @@ class GeneratedModel:
             defaults=defaults,
             path=fake_module_path,
             time_column_format=time_column_format,
-            physical_schema_override=physical_schema_override,
+            physical_schema_mapping=physical_schema_mapping,
             project=project,
             default_catalog=default_catalog,
             variables=variables,
@@ -362,7 +363,6 @@ class GeneratedModel:
                 source = self.source_loader()
         assert source is not None, "source cannot be empty"
 
-        # env = macros.copy()
         env = {}
 
         entrypoint_name, env = create_import_call_env(

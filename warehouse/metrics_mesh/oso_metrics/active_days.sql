@@ -1,7 +1,7 @@
 select @metrics_sample_date(events.bucket_day) as metrics_sample_date,
   events.event_source,
   events.to_artifact_id,
-  '' as from_artifact_id,
+  events.from_artifact_id as from_artifact_id,
   @metric_name() as metric,
   COUNT(DISTINCT events.bucket_day) amount
 from metrics.events_daily_to_artifact as events
