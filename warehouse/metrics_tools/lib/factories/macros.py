@@ -128,8 +128,6 @@ def metrics_end(evaluator: MacroEvaluator, _data_type: t.Optional[str] = None):
                 )
             ),
         )
-        print(end_date.sql())
-        print(evaluator.locals)
         return evaluator.transform(
             time_aggregation_bucket(evaluator, end_date, time_aggregation_interval)
         )
