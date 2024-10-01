@@ -214,6 +214,8 @@ all_events as (
     select * from {{ ref('int_zora_contract_invocation_events') }}
     union all
     select * from {{ ref('int_arbitrum_one_contract_invocation_events') }}
+    union all
+    select * from {{ ref('int_events_dependencies') }}
   )
   union all
   select
