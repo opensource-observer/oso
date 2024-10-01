@@ -8,6 +8,25 @@ from sqlmesh.core.macros import MacroEvaluator
 from .definition import time_suffix
 
 
+def relative_window_sample_date(
+    evaluator: MacroEvaluator,
+    base: exp.Expression,
+    window: exp.Expression,
+    unit: exp.Expression,
+    relative_index: int,
+):
+    """Gets the rolling window sample date of a different table. For now this is
+    quite explicit as opposed to using any real relationship between a related
+    table. We calculate a relative window's sample date using the formula
+
+    base - INTERVAL RELATIVE_INDEX UNIT
+
+    Inherently, this won't, for now, work on custom unit types.
+    """
+    if evaluator.runtime_stage in ["loading", "j"]:
+        pass
+
+
 def time_aggregation_bucket(
     evaluator: MacroEvaluator, time_exp: exp.Expression, interval: str
 ):
