@@ -87,13 +87,13 @@ artifact_ids as (
 changes as (
   select
     `time`,
-    event_type, -- 'ADD_DEPENDENCY' or 'REMOVE_DEPENDENCY'
-    event_source, -- 'DEPS_DEV'
-    to_artifact_id, -- unique ID (source, namespace, name)
-    to_artifact_name, -- name of the artifact (extracted from the source)
-    to_artifact_namespace, -- namespace of the artifact (extracted from the source)
-    to_artifact_type, -- 'NPM', 'GO', 'CARGO', 'MAVEN', 'NUGET', etc.
-    to_artifact_source_id, -- unique ID (source, type)
+    event_type,
+    event_source,
+    to_artifact_id,
+    to_artifact_name,
+    to_artifact_namespace,
+    to_artifact_type,
+    to_artifact_source_id,
     from_artifact_id,
     from_artifact_name,
     from_artifact_namespace,
