@@ -533,6 +533,42 @@ where i = 5650
 
 **Remember to replace 'YOUR_PROJECT_NAME' with the name of your project in the query.**
 
+### Ethereum Attestation Service
+
+<img src={OpenrankLogo} width="200" />
+
+<Button
+  size={"compact"}
+  color={"blue"}
+  target={"_blank"}
+  link={
+    "https://console.cloud.google.com/bigquery/analytics-hub/exchanges/projects/87806073973/locations/us/dataExchanges/open_source_observer_190181416ae/listings/eas_attestations_19201a46b82"
+  }
+  children={"Subscribe on BigQuery"}
+/>{" "}
+
+- [Reference documentation](https://models.opensource.observer/#!/source_list/ethereum_attestation_service_optimism)
+- [Updated weekly](https://dagster.opensource.observer/assets/ethereum_attestation_service_optimism)
+
+[Ethereum Attestation Service (EAS)](https://attest.org/) is an infrastructure public good for making attestations onchain or offchain about anything.
+
+This dataset mirrors the dataset offered by [EAS](https://attest.org/) for use in the OSO data pipeline, currenty showing all attestations on the Optimism network.
+
+For example, you can get a list of all * official * RetroPGF badgeholders:
+
+```sql
+select
+  recipient as badgeholder,
+  json_value(decoded_data_json, "$[0].value.value") as rpgfRound
+from `ethereum_attestation_service_optimism.attestations`
+where
+  revoked = False
+  and schema_id = '0xfdcfdad2dbe7489e0ce56b260348b7f14e8365a8a325aef9834818c00d46b31b'
+  and attester = '0x621477dBA416E12df7FF0d48E14c4D20DC85D7D9'
+```
+
+**Remember to replace 'YOUR_PROJECT_NAME' with the name of your project in the query.**
+
 ## Subscribe to a dataset
 
 ### 1. Data exchange listings
