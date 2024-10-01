@@ -34,6 +34,16 @@ def time_aggregation_bucket(
                 ),
             ],
         )
+    elif evaluator.engine_adapter.dialect == "trino":
+        rollup_to_interval = {
+            "daily": "day",
+            "weekly": "week",
+            "monthly": "month",
+        }
+        return exp.TimestampTrunc(
+            this=time_exp,
+            unit=exp.Literal(this=rollup_to_interval[interval], is_string=True),
+        )
     rollup_to_clickhouse_function = {
         "daily": "toStartOfDay",
         "weekly": "toStartOfWeek",

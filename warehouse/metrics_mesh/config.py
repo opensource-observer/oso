@@ -10,6 +10,7 @@ from sqlmesh.core.config import (
 from sqlmesh.core.config.connection import (
     ClickhouseConnectionConfig,
     GCPPostgresConnectionConfig,
+    TrinoConnectionConfig,
 )
 
 dotenv.load_dotenv()
@@ -33,6 +34,22 @@ config = Config(
             ),
             variables={
                 "oso_source": "sources",
+            },
+        ),
+        "trino": GatewayConfig(
+            connection=TrinoConnectionConfig(
+                host="127.0.0.1",
+                port=8080,
+                http_scheme="http",
+                user="sqlmesh",
+                catalog="metrics",
+                concurrent_tasks=8,
+            ),
+            state_connection=DuckDBConnectionConfig(
+                database=os.environ.get("SQLMESH_DUCKDB_STATE_PATH")
+            ),
+            variables={
+                "oso_source": "default",
             },
         ),
         "clickhouse": GatewayConfig(
