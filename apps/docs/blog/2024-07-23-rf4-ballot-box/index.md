@@ -2,7 +2,7 @@
 slug: rf4-ballot-box
 title: "Opening up the ballot box again (RF4 edition)"
 authors: [ccerv1]
-tags: [optimism, impact data science, retroactive public goods funding]
+tags: [optimism, data science, retroactive public goods funding]
 image: ./ballot-box-rf4.png
 ---
 

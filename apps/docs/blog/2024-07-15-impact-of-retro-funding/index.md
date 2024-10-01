@@ -2,7 +2,7 @@
 slug: impact-of-retro-funding
 title: "What’s been the impact of Retro Funding so far?"
 authors: [ccerv1]
-tags: [optimism, impact data science, retroactive public goods funding]
+tags: [optimism, data science, retroactive public goods funding]
 image: ./output_10_1.png
 ---
 

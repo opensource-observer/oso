@@ -2,7 +2,7 @@
 slug: fil-retropgf-1
 title: "Reflections on Filecoin's first round of RetroPGF"
 authors: [ccerv1]
-tags: [filecoin, protocol labs network, retroactive public goods funding]
+tags: [data science, filecoin, protocol labs, retroactive public goods funding]
 image: ./fil-banner.png
 ---
 
