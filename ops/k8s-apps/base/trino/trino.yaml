@@ -38,11 +38,14 @@ spec:
       create: true
       name: base-trino
     coordinator:
+      config:
+        query:
+          maxMemoryPerNode: 21G
       jvm:
         maxHeapSize: "7G"
       resources:
         requests:
-          requests: 2000m
+          cpu: 2000m
           memory: 7168Mi
       tolerations:
         - key: pool_type
@@ -53,12 +56,15 @@ spec:
         pool_type: trino-coordinator
       
     worker:
+      config:
+        query:
+          maxMemoryPerNode: 21G
       jvm:
-        maxHeapSize: "63G"
+        maxHeapSize: "72G"
       resources:
         requests:
-          requests: 2000m
-          memory: 64512Mi 
+          cpu: 2000m
+          memory: 102400Mi 
       tolerations:
         - key: pool_type
           operator: Equal
@@ -68,6 +74,9 @@ spec:
         pool_type: trino-worker
 
     server:
+      config:
+        query:
+          maxMemory: "100GB"
       workers: 2
       autoscaling:
         enabled: true
@@ -101,12 +110,13 @@ spec:
         iceberg.use-file-size-from-metadata=false
         fs.native-gcs.enabled=true
         gcs.project-id=opensource-observer
-        gcs.use-access-token=true
-      source:
+      #  gcs.use-access-token=true
+      source: |
         connector.name=hive
         hive.metastore.uri=thrift://10.145.192.27:9083
         fs.native-gcs.enabled=true
         gcs.project-id=opensource-observer
-        gcs.use-access-token=true
-      bigquery:
-        connector.name=bigquery
+      #  gcs.use-access-token=true
+      # bigquery: |
+      #   connector.name=bigquery
+      #   bigquery.project-id=opensource-observer
