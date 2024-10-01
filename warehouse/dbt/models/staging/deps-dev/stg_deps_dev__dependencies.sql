@@ -2,11 +2,14 @@
     materialized='incremental',
     partition_by={
       'field': 'SnapshotAt',
-      'data_type': 'timestap',
+      'data_type': 'timestamp',
       'granularity': 'day'
     },
 ) }}
 
+{% set is_production = target.name == 'production' %}
+
+{% if is_production %}
 with base as (
   select
     `SnapshotAt`,
@@ -15,12 +18,25 @@ with base as (
     `Version`,
     `Dependency`,
     `MinimumDepth`
-  from `bigquery-public-data.deps_dev_v1.PackageVersionsLatest`
+  from `bigquery-public-data.deps_dev_v1.Dependencies`
 )
-
 {% if is_incremental() %}
     select * from base
     where `SnapshotAt` > (select max(`SnapshotAt`) from {{ this }})
 {% else %}
   select * from base
+{% endif %}
+{% else %}
+  select
+    'NPM' as `System`,
+    '@example/oso' as `Name`,
+    '0.0.0' as `Version`,
+    1 as `MinimumDepth`,
+    current_timestamp() as `SnapshotAt`,
+    struct(
+      'NPM' as `System`,
+      '@example/oso-dep' as `Name`,
+      '0.0.0' as `Version`
+    ) as `Dependency`
+  limit 1
 {% endif %}
