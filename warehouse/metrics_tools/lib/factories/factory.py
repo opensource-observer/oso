@@ -258,6 +258,7 @@ def timeseries_metrics(
             name=f"metrics.timeseries_metrics_to_{entity_type}",
             kind="VIEW",
             dialect="clickhouse",
+            start=raw_options["start"],
             columns=METRICS_COLUMNS_BY_ENTITY[entity_type],
         )
 

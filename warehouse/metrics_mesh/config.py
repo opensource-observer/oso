@@ -43,7 +43,7 @@ config = Config(
                 http_scheme="http",
                 user="sqlmesh",
                 catalog="metrics",
-                concurrent_tasks=8,
+                concurrent_tasks=64,
             ),
             state_connection=DuckDBConnectionConfig(
                 database=os.environ.get("SQLMESH_DUCKDB_STATE_PATH")

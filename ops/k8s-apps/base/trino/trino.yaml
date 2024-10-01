@@ -77,7 +77,7 @@ spec:
       workers: 2
       autoscaling:
         enabled: true
-        maxReplicas: 5
+        maxReplicas: 12
         targetCPUUtilizationPercentage: 70
         behavior:
           scaleDown:
