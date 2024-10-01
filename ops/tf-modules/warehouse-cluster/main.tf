@@ -91,7 +91,7 @@ locals {
     # TRINO COORIDNATOR POOL
     {
       name               = "${var.cluster_name}-trino-coordinator-node-pool"
-      machine_type       = "e2-standard-4"
+      machine_type       = "e2-highmem-4"
       node_locations     = join(",", var.cluster_zones)
       min_count          = 0
       max_count          = 1
@@ -112,13 +112,13 @@ locals {
     # Trino worker pool
     {
       name               = "${var.cluster_name}-trino-worker-node-pool"
-      machine_type       = "n1-standard-32"
+      machine_type       = "n1-highmem-8"
       node_locations     = join(",", var.cluster_zones)
       min_count          = 0
-      max_count          = 6
+      max_count          = 10
       local_ssd_count    = 0
       spot               = false
-      disk_size_gb       = 400
+      disk_size_gb       = 200
       disk_type          = "pd-standard"
       image_type         = "COS_CONTAINERD"
       enable_gcfs        = false

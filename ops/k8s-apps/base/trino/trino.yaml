@@ -39,11 +39,11 @@ spec:
       name: base-trino
     coordinator:
       jvm:
-        maxHeapSize: "10G"
+        maxHeapSize: "25G"
       resources:
         requests:
-          cpu: 2000m
-          memory: 7168Mi
+          cpu: 3000m
+          memory: 30000Mi
       tolerations:
         - key: pool_type
           operator: Equal
@@ -55,13 +55,13 @@ spec:
     worker:
       config:
         query:
-          maxMemoryPerNode: 30GB
+          maxMemoryPerNode: 15GB
       jvm:
-        maxHeapSize: "72G"
+        maxHeapSize: "40G"
       resources:
         requests:
-          cpu: 2000m
-          memory: 102400Mi 
+          cpu: 3000m
+          memory: 50000Mi 
       tolerations:
         - key: pool_type
           operator: Equal
@@ -73,7 +73,7 @@ spec:
     server:
       config:
         query:
-          maxMemory: "100GB"
+          maxMemory: "500GB"
       workers: 2
       autoscaling:
         enabled: true
