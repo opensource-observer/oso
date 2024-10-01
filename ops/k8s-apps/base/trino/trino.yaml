@@ -1,0 +1,112 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: base-trino
+  labels:
+    toolkit.fluxcd.io/tenant: apps
+    ops.opensource.observer/environment: base
+    kube-secrets-init.doit-intl.com/enable-mutation: "true"
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: trino
+  namespace: base-trino
+spec:
+  interval: 5m
+  url: https://trinodb.github.io/charts
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: trino
+  namespace: base-trino
+spec:
+  chart:
+    spec:
+      chart: trino
+      version: "0.30.0"
+      sourceRef:
+        kind: HelmRepository
+        name: trino
+  interval: 50m
+  install:
+    remediation:
+      retries: 3
+  values:
+    serviceAccount:
+      create: true
+      name: base-trino
+    coordinator:
+      jvm:
+        maxHeapSize: "7G"
+      resources:
+        requests:
+          requests: 2000m
+          memory: 7168Mi
+      tolerations:
+        - key: pool_type
+          operator: Equal
+          value: trino-coordinator
+          effect: NoSchedule
+      nodeSelector:
+        pool_type: trino-coordinator
+      
+    worker:
+      jvm:
+        maxHeapSize: "63G"
+      resources:
+        requests:
+          requests: 2000m
+          memory: 64512Mi 
+      tolerations:
+        - key: pool_type
+          operator: Equal
+          value: trino-worker
+          effect: NoSchedule
+      nodeSelector:
+        pool_type: trino-worker
+
+    server:
+      workers: 2
+      autoscaling:
+        enabled: true
+        maxReplicas: 5
+        targetCPUUtilizationPercentage: 70
+        behavior:
+          scaleDown:
+            stabilizationWindowSeconds: 300
+            policies:
+            - type: Percent
+              value: 100
+              periodSeconds: 15
+          scaleUp:
+            stabilizationWindowSeconds: 0
+            policies:
+            - type: Percent
+              value: 100
+              periodSeconds: 15
+            - type: Pods
+              value: 4
+              periodSeconds: 15
+            selectPolicy: Max
+    catalogs:
+      metrics: |
+        connector.name=iceberg
+        iceberg.catalog.type=hive_metastore
+        hive.metastore.uri=thrift://10.145.192.27:9083
+        hive.metastore-cache-ttl=0s
+        hive.metastore-refresh-interval=5s
+        hive.metastore-timeout=10s
+        iceberg.use-file-size-from-metadata=false
+        fs.native-gcs.enabled=true
+        gcs.project-id=opensource-observer
+        gcs.use-access-token=true
+      source:
+        connector.name=hive
+        hive.metastore.uri=thrift://10.145.192.27:9083
+        fs.native-gcs.enabled=true
+        gcs.project-id=opensource-observer
+        gcs.use-access-token=true
+      bigquery:
+        connector.name=bigquery
