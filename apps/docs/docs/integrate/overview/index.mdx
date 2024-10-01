@@ -561,7 +561,7 @@ For example, you can get a list of all * official * RetroPGF badgeholders:
 select
   recipient as badgeholder,
   json_value(decoded_data_json, "$[0].value.value") as rpgfRound
-from `ethereum_attestation_service_optimism.attestations`
+from YOUR_PROJECT_NAME.ethereum_attestation_service_optimism.attestations
 where
   revoked = False
   and schema_id = '0xfdcfdad2dbe7489e0ce56b260348b7f14e8365a8a325aef9834818c00d46b31b'
