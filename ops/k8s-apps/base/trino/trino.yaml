@@ -107,6 +107,7 @@ spec:
         iceberg.use-file-size-from-metadata=false
         fs.native-gcs.enabled=true
         gcs.project-id=opensource-observer
+        iceberg.max-partitions-per-writer=1000
       #  gcs.use-access-token=true
       source: |
         connector.name=hive
