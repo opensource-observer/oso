@@ -43,7 +43,7 @@ spec:
       resources:
         requests:
           cpu: 3000m
-          memory: 30000Mi
+          memory: 25600Mi
       tolerations:
         - key: pool_type
           operator: Equal
@@ -61,7 +61,7 @@ spec:
       resources:
         requests:
           cpu: 3000m
-          memory: 50000Mi 
+          memory: 40960Mi 
       tolerations:
         - key: pool_type
           operator: Equal
