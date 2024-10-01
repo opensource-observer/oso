@@ -64,9 +64,46 @@ create table "metrics"."default"."timeseries_events_by_artifact_v0"(
 with (partitioning = array['day(time)', 'event_type'])
 ```
 
+```sql
+create table "metrics"."default"."projects_by_collection_v1"(
+	project_id VARCHAR,
+	project_source VARCHAR,
+	project_namespace VARCHAR,
+	project_name VARCHAR,
+	collection_id VARCHAR,
+	collection_source VARCHAR,
+	collection_namespace VARCHAR,
+	collection_name VARCHAR
+)
+```
+
+```sql
+create table "metrics"."default"."artifacts_by_project_v1"(
+	artifact_id VARCHAR,
+	artifact_source_id VARCHAR,
+	artifact_source VARCHAR,
+	artifact_namespace VARCHAR,
+	artifact_name VARCHAR,
+	project_id VARCHAR,
+	project_source VARCHAR,
+	project_namespace VARCHAR,
+	project_name VARCHAR
+)
+```
+
 Write the data from the parquet files into iceberg
 
 ```sql
-INSERT OVERWRITE TABLE "metrics"."default"."timeseries_events_by_artifact_v0"
-SELECT * FROM "metrics"."default"."timeseries_events_by_artifact_v0_source";
+INSERT INTO "metrics"."default"."timeseries_events_by_artifact_v0"
+SELECT * FROM "source"."default"."timeseries_events_by_artifact_v0_source";
+```
+
+```sql
+INSERT INTO "metrics"."default"."projects_by_collection_v1"
+SELECT * FROM "source"."default"."projects_by_collection_v1_source";
+```
+
+```sql
+INSERT INTO "metrics"."default"."artifacts_by_project_v1"
+SELECT * FROM "source"."default"."artifacts_by_project_v1_source";
 ```
