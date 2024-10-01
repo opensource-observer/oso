@@ -114,6 +114,16 @@ def generate_models_from_query(
             metrics_start,
         ]
 
+        kind_common = {"batch_size": 1, "batch_concurrency": 1}
+
+        # Due to how the schedulers work for sqlmesh we actually can't batch if
+        # we're using a weekly cron for a time aggregation. In order to have
+        # this work we just adjust the start/end time for the
+        # metrics_start/metrics_end and also give a large enough batch time to
+        # fit a few weeks. This ensures there's on missing data
+        if cron == "@weekly":
+            kind_common = {"batch_size": 21, "lookback": 7}
+
         if ref["entity_type"] == "artifact":
             GeneratedModel.create(
                 func=generated_entity,
@@ -124,8 +134,7 @@ def generate_models_from_query(
                 kind={
                     "name": ModelKindName.INCREMENTAL_BY_TIME_RANGE,
                     "time_column": "metrics_sample_date",
-                    "batch_size": 1,
-                    "batch_concurrency": 1,
+                    **kind_common,
                 },
                 dialect="clickhouse",
                 columns=columns,
@@ -150,7 +159,7 @@ def generate_models_from_query(
                 kind={
                     "name": ModelKindName.INCREMENTAL_BY_TIME_RANGE,
                     "time_column": "metrics_sample_date",
-                    "batch_size": 1,
+                    **kind_common,
                 },
                 dialect="clickhouse",
                 columns=columns,
@@ -174,7 +183,7 @@ def generate_models_from_query(
                 kind={
                     "name": ModelKindName.INCREMENTAL_BY_TIME_RANGE,
                     "time_column": "metrics_sample_date",
-                    "batch_size": 1,
+                    **kind_common,
                 },
                 dialect="clickhouse",
                 columns=columns,

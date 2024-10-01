@@ -94,9 +94,16 @@ def metrics_start(evaluator: MacroEvaluator, _data_type: t.Optional[str] = None)
           by taking the end_ds provided by sqlmesh and calculating a
           trailing interval back {window} intervals of unit {unit}.
     """
-    if evaluator.locals.get("time_aggregation"):
+    time_aggregation_interval = evaluator.locals.get("time_aggregation")
+    if time_aggregation_interval:
+        start_date = t.cast(
+            exp.Expression,
+            evaluator.transform(
+                parse_one("STR_TO_DATE(@start_ds, '%Y-%m-%d')", dialect="clickhouse")
+            ),
+        )
         return evaluator.transform(
-            parse_one("STR_TO_DATE(@start_ds, '%Y-%m-%d')", dialect="clickhouse")
+            time_aggregation_bucket(evaluator, start_date, time_aggregation_interval)
         )
     else:
         return evaluator.transform(
@@ -109,6 +116,21 @@ def metrics_start(evaluator: MacroEvaluator, _data_type: t.Optional[str] = None)
 
 def metrics_end(evaluator: MacroEvaluator, _data_type: t.Optional[str] = None):
     """This has different semantic meanings depending on the mode of the metric query"""
+
+    time_aggregation_interval = evaluator.locals.get("time_aggregation")
+    if time_aggregation_interval:
+        end_date = t.cast(
+            exp.Expression,
+            evaluator.transform(
+                parse_one(
+                    f"STR_TO_DATE(@end_ds, '%Y-%m-%d') + INTERVAL 1 {time_aggregation_interval}",
+                    dialect="clickhouse",
+                )
+            ),
+        )
+        return evaluator.transform(
+            time_aggregation_bucket(evaluator, end_date, time_aggregation_interval)
+        )
     return evaluator.transform(
         parse_one("STR_TO_DATE(@end_ds, '%Y-%m-%d')", dialect="clickhouse")
     )
