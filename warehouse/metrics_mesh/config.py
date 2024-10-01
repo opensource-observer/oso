@@ -45,8 +45,13 @@ config = Config(
                 catalog="metrics",
                 concurrent_tasks=64,
             ),
-            state_connection=DuckDBConnectionConfig(
-                database=os.environ.get("SQLMESH_DUCKDB_STATE_PATH")
+            state_connection=GCPPostgresConnectionConfig(
+                instance_connection_string=os.environ.get(
+                    "SQLMESH_POSTGRES_INSTANCE_CONNECTION_STRING", ""
+                ),
+                user=os.environ.get("SQLMESH_POSTGRES_USER", ""),
+                password=os.environ.get("SQLMESH_POSTGRES_PASSWORD", "placeholder"),
+                db=os.environ.get("SQLMESH_POSTGRES_DB", ""),
             ),
             variables={
                 "oso_source": "default",
