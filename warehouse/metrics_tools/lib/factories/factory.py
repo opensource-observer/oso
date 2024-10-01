@@ -122,7 +122,7 @@ def generate_models_from_query(
         # metrics_start/metrics_end and also give a large enough batch time to
         # fit a few weeks. This ensures there's on missing data
         if time_aggregation == "weekly":
-            kind_common = {"batch_size": 21, "lookback": 7}
+            kind_common = {"batch_size": 21, "lookback": 7, "batch_concurrency": 1}
         if time_aggregation == "monthly":
             kind_common = {"batch_size": 6, "batch_concurrency": 1}
         if time_aggregation == "daily":
