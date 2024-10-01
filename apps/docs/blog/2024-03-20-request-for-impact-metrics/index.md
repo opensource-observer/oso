@@ -2,7 +2,7 @@
 slug: request-for-impact-metrics
 title: "Request for Impact Metrics"
 authors: [ccerv1]
-tags: [data collective, impact data science, kariba]
+tags: [community, kariba]
 image: ./cycle.jpeg
 ---
 

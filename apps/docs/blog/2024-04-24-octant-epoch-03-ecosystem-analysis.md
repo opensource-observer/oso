@@ -2,7 +2,7 @@
 slug: octant-epoch-03-ecosystem-analysis
 title: Trends and progress among OSS projects in Octant's latest epoch
 authors: [ccerv1]
-tags: [octant, ecosystem reports, open source]
+tags: [octant, data science, ecosystem reports, open source]
 image: https://site-assets.plasmic.app/75a76e63b052ad2cf61265abb50d3f6e.png
 ---
 

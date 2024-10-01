@@ -2,7 +2,7 @@
 slug: impact-metrics-rf4
 title: "Onchain impact metrics for Optimism Retro Funding 4"
 authors: [ccerv1]
-tags: [optimism, impact data science, retroactive public goods funding]
+tags: [optimism, data science, retroactive public goods funding]
 image: ./rf4-banner.png
 ---
 

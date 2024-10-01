@@ -2,7 +2,7 @@
 slug: oso-data-portal
 title: "OSO Data Portal: free live datasets open to the public"
 authors: [ryscheng]
-tags: [featured, announcements, datasets]
+tags: [featured, development, datasets]
 image: ./landing-page.png
 ---
 

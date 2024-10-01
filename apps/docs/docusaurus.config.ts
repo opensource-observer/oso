@@ -76,9 +76,59 @@ const config: Config = {
           label: "Docs",
         },
         {
-          to: "/blog/tags/featured",
+          type: "dropdown",
           label: "Blog",
           position: "left",
+          items: [
+            {
+              label: "Featured",
+              href: "/blog/tags/featured",
+            },
+            {
+              label: "Perspective",
+              href: "/blog/tags/perspective",
+            },
+            {
+              label: "Community",
+              href: "/blog/tags/community",
+            },
+            {
+              label: "Data Science",
+              href: "/blog/tags/data-science",
+            },
+            {
+              label: "Development",
+              href: "/blog/tags/development",
+            },
+            {
+              label: "Research",
+              href: "/blog/tags/research",
+            },
+            {
+              type: "html",
+              value: "<b>Ecosystem Reports</b>",
+            },
+            {
+              label: "Arbitrum",
+              href: "/blog/tags/arbitrum",
+            },
+            {
+              label: "Filecoin",
+              href: "/blog/tags/filecoin",
+            },
+            {
+              label: "Gitcoin",
+              href: "/blog/tags/gitcoin",
+            },
+            {
+              label: "Octant",
+              href: "/blog/tags/octant",
+            },
+            {
+              label: "Optimism",
+              href: "/blog/tags/optimism",
+            },
+          ],
         },
         {
           href: "https://www.opensource.observer",

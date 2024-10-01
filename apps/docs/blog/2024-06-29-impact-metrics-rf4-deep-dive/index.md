@@ -2,7 +2,7 @@
 slug: impact-metrics-rf4-deep-dive
 title: "A deeper dive on the impact metrics for Optimism Retro Funding 4"
 authors: [ccerv1]
-tags: [optimism, impact data science, retroactive public goods funding]
+tags: [optimism, data science, retroactive public goods funding]
 image: ./events-model.png
 ---
 
