@@ -121,8 +121,12 @@ def generate_models_from_query(
         # this work we just adjust the start/end time for the
         # metrics_start/metrics_end and also give a large enough batch time to
         # fit a few weeks. This ensures there's on missing data
-        if cron == "@weekly":
+        if time_aggregation == "weekly":
             kind_common = {"batch_size": 21, "lookback": 7}
+        if time_aggregation == "monthly":
+            kind_common = {"batch_size": 6, "batch_concurrency": 1}
+        if time_aggregation == "daily":
+            kind_common = {"batch_size": 180, "batch_concurrency": 1}
 
         if ref["entity_type"] == "artifact":
             GeneratedModel.create(

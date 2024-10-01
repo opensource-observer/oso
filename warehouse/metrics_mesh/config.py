@@ -38,12 +38,14 @@ config = Config(
         ),
         "trino": GatewayConfig(
             connection=TrinoConnectionConfig(
-                host="127.0.0.1",
-                port=8080,
+                host=os.environ.get("SQLMESH_TRINO_HOST", "localhost"),
+                port=int(os.environ.get("SQLMESH_TRINO_PORT", "8080")),
                 http_scheme="http",
-                user="sqlmesh",
+                user=os.environ.get("SQLMESH_TRINO_USER", "sqlmesh"),
                 catalog="metrics",
-                concurrent_tasks=64,
+                concurrent_tasks=int(
+                    os.environ.get("SQLMESH_TRINO_CONCURRENT_TASKS", "64")
+                ),
             ),
             state_connection=GCPPostgresConnectionConfig(
                 instance_connection_string=os.environ.get(
