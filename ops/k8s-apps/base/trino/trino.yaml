@@ -42,7 +42,7 @@ spec:
         maxHeapSize: "25G"
       resources:
         requests:
-          cpu: 3000m
+          cpu: 2000m
           memory: 25600Mi
       tolerations:
         - key: pool_type
@@ -60,7 +60,7 @@ spec:
         maxHeapSize: "40G"
       resources:
         requests:
-          cpu: 3000m
+          cpu: 2000m
           memory: 40960Mi 
       tolerations:
         - key: pool_type
