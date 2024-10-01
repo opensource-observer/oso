@@ -42,7 +42,7 @@ spec:
         query:
           maxMemoryPerNode: 21G
       jvm:
-        maxHeapSize: "7G"
+        maxHeapSize: "10G"
       resources:
         requests:
           cpu: 2000m
