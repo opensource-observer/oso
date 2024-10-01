@@ -40,7 +40,7 @@ spec:
     coordinator:
       config:
         query:
-          maxMemoryPerNode: 21G
+          maxMemoryPerNode: 30GB
       jvm:
         maxHeapSize: "10G"
       resources:
@@ -58,7 +58,7 @@ spec:
     worker:
       config:
         query:
-          maxMemoryPerNode: 21G
+          maxMemoryPerNode: 30GB
       jvm:
         maxHeapSize: "72G"
       resources:
