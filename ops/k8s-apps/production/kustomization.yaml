@@ -4,4 +4,4 @@ resources:
   - ./dagster
   - ./cloudsql-proxy
   - ./redis
-  #- ./trino
+  - ./trino
