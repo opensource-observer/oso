@@ -38,9 +38,6 @@ spec:
       create: true
       name: base-trino
     coordinator:
-      config:
-        query:
-          maxMemoryPerNode: 30GB
       jvm:
         maxHeapSize: "10G"
       resources:
