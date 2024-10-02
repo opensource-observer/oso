@@ -88,6 +88,49 @@ locals {
       preemptible        = true
       initial_node_count = 0
     },
+    # TRINO COORIDNATOR POOL
+    {
+      name               = "${var.cluster_name}-trino-coordinator-node-pool"
+      machine_type       = "e2-highmem-4"
+      node_locations     = join(",", var.cluster_zones)
+      min_count          = 0
+      max_count          = 1
+      local_ssd_count    = 0
+      spot               = false
+      disk_size_gb       = 200
+      disk_type          = "pd-standard"
+      image_type         = "COS_CONTAINERD"
+      enable_gcfs        = false
+      enable_gvnic       = false
+      logging_variant    = "DEFAULT"
+      auto_repair        = true
+      auto_upgrade       = true
+      service_account    = local.node_service_account_email
+      preemptible        = false
+      initial_node_count = 0
+    },
+    # Trino worker pool
+    {
+      name               = "${var.cluster_name}-trino-worker-node-pool"
+      machine_type       = "n1-highmem-8"
+      node_locations     = join(",", var.cluster_zones)
+      min_count          = 0
+      max_count          = 10
+      local_ssd_count    = 0
+      spot               = false
+      disk_size_gb       = 200
+      disk_type          = "pd-standard"
+      image_type         = "COS_CONTAINERD"
+      enable_gcfs        = false
+      enable_gvnic       = false
+      logging_variant    = "DEFAULT"
+      auto_repair        = true
+      auto_upgrade       = true
+      service_account    = local.node_service_account_email
+      preemptible        = false
+      initial_node_count = 0
+    },
+
   ], var.extra_node_pools)
 
   node_pool_labels = merge({
@@ -106,6 +149,14 @@ locals {
     "${var.cluster_name}-preemptible-node-pool" = {
       default_node_pool = false
       pool_type         = "preemptible"
+    }
+    "${var.cluster_name}-trino-worker-node-pool" = {
+      default_node_pool = false
+      pool_type         = "trino-worker"
+    }
+    "${var.cluster_name}-trino-coordinator-node-pool" = {
+      default_node_pool = false
+      pool_type         = "trino-coordinator"
     }
   }, var.extra_node_labels)
 
@@ -137,6 +188,20 @@ locals {
         effect = "NO_SCHEDULE"
       },
     ]
+    "${var.cluster_name}-trino-worker-node-pool" = [
+      {
+        key    = "pool_type"
+        value  = "trino-worker"
+        effect = "NO_SCHEDULE"
+      },
+    ]
+    "${var.cluster_name}-trino-coordinator-node-pool" = [
+      {
+        key    = "pool_type"
+        value  = "trino-coordinator"
+        effect = "NO_SCHEDULE"
+      },
+    ]
   }, var.extra_node_taints)
 
   node_pool_tags = merge({
@@ -151,6 +216,12 @@ locals {
     ]
     "${var.cluster_name}-preemptible-node-pool" = [
       "preemptible",
+    ]
+    "${var.cluster_name}-trino-worker-pool" = [
+      "trino-worker",
+    ]
+    "${var.cluster_name}-trino-coordinator-pool" = [
+      "trino-coordinator",
     ]
   }, var.extra_node_tags)
 
@@ -177,9 +248,10 @@ module "vpc" {
 
   subnets = [
     {
-      subnet_name   = local.main_subnet_name
-      subnet_ip     = var.main_subnet_cidr
-      subnet_region = var.cluster_region
+      subnet_name           = local.main_subnet_name
+      subnet_ip             = var.main_subnet_cidr
+      subnet_region         = var.cluster_region
+      subnet_private_access = true
     },
   ]
 
