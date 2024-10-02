@@ -57,11 +57,11 @@ spec:
         query:
           maxMemoryPerNode: 15GB
       jvm:
-        maxHeapSize: "40G"
+        maxHeapSize: "70G"
       resources:
         requests:
-          cpu: 2000m
-          memory: 40960Mi 
+          cpu: 4000m
+          memory: 71000Mi 
       tolerations:
         - key: pool_type
           operator: Equal
@@ -77,7 +77,7 @@ spec:
       workers: 2
       autoscaling:
         enabled: true
-        maxReplicas: 100
+        maxReplicas: 20
         targetCPUUtilizationPercentage: 70
         behavior:
           scaleDown:
