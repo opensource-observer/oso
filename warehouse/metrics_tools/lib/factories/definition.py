@@ -240,6 +240,10 @@ def exp_literal_to_py_literal(glot_literal: exp.Expression) -> t.Any:
     if not isinstance(glot_literal, exp.Literal):
         return glot_literal
     return glot_literal.this
+
+
+class PeerRefRelativeWindowHandler(CustomFuncHandler):
+    pass
     
 
 class PeerRefHandler(CustomFuncHandler[PeerMetricDependencyRef]):
@@ -435,6 +439,8 @@ class MetricQuery:
         unit: t.Optional[str] = None,
         time_aggregation: t.Optional[str] = None,
     ):
+        """This takes the actual metrics query and tranforms it for a specific
+        window/aggregation setting."""
         context = self.expression_context()
 
         extra_vars: t.Dict[str, ExtraVarType] = {
@@ -615,6 +621,8 @@ class MetricQuery:
             time_aggregation,
         )
 
+        # We use qualify to ensure that references are properly aliased. This
+        # seems to make transforms more reliable/testable/predictable.
         metrics_query = qualify(metrics_query)
 
         metrics_query = self.transform_aggregating_selects(
@@ -653,6 +661,8 @@ class MetricQuery:
             time_aggregation,
         )
 
+        # We use qualify to ensure that references are properly aliased. This
+        # seems to make transforms more reliable/testable/predictable.
         metrics_query = qualify(metrics_query)
 
         metrics_query = self.transform_aggregating_selects(
