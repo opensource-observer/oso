@@ -118,7 +118,8 @@ def generate_models_from_query(
             metrics_start,
         ]
 
-        kind_common = {"batch_size": 1, "batch_concurrency": 1}
+        kind_common = {"batch_size": 1}
+        partitioned_by = ("day(metrics_sample_date)",)
 
         # Due to how the schedulers work for sqlmesh we actually can't batch if
         # we're using a weekly cron for a time aggregation. In order to have
@@ -126,11 +127,12 @@ def generate_models_from_query(
         # metrics_start/metrics_end and also give a large enough batch time to
         # fit a few weeks. This ensures there's on missing data
         if time_aggregation == "weekly":
-            kind_common = {"batch_size": 21, "lookback": 7, "batch_concurrency": 1}
+            kind_common = {"batch_size": 21, "lookback": 7}
         if time_aggregation == "monthly":
-            kind_common = {"batch_size": 6, "batch_concurrency": 1}
+            kind_common = {"batch_size": 6}
+            partitioned_by = ("month(metrics_sample_date)",)
         if time_aggregation == "daily":
-            kind_common = {"batch_size": 180, "batch_concurrency": 1}
+            kind_common = {"batch_size": 180}
 
         if ref["entity_type"] == "artifact":
             GeneratedModel.create(
@@ -155,6 +157,7 @@ def generate_models_from_query(
                 cron=cron,
                 start=start,
                 additional_macros=additional_macros,
+                partitioned_by=partitioned_by,
             )
 
         if ref["entity_type"] == "project":
@@ -180,6 +183,7 @@ def generate_models_from_query(
                 cron=cron,
                 start=start,
                 additional_macros=additional_macros,
+                partitioned_by=partitioned_by,
             )
         if ref["entity_type"] == "collection":
             GeneratedModel.create(
@@ -204,6 +208,7 @@ def generate_models_from_query(
                 cron=cron,
                 start=start,
                 additional_macros=additional_macros,
+                partitioned_by=partitioned_by,
             )
 
     return all_tables
