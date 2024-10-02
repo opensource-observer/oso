@@ -621,6 +621,8 @@ class MetricQuery:
             time_aggregation,
         )
 
+        # We use qualify to ensure that references are properly aliased. This
+        # seems to make transforms more reliable/testable/predictable.
         metrics_query = qualify(metrics_query)
 
         metrics_query = self.transform_aggregating_selects(
@@ -659,6 +661,8 @@ class MetricQuery:
             time_aggregation,
         )
 
+        # We use qualify to ensure that references are properly aliased. This
+        # seems to make transforms more reliable/testable/predictable.
         metrics_query = qualify(metrics_query)
 
         metrics_query = self.transform_aggregating_selects(

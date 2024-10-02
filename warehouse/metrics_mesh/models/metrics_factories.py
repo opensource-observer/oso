@@ -114,6 +114,14 @@ timeseries_metrics(
             ref="gas_fees.sql",
             time_aggregations=["daily", "weekly", "monthly"],
         ),
+        "change_in_developers": MetricQueryDef(
+            ref="change_in_developers.sql",
+            rolling=RollingConfig(
+                windows=[30, 60, 90],
+                unit="day",
+                cron="@daily",
+            ),
+        ),
     },
     default_dialect="clickhouse",
 )

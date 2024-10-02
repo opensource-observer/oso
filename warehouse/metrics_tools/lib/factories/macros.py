@@ -12,19 +12,56 @@ def relative_window_sample_date(
     evaluator: MacroEvaluator,
     base: exp.Expression,
     window: exp.Expression,
-    unit: exp.Expression,
-    relative_index: int,
+    unit: str | exp.Expression,
+    relative_index: exp.Expression,
 ):
     """Gets the rolling window sample date of a different table. For now this is
     quite explicit as opposed to using any real relationship between a related
     table. We calculate a relative window's sample date using the formula
 
-    base - INTERVAL RELATIVE_INDEX UNIT
+    base + INTERVAL RELATIVE_INDEX UNIT
 
-    Inherently, this won't, for now, work on custom unit types.
+    Inherently, this won't, for now, work on custom unit types as the interval
+    must be a valid thing to subtract from. Also note, the base should generally
+    be the `@metrics_end` date.
     """
-    if evaluator.runtime_stage in ["loading", "j"]:
-        pass
+    if evaluator.runtime_stage in ["loading", "creating"]:
+        return parse_one("STR_TO_DATE('1970-01-01', '%Y-%m-%d')")
+    if relative_index == 0:
+        return base
+
+    if isinstance(unit, exp.Literal):
+        unit = t.cast(str, unit.this)
+    elif isinstance(unit, exp.Expression):
+        transformed = evaluator.transform(unit)
+        if not transformed:
+            raise Exception("invalid window unit")
+        if isinstance(transformed, list):
+            unit = transformed[0].sql()
+        else:
+            if isinstance(transformed, exp.Literal):
+                unit = t.cast(str, transformed.this)
+            else:
+                unit = transformed.sql()
+
+    rel_index = 0
+    if isinstance(relative_index, exp.Literal):
+        rel_index = int(t.cast(int, relative_index.this))
+    elif isinstance(relative_index, exp.Expression):
+        rel_index = int(relative_index.sql())
+
+    interval_unit = exp.Var(this=unit)
+    interval_delta = exp.Interval(
+        this=exp.Mul(
+            this=exp.Literal(this=str(abs(rel_index)), is_string=False),
+            expression=window,
+        ),
+        unit=interval_unit,
+    )
+    if relative_index > 0:
+        return exp.Add(this=base, expression=interval_delta)
+    else:
+        return exp.Sub(this=base, expression=interval_delta)
 
 
 def time_aggregation_bucket(
@@ -148,11 +185,16 @@ def metrics_end(evaluator: MacroEvaluator, _data_type: t.Optional[str] = None):
 
     time_aggregation_interval = evaluator.locals.get("time_aggregation")
     if time_aggregation_interval:
+        to_interval = {
+            "daily": "day",
+            "weekly": "week",
+            "monthly": "month",
+        }
         end_date = t.cast(
             exp.Expression,
             evaluator.transform(
                 parse_one(
-                    f"STR_TO_DATE(@end_ds, '%Y-%m-%d') + INTERVAL 1 {time_aggregation_interval}",
+                    f"STR_TO_DATE(@end_ds, '%Y-%m-%d') + INTERVAL 1 {to_interval[time_aggregation_interval]}",
                     dialect="clickhouse",
                 )
             ),
@@ -182,6 +224,17 @@ def metrics_entity_type_col(
             names.append(table_alias)
         elif isinstance(table_alias, exp.Literal):
             names.append(table_alias.this)
+        else:
+            names.append(table_alias.sql())
     column_name = format_str % evaluator.locals.get("entity_type", "artifact")
     names.append(column_name)
     return sqlglot.to_column(f"{'.'.join(names)}")
+
+
+def metrics_alias_by_entity_type(
+    evaluator: MacroEvaluator, to_alias: exp.Expression, format_str: str
+):
+    if isinstance(format_str, exp.Literal):
+        format_str = format_str.this
+    alias_name = format_str % evaluator.locals.get("entity_type", "artifact")
+    return exp.alias_(to_alias, alias_name)
