@@ -121,7 +121,6 @@ spec:
         fs.native-gcs.enabled=true
         fs.cache.enabled=true
         fs.cache.max-sizes=300GB
-        fs.cache.page-size=150MB
         fs.cache.directories=/metrics-cache
         gcs.project-id=opensource-observer
         iceberg.max-partitions-per-writer=1000
