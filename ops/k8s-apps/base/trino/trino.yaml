@@ -87,7 +87,7 @@ spec:
       config:
         query:
           maxMemory: "500GB"
-      workers: 2
+      workers: 1
       autoscaling:
         enabled: true
         maxReplicas: 20

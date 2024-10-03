@@ -91,7 +91,7 @@ locals {
     # TRINO COORIDNATOR POOL
     {
       name                              = "${var.cluster_name}-trino-coordinator-node-pool"
-      machine_type                      = "e2-highmem-4"
+      machine_type                      = "n1-highmem-4"
       node_locations                    = join(",", var.cluster_zones)
       min_count                         = 0
       max_count                         = 1
