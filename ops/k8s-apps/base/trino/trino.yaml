@@ -45,11 +45,11 @@ spec:
         - name: cache
           mountPath: /metrics-cache
       jvm:
-        maxHeapSize: "25G"
+        maxHeapSize: "17G"
       resources:
         requests:
           cpu: 2000m
-          memory: 25600Mi
+          memory: 17000Mi
       tolerations:
         - key: pool_type
           operator: Equal
