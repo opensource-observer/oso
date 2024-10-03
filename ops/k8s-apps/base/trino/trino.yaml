@@ -38,6 +38,12 @@ spec:
       create: true
       name: base-trino
     coordinator:
+      additionalVolumes:
+        - name: cache
+          emptyDir: {}
+      additionalVolumeMounts:
+        - name: cache
+          mountPath: /metrics-cache
       jvm:
         maxHeapSize: "25G"
       resources:
@@ -53,6 +59,13 @@ spec:
         pool_type: trino-coordinator
       
     worker:
+      additionalVolumes:
+        - name: cache
+          emptyDir: {}
+      additionalVolumeMounts:
+        - name: cache
+          mountPath: /metrics-cache
+
       config:
         query:
           maxMemoryPerNode: 15GB
@@ -106,6 +119,10 @@ spec:
         hive.metastore-timeout=10s
         iceberg.use-file-size-from-metadata=false
         fs.native-gcs.enabled=true
+        fs.cache.enabled=true
+        fs.cache.max-sizes=300GB
+        fs.cache.page-size=150MB
+        fs.cache.directories=/metrics-cache
         gcs.project-id=opensource-observer
         iceberg.max-partitions-per-writer=1000
       #  gcs.use-access-token=true
