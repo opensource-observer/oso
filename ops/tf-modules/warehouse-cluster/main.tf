@@ -90,45 +90,47 @@ locals {
     },
     # TRINO COORIDNATOR POOL
     {
-      name               = "${var.cluster_name}-trino-coordinator-node-pool"
-      machine_type       = "e2-highmem-4"
-      node_locations     = join(",", var.cluster_zones)
-      min_count          = 0
-      max_count          = 1
-      local_ssd_count    = 0
-      spot               = false
-      disk_size_gb       = 200
-      disk_type          = "pd-standard"
-      image_type         = "COS_CONTAINERD"
-      enable_gcfs        = false
-      enable_gvnic       = false
-      logging_variant    = "DEFAULT"
-      auto_repair        = true
-      auto_upgrade       = true
-      service_account    = local.node_service_account_email
-      preemptible        = false
-      initial_node_count = 0
+      name                              = "${var.cluster_name}-trino-coordinator-node-pool"
+      machine_type                      = "n1-highmem-4"
+      node_locations                    = join(",", var.cluster_zones)
+      min_count                         = 0
+      max_count                         = 1
+      local_ssd_count                   = 0
+      local_ssd_ephemeral_storage_count = 1
+      spot                              = false
+      disk_size_gb                      = 200
+      disk_type                         = "pd-standard"
+      image_type                        = "COS_CONTAINERD"
+      enable_gcfs                       = false
+      enable_gvnic                      = false
+      logging_variant                   = "DEFAULT"
+      auto_repair                       = true
+      auto_upgrade                      = true
+      service_account                   = local.node_service_account_email
+      preemptible                       = false
+      initial_node_count                = 0
     },
     # Trino worker pool
     {
-      name               = "${var.cluster_name}-trino-worker-node-pool"
-      machine_type       = "n1-highmem-16"
-      node_locations     = join(",", var.cluster_zones)
-      min_count          = 0
-      max_count          = 10
-      local_ssd_count    = 0
-      spot               = false
-      disk_size_gb       = 200
-      disk_type          = "pd-standard"
-      image_type         = "COS_CONTAINERD"
-      enable_gcfs        = false
-      enable_gvnic       = false
-      logging_variant    = "DEFAULT"
-      auto_repair        = true
-      auto_upgrade       = true
-      service_account    = local.node_service_account_email
-      preemptible        = false
-      initial_node_count = 0
+      name                              = "${var.cluster_name}-trino-worker-node-pool"
+      machine_type                      = "n1-highmem-16"
+      node_locations                    = join(",", var.cluster_zones)
+      min_count                         = 0
+      max_count                         = 10
+      local_ssd_count                   = 0
+      local_ssd_ephemeral_storage_count = 1
+      spot                              = false
+      disk_size_gb                      = 200
+      disk_type                         = "pd-standard"
+      image_type                        = "COS_CONTAINERD"
+      enable_gcfs                       = false
+      enable_gvnic                      = false
+      logging_variant                   = "DEFAULT"
+      auto_repair                       = true
+      auto_upgrade                      = true
+      service_account                   = local.node_service_account_email
+      preemptible                       = false
+      initial_node_count                = 0
     },
 
   ], var.extra_node_pools)
@@ -282,6 +284,7 @@ module "vpc" {
 
 module "gke" {
   source                     = "terraform-google-modules/kubernetes-engine/google"
+  version                    = "~> 33.0"
   project_id                 = var.project_id
   name                       = var.cluster_name
   region                     = var.cluster_region
@@ -310,7 +313,7 @@ module "gke" {
 }
 
 # Dagster bucket. In the future it would make more sense that this is managed at
-# the application level (e.g. some kubernetes operator)
+# the application level (e.g. some k1bernetes operator)
 resource "google_storage_bucket" "dagster" {
   name          = "${var.dagster_bucket_prefix}-dagster-bucket"
   location      = var.dagster_bucket_location

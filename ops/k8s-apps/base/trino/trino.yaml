@@ -38,12 +38,18 @@ spec:
       create: true
       name: base-trino
     coordinator:
+      additionalVolumes:
+        - name: cache
+          emptyDir: {}
+      additionalVolumeMounts:
+        - name: cache
+          mountPath: /metrics-cache
       jvm:
-        maxHeapSize: "25G"
+        maxHeapSize: "17G"
       resources:
         requests:
           cpu: 2000m
-          memory: 25600Mi
+          memory: 17000Mi
       tolerations:
         - key: pool_type
           operator: Equal
@@ -53,6 +59,13 @@ spec:
         pool_type: trino-coordinator
       
     worker:
+      additionalVolumes:
+        - name: cache
+          emptyDir: {}
+      additionalVolumeMounts:
+        - name: cache
+          mountPath: /metrics-cache
+
       config:
         query:
           maxMemoryPerNode: 15GB
@@ -60,7 +73,7 @@ spec:
         maxHeapSize: "70G"
       resources:
         requests:
-          cpu: 4000m
+          cpu: 15000m
           memory: 71000Mi 
       tolerations:
         - key: pool_type
@@ -74,18 +87,18 @@ spec:
       config:
         query:
           maxMemory: "500GB"
-      workers: 2
+      workers: 1
       autoscaling:
         enabled: true
-        maxReplicas: 20
-        targetCPUUtilizationPercentage: 70
+        maxReplicas: 12 
+        targetCPUUtilizationPercentage: 50
         behavior:
           scaleDown:
             stabilizationWindowSeconds: 300
             policies:
-            - type: Percent
-              value: 100
-              periodSeconds: 15
+            - type: Pods
+              value: 1
+              periodSeconds: 60
           scaleUp:
             stabilizationWindowSeconds: 0
             policies:
@@ -106,6 +119,9 @@ spec:
         hive.metastore-timeout=10s
         iceberg.use-file-size-from-metadata=false
         fs.native-gcs.enabled=true
+        fs.cache.enabled=true
+        fs.cache.max-sizes=300GB
+        fs.cache.directories=/metrics-cache
         gcs.project-id=opensource-observer
         iceberg.max-partitions-per-writer=1000
       #  gcs.use-access-token=true
