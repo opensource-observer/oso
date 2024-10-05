@@ -9,6 +9,7 @@ with open_collective_funding_events as (
   from {{ ref('int_events') }}
   where
     event_source = 'OPEN_COLLECTIVE'
+    and event_type = 'CREDIT'
 ),
 
 oss_grants_funding_events as (
