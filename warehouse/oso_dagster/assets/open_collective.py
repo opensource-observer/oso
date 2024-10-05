@@ -592,6 +592,7 @@ def base_open_collective_client(personal_token: str):
     key_prefix="open_collective",
     partitions_def=WeeklyPartitionsDefinition(
         start_date=OPEN_COLLECTIVE_TX_EPOCH.split("T", maxsplit=1)[0],
+        end_offset=1,
     ),
     op_tags={
         "dagster-k8s/config": K8S_CONFIG,
@@ -636,6 +637,7 @@ def expenses(
     key_prefix="open_collective",
     partitions_def=WeeklyPartitionsDefinition(
         start_date=OPEN_COLLECTIVE_TX_EPOCH.split("T", maxsplit=1)[0],
+        end_offset=1,
     ),
     op_tags={
         "dagster-k8s/config": K8S_CONFIG,
