@@ -1,6 +1,5 @@
 with gitcoin_projects as (
   select distinct
-    pg.gitcoin_group_id,
     pg.latest_project_github,
     pg.latest_project_recipient_address,
     project_lookup.gitcoin_project_id
@@ -29,9 +28,10 @@ oso_projects as (
 )
 
 select distinct
-  gitcoin_projects.gitcoin_group_id,
+  oso_projects.oso_project_id,
   gitcoin_projects.gitcoin_project_id,
-  oso_projects.oso_project_id
+  gitcoin_projects.latest_project_github,
+  gitcoin_projects.latest_project_recipient_address
 from gitcoin_projects
 inner join oso_projects on (
   gitcoin_projects.latest_project_github = oso_projects.repo_owner
