@@ -28,7 +28,7 @@ unioned_events as (
     gitcoin_project_id,
     donor_address,
     amount_in_usd,
-    'crowdfunding' as funding_type
+    'DONATIONS' as funding_type
   from {{ ref('stg_gitcoin__donations') }}
 
   union all
@@ -42,7 +42,7 @@ unioned_events as (
     matching.gitcoin_project_id,
     null as donor_address,
     matching.amount_in_usd,
-    'matching_grant' as funding_type
+    'MATCHING' as funding_type
   from {{ ref('stg_gitcoin__matching') }} as matching
   left join last_donation_by_round
     on
