@@ -208,7 +208,7 @@ def get_optimism_eas(context: AssetExecutionContext, client: Client):
     key_prefix="ethereum_attestation_service_optimism",
     partitions_def=WeeklyPartitionsDefinition(
         start_date=EAS_OPTIMISM_FIRST_ATTESTATION.isoformat().split("T", maxsplit=1)[0],
-        end_date=(datetime.now()).isoformat().split("T", maxsplit=1)[0],
+        end_offset=1,
     ),
     op_tags={
         "dagster-k8s/config": K8S_CONFIG,
