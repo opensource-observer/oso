@@ -12,21 +12,23 @@ with oss_funding_data as (
     'OSS_FUNDING' as event_source,
     LOWER(to_project_name) as to_project_name,
     LOWER(from_funder_name) as from_project_name,
-    COALESCE(amount,0) as amount
+    COALESCE(amount, 0) as amount
   from {{ source('static_data_sources', 'oss_funding_v1') }}
-  where to_project_name is not null
+  where
+    to_project_name is not null
     and from_funder_name is not null
     and amount is not null
 ),
+
 gitcoin_data as (
   select -- noqa: ST06
     events.event_time as `time`,
     'GRANT_RECEIVED_USD' as event_type,
-    case
-      when events.transaction_hash is not null then events.transaction_hash
-      else CAST(events.gitcoin_project_id as STRING)
-    end as event_source_id,
-    concat('GITCOIN', '_', funding_type) as event_source,
+    COALESCE(
+      events.transaction_hash,
+      CAST(events.gitcoin_project_id as string)
+    ) as event_source_id,
+    CONCAT('GITCOIN', '_', funding_type) as event_source,
     projects.project_name as to_project_name,
     'gitcoin' as from_project_name,
     events.amount_in_usd as amount
@@ -36,6 +38,7 @@ gitcoin_data as (
   inner join {{ ref('projects_v1') }} as projects
     on project_directory.oso_project_id = projects.project_id
 ),
+
 grants as (
   select distinct
     oss_funding_data.time,
