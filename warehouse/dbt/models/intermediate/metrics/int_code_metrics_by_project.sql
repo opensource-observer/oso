@@ -78,6 +78,15 @@ aggs as (
     SUM(
       case
         when
+          metric = 'active_developer_count'
+          and time_interval = 'ALL'
+          then amount
+        else 0
+      end
+    ) as developer_count,
+    SUM(
+      case
+        when
           metric = 'contributor_count'
           and time_interval = 'ALL'
           then amount
@@ -168,6 +177,7 @@ select
   code_metrics.repository_count,
   code_metrics.star_count,
   code_metrics.fork_count,
+  code_metrics.developer_count,
   code_metrics.contributor_count,
   code_metrics.contributor_count_6_months,
   code_metrics.new_contributor_count_6_months,
