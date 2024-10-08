@@ -15,6 +15,7 @@ import GitcoinLogo from "./gitcoin.png";
 import OpenrankLogo from "./openrank.png";
 import ArbitrumLogo from "./arbitrum.png";
 import EasLogo from "./eas.png";
+import OcLogo from "./open-collective.png";
 
 First, you need to set up your BigQuery account. You can do this by going to the
 [Get Started](../../get-started/index.mdx)
@@ -566,6 +567,41 @@ where
   revoked = False
   and schema_id = '0xfdcfdad2dbe7489e0ce56b260348b7f14e8365a8a325aef9834818c00d46b31b'
   and attester = '0x621477dBA416E12df7FF0d48E14c4D20DC85D7D9'
+```
+
+**Remember to replace 'YOUR_PROJECT_NAME' with the name of your project in the query.**
+
+### Open Collective Data
+
+<img src={OcLogo} width="200" />
+
+<Button
+  size={"compact"}
+  color={"blue"}
+  target={"_blank"}
+  link={
+    "https://console.cloud.google.com/bigquery/analytics-hub/exchanges/projects/87806073973/locations/us/dataExchanges/open_source_observer_190181416ae/listings/open_collective_1926d37f24d" 
+  }
+  children={"Subscribe on BigQuery"}
+/>{" "}
+
+- [Reference documentation](https://models.opensource.observer/#!/source_list/open_collective)
+- [Updated weekly](https://dagster.opensource.observer/assets/open_collective)
+
+[Open Collective](https://opencollective.com/) is a platform for transparent finances and governance for open source projects.
+
+The Open Collective datasets contains all transactions realized on the platform since its inception. Separate datasets are available for **expenses** and **deposits**.
+
+For example, you can get the total amount of donations in `USD` made to the [**pandas**](https://pandas.pydata.org) project:
+
+```sql
+select
+  SUM(CAST(JSON_VALUE(amount, "$.value") as FLOAT64)) as total_amount,
+from
+  YOUR_PROJECT_NAME.open_collective.deposits
+where
+  JSON_VALUE(amount, "$.currency") = "USD"
+  and JSON_VALUE(to_account, "$.id") = "ov349mrw-gz75lpy9-975qa08d-jeybknox"
 ```
 
 **Remember to replace 'YOUR_PROJECT_NAME' with the name of your project in the query.**
