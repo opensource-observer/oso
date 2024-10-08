@@ -60,6 +60,8 @@ class Repository(BaseModel):
     license_spdx_id: str
     license_name: str
     language: str
+    created_at: Optional[datetime]
+    updated_at: Optional[datetime]
 
 
 class InvalidGithubURL(Exception):
@@ -129,6 +131,8 @@ def gh_repository_to_repository(
         url=repo.html_url,
         is_fork=repo.fork,
         language=repo.language or "",
+        created_at=repo.created_at or None,
+        updated_at=repo.updated_at or None,
     )
 
 
