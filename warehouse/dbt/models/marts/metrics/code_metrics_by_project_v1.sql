@@ -16,6 +16,7 @@ select
   last_commit_date,
   star_count,
   fork_count,
+  developer_count,
   contributor_count,
   contributor_count_6_months,
   new_contributor_count_6_months,

@@ -35,12 +35,15 @@ regendata_xyz = sql_assets(
         },
         {
             "table": "project_groups_summary",
+            "write_disposition": "replace",
         },
         {
             "table": "project_lookup",
+            "write_disposition": "replace",
         },
         {
             "table": "all_matching",
+            "write_disposition": "replace",
         },
     ],
 )
