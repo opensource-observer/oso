@@ -14,7 +14,7 @@ Organized a full day conference dedicated to open source funding at UC Berkeley.
 
 - [Measuring impact of open source software (Web3 + bigger picture)](https://www.youtube.com/watch?v=rMIiGbxEAw8&list=PL3C6eF-zu5AZC9dFtgMVhnclE5GtnkWvX&index=6) by Carl Cervone (Open Source Observer)
 
-**Funding the Commons Taipei 2023 **
+**Funding the Commons Taipei 2023**
 
 - [Impact Measurement for Digital Public Goods - Taipei 2023](https://www.youtube.com/watch?v=vxowxlJ4I6w) by Carl 
 
@@ -47,8 +47,22 @@ Incentive Mechanism Design for Public Goods Funding | Kariba Labs
 
 - [Incentive Mechanism Design for Public Goods Funding | Kariba Labs](https://www.youtube.com/watch?v=ZNBQ68f5xC0) by Raymond			
 
-**Mind Meld ** 
+**Mind Meld** 
 
 - [Cooperatives, Measuring Impact, and Open Source Funding | Mind Meld #006](https://www.youtube.com/watch?v=m0YLDB54Whc)  by Carl Cervone	
 
+**GovHack Brussels**
 
+- [Demo 1: Open Source Observer | GovHack Brussels](https://www.youtube.com/watch?v=EConcXsMSJM)  by Carl Cervone
+
+**Superchain Eco Podcast**
+
+- [Measuring the Impact of Restrospective Funding from Opensource Observer](https://www.youtube.com/watch?v=SLYLiX4Ifqc) with Carl Cervone
+
+**Onchain Alpha**
+
+- [Onchain Alpha | Measuring the impact of open source software contributions](https://www.youtube.com/watch?v=TAxJ_RMfrLU) with Open Source Observer
+
+**TE Academy**
+
+- [The Future of Crypto Impact Measurement](https://www.youtube.com/watch?v=_lV59GQGBA0) with Carl Cervone	
