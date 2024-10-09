@@ -33,4 +33,4 @@
 **Accelerating Science and Research with Impact Certificates**
 - Metascience Conference. Washington, DC. May 2023 DeSci SF. San Francisco, CA. Nov 2022 DWeb Camp. Camp Navarro, CA. Aug 2022
 
-
+[Accelerating Academic Research with Impact Certificates at Metascience Conference. Washington, DC.](https://www.youtube.com/watch?v=_mLdx48B7zE&list=PLChfyH8TVDGlPTcKrVboBaf6QAGSJt1hQ&index=24)  by Raymond Cheng	
