@@ -4,6 +4,8 @@
 
 **Funding the Commons San Francisco**
 
+- Organized a full day conference dedicated to open source funding at UC Berkeley. Apr 2024.
+
 [Introduction to Open Source](https://drive.google.com/file/d/1KCKp5YU36c9u3_2r-oTCH0zM9nVmqpPl/view) by Raymond Cheng
 
 [Morning Workshops Preview - Berkeley 2024](https://www.youtube.com/watch?v=6uW2lpoXe7Q&list=PL3C6eF-zu5AZC9dFtgMVhnclE5GtnkWvX&index=13) presented by Raymond Cheng (Kariba Labs), Danny O'Brien (Filecoin Foundation)
@@ -15,6 +17,8 @@
 
 **Measuring the impact of open source efforts with Open Source Observer**
 
+- DWeb Camp. Camp Navarro, CA. Aug 2024 Global Unity Impact Measurement Showcase. Online. Jan 2024. Coinbase Ventures Summit. Malibu, CA. Oct 2023
+	
 [Demo: Open Source Observer - Growing and investing in open source through data](https://www.youtube.com/watch?v=cNhQJ5FmvjQ) by Raymond Cheng
 
 [Measuring the Impact of Open Source Efforts with Open Source Observer - Taipei 2023](https://www.youtube.com/watch?v=D7xS0fgRYuQ) by Raymond Cheng
