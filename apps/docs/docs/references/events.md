@@ -22,3 +22,11 @@
 [PL Summit 23 | LabWeek23 | Istanbul, Türkiye at 1:44:15](https://www.youtube.com/watch?v=sHvdBRj3kxE&t=6250s) by Raymond Cheng
 
 [Measuring the impact of open source efforts with Open Source Observer](https://www.youtube.com/watch?v=szGLQDwm_E0) by Raymond Cheng
+
+[PLN LabDay | October 2023 at 00:22:35](https://www.youtube.com/watch?v=V7sI5pO3TT0&t=1354s) by Carl & Raymond 
+
+
+**Accelerating Science and Research with Impact Certificates**
+- Metascience Conference. Washington, DC. May 2023 DeSci SF. San Francisco, CA. Nov 2022 DWeb Camp. Camp Navarro, CA. Aug 2022
+
+
