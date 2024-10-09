@@ -34,3 +34,15 @@ DWeb Camp. Camp Navarro, CA. Aug 2024 Global Unity Impact Measurement Showcase. 
 Metascience Conference. Washington, DC. May 2023 DeSci SF. San Francisco, CA. Nov 2022 DWeb Camp. Camp Navarro, CA. Aug 2022
 
 - [Accelerating Academic Research with Impact Certificates at Metascience Conference. Washington, DC.](https://www.youtube.com/watch?v=_mLdx48B7zE&list=PLChfyH8TVDGlPTcKrVboBaf6QAGSJt1hQ&index=24)  by Raymond Cheng	
+
+- [Accelerating Academic Research with Impact Certificates at DWeb Camp](https://archive.org/details/25-17_45_accelerating_academic_research_with_impact_certificates.mp4) by Raymond Cheng	
+
+**Protocol Labs Interview**
+
+Incentive Mechanism Design for Public Goods Funding | Kariba Labs	
+
+- [Incentive Mechanism Design for Public Goods Funding | Kariba Labs](https://www.youtube.com/watch?v=ZNBQ68f5xC0) by Raymond			
+
+
+
+
