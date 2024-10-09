@@ -17,4 +17,8 @@
 
 [Demo: Open Source Observer - Growing and investing in open source through data](https://www.youtube.com/watch?v=cNhQJ5FmvjQ) by Raymond Cheng
 
+[Measuring the Impact of Open Source Efforts with Open Source Observer - Taipei 2023](https://www.youtube.com/watch?v=D7xS0fgRYuQ) by Raymond Cheng
 
+[PL Summit 23 | LabWeek23 | Istanbul, Türkiye at 1:44:15](https://www.youtube.com/watch?v=sHvdBRj3kxE&t=6250s) by Raymond Cheng
+
+[Measuring the impact of open source efforts with Open Source Observer](https://www.youtube.com/watch?v=szGLQDwm_E0) by Raymond Cheng
