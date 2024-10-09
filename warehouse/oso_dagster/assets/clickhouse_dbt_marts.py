@@ -89,14 +89,16 @@ def clickhouse_assets_from_manifests_map(
                             "op_tags": {
                                 "dagster-k8s/config": {
                                     "merge_behavior": "SHALLOW",
-                                    "resources": {
-                                        "requests": {
-                                            "cpu": "1000m",
-                                            "memory": "1024i",
-                                        },
-                                        "limits": {
-                                            "cpu": "1000m",
-                                            "memory": "1024Mi",
+                                    "container_config": {
+                                        "resources": {
+                                            "requests": {
+                                                "cpu": "1000m",
+                                                "memory": "1024i",
+                                            },
+                                            "limits": {
+                                                "cpu": "1000m",
+                                                "memory": "1024Mi",
+                                            },
                                         },
                                     },
                                     "pod_spec_config": {
