@@ -23,7 +23,7 @@ Organized a full day conference dedicated to open source funding at UC Berkeley.
 
 DWeb Camp. Camp Navarro, CA. Aug 2024 Global Unity Impact Measurement Showcase. Online. Jan 2024. Coinbase Ventures Summit. Malibu, CA. Oct 2023
 	
-- [Demo: Open Source Observer - Growing and investing in open source through data](https://www.youtube.com/watch?v=cNhQJ5FmvjQ) by Raymond Cheng
+- TechSoup Webinar. Online. May 23, 2024. Raymond Cheng. [watch](https://www.youtube.com/watch?v=cNhQJ5FmvjQ) by Raymond Cheng
 
 - [Measuring the Impact of Open Source Efforts with Open Source Observer - Taipei 2023](https://www.youtube.com/watch?v=D7xS0fgRYuQ) by Raymond Cheng
 
