@@ -14,11 +14,6 @@ Organized a full day conference dedicated to open source funding at UC Berkeley.
 
 - Measuring impact of open source software Web3 + bigger picture. UC Berkeley. April 13, 2024. Carl Cervone. [watch](https://www.youtube.com/watch?v=rMIiGbxEAw8&list=PL3C6eF-zu5AZC9dFtgMVhnclE5GtnkWvX&index=6) 
 
-**Funding the Commons Taipei 2023**
-
-- [Impact Measurement for Digital Public Goods - Taipei 2023](https://www.youtube.com/watch?v=vxowxlJ4I6w) by Carl 
-
-
 **Measuring the impact of open source efforts with Open Source Observer**
 
 DWeb Camp. Camp Navarro, CA. Aug 2024 Global Unity Impact Measurement Showcase. Online. Jan 2024. Coinbase Ventures Summit. Malibu, CA. Oct 2023
@@ -31,7 +26,9 @@ DWeb Camp. Camp Navarro, CA. Aug 2024 Global Unity Impact Measurement Showcase. 
 
 - [Measuring the impact of open source efforts with Open Source Observer](https://www.youtube.com/watch?v=szGLQDwm_E0) 
 
-- [PLN LabDay | October 2023 at 00:22:35](https://www.youtube.com/watch?v=V7sI5pO3TT0&t=1354s) by Carl & Raymond 
+- [PLN LabDay | October 2023 at 00:22:35](https://www.youtube.com/watch?v=V7sI5pO3TT0&t=1354s) by Carl & Raymond
+
+- Impact Measurement for Digital Public Goods Taipei, Taiwan. Dec 2023. Carl Cervone [watch](https://www.youtube.com/watch?v=vxowxlJ4I6w) by Carl 
 
 
 **Accelerating Science and Research with Impact Certificates**
