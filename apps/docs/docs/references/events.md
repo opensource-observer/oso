@@ -56,7 +56,7 @@ Metascience Conference. Washington, DC. May 2023 DeSci SF. San Francisco, CA. No
 
 **Superchain Eco Podcast**
 
-- [Measuring the Impact of Restrospective Funding from Opensource Observer](https://www.youtube.com/watch?v=SLYLiX4Ifqc) with Carl Cervone
+- Measuring the Impact of Restrospective Funding from Opensource Observer. Online, Nov 2023. Carl Cervone. [watch](https://www.youtube.com/watch?v=SLYLiX4Ifqc)
 
 **Onchain Alpha**
 
