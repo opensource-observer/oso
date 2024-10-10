@@ -14,6 +14,10 @@ Cooperatives, Measuring Impact, and Open Source Funding
 
 -Mind Meld Pod. Online. Aug 2024. Carl Cervone [watch](https://www.youtube.com/watch?v=m0YLDB54Whc)  
 
+**GovHack Brussels**
+
+- Open Source Observer. GovHack Brussels. Jul 2024. Carl Cervone. [watch](https://www.youtube.com/watch?v=EConcXsMSJM) 
+
 **Funding the Commons San Francisco**
 
 Organized a full day conference dedicated to open source funding at UC Berkeley. Apr 2024.
@@ -49,10 +53,6 @@ Metascience Conference. Washington, DC. May 2023 DeSci SF. San Francisco, CA. No
 - Metascience Conference. Washington, DC. May 2023. Raymond Cheng. [watch](https://www.youtube.com/watch?v=_mLdx48B7zE&list=PLChfyH8TVDGlPTcKrVboBaf6QAGSJt1hQ&index=24)  	
 
 - DWeb Camp. Camp Navarro, CA. Aug 2022. Raymond Cheng. [watch](https://archive.org/details/25-17_45_accelerating_academic_research_with_impact_certificates.mp4) 			
-
-**GovHack Brussels**
-
-- [Demo 1: Open Source Observer | GovHack Brussels](https://www.youtube.com/watch?v=EConcXsMSJM)  by Carl Cervone
 
 **Superchain Eco Podcast**
 
