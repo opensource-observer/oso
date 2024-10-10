@@ -18,17 +18,17 @@ Organized a full day conference dedicated to open source funding at UC Berkeley.
 
 DWeb Camp. Camp Navarro, CA. Aug 2024 Global Unity Impact Measurement Showcase. Online. Jan 2024. Coinbase Ventures Summit. Malibu, CA. Oct 2023
 	
-- TechSoup Webinar. Online. May 23, 2024. Raymond Cheng. [watch](https://www.youtube.com/watch?v=cNhQJ5FmvjQ) 
+- TechSoup Webinar. Online. May 2024. Raymond Cheng. [watch](https://www.youtube.com/watch?v=cNhQJ5FmvjQ)
+  
+- Funding the Commons Taipei. Taipei, Taiwan. Dec 2023. Carl Cervone [watch](https://www.youtube.com/watch?v=vxowxlJ4I6w) 
 
 - Funding the Commons Taipei. Taipei, Taiwan. Dec 2023. Raymond Cheng. [watch](https://www.youtube.com/watch?v=D7xS0fgRYuQ) 
 
-- PL Summit 23. LabWeek23. Istanbul, Türkiye. Nov. 13, 2023. Raymond Cheng. [watch](https://www.youtube.com/watch?v=sHvdBRj3kxE&t=6250s) 
+- PL Summit 23. LabWeek23. Istanbul, Türkiye. Nov. 2023. Raymond Cheng. [watch](https://www.youtube.com/watch?v=sHvdBRj3kxE&t=6250s) 
+
+- PLN LabDay. Online. October 2023. Carl & Raymond. [watch](https://www.youtube.com/watch?v=V7sI5pO3TT0&t=1354s) 
 
 - FIL Dev Summit. Reykjavík, Iceland. Sept 2023. Raymond Cheng. [watch](https://www.youtube.com/watch?v=szGLQDwm_E0) 
-
-- [PLN LabDay | October 2023 at 00:22:35](https://www.youtube.com/watch?v=V7sI5pO3TT0&t=1354s) by Carl & Raymond
-
-- Funding the Commons Taipei. Taipei, Taiwan. Dec 2023. Carl Cervone [watch](https://www.youtube.com/watch?v=vxowxlJ4I6w) 
 
 
 **Accelerating Science and Research with Impact Certificates**
