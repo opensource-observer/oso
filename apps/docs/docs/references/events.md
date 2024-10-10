@@ -22,13 +22,13 @@ DWeb Camp. Camp Navarro, CA. Aug 2024 Global Unity Impact Measurement Showcase. 
 
 - Funding the Commons Taipei. Taipei, Taiwan. Dec 2023. Raymond Cheng. [watch](https://www.youtube.com/watch?v=D7xS0fgRYuQ) 
 
-- PL Summit 23. LabWeek23. Istanbul, Türkiye. Nov. 13, 2023. Raymodn Cheng. [watch](https://www.youtube.com/watch?v=sHvdBRj3kxE&t=6250s) 
+- PL Summit 23. LabWeek23. Istanbul, Türkiye. Nov. 13, 2023. Raymond Cheng. [watch](https://www.youtube.com/watch?v=sHvdBRj3kxE&t=6250s) 
 
-- [Measuring the impact of open source efforts with Open Source Observer](https://www.youtube.com/watch?v=szGLQDwm_E0) 
+- FIL Dev Summit. Reykjavík, Iceland. Sept 2023. Raymond Cheng. [watch](https://www.youtube.com/watch?v=szGLQDwm_E0) 
 
 - [PLN LabDay | October 2023 at 00:22:35](https://www.youtube.com/watch?v=V7sI5pO3TT0&t=1354s) by Carl & Raymond
 
-- Impact Measurement for Digital Public Goods Taipei, Taiwan. Dec 2023. Carl Cervone [watch](https://www.youtube.com/watch?v=vxowxlJ4I6w) by Carl 
+- Funding the Commons Taipei. Taipei, Taiwan. Dec 2023. Carl Cervone [watch](https://www.youtube.com/watch?v=vxowxlJ4I6w) 
 
 
 **Accelerating Science and Research with Impact Certificates**
