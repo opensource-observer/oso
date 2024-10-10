@@ -36,7 +36,7 @@ Metascience Conference. Washington, DC. May 2023 DeSci SF. San Francisco, CA. No
 
 - Metascience Conference. Washington, DC. May 2023. Raymond Cheng. [watch](https://www.youtube.com/watch?v=_mLdx48B7zE&list=PLChfyH8TVDGlPTcKrVboBaf6QAGSJt1hQ&index=24)  	
 
-- [Accelerating Academic Research with Impact Certificates at DWeb Camp](https://archive.org/details/25-17_45_accelerating_academic_research_with_impact_certificates.mp4) 	
+- DWeb Camp. Camp Navarro, CA. Aug 2022. Raymond Cheng. [watch](https://archive.org/details/25-17_45_accelerating_academic_research_with_impact_certificates.mp4) 	
 
 **Protocol Labs Interview**
 
