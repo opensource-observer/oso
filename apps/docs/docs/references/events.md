@@ -6,7 +6,7 @@
 
 Incentive Mechanism Design for Public Goods Funding | Kariba Labs	
 
-- Incentive Mechanism Design for Public Goods Funding. Studio Interview. Sep 2024. Raymond Cheng. [watch](https://www.youtube.com/watch?v=ZNBQ68f5xC0)
+- Building Web3. Studio Interview. Sep 2024. Raymond Cheng. [watch](https://www.youtube.com/watch?v=ZNBQ68f5xC0)
   
 
 **Funding the Commons San Francisco**
