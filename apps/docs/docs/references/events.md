@@ -18,6 +18,14 @@ Cooperatives, Measuring Impact, and Open Source Funding
 
 - Open Source Observer. GovHack Brussels. Jul 2024. Carl Cervone. [watch](https://www.youtube.com/watch?v=EConcXsMSJM) 
 
+**TE Academy**
+
+- The Future of Crypto Impact Measurement. Online, Jun 2024. Carl Cervone. [watch](https://www.youtube.com/watch?v=_lV59GQGBA0) 
+
+**Onchain Alpha**
+
+- Measuring the impact of open source software. Online, Apr 2024. Carl Cervone. [watch](https://www.youtube.com/watch?v=TAxJ_RMfrLU)
+
 **Funding the Commons San Francisco**
 
 Organized a full day conference dedicated to open source funding at UC Berkeley. Apr 2024.
@@ -56,12 +64,4 @@ Metascience Conference. Washington, DC. May 2023 DeSci SF. San Francisco, CA. No
 
 **Superchain Eco Podcast**
 
-- Measuring the Impact of Restrospective Funding from Opensource Observer. Online, Nov 2023. Carl Cervone. [watch](https://www.youtube.com/watch?v=SLYLiX4Ifqc)
-
-**Onchain Alpha**
-
-- [Onchain Alpha | Measuring the impact of open source software contributions](https://www.youtube.com/watch?v=TAxJ_RMfrLU) with Open Source Observer
-
-**TE Academy**
-
-- [The Future of Crypto Impact Measurement](https://www.youtube.com/watch?v=_lV59GQGBA0) with Carl Cervone	
+- Measuring the Impact of Restrospective Funding. Online, Nov 2023. Carl Cervone. [watch](https://www.youtube.com/watch?v=SLYLiX4Ifqc)
