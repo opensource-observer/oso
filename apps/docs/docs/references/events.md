@@ -10,9 +10,9 @@ Organized a full day conference dedicated to open source funding at UC Berkeley.
 
 - Morning Workshops Preview. UC Berkeley. April 13, 2024. Raymond Cheng. [watch](https://www.youtube.com/watch?v=6uW2lpoXe7Q&list=PL3C6eF-zu5AZC9dFtgMVhnclE5GtnkWvX&index=13)
 
-- A Developer’s Journey: Supporting Your Public Goods Work.  UC Berkeley. April 13, 2024. Reuven Gonzales. [watch](https://www.youtube.com/watch?v=r5CThl_e6mo&list=PL3C6eF-zu5AZC9dFtgMVhnclE5GtnkWvX&index=2) 
+- A Developer’s Journey: Supporting Your Public Goods Work. UC Berkeley. April 13, 2024. Reuven Gonzales. [watch](https://www.youtube.com/watch?v=r5CThl_e6mo&list=PL3C6eF-zu5AZC9dFtgMVhnclE5GtnkWvX&index=2) 
 
-- Measuring impact of open source software Web3 + bigger picture [watch](https://www.youtube.com/watch?v=rMIiGbxEAw8&list=PL3C6eF-zu5AZC9dFtgMVhnclE5GtnkWvX&index=6) 
+- Measuring impact of open source software Web3 + bigger picture. UC Berkeley. April 13, 2024. Carl Cervone. [watch](https://www.youtube.com/watch?v=rMIiGbxEAw8&list=PL3C6eF-zu5AZC9dFtgMVhnclE5GtnkWvX&index=6) 
 
 **Funding the Commons Taipei 2023**
 
