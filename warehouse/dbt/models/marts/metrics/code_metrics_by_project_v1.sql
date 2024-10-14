@@ -12,6 +12,8 @@ select
   display_name,
   event_source,
   repository_count,
+  first_created_at_date,
+  last_updated_at_date,
   first_commit_date,
   last_commit_date,
   star_count,
