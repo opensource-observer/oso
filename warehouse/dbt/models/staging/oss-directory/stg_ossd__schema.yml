@@ -130,3 +130,21 @@ models:
       - &is_fork
         name: is_fork
         description: "is this repo a fork?"
+      - &license_name
+        name: license_name
+        description: "license name"
+      - &license_spdx_id
+        name: license_spdx_id
+        description: "license spdx id"
+      - &language
+        name: language
+        description: "programming language used in the repository"
+      - &created_at
+        name: created_at
+        description: "repository creation timestamp"
+      - &updated_at
+        name: updated_at
+        description: "repository last update timestamp"
+      - &ingestion_time
+        name: ingestion_time
+        description: "timestamp when the data was ingested"
