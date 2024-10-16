@@ -87,15 +87,15 @@
     "@types/node": "^20.14.10",
     "@types/papaparse": "^5.3.14",
     "@types/qs": "^6.9.15",
-    "@types/react": "^18.3.3",
+    "@types/react": "^18.3.11",
     "@types/react-dom": "^18.3.0",
     "@types/testing-library__jest-dom": "^5.14.9",
     "@types/uuid": "^9.0.8",
-    "@typescript-eslint/eslint-plugin": "^6.21.0",
-    "@typescript-eslint/parser": "^6.21.0",
+    "@typescript-eslint/eslint-plugin": "^8.9.0",
+    "@typescript-eslint/parser": "^8.9.0",
     "autoprefixer": "^10.4.19",
     "dotenv-cli": "^7.4.2",
-    "eslint": "^8.57.0",
+    "eslint": "^8.57.1",
     "eslint-config-next": "14.1.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-config-react": "^1.1.7",
@@ -105,6 +105,6 @@
     "supabase": "^1.183.5",
     "tailwindcss": "^3.4.4",
     "ts-node": "^10.9.2",
-    "typescript": "^5.5.3"
+    "typescript": "^5.6.3"
   }
 }

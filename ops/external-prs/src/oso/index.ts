@@ -289,7 +289,7 @@ async function refreshCredentials(args: RefreshGCPCredentials) {
         });
       }
     } catch (e) {
-      logger.info("no existing var found");
+      logger.info(`no existing var found, ${e}`);
     }
     await octo.rest.actions.createEnvironmentVariable({
       repository_id: repo.data.id,
