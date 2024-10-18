@@ -68,7 +68,7 @@ a GraphQL API from our Clickhouse database.
 We then use an [Apollo Router](https://www.apollographql.com/docs/router/)
 to service user queries to the public.
 The API can be used by external developers to integrate insights from OSO.
-Rate limits or cost sharing subscriptions may apply to it's usage depending
+Rate limits or cost sharing subscriptions may apply to its usage depending
 on the systems used. This also powers the OSO website.
 
 ### OSO Website
