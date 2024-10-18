@@ -8,7 +8,7 @@ Arbitrum One is an EVM-equivalent Optimistic Rollup chain. It inherits Ethereum-
 
 ## Coverage on Open Source Observer
 
-Open Source Observer is in the process of adding the first collection of open source projects that are building on Arbitrum One. Project data will includes Arbitrum addresses associated with smart contracts, deployers, and grant wallets.
+Open Source Observer is in the process of adding the first collection of open source projects that are building on Arbitrum One. Project data will include Arbitrum addresses associated with smart contracts, deployers, and grant wallets.
 
 The main sources of project data come from [STIP](https://forum.arbitrum.foundation/t/arbitrums-short-term-incentive-program-arbitrum-improvement-proposal/16131), grant programs, and the Dune contracts library.
 
