@@ -9,12 +9,18 @@ import { NODE_ENV, DOMAIN } from "../../lib/config";
 type AuthActionType = "signInWithOAuth" | "signOut";
 const DEFAULT_PROVIDER: Provider = "google";
 const PROTOCOL = NODE_ENV === "production" ? "https" : "http";
+const DEFAULT_SCOPES: Partial<Record<Provider, string>> = {
+  google: "openid https://www.googleapis.com/auth/userinfo.email",
+  //"openid https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/bigquery",
+  github: "",
+};
 
 type AuthActionsProps = {
   className?: string; // Plasmic CSS class
   children?: ReactNode; // Show this
   actionType?: AuthActionType; // Selector for what to do on click
   provider?: Provider;
+  scopes?: string;
   redirectOnComplete?: string; // URL to redirect to after completion;
 };
 
@@ -28,6 +34,10 @@ const AuthActionsRegistration: RegistrationProps<AuthActionsProps> = {
     type: "string",
     helpText: "See Supabase provider type",
   },
+  scopes: {
+    type: "string",
+    helpText: "See Supabase scopes type",
+  },
   redirectOnComplete: {
     type: "string",
     helpText: "Must be an absolute path from this domain (e.g. /login)",
@@ -35,18 +45,24 @@ const AuthActionsRegistration: RegistrationProps<AuthActionsProps> = {
 };
 
 function AuthActions(props: AuthActionsProps) {
-  const { className, children, actionType, provider, redirectOnComplete } =
-    props;
+  const {
+    className,
+    children,
+    actionType,
+    provider,
+    scopes,
+    redirectOnComplete,
+  } = props;
   const router = useRouter();
   const path = usePathname();
   const signInWithOAuth = async () => {
     const redirect = `${PROTOCOL}://${DOMAIN}/${redirectOnComplete ?? path}`;
+    const ensureProvider = provider ?? DEFAULT_PROVIDER;
     const { data, error } = await supabaseClient.auth.signInWithOAuth({
-      provider: provider ?? DEFAULT_PROVIDER,
+      provider: ensureProvider,
       options: {
         redirectTo: redirect,
-        scopes: "openid https://www.googleapis.com/auth/userinfo.email",
-        //"openid https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/bigquery",
+        scopes: scopes ?? DEFAULT_SCOPES[ensureProvider],
         queryParams: {
           access_type: "offline",
           prompt: "consent",
