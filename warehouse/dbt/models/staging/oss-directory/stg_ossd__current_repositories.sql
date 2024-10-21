@@ -18,6 +18,8 @@ with ranked_repositories as (
     license_spdx_id,
     language,
     ingestion_time,
+    created_at,
+    updated_at,
     ROW_NUMBER()
       over (partition by node_id order by ingestion_time desc, id asc)
       as row_num
@@ -39,6 +41,8 @@ select
   license_name,
   license_spdx_id,
   language,
-  ingestion_time
+  ingestion_time,
+  created_at,
+  updated_at
 from ranked_repositories
 where row_num = 1
