@@ -1,33 +1,49 @@
 ---
-title: Update Project Data
+title: Add Your Project
 sidebar_position: 2
 ---
 
-We maintain a repository of open source projects called
-[oss-directory](https://github.com/opensource-observer/oss-directory).
-Think of it as an awesome list of reputable open source
-projects that lists all known 'artifacts' related to a project,
-from GitHub repos, to social media profiles, to software deployments.
-We use this as the starting point of the OSO data pipeline,
-which is run automatically daily to produce metrics
-for our API and dashboards.
+:::info
+We maintain a large repository of open source projects called
+[oss-directory](https://github.com/opensource-observer/oss-directory). It's more than just an awesome list ... it's the starting point of the OSO data pipeline. We run indexers on every artifact linked to projects in the directory to produce metrics for our API and dashboards. Check if your project is already listed. If not, follow the steps below to add it.
+:::
 
-## Quick Steps
+## Find Your Project
+
+To find your project, search for its GitHub organization or repository name in [oss-directory](https://github.com/opensource-observer/oss-directory/tree/main/data/projects). Most projects are instantiated with the GitHub organization name as the project `name`. For example, Open Source Observer's project file is located at `./data/projects/o/opensource-observer.yaml`.
+
+Alternatively, you can search for projects directly in our [project explorer](https://www.opensource.observer/projects). If you locate it, then the slug in the URL is the project name. For example, `opensource-observer` is at `https://www.opensource.observer/projects/opensource-observer`.
+
+If you're a developer, you can also lookup a project directly from [our GraphQL API](https://www.opensource.observer/graphql). Here's an example query to find the project that owns the _artifact_ `github.com/opensource-observer/oso`:
+
+```graphql
+query findProject {
+  oso_artifactsByProjectV1(
+    where: {
+      artifactSource: { _eq: "GITHUB" }
+      artifactNamespace: { _eq: "opensource-observer" }
+      artifactName: { _eq: "oso" }
+    }
+  ) {
+    projectName
+  }
+}
+```
+
+If you can't find your project, you can add it by following the steps below.
+
+## Add or Update Project Data (Quick Steps)
 
 Add or update project data by making a pull request to
 [oss-directory](https://github.com/opensource-observer/oss-directory).
 
 1. Fork [oss-directory](https://github.com/opensource-observer/oss-directory/fork).
 2. Locate or create a new project `.yaml` file under `./data/projects/`.
-3. Link artifacts (ie, GitHub repositories, npm packages, blockchain addresses) in the project `.yaml` file.
+3. Link artifacts (ie, GitHub repositories, npm packages, blockchain addresses) in the project `.yaml` file. See below if you need help with the schema.
 4. Submit a pull request from your fork back to [oss-directory](https://github.com/opensource-observer/oss-directory).
-5. Once your pull request is approved, your project will automatically be added to our daily indexers. It may take longer for some historical data (e.g. GitHub events) to show up as we run backfill jobs less frequently.
+5. Once your pull request is approved, your project will automatically be added to our indexers. It may take longer for some historical data (e.g. GitHub events) to show up as we run backfill jobs less frequently.
 
-## Schema Overview
-
-Make sure to use the latest version of the oss-directory schema. You can see the latest version by opening any project YAML file and getting the version from the top of file. Note: since Version 7, we have replaced the `slug` field with `name` and the previous `name` field with `display_name`.
-
-### Project Names
+## Project Names
 
 :::important
 The `name` field is the unique identifier for the project and **must** match the name of the YAML project file. For example, if the project file is `./data/projects/m/my-project.yaml`, then the `name` field should be `my-project`.
@@ -68,11 +84,15 @@ This project would be located at `./data/projects/p/projectx-my-space.yaml`.
 
 This construction is useful for projects that are kept in a personal GitHub account or across multiple GitHub organizations.
 
+## Schema Overview
+
+Make sure to use the latest version of the oss-directory schema. You can see the latest version by opening any project YAML file and getting the version from the top of file. Note: since Version 7, we have replaced the `slug` field with `name` and the previous `name` field with `display_name`.
+
 ### Fields
 
 The schema currently contains the following fields:
 
-- `version`: The latest version of the OSS Directory schema. This is a required field. To find the latest version, open any project YAML file and get the version from the top of the file. As of writing (2024-06-05), the latest version is Version 7.
+- `version`: The latest version of the OSS Directory schema. This is a required field. To find the latest version, open any project YAML file and get the version from the top of the file. As of writing (2024-10-15), the latest version is Version 7.
 - `name`: The unique identifier for the project. See [Project Names](#project-names) for more information. This is a required field and must match the name of the YAML project file.
 - `display_name`: The display name of the project. This is a required field.
 - `description`: A brief description of the project.
@@ -119,7 +139,7 @@ In previous versions of the schema, we enumerated contracts and factories with t
 
 Read below for more detailed steps on how to add or update project data or consult the [schema](../how-oso-works/oss-directory/) for more information.
 
-## Detailed Steps
+## Add or Update Project Data (Detailed Steps)
 
 Here's a more detailed set of instructions for first-time contributors.
 
@@ -189,11 +209,11 @@ If you run into issues, check out [GitHub's instructions](https://docs.github.co
   - url: https://www.npmjs.com/package/oss-directory
   blockchain:
   - address: "0x87fEEd6162CB7dFe6B62F64366742349bF4D1B05"
+      networks:
+      - any_evm
       tags:
       - eoa
-      networks:
-      - optimism
-      - mainnet
+      - wallet
   - address: "0xc5bfce27e0e7a7d7731bc23b92ebc62b9ed63b83"
       networks:
       - optimism
@@ -227,9 +247,23 @@ If you run into issues, check out [GitHub's instructions](https://docs.github.co
 
 ### 5. Monitor indexing status of your project data
 
-Once your pull request is merged, you can check whether your project data has been indexed by querying [our API](https://cloud.hasura.io/public/graphiql?endpoint=https://opensource-observer.hasura.app/v1/graphql).
+Once your pull request is merged, you can check whether your project data has been indexed by querying [our GraphQL API](https://www.opensource.observer/graphql). Here's an example query to see that the _artifact_ `github.com/opensource-observer/oso` has been indexed:
 
-Note that our indexer currently runs every 24 hours at 02:00 UTC. Therefore, it may take up to 24 hours for your project data to be fully indexed. Backfills are run periodically to ensure that all data is indexed. If you don't see any historic event data for your project, than the most likely reason is that the backfill has not yet been run.
+```graphql
+query findProject {
+  oso_artifactsByProjectV1(
+    where: {
+      artifactSource: { _eq: "GITHUB" }
+      artifactNamespace: { _eq: "opensource-observer" }
+      artifactName: { _eq: "oso" }
+    }
+  ) {
+    projectName
+  }
+}
+```
+
+Note that our full indexer currently runs weekly on Sundays. Therefore, it may take up to a week for your project data to be indexed. Backfills are run periodically to ensure that all data is indexed. If you don't see any historic event data for your project, than the most likely reason is that the backfill has not yet been run.
 
 ## Bulk Updates
 
