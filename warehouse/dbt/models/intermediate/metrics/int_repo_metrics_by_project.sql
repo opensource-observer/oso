@@ -13,6 +13,8 @@ with repo_artifact as (
     license_spdx_id,
     language,
     watcher_count,
+    created_at,
+    updated_at,
     CAST(id as STRING) as artifact_source_id,
     LOWER(owner) as artifact_namespace,
     LOWER(name) as artifact_name
@@ -29,7 +31,9 @@ repo_snapshot as (
     is_fork,
     fork_count,
     star_count,
-    watcher_count
+    watcher_count,
+    created_at,
+    updated_at
   from repo_artifact as a
 ),
 
@@ -75,6 +79,8 @@ select distinct
   repo_snapshot.watcher_count,
   repo_snapshot.language,
   repo_snapshot.license_spdx_id,
+  repo_snapshot.created_at,
+  repo_snapshot.updated_at,
   repo_stats.first_commit_time,
   repo_stats.last_commit_time,
   repo_stats.days_with_commits_count,
