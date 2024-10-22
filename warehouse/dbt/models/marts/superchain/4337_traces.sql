@@ -58,7 +58,19 @@
 
 with filtered_traces as (
   {{ final_query }}
+),
+
+transformed_traces as (
+  select
+    *,
+    case
+      when network = 'BASE' then CAST(`value` as FLOAT64)
+      else `value`
+    end as numeric_value
+  from filtered_traces
 )
 
-select *
-from filtered_traces
+select
+  * except (`value`, numeric_value),
+  numeric_value as `value`
+from transformed_traces
