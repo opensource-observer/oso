@@ -60,7 +60,7 @@ The `address` field is the public blockchain address. On Ethereum and other netw
 Remember, a blockchain address can only be assigned to a single project. New artifacts will also be validated to ensure that they do not already exist in the directory.
 
 :::warning
-If you are referencing a Safe multi-sig address, remember to remove the chain identifer from the beginning of the address (eg, remove the 'oeth:' prefix from the beginning of an Optimism Safe).
+If you are referencing a Safe multi-sig address, remember to remove the chain identifier from the beginning of the address (eg, remove the 'oeth:' prefix from the beginning of an Optimism Safe).
 :::
 
 ### Supported EVM Networks
