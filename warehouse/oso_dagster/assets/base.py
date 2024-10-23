@@ -7,7 +7,7 @@ base_network = goldsky_network_assets(
     working_destination_dataset_name="oso_raw_sources",
     traces_config=NetworkAssetSourceConfigDict(
         schema_overrides=[
-            {"name": "value", "field_type": "BYTES"},
+            {"name": "value", "field_type": "STRING"},
         ]
     ),
 )
