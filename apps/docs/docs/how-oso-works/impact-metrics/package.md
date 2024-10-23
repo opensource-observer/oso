@@ -18,7 +18,7 @@ Number of total packages released by the project (version-agnostic).
 
 ### Downloads
 
-Number of times a packages has been downloaded over a given time period.
+Number of times a package has been downloaded over a given time period.
 
 ---
 

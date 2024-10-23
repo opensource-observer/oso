@@ -48,7 +48,7 @@ blockchain:
       - wallet
 ```
 
-In order to instantiate a project, we require a unique `name` and a GitHub URL that is not owned by any other project. Project metadata, including its `display_name` and `description`, can also be be captured. Once instantiated, a project entry can be updated to include additional artifacts.
+In order to instantiate a project, we require a unique `name` and a GitHub URL that is not owned by any other project. Project metadata, including its `display_name` and `description`, can also be captured. Once instantiated, a project entry can be updated to include additional artifacts.
 
 Critically, artifacts can only belong to one project. We run validation checks to ensure that artifacts are not duplicated across projects. Please consult the [project schema](./project) for more information.
 
@@ -72,7 +72,7 @@ npm:
   - url: https://www.npmjs.com/package/oss-directory
 ```
 
-Blockchain address artifacts include additonal tags that are used as instructions for OSO's indexers. For example, a blockchain address with a `wallet` tag will be monitored for financial transactions and changes in token balances. A blockchain address with a `deployer` tag will be monitored for smart contract deployments. Any contracts deployed by a deployer will be associated with the deployer's project. Similarly, any contracts deployed by factories deployed by a deployer will also be associated with the deployer's project.
+Blockchain address artifacts include additional tags that are used as instructions for OSO's indexers. For example, a blockchain address with a `wallet` tag will be monitored for financial transactions and changes in token balances. A blockchain address with a `deployer` tag will be monitored for smart contract deployments. Any contracts deployed by a deployer will be associated with the deployer's project. Similarly, any contracts deployed by factories deployed by a deployer will also be associated with the deployer's project.
 
 Tags are also used to indicate the network the address is used on. For example, a deployer may be active on both the Ethereum mainnet and the Optimism network.
 
