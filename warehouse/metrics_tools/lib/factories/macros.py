@@ -136,17 +136,27 @@ def metrics_sample_date(
     )
 
 
-def metrics_name(evaluator: MacroEvaluator, override: str = ""):
+def metrics_name(evaluator: MacroEvaluator, override: exp.Expression | str = ""):
     if override:
-        if isinstance(override, exp.Literal):
-            override = override.this
-    name = override or evaluator.locals.get("generated_metric_name")
+        if isinstance(override, str):
+            override = exp.Literal(this=override, is_string=True)
+    name = override
+    if not name:
+        name = exp.Literal(
+            this=evaluator.locals.get("generated_metric_name"), is_string=True
+        )
     rolling_window = evaluator.locals.get("rolling_window", "")
     rolling_unit = evaluator.locals.get("rolling_unit", "")
     time_aggregation = evaluator.locals.get("time_aggregation", "")
     suffix = time_suffix(time_aggregation, rolling_window, rolling_unit)
+    if suffix:
+        suffix = f"_{suffix}"
 
-    return exp.Literal(this=f"{name}_{suffix}", is_string=True)
+    return exp.Concat(
+        expressions=[name, exp.Literal(this=suffix, is_string=True)],
+        safe=False,
+        coalesce=False,
+    )
 
 
 def metrics_start(evaluator: MacroEvaluator, _data_type: t.Optional[str] = None):

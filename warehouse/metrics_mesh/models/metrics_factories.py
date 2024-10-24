@@ -77,6 +77,7 @@ timeseries_metrics(
                 cron="@daily",  # This determines how often this is calculated
             ),
             entity_types=["artifact", "project", "collection"],
+            is_intermediate=True,
         ),
         "developer_classifications": MetricQueryDef(
             ref="developer_activity_classification.sql",
