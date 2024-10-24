@@ -83,8 +83,8 @@ Voters may be more likely to vote for smaller projects because they are easier t
 This appears to have played out in RF5. Many of the larger projects from previous rounds saw a reduction in their RF5 funding. Examples include:
 
 - Protocol Guild: 223K OP in RF5 (vs 663K OP in RF3)
-- go-ethereum: 234K OP in RF5 (vs 496K OP in RF4)
-- Solidity: 204K OP in RF5 (vs 422K OP in RF4)
+- go-ethereum: 234K OP in RF5 (vs 496K OP in RF3)
+- Solidity: 204K OP in RF5 (vs 422K OP in RF3)
 
 Meanwhile, many of the smaller team efforts from RF3 saw an increase in their funding in RF5. Examples include:
 
