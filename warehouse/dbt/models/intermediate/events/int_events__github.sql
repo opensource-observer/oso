@@ -189,6 +189,7 @@ all_events as (
     select * from github_stars_and_forks
     union all
     select * from github_comments
+  )
 )
 
 select
