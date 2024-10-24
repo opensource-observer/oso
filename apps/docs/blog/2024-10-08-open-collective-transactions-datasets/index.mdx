@@ -6,6 +6,8 @@ tags: [data-science, open-collective]
 image: ./total_amount_donated_oc.png
 ---
 
+import Button from "../../src/components/plasmic/Button";
+
 [Open Collective](https://opencollective.com) is a platform that enables groups
 to collect and disburse funds transparently. It is used by many open-source
 projects, communities, and other groups to fund their activities. Notable
@@ -74,9 +76,22 @@ to open-source tools to build applications.
 
 ## Getting started
 
-To get started with the Open Collective transactions datasets, you can access
-them directly in BigQuery. The datasets are available in the
-`opensource-observer` project. For instance, getting the total amount of
+To get started with the Open Collective transactions datasets, 
+subscribe to the dataset on BigQuery here:
+
+<Button
+  size={"compact"}
+  color={"blue"}
+  target={"_blank"}
+  link={
+    "https://console.cloud.google.com/bigquery/analytics-hub/exchanges/projects/87806073973/locations/us/dataExchanges/open_source_observer_190181416ae/listings/open_collective_1926d37f24d" 
+  }
+  children={"Subscribe on BigQuery"}
+/>{" "}
+
+*Note: If you have not yet set up BigQuery on your Google account, check out our [Getting Started guide](../../docs/get-started/).*
+
+For instance, getting the total amount of
 donations per month in USD can be done with the following query:
 
 ```sql
@@ -84,7 +99,7 @@ SELECT
   DATE_TRUNC(DATE(created_at), MONTH) AS donation_month,
   SUM(CAST(JSON_VALUE(amount, "$.value") AS FLOAT64)) AS total_amount
 FROM
-  `opensource-observer.open_collective.deposits`
+  `YOUR_PROJECT.open_collective.deposits`
 WHERE
   JSON_VALUE(amount, "$.currency") = "USD"
   AND DATE(created_at) >= DATE("2020-01-01")
