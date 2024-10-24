@@ -3,8 +3,7 @@ import arrow
 from datetime import datetime, UTC
 from dataclasses import dataclass
 from enum import Enum
-from typing import Optional, Iterable, cast, ParamSpec, Any
-from pathlib import Path
+from typing import List, Optional, Iterable, cast, Any
 from urllib.parse import urlparse, ParseResult
 
 import httpx
@@ -62,6 +61,22 @@ class Repository(BaseModel):
     language: str
     created_at: datetime
     updated_at: datetime
+
+
+class GithubRepositorySBOMItem(BaseModel):
+    artifact_namespace: str
+    artifact_name: str
+    artifact_source: str
+    package: str
+    package_source: str
+    package_version: Optional[str]
+    snapshot_at: datetime
+
+
+class GithubClientConfig(BaseModel):
+    gh_token: str
+    rate_limit_max_retry: int = 5
+    server_error_max_rety: int = 3
 
 
 class InvalidGithubURL(Exception):
@@ -262,12 +277,78 @@ class GithubRepositoryResolver:
         logger.debug(f"unnested all github urls and got {len(all_github_urls)} rows")
         return all_github_urls
 
+    def get_sbom_for_repo(self, repo: Repository) -> List[GithubRepositorySBOMItem]:
+        try:
+            sbom = self._gh.rest.dependency_graph.export_sbom(
+                repo.owner,
+                repo.name,
+            )
+            graph = sbom.parsed_data.sbom
+            sbom_list: List[GithubRepositorySBOMItem] = []
+
+            for package in graph.packages:
+                package_name = package.name or "unknown"
+
+                if package_name.find(":") == -1:
+                    continue
+
+                package_source = package_name[0 : package_name.index(":")]
+                package_name = package_name[package_name.index(":") + 1 :]
+
+                sbom_list.append(
+                    GithubRepositorySBOMItem(
+                        artifact_namespace=repo.owner,
+                        artifact_name=repo.name,
+                        artifact_source="GITHUB",
+                        package=package_name,
+                        package_source=package_source.upper(),
+                        package_version=package.version_info or None,
+                        snapshot_at=arrow.get(graph.creation_info.created).datetime,
+                    )
+                )
+
+            return sbom_list
+        except RequestFailed as exception:
+            if exception.response.status_code == 404:
+                logging.warning("Skipping %s, no SBOM found", repo.url)
+                return []
+            raise exception
+
+    @staticmethod
+    def get_github_client(config: GithubClientConfig) -> GitHub:
+        if constants.http_cache:
+            logger.debug("Using the cache at: %s", constants.http_cache)
+            return CachedGithub(
+                config.gh_token,
+                sync_storage=get_sync_http_cache_storage(constants.http_cache),
+                async_storage=get_async_http_cache_storage(constants.http_cache),
+                auto_retry=RetryChainDecision(
+                    RetryRateLimit(max_retry=config.rate_limit_max_retry),
+                    RetryServerError(max_retry=config.server_error_max_rety),
+                ),
+            )
+        logger.debug("Loading github client without a cache")
+        return GitHub(
+            config.gh_token,
+            auto_retry=RetryChainDecision(
+                RetryRateLimit(max_retry=config.rate_limit_max_retry),
+                RetryServerError(max_retry=config.server_error_max_rety),
+            ),
+        )
+
 
 def repository_columns():
     table_schema_columns = pydantic_to_table_schema_columns(Repository)
     for column in table_schema_columns.values():
         column["nullable"] = True
     print(table_schema_columns)
+    return table_schema_columns
+
+
+def sbom_columns():
+    table_schema_columns = pydantic_to_table_schema_columns(GithubRepositorySBOMItem)
+    for column in table_schema_columns.values():
+        column["nullable"] = True
     return table_schema_columns
 
 
@@ -287,32 +368,50 @@ def oss_directory_github_repositories_resource(
 ):
     """Based on the oss_directory data we resolve repositories"""
 
-    if constants.http_cache:
-        logger.debug(f"Using the cache at: {constants.http_cache}")
-        gh = CachedGithub(
-            gh_token,
-            sync_storage=get_sync_http_cache_storage(constants.http_cache),
-            async_storage=get_async_http_cache_storage(constants.http_cache),
-            auto_retry=RetryChainDecision(
-                RetryRateLimit(max_retry=rate_limit_max_retry),
-                RetryServerError(max_retry=server_error_max_rety),
-            ),
-        )
-    else:
-        logger.debug(f"Loading github client without a cache")
-        gh = GitHub(
-            gh_token,
-            auto_retry=RetryChainDecision(
-                RetryRateLimit(max_retry=rate_limit_max_retry),
-                RetryServerError(max_retry=server_error_max_rety),
-            ),
-        )
+    config = GithubClientConfig(
+        gh_token=gh_token,
+        rate_limit_max_retry=rate_limit_max_retry,
+        server_error_max_rety=server_error_max_rety,
+    )
 
+    gh = GithubRepositoryResolver.get_github_client(config)
     resolver = GithubRepositoryResolver(gh)
-    for repo in resolver.resolve_repos(projects_df):
-        yield repo
+
+    yield from resolver.resolve_repos(projects_df)
 
 
 @dlt.source
 def oss_directory_github_repositories():
     return oss_directory_github_repositories_resource
+
+
+@dlt.resource(
+    name="sbom",
+    table_name="sbom",
+    columns=sbom_columns(),
+    write_disposition="append",
+)
+def oss_directory_github_sbom_resource(
+    projects_df: pl.DataFrame,
+    gh_token: str = dlt.secrets.value,
+    rate_limit_max_retry: int = 5,
+    server_error_max_rety: int = 3,
+):
+    """Based on the oss_directory data we resolve sbom manifests for repositories"""
+
+    config = GithubClientConfig(
+        gh_token=gh_token,
+        rate_limit_max_retry=rate_limit_max_retry,
+        server_error_max_rety=server_error_max_rety,
+    )
+
+    gh = GithubRepositoryResolver.get_github_client(config)
+    resolver = GithubRepositoryResolver(gh)
+
+    for repo in resolver.resolve_repos(projects_df):
+        yield from resolver.get_sbom_for_repo(repo)
+
+
+@dlt.source
+def oss_directory_github_sbom():
+    return oss_directory_github_sbom_resource
