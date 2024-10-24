@@ -17,6 +17,7 @@ from dagster import (
 from oso_dagster.dlt_sources.github_repos import (
     oss_directory_github_repositories_resource,
     oss_directory_github_sbom_resource,
+    oss_directory_missing_sbom_repositories_resource,
 )
 from oso_dagster.factories import dlt_factory
 from oso_dagster.factories.common import AssetFactoryResponse
@@ -158,6 +159,18 @@ def sbom(
     gh_token: str = secret_ref_arg(group_name="ossd", key="github_token"),
 ):
     yield oss_directory_github_sbom_resource(projects_df, gh_token)
+
+
+@dlt_factory(
+    key_prefix="ossd",
+    ins={"projects_df": AssetIn(project_key)},
+    tags=common_tags,
+)
+def missing_sbom(
+    projects_df: pl.DataFrame,
+    gh_token: str = secret_ref_arg(group_name="ossd", key="github_token"),
+):
+    yield oss_directory_missing_sbom_repositories_resource(projects_df, gh_token)
 
 
 @discoverable_jobs(dependencies=[repositories])

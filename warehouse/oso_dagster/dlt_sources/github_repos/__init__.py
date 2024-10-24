@@ -9,7 +9,7 @@ from urllib.parse import urlparse, ParseResult
 import httpx
 import hishel
 import dlt
-from dlt.common.libs.pydantic import pydantic_to_table_schema_columns
+from oso_dagster.factories.dlt import pydantic_to_dlt_nullable_columns
 import polars as pl
 from pydantic import BaseModel
 from githubkit import GitHub
@@ -70,6 +70,14 @@ class GithubRepositorySBOMItem(BaseModel):
     package: str
     package_source: str
     package_version: Optional[str]
+    snapshot_at: datetime
+
+
+class GitHubRespositoryMissingSBOMItem(BaseModel):
+    artifact_namespace: str
+    artifact_name: str
+    artifact_source: str
+    artifact_url: str
     snapshot_at: datetime
 
 
@@ -277,6 +285,18 @@ class GithubRepositoryResolver:
         logger.debug(f"unnested all github urls and got {len(all_github_urls)} rows")
         return all_github_urls
 
+    def is_repo_missing_sbom(self, repo: Repository) -> bool:
+        try:
+            self._gh.rest.dependency_graph.export_sbom(
+                repo.owner,
+                repo.name,
+            )
+            return False
+        except RequestFailed as e:
+            if e.response.status_code == 404:
+                return True
+            raise e
+
     def get_sbom_for_repo(self, repo: Repository) -> List[GithubRepositorySBOMItem]:
         try:
             sbom = self._gh.rest.dependency_graph.export_sbom(
@@ -337,25 +357,10 @@ class GithubRepositoryResolver:
         )
 
 
-def repository_columns():
-    table_schema_columns = pydantic_to_table_schema_columns(Repository)
-    for column in table_schema_columns.values():
-        column["nullable"] = True
-    print(table_schema_columns)
-    return table_schema_columns
-
-
-def sbom_columns():
-    table_schema_columns = pydantic_to_table_schema_columns(GithubRepositorySBOMItem)
-    for column in table_schema_columns.values():
-        column["nullable"] = True
-    return table_schema_columns
-
-
 @dlt.resource(
     name="repositories",
     table_name="repositories",
-    columns=repository_columns(),
+    columns=pydantic_to_dlt_nullable_columns(Repository),
     write_disposition="append",
     primary_key="id",
     merge_key="node_id",
@@ -380,15 +385,10 @@ def oss_directory_github_repositories_resource(
     yield from resolver.resolve_repos(projects_df)
 
 
-@dlt.source
-def oss_directory_github_repositories():
-    return oss_directory_github_repositories_resource
-
-
 @dlt.resource(
     name="sbom",
     table_name="sbom",
-    columns=sbom_columns(),
+    columns=pydantic_to_dlt_nullable_columns(GithubRepositorySBOMItem),
     write_disposition="append",
 )
 def oss_directory_github_sbom_resource(
@@ -412,6 +412,37 @@ def oss_directory_github_sbom_resource(
         yield from resolver.get_sbom_for_repo(repo)
 
 
-@dlt.source
-def oss_directory_github_sbom():
-    return oss_directory_github_sbom_resource
+@dlt.resource(
+    name="missing_sbom",
+    table_name="missing_sbom",
+    columns=pydantic_to_dlt_nullable_columns(GitHubRespositoryMissingSBOMItem),
+    write_disposition="append",
+)
+def oss_directory_missing_sbom_repositories_resource(
+    projects_df: pl.DataFrame,
+    gh_token: str = dlt.secrets.value,
+    rate_limit_max_retry: int = 5,
+    server_error_max_rety: int = 3,
+):
+    """Based on the oss_directory data we resolve repositories"""
+
+    config = GithubClientConfig(
+        gh_token=gh_token,
+        rate_limit_max_retry=rate_limit_max_retry,
+        server_error_max_rety=server_error_max_rety,
+    )
+
+    gh = GithubRepositoryResolver.get_github_client(config)
+    resolver = GithubRepositoryResolver(gh)
+
+    yield (
+        GitHubRespositoryMissingSBOMItem(
+            artifact_namespace=repo.owner,
+            artifact_name=repo.name,
+            artifact_source="GITHUB",
+            artifact_url=repo.url,
+            snapshot_at=repo.ingestion_time or datetime.now(UTC),
+        )
+        for repo in resolver.resolve_repos(projects_df)
+        if resolver.is_repo_missing_sbom(repo)
+    )
