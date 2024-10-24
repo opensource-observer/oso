@@ -130,6 +130,8 @@ repos as (
   select
     project_id,
     artifact_source as event_source,
+    MIN(created_at) as first_created_at_date,
+    MAX(updated_at) as last_updated_at_date,
     MIN(first_commit_time) as first_commit_date,
     MAX(last_commit_time) as last_commit_date,
     COUNT(distinct artifact_id) as repository_count,
@@ -172,6 +174,8 @@ select
   project_metadata.project_name,
   project_metadata.display_name,
   project_metadata.event_source,
+  code_metrics.first_created_at_date,
+  code_metrics.last_updated_at_date,
   code_metrics.first_commit_date,
   code_metrics.last_commit_date,
   code_metrics.repository_count,
