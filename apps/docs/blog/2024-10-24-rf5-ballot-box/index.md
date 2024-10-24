@@ -142,6 +142,10 @@ Experts’ high-assertion votes — where they allocated a significant percentag
 
 ![](./10-divisive-std.png)
 
+Overall, experts also had a much higher standard deviation in their votes for top projects than non-experts. This is probably a good thing: it means that the most knowledge people are also the ones most likely to hold strong opinions about projects. We can see this in the exhibit below, which compares the standard deviation of votes for each project over its median by group. (Only a few projects are labeled for clarity.)
+
+![](./10-stdev-groups.png)
+
 ### Key takeaways
 
 - Experts reached consensus on the top projects but varied in how much they thought these projects deserved.
