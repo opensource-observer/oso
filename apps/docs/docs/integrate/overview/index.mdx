@@ -6,6 +6,7 @@ sidebar_position: 1
 import Button from "../../../src/components/plasmic/Button";
 import OsoLogo from "./oso-primary.png";
 import GithubLogo from "./github.png";
+import OpenSourceInsights from "./open-source-insights.png";
 import EthereumLogo from "./ethereum.png";
 import SuperchainLogo from "./superchain.png";
 import FilecoinLogo from "./filecoin.png";
@@ -157,6 +158,59 @@ SELECT event as issue_status, COUNT(*) as cnt FROM (
   WHERE type = 'IssuesEvent'
 )
 GROUP by issue_status;
+```
+
+### Open Source Insights
+
+<img src={OpenSourceInsights} width="200" />
+
+<Button
+  size={"compact"}
+  color={"blue"}
+  target={"_blank"}
+  link={
+    "https://console.cloud.google.com/marketplace/product/bigquery-public-data/deps-dev?hl=en"
+  }
+  children={"View on BigQuery"}
+/>{" "}
+
+- [Reference documentation](https://docs.deps.dev/bigquery/v1/)
+- Data License: [CC-BY 4.0](https://docs.deps.dev/bigquery/v1/)
+
+Open Source Insights (aka [deps.dev](https://deps.dev/)) is a 
+service developed and hosted by Google to help developers
+better understand the structure, construction, and security
+of open source software packages.
+The service examines each package, constructs a full, detailed graph
+of its dependencies and their properties, and makes the results available
+to anyone who could benefit from them.
+The goal is to provide developers with a picture of how their software is put together,
+how that changes as dependencies change, and what the consequences might be.
+
+For example, to determine which packages have the most dependents:
+
+```sql
+DECLARE
+  Sys STRING DEFAULT 'CARGO';
+
+SELECT
+  Name,
+  Version,
+FROM (
+  SELECT
+    Name,
+    Version,
+    ROW_NUMBER()
+      OVER (PARTITION BY
+              Name
+            ORDER BY
+              VersionInfo.Ordinal DESC) AS RowNumber
+    FROM
+      `bigquery-public-data.deps_dev_v1.PackageVersionsLatest`
+    WHERE
+      System = Sys
+      AND VersionInfo.IsRelease)
+WHERE RowNumber = 1;
 ```
 
 
