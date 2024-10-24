@@ -32,11 +32,11 @@ select
   LOWER(from_artifact_source_id) as from_artifact_source_id,
   CAST(amount as FLOAT64) as amount
 from (
-  select * from {{ ref('int_events_blockchain') }}
+  select * from {{ ref('int_events__blockchain') }}
   union all
-  select * from {{ ref('int_events_github') }}
+  select * from {{ ref('int_events__github') }}
   union all
-  select * from {{ ref('int_events_dependencies') }}
+  select * from {{ ref('int_events__dependencies') }}
   union all
-  select * from {{ ref('int_events_open_collective') }}
+  select * from {{ ref('int_events__open_collective') }}
 )
