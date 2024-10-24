@@ -12,9 +12,9 @@ In some ways, this round felt like a return to earlier Retro Funding days. There
 
 However, RF5 also introduced several major twists: voting within categories, guest voters, and an expertise dimension. We’ll explain all these things in a minute.
 
-Like our other posts in the “opening up the ballot box” series, this post will analyze the shape of the rewards distribution curve and the preferences of individual voters using anonymized data. We’ll also deep dive into the results by category and compare expert vs non-expert voting patterns. It’s one of our longer reports because there’s a lot to unpack.
+Like [our other posts](https://docs.opensource.observer/blog/rf4-ballot-box) in the “opening up the ballot box” canon, this post will analyze the shape of the rewards distribution curve and the preferences of individual voters using anonymized data. We’ll also deep dive into the results by category and compare expert vs non-expert voting patterns.
 
-The key question this round sought to answer is: _will experts vote differently than non-experts?_ Spoiler: Yes. But we have lots of data about their voting patterns, so read on.
+Finally, we'll tackle the key question this round sought to answer: _do experts vote differently than non-experts?_ In our view, the answer is yes. We have a lot of data on this topic, so you're welcome to draw your own conclusions.
 
 <!-- truncate -->
 
@@ -44,19 +44,23 @@ Regardless of designation, all voters had the same voting experience. After sett
 
 The reward function was similar to the one used for RF3 and RF4, which relied on median scores and a normalization algorithm.
 
-Once again, you can find all the official details about the round [here](<[here](https://gov.optimism.io/t/retro-funding-5-op-stack-round-details/8612)>).
+Once again, you can find all the official details about the round [here](https://gov.optimism.io/t/retro-funding-5-op-stack-round-details/8612).
 
 ## Overall observations
 
-We’ve written [several previous "opening up the ballot box" posts](https://docs.opensource.observer/blog/rf4-ballot-box) as well as a longer standalone post about [the significance](https://docs.opensource.observer/blog/levels-of-the-game) of the reward distribution curve, i.e., the power law vs the peanut butter spread.
+We’ve written [several prior "opening up the ballot box" posts](https://docs.opensource.observer/blog/rf4-ballot-box) as well as a longer standalone post about [the significance](https://docs.opensource.observer/blog/levels-of-the-game) of the reward distribution curve.
 
-### The distribution curve was pretty flat
+We think the distribution curve is an important signal for builders. It communicates the reward for being a top project vs a middle project. It should motivate builders to aim for creating huge impact, and it should give them a sense of how much they can expect to receive if they do.
 
-If you've read these, then you will recognize that the Retro Funding 5 distribution is a nice chunky peanut butter spread.
+Unfortunately, the RF5 curve doesn't provide a very clear signal in our view.
+
+### The RF5 distribution curve is pretty flat
+
+The Retro Funding 5 distribution is what we refer to as "peanut butter spread": flat and chunky.
 
 ![](./03-rf5-distro.png)
 
-This was the flattest distribution yet. The top project, go-ethereum, received 235K OP (2.9% of the total). The median project received 93K. Even the lowest ranked project received 37K, which was more than 70% of projects received in Round 4.
+This was the flattest distribution yet. The top project, go-ethereum, received 235K OP (2.9% of the total). The median project received 93K. Even the lowest ranked project received 37K, which was more than 70% of projects received in Round 4. This made a good round for “average” projects.
 
 In [Round 4](https://docs.opensource.observer/blog/rf4-ballot-box), there was a steep power law distribution. This was likely the result of the [metrics-based voting](https://docs.opensource.observer/blog/impact-metrics-rf4), as top projects often had orders of magnitude more impact according to the metrics. The top projects were capped at 500K OP (2% of the total). The median project received 13K OP.
 
@@ -70,15 +74,17 @@ Round 2 had a particularly unique distribution curve: fairly linear up until the
 
 ![](./06-rf2-distro.png)
 
-This round was a great one for “average” projects. The flatter distribution resulted in a more equitable spread, allowing even lower-ranked projects to receive meaningful allocations.
+The flatter distribution resulted in a more equitable spread, allowing even lower-ranked projects to receive meaningful allocations.
 
 ### Smaller projects overperformed
 
-We raised [this concern](https://docs.opensource.observer/blog/what-builders-can-learn-from-retropgf3#projects-vs-individuals) in one of our RF3 reports:
+In [our RF3 analysis](https://docs.opensource.observer/blog/what-builders-can-learn-from-retropgf3#projects-vs-individuals), we raised the concern that voting on projects can give smaller projects an advantage:
 
 > In addition to the incentive for everyone to throw their name in the hat next RetroPGF, there may also be a perverse incentive for individual contributors or factions from within larger projects or DAOs to apply.
 
-Many of the top projects from previous rounds saw a reduction in their RF5 funding compared to earlier rounds. Examples include:
+Voters may be more likely to vote for smaller projects because they are easier to understand. There's also a tendency to give something to every project in the category (more on this later), or to assume that smaller projects are more deserving of funding.
+
+This appears to have played out in RF5. Many of the larger projects from previous rounds saw a reduction in their RF5 funding. Examples include:
 
 - Protocol Guild: 223K OP in RF5 (vs 663K OP in RF3)
 - go-ethereum: 234K OP in RF5 (vs 496K OP in RF4)
@@ -90,23 +96,23 @@ Meanwhile, many of the smaller team efforts from RF3 saw an increase in their fu
 - Understanding Optimism Codebase: 71K OP in RF5 (vs 29K OP in RF3)
 - OPcity stack: 63K OP in RF5 (vs 25K OP in RF3)
 
-However, the most effective strategy was for larger projects to break up their contributions into smaller pieces:
+Larger projects that broke up their contributions into smaller, discrete applications also saw an increase in their funding. For example:
 
-- Nethermind: 438K OP for two contributions in RF5 (vs 248K in RF3)
-- libp2p: 384K OP for four contributions in RF5 (vs 298K in RF3)
-- Upnode: 285K OP for three contributions in RF5 (vs 62K in RF3)
+- Nethermind: 438K OP for two applications in RF5 (vs 248K in RF3)
+- libp2p: 384K OP for four applications in RF5 (vs 298K in RF3)
+- Upnode: 285K OP for three applications in RF5 (vs 62K in RF3)
 
-Without commenting on the question of whether smaller teams are more deserving of funding, this is a predictable outcome of a flatter distribution curve. The reward function is a game, and players will optimize for it.
+Without commenting on the question of whether smaller or more modular teams are more deserving of funding, this is a predictable outcome of a flatter distribution curve. The reward function is a game, and players will optimize for it.
 
 ### We get flat distributions when voters vote for them
 
 While there may be aspects of the application process and voting UI that influence the shape of the distribution, the voters themselves are the primary drivers of the distribution curve. The RF5 distribution was flatter than previous rounds because voters voted for it to be that way.
 
-Out of the 111 voters, 80% allocated funding to every project in their assigned category, and half of them had a simulated allocation of at least 15K OP for every project in their category. Again, by contrast, the median project in RF4 received 13K OP.
+Out of the 111 voters, 80% allocated funding to every project in their assigned category. Half of voters allocated at least 15K OP to _every project_ in their category. Again, by contrast, the median project in RF4 received 13K OP.
 
 Only 26% of voters gave more than 12.5% to any one project in their category.
 
-We can quantify this by calculating the coefficient of variation (CV) in the votes cast by each voter. A low CV indicates a voter believed every project deserved a similar allocation, while a high CV suggests more polarized voting behavior (favoring certain projects heavily). Below, we illustrate the difference between flatter and steeper distributions with two example voters.
+We can quantify vote variance by calculating the [coefficient of variation](https://en.wikipedia.org/wiki/Coefficient_of_variation) (CV) in the votes cast by each voter. A low CV indicates a voter believed every project deserved a similar allocation, while a high CV suggests more polarized voting behavior (favoring certain projects heavily). Below, we illustrate the difference between flatter and steeper distributions with two example voters.
 
 ![](./08-cv-low.png)
 ![](./08-cv-high.png)
