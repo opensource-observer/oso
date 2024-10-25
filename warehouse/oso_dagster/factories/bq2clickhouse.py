@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Optional, Sequence, Dict, List, Tuple
+from typing import Optional, Sequence, Dict, List, Tuple, cast
 from dagster import (
     asset,
     AssetExecutionContext,
@@ -7,7 +7,7 @@ from dagster import (
 )
 from dagster_gcp import BigQueryResource, GCSResource
 from google.cloud.bigquery import Client as BQClient
-from .common import AssetFactoryResponse, AssetDeps
+from .common import AssetFactoryResponse, AssetDeps, GenericAsset
 from ..resources import ClickhouseResource
 from ..utils.bq import BigQueryTableConfig, export_to_gcs
 from ..utils.errors import UnsupportedTableColumn
@@ -182,7 +182,12 @@ def create_bq2clickhouse_asset(asset_config: Bq2ClickhouseAssetConfig):
             # Also ensure that the expected destination exists. Even if we
             # will delete this keeps the `OVERWRITE` mode logic simple
             create_table(
-                ch_client, destination_table_name, columns, index, order_by, if_not_exists=True
+                ch_client,
+                destination_table_name,
+                columns,
+                index,
+                order_by,
+                if_not_exists=True,
             )
             context.log.info(f"Ensured destination table {destination_table_name}")
             create_table(ch_client, temp_dest, columns, index, if_not_exists=False)
@@ -208,4 +213,5 @@ def create_bq2clickhouse_asset(asset_config: Bq2ClickhouseAssetConfig):
             }
         )
 
-    return AssetFactoryResponse([bq2clickhouse_asset])
+    # https://github.com/opensource-observer/oso/issues/2403
+    return AssetFactoryResponse([cast(GenericAsset, bq2clickhouse_asset)])
