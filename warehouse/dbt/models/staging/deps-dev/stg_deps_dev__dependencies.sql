@@ -18,7 +18,7 @@ with base as (
     `Version`,
     `Dependency`,
     `MinimumDepth`
-  from `bigquery-public-data.deps_dev_v1.Dependencies`
+  from {{ source("deps_dev", "dependencies") }}
 )
 {% if is_incremental() %}
     select * from base
