@@ -1,6 +1,6 @@
 select active.metrics_sample_date,
   active.event_source,
-  @metrics_entity_type_col('to_%s_id', table_alias := active),
+  @metrics_entity_type_col('to_{entity_type}_id', table_alias := active),
   '' as from_artifact_id,
   @metric_name('full_time_developers') as metric,
   COUNT(DISTINCT active.from_artifact_id) as amount
@@ -12,13 +12,13 @@ from metrics_peer_ref(
 where active.amount / @rolling_window >= @full_time_ratio
 group by metric,
   from_artifact_id,
-  @metrics_entity_type_col('to_%s_id', table_alias := active),
+  @metrics_entity_type_col('to_{entity_type}_id', table_alias := active),
   event_source,
   metrics_sample_date
 union all
 select active.metrics_sample_date,
   active.event_source,
-  @metrics_entity_type_col('to_%s_id', table_alias := active),
+  @metrics_entity_type_col('to_{entity_type}_id', table_alias := active),
   '' as from_artifact_id,
   @metric_name('part_time_developers') as metric,
   COUNT(DISTINCT active.from_artifact_id) as amount
@@ -30,13 +30,13 @@ from metrics_peer_ref(
 where active.amount / @rolling_window < @full_time_ratio
 group by metric,
   from_artifact_id,
-  @metrics_entity_type_col('to_%s_id', table_alias := active),
+  @metrics_entity_type_col('to_{entity_type}_id', table_alias := active),
   event_source,
   metrics_sample_date
 union all
 select active.metrics_sample_date,
   active.event_source,
-  @metrics_entity_type_col('to_%s_id', table_alias := active),
+  @metrics_entity_type_col('to_{entity_type}_id', table_alias := active),
   '' as from_artifact_id,
   @metric_name('active_developers') as metric,
   COUNT(DISTINCT active.from_artifact_id) as amount
@@ -47,6 +47,6 @@ from metrics_peer_ref(
   ) as active
 group by metric,
   from_artifact_id,
-  @metrics_entity_type_col('to_%s_id', table_alias := active),
+  @metrics_entity_type_col('to_{entity_type}_id', table_alias := active),
   event_source,
   metrics_sample_date

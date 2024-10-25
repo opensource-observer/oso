@@ -236,15 +236,19 @@ def metrics_entity_type_col(
             names.append(table_alias.this)
         else:
             names.append(table_alias.sql())
-    column_name = format_str % evaluator.locals.get("entity_type", "artifact")
+    column_name = format_str.format(
+        entity_type=evaluator.locals.get("entity_type", "artifact")
+    )
     names.append(column_name)
     return sqlglot.to_column(f"{'.'.join(names)}")
 
 
-def metrics_alias_by_entity_type(
+def metrics_entity_type_alias(
     evaluator: MacroEvaluator, to_alias: exp.Expression, format_str: str
 ):
     if isinstance(format_str, exp.Literal):
         format_str = format_str.this
-    alias_name = format_str % evaluator.locals.get("entity_type", "artifact")
+    alias_name = format_str.format(
+        entity_type=evaluator.locals.get("entity_type", "artifact")
+    )
     return exp.alias_(to_alias, alias_name)

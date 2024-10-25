@@ -22,7 +22,7 @@ from .macros import (
     metrics_sample_date,
     metrics_start,
     relative_window_sample_date,
-    metrics_alias_by_entity_type,
+    metrics_entity_type_alias,
 )
 
 CURR_DIR = os.path.dirname(__file__)
@@ -120,7 +120,7 @@ def generate_models_from_query(
         columns = METRICS_COLUMNS_BY_ENTITY[ref["entity_type"]]
         additional_macros = [
             metrics_entity_type_col,
-            metrics_alias_by_entity_type,
+            metrics_entity_type_alias,
             relative_window_sample_date,
             (metrics_name, ["metric_name"]),
             metrics_sample_date,

@@ -1,7 +1,10 @@
 WITH latest AS (
   SELECT classification.metrics_sample_date,
     classification.event_source,
-    @metrics_entity_type_col('to_%s_id', table_alias := classification),
+    @metrics_entity_type_col(
+      'to_{entity_type}_id',
+      table_alias := classification
+    ),
     classification.metric,
     classification.amount
   FROM metrics_peer_ref(
@@ -19,7 +22,10 @@ WITH latest AS (
 previous AS (
   SELECT classification.metrics_sample_date,
     classification.event_source,
-    @metrics_entity_type_col('to_%s_id', table_alias := classification),
+    @metrics_entity_type_col(
+      'to_{entity_type}_id',
+      table_alias := classification
+    ),
     classification.metric,
     classification.amount
   FROM metrics_peer_ref(
@@ -36,12 +42,12 @@ previous AS (
 )
 select @metrics_end(DATE) as metrics_sample_date,
   COALESCE(latest.event_source, previous.event_source) as event_source,
-  @metrics_alias_by_entity_type(
+  @metrics_entity_type_alias(
     COALESCE(
-      @metrics_entity_type_col('to_%s_id', table_alias := latest),
-      @metrics_entity_type_col('to_%s_id', table_alias := previous)
+      @metrics_entity_type_col('to_{entity_type}_id', table_alias := latest),
+      @metrics_entity_type_col('to_{entity_type}_id', table_alias := previous)
     ),
-    'to_%s_id'
+    'to_{entity_type}_id'
   ),
   '' as from_artifact_id,
   @metrics_name(
@@ -53,5 +59,5 @@ select @metrics_end(DATE) as metrics_sample_date,
   latest.amount - previous.amount as amount
 FROM previous
   LEFT JOIN latest ON latest.event_source = previous.event_source
-  AND @metrics_entity_type_col('to_%s_id', table_alias := latest) = @metrics_entity_type_col('to_%s_id', table_alias := previous)
+  AND @metrics_entity_type_col('to_{entity_type}_id', table_alias := latest) = @metrics_entity_type_col('to_{entity_type}_id', table_alias := previous)
   AND latest.metric = previous.metric
