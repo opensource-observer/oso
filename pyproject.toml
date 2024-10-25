@@ -62,6 +62,7 @@ dagster-sqlmesh = "0.2.0.dev3"
 google-auth = "^2.34.0"
 pillow = "^10.4.0"
 dagster-k8s = "^0.24.6"
+pyiceberg = { extras = ["hive"], version = "^0.7.1" }
 
 
 [tool.poetry.scripts]
