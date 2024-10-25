@@ -132,11 +132,17 @@ def to_actual_table_name(
 def reference_to_str(ref: PeerMetricDependencyRef, actual_name: str = ""):
     name = actual_name or ref["name"]
     result = f"{name}_to_{ref['entity_type']}"
-    suffix= time_suffix(ref.get('time_aggregation'), ref.get('window'), ref.get('unit'))
+    suffix = time_suffix(
+        ref.get("time_aggregation"), ref.get("window"), ref.get("unit")
+    )
     return f"{result}_{suffix}"
 
 
-def time_suffix(time_aggregation: t.Optional[str], window: t.Optional[int | str], unit: t.Optional[str]):
+def time_suffix(
+    time_aggregation: t.Optional[str],
+    window: t.Optional[int | str],
+    unit: t.Optional[str],
+):
     if window:
         return f"over_{window}_{unit}"
     if time_aggregation:
@@ -165,6 +171,8 @@ class MetricQueryDef:
     rolling: t.Optional[RollingConfig] = None
 
     time_aggregations: t.Optional[t.List[str]] = None
+
+    is_intermediate: bool = False
 
     @property
     def raw_sql(self):
@@ -233,7 +241,7 @@ class MetricQueryDef:
         if suffix:
             model_name = f"{model_name}_{suffix}"
         return model_name
-    
+
 
 def exp_literal_to_py_literal(glot_literal: exp.Expression) -> t.Any:
     # Don't error by default let it pass
@@ -244,7 +252,7 @@ def exp_literal_to_py_literal(glot_literal: exp.Expression) -> t.Any:
 
 class PeerRefRelativeWindowHandler(CustomFuncHandler):
     pass
-    
+
 
 class PeerRefHandler(CustomFuncHandler[PeerMetricDependencyRef]):
     name = "metrics_peer_ref"
@@ -258,10 +266,16 @@ class PeerRefHandler(CustomFuncHandler[PeerMetricDependencyRef]):
         unit: t.Optional[exp.Expression] = None,
         time_aggregation: t.Optional[exp.Expression] = None,
     ) -> PeerMetricDependencyRef:
-        entity_type_val = t.cast(str, exp_literal_to_py_literal(entity_type)) if entity_type else "" 
+        entity_type_val = (
+            t.cast(str, exp_literal_to_py_literal(entity_type)) if entity_type else ""
+        )
         window_val = int(exp_literal_to_py_literal(window)) if window else None
         unit_val = t.cast(str, exp_literal_to_py_literal(unit)) if unit else None
-        time_aggregation_val = t.cast(str, exp_literal_to_py_literal(time_aggregation)) if time_aggregation else None
+        time_aggregation_val = (
+            t.cast(str, exp_literal_to_py_literal(time_aggregation))
+            if time_aggregation
+            else None
+        )
         return PeerMetricDependencyRef(
             name=name,
             entity_type=entity_type_val,
@@ -280,7 +294,6 @@ class PeerRefHandler(CustomFuncHandler[PeerMetricDependencyRef]):
             obj["entity_type"] = context["entity_type"]
         peer_table_map = context["peer_table_map"]
         return sqlglot.to_table(f"metrics.{to_actual_table_name(obj, peer_table_map)}")
-
 
 
 class MetricQueryContext:
@@ -374,7 +387,7 @@ class MetricQuery:
                             name=name,
                             entity_type=entity,
                             window=window,
-                            unit=self._source.rolling.get('unit'),
+                            unit=self._source.rolling.get("unit"),
                         )
                     )
             for time_aggregation in self._source.time_aggregations or []:
@@ -388,6 +401,10 @@ class MetricQuery:
         return refs
 
     @property
+    def is_intermediate(self):
+        return self._source.is_intermediate
+
+    @property
     def provided_dependency_refs(self):
         return self.generate_dependency_refs_for_name(self.reference_name)
 
@@ -397,7 +414,7 @@ class MetricQuery:
         evaluator: MacroEvaluator,
         peer_table_map: t.Dict[str, str],
     ):
-        sources_database = evaluator.locals.get('oso_source') or 'default'
+        sources_database = evaluator.locals.get("oso_source") or "default"
         if ref["entity_type"] == "artifact":
             return self.generate_artifact_query(
                 evaluator,
@@ -517,7 +534,7 @@ class MetricQuery:
             # Check if this using the timeseries source tables as a join or the from
             is_using_timeseries_source = False
             for table in select.find_all(exp.Table):
-                if table.this.this in ['events_daily_to_artifact']:
+                if table.this.this in ["events_daily_to_artifact"]:
                     is_using_timeseries_source = True
             if not is_using_timeseries_source:
                 return node
@@ -526,7 +543,7 @@ class MetricQuery:
                 ex = select.expressions[i]
                 if not isinstance(ex, exp.Alias):
                     continue
-                
+
                 # If to_artifact_id is being aggregated then it's time to rewrite
                 if isinstance(ex.this, exp.Column) and isinstance(
                     ex.this.this, exp.Identifier
@@ -556,7 +573,7 @@ class MetricQuery:
                             updated_select = updated_select.join(
                                 f"{sources_database}.projects_by_collection_v1",
                                 on="artifacts_by_project_v1.project_id = projects_by_collection_v1.project_id",
-                                join_type="inner"
+                                join_type="inner",
                             )
 
                             new_to_entity_id_col = exp.to_column(
@@ -626,7 +643,8 @@ class MetricQuery:
         metrics_query = qualify(metrics_query)
 
         metrics_query = self.transform_aggregating_selects(
-            metrics_query, self.artifact_to_upstream_entity_transform("project", sources_database)
+            metrics_query,
+            self.artifact_to_upstream_entity_transform("project", sources_database),
         )
 
         top_level_select = exp.select(
@@ -666,7 +684,8 @@ class MetricQuery:
         metrics_query = qualify(metrics_query)
 
         metrics_query = self.transform_aggregating_selects(
-            metrics_query, self.artifact_to_upstream_entity_transform("collection", sources_database)
+            metrics_query,
+            self.artifact_to_upstream_entity_transform("collection", sources_database),
         )
 
         top_level_select = exp.select(
@@ -736,10 +755,43 @@ class DailyTimeseriesRollingWindowOptions(t.TypedDict):
 #         pass
 
 
-def join_all_of_entity_type(evaluator: MacroEvaluator, *, db: str, tables: t.List[str], columns: t.List[str]):
-    query = exp.select(*columns).from_(sqlglot.to_table(f"{db}.{tables[0]}"))
+def join_all_of_entity_type(
+    evaluator: MacroEvaluator, *, db: str, tables: t.List[str], columns: t.List[str]
+):
+    # A bit of a hack but we know we have a "metric" column. We want to
+    # transform this metric id to also include the event_source as a prefix to
+    # that metric id in the joined table
+    transformed_columns = []
+    for column in columns:
+        if column == "event_source":
+            continue
+        if column == "metric":
+            transformed_columns.append(
+                exp.alias_(
+                    exp.Concat(
+                        expressions=[
+                            exp.to_column("event_source"),
+                            exp.Literal(this="_", is_string=True),
+                            exp.to_column(column),
+                        ],
+                        safe=False,
+                        coalesce=False,
+                    ),
+                    alias="metric",
+                )
+            )
+        else:
+            transformed_columns.append(column)
+
+    query = exp.select(*transformed_columns).from_(
+        sqlglot.to_table(f"{db}.{tables[0]}")
+    )
     for table in tables[1:]:
-        query = query.union(exp.select(*columns).from_(sqlglot.to_table(f"{db}.{table}")), distinct=False)
+        query = query.union(
+            exp.select(*transformed_columns).from_(sqlglot.to_table(f"{db}.{table}")),
+            distinct=False,
+        )
+    # Calculate the correct metric_id for all of the entity types
     return query
 
 

@@ -255,8 +255,9 @@ def timeseries_metrics(
             start=raw_options["start"],
             timeseries_sources=timeseries_sources,
         )
-        for entity_type in all_tables.keys():
-            all_tables[entity_type] = all_tables[entity_type] + tables[entity_type]
+        if not query.is_intermediate:
+            for entity_type in all_tables.keys():
+                all_tables[entity_type] = all_tables[entity_type] + tables[entity_type]
 
     # Join all of the models of the same entity type into the same view model
     for entity_type, tables in all_tables.items():
@@ -274,103 +275,3 @@ def timeseries_metrics(
             start=raw_options["start"],
             columns=METRICS_COLUMNS_BY_ENTITY[entity_type],
         )
-
-
-# def daily_timeseries_rolling_window_model(
-#     **raw_options: t.Unpack[DailyTimeseriesRollingWindowOptions],
-# ):
-#     # We need to turn the options into something we can have easily pickled due
-#     # to some sqlmesh execution environment management that I don't yet fully
-#     # understand.
-#     metric_queries = {
-#         key: obj.to_input() for key, obj in raw_options["metric_queries"].items()
-#     }
-#     model_name = raw_options["model_name"]
-#     trailing_days = raw_options["trailing_days"]
-
-#     @model(
-#         name=model_name,
-#         is_sql=True,
-#         kind={
-#             "name": ModelKindName.INCREMENTAL_BY_TIME_RANGE,
-#             "time_column": "bucket_day",
-#             "batch_size": 1,
-#         },
-#         dialect="clickhouse",
-#         columns={
-#             "bucket_day": exp.DataType.build("DATE", dialect="clickhouse"),
-#             "event_source": exp.DataType.build("String", dialect="clickhouse"),
-#             "to_artifact_id": exp.DataType.build("String", dialect="clickhouse"),
-#             "from_artifact_id": exp.DataType.build("String", dialect="clickhouse"),
-#             "metric": exp.DataType.build("String", dialect="clickhouse"),
-#             "amount": exp.DataType.build("Float64", dialect="clickhouse"),
-#         },
-#         grain=["metric", "to_artifact_id", "from_artifact_id", "bucket_day"],
-#         **(raw_options.get("model_options", {})),
-#     )
-#     def generated_model(evaluator: MacroEvaluator):
-#         # Given a set of rolling metrics together. This will also ensure that
-#         # all of the rolling windows are identical.
-
-#         # Combine all of the queries
-#         # together into a single query. Once all of the queries have been
-#         # completed.
-#         cte_suffix = uuid.uuid4().hex
-
-#         subqueries: t.Dict[str, MetricQuery] = {}
-#         for query_name, query_input in metric_queries.items():
-#             query = MetricQueryDef.from_input(query_input)
-#             subquery = subqueries[query_name] = MetricQuery.load(
-#                 name=query_name, default_dialect="clickhouse", source=query
-#             )
-
-#         union_cte: t.Optional[exp.Query] = None
-
-#         cte_column_select = [
-#             "metrics_sample_date as bucket_day",
-#             "to_artifact_id as to_artifact_id",
-#             "from_artifact_id as from_artifact_id",
-#             "event_source as event_source",
-#             "metric as metric",
-#             "CAST(amount AS Float64) as amount",
-#         ]
-
-#         top_level_select = exp.select(
-#             "bucket_day",
-#             "to_artifact_id",
-#             "from_artifact_id",
-#             "event_source",
-#             "metric",
-#             "amount",
-#         ).from_(f"all_{cte_suffix}")
-
-#         for name, subquery in subqueries.items():
-#             # Validate the given dependencies
-#             deps = subquery.peer_dependencies
-#             for dep in deps:
-#                 if dep not in subqueries:
-#                     raise Exception(f"Missing dependency {dep} for metric query {name}")
-#                 # Replace all the references to that table and replace it with a CTE reference
-#                 replace_dep = replace_source_tables(
-#                     sqlglot.to_table(f"peer.{dep}"),
-#                     sqlglot.to_table(f"{dep}_{cte_suffix}"),
-#                 )
-#                 subquery.transform_expressions(replace_dep)
-
-#             # Evaluate the expressions in the subquery
-#             cte_name = f"{name}_{cte_suffix}"
-#             evaluated = subquery.evaluate(
-#                 evaluator, extra_vars=dict(trailing_days=trailing_days)
-#             )
-#             top_level_select = top_level_select.with_(cte_name, as_=evaluated)
-#             unionable_select = sqlglot.select(*cte_column_select).from_(cte_name)
-#             if not union_cte:
-#                 union_cte = unionable_select
-#             else:
-#                 union_cte = union_cte.union(unionable_select, distinct=False)
-
-#         if not union_cte:
-#             raise Exception("no queries generated from the evaluated queries")
-#         top_level_select = top_level_select.with_(f"all_{cte_suffix}", union_cte)
-#         return top_level_select
-#         return top_level_select
