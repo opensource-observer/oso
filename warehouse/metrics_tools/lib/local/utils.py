@@ -5,6 +5,7 @@ from google.cloud import bigquery
 
 project_id = os.getenv("GOOGLE_PROJECT_ID")
 
+
 def bq_to_duckdb(table_mapping: t.Dict[str, str], duckdb_path: str):
     """Copies the tables in table_mapping to tables in duckdb
 

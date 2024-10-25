@@ -10,7 +10,10 @@ from sqlglot.optimizer.qualify import qualify
 from sqlmesh.core.macros import MacroEvaluator
 from sqlmesh.utils.date import TimeLike
 
-from metrics_tools.dialect.translate import CustomFuncHandler, CustomFuncRegistry
+from metrics_tools.dialect.translate import (
+    CustomFuncHandler,
+    CustomFuncRegistry,
+)
 from metrics_tools.evaluator import FunctionsTransformer
 
 CURR_DIR = os.path.dirname(__file__)
@@ -376,6 +379,26 @@ class MetricQuery:
     def table_name(self, ref: PeerMetricDependencyRef):
         name = self._source.name or self._name
         return reference_to_str(ref, name)
+
+    def dependencies(
+        self, ref: PeerMetricDependencyRef, peer_table_map: t.Dict[str, str]
+    ):
+        dependencies: t.Set[str] = set()
+
+        for expression in self._expressions:
+            anonymous_expressions = expression.find_all(exp.Anonymous)
+            for anonymous in anonymous_expressions:
+                if anonymous.this == "metrics_peer_ref":
+                    dep_name = anonymous.expressions[0].sql()
+                    dependencies = dependencies.union(
+                        set(
+                            filter(
+                                lambda a: dep_name in a,
+                                peer_table_map.keys(),
+                            )
+                        )
+                    )
+        return list(dependencies)
 
     def generate_dependency_refs_for_name(self, name: str):
         refs: t.List[PeerMetricDependencyRef] = []

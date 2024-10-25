@@ -65,6 +65,10 @@ METRICS_COLUMNS_BY_ENTITY: t.Dict[str, t.Dict[str, exp.DataType]] = {
 }
 
 
+def generate_config_for_model(query: MetricQuery, peer_table_map: t.Dict[str, str]):
+    pass
+
+
 def generate_models_from_query(
     calling_file: str,
     query: MetricQuery,
@@ -96,11 +100,22 @@ def generate_models_from_query(
             assert query._source.rolling
             cron = query._source.rolling["cron"]
 
+        # Clean up the peer_table_map (this is a hack to prevent unnecessary
+        # runs when the metrics factory is updated)
+        query_dependencies = query.dependencies(ref, peer_table_map)
+        # So much of this needs to be refactored but for now this is to ensure
+        # that in some way that the dict doesn't randomly "change". I don't
+        # think this will be consistent between python machines but let's see
+        # for now.
+        reduced_peer_table_tuples = [(k, peer_table_map[k]) for k in query_dependencies]
+        reduced_peer_table_tuples.sort()
+        reduced_peer_table_map = dict(reduced_peer_table_tuples)
+
         config = GeneratedArtifactConfig(
             query_reference_name=query_reference_name,
             query_def_as_input=query_def_as_input,
             default_dialect=default_dialect,
-            peer_table_map=peer_table_map,
+            peer_table_map=reduced_peer_table_map,
             ref=ref,
             timeseries_sources=timeseries_sources,
         )
@@ -273,5 +288,11 @@ def timeseries_metrics(
             kind="VIEW",
             dialect="clickhouse",
             start=raw_options["start"],
-            columns=METRICS_COLUMNS_BY_ENTITY[entity_type],
+            columns={
+                k: METRICS_COLUMNS_BY_ENTITY[entity_type][k]
+                for k in filter(
+                    lambda col: col not in ["event_source"],
+                    METRICS_COLUMNS_BY_ENTITY[entity_type].keys(),
+                )
+            },
         )
