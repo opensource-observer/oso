@@ -2,7 +2,7 @@ MODEL (
   name metrics.timeseries_metrics_by_collection_v0,
   kind VIEW
 );
-WITH all_timeseries_metrics_by_artifact AS (
+WITH all_timeseries_metrics_by_collection AS (
   SELECT @oso_id('OSO', 'oso', metric) AS metric_id,
     to_collection_id AS collection_id,
     metrics_sample_date AS sample_date,
@@ -15,4 +15,4 @@ SELECT metric_id::String,
   sample_date::Date,
   amount::Float64,
   unit::Nullable(String)
-FROM all_timeseries_metrics_by_artifact
+FROM all_timeseries_metrics_by_collection
