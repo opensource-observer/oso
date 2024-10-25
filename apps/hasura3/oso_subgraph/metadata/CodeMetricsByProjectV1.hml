@@ -173,103 +173,6 @@ definition:
           - starCount
 
 ---
-kind: Model
-version: v1
-definition:
-  name: CodeMetricsByProjectV1
-  objectType: CodeMetricsByProjectV1
-  source:
-    dataConnectorName: oso_clickhouse
-    collection: code_metrics_by_project_v1
-  filterExpressionType: CodeMetricsByProjectV1BoolExp
-  orderableFields:
-    - fieldName: activeDeveloperCount6Months
-      orderByDirections:
-        enableAll: true
-    - fieldName: closedIssueCount6Months
-      orderByDirections:
-        enableAll: true
-    - fieldName: commitCount6Months
-      orderByDirections:
-        enableAll: true
-    - fieldName: contributorCount
-      orderByDirections:
-        enableAll: true
-    - fieldName: contributorCount6Months
-      orderByDirections:
-        enableAll: true
-    - fieldName: displayName
-      orderByDirections:
-        enableAll: true
-    - fieldName: eventSource
-      orderByDirections:
-        enableAll: true
-    - fieldName: firstCommitDate
-      orderByDirections:
-        enableAll: true
-    - fieldName: forkCount
-      orderByDirections:
-        enableAll: true
-    - fieldName: fulltimeDeveloperAverage6Months
-      orderByDirections:
-        enableAll: true
-    - fieldName: lastCommitDate
-      orderByDirections:
-        enableAll: true
-    - fieldName: mergedPullRequestCount6Months
-      orderByDirections:
-        enableAll: true
-    - fieldName: newContributorCount6Months
-      orderByDirections:
-        enableAll: true
-    - fieldName: openedIssueCount6Months
-      orderByDirections:
-        enableAll: true
-    - fieldName: openedPullRequestCount6Months
-      orderByDirections:
-        enableAll: true
-    - fieldName: projectId
-      orderByDirections:
-        enableAll: true
-    - fieldName: projectName
-      orderByDirections:
-        enableAll: true
-    - fieldName: projectNamespace
-      orderByDirections:
-        enableAll: true
-    - fieldName: projectSource
-      orderByDirections:
-        enableAll: true
-    - fieldName: repositoryCount
-      orderByDirections:
-        enableAll: true
-    - fieldName: starCount
-      orderByDirections:
-        enableAll: true
-  graphql:
-    selectMany:
-      queryRootField: oso_codeMetricsByProjectV1
-    selectUniques: []
-    orderByExpressionType: Oso_CodeMetricsByProjectV1OrderBy
-    filterInputTypeName: Oso_CodeMetricsByProjectV1FilterInput
-    aggregate:
-      queryRootField: oso_codeMetricsByProjectV1Aggregate
-  aggregateExpression: CodeMetricsByProjectV1AggExp
-
----
-kind: ModelPermissions
-version: v1
-definition:
-  modelName: CodeMetricsByProjectV1
-  permissions:
-    - role: admin
-      select:
-        filter: null
-    - role: anonymous
-      select:
-        filter: null
-
----
 kind: BooleanExpressionType
 version: v1
 definition:
@@ -384,3 +287,99 @@ definition:
   graphql:
     selectTypeName: Oso_CodeMetricsByProjectV1AggExp
 
+---
+kind: Model
+version: v1
+definition:
+  name: CodeMetricsByProjectV1
+  objectType: CodeMetricsByProjectV1
+  source:
+    dataConnectorName: oso_clickhouse
+    collection: code_metrics_by_project_v1
+  filterExpressionType: CodeMetricsByProjectV1BoolExp
+  aggregateExpression: CodeMetricsByProjectV1AggExp
+  orderableFields:
+    - fieldName: activeDeveloperCount6Months
+      orderByDirections:
+        enableAll: true
+    - fieldName: closedIssueCount6Months
+      orderByDirections:
+        enableAll: true
+    - fieldName: commitCount6Months
+      orderByDirections:
+        enableAll: true
+    - fieldName: contributorCount
+      orderByDirections:
+        enableAll: true
+    - fieldName: contributorCount6Months
+      orderByDirections:
+        enableAll: true
+    - fieldName: displayName
+      orderByDirections:
+        enableAll: true
+    - fieldName: eventSource
+      orderByDirections:
+        enableAll: true
+    - fieldName: firstCommitDate
+      orderByDirections:
+        enableAll: true
+    - fieldName: forkCount
+      orderByDirections:
+        enableAll: true
+    - fieldName: fulltimeDeveloperAverage6Months
+      orderByDirections:
+        enableAll: true
+    - fieldName: lastCommitDate
+      orderByDirections:
+        enableAll: true
+    - fieldName: mergedPullRequestCount6Months
+      orderByDirections:
+        enableAll: true
+    - fieldName: newContributorCount6Months
+      orderByDirections:
+        enableAll: true
+    - fieldName: openedIssueCount6Months
+      orderByDirections:
+        enableAll: true
+    - fieldName: openedPullRequestCount6Months
+      orderByDirections:
+        enableAll: true
+    - fieldName: projectId
+      orderByDirections:
+        enableAll: true
+    - fieldName: projectName
+      orderByDirections:
+        enableAll: true
+    - fieldName: projectNamespace
+      orderByDirections:
+        enableAll: true
+    - fieldName: projectSource
+      orderByDirections:
+        enableAll: true
+    - fieldName: repositoryCount
+      orderByDirections:
+        enableAll: true
+    - fieldName: starCount
+      orderByDirections:
+        enableAll: true
+  graphql:
+    selectMany:
+      queryRootField: oso_codeMetricsByProjectV1
+    selectUniques: []
+    orderByExpressionType: Oso_CodeMetricsByProjectV1OrderBy
+    filterInputTypeName: Oso_CodeMetricsByProjectV1FilterInput
+    aggregate:
+      queryRootField: oso_codeMetricsByProjectV1Aggregate
+
+---
+kind: ModelPermissions
+version: v1
+definition:
+  modelName: CodeMetricsByProjectV1
+  permissions:
+    - role: admin
+      select:
+        filter: null
+    - role: anonymous
+      select:
+        filter: null

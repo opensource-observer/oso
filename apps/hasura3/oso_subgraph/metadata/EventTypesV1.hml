@@ -33,43 +33,6 @@ definition:
           - eventType
 
 ---
-kind: Model
-version: v1
-definition:
-  name: EventTypesV1
-  objectType: EventTypesV1
-  source:
-    dataConnectorName: oso_clickhouse
-    collection: event_types_v1
-  filterExpressionType: EventTypesV1BoolExp
-  orderableFields:
-    - fieldName: eventType
-      orderByDirections:
-        enableAll: true
-  graphql:
-    selectMany:
-      queryRootField: oso_eventTypesV1
-    selectUniques: []
-    orderByExpressionType: Oso_EventTypesV1OrderBy
-    filterInputTypeName: Oso_EventTypesV1FilterInput
-    aggregate:
-      queryRootField: oso_eventTypesV1Aggregate
-  aggregateExpression: EventTypesV1AggExp
-
----
-kind: ModelPermissions
-version: v1
-definition:
-  modelName: EventTypesV1
-  permissions:
-    - role: admin
-      select:
-        filter: null
-    - role: anonymous
-      select:
-        filter: null
-
----
 kind: BooleanExpressionType
 version: v1
 definition:
@@ -104,3 +67,39 @@ definition:
   graphql:
     selectTypeName: Oso_EventTypesV1AggExp
 
+---
+kind: Model
+version: v1
+definition:
+  name: EventTypesV1
+  objectType: EventTypesV1
+  source:
+    dataConnectorName: oso_clickhouse
+    collection: event_types_v1
+  filterExpressionType: EventTypesV1BoolExp
+  aggregateExpression: EventTypesV1AggExp
+  orderableFields:
+    - fieldName: eventType
+      orderByDirections:
+        enableAll: true
+  graphql:
+    selectMany:
+      queryRootField: oso_eventTypesV1
+    selectUniques: []
+    orderByExpressionType: Oso_EventTypesV1OrderBy
+    filterInputTypeName: Oso_EventTypesV1FilterInput
+    aggregate:
+      queryRootField: oso_eventTypesV1Aggregate
+
+---
+kind: ModelPermissions
+version: v1
+definition:
+  modelName: EventTypesV1
+  permissions:
+    - role: admin
+      select:
+        filter: null
+    - role: anonymous
+      select:
+        filter: null

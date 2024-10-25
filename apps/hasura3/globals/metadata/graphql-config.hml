@@ -1,4 +1,3 @@
----
 kind: GraphqlConfig
 version: v1
 definition:
@@ -33,6 +32,3 @@ definition:
       countDistinctFieldName: _count_distinct
   mutation:
     rootOperationTypeName: Mutation
-  apolloFederation:
-    enableRootFields: true
-

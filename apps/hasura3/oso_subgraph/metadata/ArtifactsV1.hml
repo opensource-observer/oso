@@ -68,58 +68,6 @@ definition:
           - artifactUrl
 
 ---
-kind: Model
-version: v1
-definition:
-  name: ArtifactsV1
-  objectType: ArtifactsV1
-  source:
-    dataConnectorName: oso_clickhouse
-    collection: artifacts_v1
-  filterExpressionType: ArtifactsV1BoolExp
-  orderableFields:
-    - fieldName: artifactId
-      orderByDirections:
-        enableAll: true
-    - fieldName: artifactName
-      orderByDirections:
-        enableAll: true
-    - fieldName: artifactNamespace
-      orderByDirections:
-        enableAll: true
-    - fieldName: artifactSource
-      orderByDirections:
-        enableAll: true
-    - fieldName: artifactSourceId
-      orderByDirections:
-        enableAll: true
-    - fieldName: artifactUrl
-      orderByDirections:
-        enableAll: true
-  graphql:
-    selectMany:
-      queryRootField: oso_artifactsV1
-    selectUniques: []
-    orderByExpressionType: Oso_ArtifactsV1OrderBy
-    filterInputTypeName: Oso_ArtifactsV1FilterInput
-    aggregate:
-      queryRootField: oso_artifactsV1Aggregate
-  aggregateExpression: ArtifactsV1AggExp
-
----
-kind: ModelPermissions
-version: v1
-definition:
-  modelName: ArtifactsV1
-  permissions:
-    - role: admin
-      select:
-        filter: null
-    - role: anonymous
-      select:
-        filter: null
-
----
 kind: BooleanExpressionType
 version: v1
 definition:
@@ -174,3 +122,54 @@ definition:
   graphql:
     selectTypeName: Oso_ArtifactsV1AggExp
 
+---
+kind: Model
+version: v1
+definition:
+  name: ArtifactsV1
+  objectType: ArtifactsV1
+  source:
+    dataConnectorName: oso_clickhouse
+    collection: artifacts_v1
+  filterExpressionType: ArtifactsV1BoolExp
+  aggregateExpression: ArtifactsV1AggExp
+  orderableFields:
+    - fieldName: artifactId
+      orderByDirections:
+        enableAll: true
+    - fieldName: artifactName
+      orderByDirections:
+        enableAll: true
+    - fieldName: artifactNamespace
+      orderByDirections:
+        enableAll: true
+    - fieldName: artifactSource
+      orderByDirections:
+        enableAll: true
+    - fieldName: artifactSourceId
+      orderByDirections:
+        enableAll: true
+    - fieldName: artifactUrl
+      orderByDirections:
+        enableAll: true
+  graphql:
+    selectMany:
+      queryRootField: oso_artifactsV1
+    selectUniques: []
+    orderByExpressionType: Oso_ArtifactsV1OrderBy
+    filterInputTypeName: Oso_ArtifactsV1FilterInput
+    aggregate:
+      queryRootField: oso_artifactsV1Aggregate
+
+---
+kind: ModelPermissions
+version: v1
+definition:
+  modelName: ArtifactsV1
+  permissions:
+    - role: admin
+      select:
+        filter: null
+    - role: anonymous
+      select:
+        filter: null

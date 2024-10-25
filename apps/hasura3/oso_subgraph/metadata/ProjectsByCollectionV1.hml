@@ -82,64 +82,6 @@ definition:
           - projectSource
 
 ---
-kind: Model
-version: v1
-definition:
-  name: ProjectsByCollectionV1
-  objectType: ProjectsByCollectionV1
-  source:
-    dataConnectorName: oso_clickhouse
-    collection: projects_by_collection_v1
-  filterExpressionType: ProjectsByCollectionV1BoolExp
-  orderableFields:
-    - fieldName: collectionId
-      orderByDirections:
-        enableAll: true
-    - fieldName: collectionName
-      orderByDirections:
-        enableAll: true
-    - fieldName: collectionNamespace
-      orderByDirections:
-        enableAll: true
-    - fieldName: collectionSource
-      orderByDirections:
-        enableAll: true
-    - fieldName: projectId
-      orderByDirections:
-        enableAll: true
-    - fieldName: projectName
-      orderByDirections:
-        enableAll: true
-    - fieldName: projectNamespace
-      orderByDirections:
-        enableAll: true
-    - fieldName: projectSource
-      orderByDirections:
-        enableAll: true
-  graphql:
-    selectMany:
-      queryRootField: oso_projectsByCollectionV1
-    selectUniques: []
-    orderByExpressionType: Oso_ProjectsByCollectionV1OrderBy
-    filterInputTypeName: Oso_ProjectsByCollectionV1FilterInput
-    aggregate:
-      queryRootField: oso_projectsByCollectionV1Aggregate
-  aggregateExpression: ProjectsByCollectionV1AggExp
-
----
-kind: ModelPermissions
-version: v1
-definition:
-  modelName: ProjectsByCollectionV1
-  permissions:
-    - role: admin
-      select:
-        filter: null
-    - role: anonymous
-      select:
-        filter: null
-
----
 kind: BooleanExpressionType
 version: v1
 definition:
@@ -202,3 +144,60 @@ definition:
   graphql:
     selectTypeName: Oso_ProjectsByCollectionV1AggExp
 
+---
+kind: Model
+version: v1
+definition:
+  name: ProjectsByCollectionV1
+  objectType: ProjectsByCollectionV1
+  source:
+    dataConnectorName: oso_clickhouse
+    collection: projects_by_collection_v1
+  filterExpressionType: ProjectsByCollectionV1BoolExp
+  aggregateExpression: ProjectsByCollectionV1AggExp
+  orderableFields:
+    - fieldName: collectionId
+      orderByDirections:
+        enableAll: true
+    - fieldName: collectionName
+      orderByDirections:
+        enableAll: true
+    - fieldName: collectionNamespace
+      orderByDirections:
+        enableAll: true
+    - fieldName: collectionSource
+      orderByDirections:
+        enableAll: true
+    - fieldName: projectId
+      orderByDirections:
+        enableAll: true
+    - fieldName: projectName
+      orderByDirections:
+        enableAll: true
+    - fieldName: projectNamespace
+      orderByDirections:
+        enableAll: true
+    - fieldName: projectSource
+      orderByDirections:
+        enableAll: true
+  graphql:
+    selectMany:
+      queryRootField: oso_projectsByCollectionV1
+    selectUniques: []
+    orderByExpressionType: Oso_ProjectsByCollectionV1OrderBy
+    filterInputTypeName: Oso_ProjectsByCollectionV1FilterInput
+    aggregate:
+      queryRootField: oso_projectsByCollectionV1Aggregate
+
+---
+kind: ModelPermissions
+version: v1
+definition:
+  modelName: ProjectsByCollectionV1
+  permissions:
+    - role: admin
+      select:
+        filter: null
+    - role: anonymous
+      select:
+        filter: null

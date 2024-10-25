@@ -2,25 +2,18 @@ services:
   oso_subgraph_oso_clickhouse:
     build:
       context: .
-      dockerfile_inline: |-
-        FROM ghcr.io/hasura/ndc-clickhouse:v1.0.2
-        COPY ./ /etc/connector
-    develop:
-      watch:
-        - path: ./
-          action: sync+restart
-          target: /etc/connector
+      dockerfile: .hasura-connector/Dockerfile.oso_clickhouse
     environment:
       CLICKHOUSE_PASSWORD: $OSO_SUBGRAPH_OSO_CLICKHOUSE_CLICKHOUSE_PASSWORD
       CLICKHOUSE_URL: $OSO_SUBGRAPH_OSO_CLICKHOUSE_CLICKHOUSE_URL
       CLICKHOUSE_USERNAME: $OSO_SUBGRAPH_OSO_CLICKHOUSE_CLICKHOUSE_USERNAME
       HASURA_SERVICE_TOKEN_SECRET: $OSO_SUBGRAPH_OSO_CLICKHOUSE_HASURA_SERVICE_TOKEN_SECRET
-      OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: $OSO_SUBGRAPH_OSO_CLICKHOUSE_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
+      OTEL_EXPORTER_OTLP_ENDPOINT: $OSO_SUBGRAPH_OSO_CLICKHOUSE_OTEL_EXPORTER_OTLP_ENDPOINT
       OTEL_SERVICE_NAME: $OSO_SUBGRAPH_OSO_CLICKHOUSE_OTEL_SERVICE_NAME
     extra_hosts:
-      - local.hasura.dev=host-gateway
+      - local.hasura.dev:host-gateway
     ports:
       - mode: ingress
-        target: 8080
-        published: "8139"
         protocol: tcp
+        published: "8763"
+        target: 8080
