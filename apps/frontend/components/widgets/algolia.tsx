@@ -23,11 +23,11 @@ type AlgoliaSearchListProps = {
   children?: ReactElement; // Show this per item
   indexName?: string; // Choose a custom Algolia index
   placeholder?: string; // Placeholder for search box
-  showResultsOnEmptyQuery?: boolean; // Show some results even if no query
+  defaultSearchResults?: any; // Show some results even if no query
 };
 
 function HitsContainer(props: AlgoliaSearchListProps) {
-  const { children, showResultsOnEmptyQuery } = props;
+  const { children, defaultSearchResults } = props;
   const { results, items, isLastPage, showMore } = useInfiniteHits();
   const sentinelRef = useRef(null);
   //console.log(results);
@@ -48,10 +48,13 @@ function HitsContainer(props: AlgoliaSearchListProps) {
     }
   }, [isLastPage, showMore]);
 
+  const isResultsReady = results?.query || Array.isArray(defaultSearchResults);
+  const displayItems = results?.query ? items : defaultSearchResults;
+
   return (
     <div>
-      {(showResultsOnEmptyQuery || results?.query) &&
-        items.map((hit) => (
+      {isResultsReady &&
+        displayItems.map((hit: any) => (
           <div key={hit.objectID}>
             <DataProvider name={PLASMIC_KEY} data={hit}>
               {children}
