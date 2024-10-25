@@ -2,32 +2,32 @@
 kind: ObjectType
 version: v1
 definition:
-  name: MetricsMetricsV0
+  name: MetricsV0
   fields:
     - name: aggregationFunction
-      type: String
+      type: String!
     - name: definitionRef
-      type: String
+      type: String!
     - name: description
-      type: String
+      type: String!
     - name: displayName
       type: String!
     - name: metricId
       type: String!
     - name: metricName
       type: String!
+    - name: metricNamespace
+      type: String!
     - name: metricSource
       type: String!
     - name: rawDefinition
-      type: String
-    - name: metricNamespace
       type: String!
   graphql:
-    typeName: Oso_MetricsMetricsV0
-    inputTypeName: Oso_MetricsMetricsV0Input
+    typeName: Oso_MetricsV0
+    inputTypeName: Oso_MetricsV0Input
   dataConnectorTypeMapping:
     - dataConnectorName: oso_clickhouse
-      dataConnectorObjectType: metrics_metrics_v0
+      dataConnectorObjectType: metrics_v0
       fieldMapping:
         aggregationFunction:
           column:
@@ -47,21 +47,21 @@ definition:
         metricName:
           column:
             name: metric_name
+        metricNamespace:
+          column:
+            name: metric_namespace
         metricSource:
           column:
             name: metric_source
         rawDefinition:
           column:
             name: raw_definition
-        metricNamespace:
-          column:
-            name: metric_namespace
 
 ---
 kind: TypePermissions
 version: v1
 definition:
-  typeName: MetricsMetricsV0
+  typeName: MetricsV0
   permissions:
     - role: admin
       output:
@@ -72,9 +72,9 @@ definition:
           - displayName
           - metricId
           - metricName
+          - metricNamespace
           - metricSource
           - rawDefinition
-          - metricNamespace
     - role: anonymous
       output:
         allowedFields:
@@ -84,79 +84,18 @@ definition:
           - displayName
           - metricId
           - metricName
+          - metricNamespace
           - metricSource
           - rawDefinition
-          - metricNamespace
-
----
-kind: Model
-version: v1
-definition:
-  name: MetricsMetricsV0
-  objectType: MetricsMetricsV0
-  source:
-    dataConnectorName: oso_clickhouse
-    collection: metrics_metrics_v0
-  filterExpressionType: MetricsMetricsV0BoolExp
-  orderableFields:
-    - fieldName: aggregationFunction
-      orderByDirections:
-        enableAll: true
-    - fieldName: definitionRef
-      orderByDirections:
-        enableAll: true
-    - fieldName: description
-      orderByDirections:
-        enableAll: true
-    - fieldName: displayName
-      orderByDirections:
-        enableAll: true
-    - fieldName: metricId
-      orderByDirections:
-        enableAll: true
-    - fieldName: metricName
-      orderByDirections:
-        enableAll: true
-    - fieldName: metricSource
-      orderByDirections:
-        enableAll: true
-    - fieldName: rawDefinition
-      orderByDirections:
-        enableAll: true
-    - fieldName: metricNamespace
-      orderByDirections:
-        enableAll: true
-  graphql:
-    selectMany:
-      queryRootField: oso_metricsV0
-    selectUniques: []
-    orderByExpressionType: Oso_MetricsMetricsV0OrderBy
-    filterInputTypeName: Oso_MetricsMetricsV0FilterInput
-    aggregate:
-      queryRootField: oso_metricsV0Aggregate
-  aggregateExpression: MetricsMetricsV0AggExp
-
----
-kind: ModelPermissions
-version: v1
-definition:
-  modelName: MetricsMetricsV0
-  permissions:
-    - role: admin
-      select:
-        filter: null
-    - role: anonymous
-      select:
-        filter: null
 
 ---
 kind: BooleanExpressionType
 version: v1
 definition:
-  name: MetricsMetricsV0BoolExp
+  name: MetricsV0BoolExp
   operand:
     object:
-      type: MetricsMetricsV0
+      type: MetricsV0
       comparableFields:
         - fieldName: aggregationFunction
           booleanExpressionType: StringBoolExp
@@ -182,16 +121,16 @@ definition:
   isNull:
     enable: true
   graphql:
-    typeName: Oso_MetricsMetricsV0BoolExp
+    typeName: Oso_MetricsV0BoolExp
 
 ---
 kind: AggregateExpression
 version: v1
 definition:
-  name: MetricsMetricsV0AggExp
+  name: MetricsV0AggExp
   operand:
     object:
-      aggregatedType: MetricsMetricsV0
+      aggregatedType: MetricsV0
       aggregatableFields:
         - fieldName: aggregationFunction
           aggregateExpression: StringAggExp
@@ -214,5 +153,70 @@ definition:
   count:
     enable: true
   graphql:
-    selectTypeName: Oso_MetricsMetricsV0AggExp
+    selectTypeName: Oso_MetricsV0AggExp
 
+---
+kind: Model
+version: v1
+definition:
+  name: MetricsV0
+  objectType: MetricsV0
+  source:
+    dataConnectorName: oso_clickhouse
+    collection: metrics_v0
+  filterExpressionType: MetricsV0BoolExp
+  aggregateExpression: MetricsV0AggExp
+  orderableFields:
+    - fieldName: aggregationFunction
+      orderByDirections:
+        enableAll: true
+    - fieldName: definitionRef
+      orderByDirections:
+        enableAll: true
+    - fieldName: description
+      orderByDirections:
+        enableAll: true
+    - fieldName: displayName
+      orderByDirections:
+        enableAll: true
+    - fieldName: metricId
+      orderByDirections:
+        enableAll: true
+    - fieldName: metricName
+      orderByDirections:
+        enableAll: true
+    - fieldName: metricNamespace
+      orderByDirections:
+        enableAll: true
+    - fieldName: metricSource
+      orderByDirections:
+        enableAll: true
+    - fieldName: rawDefinition
+      orderByDirections:
+        enableAll: true
+  graphql:
+    selectMany:
+      queryRootField: oso_metricsV0
+    selectUniques:
+      - queryRootField: oso_metricsV0ByMetricSourceMetricNamespaceMetricName
+        uniqueIdentifier:
+          - metricSource
+          - metricNamespace
+          - metricName
+    orderByExpressionType: Oso_MetricsV0OrderBy
+    filterInputTypeName: Oso_MetricsV0FilterInput
+    aggregate:
+      queryRootField: oso_metricsV0Aggregate
+
+---
+kind: ModelPermissions
+version: v1
+definition:
+  modelName: MetricsV0
+  permissions:
+    - role: admin
+      select:
+        filter: null
+    - role: anonymous
+      select:
+        filter: null

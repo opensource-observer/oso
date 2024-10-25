@@ -166,100 +166,6 @@ definition:
           - transactionCount6Months
 
 ---
-kind: Model
-version: v1
-definition:
-  name: OnchainMetricsByProjectV1
-  objectType: OnchainMetricsByProjectV1
-  source:
-    dataConnectorName: oso_clickhouse
-    collection: onchain_metrics_by_project_v1
-  filterExpressionType: OnchainMetricsByProjectV1BoolExp
-  orderableFields:
-    - fieldName: activeContractCount90Days
-      orderByDirections:
-        enableAll: true
-    - fieldName: addressCount
-      orderByDirections:
-        enableAll: true
-    - fieldName: addressCount90Days
-      orderByDirections:
-        enableAll: true
-    - fieldName: daysSinceFirstTransaction
-      orderByDirections:
-        enableAll: true
-    - fieldName: displayName
-      orderByDirections:
-        enableAll: true
-    - fieldName: eventSource
-      orderByDirections:
-        enableAll: true
-    - fieldName: gasFeesSum
-      orderByDirections:
-        enableAll: true
-    - fieldName: gasFeesSum6Months
-      orderByDirections:
-        enableAll: true
-    - fieldName: highActivityAddressCount90Days
-      orderByDirections:
-        enableAll: true
-    - fieldName: lowActivityAddressCount90Days
-      orderByDirections:
-        enableAll: true
-    - fieldName: mediumActivityAddressCount90Days
-      orderByDirections:
-        enableAll: true
-    - fieldName: multiProjectAddressCount90Days
-      orderByDirections:
-        enableAll: true
-    - fieldName: newAddressCount90Days
-      orderByDirections:
-        enableAll: true
-    - fieldName: projectId
-      orderByDirections:
-        enableAll: true
-    - fieldName: projectName
-      orderByDirections:
-        enableAll: true
-    - fieldName: projectNamespace
-      orderByDirections:
-        enableAll: true
-    - fieldName: projectSource
-      orderByDirections:
-        enableAll: true
-    - fieldName: returningAddressCount90Days
-      orderByDirections:
-        enableAll: true
-    - fieldName: transactionCount
-      orderByDirections:
-        enableAll: true
-    - fieldName: transactionCount6Months
-      orderByDirections:
-        enableAll: true
-  graphql:
-    selectMany:
-      queryRootField: oso_onchainMetricsByProjectV1
-    selectUniques: []
-    orderByExpressionType: Oso_OnchainMetricsByProjectV1OrderBy
-    filterInputTypeName: Oso_OnchainMetricsByProjectV1FilterInput
-    aggregate:
-      queryRootField: oso_onchainMetricsByProjectV1Aggregate
-  aggregateExpression: OnchainMetricsByProjectV1AggExp
-
----
-kind: ModelPermissions
-version: v1
-definition:
-  modelName: OnchainMetricsByProjectV1
-  permissions:
-    - role: admin
-      select:
-        filter: null
-    - role: anonymous
-      select:
-        filter: null
-
----
 kind: BooleanExpressionType
 version: v1
 definition:
@@ -370,3 +276,96 @@ definition:
   graphql:
     selectTypeName: Oso_OnchainMetricsByProjectV1AggExp
 
+---
+kind: Model
+version: v1
+definition:
+  name: OnchainMetricsByProjectV1
+  objectType: OnchainMetricsByProjectV1
+  source:
+    dataConnectorName: oso_clickhouse
+    collection: onchain_metrics_by_project_v1
+  filterExpressionType: OnchainMetricsByProjectV1BoolExp
+  aggregateExpression: OnchainMetricsByProjectV1AggExp
+  orderableFields:
+    - fieldName: activeContractCount90Days
+      orderByDirections:
+        enableAll: true
+    - fieldName: addressCount
+      orderByDirections:
+        enableAll: true
+    - fieldName: addressCount90Days
+      orderByDirections:
+        enableAll: true
+    - fieldName: daysSinceFirstTransaction
+      orderByDirections:
+        enableAll: true
+    - fieldName: displayName
+      orderByDirections:
+        enableAll: true
+    - fieldName: eventSource
+      orderByDirections:
+        enableAll: true
+    - fieldName: gasFeesSum
+      orderByDirections:
+        enableAll: true
+    - fieldName: gasFeesSum6Months
+      orderByDirections:
+        enableAll: true
+    - fieldName: highActivityAddressCount90Days
+      orderByDirections:
+        enableAll: true
+    - fieldName: lowActivityAddressCount90Days
+      orderByDirections:
+        enableAll: true
+    - fieldName: mediumActivityAddressCount90Days
+      orderByDirections:
+        enableAll: true
+    - fieldName: multiProjectAddressCount90Days
+      orderByDirections:
+        enableAll: true
+    - fieldName: newAddressCount90Days
+      orderByDirections:
+        enableAll: true
+    - fieldName: projectId
+      orderByDirections:
+        enableAll: true
+    - fieldName: projectName
+      orderByDirections:
+        enableAll: true
+    - fieldName: projectNamespace
+      orderByDirections:
+        enableAll: true
+    - fieldName: projectSource
+      orderByDirections:
+        enableAll: true
+    - fieldName: returningAddressCount90Days
+      orderByDirections:
+        enableAll: true
+    - fieldName: transactionCount
+      orderByDirections:
+        enableAll: true
+    - fieldName: transactionCount6Months
+      orderByDirections:
+        enableAll: true
+  graphql:
+    selectMany:
+      queryRootField: oso_onchainMetricsByProjectV1
+    selectUniques: []
+    orderByExpressionType: Oso_OnchainMetricsByProjectV1OrderBy
+    filterInputTypeName: Oso_OnchainMetricsByProjectV1FilterInput
+    aggregate:
+      queryRootField: oso_onchainMetricsByProjectV1Aggregate
+
+---
+kind: ModelPermissions
+version: v1
+definition:
+  modelName: OnchainMetricsByProjectV1
+  permissions:
+    - role: admin
+      select:
+        filter: null
+    - role: anonymous
+      select:
+        filter: null

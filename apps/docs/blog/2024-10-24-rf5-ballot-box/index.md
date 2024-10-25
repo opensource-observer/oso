@@ -48,21 +48,17 @@ Once again, you can find all the official details about the round [here](https:/
 
 ## Overall observations
 
-We’ve written [several prior "opening up the ballot box" posts](https://docs.opensource.observer/blog/rf4-ballot-box) as well as a longer standalone post about [the significance](https://docs.opensource.observer/blog/levels-of-the-game) of the reward distribution curve.
-
-We think the distribution curve is an important signal for builders. It communicates the reward for being a top project vs a middle project. It should motivate builders to aim for creating huge impact, and it should give them a sense of how much they can expect to receive if they do.
-
-Unfortunately, the RF5 curve doesn't provide a very clear signal in our view.
+We’ve written before about [the significance](https://docs.opensource.observer/blog/levels-of-the-game) of the reward distribution curve. It's an important signal for builders because it communicates the reward for being a top project vs a middle project. It should motivate builders to aim for creating huge impact, and it should give them a sense of how much they can expect to receive if they do.
 
 ### The RF5 distribution curve is pretty flat
 
-The Retro Funding 5 distribution is what we refer to as "peanut butter spread": flat and chunky.
+Unfortunately, in our view, the RF5 curve doesn't provide a very clear signal to builders. Instead, the Retro Funding 5 distribution is what we refer to as "peanut butter spread": flat and chunky.
 
 ![](./03-rf5-distro.png)
 
-This was the flattest distribution yet. The top project, go-ethereum, received 235K OP (2.9% of the total). The median project received 93K. Even the lowest ranked project received 37K, which was more than 70% of projects received in Round 4. This made a good round for “average” projects.
+In fact, this was the flattest distribution of all five RF rounds. The top project, go-ethereum, received 235K OP (2.9% of the total). The median project received 93K. Even the lowest ranked project in Round 5 received 37K - more than what 70% of the projects in Round 4 received. It was a good round to be an “average” project in.
 
-In [Round 4](https://docs.opensource.observer/blog/rf4-ballot-box), there was a steep power law distribution. This was likely the result of the [metrics-based voting](https://docs.opensource.observer/blog/impact-metrics-rf4), as top projects often had orders of magnitude more impact according to the metrics. The top projects were capped at 500K OP (2% of the total). The median project received 13K OP.
+In [Round 4](https://docs.opensource.observer/blog/rf4-ballot-box), by contrast, there was a steep power law distribution. This was likely the result of the [metrics-based voting](https://docs.opensource.observer/blog/impact-metrics-rf4), as top projects often had orders of magnitude more impact according to the metrics. The top projects were capped at 500K OP (2% of the total). The median project received 13K OP.
 
 ![](./04-rf4-distro.png)
 
@@ -78,7 +74,7 @@ The flatter distribution resulted in a more equitable spread, allowing even lowe
 
 ### Smaller projects overperformed
 
-In [our RF3 analysis](https://docs.opensource.observer/blog/what-builders-can-learn-from-retropgf3#projects-vs-individuals), we raised the concern that voting on projects can give smaller projects an advantage:
+In [our RF3 analysis](https://docs.opensource.observer/blog/what-builders-can-learn-from-retropgf3#projects-vs-individuals), we raised the concern that voting on projects can give smaller projects a comparative advantage:
 
 > In addition to the incentive for everyone to throw their name in the hat next RetroPGF, there may also be a perverse incentive for individual contributors or factions from within larger projects or DAOs to apply.
 
@@ -87,8 +83,8 @@ Voters may be more likely to vote for smaller projects because they are easier t
 This appears to have played out in RF5. Many of the larger projects from previous rounds saw a reduction in their RF5 funding. Examples include:
 
 - Protocol Guild: 223K OP in RF5 (vs 663K OP in RF3)
-- go-ethereum: 234K OP in RF5 (vs 496K OP in RF4)
-- Solidity: 204K OP in RF5 (vs 422K OP in RF4)
+- go-ethereum: 234K OP in RF5 (vs 496K OP in RF3)
+- Solidity: 204K OP in RF5 (vs 422K OP in RF3)
 
 Meanwhile, many of the smaller team efforts from RF3 saw an increase in their funding in RF5. Examples include:
 
@@ -104,7 +100,7 @@ Larger projects that broke up their contributions into smaller, discrete applica
 
 Without commenting on the question of whether smaller or more modular teams are more deserving of funding, this is a predictable outcome of a flatter distribution curve. The reward function is a game, and players will optimize for it.
 
-### We get flat distributions when voters vote for them
+### We got flat distributions because that's what voters voted for
 
 While there may be aspects of the application process and voting UI that influence the shape of the distribution, the voters themselves are the primary drivers of the distribution curve. The RF5 distribution was flatter than previous rounds because voters voted for it to be that way.
 

@@ -47,49 +47,6 @@ definition:
           - rootDeployerAddress
 
 ---
-kind: Model
-version: v1
-definition:
-  name: ContractsV0
-  objectType: ContractsV0
-  source:
-    dataConnectorName: oso_clickhouse
-    collection: contracts_v0
-  filterExpressionType: ContractsV0BoolExp
-  orderableFields:
-    - fieldName: artifactSource
-      orderByDirections:
-        enableAll: true
-    - fieldName: contractAddress
-      orderByDirections:
-        enableAll: true
-    - fieldName: rootDeployerAddress
-      orderByDirections:
-        enableAll: true
-  graphql:
-    selectMany:
-      queryRootField: oso_contractsV0
-    selectUniques: []
-    orderByExpressionType: Oso_ContractsV0OrderBy
-    filterInputTypeName: Oso_ContractsV0FilterInput
-    aggregate:
-      queryRootField: oso_contractsV0Aggregate
-  aggregateExpression: ContractsV0AggExp
-
----
-kind: ModelPermissions
-version: v1
-definition:
-  modelName: ContractsV0
-  permissions:
-    - role: admin
-      select:
-        filter: null
-    - role: anonymous
-      select:
-        filter: null
-
----
 kind: BooleanExpressionType
 version: v1
 definition:
@@ -132,3 +89,45 @@ definition:
   graphql:
     selectTypeName: Oso_ContractsV0AggExp
 
+---
+kind: Model
+version: v1
+definition:
+  name: ContractsV0
+  objectType: ContractsV0
+  source:
+    dataConnectorName: oso_clickhouse
+    collection: contracts_v0
+  filterExpressionType: ContractsV0BoolExp
+  aggregateExpression: ContractsV0AggExp
+  orderableFields:
+    - fieldName: artifactSource
+      orderByDirections:
+        enableAll: true
+    - fieldName: contractAddress
+      orderByDirections:
+        enableAll: true
+    - fieldName: rootDeployerAddress
+      orderByDirections:
+        enableAll: true
+  graphql:
+    selectMany:
+      queryRootField: oso_contractsV0
+    selectUniques: []
+    orderByExpressionType: Oso_ContractsV0OrderBy
+    filterInputTypeName: Oso_ContractsV0FilterInput
+    aggregate:
+      queryRootField: oso_contractsV0Aggregate
+
+---
+kind: ModelPermissions
+version: v1
+definition:
+  modelName: ContractsV0
+  permissions:
+    - role: admin
+      select:
+        filter: null
+    - role: anonymous
+      select:
+        filter: null

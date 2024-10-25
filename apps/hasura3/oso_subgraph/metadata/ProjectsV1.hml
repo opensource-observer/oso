@@ -68,58 +68,6 @@ definition:
           - projectSource
 
 ---
-kind: Model
-version: v1
-definition:
-  name: ProjectsV1
-  objectType: ProjectsV1
-  source:
-    dataConnectorName: oso_clickhouse
-    collection: projects_v1
-  filterExpressionType: ProjectsV1BoolExp
-  orderableFields:
-    - fieldName: description
-      orderByDirections:
-        enableAll: true
-    - fieldName: displayName
-      orderByDirections:
-        enableAll: true
-    - fieldName: projectId
-      orderByDirections:
-        enableAll: true
-    - fieldName: projectName
-      orderByDirections:
-        enableAll: true
-    - fieldName: projectNamespace
-      orderByDirections:
-        enableAll: true
-    - fieldName: projectSource
-      orderByDirections:
-        enableAll: true
-  graphql:
-    selectMany:
-      queryRootField: oso_projectsV1
-    selectUniques: []
-    orderByExpressionType: Oso_ProjectsV1OrderBy
-    filterInputTypeName: Oso_ProjectsV1FilterInput
-    aggregate:
-      queryRootField: oso_projectsV1Aggregate
-  aggregateExpression: ProjectsV1AggExp
-
----
-kind: ModelPermissions
-version: v1
-definition:
-  modelName: ProjectsV1
-  permissions:
-    - role: admin
-      select:
-        filter: null
-    - role: anonymous
-      select:
-        filter: null
-
----
 kind: BooleanExpressionType
 version: v1
 definition:
@@ -174,3 +122,54 @@ definition:
   graphql:
     selectTypeName: Oso_ProjectsV1AggExp
 
+---
+kind: Model
+version: v1
+definition:
+  name: ProjectsV1
+  objectType: ProjectsV1
+  source:
+    dataConnectorName: oso_clickhouse
+    collection: projects_v1
+  filterExpressionType: ProjectsV1BoolExp
+  aggregateExpression: ProjectsV1AggExp
+  orderableFields:
+    - fieldName: description
+      orderByDirections:
+        enableAll: true
+    - fieldName: displayName
+      orderByDirections:
+        enableAll: true
+    - fieldName: projectId
+      orderByDirections:
+        enableAll: true
+    - fieldName: projectName
+      orderByDirections:
+        enableAll: true
+    - fieldName: projectNamespace
+      orderByDirections:
+        enableAll: true
+    - fieldName: projectSource
+      orderByDirections:
+        enableAll: true
+  graphql:
+    selectMany:
+      queryRootField: oso_projectsV1
+    selectUniques: []
+    orderByExpressionType: Oso_ProjectsV1OrderBy
+    filterInputTypeName: Oso_ProjectsV1FilterInput
+    aggregate:
+      queryRootField: oso_projectsV1Aggregate
+
+---
+kind: ModelPermissions
+version: v1
+definition:
+  modelName: ProjectsV1
+  permissions:
+    - role: admin
+      select:
+        filter: null
+    - role: anonymous
+      select:
+        filter: null

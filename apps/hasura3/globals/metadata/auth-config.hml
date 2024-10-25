@@ -3,5 +3,5 @@ version: v2
 definition:
   mode:
     noAuth:
-      role: admin
+      role: anonymous
       sessionVariables: {}
