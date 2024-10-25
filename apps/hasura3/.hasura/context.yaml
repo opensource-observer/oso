@@ -4,7 +4,7 @@ definition:
   current: default
   contexts:
     default:
-      project: dominant-snipe-4871
+      project: valid-robin-8499
       supergraph: ../supergraph.yaml
       subgraph: ../oso_subgraph/subgraph.yaml
       localEnvFile: ../.env

@@ -9,132 +9,6 @@ definition:
     comparisonExpressionTypeName: Oso_StringComparisonExp
 
 ---
-kind: ScalarType
-version: v1
-definition:
-  name: Float32
-  graphql:
-    typeName: Oso_Float32
-
----
-kind: ScalarType
-version: v1
-definition:
-  name: DateTime
-  graphql:
-    typeName: Oso_DateTime
-
----
-kind: ScalarType
-version: v1
-definition:
-  name: Int64
-  graphql:
-    typeName: Oso_Int64
-
----
-kind: DataConnectorScalarRepresentation
-version: v1
-definition:
-  dataConnectorName: oso_clickhouse
-  dataConnectorScalarType: Float32
-  representation: Float32
-  graphql:
-    comparisonExpressionTypeName: Oso_Float32ComparisonExp
-
----
-kind: DataConnectorScalarRepresentation
-version: v1
-definition:
-  dataConnectorName: oso_clickhouse
-  dataConnectorScalarType: DateTime
-  representation: DateTime
-  graphql:
-    comparisonExpressionTypeName: Oso_DateTimeComparisonExp
-
----
-kind: DataConnectorScalarRepresentation
-version: v1
-definition:
-  dataConnectorName: oso_clickhouse
-  dataConnectorScalarType: Int64
-  representation: Int64
-  graphql:
-    comparisonExpressionTypeName: Oso_Int64ComparisonExp
-
----
-kind: ScalarType
-version: v1
-definition:
-  name: Date
-  graphql:
-    typeName: Oso_Date
-
----
-kind: DataConnectorScalarRepresentation
-version: v1
-definition:
-  dataConnectorName: oso_clickhouse
-  dataConnectorScalarType: Date
-  representation: Date
-  graphql:
-    comparisonExpressionTypeName: Oso_DateComparisonExp
-
----
-kind: ScalarType
-version: v1
-definition:
-  name: Float64
-  graphql:
-    typeName: Oso_Float64
-
----
-kind: DataConnectorScalarRepresentation
-version: v1
-definition:
-  dataConnectorName: oso_clickhouse
-  dataConnectorScalarType: Float64
-  representation: Float64
-  graphql:
-    comparisonExpressionTypeName: Oso_Float64ComparisonExp
-
----
-kind: ScalarType
-version: v1
-definition:
-  name: Int8
-  graphql:
-    typeName: Oso_Int8
-
----
-kind: ScalarType
-version: v1
-definition:
-  name: UInt32
-  graphql:
-    typeName: Oso_UInt32
-
----
-kind: DataConnectorScalarRepresentation
-version: v1
-definition:
-  dataConnectorName: oso_clickhouse
-  dataConnectorScalarType: Int8
-  representation: Int8
-  graphql:
-    comparisonExpressionTypeName: Oso_Int8ComparisonExp
-
----
-kind: DataConnectorScalarRepresentation
-version: v1
-definition:
-  dataConnectorName: oso_clickhouse
-  dataConnectorScalarType: UInt32
-  representation: UInt32
-  graphql:
-    comparisonExpressionTypeName: Oso_UInt32ComparisonExp
-
----
 kind: BooleanExpressionType
 version: v1
 definition:
@@ -201,6 +75,24 @@ definition:
     selectTypeName: Oso_StringAggExp
 
 ---
+kind: ScalarType
+version: v1
+definition:
+  name: Float32
+  graphql:
+    typeName: Oso_Float32
+
+---
+kind: DataConnectorScalarRepresentation
+version: v1
+definition:
+  dataConnectorName: oso_clickhouse
+  dataConnectorScalarType: Float32
+  representation: Float32
+  graphql:
+    comparisonExpressionTypeName: Oso_Float32ComparisonExp
+
+---
 kind: BooleanExpressionType
 version: v1
 definition:
@@ -237,6 +129,24 @@ definition:
     typeName: Oso_Float32BoolExp
 
 ---
+kind: ScalarType
+version: v1
+definition:
+  name: DateTime
+  graphql:
+    typeName: Oso_DateTime
+
+---
+kind: DataConnectorScalarRepresentation
+version: v1
+definition:
+  dataConnectorName: oso_clickhouse
+  dataConnectorScalarType: DateTime
+  representation: DateTime
+  graphql:
+    comparisonExpressionTypeName: Oso_DateTimeComparisonExp
+
+---
 kind: BooleanExpressionType
 version: v1
 definition:
@@ -271,6 +181,78 @@ definition:
     enable: true
   graphql:
     typeName: Oso_DateTimeBoolExp
+
+---
+kind: ScalarType
+version: v1
+definition:
+  name: Int64
+  graphql:
+    typeName: Oso_Int64
+
+---
+kind: DataConnectorScalarRepresentation
+version: v1
+definition:
+  dataConnectorName: oso_clickhouse
+  dataConnectorScalarType: Int64
+  representation: Int64
+  graphql:
+    comparisonExpressionTypeName: Oso_Int64ComparisonExp
+
+---
+kind: BooleanExpressionType
+version: v1
+definition:
+  name: Int64BoolExp
+  operand:
+    scalar:
+      type: Int64
+      comparisonOperators:
+        - name: _eq
+          argumentType: Int64!
+        - name: _gt
+          argumentType: Int64!
+        - name: _gte
+          argumentType: Int64!
+        - name: _in
+          argumentType: "[Int64!]!"
+        - name: _lt
+          argumentType: Int64!
+        - name: _lte
+          argumentType: Int64!
+        - name: _neq
+          argumentType: Int64!
+        - name: _nin
+          argumentType: "[Int64!]!"
+      dataConnectorOperatorMapping:
+        - dataConnectorName: oso_clickhouse
+          dataConnectorScalarType: Int64
+          operatorMapping: {}
+  logicalOperators:
+    enable: true
+  isNull:
+    enable: true
+  graphql:
+    typeName: Oso_Int64BoolExp
+
+---
+kind: ScalarType
+version: v1
+definition:
+  name: Float64
+  graphql:
+    typeName: Oso_Float64
+
+---
+kind: DataConnectorScalarRepresentation
+version: v1
+definition:
+  dataConnectorName: oso_clickhouse
+  dataConnectorScalarType: Float64
+  representation: Float64
+  graphql:
+    comparisonExpressionTypeName: Oso_Float64ComparisonExp
 
 ---
 kind: BooleanExpressionType
@@ -389,6 +371,76 @@ definition:
     selectTypeName: Oso_DateTimeAggExp
 
 ---
+kind: AggregateExpression
+version: v1
+definition:
+  name: Int64AggExp
+  operand:
+    scalar:
+      aggregatedType: Int64
+      aggregationFunctions:
+        - name: avg
+          returnType: Float64!
+        - name: max
+          returnType: Int64!
+        - name: min
+          returnType: Int64!
+        - name: stddev_pop
+          returnType: Float64!
+        - name: stddev_samp
+          returnType: Float64!
+        - name: sum
+          returnType: Int64!
+        - name: var_pop
+          returnType: Float64!
+        - name: var_samp
+          returnType: Float64!
+      dataConnectorAggregationFunctionMapping:
+        - dataConnectorName: oso_clickhouse
+          dataConnectorScalarType: Int64
+          functionMapping:
+            avg:
+              name: avg
+            max:
+              name: max
+            min:
+              name: min
+            stddev_pop:
+              name: stddev_pop
+            stddev_samp:
+              name: stddev_samp
+            sum:
+              name: sum
+            var_pop:
+              name: var_pop
+            var_samp:
+              name: var_samp
+  count:
+    enable: true
+  countDistinct:
+    enable: true
+  graphql:
+    selectTypeName: Oso_Int64AggExp
+
+---
+kind: ScalarType
+version: v1
+definition:
+  name: Date
+  graphql:
+    typeName: Oso_Date
+
+---
+kind: DataConnectorScalarRepresentation
+version: v1
+definition:
+  dataConnectorName: oso_clickhouse
+  dataConnectorScalarType: Date
+  representation: Date
+  graphql:
+    comparisonExpressionTypeName: Oso_DateComparisonExp
+
+---
 kind: BooleanExpressionType
 version: v1
 definition:
@@ -503,92 +555,3 @@ definition:
     enable: true
   graphql:
     selectTypeName: Oso_DateAggExp
-
----
-kind: BooleanExpressionType
-version: v1
-definition:
-  name: Int64BoolExp
-  operand:
-    scalar:
-      type: Int64
-      comparisonOperators:
-        - name: _eq
-          argumentType: Int64!
-        - name: _gt
-          argumentType: Int64!
-        - name: _gte
-          argumentType: Int64!
-        - name: _in
-          argumentType: "[Int64!]!"
-        - name: _lt
-          argumentType: Int64!
-        - name: _lte
-          argumentType: Int64!
-        - name: _neq
-          argumentType: Int64!
-        - name: _nin
-          argumentType: "[Int64!]!"
-      dataConnectorOperatorMapping:
-        - dataConnectorName: oso_clickhouse
-          dataConnectorScalarType: Int64
-          operatorMapping: {}
-  logicalOperators:
-    enable: true
-  isNull:
-    enable: true
-  graphql:
-    typeName: Oso_Int64BoolExp
-
----
-kind: AggregateExpression
-version: v1
-definition:
-  name: Int64AggExp
-  operand:
-    scalar:
-      aggregatedType: Int64
-      aggregationFunctions:
-        - name: avg
-          returnType: Float64!
-        - name: max
-          returnType: Int64!
-        - name: min
-          returnType: Int64!
-        - name: stddev_pop
-          returnType: Float64!
-        - name: stddev_samp
-          returnType: Float64!
-        - name: sum
-          returnType: Int64!
-        - name: var_pop
-          returnType: Float64!
-        - name: var_samp
-          returnType: Float64!
-      dataConnectorAggregationFunctionMapping:
-        - dataConnectorName: oso_clickhouse
-          dataConnectorScalarType: Int64
-          functionMapping:
-            avg:
-              name: avg
-            max:
-              name: max
-            min:
-              name: min
-            stddev_pop:
-              name: stddev_pop
-            stddev_samp:
-              name: stddev_samp
-            sum:
-              name: sum
-            var_pop:
-              name: var_pop
-            var_samp:
-              name: var_samp
-  count:
-    enable: true
-  countDistinct:
-    enable: true
-  graphql:
-    selectTypeName: Oso_Int64AggExp
-

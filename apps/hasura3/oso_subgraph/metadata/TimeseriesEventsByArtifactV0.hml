@@ -75,61 +75,6 @@ definition:
           - toArtifactId
 
 ---
-kind: Model
-version: v1
-definition:
-  name: TimeseriesEventsByArtifactV0
-  objectType: TimeseriesEventsByArtifactV0
-  source:
-    dataConnectorName: oso_clickhouse
-    collection: timeseries_events_by_artifact_v0
-  filterExpressionType: TimeseriesEventsByArtifactV0BoolExp
-  orderableFields:
-    - fieldName: amount
-      orderByDirections:
-        enableAll: true
-    - fieldName: eventSource
-      orderByDirections:
-        enableAll: true
-    - fieldName: eventSourceId
-      orderByDirections:
-        enableAll: true
-    - fieldName: eventType
-      orderByDirections:
-        enableAll: true
-    - fieldName: fromArtifactId
-      orderByDirections:
-        enableAll: true
-    - fieldName: time
-      orderByDirections:
-        enableAll: true
-    - fieldName: toArtifactId
-      orderByDirections:
-        enableAll: true
-  graphql:
-    selectMany:
-      queryRootField: oso_timeseriesEventsByArtifactV0
-    selectUniques: []
-    orderByExpressionType: Oso_TimeseriesEventsByArtifactV0OrderBy
-    filterInputTypeName: Oso_TimeseriesEventsByArtifactV0FilterInput
-    aggregate:
-      queryRootField: oso_timeseriesEventsByArtifactV0Aggregate
-  aggregateExpression: TimeseriesEventsByArtifactV0AggExp
-
----
-kind: ModelPermissions
-version: v1
-definition:
-  modelName: TimeseriesEventsByArtifactV0
-  permissions:
-    - role: admin
-      select:
-        filter: null
-    - role: anonymous
-      select:
-        filter: null
-
----
 kind: BooleanExpressionType
 version: v1
 definition:
@@ -188,3 +133,57 @@ definition:
   graphql:
     selectTypeName: Oso_TimeseriesEventsByArtifactV0AggExp
 
+---
+kind: Model
+version: v1
+definition:
+  name: TimeseriesEventsByArtifactV0
+  objectType: TimeseriesEventsByArtifactV0
+  source:
+    dataConnectorName: oso_clickhouse
+    collection: timeseries_events_by_artifact_v0
+  filterExpressionType: TimeseriesEventsByArtifactV0BoolExp
+  aggregateExpression: TimeseriesEventsByArtifactV0AggExp
+  orderableFields:
+    - fieldName: amount
+      orderByDirections:
+        enableAll: true
+    - fieldName: eventSource
+      orderByDirections:
+        enableAll: true
+    - fieldName: eventSourceId
+      orderByDirections:
+        enableAll: true
+    - fieldName: eventType
+      orderByDirections:
+        enableAll: true
+    - fieldName: fromArtifactId
+      orderByDirections:
+        enableAll: true
+    - fieldName: time
+      orderByDirections:
+        enableAll: true
+    - fieldName: toArtifactId
+      orderByDirections:
+        enableAll: true
+  graphql:
+    selectMany:
+      queryRootField: oso_timeseriesEventsByArtifactV0
+    selectUniques: []
+    orderByExpressionType: Oso_TimeseriesEventsByArtifactV0OrderBy
+    filterInputTypeName: Oso_TimeseriesEventsByArtifactV0FilterInput
+    aggregate:
+      queryRootField: oso_timeseriesEventsByArtifactV0Aggregate
+
+---
+kind: ModelPermissions
+version: v1
+definition:
+  modelName: TimeseriesEventsByArtifactV0
+  permissions:
+    - role: admin
+      select:
+        filter: null
+    - role: anonymous
+      select:
+        filter: null

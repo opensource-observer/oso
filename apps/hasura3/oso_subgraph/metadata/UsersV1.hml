@@ -75,61 +75,6 @@ definition:
           - userSourceId
 
 ---
-kind: Model
-version: v1
-definition:
-  name: UsersV1
-  objectType: UsersV1
-  source:
-    dataConnectorName: oso_clickhouse
-    collection: users_v1
-  filterExpressionType: UsersV1BoolExp
-  orderableFields:
-    - fieldName: bio
-      orderByDirections:
-        enableAll: true
-    - fieldName: displayName
-      orderByDirections:
-        enableAll: true
-    - fieldName: profilePictureUrl
-      orderByDirections:
-        enableAll: true
-    - fieldName: url
-      orderByDirections:
-        enableAll: true
-    - fieldName: userId
-      orderByDirections:
-        enableAll: true
-    - fieldName: userSource
-      orderByDirections:
-        enableAll: true
-    - fieldName: userSourceId
-      orderByDirections:
-        enableAll: true
-  graphql:
-    selectMany:
-      queryRootField: oso_usersV1
-    selectUniques: []
-    orderByExpressionType: Oso_UsersV1OrderBy
-    filterInputTypeName: Oso_UsersV1FilterInput
-    aggregate:
-      queryRootField: oso_usersV1Aggregate
-  aggregateExpression: UsersV1AggExp
-
----
-kind: ModelPermissions
-version: v1
-definition:
-  modelName: UsersV1
-  permissions:
-    - role: admin
-      select:
-        filter: null
-    - role: anonymous
-      select:
-        filter: null
-
----
 kind: BooleanExpressionType
 version: v1
 definition:
@@ -188,3 +133,57 @@ definition:
   graphql:
     selectTypeName: Oso_UsersV1AggExp
 
+---
+kind: Model
+version: v1
+definition:
+  name: UsersV1
+  objectType: UsersV1
+  source:
+    dataConnectorName: oso_clickhouse
+    collection: users_v1
+  filterExpressionType: UsersV1BoolExp
+  aggregateExpression: UsersV1AggExp
+  orderableFields:
+    - fieldName: bio
+      orderByDirections:
+        enableAll: true
+    - fieldName: displayName
+      orderByDirections:
+        enableAll: true
+    - fieldName: profilePictureUrl
+      orderByDirections:
+        enableAll: true
+    - fieldName: url
+      orderByDirections:
+        enableAll: true
+    - fieldName: userId
+      orderByDirections:
+        enableAll: true
+    - fieldName: userSource
+      orderByDirections:
+        enableAll: true
+    - fieldName: userSourceId
+      orderByDirections:
+        enableAll: true
+  graphql:
+    selectMany:
+      queryRootField: oso_usersV1
+    selectUniques: []
+    orderByExpressionType: Oso_UsersV1OrderBy
+    filterInputTypeName: Oso_UsersV1FilterInput
+    aggregate:
+      queryRootField: oso_usersV1Aggregate
+
+---
+kind: ModelPermissions
+version: v1
+definition:
+  modelName: UsersV1
+  permissions:
+    - role: admin
+      select:
+        filter: null
+    - role: anonymous
+      select:
+        filter: null
