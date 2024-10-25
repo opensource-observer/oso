@@ -65,10 +65,6 @@ METRICS_COLUMNS_BY_ENTITY: t.Dict[str, t.Dict[str, exp.DataType]] = {
 }
 
 
-def generate_config_for_model(query: MetricQuery, peer_table_map: t.Dict[str, str]):
-    pass
-
-
 def generate_models_from_query(
     calling_file: str,
     query: MetricQuery,
@@ -109,13 +105,12 @@ def generate_models_from_query(
         # for now.
         reduced_peer_table_tuples = [(k, peer_table_map[k]) for k in query_dependencies]
         reduced_peer_table_tuples.sort()
-        reduced_peer_table_map = dict(reduced_peer_table_tuples)
 
         config = GeneratedArtifactConfig(
             query_reference_name=query_reference_name,
             query_def_as_input=query_def_as_input,
             default_dialect=default_dialect,
-            peer_table_map=reduced_peer_table_map,
+            peer_table_tuples=reduced_peer_table_tuples,
             ref=ref,
             timeseries_sources=timeseries_sources,
         )

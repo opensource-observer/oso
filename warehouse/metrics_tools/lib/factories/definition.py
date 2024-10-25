@@ -831,7 +831,7 @@ class GeneratedArtifactConfig(t.TypedDict):
     query_reference_name: str
     query_def_as_input: MetricQueryInput
     default_dialect: str
-    peer_table_map: t.Dict[str, str]
+    peer_table_tuples: t.List[t.Tuple[str, str]]
     ref: PeerMetricDependencyRef
     timeseries_sources: t.List[str]
 
@@ -841,7 +841,7 @@ def generated_entity(
     query_reference_name: str,
     query_def_as_input: MetricQueryInput,
     default_dialect: str,
-    peer_table_map: t.Dict[str, str],
+    peer_table_tuples: t.List[t.Tuple[str, str]],
     ref: PeerMetricDependencyRef,
     timeseries_sources: t.List[str],
 ):
@@ -851,6 +851,7 @@ def generated_entity(
         default_dialect=default_dialect,
         source=query_def,
     )
+    peer_table_map = dict(peer_table_tuples)
     e = query.generate_query_ref(
         ref,
         evaluator,
