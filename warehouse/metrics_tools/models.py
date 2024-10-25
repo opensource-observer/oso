@@ -208,19 +208,59 @@ def create_unregistered_macro(
     return registry
 
 
+def create_basic_python_env(
+    env: t.Dict[str, t.Any],
+    path: str | Path = "",
+    project_path: str | Path = "",
+    macros: t.Optional[MacroRegistry] = None,
+    additional_macros: t.Optional[MacroRegistry] = None,
+    variables: t.Optional[t.Dict[str, t.Any]] = None,
+):
+    if isinstance(path, str):
+        path = Path(path)
+    if isinstance(project_path, str):
+        project_path = Path(project_path)
+
+    serialized = env.copy()
+    macros = macros or macro.get_registry()
+
+    if additional_macros:
+        macros = t.cast(MacroRegistry, macros.copy())
+        macros.update(additional_macros)
+
+    python_env = {}
+    for name, used_macro in macros.items():
+        if isinstance(used_macro, Executable):
+            serialized[name] = used_macro
+        elif not hasattr(used_macro, c.SQLMESH_BUILTIN):
+            build_env(used_macro.func, env=python_env, name=name, path=path)
+
+    if variables:
+        for name, value in variables.items():
+            serialized[name] = Executable.value(value)
+
+    serialized.update(serialize_env(python_env, project_path))
+
+    return serialized
+
+
 def create_import_call_env(
     name: str,
     import_module: str,
     config: t.Mapping[str, t.Any],
     source: str,
     env: t.Dict[str, t.Any],
-    path: Path,
-    project_path: Path,
+    path: str | Path,
+    project_path: str | Path,
     macros: t.Optional[MacroRegistry] = None,
     entrypoint_name: str = "macro_entrypoint",
     additional_macros: t.Optional[MacroRegistry] = None,
     variables: t.Optional[t.Dict[str, t.Any]] = None,
 ):
+    if isinstance(path, str):
+        path = Path(path)
+    if isinstance(project_path, str):
+        project_path = Path(project_path)
 
     serialized = env.copy()
     macros = macros or macro.get_registry()
