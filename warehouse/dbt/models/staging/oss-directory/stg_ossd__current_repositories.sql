@@ -43,6 +43,6 @@ select
   language,
   created_at,
   updated_at,
-  ingestion_time  
+  ingestion_time
 from ranked_repositories
 where row_num = 1
