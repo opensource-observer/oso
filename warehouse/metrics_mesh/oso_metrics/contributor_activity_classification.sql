@@ -1,6 +1,6 @@
 select active.metrics_sample_date,
   active.event_source,
-  @metrics_entity_type_col('to_{entity_id}_id', table_alias := active),
+  @metrics_entity_type_col('to_{entity_type}_id', table_alias := active),
   '' as from_artifact_id,
   @metric_name('full_time_contributors') as metric,
   COUNT(DISTINCT active.from_artifact_id) as amount
