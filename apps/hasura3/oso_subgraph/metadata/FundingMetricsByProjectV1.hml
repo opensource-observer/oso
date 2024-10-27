@@ -2,18 +2,12 @@
 kind: ObjectType
 version: v1
 definition:
-  name: EventIndexingStatusByProjectV1
+  name: FundingMetricsByProjectV1
   fields:
+    - name: displayName
+      type: String!
     - name: eventSource
       type: String!
-    - name: eventType
-      type: String!
-    - name: eventfulDayCount
-      type: Int64!
-    - name: firstEventDate
-      type: DateTime!
-    - name: lastEventDate
-      type: DateTime!
     - name: projectId
       type: String!
     - name: projectName
@@ -22,28 +16,25 @@ definition:
       type: String!
     - name: projectSource
       type: String!
+    - name: totalFundersCount
+      type: Int64!
+    - name: totalFundingReceivedUsd
+      type: Float32!
+    - name: totalFundingReceivedUsd6Months
+      type: Float32!
   graphql:
-    typeName: Oso_EventIndexingStatusByProjectV1
-    inputTypeName: Oso_EventIndexingStatusByProjectV1Input
+    typeName: Oso_FundingMetricsByProjectV1
+    inputTypeName: Oso_FundingMetricsByProjectV1Input
   dataConnectorTypeMapping:
     - dataConnectorName: oso_clickhouse
-      dataConnectorObjectType: event_indexing_status_by_project_v1
+      dataConnectorObjectType: funding_metrics_by_project_v1
       fieldMapping:
+        displayName:
+          column:
+            name: display_name
         eventSource:
           column:
             name: event_source
-        eventType:
-          column:
-            name: event_type
-        eventfulDayCount:
-          column:
-            name: eventful_day_count
-        firstEventDate:
-          column:
-            name: first_event_date
-        lastEventDate:
-          column:
-            name: last_event_date
         projectId:
           column:
             name: project_id
@@ -56,57 +47,60 @@ definition:
         projectSource:
           column:
             name: project_source
+        totalFundersCount:
+          column:
+            name: total_funders_count
+        totalFundingReceivedUsd:
+          column:
+            name: total_funding_received_usd
+        totalFundingReceivedUsd6Months:
+          column:
+            name: total_funding_received_usd_6_months
 
 ---
 kind: TypePermissions
 version: v1
 definition:
-  typeName: EventIndexingStatusByProjectV1
+  typeName: FundingMetricsByProjectV1
   permissions:
     - role: admin
       output:
         allowedFields:
+          - displayName
           - eventSource
-          - eventType
-          - eventfulDayCount
-          - firstEventDate
-          - lastEventDate
           - projectId
           - projectName
           - projectNamespace
           - projectSource
+          - totalFundersCount
+          - totalFundingReceivedUsd
+          - totalFundingReceivedUsd6Months
     - role: anonymous
       output:
         allowedFields:
+          - displayName
           - eventSource
-          - eventType
-          - eventfulDayCount
-          - firstEventDate
-          - lastEventDate
           - projectId
           - projectName
           - projectNamespace
           - projectSource
+          - totalFundersCount
+          - totalFundingReceivedUsd
+          - totalFundingReceivedUsd6Months
 
 ---
 kind: BooleanExpressionType
 version: v1
 definition:
-  name: EventIndexingStatusByProjectV1BoolExp
+  name: FundingMetricsByProjectV1BoolExp
   operand:
     object:
-      type: EventIndexingStatusByProjectV1
+      type: FundingMetricsByProjectV1
       comparableFields:
+        - fieldName: displayName
+          booleanExpressionType: StringBoolExp
         - fieldName: eventSource
           booleanExpressionType: StringBoolExp
-        - fieldName: eventType
-          booleanExpressionType: StringBoolExp
-        - fieldName: eventfulDayCount
-          booleanExpressionType: Int64BoolExp
-        - fieldName: firstEventDate
-          booleanExpressionType: DateTimeBoolExp
-        - fieldName: lastEventDate
-          booleanExpressionType: DateTimeBoolExp
         - fieldName: projectId
           booleanExpressionType: StringBoolExp
         - fieldName: projectName
@@ -115,33 +109,33 @@ definition:
           booleanExpressionType: StringBoolExp
         - fieldName: projectSource
           booleanExpressionType: StringBoolExp
+        - fieldName: totalFundersCount
+          booleanExpressionType: Int64BoolExp
+        - fieldName: totalFundingReceivedUsd
+          booleanExpressionType: Float32BoolExp
+        - fieldName: totalFundingReceivedUsd6Months
+          booleanExpressionType: Float32BoolExp
       comparableRelationships: []
   logicalOperators:
     enable: true
   isNull:
     enable: true
   graphql:
-    typeName: Oso_EventIndexingStatusByProjectV1BoolExp
+    typeName: Oso_FundingMetricsByProjectV1BoolExp
 
 ---
 kind: AggregateExpression
 version: v1
 definition:
-  name: EventIndexingStatusByProjectV1AggExp
+  name: FundingMetricsByProjectV1AggExp
   operand:
     object:
-      aggregatedType: EventIndexingStatusByProjectV1
+      aggregatedType: FundingMetricsByProjectV1
       aggregatableFields:
+        - fieldName: displayName
+          aggregateExpression: StringAggExp
         - fieldName: eventSource
           aggregateExpression: StringAggExp
-        - fieldName: eventType
-          aggregateExpression: StringAggExp
-        - fieldName: eventfulDayCount
-          aggregateExpression: Int64AggExp
-        - fieldName: firstEventDate
-          aggregateExpression: DateTimeAggExp
-        - fieldName: lastEventDate
-          aggregateExpression: DateTimeAggExp
         - fieldName: projectId
           aggregateExpression: StringAggExp
         - fieldName: projectName
@@ -150,36 +144,33 @@ definition:
           aggregateExpression: StringAggExp
         - fieldName: projectSource
           aggregateExpression: StringAggExp
+        - fieldName: totalFundersCount
+          aggregateExpression: Int64AggExp
+        - fieldName: totalFundingReceivedUsd
+          aggregateExpression: Float32AggExp
+        - fieldName: totalFundingReceivedUsd6Months
+          aggregateExpression: Float32AggExp
   count:
     enable: true
   graphql:
-    selectTypeName: Oso_EventIndexingStatusByProjectV1AggExp
+    selectTypeName: Oso_FundingMetricsByProjectV1AggExp
 
 ---
 kind: Model
 version: v1
 definition:
-  name: EventIndexingStatusByProjectV1
-  objectType: EventIndexingStatusByProjectV1
+  name: FundingMetricsByProjectV1
+  objectType: FundingMetricsByProjectV1
   source:
     dataConnectorName: oso_clickhouse
-    collection: event_indexing_status_by_project_v1
-  filterExpressionType: EventIndexingStatusByProjectV1BoolExp
-  aggregateExpression: EventIndexingStatusByProjectV1AggExp
+    collection: funding_metrics_by_project_v1
+  filterExpressionType: FundingMetricsByProjectV1BoolExp
+  aggregateExpression: FundingMetricsByProjectV1AggExp
   orderableFields:
+    - fieldName: displayName
+      orderByDirections:
+        enableAll: true
     - fieldName: eventSource
-      orderByDirections:
-        enableAll: true
-    - fieldName: eventType
-      orderByDirections:
-        enableAll: true
-    - fieldName: eventfulDayCount
-      orderByDirections:
-        enableAll: true
-    - fieldName: firstEventDate
-      orderByDirections:
-        enableAll: true
-    - fieldName: lastEventDate
       orderByDirections:
         enableAll: true
     - fieldName: projectId
@@ -194,20 +185,29 @@ definition:
     - fieldName: projectSource
       orderByDirections:
         enableAll: true
+    - fieldName: totalFundersCount
+      orderByDirections:
+        enableAll: true
+    - fieldName: totalFundingReceivedUsd
+      orderByDirections:
+        enableAll: true
+    - fieldName: totalFundingReceivedUsd6Months
+      orderByDirections:
+        enableAll: true
   graphql:
     selectMany:
-      queryRootField: oso_eventIndexingStatusByProjectV1
+      queryRootField: oso_fundingMetricsByProjectV1
     selectUniques: []
-    orderByExpressionType: Oso_EventIndexingStatusByProjectV1OrderBy
-    filterInputTypeName: Oso_EventIndexingStatusByProjectV1FilterInput
+    orderByExpressionType: Oso_FundingMetricsByProjectV1OrderBy
+    filterInputTypeName: Oso_FundingMetricsByProjectV1FilterInput
     aggregate:
-      queryRootField: oso_eventIndexingStatusByProjectV1Aggregate
+      queryRootField: oso_fundingMetricsByProjectV1Aggregate
 
 ---
 kind: ModelPermissions
 version: v1
 definition:
-  modelName: EventIndexingStatusByProjectV1
+  modelName: FundingMetricsByProjectV1
   permissions:
     - role: admin
       select:

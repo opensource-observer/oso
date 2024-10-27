@@ -160,10 +160,7 @@ PLASMIC.registerComponent(
         helpText: "Comma-separated Algolia index names",
       },
       placeholder: "string",
-      showResultsOnEmptyQuery: {
-        type: "boolean",
-        helpText: "Show some results even if user has no query",
-      },
+      defaultSearchResults: "object",
     },
     providesData: true,
     importPath: "./components/widgets/algolia",

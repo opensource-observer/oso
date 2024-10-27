@@ -1,4 +1,3 @@
----
 kind: GraphqlConfig
 version: v1
 definition:
@@ -35,4 +34,3 @@ definition:
     rootOperationTypeName: Mutation
   apolloFederation:
     enableRootFields: true
-

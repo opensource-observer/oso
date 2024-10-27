@@ -2,7 +2,7 @@
 kind: ObjectType
 version: v1
 definition:
-  name: MetricsTimeseriesMetricsByCollectionV0
+  name: TimeseriesMetricsByCollectionV0
   fields:
     - name: amount
       type: Float64!
@@ -15,11 +15,11 @@ definition:
     - name: unit
       type: String
   graphql:
-    typeName: Oso_MetricsTimeseriesMetricsByCollectionV0
-    inputTypeName: Oso_MetricsTimeseriesMetricsByCollectionV0Input
+    typeName: Oso_TimeseriesMetricsByCollectionV0
+    inputTypeName: Oso_TimeseriesMetricsByCollectionV0Input
   dataConnectorTypeMapping:
     - dataConnectorName: oso_clickhouse
-      dataConnectorObjectType: metrics_timeseries_metrics_by_collection_v0
+      dataConnectorObjectType: timeseries_metrics_by_collection_v0
       fieldMapping:
         amount:
           column:
@@ -41,7 +41,7 @@ definition:
 kind: TypePermissions
 version: v1
 definition:
-  typeName: MetricsTimeseriesMetricsByCollectionV0
+  typeName: TimeseriesMetricsByCollectionV0
   permissions:
     - role: admin
       output:
@@ -61,15 +61,67 @@ definition:
           - unit
 
 ---
+kind: BooleanExpressionType
+version: v1
+definition:
+  name: TimeseriesMetricsByCollectionV0BoolExp
+  operand:
+    object:
+      type: TimeseriesMetricsByCollectionV0
+      comparableFields:
+        - fieldName: amount
+          booleanExpressionType: Float64BoolExp
+        - fieldName: collectionId
+          booleanExpressionType: StringBoolExp
+        - fieldName: metricId
+          booleanExpressionType: StringBoolExp
+        - fieldName: sampleDate
+          booleanExpressionType: DateBoolExp
+        - fieldName: unit
+          booleanExpressionType: StringBoolExp
+      comparableRelationships: []
+  logicalOperators:
+    enable: true
+  isNull:
+    enable: true
+  graphql:
+    typeName: Oso_TimeseriesMetricsByCollectionV0BoolExp
+
+---
+kind: AggregateExpression
+version: v1
+definition:
+  name: TimeseriesMetricsByCollectionV0AggExp
+  operand:
+    object:
+      aggregatedType: TimeseriesMetricsByCollectionV0
+      aggregatableFields:
+        - fieldName: amount
+          aggregateExpression: Float64AggExp
+        - fieldName: collectionId
+          aggregateExpression: StringAggExp
+        - fieldName: metricId
+          aggregateExpression: StringAggExp
+        - fieldName: sampleDate
+          aggregateExpression: DateAggExp
+        - fieldName: unit
+          aggregateExpression: StringAggExp
+  count:
+    enable: true
+  graphql:
+    selectTypeName: Oso_TimeseriesMetricsByCollectionV0AggExp
+
+---
 kind: Model
 version: v1
 definition:
-  name: MetricsTimeseriesMetricsByCollectionV0
-  objectType: MetricsTimeseriesMetricsByCollectionV0
+  name: TimeseriesMetricsByCollectionV0
+  objectType: TimeseriesMetricsByCollectionV0
   source:
     dataConnectorName: oso_clickhouse
-    collection: metrics_timeseries_metrics_by_collection_v0
-  filterExpressionType: MetricsTimeseriesMetricsByCollectionV0BoolExp
+    collection: timeseries_metrics_by_collection_v0
+  filterExpressionType: TimeseriesMetricsByCollectionV0BoolExp
+  aggregateExpression: TimeseriesMetricsByCollectionV0AggExp
   orderableFields:
     - fieldName: amount
       orderByDirections:
@@ -89,18 +141,22 @@ definition:
   graphql:
     selectMany:
       queryRootField: oso_timeseriesMetricsByCollectionV0
-    selectUniques: []
-    orderByExpressionType: Oso_MetricsTimeseriesMetricsByCollectionV0OrderBy
-    filterInputTypeName: Oso_MetricsTimeseriesMetricsByCollectionV0FilterInput
+    selectUniques:
+      - queryRootField: oso_timeseriesMetricsByCollectionV0ByMetricIdCollectionIdSampleDate
+        uniqueIdentifier:
+          - metricId
+          - collectionId
+          - sampleDate
+    orderByExpressionType: Oso_TimeseriesMetricsByCollectionV0OrderBy
+    filterInputTypeName: Oso_TimeseriesMetricsByCollectionV0FilterInput
     aggregate:
       queryRootField: oso_timeseriesMetricsByCollectionV0Aggregate
-  aggregateExpression: MetricsTimeseriesMetricsByCollectionV0AggExp
 
 ---
 kind: ModelPermissions
 version: v1
 definition:
-  modelName: MetricsTimeseriesMetricsByCollectionV0
+  modelName: TimeseriesMetricsByCollectionV0
   permissions:
     - role: admin
       select:
@@ -108,55 +164,3 @@ definition:
     - role: anonymous
       select:
         filter: null
-
----
-kind: BooleanExpressionType
-version: v1
-definition:
-  name: MetricsTimeseriesMetricsByCollectionV0BoolExp
-  operand:
-    object:
-      type: MetricsTimeseriesMetricsByCollectionV0
-      comparableFields:
-        - fieldName: amount
-          booleanExpressionType: Float64BoolExp
-        - fieldName: collectionId
-          booleanExpressionType: StringBoolExp
-        - fieldName: metricId
-          booleanExpressionType: StringBoolExp
-        - fieldName: sampleDate
-          booleanExpressionType: DateBoolExp
-        - fieldName: unit
-          booleanExpressionType: StringBoolExp
-      comparableRelationships: []
-  logicalOperators:
-    enable: true
-  isNull:
-    enable: true
-  graphql:
-    typeName: Oso_MetricsTimeseriesMetricsByCollectionV0BoolExp
-
----
-kind: AggregateExpression
-version: v1
-definition:
-  name: MetricsTimeseriesMetricsByCollectionV0AggExp
-  operand:
-    object:
-      aggregatedType: MetricsTimeseriesMetricsByCollectionV0
-      aggregatableFields:
-        - fieldName: amount
-          aggregateExpression: Float64AggExp
-        - fieldName: collectionId
-          aggregateExpression: StringAggExp
-        - fieldName: metricId
-          aggregateExpression: StringAggExp
-        - fieldName: sampleDate
-          aggregateExpression: DateAggExp
-        - fieldName: unit
-          aggregateExpression: StringAggExp
-  count:
-    enable: true
-  graphql:
-    selectTypeName: Oso_MetricsTimeseriesMetricsByCollectionV0AggExp
-
