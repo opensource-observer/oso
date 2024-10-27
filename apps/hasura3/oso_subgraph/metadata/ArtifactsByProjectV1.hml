@@ -89,67 +89,6 @@ definition:
           - projectSource
 
 ---
-kind: Model
-version: v1
-definition:
-  name: ArtifactsByProjectV1
-  objectType: ArtifactsByProjectV1
-  source:
-    dataConnectorName: oso_clickhouse
-    collection: artifacts_by_project_v1
-  filterExpressionType: ArtifactsByProjectV1BoolExp
-  orderableFields:
-    - fieldName: artifactId
-      orderByDirections:
-        enableAll: true
-    - fieldName: artifactName
-      orderByDirections:
-        enableAll: true
-    - fieldName: artifactNamespace
-      orderByDirections:
-        enableAll: true
-    - fieldName: artifactSource
-      orderByDirections:
-        enableAll: true
-    - fieldName: artifactSourceId
-      orderByDirections:
-        enableAll: true
-    - fieldName: projectId
-      orderByDirections:
-        enableAll: true
-    - fieldName: projectName
-      orderByDirections:
-        enableAll: true
-    - fieldName: projectNamespace
-      orderByDirections:
-        enableAll: true
-    - fieldName: projectSource
-      orderByDirections:
-        enableAll: true
-  graphql:
-    selectMany:
-      queryRootField: oso_artifactsByProjectV1
-    selectUniques: []
-    orderByExpressionType: Oso_ArtifactsByProjectV1OrderBy
-    filterInputTypeName: Oso_ArtifactsByProjectV1FilterInput
-    aggregate:
-      queryRootField: oso_artifactsByProjectV1Aggregate
-  aggregateExpression: ArtifactsByProjectV1AggExp
-
----
-kind: ModelPermissions
-version: v1
-definition:
-  modelName: ArtifactsByProjectV1
-  permissions:
-    - role: admin
-      select:
-        filter: null
-    - role: anonymous
-      select:
-        filter: null
-
----
 kind: BooleanExpressionType
 version: v1
 definition:
@@ -216,3 +155,63 @@ definition:
   graphql:
     selectTypeName: Oso_ArtifactsByProjectV1AggExp
 
+---
+kind: Model
+version: v1
+definition:
+  name: ArtifactsByProjectV1
+  objectType: ArtifactsByProjectV1
+  source:
+    dataConnectorName: oso_clickhouse
+    collection: artifacts_by_project_v1
+  filterExpressionType: ArtifactsByProjectV1BoolExp
+  aggregateExpression: ArtifactsByProjectV1AggExp
+  orderableFields:
+    - fieldName: artifactId
+      orderByDirections:
+        enableAll: true
+    - fieldName: artifactName
+      orderByDirections:
+        enableAll: true
+    - fieldName: artifactNamespace
+      orderByDirections:
+        enableAll: true
+    - fieldName: artifactSource
+      orderByDirections:
+        enableAll: true
+    - fieldName: artifactSourceId
+      orderByDirections:
+        enableAll: true
+    - fieldName: projectId
+      orderByDirections:
+        enableAll: true
+    - fieldName: projectName
+      orderByDirections:
+        enableAll: true
+    - fieldName: projectNamespace
+      orderByDirections:
+        enableAll: true
+    - fieldName: projectSource
+      orderByDirections:
+        enableAll: true
+  graphql:
+    selectMany:
+      queryRootField: oso_artifactsByProjectV1
+    selectUniques: []
+    orderByExpressionType: Oso_ArtifactsByProjectV1OrderBy
+    filterInputTypeName: Oso_ArtifactsByProjectV1FilterInput
+    aggregate:
+      queryRootField: oso_artifactsByProjectV1Aggregate
+
+---
+kind: ModelPermissions
+version: v1
+definition:
+  modelName: ArtifactsByProjectV1
+  permissions:
+    - role: admin
+      select:
+        filter: null
+    - role: anonymous
+      select:
+        filter: null

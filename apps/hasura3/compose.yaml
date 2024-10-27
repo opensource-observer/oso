@@ -4,18 +4,16 @@ services:
   engine:
     build:
       context: engine
-      dockerfile_inline: |-
-        FROM ghcr.io/hasura/v3-engine
-        COPY ./build /md/
-    develop:
-      watch:
-        - action: sync+restart
-          path: engine/build
-          target: /md/
-    env_file:
-      - engine/.env.engine
+      dockerfile: Dockerfile.engine
+      pull: true
+    environment:
+      AUTHN_CONFIG_PATH: /md/auth_config.json
+      ENABLE_CORS: "true"
+      INTROSPECTION_METADATA_FILE: /md/metadata.json
+      METADATA_PATH: /md/open_dd.json
+      OTLP_ENDPOINT: http://local.hasura.dev:4317
     extra_hosts:
-      - local.hasura.dev=host-gateway
+      - local.hasura.dev:host-gateway
     ports:
       - mode: ingress
         protocol: tcp

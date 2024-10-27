@@ -293,9 +293,9 @@ class GithubRepositoryResolver:
             )
             return False
         except RequestFailed as e:
-            if e.response.status_code == 404:
-                return True
-            raise e
+            if e.response.status_code != 404:
+                logger.warning("Error checking for SBOM: %s", e)
+            return True
 
     def get_sbom_for_repo(self, repo: Repository) -> List[GithubRepositorySBOMItem]:
         try:
@@ -330,9 +330,10 @@ class GithubRepositoryResolver:
             return sbom_list
         except RequestFailed as exception:
             if exception.response.status_code == 404:
-                logging.warning("Skipping %s, no SBOM found", repo.url)
-                return []
-            raise exception
+                logger.warning("Skipping %s, no SBOM found", repo.url)
+            else:
+                logger.warning("Error getting SBOM: %s", exception)
+            return []
 
     @staticmethod
     def get_github_client(config: GithubClientConfig) -> GitHub:
