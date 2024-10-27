@@ -119,11 +119,7 @@ def intermediate_macro_evaluator(
         raise Exception("expected node.this to be an anonymous expression")
 
     parsed = parsed.transform(replace_all_macro_vars)
-    print("> var")
-    print(repr(parsed))
     parsed = parsed.transform(replace_all_macro_funcs)
-    print("> func")
-    print(repr(parsed))
 
     intermediate_evaluation = evaluator.transform(parsed)
     if not intermediate_evaluation:
