@@ -10,16 +10,15 @@ from sqlglot.optimizer.qualify import qualify
 from sqlmesh.core.macros import MacroEvaluator
 from sqlmesh.utils.date import TimeLike
 
-from metrics_tools.dialect.translate import (
+from .dialect.translate import (
     CustomFuncHandler,
     CustomFuncRegistry,
 )
-from metrics_tools.evaluator import FunctionsTransformer
+from .evaluator import FunctionsTransformer
+from .utils import exp_literal_to_py_literal
 
 CURR_DIR = os.path.dirname(__file__)
-QUERIES_DIR = os.path.abspath(
-    os.path.join(CURR_DIR, "../../../metrics_mesh/oso_metrics")
-)
+QUERIES_DIR = os.path.abspath(os.path.join(CURR_DIR, "../metrics_mesh/oso_metrics"))
 
 type ExtraVarBaseType = str | int | float
 type ExtraVarType = ExtraVarBaseType | t.List[ExtraVarBaseType]
@@ -244,13 +243,6 @@ class MetricQueryDef:
         if suffix:
             model_name = f"{model_name}_{suffix}"
         return model_name
-
-
-def exp_literal_to_py_literal(glot_literal: exp.Expression) -> t.Any:
-    # Don't error by default let it pass
-    if not isinstance(glot_literal, exp.Literal):
-        return glot_literal
-    return glot_literal.this
 
 
 class PeerRefRelativeWindowHandler(CustomFuncHandler):

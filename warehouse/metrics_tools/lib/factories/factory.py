@@ -2,7 +2,7 @@ import inspect
 import os
 import typing as t
 
-from metrics_tools.lib.factories.definition import (
+from metrics_tools.definition import (
     GeneratedArtifactConfig,
     MetricQuery,
     TimeseriesMetricsOptions,

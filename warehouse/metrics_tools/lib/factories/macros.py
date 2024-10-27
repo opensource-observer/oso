@@ -5,7 +5,12 @@ from sqlglot import expressions as exp
 from sqlmesh.core.dialect import MacroVar, parse_one
 from sqlmesh.core.macros import MacroEvaluator
 
-from .definition import time_suffix
+from metrics_tools.definition import (
+    PeerMetricDependencyRef,
+    time_suffix,
+    to_actual_table_name,
+)
+from metrics_tools.utils import exp_literal_to_py_literal
 
 
 def relative_window_sample_date(
@@ -170,6 +175,10 @@ def metrics_start(evaluator: MacroEvaluator, _data_type: t.Optional[str] = None)
           by taking the end_ds provided by sqlmesh and calculating a
           trailing interval back {window} intervals of unit {unit}.
     """
+    if evaluator.locals.get("metrics_stage", "") == "generate":
+        return exp.Anonymous(
+            this="$$MACRO_REFERENCE", expressions=["metrics_start", _data_type]
+        )
     time_aggregation_interval = evaluator.locals.get("time_aggregation")
     if time_aggregation_interval:
         start_date = t.cast(
@@ -252,3 +261,35 @@ def metrics_entity_type_alias(
         entity_type=evaluator.locals.get("entity_type", "artifact")
     )
     return exp.alias_(to_alias, alias_name)
+
+
+def metrics_peer_ref(
+    evaluator: MacroEvaluator,
+    name: str,
+    *,
+    entity_type: t.Optional[exp.Expression] = None,
+    window: t.Optional[exp.Expression] = None,
+    unit: t.Optional[exp.Expression] = None,
+    time_aggregation: t.Optional[exp.Expression] = None,
+):
+    entity_type_val = (
+        t.cast(str, exp_literal_to_py_literal(entity_type)) if entity_type else ""
+    )
+    window_val = int(exp_literal_to_py_literal(window)) if window else None
+    unit_val = t.cast(str, exp_literal_to_py_literal(unit)) if unit else None
+    time_aggregation_val = (
+        t.cast(str, exp_literal_to_py_literal(time_aggregation))
+        if time_aggregation
+        else None
+    )
+    peer_schema = t.cast(dict, evaluator.locals.get("$$peer_schema"))
+    peer_table_map = t.cast(dict, evaluator.locals.get("$$peer_table_map"))
+
+    ref = PeerMetricDependencyRef(
+        name=name,
+        entity_type=entity_type_val,
+        window=window_val,
+        unit=unit_val,
+        time_aggregation=time_aggregation_val,
+    )
+    return exp.to_table(f"{peer_schema}.{to_actual_table_name(ref, peer_table_map)}")
