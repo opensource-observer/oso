@@ -1,0 +1,7 @@
+sources:
+  - name: deps_dev
+    database: bigquery-public-data
+    schema: deps_dev_v1
+    tables:
+      - name: dependencies
+        identifier: Dependencies
