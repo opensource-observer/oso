@@ -23,10 +23,10 @@ select
   `url` as artifact_url,
   ingestion_time as snapshot_at
 from
-  all_repos ar
+  all_repos as ar
 left join
-  all_ossd ao
+  all_ossd as ao
   on
-    CONCAT(ao.artifact_namespace, "/", ao.artifact_name) = ar.name_with_owner
+    CONCAT(ao.artifact_namespace, '/', ao.artifact_name) = ar.name_with_owner
 where
   ao.artifact_namespace is null
