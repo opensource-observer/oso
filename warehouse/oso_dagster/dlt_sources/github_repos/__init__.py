@@ -400,8 +400,21 @@ def oss_directory_github_sbom_resource(
     resolver = GithubRepositoryResolver(gh)
 
     all_github_urls = resolver.github_urls_from_df(projects_df)
-    valid_urls = [resolver.parse_url(url) for url in all_github_urls["url"] if url]
 
-    for url in valid_urls:
-        if url.type == GithubURLType.REPOSITORY and url.repository:
-            yield from resolver.get_sbom_for_repo(url.owner, url.repository)
+    for unparsed_url in all_github_urls["url"]:
+        if not unparsed_url:
+            continue
+
+        try:
+            parsed_url = resolver.parse_url(unparsed_url)
+
+            if parsed_url.type != GithubURLType.REPOSITORY or not parsed_url.repository:
+                continue
+
+            yield from resolver.get_sbom_for_repo(
+                parsed_url.owner, parsed_url.repository
+            )
+
+        except InvalidGithubURL:
+            logger.warning("Skipping invalid github url: %s", unparsed_url)
+            continue
