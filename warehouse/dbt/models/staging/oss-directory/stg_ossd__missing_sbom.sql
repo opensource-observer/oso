@@ -2,21 +2,31 @@
     materialized = 'view'
 ) }}
 
-with source as (
+with all_repos as (
   select *
-  from {{ source('ossd', 'missing_sbom') }}
+  from
+    {{ source('ossd', 'repositories') }}
 ),
 
-current_dlt_load_id as (
-  select max(_dlt_load_id) as max_dlt_load_id
-  from source
-),
-
-last_snapshot as (
+all_ossd as (
   select *
-  from source
-  where _dlt_load_id = (select max_dlt_load_id from current_dlt_load_id)
+  from
+    {{ source('ossd', 'sbom') }}
+  where
+    artifact_source = 'GITHUB'
 )
 
-select *
-from last_snapshot
+select
+  `owner` as artifact_namespace,
+  `name` as artifact_name,
+  'GITHUB' as artifact_source,
+  `url` as artifact_url,
+  ingestion_time as snapshot_at
+from
+  all_repos as ar
+left join
+  all_ossd as ao
+  on
+    CONCAT(ao.artifact_namespace, '/', ao.artifact_name) = ar.name_with_owner
+where
+  ao.artifact_namespace is null

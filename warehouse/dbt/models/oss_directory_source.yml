@@ -10,5 +10,7 @@ sources:
         identifier: collections
       - name: repositories
         identifier: repositories
+      - name: sbom
+        identifier: sbom
       - name: missing_sbom
         identifier: missing_sbom
