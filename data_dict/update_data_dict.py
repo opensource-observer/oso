@@ -3,11 +3,9 @@
 # pip install pymongo
 
 from typing import List, Dict, Any, Union, Tuple, Callable, Optional
-import pandas as pd
 from pandas_gbq import gbq
 import openai
 from google.colab import auth
-from google.cloud import bigquery
 import numpy as np
 import json
 import yaml
@@ -397,9 +395,10 @@ def generate_table_description(table_info, dataset_name):
   dataset_context_path = f'/content/drive/MyDrive/OSO/dataset_context/{dataset_name}.json'
 
   with open(dataset_context_path, 'r') as f:
-      dataset_context = json.load(f)
-
-  table_description_dict = generate_prompt(str(table_info), table_description_prompt)
+    dataset_context = json.load(f)
+  
+  dataset_context = "Important context description for the dataset: " + dataset_context
+  table_description_dict = generate_prompt(str(table_info), table_description_prompt + dataset_context)
   table_info['description'] = list(table_description_dict.values())[0]
 
   return table_info
