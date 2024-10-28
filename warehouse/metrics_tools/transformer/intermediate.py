@@ -9,21 +9,27 @@ from .base import Transform
 
 
 class IntermediateMacroEvaluatorTransform(Transform):
-    def __init__(self, macros: t.List[t.Callable], variables: t.Dict[str, t.Any]):
+    def __init__(
+        self,
+        macros: t.List[t.Callable | t.Tuple[t.Callable, t.List[str]]],
+        variables: t.Dict[str, t.Any],
+    ):
         self._macros = macros
         self._variables = variables
 
     def __call__(self, query: t.List[exp.Expression]) -> t.List[exp.Expression]:
+        registry = MacroRegistry("intermediate_macros")
         for macro in self._macros:
-            registry = create_unregistered_wrapped_macro(macro)
-        else:
-            registry = t.cast(MacroRegistry, {})
+            if isinstance(macro, tuple):
+                registry.update(create_unregistered_wrapped_macro(*macro))
+            else:
+                registry.update(create_unregistered_wrapped_macro(macro))
 
         final = []
         for expression in query:
-            final.append(
-                intermediate_macro_evaluator(
-                    expression, macros=registry, variables=self._variables
-                )
+            evaluated = intermediate_macro_evaluator(
+                expression, macros=registry, variables=self._variables
             )
+            assert evaluated is not None
+            final.extend(evaluated)
         return final

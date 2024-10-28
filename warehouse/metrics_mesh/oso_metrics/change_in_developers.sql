@@ -7,7 +7,7 @@ WITH latest AS (
     ),
     classification.metric,
     classification.amount
-  FROM metrics_peer_ref(
+  FROM @metrics_peer_ref(
       developer_classifications,
       window := @rolling_window,
       unit := @rolling_unit
@@ -24,11 +24,12 @@ previous AS (
     classification.event_source,
     @metrics_entity_type_col(
       'to_{entity_type}_id',
-      table_alias := classification
+      table_alias := classification,
+      include_column_alias := true,
     ),
     classification.metric,
     classification.amount
-  FROM metrics_peer_ref(
+  FROM @metrics_peer_ref(
       developer_classifications,
       window := @rolling_window,
       unit := @rolling_unit
@@ -47,7 +48,7 @@ select @metrics_end(DATE) as metrics_sample_date,
       @metrics_entity_type_col('to_{entity_type}_id', table_alias := latest),
       @metrics_entity_type_col('to_{entity_type}_id', table_alias := previous)
     ),
-    'to_{entity_type}_id'
+    'to_{entity_type}_id',
   ),
   '' as from_artifact_id,
   @metrics_name(

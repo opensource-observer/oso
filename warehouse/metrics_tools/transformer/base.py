@@ -4,7 +4,6 @@ from dataclasses import dataclass
 
 from sqlglot import exp
 from sqlmesh.core.dialect import parse
-from sqlglot.optimizer.qualify import qualify
 
 
 class Transform(abc.ABC):
@@ -27,7 +26,7 @@ class SQLTransformer:
         else:
             transformed = query
         # Qualify all
-        transformed = list(map(qualify, transformed))
+        # transformed = list(map(qualify, transformed))
 
         for transform in self.transforms:
             transformed = transform(transformed)

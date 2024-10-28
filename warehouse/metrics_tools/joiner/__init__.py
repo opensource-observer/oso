@@ -1,15 +1,16 @@
 import typing as t
-from metrics_tools.transformer.base import SQLTransformer, Transform
+
 from sqlglot import exp
+from sqlmesh.core.dialect import MacroVar
+
+from metrics_tools.transformer.base import SQLTransformer, Transform
 
 
-class EntityTransform(Transform):
-    def __init__(self, entity_type: str, sources_database: str):
-        self._sources_database = sources_database
+class JoinerTransform(Transform):
+    def __init__(self, entity_type: str):
         self._entity_type = entity_type
 
     def __call__(self, query: t.List[exp.Expression]) -> t.List[exp.Expression]:
-        sources_database = self._sources_database
         entity_type = self._entity_type
 
         def _transform(node: exp.Expression):
@@ -45,7 +46,10 @@ class EntityTransform(Transform):
 
                         # Add a join to this select
                         updated_select = updated_select.join(
-                            f"{sources_database}.artifacts_by_project_v1",
+                            exp.Table(
+                                this=exp.to_identifier("artifacts_by_project_v1"),
+                                db=MacroVar(this="oso_source"),
+                            ),
                             on=f"{current_alias}.to_artifact_id = artifacts_by_project_v1.artifact_id",
                             join_type="inner",
                         )
@@ -59,7 +63,10 @@ class EntityTransform(Transform):
 
                         if entity_type == "collection":
                             updated_select = updated_select.join(
-                                f"{sources_database}.projects_by_collection_v1",
+                                exp.Table(
+                                    this=exp.to_identifier("projects_by_collection_v1"),
+                                    db=MacroVar(this="oso_source"),
+                                ),
                                 on="artifacts_by_project_v1.project_id = projects_by_collection_v1.project_id",
                                 join_type="inner",
                             )
@@ -112,7 +119,7 @@ def joiner_transform(
     transformer = SQLTransformer(
         transforms=[
             # Semantic transform
-            EntityTransform(entity_type, "metrics")
+            JoinerTransform(entity_type)
         ]
     )
     return transformer.transform(query)
