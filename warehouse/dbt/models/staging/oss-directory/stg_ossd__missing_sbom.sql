@@ -5,13 +5,13 @@
 with all_repos as (
   select *
   from
-    `ossd.repositories`
+    {{ source('ossd', 'repositories') }}
 ),
 
 all_ossd as (
   select *
   from
-    `ossd.sbom`
+    {{ source('ossd', 'sbom') }}
   where
     artifact_source = 'GITHUB'
 )
