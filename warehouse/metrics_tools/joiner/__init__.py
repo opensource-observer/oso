@@ -3,7 +3,7 @@ import typing as t
 from sqlglot import exp
 from sqlmesh.core.dialect import MacroVar
 
-from metrics_tools.transformer.base import SQLTransformer, Transform
+from metrics_tools.transformer import SQLTransformer, Transform
 
 
 class JoinerTransform(Transform):

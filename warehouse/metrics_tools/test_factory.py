@@ -90,8 +90,8 @@ def timeseries_metrics_to_test():
     )
 
 
-def test_timeseries_metric_rendering(timeseries_metrics_to_test: TimeseriesMetrics):
-    for name, query in timeseries_metrics_to_test.generate_queries().items():
-        print(f"Query {name}:")
-        print(query.sql("duckdb", pretty=True))
-    assert False
+# def test_timeseries_metric_rendering(timeseries_metrics_to_test: TimeseriesMetrics):
+#     for name, query in timeseries_metrics_to_test.generate_queries().items():
+#         print(f"Query {name}:")
+#         print(query.sql("duckdb", pretty=True))
+#     assert False

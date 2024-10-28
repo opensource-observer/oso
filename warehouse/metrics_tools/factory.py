@@ -2,8 +2,10 @@ import inspect
 import typing as t
 
 from metrics_tools.joiner import JoinerTransform
-from metrics_tools.transformer.base import SQLTransformer
-from metrics_tools.transformer.intermediate import IntermediateMacroEvaluatorTransform
+from metrics_tools.transformer import (
+    SQLTransformer,
+    IntermediateMacroEvaluatorTransform,
+)
 from sqlmesh.core.macros import MacroEvaluator
 from sqlmesh.utils.date import TimeLike
 from sqlmesh.core.model import ModelKindName

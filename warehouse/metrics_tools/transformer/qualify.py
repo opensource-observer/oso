@@ -1,9 +1,13 @@
 from typing import List
-from metrics_tools.transformer.base import Transform
 from sqlglot.optimizer.qualify import qualify
 from sqlglot.expressions import Expression
 
+from .base import Transform
+
 
 class QualifyTransform(Transform):
+    def __init__(self, **options):
+        self._options = options
+
     def __call__(self, query: List[Expression]) -> List[Expression]:
-        return list(map(qualify, query))
+        return list(map(lambda a: qualify(a, **self._options), query))
