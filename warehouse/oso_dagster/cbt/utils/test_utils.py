@@ -1,5 +1,7 @@
 import sqlglot as sql
 from oso_dagster.cbt.utils import replace_source_tables, is_same_sql
+from sqlglot.optimizer.qualify import qualify
+from sqlglot.optimizer.normalize import normalize
 
 
 def test_replace_table():
@@ -16,4 +18,4 @@ def test_replace_table():
     expected = sql.parse_one(
         "select * from noreplace as nr inner join replacement as t on t.t_id = nr.nr_id"
     )
-    assert is_same_sql(result3, expected)
+    assert is_same_sql(normalize(qualify(result3)), normalize(qualify(expected)))

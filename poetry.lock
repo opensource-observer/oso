@@ -6166,13 +6166,13 @@ sqlfluff = "3.2.4"
 
 [[package]]
 name = "sqlglot"
-version = "25.24.5"
+version = "25.27.0"
 description = "An easily customizable SQL parser and transpiler"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "sqlglot-25.24.5-py3-none-any.whl", hash = "sha256:f8a8870d1f5cdd2e2dc5c39a5030a0c7b0a91264fb8972caead3dac8e8438873"},
-    {file = "sqlglot-25.24.5.tar.gz", hash = "sha256:6d3d604034301ca3b614d6b4148646b4033317b7a93d1801e9661495eb4b4fcf"},
+    {file = "sqlglot-25.27.0-py3-none-any.whl", hash = "sha256:6dbed60971542f1a69775f1f642359097859df4db440d4601cb75cb4cd9fe936"},
+    {file = "sqlglot-25.27.0.tar.gz", hash = "sha256:0a225bd0967bb1830a4fa9e9072eb1a4e74e9f80b5ff99f4bba52a60330322e9"},
 ]
 
 [package.dependencies]
@@ -6254,13 +6254,13 @@ files = [
 
 [[package]]
 name = "sqlmesh"
-version = "0.125.6"
+version = "0.129.0"
 description = ""
 optional = false
 python-versions = "*"
 files = [
-    {file = "sqlmesh-0.125.6-py3-none-any.whl", hash = "sha256:05d93501f841d94405a27af999317da686bc4998730e8e0c3993d4a90e2b5136"},
-    {file = "sqlmesh-0.125.6.tar.gz", hash = "sha256:fcad969dbe654566bdcb0406a00878b0d8a45ac9264c0830f69456f98b7e896d"},
+    {file = "sqlmesh-0.129.0-py3-none-any.whl", hash = "sha256:fea4ee3a6bc1939b4b2e4239048f2fc71743674f739b6633f740a7547cbcd5de"},
+    {file = "sqlmesh-0.129.0.tar.gz", hash = "sha256:0d04147be13591c51fac4c2fb51b9885a1a523e0a75e1ee4415076f746444c77"},
 ]
 
 [package.dependencies]
@@ -6278,17 +6278,19 @@ pydantic = "*"
 requests = "*"
 rich = {version = "*", extras = ["jupyter"]}
 "ruamel.yaml" = "*"
-sqlglot = {version = ">=25.24.3,<25.25.0", extras = ["rs"]}
-trino = {version = "*", optional = true, markers = "extra == \"trino\""}
+sqlglot = {version = ">=25.27.0,<25.28.0", extras = ["rs"]}
+tenacity = "*"
 
 [package.extras]
 athena = ["PyAthena[pandas]"]
 bigquery = ["google-cloud-bigquery-storage", "google-cloud-bigquery[pandas]"]
 cicdtest = ["dbt-athena-community", "dbt-databricks", "dbt-redshift", "dbt-sqlserver (>=1.7.0)", "dbt-trino"]
+cicdtest = ["dbt-athena-community", "dbt-databricks", "dbt-redshift", "dbt-sqlserver (>=1.7.0)", "dbt-trino"]
 clickhouse = ["clickhouse-connect"]
 databricks = ["databricks-sql-connector"]
 dbt = ["dbt-core (<2)"]
-dev = ["Faker", "PyGithub", "agate (==1.7.1)", "apache-airflow (==2.9.1)", "beautifulsoup4", "cryptography (>=42.0.4,<42.1.0)", "custom-materializations", "dbt-bigquery", "dbt-core", "dbt-duckdb (>=1.7.1)", "dbt-snowflake", "google-auth", "google-cloud-bigquery", "google-cloud-bigquery-storage", "mypy (>=1.10.0,<1.11.0)", "pandas-stubs", "pre-commit", "psycopg2-binary", "pydantic (<2.6.0)", "pyspark (>=3.5.0,<3.6.0)", "pytest", "pytest-asyncio (<0.23.0)", "pytest-mock", "pytest-retry", "pytest-xdist", "pytz", "ruff (>=0.4.0,<0.5.0)", "snowflake-connector-python[pandas,secure-local-storage] (>=3.0.2)", "sqlalchemy-stubs", "tenacity", "types-croniter", "types-dateparser", "types-python-dateutil", "types-pytz", "types-requests (==2.28.8)", "typing-extensions"]
+dev = ["Faker", "PyGithub", "agate (==1.7.1)", "apache-airflow (==2.9.1)", "beautifulsoup4", "cryptography (>=42.0.4,<42.1.0)", "custom-materializations", "dbt-bigquery", "dbt-core", "dbt-duckdb (>=1.7.1)", "dbt-snowflake", "google-auth", "google-cloud-bigquery", "google-cloud-bigquery-storage", "mypy (>=1.10.0,<1.11.0)", "pandas-stubs", "pre-commit", "psycopg2-binary", "pydantic (<2.6.0)", "pyspark (>=3.5.0,<3.6.0)", "pytest", "pytest-asyncio (<0.23.0)", "pytest-mock", "pytest-retry", "pytest-xdist", "pytz", "ruff (>=0.4.0,<0.5.0)", "snowflake-connector-python[pandas,secure-local-storage] (>=3.0.2)", "sqlalchemy-stubs", "types-croniter", "types-dateparser", "types-python-dateutil", "types-pytz", "types-requests (==2.28.8)", "typing-extensions"]
+dlt = ["dlt"]
 gcppostgres = ["cloud-sql-python-connector[pg8000]"]
 github = ["PyGithub"]
 llm = ["langchain", "openai"]
@@ -6570,31 +6572,6 @@ files = [
 [package.extras]
 docs = ["myst-parser", "pydata-sphinx-theme", "sphinx"]
 test = ["argcomplete (>=3.0.3)", "mypy (>=1.7.0)", "pre-commit", "pytest (>=7.0,<8.2)", "pytest-mock", "pytest-mypy-testing"]
-
-[[package]]
-name = "trino"
-version = "0.330.0"
-description = "Client for the Trino distributed SQL Engine"
-optional = false
-python-versions = ">=3.8"
-files = [
-    {file = "trino-0.330.0-py3-none-any.whl", hash = "sha256:535f612d754338cfefa4b3fe86b63c8c000d21cb5ea476ae4ec4390d5cc37659"},
-    {file = "trino-0.330.0.tar.gz", hash = "sha256:1e731be22bc6fb4ce6537287419c3d221faaa8d089f5a05b0f01ef25b860e96e"},
-]
-
-[package.dependencies]
-python-dateutil = "*"
-pytz = "*"
-requests = ">=2.31.0"
-tzlocal = "*"
-
-[package.extras]
-all = ["requests-kerberos", "sqlalchemy (>=1.3)"]
-external-authentication-token-cache = ["keyring"]
-gssapi = ["krb5 (==0.5.1)", "requests-gssapi"]
-kerberos = ["requests-kerberos"]
-sqlalchemy = ["sqlalchemy (>=1.3)"]
-tests = ["black", "httpretty (<1.1)", "isort", "keyring", "krb5 (==0.5.1)", "pre-commit", "pytest", "pytest-runner", "requests-gssapi", "requests-kerberos", "sqlalchemy (>=1.3)"]
 
 [[package]]
 name = "typer"
@@ -7371,4 +7348,4 @@ cffi = ["cffi (>=1.11)"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12,<3.13"
-content-hash = "d837ca847d33d9202dc4569d9ab3a8ffa6d187111bc5752ce7342ce130a69a79"
+content-hash = "22559e09b0f230c9887f8c10d35e45c0d6564e1b4278ba883e582d0fb1604cd6"
