@@ -15,6 +15,7 @@ class SQLTransformer:
     """
 
     transforms: t.List[Transform]
+    disable_qualify: bool = False
 
     def transform(self, query: str | t.List[exp.Expression]):
         if isinstance(query, str):
@@ -23,7 +24,8 @@ class SQLTransformer:
             transformed = query
         # Qualify all
         # transformed = list(map(qualify, transformed))
-        transformed = QualifyTransform()(transformed)
+        if not self.disable_qualify:
+            transformed = QualifyTransform()(transformed)
 
         for transform in self.transforms:
             transformed = transform(transformed)

@@ -1,6 +1,6 @@
 import typing as t
 
-from metrics_tools.intermediate import intermediate_macro_evaluator
+from metrics_tools.intermediate import run_intermediate_macro_evaluator
 from metrics_tools.models import create_unregistered_wrapped_macro
 from sqlmesh.core.macros import MacroRegistry
 from sqlglot import exp
@@ -27,7 +27,7 @@ class IntermediateMacroEvaluatorTransform(Transform):
 
         final = []
         for expression in query:
-            evaluated = intermediate_macro_evaluator(
+            evaluated = run_intermediate_macro_evaluator(
                 expression, macros=registry, variables=self._variables
             )
             assert evaluated is not None

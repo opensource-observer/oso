@@ -7,7 +7,7 @@ from sqlglot import exp
 from sqlglot.optimizer.qualify import qualify
 
 from .models import create_unregistered_macro
-from .intermediate import intermediate_macro_evaluator
+from .intermediate import run_intermediate_macro_evaluator, run_macro_evaluator
 
 
 @pytest.fixture
@@ -70,7 +70,45 @@ def test_intermediate_macro_evaluator(
     expected: str,
     variables: t.Dict[str, t.Any],
 ):
-    evaluated = intermediate_macro_evaluator(input, macro_fixtures, variables=variables)
+    evaluated = run_intermediate_macro_evaluator(
+        input, macro_fixtures, variables=variables
+    )
     assert evaluated is not None
     assert len(evaluated) == 1
     assert qualify(evaluated[0]) == qualify(parse_one(expected))
+
+
+@pytest.mark.parametrize(
+    "input,expected,variables",
+    [
+        (
+            "select @concat_macro('a', 'b', 'c') from test",
+            "select CONCAT('a', 'b', 'c') from test",
+            {},
+        ),
+        (
+            "select @concat_macro('a', 'b', 'c') from test @WHERE(FALSE) 1 > 2",
+            "select CONCAT('a', 'b', 'c') from test",
+            {},
+        ),
+    ],
+)
+def test_macro_evaluator(
+    macro_fixtures: MacroRegistry,
+    input: str,
+    expected: str,
+    variables: t.Dict[str, t.Any],
+):
+    evaluated = run_macro_evaluator(input, macro_fixtures, variables=variables)
+    assert evaluated is not None
+    assert len(evaluated) == 1
+    assert qualify(evaluated[0]) == qualify(parse_one(expected))
+
+
+def test_macro_evaluator_fails():
+    failed = False
+    try:
+        run_macro_evaluator("select @hi from table")
+    except Exception:
+        failed = True
+    assert failed

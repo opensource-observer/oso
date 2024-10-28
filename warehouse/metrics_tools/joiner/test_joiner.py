@@ -1,5 +1,5 @@
 import os
-from metrics_tools.joiner import joiner_transform
+from . import joiner_transform
 from metrics_tools.utils import assert_same_sql
 
 

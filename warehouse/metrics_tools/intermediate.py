@@ -4,16 +4,62 @@ from metrics_tools.models import (
     create_basic_python_env,
 )
 
-from sqlmesh.core.macros import MacroEvaluator, MacroRegistry
-from sqlmesh.core.dialect import parse_one, MacroVar, MacroFunc
+from sqlmesh import EngineAdapter
+from sqlmesh.core.macros import MacroEvaluator, MacroRegistry, macro, RuntimeStage
+from sqlmesh.core.dialect import parse_one, MacroVar, MacroFunc, parse
 from sqlglot import exp
 
 
-def intermediate_macro_evaluator(
+def run_macro_evaluator(
+    query: str | t.List[exp.Expression] | exp.Expression,
+    additional_macros: t.Optional[MacroRegistry] = None,
+    variables: t.Optional[t.Dict[str, t.Any]] = None,
+    runtime_stage: RuntimeStage = RuntimeStage.LOADING,
+    engine_adapter: t.Optional[EngineAdapter] = None,
+    default_catalog: t.Optional[str] = None,
+):
+    if isinstance(query, str):
+        parsed = parse(query)
+    elif isinstance(query, exp.Expression):
+        parsed = [query]
+    else:
+        parsed = query
+
+    macros = t.cast(MacroRegistry, macro.get_registry().copy())
+    if additional_macros:
+        macros.update(additional_macros)
+
+    env = create_basic_python_env({}, "", "", macros=macros, variables=variables)
+
+    evaluator = MacroEvaluator(
+        python_env=env,
+        runtime_stage=runtime_stage,
+        default_catalog=default_catalog,
+    )
+
+    if engine_adapter:
+        evaluator.locals["engine_adapter"] = engine_adapter
+
+    result: t.List[exp.Expression] = []
+    for part in parsed:
+        transformed = evaluator.transform(part)
+        if not transformed:
+            continue
+        if isinstance(transformed, list):
+            result.extend(transformed)
+        else:
+            result.append(transformed)
+    return result
+
+
+def run_intermediate_macro_evaluator(
     query: str | exp.Expression,
     macros: t.Optional[MacroRegistry] = None,
     variables: t.Optional[t.Dict[str, t.Any]] = None,
 ):
+    macros = macros or t.cast(MacroRegistry, {})
+    variables = variables or {}
+
     env = create_basic_python_env(
         {},
         "",
@@ -22,8 +68,6 @@ def intermediate_macro_evaluator(
         variables=variables,
     )
     evaluator = MacroEvaluator(python_env=env)
-    macros = macros or t.cast(MacroRegistry, {})
-    variables = variables or {}
 
     if isinstance(query, str):
         parsed = parse_one(query)

@@ -12,6 +12,8 @@ class JoinerTransform(Transform):
 
     def __call__(self, query: t.List[exp.Expression]) -> t.List[exp.Expression]:
         entity_type = self._entity_type
+        if entity_type == "artifact":
+            return query
 
         def _transform(node: exp.Expression):
             if not isinstance(node, exp.Select):
@@ -22,7 +24,6 @@ class JoinerTransform(Transform):
             is_using_timeseries_source = False
             for table in select.find_all(exp.Table):
                 if table.this.this in ["events_daily_to_artifact"]:
-                    print("FOUND TIME SERIES SOURCE")
                     is_using_timeseries_source = True
             if not is_using_timeseries_source:
                 return node
@@ -36,7 +37,6 @@ class JoinerTransform(Transform):
                 if isinstance(ex.this, exp.Column) and isinstance(
                     ex.this.this, exp.Identifier
                 ):
-                    print("here?")
                     if ex.this.this.this == "to_artifact_id":
                         updated_select = select.copy()
                         current_from = t.cast(exp.From, updated_select.args.get("from"))

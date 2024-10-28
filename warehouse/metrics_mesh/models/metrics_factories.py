@@ -1,48 +1,8 @@
-from metrics_tools.lib.factories import (
-    MetricQueryDef,
+from metrics_tools.factory import (
     timeseries_metrics,
+    MetricQueryDef,
     RollingConfig,
 )
-
-
-# daily_timeseries_rolling_window_model(
-#     model_name="metrics.timeseries_metrics_by_artifact_over_30_days",
-#     metric_queries={
-#         "developer_active_days": MetricQueryDef(
-#             ref="active_days.sql",
-#             vars={
-#                 "activity_event_types": ["COMMIT_CODE"],
-#             },
-#         ),
-#         "developer_classifications": MetricQueryDef(
-#             ref="developer_activity_classification.sql",
-#             vars={"full_time_days": 10},
-#         ),
-#         "contributor_active_days": MetricQueryDef(
-#             ref="active_days.sql",
-#             vars={
-#                 "activity_event_types": [
-#                     "COMMIT_CODE",
-#                     "ISSUE_OPENED",
-#                     "PULL_REQUEST_OPENED",
-#                 ],
-#             },
-#         ),
-#         "contributor_classifications": MetricQueryDef(
-#             ref="contributor_activity_classification.sql",
-#             vars={"full_time_days": 10},
-#         ),
-#         "stars": MetricQueryDef(
-#             ref="stars.sql",
-#             vars={},
-#         ),
-#     },
-#     trailing_days=30,
-#     model_options=dict(
-#         start="2015-01-01",
-#         cron="@daily",
-#     ),
-# )
 
 timeseries_metrics(
     start="2015-01-01",
@@ -115,11 +75,25 @@ timeseries_metrics(
             ref="gas_fees.sql",
             time_aggregations=["daily", "weekly", "monthly"],
         ),
-        "change_in_developers": MetricQueryDef(
+        "change_in_30_developer_activity": MetricQueryDef(
+            vars={
+                "comparison_interval": 30,
+            },
             ref="change_in_developers.sql",
             rolling=RollingConfig(
-                windows=[30, 60, 90],
-                unit="day",
+                windows=[2],
+                unit="period",
+                cron="@daily",
+            ),
+        ),
+        "change_in_60_developer_activity": MetricQueryDef(
+            vars={
+                "comparison_interval": 60,
+            },
+            ref="change_in_developers.sql",
+            rolling=RollingConfig(
+                windows=[2],
+                unit="period",
                 cron="@daily",
             ),
         ),

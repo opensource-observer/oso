@@ -4,6 +4,7 @@ import sqlglot
 from sqlglot import expressions as exp
 from sqlmesh.core.dialect import MacroVar
 from sqlmesh.core.macros import MacroEvaluator
+from sqlmesh.core.dialect import parse_one
 
 from metrics_tools.definition import (
     PeerMetricDependencyRef,
@@ -11,13 +12,6 @@ from metrics_tools.definition import (
     to_actual_table_name,
 )
 from metrics_tools.utils import exp_literal_to_py_literal
-
-
-def create_intermediate_macro_var(name: str):
-    return exp.Anonymous(
-        this="$$INTERMEDIATE_MACRO_VAR",
-        expressions=[exp.Literal(this=name, is_string=True)],
-    )
 
 
 def relative_window_sample_date(
@@ -56,21 +50,20 @@ def relative_window_sample_date(
             else:
                 unit = transformed.sql()
 
-    rel_index = 0
+    converted_relative_index = 0
     if isinstance(relative_index, exp.Literal):
-        rel_index = int(t.cast(int, relative_index.this))
-    elif isinstance(relative_index, exp.Expression):
-        rel_index = int(relative_index.sql())
-
+        converted_relative_index = int(t.cast(int, relative_index.this))
+    elif isinstance(relative_index, exp.Neg):
+        converted_relative_index = int(relative_index.this.this) * -1
     interval_unit = exp.Var(this=unit)
     interval_delta = exp.Interval(
         this=exp.Mul(
-            this=exp.Literal(this=str(abs(rel_index)), is_string=False),
+            this=exp.Literal(this=str(abs(converted_relative_index)), is_string=False),
             expression=window,
         ),
         unit=interval_unit,
     )
-    if relative_index > 0:
+    if converted_relative_index > 0:
         return exp.Add(this=base, expression=interval_delta)
     else:
         return exp.Sub(this=base, expression=interval_delta)
@@ -80,8 +73,8 @@ def time_aggregation_bucket(
     evaluator: MacroEvaluator, time_exp: exp.Expression, interval: str
 ):
 
-    # if evaluator.runtime_stage in ["loading", "creating"]:
-    #     return parse_one("STR_TO_DATE('1970-01-01', '%Y-%m-%d')")
+    if evaluator.runtime_stage in ["loading", "creating"]:
+        return parse_one("STR_TO_DATE('1970-01-01', '%Y-%m-%d')")
     if evaluator.engine_adapter.dialect == "duckdb":
         rollup_to_interval = {
             "daily": "DAY",
@@ -141,7 +134,7 @@ def metrics_sample_date(
         )
     return evaluator.transform(
         exp.StrToDate(
-            this=create_intermediate_macro_var("end_ds"),
+            this=MacroVar(this="end_ds"),
             format=exp.Literal(this="%Y-%m-%d", is_string=True),
         )
     )
@@ -187,7 +180,7 @@ def metrics_start(evaluator: MacroEvaluator, _data_type: t.Optional[str] = None)
             exp.Expression,
             evaluator.transform(
                 exp.StrToDate(
-                    this=create_intermediate_macro_var("start_ds"),
+                    this=MacroVar(this="start_ds"),
                     format=exp.Literal(this="%Y-%m-%d", is_string=True),
                 )
             ),
@@ -196,11 +189,28 @@ def metrics_start(evaluator: MacroEvaluator, _data_type: t.Optional[str] = None)
             time_aggregation_bucket(evaluator, start_date, time_aggregation_interval)
         )
     else:
+        # We are documenting that devs do do date filtering with the `between`
+        # operator so the metrics_end value is inclusive. This means that we
+        # want to go back the rolling window - 1
+        rolling_window = evaluator.locals.get("rolling_window")
+        if rolling_window is None:
+            raise Exception(
+                "metrics_start used in a non metrics model. Model was not supplied a rolling_window"
+            )
+        else:
+            rolling_window = t.cast(int, rolling_window)
+            rolling_window = rolling_window - 1
+        rolling_unit = evaluator.locals.get("rolling_unit", "")
+        if rolling_unit not in ["day", "month", "year", "week", "quarter"]:
+            raise Exception(
+                f'Invalid use of metrics_start. Cannot use rolling_unit="{rolling_unit}"'
+            )
+
         # Calculated rolling start
         rolling_start = exp.Sub(
             this=exp.Cast(
                 this=exp.StrToDate(
-                    this=create_intermediate_macro_var("end_ds"),
+                    this=MacroVar(this="end_ds"),
                     format=exp.Literal(this="%Y-%m-%d", is_string=True),
                 ),
                 to=exp.DataType(this=exp.DataType.Type.DATETIME),
@@ -208,9 +218,9 @@ def metrics_start(evaluator: MacroEvaluator, _data_type: t.Optional[str] = None)
             ),
             expression=exp.Interval(
                 this=exp.Paren(
-                    this=MacroVar(this="rolling_window"),
+                    this=exp.Literal(this=str(rolling_window), is_string=False),
                 ),
-                unit=exp.Var(this="DAY"),
+                unit=exp.Var(this=rolling_unit.upper()),
             ),
         )
         return evaluator.transform(rolling_start)
@@ -229,7 +239,7 @@ def metrics_end(evaluator: MacroEvaluator, _data_type: t.Optional[str] = None):
         time_agg_end = exp.Add(
             this=exp.Cast(
                 this=exp.StrToDate(
-                    this=create_intermediate_macro_var("end_ds"),
+                    this=MacroVar(this="end_ds"),
                     format=exp.Literal(
                         this="%Y-%m-%d",
                         is_string=True,
@@ -252,7 +262,7 @@ def metrics_end(evaluator: MacroEvaluator, _data_type: t.Optional[str] = None):
         )
     return evaluator.transform(
         exp.StrToDate(
-            this=create_intermediate_macro_var("end_ds"),
+            this=MacroVar(this="end_ds"),
             format=exp.Literal(this="%Y-%m-%d", is_string=True),
         )
     )
@@ -310,7 +320,9 @@ def metrics_peer_ref(
     time_aggregation: t.Optional[exp.Expression] = None,
 ):
     entity_type_val = (
-        t.cast(str, exp_literal_to_py_literal(entity_type)) if entity_type else ""
+        t.cast(str, exp_literal_to_py_literal(entity_type))
+        if entity_type
+        else evaluator.locals.get("entity_type", "")
     )
     window_val = int(exp_literal_to_py_literal(window)) if window else None
     unit_val = t.cast(str, exp_literal_to_py_literal(unit)) if unit else None

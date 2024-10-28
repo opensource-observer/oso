@@ -1,17 +1,10 @@
-import typing as t
-
-from oso_dagster.cbt.utils.compare import is_same_sql
+import contextlib
+import duckdb
 from sqlglot.optimizer.qualify import qualify
-from sqlglot import exp
 import sqlglot as sql
+from sqlglot import exp
 from sqlmesh.core.dialect import parse_one
-
-
-def exp_literal_to_py_literal(glot_literal: exp.Expression) -> t.Any:
-    # Don't error by default let it pass
-    if not isinstance(glot_literal, exp.Literal):
-        return glot_literal
-    return glot_literal.this
+from oso_dagster.cbt.utils.compare import is_same_sql
 
 
 def assert_same_sql(actual: exp.Expression | str, expected: exp.Expression | str):
@@ -30,3 +23,8 @@ def assert_same_sql(actual: exp.Expression | str, expected: exp.Expression | str
             print(d)
         print(len(diff))
         assert is_same_sql(actual, expected)
+
+
+@contextlib.contextmanager
+def duckdb_df_context(connection: duckdb.DuckDBPyConnection, query: str):
+    yield connection.sql(query).df()

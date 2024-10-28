@@ -4,6 +4,7 @@ import re
 import textwrap
 import typing as t
 from pathlib import Path
+import uuid
 
 from sqlglot import exp
 from sqlmesh.core import constants as c
@@ -165,6 +166,18 @@ def escape_triple_quotes(input_string: str) -> str:
     escaped_string = input_string.replace("'''", "\\'\\'\\'")
     escaped_string = escaped_string.replace('"""', '\\"\\"\\"')
     return escaped_string
+
+
+def create_unregistered_macro_registry(
+    macros: t.List[t.Callable | t.Tuple[t.Callable, t.List[str]]]
+):
+    registry = MacroRegistry(f"macro_registry_{uuid.uuid4().hex}")
+    for additional_macro in macros:
+        if isinstance(additional_macro, tuple):
+            registry.update(create_unregistered_wrapped_macro(*additional_macro))
+        else:
+            registry.update(create_unregistered_wrapped_macro(additional_macro))
+    return registry
 
 
 def create_unregistered_macro(

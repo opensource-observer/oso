@@ -10,4 +10,4 @@ class QualifyTransform(Transform):
         self._options = options
 
     def __call__(self, query: List[Expression]) -> List[Expression]:
-        return list(map(lambda a: qualify(a, **self._options), query))
+        return list(map(lambda q: qualify(q, **self._options), query))

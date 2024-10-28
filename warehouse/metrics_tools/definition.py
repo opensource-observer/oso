@@ -146,7 +146,7 @@ def time_suffix(
     unit: t.Optional[str],
 ):
     if window:
-        return f"over_{window}_{unit}"
+        return f"over_{window}_{unit}_window"
     if time_aggregation:
         return time_aggregation
 
@@ -176,13 +176,16 @@ class MetricQueryDef:
 
     is_intermediate: bool = False
 
-    @property
-    def raw_sql(self):
-        return open(os.path.join(QUERIES_DIR, self.ref)).read()
+    enabled: bool = True
 
-    def load_exp(self, default_dialect: str) -> t.List[exp.Expression]:
+    def raw_sql(self, queries_dir: str):
+        return open(os.path.join(queries_dir, self.ref)).read()
+
+    def load_exp(
+        self, queries_dir: str, default_dialect: str
+    ) -> t.List[exp.Expression]:
         """Loads the queries sql file as a sqlglot expression"""
-        raw_sql = self.raw_sql
+        raw_sql = self.raw_sql(queries_dir)
 
         dialect = self.dialect or default_dialect
         return t.cast(
@@ -335,8 +338,15 @@ class MetricQueryContext:
 
 class MetricQuery:
     @classmethod
-    def load(cls, *, name: str, default_dialect: str, source: MetricQueryDef):
-        subquery = cls(name, source, source.load_exp(default_dialect))
+    def load(
+        cls,
+        *,
+        name: str,
+        default_dialect: str,
+        source: MetricQueryDef,
+        queries_dir: str,
+    ):
+        subquery = cls(name, source, source.load_exp(queries_dir, default_dialect))
         subquery.validate()
         return subquery
 
@@ -367,6 +377,10 @@ class MetricQuery:
     @property
     def reference_name(self):
         return self._name
+
+    @property
+    def vars(self):
+        return self._source.vars or {}
 
     def table_name(self, ref: PeerMetricDependencyRef):
         name = self._source.name or self._name
@@ -422,6 +436,15 @@ class MetricQuery:
     @property
     def provided_dependency_refs(self):
         return self.generate_dependency_refs_for_name(self.reference_name)
+
+    @property
+    def metric_type(self):
+        if self._source.time_aggregations is not None:
+            return "time_aggregation"
+        elif self._source.rolling is not None:
+            return "rolling"
+        # This _shouldn't_ happen
+        raise Exception("unknown metric type")
 
     def generate_query_ref(
         self,
@@ -774,6 +797,7 @@ class TimeseriesMetricsOptions(t.TypedDict):
     model_options: t.NotRequired[t.Dict[str, t.Any]]
     start: TimeLike
     timeseries_sources: t.NotRequired[t.Optional[t.List[str]]]
+    queries_dir: t.NotRequired[t.Optional[str]]
 
 
 class GeneratedArtifactConfig(t.TypedDict):
@@ -799,6 +823,7 @@ def generated_entity(
         name=query_reference_name,
         default_dialect=default_dialect,
         source=query_def,
+        queries_dir=QUERIES_DIR,
     )
     peer_table_map = dict(peer_table_tuples)
     e = query.generate_query_ref(
