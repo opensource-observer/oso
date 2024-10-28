@@ -285,23 +285,13 @@ class GithubRepositoryResolver:
         logger.debug(f"unnested all github urls and got {len(all_github_urls)} rows")
         return all_github_urls
 
-    def is_repo_missing_sbom(self, repo: Repository) -> bool:
-        try:
-            self._gh.rest.dependency_graph.export_sbom(
-                repo.owner,
-                repo.name,
-            )
-            return False
-        except RequestFailed as e:
-            if e.response.status_code != 404:
-                logger.warning("Error checking for SBOM: %s", e)
-            return True
-
-    def get_sbom_for_repo(self, repo: Repository) -> List[GithubRepositorySBOMItem]:
+    def get_sbom_for_repo(
+        self, owner: str, name: str
+    ) -> List[GithubRepositorySBOMItem]:
         try:
             sbom = self._gh.rest.dependency_graph.export_sbom(
-                repo.owner,
-                repo.name,
+                owner,
+                name,
             )
             graph = sbom.parsed_data.sbom
             sbom_list: List[GithubRepositorySBOMItem] = []
@@ -317,8 +307,8 @@ class GithubRepositoryResolver:
 
                 sbom_list.append(
                     GithubRepositorySBOMItem(
-                        artifact_namespace=repo.owner,
-                        artifact_name=repo.name,
+                        artifact_namespace=owner,
+                        artifact_name=name,
                         artifact_source="GITHUB",
                         package=package_name,
                         package_source=package_source.upper(),
@@ -330,7 +320,7 @@ class GithubRepositoryResolver:
             return sbom_list
         except RequestFailed as exception:
             if exception.response.status_code == 404:
-                logger.warning("Skipping %s, no SBOM found", repo.url)
+                logger.warning("Skipping %s, no SBOM found", f"{owner}/{name}")
             else:
                 logger.warning("Error getting SBOM: %s", exception)
             return []
@@ -398,7 +388,7 @@ def oss_directory_github_sbom_resource(
     rate_limit_max_retry: int = 5,
     server_error_max_rety: int = 3,
 ):
-    """Based on the oss_directory data we resolve sbom manifests for repositories"""
+    """Retrieve SBOM information for GitHub repositories"""
 
     config = GithubClientConfig(
         gh_token=gh_token,
@@ -409,41 +399,9 @@ def oss_directory_github_sbom_resource(
     gh = GithubRepositoryResolver.get_github_client(config)
     resolver = GithubRepositoryResolver(gh)
 
-    for repo in resolver.resolve_repos(projects_df):
-        yield from resolver.get_sbom_for_repo(repo)
+    all_github_urls = resolver.github_urls_from_df(projects_df)
+    valid_urls = [resolver.parse_url(url) for url in all_github_urls["url"] if url]
 
-
-@dlt.resource(
-    name="missing_sbom",
-    table_name="missing_sbom",
-    columns=pydantic_to_dlt_nullable_columns(GitHubRespositoryMissingSBOMItem),
-    write_disposition="append",
-)
-def oss_directory_missing_sbom_repositories_resource(
-    projects_df: pl.DataFrame,
-    gh_token: str = dlt.secrets.value,
-    rate_limit_max_retry: int = 5,
-    server_error_max_rety: int = 3,
-):
-    """Based on the oss_directory data we resolve repositories"""
-
-    config = GithubClientConfig(
-        gh_token=gh_token,
-        rate_limit_max_retry=rate_limit_max_retry,
-        server_error_max_rety=server_error_max_rety,
-    )
-
-    gh = GithubRepositoryResolver.get_github_client(config)
-    resolver = GithubRepositoryResolver(gh)
-
-    yield (
-        GitHubRespositoryMissingSBOMItem(
-            artifact_namespace=repo.owner,
-            artifact_name=repo.name,
-            artifact_source="GITHUB",
-            artifact_url=repo.url,
-            snapshot_at=repo.ingestion_time or datetime.now(UTC),
-        )
-        for repo in resolver.resolve_repos(projects_df)
-        if resolver.is_repo_missing_sbom(repo)
-    )
+    for url in valid_urls:
+        if url.type == GithubURLType.REPOSITORY and url.repository:
+            yield from resolver.get_sbom_for_repo(url.owner, url.repository)
