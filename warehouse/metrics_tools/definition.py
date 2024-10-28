@@ -351,7 +351,7 @@ class MetricQuery:
         self._expressions = expressions
 
     def validate(self):
-        queries = find_select_expressions(self._expressions)
+        queries = find_query_expressions(self._expressions)
         if len(queries) != 1:
             raise Exception(
                 f"There must only be a single query expression in metrics query {self._source.ref}"
@@ -359,7 +359,7 @@ class MetricQuery:
 
     @property
     def query_expression(self) -> exp.Query:
-        return t.cast(exp.Query, find_select_expressions(self._expressions)[0])
+        return t.cast(exp.Query, find_query_expressions(self._expressions)[0])
 
     def expression_context(self):
         return MetricQueryContext(self._source, self._expressions[:])
@@ -716,16 +716,7 @@ class MetricQuery:
         return top_level_select
 
 
-# def generate_models_for_metric_query(name: str, query_def: MetricQueryDef):
-#     tables: t.Dict[str, str] = {}
-#     query_def_as_dict = query_def.to_input()
-#     if "artifact" in query_def.entity_types:
-
-#         @model(
-#             name=query_def.resolve_table_name(name, "artifact"),
-
-
-def find_select_expressions(expressions: t.List[exp.Expression]):
+def find_query_expressions(expressions: t.List[exp.Expression]):
     return list(filter(lambda a: isinstance(a, exp.Query), expressions))
 
 
@@ -734,40 +725,6 @@ class DailyTimeseriesRollingWindowOptions(t.TypedDict):
     metric_queries: t.Dict[str, MetricQueryDef]
     trailing_days: int
     model_options: t.NotRequired[t.Dict[str, t.Any]]
-
-
-# def generate_models_for_metric_query(name: str, query_def: MetricQueryDef):
-#     tables: t.Dict[str, str] = {}
-#     query_def_as_dict = query_def.to_input()
-#     if "artifact" in query_def.entity_types:
-
-#         @model(
-#             name=query_def.resolve_table_name(name, "artifact"),
-#             is_sql=True,
-#             kind={
-#                 "name": ModelKindName.INCREMENTAL_BY_TIME_RANGE,
-#                 "time_column": "bucket_day",
-#                 "batch_size": 1,
-#             },
-#             dialect="clickhouse",
-#             columns={
-#                 "bucket_day": exp.DataType.build("DATE", dialect="clickhouse"),
-#                 "event_source": exp.DataType.build("String", dialect="clickhouse"),
-#                 "to_artifact_id": exp.DataType.build("String", dialect="clickhouse"),
-#                 "from_artifact_id": exp.DataType.build("String", dialect="clickhouse"),
-#                 "metric": exp.DataType.build("String", dialect="clickhouse"),
-#                 "amount": exp.DataType.build("Float64", dialect="clickhouse"),
-#             },
-#             grain=["metric", "to_artifact_id", "from_artifact_id", "bucket_day"],
-#         )
-#         def _generated_to_artifact_models():
-#             pass
-
-#     if "project" in query_def.entity_types:
-#         pass
-
-#     if "collection" in query_def.entity_types:
-#         pass
 
 
 def join_all_of_entity_type(

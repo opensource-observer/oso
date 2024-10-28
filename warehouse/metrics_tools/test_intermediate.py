@@ -7,7 +7,7 @@ from sqlglot import exp
 from sqlglot.optimizer.qualify import qualify
 
 from .models import create_unregistered_macro
-from .evaluator import intermediate_macro_evaluator
+from .intermediate import intermediate_macro_evaluator
 
 
 @pytest.fixture
