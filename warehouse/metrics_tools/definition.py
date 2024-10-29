@@ -10,16 +10,15 @@ from sqlglot.optimizer.qualify import qualify
 from sqlmesh.core.macros import MacroEvaluator
 from sqlmesh.utils.date import TimeLike
 
-from metrics_tools.dialect.translate import (
+from .dialect.translate import (
     CustomFuncHandler,
     CustomFuncRegistry,
 )
-from metrics_tools.evaluator import FunctionsTransformer
+from .evaluator import FunctionsTransformer
+from .utils import exp_literal_to_py_literal
 
 CURR_DIR = os.path.dirname(__file__)
-QUERIES_DIR = os.path.abspath(
-    os.path.join(CURR_DIR, "../../../metrics_mesh/oso_metrics")
-)
+QUERIES_DIR = os.path.abspath(os.path.join(CURR_DIR, "../metrics_mesh/oso_metrics"))
 
 type ExtraVarBaseType = str | int | float
 type ExtraVarType = ExtraVarBaseType | t.List[ExtraVarBaseType]
@@ -147,7 +146,7 @@ def time_suffix(
     unit: t.Optional[str],
 ):
     if window:
-        return f"over_{window}_{unit}"
+        return f"over_{window}_{unit}_window"
     if time_aggregation:
         return time_aggregation
 
@@ -177,13 +176,16 @@ class MetricQueryDef:
 
     is_intermediate: bool = False
 
-    @property
-    def raw_sql(self):
-        return open(os.path.join(QUERIES_DIR, self.ref)).read()
+    enabled: bool = True
 
-    def load_exp(self, default_dialect: str) -> t.List[exp.Expression]:
+    def raw_sql(self, queries_dir: str):
+        return open(os.path.join(queries_dir, self.ref)).read()
+
+    def load_exp(
+        self, queries_dir: str, default_dialect: str
+    ) -> t.List[exp.Expression]:
         """Loads the queries sql file as a sqlglot expression"""
-        raw_sql = self.raw_sql
+        raw_sql = self.raw_sql(queries_dir)
 
         dialect = self.dialect or default_dialect
         return t.cast(
@@ -244,13 +246,6 @@ class MetricQueryDef:
         if suffix:
             model_name = f"{model_name}_{suffix}"
         return model_name
-
-
-def exp_literal_to_py_literal(glot_literal: exp.Expression) -> t.Any:
-    # Don't error by default let it pass
-    if not isinstance(glot_literal, exp.Literal):
-        return glot_literal
-    return glot_literal.this
 
 
 class PeerRefRelativeWindowHandler(CustomFuncHandler):
@@ -343,8 +338,15 @@ class MetricQueryContext:
 
 class MetricQuery:
     @classmethod
-    def load(cls, *, name: str, default_dialect: str, source: MetricQueryDef):
-        subquery = cls(name, source, source.load_exp(default_dialect))
+    def load(
+        cls,
+        *,
+        name: str,
+        default_dialect: str,
+        source: MetricQueryDef,
+        queries_dir: str,
+    ):
+        subquery = cls(name, source, source.load_exp(queries_dir, default_dialect))
         subquery.validate()
         return subquery
 
@@ -359,7 +361,7 @@ class MetricQuery:
         self._expressions = expressions
 
     def validate(self):
-        queries = find_select_expressions(self._expressions)
+        queries = find_query_expressions(self._expressions)
         if len(queries) != 1:
             raise Exception(
                 f"There must only be a single query expression in metrics query {self._source.ref}"
@@ -367,7 +369,7 @@ class MetricQuery:
 
     @property
     def query_expression(self) -> exp.Query:
-        return t.cast(exp.Query, find_select_expressions(self._expressions)[0])
+        return t.cast(exp.Query, find_query_expressions(self._expressions)[0])
 
     def expression_context(self):
         return MetricQueryContext(self._source, self._expressions[:])
@@ -375,6 +377,10 @@ class MetricQuery:
     @property
     def reference_name(self):
         return self._name
+
+    @property
+    def vars(self):
+        return self._source.vars or {}
 
     def table_name(self, ref: PeerMetricDependencyRef):
         name = self._source.name or self._name
@@ -430,6 +436,15 @@ class MetricQuery:
     @property
     def provided_dependency_refs(self):
         return self.generate_dependency_refs_for_name(self.reference_name)
+
+    @property
+    def metric_type(self):
+        if self._source.time_aggregations is not None:
+            return "time_aggregation"
+        elif self._source.rolling is not None:
+            return "rolling"
+        # This _shouldn't_ happen
+        raise Exception("unknown metric type")
 
     def generate_query_ref(
         self,
@@ -724,16 +739,7 @@ class MetricQuery:
         return top_level_select
 
 
-# def generate_models_for_metric_query(name: str, query_def: MetricQueryDef):
-#     tables: t.Dict[str, str] = {}
-#     query_def_as_dict = query_def.to_input()
-#     if "artifact" in query_def.entity_types:
-
-#         @model(
-#             name=query_def.resolve_table_name(name, "artifact"),
-
-
-def find_select_expressions(expressions: t.List[exp.Expression]):
+def find_query_expressions(expressions: t.List[exp.Expression]):
     return list(filter(lambda a: isinstance(a, exp.Query), expressions))
 
 
@@ -742,40 +748,6 @@ class DailyTimeseriesRollingWindowOptions(t.TypedDict):
     metric_queries: t.Dict[str, MetricQueryDef]
     trailing_days: int
     model_options: t.NotRequired[t.Dict[str, t.Any]]
-
-
-# def generate_models_for_metric_query(name: str, query_def: MetricQueryDef):
-#     tables: t.Dict[str, str] = {}
-#     query_def_as_dict = query_def.to_input()
-#     if "artifact" in query_def.entity_types:
-
-#         @model(
-#             name=query_def.resolve_table_name(name, "artifact"),
-#             is_sql=True,
-#             kind={
-#                 "name": ModelKindName.INCREMENTAL_BY_TIME_RANGE,
-#                 "time_column": "bucket_day",
-#                 "batch_size": 1,
-#             },
-#             dialect="clickhouse",
-#             columns={
-#                 "bucket_day": exp.DataType.build("DATE", dialect="clickhouse"),
-#                 "event_source": exp.DataType.build("String", dialect="clickhouse"),
-#                 "to_artifact_id": exp.DataType.build("String", dialect="clickhouse"),
-#                 "from_artifact_id": exp.DataType.build("String", dialect="clickhouse"),
-#                 "metric": exp.DataType.build("String", dialect="clickhouse"),
-#                 "amount": exp.DataType.build("Float64", dialect="clickhouse"),
-#             },
-#             grain=["metric", "to_artifact_id", "from_artifact_id", "bucket_day"],
-#         )
-#         def _generated_to_artifact_models():
-#             pass
-
-#     if "project" in query_def.entity_types:
-#         pass
-
-#     if "collection" in query_def.entity_types:
-#         pass
 
 
 def join_all_of_entity_type(
@@ -825,6 +797,7 @@ class TimeseriesMetricsOptions(t.TypedDict):
     model_options: t.NotRequired[t.Dict[str, t.Any]]
     start: TimeLike
     timeseries_sources: t.NotRequired[t.Optional[t.List[str]]]
+    queries_dir: t.NotRequired[t.Optional[str]]
 
 
 class GeneratedArtifactConfig(t.TypedDict):
@@ -850,6 +823,7 @@ def generated_entity(
         name=query_reference_name,
         default_dialect=default_dialect,
         source=query_def,
+        queries_dir=QUERIES_DIR,
     )
     peer_table_map = dict(peer_table_tuples)
     e = query.generate_query_ref(

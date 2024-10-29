@@ -2,10 +2,16 @@ import typing as t
 
 import sqlglot
 from sqlglot import expressions as exp
-from sqlmesh.core.dialect import MacroVar, parse_one
+from sqlmesh.core.dialect import MacroVar
 from sqlmesh.core.macros import MacroEvaluator
+from sqlmesh.core.dialect import parse_one
 
-from .definition import time_suffix
+from metrics_tools.definition import (
+    PeerMetricDependencyRef,
+    time_suffix,
+    to_actual_table_name,
+)
+from metrics_tools.utils import exp_literal_to_py_literal
 
 
 def relative_window_sample_date(
@@ -25,8 +31,8 @@ def relative_window_sample_date(
     must be a valid thing to subtract from. Also note, the base should generally
     be the `@metrics_end` date.
     """
-    if evaluator.runtime_stage in ["loading", "creating"]:
-        return parse_one("STR_TO_DATE('1970-01-01', '%Y-%m-%d')")
+    # if evaluator.runtime_stage in ["loading", "creating"]:
+    #     return parse_one("STR_TO_DATE('1970-01-01', '%Y-%m-%d')")
     if relative_index == 0:
         return base
 
@@ -44,21 +50,20 @@ def relative_window_sample_date(
             else:
                 unit = transformed.sql()
 
-    rel_index = 0
+    converted_relative_index = 0
     if isinstance(relative_index, exp.Literal):
-        rel_index = int(t.cast(int, relative_index.this))
-    elif isinstance(relative_index, exp.Expression):
-        rel_index = int(relative_index.sql())
-
+        converted_relative_index = int(t.cast(int, relative_index.this))
+    elif isinstance(relative_index, exp.Neg):
+        converted_relative_index = int(relative_index.this.this) * -1
     interval_unit = exp.Var(this=unit)
     interval_delta = exp.Interval(
         this=exp.Mul(
-            this=exp.Literal(this=str(abs(rel_index)), is_string=False),
+            this=exp.Literal(this=str(abs(converted_relative_index)), is_string=False),
             expression=window,
         ),
         unit=interval_unit,
     )
-    if relative_index > 0:
+    if converted_relative_index > 0:
         return exp.Add(this=base, expression=interval_delta)
     else:
         return exp.Sub(this=base, expression=interval_delta)
@@ -67,7 +72,6 @@ def relative_window_sample_date(
 def time_aggregation_bucket(
     evaluator: MacroEvaluator, time_exp: exp.Expression, interval: str
 ):
-    from sqlmesh.core.dialect import parse_one
 
     if evaluator.runtime_stage in ["loading", "creating"]:
         return parse_one("STR_TO_DATE('1970-01-01', '%Y-%m-%d')")
@@ -81,7 +85,7 @@ def time_aggregation_bucket(
             this="TIME_BUCKET",
             expressions=[
                 exp.Interval(
-                    this=exp.Literal(this=1, is_string=False),
+                    this=exp.Literal(this="1", is_string=False),
                     unit=exp.Var(this=rollup_to_interval[interval]),
                 ),
                 exp.Cast(
@@ -175,19 +179,51 @@ def metrics_start(evaluator: MacroEvaluator, _data_type: t.Optional[str] = None)
         start_date = t.cast(
             exp.Expression,
             evaluator.transform(
-                parse_one("STR_TO_DATE(@start_ds, '%Y-%m-%d')", dialect="clickhouse")
+                exp.StrToDate(
+                    this=MacroVar(this="start_ds"),
+                    format=exp.Literal(this="%Y-%m-%d", is_string=True),
+                )
             ),
         )
         return evaluator.transform(
             time_aggregation_bucket(evaluator, start_date, time_aggregation_interval)
         )
     else:
-        return evaluator.transform(
-            parse_one(
-                "STR_TO_DATE(@end_ds, '%Y-%m-%d') - INTERVAL @rolling_window DAY",
-                dialect="clickhouse",
+        # We are documenting that devs do do date filtering with the `between`
+        # operator so the metrics_end value is inclusive. This means that we
+        # want to go back the rolling window - 1
+        rolling_window = evaluator.locals.get("rolling_window")
+        if rolling_window is None:
+            raise Exception(
+                "metrics_start used in a non metrics model. Model was not supplied a rolling_window"
             )
+        else:
+            rolling_window = t.cast(int, rolling_window)
+            rolling_window = rolling_window - 1
+        rolling_unit = evaluator.locals.get("rolling_unit", "")
+        if rolling_unit not in ["day", "month", "year", "week", "quarter"]:
+            raise Exception(
+                f'Invalid use of metrics_start. Cannot use rolling_unit="{rolling_unit}"'
+            )
+
+        # Calculated rolling start
+        rolling_start = exp.Sub(
+            this=exp.Cast(
+                this=exp.StrToDate(
+                    this=MacroVar(this="end_ds"),
+                    format=exp.Literal(this="%Y-%m-%d", is_string=True),
+                ),
+                to=exp.DataType(this=exp.DataType.Type.DATETIME),
+                _type=exp.DataType(this=exp.DataType.Type.DATETIME),
+            ),
+            expression=exp.Interval(
+                this=exp.Paren(
+                    this=exp.Literal(this=str(rolling_window), is_string=False),
+                ),
+                unit=exp.Var(this=rolling_unit.upper()),
+            ),
         )
+        return evaluator.transform(rolling_start)
 
 
 def metrics_end(evaluator: MacroEvaluator, _data_type: t.Optional[str] = None):
@@ -200,20 +236,35 @@ def metrics_end(evaluator: MacroEvaluator, _data_type: t.Optional[str] = None):
             "weekly": "week",
             "monthly": "month",
         }
+        time_agg_end = exp.Add(
+            this=exp.Cast(
+                this=exp.StrToDate(
+                    this=MacroVar(this="end_ds"),
+                    format=exp.Literal(
+                        this="%Y-%m-%d",
+                        is_string=True,
+                    ),
+                ),
+                to=exp.DataType(this=exp.DataType.Type.DATETIME),
+                _type=exp.DataType(this=exp.DataType.Type.DATETIME),
+            ),
+            expression=exp.Interval(
+                this=exp.Literal(this="1", is_string=True),
+                unit=exp.Var(this=to_interval[time_aggregation_interval]),
+            ),
+        )
         end_date = t.cast(
             exp.Expression,
-            evaluator.transform(
-                parse_one(
-                    f"STR_TO_DATE(@end_ds, '%Y-%m-%d') + INTERVAL 1 {to_interval[time_aggregation_interval]}",
-                    dialect="clickhouse",
-                )
-            ),
+            time_agg_end,
         )
         return evaluator.transform(
             time_aggregation_bucket(evaluator, end_date, time_aggregation_interval)
         )
     return evaluator.transform(
-        parse_one("STR_TO_DATE(@end_ds, '%Y-%m-%d')", dialect="clickhouse")
+        exp.StrToDate(
+            this=MacroVar(this="end_ds"),
+            format=exp.Literal(this="%Y-%m-%d", is_string=True),
+        )
     )
 
 
@@ -221,6 +272,7 @@ def metrics_entity_type_col(
     evaluator: MacroEvaluator,
     format_str: str,
     table_alias: exp.Expression | str | None = None,
+    include_column_alias: exp.Expression | bool = False,
 ):
     names = []
 
@@ -228,19 +280,23 @@ def metrics_entity_type_col(
         format_str = format_str.this
 
     if table_alias:
-        if isinstance(table_alias, exp.TableAlias):
-            names.append(table_alias.this)
+        if isinstance(table_alias, (exp.TableAlias, exp.Literal, exp.Column)):
+            if isinstance(table_alias.this, exp.Identifier):
+                names.append(table_alias.this.this)
+            else:
+                names.append(table_alias.this)
         elif isinstance(table_alias, str):
             names.append(table_alias)
-        elif isinstance(table_alias, exp.Literal):
-            names.append(table_alias.this)
         else:
             names.append(table_alias.sql())
     column_name = format_str.format(
         entity_type=evaluator.locals.get("entity_type", "artifact")
     )
     names.append(column_name)
-    return sqlglot.to_column(f"{'.'.join(names)}")
+    column = sqlglot.to_column(f"{'.'.join(names)}", quoted=True)
+    if include_column_alias:
+        return column.as_(column_name)
+    return column
 
 
 def metrics_entity_type_alias(
@@ -252,3 +308,37 @@ def metrics_entity_type_alias(
         entity_type=evaluator.locals.get("entity_type", "artifact")
     )
     return exp.alias_(to_alias, alias_name)
+
+
+def metrics_peer_ref(
+    evaluator: MacroEvaluator,
+    name: str,
+    *,
+    entity_type: t.Optional[exp.Expression] = None,
+    window: t.Optional[exp.Expression] = None,
+    unit: t.Optional[exp.Expression] = None,
+    time_aggregation: t.Optional[exp.Expression] = None,
+):
+    entity_type_val = (
+        t.cast(str, exp_literal_to_py_literal(entity_type))
+        if entity_type
+        else evaluator.locals.get("entity_type", "")
+    )
+    window_val = int(exp_literal_to_py_literal(window)) if window else None
+    unit_val = t.cast(str, exp_literal_to_py_literal(unit)) if unit else None
+    time_aggregation_val = (
+        t.cast(str, exp_literal_to_py_literal(time_aggregation))
+        if time_aggregation
+        else None
+    )
+    peer_db = t.cast(dict, evaluator.locals.get("$$peer_db"))
+    peer_table_map = t.cast(dict, evaluator.locals.get("$$peer_table_map"))
+
+    ref = PeerMetricDependencyRef(
+        name=name,
+        entity_type=entity_type_val,
+        window=window_val,
+        unit=unit_val,
+        time_aggregation=time_aggregation_val,
+    )
+    return exp.to_table(f"{peer_db}.{to_actual_table_name(ref, peer_table_map)}")

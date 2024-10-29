@@ -6,7 +6,7 @@ select active.metrics_sample_date,
     include_column_alias := true,
   ),
   '' as from_artifact_id,
-  @metric_name('full_time_contributors') as metric,
+  @metric_name('full_time_developers') as metric,
   COUNT(DISTINCT active.from_artifact_id) as amount
 from @metrics_peer_ref(
     developer_active_days,
@@ -32,14 +32,14 @@ select active.metrics_sample_date,
     include_column_alias := true,
   ),
   '' as from_artifact_id,
-  @metric_name('part_time_contributors') as metric,
+  @metric_name('part_time_developers') as metric,
   COUNT(DISTINCT active.from_artifact_id) as amount
 from @metrics_peer_ref(
     developer_active_days,
     window := @rolling_window,
     unit := @rolling_unit
   ) as active
-where active.amount / @rolling_window < @full_time_ratio
+where active.amount / @rolling_window >= @full_time_ratio
   and active.metrics_sample_date = @metrics_end('DATE')
 group by metric,
   from_artifact_id,
@@ -55,7 +55,7 @@ select active.metrics_sample_date,
     include_column_alias := true,
   ),
   '' as from_artifact_id,
-  @metric_name('active_contributors') as metric,
+  @metric_name('active_developers') as metric,
   COUNT(DISTINCT active.from_artifact_id) as amount
 from @metrics_peer_ref(
     developer_active_days,
