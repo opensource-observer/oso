@@ -93,11 +93,11 @@ def clickhouse_assets_from_manifests_map(
                                         "resources": {
                                             "requests": {
                                                 "cpu": "1000m",
-                                                "memory": "1024Mi",
+                                                "memory": "1536Mi",
                                             },
                                             "limits": {
                                                 "cpu": "1000m",
-                                                "memory": "1024Mi",
+                                                "memory": "1536Mi",
                                             },
                                         },
                                     },
