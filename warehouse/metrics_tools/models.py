@@ -118,9 +118,6 @@ class GeneratedPythonModel:
             callables=[self._func],
             imports={"pd": pd},
         )
-        print(python_env)
-        print("kwargs============")
-        print(self._kwargs)
 
         return create_python_model(
             self.name,
@@ -410,13 +407,8 @@ def create_basic_python_env(
 
     callables = callables or []
     for func in callables:
-        # import inspect
-
-        # build_env(
-        #     func, env=python_env, name=func.__name__, path=Path(inspect.getfile(func))
-        # )
-        # print("AFASFAF")
-        # print(python_env)
+        # FIXME: this is not ideal right now, we should generalize
+        # create_import_call_env to support this.
 
         serialized[func.__name__] = Executable(
             name=func.__name__,
@@ -428,8 +420,6 @@ def create_basic_python_env(
         )
 
     serialized.update(serialize_env(python_env, project_path))
-    print("SERIAL")
-    print(serialized)
     return serialized
 
 

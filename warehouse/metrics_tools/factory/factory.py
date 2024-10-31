@@ -363,7 +363,7 @@ class TimeseriesMetrics:
                     )
                 },
             )
-        print("model generation complete")
+        logger.debug("model generation complete")
 
     def generate_model_for_rendered_query(
         self,
@@ -548,7 +548,6 @@ class TimeseriesMetrics:
         config["rendered_query_str"] = query_config["rendered_query"].sql(
             dialect="duckdb"
         )
-        print(f"config={config}")
         return config
 
     @property
@@ -627,9 +626,16 @@ def generated_rolling_query(
     execution_time: datetime,
     ref: PeerMetricDependencyRef,
     vars: t.Dict[str, t.Any],
+    rendered_query_str: str,
+    table_name: str,
     **kwargs,
 ) -> pd.DataFrame:
+    """This acts as the proxy to the actual function that we'd like to call for
+    the metrics model."""
+
     print(f"printing start={start}")
+    print(vars)
+    print(rendered_query_str)
 
     data = {
         "metrics_sample_date": [end],
