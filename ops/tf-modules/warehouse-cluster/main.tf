@@ -135,7 +135,7 @@ locals {
     # SQLMesh Workers
     {
       name                              = "${var.cluster_name}-sqlmesh-worker-node-pool"
-      machine_type                      = "n2-highmem-16"
+      machine_type                      = "n2-highmem-32"
       node_locations                    = join(",", var.cluster_zones)
       min_count                         = 0
       max_count                         = 10
