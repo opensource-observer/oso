@@ -132,6 +132,28 @@ locals {
       preemptible                       = false
       initial_node_count                = 0
     },
+    # SQLMesh Workers
+    {
+      name                              = "${var.cluster_name}-sqlmesh-worker-node-pool"
+      machine_type                      = "n2-highmem-16"
+      node_locations                    = join(",", var.cluster_zones)
+      min_count                         = 0
+      max_count                         = 10
+      local_ssd_count                   = 0
+      local_ssd_ephemeral_storage_count = 2
+      spot                              = false
+      disk_size_gb                      = 100
+      disk_type                         = "pd-standard"
+      image_type                        = "COS_CONTAINERD"
+      enable_gcfs                       = false
+      enable_gvnic                      = false
+      logging_variant                   = "DEFAULT"
+      auto_repair                       = true
+      auto_upgrade                      = true
+      service_account                   = local.node_service_account_email
+      preemptible                       = false
+      initial_node_count                = 0
+    },
 
   ], var.extra_node_pools)
 
@@ -159,6 +181,10 @@ locals {
     "${var.cluster_name}-trino-coordinator-node-pool" = {
       default_node_pool = false
       pool_type         = "trino-coordinator"
+    }
+    "${var.cluster_name}-sqlmesh-worker-node-pool" = {
+      default_node_pool = false
+      pool_type         = "sqlmesh-worker"
     }
   }, var.extra_node_labels)
 
@@ -204,6 +230,13 @@ locals {
         effect = "NO_SCHEDULE"
       },
     ]
+    "${var.cluster_name}-sqlmesh-worker-node-pool" = [
+      {
+        key    = "pool_type"
+        value  = "sqlmesh-worker"
+        effect = "NO_SCHEDULE"
+      },
+    ]
   }, var.extra_node_taints)
 
   node_pool_tags = merge({
@@ -224,6 +257,9 @@ locals {
     ]
     "${var.cluster_name}-trino-coordinator-pool" = [
       "trino-coordinator",
+    ]
+    "${var.cluster_name}-sqlmesh-worker-pool" = [
+      "sqlmesh-worker",
     ]
   }, var.extra_node_tags)
 
