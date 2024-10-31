@@ -11,7 +11,7 @@ from sqlmesh.core import constants as c
 from sqlmesh.core.dialect import MacroFunc
 from sqlmesh.core.macros import ExecutableOrMacro, MacroRegistry, macro
 from sqlmesh.core.model.decorator import model
-from sqlmesh.core.model.definition import create_sql_model
+from sqlmesh.core.model.definition import create_sql_model, create_python_model
 from sqlmesh.utils.jinja import JinjaMacroRegistry
 from sqlmesh.utils.metaprogramming import (
     Executable,
@@ -22,6 +22,117 @@ from sqlmesh.utils.metaprogramming import (
 )
 
 logger = logging.getLogger(__name__)
+
+CallableAliasList = t.List[t.Callable | t.Tuple[t.Callable, t.List[str]]]
+
+
+class GeneratedPythonModel:
+    @classmethod
+    def create(
+        cls,
+        *,
+        name: str,
+        entrypoint_path: str,
+        func: t.Callable,
+        columns: t.Dict[str, exp.DataType],
+        additional_macros: t.Optional[CallableAliasList] = None,
+        variables: t.Optional[t.Dict[str, t.Any]] = None,
+        **kwargs,
+    ):
+        instance = cls(
+            name=name,
+            entrypoint_path=entrypoint_path,
+            func=func,
+            additional_macros=additional_macros or [],
+            variables=variables or {},
+            columns=columns,
+            **kwargs,
+        )
+        registry = model.registry()
+        registry[name] = instance
+        return instance
+
+    def __init__(
+        self,
+        *,
+        name: str,
+        entrypoint_path: str,
+        func: t.Callable,
+        additional_macros: CallableAliasList,
+        variables: t.Dict[str, t.Any],
+        columns: t.Dict[str, exp.DataType],
+        **kwargs,
+    ):
+        self.name = name
+        self._func = func
+        self._entrypoint_path = entrypoint_path
+        self._additional_macros = additional_macros
+        self._variables = variables
+        self._kwargs = kwargs
+        self._columns = columns
+
+    def model(
+        self,
+        module_path: Path,
+        path: Path,
+        defaults: t.Optional[t.Dict[str, t.Any]] = None,
+        macros: t.Optional[MacroRegistry] = None,
+        jinja_macros: t.Optional[JinjaMacroRegistry] = None,
+        dialect: t.Optional[str] = None,
+        time_column_format: str = c.DEFAULT_TIME_COLUMN_FORMAT,
+        physical_schema_mapping: t.Optional[t.Dict[re.Pattern, str]] = None,
+        project: str = "",
+        default_catalog: t.Optional[str] = None,
+        variables: t.Optional[t.Dict[str, t.Any]] = None,
+        infer_names: t.Optional[bool] = False,
+    ):
+        fake_module_path = Path(self._entrypoint_path)
+        macros = MacroRegistry(f"macros_for_{self.name}")
+        macros.update(macros or macro.get_registry())
+
+        if self._additional_macros:
+            macros.update(create_macro_registry_from_list(self._additional_macros))
+
+        all_vars = self._variables.copy()
+        all_vars.update(variables or {})
+
+        common_kwargs: t.Dict[str, t.Any] = dict(
+            defaults=defaults,
+            path=path,
+            time_column_format=time_column_format,
+            physical_schema_mapping=physical_schema_mapping,
+            project=project,
+            default_catalog=default_catalog,
+            variables=all_vars,
+            **self._kwargs,
+        )
+
+        env = {}
+        import pandas as pd
+
+        python_env = create_basic_python_env(
+            env,
+            self._entrypoint_path,
+            module_path,
+            macros=macros,
+            callables=[self._func],
+            imports={"pd": pd},
+        )
+        print(python_env)
+        print("kwargs============")
+        print(self._kwargs)
+
+        return create_python_model(
+            self.name,
+            self._func.__name__,
+            python_env,
+            macros=macros,
+            module_path=fake_module_path,
+            jinja_macros=jinja_macros,
+            columns=self._columns,
+            dialect=dialect,
+            **common_kwargs,
+        )
 
 
 class GeneratedModel:
@@ -36,6 +147,7 @@ class GeneratedModel:
         entrypoint_path: str,
         source: t.Optional[str] = None,
         source_loader: t.Optional[t.Callable[[], str]] = None,
+        additional_macros: t.Optional[CallableAliasList] = None,
         **kwargs,
     ):
         if not source and not source_loader:
@@ -57,6 +169,7 @@ class GeneratedModel:
             entrypoint_path=entrypoint_path,
             source=source,
             source_loader=source_loader,
+            additional_macros=additional_macros,
             **kwargs,
         )
         registry = model.registry()
@@ -74,9 +187,7 @@ class GeneratedModel:
         entrypoint_path: str,
         source: t.Optional[str] = None,
         source_loader: t.Optional[t.Callable[[], str]] = None,
-        additional_macros: t.Optional[
-            t.List[t.Callable | t.Tuple[t.Callable, t.List[str]]]
-        ] = None,
+        additional_macros: t.Optional[CallableAliasList] = None,
         **kwargs,
     ):
         self.kwargs = kwargs
@@ -111,11 +222,7 @@ class GeneratedModel:
 
         if self.additional_macros:
             macros = t.cast(MacroRegistry, macros.copy())
-            for additional_macro in self.additional_macros:
-                if isinstance(additional_macro, tuple):
-                    macros.update(create_unregistered_wrapped_macro(*additional_macro))
-                else:
-                    macros.update(create_unregistered_wrapped_macro(additional_macro))
+            macros.update(create_macro_registry_from_list(self.additional_macros))
 
         common_kwargs: t.Dict[str, t.Any] = dict(
             defaults=defaults,
@@ -267,6 +374,8 @@ def create_basic_python_env(
     macros: t.Optional[MacroRegistry] = None,
     additional_macros: t.Optional[MacroRegistry] = None,
     variables: t.Optional[t.Dict[str, t.Any]] = None,
+    callables: t.Optional[t.List[t.Callable]] = None,
+    imports: t.Optional[t.Dict[str, t.Any]] = None,
 ):
     if isinstance(path, str):
         path = Path(path)
@@ -291,8 +400,36 @@ def create_basic_python_env(
         for name, value in variables.items():
             serialized[name] = Executable.value(value)
 
-    serialized.update(serialize_env(python_env, project_path))
+    imports = imports or {}
+    for name, imp in imports.items():
+        python_env[name] = imp
+        # serialized[func.__name__] = Executable(
+        #     payload=f"from {func.__module__} import {func.__name__}",
+        #     kind=ExecutableKind.IMPORT,
+        # )
 
+    callables = callables or []
+    for func in callables:
+        # import inspect
+
+        # build_env(
+        #     func, env=python_env, name=func.__name__, path=Path(inspect.getfile(func))
+        # )
+        # print("AFASFAF")
+        # print(python_env)
+
+        serialized[func.__name__] = Executable(
+            name=func.__name__,
+            payload=normalize_source(func),
+            kind=ExecutableKind.DEFINITION,
+            path="",
+            alias=None,
+            is_metadata=False,
+        )
+
+    serialized.update(serialize_env(python_env, project_path))
+    print("SERIAL")
+    print(serialized)
     return serialized
 
 
@@ -352,3 +489,13 @@ def create_import_call_env(
     )
 
     return (entrypoint_name, serialized)
+
+
+def create_macro_registry_from_list(macro_list: CallableAliasList):
+    registry = MacroRegistry("macros")
+    for additional_macro in macro_list:
+        if isinstance(additional_macro, tuple):
+            registry.update(create_unregistered_wrapped_macro(*additional_macro))
+        else:
+            registry.update(create_unregistered_wrapped_macro(additional_macro))
+    return registry

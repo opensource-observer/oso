@@ -1,14 +1,16 @@
 import contextlib
+from datetime import datetime
 import inspect
 import logging
 import os
 from queue import PriorityQueue
 import typing as t
 import textwrap
+import pandas as pd
 from dataclasses import dataclass, field
 
+from sqlmesh import ExecutionContext
 from sqlmesh.core.macros import MacroEvaluator
-from sqlmesh.utils.date import TimeLike
 from sqlmesh.core.model import ModelKindName
 import sqlglot as sql
 from sqlglot import exp
@@ -25,7 +27,10 @@ from metrics_tools.definition import (
     TimeseriesMetricsOptions,
     reference_to_str,
 )
-from metrics_tools.models import GeneratedModel
+from metrics_tools.models import (
+    GeneratedModel,
+    GeneratedPythonModel,
+)
 from metrics_tools.factory.macros import (
     metrics_end,
     metrics_entity_type_col,
@@ -78,166 +83,6 @@ METRICS_COLUMNS_BY_ENTITY: t.Dict[str, t.Dict[str, exp.DataType]] = {
 }
 
 
-def generate_metric_models(
-    calling_file: str,
-    query: MetricQuery,
-    default_dialect: str,
-    peer_table_map: t.Dict[str, str],
-    start: TimeLike,
-    timeseries_sources: t.List[str],
-):
-    # Turn the source into a dict so it can be used in the sqlmesh context
-    refs = query.provided_dependency_refs
-
-    all_tables: t.Dict[str, t.List[str]] = {
-        "artifact": [],
-        "project": [],
-        "collection": [],
-    }
-
-    for ref in refs:
-        cron = "@daily"
-        time_aggregation = ref.get("time_aggregation")
-        window = ref.get("window")
-        if time_aggregation:
-            cron = TIME_AGGREGATION_TO_CRON[time_aggregation]
-        else:
-            if not window:
-                raise Exception("window or time_aggregation must be set")
-            assert query._source.rolling
-            cron = query._source.rolling["cron"]
-
-        table_name = query.table_name(ref)
-        all_tables[ref["entity_type"]].append(table_name)
-        columns = METRICS_COLUMNS_BY_ENTITY[ref["entity_type"]]
-        additional_macros = [
-            metrics_peer_ref,
-            metrics_entity_type_col,
-            metrics_entity_type_alias,
-            relative_window_sample_date,
-            (metrics_name, ["metric_name"]),
-        ]
-
-        kind_common = {"batch_size": 1}
-        partitioned_by = ("day(metrics_sample_date)",)
-
-        # Due to how the schedulers work for sqlmesh we actually can't batch if
-        # we're using a weekly cron for a time aggregation. In order to have
-        # this work we just adjust the start/end time for the
-        # metrics_start/metrics_end and also give a large enough batch time to
-        # fit a few weeks. This ensures there's on missing data
-        if time_aggregation == "weekly":
-            kind_common = {"batch_size": 182, "lookback": 7}
-        if time_aggregation == "monthly":
-            kind_common = {"batch_size": 6}
-            partitioned_by = ("month(metrics_sample_date)",)
-        if time_aggregation == "daily":
-            kind_common = {"batch_size": 180}
-
-        evaluator_variables: t.Dict[str, t.Any] = {
-            "entity_type": ref["entity_type"],
-            "time_aggregation": ref.get("time_aggregation", None),
-            "rolling_window": ref.get("window", None),
-            "rolling_unit": ref.get("unit", None),
-        }
-        evaluator_variables.update(query.vars)
-
-        transformer = SQLTransformer(
-            disable_qualify=True,
-            transforms=[
-                IntermediateMacroEvaluatorTransform(
-                    additional_macros,
-                    variables=evaluator_variables,
-                ),
-                JoinerTransform(
-                    ref["entity_type"],
-                ),
-            ],
-        )
-
-        rendered_query = transformer.transform([query.query_expression])
-        logger.debug(rendered_query)
-
-        if ref["entity_type"] == "artifact":
-            GeneratedModel.create(
-                func=generated_query,
-                source="",
-                entrypoint_path=calling_file,
-                config={},
-                name=f"metrics.{table_name}",
-                kind={
-                    "name": ModelKindName.INCREMENTAL_BY_TIME_RANGE,
-                    "time_column": "metrics_sample_date",
-                    **kind_common,
-                },
-                dialect="clickhouse",
-                columns=columns,
-                grain=[
-                    "metric",
-                    "to_artifact_id",
-                    "from_artifact_id",
-                    "metrics_sample_date",
-                ],
-                cron=cron,
-                start=start,
-                additional_macros=additional_macros,
-                partitioned_by=partitioned_by,
-            )
-
-        if ref["entity_type"] == "project":
-            GeneratedModel.create(
-                func=generated_query,
-                source="",
-                entrypoint_path=calling_file,
-                config={},
-                name=f"metrics.{table_name}",
-                kind={
-                    "name": ModelKindName.INCREMENTAL_BY_TIME_RANGE,
-                    "time_column": "metrics_sample_date",
-                    **kind_common,
-                },
-                dialect="clickhouse",
-                columns=columns,
-                grain=[
-                    "metric",
-                    "to_project_id",
-                    "from_artifact_id",
-                    "metrics_sample_date",
-                ],
-                cron=cron,
-                start=start,
-                additional_macros=additional_macros,
-                partitioned_by=partitioned_by,
-            )
-        if ref["entity_type"] == "collection":
-            GeneratedModel.create(
-                func=generated_query,
-                source="",
-                entrypoint_path=calling_file,
-                config={},
-                name=f"metrics.{table_name}",
-                kind={
-                    "name": ModelKindName.INCREMENTAL_BY_TIME_RANGE,
-                    "time_column": "metrics_sample_date",
-                    **kind_common,
-                },
-                dialect="clickhouse",
-                columns=columns,
-                grain=[
-                    "metric",
-                    "to_collection_id",
-                    "from_artifact_id",
-                    "metrics_sample_date",
-                ],
-                cron=cron,
-                start=start,
-                additional_macros=additional_macros,
-                partitioned_by=partitioned_by,
-            )
-
-    return all_tables
-
-
 @contextlib.contextmanager
 def metric_ref_evaluator_context(
     evaluator: MacroEvaluator,
@@ -258,21 +103,6 @@ def metric_ref_evaluator_context(
         yield
     finally:
         evaluator.locals = before
-
-
-def generated_query(
-    evaluator: MacroEvaluator,
-    *,
-    rendered_query_str: str,
-    ref: PeerMetricDependencyRef,
-    table_name: str,
-    vars: t.Dict[str, t.Any],
-):
-    from sqlmesh.core.dialect import parse_one
-
-    with metric_ref_evaluator_context(evaluator, ref, vars):
-        result = evaluator.transform(parse_one(rendered_query_str))
-    return result
 
 
 class MetricQueryConfig(t.TypedDict):
@@ -339,6 +169,11 @@ class TimeseriesMetrics:
         self._raw_options = raw_options
         self._rendered = False
         self._rendered_queries: t.Dict[str, MetricQueryConfig] = {}
+
+    @property
+    def catalog(self):
+        """The catalog (sometimes db name) to use for rendered queries"""
+        return self._raw_options["catalog"]
 
     def generate_queries(self):
         if self._rendered:
@@ -435,6 +270,7 @@ class TimeseriesMetrics:
 
         visited: t.Dict[str, int] = {}
         cycle_lock: t.Dict[str, bool] = {}
+        dependencies: t.Dict[str, t.Set[str]] = {}
 
         def queue_query(name: str):
             if name in cycle_lock:
@@ -448,6 +284,7 @@ class TimeseriesMetrics:
             rendered_query = query_config["rendered_query"]
             depth = 0
             tables = rendered_query.find_all(exp.Table)
+            parents = set()
             for table in tables:
                 db_name = table.db
                 if isinstance(table.db, exp.Identifier):
@@ -459,6 +296,7 @@ class TimeseriesMetrics:
 
                 if table_name in sources:
                     continue
+                parents.add(table_name)
 
                 try:
                     parent_depth = queue_query(table_name)
@@ -480,6 +318,7 @@ class TimeseriesMetrics:
                     depth = parent_depth + 1
             queue.put(MetricQueryConfigQueueItem(depth, query_config))
             visited[name] = depth
+            dependencies[name] = parents
             del cycle_lock[name]
             return depth
 
@@ -491,14 +330,16 @@ class TimeseriesMetrics:
             item = t.cast(MetricQueryConfigQueueItem, queue.get())
             depth = item.depth
             query_config = item.config
-            yield (depth, query_config)
+            yield (depth, query_config, dependencies[query_config["table_name"]])
 
     def generate_models(self, calling_file: str):
         """Generates sqlmesh models for all the configured metrics definitions"""
         # Generate the models
 
-        for _, query_config in self.generate_ordered_queries():
-            self.generate_model_for_rendered_query(calling_file, query_config)
+        for _, query_config, dependencies in self.generate_ordered_queries():
+            self.generate_model_for_rendered_query(
+                calling_file, query_config, dependencies
+            )
 
         # Join all of the models of the same entity type into the same view model
         for entity_type, tables in self._marts_tables.items():
@@ -506,7 +347,7 @@ class TimeseriesMetrics:
                 func=join_all_of_entity_type,
                 entrypoint_path=calling_file,
                 config={
-                    "db": "metrics",
+                    "db": self.catalog,
                     "tables": tables,
                     "columns": list(METRICS_COLUMNS_BY_ENTITY[entity_type].keys()),
                 },
@@ -525,23 +366,82 @@ class TimeseriesMetrics:
         print("model generation complete")
 
     def generate_model_for_rendered_query(
-        self, calling_file: str, query_config: MetricQueryConfig
+        self,
+        calling_file: str,
+        query_config: MetricQueryConfig,
+        dependencies: t.Set[str],
     ):
         query = query_config["query"]
         match query.metric_type:
             case "rolling":
-                self.generate_rolling_model_for_rendered_query(
-                    calling_file, query_config
-                )
+                if query.use_python_model:
+                    self.generate_rolling_python_model_for_rendered_query(
+                        calling_file, query_config, dependencies
+                    )
+                else:
+                    self.generate_rolling_model_for_rendered_query(
+                        calling_file, query_config, dependencies
+                    )
             case "time_aggregation":
                 self.generate_time_aggregation_model_for_rendered_query(
-                    calling_file, query_config
+                    calling_file, query_config, dependencies
                 )
 
-    def generate_rolling_model_for_rendered_query(
-        self, calling_file: str, query_config: MetricQueryConfig
+    def generate_rolling_python_model_for_rendered_query(
+        self,
+        calling_file: str,
+        query_config: MetricQueryConfig,
+        dependencies: t.Set[str],
     ):
-        """TODO change this to a python model"""
+        depends_on = set()
+        for dep in dependencies:
+            depends_on.add(f"{self.catalog}.{dep}")
+
+        ref = query_config["ref"]
+        query = query_config["query"]
+
+        columns = METRICS_COLUMNS_BY_ENTITY[ref["entity_type"]]
+
+        kind_common = {"batch_size": 1}
+        partitioned_by = ("day(metrics_sample_date)",)
+        window = ref.get("window")
+        assert window is not None
+        assert query._source.rolling
+        cron = query._source.rolling["cron"]
+
+        grain = [
+            "metric",
+            f"to_{ref['entity_type']}_id",
+            "event_source",
+            "from_artifact_id",
+            "metrics_sample_date",
+        ]
+
+        return GeneratedPythonModel.create(
+            name=f"{self.catalog}.{query_config['table_name']}",
+            func=generated_rolling_query,
+            entrypoint_path=calling_file,
+            additional_macros=self.generated_model_additional_macros,
+            variables=self.serializable_config(query_config),
+            depends_on=depends_on,
+            columns=columns,
+            kind={
+                "name": ModelKindName.INCREMENTAL_BY_TIME_RANGE,
+                "time_column": "metrics_sample_date",
+                **kind_common,
+            },
+            partitioned_by=partitioned_by,
+            cron=cron,
+            start=self._raw_options["start"],
+            grain=grain,
+        )
+
+    def generate_rolling_model_for_rendered_query(
+        self,
+        calling_file: str,
+        query_config: MetricQueryConfig,
+        dependencies: t.Set[str],
+    ):
         config = self.serializable_config(query_config)
 
         ref = query_config["ref"]
@@ -560,6 +460,7 @@ class TimeseriesMetrics:
             "metric",
             f"to_{ref['entity_type']}_id",
             "from_artifact_id",
+            "event_source",
             "metrics_sample_date",
         ]
 
@@ -567,7 +468,7 @@ class TimeseriesMetrics:
             func=generated_query,
             entrypoint_path=calling_file,
             config=config,
-            name=f"metrics.{query_config['table_name']}",
+            name=f"{self.catalog}.{query_config['table_name']}",
             kind={
                 "name": ModelKindName.INCREMENTAL_BY_TIME_RANGE,
                 "time_column": "metrics_sample_date",
@@ -583,7 +484,10 @@ class TimeseriesMetrics:
         )
 
     def generate_time_aggregation_model_for_rendered_query(
-        self, calling_file: str, query_config: MetricQueryConfig
+        self,
+        calling_file: str,
+        query_config: MetricQueryConfig,
+        dependencies: t.Set[str],
     ):
         """Generate model for time aggregation models"""
         # Use a simple python sql model to generate the time_aggregation model
@@ -609,6 +513,7 @@ class TimeseriesMetrics:
             "metric",
             f"to_{ref['entity_type']}_id",
             "from_artifact_id",
+            "event_source",
             "metrics_sample_date",
         ]
         cron = TIME_AGGREGATION_TO_CRON[time_aggregation]
@@ -617,7 +522,7 @@ class TimeseriesMetrics:
             func=generated_query,
             entrypoint_path=calling_file,
             config=config,
-            name=f"metrics.{query_config['table_name']}",
+            name=f"{self.catalog}.{query_config['table_name']}",
             kind={
                 "name": ModelKindName.INCREMENTAL_BY_TIME_RANGE,
                 "time_column": "metrics_sample_date",
@@ -643,10 +548,13 @@ class TimeseriesMetrics:
         config["rendered_query_str"] = query_config["rendered_query"].sql(
             dialect="duckdb"
         )
+        print(f"config={config}")
         return config
 
     @property
-    def generated_model_additional_macros(self):
+    def generated_model_additional_macros(
+        self,
+    ) -> t.List[t.Callable | t.Tuple[t.Callable, t.List[str]]]:
         return [metrics_end, metrics_start, metrics_sample_date]
 
 
@@ -694,3 +602,41 @@ def join_all_of_entity_type(
         )
     # Calculate the correct metric_id for all of the entity types
     return query
+
+
+def generated_query(
+    evaluator: MacroEvaluator,
+    *,
+    rendered_query_str: str,
+    ref: PeerMetricDependencyRef,
+    table_name: str,
+    vars: t.Dict[str, t.Any],
+):
+    """Simple generated query executor for metrics queries"""
+    from sqlmesh.core.dialect import parse_one
+
+    with metric_ref_evaluator_context(evaluator, ref, vars):
+        result = evaluator.transform(parse_one(rendered_query_str))
+    return result
+
+
+def generated_rolling_query(
+    context: ExecutionContext,
+    start: datetime,
+    end: datetime,
+    execution_time: datetime,
+    ref: PeerMetricDependencyRef,
+    vars: t.Dict[str, t.Any],
+    **kwargs,
+) -> pd.DataFrame:
+    print(f"printing start={start}")
+
+    data = {
+        "metrics_sample_date": [end],
+        "metric": ["metric"],
+        "event_source": ["TEST"],
+        f"to_{ref['entity_type']}_id": ["artifact_1"],
+        "from_artifact_id": ["artifact_2"],
+        "amount": [1.0],
+    }
+    return pd.DataFrame(data)

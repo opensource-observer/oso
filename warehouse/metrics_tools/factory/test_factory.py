@@ -29,32 +29,24 @@ def timeseries_duckdb():
             "c_3": ["p_0", "p_1", "p_2"],
         },
     )
+    start = "2023-12-01"
+    end = "2024-02-01"
 
-    fixture.generate_daily_events(
-        "2023-01-01", "2024-12-31", "VISIT", "user_0", "service_0"
-    )
-    fixture.generate_daily_events(
-        "2023-01-01", "2024-12-31", "VISIT", "user_0", "service_1"
-    )
-    fixture.generate_daily_events(
-        "2023-01-01", "2024-12-31", "VISIT", "user_1", "service_1"
-    )
-    fixture.generate_daily_events(
-        "2023-01-01", "2024-12-31", "VISIT", "user_2", "service_2"
-    )
+    fixture.generate_daily_events(start, end, "VISIT", "user_0", "service_0")
+    fixture.generate_daily_events(start, end, "VISIT", "user_0", "service_1")
+    fixture.generate_daily_events(start, end, "VISIT", "user_1", "service_1")
+    fixture.generate_daily_events(start, end, "VISIT", "user_2", "service_2")
 
     for ft_dev_index in range(5):
         dev_name = f"ft_dev_{ft_dev_index}"
-        fixture.generate_daily_events(
-            "2023-01-01", "2024-12-31", "COMMIT_CODE", dev_name, "repo_0"
-        )
+        fixture.generate_daily_events(start, end, "COMMIT_CODE", dev_name, "repo_0")
 
     # Change in developers
     for ft_dev_index in range(5, 10):
         dev_name = f"ft_dev_{ft_dev_index}"
         fixture.generate_daily_events(
-            "2023-01-01",
-            "2024-12-31",
+            start,
+            end,
             "COMMIT_CODE",
             dev_name,
             "repo_0",
@@ -71,8 +63,8 @@ def timeseries_duckdb():
     for pt_dev_index in range(10):
         dev_name = f"pt_dev_{pt_dev_index}"
         fixture.generate_daily_events(
-            "2023-01-01",
-            "2024-12-31",
+            start,
+            end,
             "COMMIT_CODE",
             dev_name,
             "repo_0",
@@ -86,6 +78,7 @@ def timeseries_duckdb():
 def timeseries_metrics_to_test():
     return TimeseriesMetrics.from_raw_options(
         start="2024-01-01",
+        catalog="metrics",
         model_prefix="timeseries",
         metric_queries={
             "visits": MetricQueryDef(
@@ -179,7 +172,7 @@ def test_runner(
     base_locals = {"oso_source": "sources"}
     connection = timeseries_duckdb._conn
 
-    for _, query_config in timeseries_metrics_to_test.generate_ordered_queries():
+    for _, query_config, _ in timeseries_metrics_to_test.generate_ordered_queries():
         ref = query_config["ref"]
         locals = query_config["vars"].copy()
         locals.update(base_locals)
