@@ -3,7 +3,6 @@ import os
 import click
 import duckdb
 import queue
-import concurrent.futures
 from dataclasses import dataclass
 from boltons import fileutils
 from google.cloud import bigquery, storage
@@ -171,36 +170,29 @@ class ExporterLoader:
         return os.path.join("gs://", self._gcs_bucket_name, self._gcs_bucket_path)
 
     def run(self, tables: t.List[str], resume: bool = False):
+        self._db_conn.execute("SET memory_limit = '64GB';")
         self._db_conn.execute("CREATE SCHEMA IF NOT EXISTS sources;")
+        self._db_conn.execute(
+            """
+        CREATE SECRET IF NOT EXISTS secret1 (
+            TYPE GCS,
+            PROVIDER CREDENTIAL_CHAIN
+        );
+        """
+        )
 
-        work_queue = queue.Queue()
-        result_queue = queue.Queue()
-        workers = 12
+        for table in tables:
+            print(f"loading work for {table}")
+            prefix = self._export_and_load(table, resume)
+            print(f"creating table from {prefix}/*.parquet")
 
-        with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as executor:
-            # Make 8 workers for downloads and one for duckdb
-            all_futures: t.List[concurrent.futures.Future] = []
-            for _ in range(workers - 1):
-                all_futures.append(
-                    executor.submit(download_parquet_from_gcs, work_queue, result_queue)
-                )
-            all_futures.append(
-                executor.submit(load_into_duckdb, self._db_conn, result_queue)
+            self._db_conn.sql(
+                f"""
+            CREATE TABLE sources.{table} AS
+            SELECT * 
+            FROM read_parquet('{prefix}/*.parquet');
+            """
             )
-
-            for table in tables:
-                print(f"loading work for {table}")
-                work_list = self._export_and_load(table, resume)
-                for work in work_list:
-                    work_queue.put(work)
-
-            for _ in range(workers - 1):
-                work_queue.put(Noop())
-
-            work_queue.join()
-            result_queue.put(Noop())
-
-            concurrent.futures.wait(all_futures)
 
     def make_download_path(self, table_name: str):
         download_path = os.path.join(self._download_path, self._version, table_name)
@@ -208,7 +200,7 @@ class ExporterLoader:
         return download_path
 
     def _export_and_load(self, table: str, resume: bool = False):
-        events_gcs_path = os.path.join(
+        gcs_path_uri = os.path.join(
             self.gcs_path,
             self._version,
             table,
@@ -222,20 +214,17 @@ class ExporterLoader:
                     service_account=None,
                     table_name=table,
                 ),
-                gcs_path=events_gcs_path,
+                gcs_path=gcs_path_uri,
             )
             print("gcs exported")
 
-        download_path = self.make_download_path(table)
+        # download_path = self.make_download_path(table)
 
-        # Download the gcs stuff to a local working directory
-        prefix = os.path.join(self._gcs_bucket_path, self._version)
-
-        print("getting list of work")
         # Load the data into duckdb
-        return get_parquet_work_list(
-            self._gcs_client, self._gcs_bucket_name, prefix, download_path, table
-        )
+        # get_parquet_work_list(
+        #     self._gcs_client, self._gcs_bucket_name, prefix, download_path, table
+        # )
+        return gcs_path_uri
 
 
 @click.command()
