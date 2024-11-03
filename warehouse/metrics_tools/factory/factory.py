@@ -6,6 +6,8 @@ import os
 from queue import PriorityQueue
 import typing as t
 import textwrap
+from metrics_tools.runner import MetricsRunner
+from metrics_tools.transformer.tables import ExecutionContextTableTransform
 import pandas as pd
 from dataclasses import dataclass, field
 
@@ -294,9 +296,9 @@ class TimeseriesMetrics:
                 if db_name != "metrics":
                     continue
 
+                parents.add(table_name)
                 if table_name in sources:
                     continue
-                parents.add(table_name)
 
                 try:
                     parent_depth = queue_query(table_name)
@@ -402,7 +404,7 @@ class TimeseriesMetrics:
 
         columns = METRICS_COLUMNS_BY_ENTITY[ref["entity_type"]]
 
-        kind_common = {"batch_size": 1}
+        kind_common = {"batch_size": 90}
         partitioned_by = ("day(metrics_sample_date)",)
         window = ref.get("window")
         assert window is not None
@@ -419,7 +421,7 @@ class TimeseriesMetrics:
 
         return GeneratedPythonModel.create(
             name=f"{self.catalog}.{query_config['table_name']}",
-            func=generated_rolling_query,
+            func=generated_rolling_query_proxy,
             entrypoint_path=calling_file,
             additional_macros=self.generated_model_additional_macros,
             variables=self.serializable_config(query_config),
@@ -434,6 +436,7 @@ class TimeseriesMetrics:
             cron=cron,
             start=self._raw_options["start"],
             grain=grain,
+            imports={"pd": pd, "generated_rolling_query": generated_rolling_query},
         )
 
     def generate_rolling_model_for_rendered_query(
@@ -628,21 +631,44 @@ def generated_rolling_query(
     vars: t.Dict[str, t.Any],
     rendered_query_str: str,
     table_name: str,
+    sqlmesh_vars: t.Dict[str, t.Any],
+    *_ignored,
+):
+    # Transform the query for the current context
+    transformer = SQLTransformer(transforms=[ExecutionContextTableTransform(context)])
+    query = transformer.transform(rendered_query_str)
+    locals = vars.copy()
+    locals.update(sqlmesh_vars)
+
+    runner = MetricsRunner.from_sqlmesh_context(context, query, ref, locals)
+    yield runner.run_rolling(start, end)
+
+
+def generated_rolling_query_proxy(
+    context: ExecutionContext,
+    start: datetime,
+    end: datetime,
+    execution_time: datetime,
+    ref: PeerMetricDependencyRef,
+    vars: t.Dict[str, t.Any],
+    rendered_query_str: str,
+    table_name: str,
+    sqlmesh_vars: t.Dict[str, t.Any],
     **kwargs,
-) -> pd.DataFrame:
-    """This acts as the proxy to the actual function that we'd like to call for
+) -> t.Iterator[pd.DataFrame]:
+    """This acts as the proxy to the actual function that we'd call for
     the metrics model."""
 
-    print(f"printing start={start}")
-    print(vars)
-    print(rendered_query_str)
-
-    data = {
-        "metrics_sample_date": [end],
-        "metric": ["metric"],
-        "event_source": ["TEST"],
-        f"to_{ref['entity_type']}_id": ["artifact_1"],
-        "from_artifact_id": ["artifact_2"],
-        "amount": [1.0],
-    }
-    return pd.DataFrame(data)
+    yield from generated_rolling_query(
+        context,
+        start,
+        end,
+        execution_time,
+        ref,
+        vars,
+        rendered_query_str,
+        table_name,
+        sqlmesh_vars,
+        # Change the following variable to force reevaluation. Hack for now.
+        "version=v4",
+    )

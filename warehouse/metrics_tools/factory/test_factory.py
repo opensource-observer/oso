@@ -2,9 +2,9 @@ from metrics_tools.utils.dataframes import as_pandas_df
 from metrics_tools.utils.testing import duckdb_df_context
 import os
 import arrow
-from metrics_tools.factory.gen_data import MetricsDBFixture
 import pytest
 
+from metrics_tools.utils.fixtures.gen_data import MetricsDBFixture
 from metrics_tools.runner import MetricsRunner
 from metrics_tools.definition import MetricQueryDef, RollingConfig
 from .factory import TimeseriesMetrics

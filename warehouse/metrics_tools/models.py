@@ -37,6 +37,7 @@ class GeneratedPythonModel:
         columns: t.Dict[str, exp.DataType],
         additional_macros: t.Optional[CallableAliasList] = None,
         variables: t.Optional[t.Dict[str, t.Any]] = None,
+        imports: t.Optional[t.Dict[str, t.Any]] = None,
         **kwargs,
     ):
         instance = cls(
@@ -46,6 +47,7 @@ class GeneratedPythonModel:
             additional_macros=additional_macros or [],
             variables=variables or {},
             columns=columns,
+            imports=imports or {},
             **kwargs,
         )
         registry = model.registry()
@@ -61,6 +63,7 @@ class GeneratedPythonModel:
         additional_macros: CallableAliasList,
         variables: t.Dict[str, t.Any],
         columns: t.Dict[str, exp.DataType],
+        imports: t.Dict[str, t.Any],
         **kwargs,
     ):
         self.name = name
@@ -70,6 +73,7 @@ class GeneratedPythonModel:
         self._variables = variables
         self._kwargs = kwargs
         self._columns = columns
+        self._imports = imports
 
     def model(
         self,
@@ -94,7 +98,8 @@ class GeneratedPythonModel:
             macros.update(create_macro_registry_from_list(self._additional_macros))
 
         all_vars = self._variables.copy()
-        all_vars.update(variables or {})
+        global_variables = variables or {}
+        all_vars["sqlmesh_vars"] = global_variables
 
         common_kwargs: t.Dict[str, t.Any] = dict(
             defaults=defaults,
@@ -108,15 +113,13 @@ class GeneratedPythonModel:
         )
 
         env = {}
-        import pandas as pd
-
         python_env = create_basic_python_env(
             env,
             self._entrypoint_path,
             module_path,
             macros=macros,
             callables=[self._func],
-            imports={"pd": pd},
+            imports=self._imports,
         )
 
         return create_python_model(
