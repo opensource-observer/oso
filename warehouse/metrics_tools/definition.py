@@ -178,7 +178,7 @@ class MetricQueryDef:
 
     enabled: bool = True
 
-    use_python_model: bool = False
+    use_python_model: bool = True
 
     def raw_sql(self, queries_dir: str):
         return open(os.path.join(queries_dir, self.ref)).read()

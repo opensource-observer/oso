@@ -141,7 +141,6 @@ class MetricsRunner:
             )
             day_result = self._context.engine_adapter.fetchdf(rendered_query)
             df = pd.concat([df, day_result])
-        print(f"Completed rolling window for {count} day(s) with {len(df)} row(s)")
 
         return df
 
