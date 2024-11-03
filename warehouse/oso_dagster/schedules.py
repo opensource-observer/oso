@@ -63,7 +63,7 @@ def get_partitioned_schedules(
             cron_schedule="0 0 * * 0",
             name=f"materialize_{asset_path}_schedule",
             execution_fn=execution_fn,
-            default_status=DefaultScheduleStatus.RUNNING,
+            default_status=DefaultScheduleStatus.STOPPED,
         )
 
     return [create_schedule(asset_key) for asset_key in resolved_assets]

@@ -1,12 +1,12 @@
 from dataclasses import dataclass, field
-from typing import Optional, Sequence
+from typing import Optional, Sequence, cast
 from dagster import (
     asset,
     AssetExecutionContext,
     MaterializeResult,
 )
 from dagster_gcp import BigQueryResource
-from .common import AssetFactoryResponse
+from .common import AssetFactoryResponse, GenericAsset
 from ..constants import impersonate_service_account
 from ..resources import BigQueryDataTransferResource
 from ..utils import (
@@ -88,4 +88,5 @@ def bq_dts_asset(asset_config: BqDtsAssetConfig):
             }
         )
 
-    return AssetFactoryResponse([_bq_dts_asset])
+    # https://github.com/opensource-observer/oso/issues/2403
+    return AssetFactoryResponse([cast(GenericAsset, _bq_dts_asset)])

@@ -15,9 +15,9 @@ with source as (
 
 renamed as (
   select
-  {% for column in columns %}
-    {{ adapter.quote(column) }}{% if not loop.last %},{% endif %}
-  {% endfor %}
+    {% for column in columns %}
+      {{ adapter.quote(column) }}{% if not loop.last %},{% endif %}
+    {% endfor %}
   from source
 )
 

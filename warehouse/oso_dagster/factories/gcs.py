@@ -1,11 +1,12 @@
 import re
-from typing import Optional, Sequence, Dict
+from typing import Optional, Sequence, Dict, cast
 from dataclasses import dataclass, field
 
 import arrow
 from google.api_core.exceptions import NotFound
 from google.cloud.bigquery.job import CopyJobConfig
 from dagster import (
+    AssetsDefinition,
     asset,
     asset_sensor,
     job,
@@ -21,7 +22,7 @@ from dagster import (
 )
 from dagster_gcp import BigQueryResource, GCSResource
 
-from .common import AssetFactoryResponse
+from .common import AssetFactoryResponse, GenericAsset
 from ..utils import (
     ensure_dataset,
     DatasetOptions,
@@ -239,13 +240,13 @@ def interval_gcs_import_asset(config: IntervalGCSAsset):
         gcs_clean_up_op()
 
     @asset_sensor(
-        asset_key=gcs_asset.key,
+        asset_key=cast(AssetsDefinition, gcs_asset).key,
         name=f"{config.name}_clean_up_sensor",
         job=gcs_clean_up_job,
         default_status=DefaultSensorStatus.STOPPED,
     )
     def gcs_clean_up_sensor(
-        context: SensorEvaluationContext, gcs: GCSResource, asset_event: EventLogEntry
+        context: SensorEvaluationContext, _gcs: GCSResource, asset_event: EventLogEntry
     ):
         yield RunRequest(
             run_key=context.cursor,
@@ -258,4 +259,9 @@ def interval_gcs_import_asset(config: IntervalGCSAsset):
             ),
         )
 
-    return AssetFactoryResponse([gcs_asset], [gcs_clean_up_sensor], [gcs_clean_up_job])
+    # https://github.com/opensource-observer/oso/issues/2403
+    return AssetFactoryResponse(
+        [cast(GenericAsset, gcs_asset)],
+        [gcs_clean_up_sensor],
+        [gcs_clean_up_job],
+    )

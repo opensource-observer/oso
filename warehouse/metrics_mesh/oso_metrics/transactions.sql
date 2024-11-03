@@ -6,7 +6,7 @@ select @metrics_sample_date(events.bucket_day) as metrics_sample_date,
   SUM(events.amount) as amount
 from metrics.events_daily_to_artifact as events
 where event_type in ('CONTRACT_INVOCATION_SUCCESS_DAILY_COUNT')
-  and events.bucket_day BETWEEN @metrics_start(DATE) AND @metrics_end(DATE)
+  and events.bucket_day BETWEEN @metrics_start('DATE') AND @metrics_end('DATE')
 group by 1,
   metric,
   from_artifact_id,
