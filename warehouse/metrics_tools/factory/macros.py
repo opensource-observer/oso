@@ -174,6 +174,8 @@ def metrics_start(evaluator: MacroEvaluator, _data_type: t.Optional[str] = None)
           by taking the end_ds provided by sqlmesh and calculating a
           trailing interval back {window} intervals of unit {unit}.
     """
+    if evaluator.runtime_stage in ["loading", "creating"]:
+        return parse_one("STR_TO_DATE('1970-01-01', '%Y-%m-%d')")
     time_aggregation_interval = evaluator.locals.get("time_aggregation")
     if time_aggregation_interval:
         start_date = t.cast(
@@ -218,7 +220,7 @@ def metrics_start(evaluator: MacroEvaluator, _data_type: t.Optional[str] = None)
             ),
             expression=exp.Interval(
                 this=exp.Paren(
-                    this=exp.Literal(this=str(rolling_window), is_string=False),
+                    this=exp.Literal(this=str(rolling_window), is_string=True),
                 ),
                 unit=exp.Var(this=rolling_unit.upper()),
             ),
@@ -229,6 +231,8 @@ def metrics_start(evaluator: MacroEvaluator, _data_type: t.Optional[str] = None)
 def metrics_end(evaluator: MacroEvaluator, _data_type: t.Optional[str] = None):
     """This has different semantic meanings depending on the mode of the metric query"""
 
+    if evaluator.runtime_stage in ["loading", "creating"]:
+        return parse_one("STR_TO_DATE('1970-01-01', '%Y-%m-%d')")
     time_aggregation_interval = evaluator.locals.get("time_aggregation")
     if time_aggregation_interval:
         to_interval = {
