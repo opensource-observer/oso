@@ -220,6 +220,7 @@ def metrics_start(evaluator: MacroEvaluator, _data_type: t.Optional[str] = None)
             ),
             expression=exp.Interval(
                 this=exp.Paren(
+                    # The interval parameter should be a string or some dialects have issues parsing
                     this=exp.Literal(this=str(rolling_window), is_string=True),
                 ),
                 unit=exp.Var(this=rolling_unit.upper()),
