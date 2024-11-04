@@ -3,6 +3,7 @@
 import duckdb
 import arrow
 import logging
+from metrics_tools.utils.glot import str_or_expressions
 from sqlmesh.core.context import ExecutionContext
 from sqlmesh.core.config import DuckDBConnectionConfig
 from sqlmesh.core.engine_adapter.duckdb import DuckDBEngineAdapter
@@ -82,7 +83,7 @@ class MetricsRunner:
     def create_duckdb_execution_context(
         cls,
         conn: duckdb.DuckDBPyConnection,
-        query: t.List[exp.Expression],
+        query: str | t.List[exp.Expression],
         ref: PeerMetricDependencyRef,
         locals: t.Optional[t.Dict[str, t.Any]],
     ):
@@ -91,7 +92,17 @@ class MetricsRunner:
 
         engine_adapter = DuckDBEngineAdapter(connection_factory)
         context = ExecutionContext(engine_adapter, {})
-        return cls(context, query, ref, locals)
+        return cls(context, str_or_expressions(query), ref, locals)
+
+    @classmethod
+    def from_sqlmesh_context(
+        cls,
+        context: ExecutionContext,
+        query: str | t.List[exp.Expression],
+        ref: PeerMetricDependencyRef,
+        locals: t.Optional[t.Dict[str, t.Any]] = None,
+    ):
+        return cls(context, str_or_expressions(query), ref, locals)
 
     def __init__(
         self,
@@ -120,7 +131,9 @@ class MetricsRunner:
     def run_rolling(self, start: datetime, end: datetime):
         df: pd.DataFrame = pd.DataFrame()
         logger.debug(f"run_rolling called with start={start} and end={end}")
+        count = 0
         for day in arrow.Arrow.range("day", arrow.get(start), arrow.get(end)):
+            count += 1
             rendered_query = self.render_query(day.datetime, day.datetime)
             logger.debug(
                 f"executing rolling window: {rendered_query}",
@@ -128,6 +141,7 @@ class MetricsRunner:
             )
             day_result = self._context.engine_adapter.fetchdf(rendered_query)
             df = pd.concat([df, day_result])
+
         return df
 
     def render_query(self, start: datetime, end: datetime) -> str:
