@@ -116,8 +116,8 @@ spec:
         hive.metastore.uri=thrift://10.145.192.27:9083
         hive.metastore-cache-ttl=0s
         hive.metastore-refresh-interval=5s
-        hive.metastore-timeout=10s
-        hive.metastore-timeout=10s
+        hive.metastore.thrift.client.connect-timeout=10s
+        hive.metastore.thrift.client.read-timeout=10s
         iceberg.use-file-size-from-metadata=false
         fs.native-gcs.enabled=true
         fs.cache.enabled=true
