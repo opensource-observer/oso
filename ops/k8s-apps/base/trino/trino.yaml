@@ -25,7 +25,7 @@ spec:
   chart:
     spec:
       chart: trino
-      version: "0.30.0"
+      version: "0.33.0"
       sourceRef:
         kind: HelmRepository
         name: trino
@@ -117,6 +117,12 @@ spec:
         hive.metastore-cache-ttl=0s
         hive.metastore-refresh-interval=5s
         hive.metastore-timeout=10s
+        hive.metastore-timeout=10s
+        hive.allow-drop-table=true
+        hive.allow-add-column=true
+        hive.allow-drop-column=true
+        hive.allow-rename-column=true
+        hive.allow-rename-table=true
         iceberg.use-file-size-from-metadata=false
         fs.native-gcs.enabled=true
         fs.cache.enabled=true
