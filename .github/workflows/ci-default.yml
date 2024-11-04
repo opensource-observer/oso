@@ -179,7 +179,7 @@ jobs:
 
       - name: Test SQLMesh
         run: |
-          cd warehouse/metrics_mesh && sqlmesh test
+          cd warehouse/metrics_mesh && poetry run sqlmesh test
         if: ${{ always() && matrix.component == 'sqlmesh' }}
       
      
