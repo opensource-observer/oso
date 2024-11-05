@@ -404,7 +404,7 @@ class TimeseriesMetrics:
 
         columns = METRICS_COLUMNS_BY_ENTITY[ref["entity_type"]]
 
-        kind_common = {"batch_size": 90}
+        kind_common = {"batch_size": 90, "batch_concurrency": 1}
         partitioned_by = ("day(metrics_sample_date)",)
         window = ref.get("window")
         assert window is not None
@@ -452,7 +452,7 @@ class TimeseriesMetrics:
 
         columns = METRICS_COLUMNS_BY_ENTITY[ref["entity_type"]]
 
-        kind_common = {"batch_size": 1}
+        kind_common = {"batch_size": 1, "batch_concurrency": 1}
         partitioned_by = ("day(metrics_sample_date)",)
         window = ref.get("window")
         assert window is not None
@@ -503,13 +503,14 @@ class TimeseriesMetrics:
         time_aggregation = ref.get("time_aggregation")
         assert time_aggregation is not None
 
-        kind_options = {"batch_size": 180, "lookback": 7}
+        kind_common = {"batch_concurrency": 1}
+        kind_options = {"batch_size": 180, "lookback": 7, **kind_common}
         partitioned_by = ("day(metrics_sample_date)",)
 
         if time_aggregation == "weekly":
-            kind_options = {"batch_size": 182, "lookback": 7}
+            kind_options = {"batch_size": 182, "lookback": 7, **kind_common}
         if time_aggregation == "monthly":
-            kind_options = {"batch_size": 6, "lookback": 1}
+            kind_options = {"batch_size": 6, "lookback": 1, **kind_common}
             partitioned_by = ("month(metrics_sample_date)",)
 
         grain = [
