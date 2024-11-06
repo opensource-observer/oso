@@ -8,6 +8,7 @@ import typing as t
 import textwrap
 from metrics_tools.runner import MetricsRunner
 from metrics_tools.transformer.tables import ExecutionContextTableTransform
+from metrics_tools.utils.logging import add_metrics_tools_to_sqlmesh_logging
 import pandas as pd
 from dataclasses import dataclass, field
 
@@ -33,7 +34,7 @@ from metrics_tools.models import (
     GeneratedModel,
     GeneratedPythonModel,
 )
-from metrics_tools.factory.macros import (
+from metrics_tools.macros import (
     metrics_end,
     metrics_entity_type_col,
     metrics_name,
@@ -564,6 +565,9 @@ class TimeseriesMetrics:
 def timeseries_metrics(
     **raw_options: t.Unpack[TimeseriesMetricsOptions],
 ):
+    add_metrics_tools_to_sqlmesh_logging()
+
+    logger.debug("loading timeseries metrics")
     calling_file = inspect.stack()[1].filename
     timeseries_metrics = TimeseriesMetrics.from_raw_options(**raw_options)
     return timeseries_metrics.generate_models(calling_file)
