@@ -4,6 +4,7 @@ import duckdb
 import arrow
 import logging
 from metrics_tools.utils.glot import str_or_expressions
+from sqlmesh import EngineAdapter
 from sqlmesh.core.context import ExecutionContext
 from sqlmesh.core.config import DuckDBConnectionConfig
 from sqlmesh.core.engine_adapter.duckdb import DuckDBEngineAdapter
@@ -11,7 +12,7 @@ from sqlmesh.core.macros import RuntimeStage
 
 from metrics_tools.definition import PeerMetricDependencyRef
 from metrics_tools.intermediate import run_macro_evaluator
-from metrics_tools.factory.macros import (
+from metrics_tools.macros import (
     metrics_end,
     metrics_sample_date,
     metrics_start,
@@ -78,6 +79,13 @@ class ExistingDuckDBConnectionConfig(DuckDBConnectionConfig):
         return lambda: self._existing_connection
 
 
+class FakeEngineAdapter(EngineAdapter):
+    """This needs some work"""
+
+    def __init__(self, dialect: str):
+        self.dialect = dialect
+
+
 class MetricsRunner:
     @classmethod
     def create_duckdb_execution_context(
@@ -91,6 +99,17 @@ class MetricsRunner:
             return conn
 
         engine_adapter = DuckDBEngineAdapter(connection_factory)
+        context = ExecutionContext(engine_adapter, {})
+        return cls(context, str_or_expressions(query), ref, locals)
+
+    @classmethod
+    def from_engine_adapter(
+        cls,
+        engine_adapter: EngineAdapter,
+        query: str | t.List[exp.Expression],
+        ref: PeerMetricDependencyRef,
+        locals: t.Optional[t.Dict[str, t.Any]],
+    ):
         context = ExecutionContext(engine_adapter, {})
         return cls(context, str_or_expressions(query), ref, locals)
 
@@ -132,9 +151,8 @@ class MetricsRunner:
         df: pd.DataFrame = pd.DataFrame()
         logger.debug(f"run_rolling called with start={start} and end={end}")
         count = 0
-        for day in arrow.Arrow.range("day", arrow.get(start), arrow.get(end)):
+        for rendered_query in self.render_rolling_queries(start, end):
             count += 1
-            rendered_query = self.render_query(day.datetime, day.datetime)
             logger.debug(
                 f"executing rolling window: {rendered_query}",
                 extra={"query": rendered_query},
@@ -180,6 +198,13 @@ class MetricsRunner:
             )
         )
         return "\n".join(rendered_parts)
+
+    def render_rolling_queries(self, start: datetime, end: datetime) -> t.Iterator[str]:
+        # Given a rolling input render all the rolling queries
+        logger.debug(f"render_rolling_rolling called with start={start} and end={end}")
+        for day in arrow.Arrow.range("day", arrow.get(start), arrow.get(end)):
+            rendered_query = self.render_query(day.datetime, day.datetime)
+            yield rendered_query
 
     def commit(self, start: datetime, end: datetime, destination: str):
         """Like run but commits the result to the database"""
