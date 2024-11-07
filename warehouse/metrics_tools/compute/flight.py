@@ -252,11 +252,12 @@ def get():
 @click.option("--port", default=8080, type=click.INT)
 @click.option("--catalog", default="metrics")
 @click.option("--user", default="sqlmesh")
-@click.option("--gcs-key-id", envvar="METRICS_FLIGHT_SERVER_GCS_KEY_ID")
-@click.option("--gcs-secret", envvar="METRICS_FLIGHT_SERVER_GCS_SECRET")
+@click.option("--gcs-key-id", envvar="METRICS_FLIGHT_SERVER_GCS_KEY_ID", required=True)
+@click.option("--gcs-secret", envvar="METRICS_FLIGHT_SERVER_GCS_SECRET", required=True)
 @click.option(
     "--worker-duckdb-path",
     envvar="METRICS_FLIGHT_SERVER_WORKER_DUCKDB_PATH",
+    required=True,
 )
 def main(
     host: str,
@@ -317,12 +318,19 @@ def make_new_cluster(image: str, cluster_id: str):
     for container in spec["spec"]["worker"]["spec"]["containers"]:
         container["resources"] = {
             "limits": {
-                "memory": "16384Mi",
+                "memory": "200000Mi",
             },
             "requests": {
-                "memory": "16384Mi",
+                "memory": "200000Mi",
             },
         }
+        volume_mounts = container.get("volumeMounts", [])
+        volume_mounts.append(
+            {
+                "mountPath": "/scratch",
+                "name": "scratch",
+            }
+        )
         if container["name"] == "worker":
             args: t.List[str] = container["args"]
             args.append("--nthreads")
@@ -331,6 +339,16 @@ def make_new_cluster(image: str, cluster_id: str):
             args.append("1")
             args.append("--memory-limit")
             args.append("0")
+        container["volumeMounts"] = volume_mounts
+    volumes = spec["spec"]["worker"]["spec"].get("volumes", [])
+    volumes.append(
+        {
+            "name": "scratch",
+            "emptyDir": {},
+        }
+    )
+    spec["spec"]["worker"]["spec"]["volumes"] = volumes
+
     return spec
 
 
