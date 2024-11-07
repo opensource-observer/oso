@@ -162,11 +162,14 @@ class MetricsCalculatorFlightServer(fl.FlightServerBase):
         self.engine = engine
         self.cluster = cluster
 
-    def run_initialization(self, gcs_key_id: str, gcs_secret: str, duckdb_path: str):
+    def run_initialization(
+        self, hive_uri: str, gcs_key_id: str, gcs_secret: str, duckdb_path: str
+    ):
         client = Client(self.cluster)
         self.client = client
         client.register_plugin(
             MetricsWorkerPlugin(
+                hive_uri,
                 gcs_key_id,
                 gcs_secret,
                 duckdb_path,
@@ -281,6 +284,7 @@ def get():
     envvar="METRICS_FLIGHT_SERVER_WORKER_DUCKDB_PATH",
     required=True,
 )
+@click.option("--hive-uri", envvar="METRICS_FLIGHT_SERVER_HIVE_URI", required=True)
 def main(
     host: str,
     port: int,
@@ -289,12 +293,16 @@ def main(
     gcs_key_id: str,
     gcs_secret: str,
     worker_duckdb_path: str,
+    hive_uri: str,
 ):
     # Start the cluster
     cluster_spec = make_new_cluster(
-        "ghcr.io/opensource-observer/dagster-dask:test-1", "sqlmesh-flight"
+        "ghcr.io/opensource-observer/dagster-dask:test-1",
+        "sqlmesh-flight",
+        "sqlmesh-manual",
     )
     cluster = start_duckdb_cluster(
+        "sqlmesh-manual",
         gcs_key_id,
         gcs_secret,
         worker_duckdb_path,
@@ -310,12 +318,12 @@ def main(
             catalog,
         ),
     )
-    server.run_initialization(gcs_key_id, gcs_secret, worker_duckdb_path)
+    server.run_initialization(hive_uri, gcs_key_id, gcs_secret, worker_duckdb_path)
     with server as s:
         s.serve()
 
 
-def make_new_cluster(image: str, cluster_id: str):
+def make_new_cluster(image: str, cluster_id: str, service_account_name: str):
     spec = make_cluster_spec(
         name=f"flight-{cluster_id}",
         resources={
@@ -368,6 +376,7 @@ def make_new_cluster(image: str, cluster_id: str):
         }
     )
     spec["spec"]["worker"]["spec"]["volumes"] = volumes
+    spec["spec"]["worker"]["spec"]["serviceAccountName"] = service_account_name
 
     return spec
 

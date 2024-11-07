@@ -6,7 +6,7 @@ import duckdb
 from sqlglot import exp
 from dask.distributed import WorkerPlugin, Worker
 
-# from pyiceberg.catalog import load_catalog
+from pyiceberg.catalog import load_catalog
 
 
 class DuckDBWorkerInterface(abc.ABC):
@@ -15,12 +15,16 @@ class DuckDBWorkerInterface(abc.ABC):
 
 
 class MetricsWorkerPlugin(WorkerPlugin):
-    def __init__(self, gcs_key_id: str, gcs_secret: str, duckdb_path: str):
+    def __init__(
+        self, hive_uri: str, gcs_key_id: str, gcs_secret: str, duckdb_path: str
+    ):
+        self._hive_uri = hive_uri
         self._gcs_key_id = gcs_key_id
         self._gcs_secret = gcs_secret
         self._duckdb_path = duckdb_path
         self._conn = None
         self._cache_status: t.Dict[str, str] = {}
+        self._catalog = None
 
     def setup(self, worker: Worker):
         self._conn = duckdb.connect(self._duckdb_path)
@@ -37,8 +41,15 @@ class MetricsWorkerPlugin(WorkerPlugin):
             SECRET '{self._gcs_secret}'
         );
         """
-        print(sql)
         self._conn.sql(sql)
+        self._catalog = load_catalog(
+            "metrics",
+            **{
+                "uri": self._hive_uri,
+                "gcs.project-id": "opensource-observer",
+                "gcs.access": "read_only",
+            },
+        )
 
     def teardown(self, worker: Worker):
         if self._conn:
