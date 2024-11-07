@@ -26,6 +26,7 @@ class MetricsWorkerPlugin(WorkerPlugin):
         self._conn = duckdb.connect(self._duckdb_path)
 
         # Connect to iceberg if this is a remote worker
+        worker.log_event("info", "what")
         self._conn.sql(
             f"""
         INSTALL iceberg;
@@ -35,7 +36,7 @@ class MetricsWorkerPlugin(WorkerPlugin):
             TYPE GCS,
             KEY_ID '{self._gcs_key_id}',
             SECRET '{self._gcs_secret}'
-        )
+        );
         """
         )
 
