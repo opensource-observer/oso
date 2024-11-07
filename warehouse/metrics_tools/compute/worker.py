@@ -1,12 +1,12 @@
 # The worker initialization
 import abc
-from graphql import ExecutionContext
 import pandas as pd
 import typing as t
 import duckdb
-from datetime import datetime
 from sqlglot import exp
 from dask.distributed import WorkerPlugin, Worker
+
+# from pyiceberg.catalog import load_catalog
 
 
 class DuckDBWorkerInterface(abc.ABC):
@@ -15,29 +15,27 @@ class DuckDBWorkerInterface(abc.ABC):
 
 
 class MetricsWorkerPlugin(WorkerPlugin):
-    def __init__(self, duckdb_path: str):
+    def __init__(self, gcs_key_id: str, gcs_secret: str, duckdb_path: str):
+        self._gcs_key_id = gcs_key_id
+        self._gcs_secret = gcs_secret
         self._duckdb_path = duckdb_path
         self._conn = None
+        self._cache_status: t.Dict[str, str] = {}
 
     def setup(self, worker: Worker):
         self._conn = duckdb.connect(self._duckdb_path)
 
         # Connect to iceberg if this is a remote worker
         self._conn.sql(
-            """
+            f"""
         INSTALL iceberg;
         LOAD iceberg;
                     
         CREATE SECRET secret1 (
             TYPE GCS,
-            PROVIDER CREDENTIAL_CHAIN
+            KEY_ID '{self._gcs_key_id}',
+            SECRET '{self._gcs_secret}'
         )
-        CREATE SCHEMA IF NOT EXISTS sources;
-        CREATE TABLE IF NOT EXISTS sources.cache_status (
-            table_name VARCHAR PRIMARY KEY, 
-            version VARCHAR, 
-            is_locked BOOLEAN
-        );
         """
         )
 
@@ -50,22 +48,17 @@ class MetricsWorkerPlugin(WorkerPlugin):
         assert self._conn is not None
         return self._conn
 
-    def wait_for_cache(self, table: str):
+    def get_for_cache(
+        self,
+        table_ref_name: str,
+        table_actual_name: str,
+    ):
         """Checks if a table is cached in the local duckdb"""
+        destination_table = exp.to_table(table_ref_name)
+        self.connection.execute(f"CREATE SCHEMA IF NOT EXISTS {destination_table.db}")
         self.connection.sql(
             f"""
-            SELECT * FROM {table}
+            CREATE TABLE IF NOT EXISTS {destination_table.db}.{destination_table.this.this} AS
+            SELECT * FROM {table_actual_name}
         """
         )
-
-
-def batch_metrics_query(
-    query: exp.Expression,
-    context: ExecutionContext,
-    start: datetime,
-    end: datetime,
-    execution_time: datetime,
-    **kwargs: t.Any,
-):
-    """Yield batches of dataframes"""
-    pass
