@@ -24,7 +24,7 @@ import abc
 from pydantic import BaseModel
 from datetime import datetime
 from dask.distributed import Client
-from dask_kubernetes.operator import KubeCluster
+from dask_kubernetes.operator import KubeCluster, make_cluster_spec
 
 
 logger = logging.getLogger(__name__)
@@ -268,7 +268,15 @@ def main(
     worker_duckdb_path: str,
 ):
     # Start the cluster
-    cluster = start_duckdb_cluster(gcs_key_id, gcs_secret, worker_duckdb_path)
+    cluster_spec = make_new_cluster(
+        "ghcr.io/opensource-observer/dagster-dask:latest", "sqlmesh-flight"
+    )
+    cluster = start_duckdb_cluster(
+        gcs_key_id,
+        gcs_secret,
+        worker_duckdb_path,
+        cluster_spec=cluster_spec,
+    )
     client = Client(cluster)
 
     server = MetricsCalculatorFlightServer(
@@ -284,6 +292,46 @@ def main(
     server.run_initialization(gcs_key_id, gcs_secret, worker_duckdb_path)
     with server as s:
         s.serve()
+
+
+def make_new_cluster(image: str, cluster_id: str):
+    spec = make_cluster_spec(
+        name=f"flight-{cluster_id}",
+        resources={
+            "requests": {"memory": "1536Mi"},
+            "limits": {"memory": "3072Mi"},
+        },
+        image=image,
+    )
+    spec["spec"]["worker"]["spec"]["tolerations"] = [
+        {
+            "key": "pool_type",
+            "effect": "NoSchedule",
+            "operator": "Equal",
+            "value": "sqlmesh-worker",
+        }
+    ]
+    spec["spec"]["worker"]["spec"]["nodeSelector"] = {"pool_type": "sqlmesh-worker"}
+
+    # Give the workers a different resource allocation
+    for container in spec["spec"]["worker"]["spec"]["containers"]:
+        container["resources"] = {
+            "limits": {
+                "memory": "16384Mi",
+            },
+            "requests": {
+                "memory": "16384Mi",
+            },
+        }
+        if container["name"] == "worker":
+            args: t.List[str] = container["args"]
+            args.append("--nthreads")
+            args.append("1")
+            args.append("--nworkers")
+            args.append("1")
+            args.append("--memory-limit")
+            args.append("0")
+    return spec
 
 
 if __name__ == "__main__":
