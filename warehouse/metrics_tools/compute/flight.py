@@ -7,6 +7,8 @@ import logging
 import typing as t
 import json
 import click
+from metrics_tools.compute.cluster import start_duckdb_cluster
+from metrics_tools.compute.worker import MetricsWorkerPlugin
 from metrics_tools.definition import PeerMetricDependencyRef
 from metrics_tools.runner import FakeEngineAdapter, MetricsRunner
 import pyarrow as pa
@@ -21,8 +23,8 @@ from aiotrino.dbapi import Connection as AsyncConnection
 import abc
 from pydantic import BaseModel
 from datetime import datetime
-
-# from dask.distributed import Client
+from dask.distributed import Client
+from dask_kubernetes.operator import KubeCluster
 
 
 logger = logging.getLogger(__name__)
@@ -137,6 +139,8 @@ async def async_gen_batch(engine: Engine, query: str, columns: pd.Series):
 class MetricsCalculatorFlightServer(fl.FlightServerBase):
     def __init__(
         self,
+        cluster: KubeCluster,
+        client: Client,
         engine: Engine,
         location: str = "grpc://0.0.0.0:8815",
     ):
@@ -149,6 +153,22 @@ class MetricsCalculatorFlightServer(fl.FlightServerBase):
         )
         self.loop_thread.start()
         self.engine = engine
+        self.client = client
+        self.cluster = cluster
+
+    def run_initialization(self, gcs_key_id: str, gcs_secret: str, duckdb_path: str):
+        client = Client(self.cluster)
+        client.register_plugin(
+            MetricsWorkerPlugin(
+                gcs_key_id,
+                gcs_secret,
+                duckdb_path,
+            ),
+            name="duckdb-gcs",
+        )
+
+    def finalizer(self):
+        self.client.close()
 
     def _ticket_to_query_input(self, ticket: fl.Ticket) -> QueryInput:
         return QueryInput(**json.loads(ticket.ticket))
@@ -248,11 +268,12 @@ def main(
     worker_duckdb_path: str,
 ):
     # Start the cluster
-    # client = t.cast(
-    #     Client, start_duckdb_cluster(gcs_key_id, gcs_secret, worker_duckdb_path)
-    # )
+    cluster = start_duckdb_cluster(gcs_key_id, gcs_secret, worker_duckdb_path)
+    client = Client(cluster)
 
     server = MetricsCalculatorFlightServer(
+        cluster,
+        client,
         TrinoEngine.create(
             host,
             port,
@@ -260,7 +281,9 @@ def main(
             catalog,
         ),
     )
-    server.serve()
+    server.run_initialization(gcs_key_id, gcs_secret, worker_duckdb_path)
+    with server as s:
+        s.serve()
 
 
 if __name__ == "__main__":
