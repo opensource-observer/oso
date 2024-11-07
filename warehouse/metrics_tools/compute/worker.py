@@ -27,8 +27,7 @@ class MetricsWorkerPlugin(WorkerPlugin):
 
         # Connect to iceberg if this is a remote worker
         worker.log_event("info", "what")
-        self._conn.sql(
-            f"""
+        sql = f"""
         INSTALL iceberg;
         LOAD iceberg;
                     
@@ -38,7 +37,7 @@ class MetricsWorkerPlugin(WorkerPlugin):
             SECRET '{self._gcs_secret}'
         );
         """
-        )
+        self._conn.sql(sql)
 
     def teardown(self, worker: Worker):
         if self._conn:
