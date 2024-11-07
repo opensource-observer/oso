@@ -15,7 +15,6 @@ import pyarrow as pa
 import pyarrow.flight as fl
 import asyncio
 import pandas as pd
-import concurrent.futures
 import threading
 import aiotrino
 from trino.dbapi import Connection as Connection
@@ -23,7 +22,7 @@ from aiotrino.dbapi import Connection as AsyncConnection
 import abc
 from pydantic import BaseModel
 from datetime import datetime
-from dask.distributed import Client
+from dask.distributed import Client, get_worker, Future, as_completed
 from dask_kubernetes.operator import KubeCluster, make_cluster_spec
 
 
@@ -136,11 +135,19 @@ async def async_gen_batch(engine: Engine, query: str, columns: pd.Series):
     return await engine.run_query(query, columns)
 
 
+def execute_duckdb_load(query: str, dependencies: t.Dict[str, str]):
+    worker = get_worker()
+    plugin = t.cast(MetricsWorkerPlugin, worker.plugins["duckdb-gcs"])
+    for ref, actual in dependencies.items():
+        plugin.get_for_cache(ref, actual)
+    conn = plugin.connection
+    return conn.execute(query).df()
+
+
 class MetricsCalculatorFlightServer(fl.FlightServerBase):
     def __init__(
         self,
         cluster: KubeCluster,
-        client: Client,
         engine: Engine,
         location: str = "grpc://0.0.0.0:8815",
     ):
@@ -153,11 +160,11 @@ class MetricsCalculatorFlightServer(fl.FlightServerBase):
         )
         self.loop_thread.start()
         self.engine = engine
-        self.client = client
         self.cluster = cluster
 
     def run_initialization(self, gcs_key_id: str, gcs_secret: str, duckdb_path: str):
         client = Client(self.cluster)
+        self.client = client
         client.register_plugin(
             MetricsWorkerPlugin(
                 gcs_key_id,
@@ -177,22 +184,37 @@ class MetricsCalculatorFlightServer(fl.FlightServerBase):
         input = self._ticket_to_query_input(ticket)
 
         runner = MetricsRunner.from_engine_adapter(
-            FakeEngineAdapter("trino"),
+            FakeEngineAdapter("duckdb"),
             input.query_str,
             input.ref,
             input.locals,
         )
-        columns = input.to_column_names()
+        # columns = input.to_column_names()
 
-        def gen():
-            futures: t.List[concurrent.futures.Future[pd.DataFrame]] = []
+        # def gen():
+        #     futures: t.List[concurrent.futures.Future[pd.DataFrame]] = []
+        #     for rendered_query in runner.render_rolling_queries(input.start, input.end):
+        #         future = asyncio.run_coroutine_threadsafe(
+        #             async_gen_batch(self.engine, rendered_query, columns),
+        #             self.loop_loop,
+        #         )
+        #         futures.append(future)
+        #     for res in concurrent.futures.as_completed(futures):
+        #         yield pa.RecordBatch.from_pandas(res.result())
+
+        def gen_with_dask():
+            client = self.client
+            futures: t.List[Future] = []
             for rendered_query in runner.render_rolling_queries(input.start, input.end):
-                future = asyncio.run_coroutine_threadsafe(
-                    async_gen_batch(self.engine, rendered_query, columns),
-                    self.loop_loop,
+                future = client.submit(
+                    execute_duckdb_load, rendered_query, input.dependent_tables_map
                 )
+                # future = asyncio.run_coroutine_threadsafe(
+                #     async_gen_batch(self.engine, rendered_query, columns),
+                #     self.loop_loop,
+                # )
                 futures.append(future)
-            for res in concurrent.futures.as_completed(futures):
+            for res in as_completed(futures):
                 yield pa.RecordBatch.from_pandas(res.result())
 
         logger.debug(
@@ -201,7 +223,7 @@ class MetricsCalculatorFlightServer(fl.FlightServerBase):
         try:
             return fl.GeneratorStream(
                 input.to_arrow_schema(),
-                gen(),
+                gen_with_dask(),
             )
         except Exception as e:
             logger.error("Caught error generating stream", exc_info=e)
@@ -278,11 +300,9 @@ def main(
         worker_duckdb_path,
         cluster_spec=cluster_spec,
     )
-    client = Client(cluster)
 
     server = MetricsCalculatorFlightServer(
         cluster,
-        client,
         TrinoEngine.create(
             host,
             port,
