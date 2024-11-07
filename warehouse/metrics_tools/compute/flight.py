@@ -263,7 +263,7 @@ def get():
         ),
         locals={},
         dependent_tables_map={
-            "metrics.events_daily_to_artifact": "sqlmesh__metrics.metrics__events_daily"
+            "metrics.events_daily_to_artifact": "sqlmesh__metrics.metrics__events_daily_to_artifact"
         },
     )
     reader = client.do_get(input.to_ticket())
