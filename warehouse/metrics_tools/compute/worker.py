@@ -23,7 +23,7 @@ class MetricsWorkerPlugin(WorkerPlugin):
         self._gcs_secret = gcs_secret
         self._duckdb_path = duckdb_path
         self._conn = None
-        self._cache_status: t.Dict[str, str] = {}
+        self._cache_status: t.Dict[str, bool] = {}
         self._catalog = None
 
     def setup(self, worker: Worker):
@@ -66,11 +66,19 @@ class MetricsWorkerPlugin(WorkerPlugin):
         table_actual_name: str,
     ):
         """Checks if a table is cached in the local duckdb"""
+        if self._cache_status[table_ref_name]:
+            return
         destination_table = exp.to_table(table_ref_name)
+        source_table = exp.to_table(table_actual_name)
+
+        assert self._catalog is not None
+        # Get the metadata url
+        table = self._catalog.load_table((source_table.db, source_table.this.this))
+
         self.connection.execute(f"CREATE SCHEMA IF NOT EXISTS {destination_table.db}")
         self.connection.sql(
             f"""
             CREATE TABLE IF NOT EXISTS {destination_table.db}.{destination_table.this.this} AS
-            SELECT * FROM {table_actual_name}
+            SELECT * FROM iceberg_scan('{table.metadata_location}')
         """
         )
