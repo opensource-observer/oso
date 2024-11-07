@@ -37,6 +37,7 @@ class MetricsWorkerPlugin(WorkerPlugin):
             SECRET '{self._gcs_secret}'
         );
         """
+        print(sql)
         self._conn.sql(sql)
 
     def teardown(self, worker: Worker):
