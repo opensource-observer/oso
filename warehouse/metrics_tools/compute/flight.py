@@ -270,7 +270,7 @@ def main(
 ):
     # Start the cluster
     cluster_spec = make_new_cluster(
-        "ghcr.io/opensource-observer/dagster-dask:latest", "sqlmesh-flight"
+        "ghcr.io/opensource-observer/dagster-dask:test-1", "sqlmesh-flight"
     )
     cluster = start_duckdb_cluster(
         gcs_key_id,
