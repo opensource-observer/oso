@@ -1,12 +1,18 @@
 # The worker initialization
 import abc
+from metrics_tools.utils.logging import add_metrics_tools_to_existing_logger
 import pandas as pd
 import typing as t
 import duckdb
 from sqlglot import exp
-from dask.distributed import WorkerPlugin, Worker
+from dask.distributed import WorkerPlugin, Worker, print as dprint
+import logging
+import sys
 
 from pyiceberg.catalog import load_catalog
+from pyiceberg.table import Table as IcebergTable
+
+logger = logging.getLogger(__name__)
 
 
 class DuckDBWorkerInterface(abc.ABC):
@@ -25,9 +31,15 @@ class MetricsWorkerPlugin(WorkerPlugin):
         self._conn = None
         self._cache_status: t.Dict[str, bool] = {}
         self._catalog = None
+        self._mode = "duckdb"
 
     def setup(self, worker: Worker):
+        add_metrics_tools_to_existing_logger("distributed")
+        logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+
         self._conn = duckdb.connect(self._duckdb_path)
+        dprint("TESTING A PRINT")
+        print("TESTING A PRINT HERE normal print")
 
         # Connect to iceberg if this is a remote worker
         worker.log_event("info", "what")
@@ -65,6 +77,7 @@ class MetricsWorkerPlugin(WorkerPlugin):
         table_ref_name: str,
         table_actual_name: str,
     ):
+        logger.info(f"got a cache request for {table_ref_name}:{table_actual_name}")
         """Checks if a table is cached in the local duckdb"""
         if self._cache_status.get(table_ref_name):
             return
@@ -72,14 +85,49 @@ class MetricsWorkerPlugin(WorkerPlugin):
         source_table = exp.to_table(table_actual_name)
 
         assert self._catalog is not None
-        # Get the metadata url
         table = self._catalog.load_table((source_table.db, source_table.this.this))
 
+        if self._mode == "duckdb":
+            self.load_using_duckdb(
+                table_ref_name, table_actual_name, destination_table, table
+            )
+        else:
+            self.load_using_pyiceberg(
+                table_ref_name, table_actual_name, destination_table, table
+            )
+
+        self._cache_status[table_ref_name] = True
+
+    def load_using_duckdb(
+        self,
+        table_ref_name: str,
+        table_actual_name: str,
+        destination_table: exp.Table,
+        table: IcebergTable,
+    ):
         self.connection.execute(f"CREATE SCHEMA IF NOT EXISTS {destination_table.db}")
-        self.connection.sql(
-            f"""
+        caching_sql = f"""
             CREATE TABLE IF NOT EXISTS {destination_table.db}.{destination_table.this.this} AS
             SELECT * FROM iceberg_scan('{table.metadata_location}')
         """
+        logger.info(f"CACHING TABLE {table_ref_name} WITH SQL: {caching_sql}")
+        self.connection.sql(caching_sql)
+        logger.info(f"CACHING TABLE {table_ref_name} COMPLETED")
+
+    def load_using_pyiceberg(
+        self,
+        table_ref_name: str,
+        table_actual_name: str,
+        destination_table: exp.Table,
+        table: IcebergTable,
+    ):
+        batch_reader = table.scan().to_arrow_batch_reader()  # noqa: F841
+        self.connection.execute(f"CREATE SCHEMA IF NOT EXISTS {destination_table.db}")
+        logger.info(f"CACHING TABLE {table_ref_name} WITH ICEBERG")
+        self.connection.sql(
+            f"""
+            CREATE TABLE IF NOT EXISTS {destination_table.db}.{destination_table.this.this} AS
+            SELECT * FROM batch_reader
+        """
         )
-        self._cache_status[table_ref_name] = True
+        logger.info(f"CACHING TABLE {table_ref_name} COMPLETED")

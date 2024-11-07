@@ -22,7 +22,7 @@ from aiotrino.dbapi import Connection as AsyncConnection
 import abc
 from pydantic import BaseModel
 from datetime import datetime
-from dask.distributed import Client, get_worker, Future, as_completed
+from dask.distributed import Client, get_worker, Future, as_completed, print as dprint
 from dask_kubernetes.operator import KubeCluster, make_cluster_spec
 
 
@@ -136,9 +136,11 @@ async def async_gen_batch(engine: Engine, query: str, columns: pd.Series):
 
 
 def execute_duckdb_load(query: str, dependencies: t.Dict[str, str]):
+    dprint("Starting duckdb load")
     worker = get_worker()
     plugin = t.cast(MetricsWorkerPlugin, worker.plugins["duckdb-gcs"])
     for ref, actual in dependencies.items():
+        dprint(f"Loading cache for {ref}:{actual}")
         plugin.get_for_cache(ref, actual)
     conn = plugin.connection
     return conn.execute(query).df()
@@ -218,7 +220,15 @@ class MetricsCalculatorFlightServer(fl.FlightServerBase):
                 # )
                 futures.append(future)
             for res in as_completed(futures):
-                yield pa.RecordBatch.from_pandas(res.result())
+                logger.info("result received")
+                df = t.cast(pd.DataFrame, res.result())
+                if len(df) == 0:
+                    # Return a valid result if the dataframe is empty. It could be there are no actual results
+                    yield pa.RecordBatch.from_pandas(
+                        {col_name: [] for col_name in input.to_column_names()}
+                    )
+                else:
+                    yield pa.RecordBatch.from_pandas(res.result())
 
         logger.debug(
             f"Distributing query for {input.start} to {input.end}: {input.query_str}"
@@ -229,6 +239,7 @@ class MetricsCalculatorFlightServer(fl.FlightServerBase):
                 gen_with_dask(),
             )
         except Exception as e:
+            print("caught error")
             logger.error("Caught error generating stream", exc_info=e)
             raise e
 
@@ -239,7 +250,7 @@ def get():
         query_str="""
         SELECT bucket_day, to_artifact_id, from_artifact_id, event_source, event_type, SUM(amount) as amount
         FROM metrics.events_daily_to_artifact 
-        where bucket_day >= DATE_PARSE(@start_ds, '%Y-%m-%d') and bucket_day < DATE_PARSE(@end_ds, '%Y-%m-%d')
+        where bucket_day >= strptime(@start_ds, '%Y-%m-%d') and bucket_day <= strptime(@end_ds, '%Y-%m-%d')
         group by
             bucket_day,
             to_artifact_id,
@@ -249,9 +260,9 @@ def get():
         """,
         start=datetime.strptime("2024-01-01", "%Y-%m-%d"),
         end=datetime.strptime("2024-01-31", "%Y-%m-%d"),
-        dialect="trino",
+        dialect="duckdb",
         columns=[
-            ("bucket_day", "VARCHAR"),
+            ("bucket_day", "TIMESTAMP"),
             ("to_artifact_id", "VARCHAR"),
             ("from_artifact_id", "VARCHAR"),
             ("event_source", "VARCHAR"),
@@ -285,6 +296,7 @@ def get():
     required=True,
 )
 @click.option("--hive-uri", envvar="METRICS_FLIGHT_SERVER_HIVE_URI", required=True)
+@click.option("--image-tag", required=True)
 def main(
     host: str,
     port: int,
@@ -294,10 +306,11 @@ def main(
     gcs_secret: str,
     worker_duckdb_path: str,
     hive_uri: str,
+    image_tag: str,
 ):
     # Start the cluster
     cluster_spec = make_new_cluster(
-        "ghcr.io/opensource-observer/dagster-dask:test-3",
+        f"ghcr.io/opensource-observer/dagster-dask:{image_tag}",
         "sqlmesh-flight",
         "sqlmesh-manual",
     )
