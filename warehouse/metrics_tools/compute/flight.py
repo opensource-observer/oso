@@ -321,7 +321,7 @@ def make_new_cluster(image: str, cluster_id: str):
                 "memory": "200000Mi",
             },
             "requests": {
-                "memory": "200000Mi",
+                "memory": "150000Mi",
             },
         }
         volume_mounts = container.get("volumeMounts", [])
