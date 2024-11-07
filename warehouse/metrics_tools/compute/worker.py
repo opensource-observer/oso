@@ -66,7 +66,7 @@ class MetricsWorkerPlugin(WorkerPlugin):
         table_actual_name: str,
     ):
         """Checks if a table is cached in the local duckdb"""
-        if self._cache_status[table_ref_name]:
+        if self._cache_status.get(table_ref_name):
             return
         destination_table = exp.to_table(table_ref_name)
         source_table = exp.to_table(table_actual_name)
@@ -82,3 +82,4 @@ class MetricsWorkerPlugin(WorkerPlugin):
             SELECT * FROM iceberg_scan('{table.metadata_location}')
         """
         )
+        self._cache_status[table_ref_name] = True

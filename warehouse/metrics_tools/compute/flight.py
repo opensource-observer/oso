@@ -297,7 +297,7 @@ def main(
 ):
     # Start the cluster
     cluster_spec = make_new_cluster(
-        "ghcr.io/opensource-observer/dagster-dask:test-2",
+        "ghcr.io/opensource-observer/dagster-dask:test-3",
         "sqlmesh-flight",
         "sqlmesh-manual",
     )
