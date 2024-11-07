@@ -21,6 +21,22 @@ timeseries_metrics(
             ref="stars.sql",
             time_aggregations=["daily", "weekly", "monthly"],
         ),
+        "active_addresses": MetricQueryDef(
+            ref="active_addresses.sql",
+            time_aggregations=["daily", "weekly", "monthly"],
+        ),
+        "commits": MetricQueryDef(
+            ref="commits.sql",
+            time_aggregations=["daily", "weekly", "monthly"],
+        ),
+        "forks": MetricQueryDef(
+            ref="forks.sql",
+            time_aggregations=["daily", "weekly", "monthly"],
+        ),
+        "gas_fees": MetricQueryDef(
+            ref="gas_fees.sql",
+            time_aggregations=["daily", "weekly", "monthly"],
+        ),
         # This defines something with a rolling option that allows you to look back
         # to some arbitrary window. So you specify the window and specify the unit.
         # The unit and the window are used to pass in variables to the query. So it's
@@ -59,22 +75,6 @@ timeseries_metrics(
                 unit="day",
                 cron="@daily",
             ),
-        ),
-        "active_addresses": MetricQueryDef(
-            ref="active_addresses.sql",
-            time_aggregations=["daily", "weekly", "monthly"],
-        ),
-        "commits": MetricQueryDef(
-            ref="commits.sql",
-            time_aggregations=["daily", "weekly", "monthly"],
-        ),
-        "forks": MetricQueryDef(
-            ref="forks.sql",
-            time_aggregations=["daily", "weekly", "monthly"],
-        ),
-        "gas_fees": MetricQueryDef(
-            ref="gas_fees.sql",
-            time_aggregations=["daily", "weekly", "monthly"],
         ),
         "change_in_30_developer_activity": MetricQueryDef(
             vars={
