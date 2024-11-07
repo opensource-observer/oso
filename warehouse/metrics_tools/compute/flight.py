@@ -327,11 +327,21 @@ def make_new_cluster(image: str, cluster_id: str, service_account_name: str):
     spec = make_cluster_spec(
         name=f"flight-{cluster_id}",
         resources={
-            "requests": {"memory": "1536Mi"},
-            "limits": {"memory": "3072Mi"},
+            "requests": {"memory": "5120Mi"},
+            "limits": {"memory": "6000Mi"},
         },
         image=image,
     )
+    spec["spec"]["scheduler"]["spec"]["tolerations"] = [
+        {
+            "key": "pool_type",
+            "effect": "NoSchedule",
+            "operator": "Equal",
+            "value": "standard",
+        }
+    ]
+    spec["spec"]["scheduler"]["spec"]["nodeSelector"] = {"pool_type": "standard"}
+
     spec["spec"]["worker"]["spec"]["tolerations"] = [
         {
             "key": "pool_type",
