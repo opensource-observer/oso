@@ -830,6 +830,31 @@ traitlets = ">=4"
 test = ["pytest"]
 
 [[package]]
+name = "connectorx"
+version = "0.4.0"
+description = ""
+optional = false
+python-versions = ">=3.10"
+files = [
+    {file = "connectorx-0.4.0-cp310-cp310-macosx_10_12_x86_64.whl", hash = "sha256:447bd065feb69b63e51a8a056b1de3ccb98a48108b52987dba1b67555f01a8d8"},
+    {file = "connectorx-0.4.0-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:342d233ca0008ec7cfef2ab91da566f15a1326ac2f51c87c6dd9f77dc9a6549e"},
+    {file = "connectorx-0.4.0-cp310-cp310-manylinux_2_28_x86_64.whl", hash = "sha256:72103766090f81ed7f8aeba9183d7eb2f24b65de9678d74a61c16f85f89e8b81"},
+    {file = "connectorx-0.4.0-cp310-none-win_amd64.whl", hash = "sha256:63a5a4961ed43e5f33eebaa9ee0ea0bb4e3f7d0f710d48e2b51ede3bd1e2af44"},
+    {file = "connectorx-0.4.0-cp311-cp311-macosx_10_12_x86_64.whl", hash = "sha256:fb3653c4ff1de8ada871c2ab883ed04dc2b7bb84704fcf08e6a23cf67deb931f"},
+    {file = "connectorx-0.4.0-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:224da692923f3e2f6ae5677dfd0f00ac0374e3989832ee4de029112b09da2281"},
+    {file = "connectorx-0.4.0-cp311-cp311-manylinux_2_28_x86_64.whl", hash = "sha256:d9b6d1832c071201cacb810b06c7311cb605f99dead0ee47935d38086f1c9d4b"},
+    {file = "connectorx-0.4.0-cp311-none-win_amd64.whl", hash = "sha256:31b2c02f56360c6c4034d23c107772df98c8ab6102f71242bcb9a8a0fec06512"},
+    {file = "connectorx-0.4.0-cp312-cp312-macosx_10_12_x86_64.whl", hash = "sha256:5c6bb6cc468ff77b18b71ee44b5ea7e3c72de3a08a4740040fed3361a6086659"},
+    {file = "connectorx-0.4.0-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:42d9ae283541aca860f7082186ecb0525ff933b714e676dfe0e517e7943a9799"},
+    {file = "connectorx-0.4.0-cp312-cp312-manylinux_2_28_x86_64.whl", hash = "sha256:c3ebe1e95e4c82d69804d0165be4d4f80ff4bb1beac04d6946aa73ed04819440"},
+    {file = "connectorx-0.4.0-cp312-none-win_amd64.whl", hash = "sha256:d4c156df650860002f61155e2eff23d9c822c2e9f14e16d04e21dd1033b09cdc"},
+    {file = "connectorx-0.4.0-cp313-cp313-macosx_10_12_x86_64.whl", hash = "sha256:b74266abb86c7d570579004d909d8b4ce5d18dab29e07c63015ea75ed0178adb"},
+    {file = "connectorx-0.4.0-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:dd80488823a174d0c73e4575b10f0c0eb86bc82cbd72e28fd2b611733308699d"},
+    {file = "connectorx-0.4.0-cp313-cp313-manylinux_2_28_x86_64.whl", hash = "sha256:33a64fdd0b3efd32f54cce664f1022d448db5878e919e7a2f186f2af19eaa572"},
+    {file = "connectorx-0.4.0-cp313-none-win_amd64.whl", hash = "sha256:635727407b0a14ff30cd02519e631766b2df55c94da2d57c7599e5a9a4ce2f4f"},
+]
+
+[[package]]
 name = "croniter"
 version = "5.0.1"
 description = "croniter provides iteration for datetime object with cron like format"
@@ -7382,4 +7407,4 @@ cffi = ["cffi (>=1.11)"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12,<3.13"
-content-hash = "15254fa69d7140b4b4a656da1fd65de839b65827d2ce965d3d585f08f3fff625"
+content-hash = "e8fa971367243303b332a2590414295efe65a615e2648d83737e9a8a3d68b85e"

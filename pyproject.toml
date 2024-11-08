@@ -64,6 +64,7 @@ google-auth = "^2.34.0"
 pillow = "^10.4.0"
 dagster-k8s = "^0.24.6"
 pyiceberg = { extras = ["hive"], version = "^0.7.1" }
+connectorx = "^0.4.0"
 
 
 [tool.poetry.scripts]
