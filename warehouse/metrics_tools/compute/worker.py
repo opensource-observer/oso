@@ -4,15 +4,19 @@ from metrics_tools.utils.logging import add_metrics_tools_to_existing_logger
 import pandas as pd
 import typing as t
 import duckdb
+import uuid
 from sqlglot import exp
 from dask.distributed import WorkerPlugin, Worker, print as dprint
 import logging
 import sys
+from threading import Lock
 
 from pyiceberg.catalog import load_catalog
 from pyiceberg.table import Table as IcebergTable
 
 logger = logging.getLogger(__name__)
+
+mutex = Lock()
 
 
 class DuckDBWorkerInterface(abc.ABC):
@@ -22,8 +26,14 @@ class DuckDBWorkerInterface(abc.ABC):
 
 class MetricsWorkerPlugin(WorkerPlugin):
     def __init__(
-        self, hive_uri: str, gcs_key_id: str, gcs_secret: str, duckdb_path: str
+        self,
+        gcs_bucket: str,
+        hive_uri: str,
+        gcs_key_id: str,
+        gcs_secret: str,
+        duckdb_path: str,
     ):
+        self._gcs_bucket = gcs_bucket
         self._hive_uri = hive_uri
         self._gcs_key_id = gcs_key_id
         self._gcs_secret = gcs_secret
@@ -32,6 +42,7 @@ class MetricsWorkerPlugin(WorkerPlugin):
         self._cache_status: t.Dict[str, bool] = {}
         self._catalog = None
         self._mode = "duckdb"
+        self._uuid = uuid.uuid4().hex
 
     def setup(self, worker: Worker):
         add_metrics_tools_to_existing_logger("distributed")
@@ -70,41 +81,48 @@ class MetricsWorkerPlugin(WorkerPlugin):
     @property
     def connection(self):
         assert self._conn is not None
-        return self._conn
+        return self._conn.cursor()
 
     def get_for_cache(
         self,
         table_ref_name: str,
         table_actual_name: str,
     ):
-        logger.info(f"got a cache request for {table_ref_name}:{table_actual_name}")
         """Checks if a table is cached in the local duckdb"""
+        logger.info(
+            f"[{self._uuid}] got a cache request for {table_ref_name}:{table_actual_name}"
+        )
         if self._cache_status.get(table_ref_name):
             return
-        destination_table = exp.to_table(table_ref_name)
-        source_table = exp.to_table(table_actual_name)
+        with mutex:
+            if self._cache_status.get(table_ref_name):
+                return
+            destination_table = exp.to_table(table_ref_name)
 
-        assert self._catalog is not None
-        table = self._catalog.load_table((source_table.db, source_table.this.this))
-
-        if self._mode == "duckdb":
-            self.load_using_duckdb(
-                table_ref_name, table_actual_name, destination_table, table
+            # if self._mode == "duckdb":
+            #     self.load_using_duckdb(
+            #         table_ref_name, table_actual_name, destination_table, table
+            #     )
+            # else:
+            #     self.load_using_pyiceberg(
+            #         table_ref_name, table_actual_name, destination_table, table
+            #     )
+            self.load_using_gcs_parquet(
+                table_ref_name, table_actual_name, destination_table
             )
-        else:
-            self.load_using_pyiceberg(
-                table_ref_name, table_actual_name, destination_table, table
-            )
 
-        self._cache_status[table_ref_name] = True
+            self._cache_status[table_ref_name] = True
 
     def load_using_duckdb(
         self,
         table_ref_name: str,
         table_actual_name: str,
         destination_table: exp.Table,
-        table: IcebergTable,
     ):
+        source_table = exp.to_table(table_actual_name)
+        assert self._catalog is not None
+        table = self._catalog.load_table((source_table.db, source_table.this.this))
+
         self.connection.execute(f"CREATE SCHEMA IF NOT EXISTS {destination_table.db}")
         caching_sql = f"""
             CREATE TABLE IF NOT EXISTS {destination_table.db}.{destination_table.this.this} AS
@@ -121,6 +139,9 @@ class MetricsWorkerPlugin(WorkerPlugin):
         destination_table: exp.Table,
         table: IcebergTable,
     ):
+        source_table = exp.to_table(table_actual_name)
+        assert self._catalog is not None
+        table = self._catalog.load_table((source_table.db, source_table.this.this))
         batch_reader = table.scan().to_arrow_batch_reader()  # noqa: F841
         self.connection.execute(f"CREATE SCHEMA IF NOT EXISTS {destination_table.db}")
         logger.info(f"CACHING TABLE {table_ref_name} WITH ICEBERG")
@@ -128,6 +149,22 @@ class MetricsWorkerPlugin(WorkerPlugin):
             f"""
             CREATE TABLE IF NOT EXISTS {destination_table.db}.{destination_table.this.this} AS
             SELECT * FROM batch_reader
+        """
+        )
+        logger.info(f"CACHING TABLE {table_ref_name} COMPLETED")
+
+    def load_using_gcs_parquet(
+        self,
+        table_ref_name: str,
+        table_actual_name: str,
+        destination_table: exp.Table,
+    ):
+        self.connection.execute(f"CREATE SCHEMA IF NOT EXISTS {destination_table.db}")
+        logger.info(f"CACHING TABLE {table_ref_name} WITH PARQUET")
+        self.connection.sql(
+            f"""
+            CREATE TABLE IF NOT EXISTS {destination_table.db}.{destination_table.this.this} AS
+            SELECT * FROM read_parquet('gs://{self._gcs_bucket}/trino-export/{table_actual_name}/*')
         """
         )
         logger.info(f"CACHING TABLE {table_ref_name} COMPLETED")

@@ -16,5 +16,5 @@ def start_duckdb_cluster(
     if cluster_spec:
         options["custom_cluster_spec"] = cluster_spec
     cluster = KubeCluster(**options)
-    cluster.adapt(minimum=6, maximum=9)
+    cluster.adapt(minimum=6, maximum=6)
     return cluster
