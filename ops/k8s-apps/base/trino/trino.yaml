@@ -131,6 +131,7 @@ spec:
         hive.metastore.uri=thrift://10.145.192.27:9083
         fs.native-gcs.enabled=true
         gcs.project-id=opensource-observer
+        hive.non-managed-table-writes-enabled=true
       #  gcs.use-access-token=true
       # bigquery: |
       #   connector.name=bigquery
