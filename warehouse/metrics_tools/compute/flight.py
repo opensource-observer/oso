@@ -3,11 +3,14 @@ metrics tools. This allows us to change the underlying compute infrastructure
 while maintaining the same interface to the sqlmesh runner.
 """
 
+import concurrent.futures
 import logging
 import sys
 import typing as t
 import json
 import click
+import time
+import concurrent
 from metrics_tools.compute.cluster import start_duckdb_cluster
 from metrics_tools.compute.worker import MetricsWorkerPlugin
 from metrics_tools.definition import PeerMetricDependencyRef
@@ -20,6 +23,7 @@ import asyncio
 import pandas as pd
 import threading
 import trino
+import queue
 from sqlglot import exp
 from sqlmesh.core.dialect import parse_one
 from trino.dbapi import Connection, Cursor
@@ -29,6 +33,8 @@ from pydantic import BaseModel
 from datetime import datetime
 from dask.distributed import Client, get_worker, Future, as_completed, print as dprint
 from dask_kubernetes.operator import KubeCluster, make_cluster_spec
+from dask_kubernetes.operator.kubecluster.kubecluster import CreateMode
+from dataclasses import dataclass
 
 
 logger = logging.getLogger(__name__)
@@ -130,7 +136,7 @@ def run_coroutine_in_thread(coro):
     thread.start()
 
 
-def execute_duckdb_load(queries: t.List[str], dependencies: t.Dict[str, str]):
+def execute_duckdb_load(id: int, queries: t.List[str], dependencies: t.Dict[str, str]):
     dprint("Starting duckdb load")
     worker = get_worker()
     plugin = t.cast(MetricsWorkerPlugin, worker.plugins["duckdb-gcs"])
@@ -143,7 +149,22 @@ def execute_duckdb_load(queries: t.List[str], dependencies: t.Dict[str, str]):
         result = conn.execute(query).df()
         results.append(result)
 
-    return pd.concat(results, ignore_index=True, sort=False)
+    return DuckdbLoadedItem(
+        id=id,
+        df=pd.concat(results, ignore_index=True, sort=False),
+    )
+
+
+@dataclass(kw_only=True)
+class DuckdbLoadedItem:
+    id: int
+    df: pd.DataFrame
+
+
+@dataclass(kw_only=True)
+class ResultQueueItem:
+    id: int
+    record_batch: pa.RecordBatch
 
 
 class MetricsCalculatorFlightServer(fl.FlightServerBase):
@@ -154,6 +175,8 @@ class MetricsCalculatorFlightServer(fl.FlightServerBase):
         gcs_bucket: str,
         location: str = "grpc://0.0.0.0:8815",
         exported_map: t.Optional[t.Dict[str, str]] = None,
+        downloaders: int = 64,
+        queue_size: int = 100,
     ):
         super().__init__(location)
         self.data = pa.Table.from_pydict({"col1": [1, 2, 3]})
@@ -167,6 +190,8 @@ class MetricsCalculatorFlightServer(fl.FlightServerBase):
         self.cluster = cluster
         self.exported_map: t.Dict[str, str] = exported_map or {}
         self.gcs_bucket = gcs_bucket
+        self.queue_size = queue_size
+        self.downloader_count = downloaders
 
     def run_initialization(
         self, hive_uri: str, gcs_key_id: str, gcs_secret: str, duckdb_path: str
@@ -263,8 +288,8 @@ class MetricsCalculatorFlightServer(fl.FlightServerBase):
         self.exported_map[table] = export_table_name
         return self.exported_map[table]
 
-    def shutdown(self):
-        pass
+    # def shutdown(self):
+    #     pass
 
     def do_get(self, context: fl.ServerCallContext, ticket: fl.Ticket):
         input = self._ticket_to_query_input(ticket)
@@ -283,12 +308,6 @@ class MetricsCalculatorFlightServer(fl.FlightServerBase):
         #     raise Exception("unexpected number of expressions")
 
         rewritten_query = parse_one(input.query_str).sql(dialect="duckdb")
-        runner = MetricsRunner.from_engine_adapter(
-            FakeEngineAdapter("duckdb"),
-            rewritten_query,
-            input.ref,
-            input.locals,
-        )
         # columns = input.to_column_names()
 
         # def gen():
@@ -302,46 +321,151 @@ class MetricsCalculatorFlightServer(fl.FlightServerBase):
         #     for res in concurrent.futures.as_completed(futures):
         #         yield pa.RecordBatch.from_pandas(res.result())
 
-        def gen_with_dask():
+        def gen_with_dask(
+            rewritten_query: str,
+            input: QueryInput,
+            exported_dependent_tables_map: t.Dict[str, str],
+            download_queue: queue.Queue[Future],
+        ):
             client = self.client
             futures: t.List[Future] = []
             current_batch: t.List[str] = []
+            task_ids: t.List[int] = []
+
+            runner = MetricsRunner.from_engine_adapter(
+                FakeEngineAdapter("duckdb"),
+                rewritten_query,
+                input.ref,
+                input.locals,
+            )
+
+            task_id = 0
             for rendered_query in runner.render_rolling_queries(input.start, input.end):
                 current_batch.append(rendered_query)
                 if len(current_batch) >= input.batch_size:
                     future = client.submit(
                         execute_duckdb_load,
+                        task_id,
                         current_batch[:],
                         exported_dependent_tables_map,
                     )
                     futures.append(future)
                     current_batch = []
+                    task_ids.append(task_id)
+                    task_id += 1
             if len(current_batch) > 0:
                 future = client.submit(
                     execute_duckdb_load,
+                    task_id,
                     current_batch[:],
                     exported_dependent_tables_map,
                 )
                 futures.append(future)
+                task_ids.append(task_id)
+                task_id += 1
 
             completed_batches = 0
             total_batches = len(futures)
-            for batch in as_completed(futures, with_results=True).batches():
-                for future, res in batch:
-                    future = t.cast(Future, future)
-                    if future.cancelled:
+            for future in as_completed(futures):
+                completed_batches += 1
+                logger.info(f"progress received [{completed_batches}/{total_batches}]")
+                future = t.cast(Future, future)
+                if future.cancelled:
+                    if future.done():
+                        logger.info("future actually done???")
+                    else:
                         logger.error("future cancelled. skipping for now?")
                         print(future)
+                        print(future.result() is not None)
                         continue
-                    completed_batches += 1
-                    logger.info(
-                        f"result received [{completed_batches}/{total_batches}]"
+                download_queue.put(future)
+            return task_ids
+
+        def downloader(
+            kill_event: threading.Event,
+            download_queue: queue.Queue[Future],
+            res_queue: queue.Queue[ResultQueueItem],
+        ):
+            logger.debug("waiting for download")
+            while True:
+                try:
+                    future = download_queue.get(timeout=0.1)
+                    try:
+                        item = t.cast(DuckdbLoadedItem, future.result())
+                        record_batch = pa.RecordBatch.from_pandas(item.df)
+                        res_queue.put(
+                            ResultQueueItem(
+                                id=item.id,
+                                record_batch=record_batch,
+                            )
+                        )
+                        logger.debug("download completed")
+                    finally:
+                        download_queue.task_done()
+                except queue.Empty:
+                    if kill_event.is_set():
+                        logger.debug("shutting down downloader")
+                        return
+                if kill_event.is_set() and not download_queue.empty():
+                    logger.debug("shutting down downloader prematurely")
+                    return
+
+        def gen_record_batches(size: int):
+            download_queue: queue.Queue[Future] = queue.Queue(maxsize=size)
+            res_queue: queue.Queue[ResultQueueItem] = queue.Queue(maxsize=size)
+            kill_event = threading.Event()
+            result_queue_timeout = 5.0
+            max_result_timeout = 300
+
+            with concurrent.futures.ThreadPoolExecutor(
+                max_workers=self.downloader_count + 5
+            ) as executor:
+                dask_thread = executor.submit(
+                    gen_with_dask,
+                    rewritten_query,
+                    input,
+                    exported_dependent_tables_map,
+                    download_queue,
+                )
+                downloaders = []
+                for i in range(self.downloader_count):
+                    downloaders.append(
+                        executor.submit(
+                            downloader, kill_event, download_queue, res_queue
+                        )
                     )
-                    df = t.cast(pd.DataFrame, res)
-                    if len(df) == 0:
-                        continue
+
+                wait_retries = 0
+
+                completed_task_ids: t.Set[int] = set()
+                task_ids: t.Optional[t.Set[int]] = None
+
+                while task_ids != completed_task_ids:
+                    try:
+                        result = res_queue.get(timeout=result_queue_timeout)
+                        wait_retries = 0
+                        logger.debug("sending batch to client")
+
+                        completed_task_ids.add(result.id)
+
+                        yield result.record_batch
+                    except queue.Empty:
+                        wait_retries += 1
+                    if task_ids is None:
+                        # If the dask thread is done we know if we can check for completion
+                        if dask_thread.done():
+                            task_ids = set(dask_thread.result())
                     else:
-                        yield pa.RecordBatch.from_pandas(df)
+                        # If we have waited longer then 15 mins let's stop waiting
+                        current_wait_time = wait_retries * result_queue_timeout
+                        if current_wait_time > max_result_timeout:
+                            logger.debug(
+                                "record batches might be completed. with some kind of error"
+                            )
+                            break
+                kill_event.set()
+                logger.debug("waiting for the downloaders to shutdown")
+                executor.shutdown(cancel_futures=True)
 
         logger.debug(
             f"Distributing query for {input.start} to {input.end}: {rewritten_query}"
@@ -349,7 +473,7 @@ class MetricsCalculatorFlightServer(fl.FlightServerBase):
         try:
             return fl.GeneratorStream(
                 input.to_arrow_schema(),
-                gen_with_dask(),
+                gen_record_batches(size=self.queue_size),
             )
         except Exception as e:
             print("caught error")
@@ -357,10 +481,12 @@ class MetricsCalculatorFlightServer(fl.FlightServerBase):
             raise e
 
 
-def get(batch_size: int = 1):
-    import time
-
-    start = time.time()
+def run_get(
+    start: str,
+    end: str,
+    batch_size: int = 1,
+):
+    run_start = time.time()
     client = fl.connect("grpc://0.0.0.0:8815")
     input = QueryInput(
         query_str="""
@@ -374,8 +500,8 @@ def get(batch_size: int = 1):
             event_source,
             event_type
         """,
-        start=datetime.strptime("2023-01-01", "%Y-%m-%d"),
-        end=datetime.strptime("2023-12-31", "%Y-%m-%d"),
+        start=datetime.strptime(start, "%Y-%m-%d"),
+        end=datetime.strptime(end, "%Y-%m-%d"),
         dialect="duckdb",
         columns=[
             ("bucket_day", "TIMESTAMP"),
@@ -396,10 +522,12 @@ def get(batch_size: int = 1):
     )
     reader = client.do_get(input.to_ticket())
     r = reader.to_reader()
+    count = 0
     for batch in r:
-        print(batch.num_rows)
-    end = time.time()
-    print(f"DURATION={end - start}s")
+        count += 1
+        print(f"[{count}] ROWS={batch.num_rows}")
+    run_end = time.time()
+    print(f"DURATION={run_end - run_start}s")
 
 
 @click.command()
@@ -422,6 +550,9 @@ def get(batch_size: int = 1):
 @click.option("--worker-memory-request", default="75000Mi")
 @click.option("--scheduler-memory-limit", default="90000Mi")
 @click.option("--scheduler-memory-request", default="75000Mi")
+@click.option("--cluster-only/--no-cluster-only", default=False)
+@click.option("--cluster-name", default="sqlmesh-flight")
+@click.option("--cluster-namespace", default="sqlmesh-manual")
 def main(
     host: str,
     port: int,
@@ -438,42 +569,58 @@ def main(
     scheduler_memory_request: str,
     worker_memory_limit: str,
     worker_memory_request: str,
+    cluster_only: bool,
+    cluster_name: str,
+    cluster_namespace: str,
 ):
-    # Start the cluster
     cluster_spec = make_new_cluster(
         f"ghcr.io/opensource-observer/dagster-dask:{image_tag}",
-        "sqlmesh-flight",
-        "sqlmesh-manual",
+        cluster_name,
+        cluster_namespace,
         threads=threads,
         scheduler_memory_limit=scheduler_memory_limit,
         scheduler_memory_request=scheduler_memory_request,
         worker_memory_limit=worker_memory_limit,
         worker_memory_request=worker_memory_request,
     )
-    cluster = start_duckdb_cluster(
-        "sqlmesh-manual",
-        gcs_key_id,
-        gcs_secret,
-        worker_duckdb_path,
-        cluster_spec=cluster_spec,
-    )
 
-    server = MetricsCalculatorFlightServer(
-        cluster,
-        TrinoEngine.create(
-            host,
-            port,
-            user,
-            catalog,
-        ),
-        gcs_bucket,
-        exported_map={
-            "sqlmesh__metrics.metrics__events_daily_to_artifact__2357434958": "export_metrics__events_daily_to_artifact__2357434958_5def5e890a984cf99f7364ce3c2bb958",
-        },
-    )
-    server.run_initialization(hive_uri, gcs_key_id, gcs_secret, worker_duckdb_path)
-    with server as s:
-        s.serve()
+    if cluster_only:
+        # Start the cluster
+        cluster = start_duckdb_cluster(
+            cluster_namespace,
+            gcs_key_id,
+            gcs_secret,
+            worker_duckdb_path,
+            cluster_spec=cluster_spec,
+        )
+        try:
+            while True:
+                time.sleep(1.0)
+        finally:
+            cluster.close()
+    else:
+        cluster = KubeCluster(
+            name=cluster_name,
+            namespace=cluster_namespace,
+            create_mode=CreateMode.CONNECT_ONLY,
+            shutdown_on_close=False,
+        )
+        server = MetricsCalculatorFlightServer(
+            cluster,
+            TrinoEngine.create(
+                host,
+                port,
+                user,
+                catalog,
+            ),
+            gcs_bucket,
+            exported_map={
+                "sqlmesh__metrics.metrics__events_daily_to_artifact__2357434958": "export_metrics__events_daily_to_artifact__2357434958_5def5e890a984cf99f7364ce3c2bb958",
+            },
+        )
+        server.run_initialization(hive_uri, gcs_key_id, gcs_secret, worker_duckdb_path)
+        with server as s:
+            s.serve()
 
 
 def make_new_cluster(
@@ -487,7 +634,7 @@ def make_new_cluster(
     worker_memory_limit: str,
 ):
     spec = make_cluster_spec(
-        name=f"flight-{cluster_id}",
+        name=f"{cluster_id}",
         resources={
             "requests": {"memory": scheduler_memory_request},
             "limits": {"memory": scheduler_memory_limit},
