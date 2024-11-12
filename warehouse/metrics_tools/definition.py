@@ -178,6 +178,8 @@ class MetricQueryDef:
 
     enabled: bool = True
 
+    use_python_model: bool = True
+
     def raw_sql(self, queries_dir: str):
         return open(os.path.join(queries_dir, self.ref)).read()
 
@@ -366,6 +368,10 @@ class MetricQuery:
             raise Exception(
                 f"There must only be a single query expression in metrics query {self._source.ref}"
             )
+
+    @property
+    def use_python_model(self):
+        return self._source.use_python_model
 
     @property
     def query_expression(self) -> exp.Query:
@@ -792,12 +798,12 @@ def join_all_of_entity_type(
 
 class TimeseriesMetricsOptions(t.TypedDict):
     model_prefix: str
+    catalog: str
     metric_queries: t.Dict[str, MetricQueryDef]
     default_dialect: t.NotRequired[str]
-    model_options: t.NotRequired[t.Dict[str, t.Any]]
     start: TimeLike
-    timeseries_sources: t.NotRequired[t.Optional[t.List[str]]]
-    queries_dir: t.NotRequired[t.Optional[str]]
+    timeseries_sources: t.NotRequired[t.List[str]]
+    queries_dir: t.NotRequired[str]
 
 
 class GeneratedArtifactConfig(t.TypedDict):

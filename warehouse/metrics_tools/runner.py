@@ -3,6 +3,8 @@
 import duckdb
 import arrow
 import logging
+from metrics_tools.utils.glot import str_or_expressions
+from sqlmesh import EngineAdapter
 from sqlmesh.core.context import ExecutionContext
 from sqlmesh.core.config import DuckDBConnectionConfig
 from sqlmesh.core.engine_adapter.duckdb import DuckDBEngineAdapter
@@ -10,7 +12,7 @@ from sqlmesh.core.macros import RuntimeStage
 
 from metrics_tools.definition import PeerMetricDependencyRef
 from metrics_tools.intermediate import run_macro_evaluator
-from metrics_tools.factory.macros import (
+from metrics_tools.macros import (
     metrics_end,
     metrics_sample_date,
     metrics_start,
@@ -77,12 +79,19 @@ class ExistingDuckDBConnectionConfig(DuckDBConnectionConfig):
         return lambda: self._existing_connection
 
 
+class FakeEngineAdapter(EngineAdapter):
+    """This needs some work"""
+
+    def __init__(self, dialect: str):
+        self.dialect = dialect
+
+
 class MetricsRunner:
     @classmethod
     def create_duckdb_execution_context(
         cls,
         conn: duckdb.DuckDBPyConnection,
-        query: t.List[exp.Expression],
+        query: str | t.List[exp.Expression],
         ref: PeerMetricDependencyRef,
         locals: t.Optional[t.Dict[str, t.Any]],
     ):
@@ -91,7 +100,28 @@ class MetricsRunner:
 
         engine_adapter = DuckDBEngineAdapter(connection_factory)
         context = ExecutionContext(engine_adapter, {})
-        return cls(context, query, ref, locals)
+        return cls(context, str_or_expressions(query), ref, locals)
+
+    @classmethod
+    def from_engine_adapter(
+        cls,
+        engine_adapter: EngineAdapter,
+        query: str | t.List[exp.Expression],
+        ref: PeerMetricDependencyRef,
+        locals: t.Optional[t.Dict[str, t.Any]],
+    ):
+        context = ExecutionContext(engine_adapter, {})
+        return cls(context, str_or_expressions(query), ref, locals)
+
+    @classmethod
+    def from_sqlmesh_context(
+        cls,
+        context: ExecutionContext,
+        query: str | t.List[exp.Expression],
+        ref: PeerMetricDependencyRef,
+        locals: t.Optional[t.Dict[str, t.Any]] = None,
+    ):
+        return cls(context, str_or_expressions(query), ref, locals)
 
     def __init__(
         self,
@@ -120,14 +150,16 @@ class MetricsRunner:
     def run_rolling(self, start: datetime, end: datetime):
         df: pd.DataFrame = pd.DataFrame()
         logger.debug(f"run_rolling called with start={start} and end={end}")
-        for day in arrow.Arrow.range("day", arrow.get(start), arrow.get(end)):
-            rendered_query = self.render_query(day.datetime, day.datetime)
+        count = 0
+        for rendered_query in self.render_rolling_queries(start, end):
+            count += 1
             logger.debug(
                 f"executing rolling window: {rendered_query}",
                 extra={"query": rendered_query},
             )
             day_result = self._context.engine_adapter.fetchdf(rendered_query)
             df = pd.concat([df, day_result])
+
         return df
 
     def render_query(self, start: datetime, end: datetime) -> str:
@@ -166,6 +198,13 @@ class MetricsRunner:
             )
         )
         return "\n".join(rendered_parts)
+
+    def render_rolling_queries(self, start: datetime, end: datetime) -> t.Iterator[str]:
+        # Given a rolling input render all the rolling queries
+        logger.debug(f"render_rolling_rolling called with start={start} and end={end}")
+        for day in arrow.Arrow.range("day", arrow.get(start), arrow.get(end)):
+            rendered_query = self.render_query(day.datetime, day.datetime)
+            yield rendered_query
 
     def commit(self, start: datetime, end: datetime, destination: str):
         """Like run but commits the result to the database"""

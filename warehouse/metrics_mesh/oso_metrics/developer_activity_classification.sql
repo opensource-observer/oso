@@ -62,6 +62,7 @@ from @metrics_peer_ref(
     window := @rolling_window,
     unit := @rolling_unit
   ) as active
+where active.metrics_sample_date = @metrics_end('DATE')
 group by metric,
   from_artifact_id,
   @metrics_entity_type_col('to_{entity_type}_id', table_alias := active),

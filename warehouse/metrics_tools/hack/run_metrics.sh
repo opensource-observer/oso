@@ -4,10 +4,12 @@
 version=$1
 
 mkdir -p /scratch/duckdb
-mkdir -p /scratch/downloads
+mkdir -p /scratch/downloads/${version}
+
+apt-get install -y vim tmux
 
 # Download everything to duckdb
-python load_sources.py \
+python3 load_sources.py \
     --gcs-bucket-name oso-dataset-transfer-bucket \
     --gcs-bucket-path metrics-backstop \
     --db-path /scratch/duckdb/metrics.db \

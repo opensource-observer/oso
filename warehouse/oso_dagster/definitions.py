@@ -7,6 +7,7 @@ from dagster_sqlmesh import SQLMeshContextConfig, SQLMeshResource
 from dagster_k8s import k8s_job_executor
 from dagster_embedded_elt.dlt import DagsterDltResource
 from dotenv import load_dotenv
+from oso_dagster.utils.dbt import support_home_dir_profiles
 from . import constants
 from .schedules import schedules, get_partitioned_schedules
 from .cbt import CBTResource
@@ -114,7 +115,9 @@ def load_definitions():
     }
     for target in constants.main_dbt_manifests:
         resources[f"{target}_dbt"] = DbtCliResource(
-            project_dir=os.fspath(constants.main_dbt_project_dir), target=target
+            project_dir=os.fspath(constants.main_dbt_project_dir),
+            target=target,
+            profiles_dir=support_home_dir_profiles(),
         )
 
     extra_kwargs = {}

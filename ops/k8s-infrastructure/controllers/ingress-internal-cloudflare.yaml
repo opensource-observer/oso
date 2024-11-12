@@ -39,9 +39,9 @@ spec:
       create: true
       name: "ingress-internal-cloudflare"
     cloudflare:
-      apiToken: gcp:secretmanager:cloudflare-api-token/versions/1
-      accountId: gcp:secretmanager:cloudflare-account-id/versions/1
-      tunnelName: gcp:secretmanager:cloudflare-internal-tunnel-name/versions/1
+      apiToken: gcp:secretmanager:cloudflare-api-token/versions/latest
+      accountId: gcp:secretmanager:cloudflare-account-id/versions/latest
+      tunnelName: gcp:secretmanager:cloudflare-internal-tunnel-name/versions/latest
     image:
       repository: ghcr.io/opensource-observer/cloudflare-tunnel
       tag: "0.0.9-oso1"
@@ -63,15 +63,15 @@ spec:
                 value: [
                   {
                     "name": "CLOUDFLARE_API_TOKEN",
-                    "value": "gcp:secretmanager:cloudflare-api-token/versions/1"
+                    "value": "gcp:secretmanager:cloudflare-api-token/versions/latest"
                   },
                   {
                     "name": "CLOUDFLARE_ACCOUNT_ID",
-                    "value": "gcp:secretmanager:cloudflare-account-id/versions/1"
+                    "value": "gcp:secretmanager:cloudflare-account-id/versions/latest"
                   },
                   {
                     "name": "CLOUDFLARE_TUNNEL_NAME",
-                    "value": "gcp:secretmanager:cloudflare-internal-tunnel-name/versions/1"
+                    "value": "gcp:secretmanager:cloudflare-internal-tunnel-name/versions/latest"
                   },
                   {
                     "name": "CLOUDFLARED_IMAGE",

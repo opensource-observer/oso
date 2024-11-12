@@ -6,6 +6,7 @@ from metrics_tools.factory import (
 
 timeseries_metrics(
     start="2015-01-01",
+    catalog="metrics",
     model_prefix="timeseries",
     metric_queries={
         # This will automatically generate star counts for the given roll up periods.

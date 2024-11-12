@@ -11,7 +11,7 @@ import hishel
 import dlt
 from oso_dagster.factories.dlt import pydantic_to_dlt_nullable_columns
 import polars as pl
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 from githubkit import GitHub
 from githubkit.exception import RequestFailed
 from githubkit.versions.latest.models import (
@@ -323,6 +323,16 @@ class GithubRepositoryResolver:
                 logger.warning("Skipping %s, no SBOM found", f"{owner}/{name}")
             else:
                 logger.warning("Error getting SBOM: %s", exception)
+            return []
+        except ValidationError as exception:
+            validation_errors = [
+                f"{error['loc'][0]}: {error['msg']}" for error in exception.errors()
+            ]
+            logger.warning(
+                "Skipping %s, SBOM is malformed: %s",
+                f"{owner}/{name}",
+                ", ".join(validation_errors),
+            )
             return []
 
     @staticmethod
