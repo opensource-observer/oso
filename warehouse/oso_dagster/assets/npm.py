@@ -3,18 +3,22 @@ from typing import Generator, List, Optional
 
 import dlt
 import requests
-from dagster import AssetExecutionContext
+from dagster import AssetExecutionContext, AssetKey, WeeklyPartitionsDefinition
+from oso_dagster.cbt.cbt import CBTResource
 from pydantic import BaseModel
 
-from ..factories.dlt import pydantic_to_dlt_nullable_columns
+from ..factories.dlt import dlt_factory, pydantic_to_dlt_nullable_columns
 
 # Host for the NPM registry
 NPM_HOST = "https://api.npmjs.org"
 
+# NPM was launched on January 12, 2010
+NPM_EPOCH = "2010-01-12T00:00:00Z"
+
 
 class NPMPackageInfo(BaseModel):
     date: datetime
-    name: str
+    artifact_name: str
     downloads: int
 
 
@@ -43,7 +47,10 @@ def get_npm_package_downloads(
         if response.status_code == 400 and "end date > start date" in response.text:
             yield None
 
-        raise ValueError(f"Failed to fetch data for {package_name}: {response.text}")
+        raise ValueError(
+            f"Failed to fetch data for {
+                package_name}: {response.text}"
+        )
 
     data = response.json()
 
@@ -61,14 +68,15 @@ def get_npm_package_downloads(
 
         if date_day not in days_between:
             raise ValueError(
-                f"Unexpected date for {package_name}: {date_day} not in {days_between}"
+                f"Unexpected date for {package_name}: {date_day.strftime('%Y-%m-%d')} not in "
+                f"{days_between[0].strftime('%Y-%m-%d')} => {days_between[-1].strftime('%Y-%m-%d')}"
             )
 
         days_between.remove(date_day)
 
         yield NPMPackageInfo(
             date=date_day,
-            name=package_name,
+            artifact_name=package_name,
             downloads=download["downloads"],
         )
 
@@ -81,6 +89,8 @@ def get_npm_package_downloads(
 
 
 @dlt.resource(
+    primary_key="artifact_name",
+    name="downloads",
     columns=pydantic_to_dlt_nullable_columns(NPMPackageInfo),
 )
 def get_all_downloads(
@@ -97,32 +107,6 @@ def get_all_downloads(
 
     Yields:
         List[NPMPackageInfo]: The download count for each package
-
-    Example:
-        ```python
-        # NPM was launched on January 12, 2010
-        NPM_EPOCH = "2010-01-12T00:00:00Z"
-
-        @dlt_factory(
-            key_prefix="npm",
-            partitions_def=WeeklyPartitionsDefinition(
-                start_date=NPM_EPOCH.split("T", maxsplit=1)[0],
-                end_offset=1,
-            ),
-        )
-        def downloads(
-            context: AssetExecutionContext,
-        ):
-            yield get_all_downloads(
-                context,
-                package_names=[
-                    "@angular/core",
-                    "react",
-                    "vue",
-                    # ...
-                ],
-            )
-        ```
     """
 
     start = datetime.strptime(context.partition_key, "%Y-%m-%d")
@@ -131,4 +115,36 @@ def get_all_downloads(
     yield from (
         get_npm_package_downloads(package_name, start, end)
         for package_name in package_names
+    )
+
+
+@dlt_factory(
+    key_prefix="npm",
+    partitions_def=WeeklyPartitionsDefinition(
+        start_date=NPM_EPOCH.split("T", maxsplit=1)[0],
+        end_offset=1,
+    ),
+    deps=[AssetKey(["dbt", "production", "artifacts_v1"])],
+)
+def downloads(
+    context: AssetExecutionContext,
+    cbt: CBTResource,
+):
+    unique_artifacts_query = """
+        SELECT
+          DISTINCT(artifact_name)
+        FROM
+          `oso.artifacts_v1`
+        WHERE
+          artifact_source = "NPM"
+    """
+
+    client = cbt.get(context.log)
+
+    yield get_all_downloads(
+        context,
+        package_names=[
+            row["artifact_name"]
+            for row in client.query_with_string(unique_artifacts_query)
+        ],
     )
