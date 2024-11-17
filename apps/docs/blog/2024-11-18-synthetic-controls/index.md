@@ -6,37 +6,37 @@ tags: [featured, perspective, research, causal inference]
 image: ./syncon.png
 ---
 
-Over the last few months, we've been exploring frameworks for computing [advanced metrics](./war-for-public-goods) that can offer insights into how specific interventions impact the public goods ecosystem.
+We’ve been thinking a lot about [advanced metrics](./war-for-public-goods) lately. We want to get better at measuring how specific types of interventions impact the public goods ecosystem.
 
-For instance, we might want to measure how a group of projects or users that received token incentives performed relative to a similar group that did not receive any incentive.
+For example, we frequently seek to compare the performance of projects or users who received token incentives against those who did not.
 
-However, unlike A/B testing in a research setting, we are dealing with a real world economy here. We can't simply randomize the treatment and control groups.
+However, unlike controlled A/B testing, we’re analyzing a real-world economy. It's impossible to randomize treatment and control groups in a real-world economy.
 
-Instead, we need to use advanced statistical methods to estimate the causal effect of the treatment on the target cohort and control for other factors (eg, market conditions, competing incentive programs, elections, etc) that might influence the outcome.
+Instead, we can use advanced statistical methods to estimate the causal effect of treatments on target cohorts while controling for other factors like market conditions, competing incentives, and geopolitical events.
 
 <!-- truncate -->
 
-## A primer on synthetic controls
+## Understanding synthetic controls
 
-The [synthetic control method](https://en.wikipedia.org/wiki/Synthetic_control_method) is frequently used for modeling the effects of interventions in complex systems:
+The [synthetic control method](https://en.wikipedia.org/wiki/Synthetic_control_method) is widely used to assess the effects of interventions in complex systems:
 
 > A synthetic control is a weighted average of several units combined to recreate the trajectory that the outcome of a treated unit would have followed in the absence of the intervention. The weights are selected in a data-driven manner to ensure that the resulting synthetic control closely resembles the treated unit in terms of key predictors of the outcome variable. Unlike difference-in-differences approaches, this method can account for the effects of confounders changing over time, by weighting the control group to better match the treatment group before the intervention.
 
-Research econometricians have been using synthetic controls for decades to understand the impact of policy interventions that they can't test in a lab. For example, [Abadie and Gardeazabal](https://pubs.aeaweb.org/doi/10.1257/000282803321455188) used synthetic controls to estimate the impact of the Basque separatist movement on the Basque economy.
+Economists often use synthetic controls to evaluate policy impacts in non-laboratory settings. For example, [Abadie and Gardeazabal](https://pubs.aeaweb.org/doi/10.1257/000282803321455188) used synthetic controls to estimate the impact of the Basque separatist movement on the region's economy.
 
-At OSO, we are applying these same techniques to network economies. We want to use synthetic controls to measure the impact of grants and other incentive programs on outcomes like retained developers, users, and network TVL.
+At OSO, we'd like to apply these same techniques to network economies to gauge the impact of grants and incentives on outcomes like retained developers, user activity, and network total value locked (TVL).
 
 ![dencun](./syncon-base.png)
 
-Another important advantage of the synthetic control method is that it allows analysts to systematically select comparison groups. In our case, we are especially interested in comparing cohorts of grant recipients to similar projects that did not receive grants.
+Another important benefit of synthetic controls is their ability to systematically select comparison groups. In our work, this means comparing grant recipients to similar projects that did not receive funding.
 
-## Leveraging timeseries metrics
+## Using timeseries metrics
 
-Our work on synthetic controls is part of a broader effort to build a flexible engine for conducting advanced analysis on pretty much anything.
+Our synthetic control work is part of a broader initiative to build a flexible analysis engine capable of examining almost any metric over time.
 
-Over the past few months, we've been working hard on "timeseries metrics". These models can be used to calculate any metric for any cohort over any timeframe on a rolling basis. They are powerful because they allow you to time travel to any date in history and see how a project or cohort performed.
+For months, we’ve been building a suite of “timeseries metrics.” These models can calculate metrics for any cohort over any timeframe, allowing us to “time travel” and evaluate historical performance. This makes them much more powerful than traditional metrics, which only provide a snapshot of a project’s current state.
 
-For example, this simple query will give you every metric for every collection on OSO for every available date:
+Here’s a sample query that retrieves metrics for all OSO collections on available dates:
 
 ```sql
 select
@@ -51,15 +51,13 @@ join collections_v1 as c
   on t.collection_id = c.collection_id
 ```
 
-Most of timeseries metrics models we're building are computed on rolling windows, bucketed daily. For instance, instead of just measuring monthly active developers by grouping data by month, we now calculate monthly active developers on 30 and 90-day rolling windows (e.g., the trailing average over the previous 30 or 90 days).
+Most timeseries metrics are calculated using rolling windows, with daily buckets. For example, instead of simply measuring monthly active developers, we calculate this metric over trailing 30- and 90-day windows, offering a more granular view of cohort performance over time.
 
-These metrics will give us a granular view on how a project or cohort is performing over time.
+## Early findings
 
-## Early results
+With inspiration from [Counterfactual Labs](https://github.com/counterfactual-labs), we’ve used the [pysyncon package](https://sdfordham.github.io/pysyncon/) to estimate treatment effect relative to a synthetic control.
 
-With inspiration from our friends at [Counterfactual Labs](https://github.com/counterfactual-labs), we’ve been using the [pysyncon package](https://sdfordham.github.io/pysyncon/) to estimate the treatment effect.
-
-For example, the model below looks at monthly active developers over a 90-day rolling window for a cohort of projects that received Retro Funding in January 2024 from Optimism. We can compare this cohort to a synthetic control group of similar projects that did not receive Retro Funding.
+For example, the model below looks at monthly active developers over a 90-day rolling window for a cohort of projects that received Optimism Retro Funding in January 2024. We can compare this cohort to a synthetic control group of similar projects that did not receive Retro Funding.
 
 ```python
 SynthControlRequest(
@@ -78,16 +76,14 @@ SynthControlRequest(
 )
 ```
 
-Here's a visualization of the treatment group versus the synthetic control group:
+The resulting visualization shows the difference in monthly active developers over a 90-day period, with the gap between treatment and synthetic control indicating the treatment effect (about 150-200 monthly active developers on average).
 
 ![developers](./syncon-devs.png)
-
-The difference between the treatment and synthetic control groups is the estimated treatment effect. In this case, the treatment effect is the difference between the two lines in the chart above (about 150-200 monthly active developers over a 90-day rolling average).
 
 ## What's next
 
 As George Box famously said, "all models are wrong, but some are useful."
 
-We're just getting started with this work, but we're excited about the potential to use synthetic controls to better model the effects of incentives on crypto networks. We'll be sharing more results in the days ahead.
+We are in the early stages of applying advanced metrics like synthetic controls to better measure incentive effects on crypto networks. Stay tuned as we share more findings.
 
-In the meantime, you can see some examples of the synthetic control models in our [insights repo](https://github.com/opensource-observer/insights/tree/main/analysis/optimism/syncon) and reach out on [Discord](https://www.opensource.observer/discord) if you want to collaborate.
+Meanwhile, you can see some examples of the synthetic control models in our [insights repo](https://github.com/opensource-observer/insights/tree/main/analysis/optimism/syncon) and reach out on [Discord](https://www.opensource.observer/discord) if you'd like to collaborate!
