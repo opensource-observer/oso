@@ -6,7 +6,7 @@ tags: [featured, perspective, research, causal inference]
 image: ./syncon.png
 ---
 
-We’ve been thinking a lot about [advanced metrics](./war-for-public-goods) lately. We want to get better at measuring how specific types of interventions impact the public goods ecosystem.
+We’ve been thinking a lot about [advanced metrics](https://docs.opensource.observer/blog/war-for-public-goods) lately. We want to get better at measuring how specific types of interventions impact the public goods ecosystem.
 
 For example, we frequently seek to compare the performance of projects or users who received token incentives against those who did not.
 
