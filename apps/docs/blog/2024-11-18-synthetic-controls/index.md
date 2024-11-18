@@ -14,6 +14,8 @@ However, unlike controlled A/B testing, we’re analyzing a real-world economy. 
 
 Instead, we can use advanced statistical methods to estimate the causal effect of treatments on target cohorts while controling for other factors like market conditions, competing incentives, and geopolitical events.
 
+This post explores our early experiments with synthetic controls and causal inference in the context of crypto network economies.
+
 <!-- truncate -->
 
 ## Understanding synthetic controls
@@ -24,7 +26,7 @@ The [synthetic control method](https://en.wikipedia.org/wiki/Synthetic_control_m
 
 Economists often use synthetic controls to evaluate policy impacts in non-laboratory settings. For example, [Abadie and Gardeazabal](https://pubs.aeaweb.org/doi/10.1257/000282803321455188) used synthetic controls to estimate the impact of the Basque separatist movement on the region's economy.
 
-At OSO, we'd like to apply these same techniques to network economies to gauge the impact of grants and incentives on outcomes like retained developers, user activity, and network total value locked (TVL).
+At OSO, we'd like to apply these same techniques to crypto network economies to gauge the impact of grants and incentives on outcomes like retained developers, user activity, and network total value locked (TVL).
 
 ![dencun](./syncon-base.png)
 
@@ -34,9 +36,9 @@ Another important benefit of synthetic controls is their ability to systematical
 
 Our synthetic control work is part of a broader initiative to build a flexible analysis engine capable of examining almost any metric over time.
 
-For months, we’ve been building a suite of “timeseries metrics.” These models can calculate metrics for any cohort over any timeframe, allowing us to “time travel” and evaluate historical performance. This makes them much more powerful than traditional metrics, which only provide a snapshot of a project’s current state.
+We're currently rolling out a suite of “timeseries metrics.” These models can calculate metrics for any cohort over any timeframe, allowing us to “time travel” and evaluate historical performance. This makes them much more powerful than traditional metrics, which only provide a snapshot of a project’s current state.
 
-Here’s a sample query that retrieves metrics for all OSO collections on available dates:
+Here’s a sample query that retrieves timeseries metrics for all OSO collections on available dates:
 
 ```sql
 select
@@ -55,9 +57,9 @@ Most timeseries metrics are calculated using rolling windows, with daily buckets
 
 ## Early findings
 
-With inspiration from [Counterfactual Labs](https://github.com/counterfactual-labs), we’ve used the [pysyncon package](https://sdfordham.github.io/pysyncon/) to estimate treatment effect relative to a synthetic control.
+With inspiration from [Counterfactual Labs](https://github.com/counterfactual-labs), we’ve used the [pysyncon package](https://sdfordham.github.io/pysyncon/) to estimate treatment effect relative to a synthetic control across a range of timeseries metrics already available on OSO.
 
-For example, the model below looks at monthly active developers over a 90-day rolling window for a cohort of projects that received Optimism Retro Funding in January 2024. We can compare this cohort to a synthetic control group of similar projects that did not receive Retro Funding.
+For example, the model below looks at monthly active developers over a 90-day rolling window for a cohort of projects that received Optimism Retro Funding in January 2024. We compare this cohort to a synthetic control group of similar projects that did not receive Retro Funding.
 
 ```python
 SynthControlRequest(
@@ -86,4 +88,4 @@ As George Box famously said, "all models are wrong, but some are useful."
 
 We are in the early stages of applying advanced metrics like synthetic controls to better measure incentive effects on crypto networks. Stay tuned as we share more findings.
 
-Meanwhile, you can see some examples of the synthetic control models in our [insights repo](https://github.com/opensource-observer/insights/tree/main/analysis/optimism/syncon) and reach out on [Discord](https://www.opensource.observer/discord) if you'd like to collaborate!
+Meanwhile, you can see some examples of the synthetic control models in our [insights repo](https://github.com/opensource-observer/insights/tree/main/analysis/optimism/syncon). Reach out on [Discord](https://www.opensource.observer/discord) if you'd like to collaborate!
