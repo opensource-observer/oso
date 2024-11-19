@@ -165,11 +165,11 @@ def _dlt_factory[
                     source_args: Dict[str, Any] = extra_source_args
                     source_args.update(resolved_secrets)
 
-                    if "context" in source.__annotations__:
+                    if "context" in f.__annotations__:
                         source_args["context"] = context
-                    if "dlt" in source.__annotations__:
+                    if "dlt" in f.__annotations__:
                         source_args["dlt"] = dlt
-                    if "config" in source.__annotations__:
+                    if "config" in f.__annotations__:
                         source_args["config"] = config
 
                     for resource in extra_resources:

@@ -76,11 +76,14 @@ class CBT:
                 self.search_paths.append(p)
         self.load_env()
 
-    def query(self, model_file: str, timeout: float = 300, **vars):
+    def query_with_string(self, query_str: str, timeout: float = 300):
         with self.bigquery.get_client() as client:
-            rendered = self.render_model(model_file, **vars)
-            job = client.query(rendered)
+            job = client.query(query_str, timeout=timeout)
             return job.result()
+
+    def query(self, model_file: str, timeout: float = 300, **vars):
+        rendered = self.render_model(model_file, **vars)
+        return self.query_with_string(rendered, timeout)
 
     # we should transition to this instead of using jinja
     def query_with_sqlglot(
