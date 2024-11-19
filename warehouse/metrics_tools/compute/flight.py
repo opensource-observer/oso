@@ -136,10 +136,12 @@ def run_coroutine_in_thread(coro):
     thread.start()
 
 
-def execute_duckdb_load(id: int, queries: t.List[str], dependencies: t.Dict[str, str]):
+def execute_duckdb_load(
+    id: int, gcs_path: str, queries: t.List[str], dependencies: t.Dict[str, str]
+):
     dprint("Starting duckdb load")
     worker = get_worker()
-    plugin = t.cast(MetricsWorkerPlugin, worker.plugins["duckdb-gcs"])
+    plugin = t.cast(MetricsWorkerPlugin, worker.plugins["metrics"])
     for ref, actual in dependencies.items():
         dprint(f"Loading cache for {ref}:{actual}")
         plugin.get_for_cache(ref, actual)
@@ -207,7 +209,7 @@ class MetricsCalculatorFlightServer(fl.FlightServerBase):
                 gcs_secret,
                 duckdb_path,
             ),
-            name="duckdb-gcs",
+            name="metrics",
         )
 
     def finalizer(self):

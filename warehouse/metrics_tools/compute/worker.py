@@ -1,15 +1,19 @@
 # The worker initialization
 import abc
+import os
 from metrics_tools.utils.logging import add_metrics_tools_to_existing_logger
 import pandas as pd
 import typing as t
 import duckdb
 import uuid
 from sqlglot import exp
-from dask.distributed import WorkerPlugin, Worker, print as dprint
+from dask.distributed import WorkerPlugin, Worker
 import logging
 import sys
 from threading import Lock
+from google.cloud import storage
+from contextlib import contextmanager
+
 
 from pyiceberg.catalog import load_catalog
 from pyiceberg.table import Table as IcebergTable
@@ -49,8 +53,6 @@ class MetricsWorkerPlugin(WorkerPlugin):
         logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
         self._conn = duckdb.connect(self._duckdb_path)
-        dprint("TESTING A PRINT")
-        print("TESTING A PRINT HERE normal print")
 
         # Connect to iceberg if this is a remote worker
         worker.log_event("info", "what")
@@ -168,3 +170,18 @@ class MetricsWorkerPlugin(WorkerPlugin):
         """
         )
         logger.info(f"CACHING TABLE {table_ref_name} COMPLETED")
+
+    @contextmanager
+    def gcs_client(self):
+        client = storage.Client()
+        try:
+            yield client
+        finally:
+            client.close()
+
+    @property
+    def bucket(self):
+        return self._gcs_bucket
+
+    def bucket_path(self, *joins: str):
+        return os.path.join(f"gs://{self.bucket}", *joins)
