@@ -41,18 +41,23 @@ def get_npm_package_downloads(
     str_to = date_to.strftime("%Y-%m-%d")
 
     endpoint = f"{NPM_HOST}/downloads/range/{str_from}:{str_to}/{package_name}"
-    response = requests.get(endpoint, timeout=10)
-
-    if not response.ok:
-        if response.status_code == 400 and "end date > start date" in response.text:
-            yield None
-
-        raise ValueError(
-            f"Failed to fetch data for {
-                package_name}: {response.text}"
-        )
+    response = requests.get(
+        endpoint,
+        timeout=10,
+        headers={
+            "X-URL": "https://github.com/opensource-observer/oso",
+            "X-Contact": "ops@karibalabs.co",
+            "X-Purpose": "We are currently indexing NPM packages to provide download statistics. "
+            "If you have any questions or concerns, please contact us",
+        },
+    )
 
     data = response.json()
+
+    if not response.ok:
+        if data["error"] == "end date > start date":
+            return
+        raise ValueError(f"Failed to fetch data for {package_name}: {response.text}")
 
     if data["package"] != package_name:
         raise ValueError(
@@ -60,25 +65,19 @@ def get_npm_package_downloads(
         )
 
     days_between = [
-        date_from + timedelta(days=i) for i in range((date_to - date_from).days + 1)
+        (date_from + timedelta(days=i)).strftime("%Y-%m-%d")
+        for i in range((date_to - date_from).days + 1)
     ]
 
     for download in data["downloads"]:
-        date_day = datetime.strptime(download["day"], "%Y-%m-%d")
+        date_day = download["day"]
 
         if date_day not in days_between:
             raise ValueError(
-                f"Unexpected date for {package_name}: {date_day.strftime('%Y-%m-%d')} not in "
-                f"{days_between[0].strftime('%Y-%m-%d')} => {days_between[-1].strftime('%Y-%m-%d')}"
+                f"Unexpected date for {package_name}: {date_day} not in {str_from} => {str_to}"
             )
 
         days_between.remove(date_day)
-
-        yield NPMPackageInfo(
-            date=date_day,
-            artifact_name=package_name,
-            downloads=download["downloads"],
-        )
 
     if len(days_between) > 0:
         raise ValueError(
@@ -86,6 +85,18 @@ def get_npm_package_downloads(
                 ", ".join(str(day) for day in days_between)
             }"
         )
+
+    total_downloads = sum(download["downloads"] for download in data["downloads"])
+
+    yield (
+        NPMPackageInfo(
+            date=date_from,
+            artifact_name=package_name,
+            downloads=total_downloads,
+        )
+        if total_downloads > 0
+        else None
+    )
 
 
 @dlt.resource(
@@ -110,7 +121,12 @@ def get_all_downloads(
     """
 
     start = datetime.strptime(context.partition_key, "%Y-%m-%d")
-    end = start + timedelta(weeks=1)
+    end = start + timedelta(days=6)
+
+    context.log.info(
+        f"Processing NPM downloads for {len(package_names)} packages "
+        f"between {start.strftime('%Y-%m-%d')} and {end.strftime('%Y-%m-%d')}"
+    )
 
     yield from (
         get_npm_package_downloads(package_name, start, end)
@@ -134,7 +150,7 @@ def downloads(
         SELECT
           DISTINCT(artifact_name)
         FROM
-          `oso.artifacts_v1`
+          `oso_playground.artifacts_v1`
         WHERE
           artifact_source = "NPM"
     """
