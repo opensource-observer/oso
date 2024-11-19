@@ -150,7 +150,7 @@ def downloads(
         SELECT
           DISTINCT(artifact_name)
         FROM
-          `oso_playground.artifacts_v1`
+          `oso.artifacts_v1`
         WHERE
           artifact_source = "NPM"
     """
