@@ -32,13 +32,11 @@ class MetricsWorkerPlugin(WorkerPlugin):
     def __init__(
         self,
         gcs_bucket: str,
-        hive_uri: str,
         gcs_key_id: str,
         gcs_secret: str,
         duckdb_path: str,
     ):
         self._gcs_bucket = gcs_bucket
-        self._hive_uri = hive_uri
         self._gcs_key_id = gcs_key_id
         self._gcs_secret = gcs_secret
         self._duckdb_path = duckdb_path
@@ -54,12 +52,8 @@ class MetricsWorkerPlugin(WorkerPlugin):
 
         self._conn = duckdb.connect(self._duckdb_path)
 
-        # Connect to iceberg if this is a remote worker
-        worker.log_event("info", "what")
+        # Connect to gcs
         sql = f"""
-        INSTALL iceberg;
-        LOAD iceberg;
-                    
         CREATE SECRET secret1 (
             TYPE GCS,
             KEY_ID '{self._gcs_key_id}',
@@ -67,14 +61,6 @@ class MetricsWorkerPlugin(WorkerPlugin):
         );
         """
         self._conn.sql(sql)
-        self._catalog = load_catalog(
-            "metrics",
-            **{
-                "uri": self._hive_uri,
-                "gcs.project-id": "opensource-observer",
-                "gcs.access": "read_only",
-            },
-        )
 
     def teardown(self, worker: Worker):
         if self._conn:
