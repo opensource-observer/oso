@@ -38,7 +38,8 @@ select distinct
   ) as review_comments,
   JSON_VALUE(
     pre.payload, "$.pull_request.author_association"
-  ) as author_association
+  ) as author_association,
+  JSON_VALUE(pre.payload, "$.number") as `number`
 from pull_request_events as pre
 where
   JSON_VALUE(pre.payload, "$.pull_request.merged_at") is not null
