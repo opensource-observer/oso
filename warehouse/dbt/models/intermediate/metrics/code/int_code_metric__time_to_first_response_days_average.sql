@@ -65,7 +65,7 @@ time_to_first_response as (
 
 time_to_first_response_events as (
   select
-    merged_at as `time`,
+    responded_at as `time`,
     to_artifact_id,
     event_source,
     time_to_first_response_days as amount
