@@ -35,6 +35,18 @@ issue_events as (
   from {{ ref('stg_github__issues') }}
 ),
 
+comment_events as (
+  select
+    `number`,
+    `type`,
+    actor_id,
+    created_at,
+    LOWER(actor_login) as actor_login,
+    LOWER(repository_name) as repository_name,
+    CAST(repository_id as STRING) as to_artifact_source_id
+  from {{ ref('stg_github__comments') }}
+),
+
 all_events as (
   select
     `number`,
@@ -68,6 +80,17 @@ all_events as (
     created_at,
     'GITHUB' as event_source
   from issue_events
+  union all
+  select
+    `number`,
+    `type`,
+    actor_login,
+    repository_name,
+    actor_id,
+    to_artifact_source_id,
+    created_at,
+    'GITHUB' as event_source
+  from comment_events
 )
 
 select
@@ -81,4 +104,4 @@ select
   to_artifact_source_id,
   {{ oso_id("event_source", "to_artifact_source_id") }} as to_artifact_id
 from all_events
-where actor_login not in ('dependabot[bot]', 'github-actions[bot]')
+where actor_login not like '%[bot]'
