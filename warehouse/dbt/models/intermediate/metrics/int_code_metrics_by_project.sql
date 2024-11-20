@@ -15,6 +15,10 @@ with metrics as (
   from {{ ref('int_code_metric__fulltime_developers_average') }}
   union all
   select * from {{ ref('int_code_metric__new_contributors') }}
+  union all
+  select * from {{ ref('int_code_metric__time_to_first_response_days_average') }}
+  union all
+  select * from {{ ref('int_code_metric__time_to_merge_days_average') }}
 ),
 
 aggs as (
@@ -137,7 +141,25 @@ aggs as (
           then amount
         else 0
       end
-    ) as fulltime_developer_average_6_months
+    ) as fulltime_developer_average_6_months,
+    SUM(
+      case
+        when
+          metric = 'time_to_first_response_days_average'
+          and time_interval = '6 MONTHS'
+          then amount
+        else 0
+      end
+    ) as time_to_first_response_days_average_6_months,
+    SUM(
+      case
+        when
+          metric = 'time_to_merge_days_average'
+          and time_interval = '6 MONTHS'
+          then amount
+        else 0
+      end
+    ) as time_to_merge_days_average_6_months
   from metrics
   group by
     project_id,
@@ -210,7 +232,9 @@ select
   code_metrics.opened_issue_count_6_months,
   code_metrics.closed_issue_count_6_months,
   code_metrics.comment_count_6_months,
-  code_metrics.release_count_6_months
+  code_metrics.release_count_6_months,
+  code_metrics.time_to_first_response_days_average_6_months,
+  code_metrics.time_to_merge_days_average_6_months
 from project_metadata
 left join code_metrics
   on
