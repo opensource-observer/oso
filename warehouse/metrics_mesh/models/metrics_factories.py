@@ -106,6 +106,19 @@ timeseries_metrics(
                 cron="@daily",
             ),
         ),
+        "developer_states": MetricQueryDef(
+            ref="developer_states.sql",
+            vars={
+                "full_time_ratio": 10 / 30,
+            },
+            rolling=RollingConfig(
+                windows=[30, 60, 90],
+                unit="day",
+                cron="@daily",
+            ),
+            entity_types=["artifact", "project", "collection"],
+            is_intermediate=False,
+        ),
     },
     default_dialect="clickhouse",
 )
