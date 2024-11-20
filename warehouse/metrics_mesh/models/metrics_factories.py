@@ -29,6 +29,14 @@ timeseries_metrics(
             ref="commits.sql",
             time_aggregations=["daily", "weekly", "monthly"],
         ),
+        "comments": MetricQueryDef(
+            ref="comments.sql",
+            time_aggregations=["daily", "weekly", "monthly"],
+        ),
+        "releases": MetricQueryDef(
+            ref="releases.sql",
+            time_aggregations=["daily", "weekly", "monthly"],
+        ),
         "forks": MetricQueryDef(
             ref="forks.sql",
             time_aggregations=["daily", "weekly", "monthly"],
