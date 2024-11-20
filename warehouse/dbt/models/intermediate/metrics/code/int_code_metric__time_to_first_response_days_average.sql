@@ -3,7 +3,8 @@ with start_events as (
     `number`,
     actor_id as creator_id,
     to_artifact_id,
-    `time` as created_at
+    `time` as created_at,
+    `type`
   from {{ ref('int_github_pr_issue_threads') }}
   where `type` in ('PULL_REQUEST_OPENED', 'ISSUE_OPENED')
 ),
