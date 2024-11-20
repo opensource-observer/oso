@@ -69,6 +69,24 @@ aggs as (
     SUM(
       case
         when
+          metric in ('pull_request_review_comment_count', 'issue_comment_count')
+          and time_interval = '6 MONTHS'
+          then amount
+        else 0
+      end
+    ) as comment_count_6_months,
+    SUM(
+      case
+        when
+          metric = 'release_published_count'
+          and time_interval = '6 MONTHS'
+          then amount
+        else 0
+      end
+    ) as release_count_6_months,
+    SUM(
+      case
+        when
           metric = 'active_developer_count'
           and time_interval = '6 MONTHS'
           then amount
@@ -138,7 +156,6 @@ repos as (
     SUM(star_count) as star_count,
     SUM(fork_count) as fork_count
   from {{ ref('int_repo_metrics_by_project') }}
-  --WHERE r.is_fork = false
   group by
     project_id,
     artifact_source
@@ -191,7 +208,9 @@ select
   code_metrics.opened_pull_request_count_6_months,
   code_metrics.merged_pull_request_count_6_months,
   code_metrics.opened_issue_count_6_months,
-  code_metrics.closed_issue_count_6_months
+  code_metrics.closed_issue_count_6_months,
+  code_metrics.comment_count_6_months,
+  code_metrics.release_count_6_months
 from project_metadata
 left join code_metrics
   on
