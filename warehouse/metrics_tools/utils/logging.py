@@ -3,6 +3,8 @@ import os
 
 connected_to_sqlmesh_logs = False
 
+logger = logging.getLogger(__name__)
+
 
 def add_metrics_tools_to_sqlmesh_logging():
     """sqlmesh won't automatically add metrics_tools logging. This will enable
@@ -15,6 +17,7 @@ def add_metrics_tools_to_sqlmesh_logging():
     if app_name == "sqlmesh" and not connected_to_sqlmesh_logs:
         add_metrics_tools_to_existing_logger(app_name)
         connected_to_sqlmesh_logs = True
+        logger.info("metrics_tools logs connected to sqlmesh")
 
 
 def add_metrics_tools_to_existing_logger(logger_name: str):
