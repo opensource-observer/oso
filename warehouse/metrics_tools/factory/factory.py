@@ -366,7 +366,7 @@ class TimeseriesMetrics:
                     )
                 },
             )
-        logger.debug("model generation complete")
+        logger.info("model generation complete")
 
     def generate_model_for_rendered_query(
         self,
@@ -567,7 +567,7 @@ def timeseries_metrics(
 ):
     add_metrics_tools_to_sqlmesh_logging()
 
-    logger.debug("loading timeseries metrics")
+    logger.info("loading timeseries metrics")
     calling_file = inspect.stack()[1].filename
     timeseries_metrics = TimeseriesMetrics.from_raw_options(**raw_options)
     return timeseries_metrics.generate_models(calling_file)
@@ -646,7 +646,14 @@ def generated_rolling_query(
     locals.update(sqlmesh_vars)
 
     runner = MetricsRunner.from_sqlmesh_context(context, query, ref, locals)
-    yield runner.run_rolling(start, end)
+    df = runner.run_rolling(start, end)
+    # If the rolling window is empty we need to yield from an empty tuple
+    # otherwise sqlmesh fails. See:
+    # https://sqlmesh.readthedocs.io/en/latest/concepts/models/python_models/#returning-empty-dataframes
+    if df.empty:
+        yield from ()
+    else:
+        yield df
 
 
 def generated_rolling_query_proxy(
