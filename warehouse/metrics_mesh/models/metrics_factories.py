@@ -45,6 +45,22 @@ timeseries_metrics(
             ref="gas_fees.sql",
             time_aggregations=["daily", "weekly", "monthly"],
         ),
+        "repositories": MetricQueryDef(
+            ref="repositories.sql",
+            time_aggregations=["daily", "weekly", "monthly"],
+        ),
+        "first_commit": MetricQueryDef(
+            ref="first_commit_date.sql",
+            time_aggregations=["daily", "weekly", "monthly"],
+        ),
+        "last_commit": MetricQueryDef(
+            ref="last_commit_date.sql",
+            time_aggregations=["daily", "weekly", "monthly"],
+        ),
+        "contributors": MetricQueryDef(
+            ref="contributors.sql",
+            time_aggregations=["daily", "weekly", "monthly"],
+        ),
         # This defines something with a rolling option that allows you to look back
         # to some arbitrary window. So you specify the window and specify the unit.
         # The unit and the window are used to pass in variables to the query. So it's
@@ -106,18 +122,68 @@ timeseries_metrics(
                 cron="@daily",
             ),
         ),
-        "developer_states": MetricQueryDef(
-            ref="developer_states.sql",
-            vars={
-                "full_time_ratio": 10 / 30,
-            },
+        "contributors_6_months": MetricQueryDef(
+            ref="contributors.sql",
             rolling=RollingConfig(
-                windows=[30, 60, 90],
+                windows=[180],
                 unit="day",
                 cron="@daily",
             ),
             entity_types=["artifact", "project", "collection"],
-            is_intermediate=False,
+        ),
+        "active_developers_6_months": MetricQueryDef(
+            ref="active_developers.sql",
+            rolling=RollingConfig(
+                windows=[180],
+                unit="day",
+                cron="@daily",
+            ),
+            entity_types=["artifact", "project", "collection"],
+        ),
+        "commits_6_months": MetricQueryDef(
+            ref="commits.sql",
+            rolling=RollingConfig(
+                windows=[180],
+                unit="day",
+                cron="@daily",
+            ),
+            entity_types=["artifact", "project", "collection"],
+        ),
+        "opened_pull_requests_6_months": MetricQueryDef(
+            ref="prs_opened.sql",
+            rolling=RollingConfig(
+                windows=[180],
+                unit="day",
+                cron="@daily",
+            ),
+            entity_types=["artifact", "project", "collection"],
+        ),
+        "merged_pull_requests_6_months": MetricQueryDef(
+            ref="prs_merged.sql",
+            rolling=RollingConfig(
+                windows=[180],
+                unit="day",
+                cron="@daily",
+            ),
+            entity_types=["artifact", "project", "collection"],
+        ),
+        "opened_issues_6_months": MetricQueryDef(
+            ref="issues_opened.sql",
+            rolling=RollingConfig(
+                windows=[180],
+                unit="day",
+                cron="@daily",
+            ),
+            entity_types=["artifact", "project", "collection"],
+        ),
+        "closed_issues_6_months": MetricQueryDef(
+            ref="issues_closed.sql",
+            rolling=RollingConfig(
+                windows=[180],
+                unit="day",
+                cron="@daily",
+            ),
+            entity_types=["artifact", "project", "collection"],
         ),
     },
     default_dialect="clickhouse",
