@@ -1,4 +1,5 @@
-test_developer_active_days_to_artifact_over_60_day_window:
+test_developer_active_days_to_artifact_over_60_day_window_with_cumulative_active_days:
+  # We need to test the rolling count of active days over a 60 day period. 
   gateway: local
   model: metrics.developer_active_days_to_artifact_over_60_day_window
   vars:
@@ -18,19 +19,19 @@ test_developer_active_days_to_artifact_over_60_day_window:
         event_source: SOURCE_PROVIDER
         event_type: COMMIT_CODE
         bucket_day: 2024-01-02
-        amount: 1
+        amount: 10
       - to_artifact_id: repo_0
         from_artifact_id: dev_0
         event_source: SOURCE_PROVIDER
         event_type: COMMIT_CODE
         bucket_day: 2024-01-03
-        amount: 1
+        amount: 12
       - to_artifact_id: repo_0
         from_artifact_id: dev_0
         event_source: SOURCE_PROVIDER
         event_type: COMMIT_CODE
         bucket_day: 2024-01-04
-        amount: 1
+        amount: 20
   outputs:
     partial: true
     query:
@@ -56,3 +57,36 @@ test_developer_active_days_to_artifact_over_60_day_window:
         from_artifact_id: dev_0
         metrics_sample_date: 2024-01-05
         amount: 4
+
+  test_developer_active_days_to_artifact_over_60_day_window_with_1_active_day:
+  gateway: local
+  model: metrics.developer_active_days_to_artifact_over_60_day_window
+  vars:
+    start: 2024-01-01
+    end: 2024-01-03
+  inputs:
+    metrics.events_daily_to_artifact:
+      rows:
+      - to_artifact_id: repo_0
+        from_artifact_id: dev_0
+        event_source: SOURCE_PROVIDER
+        event_type: COMMIT_CODE
+        bucket_day: 2024-01-01
+        amount: 10
+  outputs:
+    partial: true
+    query:
+      partial: true
+      rows:
+      - to_artifact_id: repo_0
+        from_artifact_id: dev_0
+        metrics_sample_date: 2024-01-01
+        amount: 1
+      - to_artifact_id: repo_0
+        from_artifact_id: dev_0
+        metrics_sample_date: 2024-01-02
+        amount: 1
+      - to_artifact_id: repo_0
+        from_artifact_id: dev_0
+        metrics_sample_date: 2024-01-03
+        amount: 1
