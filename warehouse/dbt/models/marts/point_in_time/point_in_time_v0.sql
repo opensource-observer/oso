@@ -1,7 +1,7 @@
 {{ 
   config(meta = {
     'sync_to_db': True,
-    'order_by': [ 'event_source', 'event_type', 'to_artifact_id', 'time' ]
+    'order_by': [ 'artifact_source', 'metric', 'artifact_id', 'time' ]
   }) 
 }}
 
