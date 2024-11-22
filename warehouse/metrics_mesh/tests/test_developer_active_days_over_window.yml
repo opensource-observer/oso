@@ -1,8 +1,8 @@
-test_developer_active_days_to_artifact_over_60_day_window_with_cumulative_active_days:
+test_developer_active_days_to_artifact_over_30_day_window_with_cumulative_active_days:
   # Tests rolling count of active days when the user is active 4 of the 5 days
   # in the test interval
   gateway: local
-  model: metrics.developer_active_days_to_artifact_over_60_day_window
+  model: metrics.developer_active_days_to_artifact_over_30_day_window
   vars:
     start: 2024-01-01
     end: 2024-01-05
@@ -59,10 +59,10 @@ test_developer_active_days_to_artifact_over_60_day_window_with_cumulative_active
         metrics_sample_date: 2024-01-05
         amount: 4
 
-test_developer_active_days_to_artifact_over_60_day_window_with_1_active_day:
+test_developer_active_days_to_artifact_over_30_day_window_with_1_active_day:
   # Tests rolling count of active days when the user is active 1 in the test interval
   gateway: local
-  model: metrics.developer_active_days_to_artifact_over_60_day_window
+  model: metrics.developer_active_days_to_artifact_over_30_day_window
   vars:
     start: 2024-01-01
     end: 2024-01-03
