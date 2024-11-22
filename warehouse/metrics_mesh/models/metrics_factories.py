@@ -45,6 +45,18 @@ timeseries_metrics(
             ref="gas_fees.sql",
             time_aggregations=["daily", "weekly", "monthly"],
         ),
+        "repositories": MetricQueryDef(
+            ref="repositories.sql",
+            time_aggregations=["daily", "weekly", "monthly"],
+        ),
+        "contributors": MetricQueryDef(
+            ref="contributors.sql",
+            time_aggregations=["daily", "weekly", "monthly"],
+        ),
+        "active_developers": MetricQueryDef(
+            ref="active_developers.sql",
+            time_aggregations=["daily", "weekly", "monthly"],
+        ),
         # This defines something with a rolling option that allows you to look back
         # to some arbitrary window. So you specify the window and specify the unit.
         # The unit and the window are used to pass in variables to the query. So it's
@@ -57,7 +69,7 @@ timeseries_metrics(
                 "activity_event_types": ["COMMIT_CODE"],
             },
             rolling=RollingConfig(
-                windows=[30, 60, 90],
+                windows=[30, 90, 180],
                 unit="day",
                 cron="@daily",  # This determines how often this is calculated
             ),
@@ -70,7 +82,7 @@ timeseries_metrics(
                 "full_time_ratio": 10 / 30,
             },
             rolling=RollingConfig(
-                windows=[30, 60, 90],
+                windows=[30, 90, 180],
                 unit="day",
                 cron="@daily",
             ),
@@ -79,12 +91,12 @@ timeseries_metrics(
             ref="contributor_activity_classification.sql",
             vars={"full_time_ratio": 10 / 30},
             rolling=RollingConfig(
-                windows=[30, 60, 90],
+                windows=[30, 90, 180],
                 unit="day",
                 cron="@daily",
             ),
         ),
-        "change_in_30_developer_activity": MetricQueryDef(
+        "change_in_30_day_developer_activity": MetricQueryDef(
             vars={
                 "comparison_interval": 30,
             },
@@ -95,9 +107,9 @@ timeseries_metrics(
                 cron="@daily",
             ),
         ),
-        "change_in_60_developer_activity": MetricQueryDef(
+        "change_in_90_day_developer_activity": MetricQueryDef(
             vars={
-                "comparison_interval": 60,
+                "comparison_interval": 90,
             },
             ref="change_in_developers.sql",
             rolling=RollingConfig(
@@ -105,6 +117,62 @@ timeseries_metrics(
                 unit="period",
                 cron="@daily",
             ),
+        ),
+        "change_in_180_day_developer_activity": MetricQueryDef(
+            vars={
+                "comparison_interval": 180,
+            },
+            ref="change_in_developers.sql",
+            rolling=RollingConfig(
+                windows=[2],
+                unit="period",
+                cron="@daily",
+            ),
+        ),
+        "commits_rolling": MetricQueryDef(
+            ref="commits.sql",
+            rolling=RollingConfig(
+                windows=[180],
+                unit="day",
+                cron="@daily",
+            ),
+            entity_types=["artifact", "project", "collection"],
+        ),
+        "opened_pull_requests": MetricQueryDef(
+            ref="prs_opened.sql",
+            rolling=RollingConfig(
+                windows=[180],
+                unit="day",
+                cron="@daily",
+            ),
+            entity_types=["artifact", "project", "collection"],
+        ),
+        "merged_pull_requests": MetricQueryDef(
+            ref="prs_merged.sql",
+            rolling=RollingConfig(
+                windows=[180],
+                unit="day",
+                cron="@daily",
+            ),
+            entity_types=["artifact", "project", "collection"],
+        ),
+        "opened_issues": MetricQueryDef(
+            ref="issues_opened.sql",
+            rolling=RollingConfig(
+                windows=[180],
+                unit="day",
+                cron="@daily",
+            ),
+            entity_types=["artifact", "project", "collection"],
+        ),
+        "closed_issues_6_months": MetricQueryDef(
+            ref="issues_closed.sql",
+            rolling=RollingConfig(
+                windows=[180],
+                unit="day",
+                cron="@daily",
+            ),
+            entity_types=["artifact", "project", "collection"],
         ),
     },
     default_dialect="clickhouse",
