@@ -15,6 +15,7 @@ for repository related metrics that aren't timeseries by nature.
 #}
 select
   `time`,
+  artifact_source,
   {{ oso_id("artifact_source", "artifact_source_id") }} as artifact_id,
   metric,
   amount
