@@ -1,5 +1,5 @@
 select 
-  @metrics_sample_date(time_to_first_response_events.time) as metrics_sample_date, 
+  @metrics_sample_date(time_to_first_response_events.responded_at) as metrics_sample_date, 
   time_to_first_response_events.event_source,
   time_to_first_response_events.to_artifact_id,
   '' as from_artifact_id,
@@ -7,7 +7,7 @@ select
   AVG(time_to_first_response_events.amount) as amount
 from (
   select
-    responded_at as `time`,
+    responded_at,
     to_artifact_id,
     event_source,
     time_to_first_response_days as amount
@@ -46,22 +46,22 @@ from (
         'ISSUE_CLOSED',
         'ISSUE_COMMENT'
       )
-    ) as resp
+    ) as resp_events
     on
-      start_events.issue_number = resp.issue_number
-      and start_events.to_artifact_id = resp.to_artifact_id
-      and start_events.creator_id != resp.responder_id
+      start_events.issue_number = resp_events.issue_number
+      and start_events.to_artifact_id = resp_events.to_artifact_id
+      and start_events.creator_id != resp_events.responder_id
       and (
         (
           start_events.event_type = 'ISSUE_OPENED'
-          and resp.event_type in (
+          and resp_events.event_type in (
             'ISSUE_COMMENT', 'ISSUE_CLOSED'
           )
         )
         or
         (
           start_events.event_type = 'PULL_REQUEST_OPENED'
-          and resp.event_type in (
+          and resp_events.event_type in (
             'PULL_REQUEST_REVIEW_COMMENT', 'PULL_REQUEST_MERGED'
           )
         )
@@ -72,7 +72,7 @@ from (
       start_events.created_at
   ) as time_to_first_response
 ) as time_to_first_response_events
-where time_to_first_response_events.time BETWEEN @metrics_start('DATE') AND @metrics_end('DATE')
+where time_to_first_response_events.responded_at BETWEEN @metrics_start('DATE') AND @metrics_end('DATE')
 group by 
   metrics_sample_date,
   time_to_first_response_events.event_source,
