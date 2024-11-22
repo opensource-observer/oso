@@ -49,14 +49,6 @@ timeseries_metrics(
             ref="repositories.sql",
             time_aggregations=["daily", "weekly", "monthly"],
         ),
-        "first_commit": MetricQueryDef(
-            ref="first_commit_date.sql",
-            time_aggregations=["daily", "weekly", "monthly"],
-        ),
-        "last_commit": MetricQueryDef(
-            ref="last_commit_date.sql",
-            time_aggregations=["daily", "weekly", "monthly"],
-        ),
         "contributors": MetricQueryDef(
             ref="contributors.sql",
             time_aggregations=["daily", "weekly", "monthly"],

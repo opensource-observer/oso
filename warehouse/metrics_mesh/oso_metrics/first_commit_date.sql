@@ -1,3 +1,5 @@
+-- TODO (@ravenac95) keeping this for now, might prove useful, but we likely need
+-- a different kind of model for first commit data
 select @metrics_sample_date(events.bucket_day) as metrics_sample_date,
   events.event_source,
   events.to_artifact_id as to_artifact_id,
