@@ -1,0 +1,14 @@
+{
+    "dataset_name": "Lens Data",
+    "description": "The Lens Data dataset provides information from Lens Protocol, an open social network built on the Polygon network. It mirrors the dataset offered by Lens for use in the OSO data pipeline. The dataset includes key data on user interactions and activities within the decentralized social network, updated weekly.",
+    "use_cases": [
+      "Analyzing social interactions and posts on the Lens Protocol",
+      "Tracking user activity and engagement within the Polygon-based social network",
+      "Profiling decentralized social network behaviors and trends",
+      "Monitoring the growth and dynamics of the Lens ecosystem"
+    ],
+    "network": "Polygon (Lens Protocol)",
+    "license": "OSO terms of service",
+    "update_frequency": "Weekly",
+    "reference_documentation": "https://models.opensource.observer/"
+}  
