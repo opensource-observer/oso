@@ -1,0 +1,21 @@
+{
+    "dataset_name": "Superchain Data",
+    "description": "The Superchain Data dataset provides public blockchain data, including blocks, transactions, and traces, for several networks. This dataset is updated daily and covers networks such as Optimism, Base, Frax, Metal, Mode, PGN, and Zora. It enables querying and analysis of blockchain events, such as contract creation and transactions, and is backed by OSO's partners at Goldsky.",
+    "use_cases": [
+      "Querying deployed contracts on various blockchain networks",
+      "Analyzing blockchain transaction data and block details",
+      "Monitoring contract creation and tracing transaction events across supported networks"
+    ],
+    "networks": [
+      "Optimism mainnet",
+      "Base",
+      "Frax",
+      "Metal",
+      "Mode",
+      "PGN",
+      "Zora"
+    ],
+    "license": "Apache-2.0 (Code), OSO terms of service (Data)",
+    "update_frequency": "Daily",
+    "reference_documentation": "https://models.opensource.observer/"
+}  
