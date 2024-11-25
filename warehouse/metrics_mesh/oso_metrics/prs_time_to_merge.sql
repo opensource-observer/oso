@@ -5,16 +5,7 @@ select @metrics_sample_date(time) as metrics_sample_date,
   @metric_name() as metric,
   AVG(created_delta) as amount
 from metrics.issue_event_time_deltas
-where (
-    (
-      event_type in ("PULL_REQUEST_MERGED", "ISSUE_CLOSED")
-      and comments = 0
-    )
-    or (
-      event_type in ("PULL_REQUEST_REVIEW_COMMENT", "ISSUE_COMMENT")
-      and comments = 1
-    )
-  )
+where event_type = 'PULL_REQUEST_MERGED'
   and `time` BETWEEN @metrics_start('DATE') and @metrics_end('DATE')
 group by 1,
   metric,
