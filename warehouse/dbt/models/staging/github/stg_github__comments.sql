@@ -9,23 +9,23 @@ with pull_request_comment_events as (
     "PULL_REQUEST_REVIEW_COMMENT" as `type`,
     JSON_VALUE(ghe.payload, "$.pull_request.number") as `number`,
     JSON_VALUE(
-      pre.payload,
+      ghe.payload,
       "$.pull_request.created_at"
     ) as created_at,
     JSON_VALUE(
-      pre.payload,
+      ghe.payload,
       "$.pull_request.merged_at"
     ) as merged_at,
     JSON_VALUE(
-      pre.payload,
+      ghe.payload,
       "$.pull_request.closed_at"
     ) as closed_at,
     JSON_VALUE(
-      pre.payload,
+      ghe.payload,
       "$.pull_request.state"
     ) as `state`,
     JSON_VALUE(
-      pre.payload,
+      ghe.payload,
       "$.pull_request.comments"
     ) as comments
   from {{ ref('stg_github__events') }} as ghe
@@ -43,20 +43,20 @@ issue_comment_events as (
     "ISSUE_COMMENT" as `type`,
     JSON_VALUE(ghe.payload, "$.issue.number") as `number`,
     JSON_VALUE(
-      pre.payload,
+      ghe.payload,
       "$.issue.created_at"
     ) as created_at,
     NULL as merged_at, -- noqa
     JSON_VALUE(
-      pre.payload,
+      ghe.payload,
       "$.issue.closed_at"
     ) as closed_at,
     JSON_VALUE(
-      pre.payload,
+      ghe.payload,
       "$.issue.state"
     ) as `state`,
     JSON_VALUE(
-      pre.payload,
+      ghe.payload,
       "$.issue.comments"
     ) as comments
   from {{ ref('stg_github__events') }} as ghe
