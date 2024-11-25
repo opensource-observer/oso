@@ -41,6 +41,10 @@ timeseries_metrics(
             ref="repositories.sql",
             time_aggregations=["daily", "weekly", "monthly"],
         ),
+        "active_contracts": MetricQueryDef(
+            ref="active_contracts.sql",
+            time_aggregations=["daily", "weekly", "monthly"],
+        ),
         "contributors": MetricQueryDef(
             ref="contributors.sql",
             time_aggregations=["daily", "weekly", "monthly"],
