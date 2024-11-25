@@ -40,7 +40,7 @@ select
 from active_users active
 join first_events on first_events.from_artifact_id = active.from_artifact_id
 -- First event occurred within the rolling window
-where first_events.first_event_date >= dateAdd(day, -@rolling_window, @metrics_end('DATE'))
+where first_events.first_event_date >= @metrics_start('DATE')
 group by 
   metrics_sample_date,
   metric,
