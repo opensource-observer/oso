@@ -18,19 +18,19 @@ select
   CONCAT("ISSUE_", UPPER(JSON_VALUE(ie.payload, "$.action"))) as `type`,
   JSON_VALUE(ie.payload, "$.issue.number") as `number`,
   JSON_VALUE(
-    pre.payload,
+    ie.payload,
     "$.issue.created_at"
   ) as created_at,
   JSON_VALUE(
-    pre.payload,
+    ie.payload,
     "$.issue.closed_at"
   ) as closed_at,
   JSON_VALUE(
-    pre.payload,
+    ie.payload,
     "$.issue.state"
   ) as `state`,
   JSON_VALUE(
-    pre.payload,
+    ie.payload,
     "$.issue.comments"
   ) as comments
 from issue_events as ie
