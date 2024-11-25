@@ -3,7 +3,7 @@ with pr_events as (
     `number`,
     `type`,
     actor_id,
-    created_at,
+    event_time as `time`,
     LOWER(actor_login) as actor_login,
     LOWER(repository_name) as repository_name,
     CAST(repository_id as STRING) as to_artifact_source_id
@@ -16,7 +16,7 @@ merge_events as (
     `number`,
     `type`,
     actor_id,
-    created_at,
+    created_at as `time`,
     LOWER(actor_login) as actor_login,
     LOWER(repository_name) as repository_name,
     CAST(repository_id as STRING) as to_artifact_source_id
@@ -28,7 +28,7 @@ issue_events as (
     `number`,
     `type`,
     actor_id,
-    created_at,
+    event_time as `time`,
     LOWER(actor_login) as actor_login,
     LOWER(repository_name) as repository_name,
     CAST(repository_id as STRING) as to_artifact_source_id
@@ -40,7 +40,7 @@ comment_events as (
     `number`,
     `type`,
     actor_id,
-    created_at,
+    event_time as `time`,
     LOWER(actor_login) as actor_login,
     LOWER(repository_name) as repository_name,
     CAST(repository_id as STRING) as to_artifact_source_id
@@ -55,7 +55,7 @@ all_events as (
     repository_name,
     actor_id,
     to_artifact_source_id,
-    created_at,
+    `time`,
     'GITHUB' as event_source
   from pr_events
   union all
@@ -66,7 +66,7 @@ all_events as (
     repository_name,
     actor_id,
     to_artifact_source_id,
-    created_at,
+    `time`,
     'GITHUB' as event_source
   from merge_events
   union all
@@ -77,7 +77,7 @@ all_events as (
     repository_name,
     actor_id,
     to_artifact_source_id,
-    created_at,
+    `time`,
     'GITHUB' as event_source
   from issue_events
   union all
@@ -88,14 +88,14 @@ all_events as (
     repository_name,
     actor_id,
     to_artifact_source_id,
-    created_at,
+    `time`,
     'GITHUB' as event_source
   from comment_events
 )
 
 select
   'GITHUB' as event_source,
-  created_at as `time`,
+  `time`,
   `number`,
   `type`,
   actor_login,
