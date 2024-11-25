@@ -22,7 +22,7 @@ active_users as (
     event_types := @activity_event_types
   )
   -- Use rolling window to look back N days from the end date
-  where event_date between dateAdd(day, -@rolling_window, @metrics_end('DATE')) 
+  where event_date between @metrics_start('DATE') and @metrics_end('DATE') 
     and @metrics_end('DATE')
 )
 
