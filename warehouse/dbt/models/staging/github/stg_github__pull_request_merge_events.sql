@@ -49,6 +49,9 @@ select distinct
     pre.payload, "$.pull_request.review_comments"
   ) as review_comments,
   JSON_VALUE(
+    pre.payload, "$.pull_request.comments"
+  ) as comments,
+  JSON_VALUE(
     pre.payload, "$.pull_request.author_association"
   ) as author_association,
   JSON_VALUE(pre.payload, "$.number") as `number`
