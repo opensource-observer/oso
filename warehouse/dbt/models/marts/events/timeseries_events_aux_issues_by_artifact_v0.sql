@@ -12,5 +12,9 @@ select
   event_type,
   event_source_id,
   event_source,
-  issue_number
+  issue_id,
+  issue_number,
+  created_at,
+  merged_at,
+  closed_at
 from {{ ref('int_events_aux_issues') }}
