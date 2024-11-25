@@ -8,17 +8,17 @@ with pull_request_comment_events as (
     ghe.actor.login as actor_login,
     "PULL_REQUEST_REVIEW_COMMENT" as `type`,
     JSON_VALUE(ghe.payload, "$.pull_request.number") as `number`,
-    JSON_VALUE(
-      ghe.payload,
-      "$.pull_request.created_at"
+    PARSE_TIMESTAMP(
+      "%Y-%m-%dT%H:%M:%E*SZ",
+      JSON_VALUE(ghe.payload, "$.pull_request.created_at")
     ) as created_at,
-    JSON_VALUE(
-      ghe.payload,
-      "$.pull_request.merged_at"
+    PARSE_TIMESTAMP(
+      "%Y-%m-%dT%H:%M:%E*SZ",
+      JSON_VALUE(ghe.payload, "$.pull_request.merged_at")
     ) as merged_at,
-    JSON_VALUE(
-      ghe.payload,
-      "$.pull_request.closed_at"
+    PARSE_TIMESTAMP(
+      "%Y-%m-%dT%H:%M:%E*SZ",
+      JSON_VALUE(ghe.payload, "$.pull_request.closed_at")
     ) as closed_at,
     JSON_VALUE(
       ghe.payload,
@@ -42,14 +42,14 @@ issue_comment_events as (
     ghe.actor.login as actor_login,
     "ISSUE_COMMENT" as `type`,
     JSON_VALUE(ghe.payload, "$.issue.number") as `number`,
-    JSON_VALUE(
-      ghe.payload,
-      "$.issue.created_at"
+    PARSE_TIMESTAMP(
+      "%Y-%m-%dT%H:%M:%E*SZ",
+      JSON_VALUE(ghe.payload, "$.issue.created_at")
     ) as created_at,
-    "" as merged_at, -- noqa
-    JSON_VALUE(
-      ghe.payload,
-      "$.issue.closed_at"
+    CAST(null as TIMESTAMP) as merged_at,
+    PARSE_TIMESTAMP(
+      "%Y-%m-%dT%H:%M:%E*SZ",
+      JSON_VALUE(ghe.payload, "$.issue.closed_at")
     ) as closed_at,
     JSON_VALUE(
       ghe.payload,
