@@ -1,15 +1,12 @@
 with first_events as (
-  -- Get each user's first event date across all time
   select 
     from_artifact_id,
-    min(event_date) as first_event_date
-  from @metrics_source(
-    event_types := @activity_event_types
-  )
+    min(time::date) as first_event_date
+  from @first_of_event_from_artifact
+  where event_type in (@activity_event_types)
   group by from_artifact_id
 ),
 active_users as (
-  -- Get users active in the rolling window period
   select distinct
     from_artifact_id,
     event_date,
@@ -21,9 +18,7 @@ active_users as (
   from @metrics_source(
     event_types := @activity_event_types
   )
-  -- Use rolling window to look back N days from the end date
-  where event_date between @metrics_start('DATE') and @metrics_end('DATE') 
-    and @metrics_end('DATE')
+  where event_date >= @metrics_start('DATE')
 )
 
 select 
@@ -39,7 +34,6 @@ select
   COUNT(DISTINCT active.from_artifact_id) as amount
 from active_users active
 join first_events on first_events.from_artifact_id = active.from_artifact_id
--- First event occurred within the rolling window
 where first_events.first_event_date >= @metrics_start('DATE')
 group by 
   metrics_sample_date,
@@ -66,7 +60,6 @@ select
   COUNT(DISTINCT active.from_artifact_id) as amount
 from active_users active
 join first_events on first_events.from_artifact_id = active.from_artifact_id
--- First event occurred before the rolling window
 where first_events.first_event_date < @metrics_start('DATE')
 group by 
   metrics_sample_date,
