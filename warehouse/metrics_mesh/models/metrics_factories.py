@@ -21,10 +21,6 @@ timeseries_metrics(
             ref="stars.sql",
             time_aggregations=["daily", "weekly", "monthly"],
         ),
-        "active_addresses": MetricQueryDef(
-            ref="active_addresses.sql",
-            time_aggregations=["daily", "weekly", "monthly"],
-        ),
         "commits": MetricQueryDef(
             ref="commits.sql",
             time_aggregations=["daily", "weekly", "monthly"],
@@ -39,10 +35,6 @@ timeseries_metrics(
         ),
         "forks": MetricQueryDef(
             ref="forks.sql",
-            time_aggregations=["daily", "weekly", "monthly"],
-        ),
-        "gas_fees": MetricQueryDef(
-            ref="gas_fees.sql",
             time_aggregations=["daily", "weekly", "monthly"],
         ),
         "repositories": MetricQueryDef(
@@ -95,6 +87,18 @@ timeseries_metrics(
                 unit="day",
                 cron="@daily",
             ),
+        ),
+        "user_retention_classifications": MetricQueryDef(
+            ref="user_retention_classification.sql",
+            vars={
+                "activity_event_types": ["CONTRACT_INVOCATION_SUCCESS_DAILY_COUNT"],
+            },
+            rolling=RollingConfig(
+                windows=[30, 90, 180],
+                unit="day",
+                cron="@daily",
+            ),
+            entity_types=["artifact", "project", "collection"],
         ),
         "change_in_30_day_developer_activity": MetricQueryDef(
             vars={
@@ -169,6 +173,33 @@ timeseries_metrics(
             ref="issues_closed.sql",
             rolling=RollingConfig(
                 windows=[180],
+                unit="day",
+                cron="@daily",
+            ),
+            entity_types=["artifact", "project", "collection"],
+        ),
+        "active_addresses": MetricQueryDef(
+            ref="active_addresses.sql",
+            rolling=RollingConfig(
+                windows=[30, 90, 180],
+                unit="day",
+                cron="@daily",
+            ),
+            entity_types=["artifact", "project", "collection"],
+        ),        
+        "gas_fees": MetricQueryDef(
+            ref="gas_fees.sql",
+            rolling=RollingConfig(
+                windows=[30, 90, 180],
+                unit="day",
+                cron="@daily",
+            ),
+            entity_types=["artifact", "project", "collection"],
+        ),
+        "transactions": MetricQueryDef(
+            ref="transactions.sql",
+            rolling=RollingConfig(
+                windows=[30, 90, 180],
                 unit="day",
                 cron="@daily",
             ),
