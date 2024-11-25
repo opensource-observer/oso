@@ -136,6 +136,7 @@ select
   time,
   to_artifact_id,
   from_artifact_id,
+  {{ oso_id("event_source", "to_artifact_id", "issue_number") }} as issue_id,
   issue_number,
   created_at,
   merged_at,
