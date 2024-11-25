@@ -46,7 +46,7 @@ issue_comment_events as (
       ghe.payload,
       "$.issue.created_at"
     ) as created_at,
-    NULL as merged_at, -- noqa
+    "" as merged_at, -- noqa
     JSON_VALUE(
       ghe.payload,
       "$.issue.closed_at"
