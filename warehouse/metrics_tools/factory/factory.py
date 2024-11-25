@@ -239,6 +239,7 @@ class TimeseriesMetrics:
                     QualifyTransform(),
                     JoinerTransform(
                         ref["entity_type"],
+                        self._timeseries_sources,
                     ),
                 ],
             )
