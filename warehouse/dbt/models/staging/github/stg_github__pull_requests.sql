@@ -18,17 +18,17 @@ select
   CONCAT("PULL_REQUEST_", UPPER(JSON_VALUE(pre.payload, "$.action")))
     as `type`,
   JSON_VALUE(pre.payload, "$.number") as `number`,
-  JSON_VALUE(
-    pre.payload,
-    "$.pull_request.created_at"
+  PARSE_TIMESTAMP(
+    "%Y-%m-%dT%H:%M:%E*SZ",
+    JSON_VALUE(pre.payload, "$.pull_request.created_at")
   ) as created_at,
-  JSON_VALUE(
-    pre.payload,
-    "$.pull_request.merged_at"
+  PARSE_TIMESTAMP(
+    "%Y-%m-%dT%H:%M:%E*SZ",
+    JSON_VALUE(pre.payload, "$.pull_request.merged_at")
   ) as merged_at,
-  JSON_VALUE(
-    pre.payload,
-    "$.pull_request.closed_at"
+  PARSE_TIMESTAMP(
+    "%Y-%m-%dT%H:%M:%E*SZ",
+    JSON_VALUE(pre.payload, "$.pull_request.closed_at")
   ) as closed_at,
   JSON_VALUE(
     pre.payload,
