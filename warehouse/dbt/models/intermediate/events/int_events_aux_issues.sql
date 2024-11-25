@@ -54,7 +54,7 @@ github_issues as (
     CAST(actor_id as STRING) as from_artifact_source_id,
     `number` as issue_number,
     created_at,
-    null as merged_at,
+    CAST(null as TIMESTAMP) as merged_at,
     closed_at,
     comments
   from {{ ref('stg_github__issues') }}
