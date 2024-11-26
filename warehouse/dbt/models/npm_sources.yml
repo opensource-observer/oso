@@ -1,0 +1,9 @@
+sources:
+  - name: npm
+    database: opensource-observer
+    schema: npm
+    tables:
+      - name: downloads
+        identifier: downloads
+      - name: manifests
+        identifier: manifests
