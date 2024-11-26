@@ -1,0 +1,23 @@
+{
+    "dataset_name": "OpenRank Data",
+    "description": "The OpenRank Data dataset provides reputation scores calculated using verifiable compute for graph-based, iterative algorithms such as EigenTrust, Collaborative Filtering, Hubs and Authorities, and Latent Semantic Analysis. It scores Farcaster users in two ways: 'globaltrust', which calculates global reputation seeded by the trust of Optimism badgeholders, and 'localtrust', which calculates relative reputation scores of users. The dataset is updated daily and supports reputation analysis for decentralized networks.",
+    "use_cases": [
+      "Calculating global reputation scores of users in decentralized networks",
+      "Analyzing relative reputation scores between users (localtrust)",
+      "Exploring trust and reputation propagation through iterative algorithms",
+      "Evaluating user trust in decentralized social networks such as Farcaster"
+    ],
+    "algorithms": [
+      "EigenTrust",
+      "Collaborative Filtering",
+      "Hubs and Authorities",
+      "Latent Semantic Analysis"
+    ],
+    "networks": [
+      "Farcaster",
+      "Optimism (badgeholder seed)"
+    ],
+    "license": "OSO terms of service",
+    "update_frequency": "Daily",
+    "reference_documentation": "https://models.opensource.observer/"
+}  

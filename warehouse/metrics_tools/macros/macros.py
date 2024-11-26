@@ -31,11 +31,6 @@ def relative_window_sample_date(
     must be a valid thing to subtract from. Also note, the base should generally
     be the `@metrics_end` date.
     """
-    # if evaluator.runtime_stage in ["loading", "creating"]:
-    #     return parse_one("STR_TO_DATE('1970-01-01', '%Y-%m-%d')")
-    if relative_index == 0:
-        return base
-
     if isinstance(unit, exp.Literal):
         unit = t.cast(str, unit.this)
     elif isinstance(unit, exp.Expression):
@@ -55,6 +50,8 @@ def relative_window_sample_date(
         converted_relative_index = int(t.cast(int, relative_index.this))
     elif isinstance(relative_index, exp.Neg):
         converted_relative_index = int(relative_index.this.this) * -1
+    if converted_relative_index == 0:
+        return base
     interval_unit = exp.Var(this=unit)
     interval_delta = exp.Interval(
         this=exp.Mul(
