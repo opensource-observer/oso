@@ -19,7 +19,7 @@ with snapshots as (
 
 artifacts as (
   select artifact_name
-  from {{ ref('artifacts_v1') }}
+  from {{ ref('int_all_artifacts') }}
   where artifact_source = "NPM"
 ),
 
