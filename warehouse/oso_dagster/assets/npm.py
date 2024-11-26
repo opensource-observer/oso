@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from typing import Dict, Generator, List, Optional, Union
+from typing import Dict, Generator, List, Optional, Any
 
 import dlt
 import requests
@@ -31,18 +31,19 @@ class NPMPackageManifest(BaseModel):
     description: Optional[str] = None
     keywords: Optional[List] = None
     homepage: Optional[str] = None
-    bugs: Optional[Union[str, Dict]] = None
-    license: Optional[str] = None
-    author: Optional[Union[str, Dict]] = None
+    bugs: Optional[Dict] = None
+    license: Optional[Dict] = None
+    author: Optional[Dict] = None
     contributors: Optional[List] = None
-    funding: Optional[Union[str, Dict, List]] = None
+    funding: Optional[List] = None
     files: Optional[List] = None
     exports: Optional[Dict] = None
     main: Optional[str] = None
-    browser: Optional[bool] = None
-    man: Optional[Union[str, Dict, List]] = None
+    browser: Optional[Dict] = None
+    bin: Optional[Dict] = None
+    man: Optional[List] = None
     directories: Optional[Dict] = None
-    repository: Optional[Union[str, Dict]] = None
+    repository: Optional[Dict] = None
     scripts: Optional[Dict] = None
     config: Optional[Dict] = None
     dependencies: Optional[Dict] = None
@@ -59,6 +60,45 @@ class NPMPackageManifest(BaseModel):
     private: Optional[bool] = None
     publishConfig: Optional[Dict] = None
     workspaces: Optional[List] = None
+
+
+# Some fields in the NPM manifest are not always in the same format
+# This dictionary contains the transformations to apply to the data
+# before creating the manifest object
+TRANSFORMATIONS = {
+    "bugs": lambda value: {"url": value} if isinstance(value, str) else value,
+    "license": lambda value: {"type": value} if isinstance(value, str) else value,
+    "author": lambda value: {"author": value} if isinstance(value, str) else value,
+    "funding": lambda value: (
+        [{"type": "url", "url": value}]
+        if isinstance(value, str)
+        else [value] if isinstance(value, dict) else value
+    ),
+    "exports": lambda value: {".": value} if isinstance(value, str) else value,
+    "bin": lambda value: {"path": value} if isinstance(value, str) else value,
+    "man": lambda value: [value] if isinstance(value, str) else value,
+    "browser": lambda value: (
+        {"browser": value} if isinstance(value, (str, bool)) else value
+    ),
+    "repository": lambda value: {"url": value} if isinstance(value, str) else value,
+}
+
+
+def flatten_manifest(data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Applies transformations to the data before creating the manifest object.
+
+    Args:
+        data (Dict[str, Any]): The data to transform
+
+    Returns:
+        Dict[str, Any]: The transformed data
+    """
+
+    for key, transform in TRANSFORMATIONS.items():
+        if key in data:
+            data[key] = transform(data[key])
+    return data
 
 
 def get_npm_package_downloads(
@@ -169,7 +209,7 @@ def get_npm_package_manifest(
     if not response.ok:
         raise ValueError(f"Failed to fetch data for {package_name}: {response.text}")
 
-    yield NPMPackageManifest(**data)
+    yield NPMPackageManifest(**flatten_manifest(data))
 
 
 @dlt.resource(
