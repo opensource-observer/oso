@@ -204,15 +204,24 @@ timeseries_metrics(
             ),
             entity_types=["artifact", "project", "collection"],
         ),
-        "active_addresses": MetricQueryDef(
+        "active_addresses_aggregation": MetricQueryDef(
             ref="active_addresses.sql",
+            vars={
+                "activity_event_types": ["CONTRACT_INVOCATION_SUCCESS_DAILY_COUNT"],
+            },
+            time_aggregations=["daily", "monthly"],
+        ),
+        "active_addresses_rolling": MetricQueryDef(
+            ref="active_addresses.sql",
+            vars={
+                "activity_event_types": ["CONTRACT_INVOCATION_SUCCESS_DAILY_COUNT"],
+            },
             rolling=RollingConfig(
                 windows=[30, 90, 180],
                 unit="day",
                 cron="@daily",
             ),
-            entity_types=["artifact", "project", "collection"],
-        ),        
+        ),
         "gas_fees": MetricQueryDef(
             ref="gas_fees.sql",
             rolling=RollingConfig(
