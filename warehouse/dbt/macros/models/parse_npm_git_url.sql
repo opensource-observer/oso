@@ -16,7 +16,6 @@ normalized_urls as (
   select
     `name`,
     artifact_url,
-    original_url,
     cleaned_url,
     case
       when regexp_contains(cleaned_url, r'^git\+ssh://') then 
@@ -38,26 +37,18 @@ parsed_data as (
   select
     `name`,
     artifact_url,
-    original_url,
     normalized_url,
     regexp_extract(normalized_url, r'https?://([^/]+)/') as remote_host,
-    regexp_extract(
-      normalized_url, 
-      r'https?://[^/]+/([^/]+)/'
-    ) as remote_namespace,
-    regexp_extract(
-      normalized_url, 
-      r'https?://[^/]+/[^/]+/([^/.]+)'
-    ) as remote_name
+    regexp_extract(normalized_url, r'https?://[^/]+/([^/]+)/') as remote_namespace,
+    regexp_extract(normalized_url, r'https?://[^/]+/[^/]+/([^/.]+)') as remote_name
   from normalized_urls
 ),
 
 final_data as (
   select
-    `name`,
+   `name`,
     artifact_url,
-    original_url,
-    normalized_url as remote_url,
+    concat('https://', remote_host, '/', remote_namespace, '/', remote_name, '.git') as remote_url,
     remote_host,
     remote_namespace,
     remote_name,
