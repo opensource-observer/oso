@@ -7,17 +7,17 @@ with npm_artifacts as (
 npm_manifests as (
   select
     `name`,
-    repository__url,
-    repository__type,
+    json_value(repository, '$.url') as manifest_repository_url,
+    json_value(repository, '$.type') as manifest_repository_type,
     concat('https://www.npmjs.com/package/', `name`) as artifact_url
   from {{ ref('stg_npm__manifests') }}
   where
     `name` in (select * from npm_artifacts)
-    and repository__url is not null
+    and json_value(repository, '$.url') is not null
 ),
 
 npm_repository_urls as (
-  {{ parse_npm_git_url('repository__url', 'npm_manifests') }}
+  {{ parse_npm_git_url('manifest_repository_url', 'npm_manifests') }}
 ),
 
 npm_artifact_ownership as (
