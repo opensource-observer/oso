@@ -2,8 +2,10 @@
 """
 
 import typing as t
-from dask_kubernetes.operator import KubeCluster, make_cluster_spec
+
 from dask.distributed import Client
+from dask_kubernetes.operator import KubeCluster, make_cluster_spec
+
 from .worker import MetricsWorkerPlugin
 
 
@@ -78,6 +80,16 @@ class ClusterManager:
             "dashboard_url": self._cluster.dashboard_link,
             "workers": len(self._cluster.scheduler_info["workers"]),
         }
+
+    @property
+    def client(self):
+        client = self._client
+        assert client is not None, "Client hasn't been initialized"
+        return client
+
+    def close(self):
+        if self._cluster:
+            self._cluster.close()
 
 
 def make_new_cluster(

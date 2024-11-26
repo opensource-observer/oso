@@ -1,9 +1,33 @@
-import typing as t
 import os
+import typing as t
 
 
-def ensure_int(var: str, default: t.Optional[int] = None):
-    """Ensures an environment variables is an integer"""
+def required_var[T](var: str, default: t.Optional[T] = None):
     value = os.environ.get(var, default)
-    assert value
-    return int
+    assert value, f"f{var} is required"
+    return value
+
+
+def required_int(var: str, default: t.Optional[int] = None):
+    """Ensures an environment variables is an integer"""
+    return int(required_var(var, default))
+
+
+def required_str(var: str, default: t.Optional[str] = None):
+    return required_var(var, default)
+
+
+def ensure_var[T](var: str, default: T, converter: t.Callable[[str], T]):
+    try:
+        value = os.environ[var]
+        return converter(value)
+    except KeyError:
+        return default
+
+
+def ensure_str(var: str, default: str):
+    return ensure_var(var, default, str)
+
+
+def ensure_int(var: str, default: int):
+    return ensure_var(var, default, int)

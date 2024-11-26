@@ -1,31 +1,25 @@
 # The worker initialization
 import abc
-import os
-from metrics_tools.utils.logging import add_metrics_tools_to_existing_logger
-import pandas as pd
-import typing as t
-import duckdb
-import uuid
-from sqlglot import exp
-from dask.distributed import WorkerPlugin, Worker
 import logging
+import os
 import sys
-from threading import Lock
-from google.cloud import storage
+import typing as t
+import uuid
 from contextlib import contextmanager
+from threading import Lock
 
-
+import duckdb
+import polars as pl
+from dask.distributed import Worker, WorkerPlugin, get_worker
+from google.cloud import storage
+from metrics_tools.utils.logging import add_metrics_tools_to_existing_logger
 from pyiceberg.catalog import load_catalog
 from pyiceberg.table import Table as IcebergTable
+from sqlglot import exp
 
 logger = logging.getLogger(__name__)
 
 mutex = Lock()
-
-
-class DuckDBWorkerInterface(abc.ABC):
-    def fetchdf(self, query: str) -> pd.DataFrame:
-        raise NotImplementedError("fetchdf not implemented")
 
 
 class MetricsWorkerPlugin(WorkerPlugin):
@@ -171,3 +165,26 @@ class MetricsWorkerPlugin(WorkerPlugin):
 
     def bucket_path(self, *joins: str):
         return os.path.join(f"gs://{self.bucket}", *joins)
+
+
+def execute_duckdb_load(
+    id: int, gcs_path: str, queries: t.List[str], dependencies: t.Dict[str, str]
+):
+    logger.debug("Starting duckdb load")
+    worker = get_worker()
+    plugin = t.cast(MetricsWorkerPlugin, worker.plugins["metrics"])
+    for ref, actual in dependencies.items():
+        logger.debug(f"Loading cache for {ref}:{actual}")
+        plugin.get_for_cache(ref, actual)
+    conn = plugin.connection
+    results: t.List[pl.DataFrame] = []
+    for query in queries:
+        result = conn.execute(query).pl()
+        results.append(result)
+
+    pl.concat(results)
+
+    # return DuckdbLoadedItem(
+    #     id=id,
+    #     df=pd.concat(results, ignore_index=True, sort=False),
+    # )
