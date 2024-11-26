@@ -17,15 +17,21 @@ with snapshots as (
   where `MinimumDepth` = 1
 ),
 
+artifacts as (
+  select artifact_name
+  from {{ ref('artifacts_v1') }}
+  where artifact_source = "NPM"
+),
+
 intermediate as (
   select
     `time`,
     case
-      when previous_to_artifact_name is null then 'ADD_DEPENDENCY'
+      when previous_to_artifact_name is null then "ADD_DEPENDENCY"
       when
         to_artifact_name is not null and to_artifact_name <> previous_to_artifact_name
-        then 'REMOVE_DEPENDENCY'
-      else 'NO_CHANGE'
+        then "REMOVE_DEPENDENCY"
+      else "NO_CHANGE"
     end as event_type,
     {{ event_source_name }} as event_source,
     {{ parse_name(
@@ -48,6 +54,7 @@ intermediate as (
     from_artifact_type,
     1.0 as amount
   from snapshots
+  where from_artifact_name in (select artifact_name from artifacts)
 ),
 
 artifact_ids as (
@@ -81,7 +88,7 @@ artifact_ids as (
     }} as from_artifact_source_id,
     amount
   from intermediate
-  where event_type <> 'NO_CHANGE'
+  where event_type <> "NO_CHANGE"
 ),
 
 changes as (
