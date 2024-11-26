@@ -1,69 +1,74 @@
-{% macro parse_npm_git_url(key, source) %}
+{% macro parse_npm_git_url(repository_url_column, source_table) %}
+with cleaned_urls as (
+  select
+    `name`,
+    artifact_url,
+    {{ repository_url_column }} as original_url,
+    case
+      when regexp_contains({{ repository_url_column }}, r'#') then 
+        regexp_replace({{ repository_url_column }}, r'#.*$', '')
+      else {{ repository_url_column }}
+    end as cleaned_url
+  from {{ source_table }}
+),
 
-  with parsed_data as (
-    select
-      *,
+normalized_urls as (
+  select
+    `name`,
+    artifact_url,
+    original_url,
+    cleaned_url,
+    case
+      when regexp_contains(cleaned_url, r'^git\+ssh://') then 
+        regexp_replace(cleaned_url, r'^git\+ssh://([^@]+)@', 'https://')
+      when regexp_contains(cleaned_url, r'^git@') then 
+        regexp_replace(cleaned_url, r'^git@(.*?):', 'https://\\1/')
+      when regexp_contains(cleaned_url, r'^git\+https://') then 
+        regexp_replace(cleaned_url, r'^git\+', '')
+      when regexp_contains(cleaned_url, r'^[^:/]+\.[^:/]+/') then 
+        concat('https://', cleaned_url)
+      when regexp_contains(cleaned_url, r'^https?://') then 
+        cleaned_url
+      else null
+    end as normalized_url
+  from cleaned_urls
+),
 
-      case
-        when regexp_contains({{ key }}, r'#') then 
-          regexp_replace({{ key }}, r'#.*$', '')
-        when regexp_contains({{ key }}, r'^git\+ssh://') then 
-          regexp_replace({{ key }}, r'^git\+ssh://([^@]+)@', 'https://')
-        when regexp_contains({{ key }}, r'^git@') then 
-          regexp_replace({{ key }}, r'^git@(.*?):', 'https://\\1/')
-        when regexp_contains({{ key }}, r'^git\+https://') then 
-          regexp_replace({{ key }}, r'^git\+', '')
-        when regexp_contains({{ key }}, r'^https?://') then 
-          {{ key }}
-        when regexp_contains({{ key }}, r'^[^:/]+\.[^:/]+/') then 
-          concat('https://', {{ key }})
-        else null
-      end as remote_url,
+parsed_data as (
+  select
+    `name`,
+    artifact_url,
+    original_url,
+    normalized_url,
+    regexp_extract(normalized_url, r'https?://([^/]+)/') as remote_host,
+    regexp_extract(
+      normalized_url, 
+      r'https?://[^/]+/([^/]+)/'
+    ) as remote_namespace,
+    regexp_extract(
+      normalized_url, 
+      r'https?://[^/]+/[^/]+/([^/.]+)'
+    ) as remote_name
+  from normalized_urls
+),
 
-      regexp_extract(
-        case
-          when regexp_contains({{ key }}, r'#') then 
-            regexp_replace({{ key }}, r'#.*$', '')
-          when regexp_contains({{ key }}, r'\.git$') then 
-            regexp_replace({{ key }}, r'\.git$', '')
-          else {{ key }}
-        end,
-        r'/([^/]+)(?:\.git)?$'
-      ) as remote_name,
+final_data as (
+  select
+    `name`,
+    artifact_url,
+    original_url,
+    normalized_url as remote_url,
+    remote_host,
+    remote_namespace,
+    remote_name,
+    case
+      when lower(remote_host) like 'github.com%' then 'GITHUB'
+      when lower(remote_host) like 'gitlab.com%' then 'GITLAB'
+      when lower(remote_host) like 'bitbucket.org%' then 'BITBUCKET'
+      else 'OTHER'
+    end as remote_source_id
+  from parsed_data
+)
 
-      regexp_extract(
-        case
-          when regexp_contains({{ key }}, r'#') then 
-            regexp_replace({{ key }}, r'#.*$', '')
-          when regexp_contains({{ key }}, r'^git@') then 
-            regexp_replace({{ key }}, r'^git@(.*?):', 'https://\\1/')
-          when regexp_contains({{ key }}, r'^git\+ssh://') then 
-            regexp_replace({{ key }}, r'^git\+ssh://', 'https://')
-          else {{ key }}
-        end,
-        r'https?:\/\/[^\/]+\/([^\/]+)\/[^\/]+'
-      ) as remote_namespace,
-
-      case
-        when regexp_contains({{ key }}, r'github\.com') then 'GITHUB'
-        when regexp_contains({{ key }}, r'gitlab\.com') then 'GITLAB'
-        when regexp_contains({{ key }}, r'bitbucket\.org') then 'BITBUCKET'
-        else 'OTHER'
-      end as remote_source_id
-
-    from {{ source }}
-  ),
-
-  final_data as (
-    select
-      * except(remote_url),
-      case
-        when regexp_contains(remote_url, r'\.git$') then remote_url
-        else concat(remote_url, '.git')
-      end as remote_url
-    from parsed_data
-  )
-
-  select * from final_data
-
+select * from final_data
 {% endmacro %}
