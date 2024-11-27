@@ -195,7 +195,7 @@ timeseries_metrics(
             ),
             entity_types=["artifact", "project", "collection"],
         ),
-         "avg_time_to_first_response": MetricQueryDef(
+        "avg_time_to_first_response": MetricQueryDef(
             ref="prs_time_to_merge.sql",
             rolling=RollingConfig(
                 windows=[90, 180],
@@ -230,7 +230,7 @@ timeseries_metrics(
                 cron="@daily",
             ),
             entity_types=["artifact", "project", "collection"],
-        ),        
+        ),
         "transactions": MetricQueryDef(
             ref="transactions.sql",
             rolling=RollingConfig(
@@ -239,7 +239,24 @@ timeseries_metrics(
                 cron="@daily",
             ),
             entity_types=["artifact", "project", "collection"],
-        ),        
+        ),
+        "libin": MetricQueryDef(
+            ref="libin.sql",
+            vars={
+                "activity_event_types": [
+                    "COMMIT_CODE",
+                    "ISSUE_OPENED",
+                    "PULL_REQUEST_OPENED",
+                    "PULL_REQUEST_MERGED",
+                ],
+            },
+            rolling=RollingConfig(
+                windows=[30, 90, 180],
+                unit="day",
+                cron="@daily",
+            ),
+            entity_types=["artifact"],
+        ),
     },
     default_dialect="clickhouse",
 )
