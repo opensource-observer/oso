@@ -1,6 +1,12 @@
 {% set event_source_name = '"DEPS_DEV"' %}
 
-with snapshots as (
+with artifacts as (
+  select artifact_name
+  from {{ ref('int_all_artifacts') }}
+  where artifact_source = "NPM"
+),
+
+snapshots as (
   select
     `SnapshotAt` as `time`,
     `System` as from_artifact_type,
@@ -14,13 +20,9 @@ with snapshots as (
       order by `SnapshotAt`
     ) as previous_to_artifact_name
   from {{ ref('stg_deps_dev__dependencies') }}
-  where `MinimumDepth` = 1
-),
-
-artifacts as (
-  select artifact_name
-  from {{ ref('int_all_artifacts') }}
-  where artifact_source = "NPM"
+  where
+    `MinimumDepth` = 1
+    and `Dependency`.`Name` in (select artifact_name from artifacts)
 ),
 
 intermediate as (
@@ -54,7 +56,6 @@ intermediate as (
     from_artifact_type,
     1.0 as amount
   from snapshots
-  where from_artifact_name in (select artifact_name from artifacts)
 ),
 
 artifact_ids as (
