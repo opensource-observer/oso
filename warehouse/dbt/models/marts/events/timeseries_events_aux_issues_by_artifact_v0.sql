@@ -16,5 +16,6 @@ select
   issue_number,
   created_at,
   merged_at,
-  closed_at
+  closed_at,
+  comments
 from {{ ref('int_events_aux_issues') }}
