@@ -35,29 +35,38 @@ normalized_urls as (
 
 parsed_data as (
   select
-    `name`,
-    artifact_url,
-    normalized_url,
-    regexp_extract(normalized_url, r'https?://([^/]+)/') as remote_host,
-    regexp_extract(normalized_url, r'https?://[^/]+/([^/]+)/') as remote_namespace,
-    regexp_extract(normalized_url, r'https?://[^/]+/[^/]+/([^/.]+)') as remote_name
+    lower(`name`) as artifact_name,
+    lower(regexp_extract(`name`, r'@?([^/]+)')) as artifact_namespace,
+    lower(artifact_url) as artifact_url,
+    lower(normalized_url) as normalized_url,
+    lower(regexp_extract(normalized_url, r'https?://([^/]+)/'))
+      as remote_artifact_host,
+    lower(regexp_extract(normalized_url, r'https?://[^/]+/([^/]+)/'))
+      as remote_artifact_namespace,
+    lower(regexp_extract(normalized_url, r'https?://[^/]+/[^/]+/([^/.]+)')) 
+      as remote_artifact_name
   from normalized_urls
 ),
 
 final_data as (
   select
-   `name`,
+    'NPM' as artifact_source,
+    artifact_name,
+    artifact_namespace,
     artifact_url,
-    concat('https://', remote_host, '/', remote_namespace, '/', remote_name, '.git') as remote_url,
-    remote_host,
-    remote_namespace,
-    remote_name,
+    concat(
+      'https://', remote_artifact_host, '/', remote_artifact_namespace,
+      '/', remote_artifact_name, '.git'
+    ) as remote_artifact_url,
+    remote_artifact_host,
+    remote_artifact_namespace,
+    remote_artifact_name,
     case
-      when lower(remote_host) like 'github.com%' then 'GITHUB'
-      when lower(remote_host) like 'gitlab.com%' then 'GITLAB'
-      when lower(remote_host) like 'bitbucket.org%' then 'BITBUCKET'
+      when remote_artifact_host like 'github.com%' then 'GITHUB'
+      when remote_artifact_host like 'gitlab.com%' then 'GITLAB'
+      when remote_artifact_host like 'bitbucket.org%' then 'BITBUCKET'
       else 'OTHER'
-    end as remote_source_id
+    end as remote_artifact_source
   from parsed_data
 )
 
