@@ -24,6 +24,8 @@ normalized_urls as (
         regexp_replace(cleaned_url, r'^git@(.*?):', 'https://\\1/')
       when regexp_contains(cleaned_url, r'^git\+https://') then 
         regexp_replace(cleaned_url, r'^git\+', '')
+      when regexp_contains(cleaned_url, r'^git://') then 
+        regexp_replace(cleaned_url, r'^git://', 'https://')
       when regexp_contains(cleaned_url, r'^[^:/]+\.[^:/]+/') then 
         concat('https://', cleaned_url)
       when regexp_contains(cleaned_url, r'^https?://') then 
