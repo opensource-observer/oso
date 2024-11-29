@@ -42,7 +42,12 @@ def metrics():
 @click.option("--dialect", default="duckdb", help="The dialect to render")
 @click.pass_context
 def render(ctx: click.Context, metric: str, factory_path: str, dialect: str):
-    """Renders a given metric query. Useful for testing"""
+    """Renders a given metric query. Useful for testing
+
+    Usage:
+
+        $ oso metrics render <metrics_name>
+    """
 
     # Select all the available options for the metric
     import importlib.util
@@ -53,6 +58,8 @@ def render(ctx: click.Context, metric: str, factory_path: str, dialect: str):
 
     from metrics_tools.factory.factory import GLOBAL_TIMESERIES_METRICS
 
+    # Run the metrics factory in the sqlmesh project. This uses a single default
+    # location for now.
     spec = importlib.util.spec_from_file_location(
         "metrics_mesh.metrics_factories", factory_path
     )
