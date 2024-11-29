@@ -35,7 +35,7 @@ sbom_artifacts as (
 
 select
   {#
-    Because we use repo.id as the artifact_source_id for github, we need to lookup the artifact_id for the remote artifact. If the artifact is not found, this will return null.
+    Because we use repo.id as the artifact_source_id for github, we need to lookup the artifact_id for the SBOM repo. If the artifact is not found, this will return null.
   #}
   all_repos.artifact_id,
   sbom_artifacts.artifact_source,
