@@ -196,7 +196,7 @@ timeseries_metrics(
             entity_types=["artifact", "project", "collection"],
         ),
         "avg_time_to_first_response": MetricQueryDef(
-            ref="prs_time_to_merge.sql",
+            ref="time_to_first_response.sql",
             rolling=RollingConfig(
                 windows=[90, 180],
                 unit="day",

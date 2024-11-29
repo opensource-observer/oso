@@ -7,11 +7,11 @@ select @metrics_sample_date(time) as metrics_sample_date,
 from metrics.issue_event_time_deltas
 where (
     (
-      event_type in ("PULL_REQUEST_MERGED", "ISSUE_CLOSED")
+      event_type in ('PULL_REQUEST_MERGED', 'ISSUE_CLOSED')
       and comments = 0
     )
     or (
-      event_type in ("PULL_REQUEST_REVIEW_COMMENT", "ISSUE_COMMENT")
+      event_type in ('PULL_REQUEST_REVIEW_COMMENT', 'ISSUE_COMMENT')
       and comments = 1
     )
   )
