@@ -7,6 +7,9 @@ from sqlmesh.core.dialect import parse_one
 from oso_dagster.cbt.utils.compare import is_same_sql
 
 
+ENABLE_TIMESERIES_DEBUG = False
+
+
 def assert_same_sql(actual: exp.Expression | str, expected: exp.Expression | str):
     if isinstance(actual, str):
         actual = parse_one(actual)

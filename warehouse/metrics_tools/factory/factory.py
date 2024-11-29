@@ -563,14 +563,28 @@ class TimeseriesMetrics:
         return [metrics_end, metrics_start, metrics_sample_date]
 
 
+# Specifically for testing. This is used if the
+# `metrics_tools.utils.testing.ENABLE_TIMESERIES_DEBUG` variable is true. This
+# is for loading all of the timeseries metrics from inside the metrics_mesh
+# project and inspecting the actually rendered queries for testing purposes.
+# It's a bit of a hack but it will work for the current purposes.
+GLOBAL_TIMESERIES_METRICS: t.Dict[str, TimeseriesMetrics] = {}
+
+
 def timeseries_metrics(
     **raw_options: t.Unpack[TimeseriesMetricsOptions],
 ):
-    add_metrics_tools_to_sqlmesh_logging()
+    from metrics_tools.utils.testing import ENABLE_TIMESERIES_DEBUG
 
+    add_metrics_tools_to_sqlmesh_logging()
     logger.info("loading timeseries metrics")
-    calling_file = inspect.stack()[1].filename
+    frame_info = inspect.stack()[1]
+    calling_file = frame_info.filename
     timeseries_metrics = TimeseriesMetrics.from_raw_options(**raw_options)
+
+    if ENABLE_TIMESERIES_DEBUG:
+        GLOBAL_TIMESERIES_METRICS[calling_file] = timeseries_metrics
+
     return timeseries_metrics.generate_models(calling_file)
 
 
