@@ -96,18 +96,18 @@ timeseries_metrics(
                 cron="@daily",
             ),
         ),
-        "user_retention_classifications": MetricQueryDef(
-            ref="user_retention_classification.sql",
-            vars={
-                "activity_event_types": ["CONTRACT_INVOCATION_SUCCESS_DAILY_COUNT"],
-            },
-            rolling=RollingConfig(
-                windows=[30, 90, 180],
-                unit="day",
-                cron="@daily",
-            ),
-            entity_types=["artifact", "project", "collection"],
-        ),
+        # "user_retention_classifications": MetricQueryDef(
+        #     ref="user_retention_classification.sql",
+        #     vars={
+        #         "activity_event_types": ["CONTRACT_INVOCATION_SUCCESS_DAILY_COUNT"],
+        #     },
+        #     rolling=RollingConfig(
+        #         windows=[30, 90, 180],
+        #         unit="day",
+        #         cron="@daily",
+        #     ),
+        #     entity_types=["artifact", "project", "collection"],
+        # ),
         "change_in_30_day_developer_activity": MetricQueryDef(
             vars={
                 "comparison_interval": 30,
