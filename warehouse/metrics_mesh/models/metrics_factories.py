@@ -10,6 +10,7 @@ timeseries_metrics(
     model_prefix="timeseries",
     timeseries_sources=[
         "events_daily_to_artifact",
+        "events_daily_to_artifact_with_lag",
         "issue_event_time_deltas",
         "first_of_event_from_artifact",
     ],
@@ -261,6 +262,23 @@ timeseries_metrics(
         ),
         "transactions": MetricQueryDef(
             ref="transactions.sql",
+            rolling=RollingConfig(
+                windows=[30, 90, 180],
+                unit="day",
+                cron="@daily",
+            ),
+            entity_types=["artifact", "project", "collection"],
+        ),
+        "contributors_lifecycle": MetricQueryDef(
+            ref="lifecycle.sql",
+            vars={
+                "activity_event_types": [
+                    "COMMIT_CODE",
+                    "ISSUE_OPENED",
+                    "PULL_REQUEST_OPENED",
+                    "PULL_REQUEST_MERGED",
+                ],
+            },
             rolling=RollingConfig(
                 windows=[30, 90, 180],
                 unit="day",

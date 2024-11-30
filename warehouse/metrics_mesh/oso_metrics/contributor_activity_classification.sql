@@ -54,6 +54,57 @@ new_contributors as (
     @metrics_entity_type_col('to_{entity_type}_id', table_alias := active),
     active.event_source,
     active.metrics_sample_date
+),
+contributors_last_event as (
+  -- Gets the resurrected contributors based on the date of the last event.
+  select events.event_source,
+    events.from_artifact_id,
+    events.to_artifact_id,
+    CASE
+      WHEN COUNT(events.last_event) < COUNT(*) THEN NULL
+      ELSE MAX(events.last_event)
+    END as last_event
+  from metrics.events_daily_to_artifact_with_lag as events
+  where event_type in @activity_event_types
+    and events.bucket_day between @metrics_end('DATE') - INTERVAL @rolling_window * 4 DAY -- This is a heuristic right now to speed up queries
+    and @metrics_end('DATE')
+  group by events.from_artifact_id,
+    events.to_artifact_id,
+    events.event_source
+),
+resurrected_contributors as (
+  -- resurrected users are users that had previously churned or went dormant for
+  -- at least one period but have returned
+  select active.metrics_sample_date,
+    active.event_source,
+    @metrics_entity_type_col(
+      'to_{entity_type}_id',
+      table_alias := active,
+      include_column_alias := true,
+    ),
+    @metric_name('resurrected_contributors') as metric,
+    COUNT(DISTINCT active.from_artifact_id) as amount
+  from @metrics_peer_ref(
+      contributor_active_days,
+      window := @rolling_window,
+      unit := @rolling_unit
+    ) as active
+    inner join contributors_last_event as last_event on active.from_artifact_id = last_event.from_artifact_id
+    and active.event_source = last_event.event_source
+    and @metrics_entity_type_col(
+      'to_{entity_type}_id',
+      table_alias := active
+    ) = @metrics_entity_type_col(
+      'to_{entity_type}_id',
+      table_alias := last_event
+    )
+  where active.metrics_sample_date = @metrics_end('DATE')
+    and last_event.last_event is not null
+    and last_event.last_event < @metrics_start('DATE') - INTERVAL @rolling_window DAY
+  group by metric,
+    @metrics_entity_type_col('to_{entity_type}_id', table_alias := active),
+    active.event_source,
+    active.metrics_sample_date
 )
 select active.metrics_sample_date,
   active.event_source,
@@ -115,6 +166,18 @@ select new.metrics_sample_date,
   new.metric,
   new.amount as amount
 from new_contributors as new
+union all
+select resurrected.metrics_sample_date,
+  resurrected.event_source,
+  @metrics_entity_type_col(
+    'to_{entity_type}_id',
+    table_alias := resurrected,
+    include_column_alias := true,
+  ),
+  '' as from_artifact_id,
+  resurrected.metric,
+  resurrected.amount as amount
+from resurrected_contributors as resurrected
 union all
 -- All active contributors
 select active.metrics_sample_date,
