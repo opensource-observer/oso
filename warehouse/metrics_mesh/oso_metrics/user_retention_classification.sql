@@ -1,9 +1,13 @@
 with first_events as (
-  select from_artifact_id,
-    min(time::date) as first_event_date
+  select event_source,
+    from_artifact_id,
+    to_artifact_id,
+    min(time) as first_event_date
   from metrics.first_of_event_from_artifact
   where event_type in @activity_event_types
-  group by from_artifact_id
+  group by event_source,
+    from_artifact_id,
+    to_artifact_id
 ),
 active_users as (
   select distinct from_artifact_id,
@@ -26,6 +30,13 @@ select @metrics_end('DATE') as metrics_sample_date,
   COUNT(DISTINCT active.from_artifact_id) as amount
 from active_users active
   join first_events on first_events.from_artifact_id = active.from_artifact_id
+  and @metrics_entity_type_col(
+    'to_{entity_type}_id',
+    table_alias := active
+  ) = @metrics_entity_type_col(
+    'to_{entity_type}_id',
+    table_alias := first_events
+  )
 where first_events.first_event_date between @metrics_start('DATE') and @metrics_end('DATE')
 group by metrics_sample_date,
   metric,
@@ -48,6 +59,13 @@ select @metrics_end('DATE') as metrics_sample_date,
   COUNT(DISTINCT active.from_artifact_id) as amount
 from active_users active
   join first_events on first_events.from_artifact_id = active.from_artifact_id
+  and @metrics_entity_type_col(
+    'to_{entity_type}_id',
+    table_alias := active
+  ) = @metrics_entity_type_col(
+    'to_{entity_type}_id',
+    table_alias := first_events
+  )
 where first_events.first_event_date < @metrics_start('DATE')
 group by metrics_sample_date,
   metric,

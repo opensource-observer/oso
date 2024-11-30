@@ -236,11 +236,14 @@ class TimeseriesMetrics:
                         additional_macros,
                         variables=evaluator_variables,
                     ),
-                    QualifyTransform(),
+                    QualifyTransform(
+                        validate_qualify_columns=False, allow_partial_qualification=True
+                    ),
                     JoinerTransform(
                         ref["entity_type"],
                         self._timeseries_sources,
                     ),
+                    QualifyTransform(),
                 ],
             )
 
@@ -665,10 +668,15 @@ def generated_rolling_query(
     # If the rolling window is empty we need to yield from an empty tuple
     # otherwise sqlmesh fails. See:
     # https://sqlmesh.readthedocs.io/en/latest/concepts/models/python_models/#returning-empty-dataframes
+    total = 0
     if df.empty:
         yield from ()
     else:
+        count = len(df)
+        total += count
+        logger.debug(f"table={table_name} yielding rows {count}")
         yield df
+    logger.debug(f"table={table_name} yielded rows{total}")
 
 
 def generated_rolling_query_proxy(

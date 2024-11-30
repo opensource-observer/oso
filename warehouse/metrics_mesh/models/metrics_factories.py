@@ -11,6 +11,7 @@ timeseries_metrics(
     timeseries_sources=[
         "events_daily_to_artifact",
         "issue_event_time_deltas",
+        "first_of_event_from_artifact",
     ],
     metric_queries={
         # This will automatically generate star counts for the given roll up periods.
@@ -76,6 +77,24 @@ timeseries_metrics(
             entity_types=["artifact", "project", "collection"],
             is_intermediate=True,
         ),
+        "contributor_active_days": MetricQueryDef(
+            ref="active_days.sql",
+            vars={
+                "activity_event_types": [
+                    "COMMIT_CODE",
+                    "ISSUE_OPENED",
+                    "PULL_REQUEST_OPENED",
+                    "PULL_REQUEST_MERGED",
+                ],
+            },
+            rolling=RollingConfig(
+                windows=[30, 90, 180],
+                unit="day",
+                cron="@daily",  # This determines how often this is calculated
+            ),
+            entity_types=["artifact", "project", "collection"],
+            is_intermediate=True,
+        ),
         "developer_classifications": MetricQueryDef(
             ref="developer_activity_classification.sql",
             vars={
@@ -89,13 +108,22 @@ timeseries_metrics(
         ),
         "contributor_classifications": MetricQueryDef(
             ref="contributor_activity_classification.sql",
-            vars={"full_time_ratio": 10 / 30},
+            vars={
+                "full_time_ratio": 10 / 30,
+                "activity_event_types": [
+                    "COMMIT_CODE",
+                    "ISSUE_OPENED",
+                    "PULL_REQUEST_OPENED",
+                    "PULL_REQUEST_MERGED",
+                ],
+            },
             rolling=RollingConfig(
                 windows=[30, 90, 180],
                 unit="day",
                 cron="@daily",
             ),
         ),
+        # Currently this query performs really poorly. We need to do some debugging on it
         # "user_retention_classifications": MetricQueryDef(
         #     ref="user_retention_classification.sql",
         #     vars={
@@ -240,23 +268,23 @@ timeseries_metrics(
             ),
             entity_types=["artifact", "project", "collection"],
         ),
-        "libin": MetricQueryDef(
-            ref="libin.sql",
-            vars={
-                "activity_event_types": [
-                    "COMMIT_CODE",
-                    "ISSUE_OPENED",
-                    "PULL_REQUEST_OPENED",
-                    "PULL_REQUEST_MERGED",
-                ],
-            },
-            rolling=RollingConfig(
-                windows=[30, 90, 180],
-                unit="day",
-                cron="@daily",
-            ),
-            entity_types=["artifact"],
-        ),
+        # "libin": MetricQueryDef(
+        #     ref="libin.sql",
+        #     vars={
+        #         "activity_event_types": [
+        #             "COMMIT_CODE",
+        #             "ISSUE_OPENED",
+        #             "PULL_REQUEST_OPENED",
+        #             "PULL_REQUEST_MERGED",
+        #         ],
+        #     },
+        #     rolling=RollingConfig(
+        #         windows=[30, 90, 180],
+        #         unit="day",
+        #         cron="@daily",
+        #     ),
+        #     entity_types=["artifact"],
+        # ),
     },
     default_dialect="clickhouse",
 )
