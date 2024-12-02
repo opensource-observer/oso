@@ -9,6 +9,7 @@ select distinct
   chain_id,
   project_id as gitcoin_project_id,
   match_amount_in_usd as amount_in_usd,
+  `timestamp`,
   trim(title) as round_title,
   lower(recipient_address) as project_recipient_address
 from {{ source("gitcoin", "all_matching") }}
