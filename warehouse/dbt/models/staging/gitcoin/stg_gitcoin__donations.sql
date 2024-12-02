@@ -3,6 +3,7 @@ select distinct
   `timestamp` as donation_timestamp,
   round_id,
   round_num as round_number,
+  round_name,
   chain_id,
   project_id as gitcoin_project_id,
   amount_in_usd,
