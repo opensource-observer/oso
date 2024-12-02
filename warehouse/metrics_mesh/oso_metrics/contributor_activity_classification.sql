@@ -56,6 +56,7 @@ new_contributors as (
     active.metrics_sample_date
 ),
 lag_events_filtered as (
+  -- This filters for lagged events of the activity types we care about
   select events.bucket_day,
     events.event_source,
     events.from_artifact_id,
@@ -69,6 +70,9 @@ lag_events_filtered as (
     to_artifact_id
 ),
 contributors_earliest_event_in_period as (
+  -- This uses a window function to get the earliest event in a given period for
+  -- a specific contributor. We then use the "last_event" value of this to
+  -- determine the resurrection status.
   select events.bucket_day,
     events.event_source,
     events.from_artifact_id,
