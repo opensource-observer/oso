@@ -28,6 +28,14 @@ with round_dates as (
   ]) as v
 ),
 
+round_names as (
+  select
+    round_id as gitcoin_round_id,
+    coalesce(round_num, -1) as round_number,
+    round_name
+  from {{ ref('stg_gitcoin__donations') }}
+),
+
 -- Process legacy cGrants platform data
 cgrants as (
   select
