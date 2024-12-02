@@ -32,6 +32,7 @@ time_to_merge as (
     on
       pr.number = m.number
       and pr.to_artifact_id = m.to_artifact_id
+  where m.merged_at > pr.created_at
 ),
 
 time_to_merge_events as (
