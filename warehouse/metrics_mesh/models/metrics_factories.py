@@ -137,36 +137,11 @@ timeseries_metrics(
         #     ),
         #     entity_types=["artifact", "project", "collection"],
         # ),
-        "change_in_30_day_developer_activity": MetricQueryDef(
-            vars={
-                "comparison_interval": 30,
-            },
+        "change_in_developer_activity": MetricQueryDef(
             ref="change_in_developers.sql",
             rolling=RollingConfig(
-                windows=[2],
-                unit="period",
-                cron="@daily",
-            ),
-        ),
-        "change_in_90_day_developer_activity": MetricQueryDef(
-            vars={
-                "comparison_interval": 90,
-            },
-            ref="change_in_developers.sql",
-            rolling=RollingConfig(
-                windows=[2],
-                unit="period",
-                cron="@daily",
-            ),
-        ),
-        "change_in_180_day_developer_activity": MetricQueryDef(
-            vars={
-                "comparison_interval": 180,
-            },
-            ref="change_in_developers.sql",
-            rolling=RollingConfig(
-                windows=[2],
-                unit="period",
+                windows=[30, 90, 180],
+                unit="day",
                 cron="@daily",
             ),
         ),
