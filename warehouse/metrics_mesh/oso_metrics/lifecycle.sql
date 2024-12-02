@@ -24,7 +24,7 @@ with latest as (
     COALESCE(
       MAX(
         CASE
-          WHEN classification.metric LIKE 'full_%' THEN amount
+          WHEN classification.metric LIKE 'part_%' THEN amount
         END
       ),
       0
