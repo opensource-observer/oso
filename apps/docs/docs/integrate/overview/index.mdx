@@ -7,6 +7,7 @@ import Button from "../../../src/components/plasmic/Button";
 import OsoLogo from "./oso-primary.png";
 import GithubLogo from "./github.png";
 import OpenSourceInsights from "./open-source-insights.png";
+import OptimismLogo from "./op.png";
 import EthereumLogo from "./ethereum.png";
 import FilecoinLogo from "./filecoin.png";
 import FarcasterLogo from "./farcaster.jpg";
@@ -253,69 +254,44 @@ limit 10
 
 ### Optimism Data
 
+<img src={OptimismLogo} width="100" />
 
 <Button
   size={"compact"}
   color={"blue"}
   target={"_blank"}
   link={
-    "https://console.cloud.google.com/bigquery/analytics-hub/exchanges/projects/87806073973/locations/us/dataExchanges/open_source_observer_190181416ae/listings/superchain_data_19018918042"
+    "https://bit.ly/superchain-public-data"
   }
   children={"Subscribe on BigQuery"}
 />{" "}
 
-- Code License: [Apache-2.0](https://github.com/opensource-observer/oso/blob/main/LICENSE)
-- Data governed by the OSO
-[terms of service](https://www.opensource.observer/terms)
+- Data on every OP Stack chain, maintained by [OP Labs PBC](https://www.oplabs.co/)
+[code of conduct](https://github.com/ethereum-optimism/op-analytics?tab=coc-ov-file#readme)
+- For more details on the ETL process please visit the [op-analytics](https://static.optimism.io/op-analytics) documentation site.
+- Visit the Optimism docs to learn more about the [Superchain](https://docs.optimism.io/stack/explainer).
 
-OSO is proud to provide public datasets for the Superchain,
-backed by our partners at
-[Goldsky](https://goldsky.com/).
+All tables are partitioned by date (`dt`) and clustered by chain name (`chain`). Data is updated daily with an approximate latency of 24 hrs.
+Data is sourced from [Goldsky](https://docs.goldsky.com/introduction) using the [Mirror platform](https://docs.goldsky.com/mirror/introduction), which fetches and delivers onchain data from RPC nodes to ClickHouse.
+From there, the OP Labs team runs an incremental ingestion process based on block number.
 
-We currently provide blocks, transactions, and traces for the following networks:
-
-- [Optimism mainnet](https://www.optimism.io/)
-([Reference docs](https://models.opensource.observer/#!/source_list/superchain)
-, [Updated daily](https://dagster.opensource.observer/assets/optimism))
-- [Base](https://www.base.org/)
-([Reference docs](https://models.opensource.observer/#!/source_list/base)
-, [Updated daily](https://dagster.opensource.observer/assets/base))
-- [Frax](https://www.frax.com/)
-([Reference docs](https://models.opensource.observer/#!/source_list/frax)
-, [Updated daily](https://dagster.opensource.observer/assets/frax))
-- [Metal](https://metall2.com/)
-([Reference docs](https://models.opensource.observer/#!/source_list/metal)
-, [Updated daily](https://dagster.opensource.observer/assets/metal))
-- [Mode](https://www.mode.network/)
-([Reference docs](https://models.opensource.observer/#!/source_list/mode)
-, [Updated daily](https://dagster.opensource.observer/assets/mode))
-- [PGN](https://publicgoods.network/)
-([Reference docs](https://models.opensource.observer/#!/source_list/pgn)
-, [Updated daily](https://dagster.opensource.observer/assets/pgn))
-- [Zora](https://zora.co/)
-([Reference docs](https://models.opensource.observer/#!/source_list/zora)
-, [Updated daily](https://dagster.opensource.observer/assets/zora))
-
-
-For example, to get deployed contracts from a particular address on the Base network:
+For example, to get all transactions to the 4337 EntryPoint contracts for all OP Stack chains:
 
 ```sql
-select
-  traces.block_timestamp,
-  traces.transaction_hash,
-  txs.from_address as originating_address,
-  txs.to_address as originating_contract,
-  traces.from_address as factory_address,
-  traces.to_address as contract_address
-from `YOUR_PROJECT_NAME.superchain.base_traces` as traces
-inner join transactions as txs
-  on txs.hash = traces.transaction_hash
-where
-  LOWER(traces.from_address) != "0x3fab184622dc19b6109349b94811493bf2a45362"
-  and LOWER(trace_type) in ("create", "create2")
+  select
+    dt,
+    chain,
+    count(*) as txns
+  from `optimism_superchain_raw_onchain_data.transactions`
+  where
+    dt >= '2024-10-01'
+    and to_address in (
+      "0x5ff137d4b0fdcd49dca30c7cf57e578a026d2789",
+      "0x0000000071727de22e5e9d8baf0edac6f37da032"
+    )
+  group by dt, chain
+  order by dt, chain
 ```
-
-**Remember to replace 'YOUR_PROJECT_NAME' with the name of your project in the query.**
 
 ### Arbitrum Data
 
@@ -335,7 +311,7 @@ where
 - [Source documentation](https://docs.goldsky.com/introduction)
 - [Updated weekly](https://github.com/opensource-observer/oso/blob/main/warehouse/oso_dagster/assets/arbitrum.py)
 
-[Arbitrum](https://arbitrum.foundation/) is a Layer 2 scaling solution for Ethereum. We currently provide blocks, transactions, and traces for Arbitrum's flagship network, Arbitrum One.
+[Arbitrum](https://arbitrum.foundation/) is a Layer 2 scaling solution for Ethereum. We currently provide blocks, transactions, and traces for Arbitrum's flagship network, Arbitrum One. This public dataset is maintained by our partners at [Goldsky](https://goldsky.com/).
 
 For example, to get the average gas per transaction for each block on Arbitrum One on September 1st, 2024:
 

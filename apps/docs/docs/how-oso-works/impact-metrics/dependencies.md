@@ -100,4 +100,4 @@ Total sequencer fees of all dependent projects in the same collection.
 
 ---
 
-To contribute new metrics, please see our guide [here](../../contribute/impact-models)
+To contribute new metrics, please see our guide [here](../../contribute/data-models)
