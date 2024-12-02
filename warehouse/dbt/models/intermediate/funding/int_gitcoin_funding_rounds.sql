@@ -2,13 +2,13 @@
 with round_dates as (
   select
     round_num,
-    timestamp(`start_date`) as date_round_started,
-    timestamp(`end_date`) as date_round_ended
+    timestamp(date_round_started) as date_round_started,
+    timestamp(date_round_ended) as date_round_ended
   from unnest([
     struct(
       1 as round_num,
-      '2019-02-01T00:00:00Z' as `start_date`,
-      '2019-02-15T00:00:00Z' as `end_date`
+      '2019-02-01T00:00:00Z' as date_round_started,
+      '2019-02-15T00:00:00Z' as date_round_ended
     ),
     struct(2, '2019-03-26T00:00:00Z', '2019-04-19T00:00:00Z'),
     struct(3, '2019-09-15T00:00:00Z', '2019-10-04T00:00:00Z'),
@@ -31,15 +31,15 @@ with round_dates as (
 -- Process legacy cGrants platform data
 cgrants as (
   select
-    grants.round_id as gitcoin_round_id,
-    grants.round_number,
-    grants.round_id as round_name,
+    grant_data.round_id as gitcoin_round_id,
+    grant_data.round_number,
+    grant_data.round_id as round_name,
     round_dates.date_round_started,
     round_dates.date_round_ended,
     'quadratic_funding' as allocation_strategy,
     'cgrants' as platform,
-    round(grants.matching_amount_in_usd, 2) as matching_amount_in_usd,
-    grants.chain_ids
+    round(grant_data.matching_amount_in_usd, 2) as matching_amount_in_usd,
+    grant_data.chain_ids
   from (
     select
       round_number,
@@ -49,9 +49,9 @@ cgrants as (
     from {{ ref('stg_gitcoin__matching') }}
     where round_number is not null and round_number <= 16
     group by round_number, round_id
-  ) as grants
+  ) as grant_data
   left join round_dates as round_dates
-    on grants.round_number = round_dates.round_num
+    on grant_data.round_number = round_dates.round_num
   order by round_dates.date_round_started
 ),
 
