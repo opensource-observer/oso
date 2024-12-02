@@ -8,6 +8,10 @@ timeseries_metrics(
     start="2015-01-01",
     catalog="metrics",
     model_prefix="timeseries",
+    timeseries_sources=[
+        "events_daily_to_artifact",
+        "issue_event_time_deltas",
+    ],
     metric_queries={
         # This will automatically generate star counts for the given roll up periods.
         # A time_aggregation is just a simple addition of the aggregation. So basically we
@@ -19,10 +23,6 @@ timeseries_metrics(
         # `metrics.timeseries_stars_to_{entity_type}_{time_aggregation}`
         "stars": MetricQueryDef(
             ref="stars.sql",
-            time_aggregations=["daily", "weekly", "monthly"],
-        ),
-        "active_addresses": MetricQueryDef(
-            ref="active_addresses.sql",
             time_aggregations=["daily", "weekly", "monthly"],
         ),
         "commits": MetricQueryDef(
@@ -41,12 +41,12 @@ timeseries_metrics(
             ref="forks.sql",
             time_aggregations=["daily", "weekly", "monthly"],
         ),
-        "gas_fees": MetricQueryDef(
-            ref="gas_fees.sql",
-            time_aggregations=["daily", "weekly", "monthly"],
-        ),
         "repositories": MetricQueryDef(
             ref="repositories.sql",
+            time_aggregations=["daily", "weekly", "monthly"],
+        ),
+        "active_contracts": MetricQueryDef(
+            ref="active_contracts.sql",
             time_aggregations=["daily", "weekly", "monthly"],
         ),
         "contributors": MetricQueryDef(
@@ -95,6 +95,18 @@ timeseries_metrics(
                 unit="day",
                 cron="@daily",
             ),
+        ),
+        "user_retention_classifications": MetricQueryDef(
+            ref="user_retention_classification.sql",
+            vars={
+                "activity_event_types": ["CONTRACT_INVOCATION_SUCCESS_DAILY_COUNT"],
+            },
+            rolling=RollingConfig(
+                windows=[30, 90, 180],
+                unit="day",
+                cron="@daily",
+            ),
+            entity_types=["artifact", "project", "collection"],
         ),
         "change_in_30_day_developer_activity": MetricQueryDef(
             vars={
@@ -165,7 +177,7 @@ timeseries_metrics(
             ),
             entity_types=["artifact", "project", "collection"],
         ),
-        "closed_issues_6_months": MetricQueryDef(
+        "closed_issues": MetricQueryDef(
             ref="issues_closed.sql",
             rolling=RollingConfig(
                 windows=[180],
@@ -174,6 +186,60 @@ timeseries_metrics(
             ),
             entity_types=["artifact", "project", "collection"],
         ),
+        "avg_prs_time_to_merge": MetricQueryDef(
+            ref="prs_time_to_merge.sql",
+            rolling=RollingConfig(
+                windows=[90, 180],
+                unit="day",
+                cron="@daily",
+            ),
+            entity_types=["artifact", "project", "collection"],
+        ),
+         "avg_time_to_first_response": MetricQueryDef(
+            ref="prs_time_to_merge.sql",
+            rolling=RollingConfig(
+                windows=[90, 180],
+                unit="day",
+                cron="@daily",
+            ),
+            entity_types=["artifact", "project", "collection"],
+        ),
+        "active_addresses_aggregation": MetricQueryDef(
+            ref="active_addresses.sql",
+            vars={
+                "activity_event_types": ["CONTRACT_INVOCATION_SUCCESS_DAILY_COUNT"],
+            },
+            time_aggregations=["daily", "monthly"],
+        ),
+        "active_addresses_rolling": MetricQueryDef(
+            ref="active_addresses.sql",
+            vars={
+                "activity_event_types": ["CONTRACT_INVOCATION_SUCCESS_DAILY_COUNT"],
+            },
+            rolling=RollingConfig(
+                windows=[30, 90, 180],
+                unit="day",
+                cron="@daily",
+            ),
+        ),
+        "gas_fees": MetricQueryDef(
+            ref="gas_fees.sql",
+            rolling=RollingConfig(
+                windows=[30, 90, 180],
+                unit="day",
+                cron="@daily",
+            ),
+            entity_types=["artifact", "project", "collection"],
+        ),        
+        "transactions": MetricQueryDef(
+            ref="transactions.sql",
+            rolling=RollingConfig(
+                windows=[30, 90, 180],
+                unit="day",
+                cron="@daily",
+            ),
+            entity_types=["artifact", "project", "collection"],
+        ),        
     },
     default_dialect="clickhouse",
 )

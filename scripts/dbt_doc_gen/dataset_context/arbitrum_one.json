@@ -1,0 +1,13 @@
+{
+    "dataset_name": "Arbitrum Data",
+    "description": "The Arbitrum Data dataset provides blockchain data for Arbitrum's Layer 2 scaling solution for Ethereum. It includes blocks, transactions, and traces for Arbitrum's main network, Arbitrum One. The dataset is updated weekly and allows for querying metrics such as gas usage, transaction counts, and block-level details on the Arbitrum One network.",
+    "use_cases": [
+      "Analyzing gas usage per transaction on the Arbitrum One network",
+      "Querying block-level and transaction-level data for performance insights",
+      "Monitoring traces of transaction events and network activity on Arbitrum One"
+    ],
+    "network": "Arbitrum One",
+    "license": "OSO terms of service",
+    "update_frequency": "Weekly",
+    "reference_documentation": "https://models.opensource.observer/"
+}  

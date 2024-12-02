@@ -1,0 +1,10 @@
+{
+    "dataset_name": "oso_projects",
+    "description": "The oso_projects dataset contains information about various projects tracked within the OSO data pipeline. It includes fields such as project_id, project_source, project_namespace, project_name, display_name, and description. This dataset is used to catalog and organize project-level metadata for open-source projects.",
+    "use_cases": [
+      "Cataloging and identifying open-source projects within the OSO pipeline",
+      "Retrieving metadata about projects, such as name, source, and description",
+      "Analyzing project-level data for reporting or metrics aggregation"
+    ]
+}
+  

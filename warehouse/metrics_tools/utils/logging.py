@@ -13,7 +13,11 @@ def add_metrics_tools_to_sqlmesh_logging():
 
     global connected_to_sqlmesh_logs
 
-    app_name = os.path.basename(__main__.__file__)
+    try:
+        app_name = os.path.basename(__main__.__file__)
+    except AttributeError:
+        # Do nothing if __main__.__file__ doesn't exist
+        return
     if app_name == "sqlmesh" and not connected_to_sqlmesh_logs:
         add_metrics_tools_to_existing_logger(app_name)
         connected_to_sqlmesh_logs = True
