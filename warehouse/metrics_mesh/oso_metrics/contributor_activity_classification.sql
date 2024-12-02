@@ -55,21 +55,60 @@ new_contributors as (
     active.event_source,
     active.metrics_sample_date
 ),
+lag_events_filtered as (
+  select events.bucket_day,
+    events.event_source,
+    events.from_artifact_id,
+    events.to_artifact_id,
+    MAX(last_event) as last_event
+  from metrics.events_daily_to_artifact_with_lag as events
+  where event_type in @activity_event_types
+  group by bucket_day,
+    event_source,
+    from_artifact_id,
+    to_artifact_id
+),
+contributors_earliest_event_in_period as (
+  select events.bucket_day,
+    events.event_source,
+    events.from_artifact_id,
+    @metrics_entity_type_col(
+      'to_{entity_type}_id',
+      table_alias := events,
+      include_column_alias := true,
+    ),
+    events.last_event,
+    ROW_NUMBER() OVER (
+      PARTITION BY @metrics_entity_type_col(
+        'to_{entity_type}_id',
+        table_alias := events
+      ),
+      events.from_artifact_id,
+      events.event_source,
+      ORDER BY bucket_day ASC
+    ) as event_rank
+  from lag_events_filtered as events
+),
 contributors_last_event as (
   -- Gets the resurrected contributors based on the date of the last event.
   select events.event_source,
     events.from_artifact_id,
-    events.to_artifact_id,
+    @metrics_entity_type_col(
+      'to_{entity_type}_id',
+      table_alias := events,
+      include_column_alias := true,
+    ),
     CASE
       WHEN COUNT(events.last_event) < COUNT(*) THEN NULL
       ELSE MAX(events.last_event)
     END as last_event
-  from metrics.events_daily_to_artifact_with_lag as events
-  where event_type in @activity_event_types
-    and events.bucket_day between @metrics_end('DATE') - INTERVAL @rolling_window * 4 DAY -- This is a heuristic right now to speed up queries
-    and @metrics_end('DATE')
+  from contributors_earliest_event_in_period as events
+  where event_rank = 1
   group by events.from_artifact_id,
-    events.to_artifact_id,
+    @metrics_entity_type_col(
+      'to_{entity_type}_id',
+      table_alias := events,
+    ),
     events.event_source
 ),
 resurrected_contributors as (
@@ -100,7 +139,7 @@ resurrected_contributors as (
     )
   where active.metrics_sample_date = @metrics_end('DATE')
     and last_event.last_event is not null
-    and last_event.last_event < @metrics_start('DATE') - INTERVAL @rolling_window DAY
+    and last_event.last_event <= @metrics_start('DATE') - INTERVAL @rolling_window DAY
   group by metric,
     @metrics_entity_type_col('to_{entity_type}_id', table_alias := active),
     active.event_source,
