@@ -16,6 +16,22 @@ with latest as (
     COALESCE(
       MAX(
         CASE
+          WHEN classification.metric LIKE 'full_%' THEN amount
+        END
+      ),
+      0
+    ) as full,
+    COALESCE(
+      MAX(
+        CASE
+          WHEN classification.metric LIKE 'full_%' THEN amount
+        END
+      ),
+      0
+    ) as part,
+    COALESCE(
+      MAX(
+        CASE
           WHEN classification.metric LIKE 'new_%' THEN amount
         END
       ),
@@ -62,6 +78,22 @@ previous as (
       ),
       0
     ) as active,
+    COALESCE(
+      MAX(
+        CASE
+          WHEN classification.metric LIKE 'full_%' THEN amount
+        END
+      ),
+      0
+    ) as full,
+    COALESCE(
+      MAX(
+        CASE
+          WHEN classification.metric LIKE 'full_%' THEN amount
+        END
+      ),
+      0
+    ) as part,
     COALESCE(
       MAX(
         CASE
@@ -115,6 +147,40 @@ churned_contributors as (
         COALESCE(latest.active, 0) - COALESCE(latest.new, 0) - COALESCE(latest.resurrected, 0)
       )
     END as amount
+  from previous
+    LEFT JOIN latest ON latest.event_source = previous.event_source
+    AND @metrics_entity_type_col('to_{entity_type}_id', table_alias := latest) = @metrics_entity_type_col('to_{entity_type}_id', table_alias := previous)
+),
+change_in_full_time_contributors as (
+  select @metrics_end('DATE') as metrics_sample_date,
+    COALESCE(latest.event_source, previous.event_source) as event_source,
+    @metrics_entity_type_alias(
+      COALESCE(
+        @metrics_entity_type_col('to_{entity_type}_id', table_alias := latest),
+        @metrics_entity_type_col('to_{entity_type}_id', table_alias := previous)
+      ),
+      'to_{entity_type}_id',
+    ),
+    '' as from_artifact_id,
+    @metrics_name('change_in_full_time_contributors') as metric,
+    COALESCE(latest.full, 0) - COALESCE(previous.full, 0) as amount
+  from previous
+    LEFT JOIN latest ON latest.event_source = previous.event_source
+    AND @metrics_entity_type_col('to_{entity_type}_id', table_alias := latest) = @metrics_entity_type_col('to_{entity_type}_id', table_alias := previous)
+),
+change_in_part_time_contributors as (
+  select @metrics_end('DATE') as metrics_sample_date,
+    COALESCE(latest.event_source, previous.event_source) as event_source,
+    @metrics_entity_type_alias(
+      COALESCE(
+        @metrics_entity_type_col('to_{entity_type}_id', table_alias := latest),
+        @metrics_entity_type_col('to_{entity_type}_id', table_alias := previous)
+      ),
+      'to_{entity_type}_id',
+    ),
+    '' as from_artifact_id,
+    @metrics_name('change_in_part_time_contributors') as metric,
+    COALESCE(latest.part, 0) - COALESCE(previous.part, 0) as amount
   from previous
     LEFT JOIN latest ON latest.event_source = previous.event_source
     AND @metrics_entity_type_col('to_{entity_type}_id', table_alias := latest) = @metrics_entity_type_col('to_{entity_type}_id', table_alias := previous)
