@@ -2,7 +2,7 @@ test_change_in_30_day_developer_activity_to_artifact_over_2_period_window_full_t
   # Tests rolling count of active days when the user is active 4 of the 5 days
   # in the test interval
   gateway: local
-  model: metrics.change_in_30_day_developer_activity_to_artifact_over_2_period_window
+  model: metrics.change_in_developer_activity_to_artifact_over_30_day_window
   vars:
     start: 2024-01-31
     end: 2024-01-31

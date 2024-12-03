@@ -94,11 +94,15 @@ class JoinerTransform(Transform):
                             )
                         )
 
-                        group = t.cast(exp.Group, updated_select.args.get("group"))
-                        for group_idx in range(len(group.expressions)):
-                            group_col = t.cast(exp.Column, group.expressions[group_idx])
-                            if group_col == current_to_artifact_id_col:
-                                group_col.replace(new_to_entity_id_col)
+                        group_exp = updated_select.args.get("group")
+                        if group_exp:
+                            group = t.cast(exp.Group, group_exp)
+                            for group_idx in range(len(group.expressions)):
+                                group_col = t.cast(
+                                    exp.Column, group.expressions[group_idx]
+                                )
+                                if group_col == current_to_artifact_id_col:
+                                    group_col.replace(new_to_entity_id_col)
 
                         return updated_select
             # If nothing happens in the for loop then we didn't find the kind of

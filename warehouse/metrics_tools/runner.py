@@ -149,16 +149,25 @@ class MetricsRunner:
 
     def run_rolling(self, start: datetime, end: datetime):
         df: pd.DataFrame = pd.DataFrame()
-        logger.debug(f"run_rolling called with start={start} and end={end}")
+        logger.debug(
+            f"run_rolling[{self._ref['name']}]: called with start={start} and end={end}"
+        )
         count = 0
+        total_rows = 0
         for rendered_query in self.render_rolling_queries(start, end):
             count += 1
             logger.debug(
-                f"executing rolling window: {rendered_query}",
+                f"run_rolling[{self._ref['name']}]: executing rolling window: {rendered_query}",
                 extra={"query": rendered_query},
             )
             day_result = self._context.engine_adapter.fetchdf(rendered_query)
+            day_rows = len(day_result)
+            total_rows += day_rows
+            logger.debug(
+                f"run_rolling[{self._ref['name']}]: rolling window period resulted in {day_rows} rows"
+            )
             df = pd.concat([df, day_result])
+        logger.debug(f"run_rolling[{self._ref['name']}]: total rows {total_rows}")
 
         return df
 

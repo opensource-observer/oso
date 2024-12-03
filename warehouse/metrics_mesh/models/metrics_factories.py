@@ -10,7 +10,9 @@ timeseries_metrics(
     model_prefix="timeseries",
     timeseries_sources=[
         "events_daily_to_artifact",
+        "events_daily_to_artifact_with_lag",
         "issue_event_time_deltas",
+        "first_of_event_from_artifact",
     ],
     metric_queries={
         # This will automatically generate star counts for the given roll up periods.
@@ -76,6 +78,24 @@ timeseries_metrics(
             entity_types=["artifact", "project", "collection"],
             is_intermediate=True,
         ),
+        "contributor_active_days": MetricQueryDef(
+            ref="active_days.sql",
+            vars={
+                "activity_event_types": [
+                    "COMMIT_CODE",
+                    "ISSUE_OPENED",
+                    "PULL_REQUEST_OPENED",
+                    "PULL_REQUEST_MERGED",
+                ],
+            },
+            rolling=RollingConfig(
+                windows=[30, 90, 180],
+                unit="day",
+                cron="@daily",  # This determines how often this is calculated
+            ),
+            entity_types=["artifact", "project", "collection"],
+            is_intermediate=True,
+        ),
         "developer_classifications": MetricQueryDef(
             ref="developer_activity_classification.sql",
             vars={
@@ -89,55 +109,39 @@ timeseries_metrics(
         ),
         "contributor_classifications": MetricQueryDef(
             ref="contributor_activity_classification.sql",
-            vars={"full_time_ratio": 10 / 30},
-            rolling=RollingConfig(
-                windows=[30, 90, 180],
-                unit="day",
-                cron="@daily",
-            ),
-        ),
-        "user_retention_classifications": MetricQueryDef(
-            ref="user_retention_classification.sql",
             vars={
-                "activity_event_types": ["CONTRACT_INVOCATION_SUCCESS_DAILY_COUNT"],
+                "full_time_ratio": 10 / 30,
+                "activity_event_types": [
+                    "COMMIT_CODE",
+                    "ISSUE_OPENED",
+                    "PULL_REQUEST_OPENED",
+                    "PULL_REQUEST_MERGED",
+                ],
             },
             rolling=RollingConfig(
                 windows=[30, 90, 180],
                 unit="day",
                 cron="@daily",
             ),
-            entity_types=["artifact", "project", "collection"],
         ),
-        "change_in_30_day_developer_activity": MetricQueryDef(
-            vars={
-                "comparison_interval": 30,
-            },
+        # Currently this query performs really poorly. We need to do some debugging on it
+        # "user_retention_classifications": MetricQueryDef(
+        #     ref="user_retention_classification.sql",
+        #     vars={
+        #         "activity_event_types": ["CONTRACT_INVOCATION_SUCCESS_DAILY_COUNT"],
+        #     },
+        #     rolling=RollingConfig(
+        #         windows=[30, 90, 180],
+        #         unit="day",
+        #         cron="@daily",
+        #     ),
+        #     entity_types=["artifact", "project", "collection"],
+        # ),
+        "change_in_developer_activity": MetricQueryDef(
             ref="change_in_developers.sql",
             rolling=RollingConfig(
-                windows=[2],
-                unit="period",
-                cron="@daily",
-            ),
-        ),
-        "change_in_90_day_developer_activity": MetricQueryDef(
-            vars={
-                "comparison_interval": 90,
-            },
-            ref="change_in_developers.sql",
-            rolling=RollingConfig(
-                windows=[2],
-                unit="period",
-                cron="@daily",
-            ),
-        ),
-        "change_in_180_day_developer_activity": MetricQueryDef(
-            vars={
-                "comparison_interval": 180,
-            },
-            ref="change_in_developers.sql",
-            rolling=RollingConfig(
-                windows=[2],
-                unit="period",
+                windows=[30, 90, 180],
+                unit="day",
                 cron="@daily",
             ),
         ),
@@ -195,8 +199,8 @@ timeseries_metrics(
             ),
             entity_types=["artifact", "project", "collection"],
         ),
-         "avg_time_to_first_response": MetricQueryDef(
-            ref="prs_time_to_merge.sql",
+        "avg_time_to_first_response": MetricQueryDef(
+            ref="time_to_first_response.sql",
             rolling=RollingConfig(
                 windows=[90, 180],
                 unit="day",
@@ -230,7 +234,7 @@ timeseries_metrics(
                 cron="@daily",
             ),
             entity_types=["artifact", "project", "collection"],
-        ),        
+        ),
         "transactions": MetricQueryDef(
             ref="transactions.sql",
             rolling=RollingConfig(
@@ -239,7 +243,41 @@ timeseries_metrics(
                 cron="@daily",
             ),
             entity_types=["artifact", "project", "collection"],
-        ),        
+        ),
+        "contributors_lifecycle": MetricQueryDef(
+            ref="lifecycle.sql",
+            vars={
+                "activity_event_types": [
+                    "COMMIT_CODE",
+                    "ISSUE_OPENED",
+                    "PULL_REQUEST_OPENED",
+                    "PULL_REQUEST_MERGED",
+                ],
+            },
+            rolling=RollingConfig(
+                windows=[30, 90, 180],
+                unit="day",
+                cron="@daily",
+            ),
+            entity_types=["artifact", "project", "collection"],
+        ),
+        # "libin": MetricQueryDef(
+        #     ref="libin.sql",
+        #     vars={
+        #         "activity_event_types": [
+        #             "COMMIT_CODE",
+        #             "ISSUE_OPENED",
+        #             "PULL_REQUEST_OPENED",
+        #             "PULL_REQUEST_MERGED",
+        #         ],
+        #     },
+        #     rolling=RollingConfig(
+        #         windows=[30, 90, 180],
+        #         unit="day",
+        #         cron="@daily",
+        #     ),
+        #     entity_types=["artifact"],
+        # ),
     },
     default_dialect="clickhouse",
 )
