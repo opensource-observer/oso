@@ -278,6 +278,15 @@ timeseries_metrics(
         #     ),
         #     entity_types=["artifact"],
         # ),
+        "funding_received": MetricQueryDef(
+            ref="funding_received.sql",
+            rolling=RollingConfig(
+                windows=[180],
+                unit="day",
+                cron="@daily",
+            ),
+            entity_types=["artifact", "project", "collection"],
+        ),
     },
     default_dialect="clickhouse",
 )
