@@ -6,13 +6,13 @@
 
 with oss_funding_data as (
   select -- noqa: ST06
-    CAST(funding_date as timestamp) as `time`,
+    cast(funding_date as timestamp) as `time`,
     'GRANT_RECEIVED_USD' as event_type,
     '{{ oss_funding_url }}' as event_source_id,
     'OSS_FUNDING' as event_source,
-    LOWER(to_project_name) as to_project_name,
-    LOWER(from_funder_name) as from_project_name,
-    COALESCE(amount, 0) as amount
+    lower(to_project_name) as to_project_name,
+    lower(from_funder_name) as from_project_name,
+    coalesce(amount, 0) as amount
   from {{ source('static_data_sources', 'oss_funding_v1') }}
   where
     to_project_name is not null
@@ -22,21 +22,17 @@ with oss_funding_data as (
 
 gitcoin_data as (
   select -- noqa: ST06
-    events.event_time as `time`,
+    event_time as `time`,
     'GRANT_RECEIVED_USD' as event_type,
-    COALESCE(
-      events.transaction_hash,
-      CAST(events.gitcoin_project_id as string)
+    coalesce(
+      transaction_hash,
+      cast(gitcoin_project_id as string)
     ) as event_source_id,
-    CONCAT('GITCOIN', '_', funding_type) as event_source,
-    projects.project_name as to_project_name,
+    concat('GITCOIN', '_', upper(gitcoin_data_source)) as event_source,
+    oso_project_name as to_project_name,
     'gitcoin' as from_project_name,
-    events.amount_in_usd as amount
-  from {{ ref('int_gitcoin_funding_events') }} as events
-  inner join {{ ref('int_gitcoin_project_directory') }} as project_directory
-    on events.gitcoin_project_id = project_directory.gitcoin_project_id
-  inner join {{ ref('projects_v1') }} as projects
-    on project_directory.oso_project_id = projects.project_id
+    amount_in_usd as amount
+  from {{ ref('int_gitcoin_funding_events') }}
 ),
 
 grants as (

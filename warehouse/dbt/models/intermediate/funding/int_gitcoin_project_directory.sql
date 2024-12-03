@@ -25,15 +25,51 @@ oso_projects as (
     wallets.artifact_type = 'WALLET'
     and repos.artifact_source = 'GITHUB'
     and wallets.project_id = repos.project_id
+),
+
+wallet_matches as (
+  select distinct
+    gitcoin_projects.gitcoin_project_id,
+    gitcoin_projects.latest_project_github,
+    gitcoin_projects.latest_project_recipient_address,
+    oso_projects.oso_project_id as oso_wallet_match
+  from gitcoin_projects
+  left join oso_projects
+    on gitcoin_projects.latest_project_recipient_address = oso_projects.address
+),
+
+repo_matches as (
+  select distinct
+    wm.*,
+    oso_projects.oso_project_id as oso_repo_match
+  from wallet_matches as wm
+  left join oso_projects
+    on wm.latest_project_github = oso_projects.repo_owner
+),
+
+final_matches as (
+  select distinct
+    gitcoin_project_id,
+    latest_project_github,
+    latest_project_recipient_address,
+    oso_wallet_match,
+    oso_repo_match,
+    case
+      when oso_wallet_match is not null then oso_wallet_match
+      when oso_repo_match is not null then oso_repo_match
+    end as oso_project_id
+  from repo_matches
 )
 
-select distinct
-  oso_projects.oso_project_id,
-  gitcoin_projects.gitcoin_project_id,
-  gitcoin_projects.latest_project_github,
-  gitcoin_projects.latest_project_recipient_address
-from gitcoin_projects
-inner join oso_projects on (
-  gitcoin_projects.latest_project_github = oso_projects.repo_owner
-  and gitcoin_projects.latest_project_recipient_address = oso_projects.address
-)
+select
+  final_matches.gitcoin_project_id,
+  final_matches.latest_project_github,
+  final_matches.latest_project_recipient_address,
+  final_matches.oso_wallet_match,
+  final_matches.oso_repo_match,
+  final_matches.oso_project_id,
+  projects.project_name as oso_project_name,
+  projects.display_name as oso_display_name
+from final_matches
+left join {{ ref('projects_v1') }} as projects
+  on final_matches.oso_project_id = projects.project_id
