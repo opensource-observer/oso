@@ -30,32 +30,32 @@ with round_dates as (
 
 round_details as (
   select
-    round_id,
+    gitcoin_round_id,
     round_name,
     coalesce(round_number, -1) as round_number,
     min(donation_timestamp) as date_round_started,
     max(donation_timestamp) as date_round_ended
   from {{ ref('stg_gitcoin__donations') }}
-  group by round_id, round_number, round_name
+  group by gitcoin_round_id, round_number, round_name
 ),
 
 matching as (
   select
-    round_id,
+    gitcoin_round_id,
     chain_id,
     coalesce(round_number, -1) as round_number,
     sum(amount_in_usd) as matching_amount_in_usd
   from {{ ref('stg_gitcoin__matching') }}
-  group by round_id, round_number, chain_id
+  group by gitcoin_round_id, round_number, chain_id
 ),
 
 combined as (
   select
-    matching.round_id,
+    matching.gitcoin_round_id,
     matching.round_number,
     matching.chain_id,
     matching.matching_amount_in_usd,
-    coalesce(round_details.round_name, matching.round_id)
+    coalesce(round_details.round_name, matching.gitcoin_round_id)
       as round_name,
     coalesce(round_details.date_round_started, round_dates.date_round_started)
       as date_round_started,
@@ -64,7 +64,7 @@ combined as (
   from matching
   left join round_details
     on
-      matching.round_id = round_details.round_id
+      matching.gitcoin_round_id = round_details.gitcoin_round_id
       and matching.round_number = round_details.round_number
   left join round_dates
     on matching.round_number = round_dates.round_number
@@ -72,9 +72,9 @@ combined as (
 )
 
 select
-  {{ oso_id("'GITCOIN'", 'round_id', 'round_number') }}
+  {{ oso_id("'GITCOIN'", 'gitcoin_round_id', 'round_number') }}
     as funding_round_id,
-  round_id as gitcoin_round_id,
+  gitcoin_round_id,
   round_number,
   round_name,
   chain_id,
