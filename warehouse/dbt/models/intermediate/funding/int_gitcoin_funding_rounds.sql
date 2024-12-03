@@ -1,12 +1,12 @@
--- Hardcode the cGrant funding round dates
+-- Hardcode round dates for legacy cGrants rounds
 with round_dates as (
   select
-    round_num,
+    round_number,
     timestamp(date_round_started) as date_round_started,
     timestamp(date_round_ended) as date_round_ended
   from unnest([
     struct(
-      1 as round_num,
+      1 as round_number,
       '2019-02-01T00:00:00Z' as date_round_started,
       '2019-02-15T00:00:00Z' as date_round_ended
     ),
@@ -28,98 +28,58 @@ with round_dates as (
   ]) as v
 ),
 
-round_names as (
+round_details as (
   select
-    round_id as gitcoin_round_id,
-    coalesce(round_num, -1) as round_number,
-    round_name
+    round_id,
+    round_name,
+    coalesce(round_number, -1) as round_number,
+    min(donation_timestamp) as date_round_started,
+    max(donation_timestamp) as date_round_ended
   from {{ ref('stg_gitcoin__donations') }}
+  group by round_id, round_number, round_name
 ),
 
--- Process legacy cGrants platform data
-cgrants as (
+matching as (
   select
-    grant_data.round_id as gitcoin_round_id,
-    grant_data.round_number,
-    grant_data.round_id as round_name,
-    round_dates.date_round_started,
-    round_dates.date_round_ended,
-    'quadratic_funding' as allocation_strategy,
-    'cgrants' as platform,
-    round(grant_data.matching_amount_in_usd, 2) as matching_amount_in_usd,
-    grant_data.chain_ids
-  from (
-    select
-      round_number,
-      round_id,
-      array_agg(distinct chain_id) as chain_ids,
-      sum(amount_in_usd) as matching_amount_in_usd
-    from {{ ref('stg_gitcoin__matching') }}
-    where round_number is not null and round_number <= 16
-    group by round_number, round_id
-  ) as grant_data
-  left join round_dates as round_dates
-    on grant_data.round_number = round_dates.round_num
-  order by round_dates.date_round_started
+    round_id,
+    chain_id,
+    coalesce(round_number, -1) as round_number,
+    sum(amount_in_usd) as matching_amount_in_usd
+  from {{ ref('stg_gitcoin__matching') }}
+  group by round_id, round_number, chain_id
 ),
 
--- Process Grants Stack platform data
-grants_stack as (
+combined as (
   select
-    round_id as gitcoin_round_id,
-    coalesce(round_num, -1) as round_number,
-    round_name,
-    date_round_started,
-    date_round_ended,
-    'quadratic_funding' as allocation_strategy,
-    'grants_stack' as platform,
-    round(sum(matching_pool), 2) as matching_amount_in_usd,
-    array_agg(distinct chain_id) as chain_ids
-  from {{ source('static_data_sources', 'grants_stack_rounds') }}
-  where round_id is not null
-  group by round_id, round_num, round_name, date_round_started, date_round_ended
-),
-
--- Process current Allo platform data
-allo as (
-  select
-    round_id as gitcoin_round_id,
-    round_number,
-    round_name,
-    date_round_started,
-    date_round_ended,
-    'quadratic_funding' as allocation_strategy,
-    'allo' as platform,
-    matching_amount_in_usd,
-    chain_ids
-  from (
-    select
-      round_id,
-      coalesce(round_number, -1) as round_number,
-      'tbc' as round_name,
-      min(timestamp(`timestamp`)) as date_round_started,
-      max(timestamp(`timestamp`)) as date_round_ended,
-      round(sum(amount_in_usd), 2) as matching_amount_in_usd,
-      array_agg(distinct chain_id) as chain_ids
-    from {{ ref('stg_gitcoin__matching') }}
-    where
-      (round_number is null or round_number > 16)
-      and round_id not in (select distinct gitcoin_round_id from grants_stack)
-    group by round_id, round_number
-  )
-),
-
-union_all as (
-  select * from cgrants
-  union all
-  select * from grants_stack
-  union all
-  select * from allo
+    matching.round_id,
+    matching.round_number,
+    matching.chain_id,
+    matching.matching_amount_in_usd,
+    coalesce(round_details.round_name, matching.round_id)
+      as round_name,
+    coalesce(round_details.date_round_started, round_dates.date_round_started)
+      as date_round_started,
+    coalesce(round_details.date_round_ended, round_dates.date_round_ended)
+      as date_round_ended
+  from matching
+  left join round_details
+    on
+      matching.round_id = round_details.round_id
+      and matching.round_number = round_details.round_number
+  left join round_dates
+    on matching.round_number = round_dates.round_number
+  order by date_round_ended
 )
 
 select
-  {{ oso_id("'GITCOIN'", 'gitcoin_round_id', 'round_number') }}
+  {{ oso_id("'GITCOIN'", 'round_id', 'round_number') }}
     as funding_round_id,
-  *
-from union_all
+  round_id as gitcoin_round_id,
+  round_number,
+  round_name,
+  chain_id,
+  date_round_started,
+  date_round_ended,
+  matching_amount_in_usd
+from combined
 order by date_round_ended desc
