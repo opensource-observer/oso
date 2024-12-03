@@ -6,6 +6,7 @@ select
   round_type,
   main_round_label,
   round_name,
+  oso_generated_round_label,
   gitcoin_project_id,
   project_application_title,
   oso_project_id,
@@ -14,7 +15,6 @@ select
   donor_address,
   sum(amount_in_usd) as amount_in_usd
 from {{ ref('int_gitcoin_funding_events') }}
-where oso_project_id is not null
 group by
   event_time,
   gitcoin_data_source,
@@ -23,6 +23,7 @@ group by
   round_type,
   main_round_label,
   round_name,
+  oso_generated_round_label,
   gitcoin_project_id,
   project_application_title,
   oso_project_id,

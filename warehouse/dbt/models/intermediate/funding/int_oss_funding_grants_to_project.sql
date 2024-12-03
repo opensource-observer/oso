@@ -28,7 +28,7 @@ gitcoin_data as (
       transaction_hash,
       cast(gitcoin_project_id as string)
     ) as event_source_id,
-    concat('GITCOIN', '_', upper(gitcoin_data_source)) as event_source,
+    concat('GITCOIN', '_', upper(oso_generated_round_label)) as event_source,
     oso_project_name as to_project_name,
     'gitcoin' as from_project_name,
     amount_in_usd as amount
