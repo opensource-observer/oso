@@ -1,65 +1,69 @@
-{#
-  This model combines the donations and matching grants data to create a single table of funding events.
-  The `funding_type` column is used to differentiate between donations and matching grants.
-  The `event_time` data has some issues. It is missing for matching grants, so we use the most recent donation timestamp as a placeholder. To the cGrants data, we use a placeholder date of 2023-07-01.
-#}
-
-
-with last_donation_by_round as (
-  select
-    round_id,
-    round_number,
-    gitcoin_project_id,
-    max(donation_timestamp) as assumed_event_time
-  from {{ ref('stg_gitcoin__donations') }}
-  group by
-    round_id,
-    round_number,
-    gitcoin_project_id
+with unioned_funding_events as (
+  select * from {{ ref('stg_gitcoin__donations') }}
+  union all
+  select * from {{ ref('stg_gitcoin__matching') }}
 ),
 
-unioned_events as (
+labeled_funding_events as (
   select
-    transaction_hash,
-    donation_timestamp as event_time,
-    round_id,
-    round_number,
-    chain_id,
-    gitcoin_project_id,
-    donor_address,
-    amount_in_usd,
-    'DONATIONS' as funding_type
-  from {{ ref('stg_gitcoin__donations') }}
+    *,
+    case
+      when (
+        gitcoin_data_source in ('MatchFunding', 'CGrants')
+        and round_number between 1 and 15
+      ) then concat('GG-', lpad(cast(round_number as string), 2, '0'))
+      when (
+        gitcoin_data_source in ('MatchFunding', 'Alpha')
+        and round_number = 16
+      ) then 'GG-16'
+      when (
+        gitcoin_data_source in ('MatchFunding', 'GrantsStack')
+        and round_number is not null
+      ) then concat('GG-', lpad(cast(round_number as string), 2, '0'))
+    end as main_round_label,
+    case
+      when (
+        gitcoin_data_source = 'CGrants'
+        and round_number is null
+      ) then 'DirectDonations'
+      when (
+        gitcoin_data_source in ('MatchFunding', 'GrantsStack')
+        and round_number is null
+      ) then 'PartnerRound'
+      else 'MainRound'
+    end as round_type
+  from unioned_funding_events
+),
 
-  union all
-
+joined_events as (
   select
-    null as transaction_hash,
-    last_donation_by_round.assumed_event_time as event_time,
-    matching.round_id,
-    matching.round_number,
-    matching.chain_id,
-    matching.gitcoin_project_id,
-    null as donor_address,
-    matching.amount_in_usd,
-    'MATCHING' as funding_type
-  from {{ ref('stg_gitcoin__matching') }} as matching
-  left join last_donation_by_round
-    on
-      matching.round_id = last_donation_by_round.round_id
-      and matching.round_number = last_donation_by_round.round_number
-      and matching.gitcoin_project_id = last_donation_by_round.gitcoin_project_id
+    labeled_funding_events.*,
+    directory.oso_project_id,
+    projects.project_name as oso_project_name,
+    projects.display_name as oso_display_name
+  from labeled_funding_events
+  left join {{ ref('int_gitcoin_project_directory') }} as directory
+    on labeled_funding_events.gitcoin_project_id = directory.gitcoin_project_id
+  left join {{ ref('projects_v1') }} as projects
+    on directory.oso_project_id = projects.project_id
+  where amount_in_usd > 0
 )
 
 select
-  transaction_hash,
-  round_id,
+  event_time,
+  gitcoin_data_source,
+  gitcoin_round_id,
   round_number,
+  round_type,
+  main_round_label,
+  round_name,
   chain_id,
   gitcoin_project_id,
+  project_application_title,
+  oso_project_id,
+  oso_project_name,
+  oso_display_name,
   donor_address,
   amount_in_usd,
-  funding_type,
-  coalesce(event_time, timestamp('2023-07-01')) as event_time
-from unioned_events
-where amount_in_usd > 0
+  transaction_hash
+from joined_events
