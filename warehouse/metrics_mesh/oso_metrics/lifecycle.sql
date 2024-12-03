@@ -187,3 +187,9 @@ change_in_part_time_contributors as (
 )
 select *
 from churned_contributors
+union all
+select *
+from change_in_full_time_contributors
+union all
+select *
+from change_in_part_time_contributors
