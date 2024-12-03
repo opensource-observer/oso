@@ -9,13 +9,13 @@ WITH latest AS (
     classification.amount
   FROM @metrics_peer_ref(
       developer_classifications,
-      window := @comparison_interval,
-      unit := 'day',
+      window := @rolling_window,
+      unit := @rolling_unit,
     ) as classification
   WHERE classification.metrics_sample_date = @relative_window_sample_date(
       @metrics_end('DATE'),
-      @comparison_interval,
-      'day',
+      @rolling_window,
+      @rolling_unit,
       0
     )
 ),
@@ -31,13 +31,13 @@ previous AS (
     classification.amount
   FROM @metrics_peer_ref(
       developer_classifications,
-      window := @comparison_interval,
-      unit := 'day'
+      window := @rolling_window,
+      unit := @rolling_unit
     ) as classification
   WHERE classification.metrics_sample_date = @relative_window_sample_date(
       @metrics_end('DATE'),
-      @comparison_interval,
-      'day',
+      @rolling_window,
+      @rolling_unit,
       -1
     )
 )
