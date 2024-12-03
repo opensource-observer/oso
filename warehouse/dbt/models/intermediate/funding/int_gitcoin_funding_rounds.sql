@@ -29,9 +29,14 @@ select
   sum(amount_in_usd) as total_amount_in_usd,
   count(distinct gitcoin_project_id) as count_projects
 from unioned
-group by 1, 2, 3, 4, 5, 6
+group by
+  gitcoin_data_source,
+  gitcoin_round_id,
+  round_number,
+  round_name,
+  round_type,
+  main_round_label
 order by
   round_type asc,
   main_round_label desc,
   gitcoin_round_id asc
-_oss
