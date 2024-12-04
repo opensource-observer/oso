@@ -287,6 +287,15 @@ timeseries_metrics(
             ),
             entity_types=["artifact", "project", "collection"],
         ),
+        "dependencies": MetricQueryDef(
+            ref="dependencies.sql",
+            rolling=RollingConfig(
+                windows=[180],
+                unit="day",
+                cron="@daily",
+            ),
+            entity_types=["artifact", "project", "collection"],
+        ),
     },
     default_dialect="clickhouse",
 )
