@@ -1,4 +1,5 @@
 import inspect
+import json
 import logging
 import re
 import textwrap
@@ -426,6 +427,13 @@ def create_basic_python_env(
     return serialized
 
 
+class PrettyExecutable(Executable):
+    @classmethod
+    def value(cls, v: t.Any) -> Executable:
+        pretty_v = json.dumps(v, indent=1)
+        return cls(payload=pretty_v, kind=ExecutableKind.VALUE)
+
+
 def create_import_call_env(
     name: str,
     import_module: str,
@@ -439,6 +447,8 @@ def create_import_call_env(
     additional_macros: t.Optional[MacroRegistry] = None,
     variables: t.Optional[t.Dict[str, t.Any]] = None,
 ):
+    is_local = variables.get("gateway", "unknown") == "local" if variables else False
+
     if isinstance(path, str):
         path = Path(path)
 
@@ -474,7 +484,9 @@ def create_import_call_env(
         alias=entrypoint_name,
         is_metadata=False,
     )
-    serialized[entrypoint_config_name] = Executable.value(config)
+    serialized[entrypoint_config_name] = (
+        PrettyExecutable.value(config) if is_local else Executable.value(config)
+    )
 
     serialized[name] = Executable(
         payload=f"from {import_module} import {name}",
