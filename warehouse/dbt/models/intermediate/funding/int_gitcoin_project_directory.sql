@@ -2,16 +2,16 @@ with gitcoin_projects as (
   select distinct
     pg.latest_project_github,
     pg.latest_project_recipient_address,
-    project_lookup.gitcoin_project_id
+    project_lookup.gitcoin_project_id,
+    not(
+      not regexp_contains(pg.latest_project_github, '^[a-zA-Z0-9_-]+$')
+      or pg.latest_project_github like '%?%'
+      or pg.latest_project_github = 'none'
+      or length(pg.latest_project_github) > 39
+    ) as is_valid_github
   from {{ ref('stg_gitcoin__project_groups') }} as pg
   left join {{ ref('stg_gitcoin__project_lookup') }} as project_lookup
     on pg.gitcoin_group_id = project_lookup.gitcoin_group_id
-  where not (
-    not regexp_contains(pg.latest_project_github, '^[a-zA-Z0-9_-]+$')
-    or pg.latest_project_github like '%?%'
-    or pg.latest_project_github = 'none'
-    or length(pg.latest_project_github) > 39
-  )
 ),
 
 oso_projects as (
@@ -49,27 +49,35 @@ repo_matches as (
 
 final_matches as (
   select distinct
-    gitcoin_project_id,
-    latest_project_github,
-    latest_project_recipient_address,
-    oso_wallet_match,
-    oso_repo_match,
+    gitcoin_projects.gitcoin_project_id,
+    gitcoin_projects.latest_project_github,
+    gitcoin_projects.latest_project_recipient_address,
+    repo_matches.oso_wallet_match,
+    repo_matches.oso_repo_match,
     case
-      when oso_wallet_match is not null then oso_wallet_match
-      when oso_repo_match is not null then oso_repo_match
+      when repo_matches.oso_wallet_match is not null
+        then repo_matches.oso_wallet_match
+      when
+        repo_matches.oso_repo_match is not null
+        and gitcoin_projects.is_valid_github
+        then repo_matches.oso_repo_match
     end as oso_project_id
   from repo_matches
+  left join gitcoin_projects
+    on repo_matches.gitcoin_project_id = gitcoin_projects.gitcoin_project_id
 )
 
 select
-  final_matches.gitcoin_project_id,
-  final_matches.latest_project_github,
-  final_matches.latest_project_recipient_address,
-  final_matches.oso_wallet_match,
-  final_matches.oso_repo_match,
-  final_matches.oso_project_id,
+  gp.gitcoin_project_id,
+  gp.latest_project_github,
+  gp.latest_project_recipient_address,
+  fm.oso_wallet_match,
+  fm.oso_repo_match,
+  fm.oso_project_id,
   projects.project_name as oso_project_name,
   projects.display_name as oso_display_name
-from final_matches
+from gitcoin_projects as gp
+left join final_matches as fm
+  on gp.gitcoin_project_id = fm.gitcoin_project_id
 left join {{ ref('projects_v1') }} as projects
-  on final_matches.oso_project_id = projects.project_id
+  on fm.oso_project_id = projects.project_id
