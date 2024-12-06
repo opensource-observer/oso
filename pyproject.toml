@@ -66,6 +66,10 @@ dagster-k8s = "^0.24.6"
 pyiceberg = { extras = ["hive"], version = "^0.7.1" }
 connectorx = "^0.4.0"
 bokeh = "^3.6.1"
+pyvis = "^0.3.2"
+networkx = "^3.4.2"
+jupyter = "^1.1.1"
+matplotlib = "^3.9.3"
 
 
 [tool.poetry.scripts]
