@@ -3,7 +3,7 @@ import click
 from datetime import datetime
 import requests
 
-from .types import QueryJobInput
+from .types import QueryJobSubmitInput
 from ..definition import PeerMetricDependencyRef
 
 
@@ -13,7 +13,7 @@ def run_get(
     end: str,
     batch_size: int = 1,
 ):
-    input = QueryJobInput(
+    input = QueryJobSubmitInput(
         query_str="""
         SELECT bucket_day, to_artifact_id, from_artifact_id, event_source, event_type, SUM(amount) as amount
         FROM metrics.events_daily_to_artifact

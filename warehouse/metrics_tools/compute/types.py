@@ -28,7 +28,7 @@ class ClusterStatus(BaseModel):
     workers: int
 
 
-class QueryJobInput(BaseModel):
+class QueryJobSubmitInput(BaseModel):
     query_str: str
     start: datetime
     end: datetime
@@ -43,12 +43,12 @@ class QueryJobInput(BaseModel):
         return parse_one(self.query_str, self.dialect).sql(dialect=dialect)
 
 
-class QueryJobResponse(BaseModel):
+class QueryJobSubmitResponse(BaseModel):
     job_id: str
     result_path: str
 
 
-class QueryJobStatus(BaseModel):
+class QueryJobStatusResponse(BaseModel):
     job_id: str
     status: str
 

@@ -14,10 +14,10 @@ from .cache import TrinoCacheExportManager
 from .cluster import ClusterManager
 from .types import (
     ClusterStartRequest,
-    QueryJobInput,
+    QueryJobSubmitInput,
     ClusterStatus,
-    QueryJobResponse,
-    QueryJobStatus,
+    QueryJobSubmitResponse,
+    QueryJobStatusResponse,
 )
 
 logger = logging.getLogger(__name__)
@@ -25,6 +25,7 @@ logger = logging.getLogger(__name__)
 
 class MetricsCalculationService:
     id: str
+    gcs_bucket: str
     cluster_manager: ClusterManager
     cache_manager: TrinoCacheExportManager
     job_state: t.Dict[str, str]
@@ -35,20 +36,23 @@ class MetricsCalculationService:
     def setup(
         cls,
         id: str,
+        gcs_bucket: str,
         result_path_prefix: str,
         cluster_manager: ClusterManager,
         cache_manager: TrinoCacheExportManager,
     ):
-        return cls(id, result_path_prefix, cluster_manager, cache_manager)
+        return cls(id, gcs_bucket, result_path_prefix, cluster_manager, cache_manager)
 
     def __init__(
         self,
         id: str,
+        gcs_bucket: str,
         result_path_prefix: str,
         cluster_manager: ClusterManager,
         cache_manager: TrinoCacheExportManager,
     ):
         self.id = id
+        self.gcs_bucket = gcs_bucket
         self.result_path_prefix = result_path_prefix
         self.cluster_manager = cluster_manager
         self.cache_manager = cache_manager
@@ -64,7 +68,7 @@ class MetricsCalculationService:
     def get_cluster_status(self):
         return self.cluster_manager.get_cluster_status()
 
-    def submit_job(self, input: QueryJobInput):
+    def submit_job(self, input: QueryJobSubmitInput):
         """Submit a job to the cluster to compute the metrics"""
         job_id = str(uuid.uuid4())
         client = self.cluster_manager.client
@@ -94,9 +98,11 @@ class MetricsCalculationService:
         )
         self._set_job_started(job_id, thread)
         thread.start()
-        result_path = os.path.join(result_path_base, "*.parquet")
+        result_path = os.path.join(
+            f"gs://{self.gcs_bucket}", result_path_base, "*.parquet"
+        )
 
-        return QueryJobResponse(job_id=job_id, result_path=result_path)
+        return QueryJobSubmitResponse(job_id=job_id, result_path=result_path)
 
     def _wait_for_job_futures(self, job_id: str, futures: t.List[Future]):
         completed_batches = 0
@@ -148,7 +154,7 @@ class MetricsCalculationService:
             state = self.job_state.get(job_id)
         return state
 
-    def generate_query_batches(self, input: QueryJobInput, batch_size: int):
+    def generate_query_batches(self, input: QueryJobSubmitInput, batch_size: int):
         runner = MetricsRunner.from_engine_adapter(
             FakeEngineAdapter("duckdb"),
             input.query_as("duckdb"),
@@ -167,7 +173,7 @@ class MetricsCalculationService:
         if len(batch) > 0:
             yield (batch_num, batch)
 
-    def load_dependent_tables(self, input: QueryJobInput):
+    def load_dependent_tables(self, input: QueryJobSubmitInput):
         exported_dependent_tables_map: t.Dict[str, str] = {}
         for ref_name, actual_name in input.dependent_tables_map.items():
             # Any deps, use trino to export to gcs
@@ -179,7 +185,7 @@ class MetricsCalculationService:
         status = self._get_job_state(job_id)
         if not status:
             raise ValueError(f"Job {job_id} not found")
-        return QueryJobStatus(job_id=job_id, status=status)
+        return QueryJobStatusResponse(job_id=job_id, status=status)
 
     def add_manual_exported_table_reference(self, ref_name: str, actual_name: str):
         """This is mostly used for testing purposes, but allows us to load a

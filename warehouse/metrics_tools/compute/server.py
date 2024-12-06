@@ -7,7 +7,7 @@ import trino
 from fastapi import FastAPI, Request
 
 from ..utils import env
-from .types import ClusterStartRequest, QueryJobInput
+from .types import ClusterStartRequest, QueryJobSubmitInput
 from .service import MetricsCalculationService
 from .cache import TrinoCacheExportManager
 from .cluster import ClusterManager, make_new_cluster
@@ -71,6 +71,7 @@ async def initialize_app(app: FastAPI):
     yield {
         "mca": MetricsCalculationService(
             id=str(uuid.uuid4()),
+            gcs_bucket=gcs_bucket,
             result_path_prefix=results_path_prefix,
             cluster_manager=cluster_manager,
             cache_manager=TrinoCacheExportManager(trino_connection, gcs_bucket),
@@ -123,7 +124,7 @@ async def get_cluster_status(request: Request):
 @app.post("/job/submit")
 async def submit_job(
     request: Request,
-    input: QueryJobInput,
+    input: QueryJobSubmitInput,
 ):
     """
     Submits a Dask job for calculation
