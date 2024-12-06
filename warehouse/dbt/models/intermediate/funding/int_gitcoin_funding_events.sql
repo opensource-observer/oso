@@ -4,6 +4,27 @@ with unioned_funding_events as (
   select * from {{ ref('stg_gitcoin__matching') }}
 ),
 
+cleaned_funding_events as (
+  select
+    * except (gitcoin_round_id),
+    case
+      when
+        gitcoin_data_source = 'Alpha'
+        and round_name = 'Ethereum Infrastructure'
+        then 'alpha-eth-infra'
+      when
+        gitcoin_data_source = 'Alpha'
+        and round_name = 'Open Source Software'
+        then 'alpha-oss'
+      when
+        gitcoin_data_source = 'Alpha'
+        and round_name = 'Climate Solutions'
+        then 'alpha-climate'
+      else gitcoin_round_id
+    end as gitcoin_round_id
+  from unioned_funding_events
+),
+
 funding_events_with_round_types as (
   select
     *,
@@ -32,7 +53,7 @@ funding_events_with_round_types as (
       ) then 'PartnerRound'
       else 'MainRound'
     end as round_type
-  from unioned_funding_events
+  from cleaned_funding_events
 ),
 
 labeled_funding_events as (
@@ -70,8 +91,8 @@ labeled_funding_events as (
       when round_type = 'PartnerRound'
         then concat(
           round_type, ' - ',
-          cast(chain_id as string), ' - ',
-          gitcoin_round_id
+          gitcoin_round_id, ' - ',
+          cast(chain_id as string)
         )
     end as oso_generated_round_label
   from funding_events_with_round_types

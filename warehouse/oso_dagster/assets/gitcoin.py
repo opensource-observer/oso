@@ -45,9 +45,5 @@ regendata_xyz = sql_assets(
             "table": "all_matching",
             "write_disposition": "replace",
         },
-        {
-            "table": "public.Round",
-            "write_disposition": "replace",
-        },
     ],
 )
