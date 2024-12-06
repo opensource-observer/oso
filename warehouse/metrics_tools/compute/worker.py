@@ -1,19 +1,18 @@
 # The worker initialization
-import abc
 import logging
 import os
 import sys
 import typing as t
 import uuid
+import pandas as pd
+import io
 from contextlib import contextmanager
 from threading import Lock
 
 import duckdb
-import polars as pl
-from dask.distributed import Worker, WorkerPlugin, get_worker
+from dask.distributed import Worker, WorkerPlugin, get_worker, print as dprint
 from google.cloud import storage
 from metrics_tools.utils.logging import add_metrics_tools_to_existing_logger
-from pyiceberg.catalog import load_catalog
 from pyiceberg.table import Table as IcebergTable
 from sqlglot import exp
 
@@ -166,25 +165,45 @@ class MetricsWorkerPlugin(WorkerPlugin):
     def bucket_path(self, *joins: str):
         return os.path.join(f"gs://{self.bucket}", *joins)
 
+    def upload_to_gcs_bucket(self, blob_path: str, file: t.IO):
+        with self.gcs_client() as client:
+            bucket = client.bucket(self._gcs_bucket)
+            blob = bucket.blob(blob_path)
+            blob.upload_from_file(file)
+
 
 def execute_duckdb_load(
-    id: int, gcs_path: str, queries: t.List[str], dependencies: t.Dict[str, str]
+    job_id: str,
+    task_id: str,
+    result_path: str,
+    queries: t.List[str],
+    dependencies: t.Dict[str, str],
 ):
-    logger.debug("Starting duckdb load")
+    """Execute a duckdb load on a worker.
+
+    This executes the query with duckdb and writes the results to a gcs path.
+    """
     worker = get_worker()
+
+    # The metrics plugin keeps a record of the cached tables on the worker.
     plugin = t.cast(MetricsWorkerPlugin, worker.plugins["metrics"])
+
     for ref, actual in dependencies.items():
-        logger.debug(f"Loading cache for {ref}:{actual}")
+        dprint(f"Loading cache for {ref}:{actual}")
         plugin.get_for_cache(ref, actual)
     conn = plugin.connection
-    results: t.List[pl.DataFrame] = []
+    results: t.List[pd.DataFrame] = []
     for query in queries:
-        result = conn.execute(query).pl()
+        result = conn.execute(query).df()
         results.append(result)
+    # Concatenate the results
+    results_df = pd.concat(results)
 
-    pl.concat(results)
+    # Export the results to a parquet file in memory
+    inmem_file = io.BytesIO()
+    inmem_file.seek(0)
+    results_df.to_parquet(inmem_file)
 
-    # return DuckdbLoadedItem(
-    #     id=id,
-    #     df=pd.concat(results, ignore_index=True, sort=False),
-    # )
+    # Upload the parquet to gcs
+    plugin.upload_to_gcs_bucket(result_path, inmem_file)
+    return task_id

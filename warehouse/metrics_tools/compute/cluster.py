@@ -5,6 +5,7 @@ import typing as t
 
 from dask.distributed import Client
 from dask_kubernetes.operator import KubeCluster, make_cluster_spec
+from metrics_tools.compute.types import ClusterStatus
 
 from .worker import MetricsWorkerPlugin
 
@@ -42,7 +43,7 @@ class ClusterManager:
         self._gcs_secret = gcs_secret
         self._duckdb_path = duckdb_path
 
-    def start_cluster(self, min_size: int, max_size: int):
+    def start_cluster(self, min_size: int, max_size: int) -> ClusterStatus:
         if self._cluster is None:
             # Create a KubeCluster
             self._cluster = start_duckdb_cluster(
@@ -59,27 +60,34 @@ class ClusterManager:
                     self._duckdb_path,
                 )
             )
-            return {
-                "status": "Cluster started",
-                "dashboard_url": self._cluster.dashboard_link,
-                "workers": len(self._cluster.scheduler_info["workers"]),
-            }
+            return ClusterStatus(
+                status="Cluster started",
+                is_ready=True,
+                dashboard_url=self._cluster.dashboard_link,
+                workers=len(self._cluster.scheduler_info["workers"]),
+            )
         else:
-            # Cluster already exists
-            return {
-                "status": "Cluster already running",
-                "dashboard_url": self._cluster.dashboard_link,
-                "workers": len(self._cluster.scheduler_info["workers"]),
-            }
+            return ClusterStatus(
+                status="Cluster already running",
+                is_ready=True,
+                dashboard_url=self._cluster.dashboard_link,
+                workers=len(self._cluster.scheduler_info["workers"]),
+            )
 
     def get_cluster_status(self):
         if self._cluster is None:
-            return {"is_ready": False}
-        return {
-            "is_ready": True,
-            "dashboard_url": self._cluster.dashboard_link,
-            "workers": len(self._cluster.scheduler_info["workers"]),
-        }
+            return ClusterStatus(
+                status="Cluster not started",
+                is_ready=False,
+                dashboard_url="",
+                workers=0,
+            )
+        return ClusterStatus(
+            status="Cluster running",
+            is_ready=True,
+            dashboard_url=self._cluster.dashboard_link,
+            workers=len(self._cluster.scheduler_info["workers"]),
+        )
 
     @property
     def client(self):
