@@ -10,6 +10,11 @@ logger = logging.getLogger(__name__)
 
 
 class TrinoCacheExportManager:
+    """Manages the export of trino tables to a cache location in GCS that can be
+    used easily by duckdb or other compute resources. This is necessary because
+    pyiceberg and duckdb's iceberg libraries are quite slow at processing the
+    lakehouse data directly."""
+
     def __init__(
         self,
         db: Connection,
