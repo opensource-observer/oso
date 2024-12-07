@@ -32,6 +32,9 @@ class TrinoCacheExportManager:
     def add_export_table_reference(self, table: str, export_table: str):
         self.exported_map[table] = export_table
 
+    def add_export_table_references(self, table_map: t.Dict[str, str]):
+        self.exported_map.update(table_map)
+
     def export_table_for_cache(self, table: str):
         # Using the actual name
         # Export with trino

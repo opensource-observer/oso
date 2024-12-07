@@ -4,7 +4,7 @@ import typing as t
 
 def required_var[T](var: str, default: t.Optional[T] = None):
     value = os.environ.get(var, default)
-    assert value, f"f{var} is required"
+    assert value, f"{var} is required"
     return value
 
 

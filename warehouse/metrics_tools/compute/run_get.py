@@ -2,8 +2,9 @@
 import click
 from datetime import datetime
 import requests
+from pydantic_core import to_jsonable_python
 
-from .types import QueryJobSubmitInput
+from .types import ClusterStartRequest, ExportedTableLoad, QueryJobSubmitRequest
 from ..definition import PeerMetricDependencyRef
 
 
@@ -13,7 +14,7 @@ def run_get(
     end: str,
     batch_size: int = 1,
 ):
-    input = QueryJobSubmitInput(
+    input = QueryJobSubmitRequest(
         query_str="""
         SELECT bucket_day, to_artifact_id, from_artifact_id, event_source, event_type, SUM(amount) as amount
         FROM metrics.events_daily_to_artifact
@@ -46,7 +47,33 @@ def run_get(
         batch_size=batch_size,
     )
     # requests.get(f"{url}/sub", json=input.dict())
-    response = requests.post(f"{url}/job/submit", json=input.model_dump_json())
+    response = requests.post(f"{url}/job/submit", json=to_jsonable_python(input))
+    print(response.json())
+
+
+def run_start(url: str, min=6, max=10):
+    req = ClusterStartRequest(min_size=min, max_size=max)
+    response = requests.post(f"{url}/cluster/start", json=to_jsonable_python(req))
+    print(response.json())
+
+
+def run_cache_load(url: str):
+    req = ExportedTableLoad(
+        map={
+            "sqlmesh__metrics.metrics__events_daily_to_artifact__2357434958": "export_metrics__events_daily_to_artifact__2357434958_5def5e890a984cf99f7364ce3c2bb958",
+        }
+    )
+    response = requests.post(f"{url}/cache/manual", json=to_jsonable_python(req))
+    print(response.json())
+
+
+def run_stop(url: str):
+    response = requests.post(f"{url}/cluster/stop")
+    print(response.json())
+
+
+def run_get_status(url: str, job_id: str):
+    response = requests.get(f"{url}/job/status/{job_id}")
     print(response.json())
 
 
@@ -58,6 +85,8 @@ def run_get(
 def main(url: str, batch_size: int, start, end):
     if not end:
         end = datetime.now().strftime("%Y-%m-%d")
+    run_start(url, 8, 8)
+    run_cache_load(url)
     run_get(url, batch_size=batch_size, start=start, end=end)
 
 

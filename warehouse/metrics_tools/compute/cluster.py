@@ -13,12 +13,14 @@ from .worker import MetricsWorkerPlugin
 def start_duckdb_cluster(
     namespace: str,
     cluster_spec: t.Optional[dict] = None,
+    min_size: int = 6,
+    max_size: int = 6,
 ):
     options: t.Dict[str, t.Any] = {"namespace": namespace}
     if cluster_spec:
         options["custom_cluster_spec"] = cluster_spec
     cluster = KubeCluster(**options)
-    cluster.adapt(minimum=6, maximum=6)
+    cluster.adapt(minimum=min_size, maximum=max_size)
     return cluster
 
 
@@ -49,6 +51,8 @@ class ClusterManager:
             self._cluster = start_duckdb_cluster(
                 self._namespace,
                 self._cluster_spec,
+                min_size=min_size,
+                max_size=max_size,
             )
             self._client = Client(self._cluster)
             # Add the custom plugin to the client
@@ -58,7 +62,8 @@ class ClusterManager:
                     self._gcs_key_id,
                     self._gcs_secret,
                     self._duckdb_path,
-                )
+                ),
+                name="metrics",
             )
             return ClusterStatus(
                 status="Cluster started",
@@ -73,6 +78,12 @@ class ClusterManager:
                 dashboard_url=self._cluster.dashboard_link,
                 workers=len(self._cluster.scheduler_info["workers"]),
             )
+
+    def stop_cluster(self):
+        if self._cluster is not None:
+            self._cluster.close()
+            self._cluster = None
+            self._client = None
 
     def get_cluster_status(self):
         if self._cluster is None:

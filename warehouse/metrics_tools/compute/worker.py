@@ -1,7 +1,6 @@
 # The worker initialization
 import logging
 import os
-import sys
 import typing as t
 import uuid
 import pandas as pd
@@ -10,9 +9,11 @@ from contextlib import contextmanager
 from threading import Lock
 
 import duckdb
-from dask.distributed import Worker, WorkerPlugin, get_worker, print as dprint
+from dask.distributed import Worker, WorkerPlugin, get_worker
 from google.cloud import storage
-from metrics_tools.utils.logging import add_metrics_tools_to_existing_logger
+from metrics_tools.utils.logging import (
+    setup_module_logging,
+)
 from pyiceberg.table import Table as IcebergTable
 from sqlglot import exp
 
@@ -38,10 +39,11 @@ class MetricsWorkerPlugin(WorkerPlugin):
         self._catalog = None
         self._mode = "duckdb"
         self._uuid = uuid.uuid4().hex
+        self.logger = logger
 
     def setup(self, worker: Worker):
-        add_metrics_tools_to_existing_logger("distributed")
-        logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+        setup_module_logging("metrics_tools")
+        logger.info("setting up metrics worker plugin")
 
         self._conn = duckdb.connect(self._duckdb_path)
 
@@ -142,12 +144,12 @@ class MetricsWorkerPlugin(WorkerPlugin):
     ):
         self.connection.execute(f"CREATE SCHEMA IF NOT EXISTS {destination_table.db}")
         logger.info(f"CACHING TABLE {table_ref_name} WITH PARQUET")
-        self.connection.sql(
-            f"""
-            CREATE TABLE IF NOT EXISTS {destination_table.db}.{destination_table.this.this} AS
+        cache_sql = f"""
+            CREATE TABLE IF NOT EXISTS "{destination_table.db}"."{destination_table.this.this}" AS
             SELECT * FROM read_parquet('gs://{self._gcs_bucket}/trino-export/{table_actual_name}/*')
         """
-        )
+        logger.debug(f"executing: {cache_sql}")
+        self.connection.sql(cache_sql)
         logger.info(f"CACHING TABLE {table_ref_name} COMPLETED")
 
     @contextmanager
@@ -189,21 +191,52 @@ def execute_duckdb_load(
     plugin = t.cast(MetricsWorkerPlugin, worker.plugins["metrics"])
 
     for ref, actual in dependencies.items():
-        dprint(f"Loading cache for {ref}:{actual}")
+        plugin.logger.info(f"job[{job_id}][{task_id}] Loading cache for {ref}:{actual}")
         plugin.get_for_cache(ref, actual)
     conn = plugin.connection
     results: t.List[pd.DataFrame] = []
     for query in queries:
+        plugin.logger.info(f"job[{job_id}][{task_id}]: Executing query {query}")
         result = conn.execute(query).df()
         results.append(result)
     # Concatenate the results
+    plugin.logger.info(f"job[{job_id}][{task_id}]: Concatenating results")
     results_df = pd.concat(results)
 
     # Export the results to a parquet file in memory
+    plugin.logger.info(f"job[{job_id}][{task_id}]: Writing to in memory parquet")
     inmem_file = io.BytesIO()
-    inmem_file.seek(0)
     results_df.to_parquet(inmem_file)
+    inmem_file.seek(0)
 
     # Upload the parquet to gcs
+    plugin.logger.info(f"job[{job_id}][{task_id}]: Uploading to gcs {result_path}")
     plugin.upload_to_gcs_bucket(result_path, inmem_file)
+    return task_id
+
+
+def bad_execute(*args, **kwargs):
+    """Intentionally throws an exception
+
+    Used for testing error handling
+    """
+    worker = get_worker()
+
+    # The metrics plugin keeps a record of the cached tables on the worker.
+    plugin = t.cast(MetricsWorkerPlugin, worker.plugins["metrics"])
+    plugin.logger.info("Intentionally throwing an exception")
+
+    raise ValueError("Intentionally throwing an exception")
+
+
+def noop_execute(job_id: str, task_id: str, *args, **kwargs):
+    """Does nothing
+
+    Used for testing
+    """
+    worker = get_worker()
+
+    # The metrics plugin keeps a record of the cached tables on the worker.
+    plugin = t.cast(MetricsWorkerPlugin, worker.plugins["metrics"])
+    plugin.logger.info("Doing nothing")
     return task_id
