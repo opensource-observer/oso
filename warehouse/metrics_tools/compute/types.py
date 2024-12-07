@@ -57,8 +57,8 @@ class QueryJobSubmitResponse(BaseModel):
 
 class QueryJobStatusResponse(BaseModel):
     job_id: str
-    create_at: datetime
-    update_at: datetime
+    created_at: datetime
+    updated_at: datetime
     status: QueryJobStatus
     progress: QueryJobProgress
 
@@ -74,8 +74,8 @@ class QueryJobState(BaseModel):
     def as_response(self) -> QueryJobStatusResponse:
         return QueryJobStatusResponse(
             job_id=self.job_id,
-            create_at=self.created_at,
-            update_at=self.latest_update().updated_at,
+            created_at=self.created_at,
+            updated_at=self.latest_update().updated_at,
             status=self.latest_update().status,
             progress=self.latest_update().progress,
         )
