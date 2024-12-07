@@ -12,6 +12,7 @@ import threading
 from metrics_tools.compute.worker import execute_duckdb_load
 from metrics_tools.runner import FakeEngineAdapter, MetricsRunner
 from dask.distributed import Future, as_completed
+from pydantic import BaseModel
 
 from .cache import TrinoCacheExportManager
 from .cluster import ClusterManager
@@ -31,6 +32,25 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
+class JobSubmitArgsQueueItem(BaseModel):
+    job_id: str
+    task_id: str
+    result_path: str
+    batch: str
+    dependencies: t.Dict[str, str]
+
+
+class JobUpdateQueueItem(BaseModel):
+    job_id: str
+    job_state: QueryJobUpdate
+    thread: t.Optional[threading.Thread] = None
+
+
+class CacheUpdateQueueItem(BaseModel):
+    ref_name: str
+    actual_name: str
+
+
 class MetricsCalculationService:
     id: str
     gcs_bucket: str
@@ -40,10 +60,10 @@ class MetricsCalculationService:
     job_threads: t.Dict[str, threading.Thread]
     job_state_lock: threading.Lock
     logger: logging.Logger
-    job_update_queue: queue.Queue[
-        t.Tuple[str, QueryJobUpdate, t.Optional[threading.Thread]]
-    ]
+    job_update_queue: queue.Queue[JobUpdateQueueItem]
     stop_event: threading.Event
+    submit_job_request_queue: queue.Queue[QueryJobSubmitRequest]
+    cache_update_queue: queue.Queue[CacheUpdateQueueItem]
 
     @classmethod
     def setup(
@@ -91,14 +111,29 @@ class MetricsCalculationService:
         """Wait for job state updates indefinitely"""
         while True:
             try:
-                job_id, job_state, thread = self.job_update_queue.get(timeout=2)
+                item = self.job_update_queue.get(timeout=2)
             except queue.Empty:
                 if self.stop_event.is_set():
                     self.logger.info("Stopping job state listener")
                     break
                 continue
-            self.logger.info(f"Received job state update: {job_state}")
-            self._set_job_state(job_id, job_state, thread=thread)
+            self.logger.info(f"Received job state update: {item.job_state}")
+            self._set_job_state(item.job_id, item.job_state, item.thread)
+
+    def wait_for_cache_updates(self):
+        """Wait for cache updates indefinitely"""
+        while True:
+            try:
+                item = self.cache_update_queue.get(timeout=2)
+            except queue.Empty:
+                if self.stop_event.is_set():
+                    self.logger.info("Stopping cache update listener")
+                    break
+                continue
+            self.logger.info(f"Received cache update: {item}")
+            self.cache_manager.add_export_table_references(
+                {item.ref_name: item.actual_name}
+            )
 
     def start_job_state_listener(self):
         thread = threading.Thread(target=self.wait_for_job_state)
@@ -244,7 +279,9 @@ class MetricsCalculationService:
         state: QueryJobUpdate,
         thread: t.Optional[threading.Thread] = None,
     ):
-        self.job_update_queue.put((job_id, state, thread))
+        self.job_update_queue.put(
+            JobUpdateQueueItem(job_id=job_id, job_state=state, thread=thread)
+        )
 
     def _set_job_state(
         self,
@@ -305,7 +342,9 @@ class MetricsCalculationService:
         exported_dependent_tables_map: t.Dict[str, str] = {}
         for ref_name, actual_name in input.dependent_tables_map.items():
             # Any deps, use trino to export to gcs
-            exported_table_name = self.cache_manager.export_table_for_cache(actual_name)
+            exported_table_name = self.cache_manager._export_table_for_cache(
+                actual_name
+            )
             exported_dependent_tables_map[ref_name] = exported_table_name
         return exported_dependent_tables_map
 

@@ -57,6 +57,7 @@ class ClusterManager:
     def start_cluster(self, min_size: int, max_size: int) -> ClusterStatus:
         with self._lock:
             if self._cluster is not None:
+                self.logger.info("cluster already running")
                 return ClusterStatus(
                     status="Cluster already running",
                     is_ready=True,
@@ -64,12 +65,14 @@ class ClusterManager:
                     workers=len(self._cluster.scheduler_info["workers"]),
                 )
             if self._starting:
+                self.logger.info("cluster already starting")
                 return ClusterStatus(
                     status="Cluster starting",
                     is_ready=False,
                     dashboard_url="",
                     workers=0,
                 )
+            self.logger.info("cluster not running, starting")
             self._starting = True
             self._start_thread = Thread(
                 target=self._start_cluster_internal,
@@ -195,6 +198,9 @@ class ClusterManager:
         return client
 
     def close(self):
+        if self._start_thread:
+            if self._start_thread.is_alive():
+                self._start_thread.join()
         if self._cluster:
             self._cluster.close()
 

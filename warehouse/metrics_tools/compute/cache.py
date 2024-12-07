@@ -1,12 +1,24 @@
 import logging
+import queue
 import typing as t
 import uuid
+import threading
 
+from pydantic import BaseModel
 from sqlglot import exp
 from sqlmesh.core.dialect import parse_one
 from trino.dbapi import Connection
 
 logger = logging.getLogger(__name__)
+
+
+class ExportCacheQueueItem(BaseModel):
+    table: str
+
+
+class ExportCacheCompletedQueueItem(BaseModel):
+    table: str
+    export_table: str
 
 
 class TrinoCacheExportManager:
@@ -15,6 +27,30 @@ class TrinoCacheExportManager:
     pyiceberg and duckdb's iceberg libraries are quite slow at processing the
     lakehouse data directly."""
 
+    export_queue_thread: threading.Thread
+    export_completed_queue_thread: threading.Thread
+
+    @classmethod
+    def setup(
+        cls,
+        db: Connection,
+        gcs_bucket: str,
+        hive_catalog: str,
+        hive_schema: str,
+        preloaded_exported_map: t.Optional[t.Dict[str, str]] = None,
+        log_override: t.Optional[logging.Logger] = None,
+    ):
+        cache = cls(
+            db,
+            gcs_bucket,
+            hive_catalog,
+            hive_schema,
+            preloaded_exported_map=preloaded_exported_map,
+            log_override=log_override,
+        )
+        cache.start()
+        return cache
+
     def __init__(
         self,
         db: Connection,
@@ -22,12 +58,57 @@ class TrinoCacheExportManager:
         hive_catalog: str = "source",
         hive_schema: str = "export",
         preloaded_exported_map: t.Optional[t.Dict[str, str]] = None,
+        log_override: t.Optional[logging.Logger] = None,
     ):
         self.exported_map: t.Dict[str, str] = preloaded_exported_map or {}
         self.gcs_bucket = gcs_bucket
         self.db = db
         self.hive_catalog = hive_catalog
         self.hive_schema = hive_schema
+        self.exported_map_lock = threading.Lock()
+        self.export_queue: queue.Queue[ExportCacheQueueItem] = queue.Queue()
+        self.export_completed_queue: queue.Queue[ExportCacheCompletedQueueItem] = (
+            queue.Queue()
+        )
+        self.stop_signal = threading.Event()
+        self.logger = log_override or logger
+
+    def start(self):
+        self.stop_signal.clear()
+        if not self.export_queue_thread or not self.export_queue_thread.is_alive():
+            self.export_queue_thread = threading.Thread(
+                target=self._start_export_queue_thread
+            )
+            self.export_queue_thread.start()
+
+    def _start_export_queue_thread(self):
+        """Starts a processing thread to handle the export queue"""
+        self.logger.debug("starting export cache manager export queue")
+        while True:
+            if self.stop_signal.is_set():
+                self.logger.info("stopping export cache manager export queue")
+                break
+            try:
+                item = self.export_queue.get(timeout=1)
+                self._export_table_for_cache(item.table)
+            except queue.Empty:
+                continue
+
+    def _start_export_completed_queue_thread(self):
+        """Starts a processing thread to handle the export completed queue"""
+        self.logger.debug("starting export cache manager export completed queue")
+        while True:
+            if self.stop_signal.is_set():
+                self.logger.info("stopping export cache manager export completed queue")
+                break
+            try:
+                item = self.export_completed_queue.get(timeout=1)
+                self.add_export_table_reference(item.table, item.export_table)
+            except queue.Empty:
+                continue
+
+    def stop(self):
+        self.stop_signal.set()
 
     def run_query(self, query: str):
         cursor = self.db.cursor()
@@ -35,17 +116,22 @@ class TrinoCacheExportManager:
         return cursor.execute(query)
 
     def add_export_table_reference(self, table: str, export_table: str):
-        self.exported_map[table] = export_table
+        self.add_export_table_references({table: export_table})
 
     def add_export_table_references(self, table_map: t.Dict[str, str]):
-        self.exported_map.update(table_map)
+        with self.exported_map_lock:
+            self.exported_map.update(table_map)
 
-    def export_table_for_cache(self, table: str):
+    def queue_export_table_for_cache(self, table: str):
+        self.export_queue.put(ExportCacheQueueItem(table=table))
+
+    def _export_table_for_cache(self, table: str):
         # Using the actual name
         # Export with trino
-        if table in self.exported_map:
-            logger.debug(f"CACHE HIT FOR {table}")
-            return self.exported_map[table]
+        with self.exported_map_lock:
+            if table in self.exported_map:
+                logger.debug(f"CACHE HIT FOR {table}")
+                return self.exported_map[table]
 
         columns: t.List[t.Tuple[str, str]] = []
 
@@ -107,5 +193,6 @@ class TrinoCacheExportManager:
 
         self.run_query(insert_query.sql(dialect="trino"))
 
-        self.exported_map[table] = export_table_name
-        return self.exported_map[table]
+        with self.exported_map_lock:
+            self.exported_map[table] = export_table_name
+            return self.exported_map[table]
