@@ -33,8 +33,7 @@ async def initialize_app(app: FastAPI):
     stream_handler.setFormatter(log_formatter)
     logger.addHandler(stream_handler)
 
-    logger.info("API is starting up")
-    logger.debug("HELLO")
+    logger.info("Metrics calculation service is starting up")
     cluster_namespace = env.required_str("METRICS_CLUSTER_NAMESPACE")
     cluster_name = env.required_str("METRICS_CLUSTER_NAME")
     threads = env.required_int("METRICS_CLUSTER_WORKER_THREADS", 16)
@@ -174,8 +173,9 @@ async def get_job_status(
     """
     Get the status of a job
     """
+    include_stats = request.query_params.get("include_stats", "false").lower() == "true"
     service = get_mca(request)
-    return service.get_job_status(job_id)
+    return service.get_job_status(job_id, include_stats=include_stats)
 
 
 @app.post("/cache/manual")

@@ -1,6 +1,7 @@
 """Sets up a dask cluster
 """
 
+import logging
 import typing as t
 
 from dask.distributed import Client
@@ -8,6 +9,9 @@ from dask_kubernetes.operator import KubeCluster, make_cluster_spec
 from metrics_tools.compute.types import ClusterStatus
 
 from .worker import MetricsWorkerPlugin
+from threading import Thread, Lock
+
+logger = logging.getLogger(__name__)
 
 
 def start_duckdb_cluster(
@@ -35,6 +39,7 @@ class ClusterManager:
         gcs_secret: str,
         duckdb_path: str,
         cluster_spec: t.Optional[dict] = None,
+        log_override: t.Optional[logging.Logger] = None,
     ):
         self._cluster: t.Optional[KubeCluster] = None
         self._client: t.Optional[Client] = None
@@ -44,10 +49,44 @@ class ClusterManager:
         self._gcs_key_id = gcs_key_id
         self._gcs_secret = gcs_secret
         self._duckdb_path = duckdb_path
+        self.logger = log_override or logger
+        self._starting = False
+        self._lock = Lock()
+        self._start_thread: t.Optional[Thread] = None
 
     def start_cluster(self, min_size: int, max_size: int) -> ClusterStatus:
-        if self._cluster is None:
-            # Create a KubeCluster
+        with self._lock:
+            if self._cluster is not None:
+                return ClusterStatus(
+                    status="Cluster already running",
+                    is_ready=True,
+                    dashboard_url=self._cluster.dashboard_link,
+                    workers=len(self._cluster.scheduler_info["workers"]),
+                )
+            if self._starting:
+                return ClusterStatus(
+                    status="Cluster starting",
+                    is_ready=False,
+                    dashboard_url="",
+                    workers=0,
+                )
+            self._starting = True
+            self._start_thread = Thread(
+                target=self._start_cluster_internal,
+                args=(min_size, max_size),
+                daemon=True,
+            )
+            self._start_thread.start()
+            return ClusterStatus(
+                status="Cluster starting",
+                is_ready=False,
+                dashboard_url="",
+                workers=0,
+            )
+
+    def _start_cluster_internal(self, min_size: int, max_size: int):
+        self.logger.info("starting cluster")
+        try:
             self._cluster = start_duckdb_cluster(
                 self._namespace,
                 self._cluster_spec,
@@ -55,7 +94,6 @@ class ClusterManager:
                 max_size=max_size,
             )
             self._client = Client(self._cluster)
-            # Add the custom plugin to the client
             self._client.register_worker_plugin(
                 MetricsWorkerPlugin(
                     self._gcs_bucket,
@@ -65,21 +103,71 @@ class ClusterManager:
                 ),
                 name="metrics",
             )
-            return ClusterStatus(
-                status="Cluster started",
-                is_ready=True,
-                dashboard_url=self._cluster.dashboard_link,
-                workers=len(self._cluster.scheduler_info["workers"]),
-            )
-        else:
-            return ClusterStatus(
-                status="Cluster already running",
-                is_ready=True,
-                dashboard_url=self._cluster.dashboard_link,
-                workers=len(self._cluster.scheduler_info["workers"]),
-            )
+        except Exception as e:
+            self.logger.error(f"Failed to start cluster: {e}")
+            with self._lock:
+                self._starting = False
+            raise
+        with self._lock:
+            self._starting = False
+
+    # def __init__(
+    #     self,
+    #     namespace: str,
+    #     gcs_bucket: str,
+    #     gcs_key_id: str,
+    #     gcs_secret: str,
+    #     duckdb_path: str,
+    #     cluster_spec: t.Optional[dict] = None,
+    #     log_override: t.Optional[logging.Logger] = None,
+    # ):
+    #     self._cluster: t.Optional[KubeCluster] = None
+    #     self._client: t.Optional[Client] = None
+    #     self._cluster_spec = cluster_spec
+    #     self._namespace = namespace
+    #     self._gcs_bucket = gcs_bucket
+    #     self._gcs_key_id = gcs_key_id
+    #     self._gcs_secret = gcs_secret
+    #     self._duckdb_path = duckdb_path
+    #     self.logger = log_override or logger
+
+    # def start_cluster(self, min_size: int, max_size: int) -> ClusterStatus:
+    #     self.logger.info("starting cluster")
+    #     if self._cluster is None:
+    #         # Create a KubeCluster
+    #         self._cluster = start_duckdb_cluster(
+    #             self._namespace,
+    #             self._cluster_spec,
+    #             min_size=min_size,
+    #             max_size=max_size,
+    #         )
+    #         self._client = Client(self._cluster)
+    #         # Add the custom plugin to the client
+    #         self._client.register_worker_plugin(
+    #             MetricsWorkerPlugin(
+    #                 self._gcs_bucket,
+    #                 self._gcs_key_id,
+    #                 self._gcs_secret,
+    #                 self._duckdb_path,
+    #             ),
+    #             name="metrics",
+    #         )
+    #         return ClusterStatus(
+    #             status="Cluster started",
+    #             is_ready=True,
+    #             dashboard_url=self._cluster.dashboard_link,
+    #             workers=len(self._cluster.scheduler_info["workers"]),
+    #         )
+    #     else:
+    #         return ClusterStatus(
+    #             status="Cluster already running",
+    #             is_ready=True,
+    #             dashboard_url=self._cluster.dashboard_link,
+    #             workers=len(self._cluster.scheduler_info["workers"]),
+    #         )
 
     def stop_cluster(self):
+        self.logger.info("stopping cluster")
         if self._cluster is not None:
             self._cluster.close()
             self._cluster = None

@@ -3,6 +3,7 @@
 from datetime import datetime
 import os
 import queue
+import copy
 import typing as t
 import uuid
 import logging
@@ -275,8 +276,10 @@ class MetricsCalculationService:
                     del self.job_threads[job_id]
 
     def _get_job_state(self, job_id: str):
+        """Get the current state of a job as a deep copy (to prevent
+        mutation)"""
         with self.job_state_lock:
-            state = self.job_state.get(job_id)
+            state = copy.deepcopy(self.job_state.get(job_id))
         return state
 
     def generate_query_batches(self, input: QueryJobSubmitRequest, batch_size: int):
@@ -306,11 +309,13 @@ class MetricsCalculationService:
             exported_dependent_tables_map[ref_name] = exported_table_name
         return exported_dependent_tables_map
 
-    def get_job_status(self, job_id: str) -> QueryJobStatusResponse:
+    def get_job_status(
+        self, job_id: str, include_stats: bool = False
+    ) -> QueryJobStatusResponse:
         state = self._get_job_state(job_id)
         if not state:
             raise ValueError(f"Job {job_id} not found")
-        return state.as_response()
+        return state.as_response(include_stats=include_stats)
 
     def add_existing_exported_table_references(self, update: t.Dict[str, str]):
         """This is mostly used for testing purposes, but allows us to load a
