@@ -5,3 +5,6 @@ sources:
     tables:
       - name: dependencies
         identifier: Dependencies
+      - name: package_versions_latest
+        identifier: PackageVersionsLatest
+
