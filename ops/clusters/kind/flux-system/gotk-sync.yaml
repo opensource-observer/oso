@@ -9,8 +9,6 @@ spec:
   interval: 1m0s
   ref:
     branch: ravenac95/test-local-kind
-  secretRef:
-    name: flux-system
   url: ssh://git@github.com/opensource-observer/oso
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
