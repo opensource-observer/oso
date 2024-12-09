@@ -475,31 +475,29 @@ It includes data from the Polygon network.
 
 [Gitcoin](https://gitcoin.co/) is the hub of grantmaking in the Ethereum ecosystem. All project, round, and donation data from [regendata.xyz](https://regendata.xyz) is available in this dataset and updated daily.
 
-For example, you can get the total amount of donations mapped to projects in OSO:
+You can also access the raw Gitcoin data directly on BigQuery:
 
 ```sql
-with project_mapping as (
-  select distinct
-    gitcoin_lookup.project_id as gitcoin_id,
-    oso_projects.project_name as oso_name,
-    oso_projects.display_name as display_name
-  from `YOUR_PROJECT_NAME.gitcoin.project_groups_summary` as gitcoin_groups
-  left join `YOUR_PROJECT_NAME.gitcoin.project_lookup` as gitcoin_lookup
-    on gitcoin_groups.group_id = gitcoin_lookup.group_id
-  join `YOUR_PROJECT_NAME.oso_production.int_artifacts_in_ossd_by_project` as oso_artifacts
-    on gitcoin_groups.latest_project_github = oso_artifacts.artifact_namespace
-  join `YOUR_PROJECT_NAME.oso_production.projects_v1` as oso_projects
-    on oso_artifacts.project_id = oso_projects.project_id
-)
+select * from `YOUR_PROJECT_NAME.gitcoin.all_donations`
+```
+
+and:
+
+```sql
+select * from `YOUR_PROJECT_NAME.gitcoin.all_matching`
+```
+
+You can also get the total amount of donations mapped to projects in OSO directly from one of our data marts:
+
+```sql
 select
-  donations.timestamp,
-  donations.donor_address,
-  project_mapping.oso_name,
-  project_mapping.display_name,
-  donations.amount_in_usd
-from `YOUR_PROJECT_NAME.gitcoin.all_donations` as donations
-join project_mapping
-  on donations.project_id = project_mapping.gitcoin_id
+  round_number,
+  oso_display_name,
+  sum(amount_in_usd) as total_funding_usd
+from `YOUR_PROJECT_NAME.oso_production.gitcoin_funding_events_by_project_v0`
+where oso_project_name = 'opensource-observer'
+group by 1,2
+order by round_number
 ```
 
 [Passport](https://passport.xyz/)
