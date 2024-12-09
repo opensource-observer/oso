@@ -39,7 +39,7 @@ fi
 
 # Start kind
 echo "Ensure kind cluster is running"
-kind create cluster --config ops/clusters/kind/local/cluster.yaml
+kind create cluster --config ops/kind/cluster.yaml
 
 # Ensure that the kubectl context is set to the kind cluster
 kubectl config use-context kind-local-test-cluster
