@@ -11,6 +11,10 @@ packages = [
     { include = "oso_dagster", from = "warehouse/" },
     { include = "metrics_tools", from = "warehouse/" },
 ]
+repository = "https://github.com/opensource-observer/oso"
+homepage = "https://opensource.observer"
+documentation = "https://docs.opensource.observer/"
+
 
 [tool.poetry.dependencies]
 python = "^3.12,<3.13"
@@ -114,7 +118,7 @@ ignore = [
     "warehouse/meltano-setup",
     "warehouse/oso_lets_go",
     "warehouse/oso_dagster/dlt_sources/sql_database",
-    "scripts/dbt_doc_gen"
+    "scripts/dbt_doc_gen",
 ]
 
 [tool.ruff]
