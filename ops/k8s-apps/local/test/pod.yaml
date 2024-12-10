@@ -6,25 +6,34 @@ metadata:
   labels:
     opensource.observer/cert-inject: "enabled"
 ---
-apiVersion: v1
-kind: Pod
+apiVersion: apps/v1
+kind: Deployment
 metadata:
-  name: test-pod
+  name: test-deployment
 spec:
-  containers:
-  - name: test-pod
-    image: ubuntu
-    command: ["bash", "-c", "while true; do sleep 30; done;" ]
-    volumeMounts:
-      - mountPath: /etc/ssl/certs/
-        name: cluster-self-signed-bundle
-        readOnly: true
-  volumes:
-    - name: cluster-self-signed-bundle
-      configMap:
-        name: cluster-self-signed-bundle
-        defaultMode: 0644
-        optional: false
-        items:
-        - key: bundle.pem
-          path: bundle.pem
+  replicas: 1
+  selector:
+    matchLabels:
+      app: test-pod
+  template:
+    metadata:
+      labels:
+        app: test-pod
+    spec:
+      containers:
+      - name: test-pod
+        image: ubuntu
+        command: ["bash", "-c", "while true; do sleep 30; done;" ]
+        volumeMounts:
+          - mountPath: /etc/ssl/certs/
+            name: cluster-self-signed-bundle
+            readOnly: true
+      volumes:
+        - name: cluster-self-signed-bundle
+          configMap:
+            name: cluster-self-signed-bundle
+            defaultMode: 0644
+            optional: false
+            items:
+            - key: ca-certificates.crt
+              path: ca-certificates.crt

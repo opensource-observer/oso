@@ -10,6 +10,7 @@ packages = [
   { include = "common", from = "warehouse/" },
   { include = "oso_dagster", from = "warehouse/" },
   { include = "metrics_tools", from = "warehouse/" },
+  { include = "opsscripts", from = "ops/" },
 ]
 repository = "https://github.com/opensource-observer/oso"
 homepage = "https://www.opensource.observer"
