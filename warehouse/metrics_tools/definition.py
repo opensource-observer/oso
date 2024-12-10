@@ -433,6 +433,17 @@ class MetricQuery:
                         time_aggregation=time_aggregation,
                     )
                 )
+            # if there is no _source.time_aggregations or _source.rolling
+            # means it is a point in time metric aka key metric over the
+            # whole time period for the specific entity type
+            if not self._source.time_aggregations and not self._source.rolling:
+                refs.append(
+                    PeerMetricDependencyRef(
+                        name=name,
+                        entity_type=entity,
+                        time_aggregation="overall",
+                    )
+                )
         return refs
 
     @property
@@ -449,8 +460,9 @@ class MetricQuery:
             return "time_aggregation"
         elif self._source.rolling is not None:
             return "rolling"
-        # This _shouldn't_ happen
-        raise Exception("unknown metric type")
+        # If neither time_aggregations or rolling is set then it is a point in
+        # time metric
+        return "overall"
 
     def generate_query_ref(
         self,

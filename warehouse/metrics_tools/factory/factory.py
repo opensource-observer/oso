@@ -393,6 +393,10 @@ class TimeseriesMetrics:
                 self.generate_time_aggregation_model_for_rendered_query(
                     calling_file, query_config, dependencies
                 )
+            case "overall":
+                self.generate_point_in_time_model_for_rendered_query(
+                    calling_file, query_config, dependencies
+                )
 
     def generate_rolling_python_model_for_rendered_query(
         self,
@@ -544,6 +548,40 @@ class TimeseriesMetrics:
             start=self._raw_options["start"],
             additional_macros=self.generated_model_additional_macros,
             partitioned_by=partitioned_by,
+        )
+
+    def generate_point_in_time_model_for_rendered_query(
+        self,
+        calling_file: str,
+        query_config: MetricQueryConfig,
+        dependencies: t.Set[str],
+    ):
+        """Generate model for point in time models"""
+        config = self.serializable_config(query_config)
+        ref = query_config["ref"]
+        columns = METRICS_COLUMNS_BY_ENTITY[ref["entity_type"]]
+
+        grain = [
+            "metric",
+            f"to_{ref['entity_type']}_id",
+            "from_artifact_id",
+            "event_source",
+            "metrics_sample_date",
+        ]
+
+        GeneratedModel.create(
+            func=generated_query,
+            entrypoint_path=calling_file,
+            config=config,
+            name=f"{self.catalog}.{query_config['table_name']}",
+            kind=ModelKindName.VIEW,
+            dialect="clickhouse",
+            columns=columns,
+            grain=grain,
+            start=self._raw_options["start"],
+            # since this query's over the full time range, we don't expose access to the
+            # macros used to get information about the specific time
+            additional_macros=[],
         )
 
     def serializable_config(self, query_config: MetricQueryConfig):
