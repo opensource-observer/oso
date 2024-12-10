@@ -31,3 +31,6 @@ spec:
         name: minio
         namespace: minio-operator
       interval: 1h
+  values:
+    operator:
+      replicaCount: 1

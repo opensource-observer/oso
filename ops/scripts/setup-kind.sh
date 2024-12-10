@@ -76,6 +76,7 @@ spec:
     networkPolicy: true
     domain: "cluster.local"
   sync:
+    interval: "30s"
     kind: GitRepository
     url: "https://github.com/${repo_owner}/${repo_name}.git"
     ref: "refs/heads/${branch_name}"
