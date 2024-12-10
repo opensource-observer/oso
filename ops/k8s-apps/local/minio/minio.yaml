@@ -8,7 +8,7 @@ metadata:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: minio-secret
+  name: minio-configuration
   namespace: local-minio
 type: Opaque
 stringData:
