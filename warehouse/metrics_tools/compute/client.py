@@ -50,6 +50,8 @@ class Client:
         ref: PeerMetricDependencyRef,
         locals: t.Dict[str, t.Any],
         dependent_tables_map: t.Dict[str, str],
+        cluster_min_size: int = 6,
+        cluster_max_size: int = 6,
         retries: t.Optional[int] = None,
     ):
         """Calculate metrics for a given period and write the results to a gcs
@@ -77,7 +79,9 @@ class Client:
             str: The gcs result path from the metrics calculation service
         """
         # Trigger the cluster start
-        status = self.start_cluster(min_size=1, max_size=1)
+        status = self.start_cluster(
+            min_size=cluster_min_size, max_size=cluster_max_size
+        )
         self.logger.info(f"cluster status: {status}")
 
         job_response = self.submit_job(

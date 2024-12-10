@@ -151,8 +151,7 @@ class MetricsCalculationService:
                 retries=input.retries,
             )
 
-            self.logger.info(f"job[{job_id}]: Submitted task has: {task._id}")
-            # task = asyncio.create_task(submit())
+            self.logger.info(f"job[{job_id}]: Submitted task {task_id}")
             tasks.append(task)
 
         total = len(tasks)
@@ -164,14 +163,14 @@ class MetricsCalculationService:
         # this.
 
         for finished in asyncio.as_completed(tasks):
-            completed += 1
-            self.logger.info(f"job[{job_id}] progress: {completed}/{total}")
-            await self._notify_job_updated(job_id, completed, total)
-            self.logger.info(
-                f"job[{job_id}] finished notifying update: {completed}/{total}"
-            )
             try:
                 task_id = await finished
+                completed += 1
+                self.logger.info(f"job[{job_id}] progress: {completed}/{total}")
+                await self._notify_job_updated(job_id, completed, total)
+                self.logger.info(
+                    f"job[{job_id}] finished notifying update: {completed}/{total}"
+                )
             except CancelledError as e:
                 failures += 1
                 self.logger.error(f"job[{job_id}] task cancelled {e.args}")

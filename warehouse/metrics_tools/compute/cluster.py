@@ -5,6 +5,7 @@ import abc
 import logging
 import typing as t
 import asyncio
+import inspect
 from pyee.asyncio import AsyncIOEventEmitter
 
 from dask.distributed import Client, LocalCluster, Future as DaskFuture
@@ -27,8 +28,10 @@ def start_duckdb_cluster(
     min_size: int = 6,
     max_size: int = 6,
     quiet: bool = False,
+    **kwargs: t.Any,
 ):
     options: t.Dict[str, t.Any] = {"namespace": namespace}
+    options.update(kwargs)
     print("starting duckdb cluster")
     if cluster_spec:
         options["custom_cluster_spec"] = cluster_spec
@@ -45,21 +48,29 @@ async def start_duckdb_cluster_async(
     cluster_spec: t.Optional[dict] = None,
     min_size: int = 6,
     max_size: int = 6,
+    **kwargs: t.Any,
 ):
     """The async version of start_duckdb_cluster which wraps the sync version in
     a thread. The "async" version of dask's KubeCluster doesn't work as
     expected. So for now we do this."""
 
-    # options: t.Dict[str, t.Any] = {"namespace": namespace}
-    # if cluster_spec:
-    #     options["custom_cluster_spec"] = cluster_spec
-    # cluster = await KubeCluster(quiet=True, asynchronous=True, **options)
-    # await cluster.adapt(minimum=min_size, maximum=max_size)
-    # return cluster
+    options: t.Dict[str, t.Any] = {"namespace": namespace}
+    options.update(kwargs)
+    if cluster_spec:
+        options["custom_cluster_spec"] = cluster_spec
 
-    return await asyncio.to_thread(
-        start_duckdb_cluster, namespace, cluster_spec, min_size, max_size
-    )
+    # loop = asyncio.get_running_loop()
+    cluster = await KubeCluster(asynchronous=True, **options)
+    print(f"is cluster awaitable?: {inspect.isawaitable(cluster)}")
+    adapt_response = cluster.adapt(minimum=min_size, maximum=max_size)
+    print(f"is adapt_response awaitable?: {inspect.isawaitable(adapt_response)}")
+    if inspect.isawaitable(adapt_response):
+        await adapt_response
+    return cluster
+
+    # return await asyncio.to_thread(
+    #     start_duckdb_cluster, namespace, cluster_spec, min_size, max_size
+    # )
 
 
 class ClusterProxy(abc.ABC):
@@ -129,7 +140,7 @@ class KubeClusterProxy(ClusterProxy):
         )
 
     async def stop(self):
-        self.cluster.close()
+        await self.cluster.close()
 
     @property
     def dashboard_link(self):
@@ -153,14 +164,16 @@ class KubeClusterFactory(ClusterFactory):
         namespace: str,
         cluster_spec: t.Optional[dict] = None,
         log_override: t.Optional[logging.Logger] = None,
+        **kwargs: t.Any,
     ):
         self._namespace = namespace
         self.logger = log_override or logger
         self._cluster_spec = cluster_spec
+        self.kwargs = kwargs
 
     async def create_cluster(self, min_size: int, max_size: int):
         cluster = await start_duckdb_cluster_async(
-            self._namespace, self._cluster_spec, min_size, max_size
+            self._namespace, self._cluster_spec, min_size, max_size, **self.kwargs
         )
         return KubeClusterProxy(cluster)
 

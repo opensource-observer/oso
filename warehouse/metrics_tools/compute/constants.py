@@ -39,6 +39,10 @@ debug_all = env.ensure_bool("METRICS_DEBUG_ALL", False)
 if not debug_all:
     debug_cache = env.ensure_bool("METRICS_DEBUG_CACHE", False)
     debug_cluster = env.ensure_bool("METRICS_DEBUG_CLUSTER", False)
+    debug_cluster_no_shutdown = env.ensure_bool(
+        "METRICS_DEBUG_CLUSTER_NO_SHUTDOWN", False
+    )
 else:
     debug_cache = debug_all
     debug_cluster = debug_all
+    debug_cluster_no_shutdown = debug_all

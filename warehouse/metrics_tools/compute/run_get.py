@@ -93,7 +93,9 @@ def run_get_status(url: str, job_id: str):
     print(response.json())
 
 
-def run_local_test(url: str, start: str, end: str, batch_size: int):
+def run_local_test(
+    url: str, start: str, end: str, batch_size: int, cluster_size: int = 6
+):
     import sys
 
     logging.basicConfig(level=logging.DEBUG, stream=sys.stdout)
@@ -143,6 +145,8 @@ def run_local_test(url: str, start: str, end: str, batch_size: int):
             "metrics.events_daily_to_artifact": "sqlmesh__metrics.metrics__events_daily_to_artifact__2357434958"
         },
         batch_size=batch_size,
+        cluster_max_size=cluster_size,
+        cluster_min_size=cluster_size,
     )
 
 
@@ -150,11 +154,18 @@ def run_local_test(url: str, start: str, end: str, batch_size: int):
 @click.option("--url", default="http://localhost:8000")
 @click.option("--batch-size", type=click.INT, default=1)
 @click.option("--start", default="2024-01-01")
+@click.option("--cluster-size", type=click.INT, default=6)
 @click.option("--end")
-def main(url: str, batch_size: int, start, end):
+def main(url: str, batch_size: int, start: str, end: str, cluster_size: int):
     if not end:
         end = datetime.now().strftime("%Y-%m-%d")
-    run_local_test(url, start, end, batch_size)
+    run_local_test(
+        url,
+        start,
+        end,
+        batch_size,
+        cluster_size=cluster_size,
+    )
 
 
 if __name__ == "__main__":

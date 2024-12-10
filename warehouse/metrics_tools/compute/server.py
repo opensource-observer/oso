@@ -68,6 +68,7 @@ async def initialize_app(app: FastAPI):
             constants.cluster_namespace,
             cluster_spec=cluster_spec,
             log_override=logger,
+            shutdown_on_close=not constants.debug_cluster_no_shutdown,
         )
         cluster_manager = ClusterManager.with_metrics_plugin(
             constants.gcs_bucket,
