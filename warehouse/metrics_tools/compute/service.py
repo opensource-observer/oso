@@ -11,7 +11,6 @@ from datetime import datetime
 from dask.distributed import CancelledError, Future
 from metrics_tools.compute.worker import execute_duckdb_load
 from metrics_tools.runner import FakeEngineAdapter, MetricsRunner
-from pydantic import BaseModel
 
 from .cache import CacheExportManager
 from .cluster import ClusterManager
@@ -32,20 +31,6 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
-class QueryJobComputeSubmitArgsQueueItem(BaseModel):
-    job_id: str
-    task_id: str
-    result_path: str
-    batch: str
-    dependencies: t.Dict[str, str]
-
-
-class QueryJobSubmitRequestQueueItem(BaseModel):
-    job_id: str
-    result_path: str
-    input: QueryJobSubmitRequest
-
-
 class MetricsCalculationService:
     id: str
     gcs_bucket: str
@@ -55,8 +40,6 @@ class MetricsCalculationService:
     job_tasks: t.Dict[str, asyncio.Task]
     job_state_lock: asyncio.Lock
     logger: logging.Logger
-    stop_event: asyncio.Event
-    submit_job_request_queue: asyncio.Queue[QueryJobSubmitRequestQueueItem]
 
     @classmethod
     def setup(
@@ -97,9 +80,6 @@ class MetricsCalculationService:
         self.job_tasks = {}
         self.job_state_lock = asyncio.Lock()
         self.logger = log_override or logger
-        self.stop_event = asyncio.Event()
-
-        self.submit_job_request_queue = asyncio.Queue()
 
     async def handle_query_job_submit_request(
         self, job_id: str, result_path_base: str, input: QueryJobSubmitRequest
@@ -198,7 +178,6 @@ class MetricsCalculationService:
     async def close(self):
         await self.cluster_manager.close()
         await self.cache_manager.stop()
-        self.stop_event.set()
 
     async def start_cluster(self, start_request: ClusterStartRequest) -> ClusterStatus:
         self.logger.debug("starting cluster")
