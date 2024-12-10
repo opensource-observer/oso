@@ -87,8 +87,6 @@ metadata:
   name: minio
   namespace: local-minio
 spec:
-  credsSecret:
-    name: minio-secret
   image: quay.io/minio/minio:RELEASE.2024-11-07T00-52-20Z
   mountPath: /export
   imagePullPolicy: IfNotPresent
