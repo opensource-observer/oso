@@ -51,8 +51,6 @@ spec:
         name: jetstack 
         namespace: cert-manager
       interval: 12h
-  values:
-    installCRDs: true
 ---
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
