@@ -1,0 +1,65 @@
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: self-signed-root
+spec:
+  selfSigned: {}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: self-signed-ca
+  namespace: cert-manager
+spec:
+  isCA: true
+  commonName: self-signed-ca
+  secretName: self-signed-root-secret
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+  issuerRef:
+    name: self-signed-root
+    kind: ClusterIssuer
+    group: cert-manager.io
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: cluster-ca 
+spec:
+  ca:
+    secretName: self-signed-root-secret
+---
+apiVersion: trust.cert-manager.io/v1alpha1
+kind: Bundle
+metadata:
+  name: cluster-self-signed-bundle  # The bundle name will also be used for the target
+spec:
+  sources:
+  # Include a bundle of publicly trusted certificates which can be
+  # used to validate most TLS certificates on the internet, such as
+  # those issued by Let's Encrypt, Google, Amazon and others.
+  - useDefaultCAs: true
+
+  # A Secret in the "trust" namespace; see "Trust Namespace" below for further details
+  - secret:
+      name: self-signed-root-secret
+      key: "ca.crt"
+
+  target:
+    # Sync the bundle to a ConfigMap called `my-org.com` in every namespace which
+    # has the label "linkerd.io/inject=enabled"
+    # All ConfigMaps will include a PEM-formatted bundle, here named "root-certs.pem"
+    # and in this case we also request binary formatted bundles in JKS and PKCS#12 formats,
+    # here named "bundle.jks" and "bundle.p12".
+    configMap:
+      key: "ca-certificates.crt"
+    additionalFormats:
+      jks:
+        key: "ca-certificates.jks"
+      pkcs12:
+        key: "ca-certificates.p12"
+    namespaceSelector:
+      matchLabels:
+        opensource.observer/cert-inject: "enabled"
