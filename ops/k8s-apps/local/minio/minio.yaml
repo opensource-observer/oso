@@ -1,6 +1,11 @@
 # Intentionally the password is admin as this is for local testing.
 ---
 apiVersion: v1
+kind: Namespace
+metadata:
+  name: local-minio
+---
+apiVersion: v1
 kind: Secret
 metadata:
   name: minio-secret
@@ -16,7 +21,7 @@ stringData:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: storage-user
+  name: storage-use
   namespace: default
 type: Opaque
 data:
