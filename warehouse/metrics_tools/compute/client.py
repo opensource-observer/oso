@@ -6,14 +6,18 @@ import typing as t
 from datetime import datetime
 
 import requests
-from metrics_tools.compute.types import (ClusterStartRequest, ClusterStatus,
-                                         EmptyResponse,
-                                         ExportedTableLoadRequest,
-                                         ExportReference, InspectCacheResponse,
-                                         QueryJobStatus,
-                                         QueryJobStatusResponse,
-                                         QueryJobSubmitRequest,
-                                         QueryJobSubmitResponse)
+from metrics_tools.compute.types import (
+    ClusterStartRequest,
+    ClusterStatus,
+    EmptyResponse,
+    ExportedTableLoadRequest,
+    ExportReference,
+    InspectCacheResponse,
+    QueryJobStatus,
+    QueryJobStatusResponse,
+    QueryJobSubmitRequest,
+    QueryJobSubmitResponse,
+)
 from metrics_tools.definition import PeerMetricDependencyRef
 from pydantic import BaseModel
 from pydantic_core import to_jsonable_python

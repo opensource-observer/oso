@@ -8,8 +8,13 @@ from metrics_tools.compute.client import Client
 from pydantic_core import to_jsonable_python
 
 from ..definition import PeerMetricDependencyRef
-from .types import (ClusterStartRequest, ExportedTableLoadRequest,
-                    ExportReference, ExportType, QueryJobSubmitRequest)
+from .types import (
+    ClusterStartRequest,
+    ExportedTableLoadRequest,
+    ExportReference,
+    ExportType,
+    QueryJobSubmitRequest,
+)
 
 logger = logging.getLogger(__name__)
 

@@ -14,9 +14,11 @@ from dask_kubernetes.operator import KubeCluster, make_cluster_spec
 from metrics_tools.compute.types import ClusterStatus
 from pyee.asyncio import AsyncIOEventEmitter
 
-from . import constants
-from .worker import (DuckDBMetricsWorkerPlugin, DummyMetricsWorkerPlugin,
-                     MetricsWorkerPlugin)
+from .worker import (
+    DuckDBMetricsWorkerPlugin,
+    DummyMetricsWorkerPlugin,
+    MetricsWorkerPlugin,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -424,6 +426,10 @@ def make_new_cluster(
 
 
 def make_new_cluster_with_defaults():
+    # Import here to avoid dependency on constants for all dependents on the
+    # cluster module
+    from . import constants
+
     return make_new_cluster(
         f"{constants.cluster_worker_image_repo}:{constants.cluster_worker_image_tag}",
         constants.cluster_name,

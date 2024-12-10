@@ -3,9 +3,11 @@
 import asyncio
 import logging
 
-from metrics_tools.compute.cluster import (KubeClusterFactory,
-                                           make_new_cluster_with_defaults,
-                                           start_duckdb_cluster)
+from metrics_tools.compute.cluster import (
+    KubeClusterFactory,
+    make_new_cluster_with_defaults,
+    start_duckdb_cluster,
+)
 
 from . import constants
 

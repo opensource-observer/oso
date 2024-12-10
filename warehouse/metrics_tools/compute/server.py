@@ -9,13 +9,20 @@ from fastapi import FastAPI, Request
 from metrics_tools.utils.logging import setup_module_logging
 
 from . import constants
-from .cache import (setup_fake_cache_export_manager,
-                    setup_trino_cache_export_manager)
-from .cluster import (ClusterManager, KubeClusterFactory, LocalClusterFactory,
-                      make_new_cluster_with_defaults)
+from .cache import setup_fake_cache_export_manager, setup_trino_cache_export_manager
+from .cluster import (
+    ClusterManager,
+    KubeClusterFactory,
+    LocalClusterFactory,
+    make_new_cluster_with_defaults,
+)
 from .service import MetricsCalculationService
-from .types import (ClusterStartRequest, EmptyResponse,
-                    ExportedTableLoadRequest, QueryJobSubmitRequest)
+from .types import (
+    ClusterStartRequest,
+    EmptyResponse,
+    ExportedTableLoadRequest,
+    QueryJobSubmitRequest,
+)
 
 load_dotenv()
 logger = logging.getLogger("uvicorn.error.application")

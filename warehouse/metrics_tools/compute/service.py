@@ -15,10 +15,18 @@ from pydantic import BaseModel
 
 from .cache import CacheExportManager
 from .cluster import ClusterManager
-from .types import (ClusterStartRequest, ClusterStatus, ExportReference,
-                    QueryJobProgress, QueryJobState, QueryJobStatus,
-                    QueryJobStatusResponse, QueryJobSubmitRequest,
-                    QueryJobSubmitResponse, QueryJobUpdate)
+from .types import (
+    ClusterStartRequest,
+    ClusterStatus,
+    ExportReference,
+    QueryJobProgress,
+    QueryJobState,
+    QueryJobStatus,
+    QueryJobStatusResponse,
+    QueryJobSubmitRequest,
+    QueryJobSubmitResponse,
+    QueryJobUpdate,
+)
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
