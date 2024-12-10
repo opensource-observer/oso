@@ -1,5 +1,5 @@
-from metrics_tools.utils import env
 from dotenv import load_dotenv
+from metrics_tools.utils import env
 
 load_dotenv()
 

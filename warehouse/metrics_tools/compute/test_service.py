@@ -1,18 +1,14 @@
-from metrics_tools.compute.types import (
-    ClusterStartRequest,
-    ExportReference,
-    ExportType,
-    QueryJobStatus,
-    QueryJobSubmitRequest,
-)
-from metrics_tools.definition import PeerMetricDependencyRef
-import pytest
 import asyncio
-
-from metrics_tools.compute.service import MetricsCalculationService
-from metrics_tools.compute.cluster import ClusterManager, LocalClusterFactory
-from metrics_tools.compute.cache import CacheExportManager, FakeExportAdapter
 from datetime import datetime
+
+import pytest
+from metrics_tools.compute.cache import CacheExportManager, FakeExportAdapter
+from metrics_tools.compute.cluster import ClusterManager, LocalClusterFactory
+from metrics_tools.compute.service import MetricsCalculationService
+from metrics_tools.compute.types import (ClusterStartRequest, ExportReference,
+                                         ExportType, QueryJobStatus,
+                                         QueryJobSubmitRequest)
+from metrics_tools.definition import PeerMetricDependencyRef
 
 
 @pytest.mark.asyncio

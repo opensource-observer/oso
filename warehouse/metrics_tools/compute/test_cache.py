@@ -1,9 +1,9 @@
 import asyncio
 from unittest.mock import AsyncMock
-from metrics_tools.compute.types import ExportReference, ExportType
-import pytest
 
+import pytest
 from metrics_tools.compute.cache import CacheExportManager, FakeExportAdapter
+from metrics_tools.compute.types import ExportReference, ExportType
 
 
 @pytest.mark.asyncio

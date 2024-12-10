@@ -1,32 +1,24 @@
 """Main interface for computing metrics"""
 
-from datetime import datetime
-import os
+import asyncio
 import copy
+import logging
+import os
 import typing as t
 import uuid
-import logging
-import asyncio
+from datetime import datetime
 
+from dask.distributed import CancelledError, Future
 from metrics_tools.compute.worker import execute_duckdb_load
 from metrics_tools.runner import FakeEngineAdapter, MetricsRunner
-from dask.distributed import Future, CancelledError
 from pydantic import BaseModel
 
 from .cache import CacheExportManager
 from .cluster import ClusterManager
-from .types import (
-    ClusterStartRequest,
-    ExportReference,
-    QueryJobUpdate,
-    QueryJobSubmitRequest,
-    ClusterStatus,
-    QueryJobSubmitResponse,
-    QueryJobStatusResponse,
-    QueryJobState,
-    QueryJobStatus,
-    QueryJobProgress,
-)
+from .types import (ClusterStartRequest, ClusterStatus, ExportReference,
+                    QueryJobProgress, QueryJobState, QueryJobStatus,
+                    QueryJobStatusResponse, QueryJobSubmitRequest,
+                    QueryJobSubmitResponse, QueryJobUpdate)
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)

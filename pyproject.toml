@@ -74,6 +74,7 @@ fastapi = {extras = ["standard"], version = "^0.115.6"}
 pyee = "^12.1.1"
 aiotrino = "^0.2.3"
 pytest-asyncio = "^0.24.0"
+isort = "^5.13.2"
 
 
 [tool.poetry.scripts]

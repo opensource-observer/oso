@@ -1,19 +1,15 @@
 # Testing script
 import logging
-import click
 from datetime import datetime
-from metrics_tools.compute.client import Client
+
+import click
 import requests
+from metrics_tools.compute.client import Client
 from pydantic_core import to_jsonable_python
 
-from .types import (
-    ClusterStartRequest,
-    ExportReference,
-    ExportType,
-    ExportedTableLoadRequest,
-    QueryJobSubmitRequest,
-)
 from ..definition import PeerMetricDependencyRef
+from .types import (ClusterStartRequest, ExportedTableLoadRequest,
+                    ExportReference, ExportType, QueryJobSubmitRequest)
 
 logger = logging.getLogger(__name__)
 

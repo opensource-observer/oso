@@ -1,14 +1,9 @@
 import asyncio
 
-from dask.distributed import Client
 import pytest
-
-from metrics_tools.compute.cluster import (
-    ClusterManager,
-    ClusterProxy,
-    ClusterFactory,
-    ClusterStatus,
-)
+from dask.distributed import Client
+from metrics_tools.compute.cluster import (ClusterFactory, ClusterManager,
+                                           ClusterProxy, ClusterStatus)
 
 
 class FakeClient(Client):

@@ -2,22 +2,21 @@
 """
 
 import abc
-import logging
-import typing as t
 import asyncio
 import inspect
-from pyee.asyncio import AsyncIOEventEmitter
+import logging
+import typing as t
 
-from dask.distributed import Client, LocalCluster, Future as DaskFuture
+from dask.distributed import Client
+from dask.distributed import Future as DaskFuture
+from dask.distributed import LocalCluster
 from dask_kubernetes.operator import KubeCluster, make_cluster_spec
 from metrics_tools.compute.types import ClusterStatus
+from pyee.asyncio import AsyncIOEventEmitter
 
-from .worker import (
-    DuckDBMetricsWorkerPlugin,
-    DummyMetricsWorkerPlugin,
-    MetricsWorkerPlugin,
-)
 from . import constants
+from .worker import (DuckDBMetricsWorkerPlugin, DummyMetricsWorkerPlugin,
+                     MetricsWorkerPlugin)
 
 logger = logging.getLogger(__name__)
 

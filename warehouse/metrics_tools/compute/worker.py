@@ -1,21 +1,19 @@
 # The worker initialization
+import io
 import logging
 import os
+import time
 import typing as t
 import uuid
-from metrics_tools.compute.types import ExportReference, ExportType
-import pandas as pd
-import io
-import time
 from contextlib import contextmanager
 from threading import Lock
 
 import duckdb
+import pandas as pd
 from dask.distributed import Worker, WorkerPlugin, get_worker
 from google.cloud import storage
-from metrics_tools.utils.logging import (
-    setup_module_logging,
-)
+from metrics_tools.compute.types import ExportReference, ExportType
+from metrics_tools.utils.logging import setup_module_logging
 from sqlglot import exp
 
 logger = logging.getLogger(__name__)

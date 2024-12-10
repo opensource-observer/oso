@@ -1,7 +1,7 @@
 import logging
 import typing as t
-from enum import Enum
 from datetime import datetime
+from enum import Enum
 
 from metrics_tools.definition import PeerMetricDependencyRef
 from pydantic import BaseModel, Field

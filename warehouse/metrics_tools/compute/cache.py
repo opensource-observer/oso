@@ -6,11 +6,11 @@ import queue
 import typing as t
 import uuid
 
+from aiotrino.dbapi import Connection
 from pydantic import BaseModel
+from pyee.asyncio import AsyncIOEventEmitter
 from sqlglot import exp
 from sqlmesh.core.dialect import parse_one
-from aiotrino.dbapi import Connection
-from pyee.asyncio import AsyncIOEventEmitter
 
 from .types import ExportReference, ExportType
 

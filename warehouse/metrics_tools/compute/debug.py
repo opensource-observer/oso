@@ -1,12 +1,12 @@
 """Random manual debugging utilities"""
 
-import logging
 import asyncio
-from metrics_tools.compute.cluster import (
-    KubeClusterFactory,
-    make_new_cluster_with_defaults,
-    start_duckdb_cluster,
-)
+import logging
+
+from metrics_tools.compute.cluster import (KubeClusterFactory,
+                                           make_new_cluster_with_defaults,
+                                           start_duckdb_cluster)
+
 from . import constants
 
 logger = logging.getLogger(__name__)
