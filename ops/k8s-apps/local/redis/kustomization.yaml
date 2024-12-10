@@ -4,6 +4,6 @@ resources:
   - ../../base/redis
 namespace: local-redis
 patches:
-  - path: redis-values.yaml
+  - path: redis-deployment.yaml
     target:
       kind: Deployment
