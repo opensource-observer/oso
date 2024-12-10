@@ -32,4 +32,5 @@ spec:
         namespace: minio-operator
       interval: 1h
   values:
-    replicaCount: 1
+    operator:
+      replicaCount: 1
