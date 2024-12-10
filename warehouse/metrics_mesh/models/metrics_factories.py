@@ -296,6 +296,30 @@ timeseries_metrics(
             ),
             entity_types=["artifact", "project", "collection"],
         ),
+        "key_commit_count": MetricQueryDef(
+            ref="key_commit_count.sql",
+            entity_types=["artifact"],
+        ),
+        "key_developer_count": MetricQueryDef(
+            ref="key_developer_count.sql",
+            entity_types=["artifact"],
+        ),
+        "key_first_commit": MetricQueryDef(
+            ref="key_first_commit.sql",
+            entity_types=["artifact"],
+        ),
+        "key_fork_count": MetricQueryDef(
+            ref="key_fork_count.sql",
+            entity_types=["artifact"],
+        ),
+        "key_last_commit": MetricQueryDef(
+            ref="key_last_commit.sql",
+            entity_types=["artifact"],
+        ),
+        "key_star_count": MetricQueryDef(
+            ref="key_star_count.sql",
+            entity_types=["artifact"],
+        ),
     },
     default_dialect="clickhouse",
 )
