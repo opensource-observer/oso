@@ -104,7 +104,6 @@ class MetricsCalculationService:
     async def handle_query_job_submit_request(
         self, job_id: str, result_path_base: str, input: QueryJobSubmitRequest
     ):
-        await self._notify_job_pending(job_id, 1)
         try:
             await self._handle_query_job_submit_request(job_id, result_path_base, input)
         except Exception as e:
@@ -198,6 +197,7 @@ class MetricsCalculationService:
 
     async def close(self):
         await self.cluster_manager.close()
+        await self.cache_manager.stop()
         self.stop_event.set()
 
     async def start_cluster(self, start_request: ClusterStartRequest) -> ClusterStatus:
@@ -219,6 +219,7 @@ class MetricsCalculationService:
             f"gs://{self.gcs_bucket}", result_path_base, "*.parquet"
         )
 
+        await self._notify_job_pending(job_id, 1)
         task = asyncio.create_task(
             self.handle_query_job_submit_request(job_id, result_path_base, input)
         )

@@ -245,7 +245,10 @@ class CacheExportManager:
                 in_progress.remove(table)
 
         while not self.stop_signal.is_set():
-            item = await self.export_queue.get()
+            try:
+                item = await asyncio.wait_for(self.export_queue.get(), timeout=1)
+            except asyncio.TimeoutError:
+                continue
             if item.table in in_progress:
                 # The table is already being exported. Skip this in the queue
                 continue
@@ -300,7 +303,8 @@ class CacheExportManager:
         registration = None
         export_map: t.Dict[str, ExportReference] = {}
 
-        for table in tables:
+        # Ensure we are only comparing unique tables
+        for table in set(tables):
             reference = await self.get_export_table_reference(table)
             if reference is not None:
                 export_map[table] = reference
