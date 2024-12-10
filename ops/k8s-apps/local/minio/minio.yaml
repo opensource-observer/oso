@@ -29,33 +29,6 @@ data:
   CONSOLE_SECRET_KEY: cGFzc3dvcmQ=     # password
 ---
 apiVersion: cert-manager.io/v1
-kind: Issuer
-metadata:
-  name: tenant-certmanager-issuer
-  namespace: local-minio
-spec:
-  ca:
-    secretName: tenant-certmanager-ca-tls
----
-apiVersion: cert-manager.io/v1
-kind: Certificate
-metadata:
-  name: tenant-certmanager-ca-certificate
-  namespace: local-minio
-spec:
-  isCA: true
-  commonName: tenant-certmanager-ca
-  secretName: tenant-certmanager-ca-tls
-  duration: 70128h # 8y
-  privateKey:
-    algorithm: ECDSA
-    size: 256
-  issuerRef:
-    name: cluster-ca
-    kind: ClusterIssuer
-    group: cert-manager.io
----
-apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: tenant-certmanager-cert
@@ -70,7 +43,7 @@ spec:
   # subject:
   #   organizations:
   #     - jetstack
-  # commonName: example.com
+  # commonName: minio.local-minio.svc.cluster.local
   dnsNames:
     - "minio.local-minio"
     - "minio.local-minio.svc"
@@ -79,7 +52,9 @@ spec:
     - "*.minio.local-minio.svc.cluster.local"
   secretName: local-minio-tls
   issuerRef:
-    name: tenant-certmanager-issuer
+    name: cluster-ca
+    kind: ClusterIssuer
+    group: cert-manager.io
 ---
 apiVersion: minio.min.io/v2
 kind: Tenant
