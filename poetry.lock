@@ -7433,6 +7433,33 @@ files = [
 h11 = ">=0.9.0,<1"
 
 [[package]]
+name = "xonsh"
+version = "0.19.0"
+description = "Python-powered shell. Full-featured and cross-platform."
+optional = false
+python-versions = ">=3.9"
+files = [
+    {file = "xonsh-0.19.0-py310-none-any.whl", hash = "sha256:5dbfd992bafc7a6c7d058d3eb5d659c18654ac587c0cec1c2ce70d9b479d11ec"},
+    {file = "xonsh-0.19.0-py311-none-any.whl", hash = "sha256:53304e2b29fef5792280292f064377cf978d1479ffb119d9cfe0cd908714c437"},
+    {file = "xonsh-0.19.0-py312-none-any.whl", hash = "sha256:8d56613e08d1bba04c2f3079a47772c003f3bc933c977ab9f4d96f0ee09083f0"},
+    {file = "xonsh-0.19.0-py313-none-any.whl", hash = "sha256:7ba38ad9e662ce12099718a8a7cd5f3a352629e3cc4aa553e90b6501509270bc"},
+    {file = "xonsh-0.19.0-py39-none-any.whl", hash = "sha256:f0a628316006198809bdd5f5923398a06b8c040addf32bbe8de75f03bbb5162d"},
+    {file = "xonsh-0.19.0.tar.gz", hash = "sha256:e90cd1a5d7f3ad576c9572b161cb37a1c27872fbb1f5707566bb4a38c6c897af"},
+]
+
+[package.extras]
+bestshell = ["prompt-toolkit (>=3.0.29)", "pygments (>=2.2)"]
+dev = ["pre-commit", "re-ver", "tomli", "xonsh[doc,test]"]
+doc = ["furo", "livereload", "matplotlib", "myst-parser", "numpydoc", "psutil", "pyzmq", "runthis-sphinxext", "sphinx (>=3.1)", "tornado", "xonsh[bestshell]"]
+full = ["distro", "gnureadline", "setproctitle", "ujson", "xonsh[ptk,pygments]"]
+linux = ["distro"]
+mac = ["gnureadline"]
+proctitle = ["setproctitle"]
+ptk = ["prompt-toolkit (>=3.0.29)", "pyperclip"]
+pygments = ["pygments (>=2.2)"]
+test = ["coverage (>=5.3.1)", "prompt-toolkit (>=3.0.29)", "pygments (>=2.2)", "pyte (>=0.8.0)", "pytest (>=7)", "pytest-cov", "pytest-mock", "pytest-rerunfailures", "pytest-subprocess", "pytest-timeout", "requests", "restructuredtext_lint", "virtualenv (>=20.16.2)", "xonsh[bestshell]"]
+
+[[package]]
 name = "xyzservices"
 version = "2024.9.0"
 description = "Source of XYZ tiles providers"
