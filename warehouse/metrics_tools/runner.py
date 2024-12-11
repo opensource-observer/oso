@@ -3,6 +3,7 @@
 import duckdb
 import arrow
 import logging
+import asyncio
 from metrics_tools.utils.glot import str_or_expressions
 from sqlmesh import EngineAdapter
 from sqlmesh.core.context import ExecutionContext
@@ -213,6 +214,16 @@ class MetricsRunner:
         logger.debug(f"render_rolling_rolling called with start={start} and end={end}")
         for day in arrow.Arrow.range("day", arrow.get(start), arrow.get(end)):
             rendered_query = self.render_query(day.datetime, day.datetime)
+            yield rendered_query
+
+    async def render_rolling_queries_async(self, start: datetime, end: datetime):
+        logger.debug(
+            f"render_rolling_rolling_async called with start={start} and end={end}"
+        )
+        for day in arrow.Arrow.range("day", arrow.get(start), arrow.get(end)):
+            rendered_query = await asyncio.to_thread(
+                self.render_query, day.datetime, day.datetime
+            )
             yield rendered_query
 
     def commit(self, start: datetime, end: datetime, destination: str):

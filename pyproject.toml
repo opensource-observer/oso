@@ -70,6 +70,11 @@ dagster-k8s = "^0.24.6"
 pyiceberg = { extras = ["hive"], version = "^0.7.1" }
 connectorx = "^0.4.0"
 bokeh = "^3.6.1"
+fastapi = { extras = ["standard"], version = "^0.115.6" }
+pyee = "^12.1.1"
+aiotrino = "^0.2.3"
+pytest-asyncio = "^0.24.0"
+isort = "^5.13.2"
 
 
 [tool.poetry.scripts]
@@ -136,3 +141,6 @@ exclude = [
     "warehouse/oso_dagster/dlt_sources/sql_database/**/*.py",
     "warehouse/oso_dagster/dlt_sources/sql_database/*.py",
 ]
+
+[tool.isort]
+profile = "black"
