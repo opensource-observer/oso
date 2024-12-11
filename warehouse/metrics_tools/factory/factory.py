@@ -393,7 +393,7 @@ class TimeseriesMetrics:
                 self.generate_time_aggregation_model_for_rendered_query(
                     calling_file, query_config, dependencies
                 )
-            case "overall":
+            case "over_all_time":
                 self.generate_point_in_time_model_for_rendered_query(
                     calling_file, query_config, dependencies
                 )
@@ -574,14 +574,12 @@ class TimeseriesMetrics:
             entrypoint_path=calling_file,
             config=config,
             name=f"{self.catalog}.{query_config['table_name']}",
-            kind=ModelKindName.VIEW,
+            kind=ModelKindName.FULL,
             dialect="clickhouse",
             columns=columns,
             grain=grain,
-            start=self._raw_options["start"],
-            # since this query's over the full time range, we don't expose access to the
-            # macros used to get information about the specific time
-            additional_macros=[],
+            start="1970-01-01",
+            additional_macros=self.generated_model_additional_macros,
         )
 
     def serializable_config(self, query_config: MetricQueryConfig):
