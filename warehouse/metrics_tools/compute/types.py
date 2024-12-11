@@ -68,7 +68,7 @@ class QueryJobSubmitRequest(BaseModel):
 
 class QueryJobSubmitResponse(BaseModel):
     job_id: str
-    result_path: str
+    export_reference: ExportReference
 
 
 class QueryJobStatusResponse(BaseModel):

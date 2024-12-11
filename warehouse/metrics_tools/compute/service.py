@@ -18,6 +18,7 @@ from .types import (
     ClusterStartRequest,
     ClusterStatus,
     ExportReference,
+    ExportType,
     QueryJobProgress,
     QueryJobState,
     QueryJobStatus,
@@ -205,7 +206,14 @@ class MetricsCalculationService:
         async with self.job_state_lock:
             self.job_tasks[job_id] = task
 
-        return QueryJobSubmitResponse(job_id=job_id, result_path=result_path)
+        return QueryJobSubmitResponse(
+            job_id=job_id,
+            export_reference=ExportReference(
+                table=job_id,
+                type=ExportType.GCS,
+                payload={"gcs_path": result_path},
+            ),
+        )
 
     async def _notify_job_pending(self, job_id: str, total: int):
         await self._set_job_state(

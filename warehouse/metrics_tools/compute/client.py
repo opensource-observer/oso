@@ -76,7 +76,7 @@ class Client:
             retries (t.Optional[int], optional): The number of retries. Defaults to None.
 
         Returns:
-            str: The gcs result path from the metrics calculation service
+            ExportReference: The export reference for the resulting calculation
         """
         # Trigger the cluster start
         status = self.start_cluster(
@@ -97,7 +97,7 @@ class Client:
             retries,
         )
         job_id = job_response.job_id
-        result_path = job_response.result_path
+        export_reference = job_response.export_reference
 
         # Wait for the job to be completed
         status_response = self.get_job_status(job_id)
@@ -122,7 +122,7 @@ class Client:
             f"job[{job_id}] completed with status {status_response.status}"
         )
 
-        return result_path
+        return export_reference
 
     def start_cluster(self, min_size: int, max_size: int):
         """Start a compute cluster with the given min and max size"""
