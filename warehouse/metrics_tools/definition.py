@@ -441,7 +441,7 @@ class MetricQuery:
                     PeerMetricDependencyRef(
                         name=name,
                         entity_type=entity,
-                        time_aggregation="overall",
+                        time_aggregation="over_all_time",
                     )
                 )
         return refs
@@ -462,7 +462,7 @@ class MetricQuery:
             return "rolling"
         # If neither time_aggregations or rolling is set then it is a point in
         # time metric
-        return "overall"
+        return "over_all_time"
 
     def generate_query_ref(
         self,
