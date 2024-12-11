@@ -381,7 +381,7 @@ function testDeployGroup(group: Argv) {
       },
       (args) => handleError(testDeploySetup(args)),
     )
-    .command<TestDeployRecceArgs>(
+    .command<TestDeploySetupArgs>(
       "recce <pr> <sha> <profile-path> <service-account-path> <checkout-path>",
       "subcommand for a setting up Recce for the test deployment",
       (yags) => {
