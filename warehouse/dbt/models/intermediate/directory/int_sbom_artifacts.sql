@@ -47,6 +47,7 @@ select
   {#
     Because we use repo.id as the artifact_source_id for github, we need to lookup the artifact_id for the SBOM repo. If the artifact is not found, this will return null.
   #}
+  all_repos.project_id,
   all_repos.artifact_id,
   sbom_artifacts.artifact_source,
   sbom_artifacts.artifact_namespace,
@@ -56,11 +57,13 @@ select
   #}
   all_packages.artifact_id as package_artifact_id,
   sbom_artifacts.package_source as package_artifact_source,
+  '' as package_artifact_namespace,
   sbom_artifacts.package as package_artifact_name,
   sbom_artifacts.package_version as package_version,
   deps_dev_packages.package_github_owner,
   deps_dev_packages.package_github_repo,
   deps_dev_repos.artifact_id as package_github_artifact_id,
+  deps_dev_repos.project_id as package_github_project_id,
   sbom_artifacts.snapshot_at
 from sbom_artifacts
 left outer join {{ ref('int_all_artifacts') }} as all_repos
