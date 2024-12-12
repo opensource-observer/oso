@@ -6,6 +6,7 @@ tables as well.
 
 import abc
 import logging
+import os
 import typing as t
 from datetime import datetime
 
@@ -147,13 +148,18 @@ class TrinoImportAdapter(DBImportAdapter):
             raise NotImplementedError(f"Unsupported reference type {reference.type}")
 
         # Import the table from gcs into trino using the hive catalog
-        gcs_path = reference.payload["gcs_path"]
+        import_path = reference.payload["gcs_path"]
+        # If we are using a wildcard path, we need to remove the wildcard for
+        # trino and keep a trailing slash
+        if os.path.basename(import_path) == "*.parquet":
+            import_path = f"{os.path.dirname(import_path)}/"
+
         base_create_query = f"""
             CREATE table "{self.hive_catalog}"."{self.hive_schema}"."{reference.table_name}" (
                 placeholder VARCHAR,
             ) WITH (
                 format = 'PARQUET',
-                external_location = '{gcs_path}'
+                external_location = '{import_path}/'
             )
         """
         create_query = parse_one(base_create_query)
