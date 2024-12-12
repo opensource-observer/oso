@@ -55,10 +55,12 @@ select
   {#
     Because we only index packages that are found in OSSD, most of the time this will return a null package_artifact_id.
   #}
+  all_packages.project_id as package_project_id,
   all_packages.artifact_id as package_artifact_id,
   sbom_artifacts.package_source as package_artifact_source,
   '' as package_artifact_namespace,
   sbom_artifacts.package as package_artifact_name,
+  'GITHUB' as package_owner_source,
   sbom_artifacts.package_version as package_version,
   deps_dev_packages.package_github_owner,
   deps_dev_packages.package_github_repo,
