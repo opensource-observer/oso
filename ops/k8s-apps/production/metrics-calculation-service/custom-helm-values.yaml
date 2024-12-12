@@ -1,0 +1,15 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: production-mcs
+spec:
+  values:
+    mcs:
+      trino:
+        host: production-trino-trino.production-trino.svc.cluster.local
+        port: 8080
+        user: sqlmesh
+      gcs:
+        bucket: oso-dataset-transfer-bucket
+        key_id: gcp:secretmanager:production-mcs-gcs-key-id/versions/latest
+        secret: gcp:secretmanager:production-mcs-gcs-secret/versions/latest
