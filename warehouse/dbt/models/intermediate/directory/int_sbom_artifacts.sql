@@ -31,6 +31,16 @@ sbom_artifacts as (
     snapshot_at
   from ranked_snapshots
   where row_num = 1
+),
+
+deps_dev_packages as (
+  select distinct
+    sbom_artifact_source,
+    package_artifact_name,
+    package_github_owner,
+    package_github_repo
+  from {{ ref('int_packages') }}
+  where is_current_owner = true
 )
 
 select
@@ -48,6 +58,8 @@ select
   sbom_artifacts.package_source as package_artifact_source,
   sbom_artifacts.package as package_artifact_name,
   sbom_artifacts.package_version as package_version,
+  deps_dev_packages.package_github_owner,
+  deps_dev_packages.package_github_repo,
   sbom_artifacts.snapshot_at
 from sbom_artifacts
 left outer join {{ ref('int_all_artifacts') }} as all_repos
@@ -58,3 +70,7 @@ left outer join {{ ref('int_all_artifacts') }} as all_packages
   on
     sbom_artifacts.package = all_packages.artifact_name
     and sbom_artifacts.package_source = all_packages.artifact_source
+left outer join deps_dev_packages
+  on
+    sbom_artifacts.package_source = deps_dev_packages.sbom_artifact_source
+    and sbom_artifacts.package = deps_dev_packages.package_artifact_name
