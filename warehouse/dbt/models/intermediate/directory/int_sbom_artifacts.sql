@@ -60,7 +60,7 @@ select
   sbom_artifacts.package_version as package_version,
   deps_dev_packages.package_github_owner,
   deps_dev_packages.package_github_repo,
-  deps_dev_repos.artifact_id as package_repo_artifact_id,
+  deps_dev_repos.artifact_id as package_github_artifact_id,
   sbom_artifacts.snapshot_at
 from sbom_artifacts
 left outer join {{ ref('int_all_artifacts') }} as all_repos
