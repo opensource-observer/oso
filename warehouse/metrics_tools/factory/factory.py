@@ -605,18 +605,30 @@ def generated_rolling_query(
     gateway: str | None,
     *_ignored,
 ):
+    """Generates a rolling query for the given metrics query
+
+    If SQLMESH_MCS_ENABLED is set to true, the query will be sent to the metrics
+    calculation service. Otherwise, the query will be executed as a rolling
+    query using dataframes (this can be very slow on remote data sources of
+    non-trivial size).
+
+    This currently takes advantage of a potential hack in sqlmesh. The snapshot
+    evaluator nor the scheduler in sqlmesh seem to care what the response is
+    from the python model as long as it's either a dataframe OR a sqlglot
+    expression. This means we can return a sqlglot expression that takes the
+    ExportReference from the metrics calculation service and use it as a table
+    in the sqlmesh query.
+
+    If configured correctly, the metrics calculation service will export a trino
+    database in production and if testing, it can export a "LOCALFS" export
+    which gives you a path to parquet file with random data (that satisfies the
+    requested schema).
+    """
     # Transform the query for the current context
     transformer = SQLTransformer(transforms=[ExecutionContextTableTransform(context)])
     query = transformer.transform(rendered_query_str)
     locals = vars.copy()
     locals.update(sqlmesh_vars)
-
-    # "metrics_sample_date": exp.DataType.build("DATE", dialect="clickhouse"),
-    # "event_source": exp.DataType.build("String", dialect="clickhouse"),
-    # "to_artifact_id": exp.DataType.build("String", dialect="clickhouse"),
-    # "from_artifact_id": exp.DataType.build("String", dialect="clickhouse"),
-    # "metric": exp.DataType.build("String", dialect="clickhouse"),
-    # "amount": exp.DataType.build("Float64", dialect="clickhouse"),
 
     mcs_enabled = env.ensure_bool("SQLMESH_MCS_ENABLED", False)
     if not mcs_enabled:
