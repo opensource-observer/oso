@@ -1,4 +1,6 @@
 mcs:
+  global:
+    fullnameOverride: ""
   service:
     port: 8000
   logging:
