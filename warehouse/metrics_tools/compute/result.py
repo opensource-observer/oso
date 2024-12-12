@@ -70,48 +70,27 @@ class FakeLocalImportAdapter(DBImportAdapter):
         translated_ref = await self.translate_reference(reference)
 
         # Convert reference.columns into pandas DataFrame columns
-        df = pd.DataFrame({column_name: [] for column_name, _ in reference.columns})
+        df = reference.columns.to_pandas()
         self.logger.info(f"Created DataFrame with columns: {df.dtypes}")
 
         # Convert duckdb types to pandas types
-        duckdb_to_pandas_types: t.Dict[str, str] = {
-            "BOOLEAN": "bool",
-            "TINYINT": "int8",
-            "SMALLINT": "int16",
-            "INTEGER": "int32",
-            "BIGINT": "int64",
-            "FLOAT": "float32",
-            "DOUBLE": "float64",
-            "VARCHAR": "object",
-            "TEXT": "object",
-            "TIMESTAMP": "datetime64[ns]",
-            "DATE": "datetime64[ns]",
-        }
-
-        for column_name, column_type in reference.columns:
-            self.logger.debug(
-                f"Converting column {column_name} with type {column_type}"
-            )
-            duckdb_type = column_type.upper()
-            pandas_type = duckdb_to_pandas_types.get(duckdb_type, "object")
-            df[column_name] = df[column_name].astype(pandas_type)  # type: ignore
         self.logger.info(f"Converted DataFrame types: {df.dtypes}")
 
         # Generate random data for each column based on its type
         fake_data_size = 100
-        for column_name, column_type in reference.columns:
-            if column_type.upper() == "BOOLEAN":
+        for column_name, column_type in reference.columns.columns_as_pandas_dtypes():
+            if column_type.upper() == "bool":
                 df[column_name] = np.random.choice([True, False], size=fake_data_size)
-            elif column_type.upper() in ["TINYINT", "SMALLINT", "INTEGER", "BIGINT"]:
+            elif column_type.upper() in ["int", "int8", "int16", "int32", "int64"]:
                 df[column_name] = np.random.randint(0, 100, size=fake_data_size)
-            elif column_type.upper() in ["FLOAT", "DOUBLE"]:
+            elif column_type.upper() in ["float", "float32", "float64"]:
                 df[column_name] = np.random.random(size=fake_data_size)
-            elif column_type.upper() == ["VARCHAR", "TEXT"]:
+            elif column_type.upper() == ["object"]:
                 df[column_name] = np.random.choice(
                     ["oso", "random", "fake", "data", "foo", "bar", "baz"],
                     size=fake_data_size,
                 )
-            elif column_type.upper() in ["TIMESTAMP", "DATE"]:
+            elif column_type.upper() in ["datetime64[ns]"]:
                 df[column_name] = pd.to_datetime(
                     np.random.choice(
                         pd.date_range("2024-01-01", "2025-01-01", periods=100),
