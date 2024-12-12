@@ -14,6 +14,7 @@ from pydantic_core import to_jsonable_python
 from ..definition import PeerMetricDependencyRef
 from .types import (
     ClusterStartRequest,
+    ColumnsDefinition,
     ExportedTableLoadRequest,
     ExportReference,
     ExportType,
@@ -32,11 +33,12 @@ def run_cache_load(url: str):
     req = ExportedTableLoadRequest(
         map={
             "sqlmesh__metrics.metrics__events_daily_to_artifact__2357434958": ExportReference(
-                table="export_metrics__events_daily_to_artifact__2357434958_5def5e890a984cf99f7364ce3c2bb958",
+                table_name="export_metrics__events_daily_to_artifact__2357434958_5def5e890a984cf99f7364ce3c2bb958",
                 type=ExportType.GCS,
                 payload={
                     "gcs_path": "gs://oso-dataset-transfer-bucket/trino-export/export_metrics__events_daily_to_artifact__2357434958_5def5e890a984cf99f7364ce3c2bb958"
                 },
+                columns=ColumnsDefinition(columns=[]),
             ),
         }
     )
@@ -66,11 +68,12 @@ def run_local_test(
     client.run_cache_manual_load(
         {
             "sqlmesh__metrics.metrics__events_daily_to_artifact__2357434958": ExportReference(
-                table="export_metrics__events_daily_to_artifact__2357434958_5def5e890a984cf99f7364ce3c2bb958",
+                table_name="export_metrics__events_daily_to_artifact__2357434958_5def5e890a984cf99f7364ce3c2bb958",
                 type=ExportType.GCS,
                 payload={
                     "gcs_path": "gs://oso-dataset-transfer-bucket/trino-export/export_metrics__events_daily_to_artifact__2357434958_5def5e890a984cf99f7364ce3c2bb958"
                 },
+                columns=ColumnsDefinition(columns=[]),
             ),
         }
     )

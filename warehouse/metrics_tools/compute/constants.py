@@ -21,9 +21,7 @@ gcs_bucket = env.required_str("METRICS_GCS_BUCKET")
 gcs_key_id = env.required_str("METRICS_GCS_KEY_ID")
 gcs_secret = env.required_str("METRICS_GCS_SECRET")
 
-results_path_prefix = env.required_str(
-    "METRICS_GCS_RESULTS_PATH_PREFIX", "metrics-calc-service-results"
-)
+results_path_prefix = env.required_str("METRICS_GCS_RESULTS_PATH_PREFIX", "mcs-results")
 
 worker_duckdb_path = env.required_str("METRICS_WORKER_DUCKDB_PATH")
 
@@ -36,6 +34,7 @@ hive_catalog = env.required_str("METRICS_HIVE_CATALOG", "source")
 hive_schema = env.required_str("METRICS_HIVE_SCHEMA", "export")
 
 debug_all = env.ensure_bool("METRICS_DEBUG_ALL", False)
+debug_with_duckdb = env.ensure_bool("METRICS_DEBUG_WITH_DUCKDB", False)
 if not debug_all:
     debug_cache = env.ensure_bool("METRICS_DEBUG_CACHE", False)
     debug_cluster = env.ensure_bool("METRICS_DEBUG_CLUSTER", False)

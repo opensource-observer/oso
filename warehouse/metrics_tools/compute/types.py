@@ -17,12 +17,41 @@ class EmptyResponse(BaseModel):
 class ExportType(str, Enum):
     ICEBERG = "iceberg"
     GCS = "gcs"
+    TRINO = "trino"
+    LOCALFS = "localfs"
+
+
+class ColumnsDefinition(BaseModel):
+    columns: t.List[t.Tuple[str, str]]
+    dialect: str = "duckdb"
+
+    def columns_as(self, dialect: str) -> t.List[t.Tuple[str, str]]:
+        return [
+            (col_name, parse_one(col_type, dialect=self.dialect).sql(dialect=dialect))
+            for col_name, col_type in self.columns
+        ]
+
+    def __iter__(self):
+        for col_name, col_type in self.columns:
+            yield (col_name, col_type)
 
 
 class ExportReference(BaseModel):
-    table: str
+    catalog_name: t.Optional[str] = None
+    schema_name: t.Optional[str] = None
+    columns: ColumnsDefinition
+    table_name: str
     type: ExportType
     payload: t.Dict[str, t.Any]
+
+    def table_fqn(self) -> str:
+        names = []
+        if self.catalog_name:
+            names.append(self.catalog_name)
+        if self.schema_name:
+            names.append(self.schema_name)
+        names.append(self.table_name)
+        return ".".join(names)
 
 
 class QueryJobStatus(str, Enum):
@@ -61,9 +90,14 @@ class QueryJobSubmitRequest(BaseModel):
     locals: t.Dict[str, t.Any]
     dependent_tables_map: t.Dict[str, str]
     retries: t.Optional[int] = None
+    execution_time: datetime
 
     def query_as(self, dialect: str) -> str:
         return parse_one(self.query_str, self.dialect).sql(dialect=dialect)
+
+    @property
+    def columns_def(self) -> ColumnsDefinition:
+        return ColumnsDefinition(columns=self.columns, dialect=self.dialect)
 
 
 class QueryJobSubmitResponse(BaseModel):

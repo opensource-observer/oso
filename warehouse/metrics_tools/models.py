@@ -4,22 +4,22 @@ import logging
 import re
 import textwrap
 import typing as t
-from pathlib import Path
 import uuid
+from pathlib import Path
 
 from sqlglot import exp
 from sqlmesh.core import constants as c
 from sqlmesh.core.dialect import MacroFunc
 from sqlmesh.core.macros import ExecutableOrMacro, MacroRegistry, macro
 from sqlmesh.core.model.decorator import model
-from sqlmesh.core.model.definition import create_sql_model, create_python_model
+from sqlmesh.core.model.definition import create_python_model, create_sql_model
 from sqlmesh.utils.jinja import JinjaMacroRegistry
 from sqlmesh.utils.metaprogramming import (
     Executable,
     ExecutableKind,
     build_env,
-    serialize_env,
     normalize_source,
+    serialize_env,
 )
 
 logger = logging.getLogger(__name__)
@@ -100,6 +100,7 @@ class GeneratedPythonModel:
 
         all_vars = self._variables.copy()
         global_variables = variables or {}
+        all_vars.update(global_variables)
         all_vars["sqlmesh_vars"] = global_variables
 
         common_kwargs: t.Dict[str, t.Any] = dict(
