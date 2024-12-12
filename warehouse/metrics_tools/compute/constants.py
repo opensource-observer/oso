@@ -5,15 +5,15 @@ load_dotenv()
 
 cluster_namespace = env.required_str("METRICS_CLUSTER_NAMESPACE")
 cluster_name = env.required_str("METRICS_CLUSTER_NAME")
-cluster_worker_threads = env.required_int("METRICS_CLUSTER_WORKER_THREADS", 16)
-cluster_worker_image_repo = env.required_str(
-    "METRICS_CLUSTER_WORKER_IMAGE_REPO", "ghcr.io/opensource-observer/dagster-dask"
+cluster_image_repo = env.required_str(
+    "METRICS_CLUSTER_IMAGE_REPO", "ghcr.io/opensource-observer/dagster-dask"
 )
-cluster_worker_image_tag = env.required_str("METRICS_CLUSTER_WORKER_IMAGE_TAG")
+cluster_image_tag = env.required_str("METRICS_CLUSTER_IMAGE_TAG")
 scheduler_memory_limit = env.required_str("METRICS_SCHEDULER_MEMORY_LIMIT", "90000Mi")
 scheduler_memory_request = env.required_str(
     "METRICS_SCHEDULER_MEMORY_REQUEST", "85000Mi"
 )
+worker_threads = env.required_int("METRICS_WORKER_THREADS", 16)
 worker_memory_limit = env.required_str("METRICS_WORKER_MEMORY_LIMIT", "90000Mi")
 worker_memory_request = env.required_str("METRICS_WORKER_MEMORY_REQUEST", "85000Mi")
 
