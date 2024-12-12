@@ -5,15 +5,15 @@ load_dotenv()
 
 cluster_namespace = env.required_str("METRICS_CLUSTER_NAMESPACE")
 cluster_name = env.required_str("METRICS_CLUSTER_NAME")
-cluster_worker_threads = env.required_int("METRICS_CLUSTER_WORKER_THREADS", 16)
-cluster_worker_image_repo = env.required_str(
-    "METRICS_CLUSTER_WORKER_IMAGE_REPO", "ghcr.io/opensource-observer/dagster-dask"
+cluster_image_repo = env.required_str(
+    "METRICS_CLUSTER_IMAGE_REPO", "ghcr.io/opensource-observer/dagster-dask"
 )
-cluster_worker_image_tag = env.required_str("METRICS_CLUSTER_WORKER_IMAGE_TAG")
+cluster_image_tag = env.required_str("METRICS_CLUSTER_IMAGE_TAG")
 scheduler_memory_limit = env.required_str("METRICS_SCHEDULER_MEMORY_LIMIT", "90000Mi")
 scheduler_memory_request = env.required_str(
     "METRICS_SCHEDULER_MEMORY_REQUEST", "85000Mi"
 )
+worker_threads = env.required_int("METRICS_WORKER_THREADS", 16)
 worker_memory_limit = env.required_str("METRICS_WORKER_MEMORY_LIMIT", "90000Mi")
 worker_memory_request = env.required_str("METRICS_WORKER_MEMORY_REQUEST", "85000Mi")
 
@@ -21,9 +21,7 @@ gcs_bucket = env.required_str("METRICS_GCS_BUCKET")
 gcs_key_id = env.required_str("METRICS_GCS_KEY_ID")
 gcs_secret = env.required_str("METRICS_GCS_SECRET")
 
-results_path_prefix = env.required_str(
-    "METRICS_GCS_RESULTS_PATH_PREFIX", "metrics-calc-service-results"
-)
+results_path_prefix = env.required_str("METRICS_GCS_RESULTS_PATH_PREFIX", "mcs-results")
 
 worker_duckdb_path = env.required_str("METRICS_WORKER_DUCKDB_PATH")
 
@@ -36,6 +34,7 @@ hive_catalog = env.required_str("METRICS_HIVE_CATALOG", "source")
 hive_schema = env.required_str("METRICS_HIVE_SCHEMA", "export")
 
 debug_all = env.ensure_bool("METRICS_DEBUG_ALL", False)
+debug_with_duckdb = env.ensure_bool("METRICS_DEBUG_WITH_DUCKDB", False)
 if not debug_all:
     debug_cache = env.ensure_bool("METRICS_DEBUG_CACHE", False)
     debug_cluster = env.ensure_bool("METRICS_DEBUG_CLUSTER", False)

@@ -5,6 +5,7 @@ import logging
 import queue
 import typing as t
 import uuid
+from datetime import datetime
 
 from aiotrino.dbapi import Connection
 from pydantic import BaseModel
@@ -12,7 +13,7 @@ from pyee.asyncio import AsyncIOEventEmitter
 from sqlglot import exp
 from sqlmesh.core.dialect import parse_one
 
-from .types import ExportReference, ExportType
+from .types import ColumnsDefinition, ExportReference, ExportType
 
 logger = logging.getLogger(__name__)
 
@@ -23,11 +24,14 @@ class ExportCacheCompletedQueueItem(BaseModel):
 
 
 class ExportCacheQueueItem(BaseModel):
+    execution_time: datetime
     table: str
 
 
 class DBExportAdapter(abc.ABC):
-    async def export_table(self, table: str) -> ExportReference:
+    async def export_table(
+        self, table: str, execution_time: datetime
+    ) -> ExportReference:
         raise NotImplementedError()
 
     async def clean_export_table(self, table: str):
@@ -38,10 +42,15 @@ class FakeExportAdapter(DBExportAdapter):
     def __init__(self, log_override: t.Optional[logging.Logger] = None):
         self.logger = log_override or logger
 
-    async def export_table(self, table: str) -> ExportReference:
+    async def export_table(
+        self, table: str, execution_time: datetime
+    ) -> ExportReference:
         self.logger.info(f"fake exporting table: {table}")
         return ExportReference(
-            table=table, type=ExportType.GCS, payload={"gcs_path": "fake_path:{table}"}
+            table_name=table,
+            type=ExportType.GCS,
+            payload={"gcs_path": "fake_path:{table}"},
+            columns=ColumnsDefinition(columns=[]),
         )
 
     async def clean_export_table(self, table: str):
@@ -63,7 +72,9 @@ class TrinoExportAdapter(DBExportAdapter):
         self.hive_schema = hive_schema
         self.logger = log_override or logger
 
-    async def export_table(self, table: str) -> ExportReference:
+    async def export_table(
+        self, table: str, execution_time: datetime
+    ) -> ExportReference:
         columns: t.List[t.Tuple[str, str]] = []
 
         col_result = await self.run_query(f"SHOW COLUMNS FROM {table}")
@@ -77,7 +88,9 @@ class TrinoExportAdapter(DBExportAdapter):
         self.logger.debug(f"retrieved columns for {table} export: {columns}")
         export_table_name = f"export_{table_exp.this.this}_{uuid.uuid4().hex}"
 
-        gcs_path = f"gs://{self.gcs_bucket}/trino-export/{export_table_name}/"
+        # We make cleaning easier by using the execution time to allow listing
+        # of the export tables
+        gcs_path = f"gs://{self.gcs_bucket}/trino-export/{execution_time.strftime('%Y/%m/%d/%H')}/{export_table_name}/"
 
         # We use a little bit of a hybrid templating+sqlglot magic to generate
         # the create and insert queries. This saves us having to figure out the
@@ -135,7 +148,10 @@ class TrinoExportAdapter(DBExportAdapter):
         await self.run_query(insert_query.sql(dialect="trino"))
 
         return ExportReference(
-            table=table, type=ExportType.GCS, payload={"gcs_path": gcs_path}
+            table_name=table,
+            type=ExportType.GCS,
+            payload={"gcs_path": gcs_path},
+            columns=ColumnsDefinition(columns=columns, dialect="trino"),
         )
 
     async def run_query(self, query: str):
@@ -237,9 +253,9 @@ class CacheExportManager:
     async def export_queue_loop(self):
         in_progress: t.Set[str] = set()
 
-        async def export_table(table: str):
+        async def export_table(table: str, execution_time: datetime):
             try:
-                return await self._export_table_for_cache(table)
+                return await self._export_table_for_cache(table, execution_time)
             except Exception as e:
                 self.logger.error(f"Error exporting table {table}: {e}")
                 in_progress.remove(table)
@@ -253,7 +269,7 @@ class CacheExportManager:
                 # The table is already being exported. Skip this in the queue
                 continue
             in_progress.add(item.table)
-            export_reference = await export_table(item.table)
+            export_reference = await export_table(item.table, item.execution_time)
             self.event_emitter.emit(
                 "exported_table", table=item.table, export_reference=export_reference
             )
@@ -281,17 +297,19 @@ class CacheExportManager:
                 return None
             return copy.deepcopy(reference)
 
-    async def _export_table_for_cache(self, table: str):
+    async def _export_table_for_cache(self, table: str, execution_time: datetime):
         """Triggers an export of a table to a cache location in GCS. This does
         this by using the Hive catalog in trino to create a new table with the
         same schema as the original table, but with a different name. This new
         table is then used as the cache location for the original table."""
 
-        export_reference = await self.export_adapter.export_table(table)
+        export_reference = await self.export_adapter.export_table(table, execution_time)
         self.logger.info(f"exported table: {table} -> {export_reference}")
         return export_reference
 
-    async def resolve_export_references(self, tables: t.List[str]):
+    async def resolve_export_references(
+        self, tables: t.List[str], execution_time: datetime
+    ):
         """Resolves any required export table references or queues up a list of
         tables to be exported to a cache location. Once ready, the map of tables
         is resolved."""
@@ -331,5 +349,7 @@ class CacheExportManager:
             "exported_table", handle_exported_table
         )
         for table in tables_to_export:
-            self.export_queue.put_nowait(ExportCacheQueueItem(table=table))
+            self.export_queue.put_nowait(
+                ExportCacheQueueItem(table=table, execution_time=execution_time)
+            )
         return await future
