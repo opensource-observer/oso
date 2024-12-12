@@ -3,6 +3,7 @@ import typing as t
 from datetime import datetime
 from enum import Enum
 
+import pandas as pd
 from metrics_tools.definition import PeerMetricDependencyRef
 from pydantic import BaseModel, Field
 from sqlmesh.core.dialect import parse_one
@@ -17,12 +18,84 @@ class EmptyResponse(BaseModel):
 class ExportType(str, Enum):
     ICEBERG = "iceberg"
     GCS = "gcs"
+    TRINO = "trino"
+    LOCALFS = "localfs"
+
+
+DUCKDB_TO_PANDAS_TYPE_MAP = {
+    "BOOLEAN": "bool",
+    "BOOL": "bool",
+    "TINYINT": "int8",
+    "INT1": "int8",
+    "SMALLINT": "int16",
+    "INT2": "int16",
+    "INTEGER": "int32",
+    "INT4": "int32",
+    "BIGINT": "int64",
+    "INT8": "int64",
+    "FLOAT": "float32",
+    "FLOAT4": "float32",
+    "DOUBLE": "float64",
+    "FLOAT8": "float64",
+    "DATE": "datetime64[ns]",
+    "TIMESTAMP": "datetime64[ns]",
+    "DATETIME": "datetime64[ns]",
+    "VARCHAR": "object",
+    "CHAR": "object",
+    "BPCHAR": "object",
+    "TEXT": "object",
+    "BLOB": "bytes",
+    "BYTEA": "bytes",
+    "NUMERIC": "float64",
+}
+
+
+class ColumnsDefinition(BaseModel):
+    columns: t.List[t.Tuple[str, str]]
+    dialect: str = "duckdb"
+
+    def columns_as(self, dialect: str) -> t.List[t.Tuple[str, str]]:
+        return [
+            (col_name, parse_one(col_type, dialect=self.dialect).sql(dialect=dialect))
+            for col_name, col_type in self.columns
+        ]
+
+    def __iter__(self):
+        for col_name, col_type in self.columns:
+            yield (col_name, col_type)
+
+    def to_pandas(self) -> pd.DataFrame:
+        """Creates a basic dataframe with the columns defined in this definition
+        coerced to panda datatypes"""
+        columns_as_pandas_dtypes = self.columns_as_pandas_dtypes()
+        df = pd.DataFrame({col_name: [] for col_name, _ in columns_as_pandas_dtypes})
+        for col_name, col_type in columns_as_pandas_dtypes:
+            df[col_name] = df[col_name].astype(col_type)  # type: ignore
+        return df
+
+    def columns_as_pandas_dtypes(self) -> t.List[t.Tuple[str, str]]:
+        return [
+            (col_name, DUCKDB_TO_PANDAS_TYPE_MAP[col_type.upper()])
+            for col_name, col_type in self.columns_as("duckdb")
+        ]
 
 
 class ExportReference(BaseModel):
-    table: str
+    catalog_name: t.Optional[str] = None
+    schema_name: t.Optional[str] = None
+    columns: ColumnsDefinition
+    table_name: str
     type: ExportType
     payload: t.Dict[str, t.Any]
+
+    def table_fqn(self) -> str:
+        names = []
+        if self.catalog_name:
+            names.append(self.catalog_name)
+        if self.schema_name:
+            names.append(self.schema_name)
+        names.append(self.table_name)
+        return ".".join(names)
 
 
 class QueryJobStatus(str, Enum):
@@ -61,9 +134,14 @@ class QueryJobSubmitRequest(BaseModel):
     locals: t.Dict[str, t.Any]
     dependent_tables_map: t.Dict[str, str]
     retries: t.Optional[int] = None
+    execution_time: datetime
 
     def query_as(self, dialect: str) -> str:
         return parse_one(self.query_str, self.dialect).sql(dialect=dialect)
+
+    @property
+    def columns_def(self) -> ColumnsDefinition:
+        return ColumnsDefinition(columns=self.columns, dialect=self.dialect)
 
 
 class QueryJobSubmitResponse(BaseModel):

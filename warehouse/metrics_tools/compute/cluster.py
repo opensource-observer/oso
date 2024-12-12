@@ -431,10 +431,10 @@ def make_new_cluster_with_defaults():
     from . import constants
 
     return make_new_cluster(
-        f"{constants.cluster_worker_image_repo}:{constants.cluster_worker_image_tag}",
+        f"{constants.cluster_image_repo}:{constants.cluster_image_tag}",
         constants.cluster_name,
         constants.cluster_namespace,
-        threads=constants.cluster_worker_threads,
+        threads=constants.worker_threads,
         scheduler_memory_limit=constants.scheduler_memory_limit,
         scheduler_memory_request=constants.scheduler_memory_request,
         worker_memory_limit=constants.worker_memory_limit,

@@ -1,8 +1,4 @@
-from metrics_tools.factory import (
-    timeseries_metrics,
-    MetricQueryDef,
-    RollingConfig,
-)
+from metrics_tools.factory import MetricQueryDef, RollingConfig, timeseries_metrics
 
 timeseries_metrics(
     start="2015-01-01",
@@ -148,7 +144,7 @@ timeseries_metrics(
         "commits_rolling": MetricQueryDef(
             ref="commits.sql",
             rolling=RollingConfig(
-                windows=[180],
+                windows=[10],
                 unit="day",
                 cron="@daily",
             ),
@@ -261,23 +257,6 @@ timeseries_metrics(
             ),
             entity_types=["artifact", "project", "collection"],
         ),
-        # "libin": MetricQueryDef(
-        #     ref="libin.sql",
-        #     vars={
-        #         "activity_event_types": [
-        #             "COMMIT_CODE",
-        #             "ISSUE_OPENED",
-        #             "PULL_REQUEST_OPENED",
-        #             "PULL_REQUEST_MERGED",
-        #         ],
-        #     },
-        #     rolling=RollingConfig(
-        #         windows=[30, 90, 180],
-        #         unit="day",
-        #         cron="@daily",
-        #     ),
-        #     entity_types=["artifact"],
-        # ),
         "funding_received": MetricQueryDef(
             ref="funding_received.sql",
             rolling=RollingConfig(

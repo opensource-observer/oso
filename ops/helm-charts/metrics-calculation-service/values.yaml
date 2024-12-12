@@ -1,0 +1,49 @@
+mcs:
+  global:
+    fullnameOverride: ""
+  service:
+    port: 8000
+  logging:
+    format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    root:
+      level: "ERROR"
+    metrics_tools:
+      level: "DEBUG"
+    uvicorn:
+      level: "INFO"
+  image:
+    repo: ghcr.io/opensource-observer/dagster-dask
+    tag: latest
+  cluster:
+    namespace: "default"
+    name: "default"
+    image:
+      repo: "ghcr.io/opensource-observer/dagster-dask"
+      tag: "latest"
+    scheduler:
+      memory:
+        limit: "2Gi"
+        request: "2Gi"
+    worker:
+      threads: "4"
+      memory:
+        limit: "2Gi"
+        request: "2Gi"
+      duckdb_path: "/scratch/mcs-local.db"
+  gcs:
+    bucket: "oso-playground-dataset-transfer-bucket"
+    key_id: "gcp:secretmanager:mcs-gcs-key-id/versions/latest"
+    secret: "gcp:secretmanager:mcs-gcs-secret/versions/latest"
+  trino:
+    host: "trino"
+    port: "8080"
+    user: "trino"
+    catalog: "metrics"
+  hive:
+    catalog: "source"
+    schema: "export"
+  debug:
+    all: "false"
+    cache: "false"
+    cluster: "false"
+    cluster_no_shutdown: "false"

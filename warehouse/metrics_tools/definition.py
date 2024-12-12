@@ -402,12 +402,3 @@ class TimeseriesMetricsOptions(t.TypedDict):
     start: TimeLike
     timeseries_sources: t.NotRequired[t.List[str]]
     queries_dir: t.NotRequired[str]
-
-
-class GeneratedArtifactConfig(t.TypedDict):
-    query_reference_name: str
-    query_def_as_input: MetricQueryInput
-    default_dialect: str
-    peer_table_tuples: t.List[t.Tuple[str, str]]
-    ref: PeerMetricDependencyRef
-    timeseries_sources: t.List[str]

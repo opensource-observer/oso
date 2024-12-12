@@ -173,6 +173,7 @@ class Client:
             locals=locals,
             dependent_tables_map=dependent_tables_map,
             retries=retries,
+            execution_time=datetime.now(),
         )
         job_response = self.service_post_with_input(
             QueryJobSubmitResponse, "/job/submit", request

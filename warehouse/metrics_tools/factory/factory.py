@@ -1,49 +1,49 @@
 import contextlib
-from datetime import datetime
 import inspect
 import logging
 import os
-from queue import PriorityQueue
-import typing as t
 import textwrap
-from metrics_tools.runner import MetricsRunner
-from metrics_tools.transformer.tables import ExecutionContextTableTransform
-from metrics_tools.utils.logging import add_metrics_tools_to_sqlmesh_logging
-import pandas as pd
+import typing as t
 from dataclasses import dataclass, field
+from datetime import datetime
+from queue import PriorityQueue
 
-from sqlmesh import ExecutionContext
-from sqlmesh.core.macros import MacroEvaluator
-from sqlmesh.core.model import ModelKindName
+import pandas as pd
 import sqlglot as sql
-from sqlglot import exp
-
-from metrics_tools.joiner import JoinerTransform
-from metrics_tools.transformer import (
-    SQLTransformer,
-    IntermediateMacroEvaluatorTransform,
-)
-from metrics_tools.transformer.qualify import QualifyTransform
+from metrics_tools.compute.client import Client
+from metrics_tools.compute.types import ExportType
 from metrics_tools.definition import (
     MetricQuery,
     PeerMetricDependencyRef,
     TimeseriesMetricsOptions,
     reference_to_str,
 )
-from metrics_tools.models import (
-    GeneratedModel,
-    GeneratedPythonModel,
-)
+from metrics_tools.joiner import JoinerTransform
 from metrics_tools.macros import (
     metrics_end,
+    metrics_entity_type_alias,
     metrics_entity_type_col,
     metrics_name,
+    metrics_peer_ref,
     metrics_sample_date,
     metrics_start,
     relative_window_sample_date,
-    metrics_entity_type_alias,
-    metrics_peer_ref,
 )
+from metrics_tools.models import GeneratedModel, GeneratedPythonModel
+from metrics_tools.runner import MetricsRunner
+from metrics_tools.transformer import (
+    IntermediateMacroEvaluatorTransform,
+    SQLTransformer,
+)
+from metrics_tools.transformer.qualify import QualifyTransform
+from metrics_tools.transformer.tables import ExecutionContextTableTransform
+from metrics_tools.utils import env
+from metrics_tools.utils.logging import add_metrics_tools_to_sqlmesh_logging
+from sqlglot import exp
+from sqlmesh import ExecutionContext
+from sqlmesh.core.dialect import parse_one
+from sqlmesh.core.macros import MacroEvaluator
+from sqlmesh.core.model import ModelKindName
 
 logger = logging.getLogger(__name__)
 
@@ -381,14 +381,9 @@ class TimeseriesMetrics:
         query = query_config["query"]
         match query.metric_type:
             case "rolling":
-                if query.use_python_model:
-                    self.generate_rolling_python_model_for_rendered_query(
-                        calling_file, query_config, dependencies
-                    )
-                else:
-                    self.generate_rolling_model_for_rendered_query(
-                        calling_file, query_config, dependencies
-                    )
+                self.generate_rolling_python_model_for_rendered_query(
+                    calling_file, query_config, dependencies
+                )
             case "time_aggregation":
                 self.generate_time_aggregation_model_for_rendered_query(
                     calling_file, query_config, dependencies
@@ -442,53 +437,6 @@ class TimeseriesMetrics:
             start=self._raw_options["start"],
             grain=grain,
             imports={"pd": pd, "generated_rolling_query": generated_rolling_query},
-        )
-
-    def generate_rolling_model_for_rendered_query(
-        self,
-        calling_file: str,
-        query_config: MetricQueryConfig,
-        dependencies: t.Set[str],
-    ):
-        config = self.serializable_config(query_config)
-
-        ref = query_config["ref"]
-        query = query_config["query"]
-
-        columns = METRICS_COLUMNS_BY_ENTITY[ref["entity_type"]]
-
-        kind_common = {"batch_size": 1, "batch_concurrency": 1}
-        partitioned_by = ("day(metrics_sample_date)",)
-        window = ref.get("window")
-        assert window is not None
-        assert query._source.rolling
-        cron = query._source.rolling["cron"]
-
-        grain = [
-            "metric",
-            f"to_{ref['entity_type']}_id",
-            "from_artifact_id",
-            "event_source",
-            "metrics_sample_date",
-        ]
-
-        GeneratedModel.create(
-            func=generated_query,
-            entrypoint_path=calling_file,
-            config=config,
-            name=f"{self.catalog}.{query_config['table_name']}",
-            kind={
-                "name": ModelKindName.INCREMENTAL_BY_TIME_RANGE,
-                "time_column": "metrics_sample_date",
-                **kind_common,
-            },
-            dialect="clickhouse",
-            columns=columns,
-            grain=grain,
-            cron=cron,
-            start=self._raw_options["start"],
-            additional_macros=self.generated_model_additional_macros,
-            partitioned_by=partitioned_by,
         )
 
     def generate_time_aggregation_model_for_rendered_query(
@@ -638,7 +586,6 @@ def generated_query(
     vars: t.Dict[str, t.Any],
 ):
     """Simple generated query executor for metrics queries"""
-    from sqlmesh.core.dialect import parse_one
 
     with metric_ref_evaluator_context(evaluator, ref, vars):
         result = evaluator.transform(parse_one(rendered_query_str))
@@ -655,28 +602,96 @@ def generated_rolling_query(
     rendered_query_str: str,
     table_name: str,
     sqlmesh_vars: t.Dict[str, t.Any],
+    gateway: str | None,
     *_ignored,
 ):
+    """Generates a rolling query for the given metrics query
+
+    If SQLMESH_MCS_ENABLED is set to true, the query will be sent to the metrics
+    calculation service. Otherwise, the query will be executed as a rolling
+    query using dataframes (this can be very slow on remote data sources of
+    non-trivial size).
+
+    This currently takes advantage of a potential hack in sqlmesh. The snapshot
+    evaluator nor the scheduler in sqlmesh seem to care what the response is
+    from the python model as long as it's either a dataframe OR a sqlglot
+    expression. This means we can return a sqlglot expression that takes the
+    ExportReference from the metrics calculation service and use it as a table
+    in the sqlmesh query.
+
+    If configured correctly, the metrics calculation service will export a trino
+    database in production and if testing, it can export a "LOCALFS" export
+    which gives you a path to parquet file with random data (that satisfies the
+    requested schema).
+    """
     # Transform the query for the current context
     transformer = SQLTransformer(transforms=[ExecutionContextTableTransform(context)])
     query = transformer.transform(rendered_query_str)
     locals = vars.copy()
     locals.update(sqlmesh_vars)
 
-    runner = MetricsRunner.from_sqlmesh_context(context, query, ref, locals)
-    df = runner.run_rolling(start, end)
-    # If the rolling window is empty we need to yield from an empty tuple
-    # otherwise sqlmesh fails. See:
-    # https://sqlmesh.readthedocs.io/en/latest/concepts/models/python_models/#returning-empty-dataframes
-    total = 0
-    if df.empty:
-        yield from ()
+    mcs_enabled = env.ensure_bool("SQLMESH_MCS_ENABLED", False)
+    if not mcs_enabled:
+        runner = MetricsRunner.from_sqlmesh_context(context, query, ref, locals)
+        df = runner.run_rolling(start, end)
+        # If the rolling window is empty we need to yield from an empty tuple
+        # otherwise sqlmesh fails. See:
+        # https://sqlmesh.readthedocs.io/en/latest/concepts/models/python_models/#returning-empty-dataframes
+        total = 0
+        if df.empty:
+            yield from ()
+        else:
+            count = len(df)
+            total += count
+            logger.debug(f"table={table_name} yielding rows {count}")
+            yield df
+        logger.debug(f"table={table_name} yielded rows{total}")
     else:
-        count = len(df)
-        total += count
-        logger.debug(f"table={table_name} yielding rows {count}")
-        yield df
-    logger.debug(f"table={table_name} yielded rows{total}")
+        logger.info("metrics calculation service enabled")
+
+        mcs_url = env.required_str("SQLMESH_MCS_URL")
+        mcs_client = Client(url=mcs_url)
+
+        columns = [
+            (col_name, col_type.sql(dialect="duckdb"))
+            for col_name, col_type in METRICS_COLUMNS_BY_ENTITY[
+                ref["entity_type"]
+            ].items()
+        ]
+
+        response = mcs_client.calculate_metrics(
+            query_str=rendered_query_str,
+            start=start,
+            end=end,
+            dialect="clickhouse",
+            batch_size=1,
+            columns=columns,
+            ref=ref,
+            locals=sqlmesh_vars,
+            dependent_tables_map={},
+        )
+
+        column_names = list(map(lambda col: col[0], columns))
+        engine_dialect = context.engine_adapter.dialect
+
+        if engine_dialect == "duckdb":
+            if response.type not in [ExportType.GCS, ExportType.LOCALFS]:
+                raise Exception(f"ExportType={response.type} not supported for duckdb")
+            # Create a select query from the exported data
+            path = response.payload.get("local_path", response.payload.get("gcs_path"))
+            select_query = exp.select(*column_names).from_(
+                exp.Anonymous(
+                    this="read_parquet",
+                    expressions=[exp.Literal(this=path, is_string=True)],
+                ),
+            )
+        elif engine_dialect == "trino":
+            if response.type not in [ExportType.TRINO]:
+                raise Exception(f"ExportType={response.type} not supported for trino")
+            select_query = exp.select(*column_names).from_(response.table_fqn())
+        else:
+            raise Exception(f"Dialect={context.engine_adapter.dialect} not supported")
+        yield select_query
 
 
 def generated_rolling_query_proxy(
@@ -690,7 +705,7 @@ def generated_rolling_query_proxy(
     table_name: str,
     sqlmesh_vars: t.Dict[str, t.Any],
     **kwargs,
-) -> t.Iterator[pd.DataFrame]:
+) -> t.Iterator[pd.DataFrame | exp.Expression]:
     """This acts as the proxy to the actual function that we'd call for
     the metrics model."""
 
@@ -704,6 +719,7 @@ def generated_rolling_query_proxy(
         rendered_query_str,
         table_name,
         sqlmesh_vars,
+        context.gateway,
         # Change the following variable to force reevaluation. Hack for now.
-        "version=v4",
+        "version=v5",
     )
