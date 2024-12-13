@@ -46,6 +46,8 @@ spec:
           mountPath: /metrics-cache
       jvm:
         maxHeapSize: "17G"
+      additionalJVMConfig:
+        - "--add-opens=java.base/java.nio=ALL-UNNAMED"
       resources:
         requests:
           cpu: 2000m
@@ -71,6 +73,8 @@ spec:
           maxMemoryPerNode: 15GB
       jvm:
         maxHeapSize: "70G"
+      additionalJVMConfig:
+        - "--add-opens=java.base/java.nio=ALL-UNNAMED"
       resources:
         requests:
           cpu: 15000m
