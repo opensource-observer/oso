@@ -133,6 +133,6 @@ spec:
         gcs.project-id=opensource-observer
         hive.non-managed-table-writes-enabled=true
       #  gcs.use-access-token=true
-      # bigquery: |
-      #   connector.name=bigquery
-      #   bigquery.project-id=opensource-observer
+      bigquery: |
+        connector.name=bigquery
+        bigquery.project-id=opensource-observer
