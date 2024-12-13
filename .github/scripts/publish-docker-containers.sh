@@ -10,11 +10,18 @@ images_to_build="$(find ./docker/images/* -type f -name 'Dockerfile' -exec sh -c
 tag="$(git rev-parse HEAD)"
 
 for path in $images_to_build; do
-    image_name=$(basename $path)
+    # if directory has an image_name file use that for the image name
+    if [ -f "${path}/image_name" ]; then
+        image_name=$(cat "${path}/image_name")
+    else
+        image_name=$(basename "$path")
+    fi
+    image_dir_name=$(basename "$path")
 
     image_repo="ghcr.io/opensource-observer/${image_name}"
     sha_image="${image_repo}:${tag}"
     latest_image="${image_repo}:latest"
+
 
     echo "Building ${image_name} plugin"
     docker build \
@@ -22,8 +29,9 @@ for path in $images_to_build; do
         -t ${latest_image} \
         --label "org.opencontainers.image.source=https://github.com/opensource-observer/oso" \
         --label "observer.opensource.oso.sha=${tag}" \
+        --build-arg REPO_SHA=${tag} \
         --build-arg IMAGE_NAME=${image_name} \
-        -f docker/images/${image_name}/Dockerfile \
+        -f docker/images/${image_dir_name}/Dockerfile \
         .
     echo "Publishing the image to ${sha_image}"
     docker push "${sha_image}"

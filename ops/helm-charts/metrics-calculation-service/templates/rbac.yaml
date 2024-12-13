@@ -2,7 +2,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: {{ include "mcs.fullname" . }}-role
+  name: {{ include "mcs.fullname" . }}
 rules:
 - apiGroups: [""]
   resources: ["pods", "services"]
@@ -15,7 +15,7 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: {{ include "mcs.fullname" . }}-role-binding
+  name: {{ include "mcs.fullname" . }}
 subjects:
 - kind: ServiceAccount
   name: {{ include "mcs.fullname" . }}-sa 
