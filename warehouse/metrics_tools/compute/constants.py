@@ -6,7 +6,7 @@ load_dotenv()
 cluster_namespace = env.required_str("METRICS_CLUSTER_NAMESPACE")
 cluster_name = env.required_str("METRICS_CLUSTER_NAME")
 cluster_image_repo = env.required_str(
-    "METRICS_CLUSTER_IMAGE_REPO", "ghcr.io/opensource-observer/dagster-dask"
+    "METRICS_CLUSTER_IMAGE_REPO", "ghcr.io/opensource-observer/oso"
 )
 cluster_image_tag = env.required_str("METRICS_CLUSTER_IMAGE_TAG")
 scheduler_memory_limit = env.required_str("METRICS_SCHEDULER_MEMORY_LIMIT", "90000Mi")
