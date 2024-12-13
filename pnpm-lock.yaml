@@ -46,11 +46,11 @@ importers:
         specifier: ^3.0.1
         version: 3.0.1(@types/react@18.3.11)(react@18.3.1)
       '@plasmicapp/react-web':
-        specifier: ^0.2.353
-        version: 0.2.353(@types/react@18.3.11)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        specifier: ^0.2.357
+        version: 0.2.357(@types/react@18.3.11)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@plasmicpkgs/plasmic-basic-components':
         specifier: ^0.0.230
-        version: 0.0.230(@plasmicapp/host@1.0.207(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@plasmicapp/query@0.1.79(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 0.0.230(@plasmicapp/host@1.0.208(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@plasmicapp/query@0.1.79(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
@@ -86,8 +86,8 @@ importers:
         specifier: ^9.12.0
         version: 9.12.0
       '@plasmicapp/cli':
-        specifier: ^0.1.331
-        version: 0.1.331
+        specifier: ^0.1.334
+        version: 0.1.334
       dotenv:
         specifier: ^16.4.5
         version: 16.4.5
@@ -3349,8 +3349,8 @@ packages:
     peerDependencies:
       react: '>=16.8.0'
 
-  '@plasmicapp/cli@0.1.331':
-    resolution: {integrity: sha512-7zciU9An9TOe007u22lKr3dNdd+kjNkii7Vr08kV1pbJlmUajRdh31vFWOLyVZUst/4T2AmK3o2X3gbiZDi4Gw==}
+  '@plasmicapp/cli@0.1.334':
+    resolution: {integrity: sha512-ZPliBIW6Q3s2VuPxSseDzJSReUyFKRBc64PtdbIrKgxuwPE5ewciPw2KpJe8Hdl6g1cmS/aE5EingW0ueHI78g==}
     engines: {node: '>=12'}
     hasBin: true
 
@@ -3360,8 +3360,8 @@ packages:
     peerDependencies:
       react: '>=16.8.0'
 
-  '@plasmicapp/data-sources@0.1.166':
-    resolution: {integrity: sha512-sw2oziZA87CW7yQcmxjIt5wDA8IAeoF8bJTSNvPMzGb4tq1Nlu5Fztzj/nQw9d1vQwEOpP49BjvAPe/E7YV9Kw==}
+  '@plasmicapp/data-sources@0.1.167':
+    resolution: {integrity: sha512-Z6xQhjBcMBPdUuFn4YwXtrn/T3/WSS2i8b3JkdSpndinA+/IV80rAJcDVdB/waJkq5dH/uS3uRNc0vr7xzGJEw==}
     engines: {node: '>=10'}
     peerDependencies:
       react: '>=16.8.0'
@@ -3372,8 +3372,8 @@ packages:
       react: '>=16.8.0'
       react-dom: '>=16.8.0'
 
-  '@plasmicapp/host@1.0.207':
-    resolution: {integrity: sha512-3Tb+BKB7rXJTMziQe1vxhmmNz8K2BTHK5cX/pb37oiTqrGJUYaOyXGB0f5u4+jwqRfGcCFrBa5POOgwJvDcOUQ==}
+  '@plasmicapp/host@1.0.208':
+    resolution: {integrity: sha512-zJqehUKlw2E5d/IVxoGTeENnnPimyPG9n7LRdh4eL0phtSU/X7XKHR7qfovb7XgFkoZhLf16HP0Z0uOnAMsMwg==}
     peerDependencies:
       react: '>=16.8.0'
       react-dom: '>=16.8.0'
@@ -3420,8 +3420,8 @@ packages:
       react: '>=16.8.0'
       react-dom: '>=16.8.0'
 
-  '@plasmicapp/nextjs-app-router@1.0.12':
-    resolution: {integrity: sha512-D3h90ie5eTCiaSEHoUumu/dJEgw+O7E+P1mZBqwj2QIETIWFhqa7lQAh4c4IlJEyqpLJd3Yvzsdsp2IamW/lmQ==}
+  '@plasmicapp/nextjs-app-router@1.0.14':
+    resolution: {integrity: sha512-c5734xbpOpMs6LgJzmyWAOBvPbelquNBUBrPvat8wnD6NsnYfW6x+JwOvAAo2W4VvjCEqYOgdAHqNV7xSBk1eg==}
     engines: {node: '>=16'}
     hasBin: true
     peerDependencies:
@@ -3430,6 +3430,13 @@ packages:
 
   '@plasmicapp/prepass@1.0.17':
     resolution: {integrity: sha512-xmQdVSa28EHfdVkKfnStbZjn/g8ZWzXBQWqGte6psA2lGOlSCY0kK4UjM2/9xFnhhnIMxCk9am4KtSdruxc0zg==}
+    engines: {node: '>=12'}
+    peerDependencies:
+      react: '>=16.8.0'
+      react-dom: '>=16.8.0'
+
+  '@plasmicapp/prepass@1.0.19':
+    resolution: {integrity: sha512-In8NIXotocOAVDZismfBzOxJnoHaQEKFDPGfr2VuVQ4z8cZ8S/MtccLXJLQe+bJPD0nOG4ZC8lyJOvq4KLbflg==}
     engines: {node: '>=12'}
     peerDependencies:
       react: '>=16.8.0'
@@ -3446,8 +3453,13 @@ packages:
     peerDependencies:
       react: ^16.8.0 || ^17.0.0 || ^18.0.0
 
-  '@plasmicapp/react-web@0.2.353':
-    resolution: {integrity: sha512-ps01CXWCQWAo5GuvaUmZAe/kKFMCLbEMpR5BPF6Y3agDgP1Cg35n3pjkc2kU+7GZ/8eJPBclIROrouIGvxcucA==}
+  '@plasmicapp/react-ssr-prepass@2.0.9':
+    resolution: {integrity: sha512-HO932uH/Y4otaDmjwzJbCLlokxNAdtU9VhDVUZUuVbzh0DhWaNyn/MINCu1oeZ4a6MIjdXFIm/U2VaxNxHYdsw==}
+    peerDependencies:
+      react: ^16.8.0 || ^17.0.0 || ^18.0.0
+
+  '@plasmicapp/react-web@0.2.357':
+    resolution: {integrity: sha512-OPtJQHGIefZu8FHFDUu4NObpRHl4E4CAmaoc+5i3XiSjNG4B3ce2NdGhNyDh7o8KbtpyxGilc+/Xvih+08WVCQ==}
     peerDependencies:
       react: '>=16.8.0'
       react-dom: '>=16.8.0'
@@ -17873,16 +17885,16 @@ snapshots:
       '@plasmicapp/query': 0.1.79(react@18.3.1)
       react: 18.3.1
 
-  '@plasmicapp/cli@0.1.331': {}
+  '@plasmicapp/cli@0.1.334': {}
 
   '@plasmicapp/data-sources-context@0.1.21(react@18.3.1)':
     dependencies:
       react: 18.3.1
 
-  '@plasmicapp/data-sources@0.1.166(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@plasmicapp/data-sources@0.1.167(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@plasmicapp/data-sources-context': 0.1.21(react@18.3.1)
-      '@plasmicapp/host': 1.0.207(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@plasmicapp/host': 1.0.208(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@plasmicapp/isomorphic-unfetch': 1.0.3
       '@plasmicapp/query': 0.1.79(react@18.3.1)
       fast-stringify: 2.0.0
@@ -17898,7 +17910,7 @@ snapshots:
       react-dom: 18.3.1(react@18.3.1)
       window-or-global: 1.0.1
 
-  '@plasmicapp/host@1.0.207(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@plasmicapp/host@1.0.208(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@plasmicapp/query': 0.1.79(react@18.3.1)
       csstype: 3.1.3
@@ -17968,11 +17980,11 @@ snapshots:
       react-dom: 18.3.1(react@18.3.1)
       yargs: 17.7.2
 
-  '@plasmicapp/nextjs-app-router@1.0.12(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@plasmicapp/nextjs-app-router@1.0.14(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
-      '@plasmicapp/prepass': 1.0.17(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@plasmicapp/prepass': 1.0.19(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@plasmicapp/query': 0.1.79(react@18.3.1)
-      cross-spawn: 7.0.3
+      cross-spawn: 7.0.6
       fkill: 8.1.1
       get-port: 7.1.0
       node-html-parser: 6.1.13
@@ -17987,6 +17999,13 @@ snapshots:
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
 
+  '@plasmicapp/prepass@1.0.19(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+    dependencies:
+      '@plasmicapp/query': 0.1.79(react@18.3.1)
+      '@plasmicapp/react-ssr-prepass': 2.0.9(react@18.3.1)
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+
   '@plasmicapp/query@0.1.79(react@18.3.1)':
     dependencies:
       react: 18.3.1
@@ -17996,15 +18015,19 @@ snapshots:
     dependencies:
       react: 18.3.1
 
-  '@plasmicapp/react-web@0.2.353(@types/react@18.3.11)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@plasmicapp/react-ssr-prepass@2.0.9(react@18.3.1)':
+    dependencies:
+      react: 18.3.1
+
+  '@plasmicapp/react-web@0.2.357(@types/react@18.3.11)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@plasmicapp/auth-react': 0.0.22(react@18.3.1)
-      '@plasmicapp/data-sources': 0.1.166(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@plasmicapp/data-sources': 0.1.167(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@plasmicapp/data-sources-context': 0.1.21(react@18.3.1)
-      '@plasmicapp/host': 1.0.207(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@plasmicapp/host': 1.0.208(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@plasmicapp/loader-splits': 1.0.62
-      '@plasmicapp/nextjs-app-router': 1.0.12(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@plasmicapp/prepass': 1.0.17(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@plasmicapp/nextjs-app-router': 1.0.14(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@plasmicapp/prepass': 1.0.19(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@plasmicapp/query': 0.1.79(react@18.3.1)
       '@react-aria/checkbox': 3.14.3(react@18.3.1)
       '@react-aria/focus': 3.17.1(react@18.3.1)
@@ -18042,9 +18065,9 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  '@plasmicpkgs/plasmic-basic-components@0.0.230(@plasmicapp/host@1.0.207(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@plasmicapp/query@0.1.79(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@plasmicpkgs/plasmic-basic-components@0.0.230(@plasmicapp/host@1.0.208(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@plasmicapp/query@0.1.79(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
-      '@plasmicapp/host': 1.0.207(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@plasmicapp/host': 1.0.208(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@plasmicapp/query': 0.1.79(react@18.3.1)
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
@@ -21770,7 +21793,6 @@ snapshots:
       path-key: 3.1.1
       shebang-command: 2.0.0
       which: 2.0.2
-    optional: true
 
   crypto-random-string@2.0.0: {}
 
@@ -23116,7 +23138,7 @@ snapshots:
 
   execa@5.1.1:
     dependencies:
-      cross-spawn: 7.0.3
+      cross-spawn: 7.0.6
       get-stream: 6.0.1
       human-signals: 2.1.0
       is-stream: 2.0.1

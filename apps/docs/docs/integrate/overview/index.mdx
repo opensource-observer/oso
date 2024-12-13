@@ -19,7 +19,7 @@ import EasLogo from "./eas.png";
 import OcLogo from "./open-collective.png";
 
 First, you need to set up your BigQuery account. You can do this by going to the
-[Get Started](../../get-started/index.mdx)
+[Get Started](../../get-started/index.md)
 page.
 
 ## OSO Data Exchange on Analytics Hub
@@ -87,9 +87,9 @@ in a live production application._
 
 From source data, we produce a "universal event table", currently stored at
 [`int_events`](https://models.opensource.observer/#!/model/model.opensource_observer.int_events).
-Each event consists of an [event_type](../../how-oso-works/event.md)
+Each event consists of an [event_type](../../guides/event.md)
 (e.g. a git commit or contract invocation),
-[to/from artifacts](../../how-oso-works/oss-directory/artifact.md),
+[to/from artifacts](../../guides/oss-directory/artifact.md),
 a timestamp, and an amount.
 
 From this event table, we aggregate events in downstream models to produce our metrics.

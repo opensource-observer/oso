@@ -116,7 +116,7 @@ where passport_address = '0xd8da6bf26964af9d7eed9e03e53415d37aa96045'
 
 When you’ve developed a novel impact metrics or data model,
 we encourage you to
-[contribute back to the OSO data pipeline](https://docs.opensource.observer/docs/contribute/data-models),
+[contribute back to the OSO data pipeline](../../docs/contribute-models/data-models),
 which is continuously deployed from our
 [open source repository](https://github.com/opensource-observer/oso/).
 
