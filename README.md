@@ -201,7 +201,7 @@ $ dbt run --select {name_of_the_model}
 
 For setup and common operations for each subproject, navigate into the respective directory and check out the `README.md`.
 
-You can also find some operations guides on our [documentation](https://docs.opensource.observer/docs/how-oso-works/ops/).
+You can also find some operations guides on our [documentation](https://docs.opensource.observer/docs/guides/ops/).
 
 ## License
 

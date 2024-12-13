@@ -6,7 +6,7 @@ sidebar_position: 0
 Open Source Observer is a fully open data pipeline for measuring the impact of open source efforts.
 That means all source code, data, and infrastructure is publicly available for use.
 
-- [**Get Started**](../get-started/index.mdx): to setup your Google account for data access and run your first query
+- [**Get Started**](../get-started/index.md): to setup your Google account for data access and run your first query
 - [**Data Overview**](./overview/index.mdx): for an overview of all data available
 - [**SQL Query Guide**](./query-data.mdx): to quickly query and download any data
 - [**Python notebooks**](./python-notebooks.md): to do more in-depth data science and processing
