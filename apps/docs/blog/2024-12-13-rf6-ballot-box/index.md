@@ -33,17 +33,19 @@ At this point, the game theory optimal strategy for a team like OSO would be to:
 - Build a wide range of contributions across multiple categories
 - Take a lot of high-floor, low-ceiling bets to maximize expected value
 
-We will not be pursuing this strategy in 2025. We also think the “hackathon-ification” of Retro Funding is a bad outcome for Optimism in general.
+We will not be pursuing this strategy in 2025 😅
 
-Incentiving impact over visibility is a hard problem to solve. Our view is that the only way to solve this is by learning how to measure impact.
+Incentiving impact over visibility is a hard problem to solve. But our assumptions are that:
 
-We don't solve this by expecting voters to put more time into each vote. It's great if some do, but Retro Funding needs to scale.
+- We won't solve it by expecting voters to put more time into each vote. It's great if some do, but Retro Funding needs to scale.
 
-We don't solve this by creating a centralized team to come up with their own highly subjective assessments. Expert assessment is a useful input, but this leads to the same gatekeeping and power-brokering that we see in real-world governments.
+- We won't solve it by creating a centralized team to come up with their own highly subjective assessments. Expert assessment is a useful input, but this leads to the same gatekeeping and power-brokering that we see in real-world governments.
 
-We don't solve this by adding comment threads, changing how projects are shuffled, or making other piecemeal improvements to the voting interface. Yes, these are welcome features, but they won't fundamentally change the game.
+- We won't solve it by adding comment threads, changing how projects are shuffled, or making other piecemeal improvements to the voting interface. Yes, these are welcome features, but they won't fundamentally change the game.
 
-The long-term success of Retro Funding depends on creating a consistent signal for how impact will be measured and rewarded. Clearer evaluation will motivate the best teams, knowing that their efforts will be recognized based on their actual outcomes—-not just their visibility to voters. We are encouraged to see Optimism taking steps to address this issue in 2025.
+Our view is that the only way to solve it is by learning how to measure impact.
+
+The long-term success of Retro Funding depends on creating a consistent signal for how impact will be measured and rewarded. Clearer evaluation will motivate the best teams, knowing that their efforts will be recognized based on their actual outcomes—-not just their visibility to voters. We are encouraged to see Optimism taking steps to address this issue in 2025, and will continue to direct our data science efforts towards this goal.
 
 Now let's dive into the ballot data from RF6.
 
