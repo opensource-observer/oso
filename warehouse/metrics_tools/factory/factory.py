@@ -369,6 +369,7 @@ class TimeseriesMetrics:
                         METRICS_COLUMNS_BY_ENTITY[entity_type].keys(),
                     )
                 },
+                enabled=self._raw_options.get("enabled", True),
             )
         logger.info("model generation complete")
 
@@ -437,6 +438,7 @@ class TimeseriesMetrics:
             start=self._raw_options["start"],
             grain=grain,
             imports={"pd": pd, "generated_rolling_query": generated_rolling_query},
+            enabled=self._raw_options.get("enabled", True),
         )
 
     def generate_time_aggregation_model_for_rendered_query(
@@ -492,6 +494,7 @@ class TimeseriesMetrics:
             start=self._raw_options["start"],
             additional_macros=self.generated_model_additional_macros,
             partitioned_by=partitioned_by,
+            enabled=self._raw_options.get("enabled", True),
         )
 
     def serializable_config(self, query_config: MetricQueryConfig):

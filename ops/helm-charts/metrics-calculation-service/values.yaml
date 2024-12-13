@@ -12,13 +12,13 @@ mcs:
     uvicorn:
       level: "INFO"
   image:
-    repo: ghcr.io/opensource-observer/dagster-dask
+    repo: ghcr.io/opensource-observer/oso
     tag: latest
   cluster:
     namespace: "default"
     name: "default"
     image:
-      repo: "ghcr.io/opensource-observer/dagster-dask"
+      repo: "ghcr.io/opensource-observer/oso"
       tag: "latest"
     scheduler:
       memory:

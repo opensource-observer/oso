@@ -402,3 +402,4 @@ class TimeseriesMetricsOptions(t.TypedDict):
     start: TimeLike
     timeseries_sources: t.NotRequired[t.List[str]]
     queries_dir: t.NotRequired[str]
+    enabled: t.NotRequired[bool]

@@ -2,7 +2,21 @@
 -- pr.
 MODEL (
   name metrics.issue_event_time_deltas,
-  kind VIEW
+  kind INCREMENTAL_BY_TIME_RANGE (
+    time_column bucket_day,
+    batch_size 180,
+    batch_concurrency 1
+  ),
+  start '2015-01-01',
+  cron '@daily',
+  partitioned_by (day("time"), "event_type"),
+  grain (
+    time,
+    event_type,
+    event_source,
+    from_artifact_id,
+    to_artifact_id
+  ),
 );
 select `time`,
   event_type,
