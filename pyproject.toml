@@ -87,8 +87,8 @@ oso = 'oso_lets_go.cli:cli'
 dagster-webserver = "^1.7.2"
 ipython = "^8.21.0"
 shandy-sqlfmt = { extras = ["jinjafmt"], version = "^0.21.1" }
-sqlfluff = "^3.0.7"
-sqlfluff-templater-dbt = "^3.0.7"
+sqlfluff = "~3.2.5"
+sqlfluff-templater-dbt = "~3.2.5"
 
 [build-system]
 requires = ["poetry-core"]
