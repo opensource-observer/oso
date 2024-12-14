@@ -1,5 +1,5 @@
 ---
-title: Data Overview
+title: Access Public Datasets
 sidebar_position: 1
 ---
 
@@ -18,9 +18,9 @@ import ArbitrumLogo from "./arbitrum.png";
 import EasLogo from "./eas.png";
 import OcLogo from "./open-collective.png";
 
-First, you need to set up your BigQuery account. You can do this by going to the
-[Get Started](../../get-started/index.md)
-page.
+OSO shares every dataset on BigQuery Analytics Hub.
+To get started,
+[set up your BigQuery account](../../get-started/bigquery.mdx).
 
 ## OSO Data Exchange on Analytics Hub
 
@@ -87,7 +87,7 @@ in a live production application._
 
 From source data, we produce a "universal event table", currently stored at
 [`int_events`](https://models.opensource.observer/#!/model/model.opensource_observer.int_events).
-Each event consists of an [event_type](../../guides/event.md)
+Each event consists of an [event_type](../../references/event.md)
 (e.g. a git commit or contract invocation),
 [to/from artifacts](../../guides/oss-directory/artifact.md),
 a timestamp, and an amount.

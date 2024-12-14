@@ -1,5 +1,5 @@
 ---
-title: Event Data Indexers
+title: Event Types
 sidebar_position: 3
 ---
 

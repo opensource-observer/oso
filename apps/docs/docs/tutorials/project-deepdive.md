@@ -11,7 +11,7 @@ All **projects** are defined as YAML files in [OSS Directory](https://github.com
 
 ## BigQuery
 
-If you haven't already, then the first step is to subscribe to OSO public datasets in BigQuery. You can do this by clicking the "Subscribe" button on our [Datasets page](../integrate/overview/#oso-production-data-pipeline).
+If you haven't already, then the first step is to subscribe to OSO public datasets in BigQuery. You can do this by clicking the "Subscribe" button on our [Datasets page](../integrate/datasets#oso-production-data-pipeline).
 
 The following queries should work if you copy-paste them into your [BigQuery console](https://console.cloud.google.com/bigquery).
 

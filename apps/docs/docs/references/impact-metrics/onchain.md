@@ -12,7 +12,7 @@ Onchain metrics include projects' smart contracts, transaction volumes, and sequ
 
 ---
 
-The latest version of our code metrics model can be viewed [here](https://models.opensource.observer/#!/model/model.opensource_observer.onchain_metrics_by_project_v1#description). For information about how addresses are tagged, please see: [Address Tagging](../oss-directory/artifact.md#tagging-addresses).
+The latest version of our code metrics model can be viewed [here](https://models.opensource.observer/#!/model/model.opensource_observer.onchain_metrics_by_project_v1#description). For information about how addresses are tagged, please see: [Address Tagging](../../guides/oss-directory/artifact.md#tagging-addresses).
 
 ### days_since_first_transaction
 

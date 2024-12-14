@@ -116,7 +116,7 @@ We're excited to see how this type of model evolves and is extended for future u
 
 ## Developing the impact metrics
 
-The following design principles guide the development and evolution of [impact metrics](../../docs/guides/impact-metrics/#principles):
+The following design principles guide the development and evolution of [impact metrics](../../docs/references/impact-metrics/#principles):
 
 - Verifiability: Metrics should be based on public data that can be independently verified. They should not rely on proprietary data sources or private APIs.
 - Reproducibility: Metrics should be easy to reproduce, simulate, and audit to ensure they are achieving the intended results. They should not have a "black box" element that makes them difficult to understand or replicate.

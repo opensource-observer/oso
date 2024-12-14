@@ -496,7 +496,7 @@ An **impact metric** is essentially a SQL query made against the OSO dataset tha
 There are a variety of statistical techniques for analyzing data about impact metrics and identifying trends. This section provides a basic example of how to create an impact metric and run a distribution analysis.
 
 :::tip
-The complete specification for an impact metric is available [here](../guides/impact-metrics/index.mdx).
+The complete specification for an impact metric is available [here](../references/impact-metrics/index.mdx).
 :::
 
 ### General guide for creating an impact metric
@@ -508,7 +508,7 @@ The complete specification for an impact metric is available [here](../guides/im
 
 #### 2. Define the Metric and Selection Criteria
 
-- **Metric**: Get inspiration from some of our [impact metrics](../guides/impact-metrics/index.mdx) or [propose a new metric](../contribute-models/data-models.md). Examples: "Number of Full-Time Developer Months", "Number of Dependent Onchain Apps", "Layer 2 Gas Fees", "Number of New Contributors".
+- **Metric**: Get inspiration from some of our [impact metrics](../references/impact-metrics/index.mdx) or [propose a new metric](../contribute-models/data-models.md). Examples: "Number of Full-Time Developer Months", "Number of Dependent Onchain Apps", "Layer 2 Gas Fees", "Number of New Contributors".
 - **Time Period**: Specify a time interval for applying the metric. Examples: "Last 6 months", "Since the project's inception".
 - **Selection Filter**: Make explicit the criteria to identify which projects are eligible (or ineligible) to be included in the analysis. Examples: "Projects with developer activity in the last 90 days", "Projects with NPM packages used by at least 5 onchain projects", "Projects with a permissive open source license (e.g., MIT, Apache 2.0) and a codebase that is at least 6 months old".
 

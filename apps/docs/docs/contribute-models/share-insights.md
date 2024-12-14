@@ -31,7 +31,7 @@ Contribute your own data visualization templates by adding them to the `./visual
 
 ### Impact Metrcs
 
-We're building scripts and analysis frameworks for community-generated impact metrics. Submissions must be replicable with data sourced entirely from the OSO data warehouse and should follow the follow the [Impact Metrics Specification](../guides/impact-metrics/).
+We're building scripts and analysis frameworks for community-generated impact metrics. Submissions must be replicable with data sourced entirely from the OSO data warehouse and should follow the follow the [Impact Metrics Specification](../references/impact-metrics/).
 
 In most cases, impact vectors will be reviewed and recognized via one of our Data Challenges, with separate instructions for showcasing work and submitting pull requests.
 
