@@ -438,7 +438,7 @@ def make_new_cluster_with_defaults():
     return make_new_cluster(
         image=f"{constants.cluster_image_repo}:{constants.cluster_image_tag}",
         cluster_id=constants.cluster_name,
-        service_account_name=constants.cluster_namespace,
+        service_account_name=constants.cluster_service_account,
         threads=constants.worker_threads,
         scheduler_memory_limit=constants.scheduler_memory_limit,
         scheduler_memory_request=constants.scheduler_memory_request,

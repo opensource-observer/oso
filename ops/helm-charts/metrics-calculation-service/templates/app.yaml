@@ -10,7 +10,7 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      {{- include "mcs.selectorLabels" . | nindent 6 }}
+      component: mcs-frontend
   template:
     metadata:
       labels:
@@ -39,6 +39,8 @@ spec:
         env:
           - name: METRICS_CLUSTER_NAMESPACE
             value: "{{ .Values.mcs.cluster.namespace }}"
+          - name: METRICS_CLUSTER_SERVICE_ACCOUNT
+            value: "{{ .Values.mcs.cluster.serviceAccount }}"
           - name: METRICS_CLUSTER_NAME
             value: "{{ .Values.mcs.cluster.name }}"
           - name: METRICS_CLUSTER_IMAGE_REPO
@@ -49,7 +51,9 @@ spec:
             value: "{{ .Values.mcs.cluster.scheduler.memory.limit }}"
           - name: METRICS_SCHEDULER_MEMORY_REQUEST
             value: "{{ .Values.mcs.cluster.scheduler.memory.request }}"
-          - name: METRICS_CLUSTER_WORKER_THREADS
+          - name: METRICS_SCHEDULER_POOL_TYPE
+            value: "{{ .Values.mcs.cluster.scheduler.poolType }}"
+          - name: METRICS_WORKER_THREADS
             value: "{{ .Values.mcs.cluster.worker.threads }}"
           - name: METRICS_WORKER_MEMORY_LIMIT
             value: "{{ .Values.mcs.cluster.worker.memory.limit }}"
@@ -57,6 +61,8 @@ spec:
             value: "{{ .Values.mcs.cluster.worker.memory.request }}"
           - name: METRICS_WORKER_DUCKDB_PATH
             value: "{{ .Values.mcs.cluster.worker.duckdb_path }}"
+          - name: METRICS_WORKER_POOL_TYPE
+            value: "{{ .Values.mcs.cluster.worker.poolType }}"
           - name: METRICS_GCS_BUCKET
             value: "{{ .Values.mcs.gcs.bucket }}"
           - name: METRICS_GCS_KEY_ID

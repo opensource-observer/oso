@@ -35,6 +35,7 @@ config = Config(
                 concurrent_tasks=int(
                     os.environ.get("SQLMESH_TRINO_CONCURRENT_TASKS", "64")
                 ),
+                retries=int(os.environ.get("SQLMESH_TRINO_RETRIES", "5")),
             ),
             state_connection=GCPPostgresConnectionConfig(
                 instance_connection_string=os.environ.get(
