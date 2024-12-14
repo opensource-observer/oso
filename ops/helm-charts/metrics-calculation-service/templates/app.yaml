@@ -10,11 +10,11 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      app: mcs
+      {{- include "mcs.labels" . | nindent 6 }}
   template:
     metadata:
       labels:
-        app: mcs
+        {{- include "mcs.labels" . | nindent 8 }}
     spec:
       serviceAccountName: {{ include "mcs.fullname" . }}
       containers:
