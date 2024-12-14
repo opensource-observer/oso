@@ -13,9 +13,11 @@ scheduler_memory_limit = env.required_str("METRICS_SCHEDULER_MEMORY_LIMIT", "900
 scheduler_memory_request = env.required_str(
     "METRICS_SCHEDULER_MEMORY_REQUEST", "85000Mi"
 )
+scheduler_pool_type = env.required_str("METRICS_WORKER_POOL_TYPE", "sqlmesh-scheduler")
 worker_threads = env.required_int("METRICS_WORKER_THREADS", 16)
 worker_memory_limit = env.required_str("METRICS_WORKER_MEMORY_LIMIT", "90000Mi")
 worker_memory_request = env.required_str("METRICS_WORKER_MEMORY_REQUEST", "85000Mi")
+worker_pool_type = env.required_str("METRICS_WORKER_POOL_TYPE", "sqlmesh-worker")
 
 gcs_bucket = env.required_str("METRICS_GCS_BUCKET")
 gcs_key_id = env.required_str("METRICS_GCS_KEY_ID")
