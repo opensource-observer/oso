@@ -11,7 +11,7 @@ import TabItem from '@theme/TabItem';
 
 Octant recently kicked off **Epoch 3**, its latest reward allocation round, featuring [30 projects](https://octant.app/projects). This round comes three months after Epoch 2, which had a total of 24 projects in it. There are 20 projects continuing on from Epoch 2 into Epoch 3 - including [Open Source Observer](https://octant.app/project/3/0x87fEEd6162CB7dFe6B62F64366742349bF4D1B05).
 
-During Epoch 2, we published a [blog post](https://docs.opensource.observer/blog/octant-epoch-02-ecosystem-analysis) with some high-level indicators about the 20+ open source software (OSS) projects participating in the round. In this post, we'll provide some insights about the new OSS projects and refresh our analysis for the returning projects.
+During Epoch 2, we published a [blog post](./2024-01-26-octant-epoch-02-ecosystem-analysis.mdx) with some high-level indicators about the 20+ open source software (OSS) projects participating in the round. In this post, we'll provide some insights about the new OSS projects and refresh our analysis for the returning projects.
 
 Overall, in Epoch 3, Octant is helping support:
 
