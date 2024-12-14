@@ -303,6 +303,14 @@ class TimeseriesMetrics:
 
                 parents.add(table_name)
                 if table_name in sources:
+                    logger.debug(f"skipping known time series source {table_name}")
+                    continue
+
+                if queries.get(table_name) is None:
+                    print("SKIP???")
+                    logger.debug(
+                        f"skipping table {name}. probably an external table to metrics"
+                    )
                     continue
 
                 try:

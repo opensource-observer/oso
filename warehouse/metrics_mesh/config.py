@@ -14,16 +14,15 @@ from sqlmesh.core.config.connection import (
 
 dotenv.load_dotenv()
 
-
 config = Config(
-    model_defaults=ModelDefaultsConfig(dialect="clickhouse", start="2024-08-01"),
+    model_defaults=ModelDefaultsConfig(dialect="duckdb", start="2024-08-01"),
     gateways={
         "local": GatewayConfig(
             connection=DuckDBConnectionConfig(
                 database=os.environ.get("SQLMESH_DUCKDB_LOCAL_PATH")
             ),
             variables={
-                "oso_source": "sources",
+                "oso_source_db": "sources",
             },
         ),
         "trino": GatewayConfig(
@@ -46,7 +45,8 @@ config = Config(
                 db=os.environ.get("SQLMESH_POSTGRES_DB", ""),
             ),
             variables={
-                "oso_source": "default",
+                "oso_source_db": "oso",
+                "oso_source_catalog": "bigquery",
             },
         ),
     },

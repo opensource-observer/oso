@@ -23,7 +23,7 @@ WITH events AS (
     event_type,
     time,
     amount
-  from @oso_source.timeseries_events_by_artifact_v0
+  from @oso_source('timeseries_events_by_artifact_v0')
   where CAST(time AS DATE) between STR_TO_DATE(@start_ds, '%Y-%m-%d')::Date and STR_TO_DATE(@end_ds, '%Y-%m-%d')::Date
 )
 SELECT from_artifact_id,

@@ -3,9 +3,7 @@
 MODEL (
   name metrics.issue_event_time_deltas,
   kind INCREMENTAL_BY_TIME_RANGE (
-    time_column bucket_day,
-    batch_size 180,
-    batch_concurrency 1
+    time_column bucket_day
   ),
   start '2015-01-01',
   cron '@daily',
@@ -18,7 +16,8 @@ MODEL (
     to_artifact_id
   ),
 );
-select `time`,
+select 
+  `time`,
   event_type,
   event_source,
   @oso_id(
@@ -42,4 +41,4 @@ select `time`,
     else date_diff('second', closed_at, `time`)
   end as closed_delta,
   comments
-from @oso_source.timeseries_events_aux_issues_by_artifact_v0
+from @oso_source('timeseries_events_aux_issues_by_artifact_v0')
