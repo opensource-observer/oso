@@ -1,4 +1,4 @@
--- Mirrors the artifacts_by_project_v1 table in the source database. This is
+-- Mirrors the projects_by_collection_v1 table in the source database. This is
 -- important for situations like trino and bigquery connections. As trino has no
 -- ways to optimize queries to bigquery since it's using the storage api
 MODEL (
