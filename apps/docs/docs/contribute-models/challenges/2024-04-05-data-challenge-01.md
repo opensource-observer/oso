@@ -72,7 +72,7 @@ Here’s what you need to do to participate in this (and future) data challenges
 
 1. Join the [Kariba Data Collective](https://www.kariba.network/). Participation is open to anyone in the data collective (free to join, but we review applications).
 2. Join our Discord and receive a **_data-collective_** role; ask questions and share code snippets in the **_#data-challenges_** channel.
-3. Bookmark [our docs and tutorials](../../guides/impact-metrics/) for creating impact metrics. Also make sure to browse our [Colab Notebooks](https://drive.google.com/drive/folders/1mzqrSToxPaWhsoGOR-UVldIsaX1gqP0F) for examples and inspiration.
+3. Bookmark [our docs and tutorials](../../references/impact-metrics/) for creating impact metrics. Also make sure to browse our [Colab Notebooks](https://drive.google.com/drive/folders/1mzqrSToxPaWhsoGOR-UVldIsaX1gqP0F) for examples and inspiration.
 4. Submit your impact metric(s) by opening an issue on our Insight repo [here](https://github.com/opensource-observer/insights/issues/new/choose).
 
 Every impact metric submission should include:

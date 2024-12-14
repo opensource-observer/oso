@@ -1,6 +1,6 @@
 ---
 title: FAQ
-sidebar_position: 5
+sidebar_position: 7
 ---
 
 ## Community
@@ -9,7 +9,7 @@ sidebar_position: 5
 
 Open Source Observer is a public good.
 All of our code is [open source](https://github.com/opensource-observer/oso/).
-All of our data sets and models are [open data](../integrate/overview/index.mdx).
+All of our data sets and models are [open data](../integrate/datasets/index.mdx).
 All of our infrastructure is [open](https://dagster.opensource.observer/locations) too.
 If we are going to transform funding for public goods,
 we need to live by an open source ethos.

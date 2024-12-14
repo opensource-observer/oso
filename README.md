@@ -212,4 +212,4 @@ is released under Apache 2.0
 This repository does not contain data.
 Datasets may include material that may be subject to third party rights.
 For details on each dataset, see
-the [Data Overview](https://docs.opensource.observer/docs/integrate/overview/).
+the [Data Overview](https://docs.opensource.observer/docs/integrate/datasets/).

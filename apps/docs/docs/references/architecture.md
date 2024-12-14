@@ -1,6 +1,6 @@
 ---
 title: Technical Architecture
-sidebar_position: 5
+sidebar_position: 2
 ---
 
 :::info
@@ -41,7 +41,7 @@ Anyone with can view, query, or build off of any stage in the pipeline.
 In the future we plan to explore a decentralized lakehouse.
 
 To see all datasets that you can subscribe to, check out our
-[Data Overview](../integrate/overview/index.mdx).
+[Data Overview](../integrate/datasets/index.mdx).
 
 ### dbt pipeline
 

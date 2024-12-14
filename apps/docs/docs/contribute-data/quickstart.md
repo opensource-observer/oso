@@ -1,6 +1,6 @@
 ---
 title: Dagster Quickstart
-sidebar_position: 2
+sidebar_position: 1
 ---
 
 # Dagster quickstart

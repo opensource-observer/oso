@@ -8,7 +8,9 @@ trivially easy to integrate any public dataset into
 the OSO data pipeline, provided the dataset exists in
 the US multi-region.
 
-If the dataset needs to be replicated, see our guide on
+If you want OSO to host a copy of
+the dataset in the US multi-region,
+see our guide on
 [BigQuery Data Transfer Service](./replication.md).
 
 ## Make the data available in the US region
