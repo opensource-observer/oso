@@ -5,4 +5,13 @@ MODEL (
   name metrics.projects_by_collection_v1,
   kind FULL
 );
-select * from @oso_source('artifacts_by_project_v1')
+select
+  project_id,
+  project_source,
+  project_namespace,
+  project_name,
+  collection_id,
+  collection_source,
+  collection_namespace,
+  collection_name
+from @oso_source('projects_by_collection_v1')

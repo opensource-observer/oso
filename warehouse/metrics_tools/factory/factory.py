@@ -60,28 +60,28 @@ TIME_AGGREGATION_TO_CRON = {
 }
 METRICS_COLUMNS_BY_ENTITY: t.Dict[str, t.Dict[str, exp.DataType]] = {
     "artifact": {
-        "metrics_sample_date": exp.DataType.build("DATE", dialect="clickhouse"),
-        "event_source": exp.DataType.build("String", dialect="clickhouse"),
-        "to_artifact_id": exp.DataType.build("String", dialect="clickhouse"),
-        "from_artifact_id": exp.DataType.build("String", dialect="clickhouse"),
-        "metric": exp.DataType.build("String", dialect="clickhouse"),
-        "amount": exp.DataType.build("Float64", dialect="clickhouse"),
+        "metrics_sample_date": exp.DataType.build("DATE", dialect="duckdb"),
+        "event_source": exp.DataType.build("STRING", dialect="duckdb"),
+        "to_artifact_id": exp.DataType.build("STRING", dialect="duckdb"),
+        "from_artifact_id": exp.DataType.build("STRING", dialect="duckdb"),
+        "metric": exp.DataType.build("STRING", dialect="duckdb"),
+        "amount": exp.DataType.build("DOUBLE", dialect="duckdb"),
     },
     "project": {
-        "metrics_sample_date": exp.DataType.build("DATE", dialect="clickhouse"),
-        "event_source": exp.DataType.build("String", dialect="clickhouse"),
-        "to_project_id": exp.DataType.build("String", dialect="clickhouse"),
-        "from_artifact_id": exp.DataType.build("String", dialect="clickhouse"),
-        "metric": exp.DataType.build("String", dialect="clickhouse"),
-        "amount": exp.DataType.build("Float64", dialect="clickhouse"),
+        "metrics_sample_date": exp.DataType.build("DATE", dialect="duckdb"),
+        "event_source": exp.DataType.build("STRING", dialect="duckdb"),
+        "to_project_id": exp.DataType.build("STRING", dialect="duckdb"),
+        "from_artifact_id": exp.DataType.build("STRING", dialect="duckdb"),
+        "metric": exp.DataType.build("STRING", dialect="duckdb"),
+        "amount": exp.DataType.build("DOUBLE", dialect="duckdb"),
     },
     "collection": {
-        "metrics_sample_date": exp.DataType.build("DATE", dialect="clickhouse"),
-        "event_source": exp.DataType.build("String", dialect="clickhouse"),
-        "to_collection_id": exp.DataType.build("String", dialect="clickhouse"),
-        "from_artifact_id": exp.DataType.build("String", dialect="clickhouse"),
-        "metric": exp.DataType.build("String", dialect="clickhouse"),
-        "amount": exp.DataType.build("Float64", dialect="clickhouse"),
+        "metrics_sample_date": exp.DataType.build("DATE", dialect="duckdb"),
+        "event_source": exp.DataType.build("STRING", dialect="duckdb"),
+        "to_collection_id": exp.DataType.build("STRING", dialect="duckdb"),
+        "from_artifact_id": exp.DataType.build("STRING", dialect="duckdb"),
+        "metric": exp.DataType.build("STRING", dialect="duckdb"),
+        "amount": exp.DataType.build("DOUBLE", dialect="duckdb"),
     },
 }
 
@@ -137,7 +137,7 @@ class TimeseriesMetrics:
         metrics_queries = [
             MetricQuery.load(
                 name=name,
-                default_dialect=raw_options.get("default_dialect", "clickhouse"),
+                default_dialect=raw_options.get("default_dialect", "duckdb"),
                 source=query_def,
                 queries_dir=queries_dir,
             )
@@ -307,7 +307,6 @@ class TimeseriesMetrics:
                     continue
 
                 if queries.get(table_name) is None:
-                    print("SKIP???")
                     logger.debug(
                         f"skipping table {name}. probably an external table to metrics"
                     )

@@ -1,9 +1,7 @@
 MODEL (
   name metrics.events_daily_to_artifact,
   kind INCREMENTAL_BY_TIME_RANGE (
-    time_column bucket_day,
-    batch_size 180,
-    batch_concurrency 1
+    time_column bucket_day
   ),
   start '2015-01-01',
   cron '@daily',

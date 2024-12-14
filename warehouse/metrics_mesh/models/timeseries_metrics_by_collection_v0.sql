@@ -10,9 +10,9 @@ WITH all_timeseries_metrics_by_collection AS (
     NULL AS unit
   FROM metrics.timeseries_metrics_to_collection
 )
-SELECT metric_id::String,
-  collection_id::String,
-  sample_date::Date,
-  amount::Float64,
-  unit::Nullable(String)
+SELECT metric_id::varchar,
+  collection_id::varchar,
+  sample_date::date,
+  amount::double,
+  unit::varchar
 FROM all_timeseries_metrics_by_collection

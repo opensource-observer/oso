@@ -10,7 +10,9 @@ def oso_source(evaluator: MacroEvaluator, table_name: exp.Expression):
     table_name_evaled = evaluator.eval_expression(table_name)
     table_name_str = ""
 
-    if isinstance(table_name_evaled, (exp.Literal, exp.Identifier)):
+    if isinstance(table_name_evaled, str):
+        table_name_str = table_name_evaled
+    elif isinstance(table_name_evaled, (exp.Literal, exp.Identifier)):
         table_name_str = table_name_evaled.this
     elif isinstance(table_name_evaled, exp.Table):
         table_name_str = table_name_evaled.this.this

@@ -10,9 +10,9 @@ WITH all_timeseries_metrics_by_artifact AS (
     NULL AS unit
   FROM metrics.timeseries_metrics_to_artifact
 )
-SELECT metric_id::String,
-  artifact_id::String,
-  sample_date::Date,
-  amount::Float64,
-  unit::Nullable(String)
+SELECT metric_id::varchar,
+  artifact_id::varchar,
+  sample_date::date,
+  amount::double,
+  unit::varchar
 FROM all_timeseries_metrics_by_artifact
