@@ -15,7 +15,7 @@ select MAX(time) as time,
   event_source,
   from_artifact_id,
   to_artifact_id
-from @oso_source.timeseries_events_by_artifact_v0
+from @oso_source('timeseries_events_by_artifact_v0')
 group by event_type,
   event_source,
   from_artifact_id,

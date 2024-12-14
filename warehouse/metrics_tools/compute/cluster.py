@@ -349,14 +349,17 @@ class ClusterManager:
 
 
 def make_new_cluster(
+    *,
     image: str,
     cluster_id: str,
     service_account_name: str,
     threads: int,
     scheduler_memory_request: str,
     scheduler_memory_limit: str,
+    scheduler_pool_type: str,
     worker_memory_request: str,
     worker_memory_limit: str,
+    worker_pool_type: str,
 ):
     spec = make_cluster_spec(
         name=f"{cluster_id}",
@@ -371,20 +374,22 @@ def make_new_cluster(
             "key": "pool_type",
             "effect": "NoSchedule",
             "operator": "Equal",
-            "value": "sqlmesh-worker",
+            "value": scheduler_pool_type,
         }
     ]
-    spec["spec"]["scheduler"]["spec"]["nodeSelector"] = {"pool_type": "sqlmesh-worker"}
+    spec["spec"]["scheduler"]["spec"]["nodeSelector"] = {
+        "pool_type": scheduler_pool_type
+    }
 
     spec["spec"]["worker"]["spec"]["tolerations"] = [
         {
             "key": "pool_type",
             "effect": "NoSchedule",
             "operator": "Equal",
-            "value": "sqlmesh-worker",
+            "value": worker_pool_type,
         }
     ]
-    spec["spec"]["worker"]["spec"]["nodeSelector"] = {"pool_type": "sqlmesh-worker"}
+    spec["spec"]["worker"]["spec"]["nodeSelector"] = {"pool_type": worker_pool_type}
 
     # Give the workers a different resource allocation
     for container in spec["spec"]["worker"]["spec"]["containers"]:
@@ -431,12 +436,14 @@ def make_new_cluster_with_defaults():
     from . import constants
 
     return make_new_cluster(
-        f"{constants.cluster_image_repo}:{constants.cluster_image_tag}",
-        constants.cluster_name,
-        constants.cluster_namespace,
+        image=f"{constants.cluster_image_repo}:{constants.cluster_image_tag}",
+        cluster_id=constants.cluster_name,
+        service_account_name=constants.cluster_namespace,
         threads=constants.worker_threads,
         scheduler_memory_limit=constants.scheduler_memory_limit,
         scheduler_memory_request=constants.scheduler_memory_request,
+        scheduler_pool_type=constants.scheduler_pool_type,
         worker_memory_limit=constants.worker_memory_limit,
         worker_memory_request=constants.worker_memory_request,
+        worker_pool_type=constants.worker_pool_type,
     )

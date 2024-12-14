@@ -1,9 +1,7 @@
 MODEL (
   name metrics.events_daily_to_artifact,
   kind INCREMENTAL_BY_TIME_RANGE (
-    time_column bucket_day,
-    batch_size 45,
-    batch_concurrency 1
+    time_column bucket_day
   ),
   start '2015-01-01',
   cron '@daily',
@@ -23,7 +21,7 @@ WITH events AS (
     event_type,
     time,
     amount
-  from @oso_source.timeseries_events_by_artifact_v0
+  from @oso_source('timeseries_events_by_artifact_v0')
   where CAST(time AS DATE) between STR_TO_DATE(@start_ds, '%Y-%m-%d')::Date and STR_TO_DATE(@end_ds, '%Y-%m-%d')::Date
 )
 SELECT from_artifact_id,

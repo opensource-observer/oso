@@ -60,28 +60,28 @@ TIME_AGGREGATION_TO_CRON = {
 }
 METRICS_COLUMNS_BY_ENTITY: t.Dict[str, t.Dict[str, exp.DataType]] = {
     "artifact": {
-        "metrics_sample_date": exp.DataType.build("DATE", dialect="clickhouse"),
-        "event_source": exp.DataType.build("String", dialect="clickhouse"),
-        "to_artifact_id": exp.DataType.build("String", dialect="clickhouse"),
-        "from_artifact_id": exp.DataType.build("String", dialect="clickhouse"),
-        "metric": exp.DataType.build("String", dialect="clickhouse"),
-        "amount": exp.DataType.build("Float64", dialect="clickhouse"),
+        "metrics_sample_date": exp.DataType.build("DATE", dialect="duckdb"),
+        "event_source": exp.DataType.build("STRING", dialect="duckdb"),
+        "to_artifact_id": exp.DataType.build("STRING", dialect="duckdb"),
+        "from_artifact_id": exp.DataType.build("STRING", dialect="duckdb"),
+        "metric": exp.DataType.build("STRING", dialect="duckdb"),
+        "amount": exp.DataType.build("DOUBLE", dialect="duckdb"),
     },
     "project": {
-        "metrics_sample_date": exp.DataType.build("DATE", dialect="clickhouse"),
-        "event_source": exp.DataType.build("String", dialect="clickhouse"),
-        "to_project_id": exp.DataType.build("String", dialect="clickhouse"),
-        "from_artifact_id": exp.DataType.build("String", dialect="clickhouse"),
-        "metric": exp.DataType.build("String", dialect="clickhouse"),
-        "amount": exp.DataType.build("Float64", dialect="clickhouse"),
+        "metrics_sample_date": exp.DataType.build("DATE", dialect="duckdb"),
+        "event_source": exp.DataType.build("STRING", dialect="duckdb"),
+        "to_project_id": exp.DataType.build("STRING", dialect="duckdb"),
+        "from_artifact_id": exp.DataType.build("STRING", dialect="duckdb"),
+        "metric": exp.DataType.build("STRING", dialect="duckdb"),
+        "amount": exp.DataType.build("DOUBLE", dialect="duckdb"),
     },
     "collection": {
-        "metrics_sample_date": exp.DataType.build("DATE", dialect="clickhouse"),
-        "event_source": exp.DataType.build("String", dialect="clickhouse"),
-        "to_collection_id": exp.DataType.build("String", dialect="clickhouse"),
-        "from_artifact_id": exp.DataType.build("String", dialect="clickhouse"),
-        "metric": exp.DataType.build("String", dialect="clickhouse"),
-        "amount": exp.DataType.build("Float64", dialect="clickhouse"),
+        "metrics_sample_date": exp.DataType.build("DATE", dialect="duckdb"),
+        "event_source": exp.DataType.build("STRING", dialect="duckdb"),
+        "to_collection_id": exp.DataType.build("STRING", dialect="duckdb"),
+        "from_artifact_id": exp.DataType.build("STRING", dialect="duckdb"),
+        "metric": exp.DataType.build("STRING", dialect="duckdb"),
+        "amount": exp.DataType.build("DOUBLE", dialect="duckdb"),
     },
 }
 
@@ -137,7 +137,7 @@ class TimeseriesMetrics:
         metrics_queries = [
             MetricQuery.load(
                 name=name,
-                default_dialect=raw_options.get("default_dialect", "clickhouse"),
+                default_dialect=raw_options.get("default_dialect", "duckdb"),
                 source=query_def,
                 queries_dir=queries_dir,
             )
@@ -303,6 +303,13 @@ class TimeseriesMetrics:
 
                 parents.add(table_name)
                 if table_name in sources:
+                    logger.debug(f"skipping known time series source {table_name}")
+                    continue
+
+                if queries.get(table_name) is None:
+                    logger.debug(
+                        f"skipping table {name}. probably an external table to metrics"
+                    )
                     continue
 
                 try:
@@ -369,6 +376,7 @@ class TimeseriesMetrics:
                         METRICS_COLUMNS_BY_ENTITY[entity_type].keys(),
                     )
                 },
+                enabled=self._raw_options.get("enabled", True),
             )
         logger.info("model generation complete")
 
@@ -437,6 +445,7 @@ class TimeseriesMetrics:
             start=self._raw_options["start"],
             grain=grain,
             imports={"pd": pd, "generated_rolling_query": generated_rolling_query},
+            enabled=self._raw_options.get("enabled", True),
         )
 
     def generate_time_aggregation_model_for_rendered_query(
@@ -492,6 +501,7 @@ class TimeseriesMetrics:
             start=self._raw_options["start"],
             additional_macros=self.generated_model_additional_macros,
             partitioned_by=partitioned_by,
+            enabled=self._raw_options.get("enabled", True),
         )
 
     def serializable_config(self, query_config: MetricQueryConfig):

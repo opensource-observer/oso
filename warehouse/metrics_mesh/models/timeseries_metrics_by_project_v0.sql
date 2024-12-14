@@ -10,9 +10,9 @@ WITH all_timeseries_metrics_by_project AS (
     NULL AS unit
   FROM metrics.timeseries_metrics_to_project
 )
-SELECT metric_id::String,
-  project_id::String,
-  sample_date::Date,
-  amount::Float64,
-  unit::Nullable(String)
+SELECT metric_id::varchar,
+  project_id::varchar,
+  sample_date::date,
+  amount::double,
+  unit::varchar
 FROM all_timeseries_metrics_by_project

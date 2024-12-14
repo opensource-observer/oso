@@ -1,7 +1,6 @@
 MODEL (
   name metrics.metrics_v0,
-  kind FULL,
-  dialect "clickhouse"
+  kind FULL
 );
 WITH unioned_metric_names AS (
   SELECT DISTINCT metric
@@ -29,13 +28,13 @@ metrics_v0_no_casting AS (
     'UNKNOWN' AS aggregation_function
   FROM all_timeseries_metric_names
 )
-select metric_id::String,
-  metric_source::String,
-  metric_namespace::String,
-  metric_name::String,
-  display_name::String,
-  description::Nullable(String),
-  raw_definition::Nullable(String),
-  definition_ref::Nullable(String),
-  aggregation_function::Nullable(String)
+select metric_id::varchar,
+  metric_source::varchar,
+  metric_namespace::varchar,
+  metric_name::varchar,
+  display_name::varchar,
+  description::varchar,
+  raw_definition::varchar,
+  definition_ref::varchar,
+  aggregation_function::varchar
 FROM metrics_v0_no_casting

@@ -23,7 +23,7 @@ for path in $images_to_build; do
     latest_image="${image_repo}:latest"
 
 
-    echo "Building ${image_name} plugin"
+    echo "Building ${image_name} image"
     docker build \
         -t ${sha_image} \
         -t ${latest_image} \
