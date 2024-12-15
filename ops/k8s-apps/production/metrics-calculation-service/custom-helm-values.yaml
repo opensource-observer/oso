@@ -8,6 +8,7 @@ spec:
       cluster:
         name: mcs-worker
         namespace: production-mcs
+        serviceAccount: production-mcs
         image:
           repo: "ghcr.io/opensource-observer/oso"
           tag: "latest"
