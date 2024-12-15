@@ -4,12 +4,27 @@ kind: ClusterRole
 metadata:
   name: {{ include "mcs.fullname" . }}
 rules:
-- apiGroups: [""]
-  resources: ["pods", "services"]
-  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
-- apiGroups: ["apps"]
-  resources: ["deployments"]
-  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  # Application: watching & handling for the custom resource we declare.
+  - apiGroups: [kubernetes.dask.org]
+    resources: [daskclusters, daskworkergroups, daskworkergroups/scale, daskjobs, daskautoscalers]
+    verbs: [get, list, watch, patch, create, delete]
+
+  # Application: other resources it needs to watch and get information from.
+  - apiGroups:
+    - ""  # indicates the core API group
+    resources: [pods, pods/status]
+    verbs:
+    - "get"
+    - "list"
+    - "watch"
+
+  - apiGroups:
+    - ""  # indicates the core API group
+    resources: [services]
+    verbs:
+    - "get"
+    - "list"
+    - "watch"
 
 ---
 apiVersion: rbac.authorization.k8s.io/v1
@@ -18,9 +33,9 @@ metadata:
   name: {{ include "mcs.fullname" . }}
 subjects:
 - kind: ServiceAccount
-  name: {{ include "mcs.fullname" . }}-sa 
+  name: {{ include "mcs.fullname" . }}
   namespace: {{ .Release.Namespace }}
 roleRef:
   kind: ClusterRole
-  name: {{ include "mcs.fullname" . }}-role
+  name: {{ include "mcs.fullname" . }}
   apiGroup: rbac.authorization.k8s.io

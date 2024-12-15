@@ -5,6 +5,25 @@ metadata:
 spec:
   values:
     mcs:
+      cluster:
+        name: mcs-worker
+        namespace: production-mcs
+        serviceAccount: production-mcs
+        image:
+          repo: "ghcr.io/opensource-observer/oso"
+          tag: "latest"
+        scheduler:
+          memory:
+            limit: "23Gi"
+            request: "20Gi"
+          poolType: "mcs-scheduler"
+        worker:
+          threads: "16"
+          memory:
+            limit: "96Gi"
+            request: "90Gi"
+          poolType: "mcs-worker"
+          duckdb_path: "/scratch/mcs-local.db"
       trino:
         host: production-trino-trino.production-trino.svc.cluster.local
         port: 8080

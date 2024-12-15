@@ -36,3 +36,28 @@ async def test_cache_export_manager():
     assert export_table_1.keys() == {"table1", "table2", "table3"}
 
     assert adapter_mock.export_table.call_count == 3
+
+
+class TestException(Exception):
+    pass
+
+
+@pytest.mark.asyncio
+async def test_cache_export_manager_fails():
+    adapter_mock = AsyncMock(FakeExportAdapter)
+    adapter_mock.export_table = AsyncMock(side_effect=TestException("test"))
+    cache = await CacheExportManager.setup(adapter_mock)
+    execution_time = datetime.now()
+
+    # Attempt to export tables again but this should be mostly cache hits except
+    # for table3
+    failed = False
+    try:
+        await asyncio.wait_for(
+            cache.resolve_export_references(["table1"], execution_time), timeout=5
+        )
+    except TestException as e:
+        assert str(e) == "test"
+        failed = True
+    await cache.stop()
+    assert failed, "Expected exception to be raised"

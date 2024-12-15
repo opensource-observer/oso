@@ -3,7 +3,9 @@
 MODEL (
   name metrics.issue_event_time_deltas,
   kind INCREMENTAL_BY_TIME_RANGE (
-    time_column time
+    time_column time,
+    batch_size 365,
+    batch_concurrency 1
   ),
   start '2015-01-01',
   cron '@daily',
