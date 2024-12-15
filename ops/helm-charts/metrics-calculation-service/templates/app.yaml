@@ -44,7 +44,7 @@ spec:
         tolerations:
           {{ toYaml . | nindent 12 }}
         {{- end }}
-        {{- with. Values.mcs.frontend.resources }}
+        {{- with. .Values.mcs.frontend.resources }}
         resources:
           {{ toYaml . | nindent 12 }}
         {{- end }}
