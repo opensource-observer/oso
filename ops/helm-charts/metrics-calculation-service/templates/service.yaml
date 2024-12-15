@@ -8,5 +8,5 @@ spec:
     {{ include "mcs.selectorLabels" . | nindent 4 }}
   ports:
     - protocol: TCP
-      port: {{ .Values.mcs.service.port }}
+      port: {{ .Values.mcs.frontend.service.port }}
       targetPort: 8000
