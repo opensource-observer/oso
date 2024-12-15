@@ -19,7 +19,6 @@ spec:
       serviceAccountName: {{ include "mcs.fullname" . }}
       containers:
       - name: metrics-calculation-service
-        # TODO: Remove latest tag and use a specific version
         image: {{ .Values.mcs.image.repo }}:{{ .Values.mcs.image.tag }}
         command: ["uvicorn"] 
         args: 
@@ -33,6 +32,22 @@ spec:
         imagePullPolicy: Always
         ports:
           - containerPort: 8000
+        {{- with .Values.mcs.frontend.affinity }}
+        affinity:
+          {{ toYaml . | nindent 12 }}
+        {{- end }}
+        {{- with .Values.mcs.frontend.nodeSelector }}
+        nodeSelector:
+          {{ toYaml . | nindent 12 }}
+        {{- end }}
+        {{- with .Values.mcs.frontend.tolerations }}
+        tolerations:
+          {{ toYaml . | nindent 12 }}
+        {{- end }}
+        {{- with. Values.mcs.frontend.resources }}
+        resources:
+          {{ toYaml . | nindent 12 }}
+        {{- end }}
         volumeMounts:
           - name: config
             mountPath: /config

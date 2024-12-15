@@ -675,7 +675,7 @@ def generated_rolling_query(
             start=start,
             end=end,
             dialect="duckdb",
-            batch_size=1,
+            batch_size=env.ensure_int("SQLMESH_MCS_BATCH_SIZE", 10),
             columns=columns,
             ref=ref,
             locals=sqlmesh_vars,
