@@ -413,7 +413,7 @@ class TimeseriesMetrics:
 
         columns = METRICS_COLUMNS_BY_ENTITY[ref["entity_type"]]
 
-        kind_common = {"batch_concurrency": 1}
+        kind_common = {"batch_size": 365, "batch_concurrency": 1}
         partitioned_by = ("day(metrics_sample_date)",)
         window = ref.get("window")
         assert window is not None
