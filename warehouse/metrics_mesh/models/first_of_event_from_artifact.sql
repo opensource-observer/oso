@@ -1,7 +1,7 @@
 MODEL (
   name metrics.first_of_event_from_artifact,
   kind FULL,
-  partitioned_by (day("time"), "event_type", "event_source"),
+  partitioned_by (year("time"), "event_type", "event_source"),
   grain (
     time,
     event_type,
