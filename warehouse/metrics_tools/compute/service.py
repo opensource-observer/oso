@@ -130,7 +130,12 @@ class MetricsCalculationService:
         self.logger.debug(f"job[{job_id}] cluster ready")
 
         self.logger.debug(f"job[{job_id}] waiting for dependencies to be exported")
-        exported_dependent_tables_map = await self.resolve_dependent_tables(input)
+        try:
+            exported_dependent_tables_map = await self.resolve_dependent_tables(input)
+        except Exception as e:
+            self.logger.error(f"job[{job_id}] failed to export dependencies: {e}")
+            await self._notify_job_failed(job_id, 0, 0)
+            return
         self.logger.debug(f"job[{job_id}] dependencies exported")
 
         tasks = await self._batch_query_to_scheduler(
@@ -248,6 +253,10 @@ class MetricsCalculationService:
         """Submit a job to the cluster to compute the metrics"""
         self.logger.debug("submitting job")
         job_id = str(uuid.uuid4())
+
+        self.logger.debug(
+            f"job[{job_id}] logging request: {input.model_dump_json(indent=2)}"
+        )
 
         # Files are organized in a way that can be searched by date such that we
         # can easily clean old files
