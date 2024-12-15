@@ -184,7 +184,7 @@ class MetricsCalculationService:
             input, input.batch_size
         ):
             task_id = f"{job_id}-{batch_id}"
-            result_path = os.path.join(result_path_base, job_id, f"{batch_id}.parquet")
+            result_path = os.path.join(result_path_base, f"{batch_id}.parquet")
 
             self.logger.debug(f"job[{job_id}]: Submitting task {task_id}")
 
