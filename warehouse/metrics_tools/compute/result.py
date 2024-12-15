@@ -165,18 +165,53 @@ class TrinoImportAdapter(DBImportAdapter):
                 external_location = '{import_path}'
             )
         """
+
+        processed_columns = [
+            self.process_columns_for_import(
+                column_name,
+                parse_one(
+                    column_type,
+                    dialect=source_ref.columns.dialect,
+                    into=exp.DataType,
+                ),
+            )
+            for column_name, column_type in source_ref.columns
+        ]
+        column_defs = [row[1] for row in processed_columns]
+
         create_query = parse_one(base_create_query)
-        create_query.this.set(
-            "expressions",
-            [
-                exp.ColumnDef(
-                    this=exp.to_identifier(column_name),
-                    kind=parse_one(column_type, into=exp.DataType),
-                )
-                for column_name, column_type in source_ref.columns
-            ],
-        )
+        create_query.this.set("expressions", column_defs)
         await self.run_query(create_query.sql(dialect="trino"))
+
+    def process_columns_for_import(
+        self,
+        column_name: str,
+        column_type: exp.Expression,
+    ) -> t.Tuple[exp.Identifier, exp.ColumnDef]:
+        assert isinstance(
+            column_type, exp.DataType
+        ), "Column type must be an instance of DataType"
+
+        self.logger.debug(f"processing column for import {column_name} {column_type}")
+
+        # If the column to be exported is a date it will be output as an int64
+        # but that will not work when we try to query the parquet files from
+        # trino. So we will want to make sure that we import that as a
+        # timestamp. We can cast it downstream.
+        column_identifier = exp.to_identifier(column_name)
+        processed_column_type = column_type
+        if column_type.this == exp.DataType.Type.DATE:
+            processed_column_type = exp.DataType(
+                this=exp.DataType.Type.TIMESTAMP, nested=False
+            )
+
+        return (
+            column_identifier,
+            exp.ColumnDef(
+                this=column_identifier,
+                kind=processed_column_type,
+            ),
+        )
 
     async def translate_reference(self, reference: ExportReference) -> ExportReference:
         self.logger.info(f"Translating reference {reference}")
