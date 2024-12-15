@@ -17,6 +17,18 @@ spec:
         {{- include "mcs.selectorLabels" . | nindent 8 }}
     spec:
       serviceAccountName: {{ include "mcs.fullname" . }}
+      {{- with .Values.mcs.frontend.affinity }}
+      affinity:
+        {{ toYaml . | nindent 12 }}
+      {{- end }}
+      {{- with .Values.mcs.frontend.nodeSelector }}
+      nodeSelector:
+        {{ toYaml . | nindent 12 }}
+      {{- end }}
+      {{- with .Values.mcs.frontend.tolerations }}
+      tolerations:
+        {{ toYaml . | nindent 12 }}
+      {{- end }}
       containers:
       - name: metrics-calculation-service
         image: {{ .Values.mcs.image.repo }}:{{ .Values.mcs.image.tag }}
@@ -32,18 +44,6 @@ spec:
         imagePullPolicy: Always
         ports:
           - containerPort: 8000
-        {{- with .Values.mcs.frontend.affinity }}
-        affinity:
-          {{ toYaml . | nindent 12 }}
-        {{- end }}
-        {{- with .Values.mcs.frontend.nodeSelector }}
-        nodeSelector:
-          {{ toYaml . | nindent 12 }}
-        {{- end }}
-        {{- with .Values.mcs.frontend.tolerations }}
-        tolerations:
-          {{ toYaml . | nindent 12 }}
-        {{- end }}
         {{- with .Values.mcs.frontend.resources }}
         resources:
           {{ toYaml . | nindent 12 }}
