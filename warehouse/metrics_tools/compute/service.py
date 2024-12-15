@@ -12,6 +12,7 @@ from dask.distributed import CancelledError, Future
 from metrics_tools.compute.result import DBImportAdapter
 from metrics_tools.compute.worker import execute_duckdb_load
 from metrics_tools.runner import FakeEngineAdapter, MetricsRunner
+from pyee.asyncio import AsyncIOEventEmitter
 
 from .cache import CacheExportManager
 from .cluster import ClusterManager
@@ -102,17 +103,19 @@ class MetricsCalculationService:
         self.job_tasks = {}
         self.job_state_lock = asyncio.Lock()
         self.logger = log_override or logger
+        self.emitter = AsyncIOEventEmitter()
 
     async def handle_query_job_submit_request(
         self,
         job_id: str,
         result_path_base: str,
         input: QueryJobSubmitRequest,
-        export_reference: ExportReference,
+        calculation_export: ExportReference,
+        final_export: ExportReference,
     ):
         try:
             await self._handle_query_job_submit_request(
-                job_id, result_path_base, input, export_reference
+                job_id, result_path_base, input, calculation_export, final_export
             )
         except Exception as e:
             self.logger.error(f"job[{job_id}] failed with exception: {e}")
@@ -123,7 +126,8 @@ class MetricsCalculationService:
         job_id: str,
         result_path_base: str,
         input: QueryJobSubmitRequest,
-        export_reference: ExportReference,
+        calculation_export: ExportReference,
+        final_export: ExportReference,
     ):
         self.logger.debug(f"job[{job_id}] waiting for cluster to be ready")
         await self.cluster_manager.wait_for_ready()
@@ -160,7 +164,7 @@ class MetricsCalculationService:
 
         # Import the final result into the database
         self.logger.info("job[{job_id}]: importing final result into the database")
-        await self.import_adapter.import_reference(export_reference)
+        await self.import_adapter.import_reference(calculation_export, final_export)
 
         self.logger.debug(f"job[{job_id}]: notifying job completed")
         await self._notify_job_completed(job_id, completed, total)
@@ -252,7 +256,7 @@ class MetricsCalculationService:
     async def submit_job(self, input: QueryJobSubmitRequest):
         """Submit a job to the cluster to compute the metrics"""
         self.logger.debug("submitting job")
-        job_id = str(uuid.uuid4())
+        job_id = f"export_{str(uuid.uuid4().hex)}"
 
         self.logger.debug(
             f"job[{job_id}] logging request: {input.model_dump_json(indent=2)}"
@@ -271,13 +275,16 @@ class MetricsCalculationService:
             "*.parquet",
         )
 
+        # This is the export that the workers should write to
+        calculation_export = ExportReference(
+            table_name=job_id,
+            type=ExportType.GCS,
+            columns=ColumnsDefinition(columns=input.columns, dialect=input.dialect),
+            payload={"gcs_path": result_path},
+        )
+
         final_expected_reference = await self.import_adapter.translate_reference(
-            ExportReference(
-                table_name=job_id,
-                type=ExportType.GCS,
-                columns=ColumnsDefinition(columns=input.columns, dialect=input.dialect),
-                payload={"gcs_path": result_path},
-            )
+            calculation_export
         )
 
         await self._notify_job_pending(job_id, 1)
@@ -286,6 +293,7 @@ class MetricsCalculationService:
                 job_id,
                 result_path_base,
                 input,
+                calculation_export,
                 final_expected_reference,
             )
         )
@@ -436,6 +444,10 @@ class MetricsCalculationService:
         if not state:
             raise ValueError(f"Job {job_id} not found")
         return state.as_response(include_stats=include_stats)
+
+    async def wait_for_job_status(self, job_id: str) -> QueryJobStatusResponse:
+        # self.emitter.once(f"job_status:{job_id}")
+        raise NotImplementedError("This method is not implemented yet")
 
     async def add_existing_exported_table_references(
         self, update: t.Dict[str, ExportReference]

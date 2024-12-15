@@ -1,31 +1,25 @@
 """Run metrics queries for a given boundary"""
 
-import duckdb
-import arrow
-import logging
+import abc
 import asyncio
-from metrics_tools.utils.glot import str_or_expressions
-from sqlmesh import EngineAdapter
-from sqlmesh.core.context import ExecutionContext
-from sqlmesh.core.config import DuckDBConnectionConfig
-from sqlmesh.core.engine_adapter.duckdb import DuckDBEngineAdapter
-from sqlmesh.core.macros import RuntimeStage
+import logging
+import typing as t
+from datetime import datetime
 
+import arrow
+import duckdb
+import pandas as pd
 from metrics_tools.definition import PeerMetricDependencyRef
 from metrics_tools.intermediate import run_macro_evaluator
-from metrics_tools.macros import (
-    metrics_end,
-    metrics_sample_date,
-    metrics_start,
-)
+from metrics_tools.macros import metrics_end, metrics_sample_date, metrics_start
 from metrics_tools.models import create_unregistered_macro_registry
-import pandas as pd
-import abc
-
-from datetime import datetime
-import typing as t
-
+from metrics_tools.utils.glot import str_or_expressions
 from sqlglot import exp
+from sqlmesh import EngineAdapter
+from sqlmesh.core.config import DuckDBConnectionConfig
+from sqlmesh.core.context import ExecutionContext
+from sqlmesh.core.engine_adapter.duckdb import DuckDBEngineAdapter
+from sqlmesh.core.macros import RuntimeStage
 
 logger = logging.getLogger(__name__)
 
@@ -211,14 +205,14 @@ class MetricsRunner:
 
     def render_rolling_queries(self, start: datetime, end: datetime) -> t.Iterator[str]:
         # Given a rolling input render all the rolling queries
-        logger.debug(f"render_rolling_rolling called with start={start} and end={end}")
+        logger.debug(f"render_rolling_queries called with start={start} and end={end}")
         for day in arrow.Arrow.range("day", arrow.get(start), arrow.get(end)):
             rendered_query = self.render_query(day.datetime, day.datetime)
             yield rendered_query
 
     async def render_rolling_queries_async(self, start: datetime, end: datetime):
         logger.debug(
-            f"render_rolling_rolling_async called with start={start} and end={end}"
+            f"render_rolling_queries_async called with start={start} and end={end}"
         )
         for day in arrow.Arrow.range("day", arrow.get(start), arrow.get(end)):
             rendered_query = await asyncio.to_thread(

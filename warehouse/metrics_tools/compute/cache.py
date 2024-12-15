@@ -110,18 +110,20 @@ class TrinoExportAdapter(DBExportAdapter):
             )
         """
 
-        # Parse the create query
-        create_query = parse_one(base_create_query)
-        # Rewrite the column definitions we need to rewrite. Trino's hive
-        # connector has some issues with certain column types so we will
-        # forcibly cast those columns to values that will work
-        column_defs: t.List[exp.ColumnDef] = [
-            self.create_column_def(
-                column_name, parse_one(column_type, into=exp.DataType)
-            )
+        # Trino's hive connector has some issues with certain column types so we
+        # will forcibly cast those columns to values that will work
+        processed_columns: t.List[
+            t.Tuple[exp.Identifier, exp.ColumnDef, exp.Expression]
+        ] = [
+            self.process_columns(column_name, parse_one(column_type, into=exp.DataType))
             for column_name, column_type in columns
         ]
-        create_query.this.set("expressions", column_defs)
+
+        # Parse the create query
+        create_query = parse_one(base_create_query)
+        # Rewrite the column definitions we need to rewrite.
+
+        create_query.this.set("expressions", [row[1] for row in processed_columns])
 
         # Execute the create query which will create the export table
         await self.run_query(create_query.sql(dialect="trino"))
@@ -134,9 +136,8 @@ class TrinoExportAdapter(DBExportAdapter):
             FROM {table_exp}
         """
 
-        column_identifiers = [
-            exp.to_identifier(column_name) for column_name, _ in columns
-        ]
+        column_identifiers = [row[0] for row in processed_columns]
+        column_selects = [row[2] for row in processed_columns]
 
         # Rewrite the column identifiers in the insert into statement
         insert_query = parse_one(base_insert_query)
@@ -147,7 +148,7 @@ class TrinoExportAdapter(DBExportAdapter):
 
         # Rewrite the column identifiers in the select statement
         select = t.cast(exp.Select, insert_query.expression)
-        select.set("expressions", column_identifiers)
+        select.set("expressions", column_selects)
 
         # Execute the insert query which will populate the export table
         await self.run_query(insert_query.sql(dialect="trino"))
@@ -165,9 +166,9 @@ class TrinoExportAdapter(DBExportAdapter):
         await cursor.execute(query)
         return await cursor.fetchall()
 
-    def create_column_def(
+    def process_columns(
         self, column_name: str, column_type: exp.Expression
-    ) -> exp.ColumnDef:
+    ) -> t.Tuple[exp.Identifier, exp.ColumnDef, exp.Expression]:
         assert isinstance(
             column_type, exp.DataType
         ), "column_type must parse into DataType"
@@ -175,12 +176,14 @@ class TrinoExportAdapter(DBExportAdapter):
         self.logger.debug(
             f"creating column def for column_name: {column_name} column_type: {column_type}"
         )
+        column_select = exp.to_identifier(column_name)
+        column_identifier = exp.to_identifier(column_name)
 
         if column_type.this == exp.DataType.Type.TIMESTAMPTZ:
             # We need to cast the timestamptz to a timestamp without time zone that is
             # compatible with the hive connector
             column_type = exp.DataType(this=exp.DataType.Type.TIMESTAMP, nested=False)
-            column_def_this = exp.Cast(
+            column_select = exp.Cast(
                 this=exp.Anonymous(
                     this="at_timezone",
                     expressions=[
@@ -192,13 +195,15 @@ class TrinoExportAdapter(DBExportAdapter):
             )
         elif column_type.this == exp.DataType.Type.TIMESTAMP:
             column_type = exp.DataType(this=exp.DataType.Type.TIMESTAMP, nested=False)
-            column_def_this = exp.Cast(
+            column_select = exp.Cast(
                 this=exp.to_identifier(column_name),
                 to=column_type,
             )
-        else:
-            column_def_this = exp.to_identifier(column_name)
-        return exp.ColumnDef(this=column_def_this, kind=column_type)
+        return (
+            column_identifier,
+            exp.ColumnDef(this=column_identifier, kind=column_type),
+            column_select,
+        )
 
     async def clean_export_table(self, table: str):
         pass
