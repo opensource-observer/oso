@@ -22,12 +22,12 @@ from .types import (
     ColumnsDefinition,
     ExportReference,
     ExportType,
+    JobStatusResponse,
+    JobSubmitRequest,
+    JobSubmitResponse,
     QueryJobProgress,
     QueryJobState,
     QueryJobStatus,
-    QueryJobStatusResponse,
-    QueryJobSubmitRequest,
-    QueryJobSubmitResponse,
     QueryJobUpdate,
 )
 
@@ -109,7 +109,7 @@ class MetricsCalculationService:
         self,
         job_id: str,
         result_path_base: str,
-        input: QueryJobSubmitRequest,
+        input: JobSubmitRequest,
         calculation_export: ExportReference,
         final_export: ExportReference,
     ):
@@ -125,7 +125,7 @@ class MetricsCalculationService:
         self,
         job_id: str,
         result_path_base: str,
-        input: QueryJobSubmitRequest,
+        input: JobSubmitRequest,
         calculation_export: ExportReference,
         final_export: ExportReference,
     ):
@@ -173,7 +173,7 @@ class MetricsCalculationService:
         self,
         job_id: str,
         result_path_base: str,
-        input: QueryJobSubmitRequest,
+        input: JobSubmitRequest,
         exported_dependent_tables_map: t.Dict[str, ExportReference],
     ):
         """Given a query job: break down into batches and submit to the scheduler"""
@@ -253,7 +253,7 @@ class MetricsCalculationService:
     async def get_cluster_status(self):
         return self.cluster_manager.get_cluster_status()
 
-    async def submit_job(self, input: QueryJobSubmitRequest):
+    async def submit_job(self, input: JobSubmitRequest):
         """Submit a job to the cluster to compute the metrics"""
         self.logger.debug("submitting job")
         job_id = f"export_{str(uuid.uuid4().hex)}"
@@ -300,7 +300,7 @@ class MetricsCalculationService:
         async with self.job_state_lock:
             self.job_tasks[job_id] = task
 
-        return QueryJobSubmitResponse(
+        return JobSubmitResponse(
             job_id=job_id,
             export_reference=final_expected_reference,
         )
@@ -371,6 +371,13 @@ class MetricsCalculationService:
                     or update.status == QueryJobStatus.FAILED
                 ):
                     del self.job_tasks[job_id]
+            updated_state = copy.deepcopy(self.job_state[job_id])
+
+            self.logger.info("emitting job update events")
+            # Some things listen to all job updates
+            self.emitter.emit("job_update", job_id, updated_state)
+            # Some things listen to specific job updates
+            self.emitter.emit(f"job_update:{job_id}", updated_state)
 
     async def _get_job_state(self, job_id: str):
         """Get the current state of a job as a deep copy (to prevent
@@ -379,9 +386,7 @@ class MetricsCalculationService:
             state = copy.deepcopy(self.job_state.get(job_id))
         return state
 
-    async def generate_query_batches(
-        self, input: QueryJobSubmitRequest, batch_size: int
-    ):
+    async def generate_query_batches(self, input: JobSubmitRequest, batch_size: int):
         runner = MetricsRunner.from_engine_adapter(
             FakeEngineAdapter("duckdb"),
             input.query_as("duckdb"),
@@ -403,7 +408,7 @@ class MetricsCalculationService:
         if len(batch) > 0:
             yield (batch_num, batch)
 
-    async def resolve_dependent_tables(self, input: QueryJobSubmitRequest):
+    async def resolve_dependent_tables(self, input: JobSubmitRequest):
         """Resolve the dependent tables for the given input and returns the
         associate export references"""
 
@@ -439,15 +444,27 @@ class MetricsCalculationService:
 
     async def get_job_status(
         self, job_id: str, include_stats: bool = False
-    ) -> QueryJobStatusResponse:
+    ) -> JobStatusResponse:
         state = await self._get_job_state(job_id)
         if not state:
             raise ValueError(f"Job {job_id} not found")
         return state.as_response(include_stats=include_stats)
 
-    async def wait_for_job_status(self, job_id: str) -> QueryJobStatusResponse:
-        # self.emitter.once(f"job_status:{job_id}")
-        raise NotImplementedError("This method is not implemented yet")
+    def listen_for_job_updates(
+        self, job_id: str, handler: t.Callable[[JobStatusResponse], t.Awaitable[None]]
+    ):
+        self.logger.info("Listening for job updates")
+
+        async def convert_to_response(state: QueryJobState):
+            self.logger.debug("converting to response")
+            return await handler(state.as_response())
+
+        handle = self.emitter.add_listener(f"job_update:{job_id}", convert_to_response)
+
+        def remove_listener():
+            return self.emitter.remove_listener(f"job_update:{job_id}", handle)
+
+        return remove_listener
 
     async def add_existing_exported_table_references(
         self, update: t.Dict[str, ExportReference]

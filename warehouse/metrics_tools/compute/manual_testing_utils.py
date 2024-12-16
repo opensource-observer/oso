@@ -63,7 +63,7 @@ def run_local_test(
 
     logging.basicConfig(level=logging.DEBUG, stream=sys.stdout)
 
-    client = Client(url, log_override=logger)
+    client = Client.from_url(url, log_override=logger)
 
     client.run_cache_manual_load(
         {

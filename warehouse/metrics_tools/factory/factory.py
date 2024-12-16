@@ -661,7 +661,7 @@ def generated_rolling_query(
         logger.info("metrics calculation service enabled")
 
         mcs_url = env.required_str("SQLMESH_MCS_URL")
-        mcs_client = Client(url=mcs_url)
+        mcs_client = Client.from_url(url=mcs_url)
 
         columns = [
             (col_name, col_type.sql(dialect="duckdb"))

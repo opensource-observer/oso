@@ -11,8 +11,8 @@ from metrics_tools.compute.types import (
     ColumnsDefinition,
     ExportReference,
     ExportType,
+    JobSubmitRequest,
     QueryJobStatus,
-    QueryJobSubmitRequest,
 )
 from metrics_tools.definition import PeerMetricDependencyRef
 
@@ -41,7 +41,7 @@ async def test_metrics_calculation_service():
         }
     )
     response = await service.submit_job(
-        QueryJobSubmitRequest(
+        JobSubmitRequest(
             query_str="SELECT * FROM ref.table123",
             start=datetime(2021, 1, 1),
             end=datetime(2021, 1, 3),

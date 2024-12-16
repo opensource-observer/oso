@@ -4,15 +4,17 @@ from datetime import datetime
 from enum import Enum
 
 import pandas as pd
+from fastapi import FastAPI
 from metrics_tools.definition import PeerMetricDependencyRef
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlmesh.core.dialect import parse_one
 
 logger = logging.getLogger(__name__)
 
 
 class EmptyResponse(BaseModel):
-    pass
+    type: t.Literal["EmptyResponse"] = "EmptyResponse"
 
 
 class ExportType(str, Enum):
@@ -123,7 +125,13 @@ class ClusterStatus(BaseModel):
     workers: int
 
 
-class QueryJobSubmitRequest(BaseModel):
+class ClusterStatusResponse(BaseModel):
+    type: t.Literal["ClusterStatusResponse"] = "ClusterStatusResponse"
+    status: ClusterStatus
+
+
+class JobSubmitRequest(BaseModel):
+    type: t.Literal["JobSubmitRequest"] = "JobSubmitRequest"
     query_str: str
     start: datetime
     end: datetime
@@ -144,12 +152,14 @@ class QueryJobSubmitRequest(BaseModel):
         return ColumnsDefinition(columns=self.columns, dialect=self.dialect)
 
 
-class QueryJobSubmitResponse(BaseModel):
+class JobSubmitResponse(BaseModel):
+    type: t.Literal["JobSubmitResponse"] = "JobSubmitResponse"
     job_id: str
     export_reference: ExportReference
 
 
-class QueryJobStatusResponse(BaseModel):
+class JobStatusResponse(BaseModel):
+    type: t.Literal["JobStatusResponse"] = "JobStatusResponse"
     job_id: str
     created_at: datetime
     updated_at: datetime
@@ -166,7 +176,7 @@ class QueryJobState(BaseModel):
     def latest_update(self) -> QueryJobUpdate:
         return self.updates[-1]
 
-    def as_response(self, include_stats: bool = False) -> QueryJobStatusResponse:
+    def as_response(self, include_stats: bool = False) -> JobStatusResponse:
         # Turn update events into stats
         stats = {}
         if include_stats:
@@ -208,7 +218,7 @@ class QueryJobState(BaseModel):
                     else None
                 )
 
-        return QueryJobStatusResponse(
+        return JobStatusResponse(
             job_id=self.job_id,
             created_at=self.created_at,
             updated_at=self.latest_update().updated_at,
@@ -219,13 +229,128 @@ class QueryJobState(BaseModel):
 
 
 class ClusterStartRequest(BaseModel):
+    type: t.Literal["ClusterStartRequest"] = "ClusterStartRequest"
     min_size: int
     max_size: int
 
 
+class ClusterStatusRequest(BaseModel):
+    type: t.Literal["ClusterStatusRequest"] = "ClusterStatusRequest"
+
+
+class JobStatusRequest(BaseModel):
+    type: t.Literal["JobStatusRequest"] = "JobStatusRequest"
+    job_id: str
+    include_stats: bool
+
+
 class ExportedTableLoadRequest(BaseModel):
+    type: t.Literal["ExportedTableLoadRequest"] = "ExportedTableLoadRequest"
     map: t.Dict[str, ExportReference]
+
+
+class InspectCacheRequest(BaseModel):
+    type: t.Literal["InspectCacheRequest"] = "InspectCacheRequest"
 
 
 class InspectCacheResponse(BaseModel):
+    type: t.Literal["InspectCacheResponse"] = "InspectCacheResponse"
     map: t.Dict[str, ExportReference]
+
+
+class ErrorResponse(BaseModel):
+    type: t.Literal["ErrorResponse"] = "ErrorResponse"
+    message: str
+
+
+ServiceRequestTypes = t.Union[
+    ClusterStartRequest,
+    ClusterStatusRequest,
+    JobStatusRequest,
+    ExportedTableLoadRequest,
+]
+
+
+class ServiceRequest(BaseModel):
+    type: str
+    request: ServiceRequestTypes = Field(discriminator="type")
+
+
+ServiceResponseTypes = t.Union[
+    ClusterStatusResponse,
+    JobStatusResponse,
+    EmptyResponse,
+    InspectCacheResponse,
+    ErrorResponse,
+]
+
+
+class ServiceResponse(BaseModel):
+    type: str
+    response: ServiceResponseTypes = Field(discriminator="type")
+
+
+class ClusterConfig(BaseSettings):
+    model_config = SettingsConfigDict(env_prefix="metrics_")
+
+    cluster_namespace: str
+    cluster_service_account: str
+    cluster_name: str
+    cluster_image_repo: str = "ghcr.io/opensource-observer/oso"
+    cluster_image_tag: str = "latest"
+
+    scheduler_memory_limit: str = "90000Mi"
+    scheduler_memory_request: str = "85000Mi"
+    scheduler_pool_type: str = "sqlmesh-scheduler"
+
+    worker_threads: int = 16
+    worker_memory_limit: str = "90000Mi"
+    worker_memory_request: str = "85000Mi"
+    worker_pool_type: str = "sqlmesh-worker"
+    worker_duckdb_path: str
+
+
+class GCSConfig(BaseSettings):
+    model_config = SettingsConfigDict(env_prefix="metrics_")
+
+    gcs_bucket: str
+    gcs_key_id: str
+    gcs_secret: str
+
+
+class TrinoCacheExportConfig(BaseSettings):
+    model_config = SettingsConfigDict(env_prefix="metrics_")
+
+    trino_host: str
+    trino_port: int
+    trino_user: str
+    trino_catalog: str
+    hive_catalog: str = "source"
+    hive_schema: str = "export"
+
+
+class AppConfig(ClusterConfig, TrinoCacheExportConfig, GCSConfig):
+    model_config = SettingsConfigDict(env_prefix="metrics_")
+
+    results_path_prefix: str = "mcs-results"
+
+    debug_all: bool = False
+    debug_with_duckdb: bool = False
+    debug_cache: bool = False
+    debug_cluster: bool = False
+    debug_cluster_no_shutdown: bool = False
+
+    @model_validator(mode="after")
+    def handle_debugging(self):
+        if self.debug_all:
+            self.debug_cache = True
+            self.debug_cluster = True
+            self.debug_with_duckdb = True
+        return self
+
+
+AppLifespan = t.Callable[[FastAPI], t.Any]
+
+ConfigType = t.TypeVar("ConfigType")
+
+AppLifespanFactory = t.Callable[[ConfigType], AppLifespan]
