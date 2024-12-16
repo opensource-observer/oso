@@ -9,6 +9,7 @@
 
 select
   project_id,
+  artifact_id,
   artifact_source_id,
   artifact_source,
   artifact_namespace,
