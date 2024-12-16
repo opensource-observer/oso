@@ -1,5 +1,6 @@
 select
   artifacts.project_id,
+  artifacts.artifact_id,
   artifacts.artifact_source_id,
   artifacts.artifact_source,
   artifacts.artifact_namespace,
