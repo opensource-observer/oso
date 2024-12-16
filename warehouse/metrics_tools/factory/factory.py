@@ -39,6 +39,7 @@ from metrics_tools.transformer.qualify import QualifyTransform
 from metrics_tools.transformer.tables import ExecutionContextTableTransform
 from metrics_tools.utils import env
 from metrics_tools.utils.logging import add_metrics_tools_to_sqlmesh_logging
+from metrics_tools.utils.tables import create_dependent_tables_map
 from sqlglot import exp
 from sqlmesh import ExecutionContext
 from sqlmesh.core.dialect import parse_one
@@ -412,7 +413,7 @@ class TimeseriesMetrics:
 
         columns = METRICS_COLUMNS_BY_ENTITY[ref["entity_type"]]
 
-        kind_common = {"batch_size": 90, "batch_concurrency": 1}
+        kind_common = {"batch_concurrency": 1}
         partitioned_by = ("day(metrics_sample_date)",)
         window = ref.get("window")
         assert window is not None
@@ -466,13 +467,13 @@ class TimeseriesMetrics:
         assert time_aggregation is not None
 
         kind_common = {"batch_concurrency": 1}
-        kind_options = {"batch_size": 180, "lookback": 7, **kind_common}
+        kind_options = {"lookback": 7, **kind_common}
         partitioned_by = ("day(metrics_sample_date)",)
 
         if time_aggregation == "weekly":
-            kind_options = {"batch_size": 182, "lookback": 7, **kind_common}
+            kind_options = {"lookback": 7, **kind_common}
         if time_aggregation == "monthly":
-            kind_options = {"batch_size": 6, "lookback": 1, **kind_common}
+            kind_options = {"lookback": 1, **kind_common}
             partitioned_by = ("month(metrics_sample_date)",)
 
         grain = [
@@ -673,12 +674,14 @@ def generated_rolling_query(
             query_str=rendered_query_str,
             start=start,
             end=end,
-            dialect="clickhouse",
-            batch_size=1,
+            dialect="duckdb",
+            batch_size=env.ensure_int("SQLMESH_MCS_BATCH_SIZE", 10),
             columns=columns,
             ref=ref,
             locals=sqlmesh_vars,
-            dependent_tables_map={},
+            dependent_tables_map=create_dependent_tables_map(
+                context, rendered_query_str
+            ),
         )
 
         column_names = list(map(lambda col: col[0], columns))

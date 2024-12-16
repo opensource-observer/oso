@@ -4,6 +4,7 @@ from metrics_tools.utils import env
 load_dotenv()
 
 cluster_namespace = env.required_str("METRICS_CLUSTER_NAMESPACE")
+cluster_service_account = env.required_str("METRICS_CLUSTER_SERVICE_ACCOUNT")
 cluster_name = env.required_str("METRICS_CLUSTER_NAME")
 cluster_image_repo = env.required_str(
     "METRICS_CLUSTER_IMAGE_REPO", "ghcr.io/opensource-observer/oso"
@@ -13,7 +14,9 @@ scheduler_memory_limit = env.required_str("METRICS_SCHEDULER_MEMORY_LIMIT", "900
 scheduler_memory_request = env.required_str(
     "METRICS_SCHEDULER_MEMORY_REQUEST", "85000Mi"
 )
-scheduler_pool_type = env.required_str("METRICS_WORKER_POOL_TYPE", "sqlmesh-scheduler")
+scheduler_pool_type = env.required_str(
+    "METRICS_SCHEDULER_POOL_TYPE", "sqlmesh-scheduler"
+)
 worker_threads = env.required_int("METRICS_WORKER_THREADS", 16)
 worker_memory_limit = env.required_str("METRICS_WORKER_MEMORY_LIMIT", "90000Mi")
 worker_memory_request = env.required_str("METRICS_WORKER_MEMORY_REQUEST", "85000Mi")

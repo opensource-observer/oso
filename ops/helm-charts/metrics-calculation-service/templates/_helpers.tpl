@@ -79,4 +79,5 @@ app.kubernetes.io/name: {{ include "mcs.fullname" . }}
 
 {{- define "mcs.selectorLabels" -}}
 {{ include "mcs.labels" . }}
+component: mcs-frontend
 {{- end -}}

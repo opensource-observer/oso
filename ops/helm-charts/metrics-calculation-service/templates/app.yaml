@@ -10,16 +10,27 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      {{- include "mcs.labels" . | nindent 6 }}
+      component: mcs-frontend
   template:
     metadata:
       labels:
-        {{- include "mcs.labels" . | nindent 8 }}
+        {{- include "mcs.selectorLabels" . | nindent 8 }}
     spec:
       serviceAccountName: {{ include "mcs.fullname" . }}
+      {{- with .Values.mcs.frontend.affinity }}
+      affinity:
+        {{ toYaml . | nindent 12 }}
+      {{- end }}
+      {{- with .Values.mcs.frontend.nodeSelector }}
+      nodeSelector:
+        {{ toYaml . | nindent 12 }}
+      {{- end }}
+      {{- with .Values.mcs.frontend.tolerations }}
+      tolerations:
+        {{ toYaml . | nindent 12 }}
+      {{- end }}
       containers:
       - name: metrics-calculation-service
-        # TODO: Remove latest tag and use a specific version
         image: {{ .Values.mcs.image.repo }}:{{ .Values.mcs.image.tag }}
         command: ["uvicorn"] 
         args: 
@@ -33,12 +44,18 @@ spec:
         imagePullPolicy: Always
         ports:
           - containerPort: 8000
+        {{- with .Values.mcs.frontend.resources }}
+        resources:
+          {{ toYaml . | nindent 12 }}
+        {{- end }}
         volumeMounts:
           - name: config
             mountPath: /config
         env:
           - name: METRICS_CLUSTER_NAMESPACE
             value: "{{ .Values.mcs.cluster.namespace }}"
+          - name: METRICS_CLUSTER_SERVICE_ACCOUNT
+            value: "{{ .Values.mcs.cluster.serviceAccount }}"
           - name: METRICS_CLUSTER_NAME
             value: "{{ .Values.mcs.cluster.name }}"
           - name: METRICS_CLUSTER_IMAGE_REPO
@@ -49,7 +66,9 @@ spec:
             value: "{{ .Values.mcs.cluster.scheduler.memory.limit }}"
           - name: METRICS_SCHEDULER_MEMORY_REQUEST
             value: "{{ .Values.mcs.cluster.scheduler.memory.request }}"
-          - name: METRICS_CLUSTER_WORKER_THREADS
+          - name: METRICS_SCHEDULER_POOL_TYPE
+            value: "{{ .Values.mcs.cluster.scheduler.poolType }}"
+          - name: METRICS_WORKER_THREADS
             value: "{{ .Values.mcs.cluster.worker.threads }}"
           - name: METRICS_WORKER_MEMORY_LIMIT
             value: "{{ .Values.mcs.cluster.worker.memory.limit }}"
@@ -57,6 +76,8 @@ spec:
             value: "{{ .Values.mcs.cluster.worker.memory.request }}"
           - name: METRICS_WORKER_DUCKDB_PATH
             value: "{{ .Values.mcs.cluster.worker.duckdb_path }}"
+          - name: METRICS_WORKER_POOL_TYPE
+            value: "{{ .Values.mcs.cluster.worker.poolType }}"
           - name: METRICS_GCS_BUCKET
             value: "{{ .Values.mcs.gcs.bucket }}"
           - name: METRICS_GCS_KEY_ID

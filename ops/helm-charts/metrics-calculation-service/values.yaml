@@ -1,8 +1,13 @@
 global:
   fullnameOverride: ""
 mcs:
-  service:
-    port: 8000
+  frontend:
+    service:
+      port: 8000
+    affinity: {}
+    nodeSelector: {}
+    tolerations: []
+    resources: {}
   logging:
     format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     root:
@@ -15,6 +20,7 @@ mcs:
     repo: ghcr.io/opensource-observer/oso
     tag: latest
   cluster:
+    serviceAccount: "default"
     namespace: "default"
     name: "default"
     image:
@@ -24,11 +30,13 @@ mcs:
       memory:
         limit: "2Gi"
         request: "2Gi"
+      poolType: ""
     worker:
       threads: "4"
       memory:
         limit: "2Gi"
         request: "2Gi"
+      poolType: ""
       duckdb_path: "/scratch/mcs-local.db"
   gcs:
     bucket: "oso-playground-dataset-transfer-bucket"
