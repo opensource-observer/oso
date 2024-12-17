@@ -6,7 +6,7 @@ tags: [optimism, data science, retroactive public goods funding]
 image: ./ballot-box-rf6.png
 ---
 
-This is the last post in our “opening up the ballot box” series for 2024. Optimism has some changes in the works for [Retro Funding 2025](https://optimism.mirror.xyz/zWlA9LROAzRee5BFqbquYHawmruKzLmXbONp_hcCwE4), which will likely change how we analyze voting behavior in future rounds.
+This is the final post in our _Opening up the Ballot Box_ series for 2024. Changes planned for [Retro Funding 2025](https://optimism.mirror.xyz/zWlA9LROAzRee5BFqbquYHawmruKzLmXbONp_hcCwE4) will likely reshape how we analyze voting behavior.
 
 In RF6, our results (as an organization) reflected a critical issue with Retro Funding in its current form: subjective visibility often outweighs measurable, long-term impact.
 
