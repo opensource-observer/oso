@@ -23,6 +23,7 @@ from metrics_tools.macros import (
     metrics_end,
     metrics_entity_type_alias,
     metrics_entity_type_col,
+    metrics_entity_type_table,
     metrics_name,
     metrics_peer_ref,
     metrics_sample_date,
@@ -214,6 +215,7 @@ class TimeseriesMetrics:
             additional_macros = [
                 metrics_peer_ref,
                 metrics_entity_type_col,
+                metrics_entity_type_table,
                 metrics_entity_type_alias,
                 relative_window_sample_date,
                 (metrics_name, ["metric_name"]),

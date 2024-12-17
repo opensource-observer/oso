@@ -1,17 +1,15 @@
 import typing as t
 
 import sqlglot
-from sqlglot import expressions as exp
-from sqlmesh.core.dialect import MacroVar
-from sqlmesh.core.macros import MacroEvaluator
-from sqlmesh.core.dialect import parse_one
-
 from metrics_tools.definition import (
     PeerMetricDependencyRef,
     time_suffix,
     to_actual_table_name,
 )
 from metrics_tools.utils import exp_literal_to_py_literal
+from sqlglot import expressions as exp
+from sqlmesh.core.dialect import MacroVar, parse_one
+from sqlmesh.core.macros import MacroEvaluator
 
 
 def relative_window_sample_date(
@@ -309,6 +307,16 @@ def metrics_entity_type_alias(
         entity_type=evaluator.locals.get("entity_type", "artifact")
     )
     return exp.alias_(to_alias, alias_name)
+
+
+def metrics_entity_type_table(evaluator: MacroEvaluator, format_str: str):
+    """Turns a format string into a table name"""
+    if isinstance(format_str, exp.Literal):
+        format_str = format_str.this
+    table_name = format_str.format(
+        entity_type=evaluator.locals.get("entity_type", "artifact")
+    )
+    return sqlglot.to_table(table_name, quoted=True)
 
 
 def metrics_peer_ref(
