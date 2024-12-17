@@ -1,5 +1,4 @@
--- Model that records the delta (in seconds) since the creation of the issue or
--- pr.
+/* Model that records the delta (in seconds) since the creation of the issue or */ /* pr. */
 MODEL (
   name metrics.issue_event_time_deltas,
   kind INCREMENTAL_BY_TIME_RANGE (
@@ -9,38 +8,31 @@ MODEL (
   ),
   start '2015-01-01',
   cron '@daily',
-  partitioned_by (day("time"), "event_type"),
-  grain (
-    time,
-    event_type,
-    event_source,
-    from_artifact_id,
-    to_artifact_id
-  )
+  partitioned_by (DAY("time"), "event_type"),
+  grain (time, event_type, event_source, from_artifact_id, to_artifact_id)
 );
-select 
+
+SELECT
   "time",
   event_type,
   event_source,
-  @oso_id(
-    event_source,
-    to_artifact_id,
-    issue_number
-  ) as issue_id,
+  @oso_id(event_source, to_artifact_id, issue_number) AS issue_id,
   issue_number,
   to_artifact_id,
   from_artifact_id,
-  created_at::timestamp,
-  merged_at::timestamp,
-  closed_at::timestamp,
-  date_diff('second', created_at, "time")::double as created_delta,
-  case
-    when merged_at is null then null
-    else date_diff('second', merged_at, "time")
-  end::double as merged_delta,
-  case
-    when closed_at is null then null
-    else date_diff('second', closed_at, "time")
-  end::double as closed_delta,
+  created_at::TIMESTAMP,
+  merged_at::TIMESTAMP,
+  closed_at::TIMESTAMP,
+  DATE_DIFF('SECOND', created_at, "time")::DOUBLE AS created_delta,
+  CASE
+    WHEN merged_at IS NULL
+    THEN NULL
+    ELSE DATE_DIFF('SECOND', merged_at, "time")
+  END::DOUBLE AS merged_delta,
+  CASE
+    WHEN closed_at IS NULL
+    THEN NULL
+    ELSE DATE_DIFF('SECOND', closed_at, "time")
+  END::DOUBLE AS closed_delta,
   comments
-from @oso_source('timeseries_events_aux_issues_by_artifact_v0')
+FROM @oso_source('timeseries_events_aux_issues_by_artifact_v0')
