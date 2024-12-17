@@ -102,5 +102,6 @@ def test_app_with_all_debugging(app_client_with_all_debugging):
         progress_handler=mock_handler,
     )
 
-    assert mock_handler.call_count == 6
+    # The pending to running update, and the 3 completion updates
+    assert mock_handler.call_count == 4
     assert reference is not None
