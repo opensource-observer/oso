@@ -12,7 +12,9 @@ with oss_funding_data as (
     'OSS_FUNDING' as event_source,
     lower(to_project_name) as to_project_name,
     lower(from_funder_name) as from_project_name,
-    coalesce(amount, 0) as amount
+    coalesce(amount, 0) as amount,
+    grant_pool_name,
+    parse_json(metadata_json) as metadata_json
   from {{ source('static_data_sources', 'oss_funding_v1') }}
   where
     to_project_name is not null
@@ -31,31 +33,50 @@ gitcoin_data as (
     concat('GITCOIN', '_', upper(oso_generated_round_label)) as event_source,
     oso_project_name as to_project_name,
     'gitcoin' as from_project_name,
-    amount_in_usd as amount
+    amount_in_usd as amount,
+    oso_generated_round_label as grant_pool_name,
+    to_json(struct(
+      gitcoin_data_source,
+      gitcoin_round_id,
+      round_number,
+      round_type,
+      main_round_label,
+      round_name,
+      chain_id,
+      gitcoin_project_id,
+      project_application_title,
+      oso_project_id,
+      oso_display_name,
+      donor_address
+    )) as metadata_json
   from {{ ref('int_gitcoin_funding_events') }}
 ),
 
 grants as (
-  select distinct
+  select
     oss_funding_data.time,
     oss_funding_data.event_type,
     oss_funding_data.event_source_id,
     oss_funding_data.event_source,
     oss_funding_data.to_project_name,
     oss_funding_data.from_project_name,
-    oss_funding_data.amount
+    oss_funding_data.amount,
+    oss_funding_data.grant_pool_name,
+    oss_funding_data.metadata_json
   from oss_funding_data
 
   union all
 
-  select distinct
+  select
     gitcoin_data.time,
     gitcoin_data.event_type,
     gitcoin_data.event_source_id,
     gitcoin_data.event_source,
     gitcoin_data.to_project_name,
     gitcoin_data.from_project_name,
-    gitcoin_data.amount
+    gitcoin_data.amount,
+    gitcoin_data.grant_pool_name,
+    gitcoin_data.metadata_json
   from gitcoin_data
 )
 
@@ -70,9 +91,11 @@ select
   grants.from_project_name,
   from_projects.project_id as from_project_id,
   'WALLET' as from_type,
-  grants.amount
+  grants.amount,
+  grants.grant_pool_name,
+  grants.metadata_json
 from grants
-inner join {{ ref('projects_v1') }} as to_projects
+left join {{ ref('projects_v1') }} as to_projects
   on grants.to_project_name = to_projects.project_name
 inner join {{ ref('projects_v1') }} as from_projects
   on grants.from_project_name = from_projects.project_name
