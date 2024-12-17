@@ -682,6 +682,7 @@ def generated_rolling_query(
             dependent_tables_map=create_dependent_tables_map(
                 context, rendered_query_str
             ),
+            job_retries=env.ensure_int("SQLMESH_MCS_JOB_RETRIES", 5),
             cluster_min_size=env.ensure_int("SQLMESH_MCS_CLUSTER_MIN_SIZE", 0),
             cluster_max_size=env.ensure_int("SQLMESH_MCS_CLUSTER_MAX_SIZE", 30),
         )
