@@ -6,4 +6,4 @@ resources:
   - ./redis
   # Uncomment to turn on trino
   - ./trino
-  #- ./metrics-calculation-service
+  - ./metrics-calculation-service
