@@ -34,6 +34,18 @@ def test_create_dependent_tables_map():
             """,
             {"bar": "test_table"},
         ),
+        (
+            """
+            with grandfoo as (
+                select * from main.source
+            )
+            with foo as (
+                select * from grandfoo
+            )
+            select * from foo
+            """,
+            {"main.source": "test_table"},
+        ),
     ],
 )
 def test_create_dependent_tables_map_parameterized(
