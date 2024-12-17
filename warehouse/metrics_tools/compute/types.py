@@ -1,4 +1,5 @@
 import logging
+import math
 import typing as t
 from datetime import datetime
 from enum import Enum
@@ -107,15 +108,46 @@ class QueryJobStatus(str, Enum):
     FAILED = "failed"
 
 
+class QueryJobTaskStatus(str, Enum):
+    SUCCEEDED = "SUCCEEDED"
+    CANCELLED = "cancelled"
+    FAILED = "failed"
+
+
+class QueryJobUpdateScope(str, Enum):
+    TASK = "task"
+    JOB = "job"
+
+
 class QueryJobProgress(BaseModel):
     completed: int
     total: int
 
 
-class QueryJobUpdate(BaseModel):
-    updated_at: datetime
+class QueryJobTaskUpdate(BaseModel):
+    type: t.Literal[QueryJobUpdateScope.TASK] = QueryJobUpdateScope.TASK
+    status: QueryJobTaskStatus
+    task_id: str
+    exception: t.Optional[str] = None
+
+
+class QueryJobStateUpdate(BaseModel):
+    type: t.Literal[QueryJobUpdateScope.JOB] = QueryJobUpdateScope.JOB
     status: QueryJobStatus
-    progress: QueryJobProgress
+    has_remaining_tasks: bool
+    exception: t.Optional[str] = None
+
+
+QueryJobUpdateTypes = t.Union[
+    QueryJobTaskUpdate,
+    QueryJobStateUpdate,
+]
+
+
+class QueryJobUpdate(BaseModel):
+    time: datetime
+    scope: QueryJobUpdateScope
+    payload: QueryJobUpdateTypes = Field(discriminator="type")
 
 
 class ClusterStatus(BaseModel):
@@ -151,6 +183,15 @@ class JobSubmitRequest(BaseModel):
     def columns_def(self) -> ColumnsDefinition:
         return ColumnsDefinition(columns=self.columns, dialect=self.dialect)
 
+    def batch_count(self):
+        """The expected number of batches for this job"
+
+        This is calculated by getting the range (inclusive) between the start
+        and end and dividing by the batch size.
+        """
+        inclusive_day_length = (self.end - self.start).days + 1
+        return math.ceil(inclusive_day_length / self.batch_size)
+
 
 class JobSubmitResponse(BaseModel):
     type: t.Literal["JobSubmitResponse"] = "JobSubmitResponse"
@@ -166,17 +207,45 @@ class JobStatusResponse(BaseModel):
     status: QueryJobStatus
     progress: QueryJobProgress
     stats: t.Dict[str, float] = Field(default_factory=dict)
+    exceptions: t.List[str] = Field(default_factory=list)
 
 
 class QueryJobState(BaseModel):
     job_id: str
     created_at: datetime
+    tasks_count: int
+    tasks_completed: int = 0
+    has_remaining_tasks: bool = True
+    status: QueryJobStatus = QueryJobStatus.PENDING
     updates: t.List[QueryJobUpdate]
 
     def latest_update(self) -> QueryJobUpdate:
         return self.updates[-1]
 
-    def as_response(self, include_stats: bool = False) -> JobStatusResponse:
+    def update(self, update: QueryJobUpdate):
+        """Add an update to the job state and change any relevant job state"""
+        self.updates.append(update)
+        if update.scope == QueryJobUpdateScope.JOB:
+            payload = t.cast(QueryJobStateUpdate, update.payload)
+            if payload.status == QueryJobStatus.COMPLETED:
+                if self.status != QueryJobStatus.FAILED:
+                    self.status = QueryJobStatus.COMPLETED
+                self.has_remaining_tasks = False
+            elif payload.status == QueryJobStatus.FAILED:
+                self.has_remaining_tasks = payload.has_remaining_tasks
+            elif payload.status == QueryJobStatus.RUNNING:
+                self.status = payload.status
+        else:
+            payload = t.cast(QueryJobTaskUpdate, update.payload)
+            if payload.status == QueryJobTaskStatus.FAILED:
+                self.status = QueryJobStatus.FAILED
+            elif payload.status == QueryJobTaskStatus.CANCELLED:
+                self.status = QueryJobStatus.FAILED
+            self.tasks_completed += 1
+
+    def as_response(
+        self, include_stats: bool = False, include_exceptions_count: int = 5
+    ) -> JobStatusResponse:
         # Turn update events into stats
         stats = {}
         if include_stats:
@@ -186,20 +255,22 @@ class QueryJobState(BaseModel):
             running_to_failed = None
 
             for update in self.updates:
-                if (
-                    update.status == QueryJobStatus.RUNNING
-                    and pending_to_running is None
-                ):
-                    pending_to_running = update.updated_at
-                elif (
-                    update.status == QueryJobStatus.COMPLETED
-                    and running_to_completed is None
-                ):
-                    running_to_completed = update.updated_at
-                elif (
-                    update.status == QueryJobStatus.FAILED and running_to_failed is None
-                ):
-                    running_to_failed = update.updated_at
+                match update.scope:
+                    case QueryJobUpdateScope.JOB:
+                        if update.payload.status == QueryJobStatus.RUNNING:
+                            pending_to_running = update.time
+                        elif update.payload.status == QueryJobStatus.COMPLETED:
+                            running_to_completed = update.time
+                        elif update.payload.status == QueryJobStatus.FAILED:
+                            if running_to_failed is None:
+                                running_to_failed = update.time
+                    case QueryJobUpdateScope.TASK:
+                        if update.payload.status == QueryJobTaskStatus.FAILED:
+                            if running_to_failed is None:
+                                running_to_failed = update.time
+                        elif update.payload.status == QueryJobTaskStatus.CANCELLED:
+                            if running_to_failed is None:
+                                running_to_failed = update.time
 
             if pending_to_running:
                 stats["pending_to_running_seconds"] = (
@@ -217,14 +288,32 @@ class QueryJobState(BaseModel):
                     if pending_to_running
                     else None
                 )
+        exceptions: t.List[str] = []
+        if self.status == QueryJobStatus.FAILED:
+            for update in reversed(self.updates):
+                if update.scope == QueryJobUpdateScope.TASK:
+                    payload = t.cast(QueryJobTaskUpdate, update.payload)
+                    if payload.status == QueryJobTaskStatus.FAILED:
+                        if payload.exception:
+                            exceptions.append(payload.exception)
+                else:
+                    payload = t.cast(QueryJobStateUpdate, update.payload)
+                    if payload.exception:
+                        exceptions.append(payload.exception)
+                if len(exceptions) >= include_exceptions_count:
+                    break
 
         return JobStatusResponse(
             job_id=self.job_id,
             created_at=self.created_at,
-            updated_at=self.latest_update().updated_at,
-            status=self.latest_update().status,
-            progress=self.latest_update().progress,
+            updated_at=self.latest_update().time,
+            status=self.status,
+            progress=QueryJobProgress(
+                completed=self.tasks_completed,
+                total=self.tasks_count,
+            ),
             stats=stats,
+            exceptions=exceptions,
         )
 
 

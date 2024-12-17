@@ -190,6 +190,12 @@ class Client:
 
         if final_status.status == QueryJobStatus.FAILED:
             self.logger.error(f"job[{job_id}] failed with status {final_status.status}")
+            if final_status.exceptions:
+                self.logger.error(f"job[{job_id}] failed with exceptions")
+
+            for exc in final_status.exceptions:
+                self.logger.error(f"job[{job_id}] failed with exceptoin {exc}")
+
             raise Exception(f"job[{job_id}] failed with status {final_status.status}")
 
         self.logger.info(f"job[{job_id}] completed with status {final_status.status}")
