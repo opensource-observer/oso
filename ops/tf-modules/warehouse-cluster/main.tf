@@ -163,7 +163,7 @@ locals {
       min_count                         = 0
       max_count                         = 10
       local_ssd_count                   = 0
-      local_ssd_ephemeral_storage_count = 1
+      local_ssd_ephemeral_storage_count = 2
       spot                              = false
       disk_size_gb                      = 100
       disk_type                         = "pd-standard"
