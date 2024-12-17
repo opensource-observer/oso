@@ -80,8 +80,25 @@ where project_name = 'uniswap'
 
 **Remember to replace 'YOUR_PROJECT_NAME' with the name of your project in the query.**
 
-_Note: Unless the model name is versioned, expect that the model is unstable and should not be depended on
+_Note: Unless the model name is versioned with a `v1` or higher, expect that the model is unstable and should not be depended on
 in a live production application._
+
+Some of our most popular v1 models include:
+
+- `projects_v1`: a list of all projects in the OSO data pipeline
+- `artifacts_by_project_v1`: a list of all artifacts owned by a given project
+- `projects_by_collection_v1`: a list of all projects in a given collection
+- `code_metrics_by_project_v1`: a list of all code metrics for a given project
+- `onchain_metrics_by_project_v1`: a list of all onchain metrics for a given project (by chain)
+
+Some of the v0 (WIP) models that we include in analysis but do not recommend for production use:
+
+- `timeseries_events_by_artifact_v0`: a list of all events for a given artifact (our unified event table)
+- `oss_funding_v0`: a list of all funding grants to projects, indexed by project and funder
+- `repositories_v0`: a list of all GitHub repositories, indexed by project
+- `sboms_v0`: a list of package dependencies (software bill of materials), indexed by project
+- `package_owners_v0`: a mapping of packages to GitHub repositories, indexed by project
+- `contracts_v0`: a list of all discovered contracts, downstream from their deployers and/or factories
 
 ### OSO Staging / Intermediate Models
 
