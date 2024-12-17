@@ -164,7 +164,7 @@ locals {
       max_count                         = 20
       local_ssd_count                   = 0
       local_ssd_ephemeral_storage_count = 2
-      spot                              = false
+      spot                              = true
       disk_size_gb                      = 100
       disk_type                         = "pd-standard"
       image_type                        = "COS_CONTAINERD"
