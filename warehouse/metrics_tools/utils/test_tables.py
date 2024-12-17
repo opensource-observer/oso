@@ -46,6 +46,79 @@ def test_create_dependent_tables_map():
             """,
             {"main.source": "test_table"},
         ),
+        (
+            """
+            select * from foo   
+            union all
+            select * from bar
+            union all
+            select * from baz
+            """,
+            {"foo": "test_table", "bar": "test_table", "baz": "test_table"},
+        ),
+        (
+            """
+            with foo as (
+                select * from bar
+            )
+            select * from foo
+            union all
+            select * from baz
+            """,
+            {"bar": "test_table", "baz": "test_table"},
+        ),
+        (  # nested ctes, but I don't think any sql engine supports this
+            """
+            with foo as (
+                with bar as (
+                    select * from baz
+                )
+                select * from bar
+            )
+            select * from foo
+            union all
+            select * from baz
+            """,
+            {"baz": "test_table"},
+        ),
+        (
+            """
+            with foo as (
+                select * from bar
+            )
+            select * from foo
+            inner join baz on foo.id = baz.id
+            """,
+            {"bar": "test_table", "baz": "test_table"},
+        ),
+        (
+            """
+            select * from (
+                select * from foo
+            )
+            """,
+            {"foo": "test_table"},
+        ),
+        (
+            """
+            select * from (
+                select * from foo
+            )
+            union all
+            select * from (
+                select * from bar
+            )
+            """,
+            {"foo": "test_table", "bar": "test_table"},
+        ),
+        (
+            """
+            select * from foo
+            inner join baz on foo.id = baz.id
+            left join bar on foo.id = bar.id
+            """,
+            {"foo": "test_table", "baz": "test_table", "bar": "test_table"},
+        ),
     ],
 )
 def test_create_dependent_tables_map_parameterized(
