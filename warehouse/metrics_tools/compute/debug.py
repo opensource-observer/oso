@@ -6,24 +6,17 @@ import logging
 from metrics_tools.compute.cluster import (
     KubeClusterFactory,
     make_new_cluster_with_defaults,
-    start_duckdb_cluster,
 )
-
-from . import constants
+from metrics_tools.compute.types import AppConfig
 
 logger = logging.getLogger(__name__)
 
 
-def test_setup_cluster():
-    cluster_spec = make_new_cluster_with_defaults()
-    return start_duckdb_cluster(constants.cluster_namespace, cluster_spec)
-
-
-def async_test_setup_cluster():
-    cluster_spec = make_new_cluster_with_defaults()
+def async_test_setup_cluster(config: AppConfig):
+    cluster_spec = make_new_cluster_with_defaults(config=config)
 
     cluster_factory = KubeClusterFactory(
-        constants.cluster_namespace,
+        config.cluster_namespace,
         cluster_spec=cluster_spec,
         log_override=logger,
     )

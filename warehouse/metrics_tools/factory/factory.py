@@ -413,7 +413,7 @@ class TimeseriesMetrics:
 
         columns = METRICS_COLUMNS_BY_ENTITY[ref["entity_type"]]
 
-        kind_common = {"batch_concurrency": 1}
+        kind_common = {"batch_size": 365, "batch_concurrency": 1}
         partitioned_by = ("day(metrics_sample_date)",)
         window = ref.get("window")
         assert window is not None
@@ -661,7 +661,7 @@ def generated_rolling_query(
         logger.info("metrics calculation service enabled")
 
         mcs_url = env.required_str("SQLMESH_MCS_URL")
-        mcs_client = Client(url=mcs_url)
+        mcs_client = Client.from_url(url=mcs_url)
 
         columns = [
             (col_name, col_type.sql(dialect="duckdb"))
@@ -682,6 +682,8 @@ def generated_rolling_query(
             dependent_tables_map=create_dependent_tables_map(
                 context, rendered_query_str
             ),
+            cluster_min_size=env.ensure_int("SQLMESH_MCS_CLUSTER_MIN_SIZE", 0),
+            cluster_max_size=env.ensure_int("SQLMESH_MCS_CLUSTER_MAX_SIZE", 30),
         )
 
         column_names = list(map(lambda col: col[0], columns))

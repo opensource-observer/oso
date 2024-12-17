@@ -161,9 +161,9 @@ locals {
       machine_type                      = "n1-highmem-16"
       node_locations                    = join(",", var.cluster_zones)
       min_count                         = 0
-      max_count                         = 10
+      max_count                         = 20
       local_ssd_count                   = 0
-      local_ssd_ephemeral_storage_count = 1
+      local_ssd_ephemeral_storage_count = 2
       spot                              = false
       disk_size_gb                      = 100
       disk_type                         = "pd-standard"
@@ -357,7 +357,7 @@ module "vpc" {
 
 module "gke" {
   source                     = "terraform-google-modules/kubernetes-engine/google"
-  version                    = "~> 33.0"
+  version                    = "~> 35.0.0"
   project_id                 = var.project_id
   name                       = var.cluster_name
   region                     = var.cluster_region

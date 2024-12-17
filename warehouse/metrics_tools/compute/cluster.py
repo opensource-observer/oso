@@ -11,7 +11,7 @@ from dask.distributed import Client
 from dask.distributed import Future as DaskFuture
 from dask.distributed import LocalCluster
 from dask_kubernetes.operator import KubeCluster, make_cluster_spec
-from metrics_tools.compute.types import ClusterStatus
+from metrics_tools.compute.types import ClusterConfig, ClusterStatus
 from pyee.asyncio import AsyncIOEventEmitter
 
 from .worker import (
@@ -232,6 +232,9 @@ class ClusterManager:
         async with self._lock:
             if self._cluster is not None:
                 self.logger.info("cluster already running")
+
+                # Trigger scaling if necessary
+
                 return ClusterStatus(
                     status="Cluster already running",
                     is_ready=True,
@@ -430,20 +433,19 @@ def make_new_cluster(
     return spec
 
 
-def make_new_cluster_with_defaults():
+def make_new_cluster_with_defaults(config: ClusterConfig):
     # Import here to avoid dependency on constants for all dependents on the
     # cluster module
-    from . import constants
 
     return make_new_cluster(
-        image=f"{constants.cluster_image_repo}:{constants.cluster_image_tag}",
-        cluster_id=constants.cluster_name,
-        service_account_name=constants.cluster_service_account,
-        threads=constants.worker_threads,
-        scheduler_memory_limit=constants.scheduler_memory_limit,
-        scheduler_memory_request=constants.scheduler_memory_request,
-        scheduler_pool_type=constants.scheduler_pool_type,
-        worker_memory_limit=constants.worker_memory_limit,
-        worker_memory_request=constants.worker_memory_request,
-        worker_pool_type=constants.worker_pool_type,
+        image=f"{config.cluster_image_repo}:{config.cluster_image_tag}",
+        cluster_id=config.cluster_name,
+        service_account_name=config.cluster_service_account,
+        threads=config.worker_threads,
+        scheduler_memory_limit=config.scheduler_memory_limit,
+        scheduler_memory_request=config.scheduler_memory_request,
+        scheduler_pool_type=config.scheduler_pool_type,
+        worker_memory_limit=config.worker_memory_limit,
+        worker_memory_request=config.worker_memory_request,
+        worker_pool_type=config.worker_pool_type,
     )
