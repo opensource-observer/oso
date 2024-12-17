@@ -17,12 +17,20 @@ def app_client_with_all_debugging():
     setup_module_logging("metrics_tools")
     app = app_factory(
         default_lifecycle,
-        AppConfig(  # type: ignore
-            trino_catalog="",
-            trino_host="",
-            trino_user="",
-            hive_catalog="",
-            hive_schema="",
+        AppConfig(
+            cluster_namespace="namespace",
+            cluster_service_account="service_account",
+            cluster_name="name",
+            worker_duckdb_path="path",
+            trino_catalog="catalog",
+            trino_host="trino",
+            trino_user="trino",
+            trino_port=8080,
+            hive_catalog="catalog",
+            hive_schema="schema",
+            gcs_bucket="bucket",
+            gcs_key_id="key",
+            gcs_secret="secret",
             debug_all=True,
         ),
     )
