@@ -17,8 +17,7 @@ with oss_funding_data as (
     parse_json(metadata_json) as metadata_json
   from {{ source('static_data_sources', 'oss_funding_v1') }}
   where
-    to_project_name is not null
-    and from_funder_name is not null
+    from_funder_name is not null
     and amount is not null
 ),
 
