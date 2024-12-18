@@ -322,9 +322,7 @@ class MetricsCalculationService:
     async def _notify_job_running(self, job_id: str):
         await self._update_job_state(
             job_id,
-            QueryJobUpdate(
-                time=datetime.now(),
-                scope=QueryJobUpdateScope.JOB,
+            QueryJobUpdate.create_job_update(
                 payload=QueryJobStateUpdate(
                     status=QueryJobStatus.RUNNING,
                     has_remaining_tasks=True,
@@ -335,9 +333,7 @@ class MetricsCalculationService:
     async def _notify_job_task_completed(self, job_id: str, task_id: str):
         await self._update_job_state(
             job_id,
-            QueryJobUpdate(
-                time=datetime.now(),
-                scope=QueryJobUpdateScope.TASK,
+            QueryJobUpdate.create_task_update(
                 payload=QueryJobTaskUpdate(
                     task_id=task_id,
                     status=QueryJobTaskStatus.SUCCEEDED,
@@ -350,9 +346,7 @@ class MetricsCalculationService:
     ):
         await self._update_job_state(
             job_id,
-            QueryJobUpdate(
-                time=datetime.now(),
-                scope=QueryJobUpdateScope.TASK,
+            QueryJobUpdate.create_task_update(
                 payload=QueryJobTaskUpdate(
                     task_id=task_id,
                     status=QueryJobTaskStatus.FAILED,
@@ -364,9 +358,7 @@ class MetricsCalculationService:
     async def _notify_job_task_cancelled(self, job_id: str, task_id: str):
         await self._update_job_state(
             job_id,
-            QueryJobUpdate(
-                time=datetime.now(),
-                scope=QueryJobUpdateScope.TASK,
+            QueryJobUpdate.create_task_update(
                 payload=QueryJobTaskUpdate(
                     task_id=task_id,
                     status=QueryJobTaskStatus.CANCELLED,
@@ -377,9 +369,7 @@ class MetricsCalculationService:
     async def _notify_job_completed(self, job_id: str):
         await self._update_job_state(
             job_id,
-            QueryJobUpdate(
-                time=datetime.now(),
-                scope=QueryJobUpdateScope.JOB,
+            QueryJobUpdate.create_job_update(
                 payload=QueryJobStateUpdate(
                     status=QueryJobStatus.COMPLETED,
                     has_remaining_tasks=False,
@@ -395,9 +385,7 @@ class MetricsCalculationService:
     ):
         await self._update_job_state(
             job_id,
-            QueryJobUpdate(
-                time=datetime.now(),
-                scope=QueryJobUpdateScope.JOB,
+            QueryJobUpdate.create_job_update(
                 payload=QueryJobStateUpdate(
                     status=QueryJobStatus.FAILED,
                     has_remaining_tasks=has_remaining_tasks,

@@ -124,6 +124,26 @@ from .types import (
             False,
             1,
         ),
+        (
+            "should fail if a task is cancelled",
+            [
+                QueryJobUpdate.create_job_update(
+                    QueryJobStateUpdate(
+                        status=QueryJobStatus.RUNNING,
+                        has_remaining_tasks=True,
+                    ),
+                ),
+                QueryJobUpdate.create_task_update(
+                    QueryJobTaskUpdate(
+                        status=QueryJobTaskStatus.CANCELLED,
+                        task_id="task_id",
+                    )
+                ),
+            ],
+            QueryJobStatus.FAILED,
+            True,
+            0,
+        ),
     ],
 )
 def test_query_job_state(
