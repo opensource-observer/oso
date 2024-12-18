@@ -74,10 +74,6 @@ async def test_metrics_calculation_service():
 
         close = service.listen_for_job_updates(response.job_id, collect_updates)
         return (close, future)
-        # status = await service.get_job_status(response.job_id)
-        # while status.status in [QueryJobStatus.PENDING, QueryJobStatus.RUNNING]:
-        #     status = await service.get_job_status(response.job_id)
-        #     await asyncio.sleep(1)
 
     close, updates_future = await asyncio.create_task(wait_for_job_to_complete())
     updates = await updates_future
@@ -146,10 +142,6 @@ async def test_metrics_calculation_service_using_monthly_cron():
 
         close = service.listen_for_job_updates(response.job_id, collect_updates)
         return (close, future)
-        # status = await service.get_job_status(response.job_id)
-        # while status.status in [QueryJobStatus.PENDING, QueryJobStatus.RUNNING]:
-        #     status = await service.get_job_status(response.job_id)
-        #     await asyncio.sleep(1)
 
     close, updates_future = await asyncio.create_task(wait_for_job_to_complete())
     updates = await updates_future
