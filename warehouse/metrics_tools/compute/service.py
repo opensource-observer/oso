@@ -165,15 +165,17 @@ class MetricsCalculationService:
                 exceptions.append(e)
                 await self._notify_job_failed(job_id, True, e)
 
+        if len(exceptions) > 0:
+            exc = JobTasksFailed(job_id, len(exceptions), exceptions)
+            await self._notify_job_failed(job_id, False, exc)
+            raise exc
+
         # Import the final result into the database
         self.logger.info("job[{job_id}]: importing final result into the database")
         await self.import_adapter.import_reference(calculation_export, final_export)
 
         self.logger.debug(f"job[{job_id}]: notifying job completed")
         await self._notify_job_completed(job_id)
-
-        if len(exceptions) > 0:
-            raise JobTasksFailed(job_id, len(exceptions), exceptions)
 
     async def _batch_query_to_scheduler(
         self,
