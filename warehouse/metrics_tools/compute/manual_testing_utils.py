@@ -102,7 +102,11 @@ def run_local_test(
             ("amount", "NUMERIC"),
         ],
         ref=PeerMetricDependencyRef(
-            name="", entity_type="artifact", window=30, unit="day"
+            name="",
+            entity_type="artifact",
+            window=30,
+            unit="day",
+            cron="@daily",
         ),
         locals={},
         dependent_tables_map={

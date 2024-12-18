@@ -53,6 +53,7 @@ async def test_metrics_calculation_service():
                 entity_type="artifact",
                 window=30,
                 unit="day",
+                cron="@daily",
             ),
             execution_time=datetime.now(),
             locals={},

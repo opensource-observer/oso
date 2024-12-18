@@ -90,7 +90,11 @@ def test_app_with_all_debugging(app_client_with_all_debugging):
             ("amount", "NUMERIC"),
         ],
         ref=PeerMetricDependencyRef(
-            name="", entity_type="artifact", window=30, unit="day"
+            name="",
+            entity_type="artifact",
+            window=30,
+            unit="day",
+            cron="@daily",
         ),
         locals={},
         dependent_tables_map={
