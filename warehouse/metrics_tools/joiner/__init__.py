@@ -1,9 +1,7 @@
 import typing as t
 
-from sqlglot import exp
-from sqlmesh.core.dialect import MacroVar
-
 from metrics_tools.transformer import SQLTransformer, Transform
+from sqlglot import exp
 
 
 class JoinerTransform(Transform):
@@ -49,7 +47,7 @@ class JoinerTransform(Transform):
                         updated_select = updated_select.join(
                             exp.Table(
                                 this=exp.to_identifier("artifacts_by_project_v1"),
-                                db=MacroVar(this="oso_source"),
+                                db=exp.to_identifier("metrics"),
                             ),
                             on=f"{current_alias}.to_artifact_id = artifacts_by_project_v1.artifact_id",
                             join_type="inner",
@@ -66,7 +64,7 @@ class JoinerTransform(Transform):
                             updated_select = updated_select.join(
                                 exp.Table(
                                     this=exp.to_identifier("projects_by_collection_v1"),
-                                    db=MacroVar(this="oso_source"),
+                                    db=exp.to_identifier("metrics"),
                                 ),
                                 on="artifacts_by_project_v1.project_id = projects_by_collection_v1.project_id",
                                 join_type="inner",

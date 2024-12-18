@@ -110,7 +110,7 @@ class DuckDBMetricsWorkerPlugin(MetricsWorkerPlugin):
     ):
         """Checks if a table is cached in the local duckdb"""
         logger.info(
-            f"[{self._uuid}] got a cache request for {table_ref_name}:{export_reference.table}"
+            f"[{self._uuid}] got a cache request for {table_ref_name}:{export_reference.table_name}"
         )
         assert export_reference.type == ExportType.GCS, "Only GCS exports are supported"
         assert (
@@ -138,13 +138,16 @@ class DuckDBMetricsWorkerPlugin(MetricsWorkerPlugin):
     ):
         self.connection.execute(f"CREATE SCHEMA IF NOT EXISTS {destination_table.db}")
         logger.info(f"CACHING TABLE {table_ref_name} WITH PARQUET")
+
+        path_to_load = os.path.join(gcs_path, "*")
+
         cache_sql = f"""
             CREATE TABLE IF NOT EXISTS "{destination_table.db}"."{destination_table.this.this}" AS
-            SELECT * FROM read_parquet('{gcs_path}/*')
+            SELECT * FROM read_parquet('{path_to_load}')
         """
-        logger.debug(f"executing: {cache_sql}")
+        logger.debug(f"Executing SQL: {cache_sql}")
         self.connection.sql(cache_sql)
-        logger.info(f"CACHING TABLE {table_ref_name} COMPLETED")
+        logger.info(f"LOADING EXPORTED TABLE {table_ref_name} COMPLETED")
 
     @contextmanager
     def gcs_client(self):

@@ -14,6 +14,7 @@ from pydantic_core import to_jsonable_python
 from ..definition import PeerMetricDependencyRef
 from .types import (
     ClusterStartRequest,
+    ColumnsDefinition,
     ExportedTableLoadRequest,
     ExportReference,
     ExportType,
@@ -32,11 +33,12 @@ def run_cache_load(url: str):
     req = ExportedTableLoadRequest(
         map={
             "sqlmesh__metrics.metrics__events_daily_to_artifact__2357434958": ExportReference(
-                table="export_metrics__events_daily_to_artifact__2357434958_5def5e890a984cf99f7364ce3c2bb958",
+                table_name="export_metrics__events_daily_to_artifact__2357434958_5def5e890a984cf99f7364ce3c2bb958",
                 type=ExportType.GCS,
                 payload={
                     "gcs_path": "gs://oso-dataset-transfer-bucket/trino-export/export_metrics__events_daily_to_artifact__2357434958_5def5e890a984cf99f7364ce3c2bb958"
                 },
+                columns=ColumnsDefinition(columns=[]),
             ),
         }
     )
@@ -61,16 +63,17 @@ def run_local_test(
 
     logging.basicConfig(level=logging.DEBUG, stream=sys.stdout)
 
-    client = Client(url, log_override=logger)
+    client = Client.from_url(url, log_override=logger)
 
     client.run_cache_manual_load(
         {
             "sqlmesh__metrics.metrics__events_daily_to_artifact__2357434958": ExportReference(
-                table="export_metrics__events_daily_to_artifact__2357434958_5def5e890a984cf99f7364ce3c2bb958",
+                table_name="export_metrics__events_daily_to_artifact__2357434958_5def5e890a984cf99f7364ce3c2bb958",
                 type=ExportType.GCS,
                 payload={
                     "gcs_path": "gs://oso-dataset-transfer-bucket/trino-export/export_metrics__events_daily_to_artifact__2357434958_5def5e890a984cf99f7364ce3c2bb958"
                 },
+                columns=ColumnsDefinition(columns=[]),
             ),
         }
     )
@@ -99,7 +102,11 @@ def run_local_test(
             ("amount", "NUMERIC"),
         ],
         ref=PeerMetricDependencyRef(
-            name="", entity_type="artifact", window=30, unit="day"
+            name="",
+            entity_type="artifact",
+            window=30,
+            unit="day",
+            cron="@daily",
         ),
         locals={},
         dependent_tables_map={

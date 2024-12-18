@@ -4,13 +4,15 @@ from datetime import datetime
 import pytest
 from metrics_tools.compute.cache import CacheExportManager, FakeExportAdapter
 from metrics_tools.compute.cluster import ClusterManager, LocalClusterFactory
+from metrics_tools.compute.result import DummyImportAdapter
 from metrics_tools.compute.service import MetricsCalculationService
 from metrics_tools.compute.types import (
     ClusterStartRequest,
+    ColumnsDefinition,
     ExportReference,
     ExportType,
+    JobSubmitRequest,
     QueryJobStatus,
-    QueryJobSubmitRequest,
 )
 from metrics_tools.definition import PeerMetricDependencyRef
 
@@ -23,19 +25,23 @@ async def test_metrics_calculation_service():
         "result_path_prefix",
         ClusterManager.with_dummy_metrics_plugin(LocalClusterFactory()),
         await CacheExportManager.setup(FakeExportAdapter()),
+        DummyImportAdapter(),
     )
     await service.start_cluster(ClusterStartRequest(min_size=1, max_size=1))
     await service.add_existing_exported_table_references(
         {
             "source.table123": ExportReference(
-                table="export_table123",
+                table_name="export_table123",
                 type=ExportType.GCS,
+                columns=ColumnsDefinition(
+                    columns=[("col1", "INT"), ("col2", "TEXT")], dialect="duckdb"
+                ),
                 payload={"gcs_path": "gs://bucket/result_path_prefix/export_table123"},
             ),
         }
     )
     response = await service.submit_job(
-        QueryJobSubmitRequest(
+        JobSubmitRequest(
             query_str="SELECT * FROM ref.table123",
             start=datetime(2021, 1, 1),
             end=datetime(2021, 1, 3),
@@ -47,7 +53,9 @@ async def test_metrics_calculation_service():
                 entity_type="artifact",
                 window=30,
                 unit="day",
+                cron="@daily",
             ),
+            execution_time=datetime.now(),
             locals={},
             dependent_tables_map={"source.table123": "source.table123"},
         )

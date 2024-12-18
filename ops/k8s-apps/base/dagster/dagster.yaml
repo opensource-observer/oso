@@ -105,7 +105,7 @@ spec:
         deployments:
           - name: "oso-dagster"
             image:
-              repository: "ghcr.io/opensource-observer/dagster-dask"
+              repository: "ghcr.io/opensource-observer/oso"
               tag: latest
               pullPolicy: Always
             envConfigMaps:

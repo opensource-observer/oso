@@ -6,7 +6,7 @@ sidebar_position: 4
 Python notebooks are a great way for data scientists to explore data, organize ad-hoc analysis, and share insights. We've included several template notebooks to help you get started working with OSO data. You can find these on [Google Colab](https://drive.google.com/drive/folders/1mzqrSToxPaWhsoGOR-UVldIsaX1gqP0F?usp=drive_link) and in the [community directory](https://github.com/opensource-observer/insights/tree/main/community/notebooks) of our insights repo. We encourage you to share your analysis and visualizations with the OSO community.
 
 You will need access to the OSO data warehouse to do data science.
-See our getting started guide [here](../get-started/index.mdx).
+See our getting started guide [here](../get-started/index.md).
 
 ## Fetching Data
 
@@ -211,7 +211,7 @@ Alternatively, you can stick to static analysis and export your data from BigQue
 
 #### Obtain a GCP Service Account Key
 
-This section will walk you through the process of obtaining a GCP service account key and connecting to BigQuery from a Jupyter notebook. If you don't have a GCP account, you will need to create one (see [here](../get-started/index.mdx) for instructions).
+This section will walk you through the process of obtaining a GCP service account key and connecting to BigQuery from a Jupyter notebook. If you don't have a GCP account, you will need to create one (see [here](../get-started/index.md) for instructions).
 
 From the [GCP Console](https://console.cloud.google.com/), navigate to the BigQuery API page by clicking **API & Services** > **Enabled APIs & services** > **BigQuery API**.
 
@@ -496,7 +496,7 @@ An **impact metric** is essentially a SQL query made against the OSO dataset tha
 There are a variety of statistical techniques for analyzing data about impact metrics and identifying trends. This section provides a basic example of how to create an impact metric and run a distribution analysis.
 
 :::tip
-The complete specification for an impact metric is available [here](../how-oso-works/impact-metrics/index.mdx).
+The complete specification for an impact metric is available [here](../references/impact-metrics/index.mdx).
 :::
 
 ### General guide for creating an impact metric
@@ -508,13 +508,13 @@ The complete specification for an impact metric is available [here](../how-oso-w
 
 #### 2. Define the Metric and Selection Criteria
 
-- **Metric**: Get inspiration from some of our [impact metrics](../how-oso-works/impact-metrics/index.mdx) or [propose a new metric](../contribute/data-models.md). Examples: "Number of Full-Time Developer Months", "Number of Dependent Onchain Apps", "Layer 2 Gas Fees", "Number of New Contributors".
+- **Metric**: Get inspiration from some of our [impact metrics](../references/impact-metrics/index.mdx) or [propose a new metric](../contribute-models/data-models.md). Examples: "Number of Full-Time Developer Months", "Number of Dependent Onchain Apps", "Layer 2 Gas Fees", "Number of New Contributors".
 - **Time Period**: Specify a time interval for applying the metric. Examples: "Last 6 months", "Since the project's inception".
 - **Selection Filter**: Make explicit the criteria to identify which projects are eligible (or ineligible) to be included in the analysis. Examples: "Projects with developer activity in the last 90 days", "Projects with NPM packages used by at least 5 onchain projects", "Projects with a permissive open source license (e.g., MIT, Apache 2.0) and a codebase that is at least 6 months old".
 
 #### 3. Normalize the Data
 
-- **Query Logic**: Provide the code that fetches the metrics for each project in the selection set. The query may only make use of datasets that are public and in the OSO data warehouse. (Contribute new pubic datasets [here](../contribute/connect-data/index.md).)
+- **Query Logic**: Provide the code that fetches the metrics for each project in the selection set. The query may only make use of datasets that are public and in the OSO data warehouse. (Contribute new pubic datasets [here](../contribute-data/index.md).)
 - **Normalization Method**: Choose an appropriate method for normalizing the metric data (e.g., Gaussian distribution, log scale) that fits the metric characteristics. The script in the tutorial (see next section) includes an example of a normalization method you can start with.
 
 #### 4. Optional: Share Your Analysis

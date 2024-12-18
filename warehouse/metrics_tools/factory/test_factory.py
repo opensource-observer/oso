@@ -1,14 +1,14 @@
-from metrics_tools.utils.dataframes import as_pandas_df
-from metrics_tools.utils.testing import duckdb_df_context
 import os
+
 import arrow
 import pytest
-
-from metrics_tools.utils.fixtures.gen_data import MetricsDBFixture
-from metrics_tools.runner import MetricsRunner
 from metrics_tools.definition import MetricQueryDef, RollingConfig
-from .factory import TimeseriesMetrics
+from metrics_tools.runner import MetricsRunner
+from metrics_tools.utils.dataframes import as_pandas_df
+from metrics_tools.utils.fixtures.gen_data import MetricsDBFixture
+from metrics_tools.utils.testing import duckdb_df_context
 
+from .factory import TimeseriesMetrics
 
 CURR_DIR = os.path.dirname(__file__)
 
@@ -166,7 +166,7 @@ def test_timeseries_metric_rendering(timeseries_metrics_to_test: TimeseriesMetri
     }
 
 
-def test_runner(
+def test_with_runner(
     timeseries_metrics_to_test: TimeseriesMetrics, timeseries_duckdb: MetricsDBFixture
 ):
     base_locals = {"oso_source": "sources"}

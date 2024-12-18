@@ -1,15 +1,27 @@
 with first_of_activity_to_entity as (
   -- We use this CTE to get the first of a specific type of event to a specific
   -- entity.
-  select MIN(time) as `time`,
+  -- select MIN(time) as `time`,
+  --   event_source,
+  --   from_artifact_id,
+  --   to_artifact_id
+  -- from metrics.first_of_event_from_artifact
+  -- where event_type in @activity_event_types
+  -- group by event_source,
+  --   from_artifact_id,
+  --   to_artifact_id
+  select 
+    `time`, 
     event_source,
     from_artifact_id,
-    to_artifact_id
-  from metrics.first_of_event_from_artifact
-  where event_type in @activity_event_types
-  group by event_source,
-    from_artifact_id,
-    to_artifact_id
+    @metrics_entity_type_col(
+      'to_{entity_type}_id',
+      table_alias := first_contribution,
+      include_column_alias := true
+    )
+  from @metrics_entity_type_table(
+    'metrics.first_contribution_to_{entity_type}'
+  ) as first_contribution
 ),
 filtered_first_of as (
   -- Filtered first of events to just the current period we are measuring.

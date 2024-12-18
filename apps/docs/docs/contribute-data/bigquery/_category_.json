@@ -1,0 +1,8 @@
+{
+  "label": "Connect via BigQuery",
+  "position": 2,
+  "link": {
+    "type": "doc",
+    "id": "index"
+  }
+}

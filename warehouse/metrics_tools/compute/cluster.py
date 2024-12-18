@@ -11,7 +11,7 @@ from dask.distributed import Client
 from dask.distributed import Future as DaskFuture
 from dask.distributed import LocalCluster
 from dask_kubernetes.operator import KubeCluster, make_cluster_spec
-from metrics_tools.compute.types import ClusterStatus
+from metrics_tools.compute.types import ClusterConfig, ClusterStatus
 from pyee.asyncio import AsyncIOEventEmitter
 
 from .worker import (
@@ -232,6 +232,9 @@ class ClusterManager:
         async with self._lock:
             if self._cluster is not None:
                 self.logger.info("cluster already running")
+
+                # Trigger scaling if necessary
+
                 return ClusterStatus(
                     status="Cluster already running",
                     is_ready=True,
@@ -349,14 +352,17 @@ class ClusterManager:
 
 
 def make_new_cluster(
+    *,
     image: str,
     cluster_id: str,
     service_account_name: str,
     threads: int,
     scheduler_memory_request: str,
     scheduler_memory_limit: str,
+    scheduler_pool_type: str,
     worker_memory_request: str,
     worker_memory_limit: str,
+    worker_pool_type: str,
 ):
     spec = make_cluster_spec(
         name=f"{cluster_id}",
@@ -371,20 +377,22 @@ def make_new_cluster(
             "key": "pool_type",
             "effect": "NoSchedule",
             "operator": "Equal",
-            "value": "sqlmesh-worker",
+            "value": scheduler_pool_type,
         }
     ]
-    spec["spec"]["scheduler"]["spec"]["nodeSelector"] = {"pool_type": "sqlmesh-worker"}
+    spec["spec"]["scheduler"]["spec"]["nodeSelector"] = {
+        "pool_type": scheduler_pool_type
+    }
 
     spec["spec"]["worker"]["spec"]["tolerations"] = [
         {
             "key": "pool_type",
             "effect": "NoSchedule",
             "operator": "Equal",
-            "value": "sqlmesh-worker",
+            "value": worker_pool_type,
         }
     ]
-    spec["spec"]["worker"]["spec"]["nodeSelector"] = {"pool_type": "sqlmesh-worker"}
+    spec["spec"]["worker"]["spec"]["nodeSelector"] = {"pool_type": worker_pool_type}
 
     # Give the workers a different resource allocation
     for container in spec["spec"]["worker"]["spec"]["containers"]:
@@ -425,18 +433,19 @@ def make_new_cluster(
     return spec
 
 
-def make_new_cluster_with_defaults():
+def make_new_cluster_with_defaults(config: ClusterConfig):
     # Import here to avoid dependency on constants for all dependents on the
     # cluster module
-    from . import constants
 
     return make_new_cluster(
-        f"{constants.cluster_worker_image_repo}:{constants.cluster_worker_image_tag}",
-        constants.cluster_name,
-        constants.cluster_namespace,
-        threads=constants.cluster_worker_threads,
-        scheduler_memory_limit=constants.scheduler_memory_limit,
-        scheduler_memory_request=constants.scheduler_memory_request,
-        worker_memory_limit=constants.worker_memory_limit,
-        worker_memory_request=constants.worker_memory_request,
+        image=f"{config.cluster_image_repo}:{config.cluster_image_tag}",
+        cluster_id=config.cluster_name,
+        service_account_name=config.cluster_service_account,
+        threads=config.worker_threads,
+        scheduler_memory_limit=config.scheduler_memory_limit,
+        scheduler_memory_request=config.scheduler_memory_request,
+        scheduler_pool_type=config.scheduler_pool_type,
+        worker_memory_limit=config.worker_memory_limit,
+        worker_memory_request=config.worker_memory_request,
+        worker_pool_type=config.worker_pool_type,
     )

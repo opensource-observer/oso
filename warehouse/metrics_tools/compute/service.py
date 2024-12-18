@@ -8,28 +8,50 @@ import typing as t
 import uuid
 from datetime import datetime
 
-from dask.distributed import CancelledError, Future
+from dask.distributed import CancelledError
+from metrics_tools.compute.result import DBImportAdapter
 from metrics_tools.compute.worker import execute_duckdb_load
 from metrics_tools.runner import FakeEngineAdapter, MetricsRunner
+from pyee.asyncio import AsyncIOEventEmitter
 
 from .cache import CacheExportManager
 from .cluster import ClusterManager
 from .types import (
     ClusterStartRequest,
     ClusterStatus,
+    ColumnsDefinition,
     ExportReference,
     ExportType,
-    QueryJobProgress,
+    JobStatusResponse,
+    JobSubmitRequest,
+    JobSubmitResponse,
     QueryJobState,
+    QueryJobStateUpdate,
     QueryJobStatus,
-    QueryJobStatusResponse,
-    QueryJobSubmitRequest,
-    QueryJobSubmitResponse,
+    QueryJobTaskStatus,
+    QueryJobTaskUpdate,
     QueryJobUpdate,
+    QueryJobUpdateScope,
 )
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
+
+
+class JobFailed(Exception):
+    pass
+
+
+class JobTasksFailed(JobFailed):
+    exceptions: t.List[Exception]
+    failures: int
+
+    def __init__(self, job_id: str, failures: int, exceptions: t.List[Exception]):
+        self.failures = failures
+        self.exceptions = exceptions
+        super().__init__(
+            f"job[{job_id}] failed with {failures} failures and {len(exceptions)} exceptions"
+        )
 
 
 class MetricsCalculationService:
@@ -50,6 +72,7 @@ class MetricsCalculationService:
         result_path_prefix: str,
         cluster_manager: ClusterManager,
         cache_manager: CacheExportManager,
+        import_adapter: DBImportAdapter,
         log_override: t.Optional[logging.Logger] = None,
     ):
         service = cls(
@@ -58,9 +81,9 @@ class MetricsCalculationService:
             result_path_prefix,
             cluster_manager,
             cache_manager,
+            import_adapter=import_adapter,
             log_override=log_override,
         )
-        # service.start_job_state_listener()
         return service
 
     def __init__(
@@ -70,6 +93,7 @@ class MetricsCalculationService:
         result_path_prefix: str,
         cluster_manager: ClusterManager,
         cache_manager: CacheExportManager,
+        import_adapter: DBImportAdapter,
         log_override: t.Optional[logging.Logger] = None,
     ):
         self.id = id
@@ -77,104 +101,152 @@ class MetricsCalculationService:
         self.result_path_prefix = result_path_prefix
         self.cluster_manager = cluster_manager
         self.cache_manager = cache_manager
+        self.import_adapter = import_adapter
         self.job_state = {}
         self.job_tasks = {}
         self.job_state_lock = asyncio.Lock()
         self.logger = log_override or logger
+        self.emitter = AsyncIOEventEmitter()
 
     async def handle_query_job_submit_request(
-        self, job_id: str, result_path_base: str, input: QueryJobSubmitRequest
+        self,
+        job_id: str,
+        result_path_base: str,
+        input: JobSubmitRequest,
+        calculation_export: ExportReference,
+        final_export: ExportReference,
     ):
         try:
-            await self._handle_query_job_submit_request(job_id, result_path_base, input)
+            await self._handle_query_job_submit_request(
+                job_id, result_path_base, input, calculation_export, final_export
+            )
         except Exception as e:
             self.logger.error(f"job[{job_id}] failed with exception: {e}")
-            await self._notify_job_failed(job_id, 0, 0)
+            await self._notify_job_failed(job_id, False, e)
 
     async def _handle_query_job_submit_request(
         self,
         job_id: str,
         result_path_base: str,
-        input: QueryJobSubmitRequest,
+        input: JobSubmitRequest,
+        calculation_export: ExportReference,
+        final_export: ExportReference,
     ):
-        self.logger.info(f"job[{job_id}] waiting for cluster to be ready")
+        self.logger.debug(f"job[{job_id}] waiting for cluster to be ready")
         await self.cluster_manager.wait_for_ready()
-        self.logger.info(f"job[{job_id}] cluster ready")
+        self.logger.debug(f"job[{job_id}] cluster ready")
 
-        client = await self.cluster_manager.client
-        self.logger.info(f"job[{job_id}] waiting for dependencies to be exported")
-        exported_dependent_tables_map = await self.resolve_dependent_tables(input)
-        self.logger.info(f"job[{job_id}] dependencies exported")
+        self.logger.debug(f"job[{job_id}] waiting for dependencies to be exported")
+        try:
+            exported_dependent_tables_map = await self.resolve_dependent_tables(input)
+        except Exception as e:
+            self.logger.error(f"job[{job_id}] failed to export dependencies: {e}")
+            await self._notify_job_failed(job_id, False, e)
+            return
+        self.logger.debug(f"job[{job_id}] dependencies exported")
 
-        tasks: t.List[Future] = []
+        tasks = await self._batch_query_to_scheduler(
+            job_id, result_path_base, input, exported_dependent_tables_map
+        )
 
+        total = len(tasks)
+        if total != input.batch_count():
+            self.logger.warning("job[{job_id}] batch count mismatch")
+
+        exceptions = []
+
+        for next_task in asyncio.as_completed(tasks):
+            try:
+                await next_task
+            except Exception as e:
+                self.logger.error(
+                    f"job[{job_id}] task failed with uncaught exception: {e}"
+                )
+                exceptions.append(e)
+                await self._notify_job_failed(job_id, True, e)
+
+        # Import the final result into the database
+        self.logger.info("job[{job_id}]: importing final result into the database")
+        await self.import_adapter.import_reference(calculation_export, final_export)
+
+        self.logger.debug(f"job[{job_id}]: notifying job completed")
+        await self._notify_job_completed(job_id)
+
+        if len(exceptions) > 0:
+            raise JobTasksFailed(job_id, len(exceptions), exceptions)
+
+    async def _batch_query_to_scheduler(
+        self,
+        job_id: str,
+        result_path_base: str,
+        input: JobSubmitRequest,
+        exported_dependent_tables_map: t.Dict[str, ExportReference],
+    ):
+        """Given a query job: break down into batches and submit to the scheduler"""
+
+        tasks: t.List[asyncio.Task] = []
+        count = 0
         async for batch_id, batch in self.generate_query_batches(
             input, input.batch_size
         ):
+            if count == 0:
+                await self._notify_job_running(job_id)
+
             task_id = f"{job_id}-{batch_id}"
-            result_path = os.path.join(result_path_base, job_id, f"{batch_id}.parquet")
+            result_path = os.path.join(result_path_base, f"{batch_id}.parquet")
 
-            self.logger.info(f"job[{job_id}]: Submitting task {task_id}")
+            self.logger.debug(f"job[{job_id}]: Submitting task {task_id}")
 
-            # dependencies = {
-            #     table: to_jsonable_python(reference)
-            #     for table, reference in exported_dependent_tables_map.items()
-            # }
-
-            task = client.submit(
-                execute_duckdb_load,
-                job_id,
-                task_id,
-                result_path,
-                batch,
-                exported_dependent_tables_map,
-                retries=input.retries,
+            task = asyncio.create_task(
+                self._submit_query_task_to_scheduler(
+                    job_id,
+                    task_id,
+                    result_path,
+                    batch,
+                    exported_dependent_tables_map,
+                    retries=3,
+                )
             )
-
-            self.logger.info(f"job[{job_id}]: Submitted task {task_id}")
             tasks.append(task)
 
-        total = len(tasks)
-        completed = 0
-        failures = 0
-        exceptions = []
+            self.logger.debug(f"job[{job_id}]: Submitted task {task_id}")
+            count += 1
+        return tasks
 
-        # In the future we should replace this with the python 3.13 version of
-        # this.
+    async def _submit_query_task_to_scheduler(
+        self,
+        job_id: str,
+        task_id: str,
+        result_path: str,
+        batch: t.List[str],
+        exported_dependent_tables_map: t.Dict[str, ExportReference],
+        retries: int,
+    ):
+        """Submit a single query task to the scheduler"""
+        client = await self.cluster_manager.client
 
-        for finished in asyncio.as_completed(tasks):
-            try:
-                task_id = await finished
-                completed += 1
-                self.logger.info(f"job[{job_id}] progress: {completed}/{total}")
-                await self._notify_job_updated(job_id, completed, total)
-                self.logger.info(
-                    f"job[{job_id}] finished notifying update: {completed}/{total}"
-                )
-            except CancelledError as e:
-                failures += 1
-                self.logger.error(f"job[{job_id}] task cancelled {e.args}")
-                continue
-            except Exception as e:
-                failures += 1
-                exceptions.append(e)
-                self.logger.error(f"job[{job_id}] task failed with exception: {e}")
-                continue
-            self.logger.info(f"job[{job_id}] awaiting finished")
+        task_future = client.submit(
+            execute_duckdb_load,
+            job_id,
+            task_id,
+            result_path,
+            batch,
+            exported_dependent_tables_map,
+            retries=retries,
+            key=task_id,
+        )
 
-            await self._notify_job_updated(job_id, completed, total)
-            self.logger.info(f"job[{job_id}] task_id={task_id} finished")
-        if failures > 0:
-            self.logger.error(
-                f"job[{job_id}] {failures} tasks failed. received {len(exceptions)} exceptions"
-            )
-            await self._notify_job_failed(job_id, completed, total)
-            if len(exceptions) > 0:
-                for e in exceptions:
-                    self.logger.error(f"job[{job_id}] exception received: {e}")
-        else:
-            self.logger.info(f"job[{job_id}]: done")
-            await self._notify_job_completed(job_id, completed, total)
+        try:
+            await task_future
+            self.logger.info(f"job[{job_id}] task_id={task_id} completed")
+            await self._notify_job_task_completed(job_id, task_id)
+        except CancelledError as e:
+            self.logger.error(f"job[{job_id}] task cancelled {e.args}")
+            await self._notify_job_task_cancelled(job_id, task_id)
+        except Exception as e:
+            self.logger.error(f"job[{job_id}] task failed with exception: {e}")
+            await self._notify_job_task_failed(job_id, task_id, e)
+        return task_id
 
     async def close(self):
         await self.cluster_manager.close()
@@ -189,98 +261,191 @@ class MetricsCalculationService:
     async def get_cluster_status(self):
         return self.cluster_manager.get_cluster_status()
 
-    async def submit_job(self, input: QueryJobSubmitRequest):
+    async def submit_job(self, input: JobSubmitRequest):
         """Submit a job to the cluster to compute the metrics"""
         self.logger.debug("submitting job")
-        job_id = str(uuid.uuid4())
+        job_id = f"export_{str(uuid.uuid4().hex)}"
 
-        result_path_base = os.path.join(self.result_path_prefix, job_id)
-        result_path = os.path.join(
-            f"gs://{self.gcs_bucket}", result_path_base, "*.parquet"
+        self.logger.debug(
+            f"job[{job_id}] logging request: {input.model_dump_json(indent=2)}"
         )
 
-        await self._notify_job_pending(job_id, 1)
+        # Files are organized in a way that can be searched by date such that we
+        # can easily clean old files
+        result_path_base = os.path.join(
+            self.result_path_prefix,
+            input.execution_time.strftime("%Y/%m/%d/%H"),
+            job_id,
+        )
+        result_path = os.path.join(
+            f"gs://{self.gcs_bucket}",
+            result_path_base,
+            "*.parquet",
+        )
+
+        # This is the export that the workers should write to
+        calculation_export = ExportReference(
+            table_name=job_id,
+            type=ExportType.GCS,
+            columns=ColumnsDefinition(columns=input.columns, dialect=input.dialect),
+            payload={"gcs_path": result_path},
+        )
+
+        final_expected_reference = await self.import_adapter.translate_reference(
+            calculation_export
+        )
+
+        await self._notify_job_pending(job_id, input)
         task = asyncio.create_task(
-            self.handle_query_job_submit_request(job_id, result_path_base, input)
+            self.handle_query_job_submit_request(
+                job_id,
+                result_path_base,
+                input,
+                calculation_export,
+                final_expected_reference,
+            )
         )
         async with self.job_state_lock:
             self.job_tasks[job_id] = task
 
-        return QueryJobSubmitResponse(
+        return JobSubmitResponse(
             job_id=job_id,
-            export_reference=ExportReference(
-                table=job_id,
-                type=ExportType.GCS,
-                payload={"gcs_path": result_path},
-            ),
+            export_reference=final_expected_reference,
         )
 
-    async def _notify_job_pending(self, job_id: str, total: int):
-        await self._set_job_state(
+    async def _notify_job_pending(self, job_id: str, input: JobSubmitRequest):
+        await self._create_job_state(
+            job_id,
+            input,
+        )
+
+    async def _notify_job_running(self, job_id: str):
+        await self._update_job_state(
             job_id,
             QueryJobUpdate(
-                updated_at=datetime.now(),
-                status=QueryJobStatus.PENDING,
-                progress=QueryJobProgress(completed=0, total=total),
+                time=datetime.now(),
+                scope=QueryJobUpdateScope.JOB,
+                payload=QueryJobStateUpdate(
+                    status=QueryJobStatus.RUNNING,
+                    has_remaining_tasks=True,
+                ),
             ),
         )
 
-    async def _notify_job_updated(self, job_id: str, completed: int, total: int):
-        await self._set_job_state(
+    async def _notify_job_task_completed(self, job_id: str, task_id: str):
+        await self._update_job_state(
             job_id,
             QueryJobUpdate(
-                updated_at=datetime.now(),
-                status=QueryJobStatus.RUNNING,
-                progress=QueryJobProgress(completed=completed, total=total),
+                time=datetime.now(),
+                scope=QueryJobUpdateScope.TASK,
+                payload=QueryJobTaskUpdate(
+                    task_id=task_id,
+                    status=QueryJobTaskStatus.SUCCEEDED,
+                ),
             ),
         )
 
-    async def _notify_job_completed(self, job_id: str, completed: int, total: int):
-        await self._set_job_state(
+    async def _notify_job_task_failed(
+        self, job_id: str, task_id: str, exception: Exception
+    ):
+        await self._update_job_state(
             job_id,
             QueryJobUpdate(
-                updated_at=datetime.now(),
-                status=QueryJobStatus.COMPLETED,
-                progress=QueryJobProgress(completed=completed, total=total),
+                time=datetime.now(),
+                scope=QueryJobUpdateScope.TASK,
+                payload=QueryJobTaskUpdate(
+                    task_id=task_id,
+                    status=QueryJobTaskStatus.FAILED,
+                    exception=str(exception),
+                ),
             ),
         )
 
-    async def _notify_job_failed(self, job_id: str, completed: int, total: int):
-        await self._set_job_state(
+    async def _notify_job_task_cancelled(self, job_id: str, task_id: str):
+        await self._update_job_state(
             job_id,
             QueryJobUpdate(
-                updated_at=datetime.now(),
-                status=QueryJobStatus.FAILED,
-                progress=QueryJobProgress(completed=completed, total=total),
+                time=datetime.now(),
+                scope=QueryJobUpdateScope.TASK,
+                payload=QueryJobTaskUpdate(
+                    task_id=task_id,
+                    status=QueryJobTaskStatus.CANCELLED,
+                ),
             ),
         )
 
-    async def _set_job_state(
+    async def _notify_job_completed(self, job_id: str):
+        await self._update_job_state(
+            job_id,
+            QueryJobUpdate(
+                time=datetime.now(),
+                scope=QueryJobUpdateScope.JOB,
+                payload=QueryJobStateUpdate(
+                    status=QueryJobStatus.COMPLETED,
+                    has_remaining_tasks=False,
+                ),
+            ),
+        )
+
+    async def _notify_job_failed(
+        self,
+        job_id: str,
+        has_remaining_tasks: bool,
+        exception: t.Optional[Exception] = None,
+    ):
+        await self._update_job_state(
+            job_id,
+            QueryJobUpdate(
+                time=datetime.now(),
+                scope=QueryJobUpdateScope.JOB,
+                payload=QueryJobStateUpdate(
+                    status=QueryJobStatus.FAILED,
+                    has_remaining_tasks=has_remaining_tasks,
+                    exception=str(exception) if exception else None,
+                ),
+            ),
+        )
+
+    async def _create_job_state(self, job_id: str, input: JobSubmitRequest):
+        async with self.job_state_lock:
+            now = datetime.now()
+            self.job_state[job_id] = QueryJobState(
+                job_id=job_id,
+                created_at=now,
+                tasks_count=input.batch_count(),
+                updates=[
+                    QueryJobUpdate(
+                        time=now,
+                        scope=QueryJobUpdateScope.JOB,
+                        payload=QueryJobStateUpdate(
+                            status=QueryJobStatus.PENDING,
+                            has_remaining_tasks=True,
+                        ),
+                    )
+                ],
+            )
+
+            state = self.job_state[job_id]
+            self.emit_job_state(job_id, state)
+
+    async def _update_job_state(
         self,
         job_id: str,
         update: QueryJobUpdate,
     ):
-        self.logger.debug(f"job[{job_id}] status={update.status}")
+        self.logger.debug(f"job[{job_id}] status={update.payload.status}")
         async with self.job_state_lock:
-            if update.status == QueryJobStatus.PENDING:
-                self.job_state[job_id] = QueryJobState(
-                    job_id=job_id,
-                    created_at=update.updated_at,
-                    updates=[update],
-                )
-            else:
-                state = self.job_state.get(job_id)
-                if not state:
-                    raise ValueError(f"Job {job_id} not found")
+            state = self.job_state.get(job_id)
+            assert state is not None, f"job[{job_id}] not found"
+            state.update(update)
+            self.job_state[job_id] = state
+            self.emit_job_state(job_id, state)
 
-                state.updates.append(update)
-                self.job_state[job_id] = state
-
-                if (
-                    update.status == QueryJobStatus.COMPLETED
-                    or update.status == QueryJobStatus.FAILED
-                ):
-                    del self.job_tasks[job_id]
+    def emit_job_state(self, job_id: str, state: QueryJobState):
+        copied_state = copy.deepcopy(state)
+        self.logger.info("emitting job update events")
+        self.emitter.emit("job_update", job_id, copied_state)
+        self.emitter.emit(f"job_update:{job_id}", copied_state)
 
     async def _get_job_state(self, job_id: str):
         """Get the current state of a job as a deep copy (to prevent
@@ -289,9 +454,7 @@ class MetricsCalculationService:
             state = copy.deepcopy(self.job_state.get(job_id))
         return state
 
-    async def generate_query_batches(
-        self, input: QueryJobSubmitRequest, batch_size: int
-    ):
+    async def generate_query_batches(self, input: JobSubmitRequest, batch_size: int):
         runner = MetricsRunner.from_engine_adapter(
             FakeEngineAdapter("duckdb"),
             input.query_as("duckdb"),
@@ -313,7 +476,7 @@ class MetricsCalculationService:
         if len(batch) > 0:
             yield (batch_num, batch)
 
-    async def resolve_dependent_tables(self, input: QueryJobSubmitRequest):
+    async def resolve_dependent_tables(self, input: JobSubmitRequest):
         """Resolve the dependent tables for the given input and returns the
         associate export references"""
 
@@ -335,7 +498,7 @@ class MetricsCalculationService:
 
         # First use the cache manager to resolve the export references
         references = await self.cache_manager.resolve_export_references(
-            tables_to_export
+            tables_to_export, input.execution_time
         )
         self.logger.debug(f"resolved references: {references}")
 
@@ -349,11 +512,27 @@ class MetricsCalculationService:
 
     async def get_job_status(
         self, job_id: str, include_stats: bool = False
-    ) -> QueryJobStatusResponse:
+    ) -> JobStatusResponse:
         state = await self._get_job_state(job_id)
         if not state:
             raise ValueError(f"Job {job_id} not found")
         return state.as_response(include_stats=include_stats)
+
+    def listen_for_job_updates(
+        self, job_id: str, handler: t.Callable[[JobStatusResponse], t.Awaitable[None]]
+    ):
+        self.logger.info("Listening for job updates")
+
+        async def convert_to_response(state: QueryJobState):
+            self.logger.debug("converting to response")
+            return await handler(state.as_response())
+
+        handle = self.emitter.add_listener(f"job_update:{job_id}", convert_to_response)
+
+        def remove_listener():
+            return self.emitter.remove_listener(f"job_update:{job_id}", handle)
+
+        return remove_listener
 
     async def add_existing_exported_table_references(
         self, update: t.Dict[str, ExportReference]

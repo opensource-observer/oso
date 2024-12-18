@@ -3,9 +3,11 @@
 import logging
 import time
 import typing as t
+from contextlib import contextmanager
 from datetime import datetime
+from urllib.parse import urljoin
 
-import requests
+import httpx
 from metrics_tools.compute.types import (
     ClusterStartRequest,
     ClusterStatus,
@@ -13,14 +15,16 @@ from metrics_tools.compute.types import (
     ExportedTableLoadRequest,
     ExportReference,
     InspectCacheResponse,
+    JobStatusResponse,
+    JobSubmitRequest,
+    JobSubmitResponse,
     QueryJobStatus,
-    QueryJobStatusResponse,
-    QueryJobSubmitRequest,
-    QueryJobSubmitResponse,
 )
 from metrics_tools.definition import PeerMetricDependencyRef
 from pydantic import BaseModel
 from pydantic_core import to_jsonable_python
+from websockets.sync.client import connect
+from websockets.sync.connection import Connection
 
 logger = logging.getLogger(__name__)
 
@@ -29,14 +33,86 @@ class ResponseObject[T](t.Protocol):
     def model_validate(self, obj: dict) -> T: ...
 
 
+class BaseWebsocketConnector:
+    def receive(self) -> str:
+        raise NotImplementedError()
+
+    def send(self, data: str):
+        raise NotImplementedError()
+
+
+class WebsocketConnectFactory(t.Protocol):
+    def __call__(
+        self, *, base_url: str, path: str
+    ) -> t.ContextManager[BaseWebsocketConnector]: ...
+
+
+class WebsocketsConnector(BaseWebsocketConnector):
+    def __init__(self, connection: Connection):
+        self.connection = connection
+
+    def receive(self):
+        data = self.connection.recv()
+        if isinstance(data, str):
+            return data
+        else:
+            return data.decode()
+
+    def send(self, data: str):
+        return self.connection.send(data)
+
+
+class ClientRetriesExceeded(Exception):
+    pass
+
+
+@contextmanager
+def default_ws(*, base_url: str, path: str):
+    url = urljoin(base_url, path)
+    with connect(url) as ws:
+        yield WebsocketsConnector(ws)
+
+
 class Client:
     """A metrics calculation service client"""
 
-    url: str
+    url: httpx.Client
     logger: logging.Logger
 
-    def __init__(self, url: str, log_override: t.Optional[logging.Logger] = None):
-        self.url = url
+    @classmethod
+    def from_url(
+        cls,
+        url: str,
+        retries: int = 5,
+        log_override: t.Optional[logging.Logger] = None,
+    ):
+        """Create a client from a base url
+
+        Args:
+            url (str): The base url
+            retries (int): The number of retries the client should attempt when connecting
+            log_override (t.Optional[logging.Logger]): An optional logger override
+
+        Returns:
+            Client: The client instance
+        """
+        return cls(
+            httpx.Client(base_url=url),
+            retries,
+            default_ws,
+            log_override=log_override,
+        )
+
+    def __init__(
+        self,
+        client: httpx.Client,
+        retries: int,
+        websocket_connect_factory: WebsocketConnectFactory,
+        log_override: t.Optional[logging.Logger] = None,
+    ):
+        self.client = client
+        self.retries = retries
+        self.websocket_connect_factory = websocket_connect_factory
         self.logger = log_override or logger
 
     def calculate_metrics(
@@ -50,9 +126,10 @@ class Client:
         ref: PeerMetricDependencyRef,
         locals: t.Dict[str, t.Any],
         dependent_tables_map: t.Dict[str, str],
+        progress_handler: t.Optional[t.Callable[[JobStatusResponse], None]] = None,
         cluster_min_size: int = 6,
         cluster_max_size: int = 6,
-        retries: t.Optional[int] = None,
+        job_retries: int = 3,
     ):
         """Calculate metrics for a given period and write the results to a gcs
         folder. This method is a high level method that triggers all of the
@@ -73,7 +150,7 @@ class Client:
             ref (PeerMetricDependencyRef): The dependency reference
             locals (t.Dict[str, t.Any]): The local variables to use
             dependent_tables_map (t.Dict[str, str]): The dependent tables map
-            retries (t.Optional[int], optional): The number of retries. Defaults to None.
+            job_retries (int): The number of retries for a given job in the worker queue. Defaults to 3.
 
         Returns:
             ExportReference: The export reference for the resulting calculation
@@ -94,33 +171,34 @@ class Client:
             ref,
             locals,
             dependent_tables_map,
-            retries,
+            job_retries,
         )
         job_id = job_response.job_id
         export_reference = job_response.export_reference
 
+        if not progress_handler:
+
+            def _handler(response: JobStatusResponse):
+                self.logger.info(
+                    f"job[{job_id}] status: {response.status}, progress: {response.progress}"
+                )
+
+            progress_handler = _handler
+
         # Wait for the job to be completed
-        status_response = self.get_job_status(job_id)
-        while status_response.status in [
-            QueryJobStatus.PENDING,
-            QueryJobStatus.RUNNING,
-        ]:
-            self.logger.info(f"job[{job_id}] is still pending")
-            status_response = self.get_job_status(job_id)
-            time.sleep(5)
-            self.logger.info(f"job[{job_id}] status is {status_response}")
+        final_status = self.wait_for_job(job_id, progress_handler)
 
-        if status_response.status == QueryJobStatus.FAILED:
-            self.logger.error(
-                f"job[{job_id}] failed with status {status_response.status}"
-            )
-            raise Exception(
-                f"job[{job_id}] failed with status {status_response.status}"
-            )
+        if final_status.status == QueryJobStatus.FAILED:
+            self.logger.error(f"job[{job_id}] failed with status {final_status.status}")
+            if final_status.exceptions:
+                self.logger.error(f"job[{job_id}] failed with exceptions")
 
-        self.logger.info(
-            f"job[{job_id}] completed with status {status_response.status}"
-        )
+            for exc in final_status.exceptions:
+                self.logger.error(f"job[{job_id}] failed with exceptoin {exc}")
+
+            raise Exception(f"job[{job_id}] failed with status {final_status.status}")
+
+        self.logger.info(f"job[{job_id}] completed with status {final_status.status}")
 
         return export_reference
 
@@ -131,6 +209,24 @@ class Client:
             ClusterStatus, "/cluster/start", request
         )
         return response
+
+    def wait_for_job(
+        self, job_id: str, progress_handler: t.Callable[[JobStatusResponse], None]
+    ):
+        """Connect to the websocket and listen for job updates"""
+        url = self.client.base_url
+        with self.websocket_connect_factory(
+            base_url=f"{url.copy_with(scheme="ws")}", path=f"/job/status/{job_id}/ws"
+        ) as ws:
+            while True:
+                raw_response = ws.receive()
+                response = JobStatusResponse.model_validate_json(raw_response)
+                if response.status not in [
+                    QueryJobStatus.PENDING,
+                    QueryJobStatus.RUNNING,
+                ]:
+                    return response
+                progress_handler(response)
 
     def submit_job(
         self,
@@ -143,7 +239,7 @@ class Client:
         ref: PeerMetricDependencyRef,
         locals: t.Dict[str, t.Any],
         dependent_tables_map: t.Dict[str, str],
-        retries: t.Optional[int] = None,
+        job_retries: t.Optional[int] = None,
     ):
         """Submit a job to the metrics calculation service
 
@@ -157,12 +253,12 @@ class Client:
             ref (PeerMetricDependencyRef): The dependency reference
             locals (t.Dict[str, t.Any]): The local variables to use
             dependent_tables_map (t.Dict[str, str]): The dependent tables map
-            retries (t.Optional[int], optional): The number of retries. Defaults to None.
+            job_retries (int): The number of retries for a given job in the worker queue. Defaults to 3.
 
         Returns:
             QueryJobSubmitResponse: The job response from the metrics calculation service
         """
-        request = QueryJobSubmitRequest(
+        request = JobSubmitRequest(
             query_str=query_str,
             start=start,
             end=end,
@@ -172,16 +268,17 @@ class Client:
             ref=ref,
             locals=locals,
             dependent_tables_map=dependent_tables_map,
-            retries=retries,
+            retries=job_retries,
+            execution_time=datetime.now(),
         )
         job_response = self.service_post_with_input(
-            QueryJobSubmitResponse, "/job/submit", request
+            JobSubmitResponse, "/job/submit", request
         )
         return job_response
 
     def get_job_status(self, job_id: str):
         """Get the status of a job"""
-        return self.service_get(QueryJobStatusResponse, f"/job/status/{job_id}")
+        return self.service_get(JobStatusResponse, f"/job/status/{job_id}")
 
     def run_cache_manual_load(self, map: t.Dict[str, ExportReference]):
         """Load a cache with the provided map. This is useful for testing
@@ -195,12 +292,46 @@ class Client:
 
     def service_request[
         T
-    ](self, method: str, factory: ResponseObject[T], path: str, **kwargs) -> T:
-        response = requests.request(
-            method,
-            f"{self.url}{path}",
-            **kwargs,
-        )
+    ](
+        self,
+        method: str,
+        factory: ResponseObject[T],
+        path: str,
+        client_retries: t.Optional[int] = None,
+        **kwargs,
+    ) -> T:
+        def make_request():
+            return self.client.request(
+                method,
+                path,
+                **kwargs,
+            )
+
+        def retry_request(retries: int):
+            for i in range(retries):
+                try:
+                    response = make_request()
+                    response.raise_for_status()
+                    return response
+                except httpx.NetworkError as e:
+                    self.logger.error(f"Failed request with network error, {e}")
+                except httpx.TimeoutException as e:
+                    self.logger.error(f"Failed request with timeout, {e}")
+                except httpx.HTTPStatusError as e:
+                    self.logger.error(
+                        f"Failed request with response code: {e.response.status_code}"
+                    )
+                    if e.response.status_code >= 500:
+                        self.logger.debug("server error, retrying")
+                    elif e.response.status_code == 408:
+                        self.logger.debug("request timeout, retrying")
+                    else:
+                        raise e
+                time.sleep(2**i)  # Exponential backoff
+            raise ClientRetriesExceeded("Request failed after too many retries")
+
+        client_retries = client_retries or self.retries
+        response = retry_request(client_retries)
         return factory.model_validate(response.json())
 
     def service_post_with_input[

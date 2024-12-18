@@ -15,16 +15,13 @@ QUERIES_DIR = os.path.abspath(os.path.join(CURR_DIR, "../metrics_mesh/oso_metric
 type ExtraVarBaseType = str | int | float
 type ExtraVarType = ExtraVarBaseType | t.List[ExtraVarBaseType]
 
+RollingCronOptions = t.Literal["@daily", "@weekly", "@monthly", "@yearly"]
+
 
 class RollingConfig(t.TypedDict):
     windows: t.List[int]
     unit: str
-    cron: str
-
-
-@dataclass
-class RollingWindow:
-    trailing_days: int
+    cron: RollingCronOptions
 
 
 class TimeseriesBucket(Enum):
@@ -80,6 +77,7 @@ class PeerMetricDependencyRef(t.TypedDict):
     window: t.NotRequired[t.Optional[int]]
     unit: t.NotRequired[t.Optional[str]]
     time_aggregation: t.NotRequired[t.Optional[str]]
+    cron: t.NotRequired[RollingCronOptions]
 
 
 class MetricModelRef(t.TypedDict):
@@ -353,6 +351,7 @@ class MetricQuery:
                             entity_type=entity,
                             window=window,
                             unit=self._source.rolling.get("unit"),
+                            cron=self._source.rolling.get("cron"),
                         )
                     )
             for time_aggregation in self._source.time_aggregations or []:
@@ -402,12 +401,4 @@ class TimeseriesMetricsOptions(t.TypedDict):
     start: TimeLike
     timeseries_sources: t.NotRequired[t.List[str]]
     queries_dir: t.NotRequired[str]
-
-
-class GeneratedArtifactConfig(t.TypedDict):
-    query_reference_name: str
-    query_def_as_input: MetricQueryInput
-    default_dialect: str
-    peer_table_tuples: t.List[t.Tuple[str, str]]
-    ref: PeerMetricDependencyRef
-    timeseries_sources: t.List[str]
+    enabled: t.NotRequired[bool]

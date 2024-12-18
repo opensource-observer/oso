@@ -17,7 +17,7 @@ import Heading from "@theme/Heading";
 
 function BlogTagsPostsPageMetadata({ tag }: Props): JSX.Element {
   const title = _.capitalize(tag.label);
-  console.log(tag);
+  //console.log(tag);
   return (
     <>
       <PageMetadata title={title} description={tag.description} />
