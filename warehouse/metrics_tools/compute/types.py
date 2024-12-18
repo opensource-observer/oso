@@ -149,6 +149,14 @@ class QueryJobUpdate(BaseModel):
     scope: QueryJobUpdateScope
     payload: QueryJobUpdateTypes = Field(discriminator="type")
 
+    @classmethod
+    def create_job_update(cls, payload: QueryJobStateUpdate) -> "QueryJobUpdate":
+        return cls(time=datetime.now(), scope=QueryJobUpdateScope.JOB, payload=payload)
+
+    @classmethod
+    def create_task_update(cls, payload: QueryJobTaskUpdate) -> "QueryJobUpdate":
+        return cls(time=datetime.now(), scope=QueryJobUpdateScope.TASK, payload=payload)
+
 
 class ClusterStatus(BaseModel):
     status: str
@@ -219,6 +227,25 @@ class QueryJobState(BaseModel):
     status: QueryJobStatus = QueryJobStatus.PENDING
     updates: t.List[QueryJobUpdate]
 
+    @classmethod
+    def start(cls, job_id: str, tasks_count: int) -> "QueryJobState":
+        now = datetime.now()
+        return cls(
+            job_id=job_id,
+            created_at=now,
+            tasks_count=tasks_count,
+            updates=[
+                QueryJobUpdate(
+                    time=now,
+                    scope=QueryJobUpdateScope.JOB,
+                    payload=QueryJobStateUpdate(
+                        status=QueryJobStatus.PENDING,
+                        has_remaining_tasks=True,
+                    ),
+                )
+            ],
+        )
+
     def latest_update(self) -> QueryJobUpdate:
         return self.updates[-1]
 
@@ -233,6 +260,7 @@ class QueryJobState(BaseModel):
                 self.has_remaining_tasks = False
             elif payload.status == QueryJobStatus.FAILED:
                 self.has_remaining_tasks = payload.has_remaining_tasks
+                self.status = payload.status
             elif payload.status == QueryJobStatus.RUNNING:
                 self.status = payload.status
         else:
