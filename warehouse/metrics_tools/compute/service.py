@@ -141,8 +141,7 @@ class MetricsCalculationService:
             exported_dependent_tables_map = await self.resolve_dependent_tables(input)
         except Exception as e:
             self.logger.error(f"job[{job_id}] failed to export dependencies: {e}")
-            await self._notify_job_failed(job_id, False, e)
-            return
+            raise e
         self.logger.debug(f"job[{job_id}] dependencies exported")
 
         tasks = await self._batch_query_to_scheduler(
@@ -163,12 +162,14 @@ class MetricsCalculationService:
                     f"job[{job_id}] task failed with uncaught exception: {e}"
                 )
                 exceptions.append(e)
+                # Report failure early for any listening clients. The server
+                # will collect all errors for any internal reporting needed
                 await self._notify_job_failed(job_id, True, e)
 
+        # If there are any exceptions then we report those as failed and short
+        # circuit this method
         if len(exceptions) > 0:
-            exc = JobTasksFailed(job_id, len(exceptions), exceptions)
-            await self._notify_job_failed(job_id, False, exc)
-            raise exc
+            raise JobTasksFailed(job_id, len(exceptions), exceptions)
 
         # Import the final result into the database
         self.logger.info("job[{job_id}]: importing final result into the database")
