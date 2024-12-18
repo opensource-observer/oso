@@ -158,10 +158,10 @@ locals {
     # MCS Workers
     {
       name                              = "${var.cluster_name}-mcs-worker-node-pool"
-      machine_type                      = "n1-highmem-16"
+      machine_type                      = "n1-highmem-32"
       node_locations                    = join(",", var.cluster_zones)
       min_count                         = 0
-      max_count                         = 20
+      max_count                         = 50
       local_ssd_count                   = 0
       local_ssd_ephemeral_storage_count = 2
       spot                              = true
