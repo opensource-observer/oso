@@ -370,6 +370,6 @@ dlt_assets = create_rest_factory_asset(
     config=config,
 )
 
-tvl_assets = dlt_assets(
-    key_prefix="tvl",
+defillama_assets = dlt_assets(
+    key_prefix="defillama",
 )
