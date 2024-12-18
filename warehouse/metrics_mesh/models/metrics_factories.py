@@ -236,7 +236,7 @@ timeseries_metrics(
             rolling=RollingConfig(
                 windows=[30, 90, 180],
                 unit="day",
-                cron="@daily",
+                cron="@monthly",
             ),
             entity_types=["artifact", "project", "collection"],
         ),
@@ -253,7 +253,7 @@ timeseries_metrics(
             rolling=RollingConfig(
                 windows=[30, 90, 180],
                 unit="day",
-                cron="@daily",
+                cron="@monthly",
             ),
             entity_types=["artifact", "project", "collection"],
         ),
