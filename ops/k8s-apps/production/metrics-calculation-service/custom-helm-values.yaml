@@ -32,8 +32,8 @@ spec:
         worker:
           threads: "16"
           memory:
-            limit: "192Gi"
-            request: "180Gi"
+            limit: "390Gi"
+            request: "375Gi"
           poolType: "mcs-worker"
           duckdb_path: "/scratch/mcs-local.db"
       trino:
