@@ -9,7 +9,7 @@ from threading import Lock
 
 import duckdb
 import gcsfs
-import polars as pl
+import pandas as pd
 from dask.distributed import Worker, WorkerPlugin, get_worker
 from google.cloud import storage
 from metrics_tools.compute.types import ExportReference, ExportType
@@ -196,14 +196,14 @@ class DuckDBMetricsWorkerPlugin(MetricsWorkerPlugin):
             )
             self.get_for_cache(ref, actual)
         conn = self.connection
-        results: t.List[pl.DataFrame] = []
+        results: t.List[pd.DataFrame] = []
         for query in queries:
             self.logger.info(f"job[{job_id}][{task_id}]: Executing query {query}")
-            result = conn.execute(query).pl()
+            result = conn.execute(query).df()
             results.append(result)
         # Concatenate the results
         self.logger.info(f"job[{job_id}][{task_id}]: Concatenating results")
-        results_df = pl.concat(results)
+        results_df = pd.concat(results)
 
         # Export the results to a parquet file in memory
         self.logger.info(

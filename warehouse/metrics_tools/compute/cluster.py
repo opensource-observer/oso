@@ -65,10 +65,7 @@ async def start_duckdb_cluster_async(
         resources_str = f'{",".join(resources_to_join)}'
         worker_command.extend(["--resources", resources_str])
 
-    options: t.Dict[str, t.Any] = {
-        "namespace": namespace,
-        "worker_command": worker_command,
-    }
+    options: t.Dict[str, t.Any] = {"namespace": namespace}
     options.update(kwargs)
     if cluster_spec:
         options["custom_cluster_spec"] = cluster_spec
@@ -379,7 +376,18 @@ def make_new_cluster(
     worker_memory_request: str,
     worker_memory_limit: str,
     worker_pool_type: str,
+    worker_resources: t.Dict[str, int],
+    worker_command: t.Optional[t.List[str]] = None,
 ):
+    worker_command = worker_command or ["dask", "worker"]
+    if worker_resources:
+        resources_to_join = []
+        for resource, value in worker_resources.items():
+            resources_to_join.append(f"{resource}={value}")
+        if resources_to_join:
+            resources_str = f'{",".join(resources_to_join)}'
+            worker_command.extend(["--resources", resources_str])
+
     spec = make_cluster_spec(
         name=f"{cluster_id}",
         resources={
@@ -387,6 +395,8 @@ def make_new_cluster(
             "limits": {"memory": scheduler_memory_limit},
         },
         image=image,
+        # The type for this says string but it accepts a list
+        worker_command=worker_command,  # type: ignore
     )
     spec["spec"]["scheduler"]["spec"]["tolerations"] = [
         {
@@ -464,4 +474,5 @@ def make_new_cluster_with_defaults(config: ClusterConfig):
         worker_memory_limit=config.worker_memory_limit,
         worker_memory_request=config.worker_memory_request,
         worker_pool_type=config.worker_pool_type,
+        worker_resources=config.worker_resources,
     )

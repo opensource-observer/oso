@@ -153,6 +153,7 @@ class Client:
             locals (t.Dict[str, t.Any]): The local variables to use
             dependent_tables_map (t.Dict[str, str]): The dependent tables map
             job_retries (int): The number of retries for a given job in the worker queue. Defaults to 3.
+            slots (int): The number of slots to use for the job
             execution_time (t.Optional[datetime]): The execution time for the job
 
         Returns:
@@ -260,6 +261,7 @@ class Client:
             ref (PeerMetricDependencyRef): The dependency reference
             locals (t.Dict[str, t.Any]): The local variables to use
             dependent_tables_map (t.Dict[str, str]): The dependent tables map
+            slots (int): The number of slots to use for the job
             job_retries (int): The number of retries for a given job in the worker queue. Defaults to 3.
 
         Returns:
