@@ -182,6 +182,7 @@ class JobSubmitRequest(BaseModel):
     locals: t.Dict[str, t.Any]
     dependent_tables_map: t.Dict[str, str]
     retries: t.Optional[int] = None
+    slots: int = 2
     execution_time: datetime
 
     def query_as(self, dialect: str) -> str:
@@ -420,6 +421,7 @@ class ClusterConfig(BaseSettings):
     scheduler_memory_request: str = "85000Mi"
     scheduler_pool_type: str = "sqlmesh-scheduler"
 
+    worker_resources: t.Dict[str, int] = Field(default_factory=lambda: {"slots": "32"})
     worker_threads: int = 16
     worker_memory_limit: str = "90000Mi"
     worker_memory_request: str = "85000Mi"

@@ -23,6 +23,14 @@ class RollingConfig(t.TypedDict):
     unit: str
     cron: RollingCronOptions
 
+    # How many days do we process at once. This is useful to set for very large
+    # datasets but will default to a year if not set.
+    model_batch_size: t.NotRequired[int]
+
+    # The number of required slots for a given model. This is also very useful
+    # for large datasets
+    slots: t.NotRequired[int]
+
 
 class TimeseriesBucket(Enum):
     HOUR = "hour"
@@ -78,6 +86,8 @@ class PeerMetricDependencyRef(t.TypedDict):
     unit: t.NotRequired[t.Optional[str]]
     time_aggregation: t.NotRequired[t.Optional[str]]
     cron: t.NotRequired[RollingCronOptions]
+    batch_size: t.NotRequired[int]
+    slots: t.NotRequired[int]
 
 
 class MetricModelRef(t.TypedDict):
@@ -345,15 +355,20 @@ class MetricQuery:
         for entity in self._source.entity_types or DEFAULT_ENTITY_TYPES:
             if self._source.rolling:
                 for window in self._source.rolling["windows"]:
-                    refs.append(
-                        PeerMetricDependencyRef(
-                            name=name,
-                            entity_type=entity,
-                            window=window,
-                            unit=self._source.rolling.get("unit"),
-                            cron=self._source.rolling.get("cron"),
-                        )
+                    ref = PeerMetricDependencyRef(
+                        name=name,
+                        entity_type=entity,
+                        window=window,
+                        unit=self._source.rolling.get("unit"),
+                        cron=self._source.rolling.get("cron"),
                     )
+                    model_batch_size = self._source.rolling.get("model_batch_size")
+                    slots = self._source.rolling.get("slots")
+                    if model_batch_size:
+                        ref["batch_size"] = model_batch_size
+                    if slots:
+                        ref["slots"] = slots
+                    refs.append(ref)
             for time_aggregation in self._source.time_aggregations or []:
                 refs.append(
                     PeerMetricDependencyRef(

@@ -17,6 +17,7 @@ def async_test_setup_cluster(config: AppConfig):
 
     cluster_factory = KubeClusterFactory(
         config.cluster_namespace,
+        config.worker_resources,
         cluster_spec=cluster_spec,
         log_override=logger,
     )
