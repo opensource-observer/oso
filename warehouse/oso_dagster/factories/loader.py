@@ -80,4 +80,10 @@ def load_assets_factories_from_modules(
                 dag.add(obj)
             elif isinstance(obj, AssetFactoryResponse):
                 all = all + obj
+            elif isinstance(obj, list):
+                for item in obj:
+                    if isinstance(item, EarlyResourcesAssetFactory):
+                        dag.add(item)
+                    elif isinstance(item, AssetFactoryResponse):
+                        all = all + item
     return all
