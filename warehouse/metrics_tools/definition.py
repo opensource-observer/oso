@@ -355,15 +355,20 @@ class MetricQuery:
         for entity in self._source.entity_types or DEFAULT_ENTITY_TYPES:
             if self._source.rolling:
                 for window in self._source.rolling["windows"]:
-                    refs.append(
-                        PeerMetricDependencyRef(
-                            name=name,
-                            entity_type=entity,
-                            window=window,
-                            unit=self._source.rolling.get("unit"),
-                            cron=self._source.rolling.get("cron"),
-                        )
+                    ref = PeerMetricDependencyRef(
+                        name=name,
+                        entity_type=entity,
+                        window=window,
+                        unit=self._source.rolling.get("unit"),
+                        cron=self._source.rolling.get("cron"),
                     )
+                    model_batch_size = self._source.rolling.get("model_batch_size")
+                    slots = self._source.rolling.get("slots")
+                    if model_batch_size:
+                        ref["batch_size"] = model_batch_size
+                    if slots:
+                        ref["slots"] = slots
+                    refs.append(ref)
             for time_aggregation in self._source.time_aggregations or []:
                 refs.append(
                     PeerMetricDependencyRef(

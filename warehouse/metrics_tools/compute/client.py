@@ -245,7 +245,7 @@ class Client:
         locals: t.Dict[str, t.Any],
         dependent_tables_map: t.Dict[str, str],
         job_retries: t.Optional[int] = None,
-        slots: int = 1,
+        slots: int = 2,
         execution_time: t.Optional[datetime] = None,
     ):
         """Submit a job to the metrics calculation service
@@ -275,6 +275,7 @@ class Client:
             ref=ref,
             locals=locals,
             dependent_tables_map=dependent_tables_map,
+            slots=slots,
             retries=job_retries,
             execution_time=execution_time or datetime.now(),
         )

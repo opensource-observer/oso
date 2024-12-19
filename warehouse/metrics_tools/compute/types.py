@@ -182,7 +182,7 @@ class JobSubmitRequest(BaseModel):
     locals: t.Dict[str, t.Any]
     dependent_tables_map: t.Dict[str, str]
     retries: t.Optional[int] = None
-    slots: int = 1
+    slots: int = 2
     execution_time: datetime
 
     def query_as(self, dialect: str) -> str:
