@@ -174,7 +174,7 @@ class MetricsCalculationService:
 
         total = len(tasks)
         if total != input.batch_count():
-            self.logger.warning("job[{job_id}] batch count mismatch")
+            self.logger.warning(f"job[{job_id}] batch count mismatch")
 
         exceptions = []
         cancellations = []
@@ -201,7 +201,7 @@ class MetricsCalculationService:
             raise JobFailed(job_id, len(exceptions), exceptions, cancellations)
 
         # Import the final result into the database
-        self.logger.info("job[{job_id}]: importing final result into the database")
+        self.logger.info(f"job[{job_id}]: importing final result into the database")
         await self.import_adapter.import_reference(calculation_export, final_export)
 
         self.logger.debug(f"job[{job_id}]: notifying job completed")
