@@ -46,6 +46,7 @@ def start_duckdb_cluster(
 
 async def start_duckdb_cluster_async(
     namespace: str,
+    resources: t.Dict[str, int],
     cluster_spec: t.Optional[dict] = None,
     min_size: int = 6,
     max_size: int = 6,
@@ -55,23 +56,29 @@ async def start_duckdb_cluster_async(
     a thread. The "async" version of dask's KubeCluster doesn't work as
     expected. So for now we do this."""
 
-    options: t.Dict[str, t.Any] = {"namespace": namespace}
+    worker_command = ["dask", "worker"]
+    resources_to_join = []
+
+    for resource, value in resources.items():
+        resources_to_join.append(f"{resource}={value}")
+    if resources_to_join:
+        resources_str = f'{",".join(resources_to_join)}'
+        worker_command.extend(["--resources", resources_str])
+
+    options: t.Dict[str, t.Any] = {
+        "namespace": namespace,
+        "worker_command": worker_command,
+    }
     options.update(kwargs)
     if cluster_spec:
         options["custom_cluster_spec"] = cluster_spec
 
     # loop = asyncio.get_running_loop()
     cluster = await KubeCluster(asynchronous=True, **options)
-    print(f"is cluster awaitable?: {inspect.isawaitable(cluster)}")
     adapt_response = cluster.adapt(minimum=min_size, maximum=max_size)
-    print(f"is adapt_response awaitable?: {inspect.isawaitable(adapt_response)}")
     if inspect.isawaitable(adapt_response):
         await adapt_response
     return cluster
-
-    # return await asyncio.to_thread(
-    #     start_duckdb_cluster, namespace, cluster_spec, min_size, max_size
-    # )
 
 
 class ClusterProxy(abc.ABC):
@@ -155,7 +162,9 @@ class KubeClusterProxy(ClusterProxy):
 class LocalClusterFactory(ClusterFactory):
     async def create_cluster(self, min_size: int, max_size: int) -> ClusterProxy:
         return LocalClusterProxy(
-            await LocalCluster(n_workers=max_size, asynchronous=True)
+            await LocalCluster(
+                n_workers=max_size, resources={"slots": 10}, asynchronous=True
+            )
         )
 
 
@@ -163,6 +172,7 @@ class KubeClusterFactory(ClusterFactory):
     def __init__(
         self,
         namespace: str,
+        resources: t.Dict[str, int],
         cluster_spec: t.Optional[dict] = None,
         log_override: t.Optional[logging.Logger] = None,
         **kwargs: t.Any,
@@ -170,11 +180,17 @@ class KubeClusterFactory(ClusterFactory):
         self._namespace = namespace
         self.logger = log_override or logger
         self._cluster_spec = cluster_spec
+        self._resources = resources
         self.kwargs = kwargs
 
     async def create_cluster(self, min_size: int, max_size: int):
         cluster = await start_duckdb_cluster_async(
-            self._namespace, self._cluster_spec, min_size, max_size, **self.kwargs
+            self._namespace,
+            self._resources,
+            self._cluster_spec,
+            min_size,
+            max_size,
+            **self.kwargs,
         )
         return KubeClusterProxy(cluster)
 

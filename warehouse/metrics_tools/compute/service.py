@@ -38,20 +38,44 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
-class JobFailed(Exception):
+class JobError(Exception):
     pass
 
 
-class JobTasksFailed(JobFailed):
+class JobFailed(JobError):
     exceptions: t.List[Exception]
+    cancellations: t.List[str]
     failures: int
 
-    def __init__(self, job_id: str, failures: int, exceptions: t.List[Exception]):
+    def __init__(
+        self,
+        job_id: str,
+        failures: int,
+        exceptions: t.List[Exception],
+        cancellations: t.List[str],
+    ):
         self.failures = failures
         self.exceptions = exceptions
+        self.cancellations = cancellations
         super().__init__(
-            f"job[{job_id}] failed with {failures} failures and {len(exceptions)} exceptions"
+            f"job[{job_id}] failed with {failures} failures and {len(exceptions)} exceptions and {len(cancellations)} cancellations"
         )
+
+
+class JobTaskCancelled(JobError):
+    task_id: str
+
+    def __init__(self, task_id: str):
+        self.task_id = task_id
+        super().__init__(f"task {task_id} was cancelled")
+
+
+class JobTaskFailed(JobError):
+    exception: Exception
+
+    def __init__(self, exception: Exception):
+        self.exception = exception
+        super().__init__(f"task failed with exception: {exception}")
 
 
 class MetricsCalculationService:
@@ -141,8 +165,7 @@ class MetricsCalculationService:
             exported_dependent_tables_map = await self.resolve_dependent_tables(input)
         except Exception as e:
             self.logger.error(f"job[{job_id}] failed to export dependencies: {e}")
-            await self._notify_job_failed(job_id, False, e)
-            return
+            raise e
         self.logger.debug(f"job[{job_id}] dependencies exported")
 
         tasks = await self._batch_query_to_scheduler(
@@ -151,29 +174,38 @@ class MetricsCalculationService:
 
         total = len(tasks)
         if total != input.batch_count():
-            self.logger.warning("job[{job_id}] batch count mismatch")
+            self.logger.warning(f"job[{job_id}] batch count mismatch")
 
         exceptions = []
+        cancellations = []
 
         for next_task in asyncio.as_completed(tasks):
             try:
                 await next_task
+            except JobTaskCancelled as e:
+                cancellations.append(e.task_id)
+            except JobTaskFailed as e:
+                exceptions.append(e.exception)
             except Exception as e:
                 self.logger.error(
                     f"job[{job_id}] task failed with uncaught exception: {e}"
                 )
                 exceptions.append(e)
+                # Report failure early for any listening clients. The server
+                # will collect all errors for any internal reporting needed
                 await self._notify_job_failed(job_id, True, e)
 
+        # If there are any exceptions then we report those as failed and short
+        # circuit this method
+        if len(exceptions) > 0 or len(cancellations) > 0:
+            raise JobFailed(job_id, len(exceptions), exceptions, cancellations)
+
         # Import the final result into the database
-        self.logger.info("job[{job_id}]: importing final result into the database")
+        self.logger.info(f"job[{job_id}]: importing final result into the database")
         await self.import_adapter.import_reference(calculation_export, final_export)
 
         self.logger.debug(f"job[{job_id}]: notifying job completed")
         await self._notify_job_completed(job_id)
-
-        if len(exceptions) > 0:
-            raise JobTasksFailed(job_id, len(exceptions), exceptions)
 
     async def _batch_query_to_scheduler(
         self,
@@ -203,6 +235,7 @@ class MetricsCalculationService:
                     task_id,
                     result_path,
                     batch,
+                    input.slots,
                     exported_dependent_tables_map,
                     retries=3,
                 )
@@ -219,6 +252,7 @@ class MetricsCalculationService:
         task_id: str,
         result_path: str,
         batch: t.List[str],
+        slots: int,
         exported_dependent_tables_map: t.Dict[str, ExportReference],
         retries: int,
     ):
@@ -234,6 +268,7 @@ class MetricsCalculationService:
             exported_dependent_tables_map,
             retries=retries,
             key=task_id,
+            resources={"slots": slots},
         )
 
         try:
@@ -243,9 +278,11 @@ class MetricsCalculationService:
         except CancelledError as e:
             self.logger.error(f"job[{job_id}] task cancelled {e.args}")
             await self._notify_job_task_cancelled(job_id, task_id)
+            raise JobTaskCancelled(task_id)
         except Exception as e:
             self.logger.error(f"job[{job_id}] task failed with exception: {e}")
             await self._notify_job_task_failed(job_id, task_id, e)
+            raise JobTaskFailed(e)
         return task_id
 
     async def close(self):
@@ -322,9 +359,7 @@ class MetricsCalculationService:
     async def _notify_job_running(self, job_id: str):
         await self._update_job_state(
             job_id,
-            QueryJobUpdate(
-                time=datetime.now(),
-                scope=QueryJobUpdateScope.JOB,
+            QueryJobUpdate.create_job_update(
                 payload=QueryJobStateUpdate(
                     status=QueryJobStatus.RUNNING,
                     has_remaining_tasks=True,
@@ -335,9 +370,7 @@ class MetricsCalculationService:
     async def _notify_job_task_completed(self, job_id: str, task_id: str):
         await self._update_job_state(
             job_id,
-            QueryJobUpdate(
-                time=datetime.now(),
-                scope=QueryJobUpdateScope.TASK,
+            QueryJobUpdate.create_task_update(
                 payload=QueryJobTaskUpdate(
                     task_id=task_id,
                     status=QueryJobTaskStatus.SUCCEEDED,
@@ -350,9 +383,7 @@ class MetricsCalculationService:
     ):
         await self._update_job_state(
             job_id,
-            QueryJobUpdate(
-                time=datetime.now(),
-                scope=QueryJobUpdateScope.TASK,
+            QueryJobUpdate.create_task_update(
                 payload=QueryJobTaskUpdate(
                     task_id=task_id,
                     status=QueryJobTaskStatus.FAILED,
@@ -364,9 +395,7 @@ class MetricsCalculationService:
     async def _notify_job_task_cancelled(self, job_id: str, task_id: str):
         await self._update_job_state(
             job_id,
-            QueryJobUpdate(
-                time=datetime.now(),
-                scope=QueryJobUpdateScope.TASK,
+            QueryJobUpdate.create_task_update(
                 payload=QueryJobTaskUpdate(
                     task_id=task_id,
                     status=QueryJobTaskStatus.CANCELLED,
@@ -377,9 +406,7 @@ class MetricsCalculationService:
     async def _notify_job_completed(self, job_id: str):
         await self._update_job_state(
             job_id,
-            QueryJobUpdate(
-                time=datetime.now(),
-                scope=QueryJobUpdateScope.JOB,
+            QueryJobUpdate.create_job_update(
                 payload=QueryJobStateUpdate(
                     status=QueryJobStatus.COMPLETED,
                     has_remaining_tasks=False,
@@ -395,9 +422,7 @@ class MetricsCalculationService:
     ):
         await self._update_job_state(
             job_id,
-            QueryJobUpdate(
-                time=datetime.now(),
-                scope=QueryJobUpdateScope.JOB,
+            QueryJobUpdate.create_job_update(
                 payload=QueryJobStateUpdate(
                     status=QueryJobStatus.FAILED,
                     has_remaining_tasks=has_remaining_tasks,

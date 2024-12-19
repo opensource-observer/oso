@@ -91,6 +91,7 @@ def default_lifecycle(config: AppConfig):
             cluster_spec = make_new_cluster_with_defaults(config)
             cluster_factory = KubeClusterFactory(
                 config.cluster_namespace,
+                config.worker_resources,
                 cluster_spec=cluster_spec,
                 shutdown_on_close=not config.debug_cluster_no_shutdown,
             )
