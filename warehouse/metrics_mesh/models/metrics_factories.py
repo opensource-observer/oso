@@ -233,6 +233,7 @@ timeseries_metrics(
                 windows=[30, 90, 180],
                 unit="day",
                 cron="@daily",
+                slots=32,
             ),
         ),
         "gas_fees": MetricQueryDef(
@@ -241,7 +242,7 @@ timeseries_metrics(
                 windows=[30, 90, 180],
                 unit="day",
                 cron="@daily",
-                slots=8,
+                slots=16,
             ),
             entity_types=["artifact", "project", "collection"],
         ),
