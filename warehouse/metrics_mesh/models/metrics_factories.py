@@ -70,6 +70,7 @@ timeseries_metrics(
                 windows=[30, 90, 180],
                 unit="day",
                 cron="@daily",  # This determines how often this is calculated
+                slots=32,
             ),
             entity_types=["artifact", "project", "collection"],
             is_intermediate=True,
@@ -103,25 +104,27 @@ timeseries_metrics(
                 windows=[30, 90, 180],
                 unit="day",
                 cron="@daily",
+                slots=32,
             ),
         ),
-        # "contributor_classifications": MetricQueryDef(
-        #     ref="contributor_activity_classification.sql",
-        #     vars={
-        #         "full_time_ratio": 10 / 30,
-        #         "activity_event_types": [
-        #             "COMMIT_CODE",
-        #             "ISSUE_OPENED",
-        #             "PULL_REQUEST_OPENED",
-        #             "PULL_REQUEST_MERGED",
-        #         ],
-        #     },
-        #     rolling=RollingConfig(
-        #         windows=[30, 90, 180],
-        #         unit="day",
-        #         cron="@daily",
-        #     ),
-        # ),
+        "contributor_classifications": MetricQueryDef(
+            ref="contributor_activity_classification.sql",
+            vars={
+                "full_time_ratio": 10 / 30,
+                "activity_event_types": [
+                    "COMMIT_CODE",
+                    "ISSUE_OPENED",
+                    "PULL_REQUEST_OPENED",
+                    "PULL_REQUEST_MERGED",
+                ],
+            },
+            rolling=RollingConfig(
+                windows=[30, 90, 180],
+                unit="day",
+                cron="@daily",
+                slots=32,
+            ),
+        ),
         # Currently this query performs really poorly. We need to do some debugging on it
         # "user_retention_classifications": MetricQueryDef(
         #     ref="user_retention_classification.sql",
@@ -135,20 +138,22 @@ timeseries_metrics(
         #     ),
         #     entity_types=["artifact", "project", "collection"],
         # ),
-        # "change_in_developer_activity": MetricQueryDef(
-        #     ref="change_in_developers.sql",
-        #     rolling=RollingConfig(
-        #         windows=[30, 90, 180],
-        #         unit="day",
-        #         cron="@daily",
-        #     ),
-        # ),
+        "change_in_developer_activity": MetricQueryDef(
+            ref="change_in_developers.sql",
+            rolling=RollingConfig(
+                windows=[30, 90, 180],
+                unit="day",
+                cron="@daily",
+                slots=32,
+            ),
+        ),
         "commits_rolling": MetricQueryDef(
             ref="commits.sql",
             rolling=RollingConfig(
                 windows=[10],
                 unit="day",
                 cron="@daily",
+                slots=8,
             ),
             entity_types=["artifact", "project", "collection"],
         ),
@@ -158,6 +163,7 @@ timeseries_metrics(
                 windows=[180],
                 unit="day",
                 cron="@daily",
+                slots=8,
             ),
             entity_types=["artifact", "project", "collection"],
         ),
@@ -167,6 +173,7 @@ timeseries_metrics(
                 windows=[180],
                 unit="day",
                 cron="@daily",
+                slots=8,
             ),
             entity_types=["artifact", "project", "collection"],
         ),
@@ -176,6 +183,7 @@ timeseries_metrics(
                 windows=[180],
                 unit="day",
                 cron="@daily",
+                slots=8,
             ),
             entity_types=["artifact", "project", "collection"],
         ),
@@ -185,6 +193,7 @@ timeseries_metrics(
                 windows=[180],
                 unit="day",
                 cron="@daily",
+                slots=8,
             ),
             entity_types=["artifact", "project", "collection"],
         ),
@@ -194,6 +203,7 @@ timeseries_metrics(
                 windows=[90, 180],
                 unit="day",
                 cron="@daily",
+                slots=8,
             ),
             entity_types=["artifact", "project", "collection"],
         ),
@@ -203,6 +213,7 @@ timeseries_metrics(
                 windows=[90, 180],
                 unit="day",
                 cron="@daily",
+                slots=8,
             ),
             entity_types=["artifact", "project", "collection"],
         ),
@@ -244,29 +255,31 @@ timeseries_metrics(
             ),
             entity_types=["artifact", "project", "collection"],
         ),
-        # "contributors_lifecycle": MetricQueryDef(
-        #     ref="lifecycle.sql",
-        #     vars={
-        #         "activity_event_types": [
-        #             "COMMIT_CODE",
-        #             "ISSUE_OPENED",
-        #             "PULL_REQUEST_OPENED",
-        #             "PULL_REQUEST_MERGED",
-        #         ],
-        #     },
-        #     rolling=RollingConfig(
-        #         windows=[30, 90, 180],
-        #         unit="day",
-        #         cron="@monthly",
-        #     ),
-        #     entity_types=["artifact", "project", "collection"],
-        # ),
+        "contributors_lifecycle": MetricQueryDef(
+            ref="lifecycle.sql",
+            vars={
+                "activity_event_types": [
+                    "COMMIT_CODE",
+                    "ISSUE_OPENED",
+                    "PULL_REQUEST_OPENED",
+                    "PULL_REQUEST_MERGED",
+                ],
+            },
+            rolling=RollingConfig(
+                windows=[30, 90, 180],
+                unit="day",
+                cron="@monthly",
+                slots=32,
+            ),
+            entity_types=["artifact", "project", "collection"],
+        ),
         "funding_received": MetricQueryDef(
             ref="funding_received.sql",
             rolling=RollingConfig(
                 windows=[180],
                 unit="day",
                 cron="@daily",
+                slots=8,
             ),
             entity_types=["artifact", "project", "collection"],
         ),
@@ -276,6 +289,7 @@ timeseries_metrics(
                 windows=[180],
                 unit="day",
                 cron="@daily",
+                slots=16,
             ),
             entity_types=["artifact", "project", "collection"],
         ),
