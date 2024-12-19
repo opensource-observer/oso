@@ -235,6 +235,7 @@ class MetricsCalculationService:
                     task_id,
                     result_path,
                     batch,
+                    input.slots,
                     exported_dependent_tables_map,
                     retries=3,
                 )
@@ -251,6 +252,7 @@ class MetricsCalculationService:
         task_id: str,
         result_path: str,
         batch: t.List[str],
+        slots: int,
         exported_dependent_tables_map: t.Dict[str, ExportReference],
         retries: int,
     ):
@@ -266,6 +268,7 @@ class MetricsCalculationService:
             exported_dependent_tables_map,
             retries=retries,
             key=task_id,
+            resources={"slots": slots},
         )
 
         try:

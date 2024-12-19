@@ -23,6 +23,14 @@ class RollingConfig(t.TypedDict):
     unit: str
     cron: RollingCronOptions
 
+    # How many days do we process at once. This is useful to set for very large
+    # datasets but will default to a year if not set.
+    model_batch_size: t.NotRequired[int]
+
+    # The number of required slots for a given model. This is also very useful
+    # for large datasets
+    slots: t.NotRequired[int]
+
 
 class TimeseriesBucket(Enum):
     HOUR = "hour"
@@ -78,6 +86,8 @@ class PeerMetricDependencyRef(t.TypedDict):
     unit: t.NotRequired[t.Optional[str]]
     time_aggregation: t.NotRequired[t.Optional[str]]
     cron: t.NotRequired[RollingCronOptions]
+    batch_size: t.NotRequired[int]
+    slots: t.NotRequired[int]
 
 
 class MetricModelRef(t.TypedDict):

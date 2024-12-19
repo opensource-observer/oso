@@ -130,6 +130,8 @@ class Client:
         cluster_min_size: int = 6,
         cluster_max_size: int = 6,
         job_retries: int = 3,
+        slots: int = 1,
+        execution_time: t.Optional[datetime] = None,
     ):
         """Calculate metrics for a given period and write the results to a gcs
         folder. This method is a high level method that triggers all of the
@@ -151,6 +153,7 @@ class Client:
             locals (t.Dict[str, t.Any]): The local variables to use
             dependent_tables_map (t.Dict[str, str]): The dependent tables map
             job_retries (int): The number of retries for a given job in the worker queue. Defaults to 3.
+            execution_time (t.Optional[datetime]): The execution time for the job
 
         Returns:
             ExportReference: The export reference for the resulting calculation
@@ -172,6 +175,8 @@ class Client:
             locals,
             dependent_tables_map,
             job_retries,
+            slots=slots,
+            execution_time=execution_time,
         )
         job_id = job_response.job_id
         export_reference = job_response.export_reference
@@ -240,6 +245,8 @@ class Client:
         locals: t.Dict[str, t.Any],
         dependent_tables_map: t.Dict[str, str],
         job_retries: t.Optional[int] = None,
+        slots: int = 1,
+        execution_time: t.Optional[datetime] = None,
     ):
         """Submit a job to the metrics calculation service
 
@@ -269,7 +276,7 @@ class Client:
             locals=locals,
             dependent_tables_map=dependent_tables_map,
             retries=job_retries,
-            execution_time=datetime.now(),
+            execution_time=execution_time or datetime.now(),
         )
         job_response = self.service_post_with_input(
             JobSubmitResponse, "/job/submit", request
