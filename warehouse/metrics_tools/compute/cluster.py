@@ -155,7 +155,9 @@ class KubeClusterProxy(ClusterProxy):
 class LocalClusterFactory(ClusterFactory):
     async def create_cluster(self, min_size: int, max_size: int) -> ClusterProxy:
         return LocalClusterProxy(
-            await LocalCluster(n_workers=max_size, asynchronous=True)
+            await LocalCluster(
+                n_workers=max_size, resources={"slots": 10}, asynchronous=True
+            )
         )
 
 
