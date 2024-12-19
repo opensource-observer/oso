@@ -56,12 +56,6 @@ async def start_duckdb_cluster_async(
     a thread. The "async" version of dask's KubeCluster doesn't work as
     expected. So for now we do this."""
 
-    options: t.Dict[str, t.Any] = {
-        "namespace": namespace,
-    }
-    options.update(kwargs)
-    if cluster_spec:
-        options["custom_cluster_spec"] = cluster_spec
     worker_command = ["dask", "worker"]
     resources_to_join = []
 
@@ -70,6 +64,14 @@ async def start_duckdb_cluster_async(
     if resources_to_join:
         resources_str = f'{",".join(resources_to_join)}'
         worker_command.extend(["--resources", resources_str])
+
+    options: t.Dict[str, t.Any] = {
+        "namespace": namespace,
+        "worker_command": worker_command,
+    }
+    options.update(kwargs)
+    if cluster_spec:
+        options["custom_cluster_spec"] = cluster_spec
 
     # loop = asyncio.get_running_loop()
     cluster = await KubeCluster(asynchronous=True, **options)
