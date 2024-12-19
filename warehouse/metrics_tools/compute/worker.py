@@ -210,7 +210,7 @@ class DuckDBMetricsWorkerPlugin(MetricsWorkerPlugin):
             f"job[{job_id}][{task_id}]: Uploading to gcs {result_path} with polars"
         )
         with self.fs.open(f"{self._gcs_bucket}/{result_path}", "wb") as f:
-            results_df.write_parquet(f)  # type: ignore
+            results_df.to_parquet(f)  # type: ignore
         return task_id
 
 

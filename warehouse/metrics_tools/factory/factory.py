@@ -688,7 +688,7 @@ def generated_rolling_query(
             batch_size=env.ensure_int("SQLMESH_MCS_BATCH_SIZE", 10),
             columns=columns,
             ref=ref,
-            slots=ref.get("slots", 1),
+            slots=ref.get("slots", env.ensure_int("SQLMESH_DEFAULT_MCS_SLOTS", 2)),
             locals=sqlmesh_vars,
             dependent_tables_map=create_dependent_tables_map(
                 context, rendered_query_str

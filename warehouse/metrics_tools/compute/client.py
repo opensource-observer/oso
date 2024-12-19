@@ -117,6 +117,7 @@ class Client:
 
     def calculate_metrics(
         self,
+        *,
         query_str: str,
         start: datetime,
         end: datetime,
@@ -126,11 +127,11 @@ class Client:
         ref: PeerMetricDependencyRef,
         locals: t.Dict[str, t.Any],
         dependent_tables_map: t.Dict[str, str],
+        slots: int,
         progress_handler: t.Optional[t.Callable[[JobStatusResponse], None]] = None,
         cluster_min_size: int = 6,
         cluster_max_size: int = 6,
         job_retries: int = 3,
-        slots: int = 1,
         execution_time: t.Optional[datetime] = None,
     ):
         """Calculate metrics for a given period and write the results to a gcs
@@ -166,17 +167,17 @@ class Client:
         self.logger.info(f"cluster status: {status}")
 
         job_response = self.submit_job(
-            query_str,
-            start,
-            end,
-            dialect,
-            batch_size,
-            columns,
-            ref,
-            locals,
-            dependent_tables_map,
-            job_retries,
+            query_str=query_str,
+            start=start,
+            end=end,
+            dialect=dialect,
+            batch_size=batch_size,
+            columns=columns,
+            ref=ref,
+            locals=locals,
+            dependent_tables_map=dependent_tables_map,
             slots=slots,
+            job_retries=job_retries,
             execution_time=execution_time,
         )
         job_id = job_response.job_id
@@ -236,6 +237,7 @@ class Client:
 
     def submit_job(
         self,
+        *,
         query_str: str,
         start: datetime,
         end: datetime,
@@ -245,8 +247,8 @@ class Client:
         ref: PeerMetricDependencyRef,
         locals: t.Dict[str, t.Any],
         dependent_tables_map: t.Dict[str, str],
+        slots: int,
         job_retries: t.Optional[int] = None,
-        slots: int = 2,
         execution_time: t.Optional[datetime] = None,
     ):
         """Submit a job to the metrics calculation service
