@@ -46,7 +46,7 @@ def start_duckdb_cluster(
 
 async def start_duckdb_cluster_async(
     namespace: str,
-    resources: t.Dict[str, str],
+    resources: t.Dict[str, int],
     cluster_spec: t.Optional[dict] = None,
     min_size: int = 6,
     max_size: int = 6,
@@ -58,17 +58,22 @@ async def start_duckdb_cluster_async(
 
     options: t.Dict[str, t.Any] = {
         "namespace": namespace,
-        "resources": resources,
     }
     options.update(kwargs)
     if cluster_spec:
         options["custom_cluster_spec"] = cluster_spec
+    worker_command = ["dask", "worker"]
+    resources_to_join = []
+
+    for resource, value in resources.items():
+        resources_to_join.append(f"{resource}={value}")
+    if resources_to_join:
+        resources_str = f'{",".join(resources_to_join)}'
+        worker_command.extend(["--resources", resources_str])
 
     # loop = asyncio.get_running_loop()
     cluster = await KubeCluster(asynchronous=True, **options)
-    print(f"is cluster awaitable?: {inspect.isawaitable(cluster)}")
     adapt_response = cluster.adapt(minimum=min_size, maximum=max_size)
-    print(f"is adapt_response awaitable?: {inspect.isawaitable(adapt_response)}")
     if inspect.isawaitable(adapt_response):
         await adapt_response
     return cluster
@@ -165,7 +170,7 @@ class KubeClusterFactory(ClusterFactory):
     def __init__(
         self,
         namespace: str,
-        resources: t.Dict[str, str],
+        resources: t.Dict[str, int],
         cluster_spec: t.Optional[dict] = None,
         log_override: t.Optional[logging.Logger] = None,
         **kwargs: t.Any,
