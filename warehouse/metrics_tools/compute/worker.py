@@ -9,7 +9,7 @@ from threading import Lock
 
 import duckdb
 import gcsfs
-import pandas as pd
+import polars as pl
 from dask.distributed import Worker, WorkerPlugin, get_worker
 from google.cloud import storage
 from metrics_tools.compute.types import ExportReference, ExportType
@@ -187,7 +187,9 @@ class DuckDBMetricsWorkerPlugin(MetricsWorkerPlugin):
     ) -> t.Any:
         """Execute a duckdb load on a worker.
 
-        This executes the query with duckdb and writes the results to a gcs path.
+        This executes the query with duckdb and writes the results to a gcs
+        path. We need to use polars or pyarrow here because the pandas parquet
+        writer doesn't write the correct datatypes for trino.
         """
 
         for ref, actual in dependencies.items():
@@ -196,21 +198,22 @@ class DuckDBMetricsWorkerPlugin(MetricsWorkerPlugin):
             )
             self.get_for_cache(ref, actual)
         conn = self.connection
-        results: t.List[pd.DataFrame] = []
+        results: t.List[pl.DataFrame] = []
         for query in queries:
             self.logger.info(f"job[{job_id}][{task_id}]: Executing query {query}")
-            result = conn.execute(query).df()
+            result = conn.execute(query).pl()
             results.append(result)
         # Concatenate the results
         self.logger.info(f"job[{job_id}][{task_id}]: Concatenating results")
-        results_df = pd.concat(results)
+        combined_results = pl.concat(results)
 
         # Export the results to a parquet file in memory
         self.logger.info(
             f"job[{job_id}][{task_id}]: Uploading to gcs {result_path} with polars"
         )
         with self.fs.open(f"{self._gcs_bucket}/{result_path}", "wb") as f:
-            results_df.to_parquet(f)  # type: ignore
+            combined_results.write_parquet(f)  # type: ignore
+        self.logger.info(f"job[{job_id}][{task_id}]: Upload completed")
         return task_id
 
 

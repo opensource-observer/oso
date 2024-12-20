@@ -200,10 +200,11 @@ class TrinoImportAdapter(DBImportAdapter):
         # timestamp. We can cast it downstream.
         column_identifier = exp.to_identifier(column_name)
         processed_column_type = column_type
-        if column_type.this == exp.DataType.Type.DATE:
-            processed_column_type = exp.DataType(
-                this=exp.DataType.Type.TIMESTAMP, nested=False
-            )
+        # This might not be necessary any more
+        # if column_type.this == exp.DataType.Type.DATE:
+        #     processed_column_type = exp.DataType(
+        #         this=exp.DataType.Type.TIMESTAMP, nested=False
+        #     )
 
         return (
             column_identifier,
