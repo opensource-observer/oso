@@ -103,7 +103,7 @@ timeseries_metrics(
             rolling=RollingConfig(
                 windows=[30, 90, 180],
                 unit="day",
-                cron="@daily",
+                cron="@monthly",
                 slots=32,
             ),
         ),
@@ -121,7 +121,7 @@ timeseries_metrics(
             rolling=RollingConfig(
                 windows=[30, 90, 180],
                 unit="day",
-                cron="@daily",
+                cron="@monthly",
                 slots=32,
             ),
         ),
@@ -143,7 +143,7 @@ timeseries_metrics(
             rolling=RollingConfig(
                 windows=[30, 90, 180],
                 unit="day",
-                cron="@daily",
+                cron="@monthly",
                 slots=32,
             ),
         ),
