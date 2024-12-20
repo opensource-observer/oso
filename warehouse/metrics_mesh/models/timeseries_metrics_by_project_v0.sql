@@ -1,6 +1,6 @@
 MODEL (
   name metrics.timeseries_metrics_by_project_v0,
-  kind VIEW
+  kind FULL
 );
 
 WITH all_timeseries_metrics_by_project AS (
