@@ -376,26 +376,8 @@ class TimeseriesMetrics:
             "metrics_sample_date",
         ]
 
-        # return GeneratedPythonModel.create(
-        #     name=f"{self.catalog}.{query_config['table_name']}",
-        #     func=generated_rolling_query_proxy,
-        #     entrypoint_path=calling_file,
-        #     additional_macros=self.generated_model_additional_macros,
-        #     variables=self.serializable_config(query_config),
-        #     depends_on=depends_on,
-        #     columns=columns,
-        #     kind={
-        #         "name": ModelKindName.INCREMENTAL_BY_TIME_RANGE,
-        #         "time_column": "metrics_sample_date",
-        #         **kind_common,
-        #     },
-        #     partitioned_by=partitioned_by,
-        #     cron=cron,
-        #     start=self._raw_options["start"],
-        #     grain=grain,
-        #     imports={"pd": pd, "generated_rolling_query": generated_rolling_query},
-        #     enabled=self._raw_options.get("enabled", True),
-        # )
+        # Override the path and module so that sqlmesh generates the
+        # proper python_env for the model
         override_path = Path(inspect.getfile(generated_rolling_query_proxy))
         override_module_path = Path(
             os.path.dirname(inspect.getfile(generated_rolling_query_proxy))
