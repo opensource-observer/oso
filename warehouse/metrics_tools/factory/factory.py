@@ -315,6 +315,7 @@ class TimeseriesMetrics:
                     }
                 ),
                 name=f"metrics.timeseries_metrics_to_{entity_type}",
+                is_sql=True,
                 kind="VIEW",
                 dialect="clickhouse",
                 start=self._raw_options["start"],
@@ -461,6 +462,7 @@ class TimeseriesMetrics:
                 **kind_options,
             },
             dialect="clickhouse",
+            is_sql=True,
             columns=columns,
             grain=grain,
             cron=cron,
