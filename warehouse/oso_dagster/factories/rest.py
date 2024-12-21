@@ -1,4 +1,4 @@
-from typing import Callable, Optional, ParamSpec, TypeVar, Union, cast
+from typing import Callable, Optional, ParamSpec, Sequence, TypeVar, Union, cast
 
 import dlt
 from dagster import AssetExecutionContext
@@ -43,9 +43,15 @@ def _rest_source(_rest_source: Callable[Q, T], _asset: Callable[P, R]):
                     "Names will be automatically generated for `rest_factory`"
                 )
 
-            key_prefix = asset_kwargs.get("key_prefix", None)
+            key_prefix = cast(
+                Optional[Union[str, Sequence[str]]],
+                asset_kwargs.get("key_prefix", None),
+            )
             if key_prefix is None:
                 raise ValueError("Key prefix is required for `rest_factory`")
+
+            if not isinstance(key_prefix, str):
+                key_prefix = "/".join(key_prefix)
 
             config = cast(Optional[RESTAPIConfig], rest_kwargs.pop("config", None))
             if config is None:
@@ -80,12 +86,10 @@ def _rest_source(_rest_source: Callable[Q, T], _asset: Callable[P, R]):
                 if not isinstance(resource_name, str):
                     raise ValueError("Failed to extract resource name from reference")
 
-                asset_tags: dict = cast(dict, asset_kwargs.get("tags", {}))
-                asset_tags["dagster/concurrency_key"] = f"rest_factory_{key_prefix}"
+                op_tags: dict = cast(dict, asset_kwargs.pop("op_tags", {}))
+                op_tags["dagster/concurrency_key"] = f"rest_factory_{key_prefix}"
 
-                asset_kwargs["tags"] = asset_tags
-
-                @dlt_factory(name=resource_name, **asset_kwargs)
+                @dlt_factory(name=resource_name, op_tags=op_tags, **asset_kwargs)
                 def _dlt_ref_asset(context: AssetExecutionContext):
                     """
                     The dlt asset function that creates the REST API source asset.
@@ -99,15 +103,13 @@ def _rest_source(_rest_source: Callable[Q, T], _asset: Callable[P, R]):
 
                     rest_api_config["resources"] = [resource_ref]
 
-                    @dlt.source(max_table_nesting=0)
-                    def _internal_source():
-                        """
-                        The internal source function that creates the REST API source.
-                        """
-
-                        yield from rest_api_resources(rest_api_config, **rest_kwargs)
-
-                    return _internal_source()
+                    for resource in rest_api_resources(rest_api_config, **rest_kwargs):
+                        yield dlt.resource(
+                            resource,
+                            name=resource_name,
+                            max_table_nesting=0,
+                            write_disposition="merge",
+                        )
 
                 return _dlt_ref_asset
 
