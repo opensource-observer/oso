@@ -6,6 +6,7 @@ import sqlglot as sql
 from metrics_tools.definition import PeerMetricDependencyRef
 from metrics_tools.factory.generated import generated_rolling_query
 from metrics_tools.factory.utils import metric_ref_evaluator_context
+from metrics_tools.macros import metrics_end, metrics_sample_date, metrics_start
 from sqlglot import exp
 from sqlmesh import ExecutionContext
 from sqlmesh.core.dialect import parse_one
@@ -14,15 +15,20 @@ from sqlmesh.core.macros import MacroEvaluator
 
 def generated_query(
     evaluator: MacroEvaluator,
-    *,
-    rendered_query_str: str,
-    ref: PeerMetricDependencyRef,
-    table_name: str,
-    vars: t.Dict[str, t.Any],
 ):
     """Simple generated query executor for metrics queries"""
+    rendered_query_str = t.cast(str, evaluator.var("rendered_query_str"))
+    ref = t.cast(PeerMetricDependencyRef, evaluator.var("ref"))
 
-    with metric_ref_evaluator_context(evaluator, ref, vars):
+    with metric_ref_evaluator_context(
+        evaluator,
+        ref,
+        additional_macros={
+            "@METRICS_SAMPLE_DATE": metrics_sample_date,
+            "@METRICS_START": metrics_start,
+            "@METRICS_END": metrics_end,
+        },
+    ):
         result = evaluator.transform(parse_one(rendered_query_str))
     return result
 
@@ -32,12 +38,6 @@ def generated_rolling_query_proxy(
     start: datetime,
     end: datetime,
     execution_time: datetime,
-    # *,
-    # ref: PeerMetricDependencyRef,
-    # vars: t.Dict[str, t.Any],
-    # rendered_query_str: str,
-    # table_name: str,
-    # sqlmesh_vars: t.Dict[str, t.Any],
     **kwargs,
 ) -> t.Iterator[pd.DataFrame | exp.Expression]:
     """This acts as the proxy to the actual function that we'd call for
@@ -63,11 +63,16 @@ def generated_rolling_query_proxy(
 
 
 def join_all_of_entity_type(
-    evaluator: MacroEvaluator, *, db: str, tables: t.List[str], columns: t.List[str]
+    evaluator: MacroEvaluator,
 ):
     # A bit of a hack but we know we have a "metric" column. We want to
     # transform this metric id to also include the event_source as a prefix to
     # that metric id in the joined table
+
+    db = t.cast(str, evaluator.var("db"))
+    tables: t.List[str] = t.cast(t.List[str], evaluator.var("tables"))
+    columns: t.List[str] = t.cast(t.List[str], evaluator.var("columns"))
+
     transformed_columns = []
     for column in columns:
         if column == "event_source":

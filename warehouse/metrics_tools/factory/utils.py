@@ -9,10 +9,13 @@ from sqlmesh.core.macros import MacroEvaluator
 def metric_ref_evaluator_context(
     evaluator: MacroEvaluator,
     ref: PeerMetricDependencyRef,
-    extra_vars: t.Optional[t.Dict[str, t.Any]] = None,
+    additional_vars: t.Optional[t.Dict[str, t.Any]] = None,
+    additional_macros: t.Optional[t.Dict[str, t.Any]] = None,
 ):
-    before = evaluator.locals.copy()
-    evaluator.locals.update(extra_vars or {})
+    before_locals = evaluator.locals.copy()
+    before_macros = evaluator.macros.copy()
+
+    evaluator.locals.update(additional_vars or {})
     evaluator.locals.update(
         {
             "rolling_window": ref.get("window"),
@@ -21,7 +24,9 @@ def metric_ref_evaluator_context(
             "entity_type": ref.get("entity_type"),
         }
     )
+    evaluator.macros.update(additional_macros or {})
     try:
         yield
     finally:
-        evaluator.locals = before
+        evaluator.locals = before_locals
+        evaluator.macros = before_macros

@@ -7,7 +7,7 @@ from metrics_tools.utils.tables import create_dependent_tables_map
 
 def test_create_dependent_tables_map():
     mock = MagicMock(name="context")
-    mock.table.return_value = "test_table"
+    mock.resolve_table.return_value = "test_table"
 
     actual_tables_map = create_dependent_tables_map(mock, "select * from foo")
     expected_tables_map = {
@@ -125,7 +125,7 @@ def test_create_dependent_tables_map_parameterized(
     input: str, expected: t.Dict[str, str]
 ):
     mock = MagicMock(name="context")
-    mock.table.return_value = "test_table"
+    mock.resolve_table.return_value = "test_table"
 
     actual_tables_map = create_dependent_tables_map(mock, input)
     assert actual_tables_map == expected

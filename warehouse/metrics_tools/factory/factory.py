@@ -26,7 +26,7 @@ from metrics_tools.macros import (
     metrics_start,
     relative_window_sample_date,
 )
-from metrics_tools.models import GeneratedModel, MacroOverridingModel
+from metrics_tools.models import MacroOverridingModel
 from metrics_tools.transformer import (
     IntermediateMacroEvaluatorTransform,
     SQLTransformer,
@@ -296,18 +296,24 @@ class TimeseriesMetrics:
             )
 
         # Join all of the models of the same entity type into the same view model
+        override_path = Path(inspect.getfile(join_all_of_entity_type))
+        override_module_path = Path(
+            os.path.dirname(inspect.getfile(join_all_of_entity_type))
+        )
         for entity_type, tables in self._marts_tables.items():
-            GeneratedModel.create(
-                func=join_all_of_entity_type,
-                entrypoint_path=calling_file,
-                config={
-                    "db": self.catalog,
-                    "tables": tables,
-                    "columns": list(
+            MacroOverridingModel(
+                additional_macros=[],
+                override_module_path=override_module_path,
+                override_path=override_path,
+                locals=dict(
+                    db=self.catalog,
+                    tables=tables,
+                    columns=list(
                         constants.METRICS_COLUMNS_BY_ENTITY[entity_type].keys()
                     ),
-                },
+                ),
                 name=f"metrics.timeseries_metrics_to_{entity_type}",
+                is_sql=True,
                 kind="VIEW",
                 dialect="clickhouse",
                 start=self._raw_options["start"],
@@ -319,7 +325,7 @@ class TimeseriesMetrics:
                     )
                 },
                 enabled=self._raw_options.get("enabled", True),
-            )
+            )(join_all_of_entity_type)
         logger.info("model generation complete")
 
     def generate_model_for_rendered_query(
@@ -376,26 +382,8 @@ class TimeseriesMetrics:
             "metrics_sample_date",
         ]
 
-        # return GeneratedPythonModel.create(
-        #     name=f"{self.catalog}.{query_config['table_name']}",
-        #     func=generated_rolling_query_proxy,
-        #     entrypoint_path=calling_file,
-        #     additional_macros=self.generated_model_additional_macros,
-        #     variables=self.serializable_config(query_config),
-        #     depends_on=depends_on,
-        #     columns=columns,
-        #     kind={
-        #         "name": ModelKindName.INCREMENTAL_BY_TIME_RANGE,
-        #         "time_column": "metrics_sample_date",
-        #         **kind_common,
-        #     },
-        #     partitioned_by=partitioned_by,
-        #     cron=cron,
-        #     start=self._raw_options["start"],
-        #     grain=grain,
-        #     imports={"pd": pd, "generated_rolling_query": generated_rolling_query},
-        #     enabled=self._raw_options.get("enabled", True),
-        # )
+        # Override the path and module so that sqlmesh generates the
+        # proper python_env for the model
         override_path = Path(inspect.getfile(generated_rolling_query_proxy))
         override_module_path = Path(
             os.path.dirname(inspect.getfile(generated_rolling_query_proxy))
@@ -472,6 +460,7 @@ class TimeseriesMetrics:
                 **kind_options,
             },
             dialect="clickhouse",
+            is_sql=True,
             columns=columns,
             grain=grain,
             cron=cron,
