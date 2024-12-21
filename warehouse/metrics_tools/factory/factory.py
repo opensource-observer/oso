@@ -415,7 +415,12 @@ class TimeseriesMetrics:
 
         columns = METRICS_COLUMNS_BY_ENTITY[ref["entity_type"]]
 
-        kind_common = {"batch_size": 365, "batch_concurrency": 1}
+        kind_common = {
+            "batch_size": ref.get("batch_size", 365),
+            "batch_concurrency": 1,
+            "lookback": 10,
+            "forward_only": True,
+        }
         partitioned_by = ("day(metrics_sample_date)",)
         window = ref.get("window")
         assert window is not None
@@ -468,12 +473,15 @@ class TimeseriesMetrics:
         time_aggregation = ref.get("time_aggregation")
         assert time_aggregation is not None
 
-        kind_common = {"batch_concurrency": 1}
-        kind_options = {"lookback": 7, **kind_common}
+        kind_common = {
+            "batch_concurrency": 1,
+            "forward_only": True,
+        }
+        kind_options = {"lookback": 10, **kind_common}
         partitioned_by = ("day(metrics_sample_date)",)
 
         if time_aggregation == "weekly":
-            kind_options = {"lookback": 7, **kind_common}
+            kind_options = {"lookback": 10, **kind_common}
         if time_aggregation == "monthly":
             kind_options = {"lookback": 1, **kind_common}
             partitioned_by = ("month(metrics_sample_date)",)
@@ -680,6 +688,7 @@ def generated_rolling_query(
             batch_size=env.ensure_int("SQLMESH_MCS_BATCH_SIZE", 10),
             columns=columns,
             ref=ref,
+            slots=ref.get("slots", env.ensure_int("SQLMESH_DEFAULT_MCS_SLOTS", 2)),
             locals=sqlmesh_vars,
             dependent_tables_map=create_dependent_tables_map(
                 context, rendered_query_str

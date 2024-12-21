@@ -149,6 +149,14 @@ class QueryJobUpdate(BaseModel):
     scope: QueryJobUpdateScope
     payload: QueryJobUpdateTypes = Field(discriminator="type")
 
+    @classmethod
+    def create_job_update(cls, payload: QueryJobStateUpdate) -> "QueryJobUpdate":
+        return cls(time=datetime.now(), scope=QueryJobUpdateScope.JOB, payload=payload)
+
+    @classmethod
+    def create_task_update(cls, payload: QueryJobTaskUpdate) -> "QueryJobUpdate":
+        return cls(time=datetime.now(), scope=QueryJobUpdateScope.TASK, payload=payload)
+
 
 class ClusterStatus(BaseModel):
     status: str
@@ -174,6 +182,7 @@ class JobSubmitRequest(BaseModel):
     locals: t.Dict[str, t.Any]
     dependent_tables_map: t.Dict[str, str]
     retries: t.Optional[int] = None
+    slots: int = 2
     execution_time: datetime
 
     def query_as(self, dialect: str) -> str:
@@ -219,6 +228,25 @@ class QueryJobState(BaseModel):
     status: QueryJobStatus = QueryJobStatus.PENDING
     updates: t.List[QueryJobUpdate]
 
+    @classmethod
+    def start(cls, job_id: str, tasks_count: int) -> "QueryJobState":
+        now = datetime.now()
+        return cls(
+            job_id=job_id,
+            created_at=now,
+            tasks_count=tasks_count,
+            updates=[
+                QueryJobUpdate(
+                    time=now,
+                    scope=QueryJobUpdateScope.JOB,
+                    payload=QueryJobStateUpdate(
+                        status=QueryJobStatus.PENDING,
+                        has_remaining_tasks=True,
+                    ),
+                )
+            ],
+        )
+
     def latest_update(self) -> QueryJobUpdate:
         return self.updates[-1]
 
@@ -233,6 +261,7 @@ class QueryJobState(BaseModel):
                 self.has_remaining_tasks = False
             elif payload.status == QueryJobStatus.FAILED:
                 self.has_remaining_tasks = payload.has_remaining_tasks
+                self.status = payload.status
             elif payload.status == QueryJobStatus.RUNNING:
                 self.status = payload.status
         else:
@@ -392,6 +421,7 @@ class ClusterConfig(BaseSettings):
     scheduler_memory_request: str = "85000Mi"
     scheduler_pool_type: str = "sqlmesh-scheduler"
 
+    worker_resources: t.Dict[str, int] = Field(default_factory=lambda: {"slots": "32"})
     worker_threads: int = 16
     worker_memory_limit: str = "90000Mi"
     worker_memory_request: str = "85000Mi"

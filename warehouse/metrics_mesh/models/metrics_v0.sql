@@ -4,17 +4,14 @@ MODEL (
 );
 
 WITH unioned_metric_names AS (
-  SELECT DISTINCT
-    metric
-  FROM metrics.timeseries_metrics_to_artifact
+  SELECT *
+  FROM metrics.metric_names_from_artifact
   UNION ALL
-  SELECT DISTINCT
-    metric
-  FROM metrics.timeseries_metrics_to_project
+  SELECT *
+  FROM metrics.metric_names_from_project
   UNION ALL
-  SELECT DISTINCT
-    metric
-  FROM metrics.timeseries_metrics_to_collection
+  SELECT *
+  FROM metrics.metric_names_from_collection
 ), all_timeseries_metric_names AS (
   SELECT DISTINCT
     metric

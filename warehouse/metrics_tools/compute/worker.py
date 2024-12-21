@@ -1,5 +1,4 @@
 # The worker initialization
-import io
 import logging
 import os
 import time
@@ -9,7 +8,8 @@ from contextlib import contextmanager
 from threading import Lock
 
 import duckdb
-import pandas as pd
+import gcsfs
+import polars as pl
 from dask.distributed import Worker, WorkerPlugin, get_worker
 from google.cloud import storage
 from metrics_tools.compute.types import ExportReference, ExportType
@@ -72,6 +72,7 @@ class DuckDBMetricsWorkerPlugin(MetricsWorkerPlugin):
         self._gcs_secret = gcs_secret
         self._duckdb_path = duckdb_path
         self._conn = None
+        self._fs = None
         self._cache_status: t.Dict[str, bool] = {}
         self._catalog = None
         self._mode = "duckdb"
@@ -93,6 +94,7 @@ class DuckDBMetricsWorkerPlugin(MetricsWorkerPlugin):
         );
         """
         self._conn.sql(sql)
+        self._fs = gcsfs.GCSFileSystem()
 
     def teardown(self, worker: Worker):
         if self._conn:
@@ -170,6 +172,11 @@ class DuckDBMetricsWorkerPlugin(MetricsWorkerPlugin):
             blob = bucket.blob(blob_path)
             blob.upload_from_file(file)
 
+    @property
+    def fs(self):
+        assert self._fs is not None, "GCSFS not initialized"
+        return self._fs
+
     def handle_query(
         self,
         job_id: str,
@@ -180,32 +187,33 @@ class DuckDBMetricsWorkerPlugin(MetricsWorkerPlugin):
     ) -> t.Any:
         """Execute a duckdb load on a worker.
 
-        This executes the query with duckdb and writes the results to a gcs path.
+        This executes the query with duckdb and writes the results to a gcs
+        path. We need to use polars or pyarrow here because the pandas parquet
+        writer doesn't write the correct datatypes for trino.
         """
+
         for ref, actual in dependencies.items():
             self.logger.info(
                 f"job[{job_id}][{task_id}] Loading cache for {ref}:{actual}"
             )
             self.get_for_cache(ref, actual)
         conn = self.connection
-        results: t.List[pd.DataFrame] = []
+        results: t.List[pl.DataFrame] = []
         for query in queries:
             self.logger.info(f"job[{job_id}][{task_id}]: Executing query {query}")
-            result = conn.execute(query).df()
+            result = conn.execute(query).pl()
             results.append(result)
         # Concatenate the results
         self.logger.info(f"job[{job_id}][{task_id}]: Concatenating results")
-        results_df = pd.concat(results)
+        combined_results = pl.concat(results)
 
         # Export the results to a parquet file in memory
-        self.logger.info(f"job[{job_id}][{task_id}]: Writing to in memory parquet")
-        inmem_file = io.BytesIO()
-        results_df.to_parquet(inmem_file)
-        inmem_file.seek(0)
-
-        # Upload the parquet to gcs
-        self.logger.info(f"job[{job_id}][{task_id}]: Uploading to gcs {result_path}")
-        self.upload_to_gcs_bucket(result_path, inmem_file)
+        self.logger.info(
+            f"job[{job_id}][{task_id}]: Uploading to gcs {result_path} with polars"
+        )
+        with self.fs.open(f"{self._gcs_bucket}/{result_path}", "wb") as f:
+            combined_results.write_parquet(f)  # type: ignore
+        self.logger.info(f"job[{job_id}][{task_id}]: Upload completed")
         return task_id
 
 
