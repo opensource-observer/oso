@@ -26,7 +26,7 @@ from metrics_tools.macros import (
     metrics_start,
     relative_window_sample_date,
 )
-from metrics_tools.models import GeneratedModel, MacroOverridingModel
+from metrics_tools.models import MacroOverridingModel
 from metrics_tools.transformer import (
     IntermediateMacroEvaluatorTransform,
     SQLTransformer,
@@ -296,17 +296,24 @@ class TimeseriesMetrics:
             )
 
         # Join all of the models of the same entity type into the same view model
+        override_path = Path(inspect.getfile(join_all_of_entity_type))
+        override_module_path = Path(
+            os.path.dirname(inspect.getfile(join_all_of_entity_type))
+        )
         for entity_type, tables in self._marts_tables.items():
-            GeneratedModel.create(
-                func=join_all_of_entity_type,
-                entrypoint_path=calling_file,
-                config={
-                    "db": self.catalog,
-                    "tables": tables,
-                    "columns": list(
-                        constants.METRICS_COLUMNS_BY_ENTITY[entity_type].keys()
-                    ),
-                },
+            MacroOverridingModel(
+                additional_macros=[],
+                override_module_path=override_module_path,
+                override_path=override_path,
+                locals=dict(
+                    config={
+                        "db": self.catalog,
+                        "tables": tables,
+                        "columns": list(
+                            constants.METRICS_COLUMNS_BY_ENTITY[entity_type].keys()
+                        ),
+                    }
+                ),
                 name=f"metrics.timeseries_metrics_to_{entity_type}",
                 kind="VIEW",
                 dialect="clickhouse",
@@ -319,7 +326,7 @@ class TimeseriesMetrics:
                     )
                 },
                 enabled=self._raw_options.get("enabled", True),
-            )
+            )(join_all_of_entity_type)
         logger.info("model generation complete")
 
     def generate_model_for_rendered_query(

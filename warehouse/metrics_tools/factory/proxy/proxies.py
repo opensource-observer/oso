@@ -14,15 +14,12 @@ from sqlmesh.core.macros import MacroEvaluator
 
 def generated_query(
     evaluator: MacroEvaluator,
-    *,
-    rendered_query_str: str,
-    ref: PeerMetricDependencyRef,
-    table_name: str,
-    vars: t.Dict[str, t.Any],
 ):
     """Simple generated query executor for metrics queries"""
+    rendered_query_str = t.cast(str, evaluator.var("rendered_query_str"))
+    ref = t.cast(PeerMetricDependencyRef, evaluator.var("ref"))
 
-    with metric_ref_evaluator_context(evaluator, ref, vars):
+    with metric_ref_evaluator_context(evaluator, ref):
         result = evaluator.transform(parse_one(rendered_query_str))
     return result
 
@@ -63,11 +60,16 @@ def generated_rolling_query_proxy(
 
 
 def join_all_of_entity_type(
-    evaluator: MacroEvaluator, *, db: str, tables: t.List[str], columns: t.List[str]
+    evaluator: MacroEvaluator,
 ):
     # A bit of a hack but we know we have a "metric" column. We want to
     # transform this metric id to also include the event_source as a prefix to
     # that metric id in the joined table
+
+    db = t.cast(str, evaluator.var("db"))
+    tables: t.List[str] = t.cast(t.List[str], evaluator.var("tables"))
+    columns: t.List[str] = t.cast(t.List[str], evaluator.var("columns"))
+
     transformed_columns = []
     for column in columns:
         if column == "event_source":
