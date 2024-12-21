@@ -21,6 +21,9 @@ config = Config(
             connection=DuckDBConnectionConfig(
                 database=os.environ.get("SQLMESH_DUCKDB_LOCAL_PATH")
             ),
+            test_connection=DuckDBConnectionConfig(
+                database="/Users/raven/testing-duckdb.db",
+            ),
             variables={
                 "oso_source_db": "sources",
             },
