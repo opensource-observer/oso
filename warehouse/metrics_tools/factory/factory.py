@@ -1,23 +1,19 @@
-import contextlib
 import inspect
 import logging
 import os
 import textwrap
 import typing as t
 from dataclasses import dataclass, field
-from datetime import datetime
+from pathlib import Path
 from queue import PriorityQueue
 
-import pandas as pd
-import sqlglot as sql
-from metrics_tools.compute.client import Client
-from metrics_tools.compute.types import ExportType
 from metrics_tools.definition import (
     MetricQuery,
     PeerMetricDependencyRef,
     TimeseriesMetricsOptions,
     reference_to_str,
 )
+from metrics_tools.factory import constants
 from metrics_tools.joiner import JoinerTransform
 from metrics_tools.macros import (
     metrics_end,
@@ -30,21 +26,14 @@ from metrics_tools.macros import (
     metrics_start,
     relative_window_sample_date,
 )
-from metrics_tools.models import GeneratedModel, GeneratedPythonModel
-from metrics_tools.runner import MetricsRunner
+from metrics_tools.models import GeneratedModel, MacroOverridingModel
 from metrics_tools.transformer import (
     IntermediateMacroEvaluatorTransform,
     SQLTransformer,
 )
 from metrics_tools.transformer.qualify import QualifyTransform
-from metrics_tools.transformer.tables import ExecutionContextTableTransform
-from metrics_tools.utils import env
 from metrics_tools.utils.logging import add_metrics_tools_to_sqlmesh_logging
-from metrics_tools.utils.tables import create_dependent_tables_map
 from sqlglot import exp
-from sqlmesh import ExecutionContext
-from sqlmesh.core.dialect import parse_one
-from sqlmesh.core.macros import MacroEvaluator
 from sqlmesh.core.model import ModelKindName
 
 logger = logging.getLogger(__name__)
@@ -54,60 +43,6 @@ type ExtraVarType = ExtraVarBaseType | t.List[ExtraVarBaseType]
 
 CURR_DIR = os.path.dirname(__file__)
 QUERIES_DIR = os.path.abspath(os.path.join(CURR_DIR, "../../metrics_mesh/oso_metrics"))
-
-TIME_AGGREGATION_TO_CRON = {
-    "daily": "@daily",
-    "monthly": "@monthly",
-    "weekly": "@weekly",
-}
-METRICS_COLUMNS_BY_ENTITY: t.Dict[str, t.Dict[str, exp.DataType]] = {
-    "artifact": {
-        "metrics_sample_date": exp.DataType.build("DATE", dialect="duckdb"),
-        "event_source": exp.DataType.build("STRING", dialect="duckdb"),
-        "to_artifact_id": exp.DataType.build("STRING", dialect="duckdb"),
-        "from_artifact_id": exp.DataType.build("STRING", dialect="duckdb"),
-        "metric": exp.DataType.build("STRING", dialect="duckdb"),
-        "amount": exp.DataType.build("DOUBLE", dialect="duckdb"),
-    },
-    "project": {
-        "metrics_sample_date": exp.DataType.build("DATE", dialect="duckdb"),
-        "event_source": exp.DataType.build("STRING", dialect="duckdb"),
-        "to_project_id": exp.DataType.build("STRING", dialect="duckdb"),
-        "from_artifact_id": exp.DataType.build("STRING", dialect="duckdb"),
-        "metric": exp.DataType.build("STRING", dialect="duckdb"),
-        "amount": exp.DataType.build("DOUBLE", dialect="duckdb"),
-    },
-    "collection": {
-        "metrics_sample_date": exp.DataType.build("DATE", dialect="duckdb"),
-        "event_source": exp.DataType.build("STRING", dialect="duckdb"),
-        "to_collection_id": exp.DataType.build("STRING", dialect="duckdb"),
-        "from_artifact_id": exp.DataType.build("STRING", dialect="duckdb"),
-        "metric": exp.DataType.build("STRING", dialect="duckdb"),
-        "amount": exp.DataType.build("DOUBLE", dialect="duckdb"),
-    },
-}
-
-
-@contextlib.contextmanager
-def metric_ref_evaluator_context(
-    evaluator: MacroEvaluator,
-    ref: PeerMetricDependencyRef,
-    extra_vars: t.Optional[t.Dict[str, t.Any]] = None,
-):
-    before = evaluator.locals.copy()
-    evaluator.locals.update(extra_vars or {})
-    evaluator.locals.update(
-        {
-            "rolling_window": ref.get("window"),
-            "rolling_unit": ref.get("unit"),
-            "time_aggregation": ref.get("time_aggregation"),
-            "entity_type": ref.get("entity_type"),
-        }
-    )
-    try:
-        yield
-    finally:
-        evaluator.locals = before
 
 
 class MetricQueryConfig(t.TypedDict):
@@ -351,6 +286,8 @@ class TimeseriesMetrics:
 
     def generate_models(self, calling_file: str):
         """Generates sqlmesh models for all the configured metrics definitions"""
+        from metrics_tools.factory.proxy.proxies import join_all_of_entity_type
+
         # Generate the models
 
         for _, query_config, dependencies in self.generate_ordered_queries():
@@ -366,17 +303,19 @@ class TimeseriesMetrics:
                 config={
                     "db": self.catalog,
                     "tables": tables,
-                    "columns": list(METRICS_COLUMNS_BY_ENTITY[entity_type].keys()),
+                    "columns": list(
+                        constants.METRICS_COLUMNS_BY_ENTITY[entity_type].keys()
+                    ),
                 },
                 name=f"metrics.timeseries_metrics_to_{entity_type}",
                 kind="VIEW",
                 dialect="clickhouse",
                 start=self._raw_options["start"],
                 columns={
-                    k: METRICS_COLUMNS_BY_ENTITY[entity_type][k]
+                    k: constants.METRICS_COLUMNS_BY_ENTITY[entity_type][k]
                     for k in filter(
                         lambda col: col not in ["event_source"],
-                        METRICS_COLUMNS_BY_ENTITY[entity_type].keys(),
+                        constants.METRICS_COLUMNS_BY_ENTITY[entity_type].keys(),
                     )
                 },
                 enabled=self._raw_options.get("enabled", True),
@@ -406,6 +345,8 @@ class TimeseriesMetrics:
         query_config: MetricQueryConfig,
         dependencies: t.Set[str],
     ):
+        from metrics_tools.factory.proxy.proxies import generated_rolling_query_proxy
+
         depends_on = set()
         for dep in dependencies:
             depends_on.add(f"{self.catalog}.{dep}")
@@ -413,7 +354,7 @@ class TimeseriesMetrics:
         ref = query_config["ref"]
         query = query_config["query"]
 
-        columns = METRICS_COLUMNS_BY_ENTITY[ref["entity_type"]]
+        columns = constants.METRICS_COLUMNS_BY_ENTITY[ref["entity_type"]]
 
         kind_common = {
             "batch_size": ref.get("batch_size", 365),
@@ -435,12 +376,33 @@ class TimeseriesMetrics:
             "metrics_sample_date",
         ]
 
-        return GeneratedPythonModel.create(
+        # return GeneratedPythonModel.create(
+        #     name=f"{self.catalog}.{query_config['table_name']}",
+        #     func=generated_rolling_query_proxy,
+        #     entrypoint_path=calling_file,
+        #     additional_macros=self.generated_model_additional_macros,
+        #     variables=self.serializable_config(query_config),
+        #     depends_on=depends_on,
+        #     columns=columns,
+        #     kind={
+        #         "name": ModelKindName.INCREMENTAL_BY_TIME_RANGE,
+        #         "time_column": "metrics_sample_date",
+        #         **kind_common,
+        #     },
+        #     partitioned_by=partitioned_by,
+        #     cron=cron,
+        #     start=self._raw_options["start"],
+        #     grain=grain,
+        #     imports={"pd": pd, "generated_rolling_query": generated_rolling_query},
+        #     enabled=self._raw_options.get("enabled", True),
+        # )
+        override_path = Path(inspect.getfile(generated_rolling_query_proxy))
+        override_module_path = Path(
+            os.path.dirname(inspect.getfile(generated_rolling_query_proxy))
+        )
+        return MacroOverridingModel(
             name=f"{self.catalog}.{query_config['table_name']}",
-            func=generated_rolling_query_proxy,
-            entrypoint_path=calling_file,
-            additional_macros=self.generated_model_additional_macros,
-            variables=self.serializable_config(query_config),
+            is_sql=False,
             depends_on=depends_on,
             columns=columns,
             kind={
@@ -452,9 +414,12 @@ class TimeseriesMetrics:
             cron=cron,
             start=self._raw_options["start"],
             grain=grain,
-            imports={"pd": pd, "generated_rolling_query": generated_rolling_query},
             enabled=self._raw_options.get("enabled", True),
-        )
+            additional_macros=self.generated_model_additional_macros,
+            locals=self.serializable_config(query_config),
+            override_module_path=override_module_path,
+            override_path=override_path,
+        )(generated_rolling_query_proxy)
 
     def generate_time_aggregation_model_for_rendered_query(
         self,
@@ -463,12 +428,12 @@ class TimeseriesMetrics:
         dependencies: t.Set[str],
     ):
         """Generate model for time aggregation models"""
-        # Use a simple python sql model to generate the time_aggregation model
-        config = self.serializable_config(query_config)
+        from metrics_tools.factory.proxy.proxies import generated_query
 
+        # Use a simple python sql model to generate the time_aggregation model
         ref = query_config["ref"]
 
-        columns = METRICS_COLUMNS_BY_ENTITY[ref["entity_type"]]
+        columns = constants.METRICS_COLUMNS_BY_ENTITY[ref["entity_type"]]
 
         time_aggregation = ref.get("time_aggregation")
         assert time_aggregation is not None
@@ -493,12 +458,13 @@ class TimeseriesMetrics:
             "event_source",
             "metrics_sample_date",
         ]
-        cron = TIME_AGGREGATION_TO_CRON[time_aggregation]
+        cron = constants.TIME_AGGREGATION_TO_CRON[time_aggregation]
 
-        GeneratedModel.create(
-            func=generated_query,
-            entrypoint_path=calling_file,
-            config=config,
+        # Override the path and module so that sqlmesh generates the
+        # proper python_env for the model
+        override_path = Path(inspect.getfile(generated_query))
+        override_module_path = Path(os.path.dirname(inspect.getfile(generated_query)))
+        return MacroOverridingModel(
             name=f"{self.catalog}.{query_config['table_name']}",
             kind={
                 "name": ModelKindName.INCREMENTAL_BY_TIME_RANGE,
@@ -510,10 +476,13 @@ class TimeseriesMetrics:
             grain=grain,
             cron=cron,
             start=self._raw_options["start"],
-            additional_macros=self.generated_model_additional_macros,
             partitioned_by=partitioned_by,
             enabled=self._raw_options.get("enabled", True),
-        )
+            additional_macros=self.generated_model_additional_macros,
+            locals=self.serializable_config(query_config),
+            override_module_path=override_module_path,
+            override_path=override_path,
+        )(generated_query)
 
     def serializable_config(self, query_config: MetricQueryConfig):
         # Use a simple python sql model to generate the time_aggregation model
@@ -558,195 +527,3 @@ def timeseries_metrics(
         GLOBAL_TIMESERIES_METRICS[calling_file] = timeseries_metrics
 
     return timeseries_metrics.generate_models(calling_file)
-
-
-def join_all_of_entity_type(
-    evaluator: MacroEvaluator, *, db: str, tables: t.List[str], columns: t.List[str]
-):
-    # A bit of a hack but we know we have a "metric" column. We want to
-    # transform this metric id to also include the event_source as a prefix to
-    # that metric id in the joined table
-    transformed_columns = []
-    for column in columns:
-        if column == "event_source":
-            continue
-        if column == "metric":
-            transformed_columns.append(
-                exp.alias_(
-                    exp.Concat(
-                        expressions=[
-                            exp.to_column("event_source"),
-                            exp.Literal(this="_", is_string=True),
-                            exp.to_column(column),
-                        ],
-                        safe=False,
-                        coalesce=False,
-                    ),
-                    alias="metric",
-                )
-            )
-        else:
-            transformed_columns.append(column)
-
-    query = exp.select(*transformed_columns).from_(sql.to_table(f"{db}.{tables[0]}"))
-    for table in tables[1:]:
-        query = query.union(
-            exp.select(*transformed_columns).from_(sql.to_table(f"{db}.{table}")),
-            distinct=False,
-        )
-    # Calculate the correct metric_id for all of the entity types
-    return query
-
-
-def generated_query(
-    evaluator: MacroEvaluator,
-    *,
-    rendered_query_str: str,
-    ref: PeerMetricDependencyRef,
-    table_name: str,
-    vars: t.Dict[str, t.Any],
-):
-    """Simple generated query executor for metrics queries"""
-
-    with metric_ref_evaluator_context(evaluator, ref, vars):
-        result = evaluator.transform(parse_one(rendered_query_str))
-    return result
-
-
-def generated_rolling_query(
-    context: ExecutionContext,
-    start: datetime,
-    end: datetime,
-    execution_time: datetime,
-    ref: PeerMetricDependencyRef,
-    vars: t.Dict[str, t.Any],
-    rendered_query_str: str,
-    table_name: str,
-    sqlmesh_vars: t.Dict[str, t.Any],
-    gateway: str | None,
-    *_ignored,
-):
-    """Generates a rolling query for the given metrics query
-
-    If SQLMESH_MCS_ENABLED is set to true, the query will be sent to the metrics
-    calculation service. Otherwise, the query will be executed as a rolling
-    query using dataframes (this can be very slow on remote data sources of
-    non-trivial size).
-
-    This currently takes advantage of a potential hack in sqlmesh. The snapshot
-    evaluator nor the scheduler in sqlmesh seem to care what the response is
-    from the python model as long as it's either a dataframe OR a sqlglot
-    expression. This means we can return a sqlglot expression that takes the
-    ExportReference from the metrics calculation service and use it as a table
-    in the sqlmesh query.
-
-    If configured correctly, the metrics calculation service will export a trino
-    database in production and if testing, it can export a "LOCALFS" export
-    which gives you a path to parquet file with random data (that satisfies the
-    requested schema).
-    """
-    # Transform the query for the current context
-    transformer = SQLTransformer(transforms=[ExecutionContextTableTransform(context)])
-    query = transformer.transform(rendered_query_str)
-    locals = vars.copy()
-    locals.update(sqlmesh_vars)
-
-    mcs_enabled = env.ensure_bool("SQLMESH_MCS_ENABLED", False)
-    if not mcs_enabled:
-        runner = MetricsRunner.from_sqlmesh_context(context, query, ref, locals)
-        df = runner.run_rolling(start, end)
-        # If the rolling window is empty we need to yield from an empty tuple
-        # otherwise sqlmesh fails. See:
-        # https://sqlmesh.readthedocs.io/en/latest/concepts/models/python_models/#returning-empty-dataframes
-        total = 0
-        if df.empty:
-            yield from ()
-        else:
-            count = len(df)
-            total += count
-            logger.debug(f"table={table_name} yielding rows {count}")
-            yield df
-        logger.debug(f"table={table_name} yielded rows{total}")
-    else:
-        logger.info("metrics calculation service enabled")
-
-        mcs_url = env.required_str("SQLMESH_MCS_URL")
-        mcs_client = Client.from_url(url=mcs_url)
-
-        columns = [
-            (col_name, col_type.sql(dialect="duckdb"))
-            for col_name, col_type in METRICS_COLUMNS_BY_ENTITY[
-                ref["entity_type"]
-            ].items()
-        ]
-
-        response = mcs_client.calculate_metrics(
-            query_str=rendered_query_str,
-            start=start,
-            end=end,
-            dialect="duckdb",
-            batch_size=env.ensure_int("SQLMESH_MCS_BATCH_SIZE", 10),
-            columns=columns,
-            ref=ref,
-            slots=ref.get("slots", env.ensure_int("SQLMESH_DEFAULT_MCS_SLOTS", 2)),
-            locals=sqlmesh_vars,
-            dependent_tables_map=create_dependent_tables_map(
-                context, rendered_query_str
-            ),
-            job_retries=env.ensure_int("SQLMESH_MCS_JOB_RETRIES", 5),
-            cluster_min_size=env.ensure_int("SQLMESH_MCS_CLUSTER_MIN_SIZE", 0),
-            cluster_max_size=env.ensure_int("SQLMESH_MCS_CLUSTER_MAX_SIZE", 30),
-        )
-
-        column_names = list(map(lambda col: col[0], columns))
-        engine_dialect = context.engine_adapter.dialect
-
-        if engine_dialect == "duckdb":
-            if response.type not in [ExportType.GCS, ExportType.LOCALFS]:
-                raise Exception(f"ExportType={response.type} not supported for duckdb")
-            # Create a select query from the exported data
-            path = response.payload.get("local_path", response.payload.get("gcs_path"))
-            select_query = exp.select(*column_names).from_(
-                exp.Anonymous(
-                    this="read_parquet",
-                    expressions=[exp.Literal(this=path, is_string=True)],
-                ),
-            )
-        elif engine_dialect == "trino":
-            if response.type not in [ExportType.TRINO]:
-                raise Exception(f"ExportType={response.type} not supported for trino")
-            select_query = exp.select(*column_names).from_(response.table_fqn())
-        else:
-            raise Exception(f"Dialect={context.engine_adapter.dialect} not supported")
-        yield select_query
-
-
-def generated_rolling_query_proxy(
-    context: ExecutionContext,
-    start: datetime,
-    end: datetime,
-    execution_time: datetime,
-    ref: PeerMetricDependencyRef,
-    vars: t.Dict[str, t.Any],
-    rendered_query_str: str,
-    table_name: str,
-    sqlmesh_vars: t.Dict[str, t.Any],
-    **kwargs,
-) -> t.Iterator[pd.DataFrame | exp.Expression]:
-    """This acts as the proxy to the actual function that we'd call for
-    the metrics model."""
-
-    yield from generated_rolling_query(
-        context,
-        start,
-        end,
-        execution_time,
-        ref,
-        vars,
-        rendered_query_str,
-        table_name,
-        sqlmesh_vars,
-        context.gateway,
-        # Change the following variable to force reevaluation. Hack for now.
-        "version=v5",
-    )

@@ -9,6 +9,7 @@ from pathlib import Path
 
 from sqlglot import exp
 from sqlmesh.core import constants as c
+from sqlmesh.core.audit import ModelAudit
 from sqlmesh.core.dialect import MacroFunc
 from sqlmesh.core.macros import ExecutableOrMacro, MacroRegistry, macro
 from sqlmesh.core.model.decorator import model
@@ -25,6 +26,41 @@ from sqlmesh.utils.metaprogramming import (
 logger = logging.getLogger(__name__)
 
 CallableAliasList = t.List[t.Callable | t.Tuple[t.Callable, t.List[str]]]
+
+
+class MacroOverridingModel(model):
+    def __init__(
+        self,
+        override_module_path: Path,
+        override_path: Path,
+        locals: t.Dict[str, t.Any],
+        additional_macros: CallableAliasList,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self._additional_macros = additional_macros
+        self._locals = locals
+        self._override_module_path = override_module_path
+        self._override_path = override_path
+
+    def model(self, *args, **kwargs):
+        if len(self._additional_macros) > 0:
+            macros = MacroRegistry(f"macros_for_{self.name}")
+            system_macros = kwargs.get("macros", macros)
+            macros.update(system_macros or macro.get_registry())
+
+            macros = create_macro_registry_from_list(self._additional_macros)
+            kwargs["macros"] = macros
+
+        vars = kwargs.get("variables", {})
+        if len(self._locals) > 0:
+            vars.update(self._locals)
+
+        kwargs["variables"] = vars
+        kwargs["module_path"] = self._override_module_path
+        kwargs["path"] = self._override_path
+
+        return super().model(*args, **kwargs)
 
 
 class GeneratedPythonModel:
@@ -83,6 +119,7 @@ class GeneratedPythonModel:
         defaults: t.Optional[t.Dict[str, t.Any]] = None,
         macros: t.Optional[MacroRegistry] = None,
         jinja_macros: t.Optional[JinjaMacroRegistry] = None,
+        audit_definitions: t.Optional[t.Dict[str, ModelAudit]] = None,
         dialect: t.Optional[str] = None,
         time_column_format: str = c.DEFAULT_TIME_COLUMN_FORMAT,
         physical_schema_mapping: t.Optional[t.Dict[re.Pattern, str]] = None,
@@ -103,6 +140,8 @@ class GeneratedPythonModel:
         all_vars.update(global_variables)
         all_vars["sqlmesh_vars"] = global_variables
 
+        self._kwargs.setdefault("dialect", dialect)
+
         common_kwargs: t.Dict[str, t.Any] = dict(
             defaults=defaults,
             path=path,
@@ -111,6 +150,7 @@ class GeneratedPythonModel:
             project=project,
             default_catalog=default_catalog,
             variables=all_vars,
+            audit_definitions=audit_definitions,
             **self._kwargs,
         )
 
@@ -132,7 +172,6 @@ class GeneratedPythonModel:
             module_path=fake_module_path,
             jinja_macros=jinja_macros,
             columns=self._columns,
-            dialect=dialect,
             **common_kwargs,
         )
 
@@ -211,6 +250,7 @@ class GeneratedModel:
         defaults: t.Optional[t.Dict[str, t.Any]] = None,
         macros: t.Optional[MacroRegistry] = None,
         jinja_macros: t.Optional[JinjaMacroRegistry] = None,
+        audit_definitions: t.Optional[t.Dict[str, ModelAudit]] = None,
         dialect: t.Optional[str] = None,
         time_column_format: str = c.DEFAULT_TIME_COLUMN_FORMAT,
         physical_schema_mapping: t.Optional[t.Dict[re.Pattern, str]] = None,
@@ -226,6 +266,8 @@ class GeneratedModel:
             macros = t.cast(MacroRegistry, macros.copy())
             macros.update(create_macro_registry_from_list(self.additional_macros))
 
+        self.kwargs.setdefault("dialect", dialect)
+
         common_kwargs: t.Dict[str, t.Any] = dict(
             defaults=defaults,
             path=fake_module_path,
@@ -234,6 +276,7 @@ class GeneratedModel:
             project=project,
             default_catalog=default_catalog,
             variables=variables,
+            audit_definitions=audit_definitions,
             **self.kwargs,
         )
 
