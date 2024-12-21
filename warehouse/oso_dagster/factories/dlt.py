@@ -191,12 +191,24 @@ def _dlt_factory[
                         context.log.debug("dlt pipeline setup with bigquery and jsonl")
                         dlt_run_options["loader_file_format"] = "jsonl"
 
+                    dlt_prefix_keys = (
+                        [key_prefix]
+                        if isinstance(key_prefix, str)
+                        else (key_prefix or [])
+                    )
+                    dlt_source_name = (
+                        dlt_prefix_keys[-1] if dlt_prefix_keys else key_prefix_str
+                    )
+                    dlt_key_prefix = dlt_prefix_keys[:-1]
+
                     results = dlt.run(
                         context=context,
                         dlt_source=dlt_source,
                         dlt_pipeline=pipeline,
                         dagster_dlt_translator=PrefixedDltTranslator(
-                            source_name=key_prefix_str, tags=dict(tags)
+                            prefix=dlt_key_prefix,
+                            source_name=dlt_source_name,
+                            tags=dict(tags),
                         ),
                         **dlt_run_options,
                     )
