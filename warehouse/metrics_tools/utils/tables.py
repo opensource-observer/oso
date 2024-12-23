@@ -26,7 +26,7 @@ def resolve_table_name(
 ) -> t.Tuple[str, str]:
     table_fqn = resolve_table_fqn(table)
 
-    return (table_fqn, context.table(table_fqn))
+    return (table_fqn, context.resolve_table(table_fqn))
 
 
 def list_query_table_dependencies(
@@ -92,6 +92,6 @@ def create_dependent_tables_map(
         raise ValueError("Failed to build scope")
     # tables_map = resolve_table_map_from_scope(context, scope)
     tables = list_query_table_dependencies(query, {})
-    tables_map = {table: context.table(table) for table in tables}
+    tables_map = {table: context.resolve_table(table) for table in tables}
 
     return tables_map
