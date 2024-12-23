@@ -91,6 +91,7 @@ ipython = "^8.21.0"
 shandy-sqlfmt = { extras = ["jinjafmt"], version = "^0.21.1" }
 sqlfluff = "~3.2.5"
 sqlfluff-templater-dbt = "~3.2.5"
+isort = "^5.13.2"
 
 [build-system]
 requires = ["poetry-core"]
