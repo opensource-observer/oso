@@ -6,6 +6,7 @@ import typing as t
 
 from sqlglot import exp
 from sqlmesh.core.context import ExecutionContext
+
 from .base import Transform
 
 logger = logging.getLogger(__name__)
@@ -56,8 +57,8 @@ class ExecutionContextTableTransform(TableTransform):
         table_name = f"{table.db}.{table.this.this}"
         try:
             logger.debug(
-                f"Transforming tables for query {self._context.table(table_name)}"
+                f"Transforming tables for query {self._context.resolve_table(table_name)}"
             )
-            return exp.to_table(self._context.table(table_name))
+            return exp.to_table(self._context.resolve_table(table_name))
         except KeyError:
             return None

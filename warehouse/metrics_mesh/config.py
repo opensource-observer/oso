@@ -19,7 +19,8 @@ config = Config(
     gateways={
         "local": GatewayConfig(
             connection=DuckDBConnectionConfig(
-                database=os.environ.get("SQLMESH_DUCKDB_LOCAL_PATH")
+                concurrent_tasks=1,
+                database=os.environ.get("SQLMESH_DUCKDB_LOCAL_PATH"),
             ),
             variables={
                 "oso_source_db": "sources",
