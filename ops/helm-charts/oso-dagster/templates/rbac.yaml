@@ -1,0 +1,8 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: dagster-scaler-role
+rules:
+  - apiGroups: ["apps"] # API group for deployments
+    resources: ["deployments"] # Specific subresource for scaling
+    verbs: ["get", "update", "list", "patch", "watch"]
