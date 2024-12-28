@@ -37,6 +37,7 @@ def sqlmesh_factory(sqlmesh_infra_config: dict, sqlmesh_config: SQLMeshContextCo
         "trino_coordinator_deployment_name"
     ]
     trino_worker_deployment_name = sqlmesh_infra_config["trino_worker_deployment_name"]
+    trino_service_name = sqlmesh_infra_config["trino_service_name"]
 
     @sqlmesh_assets(
         config=sqlmesh_config,
@@ -72,9 +73,9 @@ def sqlmesh_factory(sqlmesh_infra_config: dict, sqlmesh_config: SQLMeshContextCo
             f"http://{mcs_deployment_name}.{mcs_deployment_namespace}.svc.cluster.local:8000/status"
         )
 
-        context.log.info("Waiting for the trino coordinator to come online")
+        context.log.info("Waiting for the trino service to come online")
         wait_for_ok(
-            f"http://{trino_coordinator_deployment_name}.{trino_deployment_namespace}.svc.cluster.local:8080/"
+            f"http://{trino_service_name}.{trino_deployment_namespace}.svc.cluster.local:8080/"
         )
 
         yield from sqlmesh.run(context, environment=environment)

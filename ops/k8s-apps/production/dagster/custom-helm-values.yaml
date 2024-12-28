@@ -31,7 +31,7 @@ spec:
           maxRetries: 3
     sqlmesh:
       trino:
-        host: production-trino-trino-coordinator.production-trino.svc.cluster.local
+        host: production-trino-trino.production-trino.svc.cluster.local
         user: sqlmesh
         catalog: "metrics"
         concurrentTasks: "64"

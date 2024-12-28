@@ -2,22 +2,17 @@ import os
 
 from dagster import Definitions
 from dagster_dbt import DbtCliResource
-from dagster_gcp import BigQueryResource, GCSResource
-from dagster_sqlmesh import SQLMeshContextConfig, SQLMeshResource
-from dagster_k8s import k8s_job_executor
 from dagster_embedded_elt.dlt import DagsterDltResource
+from dagster_gcp import BigQueryResource, GCSResource
+from dagster_k8s import k8s_job_executor
+from dagster_sqlmesh import SQLMeshContextConfig, SQLMeshResource
 from dotenv import load_dotenv
 from oso_dagster.utils.dbt import support_home_dir_profiles
-from . import constants
-from .schedules import schedules, get_partitioned_schedules
+
+from . import assets, constants
 from .cbt import CBTResource
 from .factories import load_all_assets_from_package
-from .utils import (
-    LocalSecretResolver,
-    GCPSecretResolver,
-    LogAlertManager,
-    CanvasDiscordWebhookAlertManager,
-)
+from .factories.alerts import setup_alert_sensor
 from .resources import (
     BigQueryDataTransferResource,
     ClickhouseResource,
@@ -25,9 +20,13 @@ from .resources import (
     load_dlt_warehouse_destination,
     load_io_manager,
 )
-from . import assets
-from .factories.alerts import setup_alert_sensor
-
+from .schedules import get_partitioned_schedules, schedules
+from .utils import (
+    CanvasDiscordWebhookAlertManager,
+    GCPSecretResolver,
+    LocalSecretResolver,
+    LogAlertManager,
+)
 
 load_dotenv()
 
@@ -111,6 +110,15 @@ def load_definitions():
         "project_id": project_id,
         "alert_manager": alert_manager,
         "sqlmesh_config": sqlmesh_config,
+        "sqlmesh_infra_config": {
+            "environment": "prod",
+            "mcs_deployment_name": "production-mcs",
+            "mcs_deployment_namespace": "production-mcs",
+            "trino_deployment_namespace": "production-trino",
+            "trino_service_name": "production-trino-trino",
+            "trino_coordinator_deployment_name": "production-trino-trino-coordinator",
+            "trino_worker_deployment_name": "production-trino-trino-worker",
+        },
         "sqlmesh": SQLMeshResource(config=sqlmesh_config),
     }
     for target in constants.main_dbt_manifests:
