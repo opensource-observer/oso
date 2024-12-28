@@ -78,27 +78,30 @@ def sqlmesh_factory(sqlmesh_infra_config: dict, sqlmesh_config: SQLMeshContextCo
             f"http://{trino_service_name}.{trino_deployment_namespace}.svc.cluster.local:8080/"
         )
 
-        yield from sqlmesh.run(context, environment=environment)
-
-        safe_async_run(
-            ensure_scale_down(
-                name=trino_coordinator_deployment_name,
-                namespace=trino_deployment_namespace,
+        try:
+            yield from sqlmesh.run(
+                context, environment=environment, plan_options={"skip_tests": True}
             )
-        )
-
-        safe_async_run(
-            ensure_scale_down(
-                name=trino_worker_deployment_name,
-                namespace=trino_deployment_namespace,
+        finally:
+            safe_async_run(
+                ensure_scale_down(
+                    name=trino_coordinator_deployment_name,
+                    namespace=trino_deployment_namespace,
+                )
             )
-        )
 
-        safe_async_run(
-            ensure_scale_down(
-                name=mcs_deployment_name,
-                namespace=mcs_deployment_namespace,
+            safe_async_run(
+                ensure_scale_down(
+                    name=trino_worker_deployment_name,
+                    namespace=trino_deployment_namespace,
+                )
             )
-        )
+
+            safe_async_run(
+                ensure_scale_down(
+                    name=mcs_deployment_name,
+                    namespace=mcs_deployment_namespace,
+                )
+            )
 
     return sqlmesh_project
