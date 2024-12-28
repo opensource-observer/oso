@@ -1,6 +1,6 @@
 ---
 title: Create a Network Graph
-sidebar_position: 3
+sidebar_position: 5
 ---
 
 Create a developer graph for related groups of projects. New to OSO? Check out our [Getting Started guide](../get-started/index.md) to set up your BigQuery or API access.
