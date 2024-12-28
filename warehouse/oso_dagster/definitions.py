@@ -65,6 +65,16 @@ def load_definitions():
         path=constants.sqlmesh_dir, gateway=constants.sqlmesh_gateway
     )
 
+    sqlmesh_infra_config = {
+        "environment": "prod",
+        "mcs_deployment_name": "production-mcs",
+        "mcs_deployment_namespace": "production-mcs",
+        "trino_deployment_namespace": "production-trino",
+        "trino_service_name": "production-trino-trino",
+        "trino_coordinator_deployment_name": "production-trino-trino-coordinator",
+        "trino_worker_deployment_name": "production-trino-trino-worker",
+    }
+
     early_resources = dict(
         project_id=project_id,
         staging_bucket=constants.staging_bucket,
@@ -72,6 +82,7 @@ def load_definitions():
         dlt_warehouse_destination=dlt_warehouse_destination,
         secrets=secret_resolver,
         sqlmesh_config=sqlmesh_config,
+        sqlmesh_infra_config=sqlmesh_infra_config,
     )
 
     asset_factories = load_all_assets_from_package(assets, early_resources)
@@ -110,15 +121,7 @@ def load_definitions():
         "project_id": project_id,
         "alert_manager": alert_manager,
         "sqlmesh_config": sqlmesh_config,
-        "sqlmesh_infra_config": {
-            "environment": "prod",
-            "mcs_deployment_name": "production-mcs",
-            "mcs_deployment_namespace": "production-mcs",
-            "trino_deployment_namespace": "production-trino",
-            "trino_service_name": "production-trino-trino",
-            "trino_coordinator_deployment_name": "production-trino-trino-coordinator",
-            "trino_worker_deployment_name": "production-trino-trino-worker",
-        },
+        "sqlmesh_infra_config": sqlmesh_infra_config,
         "sqlmesh": SQLMeshResource(config=sqlmesh_config),
     }
     for target in constants.main_dbt_manifests:
