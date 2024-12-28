@@ -41,6 +41,7 @@ alerts:
 cache:
   uri: ""
 sqlmesh:
+  gateway: ""
   trino:
     host: "trino"
     port: "8080"

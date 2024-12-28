@@ -30,6 +30,7 @@ spec:
           enabled: true
           maxRetries: 3
     sqlmesh:
+      gateway: "trino"
       trino:
         host: production-trino-trino.production-trino.svc.cluster.local
         user: sqlmesh
