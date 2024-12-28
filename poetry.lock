@@ -1266,13 +1266,13 @@ psycopg2-binary = "*"
 
 [[package]]
 name = "dagster-sqlmesh"
-version = "0.3.0"
+version = "0.3.1.dev1"
 description = ""
 optional = false
 python-versions = "<3.13,>=3.11"
 files = [
-    {file = "dagster_sqlmesh-0.3.0-py3-none-any.whl", hash = "sha256:060fa14c6204ab07cba078495bdb66906e3570ec365d93d94f4a5a96648416f5"},
-    {file = "dagster_sqlmesh-0.3.0.tar.gz", hash = "sha256:fc606aa35e47c8a2026c2949db1a7a8782c5258fbf1873e7d28aeda6819390b0"},
+    {file = "dagster_sqlmesh-0.3.1.dev1-py3-none-any.whl", hash = "sha256:1e4fd9b957e6604b2a8f95b1995476c5159e69a2d736f6058c89bce4e9777732"},
+    {file = "dagster_sqlmesh-0.3.1.dev1.tar.gz", hash = "sha256:d26f713f61c6c415668fc15ca7cf51159ae4b871a87841b46c3e4db875be0a5b"},
 ]
 
 [package.dependencies]
@@ -7748,4 +7748,4 @@ cffi = ["cffi (>=1.11)"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12,<3.13"
-content-hash = "cab9a241483d756968da6a1f9883d7a0c24e285f8d16d1e6f7632ca547251b3a"
+content-hash = "4c507b673c0d8a79a9b232de8622cba1b0eb6e17b90de015a0843bc64ac5c513"
