@@ -29,3 +29,13 @@ spec:
         runRetries:
           enabled: true
           maxRetries: 3
+    sqlmesh:
+      gateway: "trino"
+      trino:
+        host: production-trino-trino.production-trino.svc.cluster.local
+        user: sqlmesh
+        catalog: "metrics"
+        concurrentTasks: "64"
+      mcs:
+        enabled: true
+        url: "http://production-mcs.production-mcs.svc.cluster.local:8000"
