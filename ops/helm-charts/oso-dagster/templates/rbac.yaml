@@ -1,7 +1,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
+kind: ClusterRole
 metadata:
-  name: dagster-scaler-role
+  name: {{ .Release.Name }}-scaler-role
 rules:
   - apiGroups: ["apps"] # API group for deployments
     resources: ["deployments"] # Specific subresource for scaling
