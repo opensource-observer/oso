@@ -34,6 +34,8 @@ from metrics_tools.transformer import (
 from metrics_tools.transformer.qualify import QualifyTransform
 from metrics_tools.utils.logging import add_metrics_tools_to_sqlmesh_logging
 from sqlglot import exp
+from sqlmesh.core.dialect import parse_one
+from sqlmesh.core.macros import MacroEvaluator
 from sqlmesh.core.model import ModelKindName
 
 logger = logging.getLogger(__name__)
@@ -516,3 +518,24 @@ def timeseries_metrics(
         GLOBAL_TIMESERIES_METRICS[calling_file] = timeseries_metrics
 
     return timeseries_metrics.generate_models(calling_file)
+
+
+# This is to maintain compatibility with the deployed version of sqlmesh models
+# We need a way to ensure that changes to generated models are never breaking
+# (we will likely need some testing for this)
+def generated_query(
+    evaluator: MacroEvaluator,
+    *args: t.Any,
+    **kwargs: t.Any,
+):
+    """LEGACY VERSION THAT WILL BE DELETED"""
+    return parse_one("select 1")
+
+
+def join_all_of_entity_type(
+    evaluator: MacroEvaluator,
+    *args: t.Any,
+    **kwargs: t.Any,
+):
+    """LEGACY VERSION THAT WILL BE DELETED"""
+    return parse_one("select 1")
