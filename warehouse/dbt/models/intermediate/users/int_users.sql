@@ -20,8 +20,29 @@ lens_users as (
     bio,
     "" as url
   from {{ ref('stg_lens__profiles') }}
+),
+
+github_users as (
+  select
+    from_artifact_id as user_id,
+    from_artifact_source_id as user_source_id,
+    "GITHUB" as user_source,
+    display_name,
+    "" as profile_picture_url,
+    "" as bio,
+    "https://github.com/" || display_name as url
+  from (
+    select
+      from_artifact_id,
+      from_artifact_source_id,
+      MAX_BY(LOWER(from_artifact_name), time) as display_name
+    from {{ ref('int_events__github') }}
+    group by from_artifact_id, from_artifact_source_id
+  )
 )
 
 select * from farcaster_users
 union all
 select * from lens_users
+union all
+select * from github_users
