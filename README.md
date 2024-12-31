@@ -32,7 +32,7 @@ Open Source Observer is a free analytics suite that helps funders measure the im
 
 ## Quickstart
 
-### System Prequisites
+### System Prerequisites
 
 Before you begin you'll need the following on your system:
 
