@@ -1,9 +1,9 @@
 ---
-title: Replicate a Database
+title: Provide Access to Your Database
 sidebar_position: 3
 ---
 
-import NextSteps from "./dagster-config.mdx"
+import NextSteps from "../guides/dagster-config.mdx"
 
 OSO's dagster infrastructure has support for database replication into our data
 warehouse by using Dagster's "embedded-elt" that integrates with the library

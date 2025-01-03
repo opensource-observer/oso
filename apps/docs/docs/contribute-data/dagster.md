@@ -1,13 +1,13 @@
 ---
-title: Writing Custom Dagster Assets
+title: Write a Custom Dagster Asset
 sidebar_position: 6
 ---
 
-import NextSteps from "./dagster-config.mdx"
+import NextSteps from "../guides/dagster-config.mdx"
 
 Before writing a fully custom Dagster asset,
 we recommend you first see if the previous guides on
-[BigQuery datasets](./bigquery/index.md),
+[BigQuery datasets](./bigquery.md),
 [database replication](./database.md),
 [API crawling](./api.md)
 may be a better fit.

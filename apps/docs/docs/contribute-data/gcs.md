@@ -1,9 +1,9 @@
 ---
-title: Connect via Google Cloud Storage (GCS)
+title: Import from Google Cloud Storage (GCS)
 sidebar_position: 5
 ---
 
-import NextSteps from "./dagster-config.mdx"
+import NextSteps from "../guides/dagster-config.mdx"
 
 We strongly prefer data partners that can provide
 updated live datasets, over a static snapshot.
@@ -16,7 +16,7 @@ by OSO, please reach out to us on
 [Discord](https://www.opensource.observer/discord).
 
 If you prefer to handle the data storage yourself, check out the
-[Connect via BigQuery guide](./bigquery/index.md).
+[Connect via BigQuery guide](../guides/bq-data-transfer.md).
 
 ## Schedule periodic dumps to GCS
 

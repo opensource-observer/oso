@@ -1,6 +1,6 @@
 ---
-title: Add Funding Data
-sidebar_position: 10
+title: Upload Funding Data
+sidebar_position: 7
 ---
 
 :::info

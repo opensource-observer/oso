@@ -3,7 +3,7 @@ title: Crawl an API
 sidebar_position: 4
 ---
 
-import NextSteps from "./dagster-config.mdx"
+import NextSteps from "../guides/dagster-config.mdx"
 
 We expect one of the most common forms of data connection would be to connect
 some public API to OSO. We have created tooling to make this as easy as possible.
