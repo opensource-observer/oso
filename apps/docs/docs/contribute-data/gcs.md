@@ -3,8 +3,6 @@ title: Import from Google Cloud Storage (GCS)
 sidebar_position: 5
 ---
 
-import NextSteps from "../guides/dagster-config.mdx"
-
 We strongly prefer data partners that can provide
 updated live datasets, over a static snapshot.
 Datasets that use this method will require OSO sponsorship
@@ -84,5 +82,3 @@ you will find a few examples of using the GCS asset factory:
 - [Superchain data](https://github.com/opensource-observer/oso/blob/main/warehouse/oso_dagster/assets/__init__.py)
 - [Gitcoin Passport scores](https://github.com/opensource-observer/oso/blob/main/warehouse/oso_dagster/assets/gitcoin.py)
 - [OpenRank reputations on Farcaster](https://github.com/opensource-observer/oso/blob/main/warehouse/oso_dagster/assets/karma3.py)
-
-<NextSteps components={props.components}/>

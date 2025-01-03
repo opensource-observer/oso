@@ -3,8 +3,6 @@ title: Provide Access to Your Database
 sidebar_position: 3
 ---
 
-import NextSteps from "../guides/dagster-config.mdx"
-
 OSO's dagster infrastructure has support for database replication into our data
 warehouse by using Dagster's "embedded-elt" that integrates with the library
 [dlt](https://dlthub.com/).
@@ -105,5 +103,3 @@ integrated, you will want to contact the OSO team on our
 credentials (we will work out a secure method of transmission) and also ensure
 that you have access to update any firewall settings that may be required for us
 to access your database server.
-
-<NextSteps components={props.components}/>

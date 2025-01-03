@@ -3,8 +3,6 @@ title: Write a Custom Dagster Asset
 sidebar_position: 6
 ---
 
-import NextSteps from "../guides/dagster-config.mdx"
-
 Before writing a fully custom Dagster asset,
 we recommend you first see if the previous guides on
 [BigQuery datasets](./bigquery.md),
@@ -151,5 +149,3 @@ gitcoin_passport_scores = interval_gcs_import_asset(
     ),
 )
 ```
-
-<NextSteps components={props.components}/>

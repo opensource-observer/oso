@@ -29,7 +29,7 @@ Most of our visualizations are generated in Python using Matplotlib, Seaborn, an
 
 Contribute your own data visualization templates by adding them to the `./visualizations/` directory in the Insights repo. Please include a docstring in your visualization script explaining the expected data format and a brief description of use cases.
 
-### Impact Metrcs
+### Impact Metrics
 
 We're building scripts and analysis frameworks for community-generated impact metrics. Submissions must be replicable with data sourced entirely from the OSO data warehouse and should follow the follow the [Impact Metrics Specification](../references/impact-metrics/).
 

@@ -3,8 +3,6 @@ title: Crawl an API
 sidebar_position: 4
 ---
 
-import NextSteps from "../guides/dagster-config.mdx"
-
 We expect one of the most common forms of data connection would be to connect
 some public API to OSO. We have created tooling to make this as easy as possible.
 
@@ -202,5 +200,3 @@ There are a few critical changes we've made in this example:
 3. The dlt resource is yielded as usual but it is instead passed the
    `RESTClient` instance that has been configured with authentication
    credentials.
-
-<NextSteps components={props.components}/>
