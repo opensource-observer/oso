@@ -8,6 +8,19 @@ sidebar_position: 1
 The [OSS Directory](https://github.com/opensource-observer/oss-directory) serves as the "source of truth" for the projects and collections that are discoverable on Open Source Observer. While the directory may never be complete, it is actively maintained. We welcome community contributions of new projects and collections, as well as updates to existing entries. This directory is a public good, free to use and distribute.
 :::
 
+## Directory Structure
+
+The OSS Directory is organized into two main folders:
+
+- `./data/projects` - each file represents a single open source project and contains all of the artifacts for that project.
+  - See `./src/resources/schema/project.json` for the expected JSON schema
+  - Files should be named by the project `name`
+  - A project's `name` must be globally unique. If there is a conflict in chosen `name`, we will give priority to the project that has the associated GitHub organization
+  - In most cases, we adopt the GitHub organization name as the `name`. If the project is not associated with a GitHub organization, you try to use the project name followed by the repo owner as the `name`.
+- `./data/collections` - each file represents a collection of projects that have some collective meaning (e.g. all projects in an ecosystem).
+  - See `./src/resources/schema/collection.json` for the expected JSON schema
+  - Collections are identified by their unique `name`
+
 ## Collections
 
 ---
