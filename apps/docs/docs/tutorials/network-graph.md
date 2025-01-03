@@ -227,7 +227,7 @@ order by target_project_interaction_days_from_dev desc
 
 ## Python
 
-See our guide on [writing Python notebooks](../integrate/python-notebooks.md) for more information on how to connect to BigQuery and query data. Our [Insights Repo](https://github.com/opensource-observer/insights) is full of examples too.
+See our guide on [writing Python notebooks](../guides/notebooks/index.mdx) for more information on how to connect to BigQuery and query data. Our [Insights Repo](https://github.com/opensource-observer/insights) is full of examples too.
 
 ### Connect to BigQuery
 
