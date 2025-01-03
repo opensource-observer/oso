@@ -1,0 +1,171 @@
+---
+title: Get Metrics About Your Project
+sidebar_position: 5
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+:::tip
+Once you're project is indexed, you can get metrics about your project using our GraphQL API or directly from BigQuery. It's always safer to query on the `project_id` field rather than the `name` or `display_name` fields.
+:::
+
+## Find Your `project_id`
+
+You can lookup your project's `project_id` using either BigQuery or our GraphQL API:
+
+<Tabs>
+<TabItem value="sql" label="SQL">
+
+```sql
+select
+  project_id,
+  project_name,
+  display_name,
+  description
+from `oso_production.projects_v1`
+where project_name = 'opensource-observer'
+```
+
+In the case of `opensource-observer`, we get back the following:
+
+```json 
+{
+  "project_id": "Erx9J64anc8oSeN-wDKm0sojJf8ONrFVYbQ7GFnqSyc=",
+  "project_name": "opensource-observer",
+  "display_name": "Open Source Observer",
+  "description": "Open Source Observer is a free analytics suite that helps funders measure the impact of open source software contributions to the health of their ecosystem."
+}
+```
+
+</TabItem>
+<TabItem value="graphql" label="GraphQL">
+
+```graphql
+query findProject {
+  oso_projectsV1(
+    where: { projectName: { _eq: "opensource-observer" } }
+  ) {
+    projectId
+    projectName
+    displayName
+    description
+  }
+}
+```
+
+In the case of `opensource-observer`, we get back the following:
+
+```json 
+{
+  "projectId": "Erx9J64anc8oSeN-wDKm0sojJf8ONrFVYbQ7GFnqSyc=",
+  "projectName": "opensource-observer",
+  "displayName": "Open Source Observer",
+  "description": "Open Source Observer is a free analytics suite that helps funders measure the impact of open source software contributions to the health of their ecosystem."
+}
+```
+
+</TabItem>
+</Tabs>
+
+## Get Code Metrics
+
+OSO maintains a standard set of basic code metrics for each project.
+
+<Tabs>
+<TabItem value="sql" label="SQL">
+
+```sql
+select *
+from `oso_production.code_metrics_by_project_v1`
+where project_id = 'Erx9J64anc8oSeN-wDKm0sojJf8ONrFVYbQ7GFnqSyc='
+```
+
+</TabItem>
+
+<TabItem value="graphql" label="GraphQL">
+
+```graphql
+query getCodeMetrics {
+  oso_codeMetricsByProjectV1(
+    where: { projectId: { _eq: "Erx9J64anc8oSeN-wDKm0sojJf8ONrFVYbQ7GFnqSyc=" } }
+  ) {
+    repositoryCount,
+    forkCount,
+    starCount,
+    activeDeveloperCount6Months,
+    contributorCount6Months,
+    ...
+  }
+}
+```
+
+</TabItem>
+</Tabs>
+
+## Get Onchain Metrics
+
+OSO maintains a standard set of onchain metrics for each project, available by network. If you want metrics for a specific network, you can use the `event_source` field in your query, eg, `event_source = 'BASE'`.
+
+<Tabs>
+<TabItem value="sql" label="SQL">
+
+```sql
+select *
+from `oso_production.onchain_metrics_by_project_v1`
+where project_id = 'XyKL4912vsx41aNjTJDLDexSgi4_BcPkilZ8twJlqxI=' -- Aave
+```
+
+</TabItem>
+
+<TabItem value="graphql" label="GraphQL">
+
+```graphql
+query getOnchainMetrics {
+  oso_onchainMetricsByProjectV1(
+    where: { projectId: { _eq: "XyKL4912vsx41aNjTJDLDexSgi4_BcPkilZ8twJlqxI=" } }
+  ) {
+    eventSource,
+    transactionCount,
+    gasFeesSum,
+    addressCount90Days,
+    newAddressCount90Days,
+    ...
+  }
+}
+```
+
+</TabItem>
+</Tabs>
+
+## Get Funding Data
+
+You can also explore funding data for your project (currently only available on BigQuery for a limited set of grants programs).
+
+For example:
+
+```sql
+select
+  from_project_name,
+  sum(amount) as funding_amount
+from `oso_production.oss_funding_v0`
+where to_project_id = 'Erx9J64anc8oSeN-wDKm0sojJf8ONrFVYbQ7GFnqSyc='
+group by 1
+```
+
+## Timeseries Metrics
+
+OSO also maintains a standard set of timeseries metrics for each project (currently only available on BigQuery for a limited timerange).
+
+For example:
+
+```sql
+select
+  sample_date,
+  metric_name,
+  amount,
+  unit
+from `oso_production.timeseries_metrics_by_project_v0` tm
+join `oso_production.metrics_v0` m on tm.metric_id = m.metric_id
+where tm.project_id = 'Erx9J64anc8oSeN-wDKm0sojJf8ONrFVYbQ7GFnqSyc='
+```

@@ -1,9 +1,7 @@
 ---
-title: Dagster Quickstart
+title: Dagster Local Development
 sidebar_position: 1
 ---
-
-# Dagster quickstart
 
 [Dagster](https://dagster.io) is a data orchestrator that allows you to define
 data pipelines in a declarative way. It is a powerful tool that allows you to
@@ -15,6 +13,16 @@ At OSO, we use Dagster to process data from
 transform it, and load it into BigQuery. This quickstart guide will help you set
 up our Dagster instance locally, with a [`duckdb`](http://duckdb.org/) backend,
 in order to follow along with our tutorials in the next sections.
+
+## Dagster Dashboard
+
+[https://dagster.opensource.observer](https://dagster.opensource.observer)
+
+Use this to view the entire data infrastructure,
+as well as the current status of every stage of the pipeline.
+
+Admins can trigger runs
+[here](https://admin-dagster.opensource.observer/)
 
 ## Setting up Dagster
 
@@ -83,4 +91,4 @@ Head over to [http://localhost:3000](http://localhost:3000) to access Dagster's
 UI. _Et voilà_! You have successfully set up Dagster locally.
 
 This is just the beginning. Check out how to create a
-[DLT Dagster Asset](./api.md#create-dlt-dagster-assets) next and start building!
+[DLT Dagster Asset](../../contribute-data/api.md#create-dlt-dagster-assets) next and start building!

@@ -1,9 +1,7 @@
 ---
-title: Using BigQuery Data Transfer Service
-sidebar_position: 2
+title: BigQuery Data Transfer Service
+sidebar_position: 6
 ---
-
-import NextSteps from "../dagster-config.mdx"
 
 BigQuery comes with a built-in data transfer service
 for replicating datasets between BigQuery projects/regions,
@@ -13,7 +11,7 @@ In this guide, we'll copy an existing BigQuery dataset into the
 
 If you already maintain a public dataset in
 the US multi-region, you should simply make a dbt source
-as shown in [this guide](./index.md).
+as shown in [this guide](../contribute-data/bigquery.md).
 
 ## Define the Dagster asset
 
@@ -66,5 +64,3 @@ you will find a few examples of using the BigQuery Data Transfer asset factory:
 
 - [Farcaster data](https://github.com/opensource-observer/oso/blob/main/warehouse/oso_dagster/assets/farcaster.py)
 - [Lens data](https://github.com/opensource-observer/oso/blob/main/warehouse/oso_dagster/assets/lens.py)
-
-<NextSteps components={props.components}/>

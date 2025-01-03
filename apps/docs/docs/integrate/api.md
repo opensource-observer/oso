@@ -1,6 +1,6 @@
 ---
 title: Use the GraphQL API
-sidebar_position: 10
+sidebar_position: 4
 ---
 
 The OSO API currently only allows read-only GraphQL queries against a subset

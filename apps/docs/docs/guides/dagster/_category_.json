@@ -1,6 +1,6 @@
 {
-  "label": "Connect via BigQuery",
-  "position": 2,
+  "label": "🏗️ Dagster",
+  "position": 7,
   "link": {
     "type": "doc",
     "id": "index"
