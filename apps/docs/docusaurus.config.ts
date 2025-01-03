@@ -67,6 +67,7 @@ const config: Config = {
       logo: {
         alt: "OSO Logo",
         src: "img/oso-emblem-black.svg",
+        srcDark: "img/oso-emblem-white.svg",
       },
       items: [
         {
