@@ -1,6 +1,6 @@
 ---
-title: Dagster Next Steps
-sidebar_class_name: hidden
+title: Adding New Assets
+sidebar_position: 2
 ---
 
 ## Add the asset to the OSO Dagster configuration
@@ -93,9 +93,3 @@ select
   receipt_contract_address
 from {{ source("ethereum", "transactions") }}
 ```
-
-## Next steps
-
-- [**SQL Query Guide**](../integrate/query-data.mdx): run queries against the data you just loaded
-- [**Connect OSO to 3rd Party tools**](../integrate/3rd-party.mdx): explore your data using tools like Hex.tech, Tableau, and Metabase
-- [**Write a dbt model**](../contribute-models/data-models.md): contribute new impact and data models to our data pipeline

@@ -19,7 +19,7 @@ Share your work analyzing and visualizing OSS data by contributing to the [Insig
 
 We've included some starter notebooks to help data scientists get going with OSO datasets. You can find templates and community notebooks [here](https://github.com/opensource-observer/insights/blob/main/community/notebooks).
 
-Also check out our playbook for [doing data science](../integrate/python-notebooks) with OSO data.
+Also check out our playbook for [doing data science](../guides/notebooks/index.mdx) with OSO data.
 
 If you've created a notebook that you think our community can learn from, submit a PR to the `./community/notebooks/` directory in the Insights repo. Please include markdown in your notebook to explain your work.
 
@@ -29,7 +29,7 @@ Most of our visualizations are generated in Python using Matplotlib, Seaborn, an
 
 Contribute your own data visualization templates by adding them to the `./visualizations/` directory in the Insights repo. Please include a docstring in your visualization script explaining the expected data format and a brief description of use cases.
 
-### Impact Metrcs
+### Impact Metrics
 
 We're building scripts and analysis frameworks for community-generated impact metrics. Submissions must be replicable with data sourced entirely from the OSO data warehouse and should follow the follow the [Impact Metrics Specification](../references/impact-metrics/).
 

@@ -4,13 +4,15 @@ sidebar_position: 2
 ---
 
 :::info
-We maintain a large repository of open source projects called
+OSO maintains a large repository of open source projects called
 [oss-directory](https://github.com/opensource-observer/oss-directory). It's more than just an awesome list ... it's the starting point of the OSO data pipeline. We run indexers on every artifact linked to projects in the directory to produce metrics for our API and dashboards. Check if your project is already listed. If not, follow the steps below to add it.
 :::
 
-## Find Your Project
+![project-directory](./project-directory.png)
 
-To find your project, search for its GitHub organization or repository name in [oss-directory](https://github.com/opensource-observer/oss-directory/tree/main/data/projects). Most projects are instantiated with the GitHub organization name as the project `name`. For example, Open Source Observer's project file is located at `./data/projects/o/opensource-observer.yaml`.
+## Check If Your Project is Already Listed
+
+Before adding your project, check if it's already listed in [oss-directory](https://github.com/opensource-observer/oss-directory/tree/main/data/projects). Most projects are instantiated with the GitHub organization name as the project `name`. For example, Open Source Observer's project file is located at `./data/projects/o/opensource-observer.yaml`.
 
 Alternatively, you can search for projects directly in our [project explorer](https://www.opensource.observer/projects). If you locate it, then the slug in the URL is the project name. For example, `opensource-observer` is at `https://www.opensource.observer/projects/opensource-observer`.
 
@@ -32,18 +34,7 @@ query findProject {
 
 If you can't find your project, you can add it by following the steps below.
 
-## Add or Update Project Data (Quick Steps)
-
-Add or update project data by making a pull request to
-[oss-directory](https://github.com/opensource-observer/oss-directory).
-
-1. Fork [oss-directory](https://github.com/opensource-observer/oss-directory/fork).
-2. Locate or create a new project `.yaml` file under `./data/projects/`.
-3. Link artifacts (ie, GitHub repositories, npm packages, blockchain addresses) in the project `.yaml` file. See below if you need help with the schema.
-4. Submit a pull request from your fork back to [oss-directory](https://github.com/opensource-observer/oss-directory).
-5. Once your pull request is approved, your project will automatically be added to our indexers. It may take longer for some historical data (e.g. GitHub events) to show up as we run backfill jobs less frequently.
-
-## Project Names
+## Give Your Project a Unique `name` Slug
 
 :::important
 The `name` field is the unique identifier for the project and **must** match the name of the YAML project file. For example, if the project file is `./data/projects/m/my-project.yaml`, then the `name` field should be `my-project`.
@@ -84,6 +75,37 @@ This project would be located at `./data/projects/p/projectx-my-space.yaml`.
 
 This construction is useful for projects that are kept in a personal GitHub account or across multiple GitHub organizations.
 
+## Submit a Pull Request to Add Your Project
+
+Add your project by making a pull request to
+[oss-directory](https://github.com/opensource-observer/oss-directory). Here are the steps:
+
+1. Fork [oss-directory](https://github.com/opensource-observer/oss-directory/fork).
+2. Create a new project `.yaml` file under `./data/projects/`.
+3. Link artifacts (ie, GitHub repositories, npm packages, blockchain addresses) in the project `.yaml` file. See below if you need help with the schema.
+4. Submit a pull request from your fork back to [oss-directory](https://github.com/opensource-observer/oss-directory).
+5. Once your pull request is approved, your project will automatically be added to our indexers. It may take longer for some historical data (e.g. GitHub events) to show up as we run backfill jobs less frequently.
+
+Please enable "Allow edits by maintainers" while putting up the PR.
+
+Here is an example of a generic project file:
+
+```yaml
+version: 7
+name: my-project
+display_name: My Project
+github:
+  - url: https://github.com/my-project
+```
+
+## Check The Status of Your Pull Request
+
+Once you submit your pull request, a maintainer will review it and merge it if it's valid. You can check the status of your pull request by clicking the "Pull requests" tab in your forked repository.
+
+If there are any issues, you will be notified in the pull request thread.
+
+Once your pull request is merged, you will start to see your project data in the OSO API and dashboards, typically within a few days. (Our full indexer runs weekly on Sundays.) It may take longer for some historical data (e.g. GitHub events) to show up as we run backfill jobs less frequently.
+
 ## Schema Overview
 
 Make sure to use the latest version of the oss-directory schema. You can see the latest version by opening any project YAML file and getting the version from the top of file. Note: since Version 7, we have replaced the `slug` field with `name` and the previous `name` field with `display_name`.
@@ -93,7 +115,7 @@ Make sure to use the latest version of the oss-directory schema. You can see the
 The schema currently contains the following fields:
 
 - `version`: The latest version of the OSS Directory schema. This is a required field. To find the latest version, open any project YAML file and get the version from the top of the file. As of writing (2024-10-15), the latest version is Version 7.
-- `name`: The unique identifier for the project. See [Project Names](#project-names) for more information. This is a required field and must match the name of the YAML project file.
+- `name`: The unique identifier for the project. See [Give Your Project a Unique `name` Slug](#give-your-project-a-unique-name-slug) for more information. This is a required field and must match the name of the YAML project file.
 - `display_name`: The display name of the project. This is a required field.
 - `description`: A brief description of the project.
 - `websites`: A list of associated websites
@@ -171,7 +193,7 @@ If you run into issues, check out [GitHub's instructions](https://docs.github.co
 - If the project is not associated with a GitHub organization, you can use the project name followed by the repo owner as the name, separated by hyphens (eg, `my-repo-my-org`), and the same convention for the filename (eg, `./data/projects/m/my-repo-my-org.yaml`).
 - Initialize the new project with the following fields:
   - `version`: The version of the schema you are using. The latest version is Version 7. You can learn more about the schema [here](../guides/oss-directory/schema-updates).
-  - `name`: The unique identifier for the project. See [Project Names](#project-names) for more information.
+  - `name`: The unique identifier for the project. See [Give Your Project a Unique `name` Slug](#give-your-project-a-unique-name-slug) for more information.
   - `display_name`: The name of the project.
   - `github`: The GitHub URL of the project. This is a list of URLs, as a project can have multiple GitHub URLs. In most cases, the first and only URL will be the main GitHub organization URL. You don't need to include all the repositories that belong to the organization, as we will automatically index all of them.
 
