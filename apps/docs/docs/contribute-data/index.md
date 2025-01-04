@@ -4,13 +4,13 @@ sidebar_position: 0
 ---
 
 :::info
-We're always looking for new data sources to integrate with OSO and deepen our community's understanding of open source impact. If you're a developer or data engineer, please reach out to us on [Discord](https://www.opensource.observer/discord). We'd love to partner with you to connect your database (or other external data sources) to the OSO data warehouse.
+We're always looking for new data sources to integrate with OSO and deepen our community's understanding of open source impact. If you're a developer or data engineer, please reach out to us on [Discord](https://www.opensource.observer/discord). We'd love to partner with you to connect your database (or other external data sources) to the OSO data lake.
 :::
 
 There are currently the following patterns for integrating new data sources into OSO,
 in order of preference:
 
-1. [**BigQuery public datasets**](./bigquery/index.md): If you can maintain a BigQuery public dataset, this is the preferred and easiest route.
+1. [**BigQuery public datasets**](./bigquery.md): If you can maintain a BigQuery public dataset, this is the preferred and easiest route.
 2. [**Database replication**](./database.md): Provide access to your database and we can replicate it as an OSO dataset (e.g. from Postgres).
 3. [**API crawling**](./api.md): Crawl an API by writing a plugin.
 4. [**Files into Google Cloud Storage (GCS)**](./gcs.md): You can drop Parquet/CSV files in our GCS bucket for loading into BigQuery.

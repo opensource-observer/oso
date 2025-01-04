@@ -51,7 +51,7 @@ poetry add google-cloud-bigquery
 
 ### Obtain a GCP Service Account Key
 
-This section will walk you through the process of obtaining a GCP service account key and connecting to BigQuery from a Jupyter notebook. If you don't have a GCP account, you will need to create one (see [here](../get-started/index.md) for instructions).
+This section will walk you through the process of obtaining a GCP service account key and connecting to BigQuery from a Jupyter notebook. If you don't have a GCP account, you will need to create one (see [here](../../get-started/index.md) for instructions).
 
 From the [GCP Console](https://console.cloud.google.com/), navigate to the BigQuery API page by clicking **API & Services** > **Enabled APIs & services** > **BigQuery API**.
 

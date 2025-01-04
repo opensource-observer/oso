@@ -11,4 +11,4 @@ That means all source code, data, and infrastructure is publicly available for u
 - [**Use the GraphQL API**](./api.md): integrate OSO registries and metrics into a live production application
 - [**Import or clone oss-directory**](./oss-directory.md): leverage [oss-directory](https://github.com/opensource-observer/oss-directory) data separate from OSO
 
-See the [Tutorials](./tutorials/index.md) for more examples and the [Guides](./guides/index.md) for more detailed guides for integrating with specific tools (eg, Jupyter, Hex, etc).
+See the [Tutorials](../tutorials/index.md) for more examples and the [Guides](../guides/index.mdx) for more detailed guides for integrating with specific tools (eg, Jupyter, Hex, etc).
