@@ -115,7 +115,7 @@ Make sure to use the latest version of the oss-directory schema. You can see the
 The schema currently contains the following fields:
 
 - `version`: The latest version of the OSS Directory schema. This is a required field. To find the latest version, open any project YAML file and get the version from the top of the file. As of writing (2024-10-15), the latest version is Version 7.
-- `name`: The unique identifier for the project. See [Project Names](#project-names) for more information. This is a required field and must match the name of the YAML project file.
+- `name`: The unique identifier for the project. See [Give Your Project a Unique `name` Slug](#give-your-project-a-unique-name-slug) for more information. This is a required field and must match the name of the YAML project file.
 - `display_name`: The display name of the project. This is a required field.
 - `description`: A brief description of the project.
 - `websites`: A list of associated websites
@@ -193,7 +193,7 @@ If you run into issues, check out [GitHub's instructions](https://docs.github.co
 - If the project is not associated with a GitHub organization, you can use the project name followed by the repo owner as the name, separated by hyphens (eg, `my-repo-my-org`), and the same convention for the filename (eg, `./data/projects/m/my-repo-my-org.yaml`).
 - Initialize the new project with the following fields:
   - `version`: The version of the schema you are using. The latest version is Version 7. You can learn more about the schema [here](../guides/oss-directory/schema-updates).
-  - `name`: The unique identifier for the project. See [Project Names](#project-names) for more information.
+  - `name`: The unique identifier for the project. See [Give Your Project a Unique `name` Slug](#give-your-project-a-unique-name-slug) for more information.
   - `display_name`: The name of the project.
   - `github`: The GitHub URL of the project. This is a list of URLs, as a project can have multiple GitHub URLs. In most cases, the first and only URL will be the main GitHub organization URL. You don't need to include all the repositories that belong to the organization, as we will automatically index all of them.
 

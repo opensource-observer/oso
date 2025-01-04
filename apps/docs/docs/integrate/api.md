@@ -8,7 +8,7 @@ of OSO data (i.e. only mart models like impact metrics, project info).
 This API should only be used to fetch data to integrate into a live application in production.
 If you want access to the full dataset for data exploration, check out the guides on
 [performing queries](./query-data.mdx)
-and [Python notebooks](./python-notebooks.md).
+and [Python notebooks](../guides/notebooks/index.mdx).
 
 ## GraphQL Endpoint
 
