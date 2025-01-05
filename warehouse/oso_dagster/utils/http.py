@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import time
 from pathlib import Path
@@ -5,6 +6,7 @@ from typing import Type, cast
 from urllib.parse import ParseResult, parse_qsl, urlparse
 
 import hishel
+import httpx
 import requests
 from redis import Redis
 
@@ -77,4 +79,17 @@ def wait_for_ok(url: str, timeout: int = 60):
             return
         except requests.exceptions.RequestException:
             time.sleep(1)
-    raise Exception(f"Failed to connect to {url} after {timeout} seconds")
+    raise TimeoutError(f"Failed to connect to {url} after {timeout} seconds")
+
+
+async def wait_for_ok_async(url: str, timeout: int = 60):
+    start = time.time()
+    async with httpx.AsyncClient() as client:
+        while time.time() - start < timeout:
+            try:
+                response = await client.get(url)
+                response.raise_for_status()
+                return
+            except httpx.RequestError:
+                await asyncio.sleep(1)
+    raise TimeoutError(f"Failed to connect to {url} after {timeout} seconds")
