@@ -6,7 +6,6 @@ import trino
 from dagster import ConfigurableResource, ResourceDependency
 from pydantic import Field
 
-from ..utils import SecretResolver
 from ..utils.asynctools import multiple_async_contexts
 from ..utils.http import wait_for_ok_async
 from .kube import K8sResource
@@ -16,15 +15,6 @@ module_logger = logging.getLogger(__name__)
 
 class TrinoResource(ConfigurableResource):
     """Base Trino resource"""
-
-    secrets: ResourceDependency[SecretResolver]
-
-    secret_group_name: str
-
-    user: str = Field(  # noqa: F811
-        default="dagster",
-        description="Trino user",
-    )
 
     def get_client(self):
         raise NotImplementedError(
@@ -172,3 +162,35 @@ class TrinoK8sResource(TrinoResource):
             await wait_for_ok_async(url, timeout=self.connect_timeout)
 
             yield
+
+
+class TrinoRemoteResource(TrinoResource):
+    """Remote trino resource assumes that trino is already deployed somewhere"""
+
+    url: str = Field(
+        default="http://localhost:8080",
+        description="Trino url",
+    )
+
+    @asynccontextmanager
+    async def get_client(self, log_override: t.Optional[logging.Logger] = None):
+        logger = log_override or module_logger
+        async with self.ensure_available(log_override=log_override):
+            await wait_for_ok_async(self.url, timeout=self.connect_timeout)
+
+            logger.info("Connecting to trino")
+            yield trino.dbapi.connect(
+                host=self.url,
+                user=self.user,
+                catalog="hive",
+                schema="default",
+            )
+
+    @asynccontextmanager
+    async def ensure_available(self, log_override: t.Optional[logging.Logger] = None):
+        logger = log_override or module_logger
+
+        logger.info("Wait for trino to be online")
+        await wait_for_ok_async(self.url, timeout=self.connect_timeout)
+
+        yield

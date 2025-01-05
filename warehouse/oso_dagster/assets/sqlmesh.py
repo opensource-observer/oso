@@ -45,7 +45,7 @@ def sqlmesh_factory(sqlmesh_infra_config: dict, sqlmesh_config: SQLMeshContextCo
         # Ensure that both trino and the mcs are available
         async with multiple_async_contexts(
             trino=trino.ensure_available(log_override=context.log),
-            mcs=mcs.ensure_available(),
+            mcs=mcs.ensure_available(log_override=context.log),
         ):
             for result in sqlmesh.run(
                 context, environment=environment, plan_options={"skip_tests": True}

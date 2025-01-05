@@ -7,28 +7,70 @@ might need certain kubernetes resources.
 
 import inspect
 import logging
-import os
 import typing as t
 from contextlib import asynccontextmanager
 
-from dagster import ConfigurableResource, ResourceDependency
+from dagster import ConfigurableResource
 from kr8s.objects import Deployment, Service
 from pydantic import Field
-
-from ..utils import SecretResolver
 
 logger = logging.getLogger(__name__)
 
 
 class K8sResource(ConfigurableResource):
-    """Resource for interacting with kubernetes. This is more of a convenience
-    utility. However, we encapsulate interactions with k8s resources here to
-    make it easier to mock any k8s interactions in dagster assets if necessary.
+    """Base k8s resource"""
+
+    @asynccontextmanager
+    def deployment_context(
+        self,
+        name: str,
+        namespace: str,
+        min_replicas: int = 1,
+        log_override: t.Optional[logging.Logger] = None,
+        always_scale_down: bool = False,
+    ):
+        """Ensures a deployment is running with at least `min_replicas` replicas."""
+        raise NotImplementedError(
+            "deployment_context not implemented on the base K8sResource"
+        )
+
+    async def ensure_deployment_scale_up(
+        self,
+        name: str,
+        namespace: str,
+        min_replicas: int = 1,
+        log_override: t.Optional[logging.Logger] = None,
+    ):
+        """Ensures a deployment is running with at least `min_replicas` replicas."""
+        raise NotImplementedError(
+            "ensure_deployment_scale_up not implemented on the base K8sResource"
+        )
+
+    async def ensure_deployment_scale_down(
+        self,
+        name: str,
+        namespace: str,
+        max_replicas: int = 0,
+        log_override: t.Optional[logging.Logger] = None,
+    ):
+        """Ensures a deployment is running with at least `min_replicas` replicas."""
+        raise NotImplementedError(
+            "ensure_deployment_scale_down not implemented on the base K8sResource"
+        )
+
+    async def get_service_connection(self, name: str, namespace: str, port_name: str):
+        """Returns the host:port url to the service."""
+        raise NotImplementedError(
+            "get_service_connection not implemented on the base K8sResource"
+        )
+
+
+class PodLocalK8sResource(ConfigurableResource):
+    """Resource for interacting with kubernetes from within a pod. This is more
+    of a convenience utility. However, we encapsulate interactions with k8s
+    resources here to make it easier to mock any k8s interactions in dagster
+    assets if necessary.
     """
-
-    secrets: ResourceDependency[SecretResolver]
-
-    secret_group_name: str
 
     service_name: str = Field(
         default="trino",
@@ -127,10 +169,6 @@ class K8sResource(ConfigurableResource):
 
     async def get_service_connection(self, name: str, namespace: str, port_name: str):
         """Returns the host:port url to the service."""
-
-        if not os.environ.get("KUBERNETES_SERVICE_HOST"):
-            raise Exception("Not running in a k8s cluster")
-
         service = await Service.get(name=name, namespace=namespace)
         ports = t.cast(t.List[dict], service.spec.ports)
         ports_lookup = {port["name"]: port["port"] for port in ports}

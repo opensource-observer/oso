@@ -28,7 +28,7 @@ class MCSResource(ConfigurableResource):
     """Metrics calculation service resource"""
 
     @asynccontextmanager
-    def ensure_available(self):
+    def ensure_available(self, log_override: t.Optional[logging.Logger] = None):
         """Ensure the MCS is available"""
         raise NotImplementedError(
             "ensure_available not implemented on the base MCSResource"
@@ -89,6 +89,7 @@ class MCSRemoteResource(MCSResource):
     """Resource for interacting with a remote MCS"""
 
     base_url: str = Field(
+        default="http://localhost:8080",
         description="URL for the remote MCS",
     )
 

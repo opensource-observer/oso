@@ -16,6 +16,12 @@ from .factories.alerts import setup_alert_sensor
 from .resources import (
     BigQueryDataTransferResource,
     ClickhouseResource,
+    K8sResource,
+    MCSK8sResource,
+    MCSRemoteResource,
+    PodLocalK8sResource,
+    TrinoK8sResource,
+    TrinoRemoteResource,
     load_dlt_staging,
     load_dlt_warehouse_destination,
     load_io_manager,
@@ -64,6 +70,18 @@ def load_definitions():
     sqlmesh_config = SQLMeshContextConfig(
         path=constants.sqlmesh_dir, gateway=constants.sqlmesh_gateway
     )
+
+    # If we aren't running in k8s, we need to a dummy k8s resource that will
+    # error if we attempt to use it
+    if not os.environ.get("KUBERNETES_SERVICE_HOST"):
+        k8s = K8sResource()
+        trino = TrinoRemoteResource()
+        mcs = MCSRemoteResource()
+
+    else:
+        k8s = PodLocalK8sResource()
+        trino = TrinoK8sResource(k8s=k8s)
+        mcs = MCSK8sResource(k8s=k8s)
 
     sqlmesh_infra_config = {
         "environment": "prod",
@@ -123,6 +141,9 @@ def load_definitions():
         "sqlmesh_config": sqlmesh_config,
         "sqlmesh_infra_config": sqlmesh_infra_config,
         "sqlmesh": SQLMeshResource(config=sqlmesh_config),
+        "k8s": k8s,
+        "trino": trino,
+        "mcs": mcs,
     }
     for target in constants.main_dbt_manifests:
         resources[f"{target}_dbt"] = DbtCliResource(
