@@ -5,9 +5,9 @@ from dagster_sqlmesh import (
     SQLMeshResource,
     sqlmesh_assets,
 )
-from oso_dagster.utils.asynctools import safe_async_run
-from oso_dagster.utils.http import wait_for_ok
-from oso_dagster.utils.kube.scaler import ensure_scale_down, ensure_scale_up
+from oso_dagster.resources.mcs import MCSResource
+from oso_dagster.resources.trino import TrinoResource
+from oso_dagster.utils.asynctools import multiple_async_contexts
 from sqlmesh import Context
 from sqlmesh.core.model import Model
 
@@ -30,78 +30,26 @@ class PrefixedSQLMeshTranslator(SQLMeshDagsterTranslator):
 @early_resources_asset_factory()
 def sqlmesh_factory(sqlmesh_infra_config: dict, sqlmesh_config: SQLMeshContextConfig):
     environment = sqlmesh_infra_config["environment"]
-    mcs_deployment_name = sqlmesh_infra_config["mcs_deployment_name"]
-    mcs_deployment_namespace = sqlmesh_infra_config["mcs_deployment_namespace"]
-    trino_deployment_namespace = sqlmesh_infra_config["trino_deployment_namespace"]
-    trino_coordinator_deployment_name = sqlmesh_infra_config[
-        "trino_coordinator_deployment_name"
-    ]
-    trino_worker_deployment_name = sqlmesh_infra_config["trino_worker_deployment_name"]
-    trino_service_name = sqlmesh_infra_config["trino_service_name"]
 
     @sqlmesh_assets(
         config=sqlmesh_config,
         environment=environment,
         dagster_sqlmesh_translator=PrefixedSQLMeshTranslator("metrics"),
     )
-    def sqlmesh_project(context: AssetExecutionContext, sqlmesh: SQLMeshResource):
-        context.log.info("Ensuring the mcs has scaled up")
-        safe_async_run(
-            ensure_scale_up(
-                name=mcs_deployment_name, namespace=mcs_deployment_namespace, scale=1
-            )
-        )
-        context.log.info("Ensure the trino coordinator has scaled up")
-        safe_async_run(
-            ensure_scale_up(
-                name=trino_coordinator_deployment_name,
-                namespace=trino_deployment_namespace,
-                scale=1,
-            )
-        )
-        context.log.info("Ensure the trino worker has scaled up")
-        safe_async_run(
-            ensure_scale_up(
-                name=trino_worker_deployment_name,
-                namespace=trino_deployment_namespace,
-                scale=1,
-            )
-        )
-
-        context.log.info("Waiting for the mcs to come online")
-        wait_for_ok(
-            f"http://{mcs_deployment_name}.{mcs_deployment_namespace}.svc.cluster.local:8000/status"
-        )
-
-        context.log.info("Waiting for the trino service to come online")
-        wait_for_ok(
-            f"http://{trino_service_name}.{trino_deployment_namespace}.svc.cluster.local:8080/"
-        )
-
-        try:
-            yield from sqlmesh.run(
+    async def sqlmesh_project(
+        context: AssetExecutionContext,
+        sqlmesh: SQLMeshResource,
+        trino: TrinoResource,
+        mcs: MCSResource,
+    ):
+        # Ensure that both trino and the mcs are available
+        async with multiple_async_contexts(
+            trino=trino.ensure_available(log_override=context.log),
+            mcs=mcs.ensure_available(),
+        ):
+            for result in sqlmesh.run(
                 context, environment=environment, plan_options={"skip_tests": True}
-            )
-        finally:
-            safe_async_run(
-                ensure_scale_down(
-                    name=trino_coordinator_deployment_name,
-                    namespace=trino_deployment_namespace,
-                )
-            )
-
-            safe_async_run(
-                ensure_scale_down(
-                    name=trino_worker_deployment_name,
-                    namespace=trino_deployment_namespace,
-                )
-            )
-
-            safe_async_run(
-                ensure_scale_down(
-                    name=mcs_deployment_name,
-                    namespace=mcs_deployment_namespace,
-                )
-            )
+            ):
+                yield result
 
     return sqlmesh_project
