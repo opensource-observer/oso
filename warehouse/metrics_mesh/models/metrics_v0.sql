@@ -1,6 +1,9 @@
 MODEL (
   name metrics.metrics_v0,
-  kind FULL
+  kind FULL,
+  tags (
+    'export'
+  )
 );
 
 WITH unioned_metric_names AS (

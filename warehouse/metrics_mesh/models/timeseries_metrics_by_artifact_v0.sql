@@ -1,6 +1,9 @@
 MODEL (
   name metrics.timeseries_metrics_by_artifact_v0,
-  kind FULL
+  kind FULL,
+  tags (
+    'export'
+  )
 );
 
 WITH all_timeseries_metrics_by_artifact AS (
