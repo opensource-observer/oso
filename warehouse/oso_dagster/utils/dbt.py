@@ -1,10 +1,14 @@
+import logging
 import os
-import typing as t
-from pathlib import Path
-from dagster_dbt import DbtCliResource
-from dataclasses import dataclass, asdict
 import pathlib
+import typing as t
+from dataclasses import asdict, dataclass
+from pathlib import Path
+
 import yaml
+from dagster_dbt import DbtCliResource
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(kw_only=True)
@@ -123,10 +127,10 @@ def load_dbt_manifests(
     https://docs.getdbt.com/reference/artifacts/manifest-json
     """
     manifests: t.Dict[str, Path] = dict()
-    print(f"checking for profile {default_profiles_path()}")
+    logger.debug(f"checking for profile {default_profiles_path()}")
 
     if not os.path.isfile(default_profiles_path()) or force_auth:
-        print("Writing dbt profile")
+        logger.debug("Writing dbt profile")
         write_dbt_profile(
             project_id,
             profile_name,
@@ -135,7 +139,7 @@ def load_dbt_manifests(
         )
 
     if parse_projects:
-        print("generating dbt manifests")
+        logger.debug("generating dbt manifests")
         for target, _ in targets:
             target_path = Path(dbt_target_base_dir, target)
             # Ensure the dbt_target_base_dir exists

@@ -4,9 +4,9 @@ from typing import Any, Dict, List, Mapping, Optional, Sequence
 
 from dagster import AssetExecutionContext, AssetKey, Config, RunConfig, define_asset_job
 from dagster_dbt import DagsterDbtTranslator, DbtCliResource, dbt_assets
+from oso_dagster.config import DagsterConfig
 
-from ..constants import dbt_profiles_dir, main_dbt_manifests, main_dbt_project_dir
-from ..factories import AssetFactoryResponse
+from ..factories import AssetFactoryResponse, early_resources_asset_factory
 
 
 class CustomDagsterDbtTranslator(DagsterDbtTranslator):
@@ -126,8 +126,7 @@ def generate_dbt_asset(
 
 
 def dbt_assets_from_manifests_map(
-    project_dir: Path | str,
-    manifests: Dict[str, Path],
+    global_config: DagsterConfig,
     internal_map: Optional[Dict[str, List[str]]] = None,
     op_tags: Optional[Mapping[str, Any]] = None,
 ) -> AssetFactoryResponse:
@@ -154,10 +153,11 @@ def dbt_assets_from_manifests_map(
     assets: AssetFactoryResponse = AssetFactoryResponse(
         assets=[],
     )
+    manifests = global_config.dbt_manifests
     for target, manifest_path in manifests.items():
         assets += generate_dbt_asset(
-            project_dir,
-            dbt_profiles_dir,
+            global_config.main_dbt_project_dir,
+            global_config.dbt_profiles_dir,
             target,
             manifest_path,
             internal_map,
@@ -184,15 +184,17 @@ op_tags = {
     }
 }
 
-all_dbt_assets = dbt_assets_from_manifests_map(
-    main_dbt_project_dir,
-    main_dbt_manifests,
-    {
-        "oso": ["dbt", "production"],
-        "oso_base_playground": ["dbt", "base_playground"],
-        "oso_playground": ["dbt", "playground"],
-    },
-    # For now dbt should run on non-spot nodes because we sometimes need to do
-    # full-refreshes which should not be killed randomly (or as randomly)
-    op_tags=op_tags,
-)
+
+@early_resources_asset_factory()
+def all_dbt_assets(global_config: DagsterConfig) -> AssetFactoryResponse:
+    return dbt_assets_from_manifests_map(
+        global_config,
+        {
+            "oso": ["dbt", "production"],
+            "oso_base_playground": ["dbt", "base_playground"],
+            "oso_playground": ["dbt", "playground"],
+        },
+        # For now dbt should run on non-spot nodes because we sometimes need to do
+        # full-refreshes which should not be killed randomly (or as randomly)
+        op_tags=op_tags,
+    )

@@ -19,7 +19,7 @@ from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
 from dagster._core.definitions.unresolved_asset_job_definition import (
     UnresolvedAssetJobDefinition,
 )
-from oso_dagster import constants
+from oso_dagster.config import DagsterConfig
 
 type GenericAsset = t.Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]
 type NonCacheableAssetsDefinition = t.Union[AssetsDefinition, SourceAsset]
@@ -105,8 +105,14 @@ class EarlyResourcesAssetFactory:
         annotations = self._f.__annotations__.copy()
         annotations.update(self.additional_annotations)
         early_resources["dependencies"] = dependencies
+        global_config = t.cast(DagsterConfig, early_resources.get("global_config"))
+        assert (
+            global_config is not None
+        ), "global_config is required for early resources"
         args: t.Dict[str, t.Any] = dict()
         for key, value in annotations.items():
+            if key == "return":
+                continue
             if key not in early_resources:
                 raise Exception(
                     f"Failed to set early resource '{key}' for type {repr(value)}"
@@ -119,12 +125,12 @@ class EarlyResourcesAssetFactory:
             if self._caller:
                 logger.error(
                     f"Skipping failed asset factories from {self._caller.filename}",
-                    exc_info=constants.verbose_logs,
+                    exc_info=global_config.verbose_logs,
                 )
             else:
                 logger.error(
                     f"Skipping failed asset factories from {self._f.__module__}.{self._f.__name__}",
-                    exc_info=constants.verbose_logs,
+                    exc_info=global_config.verbose_logs,
                 )
             return AssetFactoryResponse(assets=[])
 

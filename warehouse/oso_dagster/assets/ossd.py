@@ -11,9 +11,11 @@ from dagster import (
     Config,
     JsonMetadataValue,
     Output,
+    ResourceParam,
     define_asset_job,
     multi_asset,
 )
+from oso_dagster.config import DagsterConfig
 from oso_dagster.dlt_sources.github_repos import (
     oss_directory_github_repositories_resource,
     oss_directory_github_sbom_resource,
@@ -143,10 +145,13 @@ project_key = projects_and_collections.keys_by_output_name["projects"]
     tags=common_tags,
 )
 def repositories(
+    global_config: ResourceParam[DagsterConfig],
     projects_df: pl.DataFrame,
     gh_token: str = secret_ref_arg(group_name="ossd", key="github_token"),
 ):
-    yield oss_directory_github_repositories_resource(projects_df, gh_token)
+    yield oss_directory_github_repositories_resource(
+        projects_df, gh_token, http_cache=global_config.http_cache
+    )
 
 
 @dlt_factory(
@@ -155,10 +160,13 @@ def repositories(
     tags=common_tags,
 )
 def sbom(
+    global_config: ResourceParam[DagsterConfig],
     projects_df: pl.DataFrame,
     gh_token: str = secret_ref_arg(group_name="ossd", key="github_token"),
 ):
-    yield oss_directory_github_sbom_resource(projects_df, gh_token)
+    yield oss_directory_github_sbom_resource(
+        projects_df, gh_token, http_cache=global_config.http_cache
+    )
 
 
 @discoverable_jobs(dependencies=[repositories])

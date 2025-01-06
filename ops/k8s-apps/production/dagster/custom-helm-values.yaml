@@ -36,6 +36,14 @@ spec:
         user: sqlmesh
         catalog: "metrics"
         concurrentTasks: "64"
+        k8s:
+          coordinatorDeploymentName: production-trino-trino-coordinator
+          workerDeploymentName: production-trino-trino-worker
+          serviceName: production-trino-trino
+          namespace: production-trino
       mcs:
         enabled: true
         url: "http://production-mcs.production-mcs.svc.cluster.local:8000"
+        k8s:
+          deploymentName: production-mcs
+          namespace: production-mcs

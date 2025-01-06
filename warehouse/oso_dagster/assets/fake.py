@@ -1,8 +1,10 @@
-from dagster import asset, op, job
-from .. import constants
+from dagster import asset, job, op
+from oso_dagster.config import DagsterConfig
+from oso_dagster.factories import AssetFactoryResponse, early_resources_asset_factory
 
-if constants.enable_tests:
 
+@early_resources_asset_factory()
+def fake_early_resources_asset(global_config: DagsterConfig) -> AssetFactoryResponse:
     @asset(compute_kind="fake")
     def fake_failing_asset() -> None:
         raise Exception("This fake asset only ever fails")
@@ -14,3 +16,10 @@ if constants.enable_tests:
     @job()
     def fake_failing_job():
         fake_failing_op()
+
+    if global_config.enable_tests:
+        return AssetFactoryResponse(
+            assets=[fake_failing_asset], jobs=[fake_failing_job]
+        )
+    else:
+        return AssetFactoryResponse(assets=[])
