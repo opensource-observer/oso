@@ -49,6 +49,11 @@ sqlmesh:
     retries: "5"
     catalog: "metrics"
     concurrentTasks: "64"
+    k8s:
+      coordinatorDeploymentName: "trino-coordinator"
+      workerDeploymentName: "trino-worker"
+      serviceName: "trino"
+      namespace: "default"
   mcs:
     enabled: false
     url: ""
@@ -58,3 +63,7 @@ sqlmesh:
       minSize: "0"
       maxSize: "60"
     defaultSlots: "2"
+    k8s:
+      deploymentName: "mcs"
+      serviceName: "mcs"
+      namespace: "default"

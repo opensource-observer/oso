@@ -12,7 +12,6 @@ from contextlib import asynccontextmanager
 
 from dagster import ConfigurableResource
 from kr8s.objects import Deployment, Service
-from pydantic import Field
 
 logger = logging.getLogger(__name__)
 
@@ -71,26 +70,6 @@ class PodLocalK8sResource(ConfigurableResource):
     resources here to make it easier to mock any k8s interactions in dagster
     assets if necessary.
     """
-
-    service_name: str = Field(
-        default="trino",
-        description="Trino service name",
-    )
-
-    deployment_name: str = Field(
-        default="trino",
-        description="Trino deployment name",
-    )
-
-    port: int = Field(
-        default=8080,
-        description="Trino port",
-    )
-
-    namespace: str = Field(
-        default="default",
-        description="Trino k8s namespace",
-    )
 
     @asynccontextmanager
     async def deployment_context(

@@ -1,3 +1,4 @@
+import logging
 import os
 
 from dagster import Definitions
@@ -7,10 +8,12 @@ from dagster_gcp import BigQueryResource, GCSResource
 from dagster_k8s import k8s_job_executor
 from dagster_sqlmesh import SQLMeshContextConfig, SQLMeshResource
 from dotenv import load_dotenv
+from metrics_tools.utils.logging import setup_module_logging
 from oso_dagster.utils.dbt import support_home_dir_profiles
 
-from . import assets, constants
+from . import assets
 from .cbt import CBTResource
+from .config import DagsterConfig
 from .factories import load_all_assets_from_package
 from .factories.alerts import setup_alert_sensor
 from .resources import (
@@ -34,21 +37,28 @@ from .utils import (
     LogAlertManager,
 )
 
+logger = logging.getLogger(__name__)
+
 load_dotenv()
 
 
 def load_definitions():
-    project_id = constants.project_id
+    setup_module_logging("oso_dagster")
+    # Load the configuration for the project
+    global_config = DagsterConfig()  # type: ignore
+    global_config.initialize()
+
+    project_id = global_config.project_id
     secret_resolver = LocalSecretResolver(prefix="DAGSTER")
-    if not constants.use_local_secrets:
+    if not global_config.use_local_secrets:
         secret_resolver = GCPSecretResolver.connect_with_default_creds(
-            project_id, constants.gcp_secrets_prefix
+            project_id, global_config.gcp_secrets_prefix
         )
 
     # A dlt destination for gcs staging to bigquery
-    dlt_staging_destination = load_dlt_staging()
+    dlt_staging_destination = load_dlt_staging(global_config)
 
-    dlt_warehouse_destination = load_dlt_warehouse_destination()
+    dlt_warehouse_destination = load_dlt_warehouse_destination(global_config)
 
     dlt = DagsterDltResource()
 
@@ -68,20 +78,33 @@ def load_definitions():
     )
 
     sqlmesh_config = SQLMeshContextConfig(
-        path=constants.sqlmesh_dir, gateway=constants.sqlmesh_gateway
+        path=global_config.sqlmesh_dir, gateway=global_config.sqlmesh_gateway
     )
 
     # If we aren't running in k8s, we need to a dummy k8s resource that will
     # error if we attempt to use it
-    if not os.environ.get("KUBERNETES_SERVICE_HOST"):
+    if not global_config.enable_k8s:
+        logger.info("Loading fake k8s resources")
         k8s = K8sResource()
         trino = TrinoRemoteResource()
         mcs = MCSRemoteResource()
 
     else:
+        logger.info("Loading k8s resources")
         k8s = PodLocalK8sResource()
-        trino = TrinoK8sResource(k8s=k8s)
-        mcs = MCSK8sResource(k8s=k8s)
+        trino = TrinoK8sResource(
+            k8s=k8s,
+            namespace="production-trino",
+            service_name="production-trino-trino",
+            coordinator_deployment_name="production-trino-trino-coordinator",
+            worker_deployment_name="production-trino-trino-worker",
+        )
+        mcs = MCSK8sResource(
+            k8s=k8s,
+            namespace="production-mcs",
+            service_name="production-mcs",
+            deployment_name="production-mcs",
+        )
 
     sqlmesh_infra_config = {
         "environment": "prod",
@@ -95,27 +118,30 @@ def load_definitions():
 
     early_resources = dict(
         project_id=project_id,
-        staging_bucket=constants.staging_bucket,
+        staging_bucket=global_config.staging_bucket_url,
         dlt_staging_destination=dlt_staging_destination,
         dlt_warehouse_destination=dlt_warehouse_destination,
         secrets=secret_resolver,
         sqlmesh_config=sqlmesh_config,
         sqlmesh_infra_config=sqlmesh_infra_config,
+        global_config=global_config,
     )
 
     asset_factories = load_all_assets_from_package(assets, early_resources)
 
     # io_manager = PolarsBigQueryIOManager(project=project_id)
-    io_manager = load_io_manager()
+    io_manager = load_io_manager(global_config)
 
     # Setup an alert sensor
     alert_manager = LogAlertManager()
-    if constants.discord_webhook_url:
-        alert_manager = CanvasDiscordWebhookAlertManager(constants.discord_webhook_url)
+    if global_config.discord_webhook_url:
+        alert_manager = CanvasDiscordWebhookAlertManager(
+            global_config.discord_webhook_url
+        )
 
     alerts = setup_alert_sensor(
         "alerts",
-        constants.dagster_alerts_base_url,
+        global_config.alerts_base_url,
         alert_manager,
     )
 
@@ -144,16 +170,17 @@ def load_definitions():
         "k8s": k8s,
         "trino": trino,
         "mcs": mcs,
+        "global_config": global_config,
     }
-    for target in constants.main_dbt_manifests:
+    for target in global_config.dbt_manifests:
         resources[f"{target}_dbt"] = DbtCliResource(
-            project_dir=os.fspath(constants.main_dbt_project_dir),
+            project_dir=os.fspath(global_config.main_dbt_project_dir),
             target=target,
             profiles_dir=support_home_dir_profiles(),
         )
 
     extra_kwargs = {}
-    if constants.enable_k8s_executor:
+    if global_config.enable_k8s_executor:
         extra_kwargs["executor"] = k8s_job_executor
 
     return Definitions(
