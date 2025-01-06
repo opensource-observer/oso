@@ -5,12 +5,14 @@ FROM ghcr.io/opensource-observer/oso-base:${REPO_SHA}
 ARG PYTHON_VERSION=3.12
 
 RUN mkdir -p /usr/src/app && \
-    bash -c "mkdir -p /usr/src/app/warehouse/{bq2cloudsql,oso_dagster,oso_lets_go,common}" && \
+    bash -c "mkdir -p /usr/src/app/warehouse/{bq2cloudsql,oso_dagster,oso_lets_go,common,metrics_tools}" && \
+    touch /usr/src/app/README.md && \
     touch /usr/src/app/warehouse/bq2cloudsql/__init__.py && \
     touch /usr/src/app/warehouse/bq2cloudsql/script.py && \
     touch /usr/src/app/warehouse/oso_dagster/__init__.py && \
     touch /usr/src/app/warehouse/oso_lets_go/__init__.py && \
     touch /usr/src/app/warehouse/oso_lets_go/wizard.py && \
+    touch /usr/src/app/warehouse/metrics_tools/__init__.py && \
     touch /usr/src/app/warehouse/common/__init__.py
 
 WORKDIR /usr/src/app
