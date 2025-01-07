@@ -116,6 +116,9 @@ def _dlt_factory[
                     )
                 
 
+                # We need to ensure that both dlt and global_config are
+                # available to the generated asset as they're used by the
+                # generated function.
                 final_extra_resources = extra_resources.union(
                     {"dlt", "global_config"}
                 )
@@ -146,8 +149,6 @@ def _dlt_factory[
                         destination=dlt_warehouse_destination,
                         dataset_name=dataset_name,
                     )
-
-                    context.log.debug(f"extra_source_args={extra_source_args}")
 
                     # When using the `required_resource_keys` we need to
                     # retrieve resources from context.resources
