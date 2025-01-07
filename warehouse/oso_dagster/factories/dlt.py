@@ -1,3 +1,4 @@
+import logging
 import typing as t
 from uuid import uuid4
 
@@ -28,6 +29,8 @@ from .common import (
     early_resources_asset_factory,
 )
 from .sql import PrefixedDltTranslator
+
+logger = logging.getLogger(__name__)
 
 
 class DltAssetConfig(Config):
@@ -111,13 +114,19 @@ def _dlt_factory[
                     op_tags["dagster/concurrency_key"] = (
                         f"{key_prefix_str}_{asset_name}"
                     )
+                
+
+                # We need to ensure that both dlt and global_config are
+                # available to the generated asset as they're used by the
+                # generated function.
+                final_extra_resources = extra_resources.union(
+                    {"dlt", "global_config"}
+                )
 
                 @asset(
                     name=asset_name,
                     key_prefix=key_prefix,
-                    required_resource_keys=extra_resources.union(
-                        {"dlt", "global_config"}
-                    ),
+                    required_resource_keys=final_extra_resources,
                     deps=deps,
                     ins=asset_ins,
                     tags=tags,
@@ -140,9 +149,13 @@ def _dlt_factory[
                         destination=dlt_warehouse_destination,
                         dataset_name=dataset_name,
                     )
+
+                    # When using the `required_resource_keys` we need to
+                    # retrieve resources from context.resources
                     global_config = t.cast(
-                        DagsterConfig, extra_source_args.get("global_config")
+                        DagsterConfig, getattr(context.resources, "global_config")
                     )
+                    assert global_config, "global_config resource is not loading correctly"
                     if global_config.enable_bigquery:
                         context.log.debug("dlt pipeline setup to use staging")
                         pipeline = dltlib.pipeline(

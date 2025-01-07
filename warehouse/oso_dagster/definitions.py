@@ -50,6 +50,8 @@ def load_definitions():
     global_config = DagsterConfig()  # type: ignore
     global_config.initialize()
 
+    logger.debug(f"Loaded global_config={global_config}")
+
     project_id = global_config.project_id
     secret_resolver = LocalSecretResolver(prefix="DAGSTER")
     if not global_config.use_local_secrets:

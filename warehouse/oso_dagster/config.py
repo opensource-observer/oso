@@ -39,7 +39,7 @@ class DagsterConfig(BaseSettings):
     local_duckdb_path: str = ""
     dbt_profile_name: str = "opensource_observer"
     gcp_secrets_prefix: str = ""
-    use_local_secrets: bool
+    use_local_secrets: bool = False
     discord_webhook_url: t.Optional[str] = None
     enable_tests: bool = False
     alerts_base_url: str = ""
