@@ -6,6 +6,9 @@ config: RESTAPIConfig = {
     "client": {
         "base_url": "https://api.growthepie.xyz/v1",
     },
+    "resource_defaults": {
+        "write_disposition": "replace",
+    },
     "resources": [
         {
             "name": "fundamentals_full",

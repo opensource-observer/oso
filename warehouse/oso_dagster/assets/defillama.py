@@ -42,6 +42,10 @@ config: RESTAPIConfig = {
     "client": {
         "base_url": "https://api.llama.fi/",
     },
+    "resource_defaults": {
+        "primary_key": "id",
+        "write_disposition": "merge",
+    },
     "resources": list(
         map(
             lambda protocol: {
