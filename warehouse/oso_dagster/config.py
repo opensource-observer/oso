@@ -82,6 +82,7 @@ class DagsterConfig(BaseSettings):
 
     mcs_remote_url: str = "http://localhost:8000"
     mcs_k8s_namespace: str = ""
+    mcs_k8s_service_name: str = ""
     mcs_k8s_deployment_name: str = ""
 
     @model_validator(mode="after")

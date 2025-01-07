@@ -23,6 +23,8 @@ from .resources import (
     MCSK8sResource,
     MCSRemoteResource,
     PodLocalK8sResource,
+    PrefixedSQLMeshTranslator,
+    Trino2ClickhouseSQLMeshExporter,
     TrinoK8sResource,
     TrinoRemoteResource,
     load_dlt_staging,
@@ -77,9 +79,21 @@ def load_definitions():
         search_paths=[os.path.join(os.path.dirname(__file__), "models")],
     )
 
+    sqlmesh_translator = PrefixedSQLMeshTranslator("metrics")
+
     sqlmesh_config = SQLMeshContextConfig(
         path=global_config.sqlmesh_dir, gateway=global_config.sqlmesh_gateway
     )
+
+    trino_exporters = [
+        Trino2ClickhouseSQLMeshExporter(
+            ["clickhouse_metrics"],
+            destination_catalog="clickhouse",
+            destination_schema="default",
+            source_catalog="metrics",
+            source_schema="metrics",
+        ),
+    ]
 
     # If we aren't running in k8s, we need to a dummy k8s resource that will
     # error if we attempt to use it
@@ -94,17 +108,26 @@ def load_definitions():
         k8s = PodLocalK8sResource()
         trino = TrinoK8sResource(
             k8s=k8s,
-            namespace="production-trino",
-            service_name="production-trino-trino",
-            coordinator_deployment_name="production-trino-trino-coordinator",
-            worker_deployment_name="production-trino-trino-worker",
+            namespace=global_config.trino_k8s_namespace,
+            service_name=global_config.trino_k8s_service_name,
+            coordinator_deployment_name=global_config.trino_k8s_coordinator_deployment_name,
+            worker_deployment_name=global_config.trino_k8s_worker_deployment_name,
         )
         mcs = MCSK8sResource(
             k8s=k8s,
-            namespace="production-mcs",
-            service_name="production-mcs",
-            deployment_name="production-mcs",
+            namespace=global_config.mcs_k8s_namespace,
+            service_name=global_config.mcs_k8s_service_name,
+            deployment_name=global_config.mcs_k8s_deployment_name,
         )
+        trino_exporters = [
+            Trino2ClickhouseSQLMeshExporter(
+                ["clickhouse_metrics"],
+                destination_catalog="clickhouse",
+                destination_schema="default",
+                source_catalog="metrics",
+                source_schema="metrics",
+            ),
+        ]
 
     sqlmesh_infra_config = {
         "environment": "prod",
@@ -125,6 +148,8 @@ def load_definitions():
         sqlmesh_config=sqlmesh_config,
         sqlmesh_infra_config=sqlmesh_infra_config,
         global_config=global_config,
+        sqlmesh_translator=sqlmesh_translator,
+        trino_exporters=trino_exporters,
     )
 
     asset_factories = load_all_assets_from_package(assets, early_resources)
@@ -143,6 +168,7 @@ def load_definitions():
         "alerts",
         global_config.alerts_base_url,
         alert_manager,
+        False,
     )
 
     asset_factories = asset_factories + alerts
@@ -171,6 +197,8 @@ def load_definitions():
         "trino": trino,
         "mcs": mcs,
         "global_config": global_config,
+        "sqlmesh_translator": sqlmesh_translator,
+        "trino_exporters": trino_exporters,
     }
     for target in global_config.dbt_manifests:
         resources[f"{target}_dbt"] = DbtCliResource(

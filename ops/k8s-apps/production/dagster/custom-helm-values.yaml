@@ -46,4 +46,5 @@ spec:
         url: "http://production-mcs.production-mcs.svc.cluster.local:8000"
         k8s:
           deploymentName: production-mcs
+          serviceName: production-mcs
           namespace: production-mcs
