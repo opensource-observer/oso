@@ -115,18 +115,11 @@ class TrinoK8sResource(TrinoResource):
 
     @asynccontextmanager
     async def get_client(self, log_override: t.Optional[logging.Logger] = None):
-        logger = log_override or module_logger
         # Bring both the coordinator and worker online if they aren't already
-
         async with self.ensure_available(log_override=log_override):
             # Wait for the status endpoint to return 200
             host, port = await self.k8s.get_service_connection(
                 self.service_name, self.namespace, self.service_port_name
-            )
-            logger.info(f"Wait for trino to be online at http://{host}:{port}/")
-
-            await wait_for_ok_async(
-                f"http://{host}:{port}/", timeout=self.deploy_timeout
             )
             yield trino.dbapi.connect(
                 host=host,
