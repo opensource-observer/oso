@@ -77,13 +77,14 @@ class Trino2ClickhouseSQLMeshExporter(SQLMeshExporter):
             deps=[key],
             compute_kind="sqlmesh-export",
         )
-        def export(trino: TrinoResource, clickhouse: ClickhouseResource) -> None:
+        async def export(trino: TrinoResource, clickhouse: ClickhouseResource) -> None:
             table_name = key.path[-1]
-            with trino.get_client() as trino_client:
+            async with trino.get_client() as connection:
                 # Export the data from trino to clickhouse by creating a table
                 # that has a suffix
                 exported_table_name = f"{clickhouse_key.path[-1]}_{datetime.now().strftime('%Y%m%d%H%M%S')}"
-                trino_client.query(
+                cursor = connection.cursor()
+                cursor.execute(
                     f"""
                     CREATE TABLE {self.trino_destination_table(exported_table_name)}
                     WITH (

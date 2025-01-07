@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 import trino
 from dagster import ConfigurableResource, ResourceDependency
 from pydantic import Field
+from trino.dbapi import Connection
 
 from ..utils.asynctools import multiple_async_contexts
 from ..utils.http import wait_for_ok_async
@@ -16,13 +17,8 @@ module_logger = logging.getLogger(__name__)
 class TrinoResource(ConfigurableResource):
     """Base Trino resource"""
 
-    def get_client(self):
-        raise NotImplementedError(
-            "get_client not implemented on the base TrinoResource"
-        )
-
     @asynccontextmanager
-    def async_get_client(self, log_override: t.Optional[logging.Logger] = None):
+    def get_client(self, log_override: t.Optional[logging.Logger] = None) -> t.AsyncGenerator[Connection, None]:
         raise NotImplementedError(
             "get_client not implemented on the base TrinoResource"
         )
