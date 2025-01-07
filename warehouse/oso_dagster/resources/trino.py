@@ -171,11 +171,7 @@ class TrinoRemoteResource(TrinoResource):
 
     @asynccontextmanager
     async def get_client(self, log_override: t.Optional[logging.Logger] = None):
-        logger = log_override or module_logger
         async with self.ensure_available(log_override=log_override):
-            await wait_for_ok_async(self.url, timeout=self.connect_timeout)
-
-            logger.info("Connecting to trino")
             yield trino.dbapi.connect(
                 host=self.url,
                 user=self.user,
