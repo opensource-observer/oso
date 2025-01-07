@@ -85,7 +85,15 @@ def load_definitions():
         path=global_config.sqlmesh_dir, gateway=global_config.sqlmesh_gateway
     )
 
-    trino_exporters = []
+    trino_exporters = [
+        Trino2ClickhouseSQLMeshExporter(
+            ["clickhouse_metrics"],
+            destination_catalog="clickhouse",
+            destination_schema="default",
+            source_catalog="metrics",
+            source_schema="metrics",
+        ),
+    ]
 
     # If we aren't running in k8s, we need to a dummy k8s resource that will
     # error if we attempt to use it
@@ -160,6 +168,7 @@ def load_definitions():
         "alerts",
         global_config.alerts_base_url,
         alert_manager,
+        False,
     )
 
     asset_factories = asset_factories + alerts

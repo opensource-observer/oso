@@ -73,7 +73,7 @@ class Trino2ClickhouseSQLMeshExporter(SQLMeshExporter):
         clickhouse_key = self.convert_model_key_to_clickhouse_key(key)
 
         @asset(
-            key=AssetKey(key.to_string()),
+            key=clickhouse_key,
             deps=[key],
             compute_kind="sqlmesh-export",
         )
