@@ -79,11 +79,13 @@ class DagsterConfig(BaseSettings):
     trino_k8s_service_name: str = ""
     trino_k8s_coordinator_deployment_name: str = ""
     trino_k8s_worker_deployment_name: str = ""
+    trino_connect_timeout: int = 240
 
     mcs_remote_url: str = "http://localhost:8000"
     mcs_k8s_namespace: str = ""
     mcs_k8s_service_name: str = ""
     mcs_k8s_deployment_name: str = ""
+    mcs_connect_timeout: int = 240
 
     @model_validator(mode="after")
     def handle_generated_config(self):

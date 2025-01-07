@@ -105,6 +105,11 @@ class TrinoK8sResource(TrinoResource):
         default="default",
         description="Trino schema",
     )
+    
+    connect_timeout: int = Field(
+        default=240,
+        description="Timeout in seconds for waiting for the service to be online",
+    )
 
     @asynccontextmanager
     async def get_client(self, log_override: t.Optional[logging.Logger] = None):
