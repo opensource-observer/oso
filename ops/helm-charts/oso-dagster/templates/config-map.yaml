@@ -21,6 +21,7 @@ data:
   DAGSTER_TRINO_K8S_SERVICE_NAME: "{{ .Values.sqlmesh.trino.k8s.serviceName }}"
   DAGSTER_TRINO_K8S_NAMESPACE: "{{ .Values.sqlmesh.trino.k8s.namespace }}"
   DAGSTER_MCS_K8S_DEPLOYMENT_NAME: "{{ .Values.sqlmesh.mcs.k8s.deploymentName }}"
+  DAGSTER_MCS_K8S_SERVICE_NAME: "{{ .Values.sqlmesh.mcs.k8s.serviceName }}"
   DAGSTER_MCS_K8S_NAMESPACE: "{{ .Values.sqlmesh.mcs.k8s.namespace }}"
   DAGSTER_SQLMESH_GATEWAY: "{{ .Values.sqlmesh.gateway }}"
   SQLMESH_POSTGRES_INSTANCE_CONNECTION_STRING: "{{ .Values.configMap.secretPrefix }}-{{ .Values.secretmanagerKeys.sqlmeshPostgresInstanceStringConnectionString }}"
