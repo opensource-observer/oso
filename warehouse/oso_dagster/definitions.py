@@ -97,7 +97,7 @@ def load_definitions():
         ),
     ]
 
-    # If we aren't running in k8s, we need to a dummy k8s resource that will
+    # If we aren't running in k8s, we need to use a dummy k8s resource that will
     # error if we attempt to use it
     if not global_config.enable_k8s:
         logger.info("Loading fake k8s resources")
