@@ -3,200 +3,150 @@ title: Crawl an API
 sidebar_position: 4
 ---
 
-We expect one of the most common forms of data connection would be to connect
-some public API to OSO. We have created tooling to make this as easy as possible.
+## What Are We Trying to Achieve?
 
-This workflow relies on a toolset called [dlt](https://dlthub.com). Simply, the dlt
-library provides a set of tools to make connecting data sources to a
-warehouse (or any other destination) very simple. There is a bit of complexity
-in configuring many of the aspects of dlt to write to the final destination so
-we've provided some helper functions and factories for you to concentrate on
-simply write a proper dlt source that crawls the api.
+At OSO, many teams need to connect a public API to their pipelines so the data
+can be analyzed, shared, or enriched further. Doing this in a consistent,
+reliable way can be tricky if you have to manually code each endpoint. Our
+solution is to use a configuration object that defines all your endpoints, then
+let our pipeline handle the rest.
 
-## `dlt` overview
+Here are a few reasons why this is helpful:
 
-Before you start writing your own API crawler, it's important to understand some
-of the key concepts of DLT. We highly suggest that you read the [dlt
-docs](https://dlthub.com/docs/intro) as they give a more thorough introduction.
-The outline here is simply an overview to get you to a very basic level of
-understanding.
+- **Minimal boilerplate**: All you do is list which endpoints you are pulling data
+  from.
+- **Automatic asset creation**: Each endpoint becomes its own asset, ready to be
+  materialized in Dagster.
+- **Easy integration with the OSO environment**: Everything is built to fit into our
+  approach to data ingestion.
 
-### DLT Concepts
+---
 
-The main concepts we will care about from DLT are:
+## Step by Step: Defining Your API Crawler
 
-- [Resource][DltResource]
-  - A resource should be thought of as the collection of data for a single
-    table. The majority of the code that is needed to collect data from some
-    data source would be located in this resource.
-- [Source][DltSource]
-  - A Source is a collection of resources. In something like postgres, you
-    might think of this as a schema or a dataset in bigquery.
-- [Destination](https://dlthub.com/docs/general-usage/destination)
-  - While you shouldn't be creating your own destination when adding to OSO,
-    this concept is as it sounds, it's the final place you'd like to have your
-    collected source stored.
-- [Pipeline](https://dlthub.com/docs/general-usage/pipeline)
-  - The pipeline orchestrates the flow of data from the source to the
-    destination. In general, our tools have abstracted this away as well. So
-    you likely won't need to interact directly with it.
+Below is a sample showing how you can ingest data from the
+[DefiLlama](https://defillama.com/) API. It retrieves data on various DeFi
+protocols such as Uniswap, Aave, etc.
 
-[DltResource]: https://dlthub.com/docs/general-usage/resource
-[DltSource]: https://dlthub.com/docs/general-usage/source
+### 1. List the Protocols
 
-### DLT and Dagster
-
-Dagster has 1st party support for integrating dlt as an asset. However, the
-provided tools still require quite a bit of boiler plate configuration. In
-response to this, we have created a set of tooling in our `oso_dagster` library
-that should remove the need to understand or even interact with the initial
-boilerplate.
-
-## Create DLT Dagster Assets
-
-With the tooling in `oso_dagster`, writing a DLT asset for our dagster
-deployment involves just writing a [DLT Resource][DltResource] and using
-`oso_dagster`'s `dlt_factory` decorator to wire it together.
-
-### Basic Example
-
-The following is a simple example that uses an example derived from [dlt's
-docs](https://dlthub.com/docs/general-usage/http/overview#explicitly-specifying-pagination-parameters)
+Pick the protocols you want. Each entry in this list represents one endpoint you
+will fetch.
 
 ```python
-# This file should be in warehouse/oso_dagster/assets/name_of_asset_group.py
-import dlt
-from dlt.sources.helpers.rest_client import RESTClient
-from dlt.sources.helpers.rest_client.paginators import JSONResponsePaginator
-from pydantic import BaseModel
-
-from oso_dagster.factories import dlt_factory, pydantic_to_dlt_nullable_columns
-
-poke_client = RESTClient(                                 # (1)
-    base_url="https://pokeapi.co/api/v2",
-    paginator=JSONResponsePaginator(next_url_path="next"),
-    data_selector="results",
-)
-
-class Pokemon(BaseModel):                                 # (2)
-    name: str
-    url: str
-
-
-@dlt.resource(                                            # (3)
-    name="pokemon",
-    columns=pydantic_to_dlt_nullable_columns(Pokemon),
-)
-def get_pokemons():
-    for page in poke_client.paginate(
-        "/pokemon",
-        params={
-            "limit": 100,
-        },
-    ):
-        for pokemon in page.results:
-            yield pokemon
-
-@dlt_factory()                                            # (4)
-def pokemon():
-    yield get_pokemons()
+DEFI_LLAMA_PROTOCOLS = [
+    "aave-v1",
+    "aave-v2",
+    "aave-v3",
+    "uniswap",
+    "velodrome",
+    "origin-protocol",
+    # ...others...
+]
 ```
 
-The example has quite a few parts so we've added numbered sections to assist in
-explanation.
+### 2. Create a Configuration Object
 
-1. Here we initialize a global client for the [pokeapi](https://pokeapi.co) that
-   uses DLT's provided `RESTClient`. The `RESTCLient` is a wrapper around the
-   popular [`requests`](https://requests.readthedocs.io/en/latest/) library. For
-   more details on this, see the [dlt docs on the
-   subject](https://dlthub.com/docs/general-usage/http/rest-client).
-2. A pydantic Model that is derived from the
-   [`pydantic.BaseModel`](https://docs.pydantic.dev/latest/api/base_model/).
-   This model is used to derive the schema for the data generated from a dlt
-   resource. This will later be used when configuring the dlt resource in
-   section `(3)`.
-3. The [DltResource][DltResource]. This is where the majority of logic should go
-   for crawling any API in question. As depicted here, the dlt resource is
-   created by using the `@dlt.resource` decorator. While not strictly necessary
-   to define a dlt resource, we require that you provide a schema in the
-   argument `columns` that matches the objects you wish to store in the data
-   warehouse. This is generated from the pydantic model in `(2)`. Additionally,
-   we use a function `pydantic_to_dlt_nullable_columns` to ensure that all of
-   the columns when written to the datawarehouse are nullable. This allows dlt
-   to better automatically handle schema changes in the future. If you do not
-   want to use nullable columns, you can discuss with us in a PR as to why that
-   might be and we can offer alternative implementations.
-4. The asset definition. This is the simplest form of asset that one can define
-   using the `@dlt_factory` decorator. The expected return type of a function
-   decorated by `@dlt_factory` is `Iterable[DltResource]`. In more complicated
-   use cases as you will see in the next example, this can be used to wire any
-   dependencies required by the resource function.
+:::tip
+For the full `config` spec, see
+[`dlt docs`](https://dlthub.com/docs/dlt-ecosystem/verified-sources/rest_api/basic).
+The following is a simplified version of the config.
+:::
 
-### Using Secrets with APIs
+The configuration object has three main parts:
 
-Often an API will need some form of authentication. In such a case, the
-authentication secrets should not be committed into the repository. If we see
-such a thing during a review we will request for changes.
-
-The following example fictiously adds authenticaton to the previously used
-pokemon API. To enable use of secrets, You will need to map the necessary
-secrets as arguments into the source by using the `secret_ref_arg`. This special
-function is used by OSO's dagster's infrastructure to resolve secrets properly
-from the currently configured `oso_dagster.utils.SecretResolver`. It takes two
-arguments `group_name` and `key`. These are used to find a secret.
+- A `client` object, which contains the base URL and any other client-level
+  settings.
+- A `resource_defaults` object, which contains default settings for all
+  resources.
+- A list of `resources`, each describing a single endpoint, with a name and
+  endpoint details.
 
 ```python
-from request.auth import HTTPBasicAuth
-import dlt
-from dlt.sources.helpers.rest_client import RESTClient
-from dlt.sources.helpers.rest_client.paginators import JSONResponsePaginator
-from pydantic import BaseModel
+from dlt.sources.rest_api.typing import RESTAPIConfig
 
-from oso_dagster.factories import dlt_factory, pydantic_to_dlt_nullable_columns
-
-class Pokemon(BaseModel):
-    name: str
-    url: str
-
-
-@dlt.resource(
-    name="pokemon",
-    columns=pydantic_to_dlt_nullable_columns(Pokemon),
-)
-def get_pokemons(poke_client: RESTClient):                # (1)
-    for page in poke_client.paginate(
-        "/pokemon",
-        params={
-            "limit": 100,
-        },
-    ):
-        for pokemon in page.results:
-            yield pokemon
-
-@dlt_factory()
-def pokemon(
-    poke_user: str = secret_ref_arg(group_name="pokemon", key="username"),
-    poke_pass: str = secret_ref_arg(group_name="pokemon", key="password")
-):
-    auth = HTTPBasicAuth(poke_user, poke_pass)       # (2)
-    client = RESTClient(
-        base_url="https://pokeapi.co/api/v2",
-        paginator=JSONResponsePaginator(next_url_path="next"),
-        data_selector="results",
-        auth=auth,
-    )
-    yield get_pokemons(client)                       # (3)
+config: RESTAPIConfig = {
+    "client": {
+        "base_url": "https://api.llama.fi/"
+    },
+    "resource_defaults": {
+        "primary_key": "id",
+        "write_disposition": "merge",
+    },
+    "resources": [
+        {
+            "name": f"{protocol.replace('-', '_').replace(".", '__dot__')}_protocol",
+            "endpoint": {
+                "path": f"protocol/{protocol}",
+                "data_selector": "$"
+            }
+        }
+        for protocol in DEFI_LLAMA_PROTOCOLS
+    ],
+}
 ```
 
-There are a few critical changes we've made in this example:
+### 3. Use the Factory Function
 
-1. You will notice that the RESTClient is no longer a global variable in the
-   module. The dlt resource here now requires it as an argument. This will allow
-   us to ensure we configure the authentication for this client properly
-2. Starting on this line and the immediately following line, the authentication
-   of for the `RESTClient` is configured. The details may differ if you're not
-   using a RESTClient instance but this provides an example for how to pass in
-   the required secrets to instantiate the necessary client.
-3. The dlt resource is yielded as usual but it is instead passed the
-   `RESTClient` instance that has been configured with authentication
-   credentials.
+We have a handy factory function called `create_rest_factory_asset` that takes
+your configuration and returns a callable **factory**. The only thing left is to
+call that factory with a `key_prefix` so OSO knows how to group these assets.
+
+Under the hood, the returned `factory` will create a set of Dagster assets,
+managing all of our infrastructure-specific details for you. Therefore, you can
+easily configure all of them in one go. For the full reference, check
+[`dagster asset documentation`](https://docs.dagster.io/_apidocs/assets#dagster.asset).
+
+```python
+from ..factories.rest import create_rest_factory_asset
+
+# ... config definition ...
+
+dlt_assets = create_rest_factory_asset(config=config)
+defillama_tvl_assets = dlt_assets(key_prefix=["defillama", "tvl"])
+```
+
+That is it. These few lines produce a set of Dagster assets, each one pulling
+data from a distinct DefiLlama endpoint. When you run your Dagster job or
+pipeline, the data will be ingested into your OSO warehouse.
+
+---
+
+## How to Run and View Results
+
+1. **Add Your Asset Code to OSO**\
+   Put the snippet above in an appropriate location in your repository, for
+   example, our `defillama` asset is located in `warehouse/oso_dagster/assets/defillama.py`.
+
+2. **Run Dagster**\
+   Simply start it up (`dagster dev`) and you will see assets for
+   each protocol listed. Or schedule a job in your deployment that includes
+   these assets.
+
+3. **Verify Your Tables**\
+   Once the assets have been materialized, check your database or data
+   warehouse. Each endpoint you defined in the config will appear as a table.
+
+---
+
+## Expanding Your Crawler
+
+In practice, you may do more than just retrieve data:
+
+- **Pagination**: dlt supports adding a paginator if you have large result sets.
+- **Transformations**: You can add transformations before loading, such as
+  cleaning up invalid fields or renaming columns.
+
+Our tooling is flexible enough to let you customize these details without losing
+the simplicity of the factory approach.
+
+---
+
+## Conclusion
+
+With just a few lines of code, you can connect OSO to any public API. This
+method removes repetitive tasks and helps you maintain a consistent approach to
+ingestion. Whenever you need to add or remove endpoints, you simply update your
+configuration object.
+
+**Happy data crawling!**
