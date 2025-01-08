@@ -73,6 +73,11 @@ class TrinoK8sResource(TrinoResource):
 
     k8s: ResourceDependency[K8sResource]
 
+    user: str = Field(
+        default="dagster",
+        description="Trino user",
+    )
+
     service_name: str = Field(
         default="trino",
         description="Trino service name",
