@@ -108,13 +108,13 @@ class Trino2ClickhouseSQLMeshExporter(SQLMeshExporter):
                 context.log.info(f"executing sql: {create_query.sql(dialect='trino')}")
                 cursor.execute(create_query.sql(dialect="trino"))
                 # Insert the data into the new table
-                cursor.execute(
-                    self.generate_insert_query(
-                        model,
-                        self.trino_source_table(table_name),
-                        self.trino_destination_table(exported_table_name),
-                    ).sql(dialect="trino")
+                insert_query = self.generate_insert_query(
+                    model,
+                    self.trino_source_table(table_name),
+                    self.trino_destination_table(exported_table_name),
                 )
+                context.log.info(f"executing sql: {insert_query.sql(dialect='trino')}")
+                cursor.execute(insert_query.sql(dialect="trino"))
 
             with clickhouse.get_client() as clickhouse_client:
                 # Create the clickhouse table
@@ -184,7 +184,7 @@ class Trino2ClickhouseSQLMeshExporter(SQLMeshExporter):
         assert model.columns_to_types is not None, "columns must not be None"
         select = exp.select(
             *[column_name for column_name in model.columns_to_types.keys()]
-        )
+        ).from_(source_table)
         insert = exp.Insert(this=exp.to_table(destination_table), expression=select)
 
         return insert
