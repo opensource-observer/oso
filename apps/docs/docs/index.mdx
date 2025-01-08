@@ -19,7 +19,9 @@ export const paths = {
   troubleshoot: './projects/troubleshoot'
 };
 
-<h2>Most popular</h2>
+:::tip
+Open search with `/` , then `Tab` to search docs
+:::
 
 <div className="cards-container">
   <a href={paths.getStarted} className="card">
@@ -36,17 +38,15 @@ export const paths = {
   </a>
 </div>
 
-<h2>By use case</h2>
-
 <div className="use-cases-container">
   <div className="use-case-column">
-    <h3>For Data Scientists</h3>
+    <h3>For data scientists</h3>
     <div className="use-case-cards">
       <a href={paths.notebooks} className="mini-card">
         <h3>Connect OSO to notebooks</h3>
       </a>
       <a href={paths.tutorials} className="mini-card">
-        <h3>See tutorials</h3>
+        <h3>Find a tutorial</h3>
       </a>
       <a href={paths.contributeModels} className="mini-card">
         <h3>Contribute models</h3>
@@ -55,13 +55,13 @@ export const paths = {
   </div>
 
   <div className="use-case-column">
-    <h3>For Developers</h3>
+    <h3>For developers</h3>
     <div className="use-case-cards">
       <a href={paths.graphqlApi} className="mini-card">
         <h3>Use the GraphQL API</h3>
       </a>
       <a href={paths.pipeline} className="mini-card">
-        <h3>View the entire pipeline</h3>
+        <h3>Check pipeline status</h3>
       </a>
       <a href={paths.connectData} className="mini-card">
         <h3>Connect your data</h3>
@@ -84,10 +84,6 @@ export const paths = {
     </div>
   </div>
 </div>
-
-:::tip
-Open search with `/` , then `Tab` to search docs
-:::
 
 <style>
 {`
