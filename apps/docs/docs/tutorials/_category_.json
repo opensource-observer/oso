@@ -1,6 +1,6 @@
 {
-  "label": "Tutorials",
-  "position": 6,
+  "label": "Find a Tutorial",
+  "position": 4,
   "link": {
     "type": "doc",
     "id": "index"
