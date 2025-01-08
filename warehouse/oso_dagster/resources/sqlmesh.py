@@ -5,10 +5,12 @@ Auxiliary resources for sqlmesh
 import typing as t
 from datetime import datetime
 
-from dagster import AssetKey, AssetsDefinition, asset
+from dagster import AssetExecutionContext, AssetKey, AssetsDefinition, asset
 from dagster_sqlmesh import SQLMeshDagsterTranslator
 from dagster_sqlmesh.controller.base import SQLMeshInstance
+from sqlglot import exp
 from sqlmesh import Context
+from sqlmesh.core.dialect import parse_one
 from sqlmesh.core.model import Model
 
 
@@ -77,23 +79,25 @@ class Trino2ClickhouseSQLMeshExporter(SQLMeshExporter):
             deps=[key],
             compute_kind="sqlmesh-export",
         )
-        async def export(trino: TrinoResource, clickhouse: ClickhouseResource) -> None:
+        async def export(
+            context: AssetExecutionContext,
+            trino: TrinoResource,
+            clickhouse: ClickhouseResource,
+        ) -> None:
             table_name = key.path[-1]
             async with trino.get_client() as connection:
                 # Export the data from trino to clickhouse by creating a table
                 # that has a suffix
                 exported_table_name = f"{clickhouse_key.path[-1]}_{datetime.now().strftime('%Y%m%d%H%M%S')}"
                 cursor = connection.cursor()
-                cursor.execute(
-                    f"""
-                    CREATE TABLE {self.trino_destination_table(exported_table_name)}
-                    WITH (
-                        engine = "MergeTree"
-                    )
-                    AS 
-                    SELECT * FROM {self.trino_source_table(key.path[-1])}
-                """
+                context.log.info(f"Exporting {table_name} to {exported_table_name}")
+                create_query = self.generate_create_table_query(
+                    model,
+                    self.trino_source_table(table_name),
+                    self.trino_destination_table(exported_table_name),
                 )
+                context.log.info(f"executing sql: {create_query}")
+                cursor.execute(create_query)
 
             with clickhouse.get_client() as clickhouse_client:
                 # Create the clickhouse table
@@ -106,3 +110,28 @@ class Trino2ClickhouseSQLMeshExporter(SQLMeshExporter):
             return None
 
         return export
+
+    def generate_create_table_query(
+        self, model: Model, source_table: str, destination_table: str
+    ):
+        base_create_query = f"""
+            CREATE table {destination_table} (
+                placeholder VARCHAR,
+            ) WITH (
+                engine = "MergeTree",
+            )
+            AS SELECT * FROM {source_table}
+        """
+
+        columns = model.columns_to_types
+        assert columns is not None, "columns must not be None"
+
+        create_query = parse_one(base_create_query)
+        create_query.this.set(
+            "expressions",
+            [
+                exp.ColumnDef(this=exp.to_identifier(column_name), kind=column_type)
+                for column_name, column_type in columns.items()
+            ],
+        )
+        return create_query.sql(dialect="trino")
