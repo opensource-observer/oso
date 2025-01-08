@@ -41,7 +41,6 @@ async def multiple_async_contexts(
 
     async def enter(name: str, cm: t.AsyncContextManager[t.Any]) -> t.Any:
         context = await cm.__aenter__()
-        print("WAT THE HELL")
         return (name, context)
 
     context_entrances: t.List[t.Awaitable[t.Any]] = [

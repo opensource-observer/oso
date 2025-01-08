@@ -14,7 +14,7 @@ transform it, and load it into BigQuery. This quickstart guide will help you set
 up our Dagster instance locally, with a [`duckdb`](http://duckdb.org/) backend,
 in order to follow along with our tutorials in the next sections.
 
-## Dagster Dashboard
+## Check pipeline status
 
 [https://dagster.opensource.observer](https://dagster.opensource.observer)
 

@@ -18,7 +18,11 @@ class TrinoResource(ConfigurableResource):
     """Base Trino resource"""
 
     @asynccontextmanager
-    def get_client(self, log_override: t.Optional[logging.Logger] = None) -> t.AsyncGenerator[Connection, None]:
+    def get_client(
+        self,
+        session_properties: t.Optional[t.Dict[str, t.Any]] = None,
+        log_override: t.Optional[logging.Logger] = None,
+    ) -> t.AsyncGenerator[Connection, None]:
         raise NotImplementedError(
             "get_client not implemented on the base TrinoResource"
         )
@@ -71,6 +75,11 @@ class TrinoK8sResource(TrinoResource):
 
     k8s: ResourceDependency[K8sResource]
 
+    user: str = Field(
+        default="dagster",
+        description="Trino user",
+    )
+
     service_name: str = Field(
         default="trino",
         description="Trino service name",
@@ -105,33 +114,34 @@ class TrinoK8sResource(TrinoResource):
         default="default",
         description="Trino schema",
     )
-    
+
     connect_timeout: int = Field(
         default=240,
         description="Timeout in seconds for waiting for the service to be online",
     )
 
     @asynccontextmanager
-    async def get_client(self, log_override: t.Optional[logging.Logger] = None):
-        logger = log_override or module_logger
+    async def get_client(
+        self,
+        session_properties: t.Optional[t.Dict[str, t.Any]] = None,
+        log_override: t.Optional[logging.Logger] = None,
+    ):
         # Bring both the coordinator and worker online if they aren't already
-
         async with self.ensure_available(log_override=log_override):
             # Wait for the status endpoint to return 200
             host, port = await self.k8s.get_service_connection(
                 self.service_name, self.namespace, self.service_port_name
             )
-            logger.info(f"Wait for trino to be online at http://{host}:{port}/")
-
-            await wait_for_ok_async(
-                f"http://{host}:{port}/", timeout=self.deploy_timeout
-            )
+            extra_connection_args = {}
+            if session_properties:
+                extra_connection_args["session_properties"] = session_properties
             yield trino.dbapi.connect(
                 host=host,
                 port=port,
                 user=self.user,
                 catalog=self.catalog,
                 schema=self.connection_schema,
+                **extra_connection_args,
             )
 
     @asynccontextmanager
@@ -156,11 +166,12 @@ class TrinoK8sResource(TrinoResource):
             host, port = await self.k8s.get_service_connection(
                 self.service_name, self.namespace, self.service_port_name
             )
-            url = f"http://{host}:{port}/"
+            # see: https://github.com/trinodb/trino/issues/14663
+            health_check_url = f"http://{host}:{port}/v1/status"
 
-            logger.info(f"Wait for trino to be online at {url}")
+            logger.info(f"Wait for trino to be online at {health_check_url}")
             # Wait for the status endpoint to return 200
-            await wait_for_ok_async(url, timeout=self.connect_timeout)
+            await wait_for_ok_async(health_check_url, timeout=self.connect_timeout)
 
             yield
 
@@ -174,12 +185,12 @@ class TrinoRemoteResource(TrinoResource):
     )
 
     @asynccontextmanager
-    async def get_client(self, log_override: t.Optional[logging.Logger] = None):
-        logger = log_override or module_logger
+    async def get_client(
+        self,
+        session_properties: t.Optional[t.Dict[str, t.Any]] = None,
+        log_override: t.Optional[logging.Logger] = None,
+    ):
         async with self.ensure_available(log_override=log_override):
-            await wait_for_ok_async(self.url, timeout=self.connect_timeout)
-
-            logger.info("Connecting to trino")
             yield trino.dbapi.connect(
                 host=self.url,
                 user=self.user,
@@ -192,6 +203,7 @@ class TrinoRemoteResource(TrinoResource):
         logger = log_override or module_logger
 
         logger.info("Wait for trino to be online")
-        await wait_for_ok_async(self.url, timeout=self.connect_timeout)
+        health_check_url = f"{self.url}/v1/status"
+        await wait_for_ok_async(health_check_url, timeout=self.connect_timeout)
 
         yield
