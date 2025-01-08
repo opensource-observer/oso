@@ -118,12 +118,12 @@ class Trino2ClickhouseSQLMeshExporter(SQLMeshExporter):
 
             with clickhouse.get_client() as clickhouse_client:
                 # Create the clickhouse table
-                clickhouse_client.query(
-                    f"""
-                    CREATE OR REPLACE VIEW IF NOT EXISTS {self._destination_schema}.{table_name} AS
+                view_create_query = f"""
+                    CREATE OR REPLACE VIEW {self.clickhouse_destination_table(table_name)} AS
                     SELECT * FROM {self.clickhouse_destination_table(exported_table_name)}
                 """
-                )
+                context.log.info(f"executing sql (clickhouse): {view_create_query}")
+                clickhouse_client.query(view_create_query)
             return None
 
         return export
