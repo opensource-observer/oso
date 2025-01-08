@@ -67,6 +67,7 @@ const config: Config = {
       logo: {
         alt: "OSO Logo",
         src: "img/oso-emblem-black.svg",
+        srcDark: "img/oso-emblem-white.svg",
       },
       items: [
         {
@@ -149,16 +150,36 @@ const config: Config = {
           title: "Docs",
           items: [
             {
-              label: "Contribute to OSO",
-              to: "/docs/contribute/",
+              label: "Get Started",
+              to: "/docs/get-started/",
             },
             {
-              label: "Get OSO Data",
+              label: "Add your project",
+              to: "/docs/projects/",
+            },
+            {
+              label: "Get Data",
               to: "/docs/integrate/",
             },
             {
-              label: "Learn How OSO Works",
-              to: "/docs/how-oso-works/",
+              label: "Tutorials",
+              to: "/docs/tutorials/",
+            },
+            {
+              label: "Contribute data",
+              to: "/docs/contribute-data/",
+            },
+            {
+              label: "Contribute models",
+              to: "/docs/contribute-models/",
+            },
+            {
+              label: "Guides",
+              to: "/docs/guides/",
+            },
+            {
+              label: "References",
+              to: "/docs/references/",
             },
           ],
         },

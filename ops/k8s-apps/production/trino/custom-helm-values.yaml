@@ -4,5 +4,40 @@ metadata:
   name: production-trino
 spec:
   values:
+    env:
+      - name: TRINO_GCS_KEY_ID
+        value: gcp:secretmanager:production-mcs-gcs-key-id/versions/latest
+      - name: TRINO_GCS_SECRET
+        value: gcp:secretmanager:production-mcs-gcs-secret/versions/latest
+      - name: CLICKHOUSE_URL
+        value: gcp:secretmanager:production-trino-clickhouse-url/versions/latest
+      - name: CLICKHOUSE_USER
+        value: gcp:secretmanager:production-trino-clickhouse-user/versions/latest
+      - name: CLICKHOUSE_PASSWORD
+        value: gcp:secretmanager:production-trino-clickhouse-password/versions/latest
     serviceAccount:
       name: production-trino
+    coordinator:
+      resources:
+        requests:
+          cpu: 7500m
+          memory: 46000Mi
+      tolerations:
+        - key: pool_type
+          operator: Equal
+          value: trino-coordinator
+          effect: NoSchedule
+      nodeSelector:
+        pool_type: trino-coordinator
+    worker:
+      resources:
+        requests:
+          cpu: 63000m
+          memory: 390000Mi
+      tolerations:
+        - key: pool_type
+          operator: Equal
+          value: trino-worker
+          effect: NoSchedule
+      nodeSelector:
+        pool_type: trino-worker

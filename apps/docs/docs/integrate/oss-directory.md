@@ -1,26 +1,13 @@
 ---
-title: Fetch Project Info
-sidebar_position: 11
+title: Import or Clone OSS Directory
+sidebar_position: 5
 ---
 
 :::info
 [oss-directory](https://github.com/opensource-observer/oss-directory) contains structured data on as many open source projects as possible, enumerating all artifacts related to the project, from source code repositories to published packages and deployments. You can get the data via our npm library, python package, or downloading the data directly from GitHub.
 :::
 
-## Directory Structure
-
-The OSS Directory is organized into two main folders:
-
-- `./data/projects` - each file represents a single open source project and contains all of the artifacts for that project.
-  - See `./src/resources/schema/project.json` for the expected JSON schema
-  - Files should be named by the project `name`
-  - A project's `name` must be globally unique. If there is a conflict in chosen `name`, we will give priority to the project that has the associated GitHub organization
-  - In most cases, we adopt the GitHub organization name as the `name`. If the project is not associated with a GitHub organization, you try to use the project name followed by the repo owner as the `name`.
-- `./data/collections` - each file represents a collection of projects that have some collective meaning (e.g. all projects in an ecosystem).
-  - See `./src/resources/schema/collection.json` for the expected JSON schema
-  - Collections are identified by their unique `name`
-
-## Using as a library
+## Import as a Library
 
 We have also published this repository as a library that you can use in your own projects. This is useful if you want to build a tool that uses the data in this repository or perform your own custom analysis.
 

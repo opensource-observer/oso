@@ -1,16 +1,13 @@
 from contextlib import contextmanager
 from typing import Any, Iterator, Optional
 
-from dagster import (
-    ConfigurableResource,
-    resource,
-)
+from dagster import ConfigurableResource, resource
 from dagster_gcp.bigquery.utils import setup_gcp_creds
 from google import auth
 from google.auth import impersonated_credentials
 from google.cloud.bigquery_datatransfer import DataTransferServiceClient
+from oso_dagster.config import DagsterConfig
 from pydantic import Field
-from ..constants import impersonate_service_account
 
 IMPERSONATE_SCOPES = [
     "https://www.googleapis.com/auth/cloud-platform",
@@ -24,6 +21,7 @@ IMPERSONATE_LIFETIME = 300
 Note: This code is predominantly copied from the BigQueryResource
 It simply returns a BigQuery DataTransferServiceClient
 """
+
 
 class BigQueryDataTransferResource(ConfigurableResource):
     """Resource for interacting with Google BigQuery Data Transfer.
@@ -70,28 +68,32 @@ class BigQueryDataTransferResource(ConfigurableResource):
     )
 
     @contextmanager
-    def get_client(self) -> Iterator[DataTransferServiceClient]:
-        #Context manager to create a BigQuery Data Transfer Client.
+    def get_client(
+        self, global_config: DagsterConfig
+    ) -> Iterator[DataTransferServiceClient]:
+        # Context manager to create a BigQuery Data Transfer Client.
         if self.gcp_credentials:
             with setup_gcp_creds(self.gcp_credentials):
                 yield DataTransferServiceClient()
 
-        elif impersonate_service_account != "":
+        elif global_config.dbt_impersonate_service_account != "":
             # By default, create an impersonated credential for a service account.
             # This is necessary to create BigQuery DataTransfer jobs
             credentials, project_id = auth.default()
             target_credentials = impersonated_credentials.Credentials(
                 source_credentials=credentials,
-                target_principal=impersonate_service_account,
+                target_principal=global_config.dbt_impersonate_service_account,
                 target_scopes=IMPERSONATE_SCOPES,
-                lifetime=IMPERSONATE_LIFETIME
+                lifetime=IMPERSONATE_LIFETIME,
             )
             yield DataTransferServiceClient(credentials=target_credentials)
         else:
             yield DataTransferServiceClient()
 
-    def get_object_to_set_on_execution_context(self) -> Any:
-        with self.get_client() as client:
+    def get_object_to_set_on_execution_context(
+        self, global_config: DagsterConfig
+    ) -> Any:
+        with self.get_client(global_config) as client:
             yield client
 
 

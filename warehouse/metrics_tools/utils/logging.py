@@ -1,5 +1,7 @@
+import typing as t
 import logging
 import os
+import sys
 
 connected_to_sqlmesh_logs = False
 
@@ -31,3 +33,43 @@ def add_metrics_tools_to_existing_logger(logger_name: str):
 
     app_logger = logging.getLogger(logger_name)
     app_logger.addFilter(MetricsToolsFilter())
+
+
+class ModuleFilter(logging.Filter):
+    """Allows logs only from the specified module."""
+
+    def __init__(self, module_name):
+        super().__init__()
+        self.module_name = module_name
+
+    def filter(self, record):
+        return record.name.startswith(self.module_name)
+
+
+def setup_multiple_modules_logging(module_names: t.List[str]):
+    for module_name in module_names:
+        setup_module_logging(module_name)
+
+
+# Configure logging
+def setup_module_logging(
+    module_name: str,
+    level: int = logging.DEBUG,
+    format: str = "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+):
+    logger = logging.getLogger(module_name)
+    logger.setLevel(level)  # Adjust the level as needed
+
+    # Create a handler that logs to stdout
+    stdout_handler = logging.StreamHandler(sys.stdout)
+    stdout_handler.setLevel(level)  # Adjust the level as needed
+
+    # Add the filter to the handler
+    stdout_handler.addFilter(ModuleFilter(module_name))
+
+    # Set a formatter (optional)
+    formatter = logging.Formatter(format, datefmt="%Y-%m-%dT%H:%M:%S")
+    stdout_handler.setFormatter(formatter)
+
+    # Add the handler to the logger
+    logger.addHandler(stdout_handler)

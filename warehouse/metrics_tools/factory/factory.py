@@ -1,49 +1,42 @@
-import contextlib
-from datetime import datetime
 import inspect
 import logging
 import os
-from queue import PriorityQueue
-import typing as t
 import textwrap
-from metrics_tools.runner import MetricsRunner
-from metrics_tools.transformer.tables import ExecutionContextTableTransform
-from metrics_tools.utils.logging import add_metrics_tools_to_sqlmesh_logging
-import pandas as pd
+import typing as t
 from dataclasses import dataclass, field
+from pathlib import Path
+from queue import PriorityQueue
 
-from sqlmesh import ExecutionContext
-from sqlmesh.core.macros import MacroEvaluator
-from sqlmesh.core.model import ModelKindName
-import sqlglot as sql
-from sqlglot import exp
-
-from metrics_tools.joiner import JoinerTransform
-from metrics_tools.transformer import (
-    SQLTransformer,
-    IntermediateMacroEvaluatorTransform,
-)
-from metrics_tools.transformer.qualify import QualifyTransform
 from metrics_tools.definition import (
     MetricQuery,
     PeerMetricDependencyRef,
     TimeseriesMetricsOptions,
     reference_to_str,
 )
-from metrics_tools.models import (
-    GeneratedModel,
-    GeneratedPythonModel,
-)
+from metrics_tools.factory import constants
+from metrics_tools.joiner import JoinerTransform
 from metrics_tools.macros import (
     metrics_end,
+    metrics_entity_type_alias,
     metrics_entity_type_col,
+    metrics_entity_type_table,
     metrics_name,
+    metrics_peer_ref,
     metrics_sample_date,
     metrics_start,
     relative_window_sample_date,
-    metrics_entity_type_alias,
-    metrics_peer_ref,
 )
+from metrics_tools.models import MacroOverridingModel
+from metrics_tools.transformer import (
+    IntermediateMacroEvaluatorTransform,
+    SQLTransformer,
+)
+from metrics_tools.transformer.qualify import QualifyTransform
+from metrics_tools.utils.logging import add_metrics_tools_to_sqlmesh_logging
+from sqlglot import exp
+from sqlmesh.core.dialect import parse_one
+from sqlmesh.core.macros import MacroEvaluator
+from sqlmesh.core.model import ModelKindName
 
 logger = logging.getLogger(__name__)
 
@@ -52,60 +45,6 @@ type ExtraVarType = ExtraVarBaseType | t.List[ExtraVarBaseType]
 
 CURR_DIR = os.path.dirname(__file__)
 QUERIES_DIR = os.path.abspath(os.path.join(CURR_DIR, "../../metrics_mesh/oso_metrics"))
-
-TIME_AGGREGATION_TO_CRON = {
-    "daily": "@daily",
-    "monthly": "@monthly",
-    "weekly": "@weekly",
-}
-METRICS_COLUMNS_BY_ENTITY: t.Dict[str, t.Dict[str, exp.DataType]] = {
-    "artifact": {
-        "metrics_sample_date": exp.DataType.build("DATE", dialect="clickhouse"),
-        "event_source": exp.DataType.build("String", dialect="clickhouse"),
-        "to_artifact_id": exp.DataType.build("String", dialect="clickhouse"),
-        "from_artifact_id": exp.DataType.build("String", dialect="clickhouse"),
-        "metric": exp.DataType.build("String", dialect="clickhouse"),
-        "amount": exp.DataType.build("Float64", dialect="clickhouse"),
-    },
-    "project": {
-        "metrics_sample_date": exp.DataType.build("DATE", dialect="clickhouse"),
-        "event_source": exp.DataType.build("String", dialect="clickhouse"),
-        "to_project_id": exp.DataType.build("String", dialect="clickhouse"),
-        "from_artifact_id": exp.DataType.build("String", dialect="clickhouse"),
-        "metric": exp.DataType.build("String", dialect="clickhouse"),
-        "amount": exp.DataType.build("Float64", dialect="clickhouse"),
-    },
-    "collection": {
-        "metrics_sample_date": exp.DataType.build("DATE", dialect="clickhouse"),
-        "event_source": exp.DataType.build("String", dialect="clickhouse"),
-        "to_collection_id": exp.DataType.build("String", dialect="clickhouse"),
-        "from_artifact_id": exp.DataType.build("String", dialect="clickhouse"),
-        "metric": exp.DataType.build("String", dialect="clickhouse"),
-        "amount": exp.DataType.build("Float64", dialect="clickhouse"),
-    },
-}
-
-
-@contextlib.contextmanager
-def metric_ref_evaluator_context(
-    evaluator: MacroEvaluator,
-    ref: PeerMetricDependencyRef,
-    extra_vars: t.Optional[t.Dict[str, t.Any]] = None,
-):
-    before = evaluator.locals.copy()
-    evaluator.locals.update(extra_vars or {})
-    evaluator.locals.update(
-        {
-            "rolling_window": ref.get("window"),
-            "rolling_unit": ref.get("unit"),
-            "time_aggregation": ref.get("time_aggregation"),
-            "entity_type": ref.get("entity_type"),
-        }
-    )
-    try:
-        yield
-    finally:
-        evaluator.locals = before
 
 
 class MetricQueryConfig(t.TypedDict):
@@ -137,7 +76,7 @@ class TimeseriesMetrics:
         metrics_queries = [
             MetricQuery.load(
                 name=name,
-                default_dialect=raw_options.get("default_dialect", "clickhouse"),
+                default_dialect=raw_options.get("default_dialect", "duckdb"),
                 source=query_def,
                 queries_dir=queries_dir,
             )
@@ -213,6 +152,7 @@ class TimeseriesMetrics:
             additional_macros = [
                 metrics_peer_ref,
                 metrics_entity_type_col,
+                metrics_entity_type_table,
                 metrics_entity_type_alias,
                 relative_window_sample_date,
                 (metrics_name, ["metric_name"]),
@@ -303,6 +243,13 @@ class TimeseriesMetrics:
 
                 parents.add(table_name)
                 if table_name in sources:
+                    logger.debug(f"skipping known time series source {table_name}")
+                    continue
+
+                if queries.get(table_name) is None:
+                    logger.debug(
+                        f"skipping table {name}. probably an external table to metrics"
+                    )
                     continue
 
                 try:
@@ -341,6 +288,8 @@ class TimeseriesMetrics:
 
     def generate_models(self, calling_file: str):
         """Generates sqlmesh models for all the configured metrics definitions"""
+        from metrics_tools.factory.proxy.proxies import join_all_of_entity_type
+
         # Generate the models
 
         for _, query_config, dependencies in self.generate_ordered_queries():
@@ -349,27 +298,36 @@ class TimeseriesMetrics:
             )
 
         # Join all of the models of the same entity type into the same view model
+        override_path = Path(inspect.getfile(join_all_of_entity_type))
+        override_module_path = Path(
+            os.path.dirname(inspect.getfile(join_all_of_entity_type))
+        )
         for entity_type, tables in self._marts_tables.items():
-            GeneratedModel.create(
-                func=join_all_of_entity_type,
-                entrypoint_path=calling_file,
-                config={
-                    "db": self.catalog,
-                    "tables": tables,
-                    "columns": list(METRICS_COLUMNS_BY_ENTITY[entity_type].keys()),
-                },
+            MacroOverridingModel(
+                additional_macros=[],
+                override_module_path=override_module_path,
+                override_path=override_path,
+                locals=dict(
+                    db=self.catalog,
+                    tables=tables,
+                    columns=list(
+                        constants.METRICS_COLUMNS_BY_ENTITY[entity_type].keys()
+                    ),
+                ),
                 name=f"metrics.timeseries_metrics_to_{entity_type}",
+                is_sql=True,
                 kind="VIEW",
                 dialect="clickhouse",
                 start=self._raw_options["start"],
                 columns={
-                    k: METRICS_COLUMNS_BY_ENTITY[entity_type][k]
+                    k: constants.METRICS_COLUMNS_BY_ENTITY[entity_type][k]
                     for k in filter(
                         lambda col: col not in ["event_source"],
-                        METRICS_COLUMNS_BY_ENTITY[entity_type].keys(),
+                        constants.METRICS_COLUMNS_BY_ENTITY[entity_type].keys(),
                     )
                 },
-            )
+                enabled=self._raw_options.get("enabled", True),
+            )(join_all_of_entity_type)
         logger.info("model generation complete")
 
     def generate_model_for_rendered_query(
@@ -381,14 +339,9 @@ class TimeseriesMetrics:
         query = query_config["query"]
         match query.metric_type:
             case "rolling":
-                if query.use_python_model:
-                    self.generate_rolling_python_model_for_rendered_query(
-                        calling_file, query_config, dependencies
-                    )
-                else:
-                    self.generate_rolling_model_for_rendered_query(
-                        calling_file, query_config, dependencies
-                    )
+                self.generate_rolling_python_model_for_rendered_query(
+                    calling_file, query_config, dependencies
+                )
             case "time_aggregation":
                 self.generate_time_aggregation_model_for_rendered_query(
                     calling_file, query_config, dependencies
@@ -404,6 +357,8 @@ class TimeseriesMetrics:
         query_config: MetricQueryConfig,
         dependencies: t.Set[str],
     ):
+        from metrics_tools.factory.proxy.proxies import generated_rolling_query_proxy
+
         depends_on = set()
         for dep in dependencies:
             depends_on.add(f"{self.catalog}.{dep}")
@@ -411,9 +366,14 @@ class TimeseriesMetrics:
         ref = query_config["ref"]
         query = query_config["query"]
 
-        columns = METRICS_COLUMNS_BY_ENTITY[ref["entity_type"]]
+        columns = constants.METRICS_COLUMNS_BY_ENTITY[ref["entity_type"]]
 
-        kind_common = {"batch_size": 90, "batch_concurrency": 1}
+        kind_common = {
+            "batch_size": ref.get("batch_size", 365),
+            "batch_concurrency": 1,
+            "lookback": 10,
+            "forward_only": True,
+        }
         partitioned_by = ("day(metrics_sample_date)",)
         window = ref.get("window")
         assert window is not None
@@ -428,12 +388,15 @@ class TimeseriesMetrics:
             "metrics_sample_date",
         ]
 
-        return GeneratedPythonModel.create(
+        # Override the path and module so that sqlmesh generates the
+        # proper python_env for the model
+        override_path = Path(inspect.getfile(generated_rolling_query_proxy))
+        override_module_path = Path(
+            os.path.dirname(inspect.getfile(generated_rolling_query_proxy))
+        )
+        return MacroOverridingModel(
             name=f"{self.catalog}.{query_config['table_name']}",
-            func=generated_rolling_query_proxy,
-            entrypoint_path=calling_file,
-            additional_macros=self.generated_model_additional_macros,
-            variables=self.serializable_config(query_config),
+            is_sql=False,
             depends_on=depends_on,
             columns=columns,
             kind={
@@ -445,55 +408,12 @@ class TimeseriesMetrics:
             cron=cron,
             start=self._raw_options["start"],
             grain=grain,
-            imports={"pd": pd, "generated_rolling_query": generated_rolling_query},
-        )
-
-    def generate_rolling_model_for_rendered_query(
-        self,
-        calling_file: str,
-        query_config: MetricQueryConfig,
-        dependencies: t.Set[str],
-    ):
-        config = self.serializable_config(query_config)
-
-        ref = query_config["ref"]
-        query = query_config["query"]
-
-        columns = METRICS_COLUMNS_BY_ENTITY[ref["entity_type"]]
-
-        kind_common = {"batch_size": 1, "batch_concurrency": 1}
-        partitioned_by = ("day(metrics_sample_date)",)
-        window = ref.get("window")
-        assert window is not None
-        assert query._source.rolling
-        cron = query._source.rolling["cron"]
-
-        grain = [
-            "metric",
-            f"to_{ref['entity_type']}_id",
-            "from_artifact_id",
-            "event_source",
-            "metrics_sample_date",
-        ]
-
-        GeneratedModel.create(
-            func=generated_query,
-            entrypoint_path=calling_file,
-            config=config,
-            name=f"{self.catalog}.{query_config['table_name']}",
-            kind={
-                "name": ModelKindName.INCREMENTAL_BY_TIME_RANGE,
-                "time_column": "metrics_sample_date",
-                **kind_common,
-            },
-            dialect="clickhouse",
-            columns=columns,
-            grain=grain,
-            cron=cron,
-            start=self._raw_options["start"],
+            enabled=self._raw_options.get("enabled", True),
             additional_macros=self.generated_model_additional_macros,
-            partitioned_by=partitioned_by,
-        )
+            locals=self.serializable_config(query_config),
+            override_module_path=override_module_path,
+            override_path=override_path,
+        )(generated_rolling_query_proxy)
 
     def generate_time_aggregation_model_for_rendered_query(
         self,
@@ -502,24 +422,27 @@ class TimeseriesMetrics:
         dependencies: t.Set[str],
     ):
         """Generate model for time aggregation models"""
-        # Use a simple python sql model to generate the time_aggregation model
-        config = self.serializable_config(query_config)
+        from metrics_tools.factory.proxy.proxies import generated_query
 
+        # Use a simple python sql model to generate the time_aggregation model
         ref = query_config["ref"]
 
-        columns = METRICS_COLUMNS_BY_ENTITY[ref["entity_type"]]
+        columns = constants.METRICS_COLUMNS_BY_ENTITY[ref["entity_type"]]
 
         time_aggregation = ref.get("time_aggregation")
         assert time_aggregation is not None
 
-        kind_common = {"batch_concurrency": 1}
-        kind_options = {"batch_size": 180, "lookback": 7, **kind_common}
+        kind_common = {
+            "batch_concurrency": 1,
+            "forward_only": True,
+        }
+        kind_options = {"lookback": 10, **kind_common}
         partitioned_by = ("day(metrics_sample_date)",)
 
         if time_aggregation == "weekly":
-            kind_options = {"batch_size": 182, "lookback": 7, **kind_common}
+            kind_options = {"lookback": 10, **kind_common}
         if time_aggregation == "monthly":
-            kind_options = {"batch_size": 6, "lookback": 1, **kind_common}
+            kind_options = {"lookback": 1, **kind_common}
             partitioned_by = ("month(metrics_sample_date)",)
 
         grain = [
@@ -529,12 +452,13 @@ class TimeseriesMetrics:
             "event_source",
             "metrics_sample_date",
         ]
-        cron = TIME_AGGREGATION_TO_CRON[time_aggregation]
+        cron = constants.TIME_AGGREGATION_TO_CRON[time_aggregation]
 
-        GeneratedModel.create(
-            func=generated_query,
-            entrypoint_path=calling_file,
-            config=config,
+        # Override the path and module so that sqlmesh generates the
+        # proper python_env for the model
+        override_path = Path(inspect.getfile(generated_query))
+        override_module_path = Path(os.path.dirname(inspect.getfile(generated_query)))
+        return MacroOverridingModel(
             name=f"{self.catalog}.{query_config['table_name']}",
             kind={
                 "name": ModelKindName.INCREMENTAL_BY_TIME_RANGE,
@@ -542,13 +466,18 @@ class TimeseriesMetrics:
                 **kind_options,
             },
             dialect="clickhouse",
+            is_sql=True,
             columns=columns,
             grain=grain,
             cron=cron,
             start=self._raw_options["start"],
-            additional_macros=self.generated_model_additional_macros,
             partitioned_by=partitioned_by,
-        )
+            enabled=self._raw_options.get("enabled", True),
+            additional_macros=self.generated_model_additional_macros,
+            locals=self.serializable_config(query_config),
+            override_module_path=override_module_path,
+            override_path=override_path,
+        )(generated_query)
 
     def generate_point_in_time_model_for_rendered_query(
         self,
@@ -627,119 +556,22 @@ def timeseries_metrics(
     return timeseries_metrics.generate_models(calling_file)
 
 
-def join_all_of_entity_type(
-    evaluator: MacroEvaluator, *, db: str, tables: t.List[str], columns: t.List[str]
-):
-    # A bit of a hack but we know we have a "metric" column. We want to
-    # transform this metric id to also include the event_source as a prefix to
-    # that metric id in the joined table
-    transformed_columns = []
-    for column in columns:
-        if column == "event_source":
-            continue
-        if column == "metric":
-            transformed_columns.append(
-                exp.alias_(
-                    exp.Concat(
-                        expressions=[
-                            exp.to_column("event_source"),
-                            exp.Literal(this="_", is_string=True),
-                            exp.to_column(column),
-                        ],
-                        safe=False,
-                        coalesce=False,
-                    ),
-                    alias="metric",
-                )
-            )
-        else:
-            transformed_columns.append(column)
-
-    query = exp.select(*transformed_columns).from_(sql.to_table(f"{db}.{tables[0]}"))
-    for table in tables[1:]:
-        query = query.union(
-            exp.select(*transformed_columns).from_(sql.to_table(f"{db}.{table}")),
-            distinct=False,
-        )
-    # Calculate the correct metric_id for all of the entity types
-    return query
-
-
+# This is to maintain compatibility with the deployed version of sqlmesh models
+# We need a way to ensure that changes to generated models are never breaking
+# (we will likely need some testing for this)
 def generated_query(
     evaluator: MacroEvaluator,
-    *,
-    rendered_query_str: str,
-    ref: PeerMetricDependencyRef,
-    table_name: str,
-    vars: t.Dict[str, t.Any],
+    *args: t.Any,
+    **kwargs: t.Any,
 ):
-    """Simple generated query executor for metrics queries"""
-    from sqlmesh.core.dialect import parse_one
-
-    with metric_ref_evaluator_context(evaluator, ref, vars):
-        result = evaluator.transform(parse_one(rendered_query_str))
-    return result
+    """LEGACY VERSION THAT WILL BE DELETED"""
+    return parse_one("select 1")
 
 
-def generated_rolling_query(
-    context: ExecutionContext,
-    start: datetime,
-    end: datetime,
-    execution_time: datetime,
-    ref: PeerMetricDependencyRef,
-    vars: t.Dict[str, t.Any],
-    rendered_query_str: str,
-    table_name: str,
-    sqlmesh_vars: t.Dict[str, t.Any],
-    *_ignored,
+def join_all_of_entity_type(
+    evaluator: MacroEvaluator,
+    *args: t.Any,
+    **kwargs: t.Any,
 ):
-    # Transform the query for the current context
-    transformer = SQLTransformer(transforms=[ExecutionContextTableTransform(context)])
-    query = transformer.transform(rendered_query_str)
-    locals = vars.copy()
-    locals.update(sqlmesh_vars)
-
-    runner = MetricsRunner.from_sqlmesh_context(context, query, ref, locals)
-    df = runner.run_rolling(start, end)
-    # If the rolling window is empty we need to yield from an empty tuple
-    # otherwise sqlmesh fails. See:
-    # https://sqlmesh.readthedocs.io/en/latest/concepts/models/python_models/#returning-empty-dataframes
-    total = 0
-    if df.empty:
-        yield from ()
-    else:
-        count = len(df)
-        total += count
-        logger.debug(f"table={table_name} yielding rows {count}")
-        yield df
-    logger.debug(f"table={table_name} yielded rows{total}")
-
-
-def generated_rolling_query_proxy(
-    context: ExecutionContext,
-    start: datetime,
-    end: datetime,
-    execution_time: datetime,
-    ref: PeerMetricDependencyRef,
-    vars: t.Dict[str, t.Any],
-    rendered_query_str: str,
-    table_name: str,
-    sqlmesh_vars: t.Dict[str, t.Any],
-    **kwargs,
-) -> t.Iterator[pd.DataFrame]:
-    """This acts as the proxy to the actual function that we'd call for
-    the metrics model."""
-
-    yield from generated_rolling_query(
-        context,
-        start,
-        end,
-        execution_time,
-        ref,
-        vars,
-        rendered_query_str,
-        table_name,
-        sqlmesh_vars,
-        # Change the following variable to force reevaluation. Hack for now.
-        "version=v4",
-    )
+    """LEGACY VERSION THAT WILL BE DELETED"""
+    return parse_one("select 1")

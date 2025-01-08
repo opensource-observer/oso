@@ -1,6 +1,6 @@
 ---
-title: FAQ
-sidebar_position: 5
+title: FAQs
+sidebar_position: 9
 ---
 
 ## Community
@@ -8,8 +8,8 @@ sidebar_position: 5
 ### How is OSO supported?
 
 Open Source Observer is a public good.
-All of our code is [open source](https://github.com/opensource-observer/oso/)
-All of our data sets and models are [open data](../integrate/overview/index.mdx).
+All of our code is [open source](https://github.com/opensource-observer/oso/).
+All of our data sets and models are [open data](../integrate/datasets/index.mdx).
 All of our infrastructure is [open](https://dagster.opensource.observer/locations) too.
 If we are going to transform funding for public goods,
 we need to live by an open source ethos.
@@ -27,7 +27,7 @@ to introduce yourself and ask questions.
 If you know what you're looking for, our docs are the best place
 to search for the answer.
 We do also occasionally host public
-[data challenges](../contribute/challenges/index.md)
+[data challenges](../contribute-models/challenges/index.md)
 if you're looking for more structure.
 
 ---
@@ -44,7 +44,7 @@ In order to instruct the indexer to also analyze your project,
 you must add your project to
 [oss-directory](https://github.com/opensource-observer/oss-directory/).
 We have detailed instructions on how to do that
-[here](../contribute/project-data.md).
+[here](../projects).
 
 ### How often do you index / refresh your data?
 

@@ -1,7 +1,7 @@
-from typing import Optional, Dict, List
+from typing import Dict, List, Optional
 
-import pandas
 import duckdb
+import pandas
 
 
 class DuckDbFixture:
@@ -12,6 +12,7 @@ class DuckDbFixture:
         tables = tables or dict()
         db = duckdb.connect()
         fixture = cls(db)
+        fixture.set_timezone()
         fixture.add_tables(tables)
         fixture.set_memory_limit("2MB")
         return fixture
@@ -35,6 +36,9 @@ class DuckDbFixture:
 
     def set_memory_limit(self, limit: str):
         self._db.sql(f"SET memory_limit = '{limit}';")
+
+    def set_timezone(self):
+        self._db.sql("SET TimeZone = 'UTC';")
 
     @property
     def db(self):
