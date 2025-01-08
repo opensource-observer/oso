@@ -486,9 +486,15 @@ class TimeseriesMetrics:
         dependencies: t.Set[str],
     ):
         """Generate model for point in time models"""
-        config = self.serializable_config(query_config)
+        from metrics_tools.factory.proxy.proxies import generated_query
+
         ref = query_config["ref"]
-        columns = METRICS_COLUMNS_BY_ENTITY[ref["entity_type"]]
+        columns = constants.METRICS_COLUMNS_BY_ENTITY[ref["entity_type"]]
+        config = self.serializable_config(query_config)
+
+        depends_on = set()
+        for dep in dependencies:
+            depends_on.add(f"{self.catalog}.{dep}")
 
         grain = [
             "metric",
@@ -498,18 +504,24 @@ class TimeseriesMetrics:
             "metrics_sample_date",
         ]
 
-        GeneratedModel.create(
-            func=generated_query,
-            entrypoint_path=calling_file,
-            config=config,
+        override_path = Path(inspect.getfile(generated_query))
+        override_module_path = Path(os.path.dirname(inspect.getfile(generated_query)))
+
+        return MacroOverridingModel(
             name=f"{self.catalog}.{query_config['table_name']}",
             kind=ModelKindName.FULL,
             dialect="clickhouse",
+            is_sql=True,
             columns=columns,
             grain=grain,
             start="1970-01-01",
+            enabled=self._raw_options.get("enabled", True),
             additional_macros=self.generated_model_additional_macros,
-        )
+            locals=config,
+            override_module_path=override_module_path,
+            override_path=override_path,
+            depends_on=depends_on,
+        )(generated_query)
 
     def serializable_config(self, query_config: MetricQueryConfig):
         # Use a simple python sql model to generate the time_aggregation model
