@@ -5,20 +5,25 @@ sidebar_position: 4
 
 ## What Are We Trying to Achieve?
 
-At OSO, many teams need to connect a public API to their pipelines so the data
-can be analyzed, shared, or enriched further. Doing this in a consistent,
-reliable way can be tricky if you have to manually code each endpoint. Our
-solution is to use a configuration object that defines all your endpoints, then
-let our pipeline handle the rest.
+At OSO, one of the core tasks is to ingest data from various sources. This
+includes APIs, databases, and other data stores. In this guide, we will focus on
+ingesting data from **REST APIs**.
+
+When you are working with APIs, you often need to write a lot of **boilerplate**
+code to fetch data, parse it, and load it into out data warehouse. This can be
+**time-consuming** and **error-prone**.
+
+To make this process easier, we have created a set of tools that allow you to
+ingest data from APIs with minimal effort.
 
 Here are a few reasons why this is helpful:
 
-- **Minimal boilerplate**: All you do is list which endpoints you are pulling data
-  from.
+- **Minimal boilerplate**: All you do is list which endpoints you are pulling
+  data from.
 - **Automatic asset creation**: Each endpoint becomes its own asset, ready to be
   materialized in Dagster.
-- **Easy integration with the OSO environment**: Everything is built to fit into our
-  approach to data ingestion.
+- **Easy integration with the OSO environment**: Everything is built to fit into
+  our approach to data ingestion.
 
 ---
 
@@ -49,11 +54,11 @@ DEFI_LLAMA_PROTOCOLS = [
 
 :::tip
 For the full `config` spec, see
-[`dlt docs`](https://dlthub.com/docs/dlt-ecosystem/verified-sources/rest_api/basic).
-The following is a simplified version of the config.
+[`dlt`](https://dlthub.com/docs/dlt-ecosystem/verified-sources/rest_api/basic)
+documentation. Not all fields are covered here, but you can add more as needed.
 :::
 
-The configuration object has three main parts:
+Our configuration object has three main parts:
 
 - A `client` object, which contains the base URL and any other client-level
   settings.
@@ -67,35 +72,46 @@ from dlt.sources.rest_api.typing import RESTAPIConfig
 
 config: RESTAPIConfig = {
     "client": {
-        "base_url": "https://api.llama.fi/"
+        "base_url": "https://api.llama.fi/",
     },
     "resource_defaults": {
-        "primary_key": "id",
-        "write_disposition": "merge",
+        "primary_key": "id", # The field to use as the primary key
+        "write_disposition": "merge", # How to handle existing data
     },
-    "resources": [
-        {
-            "name": f"{protocol.replace('-', '_').replace(".", '__dot__')}_protocol",
-            "endpoint": {
-                "path": f"protocol/{protocol}",
-                "data_selector": "$"
-            }
-        }
-        for protocol in DEFI_LLAMA_PROTOCOLS
-    ],
+    "resources": list(
+        map(
+            lambda protocol: {
+                "name": f"{protocol.replace('-', '_').replace('.', '__dot__')}_protocol",
+                "endpoint": {
+                    "path": f"protocol/{protocol}",
+                    "data_selector": "$", # Selects the whole response
+                },
+            },
+            DEFI_LLAMA_PROTOCOLS,
+        )
+    ),
 }
 ```
 
 ### 3. Use the Factory Function
 
-We have a handy factory function called `create_rest_factory_asset` that takes
-your configuration and returns a callable **factory**. The only thing left is to
-call that factory with a `key_prefix` so OSO knows how to group these assets.
+We have a handy factory function called
+[`create_rest_factory_asset`](https://github.com/opensource-observer/oso/blob/main/warehouse/oso_dagster/factories/rest.py)
+that takes your configuration and returns a callable **factory** that wires all
+assets up with the specified configuration.
 
-Under the hood, the returned `factory` will create a set of Dagster assets,
-managing all of our infrastructure-specific details for you. Therefore, you can
-easily configure all of them in one go. For the full reference, check
-[`dagster asset documentation`](https://docs.dagster.io/_apidocs/assets#dagster.asset).
+For a minimal configuration, we just need to supply a `key_prefix` to the factory
+function. This will be used to create the asset keys in the Dagster environment. It
+accepts a list of strings as input. Each element will be represented as a level in
+the key hierarchy.
+
+:::tip
+Under the hood, this will create a set of Dagster assets, managing all of
+our infrastructure-specific details for you. Therefore, you can easily configure
+all of them in one go. For the full reference, check
+[`dagster`](https://docs.dagster.io/_apidocs/assets#dagster.asset)
+documentation.
+:::
 
 ```python
 from ..factories.rest import create_rest_factory_asset
@@ -114,18 +130,16 @@ pipeline, the data will be ingested into your OSO warehouse.
 
 ## How to Run and View Results
 
-1. **Add Your Asset Code to OSO**\
-   Put the snippet above in an appropriate location in your repository, for
-   example, our `defillama` asset is located in `warehouse/oso_dagster/assets/defillama.py`.
+:::tip
+If you have not setup your local Dagster environment yet, please follow
+our [quickstart guide](../guides/dagster/index.md).
+:::
 
-2. **Run Dagster**\
-   Simply start it up (`dagster dev`) and you will see assets for
-   each protocol listed. Or schedule a job in your deployment that includes
-   these assets.
+After having your Dagster instance running, follow the
+[Dagster Asset Guide](../guides/dagster/index.md) to materialize the assets. Our
+example assets are located under `assets/defillama/tvl`.
 
-3. **Verify Your Tables**\
-   Once the assets have been materialized, check your database or data
-   warehouse. Each endpoint you defined in the config will appear as a table.
+![Dagster DefiLlama Asset List](crawl-api-example-defillama.png)
 
 ---
 
@@ -133,20 +147,81 @@ pipeline, the data will be ingested into your OSO warehouse.
 
 In practice, you may do more than just retrieve data:
 
-- **Pagination**: dlt supports adding a paginator if you have large result sets.
+- **Pagination**: `dlt` supports adding a paginator if you have large result sets.
 - **Transformations**: You can add transformations before loading, such as
   cleaning up invalid fields or renaming columns.
 
 Our tooling is flexible enough to let you customize these details without losing
 the simplicity of the factory approach.
 
+Here's a more advanced example showing automatic pagination and specific field selection using the Pokémon API:
+
+```py
+from dlt.sources.rest_api.typing import RESTAPIConfig
+
+from ..factories.rest import create_rest_factory_asset
+
+POKEMON_IDS = [
+    "rayquaza",
+    "pikachu",
+    "charizard",
+    "bulbasaur",
+    "ditto",
+    "espurr",
+    "farfetchd",
+]
+
+config: RESTAPIConfig = {
+    "client": {
+        "base_url": "https://pokeapi.co/api/v2/",
+        "paginator": "json_link",  # Enables automatic pagination
+    },
+    "resource_defaults": {
+        "write_disposition": "replace",
+    },
+    "resources": list(
+        map(
+            lambda id: {
+                "name": f"{id}_pokemon",
+                "endpoint": {
+                    "path": f"pokemon/{id}",
+                    "data_selector": "$.moves",  # Selects only the moves field
+                },
+            },
+            POKEMON_IDS,
+        )
+    ),
+}
+
+dlt_assets = create_rest_factory_asset(config=config)
+pokemon_assets = dlt_assets(key_prefix=["pokemon", "moves"])
+```
+
+After running the pipeline, you'll find the Pokémon moves assets in your data warehouse:
+
+![BigQuery Pokemon Moves Table Data](crawl-api-advanced.png)
+
+---
+
+## Current limitations
+
+Even though the factory approach is very flexible, there are some limitations
+you should be aware of:
+
+- **Resource Relationship**: Although `dlt` supports
+  [relationships](https://dlthub.com/docs/dlt-ecosystem/verified-sources/rest_api/basic#define-resource-relationships)
+  between resources, the factory does not support this feature. This is because
+  each resource is created independently, meaning that relationships between
+  them are not inferred.
+
 ---
 
 ## Conclusion
 
-With just a few lines of code, you can connect OSO to any public API. This
-method removes repetitive tasks and helps you maintain a consistent approach to
+With just a few lines of code, you can connect OSO to any API. This method
+removes repetitive tasks and helps you maintain a consistent approach to
 ingestion. Whenever you need to add or remove endpoints, you simply update your
 configuration object.
 
-**Happy data crawling!**
+Does this factory not fit your needs? You can always create your own custom
+asset following [this guide](./dagster.md).
