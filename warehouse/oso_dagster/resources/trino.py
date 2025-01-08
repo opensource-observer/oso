@@ -19,7 +19,9 @@ class TrinoResource(ConfigurableResource):
 
     @asynccontextmanager
     def get_client(
-        self, log_override: t.Optional[logging.Logger] = None
+        self,
+        session_properties: t.Optional[t.Dict[str, t.Any]] = None,
+        log_override: t.Optional[logging.Logger] = None,
     ) -> t.AsyncGenerator[Connection, None]:
         raise NotImplementedError(
             "get_client not implemented on the base TrinoResource"
@@ -119,19 +121,27 @@ class TrinoK8sResource(TrinoResource):
     )
 
     @asynccontextmanager
-    async def get_client(self, log_override: t.Optional[logging.Logger] = None):
+    async def get_client(
+        self,
+        session_properties: t.Optional[t.Dict[str, t.Any]] = None,
+        log_override: t.Optional[logging.Logger] = None,
+    ):
         # Bring both the coordinator and worker online if they aren't already
         async with self.ensure_available(log_override=log_override):
             # Wait for the status endpoint to return 200
             host, port = await self.k8s.get_service_connection(
                 self.service_name, self.namespace, self.service_port_name
             )
+            extra_connection_args = {}
+            if session_properties:
+                extra_connection_args["session_properties"] = session_properties
             yield trino.dbapi.connect(
                 host=host,
                 port=port,
                 user=self.user,
                 catalog=self.catalog,
                 schema=self.connection_schema,
+                **extra_connection_args,
             )
 
     @asynccontextmanager
@@ -175,7 +185,11 @@ class TrinoRemoteResource(TrinoResource):
     )
 
     @asynccontextmanager
-    async def get_client(self, log_override: t.Optional[logging.Logger] = None):
+    async def get_client(
+        self,
+        session_properties: t.Optional[t.Dict[str, t.Any]] = None,
+        log_override: t.Optional[logging.Logger] = None,
+    ):
         async with self.ensure_available(log_override=log_override):
             yield trino.dbapi.connect(
                 host=self.url,
