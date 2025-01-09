@@ -83,15 +83,13 @@ class ColumnsDefinition(BaseModel):
         ]
 
 
-class ExportReference(BaseModel):
+class TableReference(BaseModel):
     catalog_name: t.Optional[str] = None
     schema_name: t.Optional[str] = None
-    columns: ColumnsDefinition
     table_name: str
-    type: ExportType
-    payload: t.Dict[str, t.Any]
 
-    def table_fqn(self) -> str:
+    @property
+    def fqn(self) -> str:
         names = []
         if self.catalog_name:
             names.append(self.catalog_name)
@@ -99,6 +97,16 @@ class ExportReference(BaseModel):
             names.append(self.schema_name)
         names.append(self.table_name)
         return ".".join(names)
+
+
+class ExportReference(BaseModel):
+    columns: ColumnsDefinition
+    table: TableReference
+    type: ExportType
+    payload: t.Dict[str, t.Any]
+
+    # Used to provide any additional metadata about the export by an exporter
+    source_metadata: t.Dict[str, t.Any] = Field(default_factory=dict)
 
 
 class QueryJobStatus(str, Enum):

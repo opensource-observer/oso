@@ -16,7 +16,7 @@ from aiotrino.dbapi import Connection
 from sqlglot import exp
 from sqlmesh.core.dialect import parse_one
 
-from .types import ExportReference, ExportType
+from .types import ExportReference, ExportType, TableReference
 
 logger = logging.getLogger(__name__)
 
@@ -117,9 +117,9 @@ class FakeLocalImportAdapter(DBImportAdapter):
 
     async def translate_reference(self, reference: ExportReference) -> ExportReference:
         self.logger.info(f"Translating reference {reference}")
-        parquet_file_path = f"{self.temp_dir}/{reference.table_name}.parquet"
+        parquet_file_path = f"{self.temp_dir}/{reference.table.table_name}.parquet"
         return ExportReference(
-            table_name=reference.table_name,
+            table=TableReference(table_name=reference.table.table_name),
             type=ExportType.LOCALFS,
             columns=reference.columns,
             payload={"local_path": parquet_file_path},
@@ -158,7 +158,7 @@ class TrinoImportAdapter(DBImportAdapter):
             import_path = f"{import_path[:-1]}/"
 
         base_create_query = f"""
-            CREATE table "{dest_ref.catalog_name}"."{dest_ref.schema_name}"."{dest_ref.table_name}" (
+            CREATE table "{dest_ref.table.catalog_name}"."{dest_ref.table.schema_name}"."{dest_ref.table.table_name}" (
                 placeholder VARCHAR,
             ) WITH (
                 format = 'PARQUET',
@@ -217,9 +217,11 @@ class TrinoImportAdapter(DBImportAdapter):
             raise NotImplementedError(f"Unsupported reference type {reference.type}")
 
         return ExportReference(
-            catalog_name=self.hive_catalog,
-            schema_name=self.hive_schema,
-            table_name=reference.table_name,
+            table=TableReference(
+                catalog_name=self.hive_catalog,
+                schema_name=self.hive_schema,
+                table_name=reference.table.table_name,
+            ),
             type=ExportType.TRINO,
             columns=reference.columns,
             payload={},
