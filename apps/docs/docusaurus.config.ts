@@ -150,35 +150,15 @@ const config: Config = {
           title: "Docs",
           items: [
             {
-              label: "Get Started",
+              label: "Get started",
               to: "/docs/get-started/",
             },
             {
-              label: "Add your project",
-              to: "/docs/projects/",
+              label: "View datasets",
+              to: "/docs/integrate/datasets/",
             },
             {
-              label: "Get Data",
-              to: "/docs/integrate/",
-            },
-            {
-              label: "Tutorials",
-              to: "/docs/tutorials/",
-            },
-            {
-              label: "Contribute data",
-              to: "/docs/contribute-data/",
-            },
-            {
-              label: "Contribute models",
-              to: "/docs/contribute-models/",
-            },
-            {
-              label: "Guides",
-              to: "/docs/guides/",
-            },
-            {
-              label: "References",
+              label: "Learn how OSO works",
               to: "/docs/references/",
             },
           ],
