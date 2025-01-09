@@ -32,6 +32,7 @@ from .types import (
     QueryJobTaskUpdate,
     QueryJobUpdate,
     QueryJobUpdateScope,
+    TableReference,
 )
 
 logger = logging.getLogger(__name__)
@@ -322,7 +323,7 @@ class MetricsCalculationService:
 
         # This is the export that the workers should write to
         calculation_export = ExportReference(
-            table_name=job_id,
+            table=TableReference(table_name=job_id),
             type=ExportType.GCS,
             columns=ColumnsDefinition(columns=input.columns, dialect=input.dialect),
             payload={"gcs_path": result_path},

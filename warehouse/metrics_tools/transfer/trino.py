@@ -211,6 +211,8 @@ class TrinoExporter(Exporter):
         # Track dropped tables so we don't try to drop them again unnecessarily
         dropped_tables = set()
 
+        count = 0
+
         # We use the gcs path to determine the export time and delete any files
         # that are older than the expiration date.
         for blob in blobs:
@@ -239,3 +241,6 @@ class TrinoExporter(Exporter):
                     blob.delete(if_generation_match=blob.generation)
                 else:
                     logger.debug(f"Would have deleted: {blob.name}")
+                count += 1
+        if count == 0:
+            logger.debug("No expired tables found")
