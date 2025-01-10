@@ -1,10 +1,16 @@
 import logging
+from datetime import datetime
 from urllib.parse import urlparse
 
 from clickhouse_connect.driver.client import Client
-from metrics_tools.compute.types import ExportReference, ExportType
+from metrics_tools.compute.types import ExportReference, ExportType, TableReference
 from metrics_tools.transfer.base import ImporterInterface
-from oso_dagster.utils.clickhouse import create_table, import_data
+from oso_dagster.utils.clickhouse import (
+    create_table,
+    drop_table,
+    import_data,
+    rename_table,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +23,9 @@ class ClickhouseImporter(ImporterInterface):
         return {ExportType.GCS}
 
     async def import_table(
-        self, export_reference: ExportReference, override_table_name: str = ""
+        self,
+        destination_table: TableReference,
+        export_reference: ExportReference,
     ):
         if export_reference.type != ExportType.GCS:
             raise NotImplementedError(
@@ -28,18 +36,32 @@ class ClickhouseImporter(ImporterInterface):
         gcs_bucket = parsed_gcs_path.netloc
         gcs_blob_path = parsed_gcs_path.path.strip("/")
 
-        table_name = override_table_name or export_reference.table.table_name
-        logger.debug(f"Creating table {table_name}")
+        # Write the table to a temporary location in clickhouse (we will rename the table later)
+        loading_table_fqn = (
+            f"{destination_table.fqn}_{datetime.now().strftime('%Y%m%d%H%M%S')}"
+        )
+        logger.debug(f"Creating table {loading_table_fqn}")
         create_table(
             self.ch,
-            table_name,
+            loading_table_fqn,
             export_reference.columns.columns_as("clickhouse"),
         )
         import_path = f"https://storage.googleapis.com/{gcs_bucket}/{gcs_blob_path}/*"
-        logger.debug(f"Importing table {table_name} from {gcs_path}")
+        logger.debug(f"Importing table {loading_table_fqn} from {gcs_path}")
         import_data(
             self.ch,
-            table_name,
+            loading_table_fqn,
             import_path,
             format="Parquet",
         )
+        final_table_fqn = destination_table.fqn
+
+        # Drop existing table if it exists
+        logger.debug(f"Dropping table {destination_table.fqn}")
+        drop_table(self.ch, final_table_fqn)
+
+        # Rename the table to the final destination
+        logger.debug(f"Renaming table {loading_table_fqn} to {final_table_fqn}")
+        rename_table(self.ch, loading_table_fqn, final_table_fqn)
+
+        logger.debug(f"Table {final_table_fqn} imported successfully")

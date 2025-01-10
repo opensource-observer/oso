@@ -86,7 +86,7 @@ def drop_table(client, table_name: str):
     Any
         See https://clickhouse.com/docs/en/integrations/python#client-command-method
     """
-    return client.command(f"DROP TABLE {table_name}")
+    return client.command(f"DROP TABLE IF EXISTS {table_name}")
 
 
 def rename_table(client, from_name: str, to_name: str):

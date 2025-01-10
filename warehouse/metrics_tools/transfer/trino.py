@@ -1,12 +1,9 @@
 import logging
-import os
 import typing as t
 import uuid
 from datetime import datetime
-from urllib.parse import urlparse
 
 from aiotrino.dbapi import Connection
-from google.cloud import storage
 from metrics_tools.compute.types import (
     ColumnsDefinition,
     ExportReference,
@@ -14,6 +11,7 @@ from metrics_tools.compute.types import (
     TableReference,
 )
 from metrics_tools.transfer.base import Exporter
+from metrics_tools.transfer.storage import TimeOrderedStorage
 from sqlglot import exp
 from sqlmesh.core.dialect import parse_one
 
@@ -25,19 +23,15 @@ class TrinoExporter(Exporter):
         self,
         hive_catalog: str,
         hive_schema: str,
-        gcs_bucket: str,
-        gcs_client: storage.Client,
+        time_ordered_storage: TimeOrderedStorage,
         connection: Connection,
-        export_base_path: str = "trino-export",
         log_override: t.Optional[logging.Logger] = None,
     ):
         self.logger = log_override or logger
         self.hive_catalog = hive_catalog
         self.hive_schema = hive_schema
-        self.gcs_bucket = gcs_bucket
         self.connection = connection
-        self.export_base_path = export_base_path
-        self.gcs_client = gcs_client
+        self.time_ordered_storage = time_ordered_storage
 
     async def run_query(self, query: str):
         cursor = await self.connection.cursor()
@@ -110,7 +104,8 @@ class TrinoExporter(Exporter):
 
         # We make cleaning easier by using the export time to allow listing
         # of the export tables
-        gcs_path = f"gs://{self.gcs_bucket}/{self.export_base_path}/{export_time.strftime('%Y/%m/%d/%H')}/{export_table_name}/"
+        # gcs_path = f"gs://{self.gcs_bucket}/{self.export_base_path}/{export_time.strftime('%Y/%m/%d/%H')}/{export_table_name}/"
+        gcs_path = self.export_path(export_time, export_table_name)
 
         export_table_fqn = (
             f'"{self.hive_catalog}"."{self.hive_schema}"."{export_table_name}"'
@@ -183,64 +178,51 @@ class TrinoExporter(Exporter):
         )
 
     def export_path(self, export_time: datetime, export_table_name: str):
-        return f"gs://{self.gcs_bucket}/{self.export_base_path}/{export_time.strftime('%Y/%m/%d/%H')}/{export_table_name}/"
+        return self.time_ordered_storage.generate_path(
+            export_time, f"{export_table_name}/"  # ensure trailing slash
+        )
 
     async def cleanup_ref(self, export_reference: ExportReference):
-        # Delete the table from the hive catalog if it's there
-        gcs_path = export_reference.payload["gcs_path"]
-        parsed_gcs_path = urlparse(gcs_path)
-        export_table_name = os.path.basename(parsed_gcs_path.path.strip("/"))
-
-        drop_query = f"DROP TABLE IF EXISTS {self.hive_catalog}.{self.hive_schema}.{export_table_name}"
-        logger.debug(f"Running drop query: {drop_query}")
-        await self.run_query(drop_query)
-
+        dropped = False
         # Delete everything in the gcs path
-        bucket = self.gcs_client.get_bucket(self.gcs_bucket)
-        blobs = bucket.list_blobs(prefix=parsed_gcs_path.path.strip("/"))
-
-        for blob in blobs:
-            logger.debug(f"Deleting blob: {blob.name}")
-            blob.delete(if_generation_match=blob.generation)
+        for f in self.time_ordered_storage.iter_files(
+            export_reference=export_reference
+        ):
+            # Delete the table from the hive catalog if it exists
+            if not dropped:
+                dropped = True
+                logger.debug(f"Rel path for cleanup {f.rel_path}")
+                table_name = f.rel_path.split("/")[0]
+                drop_query = f"DROP TABLE IF EXISTS {self.hive_catalog}.{self.hive_schema}.{table_name}"
+                logger.debug(f"Running drop query: {drop_query}")
+                await self.run_query(drop_query)
+            # Delete the file
+            f.delete()
 
     async def cleanup_expired(self, expiration: datetime, dry_run: bool = False):
-        # Search for any tables that are older than the expiration date
-        bucket = self.gcs_client.get_bucket(self.gcs_bucket)
-        blobs = bucket.list_blobs(prefix=self.export_base_path)
-
         # Track dropped tables so we don't try to drop them again unnecessarily
         dropped_tables = set()
 
         count = 0
 
-        # We use the gcs path to determine the export time and delete any files
-        # that are older than the expiration date.
-        for blob in blobs:
-            name = t.cast(str, blob.name)
-            export_rel_path = os.path.relpath(name, self.export_base_path)
-            path_parts = export_rel_path.split("/")
-
-            if len(path_parts) < 6:
-                continue
-
-            export_time = datetime.strptime("/".join(path_parts[0:4]), "%Y/%m/%d/%H")
-
-            if export_time < expiration:
-                table_name = path_parts[4]
-                if table_name not in dropped_tables:
-                    drop_query = f"DROP TABLE IF EXISTS {self.hive_catalog}.{self.hive_schema}.{table_name}"
-                    if not dry_run:
-                        logger.debug(f"Running drop query: {drop_query}")
-                        await self.run_query(drop_query)
-                    else:
-                        logger.debug(f"Would have run: {drop_query}")
-                    dropped_tables.add(table_name)
-
+        # The time ordered storage is organized by time so we can iterate over things within a time range
+        for f in self.time_ordered_storage.iter_files(before=expiration):
+            path_parts = f.rel_path.split("/")
+            table_name = path_parts[0]
+            if table_name not in dropped_tables:
+                drop_query = f"DROP TABLE IF EXISTS {self.hive_catalog}.{self.hive_schema}.{table_name}"
                 if not dry_run:
-                    logger.debug(f"Deleting blob: {blob.name}")
-                    blob.delete(if_generation_match=blob.generation)
+                    logger.debug(f"Running drop query: {drop_query}")
+                    await self.run_query(drop_query)
                 else:
-                    logger.debug(f"Would have deleted: {blob.name}")
-                count += 1
+                    logger.debug(f"Would have run: {drop_query}")
+                dropped_tables.add(table_name)
+
+            if not dry_run:
+                logger.debug(f"Deleting: {f.uri}")
+                f.delete()
+            else:
+                logger.debug(f"Would have deleted: {f.uri}")
+            count += 1
         if count == 0:
             logger.debug("No expired tables found")

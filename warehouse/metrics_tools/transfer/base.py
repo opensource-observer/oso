@@ -17,7 +17,9 @@ class ExporterInterface(t.Protocol):
 class ImporterInterface(t.Protocol):
     def supported_types(self) -> t.Set[ExportType]: ...
 
-    async def import_table(self, export_reference: ExportReference): ...
+    async def import_table(
+        self, destination_table: TableReference, export_reference: ExportReference
+    ): ...
 
 
 class Exporter(ExporterInterface):
@@ -37,5 +39,7 @@ class Importer(ImporterInterface):
     def supported_types(self) -> t.Set[ExportType]:
         raise NotImplementedError("Not implemented")
 
-    async def import_table(self, export_reference: ExportReference):
+    async def import_table(
+        self, destination_table: TableReference, export_reference: ExportReference
+    ):
         raise NotImplementedError("Not implemented")
