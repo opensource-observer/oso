@@ -62,7 +62,7 @@ sqlmesh:
     cluster:
       minSize: "0"
       maxSize: "60"
-    defaultSlots: "2"
+    defaultSlots: "4"
     k8s:
       deploymentName: "mcs"
       serviceName: "mcs"
