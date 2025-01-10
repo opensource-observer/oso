@@ -44,6 +44,8 @@ class DagsterConfig(BaseSettings):
     enable_tests: bool = False
     alerts_base_url: str = ""
 
+    gcs_bucket: str = "oso-dataset-transfer-bucket"
+
     # HTTP Caching used with the github repository resolver. This is a uri
     http_cache: t.Optional[str] = None
 

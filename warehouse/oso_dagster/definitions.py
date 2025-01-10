@@ -10,7 +10,10 @@ from dagster_sqlmesh import SQLMeshContextConfig, SQLMeshResource
 from dotenv import load_dotenv
 from metrics_tools.utils.logging import setup_module_logging
 from oso_dagster.resources.clickhouse import ClickhouseImporterResource
-from oso_dagster.resources.storage import TimeOrderedStorageResource
+from oso_dagster.resources.storage import (
+    GCSTimeOrderedStorageResource,
+    TimeOrderedStorageResource,
+)
 from oso_dagster.resources.trino import TrinoExporterResource
 from oso_dagster.utils.dbt import support_home_dir_profiles
 
@@ -106,6 +109,7 @@ def load_definitions():
         k8s = K8sResource()
         trino = TrinoRemoteResource()
         mcs = MCSRemoteResource()
+        time_ordered_storage = TimeOrderedStorageResource()
 
     else:
         logger.info("Loading k8s resources")
@@ -132,8 +136,10 @@ def load_definitions():
                 source_schema="metrics",
             ),
         ]
+        time_ordered_storage = GCSTimeOrderedStorageResource(
+            bucket_name=global_config.gcs_bucket
+        )
 
-    time_ordered_storage = TimeOrderedStorageResource()
     trino_exporter = TrinoExporterResource(
         trino=trino, time_ordered_storage=time_ordered_storage
     )
