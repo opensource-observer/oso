@@ -108,6 +108,9 @@ class ExportReference(BaseModel):
     # Used to provide any additional metadata about the export by an exporter
     source_metadata: t.Dict[str, t.Any] = Field(default_factory=dict)
 
+    def table_fqn(self):
+        return self.table.fqn
+
 
 class QueryJobStatus(str, Enum):
     PENDING = "pending"
