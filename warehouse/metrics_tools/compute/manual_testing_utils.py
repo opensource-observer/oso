@@ -18,6 +18,7 @@ from .types import (
     ExportedTableLoadRequest,
     ExportReference,
     ExportType,
+    TableReference,
 )
 
 logger = logging.getLogger(__name__)
@@ -33,7 +34,9 @@ def run_cache_load(url: str):
     req = ExportedTableLoadRequest(
         map={
             "sqlmesh__metrics.metrics__events_daily_to_artifact__2357434958": ExportReference(
-                table_name="export_metrics__events_daily_to_artifact__2357434958_5def5e890a984cf99f7364ce3c2bb958",
+                table=TableReference(
+                    table_name="export_metrics__events_daily_to_artifact__2357434958_5def5e890a984cf99f7364ce3c2bb958"
+                ),
                 type=ExportType.GCS,
                 payload={
                     "gcs_path": "gs://oso-dataset-transfer-bucket/trino-export/export_metrics__events_daily_to_artifact__2357434958_5def5e890a984cf99f7364ce3c2bb958"
@@ -68,7 +71,9 @@ def run_local_test(
     client.run_cache_manual_load(
         {
             "sqlmesh__metrics.metrics__events_daily_to_artifact__2357434958": ExportReference(
-                table_name="export_metrics__events_daily_to_artifact__2357434958_5def5e890a984cf99f7364ce3c2bb958",
+                table=TableReference(
+                    table_name="export_metrics__events_daily_to_artifact__2357434958_5def5e890a984cf99f7364ce3c2bb958"
+                ),
                 type=ExportType.GCS,
                 payload={
                     "gcs_path": "gs://oso-dataset-transfer-bucket/trino-export/export_metrics__events_daily_to_artifact__2357434958_5def5e890a984cf99f7364ce3c2bb958"

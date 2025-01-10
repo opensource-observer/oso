@@ -2,6 +2,7 @@ from contextlib import contextmanager
 
 import clickhouse_connect
 from dagster import ConfigurableResource, ResourceDependency
+from metrics_tools.transfer.clickhouse import ClickhouseImporter
 from pydantic import Field
 
 from ..utils import SecretReference, SecretResolver
@@ -72,3 +73,12 @@ class ClickhouseResource(ConfigurableResource):
             host=host, username=username, password=password, secure=True
         )
         yield client
+
+
+class ClickhouseImporterResource(ConfigurableResource):
+    clickhouse: ResourceDependency[ClickhouseResource]
+
+    @contextmanager
+    def get(self):
+        with self.clickhouse.get_client() as client:
+            yield ClickhouseImporter(client)
