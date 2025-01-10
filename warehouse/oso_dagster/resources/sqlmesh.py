@@ -129,7 +129,9 @@ class Trino2ClickhouseSQLMeshExporter(SQLMeshExporter):
                             ),
                             log_override=context.log,
                         )
-                        yield MaterializeResult(asset_key=AssetKey(table_name))
+                        yield MaterializeResult(
+                            asset_key=AssetKey(table_name).with_prefix(self._prefix)
+                        )
 
         return export
 
