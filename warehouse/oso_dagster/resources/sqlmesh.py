@@ -101,7 +101,6 @@ class Trino2ClickhouseSQLMeshExporter(SQLMeshExporter):
                         Destination(
                             importer=importer,
                             table=TableReference(
-                                catalog_name=self._destination_catalog,
                                 schema_name=self._destination_schema,
                                 table_name=table_name,
                             ),
