@@ -10,7 +10,7 @@ from pydantic import Field
 
 class TimeOrderedStorageResource(ConfigurableResource):
     @contextmanager
-    def get(self, prefix: str) -> t.Generator[TimeOrderedStorage, None]:
+    def get(self, prefix: str) -> t.Iterator[TimeOrderedStorage]:
         raise NotImplementedError("Not implemented")
 
 
@@ -20,7 +20,7 @@ class GCSTimeOrderedStorageResource(TimeOrderedStorageResource):
     )
 
     @contextmanager
-    def get(self, prefix: str) -> t.Generator[TimeOrderedStorage, None]:
+    def get(self, prefix: str) -> t.Iterator[TimeOrderedStorage]:
         client = storage.Client()
         yield GCSTimeOrderedStorage(
             client=client, bucket_name=self.bucket_name, prefix=prefix

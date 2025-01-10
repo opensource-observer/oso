@@ -13,12 +13,13 @@ from ..resources import SQLMeshExporter
 
 logger = logging.getLogger(__name__)
 
+
 @early_resources_asset_factory()
-def trino_export_factory(
+def sqlmesh_export_factory(
     sqlmesh_infra_config: dict,
     sqlmesh_config: SQLMeshContextConfig,
     sqlmesh_translator: SQLMeshDagsterTranslator,
-    trino_exporters: ResourceParam[t.List[SQLMeshExporter]],
+    sqlmesh_exporters: ResourceParam[t.List[SQLMeshExporter]],
 ):
     environment = sqlmesh_infra_config["environment"]
 
@@ -31,14 +32,12 @@ def trino_export_factory(
             if "export" not in model.tags:
                 continue
             # Create a export assets for this
-            for exporter in trino_exporters:
+            for exporter in sqlmesh_exporters:
                 asset_def = exporter.create_export_asset(
                     mesh,
                     name,
                     model,
-                    sqlmesh_translator.get_asset_key_from_model(
-                        mesh.context, model
-                    ),
+                    sqlmesh_translator.get_asset_key_from_model(mesh.context, model),
                 )
                 assets.append(asset_def)
                 logger.debug(f"exporting for {name} to {asset_def.key.to_string()}")

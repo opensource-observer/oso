@@ -7,20 +7,22 @@ to transfer between databases through gcs.
 
 import logging
 import typing as t
+from dataclasses import dataclass
 
 from metrics_tools.compute.types import ExportType, TableReference
 from metrics_tools.transfer.base import ExporterInterface, ImporterInterface
-from pydantic import BaseModel
 
 module_logger = logging.getLogger(__name__)
 
 
-class Source(BaseModel):
+@dataclass(kw_only=True)
+class Source:
     exporter: ExporterInterface
     table: TableReference
 
 
-class Destination(BaseModel):
+@dataclass(kw_only=True)
+class Destination:
     importer: ImporterInterface
     table: TableReference
 

@@ -25,7 +25,7 @@ class TrinoResource(ConfigurableResource):
         self,
         session_properties: t.Optional[t.Dict[str, t.Any]] = None,
         log_override: t.Optional[logging.Logger] = None,
-    ) -> t.Generator[Connection, None]:
+    ) -> t.Iterator[Connection]:
         raise NotImplementedError(
             "get_client not implemented on the base TrinoResource"
         )
@@ -223,7 +223,7 @@ class TrinoRemoteResource(TrinoResource):
 
 
 class TrinoExporterResource(ConfigurableResource):
-    trino: ResourceDependency[K8sResource]
+    trino: ResourceDependency[TrinoResource]
 
     time_ordered_storage: ResourceDependency[TimeOrderedStorageResource]
 
@@ -237,15 +237,18 @@ class TrinoExporterResource(ConfigurableResource):
         description="Hive schema used for export",
     )
 
-    @contextmanager
-    def get_exporter(
+    @asynccontextmanager
+    async def get_exporter(
         self, export_prefix: str, log_override: t.Optional[logging.Logger] = None
-    ) -> t.Generator[TrinoExporter, None]:
+    ) -> t.AsyncGenerator[TrinoExporter, None]:
         with self.time_ordered_storage.get(export_prefix) as storage:
-            yield TrinoExporter(
-                hive_catalog=self.hive_catalog,
-                hive_schema=self.hive_schema,
-                time_ordered_storage=storage,
-                connection=self.trino.get_client(),
-                log_override=log_override,
-            )
+            async with self.trino.async_get_client(
+                log_override=log_override
+            ) as connection:
+                yield TrinoExporter(
+                    hive_catalog=self.hive_catalog,
+                    hive_schema=self.hive_schema,
+                    time_ordered_storage=storage,
+                    connection=connection,
+                    log_override=log_override,
+                )

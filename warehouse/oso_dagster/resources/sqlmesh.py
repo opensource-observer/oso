@@ -85,7 +85,7 @@ class Trino2ClickhouseSQLMeshExporter(SQLMeshExporter):
             clickhouse_importer: ClickhouseImporterResource,
         ) -> None:
             table_name = key.path[-1]
-            with trino_exporter.get_exporter(
+            async with trino_exporter.get_exporter(
                 "trino-export", log_override=context.log
             ) as exporter:
                 with clickhouse_importer.get() as importer:

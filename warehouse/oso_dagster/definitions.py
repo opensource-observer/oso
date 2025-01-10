@@ -9,6 +9,9 @@ from dagster_k8s import k8s_job_executor
 from dagster_sqlmesh import SQLMeshContextConfig, SQLMeshResource
 from dotenv import load_dotenv
 from metrics_tools.utils.logging import setup_module_logging
+from oso_dagster.resources.clickhouse import ClickhouseImporterResource
+from oso_dagster.resources.storage import TimeOrderedStorageResource
+from oso_dagster.resources.trino import TrinoExporterResource
 from oso_dagster.utils.dbt import support_home_dir_profiles
 
 from . import assets
@@ -87,7 +90,7 @@ def load_definitions():
         path=global_config.sqlmesh_dir, gateway=global_config.sqlmesh_gateway
     )
 
-    trino_exporters = [
+    sqlmesh_exporter = [
         Trino2ClickhouseSQLMeshExporter(
             ["clickhouse_metrics"],
             destination_catalog="clickhouse",
@@ -96,7 +99,6 @@ def load_definitions():
             source_schema="metrics",
         ),
     ]
-
     # If we aren't running in k8s, we need to use a dummy k8s resource that will
     # error if we attempt to use it
     if not global_config.enable_k8s:
@@ -121,7 +123,7 @@ def load_definitions():
             service_name=global_config.mcs_k8s_service_name,
             deployment_name=global_config.mcs_k8s_deployment_name,
         )
-        trino_exporters = [
+        sqlmesh_exporter = [
             Trino2ClickhouseSQLMeshExporter(
                 ["clickhouse_metrics"],
                 destination_catalog="clickhouse",
@@ -130,6 +132,12 @@ def load_definitions():
                 source_schema="metrics",
             ),
         ]
+
+    time_ordered_storage = TimeOrderedStorageResource()
+    trino_exporter = TrinoExporterResource(
+        trino=trino, time_ordered_storage=time_ordered_storage
+    )
+    clickhouse_importer = ClickhouseImporterResource(clickhouse=clickhouse)
 
     sqlmesh_infra_config = {
         "environment": "prod",
@@ -151,7 +159,10 @@ def load_definitions():
         sqlmesh_infra_config=sqlmesh_infra_config,
         global_config=global_config,
         sqlmesh_translator=sqlmesh_translator,
-        trino_exporters=trino_exporters,
+        sqlmesh_exporters=sqlmesh_exporter,
+        trino_exporter=trino_exporter,
+        clickhouse_importer=clickhouse_importer,
+        time_ordered_storage=time_ordered_storage,
     )
 
     asset_factories = load_all_assets_from_package(assets, early_resources)
@@ -200,7 +211,10 @@ def load_definitions():
         "mcs": mcs,
         "global_config": global_config,
         "sqlmesh_translator": sqlmesh_translator,
-        "trino_exporters": trino_exporters,
+        "sqlmesh_exporters": sqlmesh_exporter,
+        "trino_exporter": trino_exporter,
+        "clickhouse_importer": clickhouse_importer,
+        "time_ordered_storage": time_ordered_storage,
     }
     for target in global_config.dbt_manifests:
         resources[f"{target}_dbt"] = DbtCliResource(
