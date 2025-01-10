@@ -5,11 +5,14 @@ figured out through things like dlt. However, there are instances where we need
 to transfer between databases through gcs.
 """
 
+import logging
 import typing as t
 
 from metrics_tools.compute.types import ExportType, TableReference
 from metrics_tools.transfer.base import ExporterInterface, ImporterInterface
 from pydantic import BaseModel
+
+module_logger = logging.getLogger(__name__)
 
 
 class Source(BaseModel):
@@ -25,10 +28,20 @@ class Destination(BaseModel):
         return self.importer.supported_types()
 
 
-class DataTransferCoordinator:
-    async def transfer(self, source: Source, destination: Destination):
-        supported_types = destination.supported_types()
-        export_reference = await source.exporter.export_table(
-            source.table, supported_types
-        )
-        await destination.importer.import_table(export_reference)
+async def transfer(
+    source: Source,
+    destination: Destination,
+    log_override: t.Optional[logging.Logger] = None,
+):
+    logger = log_override or module_logger
+
+    supported_types = destination.supported_types()
+    logger.info(f"Exporting table {source.table.fqn}")
+    export_reference = await source.exporter.export_table(source.table, supported_types)
+
+    try:
+        logger.info(f"Importing exported result into {destination.table.fqn}")
+        await destination.importer.import_table(destination.table, export_reference)
+    finally:
+        logger.info("Cleaning up export reference")
+        await source.exporter.cleanup_ref(export_reference)

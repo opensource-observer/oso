@@ -3,11 +3,14 @@ Auxiliary resources for sqlmesh
 """
 
 import typing as t
-from datetime import datetime
 
 from dagster import AssetExecutionContext, AssetKey, AssetsDefinition, asset
 from dagster_sqlmesh import SQLMeshDagsterTranslator
 from dagster_sqlmesh.controller.base import SQLMeshInstance
+from metrics_tools.compute.types import TableReference
+from metrics_tools.transfer.coordinator import Destination, Source, transfer
+from oso_dagster.resources.clickhouse import ClickhouseImporterResource
+from oso_dagster.resources.trino import TrinoExporterResource
 from sqlglot import exp
 from sqlmesh import Context
 from sqlmesh.core.dialect import parse_one
@@ -69,9 +72,6 @@ class Trino2ClickhouseSQLMeshExporter(SQLMeshExporter):
     def create_export_asset(
         self, mesh: SQLMeshInstance, name: str, model: Model, key: AssetKey
     ) -> AssetsDefinition:
-        from .clickhouse import ClickhouseResource
-        from .trino import TrinoResource
-
         clickhouse_key = self.convert_model_key_to_clickhouse_key(key)
 
         @asset(
@@ -81,49 +81,34 @@ class Trino2ClickhouseSQLMeshExporter(SQLMeshExporter):
         )
         async def export(
             context: AssetExecutionContext,
-            trino: TrinoResource,
-            clickhouse: ClickhouseResource,
+            trino_exporter: TrinoExporterResource,
+            clickhouse_importer: ClickhouseImporterResource,
         ) -> None:
             table_name = key.path[-1]
-            async with trino.get_client(
-                session_properties={
-                    # Clickhouse doesn't support retries on trino so we _must_
-                    # disable it for insert queries to work
-                    "retry_policy": "None",
-                    # For whatever reason this is also necessary, writes didn't
-                    # work in manual testing without this set.
-                    "clickhouse.non_transactional_insert": "true",
-                }
-            ) as connection:
-                # Export the data from trino to clickhouse by creating a table
-                # that has a suffix
-                exported_table_name = f"{clickhouse_key.path[-1]}_{datetime.now().strftime('%Y%m%d%H%M%S')}"
-                cursor = connection.cursor()
-                context.log.info(f"Exporting {table_name} to {exported_table_name}")
-                create_query = self.generate_create_table_query(
-                    model,
-                    self.trino_source_table(table_name),
-                    self.trino_destination_table(exported_table_name),
-                )
-                context.log.info(f"executing sql: {create_query.sql(dialect='trino')}")
-                cursor.execute(create_query.sql(dialect="trino"))
-                # Insert the data into the new table
-                insert_query = self.generate_insert_query(
-                    model,
-                    self.trino_source_table(table_name),
-                    self.trino_destination_table(exported_table_name),
-                )
-                context.log.info(f"executing sql: {insert_query.sql(dialect='trino')}")
-                cursor.execute(insert_query.sql(dialect="trino"))
+            with trino_exporter.get_exporter(
+                "trino-export", log_override=context.log
+            ) as exporter:
+                with clickhouse_importer.get() as importer:
+                    await transfer(
+                        Source(
+                            exporter=exporter,
+                            table=TableReference(
+                                catalog_name=self._source_catalog,
+                                schema_name=self._source_schema,
+                                table_name=table_name,
+                            ),
+                        ),
+                        Destination(
+                            importer=importer,
+                            table=TableReference(
+                                catalog_name=self._destination_catalog,
+                                schema_name=self._destination_schema,
+                                table_name=table_name,
+                            ),
+                        ),
+                        log_override=context.log,
+                    )
 
-            with clickhouse.get_client() as clickhouse_client:
-                # Create the clickhouse table
-                view_create_query = f"""
-                    CREATE OR REPLACE VIEW {self.clickhouse_destination_table(table_name)} AS
-                    SELECT * FROM {self.clickhouse_destination_table(exported_table_name)}
-                """
-                context.log.info(f"executing sql (clickhouse): {view_create_query}")
-                clickhouse_client.query(view_create_query)
             return None
 
         return export

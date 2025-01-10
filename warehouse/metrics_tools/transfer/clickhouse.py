@@ -1,4 +1,5 @@
 import logging
+import typing as t
 from datetime import datetime
 from urllib.parse import urlparse
 
@@ -16,8 +17,9 @@ logger = logging.getLogger(__name__)
 
 
 class ClickhouseImporter(ImporterInterface):
-    def __init__(self, ch: Client):
+    def __init__(self, ch: Client, log_override: t.Optional[logging.Logger] = None):
         self.ch = ch
+        self.logger = log_override or logger
 
     def supported_types(self):
         return {ExportType.GCS}
@@ -40,14 +42,14 @@ class ClickhouseImporter(ImporterInterface):
         loading_table_fqn = (
             f"{destination_table.fqn}_{datetime.now().strftime('%Y%m%d%H%M%S')}"
         )
-        logger.debug(f"Creating table {loading_table_fqn}")
+        self.logger.debug(f"Creating table {loading_table_fqn}")
         create_table(
             self.ch,
             loading_table_fqn,
             export_reference.columns.columns_as("clickhouse"),
         )
         import_path = f"https://storage.googleapis.com/{gcs_bucket}/{gcs_blob_path}/*"
-        logger.debug(f"Importing table {loading_table_fqn} from {gcs_path}")
+        self.logger.debug(f"Importing table {loading_table_fqn} from {gcs_path}")
         import_data(
             self.ch,
             loading_table_fqn,
@@ -57,11 +59,11 @@ class ClickhouseImporter(ImporterInterface):
         final_table_fqn = destination_table.fqn
 
         # Drop existing table if it exists
-        logger.debug(f"Dropping table {destination_table.fqn}")
+        self.logger.debug(f"Dropping table {destination_table.fqn}")
         drop_table(self.ch, final_table_fqn)
 
         # Rename the table to the final destination
-        logger.debug(f"Renaming table {loading_table_fqn} to {final_table_fqn}")
+        self.logger.debug(f"Renaming table {loading_table_fqn} to {final_table_fqn}")
         rename_table(self.ch, loading_table_fqn, final_table_fqn)
 
-        logger.debug(f"Table {final_table_fqn} imported successfully")
+        self.logger.debug(f"Table {final_table_fqn} imported successfully")
