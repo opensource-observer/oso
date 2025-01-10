@@ -4,7 +4,14 @@ Auxiliary resources for sqlmesh
 
 import typing as t
 
-from dagster import AssetExecutionContext, AssetKey, AssetsDefinition, asset
+from dagster import (
+    AssetExecutionContext,
+    AssetKey,
+    AssetOut,
+    AssetsDefinition,
+    MaterializeResult,
+    multi_asset,
+)
 from dagster_sqlmesh import SQLMeshDagsterTranslator
 from dagster_sqlmesh.controller.base import SQLMeshInstance
 from metrics_tools.compute.types import TableReference
@@ -21,7 +28,7 @@ class SQLMeshExporter:
     name: str
 
     def create_export_asset(
-        self, mesh: SQLMeshInstance, name: str, model: Model, key: AssetKey
+        self, mesh: SQLMeshInstance, to_export: t.List[t.Tuple[Model, AssetKey]]
     ) -> AssetsDefinition:
         raise NotImplementedError("Not implemented")
 
@@ -66,49 +73,63 @@ class Trino2ClickhouseSQLMeshExporter(SQLMeshExporter):
     def trino_source_table(self, table_name: str):
         return f"{self._source_catalog}.{self._source_schema}.{table_name}"
 
-    def convert_model_key_to_clickhouse_key(self, key: AssetKey) -> AssetKey:
-        return AssetKey(key.path[-1]).with_prefix(self._prefix)
+    def convert_model_key_to_clickhouse_out(self, key: AssetKey) -> AssetOut:
+        return AssetOut(
+            key_prefix=self._prefix,
+            is_required=False,
+        )
 
     def create_export_asset(
-        self, mesh: SQLMeshInstance, name: str, model: Model, key: AssetKey
+        self, mesh: SQLMeshInstance, to_export: t.List[t.Tuple[Model, AssetKey]]
     ) -> AssetsDefinition:
-        clickhouse_key = self.convert_model_key_to_clickhouse_key(key)
+        clickhouse_outs = {
+            key.path[-1]: self.convert_model_key_to_clickhouse_out(key)
+            for _, key in to_export
+        }
+        internal_asset_deps: t.Mapping[str, t.Set[AssetKey]] = {
+            key.path[-1]: {key} for _, key in to_export
+        }
+        deps = [key for _, key in to_export]
 
-        @asset(
-            key=clickhouse_key,
-            deps=[key],
+        @multi_asset(
+            outs=clickhouse_outs,
+            internal_asset_deps=internal_asset_deps,
+            deps=deps,
             compute_kind="sqlmesh-export",
+            can_subset=True,
         )
         async def export(
             context: AssetExecutionContext,
             trino_exporter: TrinoExporterResource,
             clickhouse_importer: ClickhouseImporterResource,
-        ) -> None:
-            table_name = key.path[-1]
+        ):
             async with trino_exporter.get_exporter(
                 "trino-export", log_override=context.log
             ) as exporter:
                 with clickhouse_importer.get() as importer:
-                    await transfer(
-                        Source(
-                            exporter=exporter,
-                            table=TableReference(
-                                catalog_name=self._source_catalog,
-                                schema_name=self._source_schema,
-                                table_name=table_name,
-                            ),
-                        ),
-                        Destination(
-                            importer=importer,
-                            table=TableReference(
-                                schema_name=self._destination_schema,
-                                table_name=table_name,
-                            ),
-                        ),
-                        log_override=context.log,
+                    selected_output_names = (
+                        context.op_execution_context.selected_output_names
                     )
-
-            return None
+                    for table_name in selected_output_names:
+                        await transfer(
+                            Source(
+                                exporter=exporter,
+                                table=TableReference(
+                                    catalog_name=self._source_catalog,
+                                    schema_name=self._source_schema,
+                                    table_name=table_name,
+                                ),
+                            ),
+                            Destination(
+                                importer=importer,
+                                table=TableReference(
+                                    schema_name=self._destination_schema,
+                                    table_name=table_name,
+                                ),
+                            ),
+                            log_override=context.log,
+                        )
+                        yield MaterializeResult(asset_key=AssetKey(table_name))
 
         return export
 
