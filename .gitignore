@@ -78,5 +78,3 @@ production/
 # cube.dev
 core.1
 .cubecloud
-
-oso_gcp_credentials.json
