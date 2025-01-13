@@ -69,14 +69,6 @@ class GithubRepositorySBOMItem(BaseModel):
     snapshot_at: datetime
 
 
-class GitHubRespositoryMissingSBOMItem(BaseModel):
-    artifact_namespace: str
-    artifact_name: str
-    artifact_source: str
-    artifact_url: str
-    snapshot_at: datetime
-
-
 class GithubClientConfig(BaseModel):
     gh_token: str
     rate_limit_max_retry: int = 5
@@ -294,13 +286,19 @@ class GithubRepositoryResolver:
             sbom_list: t.List[GithubRepositorySBOMItem] = []
 
             for package in graph.packages:
-                package_name = package.name or "unknown"
-
-                if package_name.find(":") == -1:
+                if not package.external_refs:
+                    logger.warning(
+                        "Skipping %s for sbom %s, no external refs found",
+                        f"{package.name}",
+                        f"{owner}/{name}",
+                    )
                     continue
 
-                package_source = package_name[0 : package_name.index(":")]
-                package_name = package_name[package_name.index(":") + 1 :]
+                package_locator = package.external_refs[0].reference_locator
+                package_source = package_locator[
+                    len("pkg:") : package_locator.index("/")
+                ]
+                package_name = package.name or "UNKNOWN"
 
                 sbom_list.append(
                     GithubRepositorySBOMItem(
