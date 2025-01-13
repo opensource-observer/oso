@@ -24,3 +24,4 @@ where
     select artifact_id
     from {{ ref('odt_int__devtool_artifact_filter') }}
   )
+  and dependency_project_id != dependent_project_id

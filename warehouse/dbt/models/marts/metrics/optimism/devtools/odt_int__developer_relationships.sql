@@ -78,6 +78,6 @@ select
 from developer_relationships
 where
   count_interactions > {{ interaction_threshold }}
-  and date_last_interaction >= date_sub(
+  and date(date_last_interaction) >= date_sub(
     current_date(), interval {{ last_interaction_threshold_months }} month
   )
