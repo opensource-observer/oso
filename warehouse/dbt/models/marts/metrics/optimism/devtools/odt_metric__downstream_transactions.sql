@@ -16,15 +16,7 @@ project_contracts as (
     project_id,
     artifact_id
   from {{ ref('artifacts_by_project_v1') }}
-  where artifact_source in (
-    'OPTIMISM', 'BASE', 'MODE', 'ZORA', 'METAL', 'FRAX'
-  )
-  and artifact_id not in (
-    select artifact_id
-    from {{ ref('int_artifacts_in_ossd_by_project') }}
-    where artifact_type = 'WALLET'
-  )
-  and project_id in (select onchain_project_id from devtool_to_onchain)
+  where project_id in (select onchain_project_id from devtool_to_onchain)
 ),
 
 downstream_transactions as (
