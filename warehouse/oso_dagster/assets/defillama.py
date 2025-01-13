@@ -7,6 +7,7 @@ DEFI_LLAMA_PROTOCOLS = [
     "aave-v2",
     "aave-v3",
     "optimism-bridge",
+    "optimism-foundation",
     # Old protocols...
     "ether.fi",
     "compound-finance",
