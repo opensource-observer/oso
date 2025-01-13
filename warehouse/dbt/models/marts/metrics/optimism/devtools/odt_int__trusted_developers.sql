@@ -1,7 +1,6 @@
 {% set active_months_threshold = 3 %}
 {% set commits_threshold = 20 %}
 {% set last_commit_threshold_months = 12 %}
-{% set bot_regex = '(^|[^a-zA-Z0-9_])bot([^a-zA-Z0-9_]|$)|bot$' %}
 
 with developers as (
   select
@@ -21,7 +20,9 @@ with developers as (
     on events.to_artifact_id = repositories.artifact_id
   where
     events.event_type = 'COMMIT_CODE'
-    and not regexp_contains(users.display_name, r"{{ bot_regex }}")
+    and not regexp_contains(
+      users.display_name, r'(^|[^a-zA-Z0-9_])bot([^a-zA-Z0-9_]|$)|bot$'
+    )
     and repositories.language in ('TypeScript', 'Solidity', 'Rust')
     and repositories.project_id in (
       select distinct project_id
