@@ -15,7 +15,12 @@ with all_dependencies as (
 
 select *
 from all_dependencies
-where dependent_project_id in (
-  select distinct project_id
-  from {{ ref('odt_int__onchain_project_filter') }}
-)
+where
+  dependent_project_id in (
+    select distinct project_id
+    from {{ ref('odt_int__onchain_project_filter') }}
+  )
+  and dependency_artifact_id in (
+    select artifact_id
+    from {{ ref('odt_int__devtool_artifact_filter') }}
+  )
