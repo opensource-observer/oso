@@ -7,7 +7,8 @@ with developers as (
   select
     users.user_id as developer_id,
     users.display_name as developer_name,
-    coalesce(max(repositories.language = 'Solidity'), false) as is_solidity_dev,
+    coalesce(max(repositories.language = 'Solidity'), false)
+      as is_solidity_developer,
     sum(events.amount) as total_commits,
     count(distinct date_trunc(events.time, month)) as active_months,
     min(date(events.time)) as first_commit,

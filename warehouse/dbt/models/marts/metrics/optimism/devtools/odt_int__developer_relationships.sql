@@ -2,7 +2,9 @@
 {% set last_interaction_threshold_months = 36 %}
 
 with trusted_developers as (
-  select distinct developer_id
+  select distinct
+    developer_id,
+    is_solidity_developer
   from {{ ref('odt_int__trusted_developers') }}
 ),
 
@@ -48,6 +50,7 @@ developer_interactions as (
 developer_relationships as (
   select
     onchain_commits.developer_id,
+    trusted_developers.is_solidity_developer,
     onchain_commits.onchain_project_id,
     onchain_commits.onchain_artifact_id,
     developer_interactions.other_project_id,
@@ -58,8 +61,11 @@ developer_relationships as (
   from onchain_commits
   inner join developer_interactions
     on onchain_commits.developer_id = developer_interactions.developer_id
+  inner join {{ ref('odt_int__trusted_developers') }} as trusted_developers
+    on onchain_commits.developer_id = trusted_developers.developer_id
   group by
     onchain_commits.developer_id,
+    trusted_developers.is_solidity_developer,
     onchain_commits.onchain_project_id,
     onchain_commits.onchain_artifact_id,
     developer_interactions.other_project_id,
@@ -68,6 +74,7 @@ developer_relationships as (
 
 select
   developer_id,
+  is_solidity_developer,
   onchain_project_id,
   onchain_artifact_id,
   other_project_id,
