@@ -1,4 +1,4 @@
-{% set interaction_threshold = 1 %} 
+{% set interaction_threshold = 1 %}
 {% set last_interaction_threshold_months = 36 %}
 
 with trusted_developers as (
