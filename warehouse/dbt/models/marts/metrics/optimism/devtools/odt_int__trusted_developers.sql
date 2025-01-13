@@ -1,6 +1,6 @@
 {% set active_months_threshold = 3 %}
 {% set commits_threshold = 20 %}
-{% set last_commit_threshold = '2024-01-01' %}
+{% set last_commit_threshold_months = 12 %}
 {% set bot_regex = '(^|[^a-zA-Z0-9_])bot([^a-zA-Z0-9_]|$)|bot$' %}
 
 with developers as (
@@ -35,5 +35,5 @@ select * from developers
 where
   total_commits >= {{ commits_threshold }}
   and active_months >= {{ active_months_threshold }}
-  and last_commit >= "{{ last_commit_threshold }}"
+  and last_commit >= date_sub(current_date(), interval {{ last_commit_threshold_months }} month)
 order by developer_name
