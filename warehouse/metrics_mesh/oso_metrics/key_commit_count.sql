@@ -7,8 +7,7 @@ select distinct
   ),
   '' as from_artifact_id,
   'TOTAL_COMMITS' as metric,
-  count(*) as amount,
-  'COUNT' as unit
+  count(*) as amount
 from metrics.events_daily_to_artifact as events
 where event_type = 'COMMIT_CODE'
 group by 2, 3

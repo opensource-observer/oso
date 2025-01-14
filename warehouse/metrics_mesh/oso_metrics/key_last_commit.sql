@@ -11,8 +11,7 @@ select distinct
     split_part(
       cast(max(bucket_day) as string), ' ', 1
     )
-  ) as amount,
-  'UNIX_TIMESTAMP' as unit
+  ) as amount
 from metrics.events_daily_to_artifact as events
 where event_type = 'COMMIT_CODE'
 group by 2, 3

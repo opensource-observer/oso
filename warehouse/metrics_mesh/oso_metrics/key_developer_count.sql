@@ -7,8 +7,10 @@ select distinct
   ),
   '' as from_artifact_id,
   'DEVELOPER_COUNT' as metric,
-  count(distinct from_artifact_id) as amount,
-  'COUNT' as unit
+  count(distinct from_artifact_id) as amount
 from metrics.events_daily_to_artifact as events
-where event_type in ('COMMIT_CODE', 'PULL_REQUEST_OPENED')
+where event_type in (
+  'COMMIT_CODE',
+  'PULL_REQUEST_OPENED'
+)
 group by 2, 3
