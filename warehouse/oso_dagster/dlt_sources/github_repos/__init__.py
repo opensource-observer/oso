@@ -1,30 +1,26 @@
 import logging
-import arrow
-from datetime import datetime, UTC
+import typing as t
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from enum import Enum
-from typing import List, Optional, Iterable, cast, Any
-from urllib.parse import urlparse, ParseResult
+from urllib.parse import ParseResult, urlparse
 
-import httpx
-import hishel
+import arrow
 import dlt
-from oso_dagster.factories.dlt import pydantic_to_dlt_nullable_columns
+import hishel
+import httpx
 import polars as pl
-from pydantic import BaseModel, ValidationError
 from githubkit import GitHub
 from githubkit.exception import RequestFailed
+from githubkit.retry import RetryChainDecision, RetryRateLimit, RetryServerError
 from githubkit.versions.latest.models import (
-    MinimalRepository,
     FullRepository,
+    MinimalRepository,
     MinimalRepositoryPropLicense,
 )
-from githubkit.retry import RetryRateLimit, RetryChainDecision, RetryServerError
-
-
-from oso_dagster import constants
+from oso_dagster.factories.dlt import pydantic_to_dlt_nullable_columns
 from oso_dagster.utils import get_async_http_cache_storage, get_sync_http_cache_storage
-
+from pydantic import BaseModel, ValidationError
 
 logger = logging.getLogger(__name__)
 
@@ -39,12 +35,12 @@ class ParsedGithubURL:
     parsed_url: ParseResult
     url: str
     owner: str
-    repository: Optional[str] = None
+    repository: t.Optional[str] = None
     type: GithubURLType
 
 
 class Repository(BaseModel):
-    ingestion_time: Optional[datetime]
+    ingestion_time: t.Optional[datetime]
     id: int
     node_id: str
     owner: str
@@ -69,15 +65,7 @@ class GithubRepositorySBOMItem(BaseModel):
     artifact_source: str
     package: str
     package_source: str
-    package_version: Optional[str]
-    snapshot_at: datetime
-
-
-class GitHubRespositoryMissingSBOMItem(BaseModel):
-    artifact_namespace: str
-    artifact_name: str
-    artifact_source: str
-    artifact_url: str
+    package_version: t.Optional[str]
     snapshot_at: datetime
 
 
@@ -85,6 +73,7 @@ class GithubClientConfig(BaseModel):
     gh_token: str
     rate_limit_max_retry: int = 5
     server_error_max_rety: int = 3
+    http_cache: t.Optional[str] = None
 
 
 class InvalidGithubURL(Exception):
@@ -101,9 +90,9 @@ class CachedGithub(GitHub):
 
     def __init__(
         self,
-        auth: Any = None,
-        sync_storage: Optional[hishel.BaseStorage] = None,
-        async_storage: Optional[hishel.AsyncBaseStorage] = None,
+        auth: t.Any = None,
+        sync_storage: t.Optional[hishel.BaseStorage] = None,
+        async_storage: t.Optional[hishel.AsyncBaseStorage] = None,
         **kwargs,
     ):
         super().__init__(auth, **kwargs)
@@ -134,7 +123,7 @@ def gh_repository_to_repository(
     license_spdx_id: str = ""
     license_name: str = ""
     if repo.license_:
-        l = cast(MinimalRepositoryPropLicense, repo.license_).model_dump()
+        l = t.cast(MinimalRepositoryPropLicense, repo.license_).model_dump()
         license_spdx_id = l.get("spdx_id", "")
         license_name = l.get("name", "")
 
@@ -199,7 +188,7 @@ class GithubRepositoryResolver:
             case GithubURLType.REPOSITORY:
                 return self.get_repo(parsed)
 
-    def get_repos_for_entity(self, parsed: ParsedGithubURL) -> Iterable[Repository]:
+    def get_repos_for_entity(self, parsed: ParsedGithubURL) -> t.Iterable[Repository]:
         try:
             repos = self.get_repos_for_org(parsed)
             for repo in repos:
@@ -225,7 +214,7 @@ class GithubRepositoryResolver:
         )
         return repos
 
-    def get_repo(self, parsed: ParsedGithubURL) -> Iterable[Repository]:
+    def get_repo(self, parsed: ParsedGithubURL) -> t.Iterable[Repository]:
         if not parsed.repository:
             raise Exception("Repository must be set")
         try:
@@ -287,23 +276,29 @@ class GithubRepositoryResolver:
 
     def get_sbom_for_repo(
         self, owner: str, name: str
-    ) -> List[GithubRepositorySBOMItem]:
+    ) -> t.List[GithubRepositorySBOMItem]:
         try:
             sbom = self._gh.rest.dependency_graph.export_sbom(
                 owner,
                 name,
             )
             graph = sbom.parsed_data.sbom
-            sbom_list: List[GithubRepositorySBOMItem] = []
+            sbom_list: t.List[GithubRepositorySBOMItem] = []
 
             for package in graph.packages:
-                package_name = package.name or "unknown"
-
-                if package_name.find(":") == -1:
+                if not package.external_refs:
+                    logger.warning(
+                        "Skipping %s for sbom %s, no external refs found",
+                        f"{package.name}",
+                        f"{owner}/{name}",
+                    )
                     continue
 
-                package_source = package_name[0 : package_name.index(":")]
-                package_name = package_name[package_name.index(":") + 1 :]
+                package_locator = package.external_refs[0].reference_locator
+                package_source = package_locator[
+                    len("pkg:") : package_locator.index("/")
+                ]
+                package_name = package.name or "UNKNOWN"
 
                 sbom_list.append(
                     GithubRepositorySBOMItem(
@@ -337,12 +332,12 @@ class GithubRepositoryResolver:
 
     @staticmethod
     def get_github_client(config: GithubClientConfig) -> GitHub:
-        if constants.http_cache:
-            logger.debug("Using the cache at: %s", constants.http_cache)
+        if config.http_cache:
+            logger.debug("Using the cache at: %s", config.http_cache)
             return CachedGithub(
                 config.gh_token,
-                sync_storage=get_sync_http_cache_storage(constants.http_cache),
-                async_storage=get_async_http_cache_storage(constants.http_cache),
+                sync_storage=get_sync_http_cache_storage(config.http_cache),
+                async_storage=get_async_http_cache_storage(config.http_cache),
                 auto_retry=RetryChainDecision(
                     RetryRateLimit(max_retry=config.rate_limit_max_retry),
                     RetryServerError(max_retry=config.server_error_max_rety),
@@ -371,6 +366,7 @@ def oss_directory_github_repositories_resource(
     gh_token: str = dlt.secrets.value,
     rate_limit_max_retry: int = 5,
     server_error_max_rety: int = 3,
+    http_cache: t.Optional[str] = None,
 ):
     """Based on the oss_directory data we resolve repositories"""
 
@@ -378,6 +374,7 @@ def oss_directory_github_repositories_resource(
         gh_token=gh_token,
         rate_limit_max_retry=rate_limit_max_retry,
         server_error_max_rety=server_error_max_rety,
+        http_cache=http_cache,
     )
 
     gh = GithubRepositoryResolver.get_github_client(config)
@@ -397,6 +394,7 @@ def oss_directory_github_sbom_resource(
     gh_token: str = dlt.secrets.value,
     rate_limit_max_retry: int = 5,
     server_error_max_rety: int = 3,
+    http_cache: t.Optional[str] = None,
 ):
     """Retrieve SBOM information for GitHub repositories"""
 
@@ -404,6 +402,7 @@ def oss_directory_github_sbom_resource(
         gh_token=gh_token,
         rate_limit_max_retry=rate_limit_max_retry,
         server_error_max_rety=server_error_max_rety,
+        http_cache=http_cache,
     )
 
     gh = GithubRepositoryResolver.get_github_client(config)

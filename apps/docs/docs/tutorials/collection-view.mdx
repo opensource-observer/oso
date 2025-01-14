@@ -1,0 +1,300 @@
+---
+title: View a Collection of Projects
+sidebar_position: 1
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+Get a high level view of key metrics for a collection of projects. New to OSO? Check out our [Getting Started guide](../get-started/index.md) to set up your BigQuery or API access.
+
+:::tip
+All **collections** are defined as YAML files in [OSS Directory](https://github.com/opensource-observer/oss-directory). View our current collections [here](https://github.com/opensource-observer/oss-directory/tree/main/data/collections).
+:::
+
+## Getting Started
+
+Before running any analysis, you'll need to set up your environment:
+
+<Tabs>
+<TabItem value="sql" label="SQL">
+
+If you haven't already, subscribe to OSO public datasets in BigQuery by clicking the "Subscribe" button on our [Datasets page](../integrate/datasets/#oso-production-data-pipeline).
+
+You can run all queries in this guide directly in the [BigQuery console](https://console.cloud.google.com/bigquery).
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+Start your Python notebook with the following:
+
+```python
+from google.cloud import bigquery
+import pandas as pd
+import os
+
+os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = # PATH TO YOUR CREDENTIALS JSON
+GCP_PROJECT = # YOUR GCP PROJECT NAME
+
+client = bigquery.Client(GCP_PROJECT)
+```
+
+For more details on setting up Python notebooks, see our guide on [writing Python notebooks](../guides/notebooks/index.mdx).
+
+</TabItem>
+<TabItem value="graphql" label="GraphQL">
+
+The following queries should work if you copy-paste them into our [GraphQL sandbox](https://www.opensource.observer/graphql). For more information on how to use the GraphQL API, check out our [GraphQL guide](../integrate/api.md).
+
+</TabItem>
+</Tabs>
+
+## Query Collections
+
+### All Collections
+
+Get the names of all collections on OSO:
+
+<Tabs>
+<TabItem value="sql" label="SQL">
+
+```sql
+select
+  collection_name,
+  display_name
+from `oso_production.collections_v1`
+order by collection_name
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+query = """
+  select
+    collection_name,
+    display_name
+  from `oso_production.collections_v1`
+  order by collection_name
+"""
+df = client.query(query).to_dataframe()
+```
+
+</TabItem>
+<TabItem value="graphql" label="GraphQL">
+
+```graphql
+query Collections {
+  oso_collectionsV1 {
+    collectionName
+    displayName
+  }
+}
+```
+
+</TabItem>
+</Tabs>
+
+### Projects in a Collection
+
+Get the names of all projects in a collection:
+
+<Tabs>
+<TabItem value="sql" label="SQL">
+
+```sql
+select
+  project_id,
+  project_name
+from `oso_production.projects_by_collection_v1`
+where collection_name = 'gg-01'
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+query = """
+  select
+    project_id,
+    project_name
+  from `oso_production.projects_by_collection_v1`
+  where collection_name = 'gg-01'
+"""
+df = client.query(query).to_dataframe()
+```
+
+</TabItem>
+<TabItem value="graphql" label="GraphQL">
+
+```graphql
+query ProjectsInCollection {
+  oso_projectsByCollectionV1(where: { collectionName: { _eq: "gg-01" } }) {
+    projectId
+    projectName
+  }
+}
+```
+
+</TabItem>
+</Tabs>
+
+## Collection-level Metrics
+
+### Code Metrics
+
+Get code metrics for all projects in a collection:
+
+<Tabs>
+<TabItem value="sql" label="SQL">
+
+```sql
+select cm.*
+from `oso_production.code_metrics_by_project_v1` as cm
+join `oso_production.projects_by_collection_v1` as pbc
+  on cm.project_id = pbc.project_id
+where pbc.collection_name = 'ethereum-crypto-ecosystems'
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+query = """
+  select cm.*
+  from `oso_production.code_metrics_by_project_v1` as cm
+  join `oso_production.projects_by_collection_v1` as pbc
+    on cm.project_id = pbc.project_id
+  where pbc.collection_name = 'ethereum-crypto-ecosystems'
+"""
+df = client.query(query).to_dataframe()
+```
+
+</TabItem>
+<TabItem value="graphql" label="GraphQL">
+
+```graphql
+query CodeMetricsQuery {
+  metrics: oso_codeMetricsByProjectV1 {
+    projectId
+    starCount
+    forkCount
+    commitCount6Months
+    contributorCount6Months
+  }
+  projects: oso_projectsByCollectionV1(
+    where: { collectionName: { _eq: "ethereum-crypto-ecosystems" } }
+  ) {
+    projectId
+  }
+}
+```
+
+</TabItem>
+</Tabs>
+
+### Onchain Metrics
+
+Get onchain metrics for all projects in a collection:
+
+<Tabs>
+<TabItem value="sql" label="SQL">
+
+```sql
+select om.*
+from `oso_production.onchain_metrics_by_project_v1` as om
+join `oso_production.projects_by_collection_v1` as pbc
+  on om.project_id = pbc.project_id
+where pbc.collection_name = 'optimism'
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+query = """
+  select om.*
+  from `oso_production.onchain_metrics_by_project_v1` as om
+  join `oso_production.projects_by_collection_v1` as pbc
+    on om.project_id = pbc.project_id
+  where pbc.collection_name = 'optimism'
+"""
+df = client.query(query).to_dataframe()
+```
+
+</TabItem>
+<TabItem value="graphql" label="GraphQL">
+
+```graphql
+query OnchainMetricsQuery {
+  metrics: oso_onchainMetricsByProjectV1 {
+    projectId
+    transactionCount6Months
+    gasFeesSum6Months
+    newAddressCount90Days
+  }
+  projects: oso_projectsByCollectionV1(
+    where: { collectionName: { _eq: "optimism" } }
+  ) {
+    projectId
+  }
+}
+```
+
+</TabItem>
+</Tabs>
+
+### Funding Metrics
+
+Get funding metrics for all projects in a collection:
+
+<Tabs>
+<TabItem value="sql" label="SQL">
+
+```sql
+select fm.*
+from `oso_production.funding_metrics_by_project_v1` as fm
+join `oso_production.projects_by_collection_v1` as pbc
+  on fm.project_id = pbc.project_id
+where pbc.collection_name = 'op-rpgf3'
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+query = """
+  select fm.*
+  from `oso_production.funding_metrics_by_project_v1` as fm
+  join `oso_production.projects_by_collection_v1` as pbc
+    on fm.project_id = pbc.project_id
+  where pbc.collection_name = 'op-rpgf3'
+"""
+df = client.query(query).to_dataframe()
+```
+
+</TabItem>
+<TabItem value="graphql" label="GraphQL">
+
+```graphql
+query FundingMetricsQuery {
+  metrics: oso_fundingMetricsByProjectV1 {
+    projectId
+    totalFundingReceivedUsd6Months
+  }
+  projects: oso_projectsByCollectionV1(
+    where: { collectionName: { _eq: "op-rpgf3" } }
+  ) {
+    projectId
+  }
+}
+```
+
+</TabItem>
+</Tabs>
+
+## Adding Collections and Projects
+
+Projects and collections are defined as YAML files in our [OSS Directory repo](https://github.com/opensource-observer/oss-directory). You can add or update your own collections and projects by submitting a pull request.
+
+For more information on how collections work, see our guide [here](../guides/oss-directory/collection.md).

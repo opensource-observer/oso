@@ -33,6 +33,30 @@ An impact metric must be:
 - Aggregated over a discrete period of time. Common time intervals include last 90 days (`90 DAYS`), last 6 months (`6 MONTHS`), and since inception (`ALL`). OSO has already bucketed event data in various time intervals to facilitate this.
 - Constructed from data that is available in one or more [intermediate or mart models](https://github.com/opensource-observer/oso/tree/main/warehouse/dbt/models). Most impact metrics are currently powered from the `int_events_daily_to_project` model.
 
+## Creating Impact Metrics
+
+An **impact metric** is essentially a SQL query made against the OSO dataset that enables a user to make objective comparisons of impact among projects.
+
+There are a variety of statistical techniques for analyzing data about impact metrics and identifying trends. This section provides a basic example of how to create an impact metric and run a distribution analysis.
+
+### General guide for creating an impact metric
+
+#### 1. Name and Tag the Metric
+
+- **Name**: Give the metric a descriptive name. The name should be concise and easy to associate with the underlying impact metric. Examples: "Grow Full-Time Developers," "Increase Demand for Layer 2 Blockspace", "Bring New Users to the Ecosystem", "Improve the Developer Experience for Consumer Apps".
+- **Tagging**: Assign keyword tags to the metric. Tags should represent the types of projects working towards impact in that area. Examples: "Onchain", "DeFi", "Consumer", "Developer Libraries", "Security".
+
+#### 2. Define the Event Type and Selection Criteria
+
+- **Event Type**: See the various [event types we track](../event.md) or [propose a new metric](../../contribute-models/data-models.md). Examples: "Number of Full-Time Developer Months", "Number of Dependent Onchain Apps", "Layer 2 Gas Fees", "Number of New Contributors".
+- **Time Period**: Specify a time interval for applying the metric. Examples: "Last 6 months", "Since the project's inception".
+- **Selection Filter**: Make explicit the criteria to identify which projects are eligible (or ineligible) to be included in the analysis. Examples: "Projects with developer activity in the last 90 days", "Projects with NPM packages used by at least 5 onchain projects", "Projects with a permissive open source license (e.g., MIT, Apache 2.0) and a codebase that is at least 6 months old".
+
+#### 3. Normalize the Data
+
+- **Query Logic**: Provide the code that fetches the metrics for each project in the selection set. The query may only make use of datasets that are public and in the OSO data warehouse. (Contribute new pubic datasets [here](../../contribute-data/index.md).)
+- **Normalization Method**: Choose an appropriate method for normalizing the metric data (e.g., Gaussian distribution, log scale) that fits the metric characteristics. The script in the tutorial (see next section) includes an example of a normalization method you can start with.
+
 ## Schema
 
 Every impact metric must include the following fields: `project_id`, `impact_metric`, and `amount`. For example:

@@ -129,3 +129,9 @@ spec:
       bigquery: |
         connector.name=bigquery
         bigquery.project-id=opensource-observer
+      clickhouse: |
+        connector.name=clickhouse
+        connection-url=${ENV:CLICKHOUSE_URL}
+        connection-user=${ENV:CLICKHOUSE_USER}
+        connection-password=${ENV:CLICKHOUSE_PASSWORD}
+        clickhouse.map-string-as-varchar=true

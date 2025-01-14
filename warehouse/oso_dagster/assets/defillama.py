@@ -43,10 +43,14 @@ config: RESTAPIConfig = {
     "client": {
         "base_url": "https://api.llama.fi/",
     },
+    "resource_defaults": {
+        "primary_key": "id",
+        "write_disposition": "merge",
+    },
     "resources": list(
         map(
             lambda protocol: {
-                "name": f"{protocol.replace('-', '_')}",
+                "name": f"{protocol.replace('-', '_').replace(".", '__dot__')}_protocol",
                 "endpoint": {
                     "path": f"protocol/{protocol}",
                     "data_selector": "$",

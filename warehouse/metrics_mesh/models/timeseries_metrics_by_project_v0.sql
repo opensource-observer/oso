@@ -1,6 +1,9 @@
 MODEL (
   name metrics.timeseries_metrics_by_project_v0,
-  kind FULL
+  kind FULL,
+  tags (
+    'export'
+  )
 );
 
 WITH all_timeseries_metrics_by_project AS (

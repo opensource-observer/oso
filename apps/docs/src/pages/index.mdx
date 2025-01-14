@@ -4,9 +4,154 @@ description: "Open Source Observer (OSO) Documentation site"
 sidebar_position: 0
 ---
 
-import { PlasmicRootProvider } from "@plasmicapp/react-web";
-import Overview from "@site/src/components/plasmic/Overview";
+export const paths = {
+  getStarted: './docs/get-started/',
+  datasets: './docs/integrate/datasets/',
+  references: './docs/references/',
+  notebooks: './docs/guides/notebooks/',
+  tutorials: './docs/tutorials/',
+  contributeModels: './docs/contribute-models/',
+  graphqlApi: './docs/integrate/api',
+  pipeline: './docs/guides/dagster/',
+  connectData: './docs/contribute-data/',
+  addProject: './docs/projects/',
+  viewArtifacts: './docs/projects/view-artifacts',
+  troubleshoot: './docs/projects/troubleshoot'
+};
 
-<PlasmicRootProvider>
-  <Overview /> 
-</PlasmicRootProvider>
+<div style={{
+  border: '1px solid #e5e7eb',
+  borderRadius: '0.5rem',
+  padding: '0.5rem 0.5rem',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  transition: 'transform 0.2s ease-in-out',
+  textAlign: 'center',
+  verticalAlign: 'middle'
+}}>
+  <div>
+    <h2>Open Source Observer - Docs Hub</h2>
+    <small>Press <code>⌘</code> <code>K</code> to search docs</small>
+  </div>
+</div>
+
+<div className="cards-container">
+  <a href={paths.getStarted} className="card">
+    <h2>🌱 Get started</h2>
+    <p>Make your first queries to the OSO data lake or API</p>
+  </a>
+  <a href={paths.datasets} className="card">
+    <h2>✨ View datasets</h2>
+    <p>Explore more than 100TB of curated public datasets</p>
+  </a>
+  <a href={paths.references} className="card">
+    <h2>🔍 Learn how OSO works</h2>
+    <p>See how all the pieces in our open data pipeline fit together</p>
+  </a>
+</div>
+
+<div className="use-cases-container">
+  <div className="use-case-column">
+    <h3>For data scientists</h3>
+    <div className="use-case-cards">
+      <a href={paths.notebooks} className="mini-card">
+        <h3>📓 Connect OSO to notebooks</h3>
+      </a>
+      <a href={paths.tutorials} className="mini-card">
+        <h3>📚 Find a tutorial</h3>
+      </a>
+      <a href={paths.contributeModels} className="mini-card">
+        <h3>🤖 Contribute models</h3>
+      </a>
+    </div>
+  </div>
+
+  <div className="use-case-column">
+    <h3>For developers</h3>
+    <div className="use-case-cards">
+      <a href={paths.graphqlApi} className="mini-card">
+        <h3>⚡ Use the GraphQL API</h3>
+      </a>
+      <a href={paths.pipeline} className="mini-card">
+        <h3>📈 Check pipeline status</h3>
+      </a>
+      <a href={paths.connectData} className="mini-card">
+        <h3>🔌 Connect your data</h3>
+      </a>
+    </div>
+  </div>
+
+  <div className="use-case-column">
+    <h3>For OSS projects</h3>
+    <div className="use-case-cards">
+      <a href={paths.addProject} className="mini-card">
+        <h3>➕ Add your project</h3>
+      </a>
+      <a href={paths.viewArtifacts} className="mini-card">
+        <h3>📦 View your project's artifacts</h3>
+      </a>
+      <a href={paths.troubleshoot} className="mini-card">
+        <h3>🔧 Troubleshoot data issues</h3>
+      </a>
+    </div>
+  </div>
+</div>
+
+<style>
+{`
+  .cards-container, .use-cases-container {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    margin: 1rem 0;
+  }
+
+  @media (min-width: 768px) {
+    .cards-container, .use-cases-container {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  .card, .mini-card {
+    padding: 1rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    transition: transform 0.2s ease-in-out;
+  }
+
+  .card:hover, .mini-card:hover {
+    transform: translateY(-2px);
+    text-decoration: none;
+  }
+
+  .card h2, .use-case-column > h3 {
+    margin-top: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+  }
+
+  .mini-card h3 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 500;
+  }
+
+  .card p {
+    margin: 0.75rem 0;
+  }
+
+  .use-case-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .use-case-column > h3 {
+    margin-bottom: 1rem;
+  }
+`}
+</style>

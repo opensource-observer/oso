@@ -13,7 +13,7 @@ from pyee.asyncio import AsyncIOEventEmitter
 from sqlglot import exp
 from sqlmesh.core.dialect import parse_one
 
-from .types import ColumnsDefinition, ExportReference, ExportType
+from .types import ColumnsDefinition, ExportReference, ExportType, TableReference
 
 logger = logging.getLogger(__name__)
 
@@ -53,7 +53,7 @@ class FakeExportAdapter(DBExportAdapter):
     ) -> ExportReference:
         self.logger.info(f"fake exporting table: {table}")
         return ExportReference(
-            table_name=table,
+            table=TableReference(table_name=table),
             type=ExportType.GCS,
             payload={"gcs_path": "fake_path:{table}"},
             columns=ColumnsDefinition(columns=[]),
@@ -154,7 +154,7 @@ class TrinoExportAdapter(DBExportAdapter):
         await self.run_query(insert_query.sql(dialect="trino"))
 
         return ExportReference(
-            table_name=table,
+            table=TableReference(table_name=table),
             type=ExportType.GCS,
             payload={"gcs_path": gcs_path},
             columns=ColumnsDefinition(columns=columns, dialect="trino"),

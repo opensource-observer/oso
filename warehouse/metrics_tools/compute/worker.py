@@ -112,7 +112,7 @@ class DuckDBMetricsWorkerPlugin(MetricsWorkerPlugin):
     ):
         """Checks if a table is cached in the local duckdb"""
         logger.info(
-            f"[{self._uuid}] got a cache request for {table_ref_name}:{export_reference.table_name}"
+            f"[{self._uuid}] got a cache request for {table_ref_name}:{export_reference.table.table_name}"
         )
         assert export_reference.type == ExportType.GCS, "Only GCS exports are supported"
         assert (

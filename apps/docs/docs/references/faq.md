@@ -1,6 +1,6 @@
 ---
-title: FAQ
-sidebar_position: 7
+title: FAQs
+sidebar_position: 9
 ---
 
 ## Community

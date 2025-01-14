@@ -1,9 +1,7 @@
 ---
-title: Connect via Google Cloud Storage (GCS)
+title: Import from Google Cloud Storage (GCS)
 sidebar_position: 5
 ---
-
-import NextSteps from "./dagster-config.mdx"
 
 We strongly prefer data partners that can provide
 updated live datasets, over a static snapshot.
@@ -16,7 +14,7 @@ by OSO, please reach out to us on
 [Discord](https://www.opensource.observer/discord).
 
 If you prefer to handle the data storage yourself, check out the
-[Connect via BigQuery guide](./bigquery/index.md).
+[Connect via BigQuery guide](../guides/bq-data-transfer.md).
 
 ## Schedule periodic dumps to GCS
 
@@ -84,5 +82,3 @@ you will find a few examples of using the GCS asset factory:
 - [Superchain data](https://github.com/opensource-observer/oso/blob/main/warehouse/oso_dagster/assets/__init__.py)
 - [Gitcoin Passport scores](https://github.com/opensource-observer/oso/blob/main/warehouse/oso_dagster/assets/gitcoin.py)
 - [OpenRank reputations on Farcaster](https://github.com/opensource-observer/oso/blob/main/warehouse/oso_dagster/assets/karma3.py)
-
-<NextSteps components={props.components}/>

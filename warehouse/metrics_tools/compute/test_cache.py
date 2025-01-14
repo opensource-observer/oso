@@ -4,14 +4,19 @@ from unittest.mock import AsyncMock
 
 import pytest
 from metrics_tools.compute.cache import CacheExportManager, FakeExportAdapter
-from metrics_tools.compute.types import ColumnsDefinition, ExportReference, ExportType
+from metrics_tools.compute.types import (
+    ColumnsDefinition,
+    ExportReference,
+    ExportType,
+    TableReference,
+)
 
 
 @pytest.mark.asyncio
 async def test_cache_export_manager():
     adapter_mock = AsyncMock(FakeExportAdapter)
     adapter_mock.export_table.return_value = ExportReference(
-        table_name="test",
+        table=TableReference(table_name="test"),
         type=ExportType.GCS,
         columns=ColumnsDefinition(columns=[]),
         payload={},
