@@ -15,6 +15,7 @@ from metrics_tools.compute.types import (
     JobStatusResponse,
     JobSubmitRequest,
     QueryJobStatus,
+    TableReference,
 )
 from metrics_tools.definition import PeerMetricDependencyRef
 
@@ -33,7 +34,7 @@ async def test_metrics_calculation_service():
     await service.add_existing_exported_table_references(
         {
             "source.table123": ExportReference(
-                table_name="export_table123",
+                table=TableReference(table_name="export_table123"),
                 type=ExportType.GCS,
                 columns=ColumnsDefinition(
                     columns=[("col1", "INT"), ("col2", "TEXT")], dialect="duckdb"
@@ -101,7 +102,7 @@ async def test_metrics_calculation_service_using_monthly_cron():
     await service.add_existing_exported_table_references(
         {
             "source.table123": ExportReference(
-                table_name="export_table123",
+                table=TableReference(table_name="export_table123"),
                 type=ExportType.GCS,
                 columns=ColumnsDefinition(
                     columns=[("col1", "INT"), ("col2", "TEXT")], dialect="duckdb"

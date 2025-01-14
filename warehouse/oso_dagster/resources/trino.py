@@ -1,9 +1,12 @@
 import logging
 import typing as t
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, contextmanager
 
-import trino
+import aiotrino
+from aiotrino.dbapi import Connection as AsyncConnection
 from dagster import ConfigurableResource, ResourceDependency
+from metrics_tools.transfer.trino import TrinoExporter
+from oso_dagster.resources.storage import TimeOrderedStorageResource
 from pydantic import Field
 from trino.dbapi import Connection
 
@@ -17,14 +20,24 @@ module_logger = logging.getLogger(__name__)
 class TrinoResource(ConfigurableResource):
     """Base Trino resource"""
 
-    @asynccontextmanager
+    @contextmanager
     def get_client(
         self,
         session_properties: t.Optional[t.Dict[str, t.Any]] = None,
         log_override: t.Optional[logging.Logger] = None,
-    ) -> t.AsyncGenerator[Connection, None]:
+    ) -> t.Iterator[Connection]:
         raise NotImplementedError(
             "get_client not implemented on the base TrinoResource"
+        )
+
+    @asynccontextmanager
+    def async_get_client(
+        self,
+        session_properties: t.Optional[t.Dict[str, t.Any]] = None,
+        log_override: t.Optional[logging.Logger] = None,
+    ) -> t.AsyncGenerator[AsyncConnection, None]:
+        raise NotImplementedError(
+            "async_get_client not implemented on the base TrinoResource"
         )
 
     @asynccontextmanager
@@ -121,7 +134,7 @@ class TrinoK8sResource(TrinoResource):
     )
 
     @asynccontextmanager
-    async def get_client(
+    async def async_get_client(
         self,
         session_properties: t.Optional[t.Dict[str, t.Any]] = None,
         log_override: t.Optional[logging.Logger] = None,
@@ -135,7 +148,7 @@ class TrinoK8sResource(TrinoResource):
             extra_connection_args = {}
             if session_properties:
                 extra_connection_args["session_properties"] = session_properties
-            yield trino.dbapi.connect(
+            yield aiotrino.dbapi.connect(
                 host=host,
                 port=port,
                 user=self.user,
@@ -185,13 +198,13 @@ class TrinoRemoteResource(TrinoResource):
     )
 
     @asynccontextmanager
-    async def get_client(
+    async def async_get_client(
         self,
         session_properties: t.Optional[t.Dict[str, t.Any]] = None,
         log_override: t.Optional[logging.Logger] = None,
     ):
         async with self.ensure_available(log_override=log_override):
-            yield trino.dbapi.connect(
+            yield aiotrino.dbapi.connect(
                 host=self.url,
                 user=self.user,
                 catalog="hive",
@@ -207,3 +220,35 @@ class TrinoRemoteResource(TrinoResource):
         await wait_for_ok_async(health_check_url, timeout=self.connect_timeout)
 
         yield
+
+
+class TrinoExporterResource(ConfigurableResource):
+    trino: ResourceDependency[TrinoResource]
+
+    time_ordered_storage: ResourceDependency[TimeOrderedStorageResource]
+
+    hive_catalog: str = Field(
+        default="source",
+        description="Hive catalog used for export",
+    )
+
+    hive_schema: str = Field(
+        default="export",
+        description="Hive schema used for export",
+    )
+
+    @asynccontextmanager
+    async def get_exporter(
+        self, export_prefix: str, log_override: t.Optional[logging.Logger] = None
+    ) -> t.AsyncGenerator[TrinoExporter, None]:
+        with self.time_ordered_storage.get(export_prefix) as storage:
+            async with self.trino.async_get_client(
+                log_override=log_override
+            ) as connection:
+                yield TrinoExporter(
+                    hive_catalog=self.hive_catalog,
+                    hive_schema=self.hive_schema,
+                    time_ordered_storage=storage,
+                    connection=connection,
+                    log_override=log_override,
+                )
