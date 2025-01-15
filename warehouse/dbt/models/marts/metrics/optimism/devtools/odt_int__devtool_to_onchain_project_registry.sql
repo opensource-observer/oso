@@ -3,7 +3,6 @@ with code_deps as (
     dependency_project_id as devtool_project_id,
     dependency_artifact_id as devtool_artifact_id,
     dependent_project_id as onchain_project_id,
-    dependent_artifact_id as onchain_artifact_id,
     concat(lower(dependency_source), '_', 'package') as edge_type
   from {{ ref('odt_int__code_dependencies') }}
 ),
@@ -13,7 +12,6 @@ dev_deps as (
     other_project_id as devtool_project_id,
     other_artifact_id as devtool_artifact_id,
     onchain_project_id as onchain_project_id,
-    onchain_artifact_id as onchain_artifact_id,
     'developer_connection' as edge_type
   from {{ ref('odt_int__developer_relationships') }}
 ),
@@ -23,7 +21,6 @@ solidity_dev_deps as (
     other_project_id as devtool_project_id,
     other_artifact_id as devtool_artifact_id,
     onchain_project_id as onchain_project_id,
-    onchain_artifact_id as onchain_artifact_id,
     'solidity_developer_connection' as edge_type
   from {{ ref('odt_int__developer_relationships') }}
   where is_solidity_developer = true
