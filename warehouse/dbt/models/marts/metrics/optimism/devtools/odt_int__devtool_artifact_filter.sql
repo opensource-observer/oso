@@ -1,4 +1,4 @@
-{% set max_release_date_months = 6 %}
+{% set max_release_lookback_days = 180 %}
 
 with eligible_projects as (
   select
@@ -14,7 +14,7 @@ union_all_artifacts as (
   from eligible_projects
   where
     date(last_release_date) >= date_sub(
-      current_date(), interval {{ max_release_date_months }} month
+      current_date(), interval {{ max_release_lookback_days }} day
     )
   union all
   select package_owner_artifact_id as artifact_id

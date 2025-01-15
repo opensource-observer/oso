@@ -26,7 +26,7 @@ with developers as (
     and repositories.language in ('TypeScript', 'Solidity', 'Rust')
     and repositories.project_id in (
       select distinct project_id
-      from {{ ref('odt_int__onchain_project_filter') }}
+      from {{ ref('int_superchain_onchain_builder_filter') }}
     )
   group by
     users.user_id,

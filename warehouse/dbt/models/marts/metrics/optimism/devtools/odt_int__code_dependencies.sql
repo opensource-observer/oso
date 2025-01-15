@@ -18,7 +18,7 @@ from all_dependencies
 where
   dependent_project_id in (
     select distinct project_id
-    from {{ ref('odt_int__onchain_project_filter') }}
+    from {{ ref('int_superchain_onchain_builder_filter') }}
   )
   and dependency_artifact_id in (
     select artifact_id
