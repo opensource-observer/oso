@@ -1,7 +1,7 @@
 MODEL (
   name metrics.int_events_to_collection,
-  kind FULL,
   description 'All events to a collection',
+  kind FULL,
 );
 
 select

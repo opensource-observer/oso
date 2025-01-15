@@ -1,7 +1,7 @@
 MODEL (
   name metrics.int_events_to_project,
-  kind FULL,
   description 'All events to a project',
+  kind FULL,
 );
 
 select
