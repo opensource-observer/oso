@@ -39,7 +39,7 @@ poetry shell
 
 Finally, download playground data into your local DuckDB instance with the following command
 
-```
+```bash
 oso metrics local initialize
 ```
 
@@ -73,10 +73,50 @@ SHOW ALL TABLES;
 
 Execute a sample query:
 
-```bash
+```sql
 SELECT * FROM metrics__dev.metrics_v0 LIMIT 5;
 ```
 
+## Testing
+
+Compile against your local DuckDB copy by running:
+
+```bash
+sqlmesh plan dev
+```
+
+As this will run against everything in the dataset, you may want to pick a shorter date range (that you know has data in it), eg:
+
+```bash
+sqlmesh plan dev --start 2024-12-01 --end 2024-12-31
+```
+
+If a source that's in BigQuery is missing from DuckDB, check the `initialize_local_duckdb` function in [utils.py](warehouse/metrics_tools/local/utils.py). 
+You can add new models as `bq_to_duckdb` parameters, eg:
+
+```python
+"opensource-observer.oso_playground.YOUR_MODEL": "sources.YOUR_MODEL",
+```
+
+...and then reference the model in your sqlmesh code via `@oso_source('YOUR_MODEL')`.
+
+Important: whenever you add a new source, you will need to re-initialize your local database:
+
+```bash
+oso metrics local initialize
+```
+
+Then you can run to compile the latest models:
+
+```bash
+sqlmesh plan dev 
+```
+
+And if it executes successfully, view it in DuckDB:
+
+```sql
+SELECT * FROM metrics__dev.YOUR_MODEL LIMIT 5;
+```
 
 ## Metrics Overview
 
