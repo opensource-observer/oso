@@ -22,6 +22,15 @@ def str_to_unix_timestamp(
                 ),
             )
         )
+    if evaluator.engine_adapter.dialect == "trino":
+        return exp.Anonymous(
+            this="to_unixtime",
+            expressions=[
+                exp.StrToTime(
+                    this=time_exp, format=exp.Literal(this="%Y-%m-%d", is_string=True)
+                )
+            ],
+        )
     return exp.Anonymous(
         this="toUnixTimestamp",
         expressions=[time_exp],
