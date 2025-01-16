@@ -6,6 +6,7 @@ select
   events.to_artifact_id,
   artifacts.project_id as to_project_id,
   events.event_type,
+  events.event_source,
   events.amount
 from {{ ref('int_events__blockchain') }} as events
 inner join {{ ref('artifacts_by_project_v1') }} as artifacts
