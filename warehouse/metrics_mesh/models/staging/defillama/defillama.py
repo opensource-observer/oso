@@ -2,6 +2,7 @@ import typing as t
 
 import orjson
 import pandas as pd
+from metrics_mesh.macros.oso_source import oso_source_for_pymodel
 from sqlglot import exp
 from sqlmesh import ExecutionContext, model
 
@@ -40,11 +41,7 @@ def defillama_tvl_model(protocol: str):
     )
     def tvl_model(context: ExecutionContext, *args, **kwargs) -> pd.DataFrame:
         # Run the query for the given protocol
-        oso_source_db = context.var("oso_source_db")
-        oso_source_catalog = context.var("oso_source_catalog")
-        table = exp.Table(
-            this=f"{protocol}", db=oso_source_db, catalog=oso_source_catalog
-        )
+        table = oso_source_for_pymodel(context, f"bigquery.defillama_tvl.{protocol}")
         df = context.fetchdf(
             exp.select("chain_tvls")
             .from_(table)
