@@ -5,6 +5,7 @@ import polars as pl
 from dagster import (
     AssetExecutionContext,
     AssetIn,
+    AssetKey,
     AssetOut,
     AssetsDefinition,
     AssetSelection,
@@ -15,6 +16,7 @@ from dagster import (
     define_asset_job,
     multi_asset,
 )
+from oso_dagster.cbt.cbt import CBTResource
 from oso_dagster.config import DagsterConfig
 from oso_dagster.dlt_sources.github_repos import (
     oss_directory_github_repositories_resource,
@@ -156,16 +158,34 @@ def repositories(
 
 @dlt_factory(
     key_prefix="ossd",
-    ins={"projects_df": AssetIn(project_key)},
+    deps=[AssetKey(["ossd", "repositories"])],
     tags=common_tags,
 )
 def sbom(
     global_config: ResourceParam[DagsterConfig],
-    projects_df: pl.DataFrame,
+    context: AssetExecutionContext,
+    cbt: CBTResource,
     gh_token: str = secret_ref_arg(group_name="ossd", key="github_token"),
 ):
+    all_repositories_query = """
+        SELECT
+        DISTINCT url
+        FROM
+        `ossd.repositories`
+        WHERE
+        LOWER(url) LIKE '%github.com%';
+    """
+
+    client = cbt.get(context.log)
+
+    all_repo_urls: t.List[str] = [
+        row["url"] for row in client.query_with_string(all_repositories_query)
+    ]
+
+    context.log.info(f"Fecthing SBOMs for {len(all_repo_urls)} repositories")
+
     yield oss_directory_github_sbom_resource(
-        projects_df, gh_token, http_cache=global_config.http_cache
+        all_repo_urls, gh_token, http_cache=global_config.http_cache
     )
 
 
