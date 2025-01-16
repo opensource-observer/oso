@@ -492,10 +492,6 @@ class TimeseriesMetrics:
         columns = constants.METRICS_COLUMNS_BY_ENTITY[ref["entity_type"]]
         config = self.serializable_config(query_config)
 
-        depends_on = set()
-        for dep in dependencies:
-            depends_on.add(f"{self.catalog}.{dep}")
-
         grain = [
             "metric",
             f"to_{ref['entity_type']}_id",
@@ -520,7 +516,6 @@ class TimeseriesMetrics:
             locals=config,
             override_module_path=override_module_path,
             override_path=override_path,
-            depends_on=depends_on,
         )(generated_query)
 
     def serializable_config(self, query_config: MetricQueryConfig):
