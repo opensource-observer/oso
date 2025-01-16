@@ -514,7 +514,7 @@ class TimeseriesMetrics:
             is_sql=True,
             columns=columns,
             grain=grain,
-            start="1970-01-01",
+            start=self._raw_options["start"],
             enabled=self._raw_options.get("enabled", True),
             additional_macros=self.generated_model_additional_macros,
             locals=config,
