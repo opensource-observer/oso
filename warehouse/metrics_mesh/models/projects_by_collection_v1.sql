@@ -13,4 +13,4 @@ SELECT
   collection_source,
   collection_namespace,
   collection_name
-FROM @oso_source('projects_by_collection_v1')
+FROM @oso_source('bigquery.oso.projects_by_collection_v1')

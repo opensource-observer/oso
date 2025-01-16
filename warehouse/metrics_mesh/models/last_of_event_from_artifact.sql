@@ -11,7 +11,7 @@ SELECT
   event_source,
   from_artifact_id,
   to_artifact_id
-FROM @oso_source('timeseries_events_by_artifact_v0')
+FROM @oso_source('bigquery.oso.timeseries_events_by_artifact_v0')
 GROUP BY
   event_type,
   event_source,

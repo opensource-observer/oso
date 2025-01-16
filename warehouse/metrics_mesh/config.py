@@ -24,6 +24,20 @@ config = Config(
             ),
             variables={
                 "oso_source_db": "sources",
+                "oso_source_rewrite": [
+                    {
+                        "catalog": "bigquery",
+                        "db": "oso",
+                        "table": "*",
+                        "replace": "sources.{table}",
+                    },
+                    {
+                        "catalog": "bigquery",
+                        "db": "*",
+                        "table": "*",
+                        "replace": "sources_{db}.{table}",
+                    },
+                ],
             },
         ),
         "trino": GatewayConfig(
