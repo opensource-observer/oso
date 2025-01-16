@@ -10,4 +10,4 @@ select distinct
   artifact_source,
   artifact_namespace,
   artifact_name,
-from @oso_source('artifacts_by_project_v1')
+from @oso_source('bigquery.oso.artifacts_by_project_v1')

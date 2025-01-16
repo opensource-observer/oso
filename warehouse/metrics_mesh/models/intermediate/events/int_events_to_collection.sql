@@ -14,5 +14,5 @@ select
   int_events_to_project.event_type,
   int_events_to_project.amount
 from metrics.int_events_to_project
-inner join @oso_source('projects_by_collection_v1') collections
+inner join @oso_source('bigquery.oso.projects_by_collection_v1') collections
   on int_events_to_project.project_id = collections.project_id

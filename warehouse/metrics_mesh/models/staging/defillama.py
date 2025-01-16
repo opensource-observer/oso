@@ -39,8 +39,6 @@ def defillama_tvl_model(protocol: str):
         },
     )
     def tvl_model(context: ExecutionContext, *args, **kwargs) -> pd.DataFrame:
-        print(f"args: {args}")
-        print(f"kwargs: {kwargs}")
         # Run the query for the given protocol
         oso_source_db = context.var("oso_source_db")
         oso_source_catalog = context.var("oso_source_catalog")

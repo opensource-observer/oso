@@ -17,4 +17,4 @@ SELECT
   project_source,
   project_namespace,
   project_name
-FROM @oso_source('artifacts_by_project_v1')
+FROM @oso_source('bigquery.oso.artifacts_by_project_v1')
