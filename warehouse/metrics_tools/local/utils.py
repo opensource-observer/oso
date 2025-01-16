@@ -157,6 +157,8 @@ def initialize_local_duckdb(path: str):
             "opensource-observer.oso_playground.artifacts_by_project_v1": "sources.artifacts_by_project_v1",
             "opensource-observer.oso_playground.projects_by_collection_v1": "sources.projects_by_collection_v1",
             "opensource-observer.oso_playground.timeseries_events_aux_issues_by_artifact_v0": "sources.timeseries_events_aux_issues_by_artifact_v0",
+            "opensource-observer.oso.int_artifacts_in_ossd_by_project": "sources.int_artifacts_in_ossd_by_project",
+            "opensource-observer.oso.int_superchain_potential_bots": "sources.int_superchain_potential_bots",
             "opensource-observer.defillama_tvl.contango": "sources.contango",
         },
         path,
