@@ -11,6 +11,7 @@ select
   events.to_artifact_id,
   artifacts.project_id as to_project_id,
   events.event_type,
+  events.event_source,
   events.amount
 from @oso_source('timeseries_events_by_artifact_v0') events
 inner join @oso_source('artifacts_by_project_v1') as artifacts
