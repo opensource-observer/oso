@@ -447,8 +447,8 @@ importers:
         specifier: ^1.11.10
         version: 1.11.10
       duckdb:
-        specifier: ^0.10.1
-        version: 0.10.1(encoding@0.1.13)
+        specifier: ^1.1.3
+        version: 1.1.3(encoding@0.1.13)
       envfile:
         specifier: ^7.1.0
         version: 7.1.0
@@ -465,8 +465,8 @@ importers:
         specifier: ^3.1.0
         version: 3.1.0
       oss-directory:
-        specifier: ^0.0.16
-        version: 0.0.16(ts-node@10.9.1(@types/node@20.11.17)(typescript@5.3.3))(typescript@5.3.3)
+        specifier: ^0.0.18
+        version: 0.0.18(ts-node@10.9.1(@types/node@20.11.17)(typescript@5.3.3))(typescript@5.3.3)
       simple-git:
         specifier: ^3.25.0
         version: 3.25.0
@@ -4959,9 +4959,6 @@ packages:
   '@types/node@20.14.12':
     resolution: {integrity: sha512-r7wNXakLeSsGT0H1AU863vS2wa5wBOK4bWMjZz2wj+8nBx+m5PeIn0k8AloSLpRuiwdRQZwarZqHE4FNArPuJQ==}
 
-  '@types/node@22.7.5':
-    resolution: {integrity: sha512-jML7s2NAzMWc//QSJ1a3prpk78cOPchGvXJsC3C6R6PSMoooztvRVQEz89gmBTBY1SPMaqo5teB4uNHPdetShQ==}
-
   '@types/papaparse@5.3.14':
     resolution: {integrity: sha512-LxJ4iEFcpqc6METwp9f6BV6VVc43m6MfH0VqFosHvrUgfXiFe6ww7R3itkOQ+TCK6Y+Iv/+RnnvtRZnkc5Kc9g==}
 
@@ -6975,8 +6972,8 @@ packages:
     resolution: {integrity: sha512-20TuZZHCEZ2O71q9/+8BwKwZ0QtD9D8ObhrihJPr+vLLYlSuAU3/zL4cSlgbfeoGHTjCSJBa7NGcrF9/Bx/WJQ==}
     engines: {node: '>=4'}
 
-  duckdb@0.10.1:
-    resolution: {integrity: sha512-g62Fcg0qKgYM2A0X1pBSBEf+vKJHAzeRf4A7UtyYpUwvXbnKp0mEZ2rGXTP+/dXObyTDu+lfnyxIlORkcd097w==}
+  duckdb@1.1.3:
+    resolution: {integrity: sha512-tIpZr2NsSkYmfGC1ETl75RuVsaDyjvR3yAOrECcIyw7bdluzcyzEXOXoiuT+4t54hT+CppZv43gk/HiZdKW9Vw==}
 
   duplexer@0.1.2:
     resolution: {integrity: sha512-jtD6YG370ZCIi/9GTaJKQxWTZD045+4R4hTk/x1UyoqadyJ9x9CgSi1RlVDQF8U2sxLLSnFkCaMihqljHIWgMg==}
@@ -7157,10 +7154,6 @@ packages:
 
   escalade@3.1.1:
     resolution: {integrity: sha512-k0er2gUkLf8O0zKJiAhmkTnJlTvINGv7ygDNPbeIsX/TJjGJZHuh9B2UxbsaEkmlEo9MfhrSzmhIlhRlI2GXnw==}
-    engines: {node: '>=6'}
-
-  escalade@3.1.2:
-    resolution: {integrity: sha512-ErCHMCae19vR8vQGe50xIsVomy19rg6gFu3+r3jkEO46suLMWBksvVyoGgQV+jOfl84ZSOSlmv6Gxa89PmTGmA==}
     engines: {node: '>=6'}
 
   escalade@3.2.0:
@@ -10128,8 +10121,8 @@ packages:
     resolution: {integrity: sha512-D2FR03Vir7FIu45XBY20mTb+/ZSWB00sjU9jdQXt83gDrI4Ztz5Fs7/yy74g2N5SVQY4xY1qDr4rNddwYRVX0g==}
     engines: {node: '>=0.10.0'}
 
-  oss-directory@0.0.16:
-    resolution: {integrity: sha512-0Le/josw6COpXrnphpOiTPR3N9AE7i7SEDnnk2kfgAGBkdT6FOGOO9r+HfE+KgBPsEuKX5anGIxn6rRlX+sGig==}
+  oss-directory@0.0.18:
+    resolution: {integrity: sha512-zBoFyWrv8s5hJ+pB39sEXdqbYMcD3KtGuScHxgfXRo9vsxcZNMP0IJMd1XkQgxWyqw7Ddoo8r+40APNx21QUbw==}
     engines: {node: '>=16'}
     hasBin: true
 
@@ -12318,9 +12311,6 @@ packages:
   undici-types@5.26.5:
     resolution: {integrity: sha512-JlCMO+ehdEIKqlFxk6IfVoAUVmgz7cU7zD/h9XZ0qzeosSHmUJVOzSQvvYSYWXkFXC+IfLKSIffhv0sVZup6pA==}
 
-  undici-types@6.19.8:
-    resolution: {integrity: sha512-ve2KP6f/JnbPBFyobGHuerC9g1FYGn/F8n1LWTwNxCEzd6IfqTwUQcNXgEtmmQ6DlRrC1hrSrBnCZPokRrDHjw==}
-
   undici@5.28.2:
     resolution: {integrity: sha512-wh1pHJHnUeQV5Xa8/kyQhO7WFa8M34l026L5P/+2TYiakvGy5Rdc8jWZVyG7ieht/0WgJLEd3kcU5gKx+6GC8w==}
     engines: {node: '>=14.0'}
@@ -13942,7 +13932,7 @@ snapshots:
       '@babel/traverse': 7.25.7
       '@babel/types': 7.25.8
       convert-source-map: 2.0.0
-      debug: 4.3.7
+      debug: 4.4.0
       gensync: 1.0.0-beta.2
       json5: 2.2.3
       semver: 6.3.1
@@ -14814,7 +14804,7 @@ snapshots:
       '@babel/parser': 7.25.8
       '@babel/template': 7.25.7
       '@babel/types': 7.25.8
-      debug: 4.3.7
+      debug: 4.4.0
       globals: 11.12.0
     transitivePeerDependencies:
       - supports-color
@@ -15066,7 +15056,7 @@ snapshots:
       '@oclif/color': 0.1.2
       bytes: 3.1.2
       cli-progress: 3.12.0
-      cross-spawn: 7.0.3
+      cross-spawn: 7.0.6
       decompress: 4.2.1
       env-var: 6.3.0
       fs-extra: 9.1.0
@@ -15087,7 +15077,7 @@ snapshots:
       '@oclif/color': 0.1.2
       bytes: 3.1.2
       cli-progress: 3.12.0
-      cross-spawn: 7.0.3
+      cross-spawn: 7.0.6
       decompress: 4.2.1
       env-var: 6.3.0
       fs-extra: 9.1.0
@@ -15106,7 +15096,7 @@ snapshots:
   '@cubejs-backend/templates@0.35.67(encoding@0.1.13)(moment@2.30.1)':
     dependencies:
       '@cubejs-backend/shared': 0.35.67(encoding@0.1.13)(moment@2.30.1)
-      cross-spawn: 7.0.3
+      cross-spawn: 7.0.6
       decompress: 4.2.1
       decompress-targz: 4.1.1
       fs-extra: 9.1.0
@@ -16571,7 +16561,7 @@ snapshots:
       '@graphql-tools/utils': 10.3.1(graphql@16.9.0)
       '@whatwg-node/fetch': 0.9.18
       graphql: 16.9.0
-      tslib: 2.6.3
+      tslib: 2.8.0
     transitivePeerDependencies:
       - encoding
 
@@ -16589,7 +16579,7 @@ snapshots:
       '@graphql-tools/utils': 10.3.1(graphql@16.9.0)
       globby: 11.1.0
       graphql: 16.9.0
-      tslib: 2.6.3
+      tslib: 2.8.0
       unixify: 1.0.0
     transitivePeerDependencies:
       - supports-color
@@ -16608,7 +16598,7 @@ snapshots:
     dependencies:
       graphql: 16.9.0
       lodash.sortby: 4.7.0
-      tslib: 2.6.3
+      tslib: 2.8.0
 
   '@graphql-tools/executor-graphql-ws@1.2.0(graphql@16.9.0)':
     dependencies:
@@ -16664,7 +16654,7 @@ snapshots:
       graphql: 16.9.0
       is-glob: 4.0.3
       micromatch: 4.0.7
-      tslib: 2.6.3
+      tslib: 2.8.0
       unixify: 1.0.0
     transitivePeerDependencies:
       - supports-color
@@ -16677,7 +16667,7 @@ snapshots:
       '@graphql-tools/utils': 10.3.1(graphql@16.9.0)
       '@whatwg-node/fetch': 0.9.18
       graphql: 16.9.0
-      tslib: 2.6.3
+      tslib: 2.8.0
       value-or-promise: 1.0.12
     transitivePeerDependencies:
       - '@types/node'
@@ -16690,7 +16680,7 @@ snapshots:
       '@graphql-tools/utils': 10.3.1(graphql@16.9.0)
       globby: 11.1.0
       graphql: 16.9.0
-      tslib: 2.6.3
+      tslib: 2.8.0
       unixify: 1.0.0
 
   '@graphql-tools/graphql-tag-pluck@8.3.1(graphql@16.9.0)':
@@ -16718,7 +16708,7 @@ snapshots:
       '@graphql-tools/utils': 10.3.1(graphql@16.9.0)
       globby: 11.1.0
       graphql: 16.9.0
-      tslib: 2.6.3
+      tslib: 2.8.0
       unixify: 1.0.0
 
   '@graphql-tools/load@8.0.2(graphql@16.9.0)':
@@ -16727,7 +16717,7 @@ snapshots:
       '@graphql-tools/utils': 10.3.1(graphql@16.9.0)
       graphql: 16.9.0
       p-limit: 3.1.0
-      tslib: 2.6.3
+      tslib: 2.8.0
 
   '@graphql-tools/merge@8.4.2(graphql@16.9.0)':
     dependencies:
@@ -16753,7 +16743,7 @@ snapshots:
       '@types/js-yaml': 4.0.9
       '@whatwg-node/fetch': 0.9.18
       chalk: 4.1.2
-      debug: 4.3.7
+      debug: 4.4.0
       dotenv: 16.4.5
       graphql: 16.9.0
       graphql-request: 6.1.0(encoding@0.1.13)(graphql@16.9.0)
@@ -16763,7 +16753,7 @@ snapshots:
       js-yaml: 4.1.0
       lodash: 4.17.21
       scuid: 1.1.0
-      tslib: 2.6.3
+      tslib: 2.8.0
       yaml-ast-parser: 0.0.43
     transitivePeerDependencies:
       - '@types/node'
@@ -16811,7 +16801,7 @@ snapshots:
       '@whatwg-node/fetch': 0.9.18
       graphql: 16.9.0
       isomorphic-ws: 5.0.0(ws@8.18.0)
-      tslib: 2.6.3
+      tslib: 2.8.0
       value-or-promise: 1.0.12
       ws: 8.18.0
     transitivePeerDependencies:
@@ -16826,7 +16816,7 @@ snapshots:
       cross-inspect: 1.0.0
       dset: 3.1.3
       graphql: 16.9.0
-      tslib: 2.6.3
+      tslib: 2.8.0
 
   '@graphql-tools/utils@9.2.1(graphql@16.9.0)':
     dependencies:
@@ -16884,7 +16874,7 @@ snapshots:
   '@humanwhocodes/config-array@0.13.0':
     dependencies:
       '@humanwhocodes/object-schema': 2.0.3
-      debug: 4.3.7
+      debug: 4.4.0
       minimatch: 3.1.2
     transitivePeerDependencies:
       - supports-color
@@ -17131,7 +17121,7 @@ snapshots:
 
   '@kwsites/file-exists@1.1.1':
     dependencies:
-      debug: 4.3.7
+      debug: 4.4.0
     transitivePeerDependencies:
       - supports-color
 
@@ -18454,11 +18444,11 @@ snapshots:
       '@lukeed/uuid': 2.0.1
       '@segment/analytics-generic-utils': 1.2.0
       dset: 3.1.3
-      tslib: 2.6.3
+      tslib: 2.8.0
 
   '@segment/analytics-generic-utils@1.2.0':
     dependencies:
-      tslib: 2.6.3
+      tslib: 2.8.0
 
   '@segment/analytics-next@1.70.0(encoding@0.1.13)':
     dependencies:
@@ -20019,10 +20009,6 @@ snapshots:
     dependencies:
       undici-types: 5.26.5
 
-  '@types/node@22.7.5':
-    dependencies:
-      undici-types: 6.19.8
-
   '@types/papaparse@5.3.14':
     dependencies:
       '@types/node': 20.14.12
@@ -20178,7 +20164,7 @@ snapshots:
       '@typescript-eslint/types': 6.21.0
       '@typescript-eslint/typescript-estree': 6.21.0(typescript@5.6.3)
       '@typescript-eslint/visitor-keys': 6.21.0
-      debug: 4.3.7
+      debug: 4.4.0
       eslint: 8.57.1
     optionalDependencies:
       typescript: 5.6.3
@@ -20212,7 +20198,7 @@ snapshots:
     dependencies:
       '@typescript-eslint/typescript-estree': 8.9.0(typescript@5.6.3)
       '@typescript-eslint/utils': 8.9.0(eslint@8.57.1)(typescript@5.6.3)
-      debug: 4.3.7
+      debug: 4.4.0
       ts-api-utils: 1.3.0(typescript@5.6.3)
     optionalDependencies:
       typescript: 5.6.3
@@ -20228,7 +20214,7 @@ snapshots:
     dependencies:
       '@typescript-eslint/types': 6.21.0
       '@typescript-eslint/visitor-keys': 6.21.0
-      debug: 4.3.7
+      debug: 4.4.0
       globby: 11.1.0
       is-glob: 4.0.3
       minimatch: 9.0.3
@@ -20243,7 +20229,7 @@ snapshots:
     dependencies:
       '@typescript-eslint/types': 8.9.0
       '@typescript-eslint/visitor-keys': 8.9.0
-      debug: 4.3.7
+      debug: 4.4.0
       fast-glob: 3.3.2
       is-glob: 4.0.3
       minimatch: 9.0.5
@@ -20390,7 +20376,7 @@ snapshots:
 
   '@wry/caches@1.0.1':
     dependencies:
-      tslib: 2.6.3
+      tslib: 2.8.0
 
   '@wry/context@0.7.4':
     dependencies:
@@ -20398,7 +20384,7 @@ snapshots:
 
   '@wry/equality@0.5.7':
     dependencies:
-      tslib: 2.6.3
+      tslib: 2.8.0
 
   '@wry/trie@0.4.3':
     dependencies:
@@ -20406,7 +20392,7 @@ snapshots:
 
   '@wry/trie@0.5.0':
     dependencies:
-      tslib: 2.6.3
+      tslib: 2.8.0
 
   '@xobotyi/scrollbar-width@1.9.5': {}
 
@@ -22233,7 +22219,7 @@ snapshots:
   detect-port@1.6.1:
     dependencies:
       address: 1.2.2
-      debug: 4.3.7
+      debug: 4.4.0
     transitivePeerDependencies:
       - supports-color
 
@@ -22342,7 +22328,7 @@ snapshots:
 
   dset@3.1.3: {}
 
-  duckdb@0.10.1(encoding@0.1.13):
+  duckdb@1.1.3(encoding@0.1.13):
     dependencies:
       '@mapbox/node-pre-gyp': 1.0.11(encoding@0.1.13)
       node-addon-api: 7.1.0
@@ -22615,8 +22601,6 @@ snapshots:
 
   escalade@3.1.1: {}
 
-  escalade@3.1.2: {}
-
   escalade@3.2.0: {}
 
   escape-goat@4.0.0: {}
@@ -22673,7 +22657,7 @@ snapshots:
 
   eslint-import-resolver-typescript@3.6.1(@typescript-eslint/parser@6.21.0(eslint@8.57.1)(typescript@5.6.3))(eslint-import-resolver-node@0.3.9)(eslint-plugin-import@2.29.1)(eslint@8.57.1):
     dependencies:
-      debug: 4.3.7
+      debug: 4.4.0
       enhanced-resolve: 5.17.0
       eslint: 8.57.1
       eslint-module-utils: 2.8.1(@typescript-eslint/parser@6.21.0(eslint@8.57.1)(typescript@5.6.3))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.6.1)(eslint@8.57.1)
@@ -23115,7 +23099,7 @@ snapshots:
 
   eval@0.1.8:
     dependencies:
-      '@types/node': 22.7.5
+      '@types/node': 20.14.12
       require-like: 0.1.2
 
   event-emitter@0.3.5:
@@ -23482,7 +23466,7 @@ snapshots:
 
   foreground-child@3.2.1:
     dependencies:
-      cross-spawn: 7.0.3
+      cross-spawn: 7.0.6
       signal-exit: 4.1.0
 
   forever-agent@0.6.1: {}
@@ -23891,7 +23875,7 @@ snapshots:
       jiti: 1.21.6
       minimatch: 4.2.3
       string-env-interpolation: 1.0.1
-      tslib: 2.6.3
+      tslib: 2.8.0
     transitivePeerDependencies:
       - '@types/node'
       - bufferutil
@@ -24291,7 +24275,7 @@ snapshots:
   http-proxy-agent@7.0.2:
     dependencies:
       agent-base: 7.1.1
-      debug: 4.3.7
+      debug: 4.4.0
     transitivePeerDependencies:
       - supports-color
 
@@ -24347,7 +24331,7 @@ snapshots:
   https-proxy-agent@7.0.5:
     dependencies:
       agent-base: 7.1.1
-      debug: 4.3.7
+      debug: 4.4.0
     transitivePeerDependencies:
       - supports-color
 
@@ -26730,7 +26714,7 @@ snapshots:
       '@wry/caches': 1.0.1
       '@wry/context': 0.7.4
       '@wry/trie': 0.4.3
-      tslib: 2.6.3
+      tslib: 2.8.0
 
   optionator@0.9.4:
     dependencies:
@@ -26755,7 +26739,7 @@ snapshots:
 
   os-tmpdir@1.0.2: {}
 
-  oss-directory@0.0.16(ts-node@10.9.1(@types/node@20.11.17)(typescript@5.3.3))(typescript@5.3.3):
+  oss-directory@0.0.18(ts-node@10.9.1(@types/node@20.11.17)(typescript@5.3.3))(typescript@5.3.3):
     dependencies:
       '@ethereum-attestation-service/eas-sdk': 1.4.0(ts-node@10.9.1(@types/node@20.11.17)(typescript@5.3.3))(typescript@5.3.3)
       ajv: 8.17.1
@@ -27435,7 +27419,7 @@ snapshots:
       address: 1.2.2
       browserslist: 4.24.0
       chalk: 4.1.2
-      cross-spawn: 7.0.3
+      cross-spawn: 7.0.6
       detect-port-alt: 1.1.6
       escape-string-regexp: 4.0.0
       filesize: 8.0.7
@@ -28444,7 +28428,7 @@ snapshots:
 
   spdy@4.0.2:
     dependencies:
-      debug: 4.3.7
+      debug: 4.4.0
       handle-thing: 2.0.1
       http-deceiver: 1.2.7
       select-hose: 2.0.0
@@ -28993,7 +28977,7 @@ snapshots:
 
   ts-invariant@0.10.3:
     dependencies:
-      tslib: 2.6.3
+      tslib: 2.8.0
 
   ts-log@2.2.5: {}
 
@@ -29210,8 +29194,6 @@ snapshots:
 
   undici-types@5.26.5: {}
 
-  undici-types@6.19.8: {}
-
   undici@5.28.2:
     dependencies:
       '@fastify/busboy': 2.1.0
@@ -29316,7 +29298,7 @@ snapshots:
   update-browserslist-db@1.1.0(browserslist@4.23.2):
     dependencies:
       browserslist: 4.23.2
-      escalade: 3.1.2
+      escalade: 3.2.0
       picocolors: 1.0.1
 
   update-browserslist-db@1.1.1(browserslist@4.24.0):

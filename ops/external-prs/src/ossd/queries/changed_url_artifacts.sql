@@ -1,3 +1,3 @@
 SELECT * 
-FROM code_status 
+FROM url_status 
 WHERE status != 'EXISTING'
