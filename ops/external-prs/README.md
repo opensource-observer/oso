@@ -54,7 +54,7 @@ You can run the app via:
 
 ```bash
 # Handle PR validations
-pnpm external-prs ossd validate-prs {pr_number} {commit_sha} {main_path} {pr_path}
+pnpm external-prs ossd validate-pr {pr_number} {commit_sha} {main_path} {pr_path}
 ```
 
 If you've configured your GitHub secrets correctly,

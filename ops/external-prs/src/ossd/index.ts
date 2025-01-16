@@ -226,7 +226,7 @@ async function runParameterizedQuery(
 
 // | Projects             | {{ projects.existing }} {{ projects.added }} | {{projects.removed}} | {{ projects.updated }}
 type ProjectSummary = {
-  project_slug: string;
+  project_name: string;
   status: string;
   blockchain_added: number;
   blockchain_removed: number;
@@ -242,20 +242,15 @@ type ProjectSummary = {
   package_unchanged: number;
 };
 
-type CodeStatus = {
-  project_slug: string;
-  code_url: string;
-  status: string;
-};
-
-type PackageStatus = {
-  project_slug: string;
-  package_url: string;
+type UrlStatus = {
+  project_name: string;
+  url_value: string;
+  url_type: string;
   status: string;
 };
 
 type BlockchainStatus = {
-  project_slug: string;
+  project_name: string;
   address: string;
   tag: string;
   network: string;
@@ -269,6 +264,14 @@ type BlockchainValidationItem = {
   address: string;
   tags: string[];
   networks: string[];
+};
+
+type UrlItem = {
+  // Full URL
+  url_value: string;
+  // The type of URL
+  // e.g. GITHUB, NPM, DEFILLAMA, WEBSITE
+  url_type: string;
 };
 
 type Summary = {
@@ -285,18 +288,14 @@ type Summary = {
 type ChangeSummary = {
   projects: ProjectSummary[];
   artifacts: {
-    summary: {
-      blockchain: Summary;
-      package: Summary;
-      code: Summary;
-    };
+    summary: Record<string, Summary>;
     status: {
       blockchain: BlockchainStatus[];
-      package: PackageStatus[];
-      code: CodeStatus[];
+      url: UrlStatus[];
     };
     toValidate: {
       blockchain: BlockchainValidationItem[];
+      defillama: UrlItem[];
     };
   };
 };
@@ -448,30 +447,23 @@ class OSSDirectoryPullRequest {
         await this.runParameterizedQuery("projects_by_collection", {
           source: "pr",
         });
+        await this.runParameterizedQuery("url_artifacts", {
+          source: "main",
+        });
+        await this.runParameterizedQuery("url_artifacts", {
+          source: "pr",
+        });
         await this.runParameterizedQuery("blockchain_artifacts", {
           source: "main",
         });
         await this.runParameterizedQuery("blockchain_artifacts", {
-          source: "pr",
-        });
-        await this.runParameterizedQuery("code_artifacts", {
-          source: "main",
-        });
-        await this.runParameterizedQuery("code_artifacts", {
-          source: "pr",
-        });
-        await this.runParameterizedQuery("package_artifacts", {
-          source: "main",
-        });
-        await this.runParameterizedQuery("package_artifacts", {
           source: "pr",
         });
 
         await this.runParameterizedQuery("project_status");
         await this.runParameterizedQuery("projects_by_collection_status");
         await this.runParameterizedQuery("blockchain_status");
-        await this.runParameterizedQuery("package_status");
-        await this.runParameterizedQuery("code_status");
+        await this.runParameterizedQuery("url_status");
         await this.runParameterizedQuery("artifacts_summary");
         await this.runParameterizedQuery("project_summary");
 
@@ -509,30 +501,26 @@ class OSSDirectoryPullRequest {
             "changed_projects",
           )) as ProjectSummary[],
           artifacts: {
-            summary: {
-              blockchain: summaries["BLOCKCHAIN"],
-              code: summaries["CODE"],
-              package: summaries["PACKAGE"],
-            },
+            summary: summaries,
             status: {
               blockchain: (await runParameterizedQuery(
                 db,
                 "changed_blockchain_artifacts",
               )) as BlockchainStatus[],
-              code: (await runParameterizedQuery(
+              url: (await runParameterizedQuery(
                 db,
-                "changed_code_artifacts",
-              )) as CodeStatus[],
-              package: (await runParameterizedQuery(
-                db,
-                "changed_package_artifacts",
-              )) as PackageStatus[],
+                "changed_url_artifacts",
+              )) as UrlStatus[],
             },
             toValidate: {
               blockchain: (await runParameterizedQuery(
                 db,
                 "changed_blockchain_artifacts_to_validate",
               )) as BlockchainValidationItem[],
+              defillama: (await runParameterizedQuery(
+                db,
+                "changed_defillama_artifacts_to_validate",
+              )) as UrlItem[],
             },
           },
         };
@@ -565,7 +553,7 @@ class OSSDirectoryPullRequest {
               return await this.runParameterizedQuery(name, params);
             },
           };
-          server.context.changes = changes;
+          server.context.changes = this.changes;
           await new Promise<void>((resolve, reject) => {
             server.on("exit", () => {
               resolve();
@@ -619,17 +607,18 @@ class OSSDirectoryPullRequest {
       sha: args.sha,
       pr: args.pr,
     });
+    // Initialize
     await this.loadValidators(urls);
-
     const results = await ValidationResults.create();
+
+    // Validate blockchain artifacts
     const addressesToValidate =
       this.changes.artifacts.toValidate.blockchain.map((b) => b.address);
     logger.info({
-      message: `Starting validations for [${addressesToValidate}]. ${addressesToValidate.length} total`,
+      message: `Starting blockchain validations for [${addressesToValidate}]. ${addressesToValidate.length} total`,
       addresses: addressesToValidate,
     });
 
-    // Run on-chain validations
     for (const item of this.changes.artifacts.toValidate.blockchain) {
       const address = item.address;
       for (const network of item.networks) {
@@ -692,6 +681,82 @@ class OSSDirectoryPullRequest {
           }
         }
       }
+    }
+
+    // DefiLlama validations
+    const defillamaToValidate = this.changes.artifacts.toValidate.defillama.map(
+      (x) => x.url_value,
+    );
+    logger.info({
+      message: `Starting DefiLlama validations for [${defillamaToValidate}]. ${defillamaToValidate.length} total`,
+      addresses: defillamaToValidate,
+    });
+
+    for (const item of this.changes.artifacts.toValidate.defillama) {
+      console.log(item);
+      /**
+      const address = item.address;
+      for (const network of item.networks) {
+        const validator =
+          this.validators[uncheckedCast<BlockchainNetwork>(network)];
+        if (!validator) {
+          results.addWarning(
+            `no automated validators exist on ${network} to check tags=[${item.tags}]. Please check manually.`,
+            address,
+            { network },
+          );
+          //throw new Error(`No validator found for network "${network}"`);
+          continue;
+        }
+
+        logger.info({
+          message: `validating address ${address} on ${network} for [${item.tags}]`,
+          address: address,
+          network: network,
+          tags: item.tags,
+        });
+
+        for (const rawTag of item.tags) {
+          const tag = uncheckedCast<BlockchainTag>(rawTag);
+          const genericChecker = async (fn: () => Promise<boolean>) => {
+            if (!(await fn())) {
+              results.addError(
+                `${address} is not a ${tag} on ${network}`,
+                address,
+                { address, tag, network },
+              );
+            } else {
+              results.addSuccess(
+                `${address} is a '${tag}' on ${network}`,
+                address,
+                { address, tag, network },
+              );
+            }
+          };
+          if (tag === "eoa") {
+            await genericChecker(() => validator.isEOA(address));
+          } else if (tag === "contract") {
+            if (network === "any_evm") {
+              results.addWarning(
+                `addresses with the 'contract' tag should enumerate all networks that it is deployed on, rather than use 'any_evm'`,
+                address,
+                { address, tag, network },
+              );
+            } else {
+              await genericChecker(() => validator.isContract(address));
+            }
+          } else if (tag === "deployer") {
+            await genericChecker(() => validator.isDeployer(address));
+          } else {
+            results.addWarning(
+              `missing validator for ${tag} on ${network}`,
+              address,
+              { tag, network },
+            );
+          }
+        }
+      }
+      */
     }
 
     // Render the results to GitHub PR
