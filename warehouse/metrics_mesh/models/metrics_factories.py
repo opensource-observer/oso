@@ -296,19 +296,19 @@ timeseries_metrics(
         ),
         "key_active_address_count": MetricQueryDef(
             ref="key_active_address_count.sql",
-            entity_types=["artifact"],
+            entity_types=["artifact", "project", "collection"],
         ),
         "key_active_contract_count": MetricQueryDef(
             ref="key_active_contract_count.sql",
-            entity_types=["artifact"],
+            entity_types=["artifact", "project", "collection"],
         ),
         "key_active_developer_count": MetricQueryDef(
             ref="key_active_developer_count.sql",
-            entity_types=["artifact"],
+            entity_types=["artifact", "project", "collection"],
         ),
         "key_comment_count": MetricQueryDef(
             ref="key_comment_count.sql",
-            entity_types=["artifact"],
+            entity_types=["artifact", "project", "collection"],
         ),
         "key_commit_count": MetricQueryDef(
             ref="key_commit_count.sql",
