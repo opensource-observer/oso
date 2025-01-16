@@ -390,7 +390,7 @@ def oss_directory_github_repositories_resource(
     write_disposition="append",
 )
 def oss_directory_github_sbom_resource(
-    projects_df: pl.DataFrame,
+    all_repo_urls: t.List[str],
     gh_token: str = dlt.secrets.value,
     rate_limit_max_retry: int = 5,
     server_error_max_rety: int = 3,
@@ -408,16 +408,16 @@ def oss_directory_github_sbom_resource(
     gh = GithubRepositoryResolver.get_github_client(config)
     resolver = GithubRepositoryResolver(gh)
 
-    all_github_urls = resolver.github_urls_from_df(projects_df)
-
-    for unparsed_url in all_github_urls["url"]:
-        if not unparsed_url:
+    for raw_repo_url in all_repo_urls:
+        if not raw_repo_url:
+            logger.warning("Skipping empty repsitory url")
             continue
 
         try:
-            parsed_url = resolver.parse_url(unparsed_url)
+            parsed_url = resolver.parse_url(raw_repo_url)
 
             if parsed_url.type != GithubURLType.REPOSITORY or not parsed_url.repository:
+                logger.warning("Skipping non-repository url: %s", raw_repo_url)
                 continue
 
             yield from resolver.get_sbom_for_repo(
@@ -425,5 +425,5 @@ def oss_directory_github_sbom_resource(
             )
 
         except InvalidGithubURL:
-            logger.warning("Skipping invalid github url: %s", unparsed_url)
+            logger.warning("Skipping invalid github url: %s", raw_repo_url)
             continue
