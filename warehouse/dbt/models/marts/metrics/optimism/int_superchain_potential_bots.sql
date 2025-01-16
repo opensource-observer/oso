@@ -1,3 +1,9 @@
+{{
+  config(
+    materialized='table'
+  )
+}}
+
 {% set networks = ["optimism", "base", "frax", "metal", "mode", "zora"] %}
 
 {% set union_queries = [] %}
