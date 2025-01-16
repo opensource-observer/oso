@@ -57,7 +57,6 @@ def oso_source(evaluator: MacroEvaluator, table_name: exp.Expression):
         raise ValueError(f"Unexpected table name: {table_name_evaled}")
 
     oso_source_rewrite = t.cast(t.List[dict], evaluator.var("oso_source_rewrite", []))
-    print("test")
 
     # try to find a matching rule if none then we return the table
     rewritten_table = table
