@@ -20,8 +20,8 @@ with metrics as (
     ) as total_transactions,
     approx_count_distinct(events.from_artifact_id) as total_addresses
   from {{ ref('int_superchain_filtered_events') }} as events
-  inner join {{ ref('int_superchain_onchain_builder_filter') }} as filter
-    on events.to_project_id = filter.project_id
+  inner join {{ ref('int_superchain_onchain_builder_filter') }} as builders
+    on events.to_project_id = builders.project_id
   where
     date(events.time)
     >= date_sub(current_date(), interval {{ lookback_days }} day)
