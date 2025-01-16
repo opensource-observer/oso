@@ -22,14 +22,12 @@ where
   and events.event_source in (
     'OPTIMISM', 'BASE', 'MODE', 'ZORA', 'METAL', 'FRAX'
   )
-  and date(events.time) >= date_sub(
-    current_date(), interval @trailing_days day
-  )
+  and date(events.time) >= (current_date() - interval @trailing_days day)
   and events.from_artifact_id not in (
     select artifact_id from @oso_source('int_superchain_potential_bots')
   )
   and events.to_artifact_id not in (
     select artifact_id
-    from {{ @oso_source('int_artifacts_in_ossd_by_project') }}
+    from @oso_source('int_artifacts_in_ossd_by_project')
     where artifact_type = 'WALLET'
   )

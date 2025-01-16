@@ -18,7 +18,7 @@ with project_metrics as (
       case when event_type = 'CONTRACT_INVOCATION_DAILY_L2_GAS_USED' then amount else 0 end
     ) as total_gas_used,
     approx_count_distinct(from_artifact_id) as unique_addresses,
-    count(distinct date_trunc(time, day)) as unique_days
+    count(distinct date_trunc('day', time)) as unique_days
   from metrics.int_superchain_filtered_events
   group by to_project_id
 )
