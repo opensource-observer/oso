@@ -11,9 +11,10 @@ select
   events.to_artifact_id,
   artifacts.project_id as to_project_id,
   events.event_type,
+  events.event_source,
   events.amount
-from @oso_source('timeseries_events_by_artifact_v0') events
-inner join @oso_source('artifacts_by_project_v1') as artifacts
+from @oso_source('bigquery.oso.timeseries_events_by_artifact_v0') events
+inner join @oso_source('bigquery.oso.artifacts_by_project_v1') as artifacts
   on events.to_artifact_id = artifacts.artifact_id
 where
   events.event_type in (
@@ -24,10 +25,10 @@ where
   )
   and date(events.time) >= (current_date() - interval @trailing_days day)
   and events.from_artifact_id not in (
-    select artifact_id from @oso_source('int_superchain_potential_bots')
+    select artifact_id from @oso_source('bigquery.oso.int_superchain_potential_bots')
   )
   and events.to_artifact_id not in (
     select artifact_id
-    from @oso_source('int_artifacts_in_ossd_by_project')
+    from @oso_source('bigquery.oso.int_artifacts_in_ossd_by_project')
     where artifact_type = 'WALLET'
   )

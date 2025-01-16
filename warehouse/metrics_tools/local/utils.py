@@ -86,7 +86,7 @@ def bq_to_duckdb(table_mapping: t.Dict[str, str], duckdb_path: str):
     bqclient = bigquery.Client(project=project_id)
     conn = duckdb.connect(duckdb_path)
 
-    conn.sql("CREATE SCHEMA IF NOT EXISTS sources;")
+    created_schemas = set()
 
     for bq_table, duckdb_table in table_mapping.items():
         logger.info(f"{bq_table}: copying to {duckdb_table}")
@@ -112,7 +112,13 @@ def bq_to_duckdb(table_mapping: t.Dict[str, str], duckdb_path: str):
         new_schema = remove_metadata_from_schema(table_as_arrow.schema)
         table_as_arrow = table_as_arrow.cast(new_schema)
 
+        duckdb_table_split = duckdb_table.split(".")
+        schema = duckdb_table_split[0]
+        if schema not in created_schemas:
+            conn.execute(f"CREATE SCHEMA IF NOT EXISTS {schema}")
+            created_schemas.add(schema)
         if is_simple_copy:
+
             conn.execute(
                 f"CREATE TABLE IF NOT EXISTS {duckdb_table} AS SELECT * FROM table_as_arrow"
             )
@@ -165,10 +171,11 @@ def initialize_local_duckdb(path: str):
             "opensource-observer.oso_playground.int_superchain_potential_bots": "sources.int_superchain_potential_bots",
             "opensource-observer.oso_playground.package_owners_v0": "sources.package_owners_v0",
             "opensource-observer.oso_playground.projects_by_collection_v1": "sources.projects_by_collection_v1",
+            "opensource-observer.oso_playground.projects_v1": "sources.projects_v1",
             "opensource-observer.oso_playground.sboms_v0": "sources.sboms_v0",
             "opensource-observer.oso_playground.timeseries_events_by_artifact_v0": "sources.timeseries_events_by_artifact_v0",
             "opensource-observer.oso_playground.timeseries_events_aux_issues_by_artifact_v0": "sources.timeseries_events_aux_issues_by_artifact_v0",
-            "opensource-observer.defillama_tvl.contango": "sources.contango",
+            "opensource-observer.defillama_tvl.contango_protocol": "sources_defillama_tvl.contango_protocol",
         },
         path,
     )

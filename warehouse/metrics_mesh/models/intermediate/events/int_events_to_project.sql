@@ -12,8 +12,8 @@ select
   events.event_source,
   events.event_type,
   events.amount
-from @oso_source('timeseries_events_by_artifact_v0') events
-inner join @oso_source('artifacts_by_project_v1') artifacts
+from @oso_source('bigquery.oso.timeseries_events_by_artifact_v0') events
+inner join @oso_source('bigquery.oso.artifacts_by_project_v1') artifacts
   on
     events.to_artifact_id
     = artifacts.artifact_id
