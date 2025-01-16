@@ -169,7 +169,7 @@ def initialize_local_duckdb(path: str):
             "opensource-observer.oso_playground.sboms_v0": "sources.sboms_v0",
             "opensource-observer.oso_playground.timeseries_events_by_artifact_v0": "sources.timeseries_events_by_artifact_v0",
             "opensource-observer.oso_playground.timeseries_events_aux_issues_by_artifact_v0": "sources.timeseries_events_aux_issues_by_artifact_v0",
-            "opensource-observer.defillama_tvl.contango": "sources.contango",
+            "opensource-observer.defillama_tvl.contango_protocol": "sources_defillama.contango_protocol",
         },
         path,
     )

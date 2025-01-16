@@ -66,4 +66,4 @@ def defillama_tvl_factory(protocols: t.List[str]):
     return [defillama_tvl_model(protocol) for protocol in protocols]
 
 
-defillama_tvl_factory(["contango"])
+defillama_tvl_factory(["contango_protocol"])
