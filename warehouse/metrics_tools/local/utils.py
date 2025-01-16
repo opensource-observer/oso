@@ -8,7 +8,10 @@ from google.cloud import bigquery
 from sqlglot import exp
 from sqlmesh.core.dialect import parse_one
 
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+#logger.addHandler(logging.StreamHandler(sys.stdout))
 
 project_id = os.getenv("GOOGLE_PROJECT_ID")
 
@@ -79,12 +82,14 @@ def bq_to_duckdb(table_mapping: t.Dict[str, str], duckdb_path: str):
     Returns:
         None
     """
+    logger.info("Copying tables from BigQuery to DuckDB")
     bqclient = bigquery.Client(project=project_id)
     conn = duckdb.connect(duckdb_path)
 
     conn.sql("CREATE SCHEMA IF NOT EXISTS sources;")
 
     for bq_table, duckdb_table in table_mapping.items():
+        logger.info(f"{bq_table}: copying to {duckdb_table}")
         table = bigquery.TableReference.from_string(bq_table)
         rows = bqclient.list_rows(table)
 
@@ -148,14 +153,20 @@ def bq_to_duckdb(table_mapping: t.Dict[str, str], duckdb_path: str):
             logger.debug(f"EXECUTING={insert_query.sql(dialect="duckdb")}")
             conn.execute(insert_query.sql(dialect="duckdb"))
 
+    logger.info("...done")
+
 
 def initialize_local_duckdb(path: str):
     bq_to_duckdb(
         {
             # We need to rename this once we run the oso_playground dbt again
-            "opensource-observer.oso_playground.timeseries_events_by_artifact_v0": "sources.timeseries_events_by_artifact_v0",
             "opensource-observer.oso_playground.artifacts_by_project_v1": "sources.artifacts_by_project_v1",
+            "opensource-observer.oso_playground.int_artifacts_in_ossd_by_project": "sources.int_artifacts_in_ossd_by_project",
+            "opensource-observer.oso_playground.int_superchain_potential_bots": "sources.int_superchain_potential_bots",
+            "opensource-observer.oso_playground.package_owners_v0": "sources.package_owners_v0",
             "opensource-observer.oso_playground.projects_by_collection_v1": "sources.projects_by_collection_v1",
+            "opensource-observer.oso_playground.sboms_v0": "sources.sboms_v0",
+            "opensource-observer.oso_playground.timeseries_events_by_artifact_v0": "sources.timeseries_events_by_artifact_v0",
             "opensource-observer.oso_playground.timeseries_events_aux_issues_by_artifact_v0": "sources.timeseries_events_aux_issues_by_artifact_v0",
             "opensource-observer.defillama_tvl.contango": "sources.contango",
         },
