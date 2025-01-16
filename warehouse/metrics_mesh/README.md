@@ -2,6 +2,20 @@
 
 ## Setup
 
+You will need [DuckDB](https://duckdb.org/) on your machine. 
+
+Install using Homebrew (macOS/Linux):
+
+```bash
+brew install duckdb
+```
+
+Install using APT (Debian/Ubuntu):
+
+```bash
+sudo apt-get install duckdb
+```
+
 Make sure to set the following environment variables
 in your .env file (at the root of the oso repo)
 
@@ -16,22 +30,53 @@ Make sure you've logged into Google Cloud on your terminal
 gcloud auth application-default login
 ```
 
-Now install dependencies and download playground data into
-a local DuckDB instance.
+Now install dependencies.
 
 ```bash
 poetry install
 poetry shell
+```
+
+Finally, download playground data into your local DuckDB instance with the following command
+
+```
 oso metrics local initialize
 ```
 
 ## Run
 
+Run sqlmesh for a sample date range:
+
 ```bash
 cd warehouse/metrics_mesh
 sqlmesh plan dev --start 2024-07-01 --end 2024-08-01 # to run for specific date rates (fast)
-sqlmesh plan  # to run the entire pipeline (slow)
+# sqlmesh plan # to run the entire pipeline (slow)
 ```
+
+Explore the data in DuckDB:
+
+```bash
+duckdb
+```
+
+or
+
+```bash
+duckdb /tmp/oso.duckdb
+```
+
+See the tables are loaded:
+
+```bash
+SHOW ALL TABLES;
+```
+
+Execute a sample query:
+
+```bash
+SELECT * FROM metrics__dev.metrics_v0 LIMIT 5;
+```
+
 
 ## Metrics Overview
 
