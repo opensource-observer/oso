@@ -7,7 +7,7 @@ with metrics as (
     sum(
       case
         when events.event_type = 'CONTRACT_INVOCATION_DAILY_L2_GAS_USED'
-          then events.amount / 1e18
+          then events.amount / 1e18 -- TODO: remove gas_price
         else 0
       end
     ) as total_gas_used,
