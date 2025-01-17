@@ -41,7 +41,9 @@ def defi_llama_tvl_model(protocol: str):
             "tvl": "FLOAT",
         },
     )
-    def tvl_model(context: ExecutionContext, *args, **kwargs) -> pd.DataFrame:
+    def tvl_model(
+        context: ExecutionContext, *args, **kwargs
+    ) -> t.Iterator[pd.DataFrame]:
         source_name = defi_llama_slug_to_name(protocol)
         # Run the query for the given protocol
         table = oso_source_for_pymodel(context, f"bigquery.defillama_tvl.{source_name}")
@@ -50,6 +52,9 @@ def defi_llama_tvl_model(protocol: str):
             .from_(table)
             .sql(dialect=context.engine_adapter.dialect)
         )
+        if df.empty:
+            yield from ()
+            return
         # Parse the chain tvls
         result = pd.DataFrame(
             [
@@ -59,8 +64,11 @@ def defi_llama_tvl_model(protocol: str):
             ],
             columns=["time", "protocol", "chain", "token", "tvl"],  # type: ignore
         )
+        if result.empty:
+            yield from ()
+            return
         result["slug"] = protocol
-        return result
+        yield result
 
 
 def defi_llama_tvl_factory(protocols: t.List[str]):
