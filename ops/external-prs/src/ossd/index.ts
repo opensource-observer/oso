@@ -19,6 +19,7 @@ import * as repl from "repl";
 import columnify from "columnify";
 import { BigQueryOptions } from "@google-cloud/bigquery";
 import {
+  DefiLlamaValidator,
   EVMNetworkValidator,
   EthereumValidator,
   ArbitrumValidator,
@@ -304,7 +305,10 @@ class OSSDirectoryPullRequest {
   private db: duckdb.Database;
   private args: OSSDirectoryPullRequestArgs;
   private changes: ChangeSummary;
-  private validators: Partial<Record<BlockchainNetwork, EVMNetworkValidator>>;
+  private blockchainValidators: Partial<
+    Record<BlockchainNetwork, EVMNetworkValidator>
+  >;
+  private defillamaValidator: DefiLlamaValidator;
 
   static async init(args: OSSDirectoryPullRequestArgs) {
     const pr = new OSSDirectoryPullRequest(args);
@@ -314,7 +318,7 @@ class OSSDirectoryPullRequest {
 
   private constructor(args: OSSDirectoryPullRequestArgs) {
     this.args = args;
-    this.validators = {};
+    this.blockchainValidators = {};
   }
 
   async loadValidators(urls: RpcUrlArgs) {
@@ -322,27 +326,28 @@ class OSSDirectoryPullRequest {
     const bqOptions: BigQueryOptions = {
       ...(googleProjectId ? { projectId: googleProjectId } : {}),
     };
-    this.validators["any_evm"] = EthereumValidator({
+    this.defillamaValidator = new DefiLlamaValidator();
+    this.blockchainValidators["any_evm"] = EthereumValidator({
       rpcUrl: urls.mainnetRpcUrl,
       bqOptions,
     });
 
-    this.validators["mainnet"] = EthereumValidator({
+    this.blockchainValidators["mainnet"] = EthereumValidator({
       rpcUrl: urls.mainnetRpcUrl,
       bqOptions,
     });
 
-    this.validators["arbitrum_one"] = ArbitrumValidator({
+    this.blockchainValidators["arbitrum_one"] = ArbitrumValidator({
       rpcUrl: urls.arbitrumRpcUrl,
       bqOptions,
     });
 
-    this.validators["base"] = BaseValidator({
+    this.blockchainValidators["base"] = BaseValidator({
       rpcUrl: urls.baseRpcUrl,
       bqOptions,
     });
 
-    this.validators["optimism"] = OptimismValidator({
+    this.blockchainValidators["optimism"] = OptimismValidator({
       rpcUrl: urls.optimismRpcUrl,
       bqOptions,
     });
@@ -623,7 +628,7 @@ class OSSDirectoryPullRequest {
       const address = item.address;
       for (const network of item.networks) {
         const validator =
-          this.validators[uncheckedCast<BlockchainNetwork>(network)];
+          this.blockchainValidators[uncheckedCast<BlockchainNetwork>(network)];
         if (!validator) {
           results.addWarning(
             `no automated validators exist on ${network} to check tags=[${item.tags}]. Please check manually.`,
@@ -694,69 +699,39 @@ class OSSDirectoryPullRequest {
 
     for (const item of this.changes.artifacts.toValidate.defillama) {
       console.log(item);
-      /**
-      const address = item.address;
-      for (const network of item.networks) {
-        const validator =
-          this.validators[uncheckedCast<BlockchainNetwork>(network)];
-        if (!validator) {
-          results.addWarning(
-            `no automated validators exist on ${network} to check tags=[${item.tags}]. Please check manually.`,
-            address,
-            { network },
-          );
-          //throw new Error(`No validator found for network "${network}"`);
-          continue;
-        }
-
-        logger.info({
-          message: `validating address ${address} on ${network} for [${item.tags}]`,
-          address: address,
-          network: network,
-          tags: item.tags,
-        });
-
-        for (const rawTag of item.tags) {
-          const tag = uncheckedCast<BlockchainTag>(rawTag);
-          const genericChecker = async (fn: () => Promise<boolean>) => {
-            if (!(await fn())) {
-              results.addError(
-                `${address} is not a ${tag} on ${network}`,
-                address,
-                { address, tag, network },
-              );
-            } else {
-              results.addSuccess(
-                `${address} is a '${tag}' on ${network}`,
-                address,
-                { address, tag, network },
-              );
-            }
-          };
-          if (tag === "eoa") {
-            await genericChecker(() => validator.isEOA(address));
-          } else if (tag === "contract") {
-            if (network === "any_evm") {
-              results.addWarning(
-                `addresses with the 'contract' tag should enumerate all networks that it is deployed on, rather than use 'any_evm'`,
-                address,
-                { address, tag, network },
-              );
-            } else {
-              await genericChecker(() => validator.isContract(address));
-            }
-          } else if (tag === "deployer") {
-            await genericChecker(() => validator.isDeployer(address));
-          } else {
-            results.addWarning(
-              `missing validator for ${tag} on ${network}`,
-              address,
-              { tag, network },
-            );
-          }
-        }
+      const urlValue = item.url_value;
+      const urlType = item.url_type;
+      logger.info({
+        message: `validating DefiLlama ${urlValue}`,
+        url: urlValue,
+        type: urlType,
+      });
+      if (!this.defillamaValidator.isValidUrl(urlValue)) {
+        results.addError(
+          `${urlValue} is not a valid DefiLlama URL`,
+          urlValue,
+          item,
+        );
+      } else {
+        results.addSuccess(
+          `${urlValue} is a valid DefiLlama URL`,
+          urlValue,
+          item,
+        );
       }
-      */
+      if (!(await this.defillamaValidator.isValid(urlValue))) {
+        results.addError(
+          `${urlValue} is not a valid DefiLlama slug`,
+          urlValue,
+          item,
+        );
+      } else {
+        results.addSuccess(
+          `${urlValue} is a valid DefiLlama slug`,
+          urlValue,
+          item,
+        );
+      }
     }
 
     // Render the results to GitHub PR
