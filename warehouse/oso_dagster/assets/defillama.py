@@ -2,6 +2,11 @@ from dlt.sources.rest_api.typing import RESTAPIConfig
 
 from ..factories.rest import create_rest_factory_asset
 
+
+def defi_llama_slug_to_name(slug: str) -> str:
+    return f"{slug.replace('-', '_').replace(".", '__dot__')}_protocol"
+
+
 DEFI_LLAMA_PROTOCOLS = [
     "aave-v1",
     "aave-v2",
@@ -32,7 +37,7 @@ config: RESTAPIConfig = {
     "resources": list(
         map(
             lambda protocol: {
-                "name": f"{protocol.replace('-', '_').replace(".", '__dot__')}_protocol",
+                "name": defi_llama_slug_to_name(protocol),
                 "endpoint": {
                     "path": f"protocol/{protocol}",
                     "data_selector": "$",
@@ -42,6 +47,7 @@ config: RESTAPIConfig = {
         )
     ),
 }
+
 
 dlt_assets = create_rest_factory_asset(
     config=config,
