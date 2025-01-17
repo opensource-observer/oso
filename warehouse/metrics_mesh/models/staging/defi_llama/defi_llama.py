@@ -30,7 +30,7 @@ def parse_chain_tvl(protocol: str, chain_tvls_raw: str):
 
 def defi_llama_tvl_model(protocol: str):
     @model(
-        name=f"metrics.stg__{protocol}_tvl_events",
+        name=f"metrics.stg__{defi_llama_slug_to_name(protocol)}_tvl_events",
         is_sql=False,
         columns={
             "time": "INT64",
