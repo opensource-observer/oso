@@ -189,7 +189,6 @@ def initialize_local_duckdb(path: str):
     }
 
     table_mapping = {
-        # We need to rename this once we run the oso_playground dbt again
         "opensource-observer.oso_playground.artifacts_by_project_v1": "sources.artifacts_by_project_v1",
         "opensource-observer.oso_playground.int_artifacts_in_ossd_by_project": "sources.int_artifacts_in_ossd_by_project",
         "opensource-observer.oso_playground.int_superchain_potential_bots": "sources.int_superchain_potential_bots",
