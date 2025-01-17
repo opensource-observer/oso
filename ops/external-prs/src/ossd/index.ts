@@ -452,16 +452,16 @@ class OSSDirectoryPullRequest {
         await this.runParameterizedQuery("projects_by_collection", {
           source: "pr",
         });
-        await this.runParameterizedQuery("url_artifacts", {
+        await this.runParameterizedQuery("blockchain_artifacts", {
           source: "main",
         });
-        await this.runParameterizedQuery("url_artifacts", {
+        await this.runParameterizedQuery("blockchain_artifacts", {
           source: "pr",
         });
-        await this.runParameterizedQuery("blockchain_artifacts", {
+        await this.runParameterizedQuery("url_artifacts", {
           source: "main",
         });
-        await this.runParameterizedQuery("blockchain_artifacts", {
+        await this.runParameterizedQuery("url_artifacts", {
           source: "pr",
         });
 
