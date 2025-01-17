@@ -9,7 +9,7 @@ from sqlmesh.core.macros import MacroEvaluator
 def from_unix_timestamp(
     evaluator: MacroEvaluator,
     time_exp: exp.Expression,
-    data_type: str = "DATE",
+    data_type: str = "TIMESTAMP",
 ):
     """Convert a unix epoch timestamp to a date or timestamp."""
     from sqlmesh.core.dialect import parse_one
