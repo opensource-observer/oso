@@ -10,7 +10,7 @@ metadata:
 apiVersion: source.toolkit.fluxcd.io/v1
 kind: HelmRepository
 metadata:
-  name: cert-manager
+  name: jetstack 
   namespace: cert-manager
 spec:
   interval: 24h
@@ -29,8 +29,25 @@ spec:
       version: "1.x"
       sourceRef:
         kind: HelmRepository
-        name: cert-manager
+        name: jetstack 
         namespace: cert-manager
       interval: 12h
   values:
     installCRDs: true
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: trust-manager
+  namespace: cert-manager
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: trust-manager
+      version: "*"
+      sourceRef:
+        kind: HelmRepository
+        name: jetstack 
+        namespace: cert-manager
+      interval: 12h

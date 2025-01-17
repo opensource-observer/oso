@@ -9,10 +9,7 @@ from oso_dagster.assets.defillama import DEFI_LLAMA_PROTOCOLS, defi_llama_slug_t
 from sqlglot import exp
 from sqlmesh.core.dialect import parse_one
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-# logger.addHandler(logging.StreamHandler(sys.stdout))
 
 project_id = os.getenv("GOOGLE_PROJECT_ID")
 
