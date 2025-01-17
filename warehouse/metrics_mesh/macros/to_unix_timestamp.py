@@ -37,6 +37,7 @@ def str_to_unix_timestamp(
     )
 
 
+@macro()
 def to_unix_timestamp(
     evaluator: MacroEvaluator,
     time_exp: exp.Expression,
