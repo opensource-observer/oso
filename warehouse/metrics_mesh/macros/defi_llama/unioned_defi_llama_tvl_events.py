@@ -6,6 +6,7 @@ from sqlmesh.core.macros import MacroEvaluator
 
 @macro()
 def unioned_defi_llama_tvl_events(evaluator: MacroEvaluator):
+    """Unions all of the defi llama staging models for use in a cte"""
     return exp.union(
         *[
             exp.select("*").from_(
