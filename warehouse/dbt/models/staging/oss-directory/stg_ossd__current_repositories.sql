@@ -1,6 +1,13 @@
+{{
+  config(
+    materialized='table'
+  )
+}}
+
 {# 
   The most recent view of repositories from the ossd repositories dagster source.
 #}
+
 with ranked_repositories as (
   select
     node_id,
