@@ -13,15 +13,21 @@ def parse_chain_tvl(protocol: str, chain_tvls_raw: str):
     if isinstance(chain_tvls_raw, str):
         try:
             chain_tvls = orjson.loads(chain_tvls_raw)
-            keys = chain_tvls.keys()
+            networks = chain_tvls.keys()
             # Flatten the dictionary to a table
-            for key in keys:
-                tvl_history = chain_tvls[key]["tokens"]
+            for network in networks:
+                tvl_history = chain_tvls[network]["tokens"]
                 for entry in tvl_history:
                     tokens_values = entry["tokens"]
                     for token in tokens_values:
                         series.append(
-                            [entry["date"], protocol, key, token, tokens_values[token]]
+                            [
+                                entry["date"],
+                                protocol,
+                                network,
+                                token,
+                                tokens_values[token],
+                            ]
                         )
         except orjson.JSONDecodeError:
             return []
