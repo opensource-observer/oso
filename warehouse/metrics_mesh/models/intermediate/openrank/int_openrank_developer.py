@@ -4,18 +4,21 @@ from datetime import datetime
 import pandas as pd
 from openrank_sdk import EigenTrust
 from sqlmesh import ExecutionContext, model
+from sqlmesh.core.dialect import parse_one
 
 
 # simple illustration of a weighting function
 def weight_contributions(bucket_month, amount):
     year = bucket_month.year
-    weight = ((2018-year)/4) * (amount ** 0.5)
+    weight = ((2018 - year) / 4) * (amount**0.5)
     return weight
+
 
 # another simple illustration of a weighting function
 def weight_events(event_type, amount):
-    weight = (amount ** .5) * (0.5 if event_type == 'STARRED' else 1.0)
+    weight = (amount**0.5) * (0.5 if event_type == "STARRED" else 1.0)
     return weight
+
 
 @model(
     "metrics.int_openrank_developer",
@@ -25,7 +28,7 @@ def weight_events(event_type, amount):
         "metrics.int_events_monthly_to_project",
     ],
     columns={
-        #"id": "int",
+        # "id": "int",
         "i": "text",
         "v": "float",
     },
@@ -48,17 +51,18 @@ def execute(
     events_table = context.resolve_table("metrics.int_events_monthly_to_project")
 
     # Get trusted developers
-    seeded_developers_query = f"""
+    seeded_developers_query = parse_one(
+        f"""
         with targeted_repos as (
             select
                 artifact_id,
                 artifact_namespace,
                 artifact_name
             from {artifacts_table}
-            where (artifact_source, artifact_namespace, artifact_name) in (
-                ('GITHUB', 'ethereum', 'eips'),
-                ('GITHUB', 'ethereum', 'solidity'),
-                ('GITHUB', 'ethereum', 'go-ethereum'),
+            where CONCAT(artifact_source, artifact_namespace, artifact_name) in (
+                CONCAT('GITHUB', 'ethereum', 'eips'),
+                CONCAT('GITHUB', 'ethereum', 'solidity'),
+                CONCAT('GITHUB', 'ethereum', 'go-ethereum'),
             )
         )
         
@@ -75,27 +79,31 @@ def execute(
             on e.to_artifact_id = targeted_repos.artifact_id
         where
             e.event_type = 'COMMIT_CODE'
-            and e.bucket_month > '2014-01-01'
+            and e.bucket_month > date '2014-01-01'
             and e.to_artifact_id in (
                 select artifact_id
                 from targeted_repos
             )
-    """
-    seeded_developers = context.fetchdf(seeded_developers_query)
+    """,
+        dialect="duckdb",
+    )
+    seeded_developers = context.fetchdf(seeded_developers_query.sql(dialect="trino"))
     if seeded_developers.empty:
         yield from ()
         return
 
     # Generate pretrust values
-    seeded_developers['v'] = seeded_developers.apply(lambda x: weight_contributions(x['bucket_month'], x['amount']), axis=1)
+    seeded_developers["v"] = seeded_developers.apply(
+        lambda x: weight_contributions(x["bucket_month"], x["amount"]), axis=1
+    )
     pretrust = []
     developers = []
-    for (i,v) in seeded_developers.groupby('user')['v'].sum().items():
-        pretrust.append({'i': i, 'v': v})
+    for i, v in seeded_developers.groupby("user")["v"].sum().items():
+        pretrust.append({"i": i, "v": v})
         developers.append(i)
 
     # Get trusted repos
-    developers_str = "'"+"','".join(developers)+"'"
+    developers_str = "'" + "','".join(developers) + "'"
     trusted_repos_query = f"""
         with trusted_repos as (
             select
@@ -137,19 +145,25 @@ def execute(
         return
 
     # Construct a graph from the event data
-    trusted_repos['v'] = trusted_repos.apply(lambda x: weight_events(x['event_type'], x['amount']), axis=1)
+    trusted_repos["v"] = trusted_repos.apply(
+        lambda x: weight_events(x["event_type"], x["amount"]), axis=1
+    )
     localtrust = []
-    for item in trusted_repos.groupby(['trusted_user', 'github_user'])['v'].sum().items():
-        #((i, j), v) = item
+    for item in (
+        trusted_repos.groupby(["trusted_user", "github_user"])["v"].sum().items()
+    ):
+        # ((i, j), v) = item
         k = t.cast(t.Tuple[str, str], item[0])
         i, j = k
         v = float(item[1])
-        if i == j or '[bot]' in j:
+        if i == j or "[bot]" in j:
             continue
-        localtrust.append({'i': i, 'j': j, 'v': v})
+        localtrust.append({"i": i, "j": j, "v": v})
 
     # Run EigenTrust over the graph
-    pretrust_updated = [x for x in pretrust if x['i'] in trusted_repos['trusted_user'].unique()]
+    pretrust_updated = [
+        x for x in pretrust if x["i"] in trusted_repos["trusted_user"].unique()
+    ]
     a = EigenTrust()
     dev_rank = a.run_eigentrust(localtrust, pretrust_updated)
 
