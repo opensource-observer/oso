@@ -408,10 +408,17 @@ def oss_directory_github_sbom_resource(
     gh = GithubRepositoryResolver.get_github_client(config)
     resolver = GithubRepositoryResolver(gh)
 
-    for raw_repo_url in all_repo_urls:
+    total = len(all_repo_urls)
+    last_printed_percentage = -1
+    for index, raw_repo_url in enumerate(all_repo_urls, start=1):
         if not raw_repo_url:
-            logger.warning("Skipping empty repsitory url")
+            logger.warning("Skipping empty repository url")
             continue
+
+        percentage = (index / total) * 100
+        if int(percentage) != last_printed_percentage:
+            logger.info("Processing %d/%d (%.2f)", index, total, percentage)
+            last_printed_percentage = int(percentage)
 
         try:
             parsed_url = resolver.parse_url(raw_repo_url)
