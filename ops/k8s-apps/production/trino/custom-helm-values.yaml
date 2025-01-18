@@ -44,11 +44,11 @@ spec:
           effect: NoSchedule
       nodeSelector:
         pool_type: trino-worker
-			config:
-				query:
-					maxMemoryPerNode: 140GB
-			jvm:
-				maxHeapSize: "350G"
+      config:
+        query:
+          maxMemoryPerNode: 140GB
+      jvm:
+        maxHeapSize: "350G"
 
     additionalConfigProperties:
       - retry-policy=QUERY
