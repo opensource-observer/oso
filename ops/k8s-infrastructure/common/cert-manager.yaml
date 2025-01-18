@@ -41,6 +41,8 @@ metadata:
   name: trust-manager
   namespace: cert-manager
 spec:
+  dependsOn:
+    - name: cert-manager
   interval: 30m
   chart:
     spec:
