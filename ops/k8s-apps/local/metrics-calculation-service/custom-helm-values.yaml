@@ -1,0 +1,15 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: local-mcs
+spec:
+  values:
+    mcs:
+      cluster:
+        image:
+          repo: "ghcr.io/opensource-observer/oso"
+          tag: "latest"
+      trino:
+        host: local-trino-trino.local-trino.svc.cluster.local
+        port: 8080
+        user: sqlmesh

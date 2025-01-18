@@ -120,9 +120,13 @@ def cluster_setup(branch_name, cluster_name, repo_owner, repo_name):
                 check=True,
             )
 
+    rendered_flux_instance = flux_instance_yaml.format(
+        repo_owner=repo_owner, repo_name=repo_name, branch_name=branch_name
+    )
+
     subprocess.run(
         ["kubectl", "apply", "-f", "-"],
-        input=flux_instance_yaml.encode("utf-8"),
+        input=rendered_flux_instance.encode("utf-8"),
         check=True,
     )
 
