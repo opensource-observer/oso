@@ -1,0 +1,7 @@
+sources:
+  - name: openlabelsinitiative
+    database: opensource-observer
+    schema: openlabelsinitiative
+    tables:
+      - name: oli_tag_mapping
+        identifier: oli_tag_mapping
