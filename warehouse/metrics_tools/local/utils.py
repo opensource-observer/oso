@@ -13,6 +13,8 @@ logger = logging.getLogger(__name__)
 
 project_id = os.getenv("GOOGLE_PROJECT_ID")
 
+DUCKDB_SOURCES_SCHEMA_PREFIX = "sources"
+
 PA_TO_DUCKDB_TYPE_MAPPING = {
     pa.int8(): "TINYINT",
     pa.int16(): "SMALLINT",
@@ -35,7 +37,6 @@ PA_TO_DUCKDB_TYPING_MAPPING_BY_ID = {
     field.id: field_value for field, field_value in PA_TO_DUCKDB_TYPE_MAPPING.items()
 }
 
-
 def pyarrow_to_duckdb_type(arrow_type: pa.Field):
     """
     Convert a PyArrow data type to a DuckDB data type.
@@ -46,6 +47,10 @@ def pyarrow_to_duckdb_type(arrow_type: pa.Field):
         return f"DECIMAL({arrow_type.precision}, {arrow_type.scale})"
     elif pa.types.is_timestamp(arrow_type):
         return "TIMESTAMP"  # DuckDB only supports TIMESTAMP without timezone
+    elif pa.types.is_struct(arrow_type):
+        return "JSON" # Trino does not have struct support
+    elif pa.types.is_list(arrow_type):
+        return "JSON[]"
 
     # Look up the type in the dictionary
     return PA_TO_DUCKDB_TYPING_MAPPING_BY_ID[arrow_type.id]
@@ -186,15 +191,18 @@ def initialize_local_duckdb(path: str):
     }
 
     table_mapping = {
-        "opensource-observer.oso_playground.artifacts_by_project_v1": "sources.artifacts_by_project_v1",
-        "opensource-observer.oso_playground.int_artifacts_in_ossd_by_project": "sources.int_artifacts_in_ossd_by_project",
+        "opensource-observer.oso_playground.int_deployers": "sources.int_deployers",
+        "opensource-observer.oso_playground.int_deployers_by_project": "sources.int_deployers_by_project",
+        "opensource-observer.oso_playground.int_factories": "sources.int_factories",
+        "opensource-observer.oso_playground.int_proxies": "sources.int_proxies",
         "opensource-observer.oso_playground.int_superchain_potential_bots": "sources.int_superchain_potential_bots",
-        "opensource-observer.oso_playground.package_owners_v0": "sources.package_owners_v0",
-        "opensource-observer.oso_playground.projects_by_collection_v1": "sources.projects_by_collection_v1",
-        "opensource-observer.oso_playground.projects_v1": "sources.projects_v1",
-        "opensource-observer.oso_playground.sboms_v0": "sources.sboms_v0",
+        "opensource-observer.oso_playground.stg_deps_dev__packages": "sources.stg_deps_dev__packages",
+        "opensource-observer.oso_playground.stg_ossd__current_collections": "sources.stg_ossd__current_collections",
+        "opensource-observer.oso_playground.stg_ossd__current_projects": "sources.stg_ossd__current_projects",
+        "opensource-observer.oso_playground.stg_ossd__current_repositories": "sources.stg_ossd__current_repositories",
         "opensource-observer.oso_playground.timeseries_events_by_artifact_v0": "sources.timeseries_events_by_artifact_v0",
         "opensource-observer.oso_playground.timeseries_events_aux_issues_by_artifact_v0": "sources.timeseries_events_aux_issues_by_artifact_v0",
+        "opensource-observer.ossd.sbom": "sources_ossd.sbom",
     }
 
     table_mapping.update(defi_llama_tables)
@@ -207,10 +215,9 @@ def initialize_local_duckdb(path: str):
 
 def reset_local_duckdb(path: str):
     conn = duckdb.connect(path)
-
     response = conn.query("SHOW ALL TABLES")
     schema_names = response.df()["schema"].unique().tolist()
     for schema_name in schema_names:
-        if schema_name != "sources":
+        if not schema_name.startswith(DUCKDB_SOURCES_SCHEMA_PREFIX):
             logger.info(f"dropping schema {schema_name}")
             conn.query(f"DROP schema {schema_name} cascade")
