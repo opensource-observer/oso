@@ -17,80 +17,89 @@ with projects as (
 all_websites as (
   select
     projects.project_id,
-    websites.url as artifact_source_id,
+    unnest(json_extract_string(websites, '$.*')) as artifact_source_id,
     'WWW' as artifact_source,
     'WWW' as artifact_namespace,
-    websites.url as artifact_name,
-    websites.url as artifact_url,
+    artifact_source_id as artifact_name,
+    artifact_source_id as artifact_url,
     'WEBSITE' as artifact_type
   from projects
   cross join
-    UNNEST(projects.websites) as websites
+    UNNEST(json_extract(projects.websites, '$[*].url')) as websites
 ),
 
 all_farcaster as (
   select
     projects.project_id,
-    farcaster.url as artifact_source_id,
+    unnest(json_extract_string(farcaster, '$.*')) as artifact_source_id,
     'FARCASTER' as artifact_source,
     'FARCASTER' as artifact_namespace,
-    farcaster.url as artifact_url,
+    artifact_source_id as artifact_url,
     'SOCIAL_HANDLE' as artifact_type,
     case
       when
-        farcaster.url like 'https://warpcast.com/%'
-        then SUBSTR(farcaster.url, 22)
-      else farcaster.url
+        artifact_source_id like 'https://warpcast.com/%'
+        then SUBSTR(artifact_source_id, 22)
+      else artifact_source_id
     end as artifact_name
   from projects
   cross join
-    UNNEST(projects.social.farcaster) as farcaster
+    UNNEST(json_extract(projects.social, '$.farcaster[*].url')) as farcaster
 ),
 
 all_twitter as (
   select
     projects.project_id,
-    twitter.url as artifact_source_id,
+    unnest(json_extract_string(twitter, '$.*')) as artifact_source_id,
     'TWITTER' as artifact_source,
     'TWITTER' as artifact_namespace,
-    twitter.url as artifact_url,
+    artifact_source_id as artifact_url,
     'SOCIAL_HANDLE' as artifact_type,
     case
       when
-        twitter.url like 'https://twitter.com/%'
-        then SUBSTR(twitter.url, 21)
+        artifact_source_id like 'https://twitter.com/%'
+        then SUBSTR(artifact_source_id, 21)
       when
-        twitter.url like 'https://x.com/%'
-        then SUBSTR(twitter.url, 15)
-      else twitter.url
+        artifact_source_id like 'https://x.com/%'
+        then SUBSTR(artifact_source_id, 15)
+      else artifact_source_id
     end as artifact_name
   from projects
   cross join
-    UNNEST(projects.social.twitter) as twitter
+    UNNEST(json_extract(projects.social, '$.twitter[*].url')) as twitter
+),
+
+github_repos_raw as (
+  select
+    projects.project_id,
+    'GITHUB' as artifact_source,
+    unnest(json_extract_string(github, '$.*')) as artifact_url,
+    'REPOSITORY' as artifact_type
+  from projects
+  cross join
+    UNNEST(json_extract(projects.github, '$[*].url')) as github
 ),
 
 github_repos as (
   select
-    'GITHUB' as artifact_source,
-    'REPOSITORY' as artifact_type,
-    projects.project_id,
+    project_id,
+    artifact_source,
+    CAST(repos.id as STRING) as artifact_source_id,
     repos.owner as artifact_namespace,
     repos.name as artifact_name,
-    repos.url as artifact_url,
-    CAST(repos.id as STRING) as artifact_source_id
-  from projects
-  cross join
-    UNNEST(projects.github) as github
+    artifact_url,
+    artifact_type
+  from github_repos_raw
   inner join
     @oso_source('bigquery.oso.stg_ossd__current_repositories') as repos
     on
-      {# 
+      {#
         We join on either the repo url or the user/org url.
         The RTRIMs are to ensure we match even if there are trailing slashes 
       #}
       LOWER(CONCAT('https://github.com/', repos.owner))
-      = LOWER(RTRIM(github.url, '/'))
-      or LOWER(repos.url) = LOWER(RTRIM(github.url, '/'))
+        = LOWER(RTRIM(artifact_url, '/'))
+      or LOWER(repos.url) = LOWER(RTRIM(artifact_url, '/'))
 ),
 
 all_npm_raw as (
@@ -98,20 +107,20 @@ all_npm_raw as (
     'NPM' as artifact_source,
     'PACKAGE' as artifact_type,
     projects.project_id,
-    npm.url as artifact_source_id,
-    npm.url as artifact_url,
+    unnest(json_extract_string(npm, '$.*')) as artifact_source_id,
+    artifact_source_id as artifact_url,
     case
       when
-        npm.url like 'https://npmjs.com/package/%'
-        then SUBSTR(npm.url, 27)
+        artifact_source_id like 'https://npmjs.com/package/%'
+        then SUBSTR(artifact_source_id, 27)
       when
-        npm.url like 'https://www.npmjs.com/package/%'
-        then SUBSTR(npm.url, 31)
-      else npm.url
+        artifact_source_id like 'https://www.npmjs.com/package/%'
+        then SUBSTR(artifact_source_id, 31)
+      else artifact_source_id
     end as artifact_name
   from projects
   cross join
-    UNNEST(projects.npm) as npm
+    UNNEST(json_extract(projects.npm, '$[*].url')) as npm
 ),
 
 all_npm as (
@@ -122,7 +131,7 @@ all_npm as (
     artifact_type,
     artifact_name,
     artifact_url,
-    SPLIT(REPLACE(artifact_name, '@', ''), '/')[SAFE_OFFSET(0)]
+    SPLIT(REPLACE(artifact_name, '@', ''), '/')[0]
       as artifact_namespace
   from all_npm_raw
 ),
@@ -130,19 +139,19 @@ all_npm as (
 ossd_blockchain as (
   select
     projects.project_id,
-    tag as artifact_type,
-    network as artifact_namespace,
-    network as artifact_source,
-    blockchains.address as artifact_source_id,
-    blockchains.address as artifact_name,
-    blockchains.address as artifact_url
+    unnest(json_extract_string(tag, '$.*')) as artifact_type,
+    unnest(json_extract_string(network, '$.*')) as artifact_source,
+    unnest(json_extract_string(blockchains, '$.*.address')) as artifact_source_id,
+    artifact_source as artifact_namespace,
+    artifact_source_id as artifact_name,
+    artifact_source_id as artifact_url
   from projects
   cross join
-    UNNEST(projects.blockchain) as blockchains
+    UNNEST(json_extract(projects.blockchain, '$[*]')) as blockchains
   cross join
-    UNNEST(blockchains.networks) as network
+    UNNEST(json_extract(blockchains, '$.*.networks[*]')) as network
   cross join
-    UNNEST(blockchains.tags) as tag
+    UNNEST(json_extract(blockchains, '$.*.tags[*]')) as tag
 ),
 
 all_artifacts as (

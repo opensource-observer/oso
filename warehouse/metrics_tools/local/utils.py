@@ -13,6 +13,8 @@ logger = logging.getLogger(__name__)
 
 project_id = os.getenv("GOOGLE_PROJECT_ID")
 
+DUCKDB_SOURCES_SCHEMA_PREFIX = "sources"
+
 PA_TO_DUCKDB_TYPE_MAPPING = {
     pa.int8(): "TINYINT",
     pa.int16(): "SMALLINT",
@@ -35,7 +37,6 @@ PA_TO_DUCKDB_TYPING_MAPPING_BY_ID = {
     field.id: field_value for field, field_value in PA_TO_DUCKDB_TYPE_MAPPING.items()
 }
 
-
 def pyarrow_to_duckdb_type(arrow_type: pa.Field):
     """
     Convert a PyArrow data type to a DuckDB data type.
@@ -46,6 +47,10 @@ def pyarrow_to_duckdb_type(arrow_type: pa.Field):
         return f"DECIMAL({arrow_type.precision}, {arrow_type.scale})"
     elif pa.types.is_timestamp(arrow_type):
         return "TIMESTAMP"  # DuckDB only supports TIMESTAMP without timezone
+    elif pa.types.is_struct(arrow_type):
+        return "JSON" # Trino does not have struct support
+    elif pa.types.is_list(arrow_type):
+        return "JSON[]"
 
     # Look up the type in the dictionary
     return PA_TO_DUCKDB_TYPING_MAPPING_BY_ID[arrow_type.id]
@@ -210,10 +215,9 @@ def initialize_local_duckdb(path: str):
 
 def reset_local_duckdb(path: str):
     conn = duckdb.connect(path)
-
     response = conn.query("SHOW ALL TABLES")
     schema_names = response.df()["schema"].unique().tolist()
     for schema_name in schema_names:
-        if schema_name != "sources":
+        if not schema_name.startswith(DUCKDB_SOURCES_SCHEMA_PREFIX):
             logger.info(f"dropping schema {schema_name}")
             conn.query(f"DROP schema {schema_name} cascade")
