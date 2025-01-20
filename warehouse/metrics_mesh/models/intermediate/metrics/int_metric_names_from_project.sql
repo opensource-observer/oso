@@ -1,5 +1,5 @@
 MODEL (
-  name metrics.metric_names_from_project,
+  name metrics.int_metric_names_from_project,
   kind FULL
 );
 
