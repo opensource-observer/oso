@@ -1,5 +1,5 @@
 MODEL (
-  name metrics.metric_names_from_artifact,
+  name metrics.int_metric_names_from_artifact,
   kind FULL
 );
 

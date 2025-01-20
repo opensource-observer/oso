@@ -8,13 +8,13 @@ MODEL (
 
 WITH unioned_metric_names AS (
   SELECT *
-  FROM metrics.metric_names_from_artifact
+  FROM metrics.int_metric_names_from_artifact
   UNION ALL
   SELECT *
-  FROM metrics.metric_names_from_project
+  FROM metrics.int_metric_names_from_project
   UNION ALL
   SELECT *
-  FROM metrics.metric_names_from_collection
+  FROM metrics.int_metric_names_from_collection
 ), all_timeseries_metric_names AS (
   SELECT DISTINCT
     metric
