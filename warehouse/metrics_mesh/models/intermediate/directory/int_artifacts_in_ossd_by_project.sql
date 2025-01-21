@@ -240,7 +240,7 @@ all_normalized_artifacts as (
 
 select
   project_id,
-  @oso_id('artifact_source', 'artifact_source_id') as artifact_id,
+  @oso_id(artifact_source, artifact_source_id) as artifact_id,
   artifact_source_id,
   artifact_source,
   artifact_namespace,
