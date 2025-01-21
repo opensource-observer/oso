@@ -9,7 +9,7 @@ with eligible_projects as (
   select
     to_artifact_id as artifact_id,
     max(time) as last_release_date
-  from @oso_source('bigquery.oso.timeseries_events_by_artifact_v0') events
+  from @oso_source('bigquery.oso.int_events__github') events
   where event_type = 'RELEASE_PUBLISHED'
   group by to_artifact_id
 ),

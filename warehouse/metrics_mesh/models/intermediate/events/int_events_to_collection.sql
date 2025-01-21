@@ -1,7 +1,12 @@
 MODEL (
   name metrics.int_events_to_collection,
   description 'All events to a collection',
-  kind FULL,
+  kind INCREMENTAL_BY_TIME_RANGE (
+    time_column time,
+  ),
+  start '2015-01-01',
+  cron '@daily',
+  grain (time, event_type, event_source, from_artifact_id, to_artifact_id)
 );
 
 select
