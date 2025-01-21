@@ -5,7 +5,7 @@ test_events_daily_to_artifact:
     start: 2024-01-01
     end: 2024-02-01
   inputs:
-    sources.timeseries_events_by_artifact_v0:
+    metrics.int_events:
       rows:
       - to_artifact_id: contract_0
         from_artifact_id: user_0

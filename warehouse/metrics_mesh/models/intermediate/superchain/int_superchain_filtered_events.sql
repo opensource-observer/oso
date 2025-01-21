@@ -13,7 +13,7 @@ select
   events.event_type,
   events.event_source,
   events.amount
-from @oso_source('bigquery.oso.timeseries_events_by_artifact_v0') events
+from @oso_source('bigquery.oso.int_events__blockchain') events
 inner join metrics.int_artifacts_by_project as artifacts
   on events.to_artifact_id = artifacts.artifact_id
 where
