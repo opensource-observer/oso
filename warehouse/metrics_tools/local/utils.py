@@ -1,17 +1,19 @@
 import logging
 import os
 import typing as t
+from datetime import datetime, timedelta
 
 import duckdb
 import pyarrow as pa
-from google.cloud import bigquery
+from google.cloud import bigquery, bigquery_storage_v1
 from oso_dagster.assets.defillama import DEFI_LLAMA_PROTOCOLS, defi_llama_slug_to_name
+from pydantic import BaseModel
 from sqlglot import exp
 from sqlmesh.core.dialect import parse_one
 
 logger = logging.getLogger(__name__)
 
-project_id = os.getenv("GOOGLE_PROJECT_ID")
+PROJECT_ID = os.getenv("GOOGLE_PROJECT_ID", "opensource-observer")
 
 DUCKDB_SOURCES_SCHEMA_PREFIX = "sources"
 
@@ -37,6 +39,12 @@ PA_TO_DUCKDB_TYPING_MAPPING_BY_ID = {
     field.id: field_value for field, field_value in PA_TO_DUCKDB_TYPE_MAPPING.items()
 }
 
+
+class TableMappingDestination(BaseModel):
+    row_restriction: str = ""
+    destination: str = ""
+
+
 def pyarrow_to_duckdb_type(arrow_type: pa.Field):
     """
     Convert a PyArrow data type to a DuckDB data type.
@@ -48,7 +56,7 @@ def pyarrow_to_duckdb_type(arrow_type: pa.Field):
     elif pa.types.is_timestamp(arrow_type):
         return "TIMESTAMP"  # DuckDB only supports TIMESTAMP without timezone
     elif pa.types.is_struct(arrow_type):
-        return "JSON" # Trino does not have struct support
+        return "JSON"  # Trino does not have struct support
     elif pa.types.is_list(arrow_type):
         return "JSON[]"
 
@@ -69,7 +77,45 @@ def remove_metadata_from_schema(schema: pa.Schema) -> pa.Schema:
     return pa.schema(fields_without_metadata)
 
 
-def bq_to_duckdb(table_mapping: t.Dict[str, str], duckdb_path: str):
+def bq_read_with_options(
+    source_table: str, dest: TableMappingDestination, project_id: str
+):
+    client = bigquery_storage_v1.BigQueryReadClient()
+    source_table_split = source_table.split(".")
+    table = "projects/{}/datasets/{}/tables/{}".format(
+        source_table_split[0], source_table_split[1], source_table_split[2]
+    )
+    requested_session = bigquery_storage_v1.types.ReadSession()
+    requested_session.table = table
+
+    requested_session.data_format = bigquery_storage_v1.types.DataFormat.ARROW
+    requested_session.read_options.row_restriction = dest.row_restriction
+
+    parent = "projects/{}".format(project_id)
+    session = client.create_read_session(
+        parent=parent, read_session=requested_session, max_stream_count=1
+    )
+    reader = client.read_rows(session.streams[0].name)
+    return reader.to_arrow(session)
+
+
+def table_exists_in_duckdb(conn: duckdb.DuckDBPyConnection, table_name: str):
+    logger.info(f"checking if {table_name} already exists")
+    table_exp = exp.to_table(table_name)
+    response = conn.query(
+        f"""
+        SELECT 1 
+        FROM information_schema.tables 
+        WHERE table_schema = '{table_exp.db}'
+        AND table_name = '{table_exp.this}'
+    """
+    )
+    return len(response.fetchall()) > 0
+
+
+def bq_to_duckdb(
+    table_mapping: t.Dict[str, str | TableMappingDestination], duckdb_path: str
+):
     """Copies the tables in table_mapping to tables in duckdb
 
     The table_mapping is in the form:
@@ -86,33 +132,32 @@ def bq_to_duckdb(table_mapping: t.Dict[str, str], duckdb_path: str):
         None
     """
     logger.info("Copying tables from BigQuery to DuckDB")
-    bqclient = bigquery.Client(project=project_id)
+    bqclient = bigquery.Client(project=PROJECT_ID)
     conn = duckdb.connect(duckdb_path)
 
     created_schemas = set()
 
     for bq_table, duckdb_table in table_mapping.items():
-        logger.info(f"checking if {duckdb_table} already exists")
 
-        duckdb_table_exp = exp.to_table(duckdb_table)
+        if isinstance(duckdb_table, TableMappingDestination):
+            duckdb_table_name = duckdb_table.destination
 
-        response = conn.query(
-            f"""
-            SELECT 1 
-            FROM information_schema.tables 
-            WHERE table_schema = '{duckdb_table_exp.db}'
-            AND table_name = '{duckdb_table_exp.this}'
-        """
-        )
-        if len(response.fetchall()) > 0:
-            logger.info(f"{duckdb_table} already exists, skipping")
-            continue
+            table_as_arrow = bq_read_with_options(bq_table, duckdb_table, PROJECT_ID)
+            if table_exists_in_duckdb(conn, duckdb_table_name):
+                logger.info(f"{duckdb_table_name} already exists, skipping")
+                continue
+        else:
+            duckdb_table_name = duckdb_table
+            logger.info(f"checking if {duckdb_table_name} already exists")
+            if table_exists_in_duckdb(conn, duckdb_table_name):
+                logger.info(f"{duckdb_table_name} already exists, skipping")
+                continue
 
-        logger.info(f"{bq_table}: copying to {duckdb_table}")
-        table = bigquery.TableReference.from_string(bq_table)
-        rows = bqclient.list_rows(table)
+            logger.info(f"{bq_table}: copying to {duckdb_table}")
+            table = bigquery.TableReference.from_string(bq_table)
 
-        table_as_arrow = rows.to_arrow(create_bqstorage_client=True)  # noqa: F841
+            rows = bqclient.list_rows(table)
+            table_as_arrow = rows.to_arrow(create_bqstorage_client=True)  # noqa: F841
         columns = []
 
         # If there are no special metadata fields in a schema we can just do a
@@ -131,7 +176,7 @@ def bq_to_duckdb(table_mapping: t.Dict[str, str], duckdb_path: str):
         new_schema = remove_metadata_from_schema(table_as_arrow.schema)
         table_as_arrow = table_as_arrow.cast(new_schema)
 
-        duckdb_table_split = duckdb_table.split(".")
+        duckdb_table_split = duckdb_table_name.split(".")
         schema = duckdb_table_split[0]
 
         if schema not in created_schemas:
@@ -140,12 +185,12 @@ def bq_to_duckdb(table_mapping: t.Dict[str, str], duckdb_path: str):
 
         if is_simple_copy:
             conn.execute(
-                f"CREATE TABLE IF NOT EXISTS {duckdb_table} AS SELECT * FROM table_as_arrow"
+                f"CREATE TABLE IF NOT EXISTS {duckdb_table_name} AS SELECT * FROM table_as_arrow"
             )
         else:
             create_query = parse_one(
                 f"""
-                CREATE TABLE IF NOT EXISTS {duckdb_table} (placeholder VARCHAR);
+                CREATE TABLE IF NOT EXISTS {duckdb_table_name} (placeholder VARCHAR);
             """
             )
             create_query.this.set(
@@ -166,7 +211,7 @@ def bq_to_duckdb(table_mapping: t.Dict[str, str], duckdb_path: str):
             conn.execute(create_query.sql(dialect="duckdb"))
 
             insert_query = parse_one(
-                f"INSERT INTO {duckdb_table} (placeholder) SELECT placeholder FROM table_as_arrow"
+                f"INSERT INTO {duckdb_table_name} (placeholder) SELECT placeholder FROM table_as_arrow"
             )
             insert_query.this.set(
                 "expressions",
@@ -190,7 +235,12 @@ def initialize_local_duckdb(path: str):
         for slug in DEFI_LLAMA_PROTOCOLS
     }
 
-    table_mapping = {
+    today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    # Get the last 30 days of data
+    start_date = today - timedelta(days=30)
+    end_date = today
+
+    table_mapping: t.Dict[str, str | TableMappingDestination] = {
         "opensource-observer.oso_playground.int_deployers": "sources.int_deployers",
         "opensource-observer.oso_playground.int_deployers_by_project": "sources.int_deployers_by_project",
         "opensource-observer.oso_playground.int_events__blockchain": "sources.int_events__blockchain",
@@ -211,6 +261,19 @@ def initialize_local_duckdb(path: str):
         "opensource-observer.oso_playground.stg_ossd__current_repositories": "sources.stg_ossd__current_repositories",
         "opensource-observer.oso_playground.timeseries_events_aux_issues_by_artifact_v0": "sources.timeseries_events_aux_issues_by_artifact_v0",
         "opensource-observer.ossd.sbom": "sources_ossd.sbom",
+        # Only grab some data from frax for local testing
+        "opensource-observer.optimism_superchain_raw_onchain_data.blocks": TableMappingDestination(
+            row_restriction=f"dt >= '{start_date.strftime("%Y-%m-%d")}' AND dt < '{end_date.strftime("%Y-%m-%d")}' AND chain_id = 252",
+            destination="sources_optimism_superchain_raw_onchain_data.blocks",
+        ),
+        "opensource-observer.optimism_superchain_raw_onchain_data.transactions": TableMappingDestination(
+            row_restriction=f"dt >= '{start_date.strftime("%Y-%m-%d")}' AND dt < '{end_date.strftime("%Y-%m-%d")}' AND chain_id = 252",
+            destination="sources_optimism_superchain_raw_onchain_data.transactions",
+        ),
+        "opensource-observer.optimism_superchain_raw_onchain_data.traces": TableMappingDestination(
+            row_restriction=f"dt >= '{start_date.strftime("%Y-%m-%d")}' AND dt < '{end_date.strftime("%Y-%m-%d")}' AND chain_id = 252",
+            destination="sources_optimism_superchain_raw_onchain_data.traces",
+        ),
     }
 
     table_mapping.update(defi_llama_tables)
