@@ -115,8 +115,24 @@ def local(ctx: click.Context):
 
 @local.command()
 @click.pass_context
-def initialize(ctx: click.Context):
-    initialize_local_duckdb(ctx.obj["local_duckdb_path"])
+@click.option(
+    "-m",
+    "--max-results-per-query",
+    default=0,
+    help="The max results for local data downloads. Use if there's limited space on your device. Set to zero for all results",
+)
+@click.option(
+    "-d",
+    "--max-days",
+    default=7,
+    help="The max number of days of data to download from timeseries row restricted data",
+)
+def initialize(ctx: click.Context, max_results_per_query: int, max_days: int):
+    initialize_local_duckdb(
+        ctx.obj["local_duckdb_path"],
+        max_results_per_query=max_results_per_query,
+        max_days=max_days,
+    )
 
 
 @local.command()
