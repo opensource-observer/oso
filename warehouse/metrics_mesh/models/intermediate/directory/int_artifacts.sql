@@ -67,7 +67,7 @@ with all_artifacts as (
 )
 
 select distinct
-  @oso_id('artifact_source', 'artifact_source_id') as artifact_id,
+  @oso_id(artifact_source, artifact_source_id) as artifact_id,
   artifact_source_id,
   artifact_source,
   artifact_namespace,

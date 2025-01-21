@@ -74,7 +74,7 @@ contracts_by_project as (
 
 select
   project_id,
-  @oso_id('network', 'contract_address') as artifact_id,
+  @oso_id(network, contract_address) as artifact_id,
   network as artifact_source,
   contract_address as artifact_source_id,
   LOWER(network) as artifact_namespace,

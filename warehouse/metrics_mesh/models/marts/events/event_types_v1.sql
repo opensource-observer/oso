@@ -1,6 +1,6 @@
 MODEL (
   name metrics.event_types_v1,
-  kind FULL
+  kind FULL,
 );
 
 select distinct events.event_type

@@ -115,12 +115,12 @@ all_normalized_users as (
 )
 
 select distinct
-  @oso_id('artifact_source', 'artifact_source_id') as artifact_id,
+  @oso_id(artifact_source, artifact_source_id) as artifact_id,
   artifact_source_id,
   artifact_source,
   artifact_namespace,
   artifact_name,
-  @oso_id('user_source', 'user_source_id') as user_id,
+  @oso_id(user_source, user_source_id) as user_id,
   user_source_id,
   user_source,
   user_type,
