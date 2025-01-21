@@ -3,8 +3,6 @@ MODEL (
   kind FULL
 );
 
-SELECT [1,2,3]
-{#
 select
   users.user_id,
   users.user_source_id,
@@ -14,4 +12,3 @@ select
   users.bio,
   users.url
 from metrics.int_users as users
-#}

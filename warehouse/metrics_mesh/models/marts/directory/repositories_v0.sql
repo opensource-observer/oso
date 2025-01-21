@@ -3,8 +3,6 @@ MODEL (
   kind FULL
 );
 
-SELECT [1,2,3]
-{#
 select
   project_id,
   artifact_id,
@@ -20,8 +18,7 @@ select
   fork_count,
   license_name,
   license_spdx_id,
-  `language`,
+  "language",
   created_at,
   updated_at
 from metrics.int_repositories
-#}

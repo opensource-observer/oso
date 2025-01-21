@@ -3,8 +3,6 @@ MODEL (
   kind FULL
 );
 
-SELECT [1,2,3]
-{#
 select
   artifact_id,
   artifact_source_id,
@@ -18,4 +16,3 @@ select
   user_namespace,
   user_name
 from metrics.int_artifacts_by_user
-#}
