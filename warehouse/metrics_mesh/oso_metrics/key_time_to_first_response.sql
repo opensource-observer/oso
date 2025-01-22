@@ -5,7 +5,7 @@ select distinct
   '' as from_artifact_id,
   @metric_name('time_to_first_response') as metric,
   avg(created_delta) as amount
-from metrics.issue_event_time_deltas
+from metrics.issue_event_time_deltas as events
 where (
     (
       event_type in ('PULL_REQUEST_MERGED', 'ISSUE_CLOSED')
