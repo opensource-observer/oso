@@ -1,0 +1,19 @@
+# This packages the self signed cert bundle for the MinIO operator
+apiVersion: trust.cert-manager.io/v1alpha1
+kind: Bundle
+metadata:
+  # Minio looks for a prefix of `operator-ca-tls-` in the secret name
+  name: operator-ca-tls-secret
+spec:
+  sources:
+  # A Secret in the "trust" namespace; see "Trust Namespace" below for further details
+  - secret:
+      name: self-signed-root-secret
+      key: "ca.crt"
+
+  target:
+    secret:
+      key: "ca.crt"
+    namespaceSelector:
+      matchLabels:
+        opensource.observer/cert-inject: "enabled"
