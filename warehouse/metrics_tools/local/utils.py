@@ -157,7 +157,14 @@ def bq_to_duckdb(
                     total_rows += record_batch.num_rows
                     if total_rows >= max_results_per_query:
                         break
-                table_as_arrow = pa.Table.from_batches(to_concat)
+                if total_rows == 0:
+                    logger.info(
+                        "No rows found when limiting rows, resorting to full copy to get schema"
+                    )
+                    rows = bqclient.list_rows(table)
+                    table_as_arrow = rows.to_arrow(create_bqstorage_client=True)
+                else:
+                    table_as_arrow = pa.Table.from_batches(to_concat)
             else:
                 rows = bqclient.list_rows(table)
                 table_as_arrow = rows.to_arrow(
@@ -184,6 +191,7 @@ def bq_to_duckdb(
         duckdb_table_split = duckdb_table_name.split(".")
         schema = duckdb_table_split[0]
 
+        logger.info(f"copying {table_as_arrow.num_rows} rows to {duckdb_table_name}")
         if schema not in created_schemas:
             conn.execute(f"CREATE SCHEMA IF NOT EXISTS {schema}")
             created_schemas.add(schema)
