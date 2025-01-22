@@ -6,4 +6,5 @@ resources:
   - ./test
   - ./hive-psql
   - ./trino-psql
+  - ./hive-metastore
   #- ./trino
