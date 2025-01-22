@@ -4,4 +4,6 @@ resources: []
   - ./redis
   - ./minio
   - ./test
+  - ./hive-psql
+  - ./trino-psql
   #- ./trino
