@@ -5,7 +5,7 @@ MODEL (
 
 with events as (
   select
-    @from_unix_timestamp(block_timestamp) as `time`,
+    @from_unix_timestamp(block_timestamp) as "time",
     event_source,
     transaction_hash,
     from_address_tx,
@@ -48,7 +48,7 @@ filtered_traces as (
 
 filtered_txns as (
   select distinct
-    `time`,
+    "time",
     event_source,
     transaction_hash,
     from_address_tx_id,
@@ -62,7 +62,7 @@ filtered_txns as (
 
 trace_counts as (
   select
-    date_trunc(`time`, day) as `time`,
+    date_trunc('DAY', time::DATE) as "time",
     event_source,
     from_address_tx_id as from_artifact_id,
     to_address_trace_id as to_artifact_id,
@@ -74,7 +74,7 @@ trace_counts as (
 
 trace_gas_used as (
   select
-    date_trunc(`time`, day) as `time`,
+    date_trunc("time", day) as "time",
     event_source,
     from_address_tx_id as from_artifact_id,
     to_address_trace_id as to_artifact_id,
@@ -86,7 +86,7 @@ trace_gas_used as (
 
 txn_counts as (
   select
-    date_trunc(`time`, day) as `time`,
+    date_trunc('DAY', "time"::DATE) as "time",
     event_source,
     from_address_tx_id as from_artifact_id,
     to_address_tx_id as to_artifact_id,
@@ -98,7 +98,7 @@ txn_counts as (
 
 txn_gas_used as (
   select
-    date_trunc(`time`, day) as `time`,
+    date_trunc('DAY', "time"::DATE) as "time",
     event_source,
     from_address_tx_id as from_artifact_id,
     to_address_tx_id as to_artifact_id,
@@ -110,7 +110,7 @@ txn_gas_used as (
 
 txn_gas_fees as (
   select
-    date_trunc(`time`, day) as `time`,
+    date_trunc('DAY', "time"::DATE) as "time",
     event_source,
     from_address_tx_id as from_artifact_id,
     to_address_tx_id as to_artifact_id,
