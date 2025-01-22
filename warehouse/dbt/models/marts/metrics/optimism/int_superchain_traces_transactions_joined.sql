@@ -11,11 +11,35 @@
 
 
 with traces as (
-  select * from {{ ref('stg_superchain__traces') }}
+  select
+    dt,
+    chain,
+    gas_used,
+    transaction_hash,
+    from_address,
+    to_address
+  from {{ source('optimism_superchain_raw_onchain_data', 'traces') }}
+  where
+    dt >= '2024-11-01'
+    and network = 'mainnet'
+    and `status` = 1
+    and call_type in ('delegatecall', 'call')
 ),
 
 transactions as (
-  select * from {{ ref('stg_superchain__transactions') }}
+  select
+    dt,
+    chain,
+    gas,
+    gas_price,
+    `hash` as transaction_hash,
+    from_address,
+    to_address
+  from {{ source('optimism_superchain_raw_onchain_data', 'transactions') }}
+  where
+    dt >= '2024-11-01'
+    and network = 'mainnet'
+    and receipt_status = 1
 )
 
 select
