@@ -2,8 +2,10 @@
   "projects": [
     {
       "projectId": "2CtczDeUz9jL9qnFi6NWuQ",
-      "version": "0.2.3",
-      "dependencies": {},
+      "version": "0.3.0",
+      "dependencies": {
+        "caTPwKxj5ZrD9LQ7DMdK4Z": "3.38.0"
+      },
       "lang": "ts",
       "fileLocks": [
         {
@@ -14,32 +16,32 @@
         {
           "type": "renderModule",
           "assetId": "z50hW5Ihi9k5",
-          "checksum": "25dc6f80fe7c254e792c51fe2d43b4a9"
+          "checksum": "3be61d65c8defd07b3d8ecf8dc8cc4fc"
         },
         {
           "type": "cssRules",
           "assetId": "z50hW5Ihi9k5",
-          "checksum": "25dc6f80fe7c254e792c51fe2d43b4a9"
+          "checksum": "3be61d65c8defd07b3d8ecf8dc8cc4fc"
         },
         {
           "type": "renderModule",
           "assetId": "8u0yNVg3vXsq",
-          "checksum": "4deb8270912232ef29700376c2ee2340"
+          "checksum": "e0dad1fe31d8464ea45e3b4dc622e794"
         },
         {
           "type": "cssRules",
           "assetId": "8u0yNVg3vXsq",
-          "checksum": "4deb8270912232ef29700376c2ee2340"
+          "checksum": "e0dad1fe31d8464ea45e3b4dc622e794"
         },
         {
           "type": "renderModule",
           "assetId": "XdMR0R8lmSdz",
-          "checksum": "840794948d2228235831cd844aebde8f"
+          "checksum": "ac4292336ed08e840b89012feb43944d"
         },
         {
           "type": "cssRules",
           "assetId": "XdMR0R8lmSdz",
-          "checksum": "840794948d2228235831cd844aebde8f"
+          "checksum": "ac4292336ed08e840b89012feb43944d"
         },
         {
           "type": "icon",
@@ -64,7 +66,21 @@
         {
           "assetId": "2CtczDeUz9jL9qnFi6NWuQ",
           "type": "projectCss",
-          "checksum": "ca22df23535ee01348fd2e1587fefcbb"
+          "checksum": "576612e0453bec6db6346c326e38e4d7"
+        }
+      ],
+      "codegenVersion": "0.0.1"
+    },
+    {
+      "projectId": "caTPwKxj5ZrD9LQ7DMdK4Z",
+      "version": "3.38.0",
+      "dependencies": {},
+      "lang": "ts",
+      "fileLocks": [
+        {
+          "assetId": "caTPwKxj5ZrD9LQ7DMdK4Z",
+          "type": "projectCss",
+          "checksum": "1c02168c6b23256606111fdfdbb63549"
         }
       ],
       "codegenVersion": "0.0.1"

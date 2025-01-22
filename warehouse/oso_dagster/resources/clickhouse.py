@@ -1,13 +1,12 @@
-import clickhouse_connect
 from contextlib import contextmanager
-from dagster import (
-    ConfigurableResource,
-    resource,
-    ResourceDependency,
-)
+
+import clickhouse_connect
+from dagster import ConfigurableResource, ResourceDependency
+from metrics_tools.transfer.clickhouse import ClickhouseImporter
 from pydantic import Field
+
+from ..utils import SecretReference, SecretResolver
 from ..utils.common import ensure
-from ..utils import SecretResolver, SecretReference
 
 """
 Note: This code is predominantly copied from the BigQueryResource
@@ -76,11 +75,10 @@ class ClickhouseResource(ConfigurableResource):
         yield client
 
 
-@resource(
-    config_schema=ClickhouseResource.to_config_schema(),
-    description="Dagster resource for connecting to Clickhouse.",
-)
-def clickhouse_resource(context):
-    clickhouse_resource = ClickhouseResource.from_resource_context(context)
-    with clickhouse_resource.get_client() as client:
-        yield client
+class ClickhouseImporterResource(ConfigurableResource):
+    clickhouse: ResourceDependency[ClickhouseResource]
+
+    @contextmanager
+    def get(self):
+        with self.clickhouse.get_client() as client:
+            yield ClickhouseImporter(client)

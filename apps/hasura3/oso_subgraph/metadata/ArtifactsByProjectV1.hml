@@ -89,43 +89,71 @@ definition:
           - projectSource
 
 ---
-kind: ObjectBooleanExpressionType
+kind: BooleanExpressionType
 version: v1
 definition:
   name: ArtifactsByProjectV1BoolExp
-  objectType: ArtifactsByProjectV1
-  dataConnectorName: oso_clickhouse
-  dataConnectorObjectType: artifacts_by_project_v1
-  comparableFields:
-    - fieldName: artifactId
-      operators:
-        enableAll: true
-    - fieldName: artifactName
-      operators:
-        enableAll: true
-    - fieldName: artifactNamespace
-      operators:
-        enableAll: true
-    - fieldName: artifactSource
-      operators:
-        enableAll: true
-    - fieldName: artifactSourceId
-      operators:
-        enableAll: true
-    - fieldName: projectId
-      operators:
-        enableAll: true
-    - fieldName: projectName
-      operators:
-        enableAll: true
-    - fieldName: projectNamespace
-      operators:
-        enableAll: true
-    - fieldName: projectSource
-      operators:
-        enableAll: true
+  operand:
+    object:
+      type: ArtifactsByProjectV1
+      comparableFields:
+        - fieldName: artifactId
+          booleanExpressionType: StringBoolExp
+        - fieldName: artifactName
+          booleanExpressionType: StringBoolExp
+        - fieldName: artifactNamespace
+          booleanExpressionType: StringBoolExp
+        - fieldName: artifactSource
+          booleanExpressionType: StringBoolExp
+        - fieldName: artifactSourceId
+          booleanExpressionType: StringBoolExp
+        - fieldName: projectId
+          booleanExpressionType: StringBoolExp
+        - fieldName: projectName
+          booleanExpressionType: StringBoolExp
+        - fieldName: projectNamespace
+          booleanExpressionType: StringBoolExp
+        - fieldName: projectSource
+          booleanExpressionType: StringBoolExp
+      comparableRelationships: []
+  logicalOperators:
+    enable: true
+  isNull:
+    enable: true
   graphql:
     typeName: Oso_ArtifactsByProjectV1BoolExp
+
+---
+kind: AggregateExpression
+version: v1
+definition:
+  name: ArtifactsByProjectV1AggExp
+  operand:
+    object:
+      aggregatedType: ArtifactsByProjectV1
+      aggregatableFields:
+        - fieldName: artifactId
+          aggregateExpression: StringAggExp
+        - fieldName: artifactName
+          aggregateExpression: StringAggExp
+        - fieldName: artifactNamespace
+          aggregateExpression: StringAggExp
+        - fieldName: artifactSource
+          aggregateExpression: StringAggExp
+        - fieldName: artifactSourceId
+          aggregateExpression: StringAggExp
+        - fieldName: projectId
+          aggregateExpression: StringAggExp
+        - fieldName: projectName
+          aggregateExpression: StringAggExp
+        - fieldName: projectNamespace
+          aggregateExpression: StringAggExp
+        - fieldName: projectSource
+          aggregateExpression: StringAggExp
+  count:
+    enable: true
+  graphql:
+    selectTypeName: Oso_ArtifactsByProjectV1AggExp
 
 ---
 kind: Model
@@ -137,6 +165,7 @@ definition:
     dataConnectorName: oso_clickhouse
     collection: artifacts_by_project_v1
   filterExpressionType: ArtifactsByProjectV1BoolExp
+  aggregateExpression: ArtifactsByProjectV1AggExp
   orderableFields:
     - fieldName: artifactId
       orderByDirections:
@@ -170,6 +199,9 @@ definition:
       queryRootField: oso_artifactsByProjectV1
     selectUniques: []
     orderByExpressionType: Oso_ArtifactsByProjectV1OrderBy
+    filterInputTypeName: Oso_ArtifactsByProjectV1FilterInput
+    aggregate:
+      queryRootField: oso_artifactsByProjectV1Aggregate
 
 ---
 kind: ModelPermissions

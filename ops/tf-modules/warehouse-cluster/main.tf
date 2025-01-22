@@ -88,6 +88,96 @@ locals {
       preemptible        = true
       initial_node_count = 0
     },
+    # TRINO COORIDNATOR POOL
+    {
+      name                              = "${var.cluster_name}-trino-coordinator-node-pool"
+      machine_type                      = "n1-highmem-8"
+      node_locations                    = join(",", var.cluster_zones)
+      min_count                         = 0
+      max_count                         = 1
+      local_ssd_count                   = 0
+      local_ssd_ephemeral_storage_count = 1
+      spot                              = false
+      disk_size_gb                      = 200
+      disk_type                         = "pd-standard"
+      image_type                        = "COS_CONTAINERD"
+      enable_gcfs                       = false
+      enable_gvnic                      = false
+      logging_variant                   = "DEFAULT"
+      auto_repair                       = true
+      auto_upgrade                      = true
+      service_account                   = local.node_service_account_email
+      preemptible                       = false
+      initial_node_count                = 0
+    },
+    # Trino worker pool
+    {
+      name                              = "${var.cluster_name}-trino-worker-node-pool"
+      machine_type                      = "n1-highmem-64"
+      node_locations                    = join(",", var.cluster_zones)
+      min_count                         = 0
+      max_count                         = 10
+      local_ssd_count                   = 0
+      local_ssd_ephemeral_storage_count = 1
+      spot                              = false
+      disk_size_gb                      = 200
+      disk_type                         = "pd-standard"
+      image_type                        = "COS_CONTAINERD"
+      enable_gcfs                       = false
+      enable_gvnic                      = false
+      logging_variant                   = "DEFAULT"
+      auto_repair                       = true
+      auto_upgrade                      = true
+      service_account                   = local.node_service_account_email
+      preemptible                       = false
+      initial_node_count                = 0
+    },
+    # MCS (Metrics Calculation Service) scheduler
+    {
+      name                              = "${var.cluster_name}-mcs-scheduler-node-pool"
+      machine_type                      = "n1-highmem-4"
+      node_locations                    = join(",", var.cluster_zones)
+      min_count                         = 0
+      max_count                         = 4
+      local_ssd_count                   = 0
+      local_ssd_ephemeral_storage_count = 0
+      spot                              = false
+      disk_size_gb                      = 100
+      disk_type                         = "pd-standard"
+      image_type                        = "COS_CONTAINERD"
+      enable_gcfs                       = false
+      enable_gvnic                      = false
+      logging_variant                   = "DEFAULT"
+      auto_repair                       = true
+      auto_upgrade                      = true
+      service_account                   = local.node_service_account_email
+      preemptible                       = false
+      initial_node_count                = 0
+    },
+
+    # MCS Workers
+    {
+      name                              = "${var.cluster_name}-mcs-worker-node-pool"
+      machine_type                      = "n1-highmem-64"
+      node_locations                    = join(",", var.cluster_zones)
+      min_count                         = 0
+      max_count                         = 50
+      local_ssd_count                   = 0
+      local_ssd_ephemeral_storage_count = 3
+      spot                              = true
+      disk_size_gb                      = 100
+      disk_type                         = "pd-standard"
+      image_type                        = "COS_CONTAINERD"
+      enable_gcfs                       = false
+      enable_gvnic                      = false
+      logging_variant                   = "DEFAULT"
+      auto_repair                       = true
+      auto_upgrade                      = true
+      service_account                   = local.node_service_account_email
+      preemptible                       = false
+      initial_node_count                = 0
+    },
+
   ], var.extra_node_pools)
 
   node_pool_labels = merge({
@@ -106,6 +196,22 @@ locals {
     "${var.cluster_name}-preemptible-node-pool" = {
       default_node_pool = false
       pool_type         = "preemptible"
+    }
+    "${var.cluster_name}-trino-worker-node-pool" = {
+      default_node_pool = false
+      pool_type         = "trino-worker"
+    }
+    "${var.cluster_name}-trino-coordinator-node-pool" = {
+      default_node_pool = false
+      pool_type         = "trino-coordinator"
+    }
+    "${var.cluster_name}-mcs-scheduler-node-pool" = {
+      default_node_pool = false
+      pool_type         = "mcs-scheduler"
+    }
+    "${var.cluster_name}-mcs-worker-node-pool" = {
+      default_node_pool = false
+      pool_type         = "mcs-worker"
     }
   }, var.extra_node_labels)
 
@@ -137,6 +243,34 @@ locals {
         effect = "NO_SCHEDULE"
       },
     ]
+    "${var.cluster_name}-trino-worker-node-pool" = [
+      {
+        key    = "pool_type"
+        value  = "trino-worker"
+        effect = "NO_SCHEDULE"
+      },
+    ]
+    "${var.cluster_name}-trino-coordinator-node-pool" = [
+      {
+        key    = "pool_type"
+        value  = "trino-coordinator"
+        effect = "NO_SCHEDULE"
+      },
+    ]
+    "${var.cluster_name}-mcs-scheduler-node-pool" = [
+      {
+        key    = "pool_type"
+        value  = "mcs-scheduler"
+        effect = "NO_SCHEDULE"
+      },
+    ]
+    "${var.cluster_name}-mcs-worker-node-pool" = [
+      {
+        key    = "pool_type"
+        value  = "mcs-worker"
+        effect = "NO_SCHEDULE"
+      },
+    ]
   }, var.extra_node_taints)
 
   node_pool_tags = merge({
@@ -151,6 +285,18 @@ locals {
     ]
     "${var.cluster_name}-preemptible-node-pool" = [
       "preemptible",
+    ]
+    "${var.cluster_name}-trino-worker-pool" = [
+      "trino-worker",
+    ]
+    "${var.cluster_name}-trino-coordinator-pool" = [
+      "trino-coordinator",
+    ]
+    "${var.cluster_name}-mcs-scheduler-pool" = [
+      "mcs-scheduler",
+    ]
+    "${var.cluster_name}-mcs-worker-pool" = [
+      "mcs-worker",
     ]
   }, var.extra_node_tags)
 
@@ -177,9 +323,10 @@ module "vpc" {
 
   subnets = [
     {
-      subnet_name   = local.main_subnet_name
-      subnet_ip     = var.main_subnet_cidr
-      subnet_region = var.cluster_region
+      subnet_name           = local.main_subnet_name
+      subnet_ip             = var.main_subnet_cidr
+      subnet_region         = var.cluster_region
+      subnet_private_access = true
     },
   ]
 
@@ -210,6 +357,7 @@ module "vpc" {
 
 module "gke" {
   source                     = "terraform-google-modules/kubernetes-engine/google"
+  version                    = "~> 35.0.0"
   project_id                 = var.project_id
   name                       = var.cluster_name
   region                     = var.cluster_region
@@ -238,7 +386,7 @@ module "gke" {
 }
 
 # Dagster bucket. In the future it would make more sense that this is managed at
-# the application level (e.g. some kubernetes operator)
+# the application level (e.g. some k1bernetes operator)
 resource "google_storage_bucket" "dagster" {
   name          = "${var.dagster_bucket_prefix}-dagster-bucket"
   location      = var.dagster_bucket_location

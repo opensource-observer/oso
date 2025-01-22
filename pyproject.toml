@@ -6,10 +6,15 @@ authors = ["Kariba Labs"]
 license = "Apache-2.0"
 readme = "README.md"
 packages = [
-    { include = "bq2cloudsql", from = "warehouse/" },
-    { include = "common", from = "warehouse/" },
-    { include = "oso_dagster", from = "warehouse/" },
+  { include = "bq2cloudsql", from = "warehouse/" },
+  { include = "common", from = "warehouse/" },
+  { include = "oso_dagster", from = "warehouse/" },
+  { include = "metrics_tools", from = "warehouse/" },
+  { include = "opsscripts", from = "ops/" },
 ]
+repository = "https://github.com/opensource-observer/oso"
+homepage = "https://www.opensource.observer"
+documentation = "https://docs.opensource.observer/"
 
 [tool.poetry.dependencies]
 python = "^3.12,<3.13"
@@ -18,7 +23,7 @@ boltons = "^24.0.0"
 click = "^8.1.7"
 clickhouse-connect = "^0.7.16"
 cloud-sql-python-connector = { extras = ["pg8000"], version = "^1.6.0" }
-dagster = "1.8.6"
+dagster = "^1.8.6"
 dagster-dbt = "^0.24.0"
 dagster-embedded-elt = "^0.24.0"
 dagster-gcp = "^0.24.0"
@@ -30,8 +35,8 @@ dask-kubernetes = "^2024.4.2"
 dbt-bigquery = "^1.7.0"
 dbt-core = "^1.8.2"
 discord-webhook = "^1.3.1"
-dlt = { extras = ["duckdb"], version = "^0.5.2" }
-duckdb = "^0.10.2"
+dlt = "^1.3.0"
+duckdb = "^1.1.0"
 gcsfs = "^2024.6.1"
 google-api-python-client = "^2.116.0"
 google-cloud-bigquery = "^3.17.1"
@@ -42,7 +47,7 @@ google-cloud-service-management = "^1.8.3"
 google-cloud-service-usage = "^1.10.3"
 google-cloud-storage = "^2.14.0"
 lz4 = "^4.3.3"
-oss-directory = "^0.2.0"
+oss-directory = "^0.2.1"
 pendulum = "^3.0.0"
 polars = "^1.5.0"
 pytest = "^8.2.1"
@@ -53,17 +58,28 @@ ruff = "^0.4.10"
 sqlalchemy = "^2.0.25"
 textual = "^0.52.1"
 redis = "^5.0.7"
-githubkit = "^0.11.6"
-sqlmesh = { git = "https://github.com/opensource-observer/sqlmesh.git", rev = "test-clickhouse-engine-updates", extras = [
-    "gcppostgres",
-] }
+githubkit = "^0.12.4"
+sqlmesh = { extras = ["trino"], version = "^0.141.1" }
 dagster-duckdb = "^0.24.0"
 dagster-duckdb-polars = "^0.24.0"
 google-cloud-bigquery-storage = "^2.25.0"
-dagster-sqlmesh = "0.2.0.dev3"
+dagster-sqlmesh = "0.3.1"
 google-auth = "^2.34.0"
 pillow = "^10.4.0"
-dagster-k8s = "0.24.6"
+dagster-k8s = "^0.24.6"
+pyiceberg = { extras = ["hive"], version = "^0.7.1" }
+connectorx = "^0.4.0"
+bokeh = "^3.6.1"
+fastapi = { extras = ["standard"], version = "^0.115.6" }
+pyee = "^12.1.1"
+aiotrino = "^0.2.3"
+pytest-asyncio = "^0.24.0"
+isort = "^5.13.2"
+uvicorn = { extras = ["standard"], version = "^0.32.1" }
+websockets = "^14.1"
+pydantic-settings = "^2.7.0"
+openrank-sdk = "^0.4.0"
+pandas = "^2.2.3"
 
 
 [tool.poetry.scripts]
@@ -75,8 +91,9 @@ oso = 'oso_lets_go.cli:cli'
 dagster-webserver = "^1.7.2"
 ipython = "^8.21.0"
 shandy-sqlfmt = { extras = ["jinjafmt"], version = "^0.21.1" }
-sqlfluff = "^3.0.7"
-sqlfluff-templater-dbt = "^3.0.7"
+sqlfluff = "~3.2.5"
+sqlfluff-templater-dbt = "~3.2.5"
+isort = "^5.13.2"
 
 [build-system]
 requires = ["poetry-core"]
@@ -108,24 +125,28 @@ module_name = "oso_dagster.definitions"
 pythonVersion = "3.12"
 typeCheckingMode = "standard"
 ignore = [
-    "warehouse/bq2cloudsql",
-    "warehouse/meltano-setup",
-    "warehouse/oso_lets_go",
-    "warehouse/oso_dagster/dlt_sources/sql_database",
+  "warehouse/bq2cloudsql",
+  "warehouse/meltano-setup",
+  "warehouse/oso_lets_go",
+  "warehouse/oso_dagster/dlt_sources/sql_database",
+  "scripts/dbt_doc_gen",
 ]
 
 [tool.ruff]
 exclude = [
-    "warehouse/bq2cloudsql",
-    "warehouse/meltano-setup",
-    "warehouse/oso_lets_go",
-    "warehouse/oso_dagster/dlt_sources",
-    "warehouse/oso_dagster/dlt_sources/sql_database/**/*.py",
-    "warehouse/oso_dagster/dlt_sources/sql_database/*.py",
+  "warehouse/bq2cloudsql",
+  "warehouse/meltano-setup",
+  "warehouse/oso_lets_go",
+  "warehouse/oso_dagster/dlt_sources",
+  "warehouse/oso_dagster/dlt_sources/sql_database/**/*.py",
+  "warehouse/oso_dagster/dlt_sources/sql_database/*.py",
 ]
 
 [tool.ruff.lint]
 exclude = [
-    "warehouse/oso_dagster/dlt_sources/sql_database/**/*.py",
-    "warehouse/oso_dagster/dlt_sources/sql_database/*.py",
+  "warehouse/oso_dagster/dlt_sources/sql_database/**/*.py",
+  "warehouse/oso_dagster/dlt_sources/sql_database/*.py",
 ]
+
+[tool.isort]
+profile = "black"

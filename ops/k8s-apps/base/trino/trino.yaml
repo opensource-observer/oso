@@ -1,0 +1,59 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: base-trino
+  labels:
+    toolkit.fluxcd.io/tenant: apps
+    ops.opensource.observer/environment: base
+    kube-secrets-init.doit-intl.com/enable-mutation: "true"
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: trino
+  namespace: base-trino
+spec:
+  interval: 5m
+  url: https://trinodb.github.io/charts
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: trino
+  namespace: base-trino
+spec:
+  chart:
+    spec:
+      chart: trino
+      version: "0.33.0"
+      sourceRef:
+        kind: HelmRepository
+        name: trino
+  interval: 50m
+  install:
+    remediation:
+      retries: 3
+  values:
+    serviceAccount:
+      create: true
+      name: base-trino
+    coordinator:
+      additionalVolumes:
+        - name: cache
+          emptyDir: {}
+      additionalVolumeMounts:
+        - name: cache
+          mountPath: /metrics-cache
+      additionalJVMConfig:
+        - "--add-opens=java.base/java.nio=ALL-UNNAMED"
+      
+    worker:
+      additionalVolumes:
+        - name: cache
+          emptyDir: {}
+      additionalVolumeMounts:
+        - name: cache
+          mountPath: /metrics-cache
+
+      additionalJVMConfig:
+        - "--add-opens=java.base/java.nio=ALL-UNNAMED"

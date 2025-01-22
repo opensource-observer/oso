@@ -1,0 +1,6 @@
+# We use minio to emulate an s3 storage for trino and iceberg
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: local-minio
+resources:
+  - minio.yaml

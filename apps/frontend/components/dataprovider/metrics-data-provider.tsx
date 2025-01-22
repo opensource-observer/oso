@@ -1,6 +1,6 @@
 import { useQuery } from "@apollo/client";
 import dayjs from "dayjs";
-import _ from "lodash";
+import _, { Dictionary } from "lodash";
 import React from "react";
 import {
   assertNever,
@@ -10,7 +10,8 @@ import {
 } from "@opensource-observer/utils";
 import {
   GET_TIMESERIES_METRICS_BY_ARTIFACT,
-  //GET_TIMESERIES_METRICS_BY_PROJECT,
+  GET_TIMESERIES_METRICS_BY_PROJECT,
+  GET_TIMESERIES_METRICS_BY_COLLECTION,
 } from "../../lib/graphql/queries";
 import { eventTimeToLabel } from "../../lib/parsing";
 import { RegistrationProps } from "../../lib/types/plasmic";
@@ -25,11 +26,11 @@ import { useEnsureAuth } from "./apollo-wrapper";
 // Types used in the Plasmic registration
 type ChartType = "areaChart" | "barList";
 type XAxis = "date" | "entity" | "metric";
-type EntityType = "artifact" | "project";
+type EntityType = "artifact" | "project" | "collection";
 
 // Ideal minimum number of data points in an area chart
-type BucketWidth = "day" | "week" | "month";
-const MIN_DATA_POINTS = 20;
+//type BucketWidth = "day" | "week" | "month";
+//const MIN_DATA_POINTS = 20;
 // Default start time
 const DEFAULT_START_DATE = 0;
 // Default XAxis if not specified
@@ -67,7 +68,7 @@ const MetricsDataProviderRegistration: RegistrationProps<MetricsDataProviderProp
     entityType: {
       type: "choice",
       helpText: "What kind of entity?",
-      options: safeCast<EntityType[]>(["artifact", "project"]),
+      options: safeCast<EntityType[]>(["artifact", "project", "collection"]),
     },
     entityIds: {
       type: "array",
@@ -89,7 +90,6 @@ const MetricsDataProviderRegistration: RegistrationProps<MetricsDataProviderProp
 
 /**
  * Choose a bucket width based on the number of data points
- */
 const getBucketWidth = (props: MetricsDataProviderProps): BucketWidth => {
   const startDate = dayjs(props.startDate ?? DEFAULT_START_DATE);
   const endDate = dayjs(props.endDate);
@@ -101,6 +101,7 @@ const getBucketWidth = (props: MetricsDataProviderProps): BucketWidth => {
     return "day";
   }
 };
+*/
 
 /**
  * Used in formatting chart data
@@ -121,10 +122,12 @@ const formatDataToAreaChart = (
   formatOpts?: FormatOpts,
 ) => {
   // Start with an empty data point for each available date
-  const emptyDataPoint = _.fromPairs(categories.results.map((c) => [c, 0]));
-  const datesWithData = _.uniq(data.map((x) => eventTimeToLabel(x.date)));
+  const emptyDataPoint: Dictionary<null | number> = _.fromPairs(
+    categories.results.map((c) => [c, null]),
+  );
+  const uniqueDates = _.uniq(data.map((x) => eventTimeToLabel(x.date)));
   const groupedByDate = _.fromPairs(
-    datesWithData.map((d) => [d, _.clone(emptyDataPoint)]),
+    uniqueDates.map((d) => [d, _.clone(emptyDataPoint)]),
   );
   //console.log(groupedByDate);
 
@@ -136,7 +139,11 @@ const formatDataToAreaChart = (
       d.metricName,
       categories.opts,
     );
-    groupedByDate[dateLabel][category] += d.amount;
+    if (groupedByDate[dateLabel][category]) {
+      groupedByDate[dateLabel][category] += d.amount;
+    } else {
+      groupedByDate[dateLabel][category] = d.amount;
+    }
   });
   //console.log(groupedByDate);
 
@@ -319,8 +326,9 @@ function MetricsDataProvider(props: MetricsDataProviderProps) {
   return props.entityType === "artifact" ? (
     <ArtifactMetricsDataProvider {...props} />
   ) : props.entityType === "project" ? (
-    //<ProjectMetricsDataProvider {...props} />
-    <>{props.children}</>
+    <ProjectMetricsDataProvider {...props} />
+  ) : props.entityType === "collection" ? (
+    <CollectionMetricsDataProvider {...props} />
   ) : (
     assertNever(props.entityType)
   );
@@ -328,7 +336,6 @@ function MetricsDataProvider(props: MetricsDataProviderProps) {
 
 function ArtifactMetricsDataProvider(props: MetricsDataProviderProps) {
   useEnsureAuth();
-  const bucketWidth = getBucketWidth(props);
   const {
     data: rawData,
     error: dataError,
@@ -374,7 +381,8 @@ function ArtifactMetricsDataProvider(props: MetricsDataProviderProps) {
   const getMetricName = (id: string) => metricIdToName[id];
   const categories = createCategories(props, getEntityName, getMetricName);
   const formattedData = formatData(props, normalizedData, categories, {
-    gapFill: bucketWidth === "day",
+    //gapFill: getBucketWidth(props) === "day",
+    gapFill: false,
   });
   !dataLoading && console.log(props, rawData, dataError, formattedData);
   return (
@@ -387,10 +395,8 @@ function ArtifactMetricsDataProvider(props: MetricsDataProviderProps) {
   );
 }
 
-/**
 function ProjectMetricsDataProvider(props: MetricsDataProviderProps) {
   useEnsureAuth();
-  const bucketWidth = getBucketWidth(props);
   const {
     data: rawData,
     error: dataError,
@@ -436,7 +442,8 @@ function ProjectMetricsDataProvider(props: MetricsDataProviderProps) {
   const getMetricName = (id: string) => metricIdToName[id];
   const categories = createCategories(props, getEntityName, getMetricName);
   const formattedData = formatData(props, normalizedData, categories, {
-    gapFill: bucketWidth === "day",
+    //gapFill: getBucketWidth(props) === "day",
+    gapFill: false,
   });
   !dataLoading && console.log(props, rawData, dataError, formattedData);
   return (
@@ -448,7 +455,67 @@ function ProjectMetricsDataProvider(props: MetricsDataProviderProps) {
     />
   );
 }
-*/
+
+function CollectionMetricsDataProvider(props: MetricsDataProviderProps) {
+  useEnsureAuth();
+  const {
+    data: rawData,
+    error: dataError,
+    loading: dataLoading,
+  } = useQuery(GET_TIMESERIES_METRICS_BY_COLLECTION, {
+    variables: {
+      collectionIds: props.entityIds ?? [],
+      metricIds: props.metricIds ?? [],
+      startDate: eventTimeToLabel(props.startDate ?? DEFAULT_START_DATE),
+      endDate: eventTimeToLabel(props.endDate),
+    },
+  });
+
+  const metricIdToName: Record<string, string> = _.fromPairs(
+    (rawData?.oso_metricsV0 ?? []).map((x: any) => [
+      ensure<string>(x.metricId, "Missing metricId"),
+      ensure<string>(x.metricName, "Missing metricName"),
+    ]),
+  );
+  const entityIdToName: Record<string, string> = _.fromPairs(
+    (rawData?.oso_collectionsV1 ?? []).map((x: any) => [
+      ensure<string>(x.collectionId, "Missing collectionId"),
+      ensure<string>(x.collectionName, "Missing collectionName"),
+    ]),
+  );
+  const normalizedData: EventData[] = (
+    rawData?.oso_timeseriesMetricsByCollectionV0 ?? []
+  ).map((x: any) => ({
+    metricId: ensure<string>(x.metricId, "Data missing 'metricId'"),
+    metricName: ensure<string>(
+      metricIdToName[x.metricId],
+      "Data missing 'metricName'",
+    ),
+    entityId: ensure<string>(x.collectionId, "Data missing 'collectionId'"),
+    entityName: ensure<string>(
+      entityIdToName[x.collectionId],
+      "Data missing 'collectionName'",
+    ),
+    date: ensure<string>(x.sampleDate, "Data missing 'sampleDate'"),
+    amount: ensure<number>(x.amount, "Data missing 'amount'"),
+  }));
+  const getEntityName = (id: string) => entityIdToName[id];
+  const getMetricName = (id: string) => metricIdToName[id];
+  const categories = createCategories(props, getEntityName, getMetricName);
+  const formattedData = formatData(props, normalizedData, categories, {
+    //gapFill: getBucketWidth(props) === "day",
+    gapFill: false,
+  });
+  !dataLoading && console.log(props, rawData, dataError, formattedData);
+  return (
+    <DataProviderView
+      {...props}
+      formattedData={formattedData}
+      loading={dataLoading}
+      error={dataError}
+    />
+  );
+}
 
 export { MetricsDataProviderRegistration, MetricsDataProvider };
 export type { MetricsDataProviderProps };

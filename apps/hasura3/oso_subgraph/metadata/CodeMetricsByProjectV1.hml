@@ -173,79 +173,119 @@ definition:
           - starCount
 
 ---
-kind: ObjectBooleanExpressionType
+kind: BooleanExpressionType
 version: v1
 definition:
   name: CodeMetricsByProjectV1BoolExp
-  objectType: CodeMetricsByProjectV1
-  dataConnectorName: oso_clickhouse
-  dataConnectorObjectType: code_metrics_by_project_v1
-  comparableFields:
-    - fieldName: activeDeveloperCount6Months
-      operators:
-        enableAll: true
-    - fieldName: closedIssueCount6Months
-      operators:
-        enableAll: true
-    - fieldName: commitCount6Months
-      operators:
-        enableAll: true
-    - fieldName: contributorCount
-      operators:
-        enableAll: true
-    - fieldName: contributorCount6Months
-      operators:
-        enableAll: true
-    - fieldName: displayName
-      operators:
-        enableAll: true
-    - fieldName: eventSource
-      operators:
-        enableAll: true
-    - fieldName: firstCommitDate
-      operators:
-        enableAll: true
-    - fieldName: forkCount
-      operators:
-        enableAll: true
-    - fieldName: fulltimeDeveloperAverage6Months
-      operators:
-        enableAll: true
-    - fieldName: lastCommitDate
-      operators:
-        enableAll: true
-    - fieldName: mergedPullRequestCount6Months
-      operators:
-        enableAll: true
-    - fieldName: newContributorCount6Months
-      operators:
-        enableAll: true
-    - fieldName: openedIssueCount6Months
-      operators:
-        enableAll: true
-    - fieldName: openedPullRequestCount6Months
-      operators:
-        enableAll: true
-    - fieldName: projectId
-      operators:
-        enableAll: true
-    - fieldName: projectName
-      operators:
-        enableAll: true
-    - fieldName: projectNamespace
-      operators:
-        enableAll: true
-    - fieldName: projectSource
-      operators:
-        enableAll: true
-    - fieldName: repositoryCount
-      operators:
-        enableAll: true
-    - fieldName: starCount
-      operators:
-        enableAll: true
+  operand:
+    object:
+      type: CodeMetricsByProjectV1
+      comparableFields:
+        - fieldName: activeDeveloperCount6Months
+          booleanExpressionType: Float32BoolExp
+        - fieldName: closedIssueCount6Months
+          booleanExpressionType: Float32BoolExp
+        - fieldName: commitCount6Months
+          booleanExpressionType: Float32BoolExp
+        - fieldName: contributorCount
+          booleanExpressionType: Float32BoolExp
+        - fieldName: contributorCount6Months
+          booleanExpressionType: Float32BoolExp
+        - fieldName: displayName
+          booleanExpressionType: StringBoolExp
+        - fieldName: eventSource
+          booleanExpressionType: StringBoolExp
+        - fieldName: firstCommitDate
+          booleanExpressionType: DateTimeBoolExp
+        - fieldName: forkCount
+          booleanExpressionType: Int64BoolExp
+        - fieldName: fulltimeDeveloperAverage6Months
+          booleanExpressionType: Float32BoolExp
+        - fieldName: lastCommitDate
+          booleanExpressionType: DateTimeBoolExp
+        - fieldName: mergedPullRequestCount6Months
+          booleanExpressionType: Float32BoolExp
+        - fieldName: newContributorCount6Months
+          booleanExpressionType: Float32BoolExp
+        - fieldName: openedIssueCount6Months
+          booleanExpressionType: Float32BoolExp
+        - fieldName: openedPullRequestCount6Months
+          booleanExpressionType: Float32BoolExp
+        - fieldName: projectId
+          booleanExpressionType: StringBoolExp
+        - fieldName: projectName
+          booleanExpressionType: StringBoolExp
+        - fieldName: projectNamespace
+          booleanExpressionType: StringBoolExp
+        - fieldName: projectSource
+          booleanExpressionType: StringBoolExp
+        - fieldName: repositoryCount
+          booleanExpressionType: Int64BoolExp
+        - fieldName: starCount
+          booleanExpressionType: Int64BoolExp
+      comparableRelationships: []
+  logicalOperators:
+    enable: true
+  isNull:
+    enable: true
   graphql:
     typeName: Oso_CodeMetricsByProjectV1BoolExp
+
+---
+kind: AggregateExpression
+version: v1
+definition:
+  name: CodeMetricsByProjectV1AggExp
+  operand:
+    object:
+      aggregatedType: CodeMetricsByProjectV1
+      aggregatableFields:
+        - fieldName: activeDeveloperCount6Months
+          aggregateExpression: Float32AggExp
+        - fieldName: closedIssueCount6Months
+          aggregateExpression: Float32AggExp
+        - fieldName: commitCount6Months
+          aggregateExpression: Float32AggExp
+        - fieldName: contributorCount
+          aggregateExpression: Float32AggExp
+        - fieldName: contributorCount6Months
+          aggregateExpression: Float32AggExp
+        - fieldName: displayName
+          aggregateExpression: StringAggExp
+        - fieldName: eventSource
+          aggregateExpression: StringAggExp
+        - fieldName: firstCommitDate
+          aggregateExpression: DateTimeAggExp
+        - fieldName: forkCount
+          aggregateExpression: Int64AggExp
+        - fieldName: fulltimeDeveloperAverage6Months
+          aggregateExpression: Float32AggExp
+        - fieldName: lastCommitDate
+          aggregateExpression: DateTimeAggExp
+        - fieldName: mergedPullRequestCount6Months
+          aggregateExpression: Float32AggExp
+        - fieldName: newContributorCount6Months
+          aggregateExpression: Float32AggExp
+        - fieldName: openedIssueCount6Months
+          aggregateExpression: Float32AggExp
+        - fieldName: openedPullRequestCount6Months
+          aggregateExpression: Float32AggExp
+        - fieldName: projectId
+          aggregateExpression: StringAggExp
+        - fieldName: projectName
+          aggregateExpression: StringAggExp
+        - fieldName: projectNamespace
+          aggregateExpression: StringAggExp
+        - fieldName: projectSource
+          aggregateExpression: StringAggExp
+        - fieldName: repositoryCount
+          aggregateExpression: Int64AggExp
+        - fieldName: starCount
+          aggregateExpression: Int64AggExp
+  count:
+    enable: true
+  graphql:
+    selectTypeName: Oso_CodeMetricsByProjectV1AggExp
 
 ---
 kind: Model
@@ -257,6 +297,7 @@ definition:
     dataConnectorName: oso_clickhouse
     collection: code_metrics_by_project_v1
   filterExpressionType: CodeMetricsByProjectV1BoolExp
+  aggregateExpression: CodeMetricsByProjectV1AggExp
   orderableFields:
     - fieldName: activeDeveloperCount6Months
       orderByDirections:
@@ -326,6 +367,9 @@ definition:
       queryRootField: oso_codeMetricsByProjectV1
     selectUniques: []
     orderByExpressionType: Oso_CodeMetricsByProjectV1OrderBy
+    filterInputTypeName: Oso_CodeMetricsByProjectV1FilterInput
+    aggregate:
+      queryRootField: oso_codeMetricsByProjectV1Aggregate
 
 ---
 kind: ModelPermissions

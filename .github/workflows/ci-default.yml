@@ -60,7 +60,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        component: ["node", "python", "dbt"]
+        component: ["node", "python", "dbt", "sqlmesh"]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -176,5 +176,10 @@ jobs:
         run: |
           poetry run pytest
         if: ${{ always() && matrix.component == 'python' }}
+
+      - name: Test SQLMesh
+        run: |
+          poetry install && cd warehouse/metrics_mesh && poetry run -C ../../ sqlmesh test
+        if: ${{ always() && matrix.component == 'sqlmesh' }}
       
      

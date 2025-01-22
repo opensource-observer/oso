@@ -1,6 +1,13 @@
+{{
+  config(
+    materialized='table'
+  )
+}}
+
 {# 
   The most recent view of projects from the ossd dagster source.
 #}
+
 select
   {# 
     id is the SHA256 of namespace + slug. We hardcode our namespace

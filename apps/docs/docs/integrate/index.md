@@ -3,14 +3,11 @@ title: Get OSO Data
 sidebar_position: 0
 ---
 
-Open Source Observer is a fully open data pipeline for measuring the impact of open source efforts.
-That means all source code, data, and infrastructure is publicly available for use.
+Open Source Observer is a fully open data pipeline for measuring the impact of open source efforts. Explore the following resources:
 
-- [**Get Started**](../get-started/index.mdx): to setup your Google account for data access and run your first query
-- [**Data Overview**](./overview/index.mdx): for an overview of all data available
-- [**SQL Query Guide**](./query-data.mdx): to quickly query and download any data
-- [**Python notebooks**](./python-notebooks.md): to do more in-depth data science and processing
-- [**Connect OSO to 3rd Party tools**](./3rd-party.mdx): like Hex.tech, Tableau, and Metabase
-- [**Fork the data pipeline**](./fork-pipeline.md): to setup your own data pipeline off any OSO model
-- [**API access**](./api.md): to integrate OSO metrics into a live production application
-- [**oss-directory**](./oss-directory.md): to leverage [oss-directory](https://github.com/opensource-observer/oss-directory) data separate from OSO
+- 📊 [Subscribe to Public Datasets](./datasets/index.mdx) - Get free access to any of the public datasets that OSO maintains or builds on top of
+- 🔍 [Explore the OSO Data Lake](./query-data.mdx) - Query the OSO data lake using BigQuery
+- ⚡ [Use the GraphQL API](./api.md) - Integrate OSO registries and metrics into a live production application
+- 📂 [Import or Clone OSS-Directory](./oss-directory.md) - Leverage oss-directory data separate from OSO
+
+See the [Tutorials](../tutorials/index.md) for more examples and the [Guides](../guides/index.mdx) for more detailed guides for integrating with specific tools.

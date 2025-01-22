@@ -67,6 +67,7 @@ const config: Config = {
       logo: {
         alt: "OSO Logo",
         src: "img/oso-emblem-black.svg",
+        srcDark: "img/oso-emblem-white.svg",
       },
       items: [
         {
@@ -76,9 +77,59 @@ const config: Config = {
           label: "Docs",
         },
         {
-          to: "/blog/tags/featured",
+          type: "dropdown",
           label: "Blog",
           position: "left",
+          items: [
+            {
+              label: "Featured",
+              href: "/blog/tags/featured",
+            },
+            {
+              label: "Perspective",
+              href: "/blog/tags/perspective",
+            },
+            {
+              label: "Community",
+              href: "/blog/tags/community",
+            },
+            {
+              label: "Data Science",
+              href: "/blog/tags/data-science",
+            },
+            {
+              label: "Development",
+              href: "/blog/tags/development",
+            },
+            {
+              label: "Research",
+              href: "/blog/tags/research",
+            },
+            {
+              type: "html",
+              value: "<b>Ecosystem Reports</b>",
+            },
+            {
+              label: "Arbitrum",
+              href: "/blog/tags/arbitrum",
+            },
+            {
+              label: "Filecoin",
+              href: "/blog/tags/filecoin",
+            },
+            {
+              label: "Gitcoin",
+              href: "/blog/tags/gitcoin",
+            },
+            {
+              label: "Octant",
+              href: "/blog/tags/octant",
+            },
+            {
+              label: "Optimism",
+              href: "/blog/tags/optimism",
+            },
+          ],
         },
         {
           href: "https://www.opensource.observer",
@@ -99,16 +150,16 @@ const config: Config = {
           title: "Docs",
           items: [
             {
-              label: "Contribute to OSO",
-              to: "/docs/contribute/",
+              label: "Get started",
+              to: "/docs/get-started/",
             },
             {
-              label: "Get OSO Data",
-              to: "/docs/integrate/",
+              label: "View datasets",
+              to: "/docs/integrate/datasets/",
             },
             {
-              label: "Learn How OSO Works",
-              to: "/docs/how-oso-works/",
+              label: "Learn how OSO works",
+              to: "/docs/references/",
             },
           ],
         },

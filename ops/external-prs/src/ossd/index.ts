@@ -19,6 +19,7 @@ import * as repl from "repl";
 import columnify from "columnify";
 import { BigQueryOptions } from "@google-cloud/bigquery";
 import {
+  DefiLlamaValidator,
   EVMNetworkValidator,
   EthereumValidator,
   ArbitrumValidator,
@@ -226,7 +227,7 @@ async function runParameterizedQuery(
 
 // | Projects             | {{ projects.existing }} {{ projects.added }} | {{projects.removed}} | {{ projects.updated }}
 type ProjectSummary = {
-  project_slug: string;
+  project_name: string;
   status: string;
   blockchain_added: number;
   blockchain_removed: number;
@@ -242,20 +243,15 @@ type ProjectSummary = {
   package_unchanged: number;
 };
 
-type CodeStatus = {
-  project_slug: string;
-  code_url: string;
-  status: string;
-};
-
-type PackageStatus = {
-  project_slug: string;
-  package_url: string;
+type UrlStatus = {
+  project_name: string;
+  url_value: string;
+  url_type: string;
   status: string;
 };
 
 type BlockchainStatus = {
-  project_slug: string;
+  project_name: string;
   address: string;
   tag: string;
   network: string;
@@ -269,6 +265,14 @@ type BlockchainValidationItem = {
   address: string;
   tags: string[];
   networks: string[];
+};
+
+type UrlItem = {
+  // Full URL
+  url_value: string;
+  // The type of URL
+  // e.g. GITHUB, NPM, DEFILLAMA, WEBSITE
+  url_type: string;
 };
 
 type Summary = {
@@ -285,18 +289,14 @@ type Summary = {
 type ChangeSummary = {
   projects: ProjectSummary[];
   artifacts: {
-    summary: {
-      blockchain: Summary;
-      package: Summary;
-      code: Summary;
-    };
+    summary: Record<string, Summary>;
     status: {
       blockchain: BlockchainStatus[];
-      package: PackageStatus[];
-      code: CodeStatus[];
+      url: UrlStatus[];
     };
     toValidate: {
       blockchain: BlockchainValidationItem[];
+      defillama: UrlItem[];
     };
   };
 };
@@ -305,7 +305,10 @@ class OSSDirectoryPullRequest {
   private db: duckdb.Database;
   private args: OSSDirectoryPullRequestArgs;
   private changes: ChangeSummary;
-  private validators: Partial<Record<BlockchainNetwork, EVMNetworkValidator>>;
+  private blockchainValidators: Partial<
+    Record<BlockchainNetwork, EVMNetworkValidator>
+  >;
+  private defillamaValidator: DefiLlamaValidator;
 
   static async init(args: OSSDirectoryPullRequestArgs) {
     const pr = new OSSDirectoryPullRequest(args);
@@ -315,7 +318,7 @@ class OSSDirectoryPullRequest {
 
   private constructor(args: OSSDirectoryPullRequestArgs) {
     this.args = args;
-    this.validators = {};
+    this.blockchainValidators = {};
   }
 
   async loadValidators(urls: RpcUrlArgs) {
@@ -323,27 +326,28 @@ class OSSDirectoryPullRequest {
     const bqOptions: BigQueryOptions = {
       ...(googleProjectId ? { projectId: googleProjectId } : {}),
     };
-    this.validators["any_evm"] = EthereumValidator({
+    this.defillamaValidator = new DefiLlamaValidator();
+    this.blockchainValidators["any_evm"] = EthereumValidator({
       rpcUrl: urls.mainnetRpcUrl,
       bqOptions,
     });
 
-    this.validators["mainnet"] = EthereumValidator({
+    this.blockchainValidators["mainnet"] = EthereumValidator({
       rpcUrl: urls.mainnetRpcUrl,
       bqOptions,
     });
 
-    this.validators["arbitrum_one"] = ArbitrumValidator({
+    this.blockchainValidators["arbitrum_one"] = ArbitrumValidator({
       rpcUrl: urls.arbitrumRpcUrl,
       bqOptions,
     });
 
-    this.validators["base"] = BaseValidator({
+    this.blockchainValidators["base"] = BaseValidator({
       rpcUrl: urls.baseRpcUrl,
       bqOptions,
     });
 
-    this.validators["optimism"] = OptimismValidator({
+    this.blockchainValidators["optimism"] = OptimismValidator({
       rpcUrl: urls.optimismRpcUrl,
       bqOptions,
     });
@@ -454,24 +458,17 @@ class OSSDirectoryPullRequest {
         await this.runParameterizedQuery("blockchain_artifacts", {
           source: "pr",
         });
-        await this.runParameterizedQuery("code_artifacts", {
+        await this.runParameterizedQuery("url_artifacts", {
           source: "main",
         });
-        await this.runParameterizedQuery("code_artifacts", {
-          source: "pr",
-        });
-        await this.runParameterizedQuery("package_artifacts", {
-          source: "main",
-        });
-        await this.runParameterizedQuery("package_artifacts", {
+        await this.runParameterizedQuery("url_artifacts", {
           source: "pr",
         });
 
         await this.runParameterizedQuery("project_status");
         await this.runParameterizedQuery("projects_by_collection_status");
         await this.runParameterizedQuery("blockchain_status");
-        await this.runParameterizedQuery("package_status");
-        await this.runParameterizedQuery("code_status");
+        await this.runParameterizedQuery("url_status");
         await this.runParameterizedQuery("artifacts_summary");
         await this.runParameterizedQuery("project_summary");
 
@@ -509,30 +506,26 @@ class OSSDirectoryPullRequest {
             "changed_projects",
           )) as ProjectSummary[],
           artifacts: {
-            summary: {
-              blockchain: summaries["BLOCKCHAIN"],
-              code: summaries["CODE"],
-              package: summaries["PACKAGE"],
-            },
+            summary: summaries,
             status: {
               blockchain: (await runParameterizedQuery(
                 db,
                 "changed_blockchain_artifacts",
               )) as BlockchainStatus[],
-              code: (await runParameterizedQuery(
+              url: (await runParameterizedQuery(
                 db,
-                "changed_code_artifacts",
-              )) as CodeStatus[],
-              package: (await runParameterizedQuery(
-                db,
-                "changed_package_artifacts",
-              )) as PackageStatus[],
+                "changed_url_artifacts",
+              )) as UrlStatus[],
             },
             toValidate: {
               blockchain: (await runParameterizedQuery(
                 db,
                 "changed_blockchain_artifacts_to_validate",
               )) as BlockchainValidationItem[],
+              defillama: (await runParameterizedQuery(
+                db,
+                "changed_defillama_artifacts_to_validate",
+              )) as UrlItem[],
             },
           },
         };
@@ -565,7 +558,7 @@ class OSSDirectoryPullRequest {
               return await this.runParameterizedQuery(name, params);
             },
           };
-          server.context.changes = changes;
+          server.context.changes = this.changes;
           await new Promise<void>((resolve, reject) => {
             server.on("exit", () => {
               resolve();
@@ -619,22 +612,23 @@ class OSSDirectoryPullRequest {
       sha: args.sha,
       pr: args.pr,
     });
+    // Initialize
     await this.loadValidators(urls);
-
     const results = await ValidationResults.create();
+
+    // Validate blockchain artifacts
     const addressesToValidate =
       this.changes.artifacts.toValidate.blockchain.map((b) => b.address);
     logger.info({
-      message: `Starting validations for [${addressesToValidate}]. ${addressesToValidate.length} total`,
+      message: `Starting blockchain validations for [${addressesToValidate}]. ${addressesToValidate.length} total`,
       addresses: addressesToValidate,
     });
 
-    // Run on-chain validations
     for (const item of this.changes.artifacts.toValidate.blockchain) {
       const address = item.address;
       for (const network of item.networks) {
         const validator =
-          this.validators[uncheckedCast<BlockchainNetwork>(network)];
+          this.blockchainValidators[uncheckedCast<BlockchainNetwork>(network)];
         if (!validator) {
           results.addWarning(
             `no automated validators exist on ${network} to check tags=[${item.tags}]. Please check manually.`,
@@ -691,6 +685,52 @@ class OSSDirectoryPullRequest {
             );
           }
         }
+      }
+    }
+
+    // DefiLlama validations
+    const defillamaToValidate = this.changes.artifacts.toValidate.defillama.map(
+      (x) => x.url_value,
+    );
+    logger.info({
+      message: `Starting DefiLlama validations for [${defillamaToValidate}]. ${defillamaToValidate.length} total`,
+      addresses: defillamaToValidate,
+    });
+
+    for (const item of this.changes.artifacts.toValidate.defillama) {
+      console.log(item);
+      const urlValue = item.url_value;
+      const urlType = item.url_type;
+      logger.info({
+        message: `validating DefiLlama ${urlValue}`,
+        url: urlValue,
+        type: urlType,
+      });
+      if (!this.defillamaValidator.isValidUrl(urlValue)) {
+        results.addError(
+          `${urlValue} is not a valid DefiLlama URL`,
+          urlValue,
+          item,
+        );
+      } else {
+        results.addSuccess(
+          `${urlValue} is a valid DefiLlama URL`,
+          urlValue,
+          item,
+        );
+      }
+      if (!(await this.defillamaValidator.isValid(urlValue))) {
+        results.addError(
+          `${urlValue} is not a valid DefiLlama slug`,
+          urlValue,
+          item,
+        );
+      } else {
+        results.addSuccess(
+          `${urlValue} is a valid DefiLlama slug`,
+          urlValue,
+          item,
+        );
       }
     }
 

@@ -46,7 +46,7 @@ function summarizeForCards(
       });
     } catch (e) {
       logger.warn(
-        `error processing column ${card.column} for card rendering. skipping`,
+        `error processing column ${card.column} for card rendering. skipping. ${e}`,
       );
       return;
     }

@@ -68,34 +68,59 @@ definition:
           - artifactUrl
 
 ---
-kind: ObjectBooleanExpressionType
+kind: BooleanExpressionType
 version: v1
 definition:
   name: ArtifactsV1BoolExp
-  objectType: ArtifactsV1
-  dataConnectorName: oso_clickhouse
-  dataConnectorObjectType: artifacts_v1
-  comparableFields:
-    - fieldName: artifactId
-      operators:
-        enableAll: true
-    - fieldName: artifactName
-      operators:
-        enableAll: true
-    - fieldName: artifactNamespace
-      operators:
-        enableAll: true
-    - fieldName: artifactSource
-      operators:
-        enableAll: true
-    - fieldName: artifactSourceId
-      operators:
-        enableAll: true
-    - fieldName: artifactUrl
-      operators:
-        enableAll: true
+  operand:
+    object:
+      type: ArtifactsV1
+      comparableFields:
+        - fieldName: artifactId
+          booleanExpressionType: StringBoolExp
+        - fieldName: artifactName
+          booleanExpressionType: StringBoolExp
+        - fieldName: artifactNamespace
+          booleanExpressionType: StringBoolExp
+        - fieldName: artifactSource
+          booleanExpressionType: StringBoolExp
+        - fieldName: artifactSourceId
+          booleanExpressionType: StringBoolExp
+        - fieldName: artifactUrl
+          booleanExpressionType: StringBoolExp
+      comparableRelationships: []
+  logicalOperators:
+    enable: true
+  isNull:
+    enable: true
   graphql:
     typeName: Oso_ArtifactsV1BoolExp
+
+---
+kind: AggregateExpression
+version: v1
+definition:
+  name: ArtifactsV1AggExp
+  operand:
+    object:
+      aggregatedType: ArtifactsV1
+      aggregatableFields:
+        - fieldName: artifactId
+          aggregateExpression: StringAggExp
+        - fieldName: artifactName
+          aggregateExpression: StringAggExp
+        - fieldName: artifactNamespace
+          aggregateExpression: StringAggExp
+        - fieldName: artifactSource
+          aggregateExpression: StringAggExp
+        - fieldName: artifactSourceId
+          aggregateExpression: StringAggExp
+        - fieldName: artifactUrl
+          aggregateExpression: StringAggExp
+  count:
+    enable: true
+  graphql:
+    selectTypeName: Oso_ArtifactsV1AggExp
 
 ---
 kind: Model
@@ -107,6 +132,7 @@ definition:
     dataConnectorName: oso_clickhouse
     collection: artifacts_v1
   filterExpressionType: ArtifactsV1BoolExp
+  aggregateExpression: ArtifactsV1AggExp
   orderableFields:
     - fieldName: artifactId
       orderByDirections:
@@ -131,6 +157,9 @@ definition:
       queryRootField: oso_artifactsV1
     selectUniques: []
     orderByExpressionType: Oso_ArtifactsV1OrderBy
+    filterInputTypeName: Oso_ArtifactsV1FilterInput
+    aggregate:
+      queryRootField: oso_artifactsV1Aggregate
 
 ---
 kind: ModelPermissions

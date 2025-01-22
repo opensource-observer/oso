@@ -1,0 +1,13 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ .Release.Name }}-scaler-role
+rules:
+  # Access to deployments for scaling
+  - apiGroups: ["apps"] # API group for deployments
+    resources: ["deployments"] # Specific subresource for scaling
+    verbs: ["get", "update", "list", "patch", "watch"]
+  # Read only access to services
+  - apiGroups: [""]
+    resources: ["services"]
+    verbs: ["get", "list", "watch"]

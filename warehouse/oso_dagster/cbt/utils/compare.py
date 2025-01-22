@@ -2,6 +2,7 @@ from typing import cast
 
 import sqlglot as sql
 from sqlglot.optimizer.qualify import qualify
+from sqlglot.optimizer.normalize import normalize
 from sqlglot.diff import Keep
 from sqlglot import expressions as exp
 
@@ -27,7 +28,10 @@ def is_same_source_table(a: exp.Table, b: exp.Table):
 
 
 def is_same_sql(a: exp.Expression, b: exp.Expression):
-    diff = sql.diff(qualify(a), qualify(b))
+    diff = sql.diff(
+        normalize(qualify(sql.parse_one(a.sql()))),
+        normalize(qualify(sql.parse_one(b.sql()))),
+    )
     for section in diff:
         if type(section) != Keep:
             return False

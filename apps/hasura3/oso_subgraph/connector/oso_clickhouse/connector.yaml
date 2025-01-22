@@ -3,7 +3,7 @@ version: v2
 definition:
   name: oso_clickhouse
   subgraph: oso_subgraph
-  source: hasura/clickhouse:v1.0.0
+  source: hasura/clickhouse:v1.0.5
   context: .
   envMapping:
     CLICKHOUSE_PASSWORD:
@@ -14,7 +14,7 @@ definition:
       fromEnv: OSO_SUBGRAPH_OSO_CLICKHOUSE_CLICKHOUSE_USERNAME
     HASURA_SERVICE_TOKEN_SECRET:
       fromEnv: OSO_SUBGRAPH_OSO_CLICKHOUSE_HASURA_SERVICE_TOKEN_SECRET
-    OTEL_EXPORTER_OTLP_TRACES_ENDPOINT:
-      fromEnv: OSO_SUBGRAPH_OSO_CLICKHOUSE_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
+    OTEL_EXPORTER_OTLP_ENDPOINT:
+      fromEnv: OSO_SUBGRAPH_OSO_CLICKHOUSE_OTEL_EXPORTER_OTLP_ENDPOINT
     OTEL_SERVICE_NAME:
       fromEnv: OSO_SUBGRAPH_OSO_CLICKHOUSE_OTEL_SERVICE_NAME

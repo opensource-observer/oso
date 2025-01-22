@@ -1,6 +1,13 @@
+{{
+  config(
+    materialized='table'
+  )
+}}
+
 {# 
   The most recent view of repositories from the ossd repositories dagster source.
 #}
+
 with ranked_repositories as (
   select
     node_id,
@@ -17,6 +24,8 @@ with ranked_repositories as (
     license_name,
     license_spdx_id,
     language,
+    created_at,
+    updated_at,
     ingestion_time,
     ROW_NUMBER()
       over (partition by node_id order by ingestion_time desc, id asc)
@@ -39,6 +48,8 @@ select
   license_name,
   license_spdx_id,
   language,
+  created_at,
+  updated_at,
   ingestion_time
 from ranked_repositories
 where row_num = 1

@@ -6,19 +6,23 @@ models:
       #...
       contributors: oso-team, tomfutago
     config:
-      tags: ['oss-directory', 'artifact', 'project']
+      tags: ["oss-directory", "artifact", "project"]
     description: "Artifacts by associated list of projects"
     columns:
       - &project_id
         name: project_id
         description: "project id"
-      - name: artifact_namespace
+      - &artifact_namespace
+        name: artifact_namespace
         description: "artifact namespace"
-      - name: artifact_type
+      - &artifact_type
+        name: artifact_type
         description: "artifact type"
-      - name: artifact_name
+      - &artifact_name
+        name: artifact_name
         description: "artifact name (e.g. GitHub repo, npm package url, blockchain address)"
-      - name: artifact_url
+      - &artifact_url
+        name: artifact_url
         description: "artifact url"
       - name: artifact_source_id
         description: "artifact source id (e.g. internal GitHub repo ID, npm package url, blockchain address)"
@@ -30,7 +34,7 @@ models:
       #...
       contributors: oso-team, tomfutago
     config:
-      tags: ['staging', 'oss-directory', 'collection']
+      tags: ["staging", "oss-directory", "collection"]
     description: "Collections"
     columns:
       - name: id
@@ -59,7 +63,7 @@ models:
       #...
       contributors: oso-team, tomfutago
     config:
-      tags: ['staging', 'oss-directory', 'project']
+      tags: ["staging", "oss-directory", "project"]
     description: "Projects"
     columns:
       - name: id
@@ -82,7 +86,7 @@ models:
       #...
       contributors: oso-team, tomfutago
     config:
-      tags: ['staging', 'oss-directory', 'project', 'collection']
+      tags: ["staging", "oss-directory", "project", "collection"]
     description: "Projects by collection (referencial list of IDs)"
     columns:
       - name: collection_id
@@ -94,7 +98,7 @@ models:
       #...
       contributors: oso-team, tomfutago
     config:
-      tags: ['staging', 'oss-directory', 'repository']
+      tags: ["staging", "oss-directory", "repository"]
     description: "GitHub repositories"
     columns:
       - &node_id
@@ -130,3 +134,36 @@ models:
       - &is_fork
         name: is_fork
         description: "is this repo a fork?"
+      - &license_name
+        name: license_name
+        description: "license name"
+      - &license_spdx_id
+        name: license_spdx_id
+        description: "license spdx id"
+      - &language
+        name: language
+        description: "programming language used in the repository"
+      - &created_at
+        name: created_at
+        description: "repository creation timestamp"
+      - &updated_at
+        name: updated_at
+        description: "repository last update timestamp"
+      - &ingestion_time
+        name: ingestion_time
+        description: "timestamp when the data was ingested"
+  - name: stg_ossd__missing_sbom
+    meta:
+      #...
+      contributors: oso-team
+    config:
+      tags: ["staging", "oss-directory", "sbom"]
+    description: "Projects that are missing SBOMs"
+    columns:
+      - *artifact_namespace
+      - *artifact_name
+      - name: artifact_source
+        description: "artifact source, currently only GITHUB"
+      - *artifact_url
+      - name: snapshot_at
+        description: "snapshot time"

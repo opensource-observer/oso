@@ -5,17 +5,22 @@ import polars as pl
 from dagster import (
     AssetExecutionContext,
     AssetIn,
+    AssetKey,
     AssetOut,
     AssetsDefinition,
     AssetSelection,
     Config,
     JsonMetadataValue,
     Output,
+    ResourceParam,
     define_asset_job,
     multi_asset,
 )
+from oso_dagster.cbt.cbt import CBTResource
+from oso_dagster.config import DagsterConfig
 from oso_dagster.dlt_sources.github_repos import (
     oss_directory_github_repositories_resource,
+    oss_directory_github_sbom_resource,
 )
 from oso_dagster.factories import dlt_factory
 from oso_dagster.factories.common import AssetFactoryResponse
@@ -28,6 +33,7 @@ common_tags: t.Dict[str, str] = {
     "opensource.observer/environment": "production",
     "opensource.observer/group": "ossd",
     "opensource.observer/type": "source",
+    "dagster/concurrency_key": "ossd",
 }
 
 
@@ -141,10 +147,46 @@ project_key = projects_and_collections.keys_by_output_name["projects"]
     tags=common_tags,
 )
 def repositories(
+    global_config: ResourceParam[DagsterConfig],
     projects_df: pl.DataFrame,
     gh_token: str = secret_ref_arg(group_name="ossd", key="github_token"),
 ):
-    yield oss_directory_github_repositories_resource(projects_df, gh_token)
+    yield oss_directory_github_repositories_resource(
+        projects_df, gh_token, http_cache=global_config.http_cache
+    )
+
+
+@dlt_factory(
+    key_prefix="ossd",
+    deps=[AssetKey(["ossd", "repositories"])],
+    tags=common_tags,
+)
+def sbom(
+    global_config: ResourceParam[DagsterConfig],
+    context: AssetExecutionContext,
+    cbt: CBTResource,
+    gh_token: str = secret_ref_arg(group_name="ossd", key="github_token"),
+):
+    all_repositories_query = """
+        SELECT
+        DISTINCT url
+        FROM
+        `ossd.repositories`
+        WHERE
+        LOWER(url) LIKE '%github.com%';
+    """
+
+    client = cbt.get(context.log)
+
+    all_repo_urls: t.List[str] = [
+        row["url"] for row in client.query_with_string(all_repositories_query)
+    ]
+
+    context.log.info(f"Fecthing SBOMs for {len(all_repo_urls)} repositories")
+
+    yield oss_directory_github_sbom_resource(
+        all_repo_urls, gh_token, http_cache=global_config.http_cache
+    )
 
 
 @discoverable_jobs(dependencies=[repositories])

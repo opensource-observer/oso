@@ -32,7 +32,7 @@ Open Source Observer is a free analytics suite that helps funders measure the im
 
 ## Quickstart
 
-### System Prequisites
+### System Prerequisites
 
 Before you begin you'll need the following on your system:
 
@@ -201,7 +201,7 @@ $ dbt run --select {name_of_the_model}
 
 For setup and common operations for each subproject, navigate into the respective directory and check out the `README.md`.
 
-You can also find some operations guides on our [documentation](https://docs.opensource.observer/docs/how-oso-works/ops/).
+You can also find some operations guides on our [documentation](https://docs.opensource.observer/docs/guides/ops/).
 
 ## License
 
@@ -212,4 +212,4 @@ is released under Apache 2.0
 This repository does not contain data.
 Datasets may include material that may be subject to third party rights.
 For details on each dataset, see
-the [Data Overview](https://docs.opensource.observer/docs/integrate/overview/).
+the [Data Overview](https://docs.opensource.observer/docs/integrate/datasets/).

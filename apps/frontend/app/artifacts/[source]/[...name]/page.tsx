@@ -27,7 +27,7 @@ const STATIC_EXPORT_PARAMS: ArtifactPagePath[] = [
 export async function generateStaticParams() {
   return STATIC_EXPORT_PARAMS;
 }
- */
+*/
 
 async function getDefaultProps() {
   return {
@@ -79,18 +79,33 @@ async function getCodeProps(artifactId: string) {
   ];
   const metricChoices = [
     {
-      label: "Active Developers",
-      value: "x2DaEzZwvlBELMm0uontbOLjS1aEg-UOMDsjL9A9Hl8=",
+      label: "Active Developers (30d)",
+      value: "0x9o4M40uii5KDWi3B5OQLk97SgpZw81aDpL53a/g+c=",
       selected: true,
     },
     {
-      label: "Parttime Developers",
-      value: "V_3j9dJk7TriUvlv--1S0VzkzEg3UMjQyUr8gk-dj2E=",
+      label: "Parttime Developers (30d)",
+      value: "j639+oJeAtYFJvaMjF9JHGfw7U/2u3L9XlErnrLKLhQ=",
       selected: false,
     },
     {
-      label: "Fulltime Developers",
-      value: "Nx_6k7abdZnb8RbnjKSQS__cdqayTX2VtBOvrGWjGDs=",
+      label: "Fulltime Developers (30d)",
+      value: "vlFMX++GcaW2nPGuwTs+PMXFqlr/s3tnTzG1n7gXyx8=",
+      selected: false,
+    },
+    {
+      label: "Commits",
+      value: "Oh9Xi1a2ovZScVN77o1ye4sInynC4t3yQoWvvHdqkdQ=",
+      selected: true,
+    },
+    {
+      label: "Forks",
+      value: "tx4sCflOBp/pKjncprKr9FGuhTgeaj3hnpIzTON650g=",
+      selected: false,
+    },
+    {
+      label: "Stars",
+      value: "SrsN3Wc2CSLRktIZB+RqPXGoH4o7nj7s23tm+skPZzw=",
       selected: true,
     },
   ];

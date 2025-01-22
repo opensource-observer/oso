@@ -1,10 +1,14 @@
+import logging
 import os
-from pathlib import Path
-from dagster_dbt import DbtCliResource
-from dataclasses import dataclass, asdict
-from typing import List, Tuple, Dict
 import pathlib
+import typing as t
+from dataclasses import asdict, dataclass
+from pathlib import Path
+
 import yaml
+from dagster_dbt import DbtCliResource
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(kw_only=True)
@@ -42,7 +46,7 @@ def default_profiles_path():
 def generate_dbt_profile(
     project_id: str,
     profile_name: str,
-    targets: List[Tuple[str, str]],
+    targets: t.List[t.Tuple[str, str]],
     template: BQTargetConfigTemplate,
 ):
     """Generates the contents of a dbt `profiles.yml` file
@@ -77,7 +81,7 @@ def generate_dbt_profile(
 def write_dbt_profile(
     project_id: str,
     profile_name: str,
-    targets: List[Tuple[str, str]],
+    targets: t.List[t.Tuple[str, str]],
     template: BQTargetConfigTemplate,
     profile_path: str = "",
 ):
@@ -94,25 +98,39 @@ def write_dbt_profile(
         f.write(generated_profiles_yml)
 
 
+def support_home_dir_profiles(default: t.Optional[str] = None):
+    # DagsterDbt now defaults to using the current working directory for the
+    # dbt profile. Our old version relied on the dbt profile being in the
+    # home directory. To support both the _old_ style and the new style we
+    # will search for both. As we, hope to use sqlmesh in the future, we
+    # shouldn't worry about this too much. It would be more work to force
+    # people to change their configurations for now
+    profiles_dir = os.environ.get("DAGSTER_DBT_PROFILE_DIR", default)
+    if not profiles_dir:
+        if not os.path.isfile(os.path.join(os.getcwd(), "profiles.yml")):
+            profiles_dir = os.path.expanduser("~/.dbt")
+    return profiles_dir
+
+
 def load_dbt_manifests(
     dbt_target_base_dir: str | Path,
     dbt_project_dir: str | Path,
     project_id: str,
     profile_name: str,
-    targets: List[Tuple[str, str]],
+    targets: t.List[t.Tuple[str, str]],
     template: BQTargetConfigTemplate,
     parse_projects: bool = False,
     force_auth: bool = False,
-) -> Dict[str, Path]:
+) -> t.Dict[str, Path]:
     """
     Run `dbt parse` to create a `manifest.json` for each dbt target
     https://docs.getdbt.com/reference/artifacts/manifest-json
     """
-    manifests: Dict[str, Path] = dict()
-    print(f"checking for profile {default_profiles_path()}")
+    manifests: t.Dict[str, Path] = dict()
+    logger.debug(f"checking for profile {default_profiles_path()}")
 
     if not os.path.isfile(default_profiles_path()) or force_auth:
-        print("Writing dbt profile")
+        logger.debug("Writing dbt profile")
         write_dbt_profile(
             project_id,
             profile_name,
@@ -121,13 +139,17 @@ def load_dbt_manifests(
         )
 
     if parse_projects:
-        print("generating dbt manifests")
+        logger.debug("generating dbt manifests")
         for target, _ in targets:
             target_path = Path(dbt_target_base_dir, target)
             # Ensure the dbt_target_base_dir exists
             pathlib.Path(dbt_target_base_dir).mkdir(parents=True, exist_ok=True)
 
-            dbt = DbtCliResource(project_dir=os.fspath(dbt_project_dir), target=target)
+            dbt = DbtCliResource(
+                project_dir=os.fspath(dbt_project_dir),
+                target=target,
+                profiles_dir=support_home_dir_profiles(),
+            )
             manifests[target] = (
                 dbt.cli(
                     ["--quiet", "parse"],

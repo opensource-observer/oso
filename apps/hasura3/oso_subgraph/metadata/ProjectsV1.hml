@@ -68,34 +68,59 @@ definition:
           - projectSource
 
 ---
-kind: ObjectBooleanExpressionType
+kind: BooleanExpressionType
 version: v1
 definition:
   name: ProjectsV1BoolExp
-  objectType: ProjectsV1
-  dataConnectorName: oso_clickhouse
-  dataConnectorObjectType: projects_v1
-  comparableFields:
-    - fieldName: description
-      operators:
-        enableAll: true
-    - fieldName: displayName
-      operators:
-        enableAll: true
-    - fieldName: projectId
-      operators:
-        enableAll: true
-    - fieldName: projectName
-      operators:
-        enableAll: true
-    - fieldName: projectNamespace
-      operators:
-        enableAll: true
-    - fieldName: projectSource
-      operators:
-        enableAll: true
+  operand:
+    object:
+      type: ProjectsV1
+      comparableFields:
+        - fieldName: description
+          booleanExpressionType: StringBoolExp
+        - fieldName: displayName
+          booleanExpressionType: StringBoolExp
+        - fieldName: projectId
+          booleanExpressionType: StringBoolExp
+        - fieldName: projectName
+          booleanExpressionType: StringBoolExp
+        - fieldName: projectNamespace
+          booleanExpressionType: StringBoolExp
+        - fieldName: projectSource
+          booleanExpressionType: StringBoolExp
+      comparableRelationships: []
+  logicalOperators:
+    enable: true
+  isNull:
+    enable: true
   graphql:
     typeName: Oso_ProjectsV1BoolExp
+
+---
+kind: AggregateExpression
+version: v1
+definition:
+  name: ProjectsV1AggExp
+  operand:
+    object:
+      aggregatedType: ProjectsV1
+      aggregatableFields:
+        - fieldName: description
+          aggregateExpression: StringAggExp
+        - fieldName: displayName
+          aggregateExpression: StringAggExp
+        - fieldName: projectId
+          aggregateExpression: StringAggExp
+        - fieldName: projectName
+          aggregateExpression: StringAggExp
+        - fieldName: projectNamespace
+          aggregateExpression: StringAggExp
+        - fieldName: projectSource
+          aggregateExpression: StringAggExp
+  count:
+    enable: true
+  graphql:
+    selectTypeName: Oso_ProjectsV1AggExp
 
 ---
 kind: Model
@@ -107,6 +132,7 @@ definition:
     dataConnectorName: oso_clickhouse
     collection: projects_v1
   filterExpressionType: ProjectsV1BoolExp
+  aggregateExpression: ProjectsV1AggExp
   orderableFields:
     - fieldName: description
       orderByDirections:
@@ -131,6 +157,9 @@ definition:
       queryRootField: oso_projectsV1
     selectUniques: []
     orderByExpressionType: Oso_ProjectsV1OrderBy
+    filterInputTypeName: Oso_ProjectsV1FilterInput
+    aggregate:
+      queryRootField: oso_projectsV1Aggregate
 
 ---
 kind: ModelPermissions

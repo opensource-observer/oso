@@ -11,6 +11,6 @@ spec:
   sourceRef:
     kind: GitRepository
     name: flux-system
-  path: ./ops/k8s-infrastructure/controllers
+  path: ./ops/k8s-infrastructure/gke
   prune: true
   wait: true

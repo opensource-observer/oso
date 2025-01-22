@@ -34,7 +34,7 @@ class CustomFuncRegistry:
         return list(self._map.keys())
 
 
-def send_anonymous_to_callable(anon: exp.Anonymous, f: t.Callable):
+def send_anonymous_to_callable[T](anon: exp.Anonymous, f: t.Callable[..., T]):
     # much of this is taken from sqlmesh.core.macros
     args = []
     kwargs = {}

@@ -4,3 +4,6 @@ resources:
   - ./dagster
   - ./cloudsql-proxy
   - ./redis
+  # Uncomment to turn on trino
+  - ./trino
+  - ./metrics-calculation-service

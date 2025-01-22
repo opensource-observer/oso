@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+      - name: redis
+        image: redis:latest
+        ports:
+        - containerPort: 6379
+        env:
+        - name: REDIS_MAXMEMORY
+          value: "20mb"
+        - name: REDIS_MAXMEMORY_POLICY
+          value: "allkeys-lru"

@@ -1,31 +1,26 @@
 import logging
-import arrow
-from datetime import datetime, UTC
+import typing as t
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from enum import Enum
-from typing import Optional, Iterable, cast, ParamSpec, Any
-from pathlib import Path
-from urllib.parse import urlparse, ParseResult
+from urllib.parse import ParseResult, urlparse
 
-import httpx
-import hishel
+import arrow
 import dlt
-from dlt.common.libs.pydantic import pydantic_to_table_schema_columns
+import hishel
+import httpx
 import polars as pl
-from pydantic import BaseModel
 from githubkit import GitHub
 from githubkit.exception import RequestFailed
+from githubkit.retry import RetryChainDecision, RetryRateLimit, RetryServerError
 from githubkit.versions.latest.models import (
-    MinimalRepository,
     FullRepository,
+    MinimalRepository,
     MinimalRepositoryPropLicense,
 )
-from githubkit.retry import RetryRateLimit, RetryChainDecision, RetryServerError
-
-
-from oso_dagster import constants
+from oso_dagster.factories.dlt import pydantic_to_dlt_nullable_columns
 from oso_dagster.utils import get_async_http_cache_storage, get_sync_http_cache_storage
-
+from pydantic import BaseModel, ValidationError
 
 logger = logging.getLogger(__name__)
 
@@ -40,12 +35,12 @@ class ParsedGithubURL:
     parsed_url: ParseResult
     url: str
     owner: str
-    repository: Optional[str] = None
+    repository: t.Optional[str] = None
     type: GithubURLType
 
 
 class Repository(BaseModel):
-    ingestion_time: Optional[datetime]
+    ingestion_time: t.Optional[datetime]
     id: int
     node_id: str
     owner: str
@@ -60,6 +55,25 @@ class Repository(BaseModel):
     license_spdx_id: str
     license_name: str
     language: str
+    created_at: datetime
+    updated_at: datetime
+
+
+class GithubRepositorySBOMItem(BaseModel):
+    artifact_namespace: str
+    artifact_name: str
+    artifact_source: str
+    package: str
+    package_source: str
+    package_version: t.Optional[str]
+    snapshot_at: datetime
+
+
+class GithubClientConfig(BaseModel):
+    gh_token: str
+    rate_limit_max_retry: int = 5
+    server_error_max_rety: int = 3
+    http_cache: t.Optional[str] = None
 
 
 class InvalidGithubURL(Exception):
@@ -76,9 +90,9 @@ class CachedGithub(GitHub):
 
     def __init__(
         self,
-        auth: Any = None,
-        sync_storage: Optional[hishel.BaseStorage] = None,
-        async_storage: Optional[hishel.AsyncBaseStorage] = None,
+        auth: t.Any = None,
+        sync_storage: t.Optional[hishel.BaseStorage] = None,
+        async_storage: t.Optional[hishel.AsyncBaseStorage] = None,
         **kwargs,
     ):
         super().__init__(auth, **kwargs)
@@ -109,7 +123,7 @@ def gh_repository_to_repository(
     license_spdx_id: str = ""
     license_name: str = ""
     if repo.license_:
-        l = cast(MinimalRepositoryPropLicense, repo.license_).model_dump()
+        l = t.cast(MinimalRepositoryPropLicense, repo.license_).model_dump()
         license_spdx_id = l.get("spdx_id", "")
         license_name = l.get("name", "")
 
@@ -129,6 +143,8 @@ def gh_repository_to_repository(
         url=repo.html_url,
         is_fork=repo.fork,
         language=repo.language or "",
+        created_at=repo.created_at or datetime.fromtimestamp(0),
+        updated_at=repo.updated_at or datetime.fromtimestamp(0),
     )
 
 
@@ -172,7 +188,7 @@ class GithubRepositoryResolver:
             case GithubURLType.REPOSITORY:
                 return self.get_repo(parsed)
 
-    def get_repos_for_entity(self, parsed: ParsedGithubURL) -> Iterable[Repository]:
+    def get_repos_for_entity(self, parsed: ParsedGithubURL) -> t.Iterable[Repository]:
         try:
             repos = self.get_repos_for_org(parsed)
             for repo in repos:
@@ -198,7 +214,7 @@ class GithubRepositoryResolver:
         )
         return repos
 
-    def get_repo(self, parsed: ParsedGithubURL) -> Iterable[Repository]:
+    def get_repo(self, parsed: ParsedGithubURL) -> t.Iterable[Repository]:
         if not parsed.repository:
             raise Exception("Repository must be set")
         try:
@@ -258,19 +274,89 @@ class GithubRepositoryResolver:
         logger.debug(f"unnested all github urls and got {len(all_github_urls)} rows")
         return all_github_urls
 
+    def get_sbom_for_repo(
+        self, owner: str, name: str
+    ) -> t.List[GithubRepositorySBOMItem]:
+        try:
+            sbom = self._gh.rest.dependency_graph.export_sbom(
+                owner,
+                name,
+            )
+            graph = sbom.parsed_data.sbom
+            sbom_list: t.List[GithubRepositorySBOMItem] = []
 
-def repository_columns():
-    table_schema_columns = pydantic_to_table_schema_columns(Repository)
-    for column in table_schema_columns.values():
-        column["nullable"] = True
-    print(table_schema_columns)
-    return table_schema_columns
+            for package in graph.packages:
+                if not package.external_refs:
+                    logger.warning(
+                        "Skipping %s for sbom %s, no external refs found",
+                        f"{package.name}",
+                        f"{owner}/{name}",
+                    )
+                    continue
+
+                package_locator = package.external_refs[0].reference_locator
+                package_source = package_locator[
+                    len("pkg:") : package_locator.index("/")
+                ]
+                package_name = package.name or "UNKNOWN"
+
+                sbom_list.append(
+                    GithubRepositorySBOMItem(
+                        artifact_namespace=owner,
+                        artifact_name=name,
+                        artifact_source="GITHUB",
+                        package=package_name,
+                        package_source=package_source.upper(),
+                        package_version=package.version_info or None,
+                        snapshot_at=arrow.get(graph.creation_info.created).datetime,
+                    )
+                )
+
+            return sbom_list
+        except RequestFailed as exception:
+            if exception.response.status_code == 404:
+                logger.warning("Skipping %s, no SBOM found", f"{owner}/{name}")
+            else:
+                logger.warning("Error getting SBOM: %s", exception)
+            return []
+        except ValidationError as exception:
+            validation_errors = [
+                f"{error['loc'][0]}: {error['msg']}" for error in exception.errors()
+            ]
+            logger.warning(
+                "Skipping %s, SBOM is malformed: %s",
+                f"{owner}/{name}",
+                ", ".join(validation_errors),
+            )
+            return []
+
+    @staticmethod
+    def get_github_client(config: GithubClientConfig) -> GitHub:
+        if config.http_cache:
+            logger.debug("Using the cache at: %s", config.http_cache)
+            return CachedGithub(
+                config.gh_token,
+                sync_storage=get_sync_http_cache_storage(config.http_cache),
+                async_storage=get_async_http_cache_storage(config.http_cache),
+                auto_retry=RetryChainDecision(
+                    RetryRateLimit(max_retry=config.rate_limit_max_retry),
+                    RetryServerError(max_retry=config.server_error_max_rety),
+                ),
+            )
+        logger.debug("Loading github client without a cache")
+        return GitHub(
+            config.gh_token,
+            auto_retry=RetryChainDecision(
+                RetryRateLimit(max_retry=config.rate_limit_max_retry),
+                RetryServerError(max_retry=config.server_error_max_rety),
+            ),
+        )
 
 
 @dlt.resource(
     name="repositories",
     table_name="repositories",
-    columns=repository_columns(),
+    columns=pydantic_to_dlt_nullable_columns(Repository),
     write_disposition="append",
     primary_key="id",
     merge_key="node_id",
@@ -280,35 +366,71 @@ def oss_directory_github_repositories_resource(
     gh_token: str = dlt.secrets.value,
     rate_limit_max_retry: int = 5,
     server_error_max_rety: int = 3,
+    http_cache: t.Optional[str] = None,
 ):
     """Based on the oss_directory data we resolve repositories"""
 
-    if constants.http_cache:
-        logger.debug(f"Using the cache at: {constants.http_cache}")
-        gh = CachedGithub(
-            gh_token,
-            sync_storage=get_sync_http_cache_storage(constants.http_cache),
-            async_storage=get_async_http_cache_storage(constants.http_cache),
-            auto_retry=RetryChainDecision(
-                RetryRateLimit(max_retry=rate_limit_max_retry),
-                RetryServerError(max_retry=server_error_max_rety),
-            ),
-        )
-    else:
-        logger.debug(f"Loading github client without a cache")
-        gh = GitHub(
-            gh_token,
-            auto_retry=RetryChainDecision(
-                RetryRateLimit(max_retry=rate_limit_max_retry),
-                RetryServerError(max_retry=server_error_max_rety),
-            ),
-        )
+    config = GithubClientConfig(
+        gh_token=gh_token,
+        rate_limit_max_retry=rate_limit_max_retry,
+        server_error_max_rety=server_error_max_rety,
+        http_cache=http_cache,
+    )
 
+    gh = GithubRepositoryResolver.get_github_client(config)
     resolver = GithubRepositoryResolver(gh)
-    for repo in resolver.resolve_repos(projects_df):
-        yield repo
+
+    yield from resolver.resolve_repos(projects_df)
 
 
-@dlt.source
-def oss_directory_github_repositories():
-    return oss_directory_github_repositories_resource
+@dlt.resource(
+    name="sbom",
+    table_name="sbom",
+    columns=pydantic_to_dlt_nullable_columns(GithubRepositorySBOMItem),
+    write_disposition="append",
+)
+def oss_directory_github_sbom_resource(
+    all_repo_urls: t.List[str],
+    gh_token: str = dlt.secrets.value,
+    rate_limit_max_retry: int = 5,
+    server_error_max_rety: int = 3,
+    http_cache: t.Optional[str] = None,
+):
+    """Retrieve SBOM information for GitHub repositories"""
+
+    config = GithubClientConfig(
+        gh_token=gh_token,
+        rate_limit_max_retry=rate_limit_max_retry,
+        server_error_max_rety=server_error_max_rety,
+        http_cache=http_cache,
+    )
+
+    gh = GithubRepositoryResolver.get_github_client(config)
+    resolver = GithubRepositoryResolver(gh)
+
+    total = len(all_repo_urls)
+    last_printed_percentage = -1
+    for index, raw_repo_url in enumerate(all_repo_urls, start=1):
+        if not raw_repo_url:
+            logger.warning("Skipping empty repository url")
+            continue
+
+        percentage = (index / total) * 100
+        if int(percentage) != last_printed_percentage:
+            logger.info("Processing %d/%d (%.2f)", index, total, percentage)
+            last_printed_percentage = int(percentage)
+
+        try:
+            parsed_url = resolver.parse_url(raw_repo_url)
+
+            if parsed_url.type != GithubURLType.REPOSITORY or not parsed_url.repository:
+                logger.warning("Skipping non-repository url: %s", raw_repo_url)
+                continue
+
+            yield from resolver.get_sbom_for_repo(
+                parsed_url.owner, parsed_url.repository
+            )
+
+        except InvalidGithubURL:
+            logger.warning("Skipping invalid github url: %s", raw_repo_url)
+            continue

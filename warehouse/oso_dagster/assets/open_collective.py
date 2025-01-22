@@ -2,11 +2,11 @@ from datetime import datetime, timedelta
 from typing import List, Literal, Optional
 
 import dlt
-from dagster import AssetExecutionContext, WeeklyPartitionsDefinition
+from dagster import AssetExecutionContext, ResourceParam, WeeklyPartitionsDefinition
 from dlt.destinations.adapters import bigquery_adapter
 from gql import Client, gql
 from gql.transport.requests import RequestsHTTPTransport
-from oso_dagster import constants
+from oso_dagster.config import DagsterConfig
 from oso_dagster.factories import dlt_factory, pydantic_to_dlt_nullable_columns
 from oso_dagster.utils.secrets import secret_ref_arg
 from pydantic import UUID4, BaseModel, Field
@@ -592,7 +592,7 @@ def base_open_collective_client(personal_token: str):
     key_prefix="open_collective",
     partitions_def=WeeklyPartitionsDefinition(
         start_date=OPEN_COLLECTIVE_TX_EPOCH.split("T", maxsplit=1)[0],
-        end_date=(datetime.now()).isoformat().split("T")[0],
+        end_offset=1,
     ),
     op_tags={
         "dagster-k8s/config": K8S_CONFIG,
@@ -600,6 +600,7 @@ def base_open_collective_client(personal_token: str):
 )
 def expenses(
     context: AssetExecutionContext,
+    global_config: ResourceParam[DagsterConfig],
     personal_token: str = secret_ref_arg(
         group_name="open_collective", key="personal_token"
     ),
@@ -624,7 +625,7 @@ def expenses(
         write_disposition="merge",
     )
 
-    if constants.enable_bigquery:
+    if global_config.enable_bigquery:
         bigquery_adapter(
             resource,
             partition="created_at",
@@ -637,13 +638,14 @@ def expenses(
     key_prefix="open_collective",
     partitions_def=WeeklyPartitionsDefinition(
         start_date=OPEN_COLLECTIVE_TX_EPOCH.split("T", maxsplit=1)[0],
-        end_date=(datetime.now()).isoformat().split("T")[0],
+        end_offset=1,
     ),
     op_tags={
         "dagster-k8s/config": K8S_CONFIG,
     },
 )
 def deposits(
+    global_config: ResourceParam[DagsterConfig],
     context: AssetExecutionContext,
     personal_token: str = secret_ref_arg(
         group_name="open_collective", key="personal_token"
@@ -669,7 +671,7 @@ def deposits(
         write_disposition="merge",
     )
 
-    if constants.enable_bigquery:
+    if global_config.enable_bigquery:
         bigquery_adapter(
             resource,
             partition="created_at",

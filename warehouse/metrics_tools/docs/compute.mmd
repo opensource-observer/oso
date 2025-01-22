@@ -1,0 +1,49 @@
+sequenceDiagram
+    participant dagster as Dagster
+    participant sqlmesh as SQLMesh
+    participant m_api as Metrics Frontend API
+    participant m_cluster as Metrics Worker Cluster
+    participant trino as TrinoDB
+    participant iceberg as Iceberg Data Lake (SDK)
+    participant storage as Cloud Storage
+
+    dagster->>m_api: Initialize (through k8s api)
+    m_api->>+m_cluster: Start worker cluster (through dask)
+    m_cluster-->>-m_api: Workers Ready
+    dagster->>+m_api: Poll for Ready
+    m_api-->>-dagster: Ready
+
+    dagster->>+sqlmesh: Trigger Run
+    alt non-metrics models
+        sqlmesh->>+trino: Trigger query for model batch
+        trino->>+iceberg: Write model batch
+        iceberg->>+storage: Write to storage
+        storage-->>-iceberg: Completed
+        iceberg-->>-trino: Completed
+        trino-->>-sqlmesh: Committed
+    end
+    alt metrics models
+        sqlmesh->>+m_api: Send metrics query, total time range, and dependent tables
+        m_api->>+trino: Export dependent tables to "hive" directory for cache
+        trino->>+storage: Write table to parquet files in a "hive" directory
+        storage-->>-trino: Completed
+        trino-->>-m_api: Completed
+
+        m_api->>+m_cluster: Send metrics query for an interval of the total time range and exported dependent table reference
+        m_cluster->>+storage: Download exported tables to a local duckdb
+        storage-->>-m_cluster: Completed
+        m_cluster->>m_cluster: Run metrics query for a time range
+        m_cluster->>+storage: Upload query results as parquet files
+        storage-->>-m_cluster: Completed
+        m_cluster-->>-m_api: Completed
+        m_api-->>-sqlmesh: Completed
+        sqlmesh->>+trino: Create an external table to the parquet files in cloud storage
+        trino-->>-sqlmesh: Completed
+        sqlmesh-->>+trino: Trigger query to import the parquet files into an iceberg table
+        trino->>+iceberg: Write storage parquet files to iceberg
+        iceberg-->>-trino: Completed
+        trino-->>-sqlmesh: Completed
+    end
+    sqlmesh-->>-dagster: Completed
+
+    

@@ -78,3 +78,5 @@ Dockerfile
 # Github directory
 .github/scripts
 .git
+logs
+.mypy_cache

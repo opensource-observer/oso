@@ -2,7 +2,7 @@
 slug: impact-of-retro-funding
 title: "What’s been the impact of Retro Funding so far?"
 authors: [ccerv1]
-tags: [optimism, impact data science, retroactive public goods funding]
+tags: [optimism, data science, retroactive public goods funding]
 image: ./output_10_1.png
 ---
 
@@ -25,7 +25,7 @@ Remember: _correlation is not causation_. While there are numerous signs of posi
 
 ## Cohort Analysis
 
-At the time of writing, there are 23 [collections](https://docs.opensource.observer/docs/how-oso-works/oss-directory/collection) in the [OSS Directory](https://github.com/opensource-observer/oss-directory/tree/main/data/collections) we maintain, with a total of 1506 distinct projects with relevant activity in the last 6 months. Of these, 546 have applied for or received Retro Funding at some point.
+At the time of writing, there are 23 [collections](../../docs/guides/oss-directory/collection) in the [OSS Directory](https://github.com/opensource-observer/oss-directory/tree/main/data/collections) we maintain, with a total of 1506 distinct projects with relevant activity in the last 6 months. Of these, 546 have applied for or received Retro Funding at some point.
 
 The breakdown of RF projects by cohort is as follows:
 
