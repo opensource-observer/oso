@@ -13,6 +13,7 @@ metadata:
   name: bitnamicharts
   namespace: local-hive-psql
 spec:
+  type: "oci"
   interval: 5m
   url: oci://registry-1.docker.io/bitnamicharts
 ---
