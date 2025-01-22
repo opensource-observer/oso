@@ -70,6 +70,7 @@ def factory_deployments(
             on=exp.EQ(
                 this=traces_transaction_hash, expression=transactions_transaction_hash
             ),
+            join_type="inner",
         )
         .where(
             exp.EQ(
