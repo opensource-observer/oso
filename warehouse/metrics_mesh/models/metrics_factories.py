@@ -1,7 +1,14 @@
+import os
+
+from dotenv import load_dotenv
 from metrics_tools.factory import MetricQueryDef, RollingConfig, timeseries_metrics
 
+# Annoyingly sqlmesh doesn't load things in an expected order but we want to be
+# able to override the start date for local testing and things
+load_dotenv()
+
 timeseries_metrics(
-    start="2015-01-01",
+    start=os.environ.get("SQLMESH_TIMESERIES_METRICS_START", "2015-01-01"),
     catalog="metrics",
     model_prefix="timeseries",
     timeseries_sources=[
@@ -296,19 +303,19 @@ timeseries_metrics(
         ),
         "key_active_address_count": MetricQueryDef(
             ref="key_active_address_count.sql",
-            entity_types=["artifact"],
+            entity_types=["artifact", "project", "collection"],
         ),
         "key_active_contract_count": MetricQueryDef(
             ref="key_active_contract_count.sql",
-            entity_types=["artifact"],
+            entity_types=["artifact", "project", "collection"],
         ),
         "key_active_developer_count": MetricQueryDef(
             ref="key_active_developer_count.sql",
-            entity_types=["artifact"],
+            entity_types=["artifact", "project", "collection"],
         ),
         "key_comment_count": MetricQueryDef(
             ref="key_comment_count.sql",
-            entity_types=["artifact"],
+            entity_types=["artifact", "project", "collection"],
         ),
         "key_commit_count": MetricQueryDef(
             ref="key_commit_count.sql",

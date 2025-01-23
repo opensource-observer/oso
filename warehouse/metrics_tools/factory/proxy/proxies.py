@@ -3,7 +3,10 @@ from datetime import datetime
 
 import pandas as pd
 import sqlglot as sql
-from metrics_mesh.macros.to_unix_timestamp import str_to_unix_timestamp
+from metrics_mesh.macros.to_unix_timestamp import (
+    str_to_unix_timestamp,
+    to_unix_timestamp,
+)
 from metrics_tools.definition import PeerMetricDependencyRef
 from metrics_tools.factory.generated import generated_rolling_query
 from metrics_tools.factory.utils import metric_ref_evaluator_context
@@ -29,6 +32,7 @@ def generated_query(
             "@METRICS_START": metrics_start,
             "@METRICS_END": metrics_end,
             "@STR_TO_UNIX_TIMESTAMP": str_to_unix_timestamp,
+            "@TO_UNIX_TIMESTAMP": to_unix_timestamp,
         },
     ):
         result = evaluator.transform(parse_one(rendered_query_str))

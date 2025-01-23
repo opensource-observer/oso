@@ -1,3 +1,9 @@
+{{
+  config(
+    materialized='table'
+  )
+}}
+
 {# TODO: Add Ethereum / Mainnet and Arbitrum (One) to list of networks #}
 
 {% set networks = ["optimism", "base", "frax", "metal", "mode", "zora"] %}

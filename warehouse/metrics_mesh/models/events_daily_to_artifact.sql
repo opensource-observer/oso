@@ -19,7 +19,7 @@ WITH events AS (
     event_type,
     time,
     amount
-  FROM @oso_source('timeseries_events_by_artifact_v0')
+  FROM metrics.int_events
   WHERE
     time::DATE BETWEEN STRPTIME(@start_ds, '%Y-%m-%d')::DATE::DATE AND STRPTIME(@end_ds, '%Y-%m-%d')::DATE::DATE
 )

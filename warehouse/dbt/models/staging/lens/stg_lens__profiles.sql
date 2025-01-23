@@ -1,3 +1,9 @@
+{{ 
+  config(
+    materialized='table'
+  )
+}}
+
 {#
   Get all profile_ids mapped to the owner address and profile metadata
 #}

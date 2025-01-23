@@ -1,5 +1,5 @@
 ---
-title: Map the Software Supply Chain
+title: Map Dependencies
 sidebar_position: 3
 ---
 
@@ -137,6 +137,57 @@ df = client.query(query).to_dataframe()
 
 </TabItem>
 </Tabs>
+
+### Package Usage Metrics
+
+The following query uses package ownership data to calculate the number of projects that depend on a given package maintainer:
+
+<Tabs>
+<TabItem value="sql" label="SQL">
+
+```sql
+select
+  package_owners.package_owner_artifact_namespace as maintainter,
+  sboms.to_package_artifact_source as package_source,
+  sboms.to_package_artifact_name as package_name,
+  count(distinct sboms.from_artifact_id) as count_dependent_repos,
+  count(distinct sboms.from_project_id) as count_dependent_projects
+from `oso_production.sboms_v0` sboms
+join `oso_production.package_owners_v0` package_owners
+  on
+    sboms.to_package_artifact_name = package_owners.package_artifact_name
+    and sboms.to_package_artifact_source = package_owners.package_artifact_source
+where
+  package_owners.package_owner_artifact_namespace = 'wevm'
+group by 1,2,3
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+query = """
+  select
+    package_owners.package_owner_artifact_namespace as maintainter,
+    sboms.to_package_artifact_source as package_source,
+    sboms.to_package_artifact_name as package_name,
+    count(distinct sboms.from_artifact_id) as count_dependent_repos,
+    count(distinct sboms.from_project_id) as count_dependent_projects
+  from `oso_production.sboms_v0` sboms
+  join `oso_production.package_owners_v0` package_owners
+    on
+      sboms.to_package_artifact_name = package_owners.package_artifact_name
+      and sboms.to_package_artifact_source = package_owners.package_artifact_source
+  where
+    package_owners.package_owner_artifact_namespace = 'wevm'
+  group by 1,2,3
+"""
+df = client.query(query).to_dataframe()
+```
+
+</TabItem>
+</Tabs>
+
 
 ### Build a Deep Funding Graph
 

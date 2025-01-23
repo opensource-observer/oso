@@ -1,3 +1,17 @@
+{{
+  config(
+    materialized='table',
+    partition_by={
+      "field": "time",
+      "data_type": "timestamp",
+      "granularity": "day",
+    },
+    meta={
+      'sync_to_db': False
+    }
+  )
+}}
+
 {% set event_source_name = '"DEPS_DEV"' %}
 
 with artifacts as (

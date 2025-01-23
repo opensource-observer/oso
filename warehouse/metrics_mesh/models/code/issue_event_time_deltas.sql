@@ -34,5 +34,5 @@ SELECT
     THEN NULL
     ELSE DATE_DIFF('SECOND', closed_at, "time")
   END::DOUBLE AS closed_delta,
-  comments
-FROM @oso_source('timeseries_events_aux_issues_by_artifact_v0')
+  comments::DOUBLE
+FROM @oso_source('bigquery.oso.timeseries_events_aux_issues_by_artifact_v0')

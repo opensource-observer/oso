@@ -18,17 +18,174 @@ import ArbitrumLogo from "./arbitrum.png";
 import EasLogo from "./eas.png";
 import OcLogo from "./open-collective.png";
 
-OSO shares every dataset on BigQuery Analytics Hub.
-To get started,
-[set up your BigQuery account](../../get-started/bigquery.mdx).
+Check out our [BigQuery data exchange](https://console.cloud.google.com/bigquery/analytics-hub/exchanges/projects/87806073973/locations/us/dataExchanges/open_source_observer_190181416ae) to explore all the OSO datasets available.
+If you don't have a BigQuery account, [start here](../../get-started/bigquery.mdx).
 
-## OSO Data Exchange on Analytics Hub
+Here are some of our featured public datasets:
 
-To explore all the OSO datasets available,
-check out our
-[BigQuery data exchange](https://console.cloud.google.com/bigquery/analytics-hub/exchanges/projects/87806073973/locations/us/dataExchanges/open_source_observer_190181416ae).
+<div className="datalinks-container">
+  <a href="#oso-production-pipeline" className="datalink-card">
+    <div className="datalink-header">
+      <img src={OsoLogo} alt="OSO Logo" className="datalink-logo" />
+      <span className="tag">Updated daily</span>
+    </div>
+    <h3>OSO Production Pipeline</h3>
+  </a>
+  <a href="#oso-playground-dataset" className="datalink-card">
+    <div className="datalink-header">
+      <img src={OsoLogo} alt="OSO Logo" className="datalink-logo" />
+      <span className="tag">Updated daily</span>
+    </div>
+    <h3>OSO Playground Dataset</h3>
+  </a>
+  <a href="#github-archive" className="datalink-card">
+    <div className="datalink-header">
+      <img src={GithubLogo} alt="GitHub Logo" className="datalink-logo" />
+      <span className="tag">Updated hourly</span>
+    </div>
+    <h3>GitHub Archive</h3>
+  </a>
+  <a href="#open-source-insights" className="datalink-card">
+    <div className="datalink-header">
+      <img src={OpenSourceInsights} alt="Open Source Insights Logo" className="datalink-logo" />
+      <span className="tag">Updated daily</span>
+    </div>
+    <h3>Open Source Insights</h3>
+  </a>
+  <a href="#ethereum-etl" className="datalink-card">
+    <div className="datalink-header">
+      <img src={EthereumLogo} alt="Ethereum Logo" className="datalink-logo" />
+      <span className="tag">Updated daily</span>
+    </div>
+    <h3>Ethereum ETL</h3>
+  </a>
+  <a href="#superchain" className="datalink-card">
+    <div className="datalink-header">
+      <img src={OptimismLogo} alt="Optimism Logo" className="datalink-logo" />
+      <span className="tag">Updated daily</span>
+    </div>
+    <h3>Superchain</h3>
+  </a>
+  <a href="#arbitrum-one" className="datalink-card">
+    <div className="datalink-header">
+      <img src={ArbitrumLogo} alt="Arbitrum Logo" className="datalink-logo" />
+      <span className="tag">Updated weekly</span>
+    </div>
+    <h3>Arbitrum One</h3>
+  </a>
+  <a href="#filecoin-lily" className="datalink-card">
+    <div className="datalink-header">
+      <img src={FilecoinLogo} alt="Filecoin Logo" className="datalink-logo" />
+      <span className="tag">Updated weekly</span>
+    </div>
+    <h3>Filecoin Lily</h3>
+  </a>
+  <a href="#farcaster" className="datalink-card">
+    <div className="datalink-header">
+      <img src={FarcasterLogo} alt="Farcaster Logo" className="datalink-logo" />
+      <span className="tag">Updated weekly</span>
+    </div>
+    <h3>Farcaster</h3>
+  </a>
+  <a href="#lens" className="datalink-card">
+    <div className="datalink-header">
+      <img src={LensLogo} alt="Lens Logo" className="datalink-logo" />
+      <span className="tag">Updated weekly</span>
+    </div>
+    <h3>Lens</h3>
+  </a>
+  <a href="#gitcoin" className="datalink-card">
+    <div className="datalink-header">
+      <img src={GitcoinLogo} alt="Gitcoin Logo" className="datalink-logo" />
+      <span className="tag">Updated daily</span>
+    </div>
+    <h3>Gitcoin</h3>
+  </a>
+  <a href="#open-collective" className="datalink-card">
+    <div className="datalink-header">
+      <img src={OcLogo} alt="Open Collective Logo" className="datalink-logo" />
+      <span className="tag">Updated weekly</span>
+    </div>
+    <h3>Open Collective</h3>
+  </a>
+  <a href="#openrank" className="datalink-card">
+    <div className="datalink-header">
+      <img src={OpenrankLogo} alt="OpenRank Logo" className="datalink-logo" />
+      <span className="tag">Updated daily</span>
+    </div>
+    <h3>OpenRank</h3>
+  </a>
+  <a href="#eas" className="datalink-card">
+    <div className="datalink-header">
+      <img src={EasLogo} alt="EAS Logo" className="datalink-logo" />
+      <span className="tag">Updated weekly</span>
+    </div>
+    <h3>EAS</h3>
+  </a>
+</div>
 
-## OSO Production Data Pipeline
+<style>
+{`
+  .datalinks-container {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    margin: 1rem 0;
+  }
+
+  @media (min-width: 800px) {
+    .datalinks-container {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  .datalink-card {
+    padding: 1rem 1rem 0.5rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    transition: transform 0.2s ease-in-out;
+    position: relative;
+  }
+
+  .datalink-card:hover {
+    transform: translateY(-2px);
+    text-decoration: none;
+  }
+
+  .datalink-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+  }
+
+  .datalink-card h3 {
+    margin-top: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+  }
+
+  .datalink-logo {
+    max-width: 50%;
+    height: 20px;
+    object-fit: contain;
+  }
+
+  .tag {
+    background-color: #f3f4f6;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.875rem;
+  }
+`}
+</style>
+
+<br />
+
+## OSO Production Pipeline
 
 <img src={OsoLogo} width="200" />
 
@@ -120,7 +277,7 @@ WHERE project_id = 'XSDgPwFuQVcj57ARcKTGrm2w80KKlqJxaBWF6jZqe7w=' AND event_type
 GROUP BY project_id, event_source
 ```
 
-### OSO Playground
+## OSO Playground Dataset
 
 <Button
   size={"compact"}
@@ -139,9 +296,9 @@ GROUP BY project_id, event_source
 We maintain a subset of projects and events in a playground dataset for testing and development.
 All of the production models are mirrored in this environment.
 
-## Source Data
+## External Datasets
 
-### GitHub Data
+### GitHub Archive
 
 <img src={GithubLogo} width="100" />
 
@@ -231,7 +388,7 @@ WHERE RowNumber = 1;
 ```
 
 
-### Ethereum Data
+### Ethereum ETL
 
 <img src={EthereumLogo} width="100" />
 
@@ -269,7 +426,7 @@ limit 10
 ```
 
 
-### Optimism Data
+### Superchain
 
 <img src={OptimismLogo} width="100" />
 
@@ -310,7 +467,7 @@ For example, to get all transactions to the 4337 EntryPoint contracts for all OP
   order by dt, chain
 ```
 
-### Arbitrum Data
+### Arbitrum One
 
 <img src={ArbitrumLogo} width="100" />
 
@@ -344,7 +501,7 @@ order by number
 **Remember to replace 'YOUR_PROJECT_NAME' with the name of your project in the query.**
 
 
-### Filecoin Data
+### Filecoin Lily
 
 <img src={FilecoinLogo} width="100" />
 
@@ -379,7 +536,7 @@ where
 ```
 
 
-### Farcaster Data
+### Farcaster
 
 <img src={FarcasterLogo} width="100" />
 
@@ -451,7 +608,7 @@ FROM eth_addresses
 
 **Remember to replace 'YOUR_PROJECT_NAME' with the name of your project in the query.**
 
-### Lens Data
+### Lens
 
 <img src={LensLogo} width="200" />
 
@@ -536,7 +693,7 @@ where passport_address = '0xd8da6bf26964af9d7eed9e03e53415d37aa96045'
 
 **Remember to replace 'YOUR_PROJECT_NAME' with the name of your project in the query.**
 
-### OpenRank Data
+### OpenRank
 
 <img src={OpenrankLogo} width="200" />
 
@@ -614,7 +771,7 @@ where
 
 **Remember to replace 'YOUR_PROJECT_NAME' with the name of your project in the query.**
 
-### Open Collective Data
+### Open Collective
 
 <img src={OcLogo} width="200" />
 
@@ -686,3 +843,4 @@ Here are a few to start:
 - [**SQL Query Guide**](../query-data.mdx): to quickly query and download any data
 - [**Python notebooks**](../../guides/notebooks/index.mdx): to do more in-depth data science and processing
 - [**Connect OSO to 3rd Party tools**](../../guides/visualization-tools/index.mdx): like Hex.tech, Tableau, and Metabase
+

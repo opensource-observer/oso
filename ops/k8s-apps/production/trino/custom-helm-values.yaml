@@ -29,6 +29,9 @@ spec:
           effect: NoSchedule
       nodeSelector:
         pool_type: trino-coordinator
+      jvm:
+        maxHeapSize: "17G"
+
     worker:
       resources:
         requests:
@@ -41,3 +44,80 @@ spec:
           effect: NoSchedule
       nodeSelector:
         pool_type: trino-worker
+      config:
+        query:
+          maxMemoryPerNode: 140GB
+      jvm:
+        maxHeapSize: "350G"
+
+    additionalConfigProperties:
+      - retry-policy=QUERY
+    additionalExchangeManagerProperties:
+      - "exchange.sink-buffers-per-partition=6"
+      - "exchange.sink-buffer-pool-min-size=6"
+      - "exchange.source-concurrent-readers=6"
+      - "exchange.s3.region=us"
+      - "exchange.s3.aws-access-key=${ENV:TRINO_GCS_KEY_ID}"
+      - "exchange.s3.aws-secret-key=${ENV:TRINO_GCS_SECRET}"
+      - "exchange.s3.endpoint=https://storage.googleapis.com"
+      
+    server:
+      exchangeManager:
+        name: filesystem
+        baseDir: gs://oso-dataset-transfer-bucket/trino-exchange/
+      config:
+        query:
+          maxMemory: "1400GB"
+      workers: 1
+      autoscaling:
+        enabled: true
+        maxReplicas: 9
+        targetCPUUtilizationPercentage: 20
+        behavior:
+          scaleDown:
+            stabilizationWindowSeconds: 300
+            policies:
+            - type: Pods
+              value: 1
+              periodSeconds: 60
+          scaleUp:
+            stabilizationWindowSeconds: 0
+            policies:
+            - type: Percent
+              value: 100
+              periodSeconds: 15
+            - type: Pods
+              value: 4
+              periodSeconds: 15
+            selectPolicy: Max
+    catalogs:
+      metrics: |
+        connector.name=iceberg
+        iceberg.catalog.type=hive_metastore
+        hive.metastore.uri=thrift://10.145.192.27:9083
+        hive.metastore-cache-ttl=0s
+        hive.metastore-refresh-interval=5s
+        hive.metastore.thrift.client.connect-timeout=10s
+        hive.metastore.thrift.client.read-timeout=30s
+        iceberg.use-file-size-from-metadata=false
+        fs.native-gcs.enabled=true
+        fs.cache.enabled=true
+        fs.cache.max-sizes=300GB
+        fs.cache.directories=/metrics-cache
+        gcs.project-id=opensource-observer
+        iceberg.max-partitions-per-writer=1000
+      source: |
+        connector.name=hive
+        hive.metastore.uri=thrift://10.145.192.27:9083
+        fs.native-gcs.enabled=true
+        gcs.project-id=opensource-observer
+        hive.non-managed-table-writes-enabled=true
+      bigquery: |
+        connector.name=bigquery
+        bigquery.project-id=opensource-observer
+      clickhouse: |
+        connector.name=clickhouse
+        connection-url=${ENV:CLICKHOUSE_URL}
+        connection-user=${ENV:CLICKHOUSE_USER}
+        connection-password=${ENV:CLICKHOUSE_PASSWORD}
+        clickhouse.map-string-as-varchar=true

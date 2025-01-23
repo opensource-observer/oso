@@ -4,16 +4,19 @@ A catchall for development environment tools related to the python tooling.
 
 import typing as t
 from pickle import GLOBAL
+
 import dotenv
 from metrics_tools.factory.factory import MetricQueryConfig
+from metrics_tools.utils.logging import setup_module_logging
+from opsscripts.cli import cluster_setup
 from oso_lets_go.wizard import MultipleChoiceInput
 from sqlglot import pretty
 
 dotenv.load_dotenv()
 
 import os
-import click
 
+import click
 from metrics_tools.local.utils import initialize_local_duckdb, reset_local_duckdb
 
 CURR_DIR = os.path.dirname(__file__)
@@ -24,6 +27,10 @@ METRICS_MESH_DIR = os.path.abspath(os.path.join(CURR_DIR, "../metrics_mesh"))
 @click.option("--debug/--no-debug", default=False)
 @click.pass_context
 def cli(ctx: click.Context, debug: bool):
+    setup_module_logging("oso_lets_go")
+    setup_module_logging("metrics_tools")
+    setup_module_logging("oso_dagster")
+    setup_module_logging("opsscripts")
     ctx.ensure_object(dict)
     ctx.obj["DEBUG"] = debug
 
@@ -31,6 +38,14 @@ def cli(ctx: click.Context, debug: bool):
 @cli.group()
 def metrics():
     pass
+
+
+@cli.group()
+def ops():
+    pass
+
+
+ops.command()(cluster_setup)
 
 
 @metrics.command()
@@ -51,6 +66,7 @@ def render(ctx: click.Context, metric: str, factory_path: str, dialect: str):
 
     # Select all the available options for the metric
     import importlib.util
+
     from metrics_tools.utils import testing
     from sqlmesh.core.dialect import parse_one
 
@@ -99,8 +115,24 @@ def local(ctx: click.Context):
 
 @local.command()
 @click.pass_context
-def initialize(ctx: click.Context):
-    initialize_local_duckdb(ctx.obj["local_duckdb_path"])
+@click.option(
+    "-m",
+    "--max-results-per-query",
+    default=0,
+    help="The max results for local data downloads. Use if there's limited space on your device. Set to zero for all results",
+)
+@click.option(
+    "-d",
+    "--max-days",
+    default=7,
+    help="The max number of days of data to download from timeseries row restricted data",
+)
+def initialize(ctx: click.Context, max_results_per_query: int, max_days: int):
+    initialize_local_duckdb(
+        ctx.obj["local_duckdb_path"],
+        max_results_per_query=max_results_per_query,
+        max_days=max_days,
+    )
 
 
 @local.command()
