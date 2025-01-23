@@ -28,6 +28,16 @@ data:
   CONSOLE_ACCESS_KEY: c3RvcmFnZS11c2Vy # storage-user
   CONSOLE_SECRET_KEY: cGFzc3dvcmQ=     # password
 ---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: storage-user
+  namespace: default
+type: Opaque
+data:
+  CONSOLE_ACCESS_KEY: c3RvcmFnZS11c2Vy # storage-user
+  CONSOLE_SECRET_KEY: cGFzc3dvcmQ=     # password
+---
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
@@ -84,7 +94,11 @@ spec:
   configuration:
     name: minio-configuration
   users:
-  - name: storage-user
+    - name: storage-user
+  buckets:
+    - name: "local-storage"
+      region: "local"
+      objectLock: false
   externalCertSecret:
     - name: local-minio-tls
       type: cert-manager.io/v1
