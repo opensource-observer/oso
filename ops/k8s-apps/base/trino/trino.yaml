@@ -44,8 +44,6 @@ spec:
       additionalVolumeMounts:
         - name: cache
           mountPath: /metrics-cache
-      additionalJVMConfig:
-        - "--add-opens=java.base/java.nio=ALL-UNNAMED"
       
     worker:
       additionalVolumes:
@@ -54,6 +52,3 @@ spec:
       additionalVolumeMounts:
         - name: cache
           mountPath: /metrics-cache
-
-      additionalJVMConfig:
-        - "--add-opens=java.base/java.nio=ALL-UNNAMED"
