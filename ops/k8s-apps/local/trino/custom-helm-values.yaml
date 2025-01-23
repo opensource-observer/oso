@@ -6,6 +6,12 @@ spec:
   values:
     serviceAccount:
       name: local-trino
+    # worker:
+    #   jvm:
+    #     maxHeapSize: 2G
+    # coordinator:
+    #   jvm:
+    #     maxHeapSize: 2G
     catalogs:
       metrics: |
         connector.name=postgresql
