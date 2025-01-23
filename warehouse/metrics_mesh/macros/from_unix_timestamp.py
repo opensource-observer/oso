@@ -20,7 +20,8 @@ def from_unix_timestamp(
 
     if evaluator.runtime_stage in ["loading", "creating"]:
         return exp.Cast(
-            this="1970-01-01", is_string=True, to=exp.DataType(this=output_data_type)
+            this=exp.Literal(this="1970-01-01", is_string=True),
+            to=exp.DataType(this=output_data_type),
         )
 
     if evaluator.engine_adapter.dialect == "duckdb":
