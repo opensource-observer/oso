@@ -50,7 +50,7 @@ spec:
             items:
             - key: ca-certificates.crt
               path: ca-certificates.crt
-            - name: ca-certificates.p12
+            - key: ca-certificates.p12
               path: ca-certificates.p12
       additionalVolumeMounts:
         - name: cache
@@ -73,7 +73,7 @@ spec:
             items:
             - key: ca-certificates.crt
               path: ca-certificates.crt
-            - name: ca-certificates.p12
+            - key: ca-certificates.p12
               path: ca-certificates.p12
       additionalVolumeMounts:
         - name: cache
