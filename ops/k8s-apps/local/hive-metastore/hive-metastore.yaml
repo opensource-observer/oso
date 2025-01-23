@@ -52,4 +52,4 @@ spec:
       password: password
     image:
       repository: ghcr.io/opensource-observer/hive-metastore
-      tag: latest
+      tag: v0.2.0
