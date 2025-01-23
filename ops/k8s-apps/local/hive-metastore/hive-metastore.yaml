@@ -34,11 +34,11 @@ metadata:
 spec:
   chart:
     spec:
-      chart: hive-metastore
-      version: "*"
+      chart: ./ops/helm-charts/hive-metastore
       sourceRef:
-        kind: HelmRepository
-        name: getindata-hms
+        kind: GitRepository
+        name: flux-system
+        namespace: flux-system
   interval: 50m
   install:
     remediation:
