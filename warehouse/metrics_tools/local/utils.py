@@ -300,6 +300,10 @@ def initialize_local_duckdb(
     )
 
 
+def initialize_local_postgres():
+    pass
+
+
 def reset_local_duckdb(path: str):
     conn = duckdb.connect(path)
     response = conn.query("SHOW ALL TABLES")

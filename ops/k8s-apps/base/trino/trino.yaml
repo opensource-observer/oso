@@ -6,6 +6,7 @@ metadata:
     toolkit.fluxcd.io/tenant: apps
     ops.opensource.observer/environment: base
     kube-secrets-init.doit-intl.com/enable-mutation: "true"
+    opensource.observer/cert-inject: "enabled"
 ---
 apiVersion: source.toolkit.fluxcd.io/v1
 kind: HelmRepository

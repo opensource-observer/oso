@@ -25,7 +25,7 @@ spec:
     networkPolicy: true
     domain: "cluster.local"
   sync:
-    interval: "30s"
+    interval: "{interval}"
     kind: GitRepository
     url: "https://github.com/{repo_owner}/{repo_name}.git"
     ref: "refs/heads/{branch_name}"
@@ -37,7 +37,8 @@ spec:
 @click.option("--cluster-name", default="oso-local-test-cluster")
 @click.option("--repo-owner", default="opensource-observer")
 @click.option("--repo-name", default="oso")
-def cluster_setup(branch_name, cluster_name, repo_owner, repo_name):
+@click.option("--refresh-interval", default="30s")
+def cluster_setup(branch_name, cluster_name, repo_owner, repo_name, refresh_interval):
     if not branch_name:
         branch_name = (
             subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"])
@@ -121,7 +122,7 @@ def cluster_setup(branch_name, cluster_name, repo_owner, repo_name):
             )
 
     rendered_flux_instance = flux_instance_yaml.format(
-        repo_owner=repo_owner, repo_name=repo_name, branch_name=branch_name
+        repo_owner=repo_owner, repo_name=repo_name, branch_name=branch_name, interval=refresh_interval
     )
 
     subprocess.run(
