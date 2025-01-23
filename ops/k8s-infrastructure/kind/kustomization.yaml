@@ -6,3 +6,4 @@ patches:
   - path: ./cert-manager-custom-helm-values.yaml
     target:
       kind: HelmRelease
+      name: trust-manager
