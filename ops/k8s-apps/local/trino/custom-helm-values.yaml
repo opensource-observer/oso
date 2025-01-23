@@ -9,7 +9,7 @@ spec:
     catalogs:
       metrics: |
         connector.name=postgresql
-        connector-url=jdbc:postgresql://trino-psql-postgresql.local-trino-psql.svc.cluster.local:5432/postgres
+        connection-url=jdbc:postgresql://trino-psql-postgresql.local-trino-psql.svc.cluster.local:5432/postgres
         connection-user=postgres
         connection-password=password
       source: |
