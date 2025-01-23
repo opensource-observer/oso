@@ -1,68 +1,72 @@
 MODEL (
   name metrics.int_superchain_filtered_trace_events,
-  kind FULL,
+  kind INCREMENTAL_BY_TIME_RANGE (
+    time_column "time",
+    batch_size 90,
+    batch_concurrency 1,
+    lookback 7
+  ),
+  start '2015-01-01',
+  cron '@daily',
+  partitioned_by (DAY("time"), "event_source"),
+  grain (
+    "time",
+    event_source,
+    from_artifact_id,
+    to_artifact_id,
+    event_type
+  )
 );
 
 with events as (
   select
-    @from_unix_timestamp(block_timestamp) as "time",
-    event_source,
+    block_timestamp, 
+    chain as event_source,
     transaction_hash,
     from_address_tx,
     from_address_trace,
     to_address_trace,
     to_address_tx,
-    gas,
+    gas_used_tx,
     gas_used_trace,
     gas_price,
-    @oso_id('event_source', 'from_address_tx') as from_address_tx_id,
-    @oso_id('event_source', 'from_address_trace') as from_address_trace_id,
-    @oso_id('event_source', 'to_address_trace') as to_address_trace_id,
-    @oso_id('event_source', 'to_address_tx') as to_address_tx_id
-  from metrics.stg_superchain__traces_joined
-),
-
-known_contracts as (
-  select distinct artifact_id
-  from metrics.int_artifacts_by_project
-  where artifact_id not in (
-    select artifact_id
-    from metrics.int_artifacts_in_ossd_by_project
-    where artifact_type = 'WALLET'
-  )
-),
-
-bot_filtered_events as (
-  select * from events
-  left join @oso_source('bigquery.oso.int_superchain_potential_bots') as bots
-    on events.from_address_tx_id = bots.artifact_id
-  where bots.artifact_id is null
+    @oso_id('chain', 'from_address_tx') as from_address_tx_id,
+    @oso_id('chain', 'from_address_trace') as from_address_trace_id,
+    @oso_id('chain', 'to_address_trace') as to_address_trace_id,
+    @oso_id('chain', 'to_address_tx') as to_address_tx_id
+  from metrics.int_superchain__traces_joined
 ),
 
 filtered_traces as (
-  select bot_filtered_events.*
-  from bot_filtered_events
-  inner join known_contracts
-    on bot_filtered_events.to_address_trace_id = known_contracts.artifact_id
+  select distinct
+    events.block_timestamp,
+    events.event_source,
+    events.transaction_hash,
+    events.from_address_tx_id,
+    events.to_address_trace_id,
+    events.gas_used_trace
+  from events
+  inner join metrics.int_artifacts_by_project as known_addresses
+    on events.to_address_trace_id = known_addresses.artifact_id
 ),
 
 filtered_txns as (
   select distinct
-    "time",
-    event_source,
-    transaction_hash,
-    from_address_tx_id,
-    to_address_tx_id,
-    gas,
-    gas_price
-  from bot_filtered_events
-  inner join known_contracts
-    on bot_filtered_events.to_address_tx_id = known_contracts.artifact_id
+    events.block_timestamp,
+    events.event_source,
+    events.transaction_hash,
+    events.from_address_tx_id,
+    events.to_address_tx_id,
+    events.gas_used_tx,
+    events.gas_price
+  from events
+  inner join metrics.int_artifacts_by_project as known_addresses
+    on events.to_address_tx_id = known_addresses.artifact_id
 ),
 
 trace_counts as (
   select
-    date_trunc('DAY', time::DATE) as "time",
+    date_trunc('DAY', block_timestamp::DATE) as "time",
     event_source,
     from_address_tx_id as from_artifact_id,
     to_address_trace_id as to_artifact_id,
@@ -74,7 +78,7 @@ trace_counts as (
 
 trace_gas_used as (
   select
-    date_trunc("time", day) as "time",
+    date_trunc('DAY', block_timestamp::DATE) as "time",
     event_source,
     from_address_tx_id as from_artifact_id,
     to_address_trace_id as to_artifact_id,
@@ -86,7 +90,7 @@ trace_gas_used as (
 
 txn_counts as (
   select
-    date_trunc('DAY', "time"::DATE) as "time",
+    date_trunc('DAY', block_timestamp::DATE) as "time",
     event_source,
     from_address_tx_id as from_artifact_id,
     to_address_tx_id as to_artifact_id,
@@ -98,24 +102,24 @@ txn_counts as (
 
 txn_gas_used as (
   select
-    date_trunc('DAY', "time"::DATE) as "time",
+    date_trunc('DAY', block_timestamp::DATE) as "time",
     event_source,
     from_address_tx_id as from_artifact_id,
     to_address_tx_id as to_artifact_id,
     'CONTRACT_INVOCATION_SUCCESS_DAILY_L2_GAS_USED' as event_type,
-    sum(gas) as amount
+    sum(gas_used_tx) as amount
   from filtered_txns
   group by 1, 2, 3, 4
 ),
 
 txn_gas_fees as (
   select
-    date_trunc('DAY', "time"::DATE) as "time",
+    date_trunc('DAY', block_timestamp::DATE) as "time",
     event_source,
     from_address_tx_id as from_artifact_id,
     to_address_tx_id as to_artifact_id,
     'CONTRACT_INVOCATION_SUCCESS_DAILY_L2_GAS_FEES' as event_type,
-    sum(gas_price * gas) / 1e18 as amount
+    sum(gas_price * gas_used_tx) / 1e18 as amount
   from filtered_txns
   group by 1, 2, 3, 4
 )
