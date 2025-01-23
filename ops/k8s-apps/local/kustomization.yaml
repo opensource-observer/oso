@@ -7,4 +7,4 @@ resources:
   - ./hive-psql
   - ./trino-psql
   - ./hive-metastore
-  #- ./trino
+  - ./trino
