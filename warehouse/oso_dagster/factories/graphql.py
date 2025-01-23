@@ -1,9 +1,13 @@
 from dataclasses import dataclass
-from typing import Any, Callable, Concatenate, Dict, Optional
+from typing import Any, Callable, Concatenate, Dict, Optional, ParamSpec, TypeVar, cast
 
 import dlt
+from dagster import AssetExecutionContext
 from gql import Client, gql
+from gql.transport.exceptions import TransportError
 from gql.transport.requests import RequestsHTTPTransport
+
+from .dlt import dlt_factory
 
 # The maximum depth of the introspection query.
 FRAGMENT_MAX_DEPTH = 10
@@ -97,16 +101,25 @@ class GraphQLResourceConfig:
     Configuration for a GraphQL resource.
 
     Args:
+        name: The name of the GraphQL resource.
         endpoint: The endpoint of the GraphQL resource.
+        target_type: The type to target in the introspection query.
+        target_query: The query to target in the main query.
         max_depth: The maximum depth of the GraphQL query.
-        target_query: The target query to execute.
         headers: The headers to include in the introspection query.
+        transform_fn: The function to transform the result of the query.
+        parameters: The parameters to include in the introspection query.
     """
 
+    # TODO(jabolo): Add ability to pass secrets
+    name: str
     endpoint: str
+    target_type: str
+    target_query: str
     max_depth: int = 5
-    target_query: Optional[str] = None
     headers: Optional[Dict[str, str]] = None
+    transform_fn: Optional[Callable[[Any], Any]] = None
+    parameters: Optional[Dict[str, Dict[str, Any]]] = None
 
 
 def get_grapqhl_introspection(config: GraphQLResourceConfig) -> Dict[str, Any]:
@@ -115,7 +128,11 @@ def get_grapqhl_introspection(config: GraphQLResourceConfig) -> Dict[str, Any]:
 
     Args:
         config: The configuration for the GraphQL resource.
+
+    Returns:
+        The introspection query.
     """
+
     transport = RequestsHTTPTransport(
         url=config.endpoint,
         use_json=True,
@@ -128,12 +145,12 @@ def get_grapqhl_introspection(config: GraphQLResourceConfig) -> Dict[str, Any]:
     )
 
     populated_query = INTROSPECTION_QUERY.replace(
-        "{{ DEPTH }}", create_fragment(config.max_depth)
+        "{{ DEPTH }}", create_fragment(config.max_depth + 1)
     )
 
     try:
         return client.execute(gql(populated_query))
-    except Exception as exception:
+    except TransportError as exception:
         raise ValueError(
             "Failed to fetch GraphQL introspection query.",
         ) from exception
@@ -150,6 +167,16 @@ class _TypeToPython:
 
 
 class TypeToPython:
+    """
+    A mapping of GraphQL types to Python types.
+
+    Args:
+        available_types: The available types in the introspection query.
+
+    Returns:
+        The Python type for the given GraphQL type.
+    """
+
     def __init__(self, available_types):
         self.available_types = available_types
 
@@ -165,7 +192,18 @@ class TypeToPython:
         return f'"{name}"' if is_object else "Any"
 
 
-def resolve_type(graphql_type, instance: TypeToPython):
+def resolve_type(graphql_type: Any, instance: TypeToPython) -> str:
+    """
+    Resolve the type of a GraphQL field.
+
+    Args:
+        graphql_type: The GraphQL type.
+        instance: The instance of the TypeToPython class.
+
+    Returns:
+        The Python type for the given GraphQL type.
+    """
+
     if graphql_type["kind"] == "NON_NULL":
         return resolve_type(graphql_type["ofType"], instance)
     if graphql_type["kind"] == "LIST":
@@ -180,100 +218,209 @@ def resolve_type(graphql_type, instance: TypeToPython):
     return instance[graphql_type["name"]]
 
 
-def _graphql_resource[
-    T, **P
-](resource: Callable[P, T]) -> Callable[Concatenate[GraphQLResourceConfig, P], T]:
+def expand_field(
+    field: Dict[str, Any],
+    introspection_dict: Dict[str, Any],
+    max_depth=FRAGMENT_MAX_DEPTH,
+) -> str:
     """
-    This factory is a wrapper of the `dlt.resource` decorator.
+    Expand a field in the introspection query.
+
+    Args:
+        field: The field to expand.
+        introspection_dict: The introspection dictionary.
+        max_depth: The maximum depth of the introspection query.
+
+    Returns:
+        The expanded field.
+    """
+
+    field_name = field.get("name", "")
+
+    if max_depth == 0:
+        return field_name
+
+    field_type = (
+        field.get("type", {}).get("ofType", {}).get("name")
+        if field.get("type", {}).get("name") is None
+        else field.get("type", {}).get("name")
+    )
+
+    field_args = field.get("args")
+    if field_args:
+        # TODO(jabolo): Support input arguments in the query
+        return ""
+
+    if not field_type:
+        return ""
+
+    intro_type = introspection_dict.get(field_type)
+    if not intro_type:
+        raise ValueError(
+            f"Type '{field_type}' not found in the introspection query.",
+        )
+
+    type_fields = intro_type.get("fields")
+    if not type_fields:
+        return f"{field_name}"
+
+    if max_depth == 1:
+        return ""
+
+    return f"{field_name} {{ {' '.join([
+        expand_field(f, introspection_dict, max_depth - 1) for f in type_fields
+    ])} }}"
+
+
+def get_query_parameters(parameters: Optional[Dict[str, Dict[str, Any]]]):
+    """
+    Get the parameters for the GraphQL query.
+
+    Args:
+        parameters: The parameters for the query.
+
+    Returns:
+        The parameters for the query.
+    """
+
+    if not parameters:
+        return "", ""
+
+    return (
+        f"({', '.join([f'${key}: {value['type']}' for key, value in parameters.items()])})",
+        f"({', '.join([f'{key}: ${key}' for key in parameters.keys()])})",
+    )
+
+
+Q = ParamSpec("Q")
+T = TypeVar("T")
+
+
+def _graphql_factory(
+    _resource: Callable[Q, T]
+) -> Callable[Concatenate[GraphQLResourceConfig, Q], T]:
+    """
+    This factory creates a DLT asset from a GraphQL resource, automatically
+    wiring the introspection query to the target query and generating a Pydantic model.
 
     Args:
         resource: The function to decorate.
     """
 
-    def _factory(config: GraphQLResourceConfig, *args: P.args, **kwargs: P.kwargs) -> T:
-        if not config.target_query:
+    def _factory(config: GraphQLResourceConfig, /, *_args: Q.args, **kwargs: Q.kwargs):
+        """
+        Wrap the decorated function with the GraphQL factory.
+
+        Args:
+            config: The configuration for the GraphQL resource.
+            *_args: The arguments for the decorated function.
+            **kwargs: The keyword arguments for the decorated
+
+        Returns:
+            The DLT asset.
+        """
+
+        if not config.target_query or not config.target_query.strip():
             raise ValueError(
                 "Target query not specified in the GraphQL resource config."
             )
 
-        introspection = get_grapqhl_introspection(config) or {}
-        available_types = introspection["__schema"]["types"]
-
-        if not available_types:
+        if not config.target_type or not config.target_type.strip():
             raise ValueError(
-                "Malfomed introspection query, no types found.",
+                "Target type not specified in the GraphQL resource config."
             )
 
-        target_object = next(
-            (type for type in available_types if type["name"] == config.target_query),
-            None,
-        )
+        @dlt_factory(name=config.name, **kwargs)
+        def _dlt_graphql_asset(context: AssetExecutionContext):
+            """
+            The GraphQL factory for the DLT asset.
 
-        if not target_object:
-            raise ValueError(
-                f"Target query '{config.target_query}' not found in the introspection query.",
+            Args:
+                context: The asset execution context.
+
+            Returns:
+                The DLT asset.
+            """
+
+            introspection = get_grapqhl_introspection(config)
+            available_types = introspection["__schema"]["types"]
+
+            if not available_types:
+                raise ValueError(
+                    "Malfomed introspection query, no types found.",
+                )
+
+            dictionary_types = {type["name"]: type for type in available_types}
+
+            target_object = dictionary_types.get(config.target_type)
+
+            if not target_object:
+                raise ValueError(
+                    f"Target query '{config.target_type}' not found in the introspection query.",
+                )
+
+            type_to_python = TypeToPython(available_types)
+
+            all_types = [
+                (
+                    expand_field(field, dictionary_types, config.max_depth),
+                    resolve_type(field["type"], type_to_python),
+                )
+                for field in target_object["fields"]
+            ]
+
+            query_parameters, query_variables = get_query_parameters(config.parameters)
+
+            generated_query = f"""
+                query {query_parameters} {{
+                    {config.target_query} {query_variables} {{
+                        {" ".join([field[0] for field in all_types])}
+                    }}
+                }}
+            """
+
+            # TODO(jabolo): Pass dynamic DLT config
+            @dlt.resource(
+                name=config.name,
             )
+            def _execute_query():
+                """
+                Execute the GraphQL query.
 
-        type_to_python = TypeToPython(available_types)
+                Returns:
+                    The GraphQL query result
+                """
 
-        _all_types = [
-            (field["name"], resolve_type(field["type"], type_to_python))
-            for field in target_object["fields"]
-        ]
+                client = Client(
+                    transport=RequestsHTTPTransport(
+                        url=config.endpoint,
+                        use_json=True,
+                        headers=config.headers,
+                    ),
+                )
 
-        # TODO: Build pydantic model from introspection.
-        #   - Use the introspection to build a schema of the
-        #     root query type, since nested types are `JSON` by
-        #     default.
+                context.log.info(
+                    f"GraphQL factory: fetching data from {config.endpoint}"
+                )
 
-        # TODO: Build query from introspection.
-        #   - Use the introspection to build a query for the
-        #     target query, using the root query type.
+                context.log.info(f"GraphQL factory: {generated_query}")
 
-        # TODO: Execute the query.
-        #   - Execute the query using the introspection and
-        #     the target query.
+                # TODO(jabolo): use debounce mechanism
+                result = client.execute(
+                    gql(generated_query),
+                    variable_values={
+                        key: param["value"]
+                        for key, param in (config.parameters or {}).items()
+                    },
+                )
 
-        # TODO: Handle pagination.
+                yield config.transform_fn(result) if config.transform_fn else result
 
-        # TODO: Yield the results.
+            yield _execute_query
 
-        return resource(*args, **kwargs)
+        return _dlt_graphql_asset
 
-    return _factory
+    return cast(Callable[Concatenate[GraphQLResourceConfig, Q], T], _factory)
 
 
-graphql_resource = _graphql_resource(dlt.resource)
-"""
-This is the GraphQL resource factory that wraps the `dlt.resource` decorator.
-
-Example:
-    ```python
-    @dlt_factory(
-        key_prefix="open_collective",
-        op_tags={
-            "dagster-k8s/config": K8S_CONFIG,
-        },
-    )
-    def expenses(
-        personal_token: str = secret_ref_arg(
-            group_name="open_collective", key="personal_token"
-        ),
-    ):
-        config = GraphQLResourceConfig(
-            endpoint="https://api.opencollective.com/graphql/v2",
-            max_depth=5,
-            target_query="Transactions",
-            headers={
-                "Personal-Token": personal_token,
-            },
-        )
-
-        yield graphql_resource(
-            config,
-            name="expenses",
-            primary_key="id",
-            write_disposition="merge",
-        )
-    ```
-"""
+graphql_factory = _graphql_factory(dlt_factory)
