@@ -53,8 +53,4 @@ spec:
         name: jetstack 
         namespace: cert-manager
       interval: 12h
-  values:
-    secretTargets:
-      enabled: true
-      authorizedSecrets:
-        - cluster-self-signed-ca-bundle-secret
+
