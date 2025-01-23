@@ -41,14 +41,44 @@ spec:
       additionalVolumes:
         - name: cache
           emptyDir: {}
+        - name: cluster-self-signed-bundle
+          configMap:
+            name: cluster-self-signed-bundle
+            defaultMode: 0644
+            optional: false
+            items:
+            - key: ca-certificates.crt
+              path: ca-certificates.crt
+            - name: ca-certificates.p12
+              path: ca-certificates.p12
       additionalVolumeMounts:
         - name: cache
           mountPath: /metrics-cache
+        - name: cluster-self-signed-bundle
+          mountPath: /etc/ssl/certs
+      additionalJVMConfig:
+        #- "--add-opens=java.base/java.nio=ALL-UNNAMED"
+        - "-Djavax.net.ssl.trustStore=/etc/ssl/certs/ca-certificates.p12"
       
     worker:
       additionalVolumes:
         - name: cache
           emptyDir: {}
+        - name: cluster-self-signed-bundle
+          configMap:
+            name: cluster-self-signed-bundle
+            defaultMode: 0644
+            optional: false
+            items:
+            - key: ca-certificates.crt
+              path: ca-certificates.crt
+            - name: ca-certificates.p12
+              path: ca-certificates.p12
       additionalVolumeMounts:
         - name: cache
           mountPath: /metrics-cache
+        - name: cluster-self-signed-bundle
+          mountPath: /etc/ssl/certs
+      additionalJVMConfig:
+        #- "--add-opens=java.base/java.nio=ALL-UNNAMED"
+        - "-Djavax.net.ssl.trustStore=/etc/ssl/certs/ca-certificates.p12"
