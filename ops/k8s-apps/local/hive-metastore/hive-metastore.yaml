@@ -16,6 +16,7 @@ spec:
   interval: 5m
   url: https://getindata.github.io/hive-metastore
 ---
+# The secret creation is broken in the current helm chart.
 apiVersion: v1
 kind: Secret
 metadata:
