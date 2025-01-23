@@ -56,10 +56,10 @@ spec:
         - name: cache
           mountPath: /metrics-cache
         - name: cluster-self-signed-bundle
-          mountPath: /etc/ssl/certs
+          mountPath: /etc/ssl/k8s-certs
       additionalJVMConfig:
         #- "--add-opens=java.base/java.nio=ALL-UNNAMED"
-        - "-Djavax.net.ssl.trustStore=/etc/ssl/certs/ca-certificates.p12"
+        - "-Djavax.net.ssl.trustStore=/etc/ssl/k8s-certs/ca-certificates.p12"
       
     worker:
       additionalVolumes:
@@ -79,7 +79,7 @@ spec:
         - name: cache
           mountPath: /metrics-cache
         - name: cluster-self-signed-bundle
-          mountPath: /etc/ssl/certs
+          mountPath: /etc/ssl/k8s-certs
       additionalJVMConfig:
         #- "--add-opens=java.base/java.nio=ALL-UNNAMED"
-        - "-Djavax.net.ssl.trustStore=/etc/ssl/certs/ca-certificates.p12"
+        - "-Djavax.net.ssl.trustStore=/etc/ssl/k8s-certs/ca-certificates.p12"
