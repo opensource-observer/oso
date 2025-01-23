@@ -16,6 +16,7 @@ spec:
       config:
         query:
           maxMemoryPerNode: 500MB 
+          maxMemory: 1GB
     coordinator:
       jvm:
         maxHeapSize: 1G
@@ -33,7 +34,7 @@ spec:
         fs.native-s3.enabled=true
         s3.path-style-access=true
         s3.endpoint=https://minio.local-minio.svc.cluster.local
-        s3.aws-access-key=storage-user
+        s3.aws-access-key=admin
         s3.aws-secret-key=password
       bigquery: |
         connector.name=postgresql
