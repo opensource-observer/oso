@@ -22,15 +22,15 @@ spec:
       memory: |
         connector.name=memory
         memory.max-data-per-node=128MB
-      # source: |
-      #   connector.name=hive
-      #   hive.metastore.uri=thrift://hive-metastore.local-hive-metastore.svc.cluster.local:9083
-      #   hive.non-managed-table-writes-enabled=true
-      #   fs.native-s3.enaled=true
-      #   s3.path-style-access=true
-      #   s3.endpoint=https://minio.local-minio.svc.cluster.local
-      #   s3.aws-access-key=storage-user
-      #   s3.aws-secret-key=password
+      source: |
+        connector.name=hive
+        hive.metastore.uri=thrift://hive-metastore.local-hive-metastore.svc.cluster.local:9083
+        hive.non-managed-table-writes-enabled=true
+        fs.native-s3.enaled=true
+        s3.path-style-access=true
+        s3.endpoint=https://minio.local-minio.svc.cluster.local
+        s3.aws-access-key=storage-user
+        s3.aws-secret-key=password
       bigquery: |
         connector.name=postgresql
         connection-url=jdbc:postgresql://trino-psql-postgresql.local-trino-psql.svc.cluster.local:5432/postgres
