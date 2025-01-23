@@ -5,6 +5,7 @@ metadata:
   name: minio-operator
   labels:
     toolkit.fluxcd.io/tenant: ops
+    opensource.observer/cert-inject: "enabled"
 ---
 apiVersion: source.toolkit.fluxcd.io/v1
 kind: HelmRepository
