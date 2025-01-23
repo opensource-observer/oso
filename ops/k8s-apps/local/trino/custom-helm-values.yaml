@@ -19,11 +19,6 @@ spec:
         query:
           maxMemoryPerNode: 500MB 
     catalogs:
-      metrics: |
-        connector.name=postgresql
-        connection-url=jdbc:postgresql://trino-psql-postgresql.local-trino-psql.svc.cluster.local:5432/postgres
-        connection-user=postgres
-        connection-password=password
       source: |
         connector.name=hive
         hive.metastore.uri=thrift://hive-metastore.local-hive-metastore.svc.cluster.local:9083
@@ -33,8 +28,13 @@ spec:
         s3.endpoint=https://minio.local-minio.svc.cluster.local
         s3.aws-access-key=storage-user
         s3.aws-secret-key=password
-      bigquery: |
-        connector.name=postgresql
-        connection-url=jdbc:postgresql://trino-psql-postgresql.local-trino-psql.svc.cluster.local:5432/postgres
-        connection-user=postgres
-        connection-password=password
+      # bigquery: |
+      #   connector.name=postgresql
+      #   connection-url=jdbc:postgresql://trino-psql-postgresql.local-trino-psql.svc.cluster.local:5432/postgres
+      #   connection-user=postgres
+      #   connection-password=password
+      # metrics: |
+      #   connector.name=postgresql
+      #   connection-url=jdbc:postgresql://trino-psql-postgresql.local-trino-psql.svc.cluster.local:5432/postgres
+      #   connection-user=postgres
+      #   connection-password=password
