@@ -8,5 +8,5 @@ spec:
     secretTargets:
       enabled: true
       authorizedSecrets:
-        - operators-ca-tls-secret
+        - operator-ca-tls-secret
 
