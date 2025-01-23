@@ -40,3 +40,6 @@ spec:
       db: postgres
       username: postgres
       password: password
+    image:
+      repository: ghcr.io/opensource-observer/hive-metastore
+      tag: latest
