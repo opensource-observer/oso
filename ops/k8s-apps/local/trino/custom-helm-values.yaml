@@ -4,6 +4,10 @@ metadata:
   name: local-trino
 spec:
   values:
+    server:
+      log:
+        trino:
+          level: DEBUG
     serviceAccount:
       name: local-trino
     worker:
