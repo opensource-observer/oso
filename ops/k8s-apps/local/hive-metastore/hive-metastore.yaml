@@ -43,3 +43,5 @@ spec:
     image:
       repository: ghcr.io/opensource-observer/hive-metastore
       tag: latest
+    databaseSecret:
+      create: true
