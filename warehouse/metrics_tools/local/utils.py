@@ -17,51 +17,35 @@ PROJECT_ID = os.getenv("GOOGLE_PROJECT_ID", "opensource-observer")
 
 DUCKDB_SOURCES_SCHEMA_PREFIX = "sources"
 
-PA_TO_DUCKDB_TYPE_MAPPING = {
-    pa.int8(): "TINYINT",
-    pa.int16(): "SMALLINT",
-    pa.int32(): "INTEGER",
-    pa.int64(): "BIGINT",
-    pa.uint8(): "UTINYINT",
-    pa.uint16(): "USMALLINT",
-    pa.uint32(): "UINTEGER",
-    pa.uint64(): "UBIGINT",
-    pa.float32(): "FLOAT",
-    pa.float64(): "DOUBLE",
-    pa.string(): "VARCHAR",
-    pa.binary(): "BLOB",
-    pa.bool_(): "BOOLEAN",
-    pa.timestamp("s"): "TIMESTAMP",
-    pa.date32(): "DATE",
-    pa.date64(): "DATE",  # DuckDB does not differentiate date32 and date64
-}
-PA_TO_DUCKDB_TYPING_MAPPING_BY_ID = {
-    field.id: field_value for field, field_value in PA_TO_DUCKDB_TYPE_MAPPING.items()
-}
+
+def convert_bq_schema_to_duckdb_columns(
+    column_ids: t.List[str], bq_schema: t.List[bigquery.SchemaField]
+) -> t.List[t.Tuple[str, str]]:
+    # Create a dictionary of the schema
+    schema_dict = {field.name: field for field in bq_schema}
+    columns: t.List[t.Tuple[str, str]] = []
+    for column_id in column_ids:
+        field = schema_dict[column_id]
+
+        # force structs as json for trino later
+        if field.field_type == "STRUCT":
+            columns.append((field.name, "JSON"))
+            continue
+
+        columns.append(
+            (
+                field.name,
+                parse_one(field.field_type, into=exp.DataType, dialect="bigquery").sql(
+                    dialect="duckdb"
+                ),
+            )
+        )
+    return columns
 
 
 class TableMappingDestination(BaseModel):
     row_restriction: str = ""
     destination: str = ""
-
-
-def pyarrow_to_duckdb_type(arrow_type: pa.Field):
-    """
-    Convert a PyArrow data type to a DuckDB data type.
-    """
-
-    # Handle variable types like decimals and timestamps
-    if pa.types.is_decimal(arrow_type):
-        return f"DECIMAL({arrow_type.precision}, {arrow_type.scale})"
-    elif pa.types.is_timestamp(arrow_type):
-        return "TIMESTAMP"  # DuckDB only supports TIMESTAMP without timezone
-    elif pa.types.is_struct(arrow_type):
-        return "JSON"  # Trino does not have struct support
-    elif pa.types.is_list(arrow_type):
-        return "JSON[]"
-
-    # Look up the type in the dictionary
-    return PA_TO_DUCKDB_TYPING_MAPPING_BY_ID[arrow_type.id]
 
 
 def remove_metadata_from_schema(schema: pa.Schema) -> pa.Schema:
@@ -114,7 +98,9 @@ def table_exists_in_duckdb(conn: duckdb.DuckDBPyConnection, table_name: str):
 
 
 def bq_to_duckdb(
-    table_mapping: t.Dict[str, str | TableMappingDestination], duckdb_path: str
+    table_mapping: t.Dict[str, str | TableMappingDestination],
+    duckdb_path: str,
+    max_results_per_query: int = 0,
 ):
     """Copies the tables in table_mapping to tables in duckdb
 
@@ -126,7 +112,10 @@ def bq_to_duckdb(
 
     Args:
         table_mapping (t.Dict[str, str]): A dictionary of bigquery table names
-        to duckdb table names duckdb_path (str): The path to the duckdb database
+            to duckdb table names
+        duckdb_path (str): The path to the duckdb database
+        max_results_per_query (int): The maximum number of results to return.
+            Set to 0 to return all results
 
     Returns:
         None
@@ -138,14 +127,15 @@ def bq_to_duckdb(
     created_schemas = set()
 
     for bq_table, duckdb_table in table_mapping.items():
+        table = bigquery.TableReference.from_string(bq_table)
 
         if isinstance(duckdb_table, TableMappingDestination):
             duckdb_table_name = duckdb_table.destination
 
-            table_as_arrow = bq_read_with_options(bq_table, duckdb_table, PROJECT_ID)
             if table_exists_in_duckdb(conn, duckdb_table_name):
                 logger.info(f"{duckdb_table_name} already exists, skipping")
                 continue
+            table_as_arrow = bq_read_with_options(bq_table, duckdb_table, PROJECT_ID)
         else:
             duckdb_table_name = duckdb_table
             logger.info(f"checking if {duckdb_table_name} already exists")
@@ -154,24 +144,46 @@ def bq_to_duckdb(
                 continue
 
             logger.info(f"{bq_table}: copying to {duckdb_table}")
-            table = bigquery.TableReference.from_string(bq_table)
 
-            rows = bqclient.list_rows(table)
-            table_as_arrow = rows.to_arrow(create_bqstorage_client=True)  # noqa: F841
-        columns = []
+            if max_results_per_query:
+                logger.info(f"Limiting results to {max_results_per_query}")
+                rows = bqclient.list_rows(table)
+                # COLLECT SOME NUMBER OF ROWS
+                total_rows = 0
+                to_concat: t.List[pa.RecordBatch] = []
+                client = bigquery_storage_v1.BigQueryReadClient()
+                for record_batch in rows.to_arrow_iterable(bqstorage_client=client):
+                    to_concat.append(record_batch)
+                    total_rows += record_batch.num_rows
+                    if total_rows >= max_results_per_query:
+                        break
+                if total_rows == 0:
+                    logger.info(
+                        "No rows found when limiting rows, resorting to full copy to get schema"
+                    )
+                    rows = bqclient.list_rows(table)
+                    table_as_arrow = rows.to_arrow(create_bqstorage_client=True)
+                else:
+                    table_as_arrow = pa.Table.from_batches(to_concat)
+            else:
+                rows = bqclient.list_rows(table)
+                table_as_arrow = rows.to_arrow(
+                    create_bqstorage_client=True
+                )  # noqa: F841
+
+        # Load the schema from bigquery
+        table_schema = bqclient.get_table(table).schema
 
         # If there are no special metadata fields in a schema we can just do a
         # straight copy into duckdb
         is_simple_copy = True
-        for field in table_as_arrow.schema:
-            if field.metadata:
-                is_simple_copy = False
-                arrow_extension = field.metadata.get(b"ARROW:extension:name")
-                if arrow_extension == b"google:sqlType:json":
-                    # Convert the google extension into the correct json for duckdb
-                    columns.append((field.name, "JSON"))
-            else:
-                columns.append((field.name, pyarrow_to_duckdb_type(field.type)))
+        column_ids = [field.name for field in table_as_arrow.schema]
+        columns = convert_bq_schema_to_duckdb_columns(column_ids, table_schema)
+        column_types = set([column[1] for column in columns])
+
+        if "JSON" in column_types:
+            is_simple_copy = False
+
         # Remove all metadata from the schema
         new_schema = remove_metadata_from_schema(table_as_arrow.schema)
         table_as_arrow = table_as_arrow.cast(new_schema)
@@ -179,6 +191,7 @@ def bq_to_duckdb(
         duckdb_table_split = duckdb_table_name.split(".")
         schema = duckdb_table_split[0]
 
+        logger.info(f"copying {table_as_arrow.num_rows} rows to {duckdb_table_name}")
         if schema not in created_schemas:
             conn.execute(f"CREATE SCHEMA IF NOT EXISTS {schema}")
             created_schemas.add(schema)
@@ -227,7 +240,9 @@ def bq_to_duckdb(
     logger.info("...done")
 
 
-def initialize_local_duckdb(path: str):
+def initialize_local_duckdb(
+    path: str, max_results_per_query: int = 0, max_days: int = 7
+):
     # Use the oso_dagster assets as the source of truth for configured defi
     # llama protocols for now
     defi_llama_tables = {
@@ -237,7 +252,7 @@ def initialize_local_duckdb(path: str):
 
     today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
     # Get the last 30 days of data
-    start_date = today - timedelta(days=30)
+    start_date = today - timedelta(days=max_days)
     end_date = today
 
     table_mapping: t.Dict[str, str | TableMappingDestination] = {
@@ -281,6 +296,7 @@ def initialize_local_duckdb(path: str):
     bq_to_duckdb(
         table_mapping,
         path,
+        max_results_per_query=max_results_per_query,
     )
 
 
