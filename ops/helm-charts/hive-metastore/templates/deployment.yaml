@@ -55,6 +55,8 @@ spec:
                   name: {{ .Release.Name }}-pgauth
             - name: THRIFT_BIND_HOST
               value: "0.0.0.0"
+            - name: _JAVA_OPTIONS
+              value: "-Djava.net.preferIPv4Stack=true"
           ports:
             - name: thrift
               containerPort: {{ .Values.service.port }}
