@@ -23,7 +23,7 @@ def create_registry_container(
             "registry:2",
             detach=True,
             restart_policy={"Name": "always"},
-            ports={f"{reg_port}/tcp": ("127.0.0.1", reg_port)},
+            ports={"5000/tcp": ("127.0.0.1", reg_port)},
             name=reg_name,
             network="bridge",
         )
