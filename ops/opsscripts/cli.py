@@ -1,8 +1,18 @@
+import os
 import subprocess
 import sys
 
 import click
 import requests
+from opsscripts.utils.dockertools import (
+    configure_registry_for_nodes,
+    connect_registry_to_network,
+    create_registry_container,
+    initialize_docker_client,
+)
+
+CURR_DIR = os.path.dirname(__file__)
+OSO_REPO_DIR = os.path.abspath(os.path.join(CURR_DIR, "..", ".."))
 
 flux_instance_yaml = """
 apiVersion: fluxcd.controlplane.io/v1
@@ -38,7 +48,19 @@ spec:
 @click.option("--repo-owner", default="opensource-observer")
 @click.option("--repo-name", default="oso")
 @click.option("--refresh-interval", default="30s")
-def cluster_setup(branch_name, cluster_name, repo_owner, repo_name, refresh_interval):
+@click.option("--oso-repo-dir", default=OSO_REPO_DIR)
+@click.option("--registry-port", default=5001)
+@click.option("--registry-name", default="oso-registry")
+def cluster_setup(
+    branch_name: str,
+    cluster_name: str,
+    repo_owner: str,
+    repo_name: str,
+    refresh_interval: str,
+    oso_repo_dir: str,
+    registry_port: int,
+    registry_name: str,
+):
     if not branch_name:
         branch_name = (
             subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"])
@@ -64,6 +86,11 @@ def cluster_setup(branch_name, cluster_name, repo_owner, repo_name, refresh_inte
         click.echo(f"An error occurred: HTTP status code {response.status_code}.")
         sys.exit(1)
 
+    docker_client = initialize_docker_client()
+
+    click.echo("Ensure local container registry is running")
+    create_registry_container(docker_client, registry_name, registry_port)
+
     click.echo("Ensure kind cluster is running")
 
     get_clusters_output = subprocess.run(
@@ -77,6 +104,12 @@ def cluster_setup(branch_name, cluster_name, repo_owner, repo_name, refresh_inte
             ["kind", "create", "cluster", "--config", "ops/kind/cluster.yaml"],
             check=True,
         )
+    click.echo("configuring the registry for the kind cluster nodes")
+    configure_registry_for_nodes(
+        docker_client, registry_name, registry_port, cluster_name
+    )
+    click.echo("Connecting the registry to the kind cluster network")
+    connect_registry_to_network(docker_client, registry_name)
 
     click.echo("Switching kubectl context to the kind cluster")
     subprocess.run(
@@ -122,7 +155,10 @@ def cluster_setup(branch_name, cluster_name, repo_owner, repo_name, refresh_inte
             )
 
     rendered_flux_instance = flux_instance_yaml.format(
-        repo_owner=repo_owner, repo_name=repo_name, branch_name=branch_name, interval=refresh_interval
+        repo_owner=repo_owner,
+        repo_name=repo_name,
+        branch_name=branch_name,
+        interval=refresh_interval,
     )
 
     subprocess.run(
