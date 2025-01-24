@@ -6,6 +6,7 @@ metadata:
     toolkit.fluxcd.io/tenant: apps
     ops.opensource.observer/environment: base
     kube-secrets-init.doit-intl.com/enable-mutation: "true"
+    opensource.observer/cert-inject: "enabled"
 ---
 apiVersion: source.toolkit.fluxcd.io/v1
 kind: HelmRepository
@@ -25,7 +26,7 @@ spec:
   chart:
     spec:
       chart: trino
-      version: "0.33.0"
+      version: "1.36.0"
       sourceRef:
         kind: HelmRepository
         name: trino
@@ -41,19 +42,44 @@ spec:
       additionalVolumes:
         - name: cache
           emptyDir: {}
+        - name: cluster-self-signed-bundle
+          configMap:
+            name: cluster-self-signed-bundle
+            defaultMode: 0644
+            optional: false
+            items:
+            - key: ca-certificates.crt
+              path: ca-certificates.crt
+            - key: ca-certificates.p12
+              path: ca-certificates.p12
       additionalVolumeMounts:
         - name: cache
           mountPath: /metrics-cache
+        - name: cluster-self-signed-bundle
+          mountPath: /etc/ssl/k8s-certs
       additionalJVMConfig:
-        - "--add-opens=java.base/java.nio=ALL-UNNAMED"
+        #- "--add-opens=java.base/java.nio=ALL-UNNAMED"
+        - "-Djavax.net.ssl.trustStore=/etc/ssl/k8s-certs/ca-certificates.p12"
       
     worker:
       additionalVolumes:
         - name: cache
           emptyDir: {}
+        - name: cluster-self-signed-bundle
+          configMap:
+            name: cluster-self-signed-bundle
+            defaultMode: 0644
+            optional: false
+            items:
+            - key: ca-certificates.crt
+              path: ca-certificates.crt
+            - key: ca-certificates.p12
+              path: ca-certificates.p12
       additionalVolumeMounts:
         - name: cache
           mountPath: /metrics-cache
-
+        - name: cluster-self-signed-bundle
+          mountPath: /etc/ssl/k8s-certs
       additionalJVMConfig:
-        - "--add-opens=java.base/java.nio=ALL-UNNAMED"
+        #- "--add-opens=java.base/java.nio=ALL-UNNAMED"
+        - "-Djavax.net.ssl.trustStore=/etc/ssl/k8s-certs/ca-certificates.p12"

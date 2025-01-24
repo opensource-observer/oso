@@ -2,7 +2,7 @@ import typing as t
 
 import orjson
 import pandas as pd
-from metrics_mesh.macros.oso_source import oso_source_for_pymodel
+from metrics_tools.source.rewrite import oso_source_for_pymodel
 from oso_dagster.assets.defillama import DEFI_LLAMA_PROTOCOLS, defi_llama_slug_to_name
 from sqlglot import exp
 from sqlmesh import ExecutionContext, model

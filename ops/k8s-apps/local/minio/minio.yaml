@@ -4,6 +4,7 @@ apiVersion: v1
 kind: Namespace
 metadata:
   name: local-minio
+  opensource.observer/cert-inject: "enabled"
 ---
 apiVersion: v1
 kind: Secret
@@ -22,7 +23,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: storage-user
-  namespace: local-minio
+  namespace: default
 type: Opaque
 data:
   CONSOLE_ACCESS_KEY: c3RvcmFnZS11c2Vy # storage-user
@@ -84,7 +85,11 @@ spec:
   configuration:
     name: minio-configuration
   users:
-  - name: storage-user
+    - name: storage-user
+  buckets:
+    - name: "local-storage"
+      region: "local"
+      objectLock: false
   externalCertSecret:
     - name: local-minio-tls
       type: cert-manager.io/v1
