@@ -35,7 +35,7 @@ TABLE_MAPPING: t.Dict[str, str | TableMappingDestination] = {
     "opensource-observer.oso_playground.stg_farcaster__profiles": "bigquery.oso.stg_farcaster__profiles",
     "opensource-observer.oso_playground.stg_lens__owners": "bigquery.oso.stg_lens__owners",
     "opensource-observer.oso_playground.stg_lens__profiles": "bigquery.oso.stg_lens__profiles",
-    "opensource-observer.oso_playground.stg_ossd__current_collections": "bigquery.stg_ossd__current_collections",
+    "opensource-observer.oso_playground.stg_ossd__current_collections": "bigquery.oso.stg_ossd__current_collections",
     "opensource-observer.oso_playground.stg_ossd__current_projects": "bigquery.oso.stg_ossd__current_projects",
     "opensource-observer.oso_playground.stg_ossd__current_repositories": "bigquery.oso.stg_ossd__current_repositories",
     "opensource-observer.oso_playground.timeseries_events_aux_issues_by_artifact_v0": "bigquery.oso.timeseries_events_aux_issues_by_artifact_v0",
