@@ -19,16 +19,6 @@ stringData:
     export MINIO_STORAGE_CLASS_STANDARD="EC:0"
     export MINIO_BROWSER="on"
 ---
-# apiVersion: v1
-# kind: Secret
-# metadata:
-#   name: storage-user
-#   namespace: local-minio
-# type: Opaque
-# data:
-#   CONSOLE_ACCESS_KEY: c3RvcmFnZS11c2Vy # storage-user
-#   CONSOLE_SECRET_KEY: cGFzc3dvcmQ=     # password
-# ---
 apiVersion: v1
 kind: Secret
 metadata:
