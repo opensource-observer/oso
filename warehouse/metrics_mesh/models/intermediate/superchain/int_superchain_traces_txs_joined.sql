@@ -1,5 +1,6 @@
 MODEL (
-  name metrics.int_superchain__traces_joined,
+  name metrics.int_superchain_traces_txs_joined,
+  description 'Traces joined on transactions',
   kind INCREMENTAL_BY_TIME_RANGE (
     time_column block_timestamp,
     batch_size 90,
