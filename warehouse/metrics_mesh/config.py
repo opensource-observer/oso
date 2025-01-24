@@ -22,23 +22,6 @@ config = Config(
                 concurrent_tasks=1,
                 database=os.environ.get("SQLMESH_DUCKDB_LOCAL_PATH"),
             ),
-            variables={
-                "oso_source_db": "sources",
-                "oso_source_rewrite": [
-                    {
-                        "catalog": "bigquery",
-                        "db": "oso",
-                        "table": "*",
-                        "replace": "sources.{table}",
-                    },
-                    {
-                        "catalog": "bigquery",
-                        "db": "*",
-                        "table": "*",
-                        "replace": "sources_{db}.{table}",
-                    },
-                ],
-            },
         ),
         # This is a local trino gateway that connects to a local trino deployed
         # onto a kind cluster. It also uses duckdb for state storage as opposed
@@ -80,10 +63,6 @@ config = Config(
                 password=os.environ.get("SQLMESH_POSTGRES_PASSWORD", "placeholder"),
                 db=os.environ.get("SQLMESH_POSTGRES_DB", ""),
             ),
-            variables={
-                "oso_source_db": "oso",
-                "oso_source_catalog": "bigquery",
-            },
         ),
     },
     default_gateway="local",

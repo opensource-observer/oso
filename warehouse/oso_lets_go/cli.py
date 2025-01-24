@@ -17,7 +17,11 @@ dotenv.load_dotenv()
 import os
 
 import click
-from metrics_tools.local.utils import initialize_local_duckdb, reset_local_duckdb
+from metrics_tools.local.utils import (
+    initialize_local_duckdb,
+    initialize_local_postgres,
+    reset_local_duckdb,
+)
 
 CURR_DIR = os.path.dirname(__file__)
 METRICS_MESH_DIR = os.path.abspath(os.path.join(CURR_DIR, "../metrics_mesh"))
@@ -127,12 +131,22 @@ def local(ctx: click.Context):
     default=7,
     help="The max number of days of data to download from timeseries row restricted data",
 )
-def initialize(ctx: click.Context, max_results_per_query: int, max_days: int):
-    initialize_local_duckdb(
-        ctx.obj["local_duckdb_path"],
-        max_results_per_query=max_results_per_query,
-        max_days=max_days,
-    )
+@click.option("--local-trino/--no-local-trino", default=False)
+def initialize(
+    ctx: click.Context, max_results_per_query: int, max_days: int, local_trino: bool
+):
+    if not local_trino:
+        initialize_local_duckdb(
+            ctx.obj["local_duckdb_path"],
+            max_results_per_query=max_results_per_query,
+            max_days=max_days,
+        )
+    else:
+        initialize_local_postgres(
+            ctx.obj["local_duckdb_path"],
+            max_results_per_query=max_results_per_query,
+            max_days=max_days,
+        )
 
 
 @local.command()
