@@ -29,6 +29,6 @@ spec:
       version: "*"
       sourceRef:
         kind: HelmRepository
-        name: dask-operator
+        name: dask
         namespace: dask-operator
       interval: 1h
