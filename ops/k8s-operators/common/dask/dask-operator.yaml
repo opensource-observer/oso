@@ -14,12 +14,12 @@ metadata:
   namespace: dask-operator
 spec:
   interval: 24h
-  url: https://operator.min.io/
+  url: https://helm.dask.org/
 ---
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: dask-kubernetes-operator 
+  name: dask-operator
   namespace: dask-operator
 spec:
   interval: 30m
@@ -29,6 +29,6 @@ spec:
       version: "*"
       sourceRef:
         kind: HelmRepository
-        name: dask
+        name: dask-operator
         namespace: dask-operator
       interval: 1h
