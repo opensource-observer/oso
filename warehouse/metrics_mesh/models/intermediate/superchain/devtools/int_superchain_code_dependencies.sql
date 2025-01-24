@@ -23,7 +23,8 @@ from all_dependencies
 where
   dependent_project_id in (
     select distinct project_id
-    from metrics.int_superchain_onchain_builder_filter
+    from metrics.int_superchain_s7_onchain_builder_eligibility
+    where is_eligible
   )
   and dependency_artifact_id in (
     select artifact_id
