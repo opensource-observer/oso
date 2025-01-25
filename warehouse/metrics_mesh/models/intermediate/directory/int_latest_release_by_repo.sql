@@ -6,8 +6,8 @@ MODEL (
 with repo_releases as (
   select
     to_artifact_id as artifact_id,
-    max("time") as latest_repo_release
-  from @oso_source('bigquery.oso.int_events__github') events
+    max(bucket_day) as latest_repo_release
+  from metrics.int_events_daily_to_project as events
   where event_type = 'RELEASE_PUBLISHED'
   group by to_artifact_id
 ),
