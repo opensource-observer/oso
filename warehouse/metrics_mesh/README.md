@@ -43,6 +43,19 @@ Finally, download playground data into your local DuckDB instance with the follo
 oso metrics local initialize
 ```
 
+Or to take a smaller sample:
+
+```bash
+oso metrics local initialize --max-results-per-query 100000 --max-days 7
+```
+
+Or using shortcuts:
+
+```bash
+oso metrics local initialize -m 100000 -d 7
+```
+
+
 ## Run
 
 Run sqlmesh for a sample date range:
