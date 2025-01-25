@@ -7,8 +7,8 @@ MODEL (
 
 with all_dependencies as (
   select distinct
-    sbom.from_project_id as dependent_project_id,
-    sbom.from_artifact_id as dependent_artifact_id,
+    sbom.project_id as dependent_project_id,
+    sbom.artifact_id as dependent_artifact_id,
     sbom.package_github_project_id as dependency_project_id,
     sbom.package_github_artifact_id as dependency_artifact_id,
     sbom.package_artifact_source as dependency_source,
