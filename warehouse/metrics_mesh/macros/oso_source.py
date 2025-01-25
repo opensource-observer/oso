@@ -46,8 +46,9 @@ def oso_source(evaluator: MacroEvaluator, table_name: exp.Expression):
         select * from source_public.table
         ```
     """
-    if evaluator.runtime_stage in ["loading", "creating"]:
+    if evaluator.runtime_stage in ["loading"]:
         return table_name
+
     if evaluator.engine_adapter.dialect == "duckdb":
         # We hardcode the rewrite rules for duckdb here to 1) keep things consistent
         # and 2) ensure tests can run even on production when using duckdb

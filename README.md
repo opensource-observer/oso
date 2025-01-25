@@ -13,7 +13,7 @@ Open Source Observer is a free analytics suite that helps funders measure the im
 
 - `/apps`: The OSO apps
   - `/docs`: documentation (Docusaurus)
-    - [on Vercel](https://www.opensource.observer/docs) - Production build
+    - [on Vercel](https://docs.opensource.observer/docs) - Production build
   - `/frontend`: frontend application (Next.js)
     - [on Vercel](https://www.opensource.observer) - Production build
   - `/hasura`: API service (Hasura) - Production

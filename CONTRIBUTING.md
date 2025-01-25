@@ -2,7 +2,7 @@
 
 Thank you for your interest in contributing! There are many ways to contribute, and this document should not be considered encompassing.
 
-If you have a general question on how to use and deploy our software, please read our [Documentation](https://www.opensource.observer/docs/) or join our [community server on Discord](https://www.opensource.observer/discord).
+If you have a general question on how to use and deploy our software, please read our [Documentation](https://docs.opensource.observer/docs/) or join our [community server on Discord](https://www.opensource.observer/discord).
 
 For concrete feature requests and/or bug reports, please file an issue in this
 repository as described below.
