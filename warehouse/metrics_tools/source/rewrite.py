@@ -16,8 +16,16 @@ DUCKDB_REWRITE_RULES: t.List[dict] = [
 
 
 def oso_source_for_pymodel(context: ExecutionContext, table_name: str) -> exp.Table:
+    # Rewrite rules can be injected into the sqlmesh context via the sqlmesh
+    # config. However, in general we don't want to modify the source unless it's
+    # running on duckdb locally. So this allows rewriting as an override but
+    # defaults to using duckdb if we're currently running duckdb.
+    oso_source_rewrite_config_default: t.List[dict] = []
+    if context.engine_adapter.dialect == "duckdb":
+        oso_source_rewrite_config_default = DUCKDB_REWRITE_RULES
     oso_source_rewrite_config = t.cast(
-        t.List[dict], context.var("oso_source_rewrite", [])
+        t.List[dict],
+        context.var("oso_source_rewrite", oso_source_rewrite_config_default),
     )
     return oso_source_rewrite(oso_source_rewrite_config, table_name)
 
