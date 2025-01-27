@@ -9,10 +9,12 @@ MODEL (
   ),
   start '2015-01-01',
   cron '@daily',
-  partitioned_by (DAY("time"), "event_source"),
+  partitioned_by (DAY("time"), "chain"),
   grain (
     "time",
-    event_source,
+    project_id,
+    chain,
+    transaction_hash,
     from_artifact_id,
     to_artifact_id,
     event_type
@@ -22,7 +24,7 @@ MODEL (
 with events as (
   select
     block_timestamp, 
-    chain as event_source,
+    chain,
     transaction_hash,
     from_address_tx,
     from_address_trace,
@@ -38,99 +40,89 @@ with events as (
   from metrics.int_superchain_traces_txs_joined
 ),
 
+addresses_by_project as(
+  select distinct
+    artifact_id,
+    project_id,
+    project_name
+  from metrics.int_artifacts_by_project
+),
+
 filtered_traces as (
   select distinct
+    addresses_by_project.project_id as to_project_id,
     events.block_timestamp,
-    events.event_source,
+    events.chain,
     events.transaction_hash,
-    events.from_address_tx_id,
-    events.to_address_trace_id,
-    events.gas_used_trace
+    events.from_address_tx_id as from_artifact_id,
+    events.to_address_trace_id as to_artifact_id,
+    events.gas_used_trace as gas_used,
+    events.gas_price as gas_price,
+    'TRACE_EVENT' as event_type
   from events
-  inner join metrics.int_artifacts_by_project as known_addresses
-    on events.to_address_trace_id = known_addresses.artifact_id
+  inner join addresses_by_project
+    on events.to_address_trace_id = addresses_by_project.artifact_id
 ),
 
 filtered_txns as (
   select distinct
+    addresses_by_project.project_id as to_project_id,
     events.block_timestamp,
-    events.event_source,
+    events.chain,
     events.transaction_hash,
-    events.from_address_tx_id,
-    events.to_address_tx_id,
-    events.gas_used_tx,
-    events.gas_price
+    events.from_address_tx_id as from_artifact_id,
+    events.to_address_tx_id as to_artifact_id,
+    events.gas_used_tx as gas_used,
+    events.gas_price as gas_price,
+    'TRANSACTION_EVENT' as event_type
   from events
-  inner join metrics.int_artifacts_by_project as known_addresses
-    on events.to_address_tx_id = known_addresses.artifact_id
+  inner join addresses_by_project
+    on events.to_address_tx_id = addresses_by_project.artifact_id
 ),
 
-trace_counts as (
-  select
-    date_trunc('DAY', block_timestamp::DATE) as "time",
-    event_source,
-    from_address_tx_id as from_artifact_id,
-    to_address_trace_id as to_artifact_id,
-    'CONTRACT_INVOCATION_SUCCESS_DAILY_TRACE_COUNT' as event_type,
-    count(distinct transaction_hash) as amount
-  from filtered_traces
-  group by 1, 2, 3, 4
+filtered_4337_from_events as (
+  select distinct
+    addresses_by_project.project_id as to_project_id,
+    events.block_timestamp,
+    events.chain,
+    events.transaction_hash,
+    events.from_address_tx_id as from_artifact_id,
+    events.to_address_trace_id as to_artifact_id,
+    events.gas_used_trace as gas_used,
+    events.gas_price as gas_price,
+    '4337_FROM_EVENT' as event_type
+  from events
+  inner join addresses_by_project
+    on events.from_address_trace_id = addresses_by_project.artifact_id
+  where addresses_by_project.project_name = 'eth-infinitism-account-abstraction'
 ),
 
-trace_gas_used as (
-  select
-    date_trunc('DAY', block_timestamp::DATE) as "time",
-    event_source,
-    from_address_tx_id as from_artifact_id,
-    to_address_trace_id as to_artifact_id,
-    'CONTRACT_INVOCATION_SUCCESS_DAILY_TRACE_L2_GAS_USED' as event_type,
-    sum(gas_used_trace) as amount
-  from filtered_traces
-  group by 1, 2, 3, 4
+filtered_4337_to_events as (
+  select distinct
+    addresses_by_project.project_id as to_project_id,
+    events.block_timestamp,
+    events.chain,
+    events.transaction_hash,
+    events.from_address_tx_id as from_artifact_id,
+    events.to_address_tx_id as to_artifact_id,
+    events.gas_used_tx as gas_used,
+    events.gas_price as gas_price,
+    '4337_TO_EVENT' as event_type
+  from events
+  inner join addresses_by_project
+    on events.to_address_tx_id = addresses_by_project.artifact_id
+  where addresses_by_project.project_name = 'eth-infinitism-account-abstraction'
 ),
 
-txn_counts as (
-  select
-    date_trunc('DAY', block_timestamp::DATE) as "time",
-    event_source,
-    from_address_tx_id as from_artifact_id,
-    to_address_tx_id as to_artifact_id,
-    'CONTRACT_INVOCATION_SUCCESS_DAILY_COUNT' as event_type,
-    count(distinct transaction_hash) as amount
-  from filtered_txns
-  group by 1, 2, 3, 4
-),
 
-txn_gas_used as (
-  select
-    date_trunc('DAY', block_timestamp::DATE) as "time",
-    event_source,
-    from_address_tx_id as from_artifact_id,
-    to_address_tx_id as to_artifact_id,
-    'CONTRACT_INVOCATION_SUCCESS_DAILY_L2_GAS_USED' as event_type,
-    sum(gas_used_tx) as amount
-  from filtered_txns
-  group by 1, 2, 3, 4
-),
-
-txn_gas_fees as (
-  select
-    date_trunc('DAY', block_timestamp::DATE) as "time",
-    event_source,
-    from_address_tx_id as from_artifact_id,
-    to_address_tx_id as to_artifact_id,
-    'CONTRACT_INVOCATION_SUCCESS_DAILY_L2_GAS_FEES' as event_type,
-    sum(gas_price * gas_used_tx) / 1e18 as amount
-  from filtered_txns
-  group by 1, 2, 3, 4
+union_events as (
+  select * from filtered_traces
+  union all
+  select * from filtered_txns
+  union all
+  select * from filtered_4337_from_events
+  union all
+  select * from filtered_4337_to_events
 )
 
-select * from trace_counts
-union all
-select * from trace_gas_used
-union all
-select * from txn_counts
-union all
-select * from txn_gas_used
-union all
-select * from txn_gas_fees
+select * from union_events
