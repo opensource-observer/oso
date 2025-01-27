@@ -44,9 +44,6 @@ jobs:
         with:
           credentials_json: '${{ secrets.GOOGLE_CREDENTIALS_JSON }}'
           create_credentials_file: true
-    
-      - name: Install poetry
-        run: poetry install
 
       - name: Download up to date schema
         run: poetry run oso metrics local initialize --max-results-per-query 1 --max-days 1
