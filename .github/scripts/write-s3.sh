@@ -3,16 +3,17 @@
 set -uxo pipefail
 
 # Variables
-FILE_PATH=$1
-OBJECT_NAME=$2
+file_path=$1
+object_name=$2
+endpoint_url=$3
 
 # Upload the file to S3
-aws s3 cp "$FILE_PATH" "s3://$BUCKET_NAME/$OBJECT_NAME"
+aws s3 cp "$file_path" "s3://$BUCKET_NAME/$object_name" --endpoint-url="$endpoint_url"
 
 # Check if the upload was successful
 if [ $? -eq 0 ]; then
-  echo "File $FILE_PATH uploaded to $BUCKET_NAME/$OBJECT_NAME"
+  echo "File $file_path uploaded to $BUCKET_NAME/$object_name"
 else
-  echo "Failed to upload file $FILE_PATH"
+  echo "Failed to upload file $file_path"
   exit 1
 fi
