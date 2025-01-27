@@ -9,7 +9,7 @@ from metrics_tools.local.loader import (
     DuckDbDestinationLoader,
     PostgresDestinationLoader,
 )
-from oso_dagster.assets.defillama import DEFI_LLAMA_PROTOCOLS, defi_llama_slug_to_name
+from oso_dagster.assets.defillama import DEFILLAMA_PROTOCOLS, defillama_slug_to_name
 
 from .config import Config, DestinationLoader, RowRestriction, TableMappingDestination
 
@@ -65,11 +65,11 @@ TABLE_MAPPING: t.Dict[str, str | TableMappingDestination] = {
     ),
 }
 
-defi_llama_tables = {
-    f"opensource-observer.defillama_tvl.{defi_llama_slug_to_name(slug)}": f"bigquery.defillama_tvl.{defi_llama_slug_to_name(slug)}"
-    for slug in DEFI_LLAMA_PROTOCOLS
+defillama_tables = {
+    f"opensource-observer.defillama_tvl.{defillama_slug_to_name(slug)}": f"bigquery.defillama_tvl.{defillama_slug_to_name(slug)}"
+    for slug in DEFILLAMA_PROTOCOLS
 }
-TABLE_MAPPING.update(defi_llama_tables)
+TABLE_MAPPING.update(defillama_tables)
 
 
 def initialize_local(

@@ -1,5 +1,5 @@
 MODEL (
-  name metrics.int_defi_llama_tvl_events,
+  name metrics.int_defillama_tvl_events,
   description 'All tvl events from defi llama',
   kind FULL,
 );
@@ -10,7 +10,7 @@ MODEL (
 @DEF(to_artifact_type, UPPER(all_tvl_events.token));
 
 with all_tvl_events as (
-  @unioned_defi_llama_tvl_events()
+  @unioned_defillama_tvl_events()
 )
 
 SELECT
@@ -24,7 +24,7 @@ SELECT
     all_tvl_events.chain, 
     all_tvl_events.token
   ) as event_source_id,
-  UPPER('defi_llama') as event_source,
+  UPPER('defillama') as event_source,
   @to_artifact_name as to_artifact_name,
   @to_artifact_namespace as to_artifact_namespace,
   @to_artifact_type as to_artifact_type,
