@@ -31,6 +31,8 @@ spec:
         pool_type: trino-coordinator
       jvm:
         maxHeapSize: "17G"
+      additionalJVMConfig:
+        - "--add-opens=java.base/java.nio=ALL-UNNAMED"
 
     worker:
       resources:
@@ -49,6 +51,8 @@ spec:
           maxMemoryPerNode: 140GB
       jvm:
         maxHeapSize: "350G"
+      additionalJVMConfig:
+        - "--add-opens=java.base/java.nio=ALL-UNNAMED"
 
     additionalConfigProperties:
       - retry-policy=QUERY

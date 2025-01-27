@@ -80,6 +80,7 @@ websockets = "^14.1"
 pydantic-settings = "^2.7.0"
 openrank-sdk = "^0.4.0"
 pandas = "^2.2.3"
+docker = "^7.1.0"
 
 
 [tool.poetry.scripts]
