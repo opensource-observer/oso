@@ -21,12 +21,6 @@ with ranked_sboms as (
       over (partition by artifact_namespace, artifact_name, artifact_source, package, package_source order by snapshot_at desc)
       as row_num
   from {{ oso_source('ossd', 'sbom') }}
-  where package_source in (
-    'NPM',
-    'PYPI',
-    'GOLANG',
-    'CARGO'
-  )
 )
 
 select
