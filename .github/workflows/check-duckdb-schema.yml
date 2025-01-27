@@ -19,7 +19,7 @@ on:
 jobs:
   check-duckdb-schema:
     name: check-duckdb-schema
-    environment: ops
+    environment: deploy
     runs-on: ubuntu-latest
 
     steps:
