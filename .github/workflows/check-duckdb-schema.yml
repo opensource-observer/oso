@@ -44,6 +44,9 @@ jobs:
         with:
           credentials_json: "${{ secrets.GOOGLE_OPS_CREDENTIALS_JSON }}"
           create_credentials_file: true
+    
+      - name: Install poetry
+        run: poetry install
 
       - name: Download up to date schema
         run: poetry run oso metrics local initialize --max-results-per-query 1 --max-days 1
@@ -52,6 +55,6 @@ jobs:
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_R2_S3_API_ACCESS_KEY }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_S3_API_SECRET_KEY }}
-          AWS_ENDPOINT_URL: ${{ secrets.CLOUDFLARE_R2_S3_API_ENDPOINT }}
+          AWS_ENDPOINT_URL: ${{ vars.CLOUDFLARE_R2_S3_API_ENDPOINT }}
           BUCKET_NAME: "oso-public"
         run: bash .github/scripts/write-s3.sh "$SQLMESH_DUCKDB_LOCAL_PATH" "oso.duckdb"
