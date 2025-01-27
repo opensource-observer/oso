@@ -19,7 +19,7 @@ on:
 jobs:
   check-duckdb-schema:
     name: check-duckdb-schema
-    environment: ops
+    environment: deploy
     runs-on: ubuntu-latest
 
     steps:
@@ -39,10 +39,10 @@ jobs:
         with:
           version: ">= 363.0.0"
 
-      - name: Authenticate to google with an ops user
-        uses: "google-github-actions/auth@v2"
+      - name: Authenticate to google
+        uses: 'google-github-actions/auth@v2'
         with:
-          credentials_json: "${{ secrets.GOOGLE_OPS_CREDENTIALS_JSON }}"
+          credentials_json: '${{ secrets.GOOGLE_CREDENTIALS_JSON }}'
           create_credentials_file: true
     
       - name: Install poetry
@@ -55,6 +55,6 @@ jobs:
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_R2_S3_API_ACCESS_KEY }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_S3_API_SECRET_KEY }}
-          AWS_ENDPOINT_URL: ${{ vars.CLOUDFLARE_R2_S3_API_ENDPOINT }}
+          AWS_ENDPOINT_URL: ${{ secrets.CLOUDFLARE_R2_S3_API_ENDPOINT }}
           BUCKET_NAME: "oso-public"
         run: bash .github/scripts/write-s3.sh "$SQLMESH_DUCKDB_LOCAL_PATH" "oso.duckdb"
