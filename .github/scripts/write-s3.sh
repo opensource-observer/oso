@@ -7,7 +7,7 @@ FILE_PATH=$1
 OBJECT_NAME=$2
 
 # Upload the file to S3
-aws s3 cp "$FILE_PATH" "s3://$BUCKET_NAME/$OBJECT_NAME" --endpoint-url="$AWS_ENDPOINT_URL"
+aws s3 cp "$FILE_PATH" "s3://$BUCKET_NAME/$OBJECT_NAME"
 
 # Check if the upload was successful
 if [ $? -eq 0 ]; then
