@@ -6,7 +6,7 @@
 
 with events as (
   select
-    block_timestamp, 
+    block_timestamp,
     chain,
     transaction_hash,
     from_address_tx,
@@ -21,9 +21,12 @@ with events as (
     {{ oso_id("chain", "to_address_trace") }} as to_address_trace_id,
     {{ oso_id("chain", "to_address_tx") }} as to_address_tx_id
   from {{ ref('int_superchain_traces_txs_joined') }}
+  where
+    from_address_tx != from_address_trace
+    and to_address_tx != to_address_trace
 ),
 
-addresses_by_project as(
+addresses_by_project as (
   select distinct
     artifact_id,
     project_id,
@@ -60,7 +63,7 @@ filtered_txns as (
     'TRANSACTION_EVENT' as event_type
   from events
   inner join addresses_by_project
-    on events.to_address_tx_id = addresses_by_project.artifact_id  
+    on events.to_address_tx_id = addresses_by_project.artifact_id
 ),
 
 union_events as (

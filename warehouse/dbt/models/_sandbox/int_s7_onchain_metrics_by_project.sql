@@ -4,14 +4,16 @@
   )
 }}
 
-{% set gas_cap = 0.03 / 3000 * 1e18 %}
+{% set gas_cap = 0.03 / 3000 %}
 
 with filtered_events as (
-  select *
-  from {{ ref('int_superchain_events_by_project') }} e
+  select
+    *,
+    (gas_used * gas_price / 1e18) as gas_fee
+  from {{ ref('int_superchain_events_by_project') }}
   where from_artifact_id not in (
     select artifact_id
-    from {{ ref('int_superchain_potential_bots') }} b
+    from {{ ref('int_superchain_potential_bots') }}
   )
 ),
 
@@ -21,8 +23,8 @@ transaction_gas_fees as (
     transaction_hash,
     chain,
     timestamp_trunc(block_timestamp, month) as sample_date,
-    sum(gas_used * gas_price) as total_gas_fee,
-    least(sum(gas_used * gas_price), {{ gas_cap }}) as capped_gas_fee
+    sum(gas_fee) as total_gas_fee,
+    least(sum(gas_fee), {{ gas_cap }}) as capped_gas_fee
   from filtered_events
   group by 1, 2, 3
 ),
@@ -32,40 +34,41 @@ event_weights as (
   select
     e.transaction_hash,
     e.chain,
-    timestamp_trunc(e.block_timestamp, month) as sample_date,
     e.to_project_id,
     e.event_type,
-    e.gas_used * e.gas_price as event_gas_fee,
+    e.gas_fee as event_gas_fee,
     g.total_gas_fee,
     g.capped_gas_fee,
+    timestamp_trunc(e.block_timestamp, month) as sample_date,
     -- Calculate weights based on event type
-    case 
+    case
       when e.event_type = 'TRANSACTION_EVENT' then 0.5
-      when e.event_type = 'TRACE_EVENT' then 
-        0.5 / nullif(sum(case when e.event_type = 'TRACE_EVENT' then 1 else 0 end) 
+      when e.event_type = 'TRACE_EVENT' then
+        0.5 / nullif(sum(case when e.event_type = 'TRACE_EVENT' then 1 else 0 end)
           over (partition by e.transaction_hash), 0)
     end as weight,
     -- Calculate pro-rata share for capped gas fees
     case
-      when e.event_type = 'TRANSACTION_EVENT' then 
-        least(e.gas_used * e.gas_price * 0.5, g.capped_gas_fee * 0.5)
+      when e.event_type = 'TRANSACTION_EVENT'
+        then
+          least(e.gas_fee * 0.5, g.capped_gas_fee * 0.5)
       when e.event_type = 'TRACE_EVENT' then
-        (g.capped_gas_fee * 0.5 * (e.gas_used * e.gas_price)) / 
-        nullif(sum(case when e.event_type = 'TRACE_EVENT' then e.gas_used * e.gas_price else 0 end) 
+        (g.capped_gas_fee * 0.5 * e.gas_fee)
+        / nullif(sum(case when e.event_type = 'TRACE_EVENT' then e.gas_fee else 0 end)
           over (partition by e.transaction_hash), 0)
     end as capped_weight
-  from filtered_events e
-  left join transaction_gas_fees g
+  from filtered_events as e
+  left join transaction_gas_fees as g
     on e.transaction_hash = g.transaction_hash
 ),
 
 -- Transaction counts (non-amortized)
 transaction_counts as (
-  select 
+  select
     to_project_id as project_id,
     chain,
     timestamp_trunc(block_timestamp, month) as sample_date,
-    count(distinct transaction_hash) as amount
+    approx_count_distinct(transaction_hash) as amount
   from filtered_events
   where event_type = 'TRANSACTION_EVENT'
   group by 1, 2, 3
@@ -73,11 +76,11 @@ transaction_counts as (
 
 -- Trace counts
 trace_counts as (
-  select 
+  select
     to_project_id as project_id,
     chain,
     timestamp_trunc(block_timestamp, month) as sample_date,
-    count(distinct transaction_hash) as amount
+    approx_count_distinct(transaction_hash) as amount
   from filtered_events
   where event_type = 'TRACE_EVENT'
   group by 1, 2, 3
@@ -100,7 +103,7 @@ transaction_gas as (
     to_project_id as project_id,
     chain,
     sample_date,
-    sum(event_gas_fee) / 1e18 as amount
+    sum(event_gas_fee) as amount
   from event_weights
   where event_type = 'TRANSACTION_EVENT'
   group by 1, 2, 3
@@ -112,7 +115,7 @@ trace_gas as (
     to_project_id as project_id,
     chain,
     sample_date,
-    sum(event_gas_fee) / 1e18 as amount
+    sum(event_gas_fee) as amount
   from event_weights
   where event_type = 'TRACE_EVENT'
   group by 1, 2, 3
@@ -124,7 +127,7 @@ amortized_gas as (
     to_project_id as project_id,
     chain,
     sample_date,
-    sum(event_gas_fee * weight) / 1e18 as amount
+    sum(event_gas_fee * weight) as amount
   from event_weights
   group by 1, 2, 3
 ),
@@ -135,7 +138,7 @@ transaction_gas_capped as (
     to_project_id as project_id,
     chain,
     sample_date,
-    sum(capped_weight) / 1e18 as amount
+    sum(capped_weight) as amount
   from event_weights
   where event_type = 'TRANSACTION_EVENT'
   group by 1, 2, 3
@@ -147,7 +150,7 @@ amortized_gas_capped as (
     to_project_id as project_id,
     chain,
     sample_date,
-    sum(capped_weight) / 1e18 as amount
+    sum(capped_weight) as amount
   from event_weights
   group by 1, 2, 3
 ),
@@ -157,7 +160,7 @@ monthly_active_farcaster_users as (
     filtered_events.to_project_id as project_id,
     filtered_events.chain,
     timestamp_trunc(filtered_events.block_timestamp, month) as sample_date,
-    count(distinct users.user_source_id) as amount
+    approx_count_distinct(users.user_source_id) as amount
   from filtered_events
   inner join {{ ref('int_users') }} as users
     on filtered_events.from_artifact_id = users.user_id
@@ -170,14 +173,14 @@ monthly_active_addresses as (
     to_project_id as project_id,
     chain,
     timestamp_trunc(block_timestamp, month) as sample_date,
-    count(distinct from_artifact_id) as amount
+    approx_count_distinct(from_artifact_id) as amount
   from filtered_events
   group by 1, 2, 3
 ),
 
 -- Union all metrics together
 metrics_combined as (
-  select 
+  select
     project_id,
     chain,
     sample_date,
@@ -187,7 +190,7 @@ metrics_combined as (
 
   union all
 
-  select 
+  select
     project_id,
     chain,
     sample_date,
@@ -197,7 +200,7 @@ metrics_combined as (
 
   union all
 
-  select 
+  select
     project_id,
     chain,
     sample_date,
@@ -207,7 +210,7 @@ metrics_combined as (
 
   union all
 
-  select 
+  select
     project_id,
     chain,
     sample_date,
@@ -217,7 +220,7 @@ metrics_combined as (
 
   union all
 
-  select 
+  select
     project_id,
     chain,
     sample_date,
@@ -227,7 +230,7 @@ metrics_combined as (
 
   union all
 
-  select 
+  select
     project_id,
     chain,
     sample_date,
@@ -237,7 +240,7 @@ metrics_combined as (
 
   union all
 
-  select 
+  select
     project_id,
     chain,
     sample_date,
@@ -247,7 +250,7 @@ metrics_combined as (
 
   union all
 
-  select 
+  select
     project_id,
     chain,
     sample_date,
@@ -257,7 +260,7 @@ metrics_combined as (
 
   union all
 
-  select 
+  select
     project_id,
     chain,
     sample_date,
@@ -267,7 +270,7 @@ metrics_combined as (
 
   union all
 
-  select 
+  select
     project_id,
     chain,
     sample_date,
