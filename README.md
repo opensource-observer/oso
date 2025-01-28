@@ -218,7 +218,7 @@ To do that we do:
 gcloud auth application-default login
 
 # Run the initialization of the data pull
-oso sqlmesh local initialize --max-results-per-query 10000 --max-days 3
+oso metrics local initialize --max-results-per-query 10000 --max-days 3
 ```
 
 This will download 3 days of time series data with an approximate maximum of
@@ -229,16 +229,76 @@ download but this will be required.
 Once all of the data has been downloaded you can now run sqlmesh like so:
 
 ```bash
-oso sqlmesh local plan
+oso metrics local sqlmesh [...any sqlmesh args...]
 ```
 
+This is a convenience function for running sqlmesh locally. This is equivalent to running this series of commands:
+
 ```bash
-oso sqlmesh local plan --local-trino
+cd warehouse/metrics_mesh
+sqlmesh [...any sqlmesh args... ]
 ```
+
+So running:
+
+```bash
+oso metrics local sqlmesh plan
+```
+
+Would be equivalent to
+
+```bash
+cd warehouse/metrics_mesh
+sqlmesh plan
+```
+
+However, the real reason for this convenience function is for executing sqlmesh
+against a local trino as detailed in this next section.
 
 ### Running sqlmesh on a local trino
 
-We
+Be warned, running local trino requires running kubernetes on your machine using
+[kind](https://kind.sigs.k8s.io/). While it isn't intended to be a heavy weight
+implementation, it takes more resources than simply running with duckdb.
+However, in order to simulate and test this running against trino as it does on
+the production OSO deployment, we need to have things wired properly with kubernetes. To initialize everything simply do:
+
+```bash
+oso ops cluster-setup
+```
+
+This can take a while so please be patient, but it will generate a local
+registry that is used when running the trino deployment with the metrics
+calculation service deployed. This is to test that process works and to ensure
+that the MCS has the proper version deployed. Eventually this can/will be used
+to test the dagster deployment.
+
+Once everything is setup, things should be running in the kind cluster
+`oso-local-test-cluster`. Normally, you'd need to ensure that you forward the
+right ports so that you can access the cluster to run the sqlmesh jobs but the
+convenience functions we created to run sqlmesh ensure that this is done
+automatically. However before running sqlmesh you will need to initialize the
+data in trino.
+
+Much like running against a local duckdb the local trino can also be initialized with on the CLI like so:
+
+```bash
+oso metrics local initialize --local-trino
+```
+
+Once completed, trino will be configured to have the proper source data for sqlmesh.
+
+Finally, to run `sqlmesh plan` do this:
+
+```bash
+oso metrics local sqlmesh --local-trino plan
+```
+
+The `--local-trino` option should be passed before any sqlmesh args. Otherwise, you can call any command or use any flags from sqlmesh after the `sqlmesh` keyword in the command invocation. So to call `sqlmesh run` you'd simply do:
+
+```bash
+oso metrics local sqlmesh --local-trino run
+```
 
 ## Reference Playbooks
 
