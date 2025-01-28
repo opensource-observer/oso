@@ -319,87 +319,87 @@ timeseries_metrics(
         ),
         "key_commit_count": MetricQueryDef(
             ref="key_commit_count.sql",
-            entity_types=["artifact"],
+            entity_types=["artifact", "project", "collection"],
         ),
         "key_contributor_active_day_count": MetricQueryDef(
             ref="key_contributor_active_day_count.sql",
-            entity_types=["artifact"],
+            entity_types=["artifact", "project", "collection"],
         ),
         "key_contributor_count": MetricQueryDef(
             ref="key_contributor_count.sql",
-            entity_types=["artifact"],
+            entity_types=["artifact", "project", "collection"],
         ),
         "key_dependencies_count": MetricQueryDef(
             ref="key_dependencies_count.sql",
-            entity_types=["artifact"],
+            entity_types=["artifact", "project", "collection"],
         ),
         "key_developer_active_day_count": MetricQueryDef(
             ref="key_developer_active_day_count.sql",
-            entity_types=["artifact"],
+            entity_types=["artifact", "project", "collection"],
         ),
         "key_developer_count": MetricQueryDef(
             ref="key_developer_count.sql",
-            entity_types=["artifact"],
+            entity_types=["artifact", "project", "collection"],
         ),
         "key_first_commit": MetricQueryDef(
             ref="key_first_commit.sql",
-            entity_types=["artifact"],
+            entity_types=["artifact", "project", "collection"],
         ),
         "key_fork_count": MetricQueryDef(
             ref="key_fork_count.sql",
-            entity_types=["artifact"],
+            entity_types=["artifact", "project", "collection"],
         ),
         "key_funding_received": MetricQueryDef(
             ref="key_funding_received.sql",
-            entity_types=["artifact"],
+            entity_types=["artifact", "project", "collection"],
         ),
         "key_gas_fees": MetricQueryDef(
             ref="key_gas_fees.sql",
-            entity_types=["artifact"],
+            entity_types=["artifact", "project", "collection"],
         ),
         "key_issue_count_closed": MetricQueryDef(
             ref="key_issue_count_closed.sql",
-            entity_types=["artifact"],
+            entity_types=["artifact", "project", "collection"],
         ),
         "key_issue_count_opened": MetricQueryDef(
             ref="key_issue_count_opened.sql",
-            entity_types=["artifact"],
+            entity_types=["artifact", "project", "collection"],
         ),
         "key_last_commit": MetricQueryDef(
             ref="key_last_commit.sql",
-            entity_types=["artifact"],
+            entity_types=["artifact", "project", "collection"],
         ),
         "key_pr_count_merged": MetricQueryDef(
             ref="key_pr_count_merged.sql",
-            entity_types=["artifact"],
+            entity_types=["artifact", "project", "collection"],
         ),
         "key_pr_count_opened": MetricQueryDef(
             ref="key_pr_count_opened.sql",
-            entity_types=["artifact"],
+            entity_types=["artifact", "project", "collection"],
         ),
         "key_pr_time_to_merge": MetricQueryDef(
             ref="key_pr_time_to_merge.sql",
-            entity_types=["artifact"],
+            entity_types=["artifact", "project", "collection"],
         ),
         "key_release_count": MetricQueryDef(
             ref="key_release_count.sql",
-            entity_types=["artifact"],
+            entity_types=["artifact", "project", "collection"],
         ),
         "key_repository_count": MetricQueryDef(
             ref="key_repository_count.sql",
-            entity_types=["artifact"],
+            entity_types=["artifact", "project", "collection"],
         ),
         "key_star_count": MetricQueryDef(
             ref="key_star_count.sql",
-            entity_types=["artifact"],
+            entity_types=["artifact", "project", "collection"],
         ),
         "key_time_to_first_response": MetricQueryDef(
             ref="key_time_to_first_response.sql",
-            entity_types=["artifact"],
+            entity_types=["artifact", "project", "collection"],
         ),
         "key_transaction_count": MetricQueryDef(
             ref="key_transaction_count.sql",
-            entity_types=["artifact"],
+            entity_types=["artifact", "project", "collection"],
         ),
     },
     default_dialect="clickhouse",
