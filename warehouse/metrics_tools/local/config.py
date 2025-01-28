@@ -1,4 +1,5 @@
 import logging
+import os
 import typing as t
 from contextlib import contextmanager
 from datetime import datetime
@@ -12,6 +13,7 @@ from sqlmesh.core.dialect import parse_one
 
 logger = logging.getLogger(__name__)
 
+PROJECT_ID = os.getenv("GOOGLE_PROJECT_ID", "opensource-observer")
 
 class RowRestriction(BaseModel):
     time_column: str = ""
@@ -188,4 +190,4 @@ class Config(BaseModel):
     loader: LoaderConfig
 
     def loader_instance(self):
-        return self.loader.config.loader(self, bigquery.Client())
+        return self.loader.config.loader(self, bigquery.Client(project=PROJECT_ID))
