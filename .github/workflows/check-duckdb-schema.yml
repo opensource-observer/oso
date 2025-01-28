@@ -45,8 +45,8 @@ jobs:
           credentials_json: '${{ secrets.GOOGLE_BQ_ADMIN_CREDENTIALS_JSON }}'
           create_credentials_file: true
     
-      - name: Download up to date schema
-        run: poetry run oso metrics local initialize --max-results-per-query 1 --max-days 1
+      - name: Initialize local data
+        run: poetry run oso metrics local initialize --max-results-per-query 1 --max-days 2
 
       - name: Upload file to Cloudflare R2
         env:
