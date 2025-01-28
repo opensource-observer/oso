@@ -98,7 +98,14 @@ def initialize_local_duckdb(
 
 
 def initialize_local_postgres(
-    path: str, max_results_per_query: int = 0, max_days: int = 7
+    path: str,
+    max_results_per_query: int = 0,
+    max_days: int = 7,
+    postgres_database: str = "postgres",
+    postgres_user: str = "postgres",
+    postgres_password: str = "password",
+    postgres_host: str = "localhost",
+    postgres_port: int = 5432,
 ):
     conn = duckdb.connect(path)
 
@@ -106,11 +113,11 @@ def initialize_local_postgres(
         bigquery.Client(),
         conn,
         psycopg2.connect(
-            database="postgres",
-            user="postgres",
-            password="password",
-            host="localhost",
-            port=5432,
+            database=postgres_database,
+            user=postgres_user,
+            password=postgres_password,
+            host=postgres_host,
+            port=postgres_port,
         ),
         postgres_host="localhost",
         postgres_db="postgres",
