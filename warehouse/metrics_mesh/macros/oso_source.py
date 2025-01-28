@@ -46,17 +46,7 @@ def oso_source(evaluator: MacroEvaluator, table_name: exp.Expression):
         select * from source_public.table
         ```
     """
-    if evaluator.runtime_stage in ["loading"]:
-        return table_name
 
-    if evaluator.engine_adapter.dialect == "duckdb":
-        # We hardcode the rewrite rules for duckdb here to 1) keep things consistent
-        # and 2) ensure tests can run even on production when using duckdb
-        oso_source_rewrite_config = DUCKDB_REWRITE_RULES
-    else:
-        oso_source_rewrite_config = t.cast(
-            t.List[dict], evaluator.var("oso_source_rewrite", [])
-        )
     table_name_evaled = evaluator.eval_expression(table_name)
 
     if isinstance(table_name_evaled, str):
@@ -67,5 +57,17 @@ def oso_source(evaluator: MacroEvaluator, table_name: exp.Expression):
         table = table_name_evaled
     else:
         raise ValueError(f"Unexpected table name: {table_name_evaled}")
+
+    if evaluator.runtime_stage == "loading":
+        return table
+
+    if evaluator.engine_adapter.dialect == "duckdb":
+        # We hardcode the rewrite rules for duckdb here to 1) keep things consistent
+        # and 2) ensure tests can run even on production when using duckdb
+        oso_source_rewrite_config = DUCKDB_REWRITE_RULES
+    else:
+        oso_source_rewrite_config = t.cast(
+            t.List[dict], evaluator.var("oso_source_rewrite", [])
+        )
 
     return oso_source_rewrite(oso_source_rewrite_config, table)

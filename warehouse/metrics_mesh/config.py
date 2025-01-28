@@ -26,7 +26,7 @@ config = Config(
         # This is a local trino gateway that connects to a local trino deployed
         # onto a kind cluster. It also uses duckdb for state storage as opposed
         # to using postgres.
-        "trino-local": GatewayConfig(
+        "local-trino": GatewayConfig(
             connection=TrinoConnectionConfig(
                 host=os.environ.get("SQLMESH_TRINO_HOST", "localhost"),
                 port=int(os.environ.get("SQLMESH_TRINO_PORT", "8080")),

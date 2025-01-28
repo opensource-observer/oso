@@ -3,7 +3,7 @@ import typing as t
 import orjson
 import pandas as pd
 from metrics_tools.source.rewrite import oso_source_for_pymodel
-from oso_dagster.assets.defillama import DEFI_LLAMA_PROTOCOLS, defi_llama_slug_to_name
+from oso_dagster.assets.defillama import DEFILLAMA_PROTOCOLS, defillama_slug_to_name
 from sqlglot import exp
 from sqlmesh import ExecutionContext, model
 
@@ -34,9 +34,9 @@ def parse_chain_tvl(protocol: str, chain_tvls_raw: str):
     return series
 
 
-def defi_llama_tvl_model(protocol: str):
+def defillama_tvl_model(protocol: str):
     @model(
-        name=f"metrics.stg__{defi_llama_slug_to_name(protocol)}_tvl_events",
+        name=f"metrics.stg__{defillama_slug_to_name(protocol)}_tvl_events",
         is_sql=False,
         columns={
             "time": "INT64",
@@ -50,7 +50,7 @@ def defi_llama_tvl_model(protocol: str):
     def tvl_model(
         context: ExecutionContext, *args, **kwargs
     ) -> t.Iterator[pd.DataFrame]:
-        source_name = defi_llama_slug_to_name(protocol)
+        source_name = defillama_slug_to_name(protocol)
         # Run the query for the given protocol
         table = oso_source_for_pymodel(context, f"bigquery.defillama_tvl.{source_name}")
         df = context.fetchdf(
@@ -77,8 +77,8 @@ def defi_llama_tvl_model(protocol: str):
         yield result
 
 
-def defi_llama_tvl_factory(protocols: t.List[str]):
-    return [defi_llama_tvl_model(protocol) for protocol in protocols]
+def defillama_tvl_factory(protocols: t.List[str]):
+    return [defillama_tvl_model(protocol) for protocol in protocols]
 
 
-defi_llama_tvl_factory(DEFI_LLAMA_PROTOCOLS)
+defillama_tvl_factory(DEFILLAMA_PROTOCOLS)

@@ -39,7 +39,7 @@ Pick the protocols you want. Each entry in this list represents one endpoint you
 will fetch.
 
 ```python
-DEFI_LLAMA_PROTOCOLS = [
+DEFILLAMA_PROTOCOLS = [
     "aave-v1",
     "aave-v2",
     "aave-v3",
@@ -87,7 +87,7 @@ config: RESTAPIConfig = {
                     "data_selector": "$", # Selects the whole response
                 },
             },
-            DEFI_LLAMA_PROTOCOLS,
+            DEFILLAMA_PROTOCOLS,
         )
     ),
 }
