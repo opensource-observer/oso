@@ -52,5 +52,6 @@ jobs:
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_R2_S3_API_ACCESS_KEY }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_S3_API_SECRET_KEY }}
+          AWS_DEFAULT_REGION: "auto"
           BUCKET_NAME: "oso-public"
         run: bash .github/scripts/write-s3.sh "$SQLMESH_DUCKDB_LOCAL_PATH" "oso.duckdb" "${{ secrets.CLOUDFLARE_R2_S3_API_ENDPOINT }}"
