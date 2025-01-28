@@ -47,7 +47,7 @@ def json_extract_from_array(
     if evaluator.engine_adapter.dialect == "duckdb":
         result = exp.JSONExtract(
             this=json_expression,
-            expressions=exp.Literal(this=key, is_string=True),
+            expression=exp.Literal(this=key, is_string=True),
         )
     elif evaluator.engine_adapter.dialect == "trino":
         result = exp.JSONExtract(
