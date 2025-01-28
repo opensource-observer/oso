@@ -10,15 +10,18 @@
 
 with ranked_sboms as (
   select
-    artifact_namespace,
-    artifact_name,
-    artifact_source,
-    package,
-    package_source,
-    package_version,
     snapshot_at,
-    ROW_NUMBER()
-      over (partition by artifact_namespace, artifact_name, artifact_source, package, package_source order by snapshot_at desc)
+    lower(artifact_namespace) as artifact_namespace,
+    lower(artifact_name) as artifact_name,
+    upper(artifact_source) as artifact_source,
+    lower(package) as package,
+    upper(package_source) as package_source,
+    lower(package_version) as package_version,
+    row_number()
+      over (
+        partition by artifact_namespace, artifact_name, artifact_source, package, package_source
+        order by snapshot_at desc
+      )
       as row_num
   from {{ oso_source('ossd', 'sbom') }}
 )
