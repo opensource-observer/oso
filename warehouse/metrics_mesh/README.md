@@ -2,7 +2,7 @@
 
 ## Setup
 
-You will need [DuckDB](https://duckdb.org/) on your machine. 
+You will need [DuckDB](https://duckdb.org/) on your machine.
 
 Install using Homebrew (macOS/Linux):
 
@@ -46,25 +46,27 @@ oso metrics local initialize
 Or to take a smaller sample:
 
 ```bash
-oso metrics local initialize --max-results-per-query 100000 --max-days 7
+oso metrics local initialize --max-results-per-query 10000 --max-days 7
 ```
 
 Or using shortcuts:
 
 ```bash
-oso metrics local initialize -m 100000 -d 7
+oso metrics local initialize -m 10000 -d 7
 ```
-
 
 ## Run
 
 Run sqlmesh for a sample date range:
 
 ```bash
-cd warehouse/metrics_mesh
-sqlmesh plan dev --start 2024-07-01 --end 2024-08-01 # to run for specific date rates (fast)
+oso metrics local sqlmesh plan dev --start 2024-07-01 --end 2024-08-01 # to run for specific date rates (fast)
 # sqlmesh plan # to run the entire pipeline (slow)
 ```
+
+_Note, the command above uses a wrapper `oso metrics local sqlmesh` that will
+automatically use the correct `warehouse/metrics_mesh` directory. It can also be
+used to run with a local trino (see below)._
 
 Explore the data in DuckDB:
 
@@ -104,7 +106,7 @@ As this will run against everything in the dataset, you may want to pick a short
 sqlmesh plan dev --start 2024-12-01 --end 2024-12-31
 ```
 
-If a source that's in BigQuery is missing from DuckDB, check the `initialize_local_duckdb` function in [utils.py](warehouse/metrics_tools/local/utils.py). 
+If a source that's in BigQuery is missing from DuckDB, check the `initialize_local_duckdb` function in [utils.py](warehouse/metrics_tools/local/utils.py).
 You can add new models as `bq_to_duckdb` parameters, eg:
 
 ```python
@@ -122,7 +124,7 @@ oso metrics local initialize
 Then you can run to compile the latest models:
 
 ```bash
-sqlmesh plan dev 
+oso metrics local sqlmesh plan dev
 ```
 
 And if it executes successfully, view it in DuckDB:
@@ -130,6 +132,83 @@ And if it executes successfully, view it in DuckDB:
 ```sql
 SELECT * FROM metrics__dev.YOUR_MODEL LIMIT 5;
 ```
+
+## Sqlmesh Wrapper
+
+This is a convenience function for running sqlmesh locally. This is equivalent
+to running this series of commands:
+
+```bash
+cd warehouse/metrics_mesh
+sqlmesh [...any sqlmesh args... ]
+```
+
+So running:
+
+```bash
+oso metrics local sqlmesh plan
+```
+
+Would be equivalent to
+
+```bash
+cd warehouse/metrics_mesh
+sqlmesh plan
+```
+
+## Running sqlmesh on a local trino
+
+Be warned, running local trino requires running kubernetes on your machine using
+[kind](https://kind.sigs.k8s.io/). While it isn't intended to be a heavy weight
+implementation, it takes more resources than simply running with duckdb. For
+this reason alone, we suggest most initial testing to happen on duckdb. However,
+in order to simulate and test this running against trino as it does on the
+production OSO deployment, we need to have things wired properly with
+kubernetes. To initialize everything simply do:
+
+```bash
+oso ops cluster-setup
+```
+
+This can take a while so please be patient, but it will generate a local
+registry that is used when running the trino deployment with the metrics
+calculation service deployed. This is to test that process works and to ensure
+that the MCS has the proper version deployed. Eventually this can/will be used
+to test the dagster deployment.
+
+Once everything is setup, things should be running in the kind cluster
+`oso-local-test-cluster`. Normally, you'd need to ensure that you forward the
+right ports so that you can access the cluster to run the sqlmesh jobs but the
+convenience functions we created to run sqlmesh ensure that this is done
+automatically. However, before running sqlmesh you will need to initialize the
+data in trino.
+
+Much like running against a local duckdb the local trino can also be initialized
+with on the CLI like so:
+
+```bash
+oso metrics local initialize --local-trino
+```
+
+Once completed, trino will be configured to have the proper source data for
+sqlmesh.
+
+Finally, to run `sqlmesh plan` do this:
+
+```bash
+oso metrics local sqlmesh --local-trino plan
+```
+
+The `--local-trino` option should be passed before any sqlmesh args. Otherwise,
+you can call any command or use any flags from sqlmesh after the `sqlmesh`
+keyword in the command invocation. So to call `sqlmesh run` you'd simply do:
+
+```bash
+oso metrics local sqlmesh --local-trino run
+```
+
+Please note, you may periodically be logged out of the local kind cluster, just
+run `oso ops cluster-setup` again if that happens.
 
 ## Metrics Overview
 

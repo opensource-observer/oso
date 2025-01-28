@@ -180,12 +180,14 @@ def initialize(
 @click.option("--local-trino/--no-local-trino", default=False)
 @click.option("--local-registry-port", default=5001)
 @click.option("--redeploy-image/--no-redeploy-image", default=False)
+@click.option("--timeseries-start", default="2024-12-01")
 @click.pass_context
 def sqlmesh(
     ctx: click.Context,
     local_trino: bool,
     local_registry_port: int,
     redeploy_image: bool,
+    timeseries_start: str,
 ):
     """Proxy to the sqlmesh command that can be used against a local kind
     deployment or a local duckdb"""
@@ -231,6 +233,11 @@ def sqlmesh(
                     "SQLMESH_TRINO_PORT": str(local_port),
                     "SQLMESH_TRINO_CONCURRENT_TASKS": "1",
                     "SQLMESH_MCS_ENABLED": "0",
+                    # We set this variable to ensure that we run the minimal
+                    # amount of data. By default this ensure that we only
+                    # calculate metrics from 2024-12-01. For now this is only
+                    # set for trino but must be explicitly set for duckdb
+                    "SQLMESH_TIMESERIES_METRICS_START": timeseries_start,
                 },
             )
             process.communicate()
