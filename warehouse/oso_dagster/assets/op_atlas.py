@@ -101,5 +101,26 @@ op_atlas = sql_assets(
             "table": "RewardClaim",
             "incremental": incremental("updatedAt"),
         },
+        {
+            "table": "User",
+            "incremental": incremental("updatedAt"),
+        },
+        {
+            "table": "UserAddress",
+            "incremental": incremental("updatedAt"),
+        },
+        {
+            "table": "UserEmail",
+        },
+        {
+            "table": "UserInteraction",
+        },
+        {
+            "table": "UserOrganization",
+            "incremental": incremental("updatedAt"),
+        },
+        {
+            "table": "UserProjects",
+        },
     ],
 )
