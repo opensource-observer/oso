@@ -7,7 +7,7 @@ Before writing a fully custom Dagster asset,
 we recommend you first see if the previous guides on
 [BigQuery datasets](./bigquery.md),
 [database replication](./database.md),
-[API crawling](./api.md)
+[API crawling](./api-crawling/index.md)
 may be a better fit.
 This guide should only be used in the rare cases where you cannot
 use the other methods.
