@@ -127,12 +127,20 @@ def local(ctx: click.Context):
 
     ctx.obj["local_duckdb_path"] = local_duckdb_path
 
-    # By default just use the local duckdb path and add .trino.db to the name
-    local_trino_duckdb_path = os.getenv(
-        "SQLMESH_DUCKDB_LOCAL_TRINO_PATH", f"{local_duckdb_path}.trino.db"
-    )
-    if local_trino_duckdb_path:
-        ctx.obj["local_trino_duckdb_path"] = local_trino_duckdb_path
+    local_trino_duckdb_path = os.getenv("SQLMESH_DUCKDB_LOCAL_TRINO_PATH", None)
+    # If we don't set the local trino path then we add a trino suffix to the filename.
+    if not local_trino_duckdb_path:
+        local_duckdb_dirname = os.path.dirname(local_trino_duckdb_path)
+        local_duckdb_filename = os.path.basename(local_trino_duckdb_path)
+        name, extension = os.path.splitext(local_duckdb_filename)
+        local_trino_duckdb_filename = f"{name}-trino{extension}"
+        local_trino_duckdb_path = os.path.join(
+            local_duckdb_dirname, local_trino_duckdb_filename
+        )
+        logger.info(
+            f"SQLMESH_DUCKDB_LOCAL_TRINO_PATH not set. Using {local_trino_duckdb_path} for local trino state"
+        )
+    ctx.obj["local_trino_duckdb_path"] = local_trino_duckdb_path
 
 
 @local.command()
