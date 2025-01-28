@@ -9,7 +9,7 @@ from metrics_tools.local.loader import (
     DuckDbDestinationLoader,
     PostgresDestinationLoader,
 )
-from oso_dagster.assets.defillama import DEFI_LLAMA_PROTOCOLS, defi_llama_slug_to_name
+from oso_dagster.assets.defillama import DEFILLAMA_PROTOCOLS, defillama_slug_to_name
 
 from .config import Config, DestinationLoader, RowRestriction, TableMappingDestination
 
@@ -65,11 +65,11 @@ TABLE_MAPPING: t.Dict[str, str | TableMappingDestination] = {
     ),
 }
 
-defi_llama_tables = {
-    f"opensource-observer.defillama_tvl.{defi_llama_slug_to_name(slug)}": f"bigquery.defillama_tvl.{defi_llama_slug_to_name(slug)}"
-    for slug in DEFI_LLAMA_PROTOCOLS
+defillama_tables = {
+    f"opensource-observer.defillama_tvl.{defillama_slug_to_name(slug)}": f"bigquery.defillama_tvl.{defillama_slug_to_name(slug)}"
+    for slug in DEFILLAMA_PROTOCOLS
 }
-TABLE_MAPPING.update(defi_llama_tables)
+TABLE_MAPPING.update(defillama_tables)
 
 
 def initialize_local(
@@ -98,7 +98,14 @@ def initialize_local_duckdb(
 
 
 def initialize_local_postgres(
-    path: str, max_results_per_query: int = 0, max_days: int = 7
+    path: str,
+    max_results_per_query: int = 0,
+    max_days: int = 7,
+    postgres_database: str = "postgres",
+    postgres_user: str = "postgres",
+    postgres_password: str = "password",
+    postgres_host: str = "localhost",
+    postgres_port: int = 5432,
 ):
     conn = duckdb.connect(path)
 
@@ -106,11 +113,11 @@ def initialize_local_postgres(
         bigquery.Client(),
         conn,
         psycopg2.connect(
-            database="postgres",
-            user="postgres",
-            password="password",
-            host="localhost",
-            port=5432,
+            database=postgres_database,
+            user=postgres_user,
+            password=postgres_password,
+            host=postgres_host,
+            port=postgres_port,
         ),
         postgres_host="localhost",
         postgres_db="postgres",

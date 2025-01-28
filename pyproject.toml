@@ -81,6 +81,7 @@ pydantic-settings = "^2.7.0"
 openrank-sdk = "^0.4.0"
 pandas = "^2.2.3"
 docker = "^7.1.0"
+gitpython = "^3.1.44"
 
 
 [tool.poetry.scripts]

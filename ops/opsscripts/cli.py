@@ -5,6 +5,7 @@ import sys
 import click
 import requests
 from opsscripts.utils.dockertools import (
+    build_and_push_docker_image,
     configure_registry_for_nodes,
     connect_registry_to_network,
     create_registry_container,
@@ -91,8 +92,20 @@ def cluster_setup(
     click.echo("Ensure local container registry is running")
     create_registry_container(docker_client, registry_name, registry_port)
 
-    click.echo("Ensure kind cluster is running")
+    registry_url_base = f"localhost:{registry_port}"
 
+    oso_local_repo_name = f"{registry_url_base}/oso"
+
+    click.echo("Build and publish docker image to local registry")
+    build_and_push_docker_image(
+        docker_client,
+        oso_repo_dir,
+        os.path.join(oso_repo_dir, "docker/images/oso/Dockerfile"),
+        oso_local_repo_name,
+        "latest",
+    )
+
+    click.echo("Ensure kind cluster is running")
     get_clusters_output = subprocess.run(
         ["kind", "get", "clusters"], check=True, stdout=subprocess.PIPE
     ).stdout
@@ -104,6 +117,7 @@ def cluster_setup(
             ["kind", "create", "cluster", "--config", "ops/kind/cluster.yaml"],
             check=True,
         )
+
     click.echo("configuring the registry for the kind cluster nodes")
     configure_registry_for_nodes(
         docker_client, registry_name, registry_port, cluster_name
