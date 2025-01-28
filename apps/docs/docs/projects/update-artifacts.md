@@ -18,13 +18,13 @@ Version 7 of the oss-directory schema currently supports the following artifact 
 ## Package Managers
 
 - `npm`: An npm package URL, eg. `https://www.npmjs.com/package/@babel/core`.
-- `cargo`: A cargo package URL, eg. `https://crates.io/crates/serde`.
+- `crates`: A crates package URL, eg. `https://crates.io/crates/serde`.
 - `pypi`: A pypi package URL, eg. `https://pypi.org/project/pandas/`.
 - `go`: A go package URL (ideally hosted on GitHub), eg. `https://github.com/libp2p/go-libp2p`.
 
 ## Blockchain Addresses
 
-- `blockchain`: An EVM-compatible blockchain address.
+- `blockchain`: An blockchain address.
 
   Note: We have specific requirements for metadata about these addresses, including `networks` and `tags` fields. To view the latest fields, see the [blockchain address schema](https://github.com/opensource-observer/oss-directory/blob/main/src/resources/schema/blockchain-address.json).
 
