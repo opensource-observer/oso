@@ -14,8 +14,7 @@ key_metrics_by_collection_v0_no_casting AS (
   SELECT
     @oso_id('OSO', 'oso', metric) AS metric_id,
     to_collection_id,
-    -- TODO(jabolo): Check this with Reuven
-    from_artifact_id as from_collection_id,
+    from_artifact_id,
     metrics_sample_date AS sample_date,
     event_source,
     amount,
@@ -27,7 +26,7 @@ key_metrics_by_collection_v0_no_casting AS (
 SELECT
   metric_id::TEXT,
   to_collection_id::TEXT,
-  from_collection_id::TEXT,
+  from_artifact_id::TEXT,
   sample_date::DATE,
   event_source::TEXT,
   amount::DOUBLE,
