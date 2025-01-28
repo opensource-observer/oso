@@ -1,37 +1,20 @@
 # type: ignore
 """SQL database source helpers"""
 
-from typing import (
-    Callable,
-    Any,
-    Dict,
-    List,
-    Literal,
-    Optional,
-    Iterator,
-    Union,
-)
 import operator
+from typing import Any, Callable, Dict, Iterator, List, Literal, Optional, Union
 
 import dlt
 from dlt.common.configuration.specs import BaseConfiguration, configspec
 from dlt.common.exceptions import MissingDependencyException
 from dlt.common.schema import TTableSchemaColumns
 from dlt.common.typing import TDataItem, TSortOrder
-
 from dlt.sources.credentials import ConnectionStringCredentials
-
-from .schema_types import (
-    table_to_columns,
-    row_tuples_to_arrow,
-    Table,
-    SelectAny,
-)
-
 from sqlalchemy import Table, create_engine
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import CompileError
 
+from .schema_types import SelectAny, Table, row_tuples_to_arrow, table_to_columns
 
 TableBackend = Literal["sqlalchemy", "pyarrow", "pandas", "connectorx"]
 
@@ -217,13 +200,13 @@ def table_rows(
 
 
 def engine_from_credentials(
-    credentials: Union[ConnectionStringCredentials, Engine, str]
+    credentials: Union[ConnectionStringCredentials, Engine, str], **kwargs
 ) -> Engine:
     if isinstance(credentials, Engine):
         return credentials
     if isinstance(credentials, ConnectionStringCredentials):
         credentials = credentials.to_native_representation()
-    return create_engine(credentials)
+    return create_engine(credentials, **kwargs)
 
 
 def get_primary_key(table: Table) -> List[str]:
@@ -236,8 +219,8 @@ def unwrap_json_connector_x(field: str) -> TDataItem:
     """Creates a transform function to be added with `add_map` that will unwrap JSON columns
     ingested via connectorx. Such columns are additionally quoted and translate SQL NULL to json "null"
     """
-    import pyarrow.compute as pc
     import pyarrow as pa
+    import pyarrow.compute as pc
 
     def _unwrap(table: TDataItem) -> TDataItem:
         col_index = table.column_names.index(field)
