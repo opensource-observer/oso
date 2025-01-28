@@ -300,6 +300,9 @@ The `--local-trino` option should be passed before any sqlmesh args. Otherwise, 
 oso metrics local sqlmesh --local-trino run
 ```
 
+Please note, you may periodically be logged out of the local kind cluster, just
+run `oso ops cluster-setup` again if that happens.
+
 ## Reference Playbooks
 
 For setup and common operations for each subproject, navigate into the respective directory and check out the `README.md`.

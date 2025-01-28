@@ -190,49 +190,60 @@ def sqlmesh(
     """Proxy to the sqlmesh command that can be used against a local kind
     deployment or a local duckdb"""
 
-    # If git has changes then log a warning
-    logger.info("Checking for git changes")
-    repo = git.Repo(".")  # '.' represents the current directory
+    if local_trino:
+        # If git has changes then log a warning
+        logger.info("Checking for git changes")
+        repo = git.Repo(".")  # '.' represents the current directory
 
-    if repo.is_dirty():
-        logger.warning("You have uncommitted changes. Please commit before running")
-        # sys.exit(1)
+        if repo.is_dirty():
+            logger.warning("You have uncommitted changes. Please commit before running")
+            # sys.exit(1)
 
-    # Create an updated local docker image
-    client = initialize_docker_client()
+        # Create an updated local docker image
+        client = initialize_docker_client()
 
-    if redeploy_image:
-        logger.info("Building local docker image")
-        build_and_push_docker_image(
-            client,
-            REPO_DIR,
-            "docker/images/oso/Dockerfile",
-            f"localhost:{local_registry_port}/oso",
-            "latest",
-        )
+        if redeploy_image:
+            logger.info("Building local docker image")
+            build_and_push_docker_image(
+                client,
+                REPO_DIR,
+                "docker/images/oso/Dockerfile",
+                f"localhost:{local_registry_port}/oso",
+                "latest",
+            )
 
-    extra_args = ctx.args
-    if not ctx.args:
-        extra_args = []
+        extra_args = ctx.args
+        if not ctx.args:
+            extra_args = []
 
-    # Open up a port to the trino deployment on the kind cluster
-    trino_service = Service.get("local-trino-trino", "local-trino")
-    with trino_service.portforward(remote_port="8080") as local_port:
-        # TODO Open up a port to the mcs deployment on the kind cluster
+        # Open up a port to the trino deployment on the kind cluster
+        trino_service = Service.get("local-trino-trino", "local-trino")
+        with trino_service.portforward(remote_port="8080") as local_port:
+            # TODO Open up a port to the mcs deployment on the kind cluster
+            process = subprocess.Popen(
+                ["sqlmesh", "--gateway", "local-trino", *extra_args],
+                # shell=True,
+                cwd=os.path.join(REPO_DIR, "warehouse/metrics_mesh"),
+                env={
+                    **os.environ,
+                    "SQLMESH_DUCKDB_LOCAL_PATH": ctx.obj["local_trino_duckdb_path"],
+                    "SQLMESH_TRINO_HOST": "localhost",
+                    "SQLMESH_TRINO_PORT": str(local_port),
+                    "SQLMESH_TRINO_CONCURRENT_TASKS": "1",
+                    "SQLMESH_MCS_ENABLED": "0",
+                },
+            )
+            process.communicate()
+    else:
         process = subprocess.Popen(
-            ["sqlmesh", "--gateway", "local-trino", *extra_args],
-            # shell=True,
+            ["sqlmesh", *ctx.args],
             cwd=os.path.join(REPO_DIR, "warehouse/metrics_mesh"),
             env={
                 **os.environ,
-                "SQLMESH_DUCKDB_LOCAL_PATH": ctx.obj["local_trino_duckdb_path"],
-                "SQLMESH_TRINO_HOST": "localhost",
-                "SQLMESH_TRINO_PORT": str(local_port),
-                "SQLMESH_TRINO_CONCURRENT_TASKS": "1",
-                "SQLMESH_MCS_ENABLED": "0",
+                "SQLMESH_DUCKDB_LOCAL_PATH": ctx.obj["local_duckdb_path"],
             },
         )
-        stdout, stderr = process.communicate()
+        process.communicate()
 
 
 @local.command()
