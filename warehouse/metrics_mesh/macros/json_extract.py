@@ -1,33 +1,3 @@
-"""
-
-Attempt that works:
-
-with projects as (
-  select
-    project_id,
-    websites,
-    social,
-    github,
-    npm,
-    blockchain
-  from bigquery.oso.stg_ossd__current_projects
-)
-select * from projects
-cross join unnest(
-cast(
-		json_extract(
-			json_query(
-				json_format(websites), 
-				'lax $[*].url' with array wrapper
-			), '$'
-		) as array<JSON>)
-) as t(web);
-
-
-
-
-"""
-
 from sqlglot import expressions as exp
 from sqlmesh import macro
 from sqlmesh.core.macros import MacroEvaluator
@@ -50,9 +20,13 @@ def json_extract_from_array(
             expression=exp.Literal(this=key, is_string=True),
         )
     elif evaluator.engine_adapter.dialect == "trino":
+        # We need to use json_query because the json_extract function doesn't
+        # support arrays well through it's JSONPath implementation
         result = exp.JSONExtract(
             this=exp.JSONExtract(
                 this=json_expression,
+                # It's possible we will need to use lax here, but that will
+                # require further testing
                 expression=exp.Literal(this=f"strict {key}", is_string=True),
                 option=exp.Var(this="WITH UNCONDITIONAL ARRAY WRAPPER"),
                 json_query=True,

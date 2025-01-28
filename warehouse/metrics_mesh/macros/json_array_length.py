@@ -1,33 +1,3 @@
-"""
-
-Attempt that works:
-
-with projects as (
-  select
-    project_id,
-    websites,
-    social,
-    github,
-    npm,
-    blockchain
-  from bigquery.oso.stg_ossd__current_projects
-)
-select * from projects
-cross join unnest(
-cast(
-		json_extract(
-			json_query(
-				json_format(websites), 
-				'lax $[*].url' with array wrapper
-			), '$'
-		) as array<JSON>)
-) as t(web);
-
-
-
-
-"""
-
 from sqlglot import expressions as exp
 from sqlmesh import macro
 from sqlmesh.core.macros import MacroEvaluator
