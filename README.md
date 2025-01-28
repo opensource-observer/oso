@@ -17,18 +17,21 @@ Open Source Observer is a free analytics suite that helps funders measure the im
   - `/frontend`: frontend application (Next.js)
     - [on Vercel](https://www.opensource.observer) - Production build
   - `/hasura`: API service (Hasura) - Production
+- `/cli`: The `oso` cli for setting up and using various tools in this repository
 - `/docker`: Docker files
 - `/lib`: Common libraries
   - `/oss-artifact-validators`: Simple library to validate different properties of an "artifact"
+  - `/oso_common` - Python module for common tools across all python tools
 - `/warehouse`: All code specific to the data warehouse
   - `/dbt`: dbt configuration
   - `/oso_dagster`: Dagster configuration for orchestrating software-defined assets
-  - `/oso_lets_go`: Utility for setting up dbt with Google Cloud
+  - `/metrics_mesh`: sqlmesh configuration
   - Also contains other tools to manage warehouse pipelines
 - `/ops`: Our ops related code
   - `/external-prs`: GitHub app for validating pull requests
   - `/k8s-*`: Kubernetes configuration
   - `/tf-modules`: Terraform modules
+  - `/opstools`: Python module of various ops related tools
 
 ## Quickstart
 
@@ -67,7 +70,7 @@ poetry install
 You will also need to setup `dbt` to connect to Google BigQuery for running the data pipeline. The following wizard will copy a small playground dataset to your personal Google account and setup `dbt` for you.
 
 ```bash
-poetry run oso_lets_go
+poetry run oso lets_go
 ```
 
 :::tip
@@ -196,6 +199,46 @@ It is likely best to target a specific model so things don't take so long on som
 ```
 $ dbt run --select {name_of_the_model}
 ```
+
+## sqlmesh Development
+
+### Running sqlmesh
+
+For faster development of new models, we rely on duckdb as a local development
+environment. While this introduces the need to ensure we have macros to
+compensate for differences between environments, the simple deployment allows
+for fast iteration of ideas given that the required macros exist.
+
+To get started we need to load localized data:
+
+To do that we do:
+
+```bash
+# Ensure we're logged into google
+gcloud auth application-default login
+
+# Run the initialization of the data pull
+oso sqlmesh local initialize --max-results-per-query 10000 --max-days 3
+```
+
+This will download 3 days of time series data with an approximate maximum of
+10000 rows in each table that is not time series defined. You can change these
+or unset them if you're certain that your system can handle a larger data
+download but this will be required.
+
+Once all of the data has been downloaded you can now run sqlmesh like so:
+
+```bash
+oso sqlmesh local plan
+```
+
+```bash
+oso sqlmesh local plan --local-trino
+```
+
+### Running sqlmesh on a local trino
+
+We
 
 ## Reference Playbooks
 

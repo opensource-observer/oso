@@ -2,17 +2,27 @@
 A catchall for development environment tools related to the python tooling.
 """
 
+import logging
+import subprocess
+import sys
 import typing as t
-from pickle import GLOBAL
 
 import dotenv
+import git
+from kr8s.objects import Service
 from metrics_tools.factory.factory import MetricQueryConfig
 from metrics_tools.utils.logging import setup_module_logging
+from numpy import std
 from opsscripts.cli import cluster_setup
+from opsscripts.utils.dockertools import (
+    build_and_push_docker_image,
+    initialize_docker_client,
+)
 from oso_lets_go.wizard import MultipleChoiceInput
 from sqlglot import pretty
 
 dotenv.load_dotenv()
+logger = logging.getLogger(__name__)
 
 import os
 
@@ -25,6 +35,7 @@ from metrics_tools.local.utils import (
 
 CURR_DIR = os.path.dirname(__file__)
 METRICS_MESH_DIR = os.path.abspath(os.path.join(CURR_DIR, "../metrics_mesh"))
+REPO_DIR = os.path.abspath(os.path.join(CURR_DIR, "../../"))
 
 
 @click.group()
@@ -142,11 +153,73 @@ def initialize(
             max_days=max_days,
         )
     else:
-        initialize_local_postgres(
-            ctx.obj["local_duckdb_path"],
-            max_results_per_query=max_results_per_query,
-            max_days=max_days,
+        postgres_service = Service.get(
+            name="trino-psql-postgresql", namespace="local-trino-psql"
         )
+        with postgres_service.portforward(remote_port=5432) as local_port:
+            logger.debug(f"Proxied postgres to port: {local_port}")
+
+            initialize_local_postgres(
+                ctx.obj["local_duckdb_path"],
+                max_results_per_query=max_results_per_query,
+                max_days=max_days,
+                postgres_port=local_port,
+            )
+
+
+@local.command(
+    context_settings=dict(ignore_unknown_options=True, allow_extra_args=True)
+)
+@click.option("--local-trino/--no-local-trino", default=False)
+@click.option("--local-registry-port", default=5001)
+@click.pass_context
+def sqlmesh(ctx: click.Context, local_trino: bool, local_registry_port: int):
+    """Proxy to the sqlmesh command that can be used against a local kind
+    deployment or a local duckdb"""
+
+    # If git has changes then log a warning
+    logger.info("Checking for git changes")
+    repo = git.Repo(".")  # '.' represents the current directory
+
+    if repo.is_dirty():
+        logger.warning("You have uncommitted changes. Please commit before running")
+        sys.exit(1)
+
+    # Create an updated local docker image
+    logger.info("Building local docker image")
+
+    client = initialize_docker_client()
+
+    build_and_push_docker_image(
+        client,
+        REPO_DIR,
+        "docker/images/oso/Dockerfile",
+        f"localhost:{local_registry_port}/oso",
+        "latest",
+    )
+
+    extra_args = ctx.args
+    if not ctx.args:
+        extra_args = []
+
+    # Open up a port to the trino deployment on the kind cluster
+    trino_service = Service.get("local-trino-trino", "local-trino")
+    with trino_service.portforward(remote_port="8080") as local_port:
+        # TODO Open up a port to the mcs deployment on the kind cluster
+        process = subprocess.Popen(
+            ["sqlmesh", *extra_args],
+            shell=True,
+            cwd=os.path.join(REPO_DIR, "warehouse/metrics_mesh"),
+            env={
+                **os.environ,
+                "SQLMESH_DUCKDB_LOCAL_PATH": ctx.obj["local_duckdb_path"],
+                "SQLMESH_TRINO_HOST": "localhost",
+                "SQLMESH_TRINO_PORT": str(local_port),
+                "SQLMESH_TRINO_CONCURRENT_TASKS": "1",
+                "SQLMESH_MCS_ENABLED": "0",
+            },
+        )
+        stdout, stderr = process.communicate()
 
 
 @local.command()
