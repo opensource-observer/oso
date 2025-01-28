@@ -1,6 +1,6 @@
 ---
-title: Crawl an API
-sidebar_position: 4
+title: Rest API Crawler
+sidebar_position: 2
 ---
 
 ## What Are We Trying to Achieve?
@@ -100,10 +100,10 @@ We have a handy factory function called
 that takes your configuration and returns a callable **factory** that wires all
 assets up with the specified configuration.
 
-For a minimal configuration, we just need to supply a `key_prefix` to the factory
-function. This will be used to create the asset keys in the Dagster environment. It
-accepts a list of strings as input. Each element will be represented as a level in
-the key hierarchy.
+For a minimal configuration, we just need to supply a `key_prefix` to the
+factory function. This will be used to create the asset keys in the Dagster
+environment. It accepts a list of strings as input. Each element will be
+represented as a level in the key hierarchy.
 
 :::tip
 Under the hood, this will create a set of Dagster assets, managing all of
@@ -132,14 +132,16 @@ pipeline, the data will be ingested into your OSO warehouse.
 
 :::tip
 If you have not setup your local Dagster environment yet, please follow
-our [quickstart guide](../guides/dagster/index.md).
+our [quickstart guide](../../guides/dagster/index.md).
 :::
 
 After having your Dagster instance running, follow the
-[Dagster Asset Guide](../guides/dagster/index.md) to materialize the assets. Our
-example assets are located under `assets/defillama/tvl`.
+[Dagster Asset Guide](../../guides/dagster/index.md) to materialize the assets.
+Our example assets are located under `assets/defillama/tvl`.
 
 ![Dagster DefiLlama Asset List](crawl-api-example-defillama.png)
+
+---
 
 ---
 
@@ -147,14 +149,16 @@ example assets are located under `assets/defillama/tvl`.
 
 In practice, you may do more than just retrieve data:
 
-- **Pagination**: `dlt` supports adding a paginator if you have large result sets.
+- **Pagination**: `dlt` supports adding a paginator if you have large result
+  sets.
 - **Transformations**: You can add transformations before loading, such as
   cleaning up invalid fields or renaming columns.
 
 Our tooling is flexible enough to let you customize these details without losing
 the simplicity of the factory approach.
 
-Here's a more advanced example showing automatic pagination and specific field selection using the Pokémon API:
+Here's a more advanced example showing automatic pagination and specific field
+selection using the Pokémon API:
 
 ```py
 from dlt.sources.rest_api.typing import RESTAPIConfig
@@ -197,7 +201,8 @@ dlt_assets = create_rest_factory_asset(config=config)
 pokemon_assets = dlt_assets(key_prefix=["pokemon", "moves"])
 ```
 
-After running the pipeline, you'll find the Pokémon moves assets in your data warehouse:
+After running the pipeline, you'll find the Pokémon moves assets in your data
+warehouse:
 
 ![BigQuery Pokemon Moves Table Data](crawl-api-advanced.png)
 
@@ -223,5 +228,5 @@ removes repetitive tasks and helps you maintain a consistent approach to
 ingestion. Whenever you need to add or remove endpoints, you simply update your
 configuration object.
 
-Does this factory not fit your needs? You can always create your own custom
-asset following [this guide](./dagster.md).
+Does this factory not fit your needs? Check the
+[GraphQL API Crawler](./graphql-api.md)!

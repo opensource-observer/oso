@@ -91,4 +91,4 @@ Head over to [http://localhost:3000](http://localhost:3000) to access Dagster's
 UI. _Et voilà_! You have successfully set up Dagster locally.
 
 This is just the beginning. Check out how to create a
-[DLT Dagster Asset](../../contribute-data/api.md) next and start building!
+[DLT Dagster Asset](../../contribute-data/api-crawling/index.md) next and start building!
