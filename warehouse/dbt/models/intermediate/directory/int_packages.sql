@@ -27,19 +27,10 @@ select
   deps_dev.package_version,
   deps_dev.package_github_owner,
   deps_dev.package_github_repo,
-  case
-    when deps_dev.package_artifact_source = 'CARGO' then 'RUST'
-    when deps_dev.package_artifact_source = 'NPM' then 'NPM'
-    when deps_dev.package_artifact_source = 'PYPI' then 'PIP'
-    when deps_dev.package_artifact_source = 'GO' then 'GO'
-    when deps_dev.package_artifact_source = 'MAVEN' then 'MAVEN'
-    when deps_dev.package_artifact_source = 'NUGET' then 'NUGET'
-    else 'UNKNOWN'
-  end as sbom_artifact_source,
   (
     deps_dev.package_github_owner = latest_versions.current_owner
-    and deps_dev.package_github_repo = latest_versions.current_repo)
-    as is_current_owner
+    and deps_dev.package_github_repo = latest_versions.current_repo
+  ) as is_current_owner
 from deps_dev
 left join latest_versions
   on

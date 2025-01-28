@@ -98,3 +98,6 @@ sources:
       
       - name: ossd_repositories
         identifier: base_playground__ossd_repositories
+
+      - name: ossd_sbom
+        identifier: base_playground__ossd_sbom

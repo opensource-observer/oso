@@ -210,7 +210,7 @@ select distinct
       sboms.to_package_artifact_name = package_owners.package_artifact_name
       and sboms.to_package_artifact_source = package_owners.package_artifact_source
   where
-    sboms.to_package_artifact_source in ('NPM','RUST','GO','PIP')
+    sboms.to_package_artifact_source in ('NPM','CARGO','GOLANG','PYPI')
     and package_owners.package_owner_artifact_namespace is not null
     and concat(sboms.from_artifact_namespace, '/', sboms.from_artifact_name)
       in ('prysmaticlabs/prysm','sigp/lighthouse','consensys/teku','status-im/nimbus-eth2',
@@ -240,7 +240,7 @@ query = """
         sboms.to_package_artifact_name = package_owners.package_artifact_name
         and sboms.to_package_artifact_source = package_owners.package_artifact_source
     where
-      sboms.to_package_artifact_source in ('NPM','RUST','GO','PIP')
+      sboms.to_package_artifact_source in ('NPM','CARGO','GOLANG','PYPI')
       and package_owners.package_owner_artifact_namespace is not null
       and concat(sboms.from_artifact_namespace, '/', sboms.from_artifact_name)
         in ('prysmaticlabs/prysm','sigp/lighthouse','consensys/teku','status-im/nimbus-eth2',
