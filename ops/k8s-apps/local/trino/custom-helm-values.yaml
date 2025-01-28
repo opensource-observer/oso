@@ -48,14 +48,14 @@ spec:
         connection-password=password
       metrics: |
         connector.name=iceberg
-        fs.native-s3.enabled=true
         iceberg.catalog.type=rest
         iceberg.rest-catalog.security=NONE
         iceberg.rest-catalog.uri=http://local-nessie.local-nessie.svc.cluster.local:19120/iceberg/
         iceberg.rest-catalog.vended-credentials-enabled=false
+        fs.native-s3.enabled=true
+        s3.path-style-access=true
+        s3.region=local
         s3.endpoint=https://minio.local-minio.svc.cluster.local
         s3.aws-access-key=admin
         s3.aws-secret-key=password
-        s3.path-style-access=true
-        s3.region=local
 
