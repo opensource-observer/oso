@@ -164,7 +164,20 @@ implementation, it takes more resources than simply running with duckdb. For
 this reason alone, we suggest most initial testing to happen on duckdb. However,
 in order to simulate and test this running against trino as it does on the
 production OSO deployment, we need to have things wired properly with
-kubernetes. To initialize everything simply do:
+kubernetes.
+
+### Prerequisites
+
+In addition to having the normal dev tools for running the repo, you will also need:
+
+- [docker](https://www.docker.com/)
+- [kind](https://kind.sigs.k8s.io/)
+
+Please install these before continuing.
+
+### Local Kubernetes Cluster Setup
+
+To initialize everything simply do:
 
 ```bash
 oso ops cluster-setup
@@ -176,6 +189,9 @@ calculation service deployed. This is to test that process works and to ensure
 that the MCS has the proper version deployed. Eventually this can/will be used
 to test the dagster deployment.
 
+_Note: It will probably look like it's stuck at the `Build and publish docker
+image to local registry` step._
+
 Once everything is setup, things should be running in the kind cluster
 `oso-local-test-cluster`. Normally, you'd need to ensure that you forward the
 right ports so that you can access the cluster to run the sqlmesh jobs but the
@@ -183,15 +199,22 @@ convenience functions we created to run sqlmesh ensure that this is done
 automatically. However, before running sqlmesh you will need to initialize the
 data in trino.
 
+### Initialize Trino Data
+
 Much like running against a local duckdb the local trino can also be initialized
 with on the CLI like so:
 
 ```bash
-oso metrics local initialize --local-trino
+oso metrics local initialize --local-trino -m 1000 -d 2
 ```
 
-Once completed, trino will be configured to have the proper source data for
+_Note: It's best not to load too much data into trino for local testing. It won't be as
+fast as sqlmesh with duckdb locally._
+
+Once initialized, trino will be configured to have the proper source data for
 sqlmesh.
+
+### Running `plan` or `run`
 
 Finally, to run `sqlmesh plan` do this:
 
@@ -207,8 +230,12 @@ keyword in the command invocation. So to call `sqlmesh run` you'd simply do:
 oso metrics local sqlmesh --local-trino run
 ```
 
-Please note, you may periodically be logged out of the local kind cluster, just
-run `oso ops cluster-setup` again if that happens.
+### Changing branches or random logouts
+
+Please note, you may periodically be logged out of the local kind cluster or you
+will need to change branches that you'd like the cluster to use. Just run `oso
+ops cluster-setup` again and it will properly update the local cluster. It could
+take a few minutes for the cluster to synchronize to the declared configuration.
 
 ## Metrics Overview
 
