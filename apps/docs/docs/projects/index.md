@@ -116,13 +116,18 @@ The schema currently contains the following fields:
 
 - `version`: The latest version of the OSS Directory schema. This is a required field. To find the latest version, open any project YAML file and get the version from the top of the file. As of writing (2024-10-15), the latest version is Version 7.
 - `name`: The unique identifier for the project. See [Give Your Project a Unique `name` Slug](#give-your-project-a-unique-name-slug) for more information. This is a required field and must match the name of the YAML project file.
-- `display_name`: The display name of the project. This is a required field.
+- `display_name`: The display name of the project. This is a required field and must also be globally unique.
 - `description`: A brief description of the project.
 - `websites`: A list of associated websites
 - `social`: A list of social channels (e.g. Twitter, Telegram, Discord)
-- `github`: The GitHub URL of the project. This is a list of URLs, as a project can have multiple GitHub URLs. In most cases, the first and only URL will be the main GitHub organization URL. You don't need to include all the repositories that belong to the organization, as we will automatically index all of them.
-- `npm`: The npm URL of a package owned the project. This is a list of URLs, as a project can have multiple npm packages.
+- `github`: A list of GitHub URLs for the project. If you enter a GitHub organization, we'll automatically enumerate all repositories in the organizations. You can also list individual repositories.
+- `npm`: A list of npm packages by URL.
+- `crates`: A list of Rust crates packages by URL.
+- `pypi`: A list of Python packages packages by URL.
+- `go`: A list of Go modules by URL.
+- `open_collective`: The Open Collective URL of a project.
 - `blockchain`: A list of blockchain addresses associated with the project. Each address should include the address itself, the networks it is associated with, and any tags that describe the address. The most important addresses to include are deployers and wallets. We use deployers to trace all contracts deployed by a project, and wallets to trace all transactions made by a project.
+- `defillama`: A list of DefiLlama URLs for the project.
 - `comments`: Feel free to store any useful comments for maintainers here.
 
 For the latest fields, see the [project schema](https://github.com/opensource-observer/oss-directory/blob/main/src/resources/schema/project.json)
