@@ -9,7 +9,7 @@ We're always looking for new data sources to integrate with OSO. Here are the cu
 
 - 🗂️ [BigQuery Public Datasets](./bigquery.md) - Preferred and easiest route for maintaining a dataset
 - 🗄️ [Database Replication](./database.md) - Provide access to your database for replication as an OSO dataset
-- 🌐 [API Crawling](./api.md) - Crawl an API by writing a plugin
+- 🌐 [API Crawling](./api-crawling/index.md) - Crawl REST and GraphQL APIs easily by writing a plugin
 - 📁 [Files into Google Cloud Storage (GCS)](./gcs.md) - Drop Parquet/CSV files in our GCS bucket for loading into BigQuery
 - ⚙️ [Custom Dagster Assets](./dagster.md) - Write a custom Dagster asset for unique data sources
 - 📜 Static Files - Coordinate hand-off for high-quality data via static files. This path is
