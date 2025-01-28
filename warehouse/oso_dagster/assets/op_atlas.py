@@ -124,4 +124,5 @@ op_atlas = sql_assets(
             "table": "UserProjects",
         },
     ],
+    pool_size=5,
 )
