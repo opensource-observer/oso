@@ -196,6 +196,7 @@ class BaseDestinationLoader(DestinationLoader):
             query = f"CREATE TABLE IF NOT EXISTS {duckdb_table_name} AS SELECT * FROM table_as_arrow"
             logger.debug(f"EXECUTING={query}")
             self._duckdb_conn.execute(query)
+            logger.debug("COMPLETED")
         else:
             create_query = parse_one(
                 f"""
@@ -288,7 +289,7 @@ class PostgresDestinationLoader(BaseDestinationLoader):
                 f"""
                 INSTALL postgres;
                 LOAD postgres;
-                ATTACH 'dbname={self._postgres_db} user={self._postgres_user} password={self._postgres_password} host={self._postgres_host}' AS postgres_db (TYPE POSTGRES)
+                ATTACH 'dbname={self._postgres_db} user={self._postgres_user} password={self._postgres_password} host={self._postgres_host} port={self._postgres_port}' AS postgres_db (TYPE POSTGRES)
                 """
             )
             self._connected_to_postgres = True
@@ -313,6 +314,7 @@ class PostgresDestinationLoader(BaseDestinationLoader):
 
     def commit_to_destination(self, duckdb_table_name: str, destination: exp.Table):
         self._connect_to_postgres()
+        logger.info("Committing to postgres")
         self._duckdb_conn.execute(
             f"CREATE SCHEMA IF NOT EXISTS postgres_db.{destination.db}"
         )
@@ -337,5 +339,6 @@ class PostgresDestinationLoader(BaseDestinationLoader):
         self._duckdb_conn.execute(
             f"CREATE TABLE {destination.sql(dialect='postgres')} AS SELECT {all_columns} FROM {duckdb_table_name}"
         )
+        logger.info("copy completed")
         # Drop the temporary table
         self._duckdb_conn.execute(f"DROP TABLE {duckdb_table_name}")

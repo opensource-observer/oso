@@ -127,12 +127,20 @@ def local(ctx: click.Context):
 
     ctx.obj["local_duckdb_path"] = local_duckdb_path
 
-    # By default just use the local duckdb path and add .trino.db to the name
-    local_trino_duckdb_path = os.getenv(
-        "SQLMESH_DUCKDB_LOCAL_TRINO_PATH", f"{local_duckdb_path}.trino.db"
-    )
-    if local_trino_duckdb_path:
-        ctx.obj["local_trino_duckdb_path"] = local_trino_duckdb_path
+    local_trino_duckdb_path = os.getenv("SQLMESH_DUCKDB_LOCAL_TRINO_PATH", None)
+    # If we don't set the local trino path then we add a trino suffix to the filename.
+    if not local_trino_duckdb_path:
+        local_duckdb_dirname = os.path.dirname(local_trino_duckdb_path)
+        local_duckdb_filename = os.path.basename(local_trino_duckdb_path)
+        name, extension = os.path.splitext(local_duckdb_filename)
+        local_trino_duckdb_filename = f"{name}-trino{extension}"
+        local_trino_duckdb_path = os.path.join(
+            local_duckdb_dirname, local_trino_duckdb_filename
+        )
+        logger.info(
+            f"SQLMESH_DUCKDB_LOCAL_TRINO_PATH not set. Using {local_trino_duckdb_path} for local trino state"
+        )
+    ctx.obj["local_trino_duckdb_path"] = local_trino_duckdb_path
 
 
 @local.command()
@@ -180,12 +188,14 @@ def initialize(
 @click.option("--local-trino/--no-local-trino", default=False)
 @click.option("--local-registry-port", default=5001)
 @click.option("--redeploy-image/--no-redeploy-image", default=False)
+@click.option("--timeseries-start", default="2024-12-01")
 @click.pass_context
 def sqlmesh(
     ctx: click.Context,
     local_trino: bool,
     local_registry_port: int,
     redeploy_image: bool,
+    timeseries_start: str,
 ):
     """Proxy to the sqlmesh command that can be used against a local kind
     deployment or a local duckdb"""
@@ -231,6 +241,11 @@ def sqlmesh(
                     "SQLMESH_TRINO_PORT": str(local_port),
                     "SQLMESH_TRINO_CONCURRENT_TASKS": "1",
                     "SQLMESH_MCS_ENABLED": "0",
+                    # We set this variable to ensure that we run the minimal
+                    # amount of data. By default this ensure that we only
+                    # calculate metrics from 2024-12-01. For now this is only
+                    # set for trino but must be explicitly set for duckdb
+                    "SQLMESH_TIMESERIES_METRICS_START": timeseries_start,
                 },
             )
             process.communicate()
