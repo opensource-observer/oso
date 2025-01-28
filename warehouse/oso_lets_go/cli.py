@@ -127,6 +127,13 @@ def local(ctx: click.Context):
 
     ctx.obj["local_duckdb_path"] = local_duckdb_path
 
+    # By default just use the local duckdb path and add .trino.db to the name
+    local_trino_duckdb_path = os.getenv(
+        "SQLMESH_DUCKDB_LOCAL_TRINO_PATH", f"{local_duckdb_path}.trino.db"
+    )
+    if local_trino_duckdb_path:
+        ctx.obj["local_trino_duckdb_path"] = local_trino_duckdb_path
+
 
 @local.command()
 @click.pass_context
@@ -172,8 +179,14 @@ def initialize(
 )
 @click.option("--local-trino/--no-local-trino", default=False)
 @click.option("--local-registry-port", default=5001)
+@click.option("--redeploy-image/--no-redeploy-image", default=False)
 @click.pass_context
-def sqlmesh(ctx: click.Context, local_trino: bool, local_registry_port: int):
+def sqlmesh(
+    ctx: click.Context,
+    local_trino: bool,
+    local_registry_port: int,
+    redeploy_image: bool,
+):
     """Proxy to the sqlmesh command that can be used against a local kind
     deployment or a local duckdb"""
 
@@ -183,20 +196,20 @@ def sqlmesh(ctx: click.Context, local_trino: bool, local_registry_port: int):
 
     if repo.is_dirty():
         logger.warning("You have uncommitted changes. Please commit before running")
-        sys.exit(1)
+        # sys.exit(1)
 
     # Create an updated local docker image
-    logger.info("Building local docker image")
-
     client = initialize_docker_client()
 
-    build_and_push_docker_image(
-        client,
-        REPO_DIR,
-        "docker/images/oso/Dockerfile",
-        f"localhost:{local_registry_port}/oso",
-        "latest",
-    )
+    if redeploy_image:
+        logger.info("Building local docker image")
+        build_and_push_docker_image(
+            client,
+            REPO_DIR,
+            "docker/images/oso/Dockerfile",
+            f"localhost:{local_registry_port}/oso",
+            "latest",
+        )
 
     extra_args = ctx.args
     if not ctx.args:
@@ -207,12 +220,12 @@ def sqlmesh(ctx: click.Context, local_trino: bool, local_registry_port: int):
     with trino_service.portforward(remote_port="8080") as local_port:
         # TODO Open up a port to the mcs deployment on the kind cluster
         process = subprocess.Popen(
-            ["sqlmesh", *extra_args],
-            shell=True,
+            ["sqlmesh", "--gateway", "local-trino", *extra_args],
+            # shell=True,
             cwd=os.path.join(REPO_DIR, "warehouse/metrics_mesh"),
             env={
                 **os.environ,
-                "SQLMESH_DUCKDB_LOCAL_PATH": ctx.obj["local_duckdb_path"],
+                "SQLMESH_DUCKDB_LOCAL_PATH": ctx.obj["local_trino_duckdb_path"],
                 "SQLMESH_TRINO_HOST": "localhost",
                 "SQLMESH_TRINO_PORT": str(local_port),
                 "SQLMESH_TRINO_CONCURRENT_TASKS": "1",
