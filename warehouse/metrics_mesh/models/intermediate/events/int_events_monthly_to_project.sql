@@ -3,9 +3,12 @@ MODEL (
   description 'All events to a project, bucketed by month',
   kind INCREMENTAL_BY_TIME_RANGE (
     time_column bucket_month,
+    batch_size 12,
+    batch_concurrency 1
   ),
   start '2015-01-01',
   cron '@monthly',
+  partitioned_by (MONTH("bucket_month"), "event_type"),
   grain (bucket_month, event_type, event_source, from_artifact_id, to_artifact_id)
 );
 

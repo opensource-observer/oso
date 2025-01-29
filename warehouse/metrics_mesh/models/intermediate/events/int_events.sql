@@ -2,9 +2,12 @@ MODEL (
   name metrics.int_events,
   kind INCREMENTAL_BY_TIME_RANGE (
     time_column time,
+    batch_size 365,
+    batch_concurrency 1
   ),
   start '2015-01-01',
   cron '@daily',
+  partitioned_by (DAY("time"), "event_type"),
   grain (time, event_type, event_source, from_artifact_id, to_artifact_id)
 );
 

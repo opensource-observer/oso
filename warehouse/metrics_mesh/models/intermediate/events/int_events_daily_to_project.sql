@@ -3,9 +3,12 @@ MODEL (
   description 'All events to a project, bucketed by day',
   kind INCREMENTAL_BY_TIME_RANGE (
     time_column bucket_day,
+    batch_size 365,
+    batch_concurrency 1
   ),
   start '2015-01-01',
   cron '@daily',
+  partitioned_by (DAY("bucket_day"), "event_type"),
   grain (bucket_day, event_type, event_source, from_artifact_id, to_artifact_id)
 );
 

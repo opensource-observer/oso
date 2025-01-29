@@ -44,7 +44,7 @@ def defillama_tvl_model(protocol: str):
             "protocol": "VARCHAR",
             "chain": "VARCHAR",
             "token": "VARCHAR",
-            "tvl": "FLOAT",
+            "tvl": "DOUBLE",
         },
     )
     def tvl_model(
@@ -66,7 +66,7 @@ def defillama_tvl_model(protocol: str):
             [
                 row
                 for chain_tvl in df["chain_tvls"].values
-                for row in parse_chain_tvl("contango", chain_tvl)
+                for row in parse_chain_tvl(protocol, chain_tvl)
             ],
             columns=["time", "protocol", "chain", "token", "tvl"],  # type: ignore
         )
@@ -74,7 +74,11 @@ def defillama_tvl_model(protocol: str):
             yield from ()
             return
         result["slug"] = protocol
-        yield result
+        # Reorder columns for correct response (possibly, this is a bug with
+        # sqlmesh as dictionary order is not guaranteed)
+        yield t.cast(
+            pd.DataFrame, result[["time", "slug", "protocol", "chain", "token", "tvl"]]
+        )
 
 
 def defillama_tvl_factory(protocols: t.List[str]):
