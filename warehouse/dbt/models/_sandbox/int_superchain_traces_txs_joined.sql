@@ -1,9 +1,3 @@
-{{
-  config(
-    materialized='table'
-  )
-}}
-
 with traces as (
   select
     block_timestamp,
@@ -41,8 +35,3 @@ select
 from transactions
 left join traces
   on transactions.transaction_hash = traces.transaction_hash
-
--- placeholder
-where
-  transactions.block_timestamp > '2025-01-01'
-  and transactions.chain = 'OPTIMISM'

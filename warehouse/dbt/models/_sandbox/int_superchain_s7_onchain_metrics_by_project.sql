@@ -1,3 +1,9 @@
+{{
+  config(
+    materialized='table'
+  )
+}}
+
 {% set gas_cap = 0.03 / 3000 %}
 
 with enriched_events as (
