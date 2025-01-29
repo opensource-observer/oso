@@ -1,5 +1,4 @@
 import logging
-import os
 
 import duckdb
 from oso_dagster.assets.defillama import DEFILLAMA_PROTOCOLS, defillama_slug_to_name
