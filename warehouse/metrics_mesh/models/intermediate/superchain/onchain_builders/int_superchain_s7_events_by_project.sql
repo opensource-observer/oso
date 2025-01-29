@@ -1,5 +1,5 @@
 MODEL (
-  name metrics.int_superchain_events,
+  name metrics.int_superchain_s7_events_by_project,
   description 'Events (transactions, traces, gas, etc.) involving known contracts',
   kind INCREMENTAL_BY_TIME_RANGE (
     time_column "time",

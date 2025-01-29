@@ -1,10 +1,8 @@
--- TODO: turn this into a rolling model that includes a sample date (eg, every week)
-
 MODEL (
   name metrics.int_superchain_s7_onchain_builder_eligibility,
-  description "Determines if a project is eligible for measurement in the S7 onchain builder round",
   kind FULL,
 );
+
 
 @DEF(lookback_days, 180);
 @DEF(single_chain_tx_threshold, 10000);

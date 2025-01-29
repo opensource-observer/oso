@@ -1,6 +1,6 @@
 MODEL (
-  name metrics.int_superchain_events_by_project_and_user,
-  description 'Events by project and user (if known), with bots filtered out',
+  name metrics.int_superchain_s7_onchain_metrics_by_project,
+  description 'Onchain metrics by project',
   kind INCREMENTAL_BY_TIME_RANGE (
     time_column "time",
     batch_size 90,

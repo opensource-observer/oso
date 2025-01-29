@@ -17,25 +17,21 @@ MODEL (
     from_address_tx,
     to_address_tx,
     from_address_trace,
-    to_address_trace,
-    gas_used_tx,
-    gas_used_trace,
-    gas_price
+    to_address_trace
   )
 );
 
 select
   transactions.block_timestamp,
-  transactions.chain as chain,
   transactions.transaction_hash,
+  transactions.chain,
   transactions.from_address as from_address_tx,
-  transactions.to_address as to_address_tx,
   traces.from_address as from_address_trace,
   traces.to_address as to_address_trace,
+  transactions.to_address as to_address_tx,
   transactions.gas_used as gas_used_tx,
   traces.gas_used as gas_used_trace,
-  transactions.gas_price as gas_price  
+  transactions.gas_price as gas_price_tx
 from metrics.stg_superchain__transactions as transactions
 left join metrics.stg_superchain__traces as traces
   on transactions.transaction_hash = traces.transaction_hash
-  and transactions.chain = traces.chain
