@@ -67,9 +67,12 @@ def relative_window_sample_date(
 def time_aggregation_bucket(
     evaluator: MacroEvaluator, time_exp: exp.Expression, interval: str
 ):
-
     if evaluator.runtime_stage in ["loading", "creating"]:
         return parse_one("STR_TO_DATE('1970-01-01', '%Y-%m-%d')")
+
+    if interval == "over_all_time":
+        return parse_one("CURRENT_DATE()")
+
     if evaluator.engine_adapter.dialect == "duckdb":
         rollup_to_interval = {
             "daily": "DAY",
@@ -172,6 +175,10 @@ def metrics_start(evaluator: MacroEvaluator, _data_type: t.Optional[str] = None)
     if evaluator.runtime_stage in ["loading", "creating"]:
         return parse_one("STR_TO_DATE('1970-01-01', '%Y-%m-%d')")
     time_aggregation_interval = evaluator.locals.get("time_aggregation")
+
+    if time_aggregation_interval == "over_all_time":
+        return parse_one("STR_TO_DATE('1970-01-01', '%Y-%m-%d')")
+
     if time_aggregation_interval:
         start_date = t.cast(
             exp.Expression,
@@ -229,6 +236,10 @@ def metrics_end(evaluator: MacroEvaluator, _data_type: t.Optional[str] = None):
     if evaluator.runtime_stage in ["loading", "creating"]:
         return parse_one("STR_TO_DATE('1970-01-01', '%Y-%m-%d')")
     time_aggregation_interval = evaluator.locals.get("time_aggregation")
+
+    if time_aggregation_interval == "over_all_time":
+        return parse_one("CURRENT_DATE()")
+
     if time_aggregation_interval:
         to_interval = {
             "daily": "day",

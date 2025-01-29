@@ -3,7 +3,8 @@ MODEL (
   kind FULL,
   tags (
   'export'
-  )
+  ),
+  enabled false
 );
 
 WITH all_project_key_metrics AS (

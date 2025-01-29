@@ -158,6 +158,8 @@ class MetricQueryDef:
 
     time_aggregations: t.Optional[t.List[str]] = None
 
+    over_all_time: t.Optional[bool] = False
+
     is_intermediate: bool = False
 
     enabled: bool = True
@@ -202,15 +204,7 @@ class MetricQueryDef:
     def validate(self):
         if not self.entity_types:
             self.entity_types = DEFAULT_ENTITY_TYPES
-        # Validate the given input
-        if self.time_aggregations and self.rolling:
-            raise Exception(
-                "Invalid metric query definition. Only one of time_aggregations or trailing_windows can be used"
-            )
-        if self.time_aggregations is not None and self.rolling is not None:
-            raise Exception(
-                "Invalid metric query definition. One of time_aggregations or trailing_windows must be set"
-            )
+
         assert_allowed_items_in_list(self.entity_types, VALID_ENTITY_TYPES)
         assert_allowed_items_in_list(
             self.time_aggregations or [], ["daily", "weekly", "monthly", "yearly"]
@@ -377,10 +371,8 @@ class MetricQuery:
                         time_aggregation=time_aggregation,
                     )
                 )
-            # if there is no _source.time_aggregations or _source.rolling
-            # means it is a point in time metric aka key metric over the
-            # whole time period for the specific entity type
-            if not self._source.time_aggregations and not self._source.rolling:
+            # if we actually enabled over all time, we'll compute that as well
+            if self._source.over_all_time:
                 refs.append(
                     PeerMetricDependencyRef(
                         name=name,
@@ -397,16 +389,6 @@ class MetricQuery:
     @property
     def provided_dependency_refs(self):
         return self.generate_dependency_refs_for_name(self.reference_name)
-
-    @property
-    def metric_type(self):
-        if self._source.time_aggregations is not None:
-            return "time_aggregation"
-        elif self._source.rolling is not None:
-            return "rolling"
-        # If neither time_aggregations or rolling is set then it is a point in
-        # time metric
-        return "over_all_time"
 
 
 def find_query_expressions(expressions: t.List[exp.Expression]):
