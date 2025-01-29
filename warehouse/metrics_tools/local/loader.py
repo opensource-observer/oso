@@ -54,7 +54,6 @@ def filter_columns(
 DUCKDB_TYPES_MAPPING: t.Dict[str, str] = {
     "REAL": "DOUBLE",
     "INT": "BIGINT",
-    "TEXT[]": "TEXT",
 }
 
 # When converting to duckdb, some types are automatically changed for bigger precision.
@@ -62,9 +61,11 @@ DUCKDB_TYPES_MAPPING: t.Dict[str, str] = {
 def map_type_to_duckdb_type(type: str) -> str:
     if type.startswith("STRUCT"):
         return "STRUCT"
+
     if type in DUCKDB_TYPES_MAPPING:
         return DUCKDB_TYPES_MAPPING[type]
     return type
+
 
 def convert_bq_schema_to_duckdb_columns(
     bq_schema: t.List[bigquery.SchemaField]
@@ -74,31 +75,16 @@ def convert_bq_schema_to_duckdb_columns(
     columns: t.List[t.Tuple[str, str]] = []
     for _, field in schema_dict.items():
         field_type = field.field_type
-        from_dialect = "bigquery"
+        
         # force structs as json for trino later
         if field_type == "STRUCT":
             field_type = "JSON"
         elif field_type == "RECORD":
             field_type = "JSON"
-        elif field_type == "INTEGER":
-            field_type = "INT64"
-            from_dialect = "duckdb"
-        elif field_type == "FLOAT":
-            field_type = "DOUBLE"
-            from_dialect = "duckdb"
-
         if field.mode == "REPEATED":
             field_type = f"ARRAY<{field_type}>"
-        # If the field is an integer, for some reason sqlglot doesn't properly
-        # use int64 which is natively what integer is in bigquery. We need to manually set that type
 
-        logger.info(f"Converting {field.name} from {field_type} in bigquery to duckdb")
-        # Convert from bigquery to duckdb datatype
-        duckdb_type = parse_one(
-            field_type, into=exp.DataType, dialect=from_dialect
-        ).sql(dialect="duckdb")
-
-        duckdb_type =  map_type_to_duckdb_type(parse_one(field.field_type, into=exp.DataType, dialect="bigquery").sql(
+        duckdb_type =  map_type_to_duckdb_type(parse_one(field_type, into=exp.DataType, dialect="bigquery").sql(
                     dialect="duckdb"
                 ))
 
@@ -108,7 +94,6 @@ def convert_bq_schema_to_duckdb_columns(
                 duckdb_type,
             )
         )
-    logger.info(f"Columns: {columns}")
     return columns
 
 
@@ -217,7 +202,7 @@ class BaseDestinationLoader(DestinationLoader):
                     f"{destination.table} already exists at destination with the same schema as {rewritten_destination}, skipping"
                 )
                 return
-            logger.info(f"Schema mismatch for {destination.table}, dropping destination table")
+            logger.warning(f"Schema mismatch for {destination.table}, dropping destination table")
             self._duckdb_conn.execute(f"DROP TABLE {rewritten_destination.sql(dialect='duckdb')}")
             
         if destination.has_restriction():
@@ -262,10 +247,6 @@ class BaseDestinationLoader(DestinationLoader):
         # straight copy into duckdb
         column_ids = [field.name for field in table_as_arrow.schema]
         columns = filter_columns(column_ids, columns)
-
-        column_types = set([column[1] for column in columns])
-
-        logger.debug(f"Column types: {table_schema}")
 
         # Remove all metadata from the schema
         new_schema = remove_metadata_from_schema(table_as_arrow.schema)
