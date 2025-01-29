@@ -15,19 +15,21 @@ def factory_deployments(
     transactions_transaction_hash_column: exp.ExpOrStr = "transactions.hash",
     transactions_originating_address_column: exp.ExpOrStr = "transactions.from_address",
     transactions_originating_contract_column: exp.ExpOrStr = "transactions.to_address",
-    transactions_block_timestamp_column: exp.ExpOrStr = "transactions.block_timestamp",
+    transactions_time_partition_column: exp.ExpOrStr = "transactions.block_timestamp",
     traces_transaction_hash_column: exp.ExpOrStr = "traces.transaction_hash",
     traces_block_timestamp_column: exp.ExpOrStr = "traces.block_timestamp",
     traces_factory_address_column: exp.ExpOrStr = "traces.from_address",
     traces_contract_address_column: exp.ExpOrStr = "traces.to_address",
     traces_trace_type_column: exp.ExpOrStr = "traces.trace_type",
     traces_status_column: exp.ExpOrStr = "traces.status",
+    traces_time_partition_column: exp.ExpOrStr = "traces.block_timestamp",
 ) -> exp.Expression:
     """Get the SQL for the transactions_with_receipts_deployers macro."""
-    transactions_block_timestamp = coerce_to_column(transactions_block_timestamp_column)
     transactions_transaction_hash = coerce_to_column(
         transactions_transaction_hash_column
     )
+    transactions_time_partition = coerce_to_column(transactions_time_partition_column)
+
     traces_block_timestamp = coerce_to_column(traces_block_timestamp_column)
     traces_transaction_hash = coerce_to_column(traces_transaction_hash_column)
     traces_contract_address = coerce_to_column(traces_contract_address_column)
@@ -39,14 +41,15 @@ def factory_deployments(
         transactions_originating_contract_column
     )
     traces_trace_type = coerce_to_column(traces_trace_type_column)
-    traces_status_column = coerce_to_column(traces_status_column)
+    traces_status = coerce_to_column(traces_status_column)
+    traces_time_partition = coerce_to_column(traces_time_partition_column)
 
     transactions_cte = (
         exp.select("*")
         .from_(transactions_table.as_("transactions"))
         .where(
             exp.Between(
-                this=transactions_block_timestamp,
+                this=transactions_time_partition,
                 low=start,
                 high=end,
             )
@@ -91,13 +94,13 @@ def factory_deployments(
         )
         .where(
             exp.EQ(
-                this=traces_status_column,
+                this=traces_status,
                 expression=exp.Literal(this="1", is_string=False),
             )
         )
         .where(
             exp.Between(
-                this=traces_block_timestamp,
+                this=traces_time_partition,
                 low=start,
                 high=end,
             )
