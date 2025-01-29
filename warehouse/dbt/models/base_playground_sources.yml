@@ -1,3 +1,5 @@
+version: 2
+
 sources:
   - name: base_playground
 
@@ -95,6 +97,9 @@ sources:
 
       - name: ossd_collections
         identifier: base_playground__ossd_collections
-      
+
       - name: ossd_repositories
         identifier: base_playground__ossd_repositories
+
+      - name: ossd_sbom
+        identifier: base_playground__ossd_sbom
