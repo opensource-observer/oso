@@ -135,8 +135,8 @@ def local(ctx: click.Context):
     local_trino_duckdb_path = os.getenv("SQLMESH_DUCKDB_LOCAL_TRINO_PATH", None)
     # If we don't set the local trino path then we add a trino suffix to the filename.
     if not local_trino_duckdb_path:
-        local_duckdb_dirname = os.path.dirname(local_trino_duckdb_path)
-        local_duckdb_filename = os.path.basename(local_trino_duckdb_path)
+        local_duckdb_dirname = os.path.dirname(local_duckdb_path)
+        local_duckdb_filename = os.path.basename(local_duckdb_path)
         name, extension = os.path.splitext(local_duckdb_filename)
         local_trino_duckdb_filename = f"{name}-trino{extension}"
         local_trino_duckdb_path = os.path.join(
