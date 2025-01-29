@@ -4,11 +4,12 @@ metadata:
   name: local-trino
 spec:
   values:
-    # Uncomment to enable debug logs
-    # server:
-    #   log:
-    #     trino:
-    #       level: DEBUG
+    server:
+      workers: 1
+      # Uncomment to enable debug logs
+      # log:
+      #   trino:
+      #     level: DEBUG
     additionalConfigProperties:
       - catalog.management=dynamic
     serviceAccount:
