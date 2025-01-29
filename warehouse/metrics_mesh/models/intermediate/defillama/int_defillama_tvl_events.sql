@@ -1,7 +1,13 @@
 MODEL (
   name metrics.int_defillama_tvl_events,
   description 'All tvl events from DefiLlama',
-  kind FULL,
+  kind INCREMENTAL_BY_TIME_RANGE (
+    time_column time,
+    batch_size 365,
+    batch_concurrency 1,
+  ),
+  partitioned_by (MONTH("time"), "event_type"),
+  cron '@daily',
 );
 
 
@@ -15,7 +21,7 @@ with all_tvl_events as (
 )
 
 SELECT
-  @from_unix_timestamp(all_tvl_events.time) as "time",
+  all_tvl_events.time as "time",
   UPPER('tvl') as event_type,
   @oso_id(
     all_tvl_events.time, 
