@@ -119,11 +119,11 @@ def initialize_local_postgres(
             host=postgres_host,
             port=postgres_port,
         ),
-        postgres_host="localhost",
-        postgres_db="postgres",
-        postgres_user="postgres",
-        postgres_password="password",
-        postgres_port=5432,
+        postgres_host=postgres_host,
+        postgres_db=postgres_database,
+        postgres_user=postgres_user,
+        postgres_password=postgres_password,
+        postgres_port=postgres_port,
     )
     initialize_local(loader, max_results_per_query, max_days)
 

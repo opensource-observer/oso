@@ -30,7 +30,7 @@ to explore the schema and execute test queries.
 As shown in the video, you must "Inline Variables" in order for queries to run in the explorer.
 :::
 
-The GraphQL schema is automatically generated from [`oso/dbt/models/marts`](https://github.com/opensource-observer/oso/tree/main/dbt/models/marts). Any dbt model defined there will automatically be exported to our GraphQL API. See the guide on [adding DBT models](../contribute-models/data-models.md) for more information on contributing to our marts models.
+The GraphQL schema is automatically generated from [`warehouse/metrics_mesh/models/marts`](https://github.com/opensource-observer/oso/tree/main/warehouse/metrics_mesh/models/marts). Any sqlmesh model defined there will automatically be exported to our GraphQL API. See the guide on [adding models](../contribute-models/data-models.md) for more information on contributing to our marts models.
 
 :::warning
 Our data pipeline is under heavy development and all table schemas are subject to change until we introduce versioning to marts models.

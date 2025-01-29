@@ -22,7 +22,8 @@ from oso_dagster.utils import SecretReference
 # ProjectSnapshot (createdAt)
 # RewardClaim (updatedAt)
 
-# These are available but maybe shouldn't be included:
+# These are available but maybe shouldn't be included. It's enabled for now but
+# we can decide if we find any data that shouldn't be made public.
 # User (updatedAt)
 # UserAddress (updatedAt)
 # UserEmail (no access)
@@ -101,5 +102,27 @@ op_atlas = sql_assets(
             "table": "RewardClaim",
             "incremental": incremental("updatedAt"),
         },
+        {
+            "table": "User",
+            "incremental": incremental("updatedAt"),
+        },
+        {
+            "table": "UserAddress",
+            "incremental": incremental("updatedAt"),
+        },
+        {
+            "table": "UserEmail",
+        },
+        {
+            "table": "UserInteraction",
+        },
+        {
+            "table": "UserOrganization",
+            "incremental": incremental("updatedAt"),
+        },
+        {
+            "table": "UserProjects",
+        },
     ],
+    pool_size=5,
 )
