@@ -46,6 +46,7 @@ spec:
         connection-url=jdbc:postgresql://trino-psql-postgresql.local-trino-psql.svc.cluster.local:5432/postgres
         connection-user=postgres
         connection-password=password
+        postgresql.array-mapping=AS_ARRAY
       metrics: |
         connector.name=iceberg
         iceberg.catalog.type=rest
