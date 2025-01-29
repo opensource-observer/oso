@@ -18,16 +18,16 @@ with sbom_artifacts as (
 
 deps_dev_packages as (
   select distinct
+    package_artifact_name,
+    package_github_owner,
+    package_github_repo,
     case
       when package_artifact_source = 'CARGO' then 'CARGO'
-      when package_artifact_source = 'GO' then 'GOLANG'      
+      when package_artifact_source = 'GO' then 'GOLANG'
       when package_artifact_source = 'NPM' then 'NPM'
       when package_artifact_source = 'PYPI' then 'PYPI'
       else 'OTHER'
-    end as sbom_artifact_source,
-    package_artifact_name,
-    package_github_owner,
-    package_github_repo
+    end as sbom_artifact_source
   from {{ ref('int_packages') }}
   where is_current_owner = true
 )

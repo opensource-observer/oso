@@ -30,7 +30,7 @@ select
 from (
   select * from @oso_source('bigquery.oso.int_events__blockchain')
   union all
-  select * from @oso_source('bigquery.oso.int_events__github')
+  select * from metrics.int_events__github
   union all
   select * from @oso_source('bigquery.oso.int_events__dependencies')
   union all
