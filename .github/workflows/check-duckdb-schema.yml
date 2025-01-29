@@ -11,8 +11,8 @@ on:
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
   schedule:
-    # Schedule every day at 00:00 UTC
-    - cron: "0 0 * * *"
+    # Schedule to run every hour
+    - cron: "0 * * * *"
 
 jobs:
   check-duckdb-schema:
