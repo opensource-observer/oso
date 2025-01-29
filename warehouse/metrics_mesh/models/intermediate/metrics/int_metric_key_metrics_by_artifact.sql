@@ -1,6 +1,7 @@
 MODEL (
   name metrics.int_metric_key_metrics_by_artifact,
-  kind FULL
+  kind FULL,
+  enabled false
 );
 
 @DEF(KIND, artifact);
