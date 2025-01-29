@@ -1,13 +1,16 @@
 import logging
+import os
 import typing as t
 from datetime import datetime
 
 import duckdb
 import pyarrow as pa
 from google.cloud import bigquery, bigquery_storage_v1
+from kr8s.objects import Service
 from metrics_tools.local.config import (
     Config,
     DestinationLoader,
+    LocalTrinoLoaderConfig,
     TableMappingDestination,
 )
 from metrics_tools.source.rewrite import DUCKDB_REWRITE_RULES, oso_source_rewrite
@@ -87,9 +90,11 @@ def bq_read_with_options(
 class BaseDestinationLoader(DestinationLoader):
     def __init__(
         self,
+        config: Config,
         bqclient: bigquery.Client,
         duckdb_conn: duckdb.DuckDBPyConnection,
     ):
+        self._config = config
         self._duckdb_conn = duckdb_conn
         self._bqclient = bqclient
 
@@ -109,7 +114,6 @@ class BaseDestinationLoader(DestinationLoader):
 
     def load_from_bq(
         self,
-        config: Config,
         start: datetime,
         end: datetime,
         source_name: str,
@@ -122,6 +126,7 @@ class BaseDestinationLoader(DestinationLoader):
         source_table = bigquery.TableReference.from_string(source_name)
 
         rewritten_destination = self.destination_table_rewrite(destination.table)
+        config = self._config
 
         if self.destination_table_exists(rewritten_destination):
             logger.info(
@@ -235,6 +240,37 @@ class BaseDestinationLoader(DestinationLoader):
             self._duckdb_conn.execute(insert_query.sql(dialect="duckdb"))
         self.commit_to_destination(duckdb_table_name, rewritten_destination)
 
+    def drop_all(self):
+        """Use this to drop all data in the duckdb database and start fresh"""
+        return self.drop_like_schema_name("%")
+
+    def drop_non_sources(self):
+        return self.drop_like_schema_name("sources_%", not_like=True)
+
+    def drop_like_schema_name(self, like_schema_name: str, not_like: bool = False):
+        raise NotImplementedError("drop_like_schema_name not implemented")
+
+    def sqlmesh_base_args(self):
+        return ["sqlmesh"]
+
+    def sqlmesh(self, extra_args: t.List[str], extra_env: t.Dict[str, str]):
+        import subprocess
+
+        if "SQLMESH_DUCKDB_LOCAL_PATH" not in extra_env:
+            extra_env["SQLMESH_DUCKDB_LOCAL_PATH"] = (
+                self._config.loader.config.duckdb_path
+            )
+
+        process = subprocess.Popen(
+            [*self.sqlmesh_base_args(), *extra_args],
+            cwd=os.path.join(self._config.repo_dir, "warehouse/metrics_mesh"),
+            env={
+                **os.environ,
+                **extra_env,
+            },
+        )
+        process.communicate()
+
 
 class DuckDbDestinationLoader(BaseDestinationLoader):
     def destination_table_exists(self, table: exp.Table) -> bool:
@@ -261,35 +297,63 @@ class DuckDbDestinationLoader(BaseDestinationLoader):
         # Drop the temporary table
         self._duckdb_conn.execute(f"DROP TABLE {duckdb_table_name}")
 
+    def drop_like_schema_name(self, like_schema_name: str, not_like: bool = False):
+        not_like_str = "NOT " if not_like else ""
 
-class PostgresDestinationLoader(BaseDestinationLoader):
+        schemas = self._duckdb_conn.execute(
+            f"""
+            SELECT schema_name 
+            FROM information_schema.schemata 
+            WHERE schema_name {not_like_str} LIKE '{like_schema_name}'
+            AND schema_name NOT IN ('information_schema', 'duckdb', 'main', 'pg_catalog')
+            """
+        ).fetchall()
+
+        for schema in schemas:
+            schema_name = schema[0]
+            logger.info(f"Dropping schema {schema_name}")
+            self._duckdb_conn.execute(f"DROP SCHEMA {schema_name} CASCADE")
+
+
+class LocalTrinoDestinationLoader(BaseDestinationLoader):
     def __init__(
         self,
+        config: Config,
         bqclient: bigquery.Client,
         duckdb_conn: duckdb.DuckDBPyConnection,
         postgres_conn: pg_connection,
         postgres_host: str,
         postgres_port: int,
-        postgres_db: str,
-        postgres_user: str,
-        postgres_password: str,
     ):
-        super().__init__(bqclient, duckdb_conn)
+        super().__init__(config, bqclient, duckdb_conn)
         self._postgres_conn = postgres_conn
-        self._connected_to_postgres = False
         self._postgres_host = postgres_host
         self._postgres_port = postgres_port
-        self._postgres_db = postgres_db
-        self._postgres_user = postgres_user
-        self._postgres_password = postgres_password
+        self._connected_to_postgres = False
+
+    @property
+    def local_trino_loader_config(self) -> LocalTrinoLoaderConfig:
+        assert isinstance(
+            self._config.loader.config, LocalTrinoLoaderConfig
+        ), "Loader config is not a LocalTrinoLoaderConfig"
+        return self._config.loader.config
 
     def _connect_to_postgres(self):
         if not self._connected_to_postgres:
+            assert (
+                self._config.loader.type == "local-trino"
+            ), "Somehow we are not using the local-trino loader"
+
+            loader_config = self._config.loader.config
+            assert isinstance(
+                loader_config, LocalTrinoLoaderConfig
+            ), "Loader config is not a LocalTrinoLoaderConfig"
+
             self._duckdb_conn.execute(
                 f"""
                 INSTALL postgres;
                 LOAD postgres;
-                ATTACH 'dbname={self._postgres_db} user={self._postgres_user} password={self._postgres_password} host={self._postgres_host} port={self._postgres_port}' AS postgres_db (TYPE POSTGRES)
+                ATTACH 'dbname={loader_config.postgres_db} user={loader_config.postgres_user} password={loader_config.postgres_password} host={self._postgres_host} port={self._postgres_port}' AS postgres_db (TYPE POSTGRES)
                 """
             )
             self._connected_to_postgres = True
@@ -330,8 +394,6 @@ class PostgresDestinationLoader(BaseDestinationLoader):
             # Arrays and structs need to be cast to JSON
             if "STRUCT" in column[1]:
                 column_select.append(f"{column[0]}::JSON as {column[0]}")
-            elif "[]" in column[1]:
-                column_select.append(f"{column[0]}::JSON as {column[0]}")
             else:
                 column_select.append(column[0])
         all_columns = ", ".join(column_select)
@@ -342,3 +404,50 @@ class PostgresDestinationLoader(BaseDestinationLoader):
         logger.info("copy completed")
         # Drop the temporary table
         self._duckdb_conn.execute(f"DROP TABLE {duckdb_table_name}")
+
+    def drop_like_schema_name(self, like_schema_name: str, not_like: bool = False):
+        not_like_str = "NOT " if not_like else ""
+
+        cursor = self._postgres_conn.cursor()
+        cursor.execute(
+            f"""
+            SELECT schema_name 
+            FROM information_schema.schemata 
+            WHERE schema_name {not_like_str} LIKE '{like_schema_name}'
+            AND schema_name NOT IN ('information_schema', 'pg_catalog', 'pg_toast')
+        """
+        )
+        schemas = cursor.fetchall()
+
+        for schema in schemas:
+            schema_name = schema[0]
+            logger.info(f"Dropping schema {schema_name}")
+            cursor.execute(f"DROP SCHEMA {schema_name} CASCADE")
+        self._postgres_conn.commit()
+
+    def sqlmesh_base_args(self):
+        return ["sqlmesh", "--gateway", "local-trino"]
+
+    def sqlmesh(self, extra_args: t.List[str], extra_env: t.Dict[str, str]):
+        trino_service = Service.get(
+            namespace=self.local_trino_loader_config.trino_k8s_namespace,
+            name=self.local_trino_loader_config.trino_k8s_service,
+        )
+        with trino_service.portforward(remote_port="8080") as local_port:  # type: ignore
+            logger.info(f"Proxied trino to port {local_port} for sqlmesh")
+
+            env = {
+                **extra_env,
+                "SQLMESH_DUCKDB_LOCAL_PATH": self.local_trino_loader_config.duckdb_path,
+                "SQLMESH_TRINO_HOST": "localhost",
+                "SQLMESH_TRINO_PORT": str(local_port),
+                "SQLMESH_TRINO_CONCURRENT_TASKS": "1",
+                "SQLMESH_MCS_ENABLED": "0",
+                # We set this variable to ensure that we run the minimal
+                # amount of data. By default this ensure that we only
+                # calculate metrics from 2024-12-01. For now this is only
+                # set for trino but must be explicitly set for duckdb
+                "SQLMESH_TIMESERIES_METRICS_START": self._config.timeseries_start,
+            }
+
+            super().sqlmesh(extra_args, env)

@@ -11,6 +11,8 @@ import dotenv
 import git
 from kr8s.objects import Service
 from metrics_tools.factory.factory import MetricQueryConfig
+from metrics_tools.local.loader import LocalTrinoDestinationLoader
+from metrics_tools.local.manager import LocalWarehouseManager
 from metrics_tools.utils.logging import setup_module_logging
 from numpy import std
 from opsscripts.cli import cluster_setup
@@ -27,15 +29,18 @@ logger = logging.getLogger(__name__)
 import os
 
 import click
-from metrics_tools.local.utils import (
-    initialize_local_duckdb,
-    initialize_local_postgres,
-    reset_local_duckdb,
+from metrics_tools.local.config import Config as LocalManagerConfig
+from metrics_tools.local.config import (
+    DuckDbLoaderConfig,
+    LoaderConfig,
+    LocalTrinoLoaderConfig,
 )
+from metrics_tools.local.utils import TABLE_MAPPING
 
 CURR_DIR = os.path.dirname(__file__)
 METRICS_MESH_DIR = os.path.abspath(os.path.join(CURR_DIR, "../metrics_mesh"))
 REPO_DIR = os.path.abspath(os.path.join(CURR_DIR, "../../"))
+PROJECT_ID = os.getenv("GOOGLE_PROJECT_ID", "opensource-observer")
 
 
 @click.group()
@@ -148,38 +153,64 @@ def local(ctx: click.Context):
 @click.option(
     "-m",
     "--max-results-per-query",
-    default=0,
+    default=1000,
     help="The max results for local data downloads. Use if there's limited space on your device. Set to zero for all results",
 )
 @click.option(
     "-d",
     "--max-days",
-    default=7,
+    default=2,
     help="The max number of days of data to download from timeseries row restricted data",
 )
 @click.option("--local-trino/--no-local-trino", default=False)
 def initialize(
     ctx: click.Context, max_results_per_query: int, max_days: int, local_trino: bool
 ):
-    if not local_trino:
-        initialize_local_duckdb(
-            ctx.obj["local_duckdb_path"],
-            max_results_per_query=max_results_per_query,
-            max_days=max_days,
-        )
-    else:
-        postgres_service = Service.get(
-            name="trino-psql-postgresql", namespace="local-trino-psql"
-        )
-        with postgres_service.portforward(remote_port=5432) as local_port:
-            logger.debug(f"Proxied postgres to port: {local_port}")
+    loader = LoaderConfig(
+        type="duckdb",
+        config=DuckDbLoaderConfig(duckdb_path=ctx.obj["local_duckdb_path"]),
+    )
 
-            initialize_local_postgres(
-                ctx.obj["local_duckdb_path"],
-                max_results_per_query=max_results_per_query,
-                max_days=max_days,
-                postgres_port=local_port,
-            )
+    if local_trino:
+        loader = LoaderConfig(
+            type="local-trino",
+            config=LocalTrinoLoaderConfig(
+                duckdb_path=ctx.obj["local_trino_duckdb_path"]
+            ),
+        )
+
+    local_manager_config = LocalManagerConfig(
+        repo_dir=REPO_DIR,
+        table_mapping=TABLE_MAPPING,
+        max_days=max_days,
+        max_results_per_query=max_results_per_query,
+        project_id=PROJECT_ID,
+        loader=loader,
+    )
+
+    manager = LocalWarehouseManager.from_config(local_manager_config)
+
+    manager.initialize()
+
+    # if not local_trino:
+    #     initialize_local_duckdb(
+    #         ctx.obj["local_duckdb_path"],
+    #         max_results_per_query=max_results_per_query,
+    #         max_days=max_days,
+    #     )
+    # else:
+    #     postgres_service = Service.get(
+    #         name="trino-psql-postgresql", namespace="local-trino-psql"
+    #     )
+    #     with postgres_service.portforward(remote_port=5432) as local_port:
+    #         logger.debug(f"Proxied postgres to port: {local_port}")
+
+    #         initialize_local_postgres(
+    #             ctx.obj["local_duckdb_path"],
+    #             max_results_per_query=max_results_per_query,
+    #             max_days=max_days,
+    #             postgres_port=local_port,
+    #         )
 
 
 @local.command(
@@ -262,14 +293,62 @@ def sqlmesh(
 
 
 @local.command()
-@click.option("-q", "--quiet/--no-quiet", default=False)
 @click.pass_context
-def reset(ctx: click.Context, quiet: bool):
+@click.option(
+    "-m",
+    "--max-results-per-query",
+    default=1000,
+    help="The max results for local data downloads. Use if there's limited space on your device. Set to zero for all results",
+)
+@click.option(
+    "-d",
+    "--max-days",
+    default=2,
+    help="The max number of days of data to download from timeseries row restricted data",
+)
+@click.option("--local-trino/--no-local-trino", default=False)
+@click.option("--full-reset/--no-full-reset", default=False)
+@click.option("--quiet/--no-quiet", default=False)
+def reset(
+    ctx: click.Context,
+    max_results_per_query: int,
+    max_days: int,
+    local_trino: bool,
+    full_reset: bool,
+    quiet: bool,
+):
     if not quiet:
-        click.confirm(
+        result = click.confirm(
             "This will remove all schemas from the local duckdb except the `sources` schema. Continue?"
         )
-    reset_local_duckdb(ctx.obj["local_duckdb_path"])
+        if not result:
+            sys.exit(0)
+
+    loader = LoaderConfig(
+        type="duckdb",
+        config=DuckDbLoaderConfig(duckdb_path=ctx.obj["local_duckdb_path"]),
+    )
+
+    if local_trino:
+        loader = LoaderConfig(
+            type="local-trino",
+            config=LocalTrinoLoaderConfig(
+                duckdb_path=ctx.obj["local_trino_duckdb_path"]
+            ),
+        )
+
+    local_manager_config = LocalManagerConfig(
+        repo_dir=REPO_DIR,
+        table_mapping=TABLE_MAPPING,
+        max_days=max_days,
+        max_results_per_query=max_results_per_query,
+        project_id=PROJECT_ID,
+        loader=loader,
+    )
+
+    manager = LocalWarehouseManager.from_config(local_manager_config)
+
+    manager.reset(full_reset=full_reset)
 
 
 @cli.command()

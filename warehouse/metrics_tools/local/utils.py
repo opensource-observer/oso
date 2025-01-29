@@ -1,17 +1,10 @@
 import logging
 import os
-import typing as t
 
 import duckdb
-import psycopg2
-from google.cloud import bigquery
-from metrics_tools.local.loader import (
-    DuckDbDestinationLoader,
-    PostgresDestinationLoader,
-)
 from oso_dagster.assets.defillama import DEFILLAMA_PROTOCOLS, defillama_slug_to_name
 
-from .config import Config, DestinationLoader, RowRestriction, TableMappingDestination
+from .config import RowRestriction, TableMappingConfig, TableMappingDestination
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +12,7 @@ PROJECT_ID = os.getenv("GOOGLE_PROJECT_ID", "opensource-observer")
 
 DUCKDB_SOURCES_SCHEMA_PREFIX = "sources"
 
-TABLE_MAPPING: t.Dict[str, str | TableMappingDestination] = {
+TABLE_MAPPING: TableMappingConfig = {
     "opensource-observer.oso_playground.int_deployers": "bigquery.oso.int_deployers",
     "opensource-observer.oso_playground.int_deployers_by_project": "bigquery.oso.int_deployers_by_project",
     "opensource-observer.oso_playground.int_events__blockchain": "bigquery.oso.int_events__blockchain",
@@ -70,62 +63,6 @@ defillama_tables = {
     for slug in DEFILLAMA_PROTOCOLS
 }
 TABLE_MAPPING.update(defillama_tables)
-
-
-def initialize_local(
-    destination_loader: DestinationLoader,
-    max_results_per_query: int = 0,
-    max_days: int = 7,
-):
-    # Use the oso_dagster assets as the source of truth for configured defi
-    # llama protocols for now
-
-    Config(
-        table_mapping=TABLE_MAPPING,
-        max_days=max_days,
-        max_results_per_query=max_results_per_query,
-        project_id=PROJECT_ID,
-    ).load_tables_into(destination_loader)
-
-
-def initialize_local_duckdb(
-    path: str, max_results_per_query: int = 0, max_days: int = 7
-):
-    conn = duckdb.connect(path)
-
-    loader = DuckDbDestinationLoader(bigquery.Client(), conn)
-    initialize_local(loader, max_results_per_query, max_days)
-
-
-def initialize_local_postgres(
-    path: str,
-    max_results_per_query: int = 0,
-    max_days: int = 7,
-    postgres_database: str = "postgres",
-    postgres_user: str = "postgres",
-    postgres_password: str = "password",
-    postgres_host: str = "localhost",
-    postgres_port: int = 5432,
-):
-    conn = duckdb.connect(path)
-
-    loader = PostgresDestinationLoader(
-        bigquery.Client(),
-        conn,
-        psycopg2.connect(
-            database=postgres_database,
-            user=postgres_user,
-            password=postgres_password,
-            host=postgres_host,
-            port=postgres_port,
-        ),
-        postgres_host=postgres_host,
-        postgres_db=postgres_database,
-        postgres_user=postgres_user,
-        postgres_password=postgres_password,
-        postgres_port=postgres_port,
-    )
-    initialize_local(loader, max_results_per_query, max_days)
 
 
 def reset_local_duckdb(path: str):
