@@ -8,11 +8,7 @@ sidebar_position: 5
 OSO tracks the dependency graph among projects in a collection or ecosystem. A **dependency** is a software package, module, or project that another project requires to function properly. Conversely, a **dependent** is a project that includes a specific package as its dependency. These metrics can highlight the usefulness of a given open source software project to other projects in the ecosystem.
 :::
 
-:::warning
-These metrics are currently in development.
-:::
-
-## Direct vs. Indirect Dependents
+## Dependency Types
 
 ---
 
@@ -21,83 +17,49 @@ Dependents can be categorized as:
 - **Direct Dependents**: Projects that directly include the parent package in their list of dependencies.
 - **Indirect Dependents**: Projects that rely on the parent package through an intermediary package. For example, if Package A depends on Package B, and Package B relies on Package C, then Package A is an indirect dependent of Package C.
 
-## Developer Dependencies
+## Data Sources
 
 ---
 
-Many package managers, such as npm and Crates, distinguish between production code dependencies and **developer dependencies** that are only needed for local development and testing.
+OSO indexes software dependencies using multiple data sources:
 
-Below is an example of an npm `package.json` file with developer dependencies:
+1. **GitHub Software Bill of Materials (SBOMs)**
+   - Extracted via [GitHub’s SBOM API](https://docs.github.com/en/code-security/supply-chain-security/understanding-your-software-supply-chain/exporting-a-software-bill-of-materials-for-your-repository)
+   - Includes direct and indirect dependencies
+   - Does not support all languages, but is largely complete for JavaScript/TypeScript, Python, Rust, and Go.
+2. **Package Metadata and Historical Events**
 
-```
-"name": "my_package",
-"version": "1.0.0",
-"dependencies": {
-  "my_dep": "^1.0.0",
-  "another_dep": "~2.2.0"
-},
-"devDependencies" : {
-  "my_test_framework": "^3.1.0",
-  "another_dev_dep": "1.0.0 - 1.2.0"
-}
-```
+   - Retrieved from the [deps.dev](https://deps.dev) public dataset.
+   - Used to map package versions to their maintainers and track add/remove events between packages.
+   - Covers major package registries (npm, PyPI, Crates.io, Go modules).
+   - Includes dependency depth charts up to 10 levels deep; we typically only use the first 3 levels.
 
-## Constraints on Dependency Analysis
+3. **Downloads from Package Registries**
 
----
+   - Fetched by API from npm and from public datasets for PyPI and Crates.io.
+   - Track downloads and fetch metadata from select package registries
+   - Artifacts must be listed in a project's OSS Directory file in order to have these metrics indexed.
 
-For Open Source Observer, we've set the following constraints for our dependency analysis:
+4. **OSO Public Datasets**
+   - OSO provides SQL-based access to indexed dependency data in `oso_production.sboms_v0`
+   - Maintainer repositories are tracked in `oso_production.package_owners_v0`
 
-1. Only direct dependents are considered, excluding indirect ones.
-2. Dependency analysis is restricted to specific collections or the union of specific collection sets. This ensures a more manageable indexing process and a clearer understanding of critical package relationships within an ecosystem.
+Here is a [tutorial](../../tutorials/dependencies) on how to work with OSO dependency datasets.
 
-Without such constraints, certain packages might appear as indirect dependents or dependencies for a vast majority of open source projects.
-
-## Example
-
-> Note: This is a hypothetical example. Real-world examples based on actual dependency graphs will be added soon.
-
-Consider a collection of "Ethereum Developer Tools" with projects like `ethers` and `wagmi` and another collection called "Optimism Applications" with projects like `velodrome-finance` and `zora`. If `velodrome-finance` depends on `ethers`, and `zora` depends on both `ethers` and `wagmi`, then `ethers` has two dependents, and `wagmi` has one.
-
-```
-Ecosystems: Ethereum Developer Tools & Optimism Applications
-    |
-    |----> Project: ethers
-    |          |
-    |          |----> Dependent: velodrome-finance
-    |          |----> Dependent: zora
-    |
-    |----> Project: wagmi
-               |
-               |----> Dependent: zora
-```
-
-## Dependent Metrics
+## Limitations
 
 ---
 
-In addition to mapping projects and their dependents, we also capture the following data about a project's dependents:
+Dependency data is not always complete. Here are some of the limitations:
 
-### Current Dependents
+- Published packages may change maintainers, which can cause discontinuities in the dependency graph.
+- Some languages are not well-supported by the data sources.
+- We rely on various sources, which have different indexing and data ingestion schedules. The latest changes may not always be reflected in the OSO production data.
 
-Count of dependent projects as of the most recent indexing run. These may also be referred to as "downstream dependencies" or "reverse dependencies".
-
-### Current Dependencies
-
-Count of dependencies as of the most recent indexing run. These may also be referred to as "upstream dependencies".
-
-### Active Developer Dependents
-
-Count of active developers of all dependent projects in the same collection.
-
-### Active User Dependents
-
-Count of active users of all dependent projects in the same collection.
-
-### Fees Dependents
-
-Total sequencer fees of all dependent projects in the same collection.
+## Contributing
 
 ---
 
-To contribute new metrics, please see our guide [here](../../contribute-models/data-models)
+There is a vast amount that can be done on top of these data sources!
+
+To contribute new metrics and models, please see our guide [here](../../contribute-models/data-models)

@@ -75,6 +75,11 @@ const nextConfig = {
               permanent: false,
             },
             {
+              source: "/status",
+              destination: "https://stats.uptimerobot.com/uFqxl2jxGA",
+              permanent: false,
+            },
+            {
               source: "/forms/karibalabs-interest",
               destination: "https://tally.so/r/w7NDv6",
               permanent: false,
