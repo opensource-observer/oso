@@ -93,10 +93,14 @@ class DuckDbLoaderConfig(BaseLoaderConfig):
     def loader(self, config: "Config", bq_client: bigquery.Client):
         from metrics_tools.local.loader import DuckDbDestinationLoader
 
-        yield DuckDbDestinationLoader(config, bq_client, self.duckdb_connect())
+        duckdb_conn = self.duckdb_connect()
+        try:
+            yield DuckDbDestinationLoader(config, bq_client, duckdb_conn)
+        finally:
+            duckdb_conn.close()
 
 
-class LocalTrinoLoaderConfig(BaseModel):
+class LocalTrinoLoaderConfig(BaseLoaderConfig):
     type: t.Literal["local-trino"] = "local-trino"
     duckdb_path: str
 
@@ -130,6 +134,7 @@ class LocalTrinoLoaderConfig(BaseModel):
     @contextmanager
     def loader(self, config: "Config", bq_client: bigquery.Client):
         from kr8s.objects import Service
+        from kr8s.portforward import PortForward
         from metrics_tools.local.loader import LocalTrinoDestinationLoader
 
         postgres_service = t.cast(
@@ -139,18 +144,30 @@ class LocalTrinoLoaderConfig(BaseModel):
             ),
         )
 
+        forward_context = postgres_service.portforward(
+            remote_port=self.postgres_k8s_port
+        )
+        assert isinstance(forward_context, PortForward)
+
         with postgres_service.portforward(
             remote_port=self.postgres_k8s_port
         ) as local_port:  # type: ignore
             logger.debug(f"Proxied postgres to port: {local_port}")
-            yield LocalTrinoDestinationLoader(
+            postgres_connection = self.postgres_connect(local_port)
+            duckdb_conn = self.duckdb_connect()
+            loader = LocalTrinoDestinationLoader(
                 config,
                 bq_client,
-                self.duckdb_connect(),
-                self.postgres_connect(local_port),
+                duckdb_conn,
+                postgres_connection,
                 "localhost",
                 local_port,
             )
+            try:
+                yield loader
+            finally:
+                duckdb_conn.close()
+                postgres_connection.close()
 
 
 LoaderTypes = t.Union[DuckDbLoaderConfig, LocalTrinoLoaderConfig]

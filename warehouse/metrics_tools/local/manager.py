@@ -1,3 +1,4 @@
+import logging
 import typing as t
 from datetime import datetime, timedelta
 
@@ -6,6 +7,8 @@ from metrics_tools.local.config import (
     DestinationLoader,
     TableMappingDestination,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class LocalWarehouseManager:
@@ -30,12 +33,14 @@ class LocalWarehouseManager:
             if isinstance(destination, str):
                 destination = TableMappingDestination(table=destination)
             loader.load_from_bq(start, end, source_name, destination)
+        logger.info("Loaded all tables into warehouse")
 
     def initialize(self):
         """Initializes the sqlmesh warehouse with the necessary source tables."""
 
         with self.config.loader_instance() as loader:
             self.load_tables_into(loader)
+            return
 
     def reset(self, full_reset: bool = False):
         """Resets the sqlmesh warehouse to a clean state. If full_reset is True,

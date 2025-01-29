@@ -159,7 +159,7 @@ def local(ctx: click.Context):
 @click.option(
     "-d",
     "--max-days",
-    default=2,
+    default=3,
     help="The max number of days of data to download from timeseries row restricted data",
 )
 @click.option("--local-trino/--no-local-trino", default=False)
@@ -303,7 +303,7 @@ def sqlmesh(
 @click.option(
     "-d",
     "--max-days",
-    default=2,
+    default=3,
     help="The max number of days of data to download from timeseries row restricted data",
 )
 @click.option("--local-trino/--no-local-trino", default=False)

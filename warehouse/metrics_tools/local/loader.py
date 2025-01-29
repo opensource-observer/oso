@@ -43,17 +43,21 @@ def convert_bq_schema_to_duckdb_columns(
     for column_id in column_ids:
         field = schema_dict[column_id]
 
+        field_type = field.field_type
+        if field.mode == "REPEATED":
+            field_type = f"{field_type}[]"
         # force structs as json for trino later
-        if field.field_type == "STRUCT":
-            columns.append((field.name, "JSON"))
-            continue
+        if field_type == "STRUCT":
+            field_type = "JSON"
+        # Convert from bigquery to duckdb datatype
+        duckdb_type = parse_one(field_type, into=exp.DataType, dialect="bigquery").sql(
+            dialect="duckdb"
+        )
 
         columns.append(
             (
                 field.name,
-                parse_one(field.field_type, into=exp.DataType, dialect="bigquery").sql(
-                    dialect="duckdb"
-                ),
+                duckdb_type,
             )
         )
     return columns
@@ -176,13 +180,10 @@ class BaseDestinationLoader(DestinationLoader):
 
         # If there are no special metadata fields in a schema we can just do a
         # straight copy into duckdb
-        is_simple_copy = True
         column_ids = [field.name for field in table_as_arrow.schema]
         columns = convert_bq_schema_to_duckdb_columns(column_ids, table_schema)
-        column_types = set([column[1] for column in columns])
 
-        if "JSON" in column_types:
-            is_simple_copy = False
+        logger.debug(f"Column types: {table_schema}")
 
         # Remove all metadata from the schema
         new_schema = remove_metadata_from_schema(table_as_arrow.schema)
@@ -197,48 +198,44 @@ class BaseDestinationLoader(DestinationLoader):
             self._duckdb_conn.execute(f"CREATE SCHEMA IF NOT EXISTS {schema}")
             created_schemas.add(schema)
 
-        if is_simple_copy:
-            query = f"CREATE TABLE IF NOT EXISTS {duckdb_table_name} AS SELECT * FROM table_as_arrow"
-            logger.debug(f"EXECUTING={query}")
-            self._duckdb_conn.execute(query)
-            logger.debug("COMPLETED")
-        else:
-            create_query = parse_one(
-                f"""
-                CREATE TABLE IF NOT EXISTS {duckdb_table_name} (placeholder VARCHAR);
-            """
-            )
-            create_query.this.set(
-                "expressions",
-                [
-                    exp.ColumnDef(
-                        this=exp.Identifier(this=column_name),
-                        kind=parse_one(
-                            data_type,
-                            dialect="duckdb",
-                            into=exp.DataType,
-                        ),
-                    )
-                    for column_name, data_type in columns
-                ],
-            )
-            logger.debug(f"EXECUTING={create_query.sql(dialect="duckdb")}")
-            self._duckdb_conn.execute(create_query.sql(dialect="duckdb"))
+        create_query = parse_one(
+            f"""
+            CREATE TABLE IF NOT EXISTS {duckdb_table_name} (placeholder VARCHAR);
+        """
+        )
+        create_query.this.set(
+            "expressions",
+            [
+                exp.ColumnDef(
+                    this=exp.Identifier(this=column_name),
+                    kind=parse_one(
+                        data_type,
+                        dialect="duckdb",
+                        into=exp.DataType,
+                    ),
+                )
+                for column_name, data_type in columns
+            ],
+        )
+        logger.debug(f"EXECUTING={create_query.sql(dialect="duckdb")}")
+        self._duckdb_conn.execute(create_query.sql(dialect="duckdb"))
 
-            insert_query = parse_one(
-                f"INSERT INTO {duckdb_table_name} (placeholder) SELECT placeholder FROM table_as_arrow"
-            )
-            insert_query.this.set(
-                "expressions",
-                [exp.Identifier(this=column_name) for column_name, _ in columns],
-            )
-            insert_query.expression.set(
-                "expressions",
-                [exp.to_column(column_name) for column_name, _ in columns],
-            )
-            logger.debug(f"EXECUTING={insert_query.sql(dialect="duckdb")}")
-            self._duckdb_conn.execute(insert_query.sql(dialect="duckdb"))
+        insert_query = parse_one(
+            f"INSERT INTO {duckdb_table_name} (placeholder) SELECT placeholder FROM table_as_arrow"
+        )
+        insert_query.this.set(
+            "expressions",
+            [exp.Identifier(this=column_name) for column_name, _ in columns],
+        )
+        insert_query.expression.set(
+            "expressions",
+            [exp.to_column(column_name) for column_name, _ in columns],
+        )
+        logger.debug(f"EXECUTING={insert_query.sql(dialect="duckdb")}")
+        self._duckdb_conn.execute(insert_query.sql(dialect="duckdb"))
+
         self.commit_to_destination(duckdb_table_name, rewritten_destination)
+        logger.info(f"Loaded {source_name} into {destination.table}")
 
     def drop_all(self):
         """Use this to drop all data in the duckdb database and start fresh"""
@@ -397,11 +394,13 @@ class LocalTrinoDestinationLoader(BaseDestinationLoader):
             else:
                 column_select.append(column[0])
         all_columns = ", ".join(column_select)
+        print(all_columns)
 
-        self._duckdb_conn.execute(
-            f"CREATE TABLE {destination.sql(dialect='postgres')} AS SELECT {all_columns} FROM {duckdb_table_name}"
-        )
-        logger.info("copy completed")
+        create_query = f"CREATE TABLE {destination.sql(dialect='duckdb')} AS SELECT {all_columns} FROM {duckdb_table_name}"
+        logger.info(f"EXECUTING={create_query}")
+
+        self._duckdb_conn.execute(create_query)
+        logger.debug(f"copy into {destination.sql(dialect="duckdb")} completed")
         # Drop the temporary table
         self._duckdb_conn.execute(f"DROP TABLE {duckdb_table_name}")
 
