@@ -1,3 +1,9 @@
+{{
+  config(
+    materialized='table'
+  )
+}}
+
 with traces as (
   select
     block_timestamp,
@@ -31,9 +37,12 @@ select
   transactions.to_address as to_address_tx,
   transactions.gas_used as gas_used_tx,
   traces.gas_used as gas_used_trace,
-  transactions.gas_price as gas_price_tx,
+  transactions.gas_price as gas_price_tx
 from transactions
 left join traces
-  on
-    transactions.transaction_hash = traces.transaction_hash
-    and transactions.chain = traces.chain
+  on transactions.transaction_hash = traces.transaction_hash
+
+-- placeholder
+where
+  transactions.block_timestamp > '2025-01-01'
+  and transactions.chain = 'OPTIMISM'
