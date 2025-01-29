@@ -50,12 +50,11 @@ def relative_window_sample_date(
         converted_relative_index = int(relative_index.this.this) * -1
     if converted_relative_index == 0:
         return base
+    window_int = int(evaluator.eval_expression(window))
+    interval_delta_int = converted_relative_index * window_int
     interval_unit = exp.Var(this=unit)
     interval_delta = exp.Interval(
-        this=exp.Mul(
-            this=exp.Literal(this=str(abs(converted_relative_index)), is_string=False),
-            expression=window,
-        ),
+        this=exp.Literal(this=str(abs(interval_delta_int)), is_string=False),
         unit=interval_unit,
     )
     if converted_relative_index > 0:
