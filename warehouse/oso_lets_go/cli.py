@@ -220,6 +220,7 @@ def initialize(
 @click.option("--local-registry-port", default=5001)
 @click.option("--redeploy-image/--no-redeploy-image", default=False)
 @click.option("--timeseries-start", default="2024-12-01")
+@click.option("--repo-dir", default=REPO_DIR)
 @click.pass_context
 def sqlmesh(
     ctx: click.Context,
@@ -227,6 +228,7 @@ def sqlmesh(
     local_registry_port: int,
     redeploy_image: bool,
     timeseries_start: str,
+    repo_dir: str,
 ):
     """Proxy to the sqlmesh command that can be used against a local kind
     deployment or a local duckdb"""
@@ -234,7 +236,7 @@ def sqlmesh(
     if local_trino:
         # If git has changes then log a warning
         logger.info("Checking for git changes")
-        repo = git.Repo(".")  # '.' represents the current directory
+        repo = git.Repo(repo_dir)  # '.' represents the current directory
 
         if repo.is_dirty():
             logger.warning("You have uncommitted changes. Please commit before running")
@@ -247,7 +249,7 @@ def sqlmesh(
             logger.info("Building local docker image")
             build_and_push_docker_image(
                 client,
-                REPO_DIR,
+                repo_dir,
                 "docker/images/oso/Dockerfile",
                 f"localhost:{local_registry_port}/oso",
                 "latest",
@@ -264,7 +266,7 @@ def sqlmesh(
             process = subprocess.Popen(
                 ["sqlmesh", "--gateway", "local-trino", *extra_args],
                 # shell=True,
-                cwd=os.path.join(REPO_DIR, "warehouse/metrics_mesh"),
+                cwd=os.path.join(repo_dir, "warehouse/metrics_mesh"),
                 env={
                     **os.environ,
                     "SQLMESH_DUCKDB_LOCAL_PATH": ctx.obj["local_trino_duckdb_path"],
@@ -283,7 +285,7 @@ def sqlmesh(
     else:
         process = subprocess.Popen(
             ["sqlmesh", *ctx.args],
-            cwd=os.path.join(REPO_DIR, "warehouse/metrics_mesh"),
+            cwd=os.path.join(repo_dir, "warehouse/metrics_mesh"),
             env={
                 **os.environ,
                 "SQLMESH_DUCKDB_LOCAL_PATH": ctx.obj["local_duckdb_path"],

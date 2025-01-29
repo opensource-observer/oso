@@ -44,15 +44,29 @@ def convert_bq_schema_to_duckdb_columns(
         field = schema_dict[column_id]
 
         field_type = field.field_type
-        if field.mode == "REPEATED":
-            field_type = f"{field_type}[]"
+        from_dialect = "bigquery"
         # force structs as json for trino later
         if field_type == "STRUCT":
             field_type = "JSON"
+        elif field_type == "RECORD":
+            field_type = "JSON"
+        elif field_type == "INTEGER":
+            field_type = "INT64"
+            from_dialect = "duckdb"
+        elif field_type == "FLOAT":
+            field_type = "DOUBLE"
+            from_dialect = "duckdb"
+
+        if field.mode == "REPEATED":
+            field_type = f"ARRAY<{field_type}>"
+        # If the field is an integer, for some reason sqlglot doesn't properly
+        # use int64 which is natively what integer is in bigquery. We need to manually set that type
+
+        logger.info(f"Converting {field.name} from {field_type} in bigquery to duckdb")
         # Convert from bigquery to duckdb datatype
-        duckdb_type = parse_one(field_type, into=exp.DataType, dialect="bigquery").sql(
-            dialect="duckdb"
-        )
+        duckdb_type = parse_one(
+            field_type, into=exp.DataType, dialect=from_dialect
+        ).sql(dialect="duckdb")
 
         columns.append(
             (
@@ -60,6 +74,7 @@ def convert_bq_schema_to_duckdb_columns(
                 duckdb_type,
             )
         )
+    logger.info(f"Columns: {columns}")
     return columns
 
 
