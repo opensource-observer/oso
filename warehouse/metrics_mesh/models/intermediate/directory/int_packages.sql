@@ -1,15 +1,16 @@
 MODEL (
   name metrics.int_packages,
   kind FULL,
+  dialect duckdb
 );
 
 with deps_dev as (
   select
-    'Version' as package_version,
-    upper('System') as package_artifact_source,
-    lower('Name') as package_artifact_name,
-    lower(split('ProjectName', '/')[0]) as package_github_owner,
-    lower(split('ProjectName', '/')[1]) as package_github_repo
+    version as package_version,
+    upper(system) as package_artifact_source,
+    lower(name) as package_artifact_name,
+    lower(split(projectname, '/')[@array_index(0)]) as package_github_owner,
+    lower(split(projectname, '/')[@array_index(1)]) as package_github_repo
   from @oso_source('bigquery.oso.stg_deps_dev__packages')
 ),
 

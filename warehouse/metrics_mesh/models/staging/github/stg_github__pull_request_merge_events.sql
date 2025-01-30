@@ -52,10 +52,10 @@ select distinct
   )::INT as deletions,
   json_extract(
     pre.payload, '$.pull_request.review_comments'
-  ) as review_comments,
+  )::DOUBLE as review_comments,
   json_extract(
     pre.payload, '$.pull_request.comments'
-  ) as comments,
+  )::DOUBLE as comments,
   json_extract_string(
     pre.payload, '$.pull_request.author_association'
   ) as author_association,

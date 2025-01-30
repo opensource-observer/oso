@@ -39,5 +39,5 @@ select
   json_extract(
     pre.payload,
     '$.pull_request.comments'
-  ) as comments
+  )::DOUBLE as comments
 from pull_request_events as pre
