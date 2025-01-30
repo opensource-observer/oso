@@ -17,7 +17,7 @@ from pyiceberg.io import (
     S3_SECRET_ACCESS_KEY,
     S3_SESSION_TOKEN,
 )
-from pyiceberg.io.fsspec import SCHEME_TO_FS, SIGNERS
+from pyiceberg.io.fsspec import SIGNERS
 from pyiceberg.typedef import Properties
 from pyiceberg.utils.properties import get_first_property_value
 
@@ -26,6 +26,8 @@ logger = logging.getLogger(__name__)
 
 def _s3(properties: Properties) -> AbstractFileSystem:
     from s3fs import S3FileSystem
+
+    logger.info("Using custom S3FileSystem without TLS validation")
 
     client_kwargs = {
         "endpoint_url": properties.get(S3_ENDPOINT),
@@ -69,6 +71,3 @@ def _s3(properties: Properties) -> AbstractFileSystem:
         fs.s3.meta.events.register_last(event_name, event_function, unique_id=1925)  # type: ignore
 
     return fs
-
-
-SCHEME_TO_FS["s3"] = _s3

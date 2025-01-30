@@ -251,6 +251,7 @@ class BaseDestinationLoader(DestinationLoader):
                     table_as_arrow = rows.to_arrow(create_bqstorage_client=True)
                 else:
                     table_as_arrow = pa.Table.from_batches(to_concat)
+                logger.info(f"Rows in arrow table {table_as_arrow.num_rows}")
             else:
                 rows = self._bqclient.list_rows(source_table)
                 table_as_arrow = rows.to_arrow(
@@ -300,6 +301,9 @@ class BaseDestinationLoader(DestinationLoader):
             },
         )
         process.communicate()
+
+    def close(self):
+        self._duckdb_conn.close()
 
 
 class DuckDbDestinationLoader(BaseDestinationLoader):
@@ -452,11 +456,13 @@ class LocalTrinoDestinationLoader(BaseDestinationLoader):
         minio_client: Minio,
         iceberg_catalog: Catalog,
         minio_url: str,
+        iceberg_properties: t.Dict[str, str],
     ):
         super().__init__(config, bqclient, duckdb_conn)
         self._minio_client = minio_client
         self._iceberg_catalog = iceberg_catalog
         self._minio_url = minio_url
+        self._iceberg_properties = iceberg_properties
 
     @property
     def local_trino_loader_config(self) -> LocalTrinoLoaderConfig:
@@ -466,6 +472,7 @@ class LocalTrinoDestinationLoader(BaseDestinationLoader):
         return self._config.loader.config
 
     def destination_table_exists(self, table: exp.Table) -> bool:
+        logger.info(f"Checking if {table} exists")
         return self._iceberg_catalog.table_exists(f"{table.db}.{table.this}")
 
     def destination_table_rewrite(self, table_fqn: str) -> exp.Table:
@@ -480,19 +487,32 @@ class LocalTrinoDestinationLoader(BaseDestinationLoader):
             if not not_like:
                 if like_regex.match(namespace):
                     logger.info(f"Dropping namespace {namespace}")
-                    self.drop_tables_in_namespace(namespace)
-                    self._iceberg_catalog.drop_namespace(namespace)
+                    self.drop_all_in_namespace(namespace)
+                    try:
+                        self._iceberg_catalog.drop_namespace(namespace)
+                    except Exception as e:
+                        logger.warning(f"Failed to drop namespace {namespace}")
+                        logger.error(e)
             else:
                 if not like_regex.match(namespace):
                     logger.info(f"Dropping namespace {namespace}")
-                    self.drop_tables_in_namespace(namespace)
-                    self._iceberg_catalog.drop_namespace(namespace)
+                    self.drop_all_in_namespace(namespace)
+                    try:
+                        self._iceberg_catalog.drop_namespace(namespace)
+                    except Exception as e:
+                        logger.warning(f"Failed to drop namespace {namespace}")
+                        logger.error(e)
 
-    def drop_tables_in_namespace(self, namespace: str):
+    def drop_all_in_namespace(self, namespace: str):
         tables = self._iceberg_catalog.list_tables(namespace)
         for table in tables:
             logger.info(f"Dropping table {table}")
             self._iceberg_catalog.drop_table(table)
+
+        views = self._iceberg_catalog.list_views(namespace)
+        for view in views:
+            logger.info(f"Dropping view {view}")
+            self._iceberg_catalog.drop_view(view)
 
     def sqlmesh_base_args(self):
         return ["sqlmesh", "--gateway", "local-trino"]
@@ -529,10 +549,20 @@ class LocalTrinoDestinationLoader(BaseDestinationLoader):
         table_as_arrow: pa.Table,
         table_schema: t.List[bigquery.SchemaField],
     ):
+        import time
+
+        logger.info(f"Committing {rewritten_destination} to iceberg")
         self._iceberg_catalog.create_namespace_if_not_exists(rewritten_destination.db)
-        table = self._iceberg_catalog.create_table(
+        table = self._iceberg_catalog.create_table_if_not_exists(
             f"{rewritten_destination.db}.{rewritten_destination.this}",
             schema=table_as_arrow.schema,
         )
         table.io.properties["s3.endpoint"] = self._minio_url
-        table.append(table_as_arrow)
+        try:
+            table.append(table_as_arrow)
+        except Exception as e:
+            logger.error(f"Failed to append data to {rewritten_destination}")
+            logger.error(e)
+            time.sleep(45)
+            return
+        logger.debug(f"Committed {rewritten_destination} to iceberg")

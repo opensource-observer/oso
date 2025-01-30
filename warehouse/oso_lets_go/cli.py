@@ -192,26 +192,6 @@ def initialize(
 
     manager.initialize()
 
-    # if not local_trino:
-    #     initialize_local_duckdb(
-    #         ctx.obj["local_duckdb_path"],
-    #         max_results_per_query=max_results_per_query,
-    #         max_days=max_days,
-    #     )
-    # else:
-    #     postgres_service = Service.get(
-    #         name="trino-psql-postgresql", namespace="local-trino-psql"
-    #     )
-    #     with postgres_service.portforward(remote_port=5432) as local_port:
-    #         logger.debug(f"Proxied postgres to port: {local_port}")
-
-    #         initialize_local_postgres(
-    #             ctx.obj["local_duckdb_path"],
-    #             max_results_per_query=max_results_per_query,
-    #             max_days=max_days,
-    #             postgres_port=local_port,
-    #         )
-
 
 @local.command(
     context_settings=dict(ignore_unknown_options=True, allow_extra_args=True)
