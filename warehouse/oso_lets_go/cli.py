@@ -47,10 +47,10 @@ PROJECT_ID = os.getenv("GOOGLE_PROJECT_ID", "opensource-observer")
 @click.option("--debug/--no-debug", default=False)
 @click.pass_context
 def cli(ctx: click.Context, debug: bool):
-    setup_module_logging("oso_lets_go")
-    setup_module_logging("metrics_tools")
-    setup_module_logging("oso_dagster")
-    setup_module_logging("opsscripts")
+    setup_module_logging("oso_lets_go", color=True)
+    setup_module_logging("metrics_tools", color=True)
+    setup_module_logging("oso_dagster", color=True)
+    setup_module_logging("opsscripts", color=True)
     ctx.ensure_object(dict)
     ctx.obj["DEBUG"] = debug
 

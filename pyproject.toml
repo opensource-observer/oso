@@ -83,6 +83,7 @@ pandas = "^2.2.3"
 docker = "^7.1.0"
 gitpython = "^3.1.44"
 minio = "^7.2.15"
+colorlog = "^6.9.0"
 
 
 [tool.poetry.scripts]
