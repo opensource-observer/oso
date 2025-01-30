@@ -130,15 +130,14 @@ op_atlas = sql_assets(
             "incremental": incremental("updatedAt"),
             "defer_table_reflect": True,
         },
-        {
-            "table": "UserEmail",
-            "defer_table_reflect": True,
-        },
-        {
-            "table": "UserInteraction",
-            "defer_table_reflect": True,
-
-        },
+#        {
+#            "table": "UserEmail",
+#            "defer_table_reflect": True,
+#        },
+#        {
+#            "table": "UserInteraction",
+#            "defer_table_reflect": True,
+#        },
         {
             "table": "UserOrganization",
             "incremental": incremental("updatedAt"),
