@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 import re
@@ -186,6 +187,19 @@ class BaseDestinationLoader(DestinationLoader):
     def commit_to_destination(self, duckdb_table_name: str, destination: exp.Table):
         raise NotImplementedError("commit_to_destination not implemented")
 
+    def drop_table(self, table: exp.Table):
+        raise NotImplementedError("drop_table not implemented")
+
+    def convert_bq_schema_to_columns(self, bq_schema: t.List[bigquery.SchemaField]):
+        raise NotImplementedError("convert_bq_schema_to_columns not implemented")
+
+    def has_schema_changed(
+        self, destination: exp.Table, bq_schema: t.List[bigquery.SchemaField]
+    ):
+        columns = self.convert_bq_schema_to_columns(bq_schema)
+        destination_table_schema = self.destination_table_schema(destination)
+        return set(columns) != set(destination_table_schema)
+
     def load_from_bq(
         self,
         start: datetime,
@@ -203,23 +217,18 @@ class BaseDestinationLoader(DestinationLoader):
 
         # Load the schema from bigqouery
         table_schema = self._bqclient.get_table(source_table).schema
-        columns = convert_bq_schema_to_duckdb_columns(table_schema)
 
         if self.destination_table_exists(rewritten_destination):
-            destination_table_schema = self.destination_table_schema(
-                rewritten_destination
-            )
-            if set(columns) == set(destination_table_schema):
+            if self.has_schema_changed(rewritten_destination, table_schema):
+                logger.warning(
+                    f"Schema mismatch for {destination.table}, dropping destination table"
+                )
+                self.drop_table(rewritten_destination)
+            else:
                 logger.info(
                     f"{destination.table} already exists at destination with the same schema as {rewritten_destination}, skipping"
                 )
                 return
-            logger.warning(
-                f"Schema mismatch for {destination.table}, dropping destination table"
-            )
-            self._duckdb_conn.execute(
-                f"DROP TABLE {rewritten_destination.sql(dialect='duckdb')}"
-            )
 
         if destination.has_restriction():
             logger.info(f"Table {destination.table} has restrictions")
@@ -257,9 +266,6 @@ class BaseDestinationLoader(DestinationLoader):
                 table_as_arrow = rows.to_arrow(
                     create_bqstorage_client=True
                 )  # noqa: F841
-
-        # Load the schema from bigquery
-        table_schema = self._bqclient.get_table(source_table).schema
 
         # Load the table
         self.commit_table(
@@ -315,6 +321,12 @@ class DuckDbDestinationLoader(BaseDestinationLoader):
         destination: TableMappingDestination,
     ):
         return super().load_from_bq(start, end, source_name, destination)
+
+    def convert_bq_schema_to_columns(self, bq_schema: t.List[bigquery.SchemaField]):
+        return convert_bq_schema_to_duckdb_columns(bq_schema)
+
+    def drop_table(self, table: exp.Table):
+        self._duckdb_conn.execute(f"DROP TABLE IF EXISTS {table.sql(dialect='duckdb')}")
 
     def destination_table_exists(self, table: exp.Table) -> bool:
         table_name = table.sql(dialect="duckdb")
@@ -387,11 +399,7 @@ class DuckDbDestinationLoader(BaseDestinationLoader):
         table_schema: t.List[bigquery.SchemaField],
     ):
         duckdb_table_name = f"oso_local_temp.{rewritten_destination.this.sql(dialect="duckdb")}_{datetime.now().strftime('%Y%m%d%H%M%S')}"
-
-        # If there are no special metadata fields in a schema we can just do a
-        # straight copy into duckdb
-        column_ids = [field.name for field in table_as_arrow.schema]
-        columns = convert_bq_schema_to_duckdb_columns(column_ids, table_schema)
+        columns = self.convert_bq_schema_to_columns(table_schema)
 
         logger.debug(f"Column types: {table_schema}")
 
@@ -447,6 +455,17 @@ class DuckDbDestinationLoader(BaseDestinationLoader):
         self.commit_to_destination(duckdb_table_name, rewritten_destination)
 
 
+class SerializedBqSchema(t.TypedDict):
+    field_type: str
+    is_nullable: bool
+    max_length: t.NotRequired[int]
+    mode: t.NotRequired[str]
+    name: str
+    precision: t.NotRequired[int]
+    scale: t.NotRequired[int]
+    fields: t.NotRequired[t.List["SerializedBqSchema"]]
+
+
 class LocalTrinoDestinationLoader(BaseDestinationLoader):
     def __init__(
         self,
@@ -457,12 +476,16 @@ class LocalTrinoDestinationLoader(BaseDestinationLoader):
         iceberg_catalog: Catalog,
         minio_url: str,
         iceberg_properties: t.Dict[str, str],
+        schema_table_schema="oso_local_state",
+        schema_table_name="bq_schema",
     ):
         super().__init__(config, bqclient, duckdb_conn)
         self._minio_client = minio_client
         self._iceberg_catalog = iceberg_catalog
         self._minio_url = minio_url
         self._iceberg_properties = iceberg_properties
+        self._schema_table_schema = schema_table_schema
+        self._schema_table_name = schema_table_name
 
     @property
     def local_trino_loader_config(self) -> LocalTrinoLoaderConfig:
@@ -478,6 +501,15 @@ class LocalTrinoDestinationLoader(BaseDestinationLoader):
     def destination_table_rewrite(self, table_fqn: str) -> exp.Table:
         """Trino doesn't need to rewrite the table name. We simulate bigquery sources here"""
         return exp.to_table(table_fqn)
+
+    def has_schema_changed(
+        self, destination: exp.Table, bq_schema: t.List[bigquery.SchemaField]
+    ):
+        # We don't have a reliable way of checking if the schema has changed in trino
+        # Instead we store the schema in a duckdb table and compare the schema there
+        current_schema = self.load_bigquery_schema(destination)
+        serialized_bq_schema = self.serialize_bigquery_schema(bq_schema)
+        return json.dumps(serialized_bq_schema) != json.dumps(current_schema)
 
     def drop_like_schema_name(self, like_schema_name: str, not_like: bool = False):
         like_regex = re.compile(f"^{like_schema_name.replace("%", ".*")}$")
@@ -541,6 +573,73 @@ class LocalTrinoDestinationLoader(BaseDestinationLoader):
 
             super().sqlmesh(extra_args, env)
 
+    @property
+    def schema_table(self):
+        return f"{self._schema_table_schema}.{self._schema_table_name}"
+
+    def save_bigquery_schema(
+        self, table: exp.Table, schema: t.List[bigquery.SchemaField]
+    ):
+        self._duckdb_conn.execute(
+            f"CREATE SCHEMA IF NOT EXISTS {self._schema_table_schema}"
+        )
+        self._duckdb_conn.execute(
+            f"CREATE TABLE IF NOT EXISTS {self.schema_table} (table_name VARCHAR, serialized_schema JSON)"
+        )
+
+        serialized_schema = json.dumps(self.serialize_bigquery_schema(schema))
+
+        self._duckdb_conn.execute(
+            f"INSERT INTO {self.schema_table} VALUES ('{table.sql(dialect="trino")}', '{serialized_schema}')"
+        )
+
+    def load_bigquery_schema(self, table: exp.Table) -> t.List[bigquery.SchemaField]:
+        try:
+            response = self._duckdb_conn.query(
+                f"SELECT serialized_schema FROM {self.schema_table} WHERE table_name = '{table.sql(dialect='trino')}'"
+            )
+        except duckdb.CatalogException:
+            return []
+
+        raw_serialized_schema = response.fetchone()
+        if raw_serialized_schema is None:
+            return []
+
+        serialized_schema = json.loads(raw_serialized_schema[0])
+        return t.cast(t.List[bigquery.SchemaField], serialized_schema)
+
+    def serialize_bigquery_schema(
+        self, schema: t.List[bigquery.SchemaField]
+    ) -> t.List[SerializedBqSchema]:
+        """A hacky way to serialize the bq schema for schema comparison"""
+        sorted_schema = sorted(schema, key=lambda x: x.name)
+
+        serialized_schema_fields: t.List[SerializedBqSchema] = []
+        for field in sorted_schema:
+            serialized_field: SerializedBqSchema = {
+                "field_type": field.field_type,
+                "is_nullable": field.is_nullable,
+                "name": field.name,
+            }
+            if field.mode:
+                serialized_field["mode"] = field.mode
+            if field.max_length:
+                serialized_field["max_length"] = field.max_length
+            if field.precision:
+                serialized_field["precision"] = field.precision
+            if field.scale:
+                serialized_field["scale"] = field.scale
+            if field.fields:
+                serialized_field["fields"] = self.serialize_bigquery_schema(
+                    list(field.fields)
+                )
+            serialized_schema_fields.append(serialized_field)
+        return serialized_schema_fields
+
+    def drop_table(self, table: exp.Table):
+        logger.info(f"dropping {table.db}.{table.this} table on iceberg ")
+        self._iceberg_catalog.drop_table(f"{table.db}.{table.this}")
+
     def commit_table(
         self,
         source_name: str,
@@ -549,20 +648,24 @@ class LocalTrinoDestinationLoader(BaseDestinationLoader):
         table_as_arrow: pa.Table,
         table_schema: t.List[bigquery.SchemaField],
     ):
-        import time
-
         logger.info(f"Committing {rewritten_destination} to iceberg")
         self._iceberg_catalog.create_namespace_if_not_exists(rewritten_destination.db)
         table = self._iceberg_catalog.create_table_if_not_exists(
             f"{rewritten_destination.db}.{rewritten_destination.this}",
             schema=table_as_arrow.schema,
         )
+
+        logger.info("Storing bigquery schema in duckdb")
+        self.save_bigquery_schema(rewritten_destination, table_schema)
+
+        # This seems to be necessary to rewrite the minio url because pyiceberg
+        # ignores the initial config. Likely, it reads the minio url from
+        # the catalog.
         table.io.properties["s3.endpoint"] = self._minio_url
         try:
             table.append(table_as_arrow)
         except Exception as e:
             logger.error(f"Failed to append data to {rewritten_destination}")
             logger.error(e)
-            time.sleep(45)
             return
         logger.debug(f"Committed {rewritten_destination} to iceberg")
