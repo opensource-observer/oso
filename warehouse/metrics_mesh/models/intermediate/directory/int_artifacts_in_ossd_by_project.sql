@@ -1,17 +1,16 @@
 MODEL (
   name metrics.int_artifacts_in_ossd_by_project,
   kind FULL,
-  dialect duckdb
 );
 
 with projects as (
   select
     project_id,
-    websites,
-    social,
-    github,
-    npm,
-    blockchain
+    websites::JSON as websites,
+    social::JSON as social,
+    github::JSON as github,
+    npm::JSON as npm,
+    blockchain::JSON as blockchain
   from @oso_source('bigquery.oso.stg_ossd__current_projects')
 ),
 
