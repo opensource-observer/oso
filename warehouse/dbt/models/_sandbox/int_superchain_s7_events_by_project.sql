@@ -66,25 +66,20 @@ project_counts as (
   select
     transaction_hash,
     event_type,
-    count(distinct project_id) as num_distinct_projects
+    count(distinct project_id) as num_projects_per_event
   from unioned_events
   group by
     transaction_hash,
     event_type
 ),
 
--- Step 6: Assign project weights
+-- Step 6: Assign project counts back to each event
 project_weights as (
   select
     ue.transaction_hash,
     ue.project_id,
     ue.event_type,
-    case
-      when ue.event_type = 'TRANSACTION_EVENT'
-        then 0.5 / nullif(pc.num_distinct_projects, 0)
-      when ue.event_type = 'TRACE_EVENT'
-        then 0.5 / nullif(pc.num_distinct_projects, 0)
-    end as project_weight
+    pc.num_projects_per_event
   from unioned_events as ue
   inner join project_counts as pc
     on
@@ -107,7 +102,7 @@ select
   pw.transaction_hash,
   pw.event_type,
   pw.project_id,
-  pw.project_weight,
+  pw.num_projects_per_event,
   otx.chain,
   otx.block_timestamp,
   otx.from_artifact_id,

@@ -79,7 +79,7 @@ This model creates a unified view of blockchain activity by joining transactions
   - Preserves gas usage from both transaction and trace level
   - Computes ETH cost as: `gas_used_tx * gas_price_tx / 1e18`
 
-#### Project Event Attribution (`int_superchain_events_by_project.sql`)
+#### Project Event Attribution (`int_superchain_s7_events_by_project.sql`)
 
 This model connects blockchain events to specific projects and implements a weighted attribution system:
 
@@ -117,11 +117,11 @@ This model enriches transaction data with user context:
    - Based on OP Labs' bot detection algorithm
    - Primarily catches MEV and trading bots
 
-### Metrics Computation (`int_superchain_s7_onchain_metrics_by_project.sql`)
+### Metrics Computation
+
+#### Full Metrics by Project (`int_superchain_s7_onchain_metrics_by_project.sql`)
 
 The final model computes various metrics for each project:
-
-#### Activity Metrics
 
 1. **Transaction Counts**:
 
@@ -132,11 +132,9 @@ The final model computes various metrics for each project:
 
 2. **Gas Usage**:
 
-   - `transaction_gas_fee`: Total ETH spent on gas (`gas_used * gas_price / 1e18`)
-   - `transaction_gas_fee_capped`: Capped at 0.03/3000 ETH per tx
-   - `*_bot_filtered`: Versions excluding bot interactions
+   - `transaction_gas_fee`: Total ETH spent on gas
    - `amortized_gas_fee`: Gas costs weighted by project involvement
-   - `amortized_gas_fee_capped_bot_filtered`: Most filtered version
+   - `amortized_gas_fee_bot_filtered`: Gas costs weighted by project involvement, excluding bot interactions
 
 3. **User Activity**:
    - `monthly_active_addresses`: Unique interacting addresses
@@ -149,15 +147,29 @@ All metrics are computed:
 - Per chain
 - Aggregated monthly (using `timestamp_trunc(block_timestamp, month)`). This will be replaced with a SQLMesh-based 30-day rolling window.
 
+#### Builder Eligibility (`int_superchain_s7_onchain_builder_eligibility.sql`)
+
+This model determines project eligibility for builder rewards based on several criteria:
+
+1. **Time Window**:
+   - Looks back 180 days from current date
+2. **Activity Thresholds**:
+   - Multi-chain projects (active on >1 chain):
+     - Minimum 1,000 transactions
+   - Single-chain projects:
+     - Minimum 10,000 transactions
+   - All projects must meet:
+     - Minimum 0.1 ETH in gas fees
+     - At least 420 unique users
+     - Active on 60 or more distinct days (out of 180)
+
 ### Current Limitations
 
 1. **Project Recognition**: Limited to projects in OSO directory. Will expand with OP Atlas integration.
 
 2. **Bot Detection**: Focuses on specific bot patterns. May miss sophisticated bots. Regular updates needed as patterns evolve. Submit a PR!
 
-3. **Gas Metrics**: Based on sensitivity analysis, the gas cap is relevant to ~40% of transactions on Base over the last 30 days and <20% on OP Mainnet. It is less than 5% of transactions on other chains. It should be noted that transactions above the gas cap do represent a large portion of the total gas usage on the network (>50%).
-
-4. **Project Amortization**: The method for attribition has a bias towards protocols with simpler internal interactions. For an instance, an ERC20 in a liquidity pool with two tokens would receive a weight of 0.5/2 = 0.25, whereas an ERC20 in a vault with 100 tokens would receive a weight of 0.5/100 = 0.005. On the other hand, both the pair pool and the vault project do receive a transaction weight of 0.5.
+3. **Project Amortization**: The method for attribition has a bias towards protocols with simpler internal interactions. For an instance, an ERC20 in a liquidity pool with two tokens would receive a weight of 0.5/2 = 0.25, whereas an ERC20 in a vault with 100 tokens would receive a weight of 0.5/100 = 0.005. On the other hand, both the pair pool and the vault project do receive a transaction weight of 0.5.
 
 ### Coming Soon
 

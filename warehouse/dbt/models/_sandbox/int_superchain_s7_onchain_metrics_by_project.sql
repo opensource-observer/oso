@@ -4,7 +4,8 @@
   )
 }}
 
-{% set gas_cap = 0.03 / 3000 %}
+{% set project_weight_per_tx_event = 0.5 %}
+{% set project_weight_per_trace_event = 0.5 %}
 
 with enriched_events as (
   select
@@ -14,12 +15,16 @@ with enriched_events as (
     events.transaction_hash,
     events.from_artifact_id,
     events.event_type,
-    events.project_weight,
+    (case
+      when events.event_type = 'TRANSACTION_EVENT'
+        then {{ project_weight_per_tx_event }}
+      when events.event_type = 'TRACE_EVENT'
+        then {{ project_weight_per_trace_event }}
+    end) / events.num_projects_per_event as project_weight,
     events.gas_fee,
-    least(events.gas_fee, {{ gas_cap }}) as capped_gas_fee,
     coalesce(users.is_bot, false) as is_bot,
     coalesce(users.is_farcaster_user, false) as is_farcaster_user
-  from {{ ref('int_superchain_events_by_project') }} as events
+  from {{ ref('int_superchain_s7_events_by_project') }} as events
   left outer join {{ ref('int_superchain_s7_onchain_user_labels') }} as users
     on events.from_artifact_id = users.artifact_id
 ),
@@ -104,19 +109,7 @@ transaction_gas_fee as (
   group by 1, 2, 3
 ),
 
-transaction_gas_fee_capped as (
-  select
-    project_id,
-    chain,
-    sample_date,
-    'transaction_gas_fee_capped' as metric_name,
-    sum(capped_gas_fee) as amount
-  from enriched_events
-  where event_type = 'TRANSACTION_EVENT'
-  group by 1, 2, 3
-),
-
--- Amortized gas fees (uncapped)
+-- Amortized gas fees
 amortized_gas as (
   select
     project_id,
@@ -128,26 +121,14 @@ amortized_gas as (
   group by 1, 2, 3
 ),
 
--- Amortized gas fees (capped)
-amortized_gas_capped as (
-  select
-    project_id,
-    chain,
-    sample_date,
-    'amortized_gas_fee_capped' as metric_name,
-    sum(capped_gas_fee * project_weight) as amount
-  from enriched_events
-  group by 1, 2, 3
-),
-
 -- Amortized gas fees (bot filtered)
-amortized_gas_capped_bot_filtered as (
+amortized_gas_bot_filtered as (
   select
     project_id,
     chain,
     sample_date,
-    'amortized_gas_fee_capped_bot_filtered' as metric_name,
-    sum(capped_gas_fee * project_weight) as amount
+    'amortized_gas_fee_bot_filtered' as metric_name,
+    sum(gas_fee * project_weight) as amount
   from enriched_events
   where is_bot = false
   group by 1, 2, 3
@@ -205,13 +186,9 @@ metrics_combined as (
   union all
   select * from transaction_gas_fee
   union all
-  select * from transaction_gas_fee_capped
-  union all
   select * from amortized_gas
   union all
-  select * from amortized_gas_capped
-  union all
-  select * from amortized_gas_capped_bot_filtered
+  select * from amortized_gas_bot_filtered
   union all
   select * from monthly_active_farcaster_users
   union all
