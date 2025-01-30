@@ -45,7 +45,8 @@ project_eligibility as (
 
 select
   builder_metrics.*,
-  project_eligibility.is_eligible
+  project_eligibility.is_eligible,
+  current_timestamp() as sample_date
 from builder_metrics
 inner join project_eligibility
   on builder_metrics.project_id = project_eligibility.project_id
