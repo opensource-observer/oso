@@ -70,5 +70,5 @@ inner join eligible_onchain_repos
   on all_dependencies.dependent_artifact_id = eligible_onchain_repos.repo_artifact_id
 inner join devtool_repo_stats
   on all_dependencies.dependency_artifact_id = devtool_repo_stats.repo_artifact_id
-inner join releases
+left join releases
   on all_dependencies.dependency_artifact_id = releases.repo_artifact_id

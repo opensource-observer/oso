@@ -38,12 +38,12 @@ all_eligible_repos as (
     repo_stats.*,
     releases.last_release_published
   from repo_stats
-  inner join releases
+  left join releases
     on repo_stats.repo_artifact_id = releases.repo_artifact_id
   where
     repo_stats.repo_updated_at > '{{ last_repo_update_date }}'
     and repo_stats.repo_stars > {{ min_repo_stars }}
-    and releases.last_release_published > '{{ last_repo_update_date }}'
+    -- and releases.last_release_published > '{{ last_repo_update_date }}'
 ),
 
 events_by_trusted_developer as (
