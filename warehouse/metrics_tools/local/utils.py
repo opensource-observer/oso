@@ -1,5 +1,4 @@
 import logging
-import os
 
 import duckdb
 from oso_dagster.assets.defillama import DEFILLAMA_PROTOCOLS, defillama_slug_to_name
@@ -7,8 +6,6 @@ from oso_dagster.assets.defillama import DEFILLAMA_PROTOCOLS, defillama_slug_to_
 from .config import RowRestriction, TableMappingConfig, TableMappingDestination
 
 logger = logging.getLogger(__name__)
-
-PROJECT_ID = os.getenv("GOOGLE_PROJECT_ID", "opensource-observer")
 
 DUCKDB_SOURCES_SCHEMA_PREFIX = "sources"
 

@@ -1,7 +1,7 @@
 import logging
 import os
 import typing as t
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import duckdb
 import pyarrow as pa
@@ -34,39 +34,59 @@ def remove_metadata_from_schema(schema: pa.Schema) -> pa.Schema:
     return pa.schema(fields_without_metadata)
 
 
+def filter_columns(
+    column_ids: t.List[str], columns: t.List[t.Tuple[str, str]]
+) -> t.List[t.Tuple[str, str]]:
+    # Create a dictionary of the columns by id
+    schema_dict = {column[0]: column[1] for column in columns}
+    new_columns: t.List[t.Tuple[str, str]] = []
+    for column_id in column_ids:
+        field = schema_dict[column_id]
+        new_columns.append(
+            (
+                column_id,
+                field,
+            )
+        )
+    return new_columns
+
+
+DUCKDB_TYPES_MAPPING: t.Dict[str, str] = {
+    "REAL": "DOUBLE",
+    "INT": "BIGINT",
+}
+
+# When converting to duckdb, some types are automatically changed for bigger precision.
+# We also remove the struct information and just keep the struct type.
+def map_type_to_duckdb_type(type: str) -> str:
+    if type.startswith("STRUCT"):
+        return "STRUCT"
+
+    if type in DUCKDB_TYPES_MAPPING:
+        return DUCKDB_TYPES_MAPPING[type]
+    return type
+
+
 def convert_bq_schema_to_duckdb_columns(
-    column_ids: t.List[str], bq_schema: t.List[bigquery.SchemaField]
+    bq_schema: t.List[bigquery.SchemaField]
 ) -> t.List[t.Tuple[str, str]]:
     # Create a dictionary of the schema
     schema_dict = {field.name: field for field in bq_schema}
     columns: t.List[t.Tuple[str, str]] = []
-    for column_id in column_ids:
-        field = schema_dict[column_id]
-
+    for _, field in schema_dict.items():
         field_type = field.field_type
-        from_dialect = "bigquery"
+        
         # force structs as json for trino later
         if field_type == "STRUCT":
             field_type = "JSON"
         elif field_type == "RECORD":
             field_type = "JSON"
-        elif field_type == "INTEGER":
-            field_type = "INT64"
-            from_dialect = "duckdb"
-        elif field_type == "FLOAT":
-            field_type = "DOUBLE"
-            from_dialect = "duckdb"
-
         if field.mode == "REPEATED":
             field_type = f"ARRAY<{field_type}>"
-        # If the field is an integer, for some reason sqlglot doesn't properly
-        # use int64 which is natively what integer is in bigquery. We need to manually set that type
 
-        logger.info(f"Converting {field.name} from {field_type} in bigquery to duckdb")
-        # Convert from bigquery to duckdb datatype
-        duckdb_type = parse_one(
-            field_type, into=exp.DataType, dialect=from_dialect
-        ).sql(dialect="duckdb")
+        duckdb_type =  map_type_to_duckdb_type(parse_one(field_type, into=exp.DataType, dialect="bigquery").sql(
+                    dialect="duckdb"
+                ))
 
         columns.append(
             (
@@ -74,7 +94,6 @@ def convert_bq_schema_to_duckdb_columns(
                 duckdb_type,
             )
         )
-    logger.info(f"Columns: {columns}")
     return columns
 
 
@@ -102,8 +121,30 @@ def bq_read_with_options(
     session = client.create_read_session(
         parent=parent, read_session=requested_session, max_stream_count=1
     )
+    if len(session.streams) == 0:
+        logger.info("No result found for the given restrictions")
+        return None
     reader = client.read_rows(session.streams[0].name)
     return reader.to_arrow(session)
+
+
+def bq_try_read_with_options(
+    start: datetime,
+    end: datetime,
+    source_table: str,
+    dest: TableMappingDestination,
+    project_id: str,
+):
+    result = None
+    increment = timedelta(days=1)
+    # Exponential increments for reading from bigquery, in case the initial
+    # restriction is too small
+    while result is None:
+        result = bq_read_with_options(start, end, source_table, dest, project_id)
+        start = start - increment
+        increment = increment * 2
+        
+    return result
 
 
 class BaseDestinationLoader(DestinationLoader):
@@ -119,6 +160,9 @@ class BaseDestinationLoader(DestinationLoader):
 
     def destination_table_exists(self, table: exp.Table) -> bool:
         raise NotImplementedError("table_exists not implemented")
+    
+    def destination_table_schema(self, table: exp.Table) -> t.List[t.Tuple[str, str]]:
+        raise NotImplementedError("table_schema not implemented")
 
     def destination_table_rewrite(self, table_fqn: str) -> exp.Table:
         raise NotImplementedError("table_rewrite not implemented")
@@ -146,15 +190,24 @@ class BaseDestinationLoader(DestinationLoader):
 
         rewritten_destination = self.destination_table_rewrite(destination.table)
         config = self._config
+        
+        # Load the schema from bigqouery
+        table_schema = self._bqclient.get_table(source_table).schema
+        columns = convert_bq_schema_to_duckdb_columns(table_schema)
 
         if self.destination_table_exists(rewritten_destination):
-            logger.info(
-                f"{destination.table} already exists at destination as {rewritten_destination}, skipping"
-            )
-            return
+            destination_table_schema = self.destination_table_schema(rewritten_destination)
+            if(set(columns) == set(destination_table_schema)):
+                logger.info(
+                    f"{destination.table} already exists at destination with the same schema as {rewritten_destination}, skipping"
+                )
+                return
+            logger.warning(f"Schema mismatch for {destination.table}, dropping destination table")
+            self._duckdb_conn.execute(f"DROP TABLE {rewritten_destination.sql(dialect='duckdb')}")
+            
         if destination.has_restriction():
             logger.info(f"Table {destination.table} has restrictions")
-            table_as_arrow = bq_read_with_options(
+            table_as_arrow = bq_try_read_with_options(
                 start,
                 end,
                 source_name,
@@ -190,15 +243,10 @@ class BaseDestinationLoader(DestinationLoader):
 
         duckdb_table_name = f"oso_local_temp.{rewritten_destination.this.sql(dialect="duckdb")}_{datetime.now().strftime('%Y%m%d%H%M%S')}"
 
-        # Load the schema from bigqouery
-        table_schema = self._bqclient.get_table(source_table).schema
-
         # If there are no special metadata fields in a schema we can just do a
         # straight copy into duckdb
         column_ids = [field.name for field in table_as_arrow.schema]
-        columns = convert_bq_schema_to_duckdb_columns(column_ids, table_schema)
-
-        logger.debug(f"Column types: {table_schema}")
+        columns = filter_columns(column_ids, columns)
 
         # Remove all metadata from the schema
         new_schema = remove_metadata_from_schema(table_as_arrow.schema)
@@ -298,6 +346,18 @@ class DuckDbDestinationLoader(BaseDestinationLoader):
         )
         return len(response.fetchall()) > 0
 
+    def destination_table_schema(self, table: exp.Table) -> t.List[t.Tuple[str, str]]:
+        table_name = table.sql(dialect="duckdb")
+        response = self._duckdb_conn.query(
+            f"""
+            DESCRIBE {table_name}
+        """
+        )
+        schema: t.List[t.Tuple[str, str]] = []
+        for column in response.fetchall():
+            schema.append((column[0], map_type_to_duckdb_type(parse_one(column[1], dialect="duckdb", into=exp.DataType).sql(dialect="duckdb"))))
+        return schema
+
     def destination_table_rewrite(self, table_fqn: str) -> exp.Table:
         return oso_source_rewrite(DUCKDB_REWRITE_RULES, table_fqn)
 
@@ -383,6 +443,21 @@ class LocalTrinoDestinationLoader(BaseDestinationLoader):
         """
         )
         return len(cursor.fetchall()) > 0
+    
+    def destination_table_schema(self, table) -> t.List[t.Tuple[str, str]]:
+        cursor = self._postgres_conn.cursor()
+        cursor.execute(
+            f"""
+            SELECT column_name, data_type
+            FROM information_schema.columns
+            WHERE table_schema = '{table.db}'
+            AND table_name = '{table.this}'
+        """
+        )
+        schema: t.List[t.Tuple[str, str]] = []
+        for column in cursor.fetchall():
+            schema.append((column[0], map_type_to_duckdb_type(parse_one(column[1], dialect="postgres", into=exp.DataType).sql(dialect="duckdb"))))
+        return schema
 
     def destination_table_rewrite(self, table_fqn: str) -> exp.Table:
         table = exp.to_table(table_fqn)
