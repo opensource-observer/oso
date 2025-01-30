@@ -7,6 +7,9 @@
 {% set active_months_threshold = 3 %}
 {% set commits_threshold = 20 %}
 {% set last_commit_threshold_months = 12 %}
+{% set min_repo_stars = 5 %}
+{% set last_repo_update_date = '2024-07-01' %}
+
 
 with eligible_repos as (
   select
@@ -29,8 +32,8 @@ with eligible_repos as (
   where
     projects.is_eligible
     and repositories.language in ('TypeScript', 'Solidity', 'Rust')
-    and repositories.updated_at > '2024-07-01'
-    and repositories.star_count > 5
+    and repositories.updated_at > '{{ last_repo_update_date }}'
+    and repositories.star_count > {{ min_repo_stars }}
 ),
 
 developers as (
