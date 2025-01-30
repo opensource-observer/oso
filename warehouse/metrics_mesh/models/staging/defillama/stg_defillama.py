@@ -57,6 +57,7 @@ def defillama_tvl_model(protocol: str):
         kind={
             "name": ModelKindName.INCREMENTAL_BY_TIME_RANGE,
             "time_column": "time",
+            "batch_size": 7,
         },
     )
     def tvl_model(

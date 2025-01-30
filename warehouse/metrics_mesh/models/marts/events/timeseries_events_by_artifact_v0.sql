@@ -2,6 +2,8 @@ MODEL (
   name metrics.timeseries_events_by_artifact_v0,
   kind INCREMENTAL_BY_TIME_RANGE (
     time_column time,
+    batch_size 30,
+    batch_concurrency 1
   ),
   start '2015-01-01',
   cron '@daily',
