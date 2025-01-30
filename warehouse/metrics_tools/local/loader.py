@@ -330,7 +330,7 @@ class DuckDbDestinationLoader(BaseDestinationLoader):
 
     def destination_table_exists(self, table: exp.Table) -> bool:
         table_name = table.sql(dialect="duckdb")
-        logger.info(f"checking if {table_name} exists")
+        logger.debug(f"Checking if {table_name} exists")
         response = self._duckdb_conn.query(
             f"""
             SELECT 1 
@@ -495,7 +495,7 @@ class LocalTrinoDestinationLoader(BaseDestinationLoader):
         return self._config.loader.config
 
     def destination_table_exists(self, table: exp.Table) -> bool:
-        logger.info(f"Checking if {table} exists")
+        logger.debug(f"Checking if {table} exists")
         return self._iceberg_catalog.table_exists(f"{table.db}.{table.this}")
 
     def destination_table_rewrite(self, table_fqn: str) -> exp.Table:
