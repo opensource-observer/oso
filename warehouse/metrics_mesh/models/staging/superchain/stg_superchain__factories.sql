@@ -18,6 +18,7 @@ MODEL (
   @oso_source('bigquery.optimism_superchain_raw_onchain_data.transactions'),
   @oso_source('bigquery.optimism_superchain_raw_onchain_data.traces'),
   traces.chain_id as chain_id,
-  transactions_block_timestamp_column := @from_unix_timestamp(transactions.block_timestamp),
+  transactions_time_partition_column := transactions.dt,
   traces_block_timestamp_column := @from_unix_timestamp(traces.block_timestamp),
+  traces_time_partition_column := traces.dt,
 )
