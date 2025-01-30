@@ -1,26 +1,4 @@
-with ranked_snapshots as (
-  select
-    artifact_source,
-    package_source,
-    package_version,
-    snapshot_at,
-    lower(artifact_namespace) as artifact_namespace,
-    lower(artifact_name) as artifact_name,
-    lower(package) as package,
-    row_number() over (
-      partition by
-        artifact_source,
-        artifact_namespace,
-        artifact_name,
-        package_source,
-        package,
-        package_version
-      order by snapshot_at asc
-    ) as row_num
-  from {{ source('ossd', 'sbom') }}
-),
-
-sbom_artifacts as (
+with sbom_artifacts as (
   select
     artifact_source,
     artifact_namespace,
@@ -29,16 +7,27 @@ sbom_artifacts as (
     package,
     package_version,
     snapshot_at
-  from ranked_snapshots
-  where row_num = 1
+  from {{ ref('stg_ossd__current_sbom') }}
+  where package_source in (
+    'CARGO',
+    'GOLANG',
+    'NPM',
+    'PYPI'
+  )
 ),
 
 deps_dev_packages as (
   select distinct
-    sbom_artifact_source,
     package_artifact_name,
     package_github_owner,
-    package_github_repo
+    package_github_repo,
+    case
+      when package_artifact_source = 'CARGO' then 'CARGO'
+      when package_artifact_source = 'GO' then 'GOLANG'
+      when package_artifact_source = 'NPM' then 'NPM'
+      when package_artifact_source = 'PYPI' then 'PYPI'
+      else 'OTHER'
+    end as sbom_artifact_source
   from {{ ref('int_packages') }}
   where is_current_owner = true
 )

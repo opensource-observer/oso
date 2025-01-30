@@ -16,7 +16,8 @@ def transactions_with_receipts_deployers(
     deployer_address_column: exp.ExpOrStr = "transactions.from_address",
     contract_address_column: exp.ExpOrStr = "transactions.receipt_contract_address",
     to_address_column: exp.ExpOrStr = "transactions.to_address",
-    receipt_status_columns: exp.ExpOrStr = "transactions.receipt_status",
+    receipt_status_column: exp.ExpOrStr = "transactions.receipt_status",
+    time_partition_column: exp.ExpOrStr = "transactions.block_timestamp",
 ) -> exp.Expression:
     """Get the SQL for the transactions_with_receipts_deployers macro."""
     block_timestamp = coerce_to_column(block_timestamp_column)
@@ -24,7 +25,8 @@ def transactions_with_receipts_deployers(
     deployer_address = coerce_to_column(deployer_address_column)
     contract_address = coerce_to_column(contract_address_column)
     to_address = coerce_to_column(to_address_column)
-    receipt_status = coerce_to_column(receipt_status_columns)
+    receipt_status = coerce_to_column(receipt_status_column)
+    time_partition = coerce_to_column(time_partition_column)
 
     return (
         exp.select(
@@ -43,7 +45,7 @@ def transactions_with_receipts_deployers(
         )
         .where(
             exp.Between(
-                this=block_timestamp,
+                this=time_partition,
                 low=start,
                 high=end,
             )

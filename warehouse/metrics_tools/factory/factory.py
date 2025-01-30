@@ -336,20 +336,14 @@ class TimeseriesMetrics:
         query_config: MetricQueryConfig,
         dependencies: t.Set[str],
     ):
-        query = query_config["query"]
-        match query.metric_type:
-            case "rolling":
-                self.generate_rolling_python_model_for_rendered_query(
-                    calling_file, query_config, dependencies
-                )
-            case "time_aggregation":
-                self.generate_time_aggregation_model_for_rendered_query(
-                    calling_file, query_config, dependencies
-                )
-            case "over_all_time":
-                self.generate_point_in_time_model_for_rendered_query(
-                    calling_file, query_config, dependencies
-                )
+        query_fns = [
+            self.generate_rolling_python_model_for_rendered_query,
+            self.generate_time_aggregation_model_for_rendered_query,
+            self.generate_point_in_time_model_for_rendered_query,
+        ]
+
+        for query_fn in query_fns:
+            query_fn(calling_file, query_config, dependencies)
 
     def generate_rolling_python_model_for_rendered_query(
         self,
@@ -359,11 +353,18 @@ class TimeseriesMetrics:
     ):
         from metrics_tools.factory.proxy.proxies import generated_rolling_query_proxy
 
+        # if it does not have rolling set, we skip
+        # this is because we are calling everything against
+        # everything and we delegate to the generator function
+        # the choice of what to generate
+        ref = query_config["ref"]
+        if not ref.get("window"):
+            return None
+
         depends_on = set()
         for dep in dependencies:
             depends_on.add(f"{self.catalog}.{dep}")
 
-        ref = query_config["ref"]
         query = query_config["query"]
 
         columns = constants.METRICS_COLUMNS_BY_ENTITY[ref["entity_type"]]
@@ -426,11 +427,13 @@ class TimeseriesMetrics:
 
         # Use a simple python sql model to generate the time_aggregation model
         ref = query_config["ref"]
+        if not ref.get("time_aggregation") or ref.get("time_aggregation") == "over_all_time":
+            return None
 
         columns = constants.METRICS_COLUMNS_BY_ENTITY[ref["entity_type"]]
 
         time_aggregation = ref.get("time_aggregation")
-        assert time_aggregation is not None
+        assert time_aggregation in ["daily", "weekly", "monthly"]
 
         kind_common = {
             "batch_concurrency": 1,
@@ -489,6 +492,9 @@ class TimeseriesMetrics:
         from metrics_tools.factory.proxy.proxies import generated_query
 
         ref = query_config["ref"]
+        if ref.get("time_aggregation") != "over_all_time":
+            return None
+
         columns = constants.METRICS_COLUMNS_BY_ENTITY[ref["entity_type"]]
         config = self.serializable_config(query_config)
 

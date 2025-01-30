@@ -27,6 +27,7 @@ def known_proxies(
     call_type_value: exp.ExpOrStr = "staticcall",
     factory_address_column: exp.ExpOrStr = "proxies.factory_address",
     proxy_contracts_table: exp.ExpOrStr = "metrics.seed_known_proxy_contracts",
+    time_partition_column: exp.ExpOrStr = "traces.block_timestamp",
 ):
     traces = coerce_to_table(traces_table)
     block_timestamp = coerce_to_column(block_timestamp_column)
@@ -41,6 +42,7 @@ def known_proxies(
     status = coerce_to_column(status_column)
     trace_type_value_exp = literal_or_expression(trace_type_value)
     call_type_value_exp = literal_or_expression(call_type_value)
+    time_partition = coerce_to_column(time_partition_column)
 
     proxy_address = exp.Case(
         ifs=[
@@ -93,7 +95,7 @@ def known_proxies(
         .where(exp.NEQ(this=from_address, expression=to_address))
         .where(
             exp.Between(
-                this=block_timestamp,
+                this=time_partition,
                 low=start,
                 high=end,
             )

@@ -1,13 +1,16 @@
 import logging
+import os
 import typing as t
 from datetime import datetime
 
 import duckdb
 import pyarrow as pa
 from google.cloud import bigquery, bigquery_storage_v1
+from kr8s.objects import Service
 from metrics_tools.local.config import (
     Config,
     DestinationLoader,
+    LocalTrinoLoaderConfig,
     TableMappingDestination,
 )
 from metrics_tools.source.rewrite import DUCKDB_REWRITE_RULES, oso_source_rewrite
@@ -40,19 +43,38 @@ def convert_bq_schema_to_duckdb_columns(
     for column_id in column_ids:
         field = schema_dict[column_id]
 
+        field_type = field.field_type
+        from_dialect = "bigquery"
         # force structs as json for trino later
-        if field.field_type == "STRUCT":
-            columns.append((field.name, "JSON"))
-            continue
+        if field_type == "STRUCT":
+            field_type = "JSON"
+        elif field_type == "RECORD":
+            field_type = "JSON"
+        elif field_type == "INTEGER":
+            field_type = "INT64"
+            from_dialect = "duckdb"
+        elif field_type == "FLOAT":
+            field_type = "DOUBLE"
+            from_dialect = "duckdb"
+
+        if field.mode == "REPEATED":
+            field_type = f"ARRAY<{field_type}>"
+        # If the field is an integer, for some reason sqlglot doesn't properly
+        # use int64 which is natively what integer is in bigquery. We need to manually set that type
+
+        logger.info(f"Converting {field.name} from {field_type} in bigquery to duckdb")
+        # Convert from bigquery to duckdb datatype
+        duckdb_type = parse_one(
+            field_type, into=exp.DataType, dialect=from_dialect
+        ).sql(dialect="duckdb")
 
         columns.append(
             (
                 field.name,
-                parse_one(field.field_type, into=exp.DataType, dialect="bigquery").sql(
-                    dialect="duckdb"
-                ),
+                duckdb_type,
             )
         )
+    logger.info(f"Columns: {columns}")
     return columns
 
 
@@ -87,9 +109,11 @@ def bq_read_with_options(
 class BaseDestinationLoader(DestinationLoader):
     def __init__(
         self,
+        config: Config,
         bqclient: bigquery.Client,
         duckdb_conn: duckdb.DuckDBPyConnection,
     ):
+        self._config = config
         self._duckdb_conn = duckdb_conn
         self._bqclient = bqclient
 
@@ -109,7 +133,6 @@ class BaseDestinationLoader(DestinationLoader):
 
     def load_from_bq(
         self,
-        config: Config,
         start: datetime,
         end: datetime,
         source_name: str,
@@ -122,6 +145,7 @@ class BaseDestinationLoader(DestinationLoader):
         source_table = bigquery.TableReference.from_string(source_name)
 
         rewritten_destination = self.destination_table_rewrite(destination.table)
+        config = self._config
 
         if self.destination_table_exists(rewritten_destination):
             logger.info(
@@ -171,13 +195,10 @@ class BaseDestinationLoader(DestinationLoader):
 
         # If there are no special metadata fields in a schema we can just do a
         # straight copy into duckdb
-        is_simple_copy = True
         column_ids = [field.name for field in table_as_arrow.schema]
         columns = convert_bq_schema_to_duckdb_columns(column_ids, table_schema)
-        column_types = set([column[1] for column in columns])
 
-        if "JSON" in column_types:
-            is_simple_copy = False
+        logger.debug(f"Column types: {table_schema}")
 
         # Remove all metadata from the schema
         new_schema = remove_metadata_from_schema(table_as_arrow.schema)
@@ -192,48 +213,75 @@ class BaseDestinationLoader(DestinationLoader):
             self._duckdb_conn.execute(f"CREATE SCHEMA IF NOT EXISTS {schema}")
             created_schemas.add(schema)
 
-        if is_simple_copy:
-            query = f"CREATE TABLE IF NOT EXISTS {duckdb_table_name} AS SELECT * FROM table_as_arrow"
-            logger.debug(f"EXECUTING={query}")
-            self._duckdb_conn.execute(query)
-            logger.debug("COMPLETED")
-        else:
-            create_query = parse_one(
-                f"""
-                CREATE TABLE IF NOT EXISTS {duckdb_table_name} (placeholder VARCHAR);
-            """
-            )
-            create_query.this.set(
-                "expressions",
-                [
-                    exp.ColumnDef(
-                        this=exp.Identifier(this=column_name),
-                        kind=parse_one(
-                            data_type,
-                            dialect="duckdb",
-                            into=exp.DataType,
-                        ),
-                    )
-                    for column_name, data_type in columns
-                ],
-            )
-            logger.debug(f"EXECUTING={create_query.sql(dialect="duckdb")}")
-            self._duckdb_conn.execute(create_query.sql(dialect="duckdb"))
+        create_query = parse_one(
+            f"""
+            CREATE TABLE IF NOT EXISTS {duckdb_table_name} (placeholder VARCHAR);
+        """
+        )
+        create_query.this.set(
+            "expressions",
+            [
+                exp.ColumnDef(
+                    this=exp.Identifier(this=column_name),
+                    kind=parse_one(
+                        data_type,
+                        dialect="duckdb",
+                        into=exp.DataType,
+                    ),
+                )
+                for column_name, data_type in columns
+            ],
+        )
+        logger.debug(f"EXECUTING={create_query.sql(dialect="duckdb")}")
+        self._duckdb_conn.execute(create_query.sql(dialect="duckdb"))
 
-            insert_query = parse_one(
-                f"INSERT INTO {duckdb_table_name} (placeholder) SELECT placeholder FROM table_as_arrow"
-            )
-            insert_query.this.set(
-                "expressions",
-                [exp.Identifier(this=column_name) for column_name, _ in columns],
-            )
-            insert_query.expression.set(
-                "expressions",
-                [exp.to_column(column_name) for column_name, _ in columns],
-            )
-            logger.debug(f"EXECUTING={insert_query.sql(dialect="duckdb")}")
-            self._duckdb_conn.execute(insert_query.sql(dialect="duckdb"))
+        insert_query = parse_one(
+            f"INSERT INTO {duckdb_table_name} (placeholder) SELECT placeholder FROM table_as_arrow"
+        )
+        insert_query.this.set(
+            "expressions",
+            [exp.Identifier(this=column_name) for column_name, _ in columns],
+        )
+        insert_query.expression.set(
+            "expressions",
+            [exp.to_column(column_name) for column_name, _ in columns],
+        )
+        logger.debug(f"EXECUTING={insert_query.sql(dialect="duckdb")}")
+        self._duckdb_conn.execute(insert_query.sql(dialect="duckdb"))
+
         self.commit_to_destination(duckdb_table_name, rewritten_destination)
+        logger.info(f"Loaded {source_name} into {destination.table}")
+
+    def drop_all(self):
+        """Use this to drop all data in the duckdb database and start fresh"""
+        return self.drop_like_schema_name("%")
+
+    def drop_non_sources(self):
+        return self.drop_like_schema_name("sources_%", not_like=True)
+
+    def drop_like_schema_name(self, like_schema_name: str, not_like: bool = False):
+        raise NotImplementedError("drop_like_schema_name not implemented")
+
+    def sqlmesh_base_args(self):
+        return ["sqlmesh"]
+
+    def sqlmesh(self, extra_args: t.List[str], extra_env: t.Dict[str, str]):
+        import subprocess
+
+        if "SQLMESH_DUCKDB_LOCAL_PATH" not in extra_env:
+            extra_env["SQLMESH_DUCKDB_LOCAL_PATH"] = (
+                self._config.loader.config.duckdb_path
+            )
+
+        process = subprocess.Popen(
+            [*self.sqlmesh_base_args(), *extra_args],
+            cwd=os.path.join(self._config.repo_dir, "warehouse/metrics_mesh"),
+            env={
+                **os.environ,
+                **extra_env,
+            },
+        )
+        process.communicate()
 
 
 class DuckDbDestinationLoader(BaseDestinationLoader):
@@ -261,35 +309,63 @@ class DuckDbDestinationLoader(BaseDestinationLoader):
         # Drop the temporary table
         self._duckdb_conn.execute(f"DROP TABLE {duckdb_table_name}")
 
+    def drop_like_schema_name(self, like_schema_name: str, not_like: bool = False):
+        not_like_str = "NOT " if not_like else ""
 
-class PostgresDestinationLoader(BaseDestinationLoader):
+        schemas = self._duckdb_conn.execute(
+            f"""
+            SELECT schema_name 
+            FROM information_schema.schemata 
+            WHERE schema_name {not_like_str} LIKE '{like_schema_name}'
+            AND schema_name NOT IN ('information_schema', 'duckdb', 'main', 'pg_catalog')
+            """
+        ).fetchall()
+
+        for schema in schemas:
+            schema_name = schema[0]
+            logger.info(f"Dropping schema {schema_name}")
+            self._duckdb_conn.execute(f"DROP SCHEMA {schema_name} CASCADE")
+
+
+class LocalTrinoDestinationLoader(BaseDestinationLoader):
     def __init__(
         self,
+        config: Config,
         bqclient: bigquery.Client,
         duckdb_conn: duckdb.DuckDBPyConnection,
         postgres_conn: pg_connection,
         postgres_host: str,
         postgres_port: int,
-        postgres_db: str,
-        postgres_user: str,
-        postgres_password: str,
     ):
-        super().__init__(bqclient, duckdb_conn)
+        super().__init__(config, bqclient, duckdb_conn)
         self._postgres_conn = postgres_conn
-        self._connected_to_postgres = False
         self._postgres_host = postgres_host
         self._postgres_port = postgres_port
-        self._postgres_db = postgres_db
-        self._postgres_user = postgres_user
-        self._postgres_password = postgres_password
+        self._connected_to_postgres = False
+
+    @property
+    def local_trino_loader_config(self) -> LocalTrinoLoaderConfig:
+        assert isinstance(
+            self._config.loader.config, LocalTrinoLoaderConfig
+        ), "Loader config is not a LocalTrinoLoaderConfig"
+        return self._config.loader.config
 
     def _connect_to_postgres(self):
         if not self._connected_to_postgres:
+            assert (
+                self._config.loader.type == "local-trino"
+            ), "Somehow we are not using the local-trino loader"
+
+            loader_config = self._config.loader.config
+            assert isinstance(
+                loader_config, LocalTrinoLoaderConfig
+            ), "Loader config is not a LocalTrinoLoaderConfig"
+
             self._duckdb_conn.execute(
                 f"""
                 INSTALL postgres;
                 LOAD postgres;
-                ATTACH 'dbname={self._postgres_db} user={self._postgres_user} password={self._postgres_password} host={self._postgres_host} port={self._postgres_port}' AS postgres_db (TYPE POSTGRES)
+                ATTACH 'dbname={loader_config.postgres_db} user={loader_config.postgres_user} password={loader_config.postgres_password} host={self._postgres_host} port={self._postgres_port}' AS postgres_db (TYPE POSTGRES)
                 """
             )
             self._connected_to_postgres = True
@@ -330,15 +406,62 @@ class PostgresDestinationLoader(BaseDestinationLoader):
             # Arrays and structs need to be cast to JSON
             if "STRUCT" in column[1]:
                 column_select.append(f"{column[0]}::JSON as {column[0]}")
-            elif "[]" in column[1]:
-                column_select.append(f"{column[0]}::JSON as {column[0]}")
             else:
                 column_select.append(column[0])
         all_columns = ", ".join(column_select)
+        print(all_columns)
 
-        self._duckdb_conn.execute(
-            f"CREATE TABLE {destination.sql(dialect='postgres')} AS SELECT {all_columns} FROM {duckdb_table_name}"
-        )
-        logger.info("copy completed")
+        create_query = f"CREATE TABLE {destination.sql(dialect='duckdb')} AS SELECT {all_columns} FROM {duckdb_table_name}"
+        logger.info(f"EXECUTING={create_query}")
+
+        self._duckdb_conn.execute(create_query)
+        logger.debug(f"copy into {destination.sql(dialect="duckdb")} completed")
         # Drop the temporary table
         self._duckdb_conn.execute(f"DROP TABLE {duckdb_table_name}")
+
+    def drop_like_schema_name(self, like_schema_name: str, not_like: bool = False):
+        not_like_str = "NOT " if not_like else ""
+
+        cursor = self._postgres_conn.cursor()
+        cursor.execute(
+            f"""
+            SELECT schema_name 
+            FROM information_schema.schemata 
+            WHERE schema_name {not_like_str} LIKE '{like_schema_name}'
+            AND schema_name NOT IN ('information_schema', 'pg_catalog', 'pg_toast')
+        """
+        )
+        schemas = cursor.fetchall()
+
+        for schema in schemas:
+            schema_name = schema[0]
+            logger.info(f"Dropping schema {schema_name}")
+            cursor.execute(f"DROP SCHEMA {schema_name} CASCADE")
+        self._postgres_conn.commit()
+
+    def sqlmesh_base_args(self):
+        return ["sqlmesh", "--gateway", "local-trino"]
+
+    def sqlmesh(self, extra_args: t.List[str], extra_env: t.Dict[str, str]):
+        trino_service = Service.get(
+            namespace=self.local_trino_loader_config.trino_k8s_namespace,
+            name=self.local_trino_loader_config.trino_k8s_service,
+        )
+        with trino_service.portforward(remote_port="8080") as local_port:  # type: ignore
+            logger.info(f"Proxied trino to port {local_port} for sqlmesh")
+
+            env = {
+                **extra_env,
+                "SQLMESH_DUCKDB_LOCAL_PATH": self.local_trino_loader_config.duckdb_path,
+                "SQLMESH_TRINO_HOST": "localhost",
+                "SQLMESH_TRINO_PORT": str(local_port),
+                "SQLMESH_TRINO_CONCURRENT_TASKS": "1",
+                "SQLMESH_MCS_ENABLED": "0",
+                # We set this variable to ensure that we run the minimal
+                # amount of data. By default this ensure that we only
+                # calculate metrics from 2024-12-01. For now this is only
+                # set for trino but must be explicitly set for duckdb
+                "SQLMESH_TIMESERIES_METRICS_START": self._config.timeseries_start,
+            }
+
+            super().sqlmesh(extra_args, env)

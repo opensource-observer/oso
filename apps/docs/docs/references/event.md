@@ -27,64 +27,110 @@ All sources of event data are associated with a unique `event_source`. We are ad
 
 Event types are used to classify activities that relate to a given artifact namespace. The following event types are currently supported:
 
-### COMMIT_CODE
+### Code Events
+
+These events track activities related to source code management and collaboration:
+
+#### COMMIT_CODE
 
 Represents a commit made to a code repository. This event is used to track changes in the source code over time.
 
-### CONTRACT_INVOCATION_DAILY_COUNT
-
-Represents the daily count of contract invocations. This event is used to track the frequency of contract interactions on the blockchain.
-
-### CONTRACT_INVOCATION_DAILY_L2_GAS_USED
-
-Represents the total gas used in contract invocations on Layer 2 networks on a daily basis. This event helps track the resource consumption of contract executions.
-
-### CONTRACT_INVOCATION_SUCCESS_DAILY_COUNT
-
-Represents the daily count of successful contract invocations. This event is used to measure the success rate of contract executions on the blockchain.
-
-### FORKED
+#### FORKED
 
 Represents the event when a repository is forked. This event is used to track the distribution and branching of the source code.
 
-### ISSUE_CLOSED
+#### RELEASE_PUBLISHED
 
-Represents the closing of an issue in a repository. This event is used to track the resolution and management of reported issues.
+Represents the publication of a new release version of the software.
 
-### ISSUE_OPENED
-
-Represents the opening of a new issue in a repository. This event is used to track new problems or feature requests reported by users.
-
-### ISSUE_REOPENED
-
-Represents the reopening of a previously closed issue in a repository. This event is used to track the reoccurrence or unresolved status of issues.
-
-### PULL_REQUEST_CLOSED
-
-Represents the closing of a pull request in a repository. This event is used to track the finalization and rejection of proposed code changes.
-
-### PULL_REQUEST_MERGED
-
-Represents the merging of a pull request into the main branch of a repository. This event is used to track the integration of code changes.
-
-### PULL_REQUEST_OPENED
-
-Represents the opening of a new pull request in a repository. This event is used to track proposed changes to the codebase.
-
-### PULL_REQUEST_REOPENED
-
-Represents the reopening of a previously closed pull request in a repository. This event is used to track the reconsideration of proposed code changes.
-
-### STARRED
+#### STARRED
 
 Represents the starring of a repository by a user. This event is used to track the popularity and user interest in the repository.
 
-## NPM Events
+### Issue Events
 
-:::warning
-This section is currently in development.
-:::
+These events track the lifecycle of issues in a repository:
 
-All NPM events are associated with a unique NPM package. The following NPM events are currently supported:
+#### ISSUE_OPENED
 
-- Downloads: A snapshot of the number of downloads for an NPM package on a given date.
+Represents the opening of a new issue in a repository. This event is used to track new problems or feature requests reported by users.
+
+#### ISSUE_CLOSED
+
+Represents the closing of an issue in a repository. This event is used to track the resolution and management of reported issues.
+
+#### ISSUE_REOPENED
+
+Represents the reopening of a previously closed issue in a repository. This event is used to track the reoccurrence or unresolved status of issues.
+
+#### ISSUE_COMMENT
+
+Represents a comment made on an issue in a repository.
+
+### Pull Request Events
+
+These events track the lifecycle of pull requests:
+
+#### PULL_REQUEST_OPENED
+
+Represents the opening of a new pull request in a repository. This event is used to track proposed changes to the codebase.
+
+#### PULL_REQUEST_CLOSED
+
+Represents the closing of a pull request in a repository. This event is used to track the finalization and rejection of proposed code changes.
+
+#### PULL_REQUEST_MERGED
+
+Represents the merging of a pull request into the main branch of a repository. This event is used to track the integration of code changes.
+
+#### PULL_REQUEST_REOPENED
+
+Represents the reopening of a previously closed pull request in a repository. This event is used to track the reconsideration of proposed code changes.
+
+#### PULL_REQUEST_REVIEW_COMMENT
+
+Represents a comment made during the review of a pull request.
+
+### Onchain Events
+
+These events track blockchain-related activities:
+
+#### CONTRACT_INVOCATION_DAILY_COUNT
+
+Represents the daily count of contract invocations. This event is used to track the frequency of contract interactions on the blockchain.
+
+#### CONTRACT_INVOCATION_SUCCESS_DAILY_COUNT
+
+Represents the daily count of successful contract invocations. This event is used to measure the success rate of contract executions on the blockchain.
+
+#### CONTRACT_INVOCATION_DAILY_L2_GAS_USED
+
+Represents the total gas used in contract invocations on Layer 2 networks on a daily basis. This event helps track the resource consumption of contract executions.
+
+### Financial Events
+
+These events track financial transactions:
+
+#### GRANT_RECEIVED_USD
+
+Represents the receipt of a grant in USD equilvalent; currently only available for sources listed in [oss-funding](https://github.com/opensource-observer/oss-funding).
+
+#### CREDIT
+
+Represents an incoming financial transaction or credit to an account; currently only available for Open Collective.
+
+#### DEBIT
+
+Represents an outgoing financial transaction or debit from an account; currently only available for Open Collective.
+
+### Dependency Events
+
+These events track package dependencies:
+
+#### ADD_DEPENDENCY
+
+Represents the addition of a new dependency to a project.
+
+#### DOWNLOADS
+
+Represents the number of downloads for a package on a given date according to the package manager's public data.

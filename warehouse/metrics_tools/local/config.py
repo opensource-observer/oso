@@ -1,7 +1,11 @@
 import logging
 import typing as t
-from datetime import datetime, timedelta
+from contextlib import contextmanager
+from datetime import datetime
 
+import duckdb
+import psycopg2
+from google.cloud import bigquery
 from pydantic import BaseModel, Field
 from sqlglot import exp
 from sqlmesh.core.dialect import parse_one
@@ -52,27 +56,136 @@ class TableMappingDestination(BaseModel):
         return False
 
 
+TableMappingConfig = t.Dict[str, str | TableMappingDestination]
+
+
 class DestinationLoader(t.Protocol):
     def load_from_bq(
         self,
-        config: "Config",
         start: datetime,
         end: datetime,
         source_name: str,
         destination: TableMappingDestination,
     ): ...
 
+    def drop_all(self): ...
+
+    def drop_non_sources(self): ...
+
+    def sqlmesh(self, extra_args: t.List[str], extra_env: t.Dict[str, str]): ...
+
+
+class BaseLoaderConfig(BaseModel):
+    @contextmanager
+    def loader(
+        self, config: "Config", bq_client: bigquery.Client
+    ) -> t.Iterator[DestinationLoader]: ...
+
+
+class DuckDbLoaderConfig(BaseLoaderConfig):
+    type: t.Literal["duckdb"] = "duckdb"
+    duckdb_path: str
+
+    def duckdb_connect(self):
+        return duckdb.connect(self.duckdb_path)
+
+    @contextmanager
+    def loader(self, config: "Config", bq_client: bigquery.Client):
+        from metrics_tools.local.loader import DuckDbDestinationLoader
+
+        duckdb_conn = self.duckdb_connect()
+        try:
+            yield DuckDbDestinationLoader(config, bq_client, duckdb_conn)
+        finally:
+            duckdb_conn.close()
+
+
+class LocalTrinoLoaderConfig(BaseLoaderConfig):
+    type: t.Literal["local-trino"] = "local-trino"
+    duckdb_path: str
+
+    postgres_db: str = "postgres"
+    postgres_user: str = "postgres"
+    postgres_password: str = "password"
+
+    postgres_k8s_service: str = "trino-psql-postgresql"
+    postgres_k8s_namespace: str = "local-trino-psql"
+    postgres_k8s_port: int = 5432
+
+    trino_k8s_service: str = "local-trino-trino"
+    trino_k8s_namespace: str = "local-trino"
+    trino_k8s_port: int = 8080
+
+    def postgres_connection_string(self, port: int) -> str:
+        return f"postgresql://{self.postgres_user}:{self.postgres_password}@localhost:{port}/{self.postgres_db}"
+
+    def postgres_connect(self, port: int):
+        return psycopg2.connect(
+            database=self.postgres_db,
+            user=self.postgres_user,
+            password=self.postgres_password,
+            host="localhost",
+            port=port,
+        )
+
+    def duckdb_connect(self):
+        return duckdb.connect(self.duckdb_path)
+
+    @contextmanager
+    def loader(self, config: "Config", bq_client: bigquery.Client):
+        from kr8s.objects import Service
+        from kr8s.portforward import PortForward
+        from metrics_tools.local.loader import LocalTrinoDestinationLoader
+
+        postgres_service = t.cast(
+            Service,
+            Service.get(
+                name=self.postgres_k8s_service, namespace=self.postgres_k8s_namespace
+            ),
+        )
+
+        forward_context = postgres_service.portforward(
+            remote_port=self.postgres_k8s_port
+        )
+        assert isinstance(forward_context, PortForward)
+
+        with postgres_service.portforward(
+            remote_port=self.postgres_k8s_port
+        ) as local_port:  # type: ignore
+            logger.debug(f"Proxied postgres to port: {local_port}")
+            postgres_connection = self.postgres_connect(local_port)
+            duckdb_conn = self.duckdb_connect()
+            loader = LocalTrinoDestinationLoader(
+                config,
+                bq_client,
+                duckdb_conn,
+                postgres_connection,
+                "localhost",
+                local_port,
+            )
+            try:
+                yield loader
+            finally:
+                duckdb_conn.close()
+                postgres_connection.close()
+
+
+LoaderTypes = t.Union[DuckDbLoaderConfig, LocalTrinoLoaderConfig]
+
+
+class LoaderConfig(BaseModel):
+    type: str
+    config: LoaderTypes = Field(discriminator="type")
+
 
 class Config(BaseModel):
-    table_mapping: t.Dict[str, str | TableMappingDestination]
+    table_mapping: TableMappingConfig
+    repo_dir: str
     max_days: int = 7
     max_results_per_query: int = 0
     project_id: str = "opensource-observer"
+    timeseries_start: str = "2024-12-01"
+    loader: LoaderConfig
 
-    def load_tables_into(self, loader: DestinationLoader):
-        start = datetime.now() - timedelta(days=self.max_days)
-        end = datetime.now()
-        for source_name, destination in self.table_mapping.items():
-            if isinstance(destination, str):
-                destination = TableMappingDestination(table=destination)
-            loader.load_from_bq(self, start, end, source_name, destination)
+    def loader_instance(self):
+        return self.loader.config.loader(self, bigquery.Client())

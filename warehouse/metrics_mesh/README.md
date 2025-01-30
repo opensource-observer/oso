@@ -175,6 +175,11 @@ In addition to having the normal dev tools for running the repo, you will also n
 
 Please install these before continuing.
 
+For debugging, you may also want to install:
+
+- [kubectl](https://kubernetes.io/docs/tasks/tools/)
+- [k9s](https://k9scli.io/topics/install/)
+
 ### Local Kubernetes Cluster Setup
 
 To initialize everything simply do:
@@ -199,13 +204,31 @@ convenience functions we created to run sqlmesh ensure that this is done
 automatically. However, before running sqlmesh you will need to initialize the
 data in trino.
 
+You can check if Kind has started all your pods:
+
+```bash
+kubectl get pods --all-namespaces
+kubectl get kustomizations --all-namespaces
+```
+
+It may take an additional ~10 minutes after `oso ops cluster-setup` for
+all the pods to come online.
+In particular, you are waiting for `local-trino-psql` to be in a
+"Running" state before you can run the data initialization.
+
+If you need to kill your Kind cluster and start over, you can run
+
+```bash
+kind delete cluster oso-local-test-cluster
+```
+
 ### Initialize Trino Data
 
 Much like running against a local duckdb the local trino can also be initialized
 with on the CLI like so:
 
 ```bash
-oso metrics local initialize --local-trino -m 1000 -d 2
+oso metrics local initialize --local-trino -m 1000 -d 3
 ```
 
 _Note: It's best not to load too much data into trino for local testing. It won't be as
