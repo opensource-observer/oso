@@ -1,6 +1,6 @@
 import logging
-import sys
 import os
+import time
 import typing as t
 from contextlib import contextmanager
 from datetime import datetime
@@ -8,6 +8,7 @@ from datetime import datetime
 import duckdb
 import psycopg2
 from google.cloud import bigquery
+from kr8s.objects import Service
 from metrics_tools.local.tls_portforward import tls_port_forward
 from pydantic import BaseModel, Field
 from pyiceberg.io.fsspec import SCHEME_TO_FS
@@ -82,6 +83,8 @@ class DestinationLoader(t.Protocol):
     def drop_all(self): ...
 
     def drop_non_sources(self): ...
+
+    def drop_table(self, table: exp.Table): ...
 
     def sqlmesh(self, extra_args: t.List[str], extra_env: t.Dict[str, str]): ...
 
@@ -183,8 +186,22 @@ class LocalTrinoLoaderConfig(BaseLoaderConfig):
         }
 
     @contextmanager
+    def nessie_context(self, nessie_service: Service):
+        """The kr8s sync context manager seems to be a little broken. This works around that and manages the context ourselves"""
+        nessie_context = nessie_service.portforward(remote_port=self.nessie_k8s_port)
+        try:
+            logger.info("Starting nessie port-forward")
+            nessie_context.start()
+            # Wait for the local port to be set
+            while nessie_context.local_port in [None, 0]:
+                time.sleep(0.5)
+            yield nessie_context.local_port
+        finally:
+            logger.info("Stopping nessie port-forward")
+            nessie_context.stop()
+
+    @contextmanager
     def loader(self, config: "Config", bq_client: bigquery.Client):
-        from kr8s.objects import Service
         from metrics_tools.local.loader import LocalTrinoDestinationLoader
 
         nessie_service = t.cast(
@@ -194,30 +211,31 @@ class LocalTrinoLoaderConfig(BaseLoaderConfig):
             ),
         )
 
-        with nessie_service.portforward(remote_port=self.nessie_k8s_port) as nessie_port:  # type: ignore
+        with self.nessie_context(nessie_service) as nessie_port:
             logger.debug(f"Proxied nessie to port: {nessie_port}")
             with tls_port_forward(
                 name=self.minio_k8s_service,
                 namespace=self.minio_k8s_namespace,
                 remote_port=self.minio_k8s_port,
             ) as minio_port:  # type: ignore
+                logger.debug(f"proxied minio to port: {minio_port}")
                 try:
-                    logger.debug(f"proxied minio to port: {minio_port}")
                     duckdb_conn = self.duckdb_connect()
+                    catalog = self.iceberg_catalog(minio_port, nessie_port)
                     loader = LocalTrinoDestinationLoader(
                         config,
                         bq_client,
                         duckdb_conn,
                         self.minio_client(minio_port),
-                        self.iceberg_catalog(minio_port, nessie_port),
+                        catalog,
                         f"https://127.0.0.1:{minio_port}",
                         self.iceberg_properties(minio_port, nessie_port),
                     )
                     try:
                         yield loader
                     finally:
+                        del catalog
                         duckdb_conn.close()
-                        sys.exit(0)
                 except Exception as e:
                     logger.error(f"Error occurred in loader: {e}")
                     raise e
