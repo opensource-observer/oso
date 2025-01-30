@@ -140,6 +140,10 @@ jobs:
           curl -o $SQLMESH_DUCKDB_LOCAL_PATH https://r2.opensource.observer/oso.duckdb
         if: ${{ matrix.component == 'sqlmesh' }}
 
+      - name: Validate local database
+        run: poetry run oso metrics local initialize --max-results-per-query 50 --max-days 3
+        if: ${{ matrix.component == 'sqlmesh' }}
+
       # Automatically retry if the build fails
       - name: Build (Node)
         uses: nick-fields/retry@v3
