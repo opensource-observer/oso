@@ -1,3 +1,11 @@
+"""
+This is a custom file system for use with pyiceberg. The reason we need this is
+only because minio is using a certificate we don't trust. 
+
+The right fix would be to temporarily copy the minio certificatet into the
+current session, but this was quick and hacky.
+"""
+
 import logging
 from functools import partial
 from typing import Callable, Dict
