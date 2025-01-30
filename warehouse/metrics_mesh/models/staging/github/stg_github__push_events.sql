@@ -2,6 +2,7 @@ MODEL (
   name metrics.stg_github__push_events,
   description 'Gathers all github events for all github artifacts',
   kind FULL,
+  dialect trino,
 );
 
 select
@@ -10,10 +11,10 @@ select
   ghe.repo.name as repository_name,
   ghe.actor.id as actor_id,
   ghe.actor.login as actor_login,
-  json_extract_string(ghe.payload, '$.push_id') as push_id,
-  json_extract_string(ghe.payload, '$.ref') as ref,
-  json_extract(ghe.payload, '$.commits')::JSON[] as commits,
-  json_array_length(ghe.payload, '$.commits') as available_commits_count,
+  json_extract_scalar(ghe.payload, '$.push_id') as push_id,
+  json_extract_scalar(ghe.payload, '$.ref') as ref,
+  json_format(json_extract(ghe.payload, '$.commits')) as commits,
+  json_array_length(json_format(json_extract(ghe.payload, '$.commits'))) as available_commits_count,
   CAST(
     json_extract(ghe.payload, '$.distinct_size') as INT
   ) as actual_commits_count

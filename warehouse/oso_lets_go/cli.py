@@ -47,10 +47,10 @@ PROJECT_ID = os.getenv("GOOGLE_PROJECT_ID", "opensource-observer")
 @click.option("--debug/--no-debug", default=False)
 @click.pass_context
 def cli(ctx: click.Context, debug: bool):
-    setup_module_logging("oso_lets_go")
-    setup_module_logging("metrics_tools")
-    setup_module_logging("oso_dagster")
-    setup_module_logging("opsscripts")
+    setup_module_logging("oso_lets_go", color=True)
+    setup_module_logging("metrics_tools", color=True)
+    setup_module_logging("oso_dagster", color=True)
+    setup_module_logging("opsscripts", color=True)
     ctx.ensure_object(dict)
     ctx.obj["DEBUG"] = debug
 
@@ -191,26 +191,6 @@ def initialize(
     manager = LocalWarehouseManager.from_config(local_manager_config)
 
     manager.initialize()
-
-    # if not local_trino:
-    #     initialize_local_duckdb(
-    #         ctx.obj["local_duckdb_path"],
-    #         max_results_per_query=max_results_per_query,
-    #         max_days=max_days,
-    #     )
-    # else:
-    #     postgres_service = Service.get(
-    #         name="trino-psql-postgresql", namespace="local-trino-psql"
-    #     )
-    #     with postgres_service.portforward(remote_port=5432) as local_port:
-    #         logger.debug(f"Proxied postgres to port: {local_port}")
-
-    #         initialize_local_postgres(
-    #             ctx.obj["local_duckdb_path"],
-    #             max_results_per_query=max_results_per_query,
-    #             max_days=max_days,
-    #             postgres_port=local_port,
-    #         )
 
 
 @local.command(

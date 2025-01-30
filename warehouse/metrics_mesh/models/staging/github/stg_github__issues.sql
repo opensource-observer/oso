@@ -33,5 +33,5 @@ select
   json_extract(
     ie.payload,
     '$.issue.comments'
-  ) as comments
+  )::DOUBLE as comments
 from issue_events as ie

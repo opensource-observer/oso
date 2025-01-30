@@ -40,7 +40,7 @@ class LocalWarehouseManager:
 
         with self.config.loader_instance() as loader:
             self.load_tables_into(loader)
-            return
+        logger.info("Completed local initialization")
 
     def reset(self, full_reset: bool = False):
         """Resets the sqlmesh warehouse to a clean state. If full_reset is True,

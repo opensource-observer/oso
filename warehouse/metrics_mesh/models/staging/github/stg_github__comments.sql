@@ -32,7 +32,7 @@ with pull_request_comment_events as (
     json_extract(
       ghe.payload,
       '$.pull_request.comments'
-    ) as comments
+    )::DOUBLE as comments
   from @oso_source('bigquery.oso.stg_github__events') as ghe
   where ghe.type = 'PullRequestReviewCommentEvent'
 ),
@@ -63,7 +63,7 @@ issue_comment_events as (
     json_extract(
       ghe.payload,
       '$.issue.comments'
-    ) as comments
+    )::DOUBLE as comments
   from @oso_source('bigquery.oso.stg_github__events') as ghe
   where ghe.type = 'IssueCommentEvent'
 )

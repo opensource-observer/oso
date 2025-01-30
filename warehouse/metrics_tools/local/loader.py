@@ -1,5 +1,7 @@
+import json
 import logging
 import os
+import re
 import typing as t
 from datetime import datetime, timedelta
 
@@ -14,7 +16,8 @@ from metrics_tools.local.config import (
     TableMappingDestination,
 )
 from metrics_tools.source.rewrite import DUCKDB_REWRITE_RULES, oso_source_rewrite
-from psycopg2._psycopg import connection as pg_connection
+from minio import Minio
+from pyiceberg.catalog import Catalog
 from sqlglot import exp
 from sqlmesh.core.dialect import parse_one
 
@@ -56,6 +59,7 @@ DUCKDB_TYPES_MAPPING: t.Dict[str, str] = {
     "INT": "BIGINT",
 }
 
+
 # When converting to duckdb, some types are automatically changed for bigger precision.
 # We also remove the struct information and just keep the struct type.
 def map_type_to_duckdb_type(type: str) -> str:
@@ -68,14 +72,14 @@ def map_type_to_duckdb_type(type: str) -> str:
 
 
 def convert_bq_schema_to_duckdb_columns(
-    bq_schema: t.List[bigquery.SchemaField]
+    bq_schema: t.List[bigquery.SchemaField],
 ) -> t.List[t.Tuple[str, str]]:
     # Create a dictionary of the schema
     schema_dict = {field.name: field for field in bq_schema}
     columns: t.List[t.Tuple[str, str]] = []
     for _, field in schema_dict.items():
         field_type = field.field_type
-        
+
         # force structs as json for trino later
         if field_type == "STRUCT":
             field_type = "JSON"
@@ -84,9 +88,11 @@ def convert_bq_schema_to_duckdb_columns(
         if field.mode == "REPEATED":
             field_type = f"ARRAY<{field_type}>"
 
-        duckdb_type =  map_type_to_duckdb_type(parse_one(field_type, into=exp.DataType, dialect="bigquery").sql(
-                    dialect="duckdb"
-                ))
+        duckdb_type = map_type_to_duckdb_type(
+            parse_one(field_type, into=exp.DataType, dialect="bigquery").sql(
+                dialect="duckdb"
+            )
+        )
 
         columns.append(
             (
@@ -143,7 +149,7 @@ def bq_try_read_with_options(
         result = bq_read_with_options(start, end, source_table, dest, project_id)
         start = start - increment
         increment = increment * 2
-        
+
     return result
 
 
@@ -157,23 +163,42 @@ class BaseDestinationLoader(DestinationLoader):
         self._config = config
         self._duckdb_conn = duckdb_conn
         self._bqclient = bqclient
+        self._created_schemas = set()
 
     def destination_table_exists(self, table: exp.Table) -> bool:
         raise NotImplementedError("table_exists not implemented")
-    
+
     def destination_table_schema(self, table: exp.Table) -> t.List[t.Tuple[str, str]]:
         raise NotImplementedError("table_schema not implemented")
 
     def destination_table_rewrite(self, table_fqn: str) -> exp.Table:
         raise NotImplementedError("table_rewrite not implemented")
 
+    def commit_table(
+        self,
+        source_name: str,
+        destination: TableMappingDestination,
+        rewritten_destination: exp.Table,
+        table_as_arrow: pa.Table,
+        table_schema: t.List[bigquery.SchemaField],
+    ):
+        raise NotImplementedError("save_pyarrow_table not implemented")
+
     def commit_to_destination(self, duckdb_table_name: str, destination: exp.Table):
         raise NotImplementedError("commit_to_destination not implemented")
 
-    def write_to_temp_duckdb(
-        self, source_name: str, duckdb_table_name: str, table_as_arrow: pa.Table
+    def drop_table(self, table: exp.Table):
+        raise NotImplementedError("drop_table not implemented")
+
+    def convert_bq_schema_to_columns(self, bq_schema: t.List[bigquery.SchemaField]):
+        raise NotImplementedError("convert_bq_schema_to_columns not implemented")
+
+    def has_schema_changed(
+        self, destination: exp.Table, bq_schema: t.List[bigquery.SchemaField]
     ):
-        self._duckdb_conn.execute(f"CREATE TABLE {duckdb_table_name} AS {source_name}")
+        columns = self.convert_bq_schema_to_columns(bq_schema)
+        destination_table_schema = self.destination_table_schema(destination)
+        return set(columns) != set(destination_table_schema)
 
     def load_from_bq(
         self,
@@ -185,26 +210,26 @@ class BaseDestinationLoader(DestinationLoader):
         """Loading from bq happens first by loading into a temporary duckdb table"""
         logger.info(f"Loading {source_name} into {destination.table}")
 
-        created_schemas = set()
         source_table = bigquery.TableReference.from_string(source_name)
 
         rewritten_destination = self.destination_table_rewrite(destination.table)
         config = self._config
-        
+
         # Load the schema from bigqouery
         table_schema = self._bqclient.get_table(source_table).schema
-        columns = convert_bq_schema_to_duckdb_columns(table_schema)
 
         if self.destination_table_exists(rewritten_destination):
-            destination_table_schema = self.destination_table_schema(rewritten_destination)
-            if(set(columns) == set(destination_table_schema)):
+            if self.has_schema_changed(rewritten_destination, table_schema):
+                logger.warning(
+                    f"Schema mismatch for {destination.table}, dropping destination table"
+                )
+                self.drop_table(rewritten_destination)
+            else:
                 logger.info(
                     f"{destination.table} already exists at destination with the same schema as {rewritten_destination}, skipping"
                 )
                 return
-            logger.warning(f"Schema mismatch for {destination.table}, dropping destination table")
-            self._duckdb_conn.execute(f"DROP TABLE {rewritten_destination.sql(dialect='duckdb')}")
-            
+
         if destination.has_restriction():
             logger.info(f"Table {destination.table} has restrictions")
             table_as_arrow = bq_try_read_with_options(
@@ -235,18 +260,148 @@ class BaseDestinationLoader(DestinationLoader):
                     table_as_arrow = rows.to_arrow(create_bqstorage_client=True)
                 else:
                     table_as_arrow = pa.Table.from_batches(to_concat)
+                logger.info(f"Rows in arrow table {table_as_arrow.num_rows}")
             else:
                 rows = self._bqclient.list_rows(source_table)
                 table_as_arrow = rows.to_arrow(
                     create_bqstorage_client=True
                 )  # noqa: F841
 
-        duckdb_table_name = f"oso_local_temp.{rewritten_destination.this.sql(dialect="duckdb")}_{datetime.now().strftime('%Y%m%d%H%M%S')}"
+        # Load the table
+        self.commit_table(
+            source_name,
+            destination,
+            rewritten_destination,
+            table_as_arrow,
+            table_schema,
+        )
+        logger.info(f"Loaded {source_name} into {destination.table}")
 
-        # If there are no special metadata fields in a schema we can just do a
-        # straight copy into duckdb
-        column_ids = [field.name for field in table_as_arrow.schema]
-        columns = filter_columns(column_ids, columns)
+    def drop_all(self):
+        """Use this to drop all data in the duckdb database and start fresh"""
+        return self.drop_like_schema_name("%")
+
+    def drop_non_sources(self):
+        return self.drop_like_schema_name("sources_%", not_like=True)
+
+    def drop_like_schema_name(self, like_schema_name: str, not_like: bool = False):
+        raise NotImplementedError("drop_like_schema_name not implemented")
+
+    def sqlmesh_base_args(self):
+        return ["sqlmesh"]
+
+    def sqlmesh(self, extra_args: t.List[str], extra_env: t.Dict[str, str]):
+        import subprocess
+
+        if "SQLMESH_DUCKDB_LOCAL_PATH" not in extra_env:
+            extra_env["SQLMESH_DUCKDB_LOCAL_PATH"] = (
+                self._config.loader.config.duckdb_path
+            )
+
+        process = subprocess.Popen(
+            [*self.sqlmesh_base_args(), *extra_args],
+            cwd=os.path.join(self._config.repo_dir, "warehouse/metrics_mesh"),
+            env={
+                **os.environ,
+                **extra_env,
+            },
+        )
+        process.communicate()
+
+    def close(self):
+        self._duckdb_conn.close()
+
+
+class DuckDbDestinationLoader(BaseDestinationLoader):
+    def load_from_bq(
+        self,
+        start: datetime,
+        end: datetime,
+        source_name: str,
+        destination: TableMappingDestination,
+    ):
+        return super().load_from_bq(start, end, source_name, destination)
+
+    def convert_bq_schema_to_columns(self, bq_schema: t.List[bigquery.SchemaField]):
+        return convert_bq_schema_to_duckdb_columns(bq_schema)
+
+    def drop_table(self, table: exp.Table):
+        self._duckdb_conn.execute(f"DROP TABLE IF EXISTS {table.sql(dialect='duckdb')}")
+
+    def destination_table_exists(self, table: exp.Table) -> bool:
+        table_name = table.sql(dialect="duckdb")
+        logger.debug(f"Checking if {table_name} exists")
+        response = self._duckdb_conn.query(
+            f"""
+            SELECT 1 
+            FROM information_schema.tables 
+            WHERE table_schema = '{table.db}'
+            AND table_name = '{table.this}'
+        """
+        )
+        return len(response.fetchall()) > 0
+
+    def destination_table_schema(self, table: exp.Table) -> t.List[t.Tuple[str, str]]:
+        table_name = table.sql(dialect="duckdb")
+        response = self._duckdb_conn.query(
+            f"""
+            DESCRIBE {table_name}
+        """
+        )
+        schema: t.List[t.Tuple[str, str]] = []
+        for column in response.fetchall():
+            schema.append(
+                (
+                    column[0],
+                    map_type_to_duckdb_type(
+                        parse_one(column[1], dialect="duckdb", into=exp.DataType).sql(
+                            dialect="duckdb"
+                        )
+                    ),
+                )
+            )
+        return schema
+
+    def destination_table_rewrite(self, table_fqn: str) -> exp.Table:
+        return oso_source_rewrite(DUCKDB_REWRITE_RULES, table_fqn)
+
+    def commit_to_destination(self, duckdb_table_name: str, destination: exp.Table):
+        self._duckdb_conn.execute(f"CREATE SCHEMA IF NOT EXISTS {destination.db}")
+        self._duckdb_conn.execute(
+            f"CREATE TABLE {destination.sql(dialect='duckdb')} AS SELECT * FROM {duckdb_table_name}"
+        )
+        # Drop the temporary table
+        self._duckdb_conn.execute(f"DROP TABLE {duckdb_table_name}")
+
+    def drop_like_schema_name(self, like_schema_name: str, not_like: bool = False):
+        not_like_str = "NOT " if not_like else ""
+
+        schemas = self._duckdb_conn.execute(
+            f"""
+            SELECT schema_name 
+            FROM information_schema.schemata 
+            WHERE schema_name {not_like_str} LIKE '{like_schema_name}'
+            AND schema_name NOT IN ('information_schema', 'duckdb', 'main', 'pg_catalog')
+            """
+        ).fetchall()
+
+        for schema in schemas:
+            schema_name = schema[0]
+            logger.info(f"Dropping schema {schema_name}")
+            self._duckdb_conn.execute(f"DROP SCHEMA {schema_name} CASCADE")
+
+    def commit_table(
+        self,
+        source_name: str,
+        destination: TableMappingDestination,
+        rewritten_destination: exp.Table,
+        table_as_arrow: pa.Table,
+        table_schema: t.List[bigquery.SchemaField],
+    ):
+        duckdb_table_name = f"oso_local_temp.{rewritten_destination.this.sql(dialect="duckdb")}_{datetime.now().strftime('%Y%m%d%H%M%S')}"
+        columns = self.convert_bq_schema_to_columns(table_schema)
+
+        logger.debug(f"Column types: {table_schema}")
 
         # Remove all metadata from the schema
         new_schema = remove_metadata_from_schema(table_as_arrow.schema)
@@ -255,11 +410,11 @@ class BaseDestinationLoader(DestinationLoader):
         duckdb_table_split = duckdb_table_name.split(".")
         schema = duckdb_table_split[0]
 
-        logger.info(f"copying {table_as_arrow.num_rows} rows to {duckdb_table_name}")
-        if schema not in created_schemas:
+        logger.debug(f"copying {table_as_arrow.num_rows} rows to {duckdb_table_name}")
+        if schema not in self._created_schemas:
             logger.info(f"Creating schema {schema}")
             self._duckdb_conn.execute(f"CREATE SCHEMA IF NOT EXISTS {schema}")
-            created_schemas.add(schema)
+            self._created_schemas.add(schema)
 
         create_query = parse_one(
             f"""
@@ -298,93 +453,17 @@ class BaseDestinationLoader(DestinationLoader):
         self._duckdb_conn.execute(insert_query.sql(dialect="duckdb"))
 
         self.commit_to_destination(duckdb_table_name, rewritten_destination)
-        logger.info(f"Loaded {source_name} into {destination.table}")
-
-    def drop_all(self):
-        """Use this to drop all data in the duckdb database and start fresh"""
-        return self.drop_like_schema_name("%")
-
-    def drop_non_sources(self):
-        return self.drop_like_schema_name("sources_%", not_like=True)
-
-    def drop_like_schema_name(self, like_schema_name: str, not_like: bool = False):
-        raise NotImplementedError("drop_like_schema_name not implemented")
-
-    def sqlmesh_base_args(self):
-        return ["sqlmesh"]
-
-    def sqlmesh(self, extra_args: t.List[str], extra_env: t.Dict[str, str]):
-        import subprocess
-
-        if "SQLMESH_DUCKDB_LOCAL_PATH" not in extra_env:
-            extra_env["SQLMESH_DUCKDB_LOCAL_PATH"] = (
-                self._config.loader.config.duckdb_path
-            )
-
-        process = subprocess.Popen(
-            [*self.sqlmesh_base_args(), *extra_args],
-            cwd=os.path.join(self._config.repo_dir, "warehouse/metrics_mesh"),
-            env={
-                **os.environ,
-                **extra_env,
-            },
-        )
-        process.communicate()
 
 
-class DuckDbDestinationLoader(BaseDestinationLoader):
-    def destination_table_exists(self, table: exp.Table) -> bool:
-        table_name = table.sql(dialect="duckdb")
-        logger.info(f"checking if {table_name} exists")
-        response = self._duckdb_conn.query(
-            f"""
-            SELECT 1 
-            FROM information_schema.tables 
-            WHERE table_schema = '{table.db}'
-            AND table_name = '{table.this}'
-        """
-        )
-        return len(response.fetchall()) > 0
-
-    def destination_table_schema(self, table: exp.Table) -> t.List[t.Tuple[str, str]]:
-        table_name = table.sql(dialect="duckdb")
-        response = self._duckdb_conn.query(
-            f"""
-            DESCRIBE {table_name}
-        """
-        )
-        schema: t.List[t.Tuple[str, str]] = []
-        for column in response.fetchall():
-            schema.append((column[0], map_type_to_duckdb_type(parse_one(column[1], dialect="duckdb", into=exp.DataType).sql(dialect="duckdb"))))
-        return schema
-
-    def destination_table_rewrite(self, table_fqn: str) -> exp.Table:
-        return oso_source_rewrite(DUCKDB_REWRITE_RULES, table_fqn)
-
-    def commit_to_destination(self, duckdb_table_name: str, destination: exp.Table):
-        self._duckdb_conn.execute(f"CREATE SCHEMA IF NOT EXISTS {destination.db}")
-        self._duckdb_conn.execute(
-            f"CREATE TABLE {destination.sql(dialect='duckdb')} AS SELECT * FROM {duckdb_table_name}"
-        )
-        # Drop the temporary table
-        self._duckdb_conn.execute(f"DROP TABLE {duckdb_table_name}")
-
-    def drop_like_schema_name(self, like_schema_name: str, not_like: bool = False):
-        not_like_str = "NOT " if not_like else ""
-
-        schemas = self._duckdb_conn.execute(
-            f"""
-            SELECT schema_name 
-            FROM information_schema.schemata 
-            WHERE schema_name {not_like_str} LIKE '{like_schema_name}'
-            AND schema_name NOT IN ('information_schema', 'duckdb', 'main', 'pg_catalog')
-            """
-        ).fetchall()
-
-        for schema in schemas:
-            schema_name = schema[0]
-            logger.info(f"Dropping schema {schema_name}")
-            self._duckdb_conn.execute(f"DROP SCHEMA {schema_name} CASCADE")
+class SerializedBqSchema(t.TypedDict):
+    field_type: str
+    is_nullable: bool
+    max_length: t.NotRequired[int]
+    mode: t.NotRequired[str]
+    name: str
+    precision: t.NotRequired[int]
+    scale: t.NotRequired[int]
+    fields: t.NotRequired[t.List["SerializedBqSchema"]]
 
 
 class LocalTrinoDestinationLoader(BaseDestinationLoader):
@@ -393,15 +472,20 @@ class LocalTrinoDestinationLoader(BaseDestinationLoader):
         config: Config,
         bqclient: bigquery.Client,
         duckdb_conn: duckdb.DuckDBPyConnection,
-        postgres_conn: pg_connection,
-        postgres_host: str,
-        postgres_port: int,
+        minio_client: Minio,
+        iceberg_catalog: Catalog,
+        minio_url: str,
+        iceberg_properties: t.Dict[str, str],
+        schema_table_schema="oso_local_state",
+        schema_table_name="bq_schema",
     ):
         super().__init__(config, bqclient, duckdb_conn)
-        self._postgres_conn = postgres_conn
-        self._postgres_host = postgres_host
-        self._postgres_port = postgres_port
-        self._connected_to_postgres = False
+        self._minio_client = minio_client
+        self._iceberg_catalog = iceberg_catalog
+        self._minio_url = minio_url
+        self._iceberg_properties = iceberg_properties
+        self._schema_table_schema = schema_table_schema
+        self._schema_table_name = schema_table_name
 
     @property
     def local_trino_loader_config(self) -> LocalTrinoLoaderConfig:
@@ -410,109 +494,57 @@ class LocalTrinoDestinationLoader(BaseDestinationLoader):
         ), "Loader config is not a LocalTrinoLoaderConfig"
         return self._config.loader.config
 
-    def _connect_to_postgres(self):
-        if not self._connected_to_postgres:
-            assert (
-                self._config.loader.type == "local-trino"
-            ), "Somehow we are not using the local-trino loader"
-
-            loader_config = self._config.loader.config
-            assert isinstance(
-                loader_config, LocalTrinoLoaderConfig
-            ), "Loader config is not a LocalTrinoLoaderConfig"
-
-            self._duckdb_conn.execute(
-                f"""
-                INSTALL postgres;
-                LOAD postgres;
-                ATTACH 'dbname={loader_config.postgres_db} user={loader_config.postgres_user} password={loader_config.postgres_password} host={self._postgres_host} port={self._postgres_port}' AS postgres_db (TYPE POSTGRES)
-                """
-            )
-            self._connected_to_postgres = True
-
     def destination_table_exists(self, table: exp.Table) -> bool:
-        table_name = table.sql(dialect="postgres")
-        logger.info(f"checking if {table_name} exists")
-        cursor = self._postgres_conn.cursor()
-        cursor.execute(
-            f"""
-            SELECT 1 
-            FROM information_schema.tables 
-            WHERE table_schema = '{table.db}'
-            AND table_name = '{table.this}'
-        """
-        )
-        return len(cursor.fetchall()) > 0
-    
-    def destination_table_schema(self, table) -> t.List[t.Tuple[str, str]]:
-        cursor = self._postgres_conn.cursor()
-        cursor.execute(
-            f"""
-            SELECT column_name, data_type
-            FROM information_schema.columns
-            WHERE table_schema = '{table.db}'
-            AND table_name = '{table.this}'
-        """
-        )
-        schema: t.List[t.Tuple[str, str]] = []
-        for column in cursor.fetchall():
-            schema.append((column[0], map_type_to_duckdb_type(parse_one(column[1], dialect="postgres", into=exp.DataType).sql(dialect="duckdb"))))
-        return schema
+        logger.debug(f"Checking if {table} exists")
+        return self._iceberg_catalog.table_exists(f"{table.db}.{table.this}")
 
     def destination_table_rewrite(self, table_fqn: str) -> exp.Table:
-        table = exp.to_table(table_fqn)
-        return exp.to_table(f"postgres_db.{table.db}.{table.this}")
+        """Trino doesn't need to rewrite the table name. We simulate bigquery sources here"""
+        return exp.to_table(table_fqn)
 
-    def commit_to_destination(self, duckdb_table_name: str, destination: exp.Table):
-        self._connect_to_postgres()
-        logger.info("Committing to postgres")
-        self._duckdb_conn.execute(
-            f"CREATE SCHEMA IF NOT EXISTS postgres_db.{destination.db}"
-        )
-
-        # Check the schema of the table (column 0 is column number, 1 is column name, 2 is column type)
-        schema = self._duckdb_conn.query(
-            f"PRAGMA table_info('{duckdb_table_name}')"
-        ).fetchall()
-        columns = [(column[1], column[2]) for column in schema]
-
-        column_select = []
-        for column in columns:
-            # Arrays and structs need to be cast to JSON
-            if "STRUCT" in column[1]:
-                column_select.append(f"{column[0]}::JSON as {column[0]}")
-            else:
-                column_select.append(column[0])
-        all_columns = ", ".join(column_select)
-        print(all_columns)
-
-        create_query = f"CREATE TABLE {destination.sql(dialect='duckdb')} AS SELECT {all_columns} FROM {duckdb_table_name}"
-        logger.info(f"EXECUTING={create_query}")
-
-        self._duckdb_conn.execute(create_query)
-        logger.debug(f"copy into {destination.sql(dialect="duckdb")} completed")
-        # Drop the temporary table
-        self._duckdb_conn.execute(f"DROP TABLE {duckdb_table_name}")
+    def has_schema_changed(
+        self, destination: exp.Table, bq_schema: t.List[bigquery.SchemaField]
+    ):
+        # We don't have a reliable way of checking if the schema has changed in trino
+        # Instead we store the schema in a duckdb table and compare the schema there
+        current_schema = self.load_bigquery_schema(destination)
+        serialized_bq_schema = self.serialize_bigquery_schema(bq_schema)
+        return json.dumps(serialized_bq_schema) != json.dumps(current_schema)
 
     def drop_like_schema_name(self, like_schema_name: str, not_like: bool = False):
-        not_like_str = "NOT " if not_like else ""
+        like_regex = re.compile(f"^{like_schema_name.replace("%", ".*")}$")
+        namespaces = self._iceberg_catalog.list_namespaces()
+        for namespace_identifier in namespaces:
+            namespace = namespace_identifier[0]
+            if not not_like:
+                if like_regex.match(namespace):
+                    logger.info(f"Dropping namespace {namespace}")
+                    self.drop_all_in_namespace(namespace)
+                    try:
+                        self._iceberg_catalog.drop_namespace(namespace)
+                    except Exception as e:
+                        logger.warning(f"Failed to drop namespace {namespace}")
+                        logger.error(e)
+            else:
+                if not like_regex.match(namespace):
+                    logger.info(f"Dropping namespace {namespace}")
+                    self.drop_all_in_namespace(namespace)
+                    try:
+                        self._iceberg_catalog.drop_namespace(namespace)
+                    except Exception as e:
+                        logger.warning(f"Failed to drop namespace {namespace}")
+                        logger.error(e)
 
-        cursor = self._postgres_conn.cursor()
-        cursor.execute(
-            f"""
-            SELECT schema_name 
-            FROM information_schema.schemata 
-            WHERE schema_name {not_like_str} LIKE '{like_schema_name}'
-            AND schema_name NOT IN ('information_schema', 'pg_catalog', 'pg_toast')
-        """
-        )
-        schemas = cursor.fetchall()
+    def drop_all_in_namespace(self, namespace: str):
+        tables = self._iceberg_catalog.list_tables(namespace)
+        for table in tables:
+            logger.info(f"Dropping table {table}")
+            self._iceberg_catalog.drop_table(table)
 
-        for schema in schemas:
-            schema_name = schema[0]
-            logger.info(f"Dropping schema {schema_name}")
-            cursor.execute(f"DROP SCHEMA {schema_name} CASCADE")
-        self._postgres_conn.commit()
+        views = self._iceberg_catalog.list_views(namespace)
+        for view in views:
+            logger.info(f"Dropping view {view}")
+            self._iceberg_catalog.drop_view(view)
 
     def sqlmesh_base_args(self):
         return ["sqlmesh", "--gateway", "local-trino"]
@@ -540,3 +572,100 @@ class LocalTrinoDestinationLoader(BaseDestinationLoader):
             }
 
             super().sqlmesh(extra_args, env)
+
+    @property
+    def schema_table(self):
+        return f"{self._schema_table_schema}.{self._schema_table_name}"
+
+    def save_bigquery_schema(
+        self, table: exp.Table, schema: t.List[bigquery.SchemaField]
+    ):
+        self._duckdb_conn.execute(
+            f"CREATE SCHEMA IF NOT EXISTS {self._schema_table_schema}"
+        )
+        self._duckdb_conn.execute(
+            f"CREATE TABLE IF NOT EXISTS {self.schema_table} (table_name VARCHAR, serialized_schema JSON)"
+        )
+
+        serialized_schema = json.dumps(self.serialize_bigquery_schema(schema))
+
+        self._duckdb_conn.execute(
+            f"INSERT INTO {self.schema_table} VALUES ('{table.sql(dialect="trino")}', '{serialized_schema}')"
+        )
+
+    def load_bigquery_schema(self, table: exp.Table) -> t.List[bigquery.SchemaField]:
+        try:
+            response = self._duckdb_conn.query(
+                f"SELECT serialized_schema FROM {self.schema_table} WHERE table_name = '{table.sql(dialect='trino')}'"
+            )
+        except duckdb.CatalogException:
+            return []
+
+        raw_serialized_schema = response.fetchone()
+        if raw_serialized_schema is None:
+            return []
+
+        serialized_schema = json.loads(raw_serialized_schema[0])
+        return t.cast(t.List[bigquery.SchemaField], serialized_schema)
+
+    def serialize_bigquery_schema(
+        self, schema: t.List[bigquery.SchemaField]
+    ) -> t.List[SerializedBqSchema]:
+        """A hacky way to serialize the bq schema for schema comparison"""
+        sorted_schema = sorted(schema, key=lambda x: x.name)
+
+        serialized_schema_fields: t.List[SerializedBqSchema] = []
+        for field in sorted_schema:
+            serialized_field: SerializedBqSchema = {
+                "field_type": field.field_type,
+                "is_nullable": field.is_nullable,
+                "name": field.name,
+            }
+            if field.mode:
+                serialized_field["mode"] = field.mode
+            if field.max_length:
+                serialized_field["max_length"] = field.max_length
+            if field.precision:
+                serialized_field["precision"] = field.precision
+            if field.scale:
+                serialized_field["scale"] = field.scale
+            if field.fields:
+                serialized_field["fields"] = self.serialize_bigquery_schema(
+                    list(field.fields)
+                )
+            serialized_schema_fields.append(serialized_field)
+        return serialized_schema_fields
+
+    def drop_table(self, table: exp.Table):
+        logger.info(f"dropping {table.db}.{table.this} table on iceberg ")
+        self._iceberg_catalog.drop_table(f"{table.db}.{table.this}")
+
+    def commit_table(
+        self,
+        source_name: str,
+        destination: TableMappingDestination,
+        rewritten_destination: exp.Table,
+        table_as_arrow: pa.Table,
+        table_schema: t.List[bigquery.SchemaField],
+    ):
+        logger.info(f"Committing {rewritten_destination} to iceberg")
+        self._iceberg_catalog.create_namespace_if_not_exists(rewritten_destination.db)
+        table = self._iceberg_catalog.create_table_if_not_exists(
+            f"{rewritten_destination.db}.{rewritten_destination.this}",
+            schema=table_as_arrow.schema,
+        )
+
+        logger.info("Storing bigquery schema in duckdb")
+        self.save_bigquery_schema(rewritten_destination, table_schema)
+
+        # This seems to be necessary to rewrite the minio url because pyiceberg
+        # ignores the initial config. Likely, it reads the minio url from
+        # the catalog.
+        table.io.properties["s3.endpoint"] = self._minio_url
+        try:
+            table.append(table_as_arrow)
+        except Exception as e:
+            logger.error(f"Failed to append data to {rewritten_destination}")
+            logger.error(e)
+            return
+        logger.debug(f"Committed {rewritten_destination} to iceberg")

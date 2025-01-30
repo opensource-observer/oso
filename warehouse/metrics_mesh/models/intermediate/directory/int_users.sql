@@ -42,7 +42,7 @@ github_users as (
       from_artifact_id,
       from_artifact_source_id,
       MAX_BY(LOWER(from_artifact_name), time) as display_name
-    from @oso_source('bigquery.oso.int_events__github')
+    from metrics.int_events__github
     group by from_artifact_id, from_artifact_source_id
   )
 )

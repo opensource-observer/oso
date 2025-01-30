@@ -2,9 +2,12 @@ MODEL (
   name metrics.int_events_aux_issues,
   kind INCREMENTAL_BY_TIME_RANGE (
     time_column time,
+    batch_size 90,
+    batch_concurrency 1
   ),
   start '2015-01-01',
   cron '@daily',
+  partitioned_by (DAY("time"), "event_type"),
   grain (time, event_type, event_source, from_artifact_id, to_artifact_id)
 );
 
@@ -14,9 +17,9 @@ with github_comments as (
     type as event_type,
     CAST(id as STRING) as event_source_id,
     'GITHUB' as event_source,
-    SPLIT(REPLACE(repository_name, '@', ''), '/')[1]
+    SPLIT(REPLACE(repository_name, '@', ''), '/')[@array_index(1)]
       as to_name,
-    SPLIT(REPLACE(repository_name, '@', ''), '/')[0]
+    SPLIT(REPLACE(repository_name, '@', ''), '/')[@array_index(0)]
       as to_namespace,
     'REPOSITORY' as to_type,
     CAST(repository_id as STRING) as to_artifact_source_id,
@@ -38,9 +41,9 @@ github_issues as (
     type as event_type,
     CAST(id as STRING) as event_source_id,
     'GITHUB' as event_source,
-    SPLIT(REPLACE(repository_name, '@', ''), '/')[1]
+    SPLIT(REPLACE(repository_name, '@', ''), '/')[@array_index(1)]
       as to_name,
-    SPLIT(REPLACE(repository_name, '@', ''), '/')[0]
+    SPLIT(REPLACE(repository_name, '@', ''), '/')[@array_index(0)]
       as to_namespace,
     'REPOSITORY' as to_type,
     CAST(repository_id as STRING) as to_artifact_source_id,
@@ -62,9 +65,9 @@ github_pull_requests as (
     type as event_type,
     CAST(id as STRING) as event_source_id,
     'GITHUB' as event_source,
-    SPLIT(REPLACE(repository_name, '@', ''), '/')[1]
+    SPLIT(REPLACE(repository_name, '@', ''), '/')[@array_index(1)]
       as to_name,
-    SPLIT(REPLACE(repository_name, '@', ''), '/')[0]
+    SPLIT(REPLACE(repository_name, '@', ''), '/')[@array_index(0)]
       as to_namespace,
     'REPOSITORY' as to_type,
     CAST(repository_id as STRING) as to_artifact_source_id,
@@ -86,9 +89,9 @@ github_pull_request_merge_events as (
     type as event_type,
     CAST(id as STRING) as event_source_id,
     'GITHUB' as event_source,
-    SPLIT(REPLACE(repository_name, '@', ''), '/')[1]
+    SPLIT(REPLACE(repository_name, '@', ''), '/')[@array_index(1)]
       as to_name,
-    SPLIT(REPLACE(repository_name, '@', ''), '/')[0]
+    SPLIT(REPLACE(repository_name, '@', ''), '/')[@array_index(0)]
       as to_namespace,
     'REPOSITORY' as to_type,
     CAST(repository_id as STRING) as to_artifact_source_id,

@@ -1,7 +1,9 @@
-import typing as t
 import logging
 import os
 import sys
+import typing as t
+
+import colorlog
 
 connected_to_sqlmesh_logs = False
 
@@ -55,20 +57,27 @@ def setup_multiple_modules_logging(module_names: t.List[str]):
 def setup_module_logging(
     module_name: str,
     level: int = logging.DEBUG,
-    format: str = "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    override_format: str = "",
+    color: bool = False,
 ):
     logger = logging.getLogger(module_name)
     logger.setLevel(level)  # Adjust the level as needed
 
     # Create a handler that logs to stdout
-    stdout_handler = logging.StreamHandler(sys.stdout)
+    if color:
+        format = "%(asctime)s - %(log_color)s%(levelname)-8s%(reset)s - %(name)s - %(message)s"
+        stdout_handler = colorlog.StreamHandler(sys.stdout)
+        formatter = colorlog.ColoredFormatter(format, datefmt="%Y-%m-%dT%H:%M:%S")
+    else:
+        format = "%(asctime)s - %(levelname)-8s - %(name)s - %(message)s"
+        stdout_handler = logging.StreamHandler(sys.stdout)
+        formatter = logging.Formatter(format, datefmt="%Y-%m-%dT%H:%M:%S")
     stdout_handler.setLevel(level)  # Adjust the level as needed
 
     # Add the filter to the handler
     stdout_handler.addFilter(ModuleFilter(module_name))
 
     # Set a formatter (optional)
-    formatter = logging.Formatter(format, datefmt="%Y-%m-%dT%H:%M:%S")
     stdout_handler.setFormatter(formatter)
 
     # Add the handler to the logger
