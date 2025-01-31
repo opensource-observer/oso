@@ -106,7 +106,7 @@ SELECT
     phone_number as phone_numbers
 FROM source_table
 CROSS JOIN UNNEST(address) AS @unnested_struct(address)
-CROSS JOIN UNNEST(phone_numbers) AS @unnested_array(phone_number)
+CROSS JOIN UNNEST(phone_numbers) AS @unnested_array_ref(phone_number)
 ```
 
 This will return the same data in both trino and duckdb.
