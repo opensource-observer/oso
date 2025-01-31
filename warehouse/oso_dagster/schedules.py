@@ -2,8 +2,8 @@ from typing import Generator, Iterable, List, cast
 
 from dagster import (
     AssetKey,
-    AssetSelection,
     AssetsDefinition,
+    AssetSelection,
     DefaultScheduleStatus,
     RunRequest,
     ScheduleDefinition,
@@ -16,6 +16,9 @@ partitioned_assets = AssetSelection.tag(
     "opensource.observer/extra", "partitioned-assets"
 )
 
+core_sources_tag = AssetSelection.tag("opensource.observer/source", "core")
+
+unstable_sources_tag = AssetSelection.tag("opensource.observer/source", "unstable")
 
 def get_partitioned_schedules(
     factory: AssetFactoryResponse,
@@ -68,31 +71,42 @@ def get_partitioned_schedules(
 
     return [create_schedule(asset_key) for asset_key in resolved_assets]
 
-
-materialize_all_assets = define_asset_job(
-    "materialize_all_assets_job",
-    AssetSelection.all() - partitioned_assets,
-)
-
 materialize_source_assets = define_asset_job(
     "materialize_source_assets_job",
     AssetSelection.tag("opensource.observer/type", "source")
-    | AssetSelection.tag("opensource.observer/type", "source-qa"),
+    | AssetSelection.tag("opensource.observer/type", "source-qa")
+    | core_sources_tag,
+)
+
+materialize_unstable_source_assets = define_asset_job(
+    "materialize_unstable_source_assets_job",
+    unstable_sources_tag,
+)
+
+materialize_core_assets = define_asset_job(
+    "materialize_core_assets_job",
+    AssetSelection.all() - core_sources_tag - unstable_sources_tag - partitioned_assets,
 )
 
 schedules: list[ScheduleDefinition] = [
-    # Run everything except partitioned assets once a week on sunday at midnight
+    # Run core pipeline assets once a week on sunday at midnight
     ScheduleDefinition(
-        job=materialize_all_assets,
+        job=materialize_core_assets,
         cron_schedule="0 0 * * 0",
         tags={
             "dagster/priority": "-1",
         },
     ),
-    # Run only source data every day (exclude sunday as it's already in the schedule above)
     ScheduleDefinition(
         job=materialize_source_assets,
-        cron_schedule="0 0 * * 1-6",
+        cron_schedule="0 0 * * 0",
+        tags={
+            "dagster/priority": "-1",
+        },
+    ),
+    ScheduleDefinition(
+        job=materialize_unstable_source_assets,
+        cron_schedule="0 0 * * 0",
         tags={
             "dagster/priority": "-1",
         },
