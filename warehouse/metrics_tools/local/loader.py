@@ -59,49 +59,56 @@ DUCKDB_TYPES_MAPPING: t.Dict[str, str] = {
     "INT": "BIGINT",
 }
 
-
 # When converting to duckdb, some types are automatically changed for bigger precision.
 # We also remove the struct information and just keep the struct type.
-def map_type_to_duckdb_type(type: str) -> str:
-    if type.startswith("STRUCT"):
-        return "STRUCT"
+def map_type_to_duckdb_type(original_type: str) -> str:
+    result_type = original_type
+    # Because types can be nested (e.g. STRUCT<STRUCT<n INT>>),
+    # we brute force replace
+    for from_type, to_type in DUCKDB_TYPES_MAPPING.items():
+        result_type = result_type.replace(from_type, to_type)
+    return result_type
 
-    if type in DUCKDB_TYPES_MAPPING:
-        return DUCKDB_TYPES_MAPPING[type]
-    return type
-
-
-def convert_bq_schema_to_duckdb_columns(
-    bq_schema: t.List[bigquery.SchemaField],
+def convert_bq_schema_to_bq_columns(
+    bq_schema: t.Iterable[bigquery.SchemaField],
 ) -> t.List[t.Tuple[str, str]]:
     # Create a dictionary of the schema
     schema_dict = {field.name: field for field in bq_schema}
     columns: t.List[t.Tuple[str, str]] = []
-    for _, field in schema_dict.items():
+    for field_name, field in schema_dict.items():
         field_type = field.field_type
 
-        # force structs as json for trino later
-        if field_type == "STRUCT":
-            field_type = "JSON"
-        elif field_type == "RECORD":
-            field_type = "JSON"
+        if field_type == "RECORD" or field_type == "STRUCT":
+            inner_fields = convert_bq_schema_to_bq_columns(field.fields)
+            # [(name1, type1), (name1, type2)] => ["name1 type1", "name2 type2"]
+            flattened_fields = [f"{f[0]} {f[1]}" for f in inner_fields]
+            # ["name1 type1", "name2 type2"] => ""name1 type1, name2 type2"
+            field_type = f"STRUCT<{', '.join(flattened_fields)}>"
         if field.mode == "REPEATED":
             field_type = f"ARRAY<{field_type}>"
 
-        duckdb_type = map_type_to_duckdb_type(
-            parse_one(field_type, into=exp.DataType, dialect="bigquery").sql(
-                dialect="duckdb"
-            )
-        )
-
         columns.append(
             (
-                field.name,
-                duckdb_type,
+                field_name,
+                field_type,
             )
         )
     return columns
 
+def convert_bq_schema_to_duckdb_columns(
+    bq_schema: t.Iterable[bigquery.SchemaField],
+) -> t.List[t.Tuple[str, str]]:
+    bq_columns = convert_bq_schema_to_bq_columns(bq_schema)
+    result = [(
+        item[0],
+        map_type_to_duckdb_type(
+            parse_one(item[1], into=exp.DataType, dialect="bigquery").sql(
+                dialect="duckdb"
+            )
+        )
+    ) for item in bq_columns]
+
+    return result
 
 def bq_read_with_options(
     start: datetime,
@@ -198,7 +205,12 @@ class BaseDestinationLoader(DestinationLoader):
     ):
         columns = self.convert_bq_schema_to_columns(bq_schema)
         destination_table_schema = self.destination_table_schema(destination)
-        return set(columns) != set(destination_table_schema)
+        result = set(columns) != set(destination_table_schema)
+        if not result:
+            logger.debug(f"Schema for {destination} has changed:")
+            logger.debug(destination_table_schema)
+            logger.debug(columns)
+        return result
 
     def load_from_bq(
         self,
