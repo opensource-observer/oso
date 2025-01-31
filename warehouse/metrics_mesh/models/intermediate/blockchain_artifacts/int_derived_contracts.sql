@@ -5,10 +5,10 @@ MODEL (
 
 with contracts_deployed_no_factory as (
   select
-    network,
+    chain,
     deployer_address,
     contract_address
-  from @oso_source('bigquery.oso.int_deployers')
+  from metrics.int_deployers
   where contract_address is not null
 ),
 
@@ -19,10 +19,10 @@ contracts_deployed_via_factory as (
     Deployer Address is the EOA address that started the transaction
   #}
   select
-    network,
+    chain,
     originating_address as deployer_address,
     contract_address as contract_address
-  from @oso_source('bigquery.oso.int_factories')
+  from metrics.int_factories
   where contract_address is not null
 ),
 
@@ -32,20 +32,20 @@ contracts_deployed_by_safe_or_known_proxy as (
     Deployer address is a proxy (safe or other known proxy) that deployed the contract
   #}
   select
-    factories.network,
+    factories.chain,
     proxies.address as deployer_address,
     factories.contract_address as contract_address
-  from @oso_source('bigquery.oso.int_factories') as factories
-  inner join @oso_source('bigquery.oso.int_proxies') as proxies
+  from metrics.int_factories as factories
+  inner join metrics.int_proxies as proxies
     on
       factories.originating_contract = proxies.address
-      and factories.network = proxies.network
+      and factories.chain = proxies.chain
   where contract_address is not null
 ),
 
 derived_contracts as (
   select
-    network,
+    chain,
     deployer_address,
     contract_address
   from contracts_deployed_no_factory
@@ -53,7 +53,7 @@ derived_contracts as (
   union all
 
   select
-    network,
+    chain,
     deployer_address,
     contract_address
   from contracts_deployed_via_factory
@@ -61,14 +61,14 @@ derived_contracts as (
   union all
 
   select
-    network,
+    chain,
     deployer_address,
     contract_address
   from contracts_deployed_by_safe_or_known_proxy
 )
 
 select distinct
-  network,
+  chain as network,
   deployer_address,
   contract_address
 from derived_contracts
