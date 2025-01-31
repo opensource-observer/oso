@@ -57,7 +57,6 @@ def filter_columns(
 DUCKDB_TYPES_MAPPING: t.Dict[str, str] = {
     "REAL": "DOUBLE",
     "INT": "BIGINT",
-    "RECORD": "STRUCT",
 }
 
 # When converting to duckdb, some types are automatically changed for bigger precision.
@@ -206,7 +205,12 @@ class BaseDestinationLoader(DestinationLoader):
     ):
         columns = self.convert_bq_schema_to_columns(bq_schema)
         destination_table_schema = self.destination_table_schema(destination)
-        return set(columns) != set(destination_table_schema)
+        result = set(columns) != set(destination_table_schema)
+        if not result:
+            logger.debug(f"Schema for {destination} has changed:")
+            logger.debug(destination_table_schema)
+            logger.debug(columns)
+        return result
 
     def load_from_bq(
         self,
