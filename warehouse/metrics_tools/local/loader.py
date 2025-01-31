@@ -64,10 +64,12 @@ DUCKDB_TYPES_MAPPING: t.Dict[str, str] = {
 def map_type_to_duckdb_type(original_type: str) -> str:
     result_type = original_type
     # Because types can be nested (e.g. STRUCT<STRUCT<n INT>>),
-    # we brute force replace
+    # we brute force replace, but only on word boundaries to avoid
+    # substring issues, e.g: BIGINT -> BIGBIGINT
     for from_type, to_type in DUCKDB_TYPES_MAPPING.items():
-        result_type = result_type.replace(from_type, to_type)
-    return result_type
+        result_type = re.sub(r'\b' + from_type + r'\b', to_type, result_type)
+    # remove quotes for easier comparison
+    return result_type.replace('"', '')
 
 def convert_bq_schema_to_bq_columns(
     bq_schema: t.Iterable[bigquery.SchemaField],
@@ -206,7 +208,7 @@ class BaseDestinationLoader(DestinationLoader):
         columns = self.convert_bq_schema_to_columns(bq_schema)
         destination_table_schema = self.destination_table_schema(destination)
         result = set(columns) != set(destination_table_schema)
-        if not result:
+        if result:
             logger.debug(f"Schema for {destination} has changed:")
             logger.debug(destination_table_schema)
             logger.debug(columns)
