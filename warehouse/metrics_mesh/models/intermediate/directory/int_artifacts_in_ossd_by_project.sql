@@ -18,67 +18,67 @@ with projects as (
 all_websites as (
   select
     projects.project_id,
-    pw.websites as artifact_source_id,
+    unnested_website.url as artifact_source_id,
     'WWW' as artifact_source,
     'WWW' as artifact_namespace,
-    pw.websites as artifact_name,
-    pw.websites as artifact_url,
+    unnested_website.url as artifact_name,
+    unnested_website.url as artifact_url,
     'WEBSITE' as artifact_type
   from projects
   cross join
-    UNNEST(projects.websites) as pw(websites)
+    UNNEST(projects.websites) as @unnested_struct_ref(unnested_website)
 ),
 
 all_farcaster as (
   select
     projects.project_id,
-    ps.farcaster as artifact_source_id,
+    unnested_farcaster.url as artifact_source_id,
     'FARCASTER' as artifact_source,
     'FARCASTER' as artifact_namespace,
-    ps.farcaster as artifact_url,
+    unnested_farcaster.url as artifact_url,
     'SOCIAL_HANDLE' as artifact_type,
     case
       when
-        ps.farcaster like 'https://warpcast.com/%'
-        then SUBSTR(ps.farcaster, 22)
-      else ps.farcaster
+        unnested_farcaster.url like 'https://warpcast.com/%'
+        then SUBSTR(unnested_farcaster.url, 22)
+      else unnested_farcaster.url
     end as artifact_name
   from projects
   cross join
-    UNNEST(projects.social.farcaster) as ps(farcaster)
+    UNNEST(projects.social.farcaster) as @unnested_struct_ref(unnested_farcaster)
 ),
 
 all_twitter as (
   select
     projects.project_id,
-    ps.twitter as artifact_source_id,
+    unnested_twitter.url as artifact_source_id,
     'TWITTER' as artifact_source,
     'TWITTER' as artifact_namespace,
-    ps.twitter as artifact_url,
+    unnested_twitter.url as artifact_url,
     'SOCIAL_HANDLE' as artifact_type,
     case
       when
-        ps.twitter like 'https://twitter.com/%'
-        then SUBSTR(twitter, 21)
+        unnested_twitter.url like 'https://twitter.com/%'
+        then SUBSTR(unnested_twitter.url, 21)
       when
-        ps.twitter like 'https://x.com/%'
-        then SUBSTR(ps.twitter, 15)
-      else ps.twitter
+        unnested_twitter.url like 'https://x.com/%'
+        then SUBSTR(unnested_twitter.url, 15)
+      else unnested_twitter.url
     end as artifact_name
   from projects
   cross join
-    UNNEST(projects.social.twitter) as ps(twitter)
+    UNNEST(projects.social.twitter) as @unnested_struct_ref(unnested_twitter)
 ),
 
 github_repos_raw as (
   select
     projects.project_id,
     'GITHUB' as artifact_source,
-    pg.github as artifact_url,
+    unnested_github.url as artifact_url,
     'REPOSITORY' as artifact_type
   from projects
   cross join
-    UNNEST(projects.github) as pg(github)
+    UNNEST(projects.github) as @unnested_struct_ref(unnested_github)
 ),
 
 github_repos as (
@@ -108,20 +108,20 @@ all_npm_raw as (
     'NPM' as artifact_source,
     'PACKAGE' as artifact_type,
     projects.project_id,
-    pn.npm as artifact_source_id,
-    pn.npm as artifact_url,
+    unnested_npm.url as artifact_source_id,
+    unnested_npm.url as artifact_url,
     case
       when
-        pn.npm like 'https://npmjs.com/package/%'
-        then SUBSTR(pn.npm, 27)
+        unnested_npm.url like 'https://npmjs.com/package/%'
+        then SUBSTR(unnested_npm.url, 27)
       when
-        pn.npm like 'https://www.npmjs.com/package/%'
-        then SUBSTR(pn.npm, 31)
-      else pn.npm
+        unnested_npm.url like 'https://www.npmjs.com/package/%'
+        then SUBSTR(unnested_npm.url, 31)
+      else unnested_npm.url
     end as artifact_name
   from projects
   cross join
-    UNNEST(projects.npm) as pn(npm)
+    UNNEST(projects.npm) as @unnested_struct_ref(unnested_npm)
 ),
 
 all_npm as (
@@ -140,19 +140,19 @@ all_npm as (
 ossd_blockchain as (
   select
     projects.project_id,
-    tag as artifact_type,
-    network as artifact_source,
-    address as artifact_source_id,
-    network as artifact_namespace,
-    address as artifact_name,
-    address as artifact_url
+    unnested_tag as artifact_type,
+    unnested_network as artifact_source,
+    unnested_blockchain.address as artifact_source_id,
+    unnested_network as artifact_namespace,
+    unnested_blockchain.address as artifact_name,
+    unnested_blockchain.address as artifact_url
   from projects
   cross join
-    UNNEST(projects.blockchain) as pb(address, name, networks, tags)
+    UNNEST(projects.blockchain) as @unnested_struct_ref(unnested_blockchain)
   cross join
-    UNNEST(pb.networks) as bn(network)
+    UNNEST(unnested_blockchain.networks) as @unnested_array_ref(unnested_network)
   cross join
-    UNNEST(pb.tags) as bt(tag)
+    UNNEST(unnested_blockchain.tags) as @unnested_array_ref(unnested_tag)
 ),
 
 all_artifacts as (
