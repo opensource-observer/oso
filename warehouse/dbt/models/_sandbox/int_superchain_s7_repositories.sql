@@ -15,9 +15,20 @@ with releases as (
 
 packages as (
   select
-    package_github_artifact_id,
+    package_github_owner,
+    package_github_repo,
     max(coalesce(package_artifact_source = 'NPM', false)) as has_npm_package,
-    max(coalesce(package_artifact_source = 'CARGO', false)) as has_rust_package,
+    max(coalesce(package_artifact_source = 'CARGO', false)) as has_rust_package
+  from {{ ref('int_packages') }}
+  where is_current_owner = true
+  group by
+    package_github_owner,
+    package_github_repo
+),
+
+deps as (
+  select
+    package_github_artifact_id,
     count(distinct artifact_id) as num_dependent_repos_in_oso
   from {{ ref('int_sbom_artifacts') }}
   where package_github_project_id != project_id
@@ -42,12 +53,16 @@ select distinct
   releases.last_release_published,
   coalesce(packages.has_npm_package, false) as has_npm_package,
   coalesce(packages.has_rust_package, false) as has_rust_package,
-  coalesce(packages.num_dependent_repos_in_oso, 0) as num_dependent_repos_in_oso
+  coalesce(deps.num_dependent_repos_in_oso, 0) as num_dependent_repos_in_oso
 from {{ ref('int_repositories') }} as repos
 left join releases
   on repos.artifact_id = releases.repo_artifact_id
 left join packages
-  on repos.artifact_id = packages.package_github_artifact_id
+  on
+    repos.artifact_namespace = packages.package_github_owner
+    and repos.artifact_name = packages.package_github_repo
+left join deps
+  on repos.artifact_id = deps.package_github_artifact_id
 inner join {{ ref('projects_v1') }} as projects
   on repos.project_id = projects.project_id
 where projects.project_namespace = 'oso'
