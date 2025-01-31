@@ -105,7 +105,7 @@ SELECT
     address.zip as address_zip,
     phone_number as phone_numbers
 FROM source_table
-CROSS JOIN UNNEST(address) AS @unnested_struct(address)
+CROSS JOIN UNNEST(address) AS @unnested_struct_ref(address)
 CROSS JOIN UNNEST(phone_numbers) AS @unnested_array_ref(phone_number)
 ```
 
