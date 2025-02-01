@@ -1,3 +1,9 @@
+{{
+  config(
+    materialized='table'
+  )
+}}
+
 {% set columns = [
     "id", "legacy_id", "group", "type", "kind", "description", "amount", 
     "amount_in_host_currency", "host_currency_fx_rate", "net_amount", 
