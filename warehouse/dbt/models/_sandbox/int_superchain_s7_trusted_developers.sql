@@ -68,6 +68,8 @@ developer_events as (
     dev.developer_id,
     dev.developer_name,
     events.to_artifact_id as repo_artifact_id,
+    sum(case when events.event_type = 'COMMIT_CODE' then amount else 0 end)
+      as total_commits_to_repo,
     max(coalesce(events.event_type = 'STARRED', false)) as has_starred,
     max(coalesce(events.event_type = 'FORKED', false)) as has_forked,
     max(coalesce(events.event_type in (
@@ -111,6 +113,7 @@ developer_graph as (
     de.has_forked,
     de.has_code_contribution,
     de.has_issue_contribution,
+    de.total_commits_to_repo,
     de.total_non_star_events as total_non_star_events_to_repo,
     de.first_event as first_event_to_repo,
     de.last_event as last_event_to_repo,
