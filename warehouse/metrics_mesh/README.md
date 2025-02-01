@@ -219,7 +219,7 @@ In particular, you are waiting for `local-trino-psql` to be in a
 If you need to kill your Kind cluster and start over, you can run
 
 ```bash
-kind delete cluster oso-local-test-cluster
+kind delete cluster --name oso-local-test-cluster
 ```
 
 ### Initialize Trino Data
