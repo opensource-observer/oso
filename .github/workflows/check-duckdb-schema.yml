@@ -54,11 +54,11 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_S3_API_SECRET_KEY }}
           AWS_DEFAULT_REGION: "auto"
         run: bash .github/scripts/copy-s3.sh "$R2_S3_PATH" "$SQLMESH_DUCKDB_LOCAL_PATH" "${{ secrets.CLOUDFLARE_R2_S3_API_ENDPOINT }}"
-        if: ${{ inputs.fresh != 'true'  }}
+        if: ${{ !inputs.fresh }}
       
       - name: Save copy of the database
         run: cp $SQLMESH_DUCKDB_LOCAL_PATH $SQLMESH_DUCKDB_LOCAL_PATH.bak
-        if: ${{ inputs.fresh != 'true'  }}
+        if: ${{ !inputs.fresh  }}
   
       - name: Initialize local data
         run: poetry run oso metrics local initialize --max-results-per-query 1 --max-days 2
