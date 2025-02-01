@@ -32,7 +32,7 @@ from (
   union all
   select * from metrics.int_events__github
   union all
-  select * from @oso_source('bigquery.oso.int_events__dependencies')
+  select * from metrics.int_events__dependencies
   union all
   select * from @oso_source('bigquery.oso.int_events__open_collective')
 )
