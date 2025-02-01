@@ -24,8 +24,14 @@ TABLE_MAPPING: TableMappingConfig = {
     "opensource-observer.oso_playground.stg_github__events": "bigquery.oso.stg_github__events",
     "opensource-observer.oso_playground.stg_lens__owners": "bigquery.oso.stg_lens__owners",
     "opensource-observer.oso_playground.stg_lens__profiles": "bigquery.oso.stg_lens__profiles",
-    "opensource-observer.oso_playground.stg_open_collective__deposits": "bigquery.oso.stg_open_collective__deposits",
-    "opensource-observer.oso_playground.stg_open_collective__expenses": "bigquery.oso.stg_open_collective__expenses",
+    "opensource-observer.oso_playground.stg_open_collective__deposits": TableMappingDestination(
+        row_restriction=RowRestriction(time_column="created_at"),
+        table="bigquery.oso.stg_open_collective__deposits",
+    ),
+    "opensource-observer.oso_playground.stg_open_collective__expenses": TableMappingDestination(
+        row_restriction=RowRestriction(time_column="created_at"),
+        table="bigquery.oso.stg_open_collective__expenses",
+    ),
     "opensource-observer.oso_playground.stg_ossd__current_collections": "bigquery.oso.stg_ossd__current_collections",
     "opensource-observer.oso_playground.stg_ossd__current_projects": "bigquery.oso.stg_ossd__current_projects",
     "opensource-observer.oso_playground.stg_ossd__current_repositories": "bigquery.oso.stg_ossd__current_repositories",
