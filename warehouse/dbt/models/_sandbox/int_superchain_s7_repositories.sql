@@ -38,7 +38,6 @@ deps as (
 select distinct
   repos.project_id,
   repos.artifact_id as repo_artifact_id,
-  repos.artifact_source_id as repo_github_node_id,
   repos.artifact_namespace as repo_owner,
   repos.artifact_name as repo_name,
   repos.artifact_url as repo_url,
@@ -51,6 +50,7 @@ select distinct
   repos.created_at,
   repos.updated_at,
   releases.last_release_published,
+  current_timestamp() as sample_date,
   coalesce(packages.has_npm_package, false) as has_npm_package,
   coalesce(packages.has_rust_package, false) as has_rust_package,
   coalesce(deps.num_dependent_repos_in_oso, 0) as num_dependent_repos_in_oso
