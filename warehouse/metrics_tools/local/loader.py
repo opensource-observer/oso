@@ -439,7 +439,10 @@ class DuckDbDestinationLoader(BaseDestinationLoader):
             "expressions",
             [
                 exp.ColumnDef(
-                    this=exp.Identifier(this=column_name),
+                    this=exp.Identifier(
+                        this=column_name,
+                        quoted=True,
+                    ),
                     kind=parse_one(
                         data_type,
                         dialect="duckdb",
@@ -457,11 +460,11 @@ class DuckDbDestinationLoader(BaseDestinationLoader):
         )
         insert_query.this.set(
             "expressions",
-            [exp.Identifier(this=column_name) for column_name, _ in columns],
+            [exp.Identifier(this=column_name, quoted=True) for column_name, _ in columns],
         )
         insert_query.expression.set(
             "expressions",
-            [exp.to_column(column_name) for column_name, _ in columns],
+            [exp.to_column(column_name, quoted=True) for column_name, _ in columns],
         )
         logger.debug(f"EXECUTING={insert_query.sql(dialect="duckdb")}")
         self._duckdb_conn.execute(insert_query.sql(dialect="duckdb"))
