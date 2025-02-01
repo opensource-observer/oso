@@ -36,7 +36,7 @@ with open_collective_expenses as (
         JSON_VALUE(from_account, '$.slug') as from_namespace,
         JSON_VALUE(from_account, '$.type') as from_type,
         JSON_VALUE(from_account, '$.id') as from_artifact_source_id,
-        ABS(CAST(JSON_VALUE(amount, '$.value') as FLOAT64)) as amount
+        ABS(CAST(JSON_VALUE(amount, '$.value') as DOUBLE)) as amount
     from @oso_source('bigquery.oso.stg_open_collective__expenses')
     where JSON_VALUE(amount, '$.currency') = 'USD'
 ),
@@ -65,7 +65,7 @@ open_collective_deposits as (
         JSON_VALUE(from_account, '$.slug') as from_namespace,
         JSON_VALUE(from_account, '$.type') as from_type,
         JSON_VALUE(from_account, '$.id') as from_artifact_source_id,
-        ABS(CAST(JSON_VALUE(amount, '$.value') as FLOAT64)) as amount
+        ABS(CAST(JSON_VALUE(amount, '$.value') as DOUBLE)) as amount
     from @oso_source('bigquery.oso.stg_open_collective__deposits')
     where JSON_VALUE(amount, '$.currency') = 'USD'
 ),
