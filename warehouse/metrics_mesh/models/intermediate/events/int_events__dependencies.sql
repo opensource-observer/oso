@@ -3,7 +3,7 @@ MODEL (
   dialect trino,
   kind INCREMENTAL_BY_TIME_RANGE (
     time_column time,
-    batch_size 90,
+    batch_size 15,
     batch_concurrency 1
   ),
   start '2015-01-01',
