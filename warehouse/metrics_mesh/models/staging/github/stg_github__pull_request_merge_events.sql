@@ -59,7 +59,7 @@ select distinct
   json_extract_string(
     pre.payload, '$.pull_request.author_association'
   ) as author_association,
-  json_extract(pre.payload, '$.number')::INT as "number"
+  json_extract(pre.payload, '$.number')::BIGINT as "number"
 from pull_request_events as pre
 where
   json_extract_string(pre.payload, '$.pull_request.merged_at') is not null
