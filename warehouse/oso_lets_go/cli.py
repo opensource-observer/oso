@@ -9,6 +9,7 @@ import typing as t
 
 import dotenv
 import git
+import kr8s
 from kr8s.objects import Service
 from metrics_tools.factory.factory import MetricQueryConfig
 from metrics_tools.local.loader import LocalTrinoDestinationLoader
@@ -240,7 +241,12 @@ def sqlmesh(
             extra_args = []
 
         # Open up a port to the trino deployment on the kind cluster
-        trino_service = Service.get("local-trino-trino", "local-trino")
+        kr8s_api = kr8s.api(context="kind-oso-local-test-cluster")
+        trino_service = Service.get(
+            "local-trino-trino",
+            "local-trino",
+            api=kr8s_api,
+        )
         with trino_service.portforward(remote_port="8080") as local_port:
             # TODO Open up a port to the mcs deployment on the kind cluster
             process = subprocess.Popen(

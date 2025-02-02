@@ -19,7 +19,7 @@ select
   pre.actor.login as actor_login,
   CONCAT('PULL_REQUEST_', UPPER(json_extract_string(pre.payload, '$.action')))
     as "type",
-  json_extract(pre.payload, '$.number')::INT as "number",
+  json_extract(pre.payload, '$.number')::BIGINT as "number",
   strptime(
     json_extract_string(pre.payload, '$.pull_request.created_at'),
     '%Y-%m-%dT%H:%M:%SZ'

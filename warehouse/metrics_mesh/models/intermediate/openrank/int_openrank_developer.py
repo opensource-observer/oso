@@ -115,7 +115,7 @@ def execute(
                 on e.from_artifact_id = users.artifact_id
             where
                 e.event_type in ('STARRED', 'FORKED')
-                and e.bucket_month > '2022-01-01'
+                and e.bucket_month > date '2022-01-01'
                 and users.artifact_name in ({developers_str})
         )
         
@@ -137,7 +137,7 @@ def execute(
             on e.to_artifact_id = repos.artifact_id
         where
             e.event_type = 'COMMIT_CODE'
-            and e.bucket_month > '2022-01-01'
+            and e.bucket_month > date '2022-01-01'
     """
     trusted_repos = context.fetchdf(trusted_repos_query)
     if trusted_repos.empty:

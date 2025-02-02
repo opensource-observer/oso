@@ -13,7 +13,7 @@ select distinct
   pre.repo.id as repository_id,
   pre.repo.name as repository_name,
   'PULL_REQUEST_MERGED' as "type",
-  json_extract(pre.payload, '$.pull_request.id')::BIGINT as id,
+  json_extract(pre.payload, '$.pull_request.id')::VARCHAR as id,
   strptime(
     json_extract_string(pre.payload, '$.pull_request.merged_at'),
     '%Y-%m-%dT%H:%M:%SZ'
@@ -59,7 +59,7 @@ select distinct
   json_extract_string(
     pre.payload, '$.pull_request.author_association'
   ) as author_association,
-  json_extract(pre.payload, '$.number')::INT as "number"
+  json_extract(pre.payload, '$.number')::BIGINT as "number"
 from pull_request_events as pre
 where
   json_extract_string(pre.payload, '$.pull_request.merged_at') is not null

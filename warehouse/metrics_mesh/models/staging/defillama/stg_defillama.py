@@ -59,6 +59,7 @@ def defillama_tvl_model(protocol: str):
             "time_column": "time",
             "batch_size": 7,
         },
+        partitioned_by=("month(time)",),
     )
     def tvl_model(
         context: ExecutionContext, start: datetime, end: datetime, *args, **kwargs
