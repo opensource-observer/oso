@@ -5,7 +5,7 @@ MODEL (
 
 with contracts_deployed_no_factory as (
   select
-    chain,
+    network,
     deployer_address,
     contract_address
   from metrics.int_deployers
@@ -19,7 +19,7 @@ contracts_deployed_via_factory as (
     Deployer Address is the EOA address that started the transaction
   #}
   select
-    chain,
+    network,
     originating_address as deployer_address,
     contract_address as contract_address
   from metrics.int_factories
@@ -27,25 +27,23 @@ contracts_deployed_via_factory as (
 ),
 
 contracts_deployed_by_safe_or_known_proxy as (
-  {# 
-    This gets all of the contracts deployed by a safe or other known proxy
-    Deployer address is a proxy (safe or other known proxy) that deployed the contract
-  #}
+  -- This gets all of the contracts deployed by a safe or other known proxy
+  -- Deployer address is a proxy (safe or other known proxy) that deployed the contract
   select
-    factories.chain,
+    factories.network,
     proxies.address as deployer_address,
     factories.contract_address as contract_address
   from metrics.int_factories as factories
   inner join metrics.int_proxies as proxies
     on
       factories.originating_contract = proxies.address
-      and factories.chain = proxies.chain
+      and factories.network = proxies.network
   where contract_address is not null
 ),
 
 derived_contracts as (
   select
-    chain,
+    network,
     deployer_address,
     contract_address
   from contracts_deployed_no_factory
@@ -53,7 +51,7 @@ derived_contracts as (
   union all
 
   select
-    chain,
+    network,
     deployer_address,
     contract_address
   from contracts_deployed_via_factory
@@ -61,14 +59,14 @@ derived_contracts as (
   union all
 
   select
-    chain,
+    network,
     deployer_address,
     contract_address
   from contracts_deployed_by_safe_or_known_proxy
 )
 
 select distinct
-  chain as network,
+  network,
   deployer_address,
   contract_address
 from derived_contracts
