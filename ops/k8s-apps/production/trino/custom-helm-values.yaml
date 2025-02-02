@@ -79,7 +79,7 @@ spec:
         targetCPUUtilizationPercentage: 20
         behavior:
           scaleDown:
-            stabilizationWindowSeconds: 300
+            stabilizationWindowSeconds: 600
             policies:
             - type: Pods
               value: 1
@@ -91,7 +91,7 @@ spec:
               value: 100
               periodSeconds: 15
             - type: Pods
-              value: 4
+              value: 2 
               periodSeconds: 15
             selectPolicy: Max
     catalogs:
