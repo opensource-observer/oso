@@ -25,7 +25,7 @@ with enriched_events as (
     coalesce(users.is_bot, false) as is_bot,
     coalesce(users.is_farcaster_user, false) as is_farcaster_user
   from {{ ref('int_superchain_s7_events_by_project') }} as events
-  left outer join {{ ref('int_superchain_s7_onchain_user_labels') }} as users
+  left outer join {{ ref('int_superchain_onchain_user_labels') }} as users
     on events.from_artifact_id = users.artifact_id
 ),
 

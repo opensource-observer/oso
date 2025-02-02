@@ -14,11 +14,10 @@ with releases as (
 ),
 
 packages as (
-  select
+  select distinct
     package_github_owner,
     package_github_repo,
-    max(coalesce(package_artifact_source = 'NPM', false)) as has_npm_package,
-    max(coalesce(package_artifact_source = 'CARGO', false)) as has_rust_package
+    count(distinct package_artifact_name) as num_packages_in_deps_dev
   from {{ ref('int_packages') }}
   where is_current_owner = true
   group by
@@ -28,19 +27,18 @@ packages as (
 
 deps as (
   select
-    package_github_artifact_id,
-    count(distinct artifact_id) as num_dependent_repos_in_oso
-  from {{ ref('int_sbom_artifacts') }}
-  where package_github_project_id != project_id
-  group by package_github_artifact_id
+    dependency_artifact_id,
+    count(distinct dependent_artifact_id) as num_dependent_repos_in_oso
+  from {{ ref('int_code_dependencies') }}
+  group by dependency_artifact_id
 )
 
 select distinct
   repos.project_id,
-  repos.artifact_id as repo_artifact_id,
-  repos.artifact_namespace as repo_owner,
-  repos.artifact_name as repo_name,
-  repos.artifact_url as repo_url,
+  repos.artifact_id,
+  repos.artifact_namespace,
+  repos.artifact_name,
+  repos.artifact_url,
   repos.is_fork,
   repos.star_count,
   repos.fork_count,
@@ -50,9 +48,7 @@ select distinct
   repos.created_at,
   repos.updated_at,
   releases.last_release_published,
-  current_timestamp() as sample_date,
-  coalesce(packages.has_npm_package, false) as has_npm_package,
-  coalesce(packages.has_rust_package, false) as has_rust_package,
+  coalesce(packages.num_packages_in_deps_dev, 0) as num_packages_in_deps_dev,
   coalesce(deps.num_dependent_repos_in_oso, 0) as num_dependent_repos_in_oso
 from {{ ref('int_repositories') }} as repos
 left join releases
@@ -62,7 +58,4 @@ left join packages
     repos.artifact_namespace = packages.package_github_owner
     and repos.artifact_name = packages.package_github_repo
 left join deps
-  on repos.artifact_id = deps.package_github_artifact_id
-inner join {{ ref('projects_v1') }} as projects
-  on repos.project_id = projects.project_id
-where projects.project_namespace = 'oso'
+  on repos.artifact_id = deps.dependency_artifact_id

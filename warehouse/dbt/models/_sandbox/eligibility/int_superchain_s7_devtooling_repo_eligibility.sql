@@ -9,10 +9,9 @@
 
 select
   project_id,
-  repo_artifact_id,
+  artifact_id as repo_artifact_id,
   last_release_published,
-  has_npm_package,
-  has_rust_package,
+  num_packages_in_deps_dev,
   num_dependent_repos_in_oso,
   is_fork,
   created_at,
@@ -20,8 +19,8 @@ select
   case when (
     date(last_release_published)
     >= date_sub(current_date(), interval {{ lookback_days }} day)
-    or has_npm_package
-    or has_rust_package
+    or num_packages_in_deps_dev > 0
     or num_dependent_repos_in_oso > 0
-  ) then true else false end as is_eligible
-from {{ ref('int_superchain_s7_repositories') }}
+  ) then true else false end as is_eligible,
+  current_timestamp() as sample_date
+from {{ ref('int_repositories_enriched') }}

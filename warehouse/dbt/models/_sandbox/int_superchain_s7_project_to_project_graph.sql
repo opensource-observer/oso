@@ -5,54 +5,93 @@
 }}
 
 with project_to_developer_graph as (
-  select * from {{ ref('int_superchain_s7_project_to_developer_graph') }}
+  select
+    onchain_builder_project_id,
+    devtooling_project_id,
+    'DEVELOPER_OVERLAP' as edge_type,
+    'SHARED_DEVELOPER_COUNT' as weighting_algorithm,
+    count(distinct developer_id) as edge_weight
+  from {{ ref('int_superchain_s7_project_to_developer_graph') }}
+  group by 1, 2
+),
+
+project_to_trusted_developer_graph as (
+  select
+    onchain_builder_project_id,
+    devtooling_project_id,
+    'TRUSTED_DEVELOPER_OVERLAP' as edge_type,
+    'SHARED_DEVELOPER_COUNT' as weighting_algorithm,
+    count(distinct developer_id) as edge_weight
+  from {{ ref('int_superchain_s7_project_to_developer_graph') }}
+  where developer_id in (
+    select developer_id
+    from {{ ref('int_superchain_s7_trusted_developers') }}
+    where
+      project_id in (
+        select distinct project_id
+        from {{ ref('int_superchain_s7_onchain_builder_eligibility') }}
+        where
+          gas_fees >= 1
+          or user_count >= 10000
+      )
+      and total_commits_to_project >= 100
+  )
+  group by 1, 2
 ),
 
 project_to_dependency_graph as (
-  select * from {{ ref('int_superchain_s7_project_to_dependency_graph') }}
-),
-
--- First create developer overlap relationships
-developer_contributions as (
   select
-    devtooling_project_id as project_id,
-    developer_id,
-    timestamp(max(last_event_to_repo)) as last_contribution
-  from project_to_developer_graph
-  where has_code_contribution = true
-  group by devtooling_project_id, developer_id
-),
-
-developer_edges as (
-  select
-    a.project_id as onchain_builder_project_id,
-    b.project_id as devtooling_project_id,
-    'DEVELOPER_OVERLAP' as edge_type,
-    'SHARED_DEVELOPER_COUNT' as weighting_algorithm,
-    count(distinct a.developer_id) as edge_weight,
-    max(b.last_contribution) as sample_date
-  from developer_contributions as a
-  inner join developer_contributions as b
-    on
-      a.developer_id = b.developer_id
-      and a.project_id < b.project_id -- Avoid duplicate edges
-  group by 1, 2
-),
-
--- Dependency relationships
-dependency_edges as (
-  select distinct
-    dependent_project_id as onchain_builder_project_id,
-    dependency_project_id as devtooling_project_id,
-    'DEPENDS_ON' as edge_type,
+    onchain_builder_project_id,
+    devtooling_project_id,
+    'DEPENDENCY' as edge_type,
     'PACKAGE_COUNT' as weighting_algorithm,
-    count(distinct dependency_artifact_id) as edge_weight,
-    max(sample_date) as sample_date
-  from project_to_dependency_graph
+    count(distinct dependency_name) as edge_weight
+  from {{ ref('int_superchain_s7_project_to_dependency_graph') }}
   group by 1, 2
+),
+
+project_to_npm_dependency_graph as (
+  select
+    onchain_builder_project_id,
+    devtooling_project_id,
+    'NPM_DEPENDENCY' as edge_type,
+    'PACKAGE_COUNT' as weighting_algorithm,
+    count(distinct dependency_name) as edge_weight
+  from {{ ref('int_superchain_s7_project_to_dependency_graph') }}
+  where dependency_source = 'NPM'
+  group by 1, 2
+),
+
+project_to_cargo_dependency_graph as (
+  select
+    onchain_builder_project_id,
+    devtooling_project_id,
+    'CARGO_DEPENDENCY' as edge_type,
+    'PACKAGE_COUNT' as weighting_algorithm,
+    count(distinct dependency_name) as edge_weight
+  from {{ ref('int_superchain_s7_project_to_dependency_graph') }}
+  where dependency_source = 'CARGO'
+  group by 1, 2
+),
+
+graph as (
+  select * from project_to_developer_graph
+  union all
+  select * from project_to_trusted_developer_graph
+  union all
+  select * from project_to_dependency_graph
+  union all
+  select * from project_to_npm_dependency_graph
+  union all
+  select * from project_to_cargo_dependency_graph
 )
 
--- Combine all edges
-select * from dependency_edges
-union all
-select * from developer_edges
+select
+  current_timestamp() as sample_date,
+  onchain_builder_project_id,
+  devtooling_project_id,
+  edge_type,
+  weighting_algorithm,
+  edge_weight
+from graph
+where onchain_builder_project_id != devtooling_project_id

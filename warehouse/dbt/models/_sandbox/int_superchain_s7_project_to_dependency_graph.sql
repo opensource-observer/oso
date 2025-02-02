@@ -5,19 +5,21 @@
 }}
 
 
-select distinct
-  sbom.project_id as dependent_project_id,
-  sbom.artifact_id as dependent_artifact_id,
-  sbom.package_github_project_id as dependency_project_id,
-  sbom.package_github_artifact_id as dependency_artifact_id,
-  sbom.package_artifact_name as dependency_name,
-  sbom.package_artifact_source as dependency_source
-from {{ ref('int_sbom_artifacts') }} as sbom
-inner join {{ ref('int_superchain_s7_onchain_builder_eligibility') }} as ocr
-  on sbom.project_id = ocr.project_id
-inner join {{ ref('int_superchain_s7_devtooling_eligibility') }} as dtr
-  on sbom.package_github_artifact_id = dtr.repo_artifact_id
+select
+  ocbe.project_id as onchain_builder_project_id,
+  dtre.project_id as devtooling_project_id,
+  dependencies.dependent_artifact_id,
+  dependencies.dependency_artifact_id,
+  dependencies.dependency_name,
+  dependencies.dependency_source
+from {{ ref('int_code_dependencies') }} as dependencies
+inner join {{ ref('int_repositories_enriched') }} as dependents
+  on dependencies.dependent_artifact_id = dependents.artifact_id
+inner join {{ ref('int_superchain_s7_onchain_builder_eligibility') }} as ocbe
+  on dependents.project_id = ocbe.project_id
+inner join {{ ref('int_superchain_s7_devtooling_repo_eligibility') }} as dtre
+  on dependencies.dependency_artifact_id = dtre.repo_artifact_id
 where
-  sbom.project_id != sbom.package_github_project_id
-  and ocr.is_eligible
-  and dtr.is_eligible
+  ocbe.project_id != dtre.project_id
+  and ocbe.is_eligible
+  and dtre.is_eligible

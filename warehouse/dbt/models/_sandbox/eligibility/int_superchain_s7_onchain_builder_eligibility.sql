@@ -44,7 +44,12 @@ project_eligibility as (
 )
 
 select
-  builder_metrics.*,
+  builder_metrics.project_id,
+  builder_metrics.chain_count,
+  builder_metrics.transaction_count,
+  builder_metrics.gas_fees,
+  builder_metrics.user_count,
+  builder_metrics.active_days,
   project_eligibility.is_eligible,
   current_timestamp() as sample_date
 from builder_metrics
