@@ -20,25 +20,25 @@ with open_collective_expenses as (
         'OPEN_COLLECTIVE' as event_source,
         @oso_id(
             'OPEN_COLLECTIVE',
-            JSON_VALUE(to_account, '$.slug'),
-            JSON_VALUE(to_account, '$.name')
+            json_extract_scalar(to_account, '$.slug'),
+            json_extract_scalar(to_account, '$.name')
         ) as to_artifact_id,
-        JSON_VALUE(to_account, '$.name') as to_name,
-        JSON_VALUE(to_account, '$.slug') as to_namespace,
-        JSON_VALUE(to_account, '$.type') as to_type,
-        JSON_VALUE(to_account, '$.id') as to_artifact_source_id,
+        json_extract_scalar(to_account, '$.name') as to_name,
+        json_extract_scalar(to_account, '$.slug') as to_namespace,
+        json_extract_scalar(to_account, '$.type') as to_type,
+        json_extract_scalar(to_account, '$.id') as to_artifact_source_id,
         @oso_id(
           'OPEN_COLLECTIVE',
-          JSON_VALUE(from_account, '$.slug'),
-          JSON_VALUE(from_account, '$.name')
+          json_extract_scalar(from_account, '$.slug'),
+          json_extract_scalar(from_account, '$.name')
         ) as from_artifact_id,
-        JSON_VALUE(from_account, '$.name') as from_name,
-        JSON_VALUE(from_account, '$.slug') as from_namespace,
-        JSON_VALUE(from_account, '$.type') as from_type,
-        JSON_VALUE(from_account, '$.id') as from_artifact_source_id,
-        ABS(CAST(JSON_VALUE(amount, '$.value') as DOUBLE)) as amount
+        json_extract_scalar(from_account, '$.name') as from_name,
+        json_extract_scalar(from_account, '$.slug') as from_namespace,
+        json_extract_scalar(from_account, '$.type') as from_type,
+        json_extract_scalar(from_account, '$.id') as from_artifact_source_id,
+        ABS(CAST(json_extract_scalar(amount, '$.value') as DOUBLE)) as amount
     from @oso_source('bigquery.oso.stg_open_collective__expenses')
-    where JSON_VALUE(amount, '$.currency') = 'USD'
+    where json_extract_scalar(amount, '$.currency') = 'USD'
 ),
 
 open_collective_deposits as (
@@ -49,25 +49,25 @@ open_collective_deposits as (
         'OPEN_COLLECTIVE' as event_source,
         @oso_id(
             'OPEN_COLLECTIVE',
-            JSON_VALUE(to_account, '$.slug'),
-            JSON_VALUE(to_account, '$.name')
+            json_extract_scalar(to_account, '$.slug'),
+            json_extract_scalar(to_account, '$.name')
         ) as to_artifact_id,
-        JSON_VALUE(to_account, '$.name') as to_name,
-        JSON_VALUE(to_account, '$.slug') as to_namespace,
-        JSON_VALUE(to_account, '$.type') as to_type,
-        JSON_VALUE(to_account, '$.id') as to_artifact_source_id,
+        json_extract_scalar(to_account, '$.name') as to_name,
+        json_extract_scalar(to_account, '$.slug') as to_namespace,
+        json_extract_scalar(to_account, '$.type') as to_type,
+        json_extract_scalar(to_account, '$.id') as to_artifact_source_id,
         @oso_id(
           'OPEN_COLLECTIVE',
-          JSON_VALUE(from_account, '$.slug'),
-          JSON_VALUE(from_account, '$.name')
+          json_extract_scalar(from_account, '$.slug'),
+          json_extract_scalar(from_account, '$.name')
         ) as from_artifact_id,
-        JSON_VALUE(from_account, '$.name') as from_name,
-        JSON_VALUE(from_account, '$.slug') as from_namespace,
-        JSON_VALUE(from_account, '$.type') as from_type,
-        JSON_VALUE(from_account, '$.id') as from_artifact_source_id,
-        ABS(CAST(JSON_VALUE(amount, '$.value') as DOUBLE)) as amount
+        json_extract_scalar(from_account, '$.name') as from_name,
+        json_extract_scalar(from_account, '$.slug') as from_namespace,
+        json_extract_scalar(from_account, '$.type') as from_type,
+        json_extract_scalar(from_account, '$.id') as from_artifact_source_id,
+        ABS(CAST(json_extract_scalar(amount, '$.value') as DOUBLE)) as amount
     from @oso_source('bigquery.oso.stg_open_collective__deposits')
-    where JSON_VALUE(amount, '$.currency') = 'USD'
+    where json_extract_scalar(amount, '$.currency') = 'USD'
 ),
 
 all_funding_events as (
