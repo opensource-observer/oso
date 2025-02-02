@@ -13,7 +13,7 @@ select distinct
   pre.repo.id as repository_id,
   pre.repo.name as repository_name,
   'PULL_REQUEST_MERGED' as "type",
-  json_extract(pre.payload, '$.pull_request.id')::INT as id,
+  json_extract(pre.payload, '$.pull_request.id')::BIGINT as id,
   strptime(
     json_extract_string(pre.payload, '$.pull_request.merged_at'),
     '%Y-%m-%dT%H:%M:%SZ'
