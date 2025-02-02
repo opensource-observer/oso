@@ -1,12 +1,49 @@
+import logging
 import subprocess
 
 from docker.errors import NotFound
 
 import docker
 
+logger = logging.getLogger(__name__)
+
 
 def initialize_docker_client():
     return docker.from_env()
+
+
+def ensure_registry_and_image_build(
+    docker_client: docker.DockerClient,
+    registry_name: str,
+    registry_port: int,
+    docker_context_path: str,
+    dockerfile_path: str,
+    image_name: str,
+    image_tag: str,
+    force_image_build: bool = False,
+):
+    # Check if the registry is running
+    registry_container = docker_client.containers.list(
+        filters={"name": registry_name}, all=True
+    )
+
+    if len(registry_container) == 0:
+        logger.info("Local container registry is not running. Starting the registry")
+        create_registry_container(docker_client, registry_name, registry_port)
+
+    image_repo = f"localhost:{registry_port}/{image_name}"
+
+    image = docker_client.images.list(name=image_repo)
+    if len(image) == 0 or force_image_build:
+        logger.info("Build and publish docker image to local registry")
+        build_and_push_docker_image(
+            docker_client,
+            docker_context_path,
+            dockerfile_path,
+            image_repo,
+            image_tag,
+        )
+    return image_repo
 
 
 def create_registry_container(
@@ -59,13 +96,13 @@ def build_and_push_docker_image(
     client: docker.DockerClient,
     build_dir: str,
     dockerfile_path: str,
-    docker_repo: str,
-    docker_tag: str,
+    image_repo: str,
+    image_tag: str,
 ):
     """This is a hack at best right now to build the local docker container"""
     image, logs = client.images.build(
         path=build_dir,
         dockerfile=dockerfile_path,
-        tag=f"{docker_repo}:{docker_tag}",
+        tag=f"{image_repo}:{image_tag}",
     )
-    client.images.push(docker_repo, tag=docker_tag)
+    client.images.push(image_repo, tag=image_tag)
