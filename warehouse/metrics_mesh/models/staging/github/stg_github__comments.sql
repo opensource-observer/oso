@@ -12,7 +12,7 @@ with pull_request_comment_events as (
     ghe.actor.id as actor_id,
     ghe.actor.login as actor_login,
     'PULL_REQUEST_REVIEW_COMMENT' as "type",
-    json_extract(ghe.payload, '$.pull_request.number')::INT as "number",
+    json_extract(ghe.payload, '$.pull_request.number')::BIGINT as "number",
     strptime(
       json_extract_string(ghe.payload, '$.pull_request.created_at'),
       '%Y-%m-%dT%H:%M:%SZ'
@@ -32,7 +32,7 @@ with pull_request_comment_events as (
     json_extract(
       ghe.payload,
       '$.pull_request.comments'
-    ) as comments
+    )::DOUBLE as comments
   from @oso_source('bigquery.oso.stg_github__events') as ghe
   where ghe.type = 'PullRequestReviewCommentEvent'
 ),
@@ -63,7 +63,7 @@ issue_comment_events as (
     json_extract(
       ghe.payload,
       '$.issue.comments'
-    ) as comments
+    )::DOUBLE as comments
   from @oso_source('bigquery.oso.stg_github__events') as ghe
   where ghe.type = 'IssueCommentEvent'
 )

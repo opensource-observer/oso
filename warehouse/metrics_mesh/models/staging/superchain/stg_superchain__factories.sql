@@ -13,8 +13,8 @@ MODEL (
 );
 
 @factory_deployments(
-  @start_dt,
-  @end_dt,
+  @start_date,
+  @end_date,
   @oso_source('bigquery.optimism_superchain_raw_onchain_data.transactions'),
   @oso_source('bigquery.optimism_superchain_raw_onchain_data.traces'),
   traces.chain_id as chain_id,

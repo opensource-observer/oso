@@ -67,7 +67,7 @@ dagster-sqlmesh = "0.3.1"
 google-auth = "^2.34.0"
 pillow = "^10.4.0"
 dagster-k8s = "^0.24.6"
-pyiceberg = { extras = ["hive"], version = "^0.7.1" }
+pyiceberg = {extras = ["hive", "s3fs"], version = "^0.8.1"}
 connectorx = "^0.4.0"
 bokeh = "^3.6.1"
 fastapi = { extras = ["standard"], version = "^0.115.6" }
@@ -82,6 +82,8 @@ openrank-sdk = "^0.4.0"
 pandas = "^2.2.3"
 docker = "^7.1.0"
 gitpython = "^3.1.44"
+minio = "^7.2.15"
+colorlog = "^6.9.0"
 
 
 [tool.poetry.scripts]

@@ -17,7 +17,7 @@ select
   ie.actor.id as actor_id,
   ie.actor.login as actor_login,
   CONCAT('ISSUE_', UPPER(json_extract_string(ie.payload, '$.action'))) as "type",
-  json_extract(ie.payload, '$.issue.number')::INT as "number",
+  json_extract(ie.payload, '$.issue.number')::BIGINT as "number",
   strptime(
     json_extract_string(ie.payload, '$.issue.created_at'),
     '%Y-%m-%dT%H:%M:%SZ'
@@ -33,5 +33,5 @@ select
   json_extract(
     ie.payload,
     '$.issue.comments'
-  ) as comments
+  )::DOUBLE as comments
 from issue_events as ie

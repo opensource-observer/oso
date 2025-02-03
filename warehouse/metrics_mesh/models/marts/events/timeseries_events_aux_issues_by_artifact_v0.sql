@@ -5,7 +5,8 @@ MODEL (
   ),
   start '2015-01-01',
   cron '@daily',
-  grain (time, event_type, event_source, from_artifact_id, to_artifact_id)
+  grain (time, event_type, event_source, from_artifact_id, to_artifact_id),
+  partitioned_by (DAY("time"), "event_type")
 );
 
 select
@@ -22,3 +23,4 @@ select
   closed_at,
   comments
 from metrics.int_events_aux_issues
+where time between @start_dt and @end_dt

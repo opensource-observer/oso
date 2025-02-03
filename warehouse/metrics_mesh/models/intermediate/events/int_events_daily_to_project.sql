@@ -21,6 +21,7 @@ select
   TIMESTAMP_TRUNC(time, day) as bucket_day,
   SUM(amount) as amount
 from metrics.int_events_to_project
+where time between @start_dt and @end_dt
 group by
   project_id,
   from_artifact_id,

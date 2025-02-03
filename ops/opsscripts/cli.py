@@ -1,3 +1,4 @@
+import logging
 import os
 import subprocess
 import sys
@@ -5,12 +6,13 @@ import sys
 import click
 import requests
 from opsscripts.utils.dockertools import (
-    build_and_push_docker_image,
     configure_registry_for_nodes,
     connect_registry_to_network,
-    create_registry_container,
+    ensure_registry_and_image_build,
     initialize_docker_client,
 )
+
+logger = logging.getLogger(__name__)
 
 CURR_DIR = os.path.dirname(__file__)
 OSO_REPO_DIR = os.path.abspath(os.path.join(CURR_DIR, "..", ".."))
@@ -52,6 +54,7 @@ spec:
 @click.option("--oso-repo-dir", default=OSO_REPO_DIR)
 @click.option("--registry-port", default=5001)
 @click.option("--registry-name", default="oso-registry")
+@click.option("--force-image-build/--no-force-image-build", default=False)
 def cluster_setup(
     branch_name: str,
     cluster_name: str,
@@ -61,6 +64,7 @@ def cluster_setup(
     oso_repo_dir: str,
     registry_port: int,
     registry_name: str,
+    force_image_build: bool,
 ):
     if not branch_name:
         branch_name = (
@@ -75,62 +79,63 @@ def cluster_setup(
     )
 
     if response.status_code == 200:
-        click.echo(
+        logger.info(
             f"Branch '{branch_name}' found on remote. Using this branch for the cluster setup"
         )
     elif response.status_code == 404:
-        click.echo(
+        logger.error(
             f"Branch '{branch_name}' does not exist in the repository. Push this branch first"
         )
         sys.exit(1)
     else:
-        click.echo(f"An error occurred: HTTP status code {response.status_code}.")
+        logger.error(f"An error occurred: HTTP status code {response.status_code}.")
         sys.exit(1)
 
     docker_client = initialize_docker_client()
 
-    click.echo("Ensure local container registry is running")
-    create_registry_container(docker_client, registry_name, registry_port)
+    oso_local_image_name = "oso"
+    oso_dockerfile_path = os.path.join(oso_repo_dir, "docker/images/oso/Dockerfile")
 
-    registry_url_base = f"localhost:{registry_port}"
+    logger.info("Ensure registry and the base image are built")
 
-    oso_local_repo_name = f"{registry_url_base}/oso"
-
-    click.echo("Build and publish docker image to local registry")
-    build_and_push_docker_image(
+    image_repo = ensure_registry_and_image_build(
         docker_client,
+        registry_name,
+        registry_port,
         oso_repo_dir,
-        os.path.join(oso_repo_dir, "docker/images/oso/Dockerfile"),
-        oso_local_repo_name,
+        oso_dockerfile_path,
+        oso_local_image_name,
         "latest",
+        force_image_build=force_image_build,
     )
+    logger.info(f"Image {image_repo} built and pushed to the local registry")
 
-    click.echo("Ensure kind cluster is running")
+    logger.info("Ensure kind cluster is running")
     get_clusters_output = subprocess.run(
         ["kind", "get", "clusters"], check=True, stdout=subprocess.PIPE
     ).stdout
     clusters_list = map(lambda a: a.decode("utf-8"), get_clusters_output.split(b"\n"))
     if cluster_name in clusters_list:
-        click.echo("Kind cluster already exists. Skipping cluster creation")
+        logger.info("Kind cluster already exists. Skipping cluster creation")
     else:
         subprocess.run(
             ["kind", "create", "cluster", "--config", "ops/kind/cluster.yaml"],
             check=True,
         )
 
-    click.echo("configuring the registry for the kind cluster nodes")
+    logger.info("Configuring the registry for the kind cluster nodes")
     configure_registry_for_nodes(
         docker_client, registry_name, registry_port, cluster_name
     )
-    click.echo("Connecting the registry to the kind cluster network")
+    logger.info("Connecting the registry to the kind cluster network")
     connect_registry_to_network(docker_client, registry_name)
 
-    click.echo("Switching kubectl context to the kind cluster")
+    logger.info("Switching kubectl context to the kind cluster")
     subprocess.run(
         ["kubectl", "config", "use-context", f"kind-{cluster_name}"], check=True
     )
 
-    click.echo("Ensure kind cluster is ready")
+    logger.info("Ensure kind cluster is ready")
     subprocess.run(
         ["kubectl", "wait", "--for=condition=Ready", "node", "--all", "--timeout=5m"],
         check=True,
@@ -143,7 +148,7 @@ def cluster_setup(
     # This is not a very good way to check if flux is installed. But it works for now
     rows_and_columns = [row.split() for row in helm_list_flux_output.split(b"\n")]
     if len(rows_and_columns) < 2:
-        click.echo("helm returned an unexpected output. Exiting")
+        logger.error("helm returned an unexpected output. Exiting")
         sys.exit(1)
     else:
         names = [
@@ -151,7 +156,7 @@ def cluster_setup(
             for row in filter(lambda r: len(r) > 0, rows_and_columns)
         ]
         if "flux-operator" in names:
-            click.echo(
+            logger.info(
                 "Flux Operator is already installed. Attempting to flux with the new configuration"
             )
         else:
@@ -181,6 +186,6 @@ def cluster_setup(
         check=True,
     )
 
-    click.echo(
+    logger.info(
         "The flux instance should now be syncing the repository if everything is going as planned. Check k9s for details"
     )

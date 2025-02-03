@@ -1,5 +1,4 @@
 import logging
-import os
 
 import duckdb
 from oso_dagster.assets.defillama import DEFILLAMA_PROTOCOLS, defillama_slug_to_name
@@ -8,26 +7,31 @@ from .config import RowRestriction, TableMappingConfig, TableMappingDestination
 
 logger = logging.getLogger(__name__)
 
-PROJECT_ID = os.getenv("GOOGLE_PROJECT_ID", "opensource-observer")
-
 DUCKDB_SOURCES_SCHEMA_PREFIX = "sources"
 
 TABLE_MAPPING: TableMappingConfig = {
     "opensource-observer.oso_playground.int_deployers": "bigquery.oso.int_deployers",
     "opensource-observer.oso_playground.int_deployers_by_project": "bigquery.oso.int_deployers_by_project",
     "opensource-observer.oso_playground.int_events__blockchain": "bigquery.oso.int_events__blockchain",
-    "opensource-observer.oso_playground.int_events__dependencies": "bigquery.oso.int_events__dependencies",
-    "opensource-observer.oso_playground.int_events__open_collective": "bigquery.oso.int_events__open_collective",
     "opensource-observer.oso_playground.int_first_time_addresses": "bigquery.oso.int_first_time_addresses",
     "opensource-observer.oso_playground.int_factories": "bigquery.oso.int_factories",
     "opensource-observer.oso_playground.int_proxies": "bigquery.oso.int_proxies",
     "opensource-observer.oso_playground.int_superchain_potential_bots": "bigquery.oso.int_superchain_potential_bots",
+    "opensource-observer.oso_playground.stg_deps_dev__dependencies": "bigquery.oso.stg_deps_dev__dependencies",
     "opensource-observer.oso_playground.stg_deps_dev__packages": "bigquery.oso.stg_deps_dev__packages",
     "opensource-observer.oso_playground.stg_farcaster__addresses": "bigquery.oso.stg_farcaster__addresses",
     "opensource-observer.oso_playground.stg_farcaster__profiles": "bigquery.oso.stg_farcaster__profiles",
     "opensource-observer.oso_playground.stg_github__events": "bigquery.oso.stg_github__events",
     "opensource-observer.oso_playground.stg_lens__owners": "bigquery.oso.stg_lens__owners",
     "opensource-observer.oso_playground.stg_lens__profiles": "bigquery.oso.stg_lens__profiles",
+    "opensource-observer.oso_playground.stg_open_collective__deposits": TableMappingDestination(
+        row_restriction=RowRestriction(time_column="created_at"),
+        table="bigquery.oso.stg_open_collective__deposits",
+    ),
+    "opensource-observer.oso_playground.stg_open_collective__expenses": TableMappingDestination(
+        row_restriction=RowRestriction(time_column="created_at"),
+        table="bigquery.oso.stg_open_collective__expenses",
+    ),
     "opensource-observer.oso_playground.stg_ossd__current_collections": "bigquery.oso.stg_ossd__current_collections",
     "opensource-observer.oso_playground.stg_ossd__current_projects": "bigquery.oso.stg_ossd__current_projects",
     "opensource-observer.oso_playground.stg_ossd__current_repositories": "bigquery.oso.stg_ossd__current_repositories",

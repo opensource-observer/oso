@@ -219,7 +219,7 @@ In particular, you are waiting for `local-trino-psql` to be in a
 If you need to kill your Kind cluster and start over, you can run
 
 ```bash
-kind delete cluster oso-local-test-cluster
+kind delete cluster --name oso-local-test-cluster
 ```
 
 ### Initialize Trino Data
@@ -259,6 +259,17 @@ Please note, you may periodically be logged out of the local kind cluster or you
 will need to change branches that you'd like the cluster to use. Just run `oso
 ops cluster-setup` again and it will properly update the local cluster. It could
 take a few minutes for the cluster to synchronize to the declared configuration.
+
+### Debugging Trino
+
+You can expose your local Trino instance for debugging by running:
+
+```bash
+kubectl port-forward --namespace=local-trino service/local-trino-trino 8080:8080 --address 0.0.0.0
+```
+
+This will open up a web server to interact with Trino directly at
+`http://127.0.0.1:8080`.
 
 ## Metrics Overview
 

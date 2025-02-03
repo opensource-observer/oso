@@ -37,12 +37,6 @@ timeseries_metrics(
             entity_types=["artifact", "project", "collection"],
             over_all_time=True,
         ),
-        # "stars": MetricQueryDef(
-        #     ref="stars.sql",
-        #     time_aggregations=["daily", "weekly", "monthly"],
-        #     rolling_window={ ... rolling window config ... },
-        #     over_all_time=True/False,
-        # ),
         "commits": MetricQueryDef(
             ref="commits.sql",
             time_aggregations=["daily", "weekly", "monthly"],

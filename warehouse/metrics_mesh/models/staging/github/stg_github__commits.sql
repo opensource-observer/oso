@@ -2,6 +2,7 @@ MODEL (
   name metrics.stg_github__commits,
   description 'Turns all push events into their commit objects',
   kind FULL,
+  dialect trino
 );
 
 select
@@ -12,10 +13,10 @@ select
   ghpe.ref as ref,
   ghpe.actor_id as actor_id,
   ghpe.actor_login as actor_login,
-  json_extract_string(commit_details, '$.sha') as sha,
-  json_extract_string(commit_details, '$.author.email') as author_email,
-  json_extract_string(commit_details, '$.author.name') as author_name,
-  CAST(json_extract(commit_details, '$.distinct') as BOOL) as is_distinct,
-  json_extract_string(commit_details, '$.url') as api_url
+  json_extract_scalar(unnested_ghpe.commit_details, '$.sha') as sha,
+  json_extract_scalar(unnested_ghpe.commit_details, '$.author.email') as author_email,
+  json_extract_scalar(unnested_ghpe.commit_details, '$.author.name') as author_name,
+  CAST(json_extract(unnested_ghpe.commit_details, '$.distinct') as BOOL) as is_distinct,
+  json_extract_scalar(unnested_ghpe.commit_details, '$.url') as api_url
 from metrics.stg_github__push_events as ghpe
-cross join UNNEST(ghpe.commits) as commit_details
+cross join UNNEST(@json_extract_from_array(ghpe.commits, '$')) as unnested_ghpe(commit_details)

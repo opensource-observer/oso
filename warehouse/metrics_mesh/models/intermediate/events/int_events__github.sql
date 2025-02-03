@@ -2,9 +2,12 @@ MODEL (
   name metrics.int_events__github,
   kind INCREMENTAL_BY_TIME_RANGE (
     time_column time,
+    batch_size 365,
+    batch_concurrency 1
   ),
   start '2015-01-01',
   cron '@daily',
+  partitioned_by (DAY("time"), "event_type"),
   grain (time, event_type, event_source, from_artifact_id, to_artifact_id)
 );
 
@@ -14,9 +17,9 @@ with github_commits as (
     'COMMIT_CODE' as event_type,
     CAST(push_id as STRING) as event_source_id,
     'GITHUB' as event_source,
-    SPLIT(REPLACE(repository_name, '@', ''), '/')[1]
+    SPLIT(REPLACE(repository_name, '@', ''), '/')[@array_index(1)]
       as to_name,
-    SPLIT(REPLACE(repository_name, '@', ''), '/')[0]
+    SPLIT(REPLACE(repository_name, '@', ''), '/')[@array_index(0)]
       as to_namespace,
     'REPOSITORY' as to_type,
     CAST(repository_id as STRING) as to_artifact_source_id,
@@ -32,6 +35,7 @@ with github_commits as (
     end as from_artifact_source_id,
     CAST(1 as DOUBLE) as amount
   from metrics.stg_github__distinct_commits_resolved_mergebot
+  where created_at between @start_dt and @end_dt
 ),
 
 github_releases as (
@@ -40,9 +44,9 @@ github_releases as (
     type as event_type,
     CAST(id as STRING) as event_source_id,
     'GITHUB' as event_source,
-    SPLIT(REPLACE(repository_name, '@', ''), '/')[1]
+    SPLIT(REPLACE(repository_name, '@', ''), '/')[@array_index(1)]
       as to_name,
-    SPLIT(REPLACE(repository_name, '@', ''), '/')[0]
+    SPLIT(REPLACE(repository_name, '@', ''), '/')[@array_index(0)]  
       as to_namespace,
     'REPOSITORY' as to_type,
     CAST(repository_id as STRING) as to_artifact_source_id,
@@ -52,6 +56,7 @@ github_releases as (
     CAST(actor_id as STRING) as from_artifact_source_id,
     CAST(1 as DOUBLE) as amount
   from metrics.stg_github__releases
+  where created_at between @start_dt and @end_dt
 ),
 
 github_comments as (
@@ -60,9 +65,9 @@ github_comments as (
     type as event_type,
     CAST(id as STRING) as event_source_id,
     'GITHUB' as event_source,
-    SPLIT(REPLACE(repository_name, '@', ''), '/')[1]
+    SPLIT(REPLACE(repository_name, '@', ''), '/')[@array_index(1)]
       as to_name,
-    SPLIT(REPLACE(repository_name, '@', ''), '/')[0]
+    SPLIT(REPLACE(repository_name, '@', ''), '/')[@array_index(0)]
       as to_namespace,
     'REPOSITORY' as to_type,
     CAST(repository_id as STRING) as to_artifact_source_id,
@@ -72,6 +77,7 @@ github_comments as (
     CAST(actor_id as STRING) as from_artifact_source_id,
     CAST(1 as DOUBLE) as amount
   from metrics.stg_github__comments
+  where event_time between @start_dt and @end_dt
 ),
 
 github_issues as (
@@ -80,9 +86,9 @@ github_issues as (
     type as event_type,
     CAST(id as STRING) as event_source_id,
     'GITHUB' as event_source,
-    SPLIT(REPLACE(repository_name, '@', ''), '/')[1]
+    SPLIT(REPLACE(repository_name, '@', ''), '/')[@array_index(1)]
       as to_name,
-    SPLIT(REPLACE(repository_name, '@', ''), '/')[0]
+    SPLIT(REPLACE(repository_name, '@', ''), '/')[@array_index(0)]
       as to_namespace,
     'REPOSITORY' as to_type,
     CAST(repository_id as STRING) as to_artifact_source_id,
@@ -92,6 +98,7 @@ github_issues as (
     CAST(actor_id as STRING) as from_artifact_source_id,
     CAST(1 as DOUBLE) as amount
   from metrics.stg_github__issues
+  where event_time between @start_dt and @end_dt
 ),
 
 github_pull_requests as (
@@ -100,9 +107,9 @@ github_pull_requests as (
     type as event_type,
     CAST(id as STRING) as event_source_id,
     'GITHUB' as event_source,
-    SPLIT(REPLACE(repository_name, '@', ''), '/')[1]
+    SPLIT(REPLACE(repository_name, '@', ''), '/')[@array_index(1)]
       as to_name,
-    SPLIT(REPLACE(repository_name, '@', ''), '/')[0]
+    SPLIT(REPLACE(repository_name, '@', ''), '/')[@array_index(0)]
       as to_namespace,
     'REPOSITORY' as to_type,
     CAST(repository_id as STRING) as to_artifact_source_id,
@@ -112,6 +119,7 @@ github_pull_requests as (
     CAST(actor_id as STRING) as from_artifact_source_id,
     CAST(1 as DOUBLE) as amount
   from metrics.stg_github__pull_requests
+  where event_time between @start_dt and @end_dt
 ),
 
 github_pull_request_merge_events as (
@@ -120,9 +128,9 @@ github_pull_request_merge_events as (
     type as event_type,
     CAST(id as STRING) as event_source_id,
     'GITHUB' as event_source,
-    SPLIT(REPLACE(repository_name, '@', ''), '/')[1]
+    SPLIT(REPLACE(repository_name, '@', ''), '/')[@array_index(1)]
       as to_name,
-    SPLIT(REPLACE(repository_name, '@', ''), '/')[0]
+    SPLIT(REPLACE(repository_name, '@', ''), '/')[@array_index(0)]
       as to_namespace,
     'REPOSITORY' as to_type,
     CAST(repository_id as STRING) as to_artifact_source_id,
@@ -132,6 +140,7 @@ github_pull_request_merge_events as (
     CAST(actor_id as STRING) as from_artifact_source_id,
     CAST(1 as DOUBLE) as amount
   from metrics.stg_github__pull_request_merge_events
+  where event_time between @start_dt and @end_dt
 ),
 
 github_stars_and_forks as (
@@ -140,9 +149,9 @@ github_stars_and_forks as (
     type as event_type,
     CAST(id as STRING) as event_source_id,
     'GITHUB' as event_source,
-    SPLIT(REPLACE(repository_name, '@', ''), '/')[1]
+    SPLIT(REPLACE(repository_name, '@', ''), '/')[@array_index(1)]
       as to_name,
-    SPLIT(REPLACE(repository_name, '@', ''), '/')[0]
+    SPLIT(REPLACE(repository_name, '@', ''), '/')[@array_index(0)]
       as to_namespace,
     'REPOSITORY' as to_type,
     CAST(repository_id as STRING) as to_artifact_source_id,
@@ -152,6 +161,7 @@ github_stars_and_forks as (
     CAST(actor_id as STRING) as from_artifact_source_id,
     CAST(1 as DOUBLE) as amount
   from metrics.stg_github__stars_and_forks
+  where created_at between @start_dt and @end_dt
 ),
 
 all_events as (

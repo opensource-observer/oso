@@ -6,7 +6,7 @@ MODEL (
     batch_size 365,
     batch_concurrency 1,
   ),
-  partitioned_by (MONTH("time"), "event_type"),
+  partitioned_by (DAY("time"), "event_type"),
   cron '@daily',
 );
 

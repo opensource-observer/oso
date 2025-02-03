@@ -32,3 +32,5 @@ where
   network = 'mainnet'
   and receipt_status = 1
   and gas > 0
+  -- Bigquery requires we specify partitions to filter for this data source
+  and dt between @start_dt and @end_dt

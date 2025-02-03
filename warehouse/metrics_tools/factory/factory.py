@@ -99,7 +99,12 @@ class TimeseriesMetrics:
         peer_table_map: t.Dict[str, str],
         raw_options: TimeseriesMetricsOptions,
     ):
-        marts_tables: t.Dict[str, t.List[str]] = {
+        timeseries_mart_tables: t.Dict[str, t.List[str]] = {
+            "artifact": [],
+            "project": [],
+            "collection": [],
+        }
+        key_metrics_mart_tables: t.Dict[str, t.List[str]] = {
             "artifact": [],
             "project": [],
             "collection": [],
@@ -107,7 +112,8 @@ class TimeseriesMetrics:
         self._timeseries_sources = timeseries_sources
         self._metrics_queries = metrics_queries
         self._peer_table_map = peer_table_map
-        self._marts_tables = marts_tables
+        self._timeseries_marts_tables = timeseries_mart_tables
+        self._key_metrics_marts_tables = key_metrics_mart_tables
         self._raw_options = raw_options
         self._rendered = False
         self._rendered_queries: t.Dict[str, MetricQueryConfig] = {}
@@ -140,14 +146,20 @@ class TimeseriesMetrics:
         # Turn the source into a dict so it can be used in the sqlmesh context
         refs = query.provided_dependency_refs
 
-        marts_tables = self._marts_tables
+        timeseries_mart_tables = self._timeseries_marts_tables
+        key_metrics_mart_tables = self._key_metrics_marts_tables
 
         queries: t.Dict[str, MetricQueryConfig] = {}
         for ref in refs:
             table_name = query.table_name(ref)
 
             if not query.is_intermediate:
-                marts_tables[ref["entity_type"]].append(table_name)
+                mart_table = (
+                    key_metrics_mart_tables
+                    if ref.get("time_aggregation", None) == "over_all_time"
+                    else timeseries_mart_tables
+                )
+                mart_table[ref["entity_type"]].append(table_name)
 
             additional_macros = [
                 metrics_peer_ref,
@@ -302,7 +314,8 @@ class TimeseriesMetrics:
         override_module_path = Path(
             os.path.dirname(inspect.getfile(join_all_of_entity_type))
         )
-        for entity_type, tables in self._marts_tables.items():
+
+        for entity_type, tables in self._timeseries_marts_tables.items():
             MacroOverridingModel(
                 additional_macros=[],
                 override_module_path=override_module_path,
@@ -328,6 +341,34 @@ class TimeseriesMetrics:
                 },
                 enabled=self._raw_options.get("enabled", True),
             )(join_all_of_entity_type)
+
+        for entity_type, tables in self._key_metrics_marts_tables.items():
+            MacroOverridingModel(
+                additional_macros=[],
+                override_module_path=override_module_path,
+                override_path=override_path,
+                locals=dict(
+                    db=self.catalog,
+                    tables=tables,
+                    columns=list(
+                        constants.METRICS_COLUMNS_BY_ENTITY[entity_type].keys()
+                    ),
+                ),
+                name=f"metrics.key_metrics_to_{entity_type}",
+                is_sql=True,
+                kind="VIEW",
+                dialect="clickhouse",
+                start="1970-01-01",
+                columns={
+                    k: constants.METRICS_COLUMNS_BY_ENTITY[entity_type][k]
+                    for k in filter(
+                        lambda col: col not in ["event_source"],
+                        constants.METRICS_COLUMNS_BY_ENTITY[entity_type].keys(),
+                    )
+                },
+                enabled=self._raw_options.get("enabled", True),
+            )(join_all_of_entity_type)
+
         logger.info("model generation complete")
 
     def generate_model_for_rendered_query(

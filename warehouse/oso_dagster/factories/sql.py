@@ -97,6 +97,7 @@ def sql_assets(
     environment: str = "production",
     asset_type: str = "source",
     pool_size: t.Optional[int] = None,
+    concurrency_key: t.Optional[str] = None,
 ):
     """A convenience sql asset factory that should handle any basic incremental
     table or or full refresh sql source and configure a destination to the
@@ -115,6 +116,8 @@ def sql_assets(
             "opensource.observer/factory": "sql_dlt",
             "opensource.observer/type": asset_type,
         }
+        if concurrency_key is not None:
+            tags["dagster/concurrency_key"] = concurrency_key
         translator = PrefixedDltTranslator(source_name, tags)
 
         connection_string = secrets.resolve_as_str(source_credential_reference)

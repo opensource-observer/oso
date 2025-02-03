@@ -39,3 +39,6 @@ from metrics.stg_superchain__transactions as transactions
 left join metrics.stg_superchain__traces as traces
   on transactions.transaction_hash = traces.transaction_hash
   and transactions.chain = traces.chain
+where 
+  transactions.block_timestamp between @start_dt and @end_dt
+  and traces.block_timestamp between @start_dt and @end_dt
