@@ -37,12 +37,9 @@ snapshots as (
   where
     MinimumDepth = 1
     and Dependency.Name in (select artifact_name from artifacts)
-    -- This is a hack to avoid the need for a full table scan. We may want to
-    -- have a different solution create a more generalized dependency mapping
-    -- that uses some kind of stable id that either we derive from some other
-    -- data source or generate ourselves and add at data ingestion of artifact
-    -- dependencies
-    and SnapshotAt between @start_date - INTERVAL 180 DAY and @end_date
+    -- We only need to lag over a short period because snapshots are duplicated
+    -- data. Using 30 to ensure we capture the previous snapshot.
+    and SnapshotAt between @start_date - INTERVAL 30 DAY and @end_date
 ),
 
 intermediate as (
