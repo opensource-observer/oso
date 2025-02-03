@@ -29,10 +29,10 @@ select
   created_at,
   updated_at,
   case when (
-    date_add(current_timestamp(), interval '@lookback_days days')
+    current_timestamp() + interval @lookback_days day
       >= last_release_published
     or num_packages_in_deps_dev > 0
     or num_dependent_repos_in_oso > 0
   ) then true else false end as is_eligible,
-  DAY(current_timestamp()) as sample_date
+  current_timestamp() as sample_date
 from metrics.int_repositories_enriched
