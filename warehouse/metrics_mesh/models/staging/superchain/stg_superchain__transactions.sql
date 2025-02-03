@@ -20,13 +20,7 @@ select
   gas as gas_used,
   gas_price,
   value_lossless,
-  upper(
-    case
-      when chain = 'op' then 'optimism'
-      when chain = 'fraxtal' then 'frax'
-      else chain
-    end
-  ) as chain
+  @chain_name(chain) as chain
 from @oso_source('bigquery.optimism_superchain_raw_onchain_data.transactions')
 where
   network = 'mainnet'

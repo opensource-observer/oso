@@ -1,6 +1,6 @@
 MODEL (
   name metrics.int_superchain_traces_txs_joined,
-  description 'Traces joined on transactions',
+  description 'Traces joined on transactions (by hash and chain)',
   kind INCREMENTAL_BY_TIME_RANGE (
     time_column block_timestamp,
     batch_size 90,
@@ -34,7 +34,7 @@ select
   traces.to_address as to_address_trace,
   transactions.gas_used as gas_used_tx,
   traces.gas_used as gas_used_trace,
-  transactions.gas_price as gas_price  
+  transactions.gas_price as gas_price_tx  
 from metrics.stg_superchain__transactions as transactions
 left join metrics.stg_superchain__traces as traces
   on transactions.transaction_hash = traces.transaction_hash
