@@ -9,7 +9,7 @@ MODEL (
   ),
   start '2015-01-01',
   cron '@daily',
-  partitioned_by (DAY("block_timestamp")),
+  partitioned_by (DAY("block_timestamp"), "chain"),
   grain (
     block_timestamp,
     chain,
