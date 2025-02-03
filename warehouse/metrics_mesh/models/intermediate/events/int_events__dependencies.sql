@@ -38,7 +38,7 @@ snapshots as (
     MinimumDepth = 1
     and Dependency.Name in (select artifact_name from artifacts)
     -- We only need to lag over a short period because snapshots are duplicated
-    -- data. Using 30 to ensure we capture the previous snapshot.
+    -- data. Using 60 to ensure we capture the previous snapshot.
     and SnapshotAt between @start_date - INTERVAL 60 DAY and @end_date
 ),
 
