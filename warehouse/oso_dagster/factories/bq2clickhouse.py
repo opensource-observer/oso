@@ -1,19 +1,17 @@
 from dataclasses import dataclass, field
-from typing import Optional, Sequence, Dict, List, Tuple, cast
-from dagster import (
-    asset,
-    AssetExecutionContext,
-    MaterializeResult,
-)
+from typing import Dict, List, Optional, Sequence, Tuple, cast
+
+from dagster import AssetExecutionContext, MaterializeResult, asset
 from dagster_gcp import BigQueryResource, GCSResource
 from google.cloud.bigquery import Client as BQClient
-from .common import AssetFactoryResponse, AssetDeps, GenericAsset
+
 from ..resources import ClickhouseResource
 from ..utils.bq import BigQueryTableConfig, export_to_gcs
-from ..utils.errors import UnsupportedTableColumn
-from ..utils.gcs import gcs_to_http_url, batch_delete_folder
-from ..utils.clickhouse import create_table, import_data, drop_table, rename_table
+from ..utils.clickhouse import create_table, drop_table, import_data, rename_table
 from ..utils.common import SourceMode
+from ..utils.errors import UnsupportedTableColumn
+from ..utils.gcs import batch_delete_folder, gcs_to_http_url
+from .common import AssetDeps, AssetFactoryResponse, GenericAsset
 
 # This is the folder in the GCS bucket where we will stage the data
 GCS_BUCKET_DIRECTORY = "bq2clickhouse"
@@ -118,6 +116,7 @@ def create_bq2clickhouse_asset(asset_config: Bq2ClickhouseAssetConfig):
         "opensource.observer/factory": "bq2clickhouse",
         "opensource.observer/environment": asset_config.environment,
         "opensource.observer/type": "mart",
+        "opensource.observer/source": "core",
     }
 
     @asset(

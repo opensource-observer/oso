@@ -33,6 +33,7 @@ common_tags: t.Dict[str, str] = {
     "opensource.observer/environment": "production",
     "opensource.observer/group": "ossd",
     "opensource.observer/type": "source",
+    "opensource.observer/source": "core",
     "dagster/concurrency_key": "ossd",
 }
 

@@ -36,12 +36,11 @@ from google.api_core.exceptions import ClientError, InternalServerError, NotFoun
 from google.cloud.bigquery import Client as BQClient
 from google.cloud.bigquery import LoadJobConfig, SourceFormat, TableReference
 from google.cloud.bigquery.schema import SchemaField
-from polars.type_aliases import PolarsDataType
-
 from oso_dagster.utils.bq import (
     compare_schemas_and_ignore_safe_changes,
     get_table_schema,
 )
+from polars.type_aliases import PolarsDataType
 
 from ...cbt import CBTResource, TimePartitioning, UpdateStrategy
 from ...utils import AlertManager, add_tags, batch_delete_blobs
@@ -1115,6 +1114,7 @@ def goldsky_asset(
             tags,
             {
                 "opensource.observer/type": "source",
+                "opensource.observer/source": "unstable",
             },
         ),
         op_tags=op_tags,
