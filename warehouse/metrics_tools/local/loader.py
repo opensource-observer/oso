@@ -149,6 +149,7 @@ def bq_try_read_with_options(
     source_table: str,
     dest: TableMappingDestination,
     project_id: str,
+    max_results_per_query: int,
 ):
     result = None
     increment = timedelta(days=1)
@@ -159,7 +160,10 @@ def bq_try_read_with_options(
         start = start - increment
         increment = increment * 2
 
-    return result
+    return result.slice(
+        0,
+        min(result.num_rows, max_results_per_query),
+    )
 
 
 class BaseDestinationLoader(DestinationLoader):
@@ -252,6 +256,7 @@ class BaseDestinationLoader(DestinationLoader):
                 source_name,
                 destination,
                 config.project_id,
+                config.max_results_per_query,
             )
         else:
             if config.max_results_per_query:
