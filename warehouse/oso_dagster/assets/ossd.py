@@ -26,6 +26,7 @@ from oso_dagster.factories import dlt_factory
 from oso_dagster.factories.common import AssetFactoryResponse
 from oso_dagster.factories.jobs import discoverable_jobs
 from oso_dagster.utils import secret_ref_arg
+from oso_dagster.utils.tags import add_tags
 from ossdirectory import fetch_data
 from ossdirectory.fetch import OSSDirectory
 
@@ -33,9 +34,10 @@ common_tags: t.Dict[str, str] = {
     "opensource.observer/environment": "production",
     "opensource.observer/group": "ossd",
     "opensource.observer/type": "source",
-    "opensource.observer/source": "core",
     "dagster/concurrency_key": "ossd",
 }
+
+core_tags = add_tags(common_tags, {"opensource.observer/source": "core"})
 
 
 class OSSDirectoryConfig(Config):
@@ -74,8 +76,8 @@ def oss_directory_to_dataframe(output: str, data: t.Optional[OSSDirectory] = Non
 
 @multi_asset(
     outs={
-        "projects": AssetOut(is_required=False, key_prefix="ossd", tags=common_tags),
-        "collections": AssetOut(is_required=False, key_prefix="ossd", tags=common_tags),
+        "projects": AssetOut(is_required=False, key_prefix="ossd", tags=core_tags),
+        "collections": AssetOut(is_required=False, key_prefix="ossd", tags=core_tags),
     },
     compute_kind="dataframe",
     can_subset=True,
@@ -145,7 +147,7 @@ project_key = projects_and_collections.keys_by_output_name["projects"]
 @dlt_factory(
     key_prefix="ossd",
     ins={"projects_df": AssetIn(project_key)},
-    tags=common_tags,
+    tags=dict(core_tags.items()),
 )
 def repositories(
     global_config: ResourceParam[DagsterConfig],
@@ -160,7 +162,7 @@ def repositories(
 @dlt_factory(
     key_prefix="ossd",
     deps=[AssetKey(["ossd", "repositories"])],
-    tags=common_tags,
+    tags=dict(add_tags(common_tags, {"opensource.observer/source": "sbom"}).items()),
 )
 def sbom(
     global_config: ResourceParam[DagsterConfig],

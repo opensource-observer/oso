@@ -20,6 +20,8 @@ core_sources_tag = AssetSelection.tag("opensource.observer/source", "core")
 
 unstable_sources_tag = AssetSelection.tag("opensource.observer/source", "unstable")
 
+sbom_source_tag = AssetSelection.tag("opensource.observer/source", "sbom")
+
 def get_partitioned_schedules(
     factory: AssetFactoryResponse,
 ) -> List[ScheduleDefinition]:
@@ -71,6 +73,15 @@ def get_partitioned_schedules(
 
     return [create_schedule(asset_key) for asset_key in resolved_assets]
 
+materialize_core_assets = define_asset_job(
+    "materialize_core_assets_job",
+    AssetSelection.all()
+    - core_sources_tag
+    - unstable_sources_tag
+    - sbom_source_tag
+    - partitioned_assets,
+)
+
 materialize_source_assets = define_asset_job(
     "materialize_source_assets_job",
     AssetSelection.tag("opensource.observer/type", "source")
@@ -83,10 +94,11 @@ materialize_unstable_source_assets = define_asset_job(
     unstable_sources_tag,
 )
 
-materialize_core_assets = define_asset_job(
-    "materialize_core_assets_job",
-    AssetSelection.all() - core_sources_tag - unstable_sources_tag - partitioned_assets,
+materialize_sbom_source_assets = define_asset_job(
+    "materialize_sbom_assets_job",
+    sbom_source_tag,
 )
+
 
 schedules: list[ScheduleDefinition] = [
     # Run core pipeline assets once a week on sunday at midnight
@@ -97,16 +109,24 @@ schedules: list[ScheduleDefinition] = [
             "dagster/priority": "-1",
         },
     ),
+    # Run source assets every day at midnight
     ScheduleDefinition(
         job=materialize_source_assets,
-        cron_schedule="0 0 * * 0",
+        cron_schedule="0 0 * * *",
         tags={
             "dagster/priority": "-1",
         },
     ),
     ScheduleDefinition(
         job=materialize_unstable_source_assets,
-        cron_schedule="0 0 * * 0",
+        cron_schedule="0 0 * * *",
+        tags={
+            "dagster/priority": "-1",
+        },
+    ),
+    ScheduleDefinition(
+        job=materialize_sbom_source_assets,
+        cron_schedule="0 0 * * *",
         tags={
             "dagster/priority": "-1",
         },

@@ -2,8 +2,8 @@ import typing as t
 
 
 def add_tags(
-    tags: t.Mapping[str, t.Any], additional_tags: t.Mapping[str, t.Any]
-) -> t.Mapping[str, t.Any]:
+    tags: t.Mapping[str, str], additional_tags: t.Mapping[str, str]
+) -> t.Mapping[str, str]:
     new_tags = dict(tags)
     new_tags.update(additional_tags)
     return new_tags
