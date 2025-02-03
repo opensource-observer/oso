@@ -190,5 +190,5 @@ jobs:
 
       - name: Test SQLMesh
         run: |
-          poetry install && cd warehouse/metrics_mesh && poetry run -C ../../ sqlmesh plan dev --auto-apply --no-prompts
+          poetry install && cd warehouse/metrics_mesh && poetry run -C ../../ sqlmesh plan dev --start '1 month' --end now --auto-apply
         if: ${{ always() && matrix.component == 'sqlmesh' }}
