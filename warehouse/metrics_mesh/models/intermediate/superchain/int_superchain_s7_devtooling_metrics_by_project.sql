@@ -9,7 +9,7 @@ MODEL (
   ),
   start '2015-01-01',
   cron '@daily',
-  partitioned_by (DAY("sample_date")),
+  partitioned_by DAY("sample_date"),
   grain (
     sample_date,
     project_id,
