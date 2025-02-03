@@ -48,7 +48,11 @@ addresses_by_project as (
 -- Step 3: Compute transaction and trace events
 transaction_level_events as (
   select distinct
+    base_transactions.block_timestamp,
+    base_transactions.chain,
     base_transactions.transaction_hash,
+    base_transactions.from_address_tx_id as from_artifact_id,
+    base_transactions.gas_fee,
     abp.project_id,
     'TRANSACTION_EVENT' as event_type
   from base_transactions
@@ -58,66 +62,19 @@ transaction_level_events as (
 
 trace_level_events as (
   select distinct
+    base_transactions.block_timestamp,
+    base_transactions.chain,
     base_transactions.transaction_hash,
+    base_transactions.from_address_tx_id as from_artifact_id,
+    base_transactions.gas_fee,
     abp.project_id,
     'TRACE_EVENT' as event_type
   from base_transactions
   inner join addresses_by_project as abp
     on base_transactions.to_address_trace_id = abp.artifact_id
-),
-
--- Step 4: Combine transaction and trace events
-all_contract_events as (
-  select * from transaction_level_events
-  union all
-  select * from trace_level_events
-),
-
--- Step 5: Count distinct projects per transaction and event type
-events_per_project as (
-  select
-    transaction_hash,
-    event_type,
-    count(distinct project_id) as num_projects_per_event
-  from all_contract_events
-  group by
-    transaction_hash,
-    event_type
-),
-
--- Step 6: Assign project counts back to each event
-event_project_attribution as (
-  select
-    ace.transaction_hash,
-    ace.project_id,
-    ace.event_type,
-    ep.num_projects_per_event
-  from all_contract_events as ace
-  inner join events_per_project as ep
-    on ace.transaction_hash = ep.transaction_hash
-    and ace.event_type = ep.event_type
-),
-
--- Step 7: Extract other transaction metadata
-transaction_metadata as (
-  select distinct
-    transaction_hash,
-    chain,
-    block_timestamp,
-    from_address_tx_id as from_artifact_id,
-    gas_fee
-  from base_transactions
 )
 
-select
-  tm.block_timestamp,
-  tm.chain,
-  epa.event_type,
-  epa.project_id,
-  epa.num_projects_per_event,
-  tm.from_artifact_id,
-  epa.transaction_hash,
-  tm.gas_fee
-from event_project_attribution as epa
-inner join transaction_metadata as tm
-  on epa.transaction_hash = tm.transaction_hash
+-- Combine all events
+select * from transaction_level_events
+union all
+select * from trace_level_events
