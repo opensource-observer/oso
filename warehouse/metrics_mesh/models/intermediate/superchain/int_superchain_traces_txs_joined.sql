@@ -20,7 +20,7 @@ MODEL (
     to_address_trace,
     gas_used_tx,
     gas_used_trace,
-    gas_price
+    gas_price_tx
   )
 );
 

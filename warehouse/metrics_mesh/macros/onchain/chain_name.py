@@ -4,13 +4,13 @@ from sqlmesh.core.macros import MacroEvaluator
 
 
 @macro()
-def chain_name(evaluator: MacroEvaluator, chain: exp.Expression) -> exp.Expression:
-    return exp.Case(
-        ifs=[
-            (exp.EQ(this=chain, expression=exp.Literal.string("op")), 
-             exp.Literal.string("OPTIMISM")),
-            (exp.EQ(this=chain, expression=exp.Literal.string("fraxtal")), 
-             exp.Literal.string("FRAX")),
-        ],
-        default=exp.Upper(this=chain)
-    )
+def chain_name(
+    evaluator: MacroEvaluator,
+    chain: exp.Expression
+):
+    """Standardizes chain names across models."""
+    if exp.Literal.string("op") == chain:
+        chain = exp.Literal.string("optimism")
+    elif exp.Literal.string("fraxtal") == chain:
+        chain = exp.Literal.string("frax")
+    return exp.Upper(this=chain)
