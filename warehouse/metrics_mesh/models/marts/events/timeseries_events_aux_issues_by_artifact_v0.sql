@@ -23,3 +23,4 @@ select
   closed_at,
   comments
 from metrics.int_events_aux_issues
+where time between @start_dt and @end_dt

@@ -25,3 +25,4 @@ inner join metrics.int_artifacts_by_project artifacts
   on
     events.to_artifact_id
     = artifacts.artifact_id
+where events.time between @start_dt and @end_dt

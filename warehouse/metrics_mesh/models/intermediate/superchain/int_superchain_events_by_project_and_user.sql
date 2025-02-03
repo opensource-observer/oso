@@ -45,3 +45,4 @@ where
     from metrics.int_artifacts_in_ossd_by_project
     where artifact_type = 'WALLET'
   )
+  and events.time between @start_dt and @end_dt

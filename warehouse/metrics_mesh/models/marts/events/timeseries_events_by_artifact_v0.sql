@@ -20,3 +20,4 @@ select
   event_source,
   amount
 from metrics.int_events
+where time between @start_dt and @end_dt

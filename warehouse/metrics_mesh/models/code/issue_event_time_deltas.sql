@@ -36,3 +36,4 @@ SELECT
   END::DOUBLE AS closed_delta,
   comments::DOUBLE
 FROM metrics.int_events_aux_issues
+WHERE "time" BETWEEN @start_dt AND @end_dt
