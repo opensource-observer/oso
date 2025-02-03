@@ -6,11 +6,9 @@ MODEL (
 
 with releases as (
   select
-    to_artifact_id as repo_artifact_id,
-    max("time") as last_release_published
-  from metrics.int_events__github
-  where event_type = 'RELEASE_PUBLISHED'
-  group by to_artifact_id
+    artifact_id as repo_artifact_id,
+    last_release_published
+  from metrics.int_latest_release_by_repo
 ),
 
 packages as (
