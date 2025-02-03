@@ -24,3 +24,4 @@ select
 from metrics.int_events_to_project
 inner join metrics.int_projects_by_collection collections
   on int_events_to_project.project_id = collections.project_id
+where int_events_to_project.time between @start_dt and @end_dt

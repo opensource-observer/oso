@@ -36,6 +36,7 @@ with events as (
     @oso_id('chain', 'to_address_trace') as to_address_trace_id,
     @oso_id('chain', 'to_address_tx') as to_address_tx_id
   from metrics.int_superchain_traces_txs_joined
+  where block_timestamp between @start_dt and @end_dt
 ),
 
 filtered_traces as (

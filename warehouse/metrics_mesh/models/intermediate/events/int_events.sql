@@ -29,10 +29,14 @@ select
   CAST(amount as DOUBLE) as amount
 from (
   select * from @oso_source('bigquery.oso.int_events__blockchain')
+  where time between @start_dt and @end_dt
   union all
   select * from metrics.int_events__github
+  where time between @start_dt and @end_dt
   union all
   select * from metrics.int_events__dependencies
+  where time between @start_dt and @end_dt
   union all
   select * from metrics.int_events__funding
+  where time between @start_dt and @end_dt 
 )

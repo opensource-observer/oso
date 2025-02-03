@@ -35,6 +35,7 @@ with github_commits as (
     end as from_artifact_source_id,
     CAST(1 as DOUBLE) as amount
   from metrics.stg_github__distinct_commits_resolved_mergebot
+  where created_at between @start_dt and @end_dt
 ),
 
 github_releases as (
@@ -55,6 +56,7 @@ github_releases as (
     CAST(actor_id as STRING) as from_artifact_source_id,
     CAST(1 as DOUBLE) as amount
   from metrics.stg_github__releases
+  where created_at between @start_dt and @end_dt
 ),
 
 github_comments as (
@@ -75,6 +77,7 @@ github_comments as (
     CAST(actor_id as STRING) as from_artifact_source_id,
     CAST(1 as DOUBLE) as amount
   from metrics.stg_github__comments
+  where event_time between @start_dt and @end_dt
 ),
 
 github_issues as (
@@ -95,6 +98,7 @@ github_issues as (
     CAST(actor_id as STRING) as from_artifact_source_id,
     CAST(1 as DOUBLE) as amount
   from metrics.stg_github__issues
+  where event_time between @start_dt and @end_dt
 ),
 
 github_pull_requests as (
@@ -115,6 +119,7 @@ github_pull_requests as (
     CAST(actor_id as STRING) as from_artifact_source_id,
     CAST(1 as DOUBLE) as amount
   from metrics.stg_github__pull_requests
+  where event_time between @start_dt and @end_dt
 ),
 
 github_pull_request_merge_events as (
@@ -135,6 +140,7 @@ github_pull_request_merge_events as (
     CAST(actor_id as STRING) as from_artifact_source_id,
     CAST(1 as DOUBLE) as amount
   from metrics.stg_github__pull_request_merge_events
+  where event_time between @start_dt and @end_dt
 ),
 
 github_stars_and_forks as (
@@ -155,6 +161,7 @@ github_stars_and_forks as (
     CAST(actor_id as STRING) as from_artifact_source_id,
     CAST(1 as DOUBLE) as amount
   from metrics.stg_github__stars_and_forks
+  where created_at between @start_dt and @end_dt
 ),
 
 all_events as (

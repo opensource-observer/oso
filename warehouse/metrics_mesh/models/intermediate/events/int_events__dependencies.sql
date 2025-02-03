@@ -3,7 +3,7 @@ MODEL (
   dialect trino,
   kind INCREMENTAL_BY_TIME_RANGE (
     time_column time,
-    batch_size 90,
+    batch_size 365,
     batch_concurrency 1
   ),
   start '2015-01-01',
@@ -37,6 +37,9 @@ snapshots as (
   where
     MinimumDepth = 1
     and Dependency.Name in (select artifact_name from artifacts)
+    -- We only need to lag over a short period because snapshots are duplicated
+    -- data. Using 60 to ensure we capture the previous snapshot.
+    and SnapshotAt between @start_date - INTERVAL 60 DAY and @end_date
 ),
 
 intermediate as (

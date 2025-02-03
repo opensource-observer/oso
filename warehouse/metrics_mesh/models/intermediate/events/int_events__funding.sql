@@ -39,6 +39,7 @@ with open_collective_expenses as (
         ABS(CAST(json_extract_scalar(amount, '$.value') as DOUBLE)) as amount
     from @oso_source('bigquery.oso.stg_open_collective__expenses')
     where json_extract_scalar(amount, '$.currency') = 'USD'
+      and created_at between @start_dt and @end_dt
 ),
 
 open_collective_deposits as (
@@ -68,6 +69,7 @@ open_collective_deposits as (
         ABS(CAST(json_extract_scalar(amount, '$.value') as DOUBLE)) as amount
     from @oso_source('bigquery.oso.stg_open_collective__deposits')
     where json_extract_scalar(amount, '$.currency') = 'USD'
+      and created_at between @start_dt and @end_dt
 ),
 
 all_funding_events as (
