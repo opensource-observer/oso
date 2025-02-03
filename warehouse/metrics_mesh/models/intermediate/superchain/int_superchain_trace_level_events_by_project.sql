@@ -9,7 +9,7 @@ MODEL (
   ),
   start '2015-01-01',
   cron '@daily',
-  partitioned_by (DAY("block_timestamp")),
+  partitioned_by (DAY("block_timestamp"), "chain"),
   grain (
     block_timestamp,
     chain,
@@ -30,9 +30,9 @@ with base_transactions as (
     to_address_trace,
     to_address_tx,
     gas_used_tx * gas_price_tx / 1e18 as gas_fee,
-    @oso_id('chain', 'from_address_tx') as from_address_tx_id,
-    @oso_id('chain', 'to_address_trace') as to_address_trace_id,
-    @oso_id('chain', 'to_address_tx') as to_address_tx_id
+    @oso_id(chain, from_address_tx) as from_address_tx_id,
+    @oso_id(chain, to_address_trace) as to_address_trace_id,
+    @oso_id(chain, to_address_tx) as to_address_tx_id
   from metrics.int_superchain_traces_txs_joined
   where block_timestamp between @start_dt and @end_dt
 ),
