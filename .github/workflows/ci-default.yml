@@ -111,7 +111,7 @@ jobs:
         uses: packetcoders/action-setup-cache-python-poetry@main
         with:
           python-version: 3.12
-          poetry-version: 1.8.2
+          poetry-version: 1.8.5
 
       - name: Authenticate to google with a test-dummy user
         uses: "google-github-actions/auth@v2"
