@@ -33,7 +33,7 @@ with github_comments as (
     closed_at,
     comments
   from metrics.stg_github__comments
-  where "time" between @start_dt and @end_dt
+  where event_time between @start_dt and @end_dt
 ),
 
 github_issues as (
@@ -58,7 +58,7 @@ github_issues as (
     closed_at,
     comments
   from metrics.stg_github__issues
-  where "time" between @start_dt and @end_dt
+  where event_time between @start_dt and @end_dt
 ),
 
 github_pull_requests as (
@@ -83,7 +83,7 @@ github_pull_requests as (
     closed_at,
     comments
   from metrics.stg_github__pull_requests
-  where "time" between @start_dt and @end_dt
+  where event_time between @start_dt and @end_dt
 ),
 
 github_pull_request_merge_events as (
@@ -108,7 +108,7 @@ github_pull_request_merge_events as (
     closed_at,
     comments
   from metrics.stg_github__pull_request_merge_events
-  where "time" between @start_dt and @end_dt
+  where created_at between @start_dt and @end_dt
 ),
 
 issue_events as (
