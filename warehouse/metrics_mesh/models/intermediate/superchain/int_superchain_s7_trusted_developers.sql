@@ -27,13 +27,13 @@ with eligible_onchain_builder_repos as (
   select
     repos.artifact_id as repo_artifact_id,
     repos.project_id,
-    builders.sample_date
+    CAST(builders.sample_date AS TIMESTAMP) as sample_date
   from metrics.int_repositories_enriched as repos
   inner join metrics.int_superchain_s7_onchain_builder_eligibility as builders
     on repos.project_id = builders.project_id
   where
     repos.language in ('TypeScript', 'Solidity', 'Rust')
-    and repos.updated_at > @last_repo_update_date::timestamp
+    and repos.updated_at > CAST(@last_repo_update_date AS TIMESTAMP)
     and repos.star_count > @min_repo_stars
     and builders.is_eligible
     and builders.sample_date between @start_dt and @end_dt
@@ -68,7 +68,7 @@ eligible_developers as (
       last_commit,
       first_commit
     ) >= @active_months_threshold
-    and last_commit >= current_timestamp() - interval '@last_commit_threshold_months months'
+    and date(last_commit) >= current_date() - interval '@last_commit_threshold_months months'
 )
 
 select
