@@ -2,6 +2,7 @@ import logging
 import typing as t
 from datetime import datetime
 
+import pandas as pd
 from metrics_tools.compute.client import Client
 from metrics_tools.compute.types import ExportType
 from metrics_tools.definition import PeerMetricDependencyRef
@@ -54,6 +55,9 @@ def generated_rolling_query(
 
     mcs_enabled = env.ensure_bool("SQLMESH_MCS_ENABLED", False)
     if not mcs_enabled:
+        max_row_size = env.ensure_int(
+            "SQLMESH_LOCAL_METRICS_MAX_COMMIT_ROW_SIZE", 10000
+        )
         runner = MetricsRunner.from_sqlmesh_context(
             context, query, ref, context._variables.copy()
         )
@@ -67,8 +71,11 @@ def generated_rolling_query(
         else:
             count = len(df)
             total += count
-            logger.debug(f"table={table_name} yielding rows {count}")
-            yield df
+            logger.debug(
+                f"table={table_name} yielding rows {count} in {max_row_size} row chunks"
+            )
+            for i in range(0, count, max_row_size):
+                yield t.cast(pd.DataFrame, df[i : i + max_row_size])
         logger.debug(f"table={table_name} yielded rows{total}")
     else:
         logger.info("metrics calculation service enabled")
