@@ -5,7 +5,7 @@ resources:
   - ./minio
   - ./test
   - ./hive-psql
-  - ./trino-psql
+  - ./nessie-psql
   - ./hive-metastore
   - ./nessie
   - ./trino
