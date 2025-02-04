@@ -5,7 +5,7 @@ MODEL (
     batch_size 365,
     batch_concurrency 1
   ),
-  partitioned_by (DAY("block_timestamp"), "network"),
+  partitioned_by (DAY("block_timestamp"), "chain"),
 );
 
 select 
@@ -13,5 +13,5 @@ select
   transaction_hash,
   deployer_address,
   contract_address,
-  UPPER(chain) as network
+  UPPER(chain) as chain 
 from metrics.stg_superchain__deployers

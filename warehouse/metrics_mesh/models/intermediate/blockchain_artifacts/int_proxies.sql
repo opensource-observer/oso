@@ -7,19 +7,19 @@ with superchain_proxies (
   select 
     LOWER(to_address) as address,
     LOWER(proxy_address) as proxy_address,
-    UPPER(chain) as network,
+    UPPER(chain) as chain,
     MIN(block_timestamp) as created_date
   FROM metrics.stg_superchain__proxies
   WHERE proxy_address != to_address
   GROUP BY
     to_address,
     proxy_address,
-    network
+    chain
 )
 select
-  @oso_id(network, address) as artifact_id,
+  @oso_id(chain, address) as artifact_id,
   address,
   proxy_address,
-  network,
+  chain,
   created_date
 from superchain_proxies
