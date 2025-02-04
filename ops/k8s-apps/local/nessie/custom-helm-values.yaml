@@ -22,7 +22,7 @@ spec:
             pathStyleAccess: true
             region: local
     jdbc:
-      jdbcUrl: jdbc:postgresql://hive-psql-postgresql.local-hive-psql.svc.cluster.local:5432/postgres
+      jdbcUrl: jdbc:postgresql://nessie-psql-postgresql.local-nessie-psql.svc.cluster.local:5432/postgres
       secret:
         name: nessie-postgres
         password: password
