@@ -59,6 +59,7 @@ DUCKDB_TYPES_MAPPING: t.Dict[str, str] = {
     "INT": "BIGINT",
 }
 
+
 # When converting to duckdb, some types are automatically changed for bigger precision.
 # We also remove the struct information and just keep the struct type.
 def map_type_to_duckdb_type(original_type: str) -> str:
@@ -67,9 +68,10 @@ def map_type_to_duckdb_type(original_type: str) -> str:
     # we brute force replace, but only on word boundaries to avoid
     # substring issues, e.g: BIGINT -> BIGBIGINT
     for from_type, to_type in DUCKDB_TYPES_MAPPING.items():
-        result_type = re.sub(r'\b' + from_type + r'\b', to_type, result_type)
+        result_type = re.sub(r"\b" + from_type + r"\b", to_type, result_type)
     # remove quotes for easier comparison
-    return result_type.replace('"', '')
+    return result_type.replace('"', "")
+
 
 def convert_bq_schema_to_bq_columns(
     bq_schema: t.Iterable[bigquery.SchemaField],
@@ -79,6 +81,7 @@ def convert_bq_schema_to_bq_columns(
     columns: t.List[t.Tuple[str, str]] = []
     for field_name, field in schema_dict.items():
         field_type = field.field_type
+        assert field_type is not None, f"Field type is None for {field_name}"
 
         if field_type == "RECORD" or field_type == "STRUCT":
             inner_fields = convert_bq_schema_to_bq_columns(field.fields)
@@ -97,20 +100,25 @@ def convert_bq_schema_to_bq_columns(
         )
     return columns
 
+
 def convert_bq_schema_to_duckdb_columns(
     bq_schema: t.Iterable[bigquery.SchemaField],
 ) -> t.List[t.Tuple[str, str]]:
     bq_columns = convert_bq_schema_to_bq_columns(bq_schema)
-    result = [(
-        item[0],
-        map_type_to_duckdb_type(
-            parse_one(item[1], into=exp.DataType, dialect="bigquery").sql(
-                dialect="duckdb"
-            )
+    result = [
+        (
+            item[0],
+            map_type_to_duckdb_type(
+                parse_one(item[1], into=exp.DataType, dialect="bigquery").sql(
+                    dialect="duckdb"
+                )
+            ),
         )
-    ) for item in bq_columns]
+        for item in bq_columns
+    ]
 
     return result
+
 
 def bq_read_with_options(
     start: datetime,
@@ -149,6 +157,7 @@ def bq_try_read_with_options(
     source_table: str,
     dest: TableMappingDestination,
     project_id: str,
+    max_results_per_query: int,
 ):
     result = None
     increment = timedelta(days=1)
@@ -159,7 +168,10 @@ def bq_try_read_with_options(
         start = start - increment
         increment = increment * 2
 
-    return result
+    return result.slice(
+        0,
+        min(result.num_rows, max_results_per_query),
+    )
 
 
 class BaseDestinationLoader(DestinationLoader):
@@ -252,6 +264,7 @@ class BaseDestinationLoader(DestinationLoader):
                 source_name,
                 destination,
                 config.project_id,
+                config.max_results_per_query,
             )
         else:
             if config.max_results_per_query:
@@ -460,7 +473,10 @@ class DuckDbDestinationLoader(BaseDestinationLoader):
         )
         insert_query.this.set(
             "expressions",
-            [exp.Identifier(this=column_name, quoted=True) for column_name, _ in columns],
+            [
+                exp.Identifier(this=column_name, quoted=True)
+                for column_name, _ in columns
+            ],
         )
         insert_query.expression.set(
             "expressions",
@@ -633,8 +649,10 @@ class LocalTrinoDestinationLoader(BaseDestinationLoader):
 
         serialized_schema_fields: t.List[SerializedBqSchema] = []
         for field in sorted_schema:
+            field_type = field.field_type
+            assert field_type is not None, f"Field type for {field.name} cannot be None"
             serialized_field: SerializedBqSchema = {
-                "field_type": field.field_type,
+                "field_type": field_type,
                 "is_nullable": field.is_nullable,
                 "name": field.name,
             }
