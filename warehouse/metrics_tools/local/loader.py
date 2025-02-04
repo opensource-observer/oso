@@ -18,6 +18,7 @@ from metrics_tools.local.config import (
 from metrics_tools.source.rewrite import DUCKDB_REWRITE_RULES, oso_source_rewrite
 from minio import Minio
 from pyiceberg.catalog import Catalog
+from pyiceberg.typedef import Identifier
 from sqlglot import exp
 from sqlmesh.core.dialect import parse_one
 
@@ -704,3 +705,38 @@ class LocalTrinoDestinationLoader(BaseDestinationLoader):
             logger.error(e)
             return
         logger.debug(f"Committed {rewritten_destination} to iceberg")
+
+    def list_namespaces(self):
+        return self._iceberg_catalog.list_namespaces()
+
+    def list_all_tables(self) -> t.List[exp.Table]:
+        tables: t.List[exp.Table] = []
+        for namespace in self.list_namespaces():
+            tables.extend(self.list_tables(namespace))
+        return tables
+
+    def list_tables(self, namespace: str | Identifier) -> t.List[exp.Table]:
+        table_ids = self._iceberg_catalog.list_tables(namespace)
+        tables: t.List[exp.Table] = []
+        for table in table_ids:
+            tables.append(exp.to_table(f"{table[0]}.{table[1]}"))
+        return tables
+
+    def drop_non_sources(self):
+        # This won't work if we include multiple bigquery project sources (and
+        # therefore multiple bigquery connectors)
+        config = self._config
+
+        table_mapping = config.table_mapping
+        for table in self.list_all_tables():
+            # Hacky rewrite for the playground dataset
+            if table.db == "oso":
+                table_as_source_name = (
+                    f"opensource-observer.oso_playground.{table.this}"
+                )
+            else:
+                table_as_source_name = (
+                    f"opensource-observer.{table.sql(dialect='trino')}"
+                )
+            if table_as_source_name not in table_mapping:
+                self.drop_table(table)
