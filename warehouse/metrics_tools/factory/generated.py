@@ -2,6 +2,7 @@ import logging
 import typing as t
 from datetime import datetime
 
+import pandas as pd
 from metrics_tools.compute.client import Client
 from metrics_tools.compute.types import ExportType
 from metrics_tools.definition import PeerMetricDependencyRef
@@ -74,7 +75,7 @@ def generated_rolling_query(
                 f"table={table_name} yielding rows {count} in {max_row_size} row chunks"
             )
             for i in range(0, count, max_row_size):
-                yield df[i : i + max_row_size]
+                yield t.cast(pd.DataFrame, df[i : i + max_row_size])
         logger.debug(f"table={table_name} yielded rows{total}")
     else:
         logger.info("metrics calculation service enabled")
