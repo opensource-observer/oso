@@ -32,7 +32,7 @@ with builder_metrics as (
     count(distinct timestamp_trunc(block_timestamp, day)) as active_days
   from metrics.int_superchain_trace_level_events_by_project
   where
-    block_timestamp between @start_dt and @end_dt
+    block_timestamp between @start_date and @end_date
     and date(block_timestamp) >= (current_date() - interval @lookback_days day)
   group by project_id
 ),

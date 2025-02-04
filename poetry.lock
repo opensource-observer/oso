@@ -5284,6 +5284,20 @@ numpy = ">=1.16.6"
 test = ["cffi", "hypothesis", "pandas", "pytest", "pytz"]
 
 [[package]]
+name = "pyarrow-stubs"
+version = "17.16"
+description = "Type annotations for pyarrow"
+optional = false
+python-versions = "<4,>=3.8"
+files = [
+    {file = "pyarrow_stubs-17.16-py3-none-any.whl", hash = "sha256:76eebeb2433fe93754c74a252e976b4e76a182f8f054748872aa3a98d347621d"},
+    {file = "pyarrow_stubs-17.16.tar.gz", hash = "sha256:ab74652db59855a09d5de7009f57d079f4fb318650ff767ec91841f3d2fa550c"},
+]
+
+[package.dependencies]
+pyarrow = ">=17"
+
+[[package]]
 name = "pyasn1"
 version = "0.6.1"
 description = "Pure-Python implementation of ASN.1 types and DER/BER/CER codecs (X.208)"
@@ -8363,4 +8377,4 @@ cffi = ["cffi (>=1.11)"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12,<3.13"
-content-hash = "aa7422c5983a03063b77dca380a4d5aa6cf53ac76701a1ee0866edb602b3d0d6"
+content-hash = "e5635001851b83b61defbc404a32354695d4628689d8bd7f69e24a8b6d6a018b"

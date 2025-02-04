@@ -21,28 +21,50 @@ MODEL (
 @DEF(project_weight_per_tx_event, 0.5);
 @DEF(project_weight_per_trace_event, 0.5);
 
-with enriched_events as (
+with base_events as (
   select
-    -- TODO: hack for getting rolling 30 day sample date
     timestamp_trunc(events.block_timestamp, month) as sample_date,
     events.project_id,
     events.chain,
     events.transaction_hash,
     events.from_artifact_id,
     events.event_type,
-    (case
-      when events.event_type = 'TRANSACTION_EVENT'
-        then @project_weight_per_tx_event
-      when events.event_type = 'TRACE_EVENT'
-        then @project_weight_per_trace_event
-    end) / events.num_projects_per_event as project_weight,
     events.gas_fee,
     coalesce(users.is_bot, false) as is_bot,
     coalesce(users.is_farcaster_user, false) as is_farcaster_user
   from metrics.int_superchain_trace_level_events_by_project as events
+  inner join metrics.int_superchain_s7_onchain_builder_eligibility as builders
+    on events.project_id = builders.project_id
   left outer join metrics.int_superchain_onchain_user_labels as users
     on events.from_artifact_id = users.artifact_id
   where events.block_timestamp between @start_dt and @end_dt
+),
+
+-- Calculate projects per event type and transaction
+events_per_project as (
+  select
+    transaction_hash,
+    event_type,
+    count(distinct project_id) as num_projects_per_event
+  from base_events
+  group by
+    transaction_hash,
+    event_type
+),
+
+enriched_events as (
+  select
+    be.*,
+    (case
+      when be.event_type = 'TRANSACTION_EVENT'
+        then @project_weight_per_tx_event
+      when be.event_type = 'TRACE_EVENT'
+        then @project_weight_per_trace_event
+    end) / ep.num_projects_per_event as project_weight
+  from base_events be
+  inner join events_per_project ep
+    on be.transaction_hash = ep.transaction_hash
+    and be.event_type = ep.event_type
 ),
 
 -- Transaction counts
