@@ -7,26 +7,52 @@
 {% set project_weight_per_tx_event = 0.5 %}
 {% set project_weight_per_trace_event = 0.5 %}
 
-with enriched_events as (
+with base_events as (
   select
-    timestamp_trunc(events.block_timestamp, month) as sample_date,
-    events.project_id as project_id,
+    events.project_id,
     events.chain,
     events.transaction_hash,
     events.from_artifact_id,
     events.event_type,
-    (case
-      when events.event_type = 'TRANSACTION_EVENT'
-        then {{ project_weight_per_tx_event }}
-      when events.event_type = 'TRACE_EVENT'
-        then {{ project_weight_per_trace_event }}
-    end) / events.num_projects_per_event as project_weight,
     events.gas_fee,
+    timestamp_trunc(events.block_timestamp, month) as sample_date,
     coalesce(users.is_bot, false) as is_bot,
     coalesce(users.is_farcaster_user, false) as is_farcaster_user
-  from {{ ref('int_superchain_s7_events_by_project') }} as events
+  from {{ ref('int_superchain_trace_level_events_by_project') }} as events
+  inner join
+    {{ ref('int_superchain_s7_onchain_builder_eligibility') }} as eligibility
+    on events.project_id = eligibility.project_id
   left outer join {{ ref('int_superchain_onchain_user_labels') }} as users
     on events.from_artifact_id = users.artifact_id
+  where eligibility.is_eligible = true
+),
+
+-- Calculate projects per event type and transaction
+events_per_project as (
+  select
+    transaction_hash,
+    event_type,
+    count(distinct project_id) as num_projects_per_event
+  from base_events
+  group by
+    transaction_hash,
+    event_type
+),
+
+enriched_events as (
+  select
+    base_events.*,
+    (case
+      when base_events.event_type = 'TRANSACTION_EVENT'
+        then {{ project_weight_per_tx_event }}
+      when base_events.event_type = 'TRACE_EVENT'
+        then {{ project_weight_per_trace_event }}
+    end) / events_per_project.num_projects_per_event as project_weight
+  from base_events
+  inner join events_per_project
+    on
+      base_events.transaction_hash = events_per_project.transaction_hash
+      and base_events.event_type = events_per_project.event_type
 ),
 
 -- Transaction counts

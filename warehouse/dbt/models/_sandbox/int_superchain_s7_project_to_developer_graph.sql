@@ -61,23 +61,21 @@ graph as (
       case
         when event_type != 'STARRED'
           then coalesce(total_events, 1)
-          else 0
-        end
-      ) as total_non_star_events,
-      min(
-        case
-          when event_type != 'STARRED'
-            then date(first_event)  
-          else null
-        end
-      ) as first_event,
-      max(
-        case
-          when event_type != 'STARRED'
-            then date(last_event)
-          else null
-        end
-      ) as last_event
+        else 0
+      end
+    ) as total_non_star_events,
+    min(
+      case
+        when event_type != 'STARRED'
+          then date(first_event)
+      end
+    ) as first_event,
+    max(
+      case
+        when event_type != 'STARRED'
+          then date(last_event)
+      end
+    ) as last_event
   from developer_events
   where onchain_builder_project_id != devtooling_project_id
   group by

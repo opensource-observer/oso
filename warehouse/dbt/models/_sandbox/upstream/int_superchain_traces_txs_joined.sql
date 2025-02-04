@@ -1,3 +1,16 @@
+{{
+  config(
+    materialized='incremental',
+    partition_by={
+      "field": "block_timestamp",
+      "data_type": "timestamp",
+      "granularity": "day",
+    },
+    on_schema_change="append_new_columns",
+    incremental_strategy="insert_overwrite"
+  ) 
+}}
+
 with traces as (
   select
     block_timestamp,

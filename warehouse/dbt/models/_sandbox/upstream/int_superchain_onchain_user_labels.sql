@@ -8,7 +8,7 @@ with user_labels as (
   select
     artifacts.artifact_id,
     artifacts.user_source = 'FARCASTER' as is_farcaster_user,
-    bots.artifact_id is not null as is_bot
+    coalesce(bots.artifact_id is not null, false) as is_bot
   from {{ ref('int_artifacts_by_user') }} as artifacts
   left outer join {{ ref('int_superchain_potential_bots') }} as bots
     on artifacts.artifact_id = bots.artifact_id

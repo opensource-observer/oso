@@ -23,19 +23,20 @@ project_to_trusted_developer_graph as (
     'SHARED_DEVELOPER_COUNT' as weighting_algorithm,
     count(distinct developer_id) as edge_weight
   from {{ ref('int_superchain_s7_project_to_developer_graph') }}
-  where developer_id in (
-    select developer_id
-    from {{ ref('int_superchain_s7_trusted_developers') }}
-    where
-      project_id in (
-        select distinct project_id
-        from {{ ref('int_superchain_s7_onchain_builder_eligibility') }}
-        where
-          gas_fees >= 1
-          or user_count >= 10000
-      )
-      and total_commits_to_project >= 100
-  )
+  where
+    developer_id in (
+      select developer_id
+      from {{ ref('int_superchain_s7_trusted_developers') }}
+      where
+        project_id in (
+          select distinct project_id
+          from {{ ref('int_superchain_s7_onchain_builder_eligibility') }}
+          where
+            transaction_count_all_levels >= 100000
+            or user_count >= 10000
+        )
+        and total_commits_to_project >= 100
+    )
   group by 1, 2
 ),
 
@@ -87,11 +88,11 @@ graph as (
 )
 
 select
-  current_timestamp() as sample_date,
   onchain_builder_project_id,
   devtooling_project_id,
   edge_type,
   weighting_algorithm,
-  edge_weight
+  edge_weight,
+  current_timestamp() as sample_date
 from graph
 where onchain_builder_project_id != devtooling_project_id

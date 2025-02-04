@@ -5,7 +5,7 @@
 }}
 
 with trusted_developers as (
-select * from {{ ref('int_superchain_s7_trusted_developers') }}
+  select * from {{ ref('int_superchain_s7_trusted_developers') }}
 ),
 
 dependency_graph as (
@@ -65,7 +65,7 @@ trusted_dev_connections as (
     developer_graph.devtooling_project_id as project_id,
     'trusted_dev_connection_count' as metric_name,
     count(distinct developer_graph.developer_id) as amount
-  from developer_graph 
+  from developer_graph
   inner join trusted_developers
     on developer_graph.developer_id = trusted_developers.developer_id
   group by 1
