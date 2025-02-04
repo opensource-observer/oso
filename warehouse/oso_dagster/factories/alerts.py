@@ -4,6 +4,7 @@ from dagster import (
     RunConfig,
     RunFailureSensorContext,
     RunRequest,
+    SkipReason,
     job,
     op,
     run_failure_sensor,
@@ -31,7 +32,13 @@ def setup_alert_sensor(name: str, base_url: str, alert_manager: AlertManager, en
         name=name, default_status=status, request_job=failure_job
     )
     def failure_sensor(context: RunFailureSensorContext):
-        yield RunRequest(
+        if context.failure_event.job_name not in [
+            "materialize_stable_source_assets_job",
+            "materialize_core_assets_job",
+        ]:
+            return SkipReason("Non critical job failure")
+
+        return RunRequest(
             tags={
                 "dagster-k8s/config": {
                     "merge_behavior": "SHALLOW",
