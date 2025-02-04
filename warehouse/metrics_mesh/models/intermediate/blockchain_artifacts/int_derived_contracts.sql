@@ -5,7 +5,7 @@ MODEL (
     batch_size 365,
     batch_concurrency 1,
     --forward_only true,
-    --on_destructive_change warn
+    --on_destructive_change allow
   ),
   partitioned_by (DAY("deployment_date"), "chain"),
   cron '@daily',
