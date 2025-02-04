@@ -1,36 +1,36 @@
 import re
-from typing import Optional, Sequence, Dict, cast
 from dataclasses import dataclass, field
+from typing import Dict, Optional, Sequence, cast
 
 import arrow
-from google.api_core.exceptions import NotFound
-from google.cloud.bigquery.job import CopyJobConfig
 from dagster import (
+    AssetExecutionContext,
     AssetsDefinition,
+    DefaultSensorStatus,
+    EventLogEntry,
+    MaterializeResult,
+    OpExecutionContext,
+    RunConfig,
+    RunRequest,
+    SensorEvaluationContext,
     asset,
     asset_sensor,
     job,
     op,
-    SensorEvaluationContext,
-    AssetExecutionContext,
-    MaterializeResult,
-    EventLogEntry,
-    RunRequest,
-    RunConfig,
-    OpExecutionContext,
-    DefaultSensorStatus,
 )
 from dagster_gcp import BigQueryResource, GCSResource
+from google.api_core.exceptions import NotFound
+from google.cloud.bigquery.job import CopyJobConfig
 
-from .common import AssetFactoryResponse, GenericAsset
 from ..utils import (
-    ensure_dataset,
     DatasetOptions,
-    TimeInterval,
     SourceMode,
-    add_tags,
+    TimeInterval,
     add_key_prefix_as_tag,
+    add_tags,
+    ensure_dataset,
 )
+from .common import AssetFactoryResponse, GenericAsset
 
 
 @dataclass(kw_only=True)
@@ -97,6 +97,7 @@ def interval_gcs_import_asset(config: IntervalGCSAsset):
             tags,
             {
                 "opensource.observer/type": "source",
+                "opensource.observer/source": "stable",
             },
         ),
         compute_kind="gcs",

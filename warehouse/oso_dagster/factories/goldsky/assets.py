@@ -1117,6 +1117,7 @@ def goldsky_asset(
             tags,
             {
                 "opensource.observer/type": "source",
+                "opensource.observer/source": "unstable",
             },
         ),
         op_tags=op_tags,
