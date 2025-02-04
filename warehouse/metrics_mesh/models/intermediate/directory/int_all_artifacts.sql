@@ -36,7 +36,7 @@ verified_deployers as (
     artifact_namespace,
     artifact_name,
     artifact_name as artifact_url
-  from @oso_source('bigquery.oso.int_deployers_by_project')
+  from metrics.int_deployers_by_project
 ),
 
 verified_contracts as (
