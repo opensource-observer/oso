@@ -37,7 +37,7 @@ common_tags: t.Dict[str, str] = {
     "dagster/concurrency_key": "ossd",
 }
 
-core_tags = add_tags(common_tags, {"opensource.observer/source": "core"})
+stable_tag = add_tags(common_tags, {"opensource.observer/source": "stable"})
 
 
 class OSSDirectoryConfig(Config):
@@ -76,8 +76,8 @@ def oss_directory_to_dataframe(output: str, data: t.Optional[OSSDirectory] = Non
 
 @multi_asset(
     outs={
-        "projects": AssetOut(is_required=False, key_prefix="ossd", tags=core_tags),
-        "collections": AssetOut(is_required=False, key_prefix="ossd", tags=core_tags),
+        "projects": AssetOut(is_required=False, key_prefix="ossd", tags=stable_tag),
+        "collections": AssetOut(is_required=False, key_prefix="ossd", tags=stable_tag),
     },
     compute_kind="dataframe",
     can_subset=True,
@@ -147,7 +147,7 @@ project_key = projects_and_collections.keys_by_output_name["projects"]
 @dlt_factory(
     key_prefix="ossd",
     ins={"projects_df": AssetIn(project_key)},
-    tags=dict(core_tags.items()),
+    tags=dict(stable_tag.items()),
 )
 def repositories(
     global_config: ResourceParam[DagsterConfig],

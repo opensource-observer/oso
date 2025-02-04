@@ -16,7 +16,7 @@ partitioned_assets = AssetSelection.tag(
     "opensource.observer/extra", "partitioned-assets"
 )
 
-core_sources_tag = AssetSelection.tag("opensource.observer/source", "core")
+stable_source_tag = AssetSelection.tag("opensource.observer/source", "stable")
 
 unstable_sources_tag = AssetSelection.tag("opensource.observer/source", "unstable")
 
@@ -76,17 +76,15 @@ def get_partitioned_schedules(
 materialize_core_assets = define_asset_job(
     "materialize_core_assets_job",
     AssetSelection.all()
-    - core_sources_tag
+    - stable_source_tag
     - unstable_sources_tag
     - sbom_source_tag
     - partitioned_assets,
 )
 
-materialize_source_assets = define_asset_job(
-    "materialize_source_assets_job",
-    AssetSelection.tag("opensource.observer/type", "source")
-    | AssetSelection.tag("opensource.observer/type", "source-qa")
-    | core_sources_tag,
+materialize_stable_source_assets = define_asset_job(
+    "materialize_stable_source_assets_job",
+    stable_source_tag,
 )
 
 materialize_unstable_source_assets = define_asset_job(
@@ -111,7 +109,7 @@ schedules: list[ScheduleDefinition] = [
     ),
     # Run source assets every day at midnight
     ScheduleDefinition(
-        job=materialize_source_assets,
+        job=materialize_stable_source_assets,
         cron_schedule="0 0 * * *",
         tags={
             "dagster/priority": "-1",

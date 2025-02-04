@@ -97,7 +97,7 @@ def interval_gcs_import_asset(config: IntervalGCSAsset):
             tags,
             {
                 "opensource.observer/type": "source",
-                "opensource.observer/source": "core",
+                "opensource.observer/source": "stable",
             },
         ),
         compute_kind="gcs",

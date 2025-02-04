@@ -38,7 +38,7 @@ def bq_dts_asset(asset_config: BqDtsAssetConfig):
         "opensource.observer/factory": "bigquery_dts",
         "opensource.observer/environment": asset_config.environment,
         "opensource.observer/type": "source",
-        "opensource.observer/source": "core",
+        "opensource.observer/source": "stable",
     }
 
     @asset(

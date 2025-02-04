@@ -92,6 +92,8 @@ def _dlt_factory[
                 dlt_warehouse_destination: Destination,
                 secrets: SecretResolver,
             ):
+
+                # logger.info(f"Creating asset for {key_prefix} with {tags}")
                 resolved_secrets = resolve_secrets_for_func(secrets, f)
                 source = dltlib.source(f)
 
@@ -104,6 +106,8 @@ def _dlt_factory[
                     - set(asset_ins.keys())
                 )
 
+                # logger.info(f"Creating asset for {key_prefix} with {tags}")
+
                 if "context" in extra_resources:
                     extra_resources.discard("context")
 
@@ -114,8 +118,8 @@ def _dlt_factory[
                     op_tags["dagster/concurrency_key"] = (
                         f"{key_prefix_str}_{asset_name}"
                     )
-                
 
+                # logger.info(f"Creating asset for {key_prefix} with {tags}")
                 # We need to ensure that both dlt and global_config are
                 # available to the generated asset as they're used by the
                 # generated function.
