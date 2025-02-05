@@ -4,6 +4,8 @@ kind: HelmRelease
 metadata:
   name: tailscale-operator
 spec:
+  dependsOn:
+    - name: secrets-store-csi-driver
   values:
     oauthSecretVolume:
       csi:
