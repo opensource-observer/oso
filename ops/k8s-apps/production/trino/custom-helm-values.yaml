@@ -4,6 +4,9 @@ metadata:
   name: production-trino
 spec:
   values:
+    service:
+      annotations:
+        tailscale.com/expose: "true"
     env:
       - name: TRINO_GCS_KEY_ID
         value: gcp:secretmanager:production-mcs-gcs-key-id/versions/latest
@@ -20,7 +23,7 @@ spec:
     coordinator:
       resources:
         requests:
-          cpu: 7500m
+          cpu: 7300m
           memory: 46000Mi
       tolerations:
         - key: pool_type
