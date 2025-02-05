@@ -4,6 +4,7 @@ kind: Kustomization
 resources:
   - ./secrets-provider.yaml
   - ../../common/tailscale
+namespace: tailscale-operator
 patches:
   - path: ./custom-helm-values.yaml
     target:
