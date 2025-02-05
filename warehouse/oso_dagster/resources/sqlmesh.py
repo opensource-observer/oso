@@ -16,7 +16,9 @@ from dagster_sqlmesh import SQLMeshDagsterTranslator
 from dagster_sqlmesh.controller.base import SQLMeshInstance
 from metrics_tools.compute.types import TableReference
 from metrics_tools.transfer.coordinator import Destination, Source, transfer
+from oso_dagster.resources.bq import BigQueryImporterResource
 from oso_dagster.resources.clickhouse import ClickhouseImporterResource
+from oso_dagster.resources.duckdb import DuckDBExporterResource
 from oso_dagster.resources.trino import TrinoExporterResource
 from sqlglot import exp
 from sqlmesh import Context
@@ -98,7 +100,7 @@ class Trino2ClickhouseSQLMeshExporter(SQLMeshExporter):
             compute_kind="sqlmesh-export",
             can_subset=True,
         )
-        async def export(
+        async def trino_export(
             context: AssetExecutionContext,
             trino_exporter: TrinoExporterResource,
             clickhouse_importer: ClickhouseImporterResource,
@@ -133,7 +135,7 @@ class Trino2ClickhouseSQLMeshExporter(SQLMeshExporter):
                             asset_key=AssetKey(table_name).with_prefix(self._prefix)
                         )
 
-        return export
+        return trino_export
 
     def generate_create_table_query(
         self, model: Model, source_table: str, destination_table: str
@@ -193,5 +195,244 @@ class Trino2ClickhouseSQLMeshExporter(SQLMeshExporter):
             *[column_name for column_name in model.columns_to_types.keys()]
         ).from_(source_table)
         insert = exp.Insert(this=exp.to_table(destination_table), expression=select)
+
+        return insert
+
+
+class Trino2BigQuerySQLMeshExporter(SQLMeshExporter):
+    def __init__(
+        self,
+        prefix: str | t.List[str],
+        *,
+        project_id: str,
+        dataset_id: str,
+        source_catalog: str,
+        source_schema: str,
+    ):
+        self._prefix = prefix
+        self._project_id = project_id
+        self._dataset_id = dataset_id
+        self._source_catalog = source_catalog
+        self._source_schema = source_schema
+
+    def bigquery_destination_table(self, table_name: str) -> str:
+        return f"`{self._project_id}.{self._dataset_id}.{table_name}`"
+
+    def convert_model_key_to_bigquery_out(self, _key: AssetKey) -> AssetOut:
+        return AssetOut(
+            key_prefix=self._prefix,
+            is_required=False,
+        )
+
+    def create_export_asset(
+        self, mesh: SQLMeshInstance, to_export: t.List[t.Tuple[Model, AssetKey]]
+    ) -> AssetsDefinition:
+        bigquery_outs = {
+            key.path[-1]: self.convert_model_key_to_bigquery_out(key)
+            for _, key in to_export
+        }
+        internal_asset_deps: t.Mapping[str, t.Set[AssetKey]] = {
+            key.path[-1]: {key} for _, key in to_export
+        }
+        deps = [key for _, key in to_export]
+
+        @multi_asset(
+            outs=bigquery_outs,
+            internal_asset_deps=internal_asset_deps,
+            deps=deps,
+            compute_kind="sqlmesh-export",
+            can_subset=True,
+        )
+        async def bigquery_export(
+            context: AssetExecutionContext,
+            trino_exporter: TrinoExporterResource,
+            bigquery_importer: BigQueryImporterResource,
+        ):
+            async with trino_exporter.get_exporter(
+                "trino-export", log_override=context.log
+            ) as exporter:
+                with bigquery_importer.get() as importer:
+                    selected_output_names = (
+                        context.op_execution_context.selected_output_names
+                    )
+                    for table_name in selected_output_names:
+                        await transfer(
+                            Source(
+                                exporter=exporter,
+                                table=TableReference(
+                                    catalog_name=self._source_catalog,
+                                    schema_name=self._source_schema,
+                                    table_name=table_name,
+                                ),
+                            ),
+                            Destination(
+                                importer=importer,
+                                table=TableReference(
+                                    schema_name=self._dataset_id, table_name=table_name
+                                ),
+                            ),
+                            log_override=context.log,
+                        )
+                        yield MaterializeResult(
+                            asset_key=AssetKey(table_name).with_prefix(self._prefix)
+                        )
+
+        return bigquery_export
+
+    def generate_create_table_query(
+        self, model: Model, destination_table: str
+    ) -> exp.Expression:
+        base_create_query = f"""
+            CREATE TABLE IF NOT EXISTS {destination_table} (
+                placeholder STRING
+            )
+        """
+
+        columns = model.columns_to_types
+        assert columns is not None, "columns must not be None"
+
+        create_query = parse_one(base_create_query, dialect="bigquery")
+        create_query.this.set(
+            "expressions",
+            [
+                exp.ColumnDef(this=exp.to_identifier(column_name), kind=column_type)
+                for column_name, column_type in columns.items()
+            ],
+        )
+
+        return create_query
+
+    def generate_insert_query(
+        self, model: Model, destination_table: str
+    ) -> exp.Expression:
+        assert model.columns_to_types is not None, "columns must not be None"
+        select = exp.select(*list(model.columns_to_types.keys())).from_(
+            model.name, dialect="bigquery"
+        )
+        insert = exp.Insert(
+            this=exp.to_table(destination_table, dialect="bigquery"),
+            expression=select,
+        )
+
+        return insert
+
+
+class DuckDB2BigQuerySQLMeshExporter(SQLMeshExporter):
+    def __init__(
+        self,
+        prefix: str | t.List[str],
+        *,
+        project_id: str,
+        dataset_id: str,
+        bucket_name: str,
+    ):
+        self._prefix = prefix
+        self._project_id = project_id
+        self._dataset_id = dataset_id
+        self._bucket_name = bucket_name
+
+    def bigquery_destination_table(self, table_name: str) -> str:
+        return f"`{self._project_id}.{self._dataset_id}.{table_name}`"
+
+    def convert_model_key_to_bigquery_out(self, _key: AssetKey) -> AssetOut:
+        return AssetOut(
+            key_prefix=self._prefix,
+            is_required=False,
+        )
+
+    def create_export_asset(
+        self, mesh: SQLMeshInstance, to_export: t.List[t.Tuple[Model, AssetKey]]
+    ) -> AssetsDefinition:
+        bigquery_outs = {
+            key.path[-1]: self.convert_model_key_to_bigquery_out(key)
+            for _, key in to_export
+        }
+        internal_asset_deps: t.Mapping[str, t.Set[AssetKey]] = {
+            key.path[-1]: {key} for _, key in to_export
+        }
+        deps = [key for _, key in to_export]
+
+        @multi_asset(
+            outs=bigquery_outs,
+            internal_asset_deps=internal_asset_deps,
+            deps=deps,
+            compute_kind="sqlmesh-export",
+            can_subset=True,
+        )
+        async def duckdb_export(
+            context: AssetExecutionContext,
+            duckdb_exporter: DuckDBExporterResource,
+            bigquery_importer: BigQueryImporterResource,
+        ):
+            with duckdb_exporter.get(
+                export_prefix=(
+                    self._prefix
+                    if isinstance(self._prefix, str)
+                    else "_".join(self._prefix)
+                ),
+                gcs_bucket_name=self._bucket_name,
+            ) as exporter:
+                with bigquery_importer.get() as importer:
+                    selected_output_names = (
+                        context.op_execution_context.selected_output_names
+                    )
+                    for table_name in selected_output_names:
+                        await transfer(
+                            Source(
+                                exporter=exporter,
+                                table=TableReference(
+                                    catalog_name="oso",
+                                    schema_name="metrics__dev",
+                                    table_name=table_name,
+                                ),
+                            ),
+                            Destination(
+                                importer=importer,
+                                table=TableReference(
+                                    schema_name=self._dataset_id, table_name=table_name
+                                ),
+                            ),
+                            log_override=context.log,
+                        )
+                        yield MaterializeResult(
+                            asset_key=AssetKey(table_name).with_prefix(self._prefix)
+                        )
+
+        return duckdb_export
+
+    def generate_create_table_query(
+        self, model: Model, destination_table: str
+    ) -> exp.Expression:
+        base_create_query = f"""
+            CREATE TABLE IF NOT EXISTS {destination_table} (
+                placeholder STRING
+            )
+        """
+
+        columns = model.columns_to_types
+        assert columns is not None, "columns must not be None"
+
+        create_query = parse_one(base_create_query, dialect="bigquery")
+        create_query.this.set(
+            "expressions",
+            [
+                exp.ColumnDef(this=exp.to_identifier(column_name), kind=column_type)
+                for column_name, column_type in columns.items()
+            ],
+        )
+
+        return create_query
+
+    def generate_insert_query(
+        self, model: Model, destination_table: str
+    ) -> exp.Expression:
+        assert model.columns_to_types is not None, "columns must not be None"
+        select = exp.select(*list(model.columns_to_types.keys())).from_(
+            model.name, dialect="bigquery"
+        )
+        insert = exp.Insert(
+            this=exp.to_table(destination_table, dialect="bigquery"),
+            expression=select,
+        )
 
         return insert
