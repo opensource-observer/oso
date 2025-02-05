@@ -20,7 +20,7 @@ spec:
     coordinator:
       resources:
         requests:
-          cpu: 7500m
+          cpu: 7450m
           memory: 46000Mi
       tolerations:
         - key: pool_type
