@@ -4,7 +4,7 @@ kind: Service
 metadata:
   name: {{ include "mcs.fullname" . }}
   annotations:
-    {{- toYaml .Values.mcs.frontend.service.annotations nindent 4 }}
+    {{- toYaml .Values.mcs.frontend.service.annotations | nindent 4 }}
 spec:
   selector:
     {{ include "mcs.selectorLabels" . | nindent 4 }}
