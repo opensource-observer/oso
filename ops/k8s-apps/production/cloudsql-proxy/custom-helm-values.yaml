@@ -4,6 +4,9 @@ metadata:
   name: production-cloudsql-proxy
 spec:
   values:
+    service:
+      annotations:
+        tailscale.com/expose: "true"
     cloudsql:
       instances:
         - instance: oso-psql

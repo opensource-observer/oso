@@ -6,6 +6,9 @@ spec:
   values:
     mcs:
       frontend:
+        service:
+          annotations:
+            tailscale.com/expose: "true"
         resources:
           requests:
             cpu: "3000m"

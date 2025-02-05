@@ -4,6 +4,7 @@ mcs:
   frontend:
     service:
       port: 8000
+      annotations: {}
     affinity: {}
     nodeSelector: {}
     tolerations: []
