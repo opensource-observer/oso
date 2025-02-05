@@ -3,7 +3,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - ./secrets-provider.yaml
-  - ../../common/tailscale-operator
+  - ../../common/tailscale
 namespace: tailscale
 patches:
   - path: ./custom-helm-values.yaml
