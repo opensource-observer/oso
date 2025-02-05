@@ -17,6 +17,7 @@ import OpenrankLogo from "./openrank.png";
 import ArbitrumLogo from "./arbitrum.png";
 import EasLogo from "./eas.png";
 import OcLogo from "./open-collective.png";
+import OpAtlasLogo from "./op-atlas.png";
 
 Check out our [BigQuery data exchange](https://console.cloud.google.com/bigquery/analytics-hub/exchanges/projects/87806073973/locations/us/dataExchanges/open_source_observer_190181416ae) to explore all the OSO datasets available.
 If you don't have a BigQuery account, [start here](../../get-started/bigquery.mdx).
@@ -107,6 +108,13 @@ Here are some of our featured public datasets:
       <span className="tag">Updated weekly</span>
     </div>
     <h3>Open Collective</h3>
+  </a>
+  <a href="#op-atlas" className="datalink-card">
+    <div className="datalink-header">
+      <img src={OpAtlasLogo} alt="OP Atlas Logo" className="datalink-logo" />
+      <span className="tag">Updated daily</span>
+    </div>
+    <h3>OP Atlas</h3>
   </a>
   <a href="#openrank" className="datalink-card">
     <div className="datalink-header">
@@ -693,6 +701,73 @@ where passport_address = '0xd8da6bf26964af9d7eed9e03e53415d37aa96045'
 
 **Remember to replace 'YOUR_PROJECT_NAME' with the name of your project in the query.**
 
+### Open Collective
+
+<img src={OcLogo} width="200" />
+
+<Button
+  size={"compact"}
+  color={"blue"}
+  target={"_blank"}
+  link={
+    "https://console.cloud.google.com/bigquery/analytics-hub/exchanges/projects/87806073973/locations/us/dataExchanges/open_source_observer_190181416ae/listings/open_collective_1926d37f24d" 
+  }
+  children={"Subscribe on BigQuery"}
+/>{" "}
+
+- [Reference documentation](https://models.opensource.observer/#!/source_list/open_collective)
+- [Updated weekly](https://dagster.opensource.observer/assets/open_collective)
+
+[Open Collective](https://opencollective.com/) is a platform for transparent finances and governance for open source projects.
+
+The Open Collective datasets contains all transactions realized on the platform since its inception. Separate datasets are available for **expenses** and **deposits**.
+
+For example, you can get the total amount of donations in `USD` made to the [**pandas**](https://pandas.pydata.org) project:
+
+```sql
+select
+  SUM(CAST(JSON_VALUE(amount, "$.value") as FLOAT64)) as total_amount,
+from
+  YOUR_PROJECT_NAME.open_collective.deposits
+where
+  JSON_VALUE(amount, "$.currency") = "USD"
+  and JSON_VALUE(to_account, "$.id") = "ov349mrw-gz75lpy9-975qa08d-jeybknox"
+```
+
+**Remember to replace 'YOUR_PROJECT_NAME' with the name of your project in the query.**
+
+### OP Atlas
+
+<img src={OpAtlasLogo} width="200" />
+
+<Button
+  size={"compact"}
+  color={"blue"}
+  target={"_blank"}
+  link={
+    "https://console.cloud.google.com/bigquery/analytics-hub/exchanges/projects/87806073973/locations/us/dataExchanges/open_source_observer_190181416ae/listings/op_atlas_194d79d36ad"
+  }
+  children={"Subscribe on BigQuery"}
+/>{" "}
+
+OP Atlas contains data about projects contributing to the Optimism Collective and applying for Retro Funding, shepherded by the fine folks of [Agora](https://github.com/voteagora).
+
+For example, you can get a list of all projects and their associated repository URLs:
+
+```sql
+select
+  p.name,
+  p.description,
+  r.url as repo_url
+from `YOUR_PROJECT_NAME.op_atlas.project` as p
+join `YOUR_PROJECT_NAME.op_atlas.project_repository` as r
+  on p.id = r.project_id
+```
+
+**Remember to replace 'YOUR_PROJECT_NAME' with the name of your project in the query.**
+
+For more information, go to https://atlas.optimism.io/ or check out the [OP Atlas GitHub](https://github.com/voteagora/op-atlas).
+
 ### OpenRank
 
 <img src={OpenrankLogo} width="200" />
@@ -767,41 +842,6 @@ where
   revoked = False
   and schema_id = '0xfdcfdad2dbe7489e0ce56b260348b7f14e8365a8a325aef9834818c00d46b31b'
   and attester = '0x621477dBA416E12df7FF0d48E14c4D20DC85D7D9'
-```
-
-**Remember to replace 'YOUR_PROJECT_NAME' with the name of your project in the query.**
-
-### Open Collective
-
-<img src={OcLogo} width="200" />
-
-<Button
-  size={"compact"}
-  color={"blue"}
-  target={"_blank"}
-  link={
-    "https://console.cloud.google.com/bigquery/analytics-hub/exchanges/projects/87806073973/locations/us/dataExchanges/open_source_observer_190181416ae/listings/open_collective_1926d37f24d" 
-  }
-  children={"Subscribe on BigQuery"}
-/>{" "}
-
-- [Reference documentation](https://models.opensource.observer/#!/source_list/open_collective)
-- [Updated weekly](https://dagster.opensource.observer/assets/open_collective)
-
-[Open Collective](https://opencollective.com/) is a platform for transparent finances and governance for open source projects.
-
-The Open Collective datasets contains all transactions realized on the platform since its inception. Separate datasets are available for **expenses** and **deposits**.
-
-For example, you can get the total amount of donations in `USD` made to the [**pandas**](https://pandas.pydata.org) project:
-
-```sql
-select
-  SUM(CAST(JSON_VALUE(amount, "$.value") as FLOAT64)) as total_amount,
-from
-  YOUR_PROJECT_NAME.open_collective.deposits
-where
-  JSON_VALUE(amount, "$.currency") = "USD"
-  and JSON_VALUE(to_account, "$.id") = "ov349mrw-gz75lpy9-975qa08d-jeybknox"
 ```
 
 **Remember to replace 'YOUR_PROJECT_NAME' with the name of your project in the query.**
