@@ -9,7 +9,9 @@ from dagster_k8s import k8s_job_executor
 from dagster_sqlmesh import SQLMeshContextConfig, SQLMeshResource
 from dotenv import load_dotenv
 from metrics_tools.utils.logging import setup_module_logging
+from oso_dagster.resources.bq import BigQueryImporterResource
 from oso_dagster.resources.clickhouse import ClickhouseImporterResource
+from oso_dagster.resources.duckdb import DuckDBExporterResource, DuckDBResource
 from oso_dagster.resources.storage import (
     GCSTimeOrderedStorageResource,
     TimeOrderedStorageResource,
@@ -30,6 +32,7 @@ from .resources import (
     MCSRemoteResource,
     PodLocalK8sResource,
     PrefixedSQLMeshTranslator,
+    Trino2BigQuerySQLMeshExporter,
     Trino2ClickhouseSQLMeshExporter,
     TrinoK8sResource,
     TrinoRemoteResource,
@@ -101,6 +104,13 @@ def load_definitions():
             source_catalog="metrics",
             source_schema="metrics",
         ),
+        Trino2BigQuerySQLMeshExporter(
+            ["bigquery_metrics"],
+            project_id=project_id,
+            dataset_id="metrics",
+            source_catalog="metrics",
+            source_schema="metrics",
+        ),
     ]
     # If we aren't running in k8s, we need to use a dummy k8s resource that will
     # error if we attempt to use it
@@ -135,6 +145,13 @@ def load_definitions():
                 source_catalog="metrics",
                 source_schema="metrics",
             ),
+            Trino2BigQuerySQLMeshExporter(
+                ["bigquery_metrics"],
+                project_id=project_id,
+                dataset_id="metrics",
+                source_catalog="metrics",
+                source_schema="metrics",
+            ),
         ]
         time_ordered_storage = GCSTimeOrderedStorageResource(
             bucket_name=global_config.gcs_bucket
@@ -144,6 +161,13 @@ def load_definitions():
         trino=trino, time_ordered_storage=time_ordered_storage
     )
     clickhouse_importer = ClickhouseImporterResource(clickhouse=clickhouse)
+    bigquery_importer = BigQueryImporterResource(bigquery=bigquery)
+    duckdb_exporter = DuckDBExporterResource(
+        duckdb=DuckDBResource(
+            database_path=global_config.local_duckdb_path,
+        ),
+        time_ordered_storage=time_ordered_storage,
+    )
 
     sqlmesh_infra_config = {
         "environment": "prod",
@@ -168,6 +192,8 @@ def load_definitions():
         sqlmesh_exporters=sqlmesh_exporter,
         trino_exporter=trino_exporter,
         clickhouse_importer=clickhouse_importer,
+        bigquery_importer=bigquery_importer,
+        duckdb_exporter=duckdb_exporter,
         time_ordered_storage=time_ordered_storage,
     )
 
@@ -220,6 +246,8 @@ def load_definitions():
         "sqlmesh_exporters": sqlmesh_exporter,
         "trino_exporter": trino_exporter,
         "clickhouse_importer": clickhouse_importer,
+        "bigquery_importer": bigquery_importer,
+        "duckdb_exporter": duckdb_exporter,
         "time_ordered_storage": time_ordered_storage,
     }
     for target in global_config.dbt_manifests:
