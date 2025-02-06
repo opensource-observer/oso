@@ -108,9 +108,6 @@ spec:
         hive.metastore.thrift.client.read-timeout=30s
         iceberg.use-file-size-from-metadata=false
         fs.native-gcs.enabled=true
-        fs.cache.enabled=true
-        fs.cache.max-sizes=300GB
-        fs.cache.directories=/metrics-cache
         gcs.project-id=opensource-observer
         iceberg.max-partitions-per-writer=1000
       source: |

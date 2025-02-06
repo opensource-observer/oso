@@ -96,9 +96,9 @@ locals {
       min_count                         = 0
       max_count                         = 1
       local_ssd_count                   = 0
-      local_ssd_ephemeral_storage_count = 1
+      local_ssd_ephemeral_storage_count = 0
       spot                              = false
-      disk_size_gb                      = 200
+      disk_size_gb                      = 150
       disk_type                         = "pd-standard"
       image_type                        = "COS_CONTAINERD"
       enable_gcfs                       = false
@@ -118,8 +118,8 @@ locals {
       min_count                         = 0
       max_count                         = 10
       local_ssd_count                   = 0
-      local_ssd_ephemeral_storage_count = 1
-      spot                              = false
+      local_ssd_ephemeral_storage_count = 0
+      spot                              = true
       disk_size_gb                      = 200
       disk_type                         = "pd-standard"
       image_type                        = "COS_CONTAINERD"
