@@ -1,6 +1,9 @@
 MODEL (
   name metrics.contracts_v0,
-  kind VIEW
+  kind VIEW,
+  tags (
+    'export'
+  )
 );
 
 select
