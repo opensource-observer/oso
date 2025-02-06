@@ -2,11 +2,15 @@
 A catchall for development environment tools related to the python tooling.
 """
 
+import asyncio
 import logging
 import subprocess
 import sys
 import typing as t
+import warnings
+from datetime import datetime, timedelta
 
+import aiotrino
 import dotenv
 import git
 import kr8s
@@ -14,6 +18,8 @@ from kr8s.objects import Service
 from metrics_tools.factory.factory import MetricQueryConfig
 from metrics_tools.local.loader import LocalTrinoDestinationLoader
 from metrics_tools.local.manager import LocalWarehouseManager
+from metrics_tools.transfer.gcs import GCSTimeOrderedStorage
+from metrics_tools.transfer.trino import TrinoExporter
 from metrics_tools.utils.logging import setup_module_logging
 from numpy import std
 from opsscripts.cli import cluster_setup
@@ -23,6 +29,7 @@ from opsscripts.utils.dockertools import (
 )
 from oso_lets_go.wizard import MultipleChoiceInput
 from sqlglot import pretty
+from traitlets import default
 
 dotenv.load_dotenv()
 logger = logging.getLogger(__name__)
@@ -57,8 +64,9 @@ def cli(ctx: click.Context, debug: bool):
 
 
 @cli.group()
-def metrics():
-    pass
+@click.pass_context
+def metrics(ctx: click.Context):
+    ctx.obj["used_metrics_sub_command"] = True
 
 
 @cli.group()
@@ -124,9 +132,14 @@ def render(ctx: click.Context, metric: str, factory_path: str, dialect: str):
     print(matches[choice]["rendered_query"].sql(pretty=True, dialect=dialect))
 
 
-@metrics.group()
+@click.group()
 @click.pass_context
 def local(ctx: click.Context):
+    if ctx.obj.get("used_metrics_sub_command", False):
+        warnings.warn(
+            "The `metrics` subcommand is no longer used with `local`. Please use `oso local` directly"
+        )
+
     local_duckdb_path = os.getenv("SQLMESH_DUCKDB_LOCAL_PATH")
     if not local_duckdb_path:
         raise Exception("You need to add SQLMESH_DUCKDB_LOCAL_PATH to your .env")
@@ -147,6 +160,10 @@ def local(ctx: click.Context):
             f"SQLMESH_DUCKDB_LOCAL_TRINO_PATH not set. Using {local_trino_duckdb_path} for local trino state"
         )
     ctx.obj["local_trino_duckdb_path"] = local_trino_duckdb_path
+
+
+cli.add_command(local)
+metrics.add_command(local)
 
 
 @local.command()
@@ -194,8 +211,91 @@ def initialize(
     manager.initialize()
 
 
+@cli.group()
+def production():
+    pass
+
+
+@production.command()
+@click.option("--hive-catalog", default="source")
+@click.option("--hive-schema", default="export")
+@click.option("--bucket-name", default="oso-dataset-transfer-bucket")
+@click.option("--storage-prefix", default="trino-export")
+@click.option("--trino-host", required=True)
+@click.option("--trino-port", default=8080)
+@click.option("--trino-user", default="oso-cli")
+@click.option(
+    "--expiration", default=(datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
+)
+@click.option(
+    "--dry-run/--no-dry-run", default=False, help="Run the cleanup without deleting"
+)
+def clean_expired_trino_hive_files(
+    hive_catalog: str,
+    hive_schema: str,
+    bucket_name: str,
+    storage_prefix: str,
+    trino_host: str,
+    trino_port: int,
+    trino_user: str,
+    expiration: str,
+    dry_run: bool,
+):
+    asyncio.run(
+        run_cleanup(
+            hive_catalog,
+            hive_schema,
+            bucket_name,
+            storage_prefix,
+            trino_host,
+            trino_port,
+            trino_user,
+            expiration,
+            dry_run,
+        )
+    )
+
+
+async def run_cleanup(
+    hive_catalog: str,
+    hive_schema: str,
+    bucket_name: str,
+    storage_prefix: str,
+    trino_host: str,
+    trino_port: int,
+    trino_user: str,
+    expiration: str,
+    dry_run: bool,
+):
+    from gcloud.aio import storage
+
+    async with storage.Storage() as client:
+        gcs_storage = GCSTimeOrderedStorage(
+            client=client,
+            bucket_name=bucket_name,
+            prefix=storage_prefix,
+        )
+        connection = aiotrino.dbapi.connect(
+            host=trino_host,
+            port=trino_port,
+            user=trino_user,
+            catalog=hive_catalog,
+        )
+        exporter = TrinoExporter(
+            hive_catalog,
+            hive_schema,
+            gcs_storage,
+            connection,
+            max_concurrency=100,
+        )
+        await exporter.cleanup_expired(
+            datetime.strptime(expiration, "%Y-%m-%d"), dry_run=dry_run
+        )
+
+
 @local.command(
-    context_settings=dict(ignore_unknown_options=True, allow_extra_args=True)
+    name="sqlmesh",
+    context_settings=dict(ignore_unknown_options=True, allow_extra_args=True),
 )
 @click.option("--local-trino/--no-local-trino", default=False)
 @click.option("--local-registry-port", default=5001)
@@ -203,7 +303,7 @@ def initialize(
 @click.option("--timeseries-start", default="2024-12-01")
 @click.option("--repo-dir", default=REPO_DIR)
 @click.pass_context
-def sqlmesh(
+def local_sqlmesh(
     ctx: click.Context,
     local_trino: bool,
     local_registry_port: int,
