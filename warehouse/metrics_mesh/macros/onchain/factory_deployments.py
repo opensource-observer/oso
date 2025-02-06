@@ -76,7 +76,7 @@ def factory_deployments(
             join_type="inner",
         )
         .where(
-            exp.EQ(
+            exp.NEQ(
                 this=exp.Lower(this=traces_factory_address),
                 expression=exp.Literal(
                     this="0x3fab184622dc19b6109349b94811493bf2a45362", is_string=True
