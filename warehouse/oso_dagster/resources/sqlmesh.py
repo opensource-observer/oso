@@ -322,11 +322,15 @@ class DuckDB2BigQuerySQLMeshExporter(SQLMeshExporter):
         self,
         prefix: str | t.List[str],
         *,
+        source_catalog: str,
+        source_schema: str,
         project_id: str,
         dataset_id: str,
         bucket_name: str,
     ):
         self._prefix = prefix
+        self._source_catalog = source_catalog
+        self._source_schema = source_schema
         self._project_id = project_id
         self._dataset_id = dataset_id
         self._bucket_name = bucket_name
@@ -381,8 +385,8 @@ class DuckDB2BigQuerySQLMeshExporter(SQLMeshExporter):
                             Source(
                                 exporter=exporter,
                                 table=TableReference(
-                                    catalog_name="oso",
-                                    schema_name="metrics__dev",
+                                    catalog_name=self._source_catalog,
+                                    schema_name=self._source_schema,
                                     table_name=table_name,
                                 ),
                             ),
