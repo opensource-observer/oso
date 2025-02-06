@@ -59,21 +59,13 @@ class BigQueryImporter(ImporterInterface):
         bucket = self._storage_client.bucket(gcs_bucket_name)
         blobs = list(bucket.list_blobs(prefix=gcs_prefix))
 
-        if len(blobs) == 1 and blobs[0].name == gcs_prefix:
-            logger.info(f"Importing single file {gcs_path} to {table_id}")
-            source_uris = [gcs_path]
-        else:
-            source_uris = [
-                f"gs://{gcs_bucket_name}/{blob.name}"
-                for blob in blobs
-                if blob.name.endswith(".parquet")
-            ]
-            if not source_uris:
-                raise ValueError(f"No parquet files found in GCS path {gcs_path}")
+        source_uris = [f"gs://{gcs_bucket_name}/{blob.name}" for blob in blobs]
+        if not source_uris:
+            raise ValueError(f"No files found in GCS path {gcs_path}")
 
-            logger.info(
-                f"Importing {len(source_uris)} files from directory {gcs_path} to {table_id}"
-            )
+        logger.info(
+            f"Importing {len(source_uris)} files from directory {gcs_path} to {table_id}"
+        )
 
         job_config = bigquery.LoadJobConfig(
             source_format=bigquery.SourceFormat.PARQUET,
