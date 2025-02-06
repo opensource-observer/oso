@@ -18,7 +18,7 @@ from metrics_tools.compute.types import TableReference
 from metrics_tools.transfer.coordinator import Destination, Source, transfer
 from oso_dagster.resources.bq import BigQueryImporterResource
 from oso_dagster.resources.clickhouse import ClickhouseImporterResource
-from oso_dagster.resources.duckdb import DuckDBExporterResource
+from oso_dagster.resources.duckdb import DuckDBExporterResource, DuckDBImporterResource
 from oso_dagster.resources.trino import TrinoExporterResource
 from sqlglot import exp
 from sqlmesh import Context
@@ -100,7 +100,7 @@ class Trino2ClickhouseSQLMeshExporter(SQLMeshExporter):
             compute_kind="sqlmesh-export",
             can_subset=True,
         )
-        async def trino_export(
+        async def trino_clickhouse_export(
             context: AssetExecutionContext,
             trino_exporter: TrinoExporterResource,
             clickhouse_importer: ClickhouseImporterResource,
@@ -135,7 +135,7 @@ class Trino2ClickhouseSQLMeshExporter(SQLMeshExporter):
                             asset_key=AssetKey(table_name).with_prefix(self._prefix)
                         )
 
-        return trino_export
+        return trino_clickhouse_export
 
     def generate_create_table_query(
         self, model: Model, source_table: str, destination_table: str
@@ -243,7 +243,7 @@ class Trino2BigQuerySQLMeshExporter(SQLMeshExporter):
             compute_kind="sqlmesh-export",
             can_subset=True,
         )
-        async def bigquery_export(
+        async def trino_bigquery_export(
             context: AssetExecutionContext,
             trino_exporter: TrinoExporterResource,
             bigquery_importer: BigQueryImporterResource,
@@ -277,7 +277,7 @@ class Trino2BigQuerySQLMeshExporter(SQLMeshExporter):
                             asset_key=AssetKey(table_name).with_prefix(self._prefix)
                         )
 
-        return bigquery_export
+        return trino_bigquery_export
 
     def generate_create_table_query(
         self, model: Model, destination_table: str
@@ -359,7 +359,7 @@ class DuckDB2BigQuerySQLMeshExporter(SQLMeshExporter):
             compute_kind="sqlmesh-export",
             can_subset=True,
         )
-        async def duckdb_export(
+        async def duckdb_bigquery_export(
             context: AssetExecutionContext,
             duckdb_exporter: DuckDBExporterResource,
             bigquery_importer: BigQueryImporterResource,
@@ -398,7 +398,7 @@ class DuckDB2BigQuerySQLMeshExporter(SQLMeshExporter):
                             asset_key=AssetKey(table_name).with_prefix(self._prefix)
                         )
 
-        return duckdb_export
+        return duckdb_bigquery_export
 
     def generate_create_table_query(
         self, model: Model, destination_table: str
@@ -436,3 +436,85 @@ class DuckDB2BigQuerySQLMeshExporter(SQLMeshExporter):
         )
 
         return insert
+
+
+class Trino2DuckDBSQLMeshExporter(SQLMeshExporter):
+    def __init__(
+        self,
+        prefix: str | t.List[str],
+        *,
+        destination_catalog: str,
+        destination_schema: str,
+        source_catalog: str,
+        source_schema: str,
+    ):
+        self._prefix = prefix
+        self._destination_catalog = destination_catalog
+        self._destination_schema = destination_schema
+        self._source_catalog = source_catalog
+        self._source_schema = source_schema
+
+    def convert_model_key_to_duckdb_out(self, _key: AssetKey) -> AssetOut:
+        return AssetOut(
+            key_prefix=self._prefix,
+            is_required=False,
+        )
+
+    def create_export_asset(
+        self,
+        mesh: SQLMeshInstance,
+        to_export: t.List[t.Tuple[Model, AssetKey]],
+    ) -> AssetsDefinition:
+        duckdb_outs = {
+            key.path[-1]: self.convert_model_key_to_duckdb_out(key)
+            for _, key in to_export
+        }
+        internal_asset_deps: t.Mapping[str, t.Set[AssetKey]] = {
+            key.path[-1]: {key} for _, key in to_export
+        }
+        deps = [key for _, key in to_export]
+
+        @multi_asset(
+            outs=duckdb_outs,
+            internal_asset_deps=internal_asset_deps,
+            deps=deps,
+            compute_kind="sqlmesh-export",
+            can_subset=True,
+        )
+        async def trino_duckdb_export(
+            context: AssetExecutionContext,
+            trino_exporter: TrinoExporterResource,
+            duckdb_importer: DuckDBImporterResource,
+        ):
+            async with trino_exporter.get_exporter(
+                "trino-export", log_override=context.log
+            ) as exporter:
+                with duckdb_importer.get() as importer:
+                    selected_output_names = (
+                        context.op_execution_context.selected_output_names
+                    )
+                    for table_name in selected_output_names:
+                        await transfer(
+                            Source(
+                                exporter=exporter,
+                                table=TableReference(
+                                    catalog_name=self._source_catalog,
+                                    schema_name=self._source_schema,
+                                    table_name=table_name,
+                                ),
+                            ),
+                            Destination(
+                                importer=importer,
+                                table=TableReference(
+                                    catalog_name=self._destination_catalog,
+                                    schema_name=self._destination_schema,
+                                    table_name=table_name,
+                                ),
+                            ),
+                            log_override=context.log,
+                        )
+                        yield MaterializeResult(
+                            asset_key=AssetKey(table_name).with_prefix(self._prefix)
+                        )
+
+        return trino_duckdb_export
