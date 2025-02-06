@@ -114,7 +114,7 @@ Make sure to use the latest version of the oss-directory schema. You can see the
 
 The schema currently contains the following fields:
 
-- `version`: The latest version of the OSS Directory schema. This is a required field. To find the latest version, open any project YAML file and get the version from the top of the file. As of writing (2024-10-15), the latest version is Version 7.
+- `version`: The latest version of the OSS Directory schema. This is a required field. To find the latest version, open any project YAML file and get the version from the top of the file. As of writing (2025-02-06), the latest version is Version 7.
 - `name`: The unique identifier for the project. See [Give Your Project a Unique `name` Slug](#give-your-project-a-unique-name-slug) for more information. This is a required field and must match the name of the YAML project file.
 - `display_name`: The display name of the project. This is a required field and must also be globally unique.
 - `description`: A brief description of the project.

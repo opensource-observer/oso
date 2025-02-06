@@ -32,6 +32,10 @@ Version 7 of the oss-directory schema currently supports the following artifact 
 The simplest way to add all contracts and factories associated with your project is to just include the deployer address in the project file with the `deployer` tag. We will then automatically index all contracts and factories that originate from the deployer address. If the deployer is on multiple EVM networks, you can use the `any_evm` network label instead of listing each network individually.
 :::
 
+## DefiLlama
+
+- `defillama`: A list of DefiLlama protocol URLs, eg. `https://defillama.com/protocol/my-protocol-v1`.
+
 ## Open Collective
 
 - `open_collective`: An Open Collective URL, eg. `https://opencollective.com/my-project`.
@@ -57,3 +61,4 @@ We recommend the following examples of project files to help you get started:
 - [pandas](https://github.com/opensource-observer/oss-directory/blob/main/data/projects/p/pandas.yaml)
 - [safe-global](https://github.com/opensource-observer/oss-directory/blob/main/data/projects/s/safe-global.yaml)
 - [uniswap](https://github.com/opensource-observer/oss-directory/blob/main/data/projects/u/uniswap.yaml)
+- [wormhole](https://github.com/opensource-observer/oss-directory/blob/main/data/projects/w/wormhole.yaml)
