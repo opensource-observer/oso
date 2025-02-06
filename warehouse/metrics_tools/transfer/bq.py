@@ -1,7 +1,7 @@
 import logging
 import typing as t
 
-from google.cloud import bigquery
+from google.cloud import bigquery, storage
 from google.cloud.exceptions import NotFound
 from metrics_tools.compute.types import ExportReference, ExportType, TableReference
 from metrics_tools.transfer.base import ImporterInterface
@@ -20,6 +20,7 @@ class BigQueryImporter(ImporterInterface):
         """
 
         self._client = bigquery.Client(project=project_id)
+        self._storage_client = storage.Client(project=project_id)
 
     def supported_types(self) -> t.Set[ExportType]:
         """
@@ -34,24 +35,45 @@ class BigQueryImporter(ImporterInterface):
         self, destination_table: TableReference, export_reference: ExportReference
     ):
         """
-        Imports a table from a Parquet file in GCS to BigQuery.
+        Imports a table from a GCS export to BigQuery.
 
         Args:
-            destination_table (TableReference): The destination table reference in BigQuery.
-            export_reference (ExportReference): The export reference containing GCS path and metadata.
+            destination_table (TableReference): The BigQuery table to import to.
+            export_reference (ExportReference): The export reference containing the GCS path.
         """
 
         if export_reference.type != ExportType.GCS:
             raise ValueError("BigQueryImporter only supports GCS exports.")
 
-        dataset_name = (
-            f"{destination_table.schema_name or 'default'}"
-        )
+        dataset_name = destination_table.schema_name or "default"
         table_id = (
             f"{self._client.project}.{dataset_name}.{destination_table.table_name}"
         )
-
         self._ensure_dataset_exists(dataset_name)
+
+        gcs_path = export_reference.payload.get("gcs_path")
+        if not gcs_path:
+            raise ValueError("GCS path is missing in the export reference payload.")
+
+        gcs_bucket_name, gcs_prefix = self._parse_gcs_path(gcs_path)
+        bucket = self._storage_client.bucket(gcs_bucket_name)
+        blobs = list(bucket.list_blobs(prefix=gcs_prefix))
+
+        if len(blobs) == 1 and blobs[0].name == gcs_prefix:
+            logger.info(f"Importing single file {gcs_path} to {table_id}")
+            source_uris = [gcs_path]
+        else:
+            source_uris = [
+                f"gs://{gcs_bucket_name}/{blob.name}"
+                for blob in blobs
+                if blob.name.endswith(".parquet")
+            ]
+            if not source_uris:
+                raise ValueError(f"No parquet files found in GCS path {gcs_path}")
+
+            logger.info(
+                f"Importing {len(source_uris)} files from directory {gcs_path} to {table_id}"
+            )
 
         job_config = bigquery.LoadJobConfig(
             source_format=bigquery.SourceFormat.PARQUET,
@@ -59,14 +81,8 @@ class BigQueryImporter(ImporterInterface):
             write_disposition=bigquery.WriteDisposition.WRITE_TRUNCATE,
         )
 
-        gcs_path = export_reference.payload.get("gcs_path")
-        if not gcs_path:
-            raise ValueError("GCS path is missing in the export reference payload.")
-
-        logger.info(f"Starting import from {gcs_path} to {table_id}...")
-
         load_job = self._client.load_table_from_uri(
-            gcs_path, table_id, job_config=job_config
+            source_uris, table_id, job_config=job_config
         )
 
         load_job.result()
@@ -86,7 +102,18 @@ class BigQueryImporter(ImporterInterface):
         try:
             self._client.get_dataset(dataset_id)
             logger.info(f"Dataset {dataset_id} already exists.")
-        except NotFound as _e:
+        except NotFound:
             logger.info(f"Dataset {dataset_id} does not exist. Creating...")
             self._client.create_dataset(dataset_id)
             logger.info(f"Dataset {dataset_id} created successfully.")
+
+    def _parse_gcs_path(self, gcs_path: str) -> t.Tuple[str, str]:
+        """Extracts bucket and prefix from GCS path."""
+
+        if not gcs_path.startswith("gs://"):
+            raise ValueError("Invalid GCS path. Must start with 'gs://'")
+
+        path_parts = gcs_path[5:].split("/", 1)
+        bucket_name = path_parts[0]
+        prefix = path_parts[1] if len(path_parts) > 1 else ""
+        return bucket_name, prefix
