@@ -40,8 +40,6 @@ spec:
       name: base-trino
     coordinator:
       additionalVolumes:
-        - name: cache
-          emptyDir: {}
         - name: cluster-self-signed-bundle
           configMap:
             name: cluster-self-signed-bundle
