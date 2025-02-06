@@ -3,7 +3,7 @@ from contextlib import contextmanager
 
 import duckdb
 from dagster import ConfigurableResource, ResourceDependency
-from metrics_tools.transfer.duckdb import DuckDBExporter
+from metrics_tools.transfer.duckdb import DuckDBExporter, DuckDBImporter
 from oso_dagster.resources.storage import GCSTimeOrderedStorageResource
 from pydantic import Field
 
@@ -40,5 +40,20 @@ class DuckDBExporterResource(ConfigurableResource):
         """Provides the DuckDB connection for queries."""
         with self.time_ordered_storage.get(export_prefix) as storage:
             with self.duckdb.get_connection() as conn:
-                exporter = DuckDBExporter(storage, conn, gcs_bucket_name=gcs_bucket_name)
+                exporter = DuckDBExporter(
+                    storage, conn, gcs_bucket_name=gcs_bucket_name
+                )
                 yield exporter
+
+
+class DuckDBImporterResource(ConfigurableResource):
+    """Resource for providing a DuckDBImporter instance."""
+
+    duckdb: ResourceDependency[DuckDBResource]
+
+    @contextmanager
+    def get(self):
+        """Provides the DuckDB connection for queries."""
+        with self.duckdb.get_connection() as conn:
+            importer = DuckDBImporter(conn)
+            yield importer

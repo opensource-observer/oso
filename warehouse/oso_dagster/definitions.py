@@ -11,7 +11,11 @@ from dotenv import load_dotenv
 from metrics_tools.utils.logging import setup_module_logging
 from oso_dagster.resources.bq import BigQueryImporterResource
 from oso_dagster.resources.clickhouse import ClickhouseImporterResource
-from oso_dagster.resources.duckdb import DuckDBExporterResource, DuckDBResource
+from oso_dagster.resources.duckdb import (
+    DuckDBExporterResource,
+    DuckDBImporterResource,
+    DuckDBResource,
+)
 from oso_dagster.resources.storage import (
     GCSTimeOrderedStorageResource,
     TimeOrderedStorageResource,
@@ -168,6 +172,11 @@ def load_definitions():
         ),
         time_ordered_storage=time_ordered_storage,
     )
+    duckdb_importer = DuckDBImporterResource(
+        duckdb=DuckDBResource(
+            database_path=global_config.local_duckdb_path,
+        )
+    )
 
     sqlmesh_infra_config = {
         "environment": "prod",
@@ -194,6 +203,7 @@ def load_definitions():
         clickhouse_importer=clickhouse_importer,
         bigquery_importer=bigquery_importer,
         duckdb_exporter=duckdb_exporter,
+        duckdb_importer=duckdb_importer,
         time_ordered_storage=time_ordered_storage,
     )
 
@@ -248,6 +258,7 @@ def load_definitions():
         "clickhouse_importer": clickhouse_importer,
         "bigquery_importer": bigquery_importer,
         "duckdb_exporter": duckdb_exporter,
+        "duckdb_importer": duckdb_importer,
         "time_ordered_storage": time_ordered_storage,
     }
     for target in global_config.dbt_manifests:
