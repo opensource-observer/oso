@@ -212,10 +212,10 @@ class DuckDBExporter(ExporterInterface):
 
         count = 0
 
-        for f in self.time_ordered_storage.iter_files(before=expiration):
+        async for f in self.time_ordered_storage.iter_files(before=expiration):
             if not dry_run:
                 self.logger.debug(f"Deleting: {f.uri}")
-                f.delete()
+                await f.delete()
             else:
                 self.logger.debug(f"Would have deleted: {f.uri}")
             count += 1

@@ -4,7 +4,7 @@ import typing as t
 from datetime import datetime
 from urllib.parse import urlparse
 
-from google.cloud import storage
+from gcloud.aio import storage
 from metrics_tools.compute.types import ExportReference, ExportType
 from metrics_tools.transfer.storage import TimeOrderedStorage, TimeOrderedStorageFile
 
@@ -12,14 +12,21 @@ logger = logging.getLogger(__name__)
 
 
 class GCSTimeOrderedStorageFile(TimeOrderedStorageFile):
-    def __init__(self, bucket_name: str, blob: storage.Blob, prefix: str):
-        self.blob = blob
+    def __init__(
+        self,
+        client: storage.Storage,
+        bucket: storage.Bucket,
+        blob_name: str,
+        prefix: str,
+    ):
+        self.blob_name = blob_name
+        self.client = client
         self.prefix = prefix
-        self.bucket_name = bucket_name
+        self.bucket = bucket
 
     @property
     def stored_time(self):
-        name = t.cast(str, self.blob.name)
+        name = t.cast(str, self.blob_name)
         export_rel_path = os.path.relpath(name, self.prefix)
         path_parts = export_rel_path.split("/")
         time = datetime.strptime("/".join(path_parts[0:4]), "%Y/%m/%d/%H")
@@ -27,18 +34,18 @@ class GCSTimeOrderedStorageFile(TimeOrderedStorageFile):
 
     @property
     def time_part(self):
-        name = t.cast(str, self.blob.name)
+        name = t.cast(str, self.blob_name)
         export_rel_path = os.path.relpath(name, self.prefix)
         path_parts = export_rel_path.split("/")
         return "/".join(path_parts[0:4])
 
     @property
     def uri(self) -> str:
-        return f"gs://{self.bucket_name}/{self.full_path}"
+        return f"gs://{self.bucket.name}/{self.full_path}"
 
     @property
     def full_path(self) -> str:
-        return t.cast(str, self.blob.name)
+        return t.cast(str, self.blob_name)
 
     @property
     def rel_path(self) -> str:
@@ -50,8 +57,9 @@ class GCSTimeOrderedStorageFile(TimeOrderedStorageFile):
     def name(self) -> str:
         return os.path.basename(self.full_path)
 
-    def delete(self):
-        self.blob.delete(if_generation_match=self.blob.generation)
+    async def delete(self):
+        await self.client.delete(self.bucket.name, self.blob_name)
+        # self.blob.delete(if_generation_match=self.blob.generation)
 
 
 class GCSTimeOrderedStorage(TimeOrderedStorage):
@@ -60,7 +68,7 @@ class GCSTimeOrderedStorage(TimeOrderedStorage):
     also use creation time but this was more explicit for both organizing the
     files and also scales to any file based storage system"""
 
-    def __init__(self, *, client: storage.Client, bucket_name: str, prefix: str):
+    def __init__(self, *, client: storage.Storage, bucket_name: str, prefix: str):
         self.client = client
         self.bucket_name = bucket_name
         self.prefix = prefix
@@ -73,14 +81,17 @@ class GCSTimeOrderedStorage(TimeOrderedStorage):
             *joins,
         )
 
-    def iter_files(
+    def bucket(self, name):
+        return storage.Bucket(self.client, name)
+
+    async def iter_files(
         self,
         *,
         search_prefix: str = "",
         export_reference: t.Optional[ExportReference] = None,
         before: t.Optional[datetime] = None,
         after: t.Optional[datetime] = None,
-    ) -> t.Iterable[TimeOrderedStorageFile]:
+    ) -> t.AsyncIterable[TimeOrderedStorageFile]:
         """Iterate through all the files in the bucket that are within the time
         range.
 
@@ -93,7 +104,7 @@ class GCSTimeOrderedStorage(TimeOrderedStorage):
         Yields:
             t.Iterable[TimeOrderedStorageFile]: The files in the time range
         """
-        bucket = self.client.bucket(self.bucket_name)
+        bucket = self.bucket(self.bucket_name)
 
         if search_prefix and export_reference:
             raise ValueError("Cannot specify both search_prefix and export_reference")
@@ -112,11 +123,11 @@ class GCSTimeOrderedStorage(TimeOrderedStorage):
             search_prefix = self.prefix
         logger.debug(f"Searching for blobs with prefix: {search_prefix}")
 
-        blobs = bucket.list_blobs(prefix=search_prefix)
+        blobs = await bucket.list_blobs(prefix=search_prefix)
 
         # Parse the insertion time
-        for blob in blobs:
-            f = GCSTimeOrderedStorageFile(self.bucket_name, blob, self.prefix)
+        for blob_name in blobs:
+            f = GCSTimeOrderedStorageFile(self.client, bucket, blob_name, self.prefix)
             try:
                 stored_time = f.stored_time
             except ValueError:

@@ -1,5 +1,5 @@
 import logging
-from contextlib import contextmanager
+from contextlib import asynccontextmanager, contextmanager
 
 import duckdb
 from dagster import ConfigurableResource, ResourceDependency
@@ -35,10 +35,10 @@ class DuckDBExporterResource(ConfigurableResource):
     duckdb: ResourceDependency[DuckDBResource]
     time_ordered_storage: ResourceDependency[GCSTimeOrderedStorageResource]
 
-    @contextmanager
-    def get(self, export_prefix: str, gcs_bucket_name: str):
+    @asynccontextmanager
+    async def get(self, export_prefix: str, gcs_bucket_name: str):
         """Provides the DuckDB connection for queries."""
-        with self.time_ordered_storage.get(export_prefix) as storage:
+        async with self.time_ordered_storage.get(export_prefix) as storage:
             with self.duckdb.get_connection() as conn:
                 exporter = DuckDBExporter(
                     storage, conn, gcs_bucket_name=gcs_bucket_name
