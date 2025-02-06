@@ -203,7 +203,7 @@ class DuckDBExporter(ExporterInterface):
     async def cleanup_expired(self, expiration: datetime, dry_run: bool = False):
         """
         Cleans up expired files in the storage.
-        
+
         Args:
             expiration (datetime): The expiration time.
             dry_run (bool): Whether to perform a dry run.
@@ -211,10 +211,10 @@ class DuckDBExporter(ExporterInterface):
 
         count = 0
 
-        for f in self.time_ordered_storage.iter_files(before=expiration):
+        async for f in self.time_ordered_storage.iter_files(before=expiration):
             if not dry_run:
                 self.logger.debug(f"Deleting: {f.uri}")
-                f.delete()
+                await f.delete()
             else:
                 self.logger.debug(f"Would have deleted: {f.uri}")
             count += 1

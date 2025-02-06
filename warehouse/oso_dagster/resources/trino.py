@@ -241,7 +241,7 @@ class TrinoExporterResource(ConfigurableResource):
     async def get_exporter(
         self, export_prefix: str, log_override: t.Optional[logging.Logger] = None
     ) -> t.AsyncGenerator[TrinoExporter, None]:
-        with self.time_ordered_storage.get(export_prefix) as storage:
+        async with self.time_ordered_storage.get(export_prefix) as storage:
             async with self.trino.async_get_client(
                 log_override=log_override
             ) as connection:

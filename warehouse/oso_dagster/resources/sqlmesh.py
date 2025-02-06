@@ -364,7 +364,7 @@ class DuckDB2BigQuerySQLMeshExporter(SQLMeshExporter):
             duckdb_exporter: DuckDBExporterResource,
             bigquery_importer: BigQueryImporterResource,
         ):
-            with duckdb_exporter.get(
+            async with duckdb_exporter.get(
                 export_prefix=(
                     self._prefix
                     if isinstance(self._prefix, str)
