@@ -28,7 +28,7 @@ from . import assets
 from .cbt import CBTResource
 from .config import DagsterConfig
 from .factories import load_all_assets_from_package
-from .factories.alerts import setup_alert_sensor
+from .factories.alerts import setup_alert_sensors
 from .resources import (
     BigQueryDataTransferResource,
     ClickhouseResource,
@@ -227,8 +227,7 @@ def load_definitions():
             global_config.discord_webhook_url
         )
 
-    alerts = setup_alert_sensor(
-        "alerts",
+    alerts = setup_alert_sensors(
         global_config.alerts_base_url,
         alert_manager,
         False,
