@@ -3,6 +3,7 @@ import os
 import typing as t
 import uuid
 from datetime import datetime
+from urllib.parse import urlparse
 
 import duckdb
 from google.cloud import storage
@@ -12,7 +13,7 @@ from metrics_tools.compute.types import (
     ExportType,
     TableReference,
 )
-from metrics_tools.transfer.base import ExporterInterface
+from metrics_tools.transfer.base import ExporterInterface, ImporterInterface
 from metrics_tools.transfer.storage import TimeOrderedStorage
 from sqlglot import exp
 
@@ -203,7 +204,7 @@ class DuckDBExporter(ExporterInterface):
     async def cleanup_expired(self, expiration: datetime, dry_run: bool = False):
         """
         Cleans up expired files in the storage.
-        
+
         Args:
             expiration (datetime): The expiration time.
             dry_run (bool): Whether to perform a dry run.
@@ -221,3 +222,113 @@ class DuckDBExporter(ExporterInterface):
 
         if count == 0:
             self.logger.debug("No expired files found")
+
+
+class DuckDBImporter(ImporterInterface):
+    def __init__(
+        self,
+        connection: duckdb.DuckDBPyConnection,
+        log_override: t.Optional[logging.Logger] = None,
+    ):
+        """
+        Initializes the DuckDBImporter with a DuckDB connection and a GCS client.
+
+        Args:
+            connection (duckdb.DuckDBPyConnection): The DuckDB connection.
+            log_override (t.Optional[logging.Logger]): Optional logger override.
+        """
+
+        self.connection = connection
+        self.logger = log_override or logger
+        self.storage_client = storage.Client()
+        self.local_import_dir = "/tmp/_duckdb_imports"
+        os.makedirs(self.local_import_dir, exist_ok=True)
+
+    def supported_types(self) -> t.Set[ExportType]:
+        """
+        Returns the set of supported export types for this importer.
+        DuckDBImporter only supports GCS-based exports.
+        """
+
+        return {ExportType.GCS}
+
+    def download_from_gcs(self, gcs_uri: str) -> str:
+        """
+        Downloads the file from the provided GCS URI to a local temporary location.
+
+        Args:
+            gcs_uri (str): The GCS URI (e.g. "gs://<bucket>/<path>") to download.
+
+        Returns:
+            str: The local file path where the file was downloaded.
+        """
+
+        parsed = urlparse(gcs_uri)
+        bucket_name = parsed.netloc
+        blob_path = parsed.path.lstrip("/")
+        bucket = self.storage_client.bucket(bucket_name)
+        blob = bucket.blob(blob_path)
+
+        local_file = os.path.join(self.local_import_dir, f"{uuid.uuid4().hex}.parquet")
+        self.logger.info(f"Downloading {gcs_uri} to {local_file}...")
+        blob.download_to_filename(local_file)
+        self.logger.info(f"Downloaded file to {local_file}.")
+        return local_file
+
+    async def import_table(
+        self, destination_table: TableReference, export_reference: ExportReference
+    ):
+        """
+        Imports a table into DuckDB from a Parquet file stored on GCS.
+
+        The method downloads the file from GCS, drops the destination table if it exists,
+        and creates a new table using DuckDB's read_parquet() function.
+
+        Args:
+            destination_table (TableReference): The target table reference in DuckDB.
+            export_reference (ExportReference): The export metadata which must include a valid "gcs_path".
+
+        Raises:
+            ValueError: If export_reference does not specify a GCS export.
+        """
+
+        if export_reference.type != ExportType.GCS:
+            raise ValueError("DuckDBImporter only supports GCS exports.")
+
+        gcs_path = export_reference.payload.get("gcs_path")
+        if not gcs_path:
+            raise ValueError("GCS path is missing in the export reference payload.")
+
+        local_file_path = self.download_from_gcs(gcs_path)
+        try:
+            self.logger.debug(f"Dropping table {destination_table.fqn}...")
+            self.connection.execute(f"DROP TABLE IF EXISTS {destination_table.fqn}")
+
+            self.logger.debug(
+                f"Creating table {destination_table.fqn} from {local_file_path}..."
+            )
+            create_sql = (
+                f"CREATE TABLE {destination_table.fqn} AS "
+                f"SELECT * FROM read_parquet('{local_file_path}')"
+            )
+            self.connection.execute(create_sql)
+            self.logger.info(
+                f"Table {destination_table.fqn} imported successfully in DuckDB."
+            )
+        finally:
+            self.logger.debug(f"Deleting temporary file {local_file_path}...")
+            try:
+                os.remove(local_file_path)
+                self.logger.debug("Temporary file deleted successfully.")
+            except Exception as e:
+                self.logger.warning(
+                    f"Failed to delete temporary file {local_file_path}: {e}"
+                )
+
+    async def cleanup_ref(self, export_reference: ExportReference):
+        """
+        This importer does not retain external state that requires cleanup.
+        Temporary files are removed immediately after table creation.
+        """
+
+        self.logger.debug("No additional cleanup required for DuckDBImporter.")
