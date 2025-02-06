@@ -105,7 +105,7 @@ spec:
         hive.metastore-cache-ttl=0s
         hive.metastore-refresh-interval=5s
         hive.metastore.thrift.client.connect-timeout=10s
-        hive.metastore.thrift.client.read-timeout=30s
+        hive.metastore.thrift.client.read-timeout=60s
         iceberg.use-file-size-from-metadata=false
         fs.native-gcs.enabled=true
         gcs.project-id=opensource-observer
