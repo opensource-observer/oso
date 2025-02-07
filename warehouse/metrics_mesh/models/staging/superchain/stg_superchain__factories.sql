@@ -6,7 +6,7 @@ MODEL (
     batch_concurrency 1,
     lookback 7
   ),
-  start '2015-01-01',
+  start '2021-10-01',
   cron '@daily',
   partitioned_by (DAY("block_timestamp"), "chain"),
   grain (block_timestamp, chain_id, transaction_hash, deployer_address, contract_address)

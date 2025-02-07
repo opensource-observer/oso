@@ -7,6 +7,7 @@ MODEL (
     --forward_only true,
     --on_destructive_change allow
   ),
+  start '2021-10-01',
   partitioned_by (DAY("deployment_date"), "chain"),
   cron '@daily',
 );
