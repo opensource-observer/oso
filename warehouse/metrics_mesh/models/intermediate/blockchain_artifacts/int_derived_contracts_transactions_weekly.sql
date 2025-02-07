@@ -20,7 +20,7 @@ MODEL (
     --on_destructive_change warn
   ),
   cron '@weekly',
-  partitioned_by DAY(week),
+  partitioned_by (DAY(week), chain),
   -- We only need to start a year before from the time we start using this
   -- model. We are using this as a way to categorize model ordering.
   start '2024-08-01'
