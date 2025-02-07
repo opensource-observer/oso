@@ -14,7 +14,7 @@ MODEL (
   name metrics.int_derived_contracts_transactions_weekly,
   kind INCREMENTAL_BY_TIME_RANGE (
     time_column week,
-    batch_size 365,
+    batch_size 90,
     batch_concurrency 1,
     --forward_only true,
     --on_destructive_change warn
