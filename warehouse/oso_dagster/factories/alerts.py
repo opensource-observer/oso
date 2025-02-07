@@ -19,6 +19,36 @@ from dagster import (
 from ..utils import AlertManager, AlertOpConfig, FreshnessOpConfig
 from .common import AssetFactoryResponse
 
+ALERTS_JOB_CONFIG = {
+    "dagster-k8s/config": {
+        "merge_behavior": "SHALLOW",
+        "container_config": {
+            "resources": {
+                "requests": {
+                    "cpu": "500m",
+                    "memory": "768Mi",
+                },
+                "limits": {
+                    "cpu": "500m",
+                    "memory": "1536Mi",
+                },
+            },
+        },
+        "pod_spec_config": {
+            "node_selector": {
+                "pool_type": "persistent",
+            },
+            "tolerations": [
+                {
+                    "key": "pool_type",
+                    "operator": "Equal",
+                    "value": "persistent",
+                    "effect": "NoSchedule",
+                }
+            ],
+        },
+    },
+}
 
 def setup_alert_sensors(
     base_url: str, alert_manager: AlertManager, enable: bool = True
@@ -57,36 +87,7 @@ def setup_alert_sensors(
             return SkipReason("Non critical job failure")
 
         return RunRequest(
-            tags={
-                "dagster-k8s/config": {
-                    "merge_behavior": "SHALLOW",
-                    "container_config": {
-                        "resources": {
-                            "requests": {
-                                "cpu": "500m",
-                                "memory": "768Mi",
-                            },
-                            "limits": {
-                                "cpu": "500m",
-                                "memory": "1536Mi",
-                            },
-                        },
-                    },
-                    "pod_spec_config": {
-                        "node_selector": {
-                            "pool_type": "persistent",
-                        },
-                        "tolerations": [
-                            {
-                                "key": "pool_type",
-                                "operator": "Equal",
-                                "value": "persistent",
-                                "effect": "NoSchedule",
-                            }
-                        ],
-                    },
-                },
-            },
+            tags=ALERTS_JOB_CONFIG,
             run_key=context.dagster_run.run_id,
             run_config=RunConfig(
                 ops={
@@ -134,6 +135,7 @@ def setup_alert_sensors(
             return SkipReason("No stale assets found")
 
         return RunRequest(
+            tags=ALERTS_JOB_CONFIG,
             run_config=RunConfig(
                 ops={"freshness_alert_op": {"config": {"stale_assets": stale_assets}}}
             ),
