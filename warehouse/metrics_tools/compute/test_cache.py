@@ -54,8 +54,6 @@ async def test_cache_export_manager_fails():
     cache = await CacheExportManager.setup(adapter_mock)
     execution_time = datetime.now()
 
-    # Attempt to export tables again but this should be mostly cache hits except
-    # for table3
     failed = False
     try:
         await asyncio.wait_for(

@@ -322,6 +322,7 @@ class CacheExportManager:
                 continue
 
             in_progress.add(item.table)
+            export_table_key = self.export_table_key(item.table, item.execution_time)
             try:
                 export_reference = await export_table(item.table, item.execution_time)
             except ExportError as e:
@@ -335,18 +336,29 @@ class CacheExportManager:
                 errors[table] = table_errors
 
                 in_progress.remove(table)
-                self.event_emitter.emit("exported_table", table=table, error=error)
+                self.event_emitter.emit(
+                    "exported_table",
+                    table=table,
+                    execution_time=item.execution_time,
+                    export_table_key=export_table_key,
+                    error=error,
+                )
                 self.export_queue.task_done()
                 continue
             self.event_emitter.emit(
-                "exported_table", table=item.table, export_reference=export_reference
+                "exported_table",
+                table=item.table,
+                execution_time=item.execution_time,
+                export_table_key=export_table_key,
+                export_reference=export_reference,
             )
             self.export_queue.task_done()
 
     async def add_export_table_reference(
-        self, table: str, export_reference: ExportReference
+        self, table: str, execution_time: datetime, export_reference: ExportReference
     ):
-        await self.add_export_table_references({table: export_reference})
+        export_table_key = self.export_table_key(table, execution_time)
+        await self.add_export_table_references({export_table_key: export_reference})
 
     async def add_export_table_references(
         self, table_map: t.Dict[str, ExportReference]
@@ -358,9 +370,14 @@ class CacheExportManager:
         async with self.exported_map_lock:
             return copy.deepcopy(self.exported_map)
 
-    async def get_export_table_reference(self, table: str):
+    def export_table_key(self, table: str, execution_time: datetime):
+        return f"{table}::{execution_time}"
+
+    async def get_export_table_reference(self, table: str, execution_time: datetime):
+        export_table_key = self.export_table_key(table, execution_time)
+
         async with self.exported_map_lock:
-            reference = self.exported_map.get(table)
+            reference = self.exported_map.get(export_table_key)
             if not reference:
                 return None
             return copy.deepcopy(reference)
@@ -385,24 +402,32 @@ class CacheExportManager:
             asyncio.get_event_loop().create_future()
         )
 
+        # The tables to export should be unique combinations of the table name
+        # and execution time. This ensures that multiple runs don't use stale
+        # data accidentally.
         tables_to_export = set(tables)
         registration = None
         export_map: t.Dict[str, ExportReference] = {}
 
         # Ensure we are only comparing unique tables
         for table in set(tables):
-            reference = await self.get_export_table_reference(table)
+            reference = await self.get_export_table_reference(table, execution_time)
             if reference is not None:
                 export_map[table] = reference
                 tables_to_export.remove(table)
         if len(tables_to_export) == 0:
             return export_map
+        pending_export_table_keys = set(
+            [self.export_table_key(table, execution_time) for table in tables_to_export]
+        )
 
         self.logger.info(f"unknown tables to export: {tables_to_export}")
 
         async def handle_exported_table(
             *,
             table: str,
+            execution_time: datetime,
+            export_table_key: str,
             export_reference: t.Optional[ExportReference] = None,
             error: t.Optional[Exception] = None,
         ):
@@ -410,17 +435,29 @@ class CacheExportManager:
                 raise RuntimeError("export_reference or error must be provided")
 
             # If there was an error send it back to the listener
-            if not export_reference:
-                assert error is not None
-                future.set_exception(error)
-                return
-
-            self.logger.info(f"exported table ready: {table} -> {export_reference}")
-            if table in tables_to_export:
-                tables_to_export.remove(table)
+            self.logger.info(
+                f"exported table update received: {table} :: {execution_time}"
+            )
+            self.logger.debug(
+                f"Checking pending export table keys: {pending_export_table_keys}"
+            )
+            self.logger.debug(f"Checking export table key: {export_table_key}")
+            # Check if we were waiting for this table
+            if export_table_key in pending_export_table_keys:
+                self.logger.debug("found pending export table key")
+                # If there's no export reference then we must have an error
+                if not export_reference:
+                    assert error is not None
+                    future.set_exception(error)
+                    return
+                pending_export_table_keys.remove(export_table_key)
                 export_map[table] = export_reference
-                await self.add_export_table_reference(table, export_reference)
-            if len(tables_to_export) == 0:
+                await self.add_export_table_reference(
+                    table, execution_time, export_reference
+                )
+            # Stop listening if we have all the tables
+            if len(pending_export_table_keys) == 0:
+                self.logger.debug("all tables exported")
                 future.set_result(export_map)
                 if registration:
                     self.event_emitter.remove_listener("exported_table", registration)

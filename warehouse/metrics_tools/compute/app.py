@@ -116,6 +116,8 @@ def default_lifecycle(config: AppConfig):
             cluster_manager=cluster_manager,
             cache_manager=cache_export_manager,
             import_adapter=import_adapter,
+            cluster_scale_down_timeout=config.cluster_scale_down_timeout,
+            cluster_shutdown_timeout=config.cluster_shutdown_timeout,
         )
         try:
             yield {

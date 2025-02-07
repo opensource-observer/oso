@@ -132,6 +132,7 @@ class Client:
         cluster_min_size: int = 6,
         cluster_max_size: int = 6,
         job_retries: int = 3,
+        do_not_raise_on_failure: bool = False,
         execution_time: t.Optional[datetime] = None,
     ):
         """Calculate metrics for a given period and write the results to a gcs
@@ -143,6 +144,11 @@ class Client:
         3. Wait for the job to complete (and log progress)
         4. Return the gcs result path
 
+        If do_not_raise_on_failure is set to True, the method will not raise an
+        exception on failure. This is done to ensure that this metrics calculation
+        doesn't block the rest of the pipeline. Instead, sqlmesh should be called
+        againt to restate the failed metrics calculations.
+
         Args:
             query_str (str): The query to execute
             start (datetime): The start date
@@ -153,8 +159,12 @@ class Client:
             ref (PeerMetricDependencyRef): The dependency reference
             locals (t.Dict[str, t.Any]): The local variables to use
             dependent_tables_map (t.Dict[str, str]): The dependent tables map
-            job_retries (int): The number of retries for a given job in the worker queue. Defaults to 3.
+            job_retries (int): The number of retries for a given job in the
+                worker queue. Defaults to 3.
             slots (int): The number of slots to use for the job
+            do_not_raise_on_failure (bool): If true, the method will not raise
+                an exception on failure. Instead an error will be logged and
+                it'll be up to the caller to handle restatement of the metric.
             execution_time (t.Optional[datetime]): The execution time for the job
 
         Returns:
@@ -203,7 +213,18 @@ class Client:
             for exc in final_status.exceptions:
                 self.logger.error(f"job[{job_id}] failed with exceptoin {exc}")
 
-            raise Exception(f"job[{job_id}] failed with status {final_status.status}")
+            if not do_not_raise_on_failure:
+                raise Exception(
+                    f"job[{job_id}] failed with status {final_status.status}"
+                )
+            else:
+                self.logger.error(
+                    f"""
+                    job[{job_id}] failed. To restate use the following parameters: 
+                    `--restate-model {ref['name']} --start {start} --end {end}`
+                """
+                )
+                return None
 
         self.logger.info(f"job[{job_id}] completed with status {final_status.status}")
 

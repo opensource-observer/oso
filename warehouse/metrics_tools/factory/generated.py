@@ -106,7 +106,12 @@ def generated_rolling_query(
             job_retries=env.ensure_int("SQLMESH_MCS_JOB_RETRIES", 5),
             cluster_min_size=env.ensure_int("SQLMESH_MCS_CLUSTER_MIN_SIZE", 0),
             cluster_max_size=env.ensure_int("SQLMESH_MCS_CLUSTER_MAX_SIZE", 30),
+            execution_time=execution_time,
+            do_not_raise_on_failure=True,
         )
+        if not response:
+            yield from ()
+            return
 
         column_names = list(map(lambda col: col[0], columns))
         engine_dialect = context.engine_adapter.dialect
