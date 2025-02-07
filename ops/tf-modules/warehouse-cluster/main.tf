@@ -371,6 +371,8 @@ module "gke" {
   horizontal_pod_autoscaling = true
   filestore_csi_driver       = false
   deletion_protection        = false
+  monitoring_enable_managed_prometheus = true
+  monitoring_enabled_components = ["SYSTEM_COMPONENTS", "APISERVER", "SCHEDULER", "CONTROLLER_MANAGER"]
 
   node_pools = local.node_pools
 
