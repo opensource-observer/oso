@@ -100,7 +100,7 @@ derived_contracts as (
   from contracts_deployed_by_safe_or_known_proxy
 )
 
-select distinct
+select
   deployment_date,
   chain,
   originating_address,
