@@ -25,7 +25,7 @@ SYNC_KEY = "sync_to_db"
 def all_clickhouse_dbt_mart_assets(
     global_config: DagsterConfig,
 ) -> AssetFactoryResponse:
-    """Creates all Dagster assets from a map of manifests
+    """Deprecated: Creates all Dagster assets from a map of manifests
 
     Parameters
     ----------
@@ -38,6 +38,8 @@ def all_clickhouse_dbt_mart_assets(
     AssetsFactoryResponse
         a list of Dagster assets
     """
+
+    return AssetFactoryResponse([])
 
     manifests: Dict[str, Path] = global_config.dbt_manifests
 

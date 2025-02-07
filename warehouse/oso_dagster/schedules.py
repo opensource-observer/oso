@@ -122,9 +122,10 @@ schedules: list[ScheduleDefinition] = [
             "dagster/priority": "-1",
         },
     ),
+    # Run SBOM assets on Tuesday and Friday at midnight, since they take too long
     ScheduleDefinition(
         job=materialize_sbom_source_assets,
-        cron_schedule="0 0 * * *",
+        cron_schedule="0 0 * * 2,5",
         tags={
             "dagster/priority": "-1",
         },
