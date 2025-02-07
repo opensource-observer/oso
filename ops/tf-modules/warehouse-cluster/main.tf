@@ -7,10 +7,10 @@ locals {
   node_pools = concat([
     {
       name               = "${var.cluster_name}-default-node-pool"
-      machine_type       = "e2-standard-2"
+      machine_type       = "e2-standard-4"
       node_locations     = join(",", var.default_node_pool_cluster_zones)
       min_count          = 0
-      max_count          = 3
+      max_count          = 4
       local_ssd_count    = 0
       spot               = false
       disk_size_gb       = 50
@@ -371,6 +371,8 @@ module "gke" {
   horizontal_pod_autoscaling = true
   filestore_csi_driver       = false
   deletion_protection        = false
+  monitoring_enable_managed_prometheus = true
+  monitoring_enabled_components = ["SYSTEM_COMPONENTS", "APISERVER", "SCHEDULER", "CONTROLLER_MANAGER"]
 
   node_pools = local.node_pools
 
