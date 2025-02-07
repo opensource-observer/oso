@@ -30,13 +30,13 @@ MODEL (
 -- aggregate their tx_count on a weekly basis
 select
   date_trunc('week', dt) as week,
-  UPPER(derived_contracts.chain) as chain,
+  upper(derived_contracts.chain) as chain,
   contract_address,
   count(*) as tx_count
 from @oso_source('bigquery.optimism_superchain_raw_onchain_data.traces') as traces
 inner join metrics.int_derived_contracts as derived_contracts
   on traces.to_address = derived_contracts.contract_address
-  and traces.chain = derived_contracts.chain
+  and upper(traces.chain) = upper(derived_contracts.chain)
 where 
   traces.network = 'mainnet'
   and "status" = 1
