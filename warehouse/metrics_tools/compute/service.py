@@ -84,10 +84,16 @@ class MetricsCalculationService:
     gcs_bucket: str
     cluster_manager: ClusterManager
     cache_manager: CacheExportManager
+    last_listener_added_datetime: datetime
+    last_listener_removed_datetime: datetime
+    listener_count: int
     job_state: t.Dict[str, QueryJobState]
     job_tasks: t.Dict[str, asyncio.Task]
     job_state_lock: asyncio.Lock
     logger: logging.Logger
+    daemon: asyncio.Task
+    requested_cluster_min_size: int
+    requested_cluster_max_size: int
 
     @classmethod
     def setup(
@@ -109,6 +115,7 @@ class MetricsCalculationService:
             import_adapter=import_adapter,
             log_override=log_override,
         )
+        service.start_daemon()
         return service
 
     def __init__(
@@ -132,6 +139,9 @@ class MetricsCalculationService:
         self.job_state_lock = asyncio.Lock()
         self.logger = log_override or logger
         self.emitter = AsyncIOEventEmitter()
+        self.listener_count = 0
+        self.requested_cluster_min_size = 0
+        self.requested_cluster_max_size = 0
 
     async def handle_query_job_submit_request(
         self,
@@ -148,6 +158,40 @@ class MetricsCalculationService:
         except Exception as e:
             self.logger.error(f"job[{job_id}] failed with exception: {e}")
             await self._notify_job_failed(job_id, False, e)
+
+    def start_daemon(self):
+        """Starts a daemon coroutine that will run until the service is closed"""
+        self.daemon = asyncio.create_task(self._daemon())
+
+    async def _daemon(self):
+        while True:
+            await asyncio.sleep(60)
+
+            # Checks if there are listeners. If 0 and nothing has been added
+            # in the last 5 minutes we can scale down the cluster to 0. If
+            # nothing has been added in the last hour we can shutdown the entire
+            # dask cluster.
+            now = datetime.now()
+            if self.listener_count == 0:
+                last_listener_removed_delta = now - self.last_listener_removed_datetime
+                if last_listener_removed_delta.total_seconds() > 300:
+                    # If the cluster is already at 0 we don't need to do
+                    # anything just make sure everything is stopped
+                    if self.requested_cluster_max_size == 0:
+                        await self.cluster_manager.stop_cluster()
+
+                    await self.cluster_manager.start_cluster(
+                        0, self.requested_cluster_max_size
+                    )
+
+                if last_listener_removed_delta.total_seconds() > 3600:
+                    await self.cluster_manager.stop_cluster()
+
+    async def start_calculation_cluster(self, min_size: int, max_size: int):
+        await self.cluster_manager.start_cluster(min_size, max_size)
+
+    async def stop_calculation_cluster(self):
+        await self.cluster_manager.stop_cluster()
 
     async def _handle_query_job_submit_request(
         self,
@@ -289,6 +333,12 @@ class MetricsCalculationService:
     async def close(self):
         await self.cluster_manager.close()
         await self.cache_manager.stop()
+
+        self.daemon.cancel()
+        try:
+            await self.daemon
+        except asyncio.CancelledError:
+            pass
 
     async def start_cluster(self, start_request: ClusterStartRequest) -> ClusterStatus:
         self.logger.debug("starting cluster")
@@ -547,7 +597,11 @@ class MetricsCalculationService:
     def listen_for_job_updates(
         self, job_id: str, handler: t.Callable[[JobStatusResponse], t.Awaitable[None]]
     ):
-        self.logger.info("Listening for job updates")
+        self.last_listener_added_datetime = datetime.now()
+        self.listener_count += 1
+        self.logger.info(
+            f"Adding listener for job[{job_id}]. Total listeners: {self.listener_count}"
+        )
 
         async def convert_to_response(state: QueryJobState):
             self.logger.debug("converting to response")
@@ -556,7 +610,13 @@ class MetricsCalculationService:
         handle = self.emitter.add_listener(f"job_update:{job_id}", convert_to_response)
 
         def remove_listener():
-            return self.emitter.remove_listener(f"job_update:{job_id}", handle)
+            self.emitter.remove_listener(f"job_update:{job_id}", handle)
+            self.last_listener_removed_datetime = datetime.now()
+            self.listener_count -= 1
+            self.logger.info(
+                f"Removed listener for job[{job_id}]. Total listeners: {self.listener_count}"
+            )
+            return
 
         return remove_listener
 
