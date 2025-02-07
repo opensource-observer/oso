@@ -104,6 +104,8 @@ class MetricsCalculationService:
         cluster_manager: ClusterManager,
         cache_manager: CacheExportManager,
         import_adapter: DBImportAdapter,
+        cluster_scale_down_timeout: int = 300,
+        cluster_shutdown_timeout: int = 3600,
         log_override: t.Optional[logging.Logger] = None,
     ):
         service = cls(
@@ -112,6 +114,8 @@ class MetricsCalculationService:
             result_path_prefix,
             cluster_manager,
             cache_manager,
+            cluster_scale_down_timeout=cluster_scale_down_timeout,
+            cluster_shutdown_timeout=cluster_shutdown_timeout,
             import_adapter=import_adapter,
             log_override=log_override,
         )
@@ -126,6 +130,8 @@ class MetricsCalculationService:
         cluster_manager: ClusterManager,
         cache_manager: CacheExportManager,
         import_adapter: DBImportAdapter,
+        cluster_scale_down_timeout: int = 300,
+        cluster_shutdown_timeout: int = 3600,
         log_override: t.Optional[logging.Logger] = None,
     ):
         self.id = id
@@ -142,6 +148,8 @@ class MetricsCalculationService:
         self.listener_count = 0
         self.requested_cluster_min_size = 0
         self.requested_cluster_max_size = 0
+        self.cluster_shutdown_timeout = cluster_shutdown_timeout
+        self.cluster_scale_down_timeout = cluster_scale_down_timeout
 
     async def handle_query_job_submit_request(
         self,
@@ -164,19 +172,26 @@ class MetricsCalculationService:
         self.daemon = asyncio.create_task(self._daemon())
 
     async def _daemon(self):
+        scaled_down = False
+        shutdown = False
         while True:
             await asyncio.sleep(60)
 
             # Checks if there are listeners. If 0 and nothing has been added
-            # in the last 5 minutes we can scale down the cluster to 0. If
-            # nothing has been added in the last hour we can shutdown the entire
+            # in the last X seconds (cluster_scale_down_timeout) we can scale down the
+            # cluster to 0. If nothing has been added in the last Y seconds
+            # (cluster_shutdown_timeout) time we can shutdown the entire
             # dask cluster.
             now = datetime.now()
             if self.listener_count == 0:
                 last_listener_removed_delta = now - self.last_listener_removed_datetime
-                if last_listener_removed_delta.total_seconds() > 300:
+                if (
+                    last_listener_removed_delta.total_seconds()
+                    > self.cluster_scale_down_timeout
+                ) and not scaled_down:
                     # If the cluster is already at 0 we don't need to do
                     # anything just make sure everything is stopped
+                    scaled_down = True
                     if self.requested_cluster_max_size == 0:
                         await self.cluster_manager.stop_cluster()
 
@@ -184,14 +199,16 @@ class MetricsCalculationService:
                         0, self.requested_cluster_max_size
                     )
 
-                if last_listener_removed_delta.total_seconds() > 3600:
+                elif (
+                    last_listener_removed_delta.total_seconds()
+                    > self.cluster_shutdown_timeout
+                ) and not shutdown:
                     await self.cluster_manager.stop_cluster()
-
-    async def start_calculation_cluster(self, min_size: int, max_size: int):
-        await self.cluster_manager.start_cluster(min_size, max_size)
-
-    async def stop_calculation_cluster(self):
-        await self.cluster_manager.stop_cluster()
+                    shutdown = True
+                else:
+                    # If we are not scaling down or shutting down then we reset these states
+                    scaled_down = False
+                    shutdown = False
 
     async def _handle_query_job_submit_request(
         self,
@@ -342,6 +359,10 @@ class MetricsCalculationService:
 
     async def start_cluster(self, start_request: ClusterStartRequest) -> ClusterStatus:
         self.logger.debug("starting cluster")
+
+        self.requested_cluster_max_size = start_request.max_size
+        self.requested_cluster_min_size = start_request.min_size
+
         return await self.cluster_manager.start_cluster(
             start_request.min_size, start_request.max_size
         )
