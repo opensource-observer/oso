@@ -104,7 +104,7 @@ To do this, we take the total amount of tokens projects were granted in RF3 and 
 - Below 5K OP per developer (47 projects)
 - 5-10K OP per developer (43 projects)
 - 10-20K OP per developer (60 projects)
-- Over 20K OP per developer (51 projecs)
+- Over 20K OP per developer (51 projects)
 
 We then calculate the net change in developer activity for each sub-cohort and the mean across each distribution. These results are shown in the chart below.
 
