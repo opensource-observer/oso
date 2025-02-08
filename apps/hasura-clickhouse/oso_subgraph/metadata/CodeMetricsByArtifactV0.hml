@@ -323,11 +323,15 @@ definition:
   graphql:
     selectMany:
       queryRootField: oso_codeMetricsByArtifactV0
+      subscription:
+        rootField: oso_codeMetricsByArtifactV0
     selectUniques: []
     orderByExpressionType: Oso_CodeMetricsByArtifactV0OrderBy
     filterInputTypeName: Oso_CodeMetricsByArtifactV0FilterInput
     aggregate:
       queryRootField: oso_codeMetricsByArtifactV0Aggregate
+      subscription:
+        rootField: oso_codeMetricsByArtifactV0Aggregate
 
 ---
 kind: ModelPermissions
@@ -338,6 +342,7 @@ definition:
     - role: admin
       select:
         filter: null
+        allowSubscriptions: true
     - role: anonymous
       select:
         filter: null

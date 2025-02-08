@@ -85,11 +85,15 @@ definition:
   graphql:
     selectMany:
       queryRootField: oso_eventTypesV1
+      subscription:
+        rootField: oso_eventTypesV1
     selectUniques: []
     orderByExpressionType: Oso_EventTypesV1OrderBy
     filterInputTypeName: Oso_EventTypesV1FilterInput
     aggregate:
       queryRootField: oso_eventTypesV1Aggregate
+      subscription:
+        rootField: oso_eventTypesV1Aggregate
 
 ---
 kind: ModelPermissions
@@ -100,6 +104,7 @@ definition:
     - role: admin
       select:
         filter: null
+        allowSubscriptions: true
     - role: anonymous
       select:
         filter: null

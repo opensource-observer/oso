@@ -13,7 +13,7 @@ definition:
     - name: sampleDate
       type: Date!
     - name: unit
-      type: String
+      type: String!
   graphql:
     typeName: Oso_TimeseriesMetricsByCollectionV0
     inputTypeName: Oso_TimeseriesMetricsByCollectionV0Input
@@ -141,6 +141,8 @@ definition:
   graphql:
     selectMany:
       queryRootField: oso_timeseriesMetricsByCollectionV0
+      subscription:
+        rootField: oso_timeseriesMetricsByCollectionV0
     selectUniques:
       - queryRootField: oso_timeseriesMetricsByCollectionV0ByMetricIdCollectionIdSampleDate
         uniqueIdentifier:
@@ -151,6 +153,8 @@ definition:
     filterInputTypeName: Oso_TimeseriesMetricsByCollectionV0FilterInput
     aggregate:
       queryRootField: oso_timeseriesMetricsByCollectionV0Aggregate
+      subscription:
+        rootField: oso_timeseriesMetricsByCollectionV0Aggregate
 
 ---
 kind: ModelPermissions
@@ -161,6 +165,7 @@ definition:
     - role: admin
       select:
         filter: null
+        allowSubscriptions: true
     - role: anonymous
       select:
         filter: null

@@ -197,6 +197,8 @@ definition:
   graphql:
     selectMany:
       queryRootField: oso_metricsV0
+      subscription:
+        rootField: oso_metricsV0
     selectUniques:
       - queryRootField: oso_metricsV0ByMetricSourceMetricNamespaceMetricName
         uniqueIdentifier:
@@ -207,6 +209,8 @@ definition:
     filterInputTypeName: Oso_MetricsV0FilterInput
     aggregate:
       queryRootField: oso_metricsV0Aggregate
+      subscription:
+        rootField: oso_metricsV0Aggregate
 
 ---
 kind: ModelPermissions
@@ -217,6 +221,7 @@ definition:
     - role: admin
       select:
         filter: null
+        allowSubscriptions: true
     - role: anonymous
       select:
         filter: null

@@ -112,6 +112,24 @@ SELECT * FROM "source"."default"."artifacts_by_project_v1_source";
 
 ```sql
 
+CREATE OR REPLACE TABLE contracts_v0_import
+(
+    deployment_date Date,
+    contract_address String,
+    contract_namespace String,
+    originating_address String,
+    factory_address String,
+    root_deployer_address String,
+    sort_weight Int
+)
+ENGINE = MergeTree()
+ORDER BY deployment_date;
+
+INSERT INTO contracts_v0_import
+  SELECT *
+  FROM s3Cluster('default', 'gs://oso-dataset-transfer-bucket/trino-export/2025/02/07/19/export_contracts_v0_tester/20250207_192340_07703_6f5mp_281dd1c6-8077-40c4-9ea5-04e8a07b8558');
+
+
 CREATE OR REPLACE TABLE timeseries_metrics_to_artifact
 (
     metrics_sample_date Date,
