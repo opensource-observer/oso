@@ -1,14 +1,6 @@
 MODEL (
   name metrics.int_factories,
-  kind INCREMENTAL_BY_TIME_RANGE (
-    time_column block_timestamp,
-    batch_size 365,
-    batch_concurrency 1,
-    --forward_only true,
-    --on_destructive_change warn
-  ),
-  start '2021-10-01',
-  partitioned_by (DAY("block_timestamp"), "chain"),
+  VIEW
 );
 
 select
@@ -18,5 +10,6 @@ select
   originating_contract,
   factory_address,
   contract_address,
+  create_type,
   UPPER(chain) as chain 
 from metrics.stg_superchain__factories
