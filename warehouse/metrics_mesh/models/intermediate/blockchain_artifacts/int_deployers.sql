@@ -5,6 +5,7 @@ MODEL (
     batch_size 365,
     batch_concurrency 1
   ),
+  start '2021-10-01',
   partitioned_by (DAY("block_timestamp"), "chain"),
 );
 

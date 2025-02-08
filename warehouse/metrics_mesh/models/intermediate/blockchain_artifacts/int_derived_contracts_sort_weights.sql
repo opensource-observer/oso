@@ -11,34 +11,22 @@
 -- INCREMENTAL_BY_TIME_RANGE model for now.
 
 MODEL (
-  name metrics.int_derived_contracts_transactions_weekly,
-  kind INCREMENTAL_BY_TIME_RANGE (
-    time_column week,
-    batch_size 365,
-    batch_concurrency 1,
-    --forward_only true,
-    --on_destructive_change warn
-  ),
-  cron '@weekly',
-  partitioned_by DAY(week),
-  -- We only need to start a year before from the time we start using this
-  -- model. We are using this as a way to categorize model ordering.
-  start '2024-08-01'
+  name metrics.int_derived_contracts_sort_weights,
+  kind FULL
 );
+
+@DEF(start, current_date() - INTERVAL 180 DAY);
+@DEF(end, current_date());
 
 -- Find all transactions involving the contracts from `derived_contracts` and
 -- aggregate their tx_count on a weekly basis
 select
-  date_trunc('week', dt) as week,
-  UPPER(derived_contracts.chain) as chain,
-  contract_address,
-  count(*) as tx_count
-from @oso_source('bigquery.optimism_superchain_raw_onchain_data.traces') as traces
+  upper(derived_contracts.chain) as chain,
+  transactions_weekly.contract_address,
+  SUM(transactions_weekly.tx_count) as sort_weight
+from metrics.int_contracts_transactions_weekly as transactions_weekly
 inner join metrics.int_derived_contracts as derived_contracts
-  on traces.to_address = derived_contracts.contract_address
-  and traces.chain = derived_contracts.chain
-where 
-  traces.network = 'mainnet'
-  and "status" = 1
-  and dt between @start_date and @end_date
-group by 1, 2, 3
+  on derived_contracts.contract_address = transactions_weekly.contract_address
+  and upper(transactions_weekly.chain) = upper(derived_contracts.chain)
+where transactions_weekly.week between @start and @end
+group by 1, 2
