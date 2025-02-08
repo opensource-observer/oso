@@ -43,7 +43,7 @@ Most of the analysis in this post focuses on the 315 OSS projects that participa
 
 ## Trends in Developer Activity Before/After RF3
 
-Developer activity is a key metric for measuring the health and growth of OSS projects. Builder numbers are up across the board since RF3, especially for projects that have been in more than one round, and even when compared to a baseline group of projets that have never received RF.
+Developer activity is a key metric for measuring the health and growth of OSS projects. Builder numbers are up across the board since RF3, especially for projects that have been in more than one round, and even when compared to a baseline group of projects that have never received RF.
 
 ### Methodology
 
@@ -91,7 +91,7 @@ We can perform a similar analysis against a baseline group of projects that have
 
 ![Monthly Active Devs Comparison](output_14_1.png)
 
-We can also plot the absoluate differences in developer numbers before/after RF3 for each project in the cohort as a histogram. The distribution is a nice bell curve with a slight positive skew, indicating more projects saw a small increase (rather than decrease) in developer activity. Note that the x-axis has been truncated to focus on the majority of projects.
+We can also plot the absolute differences in developer numbers before/after RF3 for each project in the cohort as a histogram. The distribution is a nice bell curve with a slight positive skew, indicating more projects saw a small increase (rather than decrease) in developer activity. Note that the x-axis has been truncated to focus on the majority of projects.
 
 ![Net Change in Activity](output_15_1.png)
 
