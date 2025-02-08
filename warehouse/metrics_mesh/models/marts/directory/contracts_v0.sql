@@ -7,7 +7,7 @@ MODEL (
 );
 
 select
-  deployment_timestamp,
+  date_trunc('day', deployment_timestamp) as deployment_date,
   contract_address,
   contract_namespace,
   originating_address,
