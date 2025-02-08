@@ -267,7 +267,7 @@ timeseries_metrics(
             over_all_time=True,
         ),
         "transactions": MetricQueryDef(
-            ref="blockchains/transactions.sql",
+            ref="blockchain/transactions.sql",
             rolling=RollingConfig(
                 windows=[30, 90, 180],
                 unit="day",
