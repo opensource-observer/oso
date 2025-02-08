@@ -155,11 +155,15 @@ definition:
   graphql:
     selectMany:
       queryRootField: oso_projectsV1
+      subscription:
+        rootField: oso_projectsV1
     selectUniques: []
     orderByExpressionType: Oso_ProjectsV1OrderBy
     filterInputTypeName: Oso_ProjectsV1FilterInput
     aggregate:
       queryRootField: oso_projectsV1Aggregate
+      subscription:
+        rootField: oso_projectsV1Aggregate
 
 ---
 kind: ModelPermissions
@@ -170,6 +174,7 @@ definition:
     - role: admin
       select:
         filter: null
+        allowSubscriptions: true
     - role: anonymous
       select:
         filter: null

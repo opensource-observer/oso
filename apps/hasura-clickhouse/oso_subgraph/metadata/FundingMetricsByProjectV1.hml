@@ -197,11 +197,15 @@ definition:
   graphql:
     selectMany:
       queryRootField: oso_fundingMetricsByProjectV1
+      subscription:
+        rootField: oso_fundingMetricsByProjectV1
     selectUniques: []
     orderByExpressionType: Oso_FundingMetricsByProjectV1OrderBy
     filterInputTypeName: Oso_FundingMetricsByProjectV1FilterInput
     aggregate:
       queryRootField: oso_fundingMetricsByProjectV1Aggregate
+      subscription:
+        rootField: oso_fundingMetricsByProjectV1Aggregate
 
 ---
 kind: ModelPermissions
@@ -212,6 +216,7 @@ definition:
     - role: admin
       select:
         filter: null
+        allowSubscriptions: true
     - role: anonymous
       select:
         filter: null

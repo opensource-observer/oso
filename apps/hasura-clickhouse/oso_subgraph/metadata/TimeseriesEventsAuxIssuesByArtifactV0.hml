@@ -1,0 +1,264 @@
+---
+kind: ObjectType
+version: v1
+definition:
+  name: TimeseriesEventsAuxIssuesByArtifactV0
+  fields:
+    - name: closedAt
+      type: DateTime!
+    - name: comments
+      type: String!
+    - name: createdAt
+      type: DateTime!
+    - name: eventSource
+      type: String!
+    - name: eventSourceId
+      type: String!
+    - name: eventType
+      type: String!
+    - name: fromArtifactId
+      type: String!
+    - name: issueId
+      type: String!
+    - name: issueNumber
+      type: String!
+    - name: mergedAt
+      type: DateTime!
+    - name: time
+      type: DateTime!
+    - name: toArtifactId
+      type: String!
+  graphql:
+    typeName: Oso_TimeseriesEventsAuxIssuesByArtifactV0
+    inputTypeName: Oso_TimeseriesEventsAuxIssuesByArtifactV0Input
+  dataConnectorTypeMapping:
+    - dataConnectorName: oso_clickhouse
+      dataConnectorObjectType: timeseries_events_aux_issues_by_artifact_v0
+      fieldMapping:
+        closedAt:
+          column:
+            name: closed_at
+        comments:
+          column:
+            name: comments
+        createdAt:
+          column:
+            name: created_at
+        eventSource:
+          column:
+            name: event_source
+        eventSourceId:
+          column:
+            name: event_source_id
+        eventType:
+          column:
+            name: event_type
+        fromArtifactId:
+          column:
+            name: from_artifact_id
+        issueId:
+          column:
+            name: issue_id
+        issueNumber:
+          column:
+            name: issue_number
+        mergedAt:
+          column:
+            name: merged_at
+        time:
+          column:
+            name: time
+        toArtifactId:
+          column:
+            name: to_artifact_id
+
+---
+kind: TypePermissions
+version: v1
+definition:
+  typeName: TimeseriesEventsAuxIssuesByArtifactV0
+  permissions:
+    - role: admin
+      output:
+        allowedFields:
+          - closedAt
+          - comments
+          - createdAt
+          - eventSource
+          - eventSourceId
+          - eventType
+          - fromArtifactId
+          - issueId
+          - issueNumber
+          - mergedAt
+          - time
+          - toArtifactId
+    - role: anonymous
+      output:
+        allowedFields:
+          - closedAt
+          - comments
+          - createdAt
+          - eventSource
+          - eventSourceId
+          - eventType
+          - fromArtifactId
+          - issueId
+          - issueNumber
+          - mergedAt
+          - time
+          - toArtifactId
+
+---
+kind: BooleanExpressionType
+version: v1
+definition:
+  name: TimeseriesEventsAuxIssuesByArtifactV0BoolExp
+  operand:
+    object:
+      type: TimeseriesEventsAuxIssuesByArtifactV0
+      comparableFields:
+        - fieldName: closedAt
+          booleanExpressionType: DateTimeBoolExp
+        - fieldName: comments
+          booleanExpressionType: StringBoolExp
+        - fieldName: createdAt
+          booleanExpressionType: DateTimeBoolExp
+        - fieldName: eventSource
+          booleanExpressionType: StringBoolExp
+        - fieldName: eventSourceId
+          booleanExpressionType: StringBoolExp
+        - fieldName: eventType
+          booleanExpressionType: StringBoolExp
+        - fieldName: fromArtifactId
+          booleanExpressionType: StringBoolExp
+        - fieldName: issueId
+          booleanExpressionType: StringBoolExp
+        - fieldName: issueNumber
+          booleanExpressionType: StringBoolExp
+        - fieldName: mergedAt
+          booleanExpressionType: DateTimeBoolExp
+        - fieldName: time
+          booleanExpressionType: DateTimeBoolExp
+        - fieldName: toArtifactId
+          booleanExpressionType: StringBoolExp
+      comparableRelationships: []
+  logicalOperators:
+    enable: true
+  isNull:
+    enable: true
+  graphql:
+    typeName: Oso_TimeseriesEventsAuxIssuesByArtifactV0BoolExp
+
+---
+kind: AggregateExpression
+version: v1
+definition:
+  name: TimeseriesEventsAuxIssuesByArtifactV0AggExp
+  operand:
+    object:
+      aggregatedType: TimeseriesEventsAuxIssuesByArtifactV0
+      aggregatableFields:
+        - fieldName: closedAt
+          aggregateExpression: DateTimeAggExp
+        - fieldName: comments
+          aggregateExpression: StringAggExp
+        - fieldName: createdAt
+          aggregateExpression: DateTimeAggExp
+        - fieldName: eventSource
+          aggregateExpression: StringAggExp
+        - fieldName: eventSourceId
+          aggregateExpression: StringAggExp
+        - fieldName: eventType
+          aggregateExpression: StringAggExp
+        - fieldName: fromArtifactId
+          aggregateExpression: StringAggExp
+        - fieldName: issueId
+          aggregateExpression: StringAggExp
+        - fieldName: issueNumber
+          aggregateExpression: StringAggExp
+        - fieldName: mergedAt
+          aggregateExpression: DateTimeAggExp
+        - fieldName: time
+          aggregateExpression: DateTimeAggExp
+        - fieldName: toArtifactId
+          aggregateExpression: StringAggExp
+  count:
+    enable: true
+  graphql:
+    selectTypeName: Oso_TimeseriesEventsAuxIssuesByArtifactV0AggExp
+
+---
+kind: OrderByExpression
+version: v1
+definition:
+  name: TimeseriesEventsAuxIssuesByArtifactV0OrderByExp
+  operand:
+    object:
+      orderedType: TimeseriesEventsAuxIssuesByArtifactV0
+      orderableFields:
+        - fieldName: closedAt
+          orderByExpression: DateTimeOrderByExp
+        - fieldName: comments
+          orderByExpression: StringOrderByExp
+        - fieldName: createdAt
+          orderByExpression: DateTimeOrderByExp
+        - fieldName: eventSource
+          orderByExpression: StringOrderByExp
+        - fieldName: eventSourceId
+          orderByExpression: StringOrderByExp
+        - fieldName: eventType
+          orderByExpression: StringOrderByExp
+        - fieldName: fromArtifactId
+          orderByExpression: StringOrderByExp
+        - fieldName: issueId
+          orderByExpression: StringOrderByExp
+        - fieldName: issueNumber
+          orderByExpression: StringOrderByExp
+        - fieldName: mergedAt
+          orderByExpression: DateTimeOrderByExp
+        - fieldName: time
+          orderByExpression: DateTimeOrderByExp
+        - fieldName: toArtifactId
+          orderByExpression: StringOrderByExp
+      orderableRelationships: []
+  graphql:
+    expressionTypeName: Oso_TimeseriesEventsAuxIssuesByArtifactV0OrderByExp
+
+---
+kind: Model
+version: v2
+definition:
+  name: TimeseriesEventsAuxIssuesByArtifactV0
+  objectType: TimeseriesEventsAuxIssuesByArtifactV0
+  source:
+    dataConnectorName: oso_clickhouse
+    collection: timeseries_events_aux_issues_by_artifact_v0
+  filterExpressionType: TimeseriesEventsAuxIssuesByArtifactV0BoolExp
+  aggregateExpression: TimeseriesEventsAuxIssuesByArtifactV0AggExp
+  orderByExpression: TimeseriesEventsAuxIssuesByArtifactV0OrderByExp
+  graphql:
+    selectMany:
+      queryRootField: oso_timeseriesEventsAuxIssuesByArtifactV0
+      subscription:
+        rootField: oso_timeseriesEventsAuxIssuesByArtifactV0
+    selectUniques: []
+    filterInputTypeName: Oso_TimeseriesEventsAuxIssuesByArtifactV0FilterInput
+    aggregate:
+      queryRootField: oso_timeseriesEventsAuxIssuesByArtifactV0Aggregate
+      subscription:
+        rootField: oso_timeseriesEventsAuxIssuesByArtifactV0Aggregate
+
+---
+kind: ModelPermissions
+version: v1
+definition:
+  modelName: TimeseriesEventsAuxIssuesByArtifactV0
+  permissions:
+    - role: admin
+      select:
+        filter: null
+        allowSubscriptions: true
+    - role: anonymous
+      select:
+        filter: null
