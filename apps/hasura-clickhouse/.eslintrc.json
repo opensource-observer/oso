@@ -2,6 +2,6 @@
   "extends": ["../../.eslintrc.js"],
   "root": false,
   "parserOptions": {
-    "project": ["./apps/hasura3/tsconfig.json"]
+    "project": ["./apps/hasura-clickhouse/tsconfig.json"]
   }
 }

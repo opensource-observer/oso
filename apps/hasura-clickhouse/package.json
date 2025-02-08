@@ -1,5 +1,5 @@
 {
-  "name": "@opensource-observer/hasura3",
+  "name": "@opensource-observer/hasura-clickhouse",
   "version": "0.0.1",
   "description": "API service for OSO",
   "author": "Kariba Labs",
