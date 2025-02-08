@@ -1,6 +1,6 @@
 test_events_daily_to_artifact:
   gateway: local
-  model: metrics.events_daily_to_artifact
+  model: metrics.int_events_daily_to_artifact
   vars:
     start: 2024-01-01
     end: 2024-02-01
