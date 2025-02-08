@@ -11,7 +11,7 @@ import typing as t
 from contextlib import asynccontextmanager
 
 from dagster import ConfigurableResource
-from kr8s.objects import Deployment, Service
+from kr8s.asyncio.objects import Deployment, Service
 
 logger = logging.getLogger(__name__)
 
@@ -57,14 +57,17 @@ class K8sResource(ConfigurableResource):
             "ensure_deployment_scale_down not implemented on the base K8sResource"
         )
 
-    async def get_service_connection(self, name: str, namespace: str, port_name: str):
+    @asynccontextmanager
+    def get_service_connection(
+        self, name: str, namespace: str, port_name: str, use_port_forward: bool = False
+    ) -> t.AsyncIterator[t.Tuple[str, int]]:
         """Returns the host:port url to the service."""
         raise NotImplementedError(
             "get_service_connection not implemented on the base K8sResource"
         )
 
 
-class PodLocalK8sResource(ConfigurableResource):
+class K8sApiResource(ConfigurableResource):
     """Resource for interacting with kubernetes from within a pod. This is more
     of a convenience utility. However, we encapsulate interactions with k8s
     resources here to make it easier to mock any k8s interactions in dagster
@@ -146,11 +149,19 @@ class PodLocalK8sResource(ConfigurableResource):
                 await result
         return (starting_replicas, deployment.replicas)
 
-    async def get_service_connection(self, name: str, namespace: str, port_name: str):
+    @asynccontextmanager
+    async def get_service_connection(
+        self, name: str, namespace: str, port_name: str, use_port_forward: bool = False
+    ):
         """Returns the host:port url to the service."""
-        service = await Service.get(name=name, namespace=namespace)
+        service = t.cast(Service, await Service.get(name=name, namespace=namespace))
         ports = t.cast(t.List[dict], service.spec.ports)
         ports_lookup = {port["name"]: port["port"] for port in ports}
-        return f"{service.name}.{service.namespace}.svc.cluster.local", int(
-            ports_lookup[port_name]
-        )
+        port = int(ports_lookup[port_name])
+        if not use_port_forward:
+            yield f"{service.name}.{service.namespace}.svc.cluster.local", port
+            return
+        else:
+            pf = service.portforward(remote_port=port)
+            async with pf as local_port:
+                yield "localhost", local_port
