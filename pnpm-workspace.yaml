@@ -1,7 +1,7 @@
 packages:
   - "apps/docs"
   - "apps/frontend"
-  - "apps/hasura3"
+  - "apps/hasura-clickhouse"
   - "lib/oss-artifact-validators"
   - "lib/utils"
   - "ops/external-prs"
