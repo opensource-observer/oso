@@ -48,7 +48,12 @@ class ClickhouseImporter(ImporterInterface):
             loading_table_fqn,
             export_reference.columns.columns_as("clickhouse"),
         )
-        import_path = f"https://storage.googleapis.com/{gcs_bucket}/{gcs_blob_path}/*"
+        # We need the `2*` to match the files that are created by the export
+        # this is a bit of a hack due to some weird behavior in clickhouse that
+        # changed sometime around 2025-02-01. The `2*` is used because trino
+        # prefixes files with the date. So this will work for the next 975 years
+        # or so. Hopefully that's enough time.
+        import_path = f"https://storage.googleapis.com/{gcs_bucket}/{gcs_blob_path}/2*"
         self.logger.debug(f"Importing table {loading_table_fqn} from {gcs_path}")
         import_data(
             self.ch,
