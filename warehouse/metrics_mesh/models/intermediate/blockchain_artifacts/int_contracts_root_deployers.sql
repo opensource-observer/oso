@@ -8,15 +8,15 @@
 -- factory within that time and was also deployed within that time a row will be
 -- created in this model. 
 MODEL (
-  name metrics.int_factory_root_deployers,
+  name metrics.int_contracts_root_deployers,
   kind INCREMENTAL_BY_TIME_RANGE (
-    time_column deployment_date,
+    time_column deployment_timestamp,
     batch_size 30,
     batch_concurrency 1,
     lookback 30
     --forward_only true
   ),
-  partitioned_by (DAY("deployment_date"), "chain")
+  partitioned_by (DAY("deployment_timestamp"), "chain")
 );
 
 -- Take all of the contracts deployed up till now and find the root deployer
@@ -28,9 +28,30 @@ with existing_contracts as (
   where deployment_timestamp < @start_dt
 ), new_contracts as (
   select
-    *
-  from metrics.int_contracts_factory_deployed
+    deployment_timestamp,
+    chain,
+    transaction_hash,
+    originating_address,
+    contract_address,
+    -- if the originating address is the same as the factory address then
+    -- this was a create_type of create and deployed directly by an EOA
+    case
+      when originating_address = factory_address then null
+      else factory_address
+    end as factory_address,
+    create_type,
+    case 
+      when originating_address = factory_address then originating_address
+      when is_proxy then originating_address
+      else null
+    end as root_deployer_address,
+    0 as depth
+  from metrics.int_contracts_deployment
   where deployment_timestamp between @start_dt and @end_dt
+), all_contracts as (
+  select * from existing_contracts
+  union all 
+  select * from new_contracts
 ), new_resolved as (
   select
     new.deployment_timestamp,
@@ -40,56 +61,26 @@ with existing_contracts as (
     new.contract_address,
     new.factory_address,
     new.create_type,
-    existing.root_deployer_address,
-    existing.depth + 1 as depth
+    case 
+      when new.root_deployer_address is not null then new.root_deployer_address
+      else all.originating_address
+    end as root_deployer_address,
+    new.depth + 1 as depth
   from new_contracts as new
-  inner join existing_contracts as existing
+  left join all_contracts as all 
     on
-      new.chain = existing.chain
-      and new.factory_address = existing.contract_address
-  where 
-    existing.root_deployer_address is not null
-), all_resolved as (
-  select * from new_resolved as new
-  union all
-  select * from existing_contracts
-), new_unresolved as (
-  select * from new_contracts
-  where contract_address not in (
-    select contract_address from all_resolved 
-  )
-), recursive root_deployers as (
-  select
-    deployment_date,
-    chain,
-    originating_address,
-    contract_address,
-    factory_address,
-    NULL as root_deployer_address,
-    0 as depth
-  from new_unresolved
-
-  union all
-
-  -- The only time we will have a NULL root deployer address is if we have never
-  -- resolved that contract's root deployer before. So that means either:
-  --   1. The graph of this contract was deployed in the last period of time
-  --   2. The graph of this contract is somehow missing
-  -- The hope is because this is an incremental model we will eventually resolve
-  -- all of the contracts' root deployers. 
-
-  select
-    recursed.deployment_date,
-    recursed.chain,
-    recursed.originating_address,
-    recursed.contract_address,
-    recursed.factory_address,
-    new.
-    recursed.depth + 1 as depth
-  from new_unresolved as new 
-  inner join root_deployers as recursed
-    on
-      recursed.chain = new.chain
-      and recursed.factory_address = new.contract_address
-      and recursed.depth < 4
+      all.chain = new.chain
+      and all.contract_address = new.factory_address
 )
+select 
+  deployment_timestamp::TIMESTAMP,
+  chain::VARCHAR,
+  transaction_hash::VARCHAR,
+  originating_address::VARCHAR,
+  contract_address::VARCHAR,
+  factory_address::VARCHAR,
+  create_type::VARCHAR,
+  root_deployer_address::VARCHAR,
+  depth::INT
+from new_resolved
+

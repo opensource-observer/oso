@@ -7,7 +7,7 @@ MODEL (
 );
 
 select
-  deployment_date,
+  deployment_timestamp,
   contract_address,
   contract_namespace,
   originating_address,

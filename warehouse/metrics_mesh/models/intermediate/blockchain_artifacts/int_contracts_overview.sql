@@ -4,7 +4,7 @@ MODEL (
 );
 
 select
-  derived_contracts.deployment_date as deployment_date,
+  derived_contracts.deployment_timestamp as deployment_timestamp,
   derived_contracts.contract_address,
   derived_contracts.chain as contract_namespace,
   derived_contracts.originating_address as originating_address,

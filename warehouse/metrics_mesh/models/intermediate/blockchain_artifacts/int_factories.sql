@@ -1,6 +1,6 @@
 MODEL (
   name metrics.int_factories,
-  VIEW
+  kind VIEW
 );
 
 select
