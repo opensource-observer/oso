@@ -354,7 +354,7 @@ Usage:
 
 The passed in date should be the date column of a given time series event
 source. In all cases that must use this, this is just
-`events_daily_to_artifact.bucket_day`.
+`int_events_daily_to_artifact.bucket_day`.
 
 ### `@metric_start` and `@metric_end`
 
