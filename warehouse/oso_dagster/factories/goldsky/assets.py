@@ -1150,7 +1150,6 @@ def goldsky_asset(
         cbt: CBTResource,
         config: dict,
     ) -> None:
-        print(config)
         gs_asset = GoldskyAsset(gcs, bigquery, cbt, asset_config)
         gs_asset.clean_up(context.log)
 

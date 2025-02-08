@@ -1,13 +1,14 @@
 import logging
 import os
+import warnings
 
-from dagster import Definitions
+from dagster import Definitions, ExperimentalWarning
 from dagster_dbt import DbtCliResource
 from dagster_embedded_elt.dlt import DagsterDltResource
 from dagster_gcp import BigQueryResource, GCSResource
 from dagster_k8s import k8s_job_executor
 from dagster_sqlmesh import SQLMeshContextConfig, SQLMeshResource
-from dotenv import load_dotenv
+from dotenv import find_dotenv, load_dotenv
 from metrics_tools.utils.logging import setup_module_logging
 from oso_dagster.resources.bq import BigQueryImporterResource
 from oso_dagster.resources.clickhouse import ClickhouseImporterResource
@@ -31,10 +32,10 @@ from .factories.alerts import setup_alert_sensor
 from .resources import (
     BigQueryDataTransferResource,
     ClickhouseResource,
+    K8sApiResource,
     K8sResource,
     MCSK8sResource,
     MCSRemoteResource,
-    PodLocalK8sResource,
     PrefixedSQLMeshTranslator,
     Trino2BigQuerySQLMeshExporter,
     Trino2ClickhouseSQLMeshExporter,
@@ -54,10 +55,15 @@ from .utils import (
 
 logger = logging.getLogger(__name__)
 
+if os.environ.get("ENV") == "local":
+    load_dotenv(find_dotenv(".env.local"))
+elif os.environ.get("ENV") == "production":
+    load_dotenv(find_dotenv(".env.production"))
 load_dotenv()
 
 
 def load_definitions():
+    warnings.filterwarnings("ignore", category=ExperimentalWarning)
     setup_module_logging("oso_dagster")
     # Load the configuration for the project
     global_config = DagsterConfig()  # type: ignore
@@ -127,19 +133,21 @@ def load_definitions():
 
     else:
         logger.info("Loading k8s resources")
-        k8s = PodLocalK8sResource()
+        k8s = K8sApiResource()
         trino = TrinoK8sResource(
             k8s=k8s,
             namespace=global_config.trino_k8s_namespace,
             service_name=global_config.trino_k8s_service_name,
             coordinator_deployment_name=global_config.trino_k8s_coordinator_deployment_name,
             worker_deployment_name=global_config.trino_k8s_worker_deployment_name,
+            use_port_forward=global_config.k8s_use_port_forward,
         )
         mcs = MCSK8sResource(
             k8s=k8s,
             namespace=global_config.mcs_k8s_namespace,
             service_name=global_config.mcs_k8s_service_name,
             deployment_name=global_config.mcs_k8s_deployment_name,
+            use_port_forward=global_config.k8s_use_port_forward,
         )
         sqlmesh_exporter = [
             Trino2ClickhouseSQLMeshExporter(

@@ -76,6 +76,8 @@ class DagsterConfig(BaseSettings):
     # `enable_k8s_executor` is used to enable k8s executor for dagster
     enable_k8s: bool = False
 
+    k8s_use_port_forward: bool = False
+
     trino_remote_url: str = "http://localhost:8080"
     trino_k8s_namespace: str = ""
     trino_k8s_service_name: str = ""

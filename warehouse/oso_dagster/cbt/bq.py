@@ -1,13 +1,17 @@
 # Query tools for bigquery tables
-from typing import List, cast, Optional, Dict, NotRequired, TypedDict
+import logging
 from functools import cache
+from typing import Dict, List, NotRequired, Optional, TypedDict, cast
 
 from google.cloud.bigquery import Client, Table, TableReference
 from google.cloud.bigquery.table import RowIterator
 from sqlglot import expressions as exp
-from .context import Connector, ColumnList
+
+from .context import ColumnList, Connector
 
 type ExtraVarType = str | int
+
+logger = logging.getLogger(__name__)
 
 
 class MetricQueryInput(TypedDict):
@@ -22,7 +26,7 @@ class TableLoader:
         self.bq = bq
 
     def __call__(self, table_ref: TableReference | Table | str):
-        print(table_ref)
+        logger.debug(table_ref)
         return BigQueryTableQueryHelper.load_by_table(self.bq, table_ref)
 
 
@@ -136,8 +140,6 @@ class BigQueryTableQueryHelper:
 
         # If the other table is included then we can ensure only matching fields are contained
         if source_table is not None:
-            print("WHAT IS THIS")
-            print(source_table._table_ref)
             source_column_names = set(
                 map(lambda c: c.column_name, source_table.columns)
             )
@@ -147,10 +149,6 @@ class BigQueryTableQueryHelper:
                 additional_columns = (
                     set(source_column_names) - set(ordered_columns) - set(exclude or [])
                 )
-                print("source")
-                print(list(source_column_names))
-                print("ordered")
-                print(list(ordered_columns))
                 if len(additional_columns) > 0:
                     raise Exception(
                         f"more columns in the source table than the destination `{additional_columns}`"

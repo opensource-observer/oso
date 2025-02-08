@@ -234,7 +234,6 @@ def interval_gcs_import_asset(config: IntervalGCSAsset):
     @op(name=f"{config.name}_clean_up_op", tags=tags)
     def gcs_clean_up_op(context: OpExecutionContext, config: dict):
         context.log.info(f"Running clean up for {asset_config.name}")
-        print(config)
 
     @job(name=f"{config.name}_clean_up_job", tags=tags)
     def gcs_clean_up_job():
