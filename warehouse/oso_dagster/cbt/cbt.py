@@ -2,23 +2,20 @@
 #
 # A poor excuse for a dbt replacement when calling sql as a library
 import os
-import arrow
-from typing import List, Optional, Sequence
 from dataclasses import dataclass
 from enum import Enum
 from functools import cache
+from typing import List, Optional, Sequence
 
+import arrow
 from dagster import ConfigurableResource, DagsterLogManager
 from dagster_gcp import BigQueryResource
-from google.cloud.bigquery import (
-    TableReference,
-    Client,
-)
+from google.cloud.bigquery import Client, TableReference
 from google.cloud.exceptions import NotFound
 from jinja2 import Environment, FileSystemLoader, meta
 
-from .bq import BigQueryTableQueryHelper, BigQueryConnector
-from .context import DataContext, ContextQuery, Transformation
+from .bq import BigQueryConnector, BigQueryTableQueryHelper
+from .context import ContextQuery, DataContext, Transformation
 
 
 class UpdateStrategy(Enum):
@@ -311,7 +308,6 @@ class CBT:
             select_query = context.transform_query(select_query, transformations).sql(
                 dialect="bigquery"
             )
-            print(select_query)
 
         if time_partitioning:
             self.log.debug("creating table with a time partition")

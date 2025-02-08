@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import uuid
 from pathlib import Path
@@ -15,6 +16,8 @@ from ..factories import (
 from ..factories.common import AssetFactoryResponse
 from ..utils.bq import BigQueryTableConfig
 from ..utils.common import SourceMode
+
+logger = logging.getLogger(__name__)
 
 MART_DIRECTORY = "marts"
 INTERMEDIATE_DIRECTORY = "intermediate"
@@ -72,7 +75,7 @@ def all_clickhouse_dbt_mart_assets(
             table_name = n.get("name")
             # Only copy marts that are marked for sync
             if n.get("meta").get(SYNC_KEY, False):
-                print(f"Queuing {table_name}")
+                logger.debug(f"Queuing {table_name}")
                 copied_mart_names.append(table_name)
                 # Create an asset for each mart to copy
                 result = result + create_bq2clickhouse_asset(
@@ -129,8 +132,7 @@ def all_clickhouse_dbt_mart_assets(
             # Track which marts were skipped
             else:
                 skipped_mart_names.append(table_name)
-        print(
+        logger.debug(
             f"...queued {str(len(copied_mart_names))} marts, skipping {str(len(skipped_mart_names))}"
         )
-        # print(skipped_mart_names)
         return result
