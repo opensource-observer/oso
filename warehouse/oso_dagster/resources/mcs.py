@@ -63,6 +63,11 @@ class MCSK8sResource(MCSResource):
         description="Timeout in seconds for waiting for the service to be online",
     )
 
+    use_port_forward: bool = Field(
+        default=False,
+        description="Use port forward to connect to mcs - should only be used for testing",
+    )
+
     @asynccontextmanager
     async def ensure_available(self, log_override: t.Optional[logging.Logger] = None):
         """Ensures that the mcs is deployed and available"""
@@ -73,16 +78,18 @@ class MCSK8sResource(MCSResource):
             log_override=log_override,
         ):
             # Check that the service is online
-            host, port = await self.k8s.get_service_connection(
-                self.service_name, self.namespace, self.service_port_name
-            )
+            async with self.k8s.get_service_connection(
+                self.service_name,
+                self.namespace,
+                self.service_port_name,
+                use_port_forward=self.use_port_forward,
+            ) as (host, port):
+                # Wait for the status endpoint to return 200
+                await wait_for_ok_async(
+                    f"http://{host}:{port}/status", timeout=self.connect_timeout
+                )
 
-            # Wait for the status endpoint to return 200
-            await wait_for_ok_async(
-                f"http://{host}:{port}/status", timeout=self.connect_timeout
-            )
-
-            yield
+                yield
 
 
 class MCSRemoteResource(MCSResource):

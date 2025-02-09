@@ -42,7 +42,6 @@ def pydantic_to_dlt_nullable_columns(b: t.Type[BaseModel]):
     table_schema_columns = pydantic_to_table_schema_columns(b)
     for column in table_schema_columns.values():
         column["nullable"] = True
-    print(table_schema_columns)
     return table_schema_columns
 
 
@@ -123,9 +122,7 @@ def _dlt_factory[
                 # We need to ensure that both dlt and global_config are
                 # available to the generated asset as they're used by the
                 # generated function.
-                final_extra_resources = extra_resources.union(
-                    {"dlt", "global_config"}
-                )
+                final_extra_resources = extra_resources.union({"dlt", "global_config"})
 
                 @asset(
                     name=asset_name,
@@ -159,7 +156,9 @@ def _dlt_factory[
                     global_config = t.cast(
                         DagsterConfig, getattr(context.resources, "global_config")
                     )
-                    assert global_config, "global_config resource is not loading correctly"
+                    assert (
+                        global_config
+                    ), "global_config resource is not loading correctly"
                     if global_config.enable_bigquery:
                         context.log.debug("dlt pipeline setup to use staging")
                         pipeline = dltlib.pipeline(

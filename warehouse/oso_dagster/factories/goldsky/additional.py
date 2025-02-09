@@ -166,7 +166,6 @@ def blocks_missing_block_number_model(
         )
 
     job_name = f"{gs_config.key_prefix_as_str}_missing_blocks_test_job"
-    print(job_name)
 
     missing_blocks_job = define_asset_job(
         name=job_name,

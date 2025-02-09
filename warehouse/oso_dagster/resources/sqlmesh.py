@@ -2,6 +2,7 @@
 Auxiliary resources for sqlmesh
 """
 
+import logging
 import typing as t
 
 from dagster import (
@@ -24,6 +25,8 @@ from sqlglot import exp
 from sqlmesh import Context
 from sqlmesh.core.dialect import parse_one
 from sqlmesh.core.model import Model
+
+logger = logging.getLogger(__name__)
 
 
 class SQLMeshExporter:
@@ -108,6 +111,7 @@ class Trino2ClickhouseSQLMeshExporter(SQLMeshExporter):
             async with trino_exporter.get_exporter(
                 "trino-export", log_override=context.log
             ) as exporter:
+                logger.debug(f"exporting to {self._destination_catalog}")
                 with clickhouse_importer.get() as importer:
                     selected_output_names = (
                         context.op_execution_context.selected_output_names

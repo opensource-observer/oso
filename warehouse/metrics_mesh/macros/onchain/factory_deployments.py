@@ -64,6 +64,7 @@ def factory_deployments(
             transactions_originating_contract.as_("originating_contract"),
             traces_factory_address.as_("factory_address"),
             traces_contract_address.as_("contract_address"),
+            traces_trace_type.as_("create_type"),
             *additional_column_defs,
         )
         .with_("transactions_cte", as_=transactions_cte)
