@@ -33,7 +33,7 @@ spec:
             request: "20Gi"
           poolType: "mcs-scheduler"
         worker:
-          threads: "16"
+          threads: "8"
           memory:
             limit: "390Gi"
             request: "375Gi"
