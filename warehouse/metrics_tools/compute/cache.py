@@ -321,8 +321,8 @@ class CacheExportManager:
                 # The table has already errored. Skip this in the queue
                 continue
 
-            in_progress.add(item.table)
             export_table_key = self.export_table_key(item.table, item.execution_time)
+            in_progress.add(export_table_key)
             try:
                 export_reference = await export_table(item.table, item.execution_time)
             except ExportError as e:
@@ -335,7 +335,7 @@ class CacheExportManager:
                 table_errors.append(error)
                 errors[table] = table_errors
 
-                in_progress.remove(table)
+                in_progress.remove(export_table_key)
                 self.event_emitter.emit(
                     "exported_table",
                     table=table,
@@ -371,7 +371,7 @@ class CacheExportManager:
             return copy.deepcopy(self.exported_map)
 
     def export_table_key(self, table: str, execution_time: datetime):
-        return f"{table}::{execution_time}"
+        return f"{table}::{execution_time.isoformat()}"
 
     async def get_export_table_reference(self, table: str, execution_time: datetime):
         export_table_key = self.export_table_key(table, execution_time)
@@ -432,6 +432,7 @@ class CacheExportManager:
             error: t.Optional[Exception] = None,
         ):
             if not export_reference and not error:
+                self.logger.error("export_reference or error must be provided")
                 raise RuntimeError("export_reference or error must be provided")
 
             # If there was an error send it back to the listener
