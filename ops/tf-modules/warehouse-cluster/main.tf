@@ -372,7 +372,7 @@ module "gke" {
   filestore_csi_driver       = false
   deletion_protection        = false
   monitoring_enable_managed_prometheus = true
-  logging_enabled_components = ["SYSTEM_COMPONENTS", "APISERVER", "SCHEDULER", "CONTROLLER_MANAGER"]
+  logging_enabled_components = ["SYSTEM_COMPONENTS", "APISERVER", "SCHEDULER", "CONTROLLER_MANAGER", "WORKLOADS"]
   monitoring_enabled_components = ["SYSTEM_COMPONENTS", "APISERVER", "SCHEDULER", "CONTROLLER_MANAGER"]
 
 
