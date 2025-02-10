@@ -164,7 +164,7 @@ class MetricsCalculationService:
                 job_id, result_path_base, input, calculation_export, final_export
             )
         except Exception as e:
-            self.logger.error(f"job[{job_id}] failed with exception: {e}")
+            self.logger.error(f"job[{job_id}] failed with exception[{type(e)}]: {e}")
             await self._notify_job_failed(job_id, False, e)
 
     def start_daemon(self):
@@ -615,9 +615,16 @@ class MetricsCalculationService:
             raise ValueError(f"Job {job_id} not found")
         return state.as_response(include_stats=include_stats)
 
-    def listen_for_job_updates(
+    async def listen_for_job_updates(
         self, job_id: str, handler: t.Callable[[JobStatusResponse], t.Awaitable[None]]
     ):
+        async with self.job_state_lock:
+            if job_id not in self.job_state:
+                raise ValueError(f"Job {job_id} not found")
+            state = self.job_state[job_id]
+            if state.status in (QueryJobStatus.COMPLETED, QueryJobStatus.FAILED):
+                handler(state.as_response())
+                return lambda: None
         self.last_listener_added_datetime = datetime.now()
         self.listener_count += 1
         self.logger.info(

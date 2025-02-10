@@ -16,6 +16,7 @@ import dotenv
 import git
 import kr8s
 from kr8s.objects import Service
+from metrics_tools.definition import PeerMetricDependencyRef
 from metrics_tools.factory.constants import METRICS_COLUMNS_BY_ENTITY
 from metrics_tools.factory.factory import MetricQueryConfig, timeseries_metrics
 from metrics_tools.local.loader import LocalTrinoDestinationLoader
@@ -271,8 +272,8 @@ def clean_expired_trino_hive_files(
     "--trino-k8s-worker-deployment-name", default="production-trino-trino-worker"
 )
 @click.option("--job-retries", default=5, help="The number of times to retry the job")
-@click.option("--cluster-min-size", default=0, help="The minimum cluster size")
-@click.option("--cluster-max-size", default=30, help="The maximum cluster size")
+@click.option("--cluster-min-size", default=3, help="The minimum cluster size")
+@click.option("--cluster-max-size", default=15, help="The maximum cluster size")
 def call_mcs(
     metric_name: str,
     start: datetime,
@@ -339,28 +340,53 @@ def call_mcs(
     ) as mcs_url:
         from metrics_tools.compute.client import Client as MCSClient
 
-        chosen_metric = find_or_choose_metric(metric_name)
-        assert chosen_metric, f"Could not find metric {metric_name}"
+        if metric_name == "noop":
+            # This is a special case for triggering essentially a noop job
+            logger.info("Running a noop job")
+            rendered_query_str = "SELECT 1 as result"
+            columns = [("result", "int")]
+            ref = PeerMetricDependencyRef(
+                name="noop",
+                entity_type="artifact",
+                window=1,
+                slots=10,
+                batch_size=10,
+                unit="day",
+                cron="@daily",
+            )
+            variables = {}
+            dependencies_dict = {}
+        else:
+            chosen_metric = find_or_choose_metric(metric_name)
+            assert chosen_metric, f"Could not find metric {metric_name}"
 
-        rendered_query = chosen_metric["rendered_query"]
-        rendered_query_str = rendered_query.sql(dialect="duckdb")
-        # we shouldn't hard code this but it is hardcoded for now
-        columns = [
-            (col_name, col_type.sql(dialect="duckdb"))
-            for col_name, col_type in METRICS_COLUMNS_BY_ENTITY[
-                chosen_metric["ref"]["entity_type"]
-            ].items()
-        ]
+            rendered_query = chosen_metric["rendered_query"]
+            rendered_query_str = rendered_query.sql(dialect="duckdb")
+            # we shouldn't hard code this but it is hardcoded for now
+            columns = [
+                (col_name, col_type.sql(dialect="duckdb"))
+                for col_name, col_type in METRICS_COLUMNS_BY_ENTITY[
+                    chosen_metric["ref"]["entity_type"]
+                ].items()
+            ]
 
-        ref = chosen_metric["ref"]
-        variables = chosen_metric["vars"]
+            ref = chosen_metric["ref"]
+            variables = chosen_metric["vars"]
+
+            dependencies_set = list_query_table_dependencies(rendered_query, {})
+            print(dependencies_set)
+            rewrite_map = {
+                "metrics.int_events_daily_to_artifact": "metrics.metrics.events_daily_to_artifact",
+                "metrics.int_events_daily_to_artifact_with_lag": "metrics.metrics.events_daily_to_artifact_with_lag",
+                "metrics.int_issue_event_time_deltas": "metrics.metrics.issue_event_time_deltas",
+                "metrics.int_first_of_event_from_artifact": "metrics.metrics.first_of_event_from_artifact",
+            }
+            dependencies_dict = {
+                dep: rewrite_map.get(dep, dep) for dep in dependencies_set
+            }
+            print(dependencies_dict)
 
         client = MCSClient.from_url(mcs_url)
-
-        dependencies_set = list_query_table_dependencies(rendered_query, {})
-        print(dependencies_set)
-        dependencies_dict = {dep: dep for dep in dependencies_set}
-
         response = client.calculate_metrics(
             query_str=rendered_query_str,
             start=start,
