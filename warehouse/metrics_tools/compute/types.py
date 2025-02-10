@@ -470,8 +470,8 @@ class AppConfig(ClusterConfig, TrinoCacheExportConfig, GCSConfig):
     debug_cluster: bool = False
     debug_cluster_no_shutdown: bool = False
 
-    cluster_shutdown_timeout: int = 3600
-    cluster_scale_down_timeout: int = 300
+    cluster_shutdown_timeout: int = 180
+    cluster_scale_down_timeout: int = 60
 
     @model_validator(mode="after")
     def handle_debugging(self):

@@ -172,10 +172,7 @@ def setup_app(lifespan: t.Callable[[FastAPI], t.Any]):
         If the cluster is already running, it will not be restarted.
         """
         state = get_mcs(request)
-        manager = state.cluster_manager
-        return await manager.start_cluster(
-            start_request.min_size, start_request.max_size
-        )
+        return await state.start_cluster(start_request)
 
     @app.post("/cluster/stop")
     async def stop_cluster(request: Request):

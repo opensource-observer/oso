@@ -150,6 +150,8 @@ class MetricsCalculationService:
         self.requested_cluster_max_size = 0
         self.cluster_shutdown_timeout = cluster_shutdown_timeout
         self.cluster_scale_down_timeout = cluster_scale_down_timeout
+        self.last_listener_added_datetime = datetime.now()
+        self.last_listener_removed_datetime = datetime.now()
 
     async def handle_query_job_submit_request(
         self,
@@ -172,10 +174,13 @@ class MetricsCalculationService:
         self.daemon = asyncio.create_task(self._daemon())
 
     async def _daemon(self):
+        logger.debug("MCS scale down daemon: started")
         scaled_down = False
         shutdown = False
+        count = 0
         while True:
-            await asyncio.sleep(60)
+            await asyncio.sleep(1)
+            count += 1
 
             # Checks if there are listeners. If 0 and nothing has been added
             # in the last X seconds (cluster_scale_down_timeout) we can scale down the
@@ -183,32 +188,54 @@ class MetricsCalculationService:
             # (cluster_shutdown_timeout) time we can shutdown the entire
             # dask cluster.
             now = datetime.now()
+            if count % 30 == 0:
+                logger.debug(
+                    f"MCS scale down daemon: listener_count={self.listener_count}"
+                )
+            last_listener_removed_delta = now - self.last_listener_removed_datetime
             if self.listener_count == 0:
-                last_listener_removed_delta = now - self.last_listener_removed_datetime
                 if (
                     last_listener_removed_delta.total_seconds()
-                    > self.cluster_scale_down_timeout
+                    >= self.cluster_scale_down_timeout
                 ) and not scaled_down:
                     # If the cluster is already at 0 we don't need to do
                     # anything just make sure everything is stopped
-                    scaled_down = True
-                    if self.requested_cluster_max_size == 0:
-                        await self.cluster_manager.stop_cluster()
-
-                    await self.cluster_manager.start_cluster(
-                        0, self.requested_cluster_max_size
-                    )
-
-                elif (
+                    logger.debug("MCS scale down daemon: scaling down")
+                    try:
+                        await self._scale_down_cluster()
+                    except Exception as e:
+                        logger.error(f"failed to scale down cluster: {e}")
+                    else:
+                        scaled_down = True
+                if (
                     last_listener_removed_delta.total_seconds()
-                    > self.cluster_shutdown_timeout
+                    >= self.cluster_shutdown_timeout
                 ) and not shutdown:
-                    await self.cluster_manager.stop_cluster()
-                    shutdown = True
-                else:
-                    # If we are not scaling down or shutting down then we reset these states
-                    scaled_down = False
-                    shutdown = False
+                    logger.debug("MCS shutdown down daemon: scaling down")
+                    try:
+                        await self.cluster_manager.stop_cluster()
+                    except Exception as e:
+                        logger.error(f"failed to shutdown cluster: {e}")
+                    else:
+                        shutdown = True
+
+            if (
+                last_listener_removed_delta.total_seconds()
+                < self.cluster_scale_down_timeout
+            ):
+                # If we are not scaling down or shutting down then we reset these states
+                scaled_down = False
+                shutdown = False
+
+    async def _scale_down_cluster(self):
+        """Scale down the cluster to 0"""
+        if self.requested_cluster_max_size == 0:
+            logger.debug(
+                "MCS scale down daemon: requested cluster size is 0 - shutting down cluster"
+            )
+            await self.cluster_manager.stop_cluster()
+            return
+        await self.cluster_manager.resize_cluster(0, self.requested_cluster_max_size)
 
     async def _handle_query_job_submit_request(
         self,
