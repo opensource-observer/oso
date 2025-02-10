@@ -41,7 +41,7 @@ timeseries_metrics(
             ref="code/commits.sql",
             time_aggregations=["daily", "weekly", "monthly"],
             rolling=RollingConfig(
-                windows=[10],
+                windows=[180],
                 unit="day",
                 cron="@daily",
                 slots=8,

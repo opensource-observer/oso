@@ -222,7 +222,7 @@ class MetricsRunner:
 
     def iter_query_days(self, start: datetime, end: datetime):
         cron = self._ref.get("cron")
-        assert cron is not None
+        assert cron is not None, "cron is required for rolling queries"
         arrow_interval = ROLLING_CRON_TO_ARROW_UNIT[cron]
         if arrow_interval == "week":
             # We want to start weeks on sunday so we need to adjust the start time to the next sunday

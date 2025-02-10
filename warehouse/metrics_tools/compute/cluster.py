@@ -88,6 +88,9 @@ class ClusterProxy(abc.ABC):
     async def stop(self):
         raise NotImplementedError("stop not implemented")
 
+    async def adapt(self, minimum: int, maximum: int):
+        raise NotImplementedError("adapt not implemented")
+
     @property
     def dashboard_link(self):
         raise NotImplementedError("dashboard_link not implemented")
@@ -117,6 +120,10 @@ class LocalClusterProxy(ClusterProxy):
             workers=len(self.cluster.scheduler_info["workers"]),
         )
 
+    async def adapt(self, minimum: int, maximum: int):
+        # For local, this is a noop
+        return None
+
     async def stop(self):
         self.cluster.close()
 
@@ -143,6 +150,9 @@ class KubeClusterProxy(ClusterProxy):
             dashboard_url=self.cluster.dashboard_link,
             workers=len(self.cluster.scheduler_info["workers"]),
         )
+
+    async def adapt(self, minimum: int, maximum: int):
+        await self.cluster.adapt(minimum=minimum, maximum=maximum)
 
     async def stop(self):
         await self.cluster.close()
@@ -308,6 +318,12 @@ class ClusterManager:
             self._starting = False
         self.logger.debug("emitting cluster_ready")
         self.event_emitter.emit("cluster_ready")
+
+    async def resize_cluster(self, min_size: int, max_size: int):
+        async with self._lock:
+            if self._cluster is None:
+                raise Exception("Cluster not started")
+            await self._cluster.adapt(minimum=min_size, maximum=max_size)
 
     async def stop_cluster(self):
         self.logger.info("stopping cluster")

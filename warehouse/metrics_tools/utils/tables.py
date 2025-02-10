@@ -29,6 +29,10 @@ def resolve_table_name(
     return (table_fqn, context.resolve_table(table_fqn))
 
 
+def list_query_table_dependencies_from_str(query: str) -> t.Set[str]:
+    return list_query_table_dependencies(parse_one(query), {})
+
+
 def list_query_table_dependencies(
     query: exp.Expression, parent_ctes: t.Dict[str, exp.Expression]
 ) -> t.Set[str]:
