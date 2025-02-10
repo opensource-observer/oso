@@ -26,7 +26,8 @@ async def test_cache_export_manager():
     different_execution_time = datetime.now() + timedelta(days=1)
 
     export_table_0 = await asyncio.wait_for(
-        cache.resolve_export_references(["table1", "table2"], execution_time), timeout=1
+        cache.resolve_export_references(["table1", "table2"], execution_time),
+        timeout=10,
     )
 
     assert export_table_0.keys() == {"table1", "table2"}

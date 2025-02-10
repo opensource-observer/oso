@@ -307,8 +307,8 @@ class CacheExportManager:
                 )
                 self.event_emitter.emit(
                     "exported_table",
-                    table=item.table,
-                    execution_time=item.execution_time,
+                    table=table,
+                    execution_time=execution_time,
                     export_table_key=export_table_key,
                     export_reference=export_reference,
                 )
@@ -325,7 +325,7 @@ class CacheExportManager:
                 self.event_emitter.emit(
                     "exported_table",
                     table=table,
-                    execution_time=item.execution_time,
+                    execution_time=execution_time,
                     export_table_key=export_table_key,
                     error=e,
                 )
@@ -436,7 +436,10 @@ class CacheExportManager:
             [self.export_table_key(table, execution_time) for table in tables_to_export]
         )
 
-        self.logger.info(f"unknown tables to export: {tables_to_export}")
+        self.logger.debug(f"Unknown tables to export: {tables_to_export}")
+        self.logger.debug(f"Pending export table keys: {pending_export_table_keys}")
+
+        export_map_lock = asyncio.Lock()
 
         async def handle_exported_table(
             *,
@@ -452,31 +455,37 @@ class CacheExportManager:
 
             # If there was an error send it back to the listener
             self.logger.info(
-                f"exported table update received: {table} :: {execution_time}"
+                f"exported table update received: {table}::{execution_time}"
             )
             self.logger.debug(
                 f"Checking pending export table keys: {pending_export_table_keys}"
             )
             self.logger.debug(f"Checking export table key: {export_table_key}")
             # Check if we were waiting for this table
-            if export_table_key in pending_export_table_keys:
-                self.logger.debug("found pending export table key")
-                # If there's no export reference then we must have an error
-                if not export_reference:
-                    assert error is not None
-                    future.set_exception(error)
-                    return
-                pending_export_table_keys.remove(export_table_key)
-                export_map[table] = export_reference
-                await self.add_export_table_reference(
-                    table, execution_time, export_reference
-                )
-            # Stop listening if we have all the tables
-            if len(pending_export_table_keys) == 0:
-                self.logger.debug("all tables exported")
-                future.set_result(export_map)
-                if registration:
-                    self.event_emitter.remove_listener("exported_table", registration)
+            async with export_map_lock:
+                if export_table_key in pending_export_table_keys:
+                    self.logger.debug(
+                        f"found pending export table key {export_table_key}"
+                    )
+                    # If there's no export reference then we must have an error
+                    if not export_reference:
+                        assert error is not None
+                        future.set_exception(error)
+                        return
+                    pending_export_table_keys.remove(export_table_key)
+                    export_map[table] = export_reference
+                    self.logger.debug(f"updating export map: {export_map}")
+                    await self.add_export_table_reference(
+                        table, execution_time, export_reference
+                    )
+                    # Stop listening if we have all the tables
+                    if len(pending_export_table_keys) == 0:
+                        self.logger.debug(f"all tables exported {export_map}")
+                        future.set_result(export_map)
+                        if registration:
+                            self.event_emitter.remove_listener(
+                                "exported_table", registration
+                            )
 
         registration = self.event_emitter.add_listener(
             "exported_table", handle_exported_table
