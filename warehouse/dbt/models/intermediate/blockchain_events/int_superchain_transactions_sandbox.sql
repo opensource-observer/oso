@@ -124,7 +124,8 @@ select
   from_address,
   to_address,
   chain,
-  value_64
+  value_64,
+  gas * gas_price / 1e18 as gas_fee
 from {{ source('optimism_superchain_raw_onchain_data', 'transactions') }}
 where
   dt >= '2024-06-01'
