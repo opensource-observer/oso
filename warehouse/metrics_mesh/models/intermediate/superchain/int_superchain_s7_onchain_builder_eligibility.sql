@@ -91,7 +91,7 @@ select
   builder_metrics.bot_filtered_user_count,
   builder_metrics.active_days,
   project_eligibility.is_eligible,
-  current_timestamp() as sample_date
+  current_timestamp() as sample_date -- PLACEHOLDER: we should be checking eligibility on a daily or weekly basis
 from builder_metrics
 inner join project_eligibility
   on builder_metrics.project_id = project_eligibility.project_id
