@@ -141,7 +141,7 @@ jobs:
         if: ${{ matrix.component == 'sqlmesh' }}
 
       - name: Validate local database
-        run: poetry run oso local initialize --max-results-per-query 50 --max-days 3
+        run: poetry install && poetry run oso local initialize --max-results-per-query 50 --max-days 3
         if: ${{ matrix.component == 'sqlmesh' }}
 
       # Automatically retry if the build fails
