@@ -11,17 +11,14 @@ from dagster import (
     define_asset_job,
 )
 from oso_dagster.factories.common import AssetFactoryResponse
-from oso_dagster.utils.tags import experimental_tag
-
-partitioned_assets = AssetSelection.tag(
-    "opensource.observer/extra", "partitioned-assets"
+from oso_dagster.utils.tags import (
+    experimental_tag,
+    partitioned_assets,
+    sbom_source_tag,
+    stable_source_tag,
+    unstable_source_tag,
 )
 
-stable_source_tag = AssetSelection.tag("opensource.observer/source", "stable")
-
-unstable_sources_tag = AssetSelection.tag("opensource.observer/source", "unstable")
-
-sbom_source_tag = AssetSelection.tag("opensource.observer/source", "sbom")
 
 def get_partitioned_schedules(
     factory: AssetFactoryResponse,
@@ -79,7 +76,7 @@ materialize_core_assets = define_asset_job(
     AssetSelection.all()
     - experimental_tag
     - stable_source_tag
-    - unstable_sources_tag
+    - unstable_source_tag
     - sbom_source_tag
     - partitioned_assets,
 )
@@ -91,7 +88,7 @@ materialize_stable_source_assets = define_asset_job(
 
 materialize_unstable_source_assets = define_asset_job(
     "materialize_unstable_source_assets_job",
-    unstable_sources_tag,
+    unstable_source_tag,
 )
 
 materialize_sbom_source_assets = define_asset_job(

@@ -2,7 +2,6 @@ from datetime import datetime, timedelta
 from typing import Mapping
 
 from dagster import (
-    AssetSelection,
     DefaultSensorStatus,
     MultiAssetSensorEvaluationContext,
     OpExecutionContext,
@@ -16,7 +15,13 @@ from dagster import (
     run_failure_sensor,
 )
 
-from ..utils import AlertManager, AlertOpConfig, FreshnessOpConfig
+from ..utils import (
+    AlertManager,
+    AlertOpConfig,
+    FreshnessOpConfig,
+    stable_source_tag,
+    unstable_source_tag,
+)
 from .common import AssetFactoryResponse
 
 ALERTS_JOB_CONFIG = {
@@ -102,7 +107,7 @@ def setup_alert_sensors(
 
     # Only validates assets that have materialized at least once successfully
     @multi_asset_sensor(
-        monitored_assets=AssetSelection.all(),
+        monitored_assets=stable_source_tag | unstable_source_tag,
         job=freshness_alert_job,
         default_status=status,
         minimum_interval_seconds=259200,  # 3 days
