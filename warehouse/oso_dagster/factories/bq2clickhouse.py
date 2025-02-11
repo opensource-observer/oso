@@ -4,6 +4,7 @@ from typing import Dict, List, Optional, Sequence, Tuple, cast
 from dagster import AssetExecutionContext, MaterializeResult, asset
 from dagster_gcp import BigQueryResource, GCSResource
 from google.cloud.bigquery import Client as BQClient
+from oso_dagster.utils.tags import add_tags
 
 from ..resources import ClickhouseResource
 from ..utils.bq import BigQueryTableConfig, export_to_gcs
@@ -36,6 +37,8 @@ class Bq2ClickhouseAssetConfig:
     destination_table_name: str
     # index_name => list of column names to index
     index: Optional[Dict[str, List[str]]]
+    # Specific asset tags
+    tags: Optional[Dict[str, str]]
     # order_by => list of column names to order by
     order_by: Optional[List[str]]
     # Incremental or overwrite
@@ -118,13 +121,12 @@ def create_bq2clickhouse_asset(asset_config: Bq2ClickhouseAssetConfig):
         "opensource.observer/factory": "bq2clickhouse",
         "opensource.observer/environment": asset_config.environment,
         "opensource.observer/type": "mart",
-        "opensource.observer/source": "stable",
     }
 
     @asset(
         name=asset_config.asset_name,
         key_prefix=asset_config.key_prefix,
-        tags=tags,
+        tags=add_tags(tags, asset_config.tags) if asset_config.tags else tags,
         deps=asset_config.deps,
         **asset_config.asset_kwargs,
     )
