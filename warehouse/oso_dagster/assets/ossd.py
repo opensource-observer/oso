@@ -188,7 +188,7 @@ def sbom(
     context.log.info(f"Fecthing SBOMs for {len(all_repo_urls)} repositories")
 
     yield oss_directory_github_sbom_resource(
-        all_repo_urls, gh_token, http_cache=global_config.http_cache
+        context, all_repo_urls, gh_token, http_cache=global_config.http_cache
     )
 
 
