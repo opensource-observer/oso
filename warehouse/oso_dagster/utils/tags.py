@@ -1,5 +1,8 @@
 import typing as t
 
+from dagster import AssetSelection
+
+experimental_tag = AssetSelection.tag("opensource.observer/experimental", "true")
 
 def add_tags(
     tags: t.Mapping[str, str], additional_tags: t.Mapping[str, str]
