@@ -62,7 +62,7 @@ spec:
           type: QueuedRunCoordinator
           config:
             queuedRunCoordinator:
-              maxConcurrentRuns: 30
+              maxConcurrentRuns: 20
               tagConcurrencyLimits:
                 - key: "dagster/concurrency_key"
                   value:
