@@ -115,6 +115,7 @@ def sql_assets(
             "opensource.observer/environment": environment,
             "opensource.observer/factory": "sql_dlt",
             "opensource.observer/type": asset_type,
+            "opensource.observer/source": "unstable",
         }
         if concurrency_key is not None:
             tags["dagster/concurrency_key"] = concurrency_key

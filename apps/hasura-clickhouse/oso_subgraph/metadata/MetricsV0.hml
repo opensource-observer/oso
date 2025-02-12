@@ -1,0 +1,227 @@
+---
+kind: ObjectType
+version: v1
+definition:
+  name: MetricsV0
+  fields:
+    - name: aggregationFunction
+      type: String!
+    - name: definitionRef
+      type: String!
+    - name: description
+      type: String!
+    - name: displayName
+      type: String!
+    - name: metricId
+      type: String!
+    - name: metricName
+      type: String!
+    - name: metricNamespace
+      type: String!
+    - name: metricSource
+      type: String!
+    - name: rawDefinition
+      type: String!
+  graphql:
+    typeName: Oso_MetricsV0
+    inputTypeName: Oso_MetricsV0Input
+  dataConnectorTypeMapping:
+    - dataConnectorName: oso_clickhouse
+      dataConnectorObjectType: metrics_v0
+      fieldMapping:
+        aggregationFunction:
+          column:
+            name: aggregation_function
+        definitionRef:
+          column:
+            name: definition_ref
+        description:
+          column:
+            name: description
+        displayName:
+          column:
+            name: display_name
+        metricId:
+          column:
+            name: metric_id
+        metricName:
+          column:
+            name: metric_name
+        metricNamespace:
+          column:
+            name: metric_namespace
+        metricSource:
+          column:
+            name: metric_source
+        rawDefinition:
+          column:
+            name: raw_definition
+
+---
+kind: TypePermissions
+version: v1
+definition:
+  typeName: MetricsV0
+  permissions:
+    - role: admin
+      output:
+        allowedFields:
+          - aggregationFunction
+          - definitionRef
+          - description
+          - displayName
+          - metricId
+          - metricName
+          - metricNamespace
+          - metricSource
+          - rawDefinition
+    - role: anonymous
+      output:
+        allowedFields:
+          - aggregationFunction
+          - definitionRef
+          - description
+          - displayName
+          - metricId
+          - metricName
+          - metricNamespace
+          - metricSource
+          - rawDefinition
+
+---
+kind: BooleanExpressionType
+version: v1
+definition:
+  name: MetricsV0BoolExp
+  operand:
+    object:
+      type: MetricsV0
+      comparableFields:
+        - fieldName: aggregationFunction
+          booleanExpressionType: StringBoolExp
+        - fieldName: definitionRef
+          booleanExpressionType: StringBoolExp
+        - fieldName: description
+          booleanExpressionType: StringBoolExp
+        - fieldName: displayName
+          booleanExpressionType: StringBoolExp
+        - fieldName: metricId
+          booleanExpressionType: StringBoolExp
+        - fieldName: metricName
+          booleanExpressionType: StringBoolExp
+        - fieldName: metricNamespace
+          booleanExpressionType: StringBoolExp
+        - fieldName: metricSource
+          booleanExpressionType: StringBoolExp
+        - fieldName: rawDefinition
+          booleanExpressionType: StringBoolExp
+      comparableRelationships: []
+  logicalOperators:
+    enable: true
+  isNull:
+    enable: true
+  graphql:
+    typeName: Oso_MetricsV0BoolExp
+
+---
+kind: AggregateExpression
+version: v1
+definition:
+  name: MetricsV0AggExp
+  operand:
+    object:
+      aggregatedType: MetricsV0
+      aggregatableFields:
+        - fieldName: aggregationFunction
+          aggregateExpression: StringAggExp
+        - fieldName: definitionRef
+          aggregateExpression: StringAggExp
+        - fieldName: description
+          aggregateExpression: StringAggExp
+        - fieldName: displayName
+          aggregateExpression: StringAggExp
+        - fieldName: metricId
+          aggregateExpression: StringAggExp
+        - fieldName: metricName
+          aggregateExpression: StringAggExp
+        - fieldName: metricNamespace
+          aggregateExpression: StringAggExp
+        - fieldName: metricSource
+          aggregateExpression: StringAggExp
+        - fieldName: rawDefinition
+          aggregateExpression: StringAggExp
+  count:
+    enable: true
+  graphql:
+    selectTypeName: Oso_MetricsV0AggExp
+
+---
+kind: Model
+version: v1
+definition:
+  name: MetricsV0
+  objectType: MetricsV0
+  source:
+    dataConnectorName: oso_clickhouse
+    collection: metrics_v0
+  filterExpressionType: MetricsV0BoolExp
+  aggregateExpression: MetricsV0AggExp
+  orderableFields:
+    - fieldName: aggregationFunction
+      orderByDirections:
+        enableAll: true
+    - fieldName: definitionRef
+      orderByDirections:
+        enableAll: true
+    - fieldName: description
+      orderByDirections:
+        enableAll: true
+    - fieldName: displayName
+      orderByDirections:
+        enableAll: true
+    - fieldName: metricId
+      orderByDirections:
+        enableAll: true
+    - fieldName: metricName
+      orderByDirections:
+        enableAll: true
+    - fieldName: metricNamespace
+      orderByDirections:
+        enableAll: true
+    - fieldName: metricSource
+      orderByDirections:
+        enableAll: true
+    - fieldName: rawDefinition
+      orderByDirections:
+        enableAll: true
+  graphql:
+    selectMany:
+      queryRootField: oso_metricsV0
+      subscription:
+        rootField: oso_metricsV0
+    selectUniques:
+      - queryRootField: oso_metricsV0ByMetricSourceMetricNamespaceMetricName
+        uniqueIdentifier:
+          - metricSource
+          - metricNamespace
+          - metricName
+    orderByExpressionType: Oso_MetricsV0OrderBy
+    filterInputTypeName: Oso_MetricsV0FilterInput
+    aggregate:
+      queryRootField: oso_metricsV0Aggregate
+      subscription:
+        rootField: oso_metricsV0Aggregate
+
+---
+kind: ModelPermissions
+version: v1
+definition:
+  modelName: MetricsV0
+  permissions:
+    - role: admin
+      select:
+        filter: null
+        allowSubscriptions: true
+    - role: anonymous
+      select:
+        filter: null

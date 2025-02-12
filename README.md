@@ -218,7 +218,7 @@ To do that we do:
 gcloud auth application-default login
 
 # Run the initialization of the data pull
-oso metrics local initialize --max-results-per-query 10000 --max-days 3
+oso local initialize --max-results-per-query 10000 --max-days 3
 ```
 
 This will download 3 days of time series data with an approximate maximum of
@@ -229,7 +229,7 @@ download but this will be required.
 Once all of the data has been downloaded you can now run sqlmesh like so:
 
 ```bash
-oso metrics local sqlmesh [...any sqlmesh args...]
+oso local sqlmesh [...any sqlmesh args...]
 ```
 
 This is a convenience function for running sqlmesh locally. This is equivalent to running this series of commands:
@@ -242,7 +242,7 @@ sqlmesh [...any sqlmesh args... ]
 So running:
 
 ```bash
-oso metrics local sqlmesh plan
+oso local sqlmesh plan
 ```
 
 Would be equivalent to
@@ -283,7 +283,7 @@ data in trino.
 Much like running against a local duckdb the local trino can also be initialized with on the CLI like so:
 
 ```bash
-oso metrics local initialize --local-trino
+oso local initialize --local-trino
 ```
 
 Once completed, trino will be configured to have the proper source data for sqlmesh.
@@ -291,13 +291,13 @@ Once completed, trino will be configured to have the proper source data for sqlm
 Finally, to run `sqlmesh plan` do this:
 
 ```bash
-oso metrics local sqlmesh --local-trino plan
+oso local sqlmesh --local-trino plan
 ```
 
 The `--local-trino` option should be passed before any sqlmesh args. Otherwise, you can call any command or use any flags from sqlmesh after the `sqlmesh` keyword in the command invocation. So to call `sqlmesh run` you'd simply do:
 
 ```bash
-oso metrics local sqlmesh --local-trino run
+oso local sqlmesh --local-trino run
 ```
 
 Please note, you may periodically be logged out of the local kind cluster, just

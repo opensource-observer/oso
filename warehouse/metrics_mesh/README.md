@@ -40,19 +40,19 @@ poetry shell
 Finally, download playground data into your local DuckDB instance with the following command
 
 ```bash
-oso metrics local initialize
+oso local initialize
 ```
 
 Or to take a smaller sample:
 
 ```bash
-oso metrics local initialize --max-results-per-query 10000 --max-days 7
+oso local initialize --max-results-per-query 10000 --max-days 7
 ```
 
 Or using shortcuts:
 
 ```bash
-oso metrics local initialize -m 10000 -d 7
+oso local initialize -m 10000 -d 7
 ```
 
 ## Run
@@ -60,11 +60,11 @@ oso metrics local initialize -m 10000 -d 7
 Run sqlmesh for a sample date range:
 
 ```bash
-oso metrics local sqlmesh plan dev --start 2024-07-01 --end 2024-08-01 # to run for specific date rates (fast)
+oso local sqlmesh plan dev --start 2024-07-01 --end 2024-08-01 # to run for specific date rates (fast)
 # sqlmesh plan # to run the entire pipeline (slow)
 ```
 
-_Note, the command above uses a wrapper `oso metrics local sqlmesh` that will
+_Note, the command above uses a wrapper `oso local sqlmesh` that will
 automatically use the correct `warehouse/metrics_mesh` directory. It can also be
 used to run with a local trino (see below)._
 
@@ -118,13 +118,13 @@ You can add new models as `bq_to_duckdb` parameters, eg:
 Important: whenever you add a new source, you will need to re-initialize your local database:
 
 ```bash
-oso metrics local initialize
+oso local initialize
 ```
 
 Then you can run to compile the latest models:
 
 ```bash
-oso metrics local sqlmesh plan dev
+oso local sqlmesh plan dev
 ```
 
 And if it executes successfully, view it in DuckDB:
@@ -146,7 +146,7 @@ sqlmesh [...any sqlmesh args... ]
 So running:
 
 ```bash
-oso metrics local sqlmesh plan
+oso local sqlmesh plan
 ```
 
 Would be equivalent to
@@ -228,7 +228,7 @@ Much like running against a local duckdb the local trino can also be initialized
 with on the CLI like so:
 
 ```bash
-oso metrics local initialize --local-trino -m 1000 -d 3
+oso local initialize --local-trino -m 1000 -d 3
 ```
 
 _Note: It's best not to load too much data into trino for local testing. It won't be as
@@ -242,7 +242,7 @@ sqlmesh.
 Finally, to run `sqlmesh plan` do this:
 
 ```bash
-oso metrics local sqlmesh --local-trino plan
+oso local sqlmesh --local-trino plan
 ```
 
 The `--local-trino` option should be passed before any sqlmesh args. Otherwise,
@@ -250,7 +250,7 @@ you can call any command or use any flags from sqlmesh after the `sqlmesh`
 keyword in the command invocation. So to call `sqlmesh run` you'd simply do:
 
 ```bash
-oso metrics local sqlmesh --local-trino run
+oso local sqlmesh --local-trino run
 ```
 
 ### Changing branches or random logouts
@@ -354,7 +354,7 @@ Usage:
 
 The passed in date should be the date column of a given time series event
 source. In all cases that must use this, this is just
-`events_daily_to_artifact.bucket_day`.
+`int_events_daily_to_artifact.bucket_day`.
 
 ### `@metric_start` and `@metric_end`
 

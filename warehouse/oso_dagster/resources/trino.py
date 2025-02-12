@@ -133,6 +133,11 @@ class TrinoK8sResource(TrinoResource):
         description="Timeout in seconds for waiting for the service to be online",
     )
 
+    use_port_forward: bool = Field(
+        default=False,
+        description="Use port forward to connect to trino - should only be used for testing",
+    )
+
     @asynccontextmanager
     async def async_get_client(
         self,
@@ -142,20 +147,23 @@ class TrinoK8sResource(TrinoResource):
         # Bring both the coordinator and worker online if they aren't already
         async with self.ensure_available(log_override=log_override):
             # Wait for the status endpoint to return 200
-            host, port = await self.k8s.get_service_connection(
-                self.service_name, self.namespace, self.service_port_name
-            )
-            extra_connection_args = {}
-            if session_properties:
-                extra_connection_args["session_properties"] = session_properties
-            yield aiotrino.dbapi.connect(
-                host=host,
-                port=port,
-                user=self.user,
-                catalog=self.catalog,
-                schema=self.connection_schema,
-                **extra_connection_args,
-            )
+            async with self.k8s.get_service_connection(
+                self.service_name,
+                self.namespace,
+                self.service_port_name,
+                use_port_forward=self.use_port_forward,
+            ) as (host, port):
+                extra_connection_args = {}
+                if session_properties:
+                    extra_connection_args["session_properties"] = session_properties
+                yield aiotrino.dbapi.connect(
+                    host=host,
+                    port=port,
+                    user=self.user,
+                    catalog=self.catalog,
+                    schema=self.connection_schema,
+                    **extra_connection_args,
+                )
 
     @asynccontextmanager
     async def ensure_available(self, log_override: t.Optional[logging.Logger] = None):
@@ -176,17 +184,21 @@ class TrinoK8sResource(TrinoResource):
             ),
         ):
             # Check that the service is online
-            host, port = await self.k8s.get_service_connection(
-                self.service_name, self.namespace, self.service_port_name
-            )
-            # see: https://github.com/trinodb/trino/issues/14663
-            health_check_url = f"http://{host}:{port}/v1/status"
+            async with self.k8s.get_service_connection(
+                self.service_name,
+                self.namespace,
+                self.service_port_name,
+                use_port_forward=self.use_port_forward,
+            ) as (host, port):
+                # see: https://github.com/trinodb/trino/issues/14663
+                health_check_url = f"http://{host}:{port}/v1/status"
 
-            logger.info(f"Wait for trino to be online at {health_check_url}")
-            # Wait for the status endpoint to return 200
-            await wait_for_ok_async(health_check_url, timeout=self.connect_timeout)
+                logger.info(f"Wait for trino to be online at {health_check_url}")
+                # Wait for the status endpoint to return 200
+                # await wait_for_ok_async(health_check_url, timeout=self.connect_timeout)
+                logger.info("I AM HERE RIGHT NOW3--")
 
-            yield
+                yield
 
 
 class TrinoRemoteResource(TrinoResource):
@@ -241,7 +253,7 @@ class TrinoExporterResource(ConfigurableResource):
     async def get_exporter(
         self, export_prefix: str, log_override: t.Optional[logging.Logger] = None
     ) -> t.AsyncGenerator[TrinoExporter, None]:
-        with self.time_ordered_storage.get(export_prefix) as storage:
+        async with self.time_ordered_storage.get(export_prefix) as storage:
             async with self.trino.async_get_client(
                 log_override=log_override
             ) as connection:

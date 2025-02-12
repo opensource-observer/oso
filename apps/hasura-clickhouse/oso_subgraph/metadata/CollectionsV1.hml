@@ -1,0 +1,180 @@
+---
+kind: ObjectType
+version: v1
+definition:
+  name: CollectionsV1
+  fields:
+    - name: collectionId
+      type: String!
+    - name: collectionName
+      type: String!
+    - name: collectionNamespace
+      type: String!
+    - name: collectionSource
+      type: String!
+    - name: description
+      type: String!
+    - name: displayName
+      type: String!
+  graphql:
+    typeName: Oso_CollectionsV1
+    inputTypeName: Oso_CollectionsV1Input
+  dataConnectorTypeMapping:
+    - dataConnectorName: oso_clickhouse
+      dataConnectorObjectType: collections_v1
+      fieldMapping:
+        collectionId:
+          column:
+            name: collection_id
+        collectionName:
+          column:
+            name: collection_name
+        collectionNamespace:
+          column:
+            name: collection_namespace
+        collectionSource:
+          column:
+            name: collection_source
+        description:
+          column:
+            name: description
+        displayName:
+          column:
+            name: display_name
+
+---
+kind: TypePermissions
+version: v1
+definition:
+  typeName: CollectionsV1
+  permissions:
+    - role: admin
+      output:
+        allowedFields:
+          - collectionId
+          - collectionName
+          - collectionNamespace
+          - collectionSource
+          - description
+          - displayName
+    - role: anonymous
+      output:
+        allowedFields:
+          - collectionId
+          - collectionName
+          - collectionNamespace
+          - collectionSource
+          - description
+          - displayName
+
+---
+kind: BooleanExpressionType
+version: v1
+definition:
+  name: CollectionsV1BoolExp
+  operand:
+    object:
+      type: CollectionsV1
+      comparableFields:
+        - fieldName: collectionId
+          booleanExpressionType: StringBoolExp
+        - fieldName: collectionName
+          booleanExpressionType: StringBoolExp
+        - fieldName: collectionNamespace
+          booleanExpressionType: StringBoolExp
+        - fieldName: collectionSource
+          booleanExpressionType: StringBoolExp
+        - fieldName: description
+          booleanExpressionType: StringBoolExp
+        - fieldName: displayName
+          booleanExpressionType: StringBoolExp
+      comparableRelationships: []
+  logicalOperators:
+    enable: true
+  isNull:
+    enable: true
+  graphql:
+    typeName: Oso_CollectionsV1BoolExp
+
+---
+kind: AggregateExpression
+version: v1
+definition:
+  name: CollectionsV1AggExp
+  operand:
+    object:
+      aggregatedType: CollectionsV1
+      aggregatableFields:
+        - fieldName: collectionId
+          aggregateExpression: StringAggExp
+        - fieldName: collectionName
+          aggregateExpression: StringAggExp
+        - fieldName: collectionNamespace
+          aggregateExpression: StringAggExp
+        - fieldName: collectionSource
+          aggregateExpression: StringAggExp
+        - fieldName: description
+          aggregateExpression: StringAggExp
+        - fieldName: displayName
+          aggregateExpression: StringAggExp
+  count:
+    enable: true
+  graphql:
+    selectTypeName: Oso_CollectionsV1AggExp
+
+---
+kind: Model
+version: v1
+definition:
+  name: CollectionsV1
+  objectType: CollectionsV1
+  source:
+    dataConnectorName: oso_clickhouse
+    collection: collections_v1
+  filterExpressionType: CollectionsV1BoolExp
+  aggregateExpression: CollectionsV1AggExp
+  orderableFields:
+    - fieldName: collectionId
+      orderByDirections:
+        enableAll: true
+    - fieldName: collectionName
+      orderByDirections:
+        enableAll: true
+    - fieldName: collectionNamespace
+      orderByDirections:
+        enableAll: true
+    - fieldName: collectionSource
+      orderByDirections:
+        enableAll: true
+    - fieldName: description
+      orderByDirections:
+        enableAll: true
+    - fieldName: displayName
+      orderByDirections:
+        enableAll: true
+  graphql:
+    selectMany:
+      queryRootField: oso_collectionsV1
+      subscription:
+        rootField: oso_collectionsV1
+    selectUniques: []
+    orderByExpressionType: Oso_CollectionsV1OrderBy
+    filterInputTypeName: Oso_CollectionsV1FilterInput
+    aggregate:
+      queryRootField: oso_collectionsV1Aggregate
+      subscription:
+        rootField: oso_collectionsV1Aggregate
+
+---
+kind: ModelPermissions
+version: v1
+definition:
+  modelName: CollectionsV1
+  permissions:
+    - role: admin
+      select:
+        filter: null
+        allowSubscriptions: true
+    - role: anonymous
+      select:
+        filter: null

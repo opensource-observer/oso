@@ -4,6 +4,9 @@ metadata:
   name: production-trino
 spec:
   values:
+    service:
+      annotations:
+        tailscale.com/expose: "true"
     env:
       - name: TRINO_GCS_KEY_ID
         value: gcp:secretmanager:production-mcs-gcs-key-id/versions/latest
@@ -20,7 +23,7 @@ spec:
     coordinator:
       resources:
         requests:
-          cpu: 7500m
+          cpu: 7300m
           memory: 46000Mi
       tolerations:
         - key: pool_type
@@ -75,7 +78,7 @@ spec:
       workers: 1
       autoscaling:
         enabled: true
-        maxReplicas: 9
+        maxReplicas: 16
         targetCPUUtilizationPercentage: 20
         behavior:
           scaleDown:
@@ -101,13 +104,10 @@ spec:
         hive.metastore.uri=thrift://10.145.192.27:9083
         hive.metastore-cache-ttl=0s
         hive.metastore-refresh-interval=5s
-        hive.metastore.thrift.client.connect-timeout=10s
-        hive.metastore.thrift.client.read-timeout=30s
+        hive.metastore.thrift.client.connect-timeout=30s
+        hive.metastore.thrift.client.read-timeout=240s
         iceberg.use-file-size-from-metadata=false
         fs.native-gcs.enabled=true
-        fs.cache.enabled=true
-        fs.cache.max-sizes=300GB
-        fs.cache.directories=/metrics-cache
         gcs.project-id=opensource-observer
         iceberg.max-partitions-per-writer=1000
       source: |

@@ -84,10 +84,16 @@ class MetricsCalculationService:
     gcs_bucket: str
     cluster_manager: ClusterManager
     cache_manager: CacheExportManager
+    last_listener_added_datetime: datetime
+    last_listener_removed_datetime: datetime
+    listener_count: int
     job_state: t.Dict[str, QueryJobState]
     job_tasks: t.Dict[str, asyncio.Task]
     job_state_lock: asyncio.Lock
     logger: logging.Logger
+    daemon: asyncio.Task
+    requested_cluster_min_size: int
+    requested_cluster_max_size: int
 
     @classmethod
     def setup(
@@ -98,6 +104,8 @@ class MetricsCalculationService:
         cluster_manager: ClusterManager,
         cache_manager: CacheExportManager,
         import_adapter: DBImportAdapter,
+        cluster_scale_down_timeout: int = 300,
+        cluster_shutdown_timeout: int = 3600,
         log_override: t.Optional[logging.Logger] = None,
     ):
         service = cls(
@@ -106,9 +114,12 @@ class MetricsCalculationService:
             result_path_prefix,
             cluster_manager,
             cache_manager,
+            cluster_scale_down_timeout=cluster_scale_down_timeout,
+            cluster_shutdown_timeout=cluster_shutdown_timeout,
             import_adapter=import_adapter,
             log_override=log_override,
         )
+        service.start_daemon()
         return service
 
     def __init__(
@@ -119,6 +130,8 @@ class MetricsCalculationService:
         cluster_manager: ClusterManager,
         cache_manager: CacheExportManager,
         import_adapter: DBImportAdapter,
+        cluster_scale_down_timeout: int = 300,
+        cluster_shutdown_timeout: int = 3600,
         log_override: t.Optional[logging.Logger] = None,
     ):
         self.id = id
@@ -132,6 +145,13 @@ class MetricsCalculationService:
         self.job_state_lock = asyncio.Lock()
         self.logger = log_override or logger
         self.emitter = AsyncIOEventEmitter()
+        self.listener_count = 0
+        self.requested_cluster_min_size = 0
+        self.requested_cluster_max_size = 0
+        self.cluster_shutdown_timeout = cluster_shutdown_timeout
+        self.cluster_scale_down_timeout = cluster_scale_down_timeout
+        self.last_listener_added_datetime = datetime.now()
+        self.last_listener_removed_datetime = datetime.now()
 
     async def handle_query_job_submit_request(
         self,
@@ -146,8 +166,76 @@ class MetricsCalculationService:
                 job_id, result_path_base, input, calculation_export, final_export
             )
         except Exception as e:
-            self.logger.error(f"job[{job_id}] failed with exception: {e}")
+            self.logger.error(f"job[{job_id}] failed with exception[{type(e)}]: {e}")
             await self._notify_job_failed(job_id, False, e)
+
+    def start_daemon(self):
+        """Starts a daemon coroutine that will run until the service is closed"""
+        self.daemon = asyncio.create_task(self._daemon())
+
+    async def _daemon(self):
+        logger.debug("MCS scale down daemon: started")
+        scaled_down = False
+        shutdown = False
+        count = 0
+        while True:
+            await asyncio.sleep(1)
+            count += 1
+
+            # Checks if there are listeners. If 0 and nothing has been added
+            # in the last X seconds (cluster_scale_down_timeout) we can scale down the
+            # cluster to 0. If nothing has been added in the last Y seconds
+            # (cluster_shutdown_timeout) time we can shutdown the entire
+            # dask cluster.
+            now = datetime.now()
+            if count % 30 == 0:
+                logger.debug(
+                    f"MCS scale down daemon: listener_count={self.listener_count}"
+                )
+            last_listener_removed_delta = now - self.last_listener_removed_datetime
+            if self.listener_count == 0:
+                if (
+                    last_listener_removed_delta.total_seconds()
+                    >= self.cluster_scale_down_timeout
+                ) and not scaled_down:
+                    # If the cluster is already at 0 we don't need to do
+                    # anything just make sure everything is stopped
+                    logger.debug("MCS scale down daemon: scaling down")
+                    try:
+                        await self._scale_down_cluster()
+                    except Exception as e:
+                        logger.error(f"failed to scale down cluster: {e}")
+                    else:
+                        scaled_down = True
+                if (
+                    last_listener_removed_delta.total_seconds()
+                    >= self.cluster_shutdown_timeout
+                ) and not shutdown:
+                    logger.debug("MCS shutdown down daemon: scaling down")
+                    try:
+                        await self.cluster_manager.stop_cluster()
+                    except Exception as e:
+                        logger.error(f"failed to shutdown cluster: {e}")
+                    else:
+                        shutdown = True
+
+            if (
+                last_listener_removed_delta.total_seconds()
+                < self.cluster_scale_down_timeout
+            ):
+                # If we are not scaling down or shutting down then we reset these states
+                scaled_down = False
+                shutdown = False
+
+    async def _scale_down_cluster(self):
+        """Scale down the cluster to 0"""
+        if self.requested_cluster_max_size == 0:
+            logger.debug(
+                "MCS scale down daemon: requested cluster size is 0 - shutting down cluster"
+            )
+            await self.cluster_manager.stop_cluster()
+            return
+        await self.cluster_manager.resize_cluster(0, self.requested_cluster_max_size)
 
     async def _handle_query_job_submit_request(
         self,
@@ -290,8 +378,18 @@ class MetricsCalculationService:
         await self.cluster_manager.close()
         await self.cache_manager.stop()
 
+        self.daemon.cancel()
+        try:
+            await self.daemon
+        except asyncio.CancelledError:
+            pass
+
     async def start_cluster(self, start_request: ClusterStartRequest) -> ClusterStatus:
         self.logger.debug("starting cluster")
+
+        self.requested_cluster_max_size = start_request.max_size
+        self.requested_cluster_min_size = start_request.min_size
+
         return await self.cluster_manager.start_cluster(
             start_request.min_size, start_request.max_size
         )
@@ -544,10 +642,21 @@ class MetricsCalculationService:
             raise ValueError(f"Job {job_id} not found")
         return state.as_response(include_stats=include_stats)
 
-    def listen_for_job_updates(
+    async def listen_for_job_updates(
         self, job_id: str, handler: t.Callable[[JobStatusResponse], t.Awaitable[None]]
     ):
-        self.logger.info("Listening for job updates")
+        async with self.job_state_lock:
+            if job_id not in self.job_state:
+                raise ValueError(f"Job {job_id} not found")
+            state = self.job_state[job_id]
+            if state.status in (QueryJobStatus.COMPLETED, QueryJobStatus.FAILED):
+                handler(state.as_response())
+                return lambda: None
+        self.last_listener_added_datetime = datetime.now()
+        self.listener_count += 1
+        self.logger.info(
+            f"Adding listener for job[{job_id}]. Total listeners: {self.listener_count}"
+        )
 
         async def convert_to_response(state: QueryJobState):
             self.logger.debug("converting to response")
@@ -556,7 +665,13 @@ class MetricsCalculationService:
         handle = self.emitter.add_listener(f"job_update:{job_id}", convert_to_response)
 
         def remove_listener():
-            return self.emitter.remove_listener(f"job_update:{job_id}", handle)
+            self.emitter.remove_listener(f"job_update:{job_id}", handle)
+            self.last_listener_removed_datetime = datetime.now()
+            self.listener_count -= 1
+            self.logger.info(
+                f"Removed listener for job[{job_id}]. Total listeners: {self.listener_count}"
+            )
+            return
 
         return remove_listener
 

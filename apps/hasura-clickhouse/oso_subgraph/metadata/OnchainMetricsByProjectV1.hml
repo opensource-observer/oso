@@ -1,0 +1,376 @@
+---
+kind: ObjectType
+version: v1
+definition:
+  name: OnchainMetricsByProjectV1
+  fields:
+    - name: activeContractCount90Days
+      type: Float32!
+    - name: addressCount
+      type: Float32!
+    - name: addressCount90Days
+      type: Float32!
+    - name: daysSinceFirstTransaction
+      type: Float32!
+    - name: displayName
+      type: String!
+    - name: eventSource
+      type: String!
+    - name: gasFeesSum
+      type: Float32!
+    - name: gasFeesSum6Months
+      type: Float32!
+    - name: highActivityAddressCount90Days
+      type: Float32!
+    - name: lowActivityAddressCount90Days
+      type: Float32!
+    - name: mediumActivityAddressCount90Days
+      type: Float32!
+    - name: multiProjectAddressCount90Days
+      type: Float32!
+    - name: newAddressCount90Days
+      type: Float32!
+    - name: projectId
+      type: String!
+    - name: projectName
+      type: String!
+    - name: projectNamespace
+      type: String!
+    - name: projectSource
+      type: String!
+    - name: returningAddressCount90Days
+      type: Float32!
+    - name: transactionCount
+      type: Float32!
+    - name: transactionCount6Months
+      type: Float32!
+  graphql:
+    typeName: Oso_OnchainMetricsByProjectV1
+    inputTypeName: Oso_OnchainMetricsByProjectV1Input
+  dataConnectorTypeMapping:
+    - dataConnectorName: oso_clickhouse
+      dataConnectorObjectType: onchain_metrics_by_project_v1
+      fieldMapping:
+        activeContractCount90Days:
+          column:
+            name: active_contract_count_90_days
+        addressCount:
+          column:
+            name: address_count
+        addressCount90Days:
+          column:
+            name: address_count_90_days
+        daysSinceFirstTransaction:
+          column:
+            name: days_since_first_transaction
+        displayName:
+          column:
+            name: display_name
+        eventSource:
+          column:
+            name: event_source
+        gasFeesSum:
+          column:
+            name: gas_fees_sum
+        gasFeesSum6Months:
+          column:
+            name: gas_fees_sum_6_months
+        highActivityAddressCount90Days:
+          column:
+            name: high_activity_address_count_90_days
+        lowActivityAddressCount90Days:
+          column:
+            name: low_activity_address_count_90_days
+        mediumActivityAddressCount90Days:
+          column:
+            name: medium_activity_address_count_90_days
+        multiProjectAddressCount90Days:
+          column:
+            name: multi_project_address_count_90_days
+        newAddressCount90Days:
+          column:
+            name: new_address_count_90_days
+        projectId:
+          column:
+            name: project_id
+        projectName:
+          column:
+            name: project_name
+        projectNamespace:
+          column:
+            name: project_namespace
+        projectSource:
+          column:
+            name: project_source
+        returningAddressCount90Days:
+          column:
+            name: returning_address_count_90_days
+        transactionCount:
+          column:
+            name: transaction_count
+        transactionCount6Months:
+          column:
+            name: transaction_count_6_months
+
+---
+kind: TypePermissions
+version: v1
+definition:
+  typeName: OnchainMetricsByProjectV1
+  permissions:
+    - role: admin
+      output:
+        allowedFields:
+          - activeContractCount90Days
+          - addressCount
+          - addressCount90Days
+          - daysSinceFirstTransaction
+          - displayName
+          - eventSource
+          - gasFeesSum
+          - gasFeesSum6Months
+          - highActivityAddressCount90Days
+          - lowActivityAddressCount90Days
+          - mediumActivityAddressCount90Days
+          - multiProjectAddressCount90Days
+          - newAddressCount90Days
+          - projectId
+          - projectName
+          - projectNamespace
+          - projectSource
+          - returningAddressCount90Days
+          - transactionCount
+          - transactionCount6Months
+    - role: anonymous
+      output:
+        allowedFields:
+          - activeContractCount90Days
+          - addressCount
+          - addressCount90Days
+          - daysSinceFirstTransaction
+          - displayName
+          - eventSource
+          - gasFeesSum
+          - gasFeesSum6Months
+          - highActivityAddressCount90Days
+          - lowActivityAddressCount90Days
+          - mediumActivityAddressCount90Days
+          - multiProjectAddressCount90Days
+          - newAddressCount90Days
+          - projectId
+          - projectName
+          - projectNamespace
+          - projectSource
+          - returningAddressCount90Days
+          - transactionCount
+          - transactionCount6Months
+
+---
+kind: BooleanExpressionType
+version: v1
+definition:
+  name: OnchainMetricsByProjectV1BoolExp
+  operand:
+    object:
+      type: OnchainMetricsByProjectV1
+      comparableFields:
+        - fieldName: activeContractCount90Days
+          booleanExpressionType: Float32BoolExp
+        - fieldName: addressCount
+          booleanExpressionType: Float32BoolExp
+        - fieldName: addressCount90Days
+          booleanExpressionType: Float32BoolExp
+        - fieldName: daysSinceFirstTransaction
+          booleanExpressionType: Float32BoolExp
+        - fieldName: displayName
+          booleanExpressionType: StringBoolExp
+        - fieldName: eventSource
+          booleanExpressionType: StringBoolExp
+        - fieldName: gasFeesSum
+          booleanExpressionType: Float32BoolExp
+        - fieldName: gasFeesSum6Months
+          booleanExpressionType: Float32BoolExp
+        - fieldName: highActivityAddressCount90Days
+          booleanExpressionType: Float32BoolExp
+        - fieldName: lowActivityAddressCount90Days
+          booleanExpressionType: Float32BoolExp
+        - fieldName: mediumActivityAddressCount90Days
+          booleanExpressionType: Float32BoolExp
+        - fieldName: multiProjectAddressCount90Days
+          booleanExpressionType: Float32BoolExp
+        - fieldName: newAddressCount90Days
+          booleanExpressionType: Float32BoolExp
+        - fieldName: projectId
+          booleanExpressionType: StringBoolExp
+        - fieldName: projectName
+          booleanExpressionType: StringBoolExp
+        - fieldName: projectNamespace
+          booleanExpressionType: StringBoolExp
+        - fieldName: projectSource
+          booleanExpressionType: StringBoolExp
+        - fieldName: returningAddressCount90Days
+          booleanExpressionType: Float32BoolExp
+        - fieldName: transactionCount
+          booleanExpressionType: Float32BoolExp
+        - fieldName: transactionCount6Months
+          booleanExpressionType: Float32BoolExp
+      comparableRelationships: []
+  logicalOperators:
+    enable: true
+  isNull:
+    enable: true
+  graphql:
+    typeName: Oso_OnchainMetricsByProjectV1BoolExp
+
+---
+kind: AggregateExpression
+version: v1
+definition:
+  name: OnchainMetricsByProjectV1AggExp
+  operand:
+    object:
+      aggregatedType: OnchainMetricsByProjectV1
+      aggregatableFields:
+        - fieldName: activeContractCount90Days
+          aggregateExpression: Float32AggExp
+        - fieldName: addressCount
+          aggregateExpression: Float32AggExp
+        - fieldName: addressCount90Days
+          aggregateExpression: Float32AggExp
+        - fieldName: daysSinceFirstTransaction
+          aggregateExpression: Float32AggExp
+        - fieldName: displayName
+          aggregateExpression: StringAggExp
+        - fieldName: eventSource
+          aggregateExpression: StringAggExp
+        - fieldName: gasFeesSum
+          aggregateExpression: Float32AggExp
+        - fieldName: gasFeesSum6Months
+          aggregateExpression: Float32AggExp
+        - fieldName: highActivityAddressCount90Days
+          aggregateExpression: Float32AggExp
+        - fieldName: lowActivityAddressCount90Days
+          aggregateExpression: Float32AggExp
+        - fieldName: mediumActivityAddressCount90Days
+          aggregateExpression: Float32AggExp
+        - fieldName: multiProjectAddressCount90Days
+          aggregateExpression: Float32AggExp
+        - fieldName: newAddressCount90Days
+          aggregateExpression: Float32AggExp
+        - fieldName: projectId
+          aggregateExpression: StringAggExp
+        - fieldName: projectName
+          aggregateExpression: StringAggExp
+        - fieldName: projectNamespace
+          aggregateExpression: StringAggExp
+        - fieldName: projectSource
+          aggregateExpression: StringAggExp
+        - fieldName: returningAddressCount90Days
+          aggregateExpression: Float32AggExp
+        - fieldName: transactionCount
+          aggregateExpression: Float32AggExp
+        - fieldName: transactionCount6Months
+          aggregateExpression: Float32AggExp
+  count:
+    enable: true
+  graphql:
+    selectTypeName: Oso_OnchainMetricsByProjectV1AggExp
+
+---
+kind: Model
+version: v1
+definition:
+  name: OnchainMetricsByProjectV1
+  objectType: OnchainMetricsByProjectV1
+  source:
+    dataConnectorName: oso_clickhouse
+    collection: onchain_metrics_by_project_v1
+  filterExpressionType: OnchainMetricsByProjectV1BoolExp
+  aggregateExpression: OnchainMetricsByProjectV1AggExp
+  orderableFields:
+    - fieldName: activeContractCount90Days
+      orderByDirections:
+        enableAll: true
+    - fieldName: addressCount
+      orderByDirections:
+        enableAll: true
+    - fieldName: addressCount90Days
+      orderByDirections:
+        enableAll: true
+    - fieldName: daysSinceFirstTransaction
+      orderByDirections:
+        enableAll: true
+    - fieldName: displayName
+      orderByDirections:
+        enableAll: true
+    - fieldName: eventSource
+      orderByDirections:
+        enableAll: true
+    - fieldName: gasFeesSum
+      orderByDirections:
+        enableAll: true
+    - fieldName: gasFeesSum6Months
+      orderByDirections:
+        enableAll: true
+    - fieldName: highActivityAddressCount90Days
+      orderByDirections:
+        enableAll: true
+    - fieldName: lowActivityAddressCount90Days
+      orderByDirections:
+        enableAll: true
+    - fieldName: mediumActivityAddressCount90Days
+      orderByDirections:
+        enableAll: true
+    - fieldName: multiProjectAddressCount90Days
+      orderByDirections:
+        enableAll: true
+    - fieldName: newAddressCount90Days
+      orderByDirections:
+        enableAll: true
+    - fieldName: projectId
+      orderByDirections:
+        enableAll: true
+    - fieldName: projectName
+      orderByDirections:
+        enableAll: true
+    - fieldName: projectNamespace
+      orderByDirections:
+        enableAll: true
+    - fieldName: projectSource
+      orderByDirections:
+        enableAll: true
+    - fieldName: returningAddressCount90Days
+      orderByDirections:
+        enableAll: true
+    - fieldName: transactionCount
+      orderByDirections:
+        enableAll: true
+    - fieldName: transactionCount6Months
+      orderByDirections:
+        enableAll: true
+  graphql:
+    selectMany:
+      queryRootField: oso_onchainMetricsByProjectV1
+      subscription:
+        rootField: oso_onchainMetricsByProjectV1
+    selectUniques: []
+    orderByExpressionType: Oso_OnchainMetricsByProjectV1OrderBy
+    filterInputTypeName: Oso_OnchainMetricsByProjectV1FilterInput
+    aggregate:
+      queryRootField: oso_onchainMetricsByProjectV1Aggregate
+      subscription:
+        rootField: oso_onchainMetricsByProjectV1Aggregate
+
+---
+kind: ModelPermissions
+version: v1
+definition:
+  modelName: OnchainMetricsByProjectV1
+  permissions:
+    - role: admin
+      select:
+        filter: null
+        allowSubscriptions: true
+    - role: anonymous
+      select:
+        filter: null

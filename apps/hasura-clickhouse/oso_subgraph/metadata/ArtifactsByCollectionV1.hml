@@ -1,0 +1,225 @@
+---
+kind: ObjectType
+version: v1
+definition:
+  name: ArtifactsByCollectionV1
+  fields:
+    - name: artifactId
+      type: String!
+    - name: artifactName
+      type: String!
+    - name: artifactNamespace
+      type: String!
+    - name: artifactSource
+      type: String!
+    - name: artifactSourceId
+      type: String!
+    - name: collectionId
+      type: String!
+    - name: collectionName
+      type: String!
+    - name: collectionNamespace
+      type: String!
+    - name: collectionSource
+      type: String!
+  graphql:
+    typeName: Oso_ArtifactsByCollectionV1
+    inputTypeName: Oso_ArtifactsByCollectionV1Input
+  dataConnectorTypeMapping:
+    - dataConnectorName: oso_clickhouse
+      dataConnectorObjectType: artifacts_by_collection_v1
+      fieldMapping:
+        artifactId:
+          column:
+            name: artifact_id
+        artifactName:
+          column:
+            name: artifact_name
+        artifactNamespace:
+          column:
+            name: artifact_namespace
+        artifactSource:
+          column:
+            name: artifact_source
+        artifactSourceId:
+          column:
+            name: artifact_source_id
+        collectionId:
+          column:
+            name: collection_id
+        collectionName:
+          column:
+            name: collection_name
+        collectionNamespace:
+          column:
+            name: collection_namespace
+        collectionSource:
+          column:
+            name: collection_source
+
+---
+kind: TypePermissions
+version: v1
+definition:
+  typeName: ArtifactsByCollectionV1
+  permissions:
+    - role: admin
+      output:
+        allowedFields:
+          - artifactId
+          - artifactName
+          - artifactNamespace
+          - artifactSource
+          - artifactSourceId
+          - collectionId
+          - collectionName
+          - collectionNamespace
+          - collectionSource
+    - role: anonymous
+      output:
+        allowedFields:
+          - artifactId
+          - artifactName
+          - artifactNamespace
+          - artifactSource
+          - artifactSourceId
+          - collectionId
+          - collectionName
+          - collectionNamespace
+          - collectionSource
+
+---
+kind: BooleanExpressionType
+version: v1
+definition:
+  name: ArtifactsByCollectionV1BoolExp
+  operand:
+    object:
+      type: ArtifactsByCollectionV1
+      comparableFields:
+        - fieldName: artifactId
+          booleanExpressionType: StringBoolExp
+        - fieldName: artifactName
+          booleanExpressionType: StringBoolExp
+        - fieldName: artifactNamespace
+          booleanExpressionType: StringBoolExp
+        - fieldName: artifactSource
+          booleanExpressionType: StringBoolExp
+        - fieldName: artifactSourceId
+          booleanExpressionType: StringBoolExp
+        - fieldName: collectionId
+          booleanExpressionType: StringBoolExp
+        - fieldName: collectionName
+          booleanExpressionType: StringBoolExp
+        - fieldName: collectionNamespace
+          booleanExpressionType: StringBoolExp
+        - fieldName: collectionSource
+          booleanExpressionType: StringBoolExp
+      comparableRelationships: []
+  logicalOperators:
+    enable: true
+  isNull:
+    enable: true
+  graphql:
+    typeName: Oso_ArtifactsByCollectionV1BoolExp
+
+---
+kind: AggregateExpression
+version: v1
+definition:
+  name: ArtifactsByCollectionV1AggExp
+  operand:
+    object:
+      aggregatedType: ArtifactsByCollectionV1
+      aggregatableFields:
+        - fieldName: artifactId
+          aggregateExpression: StringAggExp
+        - fieldName: artifactName
+          aggregateExpression: StringAggExp
+        - fieldName: artifactNamespace
+          aggregateExpression: StringAggExp
+        - fieldName: artifactSource
+          aggregateExpression: StringAggExp
+        - fieldName: artifactSourceId
+          aggregateExpression: StringAggExp
+        - fieldName: collectionId
+          aggregateExpression: StringAggExp
+        - fieldName: collectionName
+          aggregateExpression: StringAggExp
+        - fieldName: collectionNamespace
+          aggregateExpression: StringAggExp
+        - fieldName: collectionSource
+          aggregateExpression: StringAggExp
+  count:
+    enable: true
+  graphql:
+    selectTypeName: Oso_ArtifactsByCollectionV1AggExp
+
+---
+kind: OrderByExpression
+version: v1
+definition:
+  name: ArtifactsByCollectionV1OrderByExp
+  operand:
+    object:
+      orderedType: ArtifactsByCollectionV1
+      orderableFields:
+        - fieldName: artifactId
+          orderByExpression: StringOrderByExp
+        - fieldName: artifactName
+          orderByExpression: StringOrderByExp
+        - fieldName: artifactNamespace
+          orderByExpression: StringOrderByExp
+        - fieldName: artifactSource
+          orderByExpression: StringOrderByExp
+        - fieldName: artifactSourceId
+          orderByExpression: StringOrderByExp
+        - fieldName: collectionId
+          orderByExpression: StringOrderByExp
+        - fieldName: collectionName
+          orderByExpression: StringOrderByExp
+        - fieldName: collectionNamespace
+          orderByExpression: StringOrderByExp
+        - fieldName: collectionSource
+          orderByExpression: StringOrderByExp
+      orderableRelationships: []
+  graphql:
+    expressionTypeName: Oso_ArtifactsByCollectionV1OrderByExp
+
+---
+kind: Model
+version: v2
+definition:
+  name: ArtifactsByCollectionV1
+  objectType: ArtifactsByCollectionV1
+  source:
+    dataConnectorName: oso_clickhouse
+    collection: artifacts_by_collection_v1
+  filterExpressionType: ArtifactsByCollectionV1BoolExp
+  aggregateExpression: ArtifactsByCollectionV1AggExp
+  orderByExpression: ArtifactsByCollectionV1OrderByExp
+  graphql:
+    selectMany:
+      queryRootField: oso_artifactsByCollectionV1
+      subscription:
+        rootField: oso_artifactsByCollectionV1
+    selectUniques: []
+    filterInputTypeName: Oso_ArtifactsByCollectionV1FilterInput
+    aggregate:
+      queryRootField: oso_artifactsByCollectionV1Aggregate
+      subscription:
+        rootField: oso_artifactsByCollectionV1Aggregate
+
+---
+kind: ModelPermissions
+version: v1
+definition:
+  modelName: ArtifactsByCollectionV1
+  permissions:
+    - role: admin
+      select:
+        filter: null
+        allowSubscriptions: true
+    - role: anonymous
+      select:
+        filter: null

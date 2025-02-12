@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import typing as t
 import uuid
@@ -11,7 +12,7 @@ from metrics_tools.compute.types import (
     TableReference,
 )
 from metrics_tools.transfer.base import Exporter
-from metrics_tools.transfer.storage import TimeOrderedStorage
+from metrics_tools.transfer.storage import TimeOrderedStorage, TimeOrderedStorageFile
 from sqlglot import exp
 from sqlmesh.core.dialect import parse_one
 
@@ -25,6 +26,7 @@ class TrinoExporter(Exporter):
         hive_schema: str,
         time_ordered_storage: TimeOrderedStorage,
         connection: Connection,
+        max_concurrency: int = 50,
         log_override: t.Optional[logging.Logger] = None,
     ):
         self.logger = log_override or logger
@@ -32,6 +34,7 @@ class TrinoExporter(Exporter):
         self.hive_schema = hive_schema
         self.connection = connection
         self.time_ordered_storage = time_ordered_storage
+        self.max_concurrency = max_concurrency
 
     async def run_query(self, query: str):
         cursor = await self.connection.cursor()
@@ -185,7 +188,7 @@ class TrinoExporter(Exporter):
     async def cleanup_ref(self, export_reference: ExportReference):
         dropped = False
         # Delete everything in the gcs path
-        for f in self.time_ordered_storage.iter_files(
+        async for f in self.time_ordered_storage.iter_files(
             export_reference=export_reference
         ):
             # Delete the table from the hive catalog if it exists
@@ -197,7 +200,7 @@ class TrinoExporter(Exporter):
                 logger.debug(f"Running drop query: {drop_query}")
                 await self.run_query(drop_query)
             # Delete the file
-            f.delete()
+            await f.delete()
 
     async def cleanup_expired(self, expiration: datetime, dry_run: bool = False):
         # Track dropped tables so we don't try to drop them again unnecessarily
@@ -205,8 +208,22 @@ class TrinoExporter(Exporter):
 
         count = 0
 
+        async def delete(
+            semaphore: asyncio.Semaphore, f: TimeOrderedStorageFile, dry_run: bool
+        ):
+            async with semaphore:
+                if not dry_run:
+                    logger.debug(f"Deleting: {f.uri}")
+                    await f.delete()
+                else:
+                    logger.debug(f"Would have deleted: {f.uri}")
+
+        semaphore = asyncio.Semaphore(self.max_concurrency)
+
+        delete_tasks: t.List[asyncio.Task] = []
+
         # The time ordered storage is organized by time so we can iterate over things within a time range
-        for f in self.time_ordered_storage.iter_files(before=expiration):
+        async for f in self.time_ordered_storage.iter_files(before=expiration):
             path_parts = f.rel_path.split("/")
             table_name = path_parts[0]
             if table_name not in dropped_tables:
@@ -218,11 +235,11 @@ class TrinoExporter(Exporter):
                     logger.debug(f"Would have run: {drop_query}")
                 dropped_tables.add(table_name)
 
-            if not dry_run:
-                logger.debug(f"Deleting: {f.uri}")
-                f.delete()
-            else:
-                logger.debug(f"Would have deleted: {f.uri}")
+            delete_task = asyncio.create_task(delete(semaphore, f, dry_run))
+            delete_tasks.append(delete_task)
             count += 1
+
+        await asyncio.gather(*delete_tasks)
+
         if count == 0:
             logger.debug("No expired tables found")

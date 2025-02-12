@@ -16,6 +16,7 @@ import aiotrino
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.datastructures import State
+from fastapi.websockets import WebSocketState
 from metrics_tools.compute.result import (
     DummyImportAdapter,
     FakeLocalImportAdapter,
@@ -38,6 +39,7 @@ from .types import (
     ExportedTableLoadRequest,
     JobStatusResponse,
     JobSubmitRequest,
+    QueryJobStatus,
 )
 
 load_dotenv()
@@ -116,6 +118,8 @@ def default_lifecycle(config: AppConfig):
             cluster_manager=cluster_manager,
             cache_manager=cache_export_manager,
             import_adapter=import_adapter,
+            cluster_scale_down_timeout=config.cluster_scale_down_timeout,
+            cluster_shutdown_timeout=config.cluster_shutdown_timeout,
         )
         try:
             yield {
@@ -168,10 +172,7 @@ def setup_app(lifespan: t.Callable[[FastAPI], t.Any]):
         If the cluster is already running, it will not be restarted.
         """
         state = get_mcs(request)
-        manager = state.cluster_manager
-        return await manager.start_cluster(
-            start_request.min_size, start_request.max_size
-        )
+        return await state.start_cluster(start_request)
 
     @app.post("/cluster/stop")
     async def stop_cluster(request: Request):
@@ -223,13 +224,31 @@ def setup_app(lifespan: t.Callable[[FastAPI], t.Any]):
             logger.debug(f"Received job status update: {job_status_response}")
             await update_queue.put(job_status_response)
 
-        stop_listening = service.listen_for_job_updates(job_id, listener)
+        stop_listening = await service.listen_for_job_updates(job_id, listener)
+
+        count = 0
 
         try:
             while True:
-                update = await update_queue.get()
+                count += 1
+                if count % 10 == 0:
+                    logger.debug(f"Websocket state: {websocket.client_state}")
+                if websocket.client_state == WebSocketState.DISCONNECTED:
+                    logger.debug("Websocket disconnected while waiting for job updates")
+                    break
+                try:
+                    update = await asyncio.wait_for(update_queue.get(), timeout=1)
+                except asyncio.TimeoutError:
+                    continue
                 await websocket.send_text(update.model_dump_json())
+                if update.status in (QueryJobStatus.COMPLETED, QueryJobStatus.FAILED):
+                    logger.debug("Job completed, stopping listening")
+                    break
         except WebSocketDisconnect:
+            logger.debug("Websocket disconnected")
+            stop_listening()
+            await websocket.close()
+        else:
             stop_listening()
             await websocket.close()
 

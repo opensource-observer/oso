@@ -299,54 +299,81 @@ class CacheExportManager:
         in_progress: t.Set[str] = set()
         errors: t.Dict[str, t.List[Exception]] = {}
 
-        async def export_table(table: str, execution_time: datetime) -> ExportReference:
+        async def export_table(id: str, table: str, execution_time: datetime):
+            export_table_key = self.export_table_key(table, execution_time)
             try:
-                return await self._export_table_for_cache(table, execution_time)
+                export_reference = await self._export_table_for_cache(
+                    table, execution_time
+                )
+                self.event_emitter.emit(
+                    "exported_table",
+                    table=table,
+                    execution_time=execution_time,
+                    export_table_key=export_table_key,
+                    export_reference=export_reference,
+                )
+                self.export_queue.task_done()
             except Exception as e:
-                raise ExportError(table, e)
+                self.logger.error(f"Error exporting table {table}: {e}")
 
+                # Save the error for later
+                table_errors = errors.get(export_table_key, [])
+                table_errors.append(e)
+                errors[export_table_key] = table_errors
+
+                in_progress.remove(export_table_key)
+                self.event_emitter.emit(
+                    "exported_table",
+                    table=table,
+                    execution_time=execution_time,
+                    export_table_key=export_table_key,
+                    error=e,
+                )
+                self.logger.debug("emitted error event and waiting for next export")
+                self.export_queue.task_done()
+            tasks.pop(id)
+
+        tasks: t.Dict[str, asyncio.Task] = {}
+        count = 0
+        self.logger.info("export queue loop started")
         while not self.stop_signal.is_set():
+            count += 1
             try:
                 item = await asyncio.wait_for(self.export_queue.get(), timeout=1)
             except asyncio.TimeoutError:
+                if count % 60 == 0:
+                    self.logger.debug("export queue loop is still running")
                 continue
             except asyncio.CancelledError:
                 continue
             except RuntimeError:
                 break
-            if item.table in in_progress:
+            self.logger.debug(f"export queue item received: {item}")
+            export_table_key = self.export_table_key(item.table, item.execution_time)
+            if export_table_key in in_progress:
                 # The table is already being exported. Skip this in the queue
                 continue
-            if item.table in errors:
+            if export_table_key in errors:
                 # The table has already errored. Skip this in the queue
                 continue
 
-            in_progress.add(item.table)
-            try:
-                export_reference = await export_table(item.table, item.execution_time)
-            except ExportError as e:
-                table = e.table
-                error = e.error
-                self.logger.error(f"Error exporting table {table}: {error}")
+            in_progress.add(export_table_key)
 
-                # Save the error for later
-                table_errors = errors.get(table, [])
-                table_errors.append(error)
-                errors[table] = table_errors
-
-                in_progress.remove(table)
-                self.event_emitter.emit("exported_table", table=table, error=error)
-                self.export_queue.task_done()
-                continue
-            self.event_emitter.emit(
-                "exported_table", table=item.table, export_reference=export_reference
+            export_task_id = uuid.uuid4().hex
+            tasks[export_task_id] = asyncio.create_task(
+                export_table(export_task_id, item.table, item.execution_time)
             )
-            self.export_queue.task_done()
+
+        tasks_list = list(tasks.values())
+        self.logger.info(f"waiting for {len(tasks_list)} tasks to complete")
+
+        await asyncio.gather(*tasks_list)
 
     async def add_export_table_reference(
-        self, table: str, export_reference: ExportReference
+        self, table: str, execution_time: datetime, export_reference: ExportReference
     ):
-        await self.add_export_table_references({table: export_reference})
+        export_table_key = self.export_table_key(table, execution_time)
+        await self.add_export_table_references({export_table_key: export_reference})
 
     async def add_export_table_references(
         self, table_map: t.Dict[str, ExportReference]
@@ -358,9 +385,14 @@ class CacheExportManager:
         async with self.exported_map_lock:
             return copy.deepcopy(self.exported_map)
 
-    async def get_export_table_reference(self, table: str):
+    def export_table_key(self, table: str, execution_time: datetime):
+        return f"{table}::{execution_time.isoformat()}"
+
+    async def get_export_table_reference(self, table: str, execution_time: datetime):
+        export_table_key = self.export_table_key(table, execution_time)
+
         async with self.exported_map_lock:
-            reference = self.exported_map.get(table)
+            reference = self.exported_map.get(export_table_key)
             if not reference:
                 return None
             return copy.deepcopy(reference)
@@ -385,50 +417,81 @@ class CacheExportManager:
             asyncio.get_event_loop().create_future()
         )
 
+        # The tables to export should be unique combinations of the table name
+        # and execution time. This ensures that multiple runs don't use stale
+        # data accidentally.
         tables_to_export = set(tables)
         registration = None
         export_map: t.Dict[str, ExportReference] = {}
 
         # Ensure we are only comparing unique tables
         for table in set(tables):
-            reference = await self.get_export_table_reference(table)
+            reference = await self.get_export_table_reference(table, execution_time)
             if reference is not None:
                 export_map[table] = reference
                 tables_to_export.remove(table)
         if len(tables_to_export) == 0:
             return export_map
+        pending_export_table_keys = set(
+            [self.export_table_key(table, execution_time) for table in tables_to_export]
+        )
 
-        self.logger.info(f"unknown tables to export: {tables_to_export}")
+        self.logger.debug(f"Unknown tables to export: {tables_to_export}")
+        self.logger.debug(f"Pending export table keys: {pending_export_table_keys}")
+
+        export_map_lock = asyncio.Lock()
 
         async def handle_exported_table(
             *,
             table: str,
+            execution_time: datetime,
+            export_table_key: str,
             export_reference: t.Optional[ExportReference] = None,
             error: t.Optional[Exception] = None,
         ):
             if not export_reference and not error:
+                self.logger.error("export_reference or error must be provided")
                 raise RuntimeError("export_reference or error must be provided")
 
             # If there was an error send it back to the listener
-            if not export_reference:
-                assert error is not None
-                future.set_exception(error)
-                return
-
-            self.logger.info(f"exported table ready: {table} -> {export_reference}")
-            if table in tables_to_export:
-                tables_to_export.remove(table)
-                export_map[table] = export_reference
-                await self.add_export_table_reference(table, export_reference)
-            if len(tables_to_export) == 0:
-                future.set_result(export_map)
-                if registration:
-                    self.event_emitter.remove_listener("exported_table", registration)
+            self.logger.info(
+                f"exported table update received: {table}::{execution_time}"
+            )
+            self.logger.debug(
+                f"Checking pending export table keys: {pending_export_table_keys}"
+            )
+            self.logger.debug(f"Checking export table key: {export_table_key}")
+            # Check if we were waiting for this table
+            async with export_map_lock:
+                if export_table_key in pending_export_table_keys:
+                    self.logger.debug(
+                        f"found pending export table key {export_table_key}"
+                    )
+                    # If there's no export reference then we must have an error
+                    if not export_reference:
+                        assert error is not None
+                        future.set_exception(error)
+                        return
+                    pending_export_table_keys.remove(export_table_key)
+                    export_map[table] = export_reference
+                    self.logger.debug(f"updating export map: {export_map}")
+                    await self.add_export_table_reference(
+                        table, execution_time, export_reference
+                    )
+                    # Stop listening if we have all the tables
+                    if len(pending_export_table_keys) == 0:
+                        self.logger.debug(f"all tables exported {export_map}")
+                        future.set_result(export_map)
+                        if registration:
+                            self.event_emitter.remove_listener(
+                                "exported_table", registration
+                            )
 
         registration = self.event_emitter.add_listener(
             "exported_table", handle_exported_table
         )
         for table in tables_to_export:
+            self.logger.info(f"queueing table for export: {table}")
             self.export_queue.put_nowait(
                 ExportCacheQueueItem(table=table, execution_time=execution_time)
             )

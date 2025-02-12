@@ -37,7 +37,12 @@ def transactions_with_receipts_deployers(
             *additional_column_defs,
         )
         .from_(transactions_table.as_("transactions"))
-        .where(exp.Is(this=to_address, expression=exp.Null()))
+        .where(
+            exp.Or(
+                this=exp.Is(this=to_address, expression=exp.Null()),
+                expression=exp.EQ(this=to_address, expression=exp.Literal.string("")),
+            )
+        )
         .where(
             exp.EQ(
                 this=receipt_status, expression=exp.Literal(this="1", is_string=False)

@@ -2,19 +2,30 @@
 A catchall for development environment tools related to the python tooling.
 """
 
+import asyncio
 import logging
 import subprocess
 import sys
 import typing as t
+import warnings
+from contextlib import contextmanager
+from datetime import datetime, timedelta
 
+import aiotrino
 import dotenv
 import git
 import kr8s
 from kr8s.objects import Service
-from metrics_tools.factory.factory import MetricQueryConfig
+from metrics_tools.definition import PeerMetricDependencyRef
+from metrics_tools.factory.constants import METRICS_COLUMNS_BY_ENTITY
+from metrics_tools.factory.factory import MetricQueryConfig, timeseries_metrics
 from metrics_tools.local.loader import LocalTrinoDestinationLoader
 from metrics_tools.local.manager import LocalWarehouseManager
+from metrics_tools.transfer.gcs import GCSTimeOrderedStorage
+from metrics_tools.transfer.trino import TrinoExporter
 from metrics_tools.utils.logging import setup_module_logging
+from metrics_tools.utils.tables import list_query_table_dependencies
+from metrics_tools.utils.testing import load_timeseries_metrics
 from numpy import std
 from opsscripts.cli import cluster_setup
 from opsscripts.utils.dockertools import (
@@ -23,6 +34,8 @@ from opsscripts.utils.dockertools import (
 )
 from oso_lets_go.wizard import MultipleChoiceInput
 from sqlglot import pretty
+from sqlmesh.core.dialect import parse_one
+from traitlets import default
 
 dotenv.load_dotenv()
 logger = logging.getLogger(__name__)
@@ -57,8 +70,9 @@ def cli(ctx: click.Context, debug: bool):
 
 
 @cli.group()
-def metrics():
-    pass
+@click.pass_context
+def metrics(ctx: click.Context):
+    ctx.obj["used_metrics_sub_command"] = True
 
 
 @cli.group()
@@ -69,41 +83,8 @@ def ops():
 ops.command()(cluster_setup)
 
 
-@metrics.command()
-@click.argument("metric")
-@click.option(
-    "--factory-path",
-    default=os.path.join(METRICS_MESH_DIR, "models/metrics_factories.py"),
-)
-@click.option("--dialect", default="duckdb", help="The dialect to render")
-@click.pass_context
-def render(ctx: click.Context, metric: str, factory_path: str, dialect: str):
-    """Renders a given metric query. Useful for testing
-
-    Usage:
-
-        $ oso metrics render <metrics_name>
-    """
-
-    # Select all the available options for the metric
-    import importlib.util
-
-    from metrics_tools.utils import testing
-    from sqlmesh.core.dialect import parse_one
-
-    testing.ENABLE_TIMESERIES_DEBUG = True
-
-    from metrics_tools.factory.factory import GLOBAL_TIMESERIES_METRICS
-
-    # Run the metrics factory in the sqlmesh project. This uses a single default
-    # location for now.
-    spec = importlib.util.spec_from_file_location(
-        "metrics_mesh.metrics_factories", factory_path
-    )
-    mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
-
-    timeseries_metrics = GLOBAL_TIMESERIES_METRICS[factory_path]
+def find_or_choose_metric(metric: str):
+    timeseries_metrics = load_timeseries_metrics(METRICS_MESH_DIR)
 
     matches: t.Dict[str, MetricQueryConfig] = {}
 
@@ -121,12 +102,37 @@ def render(ctx: click.Context, metric: str, factory_path: str, dialect: str):
         choice = MultipleChoiceInput(dict(zip(matches.keys(), matches.keys()))).render()
     else:
         choice = list(matches.keys())[0]
-    print(matches[choice]["rendered_query"].sql(pretty=True, dialect=dialect))
+    return matches[choice]
 
 
-@metrics.group()
+@metrics.command()
+@click.argument("metric")
+@click.option(
+    "--factory-path",
+    default=os.path.join(METRICS_MESH_DIR, "models/metrics_factories.py"),
+)
+@click.option("--dialect", default="duckdb", help="The dialect to render")
+@click.pass_context
+def render(ctx: click.Context, metric: str, factory_path: str, dialect: str):
+    """Renders a given metric query. Useful for testing
+
+    Usage:
+
+        $ oso metrics render <metrics_name>
+    """
+    chosen_metric = find_or_choose_metric(metric)
+    assert chosen_metric, f"Could not find metric {metric}"
+    print(chosen_metric["rendered_query"].sql(pretty=True, dialect=dialect))
+
+
+@click.group()
 @click.pass_context
 def local(ctx: click.Context):
+    if ctx.obj.get("used_metrics_sub_command", False):
+        warnings.warn(
+            "The `metrics` subcommand is no longer used with `local`. Please use `oso local` directly"
+        )
+
     local_duckdb_path = os.getenv("SQLMESH_DUCKDB_LOCAL_PATH")
     if not local_duckdb_path:
         raise Exception("You need to add SQLMESH_DUCKDB_LOCAL_PATH to your .env")
@@ -147,6 +153,10 @@ def local(ctx: click.Context):
             f"SQLMESH_DUCKDB_LOCAL_TRINO_PATH not set. Using {local_trino_duckdb_path} for local trino state"
         )
     ctx.obj["local_trino_duckdb_path"] = local_trino_duckdb_path
+
+
+cli.add_command(local)
+metrics.add_command(local)
 
 
 @local.command()
@@ -194,8 +204,249 @@ def initialize(
     manager.initialize()
 
 
+@cli.group()
+def production():
+    pass
+
+
+@production.command()
+@click.option("--hive-catalog", default="source")
+@click.option("--hive-schema", default="export")
+@click.option("--bucket-name", default="oso-dataset-transfer-bucket")
+@click.option("--storage-prefix", default="trino-export")
+@click.option("--trino-host", required=True)
+@click.option("--trino-port", default=8080)
+@click.option("--trino-user", default="oso-cli")
+@click.option(
+    "--expiration", default=(datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
+)
+@click.option(
+    "--dry-run/--no-dry-run", default=False, help="Run the cleanup without deleting"
+)
+def clean_expired_trino_hive_files(
+    hive_catalog: str,
+    hive_schema: str,
+    bucket_name: str,
+    storage_prefix: str,
+    trino_host: str,
+    trino_port: int,
+    trino_user: str,
+    expiration: str,
+    dry_run: bool,
+):
+    asyncio.run(
+        run_cleanup(
+            hive_catalog,
+            hive_schema,
+            bucket_name,
+            storage_prefix,
+            trino_host,
+            trino_port,
+            trino_user,
+            expiration,
+            dry_run,
+        )
+    )
+
+
+@production.command()
+@click.argument("metric-name")
+@click.option("--start", type=click.DateTime(), required=True)
+@click.option("--end", type=click.DateTime(), required=True)
+@click.option("--execution-time", type=click.DateTime(), default=datetime.now())
+@click.option("--mcs-url", default="")
+@click.option("--mcs-batch-size", default=10)
+@click.option("--use-port-forward/--no-use-port-forward", default=False)
+@click.option("--mcs-k8s-service-name", default="production-mcs")
+@click.option("--mcs-k8s-deployment-name", default="production-mcs")
+@click.option("--mcs-k8s-namespace", default="production-mcs")
+@click.option("--mcs-default-slots", default=8)
+@click.option("--trino-url", default="")
+@click.option("--trino-k8s-service-name", default="production-trino-trino")
+@click.option("--trino-k8s-namespace", default="production-trino")
+@click.option(
+    "--trino-k8s-coordinator-deployment-name",
+    default="production-trino-trino-coordinator",
+)
+@click.option(
+    "--trino-k8s-worker-deployment-name", default="production-trino-trino-worker"
+)
+@click.option("--job-retries", default=5, help="The number of times to retry the job")
+@click.option("--cluster-min-size", default=3, help="The minimum cluster size")
+@click.option("--cluster-max-size", default=15, help="The maximum cluster size")
+def call_mcs(
+    metric_name: str,
+    start: datetime,
+    end: datetime,
+    execution_time: datetime,
+    mcs_url: str,
+    mcs_batch_size: int,
+    use_port_forward: bool,
+    mcs_k8s_service_name: str,
+    mcs_k8s_deployment_name: str,
+    mcs_k8s_namespace: str,
+    mcs_default_slots: int,
+    trino_url: str,
+    trino_k8s_service_name: str,
+    trino_k8s_namespace: str,
+    trino_k8s_coordinator_deployment_name: str,
+    trino_k8s_worker_deployment_name: str,
+    job_retries: int,
+    cluster_min_size: int,
+    cluster_max_size: int,
+):
+    """Used to call the mcs to calculate an already defined metric"""
+
+    @contextmanager
+    def get_mcs_url(
+        mcs_url: str,
+        mcs_k8s_service_name: str,
+        mcs_k8s_namespace: str,
+        use_port_forward: bool,
+    ):
+        if not use_port_forward:
+            assert mcs_url, "You must provide a mcs url"
+            yield mcs_url
+        else:
+            mcs_service = Service.get(
+                mcs_k8s_service_name,
+                mcs_k8s_namespace,
+            )
+            with mcs_service.portforward(remote_port="8000") as local_port:
+                yield f"http://localhost:{local_port}"
+
+    @contextmanager
+    def get_trino_url(
+        trino_url: str,
+        trino_k8s_service_name: str,
+        trino_k8s_namespace: str,
+        trino_k8s_coordinator_deployment_name: str,
+        trino_k8s_worker_deployment_name: str,
+        use_port_forward: bool,
+    ):
+        if not use_port_forward:
+            assert trino_url, "You must provide a trino url"
+            yield trino_url
+        else:
+            coordinator_service = Service.get(
+                trino_k8s_service_name,
+                trino_k8s_namespace,
+            )
+            with coordinator_service.portforward(remote_port="8080") as local_port:
+                yield f"http://localhost:{local_port}"
+
+    with get_mcs_url(
+        mcs_url, mcs_k8s_service_name, mcs_k8s_namespace, use_port_forward
+    ) as mcs_url:
+        from metrics_tools.compute.client import Client as MCSClient
+
+        if metric_name == "noop":
+            # This is a special case for triggering essentially a noop job
+            logger.info("Running a noop job")
+            rendered_query_str = "SELECT 1 as result"
+            columns = [("result", "int")]
+            ref = PeerMetricDependencyRef(
+                name="noop",
+                entity_type="artifact",
+                window=1,
+                slots=10,
+                batch_size=10,
+                unit="day",
+                cron="@daily",
+            )
+            variables = {}
+            dependencies_dict = {}
+        else:
+            chosen_metric = find_or_choose_metric(metric_name)
+            assert chosen_metric, f"Could not find metric {metric_name}"
+
+            rendered_query = chosen_metric["rendered_query"]
+            rendered_query_str = rendered_query.sql(dialect="duckdb")
+            # we shouldn't hard code this but it is hardcoded for now
+            columns = [
+                (col_name, col_type.sql(dialect="duckdb"))
+                for col_name, col_type in METRICS_COLUMNS_BY_ENTITY[
+                    chosen_metric["ref"]["entity_type"]
+                ].items()
+            ]
+
+            ref = chosen_metric["ref"]
+            variables = chosen_metric["vars"]
+
+            dependencies_set = list_query_table_dependencies(rendered_query, {})
+            print(dependencies_set)
+            rewrite_map = {
+                "metrics.int_events_daily_to_artifact": "metrics.metrics.events_daily_to_artifact",
+                "metrics.int_events_daily_to_artifact_with_lag": "metrics.metrics.events_daily_to_artifact_with_lag",
+                "metrics.int_issue_event_time_deltas": "metrics.metrics.issue_event_time_deltas",
+                "metrics.int_first_of_event_from_artifact": "metrics.metrics.first_of_event_from_artifact",
+            }
+            dependencies_dict = {
+                dep: rewrite_map.get(dep, dep) for dep in dependencies_set
+            }
+            print(dependencies_dict)
+
+        client = MCSClient.from_url(mcs_url)
+        response = client.calculate_metrics(
+            query_str=rendered_query_str,
+            start=start,
+            end=end,
+            dialect="duckdb",
+            batch_size=mcs_batch_size,
+            columns=columns,
+            ref=ref,
+            slots=ref.get("slots", 8),
+            locals=variables,
+            dependent_tables_map=dependencies_dict,
+            job_retries=job_retries,
+            cluster_min_size=cluster_min_size,
+            cluster_max_size=cluster_max_size,
+            execution_time=execution_time,
+        )
+        assert response, "No response from MCS"
+        print(response)
+
+
+async def run_cleanup(
+    hive_catalog: str,
+    hive_schema: str,
+    bucket_name: str,
+    storage_prefix: str,
+    trino_host: str,
+    trino_port: int,
+    trino_user: str,
+    expiration: str,
+    dry_run: bool,
+):
+    from gcloud.aio import storage
+
+    async with storage.Storage() as client:
+        gcs_storage = GCSTimeOrderedStorage(
+            client=client,
+            bucket_name=bucket_name,
+            prefix=storage_prefix,
+        )
+        connection = aiotrino.dbapi.connect(
+            host=trino_host,
+            port=trino_port,
+            user=trino_user,
+            catalog=hive_catalog,
+        )
+        exporter = TrinoExporter(
+            hive_catalog,
+            hive_schema,
+            gcs_storage,
+            connection,
+            max_concurrency=100,
+        )
+        await exporter.cleanup_expired(
+            datetime.strptime(expiration, "%Y-%m-%d"), dry_run=dry_run
+        )
+
+
 @local.command(
-    context_settings=dict(ignore_unknown_options=True, allow_extra_args=True)
+    name="sqlmesh",
+    context_settings=dict(ignore_unknown_options=True, allow_extra_args=True),
 )
 @click.option("--local-trino/--no-local-trino", default=False)
 @click.option("--local-registry-port", default=5001)
@@ -203,7 +454,7 @@ def initialize(
 @click.option("--timeseries-start", default="2024-12-01")
 @click.option("--repo-dir", default=REPO_DIR)
 @click.pass_context
-def sqlmesh(
+def local_sqlmesh(
     ctx: click.Context,
     local_trino: bool,
     local_registry_port: int,

@@ -2,6 +2,7 @@ import logging
 import typing as t
 from datetime import datetime
 
+import pandas as pd
 from metrics_tools.compute.client import Client
 from metrics_tools.compute.types import ExportType
 from metrics_tools.definition import PeerMetricDependencyRef
@@ -13,6 +14,7 @@ from metrics_tools.utils import env
 from metrics_tools.utils.tables import create_dependent_tables_map
 from sqlglot import exp
 from sqlmesh import ExecutionContext
+from sqlmesh.core.test.context import TestExecutionContext
 
 logger = logging.getLogger(__name__)
 
@@ -52,8 +54,19 @@ def generated_rolling_query(
     transformer = SQLTransformer(transforms=[ExecutionContextTableTransform(context)])
     query = transformer.transform(rendered_query_str)
 
-    mcs_enabled = env.ensure_bool("SQLMESH_MCS_ENABLED", False)
+    if hasattr(context, "snapshots"):
+        print("snapshots")
+        print(context.snapshots.values())
+
+    if isinstance(context, TestExecutionContext):
+        # MCS should not be used in testing
+        mcs_enabled = False
+    else:
+        mcs_enabled = env.ensure_bool("SQLMESH_MCS_ENABLED", False)
     if not mcs_enabled:
+        max_row_size = env.ensure_int(
+            "SQLMESH_LOCAL_METRICS_MAX_COMMIT_ROW_SIZE", 10000
+        )
         runner = MetricsRunner.from_sqlmesh_context(
             context, query, ref, context._variables.copy()
         )
@@ -67,8 +80,11 @@ def generated_rolling_query(
         else:
             count = len(df)
             total += count
-            logger.debug(f"table={table_name} yielding rows {count}")
-            yield df
+            logger.debug(
+                f"table={table_name} yielding rows {count} in {max_row_size} row chunks"
+            )
+            for i in range(0, count, max_row_size):
+                yield t.cast(pd.DataFrame, df[i : i + max_row_size])
         logger.debug(f"table={table_name} yielded rows{total}")
     else:
         logger.info("metrics calculation service enabled")
@@ -96,10 +112,15 @@ def generated_rolling_query(
             dependent_tables_map=create_dependent_tables_map(
                 context, rendered_query_str
             ),
-            job_retries=env.ensure_int("SQLMESH_MCS_JOB_RETRIES", 5),
-            cluster_min_size=env.ensure_int("SQLMESH_MCS_CLUSTER_MIN_SIZE", 0),
-            cluster_max_size=env.ensure_int("SQLMESH_MCS_CLUSTER_MAX_SIZE", 30),
+            job_retries=env.ensure_int("SQLMESH_MCS_JOB_RETRIES", 8),
+            cluster_min_size=env.ensure_int("SQLMESH_MCS_CLUSTER_MIN_SIZE", 5),
+            cluster_max_size=env.ensure_int("SQLMESH_MCS_CLUSTER_MAX_SIZE", 16),
+            execution_time=execution_time,
+            do_not_raise_on_failure=True,
         )
+        if not response:
+            yield from ()
+            return
 
         column_names = list(map(lambda col: col[0], columns))
         engine_dialect = context.engine_adapter.dialect

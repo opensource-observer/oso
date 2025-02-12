@@ -73,7 +73,7 @@ async def test_metrics_calculation_service():
             if update.status not in [QueryJobStatus.PENDING, QueryJobStatus.RUNNING]:
                 future.set_result(updates)
 
-        close = service.listen_for_job_updates(response.job_id, collect_updates)
+        close = await service.listen_for_job_updates(response.job_id, collect_updates)
         return (close, future)
 
     close, updates_future = await asyncio.create_task(wait_for_job_to_complete())
@@ -141,7 +141,7 @@ async def test_metrics_calculation_service_using_monthly_cron():
             if update.status not in [QueryJobStatus.PENDING, QueryJobStatus.RUNNING]:
                 future.set_result(updates)
 
-        close = service.listen_for_job_updates(response.job_id, collect_updates)
+        close = await service.listen_for_job_updates(response.job_id, collect_updates)
         return (close, future)
 
     close, updates_future = await asyncio.create_task(wait_for_job_to_complete())

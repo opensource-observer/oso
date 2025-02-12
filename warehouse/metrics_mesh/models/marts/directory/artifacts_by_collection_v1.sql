@@ -1,6 +1,9 @@
 MODEL (
   name metrics.artifacts_by_collection_v1,
-  kind FULL
+  kind FULL,
+  tags (
+    'export'
+  ),
 );
 
 select

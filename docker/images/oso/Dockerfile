@@ -24,12 +24,10 @@ COPY pyproject.toml poetry.lock /usr/src/app/
 RUN poetry config virtualenvs.create false && \
     poetry install
 
-RUN rm -r /usr/src/app/warehouse 
+RUN rm -r /usr/src/app/warehouse && \
+    rm -r /usr/src/app/ops
 
 COPY . /usr/src/app
-
-RUN poetry config virtualenvs.create false && \
-    poetry install
 
 ENV DAGSTER_DBT_TARGET_BASE_DIR=/dbt_targets
 

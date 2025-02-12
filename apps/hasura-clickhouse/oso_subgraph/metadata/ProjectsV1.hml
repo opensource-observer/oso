@@ -1,0 +1,180 @@
+---
+kind: ObjectType
+version: v1
+definition:
+  name: ProjectsV1
+  fields:
+    - name: description
+      type: String!
+    - name: displayName
+      type: String!
+    - name: projectId
+      type: String!
+    - name: projectName
+      type: String!
+    - name: projectNamespace
+      type: String!
+    - name: projectSource
+      type: String!
+  graphql:
+    typeName: Oso_ProjectsV1
+    inputTypeName: Oso_ProjectsV1Input
+  dataConnectorTypeMapping:
+    - dataConnectorName: oso_clickhouse
+      dataConnectorObjectType: projects_v1
+      fieldMapping:
+        description:
+          column:
+            name: description
+        displayName:
+          column:
+            name: display_name
+        projectId:
+          column:
+            name: project_id
+        projectName:
+          column:
+            name: project_name
+        projectNamespace:
+          column:
+            name: project_namespace
+        projectSource:
+          column:
+            name: project_source
+
+---
+kind: TypePermissions
+version: v1
+definition:
+  typeName: ProjectsV1
+  permissions:
+    - role: admin
+      output:
+        allowedFields:
+          - description
+          - displayName
+          - projectId
+          - projectName
+          - projectNamespace
+          - projectSource
+    - role: anonymous
+      output:
+        allowedFields:
+          - description
+          - displayName
+          - projectId
+          - projectName
+          - projectNamespace
+          - projectSource
+
+---
+kind: BooleanExpressionType
+version: v1
+definition:
+  name: ProjectsV1BoolExp
+  operand:
+    object:
+      type: ProjectsV1
+      comparableFields:
+        - fieldName: description
+          booleanExpressionType: StringBoolExp
+        - fieldName: displayName
+          booleanExpressionType: StringBoolExp
+        - fieldName: projectId
+          booleanExpressionType: StringBoolExp
+        - fieldName: projectName
+          booleanExpressionType: StringBoolExp
+        - fieldName: projectNamespace
+          booleanExpressionType: StringBoolExp
+        - fieldName: projectSource
+          booleanExpressionType: StringBoolExp
+      comparableRelationships: []
+  logicalOperators:
+    enable: true
+  isNull:
+    enable: true
+  graphql:
+    typeName: Oso_ProjectsV1BoolExp
+
+---
+kind: AggregateExpression
+version: v1
+definition:
+  name: ProjectsV1AggExp
+  operand:
+    object:
+      aggregatedType: ProjectsV1
+      aggregatableFields:
+        - fieldName: description
+          aggregateExpression: StringAggExp
+        - fieldName: displayName
+          aggregateExpression: StringAggExp
+        - fieldName: projectId
+          aggregateExpression: StringAggExp
+        - fieldName: projectName
+          aggregateExpression: StringAggExp
+        - fieldName: projectNamespace
+          aggregateExpression: StringAggExp
+        - fieldName: projectSource
+          aggregateExpression: StringAggExp
+  count:
+    enable: true
+  graphql:
+    selectTypeName: Oso_ProjectsV1AggExp
+
+---
+kind: Model
+version: v1
+definition:
+  name: ProjectsV1
+  objectType: ProjectsV1
+  source:
+    dataConnectorName: oso_clickhouse
+    collection: projects_v1
+  filterExpressionType: ProjectsV1BoolExp
+  aggregateExpression: ProjectsV1AggExp
+  orderableFields:
+    - fieldName: description
+      orderByDirections:
+        enableAll: true
+    - fieldName: displayName
+      orderByDirections:
+        enableAll: true
+    - fieldName: projectId
+      orderByDirections:
+        enableAll: true
+    - fieldName: projectName
+      orderByDirections:
+        enableAll: true
+    - fieldName: projectNamespace
+      orderByDirections:
+        enableAll: true
+    - fieldName: projectSource
+      orderByDirections:
+        enableAll: true
+  graphql:
+    selectMany:
+      queryRootField: oso_projectsV1
+      subscription:
+        rootField: oso_projectsV1
+    selectUniques: []
+    orderByExpressionType: Oso_ProjectsV1OrderBy
+    filterInputTypeName: Oso_ProjectsV1FilterInput
+    aggregate:
+      queryRootField: oso_projectsV1Aggregate
+      subscription:
+        rootField: oso_projectsV1Aggregate
+
+---
+kind: ModelPermissions
+version: v1
+definition:
+  modelName: ProjectsV1
+  permissions:
+    - role: admin
+      select:
+        filter: null
+        allowSubscriptions: true
+    - role: anonymous
+      select:
+        filter: null

@@ -12,7 +12,8 @@ select
   from_address,
   to_address,
   chain,
-  sum(cast(value_64 as numeric)) as total_transferred
+  sum(cast(value_64 as numeric)) as total_transferred,
+  sum(gas * gas_price / 1e18) as total_gas_fee
 from {{ source('optimism_superchain_raw_onchain_data', 'transactions') }}
 where
   dt >= '2024-06-01'

@@ -6,6 +6,9 @@ spec:
   values:
     mcs:
       frontend:
+        service:
+          annotations:
+            tailscale.com/expose: "true"
         resources:
           requests:
             cpu: "3000m"
@@ -30,7 +33,7 @@ spec:
             request: "20Gi"
           poolType: "mcs-scheduler"
         worker:
-          threads: "16"
+          threads: "5"
           memory:
             limit: "390Gi"
             request: "375Gi"

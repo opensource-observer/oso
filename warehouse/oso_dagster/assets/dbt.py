@@ -1,3 +1,4 @@
+import logging
 import os
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional, Sequence
@@ -7,6 +8,8 @@ from dagster_dbt import DagsterDbtTranslator, DbtCliResource, dbt_assets
 from oso_dagster.config import DagsterConfig
 
 from ..factories import AssetFactoryResponse, early_resources_asset_factory
+
+logger = logging.getLogger(__name__)
 
 
 class CustomDagsterDbtTranslator(DagsterDbtTranslator):
@@ -46,6 +49,7 @@ class CustomDagsterDbtTranslator(DagsterDbtTranslator):
         if materialization:
             tags["dbt/materialized"] = materialization
             tags["opensource.observer/environment"] = self._environment
+            tags["opensource.observer/experimental"] = "true"
         return tags
 
 
@@ -81,8 +85,8 @@ def generate_dbt_asset(
     AssetsDefinition
         a single Dagster dbt asset
     """
-    print(f"Target[{target}] using profiles_dir({dbt_profiles_dir})")
-    print(f"\tmanifest_path({manifest_path})")
+    logger.debug(f"Target[{target}] using profiles_dir({dbt_profiles_dir})")
+    logger.debug(f"\tmanifest_path({manifest_path})")
     translator = CustomDagsterDbtTranslator(target, ["dbt", target], internal_map)
 
     asset_name = f"{target}_dbt"
@@ -94,7 +98,7 @@ def generate_dbt_asset(
         op_tags=op_tags,
     )
     def _generated_dbt_assets(context: AssetExecutionContext, config: DBTConfig):
-        print(f"using profiles dir {dbt_profiles_dir}")
+        logger.debug(f"using profiles dir {dbt_profiles_dir}")
         dbt = DbtCliResource(
             project_dir=os.fspath(project_dir),
             target=target,

@@ -1117,6 +1117,7 @@ def goldsky_asset(
             tags,
             {
                 "opensource.observer/type": "source",
+                "opensource.observer/source": "unstable",
             },
         ),
         op_tags=op_tags,
@@ -1149,7 +1150,6 @@ def goldsky_asset(
         cbt: CBTResource,
         config: dict,
     ) -> None:
-        print(config)
         gs_asset = GoldskyAsset(gcs, bigquery, cbt, asset_config)
         gs_asset.clean_up(context.log)
 

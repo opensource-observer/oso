@@ -64,6 +64,7 @@ def factory_deployments(
             transactions_originating_contract.as_("originating_contract"),
             traces_factory_address.as_("factory_address"),
             traces_contract_address.as_("contract_address"),
+            traces_trace_type.as_("create_type"),
             *additional_column_defs,
         )
         .with_("transactions_cte", as_=transactions_cte)
@@ -76,7 +77,7 @@ def factory_deployments(
             join_type="inner",
         )
         .where(
-            exp.EQ(
+            exp.NEQ(
                 this=exp.Lower(this=traces_factory_address),
                 expression=exp.Literal(
                     this="0x3fab184622dc19b6109349b94811493bf2a45362", is_string=True
