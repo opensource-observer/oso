@@ -405,8 +405,9 @@ def oss_directory_github_repositories_resource(
     )
 )
 def oss_directory_github_sbom_resource(
-    _context: AssetExecutionContext,
     all_repo_urls: t.List[str],
+    /,
+    _context: AssetExecutionContext,
     gh_token: str = dlt.secrets.value,
     rate_limit_max_retry: int = 5,
     server_error_max_rety: int = 3,
