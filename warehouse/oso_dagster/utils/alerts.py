@@ -241,17 +241,24 @@ class CanvasDiscordWebhookAlertManager(AlertManager):
                 f"[`Asset`]({base_url}/assets/{asset}) last materialized at {datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S')}"
             )
 
-        self.alert_discord(
+        self.alert_discord_chunks(
             "Asset Freshness Summary",
             "The following assets are stale:",
-            fields=output_fields,
+            output_fields,
         )
+
+    def alert_discord_chunks(
+        self, title: str, description: str, fields: Mapping[str, str]
+    ):
+        items = list(fields.items())
+        for i in range(0, len(items), 10):
+            self.alert_discord(title, description, fields=items[i : i + 20])
 
     def alert_discord(
         self,
         title: str,
         description: str,
-        fields: Optional[Mapping[str, str]] = None,
+        fields: Optional[list[tuple[str, str]]] = None,
         canvas_config: Optional[CanvasConfig] = None,
     ):
         embed = DiscordEmbed(
@@ -266,7 +273,9 @@ class CanvasDiscordWebhookAlertManager(AlertManager):
             embed.set_image(url="attachment://dagster_result.png")
 
         if fields:
-            for name, value in fields.items():
+            for name, value in fields:
                 embed.add_embed_field(name=name, value=value, inline=False)
         self._webhook.add_embed(embed)
         self._webhook.execute()
+        self._webhook.remove_embeds()
+        self._webhook.remove_files()
