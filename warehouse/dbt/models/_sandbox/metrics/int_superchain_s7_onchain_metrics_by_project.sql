@@ -45,7 +45,7 @@ enriched_events as (
     (case
       when base_events.event_type = 'TRANSACTION_EVENT'
         then {{ project_weight_per_tx_event }}
-      when base_events.event_type = 'TRACE_EVENT'
+      when base_events.event_type in ('TRACE_EVENT', 'AA_EVENT')
         then {{ project_weight_per_trace_event }}
     end) / events_per_project.num_projects_per_event as project_weight
   from base_events
@@ -91,7 +91,7 @@ trace_count as (
     'trace_count' as metric_name,
     approx_count_distinct(transaction_hash) as amount
   from enriched_events
-  where event_type = 'TRACE_EVENT'
+  where event_type in ('TRACE_EVENT', 'AA_EVENT')
   group by 1, 2, 3
 ),
 
@@ -104,7 +104,7 @@ trace_count_bot_filtered as (
     approx_count_distinct(transaction_hash) as amount
   from enriched_events
   where
-    event_type = 'TRACE_EVENT'
+    event_type in ('TRACE_EVENT', 'AA_EVENT')
     and is_bot = false
   group by 1, 2, 3
 ),
