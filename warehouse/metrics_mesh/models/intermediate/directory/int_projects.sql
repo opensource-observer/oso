@@ -14,4 +14,4 @@ select
   ARRAY_LENGTH(github) as github_artifact_count,
   ARRAY_LENGTH(blockchain) as blockchain_artifact_count,
   ARRAY_LENGTH(npm) as npm_artifact_count
-from @oso_source('bigquery.oso.stg_ossd__current_projects')
+from metrics.stg_ossd__current_projects
