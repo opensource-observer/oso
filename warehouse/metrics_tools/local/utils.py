@@ -10,6 +10,10 @@ logger = logging.getLogger(__name__)
 DUCKDB_SOURCES_SCHEMA_PREFIX = "sources"
 
 TABLE_MAPPING: TableMappingConfig = {
+    "opensource-observer.op_atlas.project": "bigquery.op_atlas.project",
+    "opensource-observer.op_atlas.project_contract": "bigquery.op_atlas.project_contract",
+    "opensource-observer.op_atlas.project_links": "bigquery.op_atlas.project_links",
+    "opensource-observer.op_atlas.project_repository": "bigquery.op_atlas.project_repository",
     "opensource-observer.oso_playground.int_deployers": "bigquery.oso.int_deployers",
     "opensource-observer.oso_playground.int_deployers_by_project": "bigquery.oso.int_deployers_by_project",
     "opensource-observer.oso_playground.int_events__blockchain": "bigquery.oso.int_events__blockchain",

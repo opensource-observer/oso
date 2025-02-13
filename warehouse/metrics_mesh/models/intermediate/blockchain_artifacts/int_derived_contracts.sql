@@ -4,7 +4,7 @@ MODEL (
 );
 
 select
-  deployment_timestamp::TIMESTAMP,
+  deployment_timestamp::TIMESTAMP(6),
   chain::VARCHAR,
   originating_address::VARCHAR,
   contract_address::VARCHAR,
