@@ -90,10 +90,6 @@ definition:
     selectUniques: []
     orderByExpressionType: Oso_EventTypesV1OrderBy
     filterInputTypeName: Oso_EventTypesV1FilterInput
-    aggregate:
-      queryRootField: oso_eventTypesV1Aggregate
-      subscription:
-        rootField: oso_eventTypesV1Aggregate
 
 ---
 kind: ModelPermissions

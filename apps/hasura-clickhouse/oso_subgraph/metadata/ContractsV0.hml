@@ -17,7 +17,7 @@ definition:
     - name: rootDeployerAddress
       type: String!
     - name: sortWeight
-      type: Int32!
+      type: Int64!
   graphql:
     typeName: Oso_ContractsV0
     inputTypeName: Oso_ContractsV0Input
@@ -96,7 +96,7 @@ definition:
         - fieldName: rootDeployerAddress
           booleanExpressionType: StringBoolExp
         - fieldName: sortWeight
-          booleanExpressionType: Int32BoolExp
+          booleanExpressionType: Int64BoolExp
       comparableRelationships: []
   logicalOperators:
     enable: true
@@ -127,7 +127,7 @@ definition:
         - fieldName: rootDeployerAddress
           aggregateExpression: StringAggExp
         - fieldName: sortWeight
-          aggregateExpression: Int32AggExp
+          aggregateExpression: Int64AggExp
   count:
     enable: true
   graphql:
@@ -155,7 +155,7 @@ definition:
         - fieldName: rootDeployerAddress
           orderByExpression: StringOrderByExp
         - fieldName: sortWeight
-          orderByExpression: Int32OrderByExp
+          orderByExpression: Int64OrderByExp
       orderableRelationships: []
   graphql:
     expressionTypeName: Oso_ContractsV0OrderByExp
@@ -184,10 +184,6 @@ definition:
         subscription:
           rootField: oso_contractsV0ByDeploymentDate
     filterInputTypeName: Oso_ContractsV0FilterInput
-    aggregate:
-      queryRootField: oso_contractsV0Aggregate
-      subscription:
-        rootField: oso_contractsV0Aggregate
 
 ---
 kind: ModelPermissions

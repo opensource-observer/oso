@@ -14,8 +14,6 @@ definition:
       type: String!
     - name: artifactSourceId
       type: String!
-    - name: artifactUrl
-      type: String!
   graphql:
     typeName: Oso_ArtifactsV1
     inputTypeName: Oso_ArtifactsV1Input
@@ -38,9 +36,6 @@ definition:
         artifactSourceId:
           column:
             name: artifact_source_id
-        artifactUrl:
-          column:
-            name: artifact_url
 
 ---
 kind: TypePermissions
@@ -56,7 +51,6 @@ definition:
           - artifactNamespace
           - artifactSource
           - artifactSourceId
-          - artifactUrl
     - role: anonymous
       output:
         allowedFields:
@@ -65,7 +59,6 @@ definition:
           - artifactNamespace
           - artifactSource
           - artifactSourceId
-          - artifactUrl
 
 ---
 kind: BooleanExpressionType
@@ -85,8 +78,6 @@ definition:
         - fieldName: artifactSource
           booleanExpressionType: StringBoolExp
         - fieldName: artifactSourceId
-          booleanExpressionType: StringBoolExp
-        - fieldName: artifactUrl
           booleanExpressionType: StringBoolExp
       comparableRelationships: []
   logicalOperators:
@@ -115,16 +106,37 @@ definition:
           aggregateExpression: StringAggExp
         - fieldName: artifactSourceId
           aggregateExpression: StringAggExp
-        - fieldName: artifactUrl
-          aggregateExpression: StringAggExp
   count:
     enable: true
   graphql:
     selectTypeName: Oso_ArtifactsV1AggExp
 
 ---
-kind: Model
+kind: OrderByExpression
 version: v1
+definition:
+  name: ArtifactsV1OrderByExp
+  operand:
+    object:
+      orderedType: ArtifactsV1
+      orderableFields:
+        - fieldName: artifactId
+          orderByExpression: StringOrderByExp
+        - fieldName: artifactName
+          orderByExpression: StringOrderByExp
+        - fieldName: artifactNamespace
+          orderByExpression: StringOrderByExp
+        - fieldName: artifactSource
+          orderByExpression: StringOrderByExp
+        - fieldName: artifactSourceId
+          orderByExpression: StringOrderByExp
+      orderableRelationships: []
+  graphql:
+    expressionTypeName: Oso_ArtifactsV1OrderByExp
+
+---
+kind: Model
+version: v2
 definition:
   name: ArtifactsV1
   objectType: ArtifactsV1
@@ -133,37 +145,14 @@ definition:
     collection: artifacts_v1
   filterExpressionType: ArtifactsV1BoolExp
   aggregateExpression: ArtifactsV1AggExp
-  orderableFields:
-    - fieldName: artifactId
-      orderByDirections:
-        enableAll: true
-    - fieldName: artifactName
-      orderByDirections:
-        enableAll: true
-    - fieldName: artifactNamespace
-      orderByDirections:
-        enableAll: true
-    - fieldName: artifactSource
-      orderByDirections:
-        enableAll: true
-    - fieldName: artifactSourceId
-      orderByDirections:
-        enableAll: true
-    - fieldName: artifactUrl
-      orderByDirections:
-        enableAll: true
+  orderByExpression: ArtifactsV1OrderByExp
   graphql:
     selectMany:
       queryRootField: oso_artifactsV1
       subscription:
         rootField: oso_artifactsV1
     selectUniques: []
-    orderByExpressionType: Oso_ArtifactsV1OrderBy
     filterInputTypeName: Oso_ArtifactsV1FilterInput
-    aggregate:
-      queryRootField: oso_artifactsV1Aggregate
-      subscription:
-        rootField: oso_artifactsV1Aggregate
 
 ---
 kind: ModelPermissions
