@@ -3,7 +3,7 @@ MODEL (
   kind VIEW,
   tags (
     'export'
-  )
+  ),
 );
 
 select
