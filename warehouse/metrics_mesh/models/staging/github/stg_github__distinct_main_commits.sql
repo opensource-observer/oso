@@ -25,7 +25,7 @@ select
   MIN_BY(ghc.is_distinct, ghc.created_at) as is_distinct,
   MIN_BY(ghc.api_url, ghc.created_at) as api_url
 from metrics.stg_github__commits as ghc
-inner join @oso_source('bigquery.oso.stg_ossd__current_repositories') as repos
+inner join metrics.stg_ossd__current_repositories as repos
   on ghc.repository_id = repos.id
 where ghc.ref = CONCAT('refs/heads/', repos.branch)
 
