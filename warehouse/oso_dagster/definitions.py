@@ -277,7 +277,11 @@ def load_definitions():
 
     extra_kwargs = {}
     if global_config.enable_k8s_executor:
-        extra_kwargs["executor"] = k8s_job_executor
+        extra_kwargs["executor"] = k8s_job_executor.configured(
+            {
+                "max_concurrent": 10,
+            }
+        )
 
     return Definitions(
         assets=asset_factories.assets,
