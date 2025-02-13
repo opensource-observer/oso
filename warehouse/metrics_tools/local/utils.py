@@ -39,7 +39,6 @@ TABLE_MAPPING: TableMappingConfig = {
     "opensource-observer.oso_playground.stg_ossd__current_collections": "bigquery.oso.stg_ossd__current_collections",
     "opensource-observer.oso_playground.stg_ossd__current_projects": "bigquery.oso.stg_ossd__current_projects",
     "opensource-observer.oso_playground.stg_ossd__current_repositories": "bigquery.oso.stg_ossd__current_repositories",
-    "opensource-observer.oso_playground.timeseries_events_aux_issues_by_artifact_v0": "bigquery.oso.timeseries_events_aux_issues_by_artifact_v0",
     "opensource-observer.ossd.sbom": "bigquery.ossd.sbom",
     # Only grab some data from frax for local testing
     "opensource-observer.optimism_superchain_raw_onchain_data.blocks": TableMappingDestination(
