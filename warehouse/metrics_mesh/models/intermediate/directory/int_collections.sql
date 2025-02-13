@@ -11,4 +11,4 @@ select
   collections.collection_name,
   collections.display_name,
   collections.description
-from @oso_source('bigquery.oso.stg_ossd__current_collections') as collections
+from metrics.stg_ossd__current_collections as collections
