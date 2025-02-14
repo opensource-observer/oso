@@ -12,7 +12,7 @@ with projects as (
     github as github,
     npm as npm,
     blockchain as blockchain
-  from @oso_source('bigquery.oso.stg_ossd__current_projects')
+  from metrics.stg_ossd__current_projects
 ),
 
 all_websites as (
@@ -92,7 +92,7 @@ github_repos as (
     artifact_type
   from github_repos_raw
   inner join
-    @oso_source('bigquery.oso.stg_ossd__current_repositories') as repos
+    metrics.stg_ossd__current_repositories as repos
     on
       {#
         We join on either the repo url or the user/org url.

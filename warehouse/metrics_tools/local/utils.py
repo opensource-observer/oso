@@ -36,9 +36,9 @@ TABLE_MAPPING: TableMappingConfig = {
         row_restriction=RowRestriction(time_column="created_at"),
         table="bigquery.oso.stg_open_collective__expenses",
     ),
-    "opensource-observer.oso_playground.stg_ossd__current_collections": "bigquery.oso.stg_ossd__current_collections",
-    "opensource-observer.oso_playground.stg_ossd__current_projects": "bigquery.oso.stg_ossd__current_projects",
-    "opensource-observer.oso_playground.stg_ossd__current_repositories": "bigquery.oso.stg_ossd__current_repositories",
+    "opensource-observer.ossd.collections": "bigquery.ossd.collections",
+    "opensource-observer.ossd.projects": "bigquery.ossd.projects",
+    "opensource-observer.ossd.repositories": "bigquery.ossd.repositories",
     "opensource-observer.ossd.sbom": "bigquery.ossd.sbom",
     # Only grab some data from frax for local testing
     "opensource-observer.optimism_superchain_raw_onchain_data.blocks": TableMappingDestination(
