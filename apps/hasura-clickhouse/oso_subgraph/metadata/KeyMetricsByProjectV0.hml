@@ -6,8 +6,6 @@ definition:
   fields:
     - name: amount
       type: Float64!
-    - name: metric
-      type: String!
     - name: metricId
       type: String!
     - name: projectId
@@ -26,9 +24,6 @@ definition:
         amount:
           column:
             name: amount
-        metric:
-          column:
-            name: metric
         metricId:
           column:
             name: metric_id
@@ -52,7 +47,6 @@ definition:
       output:
         allowedFields:
           - amount
-          - metric
           - metricId
           - projectId
           - sampleDate
@@ -61,7 +55,6 @@ definition:
       output:
         allowedFields:
           - amount
-          - metric
           - metricId
           - projectId
           - sampleDate
@@ -78,8 +71,6 @@ definition:
       comparableFields:
         - fieldName: amount
           booleanExpressionType: Float64BoolExp
-        - fieldName: metric
-          booleanExpressionType: StringBoolExp
         - fieldName: metricId
           booleanExpressionType: StringBoolExp
         - fieldName: projectId
@@ -107,8 +98,6 @@ definition:
       aggregatableFields:
         - fieldName: amount
           aggregateExpression: Float64AggExp
-        - fieldName: metric
-          aggregateExpression: StringAggExp
         - fieldName: metricId
           aggregateExpression: StringAggExp
         - fieldName: projectId
@@ -133,8 +122,6 @@ definition:
       orderableFields:
         - fieldName: amount
           orderByExpression: Float64OrderByExp
-        - fieldName: metric
-          orderByExpression: StringOrderByExp
         - fieldName: metricId
           orderByExpression: StringOrderByExp
         - fieldName: projectId

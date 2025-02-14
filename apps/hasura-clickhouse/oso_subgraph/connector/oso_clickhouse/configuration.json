@@ -213,7 +213,6 @@
         "columns": {
           "amount": "Float64",
           "artifact_id": "String",
-          "metric": "String",
           "metric_id": "String",
           "sample_date": "Date",
           "unit": "String"
@@ -229,7 +228,6 @@
         "columns": {
           "amount": "Float64",
           "collection_id": "String",
-          "metric": "String",
           "metric_id": "String",
           "sample_date": "Date",
           "unit": "String"
@@ -244,7 +242,6 @@
         "kind": "definition",
         "columns": {
           "amount": "Float64",
-          "metric": "String",
           "metric_id": "String",
           "project_id": "String",
           "sample_date": "Date",
