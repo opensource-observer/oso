@@ -109,14 +109,14 @@ schedules: list[ScheduleDefinition] = [
     # Run source assets every day at midnight
     ScheduleDefinition(
         job=materialize_stable_source_assets,
-        cron_schedule="0 0 * * *",
+        cron_schedule="0 18 * * *",
         tags={
             "dagster/priority": "-1",
         },
     ),
     ScheduleDefinition(
         job=materialize_unstable_source_assets,
-        cron_schedule="0 0 * * *",
+        cron_schedule="0 12 * * *",
         tags={
             "dagster/priority": "-1",
         },
@@ -124,7 +124,7 @@ schedules: list[ScheduleDefinition] = [
     # Run SBOM assets on Tuesday and Friday at midnight, since they take too long
     ScheduleDefinition(
         job=materialize_sbom_source_assets,
-        cron_schedule="0 0 * * 2,5",
+        cron_schedule="0 6 * * 2,5",
         tags={
             "dagster/priority": "-1",
         },
