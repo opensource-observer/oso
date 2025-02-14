@@ -8,8 +8,6 @@ definition:
       type: Float64!
     - name: collectionId
       type: String!
-    - name: metric
-      type: String!
     - name: metricId
       type: String!
     - name: sampleDate
@@ -29,9 +27,6 @@ definition:
         collectionId:
           column:
             name: collection_id
-        metric:
-          column:
-            name: metric
         metricId:
           column:
             name: metric_id
@@ -53,7 +48,6 @@ definition:
         allowedFields:
           - amount
           - collectionId
-          - metric
           - metricId
           - sampleDate
           - unit
@@ -62,7 +56,6 @@ definition:
         allowedFields:
           - amount
           - collectionId
-          - metric
           - metricId
           - sampleDate
           - unit
@@ -79,8 +72,6 @@ definition:
         - fieldName: amount
           booleanExpressionType: Float64BoolExp
         - fieldName: collectionId
-          booleanExpressionType: StringBoolExp
-        - fieldName: metric
           booleanExpressionType: StringBoolExp
         - fieldName: metricId
           booleanExpressionType: StringBoolExp
@@ -109,8 +100,6 @@ definition:
           aggregateExpression: Float64AggExp
         - fieldName: collectionId
           aggregateExpression: StringAggExp
-        - fieldName: metric
-          aggregateExpression: StringAggExp
         - fieldName: metricId
           aggregateExpression: StringAggExp
         - fieldName: sampleDate
@@ -134,8 +123,6 @@ definition:
         - fieldName: amount
           orderByExpression: Float64OrderByExp
         - fieldName: collectionId
-          orderByExpression: StringOrderByExp
-        - fieldName: metric
           orderByExpression: StringOrderByExp
         - fieldName: metricId
           orderByExpression: StringOrderByExp

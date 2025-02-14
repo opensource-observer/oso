@@ -874,10 +874,6 @@ definition:
               type:
                 type: named
                 name: String
-            metric:
-              type:
-                type: named
-                name: String
             metric_id:
               type:
                 type: named
@@ -901,10 +897,6 @@ definition:
               type:
                 type: named
                 name: String
-            metric:
-              type:
-                type: named
-                name: String
             metric_id:
               type:
                 type: named
@@ -924,10 +916,6 @@ definition:
               type:
                 type: named
                 name: Float64
-            metric:
-              type:
-                type: named
-                name: String
             metric_id:
               type:
                 type: named
