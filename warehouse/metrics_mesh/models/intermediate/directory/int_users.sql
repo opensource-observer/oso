@@ -13,7 +13,7 @@ with farcaster_users as (
     profile_picture_url,
     bio,
     url
-  from @oso_source('bigquery.oso.stg_farcaster__profiles')
+  from metrics.stg_farcaster__profiles
 ),
 
 lens_users as (
@@ -25,7 +25,7 @@ lens_users as (
     profile_picture_url,
     bio,
     '' as url
-  from @oso_source('bigquery.oso.stg_lens__profiles')
+  from metrics.stg_lens__profiles
 ),
 
 github_users as (
