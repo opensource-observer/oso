@@ -174,10 +174,6 @@ definition:
     selectUniques: []
     orderByExpressionType: Oso_UsersV1OrderBy
     filterInputTypeName: Oso_UsersV1FilterInput
-    aggregate:
-      queryRootField: oso_usersV1Aggregate
-      subscription:
-        rootField: oso_usersV1Aggregate
 
 ---
 kind: ModelPermissions

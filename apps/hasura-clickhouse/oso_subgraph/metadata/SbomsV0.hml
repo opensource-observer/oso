@@ -218,10 +218,6 @@ definition:
         rootField: oso_sbomsV0
     selectUniques: []
     filterInputTypeName: Oso_SbomsV0FilterInput
-    aggregate:
-      queryRootField: oso_sbomsV0Aggregate
-      subscription:
-        rootField: oso_sbomsV0Aggregate
 
 ---
 kind: ModelPermissions

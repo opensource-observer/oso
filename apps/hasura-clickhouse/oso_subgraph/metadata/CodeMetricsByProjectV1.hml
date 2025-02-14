@@ -468,10 +468,6 @@ definition:
     selectUniques: []
     orderByExpressionType: Oso_CodeMetricsByProjectV1OrderBy
     filterInputTypeName: Oso_CodeMetricsByProjectV1FilterInput
-    aggregate:
-      queryRootField: oso_codeMetricsByProjectV1Aggregate
-      subscription:
-        rootField: oso_codeMetricsByProjectV1Aggregate
 
 ---
 kind: ModelPermissions

@@ -309,10 +309,6 @@ definition:
         rootField: oso_repositoriesV0
     selectUniques: []
     filterInputTypeName: Oso_RepositoriesV0FilterInput
-    aggregate:
-      queryRootField: oso_repositoriesV0Aggregate
-      subscription:
-        rootField: oso_repositoriesV0Aggregate
 
 ---
 kind: ModelPermissions

@@ -75,22 +75,25 @@ definition:
     selectTypeName: Oso_StringAggExp
 
 ---
+kind: OrderByExpression
+version: v1
+definition:
+  name: StringOrderByExp
+  operand:
+    scalar:
+      orderedType: String
+      enableOrderByDirections:
+        enableAll: true
+  graphql:
+    expressionTypeName: Oso_StringOrderByExp
+
+---
 kind: ScalarType
 version: v1
 definition:
   name: Float32
   graphql:
     typeName: Oso_Float32
-
----
-kind: DataConnectorScalarRepresentation
-version: v1
-definition:
-  dataConnectorName: oso_clickhouse
-  dataConnectorScalarType: Float32
-  representation: Float32
-  graphql:
-    comparisonExpressionTypeName: Oso_Float32ComparisonExp
 
 ---
 kind: BooleanExpressionType
@@ -129,22 +132,22 @@ definition:
     typeName: Oso_Float32BoolExp
 
 ---
+kind: DataConnectorScalarRepresentation
+version: v1
+definition:
+  dataConnectorName: oso_clickhouse
+  dataConnectorScalarType: Float32
+  representation: Float32
+  graphql:
+    comparisonExpressionTypeName: Oso_Float32ComparisonExp
+
+---
 kind: ScalarType
 version: v1
 definition:
   name: DateTime
   graphql:
     typeName: Oso_DateTime
-
----
-kind: DataConnectorScalarRepresentation
-version: v1
-definition:
-  dataConnectorName: oso_clickhouse
-  dataConnectorScalarType: DateTime
-  representation: DateTime
-  graphql:
-    comparisonExpressionTypeName: Oso_DateTimeComparisonExp
 
 ---
 kind: BooleanExpressionType
@@ -183,22 +186,22 @@ definition:
     typeName: Oso_DateTimeBoolExp
 
 ---
+kind: DataConnectorScalarRepresentation
+version: v1
+definition:
+  dataConnectorName: oso_clickhouse
+  dataConnectorScalarType: DateTime
+  representation: DateTime
+  graphql:
+    comparisonExpressionTypeName: Oso_DateTimeComparisonExp
+
+---
 kind: ScalarType
 version: v1
 definition:
   name: Int64
   graphql:
     typeName: Oso_Int64
-
----
-kind: DataConnectorScalarRepresentation
-version: v1
-definition:
-  dataConnectorName: oso_clickhouse
-  dataConnectorScalarType: Int64
-  representation: Int64
-  graphql:
-    comparisonExpressionTypeName: Oso_Int64ComparisonExp
 
 ---
 kind: BooleanExpressionType
@@ -237,22 +240,22 @@ definition:
     typeName: Oso_Int64BoolExp
 
 ---
+kind: DataConnectorScalarRepresentation
+version: v1
+definition:
+  dataConnectorName: oso_clickhouse
+  dataConnectorScalarType: Int64
+  representation: Int64
+  graphql:
+    comparisonExpressionTypeName: Oso_Int64ComparisonExp
+
+---
 kind: ScalarType
 version: v1
 definition:
   name: Float64
   graphql:
     typeName: Oso_Float64
-
----
-kind: DataConnectorScalarRepresentation
-version: v1
-definition:
-  dataConnectorName: oso_clickhouse
-  dataConnectorScalarType: Float64
-  representation: Float64
-  graphql:
-    comparisonExpressionTypeName: Oso_Float64ComparisonExp
 
 ---
 kind: BooleanExpressionType
@@ -289,6 +292,16 @@ definition:
     enable: true
   graphql:
     typeName: Oso_Float64BoolExp
+
+---
+kind: DataConnectorScalarRepresentation
+version: v1
+definition:
+  dataConnectorName: oso_clickhouse
+  dataConnectorScalarType: Float64
+  representation: Float64
+  graphql:
+    comparisonExpressionTypeName: Oso_Float64ComparisonExp
 
 ---
 kind: AggregateExpression
@@ -431,16 +444,6 @@ definition:
     typeName: Oso_Date
 
 ---
-kind: DataConnectorScalarRepresentation
-version: v1
-definition:
-  dataConnectorName: oso_clickhouse
-  dataConnectorScalarType: Date
-  representation: Date
-  graphql:
-    comparisonExpressionTypeName: Oso_DateComparisonExp
-
----
 kind: BooleanExpressionType
 version: v1
 definition:
@@ -475,6 +478,70 @@ definition:
     enable: true
   graphql:
     typeName: Oso_DateBoolExp
+
+---
+kind: DataConnectorScalarRepresentation
+version: v1
+definition:
+  dataConnectorName: oso_clickhouse
+  dataConnectorScalarType: Date
+  representation: Date
+  graphql:
+    comparisonExpressionTypeName: Oso_DateComparisonExp
+
+---
+kind: AggregateExpression
+version: v1
+definition:
+  name: DateAggExp
+  operand:
+    scalar:
+      aggregatedType: Date
+      aggregationFunctions:
+        - name: max
+          returnType: Date!
+        - name: min
+          returnType: Date!
+      dataConnectorAggregationFunctionMapping:
+        - dataConnectorName: oso_clickhouse
+          dataConnectorScalarType: Date
+          functionMapping:
+            max:
+              name: max
+            min:
+              name: min
+  count:
+    enable: true
+  countDistinct:
+    enable: true
+  graphql:
+    selectTypeName: Oso_DateAggExp
+
+---
+kind: OrderByExpression
+version: v1
+definition:
+  name: DateOrderByExp
+  operand:
+    scalar:
+      orderedType: Date
+      enableOrderByDirections:
+        enableAll: true
+  graphql:
+    expressionTypeName: Oso_DateOrderByExp
+
+---
+kind: OrderByExpression
+version: v1
+definition:
+  name: Int64OrderByExp
+  operand:
+    scalar:
+      orderedType: Int64
+      enableOrderByDirections:
+        enableAll: true
+  graphql:
+    expressionTypeName: Oso_Int64OrderByExp
 
 ---
 kind: AggregateExpression
@@ -529,272 +596,17 @@ definition:
     selectTypeName: Oso_Float64AggExp
 
 ---
-kind: AggregateExpression
-version: v1
-definition:
-  name: DateAggExp
-  operand:
-    scalar:
-      aggregatedType: Date
-      aggregationFunctions:
-        - name: max
-          returnType: Date!
-        - name: min
-          returnType: Date!
-      dataConnectorAggregationFunctionMapping:
-        - dataConnectorName: oso_clickhouse
-          dataConnectorScalarType: Date
-          functionMapping:
-            max:
-              name: max
-            min:
-              name: min
-  count:
-    enable: true
-  countDistinct:
-    enable: true
-  graphql:
-    selectTypeName: Oso_DateAggExp
-
----
 kind: OrderByExpression
 version: v1
 definition:
-  name: StringOrderByExp
+  name: Float64OrderByExp
   operand:
     scalar:
-      orderedType: String
+      orderedType: Float64
       enableOrderByDirections:
         enableAll: true
   graphql:
-    expressionTypeName: Oso_StringOrderByExp
-
----
-kind: ScalarType
-version: v1
-definition:
-  name: Int32
-  graphql:
-    typeName: Oso_Int32
-
----
-kind: BooleanExpressionType
-version: v1
-definition:
-  name: Int32BoolExp
-  operand:
-    scalar:
-      type: Int32
-      comparisonOperators:
-        - name: _eq
-          argumentType: Int32!
-        - name: _gt
-          argumentType: Int32!
-        - name: _gte
-          argumentType: Int32!
-        - name: _in
-          argumentType: "[Int32!]!"
-        - name: _lt
-          argumentType: Int32!
-        - name: _lte
-          argumentType: Int32!
-        - name: _neq
-          argumentType: Int32!
-        - name: _nin
-          argumentType: "[Int32!]!"
-      dataConnectorOperatorMapping:
-        - dataConnectorName: oso_clickhouse
-          dataConnectorScalarType: Int32
-          operatorMapping: {}
-  logicalOperators:
-    enable: true
-  isNull:
-    enable: true
-  graphql:
-    typeName: Oso_Int32BoolExp
-
----
-kind: DataConnectorScalarRepresentation
-version: v1
-definition:
-  dataConnectorName: oso_clickhouse
-  dataConnectorScalarType: Int32
-  representation: Int32
-  graphql:
-    comparisonExpressionTypeName: Oso_Int32ComparisonExp
-
----
-kind: AggregateExpression
-version: v1
-definition:
-  name: Int32AggExp
-  operand:
-    scalar:
-      aggregatedType: Int32
-      aggregationFunctions:
-        - name: avg
-          returnType: Float64!
-        - name: max
-          returnType: Int32!
-        - name: min
-          returnType: Int32!
-        - name: stddev_pop
-          returnType: Float64!
-        - name: stddev_samp
-          returnType: Float64!
-        - name: sum
-          returnType: Int64!
-        - name: var_pop
-          returnType: Float64!
-        - name: var_samp
-          returnType: Float64!
-      dataConnectorAggregationFunctionMapping:
-        - dataConnectorName: oso_clickhouse
-          dataConnectorScalarType: Int32
-          functionMapping:
-            avg:
-              name: avg
-            max:
-              name: max
-            min:
-              name: min
-            stddev_pop:
-              name: stddev_pop
-            stddev_samp:
-              name: stddev_samp
-            sum:
-              name: sum
-            var_pop:
-              name: var_pop
-            var_samp:
-              name: var_samp
-  count:
-    enable: true
-  countDistinct:
-    enable: true
-  graphql:
-    selectTypeName: Oso_Int32AggExp
-
----
-kind: ScalarType
-version: v1
-definition:
-  name: DateTime646
-  graphql:
-    typeName: Oso_DateTime646
-
----
-kind: BooleanExpressionType
-version: v1
-definition:
-  name: DateTime646BoolExp
-  operand:
-    scalar:
-      type: DateTime646
-      comparisonOperators:
-        - name: _eq
-          argumentType: DateTime646!
-        - name: _gt
-          argumentType: DateTime646!
-        - name: _gte
-          argumentType: DateTime646!
-        - name: _in
-          argumentType: "[DateTime646!]!"
-        - name: _lt
-          argumentType: DateTime646!
-        - name: _lte
-          argumentType: DateTime646!
-        - name: _neq
-          argumentType: DateTime646!
-        - name: _nin
-          argumentType: "[DateTime646!]!"
-      dataConnectorOperatorMapping:
-        - dataConnectorName: oso_clickhouse
-          dataConnectorScalarType: DateTime64(6)
-          operatorMapping: {}
-  logicalOperators:
-    enable: true
-  isNull:
-    enable: true
-  graphql:
-    typeName: Oso_DateTime646BoolExp
-
----
-kind: DataConnectorScalarRepresentation
-version: v1
-definition:
-  dataConnectorName: oso_clickhouse
-  dataConnectorScalarType: DateTime64(6)
-  representation: DateTime646
-  graphql:
-    comparisonExpressionTypeName: Oso_DateTime646ComparisonExp
-
----
-kind: AggregateExpression
-version: v1
-definition:
-  name: DateTime646AggExp
-  operand:
-    scalar:
-      aggregatedType: DateTime646
-      aggregationFunctions:
-        - name: max
-          returnType: DateTime646!
-        - name: min
-          returnType: DateTime646!
-      dataConnectorAggregationFunctionMapping:
-        - dataConnectorName: oso_clickhouse
-          dataConnectorScalarType: DateTime64(6)
-          functionMapping:
-            max:
-              name: max
-            min:
-              name: min
-  count:
-    enable: true
-  countDistinct:
-    enable: true
-  graphql:
-    selectTypeName: Oso_DateTime646AggExp
-
----
-kind: OrderByExpression
-version: v1
-definition:
-  name: DateTime646OrderByExp
-  operand:
-    scalar:
-      orderedType: DateTime646
-      enableOrderByDirections:
-        enableAll: true
-  graphql:
-    expressionTypeName: Oso_DateTime646OrderByExp
-
----
-kind: OrderByExpression
-version: v1
-definition:
-  name: Int64OrderByExp
-  operand:
-    scalar:
-      orderedType: Int64
-      enableOrderByDirections:
-        enableAll: true
-  graphql:
-    expressionTypeName: Oso_Int64OrderByExp
-
----
-kind: OrderByExpression
-version: v1
-definition:
-  name: DateTimeOrderByExp
-  operand:
-    scalar:
-      orderedType: DateTime
-      enableOrderByDirections:
-        enableAll: true
-  graphql:
-    expressionTypeName: Oso_DateTimeOrderByExp
+    expressionTypeName: Oso_Float64OrderByExp
 
 ---
 kind: ScalarType
@@ -866,6 +678,19 @@ definition:
 kind: OrderByExpression
 version: v1
 definition:
+  name: DateTimeOrderByExp
+  operand:
+    scalar:
+      orderedType: DateTime
+      enableOrderByDirections:
+        enableAll: true
+  graphql:
+    expressionTypeName: Oso_DateTimeOrderByExp
+
+---
+kind: OrderByExpression
+version: v1
+definition:
   name: BoolOrderByExp
   operand:
     scalar:
@@ -874,55 +699,3 @@ definition:
         enableAll: true
   graphql:
     expressionTypeName: Oso_BoolOrderByExp
-
----
-kind: OrderByExpression
-version: v1
-definition:
-  name: Float64OrderByExp
-  operand:
-    scalar:
-      orderedType: Float64
-      enableOrderByDirections:
-        enableAll: true
-  graphql:
-    expressionTypeName: Oso_Float64OrderByExp
-
----
-kind: OrderByExpression
-version: v1
-definition:
-  name: DateOrderByExp
-  operand:
-    scalar:
-      orderedType: Date
-      enableOrderByDirections:
-        enableAll: true
-  graphql:
-    expressionTypeName: Oso_DateOrderByExp
-
----
-kind: OrderByExpression
-version: v1
-definition:
-  name: Float32OrderByExp
-  operand:
-    scalar:
-      orderedType: Float32
-      enableOrderByDirections:
-        enableAll: true
-  graphql:
-    expressionTypeName: Oso_Float32OrderByExp
-
----
-kind: OrderByExpression
-version: v1
-definition:
-  name: Int32OrderByExp
-  operand:
-    scalar:
-      orderedType: Int32
-      enableOrderByDirections:
-        enableAll: true
-  graphql:
-    expressionTypeName: Oso_Int32OrderByExp

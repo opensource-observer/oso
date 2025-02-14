@@ -2,34 +2,39 @@
 kind: ObjectType
 version: v1
 definition:
-  name: TimeseriesMetricsByArtifactV0
+  name: KeyMetricsByProjectV0
   fields:
     - name: amount
       type: Float64!
-    - name: artifactId
+    - name: metric
       type: String!
     - name: metricId
+      type: String!
+    - name: projectId
       type: String!
     - name: sampleDate
       type: Date!
     - name: unit
       type: String!
   graphql:
-    typeName: Oso_TimeseriesMetricsByArtifactV0
-    inputTypeName: Oso_TimeseriesMetricsByArtifactV0Input
+    typeName: Oso_KeyMetricsByProjectV0
+    inputTypeName: Oso_KeyMetricsByProjectV0Input
   dataConnectorTypeMapping:
     - dataConnectorName: oso_clickhouse
-      dataConnectorObjectType: timeseries_metrics_by_artifact_v0
+      dataConnectorObjectType: key_metrics_by_project_v0
       fieldMapping:
         amount:
           column:
             name: amount
-        artifactId:
+        metric:
           column:
-            name: artifact_id
+            name: metric
         metricId:
           column:
             name: metric_id
+        projectId:
+          column:
+            name: project_id
         sampleDate:
           column:
             name: sample_date
@@ -41,22 +46,24 @@ definition:
 kind: TypePermissions
 version: v1
 definition:
-  typeName: TimeseriesMetricsByArtifactV0
+  typeName: KeyMetricsByProjectV0
   permissions:
     - role: admin
       output:
         allowedFields:
           - amount
-          - artifactId
+          - metric
           - metricId
+          - projectId
           - sampleDate
           - unit
     - role: anonymous
       output:
         allowedFields:
           - amount
-          - artifactId
+          - metric
           - metricId
+          - projectId
           - sampleDate
           - unit
 
@@ -64,16 +71,18 @@ definition:
 kind: BooleanExpressionType
 version: v1
 definition:
-  name: TimeseriesMetricsByArtifactV0BoolExp
+  name: KeyMetricsByProjectV0BoolExp
   operand:
     object:
-      type: TimeseriesMetricsByArtifactV0
+      type: KeyMetricsByProjectV0
       comparableFields:
         - fieldName: amount
           booleanExpressionType: Float64BoolExp
-        - fieldName: artifactId
+        - fieldName: metric
           booleanExpressionType: StringBoolExp
         - fieldName: metricId
+          booleanExpressionType: StringBoolExp
+        - fieldName: projectId
           booleanExpressionType: StringBoolExp
         - fieldName: sampleDate
           booleanExpressionType: DateBoolExp
@@ -85,22 +94,24 @@ definition:
   isNull:
     enable: true
   graphql:
-    typeName: Oso_TimeseriesMetricsByArtifactV0BoolExp
+    typeName: Oso_KeyMetricsByProjectV0BoolExp
 
 ---
 kind: AggregateExpression
 version: v1
 definition:
-  name: TimeseriesMetricsByArtifactV0AggExp
+  name: KeyMetricsByProjectV0AggExp
   operand:
     object:
-      aggregatedType: TimeseriesMetricsByArtifactV0
+      aggregatedType: KeyMetricsByProjectV0
       aggregatableFields:
         - fieldName: amount
           aggregateExpression: Float64AggExp
-        - fieldName: artifactId
+        - fieldName: metric
           aggregateExpression: StringAggExp
         - fieldName: metricId
+          aggregateExpression: StringAggExp
+        - fieldName: projectId
           aggregateExpression: StringAggExp
         - fieldName: sampleDate
           aggregateExpression: DateAggExp
@@ -109,54 +120,58 @@ definition:
   count:
     enable: true
   graphql:
-    selectTypeName: Oso_TimeseriesMetricsByArtifactV0AggExp
+    selectTypeName: Oso_KeyMetricsByProjectV0AggExp
+
+---
+kind: OrderByExpression
+version: v1
+definition:
+  name: KeyMetricsByProjectV0OrderByExp
+  operand:
+    object:
+      orderedType: KeyMetricsByProjectV0
+      orderableFields:
+        - fieldName: amount
+          orderByExpression: Float64OrderByExp
+        - fieldName: metric
+          orderByExpression: StringOrderByExp
+        - fieldName: metricId
+          orderByExpression: StringOrderByExp
+        - fieldName: projectId
+          orderByExpression: StringOrderByExp
+        - fieldName: sampleDate
+          orderByExpression: DateOrderByExp
+        - fieldName: unit
+          orderByExpression: StringOrderByExp
+      orderableRelationships: []
+  graphql:
+    expressionTypeName: Oso_KeyMetricsByProjectV0OrderByExp
 
 ---
 kind: Model
-version: v1
+version: v2
 definition:
-  name: TimeseriesMetricsByArtifactV0
-  objectType: TimeseriesMetricsByArtifactV0
+  name: KeyMetricsByProjectV0
+  objectType: KeyMetricsByProjectV0
   source:
     dataConnectorName: oso_clickhouse
-    collection: timeseries_metrics_by_artifact_v0
-  filterExpressionType: TimeseriesMetricsByArtifactV0BoolExp
-  aggregateExpression: TimeseriesMetricsByArtifactV0AggExp
-  orderableFields:
-    - fieldName: amount
-      orderByDirections:
-        enableAll: true
-    - fieldName: artifactId
-      orderByDirections:
-        enableAll: true
-    - fieldName: metricId
-      orderByDirections:
-        enableAll: true
-    - fieldName: sampleDate
-      orderByDirections:
-        enableAll: true
-    - fieldName: unit
-      orderByDirections:
-        enableAll: true
+    collection: key_metrics_by_project_v0
+  filterExpressionType: KeyMetricsByProjectV0BoolExp
+  aggregateExpression: KeyMetricsByProjectV0AggExp
+  orderByExpression: KeyMetricsByProjectV0OrderByExp
   graphql:
     selectMany:
-      queryRootField: oso_timeseriesMetricsByArtifactV0
+      queryRootField: oso_keyMetricsByProjectV0
       subscription:
-        rootField: oso_timeseriesMetricsByArtifactV0
-    selectUniques:
-      - queryRootField: oso_timeseriesMetricsByArtifactV0ByMetricIdArtifactIdSampleDate
-        uniqueIdentifier:
-          - metricId
-          - artifactId
-          - sampleDate
-    orderByExpressionType: Oso_TimeseriesMetricsByArtifactV0OrderBy
-    filterInputTypeName: Oso_TimeseriesMetricsByArtifactV0FilterInput
+        rootField: oso_keyMetricsByProjectV0
+    selectUniques: []
+    filterInputTypeName: Oso_KeyMetricsByProjectV0FilterInput
 
 ---
 kind: ModelPermissions
 version: v1
 definition:
-  modelName: TimeseriesMetricsByArtifactV0
+  modelName: KeyMetricsByProjectV0
   permissions:
     - role: admin
       select:

@@ -202,10 +202,6 @@ definition:
     selectUniques: []
     orderByExpressionType: Oso_FundingMetricsByProjectV1OrderBy
     filterInputTypeName: Oso_FundingMetricsByProjectV1FilterInput
-    aggregate:
-      queryRootField: oso_fundingMetricsByProjectV1Aggregate
-      subscription:
-        rootField: oso_fundingMetricsByProjectV1Aggregate
 
 ---
 kind: ModelPermissions
