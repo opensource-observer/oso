@@ -274,6 +274,7 @@ def upload_file_to_bq(
             ),
             source_format=asset_config.source_format,
             allow_quoted_newlines=True,
+            write_disposition="WRITE_TRUNCATE",
         )
 
         load_job = bq_client.load_table_from_uri(
