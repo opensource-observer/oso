@@ -15,6 +15,15 @@ WITH unioned_metric_names AS (
   UNION ALL
   SELECT *
   FROM metrics.int_metric_names_from_collection
+  UNION ALL
+  SELECT *
+  FROM metrics.int_key_metric_names_from_artifact
+  UNION ALL
+  SELECT *
+  FROM metrics.int_key_metric_names_from_project
+  UNION ALL
+  SELECT *
+  FROM metrics.int_key_metric_names_from_collection
 ), all_timeseries_metric_names AS (
   SELECT DISTINCT
     metric
