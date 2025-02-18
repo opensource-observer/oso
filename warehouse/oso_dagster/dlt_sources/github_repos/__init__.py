@@ -3,6 +3,7 @@ import typing as t
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from enum import Enum
+from functools import partial
 from urllib.parse import ParseResult, urlparse
 
 import arrow
@@ -10,6 +11,7 @@ import dlt
 import hishel
 import httpx
 import polars as pl
+from dagster import AssetExecutionContext
 from githubkit import GitHub
 from githubkit.exception import RequestFailed
 from githubkit.retry import RetryChainDecision, RetryRateLimit, RetryServerError
@@ -19,7 +21,12 @@ from githubkit.versions.latest.models import (
     MinimalRepositoryPropLicense,
 )
 from oso_dagster.factories.dlt import pydantic_to_dlt_nullable_columns
-from oso_dagster.utils import get_async_http_cache_storage, get_sync_http_cache_storage
+from oso_dagster.utils import (
+    ParallelizeConfig,
+    dlt_parallelize,
+    get_async_http_cache_storage,
+    get_sync_http_cache_storage,
+)
 from pydantic import BaseModel, ValidationError
 
 logger = logging.getLogger(__name__)
@@ -274,14 +281,15 @@ class GithubRepositoryResolver:
         logger.debug(f"unnested all github urls and got {len(all_github_urls)} rows")
         return all_github_urls
 
-    def get_sbom_for_repo(
+    async def get_sbom_for_repo(
         self, owner: str, name: str
     ) -> t.List[GithubRepositorySBOMItem]:
         try:
-            sbom = self._gh.rest.dependency_graph.export_sbom(
+            sbom = await self._gh.rest.dependency_graph.async_export_sbom(
                 owner,
                 name,
             )
+            logger.info("Got SBOM for %s", f"{owner}/{name}")
             graph = sbom.parsed_data.sbom
             sbom_list: t.List[GithubRepositorySBOMItem] = []
 
@@ -389,12 +397,24 @@ def oss_directory_github_repositories_resource(
     columns=pydantic_to_dlt_nullable_columns(GithubRepositorySBOMItem),
     write_disposition="append",
 )
+@dlt_parallelize(
+    ParallelizeConfig(
+        chunk_size=16,
+        parallel_batches=5,
+        wait_interval=45,
+    )
+)
 def oss_directory_github_sbom_resource(
     all_repo_urls: t.List[str],
+    /,
     gh_token: str = dlt.secrets.value,
     rate_limit_max_retry: int = 5,
     server_error_max_rety: int = 3,
     http_cache: t.Optional[str] = None,
+    _chunk_resource_update: t.Optional[t.Callable[..., None]] = None,
+    _chunk_retrieve_failed: t.Optional[
+        t.Callable[[], t.Generator[t.Any, None, None]]
+    ] = None,
 ):
     """Retrieve SBOM information for GitHub repositories"""
 
@@ -408,29 +428,23 @@ def oss_directory_github_sbom_resource(
     gh = GithubRepositoryResolver.get_github_client(config)
     resolver = GithubRepositoryResolver(gh)
 
-    total = len(all_repo_urls)
-    last_printed_percentage = -1
-    for index, raw_repo_url in enumerate(all_repo_urls, start=1):
-        if not raw_repo_url:
-            logger.warning("Skipping empty repository url")
-            continue
-
-        percentage = (index / total) * 100
-        if int(percentage) != last_printed_percentage:
-            logger.info("Processing %d/%d (%.2f)", index, total, percentage)
-            last_printed_percentage = int(percentage)
+    def safe_parse_url(url: str) -> ParsedGithubURL | None:
+        """
+        Safely parse a URL and return None if it is invalid.
+        """
 
         try:
-            parsed_url = resolver.parse_url(raw_repo_url)
+            return resolver.parse_url(url)
+        except InvalidGithubURL as e:
+            logger.warning("Skipping invalid url %s: %s", url, e)
+            return None
 
-            if parsed_url.type != GithubURLType.REPOSITORY or not parsed_url.repository:
-                logger.warning("Skipping non-repository url: %s", raw_repo_url)
-                continue
+    clean_repos = [
+        (repo.owner, repo.repository)
+        for repo in (safe_parse_url(url) for url in all_repo_urls)
+        if repo and repo.type == GithubURLType.REPOSITORY and repo.repository
+    ]
 
-            yield from resolver.get_sbom_for_repo(
-                parsed_url.owner, parsed_url.repository
-            )
-
-        except InvalidGithubURL:
-            logger.warning("Skipping invalid github url: %s", raw_repo_url)
-            continue
+    yield from (
+        partial(resolver.get_sbom_for_repo, owner, repo) for owner, repo in clean_repos
+    )

@@ -5,6 +5,7 @@ from .bq import *
 from .bq_dts import *
 from .common import *
 from .dbt import *
+from .dlt import *
 from .gcs import *
 from .http import *
 from .retry import *
