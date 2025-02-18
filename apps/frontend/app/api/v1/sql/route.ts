@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getClickhouseClient } from "../../../../lib/clients/clickhouse";
+import { ClickHouseError } from "@clickhouse/client";
 //import { logger } from "../../../lib/logger";
 
 // Next.js route control
@@ -11,9 +12,8 @@ export const revalidate = 0;
 const QUERY_PARAM = "query";
 
 // Helper functions for creating responses suitable for Hasura
-const makeError = (errorMsg: string) => ({
-  error: errorMsg,
-});
+const makeErrorResponse = (errorMsg: string, status: number) =>
+  NextResponse.json({ error: errorMsg }, { status });
 
 async function doQuery(rawQuery: string) {
   const query = decodeURIComponent(rawQuery);
@@ -21,8 +21,6 @@ async function doQuery(rawQuery: string) {
   const client = getClickhouseClient();
   const rows = await client.query({ query });
   const resultSet = await rows.json();
-  // resultSet includes query statistics and metadata
-  //console.log(JSON.stringify(resultSet, null, 2));
   const data = resultSet.data;
   return data;
 }
@@ -42,22 +40,15 @@ export async function GET(request: NextRequest) {
   // If no query provided, short-circuit
   if (!query) {
     console.log(`/api/sql: Missing query`);
-    return NextResponse.json(makeError("Please provide a 'query' parameter"));
+    return makeErrorResponse("Please provide a 'query' parameter", 400);
   }
-  const result = await doQuery(query);
-  return NextResponse.json(result);
-}
-
-export async function POST(request: NextRequest) {
-  const body = await request.json();
-  const query = body[QUERY_PARAM];
-  //const auth = request.headers.get("authorization");
-
-  // If no query provided, short-circuit
-  if (!query) {
-    console.log(`/api/sql: Missing query`);
-    return NextResponse.json(makeError("Please provide a 'query' parameter"));
+  try {
+    const result = await doQuery(query);
+    return NextResponse.json(result);
+  } catch (e) {
+    if (e instanceof ClickHouseError) {
+      return makeErrorResponse(e.message, 400);
+    }
+    return makeErrorResponse("Unknown error", 500);
   }
-  const result = await doQuery(query);
-  return NextResponse.json(result);
 }
