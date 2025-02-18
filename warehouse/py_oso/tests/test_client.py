@@ -51,6 +51,7 @@ class TestClient(TestCase):
         )
         self.assertEqual(response, expected_json)
 
+    @mock.patch.dict(os.environ, {"OSO_API_KEY": None})
     @mock.patch("requests.get")
     def test_query_without_api_key(self, mock_get):
         mock_response = mock.Mock()
