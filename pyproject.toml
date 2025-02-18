@@ -134,6 +134,7 @@ ignore = [
   "warehouse/bq2cloudsql",
   "warehouse/meltano-setup",
   "warehouse/oso_lets_go",
+  "warehouse/py_oso",
   "warehouse/oso_dagster/dlt_sources/sql_database",
   "scripts/dbt_doc_gen",
 ]
@@ -143,6 +144,7 @@ exclude = [
   "warehouse/bq2cloudsql",
   "warehouse/meltano-setup",
   "warehouse/oso_lets_go",
+  "warehouse/py_oso",
   "warehouse/oso_dagster/dlt_sources",
   "warehouse/oso_dagster/dlt_sources/sql_database/**/*.py",
   "warehouse/oso_dagster/dlt_sources/sql_database/*.py",

@@ -1,0 +1,10 @@
+[project]
+name = "py-oso"
+version = "0.1.0"
+description = ""
+readme = "README.md"
+requires-python = ">=3.12"
+authors = [
+    { name = "Icaro Guerra", email = "icaro@karibalabs.co" }
+]
+dependencies = []
