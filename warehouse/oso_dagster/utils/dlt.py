@@ -143,7 +143,7 @@ class ChunkedResourceConfig(Generic[T]):
         max_manifest_age (int): Maximum age of the manifest file in seconds. If the
             manifest file is older than this value, the manifest will be reset. This
             means that the `fetch_data_fn` will be called again, re-fetching all the
-            data and starting from scratch. Defaults to 24 hours.
+            data and starting from scratch. Defaults to 3 days.
         context (AssetExecutionContext): Dagster context object.
     """
 
@@ -154,7 +154,7 @@ class ChunkedResourceConfig(Generic[T]):
         to_string_fn: Callable[..., str],
         gcs_bucket_name: str,
         gcs_prefix: str = "dlt_chunked_state",
-        max_manifest_age: int = 60 * 60 * 24,
+        max_manifest_age: int = 60 * 60 * 24 * 3,
         context: AssetExecutionContext | None = None,
     ):
         self.fetch_data_fn = fetch_data_fn
