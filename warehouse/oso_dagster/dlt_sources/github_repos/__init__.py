@@ -407,11 +407,14 @@ def oss_directory_github_repositories_resource(
 def oss_directory_github_sbom_resource(
     all_repo_urls: t.List[str],
     /,
-    _context: AssetExecutionContext,
     gh_token: str = dlt.secrets.value,
     rate_limit_max_retry: int = 5,
     server_error_max_rety: int = 3,
     http_cache: t.Optional[str] = None,
+    _chunk_resource_update: t.Optional[t.Callable[..., None]] = None,
+    _chunk_retrieve_failed: t.Optional[
+        t.Callable[[], t.Generator[t.Any, None, None]]
+    ] = None,
 ):
     """Retrieve SBOM information for GitHub repositories"""
 
