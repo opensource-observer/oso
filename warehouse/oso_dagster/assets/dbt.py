@@ -49,6 +49,7 @@ class CustomDagsterDbtTranslator(DagsterDbtTranslator):
         if materialization:
             tags["dbt/materialized"] = materialization
             tags["opensource.observer/environment"] = self._environment
+            tags["opensource.observer/experimental"] = "true"
         return tags
 
 

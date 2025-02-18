@@ -6,12 +6,12 @@ MODEL (
 );
 
 SELECT
-  MIN(time) AS time,
+  MIN(bucket_week) AS time,
   event_type,
   event_source,
   from_artifact_id,
   to_artifact_id
-FROM metrics.int_events
+FROM metrics.int_events_weekly_to_artifact
 GROUP BY
   event_type,
   event_source,

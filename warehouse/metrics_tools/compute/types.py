@@ -433,7 +433,7 @@ class ClusterConfig(BaseSettings):
     scheduler_pool_type: str = "sqlmesh-scheduler"
 
     worker_resources: t.Dict[str, int] = Field(default_factory=lambda: {"slots": "32"})
-    worker_threads: int = 16
+    worker_threads: int = 8
     worker_memory_limit: str = "90000Mi"
     worker_memory_request: str = "85000Mi"
     worker_pool_type: str = "sqlmesh-worker"
@@ -470,8 +470,8 @@ class AppConfig(ClusterConfig, TrinoCacheExportConfig, GCSConfig):
     debug_cluster: bool = False
     debug_cluster_no_shutdown: bool = False
 
-    cluster_shutdown_timeout: int = 3600
-    cluster_scale_down_timeout: int = 300
+    cluster_shutdown_timeout: int = 180
+    cluster_scale_down_timeout: int = 60
 
     @model_validator(mode="after")
     def handle_debugging(self):

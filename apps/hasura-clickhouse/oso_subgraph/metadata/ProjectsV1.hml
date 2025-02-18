@@ -160,10 +160,6 @@ definition:
     selectUniques: []
     orderByExpressionType: Oso_ProjectsV1OrderBy
     filterInputTypeName: Oso_ProjectsV1FilterInput
-    aggregate:
-      queryRootField: oso_projectsV1Aggregate
-      subscription:
-        rootField: oso_projectsV1Aggregate
 
 ---
 kind: ModelPermissions

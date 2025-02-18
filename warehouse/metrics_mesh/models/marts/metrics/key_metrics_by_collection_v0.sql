@@ -22,6 +22,5 @@ SELECT
   collection_id::TEXT,
   sample_date::DATE,
   amount::DOUBLE,
-  metric::TEXT,
   unit::TEXT
 FROM key_metrics_by_collection_v0_no_casting

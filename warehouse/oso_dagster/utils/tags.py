@@ -1,5 +1,18 @@
 import typing as t
 
+from dagster import AssetSelection
+
+experimental_tag = AssetSelection.tag("opensource.observer/experimental", "true")
+
+partitioned_assets = AssetSelection.tag(
+    "opensource.observer/extra", "partitioned-assets"
+)
+
+stable_source_tag = AssetSelection.tag("opensource.observer/source", "stable")
+
+unstable_source_tag = AssetSelection.tag("opensource.observer/source", "unstable")
+
+sbom_source_tag = AssetSelection.tag("opensource.observer/source", "sbom")
 
 def add_tags(
     tags: t.Mapping[str, str], additional_tags: t.Mapping[str, str]

@@ -10,7 +10,12 @@ from typing import Callable, Dict, List, Optional, cast
 from dagster import AssetExecutionContext, MaterializeResult, asset
 from dagster_gcp import BigQueryResource, GCSResource
 from google.api_core.exceptions import NotFound
-from google.cloud.bigquery import LoadJobConfig, SchemaField, SourceFormat
+from google.cloud.bigquery import (
+    LoadJobConfig,
+    SchemaField,
+    SourceFormat,
+    WriteDisposition,
+)
 from oso_dagster.factories.common import AssetDeps, AssetFactoryResponse, GenericAsset
 from oso_dagster.utils.gcs import batch_delete_folder
 
@@ -274,6 +279,7 @@ def upload_file_to_bq(
             ),
             source_format=asset_config.source_format,
             allow_quoted_newlines=True,
+            write_disposition=WriteDisposition.WRITE_TRUNCATE,
         )
 
         load_job = bq_client.load_table_from_uri(

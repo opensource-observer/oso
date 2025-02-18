@@ -202,10 +202,6 @@ definition:
     selectUniques: []
     orderByExpressionType: Oso_ArtifactsByProjectV1OrderBy
     filterInputTypeName: Oso_ArtifactsByProjectV1FilterInput
-    aggregate:
-      queryRootField: oso_artifactsByProjectV1Aggregate
-      subscription:
-        rootField: oso_artifactsByProjectV1Aggregate
 
 ---
 kind: ModelPermissions

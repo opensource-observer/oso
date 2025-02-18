@@ -11,16 +11,14 @@ from dagster import (
     define_asset_job,
 )
 from oso_dagster.factories.common import AssetFactoryResponse
-
-partitioned_assets = AssetSelection.tag(
-    "opensource.observer/extra", "partitioned-assets"
+from oso_dagster.utils.tags import (
+    experimental_tag,
+    partitioned_assets,
+    sbom_source_tag,
+    stable_source_tag,
+    unstable_source_tag,
 )
 
-stable_source_tag = AssetSelection.tag("opensource.observer/source", "stable")
-
-unstable_sources_tag = AssetSelection.tag("opensource.observer/source", "unstable")
-
-sbom_source_tag = AssetSelection.tag("opensource.observer/source", "sbom")
 
 def get_partitioned_schedules(
     factory: AssetFactoryResponse,
@@ -76,8 +74,9 @@ def get_partitioned_schedules(
 materialize_core_assets = define_asset_job(
     "materialize_core_assets_job",
     AssetSelection.all()
+    - experimental_tag
     - stable_source_tag
-    - unstable_sources_tag
+    - unstable_source_tag
     - sbom_source_tag
     - partitioned_assets,
 )
@@ -89,7 +88,7 @@ materialize_stable_source_assets = define_asset_job(
 
 materialize_unstable_source_assets = define_asset_job(
     "materialize_unstable_source_assets_job",
-    unstable_sources_tag,
+    unstable_source_tag,
 )
 
 materialize_sbom_source_assets = define_asset_job(
@@ -110,14 +109,14 @@ schedules: list[ScheduleDefinition] = [
     # Run source assets every day at midnight
     ScheduleDefinition(
         job=materialize_stable_source_assets,
-        cron_schedule="0 0 * * *",
+        cron_schedule="0 18 * * *",
         tags={
             "dagster/priority": "-1",
         },
     ),
     ScheduleDefinition(
         job=materialize_unstable_source_assets,
-        cron_schedule="0 0 * * *",
+        cron_schedule="0 12 * * *",
         tags={
             "dagster/priority": "-1",
         },
@@ -125,7 +124,7 @@ schedules: list[ScheduleDefinition] = [
     # Run SBOM assets on Tuesday and Friday at midnight, since they take too long
     ScheduleDefinition(
         job=materialize_sbom_source_assets,
-        cron_schedule="0 0 * * 2,5",
+        cron_schedule="0 6 * * 2,5",
         tags={
             "dagster/priority": "-1",
         },

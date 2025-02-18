@@ -205,10 +205,6 @@ definition:
         rootField: oso_artifactsByCollectionV1
     selectUniques: []
     filterInputTypeName: Oso_ArtifactsByCollectionV1FilterInput
-    aggregate:
-      queryRootField: oso_artifactsByCollectionV1Aggregate
-      subscription:
-        rootField: oso_artifactsByCollectionV1Aggregate
 
 ---
 kind: ModelPermissions

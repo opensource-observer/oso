@@ -10,6 +10,10 @@ logger = logging.getLogger(__name__)
 DUCKDB_SOURCES_SCHEMA_PREFIX = "sources"
 
 TABLE_MAPPING: TableMappingConfig = {
+    "opensource-observer.op_atlas.project": "bigquery.op_atlas.project",
+    "opensource-observer.op_atlas.project_contract": "bigquery.op_atlas.project_contract",
+    "opensource-observer.op_atlas.project_links": "bigquery.op_atlas.project_links",
+    "opensource-observer.op_atlas.project_repository": "bigquery.op_atlas.project_repository",
     "opensource-observer.oso_playground.int_deployers": "bigquery.oso.int_deployers",
     "opensource-observer.oso_playground.int_deployers_by_project": "bigquery.oso.int_deployers_by_project",
     "opensource-observer.oso_playground.int_events__blockchain": "bigquery.oso.int_events__blockchain",
@@ -32,10 +36,9 @@ TABLE_MAPPING: TableMappingConfig = {
         row_restriction=RowRestriction(time_column="created_at"),
         table="bigquery.oso.stg_open_collective__expenses",
     ),
-    "opensource-observer.oso_playground.stg_ossd__current_collections": "bigquery.oso.stg_ossd__current_collections",
-    "opensource-observer.oso_playground.stg_ossd__current_projects": "bigquery.oso.stg_ossd__current_projects",
-    "opensource-observer.oso_playground.stg_ossd__current_repositories": "bigquery.oso.stg_ossd__current_repositories",
-    "opensource-observer.oso_playground.timeseries_events_aux_issues_by_artifact_v0": "bigquery.oso.timeseries_events_aux_issues_by_artifact_v0",
+    "opensource-observer.ossd.collections": "bigquery.ossd.collections",
+    "opensource-observer.ossd.projects": "bigquery.ossd.projects",
+    "opensource-observer.ossd.repositories": "bigquery.ossd.repositories",
     "opensource-observer.ossd.sbom": "bigquery.ossd.sbom",
     # Only grab some data from frax for local testing
     "opensource-observer.optimism_superchain_raw_onchain_data.blocks": TableMappingDestination(

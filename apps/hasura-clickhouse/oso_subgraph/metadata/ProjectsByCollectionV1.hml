@@ -188,10 +188,6 @@ definition:
     selectUniques: []
     orderByExpressionType: Oso_ProjectsByCollectionV1OrderBy
     filterInputTypeName: Oso_ProjectsByCollectionV1FilterInput
-    aggregate:
-      queryRootField: oso_projectsByCollectionV1Aggregate
-      subscription:
-        rootField: oso_projectsByCollectionV1Aggregate
 
 ---
 kind: ModelPermissions

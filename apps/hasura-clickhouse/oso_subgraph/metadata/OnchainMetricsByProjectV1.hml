@@ -356,10 +356,6 @@ definition:
     selectUniques: []
     orderByExpressionType: Oso_OnchainMetricsByProjectV1OrderBy
     filterInputTypeName: Oso_OnchainMetricsByProjectV1FilterInput
-    aggregate:
-      queryRootField: oso_onchainMetricsByProjectV1Aggregate
-      subscription:
-        rootField: oso_onchainMetricsByProjectV1Aggregate
 
 ---
 kind: ModelPermissions

@@ -2,24 +2,24 @@
 kind: ObjectType
 version: v1
 definition:
-  name: PointInTimeV0
+  name: KeyMetricsByArtifactV0
   fields:
     - name: amount
-      type: Int64!
+      type: Float64!
     - name: artifactId
       type: String!
-    - name: artifactSource
+    - name: metricId
       type: String!
-    - name: metric
+    - name: sampleDate
+      type: Date!
+    - name: unit
       type: String!
-    - name: time
-      type: DateTime!
   graphql:
-    typeName: Oso_PointInTimeV0
-    inputTypeName: Oso_PointInTimeV0Input
+    typeName: Oso_KeyMetricsByArtifactV0
+    inputTypeName: Oso_KeyMetricsByArtifactV0Input
   dataConnectorTypeMapping:
     - dataConnectorName: oso_clickhouse
-      dataConnectorObjectType: point_in_time_v0
+      dataConnectorObjectType: key_metrics_by_artifact_v0
       fieldMapping:
         amount:
           column:
@@ -27,142 +27,138 @@ definition:
         artifactId:
           column:
             name: artifact_id
-        artifactSource:
+        metricId:
           column:
-            name: artifact_source
-        metric:
+            name: metric_id
+        sampleDate:
           column:
-            name: metric
-        time:
+            name: sample_date
+        unit:
           column:
-            name: time
+            name: unit
 
 ---
 kind: TypePermissions
 version: v1
 definition:
-  typeName: PointInTimeV0
+  typeName: KeyMetricsByArtifactV0
   permissions:
     - role: admin
       output:
         allowedFields:
           - amount
           - artifactId
-          - artifactSource
-          - metric
-          - time
+          - metricId
+          - sampleDate
+          - unit
     - role: anonymous
       output:
         allowedFields:
           - amount
           - artifactId
-          - artifactSource
-          - metric
-          - time
+          - metricId
+          - sampleDate
+          - unit
 
 ---
 kind: BooleanExpressionType
 version: v1
 definition:
-  name: PointInTimeV0BoolExp
+  name: KeyMetricsByArtifactV0BoolExp
   operand:
     object:
-      type: PointInTimeV0
+      type: KeyMetricsByArtifactV0
       comparableFields:
         - fieldName: amount
-          booleanExpressionType: Int64BoolExp
+          booleanExpressionType: Float64BoolExp
         - fieldName: artifactId
           booleanExpressionType: StringBoolExp
-        - fieldName: artifactSource
+        - fieldName: metricId
           booleanExpressionType: StringBoolExp
-        - fieldName: metric
+        - fieldName: sampleDate
+          booleanExpressionType: DateBoolExp
+        - fieldName: unit
           booleanExpressionType: StringBoolExp
-        - fieldName: time
-          booleanExpressionType: DateTimeBoolExp
       comparableRelationships: []
   logicalOperators:
     enable: true
   isNull:
     enable: true
   graphql:
-    typeName: Oso_PointInTimeV0BoolExp
+    typeName: Oso_KeyMetricsByArtifactV0BoolExp
 
 ---
 kind: AggregateExpression
 version: v1
 definition:
-  name: PointInTimeV0AggExp
+  name: KeyMetricsByArtifactV0AggExp
   operand:
     object:
-      aggregatedType: PointInTimeV0
+      aggregatedType: KeyMetricsByArtifactV0
       aggregatableFields:
         - fieldName: amount
-          aggregateExpression: Int64AggExp
+          aggregateExpression: Float64AggExp
         - fieldName: artifactId
           aggregateExpression: StringAggExp
-        - fieldName: artifactSource
+        - fieldName: metricId
           aggregateExpression: StringAggExp
-        - fieldName: metric
+        - fieldName: sampleDate
+          aggregateExpression: DateAggExp
+        - fieldName: unit
           aggregateExpression: StringAggExp
-        - fieldName: time
-          aggregateExpression: DateTimeAggExp
   count:
     enable: true
   graphql:
-    selectTypeName: Oso_PointInTimeV0AggExp
+    selectTypeName: Oso_KeyMetricsByArtifactV0AggExp
 
 ---
 kind: OrderByExpression
 version: v1
 definition:
-  name: PointInTimeV0OrderByExp
+  name: KeyMetricsByArtifactV0OrderByExp
   operand:
     object:
-      orderedType: PointInTimeV0
+      orderedType: KeyMetricsByArtifactV0
       orderableFields:
         - fieldName: amount
-          orderByExpression: Int64OrderByExp
+          orderByExpression: Float64OrderByExp
         - fieldName: artifactId
           orderByExpression: StringOrderByExp
-        - fieldName: artifactSource
+        - fieldName: metricId
           orderByExpression: StringOrderByExp
-        - fieldName: metric
+        - fieldName: sampleDate
+          orderByExpression: DateOrderByExp
+        - fieldName: unit
           orderByExpression: StringOrderByExp
-        - fieldName: time
-          orderByExpression: DateTimeOrderByExp
       orderableRelationships: []
   graphql:
-    expressionTypeName: Oso_PointInTimeV0OrderByExp
+    expressionTypeName: Oso_KeyMetricsByArtifactV0OrderByExp
 
 ---
 kind: Model
 version: v2
 definition:
-  name: PointInTimeV0
-  objectType: PointInTimeV0
+  name: KeyMetricsByArtifactV0
+  objectType: KeyMetricsByArtifactV0
   source:
     dataConnectorName: oso_clickhouse
-    collection: point_in_time_v0
-  filterExpressionType: PointInTimeV0BoolExp
-  aggregateExpression: PointInTimeV0AggExp
-  orderByExpression: PointInTimeV0OrderByExp
+    collection: key_metrics_by_artifact_v0
+  filterExpressionType: KeyMetricsByArtifactV0BoolExp
+  aggregateExpression: KeyMetricsByArtifactV0AggExp
+  orderByExpression: KeyMetricsByArtifactV0OrderByExp
   graphql:
     selectMany:
-      queryRootField: oso_pointInTimeV0
+      queryRootField: oso_keyMetricsByArtifactV0
       subscription:
-        rootField: oso_pointInTimeV0
+        rootField: oso_keyMetricsByArtifactV0
     selectUniques: []
-    filterInputTypeName: Oso_PointInTimeV0FilterInput
-    aggregate:
-      queryRootField: oso_pointInTimeV0Aggregate
-      subscription:
-        rootField: oso_pointInTimeV0Aggregate
+    filterInputTypeName: Oso_KeyMetricsByArtifactV0FilterInput
 
 ---
 kind: ModelPermissions
 version: v1
 definition:
-  modelName: PointInTimeV0
+  modelName: KeyMetricsByArtifactV0
   permissions:
     - role: admin
       select:

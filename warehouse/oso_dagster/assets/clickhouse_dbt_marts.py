@@ -42,8 +42,6 @@ def all_clickhouse_dbt_mart_assets(
         a list of Dagster assets
     """
 
-    return AssetFactoryResponse([])
-
     manifests: Dict[str, Path] = global_config.dbt_manifests
 
     # We only care about mart models from production
@@ -95,6 +93,7 @@ def all_clickhouse_dbt_mart_assets(
                         staging_bucket=global_config.staging_bucket_url,
                         destination_table_name=table_name,
                         index=n.get("meta").get("index"),
+                        tags={"opensource.observer/experimental": "true"},
                         order_by=n.get("meta").get("order_by"),
                         copy_mode=SourceMode.Overwrite,
                         asset_kwargs={

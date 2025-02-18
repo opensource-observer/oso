@@ -207,10 +207,6 @@ definition:
           - metricName
     orderByExpressionType: Oso_MetricsV0OrderBy
     filterInputTypeName: Oso_MetricsV0FilterInput
-    aggregate:
-      queryRootField: oso_metricsV0Aggregate
-      subscription:
-        rootField: oso_metricsV0Aggregate
 
 ---
 kind: ModelPermissions

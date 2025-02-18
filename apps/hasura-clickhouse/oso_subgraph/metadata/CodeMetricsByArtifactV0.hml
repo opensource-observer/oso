@@ -328,10 +328,6 @@ definition:
     selectUniques: []
     orderByExpressionType: Oso_CodeMetricsByArtifactV0OrderBy
     filterInputTypeName: Oso_CodeMetricsByArtifactV0FilterInput
-    aggregate:
-      queryRootField: oso_codeMetricsByArtifactV0Aggregate
-      subscription:
-        rootField: oso_codeMetricsByArtifactV0Aggregate
 
 ---
 kind: ModelPermissions

@@ -1,6 +1,9 @@
 MODEL (
   name metrics.users_v1,
-  kind FULL
+  kind FULL,
+  tags (
+    'export'
+  ),
 );
 
 select
