@@ -19,6 +19,7 @@ class AlertOpConfig(Config):
 
 
 class FreshnessOpConfig(Config):
+    fresh_assets: int
     stale_assets: Mapping[str, float]
 
 
@@ -243,7 +244,14 @@ class CanvasDiscordWebhookAlertManager(AlertManager):
 
         self.alert_discord_chunks(
             "Asset Freshness Summary",
-            "The following assets are stale:",
+            (
+                f"Found {config.fresh_assets} fresh assets."
+                + (
+                    "The following assets are stale:"
+                    if len(config.stale_assets) > 0
+                    else ""
+                )
+            ),
             output_fields,
         )
 
@@ -251,8 +259,13 @@ class CanvasDiscordWebhookAlertManager(AlertManager):
         self, title: str, description: str, fields: Mapping[str, str]
     ):
         items = list(fields.items())
+        if len(items) == 0:
+            self.alert_discord(title, description)
+            return
         for i in range(0, len(items), 10):
-            self.alert_discord(title, description, fields=items[i : i + 20])
+            self.alert_discord(
+                title, description if i == 0 else "", fields=items[i : i + 20]
+            )
 
     def alert_discord(
         self,
