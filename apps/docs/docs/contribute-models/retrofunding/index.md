@@ -1,6 +1,6 @@
 ---
 title: Create Metrics for Retro Funding
-sidebar_position: 5
+sidebar_position: 1
 ---
 
 :::info
