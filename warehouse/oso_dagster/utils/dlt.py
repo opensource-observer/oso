@@ -83,7 +83,9 @@ def dlt_parallelize(config: ParallelizeConfig):
             log = context.log if context else logger
 
             tasks: List[Coroutine[Any, Any, R]] = [
-                task() for task in fn(*args, **kwargs)
+                coro
+                for coro in (task() for task in fn(*args, **kwargs))
+                if coro is not None
             ]
             batches_list = list(batched(tasks, config.chunk_size))
 
