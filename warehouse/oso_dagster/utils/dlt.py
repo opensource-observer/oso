@@ -83,9 +83,7 @@ def dlt_parallelize(config: ParallelizeConfig):
             log = context.log if context else logger
 
             tasks: List[Coroutine[Any, Any, R]] = [
-                coro
-                for coro in (task() for task in fn(*args, **kwargs))
-                if coro is not None
+                task() for task in fn(*args, **kwargs)
             ]
             batches_list = list(batched(tasks, config.chunk_size))
 
@@ -95,9 +93,14 @@ def dlt_parallelize(config: ParallelizeConfig):
                 )
                 group_coroutines = [coro for batch in batch_group for coro in batch]
 
-                results = [
-                    await future for future in asyncio.as_completed(group_coroutines)
-                ]
+                results = []
+
+                for future in asyncio.as_completed(group_coroutines):
+                    try:
+                        result = await future
+                        results.append(result)
+                    except Exception as e:
+                        log.error(f"DLTParallelize: Task failed with exception: {e}")
 
                 for result in results:
                     yield result
