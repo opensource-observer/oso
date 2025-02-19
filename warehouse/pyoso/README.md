@@ -1,8 +1,8 @@
-# py_oso
+# pyoso
 
 _WARNING: THIS IS A WORK IN PROGRESS_
 
-`py_oso` is a Python package for fetching models and metrics from OSO. This package provides an easy-to-use interface to interact with oso and retrieve valuable data for analysis and monitoring.
+`pyoso` is a Python package for fetching models and metrics from OSO. This package provides an easy-to-use interface to interact with oso and retrieve valuable data for analysis and monitoring.
 
 ## Current Features
 
@@ -10,18 +10,18 @@ _WARNING: THIS IS A WORK IN PROGRESS_
 
 ## Installation
 
-You can install `py_oso` using pip:
+You can install `pyoso` using pip:
 
 ```bash
-pip install py_oso
+pip install pyoso
 ```
 
 ## Usage
 
-Here is a basic example of how to use `py_oso`:
+Here is a basic example of how to use `pyoso`:
 
 ```python
-from py_oso import Client
+from pyoso import Client
 
 # Initialize the client
 os.environ["OSO_API_KEY"] = 'your_api_key'
