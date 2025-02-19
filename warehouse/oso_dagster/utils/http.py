@@ -66,7 +66,7 @@ def get_sync_http_cache_storage(cache_uri: str) -> hishel.BaseStorage:
 def get_async_http_cache_storage(cache_uri: str) -> hishel.AsyncBaseStorage:
     parsed_uri = urlparse(cache_uri)
 
-    factory = FACTORIES["sync"][parsed_uri.scheme]
+    factory = FACTORIES["async"][parsed_uri.scheme]
     return cast(hishel.AsyncBaseStorage, factory(parsed_uri))
 
 
