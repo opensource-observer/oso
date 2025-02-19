@@ -19,10 +19,8 @@ async function doQuery(rawQuery: string) {
   const query = decodeURIComponent(rawQuery);
   console.log(`Running query: ${query}`);
   const client = getClickhouseClient();
-  const rows = await client.query({ query });
-  const resultSet = await rows.json();
-  const data = resultSet.data;
-  return data;
+  const rows = await client.query({ query, format: "JSONEachRow" });
+  return rows;
 }
 
 /**
@@ -32,9 +30,10 @@ async function doQuery(rawQuery: string) {
  * @param request
  * @returns
  */
-export async function GET(request: NextRequest) {
-  const searchParams = request.nextUrl.searchParams;
-  const query = searchParams.get(QUERY_PARAM);
+export async function POST(request: NextRequest) {
+  const body = await request.json();
+  const query = body?.[QUERY_PARAM];
+  // TODO: add authentication
   //const auth = request.headers.get("authorization");
 
   // If no query provided, short-circuit
@@ -43,8 +42,24 @@ export async function GET(request: NextRequest) {
     return makeErrorResponse("Please provide a 'query' parameter", 400);
   }
   try {
-    const result = await doQuery(query);
-    return NextResponse.json(result);
+    const stream = (await doQuery(query)).stream();
+
+    const readableStream = new ReadableStream({
+      start(controller) {
+        stream.on("data", (chunk) => {
+          console.log("sending", chunk.length);
+          controller.enqueue(JSON.stringify(chunk.map((r) => r.json())));
+        });
+        stream.on("end", () => {
+          controller.close();
+        });
+        stream.on("error", (error) => {
+          controller.error(error);
+        });
+      },
+    });
+
+    return new NextResponse(readableStream);
   } catch (e) {
     if (e instanceof ClickHouseError) {
       return makeErrorResponse(e.message, 400);
