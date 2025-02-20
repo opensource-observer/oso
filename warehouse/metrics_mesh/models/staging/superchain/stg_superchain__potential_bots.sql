@@ -3,7 +3,7 @@ MODEL (
   kind FULL,
   start '2021-10-01',
   cron '@daily',
-  partitioned_by (DAY("min_block_time")),
+  partitioned_by (DAY("min_block_time"), "chain_name"),
   grain (chain_name, address),
 );
 
