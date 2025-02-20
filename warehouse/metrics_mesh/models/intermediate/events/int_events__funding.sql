@@ -14,62 +14,46 @@ MODEL (
 
 with open_collective_expenses as (
     select
-        created_at as time,
-        type as event_type,
-        id as event_source_id,
-        'OPEN_COLLECTIVE' as event_source,
-        @oso_id(
-            'OPEN_COLLECTIVE',
-            json_extract_scalar(to_account, '$.slug'),
-            json_extract_scalar(to_account, '$.name')
-        ) as to_artifact_id,
-        json_extract_scalar(to_account, '$.name') as to_name,
-        json_extract_scalar(to_account, '$.slug') as to_namespace,
-        json_extract_scalar(to_account, '$.type') as to_type,
-        json_extract_scalar(to_account, '$.id') as to_artifact_source_id,
-        @oso_id(
-          'OPEN_COLLECTIVE',
-          json_extract_scalar(from_account, '$.slug'),
-          json_extract_scalar(from_account, '$.name')
-        ) as from_artifact_id,
-        json_extract_scalar(from_account, '$.name') as from_name,
-        json_extract_scalar(from_account, '$.slug') as from_namespace,
-        json_extract_scalar(from_account, '$.type') as from_type,
-        json_extract_scalar(from_account, '$.id') as from_artifact_source_id,
-        ABS(CAST(json_extract_scalar(amount, '$.value') as DOUBLE)) as amount
-    from @oso_source('bigquery.oso.stg_open_collective__expenses')
-    where json_extract_scalar(amount, '$.currency') = 'USD'
-      and created_at between @start_dt and @end_dt
+        time,
+        event_type,
+        event_source_id,
+        event_source,
+        to_artifact_id,
+        to_name,
+        to_namespace,
+        to_type,
+        to_artifact_source_id,
+        from_artifact_id,
+        from_name,
+        from_namespace,
+        from_type,
+        from_artifact_source_id,
+        amount
+    from metrics.stg_open_collective__expenses
+    where unit = 'USD'
+      and time between @start_dt and @end_dt
 ),
 
 open_collective_deposits as (
     select
-        created_at as time,
-        type as event_type,
-        id as event_source_id,
-        'OPEN_COLLECTIVE' as event_source,
-        @oso_id(
-            'OPEN_COLLECTIVE',
-            json_extract_scalar(to_account, '$.slug'),
-            json_extract_scalar(to_account, '$.name')
-        ) as to_artifact_id,
-        json_extract_scalar(to_account, '$.name') as to_name,
-        json_extract_scalar(to_account, '$.slug') as to_namespace,
-        json_extract_scalar(to_account, '$.type') as to_type,
-        json_extract_scalar(to_account, '$.id') as to_artifact_source_id,
-        @oso_id(
-          'OPEN_COLLECTIVE',
-          json_extract_scalar(from_account, '$.slug'),
-          json_extract_scalar(from_account, '$.name')
-        ) as from_artifact_id,
-        json_extract_scalar(from_account, '$.name') as from_name,
-        json_extract_scalar(from_account, '$.slug') as from_namespace,
-        json_extract_scalar(from_account, '$.type') as from_type,
-        json_extract_scalar(from_account, '$.id') as from_artifact_source_id,
-        ABS(CAST(json_extract_scalar(amount, '$.value') as DOUBLE)) as amount
-    from @oso_source('bigquery.oso.stg_open_collective__deposits')
-    where json_extract_scalar(amount, '$.currency') = 'USD'
-      and created_at between @start_dt and @end_dt
+        time,
+        event_type,
+        event_source_id,
+        event_source,
+        to_artifact_id,
+        to_name,
+        to_namespace,
+        to_type,
+        to_artifact_source_id,
+        from_artifact_id,
+        from_name,
+        from_namespace,
+        from_type,
+        from_artifact_source_id,
+        amount
+    from metrics.stg_open_collective__deposits
+    where unit = 'USD'
+      and time between @start_dt and @end_dt
 ),
 
 all_funding_events as (
