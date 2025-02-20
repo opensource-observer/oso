@@ -6,7 +6,7 @@ MODEL (
 with union_queries (
   select
     lower(address) as address,
-    upper(TODO) as network
+    upper(chain_name) as network
   from metrics.stg_superchain__potential_bots
 )
 

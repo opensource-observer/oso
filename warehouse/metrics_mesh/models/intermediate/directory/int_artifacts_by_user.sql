@@ -27,7 +27,7 @@ farcaster_users as (
       'FARCASTER_USER' as user_type,
       farcaster_profiles.username as user_name,
       UPPER(first_time_addresses.chain_name) as chain_name
-    from @oso_source('bigquery.oso.int_first_time_addresses') as first_time_addresses
+    from metrics.int_first_time_addresses as first_time_addresses
     inner join metrics.stg_farcaster__addresses as farcaster_addresses
       on first_time_addresses.address = farcaster_addresses.address
     inner join metrics.stg_farcaster__profiles as farcaster_profiles
@@ -56,7 +56,7 @@ lens_users as (
       'LENS_USER' as user_type,
       lens_profiles.full_name as user_name,
       UPPER(first_time_addresses.chain_name) as chain_name
-    from @oso_source('bigquery.oso.int_first_time_addresses') as first_time_addresses
+    from metrics.int_first_time_addresses as first_time_addresses
     inner join metrics.stg_lens__owners as lens_owners
       on first_time_addresses.address = lens_owners.owned_by
     inner join metrics.stg_lens__profiles as lens_profiles
