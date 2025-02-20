@@ -143,6 +143,7 @@ exclude = [
   "warehouse/bq2cloudsql",
   "warehouse/meltano-setup",
   "warehouse/oso_lets_go",
+  "warehouse/pyoso",
   "warehouse/oso_dagster/dlt_sources",
   "warehouse/oso_dagster/dlt_sources/sql_database/**/*.py",
   "warehouse/oso_dagster/dlt_sources/sql_database/*.py",
