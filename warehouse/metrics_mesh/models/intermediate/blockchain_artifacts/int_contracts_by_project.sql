@@ -8,7 +8,7 @@ with contracts_in_ossd as (
     project_id,
     artifact_source as chain,
     artifact_name as contract_address
-  from metrics.int_artifacts_in_ossd_by_project
+  from metrics.int_artifacts_by_project_in_ossd
   where artifact_type = 'CONTRACT'
 ),
 

@@ -8,6 +8,7 @@ select
   -- Translating op-atlas project_id to OSO project_id
   @oso_id('OP_ATLAS', project_id) as project_id,
   url as artifact_url,
+  id as artifact_source_id,
   name as display_name,
   description,
   created_at,

@@ -22,7 +22,7 @@ with ossd_artifacts as (
     artifact_namespace,
     artifact_name,
     artifact_url
-  from metrics.int_artifacts_in_ossd_by_project
+  from metrics.int_artifacts_by_project_in_ossd
   where artifact_type not in ('DEPLOYER', 'CONTRACT')
 ),
 

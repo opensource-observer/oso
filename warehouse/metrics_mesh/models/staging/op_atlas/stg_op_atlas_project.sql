@@ -6,6 +6,7 @@ MODEL (
 
 select
   @oso_id('OP_ATLAS', id)::TEXT as project_id,
+  id::TEXT as project_source_id,
   'OP_ATLAS' as project_source,
   null::TEXT as project_namespace,
   id::TEXT as project_name,

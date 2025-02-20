@@ -1,73 +1,39 @@
 MODEL (
-  name metrics.int_artifacts_in_ossd_by_project,
+  name metrics.int_artifacts_by_project_in_op_atlas,
   kind FULL,
   dialect trino
 );
 
-with projects as (
+with all_websites as (
   select
-    project_id,
-    websites as websites,
-    social as social,
-    github as github,
-    npm as npm,
-    blockchain as blockchain
-  from metrics.stg_ossd__current_projects
-),
-
-all_websites as (
-  select
-    projects.project_id,
-    unnested_website.url as artifact_source_id,
+    links.project_id,
+    links.artifact_source_id,
     'WWW' as artifact_source,
     'WWW' as artifact_namespace,
-    unnested_website.url as artifact_name,
-    unnested_website.url as artifact_url,
+    links.artifact_url as artifact_name,
+    links.artifact_url
     'WEBSITE' as artifact_type
-  from projects
-  cross join
-    UNNEST(projects.websites) as @unnested_struct_ref(unnested_website)
-),
-
-all_farcaster as (
-  select
-    projects.project_id,
-    unnested_farcaster.url as artifact_source_id,
-    'FARCASTER' as artifact_source,
-    'FARCASTER' as artifact_namespace,
-    unnested_farcaster.url as artifact_url,
-    'SOCIAL_HANDLE' as artifact_type,
-    case
-      when
-        unnested_farcaster.url like 'https://warpcast.com/%'
-        then SUBSTR(unnested_farcaster.url, 22)
-      else unnested_farcaster.url
-    end as artifact_name
-  from projects
-  cross join
-    UNNEST(projects.social.farcaster) as @unnested_struct_ref(unnested_farcaster)
+  from metrics.stg_op_atlas_project_links as links
 ),
 
 all_twitter as (
   select
     projects.project_id,
-    unnested_twitter.url as artifact_source_id,
+    projects.project_source_id as artifact_source_id,
     'TWITTER' as artifact_source,
     'TWITTER' as artifact_namespace,
-    unnested_twitter.url as artifact_url,
+    projects.twitter as artifact_url,
     'SOCIAL_HANDLE' as artifact_type,
     case
       when
-        unnested_twitter.url like 'https://twitter.com/%'
-        then SUBSTR(unnested_twitter.url, 21)
+        projects.twitter like 'https://twitter.com/%'
+        then SUBSTR(projects.twitter, 21)
       when
-        unnested_twitter.url like 'https://x.com/%'
-        then SUBSTR(unnested_twitter.url, 15)
-      else unnested_twitter.url
+        projects.twitter like 'https://x.com/%'
+        then SUBSTR(projects.twitter, 15)
+      else projects.twitter
     end as artifact_name
-  from projects
-  cross join
-    UNNEST(projects.social.twitter) as @unnested_struct_ref(unnested_twitter)
+  from metrics.stg_op_atlas_project as projects
 ),
 
 github_repos_raw as (
@@ -103,56 +69,16 @@ github_repos as (
       or LOWER(repos.url) = LOWER(RTRIM(artifact_url, '/'))
 ),
 
-all_npm_raw as (
+all_contracts as (
   select
-    'NPM' as artifact_source,
-    'PACKAGE' as artifact_type,
-    projects.project_id,
-    unnested_npm.url as artifact_source_id,
-    unnested_npm.url as artifact_url,
-    case
-      when
-        unnested_npm.url like 'https://npmjs.com/package/%'
-        then SUBSTR(unnested_npm.url, 27)
-      when
-        unnested_npm.url like 'https://www.npmjs.com/package/%'
-        then SUBSTR(unnested_npm.url, 31)
-      else unnested_npm.url
-    end as artifact_name
-  from projects
-  cross join
-    UNNEST(projects.npm) as @unnested_struct_ref(unnested_npm)
-),
-
-all_npm as (
-  select
-    project_id,
-    artifact_source_id,
-    artifact_source,
-    artifact_type,
-    artifact_name,
-    artifact_url,
-    SPLIT(REPLACE(artifact_name, '@', ''), '/')[@array_index(0)]
-      as artifact_namespace
-  from all_npm_raw
-),
-
-ossd_blockchain as (
-  select
-    projects.project_id,
-    unnested_tag as artifact_type,
+    contracts.project_id,
+    contracts.artifact_source_id as artifact_source_id,
     unnested_network as artifact_source,
-    unnested_blockchain.address as artifact_source_id,
     unnested_network as artifact_namespace,
-    unnested_blockchain.address as artifact_name,
-    unnested_blockchain.address as artifact_url
-  from projects
-  cross join
-    UNNEST(projects.blockchain) as @unnested_struct_ref(unnested_blockchain)
-  cross join
-    UNNEST(unnested_blockchain.networks) as @unnested_array_ref(unnested_network)
-  cross join
-    UNNEST(unnested_blockchain.tags) as @unnested_array_ref(unnested_tag)
+    contracts.contract_address as artifact_name,
+    NULL as artifact_type,
+    contracts.contract_address as artifact_url
+  from metrics.stg_op_atlas_project_contract as contracts
 ),
 
 all_artifacts as (

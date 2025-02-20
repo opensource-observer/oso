@@ -14,7 +14,7 @@ known_deployers as (
     project_id,
     artifact_source,
     artifact_name
-  from metrics.int_artifacts_in_ossd_by_project
+  from metrics.int_artifacts_by_project_in_ossd
   where artifact_type = 'DEPLOYER'
 ),
 
