@@ -1,5 +1,6 @@
 import typing as t
 from datetime import datetime
+from functools import reduce
 
 import pandas as pd
 import sqlglot as sql
@@ -109,3 +110,49 @@ def join_all_of_entity_type(
         )
     # Calculate the correct metric_id for all of the entity types
     return query
+
+
+def map_metadata_to_metric(
+    evaluator: MacroEvaluator,
+):
+    db = t.cast(str, evaluator.var("db"))
+    table_metadata = t.cast(t.List[t.Dict[str, t.Any]], evaluator.var("table_metadata"))
+
+    metrics_alias = exp.Concat(
+        expressions=[
+            exp.to_column("event_source"),
+            exp.Literal(this="_", is_string=True),
+            exp.to_column("metric"),
+        ],
+        safe=False,
+        coalesce=False,
+    ).as_("metric")
+
+    def make_select(table: str, meta: t.Dict[str, t.Any]):
+        return (
+            exp.select(
+                exp.Literal(this=meta["display_name"], is_string=True).as_(
+                    "display_name"
+                ),
+                exp.Literal(this=meta["description"], is_string=True).as_(
+                    "description"
+                ),
+                metrics_alias,
+            )
+            .from_(sql.to_table(f"{db}.{table}"))
+            .distinct()
+        )
+
+    selects = [
+        make_select(table, meta["metadata"])
+        for meta in table_metadata
+        for table in meta["tables"]
+    ]
+
+    unique_metrics = reduce(lambda acc, cur: acc.union(cur), selects)
+
+    return exp.select(
+        exp.column("display_name"),
+        exp.column("description"),
+        exp.column("metric"),
+    ).from_(unique_metrics.subquery())
