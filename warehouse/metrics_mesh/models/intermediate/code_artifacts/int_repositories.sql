@@ -22,6 +22,6 @@ select
   repos.language,
   repos.created_at,
   repos.updated_at
-from metrics.int_artifacts_in_ossd_by_project as artifacts
+from metrics.int_artifacts_by_project_in_ossd as artifacts
 inner join metrics.stg_ossd__current_repositories as repos
   on artifacts.artifact_source_id = CAST(repos.id as STRING)
