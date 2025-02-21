@@ -1,7 +1,8 @@
-import os
 import json
-import requests
+import os
 from unittest import TestCase, mock
+
+import requests
 from pyoso.client import Client, ClientConfig
 from pyoso.exceptions import OsoError, OsoHTTPError
 
@@ -54,7 +55,7 @@ class TestClient(TestCase):
         response = client.query(query)
 
         mock_post.assert_called_once_with(
-            "https://opensource.observer/api/v1/sql",
+            "https://www.opensource.observer/api/v1/sql",
             headers={"Authorization": f"Bearer {self.DEFAULT_API_KEY}"},
             json={"query": query},
             stream=True,
@@ -74,7 +75,7 @@ class TestClient(TestCase):
             client.query(query)
 
         mock_post.assert_called_once_with(
-            "https://opensource.observer/api/v1/sql",
+            "https://www.opensource.observer/api/v1/sql",
             headers={"Authorization": f"Bearer {self.CUSTOM_API_KEY}"},
             json={"query": query},
             stream=True,
