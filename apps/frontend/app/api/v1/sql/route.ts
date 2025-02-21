@@ -47,7 +47,6 @@ export async function POST(request: NextRequest) {
     const readableStream = new ReadableStream({
       start(controller) {
         stream.on("data", (chunk) => {
-          console.log("sending", chunk.length);
           controller.enqueue(JSON.stringify(chunk.map((r) => r.json())));
         });
         stream.on("end", () => {
