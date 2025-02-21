@@ -5,6 +5,7 @@ from typing import Optional
 
 import requests
 from pyoso.exceptions import OsoError, OsoHTTPError
+from pyoso.utils import parse_bytes_string
 
 _DEFAULT_BASE_URL = "https://www.opensource.observer/api/v1/"
 OSO_API_KEY = "OSO_API_KEY"
@@ -42,10 +43,10 @@ class Client:
                 stream=True,
             )
             response.raise_for_status()
-            json_response = []
-            for chunk in response.iter_content(chunk_size=None, decode_unicode=True):
+            chunks = b""
+            for chunk in response.iter_content(chunk_size=None):
                 if chunk:
-                    json_response.extend(json.loads(chunk))
-            return json_response
+                    chunks += chunk
+            return parse_bytes_string(chunks)
         except requests.HTTPError as e:
             raise OsoHTTPError(e, response=e.response) from None
