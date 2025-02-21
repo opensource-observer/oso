@@ -43,9 +43,9 @@ class Client:
             )
             response.raise_for_status()
             json_response = []
-            for chunk in response.iter_content(chunk_size=None):
+            for chunk in response.iter_content(chunk_size=None, decode_unicode=True):
                 if chunk:
-                    json_response.extend(json.loads(chunk.decode("utf-8")))
+                    json_response.extend(json.loads(chunk))
             return json_response
         except requests.HTTPError as e:
             raise OsoHTTPError(e, response=e.response) from None

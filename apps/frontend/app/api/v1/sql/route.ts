@@ -43,11 +43,13 @@ export async function POST(request: NextRequest) {
   }
   try {
     const stream = (await doQuery(query)).stream();
-
+    const textEncoder = new TextEncoder();
     const readableStream = new ReadableStream({
       start(controller) {
         stream.on("data", (chunk) => {
-          controller.enqueue(JSON.stringify(chunk.map((r) => r.json())));
+          controller.enqueue(
+            textEncoder.encode(JSON.stringify(chunk.map((r) => r.json()))),
+          );
         });
         stream.on("end", () => {
           controller.close();
