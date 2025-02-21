@@ -28,18 +28,25 @@ WITH unioned_metric_names AS (
   SELECT DISTINCT
     metric
   FROM unioned_metric_names
+), all_metrics_metadata AS (
+  SELECT
+    metric,
+    display_name,
+    description
+  FROM metrics.metrics_metadata
 ), metrics_v0_no_casting AS (
   SELECT
-    @oso_id('OSO', 'oso', metric) AS metric_id,
+    @oso_id('OSO', 'oso', t.metric) AS metric_id,
     'OSO' AS metric_source,
     'oso' AS metric_namespace,
-    metric AS metric_name,
-    metric AS display_name,
-    'TODO' AS description,
+    t.metric AS metric_name,
+    COALESCE(m.display_name, t.metric) AS display_name,
+    COALESCE(m.description, 'TODO') AS description,
     NULL AS raw_definition,
     'TODO' AS definition_ref,
     'UNKNOWN' AS aggregation_function
-  FROM all_timeseries_metric_names
+  FROM all_timeseries_metric_names t
+  LEFT JOIN all_metrics_metadata m ON t.metric = m.metric
 )
 SELECT
   metric_id::TEXT,
