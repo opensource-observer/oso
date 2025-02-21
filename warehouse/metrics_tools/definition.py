@@ -141,6 +141,12 @@ def assert_allowed_items_in_list[T](to_validate: t.List[T], allowed_items: t.Lis
 
 
 @dataclass(kw_only=True)
+class MetricMetadata:
+    description: str
+    display_name: str
+
+
+@dataclass(kw_only=True)
 class MetricQueryDef:
     # The relative path to the query in `oso_metrics`
     ref: str
@@ -165,6 +171,8 @@ class MetricQueryDef:
     enabled: bool = True
 
     use_python_model: bool = True
+
+    metadata: t.Optional[MetricMetadata] = None
 
     def raw_sql(self, queries_dir: str):
         return open(os.path.join(queries_dir, self.ref)).read()
