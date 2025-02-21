@@ -1,7 +1,7 @@
-import logging
+import json
 import os
 from dataclasses import dataclass
-from typing import List, Optional, TypedDict
+from typing import Optional
 
 import requests
 from pyoso.exceptions import OsoError, OsoHTTPError
@@ -42,6 +42,10 @@ class Client:
                 stream=True,
             )
             response.raise_for_status()
-            return response.json()
+            json_response = []
+            for chunk in response.iter_content(chunk_size=None):
+                if chunk:
+                    json_response.extend(json.loads(chunk.decode("utf-8")))
+            return json_response
         except requests.HTTPError as e:
             raise OsoHTTPError(e, response=e.response) from None
