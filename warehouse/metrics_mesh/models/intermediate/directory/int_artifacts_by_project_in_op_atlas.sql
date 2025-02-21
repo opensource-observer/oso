@@ -11,7 +11,7 @@ with all_websites as (
     'WWW' as artifact_source,
     'WWW' as artifact_namespace,
     links.artifact_url as artifact_name,
-    links.artifact_url
+    links.artifact_url,
     'WEBSITE' as artifact_type
   from metrics.stg_op_atlas_project_links as links
 ),
