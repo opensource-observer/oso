@@ -7,9 +7,10 @@ MODEL (
 select
   -- Translating op-atlas project_id to OSO project_id
   @oso_id('OP_ATLAS', project_id) as project_id,
-  UPPER(type) as artifact_source,
   id as artifact_source_id,
+  UPPER(type) as artifact_source,
   url as artifact_url,
+  'REPOSITORY' as artifact_type,
   created_at,
   updated_at,
   verified as is_verified,
