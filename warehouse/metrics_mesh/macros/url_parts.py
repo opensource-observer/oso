@@ -15,27 +15,17 @@ def url_parts(
     - 2 is usually the first part of the path
     return the index-th part.
     """
-    if evaluator.runtime_stage in ["loading"]:
-        return exp.Literal(this="0", is_string=False)
     
-    protocol_split = exp.Split(
+    without_protocol = exp.SplitPart(
         this=url,
-        expression=exp.Literal(this="://")
+        delimiter=exp.Literal.string("://"),
+        part_index=exp.Literal.number(2)
     )
 
-    without_protocol = exp.NthValue(
-        this=protocol_split,
-        offset=exp.Literal.number(2),
-    )
-
-    parts_split = exp.Split(
+    part = exp.SplitPart(
         this=without_protocol,
-        expression=exp.Literal(this="/")
-    )
-
-    part = exp.NthValue(
-        this=parts_split,
-        offset=exp.Literal.number(index),
+        delimiter=exp.Literal.string("/"),
+        part_index=exp.Literal.number(index)
     )
 
     return part
