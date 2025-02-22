@@ -3,156 +3,128 @@ title: "S7: Developer Tooling"
 sidebar_position: 2
 ---
 
-:::warning
-This document is a work in progress, with placeholders in some of the important sections currently under development.
+:::important
+OSO is supporting the Retro Funding S7: Developer Tooling Mission with a series of evaluation algorithms. They will evolve over the course of the season based on feedback and proposals from the community. You can view the source code and contribute your own models [here](https://github.com/ethereum-optimism/Retro-Funding).
 :::
 
-This document explains how the **Retro Funding S7: Developer Tooling Mission** will evaluate project-level impact.
+This document explains the initial evaluation methodology (and its technical details) developed for the **Retro Funding S7: Developer Tooling Mission**. These details mirror the model code in the `DevtoolingCalculator` class in the source code.
 
-The methodology considers onchain usage, developer engagement, and direct dependencies and creates a graph to score open source devtooling projects using OpenRank's implementation of the [EigenTrust algorithm](https://docs.openrank.com/reputation-algorithms/eigentrust). We then propose **three impact evaluation algorithms** by asssigning different weights and other parameters to the graph.
-
-Please note: This is the first in a series of evaluations we will be making over the next few months. Your feedback and contributions are welcome!
+The methodology considers onchain usage, developer engagement, and direct dependencies and creates a graph to score open source devtooling projects using OpenRank's implementation of the [EigenTrust algorithm](https://docs.openrank.com/reputation-algorithms/eigentrust). We then propose **three impact evaluation algorithms** that assign different weights and other parameters to the graph.
 
 ## Context
 
-In 2025, Optimism’s Retro Funding (RF) program is shifting to a "metrics-driven, humans-in-the-loop" approach. We present various strategies for scoring projects; citizens vote on the algorithms they like best. This particular round—**Retro Funding S7: Developer Tooling**—focuses on open source compilers, libraries, debuggers, and other toolchains that help builders to create interop-compatible apps on the Superchain. For the complete round details, see [here](https://gov.optimism.io/t/retro-funding-dev-tooling-mission-details/9598).
+In 2025, Optimism’s Retro Funding program is shifting to a "metrics-driven, humans-in-the-loop" approach. Instead of voting on projects, citizens vote on _algorithms_. Each algorithm represents a different strategy for rewarding projects. Algorithms will evolve in response to voting, community feedback, and new ideas over the course of the season.
+
+This particular round—**Retro Funding S7: Developer Tooling**—focuses on open source compilers, libraries, debuggers, and other toolchains that help builders create cross-chain or interop-compatible apps on the Superchain. See the [round details on the Optimism governance forum](https://gov.optimism.io/t/retro-funding-dev-tooling-mission-details/9598) for more on the mission’s objectives.
 
 ### Expected Impact
 
 The overall goals for this round include:
 
-- Grow the number and variety of dev toolchains supporting cross-chain or interoperable features.
-- Expand the Superchain developer community and create network effects around using and contributing toopen source tooling.
-- Demonstrate a tangible lift in cross-chain or onchain activity resulting from robust tools.
+- Growing the number and variety of dev toolchains supporting cross-chain or interoperable features
+- Expanding the Superchain developer community and network effects around open source tooling
+- Demonstrating a tangible lift in cross-chain or onchain activity from robust tools
 
-Remember, we are not trying to _predict_ which projects will continue to have the most impact in the future. Instead, we are trying to reward projects that have already had demonstrable impact.
+Because Retro Funding is _retroactive_, we place emphasis on demonstrable impact: the usage, adoption, and developer traction a project already has in the ecosystem.
 
 ### Scope
 
-We can estimate the current size of the devtooling ecosystem by looking at the number of packages being imported by onchain builder projects.
+We can estimate the current size of Optimism's devtooling ecosystem by looking at the number of packages being imported by onchain builder projects:
 
-- A total of X projects with deployments on the Superchain were included in OSO's dataset prior to the start of the round.
-- These projects have a total of Y distinct packages in their dependency graphs:
-  - JavaScript/TypeScript (via npm): Z
-  - Rust (via crates): A
-  - Python (via pypi): B
-  - Other: C
-- Many of these are standard web2 dependencies, but a total of X can be linked to Y projects that have applied for Retro Funding in past rounds.
-- Excluding self-edges (i.e., projects that import their own packages), we can estimate the total number of devtooling links to be X and the number of links between onchain builders and Retro Funded-projects to be Z.
+- **344** projects with open source code and active deployments on the Superchain
+- **8436** distinct packages in their aggregated dependency graphs
+  - TypeScript (npm): 6663
+  - Rust (crates): 1283
+  - Python (pypi): 107
+  - Other (Go, etc.): 383
+- **981** packages can be traced to 98 devtooling projects previously applying for Retro Funding
+- **1.8M** total devtooling links (excluding self-edges), of which **135K** connect onchain builders to past Retro Funded projects
 
-We can also estimate the number of active developers contributing to onchain builder projects.
+We also track the number of developers contributing to those 344 onchain builder projects:
 
-- From the same X projects, we can estimate that a total of X developers made one or more commits to an onchain builder project in the past 6 months.
-- Applying a higher activity threshold (at least three months of activity over the past 6 months to a repo in Solidity, Vyper, TypeScript, or Rust), we estimate a total of Y distinct developers.
-- These developers have a total of Y distinct GitHub accounts.
+- **1.3K** developers made 1 or more commits in the past 6 months
+- **942** unique developers made commits across at least 3 months (within that 6-month window), contributing to 206 distinct onchain projects
+
+The dependency graph is large and rich!
 
 ## Evaluation Methodology
 
-The evaluation is powered by Open Source Observer’s pipeline, which:
+### Overview
 
-1. **Collects** onchain project data (transactions, users, etc.), package dependencies (npm, crates, etc.), and developer events (commits, PRs, forks, etc.).
-2. **Builds** a directed graph from Onchain Projects → Developers → Devtooling Projects.
-3. **Seeds** adds trust scores in three ways:
+The OSO pipeline code is contained in our `DevtoolingCalculator` class and related helpers. Below is a high-level flow:
+
+1. **Collect** data for onchain projects (transactions, user counts, etc.), package dependencies, and developer activity (commits, PRs, forks, etc.).
+2. **Build** a directed graph from Onchain Projects → Developers → Devtooling Projects.
+3. **Seed** the graph with pretrust in three ways:
    - Onchain projects get pretrust for their economic activity (e.g., transaction volume).
-   - Devtooling projects get pretrust for their GitHub signals (e.g., number of packages published).
-   - Developers get reputation from the onchain projects they contribute to and give reputation to devtooling projects they engage with via GitHub events.
-4. **Runs** an [OpenRank-based](https://docs.openrank.com/) algorithm ([EigenTrust](https://nlp.stanford.edu/pubs/eigentrust.pdf)) on the weighted graph to compute final scores for devtooling projects.
-5. **Normalizes** applies a set of normalization functions to the scores and ensures they are within the min/max reward caps for the round.
-
-To view the full lineage and sample results for each algorithm, see the [DevtoolingCalculator](https://app.hex.tech/00bffd76-9d33-4243-8e7e-9add359f25c7/app/d5da455e-b49a-47d6-a88d-dce1f679a02b/latest).
+   - Devtooling projects get pretrust for GitHub signals (e.g., stars, forks, packages published).
+   - Developers receive an initial reputation derived from the onchain projects they contribute to.
+4. **Run** an [EigenTrust-based](https://docs.openrank.com/reputation-algorithms/eigentrust) trust propagation on that weighted graph until convergence.
+5. **Normalize** and filter the final devtooling scores, removing ineligible projects (those failing basic thresholds).  
+   We then rank and allocate rewards proportionally.
 
 ### Eligibility
 
-Projects must meet the following criteria in order to be eligible for rewards:
+A devtooling project must meet all of the following to be considered for a reward:
 
-1. **Open Source**: Be actively maintained and have a public GitHub repository with a history of public commits; and
-2. **Packages**: Be included in the dependency graph of at least **three** qualified onchain builder projects; or
-3. **Developer Engagement**: Be included in the GitHub engagement graph by at least **ten** developers who are active contributors to onchain builder projects (e.g., commits, issues, pull requests, stars, forks, etc.).
+1. **Open Source**: It has a _public_ GitHub repository with a continuous history of public commits (including some activity in the last 6 months).
+1. **Minimum Links**: The devtooling project must meet the following "centrality" thresholds within the Optimism ecosystem:
+   - At least **three** qualified onchain builder projects have included this devtooling project in their dependency graph (see “What types of package links?” below), **or**
+   - At least **ten** active onchain developers (i.e., devs who contributed to qualified onchain builder projects) have engaged with the devtooling project on GitHub (commits, issues, PRs, forks, stars, etc.).
+1. **Qualified Onchain Projects**: The onchain builder projects referencing this devtooling project must themselves meet two conditions:
+   - Verify GitHub and contract ownership on OP Atlas
+   - Have at least 0.01 ETH in L2 gas fees (across the Superchain) in the past 6 months
 
 <details>
-<summary>What are the requirements to be considered open source?</summary>
+<summary>What is meant by "public" in the Open Source requirement?</summary>
 
-A project is considered open source if it meets the following criteria:
-
-- Currently, has a public GitHub repository.
-- Has a history of public GitHub activity at least one month before the start of the round.
-- Has recent public GitHub activity (multiple commits) within the past 6 months.
-
-Note: We do not consider any activity made during periods when a repo was private. This is both a design choice and a technical limitation. OSO's GitHub data source ([gharchive](https://docs.opensource.observer/docs/integrate/datasets/#github-archive)) does not backfill private repo activity.
+Public means that the repository is public on GitHub. In addition, activity will only be tracked by OSO if it was made at a time when the repository was public. Many projects start as private but become public over time. We do not track or backfill private activity. Similarly, we do not capture any developer activity made to private repositories.
 
 </details>
 
 <details>
-<summary>What's a qualified onchain builder?</summary>
+<summary>How are package links established?</summary>
 
-Qualified onchain builder projects are those that have:
-
-- Verified their GitHub and contract ownership on OP Atlas.
-- Contributed 0.01 ETH in L2 gas fees (across the Superchain) within the past 6 months.
+We use the [SBOMs](https://docs.github.com/en/code-security/supply-chain-security/understanding-your-software-supply-chain/exporting-a-software-bill-of-materials-for-your-repository) of qualified onchain builder projects to track package links. In order to traced to a devtooling project, the package metadata must include a link to a public repository that is owned by the devtooling project.
 
 </details>
 
 <details>
-<summary>What types of package links are considered?</summary>
+<summary>Why do we use these particular thresholds?</summary>
 
-The software supply chain is complex and we are currently unable to consider all possible package links. To be considered, a package must:
-
-- Be published in a public registry (e.g., npm, crates, pypi). Note: we have some support for Go package links hosted on GitHub.
-- Link to the devtooling project's public repository in the package metadata. This is a standard best practice in the industry.
-- Be included in the GitHub [SBOMs](https://docs.github.com/en/code-security/supply-chain-security/understanding-your-software-supply-chain/exporting-a-software-bill-of-materials-for-your-repository) of qualified onchain builder projects.
-
-We have plans to expand our support for other types of package links in the future. See below for more details.
-
-</details>
-
-<details>
-<summary>What counts as developer engagement?</summary>
-
-OSO tracks all forms of developer engagement with a repo (e.g., commits, PRs, issues, stars, forks, comments, etc.). However, we do not weight all forms of engagement equally. The following variables are used to weight engagement types:
-
-- The developer who made the event and their reputation. Engagement from high-reputation developers is generally weighted more heavily.
-- The type of event (e.g., commit, PR, issue, star, fork, comment). Certain events are considered more impactful than others (e.g., commit > star).
-- When the event occurred. In some models, events that occurred more recently are weighted more heavily.
-
-The exact weights and decay rates are algorithm-specific.
+We want to exclude inactive or unproven devtooling projects that happen to appear in random code repos but have no real usage. Likewise, we want to ensure the onchain builder projects generating trust are themselves active and verifiable on OP Atlas.
 
 </details>
 
 ### Graph Construction
 
-We build a directed trust graph that ties onchain projects, developers, and devtooling projects together:
+There are three types of core **nodes** in the graph:
 
-1. **Onchain Projects → Devtooling Projects**
+- **Onchain Projects**, which hold economic pretrust and pass it on.
+- **Developers**, who gain partial trust from the onchain projects they contribute to.
+- **Devtooling Projects**, which receive trust both directly from onchain projects, via package dependencies, and indirectly from developers’ GitHub engagement.
 
-   We draw edges from onchain projects to devtooling projects whenever an onchain repo imports a package maintained by a devtooling project. This is based on data from the [SBOMs](https://docs.github.com/en/code-security/supply-chain-security/understanding-your-software-supply-chain/exporting-a-software-bill-of-materials-for-your-repository) of qualified onchain builder projects. These links are timestamped based on the last time OSO ran its SBOM indexer (typically weekly).
+Links between nodes, i.e., **edges**, are derived from the following relationships:
 
-   We currently count each relationship between an onchain project and a devtooling project as a single edge, even if the onchain project has multiple dependencies on the devtooling project. This is an important trade-off designed to reduce the incentive for devtooling projects to split their code into multiple packages to potentially game the system.
+1. **Onchain Projects → Devtooling Projects** (Package Dependencies)
 
-2. **Onchain Projects → Developers**
+   For each package in the onchain project’s [Software Bill of Materials (SBOM)](https://docs.github.com/en/code-security/supply-chain-security/understanding-your-software-supply-chain/exporting-a-software-bill-of-materials-for-your-repository), if that package is owned by a devtooling project, we add an edge from the onchain project to the devtooling project.
 
-   We define an edge from an onchain project to a developer whenever a developer has made one or more commits to an onchain builder project. Developer activity is aggregated at the project (not repo level), meaning that there is no difference between a developer who worked on a single repo or multiple repos. These links are bucketed by month, so there is no difference between a developer who made a single commit versus 100 commits in a month.
+   We typically set the edge “event timestamp” for these dependencies to the time OSO last indexed them, so they are treated as “recent” unless older time-decay rules apply.
 
-   If an onchain project has multiple active developers, we count each developer as a separate edge. The trust that flows from an onchain project to a developer is a function of how many active developers the onchain project has.
+2. **Onchain Projects → Developers** (Commits)
 
-3. **Developers → Devtooling Projects**
+   Whenever a developer commits code (or merges PRs) in an onchain project’s GitHub repository, we add an edge from the onchain project to that developer.
 
-   We define an edge from a developer to a devtooling project whenever a developer has engaged (i.e., via commits, opening a PR or issue, starring, forking, commenting in a PR or issue thread, etc.) with a devtooling project. These forms of developer activity are also aggregated at the project (not repo level), meaning that there is no difference between a developer who starred a single repo vs all of a devtooling project's repos. These links are bucketed by month, so there is no difference between a developer who opened a single PR versus 100 PRs in a month.
+   At present, the code lumps all commits in a monthly bucket. We do _not_ differentiate between 1 commit or 100 commits in that month—just that the developer contributed.
 
-All edges are directed. Onchain projects pass trust to developers and devtooling projects (via package dependencies), and developers pass additional trust to devtooling projects (via GitHub events).
+   If a developer contributed to multiple onchain projects in the same month, each project → developer link is added.
 
-<details>
-<summary>What about historical dependencies?</summary>
+3. **Developers → Devtooling Projects** (GitHub Engagement)
 
-We have plans to include historical dependency data in future iterations of the evaluation. Currently, however, our metrics are only on the latest dependency data.
+   Whenever a developer (from the set recognized above) engages with a devtooling project (commits, PRs, issues, forks, stars, or comments), we add an edge from that developer to the devtooling project.
 
-</details>
-
-<details>
-<summary>What about self-loops?</summary>
-
-If a developer’s own project is also recognized as an onchain project, the pipeline removes self-loop duplicates. This prevents artificially amplifying trust for projects that act as both an onchain builder and a devtooling library under the same entity.
-
-</details>
+   As with onchain commits, these events are grouped by month—1 PR or 10 PRs is treated as “the developer engaged in that month.”
 
 <details>
 <summary>Which types of packages are considered?</summary>
@@ -168,6 +140,34 @@ We are also open to adding more crypto-specific package managers (e.g., Soldeer)
 </details>
 
 <details>
+<summary>How are multiple dependencies from the same onchain project to the same devtooling project handled?</summary>
+
+We currently condense them into a single edge by package source (e.g., npm, crates, pypi). This is a design choice so that devtooling projects cannot trivially split code into multiple packages to artificially inflate edges.
+
+</details>
+
+<details>
+<summary>What about historical dependencies?</summary>
+
+We have plans to include historical dependency data in future iterations of the evaluation. Currently, however, our metrics are only on the latest dependency data.
+
+</details>
+
+<details>
+<summary>What about self-loops (i.e., onchain projects that use their own devtooling packages)?</summary>
+
+We do not currently allow self-loops. If an onchain project uses its own devtooling package, we exclude those edges from the graph. Similarly, a developer who commits to the same entity recognized both as an onchain project and devtooling project does not artificially double-dip.
+
+</details>
+
+<details>
+<summary>What if a package is used by onchain projects that are not in OP Atlas?</summary>
+
+For Retro Funding purposes, we do not currently track onchain projects that are not in OP Atlas. OSO has a larger registry of onchain projects, so we can simulate results if the project pool is expanded or different.
+
+</details>
+
+<details>
 <summary>What about other ways of reusing code?</summary>
 
 Other ways of reusing code, such as developing off a fork or a clone, or directly copying code, are not currently considered. In general, our assumption is that network effects will accrue around projects that are viewed as most legitimate by the community.
@@ -176,31 +176,45 @@ As this is only a first iteration of the devtooling evaluation, we are curious t
 
 </details>
 
-### Metrics
+<details>
+<summary>What if two devtooling projects are closely related? Do they double count the same dev trust?</summary>
 
-This section describes the metrics used to seed the trust graph.
+Yes, if a developer meaningfully engages with both devtooling projects, we treat those as separate edges. Overlaps can occur. But in subsequent versions, the community may propose ways to discount or unify certain highly coupled devtooling projects.
 
-Critically, these metrics are used as **pre-trust inputs** to the EigenTrust algorithm. For instance, a project that has a lot of packages but no links to onchain builder projects would receive a low score. Similarly, a project that has very few stars or forks overall but a lot of recent activity from high-reputation developers would receive a high score.
+</details>
 
-All other things being equal, a project that is a dependency for a high-impact onchain builder project will receive a higher score than a project that is a dependency for a low-impact onchain builder project.
+### Pretrust Metrics
 
-- **Onchain Projects**
+Metrics about projects and developers are used as a way of seeding the EigenTrust algorithm with **pretrust** assumptions. All other things being equal, edges that involve nodes with higher pretrust values will be weighted more heavily in the EigenTrust algorithm.
 
-  - **Transaction volume** – The number of Superchain transactions involving one or more of the project's contracts over the past 180 days.
-  - **Gas fees** – The total gas fees paid by users interacting with the project's contracts over the past 180 days.
-  - **Bot-filtered user counts** – The number of distinct addresses that have interacted with the project's contracts over the past 180 days.
+Pretrust metrics are applied to each node in the graph:
 
-- **Developers**
+1. **Onchain Projects**
 
-  - **Active months** – The number of months that a developer has made commits to an onchain builder project since 2024-01-01.
-  - **Language** – The primary programming language for the onchain builder repo(s) where the developer has made their commits.
-  - **Engagement with devtooling projects** – The time and type of event between a developer and a devtooling project.
+   - Pretrust is derived from aggregated economic metrics like:
+     - Transaction volume (count of Superchain transactions in the last 180 days)
+     - Gas fees (cumulative L2 fees paid by users in the last 180 days)
+     - Bot-filtered unique user count (unique addresses that interacted with the project’s contract)
+   - Each metric is log-scaled and min-max normalized
+   - The importance of each metric is multiplied by algorithm-specific weights.
+   - We sum the weighted metrics for each onchain project, and then normalize again so the total across all onchain projects = 1.
 
-- **Devtooling Projects**
-  - **Stars and forks** – The total number of stars and forks all repos owned by the devtooling project have received on GitHub.
-  - **Package count** – The total number of distinct packages the devtooling released on major package servers (e.g., npm, crates, pypi).
+2. **Devtooling Projects**
 
-One of the key parameters in the EigenTrust algorithm is the **alpha** parameter. This controls the portion of the EigenTrust output taken from the pre-trust values vs. the iterative trust propagation step.
+   - Pretrust is derived from the total number of published packages and GitHub metrics (stars, forks).
+   - The importance of each metric is multiplied by algorithm-specific weights.
+   - The same procedure of log-scaling, min-max normalization, weighting, and final normalization to ensure the total across devtooling projects = 1.
+
+3. **Developer Reputation**
+
+   - Pretrust is derived from the onchain project(s) a developer contributes to:
+     1. Group the developer’s commit history by (`event_month`, `developer_id`).
+     2. Identify which onchain projects they contributed to in that month.
+     3. Sum the **onchain project pretrust** for those projects, then **divide** that sum by the number of onchain projects. This yields the “share” of trust the developer receives for that month.
+     4. Accumulate these shares across all months.
+   - Finally, we apply min-max normalization across all developers to produce `developer_reputation` between 0 and 1.
+
+Not all nodes have significant pretrust, but those that do help “seed” the rest of the graph with trusted edges.
 
 <details>
 <summary>Why these metrics?</summary>
@@ -210,41 +224,52 @@ These metrics are relatively simple to measure and widely applicable to differen
 </details>
 
 <details>
-<summary>Are metrics normalized?</summary>
+<summary>Why are we dividing by the number of onchain projects contributed to in a month?</summary>
 
-Yes. We apply log scaling andmin-max normalization to the pre-trust values to ensure no single dimension dominates the combined score.
+This ensures that if a developer works on multiple onchain projects _in the same time window_, they do not receive the full sum of each project’s pretrust. It is effectively splitting the combined trust among all relevant projects. We may refine this approach in future versions (e.g., weighting by lines changed, repository size, etc.).
 
 </details>
 
 <details>
-<summary>What if a package is used by onchain projects that are not in OP Atlas?</summary>
+<summary>Why log-scaling?</summary>
 
-For retro funding, we do not currently track onchain projects that are not in OP Atlas. OSO has a larger registry of onchain projects, so we can simulate results if the project pool is expanded or different.
-
-</details>
-
-### Weighting and Time Decay
-
-Each algorithm has a different set of weights and time decay parameters.
-
-Specifically, there are four types of settings:
-
-- **Pretrust Weights**. These are the weights applied to the pretrust values for onchain projects, developers, and devtooling projects. For instance, an algorithm may weight transaction volume more heavily than user numbers, or the number of packages published more heavily than stars and forks.
-- **Link Type Weights**. These are the weights applied to the different types of edges in the graph. For instance, an algorithm may weight package dependencies more heavily than developer engagement.
-- **Event Type Weights**. These are the weights applied to the different types of events in the graph. For instance, an algorithm may weight crates installs more heavily than npm, or PRs more heavily than stars.
-- **Time Decay**. This is the time decay applied to the different types of events in the graph. For instance, an algorithm may apply a stronger decay to older commits than newer ones.
-
-<details>
-<summary>How exactly does the time decay work?</summary>
-
-The time decay is applied to the different types of events in the graph. Insert the actual formula from the code here.
+Onchain activity numbers (transactions, gas, user counts) span large orders of magnitude. Log-scaling avoids overshadowing smaller but still meaningful projects.
 
 </details>
+
+### Algorithm Settings & Weights
+
+After constucting the graph and computing pretrust scores, we assign final weights to each edge before EigenTrust runs:
+
+1. **Alpha**
+
+   - The alpha parameter controls the portion of the EigenTrust output taken from the pretrust values vs. the iterative trust propagation step. See [below](#eigentrust) for more details of setting alpha values.
+   - EigenTrust's default alpha is 0.5. This means 50% of trust remains with the original pretrust seeds each iteration, and 50% is re-distributed based on the adjacency matrix.
+   - A higher alpha places more emphasis on raw pretrust; a lower alpha places more emphasis on iterative trust from usage/engagement.
+
+1. **Time Decay**
+
+   - By default, we reference the latest `event_month` in the dataset as `time_ref` and compute `(time_ref - event_month)` in years.
+   - We apply an exponential decay factor, i.e., `exp(-decay_factor * change_in_years)`.
+   - Algorithms can specificy separate decay factors for each type of edge in the YAML config.
+     - e.g. `commit_to_onchain_repo` edges might have a smaller decay factor than `event_to_devtooling_repo`.
+
+1. **Link-Type Weights**
+
+   - Each of the two link types (i.e., package link, developer link) has a configurable base weight.
+   - These weights have the effect of favoring one type of link over another.
+
+1. **Event-Type Weights**
+   - There are `event_type` weights for both GitHub events (e.g., commit code, forked, etc.) and package events (e.g., npm dependency added, crates dependency added, etc.).
+   - These weights have the effect of favoring one type of event over another.
+   - They can also be set to zero, effectively removing that link type from the graph.
+
+All of these properties are configurable in each algorithm's associated YAML. We encourage the community to propose different settings that reflect how we want to reward certain forms of usage.
 
 <details>
 <summary>Can you apply different time decays to different types of events?</summary>
 
-This is entirely possible, but not currently implemented.
+We implement this only for link types, not event types. More fine-grained control is entirely possible, but not currently implemented.
 
 </details>
 
@@ -255,50 +280,61 @@ This is entirely possible, but not currently implemented.
 
 </details>
 
-### EigenTrust
+### EigenTrust Propagation
 
-Our scoring process uses [EigenTrust](https://docs.openrank.com/reputation-algorithms/eigentrust) to propagate trust through the graph until it converges to stable scores:
+We run the [EigenTrust](https://docs.openrank.com/openrank-sdk/sdk-references/eigentrust) algorithm to propagate trust through the weighted edges:
 
-1. **Pretrust Seed**
+1. **Pretrust Vector**
 
-   - Onchain projects start with pretrust that reflects their economic activity (transactions, fees, user counts).
-   - Devtooling projects get pretrust based on GitHub popularity (stars, forks, packages published).
-   - Developers receive reputation from onchain projects where they have contributed code (commits, PRs).
+   - We combine the onchain project pretrust, devtooling project pretrust, and developer reputation into one vector.
+   - Example: If an onchain project i has a pretrust of 0.05, devtooling project j has a pretrust of 0.01, and developer d has 0.02, those are all entries in the same “seed” vector.
 
-2. **Aggregation**
+2. **Weighted Adjacency Matrix**
 
-   - We unify these pretrust values into a single vector. Each onchain project, devtooling project, and developer has an initial trust weight based on the metrics described above.
+   - Each row i in the adjacency matrix (for node i) has outgoing edges to j with final weight `v_final`.
+   - These are normalized in the EigenTrust process so that each row sums to 1, distributing i’s trust proportionally to its outbound edges.
 
-3. **Propagation**
+3. **Iteration & Convergence**
+   - EigenTrust typically converges in a handful of iterations on large graphs.
+   - The final score for each node is the stable distribution of trust.
 
-   - EigenTrust iteratively distributes trust across the graph. Nodes with high pretrust pass a portion of that trust to the nodes they point to. The algorithm converges after several iterations to a stable set of trust scores.
+In the end, **devtooling projects** receive a final trust score that reflects:
 
-4. **Normalization**
-   - Scores are normalized to ensure no project dominates. We also apply min-max reward caps to keep allocations fair across extremely large or small scores.
+- Their initial pretrust metrics
+- How much trust flows from onchain projects that depend on them
+- How much trust flows from reputable developers who engage with them
 
 <details>
 <summary>Why EigenTrust?</summary>
 
-EigenTrust is a well-known reputation algorithm used to dampen dishonest behavior (like sybil attacks) by requiring trust to flow from established “seed” nodes. It converges quickly on large graphs and is less sensitive to outliers than naive ranking methods.  
-For more details, see [this original paper](https://nlp.stanford.edu/pubs/eigentrust.pdf) and the [OpenRank EigenTrust docs](https://docs.openrank.com/openrank-sdk/sdk-references/eigentrust).
+EigenTrust is a well-known reputation algorithm used to dampen dishonest behavior (like sybil attacks) by requiring trust to flow from established “seed” nodes. It converges quickly on large graphs and is less sensitive to outliers than naive ranking methods. For more details, see [this original paper](https://nlp.stanford.edu/pubs/eigentrust.pdf) and the [OpenRank EigenTrust docs](https://docs.openrank.com/openrank-sdk/sdk-references/eigentrust).
 
 </details>
+
+### Finalizing & Ranking
+
+When EigenTrust converges, we focus on scores for **devtooling projects** only:
+
+1. **Check Eligibility**
+
+   - Any project that does **not** pass the thresholds for minimal usage (three onchain references, or ten active developer links) is marked ineligible and zeroed out.
+
+2. **Aggregate Scores**
+
+   - For each devtooling project, we take its EigenTrust score (v). If it’s ineligible, we set it to 0.
+   - We then normalize so that the sum of devtooling scores = 1. This is the final fraction of the available S7 devtooling funds.
+
+3. **Reward Distribution**
+   - We can optionally apply a min/max reward cap. Then each project’s final trust fraction × (pool size) yields the reward.
+   - The reward distribution parameters are determined by the Optimism Foundation and are not algorithm-specific.
 
 <details>
-<summary>How is the alpha parameter set?</summary>
+<summary>How does OSO produce the “value flow” Sankey from onchain projects to devtooling projects?</summary>
 
-The alpha parameter is set to 0.2 by default. This means that 20% of the trust score is based on the pretrust values, and 80% is based on the iterative trust propagation step.
+After we have final devtooling scores, we use a method called **iterative proportional fitting (IPF)** to break down exactly how each devtooling project’s final trust is “sourced” from the onchain projects that connect to it.  
+The pipeline exports a “detailed_value_flow_graph” CSV that can power visual diagrams of which onchain projects contributed to a devtooling project’s final score. This helps with attribution and transparency.
 
 </details>
-
-### Finalizing Scores
-
-After EigenTrust converges, we rank devtooling projects by their final trust score. Projects that do not meet the basic thresholds (e.g., fewer than three onchain package dependencies or fewer than ten active developer engagements) are considered ineligible.
-
-- **Ranking** – Devtooling projects that remain eligible are sorted by their EigenTrust score.
-- **Reward Calculation** – Final reward amounts are computed by normalizing each project’s score and then distributing funds within the round’s minimum/maximum per-project caps.
-
----
 
 ## Proposed Algorithms
 
@@ -306,45 +342,49 @@ Each algorithm references a different YAML file but shares the same underlying p
 
 ### Arcturus
 
-This algorithm aims to reward projects with significant current adoption. It focuses on total dependents and downstream impact—how many developers or onchain users benefit from these tools. By recognizing well-established projects that already power much of the ecosystem, Arcturus supports cornerstone infrastructure that large numbers of builders rely on.
+This algorithm aims to reward projects with significant current adoption. It focuses on total dependents and downstream impact—how many developers and onchain users benefit from these tools. By recognizing well-established projects that already power much of the ecosystem, Arcturus seeks support cornerstone infrastructure that large numbers of builders rely on.
 
 <details>
 <summary>Weightings & Sample Results</summary>
 
-- **Onchain Pretrust**: Weighted heavily toward transaction/gas usage.
-- **Devtooling Pretrust**: Some star/fork credit, but mostly focusing on dependency references.
-- **Link Weights**: **5x** for `PACKAGE_DEPENDENCY` edges.
-- **Time Decay**: `commit_to_onchain_repo = 1.0`, `event_to_devtooling_repo = 0.5`.
+Weightings for Arcturus:
 
-```
+- **Alpha**: High. The metrics used to establish pretrust have a relatively large impact on the final scores.
+- **Time Decay**: Low. There is a small discount applied to older events, but not as much as other algorithms.
+- **Link-Type Weights**: Package bias. The model prefers package dependencies over developer engagement.
+- **Event-Type Weights**: Neutral. The model does not strongly favor one type of event over another.
+
+Projects from Retro Funding 3 that score well in this algorithm include:
+
 1. Ethers.js: https://github.com/ethers-io
 2. OpenZeppelin: https://github.com/openzeppelin
 3. Hardhat: https://github.com/nomicfoundation/hardhat
 4. wevm: https://github.com/wevm
 5. web3.js: https://github.com/web3/web3.js
-```
 
 </details>
 
 ### Bellatrix
 
-This algorithm rewards projects that are rapidly growing in adoption and impact. It measures net gains in dependents, developer traction, and onchain usage over the past six months. By prioritizing growth metrics, it encourages new or recently revamped tools that quickly gain traction among onchain builders.
+This algorithm tries to identify projects that are rapidly growing in adoption and impact. It measures net gains in dependents, developer traction, and onchain usage over the past six months. By prioritizing growth metrics, it encourages new or recently revamped tools that quickly gain traction among onchain builders.
 
 <details>
 <summary>Weightings & Sample Results</summary>
 
-- **Onchain Pretrust**: Moderately distributed, so developer connections matter more.
-- **Devtooling Pretrust**: Weighted strongly by star/fork counts.
-- **Link Weights**: Developer → devtooling edges get a high weight (4x).
-- **Time Decay**: More rapid decay for commits to highlight **recent** dev activity.
+Weightings for Bellatrix:
 
-```
+- **Alpha**: Low. The metrics used to establish pretrust have a relatively small impact on the final scores.
+- **Time Decay**: High. There is a significant decay factor applied to older events.
+- **Link-Type Weights**: Neutral. The model does not strongly favor one type of link over another.
+- **Event-Type Weights**: Opinionated. The model prefers when projects add Rust over NPM packages, and applies different weights to different types of GitHub events.
+
+Projects from Retro Funding 3 that score well in this algorithm include:
+
 1. Foundry: https://github.com/foundry-rs
 2. wevm: https://github.com/wevm
 3. Alloy: https://github.com/alloy-rs
 4. Pyth: https://github.com/pyth-network/pyth-sdk-rs
 5. whatsabi: https://github.com/shazow/whatsabi
-```
 
 </details>
 
@@ -355,38 +395,45 @@ This algorithm measures a project’s developer engagement and utility across th
 <details>
 <summary>Weightings & Sample Results</summary>
 
-- **Onchain Pretrust**: Balanced among tx counts, gas, and user metrics.
-- **Devtooling Pretrust**: Mix of popularity (stars/forks) and real dev usage.
-- **Link Weights**: Emphasizes both direct usage (4x) and dev engagement (2x).
-- **Time Decay**: Moderately reduces older events.
+Weightings for Canopus:
 
-```
+- **Alpha**: High. The metrics used to establish pretrust have a relatively large impact on the final scores.
+- **Time Decay**: Low. There is a small decay factor applied to older events.
+- **Link-Type Weights**: Developer bias. The model prefers developer engagement over package dependencies.
+- **Event-Type Weights**: Neutral. The model does not strongly favor one type of event over another.
+
+Projects from Retro Funding 3 that score well include:
+
 1. Hardhat: https://github.com/nomicfoundation/hardhat
 2. Prettier Solidity: https://github.com/prettier-solidity
 3. OpenZeppelin: https://github.com/openzeppelin
 4. Sourcify: https://github.com/ethereum/sourcify
 5. blst: https://github.com/supranational/blst
-```
 
 </details>
 
-## Contributing
+## Contributing to the Model
 
-Here are ideas for improving the evaluation:
+We welcome improvements to:
 
-1. **Expand Data Sources**  
-   Onboard additional package registries and other data about devtooling projects.
-2. **Propose More Metrics**  
-   Help refine our set of pretrust metrics and edges in the graph.
-3. **Qualitative Feedback**  
-   Compare the results of different algorithms with qualitative feedback from the community.
-4. **Try Different Algorithms**  
-   Fine-tune our initial algorithms with improved weights. Propose different weights and decay parameters entirely. Experiment with other algorithms (eg, PageRank, Hubs & Authorities).
+1. **Data Coverage**
+   - Integrate more package registries or additional GH events.
+   - Include historical dependency data (time series) for more nuanced modeling.
+2. **Pretrust Metrics**
+   - Suggest more robust onchain metrics or different weighting for devtooling GitHub popularity signals.
+3. **Algorithmic Weights**
+   - Tweak link-type, event-type, or time-decay parameters in the YAML to reflect desired emphasis.
+   - Or propose entirely new weighting logic.
+4. **Scoring Method**
+   - Compare EigenTrust with alternative ranking algorithms (PageRank, HITS, etc.).
+   - See how each method aligns with the developer community’s sense of “impact.”
+
+All data and code can be found in the [Retro-Funding GitHub repo](https://github.com/ethereum-optimism/Retro-Funding).
 
 ## Further Resources
 
 - [Retro Funding Algorithms Repo](https://github.com/ethereum-optimism/Retro-Funding)
-- [Optimism Interop tooling docs](https://docs.optimism.io/stack/interop/tools)
-- [Open Rank docs](https://docs.openrank.com/)
-- [EigenTrust Paper](https://nlp.stanford.edu/pubs/eigentrust.pdf)
-- [Devtooling Evaluation Notebook](https://app.hex.tech/00bffd76-9d33-4243-8e7e-9add359f25c7/app/d5da455e-b49a-47d6-a88d-dce1f679a02b/latest)
+- [Optimism Dev Tooling Mission Details](https://gov.optimism.io/t/retro-funding-dev-tooling-mission-details/9598)
+- [Open Rank / EigenTrust Docs](https://docs.openrank.com/reputation-algorithms/eigentrust)
+- [EigenTrust Original Paper](https://nlp.stanford.edu/pubs/eigentrust.pdf)
+- [OSO’s Devtooling Evaluation Notebook](https://app.hex.tech/00bffd76-9d33-4243-8e7e-9add359f25c7/app/d5da455e-b49a-47d6-a88d-dce1f679a02b/latest)
