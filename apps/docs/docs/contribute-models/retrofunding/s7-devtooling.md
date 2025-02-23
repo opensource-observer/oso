@@ -4,12 +4,20 @@ sidebar_position: 2
 ---
 
 :::important
-OSO is supporting the Retro Funding S7: Developer Tooling Mission with a series of evaluation algorithms. They will evolve over the course of the season based on feedback and proposals from the community. You can view the source code and contribute your own models [here](https://github.com/ethereum-optimism/Retro-Funding).
+Retro Funding is shifting to an algorithm-driven evaluation process, ensuring funding decisions are transparent, scalable, and based on measurable impact. Instead of voting on projects directly, citizens will vote on impact-measuring algorithms. Each algorithm has a different strategy for allocating rewards. These models will evolve based on community feedback and proposals. You can view the source code and contribute your own models [here](https://github.com/ethereum-optimism/Retro-Funding).
 :::
 
-This document explains the initial evaluation methodology (and its technical details) developed for the **Retro Funding S7: Developer Tooling Mission**. These details mirror the model code in the `DevtoolingCalculator` class in the source code.
+This document explains the initial evaluation methodology developed for the **Retro Funding S7: Developer Tooling Mission**, including:
 
-The methodology considers onchain usage, developer engagement, and direct dependencies and creates a graph to score open source devtooling projects using OpenRank's implementation of the [EigenTrust algorithm](https://docs.openrank.com/reputation-algorithms/eigentrust). We then propose **three impact evaluation algorithms** that assign different weights and other parameters to the graph.
+- **Linking onchain projects to devtooling projects** based on package dependencies and developer engagement
+- **Key metrics** used to seed the graph with "pretrust" assumptions
+- **Three initial algorithms** for assigning weights to the graph and emphasizing the importance of different links
+
+| Algorithm     | Goal                           | Best For                                                | Emphasis                                                                                           |
+| ------------- | ------------------------------ | ------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| **Arcturus**  | Reward widely adopted projects | Established, high-impact devtooling projects            | Adoption & ecosystem influence (prioritizes total dependents and downstream usage)                 |
+| **Bellatrix** | Prioritize fast-growing tools  | New or rapidly expanding devtooling projects            | Growth & recent traction (favors projects with rising dependents, dev traction, and onchain usage) |
+| **Canopus**   | Recognize developer engagement | Tools with high developer collaboration & contributions | Community & developer trust (weights GitHub engagement, contributions, and code quality)           |
 
 ## Context
 
@@ -53,15 +61,14 @@ The dependency graph is large and rich!
 
 The OSO pipeline code is contained in our `DevtoolingCalculator` class and related helpers. Below is a high-level flow:
 
-1. **Collect** data for onchain projects (transactions, user counts, etc.), package dependencies, and developer activity (commits, PRs, forks, etc.).
-2. **Build** a directed graph from Onchain Projects → Developers → Devtooling Projects.
-3. **Seed** the graph with pretrust in three ways:
+1. **Data Collection**: Aggregate data from onchain projects (transactions, user counts), devtooling projects (GitHub metrics, package dependencies), and developers (commits, PRs, forks).
+2. **Trust Graph**: Build a directed graph from Onchain Projects → Developers → Devtooling Projects.
+3. **Initial Pretrust Assignment**: Seed the graph with pretrust scores in three ways:
    - Onchain projects get pretrust for their economic activity (e.g., transaction volume).
    - Devtooling projects get pretrust for GitHub signals (e.g., stars, forks, packages published).
    - Developers receive an initial reputation derived from the onchain projects they contribute to.
-4. **Run** an [EigenTrust-based](https://docs.openrank.com/reputation-algorithms/eigentrust) trust propagation on that weighted graph until convergence.
-5. **Normalize** and filter the final devtooling scores, removing ineligible projects (those failing basic thresholds).  
-   We then rank and allocate rewards proportionally.
+4. **EigenTrust Implementation**: Distribute trust iteratively using [OpenRank's EigenTrust model](https://docs.openrank.com/reputation-algorithms/eigentrust) until scores converge.
+5. **Normalization & Ranking**: Filter out ineligible projects, then rank projects and allocate funding proportionally.
 
 ### Eligibility
 
@@ -307,7 +314,9 @@ In the end, **devtooling projects** receive a final trust score that reflects:
 <details>
 <summary>Why EigenTrust?</summary>
 
-EigenTrust is a well-known reputation algorithm used to dampen dishonest behavior (like sybil attacks) by requiring trust to flow from established “seed” nodes. It converges quickly on large graphs and is less sensitive to outliers than naive ranking methods. For more details, see [this original paper](https://nlp.stanford.edu/pubs/eigentrust.pdf) and the [OpenRank EigenTrust docs](https://docs.openrank.com/openrank-sdk/sdk-references/eigentrust).
+EigenTrust helps ensure funding goes to impactful devtooling projects by distributing trust through real-world dependencies and engagement. Instead of relying on raw GitHub metrics (which can be gamed), EigenTrust assigns higher scores to projects trusted by widely used onchain apps and respected developers. This prevents low-quality or spam projects from receiving disproportionate rewards.
+
+For more details, see [this original paper](https://nlp.stanford.edu/pubs/eigentrust.pdf) and the [OpenRank EigenTrust docs](https://docs.openrank.com/openrank-sdk/sdk-references/eigentrust).
 
 </details>
 
@@ -420,7 +429,7 @@ We welcome improvements to:
    - Integrate more package registries or additional GH events.
    - Include historical dependency data (time series) for more nuanced modeling.
 2. **Pretrust Metrics**
-   - Suggest more robust onchain metrics or different weighting for devtooling GitHub popularity signals.
+   - Suggest more robust onchain metrics or different weighting for devtooling GitHub / package metrics.
 3. **Algorithmic Weights**
    - Tweak link-type, event-type, or time-decay parameters in the YAML to reflect desired emphasis.
    - Or propose entirely new weighting logic.
@@ -428,7 +437,7 @@ We welcome improvements to:
    - Compare EigenTrust with alternative ranking algorithms (PageRank, HITS, etc.).
    - See how each method aligns with the developer community’s sense of “impact.”
 
-All data and code can be found in the [Retro-Funding GitHub repo](https://github.com/ethereum-optimism/Retro-Funding).
+These are just a few of our ideas! All data and code can be found in the [Retro-Funding GitHub repo](https://github.com/ethereum-optimism/Retro-Funding).
 
 ## Further Resources
 
@@ -436,4 +445,5 @@ All data and code can be found in the [Retro-Funding GitHub repo](https://github
 - [Optimism Dev Tooling Mission Details](https://gov.optimism.io/t/retro-funding-dev-tooling-mission-details/9598)
 - [Open Rank / EigenTrust Docs](https://docs.openrank.com/reputation-algorithms/eigentrust)
 - [EigenTrust Original Paper](https://nlp.stanford.edu/pubs/eigentrust.pdf)
+- [OSO Superchain S7 Metric Models](https://github.com/opensource-observer/oso/tree/main/warehouse/metrics_mesh/models/intermediate/superchain)
 - [OSO’s Devtooling Evaluation Notebook](https://app.hex.tech/00bffd76-9d33-4243-8e7e-9add359f25c7/app/d5da455e-b49a-47d6-a88d-dce1f679a02b/latest)
