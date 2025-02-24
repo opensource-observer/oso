@@ -11,7 +11,7 @@
   },
   "scripts": {
     "build": "turbo run build --concurrency=100%",
-    "build:dbt:docs": "poetry run dbt docs generate",
+    "build:dbt:docs": "uv run dbt docs generate",
     "build:docs": "turbo run build --filter=@opensource-observer/docs",
     "build:frontend": "turbo run build --filter=@opensource-observer/frontend",
     "build:ops": "turbo run build --filter=@opensource-observer/ops-*",
@@ -25,7 +25,7 @@
     "format:staged": "lint-staged",
     "lint": "turbo run lint --concurrency=100%",
     "serve": "yarn serve build",
-    "pyright": "pyright --pythonpath $(poetry env info --path)/bin/python",
+    "pyright": "pyright --pythonpath $(echo 'import sys; print(sys.prefix)' | uv run -)/bin/python",
     "test": "turbo run test --concurrency=1",
     "test:integration": "(docker compose -f docker/compose.yaml down || true) && docker compose -f docker/compose.yaml run --rm test",
     "prepare": "husky install"

@@ -9,12 +9,12 @@
         "prettier --ignore-path .gitignore --log-level warn --check"
     ],
     "**/*.py": [
-        "poetry run ruff check --fix --force-exclude",
-        "poetry run isort",
+        "uv run ruff check --fix --force-exclude",
+        "uv run isort",
         "pnpm pyright"
     ],
     "warehouse/dbt/**/*.sql": [
-        "poetry run sqlfluff fix -f",
-        "poetry run sqlfluff lint"
+        "uv run sqlfluff fix -f",
+        "uv run sqlfluff lint"
     ]
 }

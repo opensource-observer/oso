@@ -10,7 +10,7 @@ This guide walks you through setting up dbt (Data Build Tool) for OSO developmen
 ## Prerequisites
 
 - Python >=3.11
-- Python Poetry >= 1.8
+- Python uv >= 0.6
 - git
 - A GitHub account
 - BigQuery access
@@ -30,10 +30,10 @@ For other platforms, follow the [official instructions](https://cloud.google.com
 
 1. Follow the installation instructions in our monorepo [README](https://github.com/opensource-observer/oso).
 
-2. Enter the poetry environment:
+2. Activate the virtual environment:
 
 ```bash
-poetry shell
+source .venv/bin/activate
 ```
 
 3. Verify dbt is installed:
@@ -51,7 +51,7 @@ gcloud auth application-default login
 5. Run the setup wizard:
 
 ```bash
-poetry install && poetry run oso_lets_go
+uv sync && uv run oso_lets_go
 ```
 
 :::tip
@@ -92,17 +92,17 @@ opensource_observer:
 
 1. Install the [Power User for dbt core](https://marketplace.visualstudio.com/items?itemName=innoverio.vscode-dbt-power-user) extension
 
-2. Get your poetry environment path:
+2. Get your virtual environment path:
 
 ```bash
-poetry env info --path
+echo 'import sys; print(sys.prefix)' | uv run -
 ```
 
 3. In VS Code:
    - Open command palette
    - Select "Python: select interpreter"
    - Choose "Enter interpreter path..."
-   - Enter the poetry path
+   - Enter the virtual path
 
 ## Running dbt
 

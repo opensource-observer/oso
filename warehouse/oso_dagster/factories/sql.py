@@ -76,7 +76,7 @@ def _generate_asset_for_table(
         name=f"{source_name}_{table_options["table"]}",
         dlt_source=_source(),
         dlt_pipeline=pipeline,
-        dlt_dagster_translator=translator,
+        dagster_dlt_translator=translator,
     )
     def _asset(context: AssetExecutionContext, dlt: DagsterDltResource):
         kwargs = {}

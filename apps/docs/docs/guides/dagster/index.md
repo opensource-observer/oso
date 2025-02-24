@@ -34,11 +34,11 @@ the required dependencies.
 git clone git@github.com:opensource-observer/oso.git .
 ```
 
-Install the dependencies and create a virtual environment with
-[poetry](https://python-poetry.org):
+Install the dependencies with
+[uv](https://docs.astral.sh/uv/):
 
 ```sh
-poetry install && poetry shell
+uv sync
 ```
 
 Now, let's fill the `.env` file with the required environment variables:
@@ -77,7 +77,7 @@ run_queue:
 Now that we have everything set up, we can run the Dagster instance:
 
 ```sh
-dagster dev
+uv run dagster dev
 ```
 
 After a little bit of time, you should see the following message:

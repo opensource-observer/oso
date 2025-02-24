@@ -33,8 +33,8 @@ gcloud auth application-default login
 Now install dependencies.
 
 ```bash
-poetry install
-poetry shell
+uv sync
+source ../../.venv/bin/activate
 ```
 
 Finally, download playground data into your local DuckDB instance with the following command
