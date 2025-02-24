@@ -274,10 +274,10 @@ Weightings for Superscale:
 Projects from Retro Funding 4 that score well include:
 
 1. Aerodrome
-2. Zora
-3. Virtuals
-4. Synthetix
-5. Party Protocol
+2. Aave
+3. Virtuals Protocol
+4. Moonwell
+5. Zora
 
 </details>
 
@@ -296,11 +296,11 @@ Weightings for Acceleratooor:
 
 Projects from Retro Funding 4 that score well include:
 
-1. Aerodrome
-2. Zora
-3. Virtuals
-4. Synthetix
-5. Party Protocol
+1. Aave
+2. Aerodrome
+3. Virtuals Protocol
+4. Compound Finance
+5. Paragraph
 
 </details>
 
@@ -311,7 +311,7 @@ This algorithm seeks to **evenly balance various aspects of impact**. It places 
 <details>
 <summary>Weightings & Sample Results</summary>
 
-**Weightings for Goldilocks**:
+Weightings for Goldilocks:
 
 - **Chain Weights**: Neutral. All chains are weighted equally.
 - **Metric Weights**: Neutral. All metrics (TVL, transactions, gas, user counts) are weighted fairly evenly.
@@ -321,9 +321,9 @@ Projects from Retro Funding 4 that score well include:
 
 1. Aerodrome
 2. Zora
-3. Virtuals
-4. Synthetix
-5. Party Protocol
+3. Aave
+4. Layer3
+5. LI.FI
 
 </details>
 
