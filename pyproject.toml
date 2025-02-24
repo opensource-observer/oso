@@ -63,7 +63,7 @@ sqlmesh = { extras = ["trino"], version = "^0.141.1" }
 dagster-duckdb = "^0.24.0"
 dagster-duckdb-polars = "^0.24.0"
 google-cloud-bigquery-storage = "^2.25.0"
-dagster-sqlmesh = "0.3.1"
+dagster-sqlmesh = "0.4.0"
 google-auth = "^2.34.0"
 pillow = "^10.4.0"
 dagster-k8s = "^0.24.6"
