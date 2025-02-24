@@ -1,6 +1,7 @@
 MODEL (
   name metrics.int_superchain_potential_bots,
   kind FULL,
+  enabled false,
 );
 
 with union_queries (

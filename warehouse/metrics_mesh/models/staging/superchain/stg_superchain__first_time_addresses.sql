@@ -9,7 +9,8 @@ MODEL (
   start '2021-10-01',
   cron '@daily',
   partitioned_by (DAY("first_block_timestamp"), "chain_name"),
-  grain (address, chain_name, first_block_timestamp, first_tx_to, first_tx_hash, first_method_id)
+  grain (address, chain_name, first_block_timestamp, first_tx_to, first_tx_hash, first_method_id),
+  enabled false,
 );
 
 @first_time_addresses(

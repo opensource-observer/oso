@@ -2,6 +2,7 @@ MODEL (
   name metrics.int_superchain_onchain_user_labels,
   description 'Onchain user labels (farcaster, bots)',
   kind FULL,
+  enabled false,
 );
 
 with user_labels as (
