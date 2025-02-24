@@ -1,6 +1,7 @@
 MODEL (
   name metrics.int_first_time_addresses,
   kind FULL,
+  enabled false,
 );
 
 select

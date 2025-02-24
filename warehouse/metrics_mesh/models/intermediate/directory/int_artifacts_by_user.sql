@@ -2,6 +2,7 @@ MODEL (
   name metrics.int_artifacts_by_user,
   description 'This model is responsible for generating a many-to-many table of artifacts associated with a user. This includes both GitHub users and various onchain users.',
   kind FULL,
+  enabled false,
 );
 
 with event_users as (
