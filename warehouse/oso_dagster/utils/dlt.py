@@ -82,6 +82,14 @@ def dlt_parallelize(config: ParallelizeConfig):
 
             log = context.log if context else logger
 
+            chunk_update_fn = None
+            if "_chunk_resource_update" in kwargs:
+                chunk_update_fn = kwargs.pop("_chunk_resource_update")
+
+            retrieve_failed_fn = None
+            if "_chunk_retrieve_failed" in kwargs:
+                retrieve_failed_fn = kwargs.pop("_chunk_retrieve_failed")
+
             tasks: List[Coroutine[Any, Any, R]] = [
                 task() for task in fn(*args, **kwargs)
             ]
@@ -109,15 +117,11 @@ def dlt_parallelize(config: ParallelizeConfig):
                     f"DLTParallelize: Waiting for {config.wait_interval} seconds ..."
                 )
 
-                chunk_update_fn = kwargs.get("_chunk_resource_update")
                 if chunk_update_fn and isinstance(chunk_update_fn, Callable):
                     chunk_update_fn(results)
-                else:
-                    log.warning("DLTParallelize: chunk_update_fn function not found")
 
                 await asyncio.sleep(config.wait_interval)
 
-            retrieve_failed_fn = kwargs.get("_chunk_retrieve_failed")
             if retrieve_failed_fn and isinstance(retrieve_failed_fn, Callable):
                 for retrieved in retrieve_failed_fn():
                     yield retrieved
@@ -177,6 +181,65 @@ def process_chunked_resource(
     *args,
     **kwargs,
 ) -> Generator[DltResource, None, None]:
+    """
+    This function configures a DLT resource to keep state checkpoints in Google Cloud Storage.
+    It processes the data in chunks and yields the resource object. It also exposes two
+    functions via the kwargs: `_chunk_resource_update` and `_chunk_retrieve_failed`.
+
+    The `_chunk_resource_update` function is used to update the state manifest and upload
+    the chunked data to GCS.
+    The `_chunk_retrieve_failed` function is used to retrieve all the stored chunks in GCS
+    which failed in previous runs.
+
+    The decorated function must use these functions to update the state manifest and upload
+    the chunked data to GCS. It must call `_chunk_resource_update` with the elements to be
+    uploaded to GCS after a successful yield. It must also call `_chunk_retrieve_failed` at the
+    end of the function to retrieve all the stored chunks in GCS which failed in previous runs
+    and clean them up.
+
+    Example:
+    ```
+    @dlt.resource(name="example", ...)
+    def resource(max: int, *args, **kwargs):
+        for i in range(max):
+            data: List = get_data(i)
+            yield data
+
+            # Update the state manifest and upload the data
+            kwargs["_chunk_resource_update"]([data])
+
+        # Retrieve all the stored chunks in GCS from previous runs
+        # and clean them up
+        yield from kwargs["_chunk_retrieve_failed"]()
+
+    @dlt_factory(...)
+    def example(
+        context: AssetExecutionContext,
+        global_config: ResourceParam[DagsterConfig]
+    ):
+    ...
+
+    return process_chunked_resource(
+        ChunkedResourceConfig(
+            fetch_data_fn=fetch_fn,
+            resource=resource,
+            to_string_fn=str,
+            gcs_bucket_name=global_config.gcs_bucket,
+            context=context,
+        ),
+        ..., # these will be forwarded to `resource`
+    )
+    ```
+
+    Args:
+        config (ChunkedResourceConfig): Configuration object.
+        *args: Positional arguments forwarded to the resource constructor.
+        **kwargs: Keyword arguments forwarded to the resource constructor.
+
+    Yields:
+        DltResource: The bound resource object.
+    """
+
     client = storage.Client()
     bucket = client.get_bucket(config.gcs_bucket_name)
     state_blob = bucket.blob(f"{config.gcs_prefix}/{config.resource.name}/state.json")
@@ -186,6 +249,13 @@ def process_chunked_resource(
     log.info(f"ChunkedResource: Checking state in {state_blob.name}")
 
     def resource_update(elements: List[List]):
+        """
+        Updtates the state manifest and uploads the chunked data to GCS.
+
+        Args:
+            elements (List[List]): Elements to be stored in GCS
+        """
+
         count = len(elements)
         current_manifest = state_blob.download_as_string()
         current_data = json.loads(current_manifest)
@@ -216,6 +286,18 @@ def process_chunked_resource(
         log.info(f"ChunkedResource: Uploaded {count} elements to {new_blob.name}")
 
     def retrieve_failed(yield_elems: bool):
+        """
+        Retrieves all the stored chunks in GCS which failed in previous runs. If
+        `yield_elems` is True, it yields the elements as they are retrieved. Otherwise,
+        it works as a cleanup function, deleting all the stored chunks.
+
+        Args:
+            yield_elems (bool): If True, yields the elements as they are retrieved
+
+        Yields:
+            Dict: The retrieved chunked data
+        """
+
         blobs = bucket.list_blobs(
             prefix=f"{config.gcs_prefix}/{config.resource.name}/chunk."
         )
