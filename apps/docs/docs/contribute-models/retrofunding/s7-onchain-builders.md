@@ -39,23 +39,16 @@ Because Retro Funding is _retroactive_, we place emphasis on demonstrable onchai
 
 Although topline metrics for the Superchain economy are widely available, it is harder to provide a bottom-up estimate of the onchain builder ecosystem.
 
-Below is a rough snapshot of the economic contribution from onchain builders that have received grants from the Optimism Foundation, including but not limited to past Retro Funding recipients.
+Below is a rough snapshot of the economic contribution from **450+ onchain builders** that have received grants from the Optimism Foundation, including but not limited to past Retro Funding recipients.
 
-- **300+** potential onchain builder projects with recent activity on the Superchain.
-  - **35B** total transactions.
-  - **3500** ETH spent in gas fees.
-- **\$500M** of aggregated TVL.
-  - **X** DeFi projects with at least $1M TVL.
-  - **Y** Bridges with at least $1M TVL.
-- **3.5M** contracts linked to projects on the Superchain.
+- **300K+** active contract addresses linked to projects.
+- **64M+** transactions.
+- **1686 ETH+** spent in gas fees.
+- **\$2.38B+** of aggregated TVL.
+- **8.8M+** active addresses
+- **150K+** Farcaster users (based on Farcaster IDs linked to addresses)
 
-_insert chart of contracts by chain_
-
-- **1.5M** active addresses
-  - **300K** Farcaster users (based on Farcaster IDs linked to addresses)
-  - **1M** unique addresses with activity on more than one participating chain
-
-These numbers underscore the breadth of the onchain builders category.
+Note: all figures are as of January 2025, and are lower than actual figures as we have not accounted for new project sign-ups yet.
 
 ## Evaluation Methodology
 
