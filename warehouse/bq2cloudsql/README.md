@@ -20,7 +20,7 @@ Populate the values there.
 Then from the monorepo root, run install Python dependencies
 
 ```bash
-poetry install
+uv sync
 ```
 
 ## Running
@@ -28,7 +28,7 @@ poetry install
 Run the copy with
 
 ```bash
-poetry run bq2cloudsql
+uv run bq2cloudsql
 ```
 
 Note: this command is defined in the root `pyproject.toml`

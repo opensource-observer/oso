@@ -1051,7 +1051,7 @@ def goldsky_asset(
     asset_config = GoldskyConfig(**kwargs)
 
     def materialize_asset(
-        context: OpExecutionContext,
+        context: GenericExecutionContext,
         bigquery: BigQueryResource,
         gcs: GCSResource,
         cbt: CBTResource,

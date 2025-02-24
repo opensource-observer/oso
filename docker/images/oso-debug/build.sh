@@ -7,7 +7,7 @@ cd /usr/src/app
 git clone https://github.com/opensource-observer/oso.git
 cd oso
 
-poetry install
+uv sync
 pnpm install
 
 while true; do sleep 300; done;

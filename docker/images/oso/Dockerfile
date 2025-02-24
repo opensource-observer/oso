@@ -18,11 +18,12 @@ RUN mkdir -p /usr/src/app && \
     touch /usr/src/app/ops/opsscripts/__init__.py
 
 WORKDIR /usr/src/app
-COPY pyproject.toml poetry.lock /usr/src/app/
+COPY pyproject.toml uv.lock /usr/src/app/
+
+ENV UV_PROJECT_ENVIRONMENT=/usr/local
 
 # Install everything onto the system path
-RUN poetry config virtualenvs.create false && \
-    poetry install
+RUN uv sync
 
 RUN rm -r /usr/src/app/warehouse && \
     rm -r /usr/src/app/ops

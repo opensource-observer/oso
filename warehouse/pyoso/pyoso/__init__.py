@@ -1,3 +1,5 @@
+# ruff: noqa: F401
+
 from importlib.metadata import PackageNotFoundError, version
 
 try:
@@ -5,4 +7,5 @@ try:
 except PackageNotFoundError:
     __version__ = "unknown"
 
-__all__ = ["client", "exceptions"]
+from .client import Client
+from .exceptions import HTTPError, OsoError

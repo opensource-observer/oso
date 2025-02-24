@@ -42,7 +42,7 @@ Before you begin you'll need the following on your system:
 - Node >= 20 (we suggest installing with [nvm](https://github.com/nvm-sh/nvm))
 - pnpm >= 9 (see [here](https://pnpm.io/installation))
 - Python >=3.11 (see [here](https://www.python.org/downloads/))
-- Python Poetry >= 1.8 (see [here](https://pypi.org/project/poetry/))
+- Python uv >= 0.6 (see [here](https://pypi.org/project/uv/))
 - git (see [here](https://github.com/git-guides/install-git))
 - BigQuery access (see [here](https://docs.opensource.observer/docs/get-started/#login-to-bigquery) if you don't have it setup already)
 - gcloud (see [here](https://cloud.google.com/sdk/docs/install))
@@ -64,13 +64,13 @@ pnpm install
 Also install the python dependencies
 
 ```
-poetry install
+uv sync
 ```
 
 You will also need to setup `dbt` to connect to Google BigQuery for running the data pipeline. The following wizard will copy a small playground dataset to your personal Google account and setup `dbt` for you.
 
 ```bash
-poetry run oso lets_go
+uv run oso lets_go
 ```
 
 :::tip
@@ -114,12 +114,12 @@ pnpm dev:frontend
 Our datasets are public! If you'd like to use them directly as opposed to adding to our
 dbt models, checkout [our docs!](https://docs.opensource.observer/docs/get-started/)
 
-### Using the poetry environment
+### Using the virtual environment
 
-Once installation has completed you can enter the poetry environment.
+Once installation has completed you can enter the virtual environment.
 
 ```bash
-$ poetry shell
+$ source .venv/bin/activate
 ```
 
 From here you should have dbt on your path.
@@ -166,10 +166,10 @@ opensource_observer:
 
 The [Power User for dbt core](https://marketplace.visualstudio.com/items?itemName=innoverio.vscode-dbt-power-user) extension is pretty helpful.
 
-You'll need the path to your poetry environment, which you can get by running
+You'll need the path to your virtual environment, which you can get by running
 
 ```bash
-poetry env info --path
+echo 'import sys; print(sys.prefix)' | uv run -
 ```
 
 Then in VS Code:
@@ -177,13 +177,13 @@ Then in VS Code:
 - Install the extension
 - Open the command pallet, enter "Python: select interpreter"
 - Select "Enter interpreter path..."
-- Enter the path from the poetry command above
+- Enter the path from the uv command above
 
 Check that you have a little check mark next to "dbt" in the bottom bar.
 
 ### Running dbt
 
-Once you've updated any models you can run dbt _within the poetry environment_ by simply calling:
+Once you've updated any models you can run dbt _within the virtual environment_ by simply calling:
 
 ```bash
 $ dbt run
