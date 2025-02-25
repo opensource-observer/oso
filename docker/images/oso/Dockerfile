@@ -20,9 +20,10 @@ RUN mkdir -p /usr/src/app && \
 WORKDIR /usr/src/app
 COPY pyproject.toml uv.lock /usr/src/app/
 
-ENV UV_PROJECT_ENVIRONMENT=/usr/local
-
 # Install everything onto the system path
+RUN ln -s /usr/bin/python3.12 /usr/local/bin/python
+ENV UV_PROJECT_ENVIRONMENT=/usr/local/
+
 RUN uv sync
 
 RUN rm -r /usr/src/app/warehouse && \
