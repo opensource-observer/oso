@@ -27,7 +27,7 @@ This particular round—**Retro Funding S7: Developer Tooling**—focuses on ope
 
 ### Expected Impact
 
-The overall goals for this round include:
+The overall goals for this mission include:
 
 - Growing the number and variety of dev toolchains supporting cross-chain or interoperable features
 - Expanding the Superchain developer community and network effects around open source tooling
@@ -67,7 +67,7 @@ The OSO pipeline code is contained in our `DevtoolingCalculator` class and relat
    - Onchain projects get pretrust for their economic activity (e.g., transaction volume).
    - Devtooling projects get pretrust for GitHub signals (e.g., stars, forks, packages published).
    - Developers receive an initial reputation derived from the onchain projects they contribute to.
-4. **EigenTrust Implementation**: Distribute trust iteratively using [OpenRank's EigenTrust model](https://docs.openrank.com/reputation-algorithms/eigentrust) until scores converge.
+4. **EigenTrust Implementation**: Distribute trust iteratively until scores converge.
 5. **Normalization & Ranking**: Filter out ineligible projects, then rank projects and allocate funding proportionally.
 
 ### Eligibility
@@ -104,6 +104,8 @@ We want to exclude inactive or unproven devtooling projects that happen to appea
 </details>
 
 ### Graph Construction
+
+The algorithms all rely on a **value chain graph** linking devtooling projects to onchain builders and use [OpenRank's EigenTrust implementation](https://docs.openrank.com/reputation-algorithms/eigentrust) to distribute trust between projects iteratively.
 
 There are three types of core **nodes** in the graph:
 
@@ -403,7 +405,7 @@ Projects from Retro Funding 3 that score well in this algorithm include:
 
 ### Canopus
 
-Canopus recognizes projects that have **large active developer communities**. It considers package dependencies but puts stronger emphasis on key developer interactions such as commits, pull requests, and issue discussions. Canopus results in a more balanced distribution across a larger variety of open source projects, although this makes it a bit more susceptible to noise.
+Canopus recognizes projects that have **large active developer communities**. It considers package dependencies alongside developer interactions, but puts extra weight on key GitHub engagement signals – such as commits, pull requests, and issue discussions. The result is a more balanced distribution of rewards across a broader variety of projects (not just the very biggest or newest). This approach can be a bit more susceptible to noise, since it values a wider range of contribution types, but it aims to ensure broader open source contributions are well-represented.
 
 <details>
 <summary>Weightings & Sample Results</summary>

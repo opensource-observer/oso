@@ -27,7 +27,7 @@ This particular round—**Retro Funding S7: Onchain Builders**—focuses on prot
 
 ### Expected Impact
 
-The overall goals for this round include:
+The overall goals for this mission include:
 
 - Increasing network activity on the Superchain
 - Attracting TVL inflows
