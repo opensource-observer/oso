@@ -116,7 +116,11 @@ def map_metadata_to_metric(
     evaluator: MacroEvaluator,
 ):
     db = t.cast(str, evaluator.var("db"))
-    table_metadata = t.cast(t.List[t.Dict[str, t.Any]], evaluator.var("table_metadata"))
+    table = t.cast(str, evaluator.var("table"))
+    metadata = t.cast(t.Dict[str, t.Any], evaluator.var("metadata"))
+
+    description = metadata["description"]
+    display_name = metadata["display_name"]
 
     metrics_alias = exp.Concat(
         expressions=[
@@ -128,31 +132,54 @@ def map_metadata_to_metric(
         coalesce=False,
     ).as_("metric")
 
-    def make_select(table: str, meta: t.Dict[str, t.Any]):
-        return (
-            exp.select(
-                exp.Literal(this=meta["display_name"], is_string=True).as_(
-                    "display_name"
-                ),
-                exp.Literal(this=meta["description"], is_string=True).as_(
-                    "description"
-                ),
-                metrics_alias,
-            )
-            .from_(sql.to_table(f"{db}.{table}"))
-            .distinct()
+    return (
+        exp.select(
+            exp.Literal(this=display_name, is_string=True).as_("display_name"),
+            exp.Literal(this=description, is_string=True).as_("description"),
+            metrics_alias,
+        )
+        .from_(sql.to_table(f"{db}.{table}"))
+        .distinct()
+    )
+
+
+def aggregate_metadata(
+    evaluator: MacroEvaluator,
+):
+    if evaluator.runtime_stage in ["loading", "creating"]:
+        return exp.select(
+            exp.Literal(this="...", is_string=True).as_("display_name"),
+            exp.Literal(this="...", is_string=True).as_("description"),
+            exp.Literal(this="...", is_string=True).as_("metric"),
         )
 
-    selects = [
-        make_select(table, meta["metadata"])
-        for meta in table_metadata
-        for table in meta["tables"]
-    ]
+    model_names = [snap.name for snap in evaluator._snapshots.values()]
+    metadata_model_names = list(
+        filter(
+            lambda model_name: model_name.startswith(
+                '"oso"."metrics"."metrics_metadata_'
+            ),
+            model_names,
+        )
+    )
+
+    def make_select(table: str):
+        return exp.select(
+            exp.column("display_name"),
+            exp.column("description"),
+            exp.column("metric"),
+        ).from_(sql.to_table(f"{table}"))
+
+    selects = [make_select(model) for model in metadata_model_names]
 
     unique_metrics = reduce(lambda acc, cur: acc.union(cur), selects)
 
-    return exp.select(
-        exp.column("display_name"),
-        exp.column("description"),
-        exp.column("metric"),
-    ).from_(unique_metrics.subquery())
+    return (
+        exp.select(
+            exp.column("display_name"),
+            exp.column("description"),
+            exp.column("metric"),
+        )
+        .from_(unique_metrics.subquery())
+        .as_("metadata")
+    )
