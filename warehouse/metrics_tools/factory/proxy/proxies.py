@@ -1,6 +1,5 @@
 import typing as t
 from datetime import datetime
-from functools import reduce
 
 import pandas as pd
 import sqlglot as sql
@@ -146,6 +145,8 @@ def map_metadata_to_metric(
 def aggregate_metadata(
     evaluator: MacroEvaluator,
 ):
+    from functools import reduce
+
     if evaluator.runtime_stage in ["loading", "creating"]:
         return exp.select(
             exp.Literal(this="...", is_string=True).as_("display_name"),
