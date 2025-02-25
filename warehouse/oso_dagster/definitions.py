@@ -1,8 +1,7 @@
 import logging
 import os
-import warnings
 
-from dagster import Definitions, ExperimentalWarning
+from dagster import Definitions
 from dagster_dbt import DbtCliResource
 from dagster_embedded_elt.dlt import DagsterDltResource
 from dagster_gcp import BigQueryResource, GCSResource
@@ -63,7 +62,6 @@ load_dotenv()
 
 
 def load_definitions():
-    warnings.filterwarnings("ignore", category=ExperimentalWarning)
     setup_module_logging("oso_dagster")
     # Load the configuration for the project
     global_config = DagsterConfig()  # type: ignore
