@@ -1,6 +1,7 @@
 import os
 
 from dotenv import load_dotenv
+from metrics_tools.definition import MetricMetadata
 from metrics_tools.factory import MetricQueryDef, RollingConfig, timeseries_metrics
 
 # Annoyingly sqlmesh doesn't load things in an expected order but we want to be
@@ -36,6 +37,10 @@ timeseries_metrics(
             ),
             entity_types=["artifact", "project", "collection"],
             over_all_time=True,
+            metadata=MetricMetadata(
+                display_name="Stars",
+                description="Metrics related to GitHub stars",
+            ),
         ),
         "commits": MetricQueryDef(
             ref="code/commits.sql",
@@ -47,41 +52,73 @@ timeseries_metrics(
                 slots=8,
             ),
             over_all_time=True,
+            metadata=MetricMetadata(
+                display_name="Commits",
+                description="Metrics related to GitHub commits",
+            ),
         ),
         "comments": MetricQueryDef(
             ref="code/comments.sql",
             time_aggregations=["daily", "weekly", "monthly"],
             over_all_time=True,
+            metadata=MetricMetadata(
+                display_name="Comments",
+                description="Metrics related to GitHub comments",
+            ),
         ),
         "releases": MetricQueryDef(
             ref="code/releases.sql",
             time_aggregations=["daily", "weekly", "monthly"],
             over_all_time=True,
+            metadata=MetricMetadata(
+                display_name="Releases",
+                description="Metrics related to GitHub releases",
+            ),
         ),
         "forks": MetricQueryDef(
             ref="code/forks.sql",
             time_aggregations=["daily", "weekly", "monthly"],
             over_all_time=True,
+            metadata=MetricMetadata(
+                display_name="Forks",
+                description="Metrics related to GitHub repository forks",
+            ),
         ),
         "repositories": MetricQueryDef(
             ref="code/repositories.sql",
             time_aggregations=["daily", "weekly", "monthly"],
             over_all_time=True,
+            metadata=MetricMetadata(
+                display_name="Repositories",
+                description="Metrics related to GitHub repositories",
+            ),
         ),
         "active_contracts": MetricQueryDef(
             ref="blockchain/active_contracts.sql",
             time_aggregations=["daily", "weekly", "monthly"],
             over_all_time=True,
+            metadata=MetricMetadata(
+                display_name="Active Contracts",
+                description="Metrics related to active blockchain contracts",
+            ),
         ),
         "contributors": MetricQueryDef(
             ref="code/contributors.sql",
             time_aggregations=["daily", "weekly", "monthly"],
             over_all_time=True,
+            metadata=MetricMetadata(
+                display_name="Contributors",
+                description="Metrics related to GitHub contributors",
+            ),
         ),
         "active_developers": MetricQueryDef(
             ref="code/active_developers.sql",
             time_aggregations=["daily", "weekly", "monthly"],
             over_all_time=True,
+            metadata=MetricMetadata(
+                display_name="Active Developers",
+                description="Metrics related to active GitHub developers",
+            ),
         ),
         # This defines something with a rolling option that allows you to look back
         # to some arbitrary window. So you specify the window and specify the unit.
@@ -134,6 +171,10 @@ timeseries_metrics(
                 cron="@monthly",
                 slots=32,
             ),
+            metadata=MetricMetadata(
+                display_name="Developer Classifications",
+                description="Metrics related to developer activity classifications",
+            ),
         ),
         "contributor_classifications": MetricQueryDef(
             ref="code/contributor_activity_classification.sql",
@@ -151,6 +192,10 @@ timeseries_metrics(
                 unit="day",
                 cron="@monthly",
                 slots=32,
+            ),
+            metadata=MetricMetadata(
+                display_name="Contributor Classifications",
+                description="Metrics related to contributor activity classifications",
             ),
         ),
         # Currently this query performs really poorly. We need to do some debugging on it
@@ -174,6 +219,10 @@ timeseries_metrics(
                 cron="@monthly",
                 slots=32,
             ),
+            metadata=MetricMetadata(
+                display_name="Change in Developer Activity",
+                description="Metrics related to change in developer activity",
+            ),
         ),
         "opened_pull_requests": MetricQueryDef(
             ref="code/prs_opened.sql",
@@ -185,6 +234,10 @@ timeseries_metrics(
             ),
             entity_types=["artifact", "project", "collection"],
             over_all_time=True,
+            metadata=MetricMetadata(
+                display_name="Opened Pull Requests",
+                description="Metrics related to opened GitHub pull requests",
+            ),
         ),
         "merged_pull_requests": MetricQueryDef(
             ref="code/prs_merged.sql",
@@ -196,6 +249,10 @@ timeseries_metrics(
             ),
             entity_types=["artifact", "project", "collection"],
             over_all_time=True,
+            metadata=MetricMetadata(
+                display_name="Merged Pull Requests",
+                description="Metrics related to merged GitHub pull requests",
+            ),
         ),
         "opened_issues": MetricQueryDef(
             ref="code/issues_opened.sql",
@@ -207,6 +264,10 @@ timeseries_metrics(
             ),
             entity_types=["artifact", "project", "collection"],
             over_all_time=True,
+            metadata=MetricMetadata(
+                display_name="Opened Issues",
+                description="Metrics related to opened GitHub issues",
+            ),
         ),
         "closed_issues": MetricQueryDef(
             ref="code/issues_closed.sql",
@@ -218,6 +279,10 @@ timeseries_metrics(
             ),
             entity_types=["artifact", "project", "collection"],
             over_all_time=True,
+            metadata=MetricMetadata(
+                display_name="Closed Issues",
+                description="Metrics related to closed GitHub issues",
+            ),
         ),
         "avg_prs_time_to_merge": MetricQueryDef(
             ref="code/prs_time_to_merge.sql",
@@ -229,6 +294,10 @@ timeseries_metrics(
             ),
             entity_types=["artifact", "project", "collection"],
             over_all_time=True,
+            metadata=MetricMetadata(
+                display_name="Average PR Time to Merge",
+                description="Metrics related to average GitHub PR time to merge",
+            ),
         ),
         "avg_time_to_first_response": MetricQueryDef(
             ref="code/time_to_first_response.sql",
@@ -240,6 +309,10 @@ timeseries_metrics(
             ),
             entity_types=["artifact", "project", "collection"],
             over_all_time=True,
+            metadata=MetricMetadata(
+                display_name="Average Time to First Response",
+                description="Metrics related to average time to first response",
+            ),
         ),
         "active_addresses_aggregation": MetricQueryDef(
             ref="blockchain/active_addresses.sql",
@@ -254,6 +327,10 @@ timeseries_metrics(
             ),
             time_aggregations=["daily", "monthly"],
             over_all_time=True,
+            metadata=MetricMetadata(
+                display_name="Active Addresses Aggregation",
+                description="Metrics related to active blockchain addresses",
+            ),
         ),
         "gas_fees": MetricQueryDef(
             ref="blockchain/gas_fees.sql",
@@ -265,6 +342,10 @@ timeseries_metrics(
             ),
             entity_types=["artifact", "project", "collection"],
             over_all_time=True,
+            metadata=MetricMetadata(
+                display_name="Gas Fees",
+                description="Metrics related to blockchain gas fees",
+            ),
         ),
         "transactions": MetricQueryDef(
             ref="blockchain/transactions.sql",
@@ -276,6 +357,10 @@ timeseries_metrics(
             ),
             entity_types=["artifact", "project", "collection"],
             over_all_time=True,
+            metadata=MetricMetadata(
+                display_name="Transactions",
+                description="Metrics related to blockchain transactions",
+            ),
         ),
         "contributors_lifecycle": MetricQueryDef(
             ref="code/lifecycle.sql",
@@ -294,6 +379,10 @@ timeseries_metrics(
                 slots=32,
             ),
             entity_types=["artifact", "project", "collection"],
+            metadata=MetricMetadata(
+                display_name="Contributors Lifecycle",
+                description="Metrics related to contributor lifecycle",
+            ),
         ),
         "funding_received": MetricQueryDef(
             ref="funding/funding_received.sql",
@@ -305,6 +394,10 @@ timeseries_metrics(
             ),
             entity_types=["artifact", "project", "collection"],
             over_all_time=True,
+            metadata=MetricMetadata(
+                display_name="Funding Received",
+                description="Metrics related to funding received",
+            ),
         ),
         "dependencies": MetricQueryDef(
             ref="deps/dependencies.sql",
@@ -316,6 +409,10 @@ timeseries_metrics(
             ),
             entity_types=["artifact", "project", "collection"],
             over_all_time=True,
+            metadata=MetricMetadata(
+                display_name="Dependencies",
+                description="Metrics related to dependencies",
+            ),
         ),
     },
     default_dialect="clickhouse",
