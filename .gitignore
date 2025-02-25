@@ -62,6 +62,8 @@ dbt_packages/
 
 # Python
 *.pyc
+__pycache__/
+*.egg-info/
 
 supabase/.temp/
 **/supabase/.temp/

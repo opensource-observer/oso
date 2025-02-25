@@ -432,7 +432,7 @@ class ClusterConfig(BaseSettings):
     scheduler_memory_request: str = "85000Mi"
     scheduler_pool_type: str = "sqlmesh-scheduler"
 
-    worker_resources: t.Dict[str, int] = Field(default_factory=lambda: {"slots": "32"})
+    worker_resources: t.Dict[str, int] = Field(default_factory=lambda: {"slots": 32})
     worker_threads: int = 8
     worker_memory_limit: str = "90000Mi"
     worker_memory_request: str = "85000Mi"

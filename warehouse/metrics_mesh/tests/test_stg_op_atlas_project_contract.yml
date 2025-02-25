@@ -1,0 +1,52 @@
+test_stg_op_atlas_project_contract:
+  gateway: local
+  model: metrics.stg_op_atlas_project_contract
+  vars:
+    start: 2024-01-01
+    end: 2024-02-01
+  inputs:
+    bigquery.op_atlas.project_contract:
+      rows:
+      - comment: "This needs to exist for @oso_source in tests"
+    sources__bigquery__op_atlas.project_contract:
+      rows:
+      - id: 0x1
+        project_id: 0x0
+        chain_id: 1 
+        contract_address: "0x123"
+      - id: 0x2
+        project_id: 0x0
+        chain_id: 10
+        contract_address: "0x123"
+      - id: 0x3
+        project_id: 0x0
+        chain_id: 8453
+        contract_address: "0x123"
+      - id: 0x4
+        project_id: 0x0
+        chain_id: 99999
+        contract_address: "0x123"
+  outputs:
+    query:
+      partial: true
+      rows:
+      - artifact_source_id: 1
+        artifact_source: MAINNET
+        artifact_namespace: NULL
+        artifact_name: "0x123"
+        artifact_type: CONTRACT
+      - artifact_source_id: 2
+        artifact_source: OPTIMISM
+        artifact_namespace: NULL
+        artifact_name: "0x123"
+        artifact_type: CONTRACT
+      - artifact_source_id: 3
+        artifact_source: BASE
+        artifact_namespace: NULL
+        artifact_name: "0x123"
+        artifact_type: CONTRACT
+      - artifact_source_id: 4
+        artifact_source: "99999"
+        artifact_namespace: NULL
+        artifact_name: "0x123"
+        artifact_type: CONTRACT

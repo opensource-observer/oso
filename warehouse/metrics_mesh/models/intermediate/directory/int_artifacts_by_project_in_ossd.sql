@@ -1,5 +1,5 @@
 MODEL (
-  name metrics.int_artifacts_in_ossd_by_project,
+  name metrics.int_artifacts_by_project_in_ossd,
   kind FULL,
   dialect trino
 );

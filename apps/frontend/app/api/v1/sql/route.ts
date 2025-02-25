@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getClickhouseClient } from "../../../../lib/clients/clickhouse";
+import { ClickHouseError } from "@clickhouse/client";
 //import { logger } from "../../../lib/logger";
 
 // Next.js route control
@@ -11,20 +12,15 @@ export const revalidate = 0;
 const QUERY_PARAM = "query";
 
 // Helper functions for creating responses suitable for Hasura
-const makeError = (errorMsg: string) => ({
-  error: errorMsg,
-});
+const makeErrorResponse = (errorMsg: string, status: number) =>
+  NextResponse.json({ error: errorMsg }, { status });
 
 async function doQuery(rawQuery: string) {
   const query = decodeURIComponent(rawQuery);
   console.log(`Running query: ${query}`);
   const client = getClickhouseClient();
-  const rows = await client.query({ query });
-  const resultSet = await rows.json();
-  // resultSet includes query statistics and metadata
-  //console.log(JSON.stringify(resultSet, null, 2));
-  const data = resultSet.data;
-  return data;
+  const rows = await client.query({ query, format: "JSONEachRow" });
+  return rows;
 }
 
 /**
@@ -34,30 +30,41 @@ async function doQuery(rawQuery: string) {
  * @param request
  * @returns
  */
-export async function GET(request: NextRequest) {
-  const searchParams = request.nextUrl.searchParams;
-  const query = searchParams.get(QUERY_PARAM);
-  //const auth = request.headers.get("authorization");
-
-  // If no query provided, short-circuit
-  if (!query) {
-    console.log(`/api/sql: Missing query`);
-    return NextResponse.json(makeError("Please provide a 'query' parameter"));
-  }
-  const result = await doQuery(query);
-  return NextResponse.json(result);
-}
-
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  const query = body[QUERY_PARAM];
+  const query = body?.[QUERY_PARAM];
+  // TODO: add authentication
   //const auth = request.headers.get("authorization");
 
   // If no query provided, short-circuit
   if (!query) {
     console.log(`/api/sql: Missing query`);
-    return NextResponse.json(makeError("Please provide a 'query' parameter"));
+    return makeErrorResponse("Please provide a 'query' parameter", 400);
   }
-  const result = await doQuery(query);
-  return NextResponse.json(result);
+  try {
+    const stream = (await doQuery(query)).stream();
+    const textEncoder = new TextEncoder();
+    const readableStream = new ReadableStream({
+      start(controller) {
+        stream.on("data", (chunk) => {
+          controller.enqueue(
+            textEncoder.encode(JSON.stringify(chunk.map((r) => r.json()))),
+          );
+        });
+        stream.on("end", () => {
+          controller.close();
+        });
+        stream.on("error", (error) => {
+          controller.error(error);
+        });
+      },
+    });
+
+    return new NextResponse(readableStream);
+  } catch (e) {
+    if (e instanceof ClickHouseError) {
+      return makeErrorResponse(e.message, 400);
+    }
+    return makeErrorResponse("Unknown error", 500);
+  }
 }

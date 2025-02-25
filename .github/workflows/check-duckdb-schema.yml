@@ -31,11 +31,13 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: "Setup Python, Poetry and Dependencies"
-        uses: packetcoders/action-setup-cache-python-poetry@main
+      - name: Setup Python and UV
+        uses: astral-sh/setup-uv@v5
         with:
           python-version: 3.12
-          poetry-version: 1.8.2
+  
+      - name: Install dependencies
+        run: uv sync --all-packages --all-extras
 
       - name: "Set up Cloud SDK"
         uses: "google-github-actions/setup-gcloud@v2"
@@ -61,7 +63,7 @@ jobs:
         if: ${{ !inputs.fresh  }}
   
       - name: Initialize local data
-        run: poetry install && poetry run oso local initialize --max-results-per-query 100 --max-days 2
+        run: uv run oso local initialize --max-results-per-query 100 --max-days 2
       
       - name: Compare database files
         id: file-diff
