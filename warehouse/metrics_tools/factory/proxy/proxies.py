@@ -145,7 +145,6 @@ def map_metadata_to_metric(
 def aggregate_metadata(
     evaluator: MacroEvaluator,
 ):
-    import re
     from functools import reduce
 
     if evaluator.runtime_stage in ["loading", "creating"]:
@@ -157,14 +156,14 @@ def aggregate_metadata(
 
     model_names = [snap.name for snap in evaluator._snapshots.values()]
 
-    pattern = re.compile(r"^[^.]+\.[^.]+\.[^.]+$")
-
-    def is_valid_metadata_table(model_name: str):
-        return pattern.match(model_name) and model_name.split(".")[2].strip(
-            '"'
-        ).startswith("metrics_metadata_")
-
-    metadata_model_names = list(filter(is_valid_metadata_table, model_names))
+    metadata_model_names = [
+        name
+        for name in model_names
+        if (col := parse_one(name))
+        and isinstance(col, exp.Column)
+        and isinstance(col.this, exp.Identifier)
+        and col.this.this.startswith("metrics_metadata_")
+    ]
 
     assert len(metadata_model_names) > 0, "No valid metadata models found"
 
