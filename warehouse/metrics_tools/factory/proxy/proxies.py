@@ -155,14 +155,17 @@ def aggregate_metadata(
         )
 
     model_names = [snap.name for snap in evaluator._snapshots.values()]
-    metadata_model_names = list(
-        filter(
-            lambda model_name: model_name.startswith(
-                '"oso"."metrics"."metrics_metadata_'
-            ),
-            model_names,
-        )
-    )
+
+    metadata_model_names = [
+        name
+        for name in model_names
+        if (col := parse_one(name))
+        and isinstance(col, exp.Column)
+        and isinstance(col.this, exp.Identifier)
+        and col.this.this.startswith("metrics_metadata_")
+    ]
+
+    assert len(metadata_model_names) > 0, "No valid metadata models found"
 
     def make_select(table: str):
         return exp.select(
