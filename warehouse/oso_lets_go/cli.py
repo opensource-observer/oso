@@ -3,6 +3,7 @@ A catchall for development environment tools related to the python tooling.
 """
 
 import asyncio
+import getpass
 import logging
 import subprocess
 import sys
@@ -15,7 +16,7 @@ import aiotrino
 import dotenv
 import git
 import kr8s
-from kr8s.objects import Service
+from kr8s.objects import Job, Namespace, Service
 from metrics_tools.definition import PeerMetricDependencyRef
 from metrics_tools.factory.constants import METRICS_COLUMNS_BY_ENTITY
 from metrics_tools.factory.factory import MetricQueryConfig, timeseries_metrics
@@ -32,6 +33,7 @@ from opsscripts.utils.dockertools import (
     build_and_push_docker_image,
     initialize_docker_client,
 )
+from opsscripts.utils.k8stools import deploy_oso_k8s_job
 from oso_lets_go.wizard import MultipleChoiceInput
 from sqlglot import pretty
 from sqlmesh.core.dialect import parse_one
@@ -245,6 +247,55 @@ def clean_expired_trino_hive_files(
             trino_user,
             expiration,
             dry_run,
+        )
+    )
+
+
+@production.command()
+@click.option("--namespace", default="production-dagster")
+@click.option("--service-account", default="production-dagster")
+@click.option("--user-email", default=f"{getpass.getuser()}@opensource.observer")
+@click.option("--gateway", default="trino")
+def sqlmesh_migrate(
+    namespace: str, service_account: str, user_email: str, gateway: str
+):
+    env_vars = {
+        "SQLMESH_POSTGRES_INSTANCE_CONNECTION_STRING": "gcp:secretmanager:production-dagster-sqlmesh-postgres-instance-connection-string/versions/latest",
+        "SQLMESH_POSTGRES_USER": "gcp:secretmanager:production-dagster-sqlmesh-postgres-user/versions/latest",
+        "SQLMESH_POSTGRES_PASSWORD": "gcp:secretmanager:production-dagster-sqlmesh-postgres-password/versions/latest",
+        "SQLMESH_POSTGRES_DB": "sqlmesh-trino",
+        "SQLMESH_TRINO_HOST": "production-trino-trino.production-trino.svc.cluster.local",
+        "SQLMESH_TRINO_CONCURRENT_TASKS": "64",
+        "SQLMESH_MCS_ENABLED": "1",
+        "SQLMESH_MCS_URL": "http://production-mcs.production-mcs.svc.cluster.local:8000",
+        "SQLMESH_MCS_DEFAULT_SLOTS": "8",
+    }
+    asyncio.run(
+        deploy_oso_k8s_job(
+            job_name=f"sqlmesh-migrate-{datetime.now().strftime('%Y%m%d%H%M%S')}",
+            namespace=namespace,
+            cmd=["sqlmesh", "--gateway", gateway, "migrate"],
+            working_dir="/usr/src/app/warehouse/metrics_mesh",
+            user_email=user_email,
+            env=env_vars,
+            resources={
+                "requests": {"cpu": "200m", "memory": "1Gi"},
+                "limits": {"memory": "1532Mi"},
+            },
+            extra_pod_spec={
+                "serviceAccountName": service_account,
+                "nodeSelector": {
+                    "pool_type": "standard",
+                },
+                "tolerations": [
+                    {
+                        "key": "pool_type",
+                        "operator": "Equal",
+                        "value": "standard",
+                        "effect": "NoSchedule",
+                    }
+                ],
+            },
         )
     )
 
