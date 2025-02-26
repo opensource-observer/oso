@@ -134,7 +134,7 @@ locals {
     },
     # Trino consumer coordinator pool
     {
-      name                              = "${var.cluster_name}-consumer-trino-coordinator-node-pool"
+      name                              = "${var.cluster_name}-cons-trino-coord-node-pool"
       machine_type                      = "n1-highmem-2"
       node_locations                    = join(",", var.cluster_zones)
       min_count                         = 0
@@ -156,7 +156,7 @@ locals {
     },
     # Trino consumer worker pool
     {
-      name                              = "${var.cluster_name}-consumer-trino-worker-node-pool"
+      name                              = "${var.cluster_name}-cons-trino-worker-node-pool"
       machine_type                      = "n1-highmem-8"
       node_locations                    = join(",", var.cluster_zones)
       min_count                         = 0
@@ -249,13 +249,13 @@ locals {
       default_node_pool = false
       pool_type         = "trino-coordinator"
     }
-    "${var.cluster_name}-consumer-trino-worker-node-pool" = {
+    "${var.cluster_name}-cons-trino-worker-node-pool" = {
       default_node_pool = false
-      pool_type         = "consumer-trino-worker"
+      pool_type         = "cons-trino-worker"
     }
-    "${var.cluster_name}-consumer-trino-coordinator-node-pool" = {
+    "${var.cluster_name}-cons-trino-coord-node-pool" = {
       default_node_pool = false
-      pool_type         = "consumer-trino-coordinator"
+      pool_type         = "cons-trino-coord"
     }
     "${var.cluster_name}-mcs-scheduler-node-pool" = {
       default_node_pool = false
@@ -309,17 +309,17 @@ locals {
         effect = "NO_SCHEDULE"
       },
     ]
-    "${var.cluster_name}-consumer-trino-worker-node-pool" = [
+    "${var.cluster_name}-cons-trino-worker-node-pool" = [
       {
         key    = "pool_type"
-        value  = "consumer-trino-worker"
+        value  = "cons-trino-worker"
         effect = "NO_SCHEDULE"
       },
     ]
-    "${var.cluster_name}-consumer-trino-coordinator-node-pool" = [
+    "${var.cluster_name}-cons-trino-coord-node-pool" = [
       {
         key    = "pool_type"
-        value  = "consumer-trino-coordinator"
+        value  = "cons-trino-coord"
         effect = "NO_SCHEDULE"
       },
     ]
@@ -358,11 +358,11 @@ locals {
     "${var.cluster_name}-trino-coordinator-pool" = [
       "trino-coordinator",
     ]
-    "${var.cluster_name}-consumer-trino-worker-pool" = [
-      "consumer-trino-worker",
+    "${var.cluster_name}-cons-trino-worker-pool" = [
+      "cons-trino-worker",
     ]
-    "${var.cluster_name}-consumer-trino-coordinator-pool" = [
-      "consumer-trino-coordinator",
+    "${var.cluster_name}-cons-trino-coord-pool" = [
+      "cons-trino-coord",
     ]
     "${var.cluster_name}-mcs-scheduler-pool" = [
       "mcs-scheduler",
