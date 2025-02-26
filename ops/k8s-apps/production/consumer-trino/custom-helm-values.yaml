@@ -22,10 +22,10 @@ spec:
       tolerations:
         - key: pool_type
           operator: Equal
-          value: consumer-trino-coordinator
+          value: cons-trino-coord
           effect: NoSchedule
       nodeSelector:
-        pool_type: consumer-trino-coordinator
+        pool_type: cons-trino-coord
       jvm:
         maxHeapSize: "17G"
       additionalJVMConfig:
@@ -39,10 +39,10 @@ spec:
       tolerations:
         - key: pool_type
           operator: Equal
-          value: consumer-trino-worker
+          value: cons-trino-worker
           effect: NoSchedule
       nodeSelector:
-        pool_type: consumer-trino-worker
+        pool_type: cons-trino-worker
       config:
         query:
           maxMemoryPerNode: 15GB
