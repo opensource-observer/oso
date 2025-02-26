@@ -159,7 +159,7 @@ def aggregate_metadata(
 
     pattern = re.compile(r"^[^.]+\.[^.]+\.[^.]+$")
 
-    def is_valid_metadata_table(model_name):
+    def is_valid_metadata_table(model_name: str):
         return pattern.match(model_name) and model_name.split(".")[2].strip(
             '"'
         ).startswith("metrics_metadata_")
