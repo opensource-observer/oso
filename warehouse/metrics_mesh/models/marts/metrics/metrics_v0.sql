@@ -1,9 +1,18 @@
 MODEL (
   name metrics.metrics_v0,
   kind FULL,
+  dialect trino,
   tags (
     'export'
   )
+);
+
+@DEF(MAX_STAGE_OVERRIDE, 550);
+
+-- TODO(jabolo): Remove Trino session logic once #3117 lands
+@IF(
+  @OR(@gateway = 'trino', @gateway = 'local-trino'),
+  SET SESSION query_max_stage_count = @MAX_STAGE_OVERRIDE
 );
 
 WITH unioned_metric_names AS (
@@ -58,4 +67,10 @@ SELECT
   raw_definition::TEXT,
   definition_ref::TEXT,
   aggregation_function::TEXT
-FROM metrics_v0_no_casting
+FROM metrics_v0_no_casting;
+
+-- TODO(jabolo): Remove Trino session logic once #3117 lands
+@IF(
+  @OR(@gateway = 'trino', @gateway = 'local-trino'),
+  RESET SESSION query_max_stage_count
+);
