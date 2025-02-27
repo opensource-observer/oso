@@ -26,11 +26,6 @@ variable "environment" {
   description = "The environment"
 }
 
-variable "cloudsql_name" {
-  type        = string
-  description = "CloudSQL instance name"
-}
-
 variable "additional_cloudsql_client_principals" {
   type        = list(string)
   description = "List of principals to give client access to the cloudsql instance"
@@ -49,44 +44,36 @@ variable "additional_bucket_rw_service_account_names" {
   default     = []
 }
 
-variable "cloudsql_db_name" {
-  type        = string
-  default     = "postgres"
-  description = "CloudSQL DB Name"
-}
-
-variable "cloudsql_postgres_version" {
-  type        = string
-  description = "CloudSQL Postgres Version"
-  default     = "POSTGRES_15"
-}
-
-variable "cloudsql_tier" {
-  type        = string
-  description = "The cloudsql tier to deploy"
-}
-
-variable "cloudsql_zone" {
-  type        = string
-  description = "The cloudsql zone"
-}
-
-variable "cloudsql_deletion_protection_enabled" {
-  type    = bool
-  default = false
-}
-
-variable "cloudsql_ip_configuration" {
-  type = object({
-    authorized_networks                           = optional(list(map(string)), [])
-    ipv4_enabled                                  = optional(bool, true)
-    private_network                               = optional(string)
-    require_ssl                                   = optional(bool)
-    ssl_mode                                      = optional(string)
-    allocated_ip_range                            = optional(string)
-    enable_private_path_for_google_cloud_services = optional(bool, false)
-    psc_enabled                                   = optional(bool, false)
-    psc_allowed_consumer_projects                 = optional(list(string), [])
-  })
-  default = {}
+variable "cloudsql_databases" {
+  type = list(object({
+    name                = string
+    database_version    = string
+    tier                = string
+    zone                = string
+    user_name           = string
+    deletion_protection = bool
+    additional_databases = list(object({
+      name      = string
+      charset   = string
+      collation = string
+    }))
+    additional_users = list(object({
+      name            = string
+      password        = string
+      random_password = bool
+    }))
+    ip_configuration = object({
+      authorized_networks                           = optional(list(map(string)), [])
+      ipv4_enabled                                  = optional(bool, true)
+      private_network                               = optional(string)
+      require_ssl                                   = optional(bool)
+      ssl_mode                                      = optional(string)
+      allocated_ip_range                            = optional(string)
+      enable_private_path_for_google_cloud_services = optional(bool, false)
+      psc_enabled                                   = optional(bool, false)
+      psc_allowed_consumer_projects                 = optional(list(string), [])
+    })
+  }))
+  description = "List of CloudSQL databases with their configurations"
+  default     = []
 }
