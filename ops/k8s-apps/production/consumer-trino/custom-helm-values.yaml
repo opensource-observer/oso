@@ -18,7 +18,7 @@ spec:
       resources:
         requests:
           cpu: 1200m
-          memory: 10000Mi
+          memory: 8000Mi
       tolerations:
         - key: pool_type
           operator: Equal
@@ -27,7 +27,7 @@ spec:
       nodeSelector:
         pool_type: cons-trino-coord
       jvm:
-        maxHeapSize: "17G"
+        maxHeapSize: "7G"
       additionalJVMConfig:
         - "--add-opens=java.base/java.nio=ALL-UNNAMED"
 
