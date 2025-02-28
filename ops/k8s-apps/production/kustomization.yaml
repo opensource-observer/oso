@@ -7,3 +7,5 @@ resources:
   - ./trino
   - ./consumer-trino
   - ./metrics-calculation-service
+  - ./nessie
+  - ./nessie-cloudsql-proxy
