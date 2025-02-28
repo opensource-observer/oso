@@ -114,31 +114,16 @@ def join_all_of_entity_type(
 def map_metadata_to_metric(
     evaluator: MacroEvaluator,
 ):
-    db = t.cast(str, evaluator.var("db"))
-    table = t.cast(str, evaluator.var("table"))
+    metric = t.cast(str, evaluator.var("metric"))
     metadata = t.cast(t.Dict[str, t.Any], evaluator.var("metadata"))
 
     description = metadata["description"]
     display_name = metadata["display_name"]
 
-    metrics_alias = exp.Concat(
-        expressions=[
-            exp.to_column("event_source"),
-            exp.Literal(this="_", is_string=True),
-            exp.to_column("metric"),
-        ],
-        safe=False,
-        coalesce=False,
-    ).as_("metric")
-
-    return (
-        exp.select(
-            exp.Literal(this=display_name, is_string=True).as_("display_name"),
-            exp.Literal(this=description, is_string=True).as_("description"),
-            metrics_alias,
-        )
-        .from_(sql.to_table(f"{db}.{table}"))
-        .distinct()
+    return exp.select(
+        exp.Literal(this=display_name, is_string=True).as_("display_name"),
+        exp.Literal(this=description, is_string=True).as_("description"),
+        exp.Literal(this=metric, is_string=True).as_("metric"),
     )
 
 
