@@ -379,9 +379,9 @@ class TimeseriesMetrics:
             )(join_all_of_entity_type)
 
         raw_table_metadata = {
-            key: asdict(value["metadata"])
-            for key, value in self._rendered_queries.items()
-            if value["metadata"] is not None
+            key: asdict(value.metadata)
+            for key, value in self._raw_options.get("metric_queries").items()
+            if value.metadata is not None
         }
 
         transformed_metadata = defaultdict(list)
@@ -390,38 +390,32 @@ class TimeseriesMetrics:
             metadata_tuple = tuple(metadata.items())
             transformed_metadata[metadata_tuple].append(table)
 
-        table_meta = [
-            {"metadata": dict(meta), "tables": tables}
-            for meta, tables in transformed_metadata.items()
-        ]
-
         metadata_depends_on = functools.reduce(
             lambda x, y: x.union({f"metrics.metrics_metadata_{ident}" for ident in y}),
             transformed_metadata.values(),
             set(),
         )
 
-        for elem in table_meta:
-            meta = elem["metadata"]
-            tables = elem["tables"]
+        for metric_key, metric_value in self._raw_options.get("metric_queries").items():
+            if not metric_value.metadata:
+                continue
 
-            for ident in tables:
-                MacroOverridingModel(
-                    additional_macros=[],
-                    override_module_path=override_module_path,
-                    override_path=override_path,
-                    locals=dict(
-                        db=self.catalog,
-                        table=ident,
-                        metadata=meta,
-                    ),
-                    name=f"metrics.metrics_metadata_{ident}",
-                    is_sql=True,
-                    kind="VIEW",
-                    dialect="clickhouse",
-                    columns=constants.METRIC_METADATA_COLUMNS,
-                    enabled=self._raw_options.get("enabled", True),
-                )(map_metadata_to_metric)
+            MacroOverridingModel(
+                additional_macros=[],
+                depends_on=[],
+                override_module_path=override_module_path,
+                override_path=override_path,
+                locals={
+                    "metric": metric_key,
+                    "metadata": asdict(metric_value.metadata),
+                },
+                name=f"metrics.metrics_metadata_{metric_key}",
+                is_sql=True,
+                kind="FULL",
+                dialect="clickhouse",
+                columns=constants.METRIC_METADATA_COLUMNS,
+                enabled=self._raw_options.get("enabled", True),
+            )(map_metadata_to_metric)
 
         MacroOverridingModel(
             additional_macros=[],
@@ -431,7 +425,7 @@ class TimeseriesMetrics:
             locals={},
             name="metrics.metrics_metadata",
             is_sql=True,
-            kind="VIEW",
+            kind="FULL",
             dialect="clickhouse",
             columns=constants.METRIC_METADATA_COLUMNS,
             enabled=self._raw_options.get("enabled", True),
