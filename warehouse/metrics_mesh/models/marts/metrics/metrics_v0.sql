@@ -7,14 +7,6 @@ MODEL (
   )
 );
 
-@DEF(MAX_STAGE_OVERRIDE, 550);
-
--- TODO(jabolo): Remove Trino session logic once #3117 lands
-@IF(
-  @OR(@gateway = 'trino', @gateway = 'local-trino'),
-  SET SESSION query_max_stage_count = @MAX_STAGE_OVERRIDE
-);
-
 WITH unioned_metric_names AS (
   SELECT *
   FROM metrics.int_metric_names_from_artifact
@@ -55,7 +47,7 @@ WITH unioned_metric_names AS (
     'TODO' AS definition_ref,
     'UNKNOWN' AS aggregation_function
   FROM all_timeseries_metric_names t
-  LEFT JOIN all_metrics_metadata m ON t.metric = m.metric
+  LEFT JOIN all_metrics_metadata m ON t.metric LIKE '%' || m.metric || '%'
 )
 SELECT
   metric_id::TEXT,
@@ -68,9 +60,3 @@ SELECT
   definition_ref::TEXT,
   aggregation_function::TEXT
 FROM metrics_v0_no_casting;
-
--- TODO(jabolo): Remove Trino session logic once #3117 lands
-@IF(
-  @OR(@gateway = 'trino', @gateway = 'local-trino'),
-  RESET SESSION query_max_stage_count
-);
