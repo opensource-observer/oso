@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "mcs.fullname" . }}-config
+  labels:
+    {{- include "mcs.labels" . | nindent 4 }}
+data:
+  log_config.yaml: |
+    {{- include "mcs.logging.config" . | nindent 4 }}

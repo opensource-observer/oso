@@ -1,0 +1,190 @@
+---
+kind: ObjectType
+version: v1
+definition:
+  name: TimeseriesEventsByArtifactV0
+  fields:
+    - name: amount
+      type: Float32!
+    - name: eventSource
+      type: String!
+    - name: eventSourceId
+      type: String!
+    - name: eventType
+      type: String!
+    - name: fromArtifactId
+      type: String!
+    - name: time
+      type: DateTime!
+    - name: toArtifactId
+      type: String!
+  graphql:
+    typeName: Oso_TimeseriesEventsByArtifactV0
+    inputTypeName: Oso_TimeseriesEventsByArtifactV0Input
+  dataConnectorTypeMapping:
+    - dataConnectorName: oso_clickhouse
+      dataConnectorObjectType: timeseries_events_by_artifact_v0
+      fieldMapping:
+        amount:
+          column:
+            name: amount
+        eventSource:
+          column:
+            name: event_source
+        eventSourceId:
+          column:
+            name: event_source_id
+        eventType:
+          column:
+            name: event_type
+        fromArtifactId:
+          column:
+            name: from_artifact_id
+        time:
+          column:
+            name: time
+        toArtifactId:
+          column:
+            name: to_artifact_id
+
+---
+kind: TypePermissions
+version: v1
+definition:
+  typeName: TimeseriesEventsByArtifactV0
+  permissions:
+    - role: admin
+      output:
+        allowedFields:
+          - amount
+          - eventSource
+          - eventSourceId
+          - eventType
+          - fromArtifactId
+          - time
+          - toArtifactId
+    - role: anonymous
+      output:
+        allowedFields:
+          - amount
+          - eventSource
+          - eventSourceId
+          - eventType
+          - fromArtifactId
+          - time
+          - toArtifactId
+
+---
+kind: BooleanExpressionType
+version: v1
+definition:
+  name: TimeseriesEventsByArtifactV0BoolExp
+  operand:
+    object:
+      type: TimeseriesEventsByArtifactV0
+      comparableFields:
+        - fieldName: amount
+          booleanExpressionType: Float32BoolExp
+        - fieldName: eventSource
+          booleanExpressionType: StringBoolExp
+        - fieldName: eventSourceId
+          booleanExpressionType: StringBoolExp
+        - fieldName: eventType
+          booleanExpressionType: StringBoolExp
+        - fieldName: fromArtifactId
+          booleanExpressionType: StringBoolExp
+        - fieldName: time
+          booleanExpressionType: DateTimeBoolExp
+        - fieldName: toArtifactId
+          booleanExpressionType: StringBoolExp
+      comparableRelationships: []
+  logicalOperators:
+    enable: true
+  isNull:
+    enable: true
+  graphql:
+    typeName: Oso_TimeseriesEventsByArtifactV0BoolExp
+
+---
+kind: AggregateExpression
+version: v1
+definition:
+  name: TimeseriesEventsByArtifactV0AggExp
+  operand:
+    object:
+      aggregatedType: TimeseriesEventsByArtifactV0
+      aggregatableFields:
+        - fieldName: amount
+          aggregateExpression: Float32AggExp
+        - fieldName: eventSource
+          aggregateExpression: StringAggExp
+        - fieldName: eventSourceId
+          aggregateExpression: StringAggExp
+        - fieldName: eventType
+          aggregateExpression: StringAggExp
+        - fieldName: fromArtifactId
+          aggregateExpression: StringAggExp
+        - fieldName: time
+          aggregateExpression: DateTimeAggExp
+        - fieldName: toArtifactId
+          aggregateExpression: StringAggExp
+  count:
+    enable: true
+  graphql:
+    selectTypeName: Oso_TimeseriesEventsByArtifactV0AggExp
+
+---
+kind: Model
+version: v1
+definition:
+  name: TimeseriesEventsByArtifactV0
+  objectType: TimeseriesEventsByArtifactV0
+  source:
+    dataConnectorName: oso_clickhouse
+    collection: timeseries_events_by_artifact_v0
+  filterExpressionType: TimeseriesEventsByArtifactV0BoolExp
+  aggregateExpression: TimeseriesEventsByArtifactV0AggExp
+  orderableFields:
+    - fieldName: amount
+      orderByDirections:
+        enableAll: true
+    - fieldName: eventSource
+      orderByDirections:
+        enableAll: true
+    - fieldName: eventSourceId
+      orderByDirections:
+        enableAll: true
+    - fieldName: eventType
+      orderByDirections:
+        enableAll: true
+    - fieldName: fromArtifactId
+      orderByDirections:
+        enableAll: true
+    - fieldName: time
+      orderByDirections:
+        enableAll: true
+    - fieldName: toArtifactId
+      orderByDirections:
+        enableAll: true
+  graphql:
+    selectMany:
+      queryRootField: oso_timeseriesEventsByArtifactV0
+      subscription:
+        rootField: oso_timeseriesEventsByArtifactV0
+    selectUniques: []
+    orderByExpressionType: Oso_TimeseriesEventsByArtifactV0OrderBy
+    filterInputTypeName: Oso_TimeseriesEventsByArtifactV0FilterInput
+
+---
+kind: ModelPermissions
+version: v1
+definition:
+  modelName: TimeseriesEventsByArtifactV0
+  permissions:
+    - role: admin
+      select:
+        filter: null
+        allowSubscriptions: true
+    - role: anonymous
+      select:
+        filter: null

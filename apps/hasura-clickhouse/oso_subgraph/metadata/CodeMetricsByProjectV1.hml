@@ -1,0 +1,484 @@
+---
+kind: ObjectType
+version: v1
+definition:
+  name: CodeMetricsByProjectV1
+  fields:
+    - name: activeDeveloperCount6Months
+      type: Float32!
+    - name: closedIssueCount6Months
+      type: Float32!
+    - name: commitCount6Months
+      type: Float32!
+    - name: contributorCount
+      type: Float32!
+    - name: contributorCount6Months
+      type: Float32!
+    - name: displayName
+      type: String!
+    - name: eventSource
+      type: String!
+    - name: firstCommitDate
+      type: DateTime!
+    - name: forkCount
+      type: Int64!
+    - name: fulltimeDeveloperAverage6Months
+      type: Float32!
+    - name: lastCommitDate
+      type: DateTime!
+    - name: mergedPullRequestCount6Months
+      type: Float32!
+    - name: newContributorCount6Months
+      type: Float32!
+    - name: openedIssueCount6Months
+      type: Float32!
+    - name: openedPullRequestCount6Months
+      type: Float32!
+    - name: projectId
+      type: String!
+    - name: projectName
+      type: String!
+    - name: projectNamespace
+      type: String!
+    - name: projectSource
+      type: String!
+    - name: repositoryCount
+      type: Int64!
+    - name: starCount
+      type: Int64!
+    - name: commentCount6Months
+      type: Float32!
+    - name: developerCount
+      type: Float32!
+    - name: firstCreatedAtDate
+      type: DateTime!
+    - name: lastUpdatedAtDate
+      type: DateTime!
+    - name: releaseCount6Months
+      type: Float32!
+    - name: timeToFirstResponseDaysAverage6Months
+      type: Float32!
+    - name: timeToMergeDaysAverage6Months
+      type: Float32!
+  graphql:
+    typeName: Oso_CodeMetricsByProjectV1
+    inputTypeName: Oso_CodeMetricsByProjectV1Input
+  dataConnectorTypeMapping:
+    - dataConnectorName: oso_clickhouse
+      dataConnectorObjectType: code_metrics_by_project_v1
+      fieldMapping:
+        activeDeveloperCount6Months:
+          column:
+            name: active_developer_count_6_months
+        closedIssueCount6Months:
+          column:
+            name: closed_issue_count_6_months
+        commitCount6Months:
+          column:
+            name: commit_count_6_months
+        contributorCount:
+          column:
+            name: contributor_count
+        contributorCount6Months:
+          column:
+            name: contributor_count_6_months
+        displayName:
+          column:
+            name: display_name
+        eventSource:
+          column:
+            name: event_source
+        firstCommitDate:
+          column:
+            name: first_commit_date
+        forkCount:
+          column:
+            name: fork_count
+        fulltimeDeveloperAverage6Months:
+          column:
+            name: fulltime_developer_average_6_months
+        lastCommitDate:
+          column:
+            name: last_commit_date
+        mergedPullRequestCount6Months:
+          column:
+            name: merged_pull_request_count_6_months
+        newContributorCount6Months:
+          column:
+            name: new_contributor_count_6_months
+        openedIssueCount6Months:
+          column:
+            name: opened_issue_count_6_months
+        openedPullRequestCount6Months:
+          column:
+            name: opened_pull_request_count_6_months
+        projectId:
+          column:
+            name: project_id
+        projectName:
+          column:
+            name: project_name
+        projectNamespace:
+          column:
+            name: project_namespace
+        projectSource:
+          column:
+            name: project_source
+        repositoryCount:
+          column:
+            name: repository_count
+        starCount:
+          column:
+            name: star_count
+        commentCount6Months:
+          column:
+            name: comment_count_6_months
+        developerCount:
+          column:
+            name: developer_count
+        firstCreatedAtDate:
+          column:
+            name: first_created_at_date
+        lastUpdatedAtDate:
+          column:
+            name: last_updated_at_date
+        releaseCount6Months:
+          column:
+            name: release_count_6_months
+        timeToFirstResponseDaysAverage6Months:
+          column:
+            name: time_to_first_response_days_average_6_months
+        timeToMergeDaysAverage6Months:
+          column:
+            name: time_to_merge_days_average_6_months
+
+---
+kind: TypePermissions
+version: v1
+definition:
+  typeName: CodeMetricsByProjectV1
+  permissions:
+    - role: admin
+      output:
+        allowedFields:
+          - activeDeveloperCount6Months
+          - closedIssueCount6Months
+          - commitCount6Months
+          - contributorCount
+          - contributorCount6Months
+          - displayName
+          - eventSource
+          - firstCommitDate
+          - forkCount
+          - fulltimeDeveloperAverage6Months
+          - lastCommitDate
+          - mergedPullRequestCount6Months
+          - newContributorCount6Months
+          - openedIssueCount6Months
+          - openedPullRequestCount6Months
+          - projectId
+          - projectName
+          - projectNamespace
+          - projectSource
+          - repositoryCount
+          - starCount
+          - commentCount6Months
+          - developerCount
+          - firstCreatedAtDate
+          - lastUpdatedAtDate
+          - releaseCount6Months
+          - timeToFirstResponseDaysAverage6Months
+          - timeToMergeDaysAverage6Months
+    - role: anonymous
+      output:
+        allowedFields:
+          - activeDeveloperCount6Months
+          - closedIssueCount6Months
+          - commitCount6Months
+          - contributorCount
+          - contributorCount6Months
+          - displayName
+          - eventSource
+          - firstCommitDate
+          - forkCount
+          - fulltimeDeveloperAverage6Months
+          - lastCommitDate
+          - mergedPullRequestCount6Months
+          - newContributorCount6Months
+          - openedIssueCount6Months
+          - openedPullRequestCount6Months
+          - projectId
+          - projectName
+          - projectNamespace
+          - projectSource
+          - repositoryCount
+          - starCount
+          - commentCount6Months
+          - developerCount
+          - firstCreatedAtDate
+          - lastUpdatedAtDate
+          - releaseCount6Months
+          - timeToFirstResponseDaysAverage6Months
+          - timeToMergeDaysAverage6Months
+
+---
+kind: BooleanExpressionType
+version: v1
+definition:
+  name: CodeMetricsByProjectV1BoolExp
+  operand:
+    object:
+      type: CodeMetricsByProjectV1
+      comparableFields:
+        - fieldName: activeDeveloperCount6Months
+          booleanExpressionType: Float32BoolExp
+        - fieldName: closedIssueCount6Months
+          booleanExpressionType: Float32BoolExp
+        - fieldName: commitCount6Months
+          booleanExpressionType: Float32BoolExp
+        - fieldName: contributorCount
+          booleanExpressionType: Float32BoolExp
+        - fieldName: contributorCount6Months
+          booleanExpressionType: Float32BoolExp
+        - fieldName: displayName
+          booleanExpressionType: StringBoolExp
+        - fieldName: eventSource
+          booleanExpressionType: StringBoolExp
+        - fieldName: firstCommitDate
+          booleanExpressionType: DateTimeBoolExp
+        - fieldName: forkCount
+          booleanExpressionType: Int64BoolExp
+        - fieldName: fulltimeDeveloperAverage6Months
+          booleanExpressionType: Float32BoolExp
+        - fieldName: lastCommitDate
+          booleanExpressionType: DateTimeBoolExp
+        - fieldName: mergedPullRequestCount6Months
+          booleanExpressionType: Float32BoolExp
+        - fieldName: newContributorCount6Months
+          booleanExpressionType: Float32BoolExp
+        - fieldName: openedIssueCount6Months
+          booleanExpressionType: Float32BoolExp
+        - fieldName: openedPullRequestCount6Months
+          booleanExpressionType: Float32BoolExp
+        - fieldName: projectId
+          booleanExpressionType: StringBoolExp
+        - fieldName: projectName
+          booleanExpressionType: StringBoolExp
+        - fieldName: projectNamespace
+          booleanExpressionType: StringBoolExp
+        - fieldName: projectSource
+          booleanExpressionType: StringBoolExp
+        - fieldName: repositoryCount
+          booleanExpressionType: Int64BoolExp
+        - fieldName: starCount
+          booleanExpressionType: Int64BoolExp
+        - fieldName: commentCount6Months
+          booleanExpressionType: Float32BoolExp
+        - fieldName: developerCount
+          booleanExpressionType: Float32BoolExp
+        - fieldName: firstCreatedAtDate
+          booleanExpressionType: DateTimeBoolExp
+        - fieldName: lastUpdatedAtDate
+          booleanExpressionType: DateTimeBoolExp
+        - fieldName: releaseCount6Months
+          booleanExpressionType: Float32BoolExp
+        - fieldName: timeToFirstResponseDaysAverage6Months
+          booleanExpressionType: Float32BoolExp
+        - fieldName: timeToMergeDaysAverage6Months
+          booleanExpressionType: Float32BoolExp
+      comparableRelationships: []
+  logicalOperators:
+    enable: true
+  isNull:
+    enable: true
+  graphql:
+    typeName: Oso_CodeMetricsByProjectV1BoolExp
+
+---
+kind: AggregateExpression
+version: v1
+definition:
+  name: CodeMetricsByProjectV1AggExp
+  operand:
+    object:
+      aggregatedType: CodeMetricsByProjectV1
+      aggregatableFields:
+        - fieldName: activeDeveloperCount6Months
+          aggregateExpression: Float32AggExp
+        - fieldName: closedIssueCount6Months
+          aggregateExpression: Float32AggExp
+        - fieldName: commitCount6Months
+          aggregateExpression: Float32AggExp
+        - fieldName: contributorCount
+          aggregateExpression: Float32AggExp
+        - fieldName: contributorCount6Months
+          aggregateExpression: Float32AggExp
+        - fieldName: displayName
+          aggregateExpression: StringAggExp
+        - fieldName: eventSource
+          aggregateExpression: StringAggExp
+        - fieldName: firstCommitDate
+          aggregateExpression: DateTimeAggExp
+        - fieldName: forkCount
+          aggregateExpression: Int64AggExp
+        - fieldName: fulltimeDeveloperAverage6Months
+          aggregateExpression: Float32AggExp
+        - fieldName: lastCommitDate
+          aggregateExpression: DateTimeAggExp
+        - fieldName: mergedPullRequestCount6Months
+          aggregateExpression: Float32AggExp
+        - fieldName: newContributorCount6Months
+          aggregateExpression: Float32AggExp
+        - fieldName: openedIssueCount6Months
+          aggregateExpression: Float32AggExp
+        - fieldName: openedPullRequestCount6Months
+          aggregateExpression: Float32AggExp
+        - fieldName: projectId
+          aggregateExpression: StringAggExp
+        - fieldName: projectName
+          aggregateExpression: StringAggExp
+        - fieldName: projectNamespace
+          aggregateExpression: StringAggExp
+        - fieldName: projectSource
+          aggregateExpression: StringAggExp
+        - fieldName: repositoryCount
+          aggregateExpression: Int64AggExp
+        - fieldName: starCount
+          aggregateExpression: Int64AggExp
+        - fieldName: commentCount6Months
+          aggregateExpression: Float32AggExp
+        - fieldName: developerCount
+          aggregateExpression: Float32AggExp
+        - fieldName: firstCreatedAtDate
+          aggregateExpression: DateTimeAggExp
+        - fieldName: lastUpdatedAtDate
+          aggregateExpression: DateTimeAggExp
+        - fieldName: releaseCount6Months
+          aggregateExpression: Float32AggExp
+        - fieldName: timeToFirstResponseDaysAverage6Months
+          aggregateExpression: Float32AggExp
+        - fieldName: timeToMergeDaysAverage6Months
+          aggregateExpression: Float32AggExp
+  count:
+    enable: true
+  graphql:
+    selectTypeName: Oso_CodeMetricsByProjectV1AggExp
+
+---
+kind: Model
+version: v1
+definition:
+  name: CodeMetricsByProjectV1
+  objectType: CodeMetricsByProjectV1
+  source:
+    dataConnectorName: oso_clickhouse
+    collection: code_metrics_by_project_v1
+  filterExpressionType: CodeMetricsByProjectV1BoolExp
+  aggregateExpression: CodeMetricsByProjectV1AggExp
+  orderableFields:
+    - fieldName: activeDeveloperCount6Months
+      orderByDirections:
+        enableAll: true
+    - fieldName: closedIssueCount6Months
+      orderByDirections:
+        enableAll: true
+    - fieldName: commitCount6Months
+      orderByDirections:
+        enableAll: true
+    - fieldName: contributorCount
+      orderByDirections:
+        enableAll: true
+    - fieldName: contributorCount6Months
+      orderByDirections:
+        enableAll: true
+    - fieldName: displayName
+      orderByDirections:
+        enableAll: true
+    - fieldName: eventSource
+      orderByDirections:
+        enableAll: true
+    - fieldName: firstCommitDate
+      orderByDirections:
+        enableAll: true
+    - fieldName: forkCount
+      orderByDirections:
+        enableAll: true
+    - fieldName: fulltimeDeveloperAverage6Months
+      orderByDirections:
+        enableAll: true
+    - fieldName: lastCommitDate
+      orderByDirections:
+        enableAll: true
+    - fieldName: mergedPullRequestCount6Months
+      orderByDirections:
+        enableAll: true
+    - fieldName: newContributorCount6Months
+      orderByDirections:
+        enableAll: true
+    - fieldName: openedIssueCount6Months
+      orderByDirections:
+        enableAll: true
+    - fieldName: openedPullRequestCount6Months
+      orderByDirections:
+        enableAll: true
+    - fieldName: projectId
+      orderByDirections:
+        enableAll: true
+    - fieldName: projectName
+      orderByDirections:
+        enableAll: true
+    - fieldName: projectNamespace
+      orderByDirections:
+        enableAll: true
+    - fieldName: projectSource
+      orderByDirections:
+        enableAll: true
+    - fieldName: repositoryCount
+      orderByDirections:
+        enableAll: true
+    - fieldName: starCount
+      orderByDirections:
+        enableAll: true
+    - fieldName: commentCount6Months
+      orderByDirections:
+        enableAll: true
+    - fieldName: developerCount
+      orderByDirections:
+        enableAll: true
+    - fieldName: firstCreatedAtDate
+      orderByDirections:
+        enableAll: true
+    - fieldName: lastUpdatedAtDate
+      orderByDirections:
+        enableAll: true
+    - fieldName: releaseCount6Months
+      orderByDirections:
+        enableAll: true
+    - fieldName: timeToFirstResponseDaysAverage6Months
+      orderByDirections:
+        enableAll: true
+    - fieldName: timeToMergeDaysAverage6Months
+      orderByDirections:
+        enableAll: true
+  graphql:
+    selectMany:
+      queryRootField: oso_codeMetricsByProjectV1
+      subscription:
+        rootField: oso_codeMetricsByProjectV1
+    selectUniques: []
+    orderByExpressionType: Oso_CodeMetricsByProjectV1OrderBy
+    filterInputTypeName: Oso_CodeMetricsByProjectV1FilterInput
+
+---
+kind: ModelPermissions
+version: v1
+definition:
+  modelName: CodeMetricsByProjectV1
+  permissions:
+    - role: admin
+      select:
+        filter: null
+        allowSubscriptions: true
+    - role: anonymous
+      select:
+        filter: null

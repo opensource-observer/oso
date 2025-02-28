@@ -1,8 +1,11 @@
-from typing import Callable, TypeVar, List, Sequence, Tuple, Optional, cast
+import logging
 from collections import OrderedDict
+from typing import Callable, List, Optional, Sequence, Tuple, TypeVar, cast
 
 import sqlglot as sql
 from sqlglot import expressions as exp
+
+logger = logging.getLogger(__name__)
 
 
 T = TypeVar("T")
@@ -79,7 +82,7 @@ class DataContext[T]:
         dialect: str = "bigquery",
     ) -> T:
         exp = self.transform_query(query, transformations, dialect=dialect)
-        print(exp.sql())
+        logger.debug(f"Executing query: {exp.sql()}")
         return self._connector.execute_expression(exp)
 
     # def examine_query(self, query: ContextQuery):

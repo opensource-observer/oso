@@ -1,0 +1,225 @@
+---
+title: Specification
+sidebar_position: 1
+---
+
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
+
+:::info
+An **impact metric** is a quantitative measure of impact over a discrete period of time. Impact metrics are most commonly queried by project (eg, `uniswap`), although they can also be queried by individual artifact or at the collection level.
+:::
+
+## Principles
+
+---
+
+Impact metrics should be designed with the following principles in mind:
+
+- **Verifiability**: Metrics should be based on public data that can be independently verified. They should not rely on proprietary data sources or private APIs.
+- **Reproducibility**: Metrics should be easy to reproduce, simulate, and audit to ensure they are achieving the intended results. They should not have a "black box" element that makes them difficult to understand or replicate.
+- **Consistency**: Metrics should be consistent across projects and artifacts. They should be calculated using the same methodology and data sources to ensure that they are comparable.
+- **Completeness**: Metrics should be comprehensive and cover all projects and artifacts in the OSO database that fulfill basic requirements. They should not be highly sector-specific.
+- **Simplicity**: Metrics should have business logic that is easy to understand. They should not require a deep understanding of the underlying data or complex statistical methods to interpret.
+
+## Requirements
+
+---
+
+An impact metric must be:
+
+- A quantitative measure of impact on a continuous scale. Common examples include counts, sums, averages, and medians.
+- Available for all projects in the OSO database (even if many projects have a null value). Metrics should be extendable to any collection in the OSO database as well as any artifact in the same artifact namespace (eg, GitHub-related metrics, npm-related metrics, etc.).
+- Aggregated over a discrete period of time. Common time intervals include last 90 days (`90 DAYS`), last 6 months (`6 MONTHS`), and since inception (`ALL`). OSO has already bucketed event data in various time intervals to facilitate this.
+- Constructed from data that is available in one or more [intermediate or mart models](https://github.com/opensource-observer/oso/tree/main/warehouse/dbt/models). Most impact metrics are currently powered from the `int_events_daily_to_project` model.
+
+## Creating Impact Metrics
+
+An **impact metric** is essentially a SQL query made against the OSO dataset that enables a user to make objective comparisons of impact among projects.
+
+There are a variety of statistical techniques for analyzing data about impact metrics and identifying trends. This section provides a basic example of how to create an impact metric and run a distribution analysis.
+
+### General guide for creating an impact metric
+
+#### 1. Name and Tag the Metric
+
+- **Name**: Give the metric a descriptive name. The name should be concise and easy to associate with the underlying impact metric. Examples: "Grow Full-Time Developers," "Increase Demand for Layer 2 Blockspace", "Bring New Users to the Ecosystem", "Improve the Developer Experience for Consumer Apps".
+- **Tagging**: Assign keyword tags to the metric. Tags should represent the types of projects working towards impact in that area. Examples: "Onchain", "DeFi", "Consumer", "Developer Libraries", "Security".
+
+#### 2. Define the Event Type and Selection Criteria
+
+- **Event Type**: See the various [event types we track](../event.md) or [propose a new metric](../../contribute-models/data-models.md). Examples: "Number of Full-Time Developer Months", "Number of Dependent Onchain Apps", "Layer 2 Gas Fees", "Number of New Contributors".
+- **Time Period**: Specify a time interval for applying the metric. Examples: "Last 6 months", "Since the project's inception".
+- **Selection Filter**: Make explicit the criteria to identify which projects are eligible (or ineligible) to be included in the analysis. Examples: "Projects with developer activity in the last 90 days", "Projects with NPM packages used by at least 5 onchain projects", "Projects with a permissive open source license (e.g., MIT, Apache 2.0) and a codebase that is at least 6 months old".
+
+#### 3. Normalize the Data
+
+- **Query Logic**: Provide the code that fetches the metrics for each project in the selection set. The query may only make use of datasets that are public and in the OSO data warehouse. (Contribute new pubic datasets [here](../../contribute-data/index.md).)
+- **Normalization Method**: Choose an appropriate method for normalizing the metric data (e.g., Gaussian distribution, log scale) that fits the metric characteristics. The script in the tutorial (see next section) includes an example of a normalization method you can start with.
+
+## Schema
+
+Every impact metric must include the following fields: `project_id`, `impact_metric`, and `amount`. For example:
+
+```json
+{
+  "project_id": "jUda1pi-FdNlaUmgKq51B4h8x4wX3QTN2fZkKq6N0vw\u003d",
+  "impact_metric": "fork_count_6_months",
+  "amount": "125.0"
+}
+```
+
+Currently all intermediate metrics are calculated [here](https://github.com/opensource-observer/oso/tree/main/warehouse/dbt/models/intermediate/metrics) and consolidated metrics are available as metrics marts [here](https://github.com/opensource-observer/oso/tree/main/warehouse/dbt/models/marts/metrics).
+
+## Sample Metrics
+
+---
+
+The following are examples of impact metrics that can be queried from the OSO database. These examples are illustrative and do not represent an exhaustive list of all possible impact metrics. They make use of two "intermediate" tables that aggregate event data into timeseries buckets: `int_events_monthly_to_project` and `int_events_daily_to_project`. These tables are derived from the consolidated `int_events` table.
+
+### Forks in the Last 6 Months (Project Level)
+
+The following is an example of a valid impact metric, expressed in SQL:
+
+<Tabs>
+  <TabItem value="query" label="Query" default>
+    ```sql
+      select
+        project_id,
+        'fork_count_6_months' as impact_metric,
+        sum(amount) as amount
+      from `oso.int_events_monthly_to_project`
+      where 
+        event_type = 'FORKED'
+        and DATE(bucket_month) >= DATE_SUB(CURRENT_DATE(), INTERVAL 6 MONTH)
+      group by project_id
+    ```
+  </TabItem>
+  <TabItem value="response" label="Response">
+    ```json
+      [{
+        "project_id": "jUda1pi-FdNlaUmgKq51B4h8x4wX3QTN2fZkKq6N0vw\u003d",
+        "impact_metric": "'fork_count_6_months",
+        "amount": "125.0"
+      }, {
+        "project_id": "wdBmT3yweChtV4g4qcc1NN1QtfnmMPAuCVxoPkiAowY\u003d",
+        "impact_metric": "'fork_count_6_months",
+        "amount": "57.0"
+      }, {
+        "project_id": "HNv9-2g63oZCrLD2jDAIygVq7vQkn2iV2QGmEfcFsYk\u003d",
+        "impact_metric": "'fork_count_6_months",
+        "amount": "13.0"
+      }]
+    ```
+  </TabItem>
+</Tabs>
+
+### Gas Fees
+
+Here's an example of an impact metric that calculates the sum of gas fees contributed by a project across all networks:
+
+<Tabs>
+  <TabItem value="query" label="Query" default>
+    ```sql
+      select
+        project_id,
+        'gas_fees' as metric,
+        SUM(amount / 1e18) as amount
+      from `oso.int_events_monthly_to_project`
+      where
+        event_type = 'CONTRACT_INVOCATION_DAILY_L2_GAS_USED'
+      group by project_id
+    ```
+  </TabItem>
+  <TabItem value="response" label="Response">
+    ```json
+      [{
+        "project_id": "vg-apoPrbCtAM4enk0Ar4tODrqTBi9ZDnNnTw-udjw4\u003d",
+        "impact_metric": "gas_fees",
+        "amount": "0.04893"
+      }, {
+        "project_id": "7ZqXfQTqiCHHcRw-THEsTgz8W1T0apGyLe7rE8n0NCs\u003d",
+        "impact_metric": "gas_fees",
+        "amount": "5.03892"
+      }, {
+        "project_id": "PM9tS7Fp_-LmYT8B-dx8FFBz7xa8rEwm9RFAZ6JehcI\u003d",
+        "impact_metric": "gas_fees",
+        "amount": "0.01178"
+      }]
+    ```
+  </TabItem>
+</Tabs>
+
+### Daily Active Addresses in the Last 6 Months (Project Level)
+
+Here's a more complex impact metric that uses several CTEs to calculate the number of daily active addresses for a project:
+
+<Tabs>
+  <TabItem value="query" label="Query" default>
+    ```sql
+      with txns as (
+        select
+          project_id,
+          from_artifact_name,
+          bucket_day
+        from `oso.int_events_daily_to_project`
+        where
+          event_type = 'CONTRACT_INVOCATION_SUCCESS_DAILY_COUNT'
+          and DATE(bucket_day) >= DATE_SUB(CURRENT_DATE(), INTERVAL 6 MONTH)
+      ),
+      daas as (
+        select
+          project_id,
+          bucket_day,
+          COUNT(distinct from_artifact_name) as active_addresses
+        from txns
+        group by
+          project_id,
+          bucket_day
+      ),
+      total_days as (
+        select DATE_DIFF(max_day, min_day, day) + 1 as days
+        from (
+          select
+            MIN(bucket_day) as min_day,
+            MAX(bucket_day) as max_day
+          from txns
+        )
+      )
+
+      select
+        project_id,
+        'daily_active_addresses_6_months' as metric,
+        SUM(active_addresses) / (select days from total_days) as amount
+      from daas
+      group by
+        project_id
+    ```
+
+  </TabItem>
+  <TabItem value="response" label="Response">
+    ```json
+      [{
+        "project_id": "-A5N7DYgI4bDZZQaF_4SPw_qx6cv1BbfcoxJ7rZxig8\u003d",
+        "impact_metric": "daily_active_addresses_6_months",
+        "amount": "554.5"
+      }, {
+        "project_id": "-KeRKHB_H0HcNkR2_SLUC1vLy46YWoaZSMrjpiW3d5s\u003d",
+        "impact_metric": "daily_active_addresses_6_months",
+        "amount": "224.2"
+      }, {
+        "project_id": "-ceY1smj0ZhYH-JSMeK3opMBmLgc29Oe-m5cOd-KnjY\u003d",
+        "impact_metric": "daily_active_addresses_6_months",
+        "amount": "112.9"
+      }, {
+        "project_id": "-ceY1smj0ZhYH-JSMeK3opMBmLgc29Oe-m5cOd-KnjY\u003d",
+        "impact_metric": "daily_active_addresses_6_months",
+        "amount": null
+      }]
+    ```
+  </TabItem>
+</Tabs>
+
+---
+
+To contribute new metrics, please see our guide [here](../../contribute-models/data-models).

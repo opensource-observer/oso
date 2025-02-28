@@ -39,22 +39,25 @@ const nextConfig = {
               source: "/api/auth",
               destination: "/api/v1/auth",
             },
-            {
-              source: "/docs/:path*",
-              destination: "https://docs.opensource.observer/docs/:path*",
-            },
-            {
-              source: "/blog/:path*",
-              destination: "https://docs.opensource.observer/blog/:path*",
-            },
-            {
-              source: "/assets/:path*",
-              destination: "https://docs.opensource.observer/assets/:path*",
-            },
           ];
         },
         async redirects() {
           return [
+            {
+              source: "/docs/:path*",
+              destination: "https://docs.opensource.observer/docs/:path*",
+              permanent: true,
+            },
+            {
+              source: "/blog/:path*",
+              destination: "https://docs.opensource.observer/blog/:path*",
+              permanent: true,
+            },
+            {
+              source: "/assets/:path*",
+              destination: "https://docs.opensource.observer/assets/:path*",
+              permanent: true,
+            },
             {
               source: "/data-collective",
               destination: "https://www.kariba.network",
@@ -69,6 +72,11 @@ const nextConfig = {
               source: "/gather",
               destination:
                 "https://app.gather.town/invite?token=o8uSbZC4S_CokNYto7sM",
+              permanent: false,
+            },
+            {
+              source: "/status",
+              destination: "https://stats.uptimerobot.com/uFqxl2jxGA",
               permanent: false,
             },
             {

@@ -1,3 +1,9 @@
+{{ 
+  config(
+    materialized='table'
+  )
+}}
+
 {% set network_names = [
     'base',
     'frax',

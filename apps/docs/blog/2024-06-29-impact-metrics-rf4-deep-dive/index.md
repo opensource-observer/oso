@@ -72,7 +72,7 @@ Another foundational building block is a registry we maintain called [OSS Direct
 
 Every project that applied for Retro Funding (and met eligibility criteria) is included in [OSS Directory](https://github.com/opensource-observer/oss-directory).
 
-As described in [our docs](https://docs.opensource.observer/docs/how-oso-works/oss-directory/artifact), OSS Directory has one strict rule: an artifact can only belong to one project at a time. This means that a blockchain address or a repo cannot be included in multiple projects.
+As described in [our docs](../../docs/guides/oss-directory/artifact), OSS Directory has one strict rule: an artifact can only belong to one project at a time. This means that a blockchain address or a repo cannot be included in multiple projects.
 
 ![image](./oss-directory.png)
 
@@ -116,7 +116,7 @@ We're excited to see how this type of model evolves and is extended for future u
 
 ## Developing the impact metrics
 
-The following design principles guide the development and evolution of [impact metrics](https://docs.opensource.observer/docs/how-oso-works/impact-metrics/#principles):
+The following design principles guide the development and evolution of [impact metrics](../../docs/references/impact-metrics/#principles):
 
 - Verifiability: Metrics should be based on public data that can be independently verified. They should not rely on proprietary data sources or private APIs.
 - Reproducibility: Metrics should be easy to reproduce, simulate, and audit to ensure they are achieving the intended results. They should not have a "black box" element that makes them difficult to understand or replicate.

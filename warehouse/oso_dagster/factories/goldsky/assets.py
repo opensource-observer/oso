@@ -36,12 +36,11 @@ from google.api_core.exceptions import ClientError, InternalServerError, NotFoun
 from google.cloud.bigquery import Client as BQClient
 from google.cloud.bigquery import LoadJobConfig, SourceFormat, TableReference
 from google.cloud.bigquery.schema import SchemaField
-from polars.type_aliases import PolarsDataType
-
 from oso_dagster.utils.bq import (
     compare_schemas_and_ignore_safe_changes,
     get_table_schema,
 )
+from polars.type_aliases import PolarsDataType
 
 from ...cbt import CBTResource, TimePartitioning, UpdateStrategy
 from ...utils import AlertManager, add_tags, batch_delete_blobs
@@ -442,7 +441,10 @@ def list_type_convert(name: str, field: PolarsDataType):
     if not inner:
         raise Exception("no inner type was given")
     inner_type: SchemaField = PARQUET_TO_BQ_FIELD_TYPES[inner]("_inner", inner)
-    return SchemaField(name, field_type=inner_type.field_type, mode="REPEATED")
+    field_type = inner_type.field_type
+    assert field_type is not None, f"field_type for {inner} cannot be None"
+
+    return SchemaField(name, field_type=field_type, mode="REPEATED")
 
 
 PARQUET_TO_BQ_FIELD_TYPES: Dict[
@@ -1049,7 +1051,7 @@ def goldsky_asset(
     asset_config = GoldskyConfig(**kwargs)
 
     def materialize_asset(
-        context: OpExecutionContext,
+        context: GenericExecutionContext,
         bigquery: BigQueryResource,
         gcs: GCSResource,
         cbt: CBTResource,
@@ -1115,6 +1117,7 @@ def goldsky_asset(
             tags,
             {
                 "opensource.observer/type": "source",
+                "opensource.observer/source": "unstable",
             },
         ),
         op_tags=op_tags,
@@ -1147,7 +1150,6 @@ def goldsky_asset(
         cbt: CBTResource,
         config: dict,
     ) -> None:
-        print(config)
         gs_asset = GoldskyAsset(gcs, bigquery, cbt, asset_config)
         gs_asset.clean_up(context.log)
 

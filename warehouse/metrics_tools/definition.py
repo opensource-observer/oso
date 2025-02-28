@@ -6,16 +6,8 @@ from enum import Enum
 
 import sqlglot
 from sqlglot import exp
-from sqlglot.optimizer.qualify import qualify
 from sqlmesh.core.macros import MacroEvaluator
 from sqlmesh.utils.date import TimeLike
-
-from .dialect.translate import (
-    CustomFuncHandler,
-    CustomFuncRegistry,
-)
-from .evaluator import FunctionsTransformer
-from .utils import exp_literal_to_py_literal
 
 CURR_DIR = os.path.dirname(__file__)
 QUERIES_DIR = os.path.abspath(os.path.join(CURR_DIR, "../metrics_mesh/oso_metrics"))
@@ -23,16 +15,21 @@ QUERIES_DIR = os.path.abspath(os.path.join(CURR_DIR, "../metrics_mesh/oso_metric
 type ExtraVarBaseType = str | int | float
 type ExtraVarType = ExtraVarBaseType | t.List[ExtraVarBaseType]
 
+RollingCronOptions = t.Literal["@daily", "@weekly", "@monthly", "@yearly"]
+
 
 class RollingConfig(t.TypedDict):
     windows: t.List[int]
     unit: str
-    cron: str
+    cron: RollingCronOptions
 
+    # How many days do we process at once. This is useful to set for very large
+    # datasets but will default to a year if not set.
+    model_batch_size: t.NotRequired[int]
 
-@dataclass
-class RollingWindow:
-    trailing_days: int
+    # The number of required slots for a given model. This is also very useful
+    # for large datasets
+    slots: t.NotRequired[int]
 
 
 class TimeseriesBucket(Enum):
@@ -88,6 +85,9 @@ class PeerMetricDependencyRef(t.TypedDict):
     window: t.NotRequired[t.Optional[int]]
     unit: t.NotRequired[t.Optional[str]]
     time_aggregation: t.NotRequired[t.Optional[str]]
+    cron: t.NotRequired[RollingCronOptions]
+    batch_size: t.NotRequired[int]
+    slots: t.NotRequired[int]
 
 
 class MetricModelRef(t.TypedDict):
@@ -96,22 +96,6 @@ class MetricModelRef(t.TypedDict):
     window: t.NotRequired[t.Optional[int]]
     unit: t.NotRequired[t.Optional[str]]
     time_aggregation: t.NotRequired[t.Optional[str]]
-
-
-def model_meta_matches_peer_dependency(meta: MetricModelRef, dep: MetricModelRef):
-    if meta["name"] != dep["name"]:
-        return False
-    if isinstance(dep["entity_type"], list):
-        if not meta["entity_type"] not in dep["entity_type"]:
-            return False
-    else:
-        if meta["entity_type"] != dep["entity_type"]:
-            if dep["entity_type"] != "*":
-                return False
-    dep_window = dep.get("window")
-    if dep_window:
-        if isinstance(dep_window, list):
-            pass
 
 
 @dataclass(kw_only=True)
@@ -157,6 +141,12 @@ def assert_allowed_items_in_list[T](to_validate: t.List[T], allowed_items: t.Lis
 
 
 @dataclass(kw_only=True)
+class MetricMetadata:
+    description: str
+    display_name: str
+
+
+@dataclass(kw_only=True)
 class MetricQueryDef:
     # The relative path to the query in `oso_metrics`
     ref: str
@@ -174,11 +164,15 @@ class MetricQueryDef:
 
     time_aggregations: t.Optional[t.List[str]] = None
 
+    over_all_time: t.Optional[bool] = False
+
     is_intermediate: bool = False
 
     enabled: bool = True
 
     use_python_model: bool = True
+
+    metadata: t.Optional[MetricMetadata] = None
 
     def raw_sql(self, queries_dir: str):
         return open(os.path.join(queries_dir, self.ref)).read()
@@ -218,15 +212,7 @@ class MetricQueryDef:
     def validate(self):
         if not self.entity_types:
             self.entity_types = DEFAULT_ENTITY_TYPES
-        # Validate the given input
-        if self.time_aggregations and self.rolling:
-            raise Exception(
-                "Invalid metric query definition. Only one of time_aggregations or trailing_windows can be used"
-            )
-        if self.time_aggregations is not None and self.rolling is not None:
-            raise Exception(
-                "Invalid metric query definition. One of time_aggregations or trailing_windows must be set"
-            )
+
         assert_allowed_items_in_list(self.entity_types, VALID_ENTITY_TYPES)
         assert_allowed_items_in_list(
             self.time_aggregations or [], ["daily", "weekly", "monthly", "yearly"]
@@ -248,52 +234,6 @@ class MetricQueryDef:
         if suffix:
             model_name = f"{model_name}_{suffix}"
         return model_name
-
-
-class PeerRefRelativeWindowHandler(CustomFuncHandler):
-    pass
-
-
-class PeerRefHandler(CustomFuncHandler[PeerMetricDependencyRef]):
-    name = "metrics_peer_ref"
-
-    def to_obj(
-        self,
-        name,
-        *,
-        entity_type: t.Optional[exp.Expression] = None,
-        window: t.Optional[exp.Expression] = None,
-        unit: t.Optional[exp.Expression] = None,
-        time_aggregation: t.Optional[exp.Expression] = None,
-    ) -> PeerMetricDependencyRef:
-        entity_type_val = (
-            t.cast(str, exp_literal_to_py_literal(entity_type)) if entity_type else ""
-        )
-        window_val = int(exp_literal_to_py_literal(window)) if window else None
-        unit_val = t.cast(str, exp_literal_to_py_literal(unit)) if unit else None
-        time_aggregation_val = (
-            t.cast(str, exp_literal_to_py_literal(time_aggregation))
-            if time_aggregation
-            else None
-        )
-        return PeerMetricDependencyRef(
-            name=name,
-            entity_type=entity_type_val,
-            window=window_val,
-            unit=unit_val,
-            time_aggregation=time_aggregation_val,
-        )
-
-    def transform(
-        self,
-        evaluator: MacroEvaluator,
-        context: t.Dict[str, t.Any],
-        obj: PeerMetricDependencyRef,
-    ) -> exp.Expression:
-        if not obj.get("entity_type"):
-            obj["entity_type"] = context["entity_type"]
-        peer_table_map = context["peer_table_map"]
-        return sqlglot.to_table(f"metrics.{to_actual_table_name(obj, peer_table_map)}")
 
 
 class MetricQueryContext:
@@ -417,20 +357,35 @@ class MetricQuery:
         for entity in self._source.entity_types or DEFAULT_ENTITY_TYPES:
             if self._source.rolling:
                 for window in self._source.rolling["windows"]:
-                    refs.append(
-                        PeerMetricDependencyRef(
-                            name=name,
-                            entity_type=entity,
-                            window=window,
-                            unit=self._source.rolling.get("unit"),
-                        )
+                    ref = PeerMetricDependencyRef(
+                        name=name,
+                        entity_type=entity,
+                        window=window,
+                        unit=self._source.rolling.get("unit"),
+                        cron=self._source.rolling.get("cron"),
                     )
+                    model_batch_size = self._source.rolling.get("model_batch_size")
+                    slots = self._source.rolling.get("slots")
+                    if model_batch_size:
+                        ref["batch_size"] = model_batch_size
+                    if slots:
+                        ref["slots"] = slots
+                    refs.append(ref)
             for time_aggregation in self._source.time_aggregations or []:
                 refs.append(
                     PeerMetricDependencyRef(
                         name=name,
                         entity_type=entity,
                         time_aggregation=time_aggregation,
+                    )
+                )
+            # if we actually enabled over all time, we'll compute that as well
+            if self._source.over_all_time:
+                refs.append(
+                    PeerMetricDependencyRef(
+                        name=name,
+                        entity_type=entity,
+                        time_aggregation="over_all_time",
                     )
                 )
         return refs
@@ -442,307 +397,6 @@ class MetricQuery:
     @property
     def provided_dependency_refs(self):
         return self.generate_dependency_refs_for_name(self.reference_name)
-
-    @property
-    def metric_type(self):
-        if self._source.time_aggregations is not None:
-            return "time_aggregation"
-        elif self._source.rolling is not None:
-            return "rolling"
-        # This _shouldn't_ happen
-        raise Exception("unknown metric type")
-
-    def generate_query_ref(
-        self,
-        ref: PeerMetricDependencyRef,
-        evaluator: MacroEvaluator,
-        peer_table_map: t.Dict[str, str],
-    ):
-        sources_database = evaluator.locals.get("oso_source") or "default"
-        if ref["entity_type"] == "artifact":
-            return self.generate_artifact_query(
-                evaluator,
-                ref["name"],
-                peer_table_map,
-                window=ref.get("window"),
-                unit=ref.get("unit"),
-                time_aggregation=ref.get("time_aggregation"),
-            )
-        elif ref["entity_type"] == "project":
-            return self.generate_project_query(
-                evaluator,
-                ref["name"],
-                sources_database,
-                peer_table_map,
-                window=ref.get("window"),
-                unit=ref.get("unit"),
-                time_aggregation=ref.get("time_aggregation"),
-            )
-        elif ref["entity_type"] == "collection":
-            return self.generate_collection_query(
-                evaluator,
-                ref["name"],
-                sources_database,
-                peer_table_map,
-                window=ref.get("window"),
-                unit=ref.get("unit"),
-                time_aggregation=ref.get("time_aggregation"),
-            )
-        raise Exception(f"Invalid entity_type {ref["entity_type"]}")
-
-    def generate_metrics_query(
-        self,
-        evaluator: MacroEvaluator,
-        name: str,
-        peer_table_map: t.Dict[str, str],
-        entity_type: str,
-        window: t.Optional[int] = None,
-        unit: t.Optional[str] = None,
-        time_aggregation: t.Optional[str] = None,
-    ):
-        """This takes the actual metrics query and tranforms it for a specific
-        window/aggregation setting."""
-        context = self.expression_context()
-
-        extra_vars: t.Dict[str, ExtraVarType] = {
-            "entity_type": entity_type,
-        }
-        if window:
-            extra_vars["rolling_window"] = window
-        if unit:
-            extra_vars["rolling_unit"] = unit
-        if time_aggregation:
-            extra_vars["time_aggregation"] = time_aggregation
-
-        metrics_query = context.evaluate(
-            name,
-            evaluator,
-            extra_vars,
-        )
-        # Rewrite all of the table peer references. We do this last so that all
-        # macros are resolved when rewriting the anonymous functions
-        peer_handler = PeerRefHandler()
-        registry = CustomFuncRegistry()
-        registry.register(peer_handler)
-        transformer = FunctionsTransformer(
-            registry,
-            evaluator,
-            context={
-                "peer_table_map": peer_table_map,
-                "entity_type": entity_type,
-            },
-        )
-        return transformer.transform(metrics_query)
-
-    def generate_artifact_query(
-        self,
-        evaluator: MacroEvaluator,
-        name: str,
-        peer_table_map: t.Dict[str, str],
-        window: t.Optional[int] = None,
-        unit: t.Optional[str] = None,
-        time_aggregation: t.Optional[str] = None,
-    ):
-        metrics_query = self.generate_metrics_query(
-            evaluator,
-            name,
-            peer_table_map,
-            "artifact",
-            window,
-            unit,
-            time_aggregation,
-        )
-
-        top_level_select = exp.select(
-            "metrics_sample_date as metrics_sample_date",
-            "to_artifact_id as to_artifact_id",
-            "from_artifact_id as from_artifact_id",
-            "event_source as event_source",
-            "metric as metric",
-            "CAST(amount AS Float64) as amount",
-        ).from_("metrics_query")
-
-        top_level_select = top_level_select.with_("metrics_query", as_=metrics_query)
-        return top_level_select
-
-    def artifact_to_upstream_entity_transform(
-        self,
-        entity_type: str,
-        sources_database: str,
-    ) -> t.Callable[[exp.Expression], exp.Expression | None]:
-        def _transform(node: exp.Expression):
-            if not isinstance(node, exp.Select):
-                return node
-            select = node
-
-            # Check if this using the timeseries source tables as a join or the from
-            is_using_timeseries_source = False
-            for table in select.find_all(exp.Table):
-                if table.this.this in ["events_daily_to_artifact"]:
-                    is_using_timeseries_source = True
-            if not is_using_timeseries_source:
-                return node
-
-            for i in range(len(select.expressions)):
-                ex = select.expressions[i]
-                if not isinstance(ex, exp.Alias):
-                    continue
-
-                # If to_artifact_id is being aggregated then it's time to rewrite
-                if isinstance(ex.this, exp.Column) and isinstance(
-                    ex.this.this, exp.Identifier
-                ):
-                    if ex.this.this.this == "to_artifact_id":
-                        updated_select = select.copy()
-                        current_from = t.cast(exp.From, updated_select.args.get("from"))
-                        assert isinstance(current_from.this, exp.Table)
-                        current_table = current_from.this
-                        current_alias = current_table.alias
-
-                        # Add a join to this select
-                        updated_select = updated_select.join(
-                            f"{sources_database}.artifacts_by_project_v1",
-                            on=f"{current_alias}.to_artifact_id = artifacts_by_project_v1.artifact_id",
-                            join_type="inner",
-                        )
-
-                        new_to_entity_id_col = exp.to_column(
-                            "artifacts_by_project_v1.project_id", quoted=True
-                        )
-                        new_to_entity_alias = exp.to_identifier(
-                            "to_project_id", quoted=True
-                        )
-
-                        if entity_type == "collection":
-                            updated_select = updated_select.join(
-                                f"{sources_database}.projects_by_collection_v1",
-                                on="artifacts_by_project_v1.project_id = projects_by_collection_v1.project_id",
-                                join_type="inner",
-                            )
-
-                            new_to_entity_id_col = exp.to_column(
-                                "projects_by_collection_v1.collection_id", quoted=True
-                            )
-                            new_to_entity_alias = exp.to_identifier(
-                                "to_collection_id", quoted=True
-                            )
-
-                        # replace the select and the grouping with the project id in the joined table
-                        to_artifact_id_col_sel = t.cast(
-                            exp.Alias, updated_select.expressions[i]
-                        )
-                        current_to_artifact_id_col = t.cast(
-                            exp.Column, to_artifact_id_col_sel.this
-                        )
-
-                        to_artifact_id_col_sel.replace(
-                            exp.alias_(
-                                new_to_entity_id_col,
-                                alias=new_to_entity_alias,
-                            )
-                        )
-
-                        group = t.cast(exp.Group, updated_select.args.get("group"))
-                        for group_idx in range(len(group.expressions)):
-                            group_col = t.cast(exp.Column, group.expressions[group_idx])
-                            if group_col == current_to_artifact_id_col:
-                                group_col.replace(new_to_entity_id_col)
-
-                        return updated_select
-            # If nothing happens in the for loop then we didn't find the kind of
-            # expected select statement
-            return node
-
-        return _transform
-
-    def transform_aggregating_selects(
-        self,
-        expression: exp.Expression,
-        cb: t.Callable[[exp.Expression], exp.Expression | None],
-    ):
-        return expression.transform(cb)
-
-    def generate_project_query(
-        self,
-        evaluator: MacroEvaluator,
-        name: str,
-        sources_database: str,
-        peer_table_map: t.Dict[str, str],
-        window: t.Optional[int] = None,
-        unit: t.Optional[str] = None,
-        time_aggregation: t.Optional[str] = None,
-    ):
-        metrics_query = self.generate_metrics_query(
-            evaluator,
-            name,
-            peer_table_map,
-            "project",
-            window,
-            unit,
-            time_aggregation,
-        )
-
-        # We use qualify to ensure that references are properly aliased. This
-        # seems to make transforms more reliable/testable/predictable.
-        metrics_query = qualify(metrics_query)
-
-        metrics_query = self.transform_aggregating_selects(
-            metrics_query,
-            self.artifact_to_upstream_entity_transform("project", sources_database),
-        )
-
-        top_level_select = exp.select(
-            "metrics_sample_date as metrics_sample_date",
-            "to_project_id as to_project_id",
-            "from_artifact_id as from_artifact_id",
-            "event_source as event_source",
-            "metric as metric",
-            "CAST(amount AS Float64) as amount",
-        ).from_("metrics_query")
-
-        top_level_select = top_level_select.with_("metrics_query", as_=metrics_query)
-        return top_level_select
-
-    def generate_collection_query(
-        self,
-        evaluator: MacroEvaluator,
-        name: str,
-        sources_database: str,
-        peer_table_map: t.Dict[str, str],
-        window: t.Optional[int] = None,
-        unit: t.Optional[str] = None,
-        time_aggregation: t.Optional[str] = None,
-    ):
-        metrics_query = self.generate_metrics_query(
-            evaluator,
-            name,
-            peer_table_map,
-            "collection",
-            window,
-            unit,
-            time_aggregation,
-        )
-
-        # We use qualify to ensure that references are properly aliased. This
-        # seems to make transforms more reliable/testable/predictable.
-        metrics_query = qualify(metrics_query)
-
-        metrics_query = self.transform_aggregating_selects(
-            metrics_query,
-            self.artifact_to_upstream_entity_transform("collection", sources_database),
-        )
-
-        top_level_select = exp.select(
-            "metrics_sample_date as metrics_sample_date",
-            "to_collection_id as to_collection_id",
-            "from_artifact_id as from_artifact_id",
-            "event_source as event_source",
-            "metric as metric",
-            "CAST(amount AS Float64) as amount",
-        ).from_("metrics_query")
-
-        top_level_select = top_level_select.with_("metrics_query", as_=metrics_query)
-        return top_level_select
 
 
 def find_query_expressions(expressions: t.List[exp.Expression]):
@@ -756,46 +410,6 @@ class DailyTimeseriesRollingWindowOptions(t.TypedDict):
     model_options: t.NotRequired[t.Dict[str, t.Any]]
 
 
-def join_all_of_entity_type(
-    evaluator: MacroEvaluator, *, db: str, tables: t.List[str], columns: t.List[str]
-):
-    # A bit of a hack but we know we have a "metric" column. We want to
-    # transform this metric id to also include the event_source as a prefix to
-    # that metric id in the joined table
-    transformed_columns = []
-    for column in columns:
-        if column == "event_source":
-            continue
-        if column == "metric":
-            transformed_columns.append(
-                exp.alias_(
-                    exp.Concat(
-                        expressions=[
-                            exp.to_column("event_source"),
-                            exp.Literal(this="_", is_string=True),
-                            exp.to_column(column),
-                        ],
-                        safe=False,
-                        coalesce=False,
-                    ),
-                    alias="metric",
-                )
-            )
-        else:
-            transformed_columns.append(column)
-
-    query = exp.select(*transformed_columns).from_(
-        sqlglot.to_table(f"{db}.{tables[0]}")
-    )
-    for table in tables[1:]:
-        query = query.union(
-            exp.select(*transformed_columns).from_(sqlglot.to_table(f"{db}.{table}")),
-            distinct=False,
-        )
-    # Calculate the correct metric_id for all of the entity types
-    return query
-
-
 class TimeseriesMetricsOptions(t.TypedDict):
     model_prefix: str
     catalog: str
@@ -804,39 +418,4 @@ class TimeseriesMetricsOptions(t.TypedDict):
     start: TimeLike
     timeseries_sources: t.NotRequired[t.List[str]]
     queries_dir: t.NotRequired[str]
-
-
-class GeneratedArtifactConfig(t.TypedDict):
-    query_reference_name: str
-    query_def_as_input: MetricQueryInput
-    default_dialect: str
-    peer_table_tuples: t.List[t.Tuple[str, str]]
-    ref: PeerMetricDependencyRef
-    timeseries_sources: t.List[str]
-
-
-def generated_entity(
-    evaluator: MacroEvaluator,
-    query_reference_name: str,
-    query_def_as_input: MetricQueryInput,
-    default_dialect: str,
-    peer_table_tuples: t.List[t.Tuple[str, str]],
-    ref: PeerMetricDependencyRef,
-    timeseries_sources: t.List[str],
-):
-    query_def = MetricQueryDef.from_input(query_def_as_input)
-    query = MetricQuery.load(
-        name=query_reference_name,
-        default_dialect=default_dialect,
-        source=query_def,
-        queries_dir=QUERIES_DIR,
-    )
-    peer_table_map = dict(peer_table_tuples)
-    e = query.generate_query_ref(
-        ref,
-        evaluator,
-        peer_table_map=peer_table_map,
-    )
-    if not e:
-        raise Exception("failed to generate query ref")
-    return e
+    enabled: t.NotRequired[bool]

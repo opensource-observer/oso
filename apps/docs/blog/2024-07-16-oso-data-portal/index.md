@@ -14,17 +14,17 @@ OSO Data Exchange on Google BigQuery.
 Here, we will publish every data set we have as live,
 up-to-date, and free to use datasets.
 In addition to sharing every model in the
-[OSO production data pipeline](https://docs.opensource.observer/docs/integrate/overview/#oso-production-data-pipeline),
+[OSO production data pipeline](../../docs/integrate/datasets#oso-production-data-pipeline),
 we are sharing source data for blocks/transactions/traces across
-[7 chains in the OP Superchain](https://docs.opensource.observer/docs/integrate/overview/#superchain-data)
+[7 chains in the OP Superchain](../../docs/integrate/datasets#optimism-data)
 (including Optimism, Base, Frax, Metal, Mode, PGN, Zora),
-[Gitcoin Data](https://docs.opensource.observer/docs/integrate/overview/#gitcoin-and-passport-data),
-and [OpenRank](https://docs.opensource.observer/docs/integrate/overview/#openrank-data).
+[Gitcoin Data](../../docs/integrate/datasets#gitcoin-and-passport-data),
+and [OpenRank](../../docs/integrate/datasets#openrank-data).
 This builds on the existing BigQuery public data ecosystem that includes
-[GitHub](https://docs.opensource.observer/docs/integrate/overview/#github-data),
-[Ethereum](https://docs.opensource.observer/docs/integrate/overview/#ethereum-data),
-[Farcaster](https://docs.opensource.observer/docs/integrate/overview/#farcaster-data),
-and [Lens](https://docs.opensource.observer/docs/integrate/overview/#lens-data) data.
+[GitHub](../../docs/integrate/datasets#github-data),
+[Ethereum](../../docs/integrate/datasets#ethereum-data),
+[Farcaster](../../docs/integrate/datasets#farcaster-data),
+and [Lens](../../docs/integrate/datasets#lens-data) data.
 To learn more, check out the data portal here:
 
 <p style={{"text-align": "center"}}>
@@ -116,7 +116,7 @@ where passport_address = '0xd8da6bf26964af9d7eed9e03e53415d37aa96045'
 
 When you’ve developed a novel impact metrics or data model,
 we encourage you to
-[contribute back to the OSO data pipeline](https://docs.opensource.observer/docs/contribute/impact-models),
+[contribute back to the OSO data pipeline](../../docs/contribute-models/data-models),
 which is continuously deployed from our
 [open source repository](https://github.com/opensource-observer/oso/).
 

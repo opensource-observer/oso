@@ -1,0 +1,8 @@
+{
+  "label": "Connect OSO to Notebooks",
+  "position": 1,
+  "link": {
+    "type": "doc",
+    "id": "index"
+  }
+}

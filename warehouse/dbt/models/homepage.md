@@ -23,7 +23,7 @@ Note that you can also right-click on models to interactively filter and explore
 
 - [Website](https://www.opensource.observer/)
 - [Documentation](https://docs.opensource.observer/)
-- [Technical architecture](https://docs.opensource.observer/docs/how-oso-works/architecture)
+- [Technical architecture](https://docs.opensource.observer/docs/references/architecture)
 - [GitHub repo](https://github.com/opensource-observer/oso)
 - [Dagster dashboard](https://dagster.opensource.observer/)
 

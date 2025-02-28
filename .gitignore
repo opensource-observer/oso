@@ -32,6 +32,7 @@ data/
 .DS_Store
 *.pem
 *.env
+*.env.*
 .env*.local
 .env*.cloud
 *.log
@@ -61,16 +62,15 @@ dbt_packages/
 
 # Python
 *.pyc
+__pycache__/
+*.egg-info/
 
 supabase/.temp/
 **/supabase/.temp/
 */**/supabase/.temp/
 
 # local dagster home
-.dagster_local_home
-base_playground/
-playground/
-production/
+.dagster_local_home/
 
 # sqlmesh
 .cache/

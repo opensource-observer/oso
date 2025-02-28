@@ -1,17 +1,5 @@
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    Iterable,
-    Iterator,
-    List,
-    Mapping,
-    MutableMapping,
-    Optional,
-    Type,
-    Union,
-    cast,
-)
+import logging
+import typing as t
 from uuid import uuid4
 
 import dlt as dltlib
@@ -29,9 +17,9 @@ from dagster_embedded_elt.dlt import DagsterDltResource
 from dlt.common.destination import Destination
 from dlt.common.libs.pydantic import pydantic_to_table_schema_columns
 from dlt.sources import DltResource
+from oso_dagster.config import DagsterConfig
 from pydantic import BaseModel, Field
 
-from .. import constants
 from ..utils import SecretResolver, resolve_secrets_for_func
 from .common import (
     AssetDeps,
@@ -42,33 +30,34 @@ from .common import (
 )
 from .sql import PrefixedDltTranslator
 
+logger = logging.getLogger(__name__)
+
 
 class DltAssetConfig(Config):
     limit: int = 0
-    with_resources: List[str] = Field(default_factory=lambda: [])
+    with_resources: t.List[str] = Field(default_factory=lambda: [])
 
 
-def pydantic_to_dlt_nullable_columns(b: Type[BaseModel]):
+def pydantic_to_dlt_nullable_columns(b: t.Type[BaseModel]):
     table_schema_columns = pydantic_to_table_schema_columns(b)
     for column in table_schema_columns.values():
         column["nullable"] = True
-    print(table_schema_columns)
     return table_schema_columns
 
 
 def _dlt_factory[
-    R: Union[AssetMaterialization, MaterializeResult],
+    R: t.Union[AssetMaterialization, MaterializeResult],
     C: DltAssetConfig, **P,
-](c: Callable[P, Any], config_type: Type[C] = DltAssetConfig):
+](c: t.Callable[P, t.Any], config_type: t.Type[C] = DltAssetConfig):
     def dlt_factory(
-        config_type: Type[C] = config_type,
+        config_type: t.Type[C] = config_type,
         dataset_name: str = "",
         name: str = "",
-        key_prefix: Optional[AssetKeyPrefixParam] = None,
-        deps: Optional[AssetDeps] = None,
-        ins: Optional[Mapping[str, AssetIn]] = None,
-        tags: Optional[MutableMapping[str, str]] = None,
-        op_tags: Optional[MutableMapping[str, Any]] = None,
+        key_prefix: t.Optional[AssetKeyPrefixParam] = None,
+        deps: t.Optional[AssetDeps] = None,
+        ins: t.Optional[t.Mapping[str, AssetIn]] = None,
+        tags: t.Optional[t.MutableMapping[str, str]] = None,
+        op_tags: t.Optional[t.MutableMapping[str, t.Any]] = None,
         *args: P.args,
         **kwargs: P.kwargs,
     ):
@@ -92,7 +81,7 @@ def _dlt_factory[
         dataset_name = dataset_name or key_prefix_str
 
         def _decorator(
-            f: Callable[..., Iterator[DltResource]]
+            f: t.Callable[..., t.Iterator[DltResource]]
         ) -> EarlyResourcesAssetFactory:
             asset_name = name or f.__name__
 
@@ -102,6 +91,8 @@ def _dlt_factory[
                 dlt_warehouse_destination: Destination,
                 secrets: SecretResolver,
             ):
+
+                # logger.info(f"Creating asset for {key_prefix} with {tags}")
                 resolved_secrets = resolve_secrets_for_func(secrets, f)
                 source = dltlib.source(f)
 
@@ -114,6 +105,8 @@ def _dlt_factory[
                     - set(asset_ins.keys())
                 )
 
+                # logger.info(f"Creating asset for {key_prefix} with {tags}")
+
                 if "context" in extra_resources:
                     extra_resources.discard("context")
 
@@ -125,10 +118,16 @@ def _dlt_factory[
                         f"{key_prefix_str}_{asset_name}"
                     )
 
+                # logger.info(f"Creating asset for {key_prefix} with {tags}")
+                # We need to ensure that both dlt and global_config are
+                # available to the generated asset as they're used by the
+                # generated function.
+                final_extra_resources = extra_resources.union({"dlt", "global_config"})
+
                 @asset(
                     name=asset_name,
                     key_prefix=key_prefix,
-                    required_resource_keys=extra_resources.union({"dlt"}),
+                    required_resource_keys=final_extra_resources,
                     deps=deps,
                     ins=asset_ins,
                     tags=tags,
@@ -139,7 +138,7 @@ def _dlt_factory[
                     context: AssetExecutionContext,
                     config: config_type,
                     **extra_source_args,
-                ) -> Iterable[R]:
+                ) -> t.Iterable[R]:
                     pipeline_name = f"{key_prefix_str}_{name}_{uuid4()}"
 
                     # Hack for now. Staging cannot be used if running locally.
@@ -151,7 +150,16 @@ def _dlt_factory[
                         destination=dlt_warehouse_destination,
                         dataset_name=dataset_name,
                     )
-                    if constants.enable_bigquery:
+
+                    # When using the `required_resource_keys` we need to
+                    # retrieve resources from context.resources
+                    global_config = t.cast(
+                        DagsterConfig, getattr(context.resources, "global_config")
+                    )
+                    assert (
+                        global_config
+                    ), "global_config resource is not loading correctly"
+                    if global_config.enable_bigquery:
                         context.log.debug("dlt pipeline setup to use staging")
                         pipeline = dltlib.pipeline(
                             pipeline_name,
@@ -160,9 +168,9 @@ def _dlt_factory[
                             dataset_name=dataset_name,
                         )
 
-                    dlt = cast(DagsterDltResource, getattr(context.resources, "dlt"))
+                    dlt = t.cast(DagsterDltResource, getattr(context.resources, "dlt"))
 
-                    source_args: Dict[str, Any] = extra_source_args
+                    source_args: t.Dict[str, t.Any] = extra_source_args
                     source_args.update(resolved_secrets)
 
                     if "context" in f.__annotations__:
@@ -171,6 +179,8 @@ def _dlt_factory[
                         source_args["dlt"] = dlt
                     if "config" in f.__annotations__:
                         source_args["config"] = config
+                    if "global_config" in f.__annotations__:
+                        source_args["global_config"] = global_config
 
                     for resource in extra_resources:
                         source_args[resource] = getattr(context.resources, resource)
@@ -186,25 +196,37 @@ def _dlt_factory[
                     if len(config.with_resources) > 0:
                         dlt_source.with_resources(*config.with_resources)
 
-                    dlt_run_options: Dict[str, Any] = {}
-                    if constants.enable_bigquery:
+                    dlt_run_options: t.Dict[str, t.Any] = {}
+                    if global_config.enable_bigquery:
                         context.log.debug("dlt pipeline setup with bigquery and jsonl")
                         dlt_run_options["loader_file_format"] = "jsonl"
+
+                    dlt_prefix_keys = (
+                        [key_prefix]
+                        if isinstance(key_prefix, str)
+                        else (key_prefix or [])
+                    )
+                    dlt_source_name = (
+                        dlt_prefix_keys[-1] if dlt_prefix_keys else key_prefix_str
+                    )
+                    dlt_key_prefix = dlt_prefix_keys[:-1]
 
                     results = dlt.run(
                         context=context,
                         dlt_source=dlt_source,
                         dlt_pipeline=pipeline,
                         dagster_dlt_translator=PrefixedDltTranslator(
-                            source_name=key_prefix_str, tags=dict(tags)
+                            prefix=dlt_key_prefix,
+                            source_name=dlt_source_name,
+                            tags=dict(tags),
                         ),
                         **dlt_run_options,
                     )
                     for result in results:
-                        yield cast(R, result)
+                        yield t.cast(R, result)
 
-                asset_partitions = cast(
-                    Optional[PartitionsDefinition[str]],
+                asset_partitions = t.cast(
+                    t.Optional[PartitionsDefinition[str]],
                     kwargs["partitions_def"] if "partitions_def" in kwargs else None,
                 )
 

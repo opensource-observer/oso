@@ -1,0 +1,234 @@
+---
+kind: ObjectType
+version: v1
+definition:
+  name: PackageOwnersV0
+  fields:
+    - name: packageArtifactId
+      type: String!
+    - name: packageArtifactName
+      type: String!
+    - name: packageArtifactNamespace
+      type: String!
+    - name: packageArtifactSource
+      type: String!
+    - name: packageOwnerArtifactId
+      type: String!
+    - name: packageOwnerArtifactName
+      type: String!
+    - name: packageOwnerArtifactNamespace
+      type: String!
+    - name: packageOwnerProjectId
+      type: String!
+    - name: packageOwnerSource
+      type: String!
+    - name: packageProjectId
+      type: String!
+  graphql:
+    typeName: Oso_PackageOwnersV0
+    inputTypeName: Oso_PackageOwnersV0Input
+  dataConnectorTypeMapping:
+    - dataConnectorName: oso_clickhouse
+      dataConnectorObjectType: package_owners_v0
+      fieldMapping:
+        packageArtifactId:
+          column:
+            name: package_artifact_id
+        packageArtifactName:
+          column:
+            name: package_artifact_name
+        packageArtifactNamespace:
+          column:
+            name: package_artifact_namespace
+        packageArtifactSource:
+          column:
+            name: package_artifact_source
+        packageOwnerArtifactId:
+          column:
+            name: package_owner_artifact_id
+        packageOwnerArtifactName:
+          column:
+            name: package_owner_artifact_name
+        packageOwnerArtifactNamespace:
+          column:
+            name: package_owner_artifact_namespace
+        packageOwnerProjectId:
+          column:
+            name: package_owner_project_id
+        packageOwnerSource:
+          column:
+            name: package_owner_source
+        packageProjectId:
+          column:
+            name: package_project_id
+
+---
+kind: TypePermissions
+version: v1
+definition:
+  typeName: PackageOwnersV0
+  permissions:
+    - role: admin
+      output:
+        allowedFields:
+          - packageArtifactId
+          - packageArtifactName
+          - packageArtifactNamespace
+          - packageArtifactSource
+          - packageOwnerArtifactId
+          - packageOwnerArtifactName
+          - packageOwnerArtifactNamespace
+          - packageOwnerProjectId
+          - packageOwnerSource
+          - packageProjectId
+    - role: anonymous
+      output:
+        allowedFields:
+          - packageArtifactId
+          - packageArtifactName
+          - packageArtifactNamespace
+          - packageArtifactSource
+          - packageOwnerArtifactId
+          - packageOwnerArtifactName
+          - packageOwnerArtifactNamespace
+          - packageOwnerProjectId
+          - packageOwnerSource
+          - packageProjectId
+
+---
+kind: BooleanExpressionType
+version: v1
+definition:
+  name: PackageOwnersV0BoolExp
+  operand:
+    object:
+      type: PackageOwnersV0
+      comparableFields:
+        - fieldName: packageArtifactId
+          booleanExpressionType: StringBoolExp
+        - fieldName: packageArtifactName
+          booleanExpressionType: StringBoolExp
+        - fieldName: packageArtifactNamespace
+          booleanExpressionType: StringBoolExp
+        - fieldName: packageArtifactSource
+          booleanExpressionType: StringBoolExp
+        - fieldName: packageOwnerArtifactId
+          booleanExpressionType: StringBoolExp
+        - fieldName: packageOwnerArtifactName
+          booleanExpressionType: StringBoolExp
+        - fieldName: packageOwnerArtifactNamespace
+          booleanExpressionType: StringBoolExp
+        - fieldName: packageOwnerProjectId
+          booleanExpressionType: StringBoolExp
+        - fieldName: packageOwnerSource
+          booleanExpressionType: StringBoolExp
+        - fieldName: packageProjectId
+          booleanExpressionType: StringBoolExp
+      comparableRelationships: []
+  logicalOperators:
+    enable: true
+  isNull:
+    enable: true
+  graphql:
+    typeName: Oso_PackageOwnersV0BoolExp
+
+---
+kind: AggregateExpression
+version: v1
+definition:
+  name: PackageOwnersV0AggExp
+  operand:
+    object:
+      aggregatedType: PackageOwnersV0
+      aggregatableFields:
+        - fieldName: packageArtifactId
+          aggregateExpression: StringAggExp
+        - fieldName: packageArtifactName
+          aggregateExpression: StringAggExp
+        - fieldName: packageArtifactNamespace
+          aggregateExpression: StringAggExp
+        - fieldName: packageArtifactSource
+          aggregateExpression: StringAggExp
+        - fieldName: packageOwnerArtifactId
+          aggregateExpression: StringAggExp
+        - fieldName: packageOwnerArtifactName
+          aggregateExpression: StringAggExp
+        - fieldName: packageOwnerArtifactNamespace
+          aggregateExpression: StringAggExp
+        - fieldName: packageOwnerProjectId
+          aggregateExpression: StringAggExp
+        - fieldName: packageOwnerSource
+          aggregateExpression: StringAggExp
+        - fieldName: packageProjectId
+          aggregateExpression: StringAggExp
+  count:
+    enable: true
+  graphql:
+    selectTypeName: Oso_PackageOwnersV0AggExp
+
+---
+kind: OrderByExpression
+version: v1
+definition:
+  name: PackageOwnersV0OrderByExp
+  operand:
+    object:
+      orderedType: PackageOwnersV0
+      orderableFields:
+        - fieldName: packageArtifactId
+          orderByExpression: StringOrderByExp
+        - fieldName: packageArtifactName
+          orderByExpression: StringOrderByExp
+        - fieldName: packageArtifactNamespace
+          orderByExpression: StringOrderByExp
+        - fieldName: packageArtifactSource
+          orderByExpression: StringOrderByExp
+        - fieldName: packageOwnerArtifactId
+          orderByExpression: StringOrderByExp
+        - fieldName: packageOwnerArtifactName
+          orderByExpression: StringOrderByExp
+        - fieldName: packageOwnerArtifactNamespace
+          orderByExpression: StringOrderByExp
+        - fieldName: packageOwnerProjectId
+          orderByExpression: StringOrderByExp
+        - fieldName: packageOwnerSource
+          orderByExpression: StringOrderByExp
+        - fieldName: packageProjectId
+          orderByExpression: StringOrderByExp
+      orderableRelationships: []
+  graphql:
+    expressionTypeName: Oso_PackageOwnersV0OrderByExp
+
+---
+kind: Model
+version: v2
+definition:
+  name: PackageOwnersV0
+  objectType: PackageOwnersV0
+  source:
+    dataConnectorName: oso_clickhouse
+    collection: package_owners_v0
+  filterExpressionType: PackageOwnersV0BoolExp
+  aggregateExpression: PackageOwnersV0AggExp
+  orderByExpression: PackageOwnersV0OrderByExp
+  graphql:
+    selectMany:
+      queryRootField: oso_packageOwnersV0
+      subscription:
+        rootField: oso_packageOwnersV0
+    selectUniques: []
+    filterInputTypeName: Oso_PackageOwnersV0FilterInput
+
+---
+kind: ModelPermissions
+version: v1
+definition:
+  modelName: PackageOwnersV0
+  permissions:
+    - role: admin
+      select:
+        filter: null
+        allowSubscriptions: true
+    - role: anonymous
+      select:
+        filter: null

@@ -1,6 +1,26 @@
+{{
+  config(
+    materialized='table',
+    partition_by={
+      "field": "time",
+      "data_type": "timestamp",
+      "granularity": "day",
+    },
+    meta={
+      'sync_to_db': False
+    }
+  )
+}}
+
 {% set event_source_name = '"DEPS_DEV"' %}
 
-with snapshots as (
+with artifacts as (
+  select artifact_name
+  from {{ ref('int_all_artifacts') }}
+  where artifact_source = "NPM"
+),
+
+snapshots as (
   select
     `SnapshotAt` as `time`,
     `System` as from_artifact_type,
@@ -14,18 +34,20 @@ with snapshots as (
       order by `SnapshotAt`
     ) as previous_to_artifact_name
   from {{ ref('stg_deps_dev__dependencies') }}
-  where `MinimumDepth` = 1
+  where
+    `MinimumDepth` = 1
+    and `Dependency`.`Name` in (select artifact_name from artifacts)
 ),
 
 intermediate as (
   select
     `time`,
     case
-      when previous_to_artifact_name is null then 'ADD_DEPENDENCY'
+      when previous_to_artifact_name is null then "ADD_DEPENDENCY"
       when
         to_artifact_name is not null and to_artifact_name <> previous_to_artifact_name
-        then 'REMOVE_DEPENDENCY'
-      else 'NO_CHANGE'
+        then "REMOVE_DEPENDENCY"
+      else "NO_CHANGE"
     end as event_type,
     {{ event_source_name }} as event_source,
     {{ parse_name(
@@ -81,7 +103,7 @@ artifact_ids as (
     }} as from_artifact_source_id,
     amount
   from intermediate
-  where event_type <> 'NO_CHANGE'
+  where event_type <> "NO_CHANGE"
 ),
 
 changes as (

@@ -1,0 +1,58 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: base-nessie
+  labels:
+    toolkit.fluxcd.io/tenant: apps
+    ops.opensource.observer/environment: base
+    kube-secrets-init.doit-intl.com/enable-mutation: "true"
+    opensource.observer/cert-inject: "enabled"
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: nessie
+  namespace: base-nessie
+spec:
+  interval: 5m
+  url: https://charts.projectnessie.org
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: nessie
+  namespace: base-nessie
+spec:
+  chart:
+    spec:
+      chart: nessie
+      version: "0.102.0"
+      sourceRef:
+        kind: HelmRepository
+        name: nessie
+  interval: 50m
+  install:
+    remediation:
+      retries: 3
+  values:
+    # Configure to trust the local self signed certificate bundle
+    extraEnv:
+      - name: JAVA_TOOL_OPTIONS
+        value: "-Djavax.net.ssl.trustStore=/etc/ssl/k8s-certs/ca-certificates.p12"
+
+    extraVolumeMounts:
+      - name: cluster-self-signed-bundle
+        mountPath: /etc/ssl/k8s-certs
+    
+    extraVolumes:
+      - name: cluster-self-signed-bundle
+        configMap:
+          name: cluster-self-signed-bundle
+          defaultMode: 0644
+          optional: false
+          items:
+            - key: ca-certificates.crt
+              path: ca-certificates.crt
+            - key: ca-certificates.p12
+              path: ca-certificates.p12
+  

@@ -1,36 +1,44 @@
-
-from dagster import AssetKey, AssetExecutionContext
+from dagster import AssetExecutionContext
 from dagster_sqlmesh import (
-    SQLMeshDagsterTranslator,
-    sqlmesh_assets,
     SQLMeshContextConfig,
+    SQLMeshDagsterTranslator,
     SQLMeshResource,
+    sqlmesh_assets,
 )
-from sqlmesh import Context
-from sqlmesh.core.model import Model
+from oso_dagster.resources.mcs import MCSResource
+from oso_dagster.resources.trino import TrinoResource
+from oso_dagster.utils.asynctools import multiple_async_contexts
+
 from ..factories import early_resources_asset_factory
 
 
-class PrefixedSQLMeshTranslator(SQLMeshDagsterTranslator):
-    def __init__(self, prefix: str):
-        self._prefix = prefix
-
-    def get_asset_key_fqn(self, context: Context, fqn: str) -> AssetKey:
-        key = super().get_asset_key_fqn(context, fqn)
-        return key.with_prefix("clickhouse")
-
-    def get_asset_key_from_model(self, context: Context, model: Model) -> AssetKey:
-        key = super().get_asset_key_from_model(context, model)
-        return key.with_prefix(self._prefix)
-
-
 @early_resources_asset_factory()
-def sqlmesh_factory(sqlmesh_config: SQLMeshContextConfig):
+def sqlmesh_factory(
+    sqlmesh_infra_config: dict,
+    sqlmesh_config: SQLMeshContextConfig,
+    sqlmesh_translator: SQLMeshDagsterTranslator,
+):
+    environment = sqlmesh_infra_config["environment"]
+
     @sqlmesh_assets(
         config=sqlmesh_config,
-        dagster_sqlmesh_translator=PrefixedSQLMeshTranslator("metrics"),
+        environment=environment,
+        dagster_sqlmesh_translator=sqlmesh_translator,
     )
-    def sqlmesh_project(context: AssetExecutionContext, sqlmesh: SQLMeshResource):
-        yield from sqlmesh.run(context, environment="prod")
+    async def sqlmesh_project(
+        context: AssetExecutionContext,
+        sqlmesh: SQLMeshResource,
+        trino: TrinoResource,
+        mcs: MCSResource,
+    ):
+        # Ensure that both trino and the mcs are available
+        async with multiple_async_contexts(
+            trino=trino.ensure_available(log_override=context.log),
+            mcs=mcs.ensure_available(log_override=context.log),
+        ):
+            for result in sqlmesh.run(
+                context, environment=environment, plan_options={"skip_tests": True}
+            ):
+                yield result
 
     return sqlmesh_project

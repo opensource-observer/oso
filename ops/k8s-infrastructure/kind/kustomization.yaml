@@ -1,0 +1,10 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- ../common/cert-manager.yaml
+- ./local-registry.yaml
+patches:
+  - path: ./cert-manager-custom-helm-values.yaml
+    target:
+      kind: HelmRelease
+      name: trust-manager

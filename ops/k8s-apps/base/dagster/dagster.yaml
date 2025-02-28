@@ -25,15 +25,19 @@ spec:
     remediation:
       retries: 3
   values:
-    # For now let's ignore debug logs unless things become a problem. We need to
-    # configure stdout logging and have the dagster logging handler ignore debug
-    # log
 
     global:
       serviceAccountName: base-dagster
     dagster:
+      # For now let's ignore debug logs unless things become a problem. We need to
+      # configure stdout logging and have the dagster logging handler ignore debug
+      # log
       pythonLogs:
         pythonLogLevel: "INFO"
+        # Include internal python libraries in the dagster logs.
+        managedPythonLoggers:
+          - metrics_tools
+          - oso_dagster
       nameOverride: "dagster"
       ingress:
         enabled: true
@@ -46,56 +50,19 @@ spec:
         config:
           k8sRunLauncher:
             envConfigMaps:
-              - name: dagster-oso-extra-env
-            runK8sConfig:
-              podSpecConfig:
-                tolerations:
-                  - key: pool_type
-                    effect: NoSchedule
-                    operator: Equal
-                    value: standard
-                nodeSelector:
-                  pool_type: standard
-              containerConfig:
-                resources:
-                  limits:
-                    cpu: 500m
-                    memory: 2048Mi
-                  requests:
-                    cpu: 500m
-                    memory: 1024Mi
+              - name: dagster-oso-extra-env 
       dagsterWebserver:
         enableReadOnly: true
-        env:
-          - name: DAGSTER_DBT_GENERATE_AND_AUTH_GCP
-            value: "1"
         envConfigMaps:
           - name: dagster-oso-extra-env
-        resources:
-          limits:
-            cpu: 500m
-            memory: 768Mi
-          requests:
-            cpu: 250m
-            memory: 512Mi
       dagsterDaemon:
-        env:
-          - name: DAGSTER_DBT_GENERATE_AND_AUTH_GCP
-            value: "1"
         envConfigMaps:
           - name: dagster-oso-extra-env
-        resources:
-          limits:
-            cpu: 500m
-            memory: 512Mi
-          requests:
-            cpu: 400m
-            memory: 256Mi
         runCoordinator:
           type: QueuedRunCoordinator
           config:
             queuedRunCoordinator:
-              maxConcurrentRuns: 30
+              maxConcurrentRuns: 15
               tagConcurrencyLimits:
                 - key: "dagster/concurrency_key"
                   value:
@@ -105,7 +72,7 @@ spec:
         deployments:
           - name: "oso-dagster"
             image:
-              repository: "ghcr.io/opensource-observer/dagster-dask"
+              repository: "ghcr.io/opensource-observer/oso"
               tag: latest
               pullPolicy: Always
             envConfigMaps:

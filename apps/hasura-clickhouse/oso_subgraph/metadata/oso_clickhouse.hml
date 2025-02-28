@@ -1,0 +1,1572 @@
+---
+kind: DataConnectorLink
+version: v1
+definition:
+  name: oso_clickhouse
+  url:
+    readWriteUrls:
+      read:
+        valueFromEnv: OSO_SUBGRAPH_OSO_CLICKHOUSE_READ_URL
+      write:
+        valueFromEnv: OSO_SUBGRAPH_OSO_CLICKHOUSE_WRITE_URL
+  headers:
+    Authorization:
+      valueFromEnv: OSO_SUBGRAPH_OSO_CLICKHOUSE_AUTHORIZATION_HEADER
+  schema:
+    version: v0.1
+    schema:
+      scalar_types:
+        Bool:
+          representation:
+            type: boolean
+          aggregate_functions: {}
+          comparison_operators:
+            _eq:
+              type: equal
+            _in:
+              type: in
+            _neq:
+              type: custom
+              argument_type:
+                type: named
+                name: Bool
+            _nin:
+              type: custom
+              argument_type:
+                type: array
+                element_type:
+                  type: named
+                  name: Bool
+        Date:
+          representation:
+            type: string
+          aggregate_functions:
+            max:
+              result_type:
+                type: named
+                name: Date
+            min:
+              result_type:
+                type: named
+                name: Date
+          comparison_operators:
+            _eq:
+              type: equal
+            _gt:
+              type: custom
+              argument_type:
+                type: named
+                name: Date
+            _gte:
+              type: custom
+              argument_type:
+                type: named
+                name: Date
+            _in:
+              type: in
+            _lt:
+              type: custom
+              argument_type:
+                type: named
+                name: Date
+            _lte:
+              type: custom
+              argument_type:
+                type: named
+                name: Date
+            _neq:
+              type: custom
+              argument_type:
+                type: named
+                name: Date
+            _nin:
+              type: custom
+              argument_type:
+                type: array
+                element_type:
+                  type: named
+                  name: Date
+        DateTime:
+          representation:
+            type: string
+          aggregate_functions:
+            max:
+              result_type:
+                type: named
+                name: DateTime
+            min:
+              result_type:
+                type: named
+                name: DateTime
+          comparison_operators:
+            _eq:
+              type: equal
+            _gt:
+              type: custom
+              argument_type:
+                type: named
+                name: DateTime
+            _gte:
+              type: custom
+              argument_type:
+                type: named
+                name: DateTime
+            _in:
+              type: in
+            _lt:
+              type: custom
+              argument_type:
+                type: named
+                name: DateTime
+            _lte:
+              type: custom
+              argument_type:
+                type: named
+                name: DateTime
+            _neq:
+              type: custom
+              argument_type:
+                type: named
+                name: DateTime
+            _nin:
+              type: custom
+              argument_type:
+                type: array
+                element_type:
+                  type: named
+                  name: DateTime
+        Float32:
+          representation:
+            type: float32
+          aggregate_functions:
+            avg:
+              result_type:
+                type: named
+                name: Float64
+            max:
+              result_type:
+                type: named
+                name: Float64
+            min:
+              result_type:
+                type: named
+                name: Float32
+            stddev_pop:
+              result_type:
+                type: named
+                name: Float32
+            stddev_samp:
+              result_type:
+                type: named
+                name: Float32
+            sum:
+              result_type:
+                type: named
+                name: Float32
+            var_pop:
+              result_type:
+                type: named
+                name: Float32
+            var_samp:
+              result_type:
+                type: named
+                name: Float32
+          comparison_operators:
+            _eq:
+              type: equal
+            _gt:
+              type: custom
+              argument_type:
+                type: named
+                name: Float32
+            _gte:
+              type: custom
+              argument_type:
+                type: named
+                name: Float32
+            _in:
+              type: in
+            _lt:
+              type: custom
+              argument_type:
+                type: named
+                name: Float32
+            _lte:
+              type: custom
+              argument_type:
+                type: named
+                name: Float32
+            _neq:
+              type: custom
+              argument_type:
+                type: named
+                name: Float32
+            _nin:
+              type: custom
+              argument_type:
+                type: array
+                element_type:
+                  type: named
+                  name: Float32
+        Float64:
+          representation:
+            type: float64
+          aggregate_functions:
+            avg:
+              result_type:
+                type: named
+                name: Float64
+            max:
+              result_type:
+                type: named
+                name: Float64
+            min:
+              result_type:
+                type: named
+                name: Float64
+            stddev_pop:
+              result_type:
+                type: named
+                name: Float64
+            stddev_samp:
+              result_type:
+                type: named
+                name: Float64
+            sum:
+              result_type:
+                type: named
+                name: Float64
+            var_pop:
+              result_type:
+                type: named
+                name: Float64
+            var_samp:
+              result_type:
+                type: named
+                name: Float64
+          comparison_operators:
+            _eq:
+              type: equal
+            _gt:
+              type: custom
+              argument_type:
+                type: named
+                name: Float64
+            _gte:
+              type: custom
+              argument_type:
+                type: named
+                name: Float64
+            _in:
+              type: in
+            _lt:
+              type: custom
+              argument_type:
+                type: named
+                name: Float64
+            _lte:
+              type: custom
+              argument_type:
+                type: named
+                name: Float64
+            _neq:
+              type: custom
+              argument_type:
+                type: named
+                name: Float64
+            _nin:
+              type: custom
+              argument_type:
+                type: array
+                element_type:
+                  type: named
+                  name: Float64
+        Int64:
+          representation:
+            type: int64
+          aggregate_functions:
+            avg:
+              result_type:
+                type: named
+                name: Float64
+            max:
+              result_type:
+                type: named
+                name: Int64
+            min:
+              result_type:
+                type: named
+                name: Int64
+            stddev_pop:
+              result_type:
+                type: named
+                name: Float64
+            stddev_samp:
+              result_type:
+                type: named
+                name: Float64
+            sum:
+              result_type:
+                type: named
+                name: Int64
+            var_pop:
+              result_type:
+                type: named
+                name: Float64
+            var_samp:
+              result_type:
+                type: named
+                name: Float64
+          comparison_operators:
+            _eq:
+              type: equal
+            _gt:
+              type: custom
+              argument_type:
+                type: named
+                name: Int64
+            _gte:
+              type: custom
+              argument_type:
+                type: named
+                name: Int64
+            _in:
+              type: in
+            _lt:
+              type: custom
+              argument_type:
+                type: named
+                name: Int64
+            _lte:
+              type: custom
+              argument_type:
+                type: named
+                name: Int64
+            _neq:
+              type: custom
+              argument_type:
+                type: named
+                name: Int64
+            _nin:
+              type: custom
+              argument_type:
+                type: array
+                element_type:
+                  type: named
+                  name: Int64
+        String:
+          representation:
+            type: string
+          aggregate_functions: {}
+          comparison_operators:
+            _eq:
+              type: equal
+            _gt:
+              type: custom
+              argument_type:
+                type: named
+                name: String
+            _gte:
+              type: custom
+              argument_type:
+                type: named
+                name: String
+            _ilike:
+              type: custom
+              argument_type:
+                type: named
+                name: String
+            _in:
+              type: in
+            _like:
+              type: custom
+              argument_type:
+                type: named
+                name: String
+            _lt:
+              type: custom
+              argument_type:
+                type: named
+                name: String
+            _lte:
+              type: custom
+              argument_type:
+                type: named
+                name: String
+            _match:
+              type: custom
+              argument_type:
+                type: named
+                name: String
+            _neq:
+              type: custom
+              argument_type:
+                type: named
+                name: String
+            _nilike:
+              type: custom
+              argument_type:
+                type: named
+                name: String
+            _nin:
+              type: custom
+              argument_type:
+                type: array
+                element_type:
+                  type: named
+                  name: String
+            _nlike:
+              type: custom
+              argument_type:
+                type: named
+                name: String
+      object_types:
+        artifacts_by_collection_v1:
+          description: ""
+          fields:
+            artifact_id:
+              type:
+                type: named
+                name: String
+            artifact_name:
+              type:
+                type: named
+                name: String
+            artifact_namespace:
+              type:
+                type: named
+                name: String
+            artifact_source:
+              type:
+                type: named
+                name: String
+            artifact_source_id:
+              type:
+                type: named
+                name: String
+            collection_id:
+              type:
+                type: named
+                name: String
+            collection_name:
+              type:
+                type: named
+                name: String
+            collection_namespace:
+              type:
+                type: named
+                name: String
+            collection_source:
+              type:
+                type: named
+                name: String
+        artifacts_by_project_v1:
+          description: ""
+          fields:
+            artifact_id:
+              type:
+                type: named
+                name: String
+            artifact_name:
+              type:
+                type: named
+                name: String
+            artifact_namespace:
+              type:
+                type: named
+                name: String
+            artifact_source:
+              type:
+                type: named
+                name: String
+            artifact_source_id:
+              type:
+                type: named
+                name: String
+            project_id:
+              type:
+                type: named
+                name: String
+            project_name:
+              type:
+                type: named
+                name: String
+            project_namespace:
+              type:
+                type: named
+                name: String
+            project_source:
+              type:
+                type: named
+                name: String
+        artifacts_by_user_v1:
+          description: ""
+          fields:
+            artifact_id:
+              type:
+                type: named
+                name: String
+            artifact_name:
+              type:
+                type: named
+                name: String
+            artifact_namespace:
+              type:
+                type: named
+                name: String
+            artifact_source:
+              type:
+                type: named
+                name: String
+            artifact_source_id:
+              type:
+                type: named
+                name: String
+            user_id:
+              type:
+                type: named
+                name: String
+            user_name:
+              type:
+                type: named
+                name: String
+            user_namespace:
+              type:
+                type: named
+                name: String
+            user_source:
+              type:
+                type: named
+                name: String
+            user_source_id:
+              type:
+                type: named
+                name: String
+            user_type:
+              type:
+                type: named
+                name: String
+        artifacts_v1:
+          description: ""
+          fields:
+            artifact_id:
+              type:
+                type: named
+                name: String
+            artifact_name:
+              type:
+                type: named
+                name: String
+            artifact_namespace:
+              type:
+                type: named
+                name: String
+            artifact_source:
+              type:
+                type: named
+                name: String
+            artifact_source_id:
+              type:
+                type: named
+                name: String
+        code_metrics_by_artifact_v0:
+          description: ""
+          fields:
+            active_developer_count_6_months:
+              type:
+                type: named
+                name: Float32
+            artifact_id:
+              type:
+                type: named
+                name: String
+            artifact_name:
+              type:
+                type: named
+                name: String
+            artifact_namespace:
+              type:
+                type: named
+                name: String
+            closed_issue_count_6_months:
+              type:
+                type: named
+                name: Float32
+            commit_count_6_months:
+              type:
+                type: named
+                name: Float32
+            contributor_count:
+              type:
+                type: named
+                name: Float32
+            contributor_count_6_months:
+              type:
+                type: named
+                name: Float32
+            event_source:
+              type:
+                type: named
+                name: String
+            first_commit_date:
+              type:
+                type: named
+                name: DateTime
+            fork_count:
+              type:
+                type: named
+                name: Int64
+            fulltime_developer_average_6_months:
+              type:
+                type: named
+                name: Float32
+            last_commit_date:
+              type:
+                type: named
+                name: DateTime
+            merged_pull_request_count_6_months:
+              type:
+                type: named
+                name: Float32
+            new_contributor_count_6_months:
+              type:
+                type: named
+                name: Float32
+            opened_issue_count_6_months:
+              type:
+                type: named
+                name: Float32
+            opened_pull_request_count_6_months:
+              type:
+                type: named
+                name: Float32
+            star_count:
+              type:
+                type: named
+                name: Int64
+        code_metrics_by_project_v1:
+          description: ""
+          fields:
+            active_developer_count_6_months:
+              type:
+                type: named
+                name: Float32
+            closed_issue_count_6_months:
+              type:
+                type: named
+                name: Float32
+            comment_count_6_months:
+              type:
+                type: named
+                name: Float32
+            commit_count_6_months:
+              type:
+                type: named
+                name: Float32
+            contributor_count:
+              type:
+                type: named
+                name: Float32
+            contributor_count_6_months:
+              type:
+                type: named
+                name: Float32
+            developer_count:
+              type:
+                type: named
+                name: Float32
+            display_name:
+              type:
+                type: named
+                name: String
+            event_source:
+              type:
+                type: named
+                name: String
+            first_commit_date:
+              type:
+                type: named
+                name: DateTime
+            first_created_at_date:
+              type:
+                type: named
+                name: DateTime
+            fork_count:
+              type:
+                type: named
+                name: Int64
+            fulltime_developer_average_6_months:
+              type:
+                type: named
+                name: Float32
+            last_commit_date:
+              type:
+                type: named
+                name: DateTime
+            last_updated_at_date:
+              type:
+                type: named
+                name: DateTime
+            merged_pull_request_count_6_months:
+              type:
+                type: named
+                name: Float32
+            new_contributor_count_6_months:
+              type:
+                type: named
+                name: Float32
+            opened_issue_count_6_months:
+              type:
+                type: named
+                name: Float32
+            opened_pull_request_count_6_months:
+              type:
+                type: named
+                name: Float32
+            project_id:
+              type:
+                type: named
+                name: String
+            project_name:
+              type:
+                type: named
+                name: String
+            project_namespace:
+              type:
+                type: named
+                name: String
+            project_source:
+              type:
+                type: named
+                name: String
+            release_count_6_months:
+              type:
+                type: named
+                name: Float32
+            repository_count:
+              type:
+                type: named
+                name: Int64
+            star_count:
+              type:
+                type: named
+                name: Int64
+            time_to_first_response_days_average_6_months:
+              type:
+                type: named
+                name: Float32
+            time_to_merge_days_average_6_months:
+              type:
+                type: named
+                name: Float32
+        collections_v1:
+          description: ""
+          fields:
+            collection_id:
+              type:
+                type: named
+                name: String
+            collection_name:
+              type:
+                type: named
+                name: String
+            collection_namespace:
+              type:
+                type: named
+                name: String
+            collection_source:
+              type:
+                type: named
+                name: String
+            description:
+              type:
+                type: named
+                name: String
+            display_name:
+              type:
+                type: named
+                name: String
+        contracts_v0:
+          description: ""
+          fields:
+            contract_address:
+              type:
+                type: named
+                name: String
+            contract_namespace:
+              type:
+                type: named
+                name: String
+            deployment_date:
+              type:
+                type: named
+                name: Date
+            factory_address:
+              type:
+                type: named
+                name: String
+            originating_address:
+              type:
+                type: named
+                name: String
+            root_deployer_address:
+              type:
+                type: named
+                name: String
+            sort_weight:
+              type:
+                type: named
+                name: Int64
+        event_types_v1:
+          description: ""
+          fields:
+            event_type:
+              type:
+                type: named
+                name: String
+        funding_metrics_by_project_v1:
+          description: ""
+          fields:
+            display_name:
+              type:
+                type: named
+                name: String
+            event_source:
+              type:
+                type: named
+                name: String
+            project_id:
+              type:
+                type: named
+                name: String
+            project_name:
+              type:
+                type: named
+                name: String
+            project_namespace:
+              type:
+                type: named
+                name: String
+            project_source:
+              type:
+                type: named
+                name: String
+            total_funders_count:
+              type:
+                type: named
+                name: Int64
+            total_funding_received_usd:
+              type:
+                type: named
+                name: Float32
+            total_funding_received_usd_6_months:
+              type:
+                type: named
+                name: Float32
+        key_metrics_by_artifact_v0:
+          description: ""
+          fields:
+            amount:
+              type:
+                type: named
+                name: Float64
+            artifact_id:
+              type:
+                type: named
+                name: String
+            metric_id:
+              type:
+                type: named
+                name: String
+            sample_date:
+              type:
+                type: named
+                name: Date
+            unit:
+              type:
+                type: named
+                name: String
+        key_metrics_by_collection_v0:
+          description: ""
+          fields:
+            amount:
+              type:
+                type: named
+                name: Float64
+            collection_id:
+              type:
+                type: named
+                name: String
+            metric_id:
+              type:
+                type: named
+                name: String
+            sample_date:
+              type:
+                type: named
+                name: Date
+            unit:
+              type:
+                type: named
+                name: String
+        key_metrics_by_project_v0:
+          description: ""
+          fields:
+            amount:
+              type:
+                type: named
+                name: Float64
+            metric_id:
+              type:
+                type: named
+                name: String
+            project_id:
+              type:
+                type: named
+                name: String
+            sample_date:
+              type:
+                type: named
+                name: Date
+            unit:
+              type:
+                type: named
+                name: String
+        metrics_v0:
+          description: ""
+          fields:
+            aggregation_function:
+              type:
+                type: named
+                name: String
+            definition_ref:
+              type:
+                type: named
+                name: String
+            description:
+              type:
+                type: named
+                name: String
+            display_name:
+              type:
+                type: named
+                name: String
+            metric_id:
+              type:
+                type: named
+                name: String
+            metric_name:
+              type:
+                type: named
+                name: String
+            metric_namespace:
+              type:
+                type: named
+                name: String
+            metric_source:
+              type:
+                type: named
+                name: String
+            raw_definition:
+              type:
+                type: named
+                name: String
+        onchain_metrics_by_project_v1:
+          description: ""
+          fields:
+            active_contract_count_90_days:
+              type:
+                type: named
+                name: Float32
+            address_count:
+              type:
+                type: named
+                name: Float32
+            address_count_90_days:
+              type:
+                type: named
+                name: Float32
+            days_since_first_transaction:
+              type:
+                type: named
+                name: Float32
+            display_name:
+              type:
+                type: named
+                name: String
+            event_source:
+              type:
+                type: named
+                name: String
+            gas_fees_sum:
+              type:
+                type: named
+                name: Float32
+            gas_fees_sum_6_months:
+              type:
+                type: named
+                name: Float32
+            high_activity_address_count_90_days:
+              type:
+                type: named
+                name: Float32
+            low_activity_address_count_90_days:
+              type:
+                type: named
+                name: Float32
+            medium_activity_address_count_90_days:
+              type:
+                type: named
+                name: Float32
+            multi_project_address_count_90_days:
+              type:
+                type: named
+                name: Float32
+            new_address_count_90_days:
+              type:
+                type: named
+                name: Float32
+            project_id:
+              type:
+                type: named
+                name: String
+            project_name:
+              type:
+                type: named
+                name: String
+            project_namespace:
+              type:
+                type: named
+                name: String
+            project_source:
+              type:
+                type: named
+                name: String
+            returning_address_count_90_days:
+              type:
+                type: named
+                name: Float32
+            transaction_count:
+              type:
+                type: named
+                name: Float32
+            transaction_count_6_months:
+              type:
+                type: named
+                name: Float32
+        package_owners_v0:
+          description: ""
+          fields:
+            package_artifact_id:
+              type:
+                type: named
+                name: String
+            package_artifact_name:
+              type:
+                type: named
+                name: String
+            package_artifact_namespace:
+              type:
+                type: named
+                name: String
+            package_artifact_source:
+              type:
+                type: named
+                name: String
+            package_owner_artifact_id:
+              type:
+                type: named
+                name: String
+            package_owner_artifact_name:
+              type:
+                type: named
+                name: String
+            package_owner_artifact_namespace:
+              type:
+                type: named
+                name: String
+            package_owner_project_id:
+              type:
+                type: named
+                name: String
+            package_owner_source:
+              type:
+                type: named
+                name: String
+            package_project_id:
+              type:
+                type: named
+                name: String
+        projects_by_collection_v1:
+          description: ""
+          fields:
+            collection_id:
+              type:
+                type: named
+                name: String
+            collection_name:
+              type:
+                type: named
+                name: String
+            collection_namespace:
+              type:
+                type: named
+                name: String
+            collection_source:
+              type:
+                type: named
+                name: String
+            project_id:
+              type:
+                type: named
+                name: String
+            project_name:
+              type:
+                type: named
+                name: String
+            project_namespace:
+              type:
+                type: named
+                name: String
+            project_source:
+              type:
+                type: named
+                name: String
+        projects_v1:
+          description: ""
+          fields:
+            description:
+              type:
+                type: named
+                name: String
+            display_name:
+              type:
+                type: named
+                name: String
+            project_id:
+              type:
+                type: named
+                name: String
+            project_name:
+              type:
+                type: named
+                name: String
+            project_namespace:
+              type:
+                type: named
+                name: String
+            project_source:
+              type:
+                type: named
+                name: String
+        repositories_v0:
+          description: ""
+          fields:
+            artifact_id:
+              type:
+                type: named
+                name: String
+            artifact_name:
+              type:
+                type: named
+                name: String
+            artifact_namespace:
+              type:
+                type: named
+                name: String
+            artifact_source:
+              type:
+                type: named
+                name: String
+            artifact_source_id:
+              type:
+                type: named
+                name: String
+            artifact_url:
+              type:
+                type: named
+                name: String
+            branch:
+              type:
+                type: named
+                name: String
+            created_at:
+              type:
+                type: named
+                name: DateTime
+            fork_count:
+              type:
+                type: named
+                name: Int64
+            is_fork:
+              type:
+                type: named
+                name: Bool
+            language:
+              type:
+                type: named
+                name: String
+            license_name:
+              type:
+                type: named
+                name: String
+            license_spdx_id:
+              type:
+                type: named
+                name: String
+            project_id:
+              type:
+                type: named
+                name: String
+            star_count:
+              type:
+                type: named
+                name: Int64
+            updated_at:
+              type:
+                type: named
+                name: DateTime
+            watcher_count:
+              type:
+                type: named
+                name: Int64
+        sboms_v0:
+          description: ""
+          fields:
+            from_artifact_id:
+              type:
+                type: named
+                name: String
+            from_artifact_name:
+              type:
+                type: named
+                name: String
+            from_artifact_namespace:
+              type:
+                type: named
+                name: String
+            from_artifact_source:
+              type:
+                type: named
+                name: String
+            from_project_id:
+              type:
+                type: named
+                name: String
+            to_package_artifact_id:
+              type:
+                type: named
+                name: String
+            to_package_artifact_name:
+              type:
+                type: named
+                name: String
+            to_package_artifact_namespace:
+              type:
+                type: named
+                name: String
+            to_package_artifact_source:
+              type:
+                type: named
+                name: String
+            to_package_project_id:
+              type:
+                type: named
+                name: String
+        timeseries_events_by_artifact_v0:
+          description: ""
+          fields:
+            amount:
+              type:
+                type: named
+                name: Float32
+            event_source:
+              type:
+                type: named
+                name: String
+            event_source_id:
+              type:
+                type: named
+                name: String
+            event_type:
+              type:
+                type: named
+                name: String
+            from_artifact_id:
+              type:
+                type: named
+                name: String
+            time:
+              type:
+                type: named
+                name: DateTime
+            to_artifact_id:
+              type:
+                type: named
+                name: String
+        timeseries_metrics_by_artifact_v0:
+          description: ""
+          fields:
+            amount:
+              type:
+                type: named
+                name: Float64
+            artifact_id:
+              type:
+                type: named
+                name: String
+            metric_id:
+              type:
+                type: named
+                name: String
+            sample_date:
+              type:
+                type: named
+                name: Date
+            unit:
+              type:
+                type: named
+                name: String
+        timeseries_metrics_by_collection_v0:
+          description: ""
+          fields:
+            amount:
+              type:
+                type: named
+                name: Float64
+            collection_id:
+              type:
+                type: named
+                name: String
+            metric_id:
+              type:
+                type: named
+                name: String
+            sample_date:
+              type:
+                type: named
+                name: Date
+            unit:
+              type:
+                type: named
+                name: String
+        timeseries_metrics_by_project_v0:
+          description: ""
+          fields:
+            amount:
+              type:
+                type: named
+                name: Float64
+            metric_id:
+              type:
+                type: named
+                name: String
+            project_id:
+              type:
+                type: named
+                name: String
+            sample_date:
+              type:
+                type: named
+                name: Date
+            unit:
+              type:
+                type: named
+                name: String
+        users_v1:
+          description: ""
+          fields:
+            bio:
+              type:
+                type: named
+                name: String
+            display_name:
+              type:
+                type: named
+                name: String
+            profile_picture_url:
+              type:
+                type: named
+                name: String
+            url:
+              type:
+                type: named
+                name: String
+            user_id:
+              type:
+                type: named
+                name: String
+            user_source:
+              type:
+                type: named
+                name: String
+            user_source_id:
+              type:
+                type: named
+                name: String
+      collections:
+        - name: artifacts_by_collection_v1
+          description: ""
+          arguments: {}
+          type: artifacts_by_collection_v1
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: artifacts_by_project_v1
+          description: ""
+          arguments: {}
+          type: artifacts_by_project_v1
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: artifacts_by_user_v1
+          description: ""
+          arguments: {}
+          type: artifacts_by_user_v1
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: artifacts_v1
+          description: ""
+          arguments: {}
+          type: artifacts_v1
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: code_metrics_by_artifact_v0
+          description: ""
+          arguments: {}
+          type: code_metrics_by_artifact_v0
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: code_metrics_by_project_v1
+          description: ""
+          arguments: {}
+          type: code_metrics_by_project_v1
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: collections_v1
+          description: ""
+          arguments: {}
+          type: collections_v1
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: contracts_v0
+          description: ""
+          arguments: {}
+          type: contracts_v0
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: event_types_v1
+          description: ""
+          arguments: {}
+          type: event_types_v1
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: funding_metrics_by_project_v1
+          description: ""
+          arguments: {}
+          type: funding_metrics_by_project_v1
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: key_metrics_by_artifact_v0
+          description: ""
+          arguments: {}
+          type: key_metrics_by_artifact_v0
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: key_metrics_by_collection_v0
+          description: ""
+          arguments: {}
+          type: key_metrics_by_collection_v0
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: key_metrics_by_project_v0
+          description: ""
+          arguments: {}
+          type: key_metrics_by_project_v0
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: metrics_v0
+          description: ""
+          arguments: {}
+          type: metrics_v0
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: onchain_metrics_by_project_v1
+          description: ""
+          arguments: {}
+          type: onchain_metrics_by_project_v1
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: package_owners_v0
+          description: ""
+          arguments: {}
+          type: package_owners_v0
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: projects_by_collection_v1
+          description: ""
+          arguments: {}
+          type: projects_by_collection_v1
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: projects_v1
+          description: ""
+          arguments: {}
+          type: projects_v1
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: repositories_v0
+          description: ""
+          arguments: {}
+          type: repositories_v0
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: sboms_v0
+          description: ""
+          arguments: {}
+          type: sboms_v0
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: timeseries_events_by_artifact_v0
+          description: ""
+          arguments: {}
+          type: timeseries_events_by_artifact_v0
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: timeseries_metrics_by_artifact_v0
+          description: ""
+          arguments: {}
+          type: timeseries_metrics_by_artifact_v0
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: timeseries_metrics_by_collection_v0
+          description: ""
+          arguments: {}
+          type: timeseries_metrics_by_collection_v0
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: timeseries_metrics_by_project_v0
+          description: ""
+          arguments: {}
+          type: timeseries_metrics_by_project_v0
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: users_v1
+          description: ""
+          arguments: {}
+          type: users_v1
+          uniqueness_constraints: {}
+          foreign_keys: {}
+      functions: []
+      procedures: []
+    capabilities:
+      version: 0.1.6
+      capabilities:
+        query:
+          aggregates: {}
+          variables: {}
+          explain: {}
+          nested_fields: {}
+          exists: {}
+        mutation: {}
+        relationships:
+          relation_comparisons: {}
+          order_by_aggregate: {}

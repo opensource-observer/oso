@@ -1,0 +1,218 @@
+---
+kind: ObjectType
+version: v1
+definition:
+  name: FundingMetricsByProjectV1
+  fields:
+    - name: displayName
+      type: String!
+    - name: eventSource
+      type: String!
+    - name: projectId
+      type: String!
+    - name: projectName
+      type: String!
+    - name: projectNamespace
+      type: String!
+    - name: projectSource
+      type: String!
+    - name: totalFundersCount
+      type: Int64!
+    - name: totalFundingReceivedUsd
+      type: Float32!
+    - name: totalFundingReceivedUsd6Months
+      type: Float32!
+  graphql:
+    typeName: Oso_FundingMetricsByProjectV1
+    inputTypeName: Oso_FundingMetricsByProjectV1Input
+  dataConnectorTypeMapping:
+    - dataConnectorName: oso_clickhouse
+      dataConnectorObjectType: funding_metrics_by_project_v1
+      fieldMapping:
+        displayName:
+          column:
+            name: display_name
+        eventSource:
+          column:
+            name: event_source
+        projectId:
+          column:
+            name: project_id
+        projectName:
+          column:
+            name: project_name
+        projectNamespace:
+          column:
+            name: project_namespace
+        projectSource:
+          column:
+            name: project_source
+        totalFundersCount:
+          column:
+            name: total_funders_count
+        totalFundingReceivedUsd:
+          column:
+            name: total_funding_received_usd
+        totalFundingReceivedUsd6Months:
+          column:
+            name: total_funding_received_usd_6_months
+
+---
+kind: TypePermissions
+version: v1
+definition:
+  typeName: FundingMetricsByProjectV1
+  permissions:
+    - role: admin
+      output:
+        allowedFields:
+          - displayName
+          - eventSource
+          - projectId
+          - projectName
+          - projectNamespace
+          - projectSource
+          - totalFundersCount
+          - totalFundingReceivedUsd
+          - totalFundingReceivedUsd6Months
+    - role: anonymous
+      output:
+        allowedFields:
+          - displayName
+          - eventSource
+          - projectId
+          - projectName
+          - projectNamespace
+          - projectSource
+          - totalFundersCount
+          - totalFundingReceivedUsd
+          - totalFundingReceivedUsd6Months
+
+---
+kind: BooleanExpressionType
+version: v1
+definition:
+  name: FundingMetricsByProjectV1BoolExp
+  operand:
+    object:
+      type: FundingMetricsByProjectV1
+      comparableFields:
+        - fieldName: displayName
+          booleanExpressionType: StringBoolExp
+        - fieldName: eventSource
+          booleanExpressionType: StringBoolExp
+        - fieldName: projectId
+          booleanExpressionType: StringBoolExp
+        - fieldName: projectName
+          booleanExpressionType: StringBoolExp
+        - fieldName: projectNamespace
+          booleanExpressionType: StringBoolExp
+        - fieldName: projectSource
+          booleanExpressionType: StringBoolExp
+        - fieldName: totalFundersCount
+          booleanExpressionType: Int64BoolExp
+        - fieldName: totalFundingReceivedUsd
+          booleanExpressionType: Float32BoolExp
+        - fieldName: totalFundingReceivedUsd6Months
+          booleanExpressionType: Float32BoolExp
+      comparableRelationships: []
+  logicalOperators:
+    enable: true
+  isNull:
+    enable: true
+  graphql:
+    typeName: Oso_FundingMetricsByProjectV1BoolExp
+
+---
+kind: AggregateExpression
+version: v1
+definition:
+  name: FundingMetricsByProjectV1AggExp
+  operand:
+    object:
+      aggregatedType: FundingMetricsByProjectV1
+      aggregatableFields:
+        - fieldName: displayName
+          aggregateExpression: StringAggExp
+        - fieldName: eventSource
+          aggregateExpression: StringAggExp
+        - fieldName: projectId
+          aggregateExpression: StringAggExp
+        - fieldName: projectName
+          aggregateExpression: StringAggExp
+        - fieldName: projectNamespace
+          aggregateExpression: StringAggExp
+        - fieldName: projectSource
+          aggregateExpression: StringAggExp
+        - fieldName: totalFundersCount
+          aggregateExpression: Int64AggExp
+        - fieldName: totalFundingReceivedUsd
+          aggregateExpression: Float32AggExp
+        - fieldName: totalFundingReceivedUsd6Months
+          aggregateExpression: Float32AggExp
+  count:
+    enable: true
+  graphql:
+    selectTypeName: Oso_FundingMetricsByProjectV1AggExp
+
+---
+kind: Model
+version: v1
+definition:
+  name: FundingMetricsByProjectV1
+  objectType: FundingMetricsByProjectV1
+  source:
+    dataConnectorName: oso_clickhouse
+    collection: funding_metrics_by_project_v1
+  filterExpressionType: FundingMetricsByProjectV1BoolExp
+  aggregateExpression: FundingMetricsByProjectV1AggExp
+  orderableFields:
+    - fieldName: displayName
+      orderByDirections:
+        enableAll: true
+    - fieldName: eventSource
+      orderByDirections:
+        enableAll: true
+    - fieldName: projectId
+      orderByDirections:
+        enableAll: true
+    - fieldName: projectName
+      orderByDirections:
+        enableAll: true
+    - fieldName: projectNamespace
+      orderByDirections:
+        enableAll: true
+    - fieldName: projectSource
+      orderByDirections:
+        enableAll: true
+    - fieldName: totalFundersCount
+      orderByDirections:
+        enableAll: true
+    - fieldName: totalFundingReceivedUsd
+      orderByDirections:
+        enableAll: true
+    - fieldName: totalFundingReceivedUsd6Months
+      orderByDirections:
+        enableAll: true
+  graphql:
+    selectMany:
+      queryRootField: oso_fundingMetricsByProjectV1
+      subscription:
+        rootField: oso_fundingMetricsByProjectV1
+    selectUniques: []
+    orderByExpressionType: Oso_FundingMetricsByProjectV1OrderBy
+    filterInputTypeName: Oso_FundingMetricsByProjectV1FilterInput
+
+---
+kind: ModelPermissions
+version: v1
+definition:
+  modelName: FundingMetricsByProjectV1
+  permissions:
+    - role: admin
+      select:
+        filter: null
+        allowSubscriptions: true
+    - role: anonymous
+      select:
+        filter: null

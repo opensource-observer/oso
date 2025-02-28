@@ -1,0 +1,13 @@
+{
+    "dataset_name": "GitHub Data",
+    "description": "The GitHub Data dataset provides an hourly updated archive of historical GitHub events. Sourced from the GH Archive project, this dataset includes information on various events like issues opened, closed, or reopened, as well as other GitHub activities. It enables detailed analysis of repository actions and user activities on GitHub.",
+    "use_cases": [
+      "Tracking GitHub issues and repository activities",
+      "Analyzing historical GitHub event data",
+      "Monitoring project and user interactions within repositories",
+      "Querying GitHub events such as issues, pull requests, and commits"
+    ],
+    "license": "MIT (Code), GitHub terms of service (Data)",
+    "update_frequency": "Hourly",
+    "reference_documentation": "https://www.gharchive.org/"
+}  

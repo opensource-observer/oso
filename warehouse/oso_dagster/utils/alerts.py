@@ -1,7 +1,7 @@
 import io
 import logging
 from datetime import datetime
-from typing import Optional
+from typing import Mapping, Optional
 
 import pytz
 import requests
@@ -9,13 +9,18 @@ from attr import dataclass
 from dagster import Config, DagsterEvent, DagsterEventType, OpExecutionContext
 from dagster._core.events import JobFailureData
 from discord_webhook import DiscordEmbed, DiscordWebhook
-from PIL import Image, ImageDraw, ImageFont, ImageFile
+from PIL import Image, ImageDraw, ImageFile, ImageFont
 
 logger = logging.getLogger(__name__)
 
 
 class AlertOpConfig(Config):
     run_id: str
+
+
+class FreshnessOpConfig(Config):
+    fresh_assets: int
+    stale_assets: Mapping[str, float]
 
 
 class AlertManager:
@@ -27,6 +32,9 @@ class AlertManager:
     def failure_op(
         self, base_url: str, context: OpExecutionContext, config: AlertOpConfig
     ) -> None:
+        raise NotImplementedError()
+
+    def freshness_op(self, base_url: str, config: FreshnessOpConfig) -> None:
         raise NotImplementedError()
 
 
@@ -59,6 +67,16 @@ class SimpleAlertManager(AlertManager):
         self.alert(
             f"{len(step_failures)} failed steps in run ({base_url}/runs/{config.run_id})"
         )
+
+    def freshness_op(self, base_url, config):
+        output_lines: list[str] = []
+
+        for asset, timestamp in config.stale_assets.items():
+            output_lines.append(
+                f"{asset} last materialized at {datetime.fromtimestamp(timestamp)}"
+            )
+
+        self.alert("\n".join(output_lines))
 
 
 class LogAlertManager(SimpleAlertManager):
@@ -161,9 +179,7 @@ class CanvasDiscordWebhookAlertManager(AlertManager):
         image_data = io.BytesIO()
         image.save(image_data, format="PNG")
 
-        self._webhook.add_file(
-            file=image_data.getvalue(), filename="dagster_result.png"
-        )
+        return image_data.getvalue()
 
     def failure_op(
         self, base_url: str, context: OpExecutionContext, config: AlertOpConfig
@@ -191,7 +207,7 @@ class CanvasDiscordWebhookAlertManager(AlertManager):
             ):
                 job_name = result.event_specific_data.first_step_failure_event.step_key
 
-        self._config = CanvasConfig(
+        canvas_config = CanvasConfig(
             job_name=job_name,
             success=result.event_type == DagsterEventType.RUN_SUCCESS,
             steps_ok=len(
@@ -213,23 +229,66 @@ class CanvasDiscordWebhookAlertManager(AlertManager):
             message=result.message or "Unknown error cause",
         )
 
-        self._run_id = config.run_id
-        self._base_url = base_url
-        self.alert()
+        description = f"Oops! Click [`here`]({base_url}/runs/{config.run_id}) to view the details of this failure."
+        self.alert_discord(
+            "Failed Materialization", description, canvas_config=canvas_config
+        )
 
-    def alert(self, message: Optional[str] = None):
-        if not self._config:
-            raise ValueError("CanvasConfig is not set")
+    def freshness_op(self, base_url, config):
+        output_fields: Mapping[str, str] = {}
 
-        self.build_image(self._config)
+        for asset, timestamp in config.stale_assets.items():
+            output_fields[asset] = (
+                f"[`Asset`]({base_url}/assets/{asset}) last materialized at {datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S')}"
+            )
 
+        self.alert_discord_chunks(
+            "Asset Freshness Summary",
+            (
+                f"Found {config.fresh_assets} fresh assets."
+                + (
+                    "The following assets are stale:"
+                    if len(config.stale_assets) > 0
+                    else ""
+                )
+            ),
+            output_fields,
+        )
+
+    def alert_discord_chunks(
+        self, title: str, description: str, fields: Mapping[str, str]
+    ):
+        items = list(fields.items())
+        if len(items) == 0:
+            self.alert_discord(title, description)
+            return
+        for i in range(0, len(items), 10):
+            self.alert_discord(
+                title, description if i == 0 else "", fields=items[i : i + 20]
+            )
+
+    def alert_discord(
+        self,
+        title: str,
+        description: str,
+        fields: Optional[list[tuple[str, str]]] = None,
+        canvas_config: Optional[CanvasConfig] = None,
+    ):
         embed = DiscordEmbed(
-            title="Failed Materialization",
-            description=f"Oops! Click [`here`]({self._base_url}/runs/{self._run_id}) "
-            "to view the details of this failure.",
+            title=title,
+            description=description,
             color="ffffff",
         )
-        embed.set_image(url="attachment://dagster_result.png")
+        if canvas_config:
+            self._webhook.add_file(
+                file=self.build_image(canvas_config), filename="dagster_result.png"
+            )
+            embed.set_image(url="attachment://dagster_result.png")
 
+        if fields:
+            for name, value in fields:
+                embed.add_embed_field(name=name, value=value, inline=False)
         self._webhook.add_embed(embed)
         self._webhook.execute()
+        self._webhook.remove_embeds()
+        self._webhook.remove_files()

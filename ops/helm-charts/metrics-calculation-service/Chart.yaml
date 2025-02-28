@@ -1,0 +1,7 @@
+apiVersion: v2
+name: metrics-calculation-service
+description: The metrics calculation service
+
+type: application
+version: 0.12.0
+appVersion: 0.1.0

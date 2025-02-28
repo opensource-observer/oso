@@ -1,0 +1,325 @@
+---
+kind: ObjectType
+version: v1
+definition:
+  name: RepositoriesV0
+  fields:
+    - name: artifactId
+      type: String!
+    - name: artifactName
+      type: String!
+    - name: artifactNamespace
+      type: String!
+    - name: artifactSource
+      type: String!
+    - name: artifactSourceId
+      type: String!
+    - name: artifactUrl
+      type: String!
+    - name: branch
+      type: String!
+    - name: createdAt
+      type: DateTime!
+    - name: forkCount
+      type: Int64!
+    - name: isFork
+      type: Bool!
+    - name: language
+      type: String!
+    - name: licenseName
+      type: String!
+    - name: licenseSpdxId
+      type: String!
+    - name: projectId
+      type: String!
+    - name: starCount
+      type: Int64!
+    - name: updatedAt
+      type: DateTime!
+    - name: watcherCount
+      type: Int64!
+  graphql:
+    typeName: Oso_RepositoriesV0
+    inputTypeName: Oso_RepositoriesV0Input
+  dataConnectorTypeMapping:
+    - dataConnectorName: oso_clickhouse
+      dataConnectorObjectType: repositories_v0
+      fieldMapping:
+        artifactId:
+          column:
+            name: artifact_id
+        artifactName:
+          column:
+            name: artifact_name
+        artifactNamespace:
+          column:
+            name: artifact_namespace
+        artifactSource:
+          column:
+            name: artifact_source
+        artifactSourceId:
+          column:
+            name: artifact_source_id
+        artifactUrl:
+          column:
+            name: artifact_url
+        branch:
+          column:
+            name: branch
+        createdAt:
+          column:
+            name: created_at
+        forkCount:
+          column:
+            name: fork_count
+        isFork:
+          column:
+            name: is_fork
+        language:
+          column:
+            name: language
+        licenseName:
+          column:
+            name: license_name
+        licenseSpdxId:
+          column:
+            name: license_spdx_id
+        projectId:
+          column:
+            name: project_id
+        starCount:
+          column:
+            name: star_count
+        updatedAt:
+          column:
+            name: updated_at
+        watcherCount:
+          column:
+            name: watcher_count
+
+---
+kind: TypePermissions
+version: v1
+definition:
+  typeName: RepositoriesV0
+  permissions:
+    - role: admin
+      output:
+        allowedFields:
+          - artifactId
+          - artifactName
+          - artifactNamespace
+          - artifactSource
+          - artifactSourceId
+          - artifactUrl
+          - branch
+          - createdAt
+          - forkCount
+          - isFork
+          - language
+          - licenseName
+          - licenseSpdxId
+          - projectId
+          - starCount
+          - updatedAt
+          - watcherCount
+    - role: anonymous
+      output:
+        allowedFields:
+          - artifactId
+          - artifactName
+          - artifactNamespace
+          - artifactSource
+          - artifactSourceId
+          - artifactUrl
+          - branch
+          - createdAt
+          - forkCount
+          - isFork
+          - language
+          - licenseName
+          - licenseSpdxId
+          - projectId
+          - starCount
+          - updatedAt
+          - watcherCount
+
+---
+kind: BooleanExpressionType
+version: v1
+definition:
+  name: RepositoriesV0BoolExp
+  operand:
+    object:
+      type: RepositoriesV0
+      comparableFields:
+        - fieldName: artifactId
+          booleanExpressionType: StringBoolExp
+        - fieldName: artifactName
+          booleanExpressionType: StringBoolExp
+        - fieldName: artifactNamespace
+          booleanExpressionType: StringBoolExp
+        - fieldName: artifactSource
+          booleanExpressionType: StringBoolExp
+        - fieldName: artifactSourceId
+          booleanExpressionType: StringBoolExp
+        - fieldName: artifactUrl
+          booleanExpressionType: StringBoolExp
+        - fieldName: branch
+          booleanExpressionType: StringBoolExp
+        - fieldName: createdAt
+          booleanExpressionType: DateTimeBoolExp
+        - fieldName: forkCount
+          booleanExpressionType: Int64BoolExp
+        - fieldName: isFork
+          booleanExpressionType: BoolBoolExp
+        - fieldName: language
+          booleanExpressionType: StringBoolExp
+        - fieldName: licenseName
+          booleanExpressionType: StringBoolExp
+        - fieldName: licenseSpdxId
+          booleanExpressionType: StringBoolExp
+        - fieldName: projectId
+          booleanExpressionType: StringBoolExp
+        - fieldName: starCount
+          booleanExpressionType: Int64BoolExp
+        - fieldName: updatedAt
+          booleanExpressionType: DateTimeBoolExp
+        - fieldName: watcherCount
+          booleanExpressionType: Int64BoolExp
+      comparableRelationships: []
+  logicalOperators:
+    enable: true
+  isNull:
+    enable: true
+  graphql:
+    typeName: Oso_RepositoriesV0BoolExp
+
+---
+kind: AggregateExpression
+version: v1
+definition:
+  name: RepositoriesV0AggExp
+  operand:
+    object:
+      aggregatedType: RepositoriesV0
+      aggregatableFields:
+        - fieldName: artifactId
+          aggregateExpression: StringAggExp
+        - fieldName: artifactName
+          aggregateExpression: StringAggExp
+        - fieldName: artifactNamespace
+          aggregateExpression: StringAggExp
+        - fieldName: artifactSource
+          aggregateExpression: StringAggExp
+        - fieldName: artifactSourceId
+          aggregateExpression: StringAggExp
+        - fieldName: artifactUrl
+          aggregateExpression: StringAggExp
+        - fieldName: branch
+          aggregateExpression: StringAggExp
+        - fieldName: createdAt
+          aggregateExpression: DateTimeAggExp
+        - fieldName: forkCount
+          aggregateExpression: Int64AggExp
+        - fieldName: isFork
+          aggregateExpression: BoolAggExp
+        - fieldName: language
+          aggregateExpression: StringAggExp
+        - fieldName: licenseName
+          aggregateExpression: StringAggExp
+        - fieldName: licenseSpdxId
+          aggregateExpression: StringAggExp
+        - fieldName: projectId
+          aggregateExpression: StringAggExp
+        - fieldName: starCount
+          aggregateExpression: Int64AggExp
+        - fieldName: updatedAt
+          aggregateExpression: DateTimeAggExp
+        - fieldName: watcherCount
+          aggregateExpression: Int64AggExp
+  count:
+    enable: true
+  graphql:
+    selectTypeName: Oso_RepositoriesV0AggExp
+
+---
+kind: OrderByExpression
+version: v1
+definition:
+  name: RepositoriesV0OrderByExp
+  operand:
+    object:
+      orderedType: RepositoriesV0
+      orderableFields:
+        - fieldName: artifactId
+          orderByExpression: StringOrderByExp
+        - fieldName: artifactName
+          orderByExpression: StringOrderByExp
+        - fieldName: artifactNamespace
+          orderByExpression: StringOrderByExp
+        - fieldName: artifactSource
+          orderByExpression: StringOrderByExp
+        - fieldName: artifactSourceId
+          orderByExpression: StringOrderByExp
+        - fieldName: artifactUrl
+          orderByExpression: StringOrderByExp
+        - fieldName: branch
+          orderByExpression: StringOrderByExp
+        - fieldName: createdAt
+          orderByExpression: DateTimeOrderByExp
+        - fieldName: forkCount
+          orderByExpression: Int64OrderByExp
+        - fieldName: isFork
+          orderByExpression: BoolOrderByExp
+        - fieldName: language
+          orderByExpression: StringOrderByExp
+        - fieldName: licenseName
+          orderByExpression: StringOrderByExp
+        - fieldName: licenseSpdxId
+          orderByExpression: StringOrderByExp
+        - fieldName: projectId
+          orderByExpression: StringOrderByExp
+        - fieldName: starCount
+          orderByExpression: Int64OrderByExp
+        - fieldName: updatedAt
+          orderByExpression: DateTimeOrderByExp
+        - fieldName: watcherCount
+          orderByExpression: Int64OrderByExp
+      orderableRelationships: []
+  graphql:
+    expressionTypeName: Oso_RepositoriesV0OrderByExp
+
+---
+kind: Model
+version: v2
+definition:
+  name: RepositoriesV0
+  objectType: RepositoriesV0
+  source:
+    dataConnectorName: oso_clickhouse
+    collection: repositories_v0
+  filterExpressionType: RepositoriesV0BoolExp
+  aggregateExpression: RepositoriesV0AggExp
+  orderByExpression: RepositoriesV0OrderByExp
+  graphql:
+    selectMany:
+      queryRootField: oso_repositoriesV0
+      subscription:
+        rootField: oso_repositoriesV0
+    selectUniques: []
+    filterInputTypeName: Oso_RepositoriesV0FilterInput
+
+---
+kind: ModelPermissions
+version: v1
+definition:
+  modelName: RepositoriesV0
+  permissions:
+    - role: admin
+      select:
+        filter: null
+        allowSubscriptions: true
+    - role: anonymous
+      select:
+        filter: null

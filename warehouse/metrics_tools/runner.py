@@ -1,30 +1,25 @@
 """Run metrics queries for a given boundary"""
 
-import duckdb
-import arrow
+import abc
+import asyncio
 import logging
+import typing as t
+from datetime import datetime
+
+import arrow
+import duckdb
+import pandas as pd
+from metrics_tools.definition import PeerMetricDependencyRef, RollingCronOptions
+from metrics_tools.intermediate import run_macro_evaluator
+from metrics_tools.macros import metrics_end, metrics_sample_date, metrics_start
+from metrics_tools.models import create_unregistered_macro_registry
 from metrics_tools.utils.glot import str_or_expressions
+from sqlglot import exp
 from sqlmesh import EngineAdapter
-from sqlmesh.core.context import ExecutionContext
 from sqlmesh.core.config import DuckDBConnectionConfig
+from sqlmesh.core.context import ExecutionContext
 from sqlmesh.core.engine_adapter.duckdb import DuckDBEngineAdapter
 from sqlmesh.core.macros import RuntimeStage
-
-from metrics_tools.definition import PeerMetricDependencyRef
-from metrics_tools.intermediate import run_macro_evaluator
-from metrics_tools.macros import (
-    metrics_end,
-    metrics_sample_date,
-    metrics_start,
-)
-from metrics_tools.models import create_unregistered_macro_registry
-import pandas as pd
-import abc
-
-from datetime import datetime
-import typing as t
-
-from sqlglot import exp
 
 logger = logging.getLogger(__name__)
 
@@ -84,6 +79,16 @@ class FakeEngineAdapter(EngineAdapter):
 
     def __init__(self, dialect: str):
         self.dialect = dialect
+
+
+ROLLING_CRON_TO_ARROW_UNIT: t.Dict[
+    RollingCronOptions, t.Literal["day", "month", "year", "week"]
+] = {
+    "@daily": "day",
+    "@weekly": "week",
+    "@monthly": "month",
+    "@yearly": "year",
+}
 
 
 class MetricsRunner:
@@ -149,16 +154,25 @@ class MetricsRunner:
 
     def run_rolling(self, start: datetime, end: datetime):
         df: pd.DataFrame = pd.DataFrame()
-        logger.debug(f"run_rolling called with start={start} and end={end}")
+        logger.debug(
+            f"run_rolling[{self._ref['name']}]: called with start={start} and end={end}"
+        )
         count = 0
+        total_rows = 0
         for rendered_query in self.render_rolling_queries(start, end):
             count += 1
             logger.debug(
-                f"executing rolling window: {rendered_query}",
+                f"run_rolling[{self._ref['name']}]: executing rolling window: {rendered_query}",
                 extra={"query": rendered_query},
             )
             day_result = self._context.engine_adapter.fetchdf(rendered_query)
+            day_rows = len(day_result)
+            total_rows += day_rows
+            logger.debug(
+                f"run_rolling[{self._ref['name']}]: rolling window period resulted in {day_rows} rows"
+            )
             df = pd.concat([df, day_result])
+        logger.debug(f"run_rolling[{self._ref['name']}]: total rows {total_rows}")
 
         return df
 
@@ -201,9 +215,30 @@ class MetricsRunner:
 
     def render_rolling_queries(self, start: datetime, end: datetime) -> t.Iterator[str]:
         # Given a rolling input render all the rolling queries
-        logger.debug(f"render_rolling_rolling called with start={start} and end={end}")
-        for day in arrow.Arrow.range("day", arrow.get(start), arrow.get(end)):
-            rendered_query = self.render_query(day.datetime, day.datetime)
+        logger.debug(f"render_rolling_queries called with start={start} and end={end}")
+        for day in self.iter_query_days(start, end):
+            rendered_query = self.render_query(day, day)
+            yield rendered_query
+
+    def iter_query_days(self, start: datetime, end: datetime):
+        cron = self._ref.get("cron")
+        assert cron is not None, "cron is required for rolling queries"
+        arrow_interval = ROLLING_CRON_TO_ARROW_UNIT[cron]
+        if arrow_interval == "week":
+            # We want to start weeks on sunday so we need to adjust the start time to the next sunday
+            start_arrow = arrow.get(start)
+            day_of_week = start_arrow.weekday()
+            if day_of_week != 6:
+                start = start_arrow.shift(days=6 - day_of_week).datetime
+        for day in arrow.Arrow.range(arrow_interval, arrow.get(start), arrow.get(end)):
+            yield day.datetime
+
+    async def render_rolling_queries_async(self, start: datetime, end: datetime):
+        logger.debug(
+            f"render_rolling_queries_async called with start={start} and end={end}"
+        )
+        for day in self.iter_query_days(start, end):
+            rendered_query = await asyncio.to_thread(self.render_query, day, day)
             yield rendered_query
 
     def commit(self, start: datetime, end: datetime, destination: str):

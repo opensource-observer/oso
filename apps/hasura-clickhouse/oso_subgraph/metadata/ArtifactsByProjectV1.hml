@@ -1,0 +1,218 @@
+---
+kind: ObjectType
+version: v1
+definition:
+  name: ArtifactsByProjectV1
+  fields:
+    - name: artifactId
+      type: String!
+    - name: artifactName
+      type: String!
+    - name: artifactNamespace
+      type: String!
+    - name: artifactSource
+      type: String!
+    - name: artifactSourceId
+      type: String!
+    - name: projectId
+      type: String!
+    - name: projectName
+      type: String!
+    - name: projectNamespace
+      type: String!
+    - name: projectSource
+      type: String!
+  graphql:
+    typeName: Oso_ArtifactsByProjectV1
+    inputTypeName: Oso_ArtifactsByProjectV1Input
+  dataConnectorTypeMapping:
+    - dataConnectorName: oso_clickhouse
+      dataConnectorObjectType: artifacts_by_project_v1
+      fieldMapping:
+        artifactId:
+          column:
+            name: artifact_id
+        artifactName:
+          column:
+            name: artifact_name
+        artifactNamespace:
+          column:
+            name: artifact_namespace
+        artifactSource:
+          column:
+            name: artifact_source
+        artifactSourceId:
+          column:
+            name: artifact_source_id
+        projectId:
+          column:
+            name: project_id
+        projectName:
+          column:
+            name: project_name
+        projectNamespace:
+          column:
+            name: project_namespace
+        projectSource:
+          column:
+            name: project_source
+
+---
+kind: TypePermissions
+version: v1
+definition:
+  typeName: ArtifactsByProjectV1
+  permissions:
+    - role: admin
+      output:
+        allowedFields:
+          - artifactId
+          - artifactName
+          - artifactNamespace
+          - artifactSource
+          - artifactSourceId
+          - projectId
+          - projectName
+          - projectNamespace
+          - projectSource
+    - role: anonymous
+      output:
+        allowedFields:
+          - artifactId
+          - artifactName
+          - artifactNamespace
+          - artifactSource
+          - artifactSourceId
+          - projectId
+          - projectName
+          - projectNamespace
+          - projectSource
+
+---
+kind: BooleanExpressionType
+version: v1
+definition:
+  name: ArtifactsByProjectV1BoolExp
+  operand:
+    object:
+      type: ArtifactsByProjectV1
+      comparableFields:
+        - fieldName: artifactId
+          booleanExpressionType: StringBoolExp
+        - fieldName: artifactName
+          booleanExpressionType: StringBoolExp
+        - fieldName: artifactNamespace
+          booleanExpressionType: StringBoolExp
+        - fieldName: artifactSource
+          booleanExpressionType: StringBoolExp
+        - fieldName: artifactSourceId
+          booleanExpressionType: StringBoolExp
+        - fieldName: projectId
+          booleanExpressionType: StringBoolExp
+        - fieldName: projectName
+          booleanExpressionType: StringBoolExp
+        - fieldName: projectNamespace
+          booleanExpressionType: StringBoolExp
+        - fieldName: projectSource
+          booleanExpressionType: StringBoolExp
+      comparableRelationships: []
+  logicalOperators:
+    enable: true
+  isNull:
+    enable: true
+  graphql:
+    typeName: Oso_ArtifactsByProjectV1BoolExp
+
+---
+kind: AggregateExpression
+version: v1
+definition:
+  name: ArtifactsByProjectV1AggExp
+  operand:
+    object:
+      aggregatedType: ArtifactsByProjectV1
+      aggregatableFields:
+        - fieldName: artifactId
+          aggregateExpression: StringAggExp
+        - fieldName: artifactName
+          aggregateExpression: StringAggExp
+        - fieldName: artifactNamespace
+          aggregateExpression: StringAggExp
+        - fieldName: artifactSource
+          aggregateExpression: StringAggExp
+        - fieldName: artifactSourceId
+          aggregateExpression: StringAggExp
+        - fieldName: projectId
+          aggregateExpression: StringAggExp
+        - fieldName: projectName
+          aggregateExpression: StringAggExp
+        - fieldName: projectNamespace
+          aggregateExpression: StringAggExp
+        - fieldName: projectSource
+          aggregateExpression: StringAggExp
+  count:
+    enable: true
+  graphql:
+    selectTypeName: Oso_ArtifactsByProjectV1AggExp
+
+---
+kind: Model
+version: v1
+definition:
+  name: ArtifactsByProjectV1
+  objectType: ArtifactsByProjectV1
+  source:
+    dataConnectorName: oso_clickhouse
+    collection: artifacts_by_project_v1
+  filterExpressionType: ArtifactsByProjectV1BoolExp
+  aggregateExpression: ArtifactsByProjectV1AggExp
+  orderableFields:
+    - fieldName: artifactId
+      orderByDirections:
+        enableAll: true
+    - fieldName: artifactName
+      orderByDirections:
+        enableAll: true
+    - fieldName: artifactNamespace
+      orderByDirections:
+        enableAll: true
+    - fieldName: artifactSource
+      orderByDirections:
+        enableAll: true
+    - fieldName: artifactSourceId
+      orderByDirections:
+        enableAll: true
+    - fieldName: projectId
+      orderByDirections:
+        enableAll: true
+    - fieldName: projectName
+      orderByDirections:
+        enableAll: true
+    - fieldName: projectNamespace
+      orderByDirections:
+        enableAll: true
+    - fieldName: projectSource
+      orderByDirections:
+        enableAll: true
+  graphql:
+    selectMany:
+      queryRootField: oso_artifactsByProjectV1
+      subscription:
+        rootField: oso_artifactsByProjectV1
+    selectUniques: []
+    orderByExpressionType: Oso_ArtifactsByProjectV1OrderBy
+    filterInputTypeName: Oso_ArtifactsByProjectV1FilterInput
+
+---
+kind: ModelPermissions
+version: v1
+definition:
+  modelName: ArtifactsByProjectV1
+  permissions:
+    - role: admin
+      select:
+        filter: null
+        allowSubscriptions: true
+    - role: anonymous
+      select:
+        filter: null

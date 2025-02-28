@@ -1,11 +1,15 @@
 """Transforms table references from an execution context
 """
 
+import logging
 import typing as t
 
 from sqlglot import exp
 from sqlmesh.core.context import ExecutionContext
+
 from .base import Transform
+
+logger = logging.getLogger(__name__)
 
 
 class TableTransform(Transform):
@@ -19,10 +23,9 @@ class TableTransform(Transform):
             actual_table = self.transform_table_name(node)
             if not actual_table:
                 return node
-            table_kwargs = {}
             if node.alias:
-                table_kwargs["alias"] = node.alias
-            return exp.to_table(actual_table.this.this, **table_kwargs)
+                actual_table = actual_table.as_(node.alias)
+            return actual_table
 
         transformed_expressions = []
         for expression in query:
@@ -53,6 +56,9 @@ class ExecutionContextTableTransform(TableTransform):
     def transform_table_name(self, table: exp.Table) -> exp.Table | None:
         table_name = f"{table.db}.{table.this.this}"
         try:
-            return exp.to_table(self._context.table(table_name))
+            logger.debug(
+                f"Transforming tables for query {self._context.resolve_table(table_name)}"
+            )
+            return exp.to_table(self._context.resolve_table(table_name))
         except KeyError:
             return None

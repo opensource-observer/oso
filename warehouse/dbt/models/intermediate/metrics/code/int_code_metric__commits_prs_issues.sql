@@ -12,8 +12,11 @@ where
     'COMMIT_CODE',
     'PULL_REQUEST_OPENED',
     'PULL_REQUEST_MERGED',
+    'PULL_REQUEST_REVIEW_COMMENT',
     'ISSUE_OPENED',
-    'ISSUE_CLOSED'
+    'ISSUE_CLOSED',
+    'ISSUE_COMMENT',
+    'RELEASE_PUBLISHED'
   )
 group by
   events.project_id,

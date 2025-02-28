@@ -1,3 +1,9 @@
+{{
+  config(
+    materialized='table'
+  )
+}}
+
 {# any from address coming out of a proxy #}
 
 {% set networks = ["optimism", "base", "frax", "metal", "mode", "zora", "arbitrum_one"] %}

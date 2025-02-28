@@ -1,0 +1,167 @@
+---
+kind: ObjectType
+version: v1
+definition:
+  name: TimeseriesMetricsByProjectV0
+  fields:
+    - name: amount
+      type: Float64!
+    - name: metricId
+      type: String!
+    - name: projectId
+      type: String!
+    - name: sampleDate
+      type: Date!
+    - name: unit
+      type: String!
+  graphql:
+    typeName: Oso_TimeseriesMetricsByProjectV0
+    inputTypeName: Oso_TimeseriesMetricsByProjectV0Input
+  dataConnectorTypeMapping:
+    - dataConnectorName: oso_clickhouse
+      dataConnectorObjectType: timeseries_metrics_by_project_v0
+      fieldMapping:
+        amount:
+          column:
+            name: amount
+        metricId:
+          column:
+            name: metric_id
+        projectId:
+          column:
+            name: project_id
+        sampleDate:
+          column:
+            name: sample_date
+        unit:
+          column:
+            name: unit
+
+---
+kind: TypePermissions
+version: v1
+definition:
+  typeName: TimeseriesMetricsByProjectV0
+  permissions:
+    - role: admin
+      output:
+        allowedFields:
+          - amount
+          - metricId
+          - projectId
+          - sampleDate
+          - unit
+    - role: anonymous
+      output:
+        allowedFields:
+          - amount
+          - metricId
+          - projectId
+          - sampleDate
+          - unit
+
+---
+kind: BooleanExpressionType
+version: v1
+definition:
+  name: TimeseriesMetricsByProjectV0BoolExp
+  operand:
+    object:
+      type: TimeseriesMetricsByProjectV0
+      comparableFields:
+        - fieldName: amount
+          booleanExpressionType: Float64BoolExp
+        - fieldName: metricId
+          booleanExpressionType: StringBoolExp
+        - fieldName: projectId
+          booleanExpressionType: StringBoolExp
+        - fieldName: sampleDate
+          booleanExpressionType: DateBoolExp
+        - fieldName: unit
+          booleanExpressionType: StringBoolExp
+      comparableRelationships: []
+  logicalOperators:
+    enable: true
+  isNull:
+    enable: true
+  graphql:
+    typeName: Oso_TimeseriesMetricsByProjectV0BoolExp
+
+---
+kind: AggregateExpression
+version: v1
+definition:
+  name: TimeseriesMetricsByProjectV0AggExp
+  operand:
+    object:
+      aggregatedType: TimeseriesMetricsByProjectV0
+      aggregatableFields:
+        - fieldName: amount
+          aggregateExpression: Float64AggExp
+        - fieldName: metricId
+          aggregateExpression: StringAggExp
+        - fieldName: projectId
+          aggregateExpression: StringAggExp
+        - fieldName: sampleDate
+          aggregateExpression: DateAggExp
+        - fieldName: unit
+          aggregateExpression: StringAggExp
+  count:
+    enable: true
+  graphql:
+    selectTypeName: Oso_TimeseriesMetricsByProjectV0AggExp
+
+---
+kind: Model
+version: v1
+definition:
+  name: TimeseriesMetricsByProjectV0
+  objectType: TimeseriesMetricsByProjectV0
+  source:
+    dataConnectorName: oso_clickhouse
+    collection: timeseries_metrics_by_project_v0
+  filterExpressionType: TimeseriesMetricsByProjectV0BoolExp
+  aggregateExpression: TimeseriesMetricsByProjectV0AggExp
+  orderableFields:
+    - fieldName: amount
+      orderByDirections:
+        enableAll: true
+    - fieldName: metricId
+      orderByDirections:
+        enableAll: true
+    - fieldName: projectId
+      orderByDirections:
+        enableAll: true
+    - fieldName: sampleDate
+      orderByDirections:
+        enableAll: true
+    - fieldName: unit
+      orderByDirections:
+        enableAll: true
+  graphql:
+    selectMany:
+      queryRootField: oso_timeseriesMetricsByProjectV0
+      subscription:
+        rootField: oso_timeseriesMetricsByProjectV0
+    selectUniques:
+      - queryRootField: oso_timeseriesMetricsByProjectV0ByMetricIdProjectIdSampleDate
+        uniqueIdentifier:
+          - metricId
+          - projectId
+          - sampleDate
+    orderByExpressionType: Oso_TimeseriesMetricsByProjectV0OrderBy
+    filterInputTypeName: Oso_TimeseriesMetricsByProjectV0FilterInput
+
+---
+kind: ModelPermissions
+version: v1
+definition:
+  modelName: TimeseriesMetricsByProjectV0
+  permissions:
+    - role: admin
+      select:
+        filter: null
+        allowSubscriptions: true
+    - role: anonymous
+      select:
+        filter: null

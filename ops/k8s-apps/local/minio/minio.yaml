@@ -1,0 +1,95 @@
+# Intentionally the password is admin as this is for local testing.
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: local-minio
+  opensource.observer/cert-inject: "enabled"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: minio-configuration
+  namespace: local-minio
+type: Opaque
+stringData:
+  config.env: |-
+    export MINIO_ROOT_USER="admin"
+    export MINIO_ROOT_PASSWORD="password"
+    export MINIO_STORAGE_CLASS_STANDARD="EC:0"
+    export MINIO_BROWSER="on"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: storage-user
+  namespace: default
+type: Opaque
+data:
+  CONSOLE_ACCESS_KEY: c3RvcmFnZS11c2Vy # storage-user
+  CONSOLE_SECRET_KEY: cGFzc3dvcmQ=     # password
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: tenant-certmanager-cert
+  namespace: local-minio
+spec:
+  # If you see "Empty issuer DN not allowed in X509Certificates"
+  # You will need to add spec.subject.organizations or spec.commonName
+  # As documented in https://cert-manager.io/docs/usage/certificate/
+  # This specially if your other apps can't trust MinIO cert issued by cert-manager
+  # Example
+  #
+  # subject:
+  #   organizations:
+  #     - jetstack
+  # commonName: minio.local-minio.svc.cluster.local
+  dnsNames:
+    - "minio.local-minio"
+    - "minio.local-minio.svc"
+    - "minio.local-minio.svc.cluster.local"
+    - "*.local-minio.svc.cluster.local"
+    - "*.minio.local-minio.svc.cluster.local"
+  secretName: local-minio-tls
+  issuerRef:
+    name: cluster-ca
+    kind: ClusterIssuer
+    group: cert-manager.io
+---
+apiVersion: minio.min.io/v2
+kind: Tenant
+metadata:
+  name: minio-configuration
+  namespace: local-minio
+spec:
+  image: quay.io/minio/minio:RELEASE.2024-11-07T00-52-20Z
+  mountPath: /export
+  imagePullPolicy: IfNotPresent
+  pools:
+  - name: pool-0
+    servers: 1
+    volumeClaimTemplate:
+      metadata:
+        name: data
+      spec:
+        accessModes:
+        - ReadWriteOnce
+        resources:
+          requests:
+            storage: "1Gi"
+        storageClassName: standard
+    volumesPerServer: 1
+  requestAutoCert: false
+  ## Secret with credentials and configurations to be used by MinIO Tenant.
+  configuration:
+    name: minio-configuration
+  users:
+    - name: storage-user
+  buckets:
+    - name: "local-storage"
+      region: "local"
+      objectLock: false
+  externalCertSecret:
+    - name: local-minio-tls
+      type: cert-manager.io/v1

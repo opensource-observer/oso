@@ -1,5 +1,5 @@
 ---
-title: Run SQL Queries
+title: Explore the OSO Data Lake on BigQuery
 sidebar_position: 3
 ---
 
@@ -8,10 +8,10 @@ import Button from "../../src/components/plasmic/Button";
 As part of our
 [open source, open data, open infrastructure](../../blog/open-source-open-data-open-infra)
 initiative, we are making OSO data as widely available as possible.
-Use this guide to download the latest data for our own data stack.
+Use this guide to explore all of the source data and models available in the OSO data lake.
 
 Please refer to the
-[getting started](../get-started/index.mdx)
+[getting started](../get-started/index.md)
 guide to first get your BigQuery account setup.
 
 ## Subscribe an OSO dataset
@@ -19,7 +19,7 @@ guide to first get your BigQuery account setup.
 First, we need to subscribe to an OSO dataset in your own
 Google Cloud account.
 You can see all of our available datasets in the
-[Data Overview](./overview/index.mdx).
+[Data Overview](./datasets/index.mdx).
 
 We recommend starting with the OSO production data pipeline here:
 
@@ -56,14 +56,14 @@ For more on how you can optimize your queries, check out these guide:
 
 The OSO data pipeline is fully visible to queries.
 All model definitions can be found under
-[`warehouse/dbt/models/`](https://github.com/opensource-observer/oso/tree/main/warehouse/dbt/models)
+[`warehouse/metrics_mesh/`](https://github.com/opensource-observer/oso/tree/main/warehouse/metrics_mesh)
 in our
 [monorepo](https://github.com/opensource-observer/oso).
 
 We also maintain reference documentation at
 [https://models.opensource.observer/](https://models.opensource.observer/),
-which includes a model lineage graph to help you understand the schema of any model to form your queries..
-[lineage graph](https://models.opensource.observer/#!/overview?g_v=1).
+which includes a [model lineage graph](https://models.opensource.observer/#!/overview?g_v=1) to help you understand the schema of any model to form your queries.
+.
 
 Generally speaking there are three types of models:
 
@@ -93,4 +93,4 @@ If there is an intermediate model addition
 (such as a new event type or aggregation)
 that you think could help save costs for others in the future,
 please consider contributing to our
-[data models](../contribute/impact-models.md).
+[data models](../contribute-models/data-models.md).

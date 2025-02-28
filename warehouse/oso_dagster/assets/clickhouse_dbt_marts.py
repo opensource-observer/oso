@@ -1,26 +1,34 @@
 import json
+import logging
 import os
 import uuid
 from pathlib import Path
 from typing import Dict, List
 
 from dagster import AssetKey
+from oso_dagster.config import DagsterConfig
 
-from ..constants import PRODUCTION_DBT_TARGET, main_dbt_manifests, staging_bucket
-from ..factories import Bq2ClickhouseAssetConfig, create_bq2clickhouse_asset
+from ..factories import (
+    Bq2ClickhouseAssetConfig,
+    create_bq2clickhouse_asset,
+    early_resources_asset_factory,
+)
 from ..factories.common import AssetFactoryResponse
 from ..utils.bq import BigQueryTableConfig
 from ..utils.common import SourceMode
+
+logger = logging.getLogger(__name__)
 
 MART_DIRECTORY = "marts"
 INTERMEDIATE_DIRECTORY = "intermediate"
 SYNC_KEY = "sync_to_db"
 
 
-def clickhouse_assets_from_manifests_map(
-    manifests: Dict[str, Path],
+@early_resources_asset_factory()
+def all_clickhouse_dbt_mart_assets(
+    global_config: DagsterConfig,
 ) -> AssetFactoryResponse:
-    """Creates all Dagster assets from a map of manifests
+    """Deprecated: Creates all Dagster assets from a map of manifests
 
     Parameters
     ----------
@@ -34,14 +42,16 @@ def clickhouse_assets_from_manifests_map(
         a list of Dagster assets
     """
 
+    manifests: Dict[str, Path] = global_config.dbt_manifests
+
     # We only care about mart models from production
-    if PRODUCTION_DBT_TARGET not in manifests:
+    if global_config.production_dbt_target not in manifests:
         raise Exception(
-            f"Expected {PRODUCTION_DBT_TARGET} in dbt manifests({manifests.keys()})"
+            f"Expected {global_config.production_dbt_target} in dbt manifests({manifests.keys()})"
         )
 
     # Load the manifest
-    manifest_path = manifests[PRODUCTION_DBT_TARGET]
+    manifest_path = manifests[global_config.production_dbt_target]
     if not os.path.isfile(manifest_path):
         raise Exception(f"{manifest_path} does not exist")
     with open(manifest_path, "r") as f:
@@ -65,7 +75,7 @@ def clickhouse_assets_from_manifests_map(
             table_name = n.get("name")
             # Only copy marts that are marked for sync
             if n.get("meta").get(SYNC_KEY, False):
-                print(f"Queuing {table_name}")
+                logger.debug(f"Queuing {table_name}")
                 copied_mart_names.append(table_name)
                 # Create an asset for each mart to copy
                 result = result + create_bq2clickhouse_asset(
@@ -80,9 +90,10 @@ def clickhouse_assets_from_manifests_map(
                             table_name=table_name,
                             service_account=None,
                         ),
-                        staging_bucket=staging_bucket,
+                        staging_bucket=global_config.staging_bucket_url,
                         destination_table_name=table_name,
                         index=n.get("meta").get("index"),
+                        tags={"opensource.observer/experimental": "true"},
                         order_by=n.get("meta").get("order_by"),
                         copy_mode=SourceMode.Overwrite,
                         asset_kwargs={
@@ -122,13 +133,7 @@ def clickhouse_assets_from_manifests_map(
             # Track which marts were skipped
             else:
                 skipped_mart_names.append(table_name)
-        print(
+        logger.debug(
             f"...queued {str(len(copied_mart_names))} marts, skipping {str(len(skipped_mart_names))}"
         )
-        # print(skipped_mart_names)
         return result
-
-
-all_clickhouse_dbt_mart_assets = clickhouse_assets_from_manifests_map(
-    main_dbt_manifests
-)

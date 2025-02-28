@@ -28,5 +28,9 @@ select
   opened_pull_request_count_6_months,
   merged_pull_request_count_6_months,
   opened_issue_count_6_months,
-  closed_issue_count_6_months
+  closed_issue_count_6_months,
+  comment_count_6_months,
+  release_count_6_months,
+  time_to_first_response_days_average_6_months,
+  time_to_merge_days_average_6_months
 from {{ ref('int_code_metrics_by_project') }}

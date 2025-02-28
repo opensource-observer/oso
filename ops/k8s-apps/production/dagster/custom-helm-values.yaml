@@ -18,6 +18,7 @@ spec:
     dagster:
       global: 
         serviceAccountName: production-dagster
+
       ingress:
         enabled: true
         ingressClassName: ingress-internal-cloudflare
@@ -25,7 +26,71 @@ spec:
           host: admin-dagster.opensource.observer
         readOnlyDagsterWebserver:
           host: dagster.opensource.observer
+
       dagsterDaemon:
         runRetries:
           enabled: true
           maxRetries: 3
+        env:
+          - name: DAGSTER_DBT_GENERATE_AND_AUTH_GCP
+            value: "1"
+        resources:
+          limits:
+            cpu: 1000m
+            memory: 768Mi
+          requests:
+            cpu: 500m
+            memory: 512Mi
+
+      dagsterWebserver:
+        env:
+          - name: DAGSTER_DBT_GENERATE_AND_AUTH_GCP
+            value: "1"
+        resources:
+          limits:
+            cpu: 1000m
+            memory: 768Mi
+          requests:
+            cpu: 500m
+            memory: 512Mi
+
+      runLauncher:
+        config:
+          k8sRunLauncher:
+            runK8sConfig:
+              podSpecConfig:
+                tolerations:
+                  - key: pool_type
+                    effect: NoSchedule
+                    operator: Equal
+                    value: standard
+                nodeSelector:
+                  pool_type: standard
+              containerConfig:
+                resources:
+                  limits:
+                    cpu: 1000m
+                    memory: 2048Mi
+                  requests:
+                    cpu: 500m
+                    memory: 1024Mi
+        
+    sqlmesh:
+      gateway: "trino"
+      trino:
+        host: production-trino-trino.production-trino.svc.cluster.local
+        user: sqlmesh
+        catalog: "metrics"
+        concurrentTasks: "64"
+        k8s:
+          coordinatorDeploymentName: production-trino-trino-coordinator
+          workerDeploymentName: production-trino-trino-worker
+          serviceName: production-trino-trino
+          namespace: production-trino
+      mcs:
+        enabled: true
+        url: "http://production-mcs.production-mcs.svc.cluster.local:8000"
+        k8s:
+          deploymentName: production-mcs
+          serviceName: production-mcs
+          namespace: production-mcs

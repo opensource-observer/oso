@@ -17,7 +17,7 @@ If you'd like to get involved, here's what to do:
 1. Apply to [join the Data Collective](https://www.kariba.network/). It only takes a few minutes. We'll review, and reach out to schedule an onboarding call.
 2. Join our [Discord server](https://www.opensource.observer/discord) and say hello.
 3. Get inspiration from our Colab directory of [starter notebooks for impact metrics](https://drive.google.com/drive/folders/1I4exiLfZYgPwIGBEzuAMeGtJUhtS_DE7?usp=drive_link). We also have of them in our [Insights repo](https://github.com/opensource-observer/insights/tree/main/community/notebooks) if you prefer to run them locally.
-4. Consult [our docs](https://docs.opensource.observer/docs/) and especially our [impact metric spec](https://docs.opensource.observer/docs/how-oso-works/impact-metrics/) as you prepare your analysis.
+4. Consult [our docs](../../docs/) and especially our [impact metric spec](../../docs/references/impact-metrics/) as you prepare your analysis.
 
 The rest of this post includes more details on the types of impact metrics we're interested in.
 
@@ -62,7 +62,7 @@ _Metrics that attempt to differentiate onchain users based on behavior and trust
 
 This is a hot topic right now, with a number of projects attempting to create reputation systems for onchain users. We're integrating with many of the leading projects and bringing the data they generate into the OSO data warehouse. From there, there are all sorts of directions you can take the analysis!
 
-The **Onchain Activity** metric is a good starting point for new analysts. Have a look at our working definitions for [onchain users](https://docs.opensource.observer/docs/how-oso-works/impact-metrics/onchain_users) and help us create some better ones. The **Network Loyalty** is a spicy metric that will get even spicier as we add more networks to the OSO dataset!
+The **Onchain Activity** metric is a good starting point for new analysts. Have a look at our working definitions for [onchain users](../../docs/references/impact-metrics/onchain) and help us create some better ones. The **Network Loyalty** is a spicy metric that will get even spicier as we add more networks to the OSO dataset!
 
 | Impact Metric    | Description                                           | Comments                                   |
 | :--------------- | :---------------------------------------------------- | :----------------------------------------- |

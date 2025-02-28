@@ -1,12 +1,16 @@
-from typing import Dict, List, Tuple, Optional
+import logging
+from typing import Dict, List, Optional, Tuple
+
+logger = logging.getLogger(__name__)
+
 
 def create_table(
-    client, 
-    table_name: str, 
+    client,
+    table_name: str,
     columns: List[Tuple[str, str]],
     index: Optional[Dict[str, List[str]]] = None,
     order_by: Optional[List[str]] = None,
-    if_not_exists: bool = True
+    if_not_exists: bool = True,
 ):
     """
     Creates a Clickhouse table
@@ -48,13 +52,23 @@ def create_table(
         "table_name": table_name,
         "if_not_exists": "IF NOT EXISTS" if if_not_exists else "",
         "columns": ", ".join([f"`{name}` {type}" for name, type in columns]),
-        "indices": ", ".join([f"INDEX `{name}` ({', '.join(columns)}) TYPE bloom_filter" for name, columns in index.items()]) if index else "",
+        "indices": (
+            ", ".join(
+                [
+                    f"INDEX `{name}` ({', '.join(columns)}) TYPE bloom_filter"
+                    for name, columns in index.items()
+                ]
+            )
+            if index
+            else ""
+        ),
         "order_by": ", ".join(order_by) if order_by else "",
     }
 
-    #return command % params
+    # return command % params
     result = client.command(command % params)
     return result
+
 
 def drop_table(client, table_name: str):
     """
@@ -72,7 +86,8 @@ def drop_table(client, table_name: str):
     Any
         See https://clickhouse.com/docs/en/integrations/python#client-command-method
     """
-    return client.command(f"DROP TABLE {table_name}")
+    return client.command(f"DROP TABLE IF EXISTS {table_name}")
+
 
 def rename_table(client, from_name: str, to_name: str):
     """
@@ -94,7 +109,8 @@ def rename_table(client, from_name: str, to_name: str):
     """
     return client.command(f"RENAME TABLE {from_name} TO {to_name}")
 
-def import_data(client, table_name: str, s3_uri: str):
+
+def import_data(client, table_name: str, s3_uri: str, format: str = ""):
     """
     Imports data into a Clickhouse table
     Clickhouse will automatically infer the data format and compression from the file extension
@@ -109,7 +125,7 @@ def import_data(client, table_name: str, s3_uri: str):
     s3_uri: str
         URI to S3 or GCS blob
         e.g. https://storage.googleapis.com/bucket_name/folder/*.parquet
-    
+
     Returns
     -------
     Any
@@ -117,14 +133,25 @@ def import_data(client, table_name: str, s3_uri: str):
     """
     client.command("SET input_format_parquet_import_nested = 1;")
     client.command("SET parallel_distributed_insert_select = 1;")
-    command = (
-        "INSERT INTO %(table_name)s "
-        "SELECT * "
-        "FROM s3Cluster('default', '%(s3_uri)s')"
-    )
+    if not format:
+        command = (
+            "INSERT INTO %(table_name)s "
+            "SELECT * "
+            "FROM s3Cluster('default', '%(s3_uri)s')"
+        )
+    else:
+        command = (
+            "INSERT INTO %(table_name)s "
+            "SELECT * "
+            "FROM s3Cluster('default', '%(s3_uri)s', '%(format)s')"
+        )
     params = {
         "table_name": table_name,
         "s3_uri": s3_uri,
+        "format": format,
     }
+    query = command % params
+
+    logger.debug(f"Running query: {query}")
     result = client.command(command % params)
     return result

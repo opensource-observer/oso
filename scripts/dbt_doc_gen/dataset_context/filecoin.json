@@ -1,0 +1,14 @@
+{
+    "dataset_name": "Filecoin Data",
+    "description": "The Filecoin Data dataset is a decentralized storage network that stores vital information and mirrors the dataset offered by Lily for use in the OSO data pipeline. The dataset includes details such as storage deals, miners, FVM (Filecoin Virtual Machine) transactions, and other network activities. It provides a comprehensive overview of the Filecoin ecosystem and is updated weekly.",
+    "use_cases": [
+      "Querying storage deals and miner activities on the Filecoin network",
+      "Analyzing FVM transactions and network messages",
+      "Monitoring decentralized storage network metrics and performance",
+      "Tracking messages sent within the Filecoin network over time"
+    ],
+    "network": "Filecoin",
+    "license": "OSO terms of service",
+    "update_frequency": "Weekly",
+    "reference_documentation": "https://models.opensource.observer/"
+}

@@ -2,8 +2,8 @@ from typing import Generator, Iterable, List, cast
 
 from dagster import (
     AssetKey,
-    AssetSelection,
     AssetsDefinition,
+    AssetSelection,
     DefaultScheduleStatus,
     RunRequest,
     ScheduleDefinition,
@@ -11,9 +11,12 @@ from dagster import (
     define_asset_job,
 )
 from oso_dagster.factories.common import AssetFactoryResponse
-
-partitioned_assets = AssetSelection.tag(
-    "opensource.observer/extra", "partitioned-assets"
+from oso_dagster.utils.tags import (
+    experimental_tag,
+    partitioned_assets,
+    sbom_source_tag,
+    stable_source_tag,
+    unstable_source_tag,
 )
 
 
@@ -68,31 +71,60 @@ def get_partitioned_schedules(
 
     return [create_schedule(asset_key) for asset_key in resolved_assets]
 
-
-materialize_all_assets = define_asset_job(
-    "materialize_all_assets_job",
-    AssetSelection.all() - partitioned_assets,
+materialize_core_assets = define_asset_job(
+    "materialize_core_assets_job",
+    AssetSelection.all()
+    - experimental_tag
+    - stable_source_tag
+    - unstable_source_tag
+    - sbom_source_tag
+    - partitioned_assets,
 )
 
-materialize_source_assets = define_asset_job(
-    "materialize_source_assets_job",
-    AssetSelection.tag("opensource.observer/type", "source")
-    | AssetSelection.tag("opensource.observer/type", "source-qa"),
+materialize_stable_source_assets = define_asset_job(
+    "materialize_stable_source_assets_job",
+    stable_source_tag,
 )
+
+materialize_unstable_source_assets = define_asset_job(
+    "materialize_unstable_source_assets_job",
+    unstable_source_tag,
+)
+
+materialize_sbom_source_assets = define_asset_job(
+    "materialize_sbom_assets_job",
+    sbom_source_tag,
+)
+
 
 schedules: list[ScheduleDefinition] = [
-    # Run everything except partitioned assets once a week on sunday at midnight
+    # Run core pipeline assets once a week on sunday at midnight
     ScheduleDefinition(
-        job=materialize_all_assets,
+        job=materialize_core_assets,
         cron_schedule="0 0 * * 0",
         tags={
             "dagster/priority": "-1",
         },
     ),
-    # Run only source data every day (exclude sunday as it's already in the schedule above)
+    # Run source assets every day at midnight
     ScheduleDefinition(
-        job=materialize_source_assets,
-        cron_schedule="0 0 * * 1-6",
+        job=materialize_stable_source_assets,
+        cron_schedule="0 18 * * *",
+        tags={
+            "dagster/priority": "-1",
+        },
+    ),
+    ScheduleDefinition(
+        job=materialize_unstable_source_assets,
+        cron_schedule="0 12 * * *",
+        tags={
+            "dagster/priority": "-1",
+        },
+    ),
+    # Run SBOM assets on Tuesday and Friday at midnight, since they take too long
+    ScheduleDefinition(
+        job=materialize_sbom_source_assets,
+        cron_schedule="0 6 * * 2,5",
         tags={
             "dagster/priority": "-1",
         },

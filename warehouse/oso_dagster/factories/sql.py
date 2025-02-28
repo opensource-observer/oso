@@ -3,21 +3,26 @@ import typing as t
 
 import dlt
 from dagster import AssetExecutionContext, AssetKey
-from dagster_embedded_elt.dlt import (DagsterDltResource, DagsterDltTranslator,
-                                      dlt_assets)
+from dagster_embedded_elt.dlt import (
+    DagsterDltResource,
+    DagsterDltTranslator,
+    dlt_assets,
+)
 from dlt.common.schema.typing import TWriteDispositionConfig
 from dlt.destinations import bigquery
 from dlt.extract.resource import DltResource
 from dlt.pipeline.pipeline import Pipeline
-from dlt.sources.credentials import (ConnectionStringCredentials,
-                                     GcpServiceAccountCredentials)
-from sqlalchemy import MetaData, Table
+from dlt.sources.credentials import (
+    ConnectionStringCredentials,
+    GcpServiceAccountCredentials,
+)
+from oso_dagster.dlt_sources.sql_database.helpers import engine_from_credentials
+from sqlalchemy import Engine, MetaData, Table
 from sqlalchemy.exc import NoSuchTableError
 
 from ..dlt_sources.sql_database import TableBackend, sql_table
 from ..utils.secrets import SecretReference, SecretResolver
-from .common import (AssetFactoryResponse, AssetList,
-                     early_resources_asset_factory)
+from .common import AssetFactoryResponse, AssetList, early_resources_asset_factory
 
 logger = logging.getLogger(__name__)
 
@@ -45,12 +50,14 @@ class TopLevelSQLTableOptions(SQLTableOptions):
 
 def _generate_asset_for_table(
     source_name: str,
-    credentials: ConnectionStringCredentials,
+    credentials: ConnectionStringCredentials | Engine | str,
     pipeline: Pipeline,
     table_options: TopLevelSQLTableOptions,
     translator: DagsterDltTranslator,
+    pool_size: t.Optional[int] = None,
 ):
     all_table_options = table_options.copy()
+
     @dlt.source(name=f"{source_name}_{table_options["table"]}")
     def _source():
         destination_table_name = table_options.get("destination_table_name")
@@ -69,13 +76,13 @@ def _generate_asset_for_table(
         name=f"{source_name}_{table_options["table"]}",
         dlt_source=_source(),
         dlt_pipeline=pipeline,
-        dlt_dagster_translator=translator,
+        dagster_dlt_translator=translator,
     )
     def _asset(context: AssetExecutionContext, dlt: DagsterDltResource):
         kwargs = {}
         write_disposition = all_table_options.get("write_disposition")
         if write_disposition:
-            kwargs['write_disposition'] = write_disposition
+            kwargs["write_disposition"] = write_disposition
 
         yield from dlt.run(context=context, loader_file_format="jsonl", **kwargs)
 
@@ -88,7 +95,9 @@ def sql_assets(
     sql_tables: t.List[TopLevelSQLTableOptions],
     group_name: str = "",
     environment: str = "production",
-    asset_type: str = "source"
+    asset_type: str = "source",
+    pool_size: t.Optional[int] = None,
+    concurrency_key: t.Optional[str] = None,
 ):
     """A convenience sql asset factory that should handle any basic incremental
     table or or full refresh sql source and configure a destination to the
@@ -101,25 +110,34 @@ def sql_assets(
         project_id: str,
         dlt_staging_destination: dlt.destinations.filesystem,
     ):
-        
+
         tags = {
             "opensource.observer/environment": environment,
             "opensource.observer/factory": "sql_dlt",
             "opensource.observer/type": asset_type,
+            "opensource.observer/source": "unstable",
         }
-        translator = PrefixedDltTranslator(source_name, tags) 
+        if concurrency_key is not None:
+            tags["dagster/concurrency_key"] = concurrency_key
+        translator = PrefixedDltTranslator(source_name, tags)
 
         connection_string = secrets.resolve_as_str(source_credential_reference)
-        credentials = ConnectionStringCredentials(connection_string)
+        credentials: ConnectionStringCredentials | Engine | str = (
+            ConnectionStringCredentials(connection_string)
+        )
+        if pool_size:
+            credentials = engine_from_credentials(credentials, pool_size=pool_size)
 
         assets: AssetList = []
 
         for table in sql_tables:
             pipeline_name = f"{source_name}_{table["table"]}_to_bigquery"
             if group_name != "":
-                pipeline_name = f"{source_name}_{group_name}_{table["table"]}_to_bigquery"
+                pipeline_name = (
+                    f"{source_name}_{group_name}_{table["table"]}_to_bigquery"
+                )
                 if table.get("destination_table_name") is None:
-                    table['destination_table_name'] = f"{group_name}__{table["table"]}"
+                    table["destination_table_name"] = f"{group_name}__{table["table"]}"
 
             pipeline = dlt.pipeline(
                 pipeline_name=pipeline_name,
@@ -134,12 +152,12 @@ def sql_assets(
                 asset_def = _generate_asset_for_table(
                     source_name, credentials, pipeline, table, translator
                 )
-                assets.append(
-                    asset_def
-                )
+                assets.append(asset_def)
             except NoSuchTableError:
-                logger.error(f'Failed to load table "{table["table"]}" for source "{source_name}"')
-                
+                logger.error(
+                    f'Failed to load table "{table["table"]}" for source "{source_name}"'
+                )
+
         return AssetFactoryResponse(assets=assets)
 
     return factory
@@ -177,7 +195,7 @@ class PrefixedDltTranslator(DagsterDltTranslator):
         key.append("sources")
         key.append(resource.name)
         return [AssetKey(key)]
-    
+
     def get_tags(self, resource: DltResource):
         # As of 2024-07-10 This doesn't work. We will make a PR upstream
         return self._tags

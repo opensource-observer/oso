@@ -1,0 +1,405 @@
+---
+title: Analyze Funding Histories
+sidebar_position: 4
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+Analyze the funding history of your favorite projects. New to OSO? Check out our [Getting Started guide](../get-started/index.md) to set up your BigQuery or API access.
+
+This tutorial shows how to quickly lookup the funding history of your favorite projects, and then explore funding from specific sources (e.g. Gitcoin Grants, Open Collective, etc.)
+
+## Getting Started
+
+Before running any analysis, you'll need to set up your environment:
+
+<Tabs>
+<TabItem value="sql" label="SQL">
+
+If you haven't already, subscribe to OSO public datasets in BigQuery by clicking the "Subscribe" button on our [Datasets page](../integrate/datasets/#oso-production-data-pipeline).
+
+You can run all queries in this guide directly in the [BigQuery console](https://console.cloud.google.com/bigquery).
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+Start your Python notebook with the following:
+
+```python
+from google.cloud import bigquery
+import pandas as pd
+import os
+
+os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = # PATH TO YOUR CREDENTIALS JSON
+GCP_PROJECT = # YOUR GCP PROJECT NAME
+
+client = bigquery.Client(GCP_PROJECT)
+```
+
+For more details on setting up Python notebooks, see our guide on [writing Python notebooks](../guides/notebooks/index.mdx).
+
+</TabItem>
+</Tabs>
+
+## Basic Funding Analysis
+
+### Project Funding History
+
+Get the complete funding history for a specific project:
+
+<Tabs>
+<TabItem value="sql" label="SQL">
+
+```sql
+SELECT
+  time,
+  event_source,
+  from_project_name as funder,
+  amount,
+  grant_pool_name
+FROM `oso_production.oss_funding_v0`
+WHERE to_project_name = 'uniswap'
+ORDER BY time DESC
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+query = """
+  SELECT
+    time,
+    event_source,
+    from_project_name as funder,
+    amount,
+    grant_pool_name
+  FROM `oso_production.oss_funding_v0`
+  WHERE to_project_name = 'uniswap'
+  ORDER BY time DESC
+"""
+df = client.query(query).to_dataframe()
+
+# Optional: Display total funding by source
+print("Funding by source:")
+print(df.groupby('event_source')['amount'].sum())
+```
+
+</TabItem>
+</Tabs>
+
+### Top Funded Projects
+
+Find the projects that have received the most funding:
+
+<Tabs>
+<TabItem value="sql" label="SQL">
+
+```sql
+SELECT
+  to_project_name,
+  COUNT(DISTINCT event_source) as funding_sources,
+  COUNT(*) as number_of_grants,
+  SUM(amount) as total_funding
+FROM `oso_production.oss_funding_v0`
+GROUP BY to_project_name
+HAVING total_funding > 0
+ORDER BY total_funding DESC
+LIMIT 20
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+query = """
+  SELECT
+    to_project_name,
+    COUNT(DISTINCT event_source) as funding_sources,
+    COUNT(*) as number_of_grants,
+    SUM(amount) as total_funding
+  FROM `oso_production.oss_funding_v0`
+  GROUP BY to_project_name
+  HAVING total_funding > 0
+  ORDER BY total_funding DESC
+  LIMIT 20
+"""
+df = client.query(query).to_dataframe()
+
+# Optional: Create a bar chart
+import plotly.express as px
+
+fig = px.bar(df, 
+    x='to_project_name', 
+    y='total_funding',
+    title='Top Funded Projects'
+)
+fig.show()
+```
+
+</TabItem>
+</Tabs>
+
+## Advanced Analysis
+
+### Funding vs Development Activity
+
+Compare funding with development metrics to understand the relationship between financial support and project activity:
+
+<Tabs>
+<TabItem value="sql" label="SQL">
+
+```sql
+WITH project_funding AS (
+  SELECT
+    to_project_name,
+    SUM(amount) as total_funding,
+    COUNT(DISTINCT event_source) as funding_sources
+  FROM `oso_production.oss_funding_v0`
+  GROUP BY to_project_name
+)
+SELECT
+  f.to_project_name,
+  f.total_funding,
+  f.funding_sources,
+  m.active_developer_count_6_months,
+  m.commit_count_6_months,
+  m.opened_issue_count_6_months,
+  m.star_count,
+  m.fork_count
+FROM project_funding f
+JOIN `oso_production.code_metrics_by_project_v1` m
+  ON f.to_project_name = m.project_name
+WHERE f.total_funding > 0
+ORDER BY f.total_funding DESC
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+query = """
+  WITH project_funding AS (
+    SELECT
+      to_project_name,
+      SUM(amount) as total_funding,
+      COUNT(DISTINCT event_source) as funding_sources
+    FROM `oso_production.oss_funding_v0`
+    GROUP BY to_project_name
+  )
+  SELECT
+    f.to_project_name,
+    f.total_funding,
+    f.funding_sources,
+    m.active_developer_count_6_months,
+    m.commit_count_6_months,
+    m.opened_issue_count_6_months,
+    m.star_count,
+    m.fork_count
+  FROM project_funding f
+  JOIN `oso_production.code_metrics_by_project_v1` m
+    ON f.to_project_name = m.project_name
+  WHERE f.total_funding > 0
+  ORDER BY f.total_funding DESC
+"""
+df = client.query(query).to_dataframe()
+
+# Optional: Create a scatter plot
+import plotly.express as px
+
+fig = px.scatter(df, 
+    x='total_funding', 
+    y='commit_count_6_months',
+    size='active_developer_count_6_months',
+    hover_data=['to_project_name', 'funding_sources'],
+    title='Funding vs Development Activity'
+)
+fig.show()
+```
+
+</TabItem>
+</Tabs>
+
+### Funding Source Analysis
+
+Analyze the distribution and impact of different funding sources:
+
+<Tabs>
+<TabItem value="sql" label="SQL">
+
+```sql
+SELECT
+  event_source,
+  grant_pool_name,
+  COUNT(DISTINCT to_project_name) as projects_funded,
+  COUNT(*) as number_of_grants,
+  SUM(amount) as total_funding,
+  AVG(amount) as average_grant
+FROM `oso_production.oss_funding_v0`
+GROUP BY event_source, grant_pool_name
+HAVING total_funding > 0
+ORDER BY total_funding DESC
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+query = """
+  SELECT
+    event_source,
+    grant_pool_name,
+    COUNT(DISTINCT to_project_name) as projects_funded,
+    COUNT(*) as number_of_grants,
+    SUM(amount) as total_funding,
+    AVG(amount) as average_grant
+  FROM `oso_production.oss_funding_v0`
+  GROUP BY event_source, grant_pool_name
+  HAVING total_funding > 0
+  ORDER BY total_funding DESC
+"""
+df = client.query(query).to_dataframe()
+
+# Optional: Create a treemap visualization
+import plotly.express as px
+
+fig = px.treemap(df, 
+    path=[px.Constant('All Sources'), 'event_source', 'grant_pool_name'],
+    values='total_funding',
+    title='Funding Distribution by Source'
+)
+fig.show()
+```
+
+</TabItem>
+</Tabs>
+
+### Social Network Funding Analysis
+
+Analyze funding patterns within social networks by combining funding data with social graph data:
+
+<Tabs>
+<TabItem value="sql" label="SQL">
+
+```sql
+SELECT DISTINCT
+  donations.donor_address,
+  users.user_source_id as fid,
+  users.user_name as username,
+  donations.project_name,
+  amount_in_usd,
+  timestamp
+FROM `gitcoin.all_donations` as donations
+JOIN `oso_production.artifacts_by_user_v1` as users
+  ON lower(donations.donor_address) = users.artifact_name
+WHERE
+  user_source = 'FARCASTER'
+  AND users.user_source_id IN (
+    WITH max_date AS (
+      SELECT max(date) as last_date
+      FROM `karma3.localtrust`
+    )
+    SELECT CAST(j as string) as fid
+    FROM `karma3.localtrust`
+    WHERE i = 5650  -- Replace with your FID to see your network
+    ORDER BY v DESC
+    LIMIT 150
+  )
+ORDER BY amount_in_usd DESC
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+query = """
+  SELECT DISTINCT
+    donations.donor_address,
+    users.user_source_id as fid,
+    users.user_name as username,
+    donations.project_name,
+    amount_in_usd,
+    timestamp
+  FROM `gitcoin.all_donations` as donations
+  JOIN `oso_production.artifacts_by_user_v1` as users
+    ON lower(donations.donor_address) = users.artifact_name
+  WHERE
+    user_source = 'FARCASTER'
+    AND users.user_source_id IN (
+      WITH max_date AS (
+        SELECT max(date) as last_date
+        FROM `karma3.localtrust`
+      )
+      SELECT CAST(j as string) as fid
+      FROM `karma3.localtrust`
+      WHERE i = 5650  -- Replace with your FID to see your network
+      ORDER BY v DESC
+      LIMIT 150
+    )
+  ORDER BY amount_in_usd DESC
+"""
+df = client.query(query).to_dataframe()
+
+# Optional: Create a network visualization
+import networkx as nx
+import plotly.graph_objects as go
+
+# Create a graph of donors and projects
+G = nx.Graph()
+for _, row in df.iterrows():
+    G.add_edge(row['username'], row['project_name'], weight=row['amount_in_usd'])
+
+# Create a spring layout
+pos = nx.spring_layout(G)
+
+# Create edges trace
+edge_x = []
+edge_y = []
+for edge in G.edges():
+    x0, y0 = pos[edge[0]]
+    x1, y1 = pos[edge[1]]
+    edge_x.extend([x0, x1, None])
+    edge_y.extend([y0, y1, None])
+
+edges_trace = go.Scatter(
+    x=edge_x, y=edge_y,
+    line=dict(width=0.5, color='#888'),
+    hoverinfo='none',
+    mode='lines')
+
+# Create nodes trace
+node_x = []
+node_y = []
+node_text = []
+for node in G.nodes():
+    x, y = pos[node]
+    node_x.append(x)
+    node_y.append(y)
+    node_text.append(node)
+
+nodes_trace = go.Scatter(
+    x=node_x, y=node_y,
+    mode='markers+text',
+    hoverinfo='text',
+    text=node_text,
+    textposition="top center",
+    marker=dict(size=10)
+)
+
+# Create the figure
+fig = go.Figure(data=[edges_trace, nodes_trace],
+    layout=go.Layout(
+        showlegend=False,
+        hovermode='closest',
+        margin=dict(b=0,l=0,r=0,t=0),
+        xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+        yaxis=dict(showgrid=False, zeroline=False, showticklabels=False)
+    )
+)
+fig.show()
+```
+
+</TabItem>
+</Tabs>
+
+For more examples of funding analysis, check out our [Insights Repo](https://github.com/opensource-observer/insights).

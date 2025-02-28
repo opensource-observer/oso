@@ -39,18 +39,18 @@ def db():
         {
             "time_and_id": [
                 ["time", "id"],
-                [arrow.get("2024-01-01").datetime, 1],
-                [arrow.get("2024-02-01").datetime, 2],
-                [arrow.get("2024-03-01").datetime, 3],
-                [arrow.get("2024-04-01").datetime, 4],
+                [arrow.get("2024-01-01", tzinfo="UTC").datetime, 1],
+                [arrow.get("2024-02-01", tzinfo="UTC").datetime, 2],
+                [arrow.get("2024-03-01", tzinfo="UTC").datetime, 3],
+                [arrow.get("2024-04-01", tzinfo="UTC").datetime, 4],
             ],
             "time_id_and_name": [
                 ["time", "id", "name"],
-                [arrow.get("2024-01-01").datetime, 1, "alpha"],
-                [arrow.get("2024-02-01").datetime, 2, "bravo"],
-                [arrow.get("2024-03-01").datetime, 3, "charlie"],
-                [arrow.get("2024-04-01").datetime, 4, "delta"],
-                [arrow.get("2024-02-01").datetime, 5, "foxtrot"],
+                [arrow.get("2024-01-01", tzinfo="UTC").datetime, 1, "alpha"],
+                [arrow.get("2024-02-01", tzinfo="UTC").datetime, 2, "bravo"],
+                [arrow.get("2024-03-01", tzinfo="UTC").datetime, 3, "charlie"],
+                [arrow.get("2024-04-01", tzinfo="UTC").datetime, 4, "delta"],
+                [arrow.get("2024-02-01", tzinfo="UTC").datetime, 5, "foxtrot"],
             ],
         }
     )
@@ -63,12 +63,15 @@ def db():
     [
         (
             SELECT_NO_CTE,
-            dict(start=arrow.get("2024-02-01"), end=arrow.get("2024-04-01")),
+            dict(
+                start=arrow.get("2024-02-01", tzinfo="UTC"),
+                end=arrow.get("2024-04-01", tzinfo="UTC"),
+            ),
             2,
         ),
         (
             SELECT_WITH_CTE,
-            dict(start=arrow.get("2024-02-01")),
+            dict(start=arrow.get("2024-02-01", tzinfo="UTC")),
             3,
         ),
     ],
@@ -93,7 +96,10 @@ def test_time_constrain_succeed(
         (
             SELECT_WITH_JOIN,
             "time_id_and_name",
-            dict(start=arrow.get("2024-02-01"), end=arrow.get("2024-04-01")),
+            dict(
+                start=arrow.get("2024-02-01", tzinfo="UTC"),
+                end=arrow.get("2024-04-01", tzinfo="UTC"),
+            ),
             2,
         ),
     ],

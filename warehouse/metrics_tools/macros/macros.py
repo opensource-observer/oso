@@ -1,17 +1,15 @@
 import typing as t
 
 import sqlglot
-from sqlglot import expressions as exp
-from sqlmesh.core.dialect import MacroVar
-from sqlmesh.core.macros import MacroEvaluator
-from sqlmesh.core.dialect import parse_one
-
 from metrics_tools.definition import (
     PeerMetricDependencyRef,
     time_suffix,
     to_actual_table_name,
 )
 from metrics_tools.utils import exp_literal_to_py_literal
+from sqlglot import expressions as exp
+from sqlmesh.core.dialect import MacroVar, parse_one
+from sqlmesh.core.macros import MacroEvaluator
 
 
 def relative_window_sample_date(
@@ -31,11 +29,6 @@ def relative_window_sample_date(
     must be a valid thing to subtract from. Also note, the base should generally
     be the `@metrics_end` date.
     """
-    # if evaluator.runtime_stage in ["loading", "creating"]:
-    #     return parse_one("STR_TO_DATE('1970-01-01', '%Y-%m-%d')")
-    if relative_index == 0:
-        return base
-
     if isinstance(unit, exp.Literal):
         unit = t.cast(str, unit.this)
     elif isinstance(unit, exp.Expression):
@@ -55,12 +48,13 @@ def relative_window_sample_date(
         converted_relative_index = int(t.cast(int, relative_index.this))
     elif isinstance(relative_index, exp.Neg):
         converted_relative_index = int(relative_index.this.this) * -1
+    if converted_relative_index == 0:
+        return base
+    window_int = int(evaluator.eval_expression(window))
+    interval_delta_int = converted_relative_index * window_int
     interval_unit = exp.Var(this=unit)
     interval_delta = exp.Interval(
-        this=exp.Mul(
-            this=exp.Literal(this=str(abs(converted_relative_index)), is_string=False),
-            expression=window,
-        ),
+        this=exp.Literal(this=str(abs(interval_delta_int)), is_string=False),
         unit=interval_unit,
     )
     if converted_relative_index > 0:
@@ -72,9 +66,12 @@ def relative_window_sample_date(
 def time_aggregation_bucket(
     evaluator: MacroEvaluator, time_exp: exp.Expression, interval: str
 ):
-
     if evaluator.runtime_stage in ["loading", "creating"]:
         return parse_one("STR_TO_DATE('1970-01-01', '%Y-%m-%d')")
+
+    if interval == "over_all_time":
+        return parse_one("CURRENT_DATE()")
+
     if evaluator.engine_adapter.dialect == "duckdb":
         rollup_to_interval = {
             "daily": "DAY",
@@ -177,6 +174,10 @@ def metrics_start(evaluator: MacroEvaluator, _data_type: t.Optional[str] = None)
     if evaluator.runtime_stage in ["loading", "creating"]:
         return parse_one("STR_TO_DATE('1970-01-01', '%Y-%m-%d')")
     time_aggregation_interval = evaluator.locals.get("time_aggregation")
+
+    if time_aggregation_interval == "over_all_time":
+        return parse_one("STR_TO_DATE('1970-01-01', '%Y-%m-%d')")
+
     if time_aggregation_interval:
         start_date = t.cast(
             exp.Expression,
@@ -234,6 +235,10 @@ def metrics_end(evaluator: MacroEvaluator, _data_type: t.Optional[str] = None):
     if evaluator.runtime_stage in ["loading", "creating"]:
         return parse_one("STR_TO_DATE('1970-01-01', '%Y-%m-%d')")
     time_aggregation_interval = evaluator.locals.get("time_aggregation")
+
+    if time_aggregation_interval == "over_all_time":
+        return parse_one("CURRENT_DATE()")
+
     if time_aggregation_interval:
         to_interval = {
             "daily": "day",
@@ -312,6 +317,16 @@ def metrics_entity_type_alias(
         entity_type=evaluator.locals.get("entity_type", "artifact")
     )
     return exp.alias_(to_alias, alias_name)
+
+
+def metrics_entity_type_table(evaluator: MacroEvaluator, format_str: str):
+    """Turns a format string into a table name"""
+    if isinstance(format_str, exp.Literal):
+        format_str = format_str.this
+    table_name = format_str.format(
+        entity_type=evaluator.locals.get("entity_type", "artifact")
+    )
+    return sqlglot.to_table(table_name, quoted=True)
 
 
 def metrics_peer_ref(

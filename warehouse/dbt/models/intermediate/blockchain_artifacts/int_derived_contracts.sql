@@ -1,3 +1,9 @@
+{{
+  config(
+    materialized='table'
+  )
+}}
+
 with contracts_deployed_no_factory as (
   select
     network,

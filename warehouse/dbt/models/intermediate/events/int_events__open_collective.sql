@@ -1,3 +1,17 @@
+{{
+  config(
+    materialized='table',
+    partition_by={
+      "field": "time",
+      "data_type": "timestamp",
+      "granularity": "day",
+    },
+    meta={
+      'sync_to_db': False
+    }
+  )
+}}
+
 with open_collective_expenses as (
   select
     time,

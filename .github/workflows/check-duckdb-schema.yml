@@ -1,0 +1,92 @@
+# Verifies if our duckdb schema in R2 is up to date with the latest changes.
+# If it's not up to date, it will regenerate the file and upsert it.
+name: check-duckdb-schema
+env:
+  R2_S3_PATH: "s3://oso-public/oso.duckdb"
+  SQLMESH_DUCKDB_LOCAL_PATH: "/tmp/oso.duckdb"
+  GOOGLE_PROJECT_ID: "opensource-observer"
+
+# For now this only runs on a schedule once a day
+on:
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+    inputs:
+      fresh:
+        type: boolean
+        description: Whether the run should recreate the database file from scratch
+        default: false
+  schedule:
+    # Schedule to run every hour
+    - cron: "0 * * * *"
+
+jobs:
+  check-duckdb-schema:
+    name: check-duckdb-schema
+    environment: deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Setup Python and UV
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: 3.12
+  
+      - name: Install dependencies
+        run: uv sync --all-packages --all-extras
+
+      - name: "Set up Cloud SDK"
+        uses: "google-github-actions/setup-gcloud@v2"
+        with:
+          version: ">= 363.0.0"
+
+      - name: Login to google
+        uses: 'google-github-actions/auth@v2'
+        with:
+          credentials_json: '${{ secrets.GOOGLE_BQ_ADMIN_CREDENTIALS_JSON }}'
+          create_credentials_file: true
+    
+      - name: Download file from Cloudflare R2
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_R2_S3_API_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_S3_API_SECRET_KEY }}
+          AWS_DEFAULT_REGION: "auto"
+        run: bash .github/scripts/copy-s3.sh "$R2_S3_PATH" "$SQLMESH_DUCKDB_LOCAL_PATH" "${{ secrets.CLOUDFLARE_R2_S3_API_ENDPOINT }}"
+        if: ${{ !inputs.fresh }}
+      
+      - name: Save copy of the database
+        run: cp $SQLMESH_DUCKDB_LOCAL_PATH $SQLMESH_DUCKDB_LOCAL_PATH.bak
+        if: ${{ !inputs.fresh  }}
+  
+      - name: Initialize local data
+        run: uv run oso local initialize --max-results-per-query 100 --max-days 2
+      
+      - name: Compare database files
+        id: file-diff
+        run: |
+          if diff -q $SQLMESH_DUCKDB_LOCAL_PATH $SQLMESH_DUCKDB_LOCAL_PATH.bak > /dev/null; then
+            echo "files_different=false" >> $GITHUB_OUTPUT
+          else
+            echo "files_different=true" >> $GITHUB_OUTPUT
+          fi
+      
+      # Because of the checksum issue, we first delete the old file before uploading the new one
+      - name: Delete old Cloudflare R2 file
+        if: steps.file-diff.outputs.files_different == 'true'
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_R2_S3_API_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_S3_API_SECRET_KEY }}
+          AWS_DEFAULT_REGION: "auto"
+        run: bash .github/scripts/delete-s3.sh "$R2_S3_PATH" "${{ secrets.CLOUDFLARE_R2_S3_API_ENDPOINT }}"
+        
+      - name: Upload file to Cloudflare R2
+        if: steps.file-diff.outputs.files_different == 'true'
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_R2_S3_API_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_S3_API_SECRET_KEY }}
+          AWS_DEFAULT_REGION: "auto"
+        run: bash .github/scripts/copy-s3.sh "$SQLMESH_DUCKDB_LOCAL_PATH" "$R2_S3_PATH" "${{ secrets.CLOUDFLARE_R2_S3_API_ENDPOINT }}"

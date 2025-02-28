@@ -1,0 +1,89 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: local-trino
+spec:
+  values:
+    server:
+      workers: 1
+      # Uncomment to enable debug logs
+      # log:
+      #   trino:
+      #     level: DEBUG
+    additionalConfigProperties:
+      - catalog.management=dynamic
+      - retry-policy=QUERY
+    additionalExchangeManagerProperties:
+      - "exchange.sink-buffers-per-partition=6"
+      - "exchange.sink-buffer-pool-min-size=6"
+      - "exchange.source-concurrent-readers=6"
+      - "exchange.s3.region=local"
+      - "exchange.s3.aws-access-key=admin"
+      - "exchange.s3.aws-secret-key=password"
+      - "exchange.s3.endpoint=https://minio.local-minio.svc.cluster.local"
+
+    serviceAccount:
+      name: local-trino
+    worker:
+      jvm:
+        maxHeapSize: 1G
+      config:
+        query:
+          maxMemoryPerNode: 500MB 
+          maxMemory: 1GB
+    coordinator:
+      jvm:
+        maxHeapSize: 1G
+      config:
+        query:
+          maxMemoryPerNode: 500MB 
+
+    catalogs:
+      memory: |
+        connector.name=memory
+        memory.max-data-per-node=128MB
+      source: |
+        connector.name=hive
+        hive.metastore.uri=thrift://hive-metastore.local-hive-metastore.svc.cluster.local:9083
+        hive.metastore.username=
+        hive.non-managed-table-writes-enabled=true
+        fs.native-s3.enabled=true
+        s3.path-style-access=true
+        s3.region=local
+        s3.endpoint=https://minio.local-minio.svc.cluster.local
+        s3.aws-access-key=admin
+        s3.aws-secret-key=password
+
+      # bigquery: |
+      #   connector.name=postgresql
+      #   connection-url=jdbc:postgresql://trino-psql-postgresql.local-trino-psql.svc.cluster.local:5432/postgres
+      #   connection-user=postgres
+      #   connection-password=password
+      #   postgresql.array-mapping=AS_ARRAY
+      bigquery: |
+        connector.name=iceberg
+        iceberg.catalog.type=rest
+        iceberg.rest-catalog.security=NONE
+        iceberg.rest-catalog.uri=http://local-nessie.local-nessie.svc.cluster.local:19120/iceberg/
+        iceberg.rest-catalog.vended-credentials-enabled=false
+        fs.native-s3.enabled=true
+        s3.path-style-access=true
+        s3.region=local
+        s3.endpoint=https://minio.local-minio.svc.cluster.local
+        s3.aws-access-key=admin
+        s3.aws-secret-key=password
+        iceberg.max-partitions-per-writer=1000
+
+      metrics: |
+        connector.name=iceberg
+        iceberg.catalog.type=rest
+        iceberg.rest-catalog.security=NONE
+        iceberg.rest-catalog.uri=http://local-nessie.local-nessie.svc.cluster.local:19120/iceberg/
+        iceberg.rest-catalog.vended-credentials-enabled=false
+        fs.native-s3.enabled=true
+        s3.path-style-access=true
+        s3.region=local
+        s3.endpoint=https://minio.local-minio.svc.cluster.local
+        s3.aws-access-key=admin
+        s3.aws-secret-key=password
+        iceberg.max-partitions-per-writer=1000

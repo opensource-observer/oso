@@ -1,8 +1,0 @@
-from ..factories.goldsky import goldsky_network_assets
-
-
-pgn_network = goldsky_network_assets(
-    network_name="pgn",
-    destination_dataset_name="superchain",
-    working_destination_dataset_name="oso_raw_sources",
-)

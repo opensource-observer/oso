@@ -1,21 +1,19 @@
 from dataclasses import dataclass, field
 from typing import Optional, Sequence, cast
-from dagster import (
-    asset,
-    AssetExecutionContext,
-    MaterializeResult,
-)
+
+from dagster import AssetExecutionContext, MaterializeResult, ResourceParam, asset
 from dagster_gcp import BigQueryResource
-from .common import AssetFactoryResponse, GenericAsset
-from ..constants import impersonate_service_account
+from oso_dagster.config import DagsterConfig
+
 from ..resources import BigQueryDataTransferResource
 from ..utils import (
-    ensure_dataset,
+    BqDtsTransferConfig,
     DatasetOptions,
     ensure_bq_dts_transfer,
-    BqDtsTransferConfig,
+    ensure_dataset,
     unpack_config,
 )
+from .common import AssetFactoryResponse, GenericAsset
 
 
 @dataclass(kw_only=True)
@@ -40,6 +38,7 @@ def bq_dts_asset(asset_config: BqDtsAssetConfig):
         "opensource.observer/factory": "bigquery_dts",
         "opensource.observer/environment": asset_config.environment,
         "opensource.observer/type": "source",
+        "opensource.observer/source": "stable",
     }
 
     @asset(
@@ -51,6 +50,7 @@ def bq_dts_asset(asset_config: BqDtsAssetConfig):
     )
     def _bq_dts_asset(
         context: AssetExecutionContext,
+        global_config: ResourceParam[DagsterConfig],
         bigquery: BigQueryResource,
         bigquery_datatransfer: BigQueryDataTransferResource,
     ) -> MaterializeResult:
@@ -72,9 +72,9 @@ def bq_dts_asset(asset_config: BqDtsAssetConfig):
                 f"Ensured dataset named {asset_config.destination_config.dataset_name}"
             )
 
-        with bigquery_datatransfer.get_client() as bq_dts_client:
+        with bigquery_datatransfer.get_client(global_config) as bq_dts_client:
             context.log.info(
-                f"Ensuring BigQuery Data Transfer asset by impersonating {impersonate_service_account}"
+                f"Ensuring BigQuery Data Transfer asset by impersonating {global_config.dbt_impersonate_service_account}"
             )
             ensure_bq_dts_transfer(bq_dts_client, asset_config, context.log)
             context.log.info(

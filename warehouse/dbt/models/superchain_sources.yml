@@ -8,3 +8,17 @@ sources:
         meta:
           dagster:
             asset_key: ["optimism", "traces"]
+
+  - name: optimism_superchain_raw_onchain_data
+    database: opensource-observer
+    schema: optimism_superchain_raw_onchain_data
+    tables:
+      - name: transactions
+        identifier: transactions
+      - name: traces
+        identifier: traces
+      - name: blocks
+        identifier: blocks
+      - name: logs
+        identifier: logs
+ 

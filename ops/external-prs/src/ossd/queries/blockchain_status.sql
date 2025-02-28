@@ -2,9 +2,9 @@ CREATE TABLE blockchain_status AS
 WITH address_by_tag_by_network_by_project_status AS (
   SELECT 
     CASE
-      WHEN main.address IS NOT NULL THEN main.project_slug
-      ELSE pr.project_slug
-    END as project_slug,
+      WHEN main.address IS NOT NULL THEN main.project_name
+      ELSE pr.project_name
+    END as project_name,
     CASE 
       WHEN main.address IS NOT NULL THEN main.address
       ELSE pr.address
@@ -26,7 +26,7 @@ WITH address_by_tag_by_network_by_project_status AS (
     END AS status
   FROM main_blockchain_artifacts AS main
   FULL OUTER JOIN pr_blockchain_artifacts AS pr
-    ON main.project_slug = pr.project_slug AND main.address = pr.address AND main.tag = pr.tag AND main.network = pr.network
+    ON main.project_name = pr.project_name AND main.address = pr.address AND main.tag = pr.tag AND main.network = pr.network
 ), address_by_tag_by_network_status AS (
   SELECT 
     CASE 
@@ -101,7 +101,7 @@ WITH address_by_tag_by_network_by_project_status AS (
     ON main.address = pr.address
 )
 SELECT
-  by_project.project_slug,
+  by_project.project_name,
   by_project.address,
   by_project.tag,
   by_project.network,

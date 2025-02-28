@@ -27,6 +27,8 @@ env:
   CLICKHOUSE_URL: "http://127.0.0.1:8123" # dummy value
   CLICKHOUSE_USERNAME: "username"
   CLICKHOUSE_PASSWORD: "password"
+  # SQLMesh variables
+  SQLMESH_DUCKDB_LOCAL_PATH: "/tmp/oso.duckdb"
 
   # should not be set to a legitimate value for testing. This will use up API
   # quota otherwise
@@ -105,11 +107,13 @@ jobs:
           node-version: "20.x"
           cache: "pnpm"
 
-      - name: "Setup Python, Poetry and Dependencies"
-        uses: packetcoders/action-setup-cache-python-poetry@main
+      - name: Setup Python and UV
+        uses: astral-sh/setup-uv@v5
         with:
           python-version: 3.12
-          poetry-version: 1.8.2
+  
+      - name: Install dependencies
+        run: uv sync --all-packages --all-extras
 
       - name: Authenticate to google with a test-dummy user
         uses: "google-github-actions/auth@v2"
@@ -132,6 +136,15 @@ jobs:
         run: |
           bash .github/scripts/run-supabase-local.sh apps/frontend
         if: ${{ matrix.component == 'node' }}
+      
+      - name: Setup duckdb
+        run: |
+          curl -o $SQLMESH_DUCKDB_LOCAL_PATH https://r2.opensource.observer/oso.duckdb
+        if: ${{ matrix.component == 'sqlmesh' }}
+
+      - name: Validate local database
+        run: uv run oso local initialize --max-results-per-query 50 --max-days 3
+        if: ${{ matrix.component == 'sqlmesh' }}
 
       # Automatically retry if the build fails
       - name: Build (Node)
@@ -159,7 +172,7 @@ jobs:
       # Temporarily include this separately. Eventually this should all be part of lint
       - name: Lint SQL (dbt)
         run: |
-          poetry run sqlfluff lint --dialect bigquery ./warehouse/dbt/models
+          uv run sqlfluff lint --dialect bigquery ./warehouse/dbt/models
         if: ${{ always() && matrix.component == 'dbt' }}
 
       - name: Type Check (Python)
@@ -169,17 +182,15 @@ jobs:
 
       - name: Lint (Python)
         run: |
-          poetry run ruff check
+          uv run ruff check
         if: ${{ always() && matrix.component == 'python' }}
 
       - name: Test (Python)
         run: |
-          poetry run pytest
+          uv run pytest
         if: ${{ always() && matrix.component == 'python' }}
 
       - name: Test SQLMesh
         run: |
-          poetry install && cd warehouse/metrics_mesh && poetry run -C ../../ sqlmesh test
+          cd warehouse/metrics_mesh && uv run sqlmesh plan dev --start '1 month' --end now --auto-apply
         if: ${{ always() && matrix.component == 'sqlmesh' }}
-      
-     

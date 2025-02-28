@@ -1,4 +1,4 @@
--- Get the status of a project based on it's slug.
+-- Get the status of a project based on its name.
 -- Is it an entirely new project?
 -- Is it existing
 -- Was it removed?
@@ -7,7 +7,7 @@ SELECT
   CASE 
     WHEN main.name IS NOT NULL THEN main.name
     ELSE pr.name
-  END AS project_slug,
+  END AS project_name,
   CASE
     WHEN main.name IS NOT NULL AND pr.name IS NOT NULL THEN 
       CASE

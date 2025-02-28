@@ -13,12 +13,12 @@ def get_sql_fixture(sql_path: str) -> str:
 
 def test_factory():
     input = get_sql_fixture("basic/input.sql")
-    artifact = joiner_transform(input, "artifact")
+    artifact = joiner_transform(input, "artifact", ["events_daily_to_artifact"])
     assert artifact is not None
     assert len(artifact) == 1
     assert_same_sql(artifact[0], get_sql_fixture("basic/expected_artifact.sql"))
 
-    project = joiner_transform(input, "project")
+    project = joiner_transform(input, "project", ["events_daily_to_artifact"])
     assert project is not None
     assert len(project) == 1
     assert_same_sql(project[0], get_sql_fixture("basic/expected_project.sql"))

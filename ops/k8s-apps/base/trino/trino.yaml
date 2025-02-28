@@ -6,6 +6,7 @@ metadata:
     toolkit.fluxcd.io/tenant: apps
     ops.opensource.observer/environment: base
     kube-secrets-init.doit-intl.com/enable-mutation: "true"
+    opensource.observer/cert-inject: "enabled"
 ---
 apiVersion: source.toolkit.fluxcd.io/v1
 kind: HelmRepository
@@ -25,7 +26,7 @@ spec:
   chart:
     spec:
       chart: trino
-      version: "0.33.0"
+      version: "1.36.0"
       sourceRef:
         kind: HelmRepository
         name: trino
@@ -39,100 +40,38 @@ spec:
       name: base-trino
     coordinator:
       additionalVolumes:
-        - name: cache
-          emptyDir: {}
+        - name: cluster-self-signed-bundle
+          configMap:
+            name: cluster-self-signed-bundle
+            defaultMode: 0644
+            optional: false
+            items:
+            - key: ca-certificates.crt
+              path: ca-certificates.crt
+            - key: ca-certificates.p12
+              path: ca-certificates.p12
       additionalVolumeMounts:
-        - name: cache
-          mountPath: /metrics-cache
-      jvm:
-        maxHeapSize: "17G"
-      resources:
-        requests:
-          cpu: 2000m
-          memory: 17000Mi
-      tolerations:
-        - key: pool_type
-          operator: Equal
-          value: trino-coordinator
-          effect: NoSchedule
-      nodeSelector:
-        pool_type: trino-coordinator
+        - name: cluster-self-signed-bundle
+          mountPath: /etc/ssl/k8s-certs
+      additionalJVMConfig:
+        #- "--add-opens=java.base/java.nio=ALL-UNNAMED"
+        - "-Djavax.net.ssl.trustStore=/etc/ssl/k8s-certs/ca-certificates.p12"
       
     worker:
       additionalVolumes:
-        - name: cache
-          emptyDir: {}
+        - name: cluster-self-signed-bundle
+          configMap:
+            name: cluster-self-signed-bundle
+            defaultMode: 0644
+            optional: false
+            items:
+            - key: ca-certificates.crt
+              path: ca-certificates.crt
+            - key: ca-certificates.p12
+              path: ca-certificates.p12
       additionalVolumeMounts:
-        - name: cache
-          mountPath: /metrics-cache
-
-      config:
-        query:
-          maxMemoryPerNode: 15GB
-      jvm:
-        maxHeapSize: "70G"
-      resources:
-        requests:
-          cpu: 15000m
-          memory: 71000Mi 
-      tolerations:
-        - key: pool_type
-          operator: Equal
-          value: trino-worker
-          effect: NoSchedule
-      nodeSelector:
-        pool_type: trino-worker
-
-    server:
-      config:
-        query:
-          maxMemory: "500GB"
-      workers: 1
-      autoscaling:
-        enabled: true
-        maxReplicas: 12 
-        targetCPUUtilizationPercentage: 20
-        behavior:
-          scaleDown:
-            stabilizationWindowSeconds: 300
-            policies:
-            - type: Pods
-              value: 1
-              periodSeconds: 60
-          scaleUp:
-            stabilizationWindowSeconds: 0
-            policies:
-            - type: Percent
-              value: 100
-              periodSeconds: 15
-            - type: Pods
-              value: 4
-              periodSeconds: 15
-            selectPolicy: Max
-    catalogs:
-      metrics: |
-        connector.name=iceberg
-        iceberg.catalog.type=hive_metastore
-        hive.metastore.uri=thrift://10.145.192.27:9083
-        hive.metastore-cache-ttl=0s
-        hive.metastore-refresh-interval=5s
-        hive.metastore.thrift.client.connect-timeout=10s
-        hive.metastore.thrift.client.read-timeout=10s
-        iceberg.use-file-size-from-metadata=false
-        fs.native-gcs.enabled=true
-        fs.cache.enabled=true
-        fs.cache.max-sizes=300GB
-        fs.cache.directories=/metrics-cache
-        gcs.project-id=opensource-observer
-        iceberg.max-partitions-per-writer=1000
-      #  gcs.use-access-token=true
-      source: |
-        connector.name=hive
-        hive.metastore.uri=thrift://10.145.192.27:9083
-        fs.native-gcs.enabled=true
-        gcs.project-id=opensource-observer
-        hive.non-managed-table-writes-enabled=true
-      #  gcs.use-access-token=true
-      # bigquery: |
-      #   connector.name=bigquery
-      #   bigquery.project-id=opensource-observer
+        - name: cluster-self-signed-bundle
+          mountPath: /etc/ssl/k8s-certs
+      additionalJVMConfig:
+        #- "--add-opens=java.base/java.nio=ALL-UNNAMED"
+        - "-Djavax.net.ssl.trustStore=/etc/ssl/k8s-certs/ca-certificates.p12"

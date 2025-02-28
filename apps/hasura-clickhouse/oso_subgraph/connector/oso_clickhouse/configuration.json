@@ -1,0 +1,482 @@
+{
+  "$schema": "configuration.schema.json",
+  "tables": {
+    "artifacts_by_collection_v1": {
+      "name": "artifacts_by_collection_v1",
+      "schema": "default",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "artifact_id": "String",
+          "artifact_name": "String",
+          "artifact_namespace": "String",
+          "artifact_source": "String",
+          "artifact_source_id": "String",
+          "collection_id": "String",
+          "collection_name": "String",
+          "collection_namespace": "String",
+          "collection_source": "String"
+        }
+      }
+    },
+    "artifacts_by_project_v1": {
+      "name": "artifacts_by_project_v1",
+      "schema": "default",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "artifact_id": "String",
+          "artifact_name": "String",
+          "artifact_namespace": "String",
+          "artifact_source": "String",
+          "artifact_source_id": "String",
+          "project_id": "String",
+          "project_name": "String",
+          "project_namespace": "String",
+          "project_source": "String"
+        }
+      }
+    },
+    "artifacts_by_user_v1": {
+      "name": "artifacts_by_user_v1",
+      "schema": "default",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "artifact_id": "String",
+          "artifact_name": "String",
+          "artifact_namespace": "String",
+          "artifact_source": "String",
+          "artifact_source_id": "String",
+          "user_id": "String",
+          "user_name": "String",
+          "user_namespace": "String",
+          "user_source": "String",
+          "user_source_id": "String",
+          "user_type": "String"
+        }
+      }
+    },
+    "artifacts_v1": {
+      "name": "artifacts_v1",
+      "schema": "default",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "artifact_id": "String",
+          "artifact_name": "String",
+          "artifact_namespace": "String",
+          "artifact_source": "String",
+          "artifact_source_id": "String"
+        }
+      }
+    },
+    "code_metrics_by_artifact_v0": {
+      "name": "code_metrics_by_artifact_v0",
+      "schema": "default",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "active_developer_count_6_months": "Float32",
+          "artifact_id": "String",
+          "artifact_name": "String",
+          "artifact_namespace": "String",
+          "closed_issue_count_6_months": "Float32",
+          "commit_count_6_months": "Float32",
+          "contributor_count": "Float32",
+          "contributor_count_6_months": "Float32",
+          "event_source": "String",
+          "first_commit_date": "DateTime",
+          "fork_count": "Int64",
+          "fulltime_developer_average_6_months": "Float32",
+          "last_commit_date": "DateTime",
+          "merged_pull_request_count_6_months": "Float32",
+          "new_contributor_count_6_months": "Float32",
+          "opened_issue_count_6_months": "Float32",
+          "opened_pull_request_count_6_months": "Float32",
+          "star_count": "Int64"
+        }
+      }
+    },
+    "code_metrics_by_project_v1": {
+      "name": "code_metrics_by_project_v1",
+      "schema": "default",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "active_developer_count_6_months": "Float32",
+          "closed_issue_count_6_months": "Float32",
+          "comment_count_6_months": "Float32",
+          "commit_count_6_months": "Float32",
+          "contributor_count": "Float32",
+          "contributor_count_6_months": "Float32",
+          "developer_count": "Float32",
+          "display_name": "String",
+          "event_source": "String",
+          "first_commit_date": "DateTime",
+          "first_created_at_date": "DateTime",
+          "fork_count": "Int64",
+          "fulltime_developer_average_6_months": "Float32",
+          "last_commit_date": "DateTime",
+          "last_updated_at_date": "DateTime",
+          "merged_pull_request_count_6_months": "Float32",
+          "new_contributor_count_6_months": "Float32",
+          "opened_issue_count_6_months": "Float32",
+          "opened_pull_request_count_6_months": "Float32",
+          "project_id": "String",
+          "project_name": "String",
+          "project_namespace": "String",
+          "project_source": "String",
+          "release_count_6_months": "Float32",
+          "repository_count": "Int64",
+          "star_count": "Int64",
+          "time_to_first_response_days_average_6_months": "Float32",
+          "time_to_merge_days_average_6_months": "Float32"
+        }
+      }
+    },
+    "collections_v1": {
+      "name": "collections_v1",
+      "schema": "default",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "collection_id": "String",
+          "collection_name": "String",
+          "collection_namespace": "String",
+          "collection_source": "String",
+          "description": "String",
+          "display_name": "String"
+        }
+      }
+    },
+    "contracts_v0": {
+      "name": "contracts_v0",
+      "schema": "default",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "contract_address": "String",
+          "contract_namespace": "String",
+          "deployment_date": "Date",
+          "factory_address": "String",
+          "originating_address": "String",
+          "root_deployer_address": "String",
+          "sort_weight": "Int64"
+        }
+      }
+    },
+    "event_types_v1": {
+      "name": "event_types_v1",
+      "schema": "default",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "event_type": "String"
+        }
+      }
+    },
+    "funding_metrics_by_project_v1": {
+      "name": "funding_metrics_by_project_v1",
+      "schema": "default",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "display_name": "String",
+          "event_source": "String",
+          "project_id": "String",
+          "project_name": "String",
+          "project_namespace": "String",
+          "project_source": "String",
+          "total_funders_count": "Int64",
+          "total_funding_received_usd": "Float32",
+          "total_funding_received_usd_6_months": "Float32"
+        }
+      }
+    },
+    "key_metrics_by_artifact_v0": {
+      "name": "key_metrics_by_artifact_v0",
+      "schema": "default",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "amount": "Float64",
+          "artifact_id": "String",
+          "metric_id": "String",
+          "sample_date": "Date",
+          "unit": "String"
+        }
+      }
+    },
+    "key_metrics_by_collection_v0": {
+      "name": "key_metrics_by_collection_v0",
+      "schema": "default",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "amount": "Float64",
+          "collection_id": "String",
+          "metric_id": "String",
+          "sample_date": "Date",
+          "unit": "String"
+        }
+      }
+    },
+    "key_metrics_by_project_v0": {
+      "name": "key_metrics_by_project_v0",
+      "schema": "default",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "amount": "Float64",
+          "metric_id": "String",
+          "project_id": "String",
+          "sample_date": "Date",
+          "unit": "String"
+        }
+      }
+    },
+    "metrics_v0": {
+      "name": "metrics_v0",
+      "schema": "default",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "aggregation_function": "String",
+          "definition_ref": "String",
+          "description": "String",
+          "display_name": "String",
+          "metric_id": "String",
+          "metric_name": "String",
+          "metric_namespace": "String",
+          "metric_source": "String",
+          "raw_definition": "String"
+        }
+      }
+    },
+    "onchain_metrics_by_project_v1": {
+      "name": "onchain_metrics_by_project_v1",
+      "schema": "default",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "active_contract_count_90_days": "Float32",
+          "address_count": "Float32",
+          "address_count_90_days": "Float32",
+          "days_since_first_transaction": "Float32",
+          "display_name": "String",
+          "event_source": "String",
+          "gas_fees_sum": "Float32",
+          "gas_fees_sum_6_months": "Float32",
+          "high_activity_address_count_90_days": "Float32",
+          "low_activity_address_count_90_days": "Float32",
+          "medium_activity_address_count_90_days": "Float32",
+          "multi_project_address_count_90_days": "Float32",
+          "new_address_count_90_days": "Float32",
+          "project_id": "String",
+          "project_name": "String",
+          "project_namespace": "String",
+          "project_source": "String",
+          "returning_address_count_90_days": "Float32",
+          "transaction_count": "Float32",
+          "transaction_count_6_months": "Float32"
+        }
+      }
+    },
+    "package_owners_v0": {
+      "name": "package_owners_v0",
+      "schema": "default",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "package_artifact_id": "String",
+          "package_artifact_name": "String",
+          "package_artifact_namespace": "String",
+          "package_artifact_source": "String",
+          "package_owner_artifact_id": "String",
+          "package_owner_artifact_name": "String",
+          "package_owner_artifact_namespace": "String",
+          "package_owner_project_id": "String",
+          "package_owner_source": "String",
+          "package_project_id": "String"
+        }
+      }
+    },
+    "projects_by_collection_v1": {
+      "name": "projects_by_collection_v1",
+      "schema": "default",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "collection_id": "String",
+          "collection_name": "String",
+          "collection_namespace": "String",
+          "collection_source": "String",
+          "project_id": "String",
+          "project_name": "String",
+          "project_namespace": "String",
+          "project_source": "String"
+        }
+      }
+    },
+    "projects_v1": {
+      "name": "projects_v1",
+      "schema": "default",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "description": "String",
+          "display_name": "String",
+          "project_id": "String",
+          "project_name": "String",
+          "project_namespace": "String",
+          "project_source": "String"
+        }
+      }
+    },
+    "repositories_v0": {
+      "name": "repositories_v0",
+      "schema": "default",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "artifact_id": "String",
+          "artifact_name": "String",
+          "artifact_namespace": "String",
+          "artifact_source": "String",
+          "artifact_source_id": "String",
+          "artifact_url": "String",
+          "branch": "String",
+          "created_at": "DateTime",
+          "fork_count": "Int64",
+          "is_fork": "Bool",
+          "language": "String",
+          "license_name": "String",
+          "license_spdx_id": "String",
+          "project_id": "String",
+          "star_count": "Int64",
+          "updated_at": "DateTime",
+          "watcher_count": "Int64"
+        }
+      }
+    },
+    "sboms_v0": {
+      "name": "sboms_v0",
+      "schema": "default",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "from_artifact_id": "String",
+          "from_artifact_name": "String",
+          "from_artifact_namespace": "String",
+          "from_artifact_source": "String",
+          "from_project_id": "String",
+          "to_package_artifact_id": "String",
+          "to_package_artifact_name": "String",
+          "to_package_artifact_namespace": "String",
+          "to_package_artifact_source": "String",
+          "to_package_project_id": "String"
+        }
+      }
+    },
+    "timeseries_events_by_artifact_v0": {
+      "name": "timeseries_events_by_artifact_v0",
+      "schema": "default",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "amount": "Float32",
+          "event_source": "String",
+          "event_source_id": "String",
+          "event_type": "String",
+          "from_artifact_id": "String",
+          "time": "DateTime",
+          "to_artifact_id": "String"
+        }
+      }
+    },
+    "timeseries_metrics_by_artifact_v0": {
+      "name": "timeseries_metrics_by_artifact_v0",
+      "schema": "default",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "amount": "Float64",
+          "artifact_id": "String",
+          "metric_id": "String",
+          "sample_date": "Date",
+          "unit": "String"
+        }
+      }
+    },
+    "timeseries_metrics_by_collection_v0": {
+      "name": "timeseries_metrics_by_collection_v0",
+      "schema": "default",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "amount": "Float64",
+          "collection_id": "String",
+          "metric_id": "String",
+          "sample_date": "Date",
+          "unit": "String"
+        }
+      }
+    },
+    "timeseries_metrics_by_project_v0": {
+      "name": "timeseries_metrics_by_project_v0",
+      "schema": "default",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "amount": "Float64",
+          "metric_id": "String",
+          "project_id": "String",
+          "sample_date": "Date",
+          "unit": "String"
+        }
+      }
+    },
+    "users_v1": {
+      "name": "users_v1",
+      "schema": "default",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "bio": "String",
+          "display_name": "String",
+          "profile_picture_url": "String",
+          "url": "String",
+          "user_id": "String",
+          "user_source": "String",
+          "user_source_id": "String"
+        }
+      }
+    }
+  }
+}

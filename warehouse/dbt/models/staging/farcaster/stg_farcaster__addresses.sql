@@ -1,3 +1,9 @@
+{{ 
+  config(
+    materialized='table'
+  )
+}}
+
 {#
   Get all verified addresses attached to an FID
 #}

@@ -1,11 +1,12 @@
+import base64
+import hashlib
 import os
 import typing as t
+from datetime import datetime
+
+import arrow
 import duckdb
 import pandas as pd
-import hashlib
-import base64
-import arrow
-from datetime import datetime
 
 METRICS_TOOLS_DB_FIXTURE_PATH = os.environ.get("METRICS_TOOLS_DB_FIXTURE_PATH", "")
 
@@ -23,7 +24,6 @@ class MetricsDBFixture:
         conn = duckdb.connect(database=database_path)
 
         conn.execute("CREATE SCHEMA metrics")
-        conn.execute("CREATE SCHEMA sources")
 
         # Create the events table if it doesn't already exist
         conn.execute(
@@ -42,7 +42,7 @@ class MetricsDBFixture:
         # Create the artifacts_to_projects_v1 table if it doesn't already exist
         conn.execute(
             """
-            CREATE TABLE IF NOT EXISTS sources.artifacts_by_project_v1 (
+            CREATE TABLE IF NOT EXISTS metrics.artifacts_by_project_v1 (
                 artifact_id STRING,
                 artifact_source_id STRING,
                 artifact_source STRING,
@@ -59,7 +59,7 @@ class MetricsDBFixture:
         # Create the projects_to_collections_v1 table if it doesn't already exist
         conn.execute(
             """
-            CREATE TABLE IF NOT EXISTS sources.projects_by_collection_v1 (
+            CREATE TABLE IF NOT EXISTS metrics.projects_by_collection_v1 (
                 project_id STRING,
                 project_source STRING,
                 project_namespace STRING,
@@ -151,7 +151,7 @@ class MetricsDBFixture:
         # Insert data into artifacts_by_project_v1 table
         artifacts_df = pd.DataFrame(artifacts_data)  # noqa: F841
         self._conn.execute(
-            "INSERT INTO sources.artifacts_by_project_v1 SELECT * FROM artifacts_df"
+            "INSERT INTO metrics.artifacts_by_project_v1 SELECT * FROM artifacts_df"
         )
 
         # Prepare data for projects_by_collection_v1
@@ -176,5 +176,5 @@ class MetricsDBFixture:
         # Insert data into projects_by_collection_v1 table
         collections_df = pd.DataFrame(collections_data)  # noqa: F841
         self._conn.execute(
-            "INSERT INTO sources.projects_by_collection_v1 SELECT * FROM collections_df"
+            "INSERT INTO metrics.projects_by_collection_v1 SELECT * FROM collections_df"
         )

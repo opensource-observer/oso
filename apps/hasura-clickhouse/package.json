@@ -1,0 +1,47 @@
+{
+  "name": "@opensource-observer/hasura-clickhouse",
+  "version": "0.0.1",
+  "description": "API service for OSO",
+  "author": "Kariba Labs",
+  "license": "Apache-2.0",
+  "private": true,
+  "bin": "./dist/src/cli.js",
+  "main": "./dist/src/index.js",
+  "types": "./dist/src/index.d.ts",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/opensource-observer/oso.git"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build:ts": "tsc",
+    "build": "pnpm build:ts",
+    "lint": "tsc --noEmit && pnpm lint:eslint && pnpm lint:prettier",
+    "lint:eslint": "eslint --ignore-path ../../.gitignore --max-warnings 0 .",
+    "lint:prettier": "prettier --ignore-path ../../.gitignore --log-level warn --check **/*.{js,jsx,ts,tsx,sol,md,json}",
+    "metadata:update": "dotenv -- node --loader ts-node/esm src/cli.ts",
+    "metadata:introspect": "ddn connector introspect oso_clickhouse",
+    "metadata:build:local": "ddn supergraph build local",
+    "metadata:deploy:cloud": "ddn supergraph build create",
+    "start": "ddn run docker-start",
+    "stop": "ddn run docker-stop",
+    "sync": "pnpm metadata:introspect",
+    "deploy": "pnpm metadata:deploy:cloud"
+  },
+  "keywords": [],
+  "devDependencies": {
+    "@types/lodash": "^4.17.15",
+    "@types/node": "^20.14.12",
+    "dotenv-cli": "^7.4.2",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.5.4"
+  },
+  "dependencies": {
+    "glob": "^11.0.0",
+    "lodash": "^4.17.21",
+    "yaml": "^2.5.0"
+  }
+}

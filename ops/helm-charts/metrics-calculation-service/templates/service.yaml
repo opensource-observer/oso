@@ -1,0 +1,15 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "mcs.fullname" . }}
+  annotations:
+    {{- toYaml .Values.mcs.frontend.service.annotations | nindent 4 }}
+spec:
+  selector:
+    {{ include "mcs.selectorLabels" . | nindent 4 }}
+  ports:
+    - name: http
+      protocol: TCP
+      port: {{ .Values.mcs.frontend.service.port }}
+      targetPort: 8000

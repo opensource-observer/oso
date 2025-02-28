@@ -1,24 +1,20 @@
 import inspect
+import json
 import logging
-import re
 import textwrap
 import typing as t
-from pathlib import Path
 import uuid
+from pathlib import Path
 
-from sqlglot import exp
 from sqlmesh.core import constants as c
-from sqlmesh.core.dialect import MacroFunc
 from sqlmesh.core.macros import ExecutableOrMacro, MacroRegistry, macro
 from sqlmesh.core.model.decorator import model
-from sqlmesh.core.model.definition import create_sql_model, create_python_model
-from sqlmesh.utils.jinja import JinjaMacroRegistry
 from sqlmesh.utils.metaprogramming import (
     Executable,
     ExecutableKind,
     build_env,
-    serialize_env,
     normalize_source,
+    serialize_env,
 )
 
 logger = logging.getLogger(__name__)
@@ -26,247 +22,39 @@ logger = logging.getLogger(__name__)
 CallableAliasList = t.List[t.Callable | t.Tuple[t.Callable, t.List[str]]]
 
 
-class GeneratedPythonModel:
-    @classmethod
-    def create(
-        cls,
-        *,
-        name: str,
-        entrypoint_path: str,
-        func: t.Callable,
-        columns: t.Dict[str, exp.DataType],
-        additional_macros: t.Optional[CallableAliasList] = None,
-        variables: t.Optional[t.Dict[str, t.Any]] = None,
-        imports: t.Optional[t.Dict[str, t.Any]] = None,
-        **kwargs,
-    ):
-        instance = cls(
-            name=name,
-            entrypoint_path=entrypoint_path,
-            func=func,
-            additional_macros=additional_macros or [],
-            variables=variables or {},
-            columns=columns,
-            imports=imports or {},
-            **kwargs,
-        )
-        registry = model.registry()
-        registry[name] = instance
-        return instance
-
+class MacroOverridingModel(model):
     def __init__(
         self,
-        *,
-        name: str,
-        entrypoint_path: str,
-        func: t.Callable,
+        override_module_path: Path,
+        override_path: Path,
+        locals: t.Dict[str, t.Any],
         additional_macros: CallableAliasList,
-        variables: t.Dict[str, t.Any],
-        columns: t.Dict[str, exp.DataType],
-        imports: t.Dict[str, t.Any],
         **kwargs,
     ):
-        self.name = name
-        self._func = func
-        self._entrypoint_path = entrypoint_path
+        super().__init__(**kwargs)
         self._additional_macros = additional_macros
-        self._variables = variables
-        self._kwargs = kwargs
-        self._columns = columns
-        self._imports = imports
+        self._locals = locals
+        self._override_module_path = override_module_path
+        self._override_path = override_path
 
-    def model(
-        self,
-        module_path: Path,
-        path: Path,
-        defaults: t.Optional[t.Dict[str, t.Any]] = None,
-        macros: t.Optional[MacroRegistry] = None,
-        jinja_macros: t.Optional[JinjaMacroRegistry] = None,
-        dialect: t.Optional[str] = None,
-        time_column_format: str = c.DEFAULT_TIME_COLUMN_FORMAT,
-        physical_schema_mapping: t.Optional[t.Dict[re.Pattern, str]] = None,
-        project: str = "",
-        default_catalog: t.Optional[str] = None,
-        variables: t.Optional[t.Dict[str, t.Any]] = None,
-        infer_names: t.Optional[bool] = False,
-    ):
-        fake_module_path = Path(self._entrypoint_path)
-        macros = MacroRegistry(f"macros_for_{self.name}")
-        macros.update(macros or macro.get_registry())
+    def model(self, *args, **kwargs):
+        if len(self._additional_macros) > 0:
+            macros = MacroRegistry(f"macros_for_{self.name}")
+            system_macros = kwargs.get("macros", macros)
+            macros.update(system_macros or macro.get_registry())
 
-        if self._additional_macros:
-            macros.update(create_macro_registry_from_list(self._additional_macros))
+            macros = create_macro_registry_from_list(self._additional_macros)
+            kwargs["macros"] = macros
 
-        all_vars = self._variables.copy()
-        global_variables = variables or {}
-        all_vars["sqlmesh_vars"] = global_variables
+        vars = kwargs.get("variables", {})
+        if len(self._locals) > 0:
+            vars.update(self._locals)
 
-        common_kwargs: t.Dict[str, t.Any] = dict(
-            defaults=defaults,
-            path=path,
-            time_column_format=time_column_format,
-            physical_schema_mapping=physical_schema_mapping,
-            project=project,
-            default_catalog=default_catalog,
-            variables=all_vars,
-            **self._kwargs,
-        )
+        kwargs["variables"] = vars
+        kwargs["module_path"] = self._override_module_path
+        kwargs["path"] = self._override_path
 
-        env = {}
-        python_env = create_basic_python_env(
-            env,
-            self._entrypoint_path,
-            module_path,
-            macros=macros,
-            callables=[self._func],
-            imports=self._imports,
-        )
-
-        return create_python_model(
-            self.name,
-            self._func.__name__,
-            python_env,
-            macros=macros,
-            module_path=fake_module_path,
-            jinja_macros=jinja_macros,
-            columns=self._columns,
-            dialect=dialect,
-            **common_kwargs,
-        )
-
-
-class GeneratedModel:
-    @classmethod
-    def create(
-        cls,
-        *,
-        func: t.Callable[..., t.Any],
-        config: t.Mapping[str, t.Any],
-        name: str,
-        columns: t.Dict[str, exp.DataType],
-        entrypoint_path: str,
-        source: t.Optional[str] = None,
-        source_loader: t.Optional[t.Callable[[], str]] = None,
-        additional_macros: t.Optional[CallableAliasList] = None,
-        **kwargs,
-    ):
-        if not source and not source_loader:
-            try:
-                source = inspect.getsource(func)
-            except:  # noqa: E722
-                pass
-
-        assert (
-            source is not None or source_loader is not None
-        ), "Must have a way to load the source for state diffs"
-
-        instance = cls(
-            func_name=func.__name__,
-            import_module=func.__module__,
-            config=config,
-            name=name,
-            columns=columns,
-            entrypoint_path=entrypoint_path,
-            source=source,
-            source_loader=source_loader,
-            additional_macros=additional_macros,
-            **kwargs,
-        )
-        registry = model.registry()
-        registry[name] = instance
-        return instance
-
-    def __init__(
-        self,
-        *,
-        func_name: str,
-        import_module: str,
-        config: t.Mapping[str, t.Any],
-        name: str,
-        columns: t.Dict[str, exp.DataType],
-        entrypoint_path: str,
-        source: t.Optional[str] = None,
-        source_loader: t.Optional[t.Callable[[], str]] = None,
-        additional_macros: t.Optional[CallableAliasList] = None,
-        **kwargs,
-    ):
-        self.kwargs = kwargs
-        self.func_name = func_name
-        self.import_module = import_module
-        self.config = config
-        self.name = name
-        self.columns = columns
-        self.entrypoint_path = entrypoint_path
-        self.source_loader = source_loader
-        self.source = source
-        self.additional_macros = additional_macros or []
-
-    def model(
-        self,
-        *,
-        module_path: Path,
-        path: Path,
-        defaults: t.Optional[t.Dict[str, t.Any]] = None,
-        macros: t.Optional[MacroRegistry] = None,
-        jinja_macros: t.Optional[JinjaMacroRegistry] = None,
-        dialect: t.Optional[str] = None,
-        time_column_format: str = c.DEFAULT_TIME_COLUMN_FORMAT,
-        physical_schema_mapping: t.Optional[t.Dict[re.Pattern, str]] = None,
-        project: str = "",
-        default_catalog: t.Optional[str] = None,
-        variables: t.Optional[t.Dict[str, t.Any]] = None,
-        infer_names: t.Optional[bool] = False,
-    ):
-        macros = macros or macro.get_registry()
-        fake_module_path = Path(self.entrypoint_path)
-
-        if self.additional_macros:
-            macros = t.cast(MacroRegistry, macros.copy())
-            macros.update(create_macro_registry_from_list(self.additional_macros))
-
-        common_kwargs: t.Dict[str, t.Any] = dict(
-            defaults=defaults,
-            path=fake_module_path,
-            time_column_format=time_column_format,
-            physical_schema_mapping=physical_schema_mapping,
-            project=project,
-            default_catalog=default_catalog,
-            variables=variables,
-            **self.kwargs,
-        )
-
-        source = self.source
-        if not source:
-            if self.source_loader:
-                source = self.source_loader()
-        assert source is not None, "source cannot be empty"
-
-        env = {}
-
-        entrypoint_name, env = create_import_call_env(
-            self.func_name,
-            self.import_module,
-            self.config,
-            source,
-            env,
-            fake_module_path,
-            project_path=module_path,
-            macros=macros,
-            variables=variables,
-        )
-        common_kwargs["python_env"] = env
-
-        query = MacroFunc(this=exp.Anonymous(this=entrypoint_name))
-        if self.columns:
-            common_kwargs["columns"] = self.columns
-
-        return create_sql_model(
-            self.name,
-            query,
-            module_path=fake_module_path,
-            jinja_macros=jinja_macros,
-            **common_kwargs,
-        )
+        return super().model(*args, **kwargs)
 
 
 def escape_triple_quotes(input_string: str) -> str:
@@ -426,6 +214,13 @@ def create_basic_python_env(
     return serialized
 
 
+class PrettyExecutable(Executable):
+    @classmethod
+    def value(cls, v: t.Any) -> Executable:
+        pretty_v = json.dumps(v, indent=1)
+        return cls(payload=pretty_v, kind=ExecutableKind.VALUE)
+
+
 def create_import_call_env(
     name: str,
     import_module: str,
@@ -439,6 +234,8 @@ def create_import_call_env(
     additional_macros: t.Optional[MacroRegistry] = None,
     variables: t.Optional[t.Dict[str, t.Any]] = None,
 ):
+    is_local = variables.get("gateway", "unknown") == "local" if variables else False
+
     if isinstance(path, str):
         path = Path(path)
 
@@ -474,7 +271,9 @@ def create_import_call_env(
         alias=entrypoint_name,
         is_metadata=False,
     )
-    serialized[entrypoint_config_name] = Executable.value(config)
+    serialized[entrypoint_config_name] = (
+        PrettyExecutable.value(config) if is_local else Executable.value(config)
+    )
 
     serialized[name] = Executable(
         payload=f"from {import_module} import {name}",

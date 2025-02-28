@@ -1,0 +1,7 @@
+{
+  "extends": ["../../.eslintrc.js"],
+  "root": false,
+  "parserOptions": {
+    "project": ["./apps/hasura-clickhouse/tsconfig.json"]
+  }
+}

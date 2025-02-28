@@ -1,14 +1,14 @@
-from metrics_tools.utils.dataframes import as_pandas_df
-from metrics_tools.utils.testing import duckdb_df_context
 import os
+
 import arrow
 import pytest
-
-from metrics_tools.utils.fixtures.gen_data import MetricsDBFixture
-from metrics_tools.runner import MetricsRunner
 from metrics_tools.definition import MetricQueryDef, RollingConfig
-from .factory import TimeseriesMetrics
+from metrics_tools.runner import MetricsRunner
+from metrics_tools.utils.dataframes import as_pandas_df
+from metrics_tools.utils.fixtures.gen_data import MetricsDBFixture
+from metrics_tools.utils.testing import duckdb_df_context
 
+from .factory import TimeseriesMetrics
 
 CURR_DIR = os.path.dirname(__file__)
 
@@ -84,6 +84,13 @@ def timeseries_metrics_to_test():
             "visits": MetricQueryDef(
                 ref="visits.sql",
                 time_aggregations=["daily", "weekly", "monthly"],
+                rolling=RollingConfig(
+                    windows=[7],
+                    unit="day",
+                    cron="@daily",
+                ),
+                over_all_time=True,
+                entity_types=["artifact", "project", "collection"],
             ),
             "developer_active_days": MetricQueryDef(
                 ref="active_days.sql",
@@ -148,6 +155,12 @@ def test_timeseries_metric_rendering(timeseries_metrics_to_test: TimeseriesMetri
         "visits_to_artifact_monthly",
         "visits_to_project_monthly",
         "visits_to_collection_monthly",
+        "visits_to_artifact_over_all_time",
+        "visits_to_project_over_all_time",
+        "visits_to_collection_over_all_time",
+        "visits_to_artifact_over_7_day_window",
+        "visits_to_project_over_7_day_window",
+        "visits_to_collection_over_7_day_window",
         "developer_active_days_to_artifact_over_7_day_window",
         "developer_active_days_to_project_over_7_day_window",
         "developer_active_days_to_collection_over_7_day_window",
@@ -166,7 +179,7 @@ def test_timeseries_metric_rendering(timeseries_metrics_to_test: TimeseriesMetri
     }
 
 
-def test_runner(
+def test_with_runner(
     timeseries_metrics_to_test: TimeseriesMetrics, timeseries_duckdb: MetricsDBFixture
 ):
     base_locals = {"oso_source": "sources"}
@@ -189,6 +202,7 @@ def test_runner(
         )
 
     # Data assertions
+    # Validate that the daily visits are correct
     with duckdb_df_context(
         connection,
         """
@@ -199,6 +213,30 @@ def test_runner(
     ) as df:
         df = df[df["to_artifact_id"] == "service_0"]
         assert df.iloc[0]["amount"] == 1
+
+    # Validate that the rolling window visits are correct
+    with duckdb_df_context(
+        connection,
+        """
+        SELECT * 
+        FROM metrics.visits_to_artifact_over_7_day_window
+        where metrics_sample_date = '2024-01-15'
+    """,
+    ) as df:
+        df = df[df["to_artifact_id"] == "service_0"]
+        assert df.iloc[0]["amount"] == 7
+
+    # Validate visits over all time
+    with duckdb_df_context(
+        connection,
+        """
+        SELECT * 
+        FROM metrics.visits_to_artifact_over_all_time
+    """,
+    ) as df:
+        df = df[df["to_artifact_id"] == "service_0"]
+        assert df.iloc[0]["amount"] == 63
+
 
     with duckdb_df_context(
         connection,

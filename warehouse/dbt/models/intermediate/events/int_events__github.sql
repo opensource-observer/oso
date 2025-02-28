@@ -60,7 +60,7 @@ github_releases as (
 
 github_comments as (
   select -- noqa: ST06
-    created_at as `time`,
+    event_time as `time`,
     type as event_type,
     CAST(id as STRING) as event_source_id,
     "GITHUB" as event_source,
@@ -80,7 +80,7 @@ github_comments as (
 
 github_issues as (
   select -- noqa: ST06
-    created_at as `time`,
+    event_time as `time`,
     type as event_type,
     CAST(id as STRING) as event_source_id,
     "GITHUB" as event_source,
@@ -100,7 +100,7 @@ github_issues as (
 
 github_pull_requests as (
   select -- noqa: ST06
-    created_at as `time`,
+    event_time as `time`,
     type as event_type,
     CAST(id as STRING) as event_source_id,
     "GITHUB" as event_source,
@@ -120,7 +120,7 @@ github_pull_requests as (
 
 github_pull_request_merge_events as (
   select -- noqa: ST06
-    created_at as `time`,
+    event_time as `time`,
     type as event_type,
     CAST(id as STRING) as event_source_id,
     "GITHUB" as event_source,

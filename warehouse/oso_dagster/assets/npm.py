@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from typing import Generator, List, Optional
+from typing import Dict, Generator, List, Optional, Any
 
 import dlt
 import requests
@@ -9,22 +9,101 @@ from pydantic import BaseModel
 
 from ..factories.dlt import dlt_factory, pydantic_to_dlt_nullable_columns
 
+# Host for the NPM API
+NPM_API_HOST = "https://api.npmjs.org"
+
 # Host for the NPM registry
-NPM_HOST = "https://api.npmjs.org"
+NPM_REGISTRY_HOST = "https://registry.npmjs.org"
 
-# NPM was launched on January 12, 2010
-NPM_EPOCH = "2010-01-12T00:00:00Z"
+# https://github.com/npm/registry/blob/main/docs/download-counts.md#limits
+NPM_EPOCH = "2015-01-10T00:00:00Z"
 
 
-class NPMPackageInfo(BaseModel):
+class NPMPackageDownloadInfo(BaseModel):
     date: datetime
     artifact_name: str
     downloads: int
 
 
+class NPMPackageManifest(BaseModel):
+    name: Optional[str] = None
+    version: Optional[str] = None
+    description: Optional[str] = None
+    keywords: Optional[List] = None
+    homepage: Optional[str] = None
+    bugs: Optional[Dict] = None
+    license: Optional[Dict] = None
+    author: Optional[Dict] = None
+    contributors: Optional[List] = None
+    funding: Optional[List] = None
+    files: Optional[List] = None
+    exports: Optional[Dict] = None
+    main: Optional[str] = None
+    browser: Optional[Dict] = None
+    bin: Optional[Dict] = None
+    man: Optional[List] = None
+    directories: Optional[Dict] = None
+    repository: Optional[Dict] = None
+    scripts: Optional[Dict] = None
+    config: Optional[Dict] = None
+    dependencies: Optional[Dict] = None
+    devDependencies: Optional[Dict] = None
+    peerDependencies: Optional[Dict] = None
+    peerDependenciesMeta: Optional[Dict] = None
+    bundleDependencies: Optional[List] = None
+    optionalDependencies: Optional[Dict] = None
+    overrides: Optional[Dict] = None
+    engines: Optional[Dict] = None
+    os: Optional[List] = None
+    cpu: Optional[List] = None
+    devEngines: Optional[Dict] = None
+    private: Optional[bool] = None
+    publishConfig: Optional[Dict] = None
+    workspaces: Optional[List] = None
+
+
+# Some fields in the NPM manifest are not always in the same format
+# This dictionary contains the transformations to apply to the data
+# before creating the manifest object
+TRANSFORMATIONS = {
+    "bugs": lambda value: {"url": value} if isinstance(value, str) else value,
+    "license": lambda value: {"type": value} if isinstance(value, str) else value,
+    "author": lambda value: {"author": value} if isinstance(value, str) else value,
+    "funding": lambda value: (
+        [{"type": "url", "url": value}]
+        if isinstance(value, str)
+        else [value] if isinstance(value, dict) else value
+    ),
+    "exports": lambda value: {".": value} if isinstance(value, str) else value,
+    "bin": lambda value: {"path": value} if isinstance(value, str) else value,
+    "man": lambda value: [value] if isinstance(value, str) else value,
+    "browser": lambda value: (
+        {"browser": value} if isinstance(value, (str, bool)) else value
+    ),
+    "repository": lambda value: {"url": value} if isinstance(value, str) else value,
+}
+
+
+def flatten_manifest(data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Applies transformations to the data before creating the manifest object.
+
+    Args:
+        data (Dict[str, Any]): The data to transform
+
+    Returns:
+        Dict[str, Any]: The transformed data
+    """
+
+    for key, transform in TRANSFORMATIONS.items():
+        if key in data:
+            data[key] = transform(data[key])
+    return data
+
+
 def get_npm_package_downloads(
     package_name: str, date_from: datetime, date_to: datetime
-) -> Generator[Optional[NPMPackageInfo], None, None]:
+) -> Generator[Optional[NPMPackageDownloadInfo], None, None]:
     """
     Fetches the download count for an NPM package between two dates.
 
@@ -34,13 +113,13 @@ def get_npm_package_downloads(
         date_to (datetime): The end date
 
     Yields:
-        Optional[NPMPackageInfo]: The download count for the package
+        Optional[NPMPackageDownloadInfo]: The download count for the package
     """
 
     str_from = date_from.strftime("%Y-%m-%d")
     str_to = date_to.strftime("%Y-%m-%d")
 
-    endpoint = f"{NPM_HOST}/downloads/range/{str_from}:{str_to}/{package_name}"
+    endpoint = f"{NPM_API_HOST}/downloads/range/{str_from}:{str_to}/{package_name}"
     response = requests.get(
         endpoint,
         timeout=10,
@@ -89,7 +168,7 @@ def get_npm_package_downloads(
     total_downloads = sum(download["downloads"] for download in data["downloads"])
 
     yield (
-        NPMPackageInfo(
+        NPMPackageDownloadInfo(
             date=date_from,
             artifact_name=package_name,
             downloads=total_downloads,
@@ -99,10 +178,44 @@ def get_npm_package_downloads(
     )
 
 
+def get_npm_package_manifest(
+    package_name: str,
+) -> Generator[Optional[NPMPackageManifest], None, None]:
+    """
+    Fetches the manifest for an NPM package.
+
+    Args:
+        context (AssetExecutionContext): The asset execution context
+        package_name (str): The NPM package name
+
+    Yields:
+        Optional[NPMPackageManifest]: The manifest for the package
+    """
+
+    endpoint = f"{NPM_REGISTRY_HOST}/{package_name}/latest"
+    response = requests.get(
+        endpoint,
+        timeout=10,
+        headers={
+            "X-URL": "https://github.com/opensource-observer/oso",
+            "X-Contact": "ops@karibalabs.co",
+            "X-Purpose": "We are currently indexing NPM packages to provide dependency statistics. "
+            "If you have any questions or concerns, please contact us",
+        },
+    )
+
+    data = response.json()
+
+    if not response.ok:
+        raise ValueError(f"Failed to fetch data for {package_name}: {response.text}")
+
+    yield NPMPackageManifest(**flatten_manifest(data))
+
+
 @dlt.resource(
     primary_key="artifact_name",
     name="downloads",
-    columns=pydantic_to_dlt_nullable_columns(NPMPackageInfo),
+    columns=pydantic_to_dlt_nullable_columns(NPMPackageDownloadInfo),
 )
 def get_all_downloads(
     context: AssetExecutionContext,
@@ -117,7 +230,7 @@ def get_all_downloads(
         package_names (List[str]): List of NPM package names to fetch
 
     Yields:
-        List[NPMPackageInfo]: The download count for each package
+        List[NPMPackageDownloadInfo]: The download count for each package
     """
 
     start = datetime.strptime(context.partition_key, "%Y-%m-%d")
@@ -131,6 +244,33 @@ def get_all_downloads(
     yield from (
         get_npm_package_downloads(package_name, start, end)
         for package_name in package_names
+    )
+
+
+@dlt.resource(
+    primary_key="name",
+    name="manifests",
+    columns=pydantic_to_dlt_nullable_columns(NPMPackageManifest),
+)
+def get_all_manifests(
+    context: AssetExecutionContext,
+    package_names: List,
+):
+    """
+    Fetches the manifest for a list of NPM packages.
+
+    Args:
+        context (AssetExecutionContext): The asset execution
+        package_names (List): List of NPM package names to fetch
+
+    Yields:
+        List[NPMPackageManifest]: The manifest for each package
+    """
+
+    context.log.info(f"Processing NPM manifests for {len(package_names)} packages")
+
+    yield from (
+        get_npm_package_manifest(package_name) for package_name in package_names
     )
 
 
@@ -158,6 +298,34 @@ def downloads(
     client = cbt.get(context.log)
 
     yield get_all_downloads(
+        context,
+        package_names=[
+            row["artifact_name"]
+            for row in client.query_with_string(unique_artifacts_query)
+        ],
+    )
+
+
+@dlt_factory(
+    key_prefix="npm",
+    deps=[AssetKey(["dbt", "production", "artifacts_v1"])],
+)
+def manifests(
+    context: AssetExecutionContext,
+    cbt: CBTResource,
+):
+    unique_artifacts_query = """
+        SELECT
+          DISTINCT(artifact_name)
+        FROM
+          `oso.artifacts_v1`
+        WHERE
+          artifact_source = "NPM"
+    """
+
+    client = cbt.get(context.log)
+
+    yield get_all_manifests(
         context,
         package_names=[
             row["artifact_name"]

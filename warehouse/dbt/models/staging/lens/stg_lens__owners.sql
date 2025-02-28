@@ -1,3 +1,9 @@
+{{ 
+  config(
+    materialized='table'
+  )
+}}
+
 {#
   Get the latest owners
 #}

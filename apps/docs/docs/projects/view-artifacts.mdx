@@ -1,0 +1,120 @@
+---
+title: View Your Project's Artifacts
+sidebar_position: 3
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+:::important
+Projects are assigned artifacts in two ways:
+1. You can manually add an artifact to a project by adding it to the project's `.yaml` file in [oss-directory](https://github.com/opensource-observer/oss-directory).
+2. OSO _**discovers**_ downstream artifacts linked to projects. For instance, if a project owns a GitHub organization, OSO will discover all the GitHub repositories owned by that organization and link them as project artifacts.
+:::
+
+## Lookup All Artifacts for a Project
+
+You can lookup all artifacts for a project using either BigQuery or our GraphQL API:
+
+<Tabs>
+<TabItem value="sql" label="SQL">
+
+```sql
+select
+  artifact_id,
+  artifact_name,
+  artifact_namespace
+from `oso_production.artifacts_by_project_v1`
+where project_name = 'opensource-observer'
+```
+
+</TabItem>
+<TabItem value="graphql" label="GraphQL">
+
+```graphql
+query findProject {
+  oso_artifactsByProjectV1(
+    where: { projectName: { _eq: "opensource-observer" } }
+  ) {
+    artifactId
+    artifactName
+    artifactNamespace
+  }
+}
+```
+
+</TabItem>
+</Tabs>
+
+## Lookup a Specific Artifact
+
+You can lookup a specific artifact by its `artifact_name` and/or `artifact_namespace` using either BigQuery or our GraphQL API:
+
+<Tabs>
+<TabItem value="sql" label="SQL">
+
+```sql
+select
+  artifact_id,
+  artifact_name,
+  artifact_namespace
+from `oso_production.artifacts_by_project_v1`
+where artifact_name = 'oso' and artifact_namespace = 'opensource-observer'
+```
+
+</TabItem>
+
+<TabItem value="graphql" label="GraphQL">
+
+```graphql
+query findArtifact {
+  oso_artifactsByProjectV1(
+    where: { artifactName: { _eq: "oso" }, artifactNamespace: { _eq: "opensource-observer" } }
+  ) {
+    artifactId
+    artifactName
+    artifactNamespace
+  }
+}
+```
+
+</TabItem>
+</Tabs>
+
+## Lookup Artifacts by Data Source
+
+You can lookup artifacts by their data source using either BigQuery or our GraphQL API:
+
+<Tabs>
+<TabItem value="sql" label="SQL">
+
+```sql
+select
+  artifact_id,
+  artifact_name,
+  artifact_namespace
+from `oso_production.artifacts_by_project_v1`
+where artifact_source = 'GITHUB'
+```
+
+</TabItem>
+
+
+<TabItem value="graphql" label="GraphQL">
+
+```graphql
+query findArtifactsBySource {
+  oso_artifactsByProjectV1(
+    where: { artifactSource: { _eq: "GITHUB" } }
+  ) {
+    artifactId
+    artifactName
+    artifactNamespace
+  }
+}
+```
+
+</TabItem>
+</Tabs>
+
+

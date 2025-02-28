@@ -1,3 +1,9 @@
+{{
+  config(
+    materialized='table'
+  )
+}}
+
 {# 
   The most recent view of collections from the ossd dagster source.
 #}
