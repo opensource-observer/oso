@@ -31,10 +31,10 @@ ALERTS_JOB_CONFIG = {
             "resources": {
                 "requests": {
                     "cpu": "500m",
-                    "memory": "768Mi",
+                    "memory": "1024Mi",
                 },
                 "limits": {
-                    "memory": "1536Mi",
+                    "memory": "2048Mi",
                 },
             },
         },
