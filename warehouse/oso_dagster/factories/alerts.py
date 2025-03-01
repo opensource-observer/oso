@@ -34,7 +34,6 @@ ALERTS_JOB_CONFIG = {
                     "memory": "768Mi",
                 },
                 "limits": {
-                    "cpu": "500m",
                     "memory": "1536Mi",
                 },
             },
