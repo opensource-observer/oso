@@ -88,7 +88,7 @@ locals {
       preemptible        = true
       initial_node_count = 0
     },
-    # TRINO COORIDNATOR POOL
+    # Trino coordinator pool
     {
       name                              = "${var.cluster_name}-trino-coordinator-node-pool"
       machine_type                      = "n1-highmem-8"
@@ -121,6 +121,50 @@ locals {
       local_ssd_ephemeral_storage_count = 0
       spot                              = true
       disk_size_gb                      = 200
+      disk_type                         = "pd-standard"
+      image_type                        = "COS_CONTAINERD"
+      enable_gcfs                       = false
+      enable_gvnic                      = false
+      logging_variant                   = "DEFAULT"
+      auto_repair                       = true
+      auto_upgrade                      = true
+      service_account                   = local.node_service_account_email
+      preemptible                       = false
+      initial_node_count                = 0
+    },
+    # Trino consumer coordinator pool
+    {
+      name                              = "${var.cluster_name}-cons-trino-coord-node-pool"
+      machine_type                      = "n1-highmem-2"
+      node_locations                    = join(",", var.cluster_zones)
+      min_count                         = 0
+      max_count                         = 1
+      local_ssd_count                   = 0
+      local_ssd_ephemeral_storage_count = 0
+      spot                              = false
+      disk_size_gb                      = 75
+      disk_type                         = "pd-standard"
+      image_type                        = "COS_CONTAINERD"
+      enable_gcfs                       = false
+      enable_gvnic                      = false
+      logging_variant                   = "DEFAULT"
+      auto_repair                       = true
+      auto_upgrade                      = true
+      service_account                   = local.node_service_account_email
+      preemptible                       = false
+      initial_node_count                = 0
+    },
+    # Trino consumer worker pool
+    {
+      name                              = "${var.cluster_name}-cons-trino-worker-node-pool"
+      machine_type                      = "n1-highmem-8"
+      node_locations                    = join(",", var.cluster_zones)
+      min_count                         = 0
+      max_count                         = 5
+      local_ssd_count                   = 0
+      local_ssd_ephemeral_storage_count = 0
+      spot                              = true
+      disk_size_gb                      = 100
       disk_type                         = "pd-standard"
       image_type                        = "COS_CONTAINERD"
       enable_gcfs                       = false
@@ -205,6 +249,14 @@ locals {
       default_node_pool = false
       pool_type         = "trino-coordinator"
     }
+    "${var.cluster_name}-cons-trino-worker-node-pool" = {
+      default_node_pool = false
+      pool_type         = "cons-trino-worker"
+    }
+    "${var.cluster_name}-cons-trino-coord-node-pool" = {
+      default_node_pool = false
+      pool_type         = "cons-trino-coord"
+    }
     "${var.cluster_name}-mcs-scheduler-node-pool" = {
       default_node_pool = false
       pool_type         = "mcs-scheduler"
@@ -257,6 +309,20 @@ locals {
         effect = "NO_SCHEDULE"
       },
     ]
+    "${var.cluster_name}-cons-trino-worker-node-pool" = [
+      {
+        key    = "pool_type"
+        value  = "cons-trino-worker"
+        effect = "NO_SCHEDULE"
+      },
+    ]
+    "${var.cluster_name}-cons-trino-coord-node-pool" = [
+      {
+        key    = "pool_type"
+        value  = "cons-trino-coord"
+        effect = "NO_SCHEDULE"
+      },
+    ]
     "${var.cluster_name}-mcs-scheduler-node-pool" = [
       {
         key    = "pool_type"
@@ -291,6 +357,12 @@ locals {
     ]
     "${var.cluster_name}-trino-coordinator-pool" = [
       "trino-coordinator",
+    ]
+    "${var.cluster_name}-cons-trino-worker-pool" = [
+      "cons-trino-worker",
+    ]
+    "${var.cluster_name}-cons-trino-coord-pool" = [
+      "cons-trino-coord",
     ]
     "${var.cluster_name}-mcs-scheduler-pool" = [
       "mcs-scheduler",

@@ -4,6 +4,8 @@ resources:
   - ./dagster
   - ./cloudsql-proxy
   - ./redis
-  # Uncomment to turn on trino
   - ./trino
+  - ./consumer-trino
   - ./metrics-calculation-service
+  - ./nessie
+  - ./nessie-cloudsql-proxy

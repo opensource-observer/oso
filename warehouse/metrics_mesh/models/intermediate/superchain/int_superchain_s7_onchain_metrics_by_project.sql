@@ -15,7 +15,8 @@ MODEL (
     chain,
     project_id,
     metric_name
-  )
+  ),
+  enabled false,
 );
 
 @DEF(project_weight_per_tx_event, 0.5);

@@ -109,3 +109,66 @@ def join_all_of_entity_type(
         )
     # Calculate the correct metric_id for all of the entity types
     return query
+
+
+def map_metadata_to_metric(
+    evaluator: MacroEvaluator,
+):
+    metric = t.cast(str, evaluator.var("metric"))
+    metadata = t.cast(t.Dict[str, t.Any], evaluator.var("metadata"))
+
+    description = metadata["description"]
+    display_name = metadata["display_name"]
+
+    return exp.select(
+        exp.Literal(this=display_name, is_string=True).as_("display_name"),
+        exp.Literal(this=description, is_string=True).as_("description"),
+        exp.Literal(this=metric, is_string=True).as_("metric"),
+    )
+
+
+def aggregate_metadata(
+    evaluator: MacroEvaluator,
+):
+    from functools import reduce
+
+    if evaluator.runtime_stage in ["loading", "creating"]:
+        return exp.select(
+            exp.Literal(this="...", is_string=True).as_("display_name"),
+            exp.Literal(this="...", is_string=True).as_("description"),
+            exp.Literal(this="...", is_string=True).as_("metric"),
+        )
+
+    model_names = [snap.name for snap in evaluator._snapshots.values()]
+
+    metadata_model_names = [
+        name
+        for name in model_names
+        if (col := parse_one(name))
+        and isinstance(col, exp.Column)
+        and isinstance(col.this, exp.Identifier)
+        and col.this.this.startswith("metrics_metadata_")
+    ]
+
+    assert len(metadata_model_names) > 0, "No valid metadata models found"
+
+    def make_select(table: str):
+        return exp.select(
+            exp.column("display_name"),
+            exp.column("description"),
+            exp.column("metric"),
+        ).from_(sql.to_table(f"{table}"))
+
+    selects = [make_select(model) for model in metadata_model_names]
+
+    unique_metrics = reduce(lambda acc, cur: acc.union(cur), selects)
+
+    return (
+        exp.select(
+            exp.column("display_name"),
+            exp.column("description"),
+            exp.column("metric"),
+        )
+        .from_(unique_metrics.subquery())
+        .as_("metadata")
+    )

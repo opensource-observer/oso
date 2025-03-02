@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 from dagster import (
     AssetChecksDefinition,
     AssetsDefinition,
+    AssetSpec,
     JobDefinition,
     SensorDefinition,
     SourceAsset,
@@ -21,7 +22,9 @@ from dagster._core.definitions.unresolved_asset_job_definition import (
 )
 from oso_dagster.config import DagsterConfig
 
-type GenericAsset = t.Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]
+type GenericAsset = t.Union[
+    AssetsDefinition, SourceAsset, CacheableAssetsDefinition, AssetSpec
+]
 type NonCacheableAssetsDefinition = t.Union[AssetsDefinition, SourceAsset]
 type AssetList = t.Iterable[GenericAsset]
 type AssetDeps = t.Iterable[CoercibleToAssetDep]

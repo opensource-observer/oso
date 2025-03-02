@@ -27,6 +27,14 @@ jobs:
         with:
           fetch-depth: 1
 
+      - name: Setup Python and UV
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: 3.12
+  
+      - name: Install dependencies
+        run: uv sync --all-packages --all-extras
+
       - name: 'Login to GitHub Container Registry'
         uses: docker/login-action@v3
         with:
@@ -56,6 +64,12 @@ jobs:
           cluster_name: ${{ secrets.GKE_CLUSTER_NAME }}
           location: ${{ secrets.GKE_CLUSTER_REGION }}
           project_id: ${{ vars.GOOGLE_PROJECT_ID }}
+
+      # We may need a better place for this in the future but for now we need to
+      # ensure that sqlmesh state is up to date _before_ we deploy the new
+      # containers
+      - name: Run sqlmesh migrate
+        run: uv run oso production sqlmesh-migrate
 
       - name: Delete pod for dagster
         run: kubectl delete pods --namespace production-dagster -l app.kubernetes.io/instance=production-dagster,component=user-deployments

@@ -3,9 +3,9 @@ name: oso-dagster
 description: Extension of the dagster template
 
 type: application
-version: 0.12.0
+version: 0.14.0
 appVersion: "1.0.0"
 dependencies:
 - name: dagster
-  version: "1.7.16"
+  version: "1.10.1"
   repository: "https://dagster-io.github.io/helm"

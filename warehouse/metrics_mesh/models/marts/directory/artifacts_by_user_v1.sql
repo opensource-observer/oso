@@ -4,6 +4,7 @@ MODEL (
   tags (
     'export'
   ),
+  enabled false,
 );
 
 select

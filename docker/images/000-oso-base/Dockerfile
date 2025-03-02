@@ -16,7 +16,7 @@ RUN apt-get update && \
     apt-get install -y curl git && \
     curl -o get-pip.py https://bootstrap.pypa.io/get-pip.py && \
     python${PYTHON_VERSION} get-pip.py && \
-    pip${PYTHON_VERSION} install poetry && \
+    pip${PYTHON_VERSION} install uv && \
     curl -o gcloud.tar.gz https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-${GCLOUD_VERSION}-linux-x86_64.tar.gz && \
     tar xvf gcloud.tar.gz && \
     bash ./google-cloud-sdk/install.sh && \
