@@ -1,0 +1,23 @@
+load("@aspect_rules_js//npm:defs.bzl", "npm_package")
+load("@aspect_rules_ts//ts:defs.bzl", "ts_project")
+
+ts_project(
+    name = "utils_ts",
+    declaration = True,
+    declaration_map = True,
+    out_dir = "dist",
+    #srcs = ["src/index.ts"],
+    #allow_js = True,
+    resolve_json_module = True,
+    transpiler = "tsc",
+    tsconfig = "tsconfig.json",
+)
+
+npm_package(
+    name = "pkg",
+    srcs = [
+        "package.json",
+        ":utils_ts",
+    ],
+    visibility = ["//visibility:public"],
+)
