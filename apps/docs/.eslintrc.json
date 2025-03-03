@@ -5,6 +5,7 @@
     "project": ["./apps/docs/tsconfig.json"]
   },
   "rules": {
-    "@typescript-eslint/ban-ts-comment": "off"
+    "@typescript-eslint/ban-ts-comment": "off",
+    "@typescript-eslint/no-empty-object-type": "off"
   }
 }
