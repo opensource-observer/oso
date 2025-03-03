@@ -43,5 +43,8 @@
   },
   "dependencies": {
     "pyright": "^1.1.378"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": []
   }
 }

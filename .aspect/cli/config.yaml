@@ -1,0 +1,4 @@
+configure:
+  languages:
+    python: true
+    javascript: true
