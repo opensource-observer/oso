@@ -34,6 +34,7 @@
     "@emotion/react": "^11.11.4",
     "@emotion/styled": "^11.11.5",
     "@feedbackfarm/react": "^4.0.10",
+    "@headlessui/tailwindcss": "^0.2.2",
     "@mui/icons-material": "^5.16.0",
     "@mui/material": "^5.16.0",
     "@mui/x-date-pickers": "^6.20.2",
