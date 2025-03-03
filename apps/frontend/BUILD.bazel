@@ -12,7 +12,7 @@ ts_config(
 )
 
 ts_project(
-    name = "docs_ts",
+    name = "frontend_ts",
     allow_js = True,
     no_emit = True,
     out_dir = "dist",
