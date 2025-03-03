@@ -69,7 +69,7 @@ DEFILLAMA_PROTOCOLS = [
     "optimism-bridge",
     "origin-protocol",
     "overnight-finance",
-    "pancakeswap-amm-v3",
+    #"pancakeswap-amm-v3", # continuously fails
     "pendle",
     "perpetual-protocol",
     "pinto",
