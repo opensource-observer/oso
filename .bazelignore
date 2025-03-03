@@ -1,0 +1,9 @@
+node_modules
+apps/docs/node_modules
+apps/frontend/node_modules
+apps/hasura-clickhouse/node_modules
+lib/oss-artifact-validators/node_modules
+lib/utils/node_modules
+ops/external-prs/node_modules
+ops/github-app-utils/node_modules
+warehouse/cube/node_modules
