@@ -22,6 +22,6 @@ spec:
       jdbcUrl: jdbc:postgresql://production-nessie-cloudsql-proxy-gcloud-sqlproxy.production-nessie-cloudsql-proxy.svc.cluster.local:5432/postgres
       secret:
         name: nessie-postgres
-        password: gcp:secretmanager:production-nessie-db-password
-        username: gcp:secretmanager:production-nessie-db-user
+        password: password
+        username: username
     versionStoreType: JDBC
