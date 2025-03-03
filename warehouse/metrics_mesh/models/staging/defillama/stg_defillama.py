@@ -4,7 +4,11 @@ from datetime import datetime
 import orjson
 import pandas as pd
 from metrics_tools.source.rewrite import oso_source_for_pymodel
-from oso_dagster.assets.defillama import DEFILLAMA_PROTOCOLS, defillama_slug_to_name
+from oso_dagster.assets.defillama import (
+    DEFILLAMA_PROTOCOLS,
+    defillama_chain_mappings,
+    defillama_slug_to_name,
+)
 from sqlglot import exp
 from sqlmesh import ExecutionContext, model
 from sqlmesh.core.model import ModelKindName
@@ -32,7 +36,7 @@ def parse_chain_tvl(protocol: str, chain_tvls_raw: str, start: datetime, end: da
                             [
                                 pd.Timestamp(entry["date"], unit="s"),
                                 protocol,
-                                chain,
+                                defillama_chain_mappings(chain),
                                 token,
                                 tokens_values[token],
                             ]
