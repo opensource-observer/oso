@@ -328,7 +328,7 @@ class BaseDestinationLoader(DestinationLoader):
 
         process = subprocess.Popen(
             [*self.sqlmesh_base_args(), *extra_args],
-            cwd=os.path.join(self._config.repo_dir, "warehouse/metrics_mesh"),
+            cwd=os.path.join(self._config.repo_dir, "warehouse/oso_sqlmesh"),
             env={
                 **os.environ,
                 **extra_env,

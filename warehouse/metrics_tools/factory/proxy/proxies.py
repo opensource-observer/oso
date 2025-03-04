@@ -3,14 +3,14 @@ from datetime import datetime
 
 import pandas as pd
 import sqlglot as sql
-from metrics_mesh.macros.to_unix_timestamp import (
-    str_to_unix_timestamp,
-    to_unix_timestamp,
-)
 from metrics_tools.definition import PeerMetricDependencyRef
 from metrics_tools.factory.generated import generated_rolling_query
 from metrics_tools.factory.utils import metric_ref_evaluator_context
 from metrics_tools.macros import metrics_end, metrics_sample_date, metrics_start
+from oso_sqlmesh.macros.to_unix_timestamp import (
+    str_to_unix_timestamp,
+    to_unix_timestamp,
+)
 from sqlglot import exp
 from sqlmesh import ExecutionContext
 from sqlmesh.core.dialect import parse_one

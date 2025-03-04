@@ -346,5 +346,5 @@ These are just a few of our ideas! All data and code can be found in the [Retro-
 - [Optimism Onchain Builders Mission Details](https://gov.optimism.io/t/retro-funding-onchain-builders-mission-details/9611)
 - [DefiLlama Documentation](https://docs.llama.fi/) (for how TVL is calculated)
 - [Superchain Data on BigQuery](https://docs.opensource.observer/docs/integrate/datasets/#superchain)
-- [OSO Superchain S7 Metric Models](https://github.com/opensource-observer/oso/tree/main/warehouse/metrics_mesh/models/intermediate/superchain)
+- [OSO Superchain S7 Metric Models](https://github.com/opensource-observer/oso/tree/main/warehouse/oso_sqlmesh/models/intermediate/superchain)
 - [OSO’s Onchain Builders Evaluation Notebook](https://app.hex.tech/00bffd76-9d33-4243-8e7e-9add359f25c7/app/067ac30b-ef55-452c-891c-cf4dff9d86c9/latest)

@@ -101,7 +101,7 @@ class DagsterConfig(BaseSettings):
         if not self.main_dbt_project_dir:
             self.main_dbt_project_dir = self.repo_dir
         if not self.sqlmesh_dir:
-            self.sqlmesh_dir = os.path.join(self.repo_dir, "warehouse/metrics_mesh")
+            self.sqlmesh_dir = os.path.join(self.repo_dir, "warehouse/oso_sqlmesh")
 
         # If we happen to be in a kubernetes environment, enable_k8s enables the
         # K8sResource to control k8s resources

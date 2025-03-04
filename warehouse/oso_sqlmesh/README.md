@@ -65,7 +65,7 @@ oso local sqlmesh plan dev --start 2024-07-01 --end 2024-08-01 # to run for spec
 ```
 
 _Note, the command above uses a wrapper `oso local sqlmesh` that will
-automatically use the correct `warehouse/metrics_mesh` directory. It can also be
+automatically use the correct `warehouse/oso_sqlmesh` directory. It can also be
 used to run with a local trino (see below)._
 
 Explore the data in DuckDB:
@@ -139,7 +139,7 @@ This is a convenience function for running sqlmesh locally. This is equivalent
 to running this series of commands:
 
 ```bash
-cd warehouse/metrics_mesh
+cd warehouse/oso_sqlmesh
 sqlmesh [...any sqlmesh args... ]
 ```
 
@@ -152,7 +152,7 @@ oso local sqlmesh plan
 Would be equivalent to
 
 ```bash
-cd warehouse/metrics_mesh
+cd warehouse/oso_sqlmesh
 sqlmesh plan
 ```
 

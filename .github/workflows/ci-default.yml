@@ -192,5 +192,5 @@ jobs:
 
       - name: Test SQLMesh
         run: |
-          cd warehouse/metrics_mesh && uv run sqlmesh plan dev --start '1 month' --end now --auto-apply
+          cd warehouse/oso_sqlmesh && uv run sqlmesh plan dev --start '1 month' --end now --auto-apply
         if: ${{ always() && matrix.component == 'sqlmesh' }}

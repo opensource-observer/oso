@@ -10,7 +10,7 @@ from sqlmesh.core.macros import MacroEvaluator
 from sqlmesh.utils.date import TimeLike
 
 CURR_DIR = os.path.dirname(__file__)
-QUERIES_DIR = os.path.abspath(os.path.join(CURR_DIR, "../metrics_mesh/oso_metrics"))
+QUERIES_DIR = os.path.abspath(os.path.join(CURR_DIR, "../oso_sqlmesh/oso_metrics"))
 
 type ExtraVarBaseType = str | int | float
 type ExtraVarType = ExtraVarBaseType | t.List[ExtraVarBaseType]
