@@ -4,6 +4,14 @@ metadata:
   name: production-nessie
 spec:
   values:
+    advancedConfig:
+      quarkus:
+        log:
+          console:
+            level: DEBUG
+          category:
+            "io.smallrye.config":
+              level: DEBUG
     serviceAccount:
       create: true
       name: production-nessie
