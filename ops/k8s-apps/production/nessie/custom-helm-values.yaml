@@ -10,7 +10,7 @@ spec:
           console:
             level: DEBUG
           category:
-            "io.smallrye.config":
+            "[io.smallrye.config]":
               level: DEBUG
     serviceAccount:
       create: true
