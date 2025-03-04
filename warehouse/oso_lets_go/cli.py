@@ -54,7 +54,7 @@ from metrics_tools.local.config import (
 from metrics_tools.local.utils import TABLE_MAPPING
 
 CURR_DIR = os.path.dirname(__file__)
-METRICS_MESH_DIR = os.path.abspath(os.path.join(CURR_DIR, "../metrics_mesh"))
+OSO_SQLMESH_DIR = os.path.abspath(os.path.join(CURR_DIR, "../oso_sqlmesh"))
 REPO_DIR = os.path.abspath(os.path.join(CURR_DIR, "../../"))
 PROJECT_ID = os.getenv("GOOGLE_PROJECT_ID", "opensource-observer")
 
@@ -86,7 +86,7 @@ ops.command()(cluster_setup)
 
 
 def find_or_choose_metric(metric: str):
-    timeseries_metrics = load_timeseries_metrics(METRICS_MESH_DIR)
+    timeseries_metrics = load_timeseries_metrics(OSO_SQLMESH_DIR)
 
     matches: t.Dict[str, MetricQueryConfig] = {}
 
@@ -111,7 +111,7 @@ def find_or_choose_metric(metric: str):
 @click.argument("metric")
 @click.option(
     "--factory-path",
-    default=os.path.join(METRICS_MESH_DIR, "models/metrics_factories.py"),
+    default=os.path.join(OSO_SQLMESH_DIR, "models/metrics_factories.py"),
 )
 @click.option("--dialect", default="duckdb", help="The dialect to render")
 @click.pass_context
@@ -275,7 +275,7 @@ def sqlmesh_migrate(
             job_name=f"sqlmesh-migrate-{datetime.now().strftime('%Y%m%d%H%M%S')}",
             namespace=namespace,
             cmd=["sqlmesh", "--gateway", gateway, "migrate"],
-            working_dir="/usr/src/app/warehouse/metrics_mesh",
+            working_dir="/usr/src/app/warehouse/oso_sqlmesh",
             user_email=user_email,
             env=env_vars,
             resources={
@@ -554,7 +554,7 @@ def local_sqlmesh(
             process = subprocess.Popen(
                 ["sqlmesh", "--gateway", "local-trino", *extra_args],
                 # shell=True,
-                cwd=os.path.join(repo_dir, "warehouse/metrics_mesh"),
+                cwd=os.path.join(repo_dir, "warehouse/oso_sqlmesh"),
                 env={
                     **os.environ,
                     "SQLMESH_DUCKDB_LOCAL_PATH": ctx.obj["local_trino_duckdb_path"],
@@ -573,7 +573,7 @@ def local_sqlmesh(
     else:
         process = subprocess.Popen(
             ["sqlmesh", *ctx.args],
-            cwd=os.path.join(repo_dir, "warehouse/metrics_mesh"),
+            cwd=os.path.join(repo_dir, "warehouse/oso_sqlmesh"),
             env={
                 **os.environ,
                 "SQLMESH_DUCKDB_LOCAL_PATH": ctx.obj["local_duckdb_path"],
