@@ -18,6 +18,7 @@ spec:
         gcs:
           defaultOptions:
             projectId: opensource-observer
+            authType: APPLICATION_DEFAULT
     jdbc:
       jdbcUrl: jdbc:postgresql://production-nessie-cloudsql-proxy-gcloud-sqlproxy.production-nessie-cloudsql-proxy.svc.cluster.local:5432/postgres
       secret:
