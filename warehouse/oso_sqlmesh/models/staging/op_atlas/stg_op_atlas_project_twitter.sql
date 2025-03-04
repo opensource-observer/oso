@@ -9,7 +9,7 @@ with sanitized as (
         projects.project_id,
         projects.project_source_id as artifact_source_id,
         'TWITTER' as artifact_source,
-        'TWITTER' as artifact_namespace,
+        NULL::TEXT as artifact_namespace,
         case
             when
                 projects.twitter like 'https://twitter.com/%'

@@ -64,6 +64,18 @@ all_contracts as (
   from metrics.stg_op_atlas_project_contract
 ),
 
+all_deployers as (
+  select distinct
+    project_id,
+    artifact_source_id,
+    artifact_source,
+    artifact_namespace,
+    artifact_name,
+    artifact_url,
+    artifact_type
+  from metrics.stg_op_atlas_project_deployer
+),
+
 all_defillama as (
   select
     project_id,
@@ -87,6 +99,8 @@ all_artifacts as (
   union all
   select * from all_contracts
   union all
+  select * from all_deployers
+  union all
   select * from all_defillama
 ),
 
@@ -104,7 +118,7 @@ all_normalized_artifacts as (
 
 select
   project_id,
-  @oso_id(artifact_source, artifact_source_id) as artifact_id,
+  @oso_id(artifact_source, artifact_namespace, artifact_name) as artifact_id,
   artifact_source_id,
   artifact_source,
   artifact_namespace,
