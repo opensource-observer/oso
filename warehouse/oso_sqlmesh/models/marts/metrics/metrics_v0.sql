@@ -1,62 +1,53 @@
-MODEL (
-  name metrics.metrics_v0,
-  kind FULL,
-  dialect trino,
-  tags (
-    'export'
-  )
-);
+model(name oso.metrics_v0, kind full, dialect trino, tags('export'))
+;
 
-WITH unioned_metric_names AS (
-  SELECT *
-  FROM metrics.int_metric_names_from_artifact
-  UNION ALL
-  SELECT *
-  FROM metrics.int_metric_names_from_project
-  UNION ALL
-  SELECT *
-  FROM metrics.int_metric_names_from_collection
-  UNION ALL
-  SELECT *
-  FROM metrics.int_key_metric_names_from_artifact
-  UNION ALL
-  SELECT *
-  FROM metrics.int_key_metric_names_from_project
-  UNION ALL
-  SELECT *
-  FROM metrics.int_key_metric_names_from_collection
-), all_timeseries_metric_names AS (
-  SELECT DISTINCT
-    metric
-  FROM unioned_metric_names
-), all_metrics_metadata AS (
-  SELECT
-    metric,
-    display_name,
-    description
-  FROM metrics.metrics_metadata
-), metrics_v0_no_casting AS (
-  SELECT
-    @oso_id('OSO', 'oso', t.metric) AS metric_id,
-    'OSO' AS metric_source,
-    'oso' AS metric_namespace,
-    t.metric AS metric_name,
-    COALESCE(m.display_name, t.metric) AS display_name,
-    COALESCE(m.description, 'TODO') AS description,
-    NULL AS raw_definition,
-    'TODO' AS definition_ref,
-    'UNKNOWN' AS aggregation_function
-  FROM all_timeseries_metric_names t
-  LEFT JOIN all_metrics_metadata m ON t.metric LIKE '%' || m.metric || '%'
-)
-SELECT
-  metric_id::TEXT,
-  metric_source::TEXT,
-  metric_namespace::TEXT,
-  metric_name::TEXT,
-  display_name::TEXT,
-  description::TEXT,
-  raw_definition::TEXT,
-  definition_ref::TEXT,
-  aggregation_function::TEXT
-FROM metrics_v0_no_casting;
+with
+    unioned_metric_names as (
+        select *
+        from oso.int_metric_names_from_artifact
+        union all
+        select *
+        from oso.int_metric_names_from_project
+        union all
+        select *
+        from oso.int_metric_names_from_collection
+        union all
+        select *
+        from oso.int_key_metric_names_from_artifact
+        union all
+        select *
+        from oso.int_key_metric_names_from_project
+        union all
+        select *
+        from oso.int_key_metric_names_from_collection
+    ),
+    all_timeseries_metric_names as (select distinct metric from unioned_metric_names),
+    all_metrics_metadata as (
+        select metric, display_name, description from oso.metrics_metadata
+    ),
+    metrics_v0_no_casting as (
+        select
+            @oso_id('OSO', 'oso', t.metric) as metric_id,
+            'OSO' as metric_source,
+            'oso' as metric_namespace,
+            t.metric as metric_name,
+            coalesce(m.display_name, t.metric) as display_name,
+            coalesce(m.description, 'TODO') as description,
+            null as raw_definition,
+            'TODO' as definition_ref,
+            'UNKNOWN' as aggregation_function
+        from all_timeseries_metric_names t
+        left join all_metrics_metadata m on t.metric like '%' || m.metric || '%'
+    )
+select
+    metric_id::text,
+    metric_source::text,
+    metric_namespace::text,
+    metric_name::text,
+    display_name::text,
+    description::text,
+    raw_definition::text,
+    definition_ref::text,
+    aggregation_function::text
+from metrics_v0_no_casting
+;

@@ -1,8 +1,9 @@
-MODEL (
-  name metrics.stg_github__distinct_main_commits,
-  description 'Gathers all github commits on the default branch of a repo that are distinct.',
-  kind FULL,
-);
+model(
+    name oso.stg_github__distinct_main_commits,
+    description 'Gathers all github commits on the default branch of a repo that are distinct.',
+    kind full,
+)
+;
 
 {#
   Gathers all github commits on the default branch of a repo that are distinct.
@@ -12,22 +13,21 @@ MODEL (
   frequency)
 #}
 select
-  ghc.repository_id,
-  ghc.sha,
-  MIN(ghc.created_at) as created_at,
-  MIN_BY(ghc.repository_name, ghc.created_at) as repository_name,
-  MIN_BY(ghc.push_id, ghc.created_at) as push_id,
-  MIN_BY(ghc.ref, ghc.created_at) as ref,
-  MIN_BY(ghc.actor_id, ghc.created_at) as actor_id,
-  MIN_BY(ghc.actor_login, ghc.created_at) as actor_login,
-  MIN_BY(ghc.author_email, ghc.created_at) as author_email,
-  MIN_BY(ghc.author_name, ghc.created_at) as author_name,
-  MIN_BY(ghc.is_distinct, ghc.created_at) as is_distinct,
-  MIN_BY(ghc.api_url, ghc.created_at) as api_url
-from metrics.stg_github__commits as ghc
-inner join metrics.stg_ossd__current_repositories as repos
-  on ghc.repository_id = repos.id
-where ghc.ref = CONCAT('refs/heads/', repos.branch)
+    ghc.repository_id,
+    ghc.sha,
+    min(ghc.created_at) as created_at,
+    min_by(ghc.repository_name, ghc.created_at) as repository_name,
+    min_by(ghc.push_id, ghc.created_at) as push_id,
+    min_by(ghc.ref, ghc.created_at) as ref,
+    min_by(ghc.actor_id, ghc.created_at) as actor_id,
+    min_by(ghc.actor_login, ghc.created_at) as actor_login,
+    min_by(ghc.author_email, ghc.created_at) as author_email,
+    min_by(ghc.author_name, ghc.created_at) as author_name,
+    min_by(ghc.is_distinct, ghc.created_at) as is_distinct,
+    min_by(ghc.api_url, ghc.created_at) as api_url
+from oso.stg_github__commits as ghc
+inner join oso.stg_ossd__current_repositories as repos on ghc.repository_id = repos.id
+where ghc.ref = concat('refs/heads/', repos.branch)
 
 {# 
   We group by the repository id and sha to prevent merging commits between forks

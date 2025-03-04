@@ -1,5 +1,5 @@
 MODEL (
-  name metrics.int_proxies,
+  name oso.int_proxies,
   kind FULL,
 );
 
@@ -9,7 +9,7 @@ with superchain_proxies (
     LOWER(proxy_address) as proxy_address,
     UPPER(chain) as chain,
     MIN(block_timestamp) as created_date
-  FROM metrics.stg_superchain__proxies
+  FROM oso.stg_superchain__proxies
   WHERE proxy_address != to_address
   GROUP BY
     to_address,

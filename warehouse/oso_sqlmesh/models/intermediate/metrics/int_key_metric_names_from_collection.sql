@@ -1,8 +1,5 @@
-MODEL (
-  name metrics.int_key_metric_names_from_collection,
-  kind FULL
-);
+model(name oso.int_key_metric_names_from_collection, kind full)
+;
 
-SELECT DISTINCT
-  metric
-FROM metrics.key_metrics_to_collection
+select distinct metric
+from oso.key_metrics_to_collection

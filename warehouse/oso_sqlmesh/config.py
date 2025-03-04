@@ -32,7 +32,7 @@ config = Config(
                 port=int(os.environ.get("SQLMESH_TRINO_PORT", "8080")),
                 http_scheme="http",
                 user=os.environ.get("SQLMESH_TRINO_USER", "sqlmesh"),
-                catalog=os.environ.get("SQLMESH_TRINO_CATALOG", "metrics"),
+                catalog=os.environ.get("SQLMESH_TRINO_CATALOG", "iceberg"),
                 concurrent_tasks=int(
                     os.environ.get("SQLMESH_TRINO_CONCURRENT_TASKS", "8")
                 ),
@@ -49,7 +49,7 @@ config = Config(
                 port=int(os.environ.get("SQLMESH_TRINO_PORT", "8080")),
                 http_scheme="http",
                 user=os.environ.get("SQLMESH_TRINO_USER", "sqlmesh"),
-                catalog=os.environ.get("SQLMESH_TRINO_CATALOG", "metrics"),
+                catalog=os.environ.get("SQLMESH_TRINO_CATALOG", "iceberg"),
                 concurrent_tasks=int(
                     os.environ.get("SQLMESH_TRINO_CONCURRENT_TASKS", "64")
                 ),

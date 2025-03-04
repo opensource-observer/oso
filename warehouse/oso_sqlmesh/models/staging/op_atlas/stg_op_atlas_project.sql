@@ -1,24 +1,21 @@
-MODEL (
-  name metrics.stg_op_atlas_project,
-  dialect trino,
-  kind FULL,
-);
+model(name oso.stg_op_atlas_project, dialect trino, kind full,)
+;
 
 select
-  @oso_id('OP_ATLAS', id)::TEXT as project_id,
-  id::TEXT as project_source_id,
-  'OP_ATLAS' as project_source,
-  null::TEXT as project_namespace,
-  id::TEXT as project_name,
-  name::TEXT as display_name,
-  description::TEXT,
-  category::TEXT,
-  thumbnail_url::TEXT,
-  banner_url::TEXT,
-  twitter::TEXT,
-  mirror::TEXT,
-  open_source_observer_slug::TEXT,
-  created_at::TIMESTAMP,
-  updated_at::TIMESTAMP,
-  deleted_at::TIMESTAMP,
+    @oso_id('OP_ATLAS', id)::text as project_id,
+    id::text as project_source_id,
+    'OP_ATLAS' as project_source,
+    null::text as project_namespace,
+    id::text as project_name,
+    name::text as display_name,
+    description::text,
+    category::text,
+    thumbnail_url::text,
+    banner_url::text,
+    twitter::text,
+    mirror::text,
+    open_source_observer_slug::text,
+    created_at::timestamp,
+    updated_at::timestamp,
+    deleted_at::timestamp,
 from @oso_source('bigquery.op_atlas.project')

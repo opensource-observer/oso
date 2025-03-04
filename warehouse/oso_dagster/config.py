@@ -66,8 +66,10 @@ class DagsterConfig(BaseSettings):
     enable_bigquery: bool = False
 
     sqlmesh_dir: str = ""
-
     sqlmesh_gateway: str = "local"
+    sqlmesh_catalog: str = "iceberg"
+    sqlmesh_schema: str = "oso"
+    sqlmesh_bq_export_dataset_id: str = "metrics"
 
     enable_k8s_executor: bool = False
 

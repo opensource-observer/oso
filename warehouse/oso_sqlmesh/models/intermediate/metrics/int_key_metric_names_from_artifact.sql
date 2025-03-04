@@ -1,8 +1,5 @@
-MODEL (
-  name metrics.int_key_metric_names_from_artifact,
-  kind FULL
-);
+model(name oso.int_key_metric_names_from_artifact, kind full)
+;
 
-SELECT DISTINCT
-  metric
-FROM metrics.key_metrics_to_artifact
+select distinct metric
+from oso.key_metrics_to_artifact

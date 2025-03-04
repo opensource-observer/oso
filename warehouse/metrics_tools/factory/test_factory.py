@@ -78,7 +78,7 @@ def timeseries_duckdb():
 def timeseries_metrics_to_test():
     return TimeseriesMetrics.from_raw_options(
         start="2024-01-01",
-        catalog="metrics",
+        schema="oso",
         model_prefix="timeseries",
         metric_queries={
             "visits": MetricQueryDef(
@@ -198,7 +198,7 @@ def test_with_runner(
         runner.commit(
             arrow.get("2024-01-01").datetime,
             arrow.get("2024-01-16").datetime,
-            f"metrics.{query_config['table_name']}",
+            f"oso.{query_config['table_name']}",
         )
 
     # Data assertions
@@ -207,7 +207,7 @@ def test_with_runner(
         connection,
         """
         SELECT * 
-        FROM metrics.visits_to_artifact_daily 
+        FROM oso.visits_to_artifact_daily 
         where metrics_sample_date = '2024-01-15'
     """,
     ) as df:
@@ -219,7 +219,7 @@ def test_with_runner(
         connection,
         """
         SELECT * 
-        FROM metrics.visits_to_artifact_over_7_day_window
+        FROM oso.visits_to_artifact_over_7_day_window
         where metrics_sample_date = '2024-01-15'
     """,
     ) as df:
@@ -231,18 +231,17 @@ def test_with_runner(
         connection,
         """
         SELECT * 
-        FROM metrics.visits_to_artifact_over_all_time
+        FROM oso.visits_to_artifact_over_all_time
     """,
     ) as df:
         df = df[df["to_artifact_id"] == "service_0"]
         assert df.iloc[0]["amount"] == 63
 
-
     with duckdb_df_context(
         connection,
         """
     SELECT * 
-    FROM metrics.developer_active_days_to_artifact_over_7_day_window 
+    FROM oso.developer_active_days_to_artifact_over_7_day_window 
     where metrics_sample_date = '2024-01-08'
     """,
     ) as df:
@@ -256,7 +255,7 @@ def test_with_runner(
         connection,
         """
     SELECT * 
-    FROM metrics.developer_active_days_to_project_over_14_day_window 
+    FROM oso.developer_active_days_to_project_over_14_day_window 
     where metrics_sample_date = '2024-01-15'
     """,
     ) as df:
@@ -268,7 +267,7 @@ def test_with_runner(
         connection,
         """
     SELECT * 
-    FROM metrics.developer_classifications_to_artifact_over_14_day_window 
+    FROM oso.developer_classifications_to_artifact_over_14_day_window 
     where metrics_sample_date = '2024-01-15' and metric = 'full_time_developers_over_14_day_window'
     """,
     ) as df:
@@ -279,7 +278,7 @@ def test_with_runner(
         connection,
         """
     SELECT * 
-    FROM metrics.developer_classifications_to_artifact_over_14_day_window 
+    FROM oso.developer_classifications_to_artifact_over_14_day_window 
     where metrics_sample_date = '2024-01-15'
     """,
     ) as df:
@@ -291,7 +290,7 @@ def test_with_runner(
         connection,
         """
     SELECT * 
-    FROM metrics.change_in_7_day_developer_activity_to_artifact_over_2_period_window 
+    FROM oso.change_in_7_day_developer_activity_to_artifact_over_2_period_window 
     where metrics_sample_date = '2024-01-15'
     """,
     ) as df:

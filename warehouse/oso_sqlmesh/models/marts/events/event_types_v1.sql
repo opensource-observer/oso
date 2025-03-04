@@ -1,10 +1,5 @@
-MODEL (
-  name metrics.event_types_v1,
-  kind FULL,
-  tags (
-    'export'
-  ),
-);
+model(name oso.event_types_v1, kind full, tags('export'),)
+;
 
 select distinct events.event_type
-from metrics.int_events as events
+from oso.int_events as events

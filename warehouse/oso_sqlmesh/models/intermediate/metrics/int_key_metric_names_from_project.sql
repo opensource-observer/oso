@@ -1,8 +1,5 @@
-MODEL (
-  name metrics.int_key_metric_names_from_project,
-  kind FULL
-);
+model(name oso.int_key_metric_names_from_project, kind full)
+;
 
-SELECT DISTINCT
-  metric
-FROM metrics.key_metrics_to_project
+select distinct metric
+from oso.key_metrics_to_project

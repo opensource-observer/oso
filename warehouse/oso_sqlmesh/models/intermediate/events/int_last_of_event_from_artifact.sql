@@ -1,19 +1,12 @@
-MODEL (
-  name metrics.int_last_of_event_from_artifact,
-  kind FULL,
-  partitioned_by (YEAR("time"), "event_type", "event_source"),
-  grain (time, event_type, event_source, from_artifact_id, to_artifact_id)
-);
+model(
+    name oso.int_last_of_event_from_artifact,
+    kind full,
+    partitioned_by(year("time"), "event_type", "event_source"),
+    grain(time, event_type, event_source, from_artifact_id, to_artifact_id)
+)
+;
 
-SELECT
-  MAX(bucket_week) AS time,
-  event_type,
-  event_source,
-  from_artifact_id,
-  to_artifact_id
-FROM metrics.int_events_weekly_to_artifact
-GROUP BY
-  event_type,
-  event_source,
-  from_artifact_id,
-  to_artifact_id
+select
+    max(bucket_week) as time, event_type, event_source, from_artifact_id, to_artifact_id
+from oso.int_events_weekly_to_artifact
+group by event_type, event_source, from_artifact_id, to_artifact_id

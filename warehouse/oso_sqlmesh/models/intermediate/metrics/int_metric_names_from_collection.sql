@@ -1,8 +1,5 @@
-MODEL (
-  name metrics.int_metric_names_from_collection,
-  kind FULL
-);
+model(name oso.int_metric_names_from_collection, kind full)
+;
 
-SELECT DISTINCT
-  metric
-FROM metrics.timeseries_metrics_to_collection
+select distinct metric
+from oso.timeseries_metrics_to_collection

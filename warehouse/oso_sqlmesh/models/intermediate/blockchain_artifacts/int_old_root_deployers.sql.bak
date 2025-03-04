@@ -8,7 +8,7 @@
 -- factory within that time and was also deployed within that time a row will be
 -- created in this model. 
 MODEL (
-  name metrics.int_factory_root_deployers,
+  name oso.int_factory_root_deployers,
   kind INCREMENTAL_BY_TIME_RANGE (
     time_column deployment_date,
     batch_size 365,
@@ -28,7 +28,7 @@ with last_year_before_start as (
     contract_address,
     factory_address,
     chain
-  from metrics.int_factories
+  from oso.int_factories
   where block_timestamp between @start_dt - INTERVAL 365 DAY and @end_dt
   -- ignore anything that already has a root deployer defined
   and contract_address not in (
@@ -43,7 +43,7 @@ with last_year_before_start as (
     contract_address,
     factory_address,
     chain
-  from metrics.int_factories
+  from oso.int_factories
   where block_timestamp between @start_dt and @end_dt
   -- ignore anything that already has a root deployer defined
   and contract_address not in (

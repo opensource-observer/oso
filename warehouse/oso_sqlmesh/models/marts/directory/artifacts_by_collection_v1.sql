@@ -1,19 +1,14 @@
-MODEL (
-  name metrics.artifacts_by_collection_v1,
-  kind FULL,
-  tags (
-    'export'
-  ),
-);
+model(name oso.artifacts_by_collection_v1, kind full, tags('export'),)
+;
 
 select
-  artifact_id,
-  artifact_source_id,
-  artifact_source,
-  artifact_namespace,
-  artifact_name,
-  collection_id,
-  collection_source,
-  collection_namespace,
-  collection_name
-from metrics.int_artifacts_by_collection
+    artifact_id,
+    artifact_source_id,
+    artifact_source,
+    artifact_namespace,
+    artifact_name,
+    collection_id,
+    collection_source,
+    collection_namespace,
+    collection_name
+from oso.int_artifacts_by_collection

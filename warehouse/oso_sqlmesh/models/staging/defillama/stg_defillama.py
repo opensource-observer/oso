@@ -54,7 +54,7 @@ def parse_chain_tvl(protocol: str, chain_tvls_raw: str, start: datetime, end: da
 
 def defillama_tvl_model(protocol: str):
     @model(
-        name=f"metrics.stg__{defillama_slug_to_name(protocol)}_tvl_events",
+        name=f"oso.stg__{defillama_slug_to_name(protocol)}_tvl_events",
         is_sql=False,
         columns={
             "time": "TIMESTAMP",
