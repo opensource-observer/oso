@@ -4,11 +4,24 @@ MODEL (
   kind FULL,
 );
 
+with latest_repositories as (
+  select
+    *,
+    row_number() over (
+      partition by project_id, url
+      order by updated_at desc
+    ) as rn
+  from @oso_source('bigquery.op_atlas.project_repository')
+  where
+    verified = true
+    and upper(type) = 'GITHUB'
+)
+
 select
   -- Translating op-atlas project_id to OSO project_id
   @oso_id('OP_ATLAS', repos.project_id) as project_id,
   repos.id as artifact_source_id,
-  UPPER(repos.type) as artifact_source,
+  'GITHUB' as artifact_source,
   @url_parts(repos.url, 2) as artifact_namespace,
   @url_parts(repos.url, 3) as artifact_name,
   repos.url as artifact_url,
@@ -20,4 +33,5 @@ select
   --repos.contains_contracts,
   --repos.crate as contains_crates,
   --repos.npm_package as contains_npm
-from @oso_source('bigquery.op_atlas.project_repository') as repos
+from latest_repositories as repos
+where rn = 1
