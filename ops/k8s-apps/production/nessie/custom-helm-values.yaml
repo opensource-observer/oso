@@ -21,7 +21,7 @@ spec:
         defaultWarehouse: warehouse
         warehouses:
           - name: warehouse
-            location: gs://production-nessie-bucket/
+            location: gs://production-nessie-bucket/test/
       storage:
         gcs:
           defaultOptions:
