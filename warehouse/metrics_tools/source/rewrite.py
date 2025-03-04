@@ -14,6 +14,15 @@ DUCKDB_REWRITE_RULES: t.List[dict] = [
     }
 ]
 
+LOCAL_TRINO_REWRITE_RULES: t.List[dict] = [
+    {
+        "catalog": "*",
+        "db": "*",
+        "table": "*",
+        "replace": "{catalog}.bq_{db}.{table}",
+    }
+]
+
 
 def oso_source_for_pymodel(context: ExecutionContext, table_name: str) -> exp.Table:
     # Rewrite rules can be injected into the sqlmesh context via the sqlmesh
@@ -23,6 +32,8 @@ def oso_source_for_pymodel(context: ExecutionContext, table_name: str) -> exp.Ta
     oso_source_rewrite_config_default: t.List[dict] = []
     if context.engine_adapter.dialect == "duckdb":
         oso_source_rewrite_config_default = DUCKDB_REWRITE_RULES
+    if context.gateway == "local-trino":
+        oso_source_rewrite_config_default = LOCAL_TRINO_REWRITE_RULES
     oso_source_rewrite_config = t.cast(
         t.List[dict],
         context.var("oso_source_rewrite", oso_source_rewrite_config_default),
