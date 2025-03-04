@@ -47,7 +47,7 @@ type ExtraVarBaseType = str | int | float
 type ExtraVarType = ExtraVarBaseType | t.List[ExtraVarBaseType]
 
 CURR_DIR = os.path.dirname(__file__)
-QUERIES_DIR = os.path.abspath(os.path.join(CURR_DIR, "../../metrics_mesh/oso_metrics"))
+QUERIES_DIR = os.path.abspath(os.path.join(CURR_DIR, "../../oso_sqlmesh/oso_metrics"))
 
 
 class MetricQueryConfig(t.TypedDict):
@@ -652,7 +652,7 @@ class TimeseriesMetrics:
 
 # Specifically for testing. This is used if the
 # `metrics_tools.utils.testing.ENABLE_TIMESERIES_DEBUG` variable is true. This
-# is for loading all of the timeseries metrics from inside the metrics_mesh
+# is for loading all of the timeseries metrics from inside the oso_sqlmesh
 # project and inspecting the actually rendered queries for testing purposes.
 # It's a bit of a hack but it will work for the current purposes.
 GLOBAL_TIMESERIES_METRICS: t.Dict[str, TimeseriesMetrics] = {}

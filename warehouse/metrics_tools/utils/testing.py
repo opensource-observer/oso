@@ -14,7 +14,7 @@ from sqlmesh.core.engine_adapter.duckdb import DuckDBEngineAdapter
 ENABLE_TIMESERIES_DEBUG = False
 
 
-def load_timeseries_metrics(metrics_mesh_dir: str):
+def load_timeseries_metrics(oso_sqlmesh_dir: str):
     global ENABLE_TIMESERIES_DEBUG
 
     import importlib.util
@@ -23,16 +23,16 @@ def load_timeseries_metrics(metrics_mesh_dir: str):
 
     from metrics_tools.factory.factory import GLOBAL_TIMESERIES_METRICS
 
-    factory_path = os.path.join(metrics_mesh_dir, "models/metrics_factories.py")
+    factory_path = os.path.join(oso_sqlmesh_dir, "models/metrics_factories.py")
 
     # Run the metrics factory in the sqlmesh project. This uses a single default
     # location for now.
     spec = importlib.util.spec_from_file_location(
-        "metrics_mesh.metrics_factories", factory_path
+        "oso_sqlmesh.metrics_factories", factory_path
     )
     assert (
         spec is not None
-    ), f"Could not find metrics factory file at {metrics_mesh_dir}/models/metrics_factories.py"
+    ), f"Could not find metrics factory file at {oso_sqlmesh_dir}/models/metrics_factories.py"
     assert spec.loader is not None
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
