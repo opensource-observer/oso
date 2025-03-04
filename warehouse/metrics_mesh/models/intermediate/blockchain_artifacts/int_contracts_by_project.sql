@@ -53,6 +53,6 @@ select distinct
   @oso_id(artifact_source, artifact_name) as artifact_id,
   artifact_source,
   artifact_name as artifact_source_id,
-  LOWER(artifact_source) as artifact_namespace,
+  NULL::TEXT as artifact_namespace,
   artifact_name
 from all_contracts
