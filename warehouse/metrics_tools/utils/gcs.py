@@ -97,9 +97,7 @@ async def delete_gcs_blobs(
             if not dry_run:
                 for _ in range(3):
                     try:
-                        await asyncio.wait_for(
-                            client.delete(bucket.name, blob), timeout=10
-                        )
+                        await client.delete(bucket.name, blob, timeout=30)
                         break
                     except asyncio.TimeoutError:
                         logger.error(f"Timeout deleting: {blob}")
