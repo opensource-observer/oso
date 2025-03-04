@@ -25,7 +25,7 @@ Open Source Observer is a free analytics suite that helps funders measure the im
 - `/warehouse`: All code specific to the data warehouse
   - `/dbt`: dbt configuration
   - `/oso_dagster`: Dagster configuration for orchestrating software-defined assets
-  - `/metrics_mesh`: sqlmesh configuration
+  - `/oso_sqlmesh`: sqlmesh configuration
   - Also contains other tools to manage warehouse pipelines
 - `/ops`: Our ops related code
   - `/external-prs`: GitHub app for validating pull requests
@@ -235,7 +235,7 @@ oso local sqlmesh [...any sqlmesh args...]
 This is a convenience function for running sqlmesh locally. This is equivalent to running this series of commands:
 
 ```bash
-cd warehouse/metrics_mesh
+cd warehouse/oso_sqlmesh
 sqlmesh [...any sqlmesh args... ]
 ```
 
@@ -248,7 +248,7 @@ oso local sqlmesh plan
 Would be equivalent to
 
 ```bash
-cd warehouse/metrics_mesh
+cd warehouse/oso_sqlmesh
 sqlmesh plan
 ```
 
