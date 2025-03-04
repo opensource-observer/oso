@@ -98,10 +98,10 @@ materialize_sbom_source_assets = define_asset_job(
 
 
 schedules: list[ScheduleDefinition] = [
-    # Run core pipeline assets once a week on sunday at midnight
+    # Run core pipeline assets once a month
     ScheduleDefinition(
         job=materialize_core_assets,
-        cron_schedule="0 0 * * 0",
+        cron_schedule="0 0 1 * *",
         tags={
             "dagster/priority": "-1",
         },
