@@ -4,13 +4,21 @@ from datetime import datetime
 import orjson
 import pandas as pd
 from metrics_tools.source.rewrite import oso_source_for_pymodel
-from oso_dagster.assets.defillama import DEFILLAMA_PROTOCOLS, defillama_slug_to_name
+from oso_dagster.assets.defillama import (
+    DEFILLAMA_PROTOCOLS,
+    defillama_chain_mappings,
+    defillama_slug_to_name,
+)
 from sqlglot import exp
 from sqlmesh import ExecutionContext, model
 from sqlmesh.core.model import ModelKindName
 
 
 def parse_chain_tvl(protocol: str, chain_tvls_raw: str, start: datetime, end: datetime):
+    """
+    Extract aggregated TVL events from the chainTvls field.
+    For each chain, each event is expected to have a date and a totalLiquidityUSD value.
+    """
     series = []
     if isinstance(chain_tvls_raw, str):
         try:
@@ -18,7 +26,9 @@ def parse_chain_tvl(protocol: str, chain_tvls_raw: str, start: datetime, end: da
             chains = chain_tvls.keys()
             # Flatten the dictionary to a table
             for chain in chains:
-                tvl_history = chain_tvls[chain]["tokens"]
+                tvl_history = chain_tvls[chain]["tvl"]
+                if not tvl_history:
+                    continue
                 for entry in tvl_history:
                     # Skip entries outside the time range
                     if (
@@ -26,17 +36,17 @@ def parse_chain_tvl(protocol: str, chain_tvls_raw: str, start: datetime, end: da
                         or entry["date"] > end.timestamp()
                     ):
                         continue
-                    tokens_values = entry["tokens"]
-                    for token in tokens_values:
-                        series.append(
-                            [
-                                pd.Timestamp(entry["date"], unit="s"),
-                                protocol,
-                                chain,
-                                token,
-                                tokens_values[token],
-                            ]
-                        )
+                    amount = float(entry["totalLiquidityUSD"])
+                    event = {
+                        "time": pd.Timestamp(entry["date"], unit="s"),
+                        "slug": protocol,
+                        "protocol": protocol,
+                        "chain": defillama_chain_mappings(chain),
+                        "token": "",
+                        "amount": amount,
+                        "event_type": "TVL",
+                    }
+                    series.append(event)
         except orjson.JSONDecodeError:
             return []
     return series
