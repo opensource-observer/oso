@@ -205,7 +205,7 @@ locals {
       machine_type                      = "n1-highmem-64"
       node_locations                    = join(",", var.cluster_zones)
       min_count                         = 0
-      max_count                         = 50
+      max_count                         = 25
       local_ssd_count                   = 0
       local_ssd_ephemeral_storage_count = 3
       spot                              = true
@@ -428,24 +428,24 @@ module "vpc" {
 
 
 module "gke" {
-  source                     = "terraform-google-modules/kubernetes-engine/google"
-  version                    = "~> 35.0.0"
-  project_id                 = var.project_id
-  name                       = var.cluster_name
-  region                     = var.cluster_region
-  zones                      = var.cluster_zones
-  network                    = module.vpc.network_name
-  subnetwork                 = local.main_subnet_name
-  ip_range_pods              = local.subnet_range_pods_name
-  ip_range_services          = local.subnet_range_services_name
-  http_load_balancing        = var.enable_http_load_balancing
-  network_policy             = false
-  horizontal_pod_autoscaling = true
-  filestore_csi_driver       = false
-  deletion_protection        = false
+  source                               = "terraform-google-modules/kubernetes-engine/google"
+  version                              = "~> 35.0.0"
+  project_id                           = var.project_id
+  name                                 = var.cluster_name
+  region                               = var.cluster_region
+  zones                                = var.cluster_zones
+  network                              = module.vpc.network_name
+  subnetwork                           = local.main_subnet_name
+  ip_range_pods                        = local.subnet_range_pods_name
+  ip_range_services                    = local.subnet_range_services_name
+  http_load_balancing                  = var.enable_http_load_balancing
+  network_policy                       = false
+  horizontal_pod_autoscaling           = true
+  filestore_csi_driver                 = false
+  deletion_protection                  = false
   monitoring_enable_managed_prometheus = true
-  logging_enabled_components = ["SYSTEM_COMPONENTS", "APISERVER", "SCHEDULER", "CONTROLLER_MANAGER", "WORKLOADS"]
-  monitoring_enabled_components = ["SYSTEM_COMPONENTS", "APISERVER", "SCHEDULER", "CONTROLLER_MANAGER"]
+  logging_enabled_components           = ["SYSTEM_COMPONENTS", "APISERVER", "SCHEDULER", "CONTROLLER_MANAGER", "WORKLOADS"]
+  monitoring_enabled_components        = ["SYSTEM_COMPONENTS", "APISERVER", "SCHEDULER", "CONTROLLER_MANAGER"]
 
 
   node_pools = local.node_pools
