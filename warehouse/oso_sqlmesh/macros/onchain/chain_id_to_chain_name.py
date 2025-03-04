@@ -70,5 +70,39 @@ def chain_id_to_chain_name(
     ).when(
         exp.EQ(this=chain_id, expression=exp.Literal.number(7777777)),
         exp.Literal.string("zora"),
+    ).when(
+        exp.EQ(this=chain_id, expression=exp.Literal.number(690)),
+        exp.Literal.string("redstone"),
+    ).when(
+        exp.EQ(this=chain_id, expression=exp.Literal.number(7560)),
+        exp.Literal.string("cyber"),
+    ).when(
+        exp.EQ(this=chain_id, expression=exp.Literal.number(5112)),
+        exp.Literal.string("ham"),
+    ).when(
+        exp.EQ(this=chain_id, expression=exp.Literal.number(291)),
+        exp.Literal.string("orderly"),
+    ).when(
+        exp.EQ(this=chain_id, expression=exp.Literal.number(252)),
+        exp.Literal.string("frax"),
+    ).when(
+        exp.EQ(this=chain_id, expression=exp.Literal.number(255)),
+        exp.Literal.string("kroma"),
+    ).when(
+        exp.EQ(this=chain_id, expression=exp.Literal.number(2702128)),
+        exp.Literal.string("xterio"),
+    ).when(
+        exp.EQ(this=chain_id, expression=exp.Literal.number(130)),
+        exp.Literal.string("unichain"),
+    ).when(
+        exp.EQ(this=chain_id, expression=exp.Literal.number(65536)),
+        exp.Literal.string("automata"),
+    ).when(
+        exp.EQ(this=chain_id, expression=exp.Literal.number(957)),
+        exp.Literal.string("lyra"),
+    ).when(
+        exp.EQ(this=chain_id, expression=exp.Literal.number(254)),
+        exp.Literal.string("swan"),
     )
+
     return exp.Upper(this=chain_name)

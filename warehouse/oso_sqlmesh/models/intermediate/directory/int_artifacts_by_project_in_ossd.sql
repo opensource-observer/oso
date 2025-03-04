@@ -20,7 +20,7 @@ all_websites as (
     projects.project_id,
     unnested_website.url as artifact_source_id,
     'WWW' as artifact_source,
-    'WWW' as artifact_namespace,
+    NULL::TEXT as artifact_namespace,
     unnested_website.url as artifact_name,
     unnested_website.url as artifact_url,
     'WEBSITE' as artifact_type
@@ -34,7 +34,7 @@ all_farcaster as (
     projects.project_id,
     unnested_farcaster.url as artifact_source_id,
     'FARCASTER' as artifact_source,
-    'FARCASTER' as artifact_namespace,
+    NULL::TEXT as artifact_namespace,
     unnested_farcaster.url as artifact_url,
     'SOCIAL_HANDLE' as artifact_type,
     case
@@ -53,7 +53,7 @@ all_twitter as (
     projects.project_id,
     unnested_twitter.url as artifact_source_id,
     'TWITTER' as artifact_source,
-    'TWITTER' as artifact_namespace,
+    NULL::TEXT as artifact_namespace,
     unnested_twitter.url as artifact_url,
     'SOCIAL_HANDLE' as artifact_type,
     case
@@ -143,7 +143,7 @@ ossd_blockchain as (
     unnested_tag as artifact_type,
     unnested_network as artifact_source,
     unnested_blockchain.address as artifact_source_id,
-    unnested_network as artifact_namespace,
+    NULL::TEXT as artifact_namespace,
     unnested_blockchain.address as artifact_name,
     unnested_blockchain.address as artifact_url
   from projects
