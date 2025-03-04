@@ -26,7 +26,8 @@ async def delete_gcs_folders(
 
     Example Usage:
 
-    The following is a basic example of how to use this function:
+    The following is a very basic example of how to use this function in a
+    script to delete folders from a GCS bucket.
 
     ```python
         import asyncio
