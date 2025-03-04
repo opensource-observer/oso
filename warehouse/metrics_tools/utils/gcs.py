@@ -14,6 +14,49 @@ async def delete_gcs_folders(
     bucket_name: str,
     folders: t.List[str],
 ):
+    """Deletes folders from a GCS bucket.
+
+    Args:
+        client (storage.Storage): GCS client.
+        bucket_name (str): Name of the bucket.
+        folders (t.List[str]): List of folders to delete.
+
+    Returns:
+        None
+
+    Example Usage:
+
+    The following is a very basic example of how to use this function in a
+    script to delete folders from a GCS bucket.
+
+    ```python
+        import asyncio
+        import logging
+        from metrics_tools.utils.gcs import delete_gcs_folders
+        from gcloud.aio import storage
+        from metrics_tools.utils.logging import setup_module_logging
+
+
+        async def main():
+            setup_module_logging("metrics_tools")
+
+            logger.info("Deleting folders from GCS")
+
+            async with storage.Storage() as client:
+                await delete_gcs_folders(
+                    client,
+                    "bucket-name",
+                    [
+                        "folder1/"
+                    ],
+                )
+
+
+        if __name__ == "__main__":
+            asyncio.run(main())
+    ```
+
+    """
     bucket = storage.Bucket(client, bucket_name)
     for folder in folders:
         await delete_gcs_folder(client, bucket, folder)
