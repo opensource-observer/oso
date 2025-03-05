@@ -5,9 +5,12 @@ from sqlglot import exp
 
 
 class JoinerTransform(Transform):
-    def __init__(self, entity_type: str, timeseries_sources: t.List[str]):
+    def __init__(
+        self, entity_type: str, timeseries_sources: t.List[str], schema: str = "oso"
+    ):
         self._entity_type = entity_type
         self._timeseries_sources = timeseries_sources
+        self._schema = schema
 
     def __call__(self, query: t.List[exp.Expression]) -> t.List[exp.Expression]:
         entity_type = self._entity_type
@@ -47,7 +50,7 @@ class JoinerTransform(Transform):
                         updated_select = updated_select.join(
                             exp.Table(
                                 this=exp.to_identifier("artifacts_by_project_v1"),
-                                db=exp.to_identifier("metrics"),
+                                db=exp.to_identifier(self._schema),
                             ),
                             on=f"{current_alias}.to_artifact_id = artifacts_by_project_v1.artifact_id",
                             join_type="inner",
@@ -64,7 +67,7 @@ class JoinerTransform(Transform):
                             updated_select = updated_select.join(
                                 exp.Table(
                                     this=exp.to_identifier("projects_by_collection_v1"),
-                                    db=exp.to_identifier("metrics"),
+                                    db=exp.to_identifier(self._schema),
                                 ),
                                 on="artifacts_by_project_v1.project_id = projects_by_collection_v1.project_id",
                                 join_type="inner",

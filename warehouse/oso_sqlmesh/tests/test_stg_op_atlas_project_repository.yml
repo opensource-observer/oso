@@ -1,0 +1,71 @@
+
+test_stg_op_atlas_project_repository:
+  gateway: local
+  model: oso.stg_op_atlas_project_repository
+  vars:
+    start: 2024-01-01
+    end: 2024-02-01
+  inputs:
+    bigquery.op_atlas.project_repository:
+      rows:
+      - comment: "This needs to exist for @oso_source in tests"
+    sources__bigquery__op_atlas.project_repository:
+      rows:
+      - id: 0x1
+        project_id: 0x0
+        type: github
+        url: abc
+        verified: true
+        updated_at: "2025-02-01"
+      - id: 0x2
+        project_id: 0x0
+        type: github
+        url: abc/def
+        verified: true
+        updated_at: "2025-02-01"
+      - id: 0x3
+        project_id: 0x0
+        type: github
+        url: ""
+        verified: false
+        updated_at: "2025-02-01"
+      - id: 0x4
+        project_id: 0x0
+        type: github
+        url: "https://github.com/org/repo"
+        verified: true
+        updated_at: "2025-02-01"
+      - id: 0x5
+        project_id: 0x0
+        type: github
+        url: "https://github.com/org/repo/extra"    
+        verified: true
+        updated_at: "2025-02-01"
+  outputs:
+    query:
+      partial: true
+      rows:
+      - artifact_source_id: 0x1
+        artifact_source: GITHUB
+        artifact_namespace: ""
+        artifact_name: ""
+        artifact_url: abc
+        artifact_type: REPOSITORY
+      - artifact_source_id: 0x2
+        artifact_source: GITHUB
+        artifact_namespace: ""
+        artifact_name: ""
+        artifact_url: "abc/def"
+        artifact_type: REPOSITORY
+      - artifact_source_id: 0x4
+        artifact_source: GITHUB
+        artifact_namespace: org
+        artifact_name: repo
+        artifact_url: "https://github.com/org/repo"
+        artifact_type: REPOSITORY
+      - artifact_source_id: 0x5
+        artifact_source: GITHUB
+        artifact_namespace: org
+        artifact_name: repo
+        artifact_url: "https://github.com/org/repo/extra"
+        artifact_type: REPOSITORY

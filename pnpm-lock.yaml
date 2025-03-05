@@ -119,8 +119,8 @@ importers:
         specifier: ^3.0.0
         version: 3.0.0(@apollo/server@4.10.5(encoding@0.1.13)(graphql@16.9.0))(next@14.2.5(@babel/core@7.26.0)(@opentelemetry/api@1.9.0)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))
       '@clickhouse/client':
-        specifier: ^1.4.0
-        version: 1.4.0
+        specifier: ^1.10.1
+        version: 1.10.1
       '@cubejs-client/core':
         specifier: ^0.35.23
         version: 0.35.23(encoding@0.1.13)
@@ -353,10 +353,16 @@ importers:
       glob:
         specifier: ^11.0.0
         version: 11.0.0
+      lodash:
+        specifier: ^4.17.21
+        version: 4.17.21
       yaml:
         specifier: ^2.5.0
         version: 2.5.0
     devDependencies:
+      '@types/lodash':
+        specifier: ^4.17.15
+        version: 4.17.15
       '@types/node':
         specifier: ^20.14.12
         version: 20.14.12
@@ -474,8 +480,8 @@ importers:
         specifier: ^3.1.0
         version: 3.1.0
       oss-directory:
-        specifier: ^0.0.18
-        version: 0.0.18(ts-node@10.9.1(@types/node@20.11.17)(typescript@5.3.3))(typescript@5.3.3)
+        specifier: ^0.1.0
+        version: 0.1.0(ts-node@10.9.1(@types/node@20.11.17)(typescript@5.3.3))(typescript@5.3.3)
       simple-git:
         specifier: ^3.25.0
         version: 3.25.0
@@ -1815,11 +1821,11 @@ packages:
   '@chainsafe/ssz@0.9.4':
     resolution: {integrity: sha512-77Qtg2N1ayqs4Bg/wvnWfg5Bta7iy7IRh8XqXh7oNMeP2HBbBwx8m6yTpA8p0EHItWPEBkgZd5S5/LSlp3GXuQ==}
 
-  '@clickhouse/client-common@1.4.0':
-    resolution: {integrity: sha512-kglG8YyWnR1K24RckUf5ZdNTN0U0s+a1j/bpCO4ZjzjO87ICgWlXFVD22pZqSACW7/2IIi1IkzbwtxKI2s/MOw==}
+  '@clickhouse/client-common@1.10.1':
+    resolution: {integrity: sha512-Duh3cign2ChvXABpjVj9Hkz5y20Zf48OE0Y50S4qBVPdhI81S4Rh4MI/bEwvwMnzHubSkiEQ+VhC5HzV8ybnpg==}
 
-  '@clickhouse/client@1.4.0':
-    resolution: {integrity: sha512-O4mbFPM/wQtFck01ghYI2mnNHv9jSFEiQBsTCH4t6MKeGHNAPkJGaFGv+KycLTv6zjnQNjiUGdXDMVRema5SyA==}
+  '@clickhouse/client@1.10.1':
+    resolution: {integrity: sha512-Ot/6l4hFALK6NtZDS2UegukfRXWkkftWHCnzKUwanpOQ3Jd+RVKx5dxQreeBG5XcRjt1xyf5904PFjbCnaulXg==}
     engines: {node: '>=16'}
 
   '@colors/colors@1.5.0':
@@ -2174,6 +2180,10 @@ packages:
     resolution: {integrity: sha512-fTxvnS1sRMu3+JjXwJG0j/i4RT9u4qJ+lqS/yCGap4lH4zZGzQ7tu+xZqQmcMZq5OBZDL4QRxQzRjkWcGt8IVw==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
 
+  '@eslint/core@0.11.0':
+    resolution: {integrity: sha512-DWUB2pksgNEb6Bz2fggIy1wh6fGgZP4Xyy/Mt0QZPiloKKXerbqq9D3SBQTlCRYOrcRPu4vuz+CGjwdfqxnoWA==}
+    engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
+
   '@eslint/core@0.6.0':
     resolution: {integrity: sha512-8I2Q8ykA4J0x0o7cg67FPVnehcqWTBehu/lmY+bolPFHGjh49YzGBMXTvpqVgEbBdvNCSxj6iFgiIyHzf03lzg==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
@@ -2202,12 +2212,12 @@ packages:
     resolution: {integrity: sha512-eohesHH8WFRUprDNyEREgqP6beG6htMeUYeCpkEgBCieCMme5r9zFWjzAJp//9S+Kub4rqE+jXe9Cp1a7IYIIA==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
 
-  '@eslint/object-schema@2.1.5':
-    resolution: {integrity: sha512-o0bhxnL89h5Bae5T318nFoFzGy+YE5i/gGkoPAgkmTVdRKTiv3p8JHevPiPaMwoloKfEiiaHlawCqaZMqRm+XQ==}
+  '@eslint/object-schema@2.1.6':
+    resolution: {integrity: sha512-RBMg5FRL0I0gs51M/guSAj5/e14VQ4tpZnQNWwuDT66P14I43ItmPfIZRhO9fUVIPOAQXU47atlywZ/czoqFPA==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
 
-  '@eslint/plugin-kit@0.2.4':
-    resolution: {integrity: sha512-zSkKow6H5Kdm0ZUQUB2kV5JIXqoG0+uH5YADhaEHswm664N9Db8dXSi0nMJpacpMf+MyyglF1vnZohpEg5yUtg==}
+  '@eslint/plugin-kit@0.2.6':
+    resolution: {integrity: sha512-+0TjwR1eAUdZtvv/ir1mGX+v0tUoR3VEPB8Up0LLJC+whRW0GgBBtpbOkg/a/U4Dxa6l5a3l9AJ1aWIQVyoWJA==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
 
   '@ethereum-attestation-service/eas-contracts@1.3.7':
@@ -2826,6 +2836,7 @@ packages:
   '@mui/base@5.0.0-beta.40':
     resolution: {integrity: sha512-I/lGHztkCzvwlXpjD2+SNmvNQvB4227xBXhISPjEaJUXGImOQ9f3D2Yj/T3KasSI/h0MLWy74X0J6clhPmsRbQ==}
     engines: {node: '>=12.0.0'}
+    deprecated: This package has been replaced by @base-ui-components/react
     peerDependencies:
       '@types/react': ^17.0.0 || ^18.0.0
       react: ^17.0.0 || ^18.0.0
@@ -4610,11 +4621,13 @@ packages:
 
   '@supabase/auth-helpers-nextjs@0.8.7':
     resolution: {integrity: sha512-iYdOjFo0GkRvha340l8JdCiBiyXQuG9v8jnq7qMJ/2fakrskRgHTCOt7ryWbip1T6BExcWKC8SoJrhCzPOxhhg==}
+    deprecated: This package is now deprecated - please use the @supabase/ssr package instead.
     peerDependencies:
       '@supabase/supabase-js': ^2.19.0
 
   '@supabase/auth-helpers-shared@0.6.3':
     resolution: {integrity: sha512-xYQRLFeFkL4ZfwC7p9VKcarshj3FB2QJMgJPydvOY7J5czJe6xSG5/wM1z63RmAzGbCkKg+dzpq61oeSyWiGBQ==}
+    deprecated: This package is now deprecated - please use the @supabase/ssr package instead.
     peerDependencies:
       '@supabase/supabase-js': ^2.19.0
 
@@ -4985,6 +4998,9 @@ packages:
 
   '@types/libsodium-wrappers@0.7.13':
     resolution: {integrity: sha512-KeAKtlObirLJk/na6jHBFEdTDjDfFS6Vcr0eG2FjiHKn3Nw8axJFfIu0Y9TpwaauRldQBj/pZm/MHtK76r6OWg==}
+
+  '@types/lodash@4.17.15':
+    resolution: {integrity: sha512-w/P33JFeySuhN6JLkysYUK2gEmy9kHHFN7E8ro0tkfmlDOgxBDzWEZ/J8cWA+fHqFevpswDTFZnDx+R9lbL6xw==}
 
   '@types/lodash@4.17.4':
     resolution: {integrity: sha512-wYCP26ZLxaT3R39kiN2+HcJ4kTd3U1waI/cY7ivWYqFP6pW3ZNpvi6Wd6PHZx7T/t8z0vlkXMg3QYLa7DZ/IJQ==}
@@ -7740,8 +7756,8 @@ packages:
   flatted@3.3.1:
     resolution: {integrity: sha512-X8cqMLLie7KsNUDSdzeN8FYK9rEt4Dt67OsG/DNGnYTSDBG4uFAJFBnUeiV+zCVAvwFy56IjM9sH51jVaEhNxw==}
 
-  flatted@3.3.2:
-    resolution: {integrity: sha512-AiwGJM8YcNOaobumgtng+6NHuOqC3A7MixFeDafM3X9cIUM+xUXoS5Vfgf+OihAYe20fxqNM9yPBXJzRtZ/4eA==}
+  flatted@3.3.3:
+    resolution: {integrity: sha512-GX+ysw4PBCz0PzosHDepZGANEuFCMLrnRTiEy9McGjmkCQYwRq4A/X786G/fjM/+OjsWSU1ZrY5qyARZmO/uwg==}
 
   fn.name@1.1.0:
     resolution: {integrity: sha512-GRnmB5gPyJpAhTQdSZTSp9uaPSvl09KoYcMQtsB9rQoOmzs9dH6ffeccH+Z+cv6P68Hu5bC6JjRh4Ah/mHSNRw==}
@@ -8419,6 +8435,10 @@ packages:
 
   import-fresh@3.3.0:
     resolution: {integrity: sha512-veYYhQa+D1QBKznvhUHxb8faxlrwUnxseDAbAp457E0wLNio2bOSKnjYDhMj+YiAq61xrMGhQk9iXVk5FzgQMw==}
+    engines: {node: '>=6'}
+
+  import-fresh@3.3.1:
+    resolution: {integrity: sha512-TR3KfrTZTYLPB6jUjfx6MF9WcWrHL9su5TObK4ZkYgBdWKPOFoSoQIdEuTuR82pmtxH2spWG9h6etwfr1pLBqQ==}
     engines: {node: '>=6'}
 
   import-from@4.0.0:
@@ -10209,8 +10229,8 @@ packages:
     resolution: {integrity: sha512-D2FR03Vir7FIu45XBY20mTb+/ZSWB00sjU9jdQXt83gDrI4Ztz5Fs7/yy74g2N5SVQY4xY1qDr4rNddwYRVX0g==}
     engines: {node: '>=0.10.0'}
 
-  oss-directory@0.0.18:
-    resolution: {integrity: sha512-zBoFyWrv8s5hJ+pB39sEXdqbYMcD3KtGuScHxgfXRo9vsxcZNMP0IJMd1XkQgxWyqw7Ddoo8r+40APNx21QUbw==}
+  oss-directory@0.1.0:
+    resolution: {integrity: sha512-kCJLy1pd8cwxdSs5oVXxVfjKXLL9Ii5ZvXCM8cpB5xVEf71IMff0OIeoExnCcjoE8Vwm8UJ117drpm3IN8Gbkg==}
     engines: {node: '>=16'}
     hasBin: true
 
@@ -15091,11 +15111,11 @@ snapshots:
       '@chainsafe/persistent-merkle-tree': 0.4.2
       case: 1.6.3
 
-  '@clickhouse/client-common@1.4.0': {}
+  '@clickhouse/client-common@1.10.1': {}
 
-  '@clickhouse/client@1.4.0':
+  '@clickhouse/client@1.10.1':
     dependencies:
-      '@clickhouse/client-common': 1.4.0
+      '@clickhouse/client-common': 1.10.1
 
   '@colors/colors@1.5.0':
     optional: true
@@ -16174,11 +16194,16 @@ snapshots:
 
   '@eslint/config-array@0.18.0':
     dependencies:
-      '@eslint/object-schema': 2.1.5
+      '@eslint/object-schema': 2.1.6
       debug: 4.4.0
       minimatch: 3.1.2
     transitivePeerDependencies:
       - supports-color
+    optional: true
+
+  '@eslint/core@0.11.0':
+    dependencies:
+      '@types/json-schema': 7.0.15
     optional: true
 
   '@eslint/core@0.6.0':
@@ -16219,7 +16244,7 @@ snapshots:
       espree: 10.3.0
       globals: 14.0.0
       ignore: 5.3.2
-      import-fresh: 3.3.0
+      import-fresh: 3.3.1
       js-yaml: 4.1.0
       minimatch: 3.1.2
       strip-json-comments: 3.1.1
@@ -16233,11 +16258,12 @@ snapshots:
 
   '@eslint/js@9.12.0': {}
 
-  '@eslint/object-schema@2.1.5':
+  '@eslint/object-schema@2.1.6':
     optional: true
 
-  '@eslint/plugin-kit@0.2.4':
+  '@eslint/plugin-kit@0.2.6':
     dependencies:
+      '@eslint/core': 0.11.0
       levn: 0.4.1
     optional: true
 
@@ -20245,6 +20271,8 @@ snapshots:
 
   '@types/libsodium-wrappers@0.7.13': {}
 
+  '@types/lodash@4.17.15': {}
+
   '@types/lodash@4.17.4': {}
 
   '@types/lodash@4.17.6': {}
@@ -23181,7 +23209,7 @@ snapshots:
       '@eslint/core': 0.6.0
       '@eslint/eslintrc': 3.2.0
       '@eslint/js': 9.12.0
-      '@eslint/plugin-kit': 0.2.4
+      '@eslint/plugin-kit': 0.2.6
       '@humanfs/node': 0.16.6
       '@humanwhocodes/module-importer': 1.0.1
       '@humanwhocodes/retry': 0.3.1
@@ -23432,7 +23460,7 @@ snapshots:
 
   execa@8.0.1:
     dependencies:
-      cross-spawn: 7.0.3
+      cross-spawn: 7.0.6
       get-stream: 8.0.1
       human-signals: 5.0.0
       is-stream: 3.0.0
@@ -23743,7 +23771,7 @@ snapshots:
 
   flat-cache@4.0.1:
     dependencies:
-      flatted: 3.3.2
+      flatted: 3.3.3
       keyv: 4.5.4
     optional: true
 
@@ -23753,7 +23781,7 @@ snapshots:
 
   flatted@3.3.1: {}
 
-  flatted@3.3.2:
+  flatted@3.3.3:
     optional: true
 
   fn.name@1.1.0: {}
@@ -24683,6 +24711,12 @@ snapshots:
     dependencies:
       parent-module: 1.0.1
       resolve-from: 4.0.0
+
+  import-fresh@3.3.1:
+    dependencies:
+      parent-module: 1.0.1
+      resolve-from: 4.0.0
+    optional: true
 
   import-from@4.0.0: {}
 
@@ -27141,7 +27175,7 @@ snapshots:
 
   os-tmpdir@1.0.2: {}
 
-  oss-directory@0.0.18(ts-node@10.9.1(@types/node@20.11.17)(typescript@5.3.3))(typescript@5.3.3):
+  oss-directory@0.1.0(ts-node@10.9.1(@types/node@20.11.17)(typescript@5.3.3))(typescript@5.3.3):
     dependencies:
       '@ethereum-attestation-service/eas-sdk': 1.4.0(ts-node@10.9.1(@types/node@20.11.17)(typescript@5.3.3))(typescript@5.3.3)
       ajv: 8.17.1

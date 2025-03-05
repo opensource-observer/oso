@@ -30,7 +30,6 @@ const GET_TIMESERIES_METRICS_BY_ARTIFACT = gql(`
       artifactSource
       artifactNamespace
       artifactName
-      artifactUrl
     }
     oso_metricsV0(where: {metricId: {_in: $metricIds}}) {
       metricId

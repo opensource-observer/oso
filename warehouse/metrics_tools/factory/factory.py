@@ -1,13 +1,16 @@
+import functools
 import inspect
 import logging
 import os
 import textwrap
 import typing as t
-from dataclasses import dataclass, field
+from collections import defaultdict
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from queue import PriorityQueue
 
 from metrics_tools.definition import (
+    MetricMetadata,
     MetricQuery,
     PeerMetricDependencyRef,
     TimeseriesMetricsOptions,
@@ -44,7 +47,7 @@ type ExtraVarBaseType = str | int | float
 type ExtraVarType = ExtraVarBaseType | t.List[ExtraVarBaseType]
 
 CURR_DIR = os.path.dirname(__file__)
-QUERIES_DIR = os.path.abspath(os.path.join(CURR_DIR, "../../metrics_mesh/oso_metrics"))
+QUERIES_DIR = os.path.abspath(os.path.join(CURR_DIR, "../../oso_sqlmesh/oso_metrics"))
 
 
 class MetricQueryConfig(t.TypedDict):
@@ -53,6 +56,7 @@ class MetricQueryConfig(t.TypedDict):
     rendered_query: exp.Expression
     vars: t.Dict[str, t.Any]
     query: MetricQuery
+    metadata: t.Optional[MetricMetadata]
 
 
 class MetricsCycle(Exception):
@@ -119,9 +123,9 @@ class TimeseriesMetrics:
         self._rendered_queries: t.Dict[str, MetricQueryConfig] = {}
 
     @property
-    def catalog(self):
-        """The catalog (sometimes db name) to use for rendered queries"""
-        return self._raw_options["catalog"]
+    def schema(self):
+        """The schema (sometimes db name) to use for rendered queries"""
+        return self._raw_options["schema"]
 
     def generate_queries(self):
         if self._rendered:
@@ -130,7 +134,7 @@ class TimeseriesMetrics:
         queries: t.Dict[str, MetricQueryConfig] = {}
         for query in self._metrics_queries:
             queries.update(
-                self._generate_metrics_queries(query, self._peer_table_map, "metrics")
+                self._generate_metrics_queries(query, self._peer_table_map, self.schema)
             )
         self._rendered_queries = queries
         self._rendered = True
@@ -209,6 +213,7 @@ class TimeseriesMetrics:
                 rendered_query=rendered_query[0],
                 vars=query._source.vars or {},
                 query=query,
+                metadata=query._source.metadata,
             )
         return queries
 
@@ -250,7 +255,7 @@ class TimeseriesMetrics:
                     db_name = table.db.this
                 table_name = table.this.this
 
-                if db_name != "metrics":
+                if db_name != self.schema:
                     continue
 
                 parents.add(table_name)
@@ -300,7 +305,11 @@ class TimeseriesMetrics:
 
     def generate_models(self, calling_file: str):
         """Generates sqlmesh models for all the configured metrics definitions"""
-        from metrics_tools.factory.proxy.proxies import join_all_of_entity_type
+        from metrics_tools.factory.proxy.proxies import (
+            aggregate_metadata,
+            join_all_of_entity_type,
+            map_metadata_to_metric,
+        )
 
         # Generate the models
 
@@ -321,13 +330,13 @@ class TimeseriesMetrics:
                 override_module_path=override_module_path,
                 override_path=override_path,
                 locals=dict(
-                    db=self.catalog,
+                    db=self.schema,
                     tables=tables,
                     columns=list(
                         constants.METRICS_COLUMNS_BY_ENTITY[entity_type].keys()
                     ),
                 ),
-                name=f"metrics.timeseries_metrics_to_{entity_type}",
+                name=f"oso.timeseries_metrics_to_{entity_type}",
                 is_sql=True,
                 kind="VIEW",
                 dialect="clickhouse",
@@ -348,13 +357,13 @@ class TimeseriesMetrics:
                 override_module_path=override_module_path,
                 override_path=override_path,
                 locals=dict(
-                    db=self.catalog,
+                    db=self.schema,
                     tables=tables,
                     columns=list(
                         constants.METRICS_COLUMNS_BY_ENTITY[entity_type].keys()
                     ),
                 ),
-                name=f"metrics.key_metrics_to_{entity_type}",
+                name=f"oso.key_metrics_to_{entity_type}",
                 is_sql=True,
                 kind="VIEW",
                 dialect="clickhouse",
@@ -368,6 +377,59 @@ class TimeseriesMetrics:
                 },
                 enabled=self._raw_options.get("enabled", True),
             )(join_all_of_entity_type)
+
+        raw_table_metadata = {
+            key: asdict(value.metadata)
+            for key, value in self._raw_options.get("metric_queries").items()
+            if value.metadata is not None
+        }
+
+        transformed_metadata = defaultdict(list)
+
+        for table, metadata in raw_table_metadata.items():
+            metadata_tuple = tuple(metadata.items())
+            transformed_metadata[metadata_tuple].append(table)
+
+        metadata_depends_on = functools.reduce(
+            lambda x, y: x.union({f"oso.metrics_metadata_{ident}" for ident in y}),
+            transformed_metadata.values(),
+            set(),
+        )
+
+        for metric_key, metric_value in self._raw_options.get("metric_queries").items():
+            if not metric_value.metadata:
+                continue
+
+            MacroOverridingModel(
+                additional_macros=[],
+                depends_on=[],
+                override_module_path=override_module_path,
+                override_path=override_path,
+                locals={
+                    "metric": metric_key,
+                    "metadata": asdict(metric_value.metadata),
+                },
+                name=f"oso.metrics_metadata_{metric_key}",
+                is_sql=True,
+                kind="FULL",
+                dialect="clickhouse",
+                columns=constants.METRIC_METADATA_COLUMNS,
+                enabled=self._raw_options.get("enabled", True),
+            )(map_metadata_to_metric)
+
+        MacroOverridingModel(
+            additional_macros=[],
+            depends_on=metadata_depends_on,
+            override_module_path=override_module_path,
+            override_path=override_path,
+            locals={},
+            name="oso.metrics_metadata",
+            is_sql=True,
+            kind="FULL",
+            dialect="clickhouse",
+            columns=constants.METRIC_METADATA_COLUMNS,
+            enabled=self._raw_options.get("enabled", True),
+        )(aggregate_metadata)
 
         logger.info("model generation complete")
 
@@ -404,7 +466,7 @@ class TimeseriesMetrics:
 
         depends_on = set()
         for dep in dependencies:
-            depends_on.add(f"{self.catalog}.{dep}")
+            depends_on.add(f"{self.schema}.{dep}")
 
         query = query_config["query"]
 
@@ -437,7 +499,7 @@ class TimeseriesMetrics:
             os.path.dirname(inspect.getfile(generated_rolling_query_proxy))
         )
         return MacroOverridingModel(
-            name=f"{self.catalog}.{query_config['table_name']}",
+            name=f"{self.schema}.{query_config['table_name']}",
             is_sql=False,
             depends_on=depends_on,
             columns=columns,
@@ -468,7 +530,10 @@ class TimeseriesMetrics:
 
         # Use a simple python sql model to generate the time_aggregation model
         ref = query_config["ref"]
-        if not ref.get("time_aggregation") or ref.get("time_aggregation") == "over_all_time":
+        if (
+            not ref.get("time_aggregation")
+            or ref.get("time_aggregation") == "over_all_time"
+        ):
             return None
 
         columns = constants.METRICS_COLUMNS_BY_ENTITY[ref["entity_type"]]
@@ -503,7 +568,7 @@ class TimeseriesMetrics:
         override_path = Path(inspect.getfile(generated_query))
         override_module_path = Path(os.path.dirname(inspect.getfile(generated_query)))
         return MacroOverridingModel(
-            name=f"{self.catalog}.{query_config['table_name']}",
+            name=f"{self.schema}.{query_config['table_name']}",
             kind={
                 "name": ModelKindName.INCREMENTAL_BY_TIME_RANGE,
                 "time_column": "metrics_sample_date",
@@ -551,7 +616,7 @@ class TimeseriesMetrics:
         override_module_path = Path(os.path.dirname(inspect.getfile(generated_query)))
 
         return MacroOverridingModel(
-            name=f"{self.catalog}.{query_config['table_name']}",
+            name=f"{self.schema}.{query_config['table_name']}",
             kind=ModelKindName.FULL,
             dialect="clickhouse",
             is_sql=True,
@@ -587,7 +652,7 @@ class TimeseriesMetrics:
 
 # Specifically for testing. This is used if the
 # `metrics_tools.utils.testing.ENABLE_TIMESERIES_DEBUG` variable is true. This
-# is for loading all of the timeseries metrics from inside the metrics_mesh
+# is for loading all of the timeseries metrics from inside the oso_sqlmesh
 # project and inspecting the actually rendered queries for testing purposes.
 # It's a bit of a hack but it will work for the current purposes.
 GLOBAL_TIMESERIES_METRICS: t.Dict[str, TimeseriesMetrics] = {}

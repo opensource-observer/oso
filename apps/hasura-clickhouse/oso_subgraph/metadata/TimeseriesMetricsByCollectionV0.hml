@@ -151,10 +151,6 @@ definition:
           - sampleDate
     orderByExpressionType: Oso_TimeseriesMetricsByCollectionV0OrderBy
     filterInputTypeName: Oso_TimeseriesMetricsByCollectionV0FilterInput
-    aggregate:
-      queryRootField: oso_timeseriesMetricsByCollectionV0Aggregate
-      subscription:
-        rootField: oso_timeseriesMetricsByCollectionV0Aggregate
 
 ---
 kind: ModelPermissions

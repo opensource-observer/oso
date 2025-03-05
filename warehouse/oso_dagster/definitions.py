@@ -1,8 +1,7 @@
 import logging
 import os
-import warnings
 
-from dagster import Definitions, ExperimentalWarning
+from dagster import Definitions
 from dagster_dbt import DbtCliResource
 from dagster_embedded_elt.dlt import DagsterDltResource
 from dagster_gcp import BigQueryResource, GCSResource
@@ -63,7 +62,6 @@ load_dotenv()
 
 
 def load_definitions():
-    warnings.filterwarnings("ignore", category=ExperimentalWarning)
     setup_module_logging("oso_dagster")
     # Load the configuration for the project
     global_config = DagsterConfig()  # type: ignore
@@ -100,7 +98,11 @@ def load_definitions():
         search_paths=[os.path.join(os.path.dirname(__file__), "models")],
     )
 
-    sqlmesh_translator = PrefixedSQLMeshTranslator("metrics")
+    sqlmesh_catalog = global_config.sqlmesh_catalog
+    sqlmesh_schema = global_config.sqlmesh_schema
+    sqlmesh_bq_export_dataset_id = global_config.sqlmesh_bq_export_dataset_id
+
+    sqlmesh_translator = PrefixedSQLMeshTranslator("oso")
 
     sqlmesh_config = SQLMeshContextConfig(
         path=global_config.sqlmesh_dir, gateway=global_config.sqlmesh_gateway
@@ -111,15 +113,15 @@ def load_definitions():
             ["clickhouse_metrics"],
             destination_catalog="clickhouse",
             destination_schema="default",
-            source_catalog="metrics",
-            source_schema="metrics",
+            source_catalog=sqlmesh_catalog,
+            source_schema=sqlmesh_schema,
         ),
         Trino2BigQuerySQLMeshExporter(
             ["bigquery_metrics"],
             project_id=project_id,
-            dataset_id="metrics",
-            source_catalog="metrics",
-            source_schema="metrics",
+            dataset_id=sqlmesh_bq_export_dataset_id,
+            source_catalog=sqlmesh_catalog,
+            source_schema=sqlmesh_schema,
         ),
     ]
     # If we aren't running in k8s, we need to use a dummy k8s resource that will
@@ -154,15 +156,15 @@ def load_definitions():
                 ["clickhouse_metrics"],
                 destination_catalog="clickhouse",
                 destination_schema="default",
-                source_catalog="metrics",
-                source_schema="metrics",
+                source_catalog=sqlmesh_catalog,
+                source_schema=sqlmesh_schema,
             ),
             Trino2BigQuerySQLMeshExporter(
                 ["bigquery_metrics"],
                 project_id=project_id,
-                dataset_id="metrics",
-                source_catalog="metrics",
-                source_schema="metrics",
+                dataset_id=sqlmesh_bq_export_dataset_id,
+                source_catalog=sqlmesh_catalog,
+                source_schema=sqlmesh_schema,
             ),
         ]
         time_ordered_storage = GCSTimeOrderedStorageResource(
@@ -277,7 +279,11 @@ def load_definitions():
 
     extra_kwargs = {}
     if global_config.enable_k8s_executor:
-        extra_kwargs["executor"] = k8s_job_executor
+        extra_kwargs["executor"] = k8s_job_executor.configured(
+            {
+                "max_concurrent": 10,
+            }
+        )
 
     return Definitions(
         assets=asset_factories.assets,

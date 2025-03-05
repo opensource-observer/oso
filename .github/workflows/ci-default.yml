@@ -107,11 +107,13 @@ jobs:
           node-version: "20.x"
           cache: "pnpm"
 
-      - name: "Setup Python, Poetry and Dependencies"
-        uses: packetcoders/action-setup-cache-python-poetry@main
+      - name: Setup Python and UV
+        uses: astral-sh/setup-uv@v5
         with:
           python-version: 3.12
-          poetry-version: 1.8.5
+  
+      - name: Install dependencies
+        run: uv sync --all-packages --all-extras
 
       - name: Authenticate to google with a test-dummy user
         uses: "google-github-actions/auth@v2"
@@ -141,7 +143,7 @@ jobs:
         if: ${{ matrix.component == 'sqlmesh' }}
 
       - name: Validate local database
-        run: poetry install && poetry run oso local initialize --max-results-per-query 50 --max-days 3
+        run: uv run oso local initialize --max-results-per-query 50 --max-days 3
         if: ${{ matrix.component == 'sqlmesh' }}
 
       # Automatically retry if the build fails
@@ -170,7 +172,7 @@ jobs:
       # Temporarily include this separately. Eventually this should all be part of lint
       - name: Lint SQL (dbt)
         run: |
-          poetry run sqlfluff lint --dialect bigquery ./warehouse/dbt/models
+          uv run sqlfluff lint --dialect bigquery ./warehouse/dbt/models
         if: ${{ always() && matrix.component == 'dbt' }}
 
       - name: Type Check (Python)
@@ -180,15 +182,15 @@ jobs:
 
       - name: Lint (Python)
         run: |
-          poetry run ruff check
+          uv run ruff check
         if: ${{ always() && matrix.component == 'python' }}
 
       - name: Test (Python)
         run: |
-          poetry run pytest
+          uv run pytest
         if: ${{ always() && matrix.component == 'python' }}
 
       - name: Test SQLMesh
         run: |
-          poetry install && cd warehouse/metrics_mesh && poetry run -C ../../ sqlmesh plan dev --start '1 month' --end now --auto-apply
+          cd warehouse/oso_sqlmesh && uv run sqlmesh plan dev --start '1 month' --end now --auto-apply
         if: ${{ always() && matrix.component == 'sqlmesh' }}

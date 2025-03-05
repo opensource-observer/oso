@@ -33,7 +33,7 @@ def run_start(url: str, min=6, max=10):
 def run_cache_load(url: str):
     req = ExportedTableLoadRequest(
         map={
-            "sqlmesh__metrics.metrics__events_daily_to_artifact__2357434958": ExportReference(
+            "sqlmesh__iceberg.oso__events_daily_to_artifact__2357434958": ExportReference(
                 table=TableReference(
                     table_name="export_metrics__events_daily_to_artifact__2357434958_5def5e890a984cf99f7364ce3c2bb958"
                 ),
@@ -70,7 +70,7 @@ def run_local_test(
 
     client.run_cache_manual_load(
         {
-            "sqlmesh__metrics.metrics__events_daily_to_artifact__2357434958": ExportReference(
+            "sqlmesh__iceberg.oso__events_daily_to_artifact__2357434958": ExportReference(
                 table=TableReference(
                     table_name="export_metrics__events_daily_to_artifact__2357434958_5def5e890a984cf99f7364ce3c2bb958"
                 ),
@@ -86,7 +86,7 @@ def run_local_test(
     client.calculate_metrics(
         query_str="""
         SELECT bucket_day, to_artifact_id, from_artifact_id, event_source, event_type, SUM(amount) as amount
-        FROM metrics.events_daily_to_artifact
+        FROM oso.events_daily_to_artifact
         where bucket_day >= strptime(@start_ds, '%Y-%m-%d') and bucket_day <= strptime(@end_ds, '%Y-%m-%d')
         group by
             bucket_day,
@@ -115,7 +115,7 @@ def run_local_test(
         ),
         locals={},
         dependent_tables_map={
-            "metrics.events_daily_to_artifact": "sqlmesh__metrics.metrics__events_daily_to_artifact__2357434958"
+            "oso.events_daily_to_artifact": "sqlmesh__iceberg.oso__events_daily_to_artifact__2357434958"
         },
         slots=2,
         batch_size=batch_size,

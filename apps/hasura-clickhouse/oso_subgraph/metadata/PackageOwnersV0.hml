@@ -218,10 +218,6 @@ definition:
         rootField: oso_packageOwnersV0
     selectUniques: []
     filterInputTypeName: Oso_PackageOwnersV0FilterInput
-    aggregate:
-      queryRootField: oso_packageOwnersV0Aggregate
-      subscription:
-        rootField: oso_packageOwnersV0Aggregate
 
 ---
 kind: ModelPermissions

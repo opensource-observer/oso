@@ -1,0 +1,28 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: production-nessie
+spec:
+  values:
+    serviceAccount:
+      create: true
+      name: production-nessie
+    catalog:
+      enabled: true
+      iceberg:
+        defaultWarehouse: warehouse
+        warehouses:
+          - name: warehouse
+            location: gs://production-nessie-bucket/warehouse/
+      storage:
+        gcs:
+          defaultOptions:
+            projectId: opensource-observer
+            authType: APPLICATION_DEFAULT
+    jdbc:
+      jdbcUrl: jdbc:postgresql://production-nessie-cloudsql-proxy-gcloud-sqlproxy.production-nessie-cloudsql-proxy.svc.cluster.local:5432/postgres
+      secret:
+        name: nessie-postgres
+        password: password
+        username: username
+    versionStoreType: JDBC

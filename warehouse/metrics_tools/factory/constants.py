@@ -33,3 +33,9 @@ METRICS_COLUMNS_BY_ENTITY: t.Dict[str, t.Dict[str, exp.DataType]] = {
         "amount": exp.DataType.build("DOUBLE", dialect="duckdb"),
     },
 }
+
+METRIC_METADATA_COLUMNS: t.Dict[str, exp.DataType] = {
+    "display_name": exp.DataType.build("STRING", dialect="duckdb"),
+    "description": exp.DataType.build("STRING", dialect="duckdb"),
+    "metric": exp.DataType.build("STRING", dialect="duckdb"),
+}

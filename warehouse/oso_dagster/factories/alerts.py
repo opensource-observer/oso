@@ -31,11 +31,10 @@ ALERTS_JOB_CONFIG = {
             "resources": {
                 "requests": {
                     "cpu": "500m",
-                    "memory": "768Mi",
+                    "memory": "1024Mi",
                 },
                 "limits": {
-                    "cpu": "500m",
-                    "memory": "1536Mi",
+                    "memory": "2048Mi",
                 },
             },
         },
@@ -119,30 +118,40 @@ def setup_alert_sensors(
 
         stale_assets: Mapping[str, float] = {}
 
+        context.log.info(
+            f"Checking freshness of {len(materialization_records.items())} assets"
+        )
+
         for asset_key, record in materialization_records.items():
             if record is None:
                 continue
 
-            context.log.info(
-                f"{datetime.now().timestamp() - record.event_log_entry.timestamp} - {timedelta(minutes=2).total_seconds()}"
-            )
             if (
                 datetime.now().timestamp() - record.event_log_entry.timestamp
                 > timedelta(weeks=1).total_seconds()
             ):
-                # Reset the cursor to always check the latest materialization
-                context.advance_cursor({asset_key: None})
                 stale_assets[asset_key.to_user_string()] = (
                     record.event_log_entry.timestamp
                 )
 
-        if len(stale_assets) == 0:
-            return SkipReason("No stale assets found")
+        context.log.info(f"Found {len(stale_assets)} stale assets")
+
+        # Reset the cursor to always check the latest materialization
+        for asset_key in context.asset_keys:
+            context.advance_cursor({asset_key: None})
 
         return RunRequest(
             tags=ALERTS_JOB_CONFIG,
             run_config=RunConfig(
-                ops={"freshness_alert_op": {"config": {"stale_assets": stale_assets}}}
+                ops={
+                    "freshness_alert_op": {
+                        "config": {
+                            "fresh_assets": len(materialization_records)
+                            - len(stale_assets),
+                            "stale_assets": stale_assets,
+                        }
+                    }
+                }
             ),
         )
 

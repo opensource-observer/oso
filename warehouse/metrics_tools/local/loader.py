@@ -15,7 +15,11 @@ from metrics_tools.local.config import (
     LocalTrinoLoaderConfig,
     TableMappingDestination,
 )
-from metrics_tools.source.rewrite import DUCKDB_REWRITE_RULES, oso_source_rewrite
+from metrics_tools.source.rewrite import (
+    DUCKDB_REWRITE_RULES,
+    LOCAL_TRINO_REWRITE_RULES,
+    oso_source_rewrite,
+)
 from minio import Minio
 from pyiceberg.catalog import Catalog
 from pyiceberg.typedef import Identifier
@@ -328,7 +332,7 @@ class BaseDestinationLoader(DestinationLoader):
 
         process = subprocess.Popen(
             [*self.sqlmesh_base_args(), *extra_args],
-            cwd=os.path.join(self._config.repo_dir, "warehouse/metrics_mesh"),
+            cwd=os.path.join(self._config.repo_dir, "warehouse/oso_sqlmesh"),
             env={
                 **os.environ,
                 **extra_env,
@@ -533,8 +537,9 @@ class LocalTrinoDestinationLoader(BaseDestinationLoader):
         return self._iceberg_catalog.table_exists(f"{table.db}.{table.this}")
 
     def destination_table_rewrite(self, table_fqn: str) -> exp.Table:
-        """Trino doesn't need to rewrite the table name. We simulate bigquery sources here"""
-        return exp.to_table(table_fqn)
+        """Due to the `oso` name being in conflict we force the schema to add `bq_` as a prefix"""
+
+        return oso_source_rewrite(LOCAL_TRINO_REWRITE_RULES, table_fqn)
 
     def has_schema_changed(
         self, destination: exp.Table, bq_schema: t.List[bigquery.SchemaField]

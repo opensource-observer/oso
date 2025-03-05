@@ -3,6 +3,7 @@ A catchall for development environment tools related to the python tooling.
 """
 
 import asyncio
+import getpass
 import logging
 import subprocess
 import sys
@@ -15,7 +16,7 @@ import aiotrino
 import dotenv
 import git
 import kr8s
-from kr8s.objects import Service
+from kr8s.objects import Job, Namespace, Service
 from metrics_tools.definition import PeerMetricDependencyRef
 from metrics_tools.factory.constants import METRICS_COLUMNS_BY_ENTITY
 from metrics_tools.factory.factory import MetricQueryConfig, timeseries_metrics
@@ -32,6 +33,7 @@ from opsscripts.utils.dockertools import (
     build_and_push_docker_image,
     initialize_docker_client,
 )
+from opsscripts.utils.k8stools import deploy_oso_k8s_job
 from oso_lets_go.wizard import MultipleChoiceInput
 from sqlglot import pretty
 from sqlmesh.core.dialect import parse_one
@@ -52,7 +54,7 @@ from metrics_tools.local.config import (
 from metrics_tools.local.utils import TABLE_MAPPING
 
 CURR_DIR = os.path.dirname(__file__)
-METRICS_MESH_DIR = os.path.abspath(os.path.join(CURR_DIR, "../metrics_mesh"))
+OSO_SQLMESH_DIR = os.path.abspath(os.path.join(CURR_DIR, "../oso_sqlmesh"))
 REPO_DIR = os.path.abspath(os.path.join(CURR_DIR, "../../"))
 PROJECT_ID = os.getenv("GOOGLE_PROJECT_ID", "opensource-observer")
 
@@ -84,7 +86,7 @@ ops.command()(cluster_setup)
 
 
 def find_or_choose_metric(metric: str):
-    timeseries_metrics = load_timeseries_metrics(METRICS_MESH_DIR)
+    timeseries_metrics = load_timeseries_metrics(OSO_SQLMESH_DIR)
 
     matches: t.Dict[str, MetricQueryConfig] = {}
 
@@ -109,7 +111,7 @@ def find_or_choose_metric(metric: str):
 @click.argument("metric")
 @click.option(
     "--factory-path",
-    default=os.path.join(METRICS_MESH_DIR, "models/metrics_factories.py"),
+    default=os.path.join(OSO_SQLMESH_DIR, "models/metrics_factories.py"),
 )
 @click.option("--dialect", default="duckdb", help="The dialect to render")
 @click.pass_context
@@ -250,6 +252,55 @@ def clean_expired_trino_hive_files(
 
 
 @production.command()
+@click.option("--namespace", default="production-dagster")
+@click.option("--service-account", default="production-dagster")
+@click.option("--user-email", default=f"{getpass.getuser()}@opensource.observer")
+@click.option("--gateway", default="trino")
+def sqlmesh_migrate(
+    namespace: str, service_account: str, user_email: str, gateway: str
+):
+    env_vars = {
+        "SQLMESH_POSTGRES_INSTANCE_CONNECTION_STRING": "gcp:secretmanager:production-dagster-sqlmesh-postgres-instance-connection-string/versions/latest",
+        "SQLMESH_POSTGRES_USER": "gcp:secretmanager:production-dagster-sqlmesh-postgres-user/versions/latest",
+        "SQLMESH_POSTGRES_PASSWORD": "gcp:secretmanager:production-dagster-sqlmesh-postgres-password/versions/latest",
+        "SQLMESH_POSTGRES_DB": "sqlmesh-trino",
+        "SQLMESH_TRINO_HOST": "production-trino-trino.production-trino.svc.cluster.local",
+        "SQLMESH_TRINO_CONCURRENT_TASKS": "64",
+        "SQLMESH_MCS_ENABLED": "1",
+        "SQLMESH_MCS_URL": "http://production-mcs.production-mcs.svc.cluster.local:8000",
+        "SQLMESH_MCS_DEFAULT_SLOTS": "8",
+    }
+    asyncio.run(
+        deploy_oso_k8s_job(
+            job_name=f"sqlmesh-migrate-{datetime.now().strftime('%Y%m%d%H%M%S')}",
+            namespace=namespace,
+            cmd=["sqlmesh", "--gateway", gateway, "migrate"],
+            working_dir="/usr/src/app/warehouse/oso_sqlmesh",
+            user_email=user_email,
+            env=env_vars,
+            resources={
+                "requests": {"cpu": "200m", "memory": "1Gi"},
+                "limits": {"memory": "1532Mi"},
+            },
+            extra_pod_spec={
+                "serviceAccountName": service_account,
+                "nodeSelector": {
+                    "pool_type": "standard",
+                },
+                "tolerations": [
+                    {
+                        "key": "pool_type",
+                        "operator": "Equal",
+                        "value": "standard",
+                        "effect": "NoSchedule",
+                    }
+                ],
+            },
+        )
+    )
+
+
+@production.command()
 @click.argument("metric-name")
 @click.option("--start", type=click.DateTime(), required=True)
 @click.option("--end", type=click.DateTime(), required=True)
@@ -376,10 +427,10 @@ def call_mcs(
             dependencies_set = list_query_table_dependencies(rendered_query, {})
             print(dependencies_set)
             rewrite_map = {
-                "metrics.int_events_daily_to_artifact": "metrics.metrics.events_daily_to_artifact",
-                "metrics.int_events_daily_to_artifact_with_lag": "metrics.metrics.events_daily_to_artifact_with_lag",
-                "metrics.int_issue_event_time_deltas": "metrics.metrics.issue_event_time_deltas",
-                "metrics.int_first_of_event_from_artifact": "metrics.metrics.first_of_event_from_artifact",
+                "oso.int_events_daily_to_artifact": "iceberg.oso.events_daily_to_artifact",
+                "oso.int_events_daily_to_artifact_with_lag": "iceberg.oso.events_daily_to_artifact_with_lag",
+                "oso.int_issue_event_time_deltas": "iceberg.oso.issue_event_time_deltas",
+                "oso.int_first_of_event_from_artifact": "iceberg.oso.first_of_event_from_artifact",
             }
             dependencies_dict = {
                 dep: rewrite_map.get(dep, dep) for dep in dependencies_set
@@ -503,7 +554,7 @@ def local_sqlmesh(
             process = subprocess.Popen(
                 ["sqlmesh", "--gateway", "local-trino", *extra_args],
                 # shell=True,
-                cwd=os.path.join(repo_dir, "warehouse/metrics_mesh"),
+                cwd=os.path.join(repo_dir, "warehouse/oso_sqlmesh"),
                 env={
                     **os.environ,
                     "SQLMESH_DUCKDB_LOCAL_PATH": ctx.obj["local_trino_duckdb_path"],
@@ -522,7 +573,7 @@ def local_sqlmesh(
     else:
         process = subprocess.Popen(
             ["sqlmesh", *ctx.args],
-            cwd=os.path.join(repo_dir, "warehouse/metrics_mesh"),
+            cwd=os.path.join(repo_dir, "warehouse/oso_sqlmesh"),
             env={
                 **os.environ,
                 "SQLMESH_DUCKDB_LOCAL_PATH": ctx.obj["local_duckdb_path"],

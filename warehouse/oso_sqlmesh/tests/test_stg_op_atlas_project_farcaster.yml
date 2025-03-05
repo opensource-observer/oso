@@ -1,0 +1,60 @@
+test_stg_op_atlas_project_farcaster:
+  gateway: local
+  model: oso.stg_op_atlas_project_farcaster
+  vars:
+    start: 2024-01-01
+    end: 2024-02-01
+  inputs:
+    bigquery.op_atlas.project__farcaster:
+      rows:
+      - comment: "This needs to exist for @oso_source in tests"
+    sources__bigquery__op_atlas.project__farcaster:
+      rows:
+      - value: "b"
+        _dlt_id: 2
+        _dlt_parent_id: 1
+      - value: "@c"
+        _dlt_id: 3
+        _dlt_parent_id: 1
+      - value: "/d"
+        _dlt_id: 4
+        _dlt_parent_id: 1
+      - value: "https://warpcast.com/e"
+        _dlt_id: 5
+        _dlt_parent_id: 1
+    bigquery.op_atlas.project:
+      rows:
+      - comment: "This needs to exist for @oso_source in tests"
+    sources__bigquery__op_atlas.project:
+      rows:
+      - id: 1
+        name: farcaster
+        _dlt_id: 1
+  outputs:
+    query:
+      partial: true
+      rows:
+      - artifact_source_id: 2
+        artifact_source: FARCASTER
+        artifact_namespace: NULL
+        artifact_name: b
+        artifact_url: "https://warpcast.com/b"
+        artifact_type: SOCIAL_HANDLE
+      - artifact_source_id: 3
+        artifact_source: FARCASTER
+        artifact_namespace: NULL
+        artifact_name: c
+        artifact_url: "https://warpcast.com/c"
+        artifact_type: SOCIAL_HANDLE
+      - artifact_source_id: 4
+        artifact_source: FARCASTER
+        artifact_namespace: NULL
+        artifact_name: d
+        artifact_url: "https://warpcast.com/d"
+        artifact_type: SOCIAL_HANDLE
+      - artifact_source_id: 5
+        artifact_source: FARCASTER
+        artifact_namespace: NULL
+        artifact_name: e
+        artifact_url: "https://warpcast.com/e"
+        artifact_type: SOCIAL_HANDLE

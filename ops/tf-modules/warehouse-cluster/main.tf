@@ -88,7 +88,7 @@ locals {
       preemptible        = true
       initial_node_count = 0
     },
-    # TRINO COORIDNATOR POOL
+    # Trino coordinator pool
     {
       name                              = "${var.cluster_name}-trino-coordinator-node-pool"
       machine_type                      = "n1-highmem-8"
@@ -132,6 +132,50 @@ locals {
       preemptible                       = false
       initial_node_count                = 0
     },
+    # Trino consumer coordinator pool
+    {
+      name                              = "${var.cluster_name}-cons-trino-coord-node-pool"
+      machine_type                      = "n1-highmem-2"
+      node_locations                    = join(",", var.cluster_zones)
+      min_count                         = 0
+      max_count                         = 1
+      local_ssd_count                   = 0
+      local_ssd_ephemeral_storage_count = 0
+      spot                              = false
+      disk_size_gb                      = 75
+      disk_type                         = "pd-standard"
+      image_type                        = "COS_CONTAINERD"
+      enable_gcfs                       = false
+      enable_gvnic                      = false
+      logging_variant                   = "DEFAULT"
+      auto_repair                       = true
+      auto_upgrade                      = true
+      service_account                   = local.node_service_account_email
+      preemptible                       = false
+      initial_node_count                = 0
+    },
+    # Trino consumer worker pool
+    {
+      name                              = "${var.cluster_name}-cons-trino-worker-node-pool"
+      machine_type                      = "n1-highmem-8"
+      node_locations                    = join(",", var.cluster_zones)
+      min_count                         = 0
+      max_count                         = 5
+      local_ssd_count                   = 0
+      local_ssd_ephemeral_storage_count = 0
+      spot                              = true
+      disk_size_gb                      = 100
+      disk_type                         = "pd-standard"
+      image_type                        = "COS_CONTAINERD"
+      enable_gcfs                       = false
+      enable_gvnic                      = false
+      logging_variant                   = "DEFAULT"
+      auto_repair                       = true
+      auto_upgrade                      = true
+      service_account                   = local.node_service_account_email
+      preemptible                       = false
+      initial_node_count                = 0
+    },
     # MCS (Metrics Calculation Service) scheduler
     {
       name                              = "${var.cluster_name}-mcs-scheduler-node-pool"
@@ -161,7 +205,7 @@ locals {
       machine_type                      = "n1-highmem-64"
       node_locations                    = join(",", var.cluster_zones)
       min_count                         = 0
-      max_count                         = 50
+      max_count                         = 25
       local_ssd_count                   = 0
       local_ssd_ephemeral_storage_count = 3
       spot                              = true
@@ -204,6 +248,14 @@ locals {
     "${var.cluster_name}-trino-coordinator-node-pool" = {
       default_node_pool = false
       pool_type         = "trino-coordinator"
+    }
+    "${var.cluster_name}-cons-trino-worker-node-pool" = {
+      default_node_pool = false
+      pool_type         = "cons-trino-worker"
+    }
+    "${var.cluster_name}-cons-trino-coord-node-pool" = {
+      default_node_pool = false
+      pool_type         = "cons-trino-coord"
     }
     "${var.cluster_name}-mcs-scheduler-node-pool" = {
       default_node_pool = false
@@ -257,6 +309,20 @@ locals {
         effect = "NO_SCHEDULE"
       },
     ]
+    "${var.cluster_name}-cons-trino-worker-node-pool" = [
+      {
+        key    = "pool_type"
+        value  = "cons-trino-worker"
+        effect = "NO_SCHEDULE"
+      },
+    ]
+    "${var.cluster_name}-cons-trino-coord-node-pool" = [
+      {
+        key    = "pool_type"
+        value  = "cons-trino-coord"
+        effect = "NO_SCHEDULE"
+      },
+    ]
     "${var.cluster_name}-mcs-scheduler-node-pool" = [
       {
         key    = "pool_type"
@@ -291,6 +357,12 @@ locals {
     ]
     "${var.cluster_name}-trino-coordinator-pool" = [
       "trino-coordinator",
+    ]
+    "${var.cluster_name}-cons-trino-worker-pool" = [
+      "cons-trino-worker",
+    ]
+    "${var.cluster_name}-cons-trino-coord-pool" = [
+      "cons-trino-coord",
     ]
     "${var.cluster_name}-mcs-scheduler-pool" = [
       "mcs-scheduler",
@@ -356,24 +428,24 @@ module "vpc" {
 
 
 module "gke" {
-  source                     = "terraform-google-modules/kubernetes-engine/google"
-  version                    = "~> 35.0.0"
-  project_id                 = var.project_id
-  name                       = var.cluster_name
-  region                     = var.cluster_region
-  zones                      = var.cluster_zones
-  network                    = module.vpc.network_name
-  subnetwork                 = local.main_subnet_name
-  ip_range_pods              = local.subnet_range_pods_name
-  ip_range_services          = local.subnet_range_services_name
-  http_load_balancing        = var.enable_http_load_balancing
-  network_policy             = false
-  horizontal_pod_autoscaling = true
-  filestore_csi_driver       = false
-  deletion_protection        = false
+  source                               = "terraform-google-modules/kubernetes-engine/google"
+  version                              = "~> 35.0.0"
+  project_id                           = var.project_id
+  name                                 = var.cluster_name
+  region                               = var.cluster_region
+  zones                                = var.cluster_zones
+  network                              = module.vpc.network_name
+  subnetwork                           = local.main_subnet_name
+  ip_range_pods                        = local.subnet_range_pods_name
+  ip_range_services                    = local.subnet_range_services_name
+  http_load_balancing                  = var.enable_http_load_balancing
+  network_policy                       = false
+  horizontal_pod_autoscaling           = true
+  filestore_csi_driver                 = false
+  deletion_protection                  = false
   monitoring_enable_managed_prometheus = true
-  logging_enabled_components = ["SYSTEM_COMPONENTS", "APISERVER", "SCHEDULER", "CONTROLLER_MANAGER", "WORKLOADS"]
-  monitoring_enabled_components = ["SYSTEM_COMPONENTS", "APISERVER", "SCHEDULER", "CONTROLLER_MANAGER"]
+  logging_enabled_components           = ["SYSTEM_COMPONENTS", "APISERVER", "SCHEDULER", "CONTROLLER_MANAGER", "WORKLOADS"]
+  monitoring_enabled_components        = ["SYSTEM_COMPONENTS", "APISERVER", "SCHEDULER", "CONTROLLER_MANAGER"]
 
 
   node_pools = local.node_pools

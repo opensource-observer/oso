@@ -20,198 +20,8 @@
         }
       }
     },
-    "artifacts_by_collection_v1_40fb7da6_1e03_4b14_a40b_501069fe0934": {
-      "name": "artifacts_by_collection_v1_40fb7da6_1e03_4b14_a40b_501069fe0934",
-      "schema": "default",
-      "comment": "",
-      "return_type": {
-        "kind": "definition",
-        "columns": {
-          "artifact_id": "String",
-          "artifact_name": "String",
-          "artifact_namespace": "String",
-          "artifact_source": "String",
-          "artifact_source_id": "String",
-          "collection_id": "String",
-          "collection_name": "String",
-          "collection_namespace": "String",
-          "collection_source": "String"
-        }
-      }
-    },
-    "artifacts_by_collection_v1_45f06565_6f13_4e46_bc8f_17fd7803c127": {
-      "name": "artifacts_by_collection_v1_45f06565_6f13_4e46_bc8f_17fd7803c127",
-      "schema": "default",
-      "comment": "",
-      "return_type": {
-        "kind": "definition",
-        "columns": {
-          "artifact_id": "String",
-          "artifact_name": "String",
-          "artifact_namespace": "String",
-          "artifact_source": "String",
-          "artifact_source_id": "String",
-          "collection_id": "String",
-          "collection_name": "String",
-          "collection_namespace": "String",
-          "collection_source": "String"
-        }
-      }
-    },
-    "artifacts_by_collection_v1_72d8aa8a_ded4_455d_acf2_fc76e7447d1c": {
-      "name": "artifacts_by_collection_v1_72d8aa8a_ded4_455d_acf2_fc76e7447d1c",
-      "schema": "default",
-      "comment": "",
-      "return_type": {
-        "kind": "definition",
-        "columns": {
-          "artifact_id": "String",
-          "artifact_name": "String",
-          "artifact_namespace": "String",
-          "artifact_source": "String",
-          "artifact_source_id": "String",
-          "collection_id": "String",
-          "collection_name": "String",
-          "collection_namespace": "String",
-          "collection_source": "String"
-        }
-      }
-    },
-    "artifacts_by_collection_v1_a0c85089_18bb_4a9a_8789_5bcc4b99114d": {
-      "name": "artifacts_by_collection_v1_a0c85089_18bb_4a9a_8789_5bcc4b99114d",
-      "schema": "default",
-      "comment": "",
-      "return_type": {
-        "kind": "definition",
-        "columns": {
-          "artifact_id": "String",
-          "artifact_name": "String",
-          "artifact_namespace": "String",
-          "artifact_source": "String",
-          "artifact_source_id": "String",
-          "collection_id": "String",
-          "collection_name": "String",
-          "collection_namespace": "String",
-          "collection_source": "String"
-        }
-      }
-    },
-    "artifacts_by_collection_v1_b42b7193_de1c_4c87_a329_2b5794a1c803": {
-      "name": "artifacts_by_collection_v1_b42b7193_de1c_4c87_a329_2b5794a1c803",
-      "schema": "default",
-      "comment": "",
-      "return_type": {
-        "kind": "definition",
-        "columns": {
-          "artifact_id": "String",
-          "artifact_name": "String",
-          "artifact_namespace": "String",
-          "artifact_source": "String",
-          "artifact_source_id": "String",
-          "collection_id": "String",
-          "collection_name": "String",
-          "collection_namespace": "String",
-          "collection_source": "String"
-        }
-      }
-    },
     "artifacts_by_project_v1": {
       "name": "artifacts_by_project_v1",
-      "schema": "default",
-      "comment": "",
-      "return_type": {
-        "kind": "definition",
-        "columns": {
-          "artifact_id": "String",
-          "artifact_name": "String",
-          "artifact_namespace": "String",
-          "artifact_source": "String",
-          "artifact_source_id": "String",
-          "project_id": "String",
-          "project_name": "String",
-          "project_namespace": "String",
-          "project_source": "String"
-        }
-      }
-    },
-    "artifacts_by_project_v1_3ed51cd0_19b9_4d71_aae6_c090240b87d6": {
-      "name": "artifacts_by_project_v1_3ed51cd0_19b9_4d71_aae6_c090240b87d6",
-      "schema": "default",
-      "comment": "",
-      "return_type": {
-        "kind": "definition",
-        "columns": {
-          "artifact_id": "String",
-          "artifact_name": "String",
-          "artifact_namespace": "String",
-          "artifact_source": "String",
-          "artifact_source_id": "String",
-          "project_id": "String",
-          "project_name": "String",
-          "project_namespace": "String",
-          "project_source": "String"
-        }
-      }
-    },
-    "artifacts_by_project_v1_4b77c8d2_4456_47e5_9158_88f1fb3e61dd": {
-      "name": "artifacts_by_project_v1_4b77c8d2_4456_47e5_9158_88f1fb3e61dd",
-      "schema": "default",
-      "comment": "",
-      "return_type": {
-        "kind": "definition",
-        "columns": {
-          "artifact_id": "String",
-          "artifact_name": "String",
-          "artifact_namespace": "String",
-          "artifact_source": "String",
-          "artifact_source_id": "String",
-          "project_id": "String",
-          "project_name": "String",
-          "project_namespace": "String",
-          "project_source": "String"
-        }
-      }
-    },
-    "artifacts_by_project_v1_d824ba2f_34c0_42cd_b849_afd4d8626ec0": {
-      "name": "artifacts_by_project_v1_d824ba2f_34c0_42cd_b849_afd4d8626ec0",
-      "schema": "default",
-      "comment": "",
-      "return_type": {
-        "kind": "definition",
-        "columns": {
-          "artifact_id": "String",
-          "artifact_name": "String",
-          "artifact_namespace": "String",
-          "artifact_source": "String",
-          "artifact_source_id": "String",
-          "project_id": "String",
-          "project_name": "String",
-          "project_namespace": "String",
-          "project_source": "String"
-        }
-      }
-    },
-    "artifacts_by_project_v1_da848ddb_72dd_40a7_9594_3dce01f65ceb": {
-      "name": "artifacts_by_project_v1_da848ddb_72dd_40a7_9594_3dce01f65ceb",
-      "schema": "default",
-      "comment": "",
-      "return_type": {
-        "kind": "definition",
-        "columns": {
-          "artifact_id": "String",
-          "artifact_name": "String",
-          "artifact_namespace": "String",
-          "artifact_source": "String",
-          "artifact_source_id": "String",
-          "project_id": "String",
-          "project_name": "String",
-          "project_namespace": "String",
-          "project_source": "String"
-        }
-      }
-    },
-    "artifacts_by_project_v1_f30b9427_46ea_4510_82eb_d665e925fc4c": {
-      "name": "artifacts_by_project_v1_f30b9427_46ea_4510_82eb_d665e925fc4c",
       "schema": "default",
       "comment": "",
       "return_type": {
@@ -250,111 +60,6 @@
         }
       }
     },
-    "artifacts_by_user_v1_53001fd2_f0cc_4bf4_8d59_2971cd8c8313": {
-      "name": "artifacts_by_user_v1_53001fd2_f0cc_4bf4_8d59_2971cd8c8313",
-      "schema": "default",
-      "comment": "",
-      "return_type": {
-        "kind": "definition",
-        "columns": {
-          "artifact_id": "String",
-          "artifact_name": "String",
-          "artifact_namespace": "String",
-          "artifact_source": "String",
-          "artifact_source_id": "String",
-          "user_id": "String",
-          "user_name": "String",
-          "user_namespace": "String",
-          "user_source": "String",
-          "user_source_id": "String",
-          "user_type": "String"
-        }
-      }
-    },
-    "artifacts_by_user_v1_990dcf3a_ff55_48d0_9922_20dc24fc4c70": {
-      "name": "artifacts_by_user_v1_990dcf3a_ff55_48d0_9922_20dc24fc4c70",
-      "schema": "default",
-      "comment": "",
-      "return_type": {
-        "kind": "definition",
-        "columns": {
-          "artifact_id": "String",
-          "artifact_name": "String",
-          "artifact_namespace": "String",
-          "artifact_source": "String",
-          "artifact_source_id": "String",
-          "user_id": "String",
-          "user_name": "String",
-          "user_namespace": "String",
-          "user_source": "String",
-          "user_source_id": "String",
-          "user_type": "String"
-        }
-      }
-    },
-    "artifacts_by_user_v1_c4d06809_b9c0_48d9_886f_0cf6a7103a3d": {
-      "name": "artifacts_by_user_v1_c4d06809_b9c0_48d9_886f_0cf6a7103a3d",
-      "schema": "default",
-      "comment": "",
-      "return_type": {
-        "kind": "definition",
-        "columns": {
-          "artifact_id": "String",
-          "artifact_name": "String",
-          "artifact_namespace": "String",
-          "artifact_source": "String",
-          "artifact_source_id": "String",
-          "user_id": "String",
-          "user_name": "String",
-          "user_namespace": "String",
-          "user_source": "String",
-          "user_source_id": "String",
-          "user_type": "String"
-        }
-      }
-    },
-    "artifacts_by_user_v1_c979496d_14b5_4652_ae9a_01448c060ae2": {
-      "name": "artifacts_by_user_v1_c979496d_14b5_4652_ae9a_01448c060ae2",
-      "schema": "default",
-      "comment": "",
-      "return_type": {
-        "kind": "definition",
-        "columns": {
-          "artifact_id": "String",
-          "artifact_name": "String",
-          "artifact_namespace": "String",
-          "artifact_source": "String",
-          "artifact_source_id": "String",
-          "user_id": "String",
-          "user_name": "String",
-          "user_namespace": "String",
-          "user_source": "String",
-          "user_source_id": "String",
-          "user_type": "String"
-        }
-      }
-    },
-    "artifacts_by_user_v1_d4f5f50f_9cc2_428d_b4bc_df2d5504c7cd": {
-      "name": "artifacts_by_user_v1_d4f5f50f_9cc2_428d_b4bc_df2d5504c7cd",
-      "schema": "default",
-      "comment": "",
-      "return_type": {
-        "kind": "definition",
-        "columns": {
-          "artifact_id": "String",
-          "artifact_name": "String",
-          "artifact_namespace": "String",
-          "artifact_source": "String",
-          "artifact_source_id": "String",
-          "user_id": "String",
-          "user_name": "String",
-          "user_namespace": "String",
-          "user_source": "String",
-          "user_source_id": "String",
-          "user_type": "String"
-        }
-      }
-    },
     "artifacts_v1": {
       "name": "artifacts_v1",
       "schema": "default",
@@ -366,88 +71,7 @@
           "artifact_name": "String",
           "artifact_namespace": "String",
           "artifact_source": "String",
-          "artifact_source_id": "String",
-          "artifact_url": "String"
-        }
-      }
-    },
-    "artifacts_v1_9f199743_e27d_4c99_abd5_0b4f32bdb1bd": {
-      "name": "artifacts_v1_9f199743_e27d_4c99_abd5_0b4f32bdb1bd",
-      "schema": "default",
-      "comment": "",
-      "return_type": {
-        "kind": "definition",
-        "columns": {
-          "artifact_id": "String",
-          "artifact_name": "String",
-          "artifact_namespace": "String",
-          "artifact_source": "String",
-          "artifact_source_id": "String",
-          "artifact_url": "String"
-        }
-      }
-    },
-    "artifacts_v1_ad5b3750_aac1_41c4_9854_421d9d8d2728": {
-      "name": "artifacts_v1_ad5b3750_aac1_41c4_9854_421d9d8d2728",
-      "schema": "default",
-      "comment": "",
-      "return_type": {
-        "kind": "definition",
-        "columns": {
-          "artifact_id": "String",
-          "artifact_name": "String",
-          "artifact_namespace": "String",
-          "artifact_source": "String",
-          "artifact_source_id": "String",
-          "artifact_url": "String"
-        }
-      }
-    },
-    "artifacts_v1_b38c77c5_26d6_4eaf_b4df_dc903c7a2e95": {
-      "name": "artifacts_v1_b38c77c5_26d6_4eaf_b4df_dc903c7a2e95",
-      "schema": "default",
-      "comment": "",
-      "return_type": {
-        "kind": "definition",
-        "columns": {
-          "artifact_id": "String",
-          "artifact_name": "String",
-          "artifact_namespace": "String",
-          "artifact_source": "String",
-          "artifact_source_id": "String",
-          "artifact_url": "String"
-        }
-      }
-    },
-    "artifacts_v1_db84dd87_d510_4ef0_a0f6_2aa2300fdd60": {
-      "name": "artifacts_v1_db84dd87_d510_4ef0_a0f6_2aa2300fdd60",
-      "schema": "default",
-      "comment": "",
-      "return_type": {
-        "kind": "definition",
-        "columns": {
-          "artifact_id": "String",
-          "artifact_name": "String",
-          "artifact_namespace": "String",
-          "artifact_source": "String",
-          "artifact_source_id": "String",
-          "artifact_url": "String"
-        }
-      }
-    },
-    "artifacts_v1_ff28f4c0_245f_4e09_b605_a14353f38b8d": {
-      "name": "artifacts_v1_ff28f4c0_245f_4e09_b605_a14353f38b8d",
-      "schema": "default",
-      "comment": "",
-      "return_type": {
-        "kind": "definition",
-        "columns": {
-          "artifact_id": "String",
-          "artifact_name": "String",
-          "artifact_namespace": "String",
-          "artifact_source": "String",
-          "artifact_source_id": "String",
-          "artifact_url": "String"
+          "artifact_source_id": "String"
         }
       }
     },
@@ -533,30 +157,10 @@
         }
       }
     },
-    "collections_v1_d4456df2_3a14_481b_b067_ed13f786ea38": {
-      "name": "collections_v1_d4456df2_3a14_481b_b067_ed13f786ea38",
-      "schema": "default",
-      "comment": "",
-      "return_type": {
-        "kind": "definition",
-        "columns": {
-          "collection_id": "String",
-          "collection_name": "String",
-          "collection_namespace": "String",
-          "collection_source": "String",
-          "description": "String",
-          "display_name": "String"
-        }
-      }
-    },
     "contracts_v0": {
       "name": "contracts_v0",
       "schema": "default",
       "comment": "",
-      "primary_key": {
-        "name": "deployment_date",
-        "columns": ["deployment_date"]
-      },
       "return_type": {
         "kind": "definition",
         "columns": {
@@ -566,210 +170,7 @@
           "factory_address": "String",
           "originating_address": "String",
           "root_deployer_address": "String",
-          "sort_weight": "Int32"
-        }
-      }
-    },
-    "contracts_v0_031db074_a71e_40e3_9697_26f0503f0b8a": {
-      "name": "contracts_v0_031db074_a71e_40e3_9697_26f0503f0b8a",
-      "schema": "default",
-      "comment": "",
-      "return_type": {
-        "kind": "definition",
-        "columns": {
-          "artifact_source": "String",
-          "contract_address": "String",
-          "root_deployer_address": "String"
-        }
-      }
-    },
-    "contracts_v0_20250206035429": {
-      "name": "contracts_v0_20250206035429",
-      "schema": "default",
-      "comment": "",
-      "return_type": {
-        "kind": "definition",
-        "columns": {
-          "contract_address": "String",
-          "contract_namespace": "String",
-          "deployment_date": "DateTime64(6)",
-          "factory_address": "String",
-          "originating_address": "String",
-          "root_deployer_address": "String",
           "sort_weight": "Int64"
-        }
-      }
-    },
-    "contracts_v0_20250206035816": {
-      "name": "contracts_v0_20250206035816",
-      "schema": "default",
-      "comment": "",
-      "return_type": {
-        "kind": "definition",
-        "columns": {
-          "contract_address": "String",
-          "contract_namespace": "String",
-          "deployment_date": "DateTime64(6)",
-          "factory_address": "String",
-          "originating_address": "String",
-          "root_deployer_address": "String",
-          "sort_weight": "Int64"
-        }
-      }
-    },
-    "contracts_v0_20250206040214": {
-      "name": "contracts_v0_20250206040214",
-      "schema": "default",
-      "comment": "",
-      "return_type": {
-        "kind": "definition",
-        "columns": {
-          "contract_address": "String",
-          "contract_namespace": "String",
-          "deployment_date": "DateTime64(6)",
-          "factory_address": "String",
-          "originating_address": "String",
-          "root_deployer_address": "String",
-          "sort_weight": "Int64"
-        }
-      }
-    },
-    "contracts_v0_20250206040606": {
-      "name": "contracts_v0_20250206040606",
-      "schema": "default",
-      "comment": "",
-      "return_type": {
-        "kind": "definition",
-        "columns": {
-          "contract_address": "String",
-          "contract_namespace": "String",
-          "deployment_date": "DateTime64(6)",
-          "factory_address": "String",
-          "originating_address": "String",
-          "root_deployer_address": "String",
-          "sort_weight": "Int64"
-        }
-      }
-    },
-    "contracts_v0_20250207185121": {
-      "name": "contracts_v0_20250207185121",
-      "schema": "default",
-      "comment": "",
-      "return_type": {
-        "kind": "definition",
-        "columns": {
-          "contract_address": "String",
-          "contract_namespace": "String",
-          "deployment_date": "DateTime64(6)",
-          "factory_address": "String",
-          "originating_address": "String",
-          "root_deployer_address": "String",
-          "sort_weight": "Int64"
-        }
-      }
-    },
-    "contracts_v0_20250207191035": {
-      "name": "contracts_v0_20250207191035",
-      "schema": "default",
-      "comment": "",
-      "return_type": {
-        "kind": "definition",
-        "columns": {
-          "contract_address": "String",
-          "contract_namespace": "String",
-          "deployment_date": "DateTime64(6)",
-          "factory_address": "String",
-          "originating_address": "String",
-          "root_deployer_address": "String",
-          "sort_weight": "Int64"
-        }
-      }
-    },
-    "contracts_v0_20250207192758": {
-      "name": "contracts_v0_20250207192758",
-      "schema": "default",
-      "comment": "",
-      "return_type": {
-        "kind": "definition",
-        "columns": {
-          "contract_address": "String",
-          "contract_namespace": "String",
-          "deployment_date": "DateTime64(6)",
-          "factory_address": "String",
-          "originating_address": "String",
-          "root_deployer_address": "String",
-          "sort_weight": "Int64"
-        }
-      }
-    },
-    "contracts_v0_214aec9f_f41e_479b_9b33_600b7d45d7a6": {
-      "name": "contracts_v0_214aec9f_f41e_479b_9b33_600b7d45d7a6",
-      "schema": "default",
-      "comment": "",
-      "return_type": {
-        "kind": "definition",
-        "columns": {
-          "artifact_source": "String",
-          "contract_address": "String",
-          "root_deployer_address": "String"
-        }
-      }
-    },
-    "contracts_v0_5c722449_9fe2_473a_8196_c0feb8ce8cb5": {
-      "name": "contracts_v0_5c722449_9fe2_473a_8196_c0feb8ce8cb5",
-      "schema": "default",
-      "comment": "",
-      "return_type": {
-        "kind": "definition",
-        "columns": {
-          "artifact_source": "String",
-          "contract_address": "String",
-          "root_deployer_address": "String"
-        }
-      }
-    },
-    "contracts_v0_8191854e_d289_4944_81cc_5021965c096b": {
-      "name": "contracts_v0_8191854e_d289_4944_81cc_5021965c096b",
-      "schema": "default",
-      "comment": "",
-      "return_type": {
-        "kind": "definition",
-        "columns": {
-          "artifact_source": "String",
-          "contract_address": "String",
-          "root_deployer_address": "String"
-        }
-      }
-    },
-    "contracts_v0_f862a78e_167b_4450_9e30_825e83a385bf": {
-      "name": "contracts_v0_f862a78e_167b_4450_9e30_825e83a385bf",
-      "schema": "default",
-      "comment": "",
-      "return_type": {
-        "kind": "definition",
-        "columns": {
-          "artifact_source": "String",
-          "contract_address": "String",
-          "root_deployer_address": "String"
-        }
-      }
-    },
-    "event_indexing_status_by_project_v1": {
-      "name": "event_indexing_status_by_project_v1",
-      "schema": "default",
-      "comment": "",
-      "return_type": {
-        "kind": "definition",
-        "columns": {
-          "event_source": "String",
-          "event_type": "String",
-          "eventful_day_count": "Int64",
-          "first_event_date": "DateTime",
-          "last_event_date": "DateTime",
-          "project_id": "String",
-          "project_name": "String",
-          "project_namespace": "String",
-          "project_source": "String"
         }
       }
     },
@@ -800,6 +201,51 @@
           "total_funders_count": "Int64",
           "total_funding_received_usd": "Float32",
           "total_funding_received_usd_6_months": "Float32"
+        }
+      }
+    },
+    "key_metrics_by_artifact_v0": {
+      "name": "key_metrics_by_artifact_v0",
+      "schema": "default",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "amount": "Float64",
+          "artifact_id": "String",
+          "metric_id": "String",
+          "sample_date": "Date",
+          "unit": "String"
+        }
+      }
+    },
+    "key_metrics_by_collection_v0": {
+      "name": "key_metrics_by_collection_v0",
+      "schema": "default",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "amount": "Float64",
+          "collection_id": "String",
+          "metric_id": "String",
+          "sample_date": "Date",
+          "unit": "String"
+        }
+      }
+    },
+    "key_metrics_by_project_v0": {
+      "name": "key_metrics_by_project_v0",
+      "schema": "default",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "amount": "Float64",
+          "metric_id": "String",
+          "project_id": "String",
+          "sample_date": "Date",
+          "unit": "String"
         }
       }
     },
@@ -872,21 +318,6 @@
         }
       }
     },
-    "point_in_time_v0": {
-      "name": "point_in_time_v0",
-      "schema": "default",
-      "comment": "",
-      "return_type": {
-        "kind": "definition",
-        "columns": {
-          "amount": "Int64",
-          "artifact_id": "String",
-          "artifact_source": "String",
-          "metric": "String",
-          "time": "DateTime"
-        }
-      }
-    },
     "projects_by_collection_v1": {
       "name": "projects_by_collection_v1",
       "schema": "default",
@@ -905,42 +336,8 @@
         }
       }
     },
-    "projects_by_collection_v1_2d0ec562_f604_41fc_80e6_207418f84343": {
-      "name": "projects_by_collection_v1_2d0ec562_f604_41fc_80e6_207418f84343",
-      "schema": "default",
-      "comment": "",
-      "return_type": {
-        "kind": "definition",
-        "columns": {
-          "collection_id": "String",
-          "collection_name": "String",
-          "collection_namespace": "String",
-          "collection_source": "String",
-          "project_id": "String",
-          "project_name": "String",
-          "project_namespace": "String",
-          "project_source": "String"
-        }
-      }
-    },
     "projects_v1": {
       "name": "projects_v1",
-      "schema": "default",
-      "comment": "",
-      "return_type": {
-        "kind": "definition",
-        "columns": {
-          "description": "String",
-          "display_name": "String",
-          "project_id": "String",
-          "project_name": "String",
-          "project_namespace": "String",
-          "project_source": "String"
-        }
-      }
-    },
-    "projects_v1_76d9abb3_c63c_43bb_bfd9_b19aa9ebe23d": {
-      "name": "projects_v1_76d9abb3_c63c_43bb_bfd9_b19aa9ebe23d",
       "schema": "default",
       "comment": "",
       "return_type": {
@@ -982,17 +379,6 @@
         }
       }
     },
-    "reuven_test_remove_please": {
-      "name": "reuven_test_remove_please",
-      "schema": "default",
-      "comment": "",
-      "return_type": {
-        "kind": "definition",
-        "columns": {
-          "metric_id": "Nullable(String)"
-        }
-      }
-    },
     "sboms_v0": {
       "name": "sboms_v0",
       "schema": "default",
@@ -1013,347 +399,8 @@
         }
       }
     },
-    "test_metrics_v0_20250109091839": {
-      "name": "test_metrics_v0_20250109091839",
-      "schema": "default",
-      "comment": "",
-      "return_type": {
-        "kind": "definition",
-        "columns": {
-          "aggregation_function": "String",
-          "definition_ref": "String",
-          "description": "String",
-          "display_name": "String",
-          "metric_id": "String",
-          "metric_name": "String",
-          "metric_namespace": "String",
-          "metric_source": "String",
-          "raw_definition": "String"
-        }
-      }
-    },
-    "test_metrics_v0_20250109092311": {
-      "name": "test_metrics_v0_20250109092311",
-      "schema": "default",
-      "comment": "",
-      "return_type": {
-        "kind": "definition",
-        "columns": {
-          "aggregation_function": "String",
-          "definition_ref": "String",
-          "description": "String",
-          "display_name": "String",
-          "metric_id": "String",
-          "metric_name": "String",
-          "metric_namespace": "String",
-          "metric_source": "String",
-          "raw_definition": "String"
-        }
-      }
-    },
-    "test_metrics_v0_20250109092356": {
-      "name": "test_metrics_v0_20250109092356",
-      "schema": "default",
-      "comment": "",
-      "return_type": {
-        "kind": "definition",
-        "columns": {
-          "aggregation_function": "String",
-          "definition_ref": "String",
-          "description": "String",
-          "display_name": "String",
-          "metric_id": "String",
-          "metric_name": "String",
-          "metric_namespace": "String",
-          "metric_source": "String",
-          "raw_definition": "String"
-        }
-      }
-    },
-    "test_metrics_v0_20250109092651": {
-      "name": "test_metrics_v0_20250109092651",
-      "schema": "default",
-      "comment": "",
-      "return_type": {
-        "kind": "definition",
-        "columns": {
-          "aggregation_function": "String",
-          "definition_ref": "String",
-          "description": "String",
-          "display_name": "String",
-          "metric_id": "String",
-          "metric_name": "String",
-          "metric_namespace": "String",
-          "metric_source": "String",
-          "raw_definition": "String"
-        }
-      }
-    },
-    "test_metrics_v0_20250109093313": {
-      "name": "test_metrics_v0_20250109093313",
-      "schema": "default",
-      "comment": "",
-      "return_type": {
-        "kind": "definition",
-        "columns": {
-          "aggregation_function": "String",
-          "definition_ref": "String",
-          "description": "String",
-          "display_name": "String",
-          "metric_id": "String",
-          "metric_name": "String",
-          "metric_namespace": "String",
-          "metric_source": "String",
-          "raw_definition": "String"
-        }
-      }
-    },
-    "test_metrics_v0_20250109094116": {
-      "name": "test_metrics_v0_20250109094116",
-      "schema": "default",
-      "comment": "",
-      "return_type": {
-        "kind": "definition",
-        "columns": {
-          "aggregation_function": "String",
-          "definition_ref": "String",
-          "description": "String",
-          "display_name": "String",
-          "metric_id": "String",
-          "metric_name": "String",
-          "metric_namespace": "String",
-          "metric_source": "String",
-          "raw_definition": "String"
-        }
-      }
-    },
-    "test_metrics_v0_20250110051700": {
-      "name": "test_metrics_v0_20250110051700",
-      "schema": "default",
-      "comment": "",
-      "return_type": {
-        "kind": "definition",
-        "columns": {
-          "aggregation_function": "String",
-          "definition_ref": "String",
-          "description": "String",
-          "display_name": "String",
-          "metric_id": "String",
-          "metric_name": "String",
-          "metric_namespace": "String",
-          "metric_source": "String",
-          "raw_definition": "String"
-        }
-      }
-    },
-    "test_metrics_v0_20250110051909": {
-      "name": "test_metrics_v0_20250110051909",
-      "schema": "default",
-      "comment": "",
-      "return_type": {
-        "kind": "definition",
-        "columns": {
-          "aggregation_function": "String",
-          "definition_ref": "String",
-          "description": "String",
-          "display_name": "String",
-          "metric_id": "String",
-          "metric_name": "String",
-          "metric_namespace": "String",
-          "metric_source": "String",
-          "raw_definition": "String"
-        }
-      }
-    },
-    "test_metrics_v0_20250110052443": {
-      "name": "test_metrics_v0_20250110052443",
-      "schema": "default",
-      "comment": "",
-      "return_type": {
-        "kind": "definition",
-        "columns": {
-          "aggregation_function": "String",
-          "definition_ref": "String",
-          "description": "String",
-          "display_name": "String",
-          "metric_id": "String",
-          "metric_name": "String",
-          "metric_namespace": "String",
-          "metric_source": "String",
-          "raw_definition": "String"
-        }
-      }
-    },
-    "test_metrics_v0_20250110052630": {
-      "name": "test_metrics_v0_20250110052630",
-      "schema": "default",
-      "comment": "",
-      "return_type": {
-        "kind": "definition",
-        "columns": {
-          "aggregation_function": "String",
-          "definition_ref": "String",
-          "description": "String",
-          "display_name": "String",
-          "metric_id": "String",
-          "metric_name": "String",
-          "metric_namespace": "String",
-          "metric_source": "String",
-          "raw_definition": "String"
-        }
-      }
-    },
-    "test_metrics_v0_20250110052802": {
-      "name": "test_metrics_v0_20250110052802",
-      "schema": "default",
-      "comment": "",
-      "return_type": {
-        "kind": "definition",
-        "columns": {
-          "aggregation_function": "String",
-          "definition_ref": "String",
-          "description": "String",
-          "display_name": "String",
-          "metric_id": "String",
-          "metric_name": "String",
-          "metric_namespace": "String",
-          "metric_source": "String",
-          "raw_definition": "String"
-        }
-      }
-    },
-    "test_metrics_v0_20250110053109": {
-      "name": "test_metrics_v0_20250110053109",
-      "schema": "default",
-      "comment": "",
-      "return_type": {
-        "kind": "definition",
-        "columns": {
-          "aggregation_function": "String",
-          "definition_ref": "String",
-          "description": "String",
-          "display_name": "String",
-          "metric_id": "String",
-          "metric_name": "String",
-          "metric_namespace": "String",
-          "metric_source": "String",
-          "raw_definition": "String"
-        }
-      }
-    },
-    "test_metrics_v0_20250110053618": {
-      "name": "test_metrics_v0_20250110053618",
-      "schema": "default",
-      "comment": "",
-      "return_type": {
-        "kind": "definition",
-        "columns": {
-          "aggregation_function": "String",
-          "definition_ref": "String",
-          "description": "String",
-          "display_name": "String",
-          "metric_id": "String",
-          "metric_name": "String",
-          "metric_namespace": "String",
-          "metric_source": "String",
-          "raw_definition": "String"
-        }
-      }
-    },
-    "test_metrics_v0_20250110053825": {
-      "name": "test_metrics_v0_20250110053825",
-      "schema": "default",
-      "comment": "",
-      "return_type": {
-        "kind": "definition",
-        "columns": {
-          "aggregation_function": "String",
-          "definition_ref": "String",
-          "description": "String",
-          "display_name": "String",
-          "metric_id": "String",
-          "metric_name": "String",
-          "metric_namespace": "String",
-          "metric_source": "String",
-          "raw_definition": "String"
-        }
-      }
-    },
-    "test_metrics_v0_20250110080024": {
-      "name": "test_metrics_v0_20250110080024",
-      "schema": "default",
-      "comment": "",
-      "return_type": {
-        "kind": "definition",
-        "columns": {
-          "aggregation_function": "String",
-          "definition_ref": "String",
-          "description": "String",
-          "display_name": "String",
-          "metric_id": "String",
-          "metric_name": "String",
-          "metric_namespace": "String",
-          "metric_source": "String",
-          "raw_definition": "String"
-        }
-      }
-    },
-    "test_timeseries_metrics_by_artifact_v0_20250109094815": {
-      "name": "test_timeseries_metrics_by_artifact_v0_20250109094815",
-      "schema": "default",
-      "comment": "",
-      "return_type": {
-        "kind": "definition",
-        "columns": {
-          "amount": "Float64",
-          "artifact_id": "String",
-          "metric_id": "String",
-          "sample_date": "Date",
-          "unit": "String"
-        }
-      }
-    },
-    "timeseries_events_aux_issues_by_artifact_v0": {
-      "name": "timeseries_events_aux_issues_by_artifact_v0",
-      "schema": "default",
-      "comment": "",
-      "return_type": {
-        "kind": "definition",
-        "columns": {
-          "closed_at": "DateTime",
-          "comments": "String",
-          "created_at": "DateTime",
-          "event_source": "String",
-          "event_source_id": "String",
-          "event_type": "String",
-          "from_artifact_id": "String",
-          "issue_id": "String",
-          "issue_number": "String",
-          "merged_at": "DateTime",
-          "time": "DateTime",
-          "to_artifact_id": "String"
-        }
-      }
-    },
     "timeseries_events_by_artifact_v0": {
       "name": "timeseries_events_by_artifact_v0",
-      "schema": "default",
-      "comment": "",
-      "return_type": {
-        "kind": "definition",
-        "columns": {
-          "amount": "Float32",
-          "event_source": "String",
-          "event_source_id": "String",
-          "event_type": "String",
-          "from_artifact_id": "String",
-          "time": "DateTime",
-          "to_artifact_id": "String"
-        }
-      }
-    },
-    "timeseries_events_by_artifact_v0_e842fa65_37eb_424d_b62f_99cde2": {
-      "name": "timeseries_events_by_artifact_v0_e842fa65_37eb_424d_b62f_99cde2",
       "schema": "default",
       "comment": "",
       "return_type": {
@@ -1384,51 +431,6 @@
         }
       }
     },
-    "timeseries_metrics_by_artifact_v0_20250108082007": {
-      "name": "timeseries_metrics_by_artifact_v0_20250108082007",
-      "schema": "default",
-      "comment": "",
-      "return_type": {
-        "kind": "definition",
-        "columns": {
-          "amount": "Nullable(Float64)",
-          "artifact_id": "Nullable(String)",
-          "metric_id": "Nullable(String)",
-          "sample_date": "Nullable(Date)",
-          "unit": "Nullable(String)"
-        }
-      }
-    },
-    "timeseries_metrics_by_artifact_v0_20250108083317": {
-      "name": "timeseries_metrics_by_artifact_v0_20250108083317",
-      "schema": "default",
-      "comment": "",
-      "return_type": {
-        "kind": "definition",
-        "columns": {
-          "amount": "Nullable(Float64)",
-          "artifact_id": "Nullable(String)",
-          "metric_id": "Nullable(String)",
-          "sample_date": "Nullable(Date)",
-          "unit": "Nullable(String)"
-        }
-      }
-    },
-    "timeseries_metrics_by_artifact_v0_20250108085741": {
-      "name": "timeseries_metrics_by_artifact_v0_20250108085741",
-      "schema": "default",
-      "comment": "",
-      "return_type": {
-        "kind": "definition",
-        "columns": {
-          "amount": "Nullable(Float64)",
-          "artifact_id": "Nullable(String)",
-          "metric_id": "Nullable(String)",
-          "sample_date": "Nullable(Date)",
-          "unit": "Nullable(String)"
-        }
-      }
-    },
     "timeseries_metrics_by_collection_v0": {
       "name": "timeseries_metrics_by_collection_v0",
       "schema": "default",
@@ -1444,21 +446,6 @@
         }
       }
     },
-    "timeseries_metrics_by_collection_v0_20250108082007": {
-      "name": "timeseries_metrics_by_collection_v0_20250108082007",
-      "schema": "default",
-      "comment": "",
-      "return_type": {
-        "kind": "definition",
-        "columns": {
-          "amount": "Nullable(Float64)",
-          "collection_id": "Nullable(String)",
-          "metric_id": "Nullable(String)",
-          "sample_date": "Nullable(Date)",
-          "unit": "Nullable(String)"
-        }
-      }
-    },
     "timeseries_metrics_by_project_v0": {
       "name": "timeseries_metrics_by_project_v0",
       "schema": "default",
@@ -1471,21 +458,6 @@
           "project_id": "String",
           "sample_date": "Date",
           "unit": "String"
-        }
-      }
-    },
-    "timeseries_metrics_by_project_v0_20250108082007": {
-      "name": "timeseries_metrics_by_project_v0_20250108082007",
-      "schema": "default",
-      "comment": "",
-      "return_type": {
-        "kind": "definition",
-        "columns": {
-          "amount": "Nullable(Float64)",
-          "metric_id": "Nullable(String)",
-          "project_id": "Nullable(String)",
-          "sample_date": "Nullable(Date)",
-          "unit": "Nullable(String)"
         }
       }
     },

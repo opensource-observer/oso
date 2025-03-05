@@ -19,13 +19,18 @@ from dagster import (
 from oso_dagster.cbt.cbt import CBTResource
 from oso_dagster.config import DagsterConfig
 from oso_dagster.dlt_sources.github_repos import (
+    GithubRepositorySBOMItem,
     oss_directory_github_repositories_resource,
     oss_directory_github_sbom_resource,
 )
 from oso_dagster.factories import dlt_factory
 from oso_dagster.factories.common import AssetFactoryResponse
 from oso_dagster.factories.jobs import discoverable_jobs
-from oso_dagster.utils import secret_ref_arg
+from oso_dagster.utils import (
+    ChunkedResourceConfig,
+    process_chunked_resource,
+    secret_ref_arg,
+)
 from oso_dagster.utils.tags import add_tags
 from ossdirectory import fetch_data
 from ossdirectory.fetch import OSSDirectory
@@ -170,25 +175,39 @@ def sbom(
     cbt: CBTResource,
     gh_token: str = secret_ref_arg(group_name="ossd", key="github_token"),
 ):
-    all_repositories_query = """
-        SELECT
-        DISTINCT url
-        FROM
-        `ossd.repositories`
-        WHERE
-        LOWER(url) LIKE '%github.com%';
-    """
+    def fetch_fn():
+        all_repositories_query = """
+            SELECT
+                DISTINCT url
+            FROM
+                `ossd.repositories`
+            WHERE
+                LOWER(url) LIKE '%github.com%';
+        """
 
-    client = cbt.get(context.log)
+        client = cbt.get(context.log)
 
-    all_repo_urls: t.List[str] = [
-        row["url"] for row in client.query_with_string(all_repositories_query)
-    ]
+        all_repo_urls: t.List[str] = [
+            row["url"] for row in client.query_with_string(all_repositories_query)
+        ]
 
-    context.log.info(f"Fecthing SBOMs for {len(all_repo_urls)} repositories")
+        context.log.info(f"Fecthing SBOMs for {len(all_repo_urls)} repositories")
 
-    yield oss_directory_github_sbom_resource(
-        all_repo_urls, gh_token, http_cache=global_config.http_cache
+        return all_repo_urls
+
+    def sbom_to_string(element: GithubRepositorySBOMItem) -> str:
+        return element.model_dump_json()
+
+    return process_chunked_resource(
+        ChunkedResourceConfig(
+            fetch_data_fn=fetch_fn,
+            resource=oss_directory_github_sbom_resource,
+            to_string_fn=sbom_to_string,
+            gcs_bucket_name=global_config.gcs_bucket,
+            context=context,
+        ),
+        gh_token,
+        http_cache=global_config.http_cache,
     )
 
 

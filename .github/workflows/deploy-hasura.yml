@@ -45,11 +45,13 @@ jobs:
           cache: "pnpm"
           node-version: "20.x"
 
-      - name: "Setup Python, Poetry and Dependencies"
-        uses: packetcoders/action-setup-cache-python-poetry@main
+      - name: Setup Python and UV
+        uses: astral-sh/setup-uv@v5
         with:
           python-version: 3.12
-          poetry-version: 1.8.2
+  
+      - name: Install dependencies
+        run: uv sync --all-packages --all-extras
 
       - name: Login to google
         uses: 'google-github-actions/auth@v2'

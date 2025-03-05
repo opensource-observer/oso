@@ -56,16 +56,18 @@ runs:
 
         path: "ops/external-prs/pr-clone/"
 
-    - name: "Setup Python, Poetry and Dependencies"
-      uses: packetcoders/action-setup-cache-python-poetry@main
+    - name: Setup Python and UV
+      uses: astral-sh/setup-uv@v5
       with:
         python-version: 3.12
-        poetry-version: 1.8.2
 
-    - name: Install poetry deps in the pr-clone
+    - name: Install dependencies
+      run: uv sync --all-packages --all-extras
+
+    - name: Install uv deps in the pr-clone
       shell: bash
       run: |
-        cd ops/external-prs/pr-clone && poetry install
+        cd ops/external-prs/pr-clone && uv sync --all-packages --all-extras
 
     - name: Run test-deploy
       shell: bash

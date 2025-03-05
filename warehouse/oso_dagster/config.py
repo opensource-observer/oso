@@ -66,8 +66,10 @@ class DagsterConfig(BaseSettings):
     enable_bigquery: bool = False
 
     sqlmesh_dir: str = ""
-
     sqlmesh_gateway: str = "local"
+    sqlmesh_catalog: str = "iceberg"
+    sqlmesh_schema: str = "oso"
+    sqlmesh_bq_export_dataset_id: str = "metrics"
 
     enable_k8s_executor: bool = False
 
@@ -101,7 +103,7 @@ class DagsterConfig(BaseSettings):
         if not self.main_dbt_project_dir:
             self.main_dbt_project_dir = self.repo_dir
         if not self.sqlmesh_dir:
-            self.sqlmesh_dir = os.path.join(self.repo_dir, "warehouse/metrics_mesh")
+            self.sqlmesh_dir = os.path.join(self.repo_dir, "warehouse/oso_sqlmesh")
 
         # If we happen to be in a kubernetes environment, enable_k8s enables the
         # K8sResource to control k8s resources

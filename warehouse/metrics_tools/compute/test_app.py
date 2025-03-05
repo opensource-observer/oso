@@ -98,7 +98,7 @@ def test_app_with_all_debugging(app_client_with_all_debugging):
         ),
         locals={},
         dependent_tables_map={
-            "metrics.events_daily_to_artifact": "sqlmesh__metrics.metrics__events_daily_to_artifact__2357434958"
+            "oso.events_daily_to_artifact": "sqlmesh__iceberg.oso__events_daily_to_artifact__2357434958"
         },
         slots=2,
         batch_size=batch_size,

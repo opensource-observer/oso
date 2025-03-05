@@ -54,10 +54,6 @@ def generated_rolling_query(
     transformer = SQLTransformer(transforms=[ExecutionContextTableTransform(context)])
     query = transformer.transform(rendered_query_str)
 
-    if hasattr(context, "snapshots"):
-        print("snapshots")
-        print(context.snapshots.values())
-
     if isinstance(context, TestExecutionContext):
         # MCS should not be used in testing
         mcs_enabled = False

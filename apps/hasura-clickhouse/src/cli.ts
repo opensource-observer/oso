@@ -2,6 +2,7 @@ import path from "node:path";
 import fs from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { glob } from "glob";
+import _ from "lodash";
 import * as yaml from "yaml";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -20,8 +21,33 @@ const metadataGlob = path.format({
   name: "*",
   ext: EXTENSION,
 });
+const ignoredGlob = path.format({
+  dir: metadataDir,
+  name: "oso_clickhouse*.hml",
+  ext: EXTENSION,
+});
 
 // Schema for Hasura table configuration
+type Model = {
+  kind: "Model";
+  version: string;
+  definition: {
+    objectType: string;
+    source: {
+      dataConnectorName: string;
+      collection: string;
+    };
+    graphql: {
+      aggregate: {
+        queryRootField: string;
+        subscription: {
+          rootField: string;
+        };
+      };
+    };
+  };
+};
+
 type ModelPermissions = {
   kind: "ModelPermissions";
   version: string;
@@ -47,6 +73,25 @@ type TypePermissions = {
         allowedFields: string[];
       };
     }[];
+  };
+};
+
+const ensureModel = (obj: Partial<Model>) => {
+  if (!obj?.definition?.graphql) {
+    throw new Error("Malformed Model");
+  }
+  // Skip if aggregations already disabled
+  if (!obj.definition?.graphql?.aggregate) {
+    return { ...obj };
+  }
+
+  // Remove all aggregations
+  return {
+    ...obj,
+    definition: {
+      ...obj.definition,
+      graphql: _.omit(obj.definition.graphql, ["aggregate"]),
+    },
   };
 };
 
@@ -113,7 +158,9 @@ const ensureTypePermissions = (obj: Partial<TypePermissions>) => {
 };
 
 const ensureDocument = (obj: any) => {
-  if (obj?.kind === "ModelPermissions") {
+  if (obj?.kind === "Model") {
+    return ensureModel(obj);
+  } else if (obj?.kind === "ModelPermissions") {
     return ensureModelPermissions(obj);
   } else if (obj?.kind === "TypePermissions") {
     return ensureTypePermissions(obj);
@@ -125,7 +172,7 @@ const ensureDocument = (obj: any) => {
 async function main(): Promise<void> {
   // Scan all metadata files
   //const allFiles = await fs.readdir(metadataDir, { recursive: false });
-  const allFiles = await glob(metadataGlob);
+  const allFiles = await glob(metadataGlob, { ignore: ignoredGlob });
   console.log(allFiles);
   for (const file of allFiles) {
     console.log(`Updating ${file}...`);
