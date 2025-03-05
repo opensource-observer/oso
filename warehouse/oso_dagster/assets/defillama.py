@@ -1,11 +1,10 @@
 from typing import List, Set
 
 from dlt.sources.rest_api.typing import RESTAPIConfig
-from google.cloud import bigquery
+from ossdirectory import fetch_data
 
 from ..factories import AssetFactoryResponse
 from ..factories.rest import create_rest_factory_asset
-
 
 LEGACY_DEFILLAMA_PROTOCOLS = [
     "aave",
@@ -223,20 +222,13 @@ def build_defillama_assets() -> List[AssetFactoryResponse]:
         AssetFactoryResponse: The defillama asset factory.
     """
 
-    ossd_defillama_projects_query = """
-        SELECT
-            def.url
-        FROM
-            `ossd.projects`,
-            UNNEST(defillama) AS def
-        WHERE
-            ARRAY_LENGTH(defillama) > 0
-    """
-
-    client = bigquery.Client()
+    ossd_data = fetch_data()
 
     ossd_defillama_raw_urls = [
-        row["url"] for row in client.query(ossd_defillama_projects_query)
+        value["url"]
+        for entry in ossd_data.projects
+        if entry.get("defillama")
+        for value in entry["defillama"]
     ]
 
     ossd_defillama_parsed_urls = set(
