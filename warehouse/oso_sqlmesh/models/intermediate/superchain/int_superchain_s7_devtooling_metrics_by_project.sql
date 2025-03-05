@@ -78,8 +78,8 @@ WITH trusted_developers AS (
 ), repo_metrics /* Repository metrics */ AS (
   SELECT
     repos.project_id,
-    oso.metric_name,
-    oso.amount,
+    metrics.metric_name,
+    metrics.amount,
     dev_graph.sample_date
   FROM oso.int_repositories_enriched AS repos
   CROSS JOIN (
@@ -98,8 +98,8 @@ WITH trusted_developers AS (
     ON repos.project_id = dev_graph.devtooling_project_id
   GROUP BY
     repos.project_id,
-    oso.metric_name,
-    oso.amount,
+    metrics.metric_name,
+    metrics.amount,
     dev_graph.sample_date
 ), trusted_repo_metrics AS (
   SELECT
