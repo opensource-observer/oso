@@ -1,6 +1,7 @@
 from typing import List, Set
 
 from dlt.sources.rest_api.typing import RESTAPIConfig
+from google.cloud import bigquery
 from ossdirectory import fetch_data
 
 from ..factories import AssetFactoryResponse
@@ -215,12 +216,20 @@ def build_defillama_assets() -> List[AssetFactoryResponse]:
     Creates a defillama asset factory configured to fetch defillama data
     given the current ossd projects with defillama urls.
 
-    Args:
-        cbt (CBTResource): The BigQuery resource.
-
     Returns:
         AssetFactoryResponse: The defillama asset factory.
     """
+
+    client = bigquery.Client()
+
+    op_atlas_query = """
+        SELECT
+            DISTINCT value
+        FROM
+            `opensource-observer.op_atlas.project__defi_llama_slug`
+    """
+
+    op_atlas_data = [row["value"] for row in client.query(op_atlas_query).result()]
 
     ossd_data = fetch_data()
 
@@ -235,6 +244,7 @@ def build_defillama_assets() -> List[AssetFactoryResponse]:
         extract_protocol(url) for url in ossd_defillama_raw_urls
     )
 
+    ossd_defillama_parsed_urls.update(op_atlas_data)
     ossd_defillama_parsed_urls.update(LEGACY_DEFILLAMA_PROTOCOLS)
 
     dlt_assets = create_rest_factory_asset(
