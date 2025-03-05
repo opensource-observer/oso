@@ -97,7 +97,7 @@ spec:
               periodSeconds: 15
             selectPolicy: Max
     catalogs:
-      metrics: |
+      iceberg: |
         connector.name=iceberg
         iceberg.catalog.type=rest
         iceberg.rest-catalog.uri=http://production-nessie.production-nessie.svc.cluster.local:19120/iceberg
