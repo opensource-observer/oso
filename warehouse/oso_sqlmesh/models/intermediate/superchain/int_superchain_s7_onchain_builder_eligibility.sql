@@ -38,7 +38,7 @@ WITH builder_metrics AS (
   WHERE
     block_timestamp BETWEEN @start_dt AND @end_dt
     AND CAST(block_timestamp AS DATE) >= (
-      CURRENT_DATE - INTERVAL (@lookback_days) DAY
+      CURRENT_DATE - INTERVAL @lookback_days DAY
     )
   GROUP BY
     project_id

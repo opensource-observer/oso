@@ -1,6 +1,7 @@
 import os
 
 import dotenv
+from metrics_tools.source.rewrite import LOCAL_TRINO_REWRITE_RULES
 from sqlmesh.core.config import (
     Config,
     DuckDBConnectionConfig,
@@ -42,6 +43,9 @@ config = Config(
                 concurrent_tasks=1,
                 database=os.environ.get("SQLMESH_DUCKDB_LOCAL_PATH"),
             ),
+            variables={
+                "oso_source_rewrite": LOCAL_TRINO_REWRITE_RULES,
+            },
         ),
         "trino": GatewayConfig(
             connection=TrinoConnectionConfig(

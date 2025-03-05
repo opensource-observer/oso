@@ -26,7 +26,7 @@ SELECT
   updated_at,
   CASE
     WHEN (
-      CURRENT_TIMESTAMP + INTERVAL (@lookback_days) DAY >= last_release_published
+      CURRENT_TIMESTAMP + INTERVAL @lookback_days DAY >= last_release_published
       OR num_packages_in_deps_dev > 0
       OR num_dependent_repos_in_oso > 0
     )

@@ -63,7 +63,7 @@ WITH eligible_onchain_builder_repos AS (
   WHERE
     total_commits_to_project >= @commits_threshold
     AND DATEDIFF('month', CAST(first_commit AS TIMESTAMP), CAST(last_commit AS TIMESTAMP)) >= @active_months_threshold
-    AND CAST(last_commit AS DATE) >= CURRENT_DATE - INTERVAL (@last_commit_threshold_months) MONTH
+    AND CAST(last_commit AS DATE) >= CURRENT_DATE - INTERVAL @last_commit_threshold_months MONTH
 )
 SELECT
   sample_date,

@@ -30,9 +30,9 @@ SELECT
   to_address,
   userop_sender AS sender_address,
   userop_paymaster AS paymaster_address,
-  useropevent_actualgascost::DECIMAL(38, 0) AS userop_gas_price,
-  useropevent_actualgasused::DECIMAL(38, 0) AS userop_gas_used,
-  value::DECIMAL(38, 0) AS value,
+  useropevent_actualgascost::BIGINT AS userop_gas_price,
+  useropevent_actualgasused::BIGINT AS userop_gas_used,
+  value::BIGINT AS value,
   method_id,
   @chain_name(chain) AS chain
 FROM @oso_source(
@@ -40,7 +40,7 @@ FROM @oso_source(
 )
 WHERE
   network = 'mainnet'
-  AND status = '1'
+  AND status = 1
   AND trace_type IN ('call', 'create', 'create2')
   AND call_type <> 'staticcall'
   AND useropevent_success = TRUE
