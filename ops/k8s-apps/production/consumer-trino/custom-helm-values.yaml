@@ -14,6 +14,11 @@ spec:
         value: gcp:secretmanager:production-mcs-gcs-secret/versions/latest
     serviceAccount:
       name: production-consumer-trino
+    accessControl:
+      type: properties
+      properties: |
+        access-control.name=read-only
+
     coordinator:
       resources:
         requests:
