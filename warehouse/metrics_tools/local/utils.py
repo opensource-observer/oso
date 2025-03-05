@@ -1,7 +1,10 @@
 import logging
 
 import duckdb
-from oso_dagster.assets.defillama import DEFILLAMA_PROTOCOLS, defillama_slug_to_name
+from oso_dagster.assets.defillama import (
+    LEGACY_DEFILLAMA_PROTOCOLS,
+    defillama_slug_to_name,
+)
 
 from .config import RowRestriction, TableMappingConfig, TableMappingDestination
 
@@ -80,7 +83,7 @@ TABLE_MAPPING: TableMappingConfig = {
 
 defillama_tables = {
     f"opensource-observer.defillama_tvl.{defillama_slug_to_name(slug)}": f"bigquery.defillama_tvl.{defillama_slug_to_name(slug)}"
-    for slug in DEFILLAMA_PROTOCOLS
+    for slug in LEGACY_DEFILLAMA_PROTOCOLS
 }
 TABLE_MAPPING.update(defillama_tables)
 
