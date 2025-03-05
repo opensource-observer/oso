@@ -3,8 +3,8 @@
     materialized='incremental',
     partition_by={
       "field": "block_timestamp",
-      "data_type": "timestamp",
-      "granularity": "day",
+      "data_type": "date",
+      "granularity": "day"
     },
     unique_id="transaction_hash",
     on_schema_change="append_new_columns",
@@ -28,7 +28,7 @@ select
   ) as chain
 from {{ source('optimism_superchain_raw_onchain_data', 'transactions') }}
 where
-  dt >= '2024-11-01'
+  dt >= '2024-09-01'
   and network = 'mainnet'
   and receipt_status = 1
   and gas > 0
