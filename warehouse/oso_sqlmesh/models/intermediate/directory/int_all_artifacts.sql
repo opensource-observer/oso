@@ -1,54 +1,40 @@
 MODEL (
-  name metrics.int_all_artifacts,
+  name oso.int_all_artifacts,
   description "a list of all artifacts associated with a project",
-  kind FULL,
+  kind FULL
 );
 
-{#
+/*
   Notes:
   - This will create a separate row for each artifact_type, which is de-duplicated
     in int_artifacts_by_project
   - Currently, the source and namespace for blockchain artifacts are the same.
     This may change in the future.
-#}
-
-with onchain_artifacts as (
-  select
+*/
+WITH onchain_artifacts AS (
+  SELECT
     project_id,
     artifact_id,
     artifact_source_id,
     artifact_source,
-    'DEPLOYER' as artifact_type,
+    'DEPLOYER' AS artifact_type,
     artifact_namespace,
     artifact_name,
-    artifact_name as artifact_url
-  from metrics.int_deployers_by_project
-  union all
-  select
+    artifact_name AS artifact_url
+  FROM oso.int_deployers_by_project
+  UNION ALL
+  SELECT
     project_id,
     artifact_id,
     artifact_source_id,
     artifact_source,
-    'CONTRACT' as artifact_type,
+    'CONTRACT' AS artifact_type,
     artifact_namespace,
     artifact_name,
-    artifact_name as artifact_url
-  from metrics.int_contracts_by_project
-),
-
-all_normalized_artifacts as (
-  select
-    project_id,
-    artifact_id,
-    artifact_source_id,
-    artifact_source,
-    artifact_type,
-    artifact_namespace,
-    artifact_name,
-    artifact_url
-  from metrics.int_artifacts_by_project_all_sources
-  union all
-  select
+    artifact_name AS artifact_url
+  FROM oso.int_contracts_by_project
+), all_normalized_artifacts AS (
+  SELECT
     project_id,
     artifact_id,
     artifact_source_id,
@@ -57,10 +43,20 @@ all_normalized_artifacts as (
     artifact_namespace,
     artifact_name,
     artifact_url
-  from onchain_artifacts
+  FROM oso.int_artifacts_by_project_all_sources
+  UNION ALL
+  SELECT
+    project_id,
+    artifact_id,
+    artifact_source_id,
+    artifact_source,
+    artifact_type,
+    artifact_namespace,
+    artifact_name,
+    artifact_url
+  FROM onchain_artifacts
 )
-
-select distinct
+SELECT DISTINCT
   project_id,
   artifact_id,
   artifact_source_id,
@@ -69,4 +65,4 @@ select distinct
   artifact_name,
   artifact_url,
   artifact_type
-from all_normalized_artifacts
+FROM all_normalized_artifacts

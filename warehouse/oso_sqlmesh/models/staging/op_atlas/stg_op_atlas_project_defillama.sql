@@ -1,19 +1,17 @@
 MODEL (
-  name metrics.stg_op_atlas_project_defillama,
+  name oso.stg_op_atlas_project_defillama,
   dialect trino,
-  kind FULL,
+  kind FULL
 );
 
-select
-  -- Translating op-atlas project_id to OSO project_id
-  @oso_id('OP_ATLAS', projects.id) as project_id,
-  defillama._dlt_id as artifact_source_id,
-  'DEFILLAMA' as artifact_source,
-  NULL::TEXT as artifact_namespace,
-  defillama.value as artifact_name,
-  concat('https://defillama.com/protocol/', defillama.value) as artifact_url,
-  'DEFILLAMA_PROTOCOL' as artifact_type
-from @oso_source('bigquery.op_atlas.project__defi_llama_slug') as defillama
-inner join @oso_source('bigquery.op_atlas.project') as projects
-  on defillama._dlt_parent_id = projects._dlt_id
-  
+SELECT
+  @oso_id('OP_ATLAS', projects.id) AS project_id, /* Translating op-atlas project_id to OSO project_id */
+  defillama._dlt_id AS artifact_source_id,
+  'DEFILLAMA' AS artifact_source,
+  NULL::VARCHAR AS artifact_namespace,
+  defillama.value AS artifact_name,
+  CONCAT('https://defillama.com/protocol/', defillama.value) AS artifact_url,
+  'DEFILLAMA_PROTOCOL' AS artifact_type
+FROM @oso_source('bigquery.op_atlas.project__defi_llama_slug') AS defillama
+INNER JOIN @oso_source('bigquery.op_atlas.project') AS projects
+  ON defillama._dlt_parent_id = projects._dlt_id

@@ -1,12 +1,12 @@
 MODEL (
-  name metrics.users_v1,
+  name oso.users_v1,
   kind FULL,
   tags (
     'export'
-  ),
+  )
 );
 
-select
+SELECT
   users.user_id,
   users.user_source_id,
   users.user_source,
@@ -14,4 +14,4 @@ select
   users.profile_picture_url,
   users.bio,
   users.url
-from metrics.int_users as users
+FROM oso.int_users AS users

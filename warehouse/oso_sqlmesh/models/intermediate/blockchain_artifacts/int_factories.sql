@@ -1,9 +1,9 @@
 MODEL (
-  name metrics.int_factories,
+  name oso.int_factories,
   kind VIEW
 );
 
-select
+SELECT
   block_timestamp,
   transaction_hash,
   originating_address,
@@ -11,5 +11,5 @@ select
   factory_address,
   contract_address,
   create_type,
-  UPPER(chain) as chain 
-from metrics.stg_superchain__factories
+  UPPER(chain) AS chain
+FROM oso.stg_superchain__factories

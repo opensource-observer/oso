@@ -608,9 +608,9 @@ class MetricsCalculationService:
         # { reference_table_name: actual_table_table }
 
         # The reference_table_name is something like
-        # "metrics.events_daily_to_artifact". The actual_table_name is something
+        # "oso.events_daily_to_artifact". The actual_table_name is something
         # like
-        # "sqlmesh__metrics.events_daily_to_artifact__some_system_generated_id"
+        # "sqlmesh__iceberg.events_daily_to_artifact__some_system_generated_id"
         dependent_tables_map = input.dependent_tables_map
         tables_to_export = list(dependent_tables_map.values())
 

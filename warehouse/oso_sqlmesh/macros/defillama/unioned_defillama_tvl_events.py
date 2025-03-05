@@ -10,7 +10,7 @@ def unioned_defillama_tvl_events(evaluator: MacroEvaluator):
     return exp.union(
         *[
             exp.select("*").from_(
-                f"metrics.stg__{defillama_slug_to_name(protocol)}_tvl_events"
+                f"oso.stg__{defillama_slug_to_name(protocol)}_tvl_events"
             )
             for protocol in DEFILLAMA_PROTOCOLS
         ],

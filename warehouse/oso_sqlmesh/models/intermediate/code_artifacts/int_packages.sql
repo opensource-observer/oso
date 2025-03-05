@@ -1,53 +1,53 @@
 MODEL (
-  name metrics.int_packages,
+  name oso.int_packages,
   kind FULL,
   dialect duckdb
 );
 
-with deps_dev as (
-  select
-    version as package_version,
-    upper(system) as package_artifact_source,
-    lower(name) as package_artifact_name,
-    lower(split(projectname, '/')[@array_index(0)]) as package_github_owner,
-    lower(split(projectname, '/')[@array_index(1)]) as package_github_repo
-  from @oso_source('bigquery.oso.stg_deps_dev__packages')
-),
-
-latest_versions as (
-  select
+WITH deps_dev AS (
+  SELECT
+    version AS package_version,
+    UPPER(system) AS package_artifact_source,
+    LOWER(name) AS package_artifact_name,
+    LOWER(STR_SPLIT(projectname, '/')[@array_index(0)]) AS package_github_owner,
+    LOWER(STR_SPLIT(projectname, '/')[@array_index(1)]) AS package_github_repo
+  FROM @oso_source('bigquery.oso.stg_deps_dev__packages')
+), latest_versions AS (
+  SELECT
     package_artifact_source,
     package_artifact_name,
-    package_github_owner as current_owner,
-    package_github_repo as current_repo
-  from deps_dev
-  qualify row_number() over (
-    partition by package_artifact_name, package_artifact_source
-    order by package_version desc
-  ) = 1
+    package_github_owner AS current_owner,
+    package_github_repo AS current_repo
+  FROM deps_dev
+  QUALIFY
+    ROW_NUMBER() OVER (PARTITION BY package_artifact_name, package_artifact_source ORDER BY package_version DESC) = 1
 )
-
-select
+SELECT
   deps_dev.package_artifact_source,
   deps_dev.package_artifact_name,
   deps_dev.package_version,
   deps_dev.package_github_owner,
   deps_dev.package_github_repo,
-  case
-    when deps_dev.package_artifact_source = 'CARGO' then 'RUST'
-    when deps_dev.package_artifact_source = 'NPM' then 'NPM'
-    when deps_dev.package_artifact_source = 'PYPI' then 'PIP'
-    when deps_dev.package_artifact_source = 'GO' then 'GO'
-    when deps_dev.package_artifact_source = 'MAVEN' then 'MAVEN'
-    when deps_dev.package_artifact_source = 'NUGET' then 'NUGET'
-    else 'UNKNOWN'
-  end as sbom_artifact_source,
+  CASE
+    WHEN deps_dev.package_artifact_source = 'CARGO'
+    THEN 'RUST'
+    WHEN deps_dev.package_artifact_source = 'NPM'
+    THEN 'NPM'
+    WHEN deps_dev.package_artifact_source = 'PYPI'
+    THEN 'PIP'
+    WHEN deps_dev.package_artifact_source = 'GO'
+    THEN 'GO'
+    WHEN deps_dev.package_artifact_source = 'MAVEN'
+    THEN 'MAVEN'
+    WHEN deps_dev.package_artifact_source = 'NUGET'
+    THEN 'NUGET'
+    ELSE 'UNKNOWN'
+  END AS sbom_artifact_source,
   (
     deps_dev.package_github_owner = latest_versions.current_owner
-    and deps_dev.package_github_repo = latest_versions.current_repo)
-    as is_current_owner
-from deps_dev
-left join latest_versions
-  on
-    deps_dev.package_artifact_source = latest_versions.package_artifact_source
-    and deps_dev.package_artifact_name = latest_versions.package_artifact_name
+    AND deps_dev.package_github_repo = latest_versions.current_repo
+  ) AS is_current_owner
+FROM deps_dev
+LEFT JOIN latest_versions
+  ON deps_dev.package_artifact_source = latest_versions.package_artifact_source
+  AND deps_dev.package_artifact_name = latest_versions.package_artifact_name

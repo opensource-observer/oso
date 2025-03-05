@@ -1,11 +1,11 @@
 test_events_daily_to_artifact:
   gateway: local
-  model: metrics.int_events_daily_to_artifact
+  model: oso.int_events_daily_to_artifact
   vars:
     start: 2024-01-01
     end: 2024-02-01
   inputs:
-    metrics.int_events:
+    oso.int_events:
       rows:
       - to_artifact_id: contract_0
         from_artifact_id: user_0

@@ -1,11 +1,11 @@
 MODEL (
-  name metrics.int_artifacts_by_project_in_op_atlas,
+  name oso.int_artifacts_by_project_in_op_atlas,
   kind FULL,
   dialect trino
 );
 
-with all_websites as (
-  select
+WITH all_websites AS (
+  SELECT
     project_id,
     artifact_source_id,
     artifact_source,
@@ -13,11 +13,9 @@ with all_websites as (
     artifact_name,
     artifact_url,
     artifact_type
-  from metrics.stg_op_atlas_project_website as sites
-),
-
-all_farcaster as (
-  select
+  FROM oso.stg_op_atlas_project_website AS sites
+), all_farcaster AS (
+  SELECT
     project_id,
     artifact_source_id,
     artifact_source,
@@ -25,11 +23,9 @@ all_farcaster as (
     artifact_name,
     artifact_url,
     artifact_type
-  from metrics.stg_op_atlas_project_farcaster as farcaster
-),
-
-all_twitter as (
-  select
+  FROM oso.stg_op_atlas_project_farcaster AS farcaster
+), all_twitter AS (
+  SELECT
     project_id,
     artifact_source_id,
     artifact_source,
@@ -37,11 +33,9 @@ all_twitter as (
     artifact_name,
     artifact_url,
     artifact_type
-  from metrics.stg_op_atlas_project_twitter as twitter 
-),
-
-all_repository as (
-  select
+  FROM oso.stg_op_atlas_project_twitter AS twitter
+), all_repository AS (
+  SELECT
     project_id,
     artifact_source_id,
     artifact_source,
@@ -49,11 +43,9 @@ all_repository as (
     artifact_name,
     artifact_url,
     artifact_type
-  from metrics.stg_op_atlas_project_repository
-),
-
-all_contracts as (
-  select
+  FROM oso.stg_op_atlas_project_repository
+), all_contracts AS (
+  SELECT
     project_id,
     artifact_source_id,
     artifact_source,
@@ -61,11 +53,9 @@ all_contracts as (
     artifact_name,
     artifact_url,
     artifact_type
-  from metrics.stg_op_atlas_project_contract
-),
-
-all_deployers as (
-  select distinct
+  FROM oso.stg_op_atlas_project_contract
+), all_deployers AS (
+  SELECT DISTINCT
     project_id,
     artifact_source_id,
     artifact_source,
@@ -73,11 +63,9 @@ all_deployers as (
     artifact_name,
     artifact_url,
     artifact_type
-  from metrics.stg_op_atlas_project_deployer
-),
-
-all_defillama as (
-  select
+  FROM oso.stg_op_atlas_project_deployer
+), all_defillama AS (
+  SELECT
     project_id,
     artifact_source_id,
     artifact_source,
@@ -85,44 +73,53 @@ all_defillama as (
     artifact_name,
     artifact_url,
     artifact_type
-  from metrics.stg_op_atlas_project_defillama
-),
-
-all_artifacts as (
-  select * from all_websites
-  union all
-  select * from all_farcaster
-  union all
-  select * from all_twitter
-  union all
-  select * from all_repository
-  union all
-  select * from all_contracts
-  union all
-  select * from all_deployers
-  union all
-  select * from all_defillama
-),
-
-all_normalized_artifacts as (
-  select distinct
+  FROM oso.stg_op_atlas_project_defillama
+), all_artifacts AS (
+  SELECT
+    *
+  FROM all_websites
+  UNION ALL
+  SELECT
+    *
+  FROM all_farcaster
+  UNION ALL
+  SELECT
+    *
+  FROM all_twitter
+  UNION ALL
+  SELECT
+    *
+  FROM all_repository
+  UNION ALL
+  SELECT
+    *
+  FROM all_contracts
+  UNION ALL
+  SELECT
+    *
+  FROM all_deployers
+  UNION ALL
+  SELECT
+    *
+  FROM all_defillama
+), all_normalized_artifacts AS (
+  SELECT DISTINCT
     project_id,
-    LOWER(artifact_source_id) as artifact_source_id,
-    UPPER(artifact_source) as artifact_source,
-    LOWER(artifact_namespace) as artifact_namespace,
-    LOWER(artifact_name) as artifact_name,
-    LOWER(artifact_url) as artifact_url,
-    UPPER(artifact_type) as artifact_type
-  from all_artifacts
+    LOWER(artifact_source_id) AS artifact_source_id,
+    UPPER(artifact_source) AS artifact_source,
+    LOWER(artifact_namespace) AS artifact_namespace,
+    LOWER(artifact_name) AS artifact_name,
+    LOWER(artifact_url) AS artifact_url,
+    UPPER(artifact_type) AS artifact_type
+  FROM all_artifacts
 )
-
-select
+SELECT
   project_id,
-  @oso_id(artifact_source, artifact_namespace, artifact_name) as artifact_id,
+  @oso_id(artifact_source, artifact_namespace, artifact_name) AS artifact_id,
   artifact_source_id,
   artifact_source,
   artifact_namespace,
   artifact_name,
   artifact_url,
   artifact_type
-from all_normalized_artifacts
+FROM all_normalized_artifacts

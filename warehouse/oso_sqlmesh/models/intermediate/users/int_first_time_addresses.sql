@@ -1,9 +1,5 @@
-MODEL (
-  name metrics.int_first_time_addresses,
-  kind FULL,
-  enabled false,
-);
+model(name oso.int_first_time_addresses, kind full, enabled false,)
+;
 
-select
-  *
-from metrics.stg_superchain__first_time_addresses
+select *
+from oso.stg_superchain__first_time_addresses

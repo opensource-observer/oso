@@ -1,11 +1,11 @@
 MODEL (
-  name metrics.int_artifacts_by_project_all_sources,
+  name oso.int_artifacts_by_project_all_sources,
   kind FULL,
   dialect trino
 );
 
-with unioned as (
-  select
+WITH unioned AS (
+  SELECT
     project_id,
     artifact_id,
     artifact_source_id,
@@ -14,9 +14,9 @@ with unioned as (
     artifact_namespace,
     artifact_name,
     artifact_url
-  from metrics.int_artifacts_by_project_in_ossd
-  union all
-  select
+  FROM oso.int_artifacts_by_project_in_ossd
+  UNION ALL
+  SELECT
     project_id,
     artifact_id,
     artifact_source_id,
@@ -25,14 +25,13 @@ with unioned as (
     artifact_namespace,
     artifact_name,
     artifact_url
-  from metrics.int_artifacts_by_project_in_op_atlas
+  FROM oso.int_artifacts_by_project_in_op_atlas
 )
-
-select distinct
+SELECT DISTINCT
   projects.project_source,
   projects.project_namespace,
   projects.project_name,
   unioned.*
-from unioned
-join metrics.int_projects as projects
-  on unioned.project_id = projects.project_id
+FROM unioned
+JOIN oso.int_projects AS projects
+  ON unioned.project_id = projects.project_id

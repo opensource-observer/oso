@@ -1,9 +1,9 @@
 MODEL (
-  name metrics.repositories_v0,
+  name oso.repositories_v0,
   kind FULL
 );
 
-select
+SELECT
   project_id,
   artifact_id,
   artifact_source_id,
@@ -21,4 +21,4 @@ select
   "language",
   created_at,
   updated_at
-from metrics.int_repositories
+FROM oso.int_repositories

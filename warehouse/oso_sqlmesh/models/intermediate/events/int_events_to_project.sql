@@ -1,5 +1,5 @@
 MODEL (
-  name metrics.int_events_to_project,
+  name oso.int_events_to_project,
   description 'All events to a project',
   kind INCREMENTAL_BY_TIME_RANGE (
     time_column time,
@@ -12,7 +12,7 @@ MODEL (
   grain (time, event_type, event_source, from_artifact_id, to_artifact_id)
 );
 
-select
+SELECT
   artifacts.project_id,
   events.from_artifact_id,
   events.to_artifact_id,
@@ -20,9 +20,8 @@ select
   events.event_source,
   events.event_type,
   events.amount
-from metrics.int_events events
-inner join metrics.int_artifacts_by_project artifacts
-  on
-    events.to_artifact_id
-    = artifacts.artifact_id
-where events.time between @start_dt and @end_dt
+FROM oso.int_events AS events
+INNER JOIN oso.int_artifacts_by_project AS artifacts
+  ON events.to_artifact_id = artifacts.artifact_id
+WHERE
+  events.time BETWEEN @start_dt AND @end_dt

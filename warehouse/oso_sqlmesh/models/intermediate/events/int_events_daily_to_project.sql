@@ -1,5 +1,5 @@
 MODEL (
-  name metrics.int_events_daily_to_project,
+  name oso.int_events_daily_to_project,
   description 'All events to a project, bucketed by day',
   kind INCREMENTAL_BY_TIME_RANGE (
     time_column bucket_day,
@@ -12,20 +12,21 @@ MODEL (
   grain (bucket_day, event_type, event_source, from_artifact_id, to_artifact_id)
 );
 
-select
+SELECT
   project_id,
   from_artifact_id,
   to_artifact_id,
   event_source,
   event_type,
-  TIMESTAMP_TRUNC(time, day) as bucket_day,
-  SUM(amount) as amount
-from metrics.int_events_to_project
-where time between @start_dt and @end_dt
-group by
+  DATE_TRUNC('DAY', time) AS bucket_day,
+  SUM(amount) AS amount
+FROM oso.int_events_to_project
+WHERE
+  time BETWEEN @start_dt AND @end_dt
+GROUP BY
   project_id,
   from_artifact_id,
   to_artifact_id,
   event_source,
   event_type,
-  TIMESTAMP_TRUNC(time, day)
+  DATE_TRUNC('DAY', time)

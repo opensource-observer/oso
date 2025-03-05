@@ -1,10 +1,10 @@
 MODEL (
-  name metrics.key_metrics_by_artifact_v0,
+  name oso.key_metrics_by_artifact_v0,
   kind FULL,
   partitioned_by sample_date,
   tags (
-  'export'
-  ),
+    'export'
+  )
 );
 
 WITH key_metrics_by_artifact_v0_no_casting AS (
@@ -15,9 +15,8 @@ WITH key_metrics_by_artifact_v0_no_casting AS (
     amount,
     metric,
     NULL AS unit
-  FROM metrics.key_metrics_to_artifact
+  FROM oso.key_metrics_to_artifact
 )
-
 SELECT
   metric_id::TEXT,
   artifact_id::TEXT,

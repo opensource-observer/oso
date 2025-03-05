@@ -1,5 +1,5 @@
 MODEL (
-  name metrics.int_events_daily_to_artifact,
+  name oso.int_events_daily_to_artifact,
   kind INCREMENTAL_BY_TIME_RANGE (
     time_column bucket_day,
     batch_size 365,
@@ -19,7 +19,7 @@ WITH events AS (
     event_type,
     time,
     amount
-  FROM metrics.int_events
+  FROM oso.int_events
   WHERE
     time::DATE BETWEEN STRPTIME(@start_ds, '%Y-%m-%d')::DATE::DATE AND STRPTIME(@end_ds, '%Y-%m-%d')::DATE::DATE
 )

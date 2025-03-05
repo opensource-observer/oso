@@ -1,14 +1,14 @@
 MODEL (
-  name metrics.int_collections,
+  name oso.int_collections,
   description 'All collections',
-  kind FULL,
+  kind FULL
 );
 
-select
+SELECT
   collections.collection_id,
   collections.collection_source,
   collections.collection_namespace,
   collections.collection_name,
   collections.display_name,
   collections.description
-from metrics.stg_ossd__current_collections as collections
+FROM oso.stg_ossd__current_collections AS collections

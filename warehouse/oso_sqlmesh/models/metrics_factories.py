@@ -10,7 +10,7 @@ load_dotenv()
 
 timeseries_metrics(
     start=os.environ.get("SQLMESH_TIMESERIES_METRICS_START", "2015-01-01"),
-    catalog="metrics",
+    schema="oso",
     model_prefix="timeseries",
     timeseries_sources=[
         "int_events_daily_to_artifact",
@@ -26,7 +26,7 @@ timeseries_metrics(
         # monthly by getting the count of the month.
         # Additionally this will also create this along the dimensions (entity_types) of
         # project/collection so the resulting models will be named as follows
-        # `metrics.timeseries_stars_to_{entity_type}_{time_aggregation}`
+        # `oso.timeseries_stars_to_{entity_type}_{time_aggregation}`
         "stars": MetricQueryDef(
             ref="code/stars.sql",
             time_aggregations=["daily", "weekly", "monthly"],
@@ -125,7 +125,7 @@ timeseries_metrics(
         # The unit and the window are used to pass in variables to the query. So it's
         # up to the query to actually query the correct window.
         # The resultant models are named as such
-        # `metrics.timeseries_active_days_to_{entity_type}_over_{window}_{unit}`
+        # `oso.timeseries_active_days_to_{entity_type}_over_{window}_{unit}`
         "developer_active_days": MetricQueryDef(
             ref="code/active_days.sql",
             vars={

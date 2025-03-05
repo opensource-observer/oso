@@ -1,33 +1,32 @@
 MODEL (
-  name metrics.int_artifacts_history,
+  name oso.int_artifacts_history,
   description 'Currently this only captures the history of git_users. It does not capture git_repo naming histories.',
-  kind FULL,
+  kind FULL
 );
 
-with user_events as (
-  {# `from` actor artifacts derived from all events #}
-  select
-    event_source as artifact_source,
-    from_artifact_source_id as artifact_source_id,
-    from_artifact_type as artifact_type,
-    from_artifact_namespace as artifact_namespace,
-    from_artifact_name as artifact_name,
-    '' as artifact_url,
+WITH user_events AS (
+  /* `from` actor artifacts derived from all events */
+  SELECT
+    event_source AS artifact_source,
+    from_artifact_source_id AS artifact_source_id,
+    from_artifact_type AS artifact_type,
+    from_artifact_namespace AS artifact_namespace,
+    from_artifact_name AS artifact_name,
+    '' AS artifact_url,
     time
-  from metrics.int_events
+  FROM oso.int_events
 )
-
-select
-  LOWER(artifact_source_id) as artifact_source_id,
-  UPPER(artifact_source) as artifact_source,
-  UPPER(artifact_type) as artifact_type,
-  LOWER(artifact_namespace) as artifact_namespace,
-  LOWER(artifact_url) as artifact_url,
-  LOWER(artifact_name) as artifact_name,
-  MAX(time) as last_used,
-  MIN(time) as first_used
-from user_events
-group by
+SELECT
+  LOWER(artifact_source_id) AS artifact_source_id,
+  UPPER(artifact_source) AS artifact_source,
+  UPPER(artifact_type) AS artifact_type,
+  LOWER(artifact_namespace) AS artifact_namespace,
+  LOWER(artifact_url) AS artifact_url,
+  LOWER(artifact_name) AS artifact_name,
+  MAX(time) AS last_used,
+  MIN(time) AS first_used
+FROM user_events
+GROUP BY
   artifact_source_id,
   artifact_source,
   artifact_type,

@@ -412,7 +412,7 @@ class DailyTimeseriesRollingWindowOptions(t.TypedDict):
 
 class TimeseriesMetricsOptions(t.TypedDict):
     model_prefix: str
-    catalog: str
+    schema: str
     metric_queries: t.Dict[str, MetricQueryDef]
     default_dialect: t.NotRequired[str]
     start: TimeLike

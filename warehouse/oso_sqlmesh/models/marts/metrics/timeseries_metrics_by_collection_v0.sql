@@ -1,5 +1,5 @@
 MODEL (
-  name metrics.timeseries_metrics_by_collection_v0,
+  name oso.timeseries_metrics_by_collection_v0,
   kind FULL,
   partitioned_by sample_date,
   tags (
@@ -14,7 +14,7 @@ WITH all_timeseries_metrics_by_collection AS (
     metrics_sample_date AS sample_date,
     amount AS amount,
     NULL AS unit
-  FROM metrics.timeseries_metrics_to_collection
+  FROM oso.timeseries_metrics_to_collection
 )
 SELECT
   metric_id::TEXT,

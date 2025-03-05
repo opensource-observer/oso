@@ -1,12 +1,12 @@
 MODEL (
-  name metrics.stg_ossd__current_repositories,
+  name oso.stg_ossd__current_repositories,
   description 'The most recent view of repositories from the ossd repositories dagster source',
   dialect trino,
-  kind FULL,
+  kind FULL
 );
 
-with ranked_repositories as (
-  select
+WITH ranked_repositories AS (
+  SELECT
     node_id,
     id,
     url,
@@ -24,13 +24,10 @@ with ranked_repositories as (
     created_at,
     updated_at,
     ingestion_time,
-    ROW_NUMBER()
-      over (partition by node_id order by ingestion_time desc, id asc)
-      as row_num
-  from @oso_source('bigquery.ossd.repositories')
+    ROW_NUMBER() OVER (PARTITION BY node_id ORDER BY ingestion_time DESC, id ASC) AS row_num
+  FROM @oso_source('bigquery.ossd.repositories')
 )
-
-select
+SELECT
   node_id,
   id,
   url,
@@ -48,5 +45,6 @@ select
   created_at,
   updated_at,
   ingestion_time
-from ranked_repositories
-where row_num = 1
+FROM ranked_repositories
+WHERE
+  row_num = 1

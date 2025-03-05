@@ -1,5 +1,5 @@
 MODEL (
-  name metrics.timeseries_events_by_artifact_v0,
+  name oso.timeseries_events_by_artifact_v0,
   kind INCREMENTAL_BY_TIME_RANGE (
     time_column time,
     batch_size 365,
@@ -11,7 +11,7 @@ MODEL (
   partitioned_by (DAY("time"), "event_type")
 );
 
-select
+SELECT
   time,
   to_artifact_id,
   from_artifact_id,
@@ -19,5 +19,6 @@ select
   event_source_id,
   event_source,
   amount
-from metrics.int_events
-where time between @start_dt and @end_dt
+FROM oso.int_events
+WHERE
+  time BETWEEN @start_dt AND @end_dt

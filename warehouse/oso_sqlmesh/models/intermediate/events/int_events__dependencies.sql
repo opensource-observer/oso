@@ -1,5 +1,5 @@
 MODEL (
-  name metrics.int_events__dependencies,
+  name oso.int_events__dependencies,
   dialect trino,
   kind INCREMENTAL_BY_TIME_RANGE (
     time_column time,
@@ -14,77 +14,71 @@ MODEL (
 
 @DEF(event_source_name, 'DEPS_DEV');
 
-with artifacts as (
-  select artifact_name
-  from metrics.int_all_artifacts
-  where artifact_source = 'NPM'
-),
-
-snapshots as (
-  select
-    SnapshotAt as time,
-    System as from_artifact_type,
-    Name as from_artifact_name,
-    Version as from_artifact_version,
-    Dependency.Name as to_artifact_name,
-    Dependency.System as to_artifact_type,
-    Dependency.Version as to_artifact_version,
-    LAG(Dependency.Name) over (
-      partition by System, Name, Dependency.Name, Version, Dependency.Version
-      order by SnapshotAt
-    ) as previous_to_artifact_name
-  from @oso_source('bigquery.oso.stg_deps_dev__dependencies')
-  where
-    MinimumDepth = 1
-    and Dependency.Name in (select artifact_name from artifacts)
-    -- We only need to lag over a short period because snapshots are duplicated
-    -- data. Using 60 to ensure we capture the previous snapshot.
-    and SnapshotAt between @start_date - INTERVAL 60 DAY and @end_date
-),
-
-intermediate as (
-  select
+WITH artifacts AS (
+  SELECT
+    artifact_name
+  FROM oso.int_all_artifacts
+  WHERE
+    artifact_source = 'NPM'
+), snapshots AS (
+  SELECT
+    snapshotat AS time,
+    system AS from_artifact_type,
+    name AS from_artifact_name,
+    version AS from_artifact_version,
+    dependency.name AS to_artifact_name,
+    dependency.system AS to_artifact_type,
+    dependency.version AS to_artifact_version,
+    LAG(dependency.name) OVER (PARTITION BY system, name, dependency.name, version, dependency.version ORDER BY snapshotat) AS previous_to_artifact_name
+  FROM @oso_source('bigquery.oso.stg_deps_dev__dependencies')
+  WHERE
+    minimumdepth = 1
+    AND dependency.name IN (
+      SELECT
+        artifact_name
+      FROM artifacts
+    )
+    AND /* We only need to lag over a short period because snapshots are duplicated */ /* data. Using 60 to ensure we capture the previous snapshot. */ snapshotat BETWEEN @start_date - INTERVAL '60' DAY AND @end_date
+), intermediate AS (
+  SELECT
     time,
-    case
-      when previous_to_artifact_name is null then 'ADD_DEPENDENCY'
-      when
-        to_artifact_name is not null and to_artifact_name <> previous_to_artifact_name
-        then 'REMOVE_DEPENDENCY'
-      else 'NO_CHANGE'
-    end as event_type,
-    @event_source_name as event_source,
-    @deps_parse_name(to_artifact_type, to_artifact_name) as to_artifact_name,
-    @deps_parse_namespace(to_artifact_type, to_artifact_name) as to_artifact_namespace,
+    CASE
+      WHEN previous_to_artifact_name IS NULL
+      THEN 'ADD_DEPENDENCY'
+      WHEN NOT to_artifact_name IS NULL AND to_artifact_name <> previous_to_artifact_name
+      THEN 'REMOVE_DEPENDENCY'
+      ELSE 'NO_CHANGE'
+    END AS event_type,
+    @event_source_name AS event_source,
+    @deps_parse_name(to_artifact_type, to_artifact_name) AS to_artifact_name,
+    @deps_parse_namespace(to_artifact_type, to_artifact_name) AS to_artifact_namespace,
     to_artifact_type,
-    @deps_parse_name(from_artifact_type, from_artifact_name) as from_artifact_name,
-    @deps_parse_namespace(from_artifact_type, from_artifact_name) as from_artifact_namespace,
+    @deps_parse_name(from_artifact_type, from_artifact_name) AS from_artifact_name,
+    @deps_parse_namespace(from_artifact_type, from_artifact_name) AS from_artifact_namespace,
     from_artifact_type,
-    1.0 as amount
-  from snapshots
-),
-
-artifact_ids as (
-  select
+    1.0 AS amount
+  FROM snapshots
+), artifact_ids AS (
+  SELECT
     time,
     event_type,
     event_source,
-    @oso_id(event_source, to_artifact_namespace, to_artifact_name) as to_artifact_id,
+    @oso_id(event_source, to_artifact_namespace, to_artifact_name) AS to_artifact_id,
     to_artifact_name,
     to_artifact_namespace,
     to_artifact_type,
-    @oso_id(event_source, to_artifact_type) as to_artifact_source_id,
-    @oso_id(event_source, from_artifact_namespace, from_artifact_name) as from_artifact_id,
+    @oso_id(event_source, to_artifact_type) AS to_artifact_source_id,
+    @oso_id(event_source, from_artifact_namespace, from_artifact_name) AS from_artifact_id,
     from_artifact_name,
     from_artifact_namespace,
     from_artifact_type,
-    @oso_id(event_source, from_artifact_type) as from_artifact_source_id,
+    @oso_id(event_source, from_artifact_type) AS from_artifact_source_id,
     amount
-  from intermediate
-  where event_type <> 'NO_CHANGE'
-),
-
-changes as (
-  select
+  FROM intermediate
+  WHERE
+    event_type <> 'NO_CHANGE'
+), changes AS (
+  SELECT
     time,
     event_type,
     event_source,
@@ -107,24 +101,23 @@ changes as (
       from_artifact_id,
       from_artifact_type,
       event_type
-    ) as event_source_id
-  from artifact_ids
+    ) AS event_source_id
+  FROM artifact_ids
 )
-
-select
+SELECT
   time,
   to_artifact_id,
   from_artifact_id,
-  UPPER(event_type) as event_type,
-  CAST(event_source_id as STRING) as event_source_id,
-  UPPER(event_source) as event_source,
-  LOWER(to_artifact_name) as to_artifact_name,
-  LOWER(to_artifact_namespace) as to_artifact_namespace,
-  UPPER(to_artifact_type) as to_artifact_type,
-  LOWER(to_artifact_source_id) as to_artifact_source_id,
-  LOWER(from_artifact_name) as from_artifact_name,
-  LOWER(from_artifact_namespace) as from_artifact_namespace,
-  UPPER(from_artifact_type) as from_artifact_type,
-  LOWER(from_artifact_source_id) as from_artifact_source_id,
-  CAST(amount as DOUBLE) as amount
-from changes
+  UPPER(event_type) AS event_type,
+  event_source_id::VARCHAR AS event_source_id,
+  UPPER(event_source) AS event_source,
+  LOWER(to_artifact_name) AS to_artifact_name,
+  LOWER(to_artifact_namespace) AS to_artifact_namespace,
+  UPPER(to_artifact_type) AS to_artifact_type,
+  LOWER(to_artifact_source_id) AS to_artifact_source_id,
+  LOWER(from_artifact_name) AS from_artifact_name,
+  LOWER(from_artifact_namespace) AS from_artifact_namespace,
+  UPPER(from_artifact_type) AS from_artifact_type,
+  LOWER(from_artifact_source_id) AS from_artifact_source_id,
+  amount::DOUBLE AS amount
+FROM changes

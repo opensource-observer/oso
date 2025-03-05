@@ -1,9 +1,9 @@
 MODEL (
-  name metrics.int_artifacts_by_project,
+  name oso.int_artifacts_by_project,
   kind FULL
 );
 
-select distinct
+SELECT DISTINCT
   artifacts.artifact_id,
   artifacts.artifact_source_id,
   artifacts.artifact_source,
@@ -14,7 +14,8 @@ select distinct
   projects.project_source,
   projects.project_namespace,
   projects.project_name
-from metrics.int_all_artifacts as artifacts
-left join metrics.int_projects as projects
-  on artifacts.project_id = projects.project_id
-where artifacts.project_id is not null
+FROM oso.int_all_artifacts AS artifacts
+LEFT JOIN oso.int_projects AS projects
+  ON artifacts.project_id = projects.project_id
+WHERE
+  NOT artifacts.project_id IS NULL

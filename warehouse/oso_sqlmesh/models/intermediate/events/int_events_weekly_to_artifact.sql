@@ -1,5 +1,5 @@
 MODEL (
-  name metrics.int_events_weekly_to_artifact,
+  name oso.int_events_weekly_to_artifact,
   kind INCREMENTAL_BY_TIME_RANGE (
     time_column bucket_week,
     batch_size 365,
@@ -12,14 +12,15 @@ MODEL (
 );
 
 SELECT
-  date_trunc('week', bucket_day) as bucket_week,
+  DATE_TRUNC('WEEK', bucket_day) AS bucket_week,
   to_artifact_id,
   from_artifact_id,
   event_source,
   event_type,
-  SUM(amount),
-FROM metrics.int_events_daily_to_artifact
-WHERE bucket_day between @start_date AND @end_date
+  SUM(amount)
+FROM oso.int_events_daily_to_artifact
+WHERE
+  bucket_day BETWEEN @start_date AND @end_date
 GROUP BY
   1,
   from_artifact_id,

@@ -1,7 +1,7 @@
 
 test_stg_op_atlas_project_repository:
   gateway: local
-  model: metrics.stg_op_atlas_project_repository
+  model: oso.stg_op_atlas_project_repository
   vars:
     start: 2024-01-01
     end: 2024-02-01

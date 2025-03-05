@@ -1,5 +1,5 @@
 MODEL (
-  name metrics.int_superchain_traces_txs_joined,
+  name oso.int_superchain_traces_txs_joined,
   description 'Traces joined on transactions (by hash and chain)',
   kind INCREMENTAL_BY_TIME_RANGE (
     time_column block_timestamp,
@@ -24,21 +24,21 @@ MODEL (
   )
 );
 
-select
+SELECT
   transactions.block_timestamp,
-  transactions.chain as chain,
+  transactions.chain AS chain,
   transactions.transaction_hash,
-  transactions.from_address as from_address_tx,
-  transactions.to_address as to_address_tx,
-  traces.from_address as from_address_trace,
-  traces.to_address as to_address_trace,
-  transactions.gas_used as gas_used_tx,
-  traces.gas_used as gas_used_trace,
-  transactions.gas_price as gas_price_tx  
-from metrics.stg_superchain__transactions as transactions
-left join metrics.stg_superchain__traces as traces
-  on transactions.transaction_hash = traces.transaction_hash
-  and transactions.chain = traces.chain
-where 
-  transactions.block_timestamp between @start_dt and @end_dt
-  and traces.block_timestamp between @start_dt and @end_dt
+  transactions.from_address AS from_address_tx,
+  transactions.to_address AS to_address_tx,
+  traces.from_address AS from_address_trace,
+  traces.to_address AS to_address_trace,
+  transactions.gas_used AS gas_used_tx,
+  traces.gas_used AS gas_used_trace,
+  transactions.gas_price AS gas_price_tx
+FROM oso.stg_superchain__transactions AS transactions
+LEFT JOIN oso.stg_superchain__traces AS traces
+  ON transactions.transaction_hash = traces.transaction_hash
+  AND transactions.chain = traces.chain
+WHERE
+  transactions.block_timestamp BETWEEN @start_dt AND @end_dt
+  AND traces.block_timestamp BETWEEN @start_dt AND @end_dt

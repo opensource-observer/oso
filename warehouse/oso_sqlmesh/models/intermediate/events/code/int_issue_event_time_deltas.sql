@@ -1,6 +1,6 @@
 /* Model that records the delta (in seconds) since the creation of the issue or */ /* pr. */
 MODEL (
-  name metrics.int_issue_event_time_deltas,
+  name oso.int_issue_event_time_deltas,
   kind INCREMENTAL_BY_TIME_RANGE (
     time_column time,
     batch_size 365,
@@ -35,5 +35,6 @@ SELECT
     ELSE DATE_DIFF('SECOND', closed_at, "time")
   END::DOUBLE AS closed_delta,
   comments::DOUBLE
-FROM metrics.int_events_aux_issues
-WHERE "time" BETWEEN @start_dt AND @end_dt
+FROM oso.int_events_aux_issues
+WHERE
+  "time" BETWEEN @start_dt AND @end_dt

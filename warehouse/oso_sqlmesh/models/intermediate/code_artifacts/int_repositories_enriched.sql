@@ -1,37 +1,34 @@
 MODEL (
-  name metrics.int_repositories_enriched,
+  name oso.int_repositories_enriched,
   description 'All repositories enriched with release and package data',
-  kind FULL,
+  kind FULL
 );
 
-with releases as (
-  select
-    artifact_id as repo_artifact_id,
+WITH releases AS (
+  SELECT
+    artifact_id AS repo_artifact_id,
     last_release_published
-  from metrics.int_latest_release_by_repo
-),
-
-packages as (
-  select distinct
+  FROM oso.int_latest_release_by_repo
+), packages AS (
+  SELECT DISTINCT
     package_github_owner,
     package_github_repo,
-    count(distinct package_artifact_name) as num_packages_in_deps_dev
-  from metrics.int_packages
-  where is_current_owner = true
-  group by
+    COUNT(DISTINCT package_artifact_name) AS num_packages_in_deps_dev
+  FROM oso.int_packages
+  WHERE
+    is_current_owner = TRUE
+  GROUP BY
     package_github_owner,
     package_github_repo
-),
-
-deps as (
-  select
+), deps AS (
+  SELECT
     dependency_artifact_id,
-    count(distinct dependent_artifact_id) as num_dependent_repos_in_oso
-  from metrics.int_code_dependencies
-  group by dependency_artifact_id
+    COUNT(DISTINCT dependent_artifact_id) AS num_dependent_repos_in_oso
+  FROM oso.int_code_dependencies
+  GROUP BY
+    dependency_artifact_id
 )
-
-select distinct
+SELECT DISTINCT
   repos.project_id,
   repos.artifact_id,
   repos.artifact_namespace,
@@ -46,14 +43,13 @@ select distinct
   repos.created_at,
   repos.updated_at,
   releases.last_release_published,
-  coalesce(packages.num_packages_in_deps_dev, 0) as num_packages_in_deps_dev,
-  coalesce(deps.num_dependent_repos_in_oso, 0) as num_dependent_repos_in_oso
-from metrics.int_repositories as repos
-left join releases
-  on repos.artifact_id = releases.repo_artifact_id
-left join packages
-  on
-    repos.artifact_namespace = packages.package_github_owner
-    and repos.artifact_name = packages.package_github_repo
-left join deps
-  on repos.artifact_id = deps.dependency_artifact_id
+  COALESCE(packages.num_packages_in_deps_dev, 0) AS num_packages_in_deps_dev,
+  COALESCE(deps.num_dependent_repos_in_oso, 0) AS num_dependent_repos_in_oso
+FROM oso.int_repositories AS repos
+LEFT JOIN releases
+  ON repos.artifact_id = releases.repo_artifact_id
+LEFT JOIN packages
+  ON repos.artifact_namespace = packages.package_github_owner
+  AND repos.artifact_name = packages.package_github_repo
+LEFT JOIN deps
+  ON repos.artifact_id = deps.dependency_artifact_id

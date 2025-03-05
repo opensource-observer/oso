@@ -123,9 +123,9 @@ class TimeseriesMetrics:
         self._rendered_queries: t.Dict[str, MetricQueryConfig] = {}
 
     @property
-    def catalog(self):
-        """The catalog (sometimes db name) to use for rendered queries"""
-        return self._raw_options["catalog"]
+    def schema(self):
+        """The schema (sometimes db name) to use for rendered queries"""
+        return self._raw_options["schema"]
 
     def generate_queries(self):
         if self._rendered:
@@ -134,7 +134,7 @@ class TimeseriesMetrics:
         queries: t.Dict[str, MetricQueryConfig] = {}
         for query in self._metrics_queries:
             queries.update(
-                self._generate_metrics_queries(query, self._peer_table_map, "metrics")
+                self._generate_metrics_queries(query, self._peer_table_map, self.schema)
             )
         self._rendered_queries = queries
         self._rendered = True
@@ -255,7 +255,7 @@ class TimeseriesMetrics:
                     db_name = table.db.this
                 table_name = table.this.this
 
-                if db_name != "metrics":
+                if db_name != self.schema:
                     continue
 
                 parents.add(table_name)
@@ -330,13 +330,13 @@ class TimeseriesMetrics:
                 override_module_path=override_module_path,
                 override_path=override_path,
                 locals=dict(
-                    db=self.catalog,
+                    db=self.schema,
                     tables=tables,
                     columns=list(
                         constants.METRICS_COLUMNS_BY_ENTITY[entity_type].keys()
                     ),
                 ),
-                name=f"metrics.timeseries_metrics_to_{entity_type}",
+                name=f"oso.timeseries_metrics_to_{entity_type}",
                 is_sql=True,
                 kind="VIEW",
                 dialect="clickhouse",
@@ -357,13 +357,13 @@ class TimeseriesMetrics:
                 override_module_path=override_module_path,
                 override_path=override_path,
                 locals=dict(
-                    db=self.catalog,
+                    db=self.schema,
                     tables=tables,
                     columns=list(
                         constants.METRICS_COLUMNS_BY_ENTITY[entity_type].keys()
                     ),
                 ),
-                name=f"metrics.key_metrics_to_{entity_type}",
+                name=f"oso.key_metrics_to_{entity_type}",
                 is_sql=True,
                 kind="VIEW",
                 dialect="clickhouse",
@@ -391,7 +391,7 @@ class TimeseriesMetrics:
             transformed_metadata[metadata_tuple].append(table)
 
         metadata_depends_on = functools.reduce(
-            lambda x, y: x.union({f"metrics.metrics_metadata_{ident}" for ident in y}),
+            lambda x, y: x.union({f"oso.metrics_metadata_{ident}" for ident in y}),
             transformed_metadata.values(),
             set(),
         )
@@ -409,7 +409,7 @@ class TimeseriesMetrics:
                     "metric": metric_key,
                     "metadata": asdict(metric_value.metadata),
                 },
-                name=f"metrics.metrics_metadata_{metric_key}",
+                name=f"oso.metrics_metadata_{metric_key}",
                 is_sql=True,
                 kind="FULL",
                 dialect="clickhouse",
@@ -423,7 +423,7 @@ class TimeseriesMetrics:
             override_module_path=override_module_path,
             override_path=override_path,
             locals={},
-            name="metrics.metrics_metadata",
+            name="oso.metrics_metadata",
             is_sql=True,
             kind="FULL",
             dialect="clickhouse",
@@ -466,7 +466,7 @@ class TimeseriesMetrics:
 
         depends_on = set()
         for dep in dependencies:
-            depends_on.add(f"{self.catalog}.{dep}")
+            depends_on.add(f"{self.schema}.{dep}")
 
         query = query_config["query"]
 
@@ -499,7 +499,7 @@ class TimeseriesMetrics:
             os.path.dirname(inspect.getfile(generated_rolling_query_proxy))
         )
         return MacroOverridingModel(
-            name=f"{self.catalog}.{query_config['table_name']}",
+            name=f"{self.schema}.{query_config['table_name']}",
             is_sql=False,
             depends_on=depends_on,
             columns=columns,
@@ -568,7 +568,7 @@ class TimeseriesMetrics:
         override_path = Path(inspect.getfile(generated_query))
         override_module_path = Path(os.path.dirname(inspect.getfile(generated_query)))
         return MacroOverridingModel(
-            name=f"{self.catalog}.{query_config['table_name']}",
+            name=f"{self.schema}.{query_config['table_name']}",
             kind={
                 "name": ModelKindName.INCREMENTAL_BY_TIME_RANGE,
                 "time_column": "metrics_sample_date",
@@ -616,7 +616,7 @@ class TimeseriesMetrics:
         override_module_path = Path(os.path.dirname(inspect.getfile(generated_query)))
 
         return MacroOverridingModel(
-            name=f"{self.catalog}.{query_config['table_name']}",
+            name=f"{self.schema}.{query_config['table_name']}",
             kind=ModelKindName.FULL,
             dialect="clickhouse",
             is_sql=True,

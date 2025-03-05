@@ -427,10 +427,10 @@ def call_mcs(
             dependencies_set = list_query_table_dependencies(rendered_query, {})
             print(dependencies_set)
             rewrite_map = {
-                "metrics.int_events_daily_to_artifact": "metrics.metrics.events_daily_to_artifact",
-                "metrics.int_events_daily_to_artifact_with_lag": "metrics.metrics.events_daily_to_artifact_with_lag",
-                "metrics.int_issue_event_time_deltas": "metrics.metrics.issue_event_time_deltas",
-                "metrics.int_first_of_event_from_artifact": "metrics.metrics.first_of_event_from_artifact",
+                "oso.int_events_daily_to_artifact": "iceberg.oso.events_daily_to_artifact",
+                "oso.int_events_daily_to_artifact_with_lag": "iceberg.oso.events_daily_to_artifact_with_lag",
+                "oso.int_issue_event_time_deltas": "iceberg.oso.issue_event_time_deltas",
+                "oso.int_first_of_event_from_artifact": "iceberg.oso.first_of_event_from_artifact",
             }
             dependencies_dict = {
                 dep: rewrite_map.get(dep, dep) for dep in dependencies_set

@@ -1,22 +1,21 @@
 MODEL (
-  name metrics.stg_github__push_events,
+  name oso.stg_github__push_events,
   description 'Gathers all github events for all github artifacts',
   kind FULL,
-  dialect trino,
+  dialect trino
 );
 
-select
-  ghe.created_at as created_at,
-  ghe.repo.id as repository_id,
-  ghe.repo.name as repository_name,
-  ghe.actor.id as actor_id,
-  ghe.actor.login as actor_login,
-  json_extract_scalar(ghe.payload, '$.push_id') as push_id,
-  json_extract_scalar(ghe.payload, '$.ref') as ref,
-  json_format(json_extract(ghe.payload, '$.commits')) as commits,
-  json_array_length(json_format(json_extract(ghe.payload, '$.commits'))) as available_commits_count,
-  CAST(
-    json_extract(ghe.payload, '$.distinct_size') as INT
-  ) as actual_commits_count
-from @oso_source('bigquery.oso.stg_github__events') as ghe
-where ghe.type = 'PushEvent'
+SELECT
+  ghe.created_at AS created_at,
+  ghe.repo.id AS repository_id,
+  ghe.repo.name AS repository_name,
+  ghe.actor.id AS actor_id,
+  ghe.actor.login AS actor_login,
+  JSON_EXTRACT_SCALAR(ghe.payload, '$.push_id') AS push_id,
+  JSON_EXTRACT_SCALAR(ghe.payload, '$.ref') AS ref,
+  JSON_FORMAT(JSON_EXTRACT(ghe.payload, '$.commits')) AS commits,
+  JSON_ARRAY_LENGTH(JSON_FORMAT(JSON_EXTRACT(ghe.payload, '$.commits'))) AS available_commits_count,
+  CAST(JSON_EXTRACT(ghe.payload, '$.distinct_size') AS INTEGER) AS actual_commits_count
+FROM @oso_source('bigquery.oso.stg_github__events') AS ghe
+WHERE
+  ghe.type = 'PushEvent'

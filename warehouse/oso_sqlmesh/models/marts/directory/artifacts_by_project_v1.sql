@@ -1,12 +1,12 @@
 MODEL (
-  name metrics.artifacts_by_project_v1,
+  name oso.artifacts_by_project_v1,
   kind FULL,
   tags (
     'export'
-  ),
+  )
 );
 
-select
+SELECT
   artifact_id,
   artifact_source_id,
   artifact_source,
@@ -16,4 +16,4 @@ select
   project_source,
   project_namespace,
   project_name
-from metrics.int_artifacts_by_project
+FROM oso.int_artifacts_by_project

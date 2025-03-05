@@ -26,7 +26,7 @@ def known_proxies(
     trace_type_value: exp.ExpOrStr = "call",
     call_type_value: exp.ExpOrStr = "staticcall",
     factory_address_column: exp.ExpOrStr = "proxies.factory_address",
-    proxy_contracts_table: exp.ExpOrStr = "metrics.seed_known_proxy_contracts",
+    proxy_contracts_table: exp.ExpOrStr = "oso.seed_known_proxy_contracts",
     time_partition_column: exp.ExpOrStr = "traces.block_timestamp",
 ):
     traces = coerce_to_table(traces_table)

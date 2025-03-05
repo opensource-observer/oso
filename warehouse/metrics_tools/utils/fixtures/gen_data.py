@@ -23,12 +23,12 @@ class MetricsDBFixture:
 
         conn = duckdb.connect(database=database_path)
 
-        conn.execute("CREATE SCHEMA metrics")
+        conn.execute("CREATE SCHEMA oso")
 
         # Create the events table if it doesn't already exist
         conn.execute(
             """
-            CREATE TABLE IF NOT EXISTS metrics.events_daily_to_artifact (
+            CREATE TABLE IF NOT EXISTS oso.events_daily_to_artifact (
                 bucket_day DATE,
                 event_type STRING,
                 event_source STRING,
@@ -42,7 +42,7 @@ class MetricsDBFixture:
         # Create the artifacts_to_projects_v1 table if it doesn't already exist
         conn.execute(
             """
-            CREATE TABLE IF NOT EXISTS metrics.artifacts_by_project_v1 (
+            CREATE TABLE IF NOT EXISTS oso.artifacts_by_project_v1 (
                 artifact_id STRING,
                 artifact_source_id STRING,
                 artifact_source STRING,
@@ -59,7 +59,7 @@ class MetricsDBFixture:
         # Create the projects_to_collections_v1 table if it doesn't already exist
         conn.execute(
             """
-            CREATE TABLE IF NOT EXISTS metrics.projects_by_collection_v1 (
+            CREATE TABLE IF NOT EXISTS oso.projects_by_collection_v1 (
                 project_id STRING,
                 project_source STRING,
                 project_namespace STRING,
@@ -119,9 +119,7 @@ class MetricsDBFixture:
         df = date_filter(df)
 
         # Insert data into DuckDB table
-        self._conn.execute(
-            "INSERT INTO metrics.events_daily_to_artifact SELECT * FROM df"
-        )
+        self._conn.execute("INSERT INTO oso.events_daily_to_artifact SELECT * FROM df")
 
     def populate_artifacts_and_projects(
         self, projects: t.Dict[str, t.List[str]], collections: t.Dict[str, t.List[str]]
@@ -151,7 +149,7 @@ class MetricsDBFixture:
         # Insert data into artifacts_by_project_v1 table
         artifacts_df = pd.DataFrame(artifacts_data)  # noqa: F841
         self._conn.execute(
-            "INSERT INTO metrics.artifacts_by_project_v1 SELECT * FROM artifacts_df"
+            "INSERT INTO oso.artifacts_by_project_v1 SELECT * FROM artifacts_df"
         )
 
         # Prepare data for projects_by_collection_v1
@@ -176,5 +174,5 @@ class MetricsDBFixture:
         # Insert data into projects_by_collection_v1 table
         collections_df = pd.DataFrame(collections_data)  # noqa: F841
         self._conn.execute(
-            "INSERT INTO metrics.projects_by_collection_v1 SELECT * FROM collections_df"
+            "INSERT INTO oso.projects_by_collection_v1 SELECT * FROM collections_df"
         )

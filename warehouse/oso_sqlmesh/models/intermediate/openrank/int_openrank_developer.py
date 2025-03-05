@@ -21,11 +21,11 @@ def weight_events(event_type, amount):
 
 
 @model(
-    "metrics.int_openrank_developer",
+    "oso.int_openrank_developer",
     kind="full",
     depends_on=[
-        "metrics.int_artifacts",
-        "metrics.int_events_monthly_to_project",
+        "oso.int_artifacts",
+        "oso.int_events_monthly_to_project",
     ],
     columns={
         # "id": "int",
@@ -47,8 +47,8 @@ def execute(
     execution_time: datetime,
     **kwargs: t.Any,
 ) -> t.Iterator[pd.DataFrame]:
-    artifacts_table = context.resolve_table("metrics.int_artifacts")
-    events_table = context.resolve_table("metrics.int_events_monthly_to_project")
+    artifacts_table = context.resolve_table("oso.int_artifacts")
+    events_table = context.resolve_table("oso.int_events_monthly_to_project")
 
     # Get trusted developers
     seeded_developers_query = parse_one(

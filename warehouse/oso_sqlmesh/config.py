@@ -1,6 +1,7 @@
 import os
 
 import dotenv
+from metrics_tools.source.rewrite import LOCAL_TRINO_REWRITE_RULES
 from sqlmesh.core.config import (
     Config,
     DuckDBConnectionConfig,
@@ -32,7 +33,7 @@ config = Config(
                 port=int(os.environ.get("SQLMESH_TRINO_PORT", "8080")),
                 http_scheme="http",
                 user=os.environ.get("SQLMESH_TRINO_USER", "sqlmesh"),
-                catalog=os.environ.get("SQLMESH_TRINO_CATALOG", "metrics"),
+                catalog=os.environ.get("SQLMESH_TRINO_CATALOG", "iceberg"),
                 concurrent_tasks=int(
                     os.environ.get("SQLMESH_TRINO_CONCURRENT_TASKS", "8")
                 ),
@@ -42,6 +43,9 @@ config = Config(
                 concurrent_tasks=1,
                 database=os.environ.get("SQLMESH_DUCKDB_LOCAL_PATH"),
             ),
+            variables={
+                "oso_source_rewrite": LOCAL_TRINO_REWRITE_RULES,
+            },
         ),
         "trino": GatewayConfig(
             connection=TrinoConnectionConfig(
@@ -49,7 +53,7 @@ config = Config(
                 port=int(os.environ.get("SQLMESH_TRINO_PORT", "8080")),
                 http_scheme="http",
                 user=os.environ.get("SQLMESH_TRINO_USER", "sqlmesh"),
-                catalog=os.environ.get("SQLMESH_TRINO_CATALOG", "metrics"),
+                catalog=os.environ.get("SQLMESH_TRINO_CATALOG", "iceberg"),
                 concurrent_tasks=int(
                     os.environ.get("SQLMESH_TRINO_CONCURRENT_TASKS", "64")
                 ),
