@@ -50,7 +50,7 @@
     "lodash": "^4.17.21",
     "mustache": "^4.2.0",
     "octokit": "^3.1.0",
-    "oss-directory": "^0.0.18",
+    "oss-directory": "^0.0.19",
     "simple-git": "^3.25.0",
     "tmp-promise": "^3.0.3",
     "ts-dedent": "^2.2.0",
