@@ -1,12 +1,14 @@
-model(name oso.int_derived_contracts, kind view)
-;
+MODEL (
+  name oso.int_derived_contracts,
+  kind VIEW
+);
 
-select
-    deployment_timestamp::timestamp(6),
-    chain::varchar,
-    originating_address::varchar,
-    contract_address::varchar,
-    factory_address::varchar,
-    create_type::varchar,
-    root_deployer_address::varchar,
-from oso.int_contracts_root_deployers
+SELECT
+  deployment_timestamp::TIMESTAMP(6),
+  chain::TEXT,
+  originating_address::TEXT,
+  contract_address::TEXT,
+  factory_address::TEXT,
+  create_type::TEXT,
+  root_deployer_address::TEXT
+FROM oso.int_contracts_root_deployers

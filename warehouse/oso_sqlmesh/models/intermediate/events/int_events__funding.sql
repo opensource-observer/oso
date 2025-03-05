@@ -1,81 +1,80 @@
-model(
-    name oso.int_events__funding,
-    dialect trino,
-    kind incremental_by_time_range(
-        time_column time, batch_size 90, batch_concurrency 1
-    ),
-    start '2015-01-01',
-    cron '@daily',
-    partitioned_by(day("time"), "event_type"),
-    grain(time, event_type, event_source, from_artifact_id, to_artifact_id)
-)
-;
+MODEL (
+  name oso.int_events__funding,
+  dialect trino,
+  kind INCREMENTAL_BY_TIME_RANGE (
+    time_column time,
+    batch_size 90,
+    batch_concurrency 1
+  ),
+  start '2015-01-01',
+  cron '@daily',
+  partitioned_by (DAY("time"), "event_type"),
+  grain (time, event_type, event_source, from_artifact_id, to_artifact_id)
+);
 
-with
-    open_collective_expenses as (
-        select
-            time,
-            event_type,
-            event_source_id,
-            event_source,
-            to_artifact_id,
-            to_name,
-            to_namespace,
-            to_type,
-            to_artifact_source_id,
-            from_artifact_id,
-            from_name,
-            from_namespace,
-            from_type,
-            from_artifact_source_id,
-            amount
-        from oso.stg_open_collective__expenses
-        where unit = 'USD' and time between @start_dt and @end_dt
-    ),
-
-    open_collective_deposits as (
-        select
-            time,
-            event_type,
-            event_source_id,
-            event_source,
-            to_artifact_id,
-            to_name,
-            to_namespace,
-            to_type,
-            to_artifact_source_id,
-            from_artifact_id,
-            from_name,
-            from_namespace,
-            from_type,
-            from_artifact_source_id,
-            amount
-        from oso.stg_open_collective__deposits
-        where unit = 'USD' and time between @start_dt and @end_dt
-    ),
-
-    all_funding_events as (
-        select *
-        from open_collective_expenses
-        union all
-        select *
-        from open_collective_deposits
-    )
-
-select
+WITH open_collective_expenses AS (
+  SELECT
     time,
+    event_type,
+    event_source_id,
+    event_source,
     to_artifact_id,
+    to_name,
+    to_namespace,
+    to_type,
+    to_artifact_source_id,
     from_artifact_id,
-    upper(event_type) as event_type,
-    cast(event_source_id as string) as event_source_id,
-    upper(event_source) as event_source,
-    lower(to_name) as to_artifact_name,
-    lower(to_namespace) as to_artifact_namespace,
-    upper(to_type) as to_artifact_type,
-    lower(to_artifact_source_id) as to_artifact_source_id,
-    lower(from_name) as from_artifact_name,
-    lower(from_namespace) as from_artifact_namespace,
-    upper(from_type) as from_artifact_type,
-    lower(from_artifact_source_id) as from_artifact_source_id,
-    cast(amount as double) as amount
-from all_funding_events
+    from_name,
+    from_namespace,
+    from_type,
+    from_artifact_source_id,
+    amount
+  FROM oso.stg_open_collective__expenses
+  WHERE
+    unit = 'USD' AND time BETWEEN @start_dt AND @end_dt
+), open_collective_deposits AS (
+  SELECT
+    time,
+    event_type,
+    event_source_id,
+    event_source,
+    to_artifact_id,
+    to_name,
+    to_namespace,
+    to_type,
+    to_artifact_source_id,
+    from_artifact_id,
+    from_name,
+    from_namespace,
+    from_type,
+    from_artifact_source_id,
+    amount
+  FROM oso.stg_open_collective__deposits
+  WHERE
+    unit = 'USD' AND time BETWEEN @start_dt AND @end_dt
+), all_funding_events AS (
+  SELECT
+    *
+  FROM open_collective_expenses
+  UNION ALL
+  SELECT
+    *
+  FROM open_collective_deposits
+)
+SELECT
+  time,
+  to_artifact_id,
+  from_artifact_id,
+  UPPER(event_type) AS event_type,
+  event_source_id::VARCHAR AS event_source_id,
+  UPPER(event_source) AS event_source,
+  LOWER(to_name) AS to_artifact_name,
+  LOWER(to_namespace) AS to_artifact_namespace,
+  UPPER(to_type) AS to_artifact_type,
+  LOWER(to_artifact_source_id) AS to_artifact_source_id,
+  LOWER(from_name) AS from_artifact_name,
+  LOWER(from_namespace) AS from_artifact_namespace,
+  UPPER(from_type) AS from_artifact_type,
+  LOWER(from_artifact_source_id) AS from_artifact_source_id,
+  amount::DOUBLE AS amount
+FROM all_funding_events

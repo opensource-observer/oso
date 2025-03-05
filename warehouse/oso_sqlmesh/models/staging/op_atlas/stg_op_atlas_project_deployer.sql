@@ -1,25 +1,23 @@
-model(name oso.stg_op_atlas_project_deployer, dialect trino, kind full,)
-;
+MODEL (
+  name oso.stg_op_atlas_project_deployer,
+  dialect trino,
+  kind FULL
+);
 
-with
-    latest_deployers as (
-        select
-            *,
-            row_number() over (
-                partition by project_id, chain_id, deployer_address
-                order by updated_at desc
-            ) as rn
-        from @oso_source('bigquery.op_atlas.project_contract')
-    )
-
-select
-    -- Translating op-atlas project_id to OSO project_id
-    @oso_id('OP_ATLAS', project_id) as project_id,
-    id as artifact_source_id,
-    @chain_id_to_chain_name(chain_id) as artifact_source,
-    null::text as artifact_namespace,
-    deployer_address as artifact_name,
-    null::text as artifact_url,
-    'DEPLOYER' as artifact_type
-from latest_deployers
-where rn = 1
+WITH latest_deployers AS (
+  SELECT
+    *,
+    ROW_NUMBER() OVER (PARTITION BY project_id, chain_id, deployer_address ORDER BY updated_at DESC) AS rn
+  FROM @oso_source('bigquery.op_atlas.project_contract')
+)
+SELECT
+  @oso_id('OP_ATLAS', project_id) AS project_id, /* Translating op-atlas project_id to OSO project_id */
+  id AS artifact_source_id,
+  @chain_id_to_chain_name(chain_id) AS artifact_source,
+  NULL::VARCHAR AS artifact_namespace,
+  deployer_address AS artifact_name,
+  NULL::VARCHAR AS artifact_url,
+  'DEPLOYER' AS artifact_type
+FROM latest_deployers
+WHERE
+  rn = 1

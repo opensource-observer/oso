@@ -1,61 +1,55 @@
-model(
-    name oso.int_contracts_deployment,
-    kind incremental_by_time_range(
-        time_column deployment_timestamp, batch_size 90, batch_concurrency 1,
-    -- forward_only true,
-    -- on_destructive_change warn
-    ),
-    start '2021-10-01',
-    partitioned_by(day("deployment_timestamp"), "chain"),
-)
-;
+MODEL (
+  name oso.int_contracts_deployment,
+  kind INCREMENTAL_BY_TIME_RANGE (
+    time_column deployment_timestamp,
+    batch_size 90,
+    batch_concurrency 1
+  ) /* forward_only true, */ /* on_destructive_change warn */,
+  start '2021-10-01',
+  partitioned_by (DAY("deployment_timestamp"), "chain")
+);
 
--- The intent is to get the _first_ factory deployments as some contracts
--- deployed via deterministic deployers allows for multiple calls to the
--- create2 function.
-with
-    ordered_deployments_in_period as (
-        select
-            factories.block_timestamp as deployment_timestamp,
-            factories.chain as chain,
-            factories.transaction_hash as transaction_hash,
-            case
-                when proxies.address is not null
-                then proxies.address
-                else factories.originating_address
-            end as originating_address,
-            factories.originating_contract as originating_contract,
-            factories.contract_address as contract_address,
-            factories.factory_address as factory_address,
-            factories.create_type,
-            row_number() over (
-                partition by factories.contract_address, factories.chain
-                order by block_timestamp asc
-            ) as creation_order,
-            case when proxies.address is not null then true else false end as is_proxy
-        from oso.int_factories as factories
-        left join
-            oso.int_proxies as proxies
-            on factories.originating_contract = proxies.address
-            and factories.chain = proxies.chain
-        where
-            contract_address is not null
-            and block_timestamp between @start_dt and @end_dt
-            -- ignore anything that already has already been processed
-            and contract_address not in (
-                select contract_address
-                from @this_model
-                where block_timestamp < @start_dt
-            )
+/* The intent is to get the _first_ factory deployments as some contracts */ /* deployed via deterministic deployers allows for multiple calls to the */ /* create2 function. */
+WITH ordered_deployments_in_period AS (
+  SELECT
+    factories.block_timestamp AS deployment_timestamp,
+    factories.chain AS chain,
+    factories.transaction_hash AS transaction_hash,
+    CASE
+      WHEN NOT proxies.address IS NULL
+      THEN proxies.address
+      ELSE factories.originating_address
+    END AS originating_address,
+    factories.originating_contract AS originating_contract,
+    factories.contract_address AS contract_address,
+    factories.factory_address AS factory_address,
+    factories.create_type,
+    ROW_NUMBER() OVER (PARTITION BY factories.contract_address, factories.chain ORDER BY block_timestamp ASC) AS creation_order,
+    CASE WHEN NOT proxies.address IS NULL THEN TRUE ELSE FALSE END AS is_proxy
+  FROM oso.int_factories AS factories
+  LEFT JOIN oso.int_proxies AS proxies
+    ON factories.originating_contract = proxies.address
+    AND factories.chain = proxies.chain
+  WHERE
+    NOT contract_address IS NULL
+    AND block_timestamp BETWEEN @start_dt AND @end_dt
+    AND /* ignore anything that already has already been processed */ NOT contract_address IN (
+      SELECT
+        contract_address
+      FROM @this_model
+      WHERE
+        block_timestamp < @start_dt
     )
-select
-    deployment_timestamp::timestamp,
-    chain::varchar,
-    transaction_hash::varchar,
-    originating_address::varchar,
-    contract_address::varchar,
-    factory_address::varchar,
-    create_type::varchar,
-    is_proxy::boolean
-from ordered_deployments_in_period
-where creation_order = 1
+)
+SELECT
+  deployment_timestamp::TIMESTAMP,
+  chain::TEXT,
+  transaction_hash::TEXT,
+  originating_address::TEXT,
+  contract_address::TEXT,
+  factory_address::TEXT,
+  create_type::TEXT,
+  is_proxy::BOOLEAN
+FROM ordered_deployments_in_period
+WHERE
+  creation_order = 1

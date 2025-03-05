@@ -1,38 +1,35 @@
-model(
-    name oso.int_artifacts_history,
-    description 'Currently this only captures the history of git_users. It does not capture git_repo naming histories.',
-    kind full,
+MODEL (
+  name oso.int_artifacts_history,
+  description 'Currently this only captures the history of git_users. It does not capture git_repo naming histories.',
+  kind FULL
+);
+
+WITH user_events AS (
+  /* `from` actor artifacts derived from all events */
+  SELECT
+    event_source AS artifact_source,
+    from_artifact_source_id AS artifact_source_id,
+    from_artifact_type AS artifact_type,
+    from_artifact_namespace AS artifact_namespace,
+    from_artifact_name AS artifact_name,
+    '' AS artifact_url,
+    time
+  FROM oso.int_events
 )
-;
-
-with
-    user_events as (
-        {# `from` actor artifacts derived from all events #}
-        select
-            event_source as artifact_source,
-            from_artifact_source_id as artifact_source_id,
-            from_artifact_type as artifact_type,
-            from_artifact_namespace as artifact_namespace,
-            from_artifact_name as artifact_name,
-            '' as artifact_url,
-            time
-        from oso.int_events
-    )
-
-select
-    lower(artifact_source_id) as artifact_source_id,
-    upper(artifact_source) as artifact_source,
-    upper(artifact_type) as artifact_type,
-    lower(artifact_namespace) as artifact_namespace,
-    lower(artifact_url) as artifact_url,
-    lower(artifact_name) as artifact_name,
-    max(time) as last_used,
-    min(time) as first_used
-from user_events
-group by
-    artifact_source_id,
-    artifact_source,
-    artifact_type,
-    artifact_namespace,
-    artifact_url,
-    artifact_name
+SELECT
+  LOWER(artifact_source_id) AS artifact_source_id,
+  UPPER(artifact_source) AS artifact_source,
+  UPPER(artifact_type) AS artifact_type,
+  LOWER(artifact_namespace) AS artifact_namespace,
+  LOWER(artifact_url) AS artifact_url,
+  LOWER(artifact_name) AS artifact_name,
+  MAX(time) AS last_used,
+  MIN(time) AS first_used
+FROM user_events
+GROUP BY
+  artifact_source_id,
+  artifact_source,
+  artifact_type,
+  artifact_namespace,
+  artifact_url,
+  artifact_name

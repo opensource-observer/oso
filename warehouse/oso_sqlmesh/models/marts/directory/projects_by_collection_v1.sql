@@ -1,16 +1,20 @@
-model(name oso.projects_by_collection_v1, kind full, tags('export'),)
-;
+MODEL (
+  name oso.projects_by_collection_v1,
+  kind FULL,
+  tags (
+    'export'
+  )
+);
 
-select
-    projects_by_collection.project_id,
-    projects_by_collection.project_source,
-    projects_by_collection.project_namespace,
-    projects_by_collection.project_name,
-    collections.collection_id,
-    collections.collection_source,
-    collections.collection_namespace,
-    collections.collection_name
-from oso.int_projects_by_collection as projects_by_collection
-left join
-    oso.int_collections as collections
-    on projects_by_collection.collection_id = collections.collection_id
+SELECT
+  projects_by_collection.project_id,
+  projects_by_collection.project_source,
+  projects_by_collection.project_namespace,
+  projects_by_collection.project_name,
+  collections.collection_id,
+  collections.collection_source,
+  collections.collection_namespace,
+  collections.collection_name
+FROM oso.int_projects_by_collection AS projects_by_collection
+LEFT JOIN oso.int_collections AS collections
+  ON projects_by_collection.collection_id = collections.collection_id

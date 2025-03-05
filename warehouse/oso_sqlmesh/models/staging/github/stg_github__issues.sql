@@ -1,28 +1,26 @@
-model(name oso.stg_github__issues, kind full,)
-;
+MODEL (
+  name oso.stg_github__issues,
+  kind FULL
+);
 
-with
-    issue_events as (
-        select *
-        from @oso_source('bigquery.oso.stg_github__events') as ghe
-        where ghe.type = 'IssuesEvent'
-    )
-
-select
-    ie.id as id,
-    ie.created_at as event_time,
-    ie.repo.id as repository_id,
-    ie.repo.name as repository_name,
-    ie.actor.id as actor_id,
-    ie.actor.login as actor_login,
-    concat('ISSUE_', upper(json_extract_string(ie.payload, '$.action'))) as "type",
-    json_extract(ie.payload, '$.issue.number')::bigint as "number",
-    strptime(
-        json_extract_string(ie.payload, '$.issue.created_at'), '%Y-%m-%dT%H:%M:%SZ'
-    ) as created_at,
-    strptime(
-        json_extract_string(ie.payload, '$.issue.closed_at'), '%Y-%m-%dT%H:%M:%SZ'
-    ) as closed_at,
-    json_extract_string(ie.payload, '$.issue.state') as "state",
-    json_extract(ie.payload, '$.issue.comments')::double as comments
-from issue_events as ie
+WITH issue_events AS (
+  SELECT
+    *
+  FROM @oso_source('bigquery.oso.stg_github__events') AS ghe
+  WHERE
+    ghe.type = 'IssuesEvent'
+)
+SELECT
+  ie.id AS id,
+  ie.created_at AS event_time,
+  ie.repo.id AS repository_id,
+  ie.repo.name AS repository_name,
+  ie.actor.id AS actor_id,
+  ie.actor.login AS actor_login,
+  CONCAT('ISSUE_', UPPER(ie.payload ->> '$.action')) AS "type",
+  CAST(ie.payload -> '$.issue.number' AS BIGINT) AS "number",
+  STRPTIME(ie.payload ->> '$.issue.created_at', '%Y-%m-%dT%H:%M:%SZ') AS created_at,
+  STRPTIME(ie.payload ->> '$.issue.closed_at', '%Y-%m-%dT%H:%M:%SZ') AS closed_at,
+  ie.payload ->> '$.issue.state' AS "state",
+  CAST(ie.payload -> '$.issue.comments' AS DOUBLE) AS comments
+FROM issue_events AS ie

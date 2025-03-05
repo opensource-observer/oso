@@ -1,73 +1,68 @@
-model(
-    name oso.int_all_artifacts,
-    description "a list of all artifacts associated with a project",
-    kind full,
-)
-;
+MODEL (
+  name oso.int_all_artifacts,
+  description "a list of all artifacts associated with a project",
+  kind FULL
+);
 
-{#
+/*
   Notes:
   - This will create a separate row for each artifact_type, which is de-duplicated
     in int_artifacts_by_project
   - Currently, the source and namespace for blockchain artifacts are the same.
     This may change in the future.
-#}
-with
-    onchain_artifacts as (
-        select
-            project_id,
-            artifact_id,
-            artifact_source_id,
-            artifact_source,
-            'DEPLOYER' as artifact_type,
-            artifact_namespace,
-            artifact_name,
-            artifact_name as artifact_url
-        from oso.int_deployers_by_project
-        union all
-        select
-            project_id,
-            artifact_id,
-            artifact_source_id,
-            artifact_source,
-            'CONTRACT' as artifact_type,
-            artifact_namespace,
-            artifact_name,
-            artifact_name as artifact_url
-        from oso.int_contracts_by_project
-    ),
-
-    all_normalized_artifacts as (
-        select
-            project_id,
-            artifact_id,
-            artifact_source_id,
-            artifact_source,
-            artifact_type,
-            artifact_namespace,
-            artifact_name,
-            artifact_url
-        from oso.int_artifacts_by_project_all_sources
-        union all
-        select
-            project_id,
-            artifact_id,
-            artifact_source_id,
-            artifact_source,
-            artifact_type,
-            artifact_namespace,
-            artifact_name,
-            artifact_url
-        from onchain_artifacts
-    )
-
-select distinct
+*/
+WITH onchain_artifacts AS (
+  SELECT
     project_id,
     artifact_id,
     artifact_source_id,
     artifact_source,
+    'DEPLOYER' AS artifact_type,
     artifact_namespace,
     artifact_name,
-    artifact_url,
-    artifact_type
-from all_normalized_artifacts
+    artifact_name AS artifact_url
+  FROM oso.int_deployers_by_project
+  UNION ALL
+  SELECT
+    project_id,
+    artifact_id,
+    artifact_source_id,
+    artifact_source,
+    'CONTRACT' AS artifact_type,
+    artifact_namespace,
+    artifact_name,
+    artifact_name AS artifact_url
+  FROM oso.int_contracts_by_project
+), all_normalized_artifacts AS (
+  SELECT
+    project_id,
+    artifact_id,
+    artifact_source_id,
+    artifact_source,
+    artifact_type,
+    artifact_namespace,
+    artifact_name,
+    artifact_url
+  FROM oso.int_artifacts_by_project_all_sources
+  UNION ALL
+  SELECT
+    project_id,
+    artifact_id,
+    artifact_source_id,
+    artifact_source,
+    artifact_type,
+    artifact_namespace,
+    artifact_name,
+    artifact_url
+  FROM onchain_artifacts
+)
+SELECT DISTINCT
+  project_id,
+  artifact_id,
+  artifact_source_id,
+  artifact_source,
+  artifact_namespace,
+  artifact_name,
+  artifact_url,
+  artifact_type
+FROM all_normalized_artifacts

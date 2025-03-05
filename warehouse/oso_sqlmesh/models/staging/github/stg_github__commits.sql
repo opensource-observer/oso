@@ -1,26 +1,22 @@
-model(
-    name oso.stg_github__commits,
-    description 'Turns all push events into their commit objects',
-    kind full,
-    dialect trino
-)
-;
+MODEL (
+  name oso.stg_github__commits,
+  description 'Turns all push events into their commit objects',
+  kind FULL,
+  dialect trino
+);
 
-select
-    ghpe.created_at as created_at,
-    ghpe.repository_id as repository_id,
-    ghpe.repository_name as repository_name,
-    ghpe.push_id as push_id,
-    ghpe.ref as ref,
-    ghpe.actor_id as actor_id,
-    ghpe.actor_login as actor_login,
-    json_extract_scalar(unnested_ghpe.commit_details, '$.sha') as sha,
-    json_extract_scalar(unnested_ghpe.commit_details, '$.author.email') as author_email,
-    json_extract_scalar(unnested_ghpe.commit_details, '$.author.name') as author_name,
-    cast(
-        json_extract(unnested_ghpe.commit_details, '$.distinct') as bool
-    ) as is_distinct,
-    json_extract_scalar(unnested_ghpe.commit_details, '$.url') as api_url
-from oso.stg_github__push_events as ghpe
-cross join
-    unnest(@json_extract_from_array(ghpe.commits, '$')) as unnested_ghpe(commit_details)
+SELECT
+  ghpe.created_at AS created_at,
+  ghpe.repository_id AS repository_id,
+  ghpe.repository_name AS repository_name,
+  ghpe.push_id AS push_id,
+  ghpe.ref AS ref,
+  ghpe.actor_id AS actor_id,
+  ghpe.actor_login AS actor_login,
+  JSON_EXTRACT_SCALAR(unnested_ghpe.commit_details, '$.sha') AS sha,
+  JSON_EXTRACT_SCALAR(unnested_ghpe.commit_details, '$.author.email') AS author_email,
+  JSON_EXTRACT_SCALAR(unnested_ghpe.commit_details, '$.author.name') AS author_name,
+  CAST(JSON_EXTRACT(unnested_ghpe.commit_details, '$.distinct') AS BOOLEAN) AS is_distinct,
+  JSON_EXTRACT_SCALAR(unnested_ghpe.commit_details, '$.url') AS api_url
+FROM oso.stg_github__push_events AS ghpe
+CROSS JOIN UNNEST(@json_extract_from_array(ghpe.commits, '$')) AS unnested_ghpe(commit_details)

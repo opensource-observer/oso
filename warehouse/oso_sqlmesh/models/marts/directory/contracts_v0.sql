@@ -1,12 +1,17 @@
-model(name oso.contracts_v0, kind view, tags('export'),)
-;
+MODEL (
+  name oso.contracts_v0,
+  kind VIEW,
+  tags (
+    'export'
+  )
+);
 
-select
-    date_trunc('day', deployment_timestamp)::date as deployment_date,
-    contract_address,
-    contract_namespace,
-    originating_address,
-    factory_address,
-    root_deployer_address,
-    sort_weight
-from oso.int_contracts_overview
+SELECT
+  DATE_TRUNC('DAY', deployment_timestamp)::DATE AS deployment_date,
+  contract_address,
+  contract_namespace,
+  originating_address,
+  factory_address,
+  root_deployer_address,
+  sort_weight
+FROM oso.int_contracts_overview

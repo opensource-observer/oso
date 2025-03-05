@@ -1,5 +1,8 @@
-model(name oso.int_metric_names_from_project, kind full)
-;
+MODEL (
+  name oso.int_metric_names_from_project,
+  kind FULL
+);
 
-select distinct metric
-from oso.timeseries_metrics_to_project
+SELECT DISTINCT
+  metric
+FROM oso.timeseries_metrics_to_project

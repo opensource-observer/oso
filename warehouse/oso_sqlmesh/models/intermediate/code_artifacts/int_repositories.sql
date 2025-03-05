@@ -1,25 +1,27 @@
-model(name oso.int_repositories, description 'All repositories', kind full,)
-;
+MODEL (
+  name oso.int_repositories,
+  description 'All repositories',
+  kind FULL
+);
 
-select
-    artifacts.project_id,
-    artifacts.artifact_id,
-    artifacts.artifact_source_id,
-    artifacts.artifact_source,
-    artifacts.artifact_namespace,
-    artifacts.artifact_name,
-    artifacts.artifact_url,
-    repos.is_fork,
-    repos.branch,
-    repos.star_count,
-    repos.watcher_count,
-    repos.fork_count,
-    repos.license_name,
-    repos.license_spdx_id,
-    repos.language,
-    repos.created_at,
-    repos.updated_at
-from oso.int_artifacts_by_project_in_ossd as artifacts
-inner join
-    oso.stg_ossd__current_repositories as repos
-    on artifacts.artifact_source_id = cast(repos.id as string)
+SELECT
+  artifacts.project_id,
+  artifacts.artifact_id,
+  artifacts.artifact_source_id,
+  artifacts.artifact_source,
+  artifacts.artifact_namespace,
+  artifacts.artifact_name,
+  artifacts.artifact_url,
+  repos.is_fork,
+  repos.branch,
+  repos.star_count,
+  repos.watcher_count,
+  repos.fork_count,
+  repos.license_name,
+  repos.license_spdx_id,
+  repos.language,
+  repos.created_at,
+  repos.updated_at
+FROM oso.int_artifacts_by_project_in_ossd AS artifacts
+INNER JOIN oso.stg_ossd__current_repositories AS repos
+  ON artifacts.artifact_source_id = repos.id::TEXT

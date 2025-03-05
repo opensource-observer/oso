@@ -1,5 +1,11 @@
-model(name oso.event_types_v1, kind full, tags('export'),)
-;
+MODEL (
+  name oso.event_types_v1,
+  kind FULL,
+  tags (
+    'export'
+  )
+);
 
-select distinct events.event_type
-from oso.int_events as events
+SELECT DISTINCT
+  events.event_type
+FROM oso.int_events AS events

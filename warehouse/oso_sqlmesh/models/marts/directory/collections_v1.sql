@@ -1,11 +1,16 @@
-model(name oso.collections_v1, kind full, tags('export'),)
-;
+MODEL (
+  name oso.collections_v1,
+  kind FULL,
+  tags (
+    'export'
+  )
+);
 
-select
-    collections.collection_id,
-    collections.collection_source,
-    collections.collection_namespace,
-    collections.collection_name,
-    collections.display_name,
-    collections.description
-from oso.int_collections as collections
+SELECT
+  collections.collection_id,
+  collections.collection_source,
+  collections.collection_namespace,
+  collections.collection_name,
+  collections.display_name,
+  collections.description
+FROM oso.int_collections AS collections
