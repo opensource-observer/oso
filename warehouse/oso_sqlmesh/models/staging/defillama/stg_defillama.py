@@ -72,7 +72,11 @@ def defillama_tvl_model(protocol: str):
         partitioned_by=("month(time)",),
     )
     def tvl_model(
-        context: ExecutionContext, start: datetime, end: datetime, *args, **kwargs
+        context: ExecutionContext,
+        start: datetime,
+        end: datetime,
+        oso_source_rewrite: t.Optional[t.Dict[str, t.Any]] = None,
+        **kwargs,
     ) -> t.Iterator[pd.DataFrame]:
         source_name = defillama_slug_to_name(protocol)
         # Run the query for the given protocol
