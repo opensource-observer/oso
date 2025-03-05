@@ -23,7 +23,7 @@ class MetricsDBFixture:
 
         conn = duckdb.connect(database=database_path)
 
-        conn.execute("CREATE SCHEMA metrics")
+        conn.execute("CREATE SCHEMA oso")
 
         # Create the events table if it doesn't already exist
         conn.execute(
