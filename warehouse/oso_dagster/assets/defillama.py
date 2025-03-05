@@ -1,8 +1,13 @@
-from dlt.sources.rest_api.typing import RESTAPIConfig
+from typing import List, Set
 
+from dlt.sources.rest_api.typing import RESTAPIConfig
+from google.cloud import bigquery
+from ossdirectory import fetch_data
+
+from ..factories import AssetFactoryResponse
 from ..factories.rest import create_rest_factory_asset
 
-DEFILLAMA_PROTOCOLS = [
+LEGACY_DEFILLAMA_PROTOCOLS = [
     "aave",
     "aave-v1",
     "aave-v2",
@@ -69,7 +74,7 @@ DEFILLAMA_PROTOCOLS = [
     "optimism-bridge",
     "origin-protocol",
     "overnight-finance",
-    #"pancakeswap-amm-v3", # continuously fails
+    # "pancakeswap-amm-v3",  # continuously fails
     "pendle",
     "perpetual-protocol",
     "pinto",
@@ -111,15 +116,36 @@ DEFILLAMA_PROTOCOLS = [
     "woofi",
     "woofi-earn",
     "yearn-finance",
-    "zerolend"
+    "zerolend",
 ]
 
 
 def defillama_slug_to_name(slug: str) -> str:
+    """
+    Parse a defillama slug into a protocol name, replacing dashes
+    with underscores and periods with '__dot__'.
+
+    Args:
+        slug (str): The defillama slug to parse.
+
+    Returns:
+        str: The parsed protocol name
+    """
+
     return f"{slug.replace('-', '_').replace(".", '__dot__')}_protocol"
 
 
 def defillama_chain_mappings(chain: str) -> str:
+    """
+    Map defillama chains to their canonical names.
+
+    Args:
+        chain (str): The chain to map.
+
+    Returns:
+        str: The mapped chain or the original chain if no mapping is found.
+    """
+
     chain = chain.lower()
     return {
         "arbitrum": "arbitrum_one",
@@ -134,33 +160,102 @@ def defillama_chain_mappings(chain: str) -> str:
     }.get(chain, chain)
 
 
-config: RESTAPIConfig = {
-    "client": {
-        "base_url": "https://api.llama.fi/",
-    },
-    "resource_defaults": {
-        "primary_key": "id",
-        "write_disposition": "merge",
-    },
-    "resources": list(
-        map(
-            lambda protocol: {
-                "name": defillama_slug_to_name(protocol),
-                "endpoint": {
-                    "path": f"protocol/{protocol}",
-                    "data_selector": "$",
+def mk_defillama_config(urls: Set[str]) -> RESTAPIConfig:
+    """
+    Create a REST API config for fetching defillama data.
+
+    Args:
+        urls (Set[str]): A set of defillama urls to fetch.
+
+    Returns:
+        RESTAPIConfig: The REST API config.
+    """
+
+    return {
+        "client": {
+            "base_url": "https://api.llama.fi/",
+        },
+        "resource_defaults": {
+            "primary_key": "id",
+            "write_disposition": "merge",
+        },
+        "resources": list(
+            map(
+                lambda protocol: {
+                    "name": defillama_slug_to_name(protocol),
+                    "endpoint": {
+                        "path": f"protocol/{protocol}",
+                        "data_selector": "$",
+                    },
                 },
-            },
-            DEFILLAMA_PROTOCOLS,
-        )
-    ),
-}
+                urls,
+            )
+        ),
+    }
 
 
-dlt_assets = create_rest_factory_asset(
-    config=config,
-)
+def extract_protocol(url: str) -> str:
+    """
+    Extract the protocol name from a defillama url. It is assumed that
+    the protocol name is the last part of the url. For example, in the
+    url "https://defillama.com/protocol/gyroscope-protocol", the protocol name
+    is "gyroscope-protocol".
 
-defillama_tvl_assets = dlt_assets(
-    key_prefix=["defillama", "tvl"],
-)
+    Args:
+        url (str): The defillama url to parse.
+
+    Returns:
+        str: The protocol name.
+    """
+
+    return url.split("/")[-1]
+
+
+def build_defillama_assets() -> List[AssetFactoryResponse]:
+    """
+    Creates a defillama asset factory configured to fetch defillama data
+    given the current ossd projects with defillama urls.
+
+    Returns:
+        AssetFactoryResponse: The defillama asset factory.
+    """
+
+    client = bigquery.Client()
+
+    op_atlas_query = """
+        SELECT
+            DISTINCT value
+        FROM
+            `opensource-observer.op_atlas.project__defi_llama_slug`
+    """
+
+    op_atlas_data = [row["value"] for row in client.query(op_atlas_query).result()]
+
+    ossd_data = fetch_data()
+
+    ossd_defillama_raw_urls = [
+        value["url"]
+        for entry in ossd_data.projects
+        if entry.get("defillama")
+        for value in entry["defillama"]
+    ]
+
+    ossd_defillama_parsed_urls = set(
+        extract_protocol(url) for url in ossd_defillama_raw_urls
+    )
+
+    ossd_defillama_parsed_urls.update(op_atlas_data)
+    ossd_defillama_parsed_urls.update(LEGACY_DEFILLAMA_PROTOCOLS)
+
+    dlt_assets = create_rest_factory_asset(
+        config=mk_defillama_config(ossd_defillama_parsed_urls),
+    )
+
+    assets = dlt_assets(
+        key_prefix=["defillama", "tvl"],
+    )
+
+    return assets
+
+
+defillama_assets = build_defillama_assets()

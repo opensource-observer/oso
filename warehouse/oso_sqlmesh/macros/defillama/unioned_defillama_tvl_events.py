@@ -1,4 +1,7 @@
-from oso_dagster.assets.defillama import DEFILLAMA_PROTOCOLS, defillama_slug_to_name
+from oso_dagster.assets.defillama import (
+    LEGACY_DEFILLAMA_PROTOCOLS,
+    defillama_slug_to_name,
+)
 from sqlglot import exp
 from sqlmesh import macro
 from sqlmesh.core.macros import MacroEvaluator
@@ -12,7 +15,7 @@ def unioned_defillama_tvl_events(evaluator: MacroEvaluator):
             exp.select("*").from_(
                 f"oso.stg__{defillama_slug_to_name(protocol)}_tvl_events"
             )
-            for protocol in DEFILLAMA_PROTOCOLS
+            for protocol in LEGACY_DEFILLAMA_PROTOCOLS
         ],
         distinct=False,
     )

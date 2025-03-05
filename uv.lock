@@ -2835,7 +2835,7 @@ requires-dist = [
     { name = "lz4", specifier = ">=4.3.3,<5.0.0" },
     { name = "minio", specifier = ">=7.2.15,<8.0.0" },
     { name = "openrank-sdk", specifier = ">=0.4.0,<1.0.0" },
-    { name = "oss-directory", specifier = ">=0.2.1,<1.0.0" },
+    { name = "oss-directory", specifier = ">=0.2.4,<1.0.0" },
     { name = "pandas", specifier = ">=2.2.3,<3.0.0" },
     { name = "pendulum", specifier = ">=3.0.0,<4.0.0" },
     { name = "pillow", specifier = ">=10.4.0,<11.0.0" },
@@ -2870,7 +2870,7 @@ dev = [
 
 [[package]]
 name = "oss-directory"
-version = "0.2.3"
+version = "0.2.4"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "gitpython" },
@@ -2880,9 +2880,9 @@ dependencies = [
     { name = "ruff" },
     { name = "toml" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/bb/41/12c2bd963cfed9a7623940e4bfb561c69e24f31ad0f1ded373a8b09a7fb0/oss_directory-0.2.3.tar.gz", hash = "sha256:552ef2b93c33b044d2ccc598c69589a4f3738719ac2f729211971f4c20924fd5", size = 14870 }
+sdist = { url = "https://files.pythonhosted.org/packages/a9/8b/6f237b7df0c3efdc463239f6a57a563a7b2c42c3a805e026bfcf21e23225/oss_directory-0.2.4.tar.gz", hash = "sha256:21c543bafb318c2121059173b4267e3d4e5e45c69d607230739672ce44764715", size = 14907 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/46/8f/f349fdb4ac639b5b6fc34ed8be70575015ac1c6677ad66ec61c89e9a2536/oss_directory-0.2.3-py3-none-any.whl", hash = "sha256:04932aab4b7028ad3abfe007b2ce550786647668aab480eba9d948a8669348f2", size = 14442 },
+    { url = "https://files.pythonhosted.org/packages/a8/a8/c6c22c9d1814d7e945ceda7d6bb8beaf7d780e05241fd4b9d422da021731/oss_directory-0.2.4-py3-none-any.whl", hash = "sha256:334eb15f75ce6fee693e9121d34be2c249e7e02180eb388aabf47ebd5733a652", size = 14454 },
 ]
 
 [[package]]
