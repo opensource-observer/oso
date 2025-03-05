@@ -480,8 +480,8 @@ importers:
         specifier: ^3.1.0
         version: 3.1.0
       oss-directory:
-        specifier: ^0.0.19
-        version: 0.0.19(ts-node@10.9.1(@types/node@20.11.17)(typescript@5.3.3))(typescript@5.3.3)
+        specifier: ^0.1.0
+        version: 0.1.0(ts-node@10.9.1(@types/node@20.11.17)(typescript@5.3.3))(typescript@5.3.3)
       simple-git:
         specifier: ^3.25.0
         version: 3.25.0
@@ -10229,8 +10229,8 @@ packages:
     resolution: {integrity: sha512-D2FR03Vir7FIu45XBY20mTb+/ZSWB00sjU9jdQXt83gDrI4Ztz5Fs7/yy74g2N5SVQY4xY1qDr4rNddwYRVX0g==}
     engines: {node: '>=0.10.0'}
 
-  oss-directory@0.0.19:
-    resolution: {integrity: sha512-0RhH16NJqWiZyaQ4X1gf76v4KreumfMFVV2kYorJH2Ku3md++09rqmcOxY/4JbLB2aDgY5aEdGZpqwskwYcV5w==}
+  oss-directory@0.1.0:
+    resolution: {integrity: sha512-kCJLy1pd8cwxdSs5oVXxVfjKXLL9Ii5ZvXCM8cpB5xVEf71IMff0OIeoExnCcjoE8Vwm8UJ117drpm3IN8Gbkg==}
     engines: {node: '>=16'}
     hasBin: true
 
@@ -27175,7 +27175,7 @@ snapshots:
 
   os-tmpdir@1.0.2: {}
 
-  oss-directory@0.0.19(ts-node@10.9.1(@types/node@20.11.17)(typescript@5.3.3))(typescript@5.3.3):
+  oss-directory@0.1.0(ts-node@10.9.1(@types/node@20.11.17)(typescript@5.3.3))(typescript@5.3.3):
     dependencies:
       '@ethereum-attestation-service/eas-sdk': 1.4.0(ts-node@10.9.1(@types/node@20.11.17)(typescript@5.3.3))(typescript@5.3.3)
       ajv: 8.17.1
