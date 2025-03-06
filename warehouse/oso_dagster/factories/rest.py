@@ -86,10 +86,7 @@ def _rest_source(_rest_source: Callable[Q, T], _asset: Callable[P, R]):
                 if not isinstance(resource_name, str):
                     raise ValueError("Failed to extract resource name from reference")
 
-                op_tags: dict = cast(dict, asset_kwargs.pop("op_tags", {}))
-                op_tags["dagster/concurrency_key"] = f"rest_factory_{key_prefix}"
-
-                @dlt_factory(name=resource_name, op_tags=op_tags, **asset_kwargs)
+                @dlt_factory(name=resource_name, **asset_kwargs)
                 def _dlt_ref_asset(context: AssetExecutionContext):
                     """
                     The dlt asset function that creates the REST API source asset.

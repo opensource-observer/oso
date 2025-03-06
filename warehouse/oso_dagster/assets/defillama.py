@@ -261,6 +261,9 @@ def build_defillama_assets() -> List[AssetFactoryResponse]:
 
     assets = dlt_assets(
         key_prefix=["defillama", "tvl"],
+        op_tags={
+            "dagster/concurrency_key": "defillama_tvl",
+        },
     )
 
     return assets
