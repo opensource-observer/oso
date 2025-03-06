@@ -28,8 +28,8 @@ SELECT
   sender AS sender_address,
   paymaster AS paymaster_address,
   contract_address,
-  actualgascost::DECIMAL(38, 0) AS userop_gas_price,
-  actualgasused::DECIMAL(38, 0) AS userop_gas_used,
+  actualgascost::BIGINT AS userop_gas_price,
+  actualgasused::BIGINT AS userop_gas_used,
   @chain_name(chain) AS chain
 FROM @oso_source(
   'bigquery.optimism_superchain_4337_account_abstraction_data.useroperationevent_logs_v2'
