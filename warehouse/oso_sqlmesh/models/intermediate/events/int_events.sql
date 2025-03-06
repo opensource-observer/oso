@@ -30,12 +30,6 @@ SELECT
 FROM (
   SELECT
     *
-  FROM @oso_source('bigquery.oso.int_events__blockchain')
-  WHERE
-    time BETWEEN @start_dt AND @end_dt
-  UNION ALL
-  SELECT
-    *
   FROM oso.int_events__github
   WHERE
     time BETWEEN @start_dt AND @end_dt
