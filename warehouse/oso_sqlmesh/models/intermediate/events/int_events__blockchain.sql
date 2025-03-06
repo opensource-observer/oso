@@ -12,31 +12,42 @@ MODEL (
   grain (time, event_type, event_source, from_artifact_id, to_artifact_id)
 );
 
+WITH events AS (
+  SELECT
+    block_timestamp,
+    chain,
+    transaction_hash,
+    from_address_tx AS from_address,
+    CASE 
+      WHEN to_address_trace != to_address_tx THEN to_address_trace
+      ELSE to_address_tx
+    END as to_address,
+    CASE 
+      WHEN to_address_trace != to_address_tx THEN 'CONTRACT_INTERNAL_INVOCATION'
+      ELSE 'CONTRACT_INVOCATION'
+    END AS event_type,
+    CASE 
+      WHEN to_address_trace != to_address_tx THEN gas_used_trace
+      ELSE gas_used_tx
+    END AS gas_used,
+    gas_price_tx
+  FROM oso.int_superchain_traces_txs_joined
+  WHERE block_timestamp BETWEEN @start_dt AND @end_dt
+)
+
 SELECT
-  traces_txs.block_timestamp as time,
-  @oso_id(traces_txs.chain, traces_txs.to_address_trace) as to_artifact_id,
-  @oso_id(traces_txs.chain, traces_txs.from_address_trace) as from_artifact_id,
-  'CONTRACT_INVOCATION' AS event_type,
-  @oso_id(traces_txs.transaction_hash, traces_txs.to_address_trace) AS event_source_id,
-  UPPER(traces_txs.chain) AS event_source,
-  LOWER(traces_txs.to_address_trace) AS to_artifact_name,
-  LOWER(traces_txs.chain) AS to_artifact_namespace,
-  UPPER('CONTRACT') AS to_artifact_type,
-  LOWER(traces_txs.from_address_trace) AS to_artifact_source_id,
-  LOWER(traces_txs.from_address_trace) AS from_artifact_name,
-  LOWER(traces_txs.chain) AS from_artifact_namespace,
-  -- The exact categorization of an address can't be known in the event table.
-  -- We can only know if it's a contract or an EOA.
-  UPPER(CASE WHEN 
-    traces_txs.to_address_trace = traces_txs.to_address_tx THEN 'EOA' 
-    ELSE 'CONTRACT' 
-  END) AS from_artifact_type,
-  LOWER(traces_txs.from_address_trace) AS from_artifact_source_id,
-  (traces_txs.gas_used_tx * traces_txs.gas_price_tx)::DOUBLE AS amount,
-  traces_txs.transaction_hash as transaction_hash,
-  traces_txs.gas_price_tx As gas_price,
-  traces_txs.gas_used_tx AS gas_used_tx,
-  traces_txs.gas_used_trace as gas_used_trace
-FROM oso.int_superchain_traces_txs_joined as traces_txs
-WHERE
-  traces_txs.block_timestamp BETWEEN @start_dt AND @end_dt
+  block_timestamp AS time,
+  @oso_id(chain, to_address) AS to_artifact_id,
+  @oso_id(chain, from_address) AS from_artifact_id,
+  event_type,
+  @oso_id(chain, transaction_hash) AS event_source_id,
+  chain AS event_source,
+  NULL::TEXT AS to_artifact_namespace,
+  to_address AS to_artifact_name,
+  to_address AS to_artifact_source_id,
+  NULL::TEXT AS from_artifact_namespace,
+  from_address AS from_artifact_name,
+  from_address AS from_artifact_source_id,
+  (gas_used * gas_price_tx / 1e18)::DOUBLE AS amount,
+  transaction_hash
+FROM events
