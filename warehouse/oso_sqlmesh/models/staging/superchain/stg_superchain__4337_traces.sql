@@ -34,13 +34,12 @@ SELECT
   userop_paymaster AS paymaster_address,
   useropevent_actualgascost::BIGINT AS userop_gas_price,
   useropevent_actualgasused::BIGINT AS userop_gas_used,
-  CASE 
-    WHEN input != '0x' THEN 0
-    ELSE CAST(
-      ('0x' || SUBSTRING(userop_calldata, 75, 64))::DECIMAL(38,0) / 1e18 
-      AS DECIMAL(38,18)
-    )
-  END AS value
+  CAST(
+    CASE WHEN input != '0x' 
+      THEN 0 
+      ELSE CAST(CONCAT('0x', SUBSTRING(userop_calldata, 75, 64)) AS DECIMAL(38,0)) / CAST(1e18 AS DECIMAL(38,18))
+    END AS DECIMAL(38,18)
+  ) AS value
 FROM @oso_source(
   'bigquery.optimism_superchain_4337_account_abstraction_data.enriched_entrypoint_traces_v2'
 )
