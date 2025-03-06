@@ -491,7 +491,7 @@ For example, to get all transactions to the 4337 EntryPoint contracts for all OP
   color={"blue"}
   target={"_blank"}
   link={
-    "https://console.cloud.google.com/bigquery/analytics-hub/exchanges/projects/87806073973/locations/us/dataExchanges/open_source_observer_190181416ae/listings/superchain_4337_account_abstraction_data"
+    "https://bit.ly/superchain-4337"
   }
   children={"Subscribe on BigQuery"}
 />{" "}
@@ -507,7 +507,7 @@ select
   chain,
   paymaster,
   approx_count_distinct(userophash) as user_ops
-from `optimism_superchain_4337_account_abstraction_data.useroperationevent_logs_v1`
+from `optimism_superchain_4337_account_abstraction_data.useroperationevent_logs_v2`
 where dt > '2025-02-01'
 group by 1,2
 order by 3 desc
