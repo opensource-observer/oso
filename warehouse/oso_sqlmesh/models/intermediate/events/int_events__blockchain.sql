@@ -40,6 +40,7 @@ SELECT
   @oso_id(chain, to_address) AS to_artifact_id,
   @oso_id(chain, from_address) AS from_artifact_id,
   event_type,
+  -- TODO: refactor to ensure unique event_source_id
   @oso_id(chain, transaction_hash) AS event_source_id,
   chain AS event_source,
   NULL::TEXT AS to_artifact_namespace,
@@ -48,6 +49,7 @@ SELECT
   NULL::TEXT AS from_artifact_namespace,
   from_address AS from_artifact_name,
   from_address AS from_artifact_source_id,
-  (gas_used * gas_price_tx / 1e18)::DOUBLE AS amount,
+  gas_used,
+  gas_price_tx,
   transaction_hash
 FROM events
