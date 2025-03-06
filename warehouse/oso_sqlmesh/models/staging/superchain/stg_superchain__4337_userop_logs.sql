@@ -23,6 +23,7 @@ MODEL (
 SELECT
   @from_unix_timestamp(block_timestamp) AS block_timestamp,
   transaction_hash,
+  log_index,
   userophash AS userop_hash,
   sender AS sender_address,
   paymaster AS paymaster_address,
@@ -31,7 +32,7 @@ SELECT
   actualgasused::DECIMAL(38, 0) AS userop_gas_used,
   @chain_name(chain) AS chain
 FROM @oso_source(
-  'bigquery.optimism_superchain_4337_account_abstraction_data.useroperationevent_logs_v1'
+  'bigquery.optimism_superchain_4337_account_abstraction_data.useroperationevent_logs_v2'
 )
 WHERE
   network = 'mainnet'
