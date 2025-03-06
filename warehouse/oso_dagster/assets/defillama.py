@@ -1,11 +1,15 @@
+import logging
 from typing import List, Set
 
 from dlt.sources.rest_api.typing import RESTAPIConfig
+from google.api_core.exceptions import Forbidden
 from google.cloud import bigquery
 from ossdirectory import fetch_data
 
 from ..factories import AssetFactoryResponse
 from ..factories.rest import create_rest_factory_asset
+
+logger = logging.getLogger(__name__)
 
 LEGACY_DEFILLAMA_PROTOCOLS = [
     "aave",
@@ -229,7 +233,11 @@ def build_defillama_assets() -> List[AssetFactoryResponse]:
             `opensource-observer.op_atlas.project__defi_llama_slug`
     """
 
-    op_atlas_data = [row["value"] for row in client.query(op_atlas_query).result()]
+    try:
+        op_atlas_data = [row["value"] for row in client.query(op_atlas_query).result()]
+    except Forbidden as e:
+        logging.warning(f"Failed to fetch op_atlas data, skipping: {e}")
+        op_atlas_data = []
 
     ossd_data = fetch_data()
 
