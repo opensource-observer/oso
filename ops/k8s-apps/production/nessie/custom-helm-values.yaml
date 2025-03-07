@@ -19,7 +19,7 @@ spec:
         defaultWarehouse: warehouse
         warehouses:
           - name: warehouse
-            location: gs://production-nessie-bucket/warehouse/
+            location: gs://oso-iceberg-usc1/warehouse/
       storage:
         gcs:
           defaultOptions:
