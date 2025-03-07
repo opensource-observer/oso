@@ -1,6 +1,7 @@
 import logging
-from typing import List, Set
+from typing import List
 
+import requests
 from dlt.sources.rest_api.typing import RESTAPIConfig
 from google.api_core.exceptions import Forbidden
 from google.cloud import bigquery
@@ -164,7 +165,7 @@ def defillama_chain_mappings(chain: str) -> str:
     }.get(chain, chain)
 
 
-def mk_defillama_config(urls: Set[str]) -> RESTAPIConfig:
+def mk_defillama_config(urls: List[str]) -> RESTAPIConfig:
     """
     Create a REST API config for fetching defillama data.
 
@@ -198,6 +199,36 @@ def mk_defillama_config(urls: Set[str]) -> RESTAPIConfig:
     }
 
 
+def filter_valid_slugs(slugs: List[str]) -> List[str]:
+    """
+    Filter out invalid defillama slugs from a list of slugs.
+
+    Args:
+        slugs (List[str]): The list of slugs to filter.
+
+    Returns:
+        List[str]: The list of valid slugs.
+    """
+
+    for slug in slugs:
+        try:
+            r = requests.head(f"https://api.llama.fi/protocol/{slug}", timeout=10)
+            if r.status_code != 200:
+                logger.warning(
+                    f"Skipping invalid Defillama slug '{slug}': {r.status_code} {r.text}"
+                )
+                slugs.remove(slug)
+        except requests.Timeout:
+            logger.warning(
+                f"Timeout fetching '{slug}', it is likely valid but slow, keeping it"
+            )
+        except Exception as e:
+            logger.warning(f"Skipping '{slug}' due to exception: {e})")
+            slugs.remove(slug)
+
+    return slugs
+
+
 def extract_protocol(url: str) -> str:
     """
     Extract the protocol name from a defillama url. It is assumed that
@@ -215,13 +246,12 @@ def extract_protocol(url: str) -> str:
     return url.split("/")[-1]
 
 
-def build_defillama_assets() -> List[AssetFactoryResponse]:
+def fetch_defillama_protocols() -> List[str]:
     """
-    Creates a defillama asset factory configured to fetch defillama data
-    given the current ossd projects with defillama urls.
+    Fetch defillama protocols from the ossd projects and the op_atlas dataset.
 
     Returns:
-        AssetFactoryResponse: The defillama asset factory.
+        List[str]: A list of defillama slugs.
     """
 
     client = bigquery.Client()
@@ -255,8 +285,24 @@ def build_defillama_assets() -> List[AssetFactoryResponse]:
     ossd_defillama_parsed_urls.update(op_atlas_data)
     ossd_defillama_parsed_urls.update(LEGACY_DEFILLAMA_PROTOCOLS)
 
+    return list(ossd_defillama_parsed_urls)
+
+
+DEFILLAMA_PROTOCOLS = fetch_defillama_protocols()
+
+
+def build_defillama_assets() -> List[AssetFactoryResponse]:
+    """
+    Creates a defillama asset factory configured to fetch defillama data
+    given the current ossd projects with defillama urls. Also fetches
+    defillama urls from the op_atlas dataset.
+
+    Returns:
+        AssetFactoryResponse: The defillama asset factory.
+    """
+
     dlt_assets = create_rest_factory_asset(
-        config=mk_defillama_config(ossd_defillama_parsed_urls),
+        config=mk_defillama_config(DEFILLAMA_PROTOCOLS),
     )
 
     assets = dlt_assets(
