@@ -12,6 +12,14 @@ from ..factories.rest import create_rest_factory_asset
 
 logger = logging.getLogger(__name__)
 
+# These protocols cause issues with dlt and its decoding
+# implementation. It is not trivial to fix these issues
+# so we disable them for now. For more info, see #3163.
+# TODO(jabolo): Fix these issues and re-enable these protocols.
+DISABLED_DEFILLAMA_PROTOCOLS = [
+    "pancakeswap-amm-v3",
+]
+
 LEGACY_DEFILLAMA_PROTOCOLS = [
     "aave",
     "aave-v1",
@@ -79,7 +87,6 @@ LEGACY_DEFILLAMA_PROTOCOLS = [
     "optimism-bridge",
     "origin-protocol",
     "overnight-finance",
-    # "pancakeswap-amm-v3",  # continuously fails
     "pendle",
     "perpetual-protocol",
     "pinto",
@@ -284,6 +291,8 @@ def fetch_defillama_protocols() -> List[str]:
 
     ossd_defillama_parsed_urls.update(op_atlas_data)
     ossd_defillama_parsed_urls.update(LEGACY_DEFILLAMA_PROTOCOLS)
+
+    ossd_defillama_parsed_urls.difference_update(DISABLED_DEFILLAMA_PROTOCOLS)
 
     return list(ossd_defillama_parsed_urls)
 
