@@ -30,7 +30,6 @@ TABLE_MAPPING: TableMappingConfig = {
         table="bigquery.open_collective.expenses",
     ),
     ### TODO start: remove oso_playground dependency
-    "opensource-observer.oso_playground.int_events__blockchain": "bigquery.oso.int_events__blockchain",
     "opensource-observer.oso_playground.stg_deps_dev__dependencies": "bigquery.oso.stg_deps_dev__dependencies",
     "opensource-observer.oso_playground.stg_deps_dev__packages": "bigquery.oso.stg_deps_dev__packages",
     "opensource-observer.oso_playground.stg_github__events": "bigquery.oso.stg_github__events",

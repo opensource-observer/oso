@@ -1,6 +1,10 @@
 import typing as t
 
-from metrics_tools.source.rewrite import DUCKDB_REWRITE_RULES, oso_source_rewrite
+from metrics_tools.source.rewrite import (
+    DUCKDB_REWRITE_RULES,
+    LOCAL_TRINO_REWRITE_RULES,
+    oso_source_rewrite,
+)
 from sqlglot import exp
 from sqlmesh import macro
 from sqlmesh.core.macros import MacroEvaluator
@@ -59,12 +63,17 @@ def oso_source(evaluator: MacroEvaluator, table_name: exp.Expression):
         raise ValueError(f"Unexpected table name: {table_name_evaled}")
 
     if evaluator.runtime_stage == "loading":
-        return table
+        oso_source_rewrite_config = t.cast(
+            t.List[dict], evaluator.var("oso_source_rewrite", [])
+        )
+        return oso_source_rewrite(oso_source_rewrite_config, table)
 
     if evaluator.engine_adapter.dialect == "duckdb":
         # We hardcode the rewrite rules for duckdb here to 1) keep things consistent
         # and 2) ensure tests can run even on production when using duckdb
         oso_source_rewrite_config = DUCKDB_REWRITE_RULES
+    elif evaluator.gateway == "local-trino":
+        oso_source_rewrite_config = LOCAL_TRINO_REWRITE_RULES
     else:
         oso_source_rewrite_config = t.cast(
             t.List[dict], evaluator.var("oso_source_rewrite", [])
