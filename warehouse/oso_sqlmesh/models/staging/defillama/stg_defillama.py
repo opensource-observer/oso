@@ -5,7 +5,7 @@ import orjson
 import pandas as pd
 from metrics_tools.source.rewrite import oso_source_for_pymodel
 from oso_dagster.assets.defillama import (
-    LEGACY_DEFILLAMA_PROTOCOLS,
+    DEFILLAMA_PROTOCOLS,
     defillama_chain_mappings,
     defillama_slug_to_name,
 )
@@ -126,4 +126,4 @@ def defillama_tvl_factory(protocols: t.List[str]):
     return [defillama_tvl_model(protocol) for protocol in protocols]
 
 
-defillama_tvl_factory(LEGACY_DEFILLAMA_PROTOCOLS)
+defillama_tvl_factory(DEFILLAMA_PROTOCOLS)
