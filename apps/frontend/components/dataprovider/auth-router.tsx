@@ -5,11 +5,11 @@ import {
   CommonDataProviderRegistration,
   DataProviderView,
 } from "./provider-view";
-import { spawn } from "@opensource-observer/utils";
 import { RegistrationProps } from "../../lib/types/plasmic";
 import { logger } from "../../lib/logger";
-import { analytics } from "../../lib/clients/segment";
+import { clientAnalytics } from "../../lib/clients/segment";
 import { supabaseClient } from "../../lib/clients/supabase";
+import { spawn } from "@opensource-observer/utils";
 
 const DEFAULT_PLASMIC_VARIABLE = "auth";
 
@@ -70,9 +70,12 @@ function AuthRouter(props: AuthRouterProps) {
     // Identify the user via Segment
     if (user) {
       spawn(
-        analytics.identify(user.id, {
-          name: user.user_metadata?.name,
-          email: user.email,
+        clientAnalytics!.identify({
+          userId: user.id,
+          traits: {
+            name: user.user_metadata?.name,
+            email: user.email,
+          },
         }),
       );
     }
