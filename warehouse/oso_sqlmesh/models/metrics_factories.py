@@ -318,7 +318,7 @@ timeseries_metrics(
         "active_addresses_aggregation": MetricQueryDef(
             ref="blockchain/active_addresses.sql",
             vars={
-                "activity_event_types": ["CONTRACT_INVOCATION_SUCCESS_DAILY_COUNT"],
+                "activity_event_types": ["CONTRACT_INVOCATION"],
             },
             rolling=RollingConfig(
                 windows=[30, 90, 180],
