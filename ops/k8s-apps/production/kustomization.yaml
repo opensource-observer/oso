@@ -9,3 +9,4 @@ resources:
   - ./metrics-calculation-service
   - ./nessie
   - ./nessie-cloudsql-proxy
+  - ./sqlmesh-cloudsql-proxy

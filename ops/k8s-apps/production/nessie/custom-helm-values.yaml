@@ -9,10 +9,10 @@ spec:
       name: production-nessie
     resources:
       limits:
-        memory: 2048Mi
+        memory: 4096Mi
       requests:
-        cpu: 1
-        memory: 1024Mi
+        cpu: 3000m
+        memory: 2048Mi
     catalog:
       enabled: true
       iceberg:
