@@ -6,4 +6,5 @@ packages:
   - "lib/utils"
   - "ops/external-prs"
   - "ops/github-app-utils"
+  - "ops/oso-operator"
   - "warehouse/cube"

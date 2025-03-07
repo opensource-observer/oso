@@ -1,0 +1,45 @@
+{
+  "name": "@opensource-observer/ops-external-prs",
+  "version": "0.0.1",
+  "description": "External PRs github app for OSO",
+  "author": "Kariba Labs",
+  "license": "Apache-2.0",
+  "private": true,
+  "bin": {
+    "operator": "./dist/src/operator.js"
+  },
+  "main": "./dist/src/index.js",
+  "types": "./dist/src/index.d.ts",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/opensource-observer/oso.git"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc",
+    "lint": "tsc --noEmit && pnpm lint:eslint && pnpm lint:prettier",
+    "lint:eslint": "eslint --ignore-path ../../.gitignore --max-warnings 0 .",
+    "lint:prettier": "prettier --ignore-path ../../.gitignore --log-level warn --check **/*.{js,jsx,ts,tsx,sol,md,json}",
+    "tools": "node --loader ts-node/esm src/cli.ts"
+  },
+  "keywords": [],
+  "devDependencies": {
+    "@types/lodash": "^4.17.4",
+    "@types/node": "^20.11.17",
+    "dotenv": "^16.4.1",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "@dot-i/k8s-operator": "^3.0.0",
+    "@google-cloud/bigquery": "^7.8.0",
+    "@kubernetes/client-node": "^1.0.0",
+    "@types/columnify": "^1.5.4",
+    "@types/yargs": "^17.0.32",
+    "yaml": "^2.3.1",
+    "yargs": "^17.7.2"
+  }
+}
