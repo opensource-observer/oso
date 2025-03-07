@@ -17,6 +17,7 @@ timeseries_metrics(
         "int_events_daily_to_artifact_with_lag",
         "int_issue_event_time_deltas",
         "int_first_of_event_from_artifact",
+        "int_events_daily__blockchain",
     ],
     metric_queries={
         # This will automatically generate star counts for the given roll up periods.
@@ -317,7 +318,7 @@ timeseries_metrics(
         "active_addresses_aggregation": MetricQueryDef(
             ref="blockchain/active_addresses.sql",
             vars={
-                "activity_event_types": ["CONTRACT_INVOCATION_SUCCESS_DAILY_COUNT"],
+                "activity_event_types": ["CONTRACT_INVOCATION"],
             },
             rolling=RollingConfig(
                 windows=[30, 90, 180],

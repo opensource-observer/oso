@@ -14,6 +14,11 @@ spec:
         value: gcp:secretmanager:production-mcs-gcs-secret/versions/latest
     serviceAccount:
       name: production-consumer-trino
+    accessControl:
+      type: properties
+      properties: |
+        access-control.name=read-only
+
     coordinator:
       resources:
         requests:
@@ -92,7 +97,7 @@ spec:
               periodSeconds: 15
             selectPolicy: Max
     catalogs:
-      metrics: |
+      iceberg: |
         connector.name=iceberg
         iceberg.catalog.type=rest
         iceberg.rest-catalog.uri=http://production-nessie.production-nessie.svc.cluster.local:19120/iceberg
