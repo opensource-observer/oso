@@ -98,21 +98,37 @@ spec:
               periodSeconds: 15
             selectPolicy: Max
     catalogs:
-      metrics: |
+      # metrics: |
+      #   connector.name=iceberg
+      #   iceberg.catalog.type=hive_metastore
+      #   hive.metastore.uri=thrift://10.145.192.27:9083
+      #   hive.metastore-cache-ttl=0s
+      #   hive.metastore-refresh-interval=5s
+      #   hive.metastore.thrift.client.connect-timeout=30s
+      #   hive.metastore.thrift.client.read-timeout=240s
+      #   iceberg.use-file-size-from-metadata=false
+      #   fs.native-gcs.enabled=true
+      #   gcs.project-id=opensource-observer
+      #   iceberg.max-partitions-per-writer=1000
+      # source: |
+      #   connector.name=hive
+      #   hive.metastore.uri=thrift://10.145.192.27:9083
+      #   fs.native-gcs.enabled=true
+      #   gcs.project-id=opensource-observer
+      #   hive.non-managed-table-writes-enabled=true
+      iceberg: |
         connector.name=iceberg
-        iceberg.catalog.type=hive_metastore
-        hive.metastore.uri=thrift://10.145.192.27:9083
-        hive.metastore-cache-ttl=0s
-        hive.metastore-refresh-interval=5s
-        hive.metastore.thrift.client.connect-timeout=30s
-        hive.metastore.thrift.client.read-timeout=240s
+        iceberg.catalog.type=rest
+        iceberg.rest-catalog.uri=http://production-nessie.production-nessie.svc.cluster.local:19120/iceberg
+        iceberg.rest-catalog.prefix=main
+        iceberg.rest-catalog.warehouse=gs://oso-iceberg-usc1/warehouse/
         iceberg.use-file-size-from-metadata=false
+        iceberg.max-partitions-per-writer=1000
         fs.native-gcs.enabled=true
         gcs.project-id=opensource-observer
-        iceberg.max-partitions-per-writer=1000
       source: |
         connector.name=hive
-        hive.metastore.uri=thrift://10.145.192.27:9083
+        hive.metastore.uri=thrift://10.145.192.30:9083
         fs.native-gcs.enabled=true
         gcs.project-id=opensource-observer
         hive.non-managed-table-writes-enabled=true
