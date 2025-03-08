@@ -102,7 +102,7 @@ def load_definitions():
     sqlmesh_schema = global_config.sqlmesh_schema
     sqlmesh_bq_export_dataset_id = global_config.sqlmesh_bq_export_dataset_id
 
-    sqlmesh_translator = PrefixedSQLMeshTranslator("oso")
+    sqlmesh_translator = PrefixedSQLMeshTranslator("sqlmesh")
 
     sqlmesh_config = SQLMeshContextConfig(
         path=global_config.sqlmesh_dir, gateway=global_config.sqlmesh_gateway
