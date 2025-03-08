@@ -20,7 +20,7 @@ WITH filtered_events AS (
     from_address,
     to_address,
     bundler_address,
-    userop_paymaster,
+    paymaster_address,
     userop_gas_price,
     userop_gas_used
   FROM oso.stg_superchain__4337_traces
@@ -40,26 +40,13 @@ to_events AS (
   FROM filtered_events
 ),
 
-entrypoint_events AS (
-  SELECT
-    block_timestamp,
-    chain,
-    transaction_hash,
-    from_address,
-    entrypoint_contract_address AS to_address,
-    userop_gas_price,
-    userop_gas_used,
-    '4337_ENTRYPOINT_CALL' AS event_type
-  FROM filtered_events
-),
-
 paymaster_events AS (
   SELECT
     block_timestamp,
     chain,
     transaction_hash,
     from_address,
-    userop_paymaster AS to_address,
+    paymaster_address AS to_address,
     userop_gas_price,
     userop_gas_used,
     '4337_PAYMASTER_CALL' AS event_type
@@ -86,10 +73,6 @@ unioned_events AS (
   UNION ALL
   SELECT
     *
-  FROM entrypoint_events
-  UNION ALL
-  SELECT
-    *
   FROM paymaster_events
   UNION ALL
   SELECT
@@ -102,7 +85,6 @@ SELECT
   @oso_id(chain, to_address) AS to_artifact_id,
   @oso_id(chain, from_address) AS from_artifact_id,
   event_type,
-  NULL::TEXT AS to_artifact_namespace,
   -- TODO: refactor to ensure unique event_source_id
   @oso_id(chain, transaction_hash) AS event_source_id,
   chain AS event_source,

@@ -1,6 +1,6 @@
 -- 4337 events (currently only from the superchain dataset)
 MODEL (
-  name oso.int_events_daily__blockchain,
+  name oso.int_events_daily__4337,
   kind INCREMENTAL_BY_TIME_RANGE (
     time_column bucket_day,
     batch_size 180,
@@ -9,7 +9,7 @@ MODEL (
   start '2021-10-01',
   cron '@daily',
   partitioned_by (DAY("bucket_day"), "event_type", "event_source"),
-  grain (time, event_type, event_source, from_artifact_id, to_artifact_id)
+  grain (bucket_day, event_type, event_source, from_artifact_id, to_artifact_id)
 );
 
 SELECT

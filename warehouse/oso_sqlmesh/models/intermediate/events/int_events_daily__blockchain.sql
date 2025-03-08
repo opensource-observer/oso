@@ -9,7 +9,7 @@ MODEL (
   start '2021-10-01',
   cron '@daily',
   partitioned_by (DAY("bucket_day"), "event_type", "event_source"),
-  grain (time, event_type, event_source, from_artifact_id, to_artifact_id)
+  grain (bucket_day, event_type, event_source, from_artifact_id, to_artifact_id)
 );
 
 SELECT
