@@ -37,7 +37,7 @@ SELECT
   CAST(
     CASE WHEN input != '0x' 
       THEN 0 
-      ELSE CAST(CONCAT('0x', SUBSTRING(userop_calldata, 75, 64)) AS DECIMAL(38,0)) / CAST(1e18 AS DECIMAL(38,18))
+      ELSE @hex_to_int(SUBSTRING(userop_calldata, 75, 64)) / CAST(1e18 AS DECIMAL(38,18))
     END AS DECIMAL(38,18)
   ) AS value
 FROM @oso_source(
