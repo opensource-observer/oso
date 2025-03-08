@@ -263,7 +263,7 @@ def sqlmesh_migrate(
         "SQLMESH_POSTGRES_INSTANCE_CONNECTION_STRING": "gcp:secretmanager:production-dagster-sqlmesh-postgres-instance-connection-string/versions/latest",
         "SQLMESH_POSTGRES_USER": "gcp:secretmanager:production-dagster-sqlmesh-postgres-user/versions/latest",
         "SQLMESH_POSTGRES_PASSWORD": "gcp:secretmanager:production-dagster-sqlmesh-postgres-password/versions/latest",
-        "SQLMESH_POSTGRES_DB": "sqlmesh-trino",
+        "SQLMESH_POSTGRES_DB": "gcp:secretmanager:production-dagster-sqlmesh-postgres-db/versions/latest",
         "SQLMESH_TRINO_HOST": "production-trino-trino.production-trino.svc.cluster.local",
         "SQLMESH_TRINO_CONCURRENT_TASKS": "64",
         "SQLMESH_MCS_ENABLED": "1",
