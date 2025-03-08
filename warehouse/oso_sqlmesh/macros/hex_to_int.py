@@ -25,7 +25,7 @@ def hex_to_int(
         if no_prefix:
             return exp.Cast(
                 this=exp.Concat(
-                    expressions=["0x", hex_exp],
+                    expressions=[exp.Literal.string("0x"), hex_exp],
                     safe=False,
                     coalesce=False,
                 ),
