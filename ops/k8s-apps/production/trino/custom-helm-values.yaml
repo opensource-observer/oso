@@ -78,15 +78,16 @@ spec:
       workers: 1
       autoscaling:
         enabled: true
-        maxReplicas: 16
-        targetCPUUtilizationPercentage: 20
+        maxReplicas: 10
+        targetCPUUtilizationPercentage: 50
+        targetMemoryUtilizationPercentage: 50
         behavior:
           scaleDown:
             stabilizationWindowSeconds: 600
             policies:
             - type: Pods
               value: 1
-              periodSeconds: 60
+              periodSeconds: 120
           scaleUp:
             stabilizationWindowSeconds: 0
             policies:
