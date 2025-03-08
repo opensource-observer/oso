@@ -1,4 +1,7 @@
-from oso_dagster.assets.defillama import DEFILLAMA_PROTOCOLS, defillama_slug_to_name
+from oso_dagster.assets.defillama import (
+    DEFILLAMA_PROTOCOLS,
+    defillama_slug_to_name,
+)
 from sqlglot import exp
 from sqlmesh import macro
 from sqlmesh.core.macros import MacroEvaluator
