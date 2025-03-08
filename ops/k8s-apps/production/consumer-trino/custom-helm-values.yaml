@@ -102,7 +102,7 @@ spec:
         iceberg.catalog.type=rest
         iceberg.rest-catalog.uri=http://production-nessie.production-nessie.svc.cluster.local:19120/iceberg
         iceberg.rest-catalog.prefix=main
-        iceberg.rest-catalog.warehouse=gs://production-nessie-bucket/warehouse/
+        iceberg.rest-catalog.warehouse=gs://oso-iceberg-usc1/warehouse/
         fs.native-gcs.enabled=true
         gcs.project-id=opensource-observer
       bigquery: |

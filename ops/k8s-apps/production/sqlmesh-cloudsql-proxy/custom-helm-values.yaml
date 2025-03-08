@@ -1,0 +1,12 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: production-sqlmesh-cloudsql-proxy
+spec:
+  values:
+    cloudsql:
+      instances:
+        - instance: sqlmesh-psql
+          region: us-central1
+          project: opensource-observer
+          port: 5432

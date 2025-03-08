@@ -7,7 +7,10 @@ test_stg_op_atlas_project_contract:
   inputs:
     bigquery.op_atlas.project_contract:
       rows:
-      - comment: "This needs to exist for @oso_source in tests"
+      - comment: "This needs to exist for @oso_source in tests when using trino gateway"
+    bigquery.bq_op_atlas.project_contract:
+      rows:
+      - comment: "This needs to exist for @oso_source in tests when using local-trino gateway"
     sources__bigquery__op_atlas.project_contract:
       rows:
       - id: 0x1
