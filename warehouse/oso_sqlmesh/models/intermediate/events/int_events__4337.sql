@@ -17,6 +17,7 @@ WITH filtered_events AS (
     chain,
     block_timestamp,
     transaction_hash,
+    userop_hash,
     from_address,
     to_address,
     bundler_address,
@@ -32,6 +33,7 @@ to_events AS (
     block_timestamp,
     chain,
     transaction_hash,
+    userop_hash,
     from_address,
     to_address,
     userop_gas_price,
@@ -45,6 +47,7 @@ paymaster_events AS (
     block_timestamp,
     chain,
     transaction_hash,
+    userop_hash,
     from_address,
     paymaster_address AS to_address,
     userop_gas_price,
@@ -58,6 +61,7 @@ bundler_events AS (
     block_timestamp,
     chain,
     transaction_hash,
+    userop_hash,
     from_address,
     bundler_address AS to_address,
     userop_gas_price,
@@ -85,8 +89,7 @@ SELECT
   @oso_id(chain, to_address) AS to_artifact_id,
   @oso_id(chain, from_address) AS from_artifact_id,
   event_type,
-  -- TODO: refactor to ensure unique event_source_id
-  @oso_id(chain, transaction_hash) AS event_source_id,
+  @oso_id(chain, transaction_hash, userop_hash) AS event_source_id,
   chain AS event_source,
   NULL::TEXT AS to_artifact_namespace,
   to_address AS to_artifact_name,
@@ -96,5 +99,6 @@ SELECT
   from_address AS from_artifact_source_id,
   userop_gas_used::DOUBLE AS userop_gas_used,
   userop_gas_price::DOUBLE AS userop_gas_price,
-  transaction_hash
+  transaction_hash,
+  userop_hash
 FROM unioned_events
