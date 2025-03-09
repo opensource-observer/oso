@@ -135,7 +135,7 @@ def interval_gcs_import_asset(config: IntervalGCSAsset):
 
             client = gcs.get_client()
             bucket = client.bucket(config.bucket_name, user_project=gcs.project)
-            blobs = bucket.list_blobs(config.bucket_name, prefix=config.path_base)
+            blobs = bucket.list_blobs(match_glob=f"{config.path_base}/**")
 
             file_matcher = re.compile(config.path_base + "/" + config.file_match)
 
