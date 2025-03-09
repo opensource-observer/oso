@@ -198,7 +198,7 @@ def upload_file_to_gcs(
     """
     client = gcs.get_client()
     bucket_name = staging_bucket.replace(GCS_PROTOCOL, "")
-    bucket = client.bucket(bucket_name)
+    bucket = client.bucket(bucket_name, user_project=gcs.project)
     blob = bucket.blob(
         f"{GCS_BUCKET_DIRECTORY}/{sync_id}/{os.path.basename(file_path)}"
     )
@@ -316,7 +316,9 @@ def delete_gcs_files(
     gcs_relative_dir = f"{GCS_BUCKET_DIRECTORY}/{sync_id}"
 
     gcs_client = gcs.get_client()
-    batch_delete_folder(gcs_client, gcs_bucket_name, gcs_relative_dir)
+    batch_delete_folder(
+        gcs_client, gcs_bucket_name, gcs_relative_dir, user_project=gcs.project
+    )
 
 
 def create_archive2bq_asset(

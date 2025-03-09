@@ -59,12 +59,12 @@ spec:
 
     additionalConfigProperties:
       - retry-policy=QUERY
-      - "exchange.http-client.max-content-length=128MB"
+      - "exchange.http-client.max-content-length=64MB"
     additionalExchangeManagerProperties:
-      - "exchange.sink-buffers-per-partition=6"
+      - "exchange.sink-buffers-per-partition=2"
       - "exchange.sink-buffer-pool-min-size=10"
-      - "exchange.source-concurrent-readers=6"
-      - "exchange.max-page-storage-size=128MB"
+      - "exchange.source-concurrent-readers=2"
+      - "exchange.max-page-storage-size=64MB"
       - "exchange.s3.region=us-central1"
       - "exchange.s3.aws-access-key=${ENV:TRINO_GCS_KEY_ID}"
       - "exchange.s3.aws-secret-key=${ENV:TRINO_GCS_SECRET}"
@@ -82,7 +82,7 @@ spec:
         enabled: true
         maxReplicas: 10
         targetCPUUtilizationPercentage: 50
-        targetMemoryUtilizationPercentage: 50
+        targetMemoryUtilizationPercentage: 30
         behavior:
           scaleDown:
             stabilizationWindowSeconds: 600
@@ -91,14 +91,14 @@ spec:
               value: 1
               periodSeconds: 120
           scaleUp:
-            stabilizationWindowSeconds: 0
+            stabilizationWindowSeconds: 60
             policies:
             - type: Percent
               value: 100
-              periodSeconds: 15
+              periodSeconds: 60
             - type: Pods
               value: 2 
-              periodSeconds: 15
+              periodSeconds: 60
             selectPolicy: Max
     catalogs:
       # metrics: |

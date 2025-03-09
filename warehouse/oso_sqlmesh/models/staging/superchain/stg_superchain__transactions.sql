@@ -2,7 +2,7 @@ MODEL (
   name oso.stg_superchain__transactions,
   kind INCREMENTAL_BY_TIME_RANGE (
     time_column block_timestamp,
-    batch_size 180,
+    batch_size 90,
     batch_concurrency 1,
     lookback 7
   ),
