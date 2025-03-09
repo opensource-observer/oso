@@ -1,4 +1,3 @@
-/* TODO: turn this into a rolling model that includes a sample date (eg, every week) */
 MODEL (
   name oso.int_superchain_s7_onchain_builder_eligibility,
   description "Determines if a project is eligible for measurement in the S7 onchain builder round",
@@ -14,60 +13,51 @@ MODEL (
   grain (sample_date, project_id)
 );
 
+@DEF(measurement_date, '2025-03-01');
 @DEF(lookback_days, 180);
-
-@DEF(single_chain_tx_threshold, 10000);
-
-@DEF(multi_chain_tx_threshold, 1000);
-
+@DEF(transactions_threshold, 1000);
 @DEF(gas_fees_threshold, 0.1);
-
-@DEF(user_threshold, 420);
-
-@DEF(active_days_threshold, 60);
+@DEF(active_addresses_threshold, 420);
+@DEF(days_with_onchain_activity_threshold, 10);
 
 WITH builder_metrics AS (
   SELECT
     project_id,
-    COUNT(DISTINCT chain) AS chain_count,
-    COUNT(DISTINCT transaction_hash) AS transaction_count,
-    SUM(gas_fee) AS gas_fees,
-    COUNT(DISTINCT from_artifact_id) AS user_count,
-    COUNT(DISTINCT DATE_TRUNC('DAY', block_timestamp)) AS active_days
-  FROM oso.int_superchain_trace_level_events_by_project
+    COUNT(DISTINCT e.transaction_hash) AS transaction_count,
+    COUNT(DISTINCT e.from_artifact_id) AS active_addresses_count,
+    COUNT(DISTINCT DATE_TRUNC('DAY', e.time)) AS active_days,
+    SUM(e.gas_fee) AS gas_fees
+  FROM oso.int_superchain_events_by_project AS e
+  INNER JOIN oso.projects_by_collection_v1 AS pbc
+    ON e.project_id = pbc.project_id
   WHERE
-    block_timestamp BETWEEN @start_dt AND @end_dt
-    AND CAST(block_timestamp AS DATE) >= (
-      CURRENT_DATE - INTERVAL @lookback_days DAY
-    )
+    e.time BETWEEN @measurement_date - INTERVAL @lookback_days DAY
+      AND @measurement_date
+    AND UPPER(pbc.collection_name) = 'S7-ONCHAIN-BUILDERS-M1'
+    AND e.event_type IN ('CONTRACT_INVOCATION', 'CONTRACT_INTERNAL_INVOCATION')
   GROUP BY
     project_id
-), project_eligibility AS (
+),
+
+project_eligibility AS (
   SELECT
     project_id,
     (
-      (
-        CASE
-          WHEN chain_count > 1
-          THEN transaction_count >= @multi_chain_tx_threshold
-          ELSE transaction_count >= @single_chain_tx_threshold
-        END
-      )
+      transaction_count >= @transactions_threshold
+      AND active_addresses_count >= @active_addresses_threshold
+      AND active_days >= @days_with_onchain_activity_threshold
       AND gas_fees >= @gas_fees_threshold
-      AND user_count >= @user_threshold
-      AND active_days >= @active_days_threshold
     ) AS is_eligible
   FROM builder_metrics
 )
 SELECT
+  @measurement_date AS sample_date,
   builder_metrics.project_id,
-  builder_metrics.chain_count,
   builder_metrics.transaction_count,
   builder_metrics.gas_fees,
-  builder_metrics.user_count,
+  builder_metrics.active_addresses_count,
   builder_metrics.active_days,
-  project_eligibility.is_eligible,
-  CURRENT_TIMESTAMP AS sample_date
+  project_eligibility.is_eligible
 FROM builder_metrics
 INNER JOIN project_eligibility
   ON builder_metrics.project_id = project_eligibility.project_id
