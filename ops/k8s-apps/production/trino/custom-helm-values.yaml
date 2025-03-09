@@ -59,12 +59,12 @@ spec:
 
     additionalConfigProperties:
       - retry-policy=QUERY
-      - "exchange.http-client.max-content-length=128MB"
+      - "exchange.http-client.max-content-length=64MB"
     additionalExchangeManagerProperties:
-      - "exchange.sink-buffers-per-partition=6"
+      - "exchange.sink-buffers-per-partition=2"
       - "exchange.sink-buffer-pool-min-size=10"
-      - "exchange.source-concurrent-readers=6"
-      - "exchange.max-page-storage-size=128MB"
+      - "exchange.source-concurrent-readers=2"
+      - "exchange.max-page-storage-size=64MB"
       - "exchange.s3.region=us-central1"
       - "exchange.s3.aws-access-key=${ENV:TRINO_GCS_KEY_ID}"
       - "exchange.s3.aws-secret-key=${ENV:TRINO_GCS_SECRET}"
