@@ -94,7 +94,7 @@ SELECT
   NULL::TEXT AS from_artifact_namespace,
   from_address AS from_artifact_name,
   from_address AS from_artifact_source_id,
-  userop_gas_used,
-  userop_gas_price,
+  userop_gas_used::DOUBLE AS userop_gas_used,
+  userop_gas_price::DOUBLE AS userop_gas_price,
   transaction_hash
 FROM unioned_events
