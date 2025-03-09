@@ -13,7 +13,7 @@ MODEL (
   grain (sample_date, project_id)
 );
 
-@DEF(measurement_date, '2025-03-01');
+@DEF(measurement_date, DATE('2025-03-01'));
 @DEF(lookback_days, 180);
 @DEF(transactions_threshold, 1000);
 @DEF(gas_fees_threshold, 0.1);
@@ -22,7 +22,7 @@ MODEL (
 
 WITH builder_metrics AS (
   SELECT
-    project_id,
+    e.project_id,
     COUNT(DISTINCT e.transaction_hash) AS transaction_count,
     COUNT(DISTINCT e.from_artifact_id) AS active_addresses_count,
     COUNT(DISTINCT DATE_TRUNC('DAY', e.time)) AS active_days,
@@ -36,7 +36,7 @@ WITH builder_metrics AS (
     AND UPPER(pbc.collection_name) = 'S7-ONCHAIN-BUILDERS-M1'
     AND e.event_type IN ('CONTRACT_INVOCATION', 'CONTRACT_INTERNAL_INVOCATION')
   GROUP BY
-    project_id
+    e.project_id
 ),
 
 project_eligibility AS (
