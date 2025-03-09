@@ -19,7 +19,7 @@ SELECT
   event_source::VARCHAR,
   event_type::VARCHAR,
   SUM(gas_used * gas_price_tx)::DOUBLE AS amount,
-  COUNT(*)::DOUBLE AS "count"
+  COUNT(DISTINCT transaction_hash)::DOUBLE AS "count"
 FROM oso.int_events__blockchain as events
 GROUP BY
   from_artifact_id,
