@@ -204,7 +204,9 @@ def create_bq2clickhouse_asset(asset_config: Bq2ClickhouseAssetConfig):
 
         # Delete the gcs files
         gcs_client = gcs.get_client()
-        batch_delete_folder(gcs_client, gcs_bucket_name, gcs_relative_dir)
+        batch_delete_folder(
+            gcs_client, gcs_bucket_name, gcs_relative_dir, user_project=gcs.project
+        )
         context.log.info(f"Deleted GCS folder {gcs_path}")
 
         return MaterializeResult(
