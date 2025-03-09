@@ -12,9 +12,10 @@ MODEL (
   grain (bucket_day, event_type, event_source, from_artifact_id, to_artifact_id)
 );
 
-@DEF(to_artifact_namespace, LOWER(all_tvl_events.chain));
+@DEF(event_source, UPPER(all_tvl_events.chain));
+@DEF(to_artifact_namespace, '');
 @DEF(to_artifact_name, LOWER(all_tvl_events.slug));
-@DEF(from_artifact_namespace, LOWER(all_tvl_events.chain));
+@DEF(from_artifact_namespace, '');
 @DEF(from_artifact_name, LOWER(all_tvl_events.token));
 
 WITH all_tvl_events AS (
@@ -24,15 +25,15 @@ WITH all_tvl_events AS (
 tvl_events_with_ids AS (
   SELECT
     all_tvl_events.time AS bucket_day,
-    'TVL' AS event_type,
-    'DEFILLAMA' AS event_source,
+    'DEFILLAMA_TVL' AS event_type,
+    @event_source AS event_source,
     @oso_id(
-      all_tvl_events.time, @to_artifact_namespace, @to_artifact_name, @from_artifact_namespace, @from_artifact_name
+      all_tvl_events.time, @event_source, @to_artifact_namespace, @to_artifact_name, @from_artifact_namespace, @from_artifact_name
     ) AS event_source_id,
-    @oso_id(@to_artifact_namespace, @to_artifact_name) AS to_artifact_id,
+    @oso_id('DEFILLAMA', @to_artifact_namespace, @to_artifact_name) AS to_artifact_id,
     @to_artifact_namespace AS to_artifact_namespace,
     @to_artifact_name AS to_artifact_name,
-    @oso_id(@from_artifact_namespace, @from_artifact_name) AS from_artifact_id,
+    @oso_id('DEFILLAMA', @from_artifact_namespace, @from_artifact_name) AS from_artifact_id,
     @from_artifact_namespace AS from_artifact_namespace,
     @from_artifact_name AS from_artifact_name,
     all_tvl_events.tvl::DOUBLE AS amount
