@@ -36,7 +36,7 @@ to_events AS (
     to_address,
     userop_gas_price,
     userop_gas_used,
-    '4337_CONTRACT_CALL' AS event_type
+    'CONTRACT_INVOCATION_VIA_USEROP' AS event_type
   FROM filtered_events
 ),
 
@@ -49,7 +49,7 @@ paymaster_events AS (
     paymaster_address AS to_address,
     userop_gas_price,
     userop_gas_used,
-    '4337_PAYMASTER_CALL' AS event_type
+    'CONTRACT_INVOCATION_VIA_PAYMASTER' AS event_type
   FROM filtered_events
 ),
 
@@ -62,7 +62,7 @@ bundler_events AS (
     bundler_address AS to_address,
     userop_gas_price,
     userop_gas_used,
-    '4337_BUNDLER_CALL' AS event_type
+    'CONTRACT_INVOCATION_VIA_BUNDLER' AS event_type
   FROM filtered_events
 ),
 
