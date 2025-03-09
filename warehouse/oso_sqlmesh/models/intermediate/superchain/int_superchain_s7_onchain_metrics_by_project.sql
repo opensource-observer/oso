@@ -72,13 +72,32 @@ transaction_count AS (
 
 -- Gas fees
 transaction_gas_fee AS (
+  WITH project_event_types AS (
+    -- First, identify which projects have direct CONTRACT_INVOCATION events
+    SELECT DISTINCT project_id, chain
+    FROM base_events
+    WHERE event_type = 'CONTRACT_INVOCATION'
+  )
   SELECT
     project_id,
     chain,
     bucket_month AS sample_date,
     'gas_fees_monthly' AS metric_name,
     SUM(gas_fee) AS amount
-  FROM base_events
+  FROM base_events AS e
+  WHERE (
+    -- Include CONTRACT_INVOCATION events for all projects that have them
+    event_type = 'CONTRACT_INVOCATION'
+    OR
+    -- Include CONTRACT_INTERNAL_INVOCATION only for projects that don't have direct invocations
+    (event_type = 'CONTRACT_INTERNAL_INVOCATION' 
+     AND NOT EXISTS (
+       SELECT 1 
+       FROM project_event_types AS pet 
+       WHERE pet.project_id = e.project_id 
+         AND pet.chain = e.chain
+     ))
+  )
   GROUP BY 1, 2, 3
 ),
 
