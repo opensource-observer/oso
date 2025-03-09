@@ -10,14 +10,14 @@
       "lang": "ts",
       "fileLocks": [
         {
-          "type": "globalVariant",
-          "assetId": "kb7NFax8VjYW",
-          "checksum": "3a26146da84fc99238d6f726ff9b6e5e"
-        },
-        {
           "assetId": "2CtczDeUz9jL9qnFi6NWuQ",
           "checksum": "4a0424ac88096aacf68972653e200b66",
           "type": "globalContexts"
+        },
+        {
+          "type": "globalVariant",
+          "assetId": "kb7NFax8VjYW",
+          "checksum": "3a26146da84fc99238d6f726ff9b6e5e"
         },
         {
           "type": "renderModule",
