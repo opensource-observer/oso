@@ -9,7 +9,7 @@ MODEL(
   ),
   start '2015-01-01',
   cron '@daily',
-  partitioned_by day("sample_date"),
+  partitioned_by DAY("sample_date"),
   grain(sample_date, chain, project_id, metric_name),
   enabled false,
 );
@@ -28,13 +28,10 @@ WITH base_events AS (
     e.transaction_hash,
     COALESCE(users.is_farcaster_user, false) AS is_farcaster_user
   FROM oso.int_superchain_events_by_project AS e
-  INNER JOIN oso.projects_by_collection_v1 AS pbc
-    ON e.project_id = pbc.project_id
   LEFT OUTER JOIN oso.int_superchain_onchain_user_labels AS users
   ON e.from_artifact_id = users.artifact_id
   WHERE
     e.time BETWEEN @start_dt AND @end_dt
-    -- AND pbc.project_namespace = 'S7P1'
     -- Currently no 4337-specific logic
     AND e.event_type IN (
       'CONTRACT_INVOCATION',
@@ -50,11 +47,8 @@ defillama_tvl_events AS (
     DATE_TRUNC('MONTH', dl.bucket_day::DATE) AS bucket_month,
     dl.amount
   FROM oso.int_events_daily__defillama_tvl AS dl
-  INNER JOIN oso.projects_by_collection_v1 AS pbc
-    ON dl.project_id = pbc.project_id
   WHERE
     dl.bucket_day BETWEEN @start_dt AND @end_dt
-    -- AND pbc.project_namespace = 'S7P1'
     AND dl.event_type = 'DEFILLAMA_TVL'
 ),
 
