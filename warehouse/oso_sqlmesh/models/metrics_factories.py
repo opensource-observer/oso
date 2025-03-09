@@ -18,6 +18,7 @@ timeseries_metrics(
         "int_issue_event_time_deltas",
         "int_first_of_event_from_artifact",
         "int_events_daily__blockchain",
+        "int_events_daily__defillama_tvl",
     ],
     metric_queries={
         # This will automatically generate star counts for the given roll up periods.

@@ -54,5 +54,5 @@ SELECT
   tvl_events_with_ids.from_artifact_name,
   tvl_events_with_ids.amount
 FROM tvl_events_with_ids
-LEFT OUTER JOIN oso.artifacts_by_projects_v1 AS abp
+LEFT OUTER JOIN oso.artifacts_by_project_v1 AS abp
   ON tvl_events_with_ids.to_artifact_id = abp.artifact_id
