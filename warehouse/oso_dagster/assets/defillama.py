@@ -319,9 +319,25 @@ def fetch_defillama_protocols() -> Tuple[List[str], List[str]]:
     ossd_defillama_parsed_urls.difference_update(DISABLED_DEFILLAMA_PROTOCOLS)
 
     dataset = client.dataset("defillama_tvl")
-    tables = [
-        defillama_name_to_slug(table.table_id) for table in client.list_tables(dataset)
-    ]
+    try:
+        tables = [
+            defillama_name_to_slug(table.table_id)
+            for table in client.list_tables(dataset)
+        ]
+    except Forbidden as e:
+        logging.warning(f"Failed to fetch defillama tables, skipping: {e}")
+
+        # NOTE: These tables are present on the `opensource-observer.defillama_tvl`
+        # BigQuery dataset. They're a fallback in case the tables cannot be
+        # fetched from BigQuery. Useful for CI/CD pipelines to test validity
+        # of the defillama assets.
+        # This will fail if the tables are not present in the BigQuery dataset.
+        fallback_tables = ["optimism-bridge", "sushiswap"]
+        tables = []
+
+        for table in fallback_tables:
+            tables.append(table)
+            ossd_defillama_parsed_urls.add(table)
 
     return list(ossd_defillama_parsed_urls), list(
         ossd_defillama_parsed_urls.intersection(tables)
