@@ -2,10 +2,11 @@ MODEL (
   name oso.stg_superchain__4337_traces,
   kind INCREMENTAL_BY_TIME_RANGE (
     time_column block_timestamp,
-    batch_size 180,
+    batch_size 90,
     batch_concurrency 1,
     lookback 7
   ),
+  dialect trino,
   start '2021-10-01',
   cron '@daily',
   partitioned_by (DAY("block_timestamp"), "chain"),
@@ -37,7 +38,7 @@ SELECT
   CAST(
     CASE WHEN input != '0x' 
       THEN 0 
-      ELSE CAST(CONCAT('0x', SUBSTRING(userop_calldata, 75, 64)) AS DECIMAL(38,0)) / CAST(1e18 AS DECIMAL(38,18))
+      ELSE TRY(@hex_to_int(SUBSTRING(userop_calldata, 75, 64))) / CAST(1e18 AS DECIMAL(38,18))
     END AS DECIMAL(38,18)
   ) AS value
 FROM @oso_source(

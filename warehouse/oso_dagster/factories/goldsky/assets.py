@@ -407,7 +407,7 @@ def delete_all_gcs_files_in_prefix(
     context.log.info(f"deleting files in gs://{bucket_name}/{prefix}")
     client = gcs.get_client()
     try:
-        bucket = client.bucket(bucket_name)
+        bucket = client.bucket(bucket_name, user_project=gcs.project)
         blobs_to_delete = list(client.list_blobs(bucket_name, prefix=prefix))
         bucket.delete_blobs(blobs=blobs_to_delete)
     finally:
@@ -530,7 +530,9 @@ class GoldskyAsset:
         try:
             # Download the parquet file
             # Load the parquet file to get the schema
-            bucket = client.bucket(self.config.source_bucket_name)
+            bucket = client.bucket(
+                self.config.source_bucket_name, user_project=self.gcs.project
+            )
             blob = bucket.get_blob(item.blob_name)
             if not blob:
                 raise Exception("cannot load schema. failed to get blob")
@@ -892,7 +894,10 @@ class GoldskyAsset:
     def _uncached_blobs_loader(self, log: DagsterLogManager):
         log.info("Loading blobs list for processing")
         gcs_client = self.gcs.get_client()
-        blobs = gcs_client.list_blobs(
+        bucket = gcs_client.bucket(
+            self.config.source_bucket_name, user_project=self.gcs.project
+        )
+        blobs = bucket.list_blobs(
             self.config.source_bucket_name,
             prefix=f"{self.config.source_goldsky_dir}/{self.config.source_name}",
         )

@@ -77,7 +77,7 @@ spec:
       trino:
         host: production-trino-trino.production-trino.svc.cluster.local
         user: sqlmesh
-        catalog: "metrics"
+        catalog: "iceberg"
         concurrentTasks: "64"
         k8s:
           coordinatorDeploymentName: production-trino-trino-coordinator

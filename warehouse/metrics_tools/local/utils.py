@@ -17,6 +17,7 @@ TABLE_MAPPING: TableMappingConfig = {
     "opensource-observer.farcaster.verifications": "bigquery.farcaster.verifications",
     "opensource-observer.lens_v2_polygon.profile_metadata": "bigquery.lens_v2_polygon.profile_metadata",
     "opensource-observer.lens_v2_polygon.profile_ownership_history": "bigquery.lens_v2_polygon.profile_ownership_history",
+    "opensource-observer.op_atlas.application": "bigquery.op_atlas.application",
     "opensource-observer.op_atlas.project": "bigquery.op_atlas.project",
     "opensource-observer.op_atlas.project__defi_llama_slug": "bigquery.op_atlas.project__defi_llama_slug",
     "opensource-observer.op_atlas.project__farcaster": "bigquery.op_atlas.project__farcaster",
