@@ -310,10 +310,10 @@ def fetch_defillama_protocols() -> Tuple[List[str], List[str]]:
 
     ossd_defillama_parsed_urls.difference_update(DISABLED_DEFILLAMA_PROTOCOLS)
 
-    ossd_defillama_parsed_urls = filter_valid_slugs(ossd_defillama_parsed_urls)
-
     if fallback:
         ossd_defillama_parsed_urls.update(tables)
+
+    ossd_defillama_parsed_urls = filter_valid_slugs(ossd_defillama_parsed_urls)
 
     return list(ossd_defillama_parsed_urls), list(
         ossd_defillama_parsed_urls.intersection(tables)
