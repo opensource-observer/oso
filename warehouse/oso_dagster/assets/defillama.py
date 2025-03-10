@@ -167,6 +167,31 @@ def defillama_name_to_slug(name: str) -> str:
     return name.replace("__dot__", ".").replace("_", "-")
 
 
+def defillama_chain_mappings(chain: str) -> str:
+    """
+    Map defillama chains to their canonical names.
+
+    Args:
+        chain (str): The chain to map.
+
+    Returns:
+        str: The mapped chain or the original chain if no mapping is found.
+    """
+
+    chain = chain.lower()
+    return {
+        "arbitrum": "arbitrum_one",
+        "ethereum": "mainnet",
+        "fraxtal": "frax",
+        "op mainnet": "optimism",
+        "polygon": "matic",
+        "polygon zkevm": "polygon_zkevm",
+        "swellchain": "swell",
+        "world chain": "worldchain",
+        "zksync era": "zksync_era",
+    }.get(chain, chain)
+
+
 def mk_defillama_config(urls: List[str]) -> RESTAPIConfig:
     """
     Create a REST API config for fetching defillama data.
