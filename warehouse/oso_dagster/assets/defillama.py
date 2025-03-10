@@ -1,7 +1,9 @@
+import asyncio
 import logging
+from contextlib import asynccontextmanager
 from typing import List, Set, Tuple
 
-import requests
+import aiohttp
 from dlt.sources.rest_api.typing import RESTAPIConfig
 from google.api_core.exceptions import Forbidden
 from google.cloud import bigquery
@@ -199,6 +201,52 @@ def mk_defillama_config(urls: List[str]) -> RESTAPIConfig:
     }
 
 
+async def _filter_valid_slugs(slugs: Set[str]) -> Set[str]:
+    """
+    Filter out invalid defillama slugs from a set of slugs asynchronously.
+
+    Args:
+        slugs (Set[str]): The set of slugs to filter.
+
+    Returns:
+        Set[str]: The set of valid slugs.
+    """
+
+    valid_slugs = set(slugs)
+
+    @asynccontextmanager
+    async def get_session():
+        async with aiohttp.ClientSession() as session:
+            yield session
+
+    async def check_slug(session: aiohttp.ClientSession, slug: str):
+        try:
+            print(f"Checking '{slug}'")
+            async with session.head(
+                f"https://api.llama.fi/protocol/{slug}",
+                timeout=aiohttp.ClientTimeout(total=5),
+            ) as response:
+                if response.status != 200:
+                    logger.warning(
+                        f"Skipping invalid Defillama slug '{slug}': {response.status}"
+                    )
+                    valid_slugs.remove(slug)
+                print(f"Checked '{slug}'")
+        except asyncio.TimeoutError:
+            logger.warning(
+                f"Timeout fetching '{slug}', it is likely valid but slow, keeping it"
+            )
+        except Exception as e:
+            logger.warning(f"Skipping '{slug}' due to exception: {e})")
+            valid_slugs.remove(slug)
+
+    async with get_session() as session:
+        tasks = [check_slug(session, slug) for slug in slugs]
+        await asyncio.gather(*tasks)
+
+    return valid_slugs
+
+
 def filter_valid_slugs(slugs: Set[str]) -> Set[str]:
     """
     Filter out invalid defillama slugs from a set of slugs.
@@ -210,23 +258,7 @@ def filter_valid_slugs(slugs: Set[str]) -> Set[str]:
         Set[str]: The set of valid slugs.
     """
 
-    for slug in slugs:
-        try:
-            r = requests.head(f"https://api.llama.fi/protocol/{slug}", timeout=10)
-            if r.status_code != 200:
-                logger.warning(
-                    f"Skipping invalid Defillama slug '{slug}': {r.status_code} {r.text}"
-                )
-                slugs.remove(slug)
-        except requests.Timeout:
-            logger.warning(
-                f"Timeout fetching '{slug}', it is likely valid but slow, keeping it"
-            )
-        except Exception as e:
-            logger.warning(f"Skipping '{slug}' due to exception: {e})")
-            slugs.remove(slug)
-
-    return slugs
+    return asyncio.run(_filter_valid_slugs(slugs))
 
 
 def extract_protocol(url: str) -> str:
