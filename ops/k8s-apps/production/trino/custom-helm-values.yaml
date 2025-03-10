@@ -58,7 +58,7 @@ spec:
         - "--add-opens=java.base/java.nio=ALL-UNNAMED"
 
     additionalConfigProperties:
-      - retry-policy=QUERY
+      - retry-policy=TASK
       - "exchange.http-client.max-content-length=64MB"
     additionalExchangeManagerProperties:
       - "exchange.sink-buffers-per-partition=2"
@@ -73,7 +73,7 @@ spec:
     server:
       exchangeManager:
         name: filesystem
-        baseDir: gs://oso-iceberg-exchange-usc1/trino-exchange/
+        baseDir: gs://oso-iceberg-exchange-usc1
       config:
         query:
           maxMemory: "1400GB"

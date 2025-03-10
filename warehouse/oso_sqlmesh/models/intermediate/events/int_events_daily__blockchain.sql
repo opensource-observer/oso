@@ -17,8 +17,7 @@ SELECT
   from_artifact_id::VARCHAR AS from_artifact_id,
   to_artifact_id::VARCHAR AS to_artifact_id,
   event_source::VARCHAR,
-  event_type::VARCHAR,
-  SUM(gas_used * gas_price_tx)::DOUBLE AS amount,
+  SUM(gas_used::DOUBLE * gas_price_tx::DOUBLE)::DOUBLE AS amount,
   COUNT(DISTINCT transaction_hash)::DOUBLE AS "count"
 FROM oso.int_events__blockchain as events
 GROUP BY
