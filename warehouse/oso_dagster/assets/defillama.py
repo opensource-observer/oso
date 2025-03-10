@@ -1,5 +1,5 @@
 import logging
-from typing import List
+from typing import List, Tuple
 
 import requests
 from dlt.sources.rest_api.typing import RESTAPIConfig
@@ -147,6 +147,24 @@ def defillama_slug_to_name(slug: str) -> str:
     return f"{slug.replace('-', '_').replace(".", '__dot__')}_protocol"
 
 
+def defillama_name_to_slug(name: str) -> str:
+    """
+    Convert a protocol name back to a defillama slug, reversing the
+    transformations done by defillama_slug_to_name.
+
+    Args:
+        name (str): The protocol name to convert.
+
+    Returns:
+        str: The original defillama slug
+    """
+
+    if name.endswith("_protocol"):
+        name = name[:-9]
+
+    return name.replace("__dot__", ".").replace("_", "-")
+
+
 def defillama_chain_mappings(chain: str) -> str:
     """
     Map defillama chains to their canonical names.
@@ -253,15 +271,21 @@ def extract_protocol(url: str) -> str:
     return url.split("/")[-1]
 
 
-def fetch_defillama_protocols() -> List[str]:
+def fetch_defillama_protocols() -> Tuple[List[str], List[str]]:
     """
     Fetch defillama protocols from the ossd projects and the op_atlas dataset.
 
     Returns:
-        List[str]: A list of defillama slugs.
+        Tuple[List[str], List[str]]: A tuple containing the list of all defillama
+        protocols and the list of defillama protocols that are present in the
+        BigQuery dataset.
     """
 
-    client = bigquery.Client()
+    # NOTE: This project id must match the GCP project id in
+    # `warehouse/metrics_tools/local/utils.py` so that it fetches the
+    # same datasets and it does not cause any mismatch when running
+    # `oso local initialize` and `oso local sqlmesh plan dev`.
+    client = bigquery.Client(project="opensource-observer")
 
     op_atlas_query = """
         SELECT
@@ -294,10 +318,26 @@ def fetch_defillama_protocols() -> List[str]:
 
     ossd_defillama_parsed_urls.difference_update(DISABLED_DEFILLAMA_PROTOCOLS)
 
-    return list(ossd_defillama_parsed_urls)
+    dataset = client.dataset("defillama_tvl")
+    tables = [
+        defillama_name_to_slug(table.table_id) for table in client.list_tables(dataset)
+    ]
+
+    return list(ossd_defillama_parsed_urls), list(
+        ossd_defillama_parsed_urls.intersection(tables)
+    )
 
 
-DEFILLAMA_PROTOCOLS = fetch_defillama_protocols()
+# NOTE: SQLMesh depends on BigQuery to create the source tables for staging DefiLlama
+# models. If these models are not present on BigQuery, SQLMesh will fail to
+# create the source tables. By filtering out the protocols that are not present
+# in BigQuery, we ensure that SQLMesh can create the source tables for the
+# DefiLlama models.
+# `ALL_DEFILLAMA_PROTOCOLS`: All DefiLlama protocols that are present in the
+# OSSD projects and the op_atlas dataset.
+# `DEFILLAMA_PROTOCOLS`: Only DefiLlama protocols that are present in the BigQuery
+# dataset, filtered from ALL_DEFILLAMA_PROTOCOLS.
+ALL_DEFILLAMA_PROTOCOLS, DEFILLAMA_PROTOCOLS = fetch_defillama_protocols()
 
 
 def build_defillama_assets() -> List[AssetFactoryResponse]:
@@ -311,7 +351,7 @@ def build_defillama_assets() -> List[AssetFactoryResponse]:
     """
 
     dlt_assets = create_rest_factory_asset(
-        config=mk_defillama_config(DEFILLAMA_PROTOCOLS),
+        config=mk_defillama_config(ALL_DEFILLAMA_PROTOCOLS),
     )
 
     assets = dlt_assets(
