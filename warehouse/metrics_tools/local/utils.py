@@ -1,7 +1,10 @@
 import logging
 
 import duckdb
-from oso_dagster.assets.defillama import DEFILLAMA_PROTOCOLS, defillama_slug_to_name
+from oso_dagster.assets.defillama import (
+    DEFILLAMA_PROTOCOLS,
+    defillama_slug_to_name,
+)
 
 from .config import RowRestriction, TableMappingConfig, TableMappingDestination
 
@@ -34,6 +37,7 @@ TABLE_MAPPING: TableMappingConfig = {
     "opensource-observer.oso_playground.stg_deps_dev__dependencies": "bigquery.oso.stg_deps_dev__dependencies",
     "opensource-observer.oso_playground.stg_deps_dev__packages": "bigquery.oso.stg_deps_dev__packages",
     "opensource-observer.oso_playground.stg_github__events": "bigquery.oso.stg_github__events",
+    "opensource-observer.oso_playground.int_events__blockchain": "bigquery.oso.int_events__blockchain",
     ### TODO end
     "opensource-observer.ossd.collections": "bigquery.ossd.collections",
     "opensource-observer.ossd.projects": "bigquery.ossd.projects",
@@ -74,7 +78,7 @@ TABLE_MAPPING: TableMappingConfig = {
             time_column="dt",
             wheres=["chain_id = 252"],
         ),
-        table="bigquery.optimism_superchain_4337_account_abstraction_data.enriched_entrypoint_traces_v2"
+        table="bigquery.optimism_superchain_4337_account_abstraction_data.enriched_entrypoint_traces_v2",
     ),
 }
 
