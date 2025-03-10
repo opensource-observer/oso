@@ -80,7 +80,7 @@ async function getSession(request: NextRequest): Promise<Session> {
     return makeAnonUser();
   }
 
-  console.log(`/api/auth: API key and user valid valid => user`);
+  console.log(`auth: API key and user valid valid => user`);
   return makeUser(userData.user);
 }
 
