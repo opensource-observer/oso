@@ -17,7 +17,7 @@ SELECT
   banner_url::VARCHAR,
   twitter::VARCHAR,
   mirror::VARCHAR,
-  open_source_observer_slug::VARCHAR,
+  TRIM(LOWER(open_source_observer_slug))::VARCHAR AS open_source_observer_slug,
   created_at::TIMESTAMP,
   updated_at::TIMESTAMP,
   deleted_at::TIMESTAMP
