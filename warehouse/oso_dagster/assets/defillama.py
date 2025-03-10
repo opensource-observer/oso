@@ -221,7 +221,6 @@ async def _filter_valid_slugs(slugs: Set[str]) -> Set[str]:
 
     async def check_slug(session: aiohttp.ClientSession, slug: str):
         try:
-            print(f"Checking '{slug}'")
             async with session.head(
                 f"https://api.llama.fi/protocol/{slug}",
                 timeout=aiohttp.ClientTimeout(total=5),
@@ -231,7 +230,6 @@ async def _filter_valid_slugs(slugs: Set[str]) -> Set[str]:
                         f"Skipping invalid Defillama slug '{slug}': {response.status}"
                     )
                     valid_slugs.remove(slug)
-                print(f"Checked '{slug}'")
         except asyncio.TimeoutError:
             logger.warning(
                 f"Timeout fetching '{slug}', it is likely valid but slow, keeping it"
