@@ -114,6 +114,11 @@ class TrinoExporter(Exporter):
             f'"{self.hive_catalog}"."{self.hive_schema}"."{export_table_name}"'
         )
 
+        # Create the schema if it doesn't exist
+        await self.run_query(
+            f"CREATE SCHEMA IF NOT EXISTS {self.hive_catalog}.{self.hive_schema}"
+        )
+
         # We use a little bit of a hybrid templating+sqlglot magic to generate
         # the create and insert queries. This saves us having to figure out the
         # exact sqlglot objects
