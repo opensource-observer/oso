@@ -1,0 +1,16 @@
+load("@aspect_rules_ts//ts:defs.bzl", "ts_project")
+
+ts_project(
+    name = "route",
+    srcs = ["route.ts"],
+    data = [
+        "//:node_modules/@apollo/server",
+        "//:node_modules/@apollo/subgraph",
+        "//:node_modules/@as-integrations/next",
+    ],
+    deps = [
+        "//:node_modules/@apollo/server",
+        "//:node_modules/@apollo/subgraph",
+        "//:node_modules/@as-integrations/next",
+    ],
+)

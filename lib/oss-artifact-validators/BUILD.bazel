@@ -1,28 +1,8 @@
+load("@aspect_rules_js//js:defs.bzl", "js_library")
 load("@aspect_rules_js//npm:defs.bzl", "npm_package")
-load("@aspect_rules_ts//ts:defs.bzl", "ts_project")
 load("@npm//:defs.bzl", "npm_link_all_packages")
 
 npm_link_all_packages(name = "node_modules")
-
-ts_project(
-    name = "oss_artifact_validators_ts",
-    data = [
-        ":node_modules/@types/lodash",
-    ],
-    declaration = True,
-    declaration_map = True,
-    out_dir = "dist",
-    resolve_json_module = True,
-    transpiler = "tsc",
-    tsconfig = "tsconfig.json",
-    deps = [
-        ":node_modules/@google-cloud/bigquery",
-        ":node_modules/@types/jest",
-        ":node_modules/@types/lodash",
-        ":node_modules/lodash",
-        ":node_modules/web3",
-    ],
-)
 
 npm_package(
     name = "pkg",
@@ -31,4 +11,9 @@ npm_package(
         ":oss_artifact_validators_ts",
     ],
     visibility = ["//visibility:public"],
+)
+
+js_library(
+    name = "package_json",
+    srcs = ["package.json"],
 )

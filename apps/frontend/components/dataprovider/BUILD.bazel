@@ -1,0 +1,81 @@
+load("@aspect_rules_ts//ts:defs.bzl", "ts_project")
+
+ts_project(
+    name = "apollo-wrapper",
+    srcs = ["apollo-wrapper.tsx"],
+    data = [
+        "//:node_modules/@apollo/client",
+        "//:node_modules/@apollo/experimental-nextjs-app-support",
+    ],
+    deps = [
+        "//:node_modules/@apollo/client",
+        "//:node_modules/@apollo/experimental-nextjs-app-support",
+        "//apps/frontend/lib:config",
+        "//apps/frontend/lib/clients:supabase",
+    ],
+)
+
+ts_project(
+    name = "auth-router",
+    srcs = ["auth-router.tsx"],
+    data = ["//:node_modules/@opensource-observer/utils"],
+    deps = [
+        ":provider-view",
+        "//:node_modules/@opensource-observer/utils",
+        "//apps/frontend/lib:logger",
+        "//apps/frontend/lib/clients:segment",
+        "//apps/frontend/lib/clients:supabase",
+        "//apps/frontend/lib/types:plasmic",
+    ],
+)
+
+ts_project(
+    name = "cube-data-provider",
+    srcs = ["cube-data-provider.tsx"],
+    data = ["//:node_modules/@cubejs-client/react"],
+    deps = [
+        ":provider-view",
+        "//:node_modules/@cubejs-client/react",
+        "//apps/frontend/lib/clients:cube",
+        "//apps/frontend/lib/types:plasmic",
+    ],
+)
+
+ts_project(
+    name = "metrics-data-provider",
+    srcs = ["metrics-data-provider.tsx"],
+    data = [
+        "//:node_modules/@apollo/client",
+        "//:node_modules/@opensource-observer/utils",
+    ],
+    deps = [
+        ":apollo-wrapper",
+        ":provider-view",
+        "//:node_modules/@apollo/client",
+        "//:node_modules/@opensource-observer/utils",
+        "//apps/frontend/lib:parsing",
+        "//apps/frontend/lib/graphql:queries",
+        "//apps/frontend/lib/types:db",
+        "//apps/frontend/lib/types:plasmic",
+    ],
+)
+
+ts_project(
+    name = "provider-view",
+    srcs = ["provider-view.tsx"],
+    data = ["//:node_modules/@plasmicapp/loader-nextjs"],
+    deps = [
+        "//:node_modules/@plasmicapp/loader-nextjs",
+        "//apps/frontend/lib/types:plasmic",
+    ],
+)
+
+ts_project(
+    name = "supabase-query",
+    srcs = ["supabase-query.tsx"],
+    deps = [
+        ":provider-view",
+        "//apps/frontend/lib/clients:supabase",
+        "//apps/frontend/lib/types:plasmic",
+    ],
+)

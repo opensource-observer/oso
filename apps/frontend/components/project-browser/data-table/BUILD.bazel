@@ -1,0 +1,61 @@
+load("@aspect_rules_ts//ts:defs.bzl", "ts_project")
+
+ts_project(
+    name = "expandable",
+    srcs = ["expandable.tsx"],
+    data = ["//:node_modules/@mui/icons-material"],
+    deps = [
+        "//:node_modules/@mui/icons-material",
+        "//apps/frontend/lib:data-table",
+    ],
+)
+
+ts_project(
+    name = "field-default",
+    srcs = ["field-default.tsx"],
+    deps = ["//apps/frontend/lib:data-table"],
+)
+
+ts_project(
+    name = "field-growth",
+    srcs = ["field-growth.tsx"],
+    deps = ["//apps/frontend/lib:data-table"],
+)
+
+ts_project(
+    name = "field-label",
+    srcs = ["field-label.tsx"],
+    deps = [
+        "//apps/frontend/components/project-browser:project-contexts",
+        "//apps/frontend/lib:data-table",
+    ],
+)
+
+ts_project(
+    name = "field-project",
+    srcs = ["field-project.tsx"],
+    deps = ["//apps/frontend/lib:data-table"],
+)
+
+ts_project(
+    name = "field-status",
+    srcs = ["field-status.tsx"],
+    deps = [
+        "//apps/frontend/lib:data-table",
+        "//apps/frontend/lib:projects",
+    ],
+)
+
+ts_project(
+    name = "generic-data-table",
+    srcs = ["generic-data-table.tsx"],
+    data = ["//apps/frontend/components/project-browser/css:data-table.module.css"],
+    deps = [
+        ":expandable",
+        ":field-default",
+        ":field-label",
+        "//apps/frontend/components/project-browser:project-contexts",
+        "//apps/frontend/lib:data-table",
+        "//apps/frontend/lib:projects",
+    ],
+)

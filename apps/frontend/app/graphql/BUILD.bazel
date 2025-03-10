@@ -1,0 +1,8 @@
+load("@aspect_rules_ts//ts:defs.bzl", "ts_project")
+
+ts_project(
+    name = "page",
+    srcs = ["page.tsx"],
+    data = ["//apps/frontend/app/graphql:graphql.module.css"],
+    deps = ["//apps/frontend/components/widgets:apollo-sandbox"],
+)

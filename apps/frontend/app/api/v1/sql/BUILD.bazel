@@ -1,0 +1,11 @@
+load("@aspect_rules_ts//ts:defs.bzl", "ts_project")
+
+ts_project(
+    name = "route",
+    srcs = ["route.ts"],
+    data = ["//:node_modules/@clickhouse/client"],
+    deps = [
+        "//:node_modules/@clickhouse/client",
+        "//apps/frontend/lib/clients:clickhouse",
+    ],
+)

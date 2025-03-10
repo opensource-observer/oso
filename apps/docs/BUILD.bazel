@@ -1,7 +1,29 @@
-load("@aspect_rules_ts//ts:defs.bzl", "ts_config", "ts_project")
+load("@aspect_rules_js//js:defs.bzl", "js_library", "ts_config")
+load("@aspect_rules_ts//ts:defs.bzl", "ts_project")
 load("@npm//:defs.bzl", "npm_link_all_packages")
 
+# gazelle:exclude .docusaurus
+# gazelle:exclude **/node_modules
+# gazelle:exclude build
+# gazelle:exclude .eslintrc.json
+# gazelle:exclude tsconfig.json
+# gazelle:exclude babel.config.js
+# gazelle:exclude src/components/plasmic/generated
+
+# gazelle:js_collect_all
+# gazelle:js_package_file package.json :node_modules
+# gazelle:js_root
+
+# gazelle:js_visibility //apps/docs:__subpackages__
+
 npm_link_all_packages(name = "node_modules")
+
+filegroup(
+    name = "docs_markdown",
+    srcs = glob([
+        "docs/**/*.md",
+    ]),
+)
 
 ts_config(
     name = "tsconfig",
@@ -11,28 +33,68 @@ ts_config(
     ],
 )
 
+js_library(
+    name = "package_json",
+    srcs = ["package.json"],
+    visibility = ["//apps/docs:__subpackages__"],
+)
+
 ts_project(
-    name = "docs_ts",
-    allow_js = True,
-    no_emit = True,
-    out_dir = "dist",
-    preserve_jsx = True,
-    transpiler = "tsc",
-    tsconfig = ":tsconfig",
+    name = "docs",
+    srcs = [
+        "docusaurus.config.ts",
+        "sidebars.ts",
+        "src/components/BlogTagsPostsPage.tsx",
+        "src/components/HomepageFeatures/index.tsx",
+        "src/components/plasmic/Button.tsx",
+        "src/components/plasmic/Card.tsx",
+        "src/components/plasmic/DocsCard.tsx",
+        "src/components/plasmic/Overview.tsx",
+        "src/config.ts",
+        ":docs_markdown",  # keep
+    ],
+    data = [
+        "//:node_modules/@docusaurus/Link",
+        "//:node_modules/@docusaurus/Translate",
+        "//:node_modules/@docusaurus/plugin-content-docs",
+        "//:node_modules/@theme/BlogLayout",
+        "//:node_modules/@theme/BlogListPaginator",
+        "//:node_modules/@theme/BlogPostItems",
+        "//:node_modules/@theme/BlogTagsPostsPage",
+        "//:node_modules/@theme/Heading",
+        "//:node_modules/@theme/SearchMetadata",
+        "//apps/docs:node_modules/@docusaurus/preset-classic",
+        "//apps/docs:node_modules/@docusaurus/theme-common",
+        "//apps/docs:node_modules/@plasmicapp/react-web",
+        "//apps/docs:node_modules/clsx",
+        "//apps/docs:node_modules/lodash",
+        "//apps/docs:node_modules/prism-react-renderer",
+        "//apps/docs:node_modules/react",
+        "//apps/docs/src/components/HomepageFeatures:styles.module.css",
+        "//apps/docs/src/components/plasmic/generated/docs_opensource_observer:PlasmicButton.tsx",
+        "//apps/docs/src/components/plasmic/generated/docs_opensource_observer:PlasmicCard.tsx",
+        "//apps/docs/src/components/plasmic/generated/docs_opensource_observer:PlasmicDocsCard.tsx",
+        "//apps/docs/src/components/plasmic/generated/docs_opensource_observer:PlasmicOverview.tsx",
+    ],
+    visibility = ["//apps/docs:__subpackages__"],
     deps = [
-        ":node_modules/@docusaurus/core",
-        ":node_modules/@docusaurus/preset-classic",
-        ":node_modules/@docusaurus/theme-common",
-        ":node_modules/@docusaurus/types",
-        ":node_modules/@laxels/docusaurus-plugin-segment",
-        ":node_modules/@mdx-js/react",
-        ":node_modules/@plasmicapp/react-web",
-        ":node_modules/@plasmicpkgs/antd5",
-        ":node_modules/@plasmicpkgs/plasmic-basic-components",
-        ":node_modules/clsx",
-        ":node_modules/lodash",
-        ":node_modules/prism-react-renderer",
-        ":node_modules/react",
-        ":node_modules/react-dom",
+        "//:node_modules/@docusaurus/Link",
+        "//:node_modules/@docusaurus/Translate",
+        "//:node_modules/@docusaurus/plugin-content-docs",
+        "//:node_modules/@theme/BlogLayout",
+        "//:node_modules/@theme/BlogListPaginator",
+        "//:node_modules/@theme/BlogPostItems",
+        "//:node_modules/@theme/BlogTagsPostsPage",
+        "//:node_modules/@theme/Heading",
+        "//:node_modules/@theme/SearchMetadata",
+        "//apps/docs:node_modules/@docusaurus/preset-classic",
+        "//apps/docs:node_modules/@docusaurus/theme-common",
+        "//apps/docs:node_modules/@docusaurus/types",
+        "//apps/docs:node_modules/@plasmicapp/react-web",
+        "//apps/docs:node_modules/clsx",
+        "//apps/docs:node_modules/dotenv",
+        "//apps/docs:node_modules/lodash",
+        "//apps/docs:node_modules/prism-react-renderer",
+        "//apps/docs:node_modules/react",
     ],
 )

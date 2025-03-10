@@ -1,0 +1,52 @@
+load("@aspect_rules_ts//ts:defs.bzl", "ts_project")
+
+ts_project(
+    name = "config",
+    srcs = ["config.ts"],
+)
+
+ts_project(
+    name = "data-table",
+    srcs = ["data-table.ts"],
+)
+
+ts_project(
+    name = "logger",
+    srcs = ["logger.ts"],
+)
+
+ts_project(
+    name = "metrics-utils",
+    srcs = ["metrics-utils.ts"],
+    deps = [
+        ":logger",
+        ":plasmic-register",
+    ],
+)
+
+ts_project(
+    name = "parsing",
+    srcs = ["parsing.ts"],
+)
+
+ts_project(
+    name = "paths",
+    srcs = ["paths.ts"],
+)
+
+ts_project(
+    name = "plasmic-register",
+    srcs = ["plasmic-register.ts"],
+    data = ["//:node_modules/@plasmicapp/loader-nextjs"],
+    deps = ["//:node_modules/@plasmicapp/loader-nextjs"],
+)
+
+ts_project(
+    name = "projects",
+    srcs = ["projects.ts"],
+    data = ["//:node_modules/@opensource-observer/utils"],
+    deps = [
+        ":data-table",
+        "//:node_modules/@opensource-observer/utils",
+    ],
+)

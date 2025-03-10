@@ -1,0 +1,37 @@
+load("@aspect_rules_ts//ts:defs.bzl", "ts_project")
+
+ts_project(
+    name = "app",
+    srcs = ["app.ts"],
+)
+
+ts_project(
+    name = "checks",
+    srcs = ["checks.ts"],
+)
+
+ts_project(
+    name = "cli",
+    srcs = ["cli.ts"],
+)
+
+ts_project(
+    name = "commands",
+    srcs = ["commands.ts"],
+)
+
+ts_project(
+    name = "error",
+    srcs = ["error.ts"],
+)
+
+ts_project(
+    name = "logger",
+    srcs = ["logger.ts"],
+)
+
+ts_project(
+    name = "src",
+    srcs = ["index.ts"],
+    tags = ["js_barrel"],
+)

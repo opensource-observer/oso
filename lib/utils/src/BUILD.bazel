@@ -1,0 +1,17 @@
+load("@aspect_rules_ts//ts:defs.bzl", "ts_project")
+
+ts_project(
+    name = "common",
+    srcs = ["common.ts"],
+)
+
+ts_project(
+    name = "errors",
+    srcs = ["errors.ts"],
+)
+
+ts_project(
+    name = "src",
+    srcs = ["index.ts"],
+    tags = ["js_barrel"],
+)

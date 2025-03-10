@@ -1,0 +1,60 @@
+load("@aspect_rules_ts//ts:defs.bzl", "ts_project")
+
+ts_project(
+    name = "apollo",
+    srcs = ["apollo.ts"],
+    data = [
+        "//:node_modules/@apollo/client",
+        "//:node_modules/@apollo/experimental-nextjs-app-support",
+    ],
+    deps = [
+        "//:node_modules/@apollo/client",
+        "//:node_modules/@apollo/experimental-nextjs-app-support",
+        "//apps/frontend/lib:config",
+    ],
+)
+
+ts_project(
+    name = "clickhouse",
+    srcs = ["clickhouse.ts"],
+    data = ["//:node_modules/@clickhouse/client"],
+    deps = [
+        "//:node_modules/@clickhouse/client",
+        "//apps/frontend/lib:config",
+    ],
+)
+
+ts_project(
+    name = "cube",
+    srcs = ["cube.ts"],
+    data = ["//:node_modules/@cubejs-client/core"],
+    deps = [
+        "//:node_modules/@cubejs-client/core",
+        "//apps/frontend/lib:config",
+    ],
+)
+
+ts_project(
+    name = "segment",
+    srcs = ["segment.ts"],
+    data = ["//:node_modules/@segment/analytics-next"],
+    deps = [
+        "//:node_modules/@segment/analytics-next",
+        "//apps/frontend/lib:config",
+    ],
+)
+
+ts_project(
+    name = "supabase",
+    srcs = ["supabase.ts"],
+    data = [
+        "//:node_modules/@opensource-observer/utils",
+        "//:node_modules/@supabase/supabase-js",
+    ],
+    deps = [
+        "//:node_modules/@opensource-observer/utils",
+        "//:node_modules/@supabase/supabase-js",
+        "//apps/frontend/lib:config",
+        "//apps/frontend/lib/types:supabase",
+    ],
+)

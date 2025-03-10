@@ -1,0 +1,65 @@
+load("@aspect_rules_ts//ts:defs.bzl", "ts_project")
+
+ts_project(
+    name = "expanded-project-data-table",
+    srcs = ["expanded-project-data-table.tsx"],
+    deps = [
+        ":project-contexts",
+        "//apps/frontend/components/project-browser/data-table:field-growth",
+        "//apps/frontend/components/project-browser/data-table:field-project",
+        "//apps/frontend/components/project-browser/data-table:generic-data-table",
+        "//apps/frontend/lib:data-table",
+        "//apps/frontend/lib:projects",
+    ],
+)
+
+ts_project(
+    name = "project-browser",
+    srcs = ["project-browser.tsx"],
+    data = [
+        "//:node_modules/@mui/material",
+        "//apps/frontend/components/project-browser/css:browser.module.css",
+    ],
+    deps = [
+        ":project-contexts",
+        ":project-data-table",
+        "//:node_modules/@mui/material",
+        "//apps/frontend/lib:data-table",
+        "//apps/frontend/lib:projects",
+    ],
+)
+
+ts_project(
+    name = "project-client-provider",
+    srcs = ["project-client-provider.tsx"],
+    data = ["//:node_modules/@plasmicapp/loader-nextjs"],
+    deps = [
+        ":project-contexts",
+        "//:node_modules/@plasmicapp/loader-nextjs",
+        "//apps/frontend/lib:data-table",
+        "//apps/frontend/lib:projects",
+    ],
+)
+
+ts_project(
+    name = "project-contexts",
+    srcs = ["project-contexts.tsx"],
+    deps = [
+        "//apps/frontend/lib:data-table",
+        "//apps/frontend/lib:projects",
+    ],
+)
+
+ts_project(
+    name = "project-data-table",
+    srcs = ["project-data-table.tsx"],
+    deps = [
+        ":expanded-project-data-table",
+        "//apps/frontend/components/project-browser/data-table:field-growth",
+        "//apps/frontend/components/project-browser/data-table:field-project",
+        "//apps/frontend/components/project-browser/data-table:field-status",
+        "//apps/frontend/components/project-browser/data-table:generic-data-table",
+        "//apps/frontend/lib:data-table",
+        "//apps/frontend/lib:projects",
+    ],
+)

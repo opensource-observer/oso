@@ -1,0 +1,93 @@
+load("@aspect_rules_ts//ts:defs.bzl", "ts_project")
+
+ts_project(
+    name = "algolia",
+    srcs = ["algolia.tsx"],
+    data = ["//:node_modules/@plasmicapp/loader-nextjs"],
+    deps = [
+        "//:node_modules/@plasmicapp/loader-nextjs",
+        "//apps/frontend/lib:config",
+    ],
+)
+
+ts_project(
+    name = "analytics",
+    srcs = ["analytics.tsx"],
+    data = ["//:node_modules/@opensource-observer/utils"],
+    deps = [
+        "//:node_modules/@opensource-observer/utils",
+        "//apps/frontend/lib/clients:segment",
+    ],
+)
+
+ts_project(
+    name = "apollo-sandbox",
+    srcs = ["apollo-sandbox.tsx"],
+    data = ["//:node_modules/@apollo/sandbox"],
+    deps = [
+        "//:node_modules/@apollo/sandbox",
+        "//apps/frontend/lib:config",
+    ],
+)
+
+ts_project(
+    name = "auth-actions",
+    srcs = ["auth-actions.tsx"],
+    data = [
+        "//:node_modules/@opensource-observer/utils",
+        "//:node_modules/@supabase/supabase-js",
+    ],
+    deps = [
+        "//:node_modules/@opensource-observer/utils",
+        "//:node_modules/@supabase/supabase-js",
+        "//apps/frontend/lib:config",
+        "//apps/frontend/lib/clients:supabase",
+        "//apps/frontend/lib/types:plasmic",
+    ],
+)
+
+ts_project(
+    name = "auth-form",
+    srcs = ["auth-form.tsx"],
+    data = [
+        "//:node_modules/@supabase/auth-ui-react",
+        "//:node_modules/@supabase/auth-ui-shared",
+    ],
+    deps = [
+        "//:node_modules/@supabase/auth-ui-react",
+        "//:node_modules/@supabase/auth-ui-shared",
+        "//apps/frontend/lib/clients:supabase",
+    ],
+)
+
+ts_project(
+    name = "feedback-farm",
+    srcs = ["feedback-farm.tsx"],
+    data = ["//:node_modules/@feedbackfarm/react"],
+    deps = [
+        "//:node_modules/@feedbackfarm/react",
+        "//apps/frontend/lib:config",
+    ],
+)
+
+ts_project(
+    name = "supabase-write",
+    srcs = ["supabase-write.tsx"],
+    data = [
+        "//:node_modules/@mui/material",
+        "//:node_modules/@opensource-observer/utils",
+    ],
+    deps = [
+        "//:node_modules/@mui/material",
+        "//:node_modules/@opensource-observer/utils",
+        "//apps/frontend/lib/clients:supabase",
+        "//apps/frontend/lib/types:plasmic",
+    ],
+)
+
+ts_project(
+    name = "tremor",
+    srcs = ["tremor.tsx"],
+    data = ["//:node_modules/@tremor/react"],
+    deps = ["//:node_modules/@tremor/react"],
+)

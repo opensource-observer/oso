@@ -1,0 +1,18 @@
+load("@aspect_rules_ts//ts:defs.bzl", "ts_project")
+
+ts_project(
+    name = "db",
+    srcs = ["db.ts"],
+)
+
+ts_project(
+    name = "plasmic",
+    srcs = ["plasmic.ts"],
+    data = ["//:node_modules/@plasmicapp/loader-nextjs"],
+    deps = ["//:node_modules/@plasmicapp/loader-nextjs"],
+)
+
+ts_project(
+    name = "supabase",
+    srcs = ["supabase.ts"],
+)

@@ -1,0 +1,33 @@
+load("@aspect_rules_ts//ts:defs.bzl", "ts_project")
+
+ts_project(
+    name = "layout",
+    srcs = ["layout.tsx"],
+    data = ["//apps/frontend/app:globals.css"],
+    deps = [
+        "//apps/frontend/components/dataprovider:apollo-wrapper",
+        "//apps/frontend/components/widgets:analytics",
+    ],
+)
+
+ts_project(
+    name = "not-found",
+    srcs = ["not-found.tsx"],
+    data = ["//:node_modules/@plasmicapp/loader-nextjs"],
+    deps = [
+        "//:node_modules/@plasmicapp/loader-nextjs",
+        "//apps/frontend:plasmic-init",
+        "//apps/frontend:plasmic-init-client",
+    ],
+)
+
+ts_project(
+    name = "page",
+    srcs = ["page.tsx"],
+    data = ["//:node_modules/@plasmicapp/loader-nextjs"],
+    deps = [
+        "//:node_modules/@plasmicapp/loader-nextjs",
+        "//apps/frontend:plasmic-init",
+        "//apps/frontend:plasmic-init-client",
+    ],
+)

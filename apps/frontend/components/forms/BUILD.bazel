@@ -1,0 +1,16 @@
+load("@aspect_rules_ts//ts:defs.bzl", "ts_project")
+
+ts_project(
+    name = "form-elements",
+    srcs = ["form-elements.tsx"],
+)
+
+ts_project(
+    name = "visualization-context",
+    srcs = ["visualization-context.tsx"],
+    data = ["//:node_modules/@plasmicapp/loader-nextjs"],
+    deps = [
+        ":form-elements",
+        "//:node_modules/@plasmicapp/loader-nextjs",
+    ],
+)

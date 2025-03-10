@@ -1,0 +1,27 @@
+load("@aspect_rules_ts//ts:defs.bzl", "ts_project")
+
+ts_project(
+    name = "templating",
+    srcs = ["templating.ts"],
+)
+
+ts_project(
+    name = "validation-results",
+    srcs = ["validation-results.ts"],
+)
+
+ts_project(
+    name = "ossd",
+    srcs = ["index.ts"],
+    data = [
+        "//:node_modules/@google-cloud/bigquery",
+        "//:node_modules/@opensource-observer/oss-artifact-validators",
+        "//:node_modules/@opensource-observer/utils",
+    ],
+    tags = ["js_barrel"],
+    deps = [
+        "//:node_modules/@google-cloud/bigquery",
+        "//:node_modules/@opensource-observer/oss-artifact-validators",
+        "//:node_modules/@opensource-observer/utils",
+    ],
+)

@@ -1,0 +1,16 @@
+load("@aspect_rules_ts//ts:defs.bzl", "ts_project")
+
+ts_project(
+    name = "deploy",
+    srcs = ["deploy.ts"],
+    data = ["//:node_modules/@google-cloud/bigquery"],
+    deps = ["//:node_modules/@google-cloud/bigquery"],
+)
+
+ts_project(
+    name = "oso",
+    srcs = ["index.ts"],
+    data = ["//:node_modules/@google-cloud/bigquery"],
+    tags = ["js_barrel"],
+    deps = ["//:node_modules/@google-cloud/bigquery"],
+)
