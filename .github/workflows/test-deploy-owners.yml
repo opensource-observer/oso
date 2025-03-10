@@ -39,11 +39,6 @@ jobs:
       - name: Setup external pr tools
         uses: ./.github/workflows/setup-external-pr-tools
 
-      - name: Initialize check
-        run: |
-          cd ops/external-prs &&
-          pnpm tools initialize-check ${{ github.event.pull_request.head.sha }} ${{ github.event.pull_request.user.login }} test-deploy
-
       - name: Check if the user is an admin
         id: prs_permissions
         run: |
