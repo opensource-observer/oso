@@ -196,8 +196,6 @@ class TrinoK8sResource(TrinoResource):
                 logger.info(f"Wait for trino to be online at {health_check_url}")
                 # Wait for the status endpoint to return 200
                 # await wait_for_ok_async(health_check_url, timeout=self.connect_timeout)
-                logger.info("I AM HERE RIGHT NOW3--")
-
                 yield
 
 
