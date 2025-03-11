@@ -1,4 +1,4 @@
-from typing import Callable, Optional, ParamSpec, Sequence, TypeVar, Union, cast
+import typing as t
 
 import dlt
 from dagster import AssetExecutionContext
@@ -8,21 +8,21 @@ from dlt.sources.rest_api.typing import EndpointResource, RESTAPIConfig
 
 from . import dlt_factory
 
-P = ParamSpec("P")
-R = TypeVar("R")
+P = t.ParamSpec("P")
+R = t.TypeVar("R")
 
-Q = ParamSpec("Q")
-T = TypeVar("T")
+Q = t.ParamSpec("Q")
+T = t.TypeVar("T")
 
 
-def _rest_source(_rest_source: Callable[Q, T], _asset: Callable[P, R]):
+def _rest_source(_rest_source: t.Callable[Q, T], _asset: t.Callable[P, R]):
     """
     The main factory for creating a REST API source asset. It is a wrapper
     used to get full type information for both the REST API source and the
     asset factory.
     """
 
-    def _factory(*_args: Q.args, **rest_kwargs: Q.kwargs) -> Callable[P, R]:
+    def _factory(*_args: Q.args, **rest_kwargs: Q.kwargs) -> t.Callable[P, R]:
         """
         Forwards the arguments to the asset factory and returns a new factory,
         maintaining full type information for the caller.
@@ -43,8 +43,8 @@ def _rest_source(_rest_source: Callable[Q, T], _asset: Callable[P, R]):
                     "Names will be automatically generated for `rest_factory`"
                 )
 
-            key_prefix = cast(
-                Optional[Union[str, Sequence[str]]],
+            key_prefix = t.cast(
+                t.Optional[t.Union[str, t.Sequence[str]]],
                 asset_kwargs.get("key_prefix", None),
             )
             if key_prefix is None:
@@ -53,11 +53,11 @@ def _rest_source(_rest_source: Callable[Q, T], _asset: Callable[P, R]):
             if not isinstance(key_prefix, str):
                 key_prefix = "/".join(key_prefix)
 
-            config = cast(Optional[RESTAPIConfig], rest_kwargs.pop("config", None))
+            config = t.cast(t.Optional[RESTAPIConfig], rest_kwargs.pop("config", None))
             if config is None:
                 raise ValueError("Config is required for `rest_factory`")
 
-            config_resources = config.pop("resources", None)  # type: ignore
+            config_resources = t.cast(t.List[t.Any], config.pop("resources", None))  # type: ignore
             if config_resources is None:
                 raise ValueError("Resources is required for `rest_factory`")
 
@@ -70,8 +70,8 @@ def _rest_source(_rest_source: Callable[Q, T], _asset: Callable[P, R]):
                 https://pylint.readthedocs.io/en/latest/user_guide/messages/warning/cell-var-from-loop.html
                 """
 
-                resource_ref = cast(
-                    Union[str, EndpointResource, DltResource], resource_ref
+                resource_ref = t.cast(
+                    t.Union[str, EndpointResource, DltResource], resource_ref
                 )
 
                 resource_name = None
@@ -86,7 +86,10 @@ def _rest_source(_rest_source: Callable[Q, T], _asset: Callable[P, R]):
                 if not isinstance(resource_name, str):
                     raise ValueError("Failed to extract resource name from reference")
 
-                @dlt_factory(name=resource_name, **asset_kwargs)
+                op_tags: dict = t.cast(dict, asset_kwargs.pop("op_tags", {}))
+                op_tags["dagster/concurrency_key"] = f"rest_factory_{key_prefix}"
+
+                @dlt_factory(name=resource_name, op_tags=op_tags, **asset_kwargs)
                 def _dlt_ref_asset(context: AssetExecutionContext):
                     """
                     The dlt asset function that creates the REST API source asset.
@@ -96,7 +99,7 @@ def _rest_source(_rest_source: Callable[Q, T], _asset: Callable[P, R]):
                         f"Rest factory materializing asset: {key_prefix}/{resource_name}"
                     )
 
-                    rest_api_config = cast(RESTAPIConfig, config_ref)
+                    rest_api_config = t.cast(RESTAPIConfig, config_ref)
 
                     rest_api_config["resources"] = [resource_ref]
 
@@ -115,7 +118,7 @@ def _rest_source(_rest_source: Callable[Q, T], _asset: Callable[P, R]):
                 for resource_ref in config_resources
             ]
 
-        return cast(Callable[P, R], _wrapper)
+        return t.cast(t.Callable[P, R], _wrapper)
 
     return _factory
 
