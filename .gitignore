@@ -38,6 +38,7 @@ data/
 *.log
 logs/
 coverage.json
+dev-tests/
 
 # typescript
 *.tsbuildinfo
