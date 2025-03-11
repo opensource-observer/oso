@@ -25,6 +25,8 @@ spec:
           defaultOptions:
             projectId: opensource-observer
             authType: APPLICATION_DEFAULT
+    advancedConfig:
+      "nessie.version.store.persist.commit-timeout-millis": "30000"
     jdbc:
       jdbcUrl: jdbc:postgresql://production-nessie-cloudsql-proxy-gcloud-sqlproxy.production-nessie-cloudsql-proxy.svc.cluster.local:5432/postgres
       secret:
