@@ -370,6 +370,7 @@ def build_defillama_assets() -> List[AssetFactoryResponse]:
         op_tags={
             "dagster/concurrency_key": "defillama_tvl",
         },
+        pool="defillama_tvl",
     )
 
     return assets
