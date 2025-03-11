@@ -1,5 +1,6 @@
 """Metrics Calculation Service Client"""
 
+import json
 import logging
 import time
 import typing as t
@@ -18,7 +19,9 @@ from metrics_tools.compute.types import (
     JobStatusResponse,
     JobSubmitRequest,
     JobSubmitResponse,
+    PingResponse,
     QueryJobStatus,
+    ServiceResponse,
 )
 from metrics_tools.definition import PeerMetricDependencyRef
 from pydantic import BaseModel
@@ -247,14 +250,18 @@ class Client:
             base_url=f"{url.copy_with(scheme="ws")}", path=f"/job/status/{job_id}/ws"
         ) as ws:
             while True:
-                raw_response = ws.receive()
-                response = JobStatusResponse.model_validate_json(raw_response)
-                if response.status not in [
-                    QueryJobStatus.PENDING,
-                    QueryJobStatus.RUNNING,
-                ]:
-                    return response
-                progress_handler(response)
+                raw_res = ws.receive()
+                res = ServiceResponse(response=json.loads(raw_res))
+                match res.response:
+                    case JobStatusResponse(status=status):
+                        if status not in [
+                            QueryJobStatus.PENDING,
+                            QueryJobStatus.RUNNING,
+                        ]:
+                            return res.response
+                        progress_handler(res.response)
+                    case PingResponse():
+                        continue
 
     def submit_job(
         self,
