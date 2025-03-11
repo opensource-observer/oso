@@ -37,6 +37,7 @@ op_atlas_repos AS (
 
 SELECT
   op_atlas_repos.project_id,
+  /* TODO: Remove this once we index the universe  */
   CASE
     WHEN ossd_repos.id IS NOT NULL THEN ossd_repos.id::VARCHAR
     ELSE op_atlas_repos.artifact_url
