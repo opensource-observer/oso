@@ -7,7 +7,6 @@ MODEL (
 WITH sanitized AS (
   SELECT
     projects.project_id,
-    projects.project_source_id AS artifact_source_id,
     'TWITTER' AS artifact_source,
     NULL::VARCHAR AS artifact_namespace,
     CASE
@@ -23,7 +22,7 @@ WITH sanitized AS (
 )
 SELECT
   project_id,
-  artifact_source_id,
+  CONCAT('https://x.com/', artifact_name) AS artifact_source_id,
   artifact_source,
   artifact_namespace,
   artifact_name,
