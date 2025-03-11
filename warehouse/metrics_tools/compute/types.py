@@ -391,6 +391,9 @@ class ErrorResponse(BaseModel):
     type: t.Literal["ErrorResponse"] = "ErrorResponse"
     message: str
 
+class PingResponse(BaseModel):
+    type: t.Literal["PingResponse"] = "PingResponse"
+
 
 ServiceRequestTypes = t.Union[
     ClusterStartRequest,
@@ -411,11 +414,11 @@ ServiceResponseTypes = t.Union[
     EmptyResponse,
     InspectCacheResponse,
     ErrorResponse,
+    PingResponse,
 ]
 
 
 class ServiceResponse(BaseModel):
-    type: str
     response: ServiceResponseTypes = Field(discriminator="type")
 
 
@@ -472,6 +475,8 @@ class AppConfig(ClusterConfig, TrinoCacheExportConfig, GCSConfig):
 
     cluster_shutdown_timeout: int = 180
     cluster_scale_down_timeout: int = 60
+
+    websocket_ping_seconds: int = 30
 
     @model_validator(mode="after")
     def handle_debugging(self):
