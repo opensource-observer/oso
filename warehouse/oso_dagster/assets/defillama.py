@@ -1,15 +1,27 @@
 import asyncio
+import json
 import logging
 from contextlib import asynccontextmanager
+from functools import partial
 from typing import List, Set, Tuple
 
 import aiohttp
+import dlt
+from dagster import AssetExecutionContext, ResourceParam
 from dlt.sources.rest_api.typing import RESTAPIConfig
 from google.api_core.exceptions import Forbidden
 from google.cloud import bigquery
+from oso_dagster.config import DagsterConfig
+from oso_dagster.utils.dlt import (
+    ChunkedResourceConfig,
+    ParallelizeConfig,
+    dlt_parallelize,
+    process_chunked_resource,
+)
 from ossdirectory import fetch_data
 
 from ..factories import AssetFactoryResponse
+from ..factories.dlt import dlt_factory
 from ..factories.rest import create_rest_factory_asset
 
 logger = logging.getLogger(__name__)
@@ -20,6 +32,9 @@ logger = logging.getLogger(__name__)
 # TODO(jabolo): Fix these issues and re-enable these protocols.
 DISABLED_DEFILLAMA_PROTOCOLS = [
     "pancakeswap-amm-v3",
+    "hermes-v2",
+    "sakefinance",
+    "jumper-exchange",
 ]
 
 LEGACY_DEFILLAMA_PROTOCOLS = [
@@ -413,3 +428,97 @@ def build_defillama_assets() -> List[AssetFactoryResponse]:
 
 
 defillama_assets = build_defillama_assets()
+
+
+async def fetch_defillama_slug(slug: str) -> List[dict]:
+    """
+    Fetch data for a specific DeFiLlama protocol slug.
+
+    Args:
+        slug (str): The DeFiLlama protocol slug to fetch.
+
+    Returns:
+        dict: The protocol data from the DeFiLlama API.
+
+    Raises:
+        Exception: If the request fails or returns an invalid response.
+    """
+
+    async with aiohttp.ClientSession() as session:
+        try:
+            url = f"https://api.llama.fi/protocol/{slug}"
+
+            async with session.get(url) as response:
+                if response.status != 200:
+                    logger.error(
+                        f"Failed to fetch DeFiLlama data for {slug}: HTTP {response.status}"
+                    )
+                    return []
+
+                protocol_data = await response.json()
+                return [protocol_data]
+
+        except Exception as e:
+            logger.error(f"Error fetching DeFiLlama data for {slug}: {str(e)}")
+            return []
+
+
+@dlt.resource(
+    name="defillama_tvl",
+    table_name="defillama_tvl",
+    write_disposition="merge",
+    primary_key="id",
+)
+@dlt_parallelize(
+    ParallelizeConfig(
+        chunk_size=10,
+        parallel_batches=5,
+        wait_interval=5,
+    )
+)
+def defillama_tvl_resource(slugs: List[str]):
+    """
+    Fetch DeFiLlama TVL data for a list of DeFiLlama protocol slugs.
+
+    Args:
+        slugs (List[str]): The list of DeFiLlama protocol slugs to fetch.
+
+    Yields:
+        Callable: A fetch function that fetches DeFiLlama data for a specific protocol slug.
+    """
+
+    yield from (partial(fetch_defillama_slug, slug) for slug in slugs)
+
+
+@dlt_factory(
+    key_prefix="defillama",
+    name="defillama_tvl",
+    op_tags={
+        "dagster/concurrency_key": "defillama_tvl",
+    },
+    pool="defillama_tvl",
+)
+def all_defillama_tvl(
+    global_config: ResourceParam[DagsterConfig],
+    context: AssetExecutionContext,
+):
+    """
+
+    Fetch all DeFiLlama TVL data for all DeFiLlama protocols.
+
+    Args:
+        global_config (DagsterConfig): The global configuration object.
+        context (AssetExecutionContext): The asset execution context.
+
+    Returns:
+        AssetFactoryResponse: The DeFiLlama TVL asset factory.
+    """
+    return process_chunked_resource(
+        ChunkedResourceConfig(
+            fetch_data_fn=lambda: ALL_DEFILLAMA_PROTOCOLS,
+            resource=defillama_tvl_resource,
+            to_string_fn=json.dumps,
+            gcs_bucket_name=global_config.gcs_bucket,
+            context=context,
+        )
+    )
