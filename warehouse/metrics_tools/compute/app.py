@@ -22,6 +22,7 @@ from metrics_tools.compute.result import (
     FakeLocalImportAdapter,
     TrinoImportAdapter,
 )
+from uvicorn.protocols.utils import ClientDisconnected
 
 from .cache import setup_fake_cache_export_manager, setup_trino_cache_export_manager
 from .cluster import (
@@ -39,6 +40,7 @@ from .types import (
     ExportedTableLoadRequest,
     JobStatusResponse,
     JobSubmitRequest,
+    PingResponse,
     QueryJobStatus,
 )
 
@@ -135,9 +137,9 @@ def default_lifecycle(config: AppConfig):
     return initialize_app
 
 
-def app_factory[T](lifespan_factory: AppLifespanFactory[T], config: T):
+def app_factory(lifespan_factory: AppLifespanFactory[AppConfig], config: AppConfig):
     logger.debug(f"loading application with config: {config}")
-    app = setup_app(lifespan=lifespan_factory(config))
+    app = setup_app(config, lifespan=lifespan_factory(config))
     return app
 
 
@@ -152,7 +154,7 @@ def get_mcs(storage: ApplicationStateStorage) -> MetricsCalculationService:
     return t.cast(MetricsCalculationService, mcs)
 
 
-def setup_app(lifespan: t.Callable[[FastAPI], t.Any]):
+def setup_app(config: AppConfig, lifespan: t.Callable[[FastAPI], t.Any]):
     # Dependency to get the cluster manager
 
     app = FastAPI(lifespan=lifespan)
@@ -231,8 +233,10 @@ def setup_app(lifespan: t.Callable[[FastAPI], t.Any]):
         try:
             while True:
                 count += 1
-                if count % 10 == 0:
+                # Send a ping every XX seconds to keep the connection alive
+                if count % config.websocket_ping_seconds == 0:
                     logger.debug(f"Websocket state: {websocket.client_state}")
+                    await websocket.send_text(PingResponse().model_dump_json())
                 if websocket.client_state == WebSocketState.DISCONNECTED:
                     logger.debug("Websocket disconnected while waiting for job updates")
                     break
@@ -244,7 +248,7 @@ def setup_app(lifespan: t.Callable[[FastAPI], t.Any]):
                 if update.status in (QueryJobStatus.COMPLETED, QueryJobStatus.FAILED):
                     logger.debug("Job completed, stopping listening")
                     break
-        except WebSocketDisconnect:
+        except (WebSocketDisconnect, ClientDisconnected):
             logger.debug("Websocket disconnected")
             stop_listening()
             await websocket.close()
