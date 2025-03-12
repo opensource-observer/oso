@@ -4,6 +4,14 @@ MODEL (
   kind FULL
 );
 
+WITH latest_project AS (
+  SELECT
+    *,
+    ROW_NUMBER() OVER (PARTITION BY id ORDER BY updated_at DESC) AS rn
+  FROM @oso_source('bigquery.op_atlas.project')
+  WHERE deleted_at IS NULL
+)
+
 SELECT
   @oso_id('OP_ATLAS', id)::VARCHAR AS project_id,
   id::VARCHAR AS project_source_id,
@@ -21,4 +29,5 @@ SELECT
   created_at::TIMESTAMP,
   updated_at::TIMESTAMP,
   deleted_at::TIMESTAMP
-FROM @oso_source('bigquery.op_atlas.project')
+FROM latest_project
+WHERE rn = 1
