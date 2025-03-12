@@ -6,6 +6,7 @@ import dlt as dltlib
 from dagster import (
     AssetExecutionContext,
     AssetIn,
+    AssetKey,
     AssetMaterialization,
     Config,
     MaterializeResult,
@@ -48,7 +49,9 @@ def pydantic_to_dlt_nullable_columns(b: t.Type[BaseModel]):
 def _dlt_factory[
     R: t.Union[AssetMaterialization, MaterializeResult],
     C: DltAssetConfig, **P,
-](c: t.Callable[P, t.Any], config_type: t.Type[C] = DltAssetConfig):
+](
+    c: t.Callable[P, t.Any], config_type: t.Type[C] = DltAssetConfig
+):
     def dlt_factory(
         config_type: t.Type[C] = config_type,
         dataset_name: str = "",
@@ -58,6 +61,7 @@ def _dlt_factory[
         ins: t.Optional[t.Mapping[str, AssetIn]] = None,
         tags: t.Optional[t.MutableMapping[str, str]] = None,
         op_tags: t.Optional[t.MutableMapping[str, t.Any]] = None,
+        log_intermediate_results: bool = False,
         *args: P.args,
         **kwargs: P.kwargs,
     ):
@@ -81,7 +85,7 @@ def _dlt_factory[
         dataset_name = dataset_name or key_prefix_str
 
         def _decorator(
-            f: t.Callable[..., t.Iterator[DltResource]]
+            f: t.Callable[..., t.Iterator[DltResource]],
         ) -> EarlyResourcesAssetFactory:
             asset_name = name or f.__name__
 
@@ -223,7 +227,33 @@ def _dlt_factory[
                         **dlt_run_options,
                     )
                     for result in results:
+                        if log_intermediate_results and isinstance(
+                            result, MaterializeResult
+                        ):
+                            if result.metadata:
+                                context.log.info(
+                                    f"Loaded '{result.asset_key}' into '{result.metadata['dataset_name']}' successfully"
+                                )
+                            else:
+                                context.log.info(
+                                    f"Loaded '{result.asset_key}' successfully"
+                                )
+                            continue
+
                         yield t.cast(R, result)
+
+                    if log_intermediate_results:
+                        asset_key_parts = []
+                        if key_prefix:
+                            if isinstance(key_prefix, str):
+                                asset_key_parts = [key_prefix]
+                            else:
+                                asset_key_parts = list(key_prefix)
+                        asset_key_parts.append(asset_name)
+
+                        yield t.cast(
+                            R, MaterializeResult(asset_key=AssetKey(asset_key_parts))
+                        )
 
                 asset_partitions = t.cast(
                     t.Optional[PartitionsDefinition[str]],
