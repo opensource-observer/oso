@@ -40,25 +40,25 @@ test_stg_op_atlas_project_farcaster:
     query:
       partial: true
       rows:
-      - artifact_source_id: 2
+      - artifact_source_id: "https://warpcast.com/b"
         artifact_source: FARCASTER
         artifact_namespace: NULL
         artifact_name: b
         artifact_url: "https://warpcast.com/b"
         artifact_type: SOCIAL_HANDLE
-      - artifact_source_id: 3
+      - artifact_source_id: "https://warpcast.com/c"
         artifact_source: FARCASTER
         artifact_namespace: NULL
         artifact_name: c
         artifact_url: "https://warpcast.com/c"
         artifact_type: SOCIAL_HANDLE
-      - artifact_source_id: 4
+      - artifact_source_id: "https://warpcast.com/d"
         artifact_source: FARCASTER
         artifact_namespace: NULL
         artifact_name: d
         artifact_url: "https://warpcast.com/d"
         artifact_type: SOCIAL_HANDLE
-      - artifact_source_id: 5
+      - artifact_source_id: "https://warpcast.com/e"
         artifact_source: FARCASTER
         artifact_namespace: NULL
         artifact_name: e

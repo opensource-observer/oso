@@ -7,7 +7,6 @@ MODEL (
 WITH sanitized AS (
   SELECT
     @oso_id('OP_ATLAS', projects.id) AS project_id, /* Translating op-atlas project_id to OSO project_id */
-    farcaster._dlt_id AS artifact_source_id, /* TODO: Shouldn't this be FID? */
     'FARCASTER' AS artifact_source,
     NULL::VARCHAR AS artifact_namespace,
     CASE
@@ -25,7 +24,8 @@ WITH sanitized AS (
 )
 SELECT
   project_id,
-  artifact_source_id,
+  CONCAT('https://warpcast.com/', artifact_name)
+    AS artifact_source_id, /* TODO: Shouldn't this be FID? */
   artifact_source,
   artifact_namespace,
   artifact_name,

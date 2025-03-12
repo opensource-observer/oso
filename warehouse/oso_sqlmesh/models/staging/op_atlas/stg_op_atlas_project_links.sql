@@ -12,7 +12,7 @@ WITH latest_links AS (
 )
 SELECT
   @oso_id('OP_ATLAS', project_id) AS project_id, /* Translating op-atlas project_id to OSO project_id */
-  id AS artifact_source_id,
+  LOWER(url) AS artifact_source_id,
   'WWW' AS artifact_source,
   NULL::VARCHAR AS artifact_namespace,
   url AS artifact_name,
