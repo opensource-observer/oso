@@ -14,7 +14,8 @@ def load_dlt_warehouse_destination(global_config: DagsterConfig):
         return bigquery(
             credentials=GcpServiceAccountCredentials(
                 project_id=global_config.project_id
-            )
+            ),
+            truncate_tables_on_staging_destination_before_load=False,
         )
     else:
         return duckdb(global_config.local_duckdb_path)
