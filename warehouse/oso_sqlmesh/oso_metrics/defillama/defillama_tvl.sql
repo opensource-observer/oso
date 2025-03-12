@@ -4,7 +4,7 @@ select
     events.to_artifact_id,
     '' as from_artifact_id,
     @metric_name() as metric,
-    avg(events.amount) as amount
+    sum(events.amount) / @rolling_window as amount
 from oso.int_events_daily__defillama_tvl as events
 where
     event_type = 'DEFILLAMA_TVL'
