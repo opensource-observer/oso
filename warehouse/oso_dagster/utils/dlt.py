@@ -55,7 +55,7 @@ def dlt_parallelize(config: ParallelizeConfig):
     """
 
     def _decorator(
-        fn: Callable[K, Generator[Callable[..., Coroutine[Any, Any, R]], None, None]]
+        fn: Callable[K, Generator[Callable[..., Coroutine[Any, Any, R]], None, None]],
     ) -> Callable[K, AsyncGenerator[R, None]]:
         """
         Decorator function that wraps the original generator function.
