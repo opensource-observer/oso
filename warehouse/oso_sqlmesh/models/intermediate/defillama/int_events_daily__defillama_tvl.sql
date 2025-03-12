@@ -12,35 +12,59 @@ MODEL (
   grain (bucket_day, event_type, event_source, from_artifact_id, to_artifact_id)
 );
 
-@DEF(event_source, UPPER(all_tvl_events.chain));
-@DEF(to_artifact_namespace, '');
-@DEF(to_artifact_name, LOWER(all_tvl_events.slug));
-@DEF(from_artifact_namespace, '');
-@DEF(from_artifact_name, LOWER(all_tvl_events.token));
-
 WITH all_tvl_events AS (
   @unioned_defillama_tvl_events()
 ),
 
+ranked_tvl_events AS (
+  SELECT *,
+    DATE_TRUNC('day', time) AS bucket_day,
+    ROW_NUMBER() OVER (
+      PARTITION BY 
+        DATE_TRUNC('day', time),
+        chain,
+        slug,
+        token
+      ORDER BY time DESC
+    ) as rn
+  FROM all_tvl_events
+),
+
+deduplicated_tvl_events AS (
+  SELECT
+    bucket_day,
+    chain,
+    slug,
+    token,
+    tvl
+  FROM ranked_tvl_events
+  WHERE rn = 1
+),
+
 tvl_events_with_ids AS (
   SELECT
-    all_tvl_events.time AS bucket_day,
+    bucket_day,
     'DEFILLAMA_TVL' AS event_type,
-    @event_source AS event_source,
+    UPPER(chain) AS event_source,
     @oso_id(
-      all_tvl_events.time, @event_source, @to_artifact_namespace, @to_artifact_name, @from_artifact_namespace, @from_artifact_name
+      bucket_day, 
+      UPPER(chain), 
+      'defillama', -- to_artifact_namespace
+      LOWER(slug), -- to_artifact_name
+      'defillama', -- from_artifact_namespace
+      LOWER(token) -- from_artifact_name
     ) AS event_source_id,
-    @oso_id('DEFILLAMA', @to_artifact_namespace, @to_artifact_name) AS to_artifact_id,
-    @to_artifact_namespace AS to_artifact_namespace,
-    @to_artifact_name AS to_artifact_name,
-    @oso_id('DEFILLAMA', @from_artifact_namespace, @from_artifact_name) AS from_artifact_id,
-    @from_artifact_namespace AS from_artifact_namespace,
-    @from_artifact_name AS from_artifact_name,
-    all_tvl_events.tvl::DOUBLE AS amount
-  FROM all_tvl_events
+    @oso_id('DEFILLAMA', NULL, LOWER(slug)) AS to_artifact_id,
+    'defillama' AS to_artifact_namespace,
+    LOWER(slug) AS to_artifact_name,
+    @oso_id('DEFILLAMA', NULL, LOWER(token)) AS from_artifact_id,
+    'defillama' AS from_artifact_namespace,
+    LOWER(token) AS from_artifact_name,
+    tvl::DOUBLE AS amount
+  FROM deduplicated_tvl_events
 )
 
-SELECT
+SELECT DISTINCT
   abp.project_id,
   tvl_events_with_ids.bucket_day,
   tvl_events_with_ids.event_type,

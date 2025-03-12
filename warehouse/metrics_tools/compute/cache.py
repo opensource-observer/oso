@@ -94,6 +94,11 @@ class TrinoExportAdapter(DBExportAdapter):
         self.logger.debug(f"retrieved columns for {table} export: {columns}")
         export_table_name = f"export_{table_exp.this.this}_{uuid.uuid4().hex}"
 
+        # Create the schema if it doesn't exist
+        await self.run_query(
+            f"CREATE SCHEMA IF NOT EXISTS {self.hive_catalog}.{self.hive_schema}"
+        )
+
         # We make cleaning easier by using the execution time to allow listing
         # of the export tables
         gcs_path = f"gs://{self.gcs_bucket}/trino-export/{execution_time.strftime('%Y/%m/%d/%H')}/{export_table_name}/"

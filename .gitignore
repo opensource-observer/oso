@@ -37,7 +37,9 @@ data/
 .env*.cloud
 *.log
 logs/
+dev-tests/
 coverage.json
+dev-tests/
 
 # typescript
 *.tsbuildinfo
