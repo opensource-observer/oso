@@ -139,6 +139,8 @@ LEGACY_DEFILLAMA_PROTOCOLS = [
     "zerolend",
 ]
 
+DEFILLAMA_PROTOCOLS = ["aave", "sushiswap"]
+
 K8S_CONFIG = {
     "merge_behavior": "SHALLOW",
     "container_config": {
