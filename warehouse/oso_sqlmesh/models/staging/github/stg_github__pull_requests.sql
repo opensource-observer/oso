@@ -1,15 +1,22 @@
 MODEL (
   name oso.stg_github__pull_requests,
   description 'Turns all watch events into push events',
-  kind FULL
+  kind INCREMENTAL_BY_TIME_RANGE (
+    time_column event_time,
+    batch_size 90,
+    lookback 7
+  ),
+  start @github_incremental_start,
+  partitioned_by DAY(event_time),
 );
 
 WITH pull_request_events AS (
   SELECT
     *
-  FROM @oso_source('bigquery.oso.stg_github__events') AS ghe
+  FROM oso.stg_github__events AS ghe
   WHERE
     ghe.type = 'PullRequestEvent'
+    and ghe.created_at BETWEEN @start_dt AND @end_dt
 )
 SELECT
   pre.id AS id,

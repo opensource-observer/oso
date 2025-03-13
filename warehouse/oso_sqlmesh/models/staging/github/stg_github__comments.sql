@@ -1,6 +1,12 @@
 MODEL (
   name oso.stg_github__comments,
-  kind FULL
+  kind INCREMENTAL_BY_TIME_RANGE (
+    time_column event_time,
+    batch_size 90,
+    lookback 7
+  ),
+  start @github_incremental_start,
+  partitioned_by DAY(event_time),
 );
 
 WITH pull_request_comment_events AS (
@@ -18,9 +24,10 @@ WITH pull_request_comment_events AS (
     STRPTIME(ghe.payload ->> '$.pull_request.closed_at', '%Y-%m-%dT%H:%M:%SZ') AS closed_at,
     ghe.payload ->> '$.pull_request.state' AS "state",
     CAST(ghe.payload -> '$.pull_request.comments' AS DOUBLE) AS comments
-  FROM @oso_source('bigquery.oso.stg_github__events') AS ghe
+  FROM oso.stg_github__events AS ghe
   WHERE
     ghe.type = 'PullRequestReviewCommentEvent'
+    and ghe.created_at BETWEEN @start_dt AND @end_dt
 ), issue_comment_events AS (
   SELECT
     ghe.id AS id,
@@ -36,14 +43,31 @@ WITH pull_request_comment_events AS (
     STRPTIME(ghe.payload ->> '$.issue.closed_at', '%Y-%m-%dT%H:%M:%SZ') AS closed_at,
     ghe.payload ->> '$.issue.state' AS "state",
     CAST(ghe.payload -> '$.issue.comments' AS DOUBLE) AS comments
-  FROM @oso_source('bigquery.oso.stg_github__events') AS ghe
+  FROM oso.stg_github__events AS ghe
   WHERE
     ghe.type = 'IssueCommentEvent'
+    and ghe.created_at BETWEEN @start_dt AND @end_dt
+), all_events as (
+  SELECT
+    *
+  FROM pull_request_comment_events
+  UNION ALL
+  SELECT
+    *
+  FROM issue_comment_events
 )
 SELECT
-  *
-FROM pull_request_comment_events
-UNION ALL
-SELECT
-  *
-FROM issue_comment_events
+  id,
+  event_time,
+  repository_id,
+  repository_name,
+  actor_id,
+  actor_login,
+  "type",
+  "number",
+  created_at,
+  merged_at,
+  closed_at,
+  "state",
+  comments
+FROM all_events

@@ -16,7 +16,7 @@ WITH app AS (
   WHERE
     round_id IN ('7', '8')
     AND status = 'submitted'
-    AND created_at BETWEEN '2025-02-01' AND '2025-03-08'
+    AND created_at BETWEEN DATE '2025-02-01' AND DATE '2025-03-08'
 ),
 
 projects_by_collection AS (

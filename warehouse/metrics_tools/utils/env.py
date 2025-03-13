@@ -37,6 +37,13 @@ def ensure_str(var: str, default: str):
     return ensure_var(var, default, str)
 
 
+def coalesce_str(var: t.List[str], default: str):
+    for v in var:
+        if v in os.environ:
+            return os.environ[v]
+    return default
+
+
 def ensure_int(var: str, default: int):
     return ensure_var(var, default, int)
 

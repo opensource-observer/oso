@@ -16,6 +16,8 @@ spec:
         value: gcp:secretmanager:production-trino-clickhouse-url/versions/latest
       - name: CLICKHOUSE_USER
         value: gcp:secretmanager:production-trino-clickhouse-user/versions/latest
+      - name: TRINO_GCP_CREDENTIALS_JSON
+        value: gcp:secretmanager:production-trino-gcp-credentials-json/versions/latest
       - name: CLICKHOUSE_PASSWORD
         value: gcp:secretmanager:production-trino-clickhouse-password/versions/latest
     serviceAccount:
@@ -101,24 +103,6 @@ spec:
               periodSeconds: 60
             selectPolicy: Max
     catalogs:
-      # metrics: |
-      #   connector.name=iceberg
-      #   iceberg.catalog.type=hive_metastore
-      #   hive.metastore.uri=thrift://10.145.192.27:9083
-      #   hive.metastore-cache-ttl=0s
-      #   hive.metastore-refresh-interval=5s
-      #   hive.metastore.thrift.client.connect-timeout=30s
-      #   hive.metastore.thrift.client.read-timeout=240s
-      #   iceberg.use-file-size-from-metadata=false
-      #   fs.native-gcs.enabled=true
-      #   gcs.project-id=opensource-observer
-      #   iceberg.max-partitions-per-writer=1000
-      # source: |
-      #   connector.name=hive
-      #   hive.metastore.uri=thrift://10.145.192.27:9083
-      #   fs.native-gcs.enabled=true
-      #   gcs.project-id=opensource-observer
-      #   hive.non-managed-table-writes-enabled=true
       iceberg: |
         connector.name=iceberg
         iceberg.catalog.type=rest
@@ -138,6 +122,11 @@ spec:
       bigquery: |
         connector.name=bigquery
         bigquery.project-id=opensource-observer
+      github_archive: |
+        connector.name=bigquery
+        bigquery.parent-project-id=opensource-observer
+        bigquery.project-id=githubarchive
+        bigquery.credentials-key=${ENV:TRINO_GCP_CREDENTIALS_JSON}
       clickhouse: |
         connector.name=clickhouse
         connection-url=${ENV:CLICKHOUSE_URL}

@@ -6,7 +6,7 @@ MODEL (
     batch_size 365,
     batch_concurrency 1
   ),
-  start '2021-10-01',
+  start @defillama_incremental_start,
   cron '@daily',
   partitioned_by (DAY("bucket_day"), "event_type"),
   grain (bucket_day, event_type, event_source, from_artifact_id, to_artifact_id)

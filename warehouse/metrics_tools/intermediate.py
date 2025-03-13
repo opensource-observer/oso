@@ -1,13 +1,10 @@
 import typing as t
 
-from metrics_tools.models import (
-    create_basic_python_env,
-)
-
-from sqlmesh import EngineAdapter
-from sqlmesh.core.macros import MacroEvaluator, MacroRegistry, macro, RuntimeStage
-from sqlmesh.core.dialect import parse_one, MacroVar, MacroFunc, parse
+from metrics_tools.models.tools import create_basic_python_env
 from sqlglot import exp
+from sqlmesh import EngineAdapter
+from sqlmesh.core.dialect import MacroFunc, MacroVar, parse, parse_one
+from sqlmesh.core.macros import MacroEvaluator, MacroRegistry, RuntimeStage, macro
 
 
 def run_macro_evaluator(

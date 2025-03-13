@@ -7,7 +7,7 @@ MODEL (
     batch_concurrency 1,
     lookback 30
   ) /* forward_only true */,
-  start '2021-10-01',
+  start @blockchain_incremental_start,
   partitioned_by (DAY("deployment_timestamp"), "chain")
 );
 
