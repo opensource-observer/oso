@@ -182,7 +182,7 @@ def repositories(
             f"Fetching repositories for {len(valid_urls)} unique GitHub URLs"
         )
 
-        return valid_urls[:500]
+        return valid_urls
 
     def repository_to_string(repository: Repository) -> str:
         return repository.model_dump_json()
@@ -277,7 +277,7 @@ def sbom(
 
         context.log.info(f"Fecthing SBOMs for {len(clean_repos)} repositories")
 
-        return clean_repos[:500]
+        return clean_repos
 
     def sbom_to_string(element: GithubRepositorySBOMItem) -> str:
         return element.model_dump_json()
