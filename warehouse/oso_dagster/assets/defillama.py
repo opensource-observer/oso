@@ -145,8 +145,8 @@ K8S_CONFIG = {
     "merge_behavior": "SHALLOW",
     "container_config": {
         "resources": {
-            "requests": {"cpu": "5000m", "memory": "5608Mi"},
-            "limits": {"memory": "5608Mi"},
+            "requests": {"cpu": "2000m", "memory": "3584Mi"},
+            "limits": {"memory": "3584Mi"},
         },
     },
 }
