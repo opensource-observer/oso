@@ -29,7 +29,7 @@ from metrics_tools.macros import (
     metrics_start,
     relative_window_sample_date,
 )
-from metrics_tools.models import MacroOverridingModel
+from metrics_tools.models.tools import MacroOverridingModel
 from metrics_tools.transformer import (
     IntermediateMacroEvaluatorTransform,
     SQLTransformer,

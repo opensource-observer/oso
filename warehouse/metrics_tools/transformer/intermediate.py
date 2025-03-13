@@ -1,9 +1,9 @@
 import typing as t
 
 from metrics_tools.intermediate import run_intermediate_macro_evaluator
-from metrics_tools.models import create_unregistered_wrapped_macro
-from sqlmesh.core.macros import MacroRegistry
+from metrics_tools.models.tools import create_unregistered_wrapped_macro
 from sqlglot import exp
+from sqlmesh.core.macros import MacroRegistry
 
 from .base import Transform
 
