@@ -110,10 +110,10 @@ def github_events(
         "id",
         "other",
     ]
-    for period in arrow.Arrow.range(unit, start_arrow.floor(unit), end):
+    for period in arrow.Arrow.range(unit, start_arrow.floor(unit), end_arrow):
         selects.append(
             exp.select(*columns).from_(
-                exp.to_table(f"github_archive.{unit}.{period.format(format)}")
+                exp.to_table(f'"github_archive"."{unit}"."{period.format(format)}"')
             )
         )
     unioned_selects = reduce(lambda acc, cur: acc.union(cur), selects)
