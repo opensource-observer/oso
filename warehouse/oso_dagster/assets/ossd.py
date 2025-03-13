@@ -19,7 +19,11 @@ from dagster import (
 from oso_dagster.cbt.cbt import CBTResource
 from oso_dagster.config import DagsterConfig
 from oso_dagster.dlt_sources.github_repos import (
+    GithubClientConfig,
+    GithubRepositoryResolver,
     GithubRepositorySBOMItem,
+    GithubURLType,
+    Repository,
     oss_directory_github_repositories_resource,
     oss_directory_github_sbom_resource,
 )
@@ -156,11 +160,42 @@ project_key = projects_and_collections.keys_by_output_name["projects"]
 )
 def repositories(
     global_config: ResourceParam[DagsterConfig],
+    context: AssetExecutionContext,
     projects_df: pl.DataFrame,
     gh_token: str = secret_ref_arg(group_name="ossd", key="github_token"),
 ):
-    yield oss_directory_github_repositories_resource(
-        projects_df, gh_token, http_cache=global_config.http_cache
+    def fetch_fn() -> t.List[str]:
+        config = GithubClientConfig(
+            gh_token=gh_token,
+        )
+
+        gh = GithubRepositoryResolver.get_github_client(config)
+        resolver = GithubRepositoryResolver(gh)
+
+        urls = resolver.github_urls_from_df(projects_df)
+
+        valid_urls = list(
+            set(url for url in urls["url"] if resolver.safe_parse_url(url))
+        )
+
+        context.log.info(
+            f"Fetching repositories for {len(valid_urls)} unique GitHub URLs"
+        )
+
+        return valid_urls
+
+    def repository_to_string(repository: Repository) -> str:
+        return repository.model_dump_json()
+
+    return process_chunked_resource(
+        ChunkedResourceConfig(
+            fetch_data_fn=fetch_fn,
+            resource=oss_directory_github_repositories_resource,
+            to_string_fn=repository_to_string,
+            gcs_bucket_name=global_config.gcs_bucket,
+            context=context,
+        ),
+        gh_token,
     )
 
 
@@ -175,25 +210,74 @@ def sbom(
     cbt: CBTResource,
     gh_token: str = secret_ref_arg(group_name="ossd", key="github_token"),
 ):
+    max_sbom_age_days = context.get_tag("max-sbom-age-days") or "7"
+
+    try:
+        max_sbom_age_days = int(max_sbom_age_days)
+    except ValueError:
+        context.log.error(
+            f"Invalid value for `max-sbom-age-days`: {max_sbom_age_days}. Using default value of 7 days"
+        )
+        max_sbom_age_days = "7"
+
     def fetch_fn():
-        all_repositories_query = """
+        all_repositories_query = f"""
+            WITH
+              latest_sboms AS (
+              SELECT
+                artifact_namespace,
+                artifact_name,
+                MAX(snapshot_at) AS latest_snapshot
+              FROM
+                `ossd.sbom`
+              GROUP BY
+                artifact_namespace,
+                artifact_name ),
+              repos_needing_sbom AS (
+              SELECT
+                r.url,
+                r.owner,
+                r.name
+              FROM
+                `ossd.repositories` r
+              LEFT JOIN
+                latest_sboms s
+              ON
+                r.owner = s.artifact_namespace
+                AND r.name = s.artifact_name
+              WHERE
+                LOWER(r.url) LIKE '%github.com%'
+                AND (
+                  s.latest_snapshot IS NULL
+                  OR s.latest_snapshot < TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {max_sbom_age_days} DAY) ) )
             SELECT
-                DISTINCT url
+              DISTINCT url
             FROM
-                `ossd.repositories`
-            WHERE
-                LOWER(url) LIKE '%github.com%';
+              repos_needing_sbom;
         """
+
+        config = GithubClientConfig(
+            gh_token=gh_token,
+        )
+
+        gh = GithubRepositoryResolver.get_github_client(config)
+        resolver = GithubRepositoryResolver(gh)
 
         client = cbt.get(context.log)
 
-        all_repo_urls: t.List[str] = [
+        all_repo_urls: t.Set[str] = {
             row["url"] for row in client.query_with_string(all_repositories_query)
+        }
+
+        clean_repos = [
+            (repo.owner, repo.repository)
+            for repo in (resolver.safe_parse_url(url) for url in all_repo_urls)
+            if repo and repo.type == GithubURLType.REPOSITORY and repo.repository
         ]
 
-        context.log.info(f"Fecthing SBOMs for {len(all_repo_urls)} repositories")
+        context.log.info(f"Fecthing SBOMs for {len(clean_repos)} repositories")
 
-        return all_repo_urls
+        return clean_repos
 
     def sbom_to_string(element: GithubRepositorySBOMItem) -> str:
         return element.model_dump_json()
@@ -207,7 +291,6 @@ def sbom(
             context=context,
         ),
         gh_token,
-        http_cache=global_config.http_cache,
     )
 
 
