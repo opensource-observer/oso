@@ -29,6 +29,7 @@ from sqlmesh.core.model import ModelKindName
         "name": ModelKindName.INCREMENTAL_BY_TIME_RANGE,
         "time_column": "created_at",
         "batch_size": 90,
+        "batch_concurrency": 10,
         "lookback": 7,
     },
     partitioned_by=("day(created_at)",),
@@ -40,7 +41,7 @@ def github_events(
     gateway: str,
     runtime_stage: str,
     **kwargs,
-):
+) -> pd.DataFrame | exp.Expression:
     """We need to use a python model due to the way the github events are stored
     in bigquery. We need to generate a valid SQL based on the available tables
     in the github archive"""
@@ -84,8 +85,7 @@ def github_events(
             "other": [""],
         }
         df = pd.DataFrame(data)
-        yield df
-        return
+        return df
 
     start_arrow = arrow.get(start)
     end_arrow = arrow.get(end)
@@ -117,5 +117,4 @@ def github_events(
             )
         )
     unioned_selects = reduce(lambda acc, cur: acc.union(cur, distinct=False), selects)
-
     return exp.select(*columns).from_(unioned_selects.subquery())
