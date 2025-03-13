@@ -84,7 +84,7 @@ spec:
         enabled: true
         maxReplicas: 10
         targetCPUUtilizationPercentage: 50
-        targetMemoryUtilizationPercentage: 30
+        targetMemoryUtilizationPercentage: 60
         behavior:
           scaleDown:
             stabilizationWindowSeconds: 600
