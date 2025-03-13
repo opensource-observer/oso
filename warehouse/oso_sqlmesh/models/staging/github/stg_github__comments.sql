@@ -46,7 +46,7 @@ WITH pull_request_comment_events AS (
   WHERE
     ghe.type = 'IssueCommentEvent'
     and ghe.created_at BETWEEN @start_dt AND @end_dt
-) all_events as (
+), all_events as (
   SELECT
     *
   FROM pull_request_comment_events
