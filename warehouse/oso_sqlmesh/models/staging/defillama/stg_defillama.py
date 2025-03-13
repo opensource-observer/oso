@@ -72,7 +72,7 @@ def defillama_tvl_model(
     end: datetime,
     oso_source_rewrite: t.Optional[t.Dict[str, t.Any]] = None,
     **kwargs,
-) -> t.Iterator[pd.DataFrame]:
+) -> t.Generator[pd.DataFrame, None, None]:
     table = oso_source_for_pymodel(context, "bigquery.defillama.tvl")
 
     df = context.fetchdf(
@@ -100,8 +100,9 @@ def defillama_tvl_model(
 
     result_rows = []
     for _, row in df.iterrows():
-        slug = row["slug"]
-        protocol_tvl_rows = parse_chain_tvl(slug, row["chain_tvls"], start, end)
+        slug = str(row["slug"])
+        chain_tvls = str(row["chain_tvls"])
+        protocol_tvl_rows = parse_chain_tvl(slug, chain_tvls, start, end)
         result_rows.extend(protocol_tvl_rows)
 
     if not result_rows:
@@ -110,7 +111,12 @@ def defillama_tvl_model(
 
     result = pd.DataFrame(
         result_rows,
-        columns=["time", "slug", "protocol", "chain", "token", "tvl", "event_type"],
+        columns=pd.Index(
+            ["time", "slug", "protocol", "chain", "token", "tvl", "event_type"]
+        ),
     )
 
-    yield result[["time", "slug", "protocol", "chain", "token", "tvl"]]
+    yield result.loc[
+        :,
+        ["time", "slug", "protocol", "chain", "token", "tvl"],
+    ]
