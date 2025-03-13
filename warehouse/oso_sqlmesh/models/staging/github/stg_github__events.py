@@ -29,7 +29,7 @@ from sqlmesh.core.model import ModelKindName
         "name": ModelKindName.INCREMENTAL_BY_TIME_RANGE,
         "time_column": "created_at",
         "batch_size": 90,
-        "batch_concurrency": 10,
+        "batch_concurrency": 3,
         "lookback": 7,
         "forward_only": True,
     },

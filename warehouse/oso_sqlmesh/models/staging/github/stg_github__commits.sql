@@ -4,6 +4,7 @@ MODEL (
   kind INCREMENTAL_BY_TIME_RANGE (
     time_column created_at,
     batch_size 90,
+    batch_concurrency 3,
     lookback 7
   ),
   start @github_incremental_start,
