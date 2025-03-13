@@ -2,7 +2,7 @@ import typing as t
 from datetime import datetime
 
 import pandas as pd
-from metrics_tools.models.constants import blockchain_incremental_start
+from metrics_tools.models import constants
 from sqlglot import exp
 from sqlmesh import ExecutionContext, model
 from sqlmesh.core.model import ModelKindName
@@ -24,7 +24,7 @@ from sqlmesh.core.model import ModelKindName
         "id": "VARCHAR",
         "other": "VARCHAR",
     },
-    start=blockchain_incremental_start,
+    start=constants.github_incremental_start,
     kind={
         "name": ModelKindName.INCREMENTAL_BY_TIME_RANGE,
         "time_column": "created_at",
@@ -112,7 +112,9 @@ def github_events(
     ]
     for period in arrow.Arrow.range(unit, start_arrow.floor(unit), end):
         selects.append(
-            exp.select(*columns).from_(f"github_archive.{unit}.{period.format(format)}")
+            exp.select(*columns).from_(
+                exp.to_table(f"github_archive.{unit}.{period.format(format)}")
+            )
         )
     unioned_selects = reduce(lambda acc, cur: acc.union(cur), selects)
 

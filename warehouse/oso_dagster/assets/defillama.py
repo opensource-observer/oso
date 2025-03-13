@@ -139,6 +139,23 @@ LEGACY_DEFILLAMA_PROTOCOLS = [
     "zerolend",
 ]
 
+DEFILLAMA_PROTOCOLS = ["aave", "sushiswap"]
+
+
+def defillama_slug_to_name(slug: str) -> str:
+    """
+    Parse a defillama slug into a protocol name, replacing dashes
+    with underscores and periods with '__dot__'.
+
+    Args:
+        slug (str): The defillama slug to parse.
+
+    Returns:
+        str: The parsed protocol name
+    """
+
+    return f"{slug.replace('-', '_').replace(".", '__dot__')}_protocol"
+
 
 def defillama_chain_mappings(chain: str) -> str:
     """
