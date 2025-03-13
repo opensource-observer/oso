@@ -50,48 +50,38 @@ def github_events(
     import arrow
 
     if runtime_stage == "testing" or gateway != "trino":
-        if context.engine_adapter.dialect == "trino":
-            # Trino inserts data in an odd way
-            data = {
-                "type": ["PushEvent"],
-                "public": [True],
-                "payload": ["{}"],
-                "repo": [{"id": 1, "name": "name", "url": "url"}],
-                "actor": [
-                    {
-                        "id": 1,
-                        "login": "login",
-                        "gravatar_url": "gravatar_url",
-                        "avatar_url": "avatar_url",
-                        "url": "url",
-                    }
-                ],
-                "org": [
-                    {
-                        "id": 1,
-                        "login": "login",
-                        "gravatar_url": "gravatar_url",
-                        "avatar_url": "avatar_url",
-                        "url": "url",
-                    }
-                ],
-                "created_at": [start],
-                "id": ["a"],
-                "other": [""],
-            }
-            df = pd.DataFrame(data)
-            yield df
-            return
         data = {
-            "type": ["PushEvent", "PullEvent", "IssueCommentEvent", "PullRequestEvent"],
-            "public": [True, True, True, True],
-            "payload": ["{}", "{}", "{}", "{}"],
-            "repo": ["{}", "{}", "{}", "{}"],
-            "actor": ["{}", "{}", "{}", "{}"],
-            "org": ["{}", "{}", "{}", "{}"],
-            "created_at": [start, start, start, start],
-            "id": ["a", "b", "c", "d"],
-            "other": ["", "", "", ""],
+            "type": ["PushEvent"],
+            "public": [True],
+            "payload": ["{}"],
+            "repo": [
+                {
+                    "id": 1,
+                    "name": "name",
+                    "url": "url",
+                }
+            ],
+            "actor": [
+                {
+                    "id": 1,
+                    "login": "login",
+                    "gravatar_url": "gravatar_url",
+                    "avatar_url": "avatar_url",
+                    "url": "url",
+                }
+            ],
+            "org": [
+                {
+                    "id": 1,
+                    "login": "login",
+                    "gravatar_url": "gravatar_url",
+                    "avatar_url": "avatar_url",
+                    "url": "url",
+                }
+            ],
+            "created_at": [start],
+            "id": ["a"],
+            "other": [""],
         }
         df = pd.DataFrame(data)
         yield df
