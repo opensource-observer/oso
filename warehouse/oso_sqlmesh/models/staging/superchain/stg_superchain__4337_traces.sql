@@ -7,7 +7,7 @@ MODEL (
     lookback 7
   ),
   dialect trino,
-  start '2021-10-01',
+  start @blockchain_incremental_start,
   cron '@daily',
   partitioned_by (DAY("block_timestamp"), "chain"),
   grain (

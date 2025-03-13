@@ -5,7 +5,8 @@ MODEL (
     batch_size 90,
     lookback 7
   ),
-  partitioned_by (DAY(created_at))
+  start @github_incremental_start,
+  partitioned_by DAY(created_at),
 );
 
 WITH release_events AS (

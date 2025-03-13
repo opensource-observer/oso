@@ -1,6 +1,7 @@
 import os
 
 import dotenv
+from metrics_tools.models import constants
 from metrics_tools.source.rewrite import LOCAL_TRINO_REWRITE_RULES
 from sqlmesh.core.config import (
     Config,
@@ -73,15 +74,9 @@ config = Config(
     variables={
         "fulltime_dev_days": 10,
         "activity_window": 30,
-        "blockchain_incremental_start": os.environ.get(
-            "SQLMESH_DEBUG_START", "2021-10-01"
-        ),
-        "github_incremental_start": os.environ.get("SQLMESH_DEBUG_START", "2015-01-01"),
-        "funding_incremental_start": os.environ.get(
-            "SQLMESH_DEBUG_START", "2015-01-01"
-        ),
-        "defillama_incremental_start": os.environ.get(
-            "SQLMESH_DEBUG_START", "2021-10-01"
-        ),
+        "blockchain_incremental_start": constants.blockchain_incremental_start,
+        "github_incremental_start": constants.github_incremental_start,
+        "funding_incremental_start": constants.funding_incremental_start,
+        "defillama_incremental_start": constants.defillama_incremental_start,
     },
 )

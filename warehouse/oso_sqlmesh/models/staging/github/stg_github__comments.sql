@@ -5,7 +5,8 @@ MODEL (
     batch_size 90,
     lookback 7
   ),
-  partitioned_by (DAY(event_time))
+  start @github_incremental_start,
+  partitioned_by DAY(event_time),
 );
 
 WITH pull_request_comment_events AS (

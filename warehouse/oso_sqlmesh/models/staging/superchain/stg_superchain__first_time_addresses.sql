@@ -6,7 +6,7 @@ model(
         batch_concurrency 1,
         lookback 7
     ),
-    start '2021-10-01',
+    start @blockchain_incremental_start,
     cron '@daily',
     partitioned_by(day("first_block_timestamp"), "chain_name"),
     grain(
