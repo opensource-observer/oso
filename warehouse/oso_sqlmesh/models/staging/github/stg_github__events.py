@@ -31,8 +31,8 @@ from sqlmesh.core.model import ModelKindName
         "batch_size": 90,
         "batch_concurrency": 10,
         "lookback": 7,
+        "forward_only": True,
     },
-    forward_only=True,
     partitioned_by=("day(created_at)",),
     physical_properties={"max_commit_retry": 15},
 )
