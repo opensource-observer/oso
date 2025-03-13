@@ -26,4 +26,5 @@ dlt_assets = create_rest_factory_asset(
 
 growthepie_assets = dlt_assets(
     key_prefix="growthepie",
+    name="growthepie",
 )

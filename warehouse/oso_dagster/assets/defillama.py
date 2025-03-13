@@ -1,7 +1,9 @@
 import logging
-from typing import List, Set, Tuple
+from typing import Any, Dict, Generator, List, Set
 
+import dlt
 import requests
+from dlt.sources.helpers.requests import Session
 from dlt.sources.rest_api.typing import RESTAPIConfig
 from google.api_core.exceptions import Forbidden
 from google.cloud import bigquery
@@ -18,6 +20,12 @@ logger = logging.getLogger(__name__)
 # TODO(jabolo): Fix these issues and re-enable these protocols.
 DISABLED_DEFILLAMA_PROTOCOLS = [
     "pancakeswap-amm-v3",
+    "hermes-v2",
+    "sakefinance",
+    "jumper-exchange",
+    "uniswap-v2",
+    "uniswap-v3",
+    "extra-finance-leverage-farming",
 ]
 
 LEGACY_DEFILLAMA_PROTOCOLS = [
@@ -132,39 +140,6 @@ LEGACY_DEFILLAMA_PROTOCOLS = [
 ]
 
 
-def defillama_slug_to_name(slug: str) -> str:
-    """
-    Parse a defillama slug into a protocol name, replacing dashes
-    with underscores and periods with '__dot__'.
-
-    Args:
-        slug (str): The defillama slug to parse.
-
-    Returns:
-        str: The parsed protocol name
-    """
-
-    return f"{slug.replace('-', '_').replace(".", '__dot__')}_protocol"
-
-
-def defillama_name_to_slug(name: str) -> str:
-    """
-    Convert a protocol name back to a defillama slug, reversing the
-    transformations done by defillama_slug_to_name.
-
-    Args:
-        name (str): The protocol name to convert.
-
-    Returns:
-        str: The original defillama slug
-    """
-
-    if name.endswith("_protocol"):
-        name = name[:-9]
-
-    return name.replace("__dot__", ".").replace("_", "-")
-
-
 def defillama_chain_mappings(chain: str) -> str:
     """
     Map defillama chains to their canonical names.
@@ -188,40 +163,6 @@ def defillama_chain_mappings(chain: str) -> str:
         "world chain": "worldchain",
         "zksync era": "zksync_era",
     }.get(chain, chain)
-
-
-def mk_defillama_config(urls: List[str]) -> RESTAPIConfig:
-    """
-    Create a REST API config for fetching defillama data.
-
-    Args:
-        urls (Set[str]): A set of defillama urls to fetch.
-
-    Returns:
-        RESTAPIConfig: The REST API config.
-    """
-
-    return {
-        "client": {
-            "base_url": "https://api.llama.fi/",
-        },
-        "resource_defaults": {
-            "primary_key": "id",
-            "write_disposition": "merge",
-        },
-        "resources": list(
-            map(
-                lambda protocol: {
-                    "name": defillama_slug_to_name(protocol),
-                    "endpoint": {
-                        "path": f"protocol/{protocol}",
-                        "data_selector": "$",
-                    },
-                },
-                urls,
-            )
-        ),
-    }
 
 
 def filter_valid_slugs(slugs: Set[str]) -> Set[str]:
@@ -265,21 +206,17 @@ def extract_protocol(url: str) -> str:
     return url.split("/")[-1]
 
 
-def fetch_defillama_protocols() -> Tuple[List[str], List[str]]:
+@dlt.resource(name="protocols")
+def fetch_defillama_protocols() -> Generator[List[Dict[str, str]], None, None]:
     """
-    Fetch defillama protocols from the ossd projects and the op_atlas dataset.
+    Fetch all defillama protocols from the ossd projects and the op_atlas dataset.
 
     Returns:
-        Tuple[List[str], List[str]]: A tuple containing the list of all defillama
-        protocols and the list of defillama protocols that are present in the
-        BigQuery dataset.
+        Generator[List[Dict[str, str]], None, None]: A generator yielding a list of
+        dictionaries containing the protocol slugs.
     """
 
-    # NOTE: This project id must match the GCP project id in
-    # `warehouse/metrics_tools/local/utils.py` so that it fetches the
-    # same datasets and it does not cause any mismatch when running
-    # `oso local initialize` and `oso local sqlmesh plan dev`.
-    client = bigquery.Client(project="opensource-observer")
+    client = bigquery.Client()
 
     op_atlas_query = """
         SELECT
@@ -288,28 +225,13 @@ def fetch_defillama_protocols() -> Tuple[List[str], List[str]]:
             `opensource-observer.op_atlas.project__defi_llama_slug`
     """
 
-    dataset = client.dataset("defillama_tvl")
-
     try:
         op_atlas_data = [row["value"] for row in client.query(op_atlas_query).result()]
 
-        tables = [
-            defillama_name_to_slug(table.table_id)
-            for table in client.list_tables(dataset)
-        ]
-        fallback = False
     except Forbidden as e:
         logging.warning(f"Failed to fetch data from BigQuery, using fallback: {e}")
 
         op_atlas_data = []
-
-        # NOTE: These tables are present on the `opensource-observer.defillama_tvl`
-        # BigQuery dataset. They're a fallback in case the tables cannot be
-        # fetched from BigQuery. Useful for CI/CD pipelines to test validity
-        # of the defillama assets.
-        # This will fail if the tables are not present in the BigQuery dataset.
-        tables = ["optimism-bridge", "sushiswap"]
-        fallback = True
 
     ossd_data = fetch_data()
 
@@ -329,26 +251,66 @@ def fetch_defillama_protocols() -> Tuple[List[str], List[str]]:
 
     ossd_defillama_parsed_urls.difference_update(DISABLED_DEFILLAMA_PROTOCOLS)
 
-    if fallback:
-        ossd_defillama_parsed_urls.update(tables)
-
-    ossd_defillama_parsed_urls = filter_valid_slugs(ossd_defillama_parsed_urls)
-
-    return list(ossd_defillama_parsed_urls), list(
-        ossd_defillama_parsed_urls.intersection(tables)
-    )
+    yield [{"name": slug} for slug in filter_valid_slugs(ossd_defillama_parsed_urls)]
 
 
-# NOTE: SQLMesh depends on BigQuery to create the source tables for staging DefiLlama
-# models. If these models are not present on BigQuery, SQLMesh will fail to
-# create the source tables. By filtering out the protocols that are not present
-# in BigQuery, we ensure that SQLMesh can create the source tables for the
-# DefiLlama models.
-# `ALL_DEFILLAMA_PROTOCOLS`: All DefiLlama protocols that are present in the
-# OSSD projects and the op_atlas dataset.
-# `DEFILLAMA_PROTOCOLS`: Only DefiLlama protocols that are present in the BigQuery
-# dataset, filtered from ALL_DEFILLAMA_PROTOCOLS.
-ALL_DEFILLAMA_PROTOCOLS, DEFILLAMA_PROTOCOLS = fetch_defillama_protocols()
+def add_original_slug(record: Any) -> Any:
+    """
+    Add the original slug to the record.
+
+    Args:
+        record: The record to modify.
+
+    Returns:
+        The modified record.
+    """
+
+    record["slug"] = record.get("_protocols_name", "")
+    return record
+
+
+def mk_defillama_config() -> RESTAPIConfig:
+    """
+    Create a REST API config for fetching defillama data.
+
+    Returns:
+        RESTAPIConfig: The REST API config.
+    """
+
+    return {
+        "client": {
+            "base_url": "https://api.llama.fi/",
+            "session": Session(timeout=300),
+        },
+        "resource_defaults": {
+            "primary_key": "id",
+            "write_disposition": "replace",
+            "parallelized": True,
+            "max_table_nesting": 0,
+            "table_name": "defillama/tvl",
+        },
+        "resources": [
+            {
+                "name": "slugs",
+                "endpoint": {
+                    "path": "protocol/{protocol}",
+                    "data_selector": "$",
+                    "params": {
+                        "protocol": {
+                            "type": "resolve",
+                            "resource": "protocols",
+                            "field": "name",
+                        },
+                    },
+                },
+                "include_from_parent": ["name"],
+                "processing_steps": [
+                    {"map": add_original_slug},  # type: ignore
+                ],
+            },
+            fetch_defillama_protocols(),
+        ],
+    }
 
 
 def build_defillama_assets() -> List[AssetFactoryResponse]:
@@ -362,11 +324,12 @@ def build_defillama_assets() -> List[AssetFactoryResponse]:
     """
 
     dlt_assets = create_rest_factory_asset(
-        config=mk_defillama_config(ALL_DEFILLAMA_PROTOCOLS),
+        config=mk_defillama_config(),
     )
 
     assets = dlt_assets(
-        key_prefix=["defillama", "tvl"],
+        key_prefix="defillama",
+        name="tvl",
         op_tags={
             "dagster/concurrency_key": "defillama_tvl",
         },

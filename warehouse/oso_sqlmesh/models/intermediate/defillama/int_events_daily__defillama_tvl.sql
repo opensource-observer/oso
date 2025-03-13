@@ -13,7 +13,7 @@ MODEL (
 );
 
 WITH all_tvl_events AS (
-  @unioned_defillama_tvl_events()
+  SELECT * FROM oso.stg__defillama_tvl_events
 ),
 
 ranked_tvl_events AS (

@@ -1,10 +1,8 @@
 from typing import Callable, Optional, ParamSpec, Sequence, TypeVar, Union, cast
 
-import dlt
 from dagster import AssetExecutionContext
-from dlt.extract.resource import DltResource
 from dlt.sources.rest_api import rest_api_resources
-from dlt.sources.rest_api.typing import EndpointResource, RESTAPIConfig
+from dlt.sources.rest_api.typing import RESTAPIConfig
 
 from . import dlt_factory
 
@@ -38,10 +36,8 @@ def _rest_source(_rest_source: Callable[Q, T], _asset: Callable[P, R]):
             """
 
             name = asset_kwargs.get("name", None)
-            if name is not None:
-                raise ValueError(
-                    "Names will be automatically generated for `rest_factory`"
-                )
+            if name is None:
+                raise ValueError("Name is required for `rest_factory`")
 
             key_prefix = cast(
                 Optional[Union[str, Sequence[str]]],
@@ -51,69 +47,24 @@ def _rest_source(_rest_source: Callable[Q, T], _asset: Callable[P, R]):
                 raise ValueError("Key prefix is required for `rest_factory`")
 
             if not isinstance(key_prefix, str):
-                key_prefix = "/".join(key_prefix)
+                key_prefix = "_".join(key_prefix)
 
             config = cast(Optional[RESTAPIConfig], rest_kwargs.pop("config", None))
             if config is None:
                 raise ValueError("Config is required for `rest_factory`")
 
-            config_resources = config.pop("resources", None)  # type: ignore
-            if config_resources is None:
-                raise ValueError("Resources is required for `rest_factory`")
+            if "log_intermediate_results" not in asset_kwargs:
+                asset_kwargs["log_intermediate_results"] = True
 
-            def create_asset_for_resource(resource_ref, config_ref):
-                """
-                The internal function that creates a new asset for a given resource to use
-                the correct reference. If not, the asset will be created with the wrong
-                reference, the last resource in the configuration:
-
-                https://pylint.readthedocs.io/en/latest/user_guide/messages/warning/cell-var-from-loop.html
-                """
-
-                resource_ref = cast(
-                    Union[str, EndpointResource, DltResource], resource_ref
+            @dlt_factory(**asset_kwargs)
+            def _dlt_asset(context: AssetExecutionContext):
+                context.log.info(
+                    f"Rest factory materializing asset: {key_prefix}/{name}"
                 )
 
-                resource_name = None
+                yield from rest_api_resources(config)
 
-                if isinstance(resource_ref, str):
-                    resource_name = resource_ref
-                elif isinstance(resource_ref, dict):
-                    resource_name = resource_ref.get("name", None)
-                elif isinstance(resource_ref, DltResource):
-                    resource_name = resource_ref.name
-
-                if not isinstance(resource_name, str):
-                    raise ValueError("Failed to extract resource name from reference")
-
-                @dlt_factory(name=resource_name, **asset_kwargs)
-                def _dlt_ref_asset(context: AssetExecutionContext):
-                    """
-                    The dlt asset function that creates the REST API source asset.
-                    """
-
-                    context.log.info(
-                        f"Rest factory materializing asset: {key_prefix}/{resource_name}"
-                    )
-
-                    rest_api_config = cast(RESTAPIConfig, config_ref)
-
-                    rest_api_config["resources"] = [resource_ref]
-
-                    for resource in rest_api_resources(rest_api_config, **rest_kwargs):
-                        yield dlt.resource(
-                            resource,
-                            name=resource_name,
-                            max_table_nesting=0,
-                            write_disposition="merge",
-                        )
-
-                return _dlt_ref_asset
-
-            return [
-                create_asset_for_resource(resource_ref, {**config})
-                for resource_ref in config_resources
-            ]
+            return _dlt_asset
 
         return cast(Callable[P, R], _wrapper)
 
