@@ -16,6 +16,8 @@ spec:
         value: gcp:secretmanager:production-trino-clickhouse-url/versions/latest
       - name: CLICKHOUSE_USER
         value: gcp:secretmanager:production-trino-clickhouse-user/versions/latest
+      - name: TRINO_GCP_CREDENTIALS_JSON
+        value: gcp:secretmanager:production-trino-gcp-credentials-json/versions/latest
       - name: CLICKHOUSE_PASSWORD
         value: gcp:secretmanager:production-trino-clickhouse-password/versions/latest
     serviceAccount:
@@ -124,6 +126,7 @@ spec:
         connector.name=bigquery
         bigquery.parent-project-id=opensource-observer
         bigquery.project-id=githubarchive
+        bigquery.credentials-key=${ENV:TRINO_GCP_CREDENTIALS_JSON}
       clickhouse: |
         connector.name=clickhouse
         connection-url=${ENV:CLICKHOUSE_URL}
