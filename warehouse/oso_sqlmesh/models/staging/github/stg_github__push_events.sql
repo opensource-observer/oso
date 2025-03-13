@@ -16,6 +16,6 @@ SELECT
   JSON_FORMAT(JSON_EXTRACT(ghe.payload, '$.commits')) AS commits,
   JSON_ARRAY_LENGTH(JSON_FORMAT(JSON_EXTRACT(ghe.payload, '$.commits'))) AS available_commits_count,
   CAST(JSON_EXTRACT(ghe.payload, '$.distinct_size') AS INTEGER) AS actual_commits_count
-FROM @oso_source('bigquery.oso.stg_github__events') AS ghe
+FROM oso.stg_github__events AS ghe
 WHERE
   ghe.type = 'PushEvent'

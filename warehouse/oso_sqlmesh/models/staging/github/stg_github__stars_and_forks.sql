@@ -6,7 +6,7 @@ MODEL (
 WITH watch_events AS (
   SELECT
     *
-  FROM @oso_source('bigquery.oso.stg_github__events') AS ghe
+  FROM oso.stg_github__events AS ghe
   WHERE
     ghe.type IN ('WatchEvent', 'ForkEvent')
 )

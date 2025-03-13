@@ -18,7 +18,7 @@ WITH pull_request_comment_events AS (
     STRPTIME(ghe.payload ->> '$.pull_request.closed_at', '%Y-%m-%dT%H:%M:%SZ') AS closed_at,
     ghe.payload ->> '$.pull_request.state' AS "state",
     CAST(ghe.payload -> '$.pull_request.comments' AS DOUBLE) AS comments
-  FROM @oso_source('bigquery.oso.stg_github__events') AS ghe
+  FROM oso.stg_github__events AS ghe
   WHERE
     ghe.type = 'PullRequestReviewCommentEvent'
 ), issue_comment_events AS (
@@ -36,7 +36,7 @@ WITH pull_request_comment_events AS (
     STRPTIME(ghe.payload ->> '$.issue.closed_at', '%Y-%m-%dT%H:%M:%SZ') AS closed_at,
     ghe.payload ->> '$.issue.state' AS "state",
     CAST(ghe.payload -> '$.issue.comments' AS DOUBLE) AS comments
-  FROM @oso_source('bigquery.oso.stg_github__events') AS ghe
+  FROM oso.stg_github__events AS ghe
   WHERE
     ghe.type = 'IssueCommentEvent'
 )

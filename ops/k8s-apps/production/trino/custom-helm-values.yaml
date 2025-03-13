@@ -122,6 +122,7 @@ spec:
         bigquery.project-id=opensource-observer
       github_archive: |
         connector.name=bigquery
+        bigquery.parent-project-id=opensource-observer
         bigquery.project-id=githubarchive
       clickhouse: |
         connector.name=clickhouse
