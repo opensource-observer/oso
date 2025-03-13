@@ -50,6 +50,24 @@ class PrefixedSQLMeshTranslator(SQLMeshDagsterTranslator):
         key = super().get_asset_key_from_model(context, model)
         return key.with_prefix(self._prefix)
 
+    def get_tags(self, context: Context, model: Model) -> t.Dict[str, str]:
+        """Loads tags for a model.
+
+        Does a basic translation. If the tag is a string with no `:` it will be
+        considered a boolean tag with the value "true".
+
+        If the tag is a string with a `:` it will be split on the `:` and the
+        key will be the left side the value will be the right side.
+        """
+        tags: t.Dict[str, str] = {}
+        for tag in model.tags:
+            if ":" in tag:
+                key, value = tag.split(":")
+                tags[key] = value
+            else:
+                tags[tag] = "true"
+        return tags
+
 
 class Trino2ClickhouseSQLMeshExporter(SQLMeshExporter):
     def __init__(

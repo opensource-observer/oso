@@ -70,5 +70,18 @@ config = Config(
         ),
     },
     default_gateway="local",
-    variables={"fulltime_dev_days": 10, "activity_window": 30},
+    variables={
+        "fulltime_dev_days": 10,
+        "activity_window": 30,
+        "blockchain_incremental_start": os.environ.get(
+            "SQLMESH_DEBUG_START", "2021-10-01"
+        ),
+        "github_incremental_start": os.environ.get("SQLMESH_DEBUG_START", "2015-01-01"),
+        "funding_incremental_start": os.environ.get(
+            "SQLMESH_DEBUG_START", "2015-01-01"
+        ),
+        "defillama_incremental_start": os.environ.get(
+            "SQLMESH_DEBUG_START", "2021-10-01"
+        ),
+    },
 )

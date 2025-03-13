@@ -889,7 +889,7 @@ wheels = [
 
 [[package]]
 name = "dagster-sqlmesh"
-version = "0.7.0"
+version = "0.8.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "dagster" },
@@ -897,9 +897,9 @@ dependencies = [
     { name = "pytest" },
     { name = "sqlmesh" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/a8/ed/4cfa6d53035dcd037f92f6c90917b4ab7fa1c8fc15c23d12646af43b274e/dagster_sqlmesh-0.7.0.tar.gz", hash = "sha256:c2a08454770350ae1089d1ba3064dd09defb36b959494c5ab879083ad890dd93", size = 21971 }
+sdist = { url = "https://files.pythonhosted.org/packages/3e/ca/65a8dbeb6ff137bccce262c3d47d7d947956dc8c5b2debd4d73c470d5bee/dagster_sqlmesh-0.8.0.tar.gz", hash = "sha256:94eaa2fcabc2034cf37e0877b3bd06f0de72db9cb9ff209c0d3c837df9e36d78", size = 22283 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/2d/de/513331342bb9aadb63137f5bb6c7463f0e6d68a999e9c491687503ba2c4a/dagster_sqlmesh-0.7.0-py3-none-any.whl", hash = "sha256:9ce03e9f70aba93f3726461d21dcb0c994dc9d6c9a4b62d7dd7b2202bd0f2d80", size = 25890 },
+    { url = "https://files.pythonhosted.org/packages/57/39/3a82d9e6072a0e72da26905339217de1f22e4818e86dbe5351444804fdd5/dagster_sqlmesh-0.8.0-py3-none-any.whl", hash = "sha256:e41ef57b491b005797e4e54cb24dfac341be1d53e75913bfc792522079fa3a07", size = 26277 },
 ]
 
 [[package]]
@@ -2806,7 +2806,7 @@ requires-dist = [
     { name = "dagster-k8s", specifier = ">=0.24.6,<1.0.0" },
     { name = "dagster-polars", specifier = ">=0.24.0,<1.0.0" },
     { name = "dagster-postgres", specifier = ">=0.24.0,<1.0.0" },
-    { name = "dagster-sqlmesh", specifier = "==0.7.0" },
+    { name = "dagster-sqlmesh", specifier = "==0.8.0" },
     { name = "dagster-webserver", specifier = ">=1.7.16,<2.0.0" },
     { name = "dask", extras = ["distributed"], specifier = ">=2024.4.2,<2025.0.0" },
     { name = "dask-kubernetes", specifier = ">=2024.4.2,<2025.0.0" },

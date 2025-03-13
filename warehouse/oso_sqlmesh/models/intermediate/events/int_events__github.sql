@@ -5,7 +5,7 @@ MODEL (
     batch_size 365,
     batch_concurrency 1
   ),
-  start '2015-01-01',
+  start @github_incremental_start,
   cron '@daily',
   partitioned_by (DAY("time"), "event_type"),
   grain (time, event_type, event_source, from_artifact_id, to_artifact_id)
