@@ -90,7 +90,7 @@ def github_events(
     start_arrow = arrow.get(start)
     end_arrow = arrow.get(end)
 
-    difference = start_arrow - end_arrow
+    difference = end_arrow - start_arrow
     selects: t.List[exp.Select] = []
     if difference.days < 7:
         unit = "day"
