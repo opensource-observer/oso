@@ -54,14 +54,17 @@ def sqlmesh_factory(
             define_asset_job(
                 name="sqlmesh_all_assets",
                 selection=all_assets_selection,
+                description="All assets in the sqlmesh project",
             ),
             define_asset_job(
-                name="sqlmesh_no_metrics",
+                name="sqlmesh_no_metrics_assets",
                 selection=all_assets_selection - metrics_assets_selection,
+                description="All assets in the sqlmesh project except metrics",
             ),
             define_asset_job(
-                name="sqlmesh_metrics",
+                name="sqlmesh_metrics_assets",
                 selection=metrics_assets_selection,
+                description="Only metrics assets in the  sqlmesh project",
             ),
         ],
     )
