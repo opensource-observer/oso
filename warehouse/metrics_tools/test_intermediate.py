@@ -1,13 +1,13 @@
 import typing as t
-import pytest
 
-from sqlmesh.core.macros import MacroEvaluator, MacroRegistry
-from sqlmesh.core.dialect import parse_one
+import pytest
 from sqlglot import exp
 from sqlglot.optimizer.qualify import qualify
+from sqlmesh.core.dialect import parse_one
+from sqlmesh.core.macros import MacroEvaluator, MacroRegistry
 
-from .models import create_unregistered_macro
 from .intermediate import run_intermediate_macro_evaluator, run_macro_evaluator
+from .models.tools import create_unregistered_macro
 
 
 @pytest.fixture
