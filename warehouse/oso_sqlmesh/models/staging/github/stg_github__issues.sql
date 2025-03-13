@@ -1,6 +1,11 @@
 MODEL (
   name oso.stg_github__issues,
-  kind FULL
+  kind INCREMENTAL_BY_TIME_RANGE (
+    time_column event_time,
+    batch_size 90,
+    lookback 7
+  ),
+  partitioned_by (DAY(event_time)),
 );
 
 WITH issue_events AS (
@@ -9,6 +14,7 @@ WITH issue_events AS (
   FROM oso.stg_github__events AS ghe
   WHERE
     ghe.type = 'IssuesEvent'
+    and ghe.created_at BETWEEN @start_dt AND @end_dt
 )
 SELECT
   ie.id AS id,

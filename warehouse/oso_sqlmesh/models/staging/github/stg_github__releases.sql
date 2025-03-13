@@ -1,6 +1,11 @@
 MODEL (
   name oso.stg_github__releases,
-  kind FULL
+  kind INCREMENTAL_BY_TIME_RANGE (
+    time_column created_at,
+    batch_size 90,
+    lookback 7
+  ),
+  partitioned_by (DAY(created_at))
 );
 
 WITH release_events AS (
@@ -9,6 +14,7 @@ WITH release_events AS (
   FROM oso.stg_github__events AS ghe
   WHERE
     ghe.type = 'ReleaseEvent'
+    and ghe.created_at BETWEEN @start_dt AND @end_dt
 )
 SELECT
   id AS id,

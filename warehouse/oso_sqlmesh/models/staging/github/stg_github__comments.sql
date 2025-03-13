@@ -1,6 +1,11 @@
 MODEL (
   name oso.stg_github__comments,
-  kind FULL
+  kind INCREMENTAL_BY_TIME_RANGE (
+    time_column event_time,
+    batch_size 90,
+    lookback 7
+  ),
+  partitioned_by (DAY(event_time))
 );
 
 WITH pull_request_comment_events AS (
@@ -21,6 +26,7 @@ WITH pull_request_comment_events AS (
   FROM oso.stg_github__events AS ghe
   WHERE
     ghe.type = 'PullRequestReviewCommentEvent'
+    and ghe.created_at BETWEEN @start_dt AND @end_dt
 ), issue_comment_events AS (
   SELECT
     ghe.id AS id,
@@ -39,11 +45,28 @@ WITH pull_request_comment_events AS (
   FROM oso.stg_github__events AS ghe
   WHERE
     ghe.type = 'IssueCommentEvent'
+    and ghe.created_at BETWEEN @start_dt AND @end_dt
+) all_events as (
+  SELECT
+    *
+  FROM pull_request_comment_events
+  UNION ALL
+  SELECT
+    *
+  FROM issue_comment_events
 )
 SELECT
-  *
-FROM pull_request_comment_events
-UNION ALL
-SELECT
-  *
-FROM issue_comment_events
+  id,
+  event_time,
+  repository_id,
+  repository_name,
+  actor_id,
+  actor_login,
+  "type",
+  "number",
+  created_at,
+  merged_at,
+  closed_at,
+  "state",
+  comments
+FROM all_events
