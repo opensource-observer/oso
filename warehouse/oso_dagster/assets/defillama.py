@@ -139,7 +139,15 @@ LEGACY_DEFILLAMA_PROTOCOLS = [
     "zerolend",
 ]
 
-DEFILLAMA_PROTOCOLS = ["aave", "sushiswap"]
+K8S_CONFIG = {
+    "merge_behavior": "SHALLOW",
+    "container_config": {
+        "resources": {
+            "requests": {"cpu": "2000m", "memory": "3584Mi"},
+            "limits": {"memory": "3584Mi"},
+        },
+    },
+}
 
 
 def defillama_slug_to_name(slug: str) -> str:
@@ -283,6 +291,8 @@ def add_original_slug(record: Any) -> Any:
     """
 
     record["slug"] = record.get("_protocols_name", "")
+    del record["_protocols_name"]
+
     return record
 
 
@@ -349,6 +359,7 @@ def build_defillama_assets() -> List[AssetFactoryResponse]:
         name="tvl",
         op_tags={
             "dagster/concurrency_key": "defillama_tvl",
+            "dagster-k8s/config": K8S_CONFIG,
         },
         pool="defillama_tvl",
     )
