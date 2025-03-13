@@ -32,6 +32,7 @@ from sqlmesh.core.model import ModelKindName
         "batch_concurrency": 10,
         "lookback": 7,
     },
+    forward_only=True,
     partitioned_by=("day(created_at)",),
     physical_properties={"max_commit_retry": 15},
 )
@@ -39,6 +40,7 @@ def github_events(
     context: ExecutionContext,
     start: datetime,
     end: datetime,
+    execution_time: datetime,
     gateway: str,
     runtime_stage: str,
     **kwargs,
@@ -91,6 +93,13 @@ def github_events(
     start_arrow = arrow.get(start)
     end_arrow = arrow.get(end)
 
+    execution_time_arrow = arrow.get(execution_time)
+
+    if end_arrow.floor("day") >= execution_time_arrow.floor("day"):
+        # We can't select tables that are in the future so we will always be a
+        # little behind
+        end_arrow = execution_time_arrow.shift(days=-3)
+
     difference = end_arrow - start_arrow
     selects: t.List[exp.Select] = []
     if difference.days < 7:
@@ -111,6 +120,7 @@ def github_events(
         "id",
         "other",
     ]
+
     for period in arrow.Arrow.range(unit, start_arrow.floor(unit), end_arrow):
         selects.append(
             exp.select(*columns).from_(
