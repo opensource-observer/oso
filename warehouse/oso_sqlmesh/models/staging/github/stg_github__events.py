@@ -33,6 +33,7 @@ from sqlmesh.core.model import ModelKindName
         "lookback": 7,
     },
     partitioned_by=("day(created_at)",),
+    physical_properties={"max_commit_retry": 15},
 )
 def github_events(
     context: ExecutionContext,
