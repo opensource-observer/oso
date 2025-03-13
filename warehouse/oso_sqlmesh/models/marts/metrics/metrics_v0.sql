@@ -3,7 +3,10 @@ MODEL (
   kind FULL,
   dialect trino,
   tags (
-    'export'
+    'export',
+    'model_type:full',
+    'model_category:metrics',
+    'model_stage:mart'
   )
 );
 

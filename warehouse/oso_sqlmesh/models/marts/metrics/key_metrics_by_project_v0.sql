@@ -3,7 +3,10 @@ MODEL (
   kind FULL,
   partitioned_by sample_date,
   tags (
-    'export'
+    'export',
+    'model_type:full',
+    'model_category:metrics',
+    'model_stage:mart'
   )
 );
 
