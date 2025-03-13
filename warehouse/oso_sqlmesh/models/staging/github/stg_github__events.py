@@ -116,6 +116,6 @@ def github_events(
                 exp.to_table(f'"github_archive"."{unit}"."{period.format(format)}"')
             )
         )
-    unioned_selects = reduce(lambda acc, cur: acc.union(cur), selects)
+    unioned_selects = reduce(lambda acc, cur: acc.union(cur, distinct=False), selects)
 
-    return exp.select(*columns).from_(unioned_selects)
+    return exp.select(*columns).from_(unioned_selects.subquery())
