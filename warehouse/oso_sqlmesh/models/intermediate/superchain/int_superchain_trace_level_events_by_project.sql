@@ -30,9 +30,9 @@ WITH base_transactions AS (
     to_address_trace,
     to_address_tx,
     gas_used_tx * gas_price_tx / 1e18 AS gas_fee,
-    @oso_id(chain, from_address_tx) AS from_address_tx_id,
-    @oso_id(chain, to_address_trace) AS to_address_trace_id,
-    @oso_id(chain, to_address_tx) AS to_address_tx_id
+    @oso_id(chain, '', from_address_tx) AS from_address_tx_id,
+    @oso_id(chain, '', to_address_trace) AS to_address_trace_id,
+    @oso_id(chain, '', to_address_tx) AS to_address_tx_id
   FROM oso.int_superchain_traces_txs_joined
   WHERE
     block_timestamp BETWEEN @start_dt AND @end_dt

@@ -18,7 +18,7 @@ WITH projects AS (
     projects.project_id,
     unnested_website.url AS artifact_source_id,
     'WWW' AS artifact_source,
-    NULL::VARCHAR AS artifact_namespace,
+    '' AS artifact_namespace,
     unnested_website.url AS artifact_name,
     unnested_website.url AS artifact_url,
     'WEBSITE' AS artifact_type
@@ -29,7 +29,7 @@ WITH projects AS (
     projects.project_id,
     unnested_farcaster.url AS artifact_source_id,
     'FARCASTER' AS artifact_source,
-    NULL::VARCHAR AS artifact_namespace,
+    '' AS artifact_namespace,
     unnested_farcaster.url AS artifact_url,
     'SOCIAL_HANDLE' AS artifact_type,
     CASE
@@ -44,7 +44,7 @@ WITH projects AS (
     projects.project_id,
     unnested_twitter.url AS artifact_source_id,
     'TWITTER' AS artifact_source,
-    NULL::VARCHAR AS artifact_namespace,
+    '' AS artifact_namespace,
     unnested_twitter.url AS artifact_url,
     'SOCIAL_HANDLE' AS artifact_type,
     CASE
@@ -109,7 +109,7 @@ WITH projects AS (
     unnested_tag AS artifact_type,
     unnested_network AS artifact_source,
     unnested_blockchain.address AS artifact_source_id,
-    NULL::VARCHAR AS artifact_namespace,
+    '' AS artifact_namespace,
     unnested_blockchain.address AS artifact_name,
     unnested_blockchain.address AS artifact_url
   FROM projects
@@ -189,7 +189,10 @@ WITH projects AS (
 )
 SELECT
   project_id,
-  @oso_id(artifact_source, artifact_source_id) AS artifact_id,
+  CASE
+    WHEN artifact_source = 'GITHUB' THEN @oso_id(artifact_source, artifact_source_id)
+    ELSE @oso_id(artifact_source, artifact_namespace, artifact_name)
+  END AS artifact_id,
   artifact_source_id,
   artifact_source,
   artifact_namespace,
