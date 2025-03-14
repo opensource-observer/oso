@@ -39,6 +39,24 @@ from oso_dagster.utils.tags import add_tags
 from ossdirectory import fetch_data
 from ossdirectory.fetch import OSSDirectory
 
+K8S_CONFIG = {
+    "merge_behavior": "SHALLOW",
+    "pod_spec_config": {
+        "node_selector": {
+            "pool_type": "spot",
+        },
+        "tolerations": [
+            {
+                "key": "pool_type",
+                "operator": "Equal",
+                "value": "spot",
+                "effect": "NoSchedule",
+            }
+        ],
+    },
+}
+
+
 common_tags: t.Dict[str, str] = {
     "opensource.observer/environment": "production",
     "opensource.observer/group": "ossd",
@@ -157,6 +175,7 @@ project_key = projects_and_collections.keys_by_output_name["projects"]
     key_prefix="ossd",
     ins={"projects_df": AssetIn(project_key)},
     tags=dict(stable_tag.items()),
+    op_tags={"dagster-k8s/config": K8S_CONFIG},
 )
 def repositories(
     global_config: ResourceParam[DagsterConfig],
@@ -203,6 +222,7 @@ def repositories(
     key_prefix="ossd",
     deps=[AssetKey(["ossd", "repositories"])],
     tags=dict(add_tags(common_tags, {"opensource.observer/source": "sbom"}).items()),
+    op_tags={"dagster-k8s/config": K8S_CONFIG},
 )
 def sbom(
     global_config: ResourceParam[DagsterConfig],
