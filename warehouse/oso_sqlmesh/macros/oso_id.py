@@ -7,7 +7,15 @@ from sqlmesh.core.macros import MacroEvaluator
 def oso_id(evaluator: MacroEvaluator, *args: exp.Expression):
     if evaluator.runtime_stage in ["loading", "creating"]:
         return exp.Literal(this="someid", is_string=True)
-    concatenated = exp.Concat(expressions=args, safe=True, coalesce=False)
+    
+    # Convert null values to empty strings for each argument
+    processed_args = [
+        exp.Coalesce(
+            this=[arg, exp.Literal(this="", is_string=True)]
+        ) for arg in args
+    ]
+    
+    concatenated = exp.Concat(expressions=processed_args, safe=True, coalesce=False)
     if evaluator.engine_adapter.dialect == "trino":
         # Trino's SHA256 function only accepts type `varbinary`. So we convert
         # the varchar to varbinary with trino's to_utf8.
