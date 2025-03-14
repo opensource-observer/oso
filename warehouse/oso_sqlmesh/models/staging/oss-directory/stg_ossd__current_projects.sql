@@ -15,7 +15,11 @@ SELECT
   projects.websites,
   projects.social,
   projects.github,
+  projects.defillama,
   projects.npm,
+  projects.crates,
+  projects.go,
+  projects.pypi,
   projects.blockchain,
   projects.sha,
   projects.committed_time
