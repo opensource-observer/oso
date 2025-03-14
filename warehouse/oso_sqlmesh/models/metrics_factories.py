@@ -18,6 +18,7 @@ timeseries_metrics(
         "int_issue_event_time_deltas",
         "int_first_of_event_from_artifact",
         "int_events_daily__blockchain",
+        "int_events_daily__defillama_tvl",
     ],
     metric_queries={
         # This will automatically generate star counts for the given roll up periods.
@@ -361,6 +362,36 @@ timeseries_metrics(
             metadata=MetricMetadata(
                 display_name="Transactions",
                 description="Metrics related to blockchain transactions",
+            ),
+        ),
+        "contract_invocations": MetricQueryDef(
+            ref="blockchain/contract_invocations.sql",
+            rolling=RollingConfig(
+                windows=[30, 90, 180],
+                unit="day",
+                cron="@daily",
+                slots=32,
+            ),
+            entity_types=["artifact", "project", "collection"],
+            over_all_time=True,
+            metadata=MetricMetadata(
+                display_name="Contract Invocations",
+                description="Metrics related to blockchain contract invocations",
+            ),
+        ),
+        "defillama_tvl": MetricQueryDef(
+            ref="defillama/defillama_tvl.sql",
+            rolling=RollingConfig(
+                windows=[30, 90, 180],
+                unit="day",
+                cron="@daily",
+                slots=16,
+            ),
+            entity_types=["artifact", "project", "collection"],
+            over_all_time=True,
+            metadata=MetricMetadata(
+                display_name="Defillama TVL",
+                description="Metrics related to Defillama TVL",
             ),
         ),
         "contributors_lifecycle": MetricQueryDef(
