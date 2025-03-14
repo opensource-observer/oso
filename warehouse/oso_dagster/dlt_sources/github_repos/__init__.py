@@ -3,7 +3,7 @@ import typing as t
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from enum import Enum
-from functools import partial
+from functools import partial, wraps
 from urllib.parse import ParseResult, urlparse
 
 import arrow
@@ -160,7 +160,7 @@ class GithubRepositoryResolver:
         self._ingestion_time = datetime.now(UTC)
 
     async def get_repos_for_url(self, url: str) -> t.List[Repository]:
-        logger.info(f"Getting repos for {url}")
+        logger.debug(f"Getting repos for {url}")
         parsed = self.parse_url(url)
         match parsed.type:
             case GithubURLType.ENTITY:
@@ -277,7 +277,7 @@ class GithubRepositoryResolver:
                 owner,
                 name,
             )
-            logger.info("Got SBOM for %s", f"{owner}/{name}")
+            logger.debug("Got SBOM for %s", f"{owner}/{name}")
             graph = sbom.parsed_data.sbom
             sbom_list: t.List[GithubRepositorySBOMItem] = []
 
@@ -313,7 +313,7 @@ class GithubRepositoryResolver:
             if exception.response.status_code == 404:
                 logger.warning("Skipping %s, no SBOM found", f"{owner}/{name}")
             else:
-                logger.warning("Error getting SBOM: %s", exception)
+                logger.error("Error getting SBOM: %s", exception)
             return []
         except ValidationError as exception:
             validation_errors = [
@@ -356,6 +356,46 @@ class GithubRepositoryResolver:
             return None
 
 
+def with_progress_logger(
+    funcs_gen: t.Generator[t.Callable, None, None],
+    log_interval_pct: int = 5,
+) -> t.List[t.Callable]:
+    """Wraps functions at specific percentage points with logging."""
+
+    funcs_list = list(funcs_gen)
+
+    total = len(funcs_list)
+    if total == 0:
+        return []
+
+    logger.info(f"ProgressLogging: Starting processing of {total} items")
+
+    positions_to_log: t.List[int] = []
+
+    for p in range(0, 101, log_interval_pct):
+        pos = int(p * total / 100)
+        if pos < total:
+            positions_to_log.append(pos)
+
+    if positions_to_log[-1] != total - 1:
+        positions_to_log.append(total - 1)
+
+    def create_wrapper(orig_func: t.Callable, position: int, pct: int) -> t.Callable:
+        @wraps(orig_func)
+        async def wrapped():
+            logger.info(f"ProgressLogging: Processing item {position}/{total} ({pct}%)")
+            return await orig_func()
+
+        return wrapped
+
+    for pos in positions_to_log:
+        percentage = int((pos / total) * 100)
+        original_func = funcs_list[pos]
+        funcs_list[pos] = create_wrapper(original_func, pos, percentage)
+
+    return funcs_list
+
+
 @dlt.resource(
     name="repositories",
     table_name="repositories",
@@ -389,10 +429,12 @@ def oss_directory_github_repositories_resource(
     gh = GithubRepositoryResolver.get_github_client(config)
     resolver = GithubRepositoryResolver(gh)
 
-    yield from (
+    funcs = (
         partial(resolver.get_repos_for_url, github_url)
         for github_url in all_github_urls
     )
+
+    yield from with_progress_logger(funcs)
 
 
 @dlt.resource(
@@ -409,7 +451,7 @@ def oss_directory_github_repositories_resource(
     )
 )
 def oss_directory_github_sbom_resource(
-    all_repo_urls: t.List[str],
+    all_repo_urls: t.List[t.Tuple[str, str]],
     /,
     gh_token: str = dlt.secrets.value,
     rate_limit_max_retry: int = 5,
@@ -426,7 +468,9 @@ def oss_directory_github_sbom_resource(
     gh = GithubRepositoryResolver.get_github_client(config)
     resolver = GithubRepositoryResolver(gh)
 
-    yield from (
+    funcs = (
         partial(resolver.get_sbom_for_repo, owner, repo)
         for owner, repo in all_repo_urls
     )
+
+    yield from with_progress_logger(funcs)
