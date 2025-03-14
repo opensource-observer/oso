@@ -75,7 +75,7 @@ def ensure_dataset(client: BQClient, options: DatasetOptions):
         client.update_dataset(dataset, ["access_entries"])
 
     def error_handler(exc: Exception):
-        if type(exc) != PreconditionFailed:
+        if not isinstance(exc, PreconditionFailed):
             raise exc
 
     retry(retry_update, error_handler)
