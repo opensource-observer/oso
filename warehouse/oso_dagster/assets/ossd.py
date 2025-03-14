@@ -1,6 +1,7 @@
 import typing as t
 
 import arrow
+import pandas as pd
 import polars as pl
 from dagster import (
     AssetExecutionContext,
@@ -87,7 +88,9 @@ def oss_directory_to_dataframe(output: str, data: t.Optional[OSSDirectory] = Non
     assert data.meta is not None
     committed_dt = data.meta.committed_datetime
 
-    df = pl.from_dicts(getattr(data, output))
+    # FIXME: Address this when polar fixes missing columns
+    # df = pl.from_dicts(getattr(data, output))
+    df = pl.from_pandas(pd.DataFrame.from_records(getattr(data, output)))
     # Add sync time and commit sha to the dataframe
     df = df.with_columns(
         sha=pl.lit(bytes.fromhex(data.meta.sha)),
