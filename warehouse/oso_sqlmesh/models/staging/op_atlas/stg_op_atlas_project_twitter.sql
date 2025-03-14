@@ -8,7 +8,7 @@ WITH sanitized AS (
   SELECT
     projects.project_id,
     'TWITTER' AS artifact_source,
-    NULL::VARCHAR AS artifact_namespace,
+    '' AS artifact_namespace,
     CASE
       WHEN projects.twitter LIKE 'https://twitter.com/%'
       THEN SUBSTRING(projects.twitter, 21)

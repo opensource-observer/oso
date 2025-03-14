@@ -8,7 +8,7 @@ SELECT
   @oso_id('OP_ATLAS', projects.id) AS project_id, /* Translating op-atlas project_id to OSO project_id */
   LOWER(defillama.value) AS artifact_source_id,
   'DEFILLAMA' AS artifact_source,
-  NULL::VARCHAR AS artifact_namespace,
+  '' AS artifact_namespace,
   defillama.value AS artifact_name,
   CONCAT('https://defillama.com/protocol/', defillama.value) AS artifact_url,
   'DEFILLAMA_PROTOCOL' AS artifact_type

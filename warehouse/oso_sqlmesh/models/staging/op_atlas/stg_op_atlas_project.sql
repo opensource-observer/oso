@@ -16,7 +16,7 @@ SELECT
   @oso_id('OP_ATLAS', id)::VARCHAR AS project_id,
   id::VARCHAR AS project_source_id,
   'OP_ATLAS' AS project_source,
-  NULL::VARCHAR AS project_namespace,
+  '' AS project_namespace,
   id::VARCHAR AS project_name,
   name::VARCHAR AS display_name,
   description::VARCHAR,

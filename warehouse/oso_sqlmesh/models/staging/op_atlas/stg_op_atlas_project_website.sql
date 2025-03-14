@@ -8,7 +8,7 @@ SELECT
   @oso_id('OP_ATLAS', projects.id) AS project_id, /* Translating op-atlas project_id to OSO project_id */
   LOWER(websites.value) AS artifact_source_id,
   'WWW' AS artifact_source,
-  NULL::VARCHAR AS artifact_namespace,
+  '' AS artifact_namespace,
   websites.value AS artifact_name,
   websites.value AS artifact_url,
   'WEBSITE' AS artifact_type
