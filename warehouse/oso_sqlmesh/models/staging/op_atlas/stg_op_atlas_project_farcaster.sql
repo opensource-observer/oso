@@ -8,7 +8,7 @@ WITH sanitized AS (
   SELECT
     @oso_id('OP_ATLAS', projects.id) AS project_id, /* Translating op-atlas project_id to OSO project_id */
     'FARCASTER' AS artifact_source,
-    NULL::VARCHAR AS artifact_namespace,
+    '' AS artifact_namespace,
     CASE
       WHEN farcaster.value LIKE 'https://warpcast.com/%'
       THEN SUBSTRING(farcaster.value, 22)
