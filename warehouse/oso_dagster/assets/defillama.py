@@ -146,7 +146,7 @@ K8S_CONFIG = {
     "container_config": {
         "resources": {
             "requests": {"cpu": "2000m", "memory": "3584Mi"},
-            "limits": {"memory": "3584Mi"},
+            "limits": {"memory": "7168Mi"},
         },
     },
 }
