@@ -172,10 +172,7 @@ all_normalized_artifacts AS (
 )
 SELECT
   project_id,
-  CASE
-    WHEN artifact_source = 'GITHUB' THEN @oso_id(artifact_source, artifact_source_id)
-    ELSE @oso_id(artifact_source, artifact_namespace, artifact_name)
-  END AS artifact_id,
+  @oso_id(artifact_source, artifact_namespace, artifact_name) AS artifact_id,
   artifact_source_id,
   artifact_source,
   artifact_namespace,
