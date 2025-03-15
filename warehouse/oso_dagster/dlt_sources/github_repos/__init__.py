@@ -383,7 +383,9 @@ def with_progress_logger(
     def create_wrapper(orig_func: t.Callable, position: int, pct: int) -> t.Callable:
         @wraps(orig_func)
         async def wrapped():
-            logger.info(f"ProgressLogging: Processing item {position}/{total} ({pct}%)")
+            logger.info(
+                f"ProgressLogging: Processing item {position + 1}/{total} ({pct}%)"
+            )
             return await orig_func()
 
         return wrapped
