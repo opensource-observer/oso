@@ -3,8 +3,8 @@ from sqlmesh import macro
 from sqlmesh.core.macros import MacroEvaluator
 
 
-@macro()
-def oso_id(evaluator: MacroEvaluator, *args: exp.Expression):
+def _generate_oso_id(evaluator: MacroEvaluator, *args: exp.Expression):
+    """Creates a deterministic ID by concatenating the arguments and hashing them."""
     if evaluator.runtime_stage in ["loading", "creating"]:
         return exp.Literal(this="someid", is_string=True)
     concatenated = exp.Concat(expressions=args, safe=True, coalesce=False)
@@ -21,3 +21,31 @@ def oso_id(evaluator: MacroEvaluator, *args: exp.Expression):
     if evaluator.engine_adapter.dialect == "duckdb":
         return sha
     return exp.ToBase64(this=sha)
+
+
+@macro()
+def oso_id(evaluator: MacroEvaluator, *args: exp.Expression):
+    """Degenerate macro for backward compatibility."""
+    return _generate_oso_id(evaluator, *args)
+
+
+@macro()
+def oso_entity_id(
+    evaluator: MacroEvaluator,
+    entity_source: exp.Expression,
+    entity_namespace: exp.Expression,
+    entity_name: exp.Expression,
+) -> exp.Expression:
+    """Creates a deterministic ID from entity source, namespace, and name.
+    
+    Args:
+        entity_source: The source system of the entity, eg, "GITHUB"
+        entity_namespace: The namespace of the entity, eg, "my-org"
+        entity_name: The name of the entity, eg, "my-repo"
+    """
+    return _generate_oso_id(
+        evaluator,
+        entity_source,
+        entity_namespace,
+        entity_name,
+    )

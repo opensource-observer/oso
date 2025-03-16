@@ -37,16 +37,16 @@ WITH events AS (
 
 SELECT
   block_timestamp AS time,
-  @oso_id(chain, to_address) AS to_artifact_id,
-  @oso_id(chain, from_address) AS from_artifact_id,
+  @oso_entity_id(chain, '', to_address) AS to_artifact_id,
+  @oso_entity_id(chain, '', from_address) AS from_artifact_id,
   event_type,
   -- TODO: refactor to ensure unique event_source_id
-  @oso_id(chain, transaction_hash) AS event_source_id,
+  @oso_id(chain, '', transaction_hash) AS event_source_id,
   chain AS event_source,
-  NULL::TEXT AS to_artifact_namespace,
+  '' AS to_artifact_namespace,
   to_address AS to_artifact_name,
   to_address AS to_artifact_source_id,
-  NULL::TEXT AS from_artifact_namespace,
+  '' AS from_artifact_namespace,
   from_address AS from_artifact_name,
   from_address AS from_artifact_source_id,
   gas_used,

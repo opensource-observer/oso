@@ -50,9 +50,9 @@ WITH base_contracts AS (
 )
 SELECT DISTINCT
   project_id,
-  @oso_id(artifact_source, artifact_name) AS artifact_id,
+  @oso_entity_id(artifact_source, '', artifact_name) AS artifact_id,
   artifact_source,
   artifact_name AS artifact_source_id,
-  NULL::TEXT AS artifact_namespace,
+  '' AS artifact_namespace,
   artifact_name
 FROM all_contracts

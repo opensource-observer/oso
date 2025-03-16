@@ -54,10 +54,10 @@ tvl_events_with_ids AS (
       'defillama', -- from_artifact_namespace
       LOWER(token) -- from_artifact_name
     ) AS event_source_id,
-    @oso_id('DEFILLAMA', NULL, LOWER(slug)) AS to_artifact_id,
+    @oso_entity_id('DEFILLAMA', '', LOWER(slug)) AS to_artifact_id,
     'defillama' AS to_artifact_namespace,
     LOWER(slug) AS to_artifact_name,
-    @oso_id('DEFILLAMA', NULL, LOWER(token)) AS from_artifact_id,
+    @oso_entity_id('DEFILLAMA', '', LOWER(token)) AS from_artifact_id,
     'defillama' AS from_artifact_namespace,
     LOWER(token) AS from_artifact_name,
     tvl::DOUBLE AS amount

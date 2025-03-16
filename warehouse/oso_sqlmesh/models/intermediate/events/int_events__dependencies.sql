@@ -63,15 +63,17 @@ WITH artifacts AS (
     time,
     event_type,
     event_source,
-    @oso_id(event_source, to_artifact_namespace, to_artifact_name) AS to_artifact_id,
+    @oso_entity_id(event_source, to_artifact_namespace, to_artifact_name) AS to_artifact_id,
     to_artifact_name,
     to_artifact_namespace,
     to_artifact_type,
+    -- TODO: review if this is correct
     @oso_id(event_source, to_artifact_type) AS to_artifact_source_id,
-    @oso_id(event_source, from_artifact_namespace, from_artifact_name) AS from_artifact_id,
+    @oso_entity_id(event_source, from_artifact_namespace, from_artifact_name) AS from_artifact_id,
     from_artifact_name,
     from_artifact_namespace,
     from_artifact_type,
+    -- TODO: review if this is correct
     @oso_id(event_source, from_artifact_type) AS from_artifact_source_id,
     amount
   FROM intermediate

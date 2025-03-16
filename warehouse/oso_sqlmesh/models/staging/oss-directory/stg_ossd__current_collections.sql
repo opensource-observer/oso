@@ -6,7 +6,7 @@ MODEL (
 );
 
 SELECT
-  @oso_id('oso', name) AS collection_id, /* id is the SHA256 of namespace + slug */ /* We hardcode our namespace "oso" for now */ /* but we are assuming we will allow users to add their on the OSO website */
+  @oso_entity_id('OSS_DIRECTORY', 'oso', name) AS collection_id, /* id is the SHA256 of namespace + slug */ /* We hardcode our namespace "oso" for now */ /* but we are assuming we will allow users to add their on the OSO website */
   'OSS_DIRECTORY' AS collection_source,
   'oso' AS collection_namespace,
   collections.name AS collection_name,

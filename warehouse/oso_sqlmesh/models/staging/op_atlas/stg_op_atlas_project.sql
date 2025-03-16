@@ -4,30 +4,47 @@ MODEL (
   kind FULL
 );
 
-WITH latest_project AS (
+WITH cleaned_data AS (
+  SELECT
+    LOWER(id::VARCHAR) AS id,
+    name,
+    description,
+    category,
+    thumbnail_url,
+    banner_url,
+    twitter,
+    mirror,
+    TRIM(LOWER(open_source_observer_slug::VARCHAR)) AS open_source_observer_slug,
+    created_at,
+    updated_at,
+    deleted_at
+  FROM @oso_source('bigquery.op_atlas.project')
+),
+
+latest_data AS (
   SELECT
     *,
     ROW_NUMBER() OVER (PARTITION BY id ORDER BY updated_at DESC) AS rn
-  FROM @oso_source('bigquery.op_atlas.project')
+  FROM cleaned_data
   WHERE deleted_at IS NULL
 )
 
 SELECT
-  @oso_id('OP_ATLAS', id)::VARCHAR AS project_id,
-  id::VARCHAR AS project_source_id,
+  @oso_entity_id('OP_ATLAS', '', id) AS project_id,
+  id AS project_source_id,
   'OP_ATLAS' AS project_source,
-  NULL::VARCHAR AS project_namespace,
-  id::VARCHAR AS project_name,
-  name::VARCHAR AS display_name,
-  description::VARCHAR,
-  category::VARCHAR,
-  thumbnail_url::VARCHAR,
-  banner_url::VARCHAR,
-  twitter::VARCHAR,
-  mirror::VARCHAR,
-  TRIM(LOWER(open_source_observer_slug))::VARCHAR AS open_source_observer_slug,
-  created_at::TIMESTAMP,
-  updated_at::TIMESTAMP,
-  deleted_at::TIMESTAMP
-FROM latest_project
+  '' AS project_namespace,
+  id AS project_name,
+  name AS display_name,
+  description,
+  category,
+  thumbnail_url,
+  banner_url,
+  twitter,
+  mirror,
+  open_source_observer_slug,
+  created_at,
+  updated_at,
+  deleted_at
+FROM latest_data
 WHERE rn = 1

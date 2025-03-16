@@ -40,7 +40,7 @@ projects_by_collection AS (
     ON app.project_id = projects.project_id
 )
 SELECT
-  @oso_id(collection_source, collection_namespace, collection_name)
+  @oso_entity_id(collection_source, collection_namespace, collection_name)
     AS collection_id,
   collection_source,
   collection_namespace,
