@@ -11,7 +11,8 @@ WITH projects AS (
     social AS social,
     github AS github,
     npm AS npm,
-    blockchain AS blockchain
+    blockchain AS blockchain,
+    defillama AS defillama
   FROM oso.stg_ossd__current_projects
 ), all_websites AS (
   SELECT
@@ -116,6 +117,21 @@ WITH projects AS (
   CROSS JOIN UNNEST(projects.blockchain) AS @unnested_struct_ref(unnested_blockchain)
   CROSS JOIN UNNEST(unnested_blockchain.networks) AS @unnested_array_ref(unnested_network)
   CROSS JOIN UNNEST(unnested_blockchain.tags) AS @unnested_array_ref(unnested_tag)
+), all_defillama AS (
+  SELECT
+    projects.project_id,
+    LOWER(unnested_defillama.url) AS artifact_source_id,
+    'DEFILLAMA' AS artifact_source,
+    '' AS artifact_namespace,
+    CASE
+      WHEN unnested_defillama.url LIKE 'https://defillama.com/protocol/%'
+      THEN SUBSTRING(unnested_defillama.url, 32)
+      ELSE unnested_defillama.url
+    END AS artifact_name,
+    unnested_defillama.url AS artifact_url,
+    'DEFILLAMA_PROTOCOL' AS artifact_type
+  FROM projects
+  CROSS JOIN UNNEST(projects.defillama) AS @unnested_struct_ref(unnested_defillama)
 ), all_artifacts AS (
   SELECT
     project_id,
@@ -176,6 +192,16 @@ WITH projects AS (
     artifact_name,
     artifact_url
   FROM all_npm
+  UNION ALL
+  SELECT
+    project_id,
+    artifact_source_id,
+    artifact_source,
+    artifact_type,
+    artifact_namespace,
+    artifact_name,
+    artifact_url
+  FROM all_defillama
 ), all_normalized_artifacts AS (
   SELECT DISTINCT
     project_id,
