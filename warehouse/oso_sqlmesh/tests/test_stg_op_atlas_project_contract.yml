@@ -13,23 +13,23 @@ test_stg_op_atlas_project_contract:
       - comment: "This needs to exist for @oso_source in tests when using local-trino gateway"
     sources__bigquery__op_atlas.project_contract:
       rows:
-      - id: 0x1
-        project_id: 0x0
+      - id: "0x1"
+        project_id: "0x0"
         chain_id: 1 
         contract_address: "0x123"
         updated_at: "2025-02-01"
-      - id: 0x2
-        project_id: 0x0
+      - id: "0x2"
+        project_id: "0x0"
         chain_id: 10
         contract_address: "0x123"
         updated_at: "2025-02-01"
-      - id: 0x3
-        project_id: 0x0
+      - id: "0x3"
+        project_id: "0x0"
         chain_id: 8453
         contract_address: "0x123"
         updated_at: "2025-02-01"
-      - id: 0x4
-        project_id: 0x0
+      - id: "0x4"
+        project_id: "0x0"
         chain_id: 99999
         contract_address: "0x123"
         updated_at: "2025-02-01"
@@ -39,21 +39,21 @@ test_stg_op_atlas_project_contract:
       rows:
       - artifact_source_id: "0x123"
         artifact_source: MAINNET
-        artifact_namespace: NULL
+        artifact_namespace: ""
         artifact_name: "0x123"
         artifact_type: CONTRACT
       - artifact_source_id: "0x123"
         artifact_source: OPTIMISM
-        artifact_namespace: NULL
+        artifact_namespace: ""
         artifact_name: "0x123"
         artifact_type: CONTRACT
       - artifact_source_id: "0x123"
         artifact_source: BASE
-        artifact_namespace: NULL
+        artifact_namespace: ""
         artifact_name: "0x123"
         artifact_type: CONTRACT
       - artifact_source_id: "0x123"
         artifact_source: "99999"
-        artifact_namespace: NULL
+        artifact_namespace: ""
         artifact_name: "0x123"
         artifact_type: CONTRACT

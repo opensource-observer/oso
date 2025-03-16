@@ -1,11 +1,6 @@
 import logging
 
 import duckdb
-from oso_dagster.assets.defillama import (
-    DEFILLAMA_PROTOCOLS,
-    defillama_slug_to_name,
-)
-
 from .config import RowRestriction, TableMappingConfig, TableMappingDestination
 
 logger = logging.getLogger(__name__)
@@ -80,13 +75,8 @@ TABLE_MAPPING: TableMappingConfig = {
         ),
         table="bigquery.optimism_superchain_4337_account_abstraction_data.enriched_entrypoint_traces_v2",
     ),
+    "opensource-observer.defillama.tvl": "bigquery.defillama.tvl",
 }
-
-defillama_tables = {
-    f"opensource-observer.defillama_tvl.{defillama_slug_to_name(slug)}": f"bigquery.defillama_tvl.{defillama_slug_to_name(slug)}"
-    for slug in DEFILLAMA_PROTOCOLS
-}
-TABLE_MAPPING.update(defillama_tables)
 
 
 def reset_local_duckdb(path: str):

@@ -1,7 +1,7 @@
 model(
     name oso.stg_superchain__potential_bots,
     kind full,
-    start '2021-10-01',
+    start @blockchain_incremental_start,
     cron '@daily',
     partitioned_by(day("min_block_time"), "chain_name"),
     grain(chain_name, address),

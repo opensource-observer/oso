@@ -6,14 +6,14 @@ MODEL (
     batch_size 365,
     batch_concurrency 1
   ),
-  start '2021-10-01',
+  start @defillama_incremental_start,
   cron '@daily',
   partitioned_by (DAY("bucket_day"), "event_type"),
   grain (bucket_day, event_type, event_source, from_artifact_id, to_artifact_id)
 );
 
 WITH all_tvl_events AS (
-  @unioned_defillama_tvl_events()
+  SELECT * FROM oso.stg__defillama_tvl_events
 ),
 
 ranked_tvl_events AS (
@@ -54,10 +54,10 @@ tvl_events_with_ids AS (
       'defillama', -- from_artifact_namespace
       LOWER(token) -- from_artifact_name
     ) AS event_source_id,
-    @oso_id('DEFILLAMA', NULL, LOWER(slug)) AS to_artifact_id,
+    @oso_entity_id('DEFILLAMA', '', LOWER(slug)) AS to_artifact_id,
     'defillama' AS to_artifact_namespace,
     LOWER(slug) AS to_artifact_name,
-    @oso_id('DEFILLAMA', NULL, LOWER(token)) AS from_artifact_id,
+    @oso_entity_id('DEFILLAMA', '', LOWER(token)) AS from_artifact_id,
     'defillama' AS from_artifact_namespace,
     LOWER(token) AS from_artifact_name,
     tvl::DOUBLE AS amount

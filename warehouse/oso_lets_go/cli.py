@@ -206,6 +206,21 @@ def initialize(
     manager.initialize()
 
 
+@local.command()
+@click.pass_context
+@click.option("-h", "--host", default="localhost")
+def port_forward_trino(ctx: click.Context, host: str):
+    kr8s_api = kr8s.api(context="kind-oso-local-test-cluster")
+    trino_service = Service.get(
+        "local-trino-trino",
+        "local-trino",
+        api=kr8s_api,
+    )
+    with trino_service.portforward(address=host, remote_port="8080") as local_port:
+        print(f"Port forwarded to {host}:{local_port}")
+        input("Press enter to close the port forward")
+
+
 @cli.group()
 def production():
     pass

@@ -5,7 +5,7 @@ MODEL (
     batch_size 365,
     batch_concurrency 1
   ),
-  start '2015-01-01',
+  start @github_incremental_start,
   cron '@daily',
   partitioned_by (DAY("time"), "event_type"),
   grain (time, event_type, event_source, from_artifact_id, to_artifact_id)
@@ -150,12 +150,12 @@ WITH github_commits AS (
     event_type,
     event_source_id,
     event_source,
-    @oso_id(event_source, to_artifact_source_id) AS to_artifact_id,
+    @oso_entity_id(event_source, to_namespace, to_name) AS to_artifact_id,
     to_name AS to_artifact_name,
     to_namespace AS to_artifact_namespace,
     to_type AS to_artifact_type,
     to_artifact_source_id,
-    @oso_id(event_source, from_artifact_source_id) AS from_artifact_id,
+    @oso_entity_id(event_source, from_namespace, from_name) AS from_artifact_id,
     from_name AS from_artifact_name,
     from_namespace AS from_artifact_namespace,
     from_type AS from_artifact_type,

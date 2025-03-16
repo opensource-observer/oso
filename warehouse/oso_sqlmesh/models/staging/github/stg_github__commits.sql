@@ -1,7 +1,14 @@
 MODEL (
   name oso.stg_github__commits,
   description 'Turns all push events into their commit objects',
-  kind FULL,
+  kind INCREMENTAL_BY_TIME_RANGE (
+    time_column created_at,
+    batch_size 90,
+    batch_concurrency 3,
+    lookback 7
+  ),
+  start @github_incremental_start,
+  partitioned_by DAY(created_at),
   dialect trino
 );
 
@@ -20,3 +27,4 @@ SELECT
   JSON_EXTRACT_SCALAR(unnested_ghpe.commit_details, '$.url') AS api_url
 FROM oso.stg_github__push_events AS ghpe
 CROSS JOIN UNNEST(@json_extract_from_array(ghpe.commits, '$')) AS unnested_ghpe(commit_details)
+WHERE ghpe.created_at between @start_dt and @end_dt

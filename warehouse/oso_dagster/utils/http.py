@@ -56,15 +56,21 @@ FACTORIES = {
 }
 
 
-def get_sync_http_cache_storage(cache_uri: str) -> hishel.BaseStorage:
+def get_sync_http_cache_storage(cache_uri: str) -> hishel.BaseStorage | None:
     parsed_uri = urlparse(cache_uri)
+
+    if parsed_uri.scheme not in FACTORIES["sync"]:
+        return None
 
     factory = FACTORIES["sync"][parsed_uri.scheme]
     return cast(hishel.BaseStorage, factory(parsed_uri))
 
 
-def get_async_http_cache_storage(cache_uri: str) -> hishel.AsyncBaseStorage:
+def get_async_http_cache_storage(cache_uri: str) -> hishel.AsyncBaseStorage | None:
     parsed_uri = urlparse(cache_uri)
+
+    if parsed_uri.scheme not in FACTORIES["async"]:
+        return None
 
     factory = FACTORIES["async"][parsed_uri.scheme]
     return cast(hishel.AsyncBaseStorage, factory(parsed_uri))

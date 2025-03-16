@@ -29,7 +29,7 @@ from metrics_tools.macros import (
     metrics_start,
     relative_window_sample_date,
 )
-from metrics_tools.models import MacroOverridingModel
+from metrics_tools.models.tools import MacroOverridingModel
 from metrics_tools.transformer import (
     IntermediateMacroEvaluatorTransform,
     SQLTransformer,
@@ -349,6 +349,12 @@ class TimeseriesMetrics:
                     )
                 },
                 enabled=self._raw_options.get("enabled", True),
+                tags=[
+                    "model_type:view",
+                    "model_category:metrics",
+                    "model_stage:intermediate",
+                    "model_metrics_type:timeseries_union",
+                ],
             )(join_all_of_entity_type)
 
         for entity_type, tables in self._key_metrics_marts_tables.items():
@@ -376,6 +382,11 @@ class TimeseriesMetrics:
                     )
                 },
                 enabled=self._raw_options.get("enabled", True),
+                tags=[
+                    "model_type:view",
+                    "model_category:metrics",
+                    "model_stage:intermediate",
+                ],
             )(join_all_of_entity_type)
 
         raw_table_metadata = {
@@ -415,6 +426,12 @@ class TimeseriesMetrics:
                 dialect="clickhouse",
                 columns=constants.METRIC_METADATA_COLUMNS,
                 enabled=self._raw_options.get("enabled", True),
+                tags=[
+                    "model_type:incremental",
+                    "model_category:metrics",
+                    "model_stage:intermediate",
+                    "model_metrics_type:metrics_metadata",
+                ],
             )(map_metadata_to_metric)
 
         MacroOverridingModel(
@@ -429,6 +446,12 @@ class TimeseriesMetrics:
             dialect="clickhouse",
             columns=constants.METRIC_METADATA_COLUMNS,
             enabled=self._raw_options.get("enabled", True),
+            tags=[
+                "model_type:incremental",
+                "model_category:metrics",
+                "model_stage:intermediate",
+                "model_metrics_type:metrics_metadata",
+            ],
         )(aggregate_metadata)
 
         logger.info("model generation complete")
@@ -517,6 +540,12 @@ class TimeseriesMetrics:
             locals=self.serializable_config(query_config),
             override_module_path=override_module_path,
             override_path=override_path,
+            tags=[
+                "model_type:incremental",
+                "model_category:metrics",
+                "model_stage:intermediate",
+                "model_metrics_type:rolling_window",
+            ],
         )(generated_rolling_query_proxy)
 
     def generate_time_aggregation_model_for_rendered_query(
@@ -586,6 +615,12 @@ class TimeseriesMetrics:
             locals=self.serializable_config(query_config),
             override_module_path=override_module_path,
             override_path=override_path,
+            tags=[
+                "model_type:incremental",
+                "model_category:metrics",
+                "model_stage:intermediate",
+                "model_metrics_type:time_aggregation",
+            ],
         )(generated_query)
 
     def generate_point_in_time_model_for_rendered_query(
@@ -628,6 +663,12 @@ class TimeseriesMetrics:
             locals=config,
             override_module_path=override_module_path,
             override_path=override_path,
+            tags=[
+                "model_type:full",
+                "model_category:metrics",
+                "model_stage:intermediate",
+                "model_metrics_type:point_in_time",
+            ],
         )(generated_query)
 
     def serializable_config(self, query_config: MetricQueryConfig):

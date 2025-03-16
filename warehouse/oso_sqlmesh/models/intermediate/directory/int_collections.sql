@@ -19,5 +19,5 @@ SELECT DISTINCT
   atlas_collections.collection_namespace,
   atlas_collections.collection_name,
   atlas_collections.collection_display_name AS display_name,
-  NULL::TEXT AS description
+  '' AS description
 FROM oso.int_projects_by_collection_in_op_atlas AS atlas_collections

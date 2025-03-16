@@ -1,6 +1,7 @@
 import os
 
 import dotenv
+from metrics_tools.models import constants
 from metrics_tools.source.rewrite import LOCAL_TRINO_REWRITE_RULES
 from sqlmesh.core.config import (
     Config,
@@ -70,5 +71,12 @@ config = Config(
         ),
     },
     default_gateway="local",
-    variables={"fulltime_dev_days": 10, "activity_window": 30},
+    variables={
+        "fulltime_dev_days": 10,
+        "activity_window": 30,
+        "blockchain_incremental_start": constants.blockchain_incremental_start,
+        "github_incremental_start": constants.github_incremental_start,
+        "funding_incremental_start": constants.funding_incremental_start,
+        "defillama_incremental_start": constants.defillama_incremental_start,
+    },
 )

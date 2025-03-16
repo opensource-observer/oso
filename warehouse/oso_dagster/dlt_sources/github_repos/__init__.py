@@ -3,7 +3,7 @@ import typing as t
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from enum import Enum
-from functools import partial
+from functools import partial, wraps
 from urllib.parse import ParseResult, urlparse
 
 import arrow
@@ -11,7 +11,6 @@ import dlt
 import hishel
 import httpx
 import polars as pl
-from dagster import AssetExecutionContext
 from githubkit import GitHub
 from githubkit.exception import RequestFailed
 from githubkit.retry import RetryChainDecision, RetryRateLimit, RetryServerError
@@ -160,83 +159,72 @@ class GithubRepositoryResolver:
         self._gh = gh
         self._ingestion_time = datetime.now(UTC)
 
-    def resolve_repos(self, projects_df: pl.DataFrame):
-        # Unnest all of the urls to get
-        # Process all of the urls and resolve repos based on the urls
-        urls = self.github_urls_from_df(projects_df)
-        logger.debug(f"URLS loaded: {len(urls)}")
-        for url in urls["url"]:
-            if not url:
-                continue
-
-            logger.debug(f"getting repos for url: {url}")
-            try:
-                repos = self.get_repos_for_url(url)
-            except InvalidGithubURL:
-                logger.warn(f"skipping invalid github url: {url}")
-                continue
-
-            try:
-                for repo in repos:
-                    yield repo
-            except RequestFailed as e:
-                if e.response.status_code == 404:
-                    logging.warn(f"skipping {url}. no repos found")
-                    continue
-                else:
-                    raise e
-
-    def get_repos_for_url(self, url: str):
-        logger.info(f"Getting repos for {url}")
+    async def get_repos_for_url(self, url: str) -> t.List[Repository]:
+        logger.debug(f"Getting repos for {url}")
         parsed = self.parse_url(url)
         match parsed.type:
             case GithubURLType.ENTITY:
-                return self.get_repos_for_entity(parsed)
+                return await self.get_repos_for_entity(parsed)
             case GithubURLType.REPOSITORY:
-                return self.get_repo(parsed)
+                return await self.get_repo(parsed)
 
-    def get_repos_for_entity(self, parsed: ParsedGithubURL) -> t.Iterable[Repository]:
+    async def get_repos_for_entity(self, parsed: ParsedGithubURL) -> t.List[Repository]:
         try:
-            repos = self.get_repos_for_org(parsed)
-            for repo in repos:
-                yield gh_repository_to_repository(self._ingestion_time, repo)
-        except:
-            repos = self.get_repos_for_user(parsed)
-            for repo in repos:
-                yield gh_repository_to_repository(self._ingestion_time, repo)
+            repos = await self.get_repos_for_org(parsed)
+            return [
+                gh_repository_to_repository(self._ingestion_time, repo)
+                for repo in repos
+            ]
+        except RequestFailed:
+            repos = await self.get_repos_for_user(parsed)
+            return [
+                gh_repository_to_repository(self._ingestion_time, repo)
+                for repo in repos
+            ]
 
-    def get_repos_for_org(self, parsed: ParsedGithubURL):
-        repos = self._gh.paginate(
-            self._gh.rest.repos.list_for_org,
+    async def get_repos_for_org(self, parsed: ParsedGithubURL) -> t.List:
+        headers = {"X-Github-Next-Global-ID": "1"}
+        repo_list = []
+
+        async for repo in self._gh.paginate(
+            self._gh.rest.repos.async_list_for_org,
             org=parsed.owner,
-            headers={"X-Github-Next-Global-ID": "1"},
-        )
-        return repos
+            headers=headers,
+        ):
+            repo_list.append(repo)
 
-    def get_repos_for_user(self, parsed: ParsedGithubURL):
-        repos = self._gh.paginate(
-            self._gh.rest.repos.list_for_user,
+        return repo_list
+
+    async def get_repos_for_user(self, parsed: ParsedGithubURL) -> t.List:
+        headers = {"X-Github-Next-Global-ID": "1"}
+        repo_list = []
+
+        async for repo in self._gh.paginate(
+            self._gh.rest.repos.async_list_for_user,
             username=parsed.owner,
-            headers={"X-Github-Next-Global-ID": "1"},
-        )
-        return repos
+            headers=headers,
+        ):
+            repo_list.append(repo)
 
-    def get_repo(self, parsed: ParsedGithubURL) -> t.Iterable[Repository]:
+        return repo_list
+
+    async def get_repo(self, parsed: ParsedGithubURL) -> t.List[Repository]:
         if not parsed.repository:
             raise Exception("Repository must be set")
+
         try:
-            repo = self._gh.rest.repos.get(
+            repo = await self._gh.rest.repos.async_get(
                 owner=parsed.owner,
                 repo=parsed.repository,
                 headers={"X-Github-Next-Global-ID": "1"},
             )
+            return [gh_repository_to_repository(self._ingestion_time, repo.parsed_data)]
         except RequestFailed as e:
             if e.response.status_code == 404:
-                logging.warn(f"skipping {parsed.url}. not found")
+                logger.warning(f"skipping {parsed.url}. not found")
                 return []
             else:
                 raise e
-        return [gh_repository_to_repository(self._ingestion_time, repo.parsed_data)]
 
     def parse_url(self, url: str) -> ParsedGithubURL:
         parsed_url = urlparse(url)
@@ -289,7 +277,7 @@ class GithubRepositoryResolver:
                 owner,
                 name,
             )
-            logger.info("Got SBOM for %s", f"{owner}/{name}")
+            logger.debug("Got SBOM for %s", f"{owner}/{name}")
             graph = sbom.parsed_data.sbom
             sbom_list: t.List[GithubRepositorySBOMItem] = []
 
@@ -325,7 +313,7 @@ class GithubRepositoryResolver:
             if exception.response.status_code == 404:
                 logger.warning("Skipping %s, no SBOM found", f"{owner}/{name}")
             else:
-                logger.warning("Error getting SBOM: %s", exception)
+                logger.error("Error getting SBOM: %s", exception)
             return []
         except ValidationError as exception:
             validation_errors = [
@@ -360,6 +348,53 @@ class GithubRepositoryResolver:
             ),
         )
 
+    def safe_parse_url(self, url: str) -> ParsedGithubURL | None:
+        try:
+            return self.parse_url(url)
+        except InvalidGithubURL as e:
+            logger.warning("Skipping invalid url %s: %s", url, e)
+            return None
+
+
+def with_progress_logger(
+    funcs_gen: t.Generator[t.Callable, None, None],
+    log_interval_pct: int = 5,
+) -> t.List[t.Callable]:
+    """Wraps functions at specific percentage points with logging."""
+
+    funcs_list = list(funcs_gen)
+
+    total = len(funcs_list)
+    if total == 0:
+        return []
+
+    logger.info(f"ProgressLogging: Starting processing of {total} items")
+
+    positions_to_log: t.List[int] = []
+
+    for p in range(0, 101, log_interval_pct):
+        pos = int(p * total / 100)
+        if pos < total:
+            positions_to_log.append(pos)
+
+    if positions_to_log[-1] != total - 1:
+        positions_to_log.append(total - 1)
+
+    def create_wrapper(orig_func: t.Callable, position: int, pct: int) -> t.Callable:
+        @wraps(orig_func)
+        async def wrapped():
+            logger.info(f"ProgressLogging: Processing item {position}/{total} ({pct}%)")
+            return await orig_func()
+
+        return wrapped
+
+    for pos in positions_to_log:
+        percentage = int((pos / total) * 100)
+        original_func = funcs_list[pos]
+        funcs_list[pos] = create_wrapper(original_func, pos, percentage)
+
+    return funcs_list
+
 
 @dlt.resource(
     name="repositories",
@@ -369,12 +404,19 @@ class GithubRepositoryResolver:
     primary_key="id",
     merge_key="node_id",
 )
+@dlt_parallelize(
+    ParallelizeConfig(
+        chunk_size=16,
+        parallel_batches=5,
+        wait_interval=45,
+    )
+)
 def oss_directory_github_repositories_resource(
-    projects_df: pl.DataFrame,
+    all_github_urls: t.List[str],
+    /,
     gh_token: str = dlt.secrets.value,
     rate_limit_max_retry: int = 5,
     server_error_max_rety: int = 3,
-    http_cache: t.Optional[str] = None,
 ):
     """Based on the oss_directory data we resolve repositories"""
 
@@ -382,13 +424,17 @@ def oss_directory_github_repositories_resource(
         gh_token=gh_token,
         rate_limit_max_retry=rate_limit_max_retry,
         server_error_max_rety=server_error_max_rety,
-        http_cache=http_cache,
     )
 
     gh = GithubRepositoryResolver.get_github_client(config)
     resolver = GithubRepositoryResolver(gh)
 
-    yield from resolver.resolve_repos(projects_df)
+    funcs = (
+        partial(resolver.get_repos_for_url, github_url)
+        for github_url in all_github_urls
+    )
+
+    yield from with_progress_logger(funcs)
 
 
 @dlt.resource(
@@ -405,12 +451,11 @@ def oss_directory_github_repositories_resource(
     )
 )
 def oss_directory_github_sbom_resource(
-    all_repo_urls: t.List[str],
+    all_repo_urls: t.List[t.Tuple[str, str]],
     /,
     gh_token: str = dlt.secrets.value,
     rate_limit_max_retry: int = 5,
     server_error_max_rety: int = 3,
-    http_cache: t.Optional[str] = None,
 ):
     """Retrieve SBOM information for GitHub repositories"""
 
@@ -418,29 +463,14 @@ def oss_directory_github_sbom_resource(
         gh_token=gh_token,
         rate_limit_max_retry=rate_limit_max_retry,
         server_error_max_rety=server_error_max_rety,
-        http_cache=http_cache,
     )
 
     gh = GithubRepositoryResolver.get_github_client(config)
     resolver = GithubRepositoryResolver(gh)
 
-    def safe_parse_url(url: str) -> ParsedGithubURL | None:
-        """
-        Safely parse a URL and return None if it is invalid.
-        """
-
-        try:
-            return resolver.parse_url(url)
-        except InvalidGithubURL as e:
-            logger.warning("Skipping invalid url %s: %s", url, e)
-            return None
-
-    clean_repos = [
-        (repo.owner, repo.repository)
-        for repo in (safe_parse_url(url) for url in all_repo_urls)
-        if repo and repo.type == GithubURLType.REPOSITORY and repo.repository
-    ]
-
-    yield from (
-        partial(resolver.get_sbom_for_repo, owner, repo) for owner, repo in clean_repos
+    funcs = (
+        partial(resolver.get_sbom_for_repo, owner, repo)
+        for owner, repo in all_repo_urls
     )
+
+    yield from with_progress_logger(funcs)

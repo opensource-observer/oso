@@ -1,21 +1,19 @@
 import random
 import string
-from typing import Optional, cast, TypeVar, List
+from typing import List, Optional, TypeVar, cast
 
 import arrow
 import sqlglot as sql
 from sqlglot import expressions as exp
 from sqlglot.optimizer.qualify import qualify
-from ..context import DataContext, ContextQuery, Transformation
-from ..utils import replace_source_tables
 
+from ..context import ContextQuery, DataContext, Transformation
+from ..utils import replace_source_tables
 
 T = TypeVar("T")
 
 
-def time_constrain[
-    T
-](
+def time_constrain[T](
     time_column: str,
     start: Optional[arrow.Arrow] = None,
     end: Optional[arrow.Arrow] = None,
@@ -25,7 +23,7 @@ def time_constrain[
     def _transform(query: ContextQuery[T]) -> ContextQuery[T]:
         def _cq(ctx: DataContext[T]) -> exp.Expression:
             expression = query(ctx)
-            if type(expression) != exp.Select:
+            if not isinstance(expression, exp.Select):
                 raise Exception("Can only transform a select statement")
             expression = cast(exp.Select, expression)
 
@@ -51,9 +49,7 @@ def _random_suffix():
     )
 
 
-def time_constrain_table[
-    T
-](
+def time_constrain_table[T](
     time_column: str,
     table_name: str,
     start: Optional[arrow.Arrow] = None,

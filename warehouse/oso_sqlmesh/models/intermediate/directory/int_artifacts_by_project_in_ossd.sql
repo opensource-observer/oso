@@ -11,14 +11,15 @@ WITH projects AS (
     social AS social,
     github AS github,
     npm AS npm,
-    blockchain AS blockchain
+    blockchain AS blockchain,
+    defillama AS defillama
   FROM oso.stg_ossd__current_projects
 ), all_websites AS (
   SELECT
     projects.project_id,
     unnested_website.url AS artifact_source_id,
     'WWW' AS artifact_source,
-    NULL::VARCHAR AS artifact_namespace,
+    '' AS artifact_namespace,
     unnested_website.url AS artifact_name,
     unnested_website.url AS artifact_url,
     'WEBSITE' AS artifact_type
@@ -29,7 +30,7 @@ WITH projects AS (
     projects.project_id,
     unnested_farcaster.url AS artifact_source_id,
     'FARCASTER' AS artifact_source,
-    NULL::VARCHAR AS artifact_namespace,
+    '' AS artifact_namespace,
     unnested_farcaster.url AS artifact_url,
     'SOCIAL_HANDLE' AS artifact_type,
     CASE
@@ -44,7 +45,7 @@ WITH projects AS (
     projects.project_id,
     unnested_twitter.url AS artifact_source_id,
     'TWITTER' AS artifact_source,
-    NULL::VARCHAR AS artifact_namespace,
+    '' AS artifact_namespace,
     unnested_twitter.url AS artifact_url,
     'SOCIAL_HANDLE' AS artifact_type,
     CASE
@@ -109,13 +110,28 @@ WITH projects AS (
     unnested_tag AS artifact_type,
     unnested_network AS artifact_source,
     unnested_blockchain.address AS artifact_source_id,
-    NULL::VARCHAR AS artifact_namespace,
+    '' AS artifact_namespace,
     unnested_blockchain.address AS artifact_name,
     unnested_blockchain.address AS artifact_url
   FROM projects
   CROSS JOIN UNNEST(projects.blockchain) AS @unnested_struct_ref(unnested_blockchain)
   CROSS JOIN UNNEST(unnested_blockchain.networks) AS @unnested_array_ref(unnested_network)
   CROSS JOIN UNNEST(unnested_blockchain.tags) AS @unnested_array_ref(unnested_tag)
+), all_defillama AS (
+  SELECT
+    projects.project_id,
+    LOWER(unnested_defillama.url) AS artifact_source_id,
+    'DEFILLAMA' AS artifact_source,
+    '' AS artifact_namespace,
+    CASE
+      WHEN unnested_defillama.url LIKE 'https://defillama.com/protocol/%'
+      THEN SUBSTRING(unnested_defillama.url, 32)
+      ELSE unnested_defillama.url
+    END AS artifact_name,
+    unnested_defillama.url AS artifact_url,
+    'DEFILLAMA_PROTOCOL' AS artifact_type
+  FROM projects
+  CROSS JOIN UNNEST(projects.defillama) AS @unnested_struct_ref(unnested_defillama)
 ), all_artifacts AS (
   SELECT
     project_id,
@@ -176,6 +192,16 @@ WITH projects AS (
     artifact_name,
     artifact_url
   FROM all_npm
+  UNION ALL
+  SELECT
+    project_id,
+    artifact_source_id,
+    artifact_source,
+    artifact_type,
+    artifact_namespace,
+    artifact_name,
+    artifact_url
+  FROM all_defillama
 ), all_normalized_artifacts AS (
   SELECT DISTINCT
     project_id,
@@ -189,7 +215,7 @@ WITH projects AS (
 )
 SELECT
   project_id,
-  @oso_id(artifact_source, artifact_source_id) AS artifact_id,
+  @oso_entity_id(artifact_source, artifact_namespace, artifact_name) AS artifact_id,
   artifact_source_id,
   artifact_source,
   artifact_namespace,

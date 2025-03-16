@@ -4,6 +4,10 @@ metadata:
   name: production-sqlmesh-cloudsql-proxy
 spec:
   values:
+    service:
+      annotations:
+        tailscale.com/expose: "true"
+        tailscale.com/hostname: prod-sqlmesh-sql-proxy
     cloudsql:
       instances:
         - instance: sqlmesh-psql

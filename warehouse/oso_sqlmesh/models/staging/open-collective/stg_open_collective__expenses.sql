@@ -16,7 +16,7 @@ SELECT
   type AS event_type,
   id AS event_source_id,
   'OPEN_COLLECTIVE' AS event_source,
-  @oso_id(
+  @oso_entity_id(
     'OPEN_COLLECTIVE',
     JSON_EXTRACT_SCALAR(to_account, '$.slug'),
     JSON_EXTRACT_SCALAR(to_account, '$.name')
@@ -25,7 +25,7 @@ SELECT
   JSON_EXTRACT_SCALAR(to_account, '$.slug') AS to_namespace,
   JSON_EXTRACT_SCALAR(to_account, '$.type') AS to_type,
   JSON_EXTRACT_SCALAR(to_account, '$.id') AS to_artifact_source_id,
-  @oso_id(
+  @oso_entity_id(
     'OPEN_COLLECTIVE',
     JSON_EXTRACT_SCALAR(from_account, '$.slug'),
     JSON_EXTRACT_SCALAR(from_account, '$.name')
