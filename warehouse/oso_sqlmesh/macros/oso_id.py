@@ -21,3 +21,25 @@ def oso_id(evaluator: MacroEvaluator, *args: exp.Expression):
     if evaluator.engine_adapter.dialect == "duckdb":
         return sha
     return exp.ToBase64(this=sha)
+
+
+@macro()
+def oso_entity_id(
+    evaluator: MacroEvaluator,
+    entity_source: exp.Expression,
+    entity_namespace: exp.Expression,
+    entity_name: exp.Expression,
+) -> exp.Expression:
+    """Creates a deterministic ID from entity source, namespace, and name.
+    
+    Args:
+        entity_source: The source system of the entity
+        entity_namespace: The namespace of the entity
+        entity_name: The name of the entity
+    """
+    return oso_id(
+        evaluator,
+        entity_source,
+        entity_namespace,
+        entity_name,
+    )
