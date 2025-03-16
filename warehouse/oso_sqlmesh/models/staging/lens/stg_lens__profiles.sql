@@ -6,7 +6,7 @@ MODEL (
 );
 
 SELECT
-  @oso_id('LENS', '', profile_id) AS user_id,
+  @oso_entity_id('LENS', '', profile_id) AS user_id,
   profiles.profile_id AS lens_profile_id,
   profiles.name AS full_name,
   profiles.bio AS bio,
