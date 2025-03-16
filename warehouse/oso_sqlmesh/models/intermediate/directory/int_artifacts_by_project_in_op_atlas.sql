@@ -161,6 +161,7 @@ all_normalized_artifacts AS (
     LOWER(artifact_url) AS artifact_url,
     UPPER(artifact_type) AS artifact_type
   FROM all_combined_artifacts
+  WHERE artifact_name IS NOT NULL
 )
 SELECT
   project_id,
