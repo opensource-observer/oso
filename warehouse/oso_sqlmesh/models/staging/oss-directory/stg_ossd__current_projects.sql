@@ -16,7 +16,12 @@ SELECT
   projects.social,
   projects.github,
   projects.npm,
+  projects.pypi,
+  projects.crates,
+  projects.go,
   projects.blockchain,
+  projects.defillama,
+  projects.open_collective,
   projects.sha,
   projects.committed_time
 FROM @oso_source('bigquery.ossd.projects') AS projects
