@@ -18,7 +18,7 @@ WITH superchain_proxies AS (
     chain
 )
 SELECT
-  @oso_id(chain, '', address) AS artifact_id,
+  @oso_entity_id(chain, '', address) AS artifact_id,
   address,
   proxy_address,
   chain,

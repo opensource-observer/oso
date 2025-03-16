@@ -61,7 +61,7 @@ WITH all_artifacts AS (
     artifact_url
 )
 SELECT DISTINCT
-  @oso_id(artifact_source, artifact_namespace, artifact_name) AS artifact_id,
+  @oso_entity_id(artifact_source, artifact_namespace, artifact_name) AS artifact_id,
   artifact_source_id,
   artifact_source,
   artifact_namespace,

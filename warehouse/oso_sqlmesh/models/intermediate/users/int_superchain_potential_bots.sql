@@ -7,5 +7,5 @@ with
         from oso.stg_superchain__potential_bots
     )
 
-select distinct @oso_id(network, '', address) as artifact_id, address, network
+select distinct @oso_entity_id(network, '', address) as artifact_id, address, network
 from union_queries
