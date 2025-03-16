@@ -4,6 +4,9 @@ metadata:
   name: production-nessie
 spec:
   values:
+    service:
+      annotations:
+        tailscale.com/expose: "true"
     serviceAccount:
       create: true
       name: production-nessie
