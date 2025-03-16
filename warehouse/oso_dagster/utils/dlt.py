@@ -306,7 +306,9 @@ def process_chunked_resource(
             for blob in blobs:
                 if blob.name.endswith(".json"):
                     log.info(f"ChunkedResource: Retrieving chunk {blob.name}")
-                    yield json.loads(blob.download_as_string())
+                    yield from (
+                        json.loads(c) for c in json.loads(blob.download_as_string())
+                    )
 
         blobs = bucket.list_blobs(prefix=f"{config.gcs_prefix}/{config.resource.name}")
 
