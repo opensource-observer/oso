@@ -1,6 +1,7 @@
 import typing as t
 
 import arrow
+import pandas as pd
 import polars as pl
 from dagster import (
     AssetExecutionContext,
@@ -39,6 +40,30 @@ from oso_dagster.utils.tags import add_tags
 from ossdirectory import fetch_data
 from ossdirectory.fetch import OSSDirectory
 
+K8S_CONFIG = {
+    "merge_behavior": "SHALLOW",
+    "container_config": {
+        "resources": {
+            "requests": {"cpu": "2000m", "memory": "3584Mi"},
+            "limits": {"memory": "7168Mi"},
+        },
+    },
+    "pod_spec_config": {
+        "node_selector": {
+            "pool_type": "spot",
+        },
+        "tolerations": [
+            {
+                "key": "pool_type",
+                "operator": "Equal",
+                "value": "spot",
+                "effect": "NoSchedule",
+            }
+        ],
+    },
+}
+
+
 common_tags: t.Dict[str, str] = {
     "opensource.observer/environment": "production",
     "opensource.observer/group": "ossd",
@@ -63,7 +88,9 @@ def oss_directory_to_dataframe(output: str, data: t.Optional[OSSDirectory] = Non
     assert data.meta is not None
     committed_dt = data.meta.committed_datetime
 
-    df = pl.from_dicts(getattr(data, output))
+    # FIXME: Address this when polar fixes missing columns
+    # df = pl.from_dicts(getattr(data, output))
+    df = pl.from_pandas(pd.DataFrame.from_records(getattr(data, output)))
     # Add sync time and commit sha to the dataframe
     df = df.with_columns(
         sha=pl.lit(bytes.fromhex(data.meta.sha)),
@@ -157,6 +184,7 @@ project_key = projects_and_collections.keys_by_output_name["projects"]
     key_prefix="ossd",
     ins={"projects_df": AssetIn(project_key)},
     tags=dict(stable_tag.items()),
+    op_tags={"dagster-k8s/config": K8S_CONFIG},
 )
 def repositories(
     global_config: ResourceParam[DagsterConfig],
@@ -203,6 +231,7 @@ def repositories(
     key_prefix="ossd",
     deps=[AssetKey(["ossd", "repositories"])],
     tags=dict(add_tags(common_tags, {"opensource.observer/source": "sbom"}).items()),
+    op_tags={"dagster-k8s/config": K8S_CONFIG},
 )
 def sbom(
     global_config: ResourceParam[DagsterConfig],
