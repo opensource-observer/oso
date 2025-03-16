@@ -36,6 +36,7 @@ test_stg_op_atlas_project_farcaster:
       - id: 1
         name: farcaster
         _dlt_id: 1
+        updated_at: "2025-02-01"
   outputs:
     query:
       partial: true

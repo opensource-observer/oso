@@ -14,7 +14,7 @@ WITH all_websites AS (
     artifact_name,
     artifact_url,
     artifact_type
-  FROM oso.stg_op_atlas_project_website AS sites
+  FROM oso.stg_op_atlas_project_website
 ),
 all_farcaster AS (
   SELECT
@@ -25,7 +25,7 @@ all_farcaster AS (
     artifact_name,
     artifact_url,
     artifact_type
-  FROM oso.stg_op_atlas_project_farcaster AS farcaster
+  FROM oso.stg_op_atlas_project_farcaster
 ),
 all_twitter AS (
   SELECT
@@ -36,26 +36,18 @@ all_twitter AS (
     artifact_name,
     artifact_url,
     artifact_type
-  FROM oso.stg_op_atlas_project_twitter AS twitter
+  FROM oso.stg_op_atlas_project_twitter
 ),
 all_repository AS (
   SELECT
-    ar.project_id,
-    (CASE
-      WHEN ossd_repos.artifact_source_id IS NOT NULL
-      THEN ossd_repos.artifact_source_id
-      ELSE CONCAT(ar.artifact_namespace, '/', ar.artifact_name)
-    END) AS artifact_source_id,
-    ar.artifact_source,
-    ar.artifact_namespace,
-    ar.artifact_name,
-    ar.artifact_url,
-    ar.artifact_type
-  FROM oso.stg_op_atlas_project_repository AS ar
-  LEFT OUTER JOIN oso.int_artifacts_by_project_in_ossd AS ossd_repos
-    ON ar.artifact_namespace = ossd_repos.artifact_namespace
-    AND ar.artifact_name = ossd_repos.artifact_name
-    AND ossd_repos.artifact_source = 'GITHUB'
+    project_id,
+    artifact_source_id,
+    artifact_source,
+    artifact_namespace,
+    artifact_name,
+    artifact_url,
+    artifact_type
+  FROM oso.stg_op_atlas_project_repository
 ),
 all_contracts AS (
   SELECT
@@ -150,8 +142,8 @@ oso_artifacts AS (
       FROM all_artifacts  AS op_atlas_artifacts
       WHERE 
         op_atlas_artifacts.project_id = linked.op_atlas_project_id
-        AND UPPER(op_atlas_artifacts.artifact_source) = ossd_artifacts.artifact_source
-        AND LOWER(op_atlas_artifacts.artifact_name) = ossd_artifacts.artifact_name
+        AND op_atlas_artifacts.artifact_source = ossd_artifacts.artifact_source
+        AND op_atlas_artifacts.artifact_name = ossd_artifacts.artifact_name
     )
 ),
 all_combined_artifacts AS (
@@ -172,7 +164,7 @@ all_normalized_artifacts AS (
 )
 SELECT
   project_id,
-  @oso_id(artifact_source, artifact_namespace, artifact_name) AS artifact_id,
+  @oso_entity_id(artifact_source, artifact_namespace, artifact_name) AS artifact_id,
   artifact_source_id,
   artifact_source,
   artifact_namespace,
