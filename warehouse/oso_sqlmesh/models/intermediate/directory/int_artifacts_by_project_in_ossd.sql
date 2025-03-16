@@ -11,7 +11,8 @@ WITH projects AS (
     social AS social,
     github AS github,
     npm AS npm,
-    blockchain AS blockchain
+    blockchain AS blockchain,
+    defillama AS defillama
   FROM oso.stg_ossd__current_projects
 ), all_websites AS (
   SELECT
