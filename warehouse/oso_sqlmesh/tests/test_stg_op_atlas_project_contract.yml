@@ -39,21 +39,21 @@ test_stg_op_atlas_project_contract:
       rows:
       - artifact_source_id: "0x123"
         artifact_source: MAINNET
-        artifact_namespace: NULL
+        artifact_namespace: ""
         artifact_name: "0x123"
         artifact_type: CONTRACT
       - artifact_source_id: "0x123"
         artifact_source: OPTIMISM
-        artifact_namespace: NULL
+        artifact_namespace: ""
         artifact_name: "0x123"
         artifact_type: CONTRACT
       - artifact_source_id: "0x123"
         artifact_source: BASE
-        artifact_namespace: NULL
+        artifact_namespace: ""
         artifact_name: "0x123"
         artifact_type: CONTRACT
       - artifact_source_id: "0x123"
         artifact_source: "99999"
-        artifact_namespace: NULL
+        artifact_namespace: ""
         artifact_name: "0x123"
         artifact_type: CONTRACT
