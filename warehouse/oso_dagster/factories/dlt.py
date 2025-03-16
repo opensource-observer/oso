@@ -140,7 +140,8 @@ def _dlt_factory[
                 )
                 def _dlt_asset(
                     context: AssetExecutionContext,
-                    config: config_type,
+                    # This type ignore is probably wrong
+                    config: config_type, # type: ignore
                     **extra_source_args,
                 ) -> t.Iterable[R]:
                     pipeline_name = f"{key_prefix_str}_{name}_{uuid4()}"
