@@ -13,7 +13,7 @@ WITH latest_project AS (
 )
 
 SELECT
-  @oso_id('OP_ATLAS', id)::VARCHAR AS project_id,
+  @oso_id('OP_ATLAS', '', id)::VARCHAR AS project_id,
   id::VARCHAR AS project_source_id,
   'OP_ATLAS' AS project_source,
   '' AS project_namespace,

@@ -1,11 +1,11 @@
-MODEL (
+  MODEL (
   name oso.stg_op_atlas_project_defillama,
   dialect trino,
   kind FULL
 );
 
 SELECT
-  @oso_id('OP_ATLAS', projects.id) AS project_id, /* Translating op-atlas project_id to OSO project_id */
+  @oso_id('OP_ATLAS', '', projects.id) AS project_id, /* Translating op-atlas project_id to OSO project_id */
   LOWER(defillama.value) AS artifact_source_id,
   'DEFILLAMA' AS artifact_source,
   '' AS artifact_namespace,

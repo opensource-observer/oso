@@ -15,7 +15,7 @@ WITH latest_repositories AS (
 
 filtered_op_atlas_repos AS (
   SELECT
-    @oso_id('OP_ATLAS', repos.project_id) AS project_id, /* Translating op-atlas project_id to OSO project_id */
+    @oso_id('OP_ATLAS', '', repos.project_id) AS project_id, /* Translating op-atlas project_id to OSO project_id */
     'GITHUB' AS artifact_source,
     @url_parts(repos.url, 2) AS artifact_namespace,
     @url_parts(repos.url, 3) AS artifact_name,

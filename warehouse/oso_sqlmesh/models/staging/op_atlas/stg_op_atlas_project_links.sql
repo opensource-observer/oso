@@ -11,7 +11,7 @@ WITH latest_links AS (
   FROM @oso_source('bigquery.op_atlas.project_links')
 )
 SELECT
-  @oso_id('OP_ATLAS', project_id) AS project_id, /* Translating op-atlas project_id to OSO project_id */
+  @oso_id('OP_ATLAS', '', project_id) AS project_id, /* Translating op-atlas project_id to OSO project_id */
   LOWER(url) AS artifact_source_id,
   'WWW' AS artifact_source,
   '' AS artifact_namespace,

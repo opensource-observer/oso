@@ -6,7 +6,7 @@ MODEL (
 
 WITH sanitized AS (
   SELECT
-    @oso_id('OP_ATLAS', projects.id) AS project_id, /* Translating op-atlas project_id to OSO project_id */
+    @oso_id('OP_ATLAS', '', projects.id) AS project_id, /* Translating op-atlas project_id to OSO project_id */
     'FARCASTER' AS artifact_source,
     '' AS artifact_namespace,
     CASE

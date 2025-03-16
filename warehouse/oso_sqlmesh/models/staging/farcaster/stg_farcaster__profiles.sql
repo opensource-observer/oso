@@ -6,7 +6,7 @@ MODEL (
 );
 
 SELECT
-  @oso_id('oso', fid) AS user_id,
+  @oso_id('FARCASTER', '', fid) AS user_id,
   profiles.fid::VARCHAR AS farcaster_id,
   profiles.custody_address AS custody_address,
   JSON_EXTRACT_SCALAR(profiles.data, '$.username') AS username,

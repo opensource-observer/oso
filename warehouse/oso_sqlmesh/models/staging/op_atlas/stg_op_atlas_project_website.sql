@@ -5,7 +5,7 @@ MODEL (
 );
 
 SELECT
-  @oso_id('OP_ATLAS', projects.id) AS project_id, /* Translating op-atlas project_id to OSO project_id */
+  @oso_id('OP_ATLAS', '', projects.id) AS project_id, /* Translating op-atlas project_id to OSO project_id */
   LOWER(websites.value) AS artifact_source_id,
   'WWW' AS artifact_source,
   '' AS artifact_namespace,
