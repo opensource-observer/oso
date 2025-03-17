@@ -9,7 +9,7 @@ MODEL (
   start @blockchain_incremental_start,
   cron '@daily',
   partitioned_by (DAY("bucket_day"), "event_type", "event_source"),
-  grain (time, event_type, event_source, from_artifact_id, to_artifact_id)
+  grain (bucket_day, event_type, event_source, from_artifact_id, to_artifact_id)
 );
 
 SELECT
@@ -19,7 +19,8 @@ SELECT
   event_source::VARCHAR,
   event_type::VARCHAR,
   SUM(gas_used::DOUBLE * gas_price_tx::DOUBLE)::DOUBLE AS amount,
-  COUNT(*)::DOUBLE AS "count"
+  /* TODO: Use APPROX_DISTINCT or HyperLogLog++ for the count */
+  COUNT(DISTINCT transaction_hash)::DOUBLE AS "count"
 FROM oso.int_events__blockchain as events
 GROUP BY
   from_artifact_id,
