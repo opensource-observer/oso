@@ -1,7 +1,7 @@
 services:
   trino:
     ports:
-      - "8080:8080"
+      - "${SQLMESH_TRINO_PORT:-8080}:8080"
     image: "trinodb/trino:472"
     volumes:
       - ./docker/trino/etc:/usr/lib/trino/etc:ro
@@ -20,8 +20,6 @@ services:
   nessie:
     hostname: nessie
     image: "ghcr.io/projectnessie/nessie:0.102.0"
-    ports:
-      - '19120:19120'
     environment:
       nessie.version.store.type: IN_MEMORY
       nessie.catalog.default-warehouse: warehouse
@@ -40,9 +38,6 @@ services:
     hostname: minio
     image: 'minio/minio'
     container_name: minio
-    ports:
-      - '9000:9000'
-      - '9090:9090'
     environment:
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadmin
