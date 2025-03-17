@@ -1,242 +1,226 @@
-model(
-    name oso.int_superchain_s7_onchain_metrics_by_project,
-    description 'S7 onchain metrics by project with various aggregations and filters',
-    kind incremental_by_time_range(
-        time_column sample_date, batch_size 90, batch_concurrency 1, lookback 7
-    ),
-    start '2015-01-01',
-    cron '@daily',
-    partitioned_by day("sample_date"),
-    grain(sample_date, chain, project_id, metric_name),
-    enabled false,
-)
-;
+/* 
 
-@def(project_weight_per_tx_event, 0.5)
-;
-@def(project_weight_per_trace_event, 0.5)
-;
+TODO:
+- implement amortized transaction counts
+- implement amortized gas fees
+- check farcaster user logic
+- check defillama tvl logic
 
-with
-    base_events as (
-        select
-            timestamp_trunc(events.block_timestamp, month) as sample_date,
-            events.project_id,
-            events.chain,
-            events.transaction_hash,
-            events.from_artifact_id,
-            events.event_type,
-            events.gas_fee,
-            coalesce(users.is_bot, false) as is_bot,
-            coalesce(users.is_farcaster_user, false) as is_farcaster_user
-        from oso.int_superchain_trace_level_events_by_project as events
-        inner join
-            oso.int_superchain_s7_onchain_builder_eligibility as builders
-            on events.project_id = builders.project_id
-        left outer join
-            oso.int_superchain_onchain_user_labels as users
-            on events.from_artifact_id = users.artifact_id
-        where events.block_timestamp between @start_dt and @end_dt
-    ),
+*/
 
-    -- Calculate projects per event type and transaction
-    events_per_project as (
-        select
-            transaction_hash,
-            event_type,
-            count(distinct project_id) as num_projects_per_event
-        from base_events
-        group by transaction_hash, event_type
-    ),
+MODEL(
+  name oso.int_superchain_s7_onchain_metrics_by_project,
+  description 'S7 onchain metrics by project with various aggregations and filters',
+  kind incremental_by_time_range(
+   time_column sample_date,
+   batch_size 90,
+   batch_concurrency 1,
+   lookback 7
+  ),
+  start @blockchain_incremental_start,
+  cron '@daily',
+  partitioned_by DAY("sample_date"),
+  grain(sample_date, chain, project_id, metric_name)
+);
 
-    enriched_events as (
-        select
-            be.*,
-            (
-                case
-                    when be.event_type = 'TRANSACTION_EVENT'
-                    then @project_weight_per_tx_event
-                    when be.event_type = 'TRACE_EVENT'
-                    then @project_weight_per_trace_event
-                end
-            )
-            / ep.num_projects_per_event as project_weight
-        from base_events be
-        inner join
-            events_per_project ep
-            on be.transaction_hash = ep.transaction_hash
-            and be.event_type = ep.event_type
-    ),
+@DEF(project_weight_per_tx_event, 0.5);
+@DEF(project_weight_per_trace_event, 0.5);
 
-    -- Transaction counts
-    transaction_count as (
-        select
-            project_id,
-            chain,
-            sample_date,
-            'transaction_count' as metric_name,
-            count(distinct transaction_hash) as amount
-        from enriched_events
-        where event_type = 'TRANSACTION_EVENT'
-        group by 1, 2, 3
-    ),
-
-    transaction_count_bot_filtered as (
-        select
-            project_id,
-            chain,
-            sample_date,
-            'transaction_count_bot_filtered' as metric_name,
-            count(distinct transaction_hash) as amount
-        from enriched_events
-        where event_type = 'TRANSACTION_EVENT' and is_bot = false
-        group by 1, 2, 3
-    ),
-
-    -- Trace counts
-    trace_count as (
-        select
-            project_id,
-            chain,
-            sample_date,
-            'trace_count' as metric_name,
-            count(distinct transaction_hash) as amount
-        from enriched_events
-        where event_type = 'TRACE_EVENT'
-        group by 1, 2, 3
-    ),
-
-    trace_count_bot_filtered as (
-        select
-            project_id,
-            chain,
-            sample_date,
-            'trace_count_bot_filtered' as metric_name,
-            count(distinct transaction_hash) as amount
-        from enriched_events
-        where event_type = 'TRACE_EVENT' and is_bot = false
-        group by 1, 2, 3
-    ),
-
-    -- Amortized transaction counts
-    transaction_count_amortized_bot_filtered as (
-        select
-            project_id,
-            chain,
-            sample_date,
-            'transaction_count_amortized_bot_filtered' as metric_name,
-            sum(project_weight) as amount
-        from enriched_events
-        where is_bot = false
-        group by 1, 2, 3
-    ),
-
-    -- Transaction network usage
-    transaction_gas_fee as (
-        select
-            project_id,
-            chain,
-            sample_date,
-            'transaction_gas_fee' as metric_name,
-            sum(gas_fee) as amount
-        from enriched_events
-        where event_type = 'TRANSACTION_EVENT'
-        group by 1, 2, 3
-    ),
-
-    -- Amortized gas fees
-    amortized_gas as (
-        select
-            project_id,
-            chain,
-            sample_date,
-            'amortized_gas_fee' as metric_name,
-            sum(gas_fee * project_weight) as amount
-        from enriched_events
-        group by 1, 2, 3
-    ),
-
-    -- Amortized gas fees (bot filtered)
-    amortized_gas_bot_filtered as (
-        select
-            project_id,
-            chain,
-            sample_date,
-            'amortized_gas_fee_bot_filtered' as metric_name,
-            sum(gas_fee * project_weight) as amount
-        from enriched_events
-        where is_bot = false
-        group by 1, 2, 3
-    ),
-
-    -- Active users
-    monthly_active_farcaster_users as (
-        select
-            project_id,
-            chain,
-            sample_date,
-            'monthly_active_farcaster_users' as metric_name,
-            count(distinct from_artifact_id) as amount
-        from enriched_events
-        where is_farcaster_user = true
-        group by 1, 2, 3
-    ),
-
-    -- Active addresses
-    monthly_active_addresses as (
-        select
-            project_id,
-            chain,
-            sample_date,
-            'monthly_active_addresses' as metric_name,
-            count(distinct from_artifact_id) as amount
-        from enriched_events
-        group by 1, 2, 3
-    ),
-
-    -- Active addresses (bot filtered)
-    monthly_active_addresses_bot_filtered as (
-        select
-            project_id,
-            chain,
-            sample_date,
-            'monthly_active_addresses_bot_filtered' as metric_name,
-            count(distinct from_artifact_id) as amount
-        from enriched_events
-        where is_bot = false
-        group by 1, 2, 3
+-- Get all events for projects in the measurement period
+WITH base_events AS (
+  SELECT
+    e.project_id,
+    DATE_TRUNC('DAY', e.time::DATE) AS bucket_day,
+    DATE_TRUNC('MONTH', e.time::DATE) AS bucket_month,
+    e.event_type,
+    e.event_source AS chain,
+    e.from_artifact_id,
+    e.to_artifact_id,
+    e.gas_fee,
+    e.transaction_hash,
+    COALESCE(users.is_farcaster_user, false) AS is_farcaster_user
+  FROM oso.int_superchain_events_by_project AS e
+  LEFT OUTER JOIN oso.int_superchain_onchain_user_labels AS users
+  ON e.from_artifact_id = users.artifact_id
+  WHERE
+    e.time BETWEEN @start_dt AND @end_dt
+    -- Currently no 4337-specific logic
+    AND e.event_type IN (
+      'CONTRACT_INVOCATION',
+      'CONTRACT_INTERNAL_INVOCATION'
     )
+),
 
--- Union all metrics together
-select *
-from transaction_count
-union all
-select *
-from transaction_count_bot_filtered
-union all
-select *
-from trace_count
-union all
-select *
-from trace_count_bot_filtered
-union all
-select *
-from transaction_count_amortized_bot_filtered
-union all
-select *
-from transaction_gas_fee
-union all
-select *
-from amortized_gas
-union all
-select *
-from amortized_gas_bot_filtered
-union all
-select *
-from monthly_active_farcaster_users
-union all
-select *
-from monthly_active_addresses
-union all
-select *
-from monthly_active_addresses_bot_filtered
+events_per_project as (
+  SELECT
+    transaction_hash,
+    event_type,
+    COUNT(DISTINCT project_id) as num_projects_per_event
+  FROM base_events
+  GROUP BY transaction_hash, event_type
+),
+
+enriched_events AS (
+  SELECT
+    e.*,
+    ep.num_projects_per_event,
+    (
+      CASE
+        WHEN e.event_type = 'CONTRACT_INVOCATION'
+        THEN @project_weight_per_tx_event
+        WHEN e.event_type = 'CONTRACT_INTERNAL_INVOCATION'
+        THEN @project_weight_per_trace_event
+        ELSE 0
+      END
+    ) AS event_type_weight
+  FROM base_events AS e
+  LEFT OUTER JOIN events_per_project AS ep
+  ON e.transaction_hash = ep.transaction_hash
+  AND e.event_type = ep.event_type
+),
+
+/* TODO: remove hardcoded list of chains */
+defillama_tvl_events AS (
+  SELECT
+    dl.project_id,
+    UPPER(dl.from_artifact_namespace) AS chain,
+    DATE_TRUNC('DAY', dl.bucket_day::DATE) AS bucket_day,
+    DATE_TRUNC('MONTH', dl.bucket_day::DATE) AS bucket_month,
+    dl.amount
+  FROM oso.int_events_daily__defillama_tvl AS dl
+  WHERE
+    dl.bucket_day BETWEEN @start_dt AND @end_dt
+    AND dl.event_type = 'DEFILLAMA_TVL'
+    AND dl.from_artifact_name = 'usd'
+    AND dl.from_artifact_namespace IN (
+      'base',
+      'bob',
+      'frax',
+      'ink',
+      'kroma',
+      'lisk',
+      'lyra',
+      'metal',
+      'mint',
+      'mode',
+      'optimism',
+      'orderly',
+      'polynomial',
+      'race',
+      'redstone',
+      'scroll',
+      'shape',
+      'soneium',
+      'swan',
+      'swell',
+      'unichain',
+      'worldchain',
+      'xterio',
+      'zora'
+    )
+),
+
+-- Transaction counts
+transaction_count AS (
+  SELECT
+    project_id,
+    chain,
+    bucket_month AS sample_date,
+    'contract_invocations_monthly' AS metric_name,
+    COUNT(DISTINCT transaction_hash) AS amount
+  FROM enriched_events
+  GROUP BY 1, 2, 3
+),
+
+-- Gas fees
+transaction_gas_fee AS (
+  WITH project_event_types AS (
+    -- First, identify which projects have direct CONTRACT_INVOCATION events
+    SELECT DISTINCT project_id, chain
+    FROM base_events
+    WHERE event_type = 'CONTRACT_INVOCATION'
+  )
+  SELECT
+    project_id,
+    chain,
+    bucket_month AS sample_date,
+    'gas_fees_monthly' AS metric_name,
+    SUM(gas_fee) AS amount
+  FROM base_events AS e
+  WHERE (
+    -- Include CONTRACT_INVOCATION events for all projects that have them
+    event_type = 'CONTRACT_INVOCATION'
+    OR
+    -- Include CONTRACT_INTERNAL_INVOCATION only for projects that don't have direct invocations
+    (event_type = 'CONTRACT_INTERNAL_INVOCATION' 
+     AND NOT EXISTS (
+       SELECT 1 
+       FROM project_event_types AS pet 
+       WHERE pet.project_id = e.project_id 
+         AND pet.chain = e.chain
+     ))
+  )
+  GROUP BY 1, 2, 3
+),
+
+-- Defillama TVL
+defillama_tvl AS (
+  SELECT
+    project_id,
+    chain,
+    bucket_month AS sample_date,
+    'average_tvl_monthly' AS metric_name,
+    AVG(amount) AS amount
+  FROM defillama_tvl_events
+  GROUP BY 1, 2, 3
+),
+
+-- Active Farcaster users
+monthly_active_farcaster_users AS (
+  SELECT
+    project_id,
+    chain,
+    bucket_month AS sample_date,
+    'active_farcaster_users_monthly' AS metric_name,
+    COUNT(DISTINCT from_artifact_id) AS amount
+  FROM base_events
+  WHERE is_farcaster_user = true
+  GROUP BY 1, 2, 3
+),
+
+-- Active addresses
+monthly_active_addresses AS (
+  SELECT
+    project_id,
+    chain,
+    bucket_month AS sample_date,
+    'active_addresses_monthly' AS metric_name,
+    COUNT(DISTINCT from_artifact_id) AS amount
+  FROM base_events
+  GROUP BY 1, 2, 3
+),
+
+union_all_metrics AS (
+  SELECT *
+  FROM transaction_count
+  UNION ALL
+  SELECT *
+  FROM transaction_gas_fee
+  UNION ALL
+  SELECT *
+  FROM defillama_tvl
+  UNION ALL
+  SELECT *
+  FROM monthly_active_farcaster_users
+  UNION ALL
+  SELECT *
+  FROM monthly_active_addresses
+)
+
+SELECT
+  project_id::TEXT AS project_id,
+  chain::TEXT AS chain,
+  sample_date::TIMESTAMP AS sample_date,
+  metric_name::TEXT AS metric_name,
+  amount::DOUBLE AS amount
+FROM union_all_metrics
