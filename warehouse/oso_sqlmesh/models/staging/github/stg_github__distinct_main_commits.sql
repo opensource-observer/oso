@@ -12,12 +12,15 @@ MODEL (
   dialect trino
 );
 
+@DEF(deduplication_window, 180);
+
 /*
   Gathers all github commits on the default branch of a repo that are distinct.
 
   We use the `MIN_BY` method here to grab the first occurrence of a given commit
   in the case of duplicated event counts (which does seem to happen with some
-  frequency). We only look back 180 days to avoid pulling in too much data.
+  frequency). We only look back 180 days from the start date of the incremental
+  query to avoid pulling in too much data to compare for the deduplication.
 
   This model uses a heuristic to determine the default branch of a repository.
   If the repository is not in the `stg_ossd__current_repositories` table, we
@@ -43,7 +46,7 @@ LEFT JOIN oso.stg_ossd__current_repositories AS repos
   ON ghc.repository_id = repos.id
 WHERE ((repos.id IS NULL AND ghc.ref in ('refs/heads/main', 'refs/heads/master')) 
     OR (ghc.ref = CONCAT('refs/heads/', repos.branch)))
-    AND ghc.created_at BETWEEN @start_dt - INTERVAL 180 DAY AND @end_dt
+    AND ghc.created_at BETWEEN @start_dt - INTERVAL @deduplication_window DAY AND @end_dt
 GROUP BY
   ghc.repository_id,
   ghc.sha
