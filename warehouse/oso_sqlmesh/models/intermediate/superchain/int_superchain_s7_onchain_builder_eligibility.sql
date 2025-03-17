@@ -29,26 +29,27 @@ WITH builder_metrics AS (
     COUNT(DISTINCT DATE_TRUNC('DAY', e.time)) AS active_days,
     SUM(e.gas_fee) AS gas_fees
   FROM oso.int_superchain_events_by_project AS e
-  INNER JOIN oso.projects_by_collection_v1 AS pbc
-    ON e.project_id = pbc.project_id
   WHERE
     e.time BETWEEN @measurement_date - INTERVAL @lookback_days DAY
       AND @measurement_date
-    AND pbc.collection_name = '8-1'
     AND e.event_type IN ('CONTRACT_INVOCATION', 'CONTRACT_INTERNAL_INVOCATION')
-  GROUP BY
-    e.project_id
+  GROUP BY e.project_id
 ),
 
 project_eligibility AS (
   SELECT
     project_id,
+    project_id IN (
+      SELECT DISTINCT project_id
+      FROM oso.projects_by_collection_v1 AS pbc
+      WHERE pbc.collection_name = '8-1'
+    ) AS applied_to_round,
     (
       transaction_count >= @transactions_threshold
       AND active_addresses_count >= @active_addresses_threshold
       AND active_days >= @days_with_onchain_activity_threshold
       AND gas_fees >= @gas_fees_threshold
-    ) AS is_eligible
+    ) AS meets_all_criteria
   FROM builder_metrics
 )
 SELECT
@@ -58,7 +59,12 @@ SELECT
   builder_metrics.gas_fees,
   builder_metrics.active_addresses_count,
   builder_metrics.active_days,
-  project_eligibility.is_eligible
+  project_eligibility.meets_all_criteria,
+  project_eligibility.applied_to_round,
+  (
+    project_eligibility.meets_all_criteria
+    AND project_eligibility.applied_to_round
+  ) AS is_eligible
 FROM builder_metrics
 INNER JOIN project_eligibility
   ON builder_metrics.project_id = project_eligibility.project_id
