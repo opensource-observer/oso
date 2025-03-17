@@ -204,5 +204,5 @@ jobs:
       - name: Test SQLMesh in Docker
         working-directory: warehouse/oso_sqlmesh
         run: | 
-          uv run sqlmesh --gateway=local-trino-docker plan dev --start '1 month' --end now --auto-apply
+          uv run sqlmesh --gateway=local-trino-docker plan dev --start '1 week' --end now --auto-apply
         if: ${{ always() && matrix.component == 'sqlmesh-docker' }}
