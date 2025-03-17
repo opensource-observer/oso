@@ -12,9 +12,9 @@ WITH farcaster_addresses AS (
     artifacts.user_id,
     artifacts.farcaster_id,
     artifacts.address,
-    chains_names.chain
+    chain_names.chain
   FROM oso.int_artifacts_by_farcaster_user AS artifacts
-  CROSS JOIN oso.int_superchain_chain_names AS chains_names
+  CROSS JOIN oso.int_superchain_chain_names AS chain_names
 )
 
 SELECT
