@@ -45,20 +45,20 @@ tvl_events_with_ids AS (
   SELECT
     bucket_day,
     'DEFILLAMA_TVL' AS event_type,
-    UPPER(chain) AS event_source,
+    'DEFILLAMA' AS event_source,
     @oso_id(
       bucket_day, 
-      UPPER(chain), 
-      'defillama', -- to_artifact_namespace
-      LOWER(slug), -- to_artifact_name
-      'defillama', -- from_artifact_namespace
-      LOWER(token) -- from_artifact_name
+      'DEFILLAMA', 
+      '',           -- to_artifact_namespace
+      LOWER(slug),  -- to_artifact_name
+      LOWER(chain), -- from_artifact_namespace
+      LOWER(token)  -- from_artifact_name
     ) AS event_source_id,
     @oso_entity_id('DEFILLAMA', '', LOWER(slug)) AS to_artifact_id,
-    'defillama' AS to_artifact_namespace,
+    '' AS to_artifact_namespace,
     LOWER(slug) AS to_artifact_name,
-    @oso_entity_id('DEFILLAMA', '', LOWER(token)) AS from_artifact_id,
-    'defillama' AS from_artifact_namespace,
+    @oso_entity_id('DEFILLAMA', LOWER(chain), LOWER(token)) AS from_artifact_id,
+    LOWER(chain) AS from_artifact_namespace,
     LOWER(token) AS from_artifact_name,
     tvl::DOUBLE AS amount
   FROM deduplicated_tvl_events

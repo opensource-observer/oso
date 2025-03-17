@@ -38,7 +38,7 @@ def parse_chain_tvl(protocol: str, chain_tvls_raw: str, start: datetime, end: da
                         "slug": protocol,
                         "protocol": protocol,
                         "chain": defillama_chain_mappings(chain),
-                        "token": "",
+                        "token": "USD",
                         "tvl": amount,
                         "event_type": "TVL",
                     }
