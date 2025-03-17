@@ -1,0 +1,58 @@
+services:
+  trino:
+    ports:
+      - "${SQLMESH_TRINO_PORT:-8080}:8080"
+    image: "trinodb/trino:472"
+    volumes:
+      - ./docker/trino/etc:/usr/lib/trino/etc:ro
+      - ./docker/trino/catalog:/etc/trino/catalog
+
+  trino-seed:
+    image: "trinodb/trino:472"
+    volumes:
+      - ./docker/trino/seed:/seed
+      - ./docker/trino/seed.sh:/seed.sh
+    entrypoint: /seed.sh
+    depends_on:
+      trino:
+        condition: service_healthy
+
+  nessie:
+    hostname: nessie
+    image: "ghcr.io/projectnessie/nessie:0.102.0"
+    environment:
+      nessie.version.store.type: IN_MEMORY
+      nessie.catalog.default-warehouse: warehouse
+      nessie.catalog.warehouses.warehouse.location: s3://iceberg/warehouse/
+      nessie.catalog.service.s3.default-options.region: us-east-1
+      nessie.catalog.service.s3.default-options.path-style-access: true
+      nessie.catalog.service.s3.default-options.access-key: urn:nessie-secret:quarkus:nessie.catalog.secrets.access-key
+      nessie.catalog.secrets.access-key.name: minioadmin
+      nessie.catalog.secrets.access-key.secret: minioadmin
+      # MinIO endpoint for Nessie server
+      nessie.catalog.service.s3.default-options.endpoint: http://minio:9000/
+      # MinIO endpoint for clients (on the Podman/Docker host)
+      nessie.catalog.service.s3.default-options.external-endpoint: http://127.0.0.1:9000/
+
+  minio:
+    hostname: minio
+    image: 'minio/minio'
+    container_name: minio
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+      MINIO_ADDRESS: :9000
+      MINIO_REGION: us-east-1
+    command: server /data --console-address ":9090"
+
+  # This job will create the "iceberg" bucket on Minio
+  mc-job:
+    image: 'minio/mc'
+    entrypoint: |
+      /bin/bash -c "
+      sleep 5;
+      /usr/bin/mc config --quiet host add myminio http://minio:9000 minioadmin minioadmin;
+      /usr/bin/mc mb --quiet myminio/iceberg
+      "
+    depends_on:
+      - minio

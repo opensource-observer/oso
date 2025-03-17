@@ -24,6 +24,16 @@ LOCAL_TRINO_REWRITE_RULES: t.List[dict] = [
 ]
 
 
+LOCAL_TRINO_DOCKER_REWRITE_RULES: t.List[dict] = [
+    {
+        "catalog": "*",
+        "db": "*",
+        "table": "*",
+        "replace": "{catalog}.{db}.{table}",
+    }
+]
+
+
 def oso_source_for_pymodel(context: ExecutionContext, table_name: str) -> exp.Table:
     # Rewrite rules can be injected into the sqlmesh context via the sqlmesh
     # config. However, in general we don't want to modify the source unless it's
