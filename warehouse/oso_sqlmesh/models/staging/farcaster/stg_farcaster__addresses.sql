@@ -6,7 +6,7 @@ MODEL (
 );
 
 SELECT
-  v.fid::VARCHAR AS fid,
+  v.fid::VARCHAR AS farcaster_id,
   LOWER(v.address) AS address
 FROM @oso_source('bigquery.farcaster.verifications') AS v
 WHERE
