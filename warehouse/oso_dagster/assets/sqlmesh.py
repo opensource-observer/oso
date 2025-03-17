@@ -1,3 +1,4 @@
+import dagster as dg
 from dagster import AssetExecutionContext, AssetSelection, define_asset_job
 from dagster_sqlmesh import (
     SQLMeshContextConfig,
@@ -11,6 +12,11 @@ from oso_dagster.resources.trino import TrinoResource
 from oso_dagster.utils.asynctools import multiple_async_contexts
 
 from ..factories import early_resources_asset_factory
+
+
+class SQLMeshRunConfig(dg.Config):
+    # Set this to True to restate the selected models
+    restate_selected: bool = False
 
 
 @early_resources_asset_factory()
@@ -32,6 +38,7 @@ def sqlmesh_factory(
         sqlmesh: SQLMeshResource,
         trino: TrinoResource,
         mcs: MCSResource,
+        config: SQLMeshRunConfig,
     ):
         # Ensure that both trino and the mcs are available
         async with multiple_async_contexts(
@@ -39,7 +46,10 @@ def sqlmesh_factory(
             mcs=mcs.ensure_available(log_override=context.log),
         ):
             for result in sqlmesh.run(
-                context, environment=environment, plan_options={"skip_tests": True}
+                context,
+                environment=environment,
+                plan_options={"skip_tests": True},
+                restate_selected=config.restate_selected,
             ):
                 yield result
 
