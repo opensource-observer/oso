@@ -50,8 +50,13 @@ CREATE TABLE IF NOT EXISTS bigquery.ossd.projects (
    social ROW(
       discord array(ROW(url varchar)),
       farcaster array(ROW(url varchar)),
+      medium array(ROW(url varchar)),
+      mirror array(ROW(url varchar)),
+      reddit array(ROW(url varchar)),
       telegram array(ROW(url varchar)),
-      twitter array(ROW(url varchar))
+      twitter array(ROW(url varchar)),
+      warpcast array(ROW(url varchar)),
+      youtube array(ROW(url varchar))
    ),
    blockchain array(
       ROW(
@@ -64,6 +69,9 @@ CREATE TABLE IF NOT EXISTS bigquery.ossd.projects (
    npm array(ROW(url varchar)) NOT NULL,
    "go" array(ROW(url varchar)) NOT NULL,
    open_collective array(ROW(url varchar)) NOT NULL,
+   pypi array(ROW(url varchar)) NOT NULL,
+   crates array(ROW(url varchar)) NOT NULL,
+   defillama array(ROW(url varchar)) NOT NULL,
    sha varbinary,
    committed_time timestamp(6) with time zone
 );
@@ -81,6 +89,9 @@ INSERT INTO
       npm,
       "go",
       open_collective,
+      pypi,
+      crates,
+      defillama,
       sha,
       committed_time
    )
@@ -95,8 +106,13 @@ VALUES
       ROW(
          ARRAY [ROW('https://discord.com/project1')],
          ARRAY [ROW('https://farcaster.com/project1')],
+         ARRAY [ROW('https://medium.com/project1')],
+         ARRAY [ROW('https://mirror.xyz/project1')],
+         ARRAY [ROW('https://reddit.com/project1')],
          ARRAY [ROW('https://telegram.com/project1')],
-         ARRAY [ROW('https://twitter.com/project1')]
+         ARRAY [ROW('https://twitter.com/project1')],
+         ARRAY [ROW('https://warpcast.com/project1')],
+         ARRAY [ROW('https://youtube.com/project1')]
       ),
       ARRAY [ROW('address1', 'Blockchain 1', ARRAY['network1'],
       ARRAY ['tag1']
@@ -104,6 +120,9 @@ VALUES
    ARRAY [ROW('https://npmjs.com/project1')],
    ARRAY [ROW('https://go.com/project1')],
    ARRAY [ROW('https://opencollective.com/project1')],
+   ARRAY [ROW('https://pypi.org/project1')],
+   ARRAY [ROW('https://crates.io/project1')],
+   ARRAY [ROW('https://defillama.com/project1')],
    NULL,
    current_timestamp
 ),
@@ -117,8 +136,13 @@ VALUES
    ROW(
       ARRAY [ROW('https://discord.com/project2')],
       ARRAY [ROW('https://farcaster.com/project2')],
+      ARRAY [ROW('https://medium.com/project2')],
+      ARRAY [ROW('https://mirror.xyz/project2')],
+      ARRAY [ROW('https://reddit.com/project2')],
       ARRAY [ROW('https://telegram.com/project2')],
-      ARRAY [ROW('https://twitter.com/project2')]
+      ARRAY [ROW('https://twitter.com/project2')],
+      ARRAY [ROW('https://warpcast.com/project2')],
+      ARRAY [ROW('https://youtube.com/project2')]
    ),
    ARRAY [ROW('address2', 'Blockchain 2', ARRAY['network2'],
    ARRAY ['tag2']
@@ -126,6 +150,9 @@ VALUES
 ARRAY [ROW('https://npmjs.com/project2')],
 ARRAY [ROW('https://go.com/project2')],
 ARRAY [ROW('https://opencollective.com/project2')],
+ARRAY [ROW('https://pypi.org/project2')],
+ARRAY [ROW('https://crates.io/project2')],
+ARRAY [ROW('https://defillama.com/project2')],
 NULL,
 current_timestamp
 );
