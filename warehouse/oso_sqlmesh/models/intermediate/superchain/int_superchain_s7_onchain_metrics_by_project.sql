@@ -93,30 +93,8 @@ defillama_tvl_events AS (
     AND dl.event_type = 'DEFILLAMA_TVL'
     AND dl.from_artifact_name = 'usd'
     AND dl.from_artifact_namespace IN (
-      'base',
-      'bob',
-      'frax',
-      'ink',
-      'kroma',
-      'lisk',
-      'lyra',
-      'metal',
-      'mint',
-      'mode',
-      'optimism',
-      'orderly',
-      'polynomial',
-      'race',
-      'redstone',
-      'scroll',
-      'shape',
-      'soneium',
-      'swan',
-      'swell',
-      'unichain',
-      'worldchain',
-      'xterio',
-      'zora'
+      SELECT LOWER(chain)
+      FROM oso.int_superchain_chain_names
     )
 ),
 
