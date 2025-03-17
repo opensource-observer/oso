@@ -3,6 +3,7 @@ from datetime import datetime
 
 import orjson
 import pandas as pd
+from metrics_tools.models import constants
 from metrics_tools.source.rewrite import oso_source_for_pymodel
 from oso_dagster.assets.defillama import defillama_chain_mappings
 from sqlglot import exp
@@ -65,6 +66,7 @@ def parse_chain_tvl(protocol: str, chain_tvls_raw: str, start: datetime, end: da
         "batch_size": 7,
     },
     partitioned_by=("month(time)",),
+    start=constants.defillama_incremental_start,
 )
 def defillama_tvl_model(
     context: ExecutionContext,

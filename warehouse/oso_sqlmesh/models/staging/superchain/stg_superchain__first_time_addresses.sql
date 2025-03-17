@@ -25,7 +25,7 @@ model(
     @start_dt,
     @end_dt,
     @oso_source('bigquery.optimism_superchain_raw_onchain_data.transactions'),
-    chain_name_column := transactions.chain,
+    chain_name_column := @chain_name(transactions.chain),
     block_timestamp_column := @from_unix_timestamp(transactions.block_timestamp),
     time_partition_column := transactions.dt,
 )
