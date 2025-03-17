@@ -45,6 +45,6 @@ SELECT
 FROM unioned_events AS e
 INNER JOIN oso.artifacts_by_project_v1 AS abp
   ON e.to_artifact_id = abp.artifact_id
-INNER JOIN oso.int_superchain_chain_names AS chains_names
-  ON e.event_source = chains_names.chain
+INNER JOIN oso.int_superchain_chain_names AS chain_names
+  ON e.event_source = chain_names.chain
 WHERE e.time BETWEEN @start_dt AND @end_dt
