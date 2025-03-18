@@ -1,7 +1,8 @@
 MODEL (
   name oso.int_developer_activity_by_repo,
   description 'Summarizes developer activity by repository',
-  kind FULL
+  kind FULL,
+  enabled false,
 );
 
 WITH developers AS (

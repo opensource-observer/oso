@@ -6,46 +6,15 @@ MODEL(
   kind full
 );
 
-@DEF(chains, [
-  'base',
-  'bob',
-  'frax',
-  'ink',
-  'kroma',
-  'lisk',
-  'lyra',
-  'metal',
-  'mint',
-  'mode',
-  'optimism',
-  'orderly',
-  'polynomial',
-  'race',
-  'redstone',
-  'scroll',
-  'shape',
-  'soneium',
-  'swan',
-  'swell',
-  'unichain',
-  'worldchain',
-  'xterio',
-  'zora'
-]);
 
-WITH chains_struct AS (
-  SELECT UPPER(t.chain) as chain
-  FROM UNNEST(@chains) AS t(chain)
-),
-
-farcaster_addresses AS (
+WITH farcaster_addresses AS (
   SELECT
     artifacts.user_id,
     artifacts.farcaster_id,
     artifacts.address,
-    chains_struct.chain
+    chain_names.chain
   FROM oso.int_artifacts_by_farcaster_user AS artifacts
-  CROSS JOIN chains_struct
+  CROSS JOIN oso.int_superchain_chain_names AS chain_names
 )
 
 SELECT

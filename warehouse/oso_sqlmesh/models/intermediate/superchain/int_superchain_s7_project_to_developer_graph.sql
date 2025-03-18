@@ -10,7 +10,8 @@ MODEL (
   start '2015-01-01',
   cron '@daily',
   partitioned_by DAY("sample_date"),
-  grain (sample_date, developer_id, onchain_builder_project_id, devtooling_project_id)
+  grain (sample_date, developer_id, onchain_builder_project_id, devtooling_project_id),
+  enabled false
 );
 
 WITH trusted_developers AS (
