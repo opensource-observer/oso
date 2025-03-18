@@ -11,7 +11,7 @@ from sqlmesh import ExecutionContext, model
 from sqlmesh.core.model import ModelKindName
 
 
-def parse_chain_tvl(protocol: str, chain_tvls_raw: str, start: datetime, end: datetime):
+def parse_chain_tvl(protocol: str, parent_protocol: str, chain_tvls_raw: str, start: datetime, end: datetime):
     """
     Extract aggregated TVL events from the chainTvls field.
     For each chain, each event is expected to have a date and a totalLiquidityUSD value.
@@ -38,6 +38,7 @@ def parse_chain_tvl(protocol: str, chain_tvls_raw: str, start: datetime, end: da
                         "time": pd.Timestamp(entry["date"], unit="s"),
                         "slug": protocol,
                         "protocol": protocol,
+                        "parent_protocol": parent_protocol,
                         "chain": defillama_chain_mappings(chain),
                         "token": "USD",
                         "tvl": amount,
@@ -70,6 +71,7 @@ def chunk_dataframe(
         "time": "TIMESTAMP",
         "slug": "VARCHAR",
         "protocol": "VARCHAR",
+        "parent_protocol": "VARCHAR",
         "chain": "VARCHAR",
         "token": "VARCHAR",
         "tvl": "DOUBLE",
@@ -96,7 +98,7 @@ def defillama_tvl_model(
     table = oso_source_for_pymodel(context, "bigquery.defillama.tvl")
 
     df = context.fetchdf(
-        exp.select("slug", "chain_tvls")
+        exp.select("slug", "parent_protocol", "chain_tvls")
         .from_(table)
         .sql(dialect=context.engine_adapter.dialect)
     )
@@ -108,8 +110,11 @@ def defillama_tvl_model(
     result_rows = []
     for _, row in df.iterrows():
         slug = str(row["slug"])
+        parent_protocol = str(row["parent_protocol"])
+        if parent_protocol:
+            parent_protocol = parent_protocol.replace("parent#", "")
         chain_tvls = str(row["chain_tvls"])
-        protocol_tvl_rows = parse_chain_tvl(slug, chain_tvls, start, end)
+        protocol_tvl_rows = parse_chain_tvl(slug, parent_protocol, chain_tvls, start, end)
         result_rows.extend(protocol_tvl_rows)
 
     if not result_rows:
@@ -119,13 +124,13 @@ def defillama_tvl_model(
     result = pd.DataFrame(
         result_rows,
         columns=pd.Index(
-            ["time", "slug", "protocol", "chain", "token", "tvl", "event_type"]
+            ["time", "slug", "protocol", "parent_protocol", "chain", "token", "tvl", "event_type"]
         ),
     )
 
     filtered_result = result.loc[
         :,
-        ["time", "slug", "protocol", "chain", "token", "tvl"],
+        ["time", "slug", "protocol", "parent_protocol", "chain", "token", "tvl"],
     ]
 
     yield from chunk_dataframe(filtered_result, chunk_size)
