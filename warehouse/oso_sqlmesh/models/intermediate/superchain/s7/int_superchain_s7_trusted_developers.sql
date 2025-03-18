@@ -1,17 +1,7 @@
 MODEL (
   name oso.int_superchain_s7_trusted_developers,
   description "Identifies trusted developers based on commit history to relevant onchain builder repositories",
-  kind INCREMENTAL_BY_TIME_RANGE (
-    time_column sample_date,
-    batch_size 90,
-    batch_concurrency 1,
-    lookback 7
-  ),
-  start '2015-01-01',
-  cron '@daily',
-  partitioned_by DAY("sample_date"),
-  grain (sample_date, project_id, developer_id),
-  enabled false
+  kind full
 );
 
 @DEF(min_repo_stars, 5);
