@@ -1,6 +1,7 @@
 MODEL (
   name oso.int_latest_release_by_repo,
-  kind FULL
+  kind FULL,
+  enabled false
 );
 
 WITH repo_releases AS (

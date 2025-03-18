@@ -10,7 +10,8 @@ MODEL (
   start '2015-01-01',
   cron '@daily',
   partitioned_by DAY("sample_date"),
-  grain (sample_date, project_id, repo_artifact_id)
+  grain (sample_date, project_id, repo_artifact_id),
+  enabled false
 );
 
 @DEF(lookback_days, 180);

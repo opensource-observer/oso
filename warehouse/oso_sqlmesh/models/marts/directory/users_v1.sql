@@ -3,7 +3,8 @@ MODEL (
   kind FULL,
   tags (
     'export'
-  )
+  ),
+  enabled false
 );
 
 SELECT
