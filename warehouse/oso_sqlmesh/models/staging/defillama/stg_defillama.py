@@ -11,7 +11,13 @@ from sqlmesh import ExecutionContext, model
 from sqlmesh.core.model import ModelKindName
 
 
-def parse_chain_tvl(protocol: str, parent_protocol: str, chain_tvls_raw: str, start: datetime, end: datetime):
+def parse_chain_tvl(
+    protocol: str,
+    parent_protocol: str,
+    chain_tvls_raw: str,
+    start: datetime,
+    end: datetime,
+):
     """
     Extract aggregated TVL events from the chainTvls field.
     For each chain, each event is expected to have a date and a totalLiquidityUSD value.
@@ -79,7 +85,6 @@ def chunk_dataframe(
     kind={
         "name": ModelKindName.INCREMENTAL_BY_TIME_RANGE,
         "time_column": "time",
-        "batch_size": 7,
     },
     variables={
         "chunk_size": 100,
@@ -114,7 +119,9 @@ def defillama_tvl_model(
         if parent_protocol:
             parent_protocol = parent_protocol.replace("parent#", "")
         chain_tvls = str(row["chain_tvls"])
-        protocol_tvl_rows = parse_chain_tvl(slug, parent_protocol, chain_tvls, start, end)
+        protocol_tvl_rows = parse_chain_tvl(
+            slug, parent_protocol, chain_tvls, start, end
+        )
         result_rows.extend(protocol_tvl_rows)
 
     if not result_rows:
@@ -124,7 +131,16 @@ def defillama_tvl_model(
     result = pd.DataFrame(
         result_rows,
         columns=pd.Index(
-            ["time", "slug", "protocol", "parent_protocol", "chain", "token", "tvl", "event_type"]
+            [
+                "time",
+                "slug",
+                "protocol",
+                "parent_protocol",
+                "chain",
+                "token",
+                "tvl",
+                "event_type",
+            ]
         ),
     )
 
