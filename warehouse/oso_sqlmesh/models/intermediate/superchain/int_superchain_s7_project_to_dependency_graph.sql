@@ -16,7 +16,8 @@ MODEL (
     devtooling_project_id,
     dependent_artifact_id,
     dependency_artifact_id
-  )
+  ),
+  enabled false
 );
 
 WITH onchain_builder_projects AS (

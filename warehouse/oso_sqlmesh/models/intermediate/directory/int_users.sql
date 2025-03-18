@@ -1,7 +1,8 @@
 MODEL (
   name oso.int_users,
   description 'All users',
-  kind FULL
+  kind FULL,
+  enabled false
 );
 
 WITH farcaster_users AS (

@@ -10,7 +10,8 @@ MODEL (
   start '2015-01-01',
   cron '@daily',
   partitioned_by DAY("sample_date"),
-  grain (sample_date, project_id, developer_id)
+  grain (sample_date, project_id, developer_id),
+  enabled false
 );
 
 @DEF(min_repo_stars, 5);
