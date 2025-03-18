@@ -49,6 +49,20 @@ def parse_chain_tvl(protocol: str, chain_tvls_raw: str, start: datetime, end: da
     return series
 
 
+def chunk_dataframe(
+    df: pd.DataFrame, chunk_size: int = 100
+) -> t.Generator[pd.DataFrame, None, None]:
+    """
+    Split a dataframe into chunks of specified size.
+    """
+    num_chunks = (len(df) + chunk_size - 1) // chunk_size
+
+    for i in range(num_chunks):
+        start_idx = i * chunk_size
+        end_idx = min((i + 1) * chunk_size, len(df))
+        yield df.iloc[start_idx:end_idx].copy()
+
+
 @model(
     name="oso.stg__defillama_tvl_events",
     is_sql=False,
@@ -65,6 +79,9 @@ def parse_chain_tvl(protocol: str, chain_tvls_raw: str, start: datetime, end: da
         "time_column": "time",
         "batch_size": 7,
     },
+    variables={
+        "chunk_size": 100,
+    },
     partitioned_by=("month(time)",),
     start=constants.defillama_incremental_start,
 )
@@ -75,24 +92,12 @@ def defillama_tvl_model(
     oso_source_rewrite: t.Optional[t.Dict[str, t.Any]] = None,
     **kwargs,
 ) -> t.Generator[pd.DataFrame, None, None]:
+    chunk_size = t.cast(int, context.var("chunk_size"))
     table = oso_source_for_pymodel(context, "bigquery.defillama.tvl")
 
     df = context.fetchdf(
         exp.select("slug", "chain_tvls")
         .from_(table)
-        .where(
-            exp.Between(
-                this=exp.Cast(
-                    this=exp.to_column("_dlt_load_id"),
-                    to=exp.DataType(
-                        this=exp.DataType.Type.DOUBLE,
-                        nested=False,
-                    ),
-                ),
-                low=exp.Literal(this=int(start.timestamp()), is_string=False),
-                high=exp.Literal(this=int(end.timestamp()), is_string=False),
-            )
-        )
         .sql(dialect=context.engine_adapter.dialect)
     )
 
@@ -118,7 +123,9 @@ def defillama_tvl_model(
         ),
     )
 
-    yield result.loc[
+    filtered_result = result.loc[
         :,
         ["time", "slug", "protocol", "chain", "token", "tvl"],
     ]
+
+    yield from chunk_dataframe(filtered_result, chunk_size)
