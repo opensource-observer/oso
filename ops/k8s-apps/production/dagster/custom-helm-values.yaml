@@ -86,6 +86,7 @@ spec:
           namespace: production-trino
       mcs:
         enabled: true
+        skipRolling: true
         url: "http://production-mcs.production-mcs.svc.cluster.local:8000"
         k8s:
           deploymentName: production-mcs
