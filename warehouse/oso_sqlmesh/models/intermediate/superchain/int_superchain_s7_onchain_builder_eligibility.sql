@@ -21,29 +21,44 @@ MODEL (
 @DEF(active_addresses_threshold, 420);
 @DEF(days_with_onchain_activity_threshold, 10);
 
-WITH builder_metrics AS (
+WITH all_projects AS (
   SELECT
-    e.project_id,
-    COUNT(DISTINCT e.transaction_hash) AS transaction_count,
-    COUNT(DISTINCT e.from_artifact_id) AS active_addresses_count,
-    COUNT(DISTINCT DATE_TRUNC('DAY', e.time)) AS active_days,
-    SUM(e.gas_fee) AS gas_fees
-  FROM oso.int_superchain_events_by_project AS e
-  WHERE
-    e.time BETWEEN @measurement_date - INTERVAL @lookback_days DAY
+    project_id,
+    MAX(
+      CASE WHEN collection_name = '8-1' THEN true ELSE false END
+    ) as applied_to_round
+  FROM oso.projects_by_collection_v1
+  GROUP BY 1
+),
+
+events AS (
+  SELECT *
+  FROM oso.int_superchain_events_by_project
+  WHERE    
+    "time" BETWEEN @measurement_date - INTERVAL @lookback_days DAY
       AND @measurement_date
-    AND e.event_type IN ('CONTRACT_INVOCATION', 'CONTRACT_INTERNAL_INVOCATION')
-  GROUP BY e.project_id
+    AND event_type IN ('CONTRACT_INVOCATION', 'CONTRACT_INTERNAL_INVOCATION')
+),
+
+builder_metrics AS (
+  SELECT
+    all_projects.project_id,
+    all_projects.applied_to_round,
+    COUNT(DISTINCT events.transaction_hash) AS transaction_count,
+    COUNT(DISTINCT events.from_artifact_id) AS active_addresses_count,
+    COUNT(DISTINCT DATE_TRUNC('DAY', events.time)) AS active_days,
+    SUM(events.gas_fee) AS gas_fees
+  FROM all_projects
+  LEFT OUTER JOIN events
+    ON all_projects.project_id = events.project_id
+  GROUP BY
+    all_projects.project_id,
+    all_projects.applied_to_round
 ),
 
 project_eligibility AS (
   SELECT
     project_id,
-    project_id IN (
-      SELECT DISTINCT project_id
-      FROM oso.projects_by_collection_v1 AS pbc
-      WHERE pbc.collection_name = '8-1'
-    ) AS applied_to_round,
     (
       transaction_count >= @transactions_threshold
       AND active_addresses_count >= @active_addresses_threshold
@@ -52,19 +67,20 @@ project_eligibility AS (
     ) AS meets_all_criteria
   FROM builder_metrics
 )
+
 SELECT
   @measurement_date AS sample_date,
   builder_metrics.project_id,
-  builder_metrics.transaction_count,
-  builder_metrics.gas_fees,
-  builder_metrics.active_addresses_count,
-  builder_metrics.active_days,
+  COALESCE(builder_metrics.transaction_count, 0) AS transaction_count,
+  COALESCE(builder_metrics.gas_fees, 0) AS gas_fees,
+  COALESCE(builder_metrics.active_addresses_count, 0) AS active_addresses_count,
+  COALESCE(builder_metrics.active_days, 0) AS active_days,
+  builder_metrics.applied_to_round,
   project_eligibility.meets_all_criteria,
-  project_eligibility.applied_to_round,
   (
-    project_eligibility.meets_all_criteria
-    AND project_eligibility.applied_to_round
+    builder_metrics.applied_to_round
+    AND project_eligibility.meets_all_criteria
   ) AS is_eligible
 FROM builder_metrics
-INNER JOIN project_eligibility
+JOIN project_eligibility
   ON builder_metrics.project_id = project_eligibility.project_id

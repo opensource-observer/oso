@@ -17,6 +17,7 @@ custody_addresses AS (
     farcaster_id,
     custody_address AS address
   FROM oso.stg_farcaster__profiles
+  WHERE custody_address IS NOT NULL
 ),
 
 all_addresses AS (
