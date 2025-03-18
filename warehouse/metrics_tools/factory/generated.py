@@ -95,6 +95,14 @@ def generated_rolling_query(
             ].items()
         ]
 
+        if env.ensure_bool("SQLMESH_MCS_SKIP_ROLLING", False):
+            logger.warning(
+                f"skipping rolling query for now for table={table_name} start={start} end={end}"
+            )
+            # If rolling is skipped we just return an empty dataframe
+            yield from ()
+            return
+
         response = mcs_client.calculate_metrics(
             query_str=rendered_query_str,
             start=start,
