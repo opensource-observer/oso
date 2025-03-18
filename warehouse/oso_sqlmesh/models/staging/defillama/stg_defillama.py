@@ -85,7 +85,6 @@ def chunk_dataframe(
     kind={
         "name": ModelKindName.INCREMENTAL_BY_TIME_RANGE,
         "time_column": "time",
-        "batch_size": 365,
     },
     variables={
         "chunk_size": 100,
