@@ -81,6 +81,18 @@ all_defillama AS (
     artifact_url,
     artifact_type
   FROM oso.stg_op_atlas_project_defillama
+  UNION ALL
+  SELECT
+    op.project_id,
+    dl.artifact_source_id,
+    dl.artifact_source,
+    dl.artifact_namespace,
+    dl.artifact_name,
+    dl.artifact_url,
+    dl.artifact_type
+  FROM oso.stg_op_atlas_project_defillama AS op
+  JOIN oso.int_defillama_protocol_mapping AS dl
+    ON op.artifact_name = dl.parent_protocol
 ),
 all_artifacts AS (
   SELECT
