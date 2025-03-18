@@ -18,6 +18,9 @@ class SQLMeshRunConfig(dg.Config):
     # Set this to True to restate the selected models
     restate_selected: bool = False
 
+    start: str | None = None
+    end: str | None = None
+
 
 @early_resources_asset_factory()
 def sqlmesh_factory(
@@ -49,6 +52,8 @@ def sqlmesh_factory(
                 context,
                 environment=environment,
                 plan_options={"skip_tests": True},
+                start=config.start,
+                end=config.end,
                 restate_selected=config.restate_selected,
             ):
                 yield result
