@@ -95,6 +95,7 @@ dev = [
     "sqlfluff-templater-dbt~=3.2.5",
     "isort<6.0.0,>=5.13.2",
     "ruff>=0.10.0",
+    "ipykernel>=6.29.5",
 ]
 
 [tool.uv.sources]
