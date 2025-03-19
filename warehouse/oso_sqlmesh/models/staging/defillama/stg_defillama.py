@@ -11,7 +11,13 @@ from sqlmesh import ExecutionContext, model
 from sqlmesh.core.model import ModelKindName
 
 
-def parse_chain_tvl(protocol: str, chain_tvls_raw: str, start: datetime, end: datetime):
+def parse_chain_tvl(
+    protocol: str,
+    parent_protocol: str,
+    chain_tvls_raw: str,
+    start: datetime,
+    end: datetime,
+):
     """
     Extract aggregated TVL events from the chainTvls field.
     For each chain, each event is expected to have a date and a totalLiquidityUSD value.
@@ -38,6 +44,7 @@ def parse_chain_tvl(protocol: str, chain_tvls_raw: str, start: datetime, end: da
                         "time": pd.Timestamp(entry["date"], unit="s"),
                         "slug": protocol,
                         "protocol": protocol,
+                        "parent_protocol": parent_protocol,
                         "chain": defillama_chain_mappings(chain),
                         "token": "USD",
                         "tvl": amount,
@@ -49,6 +56,20 @@ def parse_chain_tvl(protocol: str, chain_tvls_raw: str, start: datetime, end: da
     return series
 
 
+def chunk_dataframe(
+    df: pd.DataFrame, chunk_size: int = 100
+) -> t.Generator[pd.DataFrame, None, None]:
+    """
+    Split a dataframe into chunks of specified size.
+    """
+    num_chunks = (len(df) + chunk_size - 1) // chunk_size
+
+    for i in range(num_chunks):
+        start_idx = i * chunk_size
+        end_idx = min((i + 1) * chunk_size, len(df))
+        yield df.iloc[start_idx:end_idx].copy()
+
+
 @model(
     name="oso.stg__defillama_tvl_events",
     is_sql=False,
@@ -56,6 +77,7 @@ def parse_chain_tvl(protocol: str, chain_tvls_raw: str, start: datetime, end: da
         "time": "TIMESTAMP",
         "slug": "VARCHAR",
         "protocol": "VARCHAR",
+        "parent_protocol": "VARCHAR",
         "chain": "VARCHAR",
         "token": "VARCHAR",
         "tvl": "DOUBLE",
@@ -63,7 +85,9 @@ def parse_chain_tvl(protocol: str, chain_tvls_raw: str, start: datetime, end: da
     kind={
         "name": ModelKindName.INCREMENTAL_BY_TIME_RANGE,
         "time_column": "time",
-        "batch_size": 7,
+    },
+    variables={
+        "chunk_size": 500000,
     },
     partitioned_by=("month(time)",),
     start=constants.defillama_incremental_start,
@@ -75,24 +99,12 @@ def defillama_tvl_model(
     oso_source_rewrite: t.Optional[t.Dict[str, t.Any]] = None,
     **kwargs,
 ) -> t.Generator[pd.DataFrame, None, None]:
+    chunk_size = t.cast(int, context.var("chunk_size"))
     table = oso_source_for_pymodel(context, "bigquery.defillama.tvl")
 
     df = context.fetchdf(
-        exp.select("slug", "chain_tvls")
+        exp.select("slug", "parent_protocol", "chain_tvls")
         .from_(table)
-        .where(
-            exp.Between(
-                this=exp.Cast(
-                    this=exp.to_column("_dlt_load_id"),
-                    to=exp.DataType(
-                        this=exp.DataType.Type.DOUBLE,
-                        nested=False,
-                    ),
-                ),
-                low=exp.Literal(this=int(start.timestamp()), is_string=False),
-                high=exp.Literal(this=int(end.timestamp()), is_string=False),
-            )
-        )
         .sql(dialect=context.engine_adapter.dialect)
     )
 
@@ -103,8 +115,13 @@ def defillama_tvl_model(
     result_rows = []
     for _, row in df.iterrows():
         slug = str(row["slug"])
+        parent_protocol = str(row["parent_protocol"])
+        if parent_protocol:
+            parent_protocol = parent_protocol.replace("parent#", "")
         chain_tvls = str(row["chain_tvls"])
-        protocol_tvl_rows = parse_chain_tvl(slug, chain_tvls, start, end)
+        protocol_tvl_rows = parse_chain_tvl(
+            slug, parent_protocol, chain_tvls, start, end
+        )
         result_rows.extend(protocol_tvl_rows)
 
     if not result_rows:
@@ -114,11 +131,22 @@ def defillama_tvl_model(
     result = pd.DataFrame(
         result_rows,
         columns=pd.Index(
-            ["time", "slug", "protocol", "chain", "token", "tvl", "event_type"]
+            [
+                "time",
+                "slug",
+                "protocol",
+                "parent_protocol",
+                "chain",
+                "token",
+                "tvl",
+                "event_type",
+            ]
         ),
     )
 
-    yield result.loc[
+    filtered_result = result.loc[
         :,
-        ["time", "slug", "protocol", "chain", "token", "tvl"],
+        ["time", "slug", "protocol", "parent_protocol", "chain", "token", "tvl"],
     ]
+
+    yield from chunk_dataframe(filtered_result, chunk_size)

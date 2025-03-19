@@ -22,6 +22,7 @@ SELECT
   /* TODO: Use APPROX_DISTINCT or HyperLogLog++ for the count */
   COUNT(DISTINCT transaction_hash)::DOUBLE AS "count"
 FROM oso.int_events__blockchain as events
+WHERE time BETWEEN @start_dt AND @end_dt
 GROUP BY
   from_artifact_id,
   to_artifact_id,

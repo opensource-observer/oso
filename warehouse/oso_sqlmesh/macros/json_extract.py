@@ -28,7 +28,7 @@ def json_extract_from_array(
                 # It's possible we will need to use lax here, but that will
                 # require further testing
                 expression=exp.Literal(this=f"strict {key}", is_string=True),
-                option=exp.Var(this="WITH UNCONDITIONAL ARRAY WRAPPER"),
+                option=exp.Var(this="WITHOUT ARRAY WRAPPER"),
                 json_query=True,
             ),
             expression=exp.Literal(this="$", is_string=True),

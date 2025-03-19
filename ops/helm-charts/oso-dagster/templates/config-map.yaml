@@ -45,3 +45,4 @@ data:
   SQLMESH_MCS_CLUSTER_MIN_SIZE: "{{ .Values.sqlmesh.mcs.cluster.minSize }}"
   SQLMESH_MCS_CLUSTER_MAX_SIZE: "{{ .Values.sqlmesh.mcs.cluster.maxSize }}"
   SQLMESH_MCS_DEFAULT_SLOTS: "{{ .Values.sqlmesh.mcs.defaultSlots }}"
+  SQLMESH_MCS_SKIP_ROLLING: "{{- if .Values.sqlmesh.mcs.skipRolling -}}1{{- else -}}0{{- end -}}"

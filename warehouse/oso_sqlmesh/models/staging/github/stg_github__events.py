@@ -57,7 +57,16 @@ def github_events(
         data = {
             "type": ["PushEvent"],
             "public": [True],
-            "payload": ["{}"],
+            "payload": [
+                """
+                {
+                    "push_id": "123", 
+                    "ref": "refs/head/main", 
+                    "commits": [{"sha": "sha_value"}], 
+                    "distinct_size": "1"
+                }
+            """
+            ],
             "repo": [
                 {
                     "id": 1,

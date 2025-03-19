@@ -12,27 +12,55 @@ MODEL (
   grain (time, event_type, event_source, from_artifact_id, to_artifact_id)
 );
 
-WITH events AS (
+
+WITH txns AS (
   SELECT
     block_timestamp,
     chain,
     transaction_hash,
+    gas_price_tx,
     from_address_tx AS from_address,
-    CASE 
-      WHEN to_address_trace != to_address_tx THEN to_address_trace
-      ELSE to_address_tx
-    END as to_address,
-    CASE 
-      WHEN to_address_trace != to_address_tx THEN 'CONTRACT_INTERNAL_INVOCATION'
-      ELSE 'CONTRACT_INVOCATION'
-    END AS event_type,
-    CASE 
-      WHEN to_address_trace != to_address_tx THEN gas_used_trace
-      ELSE gas_used_tx
-    END AS gas_used,
-    gas_price_tx
+    to_address_tx,
+    to_address_trace,
+    gas_used_tx,
+    gas_used_trace
   FROM oso.int_superchain_traces_txs_joined
   WHERE block_timestamp BETWEEN @start_dt AND @end_dt
+),
+
+internal_invocations AS (
+  SELECT
+    block_timestamp,
+    chain,
+    transaction_hash,
+    gas_price_tx,
+    from_address,
+    to_address_trace AS to_address,
+    'CONTRACT_INTERNAL_INVOCATION' AS event_type,
+    SUM(gas_used_trace) AS gas_used
+  FROM txns
+  WHERE to_address_trace != to_address_tx
+  GROUP BY 1,2,3,4,5,6
+),
+
+contract_invocations AS (
+  SELECT
+    block_timestamp,
+    chain,
+    transaction_hash,
+    gas_price_tx,
+    from_address,
+    to_address_tx AS to_address,
+    'CONTRACT_INVOCATION' AS event_type,
+    gas_used_tx AS gas_used
+  FROM txns
+  WHERE to_address_trace = to_address_tx
+),
+
+events AS (
+  SELECT * FROM internal_invocations
+  UNION ALL
+  SELECT * FROM contract_invocations
 )
 
 SELECT

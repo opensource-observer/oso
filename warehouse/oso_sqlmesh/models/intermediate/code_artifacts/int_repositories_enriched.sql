@@ -1,8 +1,7 @@
 MODEL (
   name oso.int_repositories_enriched,
   description 'All repositories enriched with release and package data',
-  kind FULL,
-  enabled false
+  kind FULL
 );
 
 WITH releases AS (
