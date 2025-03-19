@@ -4,7 +4,7 @@ MODEL (
   kind FULL,
 );
 
-WITH deveopers AS (
+WITH developers AS (
   SELECT
     users.user_id AS developer_id,
     users.github_username AS developer_name,
