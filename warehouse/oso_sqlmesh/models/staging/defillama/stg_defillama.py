@@ -87,7 +87,7 @@ def chunk_dataframe(
         "time_column": "time",
     },
     variables={
-        "chunk_size": 100,
+        "chunk_size": 50000,
     },
     partitioned_by=("month(time)",),
     start=constants.defillama_incremental_start,
