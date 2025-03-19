@@ -1,7 +1,8 @@
 MODEL (
   name oso.int_superchain_s7_trusted_developers,
   description "Identifies trusted developers based on commit history to relevant onchain builder repositories",
-  kind full
+  kind full,
+  enabled false
 );
 
 @DEF(min_repo_stars, 5);
@@ -27,7 +28,6 @@ WITH eligible_onchain_builder_repos AS (
     AND repos.updated_at > @last_repo_update_date::TIMESTAMP
     AND repos.star_count > @min_repo_stars
     AND builders.is_eligible
-    AND builders.sample_date BETWEEN @start_dt AND @end_dt
 ), developer_activity AS (
   SELECT
     repos.project_id,

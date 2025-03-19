@@ -26,7 +26,7 @@ WITH all_projects AS (
 
 ossd_projects AS (
   SELECT DISTINCT
-    CASE WHEN ossd.project_id IS NOT NULL THEN ossd.project_id
+    CASE WHEN ossd.ossd_project_id IS NOT NULL THEN ossd.ossd_project_id
          ELSE all_projects.project_id
     END AS project_id,
     all_projects.transaction_count,
