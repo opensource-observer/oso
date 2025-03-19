@@ -8,10 +8,6 @@ import generateApiKey from "generate-api-key";
 import CircularProgress from "@mui/material/CircularProgress";
 import { AreaChart } from "@tremor/react";
 import {
-  CubeDataProvider,
-  CubeDataProviderRegistration,
-} from "./components/dataprovider/cube-data-provider";
-import {
   MetricsDataProvider,
   MetricsDataProviderRegistration,
 } from "./components/dataprovider/metrics-data-provider";
@@ -75,14 +71,6 @@ PLASMIC.registerComponent(MetricsDataProvider, {
   props: { ...MetricsDataProviderRegistration },
   providesData: true,
   importPath: "./components/dataprovider/metrics-data-provider",
-});
-
-PLASMIC.registerComponent(CubeDataProvider, {
-  name: "CubeDataProvider",
-  description: "Data context for Cube.dev",
-  props: { ...CubeDataProviderRegistration },
-  providesData: true,
-  importPath: "./components/dataprovider/cube-data-provider",
 });
 
 PLASMIC.registerComponent(AreaChart, {
