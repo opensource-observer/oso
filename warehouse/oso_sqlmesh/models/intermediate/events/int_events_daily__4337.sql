@@ -21,6 +21,7 @@ SELECT
   SUM(userop_gas_used * userop_gas_price)::DOUBLE AS amount,
   COUNT(*)::DOUBLE AS "count"
 FROM oso.int_events__4337 as events
+WHERE time BETWEEN @start_dt AND @end_dt
 GROUP BY
   from_artifact_id,
   to_artifact_id,
