@@ -40,8 +40,7 @@ WITH deduped_commits AS (
     ghc.is_distinct,
     ghc.api_url,
     ROW_NUMBER() OVER (
-      /* TODO: consider using sha instead of push_id */
-      PARTITION BY ghc.repository_id, ghc.push_id
+      PARTITION BY ghc.repository_id, ghc.sha
       ORDER BY ghc.created_at ASC
     ) AS rn
   FROM oso.stg_github__commits AS ghc
