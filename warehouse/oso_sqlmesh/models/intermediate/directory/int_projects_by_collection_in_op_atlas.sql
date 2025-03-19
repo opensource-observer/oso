@@ -6,6 +6,9 @@ MODEL (
 
 @DEF(collection_source, 'OP_ATLAS');
 @DEF(collection_namespace, 'retro-funding');
+@DEF(flagged_for_removal, [
+  '0x8bfdc42f26bf691d378d2073ae509c46b85c0eed8db8abc6987b6725dd0d056a'
+]);
 
 WITH app AS (
   SELECT DISTINCT
@@ -16,7 +19,11 @@ WITH app AS (
   WHERE
     round_id IN ('7', '8')
     AND status = 'submitted'
-    AND created_at BETWEEN DATE '2025-02-01' AND DATE '2025-03-10'
+    AND created_at BETWEEN DATE '2025-02-01' AND DATE '2025-03-11'
+    AND project_name NOT IN (
+      SELECT project_name
+      FROM UNNEST(@flagged_for_removal) AS t(project_name)
+    )
 ),
 
 projects_by_collection AS (
