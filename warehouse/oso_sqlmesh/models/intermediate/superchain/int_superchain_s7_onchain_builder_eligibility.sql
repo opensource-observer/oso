@@ -47,7 +47,8 @@ builder_metrics AS (
     COUNT(DISTINCT events.transaction_hash) AS transaction_count,
     COUNT(DISTINCT events.from_artifact_id) AS active_addresses_count,
     COUNT(DISTINCT DATE_TRUNC('DAY', events.time)) AS active_days,
-    SUM(events.gas_fee) AS gas_fees
+    SUM(events.gas_fee) AS gas_fees,
+    MAX(CASE WHEN events.event_source = 'WORLDCHAIN' THEN true ELSE false END) AS is_worldchain_app
   FROM all_projects
   LEFT OUTER JOIN events
     ON all_projects.project_id = events.project_id
@@ -61,9 +62,12 @@ project_eligibility AS (
     project_id,
     (
       transaction_count >= @transactions_threshold
-      AND active_addresses_count >= @active_addresses_threshold
       AND active_days >= @days_with_onchain_activity_threshold
       AND gas_fees >= @gas_fees_threshold
+      AND (
+        active_addresses_count >= @active_addresses_threshold
+        OR is_worldchain_app -- worldchain natively bundles userops
+      )
     ) AS meets_all_criteria
   FROM builder_metrics
 )
@@ -76,6 +80,7 @@ SELECT
   COALESCE(builder_metrics.active_addresses_count, 0) AS active_addresses_count,
   COALESCE(builder_metrics.active_days, 0) AS active_days,
   builder_metrics.applied_to_round,
+  builder_metrics.is_worldchain_app,
   project_eligibility.meets_all_criteria,
   (
     builder_metrics.applied_to_round

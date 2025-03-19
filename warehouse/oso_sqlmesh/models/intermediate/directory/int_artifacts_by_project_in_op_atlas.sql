@@ -151,7 +151,9 @@ oso_artifacts AS (
   FROM oso_linked_projects AS linked
   JOIN oso.int_artifacts_by_project_in_ossd AS ossd_artifacts
     ON linked.ossd_project_id = ossd_artifacts.project_id
-  WHERE ossd_artifacts.artifact_type IN ('CONTRACT', 'DEPLOYER')
+  WHERE ossd_artifacts.artifact_type IN (
+      'CONTRACT', 'DEPLOYER', 'DEFILLAMA_PROTOCOL'
+    )
     AND NOT EXISTS (
       SELECT 1
       FROM all_artifacts  AS op_atlas_artifacts
