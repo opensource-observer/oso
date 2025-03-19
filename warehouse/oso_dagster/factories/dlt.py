@@ -10,6 +10,7 @@ from dagster import (
     AssetMaterialization,
     Config,
     MaterializeResult,
+    Output,
     PartitionsDefinition,
     asset,
     define_asset_job,
@@ -230,14 +231,18 @@ def _dlt_factory[
                         if log_intermediate_results and isinstance(
                             result, MaterializeResult
                         ):
-                            if result.metadata:
-                                context.log.info(
-                                    f"Loaded '{result.asset_key}' into '{result.metadata['dataset_name']}' successfully"
-                                )
-                            else:
-                                context.log.info(
-                                    f"Loaded '{result.asset_key}' successfully"
-                                )
+                            yield t.cast(
+                                R,
+                                Output(
+                                    result,
+                                    output_name=(
+                                        result.asset_key.to_string()
+                                        if result.asset_key
+                                        else "result"
+                                    ),
+                                    metadata=result.metadata,
+                                ),
+                            )
                             continue
 
                         yield t.cast(R, result)
