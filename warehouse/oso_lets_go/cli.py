@@ -85,7 +85,7 @@ def ops():
 ops.command()(cluster_setup)
 
 
-def find_or_choose_metric(metric: str):
+def all_matching_metrics(metric: str):
     timeseries_metrics = load_timeseries_metrics(OSO_SQLMESH_DIR)
 
     matches: t.Dict[str, MetricQueryConfig] = {}
@@ -96,6 +96,11 @@ def find_or_choose_metric(metric: str):
         if config["table_name"] == metric:
             matches[config["table_name"]] = config
             break
+    return matches
+
+
+def find_or_choose_metric(metric: str):
+    matches = all_matching_metrics(metric)
 
     if not len(matches):
         print("No matching metrics")
@@ -114,17 +119,29 @@ def find_or_choose_metric(metric: str):
     default=os.path.join(OSO_SQLMESH_DIR, "models/metrics_factories.py"),
 )
 @click.option("--dialect", default="duckdb", help="The dialect to render")
+@click.option("--output-dir")
 @click.pass_context
-def render(ctx: click.Context, metric: str, factory_path: str, dialect: str):
+def render(
+    ctx: click.Context, metric: str, factory_path: str, dialect: str, output_dir: str
+):
     """Renders a given metric query. Useful for testing
 
     Usage:
 
         $ oso metrics render <metrics_name>
+
+    If output_dir is provided then _all_ metrics will be rendered to that directory
     """
-    chosen_metric = find_or_choose_metric(metric)
-    assert chosen_metric, f"Could not find metric {metric}"
-    print(chosen_metric["rendered_query"].sql(pretty=True, dialect=dialect))
+
+    if not output_dir:
+        chosen_metric = find_or_choose_metric(metric)
+        assert chosen_metric, f"Could not find metric {metric}"
+        print(chosen_metric["rendered_query"].sql(pretty=True, dialect=dialect))
+    else:
+        matches = all_matching_metrics(metric)
+        for name, config in matches.items():
+            with open(os.path.join(output_dir, f"{name}.sql"), "w") as f:
+                f.write(config["rendered_query"].sql(pretty=True, dialect=dialect))
 
 
 @click.group()
