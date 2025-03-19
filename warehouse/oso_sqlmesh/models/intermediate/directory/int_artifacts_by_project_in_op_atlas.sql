@@ -2,7 +2,10 @@ MODEL (
   name oso.int_artifacts_by_project_in_op_atlas,
   kind FULL,
   dialect trino,
-  description "Unifies all artifacts from OP Atlas, including handling cases where contracts come in via OSO"
+  description "Unifies all artifacts from OP Atlas, including handling cases where contracts come in via OSO",
+  audits (
+    not_null(columns := (artifact_id, project_id))
+  )
 );
 
 WITH all_websites AS (
