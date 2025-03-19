@@ -18,7 +18,35 @@ spec:
       type: properties
       properties: |
         access-control.name=read-only
+    additionalConfigProperties:
+      - http-server.process-forwarded=true
+      - internal-communication.shared-secret=gcp:secretmanager:production-consumer-trino-shared-secret/versions/latest
+      - http-server.authentication.allow-insecure-over-http=true
+      - retry-policy=QUERY
+    ingress:
+      enabled: true
+      className: ingress-internal-cloudflare
+      hosts:
+        - host: trino.opensource.observer
+          paths:
+            - path: /
+              pathType: Prefix
 
+    initContainers:
+      coordinator:
+        - name: init-coordinator-auth
+          image: alpine
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/sh
+            - -c
+            - 'echo "${TRINO_AUTH}" > /etc/auth/password.db'
+          env:
+            - name: TRINO_AUTH
+              value: gcp:secretmanager:production-consumer-trino-auth/versions/latest
+          volumeMounts:
+            - mountPath: /etc/auth
+              name: trino-auth-volume
     coordinator:
       resources:
         requests:
@@ -35,6 +63,13 @@ spec:
         maxHeapSize: "7G"
       additionalJVMConfig:
         - "--add-opens=java.base/java.nio=ALL-UNNAMED"
+      additionalVolumeMounts:
+        - name: trino-auth-volume
+          mountPath: /etc/trino/auth/password
+          readOnly: true
+      additionalVolumes:
+        - name: trino-auth-volume
+          emptyDir: {}
 
     worker:
       resources:
@@ -56,8 +91,6 @@ spec:
       additionalJVMConfig:
         - "--add-opens=java.base/java.nio=ALL-UNNAMED"
 
-    additionalConfigProperties:
-      - retry-policy=QUERY
     additionalExchangeManagerProperties:
       - "exchange.sink-buffers-per-partition=6"
       - "exchange.sink-buffer-pool-min-size=6"
@@ -66,12 +99,13 @@ spec:
       - "exchange.s3.aws-access-key=${ENV:TRINO_GCS_KEY_ID}"
       - "exchange.s3.aws-secret-key=${ENV:TRINO_GCS_SECRET}"
       - "exchange.s3.endpoint=https://storage.googleapis.com"
-      
+
     server:
       exchangeManager:
         name: filesystem
         baseDir: gs://oso-dataset-transfer-bucket/trino-exchange/
       config:
+        authenticationType: PASSWORD
         query:
           maxMemory: "100GB"
       workers: 1
@@ -83,18 +117,18 @@ spec:
           scaleDown:
             stabilizationWindowSeconds: 600
             policies:
-            - type: Pods
-              value: 1
-              periodSeconds: 60
+              - type: Pods
+                value: 1
+                periodSeconds: 60
           scaleUp:
             stabilizationWindowSeconds: 0
             policies:
-            - type: Percent
-              value: 100
-              periodSeconds: 15
-            - type: Pods
-              value: 2 
-              periodSeconds: 15
+              - type: Percent
+                value: 100
+                periodSeconds: 15
+              - type: Pods
+                value: 2
+                periodSeconds: 15
             selectPolicy: Max
     catalogs:
       iceberg: |
@@ -105,6 +139,6 @@ spec:
         iceberg.rest-catalog.warehouse=gs://oso-iceberg-usc1/warehouse/
         fs.native-gcs.enabled=true
         gcs.project-id=opensource-observer
-      bigquery: |
-        connector.name=bigquery
-        bigquery.project-id=opensource-observer
+      # bigquery: |
+      #   connector.name=bigquery
+      #   bigquery.project-id=opensource-observer
