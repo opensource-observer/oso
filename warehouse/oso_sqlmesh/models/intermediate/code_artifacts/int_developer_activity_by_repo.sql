@@ -2,6 +2,7 @@ MODEL (
   name oso.int_developer_activity_by_repo,
   description 'Summarizes developer activity by repository in OSSD',
   kind FULL,
+  dialect trino,
 );
 
 WITH developers AS (

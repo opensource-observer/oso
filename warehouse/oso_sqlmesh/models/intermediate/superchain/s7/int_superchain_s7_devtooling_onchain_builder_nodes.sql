@@ -1,6 +1,7 @@
 MODEL (
   name oso.int_superchain_s7_devtooling_onchain_builder_nodes,
   description "Identifies onchain builder nodes for the S7 devtooling round",
+  dialect trino,
   kind full,
 );
 

@@ -1,6 +1,7 @@
 MODEL (
   name oso.int_superchain_s7_devtooling_devs_to_projects_graph,
   description 'Maps relationships between trusted developers, onchain builder projects, and devtooling projects',
+  dialect trino,
   kind full,
 );
 

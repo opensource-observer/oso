@@ -1,6 +1,7 @@
 MODEL (
   name oso.int_superchain_s7_devtooling_repositories,
   description "All repositories eligible for measurement in the S7 devtooling round",
+  dialect trino,
   kind full,
 );
 

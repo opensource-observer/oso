@@ -1,6 +1,7 @@
 MODEL (
   name oso.int_superchain_s7_devtooling_deps_to_projects_graph,
   description 'Maps relationships between onchain builder projects and their dependencies',
+  dialect trino,
   kind full,
 );
 

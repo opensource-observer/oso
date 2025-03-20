@@ -1,6 +1,7 @@
 MODEL (
   name oso.int_superchain_s7_devtooling_metrics_by_project,
   description "S7 metrics by devtooling project",
+  dialect trino,
   kind full,
 );
 
