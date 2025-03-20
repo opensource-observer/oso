@@ -9,7 +9,7 @@ MODEL (
   start @defillama_incremental_start,
   cron '@daily',
   partitioned_by (DAY("bucket_day"), "event_type"),
-  grain (bucket_day, event_type, event_source, from_artifact_id, to_artifact_id)
+  grain (bucket_day, event_type, event_source, from_artifact_id, to_artifact_id, project_id)
 );
 
 WITH all_tvl_events AS (
@@ -64,7 +64,8 @@ tvl_events_with_ids AS (
   FROM deduplicated_tvl_events
 )
 
-SELECT DISTINCT
+-- This will create a row for each project associated with the artifact
+SELECT
   abp.project_id,
   tvl_events_with_ids.bucket_day,
   tvl_events_with_ids.event_type,
@@ -78,5 +79,5 @@ SELECT DISTINCT
   tvl_events_with_ids.from_artifact_name,
   tvl_events_with_ids.amount
 FROM tvl_events_with_ids
-LEFT OUTER JOIN oso.artifacts_by_project_v1 AS abp
+INNER JOIN oso.artifacts_by_project_v1 AS abp
   ON tvl_events_with_ids.to_artifact_id = abp.artifact_id
