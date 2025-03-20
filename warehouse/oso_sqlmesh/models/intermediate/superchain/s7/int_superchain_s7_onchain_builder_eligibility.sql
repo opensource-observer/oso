@@ -48,7 +48,7 @@ builder_metrics AS (
     COUNT(DISTINCT events.transaction_hash) AS transaction_count,
     COUNT(DISTINCT events.from_artifact_id) AS active_addresses_count,
     COUNT(DISTINCT DATE_TRUNC('DAY', events.time)) AS active_days,
-    SUM(events.gas_fee) AS gas_fees,
+    SUM(events.gas_fee::DOUBLE) AS gas_fees,
     MAX(CASE WHEN events.event_source = 'WORLDCHAIN' THEN true ELSE false END) AS is_worldchain_app
   FROM all_projects
   LEFT OUTER JOIN events
@@ -77,7 +77,7 @@ SELECT
   @measurement_date AS sample_date,
   builder_metrics.project_id,
   COALESCE(builder_metrics.transaction_count, 0) AS transaction_count,
-  COALESCE(builder_metrics.gas_fees, 0.0) AS gas_fees,
+  COALESCE(builder_metrics.gas_fees, 0.0)::DOUBLE AS gas_fees,
   COALESCE(builder_metrics.active_addresses_count, 0) AS active_addresses_count,
   COALESCE(builder_metrics.active_days, 0) AS active_days,
   builder_metrics.applied_to_round,
