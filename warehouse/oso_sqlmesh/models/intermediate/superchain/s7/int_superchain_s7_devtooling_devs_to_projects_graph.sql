@@ -13,7 +13,6 @@ WITH dev_events AS (
     repos.project_id,
     repos.artifact_id AS repo_artifact_id,
     repos.language,
-    repos.project_id,
     DATE_TRUNC('MONTH', events.time::DATE) AS bucket_month,
     events.event_type
   FROM oso.int_events_filtered__github AS events
