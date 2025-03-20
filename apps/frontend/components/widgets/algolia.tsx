@@ -1,7 +1,7 @@
 "use client";
 
 import "instantsearch.css/themes/algolia.css";
-import algoliasearch from "algoliasearch/lite";
+import { liteClient } from "algoliasearch/lite";
 import React, { ReactElement, useEffect, useRef } from "react";
 import { Index, SearchBox, useInfiniteHits } from "react-instantsearch";
 import { InstantSearchNext } from "react-instantsearch-nextjs";
@@ -12,7 +12,7 @@ import {
   ALGOLIA_INDEX,
 } from "../../lib/config";
 
-const searchClient = algoliasearch(ALGOLIA_APPLICATION_ID, ALGOLIA_API_KEY);
+const searchClient = liteClient(ALGOLIA_APPLICATION_ID, ALGOLIA_API_KEY);
 const PLASMIC_KEY = "searchItem";
 const DEFAULT_PLACEHOLDER = "Search...";
 const DEFAULT_INDEX = "projects";
