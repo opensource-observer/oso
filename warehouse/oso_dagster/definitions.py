@@ -177,7 +177,7 @@ def load_definitions():
     clickhouse_importer = ClickhouseImporterResource(
         clickhouse=clickhouse,
         secrets=secret_resolver,
-        secret_group_name="clickhouse-importer",
+        secret_group_name="clickhouse_importer",
     )
     bigquery_importer = BigQueryImporterResource(bigquery=bigquery)
     duckdb_exporter = DuckDBExporterResource(

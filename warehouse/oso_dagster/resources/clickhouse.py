@@ -82,12 +82,12 @@ class ClickhouseImporterResource(ConfigurableResource):
     secret_group_name: str
 
     access_key: str = Field(
-        default="host",
+        default="access_key",
         description="Clickhouse host.",
     )
 
     secret_key: str = Field(
-        default="user",
+        default="secret_key",
         description="Clickhouse username.",
     )
 
