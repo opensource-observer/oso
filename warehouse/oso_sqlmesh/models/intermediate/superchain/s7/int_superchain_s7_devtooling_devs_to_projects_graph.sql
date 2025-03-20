@@ -3,6 +3,7 @@ MODEL (
   description 'Maps relationships between trusted developers, onchain builder projects, and devtooling projects',
   dialect trino,
   kind full,
+  grain (bucket_month, developer_id, project_id, event_type),
 );
 
 @DEF(active_developer_date_threshold, DATE('2024-01-01'));
@@ -11,16 +12,14 @@ WITH dev_events AS (
   SELECT    
     devs.developer_id,
     devs.developer_name,
-    repos.project_id,
-    repos.artifact_id AS repo_artifact_id,
-    repos.language,
-    DATE_TRUNC('MONTH', events.time::DATE) AS bucket_month,
+    events.project_id,
+    events.to_artifact_id AS repo_artifact_id,
+    events.bucket_month,
     events.event_type
-  FROM oso.int_events_filtered__github AS events
-  JOIN oso.int_repositories_enriched AS repos
-    ON events.to_artifact_id = repos.artifact_id
+  FROM oso.int_events_monthly_to_project AS events
   JOIN oso.int_developer_activity_by_repo AS devs
     ON events.from_artifact_id = devs.developer_id
+  WHERE events.event_source = 'GITHUB'
 ),
 
 builder_github_repos AS (
