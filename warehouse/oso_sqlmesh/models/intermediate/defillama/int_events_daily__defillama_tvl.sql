@@ -7,6 +7,7 @@ MODEL (
     batch_concurrency 1
   ),
   start @defillama_incremental_start,
+  dialect trino,
   cron '@daily',
   partitioned_by (DAY("bucket_day"), "event_type"),
   grain (bucket_day, event_type, event_source, from_artifact_id, to_artifact_id, project_id)
