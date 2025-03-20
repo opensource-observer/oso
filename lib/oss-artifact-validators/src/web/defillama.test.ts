@@ -24,7 +24,7 @@ describe("sum module", () => {
     "isValidSlug",
     async () => {
       expect(await v.isValidSlug("INVALID-SLUG")).toBe(false);
-      expect(await v.isValidSlug("uniswap-v3")).toBe(true);
+      expect(await v.isValidSlug("across")).toBe(true);
     },
     DEFILLAMA_API_TIMEOUT,
   );
@@ -36,7 +36,7 @@ describe("sum module", () => {
       expect(await v.isValid("https://defillama.com/protocol/slug")).toBe(
         false,
       );
-      expect(await v.isValid("https://defillama.com/protocol/uniswap-v3")).toBe(
+      expect(await v.isValid("https://defillama.com/protocol/across")).toBe(
         true,
       );
     },
@@ -44,8 +44,6 @@ describe("sum module", () => {
   );
 
   test("getSlug", () => {
-    expect(v.getSlug("https://defillama.com/protocol/uniswap-v3")).toBe(
-      "uniswap-v3",
-    );
+    expect(v.getSlug("https://defillama.com/protocol/across")).toBe("across");
   });
 });
