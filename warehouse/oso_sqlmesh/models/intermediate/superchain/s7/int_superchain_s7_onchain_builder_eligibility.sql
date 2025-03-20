@@ -77,7 +77,7 @@ SELECT
   @measurement_date AS sample_date,
   builder_metrics.project_id,
   COALESCE(builder_metrics.transaction_count, 0) AS transaction_count,
-  COALESCE(builder_metrics.gas_fees, 0) AS gas_fees,
+  COALESCE(builder_metrics.gas_fees, 0.0) AS gas_fees,
   COALESCE(builder_metrics.active_addresses_count, 0) AS active_addresses_count,
   COALESCE(builder_metrics.active_days, 0) AS active_days,
   builder_metrics.applied_to_round,
