@@ -1,12 +1,7 @@
 MODEL (
   name oso.int_superchain_events_by_project,
-  kind INCREMENTAL_BY_TIME_RANGE (
-    time_column time,
-    batch_size 180,
-    batch_concurrency 1
-  ),
-  start @blockchain_incremental_start,
-  cron '@daily',
+  kind full,
+  dialect trino,
   partitioned_by (DAY("time"), "event_type", "event_source"),
   grain (time, event_type, event_source, event_type, from_artifact_id, to_artifact_id)
 );
@@ -47,4 +42,4 @@ INNER JOIN oso.artifacts_by_project_v1 AS abp
   ON e.to_artifact_id = abp.artifact_id
 INNER JOIN oso.int_superchain_chain_names AS chain_names
   ON e.event_source = chain_names.chain
-WHERE e.time BETWEEN @start_dt AND @end_dt
+--WHERE e.time BETWEEN @start_dt AND @end_dt

@@ -9,7 +9,10 @@ MODEL (
   ),
   start @github_incremental_start,
   partitioned_by DAY(created_at),
-  dialect trino
+  dialect trino,
+  audits (
+    not_null(columns := (sha,))
+  )
 );
 
 SELECT

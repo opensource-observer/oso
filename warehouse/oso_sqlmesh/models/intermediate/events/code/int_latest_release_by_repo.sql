@@ -1,14 +1,14 @@
 MODEL (
   name oso.int_latest_release_by_repo,
+  description 'Latest release published for a repository in OSSD',
   kind FULL,
-  enabled false
 );
 
 WITH repo_releases AS (
   SELECT
     to_artifact_id AS artifact_id,
     MAX("time") AS latest_repo_release
-  FROM oso.int_events__github
+  FROM oso.int_events_filtered__github
   WHERE
     event_type = 'RELEASE_PUBLISHED'
   GROUP BY

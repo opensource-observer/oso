@@ -174,7 +174,11 @@ def load_definitions():
     trino_exporter = TrinoExporterResource(
         trino=trino, time_ordered_storage=time_ordered_storage
     )
-    clickhouse_importer = ClickhouseImporterResource(clickhouse=clickhouse)
+    clickhouse_importer = ClickhouseImporterResource(
+        clickhouse=clickhouse,
+        secrets=secret_resolver,
+        secret_group_name="clickhouse_importer",
+    )
     bigquery_importer = BigQueryImporterResource(bigquery=bigquery)
     duckdb_exporter = DuckDBExporterResource(
         duckdb=DuckDBResource(

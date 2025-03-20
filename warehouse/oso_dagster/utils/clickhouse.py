@@ -110,7 +110,14 @@ def rename_table(client, from_name: str, to_name: str):
     return client.command(f"RENAME TABLE {from_name} TO {to_name}")
 
 
-def import_data(client, table_name: str, s3_uri: str, format: str = ""):
+def import_data(
+    client,
+    table_name: str,
+    s3_uri: str,
+    format: str = "",
+    access_key: str = "",
+    secret_key: str = "",
+):
     """
     Imports data into a Clickhouse table
     Clickhouse will automatically infer the data format and compression from the file extension
@@ -125,6 +132,13 @@ def import_data(client, table_name: str, s3_uri: str, format: str = ""):
     s3_uri: str
         URI to S3 or GCS blob
         e.g. https://storage.googleapis.com/bucket_name/folder/*.parquet
+    format: str
+        Format of the data
+        e.g. "Parquet"
+    access_key: str
+        S3 access key
+    secret_key: str
+        S3 secret key
 
     Returns
     -------
@@ -133,25 +147,21 @@ def import_data(client, table_name: str, s3_uri: str, format: str = ""):
     """
     client.command("SET input_format_parquet_import_nested = 1;")
     client.command("SET parallel_distributed_insert_select = 1;")
-    if not format:
-        command = (
-            "INSERT INTO %(table_name)s "
-            "SELECT * "
-            "FROM s3Cluster('default', '%(s3_uri)s')"
-        )
-    else:
-        command = (
-            "INSERT INTO %(table_name)s "
-            "SELECT * "
-            "FROM s3Cluster('default', '%(s3_uri)s', '%(format)s')"
-        )
-    params = {
-        "table_name": table_name,
-        "s3_uri": s3_uri,
-        "format": format,
-    }
-    query = command % params
+    command_options = ["default", s3_uri]
+    if access_key and secret_key:
+        command_options.extend([access_key, secret_key])
+    if format:
+        command_options.append(format)
 
-    logger.debug(f"Running query: {query}")
-    result = client.command(command % params)
+    command_options_as_str = [f"'{option}'" for option in command_options]
+
+    command = f"""
+        INSERT INTO {table_name}
+        SELECT * 
+        FROM s3Cluster({', '.join(command_options_as_str)})
+    """
+    # query = command % params
+    # just to be safe let's not log while we're passing in the access key
+    # logger.debug(f"Running query: {query}")
+    result = client.command(command)
     return result

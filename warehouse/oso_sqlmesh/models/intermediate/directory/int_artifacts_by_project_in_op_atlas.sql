@@ -2,7 +2,10 @@ MODEL (
   name oso.int_artifacts_by_project_in_op_atlas,
   kind FULL,
   dialect trino,
-  description "Unifies all artifacts from OP Atlas, including handling cases where contracts come in via OSO"
+  description "Unifies all artifacts from OP Atlas, including handling cases where contracts come in via OSO",
+  audits (
+    not_null(columns := (artifact_id, project_id))
+  )
 );
 
 WITH all_websites AS (
@@ -81,6 +84,18 @@ all_defillama AS (
     artifact_url,
     artifact_type
   FROM oso.stg_op_atlas_project_defillama
+  UNION ALL
+  SELECT
+    op.project_id,
+    dl.artifact_source_id,
+    dl.artifact_source,
+    dl.artifact_namespace,
+    dl.artifact_name,
+    dl.artifact_url,
+    dl.artifact_type
+  FROM oso.stg_op_atlas_project_defillama AS op
+  JOIN oso.int_defillama_protocol_mapping AS dl
+    ON op.artifact_name = dl.parent_protocol
 ),
 all_artifacts AS (
   SELECT
@@ -136,7 +151,9 @@ oso_artifacts AS (
   FROM oso_linked_projects AS linked
   JOIN oso.int_artifacts_by_project_in_ossd AS ossd_artifacts
     ON linked.ossd_project_id = ossd_artifacts.project_id
-  WHERE ossd_artifacts.artifact_type IN ('CONTRACT', 'DEPLOYER')
+  WHERE ossd_artifacts.artifact_type IN (
+      'CONTRACT', 'DEPLOYER', 'DEFILLAMA_PROTOCOL'
+    )
     AND NOT EXISTS (
       SELECT 1
       FROM all_artifacts  AS op_atlas_artifacts

@@ -22,6 +22,30 @@ class SQLMeshRunConfig(dg.Config):
     end: str | None = None
 
 
+op_tags = {
+    "dagster-k8s/config": {
+        "container_config": {
+            "resources": {
+                "requests": {"cpu": "2500m", "memory": "5120Mi"},
+                "limits": {"memory": "10240Mi"},
+            },
+        },
+        "pod_spec_config": {
+            "node_selector": {"pool_type": "standard"},
+            "tolerations": [
+                {
+                    "key": "pool_type",
+                    "operator": "Equal",
+                    "value": "standard",
+                    "effect": "NoSchedule",
+                }
+            ],
+        },
+        "merge_behavior": "SHALLOW",
+    }
+}
+
+
 @early_resources_asset_factory()
 def sqlmesh_factory(
     sqlmesh_infra_config: dict,
@@ -35,6 +59,7 @@ def sqlmesh_factory(
         environment=environment,
         dagster_sqlmesh_translator=sqlmesh_translator,
         enabled_subsetting=True,
+        op_tags=op_tags,
     )
     async def sqlmesh_project(
         context: AssetExecutionContext,

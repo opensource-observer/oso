@@ -1,35 +1,47 @@
 MODEL (
   name oso.int_developer_activity_by_repo,
-  description 'Summarizes developer activity by repository',
+  description 'Summarizes developer activity by repository in OSSD',
+  partitioned_by (YEAR("first_event"), "event_type"),
+  grain (first_event, repo_artifact_id, developer_id, developer_name, event_type),
   kind FULL,
-  enabled false,
+  dialect trino,
 );
 
 WITH developers AS (
   SELECT DISTINCT
-    users.user_id AS developer_id,
-    users.display_name AS developer_name,
-    events.to_artifact_id AS repo_artifact_id
-  FROM oso.int_events__github AS events
-  INNER JOIN oso.int_users AS users
-    ON events.from_artifact_id = users.user_id
+    u.user_id AS developer_id,
+    u.github_username AS developer_name
+  FROM oso.int_first_of_event_from_artifact AS e
+  JOIN oso.int_github_users AS u
+    ON e.from_artifact_id = u.user_id
   WHERE
-    events.event_type = 'COMMIT_CODE'
-    AND NOT REGEXP_MATCHES(LOWER(users.display_name), '(^|[^a-z0-9_])bot([^a-z0-9_]|$)|bot$')
+    NOT u.is_bot
+    AND e.event_type = 'COMMIT_CODE'
+    AND e.event_source = 'GITHUB'
+),
+
+all_events AS (
+  SELECT 
+    fe.from_artifact_id,
+    fe.to_artifact_id,
+    fe.event_type,
+    fe.time AS first_event,
+    le.time AS last_event
+  FROM oso.int_first_of_event_from_artifact AS fe
+  JOIN oso.int_last_of_event_from_artifact AS le
+    ON fe.from_artifact_id = le.from_artifact_id
+    AND fe.to_artifact_id = le.to_artifact_id
+    AND fe.event_type = le.event_type
+  WHERE fe.event_source = 'GITHUB'
 )
+
 SELECT
-  events.to_artifact_id AS repo_artifact_id,
-  developers.developer_id,
-  developers.developer_name,
-  events.event_type,
-  MIN(events.time) AS first_event,
-  MAX(events.time) AS last_event,
-  COUNT(DISTINCT events.time) AS total_events
-FROM oso.int_events__github AS events
-INNER JOIN developers
-  ON events.from_artifact_id = developers.developer_id
-GROUP BY
-  events.to_artifact_id,
-  developers.developer_id,
-  developers.developer_name,
-  events.event_type
+  ae.to_artifact_id AS repo_artifact_id,
+  d.developer_id,
+  d.developer_name,
+  ae.event_type,
+  ae.first_event,
+  ae.last_event
+FROM all_events AS ae
+JOIN developers AS d
+  ON ae.from_artifact_id = d.developer_id

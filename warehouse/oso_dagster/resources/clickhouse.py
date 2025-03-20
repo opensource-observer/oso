@@ -77,8 +77,29 @@ class ClickhouseResource(ConfigurableResource):
 
 class ClickhouseImporterResource(ConfigurableResource):
     clickhouse: ResourceDependency[ClickhouseResource]
+    secrets: ResourceDependency[SecretResolver]
+
+    secret_group_name: str
+
+    access_key: str = Field(
+        default="access_key",
+        description="Clickhouse host.",
+    )
+
+    secret_key: str = Field(
+        default="secret_key",
+        description="Clickhouse username.",
+    )
 
     @contextmanager
     def get(self):
+        access_key = self.secrets.resolve_as_str(
+            SecretReference(group_name=self.secret_group_name, key=self.access_key)
+        )
+        secret_key = self.secrets.resolve_as_str(
+            SecretReference(group_name=self.secret_group_name, key=self.secret_key)
+        )
         with self.clickhouse.get_client() as client:
-            yield ClickhouseImporter(client)
+            yield ClickhouseImporter(
+                client, access_key=access_key, secret_key=secret_key
+            )
