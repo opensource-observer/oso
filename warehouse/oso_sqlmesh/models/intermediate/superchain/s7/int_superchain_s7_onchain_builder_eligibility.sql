@@ -2,6 +2,7 @@
 MODEL (
   name oso.int_superchain_s7_onchain_builder_eligibility,
   description "Determines if a project is eligible for measurement in the S7 onchain builder round",
+  dialect trino,
   kind INCREMENTAL_BY_TIME_RANGE (
     time_column sample_date,
     batch_size 90,

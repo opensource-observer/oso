@@ -17,6 +17,7 @@ MODEL(
   ),
   start @blockchain_incremental_start,
   cron '@daily',
+  dialect trino,
   partitioned_by DAY("sample_date"),
   grain(sample_date, chain, project_id, metric_name)
 );

@@ -1,7 +1,8 @@
 MODEL (
   name oso.int_github_users,
+  description "GitHub users linked to repositories in OSSD",
+  dialect trino,
   kind FULL,
-  description "GitHub users linked to repositories in OSSD"
 );
 
 @DEF(bot_regex, '(^|[^a-z0-9_])bot([^a-z0-9_]|$)|bot$');
@@ -20,5 +21,5 @@ SELECT
   github_id,
   github_username,
   'https://github.com/' || github_username AS url,
-  REGEXP_MATCHES(github_username, @bot_regex) AS is_bot
+  REGEXP_LIKE(github_username, @bot_regex) AS is_bot
 FROM users

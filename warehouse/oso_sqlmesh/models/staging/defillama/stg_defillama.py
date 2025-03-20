@@ -26,14 +26,18 @@ def parse_chain_tvl(
     if isinstance(chain_tvls_raw, str):
         try:
             chain_tvls = orjson.loads(chain_tvls_raw)
+            if not isinstance(chain_tvls, dict):
+                return []
+                
             chains = chain_tvls.keys()
-            # Flatten the dictionary to a table
             for chain in chains:
-                tvl_history = chain_tvls[chain]["tvl"]
+                if not isinstance(chain_tvls[chain], dict) or 'tvl' not in chain_tvls[chain]:
+                    continue
+                    
+                tvl_history = chain_tvls[chain]['tvl']
                 if not tvl_history:
                     continue
                 for entry in tvl_history:
-                    # Skip entries outside the time range
                     if (
                         entry["date"] < start.timestamp()
                         or entry["date"] > end.timestamp()
