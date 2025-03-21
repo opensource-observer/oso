@@ -47,6 +47,12 @@ export const CLICKHOUSE_USERNAME = process.env.CLICKHOUSE_USERNAME ?? "MISSING";
 export const CLICKHOUSE_PASSWORD = process.env.CLICKHOUSE_PASSWORD ?? "MISSING";
 export const CLICKHOUSE_DB_NAME = process.env.CLICKHOUSE_DB_NAME ?? "default";
 
+export const TRINO_URL = process.env.TRINO_URL ?? "MISSING";
+export const TRINO_USERNAME = process.env.TRINO_USERNAME ?? "MISSING";
+export const TRINO_PASSWORD = process.env.TRINO_PASSWORD ?? "MISSING";
+export const TRINO_CATALOG = process.env.TRINO_CATALOG ?? "iceberg";
+export const TRINO_SCHEMA = process.env.TRINO_SCHEMA ?? "oso";
+
 export const ALGOLIA_APPLICATION_ID =
   process.env.NEXT_PUBLIC_ALGOLIA_APPLICATION_ID ?? "MISSING";
 export const ALGOLIA_API_KEY =
