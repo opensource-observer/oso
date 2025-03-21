@@ -42,6 +42,24 @@ deduplicated_tvl_events AS (
   WHERE rn = 1
 ),
 
+merged_tvl_events AS (
+  SELECT
+    bucket_day,
+    chain,
+    slug,
+    token,
+    tvl
+  FROM deduplicated_tvl_events
+  UNION ALL
+  SELECT
+    bucket_day::DATE as bucket_day,
+    chain,
+    slug,
+    token,
+    amount as tvl
+  FROM oso.int_events_daily__defillama_tvl_upload
+),
+
 tvl_events_with_ids AS (
   SELECT
     bucket_day,
@@ -62,7 +80,7 @@ tvl_events_with_ids AS (
     LOWER(chain) AS from_artifact_namespace,
     LOWER(token) AS from_artifact_name,
     tvl::DOUBLE AS amount
-  FROM deduplicated_tvl_events
+  FROM merged_tvl_events
 )
 
 -- This will create a row for each project associated with the artifact
