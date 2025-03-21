@@ -9,7 +9,10 @@ MODEL (
   cron '@daily',
   dialect trino,
   partitioned_by (DAY("time"), "event_type"),
-  grain (time, event_type, event_source, from_artifact_id, to_artifact_id)
+  grain (time, event_type, event_source, from_artifact_id, to_artifact_id),
+  audits (
+    not_null(columns := (to_artifact_name, to_artifact_namespace, event_type, event_source_id, event_source))
+  )
 );
 
 WITH raw_events AS (
