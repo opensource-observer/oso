@@ -1,0 +1,2 @@
+FROM ghcr.io/hasura/ndc-jvm-trino:v1.0.2
+COPY ./ /etc/connector

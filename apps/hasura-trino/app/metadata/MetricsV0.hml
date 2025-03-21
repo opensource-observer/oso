@@ -1,0 +1,211 @@
+---
+kind: ObjectType
+version: v1
+definition:
+  name: MetricsV0
+  fields:
+    - name: aggregationFunction
+      type: String_1
+    - name: definitionRef
+      type: String_1
+    - name: description
+      type: String_1
+    - name: displayName
+      type: String_1
+    - name: metricId
+      type: String_1
+    - name: metricName
+      type: String_1
+    - name: metricNamespace
+      type: String_1
+    - name: metricSource
+      type: String_1
+    - name: rawDefinition
+      type: String_1
+  graphql:
+    typeName: MetricsV0
+    inputTypeName: MetricsV0Input
+  dataConnectorTypeMapping:
+    - dataConnectorName: oso_trino
+      dataConnectorObjectType: metrics_v0
+      fieldMapping:
+        aggregationFunction:
+          column:
+            name: aggregation_function
+        definitionRef:
+          column:
+            name: definition_ref
+        description:
+          column:
+            name: description
+        displayName:
+          column:
+            name: display_name
+        metricId:
+          column:
+            name: metric_id
+        metricName:
+          column:
+            name: metric_name
+        metricNamespace:
+          column:
+            name: metric_namespace
+        metricSource:
+          column:
+            name: metric_source
+        rawDefinition:
+          column:
+            name: raw_definition
+
+---
+kind: TypePermissions
+version: v1
+definition:
+  typeName: MetricsV0
+  permissions:
+    - role: admin
+      output:
+        allowedFields:
+          - aggregationFunction
+          - definitionRef
+          - description
+          - displayName
+          - metricId
+          - metricName
+          - metricNamespace
+          - metricSource
+          - rawDefinition
+
+---
+kind: BooleanExpressionType
+version: v1
+definition:
+  name: MetricsV0BoolExp
+  operand:
+    object:
+      type: MetricsV0
+      comparableFields:
+        - fieldName: aggregationFunction
+          booleanExpressionType: StringBoolExp
+        - fieldName: definitionRef
+          booleanExpressionType: StringBoolExp
+        - fieldName: description
+          booleanExpressionType: StringBoolExp
+        - fieldName: displayName
+          booleanExpressionType: StringBoolExp
+        - fieldName: metricId
+          booleanExpressionType: StringBoolExp
+        - fieldName: metricName
+          booleanExpressionType: StringBoolExp
+        - fieldName: metricNamespace
+          booleanExpressionType: StringBoolExp
+        - fieldName: metricSource
+          booleanExpressionType: StringBoolExp
+        - fieldName: rawDefinition
+          booleanExpressionType: StringBoolExp
+      comparableRelationships: []
+  logicalOperators:
+    enable: true
+  isNull:
+    enable: true
+  graphql:
+    typeName: MetricsV0BoolExp
+
+---
+kind: AggregateExpression
+version: v1
+definition:
+  name: MetricsV0AggExp
+  operand:
+    object:
+      aggregatedType: MetricsV0
+      aggregatableFields:
+        - fieldName: aggregationFunction
+          aggregateExpression: StringAggExp
+        - fieldName: definitionRef
+          aggregateExpression: StringAggExp
+        - fieldName: description
+          aggregateExpression: StringAggExp
+        - fieldName: displayName
+          aggregateExpression: StringAggExp
+        - fieldName: metricId
+          aggregateExpression: StringAggExp
+        - fieldName: metricName
+          aggregateExpression: StringAggExp
+        - fieldName: metricNamespace
+          aggregateExpression: StringAggExp
+        - fieldName: metricSource
+          aggregateExpression: StringAggExp
+        - fieldName: rawDefinition
+          aggregateExpression: StringAggExp
+  count:
+    enable: true
+  graphql:
+    selectTypeName: MetricsV0AggExp
+
+---
+kind: OrderByExpression
+version: v1
+definition:
+  name: MetricsV0OrderByExp
+  operand:
+    object:
+      orderedType: MetricsV0
+      orderableFields:
+        - fieldName: aggregationFunction
+          orderByExpression: String1OrderByExp
+        - fieldName: definitionRef
+          orderByExpression: String1OrderByExp
+        - fieldName: description
+          orderByExpression: String1OrderByExp
+        - fieldName: displayName
+          orderByExpression: String1OrderByExp
+        - fieldName: metricId
+          orderByExpression: String1OrderByExp
+        - fieldName: metricName
+          orderByExpression: String1OrderByExp
+        - fieldName: metricNamespace
+          orderByExpression: String1OrderByExp
+        - fieldName: metricSource
+          orderByExpression: String1OrderByExp
+        - fieldName: rawDefinition
+          orderByExpression: String1OrderByExp
+      orderableRelationships: []
+  graphql:
+    expressionTypeName: MetricsV0OrderByExp
+
+---
+kind: Model
+version: v2
+definition:
+  name: MetricsV0
+  objectType: MetricsV0
+  source:
+    dataConnectorName: oso_trino
+    collection: metrics_v0
+  filterExpressionType: MetricsV0BoolExp
+  aggregateExpression: MetricsV0AggExp
+  orderByExpression: MetricsV0OrderByExp
+  graphql:
+    selectMany:
+      queryRootField: metricsV0
+      subscription:
+        rootField: metricsV0
+    selectUniques: []
+    filterInputTypeName: MetricsV0FilterInput
+    aggregate:
+      queryRootField: metricsV0Aggregate
+      subscription:
+        rootField: metricsV0Aggregate
+
+---
+kind: ModelPermissions
+version: v1
+definition:
+  modelName: MetricsV0
+  permissions:
+    - role: admin
+      select:
+        filter: null
+        allowSubscriptions: true
+

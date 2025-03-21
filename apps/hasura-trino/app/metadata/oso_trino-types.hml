@@ -1,0 +1,564 @@
+---
+kind: ScalarType
+version: v1
+definition:
+  name: Float64
+  graphql:
+    typeName: Float64
+
+---
+kind: BooleanExpressionType
+version: v1
+definition:
+  name: Float64BoolExp
+  operand:
+    scalar:
+      type: Float64
+      comparisonOperators:
+        - name: _eq
+          argumentType: Float64!
+        - name: _gt
+          argumentType: Float64!
+        - name: _gte
+          argumentType: Float64!
+        - name: _in
+          argumentType: "[Float64!]!"
+        - name: _lt
+          argumentType: Float64!
+        - name: _lte
+          argumentType: Float64!
+      dataConnectorOperatorMapping:
+        - dataConnectorName: oso_trino
+          dataConnectorScalarType: FLOAT64
+          operatorMapping: {}
+  logicalOperators:
+    enable: true
+  isNull:
+    enable: true
+  graphql:
+    typeName: Float64BoolExp
+
+---
+kind: DataConnectorScalarRepresentation
+version: v1
+definition:
+  dataConnectorName: oso_trino
+  dataConnectorScalarType: FLOAT64
+  representation: Float64
+  graphql:
+    comparisonExpressionTypeName: Float64ComparisonExp
+
+---
+kind: ScalarType
+version: v1
+definition:
+  name: String_1
+  graphql:
+    typeName: String1
+
+---
+kind: BooleanExpressionType
+version: v1
+definition:
+  name: StringBoolExp
+  operand:
+    scalar:
+      type: String_1
+      comparisonOperators:
+        - name: _contains
+          argumentType: String_1!
+        - name: _eq
+          argumentType: String_1!
+        - name: _in
+          argumentType: "[String_1!]!"
+        - name: _like
+          argumentType: String_1!
+      dataConnectorOperatorMapping:
+        - dataConnectorName: oso_trino
+          dataConnectorScalarType: STRING
+          operatorMapping: {}
+  logicalOperators:
+    enable: true
+  isNull:
+    enable: true
+  graphql:
+    typeName: StringBoolExp
+
+---
+kind: DataConnectorScalarRepresentation
+version: v1
+definition:
+  dataConnectorName: oso_trino
+  dataConnectorScalarType: STRING
+  representation: String_1
+  graphql:
+    comparisonExpressionTypeName: String1ComparisonExp
+
+---
+kind: ScalarType
+version: v1
+definition:
+  name: Date
+  graphql:
+    typeName: Date
+
+---
+kind: BooleanExpressionType
+version: v1
+definition:
+  name: DateBoolExp
+  operand:
+    scalar:
+      type: Date
+      comparisonOperators:
+        - name: _eq
+          argumentType: Date!
+        - name: _gt
+          argumentType: Date!
+        - name: _gte
+          argumentType: Date!
+        - name: _in
+          argumentType: "[Date!]!"
+        - name: _lt
+          argumentType: Date!
+        - name: _lte
+          argumentType: Date!
+      dataConnectorOperatorMapping:
+        - dataConnectorName: oso_trino
+          dataConnectorScalarType: DATE
+          operatorMapping: {}
+  logicalOperators:
+    enable: true
+  isNull:
+    enable: true
+  graphql:
+    typeName: DateBoolExp
+
+---
+kind: DataConnectorScalarRepresentation
+version: v1
+definition:
+  dataConnectorName: oso_trino
+  dataConnectorScalarType: DATE
+  representation: Date
+  graphql:
+    comparisonExpressionTypeName: DateComparisonExp
+
+---
+kind: ScalarType
+version: v1
+definition:
+  name: Int64
+  graphql:
+    typeName: Int64
+
+---
+kind: BooleanExpressionType
+version: v1
+definition:
+  name: Int64BoolExp
+  operand:
+    scalar:
+      type: Int64
+      comparisonOperators:
+        - name: _eq
+          argumentType: Int64!
+        - name: _gt
+          argumentType: Int64!
+        - name: _gte
+          argumentType: Int64!
+        - name: _in
+          argumentType: "[Int64!]!"
+        - name: _lt
+          argumentType: Int64!
+        - name: _lte
+          argumentType: Int64!
+      dataConnectorOperatorMapping:
+        - dataConnectorName: oso_trino
+          dataConnectorScalarType: INT64
+          operatorMapping: {}
+  logicalOperators:
+    enable: true
+  isNull:
+    enable: true
+  graphql:
+    typeName: Int64BoolExp
+
+---
+kind: DataConnectorScalarRepresentation
+version: v1
+definition:
+  dataConnectorName: oso_trino
+  dataConnectorScalarType: INT64
+  representation: Int64
+  graphql:
+    comparisonExpressionTypeName: Int64ComparisonExp
+
+---
+kind: AggregateExpression
+version: v1
+definition:
+  name: Float64AggExp
+  operand:
+    scalar:
+      aggregatedType: Float64
+      aggregationFunctions:
+        - name: avg
+          returnType: Float64!
+        - name: count
+          returnType: Int64!
+        - name: max
+          returnType: Float64!
+        - name: min
+          returnType: Float64!
+        - name: stddev_pop
+          returnType: Float64!
+        - name: stddev_samp
+          returnType: Float64!
+        - name: sum
+          returnType: Float64!
+        - name: var_pop
+          returnType: Float64!
+        - name: var_samp
+          returnType: Float64!
+      dataConnectorAggregationFunctionMapping:
+        - dataConnectorName: oso_trino
+          dataConnectorScalarType: FLOAT64
+          functionMapping:
+            avg:
+              name: avg
+            count:
+              name: count
+            max:
+              name: max
+            min:
+              name: min
+            stddev_pop:
+              name: stddev_pop
+            stddev_samp:
+              name: stddev_samp
+            sum:
+              name: sum
+            var_pop:
+              name: var_pop
+            var_samp:
+              name: var_samp
+  count:
+    enable: true
+  countDistinct:
+    enable: true
+  graphql:
+    selectTypeName: Float64AggExp
+
+---
+kind: AggregateExpression
+version: v1
+definition:
+  name: StringAggExp
+  operand:
+    scalar:
+      aggregatedType: String_1
+      aggregationFunctions:
+        - name: max
+          returnType: String_1!
+        - name: min
+          returnType: String_1!
+      dataConnectorAggregationFunctionMapping:
+        - dataConnectorName: oso_trino
+          dataConnectorScalarType: STRING
+          functionMapping:
+            max:
+              name: max
+            min:
+              name: min
+  count:
+    enable: true
+  countDistinct:
+    enable: true
+  graphql:
+    selectTypeName: StringAggExp
+
+---
+kind: AggregateExpression
+version: v1
+definition:
+  name: DateAggExp
+  operand:
+    scalar:
+      aggregatedType: Date
+      aggregationFunctions: []
+      dataConnectorAggregationFunctionMapping:
+        - dataConnectorName: oso_trino
+          dataConnectorScalarType: DATE
+          functionMapping: {}
+  count:
+    enable: true
+  countDistinct:
+    enable: true
+  graphql:
+    selectTypeName: DateAggExp
+
+---
+kind: OrderByExpression
+version: v1
+definition:
+  name: Float64OrderByExp
+  operand:
+    scalar:
+      orderedType: Float64
+      enableOrderByDirections:
+        enableAll: true
+  graphql:
+    expressionTypeName: Float64OrderByExp
+
+---
+kind: OrderByExpression
+version: v1
+definition:
+  name: String1OrderByExp
+  operand:
+    scalar:
+      orderedType: String_1
+      enableOrderByDirections:
+        enableAll: true
+  graphql:
+    expressionTypeName: String1OrderByExp
+
+---
+kind: OrderByExpression
+version: v1
+definition:
+  name: DateOrderByExp
+  operand:
+    scalar:
+      orderedType: Date
+      enableOrderByDirections:
+        enableAll: true
+  graphql:
+    expressionTypeName: DateOrderByExp
+
+---
+kind: ScalarType
+version: v1
+definition:
+  name: Timestamptz
+  graphql:
+    typeName: Timestamptz
+
+---
+kind: BooleanExpressionType
+version: v1
+definition:
+  name: TimestamptzBoolExp
+  operand:
+    scalar:
+      type: Timestamptz
+      comparisonOperators:
+        - name: _eq
+          argumentType: Timestamptz!
+        - name: _gt
+          argumentType: Timestamptz!
+        - name: _gte
+          argumentType: Timestamptz!
+        - name: _in
+          argumentType: "[Timestamptz!]!"
+        - name: _lt
+          argumentType: Timestamptz!
+        - name: _lte
+          argumentType: Timestamptz!
+      dataConnectorOperatorMapping:
+        - dataConnectorName: oso_trino
+          dataConnectorScalarType: TIMESTAMPTZ
+          operatorMapping: {}
+  logicalOperators:
+    enable: true
+  isNull:
+    enable: true
+  graphql:
+    typeName: TimestamptzBoolExp
+
+---
+kind: DataConnectorScalarRepresentation
+version: v1
+definition:
+  dataConnectorName: oso_trino
+  dataConnectorScalarType: TIMESTAMPTZ
+  representation: Timestamptz
+  graphql:
+    comparisonExpressionTypeName: TimestamptzComparisonExp
+
+---
+kind: AggregateExpression
+version: v1
+definition:
+  name: TimestamptzAggExp
+  operand:
+    scalar:
+      aggregatedType: Timestamptz
+      aggregationFunctions: []
+      dataConnectorAggregationFunctionMapping:
+        - dataConnectorName: oso_trino
+          dataConnectorScalarType: TIMESTAMPTZ
+          functionMapping: {}
+  count:
+    enable: true
+  countDistinct:
+    enable: true
+  graphql:
+    selectTypeName: TimestamptzAggExp
+
+---
+kind: OrderByExpression
+version: v1
+definition:
+  name: TimestamptzOrderByExp
+  operand:
+    scalar:
+      orderedType: Timestamptz
+      enableOrderByDirections:
+        enableAll: true
+  graphql:
+    expressionTypeName: TimestamptzOrderByExp
+
+---
+kind: AggregateExpression
+version: v1
+definition:
+  name: Int64AggExp
+  operand:
+    scalar:
+      aggregatedType: Int64
+      aggregationFunctions:
+        - name: avg
+          returnType: Float64!
+        - name: count
+          returnType: Int64!
+        - name: max
+          returnType: Int64!
+        - name: min
+          returnType: Int64!
+        - name: stddev_pop
+          returnType: Float64!
+        - name: stddev_samp
+          returnType: Float64!
+        - name: sum
+          returnType: Int64!
+        - name: var_pop
+          returnType: Float64!
+        - name: var_samp
+          returnType: Float64!
+      dataConnectorAggregationFunctionMapping:
+        - dataConnectorName: oso_trino
+          dataConnectorScalarType: INT64
+          functionMapping:
+            avg:
+              name: avg
+            count:
+              name: count
+            max:
+              name: max
+            min:
+              name: min
+            stddev_pop:
+              name: stddev_pop
+            stddev_samp:
+              name: stddev_samp
+            sum:
+              name: sum
+            var_pop:
+              name: var_pop
+            var_samp:
+              name: var_samp
+  count:
+    enable: true
+  countDistinct:
+    enable: true
+  graphql:
+    selectTypeName: Int64AggExp
+
+---
+kind: OrderByExpression
+version: v1
+definition:
+  name: Int64OrderByExp
+  operand:
+    scalar:
+      orderedType: Int64
+      enableOrderByDirections:
+        enableAll: true
+  graphql:
+    expressionTypeName: Int64OrderByExp
+
+---
+kind: ScalarType
+version: v1
+definition:
+  name: Boolean_1
+  graphql:
+    typeName: Boolean1
+
+---
+kind: BooleanExpressionType
+version: v1
+definition:
+  name: BooleanBoolExp
+  operand:
+    scalar:
+      type: Boolean_1
+      comparisonOperators:
+        - name: _eq
+          argumentType: Boolean_1!
+      dataConnectorOperatorMapping:
+        - dataConnectorName: oso_trino
+          dataConnectorScalarType: BOOLEAN
+          operatorMapping: {}
+  logicalOperators:
+    enable: true
+  isNull:
+    enable: true
+  graphql:
+    typeName: BooleanBoolExp
+
+---
+kind: DataConnectorScalarRepresentation
+version: v1
+definition:
+  dataConnectorName: oso_trino
+  dataConnectorScalarType: BOOLEAN
+  representation: Boolean_1
+  graphql:
+    comparisonExpressionTypeName: Boolean1ComparisonExp
+
+---
+kind: AggregateExpression
+version: v1
+definition:
+  name: BooleanAggExp
+  operand:
+    scalar:
+      aggregatedType: Boolean_1
+      aggregationFunctions: []
+      dataConnectorAggregationFunctionMapping:
+        - dataConnectorName: oso_trino
+          dataConnectorScalarType: BOOLEAN
+          functionMapping: {}
+  count:
+    enable: true
+  countDistinct:
+    enable: true
+  graphql:
+    selectTypeName: BooleanAggExp
+
+---
+kind: OrderByExpression
+version: v1
+definition:
+  name: Boolean1OrderByExp
+  operand:
+    scalar:
+      orderedType: Boolean_1
+      enableOrderByDirections:
+        enableAll: true
+  graphql:
+    expressionTypeName: Boolean1OrderByExp
+

@@ -1,0 +1,163 @@
+---
+kind: ObjectType
+version: v1
+definition:
+  name: TimeseriesMetricsByProjectV0
+  fields:
+    - name: amount
+      type: Float64
+    - name: metricId
+      type: String_1
+    - name: projectId
+      type: String_1
+    - name: sampleDate
+      type: Date
+    - name: unit
+      type: String_1
+  graphql:
+    typeName: TimeseriesMetricsByProjectV0
+    inputTypeName: TimeseriesMetricsByProjectV0Input
+  dataConnectorTypeMapping:
+    - dataConnectorName: oso_trino
+      dataConnectorObjectType: timeseries_metrics_by_project_v0
+      fieldMapping:
+        amount:
+          column:
+            name: amount
+        metricId:
+          column:
+            name: metric_id
+        projectId:
+          column:
+            name: project_id
+        sampleDate:
+          column:
+            name: sample_date
+        unit:
+          column:
+            name: unit
+
+---
+kind: TypePermissions
+version: v1
+definition:
+  typeName: TimeseriesMetricsByProjectV0
+  permissions:
+    - role: admin
+      output:
+        allowedFields:
+          - amount
+          - metricId
+          - projectId
+          - sampleDate
+          - unit
+
+---
+kind: BooleanExpressionType
+version: v1
+definition:
+  name: TimeseriesMetricsByProjectV0BoolExp
+  operand:
+    object:
+      type: TimeseriesMetricsByProjectV0
+      comparableFields:
+        - fieldName: amount
+          booleanExpressionType: Float64BoolExp
+        - fieldName: metricId
+          booleanExpressionType: StringBoolExp
+        - fieldName: projectId
+          booleanExpressionType: StringBoolExp
+        - fieldName: sampleDate
+          booleanExpressionType: DateBoolExp
+        - fieldName: unit
+          booleanExpressionType: StringBoolExp
+      comparableRelationships: []
+  logicalOperators:
+    enable: true
+  isNull:
+    enable: true
+  graphql:
+    typeName: TimeseriesMetricsByProjectV0BoolExp
+
+---
+kind: AggregateExpression
+version: v1
+definition:
+  name: TimeseriesMetricsByProjectV0AggExp
+  operand:
+    object:
+      aggregatedType: TimeseriesMetricsByProjectV0
+      aggregatableFields:
+        - fieldName: amount
+          aggregateExpression: Float64AggExp
+        - fieldName: metricId
+          aggregateExpression: StringAggExp
+        - fieldName: projectId
+          aggregateExpression: StringAggExp
+        - fieldName: sampleDate
+          aggregateExpression: DateAggExp
+        - fieldName: unit
+          aggregateExpression: StringAggExp
+  count:
+    enable: true
+  graphql:
+    selectTypeName: TimeseriesMetricsByProjectV0AggExp
+
+---
+kind: OrderByExpression
+version: v1
+definition:
+  name: TimeseriesMetricsByProjectV0OrderByExp
+  operand:
+    object:
+      orderedType: TimeseriesMetricsByProjectV0
+      orderableFields:
+        - fieldName: amount
+          orderByExpression: Float64OrderByExp
+        - fieldName: metricId
+          orderByExpression: String1OrderByExp
+        - fieldName: projectId
+          orderByExpression: String1OrderByExp
+        - fieldName: sampleDate
+          orderByExpression: DateOrderByExp
+        - fieldName: unit
+          orderByExpression: String1OrderByExp
+      orderableRelationships: []
+  graphql:
+    expressionTypeName: TimeseriesMetricsByProjectV0OrderByExp
+
+---
+kind: Model
+version: v2
+definition:
+  name: TimeseriesMetricsByProjectV0
+  objectType: TimeseriesMetricsByProjectV0
+  source:
+    dataConnectorName: oso_trino
+    collection: timeseries_metrics_by_project_v0
+  filterExpressionType: TimeseriesMetricsByProjectV0BoolExp
+  aggregateExpression: TimeseriesMetricsByProjectV0AggExp
+  orderByExpression: TimeseriesMetricsByProjectV0OrderByExp
+  graphql:
+    selectMany:
+      queryRootField: timeseriesMetricsByProjectV0
+      subscription:
+        rootField: timeseriesMetricsByProjectV0
+    selectUniques: []
+    filterInputTypeName: TimeseriesMetricsByProjectV0FilterInput
+    aggregate:
+      queryRootField: timeseriesMetricsByProjectV0Aggregate
+      subscription:
+        rootField: timeseriesMetricsByProjectV0Aggregate
+
+---
+kind: ModelPermissions
+version: v1
+definition:
+  modelName: TimeseriesMetricsByProjectV0
+  permissions:
+    - role: admin
+      select:
+        filter: null
+        allowSubscriptions: true
+

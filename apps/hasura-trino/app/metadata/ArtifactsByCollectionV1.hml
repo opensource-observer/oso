@@ -1,0 +1,211 @@
+---
+kind: ObjectType
+version: v1
+definition:
+  name: ArtifactsByCollectionV1
+  fields:
+    - name: artifactId
+      type: String_1
+    - name: artifactName
+      type: String_1
+    - name: artifactNamespace
+      type: String_1
+    - name: artifactSource
+      type: String_1
+    - name: artifactSourceId
+      type: String_1
+    - name: collectionId
+      type: String_1
+    - name: collectionName
+      type: String_1
+    - name: collectionNamespace
+      type: String_1
+    - name: collectionSource
+      type: String_1
+  graphql:
+    typeName: ArtifactsByCollectionV1
+    inputTypeName: ArtifactsByCollectionV1Input
+  dataConnectorTypeMapping:
+    - dataConnectorName: oso_trino
+      dataConnectorObjectType: artifacts_by_collection_v1
+      fieldMapping:
+        artifactId:
+          column:
+            name: artifact_id
+        artifactName:
+          column:
+            name: artifact_name
+        artifactNamespace:
+          column:
+            name: artifact_namespace
+        artifactSource:
+          column:
+            name: artifact_source
+        artifactSourceId:
+          column:
+            name: artifact_source_id
+        collectionId:
+          column:
+            name: collection_id
+        collectionName:
+          column:
+            name: collection_name
+        collectionNamespace:
+          column:
+            name: collection_namespace
+        collectionSource:
+          column:
+            name: collection_source
+
+---
+kind: TypePermissions
+version: v1
+definition:
+  typeName: ArtifactsByCollectionV1
+  permissions:
+    - role: admin
+      output:
+        allowedFields:
+          - artifactId
+          - artifactName
+          - artifactNamespace
+          - artifactSource
+          - artifactSourceId
+          - collectionId
+          - collectionName
+          - collectionNamespace
+          - collectionSource
+
+---
+kind: BooleanExpressionType
+version: v1
+definition:
+  name: ArtifactsByCollectionV1BoolExp
+  operand:
+    object:
+      type: ArtifactsByCollectionV1
+      comparableFields:
+        - fieldName: artifactId
+          booleanExpressionType: StringBoolExp
+        - fieldName: artifactName
+          booleanExpressionType: StringBoolExp
+        - fieldName: artifactNamespace
+          booleanExpressionType: StringBoolExp
+        - fieldName: artifactSource
+          booleanExpressionType: StringBoolExp
+        - fieldName: artifactSourceId
+          booleanExpressionType: StringBoolExp
+        - fieldName: collectionId
+          booleanExpressionType: StringBoolExp
+        - fieldName: collectionName
+          booleanExpressionType: StringBoolExp
+        - fieldName: collectionNamespace
+          booleanExpressionType: StringBoolExp
+        - fieldName: collectionSource
+          booleanExpressionType: StringBoolExp
+      comparableRelationships: []
+  logicalOperators:
+    enable: true
+  isNull:
+    enable: true
+  graphql:
+    typeName: ArtifactsByCollectionV1BoolExp
+
+---
+kind: AggregateExpression
+version: v1
+definition:
+  name: ArtifactsByCollectionV1AggExp
+  operand:
+    object:
+      aggregatedType: ArtifactsByCollectionV1
+      aggregatableFields:
+        - fieldName: artifactId
+          aggregateExpression: StringAggExp
+        - fieldName: artifactName
+          aggregateExpression: StringAggExp
+        - fieldName: artifactNamespace
+          aggregateExpression: StringAggExp
+        - fieldName: artifactSource
+          aggregateExpression: StringAggExp
+        - fieldName: artifactSourceId
+          aggregateExpression: StringAggExp
+        - fieldName: collectionId
+          aggregateExpression: StringAggExp
+        - fieldName: collectionName
+          aggregateExpression: StringAggExp
+        - fieldName: collectionNamespace
+          aggregateExpression: StringAggExp
+        - fieldName: collectionSource
+          aggregateExpression: StringAggExp
+  count:
+    enable: true
+  graphql:
+    selectTypeName: ArtifactsByCollectionV1AggExp
+
+---
+kind: OrderByExpression
+version: v1
+definition:
+  name: ArtifactsByCollectionV1OrderByExp
+  operand:
+    object:
+      orderedType: ArtifactsByCollectionV1
+      orderableFields:
+        - fieldName: artifactId
+          orderByExpression: String1OrderByExp
+        - fieldName: artifactName
+          orderByExpression: String1OrderByExp
+        - fieldName: artifactNamespace
+          orderByExpression: String1OrderByExp
+        - fieldName: artifactSource
+          orderByExpression: String1OrderByExp
+        - fieldName: artifactSourceId
+          orderByExpression: String1OrderByExp
+        - fieldName: collectionId
+          orderByExpression: String1OrderByExp
+        - fieldName: collectionName
+          orderByExpression: String1OrderByExp
+        - fieldName: collectionNamespace
+          orderByExpression: String1OrderByExp
+        - fieldName: collectionSource
+          orderByExpression: String1OrderByExp
+      orderableRelationships: []
+  graphql:
+    expressionTypeName: ArtifactsByCollectionV1OrderByExp
+
+---
+kind: Model
+version: v2
+definition:
+  name: ArtifactsByCollectionV1
+  objectType: ArtifactsByCollectionV1
+  source:
+    dataConnectorName: oso_trino
+    collection: artifacts_by_collection_v1
+  filterExpressionType: ArtifactsByCollectionV1BoolExp
+  aggregateExpression: ArtifactsByCollectionV1AggExp
+  orderByExpression: ArtifactsByCollectionV1OrderByExp
+  graphql:
+    selectMany:
+      queryRootField: artifactsByCollectionV1
+      subscription:
+        rootField: artifactsByCollectionV1
+    selectUniques: []
+    filterInputTypeName: ArtifactsByCollectionV1FilterInput
+    aggregate:
+      queryRootField: artifactsByCollectionV1Aggregate
+      subscription:
+        rootField: artifactsByCollectionV1Aggregate
+
+---
+kind: ModelPermissions
+version: v1
+definition:
+  modelName: ArtifactsByCollectionV1
+  permissions:
+    - role: admin
+      select:
+        filter: null
+        allowSubscriptions: true
+

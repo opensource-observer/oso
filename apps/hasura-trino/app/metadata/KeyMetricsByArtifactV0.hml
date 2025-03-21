@@ -1,0 +1,163 @@
+---
+kind: ObjectType
+version: v1
+definition:
+  name: KeyMetricsByArtifactV0
+  fields:
+    - name: amount
+      type: Float64
+    - name: artifactId
+      type: String_1
+    - name: metricId
+      type: String_1
+    - name: sampleDate
+      type: Date
+    - name: unit
+      type: String_1
+  graphql:
+    typeName: KeyMetricsByArtifactV0
+    inputTypeName: KeyMetricsByArtifactV0Input
+  dataConnectorTypeMapping:
+    - dataConnectorName: oso_trino
+      dataConnectorObjectType: key_metrics_by_artifact_v0
+      fieldMapping:
+        amount:
+          column:
+            name: amount
+        artifactId:
+          column:
+            name: artifact_id
+        metricId:
+          column:
+            name: metric_id
+        sampleDate:
+          column:
+            name: sample_date
+        unit:
+          column:
+            name: unit
+
+---
+kind: TypePermissions
+version: v1
+definition:
+  typeName: KeyMetricsByArtifactV0
+  permissions:
+    - role: admin
+      output:
+        allowedFields:
+          - amount
+          - artifactId
+          - metricId
+          - sampleDate
+          - unit
+
+---
+kind: BooleanExpressionType
+version: v1
+definition:
+  name: KeyMetricsByArtifactV0BoolExp
+  operand:
+    object:
+      type: KeyMetricsByArtifactV0
+      comparableFields:
+        - fieldName: amount
+          booleanExpressionType: Float64BoolExp
+        - fieldName: artifactId
+          booleanExpressionType: StringBoolExp
+        - fieldName: metricId
+          booleanExpressionType: StringBoolExp
+        - fieldName: sampleDate
+          booleanExpressionType: DateBoolExp
+        - fieldName: unit
+          booleanExpressionType: StringBoolExp
+      comparableRelationships: []
+  logicalOperators:
+    enable: true
+  isNull:
+    enable: true
+  graphql:
+    typeName: KeyMetricsByArtifactV0BoolExp
+
+---
+kind: AggregateExpression
+version: v1
+definition:
+  name: KeyMetricsByArtifactV0AggExp
+  operand:
+    object:
+      aggregatedType: KeyMetricsByArtifactV0
+      aggregatableFields:
+        - fieldName: amount
+          aggregateExpression: Float64AggExp
+        - fieldName: artifactId
+          aggregateExpression: StringAggExp
+        - fieldName: metricId
+          aggregateExpression: StringAggExp
+        - fieldName: sampleDate
+          aggregateExpression: DateAggExp
+        - fieldName: unit
+          aggregateExpression: StringAggExp
+  count:
+    enable: true
+  graphql:
+    selectTypeName: KeyMetricsByArtifactV0AggExp
+
+---
+kind: OrderByExpression
+version: v1
+definition:
+  name: KeyMetricsByArtifactV0OrderByExp
+  operand:
+    object:
+      orderedType: KeyMetricsByArtifactV0
+      orderableFields:
+        - fieldName: amount
+          orderByExpression: Float64OrderByExp
+        - fieldName: artifactId
+          orderByExpression: String1OrderByExp
+        - fieldName: metricId
+          orderByExpression: String1OrderByExp
+        - fieldName: sampleDate
+          orderByExpression: DateOrderByExp
+        - fieldName: unit
+          orderByExpression: String1OrderByExp
+      orderableRelationships: []
+  graphql:
+    expressionTypeName: KeyMetricsByArtifactV0OrderByExp
+
+---
+kind: Model
+version: v2
+definition:
+  name: KeyMetricsByArtifactV0
+  objectType: KeyMetricsByArtifactV0
+  source:
+    dataConnectorName: oso_trino
+    collection: key_metrics_by_artifact_v0
+  filterExpressionType: KeyMetricsByArtifactV0BoolExp
+  aggregateExpression: KeyMetricsByArtifactV0AggExp
+  orderByExpression: KeyMetricsByArtifactV0OrderByExp
+  graphql:
+    selectMany:
+      queryRootField: keyMetricsByArtifactV0
+      subscription:
+        rootField: keyMetricsByArtifactV0
+    selectUniques: []
+    filterInputTypeName: KeyMetricsByArtifactV0FilterInput
+    aggregate:
+      queryRootField: keyMetricsByArtifactV0Aggregate
+      subscription:
+        rootField: keyMetricsByArtifactV0Aggregate
+
+---
+kind: ModelPermissions
+version: v1
+definition:
+  modelName: KeyMetricsByArtifactV0
+  permissions:
+    - role: admin
+      select:
+        filter: null
+        allowSubscriptions: true
+

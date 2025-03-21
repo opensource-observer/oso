@@ -1,0 +1,115 @@
+---
+kind: ObjectType
+version: v1
+definition:
+  name: EventTypesV1
+  fields:
+    - name: eventType
+      type: String_1
+  graphql:
+    typeName: EventTypesV1
+    inputTypeName: EventTypesV1Input
+  dataConnectorTypeMapping:
+    - dataConnectorName: oso_trino
+      dataConnectorObjectType: event_types_v1
+      fieldMapping:
+        eventType:
+          column:
+            name: event_type
+
+---
+kind: TypePermissions
+version: v1
+definition:
+  typeName: EventTypesV1
+  permissions:
+    - role: admin
+      output:
+        allowedFields:
+          - eventType
+
+---
+kind: BooleanExpressionType
+version: v1
+definition:
+  name: EventTypesV1BoolExp
+  operand:
+    object:
+      type: EventTypesV1
+      comparableFields:
+        - fieldName: eventType
+          booleanExpressionType: StringBoolExp
+      comparableRelationships: []
+  logicalOperators:
+    enable: true
+  isNull:
+    enable: true
+  graphql:
+    typeName: EventTypesV1BoolExp
+
+---
+kind: AggregateExpression
+version: v1
+definition:
+  name: EventTypesV1AggExp
+  operand:
+    object:
+      aggregatedType: EventTypesV1
+      aggregatableFields:
+        - fieldName: eventType
+          aggregateExpression: StringAggExp
+  count:
+    enable: true
+  graphql:
+    selectTypeName: EventTypesV1AggExp
+
+---
+kind: OrderByExpression
+version: v1
+definition:
+  name: EventTypesV1OrderByExp
+  operand:
+    object:
+      orderedType: EventTypesV1
+      orderableFields:
+        - fieldName: eventType
+          orderByExpression: String1OrderByExp
+      orderableRelationships: []
+  graphql:
+    expressionTypeName: EventTypesV1OrderByExp
+
+---
+kind: Model
+version: v2
+definition:
+  name: EventTypesV1
+  objectType: EventTypesV1
+  source:
+    dataConnectorName: oso_trino
+    collection: event_types_v1
+  filterExpressionType: EventTypesV1BoolExp
+  aggregateExpression: EventTypesV1AggExp
+  orderByExpression: EventTypesV1OrderByExp
+  graphql:
+    selectMany:
+      queryRootField: eventTypesV1
+      subscription:
+        rootField: eventTypesV1
+    selectUniques: []
+    filterInputTypeName: EventTypesV1FilterInput
+    aggregate:
+      queryRootField: eventTypesV1Aggregate
+      subscription:
+        rootField: eventTypesV1Aggregate
+
+---
+kind: ModelPermissions
+version: v1
+definition:
+  modelName: EventTypesV1
+  permissions:
+    - role: admin
+      select:
+        filter: null
+        allowSubscriptions: true
+
