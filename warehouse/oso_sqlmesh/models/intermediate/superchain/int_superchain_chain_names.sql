@@ -20,7 +20,6 @@ MODEL(
   'polynomial',
   'race',
   'redstone',
-  'scroll',
   'shape',
   'soneium',
   'swan',
