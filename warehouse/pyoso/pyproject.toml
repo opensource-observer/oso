@@ -7,8 +7,15 @@ requires-python = ">=3.8"
 authors = [
     { name = "Icaro Guerra", email = "icaro@karibalabs.co" }
 ]
-dependencies = []
+dependencies = [
+    "pandas>=2.2.3",
+]
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "pandas-stubs>=2.2.3.250308",
+]
