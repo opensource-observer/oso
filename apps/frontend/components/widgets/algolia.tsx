@@ -54,8 +54,8 @@ function HitsContainer(props: AlgoliaSearchListProps) {
   return (
     <div>
       {isResultsReady &&
-        displayItems.map((hit: any) => (
-          <div key={hit.objectID}>
+        displayItems.map((hit: any, i: number) => (
+          <div key={hit.objectID ?? i}>
             <DataProvider name={PLASMIC_KEY} data={hit}>
               {children}
             </DataProvider>
