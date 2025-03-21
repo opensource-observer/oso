@@ -1,4 +1,5 @@
 import typing as t
+from operator import methodcaller
 
 import arrow
 import pandas as pd
@@ -14,6 +15,7 @@ from dagster import (
     JsonMetadataValue,
     Output,
     ResourceParam,
+    RetryPolicy,
     define_asset_job,
     multi_asset,
 )
@@ -22,9 +24,7 @@ from oso_dagster.config import DagsterConfig
 from oso_dagster.dlt_sources.github_repos import (
     GithubClientConfig,
     GithubRepositoryResolver,
-    GithubRepositorySBOMItem,
     GithubURLType,
-    Repository,
     oss_directory_github_repositories_resource,
     oss_directory_github_sbom_resource,
 )
@@ -39,6 +39,10 @@ from oso_dagster.utils import (
 from oso_dagster.utils.tags import add_tags
 from ossdirectory import fetch_data
 from ossdirectory.fetch import OSSDirectory
+
+# NOTE: Since we are running on spot instances, we need to set a higher retry
+# count to account for the fact that spot instances can be terminated at any time.
+MAX_RETRY_COUNT = 25
 
 K8S_CONFIG = {
     "merge_behavior": "SHALLOW",
@@ -185,6 +189,7 @@ project_key = projects_and_collections.keys_by_output_name["projects"]
     ins={"projects_df": AssetIn(project_key)},
     tags=dict(stable_tag.items()),
     op_tags={"dagster-k8s/config": K8S_CONFIG},
+    retry_policy=RetryPolicy(max_retries=MAX_RETRY_COUNT),
 )
 def repositories(
     global_config: ResourceParam[DagsterConfig],
@@ -210,16 +215,13 @@ def repositories(
             f"Fetching repositories for {len(valid_urls)} unique GitHub URLs"
         )
 
-        return valid_urls
-
-    def repository_to_string(repository: Repository) -> str:
-        return repository.model_dump_json()
+        return valid_urls[:320]
 
     return process_chunked_resource(
         ChunkedResourceConfig(
             fetch_data_fn=fetch_fn,
             resource=oss_directory_github_repositories_resource,
-            to_string_fn=repository_to_string,
+            to_serializable_fn=methodcaller("model_dump"),
             gcs_bucket_name=global_config.gcs_bucket,
             context=context,
         ),
@@ -232,6 +234,7 @@ def repositories(
     deps=[AssetKey(["ossd", "repositories"])],
     tags=dict(add_tags(common_tags, {"opensource.observer/source": "sbom"}).items()),
     op_tags={"dagster-k8s/config": K8S_CONFIG},
+    retry_policy=RetryPolicy(max_retries=MAX_RETRY_COUNT),
 )
 def sbom(
     global_config: ResourceParam[DagsterConfig],
@@ -308,14 +311,11 @@ def sbom(
 
         return clean_repos
 
-    def sbom_to_string(element: GithubRepositorySBOMItem) -> str:
-        return element.model_dump_json()
-
     return process_chunked_resource(
         ChunkedResourceConfig(
             fetch_data_fn=fetch_fn,
             resource=oss_directory_github_sbom_resource,
-            to_string_fn=sbom_to_string,
+            to_serializable_fn=methodcaller("model_dump"),
             gcs_bucket_name=global_config.gcs_bucket,
             context=context,
         ),
