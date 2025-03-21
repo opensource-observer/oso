@@ -2,6 +2,7 @@ import os
 from dataclasses import dataclass
 from typing import Optional
 
+import pandas as pd
 import requests
 from pyoso.exceptions import OsoError, OsoHTTPError
 from pyoso.utils import parse_bytes_string
@@ -30,7 +31,7 @@ class Client:
             if not self.__base_url.endswith("/"):
                 self.__base_url += "/"
 
-    def query(self, query: str):
+    def __query(self, query: str):
         headers = {}
         if self.__api_key:
             headers["Authorization"] = f"Bearer {self.__api_key}"
@@ -49,3 +50,9 @@ class Client:
             return parse_bytes_string(chunks)
         except requests.HTTPError as e:
             raise OsoHTTPError(e, response=e.response) from None
+
+    def to_pandas(self, query: str):
+        query_data = self.__query(query)
+        return pd.DataFrame(query_data.data, columns=query_data.columns).convert_dtypes(
+            dtype_backend="pyarrow"
+        )

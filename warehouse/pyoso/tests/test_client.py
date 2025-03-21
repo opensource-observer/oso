@@ -17,9 +17,11 @@ class TestClient(TestCase):
             Client(api_key=None)
 
     @mock.patch("requests.post")
-    def test_query(self, mock_post):
+    def test_to_pandas(self, mock_post: mock.Mock):
         mock_response = mock.Mock()
-        expected_json = [{"data": "test"}]
+        columns = ["column"]
+        data = [["test"]]
+        expected_json = {"columns": columns, "data": data}
         mock_response.iter_content = mock.Mock(
             return_value=[json.dumps(expected_json).encode()]
         )
@@ -30,7 +32,7 @@ class TestClient(TestCase):
             client_opts=ClientConfig(base_url="http://localhost:8000/api/v1"),
         )
         query = "SELECT * FROM test_table"
-        response = client.query(query)
+        df = client.to_pandas(query)
 
         mock_post.assert_called_once_with(
             "http://localhost:8000/api/v1/sql",
@@ -38,13 +40,16 @@ class TestClient(TestCase):
             json={"query": query},
             stream=True,
         )
-        self.assertEqual(response, expected_json)
+        self.assertEqual(df.columns.tolist(), columns)
+        self.assertEqual(df.values.tolist(), data)
 
     @mock.patch.dict(os.environ, {"OSO_API_KEY": DEFAULT_API_KEY})
     @mock.patch("requests.post")
-    def test_query_with_default_api_key(self, mock_post):
+    def test_to_pandas_with_default_api_key(self, mock_post: mock.Mock):
         mock_response = mock.Mock()
-        expected_json = [{"data": "test"}]
+        columns = ["column"]
+        data = [["test"]]
+        expected_json = {"columns": columns, "data": data}
         mock_response.iter_content = mock.Mock(
             return_value=[json.dumps(expected_json).encode()]
         )
@@ -52,7 +57,7 @@ class TestClient(TestCase):
 
         client = Client()
         query = "SELECT * FROM test_table"
-        response = client.query(query)
+        df = client.to_pandas(query)
 
         mock_post.assert_called_once_with(
             "https://www.opensource.observer/api/v1/sql",
@@ -60,10 +65,11 @@ class TestClient(TestCase):
             json={"query": query},
             stream=True,
         )
-        self.assertEqual(response, expected_json)
+        self.assertEqual(df.columns.tolist(), columns)
+        self.assertEqual(df.values.tolist(), data)
 
     @mock.patch("requests.post")
-    def test_query_http_error(self, mock_post):
+    def test_to_pandas_http_error(self, mock_post: mock.Mock):
         mock_response = mock.Mock()
         mock_response.raise_for_status.side_effect = requests.HTTPError("HTTP Error")
         mock_post.return_value = mock_response
@@ -72,7 +78,7 @@ class TestClient(TestCase):
         query = "SELECT * FROM test_table"
 
         with self.assertRaises(OsoHTTPError):
-            client.query(query)
+            client.to_pandas(query)
 
         mock_post.assert_called_once_with(
             "https://www.opensource.observer/api/v1/sql",
