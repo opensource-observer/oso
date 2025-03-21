@@ -125,7 +125,7 @@ parsed_events AS (
     'GITHUB' AS event_source,
     LOWER(SPLIT(REPLACE(repository_name, '@', ''), '/')[@array_index(1)])
       AS to_artifact_name,
-    LOWER(STR_SPLIT(REPLACE(repository_name, '@', ''), '/')[@array_index(0)])
+    LOWER(SPLIT(REPLACE(repository_name, '@', ''), '/')[@array_index(0)])
       AS to_artifact_namespace,
     'REPOSITORY' AS to_artifact_type,
     repository_id::TEXT AS to_artifact_source_id,
