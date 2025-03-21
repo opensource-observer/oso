@@ -120,7 +120,7 @@ parsed_events AS (
     UPPER(event_type) AS event_type,
     event_source_id::TEXT AS event_source_id,
     'GITHUB' AS event_source,
-    LOWER(STR_SPLIT(REPLACE(repository_name, '@', ''), '/')[@array_index(1)])
+    LOWER(SPLIT(REPLACE(repository_name, '@', ''), '/')[@array_index(1)])
       AS to_artifact_name,
     LOWER(STR_SPLIT(REPLACE(repository_name, '@', ''), '/')[@array_index(0)])
       AS to_artifact_namespace,
