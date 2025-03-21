@@ -1,0 +1,163 @@
+---
+kind: ObjectType
+version: v1
+definition:
+  name: KeyMetricsByProjectV0
+  fields:
+    - name: amount
+      type: Float64
+    - name: metricId
+      type: String_1
+    - name: projectId
+      type: String_1
+    - name: sampleDate
+      type: Date
+    - name: unit
+      type: String_1
+  graphql:
+    typeName: KeyMetricsByProjectV0
+    inputTypeName: KeyMetricsByProjectV0Input
+  dataConnectorTypeMapping:
+    - dataConnectorName: oso_trino
+      dataConnectorObjectType: key_metrics_by_project_v0
+      fieldMapping:
+        amount:
+          column:
+            name: amount
+        metricId:
+          column:
+            name: metric_id
+        projectId:
+          column:
+            name: project_id
+        sampleDate:
+          column:
+            name: sample_date
+        unit:
+          column:
+            name: unit
+
+---
+kind: TypePermissions
+version: v1
+definition:
+  typeName: KeyMetricsByProjectV0
+  permissions:
+    - role: admin
+      output:
+        allowedFields:
+          - amount
+          - metricId
+          - projectId
+          - sampleDate
+          - unit
+
+---
+kind: BooleanExpressionType
+version: v1
+definition:
+  name: KeyMetricsByProjectV0BoolExp
+  operand:
+    object:
+      type: KeyMetricsByProjectV0
+      comparableFields:
+        - fieldName: amount
+          booleanExpressionType: Float64BoolExp
+        - fieldName: metricId
+          booleanExpressionType: StringBoolExp
+        - fieldName: projectId
+          booleanExpressionType: StringBoolExp
+        - fieldName: sampleDate
+          booleanExpressionType: DateBoolExp
+        - fieldName: unit
+          booleanExpressionType: StringBoolExp
+      comparableRelationships: []
+  logicalOperators:
+    enable: true
+  isNull:
+    enable: true
+  graphql:
+    typeName: KeyMetricsByProjectV0BoolExp
+
+---
+kind: AggregateExpression
+version: v1
+definition:
+  name: KeyMetricsByProjectV0AggExp
+  operand:
+    object:
+      aggregatedType: KeyMetricsByProjectV0
+      aggregatableFields:
+        - fieldName: amount
+          aggregateExpression: Float64AggExp
+        - fieldName: metricId
+          aggregateExpression: StringAggExp
+        - fieldName: projectId
+          aggregateExpression: StringAggExp
+        - fieldName: sampleDate
+          aggregateExpression: DateAggExp
+        - fieldName: unit
+          aggregateExpression: StringAggExp
+  count:
+    enable: true
+  graphql:
+    selectTypeName: KeyMetricsByProjectV0AggExp
+
+---
+kind: OrderByExpression
+version: v1
+definition:
+  name: KeyMetricsByProjectV0OrderByExp
+  operand:
+    object:
+      orderedType: KeyMetricsByProjectV0
+      orderableFields:
+        - fieldName: amount
+          orderByExpression: Float64OrderByExp
+        - fieldName: metricId
+          orderByExpression: String1OrderByExp
+        - fieldName: projectId
+          orderByExpression: String1OrderByExp
+        - fieldName: sampleDate
+          orderByExpression: DateOrderByExp
+        - fieldName: unit
+          orderByExpression: String1OrderByExp
+      orderableRelationships: []
+  graphql:
+    expressionTypeName: KeyMetricsByProjectV0OrderByExp
+
+---
+kind: Model
+version: v2
+definition:
+  name: KeyMetricsByProjectV0
+  objectType: KeyMetricsByProjectV0
+  source:
+    dataConnectorName: oso_trino
+    collection: key_metrics_by_project_v0
+  filterExpressionType: KeyMetricsByProjectV0BoolExp
+  aggregateExpression: KeyMetricsByProjectV0AggExp
+  orderByExpression: KeyMetricsByProjectV0OrderByExp
+  graphql:
+    selectMany:
+      queryRootField: keyMetricsByProjectV0
+      subscription:
+        rootField: keyMetricsByProjectV0
+    selectUniques: []
+    filterInputTypeName: KeyMetricsByProjectV0FilterInput
+    aggregate:
+      queryRootField: keyMetricsByProjectV0Aggregate
+      subscription:
+        rootField: keyMetricsByProjectV0Aggregate
+
+---
+kind: ModelPermissions
+version: v1
+definition:
+  modelName: KeyMetricsByProjectV0
+  permissions:
+    - role: admin
+      select:
+        filter: null
+        allowSubscriptions: true
+

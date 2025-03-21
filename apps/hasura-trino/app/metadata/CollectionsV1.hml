@@ -1,0 +1,175 @@
+---
+kind: ObjectType
+version: v1
+definition:
+  name: CollectionsV1
+  fields:
+    - name: collectionId
+      type: String_1
+    - name: collectionName
+      type: String_1
+    - name: collectionNamespace
+      type: String_1
+    - name: collectionSource
+      type: String_1
+    - name: description
+      type: String_1
+    - name: displayName
+      type: String_1
+  graphql:
+    typeName: CollectionsV1
+    inputTypeName: CollectionsV1Input
+  dataConnectorTypeMapping:
+    - dataConnectorName: oso_trino
+      dataConnectorObjectType: collections_v1
+      fieldMapping:
+        collectionId:
+          column:
+            name: collection_id
+        collectionName:
+          column:
+            name: collection_name
+        collectionNamespace:
+          column:
+            name: collection_namespace
+        collectionSource:
+          column:
+            name: collection_source
+        description:
+          column:
+            name: description
+        displayName:
+          column:
+            name: display_name
+
+---
+kind: TypePermissions
+version: v1
+definition:
+  typeName: CollectionsV1
+  permissions:
+    - role: admin
+      output:
+        allowedFields:
+          - collectionId
+          - collectionName
+          - collectionNamespace
+          - collectionSource
+          - description
+          - displayName
+
+---
+kind: BooleanExpressionType
+version: v1
+definition:
+  name: CollectionsV1BoolExp
+  operand:
+    object:
+      type: CollectionsV1
+      comparableFields:
+        - fieldName: collectionId
+          booleanExpressionType: StringBoolExp
+        - fieldName: collectionName
+          booleanExpressionType: StringBoolExp
+        - fieldName: collectionNamespace
+          booleanExpressionType: StringBoolExp
+        - fieldName: collectionSource
+          booleanExpressionType: StringBoolExp
+        - fieldName: description
+          booleanExpressionType: StringBoolExp
+        - fieldName: displayName
+          booleanExpressionType: StringBoolExp
+      comparableRelationships: []
+  logicalOperators:
+    enable: true
+  isNull:
+    enable: true
+  graphql:
+    typeName: CollectionsV1BoolExp
+
+---
+kind: AggregateExpression
+version: v1
+definition:
+  name: CollectionsV1AggExp
+  operand:
+    object:
+      aggregatedType: CollectionsV1
+      aggregatableFields:
+        - fieldName: collectionId
+          aggregateExpression: StringAggExp
+        - fieldName: collectionName
+          aggregateExpression: StringAggExp
+        - fieldName: collectionNamespace
+          aggregateExpression: StringAggExp
+        - fieldName: collectionSource
+          aggregateExpression: StringAggExp
+        - fieldName: description
+          aggregateExpression: StringAggExp
+        - fieldName: displayName
+          aggregateExpression: StringAggExp
+  count:
+    enable: true
+  graphql:
+    selectTypeName: CollectionsV1AggExp
+
+---
+kind: OrderByExpression
+version: v1
+definition:
+  name: CollectionsV1OrderByExp
+  operand:
+    object:
+      orderedType: CollectionsV1
+      orderableFields:
+        - fieldName: collectionId
+          orderByExpression: String1OrderByExp
+        - fieldName: collectionName
+          orderByExpression: String1OrderByExp
+        - fieldName: collectionNamespace
+          orderByExpression: String1OrderByExp
+        - fieldName: collectionSource
+          orderByExpression: String1OrderByExp
+        - fieldName: description
+          orderByExpression: String1OrderByExp
+        - fieldName: displayName
+          orderByExpression: String1OrderByExp
+      orderableRelationships: []
+  graphql:
+    expressionTypeName: CollectionsV1OrderByExp
+
+---
+kind: Model
+version: v2
+definition:
+  name: CollectionsV1
+  objectType: CollectionsV1
+  source:
+    dataConnectorName: oso_trino
+    collection: collections_v1
+  filterExpressionType: CollectionsV1BoolExp
+  aggregateExpression: CollectionsV1AggExp
+  orderByExpression: CollectionsV1OrderByExp
+  graphql:
+    selectMany:
+      queryRootField: collectionsV1
+      subscription:
+        rootField: collectionsV1
+    selectUniques: []
+    filterInputTypeName: CollectionsV1FilterInput
+    aggregate:
+      queryRootField: collectionsV1Aggregate
+      subscription:
+        rootField: collectionsV1Aggregate
+
+---
+kind: ModelPermissions
+version: v1
+definition:
+  modelName: CollectionsV1
+  permissions:
+    - role: admin
+      select:
+        filter: null
+        allowSubscriptions: true
+

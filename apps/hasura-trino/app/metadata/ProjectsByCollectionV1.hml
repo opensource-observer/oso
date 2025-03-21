@@ -1,0 +1,199 @@
+---
+kind: ObjectType
+version: v1
+definition:
+  name: ProjectsByCollectionV1
+  fields:
+    - name: collectionId
+      type: String_1
+    - name: collectionName
+      type: String_1
+    - name: collectionNamespace
+      type: String_1
+    - name: collectionSource
+      type: String_1
+    - name: projectId
+      type: String_1
+    - name: projectName
+      type: String_1
+    - name: projectNamespace
+      type: String_1
+    - name: projectSource
+      type: String_1
+  graphql:
+    typeName: ProjectsByCollectionV1
+    inputTypeName: ProjectsByCollectionV1Input
+  dataConnectorTypeMapping:
+    - dataConnectorName: oso_trino
+      dataConnectorObjectType: projects_by_collection_v1
+      fieldMapping:
+        collectionId:
+          column:
+            name: collection_id
+        collectionName:
+          column:
+            name: collection_name
+        collectionNamespace:
+          column:
+            name: collection_namespace
+        collectionSource:
+          column:
+            name: collection_source
+        projectId:
+          column:
+            name: project_id
+        projectName:
+          column:
+            name: project_name
+        projectNamespace:
+          column:
+            name: project_namespace
+        projectSource:
+          column:
+            name: project_source
+
+---
+kind: TypePermissions
+version: v1
+definition:
+  typeName: ProjectsByCollectionV1
+  permissions:
+    - role: admin
+      output:
+        allowedFields:
+          - collectionId
+          - collectionName
+          - collectionNamespace
+          - collectionSource
+          - projectId
+          - projectName
+          - projectNamespace
+          - projectSource
+
+---
+kind: BooleanExpressionType
+version: v1
+definition:
+  name: ProjectsByCollectionV1BoolExp
+  operand:
+    object:
+      type: ProjectsByCollectionV1
+      comparableFields:
+        - fieldName: collectionId
+          booleanExpressionType: StringBoolExp
+        - fieldName: collectionName
+          booleanExpressionType: StringBoolExp
+        - fieldName: collectionNamespace
+          booleanExpressionType: StringBoolExp
+        - fieldName: collectionSource
+          booleanExpressionType: StringBoolExp
+        - fieldName: projectId
+          booleanExpressionType: StringBoolExp
+        - fieldName: projectName
+          booleanExpressionType: StringBoolExp
+        - fieldName: projectNamespace
+          booleanExpressionType: StringBoolExp
+        - fieldName: projectSource
+          booleanExpressionType: StringBoolExp
+      comparableRelationships: []
+  logicalOperators:
+    enable: true
+  isNull:
+    enable: true
+  graphql:
+    typeName: ProjectsByCollectionV1BoolExp
+
+---
+kind: AggregateExpression
+version: v1
+definition:
+  name: ProjectsByCollectionV1AggExp
+  operand:
+    object:
+      aggregatedType: ProjectsByCollectionV1
+      aggregatableFields:
+        - fieldName: collectionId
+          aggregateExpression: StringAggExp
+        - fieldName: collectionName
+          aggregateExpression: StringAggExp
+        - fieldName: collectionNamespace
+          aggregateExpression: StringAggExp
+        - fieldName: collectionSource
+          aggregateExpression: StringAggExp
+        - fieldName: projectId
+          aggregateExpression: StringAggExp
+        - fieldName: projectName
+          aggregateExpression: StringAggExp
+        - fieldName: projectNamespace
+          aggregateExpression: StringAggExp
+        - fieldName: projectSource
+          aggregateExpression: StringAggExp
+  count:
+    enable: true
+  graphql:
+    selectTypeName: ProjectsByCollectionV1AggExp
+
+---
+kind: OrderByExpression
+version: v1
+definition:
+  name: ProjectsByCollectionV1OrderByExp
+  operand:
+    object:
+      orderedType: ProjectsByCollectionV1
+      orderableFields:
+        - fieldName: collectionId
+          orderByExpression: String1OrderByExp
+        - fieldName: collectionName
+          orderByExpression: String1OrderByExp
+        - fieldName: collectionNamespace
+          orderByExpression: String1OrderByExp
+        - fieldName: collectionSource
+          orderByExpression: String1OrderByExp
+        - fieldName: projectId
+          orderByExpression: String1OrderByExp
+        - fieldName: projectName
+          orderByExpression: String1OrderByExp
+        - fieldName: projectNamespace
+          orderByExpression: String1OrderByExp
+        - fieldName: projectSource
+          orderByExpression: String1OrderByExp
+      orderableRelationships: []
+  graphql:
+    expressionTypeName: ProjectsByCollectionV1OrderByExp
+
+---
+kind: Model
+version: v2
+definition:
+  name: ProjectsByCollectionV1
+  objectType: ProjectsByCollectionV1
+  source:
+    dataConnectorName: oso_trino
+    collection: projects_by_collection_v1
+  filterExpressionType: ProjectsByCollectionV1BoolExp
+  aggregateExpression: ProjectsByCollectionV1AggExp
+  orderByExpression: ProjectsByCollectionV1OrderByExp
+  graphql:
+    selectMany:
+      queryRootField: projectsByCollectionV1
+      subscription:
+        rootField: projectsByCollectionV1
+    selectUniques: []
+    filterInputTypeName: ProjectsByCollectionV1FilterInput
+    aggregate:
+      queryRootField: projectsByCollectionV1Aggregate
+      subscription:
+        rootField: projectsByCollectionV1Aggregate
+
+---
+kind: ModelPermissions
+version: v1
+definition:
+  modelName: ProjectsByCollectionV1
+  permissions:
+    - role: admin
+      select:
+        filter: null
+        allowSubscriptions: true
+

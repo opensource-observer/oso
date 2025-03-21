@@ -1,0 +1,223 @@
+---
+kind: ObjectType
+version: v1
+definition:
+  name: SbomsV0
+  fields:
+    - name: fromArtifactId
+      type: String_1
+    - name: fromArtifactName
+      type: String_1
+    - name: fromArtifactNamespace
+      type: String_1
+    - name: fromArtifactSource
+      type: String_1
+    - name: fromProjectId
+      type: String_1
+    - name: toPackageArtifactId
+      type: String_1
+    - name: toPackageArtifactName
+      type: String_1
+    - name: toPackageArtifactNamespace
+      type: String_1
+    - name: toPackageArtifactSource
+      type: String_1
+    - name: toPackageProjectId
+      type: String_1
+  graphql:
+    typeName: SbomsV0
+    inputTypeName: SbomsV0Input
+  dataConnectorTypeMapping:
+    - dataConnectorName: oso_trino
+      dataConnectorObjectType: sboms_v0
+      fieldMapping:
+        fromArtifactId:
+          column:
+            name: from_artifact_id
+        fromArtifactName:
+          column:
+            name: from_artifact_name
+        fromArtifactNamespace:
+          column:
+            name: from_artifact_namespace
+        fromArtifactSource:
+          column:
+            name: from_artifact_source
+        fromProjectId:
+          column:
+            name: from_project_id
+        toPackageArtifactId:
+          column:
+            name: to_package_artifact_id
+        toPackageArtifactName:
+          column:
+            name: to_package_artifact_name
+        toPackageArtifactNamespace:
+          column:
+            name: to_package_artifact_namespace
+        toPackageArtifactSource:
+          column:
+            name: to_package_artifact_source
+        toPackageProjectId:
+          column:
+            name: to_package_project_id
+
+---
+kind: TypePermissions
+version: v1
+definition:
+  typeName: SbomsV0
+  permissions:
+    - role: admin
+      output:
+        allowedFields:
+          - fromArtifactId
+          - fromArtifactName
+          - fromArtifactNamespace
+          - fromArtifactSource
+          - fromProjectId
+          - toPackageArtifactId
+          - toPackageArtifactName
+          - toPackageArtifactNamespace
+          - toPackageArtifactSource
+          - toPackageProjectId
+
+---
+kind: BooleanExpressionType
+version: v1
+definition:
+  name: SbomsV0BoolExp
+  operand:
+    object:
+      type: SbomsV0
+      comparableFields:
+        - fieldName: fromArtifactId
+          booleanExpressionType: StringBoolExp
+        - fieldName: fromArtifactName
+          booleanExpressionType: StringBoolExp
+        - fieldName: fromArtifactNamespace
+          booleanExpressionType: StringBoolExp
+        - fieldName: fromArtifactSource
+          booleanExpressionType: StringBoolExp
+        - fieldName: fromProjectId
+          booleanExpressionType: StringBoolExp
+        - fieldName: toPackageArtifactId
+          booleanExpressionType: StringBoolExp
+        - fieldName: toPackageArtifactName
+          booleanExpressionType: StringBoolExp
+        - fieldName: toPackageArtifactNamespace
+          booleanExpressionType: StringBoolExp
+        - fieldName: toPackageArtifactSource
+          booleanExpressionType: StringBoolExp
+        - fieldName: toPackageProjectId
+          booleanExpressionType: StringBoolExp
+      comparableRelationships: []
+  logicalOperators:
+    enable: true
+  isNull:
+    enable: true
+  graphql:
+    typeName: SbomsV0BoolExp
+
+---
+kind: AggregateExpression
+version: v1
+definition:
+  name: SbomsV0AggExp
+  operand:
+    object:
+      aggregatedType: SbomsV0
+      aggregatableFields:
+        - fieldName: fromArtifactId
+          aggregateExpression: StringAggExp
+        - fieldName: fromArtifactName
+          aggregateExpression: StringAggExp
+        - fieldName: fromArtifactNamespace
+          aggregateExpression: StringAggExp
+        - fieldName: fromArtifactSource
+          aggregateExpression: StringAggExp
+        - fieldName: fromProjectId
+          aggregateExpression: StringAggExp
+        - fieldName: toPackageArtifactId
+          aggregateExpression: StringAggExp
+        - fieldName: toPackageArtifactName
+          aggregateExpression: StringAggExp
+        - fieldName: toPackageArtifactNamespace
+          aggregateExpression: StringAggExp
+        - fieldName: toPackageArtifactSource
+          aggregateExpression: StringAggExp
+        - fieldName: toPackageProjectId
+          aggregateExpression: StringAggExp
+  count:
+    enable: true
+  graphql:
+    selectTypeName: SbomsV0AggExp
+
+---
+kind: OrderByExpression
+version: v1
+definition:
+  name: SbomsV0OrderByExp
+  operand:
+    object:
+      orderedType: SbomsV0
+      orderableFields:
+        - fieldName: fromArtifactId
+          orderByExpression: String1OrderByExp
+        - fieldName: fromArtifactName
+          orderByExpression: String1OrderByExp
+        - fieldName: fromArtifactNamespace
+          orderByExpression: String1OrderByExp
+        - fieldName: fromArtifactSource
+          orderByExpression: String1OrderByExp
+        - fieldName: fromProjectId
+          orderByExpression: String1OrderByExp
+        - fieldName: toPackageArtifactId
+          orderByExpression: String1OrderByExp
+        - fieldName: toPackageArtifactName
+          orderByExpression: String1OrderByExp
+        - fieldName: toPackageArtifactNamespace
+          orderByExpression: String1OrderByExp
+        - fieldName: toPackageArtifactSource
+          orderByExpression: String1OrderByExp
+        - fieldName: toPackageProjectId
+          orderByExpression: String1OrderByExp
+      orderableRelationships: []
+  graphql:
+    expressionTypeName: SbomsV0OrderByExp
+
+---
+kind: Model
+version: v2
+definition:
+  name: SbomsV0
+  objectType: SbomsV0
+  source:
+    dataConnectorName: oso_trino
+    collection: sboms_v0
+  filterExpressionType: SbomsV0BoolExp
+  aggregateExpression: SbomsV0AggExp
+  orderByExpression: SbomsV0OrderByExp
+  graphql:
+    selectMany:
+      queryRootField: sbomsV0
+      subscription:
+        rootField: sbomsV0
+    selectUniques: []
+    filterInputTypeName: SbomsV0FilterInput
+    aggregate:
+      queryRootField: sbomsV0Aggregate
+      subscription:
+        rootField: sbomsV0Aggregate
+
+---
+kind: ModelPermissions
+version: v1
+definition:
+  modelName: SbomsV0
+  permissions:
+    - role: admin
+      select:
+        filter: null
+        allowSubscriptions: true
+

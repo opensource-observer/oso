@@ -1,0 +1,187 @@
+---
+kind: ObjectType
+version: v1
+definition:
+  name: UsersV1
+  fields:
+    - name: bio
+      type: String_1
+    - name: displayName
+      type: String_1
+    - name: profilePictureUrl
+      type: String_1
+    - name: url
+      type: String_1
+    - name: userId
+      type: String_1
+    - name: userSource
+      type: String_1
+    - name: userSourceId
+      type: String_1
+  graphql:
+    typeName: UsersV1
+    inputTypeName: UsersV1Input
+  dataConnectorTypeMapping:
+    - dataConnectorName: oso_trino
+      dataConnectorObjectType: users_v1
+      fieldMapping:
+        bio:
+          column:
+            name: bio
+        displayName:
+          column:
+            name: display_name
+        profilePictureUrl:
+          column:
+            name: profile_picture_url
+        url:
+          column:
+            name: url
+        userId:
+          column:
+            name: user_id
+        userSource:
+          column:
+            name: user_source
+        userSourceId:
+          column:
+            name: user_source_id
+
+---
+kind: TypePermissions
+version: v1
+definition:
+  typeName: UsersV1
+  permissions:
+    - role: admin
+      output:
+        allowedFields:
+          - bio
+          - displayName
+          - profilePictureUrl
+          - url
+          - userId
+          - userSource
+          - userSourceId
+
+---
+kind: BooleanExpressionType
+version: v1
+definition:
+  name: UsersV1BoolExp
+  operand:
+    object:
+      type: UsersV1
+      comparableFields:
+        - fieldName: bio
+          booleanExpressionType: StringBoolExp
+        - fieldName: displayName
+          booleanExpressionType: StringBoolExp
+        - fieldName: profilePictureUrl
+          booleanExpressionType: StringBoolExp
+        - fieldName: url
+          booleanExpressionType: StringBoolExp
+        - fieldName: userId
+          booleanExpressionType: StringBoolExp
+        - fieldName: userSource
+          booleanExpressionType: StringBoolExp
+        - fieldName: userSourceId
+          booleanExpressionType: StringBoolExp
+      comparableRelationships: []
+  logicalOperators:
+    enable: true
+  isNull:
+    enable: true
+  graphql:
+    typeName: UsersV1BoolExp
+
+---
+kind: AggregateExpression
+version: v1
+definition:
+  name: UsersV1AggExp
+  operand:
+    object:
+      aggregatedType: UsersV1
+      aggregatableFields:
+        - fieldName: bio
+          aggregateExpression: StringAggExp
+        - fieldName: displayName
+          aggregateExpression: StringAggExp
+        - fieldName: profilePictureUrl
+          aggregateExpression: StringAggExp
+        - fieldName: url
+          aggregateExpression: StringAggExp
+        - fieldName: userId
+          aggregateExpression: StringAggExp
+        - fieldName: userSource
+          aggregateExpression: StringAggExp
+        - fieldName: userSourceId
+          aggregateExpression: StringAggExp
+  count:
+    enable: true
+  graphql:
+    selectTypeName: UsersV1AggExp
+
+---
+kind: OrderByExpression
+version: v1
+definition:
+  name: UsersV1OrderByExp
+  operand:
+    object:
+      orderedType: UsersV1
+      orderableFields:
+        - fieldName: bio
+          orderByExpression: String1OrderByExp
+        - fieldName: displayName
+          orderByExpression: String1OrderByExp
+        - fieldName: profilePictureUrl
+          orderByExpression: String1OrderByExp
+        - fieldName: url
+          orderByExpression: String1OrderByExp
+        - fieldName: userId
+          orderByExpression: String1OrderByExp
+        - fieldName: userSource
+          orderByExpression: String1OrderByExp
+        - fieldName: userSourceId
+          orderByExpression: String1OrderByExp
+      orderableRelationships: []
+  graphql:
+    expressionTypeName: UsersV1OrderByExp
+
+---
+kind: Model
+version: v2
+definition:
+  name: UsersV1
+  objectType: UsersV1
+  source:
+    dataConnectorName: oso_trino
+    collection: users_v1
+  filterExpressionType: UsersV1BoolExp
+  aggregateExpression: UsersV1AggExp
+  orderByExpression: UsersV1OrderByExp
+  graphql:
+    selectMany:
+      queryRootField: usersV1
+      subscription:
+        rootField: usersV1
+    selectUniques: []
+    filterInputTypeName: UsersV1FilterInput
+    aggregate:
+      queryRootField: usersV1Aggregate
+      subscription:
+        rootField: usersV1Aggregate
+
+---
+kind: ModelPermissions
+version: v1
+definition:
+  modelName: UsersV1
+  permissions:
+    - role: admin
+      select:
+        filter: null
+        allowSubscriptions: true
+
