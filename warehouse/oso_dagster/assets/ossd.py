@@ -215,7 +215,7 @@ def repositories(
             f"Fetching repositories for {len(valid_urls)} unique GitHub URLs"
         )
 
-        return valid_urls[:320]
+        return valid_urls
 
     return process_chunked_resource(
         ChunkedResourceConfig(
