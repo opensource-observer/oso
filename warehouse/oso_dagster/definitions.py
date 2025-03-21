@@ -50,6 +50,7 @@ from .utils import (
     GCPSecretResolver,
     LocalSecretResolver,
     LogAlertManager,
+    setup_chunked_state_cleanup_sensor,
 )
 
 logger = logging.getLogger(__name__)
@@ -240,6 +241,12 @@ def load_definitions():
     )
 
     asset_factories = asset_factories + alerts
+
+    chunked_state_cleanup_sensor = setup_chunked_state_cleanup_sensor(
+        global_config.gcs_bucket,
+    )
+
+    asset_factories = asset_factories + chunked_state_cleanup_sensor
 
     all_schedules = schedules + get_partitioned_schedules(asset_factories)
 
