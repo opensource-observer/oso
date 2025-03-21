@@ -116,9 +116,9 @@ export default async function ArtifactPage(props: ArtifactPageProps) {
     source === "GITHUB"
       ? await getCodeProps(artifactId)
       : await getDefaultProps();
-  console.log("!!!");
-  console.log(artifact);
-  console.log(keyMetrics);
+  //console.log("!!!");
+  //console.log(artifact);
+  //console.log(keyMetrics);
 
   //console.log(artifact);
   const plasmicData = await cachedFetchComponent(PLASMIC_COMPONENT);

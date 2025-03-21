@@ -92,9 +92,9 @@ export default async function ProjectPage(props: ProjectPageProps) {
     display_name: metricsMap[x.metric_id]?.display_name,
     description: metricsMap[x.metric_id]?.description,
   }));
-  console.log("!!!");
-  console.log(project);
-  console.log(keyMetrics);
+  //console.log("!!!");
+  //console.log(project);
+  //console.log(keyMetrics);
 
   // Get Plasmic component
   const plasmicData = await cachedFetchComponent(PLASMIC_COMPONENT);
