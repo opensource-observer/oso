@@ -229,6 +229,7 @@ timeseries_metrics(
         ),
         "opened_pull_requests": MetricQueryDef(
             ref="code/prs_opened.sql",
+            time_aggregations=["daily", "weekly", "monthly"],
             rolling=RollingConfig(
                 windows=[180],
                 unit="day",
@@ -244,6 +245,7 @@ timeseries_metrics(
         ),
         "merged_pull_requests": MetricQueryDef(
             ref="code/prs_merged.sql",
+            time_aggregations=["daily", "weekly", "monthly"],
             rolling=RollingConfig(
                 windows=[180],
                 unit="day",
@@ -259,6 +261,7 @@ timeseries_metrics(
         ),
         "opened_issues": MetricQueryDef(
             ref="code/issues_opened.sql",
+            time_aggregations=["daily", "weekly", "monthly"],
             rolling=RollingConfig(
                 windows=[180],
                 unit="day",
@@ -274,6 +277,7 @@ timeseries_metrics(
         ),
         "closed_issues": MetricQueryDef(
             ref="code/issues_closed.sql",
+            time_aggregations=["daily", "weekly", "monthly"],
             rolling=RollingConfig(
                 windows=[180],
                 unit="day",
@@ -337,6 +341,7 @@ timeseries_metrics(
         ),
         "gas_fees": MetricQueryDef(
             ref="blockchain/gas_fees.sql",
+            time_aggregations=["daily", "weekly", "monthly"],
             rolling=RollingConfig(
                 windows=[30, 90, 180],
                 unit="day",
@@ -352,6 +357,7 @@ timeseries_metrics(
         ),
         "transactions": MetricQueryDef(
             ref="blockchain/transactions.sql",
+            time_aggregations=["daily", "weekly", "monthly"],
             rolling=RollingConfig(
                 windows=[30, 90, 180],
                 unit="day",
@@ -419,6 +425,7 @@ timeseries_metrics(
         ),
         "funding_received": MetricQueryDef(
             ref="funding/funding_received.sql",
+            time_aggregations=["daily", "weekly", "monthly"],
             rolling=RollingConfig(
                 windows=[180],
                 unit="day",
@@ -434,6 +441,7 @@ timeseries_metrics(
         ),
         "dependencies": MetricQueryDef(
             ref="deps/dependencies.sql",
+            time_aggregations=["daily", "weekly", "monthly"],
             rolling=RollingConfig(
                 windows=[180],
                 unit="day",
