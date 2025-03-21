@@ -1,0 +1,163 @@
+---
+kind: ObjectType
+version: v1
+definition:
+  name: TimeseriesMetricsByArtifactV0
+  fields:
+    - name: amount
+      type: Float64
+    - name: artifactId
+      type: String_1
+    - name: metricId
+      type: String_1
+    - name: sampleDate
+      type: Date
+    - name: unit
+      type: String_1
+  graphql:
+    typeName: TimeseriesMetricsByArtifactV0
+    inputTypeName: TimeseriesMetricsByArtifactV0Input
+  dataConnectorTypeMapping:
+    - dataConnectorName: oso_trino
+      dataConnectorObjectType: timeseries_metrics_by_artifact_v0
+      fieldMapping:
+        amount:
+          column:
+            name: amount
+        artifactId:
+          column:
+            name: artifact_id
+        metricId:
+          column:
+            name: metric_id
+        sampleDate:
+          column:
+            name: sample_date
+        unit:
+          column:
+            name: unit
+
+---
+kind: TypePermissions
+version: v1
+definition:
+  typeName: TimeseriesMetricsByArtifactV0
+  permissions:
+    - role: admin
+      output:
+        allowedFields:
+          - amount
+          - artifactId
+          - metricId
+          - sampleDate
+          - unit
+
+---
+kind: BooleanExpressionType
+version: v1
+definition:
+  name: TimeseriesMetricsByArtifactV0BoolExp
+  operand:
+    object:
+      type: TimeseriesMetricsByArtifactV0
+      comparableFields:
+        - fieldName: amount
+          booleanExpressionType: Float64BoolExp
+        - fieldName: artifactId
+          booleanExpressionType: StringBoolExp
+        - fieldName: metricId
+          booleanExpressionType: StringBoolExp
+        - fieldName: sampleDate
+          booleanExpressionType: DateBoolExp
+        - fieldName: unit
+          booleanExpressionType: StringBoolExp
+      comparableRelationships: []
+  logicalOperators:
+    enable: true
+  isNull:
+    enable: true
+  graphql:
+    typeName: TimeseriesMetricsByArtifactV0BoolExp
+
+---
+kind: AggregateExpression
+version: v1
+definition:
+  name: TimeseriesMetricsByArtifactV0AggExp
+  operand:
+    object:
+      aggregatedType: TimeseriesMetricsByArtifactV0
+      aggregatableFields:
+        - fieldName: amount
+          aggregateExpression: Float64AggExp
+        - fieldName: artifactId
+          aggregateExpression: StringAggExp
+        - fieldName: metricId
+          aggregateExpression: StringAggExp
+        - fieldName: sampleDate
+          aggregateExpression: DateAggExp
+        - fieldName: unit
+          aggregateExpression: StringAggExp
+  count:
+    enable: true
+  graphql:
+    selectTypeName: TimeseriesMetricsByArtifactV0AggExp
+
+---
+kind: OrderByExpression
+version: v1
+definition:
+  name: TimeseriesMetricsByArtifactV0OrderByExp
+  operand:
+    object:
+      orderedType: TimeseriesMetricsByArtifactV0
+      orderableFields:
+        - fieldName: amount
+          orderByExpression: Float64OrderByExp
+        - fieldName: artifactId
+          orderByExpression: String1OrderByExp
+        - fieldName: metricId
+          orderByExpression: String1OrderByExp
+        - fieldName: sampleDate
+          orderByExpression: DateOrderByExp
+        - fieldName: unit
+          orderByExpression: String1OrderByExp
+      orderableRelationships: []
+  graphql:
+    expressionTypeName: TimeseriesMetricsByArtifactV0OrderByExp
+
+---
+kind: Model
+version: v2
+definition:
+  name: TimeseriesMetricsByArtifactV0
+  objectType: TimeseriesMetricsByArtifactV0
+  source:
+    dataConnectorName: oso_trino
+    collection: timeseries_metrics_by_artifact_v0
+  filterExpressionType: TimeseriesMetricsByArtifactV0BoolExp
+  aggregateExpression: TimeseriesMetricsByArtifactV0AggExp
+  orderByExpression: TimeseriesMetricsByArtifactV0OrderByExp
+  graphql:
+    selectMany:
+      queryRootField: timeseriesMetricsByArtifactV0
+      subscription:
+        rootField: timeseriesMetricsByArtifactV0
+    selectUniques: []
+    filterInputTypeName: TimeseriesMetricsByArtifactV0FilterInput
+    aggregate:
+      queryRootField: timeseriesMetricsByArtifactV0Aggregate
+      subscription:
+        rootField: timeseriesMetricsByArtifactV0Aggregate
+
+---
+kind: ModelPermissions
+version: v1
+definition:
+  modelName: TimeseriesMetricsByArtifactV0
+  permissions:
+    - role: admin
+      select:
+        filter: null
+        allowSubscriptions: true
+

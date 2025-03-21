@@ -1,0 +1,163 @@
+---
+kind: ObjectType
+version: v1
+definition:
+  name: ArtifactsV1
+  fields:
+    - name: artifactId
+      type: String_1
+    - name: artifactName
+      type: String_1
+    - name: artifactNamespace
+      type: String_1
+    - name: artifactSource
+      type: String_1
+    - name: artifactSourceId
+      type: String_1
+  graphql:
+    typeName: ArtifactsV1
+    inputTypeName: ArtifactsV1Input
+  dataConnectorTypeMapping:
+    - dataConnectorName: oso_trino
+      dataConnectorObjectType: artifacts_v1
+      fieldMapping:
+        artifactId:
+          column:
+            name: artifact_id
+        artifactName:
+          column:
+            name: artifact_name
+        artifactNamespace:
+          column:
+            name: artifact_namespace
+        artifactSource:
+          column:
+            name: artifact_source
+        artifactSourceId:
+          column:
+            name: artifact_source_id
+
+---
+kind: TypePermissions
+version: v1
+definition:
+  typeName: ArtifactsV1
+  permissions:
+    - role: admin
+      output:
+        allowedFields:
+          - artifactId
+          - artifactName
+          - artifactNamespace
+          - artifactSource
+          - artifactSourceId
+
+---
+kind: BooleanExpressionType
+version: v1
+definition:
+  name: ArtifactsV1BoolExp
+  operand:
+    object:
+      type: ArtifactsV1
+      comparableFields:
+        - fieldName: artifactId
+          booleanExpressionType: StringBoolExp
+        - fieldName: artifactName
+          booleanExpressionType: StringBoolExp
+        - fieldName: artifactNamespace
+          booleanExpressionType: StringBoolExp
+        - fieldName: artifactSource
+          booleanExpressionType: StringBoolExp
+        - fieldName: artifactSourceId
+          booleanExpressionType: StringBoolExp
+      comparableRelationships: []
+  logicalOperators:
+    enable: true
+  isNull:
+    enable: true
+  graphql:
+    typeName: ArtifactsV1BoolExp
+
+---
+kind: AggregateExpression
+version: v1
+definition:
+  name: ArtifactsV1AggExp
+  operand:
+    object:
+      aggregatedType: ArtifactsV1
+      aggregatableFields:
+        - fieldName: artifactId
+          aggregateExpression: StringAggExp
+        - fieldName: artifactName
+          aggregateExpression: StringAggExp
+        - fieldName: artifactNamespace
+          aggregateExpression: StringAggExp
+        - fieldName: artifactSource
+          aggregateExpression: StringAggExp
+        - fieldName: artifactSourceId
+          aggregateExpression: StringAggExp
+  count:
+    enable: true
+  graphql:
+    selectTypeName: ArtifactsV1AggExp
+
+---
+kind: OrderByExpression
+version: v1
+definition:
+  name: ArtifactsV1OrderByExp
+  operand:
+    object:
+      orderedType: ArtifactsV1
+      orderableFields:
+        - fieldName: artifactId
+          orderByExpression: String1OrderByExp
+        - fieldName: artifactName
+          orderByExpression: String1OrderByExp
+        - fieldName: artifactNamespace
+          orderByExpression: String1OrderByExp
+        - fieldName: artifactSource
+          orderByExpression: String1OrderByExp
+        - fieldName: artifactSourceId
+          orderByExpression: String1OrderByExp
+      orderableRelationships: []
+  graphql:
+    expressionTypeName: ArtifactsV1OrderByExp
+
+---
+kind: Model
+version: v2
+definition:
+  name: ArtifactsV1
+  objectType: ArtifactsV1
+  source:
+    dataConnectorName: oso_trino
+    collection: artifacts_v1
+  filterExpressionType: ArtifactsV1BoolExp
+  aggregateExpression: ArtifactsV1AggExp
+  orderByExpression: ArtifactsV1OrderByExp
+  graphql:
+    selectMany:
+      queryRootField: artifactsV1
+      subscription:
+        rootField: artifactsV1
+    selectUniques: []
+    filterInputTypeName: ArtifactsV1FilterInput
+    aggregate:
+      queryRootField: artifactsV1Aggregate
+      subscription:
+        rootField: artifactsV1Aggregate
+
+---
+kind: ModelPermissions
+version: v1
+definition:
+  modelName: ArtifactsV1
+  permissions:
+    - role: admin
+      select:
+        filter: null
+        allowSubscriptions: true
+

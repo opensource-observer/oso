@@ -1,0 +1,19 @@
+kind: Subgraph
+version: v2
+definition:
+  name: app
+  generator:
+    rootPath: .
+    namingConvention: graphql
+  includePaths:
+    - metadata
+  envMapping:
+    APP_OSO_TRINO_AUTHORIZATION_HEADER:
+      fromEnv: APP_OSO_TRINO_AUTHORIZATION_HEADER
+    APP_OSO_TRINO_READ_URL:
+      fromEnv: APP_OSO_TRINO_READ_URL
+    APP_OSO_TRINO_WRITE_URL:
+      fromEnv: APP_OSO_TRINO_WRITE_URL
+  connectors:
+    - path: connector/oso_trino/connector.yaml
+      connectorLinkName: oso_trino

@@ -1,0 +1,187 @@
+---
+kind: ObjectType
+version: v1
+definition:
+  name: ContractsV0
+  fields:
+    - name: contractAddress
+      type: String_1
+    - name: contractNamespace
+      type: String_1
+    - name: deploymentDate
+      type: Date
+    - name: factoryAddress
+      type: String_1
+    - name: originatingAddress
+      type: String_1
+    - name: rootDeployerAddress
+      type: String_1
+    - name: sortWeight
+      type: Int64
+  graphql:
+    typeName: ContractsV0
+    inputTypeName: ContractsV0Input
+  dataConnectorTypeMapping:
+    - dataConnectorName: oso_trino
+      dataConnectorObjectType: contracts_v0
+      fieldMapping:
+        contractAddress:
+          column:
+            name: contract_address
+        contractNamespace:
+          column:
+            name: contract_namespace
+        deploymentDate:
+          column:
+            name: deployment_date
+        factoryAddress:
+          column:
+            name: factory_address
+        originatingAddress:
+          column:
+            name: originating_address
+        rootDeployerAddress:
+          column:
+            name: root_deployer_address
+        sortWeight:
+          column:
+            name: sort_weight
+
+---
+kind: TypePermissions
+version: v1
+definition:
+  typeName: ContractsV0
+  permissions:
+    - role: admin
+      output:
+        allowedFields:
+          - contractAddress
+          - contractNamespace
+          - deploymentDate
+          - factoryAddress
+          - originatingAddress
+          - rootDeployerAddress
+          - sortWeight
+
+---
+kind: BooleanExpressionType
+version: v1
+definition:
+  name: ContractsV0BoolExp
+  operand:
+    object:
+      type: ContractsV0
+      comparableFields:
+        - fieldName: contractAddress
+          booleanExpressionType: StringBoolExp
+        - fieldName: contractNamespace
+          booleanExpressionType: StringBoolExp
+        - fieldName: deploymentDate
+          booleanExpressionType: DateBoolExp
+        - fieldName: factoryAddress
+          booleanExpressionType: StringBoolExp
+        - fieldName: originatingAddress
+          booleanExpressionType: StringBoolExp
+        - fieldName: rootDeployerAddress
+          booleanExpressionType: StringBoolExp
+        - fieldName: sortWeight
+          booleanExpressionType: Int64BoolExp
+      comparableRelationships: []
+  logicalOperators:
+    enable: true
+  isNull:
+    enable: true
+  graphql:
+    typeName: ContractsV0BoolExp
+
+---
+kind: AggregateExpression
+version: v1
+definition:
+  name: ContractsV0AggExp
+  operand:
+    object:
+      aggregatedType: ContractsV0
+      aggregatableFields:
+        - fieldName: contractAddress
+          aggregateExpression: StringAggExp
+        - fieldName: contractNamespace
+          aggregateExpression: StringAggExp
+        - fieldName: deploymentDate
+          aggregateExpression: DateAggExp
+        - fieldName: factoryAddress
+          aggregateExpression: StringAggExp
+        - fieldName: originatingAddress
+          aggregateExpression: StringAggExp
+        - fieldName: rootDeployerAddress
+          aggregateExpression: StringAggExp
+        - fieldName: sortWeight
+          aggregateExpression: Int64AggExp
+  count:
+    enable: true
+  graphql:
+    selectTypeName: ContractsV0AggExp
+
+---
+kind: OrderByExpression
+version: v1
+definition:
+  name: ContractsV0OrderByExp
+  operand:
+    object:
+      orderedType: ContractsV0
+      orderableFields:
+        - fieldName: contractAddress
+          orderByExpression: String1OrderByExp
+        - fieldName: contractNamespace
+          orderByExpression: String1OrderByExp
+        - fieldName: deploymentDate
+          orderByExpression: DateOrderByExp
+        - fieldName: factoryAddress
+          orderByExpression: String1OrderByExp
+        - fieldName: originatingAddress
+          orderByExpression: String1OrderByExp
+        - fieldName: rootDeployerAddress
+          orderByExpression: String1OrderByExp
+        - fieldName: sortWeight
+          orderByExpression: Int64OrderByExp
+      orderableRelationships: []
+  graphql:
+    expressionTypeName: ContractsV0OrderByExp
+
+---
+kind: Model
+version: v2
+definition:
+  name: ContractsV0
+  objectType: ContractsV0
+  source:
+    dataConnectorName: oso_trino
+    collection: contracts_v0
+  filterExpressionType: ContractsV0BoolExp
+  aggregateExpression: ContractsV0AggExp
+  orderByExpression: ContractsV0OrderByExp
+  graphql:
+    selectMany:
+      queryRootField: contractsV0
+      subscription:
+        rootField: contractsV0
+    selectUniques: []
+    filterInputTypeName: ContractsV0FilterInput
+    aggregate:
+      queryRootField: contractsV0Aggregate
+      subscription:
+        rootField: contractsV0Aggregate
+
+---
+kind: ModelPermissions
+version: v1
+definition:
+  modelName: ContractsV0
+  permissions:
+    - role: admin
+      select:
+        filter: null
+        allowSubscriptions: true
+

@@ -1,0 +1,163 @@
+---
+kind: ObjectType
+version: v1
+definition:
+  name: KeyMetricsByCollectionV0
+  fields:
+    - name: amount
+      type: Float64
+    - name: collectionId
+      type: String_1
+    - name: metricId
+      type: String_1
+    - name: sampleDate
+      type: Date
+    - name: unit
+      type: String_1
+  graphql:
+    typeName: KeyMetricsByCollectionV0
+    inputTypeName: KeyMetricsByCollectionV0Input
+  dataConnectorTypeMapping:
+    - dataConnectorName: oso_trino
+      dataConnectorObjectType: key_metrics_by_collection_v0
+      fieldMapping:
+        amount:
+          column:
+            name: amount
+        collectionId:
+          column:
+            name: collection_id
+        metricId:
+          column:
+            name: metric_id
+        sampleDate:
+          column:
+            name: sample_date
+        unit:
+          column:
+            name: unit
+
+---
+kind: TypePermissions
+version: v1
+definition:
+  typeName: KeyMetricsByCollectionV0
+  permissions:
+    - role: admin
+      output:
+        allowedFields:
+          - amount
+          - collectionId
+          - metricId
+          - sampleDate
+          - unit
+
+---
+kind: BooleanExpressionType
+version: v1
+definition:
+  name: KeyMetricsByCollectionV0BoolExp
+  operand:
+    object:
+      type: KeyMetricsByCollectionV0
+      comparableFields:
+        - fieldName: amount
+          booleanExpressionType: Float64BoolExp
+        - fieldName: collectionId
+          booleanExpressionType: StringBoolExp
+        - fieldName: metricId
+          booleanExpressionType: StringBoolExp
+        - fieldName: sampleDate
+          booleanExpressionType: DateBoolExp
+        - fieldName: unit
+          booleanExpressionType: StringBoolExp
+      comparableRelationships: []
+  logicalOperators:
+    enable: true
+  isNull:
+    enable: true
+  graphql:
+    typeName: KeyMetricsByCollectionV0BoolExp
+
+---
+kind: AggregateExpression
+version: v1
+definition:
+  name: KeyMetricsByCollectionV0AggExp
+  operand:
+    object:
+      aggregatedType: KeyMetricsByCollectionV0
+      aggregatableFields:
+        - fieldName: amount
+          aggregateExpression: Float64AggExp
+        - fieldName: collectionId
+          aggregateExpression: StringAggExp
+        - fieldName: metricId
+          aggregateExpression: StringAggExp
+        - fieldName: sampleDate
+          aggregateExpression: DateAggExp
+        - fieldName: unit
+          aggregateExpression: StringAggExp
+  count:
+    enable: true
+  graphql:
+    selectTypeName: KeyMetricsByCollectionV0AggExp
+
+---
+kind: OrderByExpression
+version: v1
+definition:
+  name: KeyMetricsByCollectionV0OrderByExp
+  operand:
+    object:
+      orderedType: KeyMetricsByCollectionV0
+      orderableFields:
+        - fieldName: amount
+          orderByExpression: Float64OrderByExp
+        - fieldName: collectionId
+          orderByExpression: String1OrderByExp
+        - fieldName: metricId
+          orderByExpression: String1OrderByExp
+        - fieldName: sampleDate
+          orderByExpression: DateOrderByExp
+        - fieldName: unit
+          orderByExpression: String1OrderByExp
+      orderableRelationships: []
+  graphql:
+    expressionTypeName: KeyMetricsByCollectionV0OrderByExp
+
+---
+kind: Model
+version: v2
+definition:
+  name: KeyMetricsByCollectionV0
+  objectType: KeyMetricsByCollectionV0
+  source:
+    dataConnectorName: oso_trino
+    collection: key_metrics_by_collection_v0
+  filterExpressionType: KeyMetricsByCollectionV0BoolExp
+  aggregateExpression: KeyMetricsByCollectionV0AggExp
+  orderByExpression: KeyMetricsByCollectionV0OrderByExp
+  graphql:
+    selectMany:
+      queryRootField: keyMetricsByCollectionV0
+      subscription:
+        rootField: keyMetricsByCollectionV0
+    selectUniques: []
+    filterInputTypeName: KeyMetricsByCollectionV0FilterInput
+    aggregate:
+      queryRootField: keyMetricsByCollectionV0Aggregate
+      subscription:
+        rootField: keyMetricsByCollectionV0Aggregate
+
+---
+kind: ModelPermissions
+version: v1
+definition:
+  modelName: KeyMetricsByCollectionV0
+  permissions:
+    - role: admin
+      select:
+        filter: null
+        allowSubscriptions: true
+
