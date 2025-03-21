@@ -4,21 +4,32 @@ import logging
 import uuid
 from dataclasses import dataclass
 from datetime import datetime
-from functools import partial
 from itertools import batched
 from typing import (
     Any,
     AsyncGenerator,
     Callable,
     Coroutine,
+    Dict,
     Generator,
     Generic,
     List,
+    Optional,
     ParamSpec,
     TypeVar,
 )
 
-from dagster import AssetExecutionContext
+from dagster import (
+    AssetExecutionContext,
+    DefaultSensorStatus,
+    OpExecutionContext,
+    RunRequest,
+    SensorEvaluationContext,
+    SensorResult,
+    job,
+    op,
+    sensor,
+)
 from dlt.sources import DltResource
 from google.cloud import storage
 from google.cloud.exceptions import NotFound
@@ -105,20 +116,16 @@ def dlt_parallelize(config: ParallelizeConfig):
 
                 for future in asyncio.as_completed(group_coroutines):
                     try:
-                        result = await future
-                        results.append(result)
+                        results.append(await future)
                     except Exception as e:
                         log.error(f"DLTParallelize: Task failed with exception: {e}")
-
-                for result in results:
-                    yield result
 
                 log.info(
                     f"DLTParallelize: Waiting for {config.wait_interval} seconds ..."
                 )
 
                 if chunk_update_fn and isinstance(chunk_update_fn, Callable):
-                    chunk_update_fn(results)
+                    chunk_update_fn(results, len(group_coroutines))
 
                 await asyncio.sleep(config.wait_interval)
 
@@ -143,9 +150,9 @@ class ChunkedResourceConfig(Generic[T]):
         fetch_data_fn (Callable): Function that fetches the data to be chunked.
             It will be called only once if the state file does not exist.
         resource (DltResource): DltResource class to be used for processing the data.
-        to_string_fn (Callable): Function that converts a single data unit
-            to a string representation. For Pydantic models, this can be the model's
-            `model_dump_json` method.
+        to_serializable_fn (Callable): Function that converts a single data unit
+            to a serializable dictionary. For Pydantic models, this can be the model's
+            `model_dump` method.
         gcs_bucket_name (str): Google Cloud Storage bucket name.
         gcs_prefix (str): Google Cloud Storage prefix for chunked data. Defaults
             to "dlt_chunked_state".
@@ -160,7 +167,7 @@ class ChunkedResourceConfig(Generic[T]):
         self,
         fetch_data_fn: Callable[[], List[T]],
         resource: DltResource,
-        to_string_fn: Callable[..., str],
+        to_serializable_fn: Callable[..., Dict],
         gcs_bucket_name: str,
         gcs_prefix: str = "dlt_chunked_state",
         max_manifest_age: int = 60 * 60 * 24 * 3,
@@ -168,7 +175,7 @@ class ChunkedResourceConfig(Generic[T]):
     ):
         self.fetch_data_fn = fetch_data_fn
         self.resource = resource
-        self.to_string_fn = to_string_fn
+        self.to_serializable_fn = to_serializable_fn
         self.gcs_bucket_name = gcs_bucket_name
         self.gcs_prefix = gcs_prefix
         self.max_manifest_age = max_manifest_age
@@ -194,8 +201,7 @@ def process_chunked_resource(
     The decorated function must use these functions to update the state manifest and upload
     the chunked data to GCS. It must call `_chunk_resource_update` with the elements to be
     uploaded to GCS after a successful yield. It must also call `_chunk_retrieve_failed` at the
-    end of the function to retrieve all the stored chunks in GCS which failed in previous runs
-    and clean them up.
+    end of the function to retrieve all the stored chunks in GCS which failed in previous runs.
 
     Example:
     ```
@@ -209,7 +215,6 @@ def process_chunked_resource(
             kwargs["_chunk_resource_update"]([data])
 
         # Retrieve all the stored chunks in GCS from previous runs
-        # and clean them up
         yield from kwargs["_chunk_retrieve_failed"]()
 
     @dlt_factory(...)
@@ -223,7 +228,7 @@ def process_chunked_resource(
         ChunkedResourceConfig(
             fetch_data_fn=fetch_fn,
             resource=resource,
-            to_string_fn=str,
+            to_serializable_fn=methodcaller("model_dump"),
             gcs_bucket_name=global_config.gcs_bucket,
             context=context,
         ),
@@ -248,15 +253,14 @@ def process_chunked_resource(
 
     log.info(f"ChunkedResource: Checking state in {state_blob.name}")
 
-    def resource_update(elements: List[List]):
+    def resource_update(elements: List[List], count: int):
         """
-        Updtates the state manifest and uploads the chunked data to GCS.
+        Updates the state manifest and uploads the chunked data to GCS.
 
         Args:
             elements (List[List]): Elements to be stored in GCS
         """
 
-        count = len(elements)
         current_manifest = state_blob.download_as_string()
         current_data = json.loads(current_manifest)
 
@@ -269,30 +273,25 @@ def process_chunked_resource(
 
         state_blob.upload_from_string(json.dumps(current_data))
 
-        if not current_data["pending_data"]:
-            log.info("ChunkedResource: No more pending data, deleting state")
-            state_blob.delete()
-
-        stringified_elems = [
-            config.to_string_fn(elem) for sublist in elements for elem in sublist
+        serialized_elems = [
+            config.to_serializable_fn(elem) for sublist in elements for elem in sublist
         ]
 
         new_blob = bucket.blob(
             f"{config.gcs_prefix}/{config.resource.name}/chunk.{uuid.uuid4()}.json"
         )
 
-        new_blob.upload_from_string(json.dumps(stringified_elems))
+        new_blob.upload_from_string(json.dumps(serialized_elems, default=str))
 
         log.info(f"ChunkedResource: Uploaded {count} elements to {new_blob.name}")
 
-    def retrieve_failed(yield_elems: bool):
-        """
-        Retrieves all the stored chunks in GCS which failed in previous runs. If
-        `yield_elems` is True, it yields the elements as they are retrieved. Otherwise,
-        it works as a cleanup function, deleting all the stored chunks.
+        if not current_data["pending_data"]:
+            log.info("ChunkedResource: No more pending data to process")
 
-        Args:
-            yield_elems (bool): If True, yields the elements as they are retrieved
+    def retrieve_failed():
+        """
+        Retrieves all the stored chunks in GCS which failed in previous runs.
+        Does NOT delete the blobs - this will be handled by the cleanup sensor.
 
         Yields:
             Dict: The retrieved chunked data
@@ -302,22 +301,12 @@ def process_chunked_resource(
             prefix=f"{config.gcs_prefix}/{config.resource.name}/chunk."
         )
 
-        if yield_elems:
-            for blob in blobs:
-                if blob.name.endswith(".json"):
-                    log.info(f"ChunkedResource: Retrieving chunk {blob.name}")
-                    yield from (
-                        json.loads(c) for c in json.loads(blob.download_as_string())
-                    )
-
-        blobs = bucket.list_blobs(prefix=f"{config.gcs_prefix}/{config.resource.name}")
-
         for blob in blobs:
             if blob.name.endswith(".json"):
-                log.info(f"ChunkedResource: Deleting {blob.name}")
-                blob.delete()
+                log.info(f"ChunkedResource: Retrieving chunk {blob.name}")
+                yield from json.loads(blob.download_as_string())
 
-    kwargs["_chunk_retrieve_failed"] = partial(retrieve_failed, False)
+    kwargs["_chunk_retrieve_failed"] = retrieve_failed
 
     try:
         if not state_blob.exists():
@@ -327,7 +316,6 @@ def process_chunked_resource(
         manifest_data = json.loads(manifest)
 
         log.info("ChunkedResource: Found existing state manifest")
-        kwargs["_chunk_retrieve_failed"] = partial(retrieve_failed, True)
 
         if (
             datetime.now() - datetime.fromisoformat(manifest_data["updated_at"])
@@ -335,7 +323,6 @@ def process_chunked_resource(
         ).total_seconds() > config.max_manifest_age:
             log.info("ChunkedResource: State manifest is too old, resetting")
             manifest_data = None
-            kwargs["_chunk_retrieve_failed"] = partial(retrieve_failed, False)
 
     except (NotFound, json.JSONDecodeError):
         log.info("ChunkedResource: No existing state found, creating new manifest")
@@ -366,4 +353,257 @@ def process_chunked_resource(
         manifest_data["pending_data"],
         *args,
         **kwargs,
+    )
+
+
+CHUNKED_STATE_JOB_CONFIG = {
+    "dagster-k8s/config": {
+        "merge_behavior": "SHALLOW",
+        "container_config": {
+            "resources": {
+                "requests": {
+                    "cpu": "500m",
+                    "memory": "1024Mi",
+                },
+                "limits": {
+                    "memory": "2048Mi",
+                },
+            },
+        },
+        "pod_spec_config": {
+            "node_selector": {
+                "pool_type": "persistent",
+            },
+            "tolerations": [
+                {
+                    "key": "pool_type",
+                    "operator": "Equal",
+                    "value": "persistent",
+                    "effect": "NoSchedule",
+                }
+            ],
+        },
+    },
+}
+
+
+async def batch_delete_blobs(
+    context: OpExecutionContext, bucket: storage.Bucket, blob_names: List[str]
+):
+    """
+    Asynchronous batch delete function that deletes blobs from a GCS bucket.
+
+    Args:
+        context (OpExecutionContext): The Dagster operation context
+        bucket (storage.Bucket): The GCS bucket object
+        blob_names (List[str]): Names of blobs to delete
+    """
+
+    if not blob_names:
+        context.log.info("No blobs to delete, skipping batch delete operation")
+        return
+
+    delete_tasks = []
+
+    for batch in batched(blob_names, 100):
+        if not batch:
+            continue
+
+        async def delete_batch(names):
+            if not names:
+                return
+
+            context.log.info(f"Deleting batch of {len(names)} blobs")
+            for name in names:
+                try:
+                    bucket.blob(name).delete()
+                except Exception as e:
+                    context.log.error(f"Error deleting blob {name}: {e}")
+
+        delete_tasks.append(delete_batch(batch))
+
+    if delete_tasks:
+        await asyncio.gather(*delete_tasks)
+    else:
+        context.log.info("No delete tasks created, all batches were empty")
+
+
+async def cleanup_chunks(
+    context: OpExecutionContext,
+    bucket_name: str,
+    prefix: str = "dlt_chunked_state",
+    max_age_hours: int = 24,
+    client: Optional[storage.Client] = None,
+):
+    """
+    Cleanup function that deletes chunk files older than the specified age.
+    Also cleans up state files if they have no pending data.
+
+    Args:
+        context (OpExecutionContext): The Dagster operation context
+        bucket_name (str): The GCS bucket name
+        prefix (str): The GCS prefix
+        max_age_hours (int): The maximum age of chunk files to clean up
+        client (storage.Client): Optional storage client
+    """
+
+    if client is None:
+        client = storage.Client()
+
+    bucket = client.get_bucket(bucket_name)
+
+    context.log.info(
+        f"Scanning for chunk files in bucket '{bucket_name}' with prefix '{prefix}'"
+    )
+
+    blobs = list(bucket.list_blobs(prefix=prefix))
+
+    chunk_blobs = [
+        blob for blob in blobs if "chunk." in blob.name and blob.name.endswith(".json")
+    ]
+
+    context.log.info(f"Found {len(chunk_blobs)} chunk files")
+
+    resource_chunks = {}
+    for blob in chunk_blobs:
+        parts = blob.name.split("/")
+        if len(parts) >= 2:
+            resource_name = parts[-2]
+            if resource_name not in resource_chunks:
+                resource_chunks[resource_name] = []
+            resource_chunks[resource_name].append(blob)
+
+    context.log.info(f"Found chunks for {len(resource_chunks)} resources")
+
+    cleanup_tasks = []
+    total_deleted = 0
+
+    state_blobs = [blob for blob in blobs if blob.name.endswith("/state.json")]
+
+    for state_blob in state_blobs:
+        try:
+            state_data = json.loads(state_blob.download_as_string())
+            if not state_data.get("pending_data"):
+                context.log.info(
+                    f"State file {state_blob.name} has no pending data, marking for deletion"
+                )
+                cleanup_tasks.append(
+                    batch_delete_blobs(context, bucket, [state_blob.name])
+                )
+                total_deleted += 1
+        except Exception as e:
+            context.log.error(f"Error processing state file {state_blob.name}: {e}")
+
+    for resource_name, blobs in resource_chunks.items():
+        context.log.info(
+            f"Processing resource: {resource_name} with {len(blobs)} chunk files"
+        )
+
+        blobs_to_delete = []
+        for blob in blobs:
+            blob_updated = blob.updated
+            age_hours = (
+                datetime.now() - blob_updated.replace(tzinfo=None)
+            ).total_seconds() / 3600
+
+            if age_hours > max_age_hours:
+                context.log.info(
+                    f"Marking chunk for deletion: {blob.name} (age: {age_hours:.1f} hours)"
+                )
+                blobs_to_delete.append(blob.name)
+            else:
+                context.log.info(
+                    f"Chunk is too young to delete: {blob.name} (age: {age_hours:.1f} hours)"
+                )
+
+        if blobs_to_delete:
+            context.log.info(
+                f"Scheduling deletion of {len(blobs_to_delete)} chunks for {resource_name}"
+            )
+            cleanup_tasks.append(batch_delete_blobs(context, bucket, blobs_to_delete))
+            total_deleted += len(blobs_to_delete)
+        else:
+            context.log.info(f"No chunks to delete for {resource_name}")
+
+    context.log.info(f"Total files marked for deletion: {total_deleted}")
+
+    if cleanup_tasks:
+        context.log.info(f"Executing {len(cleanup_tasks)} cleanup tasks")
+        await asyncio.gather(*cleanup_tasks)
+        context.log.info(f"Successfully executed {len(cleanup_tasks)} cleanup tasks")
+    else:
+        context.log.info("No cleanup tasks to execute")
+
+
+def setup_chunked_state_cleanup_sensor(
+    gcs_bucket_name: str,
+    gcs_prefix: str = "dlt_chunked_state",
+    max_age_hours: int = 48,
+    enable: bool = True,
+):
+    """
+    Sets up a sensor and job to clean up chunk files that are older than the specified age.
+
+    Args:
+        gcs_bucket_name (str): GCS bucket name
+        gcs_prefix (str): GCS prefix for chunked data
+        max_age_hours (int): Maximum age in hours for chunk files
+        enable (bool): Whether to enable the sensor
+
+    Returns:
+        AssetFactoryResponse: Response containing sensors and jobs
+    """
+    from oso_dagster.factories.common import AssetFactoryResponse
+
+    @op(name="chunked_state_cleanup_op")
+    async def cleanup_op(context: OpExecutionContext) -> None:
+        context.log.info(
+            f"Starting chunked state cleanup job with settings:"
+            f"\n  - Bucket: {gcs_bucket_name}"
+            f"\n  - Prefix: {gcs_prefix}"
+            f"\n  - Max age for chunk files: {max_age_hours} hours"
+        )
+
+        await cleanup_chunks(
+            context=context,
+            bucket_name=gcs_bucket_name,
+            prefix=gcs_prefix,
+            max_age_hours=max_age_hours,
+        )
+
+        context.log.info("Chunked state cleanup job completed successfully")
+
+    @job(name="chunked_state_cleanup_job")
+    def cleanup_job():
+        cleanup_op()
+
+    status = DefaultSensorStatus.RUNNING if enable else DefaultSensorStatus.STOPPED
+
+    @sensor(
+        name="chunked_state_cleanup_sensor",
+        job=cleanup_job,
+        minimum_interval_seconds=60 * 60 * 12,
+        default_status=status,
+    )
+    def cleanup_sensor(context: SensorEvaluationContext):
+        """
+        Sensor that periodically triggers the job to clean up chunk files
+        that are older than the specified age.
+        """
+        context.log.info("Evaluating chunked state cleanup sensor")
+
+        return SensorResult(
+            run_requests=[
+                RunRequest(
+                    run_key=f"chunked-state-cleanup-{context.cursor or 'initial'}",
+                    tags=CHUNKED_STATE_JOB_CONFIG,
+                )
+            ],
+            cursor=str(int(datetime.now().timestamp())),
+        )
+
+    return AssetFactoryResponse(
+        [],
+        sensors=[cleanup_sensor],
+        jobs=[cleanup_job],
     )
