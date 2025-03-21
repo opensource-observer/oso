@@ -373,6 +373,7 @@ timeseries_metrics(
         ),
         "contract_invocations": MetricQueryDef(
             ref="blockchain/contract_invocations.sql",
+            time_aggregations=["daily", "weekly", "monthly"],
             rolling=RollingConfig(
                 windows=[30, 90, 180],
                 unit="day",
@@ -388,6 +389,7 @@ timeseries_metrics(
         ),
         "defillama_tvl": MetricQueryDef(
             ref="blockchain/defillama_tvl.sql",
+            time_aggregations=["daily", "weekly", "monthly"],
             rolling=RollingConfig(
                 windows=[30, 90, 180],
                 unit="day",
