@@ -3,6 +3,7 @@ MODEL (
   description 'Maps relationships between onchain builder projects and their dependencies',
   dialect trino,
   kind full,
+  grain (onchain_builder_project_id, devtooling_project_id),
 );
 
 @DEF(active_onchain_builder_date_threshold, DATE('2024-01-01'));
