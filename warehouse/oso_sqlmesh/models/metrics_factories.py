@@ -18,6 +18,8 @@ timeseries_metrics(
         "int_issue_event_time_deltas",
         "int_first_of_event_from_artifact",
         "int_events_daily__blockchain",
+        "int_events_daily__4337",
+        "int_events_daily__defillama_tvl",
     ],
     metric_queries={
         # This will automatically generate star counts for the given roll up periods.
@@ -227,6 +229,7 @@ timeseries_metrics(
         ),
         "opened_pull_requests": MetricQueryDef(
             ref="code/prs_opened.sql",
+            time_aggregations=["daily", "weekly", "monthly"],
             rolling=RollingConfig(
                 windows=[180],
                 unit="day",
@@ -242,6 +245,7 @@ timeseries_metrics(
         ),
         "merged_pull_requests": MetricQueryDef(
             ref="code/prs_merged.sql",
+            time_aggregations=["daily", "weekly", "monthly"],
             rolling=RollingConfig(
                 windows=[180],
                 unit="day",
@@ -257,6 +261,7 @@ timeseries_metrics(
         ),
         "opened_issues": MetricQueryDef(
             ref="code/issues_opened.sql",
+            time_aggregations=["daily", "weekly", "monthly"],
             rolling=RollingConfig(
                 windows=[180],
                 unit="day",
@@ -272,6 +277,7 @@ timeseries_metrics(
         ),
         "closed_issues": MetricQueryDef(
             ref="code/issues_closed.sql",
+            time_aggregations=["daily", "weekly", "monthly"],
             rolling=RollingConfig(
                 windows=[180],
                 unit="day",
@@ -335,6 +341,7 @@ timeseries_metrics(
         ),
         "gas_fees": MetricQueryDef(
             ref="blockchain/gas_fees.sql",
+            time_aggregations=["daily", "weekly", "monthly"],
             rolling=RollingConfig(
                 windows=[30, 90, 180],
                 unit="day",
@@ -350,6 +357,7 @@ timeseries_metrics(
         ),
         "transactions": MetricQueryDef(
             ref="blockchain/transactions.sql",
+            time_aggregations=["daily", "weekly", "monthly"],
             rolling=RollingConfig(
                 windows=[30, 90, 180],
                 unit="day",
@@ -361,6 +369,36 @@ timeseries_metrics(
             metadata=MetricMetadata(
                 display_name="Transactions",
                 description="Metrics related to blockchain transactions",
+            ),
+        ),
+        "contract_invocations": MetricQueryDef(
+            ref="blockchain/contract_invocations.sql",
+            rolling=RollingConfig(
+                windows=[30, 90, 180],
+                unit="day",
+                cron="@daily",
+                slots=32,
+            ),
+            entity_types=["artifact", "project", "collection"],
+            over_all_time=True,
+            metadata=MetricMetadata(
+                display_name="Contract Invocations",
+                description="Metrics related to blockchain contract invocations",
+            ),
+        ),
+        "defillama_tvl": MetricQueryDef(
+            ref="blockchain/defillama_tvl.sql",
+            rolling=RollingConfig(
+                windows=[30, 90, 180],
+                unit="day",
+                cron="@daily",
+                slots=32,
+            ),
+            entity_types=["artifact", "project", "collection"],
+            over_all_time=True,
+            metadata=MetricMetadata(
+                display_name="Defillama TVL",
+                description="Metrics related to Defillama TVL",
             ),
         ),
         "contributors_lifecycle": MetricQueryDef(
@@ -387,6 +425,7 @@ timeseries_metrics(
         ),
         "funding_received": MetricQueryDef(
             ref="funding/funding_received.sql",
+            time_aggregations=["daily", "weekly", "monthly"],
             rolling=RollingConfig(
                 windows=[180],
                 unit="day",
@@ -402,6 +441,7 @@ timeseries_metrics(
         ),
         "dependencies": MetricQueryDef(
             ref="deps/dependencies.sql",
+            time_aggregations=["daily", "weekly", "monthly"],
             rolling=RollingConfig(
                 windows=[180],
                 unit="day",
