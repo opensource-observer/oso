@@ -14,7 +14,6 @@ const artifactResponse = {
   artifact_source: "",
   artifact_namespace: "",
   artifact_name: "",
-  artifact_url: "",
 };
 
 const GET_ALL_ARTIFACTS = define(
@@ -23,8 +22,7 @@ const GET_ALL_ARTIFACTS = define(
     artifact_id, 
     artifact_source, 
     artifact_namespace,
-    artifact_name,
-    artifact_url
+    artifact_name
   FROM artifacts_v1;
 `,
   artifactResponse,
@@ -36,8 +34,7 @@ const GET_ARTIFACTS_BY_IDS = define(
     artifact_id, 
     artifact_source, 
     artifact_namespace,
-    artifact_name,
-    artifact_url
+    artifact_name
   FROM artifacts_v1
   WHERE 
     artifact_id in {artifactIds: Array(String)};
@@ -51,8 +48,7 @@ const GET_ARTIFACT_BY_NAME = define(
     artifact_id, 
     artifact_source, 
     artifact_namespace,
-    artifact_name,
-    artifact_url
+    artifact_name
   FROM artifacts_v1
   WHERE 
     artifact_source = {artifactSource: String}

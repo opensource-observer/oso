@@ -87,7 +87,6 @@ export default async function CollectionPage(props: CollectionPageProps) {
     notFound();
   }
   const collection = collectionArray[0];
-  //console.log("project", project);
 
   // Parallelize getting things related to the project
   const projectIds = projectIdArray.map((x) => x.project_id);
@@ -107,6 +106,7 @@ export default async function CollectionPage(props: CollectionPageProps) {
   const keyMetricsData = data2[2];
   const keyMetrics = keyMetricsData.map((x) => ({
     ...x,
+    project_name: projectsMap[x.project_id]?.project_name,
     project_display_name: projectsMap[x.project_id]?.display_name,
     metric_display_name: metricsMap[x.metric_id]?.display_name,
   }));
@@ -114,6 +114,7 @@ export default async function CollectionPage(props: CollectionPageProps) {
   const projectsTable = _.values(
     _.mapValues(metricsByProjectId, (x) => {
       return {
+        projectName: x[0].project_name,
         Project: x[0].project_display_name,
         ..._.fromPairs(x.map((y) => [y.metric_display_name, y.amount])),
       };

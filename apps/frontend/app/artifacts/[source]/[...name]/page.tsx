@@ -9,7 +9,7 @@ import {
   cachedGetMetricsByIds,
   cachedGetKeyMetricsByArtifact,
 } from "../../../../lib/clickhouse/cached-queries";
-import { ARTIFACT_PAGE_CODE_METRICS_IDS } from "../../../../lib/clickhouse/metrics-config";
+import { ARTIFACT_PAGE_CODE_METRIC_IDS } from "../../../../lib/clickhouse/metrics-config";
 import { logger } from "../../../../lib/logger";
 
 const PLASMIC_COMPONENT = "ArtifactPage";
@@ -37,7 +37,7 @@ async function getDefaultProps() {
 
 async function getCodeProps(artifactId: string) {
   // Parallelize getting things related to the project
-  const metricIds = [...ARTIFACT_PAGE_CODE_METRICS_IDS];
+  const metricIds = [...ARTIFACT_PAGE_CODE_METRIC_IDS];
   const data = await Promise.all([
     cachedGetMetricsByIds({ metricIds }),
     cachedGetKeyMetricsByArtifact({
