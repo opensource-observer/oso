@@ -25,10 +25,8 @@ package_connections AS (
     deps_graph.devtooling_project_id AS project_id,
     COUNT(DISTINCT deps_graph.onchain_builder_project_id)
       AS package_connection_count,
-    ARRAY_AGG(DISTINCT projects.project_name) AS package_connection_names
+    ARRAY_AGG(DISTINCT deps_graph.onchain_builder_project_id) AS package_connection_ids
   FROM oso.int_superchain_s7_devtooling_deps_to_projects_graph AS deps_graph
-  JOIN oso.projects_v1 AS projects
-    ON deps_graph.onchain_builder_project_id = projects.project_id
   GROUP BY deps_graph.devtooling_project_id
 ),
 
@@ -50,8 +48,8 @@ project_metrics AS (
       AS package_connection_count,
     COALESCE(devs.developer_connection_count, 0)
       AS developer_connection_count,
-    COALESCE(pkgs.package_connection_names, ARRAY[]::TEXT[])
-      AS package_connection_names,
+    COALESCE(pkgs.package_connection_ids, ARRAY[]::TEXT[])
+      AS package_connection_ids,
     COALESCE(devs.developer_names, ARRAY[]::TEXT[])
       AS developer_names
   FROM devtooling_projects
@@ -73,7 +71,7 @@ SELECT
   fork_count,
   num_packages_in_deps_dev,
   package_connection_count,
-  package_connection_names,
+  package_connection_ids,
   developer_connection_count,
   developer_names,
   CASE

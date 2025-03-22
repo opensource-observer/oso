@@ -23,15 +23,17 @@ WITH dev_events AS (
 ),
 
 builder_github_repos AS (
-  SELECT DISTINCT repos.artifact_id AS repo_artifact_id
-  FROM oso.int_repositories_enriched AS repos
-  JOIN oso.int_superchain_s7_devtooling_onchain_builder_nodes AS nodes
-    ON repos.project_id = nodes.project_id
-  WHERE language IN ('TypeScript', 'Solidity', 'Rust', 'Vyper')
+  SELECT DISTINCT 
+    repo_artifact_id,
+    project_id
+  FROM oso.int_superchain_s7_devtooling_onchain_builder_nodes
 ),
 
 onchain_developers AS (
-  SELECT DISTINCT developer_id
+  SELECT DISTINCT 
+    developer_id,
+    repo_artifact_id,
+    project_id
   FROM dev_events
   WHERE
     event_type = 'COMMIT_CODE'
@@ -40,7 +42,12 @@ onchain_developers AS (
 ),
 
 relevant_projects AS (
-  SELECT DISTINCT abp.project_id
+  SELECT DISTINCT 
+    abp.project_id,
+    CASE 
+      WHEN abp.artifact_id IN (SELECT repo_artifact_id FROM builder_github_repos) THEN 'builder'
+      ELSE 'devtooling'
+    END as project_type
   FROM oso.artifacts_by_project_v1 AS abp
   JOIN oso.projects_by_collection_v1 AS pbc
     ON abp.project_id = pbc.project_id
@@ -53,15 +60,28 @@ relevant_projects AS (
 )
 
 SELECT DISTINCT
-  bucket_month,
-  project_id,
-  developer_id,
-  developer_name,
-  event_type
-FROM dev_events
+  e.bucket_month,
+  e.project_id,
+  e.developer_id,
+  e.developer_name,
+  e.event_type
+FROM dev_events e
+JOIN relevant_projects rp ON e.project_id = rp.project_id
 WHERE
-  developer_id IN (SELECT developer_id FROM onchain_developers)
-  AND project_id IN (SELECT project_id FROM relevant_projects)
+  e.developer_id IN (SELECT developer_id FROM onchain_developers)
+  AND (
+    -- Include all builder project interactions
+    rp.project_type = 'builder'
+    OR 
+    -- For devtooling projects, only include if developer isn't contributing to this project as a builder
+    (rp.project_type = 'devtooling' 
+     AND NOT EXISTS (
+       SELECT 1 
+       FROM onchain_developers od 
+       WHERE od.developer_id = e.developer_id 
+       AND od.project_id = e.project_id
+     ))
+  )
   AND event_type IN (
     'FORKED',
     'STARRED',
