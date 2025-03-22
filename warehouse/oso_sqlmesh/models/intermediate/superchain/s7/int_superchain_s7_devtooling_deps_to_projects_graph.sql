@@ -19,6 +19,7 @@ JOIN oso.int_superchain_s7_devtooling_repositories AS devtools
   ON code_deps.dependency_artifact_id = devtools.repo_artifact_id
 WHERE
   onchain_builders.artifact_namespace != devtools.repo_artifact_namespace
+  AND onchain_builders.project_id != devtools.project_id
   AND onchain_builders.updated_at >= @active_onchain_builder_date_threshold
   AND onchain_builders.project_id IN (
     SELECT project_id
