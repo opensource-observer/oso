@@ -44,10 +44,7 @@ aggregated_builder_metrics AS (
     updated_at,
     language,
     MAX(CASE WHEN project_source = 'OSS_DIRECTORY' THEN project_id END) AS oso_project_id,
-    COALESCE(
-      ARRAY_AGG(DISTINCT project_name) FILTER (WHERE project_source = 'OP_ATLAS'),
-      CAST(ARRAY[] AS ARRAY(VARCHAR))
-    ) AS op_atlas_project_names,
+    MAX(CASE WHEN project_source = 'OP_ATLAS' THEN project_name END) AS op_atlas_project_name,
     MAX(transaction_count) AS total_transaction_count,
     MAX(gas_fees) AS total_gas_fees,
     MAX(active_addresses_count) AS total_active_addresses_count
@@ -68,7 +65,7 @@ SELECT
   metrics.artifact_name as repo_artifact_name,
   metrics.updated_at,
   metrics.language,
-  metrics.op_atlas_project_names,
+  metrics.op_atlas_project_name,
   metrics.total_transaction_count,
   metrics.total_gas_fees,
   metrics.total_active_addresses_count

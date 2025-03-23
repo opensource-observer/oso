@@ -25,7 +25,8 @@ package_connections AS (
     deps_graph.devtooling_project_id AS project_id,
     COUNT(DISTINCT deps_graph.onchain_builder_project_id)
       AS package_connection_count,
-    ARRAY_AGG(DISTINCT deps_graph.onchain_builder_project_id) AS package_connection_ids
+    ARRAY_AGG(DISTINCT CAST(deps_graph.onchain_builder_project_id AS VARCHAR))
+      AS package_connection_ids
   FROM oso.int_superchain_s7_devtooling_deps_to_projects_graph AS deps_graph
   GROUP BY deps_graph.devtooling_project_id
 ),
@@ -34,7 +35,7 @@ developer_connections AS (
   SELECT
     project_id,
     COUNT(DISTINCT developer_id) AS developer_connection_count,
-    ARRAY_AGG(DISTINCT developer_name) AS developer_names
+    ARRAY_AGG(DISTINCT CAST(developer_name AS VARCHAR)) AS developer_names
   FROM oso.int_superchain_s7_devtooling_devs_to_projects_graph
   GROUP BY project_id
 ),
@@ -48,9 +49,9 @@ project_metrics AS (
       AS package_connection_count,
     COALESCE(devs.developer_connection_count, 0)
       AS developer_connection_count,
-    COALESCE(pkgs.package_connection_ids, ARRAY[]::TEXT[])
+    COALESCE(pkgs.package_connection_ids, CAST(ARRAY[] AS ARRAY(VARCHAR)))
       AS package_connection_ids,
-    COALESCE(devs.developer_names, ARRAY[]::TEXT[])
+    COALESCE(devs.developer_names, CAST(ARRAY[] AS ARRAY(VARCHAR)))
       AS developer_names
   FROM devtooling_projects
   JOIN oso.projects_v1 AS projects
@@ -59,25 +60,47 @@ project_metrics AS (
     ON devtooling_projects.project_id = pkgs.project_id
   LEFT JOIN developer_connections AS devs
     ON devtooling_projects.project_id = devs.project_id
+),
+
+connected_project_names AS (
+  SELECT 
+    pm.project_id,
+    ARRAY_AGG(DISTINCT CAST(connected_projects.project_name AS VARCHAR))
+      AS connected_project_names
+  FROM project_metrics pm
+  CROSS JOIN UNNEST(
+    CASE 
+      WHEN CARDINALITY(pm.package_connection_ids) > 0
+      THEN pm.package_connection_ids 
+      ELSE ARRAY[NULL] 
+    END
+  ) AS t(connection_id)
+  JOIN oso.projects_v1 AS connected_projects
+    ON connected_projects.project_id = t.connection_id
+    AND t.connection_id IS NOT NULL
+  GROUP BY pm.project_id
 )
 
 SELECT
-  project_id,
-  project_name,
-  display_name,
-  created_at,
-  updated_at,
-  star_count,
-  fork_count,
-  num_packages_in_deps_dev,
-  package_connection_count,
-  package_connection_ids,
-  developer_connection_count,
-  developer_names,
+  pm.project_id,
+  pm.project_name,
+  pm.display_name,
+  pm.created_at,
+  pm.updated_at,
+  pm.star_count,
+  pm.fork_count,
+  pm.num_packages_in_deps_dev,
+  pm.package_connection_count,
+  COALESCE(cpn.connected_project_names, CAST(ARRAY[] AS ARRAY(VARCHAR)))
+    AS connected_project_names,
+  pm.developer_connection_count,
+  pm.developer_names,
   CASE
-    WHEN package_connection_count >= @min_package_connection_count
-      OR developer_connection_count >= @min_developer_connection_count
+    WHEN pm.package_connection_count >= @min_package_connection_count
+      OR pm.developer_connection_count >= @min_developer_connection_count
     THEN TRUE
     ELSE FALSE
   END AS is_eligible
-FROM project_metrics
+FROM project_metrics pm
+LEFT JOIN connected_project_names cpn
+  ON pm.project_id = cpn.project_id

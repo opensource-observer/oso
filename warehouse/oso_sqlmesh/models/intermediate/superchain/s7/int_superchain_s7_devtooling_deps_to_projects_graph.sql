@@ -27,8 +27,3 @@ WHERE
   onchain_builders.repo_artifact_namespace != devtools.repo_artifact_namespace
   AND onchain_builders.project_id != devtools.project_id
   AND onchain_builders.updated_at >= @active_onchain_builder_date_threshold
-  AND onchain_builders.project_id IN (
-    SELECT project_id
-    FROM oso.int_superchain_s7_devtooling_onchain_builder_nodes
-  )
-  
