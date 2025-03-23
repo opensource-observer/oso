@@ -14,6 +14,8 @@ WITH s7_projects AS (
 SELECT DISTINCT
   abp.project_id,
   abp.artifact_id AS repo_artifact_id,
+  abp.artifact_namespace AS repo_artifact_namespace,
+  abp.artifact_name AS repo_artifact_name,
   repos.star_count,
   repos.fork_count,
   repos.last_release_published,
