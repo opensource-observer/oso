@@ -4,7 +4,13 @@ MODEL (
   kind FULL
 );
 
-WITH cleaned_data AS (
+WITH manual_mappings AS (
+  SELECT project_id, url FROM (VALUES
+    ('0xc377ed1b705bcc856a628f961f1e7c8ca943e6f3727b7c179c657e227e8e852c', 'https://github.com/miguelmota/merkletreejs')
+  ) AS x (project_id, url)
+),
+
+app_mappings_raw AS (
   SELECT
     LOWER(project_id::VARCHAR) AS project_id,
     LOWER(url) AS url,
@@ -14,11 +20,27 @@ WITH cleaned_data AS (
     verified = TRUE AND UPPER(type) = 'GITHUB'
 ),
 
-latest_data AS (
+app_mappings AS (
+  SELECT *
+  FROM (
+    SELECT 
+      *,
+      ROW_NUMBER() OVER (PARTITION BY project_id, url ORDER BY updated_at DESC) AS rn
+    FROM app_mappings_raw
+  ) ranked
+  WHERE rn = 1
+),
+
+combined_mappings AS (
   SELECT
-    *,
-    ROW_NUMBER() OVER (PARTITION BY project_id, url ORDER BY updated_at DESC) AS rn
-  FROM cleaned_data
+    project_id,
+    url
+  FROM app_mappings AS a
+  UNION ALL
+  SELECT
+    project_id,
+    url
+  FROM manual_mappings
 ),
 
 op_atlas_repos AS (
@@ -27,12 +49,12 @@ op_atlas_repos AS (
     url,
     @url_parts(url, 2) AS artifact_namespace,
     @url_parts(url, 3) AS artifact_name,
-    CONCAT('https://github.com/', @url_parts(url,2), '/', @url_parts(url,3)) AS artifact_url
-  FROM latest_data
-  WHERE rn = 1
+    CONCAT('https://github.com/', @url_parts(url,2), '/', @url_parts(url,3))
+      AS artifact_url
+  FROM combined_mappings
 )
 
-SELECT
+SELECT DISTINCT
   @oso_entity_id('OP_ATLAS', '', op_atlas_repos.project_id) AS project_id,
   /* TODO: Remove this once we index the universe  */
   CASE
