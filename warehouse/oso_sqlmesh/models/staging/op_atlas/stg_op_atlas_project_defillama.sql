@@ -38,14 +38,17 @@ app_mappings AS (
 
 combined_mappings AS (
   SELECT 
-    COALESCE(m.project_id, a.project_id) AS project_id,
-    COALESCE(m.defillama_slug, a.defillama_slug) AS defillama_slug
-  FROM app_mappings a
-  FULL OUTER JOIN manual_mappings m 
-    ON a.project_id = m.project_id
+    project_id,
+    defillama_slug
+  FROM app_mappings
+  UNION ALL
+  SELECT
+    project_id,
+    defillama_slug
+  FROM manual_mappings
 )
 
-SELECT
+SELECT DISTINCT
   @oso_entity_id('OP_ATLAS', '', project_id) AS project_id,
   CONCAT('https://defillama.com/protocol/', defillama_slug) AS artifact_source_id,
   'DEFILLAMA' AS artifact_source,

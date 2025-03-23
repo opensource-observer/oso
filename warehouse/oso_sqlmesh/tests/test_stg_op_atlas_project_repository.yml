@@ -59,8 +59,8 @@ test_stg_op_atlas_project_repository:
         artifact_namespace: "ethereum"
         artifact_name: "remix-project"
         artifact_url: "https://github.com/ethereum/remix-project"
-      - artifact_source_id: "123"
+      - artifact_source_id: "https://github.com/miguelmota/merkletreejs"
         artifact_source: GITHUB
-        artifact_namespace: "ethereum"
-        artifact_name: "remix-project"
-        artifact_url: "https://github.com/ethereum/remix-project"
+        artifact_namespace: "miguelmota"
+        artifact_name: "merkletreejs"
+        artifact_url: "https://github.com/miguelmota/merkletreejs"
