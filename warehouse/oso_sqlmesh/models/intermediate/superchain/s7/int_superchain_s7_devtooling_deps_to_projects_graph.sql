@@ -3,16 +3,10 @@ MODEL (
   description 'Maps relationships between onchain builder projects and their dependencies',
   dialect trino,
   kind full,
-  grain (onchain_builder_project_id, devtooling_project_id),
+  grain (onchain_builder_project_id, devtooling_project_id, dependency_source),
 );
 
 @DEF(active_onchain_builder_date_threshold, DATE('2024-01-01'));
-
-WITH onchain_builder_projects AS (
-  SELECT DISTINCT project_id
-  FROM oso.int_superchain_s7_devtooling_onchain_builder_nodes
-)
-
 
 SELECT DISTINCT
   onchain_builders.project_id AS onchain_builder_project_id,
@@ -25,5 +19,4 @@ JOIN oso.int_superchain_s7_devtooling_repositories AS devtools
   ON code_deps.dependency_artifact_id = devtools.repo_artifact_id
 WHERE
   onchain_builders.repo_artifact_namespace != devtools.repo_artifact_namespace
-  AND onchain_builders.project_id != devtools.project_id
   AND onchain_builders.updated_at >= @active_onchain_builder_date_threshold

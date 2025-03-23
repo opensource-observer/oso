@@ -43,8 +43,10 @@ aggregated_builder_metrics AS (
     artifact_name,
     updated_at,
     language,
-    MAX(CASE WHEN project_source = 'OSS_DIRECTORY' THEN project_id END) AS oso_project_id,
-    MAX(CASE WHEN project_source = 'OP_ATLAS' THEN project_name END) AS op_atlas_project_name,
+    MAX(CASE WHEN project_source = 'OSS_DIRECTORY' THEN project_id END)
+      AS oso_project_id,
+    MAX(CASE WHEN project_source = 'OP_ATLAS' THEN project_name END)
+      AS op_atlas_project_name,
     MAX(transaction_count) AS total_transaction_count,
     MAX(gas_fees) AS total_gas_fees,
     MAX(active_addresses_count) AS total_active_addresses_count

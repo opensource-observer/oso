@@ -65,9 +65,9 @@ project_metrics AS (
 connected_project_names AS (
   SELECT 
     pm.project_id,
-    ARRAY_AGG(DISTINCT CAST(connected_projects.project_name AS VARCHAR))
+    ARRAY_AGG(DISTINCT CAST(builder_nodes.op_atlas_project_name AS VARCHAR))
       AS connected_project_names
-  FROM project_metrics pm
+  FROM project_metrics AS pm
   CROSS JOIN UNNEST(
     CASE 
       WHEN CARDINALITY(pm.package_connection_ids) > 0
@@ -75,9 +75,10 @@ connected_project_names AS (
       ELSE ARRAY[NULL] 
     END
   ) AS t(connection_id)
-  JOIN oso.projects_v1 AS connected_projects
-    ON connected_projects.project_id = t.connection_id
+  JOIN oso.int_superchain_s7_devtooling_onchain_builder_nodes AS builder_nodes
+    ON builder_nodes.project_id = t.connection_id
     AND t.connection_id IS NOT NULL
+    AND builder_nodes.op_atlas_project_name IS NOT NULL
   GROUP BY pm.project_id
 )
 
