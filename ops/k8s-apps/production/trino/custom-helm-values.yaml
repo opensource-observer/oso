@@ -124,6 +124,11 @@ spec:
       bigquery: |
         connector.name=bigquery
         bigquery.project-id=opensource-observer
+      bigquery_public_data: |
+        connector.name=bigquery
+        bigquery.parent-project-id=opensource-observer
+        bigquery.project-id=bigquery-public-data
+        bigquery.credentials-key=${ENV:TRINO_GCP_CREDENTIALS_JSON}
       github_archive: |
         connector.name=bigquery
         bigquery.parent-project-id=opensource-observer

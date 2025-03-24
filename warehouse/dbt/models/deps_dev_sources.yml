@@ -5,5 +5,5 @@ sources:
     tables:
       - name: dependencies
         identifier: Dependencies
-      - name: package_version_to_project_latest
-        identifier: PackageVersionToProjectLatest
+      - name: package_version_to_project
+        identifier: PackageVersionToProject
