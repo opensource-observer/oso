@@ -14,17 +14,17 @@ OSO Data Exchange on Google BigQuery.
 Here, we will publish every data set we have as live,
 up-to-date, and free to use datasets.
 In addition to sharing every model in the
-[OSO production data pipeline](../../docs/integrate/datasets#oso-production-data-pipeline),
-we are sharing source data for blocks/transactions/traces across
-[7 chains in the OP Superchain](../../docs/integrate/datasets#optimism-data)
+[OSO production data pipeline](../../docs/integrate/datasets#oso-production-pipeline),
+we are sharing source data for blocks/transactions/traces across the
+[OP Superchain](../../docs/integrate/datasets#superchain)
 (including Optimism, Base, Frax, Metal, Mode, PGN, Zora),
-[Gitcoin Data](../../docs/integrate/datasets#gitcoin-and-passport-data),
-and [OpenRank](../../docs/integrate/datasets#openrank-data).
+[Gitcoin Data](../../docs/integrate/datasets#gitcoin),
+and [OpenRank](../../docs/integrate/datasets#openrank).
 This builds on the existing BigQuery public data ecosystem that includes
-[GitHub](../../docs/integrate/datasets#github-data),
-[Ethereum](../../docs/integrate/datasets#ethereum-data),
-[Farcaster](../../docs/integrate/datasets#farcaster-data),
-and [Lens](../../docs/integrate/datasets#lens-data) data.
+[GitHub](../../docs/integrate/datasets#github-archive),
+[Ethereum](../../docs/integrate/datasets#ethereum),
+[Farcaster](../../docs/integrate/datasets#farcaster),
+and [Lens](../../docs/integrate/datasets#lens) data.
 To learn more, check out the data portal here:
 
 <p style={{"text-align": "center"}}>

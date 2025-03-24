@@ -246,7 +246,7 @@ After constructing the graph and computing pretrust scores, we assign final weig
 
 1. **Alpha**
 
-   - The alpha parameter controls the portion of the EigenTrust output taken from the pretrust values vs. the iterative trust propagation step. See [below](#eigentrust) for more details of setting alpha values.
+   - The alpha parameter controls the portion of the EigenTrust output taken from the pretrust values vs. the iterative trust propagation step. See [below](#eigentrust-propagation) for more details of setting alpha values.
    - Algorithms can specify separate alpha values in the YAML config.
 
 1. **Time Decay**
