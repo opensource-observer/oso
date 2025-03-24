@@ -8,6 +8,7 @@ import type { QueryResult, Iterator } from "trino-client";
 //export const runtime = "edge"; // 'nodejs' (default) | 'edge'
 //export const dynamic = "force-dynamic";
 export const revalidate = 0;
+export const maxDuration = 300;
 
 const QUERY = "query";
 const FORMAT = "format";
