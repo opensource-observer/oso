@@ -1,6 +1,7 @@
 import logging
 
 import duckdb
+
 from .config import RowRestriction, TableMappingConfig, TableMappingDestination
 
 logger = logging.getLogger(__name__)
@@ -20,6 +21,7 @@ TABLE_MAPPING: TableMappingConfig = {
     "opensource-observer.op_atlas.project_contract": "bigquery.op_atlas.project_contract",
     "opensource-observer.op_atlas.project_links": "bigquery.op_atlas.project_links",
     "opensource-observer.op_atlas.project_repository": "bigquery.op_atlas.project_repository",
+    "opensource-observer.deps_dev_v1.package_version_to_project": "bigquery.deps_dev_v1.package_version_to_project",
     "opensource-observer.open_collective.deposits": TableMappingDestination(
         row_restriction=RowRestriction(time_column="created_at"),
         table="bigquery.open_collective.deposits",
