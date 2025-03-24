@@ -277,6 +277,35 @@ def metrics_end(evaluator: MacroEvaluator, _data_type: t.Optional[str] = None):
     )
 
 
+def metrics_sample_interval_length(
+    evaluator: MacroEvaluator,
+    unit_exp: str | exp.Literal,
+    start_exp: t.Optional[exp.Expression] = None,
+    end_exp: t.Optional[exp.Expression] = None,
+):
+    """Uses start/end dates to calculate the interval length"""
+    assert isinstance(
+        unit_exp, (str, exp.Literal)
+    ), "unit_exp must be a string or literal"
+    if isinstance(unit_exp, exp.Literal):
+        unit = exp.Var(this=unit_exp.this)
+    else:
+        unit = exp.Var(this=unit_exp.upper())
+    if not start_exp:
+        start = metrics_start(evaluator, "DATE")
+        assert isinstance(start, exp.Expression), "start must be an expression"
+        start_exp = start
+    if not end_exp:
+        end = metrics_end(evaluator, "DATE")
+        assert isinstance(end, exp.Expression), "end must be an expression"
+        end_exp = end
+    return exp.DateDiff(
+        this=end_exp,
+        expression=start_exp,
+        unit=unit,
+    )
+
+
 def metrics_entity_type_col(
     evaluator: MacroEvaluator,
     format_str: str,

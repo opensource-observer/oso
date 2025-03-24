@@ -11,7 +11,12 @@ import duckdb
 import pandas as pd
 from metrics_tools.definition import PeerMetricDependencyRef, RollingCronOptions
 from metrics_tools.intermediate import run_macro_evaluator
-from metrics_tools.macros import metrics_end, metrics_sample_date, metrics_start
+from metrics_tools.macros import (
+    metrics_end,
+    metrics_sample_date,
+    metrics_sample_interval_length,
+    metrics_start,
+)
 from metrics_tools.models.tools import create_unregistered_macro_registry
 from metrics_tools.utils.glot import str_or_expressions
 from sqlglot import exp
@@ -196,6 +201,7 @@ class MetricsRunner:
                 metrics_end,
                 metrics_start,
                 metrics_sample_date,
+                metrics_sample_interval_length,
             ]
         )
         evaluated_query = run_macro_evaluator(
