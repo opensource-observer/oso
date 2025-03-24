@@ -16,12 +16,13 @@ with base as (
     `System`,
     `ProjectName`,
     `Name`,
-    `Version`
-  from {{ source("deps_dev", "package_version_to_project_latest") }}
+    `Version`,
+    `RelationType`
+  from {{ source("deps_dev", "package_version_to_project") }}
   where
     `ProjectName` is not null
     and `ProjectType` = 'GITHUB'
-    and `RelationType` = 'SOURCE_REPO_TYPE'
+    --and `RelationType` = 'SOURCE_REPO_TYPE'
 )
 {% if is_incremental() %}
     select * from base
