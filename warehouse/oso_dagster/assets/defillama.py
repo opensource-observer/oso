@@ -328,7 +328,7 @@ def mk_defillama_config() -> RESTAPIConfig:
             "write_disposition": "replace",
             "parallelized": True,
             "max_table_nesting": 0,
-            "table_name": "defillama/tvl",
+            "table_name": "tvl",
         },
         "resources": [
             {
