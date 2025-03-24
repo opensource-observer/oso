@@ -9,8 +9,8 @@ import type { QueryResult, Iterator } from "trino-client";
 //export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-// HTTP headers
-const QUERY_PARAM = "query";
+const QUERY = "query";
+const FORMAT = "format";
 
 const makeErrorResponse = (errorMsg: string, status: number) =>
   NextResponse.json({ error: errorMsg }, { status });
@@ -39,7 +39,8 @@ async function doQuery(
  */
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  const query = body?.[QUERY_PARAM];
+  const query = body?.[QUERY];
+  const format = body?.[FORMAT] ?? "json";
   // TODO: add authentication
   //const auth = request.headers.get("authorization");
 
@@ -50,33 +51,12 @@ export async function POST(request: NextRequest) {
   }
   try {
     const [firstRow, rows] = await doQuery(query);
-    const textEncoder = new TextEncoder();
-    const readableStream = new ReadableStream({
-      async start(controller) {
-        try {
-          controller.enqueue(
-            textEncoder.encode(
-              JSON.stringify({
-                columns: firstRow.columns?.map((col) => col.name),
-                data: firstRow.data,
-              }),
-            ),
-          );
-          for await (const chunk of rows) {
-            if (chunk.data) {
-              controller.enqueue(
-                textEncoder.encode(JSON.stringify({ data: chunk.data })),
-              );
-            }
-          }
-          controller.close();
-        } catch (error) {
-          controller.error(error);
-        }
+    const readableStream = mapToReadableStream(firstRow, rows, format);
+    return new NextResponse(readableStream, {
+      headers: {
+        "Content-Type": "application/x-ndjson",
       },
     });
-
-    return new NextResponse(readableStream);
   } catch (e) {
     if (e instanceof TrinoError) {
       return makeErrorResponse(e.message, 400);
@@ -84,4 +64,58 @@ export async function POST(request: NextRequest) {
     console.log(e);
     return makeErrorResponse("Unknown error", 500);
   }
+}
+
+function mapToReadableStream(
+  firstRow: QueryResult,
+  rows: Iterator<QueryResult>,
+  format: "json" | "minimal",
+) {
+  const textEncoder = new TextEncoder();
+  const columns = firstRow.columns?.map((col) => col.name) ?? [];
+  const mapToFormat = (data: QueryResult["data"], isFirst: boolean = false) => {
+    if (!data) {
+      data = [];
+    }
+    if (format === "minimal") {
+      if (isFirst) {
+        return {
+          columns: columns,
+          data,
+        };
+      }
+      return { data };
+    }
+    return data.map((value) => {
+      const obj: Record<string, any> = {};
+      for (let i = 0; i < columns.length; i++) {
+        obj[columns[i]] = value[i];
+      }
+      return obj;
+    });
+  };
+
+  return new ReadableStream({
+    async start(controller) {
+      try {
+        controller.enqueue(
+          textEncoder.encode(
+            JSON.stringify(mapToFormat(firstRow.data, true)) + "\n",
+          ),
+        );
+        for await (const chunk of rows) {
+          if (chunk.data) {
+            controller.enqueue(
+              textEncoder.encode(
+                JSON.stringify(mapToFormat(chunk.data)) + "\n",
+              ),
+            );
+          }
+        }
+        controller.close();
+      } catch (error) {
+        controller.error(error);
+      }
+    },
+  });
 }
