@@ -13,8 +13,8 @@ Graph Construction Rules:
    - Developers: Only includes qualified developers (must have committed to a builder project)
    - Projects: Includes both builder and devtooling projects
 2. EDGES (interactions):
-   - For Builder Projects: ALL interactions from qualified developers are included
-   - For Devtooling Projects: ALL interactions from qualified developers are included,
+   - For Builder Projects: Only commits from qualified developers are included
+   - For Devtooling Projects: ALL github events from qualified developers are included,
      UNLESS the project is also classified as a builder project (to avoid double-counting)
 3. Edge Types (event_type):
    - FORKED
@@ -40,97 +40,73 @@ MODEL (
 );
 
 @DEF(active_developer_date_threshold, DATE('2024-01-01'));
+@DEF(trusted_developer_min_months, 3);
 
-/* Identifies repositories that are either builder or devtooling projects */
-WITH relevant_repos AS (
-  SELECT DISTINCT 
-    repo_artifact_id,
-    repo_artifact_namespace,
-    'builder' AS repo_type
-  FROM oso.int_superchain_s7_devtooling_onchain_builder_nodes
-  UNION
-  SELECT DISTINCT 
-    repo_artifact_id,
-    repo_artifact_namespace,
-    'devtooling' AS repo_type
-  FROM oso.int_superchain_s7_devtooling_repositories
-),
-
-/* Collects all GitHub events for relevant repositories with developer and project mapping */
-dev_events AS (
-  SELECT    
+WITH commits_to_builder_projects AS (
+  SELECT DISTINCT
+    events.bucket_month,
     events.project_id,
     events.from_artifact_id AS developer_id,
     events.to_artifact_id AS repo_artifact_id,
-    events.bucket_month,
+    builder_repos.repo_artifact_namespace,
     events.event_type,
-    repos.repo_type,
-    repos.repo_artifact_namespace
+    'BUILDER' AS repo_type
   FROM oso.int_events_monthly_to_project AS events
-  JOIN relevant_repos AS repos
-    ON events.to_artifact_id = repos.repo_artifact_id
+  JOIN oso.int_superchain_s7_devtooling_onchain_builder_nodes AS builder_repos
+    ON events.to_artifact_id = builder_repos.repo_artifact_id
+  WHERE
+    event_type = 'COMMIT_CODE'
+    AND events.bucket_month >= @active_developer_date_threshold
+),
+
+trusted_developers AS (
+  SELECT DISTINCT 
+    events.developer_id,
+    events.project_id,
+    LOWER(users.github_username) AS developer_name,
+    COUNT(DISTINCT events.bucket_month) AS months_active
+  FROM commits_to_builder_projects AS events
+  JOIN oso.int_github_users AS users
+    ON events.developer_id = users.user_id
+  WHERE users.is_bot = FALSE
+  GROUP BY 1,2,3
+  HAVING COUNT(DISTINCT events.bucket_month) >= @trusted_developer_min_months
+),
+
+github_events_to_devtooling_repos AS (
+  SELECT DISTINCT
+    events.bucket_month,
+    events.project_id,
+    events.from_artifact_id AS developer_id,
+    events.to_artifact_id AS repo_artifact_id,
+    devtool_repos.repo_artifact_namespace,
+    events.event_type,
+    'DEVTOOL' AS repo_type
+  FROM oso.int_events_monthly_to_project AS events
+  JOIN oso.int_superchain_s7_devtooling_repositories AS devtool_repos
+    ON events.to_artifact_id = devtool_repos.repo_artifact_id
   WHERE events.event_source = 'GITHUB'
 ),
 
-/* Identifies developers who have committed code to builder projects */
-onchain_developers AS (
-  SELECT DISTINCT 
-    developer_id,
-    project_id
-  FROM dev_events
-  JOIN relevant_repos AS repos
-    ON dev_events.repo_artifact_id = repos.repo_artifact_id
-  WHERE
-    event_type = 'COMMIT_CODE'
-    AND repos.repo_type = 'builder'
-    AND bucket_month >= @active_developer_date_threshold
+combined_events AS (
+  SELECT * FROM commits_to_builder_projects
+  UNION
+  SELECT * FROM github_events_to_devtooling_repos
 ),
 
-/* Create a deduplicated mapping of projects to their types
-   This explicitly identifies projects that are both builder and devtooling */
-project_classification AS (
+filtered_events AS (
   SELECT
-    project_id,
-    BOOL_OR(repo_type = 'builder') AS is_builder_project,
-    BOOL_OR(repo_type = 'devtooling') AS is_devtooling_project
-  FROM dev_events
-  GROUP BY project_id
-),
-
-/* Final selection: Gets all interactions where:
-   1. Developer has committed to any builder project since 2024-01-01 (onchain_developers)
-   AND
-   2. The interaction is either:
-      a) With a builder project (counted as builder interaction)
-      b) With a devtooling project (counted as devtool interaction, unless the specific repo
-         is also a builder repo - in that case it's already counted as a builder interaction) */
-
-final_selection AS (
-  SELECT
-    dev_events.bucket_month,
-    dev_events.project_id,
-    dev_events.developer_id,
-    LOWER(users.github_username) AS developer_name,
-    dev_events.event_type,
-    dev_events.repo_artifact_namespace
-FROM dev_events
-JOIN oso.int_github_users AS users
-  ON dev_events.developer_id = users.user_id
-WHERE dev_events.developer_id IN (SELECT developer_id FROM onchain_developers)
-  AND (
-    /* Include all builder interactions */
-    dev_events.repo_type = 'builder'
-    OR 
-    /* Include devtooling interactions only if this project isn't also classified as a builder project */
-    (dev_events.repo_type = 'devtooling'
-     AND NOT EXISTS (
-       SELECT 1
-       FROM project_classification
-       WHERE project_classification.project_id = dev_events.project_id
-       AND project_classification.is_builder_project = TRUE
-     ))
-  )
-  AND dev_events.event_type IN (
+    combined_events.bucket_month,
+    combined_events.project_id,
+    combined_events.developer_id,
+    td.developer_name,
+    combined_events.event_type,
+    combined_events.repo_type,
+    combined_events.repo_artifact_namespace
+  FROM combined_events
+  JOIN trusted_developers AS td
+    ON combined_events.developer_id = td.developer_id
+  WHERE event_type IN (
     'FORKED',
     'STARRED',
     'COMMIT_CODE',
@@ -139,7 +115,22 @@ WHERE dev_events.developer_id IN (SELECT developer_id FROM onchain_developers)
     'PULL_REQUEST_OPENED',
     'PULL_REQUEST_REVIEW_COMMENT'
   )
-  AND NOT users.is_bot
+),
+
+tagged_events AS (
+  SELECT
+    fe.bucket_month,
+    fe.project_id,
+    fe.developer_id,
+    fe.developer_name,
+    fe.event_type,
+    fe.repo_artifact_namespace,
+    CASE WHEN td.months_active IS NOT NULL THEN 'BUILDER' ELSE 'DEVTOOL' END
+      AS relationship_type
+  FROM filtered_events AS fe
+  LEFT JOIN trusted_developers AS td
+    ON fe.developer_id = td.developer_id
+    AND fe.project_id = td.project_id
 )
 
 SELECT DISTINCT
@@ -147,6 +138,11 @@ SELECT DISTINCT
   project_id,
   developer_id,
   developer_name,
-  event_type
-FROM final_selection
-WHERE repo_artifact_namespace != developer_name
+  event_type,
+  repo_artifact_namespace,
+  relationship_type
+FROM tagged_events
+WHERE
+  repo_artifact_namespace != developer_name
+  AND NOT (relationship_type = 'BUILDER' AND event_type != 'COMMIT_CODE')
+  
