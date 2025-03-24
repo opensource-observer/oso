@@ -26,5 +26,6 @@ SELECT DISTINCT
   repos.updated_at
 FROM oso.artifacts_by_project_v1 AS abp
 JOIN s7_projects ON abp.project_id = s7_projects.project_id
-JOIN oso.int_repositories_enriched repos ON abp.artifact_id = repos.artifact_id
+LEFT JOIN oso.int_repositories_enriched repos
+  ON abp.artifact_id = repos.artifact_id
 WHERE abp.artifact_source = 'GITHUB'
