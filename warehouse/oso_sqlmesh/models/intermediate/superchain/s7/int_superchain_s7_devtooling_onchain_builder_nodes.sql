@@ -34,6 +34,7 @@ WITH eligible_builder_projects AS (
     eligibility.gas_fees >= @gas_fees_threshold
     AND eligibility.sample_date = @measurement_date
     AND repos.language IN ('TypeScript', 'Solidity', 'Rust', 'Vyper')
+    AND repos.artifact_namespace != 'ethereum-optimism'
 ),
 
 aggregated_builder_metrics AS (
