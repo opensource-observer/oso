@@ -22,6 +22,7 @@ with base as (
   where
     `ProjectName` is not null
     and `ProjectType` = 'GITHUB'
+    and `SnapshotAt` >= '2025-03-01'
     --and `RelationType` = 'SOURCE_REPO_TYPE'
 )
 {% if is_incremental() %}
