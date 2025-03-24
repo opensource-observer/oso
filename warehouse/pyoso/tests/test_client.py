@@ -22,7 +22,7 @@ class TestClient(TestCase):
         columns = ["column"]
         data = [["test"]]
         expected_json = {"columns": columns, "data": data}
-        mock_response.iter_content = mock.Mock(
+        mock_response.iter_lines = mock.Mock(
             return_value=[json.dumps(expected_json).encode()]
         )
         mock_post.return_value = mock_response
@@ -36,8 +36,11 @@ class TestClient(TestCase):
 
         mock_post.assert_called_once_with(
             "http://localhost:8000/api/v1/sql",
-            headers={"Authorization": f"Bearer {self.CUSTOM_API_KEY}"},
-            json={"query": query},
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {self.CUSTOM_API_KEY}",
+            },
+            json={"query": query, "format": "minimal"},
             stream=True,
         )
         self.assertEqual(df.columns.tolist(), columns)
@@ -50,7 +53,7 @@ class TestClient(TestCase):
         columns = ["column"]
         data = [["test"]]
         expected_json = {"columns": columns, "data": data}
-        mock_response.iter_content = mock.Mock(
+        mock_response.iter_lines = mock.Mock(
             return_value=[json.dumps(expected_json).encode()]
         )
         mock_post.return_value = mock_response
@@ -61,8 +64,11 @@ class TestClient(TestCase):
 
         mock_post.assert_called_once_with(
             "https://www.opensource.observer/api/v1/sql",
-            headers={"Authorization": f"Bearer {self.DEFAULT_API_KEY}"},
-            json={"query": query},
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {self.DEFAULT_API_KEY}",
+            },
+            json={"query": query, "format": "minimal"},
             stream=True,
         )
         self.assertEqual(df.columns.tolist(), columns)
@@ -82,7 +88,10 @@ class TestClient(TestCase):
 
         mock_post.assert_called_once_with(
             "https://www.opensource.observer/api/v1/sql",
-            headers={"Authorization": f"Bearer {self.CUSTOM_API_KEY}"},
-            json={"query": query},
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {self.CUSTOM_API_KEY}",
+            },
+            json={"query": query, "format": "minimal"},
             stream=True,
         )

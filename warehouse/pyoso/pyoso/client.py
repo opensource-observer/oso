@@ -1,11 +1,11 @@
+import json
 import os
 from dataclasses import dataclass
-from typing import Optional
+from typing import Any, Optional
 
 import pandas as pd
 import requests
 from pyoso.exceptions import OsoError, OsoHTTPError
-from pyoso.utils import parse_bytes_string
 
 _DEFAULT_BASE_URL = "https://www.opensource.observer/api/v1/"
 OSO_API_KEY = "OSO_API_KEY"
@@ -14,6 +14,12 @@ OSO_API_KEY = "OSO_API_KEY"
 @dataclass
 class ClientConfig:
     base_url: Optional[str]
+
+
+@dataclass
+class QueryData:
+    columns: list[str]
+    data: list[list[Any]]
 
 
 class Client:
@@ -32,22 +38,30 @@ class Client:
                 self.__base_url += "/"
 
     def __query(self, query: str):
-        headers = {}
+        headers = {
+            "Content-Type": "application/json",
+        }
         if self.__api_key:
             headers["Authorization"] = f"Bearer {self.__api_key}"
         try:
             response = requests.post(
                 f"{self.__base_url}sql",
                 headers=headers,
-                json={"query": query},
+                json={"query": query, "format": "minimal"},
                 stream=True,
             )
             response.raise_for_status()
-            chunks = b""
-            for chunk in response.iter_content(chunk_size=None):
+            columns = []
+            data = []
+            for chunk in response.iter_lines(chunk_size=None):
                 if chunk:
-                    chunks += chunk
-            return parse_bytes_string(chunks)
+                    parsed_obj = json.loads(chunk)
+                    if "columns" in parsed_obj:
+                        columns.extend(parsed_obj["columns"])
+                    if "data" in parsed_obj:
+                        data.extend(parsed_obj["data"])
+
+            return QueryData(columns=columns, data=data)
         except requests.HTTPError as e:
             raise OsoHTTPError(e, response=e.response) from None
 
