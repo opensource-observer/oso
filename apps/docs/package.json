@@ -22,30 +22,30 @@
     "plasmic:sync": "pnpm plasmic sync --yes --force"
   },
   "dependencies": {
-    "@docusaurus/core": "3.5.2",
-    "@docusaurus/preset-classic": "3.5.2",
-    "@docusaurus/theme-common": "3.5.2",
+    "@docusaurus/core": "3.7.0",
+    "@docusaurus/preset-classic": "3.7.0",
+    "@docusaurus/theme-common": "3.7.0",
     "@laxels/docusaurus-plugin-segment": "^1.0.6",
-    "@mdx-js/react": "^3.0.1",
+    "@mdx-js/react": "^3.1.0",
     "@plasmicapp/react-web": "^0.2.378",
     "@plasmicpkgs/antd5": "^0.0.279",
-    "@plasmicpkgs/plasmic-basic-components": "^0.0.230",
+    "@plasmicpkgs/plasmic-basic-components": "^0.0.234",
     "clsx": "^2.1.1",
     "lodash": "^4.17.21",
-    "prism-react-renderer": "^2.4.0",
+    "prism-react-renderer": "^2.4.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
-    "@docusaurus/module-type-aliases": "3.5.2",
-    "@docusaurus/tsconfig": "3.5.2",
-    "@docusaurus/types": "3.5.2",
-    "@eslint/compat": "^1.2.0",
-    "@eslint/eslintrc": "^3.1.0",
-    "@eslint/js": "^9.12.0",
+    "@docusaurus/module-type-aliases": "3.7.0",
+    "@docusaurus/tsconfig": "3.7.0",
+    "@docusaurus/types": "3.7.0",
+    "@eslint/compat": "^1.2.7",
+    "@eslint/eslintrc": "^3.3.1",
+    "@eslint/js": "^9.23.0",
     "@plasmicapp/cli": "^0.1.336",
-    "dotenv": "^16.4.5",
-    "typescript": "~5.3.3"
+    "dotenv": "^16.4.7",
+    "typescript": "~5.8.2"
   },
   "browserslist": {
     "production": [
