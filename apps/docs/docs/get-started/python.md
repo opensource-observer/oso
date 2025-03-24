@@ -1,12 +1,12 @@
 ---
-title: "Access via GraphQL API"
-sidebar_position: 2
+title: "Access via Python"
+sidebar_position: 1
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-The [OSO](https://www.opensource.observer) API serves 
+The [OSO](https://www.opensource.observer) API serves
 queries on metrics and metadata about open source projects.
 It is a [GraphQL](https://graphql.org/) API backed by the
 [OSO data pipeline](../references/architecture.md).
@@ -24,7 +24,6 @@ If you already have an account, log in. Then create a new personal API key:
 3. Give your key a label - this is just for you, usually to describe a key's purpose.
 4. You should see your brand new key. **Immediately** save this value, as you'll **never** see it again after refreshing the page.
 5. Click "Create" to save the key.
-
 
 ![generate API key](../integrate/generate-api-key.png)
 
@@ -61,7 +60,6 @@ https://www.opensource.observer/api/v1/graphql
 ```
 
 In order to authenticate with the API service, you have to use the `Authorization` HTTP header and `Bearer` authentication on all HTTP requests
-
 
 <Tabs>
   <TabItem value="curl" label="curl" default>
@@ -102,7 +100,8 @@ const response = await fetch('https://www.opensource.observer/api/v1/graphql', {
 
 const data = await response.json();
 console.log(data);
-```
+
+````
   </TabItem>
   <TabItem value="python" label="Python">
 ```python
@@ -134,10 +133,10 @@ response = requests.post(
 
 data = response.json()
 print(data)
-```
+````
+
   </TabItem>
 </Tabs>
-
 
 ## Next steps
 

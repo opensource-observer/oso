@@ -15,63 +15,66 @@ import Head from '@docusaurus/Head';
 
 At Kariba Labs, we believe deeply in the power of open source software. That is why we are building Open Source Observer (aka OSO), an open source tool for measuring the impact of open source projects. In order to achieve our goal of making open source better for everyone, we believe that OSO needs more than just open source code. We are committed to being the most open and reliable source of impact metrics out there. We will achieve this by committing the OSO project to the following practices:
 
-- **Open source software**: All code is developed using permissive licenses (e.g. MIT/Apache 2.0)
+- **Open source software**: All code is developed using open source licenses
 
 - **Open data**: All collected and processed data will be openly shared with the community (to the extent allowed by terms of service)
 
-- **Open infrastructure**: We will open up our infrastructure for anyone to contribute or build upon our existing infrastructure at-cost.
+- **Open infrastructure**: We will open up our infrastructure for anyone to contribute or build upon our existing infrastructure
 
 <!-- truncate -->
 
-# Open infra for mass experimentation
+## Open infra for mass experimentation
+
 Some data projects open source parts of their code base, allowing anyone to run the indexers or visualizations themselves. However, it is often not a trivial task to run the massive data pipeline jobs necessary to collect all of the data. In many cases, the costs can be prohibitive for individuals. For example in OSO, we collect data across all of GitHub, npm, and select blockchains. Some projects periodically release data snapshots, which easily enables users to run data processing jobs without running their own indexing infrastructure. However, the very nature of snapshots means things are getting out of date as soon as you get it. In the worst case, the data is locked behind proprietary services that impose extractive pricing.
 
 If we are going to revolutionize the incentives behind public goods like open source software, we need to make the data and analyses as widely available as possible. 
 
-## Data must be live.
+### Data must be live.
 In order to build the sorts of rich applications we envision for the future, the data must be live. Snapshots will not suffice. We’re thinking of visual dashboards of rich data analyses, data oracles that feed into smart contracts, and all sorts of automated processes that can trigger on data conditions.
 
-## Share the costs and maintenance burden.
+### Share the costs and maintenance burden.
 We can’t expect every developer that wants to build on this data to run their own indexing jobs, host servers and database replicas. With OSO, we plan to charge minimal usage-based pricing to help us cover the costs of running the infrastructure, which auto-scale with demand. This can include, but is not limited to cloud computing costs, storage costs, and the human costs behind data cleaning and maintaining service availability. We aim to be fair and transparent with costs, budgets, logs, and processes. 
 
 **Our goal with OSO is to unlock the creative abilities of the masses to build their own applications and visualizations.**
 
 That will be the key to truly understanding the value and influence of open source software on the broader global economy and society in general. Let’s make this case together.
 
-# Designing openness into every layer of the stack
-Here are a handful of the ways that we want to bring open collaboration to every layer of our stack. If you have other ideas on how we can improve our open practices, please start a [discussion](https://github.com/opensource-observer/oso/issues)!
+## Designing openness into every layer of the stack
+Here are a handful of the ways that we want to bring open collaboration to every layer of our stack. If you have other ideas on how we can improve our open practices, please start a [discussion](https://github.com/opensource-observer/oso/discussions)!
 
-## Open source observer codebase
+### Open source observer code base
 https://github.com/opensource-observer/oso
 
 OSO is continuously deployed from a monorepo. The best way to join the conversion is to join the [Discord server](https://www.opensource.observer/discord), where we all hang on the daily. For more details, check out our [Contribution Guide](https://github.com/opensource-observer/oso/blob/main/CONTRIBUTING.md). 
 
-## Open source software directory (oss-directory)
+### Open source software directory (oss-directory)
 https://github.com/opensource-observer/oss-directory
 
 This is where all of our data pipelines start from. In order to build the best analytics platform for open source projects, we need the most complete accounting of all artifacts (e.g. git repos, packages, deployments) from the projects. Join #oss-directory on [Discord](https://www.opensource.observer/discord) to help us populate this.
 
-## Open indexing pipeline and logs
-https://github.com/opensource-observer/oso/actions
+### Open indexing pipeline and logs
+https://dagster.opensource.observer/
 
-At this point in time, we’ve been running all of our data indexing jobs as public jobs on GitHub actions. Contributing new GitHub actions workflows is the best way to index new sources of data. Check out the job queue to view our historical logs.
+At this point in time, we orchestrate all of our data infrastructure using a public Dagster instance. Check out our documentation on how to add new data sources and models. You can monitor all of our jobs and data freshness in the Dagster dashboard.
 
-## Open Data API access (coming soon)
+### Open Data API access
+https://www.opensource.observer/graphql
+
 OSO applications are powered by our GraphQL API. Reach out to us if you need early access. In the future, we will introduce simple at-cost usage-based pricing to access this API.
 
-## Open data science notebooks (coming soon)
+### Shared data warehouse
+We provide a community Trino cluster for querying all of the data in OSO. The easiest way to query the community cluster is via [pyoso](https://pypi.org/project/pyoso/). Similar to the GraphQL API, we want to expose cost-shared access to our data lake for collaborators to perform data analytics processing.
+
+### Open data science notebooks
 We have been creating custom Jupyter notebooks to help different foundations understand the impact of the OSS projects in their ecosystems. If you have an ecosystem that you’d like our help analyzing, please fill out our [interest form](https://www.opensource.observer/karibalabs-interest). Our [existing notebooks](https://github.com/opensource-observer/insights) are open source. We also want to provide templates for getting started with our API.
 
-## Open frontend dashboards (coming soon)
+### Open frontend dashboards (coming soon)
 We are leveraging a [low-code builder](https://plasmic.app/?ref=ryscheng) for [opensource.observer](https://www.opensource.observer). We plan on writing a blog post on how to use this for building new dashboards and reusable data visualization widgets to integrate into other websites.
 
-## Shared data warehouse (future work)
-Similar to the GraphQL API, we want to expose cost-shared access to our data warehouse for collaborators to perform data analytics processing.
-
-## Decentralized data pipeline (future work)
+### Decentralized data pipeline (future work)
 While we are starting with centralized infrastructure for team velocity and cost-sharing purposes, in the future, our goal is to decentralize our infrastructure to accommodate a rich heterogeneous data ecosystem.
 
-# Join us!
+## Join us!
 We are just getting started building the most open and reliable community effort to measure open source impact. We want to break the mold of traditional data analytics models. Instead of hoarding data in centralized infrastructure, we want to build this as openly and collaboratively as we can to power the next generation of data-driven applications.
 
 *Kariba Labs is supported by generous grants from Protocol Labs, Optimism, and Arbitrum Foundation.*
