@@ -68,6 +68,38 @@ project_eligibility AS (
       >= 3
     ) AS meets_all_criteria
   FROM builder_metrics
+),
+
+artifacts AS (
+  SELECT DISTINCT
+    project_name,
+    'DEFILLAMA_ADAPTER' AS artifact_type
+  FROM oso.artifacts_by_project_v1
+  WHERE artifact_source = 'DEFILLAMA'
+
+  UNION ALL
+
+  SELECT DISTINCT
+    p2p.external_project_name AS project_name,
+    'BUNDLE_BEAR' AS artifact_type
+  FROM oso.int_projects_to_projects p2p
+  JOIN oso.artifacts_by_project_v1 abp ON p2p.artifact_id = abp.artifact_id
+  WHERE
+    p2p.ossd_project_name IN (
+      SELECT DISTINCT ossd_name
+      FROM oso.int_4337_address_labels
+    )
+    AND p2p.external_project_source = 'OP_ATLAS'
+    AND abp.artifact_source = 'GITHUB'
+),
+
+artifact_flags AS (
+  SELECT
+    project_name,
+    MAX(CASE WHEN artifact_type = 'DEFILLAMA_ADAPTER' THEN TRUE ELSE FALSE END) AS has_defillama_adapter,
+    MAX(CASE WHEN artifact_type = 'BUNDLE_BEAR' THEN TRUE ELSE FALSE END) AS has_bundle_bear
+  FROM artifacts
+  GROUP BY 1
 )
 
 SELECT
@@ -82,7 +114,13 @@ SELECT
   (
     builder_metrics.applied_to_round
     AND project_eligibility.meets_all_criteria
-  ) AS is_eligible
+  ) AS is_eligible,
+  COALESCE(artifact_flags.has_defillama_adapter, FALSE)
+    AS has_defillama_adapter, 
+  COALESCE(artifact_flags.has_bundle_bear, FALSE)
+    AS has_bundle_bear
 FROM builder_metrics
 JOIN project_eligibility
   ON builder_metrics.project_id = project_eligibility.project_id
+LEFT JOIN artifact_flags
+  ON builder_metrics.project_id = artifact_flags.project_name
