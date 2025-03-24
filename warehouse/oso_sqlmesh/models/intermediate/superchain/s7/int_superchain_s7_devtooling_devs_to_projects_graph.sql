@@ -145,3 +145,4 @@ FROM tagged_events
 WHERE
   repo_artifact_namespace != developer_name
   AND NOT (relationship_type = 'BUILDER' AND event_type != 'COMMIT_CODE')
+  
