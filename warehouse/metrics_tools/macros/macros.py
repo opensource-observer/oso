@@ -64,7 +64,7 @@ def relative_window_sample_date(
 
 
 def time_aggregation_bucket(
-    evaluator: MacroEvaluator, time_exp: exp.Expression, interval: str
+    evaluator: MacroEvaluator, time_exp: exp.Expression, interval: str, offset: int = 0
 ):
     if evaluator.runtime_stage in ["loading", "creating"]:
         return parse_one("STR_TO_DATE('1970-01-01', '%Y-%m-%d')")
@@ -72,18 +72,30 @@ def time_aggregation_bucket(
     if interval == "over_all_time":
         return parse_one("CURRENT_DATE()")
 
+    rollup_to_interval = {
+        "daily": "day",
+        "weekly": "week",
+        "monthly": "month",
+        "quarterly": "quarter",
+        "yearly": "year",
+    }
+
+    assert interval in rollup_to_interval, f"Invalid interval type={interval}"
+
+    if offset:
+        time_exp = exp.DateAdd(
+            this=time_exp,
+            expression=exp.Literal(this=str(offset), is_string=False),
+            unit=exp.Var(this=rollup_to_interval[interval].upper()),
+        )
+
     if evaluator.engine_adapter.dialect == "duckdb":
-        rollup_to_interval = {
-            "daily": "DAY",
-            "weekly": "WEEK",
-            "monthly": "MONTH",
-        }
         return exp.Anonymous(
             this="TIME_BUCKET",
             expressions=[
                 exp.Interval(
                     this=exp.Literal(this="1", is_string=False),
-                    unit=exp.Var(this=rollup_to_interval[interval]),
+                    unit=exp.Var(this=rollup_to_interval[interval].upper()),
                 ),
                 exp.Cast(
                     this=time_exp,
@@ -92,11 +104,6 @@ def time_aggregation_bucket(
             ],
         )
     elif evaluator.engine_adapter.dialect == "trino":
-        rollup_to_interval = {
-            "daily": "day",
-            "weekly": "week",
-            "monthly": "month",
-        }
         return exp.TimestampTrunc(
             this=time_exp,
             unit=exp.Literal(this=rollup_to_interval[interval], is_string=True),
@@ -279,7 +286,8 @@ def metrics_end(evaluator: MacroEvaluator, _data_type: t.Optional[str] = None):
 
 def metrics_sample_interval_length(
     evaluator: MacroEvaluator,
-    unit_exp: str | exp.Literal,
+    time_exp: exp.Expression,
+    unit_exp: str | exp.Literal = "day",
     start_exp: t.Optional[exp.Expression] = None,
     end_exp: t.Optional[exp.Expression] = None,
 ):
@@ -291,14 +299,36 @@ def metrics_sample_interval_length(
         unit = exp.Var(this=unit_exp.this)
     else:
         unit = exp.Var(this=unit_exp.upper())
+    evaluated_time_exp = metrics_sample_date(evaluator, time_exp)
+    assert isinstance(
+        evaluated_time_exp, exp.Expression
+    ), "time_exp must be an expression"
+    time_exp = evaluated_time_exp
+    time_aggregation_interval = evaluator.locals.get("time_aggregation")
     if not start_exp:
-        start = metrics_start(evaluator, "DATE")
-        assert isinstance(start, exp.Expression), "start must be an expression"
-        start_exp = start
+        if time_aggregation_interval:
+            start = evaluator.transform(
+                time_aggregation_bucket(evaluator, time_exp, time_aggregation_interval)
+            )
+            assert isinstance(start, exp.Expression), "start must be an expression"
+            start_exp = start
+        else:
+            start = metrics_start(evaluator, "DATE")
+            assert isinstance(start, exp.Expression), "start must be an expression"
+            start_exp = start
     if not end_exp:
-        end = metrics_end(evaluator, "DATE")
-        assert isinstance(end, exp.Expression), "end must be an expression"
-        end_exp = end
+        if time_aggregation_interval:
+            end = evaluator.transform(
+                time_aggregation_bucket(
+                    evaluator, time_exp, time_aggregation_interval, offset=1
+                )
+            )
+            assert isinstance(end, exp.Expression), "end must be an expression"
+            end_exp = end
+        else:
+            end = metrics_end(evaluator, "DATE")
+            assert isinstance(end, exp.Expression), "end must be an expression"
+            end_exp = end
     return exp.DateDiff(
         this=end_exp,
         expression=start_exp,
