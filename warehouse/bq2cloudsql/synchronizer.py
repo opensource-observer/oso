@@ -1,34 +1,36 @@
-import uuid
 import os
-from enum import Enum
+import textwrap
+import uuid
 from dataclasses import dataclass
 from datetime import datetime
-import textwrap
-from typing import List, Dict, Union, Tuple, Optional
+from enum import Enum
+from typing import Dict, List, Optional, Tuple, Union
 
 import pendulum
+from google.cloud import bigquery, storage
+from google.cloud.bigquery import ExtractJobConfig
+from google.cloud.bigquery import Table as BQTable
+from google.cloud.bigquery import TableReference
+from google.cloud.storage import Bucket
+from googleapiclient.discovery import build
 from sqlalchemy import (
-    MetaData,
-    Table,
-    Column,
-    String,
-    Double,
-    BigInteger,
-    DateTime,
-    Date,
-    Boolean,
-    LargeBinary,
-    Numeric,
-    Time,
     JSON,
+    BigInteger,
+    Boolean,
+    Column,
+    Date,
+    DateTime,
+    Double,
+    LargeBinary,
+    MetaData,
+    Numeric,
+    String,
+    Table,
+    Time,
     select,
     text,
 )
 from sqlalchemy.dialects.postgresql import insert
-from google.cloud import bigquery, storage
-from google.cloud.bigquery import TableReference, ExtractJobConfig, Table as BQTable
-from google.cloud.storage import Bucket
-from googleapiclient.discovery import build
 
 from .cloudsql import CloudSQLClient
 

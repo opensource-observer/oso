@@ -5,7 +5,8 @@ Fake data generators
 import random
 import string
 from datetime import datetime
-from sqlalchemy import Table, Column, DateTime, MetaData, Integer, create_engine, String
+
+from sqlalchemy import Column, DateTime, Integer, MetaData, String, Table, create_engine
 
 
 def random_text(size: int = 20):

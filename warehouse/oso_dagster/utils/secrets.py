@@ -2,12 +2,13 @@
 Tools for dealing with secret management.
 """
 
-import os
 import inspect
-from typing import Dict, Optional, Any, Callable
-
+import os
 from dataclasses import dataclass
+from typing import Any, Callable, Dict, Optional
+
 from google.cloud import secretmanager
+
 from .types import unpack_config
 
 

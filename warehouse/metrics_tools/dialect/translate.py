@@ -3,6 +3,7 @@ Enables custom sql functions that can be processed into normal python objects as
 """
 
 import typing as t
+
 from sqlglot import exp
 from sqlmesh.core.macros import MacroEvaluator
 

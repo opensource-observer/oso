@@ -1,6 +1,7 @@
 from typing import List
-from sqlglot.optimizer.qualify import qualify
+
 from sqlglot.expressions import Expression
+from sqlglot.optimizer.qualify import qualify
 
 from .base import Transform
 

@@ -3,17 +3,19 @@ from enum import Enum
 
 from dagster import DagsterLogManager
 from google.cloud.bigquery_datatransfer import (
+    CreateTransferConfigRequest,
     DataTransferServiceClient,
+    DeleteTransferConfigRequest,
+    EmailPreferences,
     ListDataSourcesRequest,
     ListTransferConfigsRequest,
-    CreateTransferConfigRequest,
-    DeleteTransferConfigRequest,
     TransferConfig,
-    EmailPreferences,
 )
 from google.protobuf.struct_pb2 import Struct
+
 from .bq import BigQueryDatasetConfig
-from .common import TimeInterval, SourceMode
+from .common import SourceMode, TimeInterval
+
 
 # An enum for types of source data
 # The value is the `data_source_id` used in Google TransferConfig

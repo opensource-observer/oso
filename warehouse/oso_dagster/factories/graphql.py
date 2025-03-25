@@ -193,7 +193,7 @@ class TypeToPython:
 
 
 def resolve_type(graphql_type: Any, instance: TypeToPython) -> str:
-    """
+      """
     Resolve the type of a GraphQL field.
 
     Args:
@@ -203,20 +203,18 @@ def resolve_type(graphql_type: Any, instance: TypeToPython) -> str:
     Returns:
         The Python type for the given GraphQL type.
     """
-
-    if graphql_type["kind"] == "NON_NULL":
-        return resolve_type(graphql_type["ofType"], instance)
-    if graphql_type["kind"] == "LIST":
-        return (
-            f"List[{resolve_type(graphql_type["ofType"], instance)}]"
-            if "ofType" in graphql_type
-            else "Any"
-        )
-    if graphql_type["kind"] == "ENUM":
+    
+    if not isinstance(graphql_type, dict):
+        return "Any"
+    if graphql_type.get("kind") == "NON_NULL":
+        return resolve_type(graphql_type.get("ofType", {}), instance)
+    if graphql_type.get("kind") == "LIST":
+        inner = resolve_type(graphql_type.get("ofType", {}), instance)
+        return f"List[{inner}]"
+    if graphql_type.get("kind") == "ENUM":
         return "str"
-
-    return instance[graphql_type["name"]]
-
+    name = graphql_type.get("name")
+    return instance[name] if name and name in instance else "Any"
 
 def expand_field(
     field: Dict[str, Any],

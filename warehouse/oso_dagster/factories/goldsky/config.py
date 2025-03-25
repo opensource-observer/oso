@@ -1,18 +1,18 @@
 import os
+from dataclasses import dataclass, field
 from typing import (
-    Optional,
     Callable,
     List,
+    NotRequired,
+    Optional,
     Sequence,
+    TypedDict,
     TypeVar,
     Union,
-    TypedDict,
-    NotRequired,
 )
-from dataclasses import dataclass, field
 
-from google.cloud.bigquery.schema import SchemaField
 from dagster import AssetsDefinition
+from google.cloud.bigquery.schema import SchemaField
 
 from ..common import AssetFactoryResponse
 

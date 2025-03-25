@@ -1,23 +1,21 @@
 """Source that loads tables form any SQLAlchemy supported database, supports batching requests and incremental loads."""
 
-from typing import Callable, Dict, List, Optional, Union, Iterable, Any
+from typing import Any, Callable, Dict, Iterable, List, Optional, Union
+
+import dlt
+from dlt.common.configuration.specs.config_section_context import ConfigSectionContext
+from dlt.sources import DltResource
+from dlt.sources.credentials import ConnectionStringCredentials
 from sqlalchemy import MetaData, Table
 from sqlalchemy.engine import Engine
 
-import dlt
-from dlt.sources import DltResource
-
-
-from dlt.sources.credentials import ConnectionStringCredentials
-from dlt.common.configuration.specs.config_section_context import ConfigSectionContext
-
 from .helpers import (
-    table_rows,
-    engine_from_credentials,
-    get_primary_key,
-    TableBackend,
     SqlDatabaseTableConfiguration,
     SqlTableResourceConfiguration,
+    TableBackend,
+    engine_from_credentials,
+    get_primary_key,
+    table_rows,
 )
 from .schema_types import table_to_columns
 

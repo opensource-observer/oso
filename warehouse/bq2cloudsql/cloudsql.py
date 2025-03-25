@@ -1,14 +1,14 @@
-import time
 import pprint
 import ssl
+import time
+from typing import Callable, Dict, List, Optional
 
 import pg8000.native
 import sqlalchemy
-from sqlalchemy import Table, Column, MetaData, text
 from google.cloud.sql.connector import Connector
-from googleapiclient.errors import HttpError
 from googleapiclient.discovery import build
-from typing import Callable, List, Dict, Optional
+from googleapiclient.errors import HttpError
+from sqlalchemy import Column, MetaData, Table, text
 
 connector = Connector()
 pp = pprint.PrettyPrinter(indent=4)

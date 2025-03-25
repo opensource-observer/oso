@@ -1,9 +1,6 @@
 import uuid
-from .secrets import (
-    secret_ref_arg,
-    SimpleSecretResolver,
-    resolve_secrets_for_func,
-)
+
+from .secrets import SimpleSecretResolver, resolve_secrets_for_func, secret_ref_arg
 
 
 def fake_func(s: str = secret_ref_arg(group_name="fake", key="foo")):

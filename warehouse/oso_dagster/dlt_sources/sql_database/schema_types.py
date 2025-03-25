@@ -1,14 +1,14 @@
 # type: ignore
-from typing import Optional, Any, Sequence, Type, TYPE_CHECKING
-from typing_extensions import TypeAlias
-from sqlalchemy import Table, Column
-from sqlalchemy.engine import Row
-from sqlalchemy.sql import sqltypes, Select
+from typing import TYPE_CHECKING, Any, Optional, Sequence, Type
 
 from dlt.common import logger
-from dlt.common.schema.typing import TColumnSchema, TTableSchemaColumns
 from dlt.common.configuration import with_config
 from dlt.common.destination import DestinationCapabilitiesContext
+from dlt.common.schema.typing import TColumnSchema, TTableSchemaColumns
+from sqlalchemy import Column, Table
+from sqlalchemy.engine import Row
+from sqlalchemy.sql import Select, sqltypes
+from typing_extensions import TypeAlias
 
 # optionally create generics with any so they can be imported by dlt importer
 if TYPE_CHECKING:
@@ -108,8 +108,9 @@ def columns_to_arrow(
     is always the case if run within the pipeline. This will generate arrow schema compatible with the destination.
     Otherwise generic capabilities are used
     """
-    from dlt.common.libs.pyarrow import pyarrow as pa, get_py_arrow_datatype
     from dlt.common.destination.capabilities import DestinationCapabilitiesContext
+    from dlt.common.libs.pyarrow import get_py_arrow_datatype
+    from dlt.common.libs.pyarrow import pyarrow as pa
 
     return pa.schema(
         [
@@ -130,8 +131,8 @@ def columns_to_arrow(
 def row_tuples_to_arrow(
     rows: Sequence[RowAny], columns: TTableSchemaColumns, tz: str
 ) -> Any:
-    from dlt.common.libs.pyarrow import pyarrow as pa
     import numpy as np
+    from dlt.common.libs.pyarrow import pyarrow as pa
 
     arrow_schema = columns_to_arrow(columns, tz=tz)
 

@@ -1,7 +1,8 @@
 
-from sqlglot import expressions as exp
-from .context import Connector, ColumnList
 from duckdb import DuckDBPyConnection, DuckDBPyRelation
+from sqlglot import expressions as exp
+
+from .context import ColumnList, Connector
 
 
 class DuckDbConnector(Connector[DuckDBPyRelation]):

@@ -2,13 +2,14 @@
 # !pip install pandas-gbq
 # pip install pymongo
 
-from typing import List, Dict, Any, Union, Tuple, Callable, Optional
-from pandas_gbq import gbq
-import openai
-from google.colab import auth
-import numpy as np
 import json
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+
+import numpy as np
+import openai
 import yaml
+from google.colab import auth
+from pandas_gbq import gbq
 from pymongo import MongoClient
 
 auth.authenticate_user()

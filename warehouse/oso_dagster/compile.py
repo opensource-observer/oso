@@ -4,15 +4,16 @@ Tool for handling dbt compilation in a docker container. This should not be used
 locally. This is truly only for docker.
 """
 
-import click
-import os
 import base64
-import dotenv
+import os
 from pathlib import Path
+
+import click
+import dotenv
 
 dotenv.load_dotenv()
 
-from .utils.dbt import load_dbt_manifests, BQTargetConfigTemplate, default_profiles_path
+from .utils.dbt import BQTargetConfigTemplate, default_profiles_path, load_dbt_manifests
 
 
 @click.command()

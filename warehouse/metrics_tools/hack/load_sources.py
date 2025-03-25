@@ -1,12 +1,13 @@
-import typing as t
 import os
+import queue
+import typing as t
+from dataclasses import dataclass
+
 import click
 import duckdb
-import queue
-from dataclasses import dataclass
 from boltons import fileutils
 from google.cloud import bigquery, storage
-from oso_dagster.utils.bq import export_to_gcs, BigQueryTableConfig
+from oso_dagster.utils.bq import BigQueryTableConfig, export_to_gcs
 
 
 @dataclass(kw_only=True)

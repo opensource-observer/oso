@@ -1,14 +1,14 @@
-import os
 import json
+import os
 from typing import List
 
-from google.cloud import bigquery, storage
 from dbt.cli.main import dbtRunner, dbtRunnerResult
-
-from .synchronizer import BigQueryCloudSQLSynchronizer, TableSyncConfig, TableSyncMode
-from .cloudsql import CloudSQLClient
-
 from dotenv import load_dotenv
+from google.cloud import bigquery, storage
+
+from .cloudsql import CloudSQLClient
+from .synchronizer import BigQueryCloudSQLSynchronizer, TableSyncConfig, TableSyncMode
+
 
 def table_sync_config_from_dbt_marts(target: str) -> List[TableSyncConfig]:
     # Run dbt to get model meta

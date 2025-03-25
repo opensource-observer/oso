@@ -1,4 +1,4 @@
-from typing import Callable, Any
+from typing import Any, Callable
 
 type ConfigCallable[T, **P] = Callable[P, T]
 

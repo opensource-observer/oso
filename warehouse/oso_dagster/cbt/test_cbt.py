@@ -1,5 +1,6 @@
 from sqlmesh.core.dialect import parse_one
-from .mesh import render_with_sqlmesh, DictResolver
+
+from .mesh import DictResolver, render_with_sqlmesh
 
 
 def test_render_with_sqlmesh():

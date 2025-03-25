@@ -2,9 +2,10 @@
 SQLMesh + SQLGlot related tools
 """
 
+from typing import Any, Dict
+
 from sqlmesh.core.dialect import parse_one
 from sqlmesh.core.renderer import ExpressionRenderer
-from typing import Any, Dict
 
 
 class SchemaResolver:

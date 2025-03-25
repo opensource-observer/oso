@@ -1,5 +1,6 @@
-import pandas as pd
 import typing as t
+
+import pandas as pd
 
 
 def as_pandas_df(v: t.Any) -> pd.DataFrame:
