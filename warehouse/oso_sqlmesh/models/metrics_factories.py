@@ -390,12 +390,7 @@ timeseries_metrics(
         "defillama_tvl": MetricQueryDef(
             ref="blockchain/defillama_tvl.sql",
             time_aggregations=["daily", "weekly", "monthly"],
-            rolling=RollingConfig(
-                windows=[30, 90, 180],
-                unit="day",
-                cron="@daily",
-                slots=32,
-            ),
+            incremental=False,
             entity_types=["artifact", "project", "collection"],
             over_all_time=True,
             metadata=MetricMetadata(
