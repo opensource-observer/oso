@@ -17,9 +17,8 @@ const makeErrorResponse = (errorMsg: string, status: number) =>
   NextResponse.json({ error: errorMsg }, { status });
 
 async function doQuery(
-  rawQuery: string,
+  query: string,
 ): Promise<[QueryResult, Iterator<QueryResult>]> {
-  const query = decodeURIComponent(rawQuery);
   console.log(`Running query: ${query}`);
   const client = getTrinoClient();
   const rows = await client.query(query);
