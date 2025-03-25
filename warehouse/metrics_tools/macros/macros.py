@@ -167,6 +167,13 @@ def metrics_name(evaluator: MacroEvaluator, override: exp.Expression | str = "")
     )
 
 
+def is_incremental(evaluator: MacroEvaluator):
+    return (
+        evaluator.locals.get("start_ds") is not None
+        and evaluator.locals.get("end_ds") is not None
+    )
+
+
 def metrics_start(evaluator: MacroEvaluator, _data_type: t.Optional[str] = None):
     """This has different semantic meanings depending on the mode of the metric query
 
@@ -182,7 +189,7 @@ def metrics_start(evaluator: MacroEvaluator, _data_type: t.Optional[str] = None)
         return parse_one("STR_TO_DATE('1970-01-01', '%Y-%m-%d')")
     time_aggregation_interval = evaluator.locals.get("time_aggregation")
 
-    if time_aggregation_interval == "over_all_time":
+    if time_aggregation_interval == "over_all_time" or not is_incremental(evaluator):
         return parse_one("STR_TO_DATE('1970-01-01', '%Y-%m-%d')")
 
     if time_aggregation_interval:
@@ -243,7 +250,7 @@ def metrics_end(evaluator: MacroEvaluator, _data_type: t.Optional[str] = None):
         return parse_one("STR_TO_DATE('1970-01-01', '%Y-%m-%d')")
     time_aggregation_interval = evaluator.locals.get("time_aggregation")
 
-    if time_aggregation_interval == "over_all_time":
+    if time_aggregation_interval == "over_all_time" or not is_incremental(evaluator):
         return parse_one("CURRENT_DATE()")
 
     if time_aggregation_interval:
@@ -292,6 +299,7 @@ def metrics_sample_interval_length(
     end_exp: t.Optional[exp.Expression] = None,
 ):
     """Uses start/end dates to calculate the interval length"""
+
     assert isinstance(
         unit_exp, (str, exp.Literal)
     ), "unit_exp must be a string or literal"

@@ -58,6 +58,8 @@ class MetricQueryConfig(t.TypedDict):
     vars: t.Dict[str, t.Any]
     query: MetricQuery
     metadata: t.Optional[MetricMetadata]
+    incremental: bool
+    additional_tags: t.List[str]
 
 
 class MetricsCycle(Exception):
@@ -215,6 +217,8 @@ class TimeseriesMetrics:
                 vars=query._source.vars or {},
                 query=query,
                 metadata=query._source.metadata,
+                incremental=query._source.incremental,
+                additional_tags=query._source.additional_tags or [],
             )
         return queries
 
@@ -546,6 +550,7 @@ class TimeseriesMetrics:
                 "model_category:metrics",
                 "model_stage:intermediate",
                 "model_metrics_type:rolling_window",
+                *query_config["additional_tags"],
             ],
         )(generated_rolling_query_proxy)
 
@@ -597,13 +602,21 @@ class TimeseriesMetrics:
         # proper python_env for the model
         override_path = Path(inspect.getfile(generated_query))
         override_module_path = Path(os.path.dirname(inspect.getfile(generated_query)))
-        return MacroOverridingModel(
-            name=f"{self.schema}.{query_config['table_name']}",
-            kind={
+
+        if not query_config["incremental"]:
+            kind = {"name": ModelKindName.FULL}
+            model_type_tag = "model_type:full"
+        else:
+            kind = {
                 "name": ModelKindName.INCREMENTAL_BY_TIME_RANGE,
                 "time_column": "metrics_sample_date",
                 **kind_options,
-            },
+            }
+            model_type_tag = "model_type:incremental"
+
+        return MacroOverridingModel(
+            name=f"{self.schema}.{query_config['table_name']}",
+            kind=kind,
             dialect="clickhouse",
             is_sql=True,
             columns=columns,
@@ -617,10 +630,11 @@ class TimeseriesMetrics:
             override_module_path=override_module_path,
             override_path=override_path,
             tags=[
-                "model_type:incremental",
+                model_type_tag,
                 "model_category:metrics",
                 "model_stage:intermediate",
                 "model_metrics_type:time_aggregation",
+                *query_config["additional_tags"],
             ],
         )(generated_query)
 

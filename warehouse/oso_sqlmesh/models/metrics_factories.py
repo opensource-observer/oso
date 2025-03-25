@@ -44,6 +44,7 @@ timeseries_metrics(
                 display_name="Stars",
                 description="Metrics related to GitHub stars",
             ),
+            additional_tags=["data_category:code"],
         ),
         "commits": MetricQueryDef(
             ref="code/commits.sql",
@@ -59,6 +60,7 @@ timeseries_metrics(
                 display_name="Commits",
                 description="Metrics related to GitHub commits",
             ),
+            additional_tags=["data_category:code"],
         ),
         "comments": MetricQueryDef(
             ref="code/comments.sql",
@@ -68,6 +70,7 @@ timeseries_metrics(
                 display_name="Comments",
                 description="Metrics related to GitHub comments",
             ),
+            additional_tags=["data_category:code"],
         ),
         "releases": MetricQueryDef(
             ref="code/releases.sql",
@@ -77,6 +80,7 @@ timeseries_metrics(
                 display_name="Releases",
                 description="Metrics related to GitHub releases",
             ),
+            additional_tags=["data_category:code"],
         ),
         "forks": MetricQueryDef(
             ref="code/forks.sql",
@@ -86,6 +90,7 @@ timeseries_metrics(
                 display_name="Forks",
                 description="Metrics related to GitHub repository forks",
             ),
+            additional_tags=["data_category:code"],
         ),
         "repositories": MetricQueryDef(
             ref="code/repositories.sql",
@@ -95,6 +100,7 @@ timeseries_metrics(
                 display_name="Repositories",
                 description="Metrics related to GitHub repositories",
             ),
+            additional_tags=["data_category:code"],
         ),
         "active_contracts": MetricQueryDef(
             ref="blockchain/active_contracts.sql",
@@ -104,6 +110,7 @@ timeseries_metrics(
                 display_name="Active Contracts",
                 description="Metrics related to active blockchain contracts",
             ),
+            additional_tags=["data_category:blockchain"],
         ),
         "contributors": MetricQueryDef(
             ref="code/contributors.sql",
@@ -113,6 +120,7 @@ timeseries_metrics(
                 display_name="Contributors",
                 description="Metrics related to GitHub contributors",
             ),
+            additional_tags=["data_category:code"],
         ),
         "active_developers": MetricQueryDef(
             ref="code/active_developers.sql",
@@ -122,6 +130,7 @@ timeseries_metrics(
                 display_name="Active Developers",
                 description="Metrics related to active GitHub developers",
             ),
+            additional_tags=["data_category:code"],
         ),
         # This defines something with a rolling option that allows you to look back
         # to some arbitrary window. So you specify the window and specify the unit.
@@ -142,6 +151,7 @@ timeseries_metrics(
             ),
             entity_types=["artifact", "project", "collection"],
             is_intermediate=True,
+            additional_tags=["data_category:code"],
         ),
         "contributor_active_days": MetricQueryDef(
             ref="code/active_days.sql",
@@ -162,6 +172,7 @@ timeseries_metrics(
             ),
             entity_types=["artifact", "project", "collection"],
             is_intermediate=True,
+            additional_tags=["data_category:code"],
         ),
         "developer_classifications": MetricQueryDef(
             ref="code/developer_activity_classification.sql",
@@ -178,6 +189,7 @@ timeseries_metrics(
                 display_name="Developer Classifications",
                 description="Metrics related to developer activity classifications",
             ),
+            additional_tags=["data_category:code"],
         ),
         "contributor_classifications": MetricQueryDef(
             ref="code/contributor_activity_classification.sql",
@@ -200,6 +212,7 @@ timeseries_metrics(
                 display_name="Contributor Classifications",
                 description="Metrics related to contributor activity classifications",
             ),
+            additional_tags=["data_category:code"],
         ),
         # Currently this query performs really poorly. We need to do some debugging on it
         # "user_retention_classifications": MetricQueryDef(
@@ -226,6 +239,7 @@ timeseries_metrics(
                 display_name="Change in Developer Activity",
                 description="Metrics related to change in developer activity",
             ),
+            additional_tags=["data_category:code"],
         ),
         "opened_pull_requests": MetricQueryDef(
             ref="code/prs_opened.sql",
@@ -242,6 +256,7 @@ timeseries_metrics(
                 display_name="Opened Pull Requests",
                 description="Metrics related to opened GitHub pull requests",
             ),
+            additional_tags=["data_category:code"],
         ),
         "merged_pull_requests": MetricQueryDef(
             ref="code/prs_merged.sql",
@@ -258,6 +273,7 @@ timeseries_metrics(
                 display_name="Merged Pull Requests",
                 description="Metrics related to merged GitHub pull requests",
             ),
+            additional_tags=["data_category:code"],
         ),
         "opened_issues": MetricQueryDef(
             ref="code/issues_opened.sql",
@@ -274,6 +290,7 @@ timeseries_metrics(
                 display_name="Opened Issues",
                 description="Metrics related to opened GitHub issues",
             ),
+            additional_tags=["data_category:code"],
         ),
         "closed_issues": MetricQueryDef(
             ref="code/issues_closed.sql",
@@ -290,6 +307,7 @@ timeseries_metrics(
                 display_name="Closed Issues",
                 description="Metrics related to closed GitHub issues",
             ),
+            additional_tags=["data_category:code"],
         ),
         "avg_prs_time_to_merge": MetricQueryDef(
             ref="code/prs_time_to_merge.sql",
@@ -305,6 +323,7 @@ timeseries_metrics(
                 display_name="Average PR Time to Merge",
                 description="Metrics related to average GitHub PR time to merge",
             ),
+            additional_tags=["data_category:code"],
         ),
         "avg_time_to_first_response": MetricQueryDef(
             ref="code/time_to_first_response.sql",
@@ -320,6 +339,7 @@ timeseries_metrics(
                 display_name="Average Time to First Response",
                 description="Metrics related to average time to first response",
             ),
+            additional_tags=["data_category:code"],
         ),
         "active_addresses_aggregation": MetricQueryDef(
             ref="blockchain/active_addresses.sql",
@@ -338,6 +358,7 @@ timeseries_metrics(
                 display_name="Active Addresses Aggregation",
                 description="Metrics related to active blockchain addresses",
             ),
+            additional_tags=["data_category:blockchain"],
         ),
         "gas_fees": MetricQueryDef(
             ref="blockchain/gas_fees.sql",
@@ -354,6 +375,7 @@ timeseries_metrics(
                 display_name="Gas Fees",
                 description="Metrics related to blockchain gas fees",
             ),
+            additional_tags=["data_category:blockchain"],
         ),
         "transactions": MetricQueryDef(
             ref="blockchain/transactions.sql",
@@ -370,6 +392,7 @@ timeseries_metrics(
                 display_name="Transactions",
                 description="Metrics related to blockchain transactions",
             ),
+            additional_tags=["data_category:blockchain"],
         ),
         "contract_invocations": MetricQueryDef(
             ref="blockchain/contract_invocations.sql",
@@ -386,22 +409,19 @@ timeseries_metrics(
                 display_name="Contract Invocations",
                 description="Metrics related to blockchain contract invocations",
             ),
+            additional_tags=["data_category:blockchain"],
         ),
         "defillama_tvl": MetricQueryDef(
             ref="blockchain/defillama_tvl.sql",
             time_aggregations=["daily", "weekly", "monthly"],
-            rolling=RollingConfig(
-                windows=[30, 90, 180],
-                unit="day",
-                cron="@daily",
-                slots=32,
-            ),
+            incremental=False,
             entity_types=["artifact", "project", "collection"],
             over_all_time=True,
             metadata=MetricMetadata(
                 display_name="Defillama TVL",
                 description="Metrics related to Defillama TVL",
             ),
+            additional_tags=["data_category:defillama"],
         ),
         "contributors_lifecycle": MetricQueryDef(
             ref="code/lifecycle.sql",
@@ -424,6 +444,7 @@ timeseries_metrics(
                 display_name="Contributors Lifecycle",
                 description="Metrics related to contributor lifecycle",
             ),
+            additional_tags=["data_category:code"],
         ),
         "funding_received": MetricQueryDef(
             ref="funding/funding_received.sql",
@@ -440,6 +461,7 @@ timeseries_metrics(
                 display_name="Funding Received",
                 description="Metrics related to funding received",
             ),
+            additional_tags=["data_category:funding"],
         ),
         "dependencies": MetricQueryDef(
             ref="deps/dependencies.sql",
@@ -456,6 +478,9 @@ timeseries_metrics(
                 display_name="Dependencies",
                 description="Metrics related to dependencies",
             ),
+            additional_tags=[
+                "data_category:dependencies",
+            ],
         ),
     },
     default_dialect="clickhouse",
