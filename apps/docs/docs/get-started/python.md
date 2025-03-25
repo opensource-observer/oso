@@ -3,13 +3,9 @@ title: "Access via Python"
 sidebar_position: 1
 ---
 
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
-
 The [OSO](https://www.opensource.observer) API serves
 queries on metrics and metadata about open source projects.
-It is a [GraphQL](https://graphql.org/) API backed by the
-[OSO data pipeline](../references/architecture.md).
+You can access the full data lake via our `pyoso` Python library.
 
 Let's make your first query in under five minutes.
 
@@ -27,116 +23,31 @@ If you already have an account, log in. Then create a new personal API key:
 
 ![generate API key](../integrate/generate-api-key.png)
 
-## Prepare your query
+## Install pyoso
 
-You can navigate to our
-[public GraphQL explorer](https://www.opensource.observer/graphql)
-to explore the schema and execute test queries.
+You can install pyoso using pip:
 
-![GraphQL explorer](../integrate/api-explorer.gif)
-
-For example, this query will fetch the first 10 projects in
-[oss-directory](https://github.com/opensource-observer/oss-directory).
-
-```graphql
-query GetProjects {
-  oso_projectsV1(limit: 10) {
-    description
-    displayName
-    projectId
-    projectName
-    projectNamespace
-    projectSource
-  }
-}
-```
-
-## Issue your first API request
-
-All API requests are sent to the following URL:
-
-```
-https://www.opensource.observer/api/v1/graphql
-```
-
-In order to authenticate with the API service, you have to use the `Authorization` HTTP header and `Bearer` authentication on all HTTP requests
-
-<Tabs>
-  <TabItem value="curl" label="curl" default>
 ```bash
-curl -X POST \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer $DEVELOPER_API_KEY" \
-  -d '{"query":"query GetProjects { oso_projectsV1(limit: 10) { description displayName projectId projectName projectNamespace projectSource } }"}' \
-  https://www.opensource.observer/api/v1/graphql
+pip install pyoso
 ```
-  </TabItem>
-  <TabItem value="javascript" label="JavaScript">
- ```js
- const query = `
-   query GetProjects {
-     oso_projectsV1(limit: 10) {
-       description
-       displayName
-       projectId
-       projectName
-       projectNamespace
-       projectSource
-     }
-   }
- `;
-const headers = {
-  'Content-Type': 'application/json',
-  'Authorization': `Bearer ${DEVELOPER_API_KEY}`,
-};
- 
-const response = await fetch('https://www.opensource.observer/api/v1/graphql', {
-  method: 'POST',
-  headers: headers,
-  body: JSON.stringify({
-    query: query
-  }),
-});
 
-const data = await response.json();
-console.log(data);
+## Issue your first query
 
-````
-  </TabItem>
-  <TabItem value="python" label="Python">
+Here is a basic example of how to use pyoso:
+
 ```python
-import requests
+from pyoso import Client
 
-query = """
-query GetProjects {
-  oso_projectsV1(limit: 10) {
-    description
-    displayName
-    projectId
-    projectName
-    projectNamespace
-    projectSource
-  }
-}
-"""
+# Initialize the client
+os.environ["OSO_API_KEY"] = 'your_api_key'
+client = Client()
 
-headers = {
-    'Content-Type': 'application/json',
-    'Authorization': f'Bearer {DEVELOPER_API_KEY}'
-}
+# Fetch artifacts
+query = "SELECT * FROM artifacts_v1 LIMIT 5"
+artifacts = client.query(query)
 
-response = requests.post(
-    'https://www.opensource.observer/api/v1/graphql',
-    json={'query': query},
-    headers=headers
-)
-
-data = response.json()
-print(data)
-````
-
-  </TabItem>
-</Tabs>
+print(artifacts)
+```
 
 ## Next steps
 
