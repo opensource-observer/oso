@@ -26,6 +26,7 @@ from metrics_tools.macros import (
     metrics_name,
     metrics_peer_ref,
     metrics_sample_date,
+    metrics_sample_interval_length,
     metrics_start,
     relative_window_sample_date,
 )
@@ -688,7 +689,12 @@ class TimeseriesMetrics:
     def generated_model_additional_macros(
         self,
     ) -> t.List[t.Callable | t.Tuple[t.Callable, t.List[str]]]:
-        return [metrics_end, metrics_start, metrics_sample_date]
+        return [
+            metrics_end,
+            metrics_start,
+            metrics_sample_date,
+            metrics_sample_interval_length,
+        ]
 
 
 # Specifically for testing. This is used if the

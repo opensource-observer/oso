@@ -4,7 +4,7 @@ select
     events.to_artifact_id,
     '' as from_artifact_id,
     @metric_name() as metric,
-    sum(events.amount) / @rolling_window as amount
+    sum(events.amount) / @metrics_sample_interval_length(events.bucket_day, 'day') as amount
 from oso.int_events_daily__defillama_tvl as events
 where
     events.bucket_day between @metrics_start('DATE') and @metrics_end('DATE')
