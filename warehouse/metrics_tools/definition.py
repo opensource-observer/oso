@@ -1,7 +1,7 @@
 import os
 import typing as t
 from contextlib import contextmanager
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from enum import Enum
 
 import sqlglot
@@ -43,39 +43,6 @@ class TimeseriesBucket(Enum):
 DEFAULT_ENTITY_TYPES = ["artifact", "project", "collection"]
 
 
-class MetricQueryInput(t.TypedDict):
-    # The relative path to the file in the `oso_metrics` directory
-    ref: str
-
-    # The dialect that's used to parse the sql
-    dialect: t.NotRequired[t.Optional[str]]
-
-    # Additional vars for the metric
-    vars: t.NotRequired[t.Optional[t.Dict[str, ExtraVarType]]]
-
-    # This is the name used for the metric. By default this name is derived from
-    # the top level configuration used in the configuration factory that uses
-    # this input.
-    name: t.NotRequired[t.Optional[str]]
-
-    # Setting time_aggregations aggregates a metric over a specific time period.
-    # This is similar to trailing windows but the meaning is semantically
-    # differnt in that the aggregation is assumed to be an additive aggregation.
-    # So if the buckets of daily and monthly are used it is assumed you can add
-    # the daily aggregation within that month and get the value. At this bucket
-    # aggregations cannot be combined with trailing windows.
-    #
-    # Available options are daily, weekly, monthly, yearly
-    time_aggregations: t.NotRequired[t.Optional[t.List[str]]]
-
-    # If windows is specified then this metric is calculated within the given
-    # windows of trailing days. Cannot be set if buckets is set
-    rolling: t.NotRequired[t.Optional[RollingConfig]]
-
-    # The types of entities to apply this to
-    entity_types: t.List[str]
-
-
 VALID_ENTITY_TYPES = ["artifact", "project", "collection"]
 
 
@@ -88,6 +55,9 @@ class PeerMetricDependencyRef(t.TypedDict):
     cron: t.NotRequired[RollingCronOptions]
     batch_size: t.NotRequired[int]
     slots: t.NotRequired[int]
+    start: t.NotRequired[TimeLike]
+    end: t.NotRequired[TimeLike]
+    incremental: bool
 
 
 class MetricModelRef(t.TypedDict):
@@ -174,6 +144,14 @@ class MetricQueryDef:
 
     metadata: t.Optional[MetricMetadata] = None
 
+    start: t.Optional[TimeLike] = None
+
+    end: t.Optional[TimeLike] = None
+
+    # If "False" this will force the metric to be recalculated every time. This
+    # should only be done for smaller source tables
+    incremental: bool = True
+
     def raw_sql(self, queries_dir: str):
         return open(os.path.join(queries_dir, self.ref)).read()
 
@@ -217,13 +195,6 @@ class MetricQueryDef:
         assert_allowed_items_in_list(
             self.time_aggregations or [], ["daily", "weekly", "monthly", "yearly"]
         )
-
-    @classmethod
-    def from_input(cls, input: MetricQueryInput):
-        return MetricQueryDef(**input)
-
-    def to_input(self) -> MetricQueryInput:
-        return t.cast(MetricQueryInput, asdict(self))
 
     def resolve_table_name(
         self, prefix: str, peer_name: str, entity_type: str, suffix: str = ""
@@ -363,6 +334,7 @@ class MetricQuery:
                         window=window,
                         unit=self._source.rolling.get("unit"),
                         cron=self._source.rolling.get("cron"),
+                        incremental=self._source.incremental,
                     )
                     model_batch_size = self._source.rolling.get("model_batch_size")
                     slots = self._source.rolling.get("slots")
@@ -377,6 +349,7 @@ class MetricQuery:
                         name=name,
                         entity_type=entity,
                         time_aggregation=time_aggregation,
+                        incremental=self._source.incremental,
                     )
                 )
             # if we actually enabled over all time, we'll compute that as well
@@ -386,6 +359,7 @@ class MetricQuery:
                         name=name,
                         entity_type=entity,
                         time_aggregation="over_all_time",
+                        incremental=self._source.incremental,
                     )
                 )
         return refs

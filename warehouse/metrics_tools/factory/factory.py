@@ -597,13 +597,19 @@ class TimeseriesMetrics:
         # proper python_env for the model
         override_path = Path(inspect.getfile(generated_query))
         override_module_path = Path(os.path.dirname(inspect.getfile(generated_query)))
-        return MacroOverridingModel(
-            name=f"{self.schema}.{query_config['table_name']}",
-            kind={
+
+        if not ref["incremental"]:
+            kind = {"name": ModelKindName.FULL}
+        else:
+            kind = {
                 "name": ModelKindName.INCREMENTAL_BY_TIME_RANGE,
                 "time_column": "metrics_sample_date",
                 **kind_options,
-            },
+            }
+
+        return MacroOverridingModel(
+            name=f"{self.schema}.{query_config['table_name']}",
+            kind=kind,
             dialect="clickhouse",
             is_sql=True,
             columns=columns,
