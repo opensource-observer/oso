@@ -1,7 +1,7 @@
 import sqlglot as sql
-from oso_dagster.cbt.utils import replace_source_tables, is_same_sql
-from sqlglot.optimizer.qualify import qualify
+from oso_dagster.cbt.utils import is_same_sql, replace_source_tables
 from sqlglot.optimizer.normalize import normalize
+from sqlglot.optimizer.qualify import qualify
 
 
 def test_replace_table():

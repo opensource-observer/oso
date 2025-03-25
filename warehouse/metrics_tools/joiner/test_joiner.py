@@ -1,7 +1,8 @@
 import os
-from . import joiner_transform
+
 from metrics_tools.utils import assert_same_sql
 
+from . import joiner_transform
 
 CURR_DIR = os.path.dirname(__file__)
 FIXTURES_DIR = os.path.abspath(os.path.join(CURR_DIR, "fixtures"))

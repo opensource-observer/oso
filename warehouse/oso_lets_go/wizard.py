@@ -1,34 +1,33 @@
-import time
-import sys, os
+import base64
+import os
 import re
 import subprocess
-import textwrap
-import base64
-from io import StringIO
-from ruamel.yaml import YAML
-from typing import Any, Union, Optional, Callable, TextIO, Dict
+import sys
 import termios
+import textwrap
+import time
+from io import StringIO
+from typing import Any, Callable, Dict, Optional, TextIO, Union
 
-from boltons import fileutils
-from rich.text import Text
-from rich import print
-from rich.live import Live
-from rich.table import Table
-from rich.console import Console
-from rich.prompt import PromptBase, Prompt, InvalidResponse, Confirm
-from rich.syntax import Syntax
-from rich.align import Align
-from google.oauth2.credentials import Credentials  # type: ignore
 import googleapiclient.discovery  # type: ignore
-from google.cloud.resourcemanager import ProjectsClient, Project, GetProjectRequest
-from google.cloud import service_usage
-from google.cloud.service_usage import EnableServiceRequest
-from google.cloud import bigquery
-from google.cloud.bigquery import Dataset, DatasetReference
+from boltons import fileutils
 from google.auth.exceptions import DefaultCredentialsError
+from google.cloud import bigquery, service_usage
+from google.cloud.bigquery import Dataset, DatasetReference
+from google.cloud.resourcemanager import GetProjectRequest, Project, ProjectsClient
+from google.cloud.service_usage import EnableServiceRequest
 from google.iam.v1 import iam_policy_pb2  # type: ignore
 from google.iam.v1 import policy_pb2  # type: ignore
-
+from google.oauth2.credentials import Credentials  # type: ignore
+from rich import print
+from rich.align import Align
+from rich.console import Console
+from rich.live import Live
+from rich.prompt import Confirm, InvalidResponse, Prompt, PromptBase
+from rich.syntax import Syntax
+from rich.table import Table
+from rich.text import Text
+from ruamel.yaml import YAML
 
 LOGO = """
                   .*#%&&&#/,            

@@ -1,9 +1,7 @@
-from ..factories import (
-    bq_dts_asset,
-)
+from ..factories import bq_dts_asset
 from ..utils.bq import BigQueryDatasetConfig
 from ..utils.bq_dts import BqDtsSourceConfig
-from ..utils.common import TimeInterval, SourceMode
+from ..utils.common import SourceMode, TimeInterval
 
 farcaster_data = bq_dts_asset(
     key_prefix="farcaster",

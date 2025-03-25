@@ -9,5 +9,5 @@ _before_ being stored in the sqlmesh state.
 
 from .base import *
 from .intermediate import *
-from .transformer import *
 from .qualify import *
+from .transformer import *

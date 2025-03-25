@@ -2,9 +2,9 @@ import logging
 import typing as t
 
 from sqlglot import expressions as exp
-from sqlmesh.core.macros import macro, MacroEvaluator
-from sqlmesh.utils.errors import SQLMeshError
 from sqlglot.optimizer.normalize_identifiers import normalize_identifiers
+from sqlmesh.core.macros import MacroEvaluator, macro
+from sqlmesh.utils.errors import SQLMeshError
 
 logger = logging.getLogger(__name__)
 

@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from typing import Dict, Generator, List, Optional, Any
+from typing import Any, Dict, Generator, List, Optional
 
 import dlt
 import requests

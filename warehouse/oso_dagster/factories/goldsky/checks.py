@@ -1,22 +1,22 @@
 import os
 from typing import List, Optional, Tuple
 
-from .config import GoldskyConfig, AdditionalAssetFactory
-from ..common import AssetFactoryResponse
-from dagster import (
-    AssetsDefinition,
-    asset_check,
-    AssetChecksDefinition,
-    AssetCheckExecutionContext,
-    AssetCheckResult,
-    AssetCheckSeverity,
-    Config,
-)
 import arrow
 import sqlglot as sql
+from dagster import (
+    AssetCheckExecutionContext,
+    AssetCheckResult,
+    AssetChecksDefinition,
+    AssetCheckSeverity,
+    AssetsDefinition,
+    Config,
+    asset_check,
+)
 
 from ...cbt import CBTResource, Transformation
-from ...cbt.transforms import time_constrain_table, context_query_replace_source_tables
+from ...cbt.transforms import context_query_replace_source_tables, time_constrain_table
+from ..common import AssetFactoryResponse
+from .config import AdditionalAssetFactory, GoldskyConfig
 
 
 def generated_asset_prefix(asset: AssetsDefinition):

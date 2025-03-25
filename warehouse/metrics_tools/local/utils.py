@@ -1,6 +1,7 @@
 import logging
 
 import duckdb
+
 from .config import RowRestriction, TableMappingConfig, TableMappingDestination
 
 logger = logging.getLogger(__name__)

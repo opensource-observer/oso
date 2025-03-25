@@ -1,8 +1,5 @@
-from ..factories import (
-    interval_gcs_import_asset,
-    IntervalGCSAsset,
-)
-from ..utils.common import TimeInterval, SourceMode
+from ..factories import IntervalGCSAsset, interval_gcs_import_asset
+from ..utils.common import SourceMode, TimeInterval
 
 karma3_globaltrust = interval_gcs_import_asset(
     IntervalGCSAsset(

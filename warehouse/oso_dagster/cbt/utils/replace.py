@@ -1,6 +1,7 @@
 from typing import cast
 
 from sqlglot import expressions as exp
+
 from .compare import is_same_source_table
 
 
