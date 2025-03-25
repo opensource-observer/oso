@@ -1,14 +1,8 @@
 MODEL (
   name oso.int_events_daily__defillama_tvl,
   description 'Daily TVL events from DefiLlama',
-  kind INCREMENTAL_BY_TIME_RANGE (
-    time_column bucket_day,
-    batch_size 365,
-    batch_concurrency 1
-  ),
-  start @defillama_incremental_start,
+  kind full,
   dialect trino,
-  cron '@daily',
   partitioned_by (DAY("bucket_day"), "event_type"),
   grain (bucket_day, event_type, event_source, from_artifact_id, to_artifact_id, project_id)
 );
@@ -39,7 +33,23 @@ deduplicated_tvl_events AS (
     token,
     tvl
   FROM ranked_tvl_events
-  WHERE rn = 1
+  WHERE
+    rn = 1
+    AND NOT (
+      LOWER(slug) LIKE '%-borrowed'
+      OR LOWER(slug) LIKE '%-vesting'
+      OR LOWER(slug) LIKE '%-staking'
+      OR LOWER(slug) LIKE '%-pool2'
+      OR LOWER(slug) LIKE '%-treasury'
+      OR LOWER(slug) LIKE '%-cex'
+    )
+    AND LOWER(slug) NOT IN (
+      'treasury',
+      'borrowed',
+      'staking',
+      'pool2',
+      'polygon-bridge-&-staking'
+    )
 ),
 
 merged_tvl_events AS (
