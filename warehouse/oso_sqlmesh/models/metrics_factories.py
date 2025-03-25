@@ -479,7 +479,6 @@ timeseries_metrics(
                 description="Metrics related to dependencies",
             ),
             additional_tags=[
-                "data_category:code",
                 "data_category:dependencies",
             ],
         ),
