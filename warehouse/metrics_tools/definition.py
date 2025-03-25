@@ -57,7 +57,6 @@ class PeerMetricDependencyRef(t.TypedDict):
     slots: t.NotRequired[int]
     start: t.NotRequired[TimeLike]
     end: t.NotRequired[TimeLike]
-    incremental: bool
 
 
 class MetricModelRef(t.TypedDict):
@@ -151,6 +150,8 @@ class MetricQueryDef:
     # If "False" this will force the metric to be recalculated every time. This
     # should only be done for smaller source tables
     incremental: bool = True
+
+    additional_tags: t.Optional[t.List[str]] = None
 
     def raw_sql(self, queries_dir: str):
         return open(os.path.join(queries_dir, self.ref)).read()
@@ -334,7 +335,6 @@ class MetricQuery:
                         window=window,
                         unit=self._source.rolling.get("unit"),
                         cron=self._source.rolling.get("cron"),
-                        incremental=self._source.incremental,
                     )
                     model_batch_size = self._source.rolling.get("model_batch_size")
                     slots = self._source.rolling.get("slots")
@@ -349,7 +349,6 @@ class MetricQuery:
                         name=name,
                         entity_type=entity,
                         time_aggregation=time_aggregation,
-                        incremental=self._source.incremental,
                     )
                 )
             # if we actually enabled over all time, we'll compute that as well
@@ -359,7 +358,6 @@ class MetricQuery:
                         name=name,
                         entity_type=entity,
                         time_aggregation="over_all_time",
-                        incremental=self._source.incremental,
                     )
                 )
         return refs
