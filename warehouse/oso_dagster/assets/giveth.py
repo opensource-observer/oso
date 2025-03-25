@@ -6,7 +6,7 @@ configs = [
         endpoint="https://mainnet.serve.giveth.io/graphql",
         max_depth=2,
         parameters={
-            "qfRoundId": {"type": "Int", "value": 12},  # 🔁 Dynamically templated later
+            "qfRoundId": {"type": "Int", "value": 12},  # Dynamically templated later
             "skip": {"type": "Int", "value": 0},
             "take": {"type": "Int", "value": 50},
             "orderBy": {
