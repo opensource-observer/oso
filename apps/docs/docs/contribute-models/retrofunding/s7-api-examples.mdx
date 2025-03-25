@@ -1,0 +1,946 @@
+---
+title: "Retro Funding API Documentation"
+sidebar_position: 4
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+
+
+The following are examples of how to query the OSO API to get information about Retro Funding projects and metrics.
+
+## Projects
+
+### Get all projects in the round
+
+
+<Tabs>
+<TabItem value="graphql" label="GraphQL">
+
+```graphql
+query projectsInRound {
+  oso_projectsByCollectionV1(
+    where: {
+      collectionNamespace: { _eq: "retro-funding" }
+    }
+    limit: 5
+  ) {
+    projectId
+    projectName
+    collectionId
+    collectionName
+  }
+}
+```
+
+</TabItem>
+
+<TabItem value="curl" label="cURL">
+
+```bash
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "query projectsInRound { oso_projectsByCollectionV1(where: { collectionNamespace: { _eq: \"retro-funding\" } } limit: 5) { projectId projectName collectionId collectionName } }"
+  }' \
+  https://www.opensource.observer/api/v1/graphql
+```
+
+</TabItem>
+
+<TabItem value="py-oso" label="Python">
+
+```python
+query = """
+SELECT 
+    p.project_id,
+    p.project_name,
+    p.collection_id,
+    p.collection_name
+FROM projects_by_collection_v1 AS p
+WHERE p.collection_namespace = 'retro-funding'
+LIMIT 5
+"""
+df = client.to_pandas(query)
+```
+
+</TabItem>
+</Tabs>
+
+### Get a project by Atlas ID
+
+<Tabs>
+<TabItem value="graphql" label="GraphQL">
+
+```graphql
+query GetAtlasProject($atlasId: String!) {
+  oso_projectsV1(limit: 1, where: { projectName: { _eq: $atlasId } }) {
+    projectId
+    projectName
+    description
+    displayName
+    projectNamespace
+    projectSource
+  }
+}
+```
+
+Variables:
+```json
+{
+  "atlasId": "0x08df6e20a3cfabbaf8f34d4f4d048fe7da40447c24be0f3ad513db6f13c755dd"
+}
+```
+
+</TabItem>
+
+<TabItem value="curl" label="cURL">
+
+```bash
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "query GetAtlasProject($atlasId: String!) { oso_projectsV1(limit: 1, where: { projectName: { _eq: $atlasId } }) { projectId projectName description displayName projectNamespace projectSource } }",
+    "variables": {
+      "atlasId": "0x08df6e20a3cfabbaf8f34d4f4d048fe7da40447c24be0f3ad513db6f13c755dd"
+    }
+  }' \
+  https://www.opensource.observer/api/v1/graphql
+```
+
+</TabItem>
+
+<TabItem value="py-oso" label="Python">
+
+```python
+query = """
+SELECT 
+    p.project_id,
+    p.project_name,
+    p.description,
+    p.display_name,
+    p.project_namespace,
+    p.project_source
+FROM projects_v1 AS p
+WHERE p.project_name = '0x08df6e20a3cfabbaf8f34d4f4d048fe7da40447c24be0f3ad513db6f13c755dd'
+LIMIT 1
+"""
+df = client.to_pandas(query)
+```
+
+</TabItem>
+</Tabs>
+
+### Get DefiLlama slugs for a project
+
+<Tabs>
+<TabItem value="graphql" label="GraphQL">
+
+```graphql
+query GetAtlasArtifacts($atlasId: String!) {
+  oso_artifactsByProjectV1(where: { 
+    projectName: { _eq: $atlasId },
+    artifactSource: { _eq: "DEFILLAMA" }
+  }) {
+    artifactId
+    artifactName
+    artifactSource
+  }
+}
+```
+
+Variables:
+```json
+{
+  "atlasId": "0x08df6e20a3cfabbaf8f34d4f4d048fe7da40447c24be0f3ad513db6f13c755dd"
+}
+```
+
+</TabItem>
+
+<TabItem value="curl" label="cURL">
+
+```bash
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "query GetAtlasArtifacts($atlasId: String!) { oso_artifactsByProjectV1(where: { projectName: { _eq: $atlasId }, artifactSource: { _eq: \"DEFILLAMA\" } }) { artifactId artifactName artifactSource } }",
+    "variables": {
+      "atlasId": "0x08df6e20a3cfabbaf8f34d4f4d048fe7da40447c24be0f3ad513db6f13c755dd"
+    }
+  }' \
+  https://www.opensource.observer/api/v1/graphql
+```
+
+</TabItem>
+
+<TabItem value="py-oso" label="Python">
+
+```python
+query = """
+SELECT 
+    a.artifact_id,
+    a.artifact_name,
+    a.artifact_source
+FROM artifacts_by_project_v1 AS a
+WHERE a.project_name = '0x08df6e20a3cfabbaf8f34d4f4d048fe7da40447c24be0f3ad513db6f13c755dd'
+  AND a.artifact_source = 'DEFILLAMA'
+"""
+df = client.to_pandas(query)
+```
+
+</TabItem>
+</Tabs>
+
+### Get GitHub repositories for a project
+
+<Tabs>
+<TabItem value="graphql" label="GraphQL">
+
+```graphql
+query GetGitHubRepos($projectId: String!) {
+  oso_artifactsByProjectV1(where: { 
+    projectId: { _eq: $projectId },
+    artifactSource: { _eq: "GITHUB" }
+  }) {
+    artifactId
+    artifactName
+    artifactNamespace
+  }
+}
+```
+
+Variables:
+```json
+{
+  "projectId": "5/9fRbVoDF7pHwBdiMbNUbKhidEt/12Ojt9f8cWoZnQ="
+}
+```
+
+</TabItem>
+
+<TabItem value="curl" label="cURL">
+
+```bash
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "query GetGitHubRepos($projectId: String!) { oso_artifactsByProjectV1(where: { projectId: { _eq: $projectId }, artifactSource: { _eq: \"GITHUB\" } }) { artifactId artifactName artifactNamespace } }",
+    "variables": {
+      "projectId": "5/9fRbVoDF7pHwBdiMbNUbKhidEt/12Ojt9f8cWoZnQ="
+    }
+  }' \
+  https://www.opensource.observer/api/v1/graphql
+```
+
+</TabItem>
+
+<TabItem value="py-oso" label="Python">
+
+```python
+query = """
+SELECT 
+    a.artifact_id,
+    a.artifact_name,
+    a.artifact_namespace
+FROM artifacts_by_project_v1 AS a
+WHERE a.project_id = '5/9fRbVoDF7pHwBdiMbNUbKhidEt/12Ojt9f8cWoZnQ='
+  AND a.artifact_source = 'GITHUB'
+"""
+df = client.to_pandas(query)
+```
+
+</TabItem>
+</Tabs>
+
+## Metrics
+
+### See all metric IDs
+
+<Tabs>
+<TabItem value="graphql" label="GraphQL">
+
+```graphql
+query GetMetricIds {
+  oso_metricsV0 {
+    metricId
+    metricName
+  }
+}
+```
+
+</TabItem>
+
+<TabItem value="curl" label="cURL">
+
+```bash
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "query GetMetricIds { oso_metricsV0 { metricId metricName } }"
+  }' \
+  https://www.opensource.observer/api/v1/graphql
+```
+
+</TabItem>
+
+<TabItem value="py-oso" label="Python">
+
+```python
+query = """
+SELECT 
+    m.metric_id,
+    m.metric_name
+FROM metrics_v0 AS m
+"""
+df = client.to_pandas(query)
+```
+
+</TabItem>
+</Tabs>
+
+### Get timeseries metrics for a project over a date range
+
+<Tabs>
+<TabItem value="graphql" label="GraphQL">
+
+```graphql
+query GetTimeseriesMetrics(
+    $projectId: String!,
+    $metricIds: [String!]!,
+    $startDate: Oso_Date!,
+    $endDate: Oso_Date!
+) {
+  oso_timeseriesMetricsByProjectV0(
+    where: {
+      projectId: { _eq: $projectId },
+      sampleDate: { _gte: $startDate, _lte: $endDate },
+      metricId: { _in: $metricIds }
+    }
+  ) {
+    metricId
+    sampleDate
+    amount
+  }
+}
+```
+
+Variables:
+```json
+{
+  "projectId": "5/9fRbVoDF7pHwBdiMbNUbKhidEt/12Ojt9f8cWoZnQ=",
+  "metricIds": [
+    "+CYPj5teekBILVKfpi7dWcV4Qjzn5QDjc4fxl61+Q/Q=",  # transactions
+    "1PD0AamFG56j+rMmIyuOjGZhYyH+CLe2mmgzWLIPgvg=",  # gas fees
+    "qlmqaIagTHAic/MX57vOmSprhncNDLYghKF0dM9+m3w=",  # tvl
+    "PE/HlkQj+5mUPwKeOt3SDiJUA0aL6Ywp3mbvtckk5zM="   # active addresses
+  ],
+  "startDate": "2025-01-01",
+  "endDate": "2025-02-28"
+}
+```
+
+</TabItem>
+
+<TabItem value="curl" label="cURL">
+
+```bash
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "query GetTimeseriesMetrics($projectId: String!, $metricIds: [String!]!, $startDate: Oso_Date!, $endDate: Oso_Date!) { oso_timeseriesMetricsByProjectV0(where: { projectId: { _eq: $projectId }, sampleDate: { _gte: $startDate, _lte: $endDate }, metricId: { _in: $metricIds } }) { metricId sampleDate amount } }",
+    "variables": {
+      "projectId": "5/9fRbVoDF7pHwBdiMbNUbKhidEt/12Ojt9f8cWoZnQ=",
+      "metricIds": [
+        "+CYPj5teekBILVKfpi7dWcV4Qjzn5QDjc4fxl61+Q/Q=",
+        "1PD0AamFG56j+rMmIyuOjGZhYyH+CLe2mmgzWLIPgvg=",
+        "qlmqaIagTHAic/MX57vOmSprhncNDLYghKF0dM9+m3w=",
+        "PE/HlkQj+5mUPwKeOt3SDiJUA0aL6Ywp3mbvtckk5zM="
+      ],
+      "startDate": "2025-01-01",
+      "endDate": "2025-02-28"
+    }
+  }' \
+  https://www.opensource.observer/api/v1/graphql
+```
+
+</TabItem>
+
+<TabItem value="py-oso" label="Python">
+
+```python
+query = """
+SELECT 
+    tm.metric_id,
+    tm.sample_date,
+    tm.amount
+FROM timeseries_metrics_by_project_v0 AS tm
+WHERE tm.project_id = '5/9fRbVoDF7pHwBdiMbNUbKhidEt/12Ojt9f8cWoZnQ='
+  AND tm.sample_date BETWEEN '2025-01-01' AND '2025-02-28'
+  AND tm.metric_id IN (
+    '+CYPj5teekBILVKfpi7dWcV4Qjzn5QDjc4fxl61+Q/Q=',  # transactions
+    '1PD0AamFG56j+rMmIyuOjGZhYyH+CLe2mmgzWLIPgvg=',  # gas fees
+    'qlmqaIagTHAic/MX57vOmSprhncNDLYghKF0dM9+m3w=',  # tvl
+    'PE/HlkQj+5mUPwKeOt3SDiJUA0aL6Ywp3mbvtckk5zM='   # active addresses
+  )
+"""
+df = client.to_pandas(query)
+```
+
+</TabItem>
+</Tabs>
+
+### Get metrics for a specific date
+
+<Tabs>
+<TabItem value="graphql" label="GraphQL">
+
+```graphql
+query GetTimeseriesMetricsByDate(
+    $metricId: String!,
+    $projectId: String!,
+    $date: Oso_Date!
+) {
+  oso_timeseriesMetricsByProjectV0(
+    where: {
+      metricId: { _eq: $metricId },
+      projectId: { _eq: $projectId },
+      sampleDate: { _eq: $date }
+    }
+  ) {
+    metricId
+    sampleDate
+    amount
+  }
+}
+```
+
+Variables:
+```json
+{
+  "metricId": "PE/HlkQj+5mUPwKeOt3SDiJUA0aL6Ywp3mbvtckk5zM=",
+  "projectId": "5/9fRbVoDF7pHwBdiMbNUbKhidEt/12Ojt9f8cWoZnQ=",
+  "date": "2025-02-28"
+}
+```
+
+</TabItem>
+
+<TabItem value="curl" label="cURL">
+
+```bash
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "query GetTimeseriesMetricsByDate($metricId: String!, $projectId: String!, $date: Oso_Date!) { oso_timeseriesMetricsByProjectV0(where: { metricId: { _eq: $metricId }, projectId: { _eq: $projectId }, sampleDate: { _eq: $date } }) { metricId sampleDate amount } }",
+    "variables": {
+      "metricId": "PE/HlkQj+5mUPwKeOt3SDiJUA0aL6Ywp3mbvtckk5zM=",
+      "projectId": "5/9fRbVoDF7pHwBdiMbNUbKhidEt/12Ojt9f8cWoZnQ=",
+      "date": "2025-02-28"
+    }
+  }' \
+  https://www.opensource.observer/api/v1/graphql
+```
+
+</TabItem>
+
+<TabItem value="py-oso" label="Python">
+
+```python
+query = """
+SELECT 
+    tm.metric_id,
+    tm.sample_date,
+    tm.amount
+FROM timeseries_metrics_by_project_v0 AS tm
+WHERE tm.project_id = '5/9fRbVoDF7pHwBdiMbNUbKhidEt/12Ojt9f8cWoZnQ='
+  AND tm.metric_id = 'PE/HlkQj+5mUPwKeOt3SDiJUA0aL6Ywp3mbvtckk5zM='  -- active addresses
+  AND tm.sample_date = '2025-02-28'
+"""
+df = client.to_pandas(query)
+```
+
+</TabItem>
+</Tabs>
+
+### Get transaction metrics
+
+<Tabs>
+<TabItem value="graphql" label="GraphQL">
+
+```graphql
+query GetTransactionMetrics(
+    $projectId: String!,
+    $startDate: Oso_Date!,
+    $endDate: Oso_Date!
+) {
+  oso_timeseriesMetricsByProjectV0(
+    where: {
+      projectId: { _eq: $projectId },
+      sampleDate: { _gte: $startDate, _lte: $endDate },
+      metricId: { _in: [
+        "+CYPj5teekBILVKfpi7dWcV4Qjzn5QDjc4fxl61+Q/Q=",  # OPTIMISM
+        "I9PgkRs4ZvvhJoA4A3ttP4OHW5xuJkEq0SrPzVIqN64=",  # BASE
+        "aXBn856tlU8mg2Z3047UmP7kpVMOC1gpazXl55srHrI="   # INK
+      ] }
+    }
+  ) {
+    metricId
+    sampleDate
+    amount
+  }
+}
+```
+
+Variables:
+```json
+{
+  "projectId": "5/9fRbVoDF7pHwBdiMbNUbKhidEt/12Ojt9f8cWoZnQ=",
+  "startDate": "2025-02-01",
+  "endDate": "2025-02-28"
+}
+```
+
+</TabItem>
+
+<TabItem value="curl" label="cURL">
+
+```bash
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "query GetTransactionMetrics($projectId: String!, $startDate: Oso_Date!, $endDate: Oso_Date!) { oso_timeseriesMetricsByProjectV0(where: { projectId: { _eq: $projectId }, sampleDate: { _gte: $startDate, _lte: $endDate }, metricId: { _in: [\"+CYPj5teekBILVKfpi7dWcV4Qjzn5QDjc4fxl61+Q/Q=\",\"I9PgkRs4ZvvhJoA4A3ttP4OHW5xuJkEq0SrPzVIqN64=\",\"aXBn856tlU8mg2Z3047UmP7kpVMOC1gpazXl55srHrI=\"] } }) { metricId sampleDate amount } }",
+    "variables": {
+      "projectId": "5/9fRbVoDF7pHwBdiMbNUbKhidEt/12Ojt9f8cWoZnQ=",
+      "startDate": "2025-02-01",
+      "endDate": "2025-02-28"
+    }
+  }' \
+  https://www.opensource.observer/api/v1/graphql
+```
+
+</TabItem>
+
+<TabItem value="py-oso" label="Python">
+
+```python
+query = """
+SELECT 
+    tm.metric_id,
+    tm.sample_date,
+    tm.amount
+FROM timeseries_metrics_by_project_v0 AS tm
+WHERE tm.project_id = '5/9fRbVoDF7pHwBdiMbNUbKhidEt/12Ojt9f8cWoZnQ='
+  AND tm.sample_date BETWEEN '2025-02-01' AND '2025-02-28'
+  AND tm.metric_id IN (
+    '+CYPj5teekBILVKfpi7dWcV4Qjzn5QDjc4fxl61+Q/Q=',  # OPTIMISM
+    'I9PgkRs4ZvvhJoA4A3ttP4OHW5xuJkEq0SrPzVIqN64=',  # BASE
+    'aXBn856tlU8mg2Z3047UmP7kpVMOC1gpazXl55srHrI='   # INK
+  )
+"""
+df = client.to_pandas(query)
+```
+
+</TabItem>
+</Tabs>
+
+### Get active addresses metrics
+
+<Tabs>
+<TabItem value="graphql" label="GraphQL">
+
+```graphql
+query GetActiveAddressesMetrics(
+    $projectId: String!,
+    $startDate: Oso_Date!,
+    $endDate: Oso_Date!
+) {
+  oso_timeseriesMetricsByProjectV0(
+    where: {
+      projectId: { _eq: $projectId },
+      sampleDate: { _gte: $startDate, _lte: $endDate },
+      metricId: { _in: [
+        "PE/HlkQj+5mUPwKeOt3SDiJUA0aL6Ywp3mbvtckk5zM=",  # OPTIMISM
+        "G2aj792VVSZhk/oENCPGdapeVEozGum9W0o+Y0A5D9w=",  # BASE
+        "YVlXddV9S4PooUOtWsYX5+w9HjhJ55FWCqqIL8i6oH4="   # INK
+      ] }
+    }
+  ) {
+    metricId
+    sampleDate
+    amount
+  }
+}
+```
+
+Variables:
+```json
+{
+  "projectId": "5/9fRbVoDF7pHwBdiMbNUbKhidEt/12Ojt9f8cWoZnQ=",
+  "startDate": "2025-02-01",
+  "endDate": "2025-02-28"
+}
+```
+
+</TabItem>
+
+<TabItem value="curl" label="cURL">
+
+```bash
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "query GetActiveAddressesMetrics($projectId: String!, $startDate: Oso_Date!, $endDate: Oso_Date!) { oso_timeseriesMetricsByProjectV0(where: { projectId: { _eq: $projectId }, sampleDate: { _gte: $startDate, _lte: $endDate }, metricId: { _in: [\"PE/HlkQj+5mUPwKeOt3SDiJUA0aL6Ywp3mbvtckk5zM=\",\"G2aj792VVSZhk/oENCPGdapeVEozGum9W0o+Y0A5D9w=\",\"YVlXddV9S4PooUOtWsYX5+w9HjhJ55FWCqqIL8i6oH4=\"] } }) { metricId sampleDate amount } }",
+    "variables": {
+      "projectId": "5/9fRbVoDF7pHwBdiMbNUbKhidEt/12Ojt9f8cWoZnQ=",
+      "startDate": "2025-02-01",
+      "endDate": "2025-02-28"
+    }
+  }' \
+  https://www.opensource.observer/api/v1/graphql
+```
+
+</TabItem>
+
+<TabItem value="py-oso" label="Python">
+
+```python
+query = """
+SELECT 
+    tm.metric_id,
+    tm.sample_date,
+    tm.amount
+FROM timeseries_metrics_by_project_v0 AS tm
+WHERE tm.project_id = '5/9fRbVoDF7pHwBdiMbNUbKhidEt/12Ojt9f8cWoZnQ='
+  AND tm.sample_date BETWEEN '2025-02-01' AND '2025-02-28'
+  AND tm.metric_id IN (
+    'PE/HlkQj+5mUPwKeOt3SDiJUA0aL6Ywp3mbvtckk5zM=',  # OPTIMISM
+    'G2aj792VVSZhk/oENCPGdapeVEozGum9W0o+Y0A5D9w=',  # BASE
+    'YVlXddV9S4PooUOtWsYX5+w9HjhJ55FWCqqIL8i6oH4='   # INK
+  )
+"""
+df = client.to_pandas(query)
+```
+
+</TabItem>
+</Tabs>
+
+### Get gas fees metrics
+
+<Tabs>
+<TabItem value="graphql" label="GraphQL">
+
+```graphql
+query GetGasFeesMetrics(
+    $projectId: String!,
+    $startDate: Oso_Date!,
+    $endDate: Oso_Date!
+) {
+  oso_timeseriesMetricsByProjectV0(
+    where: {
+      projectId: { _eq: $projectId },
+      sampleDate: { _gte: $startDate, _lte: $endDate },
+      metricId: { _in: [
+        "1PD0AamFG56j+rMmIyuOjGZhYyH+CLe2mmgzWLIPgvg=",  # OPTIMISM
+        "dBiekfqo+sEtNxDbBkQGorouPypHsgDGZr4SLlonQIg=",  # BASE
+        "Zmd1uqzZJu/s1aEBfKoNIsI1zr1HW4L4TvmFGWz1dww="   # INK
+      ] }
+    }
+  ) {
+    metricId
+    sampleDate
+    amount
+  }
+}
+```
+
+Variables:
+```json
+{
+  "projectId": "5/9fRbVoDF7pHwBdiMbNUbKhidEt/12Ojt9f8cWoZnQ=",
+  "startDate": "2025-02-01",
+  "endDate": "2025-02-28"
+}
+```
+
+</TabItem>
+
+<TabItem value="curl" label="cURL">
+
+```bash
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "query GetGasFeesMetrics($projectId: String!, $startDate: Oso_Date!, $endDate: Oso_Date!) { oso_timeseriesMetricsByProjectV0(where: { projectId: { _eq: $projectId }, sampleDate: { _gte: $startDate, _lte: $endDate }, metricId: { _in: [\"1PD0AamFG56j+rMmIyuOjGZhYyH+CLe2mmgzWLIPgvg=\",\"dBiekfqo+sEtNxDbBkQGorouPypHsgDGZr4SLlonQIg=\",\"Zmd1uqzZJu/s1aEBfKoNIsI1zr1HW4L4TvmFGWz1dww=\"] } }) { metricId sampleDate amount } }",
+    "variables": {
+      "projectId": "5/9fRbVoDF7pHwBdiMbNUbKhidEt/12Ojt9f8cWoZnQ=",
+      "startDate": "2025-02-01",
+      "endDate": "2025-02-28"
+    }
+  }' \
+  https://www.opensource.observer/api/v1/graphql
+```
+
+</TabItem>
+
+<TabItem value="py-oso" label="Python">
+
+```python
+query = """
+SELECT 
+    tm.metric_id,
+    tm.sample_date,
+    tm.amount
+FROM timeseries_metrics_by_project_v0 AS tm
+WHERE tm.project_id = '5/9fRbVoDF7pHwBdiMbNUbKhidEt/12Ojt9f8cWoZnQ='
+  AND tm.sample_date BETWEEN '2025-02-01' AND '2025-02-28'
+  AND tm.metric_id IN (
+    '1PD0AamFG56j+rMmIyuOjGZhYyH+CLe2mmgzWLIPgvg=',  # OPTIMISM
+    'dBiekfqo+sEtNxDbBkQGorouPypHsgDGZr4SLlonQIg=',  # BASE
+    'Zmd1uqzZJu/s1aEBfKoNIsI1zr1HW4L4TvmFGWz1dww='   # INK
+  )
+"""
+df = client.to_pandas(query)
+```
+
+</TabItem>
+</Tabs>
+
+### Get TVL metrics
+
+<Tabs>
+<TabItem value="graphql" label="GraphQL">
+
+```graphql
+query GetTVLMetrics(
+    $projectId: String!,
+    $startDate: Oso_Date!,
+    $endDate: Oso_Date!
+) {
+  oso_timeseriesMetricsByProjectV0(
+    where: {
+      projectId: { _eq: $projectId },
+      sampleDate: { _gte: $startDate, _lte: $endDate },
+      metricId: { _in: [
+        "qlmqaIagTHAic/MX57vOmSprhncNDLYghKF0dM9+m3w=",  # OPTIMISM
+        "ss5IHd8zzw7KGYM1PWGYFe7H2fVLq8x8CJZwVBI8nLc=",  # BASE
+        "PTkbAgVzNKiRx2stgyLeWaq5KGxrhwwBmfOCN5YmP1o="   # INK
+      ] }
+    }
+  ) {
+    metricId
+    sampleDate
+    amount
+  }
+}
+```
+
+Variables:
+```json
+{
+  "projectId": "5/9fRbVoDF7pHwBdiMbNUbKhidEt/12Ojt9f8cWoZnQ=",
+  "startDate": "2025-02-01",
+  "endDate": "2025-02-28"
+}
+```
+
+</TabItem>
+
+<TabItem value="curl" label="cURL">
+
+```bash
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "query GetTVLMetrics($projectId: String!, $startDate: Oso_Date!, $endDate: Oso_Date!) { oso_timeseriesMetricsByProjectV0(where: { projectId: { _eq: $projectId }, sampleDate: { _gte: $startDate, _lte: $endDate }, metricId: { _in: [\"qlmqaIagTHAic/MX57vOmSprhncNDLYghKF0dM9+m3w=\",\"ss5IHd8zzw7KGYM1PWGYFe7H2fVLq8x8CJZwVBI8nLc=\",\"PTkbAgVzNKiRx2stgyLeWaq5KGxrhwwBmfOCN5YmP1o=\"] } }) { metricId sampleDate amount } }",
+    "variables": {
+      "projectId": "5/9fRbVoDF7pHwBdiMbNUbKhidEt/12Ojt9f8cWoZnQ=",
+      "startDate": "2025-02-01",
+      "endDate": "2025-02-28"
+    }
+  }' \
+  https://www.opensource.observer/api/v1/graphql
+```
+
+</TabItem>
+
+<TabItem value="py-oso" label="Python">
+
+```python
+query = """
+SELECT 
+    tm.metric_id,
+    tm.sample_date,
+    tm.amount
+FROM timeseries_metrics_by_project_v0 AS tm
+WHERE tm.project_id = '5/9fRbVoDF7pHwBdiMbNUbKhidEt/12Ojt9f8cWoZnQ='
+  AND tm.sample_date BETWEEN '2025-02-01' AND '2025-02-28'
+  AND tm.metric_id IN (
+    'qlmqaIagTHAic/MX57vOmSprhncNDLYghKF0dM9+m3w=',  # OPTIMISM
+    'ss5IHd8zzw7KGYM1PWGYFe7H2fVLq8x8CJZwVBI8nLc=',  # BASE
+    'PTkbAgVzNKiRx2stgyLeWaq5KGxrhwwBmfOCN5YmP1o='   # INK
+  )
+"""
+df = client.to_pandas(query)
+```
+
+</TabItem>
+</Tabs>
+
+## Dependencies (Coming Soon!)
+
+### Get dependent projects
+
+<Tabs>
+<TabItem value="graphql" label="GraphQL">
+
+```graphql
+query GetDependentProjects($projectId: String!) {
+  oso_dependenciesV0(where: { toProjectId: { _eq: $projectId } }) {                
+    toProjectId
+    fromProjectId
+    dependencyType
+  }
+}
+```
+
+Variables:
+```json
+{
+  "projectId": "5/9fRbVoDF7pHwBdiMbNUbKhidEt/12Ojt9f8cWoZnQ="
+}
+```
+
+</TabItem>
+
+<TabItem value="curl" label="cURL">
+
+```bash
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "query GetDependentProjects($projectId: String!) { oso_dependenciesV0(where: { toProjectId: { _eq: $projectId } }) { toProjectId fromProjectId dependencyType } }",
+    "variables": {
+      "projectId": "5/9fRbVoDF7pHwBdiMbNUbKhidEt/12Ojt9f8cWoZnQ="
+    }
+  }' \
+  https://www.opensource.observer/api/v1/graphql
+```
+
+</TabItem>
+
+<TabItem value="py-oso" label="Python">
+
+```python
+query = """
+SELECT 
+    d.to_project_id,
+    d.from_project_id,
+    d.dependency_type
+FROM dependencies_v0 AS d
+WHERE d.to_project_id = '5/9fRbVoDF7pHwBdiMbNUbKhidEt/12Ojt9f8cWoZnQ='
+"""
+df = client.to_pandas(query)
+```
+
+</TabItem>
+</Tabs>
+
+## Reference
+
+### Metric IDs for Onchain Builders
+
+| Chain | Active Addresses (Daily) | Gas Fees (Daily) | Transactions (Daily) | DefiLlama TVL (Daily) |
+|-------|--------------------------|------------------|----------------------|------------------------|
+| AUTOMATA | QdEMc/9T7A9uHmGyebYqTgZtK8RMA4lUDE5vBZP8yYQ= | pzNqT8Daqw9cVBYtLmUabuHeMOKoqKKIhTWxXkYrpzM= | UyoNy8OtyDs7zMAvbWrTkHkQivER8/ch/4sGuXzIBy8= | - |
+| BASE | G2aj792VVSZhk/oENCPGdapeVEozGum9W0o+Y0A5D9w= | dBiekfqo+sEtNxDbBkQGorouPypHsgDGZr4SLlonQIg= | I9PgkRs4ZvvhJoA4A3ttP4OHW5xuJkEq0SrPzVIqN64= | ss5IHd8zzw7KGYM1PWGYFe7H2fVLq8x8CJZwVBI8nLc= |
+| BOB | ooVpyQAjLTc+L/pUepYBtDtiRvd6CqA35bEdRbfMuXU= | UsJkCKoOnWHj21QXFJR8ZI44SAcpW4y4slfY7tO+hEs= | YQEnSzTkB1cX2Pp7zNCR2M8o15dXmkdKK59OmtaWvH4= | Myz6ifp4t62tT3uXov0qe5eOSYX4pasxjUzOzDyxvwk= |
+| CYBER | bmtrI5K28X/rHxageGh+VPttf7GHZEbAUItmr8dhWe8= | dorNwoQhkRkspfHJUT1Ko3KdKBvc66bLri8p+Vs9LOs= | BfhS2uIH7oaR7OOuckigqPeU8h543PLnifzHwJppSlc= | - |
+| FRAX | xdxWbfeAuQawUUnx7SM+WWycBoMrfQtNcSAa6OcKtRI= | Gq9oWmIzQlRK9oBCKFl9Hq6pJ1+cLJ0YehoDqMgFiDc= | 6Iy0wZ9CmmlN7SyCXkdKe30wDb8s4QphG5gvre4hxG8= | 5+SjFSEgi1CurNH1pVdGEXLbXuTTSXj6w17ma8w/qlE= |
+| HAM | 9oCVh0sV1tiFxMRFHPNJpgNmsRIm5NUKmhHd1cHpmSc= | UI4Ta1SgepKrMldOUWlHoQjKRoAVZsy5CcagqCLs7zQ= | po1+unS65d5x++FeMSm+7ziGuGcFLuiNkX+gbimdnBY= | - |
+| INK | YVlXddV9S4PooUOtWsYX5+w9HjhJ55FWCqqIL8i6oH4= | Zmd1uqzZJu/s1aEBfKoNIsI1zr1HW4L4TvmFGWz1dww= | aXBn856tlU8mg2Z3047UmP7kpVMOC1gpazXl55srHrI= | PTkbAgVzNKiRx2stgyLeWaq5KGxrhwwBmfOCN5YmP1o= |
+| KROMA | R/AoozORX2lQvbwY8XXNIrsgbyYIKqvLPLiE8pd3kes= | BDkCiphCMikILGoRru32ca7nZv3SMwQiWCaglqdjygU= | GCj6MTzi3j6AWC2X9+e6NX6YfzVp40UxEa0hHUQIY4c= | J7lEviP96Q3/7G3d/f401LAI6kGfjT6wzG+ZODStke8= |
+| LISK | r/PI23PyEA/ke7QvGlLZKqh5xFsv3LA8yVzIo2cGhc8= | WRqIZSiYhqshpdLzine30aLZzrgBMk2VE54LjX5XtYw= | PsNrB6WSZE572GEHsN4P7AnyfNJzEWTTfv++kxI3Yp4= | dpw811b5/55RV9CZfnpkGSdLlOP1hdp0OF952XVUTWU= |
+| LYRA | N5rcFZ7X5puoKkvcWJIEpunzsEKY9j9A0wNFAK8ckfU= | AMw6OBo4fFmxlSKHRHRPQfoKGPEmqn4rPVqDUurMHiE= | uHuZJnyQ8YM88ki2BfYKUW05SW9vPkZz8L3a9s9QeWQ= | - |
+| METAL | 3PmYaM6TSzeSUaegJELWPREj341+9E5NDH/ycVVwE+g= | WpFQBuYoeR60ZkEdq7cLfj2fIk7tjk/P58/Y9/9UcKA= | tuzBBz5ZoPatqMPi+FGRQlc+e1a86M7sI+FNnh/r04w= | - |
+| MINT | dojiObKfwKwo9H51BLnlSeW4qSlUhjBTkhp9TR1A5vo= | 7hOXfiIhXdOxobTRvSXOROojLY/V8vg0INh5RJ3N0a8= | aXD0aVKcN2wv4Iueac3g59noHfx4zFyYMfrtKru/jZg= | ki01wlulG50z6M9l8l5sQehPU9rDrxFmutPQqDUhIiM= |
+| MODE | j7FEQ7G/ysZGCQDVMolgGA575NBed9nnv7Sos1EBLSc= | UYS/nGacZGua8TkIidJnB6jEXMNoJym9o79LrILlHKM= | F5Jov1gVA9cms2q3rm51MsVeo+i1Mhbqg2k2xmWeGXE= | ndFsC8I6H09EX6VAYQ59iKF4oaCTOkylu08tqVI+6gY= |
+| OPTIMISM | PE/HlkQj+5mUPwKeOt3SDiJUA0aL6Ywp3mbvtckk5zM= | 1PD0AamFG56j+rMmIyuOjGZhYyH+CLe2mmgzWLIPgvg= | +CYPj5teekBILVKfpi7dWcV4Qjzn5QDjc4fxl61+Q/Q= | qlmqaIagTHAic/MX57vOmSprhncNDLYghKF0dM9+m3w= |
+| ORDERLY | krGm5ldFpz2rucJU3/bpQ/YUp1+Wzg/Tzc2l5/Phl04= | 9sIaU9P33t5IXsKtGRZdvELh9Eo9rjK94C+1q2PgniM= | ZTMr6/nJUDNlDacMk5TuzdyQZsrPBmpYE4Gmen1K6Mo= | - |
+| POLYNOMIAL | TZXfsntBS+NNEe/XYLwnbV+rzNSc2wIIbDIuN+EQTbw= | 59ZUc7ZNdPqkd9y5CNhprWxcpZcCKancDfQ0KcmvzeI= | SxfVVXXf6F8WGIi7uoB1HtNcaR/sHqbxI3MXxYYXtms= | UiLK0j/dZtUWZUiLLB1CzdjkN2xGi/PMVWNvhUS03MU= |
+| RACE | WqW/XS5Rf1h55Y8e+Aqn1CD51UBSDmk0EbiKPcI7Jz0= | Zy5WZtLLI+w8TBAUFy5CDO+Uf5ijhkY4sTLul0OixLI= | ISQ6eIIKp0B9iAk/nx0eQMWZ2ehB2RvEJHenZLJLgzQ= | - |
+| REDSTONE | cuuJZDt6Np+B3eweuTZjluazY7JlxJws/lTWckv/i8E= | CSirey5zj7PgDS76fCKmRF55kR6ZZ/myIj7ccA0b4xA= | wRXdgZ/neydxNfaMYNLwFwH4WtDMA+fZgbb4ZwPknek= | - |
+| SHAPE | mfsp8g4ERJkOuBoKG5ZXCsalol+Dw/i771nPJ//dVgc= | DqqSYMg+bxFEw7N39M3GtciAXkCXiARdDIWaUyRmbZw= | kSzhOSbTGMpI7IB6Lhmvs7ElYRuDy1gW/OsXJyHm7WI= | - |
+| SONEIUM | J/oTg21YADvP5STmtJ62qKv3dVLCBiIebjCw6s2SS0U= | r9XtmkpoYKTw6TWuHxy6+ASoX8bHl0ZB9sR2RdsQrVA= | sLGXj47SqEnZ5Ndfiwz7WuuEarFWnv3iRcIVpJNBROY= | 5cxOotfRvkVUHBXfoGxyQiGuqrhGAox3TuNfKI3/OMQ= |
+| SWAN | cKyxsE76OBtW8ZNZWbH7gfXN/+CVM47PPGPssGvmSgU= | GudxCxGrnuRl4MITnpHCIAtZZ25wmiNhDCJCBgEiIqs= | l0nAxz8Nf5mvjapPWC+vZBKNFQe4YqKNezfvCizBK38= | - |
+| SWELL | enAqApLFF0jQqKXu62ukTqWj+6W7NF/f3zyLrihWrzU= | mO+/sxrE4vJZfrQO3bFjYtMT9iK/RfGdXoDkekY5Bh8= | RfHL3VdykEYL02vCdCSTFZHi066z9/DsUF7uTS5F7/g= | EZt+fei9OcaI4qH4/VOs+DqUGF5o56BmQLE2EX/ur9o= |
+| UNICHAIN | 0RQFDOuKSFfEwcleGnTGb7lM+vZg9nBzZ9WyzOye1js= | RPbKsmdW0/HirF7l75QQd0Nl02deTVxOCCrFFupKHq0= | sfq4QRqSyFpW9LqR7rw2x4gk+vhC87Ny3MNPpz77y/I= | +hPVJiVcO3aF1fsFSDQs0hNhv6Ebtu/G8e1JbaL2lEU= |
+| WORLDCHAIN | jVe/Dpr1TgIxBLbkMoLKmXWTJthxFB0LhHrxWQmt548= | hXw/qm4zZq7F+r3+FpPwE11FA6TD7H/cnY0+t697fq0= | xak+QMrTI2r97/oFyvE45Wmpqe9r+P4E5pLhyGswjWc= | waUx+j75/SloH+se3JVW3oDt2Z8AgvO/QwcxMwoOKkI= |
+| XTERIO | 91Lmuq3ndcnbZwqO7660c9j2fAQSVnhTEVR8rWec17M= | 4Bi3sOZJ/iDa6Z4pvWMi0IrTTd/oHMqqKqjMKUkjWSQ= | /s2yXOol2pPAkxCtBO+45y4olRrFIPWRGymDJ4k28Wc= | - |
+| ZORA | gqPrgjDFJo0cxqAjtajifVr4f+ODszjovnISfmqT3qA= | cgfAWKq1l/V12yl1VKIGxFDmaFuotwck19DV+KGl6XY= | 7B968iepoM5KgO93Lo/9rnvqkud1scMnSVHcSCThEbc= | yDQTF2Jvodg/6XgVmx5t3QdDy4BGMqyi/JMa2U4jQMA= |
+
+Note: A dash (-) indicates that the metric is not available for that chain.
+
+### Coverage testing
+
+Here is a query you can run in py-oso to test the coverage of the metrics:
+
+```python
+#! pip install pyoso
+
+from dotenv import load_dotenv
+import os
+import pandas as pd
+from pyoso import Client
+
+load_dotenv()
+OSO_API_KEY = os.environ['OSO_API_KEY']
+client = Client(api_key=OSO_API_KEY)
+
+metrics = [
+    f"{c.upper()}_{m}"
+    for c in [  # Supported chains
+        'base', 'bob', 'frax', 'ink', 'kroma', 'lisk', 'lyra',
+        'metal', 'mint', 'mode', 'optimism', 'orderly', 'polynomial',
+        'race', 'redstone', 'shape', 'soneium', 'swan', 'swell',
+        'unichain', 'worldchain', 'xterio', 'zora'
+    ]
+    for m in [  # Metric types
+        'defillama_tvl_daily',
+        'gas_fees_daily',     
+        'transactions_daily',
+        'active_addresses_aggregation_daily'
+    ]
+]
+query = f"""
+WITH metric_ids AS (
+  SELECT DISTINCT
+    metric_id,
+    metric_name
+  FROM metrics_v0
+  WHERE metric_name IN ({"'" + "','".join(metrics) + "'"})
+),
+metric_stats AS (
+  SELECT 
+    tm.metric_id,
+    COUNT(DISTINCT tm.project_id) as project_count,
+    MIN(tm.sample_date) as first_date,
+    MAX(tm.sample_date) as last_date,
+    AVG(tm.amount) as mean_value
+  FROM timeseries_metrics_by_project_v0 tm
+  GROUP BY tm.metric_id
+)
+SELECT 
+  mi.metric_id,
+  mi.metric_name,
+  ms.project_count,
+  ms.first_date,
+  ms.last_date,
+  ms.mean_value
+FROM metric_ids mi
+LEFT JOIN metric_stats ms ON mi.metric_id = ms.metric_id
+ORDER BY mi.metric_name
+"""
+df = client.to_pandas(query)
+```
