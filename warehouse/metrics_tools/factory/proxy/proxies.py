@@ -6,7 +6,12 @@ import sqlglot as sql
 from metrics_tools.definition import PeerMetricDependencyRef
 from metrics_tools.factory.generated import generated_rolling_query
 from metrics_tools.factory.utils import metric_ref_evaluator_context
-from metrics_tools.macros import metrics_end, metrics_sample_date, metrics_start
+from metrics_tools.macros import (
+    metrics_end,
+    metrics_sample_date,
+    metrics_sample_interval_length,
+    metrics_start,
+)
 from oso_sqlmesh.macros.to_unix_timestamp import (
     str_to_unix_timestamp,
     to_unix_timestamp,
@@ -29,6 +34,7 @@ def generated_query(
         ref,
         additional_macros={
             "@METRICS_SAMPLE_DATE": metrics_sample_date,
+            "@METRICS_SAMPLE_INTERVAL_LENGTH": metrics_sample_interval_length,
             "@METRICS_START": metrics_start,
             "@METRICS_END": metrics_end,
             "@STR_TO_UNIX_TIMESTAMP": str_to_unix_timestamp,

@@ -1,0 +1,108 @@
+test_defillama_tvl_to_project_monthly:
+  # Tests that the average TVL for a project is calculated correctly
+  model: oso.defillama_tvl_to_project_monthly
+  vars:
+    start: 2024-01-01
+    end: 2024-03-01
+  inputs:
+    oso.int_events_daily__defillama_tvl:
+      rows:
+      - to_artifact_id: to_art_0
+        from_artifact_namespace: test
+        bucket_day: 2024-01-01
+        amount: 31
+      - to_artifact_id: to_art_0
+        from_artifact_namespace: test
+        bucket_day: 2024-01-02
+        amount: 31
+      - to_artifact_id: to_art_0
+        from_artifact_namespace: test
+        bucket_day: 2024-01-03
+        amount: 31
+      - to_artifact_id: to_art_0
+        from_artifact_namespace: test
+        bucket_day: 2024-01-04
+        amount: 31
+      - to_artifact_id: to_art_0
+        from_artifact_namespace: test
+        bucket_day: 2024-01-05
+        amount: 31
+      - to_artifact_id: to_art_1
+        from_artifact_namespace: test
+        bucket_day: 2024-01-01
+        amount: 31
+      - to_artifact_id: to_art_1
+        from_artifact_namespace: test
+        bucket_day: 2024-01-02
+        amount: 31
+      - to_artifact_id: to_art_1
+        from_artifact_namespace: test
+        bucket_day: 2024-01-03
+        amount: 31
+      - to_artifact_id: to_art_1
+        from_artifact_namespace: test
+        bucket_day: 2024-01-04
+        amount: 31
+      - to_artifact_id: to_art_1
+        from_artifact_namespace: test
+        bucket_day: 2024-01-05
+        amount: 31
+      # for feb
+      - to_artifact_id: to_art_0
+        from_artifact_namespace: test
+        bucket_day: 2024-02-01
+        amount: 58
+      - to_artifact_id: to_art_0
+        from_artifact_namespace: test
+        bucket_day: 2024-02-02
+        amount: 58
+      - to_artifact_id: to_art_0
+        from_artifact_namespace: test
+        bucket_day: 2024-02-03
+        amount: 58
+      - to_artifact_id: to_art_0
+        from_artifact_namespace: test
+        bucket_day: 2024-02-04
+        amount: 58
+      - to_artifact_id: to_art_0
+        from_artifact_namespace: test
+        bucket_day: 2024-02-05
+        amount: 58
+      - to_artifact_id: to_art_1
+        from_artifact_namespace: test
+        bucket_day: 2024-02-01
+        amount: 58
+      - to_artifact_id: to_art_1
+        from_artifact_namespace: test
+        bucket_day: 2024-02-02
+        amount: 58
+      - to_artifact_id: to_art_1
+        from_artifact_namespace: test
+        bucket_day: 2024-02-03
+        amount: 58
+      - to_artifact_id: to_art_1
+        from_artifact_namespace: test
+        bucket_day: 2024-02-04
+        amount: 58
+      - to_artifact_id: to_art_1
+        from_artifact_namespace: test
+        bucket_day: 2024-02-05
+        amount: 58
+
+    oso.artifacts_by_project_v1:
+      rows:
+      - artifact_id: to_art_0
+        project_id: project_0
+      - artifact_id: to_art_1
+        project_id: project_0
+  outputs:
+    query:
+      partial: true
+      rows:
+      - metrics_sample_date: 2024-01-01
+        to_project_id: project_0
+        amount: 10
+      - metrics_sample_date: 2024-02-01
+        to_project_id: project_0
+        amount: 20
+
