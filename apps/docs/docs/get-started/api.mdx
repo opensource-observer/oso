@@ -1,10 +1,15 @@
 ---
 title: "Access via GraphQL API"
-sidebar_position: 1
+sidebar_position: 2
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
+
+:::warning
+Unlike the `pyoso` Python library, which has access to every model
+in the data lake, the GraphQL API only exposes the subset of "mart" models.
+:::
 
 The [OSO](https://www.opensource.observer) API serves 
 queries on metrics and metadata about open source projects.
