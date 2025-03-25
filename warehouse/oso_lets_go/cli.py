@@ -316,6 +316,54 @@ def sqlmesh_migrate(
 
 
 @production.command()
+@click.option("--namespace", default="production-dagster")
+@click.option("--service-account", default="production-dagster")
+@click.option("--user-email", default=f"{getpass.getuser()}@opensource.observer")
+@click.option("--gateway", default="trino")
+def sqlmesh_debug(namespace: str, service_account: str, user_email: str, gateway: str):
+    env_vars = {
+        "SQLMESH_POSTGRES_INSTANCE_CONNECTION_STRING": "gcp:secretmanager:production-dagster-sqlmesh-postgres-instance-connection-string/versions/latest",
+        "SQLMESH_POSTGRES_USER": "gcp:secretmanager:production-dagster-sqlmesh-postgres-user/versions/latest",
+        "SQLMESH_POSTGRES_PASSWORD": "gcp:secretmanager:production-dagster-sqlmesh-postgres-password/versions/latest",
+        "SQLMESH_POSTGRES_DB": "gcp:secretmanager:production-dagster-sqlmesh-postgres-db/versions/latest",
+        "SQLMESH_TRINO_HOST": "production-trino-trino.production-trino.svc.cluster.local",
+        "SQLMESH_TRINO_CONCURRENT_TASKS": "64",
+        "SQLMESH_MCS_ENABLED": "1",
+        "SQLMESH_MCS_URL": "http://production-mcs.production-mcs.svc.cluster.local:8000",
+        "SQLMESH_MCS_DEFAULT_SLOTS": "8",
+        "SQLMESH_MCS_SKIP_ROLLING": "1",
+    }
+    asyncio.run(
+        deploy_oso_k8s_job(
+            job_name=f"sqlmesh-debug-{datetime.now().strftime('%Y%m%d%H%M%S')}",
+            namespace=namespace,
+            cmd=["sleep", "86400"],
+            working_dir="/usr/src/app/warehouse/oso_sqlmesh",
+            user_email=user_email,
+            env=env_vars,
+            resources={
+                "requests": {"cpu": "1500m", "memory": "5Gi"},
+                "limits": {"memory": "9Gi"},
+            },
+            extra_pod_spec={
+                "serviceAccountName": service_account,
+                "nodeSelector": {
+                    "pool_type": "standard",
+                },
+                "tolerations": [
+                    {
+                        "key": "pool_type",
+                        "operator": "Equal",
+                        "value": "standard",
+                        "effect": "NoSchedule",
+                    }
+                ],
+            },
+        )
+    )
+
+
+@production.command()
 @click.argument("metric-name")
 @click.option("--start", type=click.DateTime(), required=True)
 @click.option("--end", type=click.DateTime(), required=True)
