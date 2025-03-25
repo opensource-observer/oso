@@ -23,5 +23,7 @@ SELECT
   repos.created_at,
   repos.updated_at
 FROM oso.int_artifacts_by_project AS artifacts
-INNER JOIN oso.stg_ossd__current_repositories AS repos
+LEFT JOIN oso.stg_ossd__current_repositories AS repos
   ON artifacts.artifact_source_id = repos.id::TEXT
+WHERE
+  artifacts.artifact_source = 'GITHUB'

@@ -55,3 +55,6 @@ JOIN oso.projects_v1 AS dp
   ON fg.devtooling_project_id = dp.project_id
 LEFT JOIN oso.int_superchain_s7_devtooling_onchain_builder_nodes AS bp
   ON fg.onchain_builder_project_id = bp.project_id
+JOIN oso.projects_by_collection_v1 AS pbc
+  ON fg.devtooling_project_id = pbc.project_id
+WHERE pbc.collection_name = '7-1'

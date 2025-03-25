@@ -72,7 +72,7 @@ project_eligibility AS (
 
 artifacts AS (
   SELECT DISTINCT
-    project_name,
+    project_id,
     'DEFILLAMA_ADAPTER' AS artifact_type
   FROM oso.artifacts_by_project_v1
   WHERE artifact_source = 'DEFILLAMA'
@@ -80,10 +80,11 @@ artifacts AS (
   UNION ALL
 
   SELECT DISTINCT
-    p2p.external_project_name AS project_name,
+    p2p.external_project_id AS project_id,
     'BUNDLE_BEAR' AS artifact_type
-  FROM oso.int_projects_to_projects p2p
-  JOIN oso.artifacts_by_project_v1 abp ON p2p.artifact_id = abp.artifact_id
+  FROM oso.int_projects_to_projects AS p2p
+  JOIN oso.artifacts_by_project_v1 AS abp
+    ON p2p.artifact_id = abp.artifact_id
   WHERE
     p2p.ossd_project_name IN (
       SELECT DISTINCT ossd_name
@@ -95,7 +96,7 @@ artifacts AS (
 
 artifact_flags AS (
   SELECT
-    project_name,
+    project_id,
     MAX(CASE WHEN artifact_type = 'DEFILLAMA_ADAPTER' THEN TRUE ELSE FALSE END) AS has_defillama_adapter,
     MAX(CASE WHEN artifact_type = 'BUNDLE_BEAR' THEN TRUE ELSE FALSE END) AS has_bundle_bear
   FROM artifacts
@@ -123,4 +124,4 @@ FROM builder_metrics
 JOIN project_eligibility
   ON builder_metrics.project_id = project_eligibility.project_id
 LEFT JOIN artifact_flags
-  ON builder_metrics.project_id = artifact_flags.project_name
+  ON builder_metrics.project_id = artifact_flags.project_id
