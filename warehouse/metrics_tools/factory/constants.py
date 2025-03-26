@@ -38,4 +38,6 @@ METRIC_METADATA_COLUMNS: t.Dict[str, exp.DataType] = {
     "display_name": exp.DataType.build("STRING", dialect="duckdb"),
     "description": exp.DataType.build("STRING", dialect="duckdb"),
     "metric": exp.DataType.build("STRING", dialect="duckdb"),
+    "sql_source_path": exp.DataType.build("STRING", dialect="duckdb"),
+    "rendered_sql": exp.DataType.build("STRING[]", dialect="duckdb"),
 }
