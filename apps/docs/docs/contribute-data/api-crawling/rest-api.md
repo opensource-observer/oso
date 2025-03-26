@@ -132,11 +132,11 @@ pipeline, the data will be ingested into your OSO warehouse.
 
 :::tip
 If you have not setup your local Dagster environment yet, please follow
-our [quickstart guide](../../guides/dagster/index.md).
+our [quickstart guide](../setup/index.md).
 :::
 
 After having your Dagster instance running, follow the
-[Dagster Asset Guide](../../guides/dagster/index.md) to materialize the assets.
+[Dagster Asset Guide](../setup/index.md) to materialize the assets.
 Our example assets are located under `assets/defillama/tvl`.
 
 ![Dagster DefiLlama Asset List](crawl-api-example-defillama.png)
