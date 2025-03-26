@@ -1,6 +1,6 @@
 ---
-title: Subscribe to Public Datasets
-sidebar_position: 1
+title: Subscribe to Source Datasets on BigQuery
+sidebar_position: 9
 ---
 
 import Button from "../../../src/components/plasmic/Button";
@@ -19,8 +19,13 @@ import EasLogo from "./eas.png";
 import OcLogo from "./open-collective.png";
 import OpAtlasLogo from "./op-atlas.png";
 
-Check out our [BigQuery data exchange](https://console.cloud.google.com/bigquery/analytics-hub/exchanges/projects/87806073973/locations/us/dataExchanges/open_source_observer_190181416ae) to explore all the OSO datasets available.
+OSO curates a variety of public datasets from the open source ecosystem.
+Check out our [BigQuery data exchange](https://console.cloud.google.com/bigquery/analytics-hub/exchanges/projects/87806073973/locations/us/dataExchanges/open_source_observer_190181416ae)
+to explore available data.
 If you don't have a BigQuery account, [start here](../../get-started/bigquery.mdx).
+
+*Note: If you want to explore data and metrics computed in the OSO data pipeline,
+we recommend that you use [pyoso](../query-data.mdx) instead.*
 
 Here are some of our featured public datasets:
 
@@ -31,13 +36,6 @@ Here are some of our featured public datasets:
       <span className="tag">Updated daily</span>
     </div>
     <h3>OSO Production Pipeline</h3>
-  </a>
-  <a href="#oso-playground-dataset" className="datalink-card">
-    <div className="datalink-header">
-      <img src={OsoLogo} alt="OSO Logo" className="datalink-logo" />
-      <span className="tag">Updated daily</span>
-    </div>
-    <h3>OSO Playground Dataset</h3>
   </a>
   <a href="#github-archive" className="datalink-card">
     <div className="datalink-header">
@@ -291,25 +289,6 @@ FROM `YOUR_PROJECT_NAME.oso_production.int_events_daily_to_project`
 WHERE project_id = 'XSDgPwFuQVcj57ARcKTGrm2w80KKlqJxaBWF6jZqe7w=' AND event_type = 'CONTRACT_INVOCATION_DAILY_COUNT'
 GROUP BY project_id, event_source
 ```
-
-## OSO Playground Dataset
-
-<Button
-  size={"compact"}
-  color={"blue"}
-  target={"_blank"}
-  link={
-    "https://console.cloud.google.com/bigquery/analytics-hub/exchanges/projects/87806073973/locations/us/dataExchanges/open_source_observer_190181416ae/listings/oso_playground_1901889910d"
-  }
-  children={"Subscribe on BigQuery"}
-/>{" "}
-
-- [Reference documentation](https://models.opensource.observer/#!/model/model.opensource_observer.code_metrics_by_project_v1)
-- [License: CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)
-- [Updated daily](https://dagster.opensource.observer/assets/dbt/playground)
-
-We maintain a subset of projects and events in a playground dataset for testing and development.
-All of the production models are mirrored in this environment.
 
 ## External Datasets
 
@@ -910,6 +889,23 @@ to the dataset.
 You can star the dataset to keep it in your project.
 
 ![star](./bigquery_starred_datasets.png)
+
+## Cost Estimation
+
+BigQuery [on-demand pricing](https://cloud.google.com/bigquery/pricing)
+charges based on the number of bytes scanned,
+with the first 1 TB free every month.
+
+To keep track of your usage, check the bytes scanned in the top right corner before running your query.
+
+![cost estimate](../bigquery_cost_estimate.png)
+
+BigQuery costs can rack up quickly if you are not careful optimizing your queries.
+For more on how you can optimize your queries, check out these guide:
+
+- [BigQuery: Optimize query computation](https://cloud.google.com/bigquery/docs/best-practices-performance-compute)
+- [Avoiding eight common BigQuery query mistakes](https://www.doit.com/avoiding-eight-common-bigquery-query-mistakes/)
+
 
 ## Next steps
 
