@@ -1,32 +1,19 @@
 import logging
-from typing import Any, Dict, Generator, List, Set
+from typing import Any, Dict, Generator, Set
 
 import dlt
+import pandas as pd
 import requests
+from dagster import AssetExecutionContext, ResourceParam
+from dlt.destinations.adapters import bigquery_adapter
 from dlt.sources.helpers.requests import Session
-from dlt.sources.rest_api.typing import RESTAPIConfig
 from google.api_core.exceptions import Forbidden
 from google.cloud import bigquery
+from oso_dagster.config import DagsterConfig
+from oso_dagster.factories import dlt_factory
 from ossdirectory import fetch_data
 
-from ..factories import AssetFactoryResponse
-from ..factories.rest import create_rest_factory_asset
-
 logger = logging.getLogger(__name__)
-
-# These protocols cause issues with dlt and its decoding
-# implementation. It is not trivial to fix these issues
-# so we disable them for now. For more info, see #3163.
-# TODO(jabolo): Fix these issues and re-enable these protocols.
-DISABLED_DEFILLAMA_PROTOCOLS = [
-    "pancakeswap-amm-v3",
-    "hermes-v2",
-    "sakefinance",
-    "jumper-exchange",
-    "uniswap-v2",
-    "uniswap-v3",
-    "extra-finance-leverage-farming",
-]
 
 LEGACY_DEFILLAMA_PROTOCOLS = [
     "aave",
@@ -153,6 +140,8 @@ LEGACY_DEFILLAMA_PROTOCOLS = [
 
 DEFILLAMA_PROTOCOLS = ["aave", "sushiswap"]
 
+DEFILLAMA_TVL_EPOCH = "2021-10-01T00:00:00.000Z"
+
 K8S_CONFIG = {
     "merge_behavior": "SHALLOW",
     "container_config": {
@@ -204,55 +193,12 @@ def defillama_chain_mappings(chain: str) -> str:
     }.get(chain, chain)
 
 
-def filter_valid_slugs(slugs: Set[str]) -> Set[str]:
+def get_valid_defillama_slugs() -> Set[str]:
     """
-    Filter out invalid defillama slugs from a set of slugs.
-
-    Args:
-        slugs (Set[str]): The set of slugs to filter.
+    Get all valid defillama slugs from the ossd projects and the op_atlas dataset.
 
     Returns:
-        Set[str]: The set of valid slugs.
-    """
-
-    all_slugs = set(slugs)
-
-    try:
-        r = requests.get("https://api.llama.fi/protocols", timeout=5)
-        r.raise_for_status()
-    except requests.exceptions.RequestException as e:
-        logger.warning(f"Failed to fetch Defillama protocols: {e}")
-        return all_slugs
-
-    valid_slugs = {x["slug"] for x in r.json()}
-    return all_slugs.intersection(valid_slugs)
-
-
-def extract_protocol(url: str) -> str:
-    """
-    Extract the protocol name from a defillama url. It is assumed that
-    the protocol name is the last part of the url. For example, in the
-    url "https://defillama.com/protocol/gyroscope-protocol", the protocol name
-    is "gyroscope-protocol".
-
-    Args:
-        url (str): The defillama url to parse.
-
-    Returns:
-        str: The protocol name.
-    """
-
-    return url.split("/")[-1]
-
-
-@dlt.resource(name="protocols")
-def fetch_defillama_protocols() -> Generator[List[Dict[str, str]], None, None]:
-    """
-    Fetch all defillama protocols from the ossd projects and the op_atlas dataset.
-
-    Returns:
-        Generator[List[Dict[str, str]], None, None]: A generator yielding a list of
-        dictionaries containing the protocol slugs.
+        Set[str]: A set of valid defillama slugs.
     """
 
     client = bigquery.Client()
@@ -288,97 +234,173 @@ def fetch_defillama_protocols() -> Generator[List[Dict[str, str]], None, None]:
     ossd_defillama_parsed_urls.update(op_atlas_data)
     ossd_defillama_parsed_urls.update(LEGACY_DEFILLAMA_PROTOCOLS)
 
-    ossd_defillama_parsed_urls.difference_update(DISABLED_DEFILLAMA_PROTOCOLS)
+    try:
+        r = requests.get(
+            "https://api.llama.fi/protocols",
+            timeout=10,
+        )
+        r.raise_for_status()
 
-    yield [{"name": slug} for slug in filter_valid_slugs(ossd_defillama_parsed_urls)]
+        valid_defillama_slugs = {x["slug"] for x in r.json()}
+        return valid_defillama_slugs | ossd_defillama_parsed_urls
+    except requests.exceptions.RequestException as e:
+        logger.warning(f"Failed to fetch Defillama protocols: {e}")
+        return ossd_defillama_parsed_urls
 
 
-def add_original_slug(record: Any) -> Any:
+def extract_protocol(url: str) -> str:
     """
-    Add the original slug to the record.
+    Extract the protocol name from a defillama url. It is assumed that
+    the protocol name is the last part of the url. For example, in the
+    url "https://defillama.com/protocol/gyroscope-protocol", the protocol name
+    is "gyroscope-protocol".
 
     Args:
-        record: The record to modify.
+        url (str): The defillama url to parse.
 
     Returns:
-        The modified record.
+        str: The protocol name.
     """
 
-    record["slug"] = record.get("_protocols_name", "")
-    del record["_protocols_name"]
-
-    return record
+    return url.split("/")[-1]
 
 
-def mk_defillama_config() -> RESTAPIConfig:
+def parse_chain_tvl(
+    protocol: str,
+    parent_protocol: str,
+    chain_tvls_raw: Dict,
+) -> Generator[Dict[str, Any], None, None]:
     """
-    Create a REST API config for fetching defillama data.
+    Extract aggregated TVL events from the chainTvls field.
+    For each chain, each event is expected to have a date and a totalLiquidityUSD value.
 
-    Returns:
-        RESTAPIConfig: The REST API config.
+    Args:
+        protocol (str): The protocol slug
+        parent_protocol (str): The parent protocol (if any)
+        chain_tvls_raw (Dict): The raw chain TVL data
+
+    Yields:
+        Dict[str, Any]: Individual TVL events
     """
+    chains = chain_tvls_raw.keys()
+    for chain in chains:
+        if (
+            not isinstance(chain_tvls_raw[chain], dict)
+            or "tvl" not in chain_tvls_raw[chain]
+        ):
+            continue
 
-    return {
-        "client": {
-            "base_url": "https://api.llama.fi/",
-            "session": Session(timeout=300),
-        },
-        "resource_defaults": {
-            "primary_key": "id",
-            "write_disposition": "replace",
-            "parallelized": True,
-            "max_table_nesting": 0,
-            "table_name": "tvl",
-        },
-        "resources": [
-            {
-                "name": "slugs",
-                "endpoint": {
-                    "path": "protocol/{protocol}",
-                    "data_selector": "$",
-                    "params": {
-                        "protocol": {
-                            "type": "resolve",
-                            "resource": "protocols",
-                            "field": "name",
-                        },
-                    },
-                },
-                "include_from_parent": ["name"],
-                "processing_steps": [
-                    {"map": add_original_slug},  # type: ignore
-                ],
-            },
-            fetch_defillama_protocols(),
-        ],
-    }
+        tvl_history = chain_tvls_raw[chain]["tvl"]
+        if not tvl_history:
+            continue
+
+        for entry in tvl_history:
+            try:
+                timestamp = pd.Timestamp(entry["date"], unit="s")
+                amount = float(entry["totalLiquidityUSD"])
+
+                event = {
+                    "time": timestamp.isoformat(),
+                    "slug": protocol,
+                    "protocol": protocol,
+                    "parent_protocol": parent_protocol,
+                    "chain": defillama_chain_mappings(chain),
+                    "token": "USD",
+                    "tvl": amount,
+                    "event_type": "TVL",
+                }
+                yield event
+            except (KeyError, ValueError) as e:
+                logger.warning(f"Error parsing TVL entry for {protocol}/{chain}: {e}")
+                continue
 
 
-def build_defillama_assets() -> List[AssetFactoryResponse]:
+def get_defillama_tvl_events(
+    context: AssetExecutionContext,
+) -> Generator[Dict[str, Any], None, None]:
     """
-    Creates a defillama asset factory configured to fetch defillama data
-    given the current ossd projects with defillama urls. Also fetches
-    defillama urls from the op_atlas dataset.
+    Fetch DefiLlama protocol TVL data for all available dates.
 
-    Returns:
-        AssetFactoryResponse: The defillama asset factory.
+    Args:
+        context (AssetExecutionContext): The execution context
+
+    Yields:
+        Dict[str, Any]: Individual TVL events for all protocols and chains
     """
+    session = Session(timeout=300)
 
-    dlt_assets = create_rest_factory_asset(
-        config=mk_defillama_config(),
+    context.log.info("Processing all TVL data")
+
+    valid_slugs = get_valid_defillama_slugs()
+    context.log.info(f"Found {len(valid_slugs)} valid DefiLlama protocols")
+
+    for i, slug in enumerate(valid_slugs):
+        try:
+            url = f"https://api.llama.fi/protocol/{slug}"
+            context.log.info(
+                f"Fetching data for protocol: {slug} ({i + 1}/{len(valid_slugs)})"
+            )
+
+            response = session.get(url)
+            response.raise_for_status()
+            protocol_data = response.json()
+
+            parent_protocol = ""
+            if "parentProtocol" in protocol_data:
+                parent_protocol = protocol_data.get("parentProtocol", "")
+
+            if "chainTvls" in protocol_data:
+                yield from parse_chain_tvl(
+                    slug,
+                    parent_protocol,
+                    protocol_data["chainTvls"],
+                )
+
+        except requests.exceptions.RequestException as e:
+            context.log.warning(f"Failed to fetch data for protocol {slug}: {e}")
+            continue
+        except Exception as e:
+            context.log.error(f"Error processing protocol {slug}: {e}")
+            continue
+
+
+@dlt_factory(
+    key_prefix="defillama",
+    name="tvl_events",
+    op_tags={
+        "dagster/concurrency_key": "defillama_tvl",
+        "dagster-k8s/config": K8S_CONFIG,
+    },
+)
+def defillama_tvl_assets(
+    context: AssetExecutionContext,
+    global_config: ResourceParam[DagsterConfig],
+):
+    """
+    Create and register a Dagster asset that materializes DeFiLlama TVL data.
+
+    Args:
+        context (AssetExecutionContext): The execution context of the asset.
+        global_config (DagsterConfig): Global configuration parameters.
+
+    Yields:
+        Generator: A generator that yields DeFiLlama TVL events.
+    """
+    resource = dlt.resource(
+        get_defillama_tvl_events(context),
+        name="tvl_events",
+        primary_key=["slug", "chain", "time"],
+        write_disposition="replace",
     )
 
-    assets = dlt_assets(
-        key_prefix="defillama",
-        name="tvl",
-        op_tags={
-            "dagster/concurrency_key": "defillama_tvl",
-            "dagster-k8s/config": K8S_CONFIG,
-        },
-        pool="defillama_tvl",
-    )
+    if global_config.enable_bigquery:
+        bigquery_adapter(
+            resource,
+            partition="time",
+            cluster=[
+                "slug",
+                "chain",
+            ],
+        )
 
-    return assets
-
-
-defillama_assets = build_defillama_assets()
+    yield resource
