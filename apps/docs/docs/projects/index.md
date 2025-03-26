@@ -138,22 +138,22 @@ For the latest fields, see the [project schema](https://github.com/opensource-ob
 The simplest way to add all contracts and factories associated with your project is to just add the deployer address in the project file. We will then automatically index all contracts and factories associated with the deployer address. If the deployer is on multiple EVM networks, you can use the `any_evm` tag instead of listing each network individually.
 :::
 
-OSO currently supports the following blockchain networks, which can be enumerated in the `networks` field of a blockchain address:
+If you prefer to enumerate addresses, you should specify the `networks` and `tags`
+for the address.
+Some common `networks` include:
 
 - `any_evm`: Any Ethereum Virtual Machine (EVM) network. This is the recommended tag for EOAs that deploy contracts on multiple EVM networks.
 - `mainnet`: The Ethereum mainnet.
 - `arbitrum_one`: The Arbitrum L2 network.
 - `base`: The Base L2 network.
-- `frax`: The Frax L2 network.
-- `metal`: The Metal L2 network.
-- `mode`: The Mode L2 network.
 - `optimism`: The Optimism L2 network.
-- `zora`: The Zora L2 network.
+- `zksync_eta`: zkSync Era L2 network.
 
 Note: We do not support testnets for any of these networks and do not intend to.
 
 The following tags can be used to describe blockchain addresses:
 
+- `bridge`: A bridge address
 - `deployer`: A deployer address.
 - `eoa`: An externally owned account (EOA) address.
 - `safe`: A multisig safe contract address.
@@ -164,7 +164,10 @@ In previous versions of the schema, we enumerated contracts and factories with t
 - `contract`: A smart contract address.
 - `factory`: A factory contract address.
 
-Read below for more detailed steps on how to add or update project data or consult the [schema](../guides/oss-directory/) for more information.
+For a full list of supported networks and tags, check out the
+[schema on oss-directory](https://github.com/opensource-observer/oss-directory/blob/main/src/resources/schema/blockchain-address.json).
+
+Read below for more detailed steps on how to add or update project data or consult the [guide](../guides/oss-directory/) for more information.
 
 ## Add or Update Project Data (Detailed Steps)
 
