@@ -87,9 +87,9 @@ importers:
       "@eslint/js":
         specifier: ^9.23.0
         version: 9.23.0
-      "@plasmicapp/cli":
-        specifier: ^0.1.336
-        version: 0.1.336
+      '@plasmicapp/cli':
+        specifier: ^0.1.337
+        version: 0.1.337
       dotenv:
         specifier: ^16.4.7
         version: 16.4.7
@@ -6249,12 +6249,9 @@ packages:
     peerDependencies:
       react: ">=16.8.0"
 
-  "@plasmicapp/cli@0.1.336":
-    resolution:
-      {
-        integrity: sha512-raxRFZSpNSLlK2ajUVsOtruM4sJsPN7kWfWOPAbxjCAdHQ1NMd9gXNdB0B5nrdfZPRr+CbchHn3BEbEG56KV7g==,
-      }
-    engines: { node: ">=12" }
+  '@plasmicapp/cli@0.1.337':
+    resolution: {integrity: sha512-ZYwbYEUOd4MKjCz+bE72kHN0ETXGg7OmEOFkDqp0xdCyBBJVeYgiii9jQarBFTz6MDswXr4eu/zIW/XXbttgpg==}
+    engines: {node: '>=12'}
     hasBin: true
 
   "@plasmicapp/data-sources-context@0.1.21":
@@ -29011,7 +29008,7 @@ snapshots:
       "@plasmicapp/query": 0.1.79(react@18.3.1)
       react: 18.3.1
 
-  "@plasmicapp/cli@0.1.336": {}
+  '@plasmicapp/cli@0.1.337': {}
 
   "@plasmicapp/data-sources-context@0.1.21(react@18.3.1)":
     dependencies:

@@ -3,58 +3,56 @@ title: dbt Setup
 sidebar_position: 5
 ---
 
-We use dbt to build our data warehouse. You can view every model on OSO here: [https://models.opensource.observer](https://models.opensource.observer/).
+:::warning
+We are in the process of deprecating our dbt setup in favor of sqlmesh.
+We have left the dbt setup in case there are models we still need to run
+manually.
+:::
+
+We use dbt to run a BigQuery-based data pipeline.
+You can view every dbt model on OSO here:
+[https://models.opensource.observer](https://models.opensource.observer/).
 
 This guide walks you through setting up dbt (Data Build Tool) for OSO development.
 
 ## Prerequisites
 
-- Python >=3.11
-- Python uv >= 0.6
-- git
+- Python >=3.11 (see [here](https://www.python.org/downloads/))
+- Python uv >= 0.6 (see [here](https://pypi.org/project/uv/))
+- git (see [here](https://github.com/git-guides/install-git))
 - A GitHub account
 - BigQuery access
-- `gcloud` CLI
+- `gcloud` CLI (see [here](https://cloud.google.com/sdk/docs/install))
 
-### Installing gcloud CLI
+### Setup dependencies
 
-For macOS users:
-
-```bash
-brew install --cask google-cloud-sdk
-```
-
-For other platforms, follow the [official instructions](https://cloud.google.com/sdk/docs/install).
-
-## Installation
-
-1. Follow the installation instructions in our monorepo [README](https://github.com/opensource-observer/oso).
-
-2. Activate the virtual environment:
+1. Activate the virtual environment:
 
 ```bash
 source .venv/bin/activate
 ```
 
-3. Verify dbt is installed:
+2. Verify dbt is installed:
 
 ```bash
 which dbt
 ```
 
-4. Authenticate with gcloud:
+3. Authenticate with gcloud:
 
 ```bash
 gcloud auth application-default login
 ```
 
-5. Run the setup wizard:
+4. Run the setup wizard:
 
 ```bash
 uv sync && uv run oso_lets_go
 ```
 
 :::tip
+The script is idempotent, so you can safely run it again
+if you encounter any issues.
 The wizard will create a GCP project and BigQuery dataset if needed, copy a subset of OSO data for development, and configure your dbt profile.
 :::
 
@@ -122,4 +120,106 @@ dbt run --select {model_name}
 By default, this writes to the `opensource-observer.oso_playground` dataset.
 :::
 
-For more details on working with dbt models, see our [Data Models Guide](../contribute-models/data-models.md).
+You can view all of our models and their documentation at [https://models.opensource.observer](https://models.opensource.observer/).
+
+## Model Organization
+
+Our dbt models are located in `warehouse/dbt/models/` and follow these conventions:
+
+- `staging/` - Extract raw source data with minimal transformation (usually materialized as views)
+- `intermediate/` - Transform staging data into useful representations
+- `marts/` - Final aggregations and metrics (copied to frontend database)
+
+## Development Workflow
+
+1. **Write Your Model**
+
+   - Add SQL files to appropriate directory in `warehouse/dbt/models/`
+   - Use existing models as references
+
+2. **Test Locally**
+
+   ```bash
+   dbt run --select your_model_name
+   ```
+
+   By default, this will run the `oso_playground` dataset. If you want to run against the production dataset, you can use the `--target` flag:
+
+   ```bash
+   dbt run --select your_model_name --target production
+   ```
+
+   You can also run all models downstream of a given model by appending a `+` to the model name:
+
+   ```bash
+   dbt run --select your_model_name+
+   ```
+
+3. **Using BigQuery UI**
+
+   ```bash
+   dbt compile --select your_model_name
+   ```
+
+   Find compiled SQL in `target/` directory to run in [BigQuery Console](https://console.cloud.google.com/bigquery)
+
+   Alternatively, you can used the `pbcopy` command to copy the SQL to your clipboard:
+
+   ```bash
+   dbt compile --select your_model_name | pbcopy
+   ```
+
+4. **Submit PR**
+   - Models are deployed automatically after merge to main
+   - Monitor runs in Dagster UI: [https://dagster.opensource.observer](https://dagster.opensource.observer)
+
+## FAQ
+
+### Referring to Data Sources in Intermediate and Marts Models
+
+All intermediate and mart models should refer to data sources using the `ref()` macro.
+
+For example, to refer to staged data from the `github_archive` source, you can use:
+
+```sql
+{{ ref('stg_github__events') }}
+```
+
+And to refer to data from the `int_events` intermediate model, you can use:
+
+```sql
+{{ ref('int_events') }}
+```
+
+### Referring to Data Sources in Staging Models
+
+Staging models can refer to data sources using the `source()` macro.
+
+For example, to refer to raw data from the `github_archive` source, you can use:
+
+```sql
+{{ source('github_archive', 'events') }}
+```
+
+### The `oso_source` macro
+
+Use `oso_source()` instead of `source()` to help manage our playground dataset:
+
+```sql
+{{ oso_source('namespace', 'table_name') }}
+```
+
+### Working with IDs
+
+Use the `oso_id()` macro to generate consistent identifiers across our data models. This macro creates a URL-safe base64 encoding of a SHA256 hash of the concatenated input parameters.
+
+For example, to generate an artifact ID:
+
+```sql
+{{ oso_id("artifact_source", "artifact_source_id") }}
+```
+
+## Reference Documentation
+
+- Browse models: [`warehouse/dbt/models`](https://github.com/opensource-observer/oso/tree/main/warehouse/dbt/models)
+- Online docs: [models.opensource.observer](https://models.opensource.observer/)

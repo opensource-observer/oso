@@ -39,7 +39,8 @@ pnpm lint
 pnpm test
 ```
 
-You can also serve built files with
+The resulting static site can be found in `./build/`.
+You can serve built files with:
 
 ```bash
 pnpm start
@@ -61,17 +62,4 @@ Currently, all deployments are automatically handled by Vercel's GitHub app.
 
 More coming...
 
-All data is access through a Hasura GraphQL engine. In the future, we may be able to run this on Cloudflare workers/pages in the edge runtime due to this architecture decision.
-
-### Dependent services
-
-The application will query a GraphQL service both server-side and client-side.
-We assume you have a Hasura instance running at a URL configured by
-`NEXT_PUBLIC_DB_GRAPHQL_URL`.
-
-We run a Hasura cloud instance, but you can also setup a local Hasura instance.
-
-1. Navigate to `../indexer`.
-2. Populate `.env` with the proper database configuration
-3. Make sure you have `docker` installed on your machine.
-4. Run `../indexer/utilities/database/hasura.sh` to pull the latest Hasura docker image and run it.
+All data is accessed through a Hasura GraphQL engine. In the future, we may be able to run this on Cloudflare workers/pages in the edge runtime due to this architecture decision.

@@ -174,11 +174,11 @@ open_collective_transactions = graphql_factory(
 
 :::tip
 If you have not setup your local Dagster environment yet, please follow
-our [quickstart guide](../../guides/dagster/index.md).
+our [quickstart guide](../setup/index.md).
 :::
 
 After having your Dagster instance running, follow the
-[Dagster Asset Guide](../../guides/dagster/index.md) to materialize the assets.
+[Dagster Asset Guide](../setup/index.md) to materialize the assets.
 Our example assets are located under `assets/open_collective/transactions`.
 
 ![Dagster Open Collective Asset List](crawl-api-graphql-pipeline.png)

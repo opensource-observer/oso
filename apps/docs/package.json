@@ -43,7 +43,7 @@
     "@eslint/compat": "^1.2.7",
     "@eslint/eslintrc": "^3.3.1",
     "@eslint/js": "^9.23.0",
-    "@plasmicapp/cli": "^0.1.336",
+    "@plasmicapp/cli": "^0.1.337",
     "dotenv": "^16.4.7",
     "typescript": "~5.8.2"
   },

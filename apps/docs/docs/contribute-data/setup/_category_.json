@@ -1,0 +1,8 @@
+{
+  "label": "Getting Started with Dagster",
+  "position": 0,
+  "link": {
+    "type": "doc",
+    "id": "index"
+  }
+}

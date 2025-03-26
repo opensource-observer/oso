@@ -14,7 +14,7 @@ by OSO, please reach out to us on
 [Discord](https://www.opensource.observer/discord).
 
 If you prefer to handle the data storage yourself, check out the
-[Connect via BigQuery guide](../guides/bq-data-transfer.md).
+[Connect via BigQuery guide](./bq-data-transfer.md).
 
 ## Schedule periodic dumps to GCS
 

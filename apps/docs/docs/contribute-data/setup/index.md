@@ -1,6 +1,6 @@
 ---
-title: Dagster Local Development
-sidebar_position: 1
+title: Getting Started with Dagster
+sidebar_position: 0
 ---
 
 [Dagster](https://dagster.io) is a data orchestrator that allows you to define

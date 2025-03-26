@@ -11,7 +11,7 @@ the US multi-region.
 If you want OSO to host a copy of
 the dataset in the US multi-region,
 see our guide on
-[BigQuery Data Transfer Service](../guides/bq-data-transfer.md).
+[BigQuery Data Transfer Service](./bq-data-transfer.md).
 
 ## Make the data available in the US region
 
@@ -29,7 +29,7 @@ you can do this directly from the
 
 OSO will also copy certain valuable datasets into the
 `opensource-observer` project via the BigQuery Data Transfer Service
-See the guide on [BigQuery Data Transfer Service](../guides/bq-data-transfer.md)
+See the guide on [BigQuery Data Transfer Service](./bq-data-transfer.md)
 add dataset replication as a Dagster asset to OSO.
 
 ## Make the data accessible to our Google service account
