@@ -6,9 +6,9 @@ sidebar_position: 3
 import Link from "@docusaurus/Link";
 import Button from "../../src/components/plasmic/Button";
 
-
-OSO's data lake is currently located in BigQuery on Google Cloud (GCP).
-Every data model is made publicly available by a BigQuery dataset.
+OSO uses BigQuery as the means of sharing large datasets with the community.
+Unless you plan to setup your own data pipeline, we recommend that
+you either start with [pyoso](./python.md) or the [API](./api.md) to access OSO data.
 
 This page will guide you through the process of subscribing to the OSO production dataset and making your first query.
 
@@ -77,7 +77,7 @@ Create a linked dataset in your own GCP project.
 Open a new tab by clicking on the `+` icon
 on the top right of the console to `Create SQL Query`.
 
-From here you will be able to write any SQL you'd like any OSO dataset.
+From here you will be able to write any SQL you'd like to any OSO dataset.
 For example, you can query the `oso_production` dataset for
 all available collections like this:
 
