@@ -1,5 +1,4 @@
 import typing as t
-from datetime import datetime
 
 import orjson
 import pandas as pd
@@ -13,8 +12,6 @@ def parse_chain_tvl(
     protocol: str,
     parent_protocol: str,
     chain_tvls_raw: str,
-    start: datetime,
-    end: datetime,
 ):
     """
     Extract aggregated TVL events from the chainTvls field.
@@ -36,11 +33,6 @@ def parse_chain_tvl(
                 if not tvl_history:
                     continue
                 for entry in tvl_history:
-                    if (
-                        entry["date"] < start.timestamp()
-                        or entry["date"] > end.timestamp()
-                    ):
-                        continue
                     amount = float(entry["totalLiquidityUSD"])
                     event = {
                         "time": pd.Timestamp(entry["date"], unit="s"),
@@ -85,6 +77,9 @@ def chunk_dataframe(
         "tvl": "DOUBLE",
     },
     kind="full",
+    variables={
+        "chunk_size": 500000,
+    },
     partitioned_by=("month(time)",),
 )
 def defillama_tvl_model(
@@ -113,7 +108,7 @@ def defillama_tvl_model(
             parent_protocol = parent_protocol.replace("parent#", "")
         chain_tvls = str(row["chain_tvls"])
         protocol_tvl_rows = parse_chain_tvl(
-            slug, parent_protocol, chain_tvls, datetime.now(), datetime.now()
+            slug, parent_protocol, chain_tvls
         )
         result_rows.extend(protocol_tvl_rows)
 
