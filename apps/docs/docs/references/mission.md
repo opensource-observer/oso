@@ -1,6 +1,6 @@
 ---
 title: Learn More About Our Mission
-sidebar_position: 8
+sidebar_position: 17
 ---
 
 Open Source Observer is an open source public good maintained by Kariba Labs.

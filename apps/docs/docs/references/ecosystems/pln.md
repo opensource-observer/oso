@@ -8,8 +8,6 @@ The Protocol Labs Network (PLN) is a collection of projects contributing to the 
 
 ## Coverage on Open Source Observer
 
-Open Source Observer currently has 38 open source projects that are part of the PLN. Project data does not yet include Filecoin or FVM addresses.
-
 The main sources of project data come from the PL directory and any grants that have been awarded to projects from other ecosystems.
 
 [Here](https://docs.opensource.observer/blog/pln-ecosystem-analysis) is our most recent report on the PLN ecosystem.

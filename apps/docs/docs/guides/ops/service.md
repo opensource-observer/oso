@@ -12,20 +12,23 @@ that the community aims to achieve together.
 
 ## Service Status
 
+You can find our status page here:
+
+[https://www.opensource.observer/status](https://www.opensource.observer/status)
+
 ## Service Definition
 
 OSO is constantly experimenting with new technology and services
 to improve our infrastructure.
 We only aim to provide service availability for the following mature services:
 
-- [Dagster](https://data.opensource.observer)
-- [dbt pipeline](https://dbt.opensource.observer)
-- [API](https://api.opensource.observer)
+- [Dagster](https://dagster.opensource.observer)
+- [sqlmesh pipeline](https://dagster.opensource.observer/assets/sqlmesh?view=folder)
+- [API](https://www.opensource.observer/graphql)
 - [Frontend](https://www.opensource.observer)
 - [Documentation](https://docs.opensource.observer)
 
-_Note: the sqlmesh pipeline is currently in development and not yet reliable for production use_
-
 ## Outage Escalation
 
-There are 2 surfaces
+The best way to get in touch with the team is via
+[Discord](https://www.opensource.observer/discord).

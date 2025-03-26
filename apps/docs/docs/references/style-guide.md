@@ -3,9 +3,10 @@ title: Code Style Guide
 sidebar_position: 10
 ---
 
-## dbt Models
+## Data Models
 
-We generally follow the dbt style guides for mart and field names. We recommend reading through these official style guides first:
+We generally follow the dbt style guides for mart and field names, even in sqlmesh.
+We recommend reading through these official style guides first:
 
 - [dbt directory structure](https://docs.getdbt.com/best-practices/how-we-structure/1-guide-overview)
 - [dbt models](https://docs.getdbt.com/best-practices/how-we-style/1-how-we-style-our-dbt-models)
@@ -16,7 +17,7 @@ In addition to the official guides, we follow these additional guidelines:
 
 - **Use consistent naming**: Ensure consistent naming in all int tables. For example if we use `artifact_namespace`, do not rename this to _source_, _network_, _domain_, or _chain_ somewhere else.
 
-- **Avoid complex marts**: Push all complexity to intermediate tables. Marts should simply be a direct copy or less granular version of an intermediate table.
+- **Avoid complex marts**: Push all complexity to intermediate tables. Marts should simply be a direct copy or less granular version of an intermediate table. View models are also a relatively cheap way to separate out complex CTEs.
 
 - **Enumerate all columns explicitly in models**: concretely, this mean
   - Avoid using `*` statements in a mart model. This makes it easier to trace any changes through version control.

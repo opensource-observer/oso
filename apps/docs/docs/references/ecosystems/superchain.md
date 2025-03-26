@@ -8,11 +8,12 @@ OP Mainnet is an EVM-equivalent Optimistic Rollup chain. It aims to be fast, sim
 
 ## Coverage on Open Source Observer
 
-Open Source Observer currently has 370+ open source projects that are building on OP Mainnet. Project data includes all Superchain addresses associated with smart contracts, deployers, and grant wallets.
+Open Source Observer currently has 4000+ open source projects that are building on the Superchain. Project data includes all Superchain addresses associated with smart contracts, deployers, and grant wallets.
 
 The main sources of project data come from Retro Funding and other grant applications, Dune Spellbook, and community contributions.
 
-[Here](https://docs.opensource.observer/blog/impact-metrics-rf4) is our blog post on impact metrics for the Optimism Retro Funding ecosystem.
+Check out our [blog](../../../blog/tags/optimism)
+for reports on the Optimism Retro Funding ecosystem.
 
 ## Ecosystem Resources
 
