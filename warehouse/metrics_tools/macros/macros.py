@@ -63,6 +63,16 @@ def relative_window_sample_date(
         return exp.Sub(this=base, expression=interval_delta)
 
 
+INTERVAL_CONVERSION: dict[str, tuple[int, str]] = {
+    "daily": (1, "day"),
+    "weekly": (1, "week"),
+    "monthly": (1, "month"),
+    "quarterly": (3, "month"),
+    "biannually": (6, "month"),
+    "yearly": (1, "year"),
+}
+
+
 def time_aggregation_bucket(
     evaluator: MacroEvaluator, time_exp: exp.Expression, interval: str, offset: int = 0
 ):
@@ -72,21 +82,17 @@ def time_aggregation_bucket(
     if interval == "over_all_time":
         return parse_one("CURRENT_DATE()")
 
-    rollup_to_interval = {
-        "daily": "day",
-        "weekly": "week",
-        "monthly": "month",
-        "quarterly": "quarter",
-        "yearly": "year",
-    }
+    assert interval in INTERVAL_CONVERSION, f"Invalid interval type={interval}"
 
-    assert interval in rollup_to_interval, f"Invalid interval type={interval}"
+    current_interval = INTERVAL_CONVERSION[interval]
 
     if offset:
         time_exp = exp.DateAdd(
             this=time_exp,
-            expression=exp.Literal(this=str(offset), is_string=False),
-            unit=exp.Var(this=rollup_to_interval[interval].upper()),
+            expression=exp.Literal(
+                this=str(offset * current_interval[0]), is_string=False
+            ),
+            unit=exp.Var(this=current_interval[1].upper()),
         )
 
     if evaluator.engine_adapter.dialect == "duckdb":
@@ -94,8 +100,8 @@ def time_aggregation_bucket(
             this="TIME_BUCKET",
             expressions=[
                 exp.Interval(
-                    this=exp.Literal(this="1", is_string=False),
-                    unit=exp.Var(this=rollup_to_interval[interval].upper()),
+                    this=exp.Literal(this=current_interval[0], is_string=False),
+                    unit=exp.Var(this=current_interval[1].upper()),
                 ),
                 exp.Cast(
                     this=time_exp,
@@ -103,21 +109,10 @@ def time_aggregation_bucket(
                 ),
             ],
         )
-    elif evaluator.engine_adapter.dialect == "trino":
-        return exp.TimestampTrunc(
-            this=time_exp,
-            unit=exp.Literal(this=rollup_to_interval[interval], is_string=True),
-        )
-    rollup_to_clickhouse_function = {
-        "daily": "toStartOfDay",
-        "weekly": "toStartOfWeek",
-        "monthly": "toStartOfMonth",
-    }
-    return exp.Anonymous(
-        this=rollup_to_clickhouse_function[interval],
-        expressions=[
-            time_exp,
-        ],
+
+    return exp.TimestampTrunc(
+        this=time_exp,
+        unit=exp.Literal(this=INTERVAL_CONVERSION[interval], is_string=True),
     )
 
 
@@ -128,7 +123,6 @@ def metrics_sample_date(
     should be used on final result"""
     time_aggregation_interval = evaluator.locals.get("time_aggregation")
     if time_aggregation_interval:
-        # return parse_one("STR_TO_DATE(@start_ds, '%Y-%m-%d)", dialect="clickhouse")
         if not time_exp:
             raise Exception(
                 "metrics_sample_date must have a date input when used in a time_aggregation metric"
@@ -254,11 +248,8 @@ def metrics_end(evaluator: MacroEvaluator, _data_type: t.Optional[str] = None):
         return parse_one("CURRENT_DATE()")
 
     if time_aggregation_interval:
-        to_interval = {
-            "daily": "day",
-            "weekly": "week",
-            "monthly": "month",
-        }
+        current_interval = INTERVAL_CONVERSION[time_aggregation_interval]
+
         time_agg_end = exp.Add(
             this=exp.Cast(
                 this=exp.StrToDate(
@@ -272,8 +263,8 @@ def metrics_end(evaluator: MacroEvaluator, _data_type: t.Optional[str] = None):
                 _type=exp.DataType(this=exp.DataType.Type.DATETIME),
             ),
             expression=exp.Interval(
-                this=exp.Literal(this="1", is_string=True),
-                unit=exp.Var(this=to_interval[time_aggregation_interval]),
+                this=exp.Literal(this=f"{current_interval[0]}", is_string=True),
+                unit=exp.Var(this=current_interval[1].upper()),
             ),
         )
         end_date = t.cast(

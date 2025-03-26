@@ -344,7 +344,7 @@ class TimeseriesMetrics:
                 name=f"oso.timeseries_metrics_to_{entity_type}",
                 is_sql=True,
                 kind="VIEW",
-                dialect="clickhouse",
+                dialect="trino",
                 start=self._raw_options["start"],
                 columns={
                     k: constants.METRICS_COLUMNS_BY_ENTITY[entity_type][k]
@@ -377,7 +377,7 @@ class TimeseriesMetrics:
                 name=f"oso.key_metrics_to_{entity_type}",
                 is_sql=True,
                 kind="VIEW",
-                dialect="clickhouse",
+                dialect="trino",
                 start="1970-01-01",
                 columns={
                     k: constants.METRICS_COLUMNS_BY_ENTITY[entity_type][k]
@@ -438,7 +438,7 @@ class TimeseriesMetrics:
                 name=f"oso.metrics_metadata_{metric_key}",
                 is_sql=True,
                 kind="FULL",
-                dialect="clickhouse",
+                dialect="trino",
                 columns=constants.METRIC_METADATA_COLUMNS,
                 enabled=self._raw_options.get("enabled", True),
                 tags=[
@@ -458,7 +458,7 @@ class TimeseriesMetrics:
             name="oso.metrics_metadata",
             is_sql=True,
             kind="FULL",
-            dialect="clickhouse",
+            dialect="trino",
             columns=constants.METRIC_METADATA_COLUMNS,
             enabled=self._raw_options.get("enabled", True),
             tags=[
@@ -584,7 +584,14 @@ class TimeseriesMetrics:
         columns = constants.METRICS_COLUMNS_BY_ENTITY[ref["entity_type"]]
 
         time_aggregation = ref.get("time_aggregation")
-        assert time_aggregation in ["daily", "weekly", "monthly"]
+        assert time_aggregation in [
+            "daily",
+            "weekly",
+            "monthly",
+            "quarterly",
+            "biannually",
+            "yearly",
+        ]
 
         kind_common = {
             "batch_concurrency": 1,
@@ -627,7 +634,7 @@ class TimeseriesMetrics:
         return MacroOverridingModel(
             name=f"{self.schema}.{query_config['table_name']}",
             kind=kind,
-            dialect="clickhouse",
+            dialect="trino",
             is_sql=True,
             columns=columns,
             grain=grain,
@@ -678,7 +685,7 @@ class TimeseriesMetrics:
         return MacroOverridingModel(
             name=f"{self.schema}.{query_config['table_name']}",
             kind=ModelKindName.FULL,
-            dialect="clickhouse",
+            dialect="trino",
             is_sql=True,
             columns=columns,
             grain=grain,
