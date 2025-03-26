@@ -1,22 +1,17 @@
 import typing as t
-from datetime import datetime
 
 import orjson
 import pandas as pd
-from metrics_tools.models import constants
 from metrics_tools.source.rewrite import oso_source_for_pymodel
 from oso_dagster.assets.defillama import defillama_chain_mappings
 from sqlglot import exp
 from sqlmesh import ExecutionContext, model
-from sqlmesh.core.model import ModelKindName
 
 
 def parse_chain_tvl(
     protocol: str,
     parent_protocol: str,
     chain_tvls_raw: str,
-    start: datetime,
-    end: datetime,
 ):
     """
     Extract aggregated TVL events from the chainTvls field.
@@ -38,11 +33,6 @@ def parse_chain_tvl(
                 if not tvl_history:
                     continue
                 for entry in tvl_history:
-                    if (
-                        entry["date"] < start.timestamp()
-                        or entry["date"] > end.timestamp()
-                    ):
-                        continue
                     amount = float(entry["totalLiquidityUSD"])
                     event = {
                         "time": pd.Timestamp(entry["date"], unit="s"),
@@ -86,20 +76,14 @@ def chunk_dataframe(
         "token": "VARCHAR",
         "tvl": "DOUBLE",
     },
-    kind={
-        "name": ModelKindName.INCREMENTAL_BY_TIME_RANGE,
-        "time_column": "time",
-    },
+    kind="full",
     variables={
         "chunk_size": 500000,
     },
     partitioned_by=("month(time)",),
-    start=constants.defillama_incremental_start,
 )
 def defillama_tvl_model(
     context: ExecutionContext,
-    start: datetime,
-    end: datetime,
     oso_source_rewrite: t.Optional[t.Dict[str, t.Any]] = None,
     **kwargs,
 ) -> t.Generator[pd.DataFrame, None, None]:
@@ -124,7 +108,7 @@ def defillama_tvl_model(
             parent_protocol = parent_protocol.replace("parent#", "")
         chain_tvls = str(row["chain_tvls"])
         protocol_tvl_rows = parse_chain_tvl(
-            slug, parent_protocol, chain_tvls, start, end
+            slug, parent_protocol, chain_tvls
         )
         result_rows.extend(protocol_tvl_rows)
 

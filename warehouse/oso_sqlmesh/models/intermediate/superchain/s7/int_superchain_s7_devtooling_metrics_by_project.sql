@@ -1,6 +1,6 @@
 MODEL (
   name oso.int_superchain_s7_devtooling_metrics_by_project,
-  description "S7 metrics by devtooling project",
+  description "S7 metrics by devtooling project (ready for JSON export)",
   dialect trino,
   kind full,
 );
@@ -23,8 +23,7 @@ WITH devtooling_projects AS (
 package_connections AS (
   SELECT
     deps_graph.devtooling_project_id AS project_id,
-    COUNT(DISTINCT deps_graph.onchain_builder_project_id)
-      AS package_connection_count,
+    COUNT(DISTINCT deps_graph.onchain_builder_project_id) AS package_connection_count,
     ARRAY_AGG(DISTINCT CAST(deps_graph.onchain_builder_project_id AS VARCHAR))
       AS package_connection_ids
   FROM oso.int_superchain_s7_devtooling_deps_to_projects_graph AS deps_graph
@@ -42,66 +41,66 @@ developer_connections AS (
 
 project_metrics AS (
   SELECT
-    devtooling_projects.*,
-    projects.project_name,
-    projects.display_name,
-    COALESCE(pkgs.package_connection_count, 0)
-      AS package_connection_count,
-    COALESCE(devs.developer_connection_count, 0)
-      AS developer_connection_count,
-    COALESCE(pkgs.package_connection_ids, CAST(ARRAY[] AS ARRAY(VARCHAR)))
-      AS package_connection_ids,
-    COALESCE(devs.developer_names, CAST(ARRAY[] AS ARRAY(VARCHAR)))
-      AS developer_names
-  FROM devtooling_projects
-  JOIN oso.projects_v1 AS projects
-    ON devtooling_projects.project_id = projects.project_id
-  LEFT JOIN package_connections AS pkgs
-    ON devtooling_projects.project_id = pkgs.project_id
-  LEFT JOIN developer_connections AS devs
-    ON devtooling_projects.project_id = devs.project_id
-),
-
-connected_project_names AS (
-  SELECT 
-    pm.project_id,
-    ARRAY_AGG(DISTINCT CAST(builder_nodes.op_atlas_project_name AS VARCHAR))
-      AS connected_project_names
-  FROM project_metrics AS pm
-  CROSS JOIN UNNEST(
-    CASE 
-      WHEN CARDINALITY(pm.package_connection_ids) > 0
-      THEN pm.package_connection_ids 
-      ELSE ARRAY[NULL] 
-    END
-  ) AS t(connection_id)
-  JOIN oso.int_superchain_s7_devtooling_onchain_builder_nodes AS builder_nodes
-    ON builder_nodes.project_id = t.connection_id
-    AND t.connection_id IS NOT NULL
-    AND builder_nodes.op_atlas_project_name IS NOT NULL
-  GROUP BY pm.project_id
+    dp.project_id,
+    proj.project_name,
+    proj.display_name,
+    dp.created_at,
+    dp.updated_at,
+    dp.star_count,
+    dp.fork_count,
+    dp.num_packages_in_deps_dev,
+    COALESCE(pkgs.package_connection_count, 0) AS package_connection_count,
+    COALESCE(devs.developer_connection_count, 0) AS developer_connection_count,
+    COALESCE(devs.developer_names, CAST(ARRAY[] AS ARRAY(VARCHAR))) AS developer_names,
+    CASE
+      WHEN COALESCE(pkgs.package_connection_count, 0) >= @min_package_connection_count
+        OR COALESCE(devs.developer_connection_count, 0) >= @min_developer_connection_count
+      THEN TRUE
+      ELSE FALSE
+    END AS is_eligible
+  FROM devtooling_projects dp
+  JOIN oso.projects_v1 proj
+    ON dp.project_id = proj.project_id
+  LEFT JOIN package_connections pkgs
+    ON dp.project_id = pkgs.project_id
+  LEFT JOIN developer_connections devs
+    ON dp.project_id = devs.project_id
 )
 
 SELECT
-  pm.project_id,
-  pm.project_name,
-  pm.display_name,
-  pm.created_at,
-  pm.updated_at,
-  pm.star_count,
-  pm.fork_count,
-  pm.num_packages_in_deps_dev,
-  pm.package_connection_count,
-  COALESCE(cpn.connected_project_names, CAST(ARRAY[] AS ARRAY(VARCHAR)))
-    AS connected_project_names,
-  pm.developer_connection_count,
-  pm.developer_names,
-  CASE
-    WHEN pm.package_connection_count >= @min_package_connection_count
-      OR pm.developer_connection_count >= @min_developer_connection_count
-    THEN TRUE
-    ELSE FALSE
-  END AS is_eligible
-FROM project_metrics pm
-LEFT JOIN connected_project_names cpn
-  ON pm.project_id = cpn.project_id
+  m.project_name,
+  m.display_name,
+  m.is_eligible,
+  m.project_id AS oso_project_id,
+  m.star_count AS project_star_count,
+  m.fork_count AS project_fork_count,
+  m.package_connection_count,
+  m.developer_connection_count,
+  filter(
+    ARRAY_AGG(DISTINCT CASE 
+                         WHEN g.onchain_builder_project_id IS NOT NULL 
+                         THEN g.onchain_builder_project_id 
+                       END),
+    x -> x IS NOT NULL
+  ) AS onchain_builder_oso_project_ids,
+  filter(
+    ARRAY_AGG(DISTINCT CASE 
+                         WHEN g.onchain_builder_op_atlas_project_id IS NOT NULL 
+                         THEN g.onchain_builder_op_atlas_project_id 
+                       END),
+    x -> x IS NOT NULL
+  ) AS onchain_builder_op_atlas_ids,
+  m.developer_names AS trusted_developer_usernames
+FROM project_metrics m
+LEFT JOIN oso.int_superchain_s7_devtooling_graph g
+  ON m.project_id = g.devtooling_project_id
+GROUP BY
+  m.project_name,
+  m.display_name,
+  m.is_eligible,
+  m.project_id,
+  m.star_count,
+  m.fork_count,
+  m.package_connection_count,
+  m.developer_connection_count,
+  m.developer_names;
