@@ -11,9 +11,7 @@ CREATE TABLE IF NOT EXISTS bigquery.defillama.tvl_events (
     event_type VARCHAR,
     _dlt_load_id VARCHAR,
     _dlt_id VARCHAR
-)
-PARTITIONED BY (DATE_TRUNC('week', time))
-CLUSTERED BY (slug, chain);
+);
 
 INSERT INTO bigquery.defillama.tvl_events (
     time,
