@@ -122,6 +122,8 @@ def map_metadata_to_metric(
 ):
     metric = t.cast(str, evaluator.var("metric"))
     metadata = t.cast(t.Dict[str, t.Any], evaluator.var("metadata"))
+    sql_source_path = t.cast(str, evaluator.var("sql_source_path", ""))
+    rendered_sql = t.cast(t.List[str], evaluator.var("rendered_sql", ""))
 
     description = metadata["description"]
     display_name = metadata["display_name"]
@@ -130,6 +132,12 @@ def map_metadata_to_metric(
         exp.Literal(this=display_name, is_string=True).as_("display_name"),
         exp.Literal(this=description, is_string=True).as_("description"),
         exp.Literal(this=metric, is_string=True).as_("metric"),
+        exp.Literal(this=sql_source_path, is_string=True).as_("sql_source_path"),
+        exp.Array(
+            expressions=[
+                exp.Literal(this=query, is_string=True) for query in rendered_sql
+            ]
+        ).as_("rendered_sql"),
     )
 
 
@@ -143,6 +151,10 @@ def aggregate_metadata(
             exp.Literal(this="...", is_string=True).as_("display_name"),
             exp.Literal(this="...", is_string=True).as_("description"),
             exp.Literal(this="...", is_string=True).as_("metric"),
+            exp.Literal(this=exp.Array(this=[]), is_string=False).as_(
+                "sql_source_path"
+            ),
+            exp.Literal(this="...", is_string=True).as_("rendered_sql"),
         )
 
     model_names = [snap.name for snap in evaluator._snapshots.values()]
@@ -163,6 +175,8 @@ def aggregate_metadata(
             exp.column("display_name"),
             exp.column("description"),
             exp.column("metric"),
+            exp.column("sql_source_path"),
+            exp.column("rendered_sql"),
         ).from_(sql.to_table(f"{table}"))
 
     selects = [make_select(model) for model in metadata_model_names]
@@ -174,6 +188,8 @@ def aggregate_metadata(
             exp.column("display_name"),
             exp.column("description"),
             exp.column("metric"),
+            exp.column("sql_source_path"),
+            exp.column("rendered_sql"),
         )
         .from_(unique_metrics.subquery())
         .as_("metadata")

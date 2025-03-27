@@ -42,7 +42,9 @@ WITH unioned_metric_names AS (
   SELECT
     metric,
     display_name,
-    description
+    description,
+    sql_source_path,
+    rendered_sql,
   FROM oso.metrics_metadata
 ), metrics_v0_no_casting AS (
   SELECT
@@ -52,8 +54,8 @@ WITH unioned_metric_names AS (
     t.metric AS metric_name,
     COALESCE(m.display_name, t.metric) AS display_name,
     COALESCE(m.description, 'TODO') AS description,
-    NULL AS raw_definition,
-    'TODO' AS definition_ref,
+    COALESCE(m.rendered_sql, []) AS rendered_sql,
+    COALESCE(m.sql_source_path, 'TODO') AS sql_source_path,
     'UNKNOWN' AS aggregation_function
   FROM all_timeseries_metric_names AS t
   LEFT JOIN all_metrics_metadata AS m
@@ -66,7 +68,7 @@ SELECT
   metric_name::VARCHAR,
   display_name::VARCHAR,
   description::VARCHAR,
-  raw_definition::VARCHAR,
-  definition_ref::VARCHAR,
+  rendered_sql::ARRAY<VARCHAR>,
+  sql_source_path::VARCHAR,
   aggregation_function::VARCHAR
 FROM metrics_v0_no_casting

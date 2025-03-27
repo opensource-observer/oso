@@ -424,6 +424,16 @@ class TimeseriesMetrics:
                 locals={
                     "metric": metric_key,
                     "metadata": asdict(metric_value.metadata),
+                    "sql_source_path": metric_value.ref,
+                    "rendered_sql": [
+                        query_data["rendered_query"].sql(
+                            dialect="presto",
+                            pretty=True,
+                            normalize=True,
+                        )
+                        for query_name, query_data in self._rendered_queries.items()
+                        if query_name.startswith(metric_key)
+                    ],
                 },
                 name=f"oso.metrics_metadata_{metric_key}",
                 is_sql=True,

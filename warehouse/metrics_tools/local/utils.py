@@ -76,6 +76,7 @@ TABLE_MAPPING: TableMappingConfig = {
         table="bigquery.optimism_superchain_4337_account_abstraction_data.enriched_entrypoint_traces_v2",
     ),
     "opensource-observer.defillama.tvl_events": "bigquery.defillama.tvl_events",
+    "opensource-observer.sqlmesh.rendered_models": "bigquery.sqlmesh.rendered_models",
 }
 
 
