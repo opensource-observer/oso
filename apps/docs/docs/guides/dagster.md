@@ -38,6 +38,54 @@ Right now, alerts are reported to `#alerts` in the
 
 ## Secrets Management
 
-### Local secrets manager
+When you are creating new data sources for OSO,
+you may need to handle secrets (e.g. passwords, access keys, DB connection strings).
+
+:::warning
+**DO NOT CHECK SECRETS INTO THE REPOSITORY!**
+:::
+
+Instead, please use the OSO `SecretResolver` to properly handle your secrets.
+
+### Local secrets
+
+While you are developing your code,
+the right place to store secrets is in your root `.env` file.
+The OSO `SecretResolver` organizes secrets by
+`(prefix, group, key)`.
+Dagster will automatically load secrets from your environment by
+the following convention `PREFIX__GROUP__KEY`.
+By default, all secrets in Dagster use the prefix, `dagster`.
+
+For example, we store all Clickhouse secrets under the `clickhouse` group.
+Thus, these are the environment variables we'd set for Clickhouse:
+
+```
+DAGSTER__CLICKHOUSE__HOST=
+DAGSTER__CLICKHOUSE__USER=
+DAGSTER__CLICKHOUSE__PASSWORD=
+```
+
+You can reference a secret using `SecretReference`
+and resolve it using `SecretResolver`.
+
+```python
+from ..utils import SecretReference, SecretResolver
+
+password_ref = SecretReference(group_name="clickhouse", key="password")
+password = secret_resolver.resolve_as_str(password_ref)
+```
+
+In order to get a reference to the `SecretResolver`,
+you'll want to accept it as a Dagster resource.
+You can see
+[`definitions.py`](https://github.com/opensource-observer/oso/blob/main/warehouse/oso_dagster/definitions.py) and
+[`clickhouse.py`](https://github.com/opensource-observer/oso/blob/main/warehouse/oso_dagster/resources/clickhouse.py) as an example.
 
 ### Production secrets
+
+When you are ready to run your assets in production,
+please reach out to the core OSO team on
+[Discord](https://www.opensource.observer/discord).
+We will arrange a secure way to share your secrets
+into our production keystore.
