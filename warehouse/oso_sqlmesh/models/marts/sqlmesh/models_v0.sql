@@ -1,5 +1,5 @@
 MODEL (
-  name oso._sqlmesh__rendered_models,
+  name oso.models_v0,
   kind FULL,
   tags (
     'export',
