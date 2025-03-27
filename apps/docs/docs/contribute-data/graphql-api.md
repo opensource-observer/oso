@@ -1,33 +1,24 @@
 ---
 title: GraphQL API Crawler
-sidebar_position: 3
+sidebar_position: 4
 ---
 
-## GraphQL Resource Factory
+This guide will explain how to use the
+[`graphql_factory`](https://github.com/opensource-observer/oso/blob/main/warehouse/oso_dagster/factories/graphql.py) factory function to automatically
+introspect, build queries, and scrape GraphQL APIs.
 
-Many of our data ingestion workflows rely on GraphQL, but constructing queries
-and introspecting types can involve repetitive steps. This **GraphQL Resource
-Factory** eliminates boilerplate by handling introspection, query building, and
-parameter management for you.
+## Defining Your GraphQL Resource
 
-This guide will explain how to use the factory to bootstrap a
-[`graphql_factory`](https://github.com/opensource-observer/oso/blob/main/warehouse/oso_dagster/factories/graphql.py)
-asset in Dagster. We'll walk through the process of defining a configuration,
-building the factory, and customizing the asset to suit your needs.
-
----
-
-## Step by Step: Defining Your GraphQL Resource
-
-This example will demonstrate how to create a GraphQL asset that fetches
-transactions from the Open
-[Collective API](https://docs.opencollective.com/help/contributing/development/api).
+In this example, we will create a GraphQL asset that fetches
+transactions from the
+[Open Collective API](https://docs.opencollective.com/help/contributing/development/api).
 The API has a `transactions` query that returns a list of transactions.
 
 Currently, it has hundreds of nested fields, making it **cumbersome** to write
-queries manually (which we have done in the past and it's not fun). The GraphQL
-Resource Factory will generate the query for us, extract the relevant data, and
-return a clean, usable asset, all with minimal effort.
+queries manually (we have done this in the past and it is not fun). The GraphQL
+Resource Factory will introspect the schema,
+generate the query, extract the relevant data, and
+return a clean asset, with minimal effort.
 
 ### 1. Create the Configuration
 
@@ -174,11 +165,11 @@ open_collective_transactions = graphql_factory(
 
 :::tip
 If you have not setup your local Dagster environment yet, please follow
-our [quickstart guide](../setup/index.md).
+our [quickstart guide](./setup/index.md).
 :::
 
 After having your Dagster instance running, follow the
-[Dagster Asset Guide](../setup/index.md) to materialize the assets.
+[Dagster setup guide](./setup/index.md) to materialize the assets.
 Our example assets are located under `assets/open_collective/transactions`.
 
 ![Dagster Open Collective Asset List](crawl-api-graphql-pipeline.png)
