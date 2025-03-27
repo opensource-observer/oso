@@ -21,6 +21,7 @@ TABLE_MAPPING: TableMappingConfig = {
     "opensource-observer.op_atlas.project_contract": "bigquery.op_atlas.project_contract",
     "opensource-observer.op_atlas.project_links": "bigquery.op_atlas.project_links",
     "opensource-observer.op_atlas.project_repository": "bigquery.op_atlas.project_repository",
+    "opensource-observer.op_atlas.project_organization": "bigquery.op_atlas.project_organization",
     "opensource-observer.open_collective.deposits": TableMappingDestination(
         row_restriction=RowRestriction(time_column="created_at"),
         table="bigquery.open_collective.deposits",
