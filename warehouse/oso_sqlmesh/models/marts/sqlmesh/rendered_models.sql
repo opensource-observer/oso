@@ -11,7 +11,7 @@ MODEL (
 
 WITH all_timeseries_metrics_by_project AS (
   SELECT
-    @oso_id('OSO', 'oso', model_name) AS model_id,
+    @oso_id('OSO', 'sqlmesh', model_name) AS model_id,
     model_name as name,
     rendered_sql as sql,
     rendered_at,
