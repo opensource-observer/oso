@@ -11,7 +11,7 @@ with
     ),
     active_users as (
         select distinct from_artifact_id, bucket_day, event_source, to_artifact_id
-        from oso.int_events_daily_to_artifact
+        from oso.int_events_daily__blockchain
         where event_type in @activity_event_types
         where bucket_day between @metrics_start('DATE') and @metrics_end('DATE')
     )

@@ -1,7 +1,8 @@
 MODEL (
   name oso.int_artifacts_history,
   description 'Currently this only captures the history of git_users. It does not capture git_repo naming histories.',
-  kind FULL
+  kind FULL,
+  enabled false
 );
 
 WITH user_events AS (

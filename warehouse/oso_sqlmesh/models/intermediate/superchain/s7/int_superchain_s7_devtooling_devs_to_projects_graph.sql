@@ -51,7 +51,7 @@ WITH commits_to_builder_projects AS (
     builder_repos.repo_artifact_namespace,
     events.event_type,
     'BUILDER' AS repo_type
-  FROM oso.int_events_monthly_to_project AS events
+  FROM oso.int_events_monthly_to_project__github AS events
   JOIN oso.int_superchain_s7_devtooling_onchain_builder_nodes AS builder_repos
     ON events.to_artifact_id = builder_repos.repo_artifact_id
   WHERE
@@ -82,7 +82,7 @@ github_events_to_devtooling_repos AS (
     devtool_repos.repo_artifact_namespace,
     events.event_type,
     'DEVTOOL' AS repo_type
-  FROM oso.int_events_monthly_to_project AS events
+  FROM oso.int_events_monthly_to_project__github AS events
   JOIN oso.int_superchain_s7_devtooling_repositories AS devtool_repos
     ON events.to_artifact_id = devtool_repos.repo_artifact_id
   WHERE events.event_source = 'GITHUB'

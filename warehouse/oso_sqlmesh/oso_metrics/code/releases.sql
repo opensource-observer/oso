@@ -5,7 +5,7 @@ select
     '' as from_artifact_id,
     @metric_name() as metric,
     sum(events.amount) as amount
-from oso.int_events_daily_to_artifact as events
+from oso.int_events_daily__github as events
 where
     event_type in ('RELEASE_PUBLISHED')
     and events.bucket_day between @metrics_start('DATE') and @metrics_end('DATE')

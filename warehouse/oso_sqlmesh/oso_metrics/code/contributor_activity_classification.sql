@@ -75,7 +75,7 @@ with
             events.from_artifact_id,
             events.to_artifact_id,
             max(last_event) as last_event
-        from oso.int_events_daily_to_artifact_with_lag as events
+        from oso.int_events_daily__github_with_lag as events
         where event_type in @activity_event_types
         group by bucket_day, event_source, from_artifact_id, to_artifact_id
     ),

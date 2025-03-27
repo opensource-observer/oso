@@ -7,7 +7,7 @@ test_developer_active_days_to_artifact_over_30_day_window_with_cumulative_active
     start: 2024-01-01
     end: 2024-01-05
   inputs:
-    oso.int_events_daily_to_artifact:
+    oso.int_events_daily__github:
       rows:
       - to_artifact_id: repo_0
         from_artifact_id: dev_0
@@ -67,7 +67,7 @@ test_developer_active_days_to_artifact_over_30_day_window_with_1_active_day:
     start: 2024-01-01
     end: 2024-01-03
   inputs:
-    oso.int_events_daily_to_artifact:
+    oso.int_events_daily__github:
       rows:
       - to_artifact_id: repo_0
         from_artifact_id: dev_0

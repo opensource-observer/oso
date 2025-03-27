@@ -1,5 +1,5 @@
 MODEL (
-  name oso.int_events_weekly_to_artifact,
+  name oso.int_events_weekly__github,
   kind INCREMENTAL_BY_TIME_RANGE (
     time_column bucket_week,
     batch_size 365,
@@ -18,7 +18,7 @@ SELECT
   event_source,
   event_type,
   SUM(amount)
-FROM oso.int_events_daily_to_artifact
+FROM oso.int_events_daily__github
 WHERE
   bucket_day BETWEEN @start_date AND @end_date
 GROUP BY
