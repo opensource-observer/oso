@@ -64,3 +64,8 @@ test_stg_op_atlas_project_repository:
         artifact_namespace: "miguelmota"
         artifact_name: "merkletreejs"
         artifact_url: "https://github.com/miguelmota/merkletreejs"
+      - artifact_source_id: "https://github.com/ethereum/solc-js"
+        artifact_source: GITHUB
+        artifact_namespace: "ethereum"
+        artifact_name: "solc-js"
+        artifact_url: "https://github.com/ethereum/solc-js"
