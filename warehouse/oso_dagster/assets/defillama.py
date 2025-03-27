@@ -242,7 +242,7 @@ def get_valid_defillama_slugs() -> Set[str]:
         r.raise_for_status()
 
         valid_defillama_slugs = {x["slug"] for x in r.json()}
-        return valid_defillama_slugs | ossd_defillama_parsed_urls
+        return valid_defillama_slugs & ossd_defillama_parsed_urls
     except requests.exceptions.RequestException as e:
         logger.warning(f"Failed to fetch Defillama protocols: {e}")
         return ossd_defillama_parsed_urls
