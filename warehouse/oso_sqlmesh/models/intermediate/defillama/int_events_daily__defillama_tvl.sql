@@ -8,7 +8,7 @@ MODEL (
 );
 
 WITH all_tvl_events AS (
-  SELECT * FROM oso.stg__defillama_tvl_events
+  SELECT * FROM oso.stg_defillama__tvl_events
 ),
 
 ranked_tvl_events AS (

@@ -20,7 +20,7 @@ stg_defillama_protocols AS (
   SELECT DISTINCT
     parent_protocol,
     protocol
-  FROM oso.stg__defillama_tvl_events
+  FROM oso.stg_defillama__tvl_events
   WHERE parent_protocol IS NOT NULL
 ),
 
