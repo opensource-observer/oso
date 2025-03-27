@@ -1,6 +1,6 @@
 ---
 title: Import from Google Cloud Storage (GCS)
-sidebar_position: 5
+sidebar_position: 6
 ---
 
 We strongly prefer data partners that can provide
