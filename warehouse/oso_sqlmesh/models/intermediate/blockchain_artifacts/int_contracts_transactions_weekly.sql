@@ -14,7 +14,7 @@ MODEL (
 /* Find all transactions involving the contracts from `derived_contracts` and */ /* aggregate their tx_count on a weekly basis */
 SELECT
   DATE_TRUNC('WEEK', traces.dt) AS week,
-  UPPER(traces.chain) AS chain,
+  @chain_name(chain) AS chain,
   LOWER(traces.to_address) AS contract_address,
   COUNT(*) AS tx_count
 FROM @oso_source('bigquery.optimism_superchain_raw_onchain_data.traces') AS traces
