@@ -64,7 +64,7 @@ class ClickhouseResource(ConfigurableResource):
             SecretReference(group_name=self.secret_group_name, key=self.password)
         )
         # Context manager to create a Clickhouse Client.
-        ensure(host, "Missing DAGSTER__CLICKHOUSE_HOST (if using local secrets)")
+        ensure(host, "Missing DAGSTER__CLICKHOUSE__HOST (if using local secrets)")
         ensure(username, "Missing DAGSTER__CLICKHOUSE__USER (if using local secrets)")
         ensure(
             password, "Missing DAGSTER__CLICKHOUSE__PASSWORD (if using local secrets)"
