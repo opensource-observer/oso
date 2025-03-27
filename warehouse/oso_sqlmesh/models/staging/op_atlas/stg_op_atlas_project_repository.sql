@@ -6,7 +6,8 @@ MODEL (
 
 WITH manual_mappings AS (
   SELECT project_id, url FROM (VALUES
-    ('0xc377ed1b705bcc856a628f961f1e7c8ca943e6f3727b7c179c657e227e8e852c', 'https://github.com/miguelmota/merkletreejs')
+    ('0xc377ed1b705bcc856a628f961f1e7c8ca943e6f3727b7c179c657e227e8e852c', 'https://github.com/miguelmota/merkletreejs'),
+    ('0xcc8d03e014e121d10602eeff729b755d5dc6a317df0d6302c8a9d3b5424aaba8', 'https://github.com/ethereum/solc-js')
   ) AS x (project_id, url)
 ),
 
