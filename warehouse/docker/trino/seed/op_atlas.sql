@@ -378,3 +378,76 @@ VALUES
       'load2',
       'dlt2'
    );
+
+CREATE TABLE IF NOT EXISTS bigquery.op_atlas.project_organization (
+   id varchar NOT NULL,
+   created_at timestamp(6) with time zone NOT NULL,
+   updated_at timestamp(6) with time zone NOT NULL,
+   deleted_at timestamp(6) with time zone,
+   project_id varchar NOT NULL,
+   organization_id varchar NOT NULL,
+   _dlt_load_id varchar NOT NULL,
+   _dlt_id varchar NOT NULL
+);
+
+INSERT INTO bigquery.op_atlas.project_organization (
+   id,
+   created_at,
+   updated_at,
+   deleted_at,
+   project_id,
+   organization_id,
+   _dlt_load_id,
+   _dlt_id
+)
+VALUES
+   (
+      'b9ee1d25-860e-4aa5-aa80-cf48ff5c2473',
+      TIMESTAMP '2025-03-23 17:13:21.416000 UTC',
+      TIMESTAMP '2025-03-23 17:13:23.471000 UTC',
+      NULL,
+      '0x1490a15d46c7707536fc9068da7c7d775f22562b346bf5c95369b03f9e3e7dad',
+      '0xdc657d35031ec0b83ab379362609213e7627679e587ecca26b62d3ad628c6535',
+      '1742818377.7490938',
+      'NdevF1HflHupNg'
+   ),
+   (
+      '31c20a43-96e7-43a2-997c-068980b0402b',
+      TIMESTAMP '2025-03-25 05:33:06.102000 UTC',
+      TIMESTAMP '2025-03-25 05:33:08.608000 UTC',
+      NULL,
+      '0x68f3271c77c9fd815707cefabcccb85457cfc820b65785d29356419243919365',
+      '0x73d3d11609826f7bf461155891b33e4468925d19968cc7e08c5e1ed7a33dbbdb',
+      '1742904671.6629562',
+      'CuC7kK33myYchA'
+   ),
+   (
+      'fba0c497-b920-4435-a56d-a35066781844',
+      TIMESTAMP '2025-03-25 14:48:04.348000 UTC',
+      TIMESTAMP '2025-03-25 14:48:06.420000 UTC',
+      NULL,
+      '0xd9e0c75338d41d200ebe8d347cdedea7b648b38452aa45c9cd87bdebee726786',
+      '0xd644132af288877e2766885b748590155eaebd95239b67d4e64d05ae8adfbfdd',
+      '1742991242.7355466',
+      '3EakcqUc5oQXUg'
+   ),
+   (
+      'fba0c497-b920-4435-a56d-a35066781844',
+      TIMESTAMP '2025-03-25 14:48:04.348000 UTC',
+      TIMESTAMP '2025-03-25 14:48:06.420000 UTC',
+      NULL,
+      '0xd9e0c75338d41d200ebe8d347cdedea7b648b38452aa45c9cd87bdebee726786',
+      '0xd644132af288877e2766885b748590155eaebd95239b67d4e64d05ae8adfbfdd',
+      '1742992293.7080584',
+      'HEgrn+HEOtW6gQ'
+   ),
+   (
+      '5acb646c-4bb9-4e6a-8246-b95f9397773b',
+      TIMESTAMP '2025-03-25 19:41:42.653000 UTC',
+      TIMESTAMP '2025-03-25 19:41:44.743000 UTC',
+      NULL,
+      '0x0576376ae9134c25737f66a10f5d1b62c4df03301c876dc00a4ff1e4ea2e7bd3',
+      '0x9791b3ca77df18d1968fe55ec0ec33ec764c70712184f199b2f5d18a83f7bee4',
+      '1742991242.7355466',
+      'xRtzztjE6V3etg'
+   );
