@@ -9,7 +9,8 @@ MODEL (
   start '2015-01-01',
   cron '@daily',
   partitioned_by (DAY("time"), "event_type"),
-  grain (time, event_type, event_source, from_artifact_id, to_artifact_id)
+  grain (time, event_type, event_source, from_artifact_id, to_artifact_id),
+  enabled false
 );
 
 SELECT
@@ -21,7 +22,7 @@ SELECT
   int_events_to_project.event_source,
   int_events_to_project.event_type,
   int_events_to_project.amount
-FROM oso.int_events_to_project
+FROM oso.int_events_to_project__github
 INNER JOIN oso.int_projects_by_collection AS collections
   ON int_events_to_project.project_id = collections.project_id
 WHERE

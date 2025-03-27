@@ -1,5 +1,5 @@
 MODEL (
-  name oso.int_events_daily_to_project,
+  name oso.int_events_daily_to_project__github,
   description 'All events to a project, bucketed by day',
   kind INCREMENTAL_BY_TIME_RANGE (
     time_column bucket_day,
@@ -20,7 +20,7 @@ SELECT
   event_type,
   DATE_TRUNC('DAY', time) AS bucket_day,
   SUM(amount) AS amount
-FROM oso.int_events_to_project
+FROM oso.int_events_to_project__github
 WHERE
   time BETWEEN @start_dt AND @end_dt
 GROUP BY

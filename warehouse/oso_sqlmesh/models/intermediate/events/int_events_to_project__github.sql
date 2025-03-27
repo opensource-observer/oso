@@ -1,5 +1,5 @@
 MODEL (
-  name oso.int_events_to_project,
+  name oso.int_events_to_project__github,
   description 'All events to a project',
   kind INCREMENTAL_BY_TIME_RANGE (
     time_column time,
