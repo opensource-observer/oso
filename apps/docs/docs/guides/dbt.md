@@ -1,6 +1,6 @@
 ---
 title: dbt Setup
-sidebar_position: 5
+sidebar_position: 7
 ---
 
 :::warning
@@ -174,6 +174,39 @@ Our dbt models are located in `warehouse/dbt/models/` and follow these conventio
    - Monitor runs in Dagster UI: [https://dagster.opensource.observer](https://dagster.opensource.observer)
 
 ## FAQ
+
+### Defining a dbt source
+
+In order to make a new dataset available to the data pipeline,
+you need to add it as a dbt source.
+In this example, we create a source in `oso/warehouse/dbt/models/`
+(see [source](https://github.com/opensource-observer/oso/blob/main/warehouse/dbt/models/ethereum_sources.yml))
+for the Ethereum mainnet
+[public dataset](https://cloud.google.com/blog/products/data-analytics/ethereum-bigquery-public-dataset-smart-contract-analytics).
+
+```yaml
+sources:
+  - name: ethereum
+    database: bigquery-public-data
+    schema: crypto_ethereum
+    tables:
+      - name: transactions
+        identifier: transactions
+      - name: traces
+        identifier: traces
+```
+
+We can then reference these tables in downstream models with
+the `source` macro:
+
+```sql
+select
+  block_timestamp,
+  `hash` as transaction_hash,
+  from_address,
+  receipt_contract_address
+from {{ source("ethereum", "transactions") }}
+```
 
 ### Referring to Data Sources in Intermediate and Marts Models
 

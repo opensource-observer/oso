@@ -1,22 +1,18 @@
 ---
 title: Rest API Crawler
-sidebar_position: 2
+sidebar_position: 5
 ---
 
-## What Are We Trying to Achieve?
-
-At OSO, one of the core tasks is to ingest data from various sources. This
-includes APIs, databases, and other data stores. In this guide, we will focus on
-ingesting data from **REST APIs**.
+This guide will explain how to use the
+[`create_rest_factory_asset`](https://github.com/opensource-observer/oso/blob/main/warehouse/oso_dagster/factories/rest.py) factory function to automatically
+build queries and scrape REST APIs.
 
 When you are working with APIs, you often need to write a lot of **boilerplate**
 code to fetch data, parse it, and load it into out data warehouse. This can be
 **time-consuming** and **error-prone**.
 
 To make this process easier, we have created a set of tools that allow you to
-ingest data from APIs with minimal effort.
-
-Here are a few reasons why this is helpful:
+ingest data from APIs with minimal effort, enabling:
 
 - **Minimal boilerplate**: All you do is list which endpoints you are pulling
   data from.
@@ -25,9 +21,7 @@ Here are a few reasons why this is helpful:
 - **Easy integration with the OSO environment**: Everything is built to fit into
   our approach to data ingestion.
 
----
-
-## Step by Step: Defining Your API Crawler
+## Defining Your API Crawler
 
 Below is a sample showing how you can ingest data from the
 [DefiLlama](https://defillama.com/) API. It retrieves data on various DeFi
@@ -132,16 +126,14 @@ pipeline, the data will be ingested into your OSO warehouse.
 
 :::tip
 If you have not setup your local Dagster environment yet, please follow
-our [quickstart guide](../setup/index.md).
+our [quickstart guide](./setup/index.md).
 :::
 
 After having your Dagster instance running, follow the
-[Dagster Asset Guide](../setup/index.md) to materialize the assets.
+[Dagster Asset Guide](./setup/index.md) to materialize the assets.
 Our example assets are located under `assets/defillama/tvl`.
 
 ![Dagster DefiLlama Asset List](crawl-api-example-defillama.png)
-
----
 
 ---
 
