@@ -1,26 +1,26 @@
 ---
-title: Provide Access to Your Database
+title: Replicate your SQL Database
 sidebar_position: 3
 ---
 
-OSO's dagster infrastructure has support for database replication into our data
+OSO's Dagster infrastructure has support for database replication into our data
 warehouse by using Dagster's "embedded-elt" that integrates with the library
 [dlt](https://dlthub.com/).
 
-## Configure your database as a dagster asset
+## Configure your database as a Dagster asset
 
-There are many possible ways to configure a database as a dagster asset,
-however, to reduce complexity of configuration we provide a single interface for
-specifying a SQL database for replication. The SQL database _must_ be a database
-that is [supported by
-dlt](https://dlthub.com/devel/dlt-ecosystem/verified-sources/sql_database). In
-general, we replicate _all_ columns and for now custom column selection is not
+There are many possible ways to configure a database as a Dagster asset.
+To simplify things, we have built a factory function, `sql_assets`,
+to automatically replicate any SQL database.
+The SQL database _must_ be a database that is
+[supported by dlt](https://dlthub.com/devel/dlt-ecosystem/verified-sources/sql_database).
+In general, we replicate _all_ columns and for now custom column selection is not
 available in our interface.
 
-This section shows how to setup a database with two tables as a set of sql
-assets. The table named `some_incremental_database` has a chronologically
-organized or updated dataset and can therefore be loaded incrementally. The
-second table, `some_nonincremental_database`, does not have a way to be loaded
+This section shows how to replciate 2 tables in a database.
+The first table named `some_incremental_database` has a time column
+and can be loaded incrementally.
+The second table, `some_nonincremental_database`, does not have a way to be loaded
 incrementally and will force a full refresh upon every sync.
 
 To setup this database replication, you can add a new python file to
@@ -52,25 +52,21 @@ my_database = sql_assets(
 ```
 
 The first three lines of the file import some necessary tooling to configure a
-sql database:
+SQL database:
 
-- The first import, `sql_assets`, is an asset factory created by the OSO team
-  that enables this "easy" configuration of sql assets.
-- The second import, `SecretReference`, is a tool used to reference a secret in
-  a secret resolver. The secret resolver can be configured differently based on
-  the environment, but on production we use this to reference a cloud based secret
-  manager.
-- The final import, `incremental`, is used to specify a column to use for
-  incremental loading. This is a `dlt` constructor that is passed to the
-  configuration.
+- `sql_assets`: an asset factory created by the OSO team
+  that enables this simple configuration of SQL assets.
+- `SecretReference`: a secret reference in the OSO a secret resolver.
+  The secret resolver can be configured differently based on
+  the environment. On production, we use a cloud-based secret manager.
+- `incremental`: used to specify a column to use for incremental loading.
+  This is a `dlt` constructor that is passed to the configuration.
 
-The `sql_assets`, factory takes 3 arguments:
+The `sql_assets` factory takes 3 arguments:
 
-- The first argument is an asset key prefix which is used to both specify an
-  asset key prefix and also used when generating asset related names inside the
-  factory. In general, this should match the filename of the containing python
-  file unless you have a more complex set of assets to configure. This name is
-  also used as the dataset name into which this data will be loaded.
+- The first argument is an asset key prefix, used to group assets generated
+  by the factory. In general, this should match the filename of the python
+  file unless you have more complex requirements.
 - The second argument must be a `SecretReference` object that will be used to
   retrieve the credentials that you will provide at a later step to the OSO
   team. The `SecretReference` object has two required keyword arguments:
@@ -81,11 +77,10 @@ The `sql_assets`, factory takes 3 arguments:
   - `key` - This is an arbitrary name for the secret.
 
 - The third argument is a list of dictionaries that define options for tables
-  that should be replicated into the data warehouse. The most important options
-  here are:
+  that should be replicated into OSO.
 
-  - `table` - The table name
-  - `destination_table_name` - The table name to use in the data warehouse
+  - `table` - The source table name
+  - `destination_table_name` - The destination table name to use in the OSO data lake
   - `incremental` - An `incremental` object that defines time/date based column
     to use for incrementally loading a database.
 
@@ -95,11 +90,11 @@ The `sql_assets`, factory takes 3 arguments:
 
 ## Enabling access to your database
 
-Before the OSO infrastructure can begin to synchronize your database to the data
-warehouse, it will need to be provided access to the database. At this time
-there is no automated process for this. Once you're ready to get your database
-integrated, you will want to contact the OSO team on our
-[Discord](https://www.opensource.observer/discord). Be prepared to provide
-credentials (we will work out a secure method of transmission) and also ensure
-that you have access to update any firewall settings that may be required for us
+For the asset to run in OSO production, we will need access to
+your secrets (e.g. password or connection string).
+At this time there is no automated process for this.
+You can contact the OSO team on our
+[Discord](https://www.opensource.observer/discord).
+Be prepared to provide credentials via a secure method of transmission.
+Also remember to update any firewall settings that may be required for us
 to access your database server.
