@@ -10,7 +10,7 @@ MODEL (
   )
 );
 
-WITH all_timeseries_metrics_by_project AS (
+WITH all_key_metrics_by_project AS (
   SELECT
     @oso_id('OSO', 'oso', metric) AS metric_id,
     to_project_id AS project_id,
@@ -19,7 +19,8 @@ WITH all_timeseries_metrics_by_project AS (
     metric,
     NULL AS unit
   FROM oso.key_metrics_to_project
-  UNION ALL
+),
+all_timeseries_metrics_by_project AS (
   SELECT
     @oso_id('OSO', 'oso', metric) AS metric_id,
     to_project_id AS project_id,
@@ -27,11 +28,17 @@ WITH all_timeseries_metrics_by_project AS (
     amount AS amount,
     NULL AS unit
   FROM oso.timeseries_metrics_to_project
+),
+unioned_metrics_by_project AS (
+  SELECT * FROM all_key_metrics_by_project
+  UNION ALL
+  SELECT * FROM all_timeseries_metrics_by_project
 )
+
 SELECT
   metric_id::TEXT,
   project_id::TEXT,
   sample_date::DATE,
   amount::DOUBLE,
   unit::TEXT
-FROM all_timeseries_metrics_by_project
+FROM unioned_metrics_by_project

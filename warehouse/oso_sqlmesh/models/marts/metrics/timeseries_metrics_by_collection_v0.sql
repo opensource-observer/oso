@@ -10,7 +10,7 @@ MODEL (
   )
 );
 
-WITH all_timeseries_metrics_by_collection AS (
+WITH all_key_metrics_by_collection AS (
   SELECT
     @oso_id('OSO', 'oso', metric) AS metric_id,
     to_collection_id AS collection_id,
@@ -19,7 +19,8 @@ WITH all_timeseries_metrics_by_collection AS (
     metric,
     NULL AS unit
   FROM oso.key_metrics_to_collection
-  UNION ALL
+),
+all_timeseries_metrics_by_collection AS (
   SELECT
     @oso_id('OSO', 'oso', metric) AS metric_id,
     to_collection_id AS collection_id,
@@ -27,11 +28,17 @@ WITH all_timeseries_metrics_by_collection AS (
     amount AS amount,
     NULL AS unit
   FROM oso.timeseries_metrics_to_collection
+),
+unioned_metrics_by_collection AS (
+  SELECT * FROM all_key_metrics_by_collection
+  UNION ALL
+  SELECT * FROM all_timeseries_metrics_by_collection
 )
+
 SELECT
   metric_id::TEXT,
   collection_id::TEXT,
   sample_date::DATE,
   amount::DOUBLE,
   unit::TEXT
-FROM all_timeseries_metrics_by_collection
+FROM unioned_metrics_by_collection

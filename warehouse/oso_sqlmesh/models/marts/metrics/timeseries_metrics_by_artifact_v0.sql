@@ -10,7 +10,7 @@ MODEL (
   )
 );
 
-WITH all_timeseries_metrics_by_artifact AS (
+WITH all_key_metrics_by_artifact AS (
   SELECT
     @oso_id('OSO', 'oso', metric) AS metric_id,
     to_artifact_id AS artifact_id,
@@ -19,7 +19,8 @@ WITH all_timeseries_metrics_by_artifact AS (
     metric,
     NULL AS unit
   FROM oso.key_metrics_to_artifact
-  UNION ALL
+),
+all_timeseries_metrics_by_artifact AS (
   SELECT
     @oso_id('OSO', 'oso', metric) AS metric_id,
     to_artifact_id AS artifact_id,
@@ -27,11 +28,17 @@ WITH all_timeseries_metrics_by_artifact AS (
     amount AS amount,
     NULL AS unit
   FROM oso.timeseries_metrics_to_artifact
+),
+unioned_metrics_by_artifact AS (
+  SELECT * FROM all_key_metrics_by_artifact
+  UNION ALL
+  SELECT * FROM all_timeseries_metrics_by_artifact
 )
+
 SELECT
   metric_id::TEXT,
   artifact_id::TEXT,
   sample_date::DATE,
   amount::DOUBLE,
   unit::TEXT
-FROM all_timeseries_metrics_by_artifact
+FROM unioned_metrics_by_artifact
