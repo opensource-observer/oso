@@ -87,11 +87,10 @@ def time_aggregation_bucket(
     current_interval = INTERVAL_CONVERSION[interval]
 
     if offset:
+        total_offset = current_interval[0] * offset
         time_exp = exp.DateAdd(
             this=time_exp,
-            expression=exp.Literal(
-                this=str(offset * current_interval[0]), is_string=False
-            ),
+            expression=exp.Literal(this=str(total_offset), is_string=False),
             unit=exp.Var(this=current_interval[1].upper()),
         )
 
@@ -100,7 +99,7 @@ def time_aggregation_bucket(
             this="TIME_BUCKET",
             expressions=[
                 exp.Interval(
-                    this=exp.Literal(this=current_interval[0], is_string=False),
+                    this=exp.Literal(this=str(current_interval[0]), is_string=False),
                     unit=exp.Var(this=current_interval[1].upper()),
                 ),
                 exp.Cast(
@@ -112,7 +111,7 @@ def time_aggregation_bucket(
 
     return exp.TimestampTrunc(
         this=time_exp,
-        unit=exp.Literal(this=INTERVAL_CONVERSION[interval], is_string=True),
+        unit=exp.Literal(this=current_interval[1], is_string=True),
     )
 
 
