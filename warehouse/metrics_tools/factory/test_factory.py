@@ -30,7 +30,7 @@ def timeseries_duckdb():
         },
     )
     start = "2023-12-01"
-    end = "2024-02-01"
+    end = "2025-02-01"
 
     fixture.generate_daily_events(start, end, "VISIT", "user_0", "service_0")
     fixture.generate_daily_events(start, end, "VISIT", "user_0", "service_1")
@@ -55,9 +55,7 @@ def timeseries_duckdb():
 
     for ft_dev_index in range(5):
         dev_name = f"ft_dev_{ft_dev_index}"
-        fixture.generate_daily_events(
-            "2023-01-01", "2024-12-31", "COMMIT_CODE", dev_name, "repo_1"
-        )
+        fixture.generate_daily_events(start, end, "COMMIT_CODE", dev_name, "repo_1")
 
     # User that commits only once a month
     for pt_dev_index in range(10):
@@ -83,7 +81,14 @@ def timeseries_metrics_to_test():
         metric_queries={
             "visits": MetricQueryDef(
                 ref="visits.sql",
-                time_aggregations=["daily", "weekly", "monthly"],
+                time_aggregations=[
+                    "daily",
+                    "weekly",
+                    "monthly",
+                    "quarterly",
+                    "biannually",
+                    "yearly",
+                ],
                 rolling=RollingConfig(
                     windows=[7],
                     unit="day",
@@ -131,7 +136,7 @@ def timeseries_metrics_to_test():
                 entity_types=["artifact", "project", "collection"],
             ),
         },
-        default_dialect="clickhouse",
+        default_dialect="trino",
         queries_dir=os.path.join(CURR_DIR, "fixtures/metrics"),
         timeseries_sources=["events_daily_to_artifact"],
     )
@@ -155,6 +160,15 @@ def test_timeseries_metric_rendering(timeseries_metrics_to_test: TimeseriesMetri
         "visits_to_artifact_monthly",
         "visits_to_project_monthly",
         "visits_to_collection_monthly",
+        "visits_to_artifact_quarterly",
+        "visits_to_project_quarterly",
+        "visits_to_collection_quarterly",
+        "visits_to_artifact_biannually",
+        "visits_to_project_biannually",
+        "visits_to_collection_biannually",
+        "visits_to_artifact_yearly",
+        "visits_to_project_yearly",
+        "visits_to_collection_yearly",
         "visits_to_artifact_over_all_time",
         "visits_to_project_over_all_time",
         "visits_to_collection_over_all_time",
@@ -214,6 +228,42 @@ def test_with_runner(
         df = df[df["to_artifact_id"] == "service_0"]
         assert df.iloc[0]["amount"] == 1
 
+    # Validate that quarterly visits are correct
+    with duckdb_df_context(
+        connection,
+        """
+        SELECT * 
+        FROM oso.visits_to_artifact_quarterly
+        where metrics_sample_date = '2024-01-01'
+    """,
+    ) as df:
+        df = df[df["to_artifact_id"] == "service_0"]
+        assert df.iloc[0]["amount"] == 91
+
+    # Validate that biannual visits are correct
+    with duckdb_df_context(
+        connection,
+        """
+        SELECT * 
+        FROM oso.visits_to_artifact_biannually
+        where metrics_sample_date = '2024-01-01'
+    """,
+    ) as df:
+        df = df[df["to_artifact_id"] == "service_0"]
+        assert df.iloc[0]["amount"] == 182
+
+    # Validate that the yearly visits are correct
+    with duckdb_df_context(
+        connection,
+        """
+        SELECT * 
+        FROM oso.visits_to_artifact_yearly
+        where metrics_sample_date = '2024-01-01'
+    """,
+    ) as df:
+        df = df[df["to_artifact_id"] == "service_0"]
+        assert df.iloc[0]["amount"] == 366
+
     # Validate that the rolling window visits are correct
     with duckdb_df_context(
         connection,
@@ -235,7 +285,7 @@ def test_with_runner(
     """,
     ) as df:
         df = df[df["to_artifact_id"] == "service_0"]
-        assert df.iloc[0]["amount"] == 63
+        assert df.iloc[0]["amount"] == 429
 
     with duckdb_df_context(
         connection,
