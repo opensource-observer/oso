@@ -166,6 +166,9 @@ def test_timeseries_metric_rendering(timeseries_metrics_to_test: TimeseriesMetri
         "visits_to_artifact_biannually",
         "visits_to_project_biannually",
         "visits_to_collection_biannually",
+        "visits_to_artifact_yearly",
+        "visits_to_project_yearly",
+        "visits_to_collection_yearly",
         "visits_to_artifact_over_all_time",
         "visits_to_project_over_all_time",
         "visits_to_collection_over_all_time",
@@ -234,8 +237,6 @@ def test_with_runner(
         where metrics_sample_date = '2024-01-01'
     """,
     ) as df:
-        print("boop")
-        print(df)
         df = df[df["to_artifact_id"] == "service_0"]
         assert df.iloc[0]["amount"] == 91
 
@@ -248,8 +249,6 @@ def test_with_runner(
         where metrics_sample_date = '2024-01-01'
     """,
     ) as df:
-        print("boop")
-        print(df)
         df = df[df["to_artifact_id"] == "service_0"]
         assert df.iloc[0]["amount"] == 182
 
