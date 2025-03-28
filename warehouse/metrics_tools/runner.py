@@ -24,7 +24,7 @@ from sqlmesh import EngineAdapter
 from sqlmesh.core.config import DuckDBConnectionConfig
 from sqlmesh.core.context import ExecutionContext
 from sqlmesh.core.engine_adapter.duckdb import DuckDBEngineAdapter
-from sqlmesh.core.macros import RuntimeStage
+from sqlmesh.core.macros import MacroRegistry, RuntimeStage
 
 logger = logging.getLogger(__name__)
 
@@ -94,6 +94,46 @@ ROLLING_CRON_TO_ARROW_UNIT: t.Dict[
     "@monthly": "month",
     "@yearly": "year",
 }
+
+
+def render_metrics_query(
+    query: str | t.List[exp.Expression] | exp.Expression,
+    ref: PeerMetricDependencyRef,
+    variables: t.Optional[t.Dict[str, t.Any]] = None,
+    engine_adapter: t.Optional[EngineAdapter] = None,
+    additional_macros: t.Optional[MacroRegistry] = None,
+    runtime_stage: RuntimeStage = RuntimeStage.EVALUATING,
+):
+    variables = variables or {}
+
+    time_aggregation = ref.get("time_aggregation")
+    rolling_window = ref.get("window")
+    rolling_unit = ref.get("unit")
+    if time_aggregation:
+        variables["time_aggregation"] = time_aggregation
+    if rolling_window and rolling_unit:
+        variables["rolling_window"] = rolling_window
+        variables["rolling_unit"] = rolling_unit
+
+    variables.setdefault("start_ds", datetime(1970, 1, 1).strftime("%Y-%m-%d"))
+    variables.setdefault("end_ds", datetime.now().strftime("%Y-%m-%d"))
+
+    additional_macros = create_unregistered_macro_registry(
+        [
+            metrics_end,
+            metrics_start,
+            metrics_sample_date,
+            metrics_sample_interval_length,
+        ]
+    )
+    evaluated_query = run_macro_evaluator(
+        query,
+        additional_macros=additional_macros,
+        variables=variables,
+        engine_adapter=engine_adapter,
+        runtime_stage=runtime_stage,
+    )
+    return evaluated_query
 
 
 class MetricsRunner:
@@ -186,31 +226,32 @@ class MetricsRunner:
             "start_ds": start.strftime("%Y-%m-%d"),
             "end_ds": end.strftime("%Y-%m-%d"),
         }
-        logger.debug(f"start_ds={variables['start_ds']} end_ds={variables['end_ds']}")
-        time_aggregation = self._ref.get("time_aggregation")
-        rolling_window = self._ref.get("window")
-        rolling_unit = self._ref.get("unit")
-        if time_aggregation:
-            variables["time_aggregation"] = time_aggregation
-        if rolling_window and rolling_unit:
-            variables["rolling_window"] = rolling_window
-            variables["rolling_unit"] = rolling_unit
         variables.update(self._locals)
-        additional_macros = create_unregistered_macro_registry(
-            [
-                metrics_end,
-                metrics_start,
-                metrics_sample_date,
-                metrics_sample_interval_length,
-            ]
-        )
-        evaluated_query = run_macro_evaluator(
+        logger.debug(f"start_ds={variables['start_ds']} end_ds={variables['end_ds']}")
+
+        evaluated_query = render_metrics_query(
             self._query,
-            additional_macros=additional_macros,
-            variables=variables,
+            self._ref,
             engine_adapter=self._context.engine_adapter,
+            variables=variables,
+            additional_macros=None,
             runtime_stage=RuntimeStage.EVALUATING,
         )
+        # additional_macros = create_unregistered_macro_registry(
+        #     [
+        #         metrics_end,
+        #         metrics_start,
+        #         metrics_sample_date,
+        #         metrics_sample_interval_length,
+        #     ]
+        # )
+        # evaluated_query = run_macro_evaluator(
+        #     self._query,
+        #     additional_macros=additional_macros,
+        #     variables=variables,
+        #     engine_adapter=self._context.engine_adapter,
+        #     runtime_stage=RuntimeStage.EVALUATING,
+        # )
         rendered_parts = list(
             map(
                 lambda a: a.sql(dialect=self._context.engine_adapter.dialect),

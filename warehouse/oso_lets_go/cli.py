@@ -4,11 +4,13 @@ A catchall for development environment tools related to the python tooling.
 
 import asyncio
 import getpass
+import json
 import logging
 import subprocess
 import sys
 import typing as t
 import warnings
+from ast import parse
 from contextlib import contextmanager
 from datetime import datetime, timedelta
 
@@ -20,14 +22,16 @@ from kr8s.objects import Job, Namespace, Service
 from metrics_tools.definition import PeerMetricDependencyRef
 from metrics_tools.factory.constants import METRICS_COLUMNS_BY_ENTITY
 from metrics_tools.factory.factory import MetricQueryConfig, timeseries_metrics
+from metrics_tools.intermediate import run_macro_evaluator
 from metrics_tools.local.loader import LocalTrinoDestinationLoader
 from metrics_tools.local.manager import LocalWarehouseManager
+from metrics_tools.runner import render_metrics_query
 from metrics_tools.transfer.gcs import GCSTimeOrderedStorage
 from metrics_tools.transfer.trino import TrinoExporter
 from metrics_tools.utils.logging import setup_module_logging
 from metrics_tools.utils.tables import list_query_table_dependencies
 from metrics_tools.utils.testing import load_timeseries_metrics
-from numpy import std
+from numpy import full, std
 from opsscripts.cli import cluster_setup
 from opsscripts.utils.dockertools import (
     build_and_push_docker_image,
@@ -37,6 +41,7 @@ from opsscripts.utils.k8stools import deploy_oso_k8s_job
 from oso_lets_go.wizard import MultipleChoiceInput
 from sqlglot import pretty
 from sqlmesh.core.dialect import parse_one
+from sqlmesh.core.macros import RuntimeStage
 from traitlets import default
 
 dotenv.load_dotenv()
@@ -114,8 +119,17 @@ def find_or_choose_metric(metric: str):
     default=os.path.join(OSO_SQLMESH_DIR, "models/metrics_factories.py"),
 )
 @click.option("--dialect", default="duckdb", help="The dialect to render")
+@click.option("--full-render/--no-full-render", default=False)
+@click.option("--vars", default="")
 @click.pass_context
-def render(ctx: click.Context, metric: str, factory_path: str, dialect: str):
+def render(
+    ctx: click.Context,
+    metric: str,
+    factory_path: str,
+    dialect: str,
+    vars: str,
+    full_render: bool,
+):
     """Renders a given metric query. Useful for testing
 
     Usage:
@@ -125,6 +139,24 @@ def render(ctx: click.Context, metric: str, factory_path: str, dialect: str):
     chosen_metric = find_or_choose_metric(metric)
     assert chosen_metric, f"Could not find metric {metric}"
     print(chosen_metric["rendered_query"].sql(pretty=True, dialect=dialect))
+    query = chosen_metric["rendered_query"].sql(dialect=dialect)
+    if vars:
+        parsed_vars = json.loads(vars)
+    else:
+        parsed_vars = {}
+
+    parsed_vars.update(chosen_metric["vars"])
+
+    if full_render:
+        expr = render_metrics_query(
+            query,
+            chosen_metric["ref"],
+            variables=parsed_vars,
+            runtime_stage=RuntimeStage.EVALUATING,
+        )
+        print("")
+        print("### FULL RENDERING")
+        print(expr[0].sql(dialect=dialect, pretty=True))
 
 
 @click.group()
