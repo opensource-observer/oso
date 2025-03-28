@@ -16,7 +16,6 @@ WITH all_key_metrics_by_collection AS (
     to_collection_id AS collection_id,
     metrics_sample_date AS sample_date,
     amount,
-    metric,
     NULL AS unit
   FROM oso.key_metrics_to_collection
 ),

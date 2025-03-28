@@ -16,7 +16,6 @@ WITH all_key_metrics_by_artifact AS (
     to_artifact_id AS artifact_id,
     metrics_sample_date AS sample_date,
     amount,
-    metric,
     NULL AS unit
   FROM oso.key_metrics_to_artifact
 ),
