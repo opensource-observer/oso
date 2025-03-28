@@ -15,6 +15,15 @@ WITH all_timeseries_metrics_by_artifact AS (
     @oso_id('OSO', 'oso', metric) AS metric_id,
     to_artifact_id AS artifact_id,
     metrics_sample_date AS sample_date,
+    amount,
+    metric,
+    NULL AS unit
+  FROM oso.key_metrics_to_artifact
+  UNION ALL
+  SELECT
+    @oso_id('OSO', 'oso', metric) AS metric_id,
+    to_artifact_id AS artifact_id,
+    metrics_sample_date AS sample_date,
     amount AS amount,
     NULL AS unit
   FROM oso.timeseries_metrics_to_artifact

@@ -15,6 +15,15 @@ WITH all_timeseries_metrics_by_project AS (
     @oso_id('OSO', 'oso', metric) AS metric_id,
     to_project_id AS project_id,
     metrics_sample_date AS sample_date,
+    amount,
+    metric,
+    NULL AS unit
+  FROM oso.key_metrics_to_project
+  UNION ALL
+  SELECT
+    @oso_id('OSO', 'oso', metric) AS metric_id,
+    to_project_id AS project_id,
+    metrics_sample_date AS sample_date,
     amount AS amount,
     NULL AS unit
   FROM oso.timeseries_metrics_to_project
