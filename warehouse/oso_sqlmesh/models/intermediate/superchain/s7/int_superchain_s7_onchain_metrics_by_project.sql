@@ -1,25 +1,10 @@
-/* 
-TODO:
--[x] check farcaster user logic
--[x] implement amortized transaction counts
--[ ] implement amortized gas fees
--[ ] check defillama tvl logic
-*/
-
 MODEL(
   name oso.int_superchain_s7_onchain_metrics_by_project,
   description 'S7 onchain metrics by project with various aggregations and filters',
-  kind incremental_by_time_range(
-   time_column sample_date,
-   batch_size 90,
-   batch_concurrency 1,
-   lookback 7
-  ),
-  start @blockchain_incremental_start,
-  cron '@daily',
+  kind full,
   dialect trino,
-  partitioned_by DAY("sample_date"),
-  grain(sample_date, chain, project_id, metric_name)
+  partitioned_by chain,
+  grain(chain, sample_date, project_id, metric_name)
 );
 
 @DEF(direct_invocation_weight, 0.5);
@@ -42,11 +27,10 @@ WITH base_events AS (
   LEFT OUTER JOIN oso.int_superchain_onchain_user_labels AS users
   ON e.from_artifact_id = users.artifact_id
   WHERE
-    e.time BETWEEN @start_dt AND @end_dt
     /* Currently no 4337-specific logic as these events are 
     already captured in the CONTRACT_INTERNAL_INVOCATION
     events and would need to be de-duped. */ 
-    AND e.event_type IN (
+    e.event_type IN (
       'CONTRACT_INVOCATION',
       'CONTRACT_INTERNAL_INVOCATION'
     )
@@ -147,10 +131,9 @@ defillama_tvl_events AS (
     DATE_TRUNC('DAY', dl.bucket_day::DATE) AS bucket_day,
     DATE_TRUNC('MONTH', dl.bucket_day::DATE) AS bucket_month,
     dl.amount
-  FROM oso.int_events_daily__defillama_tvl AS dl
+  FROM oso.int_events_daily_to_project__defillama_tvl AS dl
   WHERE
-    dl.bucket_day BETWEEN @start_dt AND @end_dt
-    AND dl.event_type = 'DEFILLAMA_TVL'
+    dl.event_type = 'DEFILLAMA_TVL'
     AND dl.from_artifact_name = 'usd'
     AND dl.from_artifact_namespace IN (
       SELECT LOWER(chain)
