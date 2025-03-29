@@ -699,3 +699,98 @@ definition:
         enableAll: true
   graphql:
     expressionTypeName: Oso_BoolOrderByExp
+
+---
+kind: ScalarType
+version: v1
+definition:
+  name: DateTime646
+  graphql:
+    typeName: Oso_DateTime646
+
+---
+kind: BooleanExpressionType
+version: v1
+definition:
+  name: DateTime646BoolExp
+  operand:
+    scalar:
+      type: DateTime646
+      comparisonOperators:
+        - name: _eq
+          argumentType: DateTime646!
+        - name: _gt
+          argumentType: DateTime646!
+        - name: _gte
+          argumentType: DateTime646!
+        - name: _in
+          argumentType: "[DateTime646!]!"
+        - name: _lt
+          argumentType: DateTime646!
+        - name: _lte
+          argumentType: DateTime646!
+        - name: _neq
+          argumentType: DateTime646!
+        - name: _nin
+          argumentType: "[DateTime646!]!"
+      dataConnectorOperatorMapping:
+        - dataConnectorName: oso_clickhouse
+          dataConnectorScalarType: DateTime64(6)
+          operatorMapping: {}
+  logicalOperators:
+    enable: true
+  isNull:
+    enable: true
+  graphql:
+    typeName: Oso_DateTime646BoolExp
+
+---
+kind: DataConnectorScalarRepresentation
+version: v1
+definition:
+  dataConnectorName: oso_clickhouse
+  dataConnectorScalarType: DateTime64(6)
+  representation: DateTime646
+  graphql:
+    comparisonExpressionTypeName: Oso_DateTime646ComparisonExp
+
+---
+kind: AggregateExpression
+version: v1
+definition:
+  name: DateTime646AggExp
+  operand:
+    scalar:
+      aggregatedType: DateTime646
+      aggregationFunctions:
+        - name: max
+          returnType: DateTime646!
+        - name: min
+          returnType: DateTime646!
+      dataConnectorAggregationFunctionMapping:
+        - dataConnectorName: oso_clickhouse
+          dataConnectorScalarType: DateTime64(6)
+          functionMapping:
+            max:
+              name: max
+            min:
+              name: min
+  count:
+    enable: true
+  countDistinct:
+    enable: true
+  graphql:
+    selectTypeName: Oso_DateTime646AggExp
+
+---
+kind: OrderByExpression
+version: v1
+definition:
+  name: DateTime646OrderByExp
+  operand:
+    scalar:
+      orderedType: DateTime646
+      enableOrderByDirections:
+        enableAll: true
+  graphql:
+    expressionTypeName: Oso_DateTime646OrderByExp

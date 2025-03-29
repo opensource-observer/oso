@@ -18,18 +18,18 @@
   },
   "scripts": {
     "build:ts": "tsc",
+    "build:hasura": "ddn supergraph build local",
     "build": "pnpm build:ts",
     "lint": "tsc --noEmit && pnpm lint:eslint && pnpm lint:prettier",
     "lint:eslint": "eslint --ignore-path ../../.gitignore --max-warnings 0 .",
     "lint:prettier": "prettier --ignore-path ../../.gitignore --log-level warn --check **/*.{js,jsx,ts,tsx,sol,md,json}",
-    "metadata:update": "dotenv -- node --loader ts-node/esm src/cli.ts",
     "metadata:introspect": "ddn connector introspect oso_clickhouse",
-    "metadata:build:local": "ddn supergraph build local",
-    "metadata:deploy:cloud": "ddn supergraph build create",
+    "metadata:add": "ddn model add oso_clickhouse '*_v?'",
+    "metadata:update": "dotenv -- node --loader ts-node/esm src/cli.ts",
     "start": "ddn run docker-start",
     "stop": "ddn run docker-stop",
     "sync": "pnpm metadata:introspect",
-    "deploy": "pnpm metadata:deploy:cloud"
+    "deploy": "ddn supergraph build create --apply"
   },
   "keywords": [],
   "devDependencies": {
