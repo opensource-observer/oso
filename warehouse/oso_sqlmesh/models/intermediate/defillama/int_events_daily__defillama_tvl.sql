@@ -36,38 +36,20 @@ deduplicated_tvl_events AS (
   WHERE
     rn = 1
     AND NOT (
-      LOWER(slug) LIKE '%-borrowed'
-      OR LOWER(slug) LIKE '%-vesting'
-      OR LOWER(slug) LIKE '%-staking'
-      OR LOWER(slug) LIKE '%-pool2'
-      OR LOWER(slug) LIKE '%-treasury'
-      OR LOWER(slug) LIKE '%-cex'
+      LOWER(chain) LIKE '%-borrowed'
+      OR LOWER(chain) LIKE '%-vesting'
+      OR LOWER(chain) LIKE '%-staking'
+      OR LOWER(chain) LIKE '%-pool2'
+      OR LOWER(chain) LIKE '%-treasury'
+      OR LOWER(chain) LIKE '%-cex'
     )
-    AND LOWER(slug) NOT IN (
+    AND LOWER(chain) NOT IN (
       'treasury',
       'borrowed',
       'staking',
       'pool2',
       'polygon-bridge-&-staking'
     )
-),
-
-merged_tvl_events AS (
-  SELECT
-    bucket_day,
-    chain,
-    slug,
-    token,
-    tvl
-  FROM deduplicated_tvl_events
-  UNION ALL
-  SELECT
-    bucket_day::DATE as bucket_day,
-    chain,
-    slug,
-    token,
-    amount as tvl
-  FROM oso.int_events_daily__defillama_tvl_upload
 ),
 
 tvl_events_with_ids AS (
@@ -90,7 +72,7 @@ tvl_events_with_ids AS (
     LOWER(chain) AS from_artifact_namespace,
     LOWER(token) AS from_artifact_name,
     tvl::DOUBLE AS amount
-  FROM merged_tvl_events
+  FROM deduplicated_tvl_events
 )
 
 -- This will create a row for each project associated with the artifact
