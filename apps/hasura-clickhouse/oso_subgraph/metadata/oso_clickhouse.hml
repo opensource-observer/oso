@@ -135,6 +135,55 @@ definition:
                 element_type:
                   type: named
                   name: DateTime
+        DateTime64(6):
+          representation:
+            type: string
+          aggregate_functions:
+            max:
+              result_type:
+                type: named
+                name: DateTime64(6)
+            min:
+              result_type:
+                type: named
+                name: DateTime64(6)
+          comparison_operators:
+            _eq:
+              type: equal
+            _gt:
+              type: custom
+              argument_type:
+                type: named
+                name: DateTime64(6)
+            _gte:
+              type: custom
+              argument_type:
+                type: named
+                name: DateTime64(6)
+            _in:
+              type: in
+            _lt:
+              type: custom
+              argument_type:
+                type: named
+                name: DateTime64(6)
+            _lte:
+              type: custom
+              argument_type:
+                type: named
+                name: DateTime64(6)
+            _neq:
+              type: custom
+              argument_type:
+                type: named
+                name: DateTime64(6)
+            _nin:
+              type: custom
+              argument_type:
+                type: array
+                element_type:
+                  type: named
+                  name: DateTime64(6)
         Float32:
           representation:
             type: float32
@@ -971,6 +1020,25 @@ definition:
               type:
                 type: named
                 name: String
+        models_v0:
+          description: ""
+          fields:
+            model_id:
+              type:
+                type: named
+                name: String
+            model_name:
+              type:
+                type: named
+                name: String
+            rendered_at:
+              type:
+                type: named
+                name: DateTime64(6)
+            rendered_sql:
+              type:
+                type: named
+                name: String
         onchain_metrics_by_project_v1:
           description: ""
           fields:
@@ -1487,6 +1555,12 @@ definition:
           description: ""
           arguments: {}
           type: metrics_v0
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: models_v0
+          description: ""
+          arguments: {}
+          type: models_v0
           uniqueness_constraints: {}
           foreign_keys: {}
         - name: onchain_metrics_by_project_v1

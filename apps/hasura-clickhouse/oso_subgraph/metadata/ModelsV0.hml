@@ -1,0 +1,156 @@
+---
+kind: ObjectType
+version: v1
+definition:
+  name: ModelsV0
+  fields:
+    - name: modelId
+      type: String!
+    - name: modelName
+      type: String!
+    - name: renderedAt
+      type: DateTime646!
+    - name: renderedSql
+      type: String!
+  graphql:
+    typeName: Oso_ModelsV0
+    inputTypeName: Oso_ModelsV0Input
+  dataConnectorTypeMapping:
+    - dataConnectorName: oso_clickhouse
+      dataConnectorObjectType: models_v0
+      fieldMapping:
+        modelId:
+          column:
+            name: model_id
+        modelName:
+          column:
+            name: model_name
+        renderedAt:
+          column:
+            name: rendered_at
+        renderedSql:
+          column:
+            name: rendered_sql
+
+---
+kind: TypePermissions
+version: v1
+definition:
+  typeName: ModelsV0
+  permissions:
+    - role: admin
+      output:
+        allowedFields:
+          - modelId
+          - modelName
+          - renderedAt
+          - renderedSql
+    - role: anonymous
+      output:
+        allowedFields:
+          - modelId
+          - modelName
+          - renderedAt
+          - renderedSql
+
+---
+kind: BooleanExpressionType
+version: v1
+definition:
+  name: ModelsV0BoolExp
+  operand:
+    object:
+      type: ModelsV0
+      comparableFields:
+        - fieldName: modelId
+          booleanExpressionType: StringBoolExp
+        - fieldName: modelName
+          booleanExpressionType: StringBoolExp
+        - fieldName: renderedAt
+          booleanExpressionType: DateTime646BoolExp
+        - fieldName: renderedSql
+          booleanExpressionType: StringBoolExp
+      comparableRelationships: []
+  logicalOperators:
+    enable: true
+  isNull:
+    enable: true
+  graphql:
+    typeName: Oso_ModelsV0BoolExp
+
+---
+kind: AggregateExpression
+version: v1
+definition:
+  name: ModelsV0AggExp
+  operand:
+    object:
+      aggregatedType: ModelsV0
+      aggregatableFields:
+        - fieldName: modelId
+          aggregateExpression: StringAggExp
+        - fieldName: modelName
+          aggregateExpression: StringAggExp
+        - fieldName: renderedAt
+          aggregateExpression: DateTime646AggExp
+        - fieldName: renderedSql
+          aggregateExpression: StringAggExp
+  count:
+    enable: true
+  graphql:
+    selectTypeName: Oso_ModelsV0AggExp
+
+---
+kind: OrderByExpression
+version: v1
+definition:
+  name: ModelsV0OrderByExp
+  operand:
+    object:
+      orderedType: ModelsV0
+      orderableFields:
+        - fieldName: modelId
+          orderByExpression: StringOrderByExp
+        - fieldName: modelName
+          orderByExpression: StringOrderByExp
+        - fieldName: renderedAt
+          orderByExpression: DateTime646OrderByExp
+        - fieldName: renderedSql
+          orderByExpression: StringOrderByExp
+      orderableRelationships: []
+  graphql:
+    expressionTypeName: Oso_ModelsV0OrderByExp
+
+---
+kind: Model
+version: v2
+definition:
+  name: ModelsV0
+  objectType: ModelsV0
+  source:
+    dataConnectorName: oso_clickhouse
+    collection: models_v0
+  filterExpressionType: ModelsV0BoolExp
+  aggregateExpression: ModelsV0AggExp
+  orderByExpression: ModelsV0OrderByExp
+  graphql:
+    selectMany:
+      queryRootField: oso_modelsV0
+      subscription:
+        rootField: oso_modelsV0
+    selectUniques: []
+    filterInputTypeName: Oso_ModelsV0FilterInput
+
+---
+kind: ModelPermissions
+version: v1
+definition:
+  modelName: ModelsV0
+  permissions:
+    - role: admin
+      select:
+        filter: null
+        allowSubscriptions: true
+    - role: anonymous
+      select:
+        filter: null
