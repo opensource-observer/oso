@@ -4,7 +4,7 @@ MODEL (
   kind full,
   dialect trino,
   partitioned_by (DAY("bucket_day"), "event_type"),
-  grain (bucket_day, event_type, event_source, from_artifact_id, to_artifact_id, project_id)
+  grain (bucket_day, event_type, event_source, from_artifact_id, to_artifact_id)
 );
 
 WITH all_tvl_events AS (
@@ -75,20 +75,16 @@ tvl_events_with_ids AS (
   FROM deduplicated_tvl_events
 )
 
--- This will create a row for each project associated with the artifact
 SELECT
-  abp.project_id,
-  tvl_events_with_ids.bucket_day,
-  tvl_events_with_ids.event_type,
-  tvl_events_with_ids.event_source,
-  tvl_events_with_ids.event_source_id,
-  tvl_events_with_ids.to_artifact_id,
-  tvl_events_with_ids.to_artifact_namespace,
-  tvl_events_with_ids.to_artifact_name,
-  tvl_events_with_ids.from_artifact_id,
-  tvl_events_with_ids.from_artifact_namespace,
-  tvl_events_with_ids.from_artifact_name,
-  tvl_events_with_ids.amount
+  bucket_day,
+  event_type,
+  event_source,
+  event_source_id,
+  to_artifact_id,
+  to_artifact_namespace,
+  to_artifact_name,
+  from_artifact_id,
+  from_artifact_namespace,
+  from_artifact_name,
+  amount
 FROM tvl_events_with_ids
-INNER JOIN oso.artifacts_by_project_v1 AS abp
-  ON tvl_events_with_ids.to_artifact_id = abp.artifact_id

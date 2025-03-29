@@ -147,7 +147,7 @@ defillama_tvl_events AS (
     DATE_TRUNC('DAY', dl.bucket_day::DATE) AS bucket_day,
     DATE_TRUNC('MONTH', dl.bucket_day::DATE) AS bucket_month,
     dl.amount
-  FROM oso.int_events_daily__defillama_tvl AS dl
+  FROM oso.int_events_daily_to_project__defillama_tvl AS dl
   WHERE
     dl.bucket_day BETWEEN @start_dt AND @end_dt
     AND dl.event_type = 'DEFILLAMA_TVL'
