@@ -15,29 +15,25 @@ This tutorial shows how to quickly lookup the funding history of your favorite p
 Before running any analysis, you'll need to set up your environment:
 
 <Tabs>
-<TabItem value="sql" label="SQL">
-
-If you haven't already, subscribe to OSO public datasets in BigQuery by clicking the "Subscribe" button on our [Datasets page](../integrate/datasets/#oso-production-pipeline).
-
-You can run all queries in this guide directly in the [BigQuery console](https://console.cloud.google.com/bigquery).
-
-</TabItem>
 <TabItem value="python" label="Python">
 
 Start your Python notebook with the following:
 
 ```python
-from google.cloud import bigquery
-import pandas as pd
 import os
+import pandas as pd
+from pyoso import Client
 
-os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = # PATH TO YOUR CREDENTIALS JSON
-GCP_PROJECT = # YOUR GCP PROJECT NAME
-
-client = bigquery.Client(GCP_PROJECT)
+OSO_API_KEY = os.environ['OSO_API_KEY']
+client = Client(api_key=OSO_API_KEY)
 ```
 
 For more details on setting up Python notebooks, see our guide on [writing Python notebooks](../guides/notebooks/index.mdx).
+
+</TabItem>
+<TabItem value="graphql" label="GraphQL">
+
+The following queries should work if you copy-paste them into our [GraphQL sandbox](https://www.opensource.observer/graphql). For more information on how to use the GraphQL API, check out our [GraphQL guide](../integrate/api.md).
 
 </TabItem>
 </Tabs>
@@ -49,40 +45,43 @@ For more details on setting up Python notebooks, see our guide on [writing Pytho
 Get the complete funding history for a specific project:
 
 <Tabs>
-<TabItem value="sql" label="SQL">
+<TabItem value="python" label="Python">
 
-```sql
+```python
+query = """
 SELECT
   time,
   event_source,
   from_project_name as funder,
   amount,
   grant_pool_name
-FROM `oso_production.oss_funding_v0`
+FROM oss_funding_v0
 WHERE to_project_name = 'uniswap'
 ORDER BY time DESC
-```
-
-</TabItem>
-<TabItem value="python" label="Python">
-
-```python
-query = """
-  SELECT
-    time,
-    event_source,
-    from_project_name as funder,
-    amount,
-    grant_pool_name
-  FROM `oso_production.oss_funding_v0`
-  WHERE to_project_name = 'uniswap'
-  ORDER BY time DESC
 """
-df = client.query(query).to_dataframe()
+df = client.to_pandas(query)
 
 # Optional: Display total funding by source
 print("Funding by source:")
 print(df.groupby('event_source')['amount'].sum())
+```
+
+</TabItem>
+<TabItem value="graphql" label="GraphQL">
+
+```graphql
+query ProjectFundingHistory {
+  oso_ossFundingV0(
+    where: { toProjectName: { _eq: "uniswap" } }
+    order_by: { time: desc }
+  ) {
+    time
+    eventSource
+    fromProjectName
+    amount
+    grantPoolName
+  }
+}
 ```
 
 </TabItem>
@@ -93,38 +92,22 @@ print(df.groupby('event_source')['amount'].sum())
 Find the projects that have received the most funding:
 
 <Tabs>
-<TabItem value="sql" label="SQL">
+<TabItem value="python" label="Python">
 
-```sql
+```python
+query = """
 SELECT
   to_project_name,
   COUNT(DISTINCT event_source) as funding_sources,
   COUNT(*) as number_of_grants,
   SUM(amount) as total_funding
-FROM `oso_production.oss_funding_v0`
+FROM oss_funding_v0
 GROUP BY to_project_name
 HAVING total_funding > 0
 ORDER BY total_funding DESC
 LIMIT 20
-```
-
-</TabItem>
-<TabItem value="python" label="Python">
-
-```python
-query = """
-  SELECT
-    to_project_name,
-    COUNT(DISTINCT event_source) as funding_sources,
-    COUNT(*) as number_of_grants,
-    SUM(amount) as total_funding
-  FROM `oso_production.oss_funding_v0`
-  GROUP BY to_project_name
-  HAVING total_funding > 0
-  ORDER BY total_funding DESC
-  LIMIT 20
 """
-df = client.query(query).to_dataframe()
+df = client.to_pandas(query)
 
 # Optional: Create a bar chart
 import plotly.express as px
@@ -138,6 +121,26 @@ fig.show()
 ```
 
 </TabItem>
+<TabItem value="graphql" label="GraphQL">
+
+```graphql
+query TopFundedProjects {
+  # This query requires aggregation which is complex in GraphQL
+  # You would need to fetch all funding data and aggregate client-side
+  oso_ossFundingV0(
+    limit: 1000
+    order_by: { amount: desc }
+  ) {
+    toProjectName
+    eventSource
+    amount
+  }
+}
+```
+
+Note: For aggregation queries like this, the Python approach is more efficient as it handles the grouping and calculations server-side.
+
+</TabItem>
 </Tabs>
 
 ## Advanced Analysis
@@ -147,15 +150,16 @@ fig.show()
 Compare funding with development metrics to understand the relationship between financial support and project activity:
 
 <Tabs>
-<TabItem value="sql" label="SQL">
+<TabItem value="python" label="Python">
 
-```sql
+```python
+query = """
 WITH project_funding AS (
   SELECT
     to_project_name,
     SUM(amount) as total_funding,
     COUNT(DISTINCT event_source) as funding_sources
-  FROM `oso_production.oss_funding_v0`
+  FROM oss_funding_v0
   GROUP BY to_project_name
 )
 SELECT
@@ -168,41 +172,12 @@ SELECT
   m.star_count,
   m.fork_count
 FROM project_funding f
-JOIN `oso_production.code_metrics_by_project_v1` m
+JOIN code_metrics_by_project_v1 m
   ON f.to_project_name = m.project_name
 WHERE f.total_funding > 0
 ORDER BY f.total_funding DESC
-```
-
-</TabItem>
-<TabItem value="python" label="Python">
-
-```python
-query = """
-  WITH project_funding AS (
-    SELECT
-      to_project_name,
-      SUM(amount) as total_funding,
-      COUNT(DISTINCT event_source) as funding_sources
-    FROM `oso_production.oss_funding_v0`
-    GROUP BY to_project_name
-  )
-  SELECT
-    f.to_project_name,
-    f.total_funding,
-    f.funding_sources,
-    m.active_developer_count_6_months,
-    m.commit_count_6_months,
-    m.opened_issue_count_6_months,
-    m.star_count,
-    m.fork_count
-  FROM project_funding f
-  JOIN `oso_production.code_metrics_by_project_v1` m
-    ON f.to_project_name = m.project_name
-  WHERE f.total_funding > 0
-  ORDER BY f.total_funding DESC
 """
-df = client.query(query).to_dataframe()
+df = client.to_pandas(query)
 
 # Optional: Create a scatter plot
 import plotly.express as px
@@ -218,6 +193,34 @@ fig.show()
 ```
 
 </TabItem>
+<TabItem value="graphql" label="GraphQL">
+
+```graphql
+query FundingVsDevelopmentActivity {
+  # This complex analysis requires multiple queries and client-side processing
+  # First get code metrics for projects
+  codeMetrics: oso_codeMetricsByProjectV1 {
+    projectName
+    activeDevCount6Months: activeDevCount6Months
+    commitCount6Months
+    openedIssueCount6Months
+    starCount
+    forkCount
+  }
+  
+  # Then get funding data
+  # You would need to fetch all funding data and aggregate client-side
+  fundingData: oso_ossFundingV0 {
+    toProjectName
+    eventSource
+    amount
+  }
+}
+```
+
+Note: For complex analyses like this, the Python approach is more efficient as it handles the joins and calculations server-side.
+
+</TabItem>
 </Tabs>
 
 ### Funding Source Analysis
@@ -225,9 +228,10 @@ fig.show()
 Analyze the distribution and impact of different funding sources:
 
 <Tabs>
-<TabItem value="sql" label="SQL">
+<TabItem value="python" label="Python">
 
-```sql
+```python
+query = """
 SELECT
   event_source,
   grant_pool_name,
@@ -235,30 +239,12 @@ SELECT
   COUNT(*) as number_of_grants,
   SUM(amount) as total_funding,
   AVG(amount) as average_grant
-FROM `oso_production.oss_funding_v0`
+FROM oss_funding_v0
 GROUP BY event_source, grant_pool_name
 HAVING total_funding > 0
 ORDER BY total_funding DESC
-```
-
-</TabItem>
-<TabItem value="python" label="Python">
-
-```python
-query = """
-  SELECT
-    event_source,
-    grant_pool_name,
-    COUNT(DISTINCT to_project_name) as projects_funded,
-    COUNT(*) as number_of_grants,
-    SUM(amount) as total_funding,
-    AVG(amount) as average_grant
-  FROM `oso_production.oss_funding_v0`
-  GROUP BY event_source, grant_pool_name
-  HAVING total_funding > 0
-  ORDER BY total_funding DESC
 """
-df = client.query(query).to_dataframe()
+df = client.to_pandas(query)
 
 # Optional: Create a treemap visualization
 import plotly.express as px
@@ -272,6 +258,25 @@ fig.show()
 ```
 
 </TabItem>
+<TabItem value="graphql" label="GraphQL">
+
+```graphql
+query FundingSourceAnalysis {
+  # This aggregation query requires client-side processing
+  oso_ossFundingV0(
+    limit: 1000
+  ) {
+    eventSource
+    grantPoolName
+    toProjectName
+    amount
+  }
+}
+```
+
+Note: For aggregation queries like this, the Python approach is more efficient as it handles the grouping and calculations server-side.
+
+</TabItem>
 </Tabs>
 
 ### Social Network Funding Analysis
@@ -279,9 +284,10 @@ fig.show()
 Analyze funding patterns within social networks by combining funding data with social graph data:
 
 <Tabs>
-<TabItem value="sql" label="SQL">
+<TabItem value="python" label="Python">
 
-```sql
+```python
+query = """
 SELECT DISTINCT
   donations.donor_address,
   users.user_source_id as fid,
@@ -289,56 +295,25 @@ SELECT DISTINCT
   donations.project_name,
   amount_in_usd,
   timestamp
-FROM `gitcoin.all_donations` as donations
-JOIN `oso_production.artifacts_by_user_v1` as users
+FROM gitcoin.all_donations as donations
+JOIN artifacts_by_user_v1 as users
   ON lower(donations.donor_address) = users.artifact_name
 WHERE
   user_source = 'FARCASTER'
   AND users.user_source_id IN (
     WITH max_date AS (
       SELECT max(date) as last_date
-      FROM `karma3.localtrust`
+      FROM karma3.localtrust
     )
     SELECT CAST(j as string) as fid
-    FROM `karma3.localtrust`
+    FROM karma3.localtrust
     WHERE i = 5650  -- Replace with your FID to see your network
     ORDER BY v DESC
     LIMIT 150
   )
 ORDER BY amount_in_usd DESC
-```
-
-</TabItem>
-<TabItem value="python" label="Python">
-
-```python
-query = """
-  SELECT DISTINCT
-    donations.donor_address,
-    users.user_source_id as fid,
-    users.user_name as username,
-    donations.project_name,
-    amount_in_usd,
-    timestamp
-  FROM `gitcoin.all_donations` as donations
-  JOIN `oso_production.artifacts_by_user_v1` as users
-    ON lower(donations.donor_address) = users.artifact_name
-  WHERE
-    user_source = 'FARCASTER'
-    AND users.user_source_id IN (
-      WITH max_date AS (
-        SELECT max(date) as last_date
-        FROM `karma3.localtrust`
-      )
-      SELECT CAST(j as string) as fid
-      FROM `karma3.localtrust`
-      WHERE i = 5650  -- Replace with your FID to see your network
-      ORDER BY v DESC
-      LIMIT 150
-    )
-  ORDER BY amount_in_usd DESC
 """
-df = client.query(query).to_dataframe()
+df = client.to_pandas(query)
 
 # Optional: Create a network visualization
 import networkx as nx
@@ -398,6 +373,31 @@ fig = go.Figure(data=[edges_trace, nodes_trace],
 )
 fig.show()
 ```
+
+</TabItem>
+<TabItem value="graphql" label="GraphQL">
+
+```graphql
+query SocialNetworkFundingAnalysis {
+  # This complex analysis requires multiple data sources and client-side processing
+  # The Python approach is recommended for this type of analysis
+  
+  # You would need to query artifacts by user
+  users: oso_artifactsByUserV1(
+    where: { userSource: { _eq: "FARCASTER" } }
+    limit: 100
+  ) {
+    userSourceId
+    userName
+    artifactName
+  }
+  
+  # Then join with donation data from other sources
+  # This would require additional queries and client-side processing
+}
+```
+
+Note: For complex analyses involving multiple data sources like this, the Python approach is more efficient and flexible.
 
 </TabItem>
 </Tabs>

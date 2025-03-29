@@ -17,26 +17,17 @@ All **projects** are defined as YAML files in [OSS Directory](https://github.com
 Before running any analysis, you'll need to set up your environment:
 
 <Tabs>
-<TabItem value="sql" label="SQL">
-
-If you haven't already, subscribe to OSO public datasets in BigQuery by clicking the "Subscribe" button on our [Datasets page](../integrate/datasets/#oso-production-pipeline).
-
-You can run all queries in this guide directly in the [BigQuery console](https://console.cloud.google.com/bigquery).
-
-</TabItem>
 <TabItem value="python" label="Python">
 
 Start your Python notebook with the following:
 
 ```python
-from google.cloud import bigquery
-import pandas as pd
 import os
+import pandas as pd
+from pyoso import Client
 
-os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = # PATH TO YOUR CREDENTIALS JSON
-GCP_PROJECT = # YOUR GCP PROJECT NAME
-
-client = bigquery.Client(GCP_PROJECT)
+OSO_API_KEY = os.environ['OSO_API_KEY']
+client = Client(api_key=OSO_API_KEY)
 ```
 
 For more details on setting up Python notebooks, see our guide on [writing Python notebooks](../guides/notebooks/index.mdx).
@@ -54,30 +45,18 @@ The following queries should work if you copy-paste them into our [GraphQL sandb
 Search for projects by name:
 
 <Tabs>
-<TabItem value="sql" label="SQL">
-
-```sql
-select
-  project_id,
-  project_name,
-  display_name
-from `oso_production.projects_v1`
-where lower(display_name) like lower('%merkle%')
-```
-
-</TabItem>
 <TabItem value="python" label="Python">
 
 ```python
 query = """
-  select
-    project_id,
-    project_name,
-    display_name
-  from `oso_production.projects_v1`
-  where lower(display_name) like lower('%merkle%')
+SELECT
+  project_id,
+  project_name,
+  display_name
+FROM projects_v1
+WHERE lower(display_name) LIKE lower('%merkle%')
 """
-df = client.query(query).to_dataframe()
+df = client.to_pandas(query)
 ```
 
 </TabItem>
@@ -101,36 +80,21 @@ query FindProject {
 Find projects associated with specific artifacts:
 
 <Tabs>
-<TabItem value="sql" label="SQL">
-
-```sql
-select
-  project_id,
-  project_name,
-  artifact_namespace as github_owner,
-  artifact_name as github_repo
-from `oso_production.artifacts_by_project_v1`
-where
-  artifact_source = 'GITHUB'
-  and artifact_namespace like '%uniswap%'
-```
-
-</TabItem>
 <TabItem value="python" label="Python">
 
 ```python
 query = """
-  select
-    project_id,
-    project_name,
-    artifact_namespace as github_owner,
-    artifact_name as github_repo
-  from `oso_production.artifacts_by_project_v1`
-  where
-    artifact_source = 'GITHUB'
-    and artifact_namespace like '%uniswap%'
+SELECT
+  project_id,
+  project_name,
+  artifact_namespace as github_owner,
+  artifact_name as github_repo
+FROM artifacts_by_project_v1
+WHERE
+  artifact_source = 'GITHUB'
+  AND artifact_namespace LIKE '%uniswap%'
 """
-df = client.query(query).to_dataframe()
+df = client.to_pandas(query)
 ```
 
 </TabItem>
@@ -160,36 +124,21 @@ query FindProjectByArtifact {
 Get code metrics for a specific project:
 
 <Tabs>
-<TabItem value="sql" label="SQL">
+<TabItem value="python" label="Python">
 
-```sql
-select
+```python
+query = """
+SELECT
   project_name,
   display_name,
   star_count,
   fork_count,
   commit_count_6_months,
   contributor_count_6_months
-from `oso_production.code_metrics_by_project_v1`
-where project_name = 'opensource-observer'
-```
-
-</TabItem>
-<TabItem value="python" label="Python">
-
-```python
-query = """
-  select
-    project_name,
-    display_name,
-    star_count,
-    fork_count,
-    commit_count_6_months,
-    contributor_count_6_months
-  from `oso_production.code_metrics_by_project_v1`
-  where project_name = 'opensource-observer'
+FROM code_metrics_by_project_v1
+WHERE project_name = 'opensource-observer'
 """
-df = client.query(query).to_dataframe()
+df = client.to_pandas(query)
 ```
 
 </TabItem>
@@ -218,40 +167,23 @@ query CodeMetricsForProject {
 Get historical metrics for a project:
 
 <Tabs>
-<TabItem value="sql" label="SQL">
-
-```sql
-select
-  tm.sample_date,
-  m.metric_name,
-  tm.amount
-from `oso_production.timeseries_metrics_by_project_v0` as tm
-join `oso_production.metrics_v0` as m
-  on tm.metric_id = m.metric_id
-join `oso_production.projects_v1` as p
-  on tm.project_id = p.project_id
-where p.project_name = 'wevm'
-order by sample_date desc
-```
-
-</TabItem>
 <TabItem value="python" label="Python">
 
 ```python
 query = """
-  select
-    tm.sample_date,
-    m.metric_name,
-    tm.amount
-  from `oso_production.timeseries_metrics_by_project_v0` as tm
-  join `oso_production.metrics_v0` as m
-    on tm.metric_id = m.metric_id
-  join `oso_production.projects_v1` as p
-    on tm.project_id = p.project_id
-  where p.project_name = 'wevm'
-  order by sample_date desc
+SELECT
+  tm.sample_date,
+  m.metric_name,
+  tm.amount
+FROM timeseries_metrics_by_project_v0 AS tm
+JOIN metrics_v0 AS m
+  ON tm.metric_id = m.metric_id
+JOIN projects_v1 AS p
+  ON tm.project_id = p.project_id
+WHERE p.project_name = 'wevm'
+ORDER BY sample_date DESC
 """
-df = client.query(query).to_dataframe()
+df = client.to_pandas(query)
 ```
 
 </TabItem>
@@ -285,48 +217,27 @@ Note: You'll need to join these results client-side by matching `metricId` value
 Get all contributors to a project's GitHub repositories:
 
 <Tabs>
-<TabItem value="sql" label="SQL">
+<TabItem value="python" label="Python">
 
-```sql
-select
+```python
+query = """
+SELECT
   te.time,
   a.artifact_name as code_contributor,
   abp.artifact_name as github_repo,
   te.event_type,
   te.amount
-from `oso_production.timeseries_events_by_artifact_v0` as te
-join `oso_production.artifacts_by_project_v1` as abp
-  on te.to_artifact_id = abp.artifact_id
-join `oso_production.artifacts_v1` a
-  on te.from_artifact_id = a.artifact_id
-where
+FROM timeseries_events_by_artifact_v0 AS te
+JOIN artifacts_by_project_v1 AS abp
+  ON te.to_artifact_id = abp.artifact_id
+JOIN artifacts_v1 a
+  ON te.from_artifact_id = a.artifact_id
+WHERE
   abp.project_name = 'ipfs'
-  and te.event_type = 'COMMIT_CODE'
-order by te.time desc
-```
-
-</TabItem>
-<TabItem value="python" label="Python">
-
-```python
-query = """
-  select
-    te.time,
-    a.artifact_name as code_contributor,
-    abp.artifact_name as github_repo,
-    te.event_type,
-    te.amount
-  from `oso_production.timeseries_events_by_artifact_v0` as te
-  join `oso_production.artifacts_by_project_v1` as abp
-    on te.to_artifact_id = abp.artifact_id
-  join `oso_production.artifacts_v1` a
-    on te.from_artifact_id = a.artifact_id
-  where
-    abp.project_name = 'ipfs'
-    and te.event_type = 'COMMIT_CODE'
-  order by te.time desc
+  AND te.event_type = 'COMMIT_CODE'
+ORDER BY te.time DESC
 """
-df = client.query(query).to_dataframe()
+df = client.to_pandas(query)
 ```
 
 </TabItem>
