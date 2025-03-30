@@ -3,7 +3,7 @@ MODEL(
   description 'S7 onchain metrics by project with various aggregations and filters',
   kind full,
   dialect trino,
-  partitioned_by chain,
+  partitioned_by DAY("sample_date"),
   grain(chain, sample_date, project_id, metric_name)
 );
 
