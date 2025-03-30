@@ -93,7 +93,7 @@ all_timeseries_metric_names AS (
     'UNKNOWN' AS aggregation_function
   FROM all_timeseries_metric_names AS t
   LEFT JOIN all_metrics_metadata AS m
-    ON t.metric = m.metric
+    ON t.metric LIKE '%' || m.metric || '%'
 )
 SELECT
   metric_id::VARCHAR,
