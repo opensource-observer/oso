@@ -3,11 +3,11 @@ MODEL(
   description 'S7 onchain metrics by project with various aggregations and filters',
   kind incremental_by_time_range(
    time_column sample_date,
-   batch_size 90,
+   batch_size 60,
    batch_concurrency 1,
    lookback 7
   ),
-  start @blockchain_incremental_start,
+  start '2024-09-01',
   cron '@daily',
   dialect trino,
   partitioned_by DAY("sample_date"),

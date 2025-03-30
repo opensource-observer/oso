@@ -1,9 +1,16 @@
 MODEL (
   name oso.int_superchain_events_by_project,
-  kind full,
+  kind incremental_by_time_range(
+   time_column time,
+   batch_size 60,
+   batch_concurrency 1,
+   lookback 7
+  ),
+  start '2024-09-01',
+  cron '@daily',
   dialect trino,
   partitioned_by (DAY("time"), "event_type", "event_source"),
-  grain (time, event_type, event_source, event_type, from_artifact_id, to_artifact_id)
+  grain (time, event_type, event_source, event_type, from_artifact_id, to_artifact_id, transaction_hash)
 );
 
 WITH unioned_events AS (
@@ -16,6 +23,7 @@ WITH unioned_events AS (
     transaction_hash,
     (userop_gas_used * userop_gas_price / 1e18) AS gas_fee
   FROM oso.int_events__4337
+  WHERE time BETWEEN @start_dt AND @end_dt
   UNION ALL
   SELECT
     time,
@@ -26,6 +34,7 @@ WITH unioned_events AS (
     transaction_hash,
     (gas_used * gas_price_tx / 1e18) AS gas_fee
   FROM oso.int_events__blockchain
+  WHERE time BETWEEN @start_dt AND @end_dt
 )
 
 SELECT
@@ -42,4 +51,3 @@ INNER JOIN oso.artifacts_by_project_v1 AS abp
   ON e.to_artifact_id = abp.artifact_id
 INNER JOIN oso.int_superchain_chain_names AS chain_names
   ON e.event_source = chain_names.chain
---WHERE e.time BETWEEN @start_dt AND @end_dt
