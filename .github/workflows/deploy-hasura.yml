@@ -54,6 +54,17 @@ jobs:
           cache: "pnpm"
           node-version: "20.x"
 
+      - name: Load .env file
+        run: |
+          touch apps/hasura-clickhouse/.env && \
+            echo "HASURA_DDN_PAT=${HASURA_DDN_PAT}" >> apps/hasura-clickhouse/.env && \
+            echo "OSO_SUBGRAPH_OSO_CLICKHOUSE_AUTHORIZATION_HEADER=${OSO_SUBGRAPH_OSO_CLICKHOUSE_AUTHORIZATION_HEADER}" >> apps/hasura-clickhouse/.env && \
+            echo "OSO_SUBGRAPH_OSO_CLICKHOUSE_CLICKHOUSE_PASSWORD=${OSO_SUBGRAPH_OSO_CLICKHOUSE_CLICKHOUSE_PASSWORD}" >> apps/hasura-clickhouse/.env && \
+            echo "OSO_SUBGRAPH_OSO_CLICKHOUSE_CLICKHOUSE_URL=${OSO_SUBGRAPH_OSO_CLICKHOUSE_CLICKHOUSE_URL}" >> apps/hasura-clickhouse/.env && \
+            echo "OSO_SUBGRAPH_OSO_CLICKHOUSE_CLICKHOUSE_USERNAME=${OSO_SUBGRAPH_OSO_CLICKHOUSE_CLICKHOUSE_USERNAME}" >> apps/hasura-clickhouse/.env && \
+            echo "OSO_SUBGRAPH_OSO_CLICKHOUSE_READ_URL=${OSO_SUBGRAPH_OSO_CLICKHOUSE_READ_URL}" >> apps/hasura-clickhouse/.env && \
+            echo "OSO_SUBGRAPH_OSO_CLICKHOUSE_WRITE_URL=${OSO_SUBGRAPH_OSO_CLICKHOUSE_WRITE_URL}" >> apps/hasura-clickhouse/.env
+
       - name: Build
         run: pnpm build:hasura
 
