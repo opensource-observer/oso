@@ -28,7 +28,7 @@
     "metadata:update": "dotenv -- node --loader ts-node/esm src/cli.ts",
     "start": "ddn run docker-start",
     "stop": "ddn run docker-stop",
-    "sync": "pnpm metadata:introspect",
+    "sync": "pnpm metadata:introspect && pnpm metdata:add && pnpm metadata:update",
     "deploy": "ddn supergraph build create --apply"
   },
   "keywords": [],
