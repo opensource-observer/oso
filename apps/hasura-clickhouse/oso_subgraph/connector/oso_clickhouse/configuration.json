@@ -268,6 +268,20 @@
         }
       }
     },
+    "models_v0": {
+      "name": "models_v0",
+      "schema": "default",
+      "comment": "",
+      "return_type": {
+        "kind": "definition",
+        "columns": {
+          "model_id": "String",
+          "model_name": "String",
+          "rendered_at": "DateTime64(6)",
+          "rendered_sql": "String"
+        }
+      }
+    },
     "onchain_metrics_by_project_v1": {
       "name": "onchain_metrics_by_project_v1",
       "schema": "default",
