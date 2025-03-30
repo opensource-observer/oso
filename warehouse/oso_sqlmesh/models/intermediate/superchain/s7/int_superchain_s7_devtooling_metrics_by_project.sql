@@ -74,6 +74,7 @@ SELECT
   m.project_id AS oso_project_id,
   m.star_count AS project_star_count,
   m.fork_count AS project_fork_count,
+  m.num_packages_in_deps_dev AS num_packages_in_deps_dev,
   m.package_connection_count,
   m.developer_connection_count,
   filter(
@@ -101,6 +102,7 @@ GROUP BY
   m.project_id,
   m.star_count,
   m.fork_count,
+  m.num_packages_in_deps_dev,
   m.package_connection_count,
   m.developer_connection_count,
   m.developer_names;
