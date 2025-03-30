@@ -6,6 +6,7 @@ env:
   OSO_SUBGRAPH_OSO_CLICKHOUSE_CLICKHOUSE_PASSWORD: ${{ secrets.OSO_SUBGRAPH_OSO_CLICKHOUSE_CLICKHOUSE_PASSWORD }}
   OSO_SUBGRAPH_OSO_CLICKHOUSE_CLICKHOUSE_URL: ${{ vars.OSO_SUBGRAPH_OSO_CLICKHOUSE_CLICKHOUSE_URL }}
   OSO_SUBGRAPH_OSO_CLICKHOUSE_CLICKHOUSE_USERNAME: ${{ vars.OSO_SUBGRAPH_OSO_CLICKHOUSE_CLICKHOUSE_USERNAME }}
+  OSO_SUBGRAPH_OSO_CLICKHOUSE_HASURA_SERVICE_TOKEN_SECRET: ${{ secrets.OSO_SUBGRAPH_OSO_CLICKHOUSE_HASURA_SERVICE_TOKEN_SECRET }}
   OSO_SUBGRAPH_OSO_CLICKHOUSE_READ_URL: ${{ vars.OSO_SUBGRAPH_OSO_CLICKHOUSE_READ_URL }}
   OSO_SUBGRAPH_OSO_CLICKHOUSE_WRITE_URL: ${{ vars.OSO_SUBGRAPH_OSO_CLICKHOUSE_WRITE_URL }}
   #HASURA_GRAPHQL_ADMIN_SECRET: ${{ secrets.HASURA_GRAPHQL_ADMIN_SECRET }}
@@ -53,6 +54,29 @@ jobs:
         with:
           cache: "pnpm"
           node-version: "20.x"
+
+      - name: Load .env file
+        run: |
+          echo "HASURA_DDN_PAT=${HASURA_DDN_PAT}" > apps/hasura-clickhouse/.env && \
+            echo "OSO_SUBGRAPH_OSO_CLICKHOUSE_AUTHORIZATION_HEADER=${OSO_SUBGRAPH_OSO_CLICKHOUSE_AUTHORIZATION_HEADER}" >> apps/hasura-clickhouse/.env && \
+            echo "OSO_SUBGRAPH_OSO_CLICKHOUSE_CLICKHOUSE_PASSWORD=${OSO_SUBGRAPH_OSO_CLICKHOUSE_CLICKHOUSE_PASSWORD}" >> apps/hasura-clickhouse/.env && \
+            echo "OSO_SUBGRAPH_OSO_CLICKHOUSE_CLICKHOUSE_URL=${OSO_SUBGRAPH_OSO_CLICKHOUSE_CLICKHOUSE_URL}" >> apps/hasura-clickhouse/.env && \
+            echo "OSO_SUBGRAPH_OSO_CLICKHOUSE_CLICKHOUSE_USERNAME=${OSO_SUBGRAPH_OSO_CLICKHOUSE_CLICKHOUSE_USERNAME}" >> apps/hasura-clickhouse/.env && \
+            echo "OSO_SUBGRAPH_OSO_CLICKHOUSE_HASURA_SERVICE_TOKEN_SECRET=${OSO_SUBGRAPH_OSO_CLICKHOUSE_HASURA_SERVICE_TOKEN_SECRET}" >> apps/hasura-clickhouse/.env && \
+            echo "OSO_SUBGRAPH_OSO_CLICKHOUSE_OTEL_EXPORTER_OTLP_ENDPOINT=http://local.hasura.dev:4317" >> apps/hasura-clickhouse/.env && \
+            echo "OSO_SUBGRAPH_OSO_CLICKHOUSE_OTEL_SERVICE_NAME=oso_subgraph_oso_clickhouse" >> apps/hasura-clickhouse/.env && \
+            echo "OSO_SUBGRAPH_OSO_CLICKHOUSE_READ_URL=http://local.hasura.dev:8763" >> apps/hasura-clickhouse/.env && \
+            echo "OSO_SUBGRAPH_OSO_CLICKHOUSE_WRITE_URL=http://local.hasura.dev:8763" >> apps/hasura-clickhouse/.env
+
+      - name: Load .env.cloud file
+        run: |
+          echo "HASURA_DDN_PAT=${HASURA_DDN_PAT}" > apps/hasura-clickhouse/.env.cloud && \
+            echo "OSO_SUBGRAPH_OSO_CLICKHOUSE_AUTHORIZATION_HEADER=${OSO_SUBGRAPH_OSO_CLICKHOUSE_AUTHORIZATION_HEADER}" >> apps/hasura-clickhouse/.env.cloud && \
+            echo "OSO_SUBGRAPH_OSO_CLICKHOUSE_CLICKHOUSE_PASSWORD=${OSO_SUBGRAPH_OSO_CLICKHOUSE_CLICKHOUSE_PASSWORD}" >> apps/hasura-clickhouse/.env.cloud && \
+            echo "OSO_SUBGRAPH_OSO_CLICKHOUSE_CLICKHOUSE_URL=${OSO_SUBGRAPH_OSO_CLICKHOUSE_CLICKHOUSE_URL}" >> apps/hasura-clickhouse/.env.cloud && \
+            echo "OSO_SUBGRAPH_OSO_CLICKHOUSE_CLICKHOUSE_USERNAME=${OSO_SUBGRAPH_OSO_CLICKHOUSE_CLICKHOUSE_USERNAME}" >> apps/hasura-clickhouse/.env.cloud && \
+            echo "OSO_SUBGRAPH_OSO_CLICKHOUSE_READ_URL=${OSO_SUBGRAPH_OSO_CLICKHOUSE_READ_URL}" >> apps/hasura-clickhouse/.env.cloud && \
+            echo "OSO_SUBGRAPH_OSO_CLICKHOUSE_WRITE_URL=${OSO_SUBGRAPH_OSO_CLICKHOUSE_WRITE_URL}" >> apps/hasura-clickhouse/.env.cloud
 
       - name: Build
         run: pnpm build:hasura
