@@ -10,7 +10,7 @@ MODEL (
 );
 
 @DEF(gas_fees_threshold, 0.1);
-@DEF(measurement_date, DATE('2025-03-01'));
+@DEF(measurement_date, DATE('2025-02-28'));
 
 WITH eligible_builder_projects AS (
   SELECT
