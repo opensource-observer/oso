@@ -38,45 +38,21 @@ pnpm build
 
 ## Sync schema with Clickhouse
 
-(Optional) start a local Hasura instance.
-If you don't run it locally, the sync command will load an ephemeral container
-
-```bash
-pnpm start
-```
-
 Pull the latest Clickhouse schema
 
 ```bash
 pnpm sync
 ```
 
-This will introspect the database and store the entire schema in a configuration file.
+Note, under the hood, this will do the following steps:
 
-## Configure metadata
+- Introspect the database and store the entire schema in a configuration file (`pnpm metadata:introspect`)
+- Add all of the versioned models to the Hasura API (`pnpm metadata:add`)
+- Automatically update the Hasura metadata files to fit the OSO policy (`pnpm metadata:update`)
 
-To expose a model via the Hasura API,
-you need to explicitly add model metadata.
-
-To automatically add all versioned models, run
-
-```bash
-pnpm metadata:add
-```
-
-From here, you can modify any files to update the Hasura configuration.
-See the
-[Hasura docs](https://hasura.io/docs/3.0/) to learn more.
-
-We include a script for automatically modifying the metadata
-in `./src/cli.ts`. This will currently just make all models
-publicly available.
-
-To run this script
-
-```bash
-pnpm metadata:update
-```
+You either can script changes to the Hasura metadata through `./src/cli.ts`
+or manually modify any files to update the Hasura configuration.
+See the [Hasura docs](https://hasura.io/docs/3.0/) to learn more.
 
 ## Deploy
 
@@ -84,6 +60,15 @@ To apply the metadata configurations to Hasura cloud, run:
 
 ```bash
 pnpm run deploy
+```
+
+## Run locally
+
+Start a local Hasura instance.
+If you don't run it locally, the sync command will load an ephemeral container
+
+```bash
+pnpm start
 ```
 
 ## FAQ
