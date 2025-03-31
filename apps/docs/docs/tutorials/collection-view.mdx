@@ -6,7 +6,7 @@ sidebar_position: 1
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-Get a high level view of key metrics for a collection of projects. New to OSO? Check out our [Getting Started guide](../get-started/index.md) to set up your BigQuery or API access.
+Get a high level view of key metrics for a collection of projects. New to OSO? Check out our [Getting Started guide](../get-started/index.md) to set up your API access.
 
 :::tip
 All **collections** are defined as YAML files in [OSS Directory](https://github.com/opensource-observer/oss-directory). View our current collections [here](https://github.com/opensource-observer/oss-directory/tree/main/data/collections).
@@ -88,7 +88,7 @@ SELECT
   project_id,
   project_name
 FROM projects_by_collection_v1
-WHERE collection_name = 'gg-01'
+WHERE collection_name = 'ethereum-github'
 """
 df = client.to_pandas(query)
 ```
@@ -98,7 +98,7 @@ df = client.to_pandas(query)
 
 ```graphql
 query ProjectsInCollection {
-  oso_projectsByCollectionV1(where: { collectionName: { _eq: "gg-01" } }) {
+  oso_projectsByCollectionV1(where: { collectionName: { _eq: "ethereum-github" } }) {
     projectId
     projectName
   }
@@ -112,18 +112,23 @@ query ProjectsInCollection {
 
 ### Code Metrics
 
-Get code metrics for all projects in a collection:
+Get onchain metrics for all projects in a collection:
 
 <Tabs>
 <TabItem value="python" label="Python">
 
 ```python
 query = """
-SELECT cm.*
-FROM code_metrics_by_project_v1 AS cm
-JOIN projects_by_collection_v1 AS pbc
-  ON cm.project_id = pbc.project_id
-WHERE pbc.collection_name = 'ethereum-crypto-ecosystems'
+SELECT
+  tm.sample_date,
+  tm.amount
+FROM timeseries_metrics_by_collection_v0 AS tm
+JOIN collections_v1 AS c ON tm.collection_id = c.collection_id
+JOIN metrics_v0 AS m ON tm.metric_id = m.metric_id
+WHERE
+    c.collection_name = 'ethereum-github'
+    AND m.metric_name = 'GITHUB_commits_daily'
+ORDER BY 1
 """
 df = client.to_pandas(query)
 ```
@@ -132,19 +137,53 @@ df = client.to_pandas(query)
 <TabItem value="graphql" label="GraphQL">
 
 ```graphql
-query CodeMetricsQuery {
-  metrics: oso_codeMetricsByProjectV1 {
-    projectId
-    starCount
-    forkCount
-    commitCount6Months
-    contributorCount6Months
+query GetCollectionAndMetricIds(
+  $collectionName: String!,
+  $metricName: String!
+) {
+  oso_collectionsV1(where: { collectionName: { _eq: $collectionName } }) {
+    collectionId
   }
-  projects: oso_projectsByCollectionV1(
-    where: { collectionName: { _eq: "ethereum-crypto-ecosystems" } }
+  oso_metricsV0(where: { metricName: { _eq: $metricName } }) {
+    metricId
+  }
+}
+```
+
+Variables for the first two queries:
+```json
+{
+  "collectionName": "ethereum-github",
+  "metricName": "GITHUB_commits_daily"
+}
+```
+
+And then for the third query, using the IDs from the previous queries:
+
+```graphql
+query GetCollectionTimeseriesMetrics(
+  $collectionId: String!,
+  $metricId: String!
+) {
+  oso_timeseriesMetricsByCollectionV0(
+    where: {
+      collectionId: { _eq: $collectionId }
+      metricId: { _eq: $metricId }
+    }
+    order_by: { sampleDate: Asc }
   ) {
-    projectId
+    sampleDate
+    amount
   }
+}
+```
+
+Using the IDs from the previous queries:
+
+```json
+{
+  "collectionId": "r0SpWoQGlLPB/ZXdas1jtd8k3DwLmhy/l8hdzpJrU1g=",
+  "metricId": "0xy+em6XN6wQKZMqtspcmc49ze3hD4BofTyMG+PU2OE="
 }
 ```
 
@@ -160,11 +199,16 @@ Get onchain metrics for all projects in a collection:
 
 ```python
 query = """
-SELECT om.*
-FROM onchain_metrics_by_project_v1 AS om
-JOIN projects_by_collection_v1 AS pbc
-  ON om.project_id = pbc.project_id
-WHERE pbc.collection_name = 'optimism'
+SELECT
+  tm.sample_date,
+  tm.amount
+FROM timeseries_metrics_by_collection_v0 AS tm
+JOIN collections_v1 AS c ON tm.collection_id = c.collection_id
+JOIN metrics_v0 AS m ON tm.metric_id = m.metric_id
+WHERE
+    c.collection_name = 'op-retrofunding-4'
+    AND m.metric_name = 'BASE_gas_fees_weekly'
+ORDER BY 1
 """
 df = client.to_pandas(query)
 ```
@@ -173,56 +217,52 @@ df = client.to_pandas(query)
 <TabItem value="graphql" label="GraphQL">
 
 ```graphql
-query OnchainMetricsQuery {
-  metrics: oso_onchainMetricsByProjectV1 {
-    projectId
-    transactionCount6Months
-    gasFeesSum6Months
-    newAddressCount90Days
+query GetCollectionAndMetricIds(
+  $collectionName: String!,
+  $metricName: String!
+) {
+  oso_collectionsV1(where: { collectionName: { _eq: $collectionName } }) {
+    collectionId
   }
-  projects: oso_projectsByCollectionV1(
-    where: { collectionName: { _eq: "optimism" } }
-  ) {
-    projectId
+  oso_metricsV0(where: { metricName: { _eq: $metricName } }) {
+    metricId
   }
 }
 ```
 
-</TabItem>
-</Tabs>
-
-### Funding Metrics
-
-Get funding metrics for all projects in a collection:
-
-<Tabs>
-<TabItem value="python" label="Python">
-
-```python
-query = """
-SELECT fm.*
-FROM funding_metrics_by_project_v1 AS fm
-JOIN projects_by_collection_v1 AS pbc
-  ON fm.project_id = pbc.project_id
-WHERE pbc.collection_name = 'op-rpgf3'
-"""
-df = client.to_pandas(query)
+Variables for the first query:
+```json
+{
+  "collectionName": "op-retrofunding-4",
+  "metricName": "BASE_gas_fees_weekly"
+}
 ```
 
-</TabItem>
-<TabItem value="graphql" label="GraphQL">
+And then get the timeseries data:
 
 ```graphql
-query FundingMetricsQuery {
-  metrics: oso_fundingMetricsByProjectV1 {
-    projectId
-    totalFundingReceivedUsd6Months
-  }
-  projects: oso_projectsByCollectionV1(
-    where: { collectionName: { _eq: "op-rpgf3" } }
+query GetCollectionTimeseriesMetrics(
+  $collectionId: String!,
+  $metricId: String!
+) {
+  oso_timeseriesMetricsByCollectionV0(
+    where: {
+      collectionId: { _eq: $collectionId }
+      metricId: { _eq: $metricId }
+    }
+    order_by: { sampleDate: asc }
   ) {
-    projectId
+    sampleDate
+    amount
   }
+}
+```
+
+Using the IDs from the previous query:
+```json
+{
+  "collectionId": "<collection_id from first query>",
+  "metricId": "<metric_id from first query>"
 }
 ```
 
