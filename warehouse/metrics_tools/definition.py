@@ -163,15 +163,18 @@ class MetricQueryDef:
         raw_sql = self.raw_sql(queries_dir)
 
         dialect = self.dialect or default_dialect
-        return t.cast(
-            t.List[exp.Expression],
-            list(
-                filter(
-                    lambda a: a is not None,
-                    sqlglot.parse(raw_sql, dialect=dialect),
-                )
-            ),
-        )
+        try:
+            return t.cast(
+                t.List[exp.Expression],
+                list(
+                    filter(
+                        lambda a: a is not None,
+                        sqlglot.parse(raw_sql, dialect=dialect),
+                    )
+                ),
+            )
+        except Exception as e:
+            raise Exception(f"Failed to parse SQL for {self.ref} with error {e}") from e
 
     @contextmanager
     def query_vars(

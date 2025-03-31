@@ -7,6 +7,7 @@ from metrics_tools.definition import (
     to_actual_table_name,
 )
 from metrics_tools.utils import exp_literal_to_py_literal
+from metrics_tools.utils.glot import exp_to_int
 from sqlglot import expressions as exp
 from sqlmesh.core.dialect import MacroVar, parse_one
 from sqlmesh.core.macros import MacroEvaluator
@@ -15,8 +16,6 @@ from sqlmesh.core.macros import MacroEvaluator
 def relative_window_sample_date(
     evaluator: MacroEvaluator,
     base: exp.Expression,
-    window: exp.Expression,
-    unit: str | exp.Expression,
     relative_index: exp.Expression,
 ):
     """Gets the rolling window sample date of a different table. For now this is
@@ -29,6 +28,26 @@ def relative_window_sample_date(
     must be a valid thing to subtract from. Also note, the base should generally
     be the `@metrics_end` date.
     """
+
+    if time_aggregation := evaluator.locals.get("time_aggregation"):
+        if time_aggregation == "over_all_time":
+            raise Exception("Cannot use relative_window_sample_date over all time")
+        converted_relative_index = exp_to_int(relative_index)
+        return time_aggregation_bucket(
+            evaluator,
+            base,
+            time_aggregation,
+            converted_relative_index,
+        )
+
+    window = evaluator.locals.get("rolling_window", "")
+    unit = evaluator.locals.get("rolling_unit", "")
+
+    if not window or not unit:
+        raise Exception(
+            "relative_window_sample_date requires a rolling_window and rolling_unit"
+        )
+
     if isinstance(unit, exp.Literal):
         unit = t.cast(str, unit.this)
     elif isinstance(unit, exp.Expression):
@@ -43,11 +62,7 @@ def relative_window_sample_date(
             else:
                 unit = transformed.sql()
 
-    converted_relative_index = 0
-    if isinstance(relative_index, exp.Literal):
-        converted_relative_index = int(t.cast(int, relative_index.this))
-    elif isinstance(relative_index, exp.Neg):
-        converted_relative_index = int(relative_index.this.this) * -1
+    converted_relative_index = exp_to_int(relative_index)
     if converted_relative_index == 0:
         return base
     window_int = int(evaluator.eval_expression(window))

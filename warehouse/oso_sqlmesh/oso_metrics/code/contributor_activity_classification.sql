@@ -52,7 +52,7 @@ with
         from
             @metrics_peer_ref(
                 contributor_active_days,
-                window := @rolling_window, unit := @rolling_unit
+                time_aggregation := @time_aggregation
             ) as active
         inner join
             filtered_first_of as ffo
@@ -60,7 +60,6 @@ with
             and active.event_source = ffo.event_source
             and @metrics_entity_type_col('to_{entity_type}_id', table_alias := active)
             = @metrics_entity_type_col('to_{entity_type}_id', table_alias := ffo)
-        where active.metrics_sample_date = @metrics_end('DATE')
         group by
             metric,
             @metrics_entity_type_col('to_{entity_type}_id', table_alias := active),
@@ -142,7 +141,7 @@ with
         from
             @metrics_peer_ref(
                 contributor_active_days,
-                window := @rolling_window, unit := @rolling_unit
+                time_aggregation := @time_aggregation,
             ) as active
         inner join
             contributors_last_event as last_event
@@ -151,10 +150,9 @@ with
             and @metrics_entity_type_col('to_{entity_type}_id', table_alias := active)
             = @metrics_entity_type_col('to_{entity_type}_id', table_alias := last_event)
         where
-            active.metrics_sample_date = @metrics_end('DATE')
-            and last_event.last_event is not null
+            last_event.last_event is not null
             and last_event.last_event
-            <= @metrics_start('DATE') - interval @rolling_window day
+            <= @metrics_start('DATE') - interval @metrics_sample_interval_length(active.metrics_sample_date, 'day') day
         group by
             metric,
             @metrics_entity_type_col('to_{entity_type}_id', table_alias := active),
@@ -172,11 +170,11 @@ select
     count(distinct active.from_artifact_id) as amount
 from
     @metrics_peer_ref(
-        contributor_active_days, window := @rolling_window, unit := @rolling_unit
+        contributor_active_days, 
+        time_aggregation := @time_aggregation,
     ) as active
 where
-    active.amount / @rolling_window >= @full_time_ratio
-    and active.metrics_sample_date = @metrics_end('DATE')
+    active.amount / @metrics_sample_interval_length(active.metrics_sample_date, 'day') >= @full_time_ratio
 group by
     metric,
     from_artifact_id,
@@ -195,11 +193,11 @@ select
     count(distinct active.from_artifact_id) as amount
 from
     @metrics_peer_ref(
-        contributor_active_days, window := @rolling_window, unit := @rolling_unit
+        contributor_active_days,
+        time_aggregation := @time_aggregation,
     ) as active
 where
-    active.amount / @rolling_window < @full_time_ratio
-    and active.metrics_sample_date = @metrics_end('DATE')
+    active.amount / @metrics_sample_interval_length(active.metrics_sample_date, 'day') < @full_time_ratio
 group by
     metric,
     from_artifact_id,
@@ -241,9 +239,9 @@ select
     count(distinct active.from_artifact_id) as amount
 from
     @metrics_peer_ref(
-        contributor_active_days, window := @rolling_window, unit := @rolling_unit
+        contributor_active_days,
+        time_aggregation := @time_aggregation,
     ) as active
-where active.metrics_sample_date = @metrics_end('DATE')
 group by
     metric,
     from_artifact_id,
