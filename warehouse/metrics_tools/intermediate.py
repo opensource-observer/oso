@@ -1,10 +1,19 @@
 import typing as t
 
+import duckdb
 from metrics_tools.models.tools import create_basic_python_env
 from sqlglot import exp
 from sqlmesh import EngineAdapter
 from sqlmesh.core.dialect import MacroFunc, MacroVar, parse, parse_one
 from sqlmesh.core.macros import MacroEvaluator, MacroRegistry, RuntimeStage, macro
+
+
+def fake_engine_adapter() -> EngineAdapter:
+    """Return a fake engine adapter for testing purposes."""
+    from sqlmesh.core.engine_adapter.duckdb import DuckDBEngineAdapter
+
+    engine_adapter = DuckDBEngineAdapter(lambda: duckdb.connect())
+    return engine_adapter
 
 
 def run_macro_evaluator(
@@ -36,6 +45,8 @@ def run_macro_evaluator(
 
     if engine_adapter:
         evaluator.locals["engine_adapter"] = engine_adapter
+    else:
+        evaluator.locals["engine_adapter"] = fake_engine_adapter()
 
     result: t.List[exp.Expression] = []
     for part in parsed:

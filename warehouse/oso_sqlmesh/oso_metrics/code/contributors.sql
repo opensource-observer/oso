@@ -5,7 +5,7 @@ select
     '' as from_artifact_id,
     @metric_name() as metric,
     count(distinct events.from_artifact_id) as amount
-from oso.int_events_daily_to_artifact as events
+from oso.int_events_daily__github as events
 where
     events.event_type
     in ('COMMIT_CODE', 'ISSUE_OPENED', 'PULL_REQUEST_OPENED', 'PULL_REQUEST_MERGED')

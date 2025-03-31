@@ -38,33 +38,21 @@ pnpm build
 
 ## Sync schema with Clickhouse
 
-First, start a local Hasura instance. This is required to run the Clickhouse connector.
-
-```bash
-pnpm start
-```
-
-In a separate terminal, pull the latest Clickhouse schema
+Pull the latest Clickhouse schema
 
 ```bash
 pnpm sync
 ```
 
-## Configure metadata
+Note, under the hood, this will do the following steps:
 
-From here, you can modify any files to update the Hasura configuration.
-See the
-[Hasura docs](https://hasura.io/docs/3.0/) to learn more.
+- Introspect the database and store the entire schema in a configuration file (`pnpm metadata:introspect`)
+- Add all of the versioned models to the Hasura API (`pnpm metadata:add`)
+- Automatically update the Hasura metadata files to fit the OSO policy (`pnpm metadata:update`)
 
-We include a script for automatically modifying the metadata
-in `./src/cli.ts`. This will currently just make all models
-publicly available.
-
-To run this script
-
-```bash
-pnpm metadata:update
-```
+You either can script changes to the Hasura metadata through `./src/cli.ts`
+or manually modify any files to update the Hasura configuration.
+See the [Hasura docs](https://hasura.io/docs/3.0/) to learn more.
 
 ## Deploy
 
@@ -74,7 +62,18 @@ To apply the metadata configurations to Hasura cloud, run:
 pnpm run deploy
 ```
 
-This will output a build ID, which you'll need to apply as default:
+## Run locally
+
+Start a local Hasura instance.
+If you don't run it locally, the sync command will load an ephemeral container
+
+```bash
+pnpm start
+```
+
+## FAQ
+
+If you build and deploy a version without applying it as the default one, you'll need to do that explicitly
 
 ```bash
 ddn supergraph build apply BUILD_ID

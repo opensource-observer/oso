@@ -1,5 +1,5 @@
 MODEL (
-  name oso.int_events_to_project,
+  name oso.int_events_to_project__github,
   description 'All events to a project',
   kind INCREMENTAL_BY_TIME_RANGE (
     time_column time,
@@ -20,7 +20,7 @@ SELECT
   events.event_source,
   events.event_type,
   events.amount
-FROM oso.int_events AS events
+FROM oso.int_events__github AS events
 INNER JOIN oso.int_artifacts_by_project AS artifacts
   ON events.to_artifact_id = artifacts.artifact_id
 WHERE

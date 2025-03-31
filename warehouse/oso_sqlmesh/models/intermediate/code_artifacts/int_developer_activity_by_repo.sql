@@ -11,7 +11,7 @@ WITH developers AS (
   SELECT DISTINCT
     u.user_id AS developer_id,
     u.github_username AS developer_name
-  FROM oso.int_first_of_event_from_artifact AS e
+  FROM oso.int_first_of_event_from_artifact__github AS e
   JOIN oso.int_github_users AS u
     ON e.from_artifact_id = u.user_id
   WHERE
@@ -27,8 +27,8 @@ all_events AS (
     fe.event_type,
     fe.time AS first_event,
     le.time AS last_event
-  FROM oso.int_first_of_event_from_artifact AS fe
-  JOIN oso.int_last_of_event_from_artifact AS le
+  FROM oso.int_first_of_event_from_artifact__github AS fe
+  JOIN oso.int_last_of_event_from_artifact__github AS le
     ON fe.from_artifact_id = le.from_artifact_id
     AND fe.to_artifact_id = le.to_artifact_id
     AND fe.event_type = le.event_type

@@ -1,6 +1,7 @@
 ---
 title: BigQuery Data Transfer Service
-sidebar_position: 6
+sidebar_position: 2
+sidebar_class_name: hidden
 ---
 
 BigQuery comes with a built-in data transfer service

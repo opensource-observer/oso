@@ -194,7 +194,15 @@ class MetricQueryDef:
 
         assert_allowed_items_in_list(self.entity_types, VALID_ENTITY_TYPES)
         assert_allowed_items_in_list(
-            self.time_aggregations or [], ["daily", "weekly", "monthly", "yearly"]
+            self.time_aggregations or [],
+            [
+                "daily",
+                "weekly",
+                "monthly",
+                "quarterly",
+                "biannually",
+                "yearly",
+            ],
         )
 
     def resolve_table_name(

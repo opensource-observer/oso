@@ -1,13 +1,14 @@
 ---
 title: Write a Custom Dagster Asset
-sidebar_position: 6
+sidebar_position: 7
 ---
 
 Before writing a fully custom Dagster asset,
 we recommend you first see if the previous guides on
 [BigQuery datasets](./bigquery.md),
 [database replication](./database.md),
-[API crawling](./api-crawling/index.md)
+[Graph API crawling](./graphql-api.md),
+or [REST API crawling](./rest-api.md)
 may be a better fit.
 This guide should only be used in the rare cases where you cannot
 use the other methods.

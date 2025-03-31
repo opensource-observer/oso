@@ -5,7 +5,7 @@ select
     events.from_artifact_id as from_artifact_id,
     @metric_name() as metric,
     count(distinct events.bucket_day) amount
-from oso.int_events_daily_to_artifact as events
+from oso.int_events_daily__github as events
 where
     event_type in @activity_event_types
     and events.bucket_day between @metrics_start('DATE') and @metrics_end('DATE')

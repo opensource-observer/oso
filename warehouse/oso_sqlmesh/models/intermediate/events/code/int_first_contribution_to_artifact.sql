@@ -15,7 +15,7 @@ SELECT
   event_source,
   from_artifact_id,
   to_artifact_id
-FROM oso.int_first_of_event_from_artifact
+FROM oso.int_first_of_event_from_artifact__github
 WHERE
   event_type IN ('COMMIT_CODE', 'ISSUE_OPENED', 'PULL_REQUEST_OPENED', 'PULL_REQUEST_MERGED')
 GROUP BY

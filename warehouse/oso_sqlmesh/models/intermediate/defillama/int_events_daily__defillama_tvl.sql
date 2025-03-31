@@ -4,11 +4,11 @@ MODEL (
   kind full,
   dialect trino,
   partitioned_by (DAY("bucket_day"), "event_type"),
-  grain (bucket_day, event_type, event_source, from_artifact_id, to_artifact_id, project_id)
+  grain (bucket_day, event_type, event_source, from_artifact_id, to_artifact_id)
 );
 
 WITH all_tvl_events AS (
-  SELECT * FROM oso.stg__defillama_tvl_events
+  SELECT * FROM oso.stg_defillama__tvl_events
 ),
 
 ranked_tvl_events AS (
@@ -36,38 +36,20 @@ deduplicated_tvl_events AS (
   WHERE
     rn = 1
     AND NOT (
-      LOWER(slug) LIKE '%-borrowed'
-      OR LOWER(slug) LIKE '%-vesting'
-      OR LOWER(slug) LIKE '%-staking'
-      OR LOWER(slug) LIKE '%-pool2'
-      OR LOWER(slug) LIKE '%-treasury'
-      OR LOWER(slug) LIKE '%-cex'
+      LOWER(chain) LIKE '%-borrowed'
+      OR LOWER(chain) LIKE '%-vesting'
+      OR LOWER(chain) LIKE '%-staking'
+      OR LOWER(chain) LIKE '%-pool2'
+      OR LOWER(chain) LIKE '%-treasury'
+      OR LOWER(chain) LIKE '%-cex'
     )
-    AND LOWER(slug) NOT IN (
+    AND LOWER(chain) NOT IN (
       'treasury',
       'borrowed',
       'staking',
       'pool2',
       'polygon-bridge-&-staking'
     )
-),
-
-merged_tvl_events AS (
-  SELECT
-    bucket_day,
-    chain,
-    slug,
-    token,
-    tvl
-  FROM deduplicated_tvl_events
-  UNION ALL
-  SELECT
-    bucket_day::DATE as bucket_day,
-    chain,
-    slug,
-    token,
-    amount as tvl
-  FROM oso.int_events_daily__defillama_tvl_upload
 ),
 
 tvl_events_with_ids AS (
@@ -90,23 +72,19 @@ tvl_events_with_ids AS (
     LOWER(chain) AS from_artifact_namespace,
     LOWER(token) AS from_artifact_name,
     tvl::DOUBLE AS amount
-  FROM merged_tvl_events
+  FROM deduplicated_tvl_events
 )
 
--- This will create a row for each project associated with the artifact
 SELECT
-  abp.project_id,
-  tvl_events_with_ids.bucket_day,
-  tvl_events_with_ids.event_type,
-  tvl_events_with_ids.event_source,
-  tvl_events_with_ids.event_source_id,
-  tvl_events_with_ids.to_artifact_id,
-  tvl_events_with_ids.to_artifact_namespace,
-  tvl_events_with_ids.to_artifact_name,
-  tvl_events_with_ids.from_artifact_id,
-  tvl_events_with_ids.from_artifact_namespace,
-  tvl_events_with_ids.from_artifact_name,
-  tvl_events_with_ids.amount
+  bucket_day,
+  event_type,
+  event_source,
+  event_source_id,
+  to_artifact_id,
+  to_artifact_namespace,
+  to_artifact_name,
+  from_artifact_id,
+  from_artifact_namespace,
+  from_artifact_name,
+  amount
 FROM tvl_events_with_ids
-INNER JOIN oso.artifacts_by_project_v1 AS abp
-  ON tvl_events_with_ids.to_artifact_id = abp.artifact_id

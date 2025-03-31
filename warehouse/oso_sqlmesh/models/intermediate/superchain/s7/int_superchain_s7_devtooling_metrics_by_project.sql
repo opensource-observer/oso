@@ -6,7 +6,7 @@ MODEL (
 );
 
 @DEF(min_package_connection_count, 3);
-@DEF(min_developer_connection_count, 10);
+@DEF(min_developer_connection_count, 5);
 
 WITH devtooling_projects AS (
   SELECT
@@ -46,9 +46,9 @@ project_metrics AS (
     proj.display_name,
     dp.created_at,
     dp.updated_at,
-    dp.star_count,
-    dp.fork_count,
-    dp.num_packages_in_deps_dev,
+    COALESCE(dp.star_count, 0) AS star_count,
+    COALESCE(dp.fork_count, 0) AS fork_count,
+    COALESCE(dp.num_packages_in_deps_dev, 0) AS num_packages_in_deps_dev,
     COALESCE(pkgs.package_connection_count, 0) AS package_connection_count,
     COALESCE(devs.developer_connection_count, 0) AS developer_connection_count,
     COALESCE(devs.developer_names, CAST(ARRAY[] AS ARRAY(VARCHAR))) AS developer_names,
@@ -71,9 +71,10 @@ SELECT
   m.project_name,
   m.display_name,
   m.is_eligible,
-  m.project_id AS oso_project_id,
-  m.star_count AS project_star_count,
-  m.fork_count AS project_fork_count,
+  m.project_id,
+  m.star_count,
+  m.fork_count,
+  m.num_packages_in_deps_dev AS num_packages_in_deps_dev,
   m.package_connection_count,
   m.developer_connection_count,
   filter(
@@ -101,6 +102,7 @@ GROUP BY
   m.project_id,
   m.star_count,
   m.fork_count,
+  m.num_packages_in_deps_dev,
   m.package_connection_count,
   m.developer_connection_count,
   m.developer_names;

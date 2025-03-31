@@ -20,7 +20,7 @@ events AS (
       AS star_count,
     COUNT(DISTINCT CASE WHEN event_type = 'FORKED' THEN from_artifact_id END)
       AS fork_count
-  FROM oso.int_events_to_project
+  FROM oso.int_events_to_project__github
   WHERE
     "time" >= @event_date_threshold
     AND event_type IN ('STARRED', 'FORKED')

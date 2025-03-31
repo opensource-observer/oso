@@ -13,13 +13,15 @@ timeseries_metrics(
     schema="oso",
     model_prefix="timeseries",
     timeseries_sources=[
-        "int_events_daily_to_artifact",
-        "int_events_daily_to_artifact_with_lag",
         "int_issue_event_time_deltas",
-        "int_first_of_event_from_artifact",
+        "int_first_of_event_from_artifact__github",
         "int_events_daily__blockchain",
         "int_events_daily__4337",
         "int_events_daily__defillama_tvl",
+        "int_events_daily__github",
+        "int_events_daily__github_with_lag",
+        "int_events_daily__funding",
+        "int_events_daily__dependencies",
     ],
     metric_queries={
         # This will automatically generate star counts for the given roll up periods.
