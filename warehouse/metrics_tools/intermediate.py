@@ -127,13 +127,10 @@ def run_intermediate_macro_evaluator(
         if not node.this.startswith("$$INTERMEDIATE"):
             return node
         if node.this == "$$INTERMEDIATE_MACRO_VAR":
-            print("restoring macro var???")
             return MacroVar(this=node.expressions[0].this)
         elif node.this == "$$INTERMEDIATE_MACRO_FUNC":
-            print("restoring macro func???")
             # Restore all recursive expressions
             recursed_transform = node.expressions[0].transform(restore_intermediate)
-            print(recursed_transform.sql(dialect="duckdb"))
             return MacroFunc(this=recursed_transform)
         else:
             raise Exception(f"Unknown anonymous intermediate reference `{node.this}`")
