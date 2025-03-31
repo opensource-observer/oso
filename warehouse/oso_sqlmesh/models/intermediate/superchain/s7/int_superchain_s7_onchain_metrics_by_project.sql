@@ -155,7 +155,8 @@ defillama_tvl AS (
     chain,
     bucket_month AS sample_date,
     'average_tvl_monthly' AS metric_name,
-    AVG(amount) AS amount
+    SUM(amount) / DAY(DATE_ADD('MONTH', 1, bucket_month) - INTERVAL '1' DAY)
+      AS amount
   FROM defillama_tvl_events
   GROUP BY 1, 2, 3
 ),
