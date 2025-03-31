@@ -1,6 +1,8 @@
 MODEL (
   name oso.int_artifacts_by_project,
-  kind FULL
+  kind FULL,
+  dialect trino,
+  grain (project_id, artifact_id)
 );
 
 SELECT DISTINCT
@@ -10,12 +12,10 @@ SELECT DISTINCT
   artifacts.artifact_namespace,
   artifacts.artifact_name,
   artifacts.artifact_url,
-  artifacts.project_id,
+  projects.project_id,
   projects.project_source,
   projects.project_namespace,
   projects.project_name
 FROM oso.int_all_artifacts AS artifacts
-LEFT JOIN oso.int_projects AS projects
+JOIN oso.int_projects AS projects
   ON artifacts.project_id = projects.project_id
-WHERE
-  NOT artifacts.project_id IS NULL
