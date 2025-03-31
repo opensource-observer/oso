@@ -15,7 +15,7 @@ MODEL (
   grain (sample_date, project_id)
 );
 
-@DEF(measurement_date, DATE('2025-03-01'));
+@DEF(measurement_date, DATE('2025-02-28'));
 @DEF(lookback_days, 180);
 @DEF(transactions_threshold, 1000);
 @DEF(gas_fees_threshold, 0.0);
