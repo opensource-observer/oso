@@ -26,7 +26,7 @@ SELECT
   @chain_id_to_chain_name(chain_id) AS artifact_source,
   '' AS artifact_namespace,
   deployer_address AS artifact_name,
-  '' AS artifact_url,
+  deployer_address AS artifact_url,
   'DEPLOYER' AS artifact_type
 FROM latest_data
 WHERE rn = 1
