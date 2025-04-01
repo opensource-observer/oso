@@ -22,7 +22,6 @@ timeseries_metrics(
         "int_events_daily__github",
         "int_events_daily__github_with_lag",
         "int_events_daily__funding",
-        "int_events_daily__dependencies",
     ],
     metric_queries={
         # This will automatically generate star counts for the given roll up periods.
@@ -517,25 +516,25 @@ timeseries_metrics(
             ),
             additional_tags=["data_category:funding"],
         ),
-        "dependencies": MetricQueryDef(
-            ref="deps/dependencies.sql",
-            time_aggregations=[
-                "daily",
-                "weekly",
-                "monthly",
-                "quarterly",
-                "biannually",
-                "yearly",
-            ],
-            entity_types=["artifact", "project", "collection"],
-            over_all_time=True,
-            metadata=MetricMetadata(
-                display_name="Dependencies",
-                description="Metrics related to dependencies",
-            ),
-            additional_tags=[
-                "data_category:dependencies",
-            ],
-        ),
+        # "dependencies": MetricQueryDef(
+        #     ref="deps/dependencies.sql",
+        #     time_aggregations=[
+        #         "daily",
+        #         "weekly",
+        #         "monthly",
+        #         "quarterly",
+        #         "biannually",
+        #         "yearly",
+        #     ],
+        #     entity_types=["artifact", "project", "collection"],
+        #     over_all_time=True,
+        #     metadata=MetricMetadata(
+        #         display_name="Dependencies",
+        #         description="Metrics related to dependencies",
+        #     ),
+        #     additional_tags=[
+        #         "data_category:dependencies",
+        #     ],
+        # ),
     },
 )
