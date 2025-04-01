@@ -10,6 +10,7 @@ MODEL (
   cron '@daily',
   partitioned_by (DAY("time"), "event_type"),
   grain (time, event_type, event_source, from_artifact_id, to_artifact_id)
+  enabled false,
 );
 
 @DEF(event_source_name, 'DEPS_DEV');

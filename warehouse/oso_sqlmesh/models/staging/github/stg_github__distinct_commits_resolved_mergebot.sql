@@ -8,6 +8,7 @@ MODEL (
     lookback 7
   ),
   start @github_incremental_start,
+  dialect duckdb,
   partitioned_by DAY(created_at)
 );
 
