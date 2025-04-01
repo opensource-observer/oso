@@ -490,7 +490,6 @@ timeseries_metrics(
                     "PULL_REQUEST_OPENED",
                     "PULL_REQUEST_MERGED",
                 ],
-                "debug": 1,
             },
             time_aggregations=["monthly", "quarterly", "biannually", "yearly"],
             entity_types=["artifact", "project", "collection"],

@@ -20,11 +20,15 @@ from sqlmesh.core.config.connection import (
 dotenv.load_dotenv()
 
 config = Config(
-    default_test_connection=DuckDBConnectionConfig(
-        concurrent_tasks=1,
-        database=os.environ.get("SQLMESH_DUCKDB_LOCAL_PATH"),
+    default_test_connection=(
+        DuckDBConnectionConfig(
+            concurrent_tasks=1,
+            database=os.environ.get("SQLMESH_DUCKDB_LOCAL_PATH"),
+        )
+        if os.environ.get("SQLMESH_DEBUG_TESTS")
+        else None
     ),
-    model_defaults=ModelDefaultsConfig(dialect="duckdb", start="2024-08-01"),
+    model_defaults=ModelDefaultsConfig(dialect="trino", start="2024-08-01"),
     gateways={
         "local": GatewayConfig(
             connection=DuckDBConnectionConfig(

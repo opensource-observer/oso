@@ -212,10 +212,13 @@ class TimeseriesMetrics:
                 ],
             )
 
+            vars = query._source.vars or {}
+
             try:
                 rendered_query = transformer.transform(
                     [query.query_expression],
                     dialect=query._source.dialect or self.default_dialect,
+                    debug=vars.get("debug", 0) == 1,
                 )
             except Exception as e:
                 logger.error(f"Failed to render query {query.table_name(ref)}: {e}")
@@ -726,7 +729,7 @@ class TimeseriesMetrics:
         # Apparently expressions also cannot be serialized.
         del config["rendered_query"]
         config["rendered_query_str"] = query_config["rendered_query"].sql(
-            dialect="duckdb"
+            dialect=query_config["dialect"] or self.default_dialect,
         )
         return config
 

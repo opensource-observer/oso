@@ -154,7 +154,7 @@ with
             and last_event.last_event
             <= DATE_ADD(
               'DAY', 
-              -1 * @metrics_sample_interval_length(active.metrics_sample_date, 'day'),
+              (-1 * @metrics_sample_interval_length(active.metrics_sample_date, 'day')),
               @metrics_start('DATE')
             )
         group by
