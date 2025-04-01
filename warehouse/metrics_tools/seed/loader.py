@@ -1,0 +1,55 @@
+from typing import Protocol
+
+from aiotrino.dbapi import Connection, connect
+from metrics_tools.seed.sql import (
+    sql_create_table_from_pydantic_schema,
+    sql_insert_from_pydantic_instances,
+)
+from pydantic import BaseModel
+
+
+class DestinationLoader(Protocol):
+    async def close(self): ...
+
+    async def create_schema(self, name: str): ...
+
+    async def create_table(self, name: str, base: type[BaseModel]): ...
+
+    async def insert(self, table_name: str, instances: list[BaseModel]): ...
+
+
+class TrinoLoader(DestinationLoader):
+    conn: Connection
+
+    def __init__(self):
+        self.conn = connect(
+            host="localhost",
+            port=8080,
+            user="user",
+            catalog="bigquery",
+        )
+
+    async def close(self):
+        await self.conn.close()
+
+    async def create_schema(self, name: str):
+        cur = await self.conn.cursor()
+        await cur.execute(
+            f"""
+        CREATE SCHEMA IF NOT EXISTS bigquery.{name}
+        """
+        )
+        await cur.fetchall()
+
+    async def create_table(self, name: str, base: type[BaseModel]):
+        schema = base.model_json_schema()
+        sql = sql_create_table_from_pydantic_schema(name, schema, "trino")
+        cur = await self.conn.cursor()
+        await cur.execute(sql)
+        await cur.fetchall()
+
+    async def insert(self, table_name: str, instances: list[BaseModel]):
+        sql = sql_insert_from_pydantic_instances(table_name, instances, "trino")
+        cur = await self.conn.cursor()
+        await cur.execute(sql)
+        await cur.fetchall()

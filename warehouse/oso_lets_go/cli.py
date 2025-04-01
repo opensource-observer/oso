@@ -26,6 +26,7 @@ from metrics_tools.intermediate import run_macro_evaluator
 from metrics_tools.local.loader import LocalTrinoDestinationLoader
 from metrics_tools.local.manager import LocalWarehouseManager
 from metrics_tools.runner import render_metrics_query
+from metrics_tools.seed.seed import db_seed
 from metrics_tools.transfer.gcs import GCSTimeOrderedStorage
 from metrics_tools.transfer.trino import TrinoExporter
 from metrics_tools.utils.logging import setup_module_logging
@@ -735,6 +736,12 @@ def reset(
     manager = LocalWarehouseManager.from_config(local_manager_config)
 
     manager.reset(full_reset=full_reset)
+
+
+@local.command(name="seed")
+@click.pass_context
+def seed_db(ctx: click.Context):
+    asyncio.run(db_seed())
 
 
 @cli.command()
