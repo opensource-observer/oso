@@ -3,9 +3,9 @@ MODEL (
   kind FULL,
   tags (
     'export',
-    'model_type:full',
-    'model_category:sqlmesh',
-    'model_stage:mart'
+    'model_type=full',
+    'model_category=sqlmesh',
+    'model_stage=mart'
   )
 );
 

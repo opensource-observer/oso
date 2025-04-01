@@ -4,9 +4,9 @@ MODEL (
   partitioned_by sample_date,
   tags (
     'export',
-    'model_type:full',
-    'model_category:metrics',
-    'model_stage:mart'
+    'model_type=full',
+    'model_category=metrics',
+    'model_stage=mart'
   )
 );
 

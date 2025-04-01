@@ -372,10 +372,10 @@ class TimeseriesMetrics:
                 },
                 enabled=self._raw_options.get("enabled", True),
                 tags=[
-                    "model_type:view",
-                    "model_category:metrics",
-                    "model_stage:intermediate",
-                    "model_metrics_type:timeseries_union",
+                    "model_type=view",
+                    "model_category=metrics",
+                    "model_stage=intermediate",
+                    "model_metrics_type=timeseries_union",
                 ],
             )(join_all_of_entity_type)
 
@@ -405,9 +405,9 @@ class TimeseriesMetrics:
                 },
                 enabled=self._raw_options.get("enabled", True),
                 tags=[
-                    "model_type:view",
-                    "model_category:metrics",
-                    "model_stage:intermediate",
+                    "model_type=view",
+                    "model_category=metrics",
+                    "model_stage=intermediate",
                 ],
             )(join_all_of_entity_type)
 
@@ -459,10 +459,10 @@ class TimeseriesMetrics:
                 columns=constants.METRIC_METADATA_COLUMNS,
                 enabled=self._raw_options.get("enabled", True),
                 tags=[
-                    "model_type:incremental",
-                    "model_category:metrics",
-                    "model_stage:intermediate",
-                    "model_metrics_type:metrics_metadata",
+                    "model_type=incremental",
+                    "model_category=metrics",
+                    "model_stage=intermediate",
+                    "model_metrics_type=metrics_metadata",
                 ],
             )(map_metadata_to_metric)
 
@@ -479,10 +479,10 @@ class TimeseriesMetrics:
             columns=constants.METRIC_METADATA_COLUMNS,
             enabled=self._raw_options.get("enabled", True),
             tags=[
-                "model_type:incremental",
-                "model_category:metrics",
-                "model_stage:intermediate",
-                "model_metrics_type:metrics_metadata",
+                "model_type=incremental",
+                "model_category=metrics",
+                "model_stage=intermediate",
+                "model_metrics_type=metrics_metadata",
             ],
         )(aggregate_metadata)
 
@@ -573,10 +573,10 @@ class TimeseriesMetrics:
             override_module_path=override_module_path,
             override_path=override_path,
             tags=[
-                "model_type:incremental",
-                "model_category:metrics",
-                "model_stage:intermediate",
-                "model_metrics_type:rolling_window",
+                "model_type=incremental",
+                "model_category=metrics",
+                "model_stage=intermediate",
+                "model_metrics_type=rolling_window",
                 *query_config["additional_tags"],
             ],
         )(generated_rolling_query_proxy)
@@ -664,14 +664,14 @@ class TimeseriesMetrics:
 
         if not query_config["incremental"]:
             kind = {"name": ModelKindName.FULL}
-            model_type_tag = "model_type:full"
+            model_type_tag = "model_type=full"
         else:
             kind = {
                 "name": ModelKindName.INCREMENTAL_BY_TIME_RANGE,
                 "time_column": "metrics_sample_date",
                 **kind_options,
             }
-            model_type_tag = "model_type:incremental"
+            model_type_tag = "model_type=incremental"
 
         return MacroOverridingModel(
             name=f"{self.schema}.{query_config['table_name']}",
@@ -690,9 +690,9 @@ class TimeseriesMetrics:
             override_path=override_path,
             tags=[
                 model_type_tag,
-                "model_category:metrics",
-                "model_stage:intermediate",
-                "model_metrics_type:time_aggregation",
+                "model_category=metrics",
+                "model_stage=intermediate",
+                "model_metrics_type=time_aggregation",
                 *query_config["additional_tags"],
             ],
         )(generated_query)
@@ -738,10 +738,10 @@ class TimeseriesMetrics:
             override_module_path=override_module_path,
             override_path=override_path,
             tags=[
-                "model_type:full",
-                "model_category:metrics",
-                "model_stage:intermediate",
-                "model_metrics_type:point_in_time",
+                "model_type=full",
+                "model_category=metrics",
+                "model_stage=intermediate",
+                "model_metrics_type=point_in_time",
             ],
         )(generated_query)
 
