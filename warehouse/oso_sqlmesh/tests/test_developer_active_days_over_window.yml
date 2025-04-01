@@ -1,8 +1,8 @@
-test_developer_active_days_to_artifact_over_30_day_window_with_cumulative_active_days:
+test_developer_active_days_to_artifact_monthly_with_cumulative_active_days:
   # Tests rolling count of active days when the user is active 4 of the 5 days
   # in the test interval
   gateway: local
-  model: oso.developer_active_days_to_artifact_over_30_day_window
+  model: oso.developer_active_days_to_artifact_monthly
   vars:
     start: 2024-01-01
     end: 2024-01-05
@@ -34,38 +34,20 @@ test_developer_active_days_to_artifact_over_30_day_window_with_cumulative_active
         bucket_day: 2024-01-04
         amount: 20
   outputs:
-    partial: true
     query:
       partial: true
       rows:
       - to_artifact_id: repo_0
         from_artifact_id: dev_0
         metrics_sample_date: 2024-01-01
-        amount: 1
-      - to_artifact_id: repo_0
-        from_artifact_id: dev_0
-        metrics_sample_date: 2024-01-02
-        amount: 2
-      - to_artifact_id: repo_0
-        from_artifact_id: dev_0
-        metrics_sample_date: 2024-01-03
-        amount: 3
-      - to_artifact_id: repo_0
-        from_artifact_id: dev_0
-        metrics_sample_date: 2024-01-04
-        amount: 4
-      - to_artifact_id: repo_0
-        from_artifact_id: dev_0
-        metrics_sample_date: 2024-01-05
         amount: 4
 
-test_developer_active_days_to_artifact_over_30_day_window_with_1_active_day:
-  # Tests rolling count of active days when the user is active 1 in the test interval
+test_developer_active_days_to_artifact_monthly_with_1_active_day:
   gateway: local
-  model: oso.developer_active_days_to_artifact_over_30_day_window
+  model: oso.developer_active_days_to_artifact_monthly
   vars:
     start: 2024-01-01
-    end: 2024-01-03
+    end: 2024-01-31
   inputs:
     oso.int_events_daily__github:
       rows:
@@ -75,20 +57,17 @@ test_developer_active_days_to_artifact_over_30_day_window_with_1_active_day:
         event_type: COMMIT_CODE
         bucket_day: 2024-01-01
         amount: 10
+      - to_artifact_id: repo_0
+        from_artifact_id: dev_0
+        event_source: SOURCE_PROVIDER
+        event_type: COMMIT_CODE
+        bucket_day: 2024-01-02
+        amount: 10
   outputs:
-    partial: true
     query:
       partial: true
       rows:
       - to_artifact_id: repo_0
         from_artifact_id: dev_0
         metrics_sample_date: 2024-01-01
-        amount: 1
-      - to_artifact_id: repo_0
-        from_artifact_id: dev_0
-        metrics_sample_date: 2024-01-02
-        amount: 1
-      - to_artifact_id: repo_0
-        from_artifact_id: dev_0
-        metrics_sample_date: 2024-01-03
-        amount: 1
+        amount: 2

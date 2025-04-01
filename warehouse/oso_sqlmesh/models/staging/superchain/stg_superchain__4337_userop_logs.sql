@@ -17,7 +17,8 @@ MODEL (
     sender_address,
     paymaster_address,
     contract_address
-  )
+  ),
+  dialect duckdb,
 );
 
 SELECT

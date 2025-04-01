@@ -8,5 +8,5 @@ select
 from oso.int_issue_event_time_deltas
 where
     event_type = 'PULL_REQUEST_MERGED'
-    and `time` between @metrics_start('DATE') and @metrics_end('DATE')
+    and "time" between @metrics_start('DATE') and @metrics_end('DATE')
 group by 1, metric, from_artifact_id, to_artifact_id, event_source,

@@ -8,11 +8,12 @@ from sqlmesh.core.dialect import MacroFunc, MacroVar, parse, parse_one
 from sqlmesh.core.macros import MacroEvaluator, MacroRegistry, RuntimeStage, macro
 
 
-def fake_engine_adapter() -> EngineAdapter:
+def fake_engine_adapter(dialect: str) -> EngineAdapter:
     """Return a fake engine adapter for testing purposes."""
     from sqlmesh.core.engine_adapter.duckdb import DuckDBEngineAdapter
 
     engine_adapter = DuckDBEngineAdapter(lambda: duckdb.connect())
+    engine_adapter.dialect = dialect
     return engine_adapter
 
 
@@ -23,6 +24,7 @@ def run_macro_evaluator(
     runtime_stage: RuntimeStage = RuntimeStage.LOADING,
     engine_adapter: t.Optional[EngineAdapter] = None,
     default_catalog: t.Optional[str] = None,
+    dialect: str = "duckdb",
 ):
     if isinstance(query, str):
         parsed = parse(query)
@@ -46,7 +48,7 @@ def run_macro_evaluator(
     if engine_adapter:
         evaluator.locals["engine_adapter"] = engine_adapter
     else:
-        evaluator.locals["engine_adapter"] = fake_engine_adapter()
+        evaluator.locals["engine_adapter"] = fake_engine_adapter(dialect)
 
     result: t.List[exp.Expression] = []
     for part in parsed:
@@ -137,5 +139,9 @@ def run_intermediate_macro_evaluator(
         intermediate_evaluation = [intermediate_evaluation]
     final: t.List[exp.Expression] = []
     for int_expression in intermediate_evaluation:
-        final.append(int_expression.transform(restore_intermediate))
+        restored = int_expression.transform(restore_intermediate)
+        if "debug" in variables:
+            print("debugging intermediate macro evaluation")
+            print(restored.sql(dialect=variables.get("debug_dialect", "duckdb")))
+        final.append(restored)
     return final
