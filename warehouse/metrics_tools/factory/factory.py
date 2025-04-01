@@ -611,17 +611,42 @@ class TimeseriesMetrics:
         ]
 
         kind_common = {
-            "batch_concurrency": 1,
+            "batch_concurrency": 3,
             "forward_only": True,
         }
         kind_options = {"lookback": 10, **kind_common}
         partitioned_by = ("day(metrics_sample_date)",)
 
         if time_aggregation == "weekly":
-            kind_options = {"lookback": 10, **kind_common}
+            kind_options = {
+                "lookback": 10,
+                "batch_size": 365,
+                **kind_common,
+            }
         if time_aggregation == "monthly":
-            kind_options = {"lookback": 1, **kind_common}
+            kind_options = {
+                "lookback": 1,
+                "batch_size": 12,
+                **kind_common,
+            }
             partitioned_by = ("month(metrics_sample_date)",)
+        if time_aggregation == "quarterly":
+            kind_options = {
+                "lookback": 6,
+                "batch_size": 12,
+                **kind_common,
+            }
+            partitioned_by = ("month(metrics_sample_date)",)
+        if time_aggregation == "biannually":
+            kind_options = {"lookback": 12, "batch_size": 12, **kind_common}
+            partitioned_by = ("month(metrics_sample_date)",)
+        if time_aggregation == "yearly":
+            kind_options = {
+                "lookback": 1,
+                "batch_size": 1,
+                **kind_common,
+            }
+            partitioned_by = ("year(metrics_sample_date)",)
 
         grain = [
             "metric",
