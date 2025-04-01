@@ -1,6 +1,7 @@
 MODEL (
   name oso.stg_github__pull_request_merge_events,
-  kind FULL
+  kind FULL,
+  dialect duckdb,
 );
 
 WITH pull_request_events AS (

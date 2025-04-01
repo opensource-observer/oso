@@ -46,6 +46,14 @@ def exp_literal_to_py_literal(glot_literal: exp.Expression) -> t.Any:
     return glot_literal.this
 
 
+def exp_to_int(glot_expression: exp.Expression) -> int:
+    if isinstance(glot_expression, exp.Literal):
+        return int(glot_expression.this)
+    elif isinstance(glot_expression, exp.Neg):
+        return int(glot_expression.this.this) * -1
+    raise ValueError(f"Invalid expression type: {glot_expression}")
+
+
 def str_or_expressions(query: str | t.List[exp.Expression]) -> t.List[exp.Expression]:
     if not isinstance(query, list):
         return parse(query)

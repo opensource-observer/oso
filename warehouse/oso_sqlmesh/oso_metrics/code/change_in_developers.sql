@@ -1,64 +1,30 @@
-WITH latest AS (
-  SELECT classification.metrics_sample_date,
-    classification.event_source,
-    @metrics_entity_type_col(
-      'to_{entity_type}_id',
-      table_alias := classification
-    ),
-    classification.metric,
-    classification.amount
-  FROM @metrics_peer_ref(
-      developer_classifications,
-      window := @rolling_window,
-      unit := @rolling_unit,
-    ) as classification
-  WHERE classification.metrics_sample_date = @relative_window_sample_date(
-      @metrics_end('DATE'),
-      @rolling_window,
-      @rolling_unit,
-      0
-    )
-),
-previous AS (
-  SELECT classification.metrics_sample_date,
-    classification.event_source,
-    @metrics_entity_type_col(
-      'to_{entity_type}_id',
-      table_alias := classification,
-      include_column_alias := true,
-    ),
-    classification.metric,
-    classification.amount
-  FROM @metrics_peer_ref(
-      developer_classifications,
-      window := @rolling_window,
-      unit := @rolling_unit
-    ) as classification
-  WHERE classification.metrics_sample_date = @relative_window_sample_date(
-      @metrics_end('DATE'),
-      @rolling_window,
-      @rolling_unit,
-      -1
-    )
-)
-select @metrics_end('DATE') as metrics_sample_date,
-  COALESCE(latest.event_source, previous.event_source) as event_source,
-  @metrics_entity_type_alias(
-    COALESCE(
-      @metrics_entity_type_col('to_{entity_type}_id', table_alias := latest),
-      @metrics_entity_type_col('to_{entity_type}_id', table_alias := previous)
-    ),
+select classification.metrics_sample_date,
+  classification.event_source,
+  @metrics_entity_type_col(
     'to_{entity_type}_id',
+    table_alias := classification
   ),
   '' as from_artifact_id,
-  @metrics_name(
-    CONCAT(
-      'change_in_',
-      COALESCE(previous.metric, latest.metric)
-    )
-  ) as metric,
-  latest.amount - previous.amount as amount
-FROM previous
-  LEFT JOIN latest ON latest.event_source = previous.event_source
-  AND @metrics_entity_type_col('to_{entity_type}_id', table_alias := latest) = @metrics_entity_type_col('to_{entity_type}_id', table_alias := previous)
-  AND latest.metric = previous.metric
+  CASE WHEN classification.metric LIKE 'active_%' THEN @metric_name('change_in_active_developers')
+    WHEN classification.metric LIKE 'full_%' THEN @metric_name('change_in_full_time_contributors')
+    WHEN classification.metric LIKE 'part_%' THEN @metric_name('change_in_part_time_contributors')
+  END as metric,
+  LAG(classification.amount) OVER (
+    PARTITION BY @metrics_entity_type_col(
+      'to_{entity_type}_id',
+      table_alias := classification
+    ), classification.event_source, classification.metric
+    ORDER BY classification.metrics_sample_date
+  ) - classification.amount as amount
+
+from @metrics_peer_ref(
+    contributor_classifications,
+    time_aggregation := @time_aggregation,
+  ) as classification
+-- group by classification.metrics_sample_date,
+--   @metrics_entity_type_col(
+--     'to_{entity_type}_id',
+--     table_alias := classification
+--   ),
+--   classification.event_source,
+--   5

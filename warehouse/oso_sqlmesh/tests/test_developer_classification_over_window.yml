@@ -1,13 +1,13 @@
-test_developer_classifications_to_artifact_over_30_day_window_full_time_devs:
+test_developer_classifications_to_artifact_monthly_full_time_devs:
   # Tests rolling count of active days when the user is active 4 of the 5 days
   # in the test interval
   gateway: local
-  model: oso.developer_classifications_to_artifact_over_30_day_window
+  model: oso.developer_classifications_to_artifact_monthly
   vars:
     start: 2024-01-01
-    end: 2024-01-01
+    end: 2024-01-31
   inputs:
-    oso.developer_active_days_to_artifact_over_30_day_window:
+    oso.developer_active_days_to_artifact_monthly:
       rows:
       - to_artifact_id: repo_0
         from_artifact_id: dev_0
@@ -22,18 +22,17 @@ test_developer_classifications_to_artifact_over_30_day_window_full_time_devs:
         metric: developer_active_days
         amount: 30
   outputs:
-    partial: true
     query:
       partial: true
       rows:
       - metrics_sample_date: 2024-01-01
         to_artifact_id: repo_0
         from_artifact_id: ""
-        metric: full_time_developers_over_30_day_window
+        metric: full_time_developers_monthly
         amount: 2
       - metrics_sample_date: 2024-01-01
         to_artifact_id: repo_0
         from_artifact_id: ""
-        metric: active_developers_over_30_day_window
+        metric: active_developers_monthly
         amount: 2
 

@@ -2,13 +2,14 @@ import os
 
 from dotenv import load_dotenv
 from metrics_tools.definition import MetricMetadata
-from metrics_tools.factory import MetricQueryDef, RollingConfig, timeseries_metrics
+from metrics_tools.factory import MetricQueryDef, timeseries_metrics
 
 # Annoyingly sqlmesh doesn't load things in an expected order but we want to be
 # able to override the start date for local testing and things
 load_dotenv()
 
 timeseries_metrics(
+    default_dialect="trino",
     start=os.environ.get("SQLMESH_TIMESERIES_METRICS_START", "2015-01-01"),
     schema="oso",
     model_prefix="timeseries",
@@ -34,12 +35,14 @@ timeseries_metrics(
         # `oso.timeseries_stars_to_{entity_type}_{time_aggregation}`
         "stars": MetricQueryDef(
             ref="code/stars.sql",
-            time_aggregations=["daily", "weekly", "monthly"],
-            rolling=RollingConfig(
-                windows=[30, 90, 180],
-                unit="day",
-                cron="@daily",
-            ),
+            time_aggregations=[
+                "daily",
+                "weekly",
+                "monthly",
+                "quarterly",
+                "biannually",
+                "yearly",
+            ],
             entity_types=["artifact", "project", "collection"],
             over_all_time=True,
             metadata=MetricMetadata(
@@ -50,13 +53,14 @@ timeseries_metrics(
         ),
         "commits": MetricQueryDef(
             ref="code/commits.sql",
-            time_aggregations=["daily", "weekly", "monthly"],
-            rolling=RollingConfig(
-                windows=[180],
-                unit="day",
-                cron="@daily",
-                slots=8,
-            ),
+            time_aggregations=[
+                "daily",
+                "weekly",
+                "monthly",
+                "quarterly",
+                "biannually",
+                "yearly",
+            ],
             over_all_time=True,
             metadata=MetricMetadata(
                 display_name="Commits",
@@ -76,7 +80,14 @@ timeseries_metrics(
         ),
         "releases": MetricQueryDef(
             ref="code/releases.sql",
-            time_aggregations=["daily", "weekly", "monthly"],
+            time_aggregations=[
+                "daily",
+                "weekly",
+                "monthly",
+                "quarterly",
+                "biannually",
+                "yearly",
+            ],
             over_all_time=True,
             metadata=MetricMetadata(
                 display_name="Releases",
@@ -86,7 +97,14 @@ timeseries_metrics(
         ),
         "forks": MetricQueryDef(
             ref="code/forks.sql",
-            time_aggregations=["daily", "weekly", "monthly"],
+            time_aggregations=[
+                "daily",
+                "weekly",
+                "monthly",
+                "quarterly",
+                "biannually",
+                "yearly",
+            ],
             over_all_time=True,
             metadata=MetricMetadata(
                 display_name="Forks",
@@ -96,7 +114,14 @@ timeseries_metrics(
         ),
         "repositories": MetricQueryDef(
             ref="code/repositories.sql",
-            time_aggregations=["daily", "weekly", "monthly"],
+            time_aggregations=[
+                "daily",
+                "weekly",
+                "monthly",
+                "quarterly",
+                "biannually",
+                "yearly",
+            ],
             over_all_time=True,
             metadata=MetricMetadata(
                 display_name="Repositories",
@@ -106,7 +131,14 @@ timeseries_metrics(
         ),
         "active_contracts": MetricQueryDef(
             ref="blockchain/active_contracts.sql",
-            time_aggregations=["daily", "weekly", "monthly"],
+            time_aggregations=[
+                "daily",
+                "weekly",
+                "monthly",
+                "quarterly",
+                "biannually",
+                "yearly",
+            ],
             over_all_time=True,
             metadata=MetricMetadata(
                 display_name="Active Contracts",
@@ -116,7 +148,14 @@ timeseries_metrics(
         ),
         "contributors": MetricQueryDef(
             ref="code/contributors.sql",
-            time_aggregations=["daily", "weekly", "monthly"],
+            time_aggregations=[
+                "daily",
+                "weekly",
+                "monthly",
+                "quarterly",
+                "biannually",
+                "yearly",
+            ],
             over_all_time=True,
             metadata=MetricMetadata(
                 display_name="Contributors",
@@ -126,7 +165,14 @@ timeseries_metrics(
         ),
         "active_developers": MetricQueryDef(
             ref="code/active_developers.sql",
-            time_aggregations=["daily", "weekly", "monthly"],
+            time_aggregations=[
+                "daily",
+                "weekly",
+                "monthly",
+                "quarterly",
+                "biannually",
+                "yearly",
+            ],
             over_all_time=True,
             metadata=MetricMetadata(
                 display_name="Active Developers",
@@ -145,12 +191,12 @@ timeseries_metrics(
             vars={
                 "activity_event_types": ["COMMIT_CODE"],
             },
-            rolling=RollingConfig(
-                windows=[30, 90, 180],
-                unit="day",
-                cron="@daily",  # This determines how often this is calculated
-                slots=32,
-            ),
+            time_aggregations=[
+                "monthly",
+                "quarterly",
+                "biannually",
+                "yearly",
+            ],
             entity_types=["artifact", "project", "collection"],
             is_intermediate=True,
             additional_tags=["data_category:code"],
@@ -165,13 +211,12 @@ timeseries_metrics(
                     "PULL_REQUEST_MERGED",
                 ],
             },
-            rolling=RollingConfig(
-                windows=[30, 90, 180],
-                unit="day",
-                cron="@daily",  # This determines how often this is calculated
-                model_batch_size=90,
-                slots=32,
-            ),
+            time_aggregations=[
+                "monthly",
+                "quarterly",
+                "biannually",
+                "yearly",
+            ],
             entity_types=["artifact", "project", "collection"],
             is_intermediate=True,
             additional_tags=["data_category:code"],
@@ -181,12 +226,12 @@ timeseries_metrics(
             vars={
                 "full_time_ratio": 10 / 30,
             },
-            rolling=RollingConfig(
-                windows=[30, 90, 180],
-                unit="day",
-                cron="@monthly",
-                slots=32,
-            ),
+            time_aggregations=[
+                "monthly",
+                "quarterly",
+                "biannually",
+                "yearly",
+            ],
             metadata=MetricMetadata(
                 display_name="Developer Classifications",
                 description="Metrics related to developer activity classifications",
@@ -204,12 +249,12 @@ timeseries_metrics(
                     "PULL_REQUEST_MERGED",
                 ],
             },
-            rolling=RollingConfig(
-                windows=[30, 90, 180],
-                unit="day",
-                cron="@monthly",
-                slots=32,
-            ),
+            time_aggregations=[
+                "monthly",
+                "quarterly",
+                "biannually",
+                "yearly",
+            ],
             metadata=MetricMetadata(
                 display_name="Contributor Classifications",
                 description="Metrics related to contributor activity classifications",
@@ -231,12 +276,12 @@ timeseries_metrics(
         # ),
         "change_in_developer_activity": MetricQueryDef(
             ref="code/change_in_developers.sql",
-            rolling=RollingConfig(
-                windows=[30, 90, 180],
-                unit="day",
-                cron="@monthly",
-                slots=32,
-            ),
+            time_aggregations=[
+                "monthly",
+                "quarterly",
+                "biannually",
+                "yearly",
+            ],
             metadata=MetricMetadata(
                 display_name="Change in Developer Activity",
                 description="Metrics related to change in developer activity",
@@ -245,13 +290,14 @@ timeseries_metrics(
         ),
         "opened_pull_requests": MetricQueryDef(
             ref="code/prs_opened.sql",
-            time_aggregations=["daily", "weekly", "monthly"],
-            rolling=RollingConfig(
-                windows=[180],
-                unit="day",
-                cron="@daily",
-                slots=8,
-            ),
+            time_aggregations=[
+                "daily",
+                "weekly",
+                "monthly",
+                "quarterly",
+                "biannually",
+                "yearly",
+            ],
             entity_types=["artifact", "project", "collection"],
             over_all_time=True,
             metadata=MetricMetadata(
@@ -262,13 +308,14 @@ timeseries_metrics(
         ),
         "merged_pull_requests": MetricQueryDef(
             ref="code/prs_merged.sql",
-            time_aggregations=["daily", "weekly", "monthly"],
-            rolling=RollingConfig(
-                windows=[180],
-                unit="day",
-                cron="@daily",
-                slots=8,
-            ),
+            time_aggregations=[
+                "daily",
+                "weekly",
+                "monthly",
+                "quarterly",
+                "biannually",
+                "yearly",
+            ],
             entity_types=["artifact", "project", "collection"],
             over_all_time=True,
             metadata=MetricMetadata(
@@ -279,13 +326,14 @@ timeseries_metrics(
         ),
         "opened_issues": MetricQueryDef(
             ref="code/issues_opened.sql",
-            time_aggregations=["daily", "weekly", "monthly"],
-            rolling=RollingConfig(
-                windows=[180],
-                unit="day",
-                cron="@daily",
-                slots=8,
-            ),
+            time_aggregations=[
+                "daily",
+                "weekly",
+                "monthly",
+                "quarterly",
+                "biannually",
+                "yearly",
+            ],
             entity_types=["artifact", "project", "collection"],
             over_all_time=True,
             metadata=MetricMetadata(
@@ -296,13 +344,14 @@ timeseries_metrics(
         ),
         "closed_issues": MetricQueryDef(
             ref="code/issues_closed.sql",
-            time_aggregations=["daily", "weekly", "monthly"],
-            rolling=RollingConfig(
-                windows=[180],
-                unit="day",
-                cron="@daily",
-                slots=8,
-            ),
+            time_aggregations=[
+                "daily",
+                "weekly",
+                "monthly",
+                "quarterly",
+                "biannually",
+                "yearly",
+            ],
             entity_types=["artifact", "project", "collection"],
             over_all_time=True,
             metadata=MetricMetadata(
@@ -313,12 +362,10 @@ timeseries_metrics(
         ),
         "avg_prs_time_to_merge": MetricQueryDef(
             ref="code/prs_time_to_merge.sql",
-            rolling=RollingConfig(
-                windows=[90, 180],
-                unit="day",
-                cron="@daily",
-                slots=8,
-            ),
+            time_aggregations=[
+                "quarterly",
+                "biannually",
+            ],
             entity_types=["artifact", "project", "collection"],
             over_all_time=True,
             metadata=MetricMetadata(
@@ -329,12 +376,10 @@ timeseries_metrics(
         ),
         "avg_time_to_first_response": MetricQueryDef(
             ref="code/time_to_first_response.sql",
-            rolling=RollingConfig(
-                windows=[90, 180],
-                unit="day",
-                cron="@daily",
-                slots=8,
-            ),
+            time_aggregations=[
+                "quarterly",
+                "biannually",
+            ],
             entity_types=["artifact", "project", "collection"],
             over_all_time=True,
             metadata=MetricMetadata(
@@ -348,13 +393,14 @@ timeseries_metrics(
             vars={
                 "activity_event_types": ["CONTRACT_INVOCATION"],
             },
-            rolling=RollingConfig(
-                windows=[30, 90, 180],
-                unit="day",
-                cron="@daily",
-                slots=32,
-            ),
-            time_aggregations=["daily", "monthly"],
+            time_aggregations=[
+                "daily",
+                "weekly",
+                "monthly",
+                "quarterly",
+                "biannually",
+                "yearly",
+            ],
             over_all_time=True,
             metadata=MetricMetadata(
                 display_name="Active Addresses Aggregation",
@@ -364,13 +410,14 @@ timeseries_metrics(
         ),
         "gas_fees": MetricQueryDef(
             ref="blockchain/gas_fees.sql",
-            time_aggregations=["daily", "weekly", "monthly"],
-            rolling=RollingConfig(
-                windows=[30, 90, 180],
-                unit="day",
-                cron="@daily",
-                slots=16,
-            ),
+            time_aggregations=[
+                "daily",
+                "weekly",
+                "monthly",
+                "quarterly",
+                "biannually",
+                "yearly",
+            ],
             entity_types=["artifact", "project", "collection"],
             over_all_time=True,
             metadata=MetricMetadata(
@@ -381,13 +428,14 @@ timeseries_metrics(
         ),
         "transactions": MetricQueryDef(
             ref="blockchain/transactions.sql",
-            time_aggregations=["daily", "weekly", "monthly"],
-            rolling=RollingConfig(
-                windows=[30, 90, 180],
-                unit="day",
-                cron="@daily",
-                slots=32,
-            ),
+            time_aggregations=[
+                "daily",
+                "weekly",
+                "monthly",
+                "quarterly",
+                "biannually",
+                "yearly",
+            ],
             entity_types=["artifact", "project", "collection"],
             over_all_time=True,
             metadata=MetricMetadata(
@@ -398,13 +446,14 @@ timeseries_metrics(
         ),
         "contract_invocations": MetricQueryDef(
             ref="blockchain/contract_invocations.sql",
-            time_aggregations=["daily", "weekly", "monthly"],
-            rolling=RollingConfig(
-                windows=[30, 90, 180],
-                unit="day",
-                cron="@daily",
-                slots=32,
-            ),
+            time_aggregations=[
+                "daily",
+                "weekly",
+                "monthly",
+                "quarterly",
+                "biannually",
+                "yearly",
+            ],
             entity_types=["artifact", "project", "collection"],
             over_all_time=True,
             metadata=MetricMetadata(
@@ -415,7 +464,14 @@ timeseries_metrics(
         ),
         "defillama_tvl": MetricQueryDef(
             ref="blockchain/defillama_tvl.sql",
-            time_aggregations=["daily", "weekly", "monthly"],
+            time_aggregations=[
+                "daily",
+                "weekly",
+                "monthly",
+                "quarterly",
+                "biannually",
+                "yearly",
+            ],
             incremental=False,
             entity_types=["artifact", "project", "collection"],
             over_all_time=True,
@@ -435,12 +491,7 @@ timeseries_metrics(
                     "PULL_REQUEST_MERGED",
                 ],
             },
-            rolling=RollingConfig(
-                windows=[30, 90, 180],
-                unit="day",
-                cron="@monthly",
-                slots=32,
-            ),
+            time_aggregations=["monthly", "quarterly", "biannually", "yearly"],
             entity_types=["artifact", "project", "collection"],
             metadata=MetricMetadata(
                 display_name="Contributors Lifecycle",
@@ -450,13 +501,14 @@ timeseries_metrics(
         ),
         "funding_received": MetricQueryDef(
             ref="funding/funding_received.sql",
-            time_aggregations=["daily", "weekly", "monthly"],
-            rolling=RollingConfig(
-                windows=[180],
-                unit="day",
-                cron="@daily",
-                slots=8,
-            ),
+            time_aggregations=[
+                "daily",
+                "weekly",
+                "monthly",
+                "quarterly",
+                "biannually",
+                "yearly",
+            ],
             entity_types=["artifact", "project", "collection"],
             over_all_time=True,
             metadata=MetricMetadata(
@@ -467,13 +519,14 @@ timeseries_metrics(
         ),
         "dependencies": MetricQueryDef(
             ref="deps/dependencies.sql",
-            time_aggregations=["daily", "weekly", "monthly"],
-            rolling=RollingConfig(
-                windows=[180],
-                unit="day",
-                cron="@daily",
-                slots=16,
-            ),
+            time_aggregations=[
+                "daily",
+                "weekly",
+                "monthly",
+                "quarterly",
+                "biannually",
+                "yearly",
+            ],
             entity_types=["artifact", "project", "collection"],
             over_all_time=True,
             metadata=MetricMetadata(
@@ -485,5 +538,4 @@ timeseries_metrics(
             ],
         ),
     },
-    default_dialect="clickhouse",
 )

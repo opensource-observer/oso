@@ -103,6 +103,7 @@ def render_metrics_query(
     engine_adapter: t.Optional[EngineAdapter] = None,
     additional_macros: t.Optional[MacroRegistry] = None,
     runtime_stage: RuntimeStage = RuntimeStage.EVALUATING,
+    dialect: str = "duckdb",
 ):
     variables = variables or {}
 
@@ -132,6 +133,7 @@ def render_metrics_query(
         variables=variables,
         engine_adapter=engine_adapter,
         runtime_stage=runtime_stage,
+        dialect=dialect,
     )
     return evaluated_query
 

@@ -57,6 +57,7 @@ class PeerMetricDependencyRef(t.TypedDict):
     slots: t.NotRequired[int]
     start: t.NotRequired[TimeLike]
     end: t.NotRequired[TimeLike]
+    dialect: t.NotRequired[str]
 
 
 class MetricModelRef(t.TypedDict):
@@ -163,15 +164,18 @@ class MetricQueryDef:
         raw_sql = self.raw_sql(queries_dir)
 
         dialect = self.dialect or default_dialect
-        return t.cast(
-            t.List[exp.Expression],
-            list(
-                filter(
-                    lambda a: a is not None,
-                    sqlglot.parse(raw_sql, dialect=dialect),
-                )
-            ),
-        )
+        try:
+            return t.cast(
+                t.List[exp.Expression],
+                list(
+                    filter(
+                        lambda a: a is not None,
+                        sqlglot.parse(raw_sql, dialect=dialect),
+                    )
+                ),
+            )
+        except Exception as e:
+            raise Exception(f"Failed to parse SQL for {self.ref} with error {e}") from e
 
     @contextmanager
     def query_vars(
@@ -344,6 +348,8 @@ class MetricQuery:
                         unit=self._source.rolling.get("unit"),
                         cron=self._source.rolling.get("cron"),
                     )
+                    if self._source.dialect:
+                        ref["dialect"] = self._source.dialect
                     model_batch_size = self._source.rolling.get("model_batch_size")
                     slots = self._source.rolling.get("slots")
                     if model_batch_size:
@@ -352,22 +358,24 @@ class MetricQuery:
                         ref["slots"] = slots
                     refs.append(ref)
             for time_aggregation in self._source.time_aggregations or []:
-                refs.append(
-                    PeerMetricDependencyRef(
-                        name=name,
-                        entity_type=entity,
-                        time_aggregation=time_aggregation,
-                    )
+                ref = PeerMetricDependencyRef(
+                    name=name,
+                    entity_type=entity,
+                    time_aggregation=time_aggregation,
                 )
+                if self._source.dialect:
+                    ref["dialect"] = self._source.dialect
+                refs.append(ref)
             # if we actually enabled over all time, we'll compute that as well
             if self._source.over_all_time:
-                refs.append(
-                    PeerMetricDependencyRef(
-                        name=name,
-                        entity_type=entity,
-                        time_aggregation="over_all_time",
-                    )
+                ref = PeerMetricDependencyRef(
+                    name=name,
+                    entity_type=entity,
+                    time_aggregation="over_all_time",
                 )
+                if self._source.dialect:
+                    ref["dialect"] = self._source.dialect
+                refs.append(ref)
         return refs
 
     @property

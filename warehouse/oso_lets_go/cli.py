@@ -153,9 +153,10 @@ def render(
             chosen_metric["ref"],
             variables=parsed_vars,
             runtime_stage=RuntimeStage.EVALUATING,
+            dialect=dialect,
         )
         print("")
-        print("### FULL RENDERING")
+        print(f"### FULL RENDERING ({dialect})")
         print(expr[0].sql(dialect=dialect, pretty=True))
 
 

@@ -41,7 +41,13 @@ def generated_query(
             "@TO_UNIX_TIMESTAMP": to_unix_timestamp,
         },
     ):
-        result = evaluator.transform(parse_one(rendered_query_str))
+        dialect = ref.get(
+            "dialect", evaluator.dialect or evaluator.engine_adapter.dialect
+        )
+        parse_args = {}
+        if dialect:
+            parse_args["dialect"] = dialect
+        result = evaluator.transform(parse_one(rendered_query_str, **parse_args))
     return result
 
 

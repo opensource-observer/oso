@@ -10,11 +10,9 @@ select active.metrics_sample_date,
   COUNT(DISTINCT active.from_artifact_id) as amount
 from @metrics_peer_ref(
     developer_active_days,
-    window := @rolling_window,
-    unit := @rolling_unit
+    time_aggregation := @time_aggregation,
   ) as active
-where active.amount / @rolling_window >= @full_time_ratio
-  and active.metrics_sample_date = @metrics_end('DATE')
+where active.amount / @metrics_sample_interval_length(active.metrics_sample_date, 'day') >= @full_time_ratio
 group by metric,
   from_artifact_id,
   @metrics_entity_type_col(
@@ -36,11 +34,9 @@ select active.metrics_sample_date,
   COUNT(DISTINCT active.from_artifact_id) as amount
 from @metrics_peer_ref(
     developer_active_days,
-    window := @rolling_window,
-    unit := @rolling_unit
+    time_aggregation := @time_aggregation,
   ) as active
-where active.amount / @rolling_window < @full_time_ratio
-  and active.metrics_sample_date = @metrics_end('DATE')
+where active.amount / @metrics_sample_interval_length(active.metrics_sample_date, 'day') < @full_time_ratio
 group by metric,
   from_artifact_id,
   @metrics_entity_type_col('to_{entity_type}_id', table_alias := active),
@@ -59,10 +55,8 @@ select active.metrics_sample_date,
   COUNT(DISTINCT active.from_artifact_id) as amount
 from @metrics_peer_ref(
     developer_active_days,
-    window := @rolling_window,
-    unit := @rolling_unit
+    time_aggregation := @time_aggregation,
   ) as active
-where active.metrics_sample_date = @metrics_end('DATE')
 group by metric,
   from_artifact_id,
   @metrics_entity_type_col('to_{entity_type}_id', table_alias := active),
