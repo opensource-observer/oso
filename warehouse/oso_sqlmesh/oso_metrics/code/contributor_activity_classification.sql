@@ -12,7 +12,7 @@ with
         -- from_artifact_id,
         -- to_artifact_id
         select
-            `time`,
+            "time",
             event_source,
             from_artifact_id,
             @metrics_entity_type_col(
@@ -34,7 +34,7 @@ with
                 'to_{entity_type}_id', table_alias := fo, include_column_alias := true
             )
         from first_of_activity_to_entity as fo
-        where `time` between @metrics_start('DATE') and @metrics_end('DATE')
+        where "fo"."time" between @metrics_start('DATE') and @metrics_end('DATE')
     ),
     new_contributors as (
         -- Only new contributors. we do this by joining on the filtered first of events
@@ -152,7 +152,11 @@ with
         where
             last_event.last_event is not null
             and last_event.last_event
-            <= @metrics_start('DATE') - interval @metrics_sample_interval_length(active.metrics_sample_date, 'day') day
+            <= DATE_ADD(
+              'DAY', 
+              -1 * @metrics_sample_interval_length(active.metrics_sample_date, 'day'),
+              @metrics_start('DATE')
+            )
         group by
             metric,
             @metrics_entity_type_col('to_{entity_type}_id', table_alias := active),

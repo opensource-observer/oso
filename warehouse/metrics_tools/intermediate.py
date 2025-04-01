@@ -141,6 +141,7 @@ def run_intermediate_macro_evaluator(
     for int_expression in intermediate_evaluation:
         restored = int_expression.transform(restore_intermediate)
         if "debug" in variables:
-            print(restored.sql(dialect="duckdb"))
+            print("debugging intermediate macro evaluation")
+            print(restored.sql(dialect=variables.get("debug_dialect", "duckdb")))
         final.append(restored)
     return final

@@ -9,6 +9,7 @@ from metrics_tools.factory import MetricQueryDef, timeseries_metrics
 load_dotenv()
 
 timeseries_metrics(
+    default_dialect="trino",
     start=os.environ.get("SQLMESH_TIMESERIES_METRICS_START", "2015-01-01"),
     schema="oso",
     model_prefix="timeseries",
@@ -538,5 +539,4 @@ timeseries_metrics(
             ],
         ),
     },
-    default_dialect="clickhouse",
 )

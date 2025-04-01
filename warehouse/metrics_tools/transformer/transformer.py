@@ -17,9 +17,11 @@ class SQLTransformer:
     transforms: t.List[Transform]
     disable_qualify: bool = False
 
-    def transform(self, query: str | t.List[exp.Expression]):
+    def transform(
+        self, query: str | t.List[exp.Expression], dialect: str | None = None
+    ):
         if isinstance(query, str):
-            transformed = parse(query)
+            transformed = parse(query, default_dialect=dialect)
         else:
             transformed = query
         # Qualify all
@@ -29,4 +31,7 @@ class SQLTransformer:
 
         for transform in self.transforms:
             transformed = transform(transformed)
+            # print("transformed")
+            # for expr in transformed:
+            #     print(expr.sql(dialect="trino"))
         return transformed

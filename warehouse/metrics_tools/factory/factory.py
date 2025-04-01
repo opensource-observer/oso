@@ -60,6 +60,7 @@ class MetricQueryConfig(t.TypedDict):
     metadata: t.Optional[MetricMetadata]
     incremental: bool
     additional_tags: t.List[str]
+    dialect: t.Optional[str]
 
 
 class MetricsCycle(Exception):
@@ -124,6 +125,11 @@ class TimeseriesMetrics:
         self._raw_options = raw_options
         self._rendered = False
         self._rendered_queries: t.Dict[str, MetricQueryConfig] = {}
+
+    @property
+    def default_dialect(self):
+        """The default dialect to use for rendered queries"""
+        return self._raw_options.get("default_dialect", "duckdb")
 
     @property
     def schema(self):
@@ -206,7 +212,14 @@ class TimeseriesMetrics:
                 ],
             )
 
-            rendered_query = transformer.transform([query.query_expression])
+            try:
+                rendered_query = transformer.transform(
+                    [query.query_expression],
+                    dialect=query._source.dialect or self.default_dialect,
+                )
+            except Exception as e:
+                logger.error(f"Failed to render query {query.table_name(ref)}: {e}")
+                raise e
 
             assert rendered_query is not None
             assert len(rendered_query) == 1
@@ -219,6 +232,7 @@ class TimeseriesMetrics:
                 metadata=query._source.metadata,
                 incremental=query._source.incremental,
                 additional_tags=query._source.additional_tags or [],
+                dialect=query._source.dialect,
             )
         return queries
 
@@ -344,7 +358,7 @@ class TimeseriesMetrics:
                 name=f"oso.timeseries_metrics_to_{entity_type}",
                 is_sql=True,
                 kind="VIEW",
-                dialect="trino",
+                dialect=self.default_dialect,
                 start=self._raw_options["start"],
                 columns={
                     k: constants.METRICS_COLUMNS_BY_ENTITY[entity_type][k]
@@ -377,7 +391,7 @@ class TimeseriesMetrics:
                 name=f"oso.key_metrics_to_{entity_type}",
                 is_sql=True,
                 kind="VIEW",
-                dialect="trino",
+                dialect=self.default_dialect,
                 start="1970-01-01",
                 columns={
                     k: constants.METRICS_COLUMNS_BY_ENTITY[entity_type][k]
@@ -438,7 +452,7 @@ class TimeseriesMetrics:
                 name=f"oso.metrics_metadata_{metric_key}",
                 is_sql=True,
                 kind="FULL",
-                dialect="trino",
+                dialect=self.default_dialect,
                 columns=constants.METRIC_METADATA_COLUMNS,
                 enabled=self._raw_options.get("enabled", True),
                 tags=[
@@ -458,7 +472,7 @@ class TimeseriesMetrics:
             name="oso.metrics_metadata",
             is_sql=True,
             kind="FULL",
-            dialect="trino",
+            dialect=self.default_dialect,
             columns=constants.METRIC_METADATA_COLUMNS,
             enabled=self._raw_options.get("enabled", True),
             tags=[
@@ -634,7 +648,7 @@ class TimeseriesMetrics:
         return MacroOverridingModel(
             name=f"{self.schema}.{query_config['table_name']}",
             kind=kind,
-            dialect="trino",
+            dialect=query_config["dialect"] or self.default_dialect,
             is_sql=True,
             columns=columns,
             grain=grain,
@@ -685,7 +699,7 @@ class TimeseriesMetrics:
         return MacroOverridingModel(
             name=f"{self.schema}.{query_config['table_name']}",
             kind=ModelKindName.FULL,
-            dialect="trino",
+            dialect=query_config["dialect"] or self.default_dialect,
             is_sql=True,
             columns=columns,
             grain=grain,
