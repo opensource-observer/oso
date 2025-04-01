@@ -17,26 +17,17 @@ All **projects** are defined as YAML files in [OSS Directory](https://github.com
 Before running any analysis, you'll need to set up your environment:
 
 <Tabs>
-<TabItem value="sql" label="SQL">
-
-If you haven't already, subscribe to OSO public datasets in BigQuery by clicking the "Subscribe" button on our [Datasets page](../integrate/datasets/#oso-production-pipeline).
-
-You can run all queries in this guide directly in the [BigQuery console](https://console.cloud.google.com/bigquery).
-
-</TabItem>
 <TabItem value="python" label="Python">
 
 Start your Python notebook with the following:
 
 ```python
-from google.cloud import bigquery
-import pandas as pd
 import os
+import pandas as pd
+from pyoso import Client
 
-os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = # PATH TO YOUR CREDENTIALS JSON
-GCP_PROJECT = # YOUR GCP PROJECT NAME
-
-client = bigquery.Client(GCP_PROJECT)
+OSO_API_KEY = os.environ['OSO_API_KEY']
+client = Client(api_key=OSO_API_KEY)
 ```
 
 For more details on setting up Python notebooks, see our guide on [writing Python notebooks](../guides/notebooks/index.mdx).
@@ -54,30 +45,18 @@ The following queries should work if you copy-paste them into our [GraphQL sandb
 Search for projects by name:
 
 <Tabs>
-<TabItem value="sql" label="SQL">
-
-```sql
-select
-  project_id,
-  project_name,
-  display_name
-from `oso_production.projects_v1`
-where lower(display_name) like lower('%merkle%')
-```
-
-</TabItem>
 <TabItem value="python" label="Python">
 
 ```python
 query = """
-  select
-    project_id,
-    project_name,
-    display_name
-  from `oso_production.projects_v1`
-  where lower(display_name) like lower('%merkle%')
+SELECT
+  project_id,
+  project_name,
+  display_name
+FROM projects_v1
+WHERE lower(display_name) LIKE lower('%merkle%')
 """
-df = client.query(query).to_dataframe()
+df = client.to_pandas(query)
 ```
 
 </TabItem>
@@ -85,7 +64,7 @@ df = client.query(query).to_dataframe()
 
 ```graphql
 query FindProject {
-  oso_projectsV1(where: { display_name: { _ilike: "%merkle%" } }) {
+  oso_projectsV1(where: { displayName: { _ilike: "%merkle%" } }) {
     projectId
     projectName
     displayName
@@ -101,36 +80,21 @@ query FindProject {
 Find projects associated with specific artifacts:
 
 <Tabs>
-<TabItem value="sql" label="SQL">
-
-```sql
-select
-  project_id,
-  project_name,
-  artifact_namespace as github_owner,
-  artifact_name as github_repo
-from `oso_production.artifacts_by_project_v1`
-where
-  artifact_source = 'GITHUB'
-  and artifact_namespace like '%uniswap%'
-```
-
-</TabItem>
 <TabItem value="python" label="Python">
 
 ```python
 query = """
-  select
-    project_id,
-    project_name,
-    artifact_namespace as github_owner,
-    artifact_name as github_repo
-  from `oso_production.artifacts_by_project_v1`
-  where
-    artifact_source = 'GITHUB'
-    and artifact_namespace like '%uniswap%'
+SELECT
+  project_id,
+  project_name,
+  artifact_namespace as github_owner,
+  artifact_name as github_repo
+FROM artifacts_by_project_v1
+WHERE
+  artifact_source = 'GITHUB'
+  AND artifact_namespace LIKE '%uniswap%'
 """
-df = client.query(query).to_dataframe()
+df = client.to_pandas(query)
 ```
 
 </TabItem>
@@ -160,53 +124,87 @@ query FindProjectByArtifact {
 Get code metrics for a specific project:
 
 <Tabs>
-<TabItem value="sql" label="SQL">
-
-```sql
-select
-  project_name,
-  display_name,
-  star_count,
-  fork_count,
-  commit_count_6_months,
-  contributor_count_6_months
-from `oso_production.code_metrics_by_project_v1`
-where project_name = 'opensource-observer'
-```
-
-</TabItem>
 <TabItem value="python" label="Python">
 
 ```python
 query = """
-  select
-    project_name,
-    display_name,
-    star_count,
-    fork_count,
-    commit_count_6_months,
-    contributor_count_6_months
-  from `oso_production.code_metrics_by_project_v1`
-  where project_name = 'opensource-observer'
+SELECT
+  tm.sample_date,
+  m.metric_name,
+  tm.amount
+FROM timeseries_metrics_by_project_v0 AS tm
+JOIN metrics_v0 AS m
+  ON tm.metric_id = m.metric_id
+JOIN projects_v1 AS p
+  ON tm.project_id = p.project_id
+WHERE 
+  p.project_name = 'opensource-observer'
+  AND m.metric_name IN (
+    'GITHUB_stars_daily',
+    'GITHUB_forks_daily',
+    'GITHUB_commits_daily',
+    'GITHUB_contributors_daily'
+  )
+ORDER BY tm.sample_date DESC
 """
-df = client.query(query).to_dataframe()
+df = client.to_pandas(query)
 ```
 
 </TabItem>
 <TabItem value="graphql" label="GraphQL">
 
 ```graphql
-query CodeMetricsForProject {
-  oso_codeMetricsByProjectV1(
-    where: { projectName: { _eq: "opensource-observer" } }
-  ) {
-    projectName
-    displayName
-    starCount
-    forkCount
-    commitCount6Months
-    contributorCount6Months
+query GetProjectAndMetricIds($projectName: String!) {
+  oso_projectsV1(where: { projectName: { _eq: $projectName } }) {
+    projectId
   }
+  oso_metricsV0(where: { metricName: { _in: [
+    "GITHUB_stars_daily",
+    "GITHUB_forks_daily",
+    "GITHUB_commits_daily",
+    "GITHUB_contributors_daily"
+  ] } }) {
+    metricId
+    metricName
+  }
+}
+```
+
+Variables:
+```json
+{
+  "projectName": "opensource-observer"
+}
+```
+
+And then get the timeseries data:
+
+```graphql
+query GetProjectTimeseriesMetrics($projectId: String!) {
+  oso_timeseriesMetricsByProjectV0(
+    where: {
+      projectId: { _eq: $projectId }
+      metricId: { _in: $metricIds }
+    }
+    order_by: { sampleDate: Desc }
+  ) {
+    sampleDate
+    metricId
+    amount
+  }
+}
+```
+
+Using the IDs from the previous query:
+```json
+{
+  "projectId": "UuWbpo5bpL5QsYvlukUWNm2uE8HFjxQxzCM0e+HMZfk=",
+  "metricIds": [
+    "eV94RLJgcpOd+aMt8Y0sYGyN4V+6CCSwuxyZC7B1/FE=",
+    "8oVBt/WidET++OTvxowXmzJRSYVgXHhRQPB0R/JXIa0=",
+    "0xy+em6XN6wQKZMqtspcmc49ze3hD4BofTyMG+PU2OE=",
+    "4RMwikzLmSG2bwtW+MEFGwIVk7/IjFftTPZ9rU3Isr4="
+  ]
 }
 ```
 
@@ -218,164 +216,125 @@ query CodeMetricsForProject {
 Get historical metrics for a project:
 
 <Tabs>
-<TabItem value="sql" label="SQL">
-
-```sql
-select
-  tm.sample_date,
-  m.metric_name,
-  tm.amount
-from `oso_production.timeseries_metrics_by_project_v0` as tm
-join `oso_production.metrics_v0` as m
-  on tm.metric_id = m.metric_id
-join `oso_production.projects_v1` as p
-  on tm.project_id = p.project_id
-where p.project_name = 'wevm'
-order by sample_date desc
-```
-
-</TabItem>
 <TabItem value="python" label="Python">
 
 ```python
 query = """
-  select
-    tm.sample_date,
-    m.metric_name,
-    tm.amount
-  from `oso_production.timeseries_metrics_by_project_v0` as tm
-  join `oso_production.metrics_v0` as m
-    on tm.metric_id = m.metric_id
-  join `oso_production.projects_v1` as p
-    on tm.project_id = p.project_id
-  where p.project_name = 'wevm'
-  order by sample_date desc
+SELECT
+  tm.sample_date,
+  m.metric_name,
+  tm.amount
+FROM timeseries_metrics_by_project_v0 AS tm
+JOIN metrics_v0 AS m
+  ON tm.metric_id = m.metric_id
+JOIN projects_v1 AS p
+  ON tm.project_id = p.project_id
+WHERE p.project_name = 'wevm'
+ORDER BY sample_date DESC
 """
-df = client.query(query).to_dataframe()
+df = client.to_pandas(query)
 ```
 
 </TabItem>
 <TabItem value="graphql" label="GraphQL">
 
 ```graphql
-query TimeseriesMetrics {
-  timeseriesMetrics: oso_timeseriesMetricsByProjectV0(
-    where: {
-      projectId: { _eq: "Erx9J64anc8oSeN-wDKm0sojJf8ONrFVYbQ7GFnqSyc=" }
-    }
-  ) {
-    sampleDate
-    metricId
-    amount
+query GetProjectAndMetricIds($projectName: String!) {
+  oso_projectsV1(where: { projectName: { _eq: $projectName } }) {
+    projectId
   }
-  metrics: oso_metricsV0 {
+  oso_metricsV0 {
     metricId
     metricName
   }
 }
 ```
 
-Note: You'll need to join these results client-side by matching `metricId` values from both queries.
-
-</TabItem>
-</Tabs>
-
-## Code Contributors
-
-Get all contributors to a project's GitHub repositories:
-
-<Tabs>
-<TabItem value="sql" label="SQL">
-
-```sql
-select
-  te.time,
-  a.artifact_name as code_contributor,
-  abp.artifact_name as github_repo,
-  te.event_type,
-  te.amount
-from `oso_production.timeseries_events_by_artifact_v0` as te
-join `oso_production.artifacts_by_project_v1` as abp
-  on te.to_artifact_id = abp.artifact_id
-join `oso_production.artifacts_v1` a
-  on te.from_artifact_id = a.artifact_id
-where
-  abp.project_name = 'ipfs'
-  and te.event_type = 'COMMIT_CODE'
-order by te.time desc
-```
-
-</TabItem>
-<TabItem value="python" label="Python">
-
-```python
-query = """
-  select
-    te.time,
-    a.artifact_name as code_contributor,
-    abp.artifact_name as github_repo,
-    te.event_type,
-    te.amount
-  from `oso_production.timeseries_events_by_artifact_v0` as te
-  join `oso_production.artifacts_by_project_v1` as abp
-    on te.to_artifact_id = abp.artifact_id
-  join `oso_production.artifacts_v1` a
-    on te.from_artifact_id = a.artifact_id
-  where
-    abp.project_name = 'ipfs'
-    and te.event_type = 'COMMIT_CODE'
-  order by te.time desc
-"""
-df = client.query(query).to_dataframe()
-```
-
-</TabItem>
-<TabItem value="graphql" label="GraphQL">
-
-To get this data in GraphQL, you'll need to run multiple queries and join them client-side:
-
-1. First, get the project's artifacts:
-```graphql
-query GetProjectArtifacts {
-  oso_artifactsByProjectV1(
-    where: { projectName: { _eq: "ipfs" } }
-  ) {
-    artifactId
-    artifactName
-  }
+Variables:
+```json
+{
+  "projectName": "wevm"
 }
 ```
 
-2. Then, for each artifact, get the events:
+And then get the timeseries data:
+
 ```graphql
-query GetArtifactEvents($artifactId: String!) {
-  oso_timeseriesEventsByArtifactV0(
+query GetProjectTimeseriesMetrics($projectId: String!) {
+  oso_timeseriesMetricsByProjectV0(
     where: {
-      toArtifactId: { _eq: $artifactId }
-      eventType: { _eq: "COMMIT_CODE" }
+      projectId: { _eq: $projectId }
     }
+    order_by: { sampleDate: Desc }
   ) {
-    time
-    fromArtifactId
-    eventType
+    sampleDate
+    metricId
     amount
   }
 }
 ```
 
-3. Finally, get the contributor names:
+Using the project ID from the previous query:
+```json
+{
+  "projectId": "iFwvhinW6hRuD/1dIGR7QqYwJTFdfgyLFhWW5Lhp/j4="
+}
+```
+
+</TabItem>
+</Tabs>
+
+## Repository Snapshot
+
+Get a snapshot of a project's GitHub repositories:
+
+<Tabs>
+<TabItem value="python" label="Python">
+
+```python
+query = """
+SELECT
+    r.artifact_url,
+    r.star_count,
+    r.fork_count,
+    r.license_name,
+    r.language
+FROM repositories_v0 AS r
+JOIN projects_v1 AS p
+  ON r.project_id = p.project_id
+WHERE
+  p.project_name = 'wevm'
+ORDER BY r.star_count DESC
+"""
+df = client.to_pandas(query)
+```
+
+</TabItem>
+<TabItem value="graphql" label="GraphQL">
+
 ```graphql
-query GetContributors($artifactIds: [String!]) {
-  oso_artifactsV1(
-    where: { artifactId: { _in: $artifactIds } }
+query GetProjectRepositories($artifactNamespace: String!) {
+  oso_repositoriesV0(
+    where: { 
+      artifactNamespace: { _eq: $artifactNamespace }
+    }
+    order_by: { starCount: Desc }
   ) {
-    artifactId
-    artifactName
+    artifactUrl
+    starCount
+    forkCount
+    licenseName
+    language
   }
 }
 ```
 
-You'll need to combine these results client-side to get the complete picture.
+Variables:
+```json
+{
+  "artifactNamespace": "wevm"
+}
+```
 
 </TabItem>
 </Tabs>
