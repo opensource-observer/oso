@@ -16,6 +16,8 @@ from sqlmesh.core.macros import MacroEvaluator
 def relative_window_sample_date(
     evaluator: MacroEvaluator,
     base: exp.Expression,
+    window: exp.Expression,
+    unit: str | exp.Expression,
     relative_index: exp.Expression,
 ):
     """Gets the rolling window sample date of a different table. For now this is
@@ -29,23 +31,9 @@ def relative_window_sample_date(
     be the `@metrics_end` date.
     """
 
-    if time_aggregation := evaluator.locals.get("time_aggregation"):
-        if time_aggregation == "over_all_time":
-            raise Exception("Cannot use relative_window_sample_date over all time")
-        converted_relative_index = exp_to_int(relative_index)
-        return time_aggregation_bucket(
-            evaluator,
-            base,
-            time_aggregation,
-            converted_relative_index,
-        )
-
-    window = evaluator.locals.get("rolling_window", "")
-    unit = evaluator.locals.get("rolling_unit", "")
-
-    if not window or not unit:
+    if evaluator.locals.get("time_aggregation"):
         raise Exception(
-            "relative_window_sample_date requires a rolling_window and rolling_unit"
+            "relative_window_sample_date cannot be used in time_aggregation mode"
         )
 
     if isinstance(unit, exp.Literal):
