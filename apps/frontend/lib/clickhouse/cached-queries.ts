@@ -11,6 +11,7 @@ import {
   GET_COLLECTIONS_BY_IDS,
   GET_COLLECTION_BY_NAME,
   GET_COLLECTION_IDS_BY_PROJECT_IDS,
+  GET_MODEL_BY_NAME,
   GET_METRICS_BY_IDS,
   GET_METRIC_BY_NAME,
   GET_KEY_METRICS_BY_ARTIFACT,
@@ -133,6 +134,13 @@ const cachedGetCollectionIdsByProjectIds = cache(
     }),
 );
 
+const cachedGetModelByName = cache(async (variables: { modelName: string }) =>
+  queryWrapper({
+    query: GET_MODEL_BY_NAME,
+    variables,
+  }),
+);
+
 const cachedGetMetricsByIds = cache(
   async (variables: { metricIds: string[] }) =>
     queryWrapper({
@@ -187,6 +195,7 @@ export {
   cachedGetCollectionByName,
   cachedGetCollectionsByIds,
   cachedGetCollectionIdsByProjectIds,
+  cachedGetModelByName,
   cachedGetMetricsByIds,
   cachedGetMetricByName,
   cachedGetKeyMetricsByArtifact,
