@@ -1,19 +1,18 @@
 from datetime import datetime
 
 from metrics_tools.seed.loader import DestinationLoader
-from pydantic import BaseModel, Field
+from metrics_tools.seed.types import Column
+from pydantic import BaseModel
 
 
 class Collections(BaseModel):
-    version: int | None = Field(json_schema_extra={"sql": "BIGINT"})
-    name: str | None = Field(json_schema_extra={"sql": "VARCHAR"})
-    display_name: str | None = Field(json_schema_extra={"sql": "VARCHAR"})
-    projects: list[str] = Field(json_schema_extra={"sql": "ARRAY(VARCHAR)"})
-    description: str | None = Field(json_schema_extra={"sql": "VARCHAR"})
-    sha: bytes | None = Field(json_schema_extra={"sql": "VARBINARY"})
-    committed_time: datetime | None = Field(
-        json_schema_extra={"sql": "TIMESTAMP(6) WITH TIME ZONE"}
-    )
+    version: int | None = Column("BIGINT")
+    name: str | None = Column("VARCHAR")
+    display_name: str | None = Column("VARCHAR")
+    projects: list[str] = Column("ARRAY(VARCHAR)")
+    description: str | None = Column("VARCHAR")
+    sha: bytes | None = Column("VARBINARY")
+    committed_time: datetime | None = Column("TIMESTAMP(6) WITH TIME ZONE")
 
 
 async def seed(loader: DestinationLoader):

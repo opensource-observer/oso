@@ -1,33 +1,23 @@
 from datetime import datetime
 
 from metrics_tools.seed.loader import DestinationLoader
-from pydantic import BaseModel, Field
-
-# CREATE TABLE IF NOT EXISTS bigquery.oso.stg_deps_dev__dependencies (
-#    snapshotat timestamp(6) with time zone,
-#    system varchar,
-#    name varchar,
-#    version varchar,
-#    dependency ROW(System varchar, Name varchar, Version varchar),
-#    minimumdepth bigint
-# );
+from metrics_tools.seed.types import Column
+from pydantic import BaseModel
 
 
 class Dependency(BaseModel):
-    System: str | None = Field(json_schema_extra={"sql": "VARCHAR"})
-    Name: str | None = Field(json_schema_extra={"sql": "VARCHAR"})
-    Version: str | None = Field(json_schema_extra={"sql": "VARCHAR"})
+    System: str | None = Column("VARCHAR")
+    Name: str | None = Column("VARCHAR")
+    Version: str | None = Column("VARCHAR")
 
 
 class StgDepsDevDependencies(BaseModel):
-    snapshotat: datetime | None = Field(
-        json_schema_extra={"sql": "TIMESTAMP(6) WITH TIME ZONE"}
-    )
-    system: str | None = Field(json_schema_extra={"sql": "VARCHAR"})
-    name: str | None = Field(json_schema_extra={"sql": "VARCHAR"})
-    version: str | None = Field(json_schema_extra={"sql": "VARCHAR"})
-    dependency: Dependency | None = Field(json_schema_extra={"sql": "ROW(?)"})
-    minimumdepth: int | None = Field(json_schema_extra={"sql": "BIGINT"})
+    snapshotat: datetime | None = Column("TIMESTAMP(6) WITH TIME ZONE")
+    system: str | None = Column("VARCHAR")
+    name: str | None = Column("VARCHAR")
+    version: str | None = Column("VARCHAR")
+    dependency: Dependency | None = Column("ROW(?)")
+    minimumdepth: int | None = Column("BIGINT")
 
 
 async def seed(loader: DestinationLoader):

@@ -1,35 +1,30 @@
 from datetime import datetime, timedelta
 
 from metrics_tools.seed.loader import DestinationLoader
-from pydantic import BaseModel, Field
+from metrics_tools.seed.types import Column
+from pydantic import BaseModel
 
 
 class Repositories(BaseModel):
-    ingestion_time: datetime | None = Field(
-        json_schema_extra={"sql": "TIMESTAMP(6) WITH TIME ZONE"}
-    )
-    id: int | None = Field(json_schema_extra={"sql": "BIGINT"})
-    node_id: str | None = Field(json_schema_extra={"sql": "VARCHAR"})
-    name_with_owner: str | None = Field(json_schema_extra={"sql": "VARCHAR"})
-    url: str | None = Field(json_schema_extra={"sql": "VARCHAR"})
-    name: str | None = Field(json_schema_extra={"sql": "VARCHAR"})
-    is_fork: bool | None = Field(json_schema_extra={"sql": "BOOLEAN"})
-    branch: str | None = Field(json_schema_extra={"sql": "VARCHAR"})
-    fork_count: int | None = Field(json_schema_extra={"sql": "BIGINT"})
-    star_count: int | None = Field(json_schema_extra={"sql": "BIGINT"})
-    watcher_count: int | None = Field(json_schema_extra={"sql": "BIGINT"})
-    license_spdx_id: str | None = Field(json_schema_extra={"sql": "VARCHAR"})
-    license_name: str | None = Field(json_schema_extra={"sql": "VARCHAR"})
-    language: str | None = Field(json_schema_extra={"sql": "VARCHAR"})
-    dlt_load_id: str = Field(alias="_dlt_load_id", json_schema_extra={"sql": "VARCHAR"})
-    dlt_id: str = Field(alias="_dlt_id", json_schema_extra={"sql": "VARCHAR"})
-    owner: str | None = Field(json_schema_extra={"sql": "VARCHAR"})
-    created_at: datetime | None = Field(
-        json_schema_extra={"sql": "TIMESTAMP(6) WITH TIME ZONE"}
-    )
-    updated_at: datetime | None = Field(
-        json_schema_extra={"sql": "TIMESTAMP(6) WITH TIME ZONE"}
-    )
+    ingestion_time: datetime | None = Column("TIMESTAMP(6) WITH TIME ZONE")
+    id: int | None = Column("BIGINT")
+    node_id: str | None = Column("VARCHAR")
+    name_with_owner: str | None = Column("VARCHAR")
+    url: str | None = Column("VARCHAR")
+    name: str | None = Column("VARCHAR")
+    is_fork: bool | None = Column("BOOLEAN")
+    branch: str | None = Column("VARCHAR")
+    fork_count: int | None = Column("BIGINT")
+    star_count: int | None = Column("BIGINT")
+    watcher_count: int | None = Column("BIGINT")
+    license_spdx_id: str | None = Column("VARCHAR")
+    license_name: str | None = Column("VARCHAR")
+    language: str | None = Column("VARCHAR")
+    dlt_load_id: str = Column("VARCHAR", "_dlt_load_id")
+    dlt_id: str = Column("VARCHAR", "_dlt_id")
+    owner: str | None = Column("VARCHAR")
+    created_at: datetime | None = Column("TIMESTAMP(6) WITH TIME ZONE")
+    updated_at: datetime | None = Column("TIMESTAMP(6) WITH TIME ZONE")
 
 
 async def seed(loader: DestinationLoader):
@@ -53,8 +48,8 @@ async def seed(loader: DestinationLoader):
                 license_spdx_id="MIT",
                 license_name="MIT License",
                 language="python",
-                _dlt_load_id="load1",
-                _dlt_id="id1",
+                dlt_load_id="load1",
+                dlt_id="id1",
                 owner="owner1",
                 created_at=datetime.now() - timedelta(days=1),
                 updated_at=datetime.now(),
@@ -74,8 +69,8 @@ async def seed(loader: DestinationLoader):
                 license_spdx_id="GPL-3.0",
                 license_name="GNU General Public License v3.0",
                 language="javaScript",
-                _dlt_load_id="load2",
-                _dlt_id="id2",
+                dlt_load_id="load2",
+                dlt_id="id2",
                 owner="owner2",
                 created_at=datetime.now() - timedelta(days=1),
                 updated_at=datetime.now(),

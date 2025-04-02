@@ -1,3 +1,4 @@
+import json
 from typing import Any, Literal
 
 from pydantic import BaseModel
@@ -49,6 +50,7 @@ def get_sql_column_types(
     columns: dict[str, str] = {}
     for column_name, column_props in properties.items():
         sql_type = get_sql_column_type(schema, column_props)
+        column_name = properties.get("column_name", column_name)
         # If the column has anyOf property, we need to check if it is nullable
         nullable = (
             "NOT NULL"
@@ -93,6 +95,7 @@ def sql_insert_from_pydantic_instances(
     columns = get_sql_column_types(schema, properties)
     columns_to_types: dict[str, exp.DataType] = {}
     for column_name, column_type in columns.items():
+        column_name = properties.get("column_name", column_name)
         columns_to_types[column_name] = exp.maybe_parse(
             column_type.removeprefix(column_name).removesuffix("NOT NULL").strip(),
             into=exp.DataType,
@@ -103,9 +106,9 @@ def sql_insert_from_pydantic_instances(
         exp.alias_(exp.cast(exp.column(column), to=kind), column, copy=False)
         for column, kind in columns_to_types.items()
     ]
+
     expressions = [
-        tuple(transform_values(tuple(instance.model_dump().values()), columns_to_types))
-        for instance in instances
+        tuple(map_values_to_sql(instance, columns_to_types)) for instance in instances
     ]
     values_exp = exp.values(expressions, alias="t", columns=columns_to_types)
 
@@ -117,3 +120,13 @@ def sql_insert_from_pydantic_instances(
     ).sql(dialect=dialect)
 
     return insert_into_sql
+
+
+def map_values_to_sql(instance: BaseModel, columns_to_types: dict[str, exp.DataType]):
+    values = []
+    for value in instance.model_dump().values():
+        if isinstance(value, dict):
+            value = json.dumps(value)
+        values.append(value)
+
+    return transform_values(tuple(values), columns_to_types)

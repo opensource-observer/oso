@@ -1,27 +1,26 @@
 from datetime import datetime
 
 from metrics_tools.seed.loader import DestinationLoader
-from pydantic import BaseModel, Field
+from metrics_tools.seed.types import Column
+from pydantic import BaseModel
 
 
 class IntEventsBlockchain(BaseModel):
-    time: datetime | None = Field(
-        json_schema_extra={"sql": "TIMESTAMP(6) WITH TIME ZONE"}
-    )
-    to_artifact_id: str | None = Field(json_schema_extra={"sql": "VARCHAR"})
-    from_artifact_id: str | None = Field(json_schema_extra={"sql": "VARCHAR"})
-    event_type: str | None = Field(json_schema_extra={"sql": "VARCHAR"})
-    event_source_id: str | None = Field(json_schema_extra={"sql": "VARCHAR"})
-    event_source: str | None = Field(json_schema_extra={"sql": "VARCHAR"})
-    to_artifact_name: str | None = Field(json_schema_extra={"sql": "VARCHAR"})
-    to_artifact_namespace: str | None = Field(json_schema_extra={"sql": "VARCHAR"})
-    to_artifact_type: str | None = Field(json_schema_extra={"sql": "VARCHAR"})
-    to_artifact_source_id: str | None = Field(json_schema_extra={"sql": "VARCHAR"})
-    from_artifact_name: str | None = Field(json_schema_extra={"sql": "VARCHAR"})
-    from_artifact_namespace: str | None = Field(json_schema_extra={"sql": "VARCHAR"})
-    from_artifact_type: str | None = Field(json_schema_extra={"sql": "VARCHAR"})
-    from_artifact_source_id: str | None = Field(json_schema_extra={"sql": "VARCHAR"})
-    amount: float | None = Field(json_schema_extra={"sql": "DOUBLE"})
+    time: datetime | None = Column("TIMESTAMP(6) WITH TIME ZONE")
+    to_artifact_id: str | None = Column("VARCHAR")
+    from_artifact_id: str | None = Column("VARCHAR")
+    event_type: str | None = Column("VARCHAR")
+    event_source_id: str | None = Column("VARCHAR")
+    event_source: str | None = Column("VARCHAR")
+    to_artifact_name: str | None = Column("VARCHAR")
+    to_artifact_namespace: str | None = Column("VARCHAR")
+    to_artifact_type: str | None = Column("VARCHAR")
+    to_artifact_source_id: str | None = Column("VARCHAR")
+    from_artifact_name: str | None = Column("VARCHAR")
+    from_artifact_namespace: str | None = Column("VARCHAR")
+    from_artifact_type: str | None = Column("VARCHAR")
+    from_artifact_source_id: str | None = Column("VARCHAR")
+    amount: float | None = Column("DOUBLE")
 
 
 async def seed(loader: DestinationLoader):

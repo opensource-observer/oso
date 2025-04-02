@@ -1,7 +1,8 @@
 from datetime import datetime
 
 from metrics_tools.seed.loader import DestinationLoader
-from pydantic import BaseModel, Field
+from metrics_tools.seed.types import Column
+from pydantic import BaseModel
 
 # CREATE TABLE IF NOT EXISTS bigquery.ossd.projects (
 #    version bigint,
@@ -41,47 +42,45 @@ from pydantic import BaseModel, Field
 
 
 class Url(BaseModel):
-    url: str | None = Field(json_schema_extra={"sql": "VARCHAR"})
+    url: str | None = Column("VARCHAR")
 
 
 class Social(BaseModel):
-    discord: list[Url] | None = Field(json_schema_extra={"sql": "ARRAY(ROW(?))"})
-    farcaster: list[Url] | None = Field(json_schema_extra={"sql": "ARRAY(ROW(?))"})
-    medium: list[Url] | None = Field(json_schema_extra={"sql": "ARRAY(ROW(?))"})
-    mirror: list[Url] | None = Field(json_schema_extra={"sql": "ARRAY(ROW(?))"})
-    reddit: list[Url] | None = Field(json_schema_extra={"sql": "ARRAY(ROW(?))"})
-    telegram: list[Url] | None = Field(json_schema_extra={"sql": "ARRAY(ROW(?))"})
-    twitter: list[Url] | None = Field(json_schema_extra={"sql": "ARRAY(ROW(?))"})
-    warpcast: list[Url] | None = Field(json_schema_extra={"sql": "ARRAY(ROW(?))"})
-    youtube: list[Url] | None = Field(json_schema_extra={"sql": "ARRAY(ROW(?))"})
+    discord: list[Url] | None = Column("ARRAY(ROW(?))")
+    farcaster: list[Url] | None = Column("ARRAY(ROW(?))")
+    medium: list[Url] | None = Column("ARRAY(ROW(?))")
+    mirror: list[Url] | None = Column("ARRAY(ROW(?))")
+    reddit: list[Url] | None = Column("ARRAY(ROW(?))")
+    telegram: list[Url] | None = Column("ARRAY(ROW(?))")
+    twitter: list[Url] | None = Column("ARRAY(ROW(?))")
+    warpcast: list[Url] | None = Column("ARRAY(ROW(?))")
+    youtube: list[Url] | None = Column("ARRAY(ROW(?))")
 
 
 class Blockchain(BaseModel):
-    address: str | None = Field(json_schema_extra={"sql": "VARCHAR"})
-    name: str | None = Field(json_schema_extra={"sql": "VARCHAR"})
-    networks: list[str] | None = Field(json_schema_extra={"sql": "ARRAY(VARCHAR)"})
-    tags: list[str] | None = Field(json_schema_extra={"sql": "ARRAY(VARCHAR)"})
+    address: str | None = Column("VARCHAR")
+    name: str | None = Column("VARCHAR")
+    networks: list[str] | None = Column("ARRAY(VARCHAR)")
+    tags: list[str] | None = Column("ARRAY(VARCHAR)")
 
 
 class Projects(BaseModel):
-    version: int | None = Field(json_schema_extra={"sql": "BIGINT"})
-    name: str | None = Field(json_schema_extra={"sql": "VARCHAR"})
-    display_name: str | None = Field(json_schema_extra={"sql": "VARCHAR"})
-    github: list[Url] = Field(json_schema_extra={"sql": "ARRAY(ROW(?))"})
-    description: str | None = Field(json_schema_extra={"sql": "VARCHAR"})
-    websites: list[Url] = Field(json_schema_extra={"sql": "ARRAY(ROW(?))"})
-    social: Social | None = Field(json_schema_extra={"sql": "ROW(?)"})
-    blockchain: list[Blockchain] = Field(json_schema_extra={"sql": "ARRAY(ROW(?))"})
-    npm: list[Url] = Field(json_schema_extra={"sql": "ARRAY(ROW(?))"})
-    go: list[Url] = Field(json_schema_extra={"sql": "ARRAY(ROW(?))"})
-    open_collective: list[Url] = Field(json_schema_extra={"sql": "ARRAY(ROW(?))"})
-    pypi: list[Url] = Field(json_schema_extra={"sql": "ARRAY(ROW(?))"})
-    crates: list[Url] = Field(json_schema_extra={"sql": "ARRAY(ROW(?))"})
-    defillama: list[Url] = Field(json_schema_extra={"sql": "ARRAY(ROW(?))"})
-    sha: bytes | None = Field(json_schema_extra={"sql": "VARBINARY"})
-    committed_time: datetime | None = Field(
-        json_schema_extra={"sql": "TIMESTAMP(6) WITH TIME ZONE"}
-    )
+    version: int | None = Column("BIGINT")
+    name: str | None = Column("VARCHAR")
+    display_name: str | None = Column("VARCHAR")
+    github: list[Url] = Column("ARRAY(ROW(?))")
+    description: str | None = Column("VARCHAR")
+    websites: list[Url] = Column("ARRAY(ROW(?))")
+    social: Social | None = Column("ROW(?)")
+    blockchain: list[Blockchain] = Column("ARRAY(ROW(?))")
+    npm: list[Url] = Column("ARRAY(ROW(?))")
+    go: list[Url] = Column("ARRAY(ROW(?))")
+    open_collective: list[Url] = Column("ARRAY(ROW(?))")
+    pypi: list[Url] = Column("ARRAY(ROW(?))")
+    crates: list[Url] = Column("ARRAY(ROW(?))")
+    defillama: list[Url] = Column("ARRAY(ROW(?))")
+    sha: bytes | None = Column("VARBINARY")
+    committed_time: datetime | None = Column("TIMESTAMP(6) WITH TIME ZONE")
 
 
 async def seed(loader: DestinationLoader):

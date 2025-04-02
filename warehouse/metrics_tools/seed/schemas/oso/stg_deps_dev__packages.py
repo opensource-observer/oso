@@ -1,25 +1,16 @@
 from datetime import datetime
 
 from metrics_tools.seed.loader import DestinationLoader
-from pydantic import BaseModel, Field
-
-# CREATE TABLE IF NOT EXISTS bigquery.oso.stg_deps_dev__packages (
-#    snapshotat timestamp(6) with time zone,
-#    system varchar,
-#    projectname varchar,
-#    name varchar,
-#    version varchar
-# );
+from metrics_tools.seed.types import Column
+from pydantic import BaseModel
 
 
 class StgDepsDevPackages(BaseModel):
-    snapshotat: datetime | None = Field(
-        json_schema_extra={"sql": "TIMESTAMP(6) WITH TIME ZONE"}
-    )
-    system: str | None = Field(json_schema_extra={"sql": "VARCHAR"})
-    projectname: str | None = Field(json_schema_extra={"sql": "VARCHAR"})
-    name: str | None = Field(json_schema_extra={"sql": "VARCHAR"})
-    version: str | None = Field(json_schema_extra={"sql": "VARCHAR"})
+    snapshotat: datetime | None = Column("TIMESTAMP(6) WITH TIME ZONE")
+    system: str | None = Column("VARCHAR")
+    projectname: str | None = Column("VARCHAR")
+    name: str | None = Column("VARCHAR")
+    version: str | None = Column("VARCHAR")
 
 
 async def seed(loader: DestinationLoader):

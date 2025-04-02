@@ -1,21 +1,20 @@
 from datetime import datetime
 
 from metrics_tools.seed.loader import DestinationLoader
-from pydantic import BaseModel, Field
+from metrics_tools.seed.types import Column
+from pydantic import BaseModel
 
 
 class Sbom(BaseModel):
-    artifact_namespace: str | None = Field(json_schema_extra={"sql": "VARCHAR"})
-    artifact_name: str | None = Field(json_schema_extra={"sql": "VARCHAR"})
-    artifact_source: str | None = Field(json_schema_extra={"sql": "VARCHAR"})
-    package: str | None = Field(json_schema_extra={"sql": "VARCHAR"})
-    package_source: str | None = Field(json_schema_extra={"sql": "VARCHAR"})
-    package_version: str | None = Field(json_schema_extra={"sql": "VARCHAR"})
-    snapshot_at: datetime | None = Field(
-        json_schema_extra={"sql": "TIMESTAMP(6) WITH TIME ZONE"}
-    )
-    dlt_load_id: str = Field(alias="_dlt_load_id", json_schema_extra={"sql": "VARCHAR"})
-    dlt_id: str = Field(alias="_dlt_id", json_schema_extra={"sql": "VARCHAR"})
+    artifact_namespace: str | None = Column("VARCHAR")
+    artifact_name: str | None = Column("VARCHAR")
+    artifact_source: str | None = Column("VARCHAR")
+    package: str | None = Column("VARCHAR")
+    package_source: str | None = Column("VARCHAR")
+    package_version: str | None = Column("VARCHAR")
+    snapshot_at: datetime | None = Column("TIMESTAMP(6) WITH TIME ZONE")
+    dlt_load_id: str = Column("VARCHAR", "_dlt_load_id")
+    dlt_id: str = Column("VARCHAR", "_dlt_id")
 
 
 async def seed(loader: DestinationLoader):
@@ -32,8 +31,8 @@ async def seed(loader: DestinationLoader):
                 package_source="source1",
                 package_version="1.0.0",
                 snapshot_at=datetime.now(),
-                _dlt_load_id="load1",
-                _dlt_id="id1",
+                dlt_load_id="load1",
+                dlt_id="id1",
             ),
             Sbom(
                 artifact_namespace="namespace2",
@@ -43,8 +42,8 @@ async def seed(loader: DestinationLoader):
                 package_source="source2",
                 package_version="2.0.0",
                 snapshot_at=datetime.now(),
-                _dlt_load_id="load2",
-                _dlt_id="id2",
+                dlt_load_id="load2",
+                dlt_id="id2",
             ),
         ],
     )
