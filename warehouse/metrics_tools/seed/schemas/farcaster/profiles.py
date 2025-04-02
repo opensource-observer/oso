@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any, Dict
 
 from metrics_tools.seed.loader import DestinationLoader
@@ -21,13 +21,13 @@ async def seed(loader: DestinationLoader):
         [
             Profiles(
                 fid=1,
-                last_updated_at=datetime.now(),
+                last_updated_at=datetime.now() - timedelta(days=2),
                 data={"username": "Alice"},
                 custody_address="0x123",
             ),
             Profiles(
                 fid=2,
-                last_updated_at=datetime.now(),
+                last_updated_at=datetime.now() - timedelta(days=1),
                 data={"username": "Bob"},
                 custody_address="0x456",
             ),

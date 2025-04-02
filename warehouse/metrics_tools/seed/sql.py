@@ -124,8 +124,13 @@ def sql_insert_from_pydantic_instances(
 
 def map_values_to_sql(instance: BaseModel, columns_to_types: dict[str, exp.DataType]):
     values = []
-    for value in instance.model_dump().values():
-        if isinstance(value, dict):
+    for column, value in instance.model_dump().items():
+        column_type = columns_to_types.get(column)
+        if (
+            isinstance(value, dict)
+            and column_type
+            and column_type.is_type(exp.DataType.Type.JSON)
+        ):
             value = json.dumps(value)
         values.append(value)
 
