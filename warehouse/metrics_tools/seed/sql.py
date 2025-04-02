@@ -49,7 +49,6 @@ def get_sql_column_types(
     columns: dict[str, str] = {}
     for column_name, column_props in properties.items():
         sql_type = get_sql_column_type(schema, column_props)
-        print(sql_type)
         # If the column has anyOf property, we need to check if it is nullable
         nullable = (
             "NOT NULL"
@@ -76,7 +75,6 @@ def sql_create_table_from_pydantic_schema(
         dialect="trino",
     ).sql(dialect=dialect)
 
-    print(create_table_sql)
     return create_table_sql
 
 
@@ -94,7 +92,6 @@ def sql_insert_from_pydantic_instances(
     properties: dict[str, Any] = schema["properties"]
     columns = get_sql_column_types(schema, properties)
     columns_to_types: dict[str, exp.DataType] = {}
-    print(columns)
     for column_name, column_type in columns.items():
         columns_to_types[column_name] = exp.maybe_parse(
             column_type.removeprefix(column_name).removesuffix("NOT NULL").strip(),
@@ -118,7 +115,5 @@ def sql_insert_from_pydantic_instances(
         .from_(values_exp, copy=False)
         .where(exp.false() if not instances else None, copy=False),
     ).sql(dialect=dialect)
-
-    print(insert_into_sql)
 
     return insert_into_sql

@@ -1,3 +1,4 @@
+import logging
 from typing import Protocol
 
 from aiotrino.dbapi import Connection, connect
@@ -7,6 +8,7 @@ from metrics_tools.seed.sql import (
 )
 from pydantic import BaseModel
 
+logger = logging.getLogger(__name__)
 
 class DestinationLoader(Protocol):
     async def close(self): ...
@@ -33,6 +35,7 @@ class TrinoLoader(DestinationLoader):
         await self.conn.close()
 
     async def create_schema(self, name: str):
+        logger.info(f"Creating schema {name}")
         cur = await self.conn.cursor()
         await cur.execute(
             f"""
@@ -42,6 +45,7 @@ class TrinoLoader(DestinationLoader):
         await cur.fetchall()
 
     async def create_table(self, name: str, base: type[BaseModel]):
+        logger.info(f"Creating table {name}")
         schema = base.model_json_schema()
         sql = sql_create_table_from_pydantic_schema(name, schema, "trino")
         cur = await self.conn.cursor()
@@ -49,6 +53,7 @@ class TrinoLoader(DestinationLoader):
         await cur.fetchall()
 
     async def insert(self, table_name: str, instances: list[BaseModel]):
+        logger.info(f"Inserting {len(instances)} rows into {table_name}")
         sql = sql_insert_from_pydantic_instances(table_name, instances, "trino")
         cur = await self.conn.cursor()
         await cur.execute(sql)
