@@ -5,17 +5,51 @@ from sqlglot import exp, parse_one
 from sqlmesh.core.dialect import transform_values
 
 
-def sql_create_table_from_pydantic_schema(
-    name: str, schema: dict[str, Any], dialect: Literal["trino", "duckdb"]
-) -> str:
-    properties: dict[str, Any] = schema["properties"]
-    if not name:
-        raise ValueError("Table name not defined in schema")
-    columns = []
+def get_types(field: dict[str, Any]) -> list[str]:
+    if "anyOf" in field:
+        any_of_types: list[dict[str, Any]] = field["anyOf"]
+        return [t for any_of_type in any_of_types for t in get_types(any_of_type)]
+    elif "items" in field:
+        return get_types(field["items"])
+    elif "type" in field:
+        return [field["type"]]
+    elif "$ref" in field:
+        return [field["$ref"]]
+    else:
+        raise ValueError(f"Unknown field type: {field}")
+
+
+def get_sql_column_type(schema: dict[str, Any], column_props: dict[str, Any]) -> str:
+    sql_type: str | None = column_props.get("sql")
+    if not sql_type:
+        raise ValueError(f"SQL type not defined for column '{column_props}'")
+
+    ref_index = sql_type.find("?")
+    if ref_index == -1:
+        return sql_type
+
+    type_list = get_types(column_props)
+
+    ref = next((t for t in type_list if t.startswith("#/$defs/")), None)
+    if not ref:
+        raise ValueError(
+            f"No reference starting with '#/$defs/' found in types: {type_list}"
+        )
+
+    ref_props: dict[str, Any] = schema["$defs"][ref.split("/")[-1]]["properties"]
+    nested_types = get_sql_column_types(schema, ref_props)
+
+    return sql_type.replace("?", ",\n ".join(list(nested_types.values())), 1)
+
+
+def get_sql_column_types(
+    schema: dict[str, Any],
+    properties: dict[str, Any],
+) -> dict[str, str]:
+    columns: dict[str, str] = {}
     for column_name, column_props in properties.items():
-        sql_type = column_props.get("sql")
-        if not sql_type:
-            raise ValueError(f"SQL type not defined for column '{column_name}'")
+        sql_type = get_sql_column_type(schema, column_props)
+        print(sql_type)
         # If the column has anyOf property, we need to check if it is nullable
         nullable = (
             "NOT NULL"
@@ -24,13 +58,25 @@ def sql_create_table_from_pydantic_schema(
             )
             else ""
         )
-        columns.append(f"{column_name} {sql_type} {nullable}".strip())
+        columns[column_name] = f"{column_name} {sql_type} {nullable}".strip()
+    return columns
+
+
+def sql_create_table_from_pydantic_schema(
+    name: str, schema: dict[str, Any], dialect: Literal["trino", "duckdb"]
+) -> str:
+    if not name:
+        raise ValueError("Table name not defined in schema")
+
+    properties: dict[str, Any] = schema["properties"]
+    columns = get_sql_column_types(schema, properties)
 
     create_table_sql = parse_one(
-        f"CREATE TABLE IF NOT EXISTS {name} (\n  {',\n  '.join(columns)}\n)",
+        f"CREATE TABLE IF NOT EXISTS {name} (\n  {',\n  '.join(list(columns.values()))}\n)",
         dialect="trino",
     ).sql(dialect=dialect)
 
+    print(create_table_sql)
     return create_table_sql
 
 
@@ -45,17 +91,16 @@ def sql_insert_from_pydantic_instances(
         return ""
 
     schema = instances[0].model_json_schema()
+    properties: dict[str, Any] = schema["properties"]
+    columns = get_sql_column_types(schema, properties)
     columns_to_types: dict[str, exp.DataType] = {}
-    for column_name, column_props in schema["properties"].items():
-        sql_type = column_props.get("sql")
-        if not sql_type:
-            raise ValueError(f"SQL type not defined for column '{column_name}'")
-        # If the column has anyOf property, we need to check if it is nullable
-
+    print(columns)
+    for column_name, column_type in columns.items():
         columns_to_types[column_name] = exp.maybe_parse(
-            sql_type, into=exp.DataType, dialect=dialect
+            column_type.removeprefix(column_name).removesuffix("NOT NULL").strip(),
+            into=exp.DataType,
+            dialect=dialect,
         )
-        columns_to_types[column_name]
 
     casted_columns = [
         exp.alias_(exp.cast(exp.column(column), to=kind), column, copy=False)
@@ -73,5 +118,7 @@ def sql_insert_from_pydantic_instances(
         .from_(values_exp, copy=False)
         .where(exp.false() if not instances else None, copy=False),
     ).sql(dialect=dialect)
+
+    print(insert_into_sql)
 
     return insert_into_sql
