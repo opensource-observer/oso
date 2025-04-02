@@ -5,9 +5,12 @@ MODEL(
 );
 
 @DEF(chains, [
+  'automata',
   'base',
   'bob',
+  'cyber',
   'frax',
+  'ham',
   'ink',
   'kroma',
   'lisk',
