@@ -35,6 +35,9 @@ spec:
     remediation:
       retries: 3
   values:
+    additionalNodeProperties:
+      - log.format=json
+      - log.console-format=json
     serviceAccount:
       create: true
       name: base-trino
