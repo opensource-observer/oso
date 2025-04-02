@@ -25,6 +25,8 @@ spec:
     remediation:
       retries: 3
   values:
+    osoDagster:
+      verboseLogs: 1
 
     global:
       serviceAccountName: base-dagster
