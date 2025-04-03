@@ -14,7 +14,7 @@ Projects are assigned artifacts in two ways:
 
 ## Lookup All Artifacts for a Project
 
-You can lookup all artifacts for a project using either BigQuery or our GraphQL API:
+You can lookup all artifacts for a project using either SQL or our API:
 
 <Tabs>
 <TabItem value="sql" label="SQL">
@@ -24,7 +24,7 @@ select
   artifact_id,
   artifact_name,
   artifact_namespace
-from `oso_production.artifacts_by_project_v1`
+from `artifacts_by_project_v1`
 where project_name = 'opensource-observer'
 ```
 
@@ -48,7 +48,7 @@ query findProject {
 
 ## Lookup a Specific Artifact
 
-You can lookup a specific artifact by its `artifact_name` and/or `artifact_namespace` using either BigQuery or our GraphQL API:
+You can lookup a specific artifact by its `artifact_name` and/or `artifact_namespace` using either SQL or our API:
 
 <Tabs>
 <TabItem value="sql" label="SQL">
@@ -58,7 +58,7 @@ select
   artifact_id,
   artifact_name,
   artifact_namespace
-from `oso_production.artifacts_by_project_v1`
+from `artifacts_by_project_v1`
 where artifact_name = 'oso' and artifact_namespace = 'opensource-observer'
 ```
 
@@ -83,7 +83,7 @@ query findArtifact {
 
 ## Lookup Artifacts by Data Source
 
-You can lookup artifacts by their data source using either BigQuery or our GraphQL API:
+You can lookup artifacts by their data source using either SQL or our API:
 
 <Tabs>
 <TabItem value="sql" label="SQL">
@@ -93,7 +93,7 @@ select
   artifact_id,
   artifact_name,
   artifact_namespace
-from `oso_production.artifacts_by_project_v1`
+from `artifacts_by_project_v1`
 where artifact_source = 'GITHUB'
 ```
 
