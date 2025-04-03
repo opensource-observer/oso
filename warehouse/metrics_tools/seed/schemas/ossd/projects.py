@@ -4,42 +4,6 @@ from metrics_tools.seed.loader import DestinationLoader
 from metrics_tools.seed.types import Column
 from pydantic import BaseModel
 
-# CREATE TABLE IF NOT EXISTS bigquery.ossd.projects (
-#    version bigint,
-#    name varchar,
-#    display_name varchar,
-#    github array(ROW(url varchar)) NOT NULL,
-#    description varchar,
-#    websites array(ROW(url varchar)) NOT NULL,
-#    social ROW(
-#       discord array(ROW(url varchar)),
-#       farcaster array(ROW(url varchar)),
-#       medium array(ROW(url varchar)),
-#       mirror array(ROW(url varchar)),
-#       reddit array(ROW(url varchar)),
-#       telegram array(ROW(url varchar)),
-#       twitter array(ROW(url varchar)),
-#       warpcast array(ROW(url varchar)),
-#       youtube array(ROW(url varchar))
-#    ),
-#    blockchain array(
-#       ROW(
-#          address varchar,
-#          name varchar,
-#          networks array(varchar),
-#          tags array(varchar)
-#       )
-#    ) NOT NULL,
-#    npm array(ROW(url varchar)) NOT NULL,
-#    "go" array(ROW(url varchar)) NOT NULL,
-#    open_collective array(ROW(url varchar)) NOT NULL,
-#    pypi array(ROW(url varchar)) NOT NULL,
-#    crates array(ROW(url varchar)) NOT NULL,
-#    defillama array(ROW(url varchar)) NOT NULL,
-#    sha varbinary,
-#    committed_time timestamp(6) with time zone
-# );
-
 
 class Url(BaseModel):
     url: str | None = Column("VARCHAR")

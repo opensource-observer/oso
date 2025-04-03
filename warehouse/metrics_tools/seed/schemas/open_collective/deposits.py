@@ -5,44 +5,6 @@ from metrics_tools.seed.loader import DestinationLoader
 from metrics_tools.seed.types import Column
 from pydantic import BaseModel
 
-# CREATE TABLE IF NOT EXISTS bigquery.open_collective.deposits (
-#    id varchar,
-#    legacy_id bigint,
-#    "group" varchar,
-#    type varchar,
-#    kind varchar,
-#    description varchar,
-#    amount json,
-#    amount_in_host_currency json,
-#    host_currency_fx_rate double,
-#    net_amount json,
-#    net_amount_in_host_currency json,
-#    tax_amount json,
-#    tax_info json,
-#    platform_fee json,
-#    host_fee json,
-#    payment_processor_fee json,
-#    account json,
-#    from_account json,
-#    to_account json,
-#    expense json,
-#    "order" json,
-#    created_at timestamp(6) with time zone,
-#    updated_at timestamp(6) with time zone,
-#    is_refunded boolean,
-#    is_refund boolean,
-#    is_disputed boolean,
-#    is_in_review boolean,
-#    payment_method json,
-#    payout_method json,
-#    is_order_rejected boolean,
-#    merchant_id varchar,
-#    invoice_template varchar,
-#    host json,
-#    _dlt_load_id varchar NOT NULL,
-#    _dlt_id varchar NOT NULL
-# );
-
 
 class Deposits(BaseModel):
     id: str | None = Column("VARCHAR")
