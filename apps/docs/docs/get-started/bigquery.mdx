@@ -6,11 +6,20 @@ sidebar_position: 3
 import Link from "@docusaurus/Link";
 import Button from "../../src/components/plasmic/Button";
 
-OSO uses BigQuery as the means of sharing large datasets with the community.
-Unless you plan to setup your own data pipeline, we recommend that
-you either start with [pyoso](./python.md) or the [API](./api.mdx) to access OSO data.
-
+OSO uses BigQuery as one means of sharing large datasets with the community.
 This page will guide you through the process of subscribing to the OSO production dataset and making your first query.
+
+:::warning
+BigQuery should only be used if you want need direct access to
+source data or mart models for your own data pipeline or
+or integration into third-party tools.
+
+- If you are a data scientist and you want to run your own analysis,
+we recommend using [pyoso](./python.md).
+- If you are an application developer and you want to integrate OSO data into your application,
+we recommend using the [API](./api.mdx).
+:::
+
 
 ## Sign up for Google Cloud
 
@@ -83,7 +92,7 @@ all available collections like this:
 
 ```sql
 SELECT *
-FROM `YOUR_PROJECT_NAME.oso_production.collections_v1`
+FROM `YOUR_PROJECT_NAME.oso_production.projects_v1`
 ```
 
 **Remember to update the project name in the query.**
@@ -96,18 +105,16 @@ The results will appear in a table at the bottom of the console.
 The console will help you complete your query as you type, and will also provide you with a preview of the results and computation time. You can save your queries, download the results, and even make simple visualizations directly from the console.
 
 :::tip
+**oso_production** contains all production data. This can be quite large depending on the dataset.
+
 To explore all the OSO datasets available, see the 
 [Data Overview](../integrate/datasets/index.mdx).
-
-- **oso_production** contains all production data. This can be quite large depending on the dataset.
-- **oso_playground** contains only the last 2 weeks for every dataset. We recommend using this for development and testing.
   :::
 
 ## Next steps
 
-Now that you're set up, there are many ways to contribute to OSO and integrate the data with your application:
+Now that you're set up, there are many ways to contribute to OSO play with the data:
 
-- [SQL Query Guide](../integrate/query-data.mdx) for more details on running effective queries
-- [Write Python notebooks](../guides/notebooks/index.mdx) for advanced analysis and visualizations
-- [Propose an impact model](../contribute-models/data-models.md) to run in the OSO data pipeline
-- [Query the OSO API](../integrate/api.md) for impact metrics and project info to integrate into your application
+- [Connect to 3rd-party tools](../guides//visualization-tools/index.mdx) like Tableau, Looker, or Hex
+- [Connect new datasets](../contribute-data/setup/index.md) to add data assets
+- [Contribute data models](../contribute-models/setup.md) to add new data models

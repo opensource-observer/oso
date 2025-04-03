@@ -6,7 +6,9 @@ sidebar_position: 5
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-Create a developer graph for related groups of projects. New to OSO? Check out our [Getting Started guide](../get-started/index.md) to set up your BigQuery or API access.
+Create a developer graph for related groups of projects.
+New to OSO? Check out our [Getting Started guide](../get-started/index.md)
+to set up your API access.
 
 This tutorial combines various datasets to create a developer contribution graph. The graph highlights developers who have contributed to relevant repositories with onchain activity and shows their interactions with other (mostly off-chain) repositories. The analysis objective is to identify core developers contributing to specific projects and track their interactions with other repositories.
 
