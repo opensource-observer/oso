@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from typing import Any
 
 from pydantic import Field
@@ -13,3 +14,12 @@ def Column(sql_type: str, column_name: str | None = None) -> Any:
     if column_name:
         json_schema_extra["column_name"] = column_name
     return Field(json_schema_extra=json_schema_extra)
+
+
+@dataclass
+class SeedConfig[T]:
+    catalog: str
+    schema: str
+    table: str
+    base: type[T]
+    rows: list[T]
