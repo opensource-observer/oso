@@ -122,4 +122,4 @@ Here's an example of how these building blocks can be used to model a collection
     - Artifact: https://github.com/ipld/go-ipld-prime # go-ipld-prime
 ```
 
-Once these entries are submitted to the OSS Directory, OSO will add them to the next data indexing job. After indexing is complete, metrics about these artifacts, projects, and collections will be available in BigQuery and through the OSO API.
+Once these entries are submitted to the OSS Directory, OSO will add them to the next data indexing job. After indexing is complete, metrics about these artifacts, projects, and collections will be available through the OSO API.
