@@ -1,7 +1,6 @@
 from datetime import date, timedelta
 
-from metrics_tools.seed.loader import DestinationLoader
-from metrics_tools.seed.types import Column
+from metrics_tools.seed.types import Column, SeedConfig
 from pydantic import BaseModel
 
 
@@ -32,63 +31,63 @@ class Traces(BaseModel):
     dt: date | None = Column("DATE")
 
 
-async def seed(loader: DestinationLoader):
-    await loader.create_table("optimism_superchain_raw_onchain_data.traces", Traces)
-
-    await loader.insert(
-        "optimism_superchain_raw_onchain_data.traces",
-        [
-            Traces(
-                network="network1",
-                chain_id=1,
-                block_timestamp=1622547800,
-                block_number=123456,
-                block_hash="block_hash1",
-                transaction_hash="tx_hash1",
-                transaction_index=1,
-                from_address="from_address1",
-                to_address="to_address1",
-                value_64=1,
-                value_lossless="value_lossless1",
-                input="input1",
-                output="output1",
-                trace_type="trace_type1",
-                call_type="call_type1",
-                reward_type="reward_type1",
-                gas=21000,
-                gas_used=20000,
-                subtraces=1,
-                trace_address="trace_address1",
-                error="error1",
-                status=1,
-                chain="chain1",
-                dt=date.today() - timedelta(days=1),
-            ),
-            Traces(
-                network="network2",
-                chain_id=2,
-                block_timestamp=1622547801,
-                block_number=123457,
-                block_hash="block_hash2",
-                transaction_hash="tx_hash2",
-                transaction_index=2,
-                from_address="from_address2",
-                to_address="to_address2",
-                value_64=2,
-                value_lossless="value_lossless2",
-                input="input2",
-                output="output2",
-                trace_type="trace_type2",
-                call_type="call_type2",
-                reward_type="reward_type2",
-                gas=22000,
-                gas_used=21000,
-                subtraces=2,
-                trace_address="trace_address2",
-                error="error2",
-                status=2,
-                chain="chain2",
-                dt=date.today(),
-            ),
-        ],
-    )
+seed = SeedConfig(
+    catalog="bigquery",
+    schema="optimism_superchain_raw_onchain_data",
+    table="traces",
+    base=Traces,
+    rows=[
+        Traces(
+            network="network1",
+            chain_id=1,
+            block_timestamp=1622547800,
+            block_number=123456,
+            block_hash="block_hash1",
+            transaction_hash="tx_hash1",
+            transaction_index=1,
+            from_address="from_address1",
+            to_address="to_address1",
+            value_64=1,
+            value_lossless="value_lossless1",
+            input="input1",
+            output="output1",
+            trace_type="trace_type1",
+            call_type="call_type1",
+            reward_type="reward_type1",
+            gas=21000,
+            gas_used=20000,
+            subtraces=1,
+            trace_address="trace_address1",
+            error="error1",
+            status=1,
+            chain="chain1",
+            dt=date.today() - timedelta(days=1),
+        ),
+        Traces(
+            network="network2",
+            chain_id=2,
+            block_timestamp=1622547801,
+            block_number=123457,
+            block_hash="block_hash2",
+            transaction_hash="tx_hash2",
+            transaction_index=2,
+            from_address="from_address2",
+            to_address="to_address2",
+            value_64=2,
+            value_lossless="value_lossless2",
+            input="input2",
+            output="output2",
+            trace_type="trace_type2",
+            call_type="call_type2",
+            reward_type="reward_type2",
+            gas=22000,
+            gas_used=21000,
+            subtraces=2,
+            trace_address="trace_address2",
+            error="error2",
+            status=2,
+            chain="chain2",
+            dt=date.today(),
+        ),
+    ],
+)

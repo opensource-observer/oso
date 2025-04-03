@@ -32,7 +32,6 @@ class TrinoLoader(DestinationLoader):
             host="localhost",
             port=8080,
             user="user",
-            catalog="bigquery",
         )
         return cls(connection)
 
@@ -44,16 +43,18 @@ class TrinoLoader(DestinationLoader):
 
     async def load(self, config: SeedConfig[BaseModel]):
         logger.info(f"Loading {config.catalog}.{config.schema}.{config.table}")
-        await self.create_schema(config.schema)
-        await self.create_table(f"{config.schema}.{config.table}", config.base)
-        await self.insert(f"{config.schema}.{config.table}", config.rows)
+        schema = f"{config.catalog}.{config.schema}"
+        table = f"{config.catalog}.{config.schema}.{config.table}"
+        await self.create_schema(schema)
+        await self.create_table(table, config.base)
+        await self.insert(table, config.rows)
 
     async def create_schema(self, name: str):
         logger.info(f"Creating schema {name}")
         cur = await self.conn.cursor()
         await cur.execute(
             f"""
-        CREATE SCHEMA IF NOT EXISTS bigquery.{name}
+        CREATE SCHEMA IF NOT EXISTS {name}
         """
         )
         await cur.fetchall()

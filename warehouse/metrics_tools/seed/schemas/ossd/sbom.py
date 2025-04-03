@@ -1,7 +1,6 @@
 from datetime import datetime
 
-from metrics_tools.seed.loader import DestinationLoader
-from metrics_tools.seed.types import Column
+from metrics_tools.seed.types import Column, SeedConfig
 from pydantic import BaseModel
 
 
@@ -17,33 +16,33 @@ class Sbom(BaseModel):
     dlt_id: str = Column("VARCHAR", "_dlt_id")
 
 
-async def seed(loader: DestinationLoader):
-    await loader.create_table("ossd.sbom", Sbom)
-
-    await loader.insert(
-        "ossd.sbom",
-        [
-            Sbom(
-                artifact_namespace="namespace1",
-                artifact_name="artifact1",
-                artifact_source="source1",
-                package="package1",
-                package_source="source1",
-                package_version="1.0.0",
-                snapshot_at=datetime.now(),
-                dlt_load_id="load1",
-                dlt_id="id1",
-            ),
-            Sbom(
-                artifact_namespace="namespace2",
-                artifact_name="artifact2",
-                artifact_source="source2",
-                package="package2",
-                package_source="source2",
-                package_version="2.0.0",
-                snapshot_at=datetime.now(),
-                dlt_load_id="load2",
-                dlt_id="id2",
-            ),
-        ],
-    )
+seed = SeedConfig(
+    catalog="bigquery",
+    schema="ossd",
+    table="sbom",
+    base=Sbom,
+    rows=[
+        Sbom(
+            artifact_namespace="namespace1",
+            artifact_name="artifact1",
+            artifact_source="source1",
+            package="package1",
+            package_source="source1",
+            package_version="1.0.0",
+            snapshot_at=datetime.now(),
+            dlt_load_id="load1",
+            dlt_id="id1",
+        ),
+        Sbom(
+            artifact_namespace="namespace2",
+            artifact_name="artifact2",
+            artifact_source="source2",
+            package="package2",
+            package_source="source2",
+            package_version="2.0.0",
+            snapshot_at=datetime.now(),
+            dlt_load_id="load2",
+            dlt_id="id2",
+        ),
+    ],
+)

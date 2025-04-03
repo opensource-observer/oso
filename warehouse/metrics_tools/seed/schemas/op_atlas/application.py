@@ -1,7 +1,6 @@
 from datetime import datetime, timedelta
 
-from metrics_tools.seed.loader import DestinationLoader
-from metrics_tools.seed.types import Column
+from metrics_tools.seed.types import Column, SeedConfig
 from pydantic import BaseModel
 
 
@@ -18,35 +17,35 @@ class Application(BaseModel):
     dlt_id: str = Column("VARCHAR", "_dlt_id")
 
 
-async def seed(loader: DestinationLoader):
-    await loader.create_table("op_atlas.application", Application)
-
-    await loader.insert(
-        "op_atlas.application",
-        [
-            Application(
-                id="1",
-                status="active",
-                attestation_id="att1",
-                created_at=datetime.now() - timedelta(days=2),
-                updated_at=datetime.now() - timedelta(days=2),
-                round_id="round1",
-                project_id="proj1",
-                category_id="cat1",
-                dlt_load_id="load1",
-                dlt_id="dlt1",
-            ),
-            Application(
-                id="2",
-                status="inactive",
-                attestation_id="att2",
-                created_at=datetime.now() - timedelta(days=1),
-                updated_at=datetime.now() - timedelta(days=1),
-                round_id="round2",
-                project_id="proj2",
-                category_id="cat2",
-                dlt_load_id="load2",
-                dlt_id="dlt2",
-            ),
-        ],
-    )
+seed = SeedConfig(
+    catalog="bigquery",
+    schema="op_atlas",
+    table="application",
+    base=Application,
+    rows=[
+        Application(
+            id="1",
+            status="active",
+            attestation_id="att1",
+            created_at=datetime.now() - timedelta(days=2),
+            updated_at=datetime.now() - timedelta(days=2),
+            round_id="round1",
+            project_id="proj1",
+            category_id="cat1",
+            dlt_load_id="load1",
+            dlt_id="dlt1",
+        ),
+        Application(
+            id="2",
+            status="inactive",
+            attestation_id="att2",
+            created_at=datetime.now() - timedelta(days=1),
+            updated_at=datetime.now() - timedelta(days=1),
+            round_id="round2",
+            project_id="proj2",
+            category_id="cat2",
+            dlt_load_id="load2",
+            dlt_id="dlt2",
+        ),
+    ],
+)

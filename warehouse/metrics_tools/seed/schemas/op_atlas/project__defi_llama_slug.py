@@ -1,5 +1,4 @@
-from metrics_tools.seed.loader import DestinationLoader
-from metrics_tools.seed.types import Column
+from metrics_tools.seed.types import Column, SeedConfig
 from pydantic import BaseModel
 
 
@@ -10,17 +9,17 @@ class ProjectDefiLlamaSlug(BaseModel):
     dlt_id: str = Column("VARCHAR", "_dlt_id")
 
 
-async def seed(loader: DestinationLoader):
-    await loader.create_table("op_atlas.project__defi_llama_slug", ProjectDefiLlamaSlug)
-
-    await loader.insert(
-        "op_atlas.project__defi_llama_slug",
-        [
-            ProjectDefiLlamaSlug(
-                value="slug1", dlt_parent_id="parent1", dlt_list_idx=1, dlt_id="dlt1"
-            ),
-            ProjectDefiLlamaSlug(
-                value="slug2", dlt_parent_id="parent2", dlt_list_idx=2, dlt_id="dlt2"
-            ),
-        ],
-    )
+seed = SeedConfig(
+    catalog="bigquery",
+    schema="op_atlas",
+    table="project__defi_llama_slug",
+    base=ProjectDefiLlamaSlug,
+    rows=[
+        ProjectDefiLlamaSlug(
+            value="slug1", dlt_parent_id="parent1", dlt_list_idx=1, dlt_id="dlt1"
+        ),
+        ProjectDefiLlamaSlug(
+            value="slug2", dlt_parent_id="parent2", dlt_list_idx=2, dlt_id="dlt2"
+        ),
+    ],
+)

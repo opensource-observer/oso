@@ -1,7 +1,6 @@
 from datetime import datetime, timedelta
 
-from metrics_tools.seed.loader import DestinationLoader
-from metrics_tools.seed.types import Column
+from metrics_tools.seed.types import Column, SeedConfig
 from pydantic import BaseModel
 
 
@@ -12,23 +11,23 @@ class Verifications(BaseModel):
     deleted_at: datetime | None = Column("TIMESTAMP(6) WITH TIME ZONE")
 
 
-async def seed(loader: DestinationLoader):
-    await loader.create_table("farcaster.verifications", Verifications)
-
-    await loader.insert(
-        "farcaster.verifications",
-        [
-            Verifications(
-                fid=1,
-                address="0x123",
-                timestamp=datetime.now() - timedelta(days=2),
-                deleted_at=None,
-            ),
-            Verifications(
-                fid=2,
-                address="0x456",
-                timestamp=datetime.now() - timedelta(days=1),
-                deleted_at=None,
-            ),
-        ],
-    )
+seed = SeedConfig(
+    catalog="bigquery",
+    schema="farcaster",
+    table="verifications",
+    base=Verifications,
+    rows=[
+        Verifications(
+            fid=1,
+            address="0x123",
+            timestamp=datetime.now() - timedelta(days=2),
+            deleted_at=None,
+        ),
+        Verifications(
+            fid=2,
+            address="0x456",
+            timestamp=datetime.now() - timedelta(days=1),
+            deleted_at=None,
+        ),
+    ],
+)

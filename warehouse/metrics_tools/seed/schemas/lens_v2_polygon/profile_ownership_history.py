@@ -1,7 +1,6 @@
 from datetime import datetime, timedelta
 
-from metrics_tools.seed.loader import DestinationLoader
-from metrics_tools.seed.types import Column
+from metrics_tools.seed.types import Column, SeedConfig
 from pydantic import BaseModel
 
 
@@ -23,41 +22,39 @@ class ProfileOwnershipHistory(BaseModel):
     datastream_metadata: DatastreamMetadata | None = Column("ROW(?)")
 
 
-async def seed(loader: DestinationLoader):
-    await loader.create_table(
-        "lens_v2_polygon.profile_ownership_history", ProfileOwnershipHistory
-    )
-
-    await loader.insert(
-        "lens_v2_polygon.profile_ownership_history",
-        [
-            ProfileOwnershipHistory(
-                history_id=1,
-                profile_id="profile_1",
-                owned_by="owner_1",
-                tx_hash="tx_hash_1",
-                block_hash="block_hash_1",
-                block_number=1001,
-                log_index=1,
-                tx_index=1,
-                block_timestamp=datetime.now() - timedelta(days=2),
-                datastream_metadata=DatastreamMetadata(
-                    uuid="uuid_1", source_timestamp=1234567890
-                ),
+seed = SeedConfig(
+    catalog="bigquery",
+    schema="lens_v2_polygon",
+    table="profile_ownership_history",
+    base=ProfileOwnershipHistory,
+    rows=[
+        ProfileOwnershipHistory(
+            history_id=1,
+            profile_id="profile_1",
+            owned_by="owner_1",
+            tx_hash="tx_hash_1",
+            block_hash="block_hash_1",
+            block_number=1001,
+            log_index=1,
+            tx_index=1,
+            block_timestamp=datetime.now() - timedelta(days=2),
+            datastream_metadata=DatastreamMetadata(
+                uuid="uuid_1", source_timestamp=1234567890
             ),
-            ProfileOwnershipHistory(
-                history_id=2,
-                profile_id="profile_2",
-                owned_by="owner_2",
-                tx_hash="tx_hash_2",
-                block_hash="block_hash_2",
-                block_number=1002,
-                log_index=2,
-                tx_index=2,
-                block_timestamp=datetime.now() - timedelta(days=1),
-                datastream_metadata=DatastreamMetadata(
-                    uuid="uuid_2", source_timestamp=1234567891
-                ),
+        ),
+        ProfileOwnershipHistory(
+            history_id=2,
+            profile_id="profile_2",
+            owned_by="owner_2",
+            tx_hash="tx_hash_2",
+            block_hash="block_hash_2",
+            block_number=1002,
+            log_index=2,
+            tx_index=2,
+            block_timestamp=datetime.now() - timedelta(days=1),
+            datastream_metadata=DatastreamMetadata(
+                uuid="uuid_2", source_timestamp=1234567891
             ),
-        ],
-    )
+        ),
+    ],
+)

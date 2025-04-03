@@ -1,7 +1,6 @@
 from datetime import datetime
 
-from metrics_tools.seed.loader import DestinationLoader
-from metrics_tools.seed.types import Column
+from metrics_tools.seed.types import Column, SeedConfig
 from pydantic import BaseModel
 
 
@@ -39,57 +38,57 @@ class StgGithubEvents(BaseModel):
     other: str | None = Column("VARCHAR")
 
 
-async def seed(loader: DestinationLoader):
-    await loader.create_table("oso.stg_github__events", StgGithubEvents)
-
-    await loader.insert(
-        "oso.stg_github__events",
-        [
-            StgGithubEvents(
-                type="type1",
-                public=True,
-                payload="payload1",
-                repo=Repo(id=1, name="repo1", url="url1"),
-                actor=Actor(
-                    id=1,
-                    login="login1",
-                    gravatar_id="gravatar1",
-                    avatar_url="avatar1",
-                    url="url1",
-                ),
-                org=Org(
-                    id=1,
-                    login="login1",
-                    gravatar_id="gravatar1",
-                    avatar_url="avatar1",
-                    url="url1",
-                ),
-                created_at=datetime.now(),
-                id="id1",
-                other="other1",
+seed = SeedConfig(
+    catalog="bigquery",
+    schema="oso",
+    table="stg_github__events",
+    base=StgGithubEvents,
+    rows=[
+        StgGithubEvents(
+            type="type1",
+            public=True,
+            payload="payload1",
+            repo=Repo(id=1, name="repo1", url="url1"),
+            actor=Actor(
+                id=1,
+                login="login1",
+                gravatar_id="gravatar1",
+                avatar_url="avatar1",
+                url="url1",
             ),
-            StgGithubEvents(
-                type="type2",
-                public=False,
-                payload="payload2",
-                repo=Repo(id=2, name="repo2", url="url2"),
-                actor=Actor(
-                    id=2,
-                    login="login2",
-                    gravatar_id="gravatar2",
-                    avatar_url="avatar2",
-                    url="url2",
-                ),
-                org=Org(
-                    id=2,
-                    login="login2",
-                    gravatar_id="gravatar2",
-                    avatar_url="avatar2",
-                    url="url2",
-                ),
-                created_at=datetime.now(),
-                id="id2",
-                other="other2",
+            org=Org(
+                id=1,
+                login="login1",
+                gravatar_id="gravatar1",
+                avatar_url="avatar1",
+                url="url1",
             ),
-        ],
-    )
+            created_at=datetime.now(),
+            id="id1",
+            other="other1",
+        ),
+        StgGithubEvents(
+            type="type2",
+            public=False,
+            payload="payload2",
+            repo=Repo(id=2, name="repo2", url="url2"),
+            actor=Actor(
+                id=2,
+                login="login2",
+                gravatar_id="gravatar2",
+                avatar_url="avatar2",
+                url="url2",
+            ),
+            org=Org(
+                id=2,
+                login="login2",
+                gravatar_id="gravatar2",
+                avatar_url="avatar2",
+                url="url2",
+            ),
+            created_at=datetime.now(),
+            id="id2",
+            other="other2",
+        ),
+    ],
+)

@@ -1,7 +1,6 @@
 from datetime import date, timedelta
 
-from metrics_tools.seed.loader import DestinationLoader
-from metrics_tools.seed.types import Column
+from metrics_tools.seed.types import Column, SeedConfig
 from pydantic import BaseModel
 
 
@@ -26,54 +25,51 @@ class UserOperationEventLogsV2(BaseModel):
     dt: date | None = Column("DATE")
 
 
-async def seed(loader: DestinationLoader):
-    await loader.create_table(
-        "optimism_superchain_4337_account_abstraction_data.useroperationevent_logs_v2",
-        UserOperationEventLogsV2,
-    )
-
-    await loader.insert(
-        "optimism_superchain_4337_account_abstraction_data.useroperationevent_logs_v2",
-        [
-            UserOperationEventLogsV2(
-                chain_id=1,
-                network="network1",
-                block_timestamp=1622547800,
-                block_number=123456,
-                block_hash="block_hash1",
-                transaction_hash="tx_hash1",
-                transaction_index=1,
-                log_index=1,
-                contract_address="contract_address1",
-                userophash="userophash1",
-                sender="sender1",
-                paymaster="paymaster1",
-                nonce="nonce1",
-                success=True,
-                actualgascost="actualgascost1",
-                actualgasused="actualgasused1",
-                chain="chain1",
-                dt=date.today() - timedelta(days=1),
-            ),
-            UserOperationEventLogsV2(
-                chain_id=2,
-                network="network2",
-                block_timestamp=1622547801,
-                block_number=123457,
-                block_hash="block_hash2",
-                transaction_hash="tx_hash2",
-                transaction_index=2,
-                log_index=2,
-                contract_address="contract_address2",
-                userophash="userophash2",
-                sender="sender2",
-                paymaster="paymaster2",
-                nonce="nonce2",
-                success=False,
-                actualgascost="actualgascost2",
-                actualgasused="actualgasused2",
-                chain="chain2",
-                dt=date.today(),
-            ),
-        ],
-    )
+seed = SeedConfig(
+    catalog="bigquery",
+    schema="optimism_superchain_4337_account_abstraction_data",
+    table="useroperationevent_logs_v2",
+    base=UserOperationEventLogsV2,
+    rows=[
+        UserOperationEventLogsV2(
+            chain_id=1,
+            network="network1",
+            block_timestamp=1622547800,
+            block_number=123456,
+            block_hash="block_hash1",
+            transaction_hash="tx_hash1",
+            transaction_index=1,
+            log_index=1,
+            contract_address="contract_address1",
+            userophash="userophash1",
+            sender="sender1",
+            paymaster="paymaster1",
+            nonce="nonce1",
+            success=True,
+            actualgascost="actualgascost1",
+            actualgasused="actualgasused1",
+            chain="chain1",
+            dt=date.today() - timedelta(days=1),
+        ),
+        UserOperationEventLogsV2(
+            chain_id=2,
+            network="network2",
+            block_timestamp=1622547801,
+            block_number=123457,
+            block_hash="block_hash2",
+            transaction_hash="tx_hash2",
+            transaction_index=2,
+            log_index=2,
+            contract_address="contract_address2",
+            userophash="userophash2",
+            sender="sender2",
+            paymaster="paymaster2",
+            nonce="nonce2",
+            success=False,
+            actualgascost="actualgascost2",
+            actualgasused="actualgasused2",
+            chain="chain2",
+            dt=date.today(),
+        ),
+    ],
+)

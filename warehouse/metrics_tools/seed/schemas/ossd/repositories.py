@@ -1,7 +1,6 @@
 from datetime import datetime, timedelta
 
-from metrics_tools.seed.loader import DestinationLoader
-from metrics_tools.seed.types import Column
+from metrics_tools.seed.types import Column, SeedConfig
 from pydantic import BaseModel
 
 
@@ -27,53 +26,53 @@ class Repositories(BaseModel):
     updated_at: datetime | None = Column("TIMESTAMP(6) WITH TIME ZONE")
 
 
-async def seed(loader: DestinationLoader):
-    await loader.create_table("ossd.repositories", Repositories)
-
-    await loader.insert(
-        "ossd.repositories",
-        [
-            Repositories(
-                ingestion_time=datetime.now() - timedelta(days=1),
-                id=1,
-                node_id="node1",
-                name_with_owner="owner1/repo1",
-                url="https://github.com/owner1/repo1",
-                name="repo1",
-                is_fork=False,
-                branch="main",
-                fork_count=10,
-                star_count=100,
-                watcher_count=50,
-                license_spdx_id="MIT",
-                license_name="MIT License",
-                language="python",
-                dlt_load_id="load1",
-                dlt_id="id1",
-                owner="owner1",
-                created_at=datetime.now() - timedelta(days=1),
-                updated_at=datetime.now(),
-            ),
-            Repositories(
-                ingestion_time=datetime.now() - timedelta(days=1),
-                id=2,
-                node_id="node2",
-                name_with_owner="owner2/repo2",
-                url="https://github.com/owner2/repo2",
-                name="repo2",
-                is_fork=True,
-                branch="main",
-                fork_count=20,
-                star_count=200,
-                watcher_count=100,
-                license_spdx_id="GPL-3.0",
-                license_name="GNU General Public License v3.0",
-                language="javaScript",
-                dlt_load_id="load2",
-                dlt_id="id2",
-                owner="owner2",
-                created_at=datetime.now() - timedelta(days=1),
-                updated_at=datetime.now(),
-            ),
-        ],
-    )
+seed = SeedConfig(
+    catalog="bigquery",
+    schema="ossd",
+    table="repositories",
+    base=Repositories,
+    rows=[
+        Repositories(
+            ingestion_time=datetime.now() - timedelta(days=1),
+            id=1,
+            node_id="node1",
+            name_with_owner="owner1/repo1",
+            url="https://github.com/owner1/repo1",
+            name="repo1",
+            is_fork=False,
+            branch="main",
+            fork_count=10,
+            star_count=100,
+            watcher_count=50,
+            license_spdx_id="MIT",
+            license_name="MIT License",
+            language="python",
+            dlt_load_id="load1",
+            dlt_id="id1",
+            owner="owner1",
+            created_at=datetime.now() - timedelta(days=1),
+            updated_at=datetime.now(),
+        ),
+        Repositories(
+            ingestion_time=datetime.now() - timedelta(days=1),
+            id=2,
+            node_id="node2",
+            name_with_owner="owner2/repo2",
+            url="https://github.com/owner2/repo2",
+            name="repo2",
+            is_fork=True,
+            branch="main",
+            fork_count=20,
+            star_count=200,
+            watcher_count=100,
+            license_spdx_id="GPL-3.0",
+            license_name="GNU General Public License v3.0",
+            language="javaScript",
+            dlt_load_id="load2",
+            dlt_id="id2",
+            owner="owner2",
+            created_at=datetime.now() - timedelta(days=1),
+            updated_at=datetime.now(),
+        ),
+    ],
+)

@@ -1,7 +1,6 @@
 from datetime import datetime, timedelta
 
-from metrics_tools.seed.loader import DestinationLoader
-from metrics_tools.seed.types import Column
+from metrics_tools.seed.types import Column, SeedConfig
 from pydantic import BaseModel
 
 
@@ -22,43 +21,43 @@ class ProjectContract(BaseModel):
     verification_chain_id: int | None = Column("BIGINT")
 
 
-async def seed(loader: DestinationLoader):
-    await loader.create_table("op_atlas.project_contract", ProjectContract)
-
-    await loader.insert(
-        "op_atlas.project_contract",
-        [
-            ProjectContract(
-                id="1",
-                contract_address="0x123",
-                deployer_address="0xabc",
-                deployment_hash="hash1",
-                verification_proof="proof1",
-                chain_id=1,
-                created_at=datetime.now() - timedelta(days=2),
-                updated_at=datetime.now() - timedelta(days=2),
-                project_id="proj1",
-                description="Description One",
-                name="Contract One",
-                dlt_load_id="load1",
-                dlt_id="dlt1",
-                verification_chain_id=1,
-            ),
-            ProjectContract(
-                id="2",
-                contract_address="0x456",
-                deployer_address="0xdef",
-                deployment_hash="hash2",
-                verification_proof="proof2",
-                chain_id=2,
-                created_at=datetime.now() - timedelta(days=1),
-                updated_at=datetime.now() - timedelta(days=1),
-                project_id="proj2",
-                description="Description Two",
-                name="Contract Two",
-                dlt_load_id="load2",
-                dlt_id="dlt2",
-                verification_chain_id=2,
-            ),
-        ],
-    )
+seed = SeedConfig(
+    catalog="bigquery",
+    schema="op_atlas",
+    table="project_contract",
+    base=ProjectContract,
+    rows=[
+        ProjectContract(
+            id="1",
+            contract_address="0x123",
+            deployer_address="0xabc",
+            deployment_hash="hash1",
+            verification_proof="proof1",
+            chain_id=1,
+            created_at=datetime.now() - timedelta(days=2),
+            updated_at=datetime.now() - timedelta(days=2),
+            project_id="proj1",
+            description="Description One",
+            name="Contract One",
+            dlt_load_id="load1",
+            dlt_id="dlt1",
+            verification_chain_id=1,
+        ),
+        ProjectContract(
+            id="2",
+            contract_address="0x456",
+            deployer_address="0xdef",
+            deployment_hash="hash2",
+            verification_proof="proof2",
+            chain_id=2,
+            created_at=datetime.now() - timedelta(days=1),
+            updated_at=datetime.now() - timedelta(days=1),
+            project_id="proj2",
+            description="Description Two",
+            name="Contract Two",
+            dlt_load_id="load2",
+            dlt_id="dlt2",
+            verification_chain_id=2,
+        ),
+    ],
+)
