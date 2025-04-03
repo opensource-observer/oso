@@ -40,6 +40,7 @@ from opsscripts.utils.dockertools import (
 )
 from opsscripts.utils.k8stools import deploy_oso_k8s_job
 from oso_lets_go.wizard import MultipleChoiceInput
+from python_on_whales import DockerClient
 from sqlglot import pretty
 from sqlmesh.core.dialect import parse_one
 from sqlmesh.core.macros import RuntimeStage
@@ -747,18 +748,12 @@ def sqlmesh_test(ctx: click.Context):
     if not ctx.args:
         extra_args = []
 
+    docker_client = DockerClient(
+        compose_files=[os.path.join(REPO_DIR, "warehouse/docker-compose.yml")]
+    )
     try:
-        subprocess.run(
-            [
-                "docker",
-                "compose",
-                "-f",
-                os.path.join(REPO_DIR, "warehouse/docker-compose.yml"),
-                "up",
-                "--wait",
-            ],
-            check=True,
-        )
+        docker_client.compose.up(wait=True)
+
         asyncio.run(db_seed())
 
         process = subprocess.Popen(
@@ -774,20 +769,17 @@ def sqlmesh_test(ctx: click.Context):
         )
         process.communicate()
 
-    except e:
+    except Exception as e:
         logger.error(f"Failed to run tests: {e}")
         raise
     finally:
-        subprocess.run(
-            [
-                "docker",
-                "compose",
-                "-f",
-                os.path.join(REPO_DIR, "warehouse/docker-compose.yml"),
-                "down",
-            ],
-            check=True,
-        )
+        docker_client.compose.down()
+
+
+@local.command()
+@click.pass_context
+def run_seed(ctx: click.Context):
+    asyncio.run(db_seed())
 
 
 @cli.command()
