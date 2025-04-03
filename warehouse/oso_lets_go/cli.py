@@ -738,10 +738,56 @@ def reset(
     manager.reset(full_reset=full_reset)
 
 
-@local.command(name="seed")
+@local.command(
+    context_settings=dict(ignore_unknown_options=True, allow_extra_args=True),
+)
 @click.pass_context
-def seed_db(ctx: click.Context):
-    asyncio.run(db_seed())
+def sqlmesh_test(ctx: click.Context):
+    extra_args = ctx.args
+    if not ctx.args:
+        extra_args = []
+
+    try:
+        subprocess.run(
+            [
+                "docker",
+                "compose",
+                "-f",
+                os.path.join(REPO_DIR, "warehouse/docker-compose.yml"),
+                "up",
+                "--wait",
+            ],
+            check=True,
+        )
+        asyncio.run(db_seed())
+
+        process = subprocess.Popen(
+            ["sqlmesh", "--gateway", "local-trino-docker", *extra_args],
+            # shell=True,
+            cwd=os.path.join(REPO_DIR, "warehouse/oso_sqlmesh"),
+            env={
+                **os.environ,
+                "SQLMESH_DUCKDB_LOCAL_PATH": ctx.obj["local_trino_duckdb_path"],
+                "SQLMESH_TRINO_HOST": "localhost",
+                "SQLMESH_TRINO_PORT": os.environ.get("SQLMESH_TRINO_PORT", "8080"),
+            },
+        )
+        process.communicate()
+
+    except e:
+        logger.error(f"Failed to run tests: {e}")
+        raise
+    finally:
+        subprocess.run(
+            [
+                "docker",
+                "compose",
+                "-f",
+                os.path.join(REPO_DIR, "warehouse/docker-compose.yml"),
+                "down",
+            ],
+            check=True,
+        )
 
 
 @cli.command()
