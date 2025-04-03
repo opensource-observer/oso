@@ -50,7 +50,7 @@ def get_sql_column_types(
     columns: dict[str, str] = {}
     for column_name, column_props in properties.items():
         sql_type = get_sql_column_type(schema, column_props)
-        column_name = properties.get("column_name", column_name)
+        column_name = column_props.get("column_name", column_name)
         # If the column has anyOf property, we need to check if it is nullable
         nullable = (
             "NOT NULL"
