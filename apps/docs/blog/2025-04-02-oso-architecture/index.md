@@ -155,3 +155,23 @@ we moved all of our data orchestration to
 [Dagster](https://dagster.io/),
 which allowed us to visualize the entire data pipeline,
 monitor data jobs, data freshness, and debug individual failing models.
+
+## Phase 4: Replacing Postgres with Clickhouse
+
+By this point, our metrics were derived from over 50TB+ of raw data.
+Even the mart models being served from the API were over 100GB+ in size.
+The Postgres database we used for serving was struggling to keep up with queries,
+even with basic lookups.
+The breaking point came when the job to create indices kept failing
+for our larger tables (e.g. `artifacts_by_project_v1`).
+
+We originally chose Postgres as the safe, most common option,
+but it was increasingly clear its limitations as a
+[OLTP](https://en.wikipedia.org/wiki/Online_transaction_processing)
+database. We wanted to switch to an
+[OLAP](https://en.wikipedia.org/wiki/Online_analytical_processing)
+database, optimized for analytics queries.
+After evaluating some options,
+we ended up choosing [Clickhouse](https://clickhouse.com/),
+which has built a reputation for low-latency snappy
+analytics queries, suitable for frontends.
