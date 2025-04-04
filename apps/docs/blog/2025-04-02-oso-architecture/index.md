@@ -258,3 +258,50 @@ The experiment convinced us of 2 things:
 
 1. sqlmesh is the future of data transformation
 2. Clickhouse is great for serving, but too slow/costly for the backend pipeline
+
+## Phase 6: Replacing dbt/BigQuery with sqlmesh/Trino/Iceberg
+
+By now we were committed to fully transitioning our entire pipeline to sqlmesh.
+However, our cloud bills were becoming astronomical.
+On certain days when we ran a full pipeline refresh,
+our 1-day cloud bill would be >$1000.
+We needed to find a more cost-effective and scalable solution.
+
+We decided to rip off the band-aid and do a major transition
+to an auto-scaling Trino cluster while transitioning to sqlmesh.
+We'd hit 3 birds with 1 stone: decentralizing our infra,
+supporting time-series metrics on sqlmesh, and reducing our cloud costs
+all in 1 go, at the cost of instability for months.
+
+[![](https://mermaid.ink/img/pako:eNqFVdtS2zAQ_RWNnpwhSQkQEvLQGS7TKR0uaaF0prgPsrzYKrbk6kISGP69K9shFyfgPMRe7VntnqNdvVCuYqAj2ul0QmmFzWBEQoo_WVpC-ZCpCU-ZtuT2JJQEH-OiRLMiJYWLMsHvQ3rMrdKGBFdKdmCaMmeseIJWSP9UCP84A9qg70__v7ISw5NfOGOWEcMFYBrGGvKJgEyEhGV3kHH1UkYjnQ7meidggs7fHehZSNH2mSijJhBVnj565XiqpNUichaIL7r2FTKGKeh3nHN0zsw8tOYpGKuZFUqug344Sf5hHgLMIhNWiMpvjT1cwqqvC5DkRjnNgVxHWNUT5uLLXfCz4FsUkCEjCLtkQpKSsXFtXKHUPyuZIuSbilZtJDhjibGgd8y_LAeTthoxanLm6nCVZVBrHWe26R-JxNc_uw9qxIRpSBWqRYITkZQaIaq1BuMqL5DpiFme4l4njD-i0nMz4ZnzaZLgVgupWmv0NGqttMBy5yIsh99YX0PyGHOvwRl7rCrYnnIFv2SYo2CZeIb3oXOSKthYKw7m41Tfgn0M2wL0oly8RQnOOUSgkw1yqIwVnoGIGX_Wri-Ox-VZ898kOMWefyxjNPXnShqXg7ZeKITe4HkWMiFVvVU_r8i4FVxVudzUW9hc46WpwnI1C2g5SRafVZ82N90M3ua9UsHGFn7QeMhwb-TmS_1KfNMLDqbZweUYQ9dfEBFWFEh83bh3gPMi27mCqe3-Na1NSEzQT-bxOamGCgm-MuM0exeE223gYGmGrQzhxVBbvOEibVPkIGcixnvlxZtDalPIURB_t8RMP_r75RX9mLPqZiY5HVntoE21cklKRw8sM_jlPPVwJhhyl79ZCyZ_K5XPIRALHEiX1S1WXmZtmmi_dx0SMwJ9qpy0dLS3e1QGoKMXOqWjQa_b3-8f7PX7w8HgYO-w16YzOurvd_tHw-HhPi70DnuD3mubPpc77naHg_7rf_VROPc?type=png)](https://mermaid.live/edit#pako:eNqFVdtS2zAQ_RWNnpwhSQkQEvLQGS7TKR0uaaF0prgPsrzYKrbk6kISGP69K9shFyfgPMRe7VntnqNdvVCuYqAj2ul0QmmFzWBEQoo_WVpC-ZCpCU-ZtuT2JJQEH-OiRLMiJYWLMsHvQ3rMrdKGBFdKdmCaMmeseIJWSP9UCP84A9qg70__v7ISw5NfOGOWEcMFYBrGGvKJgEyEhGV3kHH1UkYjnQ7meidggs7fHehZSNH2mSijJhBVnj565XiqpNUichaIL7r2FTKGKeh3nHN0zsw8tOYpGKuZFUqug344Sf5hHgLMIhNWiMpvjT1cwqqvC5DkRjnNgVxHWNUT5uLLXfCz4FsUkCEjCLtkQpKSsXFtXKHUPyuZIuSbilZtJDhjibGgd8y_LAeTthoxanLm6nCVZVBrHWe26R-JxNc_uw9qxIRpSBWqRYITkZQaIaq1BuMqL5DpiFme4l4njD-i0nMz4ZnzaZLgVgupWmv0NGqttMBy5yIsh99YX0PyGHOvwRl7rCrYnnIFv2SYo2CZeIb3oXOSKthYKw7m41Tfgn0M2wL0oly8RQnOOUSgkw1yqIwVnoGIGX_Wri-Ox-VZ898kOMWefyxjNPXnShqXg7ZeKITe4HkWMiFVvVU_r8i4FVxVudzUW9hc46WpwnI1C2g5SRafVZ82N90M3ua9UsHGFn7QeMhwb-TmS_1KfNMLDqbZweUYQ9dfEBFWFEh83bh3gPMi27mCqe3-Na1NSEzQT-bxOamGCgm-MuM0exeE223gYGmGrQzhxVBbvOEibVPkIGcixnvlxZtDalPIURB_t8RMP_r75RX9mLPqZiY5HVntoE21cklKRw8sM_jlPPVwJhhyl79ZCyZ_K5XPIRALHEiX1S1WXmZtmmi_dx0SMwJ9qpy0dLS3e1QGoKMXOqWjQa_b3-8f7PX7w8HgYO-w16YzOurvd_tHw-HhPi70DnuD3mubPpc77naHg_7rf_VROPc)
+
+After a painful Q1, we are excited to share the results of this refactor:
+
+- We run all of our queries on an auto-scaling Trino cluster of spot instances.
+  This makes it cheap enough to run calculate all our metrics as time-series for all time.
+- We launched [`pyoso`](../../docs/get-started/python),
+  which offers the community a generous quota to query the OSO data lake.
+- We scanned over 1.2 PB across a 20-node cluster in the last month,
+  preparing for Optimism retro funding.
+- You can contribute both
+  [data](../../docs/contribute-data/)
+  and [models](../../docs/contribute-models/)
+  to the OSO data lake to take advantage of this community resource.
+
+Let's analyze software impact together!
+
+## Summary
+
+Here's where we ended up after a year of exploring DataOps tooling:
+
+- For cloud infrastructure: [Google Cloud](https://cloud.google.com/)
+- For data orchestration: [Dagster](https://dagster.io/)
+- For data transformations: [sqlmesh](https://sqlmesh.com/)
+- For data ingest: [dlt](https://dlthub.com/)
+- For data lake tables: [Apache Iceberg](https://iceberg.apache.org/)
+- For OLAP database: [Clickhouse](https://clickhouse.com/)
+- For OLTP database: [Supabase](https://supabase.com/)
+- For GraphQL APIs: [Hasura](https://hasura.io/)
+- For low-code frontend builder: [Plasmic](https://plasmic.app?ref=ryscheng)
+- For frontend framework: [Next.js](https://nextjs.org/)
+- For frontend hosting: [Vercel](https://vercel.com/)
