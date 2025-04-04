@@ -130,3 +130,28 @@ For now, this was a huge step up in our ability
 to experiment with different data models.
 At the end of the pipeline, we materialize our
 mart models into the same Postgres database for serving the API.
+
+## Phase 3: Replacing GitHub actions with Dagster
+
+At this point, we were still using GitHub actions
+to orchestrate all of our data jobs.
+The problem here was when things went wrong (which happened a lot),
+it was very difficult to find the exact failure in the logs.
+It was also difficult to tell how fresh any particular data model was,
+and we had no capacity to materialize a single model.
+Instead, we only had 1 job that would run the entire pipeline.
+
+By this time, we were racing to get metrics ready for Optimism retro funding 4,
+the first time our metrics would directly impact the flow of funding.
+Debugging a stable pipeline was the top priority.
+We were also partnering with [Goldsky](https://goldsky.com/)
+to ingest our own blockchain traces from 7 networks in the Superchain,
+releasing them as a public dataset.
+
+![dagster](./dagster_assets.png)
+
+In order to facilitate better debugging,
+we moved all of our data orchestration to
+[Dagster](https://dagster.io/),
+which allowed us to visualize the entire data pipeline,
+monitor data jobs, data freshness, and debug individual failing models.
