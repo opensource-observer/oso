@@ -83,3 +83,50 @@ It was time to transition to an
 [ELT](https://aws.amazon.com/compare/the-difference-between-etl-and-elt/) process.
 
 ![ELT](https://images.ctfassets.net/xnqwd8kotbaj/62wFnQhpt5STjuOyNPogDa/b1436e9c5a8f18219e6db93b7d55d5d2/data-pipeline_glossary.png)
+
+## Phase 2: Adding dbt and BigQuery
+
+Enter data warehouses, like Snowflake, Databricks, and BigQuery.
+By storing all of the raw source data in a data warehouse,
+it makes it trivial to dynamically run any arbitrary queries on top.
+We can define a sequences of transformations in our data pipeline.
+We chose to use [dbt](https://www.getdbt.com/),
+which is still considered best-in-class for this workload.
+If we changed any data model, the pipeline should be smart enough
+to only recompute models downstream from it.
+It was also smart enough to incrementally run models on fresh data.
+
+We also decided to build on top of Google BigQuery,
+which already had the 2 main public datasets we needed at the time for free,
+GitHub and Optimism blockchain data.
+It was also the only major data warehouse that supported retail users.
+Anyone with a Google account could query the raw data or our data models,
+up to 1TB for free every month.
+As a first-stage filter, we would filter down the raw data sources
+to just the relevant events for a small subset of projects.
+Then, we'd normalize everything in our own semantic model
+of [artifacts, projects, collections, and events](../../docs/references/).
+Metrics were then computed against a universal event table,
+each represented by its own data model.
+
+[![](https://mermaid.ink/img/pako:eNp9VNty2jAQ_RWNnmAKtE5ioH7oTBPaaTu5kJKmM437INsbW62RXF1CSIZ_z8oyJgFS8YC8Oquze3a1jzSVGdCI9vv9WBhuSohITPEnakssbku5SAumDLk6jgXBpW2SK1YVpLJJydObmH5MjVSadM6l6MN9waw2_A66Mf3tPdyyGpRG7A_3_-Ikgzt3MGGGkU8i5wK2EUywcqlNi5qlHDBYtLQwEJnf1Dyk38csrjksyFtyaUEtY4q2D0RquYDEIx2vB24hWMU9Ys3rUSdSGMUTa4DMLk8beCrnFVoSZtJin9N3K8g_vJ6DbjwWTEEhMUwP39IU6THLiwoEmUmrUiAXCWZ0B6pOdaPJpgq8ghJFC9bqTBvDCwndkiotQBvFDJfCwb_J5KWRdCYs1wZUd8e5Dfum0_C0FtI55nmtIbp1t_yeC3TTSE0qJVPQum6aLDG7bM-9vJBnDMPirOQPsF_InUC939RTvVqutnk2n74Fdlsjw6wT9pxvi2s3xo3LnsrdKuwo5EZZPjdb4mrNU9C7xas7F6E_ISGsqvDlNSW7BmyT8s053JvBH93d54npuGc6_Up8L5HOF6atYt1XaP7_LNqH2yTnOuLi9GpKJo2BdKZSm1yB3mqI9pVuOn-zw0Pao3NQc8YzHEmPzhxTU8Ac5XRjKWPqrxtNK8Qxa-RsKVIaGWWhR5W0eUGjW1Zq_LIVBgcTzlDpeWutmPgl5XztAhnHuXXmB2A9B3s0V467uRIjAnUirTA0Cg6C-gIaPdJ7Go2CQXgYHh2E4Xg0OjoY4uGSRuHhIHw_Hg8P8SAYBqNg1aMPNeO7wXgUrp4A-sasPA?type=png)](https://mermaid.live/edit#pako:eNp9VNty2jAQ_RWNnmAKtE5ioH7oTBPaaTu5kJKmM437INsbW62RXF1CSIZ_z8oyJgFS8YC8Oquze3a1jzSVGdCI9vv9WBhuSohITPEnakssbku5SAumDLk6jgXBpW2SK1YVpLJJydObmH5MjVSadM6l6MN9waw2_A66Mf3tPdyyGpRG7A_3_-Ikgzt3MGGGkU8i5wK2EUywcqlNi5qlHDBYtLQwEJnf1Dyk38csrjksyFtyaUEtY4q2D0RquYDEIx2vB24hWMU9Ys3rUSdSGMUTa4DMLk8beCrnFVoSZtJin9N3K8g_vJ6DbjwWTEEhMUwP39IU6THLiwoEmUmrUiAXCWZ0B6pOdaPJpgq8ghJFC9bqTBvDCwndkiotQBvFDJfCwb_J5KWRdCYs1wZUd8e5Dfum0_C0FtI55nmtIbp1t_yeC3TTSE0qJVPQum6aLDG7bM-9vJBnDMPirOQPsF_InUC939RTvVqutnk2n74Fdlsjw6wT9pxvi2s3xo3LnsrdKuwo5EZZPjdb4mrNU9C7xas7F6E_ISGsqvDlNSW7BmyT8s053JvBH93d54npuGc6_Up8L5HOF6atYt1XaP7_LNqH2yTnOuLi9GpKJo2BdKZSm1yB3mqI9pVuOn-zw0Pao3NQc8YzHEmPzhxTU8Ac5XRjKWPqrxtNK8Qxa-RsKVIaGWWhR5W0eUGjW1Zq_LIVBgcTzlDpeWutmPgl5XztAhnHuXXmB2A9B3s0V467uRIjAnUirTA0Cg6C-gIaPdJ7Go2CQXgYHh2E4Xg0OjoY4uGSRuHhIHw_Hg8P8SAYBqNg1aMPNeO7wXgUrp4A-sasPA)
+
+**_Pros_**
+
+- Simple and low setup costs
+- Leverage the rich public data ecosystem of BigQuery
+- Easily share data with any Google user
+- Integrates easily with Kaggle
+
+**_Cons_**
+
+- Very high computation costs
+- Proprietary technical stack
+- Jinja macros
+
+We'll address the cons
+[later](#phase-6-replacing-dbtbigquery-with-sqlmeshtrinoiceberg).
+For now, this was a huge step up in our ability
+to experiment with different data models.
+At the end of the pipeline, we materialize our
+mart models into the same Postgres database for serving the API.
