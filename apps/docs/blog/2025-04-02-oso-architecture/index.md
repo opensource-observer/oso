@@ -175,3 +175,37 @@ After evaluating some options,
 we ended up choosing [Clickhouse](https://clickhouse.com/),
 which has built a reputation for low-latency snappy
 analytics queries, suitable for frontends.
+
+## Phase 5: Replacing custom indexing with dlt
+
+We quickly outgrew what we could do with just the available public datasets.
+Beyond establishing our own ELT ingest for Superchain data,
+we also needed to ingest
+[Farcaster](https://www.farcaster.xyz/),
+[Gitcoin](https://www.gitcoin.co/),
+[OpenRank](https://openrank.com/), and
+[EAS](https://attest.org/) data.
+
+We evaluate a number of different data movement tools,
+with very limited success,
+including:
+[Airbyte](https://airbyte.com/),
+[CloudQuery](https://www.cloudquery.io/),
+[Meltano](https://meltano.com/),
+[BigQuery Data Transfer Service](https://cloud.google.com/bigquery/docs/dts-introduction).
+Sometimes, we wanted to replicate an existing dataset
+from S3 or Postgres.
+Sometimes, we wanted to crawl an API, which could be REST or GraphQL.
+Often times these different solutions would fail for
+a [variety](https://github.com/opensource-observer/oso/issues?q=is%3Aissue%20state%3Aclosed%20cloudquery%20)
+of [reasons](https://github.com/opensource-observer/oso/issues?q=is%3Aissue%20state%3Aclosed%20airbyte%20).
+
+[![](https://mermaid.ink/img/pako:eNp9VNty2jAQ_RWNnmACtCRxoH7oTBLaaTu5kNKmM8V9kO0NVmMkV5cAyfDvXdnGTmwS84C8Ose7e3S0TzSSMVCf9vv9QBhuUvBJQPEn8kgg7lK5ihKmDPlxFgiCj7bhQrEsIZkNUx7NA3oaGak06VxJ0Yd1wqw2_AG6Af1TMNxjNSiN2J_u_8VODA9uY8IMI5_EggtoIphg6UabCjWLOGCxGKlgIOJikech_T52ccthRd6RGwtqE1CMfSRSyxWEBdLlLYANBMt4E3EuhVE8tAaIE6zEchHDGlQB3hXZIsxuLkp8JJcZRkJmomQf6bsV5B_WwkGXjBVTkEjsqYA3DgBrRUmuMxBkJq2KgFyH2P4DluR0qQWsj4xnkKLCw52U0zLwQm_3SBUloI1ihkvh4N9k-DJIOhO20AZUt0UuhdkliWSaQumRODVtfNXmvFNSqgjpnPFFfkBI6zZ4zwWdl-dIMiUj0LrIFppXq2sdVIyJ9-u-L19Bv2QoAGcpf4S3qXVDOW9aFPmqMSpP16-FM9uOdWWH7Hm-Rq52jTVlj0fuFEqCuVHQz-WSOFfxCHTbJvmFQugvCAnLMhwIpTluAQ2ZHlzB2gz-6u4-Jrbjpsf0KylcSzpfmLaKHZxm6BjZfSXb25e2Gitlj85S1xenUzIpA6RzjlXe5wI1PFVNkfqy1SvcpD26BLVkPMaR-eTCATUJLFFXNzZjpu7d6NwijlkjZxsRUd8oCz2qpF0k1L9jqcY3m2F5MOEMJV9W0YyJ31IudxSIOd6Zy2JA53O6RxfK5S4_iRWBOpdWGOp7o5xP_Se6pv5oOPCOvONDzxuPRseHJ8Me3SDmaOB9GI9PjnBjeDIcDbc9-pgnfD8Yj7ztfxhf3UI?type=png)](https://mermaid.live/edit#pako:eNp9VNty2jAQ_RWNnmACtCRxoH7oTBLaaTu5kNKmM8V9kO0NVmMkV5cAyfDvXdnGTmwS84C8Ose7e3S0TzSSMVCf9vv9QBhuUvBJQPEn8kgg7lK5ihKmDPlxFgiCj7bhQrEsIZkNUx7NA3oaGak06VxJ0Yd1wqw2_AG6Af1TMNxjNSiN2J_u_8VODA9uY8IMI5_EggtoIphg6UabCjWLOGCxGKlgIOJikech_T52ccthRd6RGwtqE1CMfSRSyxWEBdLlLYANBMt4E3EuhVE8tAaIE6zEchHDGlQB3hXZIsxuLkp8JJcZRkJmomQf6bsV5B_WwkGXjBVTkEjsqYA3DgBrRUmuMxBkJq2KgFyH2P4DluR0qQWsj4xnkKLCw52U0zLwQm_3SBUloI1ihkvh4N9k-DJIOhO20AZUt0UuhdkliWSaQumRODVtfNXmvFNSqgjpnPFFfkBI6zZ4zwWdl-dIMiUj0LrIFppXq2sdVIyJ9-u-L19Bv2QoAGcpf4S3qXVDOW9aFPmqMSpP16-FM9uOdWWH7Hm-Rq52jTVlj0fuFEqCuVHQz-WSOFfxCHTbJvmFQugvCAnLMhwIpTluAQ2ZHlzB2gz-6u4-Jrbjpsf0KylcSzpfmLaKHZxm6BjZfSXb25e2Gitlj85S1xenUzIpA6RzjlXe5wI1PFVNkfqy1SvcpD26BLVkPMaR-eTCATUJLFFXNzZjpu7d6NwijlkjZxsRUd8oCz2qpF0k1L9jqcY3m2F5MOEMJV9W0YyJ31IudxSIOd6Zy2JA53O6RxfK5S4_iRWBOpdWGOp7o5xP_Se6pv5oOPCOvONDzxuPRseHJ8Me3SDmaOB9GI9PjnBjeDIcDbc9-pgnfD8Yj7ztfxhf3UI)
+
+With the new Dagster setup,
+we decided to just stick with Dagster
+[embedded-elt](https://docs.dagster.io/integrations/libraries/embedded-elt),
+which has built-in support for
+[dlt](https://dlthub.com/).
+It has satisfied every use case we've had so far,
+and we've never looked back.
