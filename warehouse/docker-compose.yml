@@ -7,16 +7,6 @@ services:
       - ./docker/trino/etc:/usr/lib/trino/etc:ro
       - ./docker/trino/catalog:/etc/trino/catalog
 
-  trino-seed:
-    image: "trinodb/trino:472"
-    volumes:
-      - ./docker/trino/seed:/seed
-      - ./docker/trino/seed.sh:/seed.sh
-    entrypoint: /seed.sh
-    depends_on:
-      trino:
-        condition: service_healthy
-
   nessie:
     hostname: nessie
     image: "ghcr.io/projectnessie/nessie:0.102.0"
