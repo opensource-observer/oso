@@ -209,3 +209,52 @@ which has built-in support for
 [dlt](https://dlthub.com/).
 It has satisfied every use case we've had so far,
 and we've never looked back.
+
+## Phase 5: Running sqlmesh on Clickhouse
+
+Around August 2024, we hit a major roadblock with dbt and BigQuery.
+Up until now, we were just computing metrics
+at the current date (e.g. new active contributors to a project within the last 6 months).
+What if we wanted to see the full time series of _any_ metric
+for _any_ period of time?
+This would be incredibly powerful, not just to show time-series graphs
+in a dashboard.
+It would be the fundamental underpinning of any causal inference
+analysis to understand whether _any_ funding system is driving real outcomes.
+
+In order to calculate time-series metrics,
+we evaluated a number of metric semantic layers,
+including
+[Cube](https://cube.dev/) and
+[MetricFlow](https://docs.getdbt.com/docs/build/about-metricflow).
+However neither supported what we thought was the simplest
+tablestakes metric:
+"How many unique active users/developers churned between any 2 months?"
+
+In order to perform this query, we'd need to mark each unique user/developer
+by their activity in a 30-day rolling window.
+Then we'd aggregate by artifact/project/collection, the number of unique
+users/developers in a 30-day rolling window.
+Then we'd compare 2 subsequent months in a rolling window to determine the changes (churn).
+
+[![](https://mermaid.ink/img/pako:eNqVVdty2jAQ_RWNnmACtJA4ED90Jpd22k4upLTpTOM-yPYGq7ElR5cAyeTfu7INBDC0MQ_Yq3N8ds_Kq2cayRioT9vtdiAMNyn4JKD4E0UkEHepnEQJU4Z8PwkEwUvbcKxYnpDchimPbgN6HBmpNGlcStGGacKsNvwRmgH9XTLcZTUojdgf7n9lJYZHt3DGDCMfxZgLWEcwwdKZNgvUKOKAyWJkAQMRlzeFDmm3sYobDhPyjlxbULOAYuwDkVpOICyRTrcEriFYztcRp1IYxUNrgDjDKiwXMUxBleB5khuE0fV5hY9klmMkZCZK6kjfrCAPmAsHXTEmTEEisaYSvtYAzBUtucpBkJG0KgJyFWL5j5iS82Vp4LJlPIcUHe4i74JxQQo_h1V0xXR3SRUloI1ihkvhOF9luBokjTM21gZUc4NcuTNvWiTTFKqNEqdmE7-o9bZRURYR0jjh46JLSGuu8V67els1k-RKRqB1qRaardltdCtG4Xrz6_RK-gVDAzhL-RPspi4LKnjDMsmtu2OxsZeP_yPuSgiZ096xA3po1SeFdaPAW3ZB7427YJ6Ma-rV-fGw0HIB0jjF6XFf2FHTVf2QZqDrG1qtbRers7ci1ar828kt7SinxeYU2dmCu8r21x1wny2PQG-aX0wshP6EkLA8R88qy28Av_h07xKmpvNHN-uYmJsbz8MvpBwLpPGZaavY3nGOX6NsblHbPRVXxu1yKi3vcJG2aAYqYzzGs-XZhQNqEsjQWHe-xEzduzPmBXHMGjmaiYj6RlloUSXtOKH-HUs1PtkcrYQzztC6bBHNmfglZTanQMxxrlyUJ1lxoLXoWDnt6pWYEahTaYWh_lFBp_4znVK_3-14-95Bz_MG_f5B77DbojPqe_sd72gwONzHhe5ht999adGnQu99Z9D3Xv4C0NI5Ag?type=png)](https://mermaid.live/edit#pako:eNqVVdty2jAQ_RWNnmACtJA4ED90Jpd22k4upLTpTOM-yPYGq7ElR5cAyeTfu7INBDC0MQ_Yq3N8ds_Kq2cayRioT9vtdiAMNyn4JKD4E0UkEHepnEQJU4Z8PwkEwUvbcKxYnpDchimPbgN6HBmpNGlcStGGacKsNvwRmgH9XTLcZTUojdgf7n9lJYZHt3DGDCMfxZgLWEcwwdKZNgvUKOKAyWJkAQMRlzeFDmm3sYobDhPyjlxbULOAYuwDkVpOICyRTrcEriFYztcRp1IYxUNrgDjDKiwXMUxBleB5khuE0fV5hY9klmMkZCZK6kjfrCAPmAsHXTEmTEEisaYSvtYAzBUtucpBkJG0KgJyFWL5j5iS82Vp4LJlPIcUHe4i74JxQQo_h1V0xXR3SRUloI1ihkvhOF9luBokjTM21gZUc4NcuTNvWiTTFKqNEqdmE7-o9bZRURYR0jjh46JLSGuu8V67els1k-RKRqB1qRaardltdCtG4Xrz6_RK-gVDAzhL-RPspi4LKnjDMsmtu2OxsZeP_yPuSgiZ096xA3po1SeFdaPAW3ZB7427YJ6Ma-rV-fGw0HIB0jjF6XFf2FHTVf2QZqDrG1qtbRers7ci1ar828kt7SinxeYU2dmCu8r21x1wny2PQG-aX0wshP6EkLA8R88qy28Av_h07xKmpvNHN-uYmJsbz8MvpBwLpPGZaavY3nGOX6NsblHbPRVXxu1yKi3vcJG2aAYqYzzGs-XZhQNqEsjQWHe-xEzduzPmBXHMGjmaiYj6RlloUSXtOKH-HUs1PtkcrYQzztC6bBHNmfglZTanQMxxrlyUJ1lxoLXoWDnt6pWYEahTaYWh_lFBp_4znVK_3-14-95Bz_MG_f5B77DbojPqe_sd72gwONzHhe5ht999adGnQu99Z9D3Xv4C0NI5Ag)
+
+Instead, we ended up writing our own semantic layer metrics factory
+on top of [sqlmesh](https://sqlmesh.com/).
+sqlmesh is a drop-in replacement for dbt, with a number of additional powerful
+features, including Python macros (bye bye Jinja),
+automatic translation between SQL dialects,
+and the ability to auto-matically generate new models using Python.
+These features were the fundamental unlock that enabled us to build our own
+semantic layer and metrics system.
+We built so much on the bleeding edge of metrics
+that the team behind sqlmesh invited us to speak at their annual
+[Tobiko conference](https://groupby.tobikodata.com/).
+
+Our initial experiments ran the metrics pipeline on a separate
+Clickhouse cluster, so that we could continue supporting the existing
+mature dbt/BigQuery pipeline.
+The experiment convinced us of 2 things:
+
+1. sqlmesh is the future of data transformation
+2. Clickhouse is great for serving, but too slow/costly for the backend pipeline
