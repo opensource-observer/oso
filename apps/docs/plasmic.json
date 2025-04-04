@@ -67,19 +67,6 @@
           "cssFilePath": "generated/docs_opensource_observer/PlasmicCard.module.css",
           "scheme": "blackbox",
           "componentType": "component"
-        },
-        {
-          "id": "_F-nuwBX0XMK",
-          "name": "DocsCard",
-          "type": "managed",
-          "projectId": "2CtczDeUz9jL9qnFi6NWuQ",
-          "renderModuleFilePath": "generated/docs_opensource_observer/PlasmicDocsCard.tsx",
-          "importSpec": {
-            "modulePath": "DocsCard.tsx"
-          },
-          "cssFilePath": "generated/docs_opensource_observer/PlasmicDocsCard.module.css",
-          "scheme": "blackbox",
-          "componentType": "component"
         }
       ],
       "icons": [

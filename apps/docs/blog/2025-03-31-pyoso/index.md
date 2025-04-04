@@ -14,7 +14,7 @@ No need to manage infrastructure or wrangle database credentials. Just install t
 
 ## Why we built Pyoso
 
-At Kariba, we've been working with a growing network of [Impact Data Scientists](../impact-data-scientists) to analyze the health and impact of open source ecosystems. Until now, most of that work required connecting to BigQuery or running a playground version of our database from the command line. We wanted to make it easier for anyone to get started with OSO data - especially those who live in Jupyter notebooks.
+At Kariba, we've been working with a growing network of [Impact Data Scientists](../../blog/impact-data-scientists) to analyze the health and impact of open source ecosystems. Until now, most of that work required connecting to BigQuery or running a playground version of our database from the command line. We wanted to make it easier for anyone to get started with OSO data - especially those who live in Jupyter notebooks.
 
 (We also moved our production database off of BigQuery. You shouldn't care where the data lives. You should just be able to query it!)
 
