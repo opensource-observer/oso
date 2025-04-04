@@ -257,7 +257,7 @@ mature dbt/BigQuery pipeline.
 The experiment convinced us of 2 things:
 
 1. sqlmesh is the future of data transformation
-2. Clickhouse is great for serving, but too slow/costly for the backend pipeline
+2. Clickhouse is great for serving, but lack of fast deletes and it's eventually consistent nature weren't a good fit for sqlmesh and the dataset we were analyzing. 
 
 ## Phase 6: Replacing dbt/BigQuery with sqlmesh/Trino/Iceberg
 
