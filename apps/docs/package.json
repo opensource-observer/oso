@@ -27,7 +27,7 @@
     "@docusaurus/theme-common": "3.7.0",
     "@laxels/docusaurus-plugin-segment": "^1.0.6",
     "@mdx-js/react": "^3.1.0",
-    "@plasmicapp/react-web": "^0.2.379",
+    "@plasmicapp/react-web": "^0.2.378",
     "@plasmicpkgs/antd5": "^0.0.279",
     "@plasmicpkgs/plasmic-basic-components": "^0.0.234",
     "clsx": "^2.1.1",
