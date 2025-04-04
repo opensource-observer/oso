@@ -186,7 +186,7 @@ we also needed to ingest
 [OpenRank](https://openrank.com/), and
 [EAS](https://attest.org/) data.
 
-We evaluate a number of different data movement tools,
+We evaluated a number of different data movement tools,
 with very limited success,
 including:
 [Airbyte](https://airbyte.com/),
