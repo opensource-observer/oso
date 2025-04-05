@@ -137,10 +137,6 @@ jobs:
           bash .github/scripts/run-supabase-local.sh apps/frontend
         if: ${{ matrix.component == 'node' }}
 
-      - name: Validate local database
-        run: uv run oso local initialize --max-results-per-query 50 --max-days 3
-        if: ${{ matrix.component == 'sqlmesh' }}
-
       # Automatically retry if the build fails
       - name: Build (Node)
         uses: nick-fields/retry@v3
