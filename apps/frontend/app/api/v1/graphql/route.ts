@@ -1,16 +1,23 @@
 import { ApolloServer } from "@apollo/server";
-import { ApolloGateway, IntrospectAndCompose } from "@apollo/gateway";
+import { ApolloGateway } from "@apollo/gateway";
 import { startServerAndCreateNextHandler } from "@as-integrations/next";
+import { readFileSync } from "fs";
 import { NextRequest } from "next/server";
-import { HASURA_URL } from "../../../../lib/config";
+//import { ApolloGateway, IntrospectAndCompose } from "@apollo/gateway";
+//import { HASURA_URL } from "../../../../lib/config";
+
+const supergraphSdl = readFileSync("./supergraph.graphql").toString();
 
 const gateway = new ApolloGateway({
+  supergraphSdl,
+  /**
   supergraphSdl: new IntrospectAndCompose({
     subgraphs: [
       { name: "hasura", url: HASURA_URL },
       //{ name: 'products', url: 'http://localhost:4002' },
     ],
   }),
+  */
 });
 
 const server = new ApolloServer({
