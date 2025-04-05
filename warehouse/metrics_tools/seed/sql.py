@@ -1,9 +1,20 @@
 import json
+from dataclasses import dataclass
 from typing import Any, Literal
 
 from pydantic import BaseModel
 from sqlglot import exp, parse_one
 from sqlmesh.core.dialect import transform_values
+
+
+@dataclass
+class SqlColumn:
+    column: exp.Column
+    type: exp.DataType
+    nullable: bool
+
+    def __str__(self) -> str:
+        return f"{self.column.sql()} {self.type.sql()} {'NOT NULL' if not self.nullable else ''}".strip()
 
 
 def get_types(field: dict[str, Any]) -> list[str]:
@@ -40,26 +51,28 @@ def get_sql_column_type(schema: dict[str, Any], column_props: dict[str, Any]) ->
     ref_props: dict[str, Any] = schema["$defs"][ref.split("/")[-1]]["properties"]
     nested_types = get_sql_column_types(schema, ref_props)
 
-    return sql_type.replace("?", ",\n ".join(list(nested_types.values())), 1)
+    return sql_type.replace(
+        "?", ",\n ".join(list(str(x) for x in nested_types.values())), 1
+    )
 
 
 def get_sql_column_types(
     schema: dict[str, Any],
     properties: dict[str, Any],
-) -> dict[str, str]:
-    columns: dict[str, str] = {}
+) -> dict[str, SqlColumn]:
+    columns: dict[str, SqlColumn] = {}
     for column_name, column_props in properties.items():
         sql_type = get_sql_column_type(schema, column_props)
         column_name = column_props.get("column_name", column_name)
         # If the column has anyOf property, we need to check if it is nullable
-        nullable = (
-            "NOT NULL"
-            if not any(
-                option.get("type") == "null" for option in column_props.get("anyOf", [])
-            )
-            else ""
+        nullable = any(
+            option.get("type") == "null" for option in column_props.get("anyOf", [])
         )
-        columns[column_name] = f"{column_name} {sql_type} {nullable}".strip()
+        columns[column_name] = SqlColumn(
+            column=exp.column(col=column_name, quoted=True),
+            type=exp.maybe_parse(sql_type, into=exp.DataType, dialect="trino"),
+            nullable=nullable,
+        )
     return columns
 
 
@@ -73,7 +86,7 @@ def sql_create_table_from_pydantic_schema(
     columns = get_sql_column_types(schema, properties)
 
     create_table_sql = parse_one(
-        f"CREATE TABLE IF NOT EXISTS {name} (\n  {',\n  '.join(list(columns.values()))}\n)",
+        f"CREATE TABLE IF NOT EXISTS {name} (\n  {',\n  '.join(list(str(x) for x in columns.values()))}\n)",
         dialect="trino",
     ).sql(dialect=dialect)
 
@@ -93,30 +106,26 @@ def sql_insert_from_pydantic_instances(
     schema = instances[0].model_json_schema()
     properties: dict[str, Any] = schema["properties"]
     columns = get_sql_column_types(schema, properties)
-    columns_to_types: dict[str, exp.DataType] = {}
-    for column_name, column_type in columns.items():
-        column_name = properties.get("column_name", column_name)
-        columns_to_types[column_name] = exp.maybe_parse(
-            column_type.removeprefix(column_name).removesuffix("NOT NULL").strip(),
-            into=exp.DataType,
-            dialect=dialect,
-        )
-
-    casted_columns = [
-        exp.alias_(exp.cast(exp.column(column), to=kind), column, copy=False)
-        for column, kind in columns_to_types.items()
-    ]
+    columns_to_types = {column.column.name: column.type for column in columns.values()}
 
     expressions = [
-        tuple(map_values_to_sql(instance, columns_to_types)) for instance in instances
+        tuple(
+            map_values_to_sql(
+                instance,
+                columns_to_types,
+            )
+        )
+        for instance in instances
     ]
-    values_exp = exp.values(expressions, alias="t", columns=columns_to_types)
+    values_exp = exp.values(expressions)
 
     insert_into_sql = exp.insert(
         into=exp.to_table(name),
-        expression=exp.select(*casted_columns)
-        .from_(values_exp, copy=False)
-        .where(exp.false() if not instances else None, copy=False),
+        expression=values_exp,
+        columns=[
+            exp.to_identifier(column.column.name, quoted=True)
+            for column in columns.values()
+        ],
     ).sql(dialect=dialect)
 
     return insert_into_sql

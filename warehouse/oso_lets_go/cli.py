@@ -743,43 +743,55 @@ def reset(
     context_settings=dict(ignore_unknown_options=True, allow_extra_args=True),
 )
 @click.pass_context
-def sqlmesh_test(ctx: click.Context):
+@click.option("--duckdb/--no-duckdb", default=False)
+def sqlmesh_test(ctx: click.Context, duckdb: bool):
     extra_args = ctx.args
     if not ctx.args:
         extra_args = []
 
-    docker_client = DockerClient(
-        compose_files=[os.path.join(REPO_DIR, "warehouse/docker-compose.yml")]
-    )
-    try:
-        docker_client.compose.up(wait=True)
-
-        asyncio.run(db_seed())
+    if duckdb:
+        asyncio.run(db_seed("duckdb"))
 
         process = subprocess.Popen(
-            ["sqlmesh", "--gateway", "local-trino-docker", *extra_args],
-            # shell=True,
+            ["sqlmesh", *extra_args],
             cwd=os.path.join(REPO_DIR, "warehouse/oso_sqlmesh"),
             env={
                 **os.environ,
-                "SQLMESH_DUCKDB_LOCAL_PATH": ctx.obj["local_trino_duckdb_path"],
-                "SQLMESH_TRINO_HOST": "localhost",
-                "SQLMESH_TRINO_PORT": os.environ.get("SQLMESH_TRINO_PORT", "8080"),
+                "SQLMESH_DUCKDB_LOCAL_PATH": ctx.obj["local_duckdb_path"],
             },
         )
         process.communicate()
+    else:
+        docker_client = DockerClient(
+            compose_files=[os.path.join(REPO_DIR, "warehouse/docker-compose.yml")]
+        )
+        try:
+            docker_client.compose.up(wait=True)
 
-    except Exception as e:
-        logger.error(f"Failed to run tests: {e}")
-        raise
-    finally:
-        docker_client.compose.down()
+            asyncio.run(db_seed("trino"))
+
+            process = subprocess.Popen(
+                ["sqlmesh", "--gateway", "local-trino-docker", *extra_args],
+                # shell=True,
+                cwd=os.path.join(REPO_DIR, "warehouse/oso_sqlmesh"),
+                env={
+                    **os.environ,
+                    "SQLMESH_DUCKDB_LOCAL_PATH": ctx.obj["local_trino_duckdb_path"],
+                    "SQLMESH_TRINO_HOST": "localhost",
+                    "SQLMESH_TRINO_PORT": os.environ.get("SQLMESH_TRINO_PORT", "8080"),
+                },
+            )
+            process.communicate()
+
+        finally:
+            docker_client.compose.down()
 
 
 @local.command()
 @click.pass_context
-def run_seed(ctx: click.Context):
-    asyncio.run(db_seed())
+@click.option("--duckdb/--no-duckdb", default=False)
+def run_seed(ctx: click.Context, duckdb: bool):
+    asyncio.run(db_seed("duckdb" if duckdb else "trino"))
 
 
 @cli.command()

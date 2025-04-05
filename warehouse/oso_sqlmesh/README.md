@@ -20,14 +20,7 @@ Make sure to set the following environment variables
 in your .env file (at the root of the oso repo)
 
 ```
-GOOGLE_PROJECT_ID=opensource-observer
 SQLMESH_DUCKDB_LOCAL_PATH=/tmp/oso.duckdb
-```
-
-Make sure you've logged into Google Cloud on your terminal
-
-```bash
-gcloud auth application-default login
 ```
 
 Now install dependencies.
@@ -37,36 +30,12 @@ uv sync
 source ../../.venv/bin/activate
 ```
 
-Finally, download playground data into your local DuckDB instance with the following command
-
-```bash
-oso local initialize
-```
-
-Or to take a smaller sample:
-
-```bash
-oso local initialize --max-results-per-query 10000 --max-days 7
-```
-
-Or using shortcuts:
-
-```bash
-oso local initialize -m 10000 -d 7
-```
-
-This will download 7 days of time series data with an approximate maximum of
-10000 rows in each table that is not time series defined. You can change these
-or unset them if you're certain that your system can handle a larger data
-download but this will be required.
-
 ## Run
 
-Run sqlmesh for a sample date range:
+Run sqlmesh with our test seed data:
 
 ```bash
-oso local sqlmesh plan dev --start 2024-07-01 --end 2024-08-01 # to run for specific date rates (fast)
-# sqlmesh plan # to run the entire pipeline (slow)
+oso local sqlmesh-test --duckdb plan dev --start '1 week' --end now
 ```
 
 _Note, the command above uses a wrapper `oso local sqlmesh` that will
@@ -111,11 +80,30 @@ As this will run against everything in the dataset, you may want to pick a short
 sqlmesh plan dev --start 2024-12-01 --end 2024-12-31
 ```
 
-If a source that's in BigQuery is missing from DuckDB, check the `initialize_local_duckdb` function in [utils.py](warehouse/metrics_tools/local/utils.py).
-You can add new models as `TABLE_MAPPING` fields, eg:
+If a source that's in BigQuery is missing from DuckDB, check the [seed data](warehouse/metrics_tools/seed/schemas/).
+You can add new models by creating a new file in `schemas` and adding a `BaseModel` class with the table schema and `SeedConfig` object, eg:
 
 ```python
-"opensource-observer.farcaster.profiles": "bigquery.farcaster.profiles",
+seed = SeedConfig(
+    catalog="bigquery",
+    schema="farcaster",
+    table="profiles",
+    base=Profiles,
+    rows=[
+        Profiles(
+            fid=1,
+            last_updated_at=datetime.now() - timedelta(days=2),
+            data={"username": "Alice"},
+            custody_address="0x123",
+        ),
+        Profiles(
+            fid=2,
+            last_updated_at=datetime.now() - timedelta(days=1),
+            data={"username": "Bob"},
+            custody_address="0x456",
+        ),
+    ],
+)
 ```
 
 ...and then reference the model in your sqlmesh code via `@oso_source('YOUR_MODEL')`.
@@ -161,9 +149,35 @@ In addition to having the normal dev tools for running the repo, you will also n
 - [docker](https://www.docker.com/)
 - [docker-compose](https://docs.docker.com/compose/install/)
 
-:::warning
-TODO: fill in the rest
-:::
+### Running sqlmesh
+
+Run sqlmesh with our test seed data:
+
+```bash
+oso local sqlmesh-test plan dev --start '1 week' --end now
+```
+
+This command will handle the docker containers and seed data initialization before
+wrapping the sqlmesh call. All the containers will be deleted at the end.
+
+### Debugging Trino / SQLMesh
+
+You can expose your local Trino instance for debugging by running:
+
+```bash
+cd warehouse
+docker compose up --wait
+```
+
+This will open up a web server to interact with Trino directly at
+`http://127.0.0.1:8080`.
+
+This is also a good way if you want to keep running sqlmesh on top of the same containers
+instead of recreating them every time. To initialize the data you can run:
+
+```bash
+oso local run-seed
+```
 
 ## Running sqlmesh on a local Trino with Kind
 
@@ -186,6 +200,20 @@ For debugging, you may also want to install:
 
 - [kubectl](https://kubernetes.io/docs/tasks/tools/)
 - [k9s](https://k9scli.io/topics/install/)
+
+Make sure to set the following environment variables
+in your .env file (at the root of the oso repo)
+
+```
+GOOGLE_PROJECT_ID=opensource-observer
+SQLMESH_DUCKDB_LOCAL_PATH=/tmp/oso.duckdb
+```
+
+Make sure you've logged into Google Cloud on your terminal
+
+```bash
+gcloud auth application-default login
+```
 
 ### Local Kubernetes Cluster Setup
 

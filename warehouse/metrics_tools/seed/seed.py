@@ -1,12 +1,13 @@
 import importlib
 import os
+from typing import Literal
 
-from metrics_tools.seed.loader import TrinoLoader
+from metrics_tools.seed.loader import DuckDbLoader, TrinoLoader
 from metrics_tools.seed.types import SeedConfig
 
 
-async def db_seed():
-    loader = TrinoLoader.connect()
+async def db_seed(loader_type: Literal["trino", "duckdb"] = "trino"):
+    loader = TrinoLoader.connect() if loader_type == "trino" else DuckDbLoader.connect()
     try:
         path, _ = os.path.split(os.path.realpath(__file__))
         for root, _, files in os.walk(os.path.join(path, "schemas")):
