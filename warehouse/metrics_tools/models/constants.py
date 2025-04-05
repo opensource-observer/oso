@@ -10,6 +10,7 @@ def coalesce_start_value(var_name: str, default: str) -> str:
 
 
 blockchain_incremental_start = coalesce_start_value("BLOCKCHAIN", "2021-10-01")
+deps_dev_incremental_start = coalesce_start_value("DEPS_DEV", "2015-01-01")
 github_incremental_start = coalesce_start_value("GITHUB", "2015-01-01")
 funding_incremental_start = coalesce_start_value("FUNDING", "2015-01-01")
 defillama_incremental_start = coalesce_start_value("DEFILLAMA", "2021-10-01")
