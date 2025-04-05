@@ -5,10 +5,10 @@
   "license": "Apache-2.0",
   "private": true,
   "scripts": {
-    "build": "pnpm graphql:codegen && next build",
+    "build": "pnpm graphql:schema && pnpm graphql:codegen && next build",
     "deploy": "pnpm build",
     "dev": "pnpm graphql:watch && next dev",
-    "graphql:schema": "dotenv -e .env.local -- node --loader ts-node/esm bin/genSchema.ts",
+    "graphql:schema": "rover supergraph compose --config ./supergraph-config.yaml > supergraph.graphql",
     "graphql:codegen": "dotenv -e .env.local -- graphql-codegen --config ./lib/graphql/codegen.ts",
     "graphql:watch": "dotenv -e .env.local -- graphql-codegen -w --config ./lib/graphql/codegen.ts",
     "lint": "tsc --noEmit && next lint && pnpm lint:eslint && pnpm lint:prettier",
@@ -75,6 +75,7 @@
     "yup": "^1.6.1"
   },
   "devDependencies": {
+    "@apollo/rover": "^0.28.1",
     "@graphql-codegen/cli": "^5.0.5",
     "@graphql-codegen/client-preset": "^4.7.0",
     "@graphql-typed-document-node/core": "^3.2.0",
