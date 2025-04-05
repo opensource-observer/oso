@@ -1,0 +1,5 @@
+subgraphs:
+  hasura:
+    routing_url: https://valid-robin-8499.ddn.hasura.app/graphql
+    schema:
+      subgraph_url: https://valid-robin-8499.ddn.hasura.app/graphql
