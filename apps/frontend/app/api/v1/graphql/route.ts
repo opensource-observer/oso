@@ -4,13 +4,14 @@ import { startServerAndCreateNextHandler } from "@as-integrations/next";
 import { readFileSync } from "fs";
 import path from "path";
 import { NextRequest } from "next/server";
-import { fileURLToPath } from "url";
 //import { ApolloGateway, IntrospectAndCompose } from "@apollo/gateway";
 //import { HASURA_URL } from "../../../../lib/config";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const supergraphPath = path.join(__dirname, "supergraph.graphql");
+// https://vercel.com/guides/loading-static-file-nextjs-api-route
+const supergraphPath = path.join(
+  process.cwd(),
+  "./app/api/v1/graphql/supergraph.graphql",
+);
 const supergraphSdl = readFileSync(supergraphPath).toString();
 
 const gateway = new ApolloGateway({
