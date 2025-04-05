@@ -44,6 +44,12 @@ including the [Vercel](https://vercel.com/) and
 We also wrapped the data fetching logic in a Node.js CLI,
 so that we could run jobs from [GitHub actions](https://github.com/features/actions)
 to take advantage of the free compute minutes available to open source projects.
+One of the cool technologies that we discovered at this time
+was [Hasura](https://hasura.io/),
+which automatically turned any Postgres database into a GraphQL API.
+Eventually, we replaced Postgres with
+[Timescale](https://www.timescale.com/)
+in order to more efficiently store and query time series events.
 
 **_Pros_**
 
@@ -57,13 +63,6 @@ to take advantage of the free compute minutes available to open source projects.
 - Lots of custom code to scrape APIs
 - Difficult to trace data quality issues
 
-One of the cool technologies that we discovered at this time
-was [Hasura](https://hasura.io/),
-which automatically turned any Postgres database into a GraphQL API.
-Eventually, we replaced Postgres with
-[Timescale](https://www.timescale.com/)
-in order to more efficiently store and query time series events.
-
 The problem with the initial architecture was that we
 both aggregated too much, and too little to be effective.
 We quickly outgrew simple aggregations
@@ -74,7 +73,7 @@ a large amount of engineering work and reindexing all of the data.
 
 For example, we wanted to count the number of distinct active developers
 across all repos in a project.
-When we first started, we stored data bucketing events by day to be
+When we first started, we bucketed events by day to be
 storage efficient, which lost the data fidelity needed to compute something like this.
 We learned the hard way, as countless others before us,
 that [ETL](https://en.wikipedia.org/wiki/Extract%2C_transform%2C_load)
@@ -90,7 +89,7 @@ Enter data warehouses, like Snowflake, Databricks, and BigQuery.
 By storing all of the raw source data in a data warehouse,
 it makes it trivial to dynamically run any arbitrary queries on top.
 We can define a sequences of transformations in our data pipeline.
-We chose to use [dbt](https://www.getdbt.com/),
+We chose [dbt](https://www.getdbt.com/) at the time,
 which is still considered best-in-class for this workload.
 If we changed any data model, the pipeline should be smart enough
 to only recompute models downstream from it.
@@ -128,7 +127,7 @@ We'll address the cons
 [later](#phase-6-replacing-dbtbigquery-with-sqlmeshtrinoiceberg).
 For now, this was a huge step up in our ability
 to experiment with different data models.
-At the end of the pipeline, we materialize our
+At the end of the pipeline, we materialized our
 mart models into the same Postgres database for serving the API.
 
 ## Phase 3: Replacing GitHub actions with Dagster
@@ -257,7 +256,8 @@ mature dbt/BigQuery pipeline.
 The experiment convinced us of 2 things:
 
 1. sqlmesh is the future of data transformation
-2. Clickhouse is great for serving, but lack of fast deletes and it's eventually consistent nature weren't a good fit for sqlmesh and the dataset we were analyzing.
+2. Clickhouse is great for serving, but its lack of fast deletes
+   and its eventually consistent nature were not a good fit for sqlmesh
 
 ## Phase 6: Replacing dbt/BigQuery with sqlmesh/Trino/Iceberg
 
@@ -271,7 +271,7 @@ We decided to rip off the band-aid and do a major transition
 to an auto-scaling Trino cluster while transitioning to sqlmesh.
 We'd hit 3 birds with 1 stone: decentralizing our infra,
 supporting time-series metrics on sqlmesh, and reducing our cloud costs
-all in 1 go, at the cost of instability for months.
+all in 1 go, at the cost of instability for a few months.
 
 [![](https://mermaid.ink/img/pako:eNqFVdtS2zAQ_RWNnpwhSQkQEvLQGS7TKR0uaaF0prgPsrzYKrbk6kISGP69K9shFyfgPMRe7VntnqNdvVCuYqAj2ul0QmmFzWBEQoo_WVpC-ZCpCU-ZtuT2JJQEH-OiRLMiJYWLMsHvQ3rMrdKGBFdKdmCaMmeseIJWSP9UCP84A9qg70__v7ISw5NfOGOWEcMFYBrGGvKJgEyEhGV3kHH1UkYjnQ7meidggs7fHehZSNH2mSijJhBVnj565XiqpNUichaIL7r2FTKGKeh3nHN0zsw8tOYpGKuZFUqug344Sf5hHgLMIhNWiMpvjT1cwqqvC5DkRjnNgVxHWNUT5uLLXfCz4FsUkCEjCLtkQpKSsXFtXKHUPyuZIuSbilZtJDhjibGgd8y_LAeTthoxanLm6nCVZVBrHWe26R-JxNc_uw9qxIRpSBWqRYITkZQaIaq1BuMqL5DpiFme4l4njD-i0nMz4ZnzaZLgVgupWmv0NGqttMBy5yIsh99YX0PyGHOvwRl7rCrYnnIFv2SYo2CZeIb3oXOSKthYKw7m41Tfgn0M2wL0oly8RQnOOUSgkw1yqIwVnoGIGX_Wri-Ox-VZ898kOMWefyxjNPXnShqXg7ZeKITe4HkWMiFVvVU_r8i4FVxVudzUW9hc46WpwnI1C2g5SRafVZ82N90M3ua9UsHGFn7QeMhwb-TmS_1KfNMLDqbZweUYQ9dfEBFWFEh83bh3gPMi27mCqe3-Na1NSEzQT-bxOamGCgm-MuM0exeE223gYGmGrQzhxVBbvOEibVPkIGcixnvlxZtDalPIURB_t8RMP_r75RX9mLPqZiY5HVntoE21cklKRw8sM_jlPPVwJhhyl79ZCyZ_K5XPIRALHEiX1S1WXmZtmmi_dx0SMwJ9qpy0dLS3e1QGoKMXOqWjQa_b3-8f7PX7w8HgYO-w16YzOurvd_tHw-HhPi70DnuD3mubPpc77naHg_7rf_VROPc?type=png)](https://mermaid.live/edit#pako:eNqFVdtS2zAQ_RWNnpwhSQkQEvLQGS7TKR0uaaF0prgPsrzYKrbk6kISGP69K9shFyfgPMRe7VntnqNdvVCuYqAj2ul0QmmFzWBEQoo_WVpC-ZCpCU-ZtuT2JJQEH-OiRLMiJYWLMsHvQ3rMrdKGBFdKdmCaMmeseIJWSP9UCP84A9qg70__v7ISw5NfOGOWEcMFYBrGGvKJgEyEhGV3kHH1UkYjnQ7meidggs7fHehZSNH2mSijJhBVnj565XiqpNUichaIL7r2FTKGKeh3nHN0zsw8tOYpGKuZFUqug344Sf5hHgLMIhNWiMpvjT1cwqqvC5DkRjnNgVxHWNUT5uLLXfCz4FsUkCEjCLtkQpKSsXFtXKHUPyuZIuSbilZtJDhjibGgd8y_LAeTthoxanLm6nCVZVBrHWe26R-JxNc_uw9qxIRpSBWqRYITkZQaIaq1BuMqL5DpiFme4l4njD-i0nMz4ZnzaZLgVgupWmv0NGqttMBy5yIsh99YX0PyGHOvwRl7rCrYnnIFv2SYo2CZeIb3oXOSKthYKw7m41Tfgn0M2wL0oly8RQnOOUSgkw1yqIwVnoGIGX_Wri-Ox-VZ898kOMWefyxjNPXnShqXg7ZeKITe4HkWMiFVvVU_r8i4FVxVudzUW9hc46WpwnI1C2g5SRafVZ82N90M3ua9UsHGFn7QeMhwb-TmS_1KfNMLDqbZweUYQ9dfEBFWFEh83bh3gPMi27mCqe3-Na1NSEzQT-bxOamGCgm-MuM0exeE223gYGmGrQzhxVBbvOEibVPkIGcixnvlxZtDalPIURB_t8RMP_r75RX9mLPqZiY5HVntoE21cklKRw8sM_jlPPVwJhhyl79ZCyZ_K5XPIRALHEiX1S1WXmZtmmi_dx0SMwJ9qpy0dLS3e1QGoKMXOqWjQa_b3-8f7PX7w8HgYO-w16YzOurvd_tHw-HhPi70DnuD3mubPpc77naHg_7rf_VROPc)
 
