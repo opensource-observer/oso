@@ -26,6 +26,7 @@ from metrics_tools.intermediate import run_macro_evaluator
 from metrics_tools.local.loader import LocalTrinoDestinationLoader
 from metrics_tools.local.manager import LocalWarehouseManager
 from metrics_tools.runner import render_metrics_query
+from metrics_tools.seed.seed import db_seed
 from metrics_tools.transfer.gcs import GCSTimeOrderedStorage
 from metrics_tools.transfer.trino import TrinoExporter
 from metrics_tools.utils.logging import setup_module_logging
@@ -39,6 +40,7 @@ from opsscripts.utils.dockertools import (
 )
 from opsscripts.utils.k8stools import deploy_oso_k8s_job
 from oso_lets_go.wizard import MultipleChoiceInput
+from python_on_whales import DockerClient
 from sqlglot import pretty
 from sqlmesh.core.dialect import parse_one
 from sqlmesh.core.macros import RuntimeStage
@@ -735,6 +737,49 @@ def reset(
     manager = LocalWarehouseManager.from_config(local_manager_config)
 
     manager.reset(full_reset=full_reset)
+
+
+@local.command(
+    context_settings=dict(ignore_unknown_options=True, allow_extra_args=True),
+)
+@click.pass_context
+def sqlmesh_test(ctx: click.Context):
+    extra_args = ctx.args
+    if not ctx.args:
+        extra_args = []
+
+    docker_client = DockerClient(
+        compose_files=[os.path.join(REPO_DIR, "warehouse/docker-compose.yml")]
+    )
+    try:
+        docker_client.compose.up(wait=True)
+
+        asyncio.run(db_seed())
+
+        process = subprocess.Popen(
+            ["sqlmesh", "--gateway", "local-trino-docker", *extra_args],
+            # shell=True,
+            cwd=os.path.join(REPO_DIR, "warehouse/oso_sqlmesh"),
+            env={
+                **os.environ,
+                "SQLMESH_DUCKDB_LOCAL_PATH": ctx.obj["local_trino_duckdb_path"],
+                "SQLMESH_TRINO_HOST": "localhost",
+                "SQLMESH_TRINO_PORT": os.environ.get("SQLMESH_TRINO_PORT", "8080"),
+            },
+        )
+        process.communicate()
+
+    except Exception as e:
+        logger.error(f"Failed to run tests: {e}")
+        raise
+    finally:
+        docker_client.compose.down()
+
+
+@local.command()
+@click.pass_context
+def run_seed(ctx: click.Context):
+    asyncio.run(db_seed())
 
 
 @cli.command()

@@ -12,7 +12,7 @@ ryscheng:
 
 ravenac95:
   name: Reuven Gonzales
-  title: Engineer
+  title: Founding Engineer
   url: https://github.com/ravenac95
   image_url: https://github.com/ravenac95.png
 
@@ -27,3 +27,9 @@ rohitmalekar:
   title: Insights and Partnerships
   url: https://github.com/rohitmalekar
   image_url: https://github.com/rohitmalekar.png
+
+icarog:
+  name: Ícaro Guerra
+  title: Engineer
+  url: https://github.com/IcaroG
+  image_url: https://github.com/IcaroG.png

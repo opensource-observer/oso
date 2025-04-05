@@ -46,14 +46,14 @@ importers:
         specifier: ^3.1.0
         version: 3.1.0(@types/react@18.3.11)(react@18.3.1)
       '@plasmicapp/react-web':
-        specifier: ^0.2.378
-        version: 0.2.378(@types/react@18.3.11)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        specifier: ^0.2.379
+        version: 0.2.379(@types/react@18.3.11)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@plasmicpkgs/antd5':
         specifier: ^0.0.279
-        version: 0.0.279(@plasmicapp/data-sources@0.1.175(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@plasmicapp/host@1.0.211(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@plasmicapp/query@0.1.79(react@18.3.1))(date-fns@3.6.0)(luxon@3.4.0)(moment@2.30.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 0.0.279(@plasmicapp/data-sources@0.1.176(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@plasmicapp/host@1.0.212(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@plasmicapp/query@0.1.79(react@18.3.1))(date-fns@3.6.0)(luxon@3.4.0)(moment@2.30.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@plasmicpkgs/plasmic-basic-components':
         specifier: ^0.0.234
-        version: 0.0.234(@plasmicapp/host@1.0.211(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@plasmicapp/query@0.1.79(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 0.0.234(@plasmicapp/host@1.0.212(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@plasmicapp/query@0.1.79(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
@@ -2864,8 +2864,8 @@ packages:
     resolution: {integrity: sha512-fTxvnS1sRMu3+JjXwJG0j/i4RT9u4qJ+lqS/yCGap4lH4zZGzQ7tu+xZqQmcMZq5OBZDL4QRxQzRjkWcGt8IVw==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
 
-  '@eslint/core@0.12.0':
-    resolution: {integrity: sha512-cmrR6pytBuSMTaBweKoGMwu3EiHiEC+DoyupPmlZ0HxBJBtIxwe+j/E4XPIKNx+Q74c8lXKPwYawBf5glsTkHg==}
+  '@eslint/core@0.13.0':
+    resolution: {integrity: sha512-yfkgDw1KR66rkT5A8ci4irzDysN7FRpq3ttJolR88OqQikAWqwA8j5VZyas+vjyBNFIJ7MfybJ9plMILI2UrCw==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
 
   '@eslint/core@0.6.0':
@@ -2900,8 +2900,8 @@ packages:
     resolution: {integrity: sha512-RBMg5FRL0I0gs51M/guSAj5/e14VQ4tpZnQNWwuDT66P14I43ItmPfIZRhO9fUVIPOAQXU47atlywZ/czoqFPA==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
 
-  '@eslint/plugin-kit@0.2.7':
-    resolution: {integrity: sha512-JubJ5B2pJ4k4yGxaNLdbjrnk9d/iDz6/q8wOilpIowd6PJPgaxCuHBnBszq7Ce2TyMrywm5r4PnKm6V3iiZF+g==}
+  '@eslint/plugin-kit@0.2.8':
+    resolution: {integrity: sha512-ZAoA40rNMPwSm+AeHpCq8STiNAwzWLJuP8Xv4CHIc9wv/PSuExjMrmjfYNj682vW0OOiZ1HKxzvjQr9XZIisQA==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
 
   '@ethereum-attestation-service/eas-contracts@1.3.7':
@@ -4150,14 +4150,20 @@ packages:
     peerDependencies:
       react: '>=16.8.0'
 
-  '@plasmicapp/data-sources@0.1.175':
-    resolution: {integrity: sha512-upv4uXEAb+2YyH/F6a4s8Gwyun2d8YdIplyQotZE6WlsTSNoeNpF2hJk6oSHts0+zvmKioKSQ6UjjZUebh0N3w==}
+  '@plasmicapp/data-sources@0.1.176':
+    resolution: {integrity: sha512-ZKr1rkHu6ITkknrUgP9Hv0GOV0pDm+QllgMKPOCBHJk0STM9BknJ6YaNC4X7+2E35B21k/Sr0P6t8at1TwXJtQ==}
     engines: {node: '>=10'}
     peerDependencies:
       react: '>=16.8.0'
 
   '@plasmicapp/host@1.0.211':
     resolution: {integrity: sha512-53jZFUcPZjQW0tA4zfl+xm/zxzxmjxV9IW+Ir6iG1Yi5ljP6SAncsu9EaAcjJBbbWNPurjcAsIIdxZiENk99Eg==}
+    peerDependencies:
+      react: '>=16.8.0'
+      react-dom: '>=16.8.0'
+
+  '@plasmicapp/host@1.0.212':
+    resolution: {integrity: sha512-TIm+cMw2l6GUeN2+HIe30ACI1ur+BL3L2QOdQLEAt6Vo4hJFIA21R3n7y3IexKj3VHGX3ieta457iuV8Rf0EiA==}
     peerDependencies:
       react: '>=16.8.0'
       react-dom: '>=16.8.0'
@@ -4222,8 +4228,8 @@ packages:
     peerDependencies:
       react: ^16.8.0 || ^17.0.0 || ^18.0.0
 
-  '@plasmicapp/react-web@0.2.378':
-    resolution: {integrity: sha512-sAClcNqSruY+355A7C9xq86SiywOD0+H1y4Xwnnzkj8TarJ892hD1mC9qvTZDp0usea2eTIgJKbDAMjVOGgsaA==}
+  '@plasmicapp/react-web@0.2.379':
+    resolution: {integrity: sha512-rQQAM3ZZZ4p3jhdrtX228tFkNqsuAcaGjoRIEJV4FthxRQjttLgistEZp1w4aWH1CLtDvz2G2n08hsqMPhAipA==}
     peerDependencies:
       react: '>=16.8.0'
       react-dom: '>=16.8.0'
@@ -17731,7 +17737,7 @@ snapshots:
       - supports-color
     optional: true
 
-  '@eslint/core@0.12.0':
+  '@eslint/core@0.13.0':
     dependencies:
       '@types/json-schema': 7.0.15
     optional: true
@@ -17779,9 +17785,9 @@ snapshots:
   '@eslint/object-schema@2.1.6':
     optional: true
 
-  '@eslint/plugin-kit@0.2.7':
+  '@eslint/plugin-kit@0.2.8':
     dependencies:
-      '@eslint/core': 0.12.0
+      '@eslint/core': 0.13.0
       levn: 0.4.1
     optional: true
 
@@ -19091,7 +19097,7 @@ snapshots:
 
   '@mui/private-theming@5.16.0(@types/react@18.3.11)(react@18.3.1)':
     dependencies:
-      '@babel/runtime': 7.24.7
+      '@babel/runtime': 7.27.0
       '@mui/utils': 5.16.0(@types/react@18.3.11)(react@18.3.1)
       prop-types: 15.8.1
       react: 18.3.1
@@ -19100,7 +19106,7 @@ snapshots:
 
   '@mui/styled-engine@5.15.14(@emotion/react@11.14.0(@types/react@18.3.11)(react@18.3.1))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@18.3.11)(react@18.3.1))(@types/react@18.3.11)(react@18.3.1))(react@18.3.1)':
     dependencies:
-      '@babel/runtime': 7.24.7
+      '@babel/runtime': 7.27.0
       '@emotion/cache': 11.11.0
       csstype: 3.1.3
       prop-types: 15.8.1
@@ -19715,10 +19721,10 @@ snapshots:
     dependencies:
       react: 18.3.1
 
-  '@plasmicapp/data-sources@0.1.175(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@plasmicapp/data-sources@0.1.176(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@plasmicapp/data-sources-context': 0.1.21(react@18.3.1)
-      '@plasmicapp/host': 1.0.211(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@plasmicapp/host': 1.0.212(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@plasmicapp/isomorphic-unfetch': 1.0.3
       '@plasmicapp/query': 0.1.79(react@18.3.1)
       fast-stringify: 2.0.0
@@ -19727,6 +19733,14 @@ snapshots:
       - react-dom
 
   '@plasmicapp/host@1.0.211(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+    dependencies:
+      '@plasmicapp/query': 0.1.79(react@18.3.1)
+      csstype: 3.1.3
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+      window-or-global: 1.0.1
+
+  '@plasmicapp/host@1.0.212(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@plasmicapp/query': 0.1.79(react@18.3.1)
       csstype: 3.1.3
@@ -19813,12 +19827,12 @@ snapshots:
     dependencies:
       react: 18.3.1
 
-  '@plasmicapp/react-web@0.2.378(@types/react@18.3.11)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@plasmicapp/react-web@0.2.379(@types/react@18.3.11)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@plasmicapp/auth-react': 0.0.22(react@18.3.1)
-      '@plasmicapp/data-sources': 0.1.175(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@plasmicapp/data-sources': 0.1.176(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@plasmicapp/data-sources-context': 0.1.21(react@18.3.1)
-      '@plasmicapp/host': 1.0.211(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@plasmicapp/host': 1.0.212(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@plasmicapp/loader-splits': 1.0.64
       '@plasmicapp/nextjs-app-router': 1.0.16(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@plasmicapp/prepass': 1.0.19(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -19859,10 +19873,10 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  '@plasmicpkgs/antd5@0.0.279(@plasmicapp/data-sources@0.1.175(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@plasmicapp/host@1.0.211(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@plasmicapp/query@0.1.79(react@18.3.1))(date-fns@3.6.0)(luxon@3.4.0)(moment@2.30.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@plasmicpkgs/antd5@0.0.279(@plasmicapp/data-sources@0.1.176(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@plasmicapp/host@1.0.212(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@plasmicapp/query@0.1.79(react@18.3.1))(date-fns@3.6.0)(luxon@3.4.0)(moment@2.30.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
-      '@plasmicapp/data-sources': 0.1.175(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@plasmicapp/host': 1.0.211(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@plasmicapp/data-sources': 0.1.176(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@plasmicapp/host': 1.0.212(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@plasmicapp/query': 0.1.79(react@18.3.1)
       antd: 5.24.4(date-fns@3.6.0)(luxon@3.4.0)(moment@2.30.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       classnames: 2.5.1
@@ -19876,9 +19890,9 @@ snapshots:
       - moment
       - react-dom
 
-  '@plasmicpkgs/plasmic-basic-components@0.0.234(@plasmicapp/host@1.0.211(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@plasmicapp/query@0.1.79(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@plasmicpkgs/plasmic-basic-components@0.0.234(@plasmicapp/host@1.0.212(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@plasmicapp/query@0.1.79(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
-      '@plasmicapp/host': 1.0.211(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@plasmicapp/host': 1.0.212(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@plasmicapp/query': 0.1.79(react@18.3.1)
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
@@ -19924,7 +19938,7 @@ snapshots:
 
   '@rc-component/async-validator@5.0.4':
     dependencies:
-      '@babel/runtime': 7.26.10
+      '@babel/runtime': 7.27.0
 
   '@rc-component/color-picker@2.0.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
@@ -19937,14 +19951,14 @@ snapshots:
 
   '@rc-component/context@1.4.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
-      '@babel/runtime': 7.26.10
+      '@babel/runtime': 7.27.0
       rc-util: 5.44.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
 
   '@rc-component/mini-decimal@1.1.0':
     dependencies:
-      '@babel/runtime': 7.26.10
+      '@babel/runtime': 7.27.0
 
   '@rc-component/mutate-observer@1.1.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
@@ -19956,7 +19970,7 @@ snapshots:
 
   '@rc-component/portal@1.1.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
-      '@babel/runtime': 7.26.10
+      '@babel/runtime': 7.27.0
       classnames: 2.5.1
       rc-util: 5.44.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       react: 18.3.1
@@ -22152,7 +22166,7 @@ snapshots:
 
   babel-plugin-macros@3.1.0:
     dependencies:
-      '@babel/runtime': 7.26.10
+      '@babel/runtime': 7.27.0
       cosmiconfig: 7.1.0
       resolve: 1.22.8
 
@@ -23620,7 +23634,7 @@ snapshots:
 
   dom-helpers@5.2.1:
     dependencies:
-      '@babel/runtime': 7.24.7
+      '@babel/runtime': 7.27.0
       csstype: 3.1.3
 
   dom-serializer@1.4.1:
@@ -24258,7 +24272,7 @@ snapshots:
       '@eslint/core': 0.6.0
       '@eslint/eslintrc': 3.3.1
       '@eslint/js': 9.12.0
-      '@eslint/plugin-kit': 0.2.7
+      '@eslint/plugin-kit': 0.2.8
       '@humanfs/node': 0.16.6
       '@humanwhocodes/module-importer': 1.0.1
       '@humanwhocodes/retry': 0.3.1
@@ -29168,7 +29182,7 @@ snapshots:
 
   rc-overflow@1.4.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
     dependencies:
-      '@babel/runtime': 7.26.10
+      '@babel/runtime': 7.27.0
       classnames: 2.5.1
       rc-resize-observer: 1.4.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       rc-util: 5.44.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -29348,7 +29362,7 @@ snapshots:
 
   rc-virtual-list@3.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
     dependencies:
-      '@babel/runtime': 7.26.10
+      '@babel/runtime': 7.27.0
       classnames: 2.5.1
       rc-resize-observer: 1.4.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       rc-util: 5.44.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
