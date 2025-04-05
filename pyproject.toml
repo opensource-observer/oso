@@ -103,7 +103,7 @@ dev = [
 pyoso = { workspace = true }
 
 [tool.uv.workspace]
-members = ["warehouse/pyoso"]
+members = ["warehouse/pyoso", "warehouse/oso_mcp"]
 
 [build-system]
 requires = ["hatchling"]
