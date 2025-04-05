@@ -1,0 +1,17 @@
+[project]
+name = "oso-mcp"
+version = "0.1.0"
+description = "The OpenSource Observer MCP server"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [{ name = "Javier Ríos", email = "javi@karibalabs.co" }]
+dependencies = [
+    "mcp[cli]>=1.6.0",
+    "pydantic>=2.10.6",
+    "pyoso",
+    "python-dotenv>=1.0.1",
+    "requests>=2.32.3",
+]
+
+[tool.uv.sources]
+pyoso = { workspace = true }
