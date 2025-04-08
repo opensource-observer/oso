@@ -18,7 +18,8 @@ MODEL (
     to_address,
     proxy_type,
     proxy_address
-  )
+  ),
+  dialect duckdb,
 );
 
 @known_proxies(

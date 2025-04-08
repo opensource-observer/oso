@@ -7,6 +7,7 @@ from metrics_tools.definition import (
     to_actual_table_name,
 )
 from metrics_tools.utils import exp_literal_to_py_literal
+from metrics_tools.utils.glot import exp_to_int
 from sqlglot import expressions as exp
 from sqlmesh.core.dialect import MacroVar, parse_one
 from sqlmesh.core.macros import MacroEvaluator
@@ -29,6 +30,12 @@ def relative_window_sample_date(
     must be a valid thing to subtract from. Also note, the base should generally
     be the `@metrics_end` date.
     """
+
+    if evaluator.locals.get("time_aggregation"):
+        raise Exception(
+            "relative_window_sample_date cannot be used in time_aggregation mode"
+        )
+
     if isinstance(unit, exp.Literal):
         unit = t.cast(str, unit.this)
     elif isinstance(unit, exp.Expression):
@@ -43,11 +50,7 @@ def relative_window_sample_date(
             else:
                 unit = transformed.sql()
 
-    converted_relative_index = 0
-    if isinstance(relative_index, exp.Literal):
-        converted_relative_index = int(t.cast(int, relative_index.this))
-    elif isinstance(relative_index, exp.Neg):
-        converted_relative_index = int(relative_index.this.this) * -1
+    converted_relative_index = exp_to_int(relative_index)
     if converted_relative_index == 0:
         return base
     window_int = int(evaluator.eval_expression(window))

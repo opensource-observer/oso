@@ -26,7 +26,7 @@ spec:
   chart:
     spec:
       chart: trino
-      version: "1.37.0"
+      version: "1.38.0"
       sourceRef:
         kind: HelmRepository
         name: trino
@@ -35,6 +35,9 @@ spec:
     remediation:
       retries: 3
   values:
+    additionalNodeProperties:
+      - log.format=json
+      - log.console-format=json
     serviceAccount:
       create: true
       name: base-trino

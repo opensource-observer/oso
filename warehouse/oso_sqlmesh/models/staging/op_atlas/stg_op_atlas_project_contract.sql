@@ -26,7 +26,7 @@ SELECT
   @chain_id_to_chain_name(chain_id) AS artifact_source,
   '' AS artifact_namespace,
   contract_address AS artifact_name,
-  '' AS artifact_url,
+  contract_address AS artifact_url,
   'CONTRACT' AS artifact_type
 FROM latest_data
 WHERE rn = 1

@@ -96,13 +96,14 @@ dev = [
     "isort<6.0.0,>=5.13.2",
     "ruff>=0.10.0",
     "ipykernel>=6.29.5",
+    "python-on-whales>=0.76.1",
 ]
 
 [tool.uv.sources]
 pyoso = { workspace = true }
 
 [tool.uv.workspace]
-members = ["warehouse/pyoso"]
+members = ["warehouse/pyoso", "warehouse/oso_mcp"]
 
 [build-system]
 requires = ["hatchling"]

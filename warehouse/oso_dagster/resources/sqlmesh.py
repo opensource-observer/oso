@@ -61,8 +61,8 @@ class PrefixedSQLMeshTranslator(SQLMeshDagsterTranslator):
         """
         tags: t.Dict[str, str] = {}
         for tag in model.tags:
-            if ":" in tag:
-                key, value = tag.split(":")
+            if "=" in tag:
+                key, value = tag.split("=")
                 tags[key] = value
             else:
                 tags[tag] = "true"

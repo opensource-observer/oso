@@ -11,6 +11,9 @@ dagster:
   dagsterWebserver:
     enableReadOnly: true
 
+osoDagster:
+  verboseLogs: 0
+
 global:
   dagsterInternalName: "dagster"
 

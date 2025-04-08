@@ -362,7 +362,7 @@ CHUNKED_STATE_JOB_CONFIG = {
         "container_config": {
             "resources": {
                 "requests": {
-                    "cpu": "500m",
+                    "cpu": "250m",
                     "memory": "1024Mi",
                 },
                 "limits": {

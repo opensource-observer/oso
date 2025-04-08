@@ -212,7 +212,7 @@ Here is an excerpt from the OSO codebase that registers the `stars` metric:
         display_name="Stars",
         description="Metrics related to GitHub stars",
     ),
-    additional_tags=["data_category:code"],
+    additional_tags=["data_category=code"],
 ),
 ```
 
@@ -673,7 +673,7 @@ timeseries_metrics(
                 display_name="Stars",
                 description="Metrics related to GitHub stars",
             ),
-            additional_tags=["data_category:code"],
+            additional_tags=["data_category=code"],
         ),
         # other metrics...
     }

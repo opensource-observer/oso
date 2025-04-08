@@ -6,7 +6,20 @@ TIME_AGGREGATION_TO_CRON = {
     "daily": "@daily",
     "monthly": "@monthly",
     "weekly": "@weekly",
+    "quarterly": "@monthly",
+    "biannually": "@monthly",
+    "yearly": "@yearly",
 }
+
+TIME_AGGREGATION_TO_END = {
+    "daily": "1 day ago",
+    "monthly": "1 month ago",
+    "weekly": "1 week ago",
+    "quarterly": "3 months ago",
+    "biannually": "6 months ago",
+    "yearly": "1 year ago",
+}
+
 METRICS_COLUMNS_BY_ENTITY: t.Dict[str, t.Dict[str, exp.DataType]] = {
     "artifact": {
         "metrics_sample_date": exp.DataType.build("DATE", dialect="duckdb"),

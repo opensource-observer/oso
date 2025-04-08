@@ -7,12 +7,13 @@ import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
 :::tip
-Once you're project is indexed, you can get metrics about your project using our GraphQL API or directly from BigQuery. It's always safer to query on the `project_id` field rather than the `name` or `display_name` fields.
+Once you're project is indexed, you can get metrics about your project using our GraphQL API
+or from pyoso. It's always safer to query on the `project_id` field rather than the `name` or `display_name` fields.
 :::
 
 ## Find Your `project_id`
 
-You can lookup your project's `project_id` using either BigQuery or our GraphQL API:
+You can lookup your project's `project_id` using either SQL or our GraphQL API:
 
 <Tabs>
 <TabItem value="sql" label="SQL">
@@ -23,7 +24,7 @@ select
   project_name,
   display_name,
   description
-from `oso_production.projects_v1`
+from `projects_v1`
 where project_name = 'opensource-observer'
 ```
 
@@ -50,7 +51,7 @@ In the case of `opensource-observer`, we get back the following:
 
 ```json 
 {
-  "projectId": "Erx9J64anc8oSeN-wDKm0sojJf8ONrFVYbQ7GFnqSyc=",
+  "projectId": "UuWbpo5bpL5QsYvlukUWNm2uE8HFjxQxzCM0e+HMZfk=",
   "projectName": "opensource-observer",
   "displayName": "Open Source Observer",
   "description": "Open Source Observer is a free analytics suite that helps funders measure the impact of open source software contributions to the health of their ecosystem."
@@ -72,7 +73,7 @@ select
   metric_name,
   display_name,
   description
-from `oso_production.metrics_v0`;
+from `metrics_v0`;
 ```
 
 </TabItem>
@@ -116,9 +117,9 @@ select
   metric_id,
   project_id,
   amount
-from `oso_production.key_metrics_by_project_v0`
-where project_id = 'Erx9J64anc8oSeN-wDKm0sojJf8ONrFVYbQ7GFnqSyc='
-  and metric_id = '0xy+em6XN6wQKZMqtspcmc49ze3hD4BofTyMG+PU2OE='
+from `key_metrics_by_project_v0`
+where project_id = 'UuWbpo5bpL5QsYvlukUWNm2uE8HFjxQxzCM0e+HMZfk='
+  and metric_id = '1zNSDLeL7d1bqMgJ4b/AGBd0lQs4Q4Wy9jIf2ge72kw='
 ```
 
 </TabItem>
@@ -129,8 +130,8 @@ where project_id = 'Erx9J64anc8oSeN-wDKm0sojJf8ONrFVYbQ7GFnqSyc='
 query getKeyMetrics {
   oso_keyMetricsByProjectV0(
     where: {
-      projectId: { _eq: "Erx9J64anc8oSeN-wDKm0sojJf8ONrFVYbQ7GFnqSyc=" },
-      metricId: { _eq: "0xy+em6XN6wQKZMqtspcmc49ze3hD4BofTyMG+PU2OE=" }
+      projectId: { _eq: "UuWbpo5bpL5QsYvlukUWNm2uE8HFjxQxzCM0e+HMZfk=" },
+      metricId: { _eq: "1zNSDLeL7d1bqMgJ4b/AGBd0lQs4Q4Wy9jIf2ge72kw=" }
     }
   ) {
     metricId,
@@ -147,9 +148,9 @@ In the case of daily GitHub commits, we get back the following:
 
 ```json 
 {
-  "projectId": "Erx9J64anc8oSeN-wDKm0sojJf8ONrFVYbQ7GFnqSyc=",
-  "metricId": "0xy+em6XN6wQKZMqtspcmc49ze3hD4BofTyMG+PU2OE=",
-  "amount": 20
+  "projectId": "UuWbpo5bpL5QsYvlukUWNm2uE8HFjxQxzCM0e+HMZfk=",
+  "metricId": "1zNSDLeL7d1bqMgJ4b/AGBd0lQs4Q4Wy9jIf2ge72kw=",
+  "amount": 2930
 },
 ```
 
@@ -166,12 +167,13 @@ select
   tm.project_id,
   tm.sample_date,
   tm.amount,
-  tm.unit
-  m.metric_name,
-from `oso_production.timeseries_metrics_by_project_v0` tm
-join `oso_production.metrics_v0` m on tm.metric_id = m.metric_id
-where tm.project_id = 'Erx9J64anc8oSeN-wDKm0sojJf8ONrFVYbQ7GFnqSyc='
+  tm.unit,
+  m.metric_name
+from `timeseries_metrics_by_project_v0` tm
+join `metrics_v0` m on tm.metric_id = m.metric_id
+where tm.project_id = 'UuWbpo5bpL5QsYvlukUWNm2uE8HFjxQxzCM0e+HMZfk='
   and tm.metric_id = '0xy+em6XN6wQKZMqtspcmc49ze3hD4BofTyMG+PU2OE='
+order by tm.sample_date ASCENDING
 ```
 
 </TabItem>
@@ -182,7 +184,7 @@ where tm.project_id = 'Erx9J64anc8oSeN-wDKm0sojJf8ONrFVYbQ7GFnqSyc='
 query getTimeseriesMetrics {
   oso_timeseriesMetricsByProjectV0(
     where: {
-      projectId: { _eq: "Erx9J64anc8oSeN-wDKm0sojJf8ONrFVYbQ7GFnqSyc=" },
+      projectId: { _eq: "UuWbpo5bpL5QsYvlukUWNm2uE8HFjxQxzCM0e+HMZfk=" },
       metricId: { _eq: "0xy+em6XN6wQKZMqtspcmc49ze3hD4BofTyMG+PU2OE=" }
     }
   ) {

@@ -1,4 +1,4 @@
-with latest as (
+with history as (
   select classification.metrics_sample_date,
     @metrics_entity_type_col(
       'to_{entity_type}_id',
@@ -47,15 +47,8 @@ with latest as (
     ) as resurrected
   from @metrics_peer_ref(
       contributor_classifications,
-      window := @rolling_window,
-      unit := @rolling_unit
+      time_aggregation := @time_aggregation,
     ) as classification
-  where classification.metrics_sample_date = @relative_window_sample_date(
-      @metrics_end('DATE'),
-      @rolling_window,
-      @rolling_unit,
-      0
-    )
   group by classification.metrics_sample_date,
     @metrics_entity_type_col(
       'to_{entity_type}_id',
@@ -63,133 +56,105 @@ with latest as (
     ),
     classification.event_source
 ),
-previous as (
-  select classification.metrics_sample_date,
-    @metrics_entity_type_col(
-      'to_{entity_type}_id',
-      table_alias := classification
-    ),
-    classification.event_source,
-    COALESCE(
-      MAX(
-        CASE
-          WHEN classification.metric LIKE 'active_%' THEN amount
-        END
-      ),
-      0
-    ) as active,
-    COALESCE(
-      MAX(
-        CASE
-          WHEN classification.metric LIKE 'full_%' THEN amount
-        END
-      ),
-      0
-    ) as full,
-    COALESCE(
-      MAX(
-        CASE
-          WHEN classification.metric LIKE 'part_%' THEN amount
-        END
-      ),
-      0
-    ) as part,
-    COALESCE(
-      MAX(
-        CASE
-          WHEN classification.metric LIKE 'new_%' THEN amount
-        END
-      ),
-      0
-    ) as new,
-    COALESCE(
-      MAX(
-        CASE
-          WHEN classification.metric LIKE 'resurrected_%' THEN amount
-        END
-      ),
-      0
-    ) as resurrected
-  from @metrics_peer_ref(
-      contributor_classifications,
-      window := @rolling_window,
-      unit := @rolling_unit,
-    ) as classification
-  where classification.metrics_sample_date = @relative_window_sample_date(
-      @metrics_end('DATE'),
-      @rolling_window,
-      @rolling_unit,
-      -1
-    )
-  group by metrics_sample_date,
-    @metrics_entity_type_col(
-      'to_{entity_type}_id',
-      table_alias := classification
-    ),
-    event_source
-),
-churned_contributors as (
+lifecycle as (
   -- Churn is prev.active - (latest.active - latest.new - latest.resurrected)
-  select @metrics_end('DATE') as metrics_sample_date,
-    COALESCE(latest.event_source, previous.event_source) as event_source,
-    @metrics_entity_type_alias(
-      COALESCE(
-        @metrics_entity_type_col('to_{entity_type}_id', table_alias := latest),
-        @metrics_entity_type_col('to_{entity_type}_id', table_alias := previous)
-      ),
+  select history.metrics_sample_date,
+    history.event_source,
+    @metrics_entity_type_col(
       'to_{entity_type}_id',
+      table_alias := history
     ),
-    '' as from_artifact_id,
-    @metrics_name('churned_contributors') as metric,
-    CASE
-      WHEN previous.active is null THEN 0
-      ELSE previous.active - (
-        COALESCE(latest.active, 0) - COALESCE(latest.new, 0) - COALESCE(latest.resurrected, 0)
-      )
-    END as amount
-  from previous
-    LEFT JOIN latest ON latest.event_source = previous.event_source
-    AND @metrics_entity_type_col('to_{entity_type}_id', table_alias := latest) = @metrics_entity_type_col('to_{entity_type}_id', table_alias := previous)
-),
-change_in_full_time_contributors as (
-  select @metrics_end('DATE') as metrics_sample_date,
-    COALESCE(latest.event_source, previous.event_source) as event_source,
-    @metrics_entity_type_alias(
-      COALESCE(
-        @metrics_entity_type_col('to_{entity_type}_id', table_alias := latest),
-        @metrics_entity_type_col('to_{entity_type}_id', table_alias := previous)
-      ),
-      'to_{entity_type}_id',
-    ),
-    '' as from_artifact_id,
-    @metrics_name('change_in_full_time_contributors') as metric,
-    COALESCE(latest.full, 0) - COALESCE(previous.full, 0) as amount
-  from previous
-    LEFT JOIN latest ON latest.event_source = previous.event_source
-    AND @metrics_entity_type_col('to_{entity_type}_id', table_alias := latest) = @metrics_entity_type_col('to_{entity_type}_id', table_alias := previous)
-),
-change_in_part_time_contributors as (
-  select @metrics_end('DATE') as metrics_sample_date,
-    COALESCE(latest.event_source, previous.event_source) as event_source,
-    @metrics_entity_type_alias(
-      COALESCE(
-        @metrics_entity_type_col('to_{entity_type}_id', table_alias := latest),
-        @metrics_entity_type_col('to_{entity_type}_id', table_alias := previous)
-      ),
-      'to_{entity_type}_id',
-    ),
-    '' as from_artifact_id,
-    @metrics_name('change_in_part_time_contributors') as metric,
-    COALESCE(latest.part, 0) - COALESCE(previous.part, 0) as amount
-  from previous
-    LEFT JOIN latest ON latest.event_source = previous.event_source
-    AND @metrics_entity_type_col('to_{entity_type}_id', table_alias := latest) = @metrics_entity_type_col('to_{entity_type}_id', table_alias := previous)
+    LAG(history.active) OVER ( 
+      PARTITION BY @metrics_entity_type_col(
+        'to_{entity_type}_id',
+        table_alias := history
+      ), event_source
+      ORDER BY history.metrics_sample_date
+    ) - history.active - history.new - history.resurrected as churn,
+    LAG(history.full) OVER (
+      PARTITION BY @metrics_entity_type_col(
+        'to_{entity_type}_id',
+        table_alias := history
+      ), event_source
+      ORDER BY history.metrics_sample_date
+    ) - history.full as change_in_full_time_contributors,
+    LAG(history.part) OVER (
+      PARTITION BY @metrics_entity_type_col(
+        'to_{entity_type}_id',
+        table_alias := history
+      ), event_source
+      ORDER BY history.metrics_sample_date
+    ) - history.part as change_in_part_time_contributors,
+    LAG(history.new) OVER (
+      PARTITION BY @metrics_entity_type_col(
+        'to_{entity_type}_id',
+        table_alias := history
+      ), event_source
+      ORDER BY history.metrics_sample_date
+    ) - history.new as change_in_new_contributors,
+    LAG(history.active) OVER (
+      PARTITION BY @metrics_entity_type_col(
+        'to_{entity_type}_id',
+        table_alias := history
+      ), event_source
+      ORDER BY history.metrics_sample_date
+    ) - history.active as change_in_active_contributors
+  from history as history
 )
-select *
-from churned_contributors
+-- do a crappy unpivot for now because there's a bug with doing an unpivot with
+-- an unnest
+
+select lifecycle.metrics_sample_date,
+  @metrics_entity_type_col(
+    'to_{entity_type}_id',
+    table_alias := lifecycle 
+  ),
+  lifecycle.event_source,
+  '' as from_artifact_id,
+  @metrics_name('change_in_new_contributors') as metric,
+  lifecycle.change_in_new_contributors as amount
+from lifecycle as lifecycle
 union all
-select *
-from change_in_full_time_contributors
+select lifecycle.metrics_sample_date,
+  @metrics_entity_type_col(
+    'to_{entity_type}_id',
+    table_alias := lifecycle
+  ),
+  lifecycle.event_source,
+  '' as from_artifact_id,
+  @metrics_name('change_in_active_contributors') as metric,
+  lifecycle.change_in_active_contributors as amount
+from lifecycle as lifecycle
 union all
-select *
-from change_in_part_time_contributors
+select lifecycle.metrics_sample_date,
+  @metrics_entity_type_col(
+    'to_{entity_type}_id',
+    table_alias := lifecycle
+  ),
+  lifecycle.event_source,
+  '' as from_artifact_id,
+  @metrics_name('change_in_full_time_contributors') as metric,
+  lifecycle.change_in_full_time_contributors as amount
+from lifecycle as lifecycle
+union all
+select lifecycle.metrics_sample_date,
+  @metrics_entity_type_col(
+    'to_{entity_type}_id',
+    table_alias := lifecycle
+  ),
+  lifecycle.event_source,
+  '' as from_artifact_id,
+  @metrics_name('change_in_part_time_contributors') as metric,
+  lifecycle.change_in_part_time_contributors as amount
+from lifecycle as lifecycle
+union all
+select lifecycle.metrics_sample_date,
+  @metrics_entity_type_col(
+    'to_{entity_type}_id',
+    table_alias := lifecycle
+  ),
+  lifecycle.event_source,
+  '' as from_artifact_id,
+  @metrics_name('churned_contributors') as metric,
+  lifecycle.churn as amount
+from lifecycle as lifecycle

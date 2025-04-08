@@ -1,0 +1,1381 @@
+schema
+  @link(url: "https://specs.apollo.dev/link/v1.0")
+  @link(url: "https://specs.apollo.dev/join/v0.3", for: EXECUTION)
+{
+  query: Query
+}
+
+directive @join__enumValue(graph: join__Graph!) repeatable on ENUM_VALUE
+
+directive @join__field(graph: join__Graph, requires: join__FieldSet, provides: join__FieldSet, type: String, external: Boolean, override: String, usedOverridden: Boolean) repeatable on FIELD_DEFINITION | INPUT_FIELD_DEFINITION
+
+directive @join__graph(name: String!, url: String!) on ENUM_VALUE
+
+directive @join__implements(graph: join__Graph!, interface: String!) repeatable on OBJECT | INTERFACE
+
+directive @join__type(graph: join__Graph!, key: join__FieldSet, extension: Boolean! = false, resolvable: Boolean! = true, isInterfaceObject: Boolean! = false) repeatable on OBJECT | INTERFACE | UNION | ENUM | INPUT_OBJECT | SCALAR
+
+directive @join__unionMember(graph: join__Graph!, member: String!) repeatable on UNION
+
+directive @link(url: String, as: String, for: link__Purpose, import: [link__Import]) repeatable on SCHEMA
+
+scalar join__FieldSet
+
+enum join__Graph {
+  HASURA @join__graph(name: "hasura", url: "https://valid-robin-8499.ddn.hasura.app/graphql")
+}
+
+scalar link__Import
+
+enum link__Purpose {
+  """
+  `SECURITY` features provide metadata necessary to securely resolve fields.
+  """
+  SECURITY
+
+  """
+  `EXECUTION` features provide metadata necessary for operation execution.
+  """
+  EXECUTION
+}
+
+enum OrderBy
+  @join__type(graph: HASURA)
+{
+  """Sorts the data in ascending order"""
+  Asc @join__enumValue(graph: HASURA)
+
+  """Sorts the data in descending order"""
+  Desc @join__enumValue(graph: HASURA)
+}
+
+type Oso_ArtifactsByCollectionV1
+  @join__type(graph: HASURA)
+{
+  artifactId: String!
+  artifactName: String!
+  artifactNamespace: String!
+  artifactSource: String!
+  artifactSourceId: String!
+  collectionId: String!
+  collectionName: String!
+  collectionNamespace: String!
+  collectionSource: String!
+}
+
+input Oso_ArtifactsByCollectionV1BoolExp
+  @join__type(graph: HASURA)
+{
+  _and: [Oso_ArtifactsByCollectionV1BoolExp!]
+  _not: Oso_ArtifactsByCollectionV1BoolExp
+  _or: [Oso_ArtifactsByCollectionV1BoolExp!]
+  artifactId: Oso_StringBoolExp
+  artifactName: Oso_StringBoolExp
+  artifactNamespace: Oso_StringBoolExp
+  artifactSource: Oso_StringBoolExp
+  artifactSourceId: Oso_StringBoolExp
+  collectionId: Oso_StringBoolExp
+  collectionName: Oso_StringBoolExp
+  collectionNamespace: Oso_StringBoolExp
+  collectionSource: Oso_StringBoolExp
+}
+
+input Oso_ArtifactsByCollectionV1OrderByExp
+  @join__type(graph: HASURA)
+{
+  artifactId: OrderBy
+  artifactName: OrderBy
+  artifactNamespace: OrderBy
+  artifactSource: OrderBy
+  artifactSourceId: OrderBy
+  collectionId: OrderBy
+  collectionName: OrderBy
+  collectionNamespace: OrderBy
+  collectionSource: OrderBy
+}
+
+type Oso_ArtifactsByProjectV1
+  @join__type(graph: HASURA)
+{
+  artifactId: String!
+  artifactName: String!
+  artifactNamespace: String!
+  artifactSource: String!
+  artifactSourceId: String!
+  projectId: String!
+  projectName: String!
+  projectNamespace: String!
+  projectSource: String!
+}
+
+input Oso_ArtifactsByProjectV1BoolExp
+  @join__type(graph: HASURA)
+{
+  _and: [Oso_ArtifactsByProjectV1BoolExp!]
+  _not: Oso_ArtifactsByProjectV1BoolExp
+  _or: [Oso_ArtifactsByProjectV1BoolExp!]
+  artifactId: Oso_StringBoolExp
+  artifactName: Oso_StringBoolExp
+  artifactNamespace: Oso_StringBoolExp
+  artifactSource: Oso_StringBoolExp
+  artifactSourceId: Oso_StringBoolExp
+  projectId: Oso_StringBoolExp
+  projectName: Oso_StringBoolExp
+  projectNamespace: Oso_StringBoolExp
+  projectSource: Oso_StringBoolExp
+}
+
+input Oso_ArtifactsByProjectV1OrderBy
+  @join__type(graph: HASURA)
+{
+  artifactId: OrderBy
+  artifactName: OrderBy
+  artifactNamespace: OrderBy
+  artifactSource: OrderBy
+  artifactSourceId: OrderBy
+  projectId: OrderBy
+  projectName: OrderBy
+  projectNamespace: OrderBy
+  projectSource: OrderBy
+}
+
+type Oso_ArtifactsByUserV1
+  @join__type(graph: HASURA)
+{
+  artifactId: String!
+  artifactName: String!
+  artifactNamespace: String!
+  artifactSource: String!
+  artifactSourceId: String!
+  userId: String!
+  userName: String!
+  userNamespace: String!
+  userSource: String!
+  userSourceId: String!
+  userType: String!
+}
+
+input Oso_ArtifactsByUserV1BoolExp
+  @join__type(graph: HASURA)
+{
+  _and: [Oso_ArtifactsByUserV1BoolExp!]
+  _not: Oso_ArtifactsByUserV1BoolExp
+  _or: [Oso_ArtifactsByUserV1BoolExp!]
+  artifactId: Oso_StringBoolExp
+  artifactName: Oso_StringBoolExp
+  artifactNamespace: Oso_StringBoolExp
+  artifactSource: Oso_StringBoolExp
+  artifactSourceId: Oso_StringBoolExp
+  userId: Oso_StringBoolExp
+  userName: Oso_StringBoolExp
+  userNamespace: Oso_StringBoolExp
+  userSource: Oso_StringBoolExp
+  userSourceId: Oso_StringBoolExp
+  userType: Oso_StringBoolExp
+}
+
+input Oso_ArtifactsByUserV1OrderByExp
+  @join__type(graph: HASURA)
+{
+  artifactId: OrderBy
+  artifactName: OrderBy
+  artifactNamespace: OrderBy
+  artifactSource: OrderBy
+  artifactSourceId: OrderBy
+  userId: OrderBy
+  userName: OrderBy
+  userNamespace: OrderBy
+  userSource: OrderBy
+  userSourceId: OrderBy
+  userType: OrderBy
+}
+
+type Oso_ArtifactsV1
+  @join__type(graph: HASURA)
+{
+  artifactId: String!
+  artifactName: String!
+  artifactNamespace: String!
+  artifactSource: String!
+  artifactSourceId: String!
+}
+
+input Oso_ArtifactsV1BoolExp
+  @join__type(graph: HASURA)
+{
+  _and: [Oso_ArtifactsV1BoolExp!]
+  _not: Oso_ArtifactsV1BoolExp
+  _or: [Oso_ArtifactsV1BoolExp!]
+  artifactId: Oso_StringBoolExp
+  artifactName: Oso_StringBoolExp
+  artifactNamespace: Oso_StringBoolExp
+  artifactSource: Oso_StringBoolExp
+  artifactSourceId: Oso_StringBoolExp
+}
+
+input Oso_ArtifactsV1OrderByExp
+  @join__type(graph: HASURA)
+{
+  artifactId: OrderBy
+  artifactName: OrderBy
+  artifactNamespace: OrderBy
+  artifactSource: OrderBy
+  artifactSourceId: OrderBy
+}
+
+scalar Oso_Bool
+  @join__type(graph: HASURA)
+
+input Oso_BoolBoolExp
+  @join__type(graph: HASURA)
+{
+  _eq: Oso_Bool
+  _in: [Oso_Bool!]
+  _is_null: Boolean
+  _neq: Oso_Bool
+  _nin: [Oso_Bool!]
+}
+
+type Oso_CodeMetricsByArtifactV0
+  @join__type(graph: HASURA)
+{
+  activeDeveloperCount6Months: Oso_Float32!
+  artifactId: String!
+  artifactName: String!
+  artifactNamespace: String!
+  closedIssueCount6Months: Oso_Float32!
+  commitCount6Months: Oso_Float32!
+  contributorCount: Oso_Float32!
+  contributorCount6Months: Oso_Float32!
+  eventSource: String!
+  firstCommitDate: Oso_DateTime!
+  forkCount: Oso_Int64!
+  fulltimeDeveloperAverage6Months: Oso_Float32!
+  lastCommitDate: Oso_DateTime!
+  mergedPullRequestCount6Months: Oso_Float32!
+  newContributorCount6Months: Oso_Float32!
+  openedIssueCount6Months: Oso_Float32!
+  openedPullRequestCount6Months: Oso_Float32!
+  starCount: Oso_Int64!
+}
+
+input Oso_CodeMetricsByArtifactV0BoolExp
+  @join__type(graph: HASURA)
+{
+  _and: [Oso_CodeMetricsByArtifactV0BoolExp!]
+  _not: Oso_CodeMetricsByArtifactV0BoolExp
+  _or: [Oso_CodeMetricsByArtifactV0BoolExp!]
+  activeDeveloperCount6Months: Oso_Float32BoolExp
+  artifactId: Oso_StringBoolExp
+  artifactName: Oso_StringBoolExp
+  artifactNamespace: Oso_StringBoolExp
+  closedIssueCount6Months: Oso_Float32BoolExp
+  commitCount6Months: Oso_Float32BoolExp
+  contributorCount: Oso_Float32BoolExp
+  contributorCount6Months: Oso_Float32BoolExp
+  eventSource: Oso_StringBoolExp
+  firstCommitDate: Oso_DateTimeBoolExp
+  forkCount: Oso_Int64BoolExp
+  fulltimeDeveloperAverage6Months: Oso_Float32BoolExp
+  lastCommitDate: Oso_DateTimeBoolExp
+  mergedPullRequestCount6Months: Oso_Float32BoolExp
+  newContributorCount6Months: Oso_Float32BoolExp
+  openedIssueCount6Months: Oso_Float32BoolExp
+  openedPullRequestCount6Months: Oso_Float32BoolExp
+  starCount: Oso_Int64BoolExp
+}
+
+input Oso_CodeMetricsByArtifactV0OrderBy
+  @join__type(graph: HASURA)
+{
+  activeDeveloperCount6Months: OrderBy
+  artifactId: OrderBy
+  artifactName: OrderBy
+  artifactNamespace: OrderBy
+  closedIssueCount6Months: OrderBy
+  commitCount6Months: OrderBy
+  contributorCount: OrderBy
+  contributorCount6Months: OrderBy
+  eventSource: OrderBy
+  firstCommitDate: OrderBy
+  forkCount: OrderBy
+  fulltimeDeveloperAverage6Months: OrderBy
+  lastCommitDate: OrderBy
+  mergedPullRequestCount6Months: OrderBy
+  newContributorCount6Months: OrderBy
+  openedIssueCount6Months: OrderBy
+  openedPullRequestCount6Months: OrderBy
+  starCount: OrderBy
+}
+
+type Oso_CodeMetricsByProjectV1
+  @join__type(graph: HASURA)
+{
+  activeDeveloperCount6Months: Oso_Float32!
+  closedIssueCount6Months: Oso_Float32!
+  commentCount6Months: Oso_Float32!
+  commitCount6Months: Oso_Float32!
+  contributorCount: Oso_Float32!
+  contributorCount6Months: Oso_Float32!
+  developerCount: Oso_Float32!
+  displayName: String!
+  eventSource: String!
+  firstCommitDate: Oso_DateTime!
+  firstCreatedAtDate: Oso_DateTime!
+  forkCount: Oso_Int64!
+  fulltimeDeveloperAverage6Months: Oso_Float32!
+  lastCommitDate: Oso_DateTime!
+  lastUpdatedAtDate: Oso_DateTime!
+  mergedPullRequestCount6Months: Oso_Float32!
+  newContributorCount6Months: Oso_Float32!
+  openedIssueCount6Months: Oso_Float32!
+  openedPullRequestCount6Months: Oso_Float32!
+  projectId: String!
+  projectName: String!
+  projectNamespace: String!
+  projectSource: String!
+  releaseCount6Months: Oso_Float32!
+  repositoryCount: Oso_Int64!
+  starCount: Oso_Int64!
+  timeToFirstResponseDaysAverage6Months: Oso_Float32!
+  timeToMergeDaysAverage6Months: Oso_Float32!
+}
+
+input Oso_CodeMetricsByProjectV1BoolExp
+  @join__type(graph: HASURA)
+{
+  _and: [Oso_CodeMetricsByProjectV1BoolExp!]
+  _not: Oso_CodeMetricsByProjectV1BoolExp
+  _or: [Oso_CodeMetricsByProjectV1BoolExp!]
+  activeDeveloperCount6Months: Oso_Float32BoolExp
+  closedIssueCount6Months: Oso_Float32BoolExp
+  commentCount6Months: Oso_Float32BoolExp
+  commitCount6Months: Oso_Float32BoolExp
+  contributorCount: Oso_Float32BoolExp
+  contributorCount6Months: Oso_Float32BoolExp
+  developerCount: Oso_Float32BoolExp
+  displayName: Oso_StringBoolExp
+  eventSource: Oso_StringBoolExp
+  firstCommitDate: Oso_DateTimeBoolExp
+  firstCreatedAtDate: Oso_DateTimeBoolExp
+  forkCount: Oso_Int64BoolExp
+  fulltimeDeveloperAverage6Months: Oso_Float32BoolExp
+  lastCommitDate: Oso_DateTimeBoolExp
+  lastUpdatedAtDate: Oso_DateTimeBoolExp
+  mergedPullRequestCount6Months: Oso_Float32BoolExp
+  newContributorCount6Months: Oso_Float32BoolExp
+  openedIssueCount6Months: Oso_Float32BoolExp
+  openedPullRequestCount6Months: Oso_Float32BoolExp
+  projectId: Oso_StringBoolExp
+  projectName: Oso_StringBoolExp
+  projectNamespace: Oso_StringBoolExp
+  projectSource: Oso_StringBoolExp
+  releaseCount6Months: Oso_Float32BoolExp
+  repositoryCount: Oso_Int64BoolExp
+  starCount: Oso_Int64BoolExp
+  timeToFirstResponseDaysAverage6Months: Oso_Float32BoolExp
+  timeToMergeDaysAverage6Months: Oso_Float32BoolExp
+}
+
+input Oso_CodeMetricsByProjectV1OrderBy
+  @join__type(graph: HASURA)
+{
+  activeDeveloperCount6Months: OrderBy
+  closedIssueCount6Months: OrderBy
+  commentCount6Months: OrderBy
+  commitCount6Months: OrderBy
+  contributorCount: OrderBy
+  contributorCount6Months: OrderBy
+  developerCount: OrderBy
+  displayName: OrderBy
+  eventSource: OrderBy
+  firstCommitDate: OrderBy
+  firstCreatedAtDate: OrderBy
+  forkCount: OrderBy
+  fulltimeDeveloperAverage6Months: OrderBy
+  lastCommitDate: OrderBy
+  lastUpdatedAtDate: OrderBy
+  mergedPullRequestCount6Months: OrderBy
+  newContributorCount6Months: OrderBy
+  openedIssueCount6Months: OrderBy
+  openedPullRequestCount6Months: OrderBy
+  projectId: OrderBy
+  projectName: OrderBy
+  projectNamespace: OrderBy
+  projectSource: OrderBy
+  releaseCount6Months: OrderBy
+  repositoryCount: OrderBy
+  starCount: OrderBy
+  timeToFirstResponseDaysAverage6Months: OrderBy
+  timeToMergeDaysAverage6Months: OrderBy
+}
+
+type Oso_CollectionsV1
+  @join__type(graph: HASURA)
+{
+  collectionId: String!
+  collectionName: String!
+  collectionNamespace: String!
+  collectionSource: String!
+  description: String!
+  displayName: String!
+}
+
+input Oso_CollectionsV1BoolExp
+  @join__type(graph: HASURA)
+{
+  _and: [Oso_CollectionsV1BoolExp!]
+  _not: Oso_CollectionsV1BoolExp
+  _or: [Oso_CollectionsV1BoolExp!]
+  collectionId: Oso_StringBoolExp
+  collectionName: Oso_StringBoolExp
+  collectionNamespace: Oso_StringBoolExp
+  collectionSource: Oso_StringBoolExp
+  description: Oso_StringBoolExp
+  displayName: Oso_StringBoolExp
+}
+
+input Oso_CollectionsV1OrderBy
+  @join__type(graph: HASURA)
+{
+  collectionId: OrderBy
+  collectionName: OrderBy
+  collectionNamespace: OrderBy
+  collectionSource: OrderBy
+  description: OrderBy
+  displayName: OrderBy
+}
+
+type Oso_ContractsV0
+  @join__type(graph: HASURA)
+{
+  contractAddress: String!
+  contractNamespace: String!
+  deploymentDate: Oso_Date!
+  factoryAddress: String!
+  originatingAddress: String!
+  rootDeployerAddress: String!
+  sortWeight: Oso_Int64!
+}
+
+input Oso_ContractsV0BoolExp
+  @join__type(graph: HASURA)
+{
+  _and: [Oso_ContractsV0BoolExp!]
+  _not: Oso_ContractsV0BoolExp
+  _or: [Oso_ContractsV0BoolExp!]
+  contractAddress: Oso_StringBoolExp
+  contractNamespace: Oso_StringBoolExp
+  deploymentDate: Oso_DateBoolExp
+  factoryAddress: Oso_StringBoolExp
+  originatingAddress: Oso_StringBoolExp
+  rootDeployerAddress: Oso_StringBoolExp
+  sortWeight: Oso_Int64BoolExp
+}
+
+input Oso_ContractsV0OrderByExp
+  @join__type(graph: HASURA)
+{
+  contractAddress: OrderBy
+  contractNamespace: OrderBy
+  deploymentDate: OrderBy
+  factoryAddress: OrderBy
+  originatingAddress: OrderBy
+  rootDeployerAddress: OrderBy
+  sortWeight: OrderBy
+}
+
+scalar Oso_Date
+  @join__type(graph: HASURA)
+
+input Oso_DateBoolExp
+  @join__type(graph: HASURA)
+{
+  _eq: Oso_Date
+  _gt: Oso_Date
+  _gte: Oso_Date
+  _in: [Oso_Date!]
+  _is_null: Boolean
+  _lt: Oso_Date
+  _lte: Oso_Date
+  _neq: Oso_Date
+  _nin: [Oso_Date!]
+}
+
+scalar Oso_DateTime
+  @join__type(graph: HASURA)
+
+scalar Oso_DateTime646
+  @join__type(graph: HASURA)
+
+input Oso_DateTime646BoolExp
+  @join__type(graph: HASURA)
+{
+  _eq: Oso_DateTime646
+  _gt: Oso_DateTime646
+  _gte: Oso_DateTime646
+  _in: [Oso_DateTime646!]
+  _is_null: Boolean
+  _lt: Oso_DateTime646
+  _lte: Oso_DateTime646
+  _neq: Oso_DateTime646
+  _nin: [Oso_DateTime646!]
+}
+
+input Oso_DateTimeBoolExp
+  @join__type(graph: HASURA)
+{
+  _eq: Oso_DateTime
+  _gt: Oso_DateTime
+  _gte: Oso_DateTime
+  _in: [Oso_DateTime!]
+  _is_null: Boolean
+  _lt: Oso_DateTime
+  _lte: Oso_DateTime
+  _neq: Oso_DateTime
+  _nin: [Oso_DateTime!]
+}
+
+type Oso_EventTypesV1
+  @join__type(graph: HASURA)
+{
+  eventType: String!
+}
+
+input Oso_EventTypesV1BoolExp
+  @join__type(graph: HASURA)
+{
+  _and: [Oso_EventTypesV1BoolExp!]
+  _not: Oso_EventTypesV1BoolExp
+  _or: [Oso_EventTypesV1BoolExp!]
+  eventType: Oso_StringBoolExp
+}
+
+input Oso_EventTypesV1OrderBy
+  @join__type(graph: HASURA)
+{
+  eventType: OrderBy
+}
+
+scalar Oso_Float32
+  @join__type(graph: HASURA)
+
+input Oso_Float32BoolExp
+  @join__type(graph: HASURA)
+{
+  _eq: Oso_Float32
+  _gt: Oso_Float32
+  _gte: Oso_Float32
+  _in: [Oso_Float32!]
+  _is_null: Boolean
+  _lt: Oso_Float32
+  _lte: Oso_Float32
+  _neq: Oso_Float32
+  _nin: [Oso_Float32!]
+}
+
+scalar Oso_Float64
+  @join__type(graph: HASURA)
+
+input Oso_Float64BoolExp
+  @join__type(graph: HASURA)
+{
+  _eq: Oso_Float64
+  _gt: Oso_Float64
+  _gte: Oso_Float64
+  _in: [Oso_Float64!]
+  _is_null: Boolean
+  _lt: Oso_Float64
+  _lte: Oso_Float64
+  _neq: Oso_Float64
+  _nin: [Oso_Float64!]
+}
+
+type Oso_FundingMetricsByProjectV1
+  @join__type(graph: HASURA)
+{
+  displayName: String!
+  eventSource: String!
+  projectId: String!
+  projectName: String!
+  projectNamespace: String!
+  projectSource: String!
+  totalFundersCount: Oso_Int64!
+  totalFundingReceivedUsd: Oso_Float32!
+  totalFundingReceivedUsd6Months: Oso_Float32!
+}
+
+input Oso_FundingMetricsByProjectV1BoolExp
+  @join__type(graph: HASURA)
+{
+  _and: [Oso_FundingMetricsByProjectV1BoolExp!]
+  _not: Oso_FundingMetricsByProjectV1BoolExp
+  _or: [Oso_FundingMetricsByProjectV1BoolExp!]
+  displayName: Oso_StringBoolExp
+  eventSource: Oso_StringBoolExp
+  projectId: Oso_StringBoolExp
+  projectName: Oso_StringBoolExp
+  projectNamespace: Oso_StringBoolExp
+  projectSource: Oso_StringBoolExp
+  totalFundersCount: Oso_Int64BoolExp
+  totalFundingReceivedUsd: Oso_Float32BoolExp
+  totalFundingReceivedUsd6Months: Oso_Float32BoolExp
+}
+
+input Oso_FundingMetricsByProjectV1OrderBy
+  @join__type(graph: HASURA)
+{
+  displayName: OrderBy
+  eventSource: OrderBy
+  projectId: OrderBy
+  projectName: OrderBy
+  projectNamespace: OrderBy
+  projectSource: OrderBy
+  totalFundersCount: OrderBy
+  totalFundingReceivedUsd: OrderBy
+  totalFundingReceivedUsd6Months: OrderBy
+}
+
+scalar Oso_Int64
+  @join__type(graph: HASURA)
+
+input Oso_Int64BoolExp
+  @join__type(graph: HASURA)
+{
+  _eq: Oso_Int64
+  _gt: Oso_Int64
+  _gte: Oso_Int64
+  _in: [Oso_Int64!]
+  _is_null: Boolean
+  _lt: Oso_Int64
+  _lte: Oso_Int64
+  _neq: Oso_Int64
+  _nin: [Oso_Int64!]
+}
+
+type Oso_KeyMetricsByArtifactV0
+  @join__type(graph: HASURA)
+{
+  amount: Oso_Float64!
+  artifactId: String!
+  metricId: String!
+  sampleDate: Oso_Date!
+  unit: String!
+}
+
+input Oso_KeyMetricsByArtifactV0BoolExp
+  @join__type(graph: HASURA)
+{
+  _and: [Oso_KeyMetricsByArtifactV0BoolExp!]
+  _not: Oso_KeyMetricsByArtifactV0BoolExp
+  _or: [Oso_KeyMetricsByArtifactV0BoolExp!]
+  amount: Oso_Float64BoolExp
+  artifactId: Oso_StringBoolExp
+  metricId: Oso_StringBoolExp
+  sampleDate: Oso_DateBoolExp
+  unit: Oso_StringBoolExp
+}
+
+input Oso_KeyMetricsByArtifactV0OrderByExp
+  @join__type(graph: HASURA)
+{
+  amount: OrderBy
+  artifactId: OrderBy
+  metricId: OrderBy
+  sampleDate: OrderBy
+  unit: OrderBy
+}
+
+type Oso_KeyMetricsByCollectionV0
+  @join__type(graph: HASURA)
+{
+  amount: Oso_Float64!
+  collectionId: String!
+  metricId: String!
+  sampleDate: Oso_Date!
+  unit: String!
+}
+
+input Oso_KeyMetricsByCollectionV0BoolExp
+  @join__type(graph: HASURA)
+{
+  _and: [Oso_KeyMetricsByCollectionV0BoolExp!]
+  _not: Oso_KeyMetricsByCollectionV0BoolExp
+  _or: [Oso_KeyMetricsByCollectionV0BoolExp!]
+  amount: Oso_Float64BoolExp
+  collectionId: Oso_StringBoolExp
+  metricId: Oso_StringBoolExp
+  sampleDate: Oso_DateBoolExp
+  unit: Oso_StringBoolExp
+}
+
+input Oso_KeyMetricsByCollectionV0OrderByExp
+  @join__type(graph: HASURA)
+{
+  amount: OrderBy
+  collectionId: OrderBy
+  metricId: OrderBy
+  sampleDate: OrderBy
+  unit: OrderBy
+}
+
+type Oso_KeyMetricsByProjectV0
+  @join__type(graph: HASURA)
+{
+  amount: Oso_Float64!
+  metricId: String!
+  projectId: String!
+  sampleDate: Oso_Date!
+  unit: String!
+}
+
+input Oso_KeyMetricsByProjectV0BoolExp
+  @join__type(graph: HASURA)
+{
+  _and: [Oso_KeyMetricsByProjectV0BoolExp!]
+  _not: Oso_KeyMetricsByProjectV0BoolExp
+  _or: [Oso_KeyMetricsByProjectV0BoolExp!]
+  amount: Oso_Float64BoolExp
+  metricId: Oso_StringBoolExp
+  projectId: Oso_StringBoolExp
+  sampleDate: Oso_DateBoolExp
+  unit: Oso_StringBoolExp
+}
+
+input Oso_KeyMetricsByProjectV0OrderByExp
+  @join__type(graph: HASURA)
+{
+  amount: OrderBy
+  metricId: OrderBy
+  projectId: OrderBy
+  sampleDate: OrderBy
+  unit: OrderBy
+}
+
+type Oso_MetricsV0
+  @join__type(graph: HASURA)
+{
+  aggregationFunction: String!
+  definitionRef: String!
+  description: String!
+  displayName: String!
+  metricId: String!
+  metricName: String!
+  metricNamespace: String!
+  metricSource: String!
+  rawDefinition: String!
+}
+
+input Oso_MetricsV0BoolExp
+  @join__type(graph: HASURA)
+{
+  _and: [Oso_MetricsV0BoolExp!]
+  _not: Oso_MetricsV0BoolExp
+  _or: [Oso_MetricsV0BoolExp!]
+  aggregationFunction: Oso_StringBoolExp
+  definitionRef: Oso_StringBoolExp
+  description: Oso_StringBoolExp
+  displayName: Oso_StringBoolExp
+  metricId: Oso_StringBoolExp
+  metricName: Oso_StringBoolExp
+  metricNamespace: Oso_StringBoolExp
+  metricSource: Oso_StringBoolExp
+  rawDefinition: Oso_StringBoolExp
+}
+
+input Oso_MetricsV0OrderBy
+  @join__type(graph: HASURA)
+{
+  aggregationFunction: OrderBy
+  definitionRef: OrderBy
+  description: OrderBy
+  displayName: OrderBy
+  metricId: OrderBy
+  metricName: OrderBy
+  metricNamespace: OrderBy
+  metricSource: OrderBy
+  rawDefinition: OrderBy
+}
+
+type Oso_ModelsV0
+  @join__type(graph: HASURA)
+{
+  modelId: String!
+  modelName: String!
+  renderedAt: Oso_DateTime646!
+  renderedSql: String!
+}
+
+input Oso_ModelsV0BoolExp
+  @join__type(graph: HASURA)
+{
+  _and: [Oso_ModelsV0BoolExp!]
+  _not: Oso_ModelsV0BoolExp
+  _or: [Oso_ModelsV0BoolExp!]
+  modelId: Oso_StringBoolExp
+  modelName: Oso_StringBoolExp
+  renderedAt: Oso_DateTime646BoolExp
+  renderedSql: Oso_StringBoolExp
+}
+
+input Oso_ModelsV0OrderByExp
+  @join__type(graph: HASURA)
+{
+  modelId: OrderBy
+  modelName: OrderBy
+  renderedAt: OrderBy
+  renderedSql: OrderBy
+}
+
+type Oso_OnchainMetricsByProjectV1
+  @join__type(graph: HASURA)
+{
+  activeContractCount90Days: Oso_Float32!
+  addressCount: Oso_Float32!
+  addressCount90Days: Oso_Float32!
+  daysSinceFirstTransaction: Oso_Float32!
+  displayName: String!
+  eventSource: String!
+  gasFeesSum: Oso_Float32!
+  gasFeesSum6Months: Oso_Float32!
+  highActivityAddressCount90Days: Oso_Float32!
+  lowActivityAddressCount90Days: Oso_Float32!
+  mediumActivityAddressCount90Days: Oso_Float32!
+  multiProjectAddressCount90Days: Oso_Float32!
+  newAddressCount90Days: Oso_Float32!
+  projectId: String!
+  projectName: String!
+  projectNamespace: String!
+  projectSource: String!
+  returningAddressCount90Days: Oso_Float32!
+  transactionCount: Oso_Float32!
+  transactionCount6Months: Oso_Float32!
+}
+
+input Oso_OnchainMetricsByProjectV1BoolExp
+  @join__type(graph: HASURA)
+{
+  _and: [Oso_OnchainMetricsByProjectV1BoolExp!]
+  _not: Oso_OnchainMetricsByProjectV1BoolExp
+  _or: [Oso_OnchainMetricsByProjectV1BoolExp!]
+  activeContractCount90Days: Oso_Float32BoolExp
+  addressCount: Oso_Float32BoolExp
+  addressCount90Days: Oso_Float32BoolExp
+  daysSinceFirstTransaction: Oso_Float32BoolExp
+  displayName: Oso_StringBoolExp
+  eventSource: Oso_StringBoolExp
+  gasFeesSum: Oso_Float32BoolExp
+  gasFeesSum6Months: Oso_Float32BoolExp
+  highActivityAddressCount90Days: Oso_Float32BoolExp
+  lowActivityAddressCount90Days: Oso_Float32BoolExp
+  mediumActivityAddressCount90Days: Oso_Float32BoolExp
+  multiProjectAddressCount90Days: Oso_Float32BoolExp
+  newAddressCount90Days: Oso_Float32BoolExp
+  projectId: Oso_StringBoolExp
+  projectName: Oso_StringBoolExp
+  projectNamespace: Oso_StringBoolExp
+  projectSource: Oso_StringBoolExp
+  returningAddressCount90Days: Oso_Float32BoolExp
+  transactionCount: Oso_Float32BoolExp
+  transactionCount6Months: Oso_Float32BoolExp
+}
+
+input Oso_OnchainMetricsByProjectV1OrderBy
+  @join__type(graph: HASURA)
+{
+  activeContractCount90Days: OrderBy
+  addressCount: OrderBy
+  addressCount90Days: OrderBy
+  daysSinceFirstTransaction: OrderBy
+  displayName: OrderBy
+  eventSource: OrderBy
+  gasFeesSum: OrderBy
+  gasFeesSum6Months: OrderBy
+  highActivityAddressCount90Days: OrderBy
+  lowActivityAddressCount90Days: OrderBy
+  mediumActivityAddressCount90Days: OrderBy
+  multiProjectAddressCount90Days: OrderBy
+  newAddressCount90Days: OrderBy
+  projectId: OrderBy
+  projectName: OrderBy
+  projectNamespace: OrderBy
+  projectSource: OrderBy
+  returningAddressCount90Days: OrderBy
+  transactionCount: OrderBy
+  transactionCount6Months: OrderBy
+}
+
+type Oso_PackageOwnersV0
+  @join__type(graph: HASURA)
+{
+  packageArtifactId: String!
+  packageArtifactName: String!
+  packageArtifactNamespace: String!
+  packageArtifactSource: String!
+  packageOwnerArtifactId: String!
+  packageOwnerArtifactName: String!
+  packageOwnerArtifactNamespace: String!
+  packageOwnerProjectId: String!
+  packageOwnerSource: String!
+  packageProjectId: String!
+}
+
+input Oso_PackageOwnersV0BoolExp
+  @join__type(graph: HASURA)
+{
+  _and: [Oso_PackageOwnersV0BoolExp!]
+  _not: Oso_PackageOwnersV0BoolExp
+  _or: [Oso_PackageOwnersV0BoolExp!]
+  packageArtifactId: Oso_StringBoolExp
+  packageArtifactName: Oso_StringBoolExp
+  packageArtifactNamespace: Oso_StringBoolExp
+  packageArtifactSource: Oso_StringBoolExp
+  packageOwnerArtifactId: Oso_StringBoolExp
+  packageOwnerArtifactName: Oso_StringBoolExp
+  packageOwnerArtifactNamespace: Oso_StringBoolExp
+  packageOwnerProjectId: Oso_StringBoolExp
+  packageOwnerSource: Oso_StringBoolExp
+  packageProjectId: Oso_StringBoolExp
+}
+
+input Oso_PackageOwnersV0OrderByExp
+  @join__type(graph: HASURA)
+{
+  packageArtifactId: OrderBy
+  packageArtifactName: OrderBy
+  packageArtifactNamespace: OrderBy
+  packageArtifactSource: OrderBy
+  packageOwnerArtifactId: OrderBy
+  packageOwnerArtifactName: OrderBy
+  packageOwnerArtifactNamespace: OrderBy
+  packageOwnerProjectId: OrderBy
+  packageOwnerSource: OrderBy
+  packageProjectId: OrderBy
+}
+
+type Oso_ProjectsByCollectionV1
+  @join__type(graph: HASURA)
+{
+  collectionId: String!
+  collectionName: String!
+  collectionNamespace: String!
+  collectionSource: String!
+  projectId: String!
+  projectName: String!
+  projectNamespace: String!
+  projectSource: String!
+}
+
+input Oso_ProjectsByCollectionV1BoolExp
+  @join__type(graph: HASURA)
+{
+  _and: [Oso_ProjectsByCollectionV1BoolExp!]
+  _not: Oso_ProjectsByCollectionV1BoolExp
+  _or: [Oso_ProjectsByCollectionV1BoolExp!]
+  collectionId: Oso_StringBoolExp
+  collectionName: Oso_StringBoolExp
+  collectionNamespace: Oso_StringBoolExp
+  collectionSource: Oso_StringBoolExp
+  projectId: Oso_StringBoolExp
+  projectName: Oso_StringBoolExp
+  projectNamespace: Oso_StringBoolExp
+  projectSource: Oso_StringBoolExp
+}
+
+input Oso_ProjectsByCollectionV1OrderBy
+  @join__type(graph: HASURA)
+{
+  collectionId: OrderBy
+  collectionName: OrderBy
+  collectionNamespace: OrderBy
+  collectionSource: OrderBy
+  projectId: OrderBy
+  projectName: OrderBy
+  projectNamespace: OrderBy
+  projectSource: OrderBy
+}
+
+type Oso_ProjectsV1
+  @join__type(graph: HASURA)
+{
+  description: String!
+  displayName: String!
+  projectId: String!
+  projectName: String!
+  projectNamespace: String!
+  projectSource: String!
+}
+
+input Oso_ProjectsV1BoolExp
+  @join__type(graph: HASURA)
+{
+  _and: [Oso_ProjectsV1BoolExp!]
+  _not: Oso_ProjectsV1BoolExp
+  _or: [Oso_ProjectsV1BoolExp!]
+  description: Oso_StringBoolExp
+  displayName: Oso_StringBoolExp
+  projectId: Oso_StringBoolExp
+  projectName: Oso_StringBoolExp
+  projectNamespace: Oso_StringBoolExp
+  projectSource: Oso_StringBoolExp
+}
+
+input Oso_ProjectsV1OrderBy
+  @join__type(graph: HASURA)
+{
+  description: OrderBy
+  displayName: OrderBy
+  projectId: OrderBy
+  projectName: OrderBy
+  projectNamespace: OrderBy
+  projectSource: OrderBy
+}
+
+type Oso_RepositoriesV0
+  @join__type(graph: HASURA)
+{
+  artifactId: String!
+  artifactName: String!
+  artifactNamespace: String!
+  artifactSource: String!
+  artifactSourceId: String!
+  artifactUrl: String!
+  branch: String!
+  createdAt: Oso_DateTime!
+  forkCount: Oso_Int64!
+  isFork: Oso_Bool!
+  language: String!
+  licenseName: String!
+  licenseSpdxId: String!
+  projectId: String!
+  starCount: Oso_Int64!
+  updatedAt: Oso_DateTime!
+  watcherCount: Oso_Int64!
+}
+
+input Oso_RepositoriesV0BoolExp
+  @join__type(graph: HASURA)
+{
+  _and: [Oso_RepositoriesV0BoolExp!]
+  _not: Oso_RepositoriesV0BoolExp
+  _or: [Oso_RepositoriesV0BoolExp!]
+  artifactId: Oso_StringBoolExp
+  artifactName: Oso_StringBoolExp
+  artifactNamespace: Oso_StringBoolExp
+  artifactSource: Oso_StringBoolExp
+  artifactSourceId: Oso_StringBoolExp
+  artifactUrl: Oso_StringBoolExp
+  branch: Oso_StringBoolExp
+  createdAt: Oso_DateTimeBoolExp
+  forkCount: Oso_Int64BoolExp
+  isFork: Oso_BoolBoolExp
+  language: Oso_StringBoolExp
+  licenseName: Oso_StringBoolExp
+  licenseSpdxId: Oso_StringBoolExp
+  projectId: Oso_StringBoolExp
+  starCount: Oso_Int64BoolExp
+  updatedAt: Oso_DateTimeBoolExp
+  watcherCount: Oso_Int64BoolExp
+}
+
+input Oso_RepositoriesV0OrderByExp
+  @join__type(graph: HASURA)
+{
+  artifactId: OrderBy
+  artifactName: OrderBy
+  artifactNamespace: OrderBy
+  artifactSource: OrderBy
+  artifactSourceId: OrderBy
+  artifactUrl: OrderBy
+  branch: OrderBy
+  createdAt: OrderBy
+  forkCount: OrderBy
+  isFork: OrderBy
+  language: OrderBy
+  licenseName: OrderBy
+  licenseSpdxId: OrderBy
+  projectId: OrderBy
+  starCount: OrderBy
+  updatedAt: OrderBy
+  watcherCount: OrderBy
+}
+
+type Oso_SbomsV0
+  @join__type(graph: HASURA)
+{
+  fromArtifactId: String!
+  fromArtifactName: String!
+  fromArtifactNamespace: String!
+  fromArtifactSource: String!
+  fromProjectId: String!
+  toPackageArtifactId: String!
+  toPackageArtifactName: String!
+  toPackageArtifactNamespace: String!
+  toPackageArtifactSource: String!
+  toPackageProjectId: String!
+}
+
+input Oso_SbomsV0BoolExp
+  @join__type(graph: HASURA)
+{
+  _and: [Oso_SbomsV0BoolExp!]
+  _not: Oso_SbomsV0BoolExp
+  _or: [Oso_SbomsV0BoolExp!]
+  fromArtifactId: Oso_StringBoolExp
+  fromArtifactName: Oso_StringBoolExp
+  fromArtifactNamespace: Oso_StringBoolExp
+  fromArtifactSource: Oso_StringBoolExp
+  fromProjectId: Oso_StringBoolExp
+  toPackageArtifactId: Oso_StringBoolExp
+  toPackageArtifactName: Oso_StringBoolExp
+  toPackageArtifactNamespace: Oso_StringBoolExp
+  toPackageArtifactSource: Oso_StringBoolExp
+  toPackageProjectId: Oso_StringBoolExp
+}
+
+input Oso_SbomsV0OrderByExp
+  @join__type(graph: HASURA)
+{
+  fromArtifactId: OrderBy
+  fromArtifactName: OrderBy
+  fromArtifactNamespace: OrderBy
+  fromArtifactSource: OrderBy
+  fromProjectId: OrderBy
+  toPackageArtifactId: OrderBy
+  toPackageArtifactName: OrderBy
+  toPackageArtifactNamespace: OrderBy
+  toPackageArtifactSource: OrderBy
+  toPackageProjectId: OrderBy
+}
+
+input Oso_StringBoolExp
+  @join__type(graph: HASURA)
+{
+  _eq: String
+  _gt: String
+  _gte: String
+  _ilike: String
+  _in: [String!]
+  _is_null: Boolean
+  _like: String
+  _lt: String
+  _lte: String
+  _match: String
+  _neq: String
+  _nilike: String
+  _nin: [String!]
+  _nlike: String
+}
+
+type Oso_TimeseriesEventsByArtifactV0
+  @join__type(graph: HASURA)
+{
+  amount: Oso_Float32!
+  eventSource: String!
+  eventSourceId: String!
+  eventType: String!
+  fromArtifactId: String!
+  time: Oso_DateTime!
+  toArtifactId: String!
+}
+
+input Oso_TimeseriesEventsByArtifactV0BoolExp
+  @join__type(graph: HASURA)
+{
+  _and: [Oso_TimeseriesEventsByArtifactV0BoolExp!]
+  _not: Oso_TimeseriesEventsByArtifactV0BoolExp
+  _or: [Oso_TimeseriesEventsByArtifactV0BoolExp!]
+  amount: Oso_Float32BoolExp
+  eventSource: Oso_StringBoolExp
+  eventSourceId: Oso_StringBoolExp
+  eventType: Oso_StringBoolExp
+  fromArtifactId: Oso_StringBoolExp
+  time: Oso_DateTimeBoolExp
+  toArtifactId: Oso_StringBoolExp
+}
+
+input Oso_TimeseriesEventsByArtifactV0OrderBy
+  @join__type(graph: HASURA)
+{
+  amount: OrderBy
+  eventSource: OrderBy
+  eventSourceId: OrderBy
+  eventType: OrderBy
+  fromArtifactId: OrderBy
+  time: OrderBy
+  toArtifactId: OrderBy
+}
+
+type Oso_TimeseriesMetricsByArtifactV0
+  @join__type(graph: HASURA)
+{
+  amount: Oso_Float64!
+  artifactId: String!
+  metricId: String!
+  sampleDate: Oso_Date!
+  unit: String!
+}
+
+input Oso_TimeseriesMetricsByArtifactV0BoolExp
+  @join__type(graph: HASURA)
+{
+  _and: [Oso_TimeseriesMetricsByArtifactV0BoolExp!]
+  _not: Oso_TimeseriesMetricsByArtifactV0BoolExp
+  _or: [Oso_TimeseriesMetricsByArtifactV0BoolExp!]
+  amount: Oso_Float64BoolExp
+  artifactId: Oso_StringBoolExp
+  metricId: Oso_StringBoolExp
+  sampleDate: Oso_DateBoolExp
+  unit: Oso_StringBoolExp
+}
+
+input Oso_TimeseriesMetricsByArtifactV0OrderBy
+  @join__type(graph: HASURA)
+{
+  amount: OrderBy
+  artifactId: OrderBy
+  metricId: OrderBy
+  sampleDate: OrderBy
+  unit: OrderBy
+}
+
+type Oso_TimeseriesMetricsByCollectionV0
+  @join__type(graph: HASURA)
+{
+  amount: Oso_Float64!
+  collectionId: String!
+  metricId: String!
+  sampleDate: Oso_Date!
+  unit: String!
+}
+
+input Oso_TimeseriesMetricsByCollectionV0BoolExp
+  @join__type(graph: HASURA)
+{
+  _and: [Oso_TimeseriesMetricsByCollectionV0BoolExp!]
+  _not: Oso_TimeseriesMetricsByCollectionV0BoolExp
+  _or: [Oso_TimeseriesMetricsByCollectionV0BoolExp!]
+  amount: Oso_Float64BoolExp
+  collectionId: Oso_StringBoolExp
+  metricId: Oso_StringBoolExp
+  sampleDate: Oso_DateBoolExp
+  unit: Oso_StringBoolExp
+}
+
+input Oso_TimeseriesMetricsByCollectionV0OrderBy
+  @join__type(graph: HASURA)
+{
+  amount: OrderBy
+  collectionId: OrderBy
+  metricId: OrderBy
+  sampleDate: OrderBy
+  unit: OrderBy
+}
+
+type Oso_TimeseriesMetricsByProjectV0
+  @join__type(graph: HASURA)
+{
+  amount: Oso_Float64!
+  metricId: String!
+  projectId: String!
+  sampleDate: Oso_Date!
+  unit: String!
+}
+
+input Oso_TimeseriesMetricsByProjectV0BoolExp
+  @join__type(graph: HASURA)
+{
+  _and: [Oso_TimeseriesMetricsByProjectV0BoolExp!]
+  _not: Oso_TimeseriesMetricsByProjectV0BoolExp
+  _or: [Oso_TimeseriesMetricsByProjectV0BoolExp!]
+  amount: Oso_Float64BoolExp
+  metricId: Oso_StringBoolExp
+  projectId: Oso_StringBoolExp
+  sampleDate: Oso_DateBoolExp
+  unit: Oso_StringBoolExp
+}
+
+input Oso_TimeseriesMetricsByProjectV0OrderBy
+  @join__type(graph: HASURA)
+{
+  amount: OrderBy
+  metricId: OrderBy
+  projectId: OrderBy
+  sampleDate: OrderBy
+  unit: OrderBy
+}
+
+type Oso_UsersV1
+  @join__type(graph: HASURA)
+{
+  bio: String!
+  displayName: String!
+  profilePictureUrl: String!
+  url: String!
+  userId: String!
+  userSource: String!
+  userSourceId: String!
+}
+
+input Oso_UsersV1BoolExp
+  @join__type(graph: HASURA)
+{
+  _and: [Oso_UsersV1BoolExp!]
+  _not: Oso_UsersV1BoolExp
+  _or: [Oso_UsersV1BoolExp!]
+  bio: Oso_StringBoolExp
+  displayName: Oso_StringBoolExp
+  profilePictureUrl: Oso_StringBoolExp
+  url: Oso_StringBoolExp
+  userId: Oso_StringBoolExp
+  userSource: Oso_StringBoolExp
+  userSourceId: Oso_StringBoolExp
+}
+
+input Oso_UsersV1OrderBy
+  @join__type(graph: HASURA)
+{
+  bio: OrderBy
+  displayName: OrderBy
+  profilePictureUrl: OrderBy
+  url: OrderBy
+  userId: OrderBy
+  userSource: OrderBy
+  userSourceId: OrderBy
+}
+
+type Query
+  @join__type(graph: HASURA)
+{
+  oso_artifactsByCollectionV1(limit: Int, offset: Int, order_by: [Oso_ArtifactsByCollectionV1OrderByExp!], where: Oso_ArtifactsByCollectionV1BoolExp): [Oso_ArtifactsByCollectionV1!]
+  oso_artifactsByProjectV1(limit: Int, offset: Int, order_by: [Oso_ArtifactsByProjectV1OrderBy!], where: Oso_ArtifactsByProjectV1BoolExp): [Oso_ArtifactsByProjectV1!]
+  oso_artifactsByUserV1(limit: Int, offset: Int, order_by: [Oso_ArtifactsByUserV1OrderByExp!], where: Oso_ArtifactsByUserV1BoolExp): [Oso_ArtifactsByUserV1!]
+  oso_artifactsV1(limit: Int, offset: Int, order_by: [Oso_ArtifactsV1OrderByExp!], where: Oso_ArtifactsV1BoolExp): [Oso_ArtifactsV1!]
+  oso_codeMetricsByArtifactV0(limit: Int, offset: Int, order_by: [Oso_CodeMetricsByArtifactV0OrderBy!], where: Oso_CodeMetricsByArtifactV0BoolExp): [Oso_CodeMetricsByArtifactV0!]
+  oso_codeMetricsByProjectV1(limit: Int, offset: Int, order_by: [Oso_CodeMetricsByProjectV1OrderBy!], where: Oso_CodeMetricsByProjectV1BoolExp): [Oso_CodeMetricsByProjectV1!]
+  oso_collectionsV1(limit: Int, offset: Int, order_by: [Oso_CollectionsV1OrderBy!], where: Oso_CollectionsV1BoolExp): [Oso_CollectionsV1!]
+  oso_contractsV0(limit: Int, offset: Int, order_by: [Oso_ContractsV0OrderByExp!], where: Oso_ContractsV0BoolExp): [Oso_ContractsV0!]
+  oso_contractsV0ByDeploymentDate(deploymentDate: Oso_Date!): Oso_ContractsV0
+  oso_eventTypesV1(limit: Int, offset: Int, order_by: [Oso_EventTypesV1OrderBy!], where: Oso_EventTypesV1BoolExp): [Oso_EventTypesV1!]
+  oso_fundingMetricsByProjectV1(limit: Int, offset: Int, order_by: [Oso_FundingMetricsByProjectV1OrderBy!], where: Oso_FundingMetricsByProjectV1BoolExp): [Oso_FundingMetricsByProjectV1!]
+  oso_keyMetricsByArtifactV0(limit: Int, offset: Int, order_by: [Oso_KeyMetricsByArtifactV0OrderByExp!], where: Oso_KeyMetricsByArtifactV0BoolExp): [Oso_KeyMetricsByArtifactV0!]
+  oso_keyMetricsByCollectionV0(limit: Int, offset: Int, order_by: [Oso_KeyMetricsByCollectionV0OrderByExp!], where: Oso_KeyMetricsByCollectionV0BoolExp): [Oso_KeyMetricsByCollectionV0!]
+  oso_keyMetricsByProjectV0(limit: Int, offset: Int, order_by: [Oso_KeyMetricsByProjectV0OrderByExp!], where: Oso_KeyMetricsByProjectV0BoolExp): [Oso_KeyMetricsByProjectV0!]
+  oso_metricsV0(limit: Int, offset: Int, order_by: [Oso_MetricsV0OrderBy!], where: Oso_MetricsV0BoolExp): [Oso_MetricsV0!]
+  oso_metricsV0ByMetricSourceMetricNamespaceMetricName(metricName: String!, metricNamespace: String!, metricSource: String!): Oso_MetricsV0
+  oso_modelsV0(limit: Int, offset: Int, order_by: [Oso_ModelsV0OrderByExp!], where: Oso_ModelsV0BoolExp): [Oso_ModelsV0!]
+  oso_onchainMetricsByProjectV1(limit: Int, offset: Int, order_by: [Oso_OnchainMetricsByProjectV1OrderBy!], where: Oso_OnchainMetricsByProjectV1BoolExp): [Oso_OnchainMetricsByProjectV1!]
+  oso_packageOwnersV0(limit: Int, offset: Int, order_by: [Oso_PackageOwnersV0OrderByExp!], where: Oso_PackageOwnersV0BoolExp): [Oso_PackageOwnersV0!]
+  oso_projectsByCollectionV1(limit: Int, offset: Int, order_by: [Oso_ProjectsByCollectionV1OrderBy!], where: Oso_ProjectsByCollectionV1BoolExp): [Oso_ProjectsByCollectionV1!]
+  oso_projectsV1(limit: Int, offset: Int, order_by: [Oso_ProjectsV1OrderBy!], where: Oso_ProjectsV1BoolExp): [Oso_ProjectsV1!]
+  oso_repositoriesV0(limit: Int, offset: Int, order_by: [Oso_RepositoriesV0OrderByExp!], where: Oso_RepositoriesV0BoolExp): [Oso_RepositoriesV0!]
+  oso_sbomsV0(limit: Int, offset: Int, order_by: [Oso_SbomsV0OrderByExp!], where: Oso_SbomsV0BoolExp): [Oso_SbomsV0!]
+  oso_timeseriesEventsByArtifactV0(limit: Int, offset: Int, order_by: [Oso_TimeseriesEventsByArtifactV0OrderBy!], where: Oso_TimeseriesEventsByArtifactV0BoolExp): [Oso_TimeseriesEventsByArtifactV0!]
+  oso_timeseriesMetricsByArtifactV0(limit: Int, offset: Int, order_by: [Oso_TimeseriesMetricsByArtifactV0OrderBy!], where: Oso_TimeseriesMetricsByArtifactV0BoolExp): [Oso_TimeseriesMetricsByArtifactV0!]
+  oso_timeseriesMetricsByArtifactV0ByMetricIdArtifactIdSampleDate(artifactId: String!, metricId: String!, sampleDate: Oso_Date!): Oso_TimeseriesMetricsByArtifactV0
+  oso_timeseriesMetricsByCollectionV0(limit: Int, offset: Int, order_by: [Oso_TimeseriesMetricsByCollectionV0OrderBy!], where: Oso_TimeseriesMetricsByCollectionV0BoolExp): [Oso_TimeseriesMetricsByCollectionV0!]
+  oso_timeseriesMetricsByCollectionV0ByMetricIdCollectionIdSampleDate(collectionId: String!, metricId: String!, sampleDate: Oso_Date!): Oso_TimeseriesMetricsByCollectionV0
+  oso_timeseriesMetricsByProjectV0(limit: Int, offset: Int, order_by: [Oso_TimeseriesMetricsByProjectV0OrderBy!], where: Oso_TimeseriesMetricsByProjectV0BoolExp): [Oso_TimeseriesMetricsByProjectV0!]
+  oso_timeseriesMetricsByProjectV0ByMetricIdProjectIdSampleDate(metricId: String!, projectId: String!, sampleDate: Oso_Date!): Oso_TimeseriesMetricsByProjectV0
+  oso_usersV1(limit: Int, offset: Int, order_by: [Oso_UsersV1OrderBy!], where: Oso_UsersV1BoolExp): [Oso_UsersV1!]
+}

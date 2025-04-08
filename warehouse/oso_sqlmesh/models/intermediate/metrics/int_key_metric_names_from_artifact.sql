@@ -2,9 +2,9 @@ MODEL (
   name oso.int_key_metric_names_from_artifact,
   kind FULL,
   tags (
-    "model_type:full",
-    "model_category:metrics",
-    "model_stage:intermediate"
+    "model_type=full",
+    "model_category=metrics",
+    "model_stage=intermediate"
   )
 );
 

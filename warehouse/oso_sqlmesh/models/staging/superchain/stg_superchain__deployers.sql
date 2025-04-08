@@ -9,7 +9,8 @@ MODEL (
   start @blockchain_incremental_start,
   cron '@daily',
   partitioned_by (DAY("block_timestamp"), "chain"),
-  grain (block_timestamp, chain_id, transaction_hash, deployer_address, contract_address)
+  grain (block_timestamp, chain_id, transaction_hash, deployer_address, contract_address),
+  dialect duckdb,
 );
 
 @transactions_with_receipts_deployers(

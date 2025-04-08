@@ -8,11 +8,12 @@ MODEL (
   ),
   start @github_incremental_start,
   partitioned_by DAY(event_time),
+  dialect duckdb,
 );
 
 WITH issue_events AS (
   SELECT
-    *
+  *
   FROM oso.stg_github__events AS ghe
   WHERE
     ghe.type = 'IssuesEvent'

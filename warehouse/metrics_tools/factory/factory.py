@@ -60,6 +60,7 @@ class MetricQueryConfig(t.TypedDict):
     metadata: t.Optional[MetricMetadata]
     incremental: bool
     additional_tags: t.List[str]
+    dialect: t.Optional[str]
 
 
 class MetricsCycle(Exception):
@@ -124,6 +125,11 @@ class TimeseriesMetrics:
         self._raw_options = raw_options
         self._rendered = False
         self._rendered_queries: t.Dict[str, MetricQueryConfig] = {}
+
+    @property
+    def default_dialect(self):
+        """The default dialect to use for rendered queries"""
+        return self._raw_options.get("default_dialect", "duckdb")
 
     @property
     def schema(self):
@@ -206,7 +212,17 @@ class TimeseriesMetrics:
                 ],
             )
 
-            rendered_query = transformer.transform([query.query_expression])
+            vars = query._source.vars or {}
+
+            try:
+                rendered_query = transformer.transform(
+                    [query.query_expression],
+                    dialect=query._source.dialect or self.default_dialect,
+                    debug=vars.get("debug", 0) == 1,
+                )
+            except Exception as e:
+                logger.error(f"Failed to render query {query.table_name(ref)}: {e}")
+                raise e
 
             assert rendered_query is not None
             assert len(rendered_query) == 1
@@ -219,6 +235,7 @@ class TimeseriesMetrics:
                 metadata=query._source.metadata,
                 incremental=query._source.incremental,
                 additional_tags=query._source.additional_tags or [],
+                dialect=query._source.dialect,
             )
         return queries
 
@@ -344,7 +361,7 @@ class TimeseriesMetrics:
                 name=f"oso.timeseries_metrics_to_{entity_type}",
                 is_sql=True,
                 kind="VIEW",
-                dialect="trino",
+                dialect=self.default_dialect,
                 start=self._raw_options["start"],
                 columns={
                     k: constants.METRICS_COLUMNS_BY_ENTITY[entity_type][k]
@@ -355,10 +372,10 @@ class TimeseriesMetrics:
                 },
                 enabled=self._raw_options.get("enabled", True),
                 tags=[
-                    "model_type:view",
-                    "model_category:metrics",
-                    "model_stage:intermediate",
-                    "model_metrics_type:timeseries_union",
+                    "model_type=view",
+                    "model_category=metrics",
+                    "model_stage=intermediate",
+                    "model_metrics_type=timeseries_union",
                 ],
             )(join_all_of_entity_type)
 
@@ -377,7 +394,7 @@ class TimeseriesMetrics:
                 name=f"oso.key_metrics_to_{entity_type}",
                 is_sql=True,
                 kind="VIEW",
-                dialect="trino",
+                dialect=self.default_dialect,
                 start="1970-01-01",
                 columns={
                     k: constants.METRICS_COLUMNS_BY_ENTITY[entity_type][k]
@@ -388,9 +405,9 @@ class TimeseriesMetrics:
                 },
                 enabled=self._raw_options.get("enabled", True),
                 tags=[
-                    "model_type:view",
-                    "model_category:metrics",
-                    "model_stage:intermediate",
+                    "model_type=view",
+                    "model_category=metrics",
+                    "model_stage=intermediate",
                 ],
             )(join_all_of_entity_type)
 
@@ -438,14 +455,14 @@ class TimeseriesMetrics:
                 name=f"oso.metrics_metadata_{metric_key}",
                 is_sql=True,
                 kind="FULL",
-                dialect="trino",
+                dialect=self.default_dialect,
                 columns=constants.METRIC_METADATA_COLUMNS,
                 enabled=self._raw_options.get("enabled", True),
                 tags=[
-                    "model_type:incremental",
-                    "model_category:metrics",
-                    "model_stage:intermediate",
-                    "model_metrics_type:metrics_metadata",
+                    "model_type=incremental",
+                    "model_category=metrics",
+                    "model_stage=intermediate",
+                    "model_metrics_type=metrics_metadata",
                 ],
             )(map_metadata_to_metric)
 
@@ -458,14 +475,14 @@ class TimeseriesMetrics:
             name="oso.metrics_metadata",
             is_sql=True,
             kind="FULL",
-            dialect="trino",
+            dialect=self.default_dialect,
             columns=constants.METRIC_METADATA_COLUMNS,
             enabled=self._raw_options.get("enabled", True),
             tags=[
-                "model_type:incremental",
-                "model_category:metrics",
-                "model_stage:intermediate",
-                "model_metrics_type:metrics_metadata",
+                "model_type=incremental",
+                "model_category=metrics",
+                "model_stage=intermediate",
+                "model_metrics_type=metrics_metadata",
             ],
         )(aggregate_metadata)
 
@@ -556,10 +573,10 @@ class TimeseriesMetrics:
             override_module_path=override_module_path,
             override_path=override_path,
             tags=[
-                "model_type:incremental",
-                "model_category:metrics",
-                "model_stage:intermediate",
-                "model_metrics_type:rolling_window",
+                "model_type=incremental",
+                "model_category=metrics",
+                "model_stage=intermediate",
+                "model_metrics_type=rolling_window",
                 *query_config["additional_tags"],
             ],
         )(generated_rolling_query_proxy)
@@ -594,17 +611,42 @@ class TimeseriesMetrics:
         ]
 
         kind_common = {
-            "batch_concurrency": 1,
+            "batch_concurrency": 3,
             "forward_only": True,
         }
         kind_options = {"lookback": 10, **kind_common}
         partitioned_by = ("day(metrics_sample_date)",)
 
         if time_aggregation == "weekly":
-            kind_options = {"lookback": 10, **kind_common}
+            kind_options = {
+                "lookback": 10,
+                "batch_size": 365,
+                **kind_common,
+            }
         if time_aggregation == "monthly":
-            kind_options = {"lookback": 1, **kind_common}
+            kind_options = {
+                "lookback": 1,
+                "batch_size": 12,
+                **kind_common,
+            }
             partitioned_by = ("month(metrics_sample_date)",)
+        if time_aggregation == "quarterly":
+            kind_options = {
+                "lookback": 6,
+                "batch_size": 12,
+                **kind_common,
+            }
+            partitioned_by = ("month(metrics_sample_date)",)
+        if time_aggregation == "biannually":
+            kind_options = {"lookback": 12, "batch_size": 12, **kind_common}
+            partitioned_by = ("month(metrics_sample_date)",)
+        if time_aggregation == "yearly":
+            kind_options = {
+                "lookback": 1,
+                "batch_size": 1,
+                **kind_common,
+            }
+            partitioned_by = ("year(metrics_sample_date)",)
 
         grain = [
             "metric",
@@ -622,19 +664,19 @@ class TimeseriesMetrics:
 
         if not query_config["incremental"]:
             kind = {"name": ModelKindName.FULL}
-            model_type_tag = "model_type:full"
+            model_type_tag = "model_type=full"
         else:
             kind = {
                 "name": ModelKindName.INCREMENTAL_BY_TIME_RANGE,
                 "time_column": "metrics_sample_date",
                 **kind_options,
             }
-            model_type_tag = "model_type:incremental"
+            model_type_tag = "model_type=incremental"
 
         return MacroOverridingModel(
             name=f"{self.schema}.{query_config['table_name']}",
             kind=kind,
-            dialect="trino",
+            dialect=query_config["dialect"] or self.default_dialect,
             is_sql=True,
             columns=columns,
             grain=grain,
@@ -648,9 +690,9 @@ class TimeseriesMetrics:
             override_path=override_path,
             tags=[
                 model_type_tag,
-                "model_category:metrics",
-                "model_stage:intermediate",
-                "model_metrics_type:time_aggregation",
+                "model_category=metrics",
+                "model_stage=intermediate",
+                "model_metrics_type=time_aggregation",
                 *query_config["additional_tags"],
             ],
         )(generated_query)
@@ -685,7 +727,7 @@ class TimeseriesMetrics:
         return MacroOverridingModel(
             name=f"{self.schema}.{query_config['table_name']}",
             kind=ModelKindName.FULL,
-            dialect="trino",
+            dialect=query_config["dialect"] or self.default_dialect,
             is_sql=True,
             columns=columns,
             grain=grain,
@@ -696,10 +738,10 @@ class TimeseriesMetrics:
             override_module_path=override_module_path,
             override_path=override_path,
             tags=[
-                "model_type:full",
-                "model_category:metrics",
-                "model_stage:intermediate",
-                "model_metrics_type:point_in_time",
+                "model_type=full",
+                "model_category=metrics",
+                "model_stage=intermediate",
+                "model_metrics_type=point_in_time",
             ],
         )(generated_query)
 
@@ -712,7 +754,7 @@ class TimeseriesMetrics:
         # Apparently expressions also cannot be serialized.
         del config["rendered_query"]
         config["rendered_query_str"] = query_config["rendered_query"].sql(
-            dialect="duckdb"
+            dialect=query_config["dialect"] or self.default_dialect,
         )
         return config
 

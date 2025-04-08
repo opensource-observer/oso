@@ -216,6 +216,30 @@ const GET_COLLECTION_IDS_BY_PROJECT_IDS = define(
 );
 
 /**********************
+ * MODELS
+ **********************/
+
+const modelResponse = {
+  model_id: "",
+  model_name: "",
+  rendered_sql: "",
+};
+
+const GET_MODEL_BY_NAME = define(
+  `
+  SELECT 
+    model_id, 
+    model_name, 
+    rendered_sql
+  FROM 
+    models_v0
+  WHERE 
+    model_name = {modelName: String}
+`,
+  modelResponse,
+);
+
+/**********************
  * METRICS
  **********************/
 
@@ -375,6 +399,7 @@ export {
   GET_COLLECTIONS_BY_IDS,
   GET_COLLECTION_BY_NAME,
   GET_COLLECTION_IDS_BY_PROJECT_IDS,
+  GET_MODEL_BY_NAME,
   GET_ALL_METRICS,
   GET_METRICS_BY_IDS,
   GET_METRIC_BY_NAME,

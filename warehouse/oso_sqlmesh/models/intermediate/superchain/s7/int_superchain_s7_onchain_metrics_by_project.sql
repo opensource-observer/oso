@@ -1,10 +1,17 @@
 MODEL(
   name oso.int_superchain_s7_onchain_metrics_by_project,
   description 'S7 onchain metrics by project with various aggregations and filters',
-  kind full,
+  kind incremental_by_time_range(
+   time_column sample_date,
+   batch_size 60,
+   batch_concurrency 1,
+   lookback 7
+  ),
+  start '2024-09-01',
+  cron '@daily',
   dialect trino,
-  partitioned_by chain,
-  grain(chain, sample_date, project_id, metric_name)
+  partitioned_by DAY("sample_date"),
+  grain(sample_date, chain, project_id, metric_name)
 );
 
 @DEF(direct_invocation_weight, 0.5);
@@ -34,6 +41,7 @@ WITH base_events AS (
       'CONTRACT_INVOCATION',
       'CONTRACT_INTERNAL_INVOCATION'
     )
+    AND e.time BETWEEN @start_dt AND @end_dt
 ),
 
 -- Calculate number of projects involved in internal invocations per transaction
@@ -147,7 +155,8 @@ defillama_tvl AS (
     chain,
     bucket_month AS sample_date,
     'average_tvl_monthly' AS metric_name,
-    AVG(amount) AS amount
+    SUM(amount) / DAY(DATE_ADD('MONTH', 1, bucket_month) - INTERVAL '1' DAY)
+      AS amount
   FROM defillama_tvl_events
   GROUP BY 1, 2, 3
 ),

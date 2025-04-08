@@ -67,6 +67,6 @@ class Client:
 
     def to_pandas(self, query: str):
         query_data = self.__query(query)
-        return pd.DataFrame(query_data.data, columns=query_data.columns).convert_dtypes(
-            dtype_backend="pyarrow"
-        )
+        return pd.DataFrame(
+            query_data.data, columns=query_data.columns
+        ).convert_dtypes()

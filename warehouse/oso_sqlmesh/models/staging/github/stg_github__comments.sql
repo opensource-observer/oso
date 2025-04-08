@@ -6,6 +6,7 @@ MODEL (
     batch_concurrency 3,
     lookback 7
   ),
+  dialect "duckdb",
   start @github_incremental_start,
   partitioned_by DAY(event_time),
 );
