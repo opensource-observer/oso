@@ -91,7 +91,7 @@ A total of **3000 OP** is available as retroactive rewards in the form of L2 tok
 
 The primary way to receive rewards is to submit an impact metric in the form described above. We will reward the contributors who come up with the best metrics with 20-50 OP tokens per metric (capped at 10 metrics per contributor). The actual amount of the reward will be a function of the complexity and utility of the metric. As a guiding principle, we want to incentivize contributors to work on hard but widely applicable metrics. (Basically, we don’t want to see 10 variants of daily active users.)
 
-In addition to direct work on impact metrics, we also have reward budgets for work on collections (defining a group of related projects) and adding/updating project data. We will reward collection creators 10-20 OP per new collection that gets added to oss-directory. We will reward contributors of project data at the rates described in our [bounty program](https://docs.opensource.observer/docs/contribute/challenges/bounties#ongoing-bounties) at the prevailing OP-USDC dex rate on May 31. These are capped at 250 OP per contributor.
+In addition to direct work on impact metrics, we also have reward budgets for work on collections (defining a group of related projects) and adding/updating project data. We will reward collection creators 10-20 OP per new collection that gets added to oss-directory at the prevailing OP-USDC dex rate on May 31. These are capped at 250 OP per contributor.
 
 Finally, we have a reward pool for other forms of contribution during the life of the challenge. This could include efforts to onboard or process new datasets, community activation, and improvements to OSO’s underlying infrastructure.
 

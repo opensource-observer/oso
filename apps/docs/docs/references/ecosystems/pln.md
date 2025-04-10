@@ -10,7 +10,7 @@ The Protocol Labs Network (PLN) is a collection of projects contributing to the 
 
 The main sources of project data come from the PL directory and any grants that have been awarded to projects from other ecosystems.
 
-[Here](https://docs.opensource.observer/blog/pln-ecosystem-analysis) is our most recent report on the PLN ecosystem.
+[Here](../../../blog/tags/filecoin) is our most recent report on the PLN ecosystem.
 
 ## Ecosystem Resources
 
