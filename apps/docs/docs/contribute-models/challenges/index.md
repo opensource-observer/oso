@@ -15,7 +15,7 @@ We currently do not have any active challenges, but view some of our past challe
 - [Audit of RF4 Impact Metric Calculations](./2024-07-02-rf4-metrics-audit)
 - [Earn OP rewards for proposing onchain impact metrics](./2024-04-05-data-challenge-01)
 
-We also have [ongoing bounties](./bounties) for adding/updating projects and artifacts.
+We also have [ongoing bounties](../bounties) for adding/updating projects and artifacts.
 
 ## Terms and Conditions
 
