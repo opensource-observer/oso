@@ -101,9 +101,14 @@ dev = [
 
 [tool.uv.sources]
 pyoso = { workspace = true }
+oso-mcp = { workspace = true }
 
 [tool.uv.workspace]
-members = ["warehouse/pyoso", "warehouse/oso_mcp"]
+members = [
+    "warehouse/oso_agent",
+    "warehouse/oso_mcp",
+    "warehouse/pyoso"
+]
 
 [build-system]
 requires = ["hatchling"]
