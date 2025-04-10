@@ -9,9 +9,7 @@ dependencies = [
     "llama-index>=0.12.29",
     "llama-index-llms-ollama>=0.5.4",
     "llama-index-tools-mcp>=0.1.1",
-#    "oso-mcp",
 ]
 
 [tool.uv.sources]
 pyoso = { workspace = true }
-#oso-mcp = { workspace = true }

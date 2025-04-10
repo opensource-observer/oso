@@ -4,8 +4,7 @@ from dotenv import load_dotenv
 from llama_index.core.agent.workflow import ReActAgent
 from llama_index.core.tools import FunctionTool
 from llama_index.llms.ollama import Ollama
-
-#from oso_mcp import mcp
+from llama_index.tools.mcp import BasicMCPClient, McpToolSpec
 
 load_dotenv()
 OLLAMA_MODEL = "llama3.2:3b"
@@ -22,17 +21,17 @@ local_tools = [
 ]
 
 # MCP
-#mcp_client = BasicMCPClient(OSO_MCP_URL)
-#mcp_tool_spec = McpToolSpec(
-#    client=mcp_client,
+mcp_client = BasicMCPClient(OSO_MCP_URL)
+mcp_tool_spec = McpToolSpec(
+    client=mcp_client,
     # Optional: Filter the tools by name
     # allowed_tools=["tool1", "tool2"],
-#)
-#mcp_tools = mcp_tool_spec.to_tool_list()
+)
+mcp_tools = mcp_tool_spec.to_tool_list()
 
 # Create an agent workflow with our calculator tool
 llm = Ollama(model=OLLAMA_MODEL, base_url=OLLAMA_URL, request_timeout=60.0)
-tools = local_tools #+ mcp_tools
+tools = local_tools + mcp_tools
 #agent = FunctionAgent(
 #    tools=[multiply],
 agent = ReActAgent(
@@ -45,10 +44,9 @@ async def main():
     # Run the agent
     response = await agent.run("What is 1234 * 4567?")
     print(str(response))
+    response = await agent.run("Please give me the first 10 rows of the table `projects_v1`")
+    print(str(response))
 
 # Run the agent
 if __name__ == "__main__":
-    asyncio.run(
-        main(),
-        #mcp.run(transport="stdio")
-    )
+    asyncio.run(main())
