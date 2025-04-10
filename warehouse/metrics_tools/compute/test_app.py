@@ -7,7 +7,7 @@ from fastapi.testclient import TestClient
 from metrics_tools.compute.app import app_factory, default_lifecycle
 from metrics_tools.compute.client import BaseWebsocketConnector, Client
 from metrics_tools.compute.types import AppConfig
-from metrics_tools.definition import PeerMetricDependencyRef
+from metrics_tools.definition import MetricModelDefinition
 from metrics_tools.utils.logging import setup_module_logging
 from starlette.testclient import WebSocketTestSession
 
@@ -89,7 +89,7 @@ def test_app_with_all_debugging(app_client_with_all_debugging):
             ("event_type", "VARCHAR"),
             ("amount", "NUMERIC"),
         ],
-        ref=PeerMetricDependencyRef(
+        ref=MetricModelDefinition(
             name="",
             entity_type="artifact",
             window=30,
