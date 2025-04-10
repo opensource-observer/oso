@@ -7,10 +7,10 @@ A multi-agent framework that can answer questions from the OSO data lake.
 
 ## Installation
 
-Install dependencies:
+Install dependencies from the root
 
 ```bash
-uv venv && uv sync
+uv sync --all-packages
 ```
 
 Get an OSO API key from
@@ -18,18 +18,18 @@ Get an OSO API key from
 instructions in the [Getting OSO API Key](#getting-oso-api-key) section to
 obtain your key.
 
+Add this to the `.env` file in `warehouse/oso_mcp/`
+
 ## Run the agent
 
 First run the MCP server in a separate terminal:
 
 ```bash
-cd warehouse/oso_mcp/
-OSO_API_KEY=YOUR_API_KEY uv run main.py
+uv run warehouse/oso_mcp/main.py
 ```
 
 Then run the agent:
 
 ```bash
-cd warehouse/oso_agent/
-uv run main.py
+uv run warehouse/oso_agent/main.py
 ```
