@@ -13,7 +13,7 @@ The intended business logic of impact metrics will not change. The purpose of th
 
 ## Context
 
-A full write-up on the process OSO employed is available [here](https://mirror.xyz/cerv1.eth/0s05D8YqJwezhJpOn9PEx_jLihvTqtFxw0R4_6nFl5I) and in a more distilled format [here](/blog/2024-06-29-impact-metrics-rf4-deep-dive/index). All SQL models are available in interactive format [here](https://models.opensource.observer/#!/overview) and from our [GitHub](https://github.com/opensource-observer/oso/tree/main/warehouse/dbt/models).
+A full write-up on the process OSO employed is available [here](https://mirror.xyz/cerv1.eth/0s05D8YqJwezhJpOn9PEx_jLihvTqtFxw0R4_6nFl5I) and in a more distilled format [here](../../../blog/impact-metrics-rf4-deep-dive/). All SQL models are available in interactive format [here](https://models.opensource.observer/#!/overview) and from our [GitHub](https://github.com/opensource-observer/oso/tree/main/warehouse/dbt/models).
 
 The downstream models most relevant to this audit are available in interactive format [here](https://models.opensource.observer/#!/model/model.opensource_observer.rf4_impact_metrics_by_project) and in our GitHub [here](https://github.com/opensource-observer/oso/tree/main/warehouse/dbt/models/marts/superchain.)
 
