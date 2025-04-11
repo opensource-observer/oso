@@ -1,14 +1,14 @@
 import typing as t
 from contextlib import contextmanager
 
-from metrics_tools.definition import PeerMetricDependencyRef
+from metrics_tools.definition import MetricModelDefinition
 from sqlmesh.core.macros import MacroEvaluator
 
 
 @contextmanager
 def metric_ref_evaluator_context(
     evaluator: MacroEvaluator,
-    ref: PeerMetricDependencyRef,
+    ref: MetricModelDefinition,
     additional_vars: t.Optional[t.Dict[str, t.Any]] = None,
     additional_macros: t.Optional[t.Dict[str, t.Any]] = None,
 ):

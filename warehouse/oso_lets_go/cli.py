@@ -19,7 +19,7 @@ import dotenv
 import git
 import kr8s
 from kr8s.objects import Job, Namespace, Service
-from metrics_tools.definition import PeerMetricDependencyRef
+from metrics_tools.definition import MetricModelDefinition
 from metrics_tools.factory.constants import METRICS_COLUMNS_BY_ENTITY
 from metrics_tools.factory.factory import MetricQueryConfig, timeseries_metrics
 from metrics_tools.intermediate import run_macro_evaluator
@@ -494,7 +494,7 @@ def call_mcs(
             logger.info("Running a noop job")
             rendered_query_str = "SELECT 1 as result"
             columns = [("result", "int")]
-            ref = PeerMetricDependencyRef(
+            ref = MetricModelDefinition(
                 name="noop",
                 entity_type="artifact",
                 window=1,

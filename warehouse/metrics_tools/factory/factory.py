@@ -12,9 +12,9 @@ from queue import PriorityQueue
 from metrics_tools.definition import (
     MetricMetadata,
     MetricQuery,
-    PeerMetricDependencyRef,
+    MetricModelDefinition,
     TimeseriesMetricsOptions,
-    reference_to_str,
+    model_def_to_str,
 )
 from metrics_tools.factory import constants
 from metrics_tools.joiner import JoinerTransform
@@ -53,7 +53,7 @@ QUERIES_DIR = os.path.abspath(os.path.join(CURR_DIR, "../../oso_sqlmesh/oso_metr
 
 class MetricQueryConfig(t.TypedDict):
     table_name: str
-    ref: PeerMetricDependencyRef
+    ref: MetricModelDefinition
     rendered_query: exp.Expression
     vars: t.Dict[str, t.Any]
     query: MetricQuery
@@ -94,9 +94,9 @@ class TimeseriesMetrics:
         # Build the dependency graph of all the metrics queries
         peer_table_map: t.Dict[str, str] = {}
         for query in metrics_queries:
-            provided_refs = query.provided_dependency_refs
-            for ref in provided_refs:
-                peer_table_map[reference_to_str(ref)] = query.table_name(ref)
+            model_defs = query.provided_model_defs
+            for model_def in model_defs:
+                peer_table_map[model_def_to_str(model_def)] = query.table_name(model_def)
 
         return cls(timeseries_sources, metrics_queries, peer_table_map, raw_options)
 
@@ -157,7 +157,7 @@ class TimeseriesMetrics:
     ):
         """Given a MetricQuery, generate all of the queries for it's given dimensions"""
         # Turn the source into a dict so it can be used in the sqlmesh context
-        refs = query.provided_dependency_refs
+        refs = query.provided_model_defs
 
         timeseries_mart_tables = self._timeseries_marts_tables
         key_metrics_mart_tables = self._key_metrics_marts_tables

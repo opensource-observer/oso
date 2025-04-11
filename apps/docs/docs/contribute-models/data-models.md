@@ -680,6 +680,28 @@ timeseries_metrics(
 )
 ```
 
+4. Check the rendering of the metrics model's sql
+
+It is often useful to check what the generated sql for a given metrics model. To do this we have created a tool that can be used to render the sql and display that on the cli. To do this for `stars` as is defined in the previous step you'd simply do the following:
+
+```bash
+uv run oso metrics render stars
+```
+
+It may take a second because the models themselves are being rendered in the
+underlying process, but it will present a UI for you to choose which version of
+the generated model you'd like to see (e.g. `stars_to_artifact_weekly`,
+`stars_to_project_over_all_time`).
+
+By default, only the "intermediate" form of the metrics model is rendered on the
+CLI. This includes some of the metrics specific macros. If you'd like to see the
+raw sql that you could use you can set `--full-render` and an output dialect via
+`--dialect DIALECT`. For duckdb you'd do this as so:
+
+```bash
+uv run oso metrics render stars --full-render --dialect duckdb
+```
+
 ### Conclusion
 
 Contributing data models to OSO using SQLMesh is a powerful way to enhance the platform's capabilities. By following the guidelines in this document, you can create high-quality models that integrate seamlessly with the existing codebase.

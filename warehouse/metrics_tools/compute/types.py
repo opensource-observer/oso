@@ -6,7 +6,7 @@ from enum import Enum
 
 import pandas as pd
 from fastapi import FastAPI
-from metrics_tools.definition import PeerMetricDependencyRef
+from metrics_tools.definition import MetricModelDefinition
 from pydantic import BaseModel, Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlmesh.core.dialect import parse_one
@@ -189,7 +189,7 @@ class JobSubmitRequest(BaseModel):
     dialect: str
     batch_size: int
     columns: t.List[t.Tuple[str, str]]
-    ref: PeerMetricDependencyRef
+    ref: MetricModelDefinition
     locals: t.Dict[str, t.Any]
     dependent_tables_map: t.Dict[str, str]
     retries: t.Optional[int] = None
