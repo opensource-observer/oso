@@ -1,15 +1,36 @@
 import asyncio
+import os
 
 from dotenv import load_dotenv
 from llama_index.core.agent.workflow import ReActAgent
 from llama_index.core.tools import FunctionTool
 from llama_index.llms.ollama import Ollama
 from llama_index.tools.mcp import BasicMCPClient, McpToolSpec
+from openinference.instrumentation.llama_index import LlamaIndexInstrumentor
+from opentelemetry.exporter.otlp.proto.http.trace_exporter import (
+    OTLPSpanExporter as HTTPSpanExporter,
+)
+from opentelemetry.sdk import trace as trace_sdk
+from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 
 load_dotenv()
-OLLAMA_MODEL = "llama3.2:3b"
-OLLAMA_URL = "http://localhost:11434"
-OSO_MCP_URL = "http://localhost:8000/sse"
+
+OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "llama3.2:3b")
+OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://localhost:11434")
+OSO_MCP_URL = os.environ.get("OSO_MCP_URL", "http://localhost:8000/sse")
+ARIZE_PHOENIX_TRACES_URL = os.environ.get("ARIZE_PHOENIX_TRACES_URL", "http://localhost:6006/v1/traces")
+
+# Add Phoenix
+span_phoenix_processor = SimpleSpanProcessor(
+    HTTPSpanExporter(endpoint=ARIZE_PHOENIX_TRACES_URL),
+)
+
+# Add them to the tracer
+tracer_provider = trace_sdk.TracerProvider()
+tracer_provider.add_span_processor(span_processor=span_phoenix_processor)
+
+# Instrument the application
+LlamaIndexInstrumentor().instrument(tracer_provider=tracer_provider)
 
 # Define a simple calculator tool
 def multiply(a: float, b: float) -> float:

@@ -28,6 +28,12 @@ First run the MCP server in a separate terminal:
 uv run warehouse/oso_mcp/main.py
 ```
 
+For now, in another separate terminal run arize phoenix in a docker container (this command is intentionally ephemeral):
+
+```bash
+docker run -it --rm -p 6006:6006 -p 4317:4317 arizephoenix/phoenix:latest
+```
+
 Then run the agent:
 
 ```bash
