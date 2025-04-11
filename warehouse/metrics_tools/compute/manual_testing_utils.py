@@ -11,7 +11,7 @@ import requests
 from metrics_tools.compute.client import Client
 from pydantic_core import to_jsonable_python
 
-from ..definition import PeerMetricDependencyRef
+from ..definition import MetricModelDefinition
 from .types import (
     ClusterStartRequest,
     ColumnsDefinition,
@@ -106,7 +106,7 @@ def run_local_test(
             ("event_type", "VARCHAR"),
             ("amount", "NUMERIC"),
         ],
-        ref=PeerMetricDependencyRef(
+        ref=MetricModelDefinition(
             name="",
             entity_type="artifact",
             window=30,

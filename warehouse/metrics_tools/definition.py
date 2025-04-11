@@ -46,7 +46,7 @@ DEFAULT_ENTITY_TYPES = ["artifact", "project", "collection"]
 VALID_ENTITY_TYPES = ["artifact", "project", "collection"]
 
 
-class PeerMetricDependencyRef(t.TypedDict):
+class MetricModelDefinition(t.TypedDict):
     name: str
     entity_type: str
     window: t.NotRequired[t.Optional[int]]
@@ -60,36 +60,18 @@ class PeerMetricDependencyRef(t.TypedDict):
     dialect: t.NotRequired[str]
 
 
-class MetricModelRef(t.TypedDict):
-    name: str
-    entity_type: str
-    window: t.NotRequired[t.Optional[int]]
-    unit: t.NotRequired[t.Optional[str]]
-    time_aggregation: t.NotRequired[t.Optional[str]]
-
-
-@dataclass(kw_only=True)
-class PeerMetricDependencyDataClass:
-    name: str
-    entity_type: str
-
-    window: t.Optional[int] = None
-    unit: t.Optional[str] = None
-    time_aggregation: t.Optional[str] = None
-
-
 def to_actual_table_name(
-    ref: PeerMetricDependencyRef, peer_table_map: t.Dict[str, str]
+    model_def: MetricModelDefinition, peer_table_map: t.Dict[str, str]
 ):
-    ref_table_name = reference_to_str(ref)
-    return peer_table_map[ref_table_name]
+    table_name = model_def_to_str(model_def)
+    return peer_table_map[table_name]
 
 
-def reference_to_str(ref: PeerMetricDependencyRef, actual_name: str = ""):
-    name = actual_name or ref["name"]
-    result = f"{name}_to_{ref['entity_type']}"
+def model_def_to_str(model_def: MetricModelDefinition, actual_name: str = ""):
+    name = actual_name or model_def["name"]
+    result = f"{name}_to_{model_def['entity_type']}"
     suffix = time_suffix(
-        ref.get("time_aggregation"), ref.get("window"), ref.get("unit")
+        model_def.get("time_aggregation"), model_def.get("window"), model_def.get("unit")
     )
     return f"{result}_{suffix}"
 
@@ -118,6 +100,7 @@ class MetricMetadata:
 
 @dataclass(kw_only=True)
 class MetricQueryDef:
+    """Defines the parameters for a given metric query"""
     # The relative path to the query in `oso_metrics`
     ref: str
 
@@ -312,36 +295,16 @@ class MetricQuery:
     def vars(self):
         return self._source.vars or {}
 
-    def table_name(self, ref: PeerMetricDependencyRef):
+    def table_name(self, model_def: MetricModelDefinition):
         name = self._source.name or self._name
-        return reference_to_str(ref, name)
+        return model_def_to_str(model_def, name)
 
-    def dependencies(
-        self, ref: PeerMetricDependencyRef, peer_table_map: t.Dict[str, str]
-    ):
-        dependencies: t.Set[str] = set()
-
-        for expression in self._expressions:
-            anonymous_expressions = expression.find_all(exp.Anonymous)
-            for anonymous in anonymous_expressions:
-                if anonymous.this == "metrics_peer_ref":
-                    dep_name = anonymous.expressions[0].sql()
-                    dependencies = dependencies.union(
-                        set(
-                            filter(
-                                lambda a: dep_name in a,
-                                peer_table_map.keys(),
-                            )
-                        )
-                    )
-        return list(dependencies)
-
-    def generate_dependency_refs_for_name(self, name: str):
-        refs: t.List[PeerMetricDependencyRef] = []
+    def generate_model_defs_for_name(self, name: str):
+        model_defs: t.List[MetricModelDefinition] = []
         for entity in self._source.entity_types or DEFAULT_ENTITY_TYPES:
             if self._source.rolling:
                 for window in self._source.rolling["windows"]:
-                    ref = PeerMetricDependencyRef(
+                    model_def = MetricModelDefinition(
                         name=name,
                         entity_type=entity,
                         window=window,
@@ -349,42 +312,42 @@ class MetricQuery:
                         cron=self._source.rolling.get("cron"),
                     )
                     if self._source.dialect:
-                        ref["dialect"] = self._source.dialect
+                        model_def["dialect"] = self._source.dialect
                     model_batch_size = self._source.rolling.get("model_batch_size")
                     slots = self._source.rolling.get("slots")
                     if model_batch_size:
-                        ref["batch_size"] = model_batch_size
+                        model_def["batch_size"] = model_batch_size
                     if slots:
-                        ref["slots"] = slots
-                    refs.append(ref)
+                        model_def["slots"] = slots
+                    model_defs.append(model_def)
             for time_aggregation in self._source.time_aggregations or []:
-                ref = PeerMetricDependencyRef(
+                model_def = MetricModelDefinition(
                     name=name,
                     entity_type=entity,
                     time_aggregation=time_aggregation,
                 )
                 if self._source.dialect:
-                    ref["dialect"] = self._source.dialect
-                refs.append(ref)
+                    model_def["dialect"] = self._source.dialect
+                model_defs.append(model_def)
             # if we actually enabled over all time, we'll compute that as well
             if self._source.over_all_time:
-                ref = PeerMetricDependencyRef(
+                model_def = MetricModelDefinition(
                     name=name,
                     entity_type=entity,
                     time_aggregation="over_all_time",
                 )
                 if self._source.dialect:
-                    ref["dialect"] = self._source.dialect
-                refs.append(ref)
-        return refs
+                    model_def["dialect"] = self._source.dialect
+                model_defs.append(model_def)
+        return model_defs
 
     @property
     def is_intermediate(self):
         return self._source.is_intermediate
 
     @property
-    def provided_dependency_refs(self):
-        return self.generate_dependency_refs_for_name(self.reference_name)
+    def provided_model_defs(self):
+        return self.generate_model_defs_for_name(self.reference_name)
 
 
 def find_query_expressions(expressions: t.List[exp.Expression]):
