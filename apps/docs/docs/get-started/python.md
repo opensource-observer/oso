@@ -48,11 +48,3 @@ artifacts = client.query(query)
 
 print(artifacts)
 ```
-
-## Next steps
-
-Congratulations! You've made your first API request.
-Now try one of our tutorials.
-
-- [Analyze a collection of projects](../tutorials/collection-view)
-- [Deep dive into a project](../tutorials/project-deepdive)
