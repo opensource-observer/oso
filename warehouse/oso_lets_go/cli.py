@@ -649,7 +649,7 @@ def local_sqlmesh(
         )
         with trino_service.portforward(remote_port="8080") as local_port:
             # TODO Open up a port to the mcs deployment on the kind cluster
-            process = subprocess.Popen(
+            subprocess.run(
                 ["sqlmesh", "--gateway", "local-trino", *extra_args],
                 # shell=True,
                 cwd=os.path.join(repo_dir, "warehouse/oso_sqlmesh"),
@@ -666,18 +666,18 @@ def local_sqlmesh(
                     # set for trino but must be explicitly set for duckdb
                     "SQLMESH_TIMESERIES_METRICS_START": timeseries_start,
                 },
+                check=True,
             )
-            process.communicate()
     else:
-        process = subprocess.Popen(
+        subprocess.run(
             ["sqlmesh", *ctx.args],
             cwd=os.path.join(repo_dir, "warehouse/oso_sqlmesh"),
             env={
                 **os.environ,
                 "SQLMESH_DUCKDB_LOCAL_PATH": ctx.obj["local_duckdb_path"],
             },
+            check=True,
         )
-        process.communicate()
 
 
 @local.command()
@@ -752,15 +752,15 @@ def sqlmesh_test(ctx: click.Context, duckdb: bool):
     if duckdb:
         asyncio.run(db_seed("duckdb"))
 
-        process = subprocess.Popen(
+        subprocess.run(
             ["sqlmesh", *extra_args],
             cwd=os.path.join(REPO_DIR, "warehouse/oso_sqlmesh"),
             env={
                 **os.environ,
                 "SQLMESH_DUCKDB_LOCAL_PATH": ctx.obj["local_duckdb_path"],
             },
+            check=True,
         )
-        process.communicate()
     else:
         docker_client = DockerClient(
             compose_files=[os.path.join(REPO_DIR, "warehouse/docker-compose.yml")]
@@ -770,7 +770,7 @@ def sqlmesh_test(ctx: click.Context, duckdb: bool):
 
             asyncio.run(db_seed("trino"))
 
-            process = subprocess.Popen(
+            subprocess.run(
                 ["sqlmesh", "--gateway", "local-trino-docker", *extra_args],
                 # shell=True,
                 cwd=os.path.join(REPO_DIR, "warehouse/oso_sqlmesh"),
@@ -780,8 +780,8 @@ def sqlmesh_test(ctx: click.Context, duckdb: bool):
                     "SQLMESH_TRINO_HOST": "localhost",
                     "SQLMESH_TRINO_PORT": os.environ.get("SQLMESH_TRINO_PORT", "8080"),
                 },
+                check=True,
             )
-            process.communicate()
 
         finally:
             docker_client.compose.down()
