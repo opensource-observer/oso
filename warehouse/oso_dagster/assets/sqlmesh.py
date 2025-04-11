@@ -52,6 +52,7 @@ def sqlmesh_factory(
     sqlmesh_config: SQLMeshContextConfig,
     sqlmesh_translator: SQLMeshDagsterTranslator,
 ):
+    dev_environment = sqlmesh_infra_config["dev_environment"]
     environment = sqlmesh_infra_config["environment"]
 
     @sqlmesh_assets(
@@ -73,6 +74,20 @@ def sqlmesh_factory(
             trino=trino.ensure_available(log_override=context.log),
             mcs=mcs.ensure_available(log_override=context.log),
         ):
+            # If we specify a dev_environment, we will first plan it for safety
+            if dev_environment:
+                all(
+                    sqlmesh.run(
+                        context,
+                        environment=dev_environment,
+                        plan_options={"skip_tests": True},
+                        start=config.start,
+                        end=config.end,
+                        restate_selected=config.restate_selected,
+                        skip_run=True,
+                    )
+                )
+
             for result in sqlmesh.run(
                 context,
                 environment=environment,
