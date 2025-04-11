@@ -88,7 +88,7 @@ model_factory(["foo", "bar", "baz"])
 ```
 
 We would then generate `my_model.foo_model`, `my_model.bar_model`, and
-`my_model.baz_model`. 
+`my_model.baz_model`.
 
 This contrived example isn't all that useful but if you can imagine that the
 `values` parameter could be derived in any way that python allows, it opens up
@@ -142,25 +142,25 @@ updated_table_name_query = exp.replace_tables(query, {"employees": "updated_empl
 More interestingly, let's say we wanted to use the `employees` but instead of
 getting just the `id` of a given employee in the `source_table` we also want to
 get the department name by joining on the departments table. Let's pretend that
-the employees table also has `department_id` as an available column. 
+the employees table also has `department_id` as an available column.
 
 We could do this transform as follows:
 
 ```python
-# The top level expression is a `sqlglot.exp.Select` expression. 
-# This has the columns in the `expressions` property. Ideally, 
-# we'd actually want to wrap this in a function that doesn't update 
-# this in place so we can preserve the original query, but for simplicity 
+# The top level expression is a `sqlglot.exp.Select` expression.
+# This has the columns in the `expressions` property. Ideally,
+# we'd actually want to wrap this in a function that doesn't update
+# this in place so we can preserve the original query, but for simplicity
 # we simply do this for now.
 query.expressions.append(exp.to_column("d.department_name").as_("department_name"))
 
-# To add the join we simply add it to the parsed object. 
-# Notice we need to have query on the left side of the equal sign. 
-# This is because the `join()` method does not update the original 
-# object in place. 
+# To add the join we simply add it to the parsed object.
+# Notice we need to have query on the left side of the equal sign.
+# This is because the `join()` method does not update the original
+# object in place.
 query = query.join(
-    exp.to_table("departments").as_("d"), 
-    on="d.department_id = e.department_id", 
+    exp.to_table("departments").as_("d"),
+    on="d.department_id = e.department_id",
     join_type="inner"
 )
 ```
@@ -186,7 +186,7 @@ time, are limited to different entity relationships or time aggregations (either
 normal time buckets or rolling windows). Combined, this allows us to generate a
 large number of models from a single query definition. Additionally, the
 generated models are combined in various ways to provide additional metadata for
-the OSO frontend. 
+the OSO frontend.
 
 We implemented this models metrics factory as a way to keep the data warehouse
 as DRY as possible. More code means more maintenance and given the power
@@ -201,25 +201,25 @@ The following Entity Relationship diagram gives a general overview of the archit
 
 The key components of the diagram are:
 
-* `TimeseriesMetrics (Factory)` 
-    * This is the factory class that is defined in
-      `warehouse/metrics_tools/factory/factory.py`. This should generally be
-      instantiated from sqlmesh using the `timeseries_metrics` function.
-* `MetricQuery`
-    * This is used to define any parameters that should associated with a given
-      metric. This needs a reference to a metrics sql query from
-      `warehouse/oso_sqlmesh/oso_metrics`. This is defined by the
-      `MetricQueryDef` object when instantiating a `TimeseriesMetrics` class.
-* `MetricModelDefinition`
-    * This object defines a single metric model that the factory generates. It
-      is all the parameters specific to that single model and includes any
-      rendered sql that is used to execute the model's query. 
-* `Time series custom macros`
-    * These are special macro functions that are injected into each of the
-      models for things like proper time boundaries and sample dates.
-* `MacroOverridingModel`
-    * This is a special class we created to override the macros of the generated
-      sqlmesh models. 
+- `TimeseriesMetrics (Factory)`
+  - This is the factory class that is defined in
+    `warehouse/metrics_tools/factory/factory.py`. This should generally be
+    instantiated from sqlmesh using the `timeseries_metrics` function.
+- `MetricQuery`
+  - This is used to define any parameters that should associated with a given
+    metric. This needs a reference to a metrics sql query from
+    `warehouse/oso_sqlmesh/oso_metrics`. This is defined by the
+    `MetricQueryDef` object when instantiating a `TimeseriesMetrics` class.
+- `MetricModelDefinition`
+  - This object defines a single metric model that the factory generates. It
+    is all the parameters specific to that single model and includes any
+    rendered sql that is used to execute the model's query.
+- `Time series custom macros`
+  - These are special macro functions that are injected into each of the
+    models for things like proper time boundaries and sample dates.
+- `MacroOverridingModel`
+  - This is a special class we created to override the macros of the generated
+    sqlmesh models.
 
 ### Rendering SQL for each metric model
 
@@ -242,12 +242,12 @@ following `MetricsQueryDef`:
 
 You'd end up with 4 different metrics models:
 
-* Entity Type = `artifact` 
-    * Time Aggregation = `daily`
-    * Time Aggregation = `weekly`
-* Entity Type = `project` 
-    * Time Aggregation = `daily`
-    * Time Aggregation = `weekly`
+- Entity Type = `artifact`
+  - Time Aggregation = `daily`
+  - Time Aggregation = `weekly`
+- Entity Type = `project`
+  - Time Aggregation = `daily`
+  - Time Aggregation = `weekly`
 
 We then iterate through each of these different parameters and generate the
 associated sql for each of these models. We use a special joining transformation
@@ -263,7 +263,7 @@ sqlmesh docs but sqlmesh's state system is powerful because it has the ability
 to track changes to both sql and python models. Part of how it achieves this is
 that it stores python models in a special serialized format. This also means
 that it can use the serialized python to perform it's "runs" of any given
-sqlmesh model in a way that is properly versioned (for the most part). 
+sqlmesh model in a way that is properly versioned (for the most part).
 
 For our purposes, we actually try to use what we call `proxies` (see
 `warehouse/metrics_tools/factory/proxy`) because the sqlmesh storing the
@@ -272,4 +272,4 @@ what we want in the future as changes in the code could should likely cause
 changes in the model but this was done because many of the generated metrics
 models rely on the same code so changing a one small thing could cause breaking
 changes. In the future we might avoid this by simply setting all metrics models
-to be forward only (this is now the default setting). 
+to be forward only (this is now the default setting).
