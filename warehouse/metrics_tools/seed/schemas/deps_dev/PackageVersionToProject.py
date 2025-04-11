@@ -3,20 +3,6 @@ from datetime import datetime
 from metrics_tools.seed.types import Column, SeedConfig
 from pydantic import BaseModel
 
-#select
-#    `SnapshotAt`,
-#    `System`,
-#    `ProjectName`,
-#    `Name`,
-#    `Version`,
-#    `RelationType`
-#  from bigquery_public_data.deps_dev_v1.PackageVersionToProject
-#  where
-#    `ProjectName` is not null
-#    and `ProjectType` = 'GITHUB'
-#    and `SnapshotAt` >= @oldest_snapshot_date
-#    --and `RelationType` = 'SOURCE_REPO_TYPE'
-#
 
 class PackageVersionToProject(BaseModel):
     SnapshotAt: datetime | None = Column("TIMESTAMP")
