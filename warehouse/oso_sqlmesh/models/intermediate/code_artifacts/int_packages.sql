@@ -14,13 +14,6 @@ WITH deps_dev AS (
     LOWER(STR_SPLIT(project_name, '/')[@array_index(0)]) AS package_github_owner,
     LOWER(STR_SPLIT(project_name, '/')[@array_index(1)]) AS package_github_repo
   FROM oso.stg_deps_dev__packages
-  WHERE
-    system IS NOT NULL
-    AND project_name IS NOT NULL
-    AND version IS NOT NULL
-    AND system IN ('CARGO', 'NPM', 'PYPI', 'GO', 'MAVEN', 'NUGET')
-    AND snapshot_at >= @oldest_snapshot_date
-    --AND snapshot_at BETWEEN @start_dt AND @end_dt 
 ), latest_versions AS (
   SELECT
     package_artifact_source,

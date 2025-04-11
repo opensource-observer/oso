@@ -24,7 +24,7 @@ with base as (
     "RelationType" as relationship_type
   from @oso_source('bigquery_public_data.deps_dev_v1.PackageVersionToProject')
   where
-    project_name is not null
+    and project_name is not null
     and project_type = 'GITHUB'
     and snapshot_at >= @oldest_snapshot_date
     --and RelationType = 'SOURCE_REPO_TYPE'
