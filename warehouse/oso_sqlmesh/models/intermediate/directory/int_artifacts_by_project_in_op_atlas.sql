@@ -135,7 +135,7 @@ oso_linked_projects AS (
   FROM oso.stg_op_atlas_project AS op_atlas
   JOIN oso.int_projects AS ossd
     ON ossd.project_source = 'OSS_DIRECTORY'
-    AND ossd.project_name = op_atlas.open_source_observer_slug
+    AND LOWER(ossd.project_name) = LOWER(op_atlas.open_source_observer_slug)
   WHERE op_atlas.open_source_observer_slug IS NOT NULL
 ),
 -- Get artifacts from OSSD for the linked projects
