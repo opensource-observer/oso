@@ -10,6 +10,7 @@ from pyoso import Client
 
 load_dotenv()
 
+MCP_SSE_PORT = 8000
 
 @dataclass
 class AppContext:
@@ -34,6 +35,7 @@ async def app_lifespan(_server: FastMCP) -> AsyncIterator[AppContext]:
 
 mcp = FastMCP(
     "OSO Data Lake Explorer",
+    port=MCP_SSE_PORT,
     dependencies=["pyoso", "python-dotenv", "requests"],
     lifespan=app_lifespan,
 )
@@ -303,4 +305,5 @@ def get_help_guide() -> str:
 
 
 if __name__ == "__main__":
-    mcp.run(transport="stdio")
+    mcp.run(transport="sse")
+    #mcp.run(transport="stdio")
