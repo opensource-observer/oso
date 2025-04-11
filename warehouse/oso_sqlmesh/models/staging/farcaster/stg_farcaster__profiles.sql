@@ -2,7 +2,8 @@ MODEL (
   name oso.stg_farcaster__profiles,
   description 'Get all farcaster profiles from the JSON',
   dialect trino,
-  kind FULL
+  kind FULL,
+  audit (trino_parquets_not_missing) 
 );
 
 SELECT

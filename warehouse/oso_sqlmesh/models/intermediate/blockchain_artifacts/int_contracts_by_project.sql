@@ -2,7 +2,8 @@ MODEL (
   name oso.int_contracts_by_project,
   kind FULL,
   partitioned_by "artifact_namespace",
-  description "Combines directly associated contracts and derived contracts from factory deployments"
+  description "Combines directly associated contracts and derived contracts from factory deployments",
+  audit (trino_parquets_not_missing)
 );
 
 WITH base_contracts AS (

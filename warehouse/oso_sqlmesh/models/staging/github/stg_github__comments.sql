@@ -8,7 +8,8 @@ MODEL (
   ),
   dialect "duckdb",
   start @github_incremental_start,
-  partitioned_by DAY(event_time),
+  partitioned_by DAY(event_time), 
+  audit (trino_parquets_not_missing) 
 );
 
 WITH pull_request_comment_events AS (

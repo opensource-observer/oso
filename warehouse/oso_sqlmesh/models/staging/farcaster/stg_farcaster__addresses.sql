@@ -2,7 +2,8 @@ MODEL (
   name oso.stg_farcaster__addresses,
   description 'Get all verified addresses attached to an FID',
   dialect trino,
-  kind FULL
+  kind FULL,
+  audit (trino_parquets_not_missing) 
 );
 
 SELECT

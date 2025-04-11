@@ -11,7 +11,8 @@ MODEL (
   partitioned_by DAY(created_at),
   dialect trino,
   audits (
-    not_null(columns := (sha,))
+    not_null(columns := (sha,)),
+    trino_parquets_not_missing,
   )
 );
 

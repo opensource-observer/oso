@@ -1,7 +1,8 @@
 MODEL(
   name oso.int_4337_address_labels,
   description '4337 address labels (https://github.com/Jam516/BundleBear/tree/main/models/erc4337/labels); last updated 2025-03-18',
-  kind full
+  kind full,
+  audit (trino_parquets_not_missing)
 );
 
 WITH bundlers AS (

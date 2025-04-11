@@ -35,6 +35,8 @@ from sqlmesh.core.model import ModelKindName
     },
     partitioned_by=("day(created_at)",),
     physical_properties={"max_commit_retry": 15},
+    audits=["trino_parquets_not_missing"],
+    
 )
 def github_events(
     context: ExecutionContext,

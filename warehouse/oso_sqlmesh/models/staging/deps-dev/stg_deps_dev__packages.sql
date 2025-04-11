@@ -9,6 +9,7 @@ MODEL (
   start @deps_dev_incremental_start,
   partitioned_by DAY(snapshot_at),
   dialect duckdb,
+  audit (trino_parquets_not_missing) 
 );
 
 @DEF(oldest_snapshot_date, '2025-03-01');

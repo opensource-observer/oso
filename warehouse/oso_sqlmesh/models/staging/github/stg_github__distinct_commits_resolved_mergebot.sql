@@ -9,7 +9,8 @@ MODEL (
   ),
   start @github_incremental_start,
   dialect duckdb,
-  partitioned_by DAY(created_at)
+  partitioned_by DAY(created_at),
+  audits (trino_parquets_not_missing),
 );
 
 @DEF(merge_lead_window, 90);

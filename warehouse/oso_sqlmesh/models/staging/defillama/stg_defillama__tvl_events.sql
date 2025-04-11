@@ -1,6 +1,7 @@
 MODEL (
   name oso.stg_defillama__tvl_events,
-  kind FULL
+  kind FULL,
+  audit (trino_parquets_not_missing)
 );
 
 SELECT

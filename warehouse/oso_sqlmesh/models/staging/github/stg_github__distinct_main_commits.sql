@@ -9,7 +9,8 @@ MODEL (
   ),
   start @github_incremental_start,
   partitioned_by DAY(created_at),
-  dialect trino
+  dialect trino,
+  audits (trino_parquets_not_missing),
 );
 
 @DEF(deduplication_window, 180);
