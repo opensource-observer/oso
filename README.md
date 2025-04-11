@@ -61,7 +61,7 @@ pnpm install
 Also install the python dependencies
 
 ```
-uv sync
+uv sync --all-packages
 ```
 
 ## Reference Playbooks
