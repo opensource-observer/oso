@@ -6,7 +6,7 @@ MODEL (
   grain (project_id, artifact_source, artifact_id),
   description "Combines bridges with the ANY_EVM source",
   audits (
-    number_of_rows(threshold := 0)
+    has_at_least_n_rows(threshold := 0)
   )
 );
 

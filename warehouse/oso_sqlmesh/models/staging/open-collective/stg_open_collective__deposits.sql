@@ -10,7 +10,7 @@ MODEL (
   start '2015-01-01',
   cron '@daily',
   audits (
-    number_of_rows(threshold := 0)
+    has_at_least_n_rows(threshold := 0)
   )
 );
 

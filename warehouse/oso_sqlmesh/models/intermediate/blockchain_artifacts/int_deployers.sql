@@ -8,7 +8,7 @@ MODEL (
   start @blockchain_incremental_start,
   partitioned_by (DAY("block_timestamp"), "chain"),
   audits (
-    number_of_rows(threshold := 0)
+    has_at_least_n_rows(threshold := 0)
   )
 );
 

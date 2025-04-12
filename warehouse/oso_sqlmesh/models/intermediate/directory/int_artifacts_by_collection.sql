@@ -2,7 +2,7 @@ MODEL (
   name oso.int_artifacts_by_collection,
   kind FULL,
   audits (
-    number_of_rows(threshold := 0)
+    has_at_least_n_rows(threshold := 0)
   )
 );
 

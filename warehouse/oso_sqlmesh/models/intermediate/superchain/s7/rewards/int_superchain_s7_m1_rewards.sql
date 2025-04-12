@@ -4,7 +4,7 @@ MODEL (
   dialect trino,
   kind full,
   audits (
-    number_of_rows(threshold := 0)
+    has_at_least_n_rows(threshold := 0)
   ),
   grain (project_id, chain, sample_date),
 );

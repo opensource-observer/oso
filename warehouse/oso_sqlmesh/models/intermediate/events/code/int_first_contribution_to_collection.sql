@@ -9,7 +9,7 @@ MODEL (
   partitioned_by (YEAR("time"), "event_source"),
   grain (time, event_source, from_artifact_id, to_collection_id),
   audits (
-    number_of_rows(threshold := 0)
+    has_at_least_n_rows(threshold := 0)
   )
 );
 

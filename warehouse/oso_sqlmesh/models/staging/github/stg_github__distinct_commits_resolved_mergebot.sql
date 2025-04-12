@@ -11,7 +11,7 @@ MODEL (
   dialect duckdb,
   partitioned_by DAY(created_at),
   audits (
-    number_of_rows(threshold := 0)
+    has_at_least_n_rows(threshold := 0)
   )
 );
 

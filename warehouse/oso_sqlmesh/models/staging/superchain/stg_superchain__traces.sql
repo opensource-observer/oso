@@ -12,7 +12,7 @@ MODEL (
   grain (block_timestamp, chain, transaction_hash, from_address, to_address),
   dialect duckdb,
   audits (
-    number_of_rows(threshold := 0)
+    has_at_least_n_rows(threshold := 0)
   )
 );
 

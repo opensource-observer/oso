@@ -4,7 +4,7 @@ MODEL (
   partitioned_by "artifact_namespace",
   description "Combines deployers from any EVM chain and chain-specific deployers",
   audits (
-    number_of_rows(threshold := 0)
+    has_at_least_n_rows(threshold := 0)
   )
 );
 

@@ -21,7 +21,7 @@ MODEL (
   ),
   dialect duckdb,
   audits (
-    number_of_rows(threshold := 0)
+    has_at_least_n_rows(threshold := 0)
   )
 );
 

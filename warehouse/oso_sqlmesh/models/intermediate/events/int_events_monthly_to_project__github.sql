@@ -11,7 +11,7 @@ MODEL (
   partitioned_by (MONTH("bucket_month"), "event_type"),
   grain (bucket_month, event_type, event_source, from_artifact_id, to_artifact_id),
   audits (
-    number_of_rows(threshold := 0)
+    has_at_least_n_rows(threshold := 0)
   )
 );
 

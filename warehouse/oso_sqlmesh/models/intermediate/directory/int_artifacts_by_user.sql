@@ -4,7 +4,7 @@ model(
   kind full,
   enabled false,
   audits (
-    number_of_rows(threshold := 0)
+    has_at_least_n_rows(threshold := 0)
   )
 );
 

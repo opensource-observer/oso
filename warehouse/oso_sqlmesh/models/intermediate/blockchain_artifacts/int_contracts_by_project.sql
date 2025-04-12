@@ -4,7 +4,7 @@ MODEL (
   partitioned_by "artifact_namespace",
   description "Combines directly associated contracts and derived contracts from factory deployments",
   audits (
-    number_of_rows(threshold := 0)
+    has_at_least_n_rows(threshold := 0)
   )
 );
 

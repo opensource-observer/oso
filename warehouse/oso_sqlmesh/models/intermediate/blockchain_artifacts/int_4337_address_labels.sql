@@ -3,7 +3,7 @@ MODEL(
   description '4337 address labels (https://github.com/Jam516/BundleBear/tree/main/models/erc4337/labels); last updated 2025-03-18',
   kind full,
   audits (
-    number_of_rows(threshold := 0)
+    has_at_least_n_rows(threshold := 0)
   )
 );
 
