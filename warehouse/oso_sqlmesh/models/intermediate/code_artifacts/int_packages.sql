@@ -1,7 +1,10 @@
 MODEL (
   name oso.int_packages,
   kind FULL,
-  dialect duckdb
+  dialect duckdb,
+  audits (
+    number_of_rows(threshold := 0)
+  )
 );
 
 @DEF(oldest_snapshot_date, '2025-03-01');
