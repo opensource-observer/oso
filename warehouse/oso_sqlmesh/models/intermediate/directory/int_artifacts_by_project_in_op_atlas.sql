@@ -4,7 +4,8 @@ MODEL (
   dialect trino,
   description "Unifies all artifacts from OP Atlas, including handling cases where contracts come in via OSO",
   audits (
-    not_null(columns := (artifact_id, project_id))
+    not_null(columns := (artifact_id, project_id)),
+    number_of_rows(threshold := 0)
   )
 );
 

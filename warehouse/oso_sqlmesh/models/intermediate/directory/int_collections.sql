@@ -1,7 +1,10 @@
 MODEL (
   name oso.int_collections,
   description 'All collections',
-  kind FULL
+  kind FULL,
+  audits (
+    number_of_rows(threshold := 0)
+  )
 );
 
 SELECT

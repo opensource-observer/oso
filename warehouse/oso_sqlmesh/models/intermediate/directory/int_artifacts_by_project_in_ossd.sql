@@ -1,7 +1,10 @@
 MODEL (
   name oso.int_artifacts_by_project_in_ossd,
   kind FULL,
-  dialect trino
+  dialect trino,
+  audits (
+    number_of_rows(threshold := 0)
+  )
 );
 
 WITH projects AS (
