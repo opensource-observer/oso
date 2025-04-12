@@ -1,6 +1,9 @@
 MODEL (
   name oso.int_derived_contracts,
-  kind VIEW
+  kind VIEW,
+  audits (
+    number_of_rows(threshold := 0)
+  )
 );
 
 SELECT

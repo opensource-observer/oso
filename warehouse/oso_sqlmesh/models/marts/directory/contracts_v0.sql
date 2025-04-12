@@ -3,6 +3,9 @@ MODEL (
   kind VIEW,
   tags (
     'export'
+  ),
+  audits (
+    number_of_rows(threshold := 0)
   )
 );
 

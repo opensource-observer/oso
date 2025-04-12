@@ -8,7 +8,10 @@ MODEL (
   ) /* forward_only true, */ /* on_destructive_change warn */,
   cron '@weekly',
   partitioned_by (DAY(week), chain),
-  start '2024-08-01'
+  start '2024-08-01',
+  audits (
+    number_of_rows(threshold := 0)
+  )
 );
 
 /* Find all transactions involving the contracts from `derived_contracts` and */ /* aggregate their tx_count on a weekly basis */

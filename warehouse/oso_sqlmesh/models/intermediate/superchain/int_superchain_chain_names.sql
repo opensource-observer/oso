@@ -1,7 +1,10 @@
 MODEL(
   name oso.int_superchain_chain_names,
   description 'Relevant Superchain chains',
-  kind full
+  kind full,
+  audits (
+    number_of_rows(threshold := 0)
+  )
 );
 
 @DEF(chains, [

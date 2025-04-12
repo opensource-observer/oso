@@ -8,7 +8,10 @@ MODEL (
     lookback 30
   ) /* forward_only true */,
   start @blockchain_incremental_start,
-  partitioned_by (DAY("deployment_timestamp"), "chain")
+  partitioned_by (DAY("deployment_timestamp"), "chain"),
+  audits (
+    number_of_rows(threshold := 0)
+  )
 );
 
 WITH existing_contracts AS (

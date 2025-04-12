@@ -1,6 +1,9 @@
 MODEL (
   name oso.int_factories,
-  kind VIEW
+  kind VIEW,
+  audits (
+    number_of_rows(threshold := 0)
+  )
 );
 
 SELECT

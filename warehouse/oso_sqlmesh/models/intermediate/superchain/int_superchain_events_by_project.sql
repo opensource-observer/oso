@@ -10,7 +10,10 @@ MODEL (
   cron '@daily',
   dialect trino,
   partitioned_by (DAY("time"), "event_type", "event_source"),
-  grain (time, event_type, event_source, event_type, from_artifact_id, to_artifact_id, transaction_hash)
+  grain (time, event_type, event_source, event_type, from_artifact_id, to_artifact_id, transaction_hash),
+  audits (
+    number_of_rows(threshold := 0)
+  )
 );
 
 WITH unioned_events AS (

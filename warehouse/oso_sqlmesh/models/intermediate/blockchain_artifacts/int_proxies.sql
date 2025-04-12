@@ -1,6 +1,9 @@
 MODEL (
   name oso.int_proxies,
-  kind FULL
+  kind FULL,
+  audits (
+    number_of_rows(threshold := 0)
+  )
 );
 
 WITH superchain_proxies AS (
