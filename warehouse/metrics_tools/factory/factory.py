@@ -382,6 +382,7 @@ class TimeseriesMetrics:
                     "model_stage=intermediate",
                     "model_metrics_type=timeseries_union",
                 ],
+                audits=self.audits,
             )(join_all_of_entity_type)
 
         for entity_type, tables in self._key_metrics_marts_tables.items():
@@ -414,6 +415,7 @@ class TimeseriesMetrics:
                     "model_category=metrics",
                     "model_stage=intermediate",
                 ],
+                audits=self.audits,
             )(join_all_of_entity_type)
 
         raw_table_metadata = {
