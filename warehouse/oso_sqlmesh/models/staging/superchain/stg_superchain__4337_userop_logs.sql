@@ -19,6 +19,9 @@ MODEL (
     contract_address
   ),
   dialect duckdb,
+  audits (
+    number_of_rows(threshold := 0)
+  )
 );
 
 SELECT

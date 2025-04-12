@@ -20,6 +20,9 @@ MODEL (
     bundler_address,
     userop_paymaster,
     method_id
+  ),
+  audits (
+    number_of_rows(threshold := 0)
   )
 );
 

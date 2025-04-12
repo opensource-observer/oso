@@ -2,7 +2,10 @@ MODEL (
   name oso.stg_ossd__current_sbom,
   description 'The most recent view of sboms from the ossd dagster source',
   dialect trino,
-  kind FULL
+  kind FULL,
+  audits (
+    number_of_rows(threshold := 0)
+  )
 );
 
 WITH ranked_sboms AS (

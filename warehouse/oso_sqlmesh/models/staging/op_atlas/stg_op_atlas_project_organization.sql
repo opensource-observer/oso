@@ -2,7 +2,10 @@ MODEL (
   name oso.stg_op_atlas_project_organization,
   description 'Staging model for OP Atlas project-to-organization mappings',
   dialect trino,
-  kind FULL
+  kind FULL,
+  audits (
+    number_of_rows(threshold := 0)
+  )
 );
 
 WITH cleaned_data AS (

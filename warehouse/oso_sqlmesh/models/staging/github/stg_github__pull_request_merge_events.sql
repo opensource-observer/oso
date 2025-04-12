@@ -2,6 +2,9 @@ MODEL (
   name oso.stg_github__pull_request_merge_events,
   kind FULL,
   dialect duckdb,
+  audits (
+    number_of_rows(threshold := 0)
+  )
 );
 
 WITH pull_request_events AS (

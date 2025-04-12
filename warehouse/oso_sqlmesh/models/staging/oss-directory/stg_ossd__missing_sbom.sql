@@ -2,7 +2,10 @@ MODEL (
   name oso.stg_ossd__missing_sbom,
   description 'The most recent view of sboms from the ossd dagster source',
   dialect trino,
-  kind VIEW
+  kind VIEW,
+  audits (
+    number_of_rows(threshold := 0)
+  )
 );
 
 WITH all_repos AS (

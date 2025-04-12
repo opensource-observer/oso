@@ -11,6 +11,9 @@ MODEL (
   partitioned_by (DAY("block_timestamp"), "chain"),
   grain (block_timestamp, chain_id, transaction_hash, deployer_address, contract_address),
   dialect duckdb,
+  audits (
+    number_of_rows(threshold := 0)
+  )
 );
 
 @transactions_with_receipts_deployers(

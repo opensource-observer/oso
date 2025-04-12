@@ -3,7 +3,10 @@
 MODEL(
   name oso.int_superchain_onchain_user_labels,
   description 'Onchain user labels',
-  kind full
+  kind full,
+  audits (
+    number_of_rows(threshold := 0)
+  )
 );
 
 

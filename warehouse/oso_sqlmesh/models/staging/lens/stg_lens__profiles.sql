@@ -2,7 +2,10 @@ MODEL (
   name oso.stg_lens__profiles,
   description 'Get all profile_ids mapped to the owner address and profile metadata',
   dialect trino,
-  kind FULL
+  kind FULL,
+  audits (
+    number_of_rows(threshold := 0)
+  )
 );
 
 SELECT

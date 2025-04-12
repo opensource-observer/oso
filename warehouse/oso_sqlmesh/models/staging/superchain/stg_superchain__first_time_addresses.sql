@@ -18,6 +18,9 @@ model(
         first_method_id
     ),
     enabled false,
+    audits (
+      number_of_rows(threshold := 0)
+    )
 )
 ;
 

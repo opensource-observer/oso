@@ -9,7 +9,10 @@ MODEL (
   cron '@daily',
   partitioned_by (DAY("time"), "event_type"),
   grain (time, event_type, event_source, from_artifact_id, to_artifact_id),
-  dialect duckdb
+  dialect duckdb,
+  audits (
+    number_of_rows(threshold := 0)
+  )
 );
 
 WITH github_comments AS (

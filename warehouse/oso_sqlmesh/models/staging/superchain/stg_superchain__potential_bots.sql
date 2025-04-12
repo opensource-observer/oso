@@ -6,6 +6,9 @@ model(
     partitioned_by(day("min_block_time"), "chain_name"),
     grain(chain_name, address),
     enabled false,
+    audits (
+      number_of_rows(threshold := 0)
+    )
 )
 ;
 

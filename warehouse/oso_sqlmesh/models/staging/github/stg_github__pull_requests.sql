@@ -10,6 +10,9 @@ MODEL (
   dialect "duckdb",
   start @github_incremental_start,
   partitioned_by DAY(event_time),
+  audits (
+    number_of_rows(threshold := 0)
+  )
 );
 
 WITH pull_request_events AS (

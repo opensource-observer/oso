@@ -10,7 +10,10 @@ MODEL (
   cron '@daily',
   partitioned_by (DAY("time"), "event_type"),
   grain (time, event_type, event_source, from_artifact_id, to_artifact_id),
-  enabled false
+  enabled false,
+  audits (
+    number_of_rows(threshold := 0)
+  )
 );
 
 SELECT

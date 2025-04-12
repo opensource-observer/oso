@@ -11,6 +11,9 @@ MODEL (
   partitioned_by (DAY("block_timestamp"), "chain", "create_type"),
   grain (block_timestamp, chain_id, transaction_hash, deployer_address, contract_address),
   dialect duckdb,
+  audits (
+    number_of_rows(threshold := 0)
+  )
 );
 
 @factory_deployments(

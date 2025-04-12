@@ -11,6 +11,9 @@ MODEL (
   partitioned_by (DAY("block_timestamp"), "chain"),
   grain (block_timestamp, chain, transaction_hash, from_address, to_address),
   dialect duckdb,
+  audits (
+    number_of_rows(threshold := 0)
+  )
 );
 
 SELECT

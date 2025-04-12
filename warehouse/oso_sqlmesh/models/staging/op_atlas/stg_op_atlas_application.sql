@@ -2,7 +2,10 @@ MODEL (
   name oso.stg_op_atlas_application,
   description 'Staging model for OP Atlas project applications',
   dialect trino,
-  kind FULL
+  kind FULL,
+  audits (
+    number_of_rows(threshold := 0)
+  )
 );
 
 SELECT

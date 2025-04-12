@@ -3,6 +3,9 @@ MODEL (
   description "GitHub users linked to repositories in OSSD",
   dialect trino,
   kind FULL,
+  audits (
+    number_of_rows(threshold := 0)
+  )
 );
 
 @DEF(bot_regex, '(^|[^a-z0-9_])bot([^a-z0-9_]|$)|bot$');
