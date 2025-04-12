@@ -1,7 +1,10 @@
 MODEL (
   name oso.int_projects_by_collection,
   description "Many to many relationship table for collections",
-  kind FULL
+  kind full,
+  audits (
+    number_of_rows(threshold := 0)
+  )
 );
 
 SELECT
