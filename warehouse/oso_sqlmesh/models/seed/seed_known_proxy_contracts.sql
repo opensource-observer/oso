@@ -8,5 +8,8 @@ MODEL (
     proxy_type TEXT,
     version TEXT,
     factory_address TEXT
+  ),
+  audits (
+    has_at_least_n_rows(threshold := 0)
   )
 )

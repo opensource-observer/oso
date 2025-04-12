@@ -137,6 +137,8 @@ class MetricQueryDef:
 
     additional_tags: t.Optional[t.List[str]] = None
 
+    audits: t.Optional[list[tuple[str, dict]]] = None
+
     def raw_sql(self, queries_dir: str):
         return open(os.path.join(queries_dir, self.ref)).read()
 
@@ -370,3 +372,4 @@ class TimeseriesMetricsOptions(t.TypedDict):
     timeseries_sources: t.NotRequired[t.List[str]]
     queries_dir: t.NotRequired[str]
     enabled: t.NotRequired[bool]
+    audits: t.NotRequired[list[tuple[str, dict]]]

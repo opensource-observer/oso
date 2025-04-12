@@ -1,7 +1,10 @@
 MODEL (
   name oso.int_projects,
   description 'All projects',
-  kind FULL
+  kind FULL,
+  audits (
+    has_at_least_n_rows(threshold := 0)
+  )
 );
 
 WITH ossd_projects AS (

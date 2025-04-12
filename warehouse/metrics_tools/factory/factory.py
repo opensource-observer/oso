@@ -11,8 +11,8 @@ from queue import PriorityQueue
 
 from metrics_tools.definition import (
     MetricMetadata,
-    MetricQuery,
     MetricModelDefinition,
+    MetricQuery,
     TimeseriesMetricsOptions,
     model_def_to_str,
 )
@@ -135,6 +135,11 @@ class TimeseriesMetrics:
     def schema(self):
         """The schema (sometimes db name) to use for rendered queries"""
         return self._raw_options["schema"]
+    
+    @property
+    def audits(self):
+        """The audits to use for rendered queries"""
+        return self._raw_options.get("audits", [])
 
     def generate_queries(self):
         if self._rendered:
@@ -377,6 +382,7 @@ class TimeseriesMetrics:
                     "model_stage=intermediate",
                     "model_metrics_type=timeseries_union",
                 ],
+                audits=self.audits,
             )(join_all_of_entity_type)
 
         for entity_type, tables in self._key_metrics_marts_tables.items():
@@ -409,6 +415,7 @@ class TimeseriesMetrics:
                     "model_category=metrics",
                     "model_stage=intermediate",
                 ],
+                audits=self.audits,
             )(join_all_of_entity_type)
 
         raw_table_metadata = {
@@ -464,6 +471,7 @@ class TimeseriesMetrics:
                     "model_stage=intermediate",
                     "model_metrics_type=metrics_metadata",
                 ],
+                audits=self.audits,
             )(map_metadata_to_metric)
 
         MacroOverridingModel(
@@ -484,6 +492,7 @@ class TimeseriesMetrics:
                 "model_stage=intermediate",
                 "model_metrics_type=metrics_metadata",
             ],
+            audits=self.audits,
         )(aggregate_metadata)
 
         logger.info("model generation complete")
@@ -547,6 +556,9 @@ class TimeseriesMetrics:
             "metrics_sample_date",
         ]
 
+        audits = (query._source.audits or [])[:]
+        audits.extend(self.audits)
+
         # Override the path and module so that sqlmesh generates the
         # proper python_env for the model
         override_path = Path(inspect.getfile(generated_rolling_query_proxy))
@@ -579,6 +591,7 @@ class TimeseriesMetrics:
                 "model_metrics_type=rolling_window",
                 *query_config["additional_tags"],
             ],
+            audits=audits,
         )(generated_rolling_query_proxy)
 
     def generate_time_aggregation_model_for_rendered_query(
@@ -657,6 +670,10 @@ class TimeseriesMetrics:
         ]
         cron = constants.TIME_AGGREGATION_TO_CRON[time_aggregation]
 
+        query = query_config["query"]
+        audits = (query._source.audits or [])[:]
+        audits.extend(self.audits)
+
         # Override the path and module so that sqlmesh generates the
         # proper python_env for the model
         override_path = Path(inspect.getfile(generated_query))
@@ -695,6 +712,7 @@ class TimeseriesMetrics:
                 "model_metrics_type=time_aggregation",
                 *query_config["additional_tags"],
             ],
+            audits=audits,
         )(generated_query)
 
     def generate_point_in_time_model_for_rendered_query(
@@ -721,6 +739,10 @@ class TimeseriesMetrics:
             "metrics_sample_date",
         ]
 
+        query = query_config["query"]
+        audits = (query._source.audits or [])[:]
+        audits.extend(self.audits)
+
         override_path = Path(inspect.getfile(generated_query))
         override_module_path = Path(os.path.dirname(inspect.getfile(generated_query)))
 
@@ -743,6 +765,7 @@ class TimeseriesMetrics:
                 "model_stage=intermediate",
                 "model_metrics_type=point_in_time",
             ],
+            audits=audits,
         )(generated_query)
 
     def serializable_config(self, query_config: MetricQueryConfig):

@@ -2,7 +2,10 @@ MODEL (
   name oso.int_contracts_by_project,
   kind FULL,
   partitioned_by "artifact_namespace",
-  description "Combines directly associated contracts and derived contracts from factory deployments"
+  description "Combines directly associated contracts and derived contracts from factory deployments",
+  audits (
+    has_at_least_n_rows(threshold := 0)
+  )
 );
 
 WITH base_contracts AS (

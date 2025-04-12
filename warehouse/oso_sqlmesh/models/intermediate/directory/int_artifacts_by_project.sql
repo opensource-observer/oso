@@ -2,7 +2,10 @@ MODEL (
   name oso.int_artifacts_by_project,
   kind FULL,
   dialect trino,
-  grain (project_id, artifact_id)
+  grain (project_id, artifact_id),
+  audits (
+    has_at_least_n_rows(threshold := 0)
+  )
 );
 
 SELECT DISTINCT

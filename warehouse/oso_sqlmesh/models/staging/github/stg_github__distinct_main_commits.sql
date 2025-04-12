@@ -9,7 +9,10 @@ MODEL (
   ),
   start @github_incremental_start,
   partitioned_by DAY(created_at),
-  dialect trino
+  dialect trino,
+  audits (
+    has_at_least_n_rows(threshold := 0)
+  )
 );
 
 @DEF(deduplication_window, 180);

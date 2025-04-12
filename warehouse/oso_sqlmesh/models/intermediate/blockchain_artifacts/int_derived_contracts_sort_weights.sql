@@ -1,7 +1,10 @@
 /* In order to keep this model as small and the least complicated it can be we */ /* take the last 180 days and aggregate activity on a given contract on a weekly */ /* basis when used in the contracts overview model. This model is intermediate */ /* to that model and simply aggregates the transactions on a weekly basis for a */ /* given contract. It only goes back ~6 months from the time we deployed this */ /* model (2025-02-01) */ /* In the future we should make a different model type for this that */ /* automatically deletes _old_ data that we don't need. However sqlmesh doesn't */ /* have out of the box support for that yet so we will implement as an */ /* INCREMENTAL_BY_TIME_RANGE model for now. */
 MODEL (
   name oso.int_derived_contracts_sort_weights,
-  kind FULL
+  kind FULL,
+  audits (
+    has_at_least_n_rows(threshold := 0)
+  )
 );
 
 @DEF(start, CURRENT_DATE - INTERVAL '180' DAY);

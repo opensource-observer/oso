@@ -1,7 +1,10 @@
 MODEL (
   name oso.int_artifacts,
   description 'All artifacts',
-  kind FULL
+  kind FULL,
+  audits (
+    has_at_least_n_rows(threshold := 0)
+  )
 );
 
 WITH all_artifacts AS (

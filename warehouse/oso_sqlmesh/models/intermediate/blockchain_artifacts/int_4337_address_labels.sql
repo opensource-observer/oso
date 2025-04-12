@@ -1,7 +1,10 @@
 MODEL(
   name oso.int_4337_address_labels,
   description '4337 address labels (https://github.com/Jam516/BundleBear/tree/main/models/erc4337/labels); last updated 2025-03-18',
-  kind full
+  kind full,
+  audits (
+    has_at_least_n_rows(threshold := 0)
+  )
 );
 
 WITH bundlers AS (

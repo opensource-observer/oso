@@ -1,7 +1,11 @@
 MODEL (
   name oso.int_all_artifacts,
   description "a list of all artifacts associated with a project",
-  kind FULL
+  kind FULL,
+  dialect trino,
+  audits (
+    has_at_least_n_rows(threshold := 0)
+  )
 );
 
 /*

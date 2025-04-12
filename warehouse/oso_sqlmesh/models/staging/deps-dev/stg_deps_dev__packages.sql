@@ -8,7 +8,10 @@ MODEL (
   ),
   start @deps_dev_incremental_start,
   partitioned_by DAY(snapshot_at),
-  dialect duckdb
+  dialect duckdb,
+  audits (
+    has_at_least_n_rows(threshold := 0)
+  )
 );
 
 @DEF(oldest_snapshot_date, DATE '2025-03-01');

@@ -8,7 +8,10 @@ MODEL (
   ),
   partitioned_by (DAY("time"), "event_type"),
   start '2015-01-01',
-  cron '@daily'
+  cron '@daily',
+  audits (
+    has_at_least_n_rows(threshold := 0)
+  )
 );
 
 SELECT

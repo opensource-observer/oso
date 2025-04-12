@@ -1,7 +1,6 @@
 AUDIT (
   name has_at_least_n_rows,
-  dialect duckdb
-
+  dialect trino
 );
 
 with num_rows as (

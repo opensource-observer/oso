@@ -20,6 +20,9 @@ MODEL (
     proxy_address
   ),
   dialect duckdb,
+  audits (
+    has_at_least_n_rows(threshold := 0)
+  )
 );
 
 @known_proxies(

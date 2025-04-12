@@ -9,7 +9,10 @@ MODEL (
   start @funding_incremental_start,
   cron '@daily',
   partitioned_by (DAY("time"), "event_type"),
-  grain (time, event_type, event_source, from_artifact_id, to_artifact_id)
+  grain (time, event_type, event_source, from_artifact_id, to_artifact_id),
+  audits (
+    has_at_least_n_rows(threshold := 0)
+  )
 );
 
 WITH open_collective_expenses AS (

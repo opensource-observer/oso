@@ -11,6 +11,9 @@ MODEL (
   partitioned_by (DAY("time"), "event_type"),
   grain (time, event_type, event_source, from_artifact_id, to_artifact_id),
   enabled false,
+  audits (
+    has_at_least_n_rows(threshold := 0)
+  )
 );
 
 @DEF(event_source_name, 'DEPS_DEV');

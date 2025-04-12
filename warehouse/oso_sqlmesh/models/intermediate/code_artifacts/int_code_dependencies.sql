@@ -1,7 +1,10 @@
 MODEL (
   name oso.int_code_dependencies,
   description 'Maps GitHub artifacts to the GitHub artifacts they depend on',
-  kind FULL
+  kind FULL,
+  audits (
+    has_at_least_n_rows(threshold := 0)
+  )
 );
 
 SELECT DISTINCT

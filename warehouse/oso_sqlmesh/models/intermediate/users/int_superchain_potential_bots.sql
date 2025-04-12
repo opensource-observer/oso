@@ -1,5 +1,11 @@
-model(name oso.int_superchain_potential_bots, kind full, enabled false,)
-;
+model(
+  name oso.int_superchain_potential_bots, 
+  kind full, 
+  enabled false,
+  audits (
+    has_at_least_n_rows(threshold := 0)
+  )
+);
 
 with
     union_queries(

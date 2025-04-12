@@ -1,7 +1,10 @@
 MODEL (
   name oso.int_projects_by_collection_in_ossd,
   description "Many-to-many mapping of projects to OSSD collections",
-  kind FULL
+  kind FULL,
+  audits (
+    has_at_least_n_rows(threshold := 0)
+  )
 );
 
 SELECT

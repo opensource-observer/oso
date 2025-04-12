@@ -1,7 +1,10 @@
 MODEL (
   name oso.int_repositories,
   description 'All repositories',
-  kind FULL
+  kind FULL,
+  audits (
+    has_at_least_n_rows(threshold := 0)
+  )
 );
 
 SELECT

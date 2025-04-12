@@ -6,7 +6,10 @@ MODEL (
     batch_concurrency 1
   ),
   start @blockchain_incremental_start,
-  partitioned_by (DAY("block_timestamp"), "chain")
+  partitioned_by (DAY("block_timestamp"), "chain"),
+  audits (
+    has_at_least_n_rows(threshold := 0)
+  )
 );
 
 SELECT
