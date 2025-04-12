@@ -6,6 +6,9 @@ MODEL (
     'model_type=full',
     'model_category=sqlmesh',
     'model_stage=mart'
+  ),
+  audits (
+    number_of_rows(threshold := 0)
   )
 );
 

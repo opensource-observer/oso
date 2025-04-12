@@ -8,7 +8,10 @@ MODEL (
   start @github_incremental_start,
   cron '@daily',
   partitioned_by (DAY("bucket_day"), "event_type"),
-  grain (bucket_day, event_type, event_source, from_artifact_id, to_artifact_id)
+  grain (bucket_day, event_type, event_source, from_artifact_id, to_artifact_id),
+  audits (
+    number_of_rows(threshold := 0)
+  )
 );
 
 SELECT

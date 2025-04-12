@@ -4,6 +4,9 @@ MODEL (
   tags (
     'export'
   ),
+  audits (
+    number_of_rows(threshold := 0)
+  ),
   enabled false
 );
 

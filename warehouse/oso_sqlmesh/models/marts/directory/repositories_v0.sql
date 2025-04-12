@@ -1,6 +1,9 @@
 MODEL (
   name oso.repositories_v0,
-  kind FULL
+  kind FULL,
+  audits (
+    number_of_rows(threshold := 0)
+  )
 );
 
 SELECT

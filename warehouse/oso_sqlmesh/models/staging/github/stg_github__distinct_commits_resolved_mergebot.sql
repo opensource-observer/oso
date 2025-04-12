@@ -9,7 +9,10 @@ MODEL (
   ),
   start @github_incremental_start,
   dialect duckdb,
-  partitioned_by DAY(created_at)
+  partitioned_by DAY(created_at),
+  audits (
+    number_of_rows(threshold := 0)
+  )
 );
 
 @DEF(merge_lead_window, 90);

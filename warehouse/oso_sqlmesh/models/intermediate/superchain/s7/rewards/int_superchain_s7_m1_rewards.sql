@@ -3,6 +3,9 @@ MODEL (
   description 'Rewards for Retro Funding S7 - Measurement Period 1 (Feb 2025)',
   dialect trino,
   kind full,
+  audits (
+    number_of_rows(threshold := 0)
+  ),
   grain (project_id, chain, sample_date),
 );
 

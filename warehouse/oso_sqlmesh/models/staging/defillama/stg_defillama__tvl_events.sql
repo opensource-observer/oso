@@ -1,6 +1,9 @@
 MODEL (
   name oso.stg_defillama__tvl_events,
-  kind FULL
+  kind FULL,
+  audits (
+    number_of_rows(threshold := 0)
+  )
 );
 
 SELECT
