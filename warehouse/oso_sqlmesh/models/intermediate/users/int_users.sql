@@ -2,7 +2,10 @@ MODEL (
   name oso.int_users,
   description 'All users',
   kind FULL,
-  enabled false
+  enabled false,
+  audits (
+    has_at_least_n_rows(threshold := 0)
+  ),
 );
 
 WITH farcaster_users AS (
