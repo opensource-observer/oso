@@ -59,6 +59,7 @@ class MetricModelDefinition(t.TypedDict):
     end: t.NotRequired[TimeLike]
     dialect: t.NotRequired[str]
 
+PeerMetricDependencyRef = MetricModelDefinition
 
 def to_actual_table_name(
     model_def: MetricModelDefinition, peer_table_map: t.Dict[str, str]
