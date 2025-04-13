@@ -541,6 +541,8 @@ class TimeseriesMetrics:
             "batch_concurrency": 1,
             "lookback": 10,
             "forward_only": True,
+            "time_column": "metrics_sample_date",
+            "on_destructive_change": "warn",
         }
         partitioned_by = ("day(metrics_sample_date)",)
         window = ref.get("window")
@@ -572,7 +574,6 @@ class TimeseriesMetrics:
             columns=columns,
             kind={
                 "name": ModelKindName.INCREMENTAL_BY_TIME_RANGE,
-                "time_column": "metrics_sample_date",
                 **kind_common,
             },
             partitioned_by=partitioned_by,
@@ -686,6 +687,7 @@ class TimeseriesMetrics:
             kind = {
                 "name": ModelKindName.INCREMENTAL_BY_TIME_RANGE,
                 "time_column": "metrics_sample_date",
+                "on_destructive_change": "warn",
                 **kind_options,
             }
             model_type_tag = "model_type=incremental"
