@@ -78,7 +78,7 @@ spec:
     server:
       exchangeManager:
         name: filesystem
-        baseDir: gs://oso-iceberg-exchange-usc1
+        baseDir: gs://oso-iceberg-exchange-usc1/trino-exchange
       config:
         query:
           maxMemory: "1400GB"

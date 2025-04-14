@@ -103,7 +103,7 @@ spec:
     server:
       exchangeManager:
         name: filesystem
-        baseDir: gs://oso-dataset-transfer-bucket/trino-exchange/
+        baseDir: gs://oso-consumer-iceberg-exchange-usc1/trino-exchange
       config:
         authenticationType: PASSWORD
         query:
