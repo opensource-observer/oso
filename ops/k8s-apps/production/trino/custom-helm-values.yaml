@@ -115,7 +115,7 @@ spec:
         iceberg.max-partitions-per-writer=1000
         fs.native-gcs.enabled=true
         gcs.project-id=opensource-observer
-        parquet.max-buffer-size=2048MB
+        parquet.max-buffer-size=10240MB
       source: |
         connector.name=hive
         hive.metastore.uri=thrift://10.145.192.30:9083
