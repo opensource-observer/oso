@@ -74,6 +74,7 @@ spec:
       - "exchange.s3.aws-access-key=${ENV:TRINO_GCS_KEY_ID}"
       - "exchange.s3.aws-secret-key=${ENV:TRINO_GCS_SECRET}"
       - "exchange.s3.endpoint=https://storage.googleapis.com"
+      - "parquet.max-buffer-size=1024MB"
       
     server:
       exchangeManager:
