@@ -73,6 +73,7 @@ def sqlmesh_factory(
         ):
             # If we specify a dev_environment, we will first plan it for safety
             if dev_environment:
+                context.log.info("Planning dev environment")
                 all(
                     sqlmesh.run(
                         context,
@@ -85,6 +86,7 @@ def sqlmesh_factory(
                     )
                 )
 
+            context.log.info("Starting to process prod environment")
             for result in sqlmesh.run(
                 context,
                 environment=environment,
