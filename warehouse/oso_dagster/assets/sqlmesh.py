@@ -7,7 +7,6 @@ from dagster_sqlmesh import (
     sqlmesh_assets,
 )
 from oso_dagster.factories.common import AssetFactoryResponse
-from oso_dagster.resources.mcs import MCSResource
 from oso_dagster.resources.trino import TrinoResource
 from oso_dagster.utils.asynctools import multiple_async_contexts
 
@@ -52,6 +51,7 @@ def sqlmesh_factory(
     sqlmesh_config: SQLMeshContextConfig,
     sqlmesh_translator: SQLMeshDagsterTranslator,
 ):
+    dev_environment = sqlmesh_infra_config["dev_environment"]
     environment = sqlmesh_infra_config["environment"]
 
     @sqlmesh_assets(
@@ -65,14 +65,28 @@ def sqlmesh_factory(
         context: AssetExecutionContext,
         sqlmesh: SQLMeshResource,
         trino: TrinoResource,
-        mcs: MCSResource,
         config: SQLMeshRunConfig,
     ):
         # Ensure that both trino and the mcs are available
         async with multiple_async_contexts(
             trino=trino.ensure_available(log_override=context.log),
-            mcs=mcs.ensure_available(log_override=context.log),
         ):
+            # If we specify a dev_environment, we will first plan it for safety
+            if dev_environment:
+                context.log.info("Planning dev environment")
+                all(
+                    sqlmesh.run(
+                        context,
+                        environment=dev_environment,
+                        plan_options={"skip_tests": True},
+                        start=config.start,
+                        end=config.end,
+                        restate_selected=config.restate_selected,
+                        skip_run=True,
+                    )
+                )
+
+            context.log.info("Starting to process prod environment")
             for result in sqlmesh.run(
                 context,
                 environment=environment,

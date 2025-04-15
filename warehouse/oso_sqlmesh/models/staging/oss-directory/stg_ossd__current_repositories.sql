@@ -2,7 +2,10 @@ MODEL (
   name oso.stg_ossd__current_repositories,
   description 'The most recent view of repositories from the ossd repositories dagster source',
   dialect trino,
-  kind FULL
+  kind FULL,
+  audits (
+    has_at_least_n_rows(threshold := 0)
+  )
 );
 
 WITH ranked_repositories AS (

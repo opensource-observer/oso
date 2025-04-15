@@ -17,7 +17,7 @@ from metrics_tools.compute.types import (
     QueryJobStatus,
     TableReference,
 )
-from metrics_tools.definition import PeerMetricDependencyRef
+from metrics_tools.definition import MetricModelDefinition
 
 
 @pytest.mark.asyncio
@@ -51,7 +51,7 @@ async def test_metrics_calculation_service():
             dialect="duckdb",
             batch_size=1,
             columns=[("col1", "int"), ("col2", "string")],
-            ref=PeerMetricDependencyRef(
+            ref=MetricModelDefinition(
                 name="test",
                 entity_type="artifact",
                 window=30,
@@ -119,7 +119,7 @@ async def test_metrics_calculation_service_using_monthly_cron():
             dialect="duckdb",
             batch_size=1,
             columns=[("col1", "int"), ("col2", "string")],
-            ref=PeerMetricDependencyRef(
+            ref=MetricModelDefinition(
                 name="test",
                 entity_type="artifact",
                 window=30,

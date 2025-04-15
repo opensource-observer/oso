@@ -1,6 +1,9 @@
 MODEL (
   name oso.package_owners_v0,
-  kind FULL
+  kind FULL,
+  audits (
+    has_at_least_n_rows(threshold := 0)
+  )
 );
 
 SELECT DISTINCT

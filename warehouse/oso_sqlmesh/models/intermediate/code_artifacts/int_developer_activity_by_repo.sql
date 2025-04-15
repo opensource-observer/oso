@@ -5,6 +5,9 @@ MODEL (
   grain (first_event, repo_artifact_id, developer_id, developer_name, event_type),
   kind FULL,
   dialect trino,
+  audits (
+    has_at_least_n_rows(threshold := 0)
+  )
 );
 
 WITH developers AS (

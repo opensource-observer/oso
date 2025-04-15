@@ -19,13 +19,14 @@ import dotenv
 import git
 import kr8s
 from kr8s.objects import Job, Namespace, Service
-from metrics_tools.definition import PeerMetricDependencyRef
+from metrics_tools.definition import MetricModelDefinition
 from metrics_tools.factory.constants import METRICS_COLUMNS_BY_ENTITY
 from metrics_tools.factory.factory import MetricQueryConfig, timeseries_metrics
 from metrics_tools.intermediate import run_macro_evaluator
 from metrics_tools.local.loader import LocalTrinoDestinationLoader
 from metrics_tools.local.manager import LocalWarehouseManager
 from metrics_tools.runner import render_metrics_query
+from metrics_tools.seed.seed import db_seed
 from metrics_tools.transfer.gcs import GCSTimeOrderedStorage
 from metrics_tools.transfer.trino import TrinoExporter
 from metrics_tools.utils.logging import setup_module_logging
@@ -39,6 +40,7 @@ from opsscripts.utils.dockertools import (
 )
 from opsscripts.utils.k8stools import deploy_oso_k8s_job
 from oso_lets_go.wizard import MultipleChoiceInput
+from python_on_whales import DockerClient
 from sqlglot import pretty
 from sqlmesh.core.dialect import parse_one
 from sqlmesh.core.macros import RuntimeStage
@@ -492,7 +494,7 @@ def call_mcs(
             logger.info("Running a noop job")
             rendered_query_str = "SELECT 1 as result"
             columns = [("result", "int")]
-            ref = PeerMetricDependencyRef(
+            ref = MetricModelDefinition(
                 name="noop",
                 entity_type="artifact",
                 window=1,
@@ -647,7 +649,7 @@ def local_sqlmesh(
         )
         with trino_service.portforward(remote_port="8080") as local_port:
             # TODO Open up a port to the mcs deployment on the kind cluster
-            process = subprocess.Popen(
+            subprocess.run(
                 ["sqlmesh", "--gateway", "local-trino", *extra_args],
                 # shell=True,
                 cwd=os.path.join(repo_dir, "warehouse/oso_sqlmesh"),
@@ -664,18 +666,18 @@ def local_sqlmesh(
                     # set for trino but must be explicitly set for duckdb
                     "SQLMESH_TIMESERIES_METRICS_START": timeseries_start,
                 },
+                check=True,
             )
-            process.communicate()
     else:
-        process = subprocess.Popen(
+        subprocess.run(
             ["sqlmesh", *ctx.args],
             cwd=os.path.join(repo_dir, "warehouse/oso_sqlmesh"),
             env={
                 **os.environ,
                 "SQLMESH_DUCKDB_LOCAL_PATH": ctx.obj["local_duckdb_path"],
             },
+            check=True,
         )
-        process.communicate()
 
 
 @local.command()
@@ -735,6 +737,61 @@ def reset(
     manager = LocalWarehouseManager.from_config(local_manager_config)
 
     manager.reset(full_reset=full_reset)
+
+
+@local.command(
+    context_settings=dict(ignore_unknown_options=True, allow_extra_args=True),
+)
+@click.pass_context
+@click.option("--duckdb/--no-duckdb", default=False)
+def sqlmesh_test(ctx: click.Context, duckdb: bool):
+    extra_args = ctx.args
+    if not ctx.args:
+        extra_args = []
+
+    if duckdb:
+        asyncio.run(db_seed("duckdb"))
+
+        subprocess.run(
+            ["sqlmesh", *extra_args],
+            cwd=os.path.join(REPO_DIR, "warehouse/oso_sqlmesh"),
+            env={
+                **os.environ,
+                "SQLMESH_DUCKDB_LOCAL_PATH": ctx.obj["local_duckdb_path"],
+            },
+            check=True,
+        )
+    else:
+        docker_client = DockerClient(
+            compose_files=[os.path.join(REPO_DIR, "warehouse/docker-compose.yml")]
+        )
+        try:
+            docker_client.compose.up(wait=True)
+
+            asyncio.run(db_seed("trino"))
+
+            subprocess.run(
+                ["sqlmesh", "--gateway", "local-trino-docker", *extra_args],
+                # shell=True,
+                cwd=os.path.join(REPO_DIR, "warehouse/oso_sqlmesh"),
+                env={
+                    **os.environ,
+                    "SQLMESH_DUCKDB_LOCAL_PATH": ctx.obj["local_trino_duckdb_path"],
+                    "SQLMESH_TRINO_HOST": "localhost",
+                    "SQLMESH_TRINO_PORT": os.environ.get("SQLMESH_TRINO_PORT", "8080"),
+                },
+                check=True,
+            )
+
+        finally:
+            docker_client.compose.down()
+
+
+@local.command()
+@click.pass_context
+@click.option("--duckdb/--no-duckdb", default=False)
+def run_seed(ctx: click.Context, duckdb: bool):
+    asyncio.run(db_seed("duckdb" if duckdb else "trino"))
 
 
 @cli.command()

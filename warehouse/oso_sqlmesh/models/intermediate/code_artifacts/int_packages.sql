@@ -1,17 +1,22 @@
 MODEL (
   name oso.int_packages,
   kind FULL,
-  dialect duckdb
+  dialect duckdb,
+  audits (
+    has_at_least_n_rows(threshold := 0)
+  )
 );
+
+@DEF(oldest_snapshot_date, '2025-03-01');
 
 WITH deps_dev AS (
   SELECT
     version AS package_version,
     UPPER(system) AS package_artifact_source,
     LOWER(name) AS package_artifact_name,
-    LOWER(STR_SPLIT(projectname, '/')[@array_index(0)]) AS package_github_owner,
-    LOWER(STR_SPLIT(projectname, '/')[@array_index(1)]) AS package_github_repo
-  FROM @oso_source('bigquery.oso.stg_deps_dev__packages')
+    LOWER(STR_SPLIT(project_name, '/')[@array_index(0)]) AS package_github_owner,
+    LOWER(STR_SPLIT(project_name, '/')[@array_index(1)]) AS package_github_repo
+  FROM oso.stg_deps_dev__packages
 ), latest_versions AS (
   SELECT
     package_artifact_source,

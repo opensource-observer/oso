@@ -1,4 +1,12 @@
-model(name oso.artifacts_by_user_v1, kind full, tags('export'), enabled false,)
+model(
+  name oso.artifacts_by_user_v1, 
+  kind full, 
+  tags('export'), 
+  enabled false,
+  audits (
+    not_null(columns := (artifact_id, user_id))
+  )
+)
 ;
 
 select

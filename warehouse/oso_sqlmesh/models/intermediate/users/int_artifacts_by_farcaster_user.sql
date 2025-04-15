@@ -1,7 +1,10 @@
 MODEL (
   name oso.int_artifacts_by_farcaster_user,
   kind FULL,
-  description "EVM addresses linked to Farcaster IDs"
+  description "EVM addresses linked to Farcaster IDs",
+  audits (
+    has_at_least_n_rows(threshold := 0)
+  )
 );
 
 WITH farcaster_addresses AS (

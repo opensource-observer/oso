@@ -1,7 +1,10 @@
 MODEL (
   name oso.stg_op_atlas_project_website,
   dialect trino,
-  kind FULL
+  kind FULL,
+  audits (
+    has_at_least_n_rows(threshold := 0)
+  )
 );
 
 WITH cleaned_data AS (

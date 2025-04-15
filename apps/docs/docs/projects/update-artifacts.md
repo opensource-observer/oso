@@ -7,13 +7,28 @@ sidebar_position: 4
 You can update your project's artifacts by editing the project's `.yaml` file in [oss-directory](https://github.com/opensource-observer/oss-directory) and submitting a pull request. Always refer to the [project schema](https://github.com/opensource-observer/oss-directory/blob/main/src/resources/schema/project.json) for the latest fields. Edits that do not conform to the schema will be rejected.
 :::
 
-Version 7 of the oss-directory schema currently supports the following artifact sources:
+You can confirm your artifacts are indexed from [pyoso](../get-started/python.md) or using our [GraphQL API](../get-started/api.mdx). Note that updates may take some time to propagate, as we don't run all of our indexers on a daily basis.
 
 ## Code Repositories
 
 - `github`: A GitHub organization or repository URL.
 
-  Note: we have plans to support other code repositories in the future, such as GitLab and Bitbucket.
+To confirm your GitHub artifacts are being indexed, you can run a quick query in pyoso:
+
+```python
+query = """
+SELECT
+  artifact_id,
+  artifact_name,
+  artifact_namespace
+FROM artifacts_by_project_v1
+WHERE artifact_source = 'GITHUB'
+  AND project_name = 'your-project-name'
+"""
+df = client.to_pandas(query)
+```
+
+Note: we have plans to support other code repositories in the future, such as GitLab and Bitbucket.
 
 ## Package Managers
 

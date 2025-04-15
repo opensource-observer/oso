@@ -7,24 +7,28 @@ import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
 :::tip
-Once you're project is indexed, you can get metrics about your project using our GraphQL API or directly from BigQuery. It's always safer to query on the `project_id` field rather than the `name` or `display_name` fields.
+Once you're project is indexed, you can get metrics about your project using our [GraphQL API](../get-started/api.mdx)
+or from [pyoso](../get-started/python.md). It's always safer to query on the `project_id` field rather than the `name` or `display_name` fields.
 :::
 
 ## Find Your `project_id`
 
-You can lookup your project's `project_id` using either BigQuery or our GraphQL API:
+You can lookup your project's `project_id` using either SQL or our GraphQL API:
 
 <Tabs>
-<TabItem value="sql" label="SQL">
+<TabItem value="python" label="Python">
 
-```sql
-select
+```python
+query = """
+SELECT
   project_id,
   project_name,
   display_name,
   description
-from `oso_production.projects_v1`
-where project_name = 'opensource-observer'
+FROM projects_v1
+WHERE project_name = 'opensource-observer'
+"""
+df = client.to_pandas(query)
 ```
 
 </TabItem>
@@ -50,7 +54,7 @@ In the case of `opensource-observer`, we get back the following:
 
 ```json 
 {
-  "projectId": "Erx9J64anc8oSeN-wDKm0sojJf8ONrFVYbQ7GFnqSyc=",
+  "projectId": "UuWbpo5bpL5QsYvlukUWNm2uE8HFjxQxzCM0e+HMZfk=",
   "projectName": "opensource-observer",
   "displayName": "Open Source Observer",
   "description": "Open Source Observer is a free analytics suite that helps funders measure the impact of open source software contributions to the health of their ecosystem."
@@ -64,15 +68,18 @@ OSO maintains a directory of available metrics in `metrics_v0`.
 To see all available metrics, you can run the following query:
 
 <Tabs>
-<TabItem value="sql" label="SQL">
+<TabItem value="python" label="Python">
 
-```sql
-select
+```python
+query = """
+SELECT
   metric_id,
   metric_name,
   display_name,
   description
-from `oso_production.metrics_v0`;
+FROM metrics_v0
+"""
+df = client.to_pandas(query)
 ```
 
 </TabItem>
@@ -109,16 +116,19 @@ For any particular metric,
 you can get a current value (e.g. to display on a website):
 
 <Tabs>
-<TabItem value="sql" label="SQL">
+<TabItem value="python" label="Python">
 
-```sql
-select
+```python
+query = """
+SELECT
   metric_id,
   project_id,
   amount
-from `oso_production.key_metrics_by_project_v0`
-where project_id = 'Erx9J64anc8oSeN-wDKm0sojJf8ONrFVYbQ7GFnqSyc='
-  and metric_id = '0xy+em6XN6wQKZMqtspcmc49ze3hD4BofTyMG+PU2OE='
+FROM key_metrics_by_project_v0
+WHERE project_id = 'UuWbpo5bpL5QsYvlukUWNm2uE8HFjxQxzCM0e+HMZfk='
+  AND metric_id = '1zNSDLeL7d1bqMgJ4b/AGBd0lQs4Q4Wy9jIf2ge72kw='
+"""
+df = client.to_pandas(query)
 ```
 
 </TabItem>
@@ -129,8 +139,8 @@ where project_id = 'Erx9J64anc8oSeN-wDKm0sojJf8ONrFVYbQ7GFnqSyc='
 query getKeyMetrics {
   oso_keyMetricsByProjectV0(
     where: {
-      projectId: { _eq: "Erx9J64anc8oSeN-wDKm0sojJf8ONrFVYbQ7GFnqSyc=" },
-      metricId: { _eq: "0xy+em6XN6wQKZMqtspcmc49ze3hD4BofTyMG+PU2OE=" }
+      projectId: { _eq: "UuWbpo5bpL5QsYvlukUWNm2uE8HFjxQxzCM0e+HMZfk=" },
+      metricId: { _eq: "1zNSDLeL7d1bqMgJ4b/AGBd0lQs4Q4Wy9jIf2ge72kw=" }
     }
   ) {
     metricId,
@@ -147,9 +157,9 @@ In the case of daily GitHub commits, we get back the following:
 
 ```json 
 {
-  "projectId": "Erx9J64anc8oSeN-wDKm0sojJf8ONrFVYbQ7GFnqSyc=",
-  "metricId": "0xy+em6XN6wQKZMqtspcmc49ze3hD4BofTyMG+PU2OE=",
-  "amount": 20
+  "projectId": "UuWbpo5bpL5QsYvlukUWNm2uE8HFjxQxzCM0e+HMZfk=",
+  "metricId": "1zNSDLeL7d1bqMgJ4b/AGBd0lQs4Q4Wy9jIf2ge72kw=",
+  "amount": 2930
 },
 ```
 
@@ -159,19 +169,23 @@ OSO also maintains a standard set of timeseries metrics for each project
 (e.g. to power graphs):
 
 <Tabs>
-<TabItem value="sql" label="SQL">
+<TabItem value="python" label="Python">
 
-```sql
-select
+```python
+query = """
+SELECT
   tm.project_id,
   tm.sample_date,
   tm.amount,
-  tm.unit
-  m.metric_name,
-from `oso_production.timeseries_metrics_by_project_v0` tm
-join `oso_production.metrics_v0` m on tm.metric_id = m.metric_id
-where tm.project_id = 'Erx9J64anc8oSeN-wDKm0sojJf8ONrFVYbQ7GFnqSyc='
-  and tm.metric_id = '0xy+em6XN6wQKZMqtspcmc49ze3hD4BofTyMG+PU2OE='
+  tm.unit,
+  m.metric_name
+FROM timeseries_metrics_by_project_v0 tm
+JOIN metrics_v0 m ON tm.metric_id = m.metric_id
+WHERE tm.project_id = 'UuWbpo5bpL5QsYvlukUWNm2uE8HFjxQxzCM0e+HMZfk='
+  AND tm.metric_id = '0xy+em6XN6wQKZMqtspcmc49ze3hD4BofTyMG+PU2OE='
+ORDER BY tm.sample_date ASC
+"""
+df = client.to_pandas(query)
 ```
 
 </TabItem>
@@ -182,7 +196,7 @@ where tm.project_id = 'Erx9J64anc8oSeN-wDKm0sojJf8ONrFVYbQ7GFnqSyc='
 query getTimeseriesMetrics {
   oso_timeseriesMetricsByProjectV0(
     where: {
-      projectId: { _eq: "Erx9J64anc8oSeN-wDKm0sojJf8ONrFVYbQ7GFnqSyc=" },
+      projectId: { _eq: "UuWbpo5bpL5QsYvlukUWNm2uE8HFjxQxzCM0e+HMZfk=" },
       metricId: { _eq: "0xy+em6XN6wQKZMqtspcmc49ze3hD4BofTyMG+PU2OE=" }
     }
   ) {

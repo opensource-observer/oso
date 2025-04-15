@@ -194,6 +194,7 @@ def load_definitions():
     )
 
     sqlmesh_infra_config = {
+        "dev_environment": "dev",
         "environment": "prod",
         "mcs_deployment_name": "production-mcs",
         "mcs_deployment_namespace": "production-mcs",

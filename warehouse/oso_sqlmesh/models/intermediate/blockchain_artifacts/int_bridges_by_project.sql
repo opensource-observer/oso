@@ -4,7 +4,10 @@ MODEL (
   dialect trino,
   partitioned_by "artifact_source",
   grain (project_id, artifact_source, artifact_id),
-  description "Combines bridges with the ANY_EVM source"
+  description "Combines bridges with the ANY_EVM source",
+  audits (
+    has_at_least_n_rows(threshold := 0)
+  )
 );
 
 WITH base_bridges AS (

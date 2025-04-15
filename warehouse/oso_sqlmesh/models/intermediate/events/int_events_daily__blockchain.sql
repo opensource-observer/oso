@@ -9,7 +9,10 @@ MODEL (
   start @blockchain_incremental_start,
   cron '@daily',
   partitioned_by (DAY("bucket_day"), "event_type", "event_source"),
-  grain (bucket_day, event_type, event_source, from_artifact_id, to_artifact_id)
+  grain (bucket_day, event_type, event_source, from_artifact_id, to_artifact_id),
+  audits (
+    has_at_least_n_rows(threshold := 0)
+  )
 );
 
 SELECT

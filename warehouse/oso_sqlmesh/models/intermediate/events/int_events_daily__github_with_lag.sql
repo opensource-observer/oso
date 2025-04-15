@@ -8,7 +8,10 @@ MODEL (
   start '2015-01-01',
   cron '@daily',
   partitioned_by (DAY("bucket_day"), "event_type"),
-  grain (bucket_day, event_type, event_source, from_artifact_id, to_artifact_id)
+  grain (bucket_day, event_type, event_source, from_artifact_id, to_artifact_id),
+  audits (
+    not_null(columns := (event_type, event_source))
+  )
 );
 
 SELECT

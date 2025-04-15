@@ -1,13 +1,19 @@
 MODEL(
   name oso.int_superchain_chain_names,
   description 'Relevant Superchain chains',
-  kind full
+  kind full,
+  audits (
+    has_at_least_n_rows(threshold := 0)
+  )
 );
 
 @DEF(chains, [
+  'automata',
   'base',
   'bob',
+  'cyber',
   'frax',
+  'ham',
   'ink',
   'kroma',
   'lisk',

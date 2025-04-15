@@ -7,6 +7,9 @@ MODEL (
     'model_type=full',
     'model_category=metrics',
     'model_stage=mart'
+  ),
+  audits (
+    has_at_least_n_rows(threshold := 0)
   )
 );
 

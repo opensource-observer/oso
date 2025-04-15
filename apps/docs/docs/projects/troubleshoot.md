@@ -7,6 +7,8 @@ sidebar_position: 5
 If you can't find an answer to your question here, please jump into our [Discord](https://www.opensource.observer/discord) and ask in the #help channel. If you spot a bug or have a feature request, please [open an issue](https://github.com/opensource-observer/oso/issues).
 :::
 
+You can troubleshoot your project from [pyoso](../get-started/python.md) or using our [GraphQL API](../get-started/api.mdx).
+
 ## I Don't See My Project Data
 
 Our full indexer currently runs weekly on Sundays. Therefore, it may take up to a week for your project data to be indexed. Backfills are run periodically to ensure that all data is indexed. If you don't see any historic event data for your project, than the most likely reason is that the backfill has not yet been run.
@@ -15,9 +17,20 @@ If it's been more than a week and you still don't see your project data, there a
 
 - Confirm that your project is correctly listed in the [oss-directory](https://github.com/opensource-observer/oss-directory).
 - Check if we've pulled the data from oss-directory recently. Our pipeline is public and runs weekly. You can see the latest run [here](https://dagster.opensource.observer/assets/ossd).
-- Check if the full pipeline has run or encountered an error. You can see the status of the projects_v1 model [here](https://dagster.opensource.observer/assets/dbt/production/projects_v1). If the latest run has failed, you will see a red X under "Latest materialization" at the top of the page.
+- Check if the full pipeline has run or encountered an error. You can see the status of the `projects_v1` model [here](https://dagster.opensource.observer/assets/dbt/production/projects_v1). If the latest run has failed, you will see a red X under "Latest materialization" at the top of the page.
 
-If all of these checks pass, then send us a message in [Discord](https://www.opensource.observer/discord) and we'll take a look.
+If all of these checks pass, then try running a quick query in pyoso to confirm the data is missing:
+
+```python
+query = """
+SELECT *
+FROM projects_v1
+WHERE project_name = 'your-project-name'
+"""
+df = client.to_pandas(query)
+```
+
+If the project is still missing, send us a message in [Discord](https://www.opensource.observer/discord) and we'll take a look.
 
 ## My Project Started Earlier Than Your Data Shows
 

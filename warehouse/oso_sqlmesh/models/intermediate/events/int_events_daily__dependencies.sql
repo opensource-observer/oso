@@ -9,7 +9,10 @@ MODEL (
   cron '@daily',
   partitioned_by (DAY("bucket_day"), "event_type"),
   grain (bucket_day, event_type, event_source, from_artifact_id, to_artifact_id),
-  enabled false
+  enabled false,
+  audits (
+    not_null(columns := (event_type, event_source))
+  )
 );
 
 SELECT

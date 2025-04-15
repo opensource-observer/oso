@@ -2,7 +2,10 @@ MODEL (
   name oso.int_deployers_by_project,
   kind FULL,
   partitioned_by "artifact_namespace",
-  description "Combines deployers from any EVM chain and chain-specific deployers"
+  description "Combines deployers from any EVM chain and chain-specific deployers",
+  audits (
+    has_at_least_n_rows(threshold := 0)
+  )
 );
 
 WITH base_deployers AS (

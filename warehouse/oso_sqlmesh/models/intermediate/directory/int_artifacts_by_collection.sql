@@ -1,6 +1,9 @@
 MODEL (
   name oso.int_artifacts_by_collection,
-  kind FULL
+  kind FULL,
+  audits (
+    has_at_least_n_rows(threshold := 0)
+  )
 );
 
 SELECT DISTINCT

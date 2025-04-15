@@ -1,7 +1,7 @@
 from datetime import datetime
 
 import duckdb
-from metrics_tools.definition import PeerMetricDependencyRef
+from metrics_tools.definition import MetricModelDefinition
 from metrics_tools.runner import MetricsRunner
 
 
@@ -13,7 +13,7 @@ def test_runner_rendering():
         where time between @metrics_start('DATE') 
             and @metrics_end('DATE')
         """,
-        ref=PeerMetricDependencyRef(
+        ref=MetricModelDefinition(
             name="test",
             entity_type="artifact",
             window=30,

@@ -2,7 +2,10 @@ MODEL (
   name oso.int_projects_to_projects,
   description 'Many to many mapping of OSSD defined projects to externally defined projects',
   dialect trino,
-  kind FULL
+  kind FULL,
+  audits (
+    has_at_least_n_rows(threshold := 0)
+  )
 );
 
 WITH artifacts_by_project_source AS (

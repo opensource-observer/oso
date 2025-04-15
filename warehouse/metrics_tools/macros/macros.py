@@ -2,7 +2,7 @@ import typing as t
 
 import sqlglot
 from metrics_tools.definition import (
-    PeerMetricDependencyRef,
+    MetricModelDefinition,
     time_suffix,
     to_actual_table_name,
 )
@@ -413,7 +413,7 @@ def metrics_peer_ref(
     peer_db = t.cast(dict, evaluator.locals.get("$$peer_db"))
     peer_table_map = t.cast(dict, evaluator.locals.get("$$peer_table_map"))
 
-    ref = PeerMetricDependencyRef(
+    ref = MetricModelDefinition(
         name=name,
         entity_type=entity_type_val,
         window=window_val,

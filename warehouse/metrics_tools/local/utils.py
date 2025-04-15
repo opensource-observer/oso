@@ -30,10 +30,6 @@ TABLE_MAPPING: TableMappingConfig = {
         row_restriction=RowRestriction(time_column="created_at"),
         table="bigquery.open_collective.expenses",
     ),
-    ### TODO start: remove oso_playground dependency
-    "opensource-observer.oso_playground.stg_deps_dev__dependencies": "bigquery.oso.stg_deps_dev__dependencies",
-    "opensource-observer.oso_playground.stg_deps_dev__packages": "bigquery.oso.stg_deps_dev__packages",
-    ### TODO end
     "opensource-observer.ossd.collections": "bigquery.ossd.collections",
     "opensource-observer.ossd.projects": "bigquery.ossd.projects",
     "opensource-observer.ossd.repositories": "bigquery.ossd.repositories",

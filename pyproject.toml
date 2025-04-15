@@ -47,7 +47,7 @@ dependencies = [
     "dagster-duckdb<1.0.0,>=0.24.0",
     "dagster-duckdb-polars<1.0.0,>=0.24.0",
     "google-cloud-bigquery-storage<3.0.0,>=2.25.0",
-    "dagster-sqlmesh==0.10.0",
+    "dagster-sqlmesh==0.11.2",
     "google-auth<3.0.0,>=2.34.0",
     "pillow<11.0.0,>=10.4.0",
     "dagster-k8s<1.0.0,>=0.24.6",
@@ -96,13 +96,19 @@ dev = [
     "isort<6.0.0,>=5.13.2",
     "ruff>=0.10.0",
     "ipykernel>=6.29.5",
+    "python-on-whales>=0.76.1",
 ]
 
 [tool.uv.sources]
 pyoso = { workspace = true }
+oso-mcp = { workspace = true }
 
 [tool.uv.workspace]
-members = ["warehouse/pyoso"]
+members = [
+    "warehouse/oso_agent",
+    "warehouse/oso_mcp",
+    "warehouse/pyoso"
+]
 
 [build-system]
 requires = ["hatchling"]

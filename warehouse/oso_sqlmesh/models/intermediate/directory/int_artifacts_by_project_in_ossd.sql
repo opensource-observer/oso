@@ -1,7 +1,10 @@
 MODEL (
   name oso.int_artifacts_by_project_in_ossd,
   kind FULL,
-  dialect trino
+  dialect trino,
+  audits (
+    has_at_least_n_rows(threshold := 0)
+  )
 );
 
 WITH projects AS (
@@ -61,7 +64,7 @@ WITH projects AS (
   SELECT
     projects.project_id,
     'GITHUB' AS artifact_source,
-    unnested_github.url AS artifact_url,
+    unnested_github.url AS source_url,
     'REPOSITORY' AS artifact_type
   FROM projects
   CROSS JOIN UNNEST(projects.github) AS @unnested_struct_ref(unnested_github)
@@ -72,12 +75,13 @@ WITH projects AS (
     repos.id::VARCHAR AS artifact_source_id,
     repos.owner AS artifact_namespace,
     repos.name AS artifact_name,
-    artifact_url,
+    LOWER(CONCAT('https://github.com/', repos.owner, '/', repos.name))
+      AS artifact_url,
     artifact_type
   FROM github_repos_raw
   INNER JOIN oso.stg_ossd__current_repositories AS repos
-    ON LOWER(CONCAT('https://github.com/', repos.owner)) = LOWER(TRIM(TRAILING '/' FROM artifact_url))
-    OR LOWER(repos.url) = LOWER(TRIM(TRAILING '/' FROM artifact_url))
+    ON LOWER(CONCAT('https://github.com/', repos.owner)) = LOWER(TRIM(TRAILING '/' FROM source_url))
+    OR LOWER(repos.url) = LOWER(TRIM(TRAILING '/' FROM source_url))
 ), all_npm_raw AS (
   SELECT
     'NPM' AS artifact_source,

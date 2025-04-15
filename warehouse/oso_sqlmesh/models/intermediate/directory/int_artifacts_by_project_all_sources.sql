@@ -1,7 +1,10 @@
 MODEL (
   name oso.int_artifacts_by_project_all_sources,
   kind FULL,
-  dialect trino
+  dialect trino,
+  audits (
+    has_at_least_n_rows(threshold := 0)
+  )
 );
 
 WITH unioned AS (

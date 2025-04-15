@@ -3,7 +3,7 @@ from datetime import datetime
 
 import pandas as pd
 import sqlglot as sql
-from metrics_tools.definition import PeerMetricDependencyRef
+from metrics_tools.definition import MetricModelDefinition
 from metrics_tools.factory.generated import generated_rolling_query
 from metrics_tools.factory.utils import metric_ref_evaluator_context
 from metrics_tools.macros import (
@@ -27,7 +27,7 @@ def generated_query(
 ):
     """Simple generated query executor for metrics queries"""
     rendered_query_str = t.cast(str, evaluator.var("rendered_query_str"))
-    ref = t.cast(PeerMetricDependencyRef, evaluator.var("ref"))
+    ref = t.cast(MetricModelDefinition, evaluator.var("ref"))
 
     with metric_ref_evaluator_context(
         evaluator,
@@ -60,7 +60,7 @@ def generated_rolling_query_proxy(
 ) -> t.Iterator[pd.DataFrame | exp.Expression]:
     """This acts as the proxy to the actual function that we'd call for
     the metrics model."""
-    ref = t.cast(PeerMetricDependencyRef, context.var("ref"))
+    ref = t.cast(MetricModelDefinition, context.var("ref"))
     vars = t.cast(t.Dict[str, t.Any], context.var("vars"))
     rendered_query_str = t.cast(str, context.var("rendered_query_str"))
     table_name = t.cast(str, context.var("table_name"))

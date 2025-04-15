@@ -3,6 +3,9 @@ model(
   description 'This model is responsible for generating a many-to-many table of artifacts associated with a user. This includes both GitHub users and various onchain users.',
   kind full,
   enabled false,
+  audits (
+    has_at_least_n_rows(threshold := 0)
+  )
 );
 
 with

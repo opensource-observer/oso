@@ -21,6 +21,9 @@ MODEL (
     gas_used_tx,
     gas_used_trace,
     gas_price_tx
+  ),
+  audits (
+    has_at_least_n_rows(threshold := 0)
   )
 );
 

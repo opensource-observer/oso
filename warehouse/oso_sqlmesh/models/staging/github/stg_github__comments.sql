@@ -9,6 +9,9 @@ MODEL (
   dialect "duckdb",
   start @github_incremental_start,
   partitioned_by DAY(event_time),
+  audits (
+    has_at_least_n_rows(threshold := 0)
+  )
 );
 
 WITH pull_request_comment_events AS (

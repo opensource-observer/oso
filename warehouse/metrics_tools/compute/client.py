@@ -23,7 +23,7 @@ from metrics_tools.compute.types import (
     QueryJobStatus,
     ServiceResponse,
 )
-from metrics_tools.definition import PeerMetricDependencyRef
+from metrics_tools.definition import MetricModelDefinition
 from pydantic import BaseModel
 from pydantic_core import to_jsonable_python
 from websockets.sync.client import connect
@@ -127,7 +127,7 @@ class Client:
         dialect: str,
         batch_size: int,
         columns: t.List[t.Tuple[str, str]],
-        ref: PeerMetricDependencyRef,
+        ref: MetricModelDefinition,
         locals: t.Dict[str, t.Any],
         dependent_tables_map: t.Dict[str, str],
         slots: int,
@@ -272,7 +272,7 @@ class Client:
         dialect: str,
         batch_size: int,
         columns: t.List[t.Tuple[str, str]],
-        ref: PeerMetricDependencyRef,
+        ref: MetricModelDefinition,
         locals: t.Dict[str, t.Any],
         dependent_tables_map: t.Dict[str, str],
         slots: int,

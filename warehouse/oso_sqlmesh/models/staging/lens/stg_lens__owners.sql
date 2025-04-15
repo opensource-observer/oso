@@ -2,7 +2,10 @@ MODEL (
   name oso.stg_lens__owners,
   description 'Get the latest owners',
   dialect trino,
-  kind FULL
+  kind FULL,
+  audits (
+    has_at_least_n_rows(threshold := 0)
+  )
 );
 
 WITH lens_owners_ordered AS (

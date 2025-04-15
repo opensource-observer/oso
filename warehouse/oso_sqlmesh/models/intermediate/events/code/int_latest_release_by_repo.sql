@@ -2,6 +2,9 @@ MODEL (
   name oso.int_latest_release_by_repo,
   description 'Latest release published for a repository in OSSD',
   kind FULL,
+  audits (
+    has_at_least_n_rows(threshold := 0)
+  )
 );
 
 WITH repo_releases AS (

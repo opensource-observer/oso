@@ -18,6 +18,7 @@ import ArbitrumLogo from "./arbitrum.png";
 import EasLogo from "./eas.png";
 import OcLogo from "./open-collective.png";
 import OpAtlasLogo from "./op-atlas.png";
+import OliLogo from "./oli.png";
 
 OSO curates a variety of public datasets from the open source ecosystem.
 Check out our [BigQuery data exchange](https://console.cloud.google.com/bigquery/analytics-hub/exchanges/projects/87806073973/locations/us/dataExchanges/open_source_observer_190181416ae)
@@ -134,6 +135,13 @@ Here are some of our featured public datasets:
       <span className="tag">Updated weekly</span>
     </div>
     <h3>EAS</h3>
+  </a>
+  <a href="#open-labels-initiative" className="datalink-card">
+    <div className="datalink-header">
+      <img src={OliLogo} alt="Open Labels Initiative Logo" className="datalink-logo" />
+      <span className="tag">Archive</span>
+    </div>
+    <h3>Open Labels Initiative</h3>
   </a>
 </div>
 
@@ -827,6 +835,35 @@ where i = 5650
 
 **Remember to replace 'YOUR_PROJECT_NAME' with the name of your project in the query.**
 
+### Open Labels Initiative
+
+<img src={OliLogo} width="200" />
+
+<Button
+  size={"compact"}
+  color={"blue"}
+  target={"_blank"}
+  link={
+    "https://console.cloud.google.com/bigquery/analytics-hub/discovery/projects/opensource-observer/locations/us/dataExchanges/open_source_observer_190181416ae/listings/openlabelsinitiative_196179b761d"
+  }
+  children={"Subscribe on BigQuery"}
+/>{" "}
+
+A standardized framework and data model for EVM address labeling, maintained by [growthepie.xyz](https://growthepie.xyz/).
+
+For example, you can get project ownership labels for addresses:
+
+```sql
+SELECT
+  CONCAT('0x', CAST(TO_HEX(address) AS STRING)) AS address,
+  UPPER(origin_key) AS chain,
+  value AS project_name
+FROM `YOUR_PROJECT_NAME.openlabelsinitiative.oli_tag_mapping`
+WHERE tag_id = 'owner_project'
+```
+
+**Remember to replace 'YOUR_PROJECT_NAME' with the name of your project in the query.**
+
 ### Ethereum Attestation Service
 
 <img src={EasLogo} width="200" />
@@ -911,10 +948,3 @@ For more on how you can optimize your queries, check out these guide:
 
 Once you've subscribed our datasets to your own Google project,
 you can start to run queries and analyses with a variety of tools.
-
-Here are a few to start:
-
-- [**SQL Query Guide**](../query-data.mdx): to quickly query and download any data
-- [**Python notebooks**](../../guides/notebooks/index.mdx): to do more in-depth data science and processing
-- [**Connect OSO to 3rd Party tools**](../../guides/visualization-tools/index.mdx): like Hex.tech, Tableau, and Metabase
-

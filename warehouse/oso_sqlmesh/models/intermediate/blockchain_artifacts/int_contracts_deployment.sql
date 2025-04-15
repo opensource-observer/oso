@@ -6,7 +6,10 @@ MODEL (
     batch_concurrency 1
   ) /* forward_only true, */ /* on_destructive_change warn */,
   start @blockchain_incremental_start,
-  partitioned_by (DAY("deployment_timestamp"), "chain")
+  partitioned_by (DAY("deployment_timestamp"), "chain"),
+  audits (
+    has_at_least_n_rows(threshold := 0)
+  )
 );
 
 /* The intent is to get the _first_ factory deployments as some contracts */ /* deployed via deterministic deployers allows for multiple calls to the */ /* create2 function. */

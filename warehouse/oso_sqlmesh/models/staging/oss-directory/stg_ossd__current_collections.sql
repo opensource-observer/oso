@@ -2,14 +2,17 @@ MODEL (
   name oso.stg_ossd__current_collections,
   description 'The most recent view of collections from the ossd dagster source',
   dialect trino,
-  kind FULL
+  kind FULL,
+  audits (
+    has_at_least_n_rows(threshold := 0)
+  )
 );
 
 SELECT
   @oso_entity_id('OSS_DIRECTORY', 'oso', name) AS collection_id, /* id is the SHA256 of namespace + slug */ /* We hardcode our namespace "oso" for now */ /* but we are assuming we will allow users to add their on the OSO website */
   'OSS_DIRECTORY' AS collection_source,
   'oso' AS collection_namespace,
-  collections.name AS collection_name,
+  LOWER(collections.name) AS collection_name,
   collections.display_name,
   collections.description,
   collections.projects,

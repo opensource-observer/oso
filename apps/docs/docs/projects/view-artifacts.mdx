@@ -8,24 +8,29 @@ import TabItem from '@theme/TabItem';
 
 :::important
 Projects are assigned artifacts in two ways:
+
 1. You can manually add an artifact to a project by adding it to the project's `.yaml` file in [oss-directory](https://github.com/opensource-observer/oss-directory).
 2. OSO _**discovers**_ downstream artifacts linked to projects. For instance, if a project owns a GitHub organization, OSO will discover all the GitHub repositories owned by that organization and link them as project artifacts.
 :::
 
 ## Lookup All Artifacts for a Project
 
-You can lookup all artifacts for a project using either BigQuery or our GraphQL API:
+You can look up your project's artifacts from [pyoso](../get-started/python.md) or using our [GraphQL API](../get-started/api.mdx).
+It's always safer to query on the `project_id` field rather than the `name` or `display_name` fields.
 
 <Tabs>
-<TabItem value="sql" label="SQL">
+<TabItem value="python" label="Python">
 
-```sql
-select
+```python
+query = """
+SELECT
   artifact_id,
   artifact_name,
   artifact_namespace
-from `oso_production.artifacts_by_project_v1`
-where project_name = 'opensource-observer'
+FROM artifacts_by_project_v1
+WHERE project_name = 'opensource-observer'
+"""
+df = client.to_pandas(query)
 ```
 
 </TabItem>
@@ -48,18 +53,21 @@ query findProject {
 
 ## Lookup a Specific Artifact
 
-You can lookup a specific artifact by its `artifact_name` and/or `artifact_namespace` using either BigQuery or our GraphQL API:
+You can lookup a specific artifact by its `artifact_name` and/or `artifact_namespace` using either SQL or our API:
 
 <Tabs>
-<TabItem value="sql" label="SQL">
+<TabItem value="python" label="Python">
 
-```sql
-select
+```python
+query = """
+SELECT
   artifact_id,
   artifact_name,
   artifact_namespace
-from `oso_production.artifacts_by_project_v1`
-where artifact_name = 'oso' and artifact_namespace = 'opensource-observer'
+FROM artifacts_by_project_v1
+WHERE artifact_name = 'oso' AND artifact_namespace = 'opensource-observer'
+"""
+df = client.to_pandas(query)
 ```
 
 </TabItem>
@@ -83,18 +91,21 @@ query findArtifact {
 
 ## Lookup Artifacts by Data Source
 
-You can lookup artifacts by their data source using either BigQuery or our GraphQL API:
+You can lookup artifacts by their data source using either SQL or our API:
 
 <Tabs>
-<TabItem value="sql" label="SQL">
+<TabItem value="python" label="Python">
 
-```sql
-select
+```python
+query = """
+SELECT
   artifact_id,
   artifact_name,
   artifact_namespace
-from `oso_production.artifacts_by_project_v1`
-where artifact_source = 'GITHUB'
+FROM artifacts_by_project_v1
+WHERE artifact_source = 'GITHUB'
+"""
+df = client.to_pandas(query)
 ```
 
 </TabItem>
@@ -116,5 +127,3 @@ query findArtifactsBySource {
 
 </TabItem>
 </Tabs>
-
-

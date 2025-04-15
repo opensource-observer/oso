@@ -5,7 +5,7 @@ from datetime import datetime
 import pandas as pd
 from metrics_tools.compute.client import Client
 from metrics_tools.compute.types import ExportType
-from metrics_tools.definition import PeerMetricDependencyRef
+from metrics_tools.definition import MetricModelDefinition
 from metrics_tools.factory.constants import METRICS_COLUMNS_BY_ENTITY
 from metrics_tools.runner import MetricsRunner
 from metrics_tools.transformer import SQLTransformer
@@ -24,7 +24,7 @@ def generated_rolling_query(
     start: datetime,
     end: datetime,
     execution_time: datetime,
-    ref: PeerMetricDependencyRef,
+    ref: MetricModelDefinition,
     vars: t.Dict[str, t.Any],
     rendered_query_str: str,
     table_name: str,

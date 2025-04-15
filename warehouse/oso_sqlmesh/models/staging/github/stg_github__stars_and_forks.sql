@@ -9,6 +9,9 @@ MODEL (
   start @github_incremental_start,
   partitioned_by DAY(created_at),
   dialect duckdb,
+  audits (
+    has_at_least_n_rows(threshold := 0)
+  )
 );
 
 WITH watch_events AS (
