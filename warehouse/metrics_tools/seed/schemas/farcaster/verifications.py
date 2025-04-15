@@ -5,10 +5,12 @@ from pydantic import BaseModel
 
 
 class Verifications(BaseModel):
-    fid: int = Column("BIGINT")
-    address: str = Column("VARCHAR")
-    timestamp: datetime = Column("TIMESTAMP(6) WITH TIME ZONE")
-    deleted_at: datetime | None = Column("TIMESTAMP(6) WITH TIME ZONE")
+    """Farcaster profile verifications"""
+
+    fid: int = Column("BIGINT", description="The farcaster id")
+    address: str = Column("VARCHAR", description="The address of the farcaster profile")
+    timestamp: datetime = Column("TIMESTAMP(6) WITH TIME ZONE", description="The timestamp of the verification")
+    deleted_at: datetime | None = Column("TIMESTAMP(6) WITH TIME ZONE", description="The timestamp of the verification's deletion")
 
 
 seed = SeedConfig(

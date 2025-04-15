@@ -4,9 +4,9 @@ from pydantic import BaseModel
 
 class ProjectFarcaster(BaseModel):
     value: str | None = Column("VARCHAR")
-    dlt_parent_id: str = Column("VARCHAR", "_dlt_parent_id")
-    dlt_list_idx: int = Column("BIGINT", "_dlt_list_idx")
-    dlt_id: str = Column("VARCHAR", "_dlt_id")
+    dlt_parent_id: str = Column("VARCHAR", column_name="_dlt_parent_id")
+    dlt_list_idx: int = Column("BIGINT", column_name="_dlt_list_idx")
+    dlt_id: str = Column("VARCHAR", column_name="_dlt_id")
 
 
 seed = SeedConfig(

@@ -16,8 +16,8 @@ class ProjectContract(BaseModel):
     project_id: str = Column("VARCHAR")
     description: str | None = Column("VARCHAR")
     name: str | None = Column("VARCHAR")
-    dlt_load_id: str = Column("VARCHAR", "_dlt_load_id")
-    dlt_id: str = Column("VARCHAR", "_dlt_id")
+    dlt_load_id: str = Column("VARCHAR", column_name="_dlt_load_id")
+    dlt_id: str = Column("VARCHAR", column_name="_dlt_id")
     verification_chain_id: int | None = Column("BIGINT")
 
 

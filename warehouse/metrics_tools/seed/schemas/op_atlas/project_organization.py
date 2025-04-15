@@ -11,8 +11,8 @@ class ProjectOrganization(BaseModel):
     deleted_at: datetime | None = Column("TIMESTAMP(6) WITH TIME ZONE")
     project_id: str = Column("VARCHAR")
     organization_id: str = Column("VARCHAR")
-    dlt_load_id: str = Column("VARCHAR", "_dlt_load_id")
-    dlt_id: str = Column("VARCHAR", "_dlt_id")
+    dlt_load_id: str = Column("VARCHAR", column_name="_dlt_load_id")
+    dlt_id: str = Column("VARCHAR", column_name="_dlt_id")
 
 
 seed = SeedConfig(
