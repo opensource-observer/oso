@@ -11,7 +11,8 @@ WITH project_slug_mappings AS (
   SELECT * FROM (
     VALUES 
       ('0x808b31862cec6dccf3894bb0e76ce4ca298e4c2820e2ccbf4816da740463b220', 'fractal-visions'),
-      ('0xed3d54e5394dc3ed01f15a67fa6a70e203df31c928dad79f70e25cb84f6e2cf9', 'host-it')
+      ('0xed3d54e5394dc3ed01f15a67fa6a70e203df31c928dad79f70e25cb84f6e2cf9', 'host-it'),
+      ('0x15b210abdc6acfd99e60255792b2b78714f4e8c92c4c5e91b898d48d046212a4', 'defieye')
   ) AS t(atlas_id, oso_slug)
 ),
 
