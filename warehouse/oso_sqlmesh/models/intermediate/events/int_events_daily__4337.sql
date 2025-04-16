@@ -21,7 +21,7 @@ SELECT
   to_artifact_id::VARCHAR AS to_artifact_id,
   event_source::VARCHAR,
   event_type::VARCHAR,
-  SUM(userop_gas_used * userop_gas_price)::DOUBLE AS amount,
+  SUM(userop_gas_cost)::DOUBLE AS amount,
   COUNT(*)::DOUBLE AS "count"
 FROM oso.int_events__4337 as events
 WHERE time BETWEEN @start_dt AND @end_dt
