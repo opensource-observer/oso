@@ -18,7 +18,7 @@ MODEL(
 @DEF(internal_invocation_weight, 0.5);
 
 -- Get all events for projects in the measurement period
-WITH base_events AS (
+WITH all_events AS (
   SELECT
     e.project_id,
     DATE_TRUNC('DAY', e.time::DATE) AS bucket_day,
@@ -33,15 +33,26 @@ WITH base_events AS (
   FROM oso.int_superchain_events_by_project AS e
   LEFT OUTER JOIN oso.int_superchain_onchain_user_labels AS users
   ON e.from_artifact_id = users.artifact_id
-  WHERE
-    /* Currently no 4337-specific logic as these events are 
-    already captured in the CONTRACT_INTERNAL_INVOCATION
-    events and would need to be de-duped. */ 
-    e.event_type IN (
-      'CONTRACT_INVOCATION',
-      'CONTRACT_INTERNAL_INVOCATION'
-    )
-    AND e.time BETWEEN @start_dt AND @end_dt
+  WHERE e.time BETWEEN @start_dt AND @end_dt
+),
+
+base_events AS (
+  SELECT *
+  FROM all_events
+  WHERE event_type IN (
+    'CONTRACT_INVOCATION',
+    'CONTRACT_INTERNAL_INVOCATION'
+  )
+),
+
+aa_events AS (
+  SELECT *
+  FROM all_events
+  WHERE event_type IN (
+    'CONTRACT_INVOCATION_VIA_USEROP',
+    'CONTRACT_INVOCATION_VIA_PAYMASTER',
+    'CONTRACT_INVOCATION_VIA_BUNDLER'
+  )
 ),
 
 -- Calculate number of projects involved in internal invocations per transaction
@@ -88,15 +99,53 @@ amortized_transaction_count AS (
   GROUP BY 1, 2, 3
 ),
 
--- Transaction counts
+-- Standard transaction counts
 transaction_count AS (
   SELECT
     project_id,
     chain,
     bucket_month AS sample_date,
+    'transactions_monthly' AS metric_name,
+    APPROX_DISTINCT(transaction_hash) AS amount
+  FROM base_events
+  WHERE event_type = 'CONTRACT_INVOCATION'
+  GROUP BY 1, 2, 3
+),
+
+-- Internal transaction counts
+internal_transaction_count AS (
+  SELECT
+    project_id,
+    chain,
+    bucket_month AS sample_date,
+    'internal_transactions_monthly' AS metric_name,
+    APPROX_DISTINCT(transaction_hash) AS amount
+  FROM base_events
+  WHERE event_type = 'CONTRACT_INTERNAL_INVOCATION'
+  GROUP BY 1, 2, 3
+),
+
+-- Transactions and internal invocations
+contract_invocations_count AS (
+  SELECT
+    project_id,
+    chain,
+    bucket_month AS sample_date,
     'contract_invocations_monthly' AS metric_name,
-    COUNT(DISTINCT transaction_hash) AS amount
+    APPROX_DISTINCT(transaction_hash) AS amount
   FROM weighted_events
+  GROUP BY 1, 2, 3
+),
+
+-- AA-related userop counts
+aa_userop_count AS (
+  SELECT
+    project_id,
+    chain,
+    bucket_month AS sample_date,
+    'account_abstraction_userops_monthly' AS metric_name,
+    COUNT(*) AS amount
+  FROM aa_events
   GROUP BY 1, 2, 3
 ),
 
@@ -168,7 +217,7 @@ monthly_active_farcaster_users AS (
     chain,
     bucket_month AS sample_date,
     'active_farcaster_users_monthly' AS metric_name,
-    COUNT(DISTINCT from_artifact_id) AS amount
+    APPROX_DISTINCT(from_artifact_id) AS amount
   FROM weighted_events
   WHERE is_farcaster_user = true
   GROUP BY 1, 2, 3
@@ -181,7 +230,7 @@ monthly_active_addresses AS (
     chain,
     bucket_month AS sample_date,
     'active_addresses_monthly' AS metric_name,
-    COUNT(DISTINCT from_artifact_id) AS amount
+    APPROX_DISTINCT(from_artifact_id) AS amount
   FROM weighted_events
   GROUP BY 1, 2, 3
 ),
@@ -192,6 +241,15 @@ union_all_metrics AS (
   UNION ALL
   SELECT *
   FROM transaction_count
+  UNION ALL
+  SELECT *
+  FROM internal_transaction_count
+  UNION ALL
+  SELECT *
+  FROM contract_invocations_count
+  UNION ALL
+  SELECT *
+  FROM aa_userop_count
   UNION ALL
   SELECT *
   FROM transaction_gas_fee
