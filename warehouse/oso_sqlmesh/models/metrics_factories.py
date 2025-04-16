@@ -162,23 +162,6 @@ timeseries_metrics(
             ),
             additional_tags=["data_category=code"],
         ),
-        "active_developers": MetricQueryDef(
-            ref="code/active_developers.sql",
-            time_aggregations=[
-                "daily",
-                "weekly",
-                "monthly",
-                "quarterly",
-                "biannually",
-                "yearly",
-            ],
-            over_all_time=True,
-            metadata=MetricMetadata(
-                display_name="Active Developers",
-                description="Metrics related to active GitHub developers",
-            ),
-            additional_tags=["data_category=code"],
-        ),
         # This defines something with a rolling option that allows you to look back
         # to some arbitrary window. So you specify the window and specify the unit.
         # The unit and the window are used to pass in variables to the query. So it's
