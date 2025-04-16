@@ -25,7 +25,7 @@ WITH filtered_events AS (
     to_address,
     bundler_address,
     paymaster_address,
-    userop_gas_price,
+    userop_gas_cost,
     userop_gas_used
   FROM oso.stg_superchain__4337_traces
   WHERE block_timestamp BETWEEN @start_dt AND @end_dt
@@ -39,7 +39,7 @@ to_events AS (
     userop_hash,
     from_address,
     to_address,
-    userop_gas_price,
+    userop_gas_cost,
     userop_gas_used,
     'CONTRACT_INVOCATION_VIA_USEROP' AS event_type
   FROM filtered_events
@@ -53,7 +53,7 @@ paymaster_events AS (
     userop_hash,
     from_address,
     paymaster_address AS to_address,
-    userop_gas_price,
+    userop_gas_cost,
     userop_gas_used,
     'CONTRACT_INVOCATION_VIA_PAYMASTER' AS event_type
   FROM filtered_events
@@ -67,7 +67,7 @@ bundler_events AS (
     userop_hash,
     from_address,
     bundler_address AS to_address,
-    userop_gas_price,
+    userop_gas_cost,
     userop_gas_used,
     'CONTRACT_INVOCATION_VIA_BUNDLER' AS event_type
   FROM filtered_events
@@ -101,7 +101,7 @@ SELECT
   from_address AS from_artifact_name,
   from_address AS from_artifact_source_id,
   userop_gas_used::DOUBLE AS userop_gas_used,
-  userop_gas_price::DOUBLE AS userop_gas_price,
+  userop_gas_cost::DOUBLE AS userop_gas_cost,
   transaction_hash,
   userop_hash
 FROM unioned_events
