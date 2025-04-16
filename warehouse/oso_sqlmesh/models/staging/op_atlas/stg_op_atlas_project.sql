@@ -7,7 +7,15 @@ MODEL (
   )
 );
 
-WITH cleaned_data AS (
+WITH project_slug_mappings AS (
+  SELECT * FROM (
+    VALUES 
+      ('0x808b31862cec6dccf3894bb0e76ce4ca298e4c2820e2ccbf4816da740463b220', 'fractal-visions'),
+      ('0xed3d54e5394dc3ed01f15a67fa6a70e203df31c928dad79f70e25cb84f6e2cf9', 'host-it')
+  ) AS t(atlas_id, oso_slug)
+),
+
+cleaned_data AS (
   SELECT
     LOWER(id::VARCHAR) AS id,
     name,
@@ -17,11 +25,14 @@ WITH cleaned_data AS (
     banner_url,
     twitter,
     mirror,
-    TRIM(LOWER(open_source_observer_slug::VARCHAR)) AS open_source_observer_slug,
+    COALESCE(
+      (SELECT oso_slug FROM project_slug_mappings WHERE LOWER(atlas_id) = LOWER(cleaned.id)),
+      TRIM(LOWER(open_source_observer_slug::VARCHAR))
+    ) AS open_source_observer_slug,
     created_at,
     updated_at,
     deleted_at
-  FROM @oso_source('bigquery.op_atlas.project')
+  FROM @oso_source('bigquery.op_atlas.project') AS cleaned
 ),
 
 latest_data AS (
