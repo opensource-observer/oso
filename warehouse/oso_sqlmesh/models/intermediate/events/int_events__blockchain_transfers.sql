@@ -1,6 +1,6 @@
 -- Blockchain events (currently only from the superchain dataset)
 MODEL (
-  name oso.int_events__blockchain,
+  name oso.int_events__blockchain_transfers,
   kind INCREMENTAL_BY_TIME_RANGE (
     time_column time,
     batch_size 180,
@@ -8,6 +8,7 @@ MODEL (
   ),
   start @blockchain_incremental_start,
   cron '@daily',
+  dialect trino,
   partitioned_by (DAY("time"), "event_type", "event_source"),
   grain (time, event_type, event_source, from_artifact_id, to_artifact_id),
   audits (
@@ -22,11 +23,10 @@ WITH txns AS (
     chain,
     from_address,
     to_address,
-    value_lossless,
+    value_lossless::DOUBLE AS amount,
     'BLOCKCHAIN_TRANSFER' AS event_type
   FROM oso.stg_superchain__transactions
   WHERE block_timestamp BETWEEN @start_dt AND @end_dt
-  AND value_lossless > 0
 )
 
 SELECT
@@ -43,5 +43,6 @@ SELECT
   '' AS from_artifact_namespace,
   from_address AS from_artifact_name,
   from_address AS from_artifact_source_id,
-  value_lossless
+  amount
 FROM txns
+WHERE amount > 0
