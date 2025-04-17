@@ -29,44 +29,52 @@ env:
   CLICKHOUSE_PASSWORD: "password"
   # SQLMesh variables
   SQLMESH_DUCKDB_LOCAL_PATH: "/tmp/oso.duckdb"
+
+  # should not be set to a legitimate value for testing. This will use up API
+  # quota otherwise
   DUNE_API_KEY: "none"
 
+# Trigger the workflow when:
 on:
+  # A push occurs to one of the matched branches.
   push:
     branches:
       - main
+  # Or when a pull request event occurs for a pull request against one of the
+  # matched branches.
   pull_request:
     branches:
       - main
+  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
   merge_group:
 
+# Cancel in progress jobs on new pushes.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   lint-and-test:
+    # NOTE: This name appears in GitHub's Checks API.
     name: test
     environment: testing
     runs-on: ubuntu-latest
     strategy:
       matrix:
         # PRIORITY ORDER: python → sqlmesh → sqlmesh-docker → node
-        component: [
-          "python",
-          "sqlmesh",
-          "sqlmesh-docker",
-          "node",
-          # "dbt"    # ← dbt is least important for now
-        ]
+        component: ["python", "sqlmesh", "sqlmesh-docker", "node"] # "dbt"
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
+          # Check out pull request's HEAD commit instead of the merge commit to
+          # prevent gitlint from failing due to too long commit message titles,
+          # e.g. "Merge 3e621938d65caaa67f8e35d145335d889d470fc8 into 19a39b2f66cd7a165082d1486b2f1eb36ec2354a".
           ref: ${{ github.event.pull_request.head.sha }}
-          fetch-depth: 0
-
+          # Fetch all history so gitlint can check the relevant commits.
+          fetch-depth: "0"
+          
       - name: Load public vars
         run: |
           bash .github/scripts/load-public-vars.sh $GITHUB_ENV \
@@ -81,7 +89,7 @@ jobs:
             GOOGLE_TEST_DUMMY_CREDENTIALS_JSON \
             PUBLIC_VARS_TEST
 
-      - name: Check if algolia is empty
+      - name: Check if algolia is empty, set the variable to some dummy value if it is
         shell: bash
         run: |
           echo "NEXT_PUBLIC_ALGOLIA_API_KEY=${NEXT_PUBLIC_ALGOLIA_API_KEY:-xxxx}" >> "$GITHUB_ENV"
@@ -159,12 +167,14 @@ jobs:
       # SQLMesh steps
       - name: Test SQLMesh (DuckDB)
         working-directory: warehouse
-        run: uv run oso local sqlmesh-test --duckdb plan dev --start '1 week' --end now --auto-apply
+        run: |
+          uv run oso local sqlmesh-test --duckdb plan dev --start '1 week' --end now --auto-apply
         if: ${{ always() && matrix.component == 'sqlmesh' }}
 
       - name: Test SQLMesh (Docker)
         working-directory: warehouse
-        run: uv run oso local sqlmesh-test plan dev --start '1 week' --end now --auto-apply
+        run: |
+          uv run oso local sqlmesh-test plan dev --start '1 week' --end now --auto-apply
         if: ${{ always() && matrix.component == 'sqlmesh-docker' }}
 
       # ─────────────────────────────────────────────────────────────────────
