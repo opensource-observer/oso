@@ -128,27 +128,6 @@ jobs:
           credentials_json: "${{ env.GOOGLE_TEST_DUMMY_CREDENTIALS_JSON }}"
           create_credentials_file: true
 
-      - name: Setup dbt profile
-        run: bash .github/scripts/create-dbt-profile.sh ${GOOGLE_APPLICATION_CREDENTIALS}
-
-      # ─────────────────────────────────────────────────────────────────────
-      # Node steps
-      - name: Build (Node)
-        uses: nick-fields/retry@v3
-        with:
-          timeout_minutes: 5
-          max_attempts: 3
-          command: pnpm build
-        if: ${{ matrix.component == 'node' }}
-
-      - name: Lint (Node)
-        run: pnpm lint
-        if: ${{ always() && matrix.component == 'node' }}
-
-      - name: Test (Node)
-        run: pnpm test
-        if: ${{ always() && matrix.component == 'node' }}
-
       # ─────────────────────────────────────────────────────────────────────
       # Python steps
       - name: Type Check (Python)
@@ -178,7 +157,34 @@ jobs:
         if: ${{ always() && matrix.component == 'sqlmesh-docker' }}
 
       # ─────────────────────────────────────────────────────────────────────
+      # Node steps
+      - name: Run supabase local
+        id: supabase
+        run: |
+          bash .github/scripts/run-supabase-local.sh apps/frontend
+        if: ${{ matrix.component == 'node' }}
+
+      - name: Build (Node)
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 5
+          max_attempts: 3
+          command: pnpm build
+        if: ${{ matrix.component == 'node' }}
+
+      - name: Lint (Node)
+        run: pnpm lint
+        if: ${{ always() && steps.supabase.conclusion == 'success' && matrix.component == 'node' }}
+
+      - name: Test (Node)
+        run: pnpm test
+        if: ${{ always() && steps.supabase.conclusion == 'success' &&  matrix.component == 'node' }}
+
+      # ─────────────────────────────────────────────────────────────────────
       # dbt steps (deprecated)
+      # - name: Setup dbt profile
+      #   run: bash .github/scripts/create-dbt-profile.sh ${GOOGLE_APPLICATION_CREDENTIALS}
+        
       # - name: Lint SQL (dbt)
       #   run: |
       #     uv run sqlfluff lint --dialect bigquery ./warehouse/dbt/models
