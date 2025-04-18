@@ -10,7 +10,7 @@ MODEL (
 WITH s7_projects AS (
   SELECT DISTINCT project_id
   FROM oso.projects_by_collection_v1
-  WHERE collection_name = '7-1'
+  WHERE collection_name IN ('7-1', '7-2')
 ),
 
 events AS (

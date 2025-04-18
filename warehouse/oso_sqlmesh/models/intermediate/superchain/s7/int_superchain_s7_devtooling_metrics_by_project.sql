@@ -105,4 +105,4 @@ GROUP BY
   m.num_packages_in_deps_dev,
   m.package_connection_count,
   m.developer_connection_count,
-  m.developer_names;
+  m.developer_names
