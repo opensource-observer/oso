@@ -11,99 +11,80 @@ MODEL (
 
 @DEF(transactions_threshold, 1000);
 @DEF(gas_fees_threshold, 0.0);
-@DEF(active_addresses_threshold, 420);
 @DEF(days_with_onchain_activity_threshold, 10);
-@DEF(start_date, DATE('2025-02-01'));
-@DEF(end_date, DATE('2025-07-31'));
 
 WITH
-  -- get the three relevant biannual metric IDs for the Superchain
-  metric_names AS (
+  -- Define measurement dates (e.g., end of each month)
+  measurement_dates AS (
     SELECT
-      t.metric_group,
-      CONCAT(c.chain, '_', t.metric_group, '_biannually') AS metric_name
-    FROM (VALUES 
-      ('contract_invocations'),
-      ('gas_fees'),
-      ('active_addresses_aggregation')
-    ) AS t(metric_group)
-    CROSS JOIN oso.int_superchain_chain_names AS c
+      measurement_date,
+      date_trunc('month', measurement_date) AS sample_date
+    FROM (
+      SELECT measurement_date
+      FROM (VALUES 
+        (DATE('2025-02-28')),
+        (DATE('2025-03-31')),
+        (DATE('2025-04-30')),
+        (DATE('2025-05-31')),
+        (DATE('2025-06-30')),
+        (DATE('2025-07-31'))
+      ) AS t(measurement_date)
+    )
   ),
 
-  metrics AS (
-    SELECT
-      m.metric_id,
-      mn.metric_group
-    FROM oso.metrics_v0 AS m
-    JOIN metric_names AS mn
-      ON m.metric_name = mn.metric_name
-  ),
-
-  -- sum the binannual metrics for each project
-  biannual AS (
-    SELECT
-      tm.project_id,
-      m.metric_group,
-      tm.sample_date,
-      SUM(tm.amount) AS amount
-    FROM oso.timeseries_metrics_by_project_v0 AS tm
-    JOIN metrics AS m
-      ON tm.metric_id = m.metric_id
-    WHERE tm.sample_date BETWEEN @start_date AND @end_date
-    GROUP BY 1,2,3
-  ),
-
-  -- use daily invocations to derive active_days
+  -- Get the daily metric IDs for the Superchain
   daily_metrics AS (
     SELECT
-      m.metric_id
+      m.metric_id,
+      CASE 
+        WHEN m.metric_name LIKE '%_contract_invocations_daily' THEN 'contract_invocations'
+        WHEN m.metric_name LIKE '%_gas_fees_daily' THEN 'gas_fees'
+      END AS metric_group
     FROM oso.metrics_v0 AS m
     JOIN oso.int_superchain_chain_names AS c
-      ON m.metric_name = CONCAT(c.chain, '_contract_invocations_daily')
+      ON m.metric_name LIKE CONCAT(c.chain, '_%_daily')
+    WHERE m.metric_name LIKE '%_contract_invocations_daily'
+       OR m.metric_name LIKE '%_gas_fees_daily'
   ),
 
-  -- enumerate each window end (project + date)
-  active_windows AS (
+  -- For each measurement date, get all projects
+  project_measurement_dates AS (
     SELECT DISTINCT
-      project_id,
-      sample_date
-    FROM biannual
+      p.project_id,
+      md.measurement_date,
+      md.sample_date
+    FROM oso.projects_v1 AS p
+    CROSS JOIN measurement_dates AS md
   ),
 
-  -- count distinct “active” days in the prior 180 days
-  active_days_calc AS (
+  -- Calculate metrics for each project and measurement date
+  -- by looking back 180 days from each measurement date
+  project_metrics AS (
     SELECT
-      aw.project_id,
-      'active_days' AS metric_group,
-      aw.sample_date,
-      COUNT(DISTINCT tm.sample_date) FILTER (WHERE tm.amount > 0) AS amount
-    FROM active_windows AS aw
+      pmd.project_id,
+      pmd.sample_date,
+      dm.metric_group,
+      SUM(tm.amount) AS amount,
+      COUNT(DISTINCT CASE WHEN tm.amount > 0 THEN tm.sample_date END) AS active_days
+    FROM project_measurement_dates AS pmd
     JOIN oso.timeseries_metrics_by_project_v0 AS tm
-      ON tm.project_id = aw.project_id
-     AND tm.sample_date BETWEEN aw.sample_date - INTERVAL '179' DAY
-                            AND aw.sample_date
+      ON tm.project_id = pmd.project_id
+     AND tm.sample_date BETWEEN pmd.measurement_date - INTERVAL '179' DAY
+                            AND pmd.measurement_date
     JOIN daily_metrics AS dm
       ON tm.metric_id = dm.metric_id
-    GROUP BY 1,2,3
+    GROUP BY 1, 2, 3
   ),
 
-  -- stack them back together
-  all_metrics AS (
-    SELECT * FROM biannual
-    UNION ALL
-    SELECT * FROM active_days_calc
-  ),
-
-  -- pivot
+  -- Pivot the metrics
   pivoted AS (
     SELECT
       project_id,
       sample_date,
-      COALESCE(MAX(CASE WHEN metric_group = 'contract_invocations'           THEN amount END), 0) AS transaction_count,
-      COALESCE(MAX(CASE WHEN metric_group = 'gas_fees'                       THEN amount END), 0) AS gas_fees,
-      COALESCE(MAX(CASE WHEN metric_group = 'active_addresses_aggregation'   THEN amount END), 0) AS active_addresses_count,
-      COALESCE(MAX(CASE WHEN metric_group = 'active_days'                    THEN amount END), 0) AS active_days
-    FROM all_metrics
+      COALESCE(MAX(CASE WHEN metric_group = 'contract_invocations' THEN amount END), 0) AS transaction_count,
+      COALESCE(MAX(CASE WHEN metric_group = 'gas_fees' THEN amount END), 0) AS gas_fees,
+      COALESCE(MAX(CASE WHEN metric_group = 'contract_invocations' THEN active_days END), 0) AS active_days
+    FROM project_metrics
     GROUP BY project_id, sample_date
     ORDER BY project_id, sample_date
   )
@@ -113,13 +94,10 @@ SELECT
   sample_date,
   transaction_count,
   gas_fees,
-  active_addresses_count,
   active_days,
   (
-    CAST(transaction_count >= @transactions_threshold AS INTEGER) +
-    CAST(active_days >= @days_with_onchain_activity_threshold AS INTEGER) +
-    CAST(active_addresses_count >= @active_addresses_threshold AS INTEGER) +
-    CAST(gas_fees >= @gas_fees_threshold AS INTEGER)
-     >= 3
-   ) AS meets_all_criteria
+    transaction_count >= @transactions_threshold
+    AND active_days >= @days_with_onchain_activity_threshold
+    AND gas_fees >= @gas_fees_threshold
+  ) AS meets_all_criteria
 FROM pivoted
