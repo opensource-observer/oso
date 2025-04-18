@@ -47,6 +47,7 @@ apiVersion: keda.sh/v1alpha1
 kind: ClusterTriggerAuthentication
 metadata:
   name: google-auth
+  namespace: keda
 spec:
   podIdentity:
     provider: gcp
