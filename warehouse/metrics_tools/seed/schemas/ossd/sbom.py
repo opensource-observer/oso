@@ -12,8 +12,8 @@ class Sbom(BaseModel):
     package_source: str | None = Column("VARCHAR")
     package_version: str | None = Column("VARCHAR")
     snapshot_at: datetime | None = Column("TIMESTAMP(6) WITH TIME ZONE")
-    dlt_load_id: str = Column("VARCHAR", "_dlt_load_id")
-    dlt_id: str = Column("VARCHAR", "_dlt_id")
+    dlt_load_id: str = Column("VARCHAR", column_name="_dlt_load_id")
+    dlt_id: str = Column("VARCHAR", column_name="_dlt_id")
 
 
 seed = SeedConfig(
