@@ -8,8 +8,8 @@ class RenderedModels(BaseModel):
     model_name: str | None = Column("VARCHAR")
     rendered_sql: str | None = Column("VARCHAR")
     rendered_at: datetime | None = Column("TIMESTAMP(6) WITH TIME ZONE")
-    dlt_load_id: str = Column("VARCHAR", "_dlt_load_id")
-    dlt_id: str = Column("VARCHAR", "_dlt_id")
+    dlt_load_id: str = Column("VARCHAR", column_name="_dlt_load_id")
+    dlt_id: str = Column("VARCHAR", column_name="_dlt_id")
 
 
 seed = SeedConfig(
