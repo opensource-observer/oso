@@ -6,10 +6,12 @@ from pydantic import BaseModel
 
 
 class Profiles(BaseModel):
-    fid: int = Column("BIGINT")
-    last_updated_at: datetime | None = Column("TIMESTAMP(6) WITH TIME ZONE")
-    data: Dict[str, Any] | None = Column("JSON")
-    custody_address: str | None = Column("VARCHAR")
+    """Farcaster profile"""
+
+    fid: int = Column("BIGINT", description="The farcaster id of the profile")
+    last_updated_at: datetime | None = Column("TIMESTAMP(6) WITH TIME ZONE", description="The last updated time of the profile")
+    data: Dict[str, Any] | None = Column("JSON", description="JSON farcaster data of the profile")
+    custody_address: str | None = Column("VARCHAR", description="The custody address of the profile")
 
 
 seed = SeedConfig(

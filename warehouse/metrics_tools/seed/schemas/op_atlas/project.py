@@ -25,8 +25,8 @@ class Project(BaseModel):
     pricing_model: str | None = Column("VARCHAR")
     pricing_model_details: str | None = Column("VARCHAR")
     is_submitted_to_oso: bool = Column("BOOLEAN")
-    dlt_load_id: str = Column("VARCHAR", "_dlt_load_id")
-    dlt_id: str = Column("VARCHAR", "_dlt_id")
+    dlt_load_id: str = Column("VARCHAR", column_name="_dlt_load_id")
+    dlt_id: str = Column("VARCHAR", column_name="_dlt_id")
 
 
 seed = SeedConfig(
