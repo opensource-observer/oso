@@ -10,4 +10,5 @@ resources:
   - ./nessie
   - ./nessie-cloudsql-proxy
   - ./sqlmesh-cloudsql-proxy
+  - ./keda
   
