@@ -1,127 +1,125 @@
-/* TODO: turn this into a rolling model that includes a sample date (eg, every week) */
 MODEL (
   name oso.int_superchain_s7_onchain_builder_eligibility,
   description "Determines if a project is eligible for measurement in the S7 onchain builder round",
   dialect trino,
-  kind INCREMENTAL_BY_TIME_RANGE (
-    time_column sample_date,
-    batch_size 90,
-    batch_concurrency 1,
-    lookback 7
-  ),
-  start @blockchain_incremental_start,
-  cron '@daily',
-  partitioned_by DAY("sample_date"),
-  grain (sample_date, project_id)
+  kind full,
+  grain (sample_date, project_id),
+  audits (
+    has_at_least_n_rows(threshold := 0)
+  )
 );
 
-@DEF(measurement_date, DATE('2025-02-28'));
-@DEF(lookback_days, 180);
 @DEF(transactions_threshold, 1000);
 @DEF(gas_fees_threshold, 0.0);
 @DEF(active_addresses_threshold, 420);
 @DEF(days_with_onchain_activity_threshold, 10);
+@DEF(start_date, DATE('2025-02-01'));
+@DEF(end_date, DATE('2025-07-31'));
 
-WITH all_projects AS (
-  SELECT
-    project_id,
-    MAX(
-      CASE WHEN collection_name = '8-1' THEN true ELSE false END
-    ) as applied_to_round
-  FROM oso.projects_by_collection_v1
-  GROUP BY 1
-),
+WITH
+  -- get the three relevant biannual metric IDs for the Superchain
+  metric_names AS (
+    SELECT
+      t.metric_group,
+      CONCAT(c.chain, '_', t.metric_group, '_biannually') AS metric_name
+    FROM (VALUES 
+      ('contract_invocations'),
+      ('gas_fees'),
+      ('active_addresses_aggregation')
+    ) AS t(metric_group)
+    CROSS JOIN oso.int_superchain_chain_names AS c
+  ),
 
-events AS (
-  SELECT *
-  FROM oso.int_superchain_events_by_project
-  WHERE    
-    "time" BETWEEN @measurement_date - INTERVAL @lookback_days DAY
-      AND @measurement_date
-    AND event_type IN ('CONTRACT_INVOCATION', 'CONTRACT_INTERNAL_INVOCATION')
-),
+  metrics AS (
+    SELECT
+      m.metric_id,
+      mn.metric_group
+    FROM oso.metrics_v0 AS m
+    JOIN metric_names AS mn
+      ON m.metric_name = mn.metric_name
+  ),
 
-builder_metrics AS (
-  SELECT
-    all_projects.project_id,
-    all_projects.applied_to_round,
-    COUNT(DISTINCT events.transaction_hash) AS transaction_count,
-    COUNT(DISTINCT events.from_artifact_id) AS active_addresses_count,
-    COUNT(DISTINCT DATE_TRUNC('DAY', events.time)) AS active_days,
-    SUM(events.gas_fee::DOUBLE) AS gas_fees
-  FROM all_projects
-  LEFT OUTER JOIN events
-    ON all_projects.project_id = events.project_id
-  GROUP BY
-    all_projects.project_id,
-    all_projects.applied_to_round
-),
+  -- sum the binannual metrics for each project
+  biannual AS (
+    SELECT
+      tm.project_id,
+      m.metric_group,
+      tm.sample_date,
+      SUM(tm.amount) AS amount
+    FROM oso.timeseries_metrics_by_project_v0 AS tm
+    JOIN metrics AS m
+      ON tm.metric_id = m.metric_id
+    WHERE tm.sample_date BETWEEN @start_date AND @end_date
+    GROUP BY 1,2,3
+  ),
 
-project_eligibility AS (
-  SELECT
-    project_id,
-    (
-      CAST(transaction_count >= @transactions_threshold AS INTEGER) +
-      CAST(active_days >= @days_with_onchain_activity_threshold AS INTEGER) +
-      CAST(active_addresses_count >= @active_addresses_threshold AS INTEGER) +
-      CAST(gas_fees >= @gas_fees_threshold AS INTEGER)
-      >= 3
-    ) AS meets_all_criteria
-  FROM builder_metrics
-),
+  -- use daily invocations to derive active_days
+  daily_metrics AS (
+    SELECT
+      m.metric_id
+    FROM oso.metrics_v0 AS m
+    JOIN oso.int_superchain_chain_names AS c
+      ON m.metric_name = CONCAT(c.chain, '_contract_invocations_daily')
+  ),
 
-artifacts AS (
-  SELECT DISTINCT
-    project_id,
-    'DEFILLAMA_ADAPTER' AS artifact_type
-  FROM oso.artifacts_by_project_v1
-  WHERE artifact_source = 'DEFILLAMA'
+  -- enumerate each window end (project + date)
+  active_windows AS (
+    SELECT DISTINCT
+      project_id,
+      sample_date
+    FROM biannual
+  ),
 
-  UNION ALL
+  -- count distinct “active” days in the prior 180 days
+  active_days_calc AS (
+    SELECT
+      aw.project_id,
+      'active_days' AS metric_group,
+      aw.sample_date,
+      COUNT(DISTINCT tm.sample_date) FILTER (WHERE tm.amount > 0) AS amount
+    FROM active_windows AS aw
+    JOIN oso.timeseries_metrics_by_project_v0 AS tm
+      ON tm.project_id = aw.project_id
+     AND tm.sample_date BETWEEN aw.sample_date - INTERVAL '179' DAY
+                            AND aw.sample_date
+    JOIN daily_metrics AS dm
+      ON tm.metric_id = dm.metric_id
+    GROUP BY 1,2,3
+  ),
 
-  SELECT DISTINCT
-    p2p.external_project_id AS project_id,
-    'BUNDLE_BEAR' AS artifact_type
-  FROM oso.int_projects_to_projects AS p2p
-  JOIN oso.artifacts_by_project_v1 AS abp
-    ON p2p.artifact_id = abp.artifact_id
-  WHERE
-    p2p.ossd_project_name IN (
-      SELECT DISTINCT ossd_name
-      FROM oso.int_4337_address_labels
-    )
-    AND p2p.external_project_source = 'OP_ATLAS'
-    AND abp.artifact_source = 'GITHUB'
-),
+  -- stack them back together
+  all_metrics AS (
+    SELECT * FROM biannual
+    UNION ALL
+    SELECT * FROM active_days_calc
+  ),
 
-artifact_flags AS (
-  SELECT
-    project_id,
-    MAX(CASE WHEN artifact_type = 'DEFILLAMA_ADAPTER' THEN TRUE ELSE FALSE END) AS has_defillama_adapter,
-    MAX(CASE WHEN artifact_type = 'BUNDLE_BEAR' THEN TRUE ELSE FALSE END) AS has_bundle_bear
-  FROM artifacts
-  GROUP BY 1
-)
+  -- pivot
+  pivoted AS (
+    SELECT
+      project_id,
+      sample_date,
+      COALESCE(MAX(CASE WHEN metric_group = 'contract_invocations'           THEN amount END), 0) AS transaction_count,
+      COALESCE(MAX(CASE WHEN metric_group = 'gas_fees'                       THEN amount END), 0) AS gas_fees,
+      COALESCE(MAX(CASE WHEN metric_group = 'active_addresses_aggregation'   THEN amount END), 0) AS active_addresses_count,
+      COALESCE(MAX(CASE WHEN metric_group = 'active_days'                    THEN amount END), 0) AS active_days
+    FROM all_metrics
+    GROUP BY project_id, sample_date
+    ORDER BY project_id, sample_date
+  )
 
 SELECT
-  @measurement_date AS sample_date,
-  builder_metrics.project_id,
-  COALESCE(builder_metrics.transaction_count, 0) AS transaction_count,
-  COALESCE(builder_metrics.gas_fees, 0.0)::DOUBLE AS gas_fees,
-  COALESCE(builder_metrics.active_addresses_count, 0) AS active_addresses_count,
-  COALESCE(builder_metrics.active_days, 0) AS active_days,
-  builder_metrics.applied_to_round,
-  project_eligibility.meets_all_criteria,
+  project_id,
+  sample_date,
+  transaction_count,
+  gas_fees,
+  active_addresses_count,
+  active_days,
   (
-    builder_metrics.applied_to_round
-    AND project_eligibility.meets_all_criteria
-  ) AS is_eligible,
-  COALESCE(artifact_flags.has_defillama_adapter, FALSE)
-    AS has_defillama_adapter, 
-  COALESCE(artifact_flags.has_bundle_bear, FALSE)
-    AS has_bundle_bear
-FROM builder_metrics
-JOIN project_eligibility
-  ON builder_metrics.project_id = project_eligibility.project_id
-LEFT JOIN artifact_flags
-  ON builder_metrics.project_id = artifact_flags.project_id
+    CAST(transaction_count >= @transactions_threshold AS INTEGER) +
+    CAST(active_days >= @days_with_onchain_activity_threshold AS INTEGER) +
+    CAST(active_addresses_count >= @active_addresses_threshold AS INTEGER) +
+    CAST(gas_fees >= @gas_fees_threshold AS INTEGER)
+     >= 3
+   ) AS meets_all_criteria
+FROM pivoted
