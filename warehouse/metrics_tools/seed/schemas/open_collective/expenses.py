@@ -8,7 +8,7 @@ from pydantic import BaseModel
 class Expenses(BaseModel):
     id: str | None = Column("VARCHAR")
     legacy_id: int | None = Column("BIGINT")
-    group: str | None = Column("VARCHAR", "group")
+    group: str | None = Column("VARCHAR", column_name="group")
     type: str | None = Column("VARCHAR")
     kind: str | None = Column("VARCHAR")
     description: str | None = Column("VARCHAR")
@@ -26,7 +26,7 @@ class Expenses(BaseModel):
     from_account: Dict[str, Any] | None = Column("JSON")
     to_account: Dict[str, Any] | None = Column("JSON")
     expense: Dict[str, Any] | None = Column("JSON")
-    order: Dict[str, Any] | None = Column("JSON", "order")
+    order: Dict[str, Any] | None = Column("JSON", column_name="order")
     created_at: datetime | None = Column("TIMESTAMP(6) WITH TIME ZONE")
     updated_at: datetime | None = Column("TIMESTAMP(6) WITH TIME ZONE")
     is_refunded: bool | None = Column("BOOLEAN")
@@ -39,8 +39,8 @@ class Expenses(BaseModel):
     merchant_id: str | None = Column("VARCHAR")
     invoice_template: str | None = Column("VARCHAR")
     host: Dict[str, Any] | None = Column("JSON")
-    dlt_load_id: str = Column("VARCHAR", "_dlt_load_id")
-    dlt_id: str = Column("VARCHAR", "_dlt_id")
+    dlt_load_id: str = Column("VARCHAR", column_name="_dlt_load_id")
+    dlt_id: str = Column("VARCHAR", column_name="_dlt_id")
 
 
 seed = SeedConfig(

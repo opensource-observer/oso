@@ -5,16 +5,18 @@ from pydantic import BaseModel
 
 
 class TvlEvents(BaseModel):
-    time: datetime | None = Column("TIMESTAMP")
-    slug: str | None = Column("VARCHAR")
-    protocol: str | None = Column("VARCHAR")
-    parent_protocol: str | None = Column("VARCHAR")
-    chain: str | None = Column("VARCHAR")
-    token: str | None = Column("VARCHAR")
-    tvl: float | None = Column("DOUBLE")
-    event_type: str | None = Column("VARCHAR")
-    dlt_load_id: str | None = Column("VARCHAR", "_dlt_load_id")
-    dlt_id: str | None = Column("VARCHAR", "_dlt_id")
+    """Stores TVL values for a given protocol on multiple chains"""
+
+    time: datetime | None = Column("TIMESTAMP", description="The timestamp of the TVL value")
+    slug: str | None = Column("VARCHAR", description="The slug of the protocol")
+    protocol: str | None = Column("VARCHAR", description="The name of the protocol")
+    parent_protocol: str | None = Column("VARCHAR", description="The name of the parent protocol")
+    chain: str | None = Column("VARCHAR", description="The name of the chain for the current tvl")
+    token: str | None = Column("VARCHAR", description="The token symbol of the TVL value")
+    tvl: float | None = Column("DOUBLE", description="The magnitude of the TVL value")
+    event_type: str | None = Column("VARCHAR", description="The type of event")
+    dlt_load_id: str | None = Column("VARCHAR", column_name="_dlt_load_id", description="Internal only value used by DLT. This is the unix timestamp of the load job that scraped the data")
+    dlt_id: str | None = Column("VARCHAR", column_name="_dlt_id", description="Internal only unique value for the row")
 
 
 seed = SeedConfig(

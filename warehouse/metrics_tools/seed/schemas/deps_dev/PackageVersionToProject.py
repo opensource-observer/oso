@@ -5,13 +5,15 @@ from pydantic import BaseModel
 
 
 class PackageVersionToProject(BaseModel):
-    SnapshotAt: datetime | None = Column("TIMESTAMP")
-    System: str | None = Column("VARCHAR")
-    ProjectName: str | None = Column("VARCHAR")
-    ProjectType: str | None = Column("VARCHAR")
-    Name: str | None = Column("VARCHAR")
-    Version: str | None = Column("VARCHAR")
-    RelationType: str | None = Column("VARCHAR")
+    """Stores the mapping between package versions and projects"""
+
+    SnapshotAt: datetime | None = Column("TIMESTAMP", description="The timestamp of the snapshot")
+    System: str | None = Column("VARCHAR", description="The dependency management system of the package-version.")
+    ProjectName: str | None = Column("VARCHAR", description="The name of the project.")
+    ProjectType: str | None = Column("VARCHAR", description="The type of the project.")
+    Name: str | None = Column("VARCHAR", description="The name of the package-version" )
+    Version: str | None = Column("VARCHAR", description="The version of the package-version")
+    RelationType: str | None = Column("VARCHAR", description="What the relationship between the project and the package version is.")
 
 seed = SeedConfig(
     catalog="bigquery_public_data",
