@@ -19,7 +19,7 @@ from sqlmesh.utils.metaprogramming import (
 
 logger = logging.getLogger(__name__)
 
-CallableAliasList = t.List[t.Callable[[t.Any], t.Any] | t.Tuple[t.Callable[[t.Any], t.Any], t.List[str]]]
+CallableAliasList = t.List[t.Callable[..., t.Any] | t.Tuple[t.Callable[..., t.Any], t.List[str]]]
 
 
 class MacroOverridingModel(model):
@@ -64,7 +64,7 @@ def escape_triple_quotes(input_string: str) -> str:
 
 
 def create_unregistered_macro_registry(
-    macros: t.List[t.Callable[[t.Any], t.Any] | t.Tuple[t.Callable[[t.Any], t.Any], t.List[str]]]
+    macros: t.List[t.Callable[..., t.Any] | t.Tuple[t.Callable[..., t.Any], t.List[str]]]
 ):
     registry = MacroRegistry(f"macro_registry_{uuid.uuid4().hex}")
     for additional_macro in macros:
@@ -113,7 +113,7 @@ def create_unregistered_macro(
 
 
 def create_unregistered_wrapped_macro(
-    func: t.Callable[[t.Any], t.Any],
+    func: t.Callable[..., t.Any],
     aliases: t.Optional[t.List[str]] = None,
 ) -> t.Dict[str, ExecutableOrMacro]:
     aliases = aliases or []
