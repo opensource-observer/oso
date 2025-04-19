@@ -19,7 +19,7 @@ from sqlmesh.utils.metaprogramming import (
 
 logger = logging.getLogger(__name__)
 
-CallableAliasList = t.List[t.Callable | t.Tuple[t.Callable, t.List[str]]]
+CallableAliasList = t.List[t.Callable[..., t.Any] | t.Tuple[t.Callable[..., t.Any], t.List[str]]]
 
 
 class MacroOverridingModel(model):
@@ -64,12 +64,12 @@ def escape_triple_quotes(input_string: str) -> str:
 
 
 def create_unregistered_macro_registry(
-    macros: t.List[t.Callable | t.Tuple[t.Callable, t.List[str]]]
+    macros: t.List[t.Callable[..., t.Any] | t.Tuple[t.Callable[..., t.Any], t.List[str]]]
 ):
     registry = MacroRegistry(f"macro_registry_{uuid.uuid4().hex}")
     for additional_macro in macros:
         if isinstance(additional_macro, tuple):
-            registry.update(create_unregistered_wrapped_macro(*additional_macro))
+            registry.update(create_unregistered_wrapped_macro(*additional_macro)) # type: ignore
         else:
             registry.update(create_unregistered_wrapped_macro(additional_macro))
     return registry
@@ -113,7 +113,7 @@ def create_unregistered_macro(
 
 
 def create_unregistered_wrapped_macro(
-    func: t.Callable,
+    func: t.Callable[..., t.Any],
     aliases: t.Optional[t.List[str]] = None,
 ) -> t.Dict[str, ExecutableOrMacro]:
     aliases = aliases or []
@@ -216,7 +216,7 @@ def create_basic_python_env(
 
 class PrettyExecutable(Executable):
     @classmethod
-    def value(cls, v: t.Any) -> Executable:
+    def value(cls, v: t.Any, is_metadata: t.Optional[bool] = None) -> Executable:
         pretty_v = json.dumps(v, indent=1)
         return cls(payload=pretty_v, kind=ExecutableKind.VALUE)
 
@@ -287,7 +287,7 @@ def create_macro_registry_from_list(macro_list: CallableAliasList):
     registry = MacroRegistry("macros")
     for additional_macro in macro_list:
         if isinstance(additional_macro, tuple):
-            registry.update(create_unregistered_wrapped_macro(*additional_macro))
+            registry.update(create_unregistered_wrapped_macro(*additional_macro)) # type: ignore
         else:
             registry.update(create_unregistered_wrapped_macro(additional_macro))
     return registry
