@@ -37,6 +37,9 @@ MODEL (
   dialect trino,
   kind full,
   grain (bucket_month, developer_id, project_id, event_type),
+  audits (
+    has_at_least_n_rows(threshold := 0)
+  ),
 );
 
 @DEF(active_developer_date_threshold, DATE('2024-01-01'));

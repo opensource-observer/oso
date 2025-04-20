@@ -4,6 +4,9 @@ MODEL (
   dialect trino,
   kind full,
   grain (onchain_builder_project_id, devtooling_project_id, relationship_type),
+  audits (
+    has_at_least_n_rows(threshold := 0)
+  ),
 );
 
 

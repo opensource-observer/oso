@@ -23,6 +23,9 @@ timeseries_metrics(
         "int_events_daily__github_with_lag",
         "int_events_daily__funding",
     ],
+    audits=[
+        ("has_at_least_n_rows", {"threshold": 0}),
+    ],
     metric_queries={
         # This will automatically generate star counts for the given roll up periods.
         # A time_aggregation is just a simple addition of the aggregation. So basically we
