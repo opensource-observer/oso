@@ -7,6 +7,9 @@ MODEL (
   description "Identifies onchain builder nodes for the S7 devtooling round",
   dialect trino,
   kind full,
+  audits (
+    has_at_least_n_rows(threshold := 0)
+  ),
 );
 
 @DEF(gas_fees_threshold, 0.1);

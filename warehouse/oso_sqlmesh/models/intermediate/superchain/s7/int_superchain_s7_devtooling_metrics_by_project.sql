@@ -3,6 +3,9 @@ MODEL (
   description "S7 metrics by devtooling project (ready for JSON export)",
   dialect trino,
   kind full,
+  audits (
+    has_at_least_n_rows(threshold := 0)
+  ),
 );
 
 @DEF(min_package_connection_count, 3);
