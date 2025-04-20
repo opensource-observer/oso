@@ -67,7 +67,7 @@ config = Config(
                 user=os.environ.get("SQLMESH_TRINO_USER", "sqlmesh"),
                 catalog=os.environ.get("SQLMESH_TRINO_CATALOG", "iceberg"),
                 concurrent_tasks=int(
-                    os.environ.get("SQLMESH_TRINO_CONCURRENT_TASKS", "8")
+                    os.environ.get("SQLMESH_TRINO_CONCURRENT_TASKS", "1")
                 ),
                 retries=int(os.environ.get("SQLMESH_TRINO_RETRIES", "5")),
             ),
