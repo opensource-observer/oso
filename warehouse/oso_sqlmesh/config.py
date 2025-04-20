@@ -14,6 +14,7 @@ from sqlmesh.core.config import (
 )
 from sqlmesh.core.config.connection import (
     GCPPostgresConnectionConfig,
+    PostgresConnectionConfig,
     TrinoConnectionConfig,
 )
 
@@ -71,9 +72,12 @@ config = Config(
                 ),
                 retries=int(os.environ.get("SQLMESH_TRINO_RETRIES", "5")),
             ),
-            state_connection=DuckDBConnectionConfig(
-                concurrent_tasks=1,
-                database=os.environ.get("SQLMESH_DUCKDB_LOCAL_PATH"),
+            state_connection=PostgresConnectionConfig(
+                host=os.environ.get("SQLMESH_POSTGRES_HOST", "localhost"),
+                port=int(os.environ.get("SQLMESH_POSTGRES_PORT", "5432")),
+                user=os.environ.get("SQLMESH_POSTGRES_USER", "postgres"),
+                password=os.environ.get("SQLMESH_POSTGRES_PASSWORD", "postgres"),
+                database=os.environ.get("SQLMESH_POSTGRES_DB", "postgres"),
             ),
             variables={
                 "oso_source_rewrite": LOCAL_TRINO_DOCKER_REWRITE_RULES,
