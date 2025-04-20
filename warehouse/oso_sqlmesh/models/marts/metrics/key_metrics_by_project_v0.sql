@@ -1,7 +1,7 @@
 MODEL (
   name oso.key_metrics_by_project_v0,
   kind FULL,
-  partitioned_by sample_date,
+  partitioned_by year(sample_date),
   tags (
     'export',
     'model_type=full',
