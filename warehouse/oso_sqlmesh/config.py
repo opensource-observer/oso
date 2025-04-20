@@ -10,6 +10,7 @@ from sqlmesh.core.config import (
     Config,
     DuckDBConnectionConfig,
     GatewayConfig,
+    LinterConfig,
     ModelDefaultsConfig,
 )
 from sqlmesh.core.config.connection import (
@@ -21,6 +22,14 @@ from sqlmesh.core.config.connection import (
 dotenv.load_dotenv()
 
 config = Config(
+    linter=LinterConfig(
+        enabled=True,
+        rules={
+            "incrementalmusthavetimepartition",
+            "timepartitionsmustbebucketed",
+            "nomissingaudits",
+        },
+    ),
     default_test_connection=(
         DuckDBConnectionConfig(
             concurrent_tasks=1,

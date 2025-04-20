@@ -3,6 +3,9 @@ MODEL (
   description "All repositories eligible for measurement in the S7 devtooling round",
   dialect trino,
   kind full,
+  audits (
+    has_at_least_n_rows(threshold := 0)
+  ),
 );
 
 @DEF(event_date_threshold, DATE('2024-01-01'));
