@@ -24,6 +24,15 @@ services:
       # MinIO endpoint for clients (on the Podman/Docker host)
       nessie.catalog.service.s3.default-options.external-endpoint: http://127.0.0.1:9000/
 
+  postgres:
+    hostname: postgres
+    image: postgres:15
+    ports: 
+      - "${SQLMESH_POSTGRES_PORT:-5432}:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+
   minio:
     hostname: minio
     image: 'minio/minio'
