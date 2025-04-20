@@ -1,4 +1,4 @@
-  MODEL (
+MODEL (
   name oso.stg_worldchain__verified_users,
   kind INCREMENTAL_BY_TIME_RANGE (
     time_column block_timestamp,
@@ -37,12 +37,16 @@ SELECT DISTINCT
   LOWER(
     CONCAT(
       '0x',
-      SUBSTRING(element.element, 27)
+      SUBSTRING(unnested_element.element, 27)
     )
   ) AS verified_address,
   @from_unix_timestamp(
     CAST(
-      CONCAT('0x', SUBSTRING(raw.data, 3)) AS BIGINT)
-    ) AS address_verified_until
+      CONCAT(
+        '0x',
+        SUBSTRING(raw.data, 3)
+      ) AS BIGINT
+    )
+  ) AS address_verified_until
 FROM raw
-CROSS JOIN UNNEST(raw.args_list) AS t(element)
+CROSS JOIN UNNEST(raw.args_list) AS @unnested_struct_ref(unnested_element)
