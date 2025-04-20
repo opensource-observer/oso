@@ -27,6 +27,7 @@ config = Config(
         rules={
             "incrementalmusthavetimepartition",
             "timepartitionsmustbebucketed",
+            "nomissingaudits",
         },
     ),
     default_test_connection=(
