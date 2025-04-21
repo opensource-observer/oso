@@ -1,27 +1,31 @@
+import re
 import typing as t
 
 from sqlmesh.core.linter.rule import Rule, RuleViolation
-from sqlmesh.core.model import Model, SqlModel
+from sqlmesh.core.model import IncrementalByTimeRangeKind, Model, SqlModel
+
+# Tables that indicate a model is related to projects (with canonical names)
+PROJECT_TABLES = {
+    "oso.int_artifacts_by_project",
+    "oso.artifacts_by_project_v1",
+    "oso.int_projects",
+    "oso.projects_v1",
+}
+
+# Tables that indicate a model is related to collections (with canonical names)
+COLLECTION_TABLES = {
+    "oso.int_projects_by_collection",
+    "oso.projects_by_collection_v1",
+    "oso.int_collections",
+    "oso.collections_v1",
+}
+
+PROJECT_ID_PATTERN = re.compile(r'\bproject_id\b', re.IGNORECASE)
+COLLECTION_ID_PATTERN = re.compile(r'\bcollection_id\b', re.IGNORECASE)
 
 
 class EntityCategoryTagRequired(Rule):
     """Models that reference project or collection tables must have the appropriate entity_category tags."""
-
-    # Tables that indicate a model is related to projects
-    PROJECT_TABLES = {
-        "int_artifacts_by_project",
-        "artifacts_by_project_v1",
-        "int_projects",
-        "projects_v1",
-    }
-
-    # Tables that indicate a model is related to collections
-    COLLECTION_TABLES = {
-        "int_projects_by_collection",
-        "projects_by_collection_v1",
-        "int_collections",
-        "collections_v1",
-    }
 
     def check_model(self, model: Model) -> t.Optional[RuleViolation]:
         if not isinstance(model, SqlModel):
@@ -35,27 +39,20 @@ class EntityCategoryTagRequired(Rule):
         # Get the model's dependencies
         dependencies = model.depends_on or []
         
-        # Extract just the table names from the dependencies
-        referenced_tables = set()
-        for dep in dependencies:
-            # Dependencies are in the format "schema.table"
-            if "." in dep:
-                schema, table = dep.split(".", 1)
-                referenced_tables.add(table.lower())
-            else:
-                referenced_tables.add(dep.lower())
+        # Use the full canonical names from dependencies
+        referenced_tables = {dep.lower() for dep in dependencies}
 
         # Check if the model references project or collection tables
         references_project = any(
-            table in self.PROJECT_TABLES for table in referenced_tables
+            table in PROJECT_TABLES for table in referenced_tables
         )
         references_collection = any(
-            table in self.COLLECTION_TABLES for table in referenced_tables
+            table in COLLECTION_TABLES for table in referenced_tables
         )
 
         # If the model references project tables but doesn't have the project tag, report a violation
         if references_project and not has_project_tag:
-            project_tables = [t for t in referenced_tables if t in self.PROJECT_TABLES]
+            project_tables = [t for t in referenced_tables if t in PROJECT_TABLES]
             return self.violation(
                 f"Model references project tables ({', '.join(project_tables)}) "
                 f"but doesn't have the 'entity_category=project' tag."
@@ -63,11 +60,29 @@ class EntityCategoryTagRequired(Rule):
 
         # If the model references collection tables but doesn't have the collection tag, report a violation
         if references_collection and not has_collection_tag:
-            collection_tables = [t for t in referenced_tables if t in self.COLLECTION_TABLES]
+            collection_tables = [t for t in referenced_tables if t in COLLECTION_TABLES]
             return self.violation(
                 f"Model references collection tables ({', '.join(collection_tables)}) "
                 f"but doesn't have the 'entity_category=collection' tag."
             )
+
+        # Additional check for incremental models that use project_id or collection_id
+        is_incremental = isinstance(model.kind, IncrementalByTimeRangeKind)
+        
+        if is_incremental and isinstance(model, SqlModel) and model.query:
+            query_str = str(model.query)
+            
+            # Check for project_id in incremental models
+            if PROJECT_ID_PATTERN.search(query_str) and not has_project_tag:
+                return self.violation(
+                    "Incremental model uses 'project_id' but doesn't have the 'entity_category=project' tag."
+                )
+                
+            # Check for collection_id in incremental models
+            if COLLECTION_ID_PATTERN.search(query_str) and not has_collection_tag:
+                return self.violation(
+                    "Incremental model uses 'collection_id' but doesn't have the 'entity_category=collection' tag."
+                )
 
         return None
 
