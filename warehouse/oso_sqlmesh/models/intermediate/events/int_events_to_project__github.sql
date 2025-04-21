@@ -10,6 +10,9 @@ MODEL (
   cron '@daily',
   partitioned_by (DAY("time"), "event_type"),
   grain (time, event_type, event_source, from_artifact_id, to_artifact_id),
+  tags (
+    'entity_category=project'
+  ),
   audits (
     has_at_least_n_rows(threshold := 0)
   )

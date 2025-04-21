@@ -5,6 +5,9 @@ MODEL (
   dialect trino,
   partitioned_by (DAY("bucket_day"), "event_type"),
   grain (bucket_day, event_type, event_source, from_artifact_id, to_artifact_id, project_id),
+  tags (
+    'entity_category=project'
+  ),
   audits (
     has_at_least_n_rows(threshold := 0)
   )

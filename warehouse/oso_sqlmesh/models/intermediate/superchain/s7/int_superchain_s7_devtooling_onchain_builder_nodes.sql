@@ -7,6 +7,9 @@ MODEL (
   description "Identifies onchain builder nodes for the S7 devtooling round",
   dialect trino,
   kind full,
+  tags (
+    'entity_category=project'
+  ),
   audits (
     has_at_least_n_rows(threshold := 0)
   ),

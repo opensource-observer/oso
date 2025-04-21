@@ -2,6 +2,9 @@ MODEL (
   name oso.int_projects_by_collection,
   description "Many to many relationship table for collections",
   kind full,
+  tags (
+    'entity_category=collection'
+  ),
   audits (
     has_at_least_n_rows(threshold := 0)
   )
