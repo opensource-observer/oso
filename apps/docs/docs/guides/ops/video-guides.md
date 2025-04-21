@@ -15,4 +15,4 @@ This is a set of video guides by our internal team.
 - [OSS Directory Refresh](https://www.loom.com/share/9342f91620e1416e83a9823a605d5bf4)
   - This video covers how to refresh the oss directory data
 - [Restating a SQLMesh model with Dagster](https://www.loom.com/share/fd7ba11a03f6431981e97e7159467dfe)
-  - This video covers the proper way to restate a sqlmesh 
+  - This video covers the proper way to restate a sqlmesh
