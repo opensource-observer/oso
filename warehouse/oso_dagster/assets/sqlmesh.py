@@ -96,6 +96,7 @@ def sqlmesh_factory(
                 start=config.start,
                 end=config.end,
                 restate_selected=config.restate_selected,
+                restate_models=config.restate_models,
             ):
                 yield result
 
