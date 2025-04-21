@@ -142,6 +142,12 @@ jobs:
         run: uv run pytest
         if: ${{ always() && matrix.component == 'python' }}
 
+      - name: Lint SQLMesh
+         working-directory: warehouse
+         run: | 
+           uv run oso local sqlmesh lint
+         if: ${{ always() && matrix.component == 'sqlmesh-docker' || matrix.component == 'sqlmesh' }}
+
       # ─────────────────────────────────────────────────────────────────────
       # SQLMesh steps
       - name: Test SQLMesh (DuckDB)
