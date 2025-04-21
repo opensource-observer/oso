@@ -32,10 +32,20 @@ WITH all_events AS (
     e.to_artifact_id,
     e.gas_fee,
     e.transaction_hash,
-    COALESCE(users.is_farcaster_user, false) AS is_farcaster_user
+    COALESCE(users.is_farcaster_user, false) AS is_farcaster_user,
+    COALESCE(
+      CASE
+        WHEN worldchain_users.verified_until > e.time
+        THEN true 
+        ELSE false
+      END,
+      false
+    ) AS is_worldchain_verified
   FROM oso.int_superchain_events_by_project AS e
   LEFT OUTER JOIN oso.int_superchain_onchain_user_labels AS users
-  ON e.from_artifact_id = users.artifact_id
+    ON e.from_artifact_id = users.artifact_id
+  LEFT OUTER JOIN oso.int_worldchain_verified_addresses AS worldchain_users
+    ON e.from_artifact_id = worldchain_users.user_id
   WHERE e.time BETWEEN @start_dt AND @end_dt
 ),
 
@@ -221,8 +231,21 @@ monthly_active_farcaster_users AS (
     bucket_month AS sample_date,
     'active_farcaster_users_monthly' AS metric_name,
     APPROX_DISTINCT(from_artifact_id) AS amount
-  FROM weighted_events
+  FROM all_events
   WHERE is_farcaster_user = true
+  GROUP BY 1, 2, 3
+),
+
+-- Active worldchain verified addresses
+monthly_active_worldchain_verified_addresses AS (
+  SELECT
+    project_id,
+    chain,
+    bucket_month AS sample_date,
+    'active_worldchain_verified_addresses_monthly' AS metric_name,
+    APPROX_DISTINCT(from_artifact_id) AS amount
+  FROM all_events
+  WHERE is_worldchain_verified = true
   GROUP BY 1, 2, 3
 ),
 
@@ -234,7 +257,7 @@ monthly_active_addresses AS (
     bucket_month AS sample_date,
     'active_addresses_monthly' AS metric_name,
     APPROX_DISTINCT(from_artifact_id) AS amount
-  FROM weighted_events
+  FROM all_events
   GROUP BY 1, 2, 3
 ),
 
@@ -262,6 +285,9 @@ union_all_metrics AS (
   UNION ALL
   SELECT *
   FROM monthly_active_farcaster_users
+  UNION ALL
+  SELECT *
+  FROM monthly_active_worldchain_verified_addresses
   UNION ALL
   SELECT *
   FROM monthly_active_addresses
