@@ -3,6 +3,9 @@ MODEL (
   description "S7 metrics by devtooling project (ready for JSON export)",
   dialect trino,
   kind full,
+  audits (
+    has_at_least_n_rows(threshold := 0)
+  ),
 );
 
 @DEF(min_package_connection_count, 3);
@@ -105,4 +108,4 @@ GROUP BY
   m.num_packages_in_deps_dev,
   m.package_connection_count,
   m.developer_connection_count,
-  m.developer_names;
+  m.developer_names

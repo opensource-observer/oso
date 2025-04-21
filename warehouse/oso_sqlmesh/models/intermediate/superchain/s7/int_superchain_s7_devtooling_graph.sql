@@ -4,6 +4,9 @@ MODEL (
   dialect trino,
   kind full,
   grain (onchain_builder_project_id, devtooling_project_id, relationship_type),
+  audits (
+    has_at_least_n_rows(threshold := 0)
+  ),
 );
 
 
@@ -57,4 +60,3 @@ LEFT JOIN oso.int_superchain_s7_devtooling_onchain_builder_nodes AS bp
   ON fg.onchain_builder_project_id = bp.project_id
 JOIN oso.projects_by_collection_v1 AS pbc
   ON fg.devtooling_project_id = pbc.project_id
-WHERE pbc.collection_name = '7-1'

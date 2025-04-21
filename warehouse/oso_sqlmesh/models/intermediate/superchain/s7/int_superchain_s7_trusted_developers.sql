@@ -3,6 +3,9 @@ MODEL (
   description 'Maps relationships between trusted developers and devtooling projects',
   dialect trino,
   kind full,
+  audits (
+    has_at_least_n_rows(threshold := 0)
+  ),
 );
 
 SELECT DISTINCT

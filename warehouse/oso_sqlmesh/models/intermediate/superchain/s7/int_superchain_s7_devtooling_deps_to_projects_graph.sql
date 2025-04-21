@@ -4,6 +4,9 @@ MODEL (
   dialect trino,
   kind full,
   grain (onchain_builder_project_id, devtooling_project_id, dependency_source),
+  audits (
+    has_at_least_n_rows(threshold := 0)
+  ),
 );
 
 @DEF(active_onchain_builder_date_threshold, DATE('2024-01-01'));
