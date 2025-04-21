@@ -28,6 +28,7 @@ config = Config(
             "incrementalmusthavetimepartition",
             "timepartitionsmustbebucketed",
             "nomissingaudits",
+            "entitycategorytagrequired",
         },
     ),
     default_test_connection=(
