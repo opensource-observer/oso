@@ -16,6 +16,7 @@ from ..factories import early_resources_asset_factory
 class SQLMeshRunConfig(dg.Config):
     # Set this to True to restate the selected models
     restate_selected: bool = False
+    restate_models: list[str] | None = None
 
     start: str | None = None
     end: str | None = None
@@ -58,7 +59,7 @@ def sqlmesh_factory(
         config=sqlmesh_config,
         environment=environment,
         dagster_sqlmesh_translator=sqlmesh_translator,
-        enabled_subsetting=True,
+        enabled_subsetting=False,
         op_tags=op_tags,
     )
     async def sqlmesh_project(
@@ -82,6 +83,7 @@ def sqlmesh_factory(
                         start=config.start,
                         end=config.end,
                         restate_selected=config.restate_selected,
+                        restate_models=config.restate_models,
                         skip_run=True,
                     )
                 )
