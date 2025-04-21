@@ -72,6 +72,28 @@ def sqlmesh_factory(
         async with multiple_async_contexts(
             trino=trino.ensure_available(log_override=context.log),
         ):
+            # If restate_selected is True but restate_models is None, dynamically identify models
+            if config.restate_selected and config.restate_models is None:
+                # Get the SQLMesh context
+                sqlmesh_context = sqlmesh.get_context()
+                
+                # Get all models
+                all_models = sqlmesh_context.get_models()
+                
+                # Filter models with project or collection tags
+                project_and_collection_models = []
+                
+                for model in all_models:
+                    model_tags = model.tags or []
+                    
+                    # Check if the model has project or collection tags
+                    if any(tag.startswith("entity_category=project") for tag in model_tags) or \
+                       any(tag.startswith("entity_category=collection") for tag in model_tags):                    
+                        project_and_collection_models.append(f"oso.{model.name}")
+                
+                context.log.info(f"Dynamically identified {len(project_and_collection_models)} models to restate")
+                config.restate_models = project_and_collection_models
+            
             # If we specify a dev_environment, we will first plan it for safety
             if dev_environment:
                 context.log.info("Planning dev environment")
@@ -104,7 +126,7 @@ def sqlmesh_factory(
     # metrics_assets_selection = all_assets_selection.tag(
     #     key="model_category", value="metrics"
     # )
-
+    
     return AssetFactoryResponse(
         assets=[sqlmesh_project],
         jobs=[
@@ -112,6 +134,21 @@ def sqlmesh_factory(
                 name="sqlmesh_all_assets",
                 selection=all_assets_selection,
                 description="All assets in the sqlmesh project",
+            ),
+            define_asset_job(
+                name="sqlmesh_restate_project_collection_assets",
+                selection=all_assets_selection,
+                description="Restate all project and collection related assets",
+                config={
+                    "ops": {
+                        "sqlmesh_project": {
+                            "config": {
+                                "restate_selected": True,
+                                "restate_models": None,  # Will be dynamically identified at runtime
+                            }
+                        }
+                    }
+                },
             ),
             # define_asset_job(
             #     name="sqlmesh_no_metrics_assets",
