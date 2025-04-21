@@ -16,6 +16,7 @@ from ..factories import early_resources_asset_factory
 class SQLMeshRunConfig(dg.Config):
     # Set this to True to restate the selected models
     restate_selected: bool = False
+    restate_models: list[str] | None = None
 
     start: str | None = None
     end: str | None = None
@@ -58,7 +59,7 @@ def sqlmesh_factory(
         config=sqlmesh_config,
         environment=environment,
         dagster_sqlmesh_translator=sqlmesh_translator,
-        enabled_subsetting=True,
+        enabled_subsetting=False,
         op_tags=op_tags,
     )
     async def sqlmesh_project(
@@ -82,6 +83,7 @@ def sqlmesh_factory(
                         start=config.start,
                         end=config.end,
                         restate_selected=config.restate_selected,
+                        restate_models=config.restate_models,
                         skip_run=True,
                     )
                 )
@@ -98,9 +100,9 @@ def sqlmesh_factory(
                 yield result
 
     all_assets_selection = AssetSelection.assets(sqlmesh_project)
-    metrics_assets_selection = all_assets_selection.tag(
-        key="model_category", value="metrics"
-    )
+    # metrics_assets_selection = all_assets_selection.tag(
+    #     key="model_category", value="metrics"
+    # )
 
     return AssetFactoryResponse(
         assets=[sqlmesh_project],
@@ -110,15 +112,15 @@ def sqlmesh_factory(
                 selection=all_assets_selection,
                 description="All assets in the sqlmesh project",
             ),
-            define_asset_job(
-                name="sqlmesh_no_metrics_assets",
-                selection=all_assets_selection - metrics_assets_selection,
-                description="All assets in the sqlmesh project except metrics",
-            ),
-            define_asset_job(
-                name="sqlmesh_metrics_assets",
-                selection=metrics_assets_selection,
-                description="Only metrics assets in the  sqlmesh project",
-            ),
+            # define_asset_job(
+            #     name="sqlmesh_no_metrics_assets",
+            #     selection=all_assets_selection - metrics_assets_selection,
+            #     description="All assets in the sqlmesh project except metrics",
+            # ),
+            # define_asset_job(
+            #     name="sqlmesh_metrics_assets",
+            #     selection=metrics_assets_selection,
+            #     description="Only metrics assets in the  sqlmesh project",
+            # ),
         ],
     )
