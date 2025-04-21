@@ -100,9 +100,9 @@ def sqlmesh_factory(
                 yield result
 
     all_assets_selection = AssetSelection.assets(sqlmesh_project)
-    metrics_assets_selection = all_assets_selection.tag(
-        key="model_category", value="metrics"
-    )
+    # metrics_assets_selection = all_assets_selection.tag(
+    #     key="model_category", value="metrics"
+    # )
 
     return AssetFactoryResponse(
         assets=[sqlmesh_project],
@@ -112,15 +112,15 @@ def sqlmesh_factory(
                 selection=all_assets_selection,
                 description="All assets in the sqlmesh project",
             ),
-            define_asset_job(
-                name="sqlmesh_no_metrics_assets",
-                selection=all_assets_selection - metrics_assets_selection,
-                description="All assets in the sqlmesh project except metrics",
-            ),
-            define_asset_job(
-                name="sqlmesh_metrics_assets",
-                selection=metrics_assets_selection,
-                description="Only metrics assets in the  sqlmesh project",
-            ),
+            # define_asset_job(
+            #     name="sqlmesh_no_metrics_assets",
+            #     selection=all_assets_selection - metrics_assets_selection,
+            #     description="All assets in the sqlmesh project except metrics",
+            # ),
+            # define_asset_job(
+            #     name="sqlmesh_metrics_assets",
+            #     selection=metrics_assets_selection,
+            #     description="Only metrics assets in the  sqlmesh project",
+            # ),
         ],
     )
