@@ -62,7 +62,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        component: ["node", "python", "dbt", "sqlmesh", "sqlmesh-docker"]
+        # PRIORITY ORDER: python → sqlmesh → sqlmesh-docker → node
+        component: ["python", "sqlmesh", "sqlmesh-docker", "node"] # "dbt"
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -73,7 +74,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           # Fetch all history so gitlint can check the relevant commits.
           fetch-depth: "0"
-
+          
       - name: Load public vars
         run: |
           bash .github/scripts/load-public-vars.sh $GITHUB_ENV \
@@ -111,90 +112,86 @@ jobs:
         uses: astral-sh/setup-uv@v5
         with:
           python-version: 3.12
-  
+
       - name: Install dependencies
         run: uv sync --all-packages --all-extras
-
-      - name: Authenticate to google with a test-dummy user
-        uses: "google-github-actions/auth@v2"
-        with:
-          credentials_json: "${{ env.GOOGLE_TEST_DUMMY_CREDENTIALS_JSON }}"
-          create_credentials_file: true
-
-      - name: Setup dbt profile
-        run: |
-          bash .github/scripts/create-dbt-profile.sh ${GOOGLE_APPLICATION_CREDENTIALS}
 
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
         with:
           version: nightly-87bc53fc6c874bd4c92d97ed180b949e3a36d78c
-        if: ${{ matrix.component == 'node' }}
+        if: ${{ matrix.component == 'node' }}        
 
+      - name: Authenticate to google (test dummy)
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: "${{ env.GOOGLE_TEST_DUMMY_CREDENTIALS_JSON }}"
+          create_credentials_file: true
+
+      # ─────────────────────────────────────────────────────────────────────
+      # Python steps
+      - name: Type Check (Python)
+        run: pnpm pyright
+        if: ${{ always() && matrix.component == 'python' }}
+
+      - name: Lint (Python)
+        run: uv run ruff check
+        if: ${{ always() && matrix.component == 'python' }}
+
+      - name: Test (Python)
+        run: uv run pytest
+        if: ${{ always() && matrix.component == 'python' }}
+
+      - name: Lint SQLMesh
+         working-directory: warehouse
+         run: | 
+           uv run oso local sqlmesh lint
+         if: ${{ always() && matrix.component == 'sqlmesh-docker' || matrix.component == 'sqlmesh' }}
+
+      # ─────────────────────────────────────────────────────────────────────
+      # SQLMesh steps
+      - name: Test SQLMesh (DuckDB)
+        working-directory: warehouse
+        run: |
+          uv run oso local sqlmesh-test --duckdb plan dev --start '1 week' --end now --auto-apply
+        if: ${{ always() && matrix.component == 'sqlmesh' }}
+
+      - name: Test SQLMesh (Docker)
+        working-directory: warehouse
+        run: |
+          uv run oso local sqlmesh-test plan dev --start '1 week' --end now --auto-apply
+        if: ${{ always() && matrix.component == 'sqlmesh-docker' }}
+
+      # ─────────────────────────────────────────────────────────────────────
+      # Node steps
       - name: Run supabase local
         id: supabase
         run: |
           bash .github/scripts/run-supabase-local.sh apps/frontend
         if: ${{ matrix.component == 'node' }}
 
-      # Automatically retry if the build fails
       - name: Build (Node)
         uses: nick-fields/retry@v3
         with:
           timeout_minutes: 5
           max_attempts: 3
-          command: |
-            pnpm build
-        # Always run this step so that all linting errors can be seen at once.
+          command: pnpm build
         if: ${{ matrix.component == 'node' }}
 
       - name: Lint (Node)
-        run: |
-          pnpm lint
-        # Always run this step so that all linting errors can be seen at once.
+        run: pnpm lint
         if: ${{ always() && steps.supabase.conclusion == 'success' && matrix.component == 'node' }}
 
       - name: Test (Node)
-        run: |
-          pnpm test
-        # Always run this step so that all linting errors can be seen at once.
+        run: pnpm test
         if: ${{ always() && steps.supabase.conclusion == 'success' &&  matrix.component == 'node' }}
 
-      # Temporarily include this separately. Eventually this should all be part of lint
-      - name: Lint SQL (dbt)
-        run: |
-          uv run sqlfluff lint --dialect bigquery ./warehouse/dbt/models
-        if: ${{ always() && matrix.component == 'dbt' }}
-
-      - name: Type Check (Python)
-        run: |
-          pnpm pyright
-        if: ${{ always() && matrix.component == 'python' }}
-
-      - name: Lint (Python)
-        run: |
-          uv run ruff check
-        if: ${{ always() && matrix.component == 'python' }}
-
-      - name: Test (Python)
-        run: |
-          uv run pytest
-        if: ${{ always() && matrix.component == 'python' }}
-
-      - name: Lint SQLMesh
-        working-directory: warehouse
-        run: | 
-          uv run oso local sqlmesh lint
-        if: ${{ always() && matrix.component == 'sqlmesh-docker' || matrix.component == 'sqlmesh' }}
-
-      - name: Test SQLMesh duckdb
-        working-directory: warehouse
-        run: | 
-          uv run oso local sqlmesh-test --duckdb plan dev --start '1 week' --end now --auto-apply
-        if: ${{ always() && matrix.component == 'sqlmesh' }}
-
-      - name: Test SQLMesh in Docker
-        working-directory: warehouse
-        run: | 
-          uv run oso local sqlmesh-test plan dev --start '1 week' --end now --auto-apply
-        if: ${{ always() && matrix.component == 'sqlmesh-docker' }}
+      # ─────────────────────────────────────────────────────────────────────
+      # dbt steps (deprecated)
+      # - name: Setup dbt profile
+      #   run: bash .github/scripts/create-dbt-profile.sh ${GOOGLE_APPLICATION_CREDENTIALS}
+        
+      # - name: Lint SQL (dbt)
+      #   run: |
+      #     uv run sqlfluff lint --dialect bigquery ./warehouse/dbt/models
+      #   if: ${{ always() && matrix.component == 'dbt' }}
