@@ -137,12 +137,10 @@ def sqlmesh_factory(
                 description="Restate all project and collection related assets",
                 config=RunConfig(
                     ops={
-                        "sqlmesh_project": {
-                            "config": SQLMeshRunConfig(
-                                restate_by_entity_category=True,
-                                restate_entity_categories=["project", "collection"],
-                            ),
-                        }
+                        "sqlmesh_project": SQLMeshRunConfig(
+                            restate_by_entity_category=True,
+                            restate_entity_categories=["project", "collection"],
+                        ),
                     }
                 ),
             ),
@@ -153,12 +151,10 @@ def sqlmesh_factory(
                 description="Restate only project related assets",
                 config=RunConfig(
                     ops={
-                        "sqlmesh_project": {
-                            "config": SQLMeshRunConfig(
-                                restate_by_entity_category=True,
-                                restate_entity_categories=["project"],
-                            ),
-                        }
+                        "sqlmesh_project": SQLMeshRunConfig(
+                            restate_by_entity_category=True,
+                            restate_entity_categories=["project"],
+                        ),
                     }
                 ),
             ),
@@ -169,12 +165,10 @@ def sqlmesh_factory(
                 description="Restate only collection related assets",
                 config=RunConfig(
                     ops={
-                        "sqlmesh_project": {
-                            "config": SQLMeshRunConfig(
+                        "sqlmesh_project": SQLMeshRunConfig(
                                 restate_by_entity_category=True,
                                 restate_entity_categories=["collection"],
                             )
-                        }
                     }
                 ),
             ),
