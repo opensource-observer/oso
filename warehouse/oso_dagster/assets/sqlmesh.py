@@ -1,5 +1,5 @@
 import dagster as dg
-from dagster import AssetExecutionContext, AssetSelection, define_asset_job
+from dagster import AssetExecutionContext, AssetSelection, RunConfig, define_asset_job
 from dagster_sqlmesh import (
     SQLMeshContextConfig,
     SQLMeshDagsterTranslator,
@@ -135,8 +135,8 @@ def sqlmesh_factory(
                 name="sqlmesh_restate_project_collection_assets",
                 selection=all_assets_selection,
                 description="Restate all project and collection related assets",
-                config={
-                    "ops": {
+                config=RunConfig(
+                    ops={
                         "sqlmesh_project": {
                             "config": SQLMeshRunConfig(
                                 restate_by_entity_category=True,
@@ -144,15 +144,15 @@ def sqlmesh_factory(
                             ),
                         }
                     }
-                },
+                ),
             ),
             # Job to restate only project related assets
             define_asset_job(
                 name="sqlmesh_restate_project_assets",
                 selection=all_assets_selection,
                 description="Restate only project related assets",
-                config={
-                    "ops": {
+                config=RunConfig(
+                    ops={
                         "sqlmesh_project": {
                             "config": SQLMeshRunConfig(
                                 restate_by_entity_category=True,
@@ -160,15 +160,15 @@ def sqlmesh_factory(
                             ),
                         }
                     }
-                },
+                ),
             ),
             # Job to restate only collection related assets
             define_asset_job(
                 name="sqlmesh_restate_collection_assets",
                 selection=all_assets_selection,
                 description="Restate only collection related assets",
-                config={
-                    "ops": {
+                config=RunConfig(
+                    ops={
                         "sqlmesh_project": {
                             "config": SQLMeshRunConfig(
                                 restate_by_entity_category=True,
@@ -176,7 +176,7 @@ def sqlmesh_factory(
                             )
                         }
                     }
-                },
+                ),
             ),
             # define_asset_job(
             #     name="sqlmesh_no_metrics_assets",
