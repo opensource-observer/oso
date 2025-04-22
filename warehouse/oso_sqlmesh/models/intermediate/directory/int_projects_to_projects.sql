@@ -34,6 +34,13 @@ WITH artifacts_by_project_source AS (
     ON directory.project_id = ossd_projects.project_id
   JOIN oso.int_projects AS external_projects
     ON external.project_id = external_projects.project_id
+  JOIN oso.int_all_artifacts AS all_artifacts
+    ON directory.artifact_id = all_artifacts.artifact_id
+  WHERE all_artifacts.artifact_type IN (
+    'DEPLOYER',
+    'REPOSITORY',
+    'DEFILLAMA_PROTOCOL'
+  )
 )
 
 SELECT DISTINCT
