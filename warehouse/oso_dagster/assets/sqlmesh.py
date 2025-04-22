@@ -73,7 +73,8 @@ def sqlmesh_factory(
         config: SQLMeshRunConfig,
     ):
 
-        restate_models = config.restate_models or []
+        restate_models = config.restate_models[:] if config.restate_models else []
+        
         # Ensure that both trino and the mcs are available
         async with multiple_async_contexts(
             trino=trino.ensure_available(log_override=context.log),
@@ -101,7 +102,7 @@ def sqlmesh_factory(
                         plan_options={"skip_tests": True},
                         start=config.start,
                         end=config.end,
-                        restate_models=config.restate_models,
+                        restate_models=restate_models,
                         skip_run=True,
                     )
                 )
@@ -113,7 +114,7 @@ def sqlmesh_factory(
                 plan_options={"skip_tests": True},
                 start=config.start,
                 end=config.end,
-                restate_models=config.restate_models,
+                restate_models=restate_models,
             ):
                 yield result
 
