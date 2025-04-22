@@ -166,9 +166,9 @@ def sqlmesh_factory(
                 config=RunConfig(
                     ops={
                         "sqlmesh_project": SQLMeshRunConfig(
-                                restate_by_entity_category=True,
-                                restate_entity_categories=["collection"],
-                            )
+                            restate_by_entity_category=True,
+                            restate_entity_categories=["collection"],
+                        )
                     }
                 ),
             ),
