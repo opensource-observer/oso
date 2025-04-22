@@ -141,11 +141,10 @@ def sqlmesh_factory(
                 config={
                     "ops": {
                         "sqlmesh_project": {
-                            "config": {
-                                "restate_selected": True,
-                                "restate_by_entity_category": True,
-                                "restate_entity_categories": ["project", "collection"],
-                            }
+                            "config": SQLMeshRunConfig(
+                                restate_by_entity_category=True,
+                                restate_entity_categories=["project", "collection"],
+                            ),
                         }
                     }
                 },
@@ -158,11 +157,10 @@ def sqlmesh_factory(
                 config={
                     "ops": {
                         "sqlmesh_project": {
-                            "config": {
-                                "restate_selected": True,
-                                "restate_by_entity_category": True,
-                                "restate_entity_categories": ["project"],
-                            }
+                            "config": SQLMeshRunConfig(
+                                restate_by_entity_category=True,
+                                restate_entity_categories=["project"],
+                            ),
                         }
                     }
                 },
@@ -175,11 +173,10 @@ def sqlmesh_factory(
                 config={
                     "ops": {
                         "sqlmesh_project": {
-                            "config": {
-                                "restate_selected": True,
-                                "restate_by_entity_category": True,
-                                "restate_entity_categories": ["collection"],
-                            }
+                            "config": SQLMeshRunConfig(
+                                restate_by_entity_category=True,
+                                restate_entity_categories=["collection"],
+                            )
                         }
                     }
                 },
