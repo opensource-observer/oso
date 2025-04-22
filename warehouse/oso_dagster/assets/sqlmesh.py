@@ -15,7 +15,6 @@ from ..factories import early_resources_asset_factory
 
 class SQLMeshRunConfig(dg.Config):
     # Set this to True to restate the selected models
-    restate_selected: bool = False
     restate_models: list[str] | None = None
     
     # Set this to True to dynamically identify models to restate based on entity_category tags
@@ -102,7 +101,6 @@ def sqlmesh_factory(
                         plan_options={"skip_tests": True},
                         start=config.start,
                         end=config.end,
-                        restate_selected=config.restate_selected,
                         restate_models=config.restate_models,
                         skip_run=True,
                     )
@@ -115,7 +113,6 @@ def sqlmesh_factory(
                 plan_options={"skip_tests": True},
                 start=config.start,
                 end=config.end,
-                restate_selected=config.restate_selected,
                 restate_models=config.restate_models,
             ):
                 yield result
@@ -141,11 +138,10 @@ def sqlmesh_factory(
                 config={
                     "ops": {
                         "sqlmesh_project": {
-                            "config": {
-                                "restate_selected": True,
-                                "restate_by_entity_category": True,
-                                "restate_entity_categories": ["project", "collection"],
-                            }
+                            "config": SQLMeshRunConfig(
+                                restate_by_entity_category=True,
+                                restate_entity_categories=["project", "collection"],
+                            ),
                         }
                     }
                 },
@@ -158,11 +154,10 @@ def sqlmesh_factory(
                 config={
                     "ops": {
                         "sqlmesh_project": {
-                            "config": {
-                                "restate_selected": True,
-                                "restate_by_entity_category": True,
-                                "restate_entity_categories": ["project"],
-                            }
+                            "config": SQLMeshRunConfig(
+                                restate_by_entity_category=True,
+                                restate_entity_categories=["project"],
+                            ),
                         }
                     }
                 },
@@ -175,11 +170,10 @@ def sqlmesh_factory(
                 config={
                     "ops": {
                         "sqlmesh_project": {
-                            "config": {
-                                "restate_selected": True,
-                                "restate_by_entity_category": True,
-                                "restate_entity_categories": ["collection"],
-                            }
+                            "config": SQLMeshRunConfig(
+                                restate_by_entity_category=True,
+                                restate_entity_categories=["collection"],
+                            )
                         }
                     }
                 },
