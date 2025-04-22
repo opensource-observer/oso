@@ -81,7 +81,7 @@ def sqlmesh_factory(
             if config.restate_by_entity_category:
                 # Ensure we have entity categories to filter by
                 if not config.restate_entity_categories:
-                    context.log.warning("restate_by_entity_category is True but no entity categories specified. Using both 'project' and 'collection'.")
+                    context.log.info("restate_by_entity_category is True but no entity categories specified. Using both 'project' and 'collection'.")
                     entity_categories = ["project", "collection"]
                 else:
                     entity_categories = config.restate_entity_categories
