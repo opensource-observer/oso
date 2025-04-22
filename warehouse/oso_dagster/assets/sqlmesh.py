@@ -86,29 +86,11 @@ def sqlmesh_factory(
                 else:
                     entity_categories = config.restate_entity_categories
                     context.log.info(f"Filtering models by entity categories: {entity_categories}")
-                
-                # Get the SQLMesh context
-                sqlmesh_context = sqlmesh.get_context()
-                
-                # Get all models
-                all_models = sqlmesh_context.get_models()
-                
-                # Filter models with the specified entity categories
-                models_to_restate = []
-                
-                for model in all_models:
-                    model_tags = model.tags or []
-                    
-                    # Check if the model has any of the specified entity categories
-                    if any(
-                        tag.startswith(f"entity_category={category}") 
-                        for tag in model_tags 
-                        for category in entity_categories
-                    ):
-                        models_to_restate.append(f"oso.{model.name}")
-                
-                context.log.info(f"Dynamically identified {len(models_to_restate)} models to restate for entity categories: {entity_categories}")
-                config.restate_models = models_to_restate
+
+                restate_models = config.restate_models or []
+                for category in entity_categories:
+                    restate_models.append(f"tag:entity_category={category}")
+                config.restate_models = restate_models
             
             # If we specify a dev_environment, we will first plan it for safety
             if dev_environment:
