@@ -897,6 +897,125 @@ We have created some temporary Metric IDs to store project rewards for S7.
 
 These are available ONLY in the `metrics_v0` and `timeseries_metrics_by_project_v0` tables.
 
+
+### Eligibility Criteria
+
+Current eligibility criteria include:
+
+- 1000 transactions (contract invocations) in the 180-day period
+- 10 days with onchain activity in the 180-day period
+
+The example query grabs the data necessary to check if a project meets these criteria for the period ending 2025-02-28.
+
+<Tabs>
+<TabItem value="graphql" label="GraphQL">
+
+```graphql
+query CheckProjectEligibility(
+  $projectId: String!,
+  $startDate: Oso_Date!,
+  $endDate: Oso_Date!
+) {
+  # Get contract invocation metrics for the 180-day period
+  contractInvocations: oso_timeseriesMetricsByProjectV0(
+    where: {
+      projectId: { _eq: $projectId },
+      sampleDate: { _gte: $startDate, _lte: $endDate },
+      metricId: { _in: [
+        "OVljq6aZt9O5d5Bk0RpoAEXJ+nJr80fkry5+f7RUuRk=",  # OPTIMISM
+        "8vTagJLAu5fbgEOQ6nqnLsRqbQ7dDOQANWfiaPKDVPc=",  # BASE
+        "WOxUb39soikSlTz0N9gJZh9UkU5v8+TLRAFanTBWHhE="   # INK
+        # This should be extended to include all chains
+      ] }
+    }
+    order_by: [ {
+       sampleDate: Desc
+    }]
+  ) {
+    metricId
+    sampleDate
+    amount
+  }
+}
+```
+
+Variables:
+```json
+{
+  "projectId": "5/9fRbVoDF7pHwBdiMbNUbKhidEt/12Ojt9f8cWoZnQ=",
+  "startDate": "2024-09-02",
+  "endDate": "2025-02-28"
+}
+```
+
+The response will include the contract invocation metrics for the project over the specified period. In order to check if the project meets the eligibility criteria, you need to:
+
+1. Sum the `amount` field to get the total number of transactions across all chains.
+2. Count the number of distinct `sampleDate` values to get the number of days with onchain activity.
+
+You can then compare these values to the eligibility criteria to determine if the project is eligible.
+</TabItem>
+
+<TabItem value="curl" label="cURL">
+
+```bash
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "query CheckProjectEligibility($projectId: String!, $startDate: Oso_Date!, $endDate: Oso_Date!) { contractInvocations: oso_timeseriesMetricsByProjectV0(where: { projectId: { _eq: $projectId }, sampleDate: { _gte: $startDate, _lte: $endDate }, metricId: { _in: [\"OVljq6aZt9O5d5Bk0RpoAEXJ+nJr80fkry5+f7RUuRk=\", \"8vTagJLAu5fbgEOQ6nqnLsRqbQ7dDOQANWfiaPKDVPc=\", \"WOxUb39soikSlTz0N9gJZh9UkU5v8+TLRAFanTBWHhE=\"] } }) { metricId sampleDate amount } }",
+    "variables": {
+      "projectId": "5/9fRbVoDF7pHwBdiMbNUbKhidEt/12Ojt9f8cWoZnQ=",
+      "startDate": "2024-09-02",
+      "endDate": "2025-02-28"
+    }
+  }' \
+  https://www.opensource.observer/api/v1/graphql
+```
+
+</TabItem>
+
+<TabItem value="py-oso" label="Python">
+
+```python
+# Define parameters
+project_id = '5/9fRbVoDF7pHwBdiMbNUbKhidEt/12Ojt9f8cWoZnQ='
+measurement_date = '2025-02-28'
+lookback_days = 179
+
+# Calculate the start date (180 days before measurement date)
+start_date = (datetime.strptime(measurement_date, '%Y-%m-%d') - timedelta(days=lookback_days)).strftime('%Y-%m-%d')
+
+# Get contract invocation metrics for the 180-day period
+query = f"""
+WITH daily_metrics AS (
+  SELECT
+    tm.project_id,
+    tm.sample_date,
+    tm.amount
+  FROM timeseries_metrics_by_project_v0 AS tm
+  WHERE tm.project_id = '{project_id}'
+    AND tm.sample_date BETWEEN '{start_date}' AND '{measurement_date}'
+    AND tm.metric_id IN (
+      'OVljq6aZt9O5d5Bk0RpoAEXJ+nJr80fkry5+f7RUuRk=',  # OPTIMISM contract invocations
+      '8vTagJLAu5fbgEOQ6nqnLsRqbQ7dDOQANWfiaPKDVPc=',  # BASE contract invocations
+      'WOxUb39soikSlTz0N9gJZh9UkU5v8+TLRAFanTBWHhE='   # INK contract invocations
+    )
+)
+SELECT
+  project_id,
+  SUM(amount) AS transaction_count,
+  COUNT(DISTINCT CASE WHEN amount > 0 THEN sample_date END) AS active_days
+FROM daily_metrics
+GROUP BY project_id
+"""
+
+df = client.to_pandas(query)
+print(df)
+```
+
+</TabItem>
+</Tabs>
+
 ### Coverage testing
 
 Here is a query you can run in py-oso to test the coverage of the metrics:
