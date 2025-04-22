@@ -11,6 +11,9 @@ MODEL (
   dialect trino,
   partitioned_by (DAY("time"), "event_type", "event_source"),
   grain (time, event_type, event_source, event_type, from_artifact_id, to_artifact_id, transaction_hash),
+  tags (
+    'entity_category=project'
+  ),
   audits (
     has_at_least_n_rows(threshold := 0)
   )

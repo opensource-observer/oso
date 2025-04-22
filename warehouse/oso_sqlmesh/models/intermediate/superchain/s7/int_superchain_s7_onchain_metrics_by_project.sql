@@ -12,6 +12,9 @@ MODEL(
   dialect trino,
   partitioned_by DAY("sample_date"),
   grain(sample_date, chain, project_id, metric_name),
+  tags (
+    'entity_category=project'
+  ),
   audits (
     has_at_least_n_rows(threshold := 0)
   )

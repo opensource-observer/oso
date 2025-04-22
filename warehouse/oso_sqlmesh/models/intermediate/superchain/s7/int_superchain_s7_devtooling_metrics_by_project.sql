@@ -3,6 +3,9 @@ MODEL (
   description "S7 metrics by devtooling project (ready for JSON export)",
   dialect trino,
   kind full,
+  tags (
+    'entity_category=project'
+  ),
   audits (
     has_at_least_n_rows(threshold := 0)
   ),

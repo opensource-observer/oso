@@ -3,6 +3,9 @@ MODEL (
   description 'Many to many mapping of OSSD defined projects to externally defined projects',
   dialect trino,
   kind FULL,
+  tags (
+    'entity_category=project'
+  ),
   audits (
     has_at_least_n_rows(threshold := 0)
   )

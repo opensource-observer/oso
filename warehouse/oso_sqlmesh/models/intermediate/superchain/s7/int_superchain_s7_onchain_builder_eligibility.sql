@@ -4,6 +4,9 @@ MODEL (
   dialect trino,
   kind full,
   grain (sample_date, project_id),
+  tags (
+    'entity_category=project'
+  ),
   audits (
     has_at_least_n_rows(threshold := 0)
   )

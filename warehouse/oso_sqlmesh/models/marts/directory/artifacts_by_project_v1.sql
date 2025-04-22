@@ -2,7 +2,8 @@ MODEL (
   name oso.artifacts_by_project_v1,
   kind FULL,
   tags (
-    'export'
+    'export',
+    'entity_category=project'
   ),
   audits (
     has_at_least_n_rows(threshold := 0)

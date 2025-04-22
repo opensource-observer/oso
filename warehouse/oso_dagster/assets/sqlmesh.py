@@ -17,6 +17,11 @@ class SQLMeshRunConfig(dg.Config):
     # Set this to True to restate the selected models
     restate_selected: bool = False
     restate_models: list[str] | None = None
+    
+    # Set this to True to dynamically identify models to restate based on entity_category tags
+    restate_by_entity_category: bool = False
+    # List of entity categories to restate (e.g., ["project", "collection"])
+    restate_entity_categories: list[str] | None = None
 
     start: str | None = None
     end: str | None = None
@@ -72,6 +77,21 @@ def sqlmesh_factory(
         async with multiple_async_contexts(
             trino=trino.ensure_available(log_override=context.log),
         ):
+            # If restate_by_entity_category is True, dynamically identify models based on entity categories
+            if config.restate_by_entity_category:
+                # Ensure we have entity categories to filter by
+                if not config.restate_entity_categories:
+                    context.log.info("restate_by_entity_category is True but no entity categories specified. Using both 'project' and 'collection'.")
+                    entity_categories = ["project", "collection"]
+                else:
+                    entity_categories = config.restate_entity_categories
+                    context.log.info(f"Filtering models by entity categories: {entity_categories}")
+
+                restate_models = config.restate_models or []
+                for category in entity_categories:
+                    restate_models.append(f"tag:entity_category={category}")
+                config.restate_models = restate_models
+            
             # If we specify a dev_environment, we will first plan it for safety
             if dev_environment:
                 context.log.info("Planning dev environment")
@@ -104,7 +124,7 @@ def sqlmesh_factory(
     # metrics_assets_selection = all_assets_selection.tag(
     #     key="model_category", value="metrics"
     # )
-
+    
     return AssetFactoryResponse(
         assets=[sqlmesh_project],
         jobs=[
@@ -112,6 +132,57 @@ def sqlmesh_factory(
                 name="sqlmesh_all_assets",
                 selection=all_assets_selection,
                 description="All assets in the sqlmesh project",
+            ),
+            # Job to restate all project and collection related assets
+            define_asset_job(
+                name="sqlmesh_restate_project_collection_assets",
+                selection=all_assets_selection,
+                description="Restate all project and collection related assets",
+                config={
+                    "ops": {
+                        "sqlmesh_project": {
+                            "config": {
+                                "restate_selected": True,
+                                "restate_by_entity_category": True,
+                                "restate_entity_categories": ["project", "collection"],
+                            }
+                        }
+                    }
+                },
+            ),
+            # Job to restate only project related assets
+            define_asset_job(
+                name="sqlmesh_restate_project_assets",
+                selection=all_assets_selection,
+                description="Restate only project related assets",
+                config={
+                    "ops": {
+                        "sqlmesh_project": {
+                            "config": {
+                                "restate_selected": True,
+                                "restate_by_entity_category": True,
+                                "restate_entity_categories": ["project"],
+                            }
+                        }
+                    }
+                },
+            ),
+            # Job to restate only collection related assets
+            define_asset_job(
+                name="sqlmesh_restate_collection_assets",
+                selection=all_assets_selection,
+                description="Restate only collection related assets",
+                config={
+                    "ops": {
+                        "sqlmesh_project": {
+                            "config": {
+                                "restate_selected": True,
+                                "restate_by_entity_category": True,
+                                "restate_entity_categories": ["collection"],
+                            }
+                        }
+                    }
+                },
             ),
             # define_asset_job(
             #     name="sqlmesh_no_metrics_assets",

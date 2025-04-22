@@ -6,7 +6,8 @@ MODEL (
     'export',
     'model_type=full',
     'model_category=metrics',
-    'model_stage=mart'
+    'model_stage=mart',
+    'entity_category=collection'
   ),
   audits (
     has_at_least_n_rows(threshold := 0)
