@@ -72,6 +72,8 @@ def sqlmesh_factory(
         trino: TrinoResource,
         config: SQLMeshRunConfig,
     ):
+
+        restate_models = config.restate_models or []
         # Ensure that both trino and the mcs are available
         async with multiple_async_contexts(
             trino=trino.ensure_available(log_override=context.log),
@@ -86,10 +88,8 @@ def sqlmesh_factory(
                     entity_categories = config.restate_entity_categories
                     context.log.info(f"Filtering models by entity categories: {entity_categories}")
 
-                restate_models = config.restate_models or []
                 for category in entity_categories:
                     restate_models.append(f"tag:entity_category={category}")
-                config.restate_models = restate_models
             
             # If we specify a dev_environment, we will first plan it for safety
             if dev_environment:
