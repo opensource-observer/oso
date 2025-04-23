@@ -41,7 +41,7 @@ SELECT DISTINCT
     )
   ) AS verified_address,
   @from_unix_timestamp(
-    @hex_to_int(SUBSTRING(raw.data, -8))
+    @safe_hex_to_int(SUBSTRING(raw.data, -8))
   ) AS address_verified_until
 FROM raw
 CROSS JOIN UNNEST(raw.args_list) AS @unnested_struct_ref(unnested_element)
