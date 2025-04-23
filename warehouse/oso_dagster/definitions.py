@@ -111,14 +111,14 @@ def load_definitions():
 
     sqlmesh_exporter = [
         Trino2ClickhouseSQLMeshExporter(
-            ["clickhouse_metrics"],
+            ["clickhouse_export"],
             destination_catalog="clickhouse",
             destination_schema="default",
             source_catalog=sqlmesh_catalog,
             source_schema=sqlmesh_schema,
         ),
         Trino2BigQuerySQLMeshExporter(
-            ["bigquery_metrics"],
+            ["bigquery_export"],
             project_id=project_id,
             dataset_id=sqlmesh_bq_export_dataset_id,
             source_catalog=sqlmesh_catalog,
