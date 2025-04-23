@@ -62,7 +62,8 @@ def create_table(
             if index
             else ""
         ),
-        "order_by": ", ".join(order_by) if order_by else "",
+        # Use the first column as default ORDER BY if none provided
+        "order_by": ", ".join(order_by) if order_by else columns[0][0] if columns else "tuple()",
     }
 
     # return command % params
