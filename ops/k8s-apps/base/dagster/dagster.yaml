@@ -35,7 +35,7 @@ spec:
       # configure stdout logging and have the dagster logging handler ignore debug
       # log
       pythonLogs:
-        pythonLogLevel: "DEBUG"
+        pythonLogLevel: "INFO"
         # Include internal python libraries in the dagster logs.
         managedPythonLoggers:
           - metrics_tools
