@@ -69,7 +69,7 @@ class DagsterConfig(BaseSettings):
     sqlmesh_gateway: str = "local"
     sqlmesh_catalog: str = "iceberg"
     sqlmesh_schema: str = "oso"
-    sqlmesh_bq_export_dataset_id: str = "metrics"
+    sqlmesh_bq_export_dataset_id: str = "oso"
 
     enable_k8s_executor: bool = False
 
