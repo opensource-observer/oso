@@ -25,6 +25,7 @@ from oso_dagster.dlt_sources.github_repos import (
     GithubClientConfig,
     GithubRepositoryResolver,
     GithubURLType,
+    oss_directory_github_funding_resource,
     oss_directory_github_repositories_resource,
     oss_directory_github_sbom_resource,
 )
@@ -320,6 +321,23 @@ def sbom(
             context=context,
         ),
         gh_token,
+    )
+
+
+@dlt_factory(
+    key_prefix="ossd",
+    tags=dict(add_tags(common_tags, {"opensource.observer/source": "sbom"}).items()),
+    op_tags={"dagster-k8s/config": K8S_CONFIG},
+    retry_policy=RetryPolicy(max_retries=MAX_RETRY_COUNT),
+)
+def funding(
+    gh_token: str = secret_ref_arg(group_name="ossd", key="github_token"),
+):
+    yield oss_directory_github_funding_resource(
+        "opensource-observer",
+        "oss-funding",
+        "data/funding_data.csv",
+        gh_token=gh_token,
     )
 
 

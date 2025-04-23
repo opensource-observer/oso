@@ -34,6 +34,7 @@ TABLE_MAPPING: TableMappingConfig = {
     "opensource-observer.ossd.projects": "bigquery.ossd.projects",
     "opensource-observer.ossd.repositories": "bigquery.ossd.repositories",
     "opensource-observer.ossd.sbom": "bigquery.ossd.sbom",
+    "opensource-observer.ossd.funding": "bigquery.ossd.funding",
     # Only grab some data from frax for local testing
     "opensource-observer.optimism_superchain_raw_onchain_data.blocks": TableMappingDestination(
         # row_restriction=f"dt >= '{start_date.strftime("%Y-%m-%d")}' AND dt < '{end_date.strftime("%Y-%m-%d")}' AND chain_id = 252",
