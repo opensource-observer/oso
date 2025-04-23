@@ -6,7 +6,7 @@ import {
   ALGOLIA_API_KEY,
   ALGOLIA_APP_ID,
   ALGOLIA_INDEX,
-  SEGMENT_WRITE_KEY,
+  GOOGLE_ANALYTICS_KEY,
 } from "./src/config";
 
 const config: Config = {
@@ -55,6 +55,9 @@ const config: Config = {
         },
         theme: {
           customCss: "./src/css/custom.css",
+        },
+        gtag: {
+          trackingID: GOOGLE_ANALYTICS_KEY,
         },
       } satisfies Preset.Options,
     ],
@@ -211,9 +214,7 @@ const config: Config = {
       darkTheme: prismThemes.dracula,
     },
   } satisfies Preset.ThemeConfig,
-  plugins: [
-    ["@laxels/docusaurus-plugin-segment", { apiKey: SEGMENT_WRITE_KEY }],
-  ],
+  plugins: [],
 };
 
 export default config;
