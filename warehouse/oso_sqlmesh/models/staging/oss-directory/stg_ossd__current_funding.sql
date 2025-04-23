@@ -13,18 +13,18 @@ SELECT
     'OSS_FUNDING',
     'oso',
     CONCAT(
-      COALESCE(to_project_name, ''),
-      COALESCE(from_funder_name, ''),
-      COALESCE(funding_date, '')
+      COALESCE(funding.to_project_name, ''),
+      COALESCE(funding.from_funder_name, ''),
+      COALESCE(funding.funding_date, '')
     )
   ) AS funding_id,
   'OSS_FUNDING' AS funding_source,
   'oso' AS funding_namespace,
-  to_project_name,
-  amount,
-  funding_date,
-  from_funder_name,
-  grant_pool_name,
-  metadata,
-  file_path
+  funding.to_project_name,
+  funding.amount,
+  funding.funding_date,
+  funding.from_funder_name,
+  funding.grant_pool_name,
+  funding.metadata,
+  funding.file_path
 FROM @oso_source('bigquery.ossd.funding') AS funding
