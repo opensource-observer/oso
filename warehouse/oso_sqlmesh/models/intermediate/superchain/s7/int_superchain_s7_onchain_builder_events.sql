@@ -1,6 +1,6 @@
 MODEL(
   name oso.int_superchain_s7_onchain_builder_events,
-  description 'Unified model of all Superchain-related events with priority ordering for non-Worldchain projects',
+  description 'Unified model of all Superchain-related events with S7-specific event weights',
   kind incremental_by_time_range(
    time_column time,
    batch_size 60,
@@ -58,7 +58,6 @@ all_events AS (
       gas_fee
     FROM oso.int_superchain_events_by_project
     WHERE time BETWEEN @start_dt AND @end_dt
-      AND event_source != 'WORLDCHAIN'
     UNION ALL
     SELECT
       project_id,
@@ -70,7 +69,6 @@ all_events AS (
       gas_fee
     FROM oso.int_worldchain_events_by_project
     WHERE time BETWEEN @start_dt AND @end_dt
-      AND event_source = 'WORLDCHAIN'
   ) AS e
   JOIN projects AS p ON e.project_id = p.project_id
   GROUP BY
