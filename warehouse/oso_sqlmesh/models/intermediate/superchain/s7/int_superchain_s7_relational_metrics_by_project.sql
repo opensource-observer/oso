@@ -13,12 +13,10 @@ MODEL (
 );
 
 
-@DEF(default_sample_date, DATE '2025-03-01');
-
 WITH relational_metrics AS (
   SELECT
     project_id,
-    @default_sample_date AS sample_date,
+    current_date() AS sample_date,
     'S7_DEVTOOLING_onchain_builder_oso_project_ids' AS metric_name,
     onchain_builder_oso_project_ids AS related_entities,
     'list of OSO project ids' AS unit
@@ -26,7 +24,7 @@ WITH relational_metrics AS (
   UNION ALL
   SELECT
     project_id,
-    @default_sample_date AS sample_date,
+    current_date() AS sample_date,
     'S7_DEVTOOLING_onchain_builder_op_atlas_ids' AS metric_name,
     onchain_builder_op_atlas_ids AS related_entities,
     'list of OP Atlas project ids' AS unit
@@ -34,7 +32,7 @@ WITH relational_metrics AS (
   UNION ALL
   SELECT
     project_id,
-    @default_sample_date AS sample_date,
+    current_date() AS sample_date,
     'S7_DEVTOOLING_trusted_developer_usernames' AS metric_name,
     trusted_developer_usernames AS related_entities,
     'list of GitHub usernames' AS unit

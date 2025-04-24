@@ -1,6 +1,6 @@
 MODEL (
-  name oso.int_superchain_s7_timeseries_metrics_by_project,
-  description "S7 Retro Funding timeseries metrics by project (for API)",
+  name oso.int_superchain_s7_summary_metrics_by_project,
+  description "S7 Retro Funding summary metrics by project",
   dialect trino,
   kind full,
   grain (project_id, sample_date),
