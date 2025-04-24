@@ -7,9 +7,7 @@ import {
 } from "./provider-view";
 import { RegistrationProps } from "../../lib/types/plasmic";
 import { logger } from "../../lib/logger";
-import { clientAnalytics } from "../../lib/clients/segment";
 import { supabaseClient } from "../../lib/clients/supabase";
-import { spawn } from "@opensource-observer/utils";
 
 const DEFAULT_PLASMIC_VARIABLE = "auth";
 
@@ -68,6 +66,7 @@ function AuthRouter(props: AuthRouterProps) {
       data: { session },
     } = await supabaseClient.auth.getSession();
     // Identify the user via Segment
+    /**
     if (user) {
       spawn(
         clientAnalytics!.identify({
@@ -79,6 +78,7 @@ function AuthRouter(props: AuthRouterProps) {
         }),
       );
     }
+    */
 
     console.log("User: ", user);
     console.log("Session: ", session);

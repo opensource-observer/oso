@@ -3,7 +3,6 @@ import "server-only";
 import { type NextRequest } from "next/server";
 import { supabasePrivileged } from "../clients/supabase";
 import { User as SupabaseUser } from "@supabase/supabase-js";
-import { serverAnalytics } from "../clients/segment";
 
 type AnonUser = {
   role: "anonymous";
@@ -87,13 +86,14 @@ async function getSession(request: NextRequest): Promise<Session> {
 export async function verifySession(request: NextRequest) {
   const session = await getSession(request);
 
+  /**
   const trackParams = {
     event: "api_call",
     properties: {
       path: request.nextUrl.pathname,
     },
   };
-
+  
   if (session.role === "user") {
     serverAnalytics!.track({
       userId: session.userId,
@@ -105,6 +105,7 @@ export async function verifySession(request: NextRequest) {
       ...trackParams,
     });
   }
+  */
 
   return session;
 }
