@@ -50,6 +50,7 @@ DUCKDB_TO_PANDAS_TYPE_MAP = {
     "BLOB": "bytes",
     "BYTEA": "bytes",
     "NUMERIC": "float64",
+    "DECIMAL(18, 3)": "float64",
 }
 
 
