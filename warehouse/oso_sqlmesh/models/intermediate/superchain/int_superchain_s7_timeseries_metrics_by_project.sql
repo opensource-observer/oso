@@ -15,7 +15,41 @@ MODEL (
 
 @DEF(default_sample_date, DATE '2025-03-01');
 
-WITH onchain_builder_metrics AS (
+WITH onchain_builder_eligibility AS (
+  SELECT DISTINCT
+    project_id,
+    sample_date,
+    'S7_ONCHAIN_BUILDERS_gas_fees_over_180_days' AS metric,
+    gas_fees::DOUBLE AS amount,
+    'ETH' AS unit
+  FROM oso.int_superchain_s7_onchain_builder_eligibility
+  UNION ALL
+  SELECT DISTINCT
+    project_id,
+    sample_date,
+    'S7_ONCHAIN_BUILDERS_transactions_over_180_days' AS metric,
+    transaction_count::DOUBLE AS amount,
+    'unique transaction hashes' AS unit
+  FROM oso.int_superchain_s7_onchain_builder_eligibility
+  UNION ALL
+  SELECT DISTINCT
+    project_id,
+    sample_date,
+    'S7_ONCHAIN_BUILDERS_active_days_over_180_days' AS metric,
+    active_days::DOUBLE AS amount,
+    'days' AS unit
+  FROM oso.int_superchain_s7_onchain_builder_eligibility
+  UNION ALL
+  SELECT DISTINCT
+    project_id,
+    sample_date,
+    'S7_ONCHAIN_BUILDERS_is_eligible' AS metric,
+    meets_all_criteria::DOUBLE AS amount,
+    'boolean' AS unit
+  FROM oso.int_superchain_s7_onchain_builder_eligibility
+),
+
+onchain_builder_metrics AS (
   SELECT
     project_id,
     sample_date,
@@ -104,6 +138,8 @@ rewards AS (
 
 
 all_metrics AS (
+  SELECT * FROM onchain_builder_eligibility
+  UNION ALL
   SELECT * FROM onchain_builder_metrics
   UNION ALL
   SELECT * FROM rewards
