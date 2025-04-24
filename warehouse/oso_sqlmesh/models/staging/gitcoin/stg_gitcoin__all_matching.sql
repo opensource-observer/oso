@@ -4,12 +4,12 @@ MODEL (
   kind full,
   cron '@daily',
   dialect trino,
-  grain (sample_date, project_recipient_address, gitcoin_project_id, gitcoin_round_id, chain_id)
+  grain (time, project_recipient_address, gitcoin_project_id, gitcoin_round_id, chain_id)
 );
 
 SELECT distinct
   'MatchFunding' as gitcoin_data_source,
-  timestamp::DATE AS sample_date,
+  timestamp::DATE AS time,
   round_id::VARCHAR AS gitcoin_round_id,
   round_num::INTEGER AS round_number,
   round_name::VARCHAR as round_name,
