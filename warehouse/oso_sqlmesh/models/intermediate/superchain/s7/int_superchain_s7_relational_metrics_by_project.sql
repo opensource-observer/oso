@@ -1,9 +1,9 @@
 MODEL (
   name oso.int_superchain_s7_relational_metrics_by_project,
-  description "S7 Retro Funding relational metrics by project (for API)",
+  description "S7 Retro Funding relational metrics by project",
   dialect trino,
   kind full,
-  grain (project_id, sample_date),
+  grain (project_id, sample_date, metric_name),
   tags (
     'entity_category=project'
   ),
