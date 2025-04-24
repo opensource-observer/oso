@@ -1,6 +1,7 @@
 import React, { ReactNode } from "react";
 import { Provider } from "@supabase/supabase-js";
 import { useRouter, usePathname } from "next/navigation";
+import { usePostHog } from "posthog-js/react";
 import { assertNever, spawn } from "@opensource-observer/utils";
 import { supabaseClient } from "../../lib/clients/supabase";
 import { RegistrationProps } from "../../lib/types/plasmic";
@@ -53,6 +54,7 @@ function AuthActions(props: AuthActionsProps) {
     scopes,
     redirectOnComplete,
   } = props;
+  const posthog = usePostHog();
   const router = useRouter();
   const path = usePathname();
   const signInWithOAuth = async () => {
@@ -74,6 +76,8 @@ function AuthActions(props: AuthActionsProps) {
 
   const signOut = async () => {
     const { error } = await supabaseClient.auth.signOut();
+    // Make sure we dis-associate the logged in user
+    posthog.reset();
     console.log("Supabase signout: ", error);
     if (redirectOnComplete) {
       router.push(redirectOnComplete);
