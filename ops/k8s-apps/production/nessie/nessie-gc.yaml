@@ -1,0 +1,37 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: nessie-gc-job
+spec:
+  schedule: "0 0 * * 3"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: nessie-gc
+              image: ghcr.io/projectnessie/nessie-gc:0.103.3
+              command:
+                - /bin/bash
+                - -c
+                - |
+                  java -jar /nessie-gc.jar gc \
+                    --uri=http://production-nessie.production-nessie.svc.cluster.local:19120/api/v2 \
+                    --jdbc-url=jdbc:postgresql://production-nessie-cloudsql-proxy-gcloud-sqlproxy.production-nessie-cloudsql-proxy.svc.cluster.local:5432/nessie-gc \
+                    --jdbc-user=$JDBC_USER \
+                    --jdbc-password=$JDBC_PASSWORD \
+                    --jdbc-schema=CREATE_IF_NOT_EXISTS \
+                    --default-cutoff=P10D
+              env:
+                - name: JDBC_USER
+                  value: gcp:secretmanager:production-nessie-db-user/versions/latest
+                - name: JDBC_PASSWORD
+                  value: gcp:secretmanager:production-nessie-db-password/versions/latest
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 512Mi
+                limits:
+                  memory: 512Mi
+          restartPolicy: Never
+          serviceAccountName: production-nessie
