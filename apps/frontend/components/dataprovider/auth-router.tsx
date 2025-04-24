@@ -1,5 +1,6 @@
 import { ReactNode } from "react";
 import { useAsync } from "react-use";
+import { usePostHog } from "posthog-js/react";
 import {
   CommonDataProviderProps,
   CommonDataProviderRegistration,
@@ -50,6 +51,7 @@ function AuthRouter(props: AuthRouterProps) {
     testNoAuth,
   } = props;
   const key = variableName ?? DEFAULT_PLASMIC_VARIABLE;
+  const posthog = usePostHog();
 
   const {
     value: data,
@@ -65,20 +67,13 @@ function AuthRouter(props: AuthRouterProps) {
     const {
       data: { session },
     } = await supabaseClient.auth.getSession();
-    // Identify the user via Segment
-    /**
+    // Identify the user via PostHog
     if (user) {
-      spawn(
-        clientAnalytics!.identify({
-          userId: user.id,
-          traits: {
-            name: user.user_metadata?.name,
-            email: user.email,
-          },
-        }),
-      );
+      posthog?.identify(user.id, {
+        name: user.user_metadata?.name,
+        email: user.email,
+      });
     }
-    */
 
     console.log("User: ", user);
     console.log("Session: ", session);
