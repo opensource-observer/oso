@@ -1,14 +1,7 @@
 MODEL(
   name oso.int_superchain_s7_onchain_metrics_by_project,
   description 'S7 onchain metrics by project with various aggregations and filters',
-  kind incremental_by_time_range(
-   time_column sample_date,
-   batch_size 60,
-   batch_concurrency 1,
-   lookback 7
-  ),
-  start '2024-09-01',
-  cron '@daily',
+  kind full,
   dialect trino,
   partitioned_by DAY("sample_date"),
   grain(sample_date, chain, project_id, metric_name),
@@ -20,87 +13,33 @@ MODEL(
   )
 );
 
-@DEF(direct_invocation_weight, 0.5);
-@DEF(internal_invocation_weight, 0.5);
 
--- Get all events for projects in the measurement period
 WITH all_events AS (
   SELECT
-    e.project_id,
-    DATE_TRUNC('DAY', e.time::DATE) AS bucket_day,
-    DATE_TRUNC('MONTH', e.time::DATE) AS bucket_month,
-    e.event_type,
-    e.event_source AS chain,
-    e.from_artifact_id,
-    e.to_artifact_id,
-    e.gas_fee,
-    e.transaction_hash,
-    COALESCE(users.is_farcaster_user, false) AS is_farcaster_user,
-    COALESCE(
-      CASE
-        WHEN worldchain_users.verified_until > e.time
-        THEN true 
-        ELSE false
-      END,
-      false
-    ) AS is_worldchain_verified
-  FROM oso.int_superchain_events_by_project AS e
-  LEFT OUTER JOIN oso.int_superchain_onchain_user_labels AS users
-    ON e.from_artifact_id = users.artifact_id
-  LEFT OUTER JOIN oso.int_worldchain_verified_addresses AS worldchain_users
-    ON e.from_artifact_id = worldchain_users.user_id
-  WHERE e.time BETWEEN @start_dt AND @end_dt
+    events.project_id,
+    DATE_TRUNC('MONTH', events.time::DATE) AS sample_date,
+    events.event_type,
+    events.event_source AS chain,
+    events.from_artifact_id,
+    events.gas_fee,
+    events.transaction_hash,
+    events.event_weight,
+    COALESCE(users.is_farcaster_user, false) AS is_farcaster_user
+  FROM oso.int_superchain_s7_onchain_builder_events AS events
+  LEFT JOIN oso.int_superchain_onchain_user_labels AS users
+    ON events.from_artifact_id = users.artifact_id
 ),
 
-base_events AS (
-  SELECT *
-  FROM all_events
-  WHERE event_type IN (
-    'CONTRACT_INVOCATION',
-    'CONTRACT_INTERNAL_INVOCATION'
-  )
-),
-
-aa_events AS (
-  SELECT *
-  FROM all_events
-  WHERE event_type IN (
-    'CONTRACT_INVOCATION_VIA_USEROP',
-    'CONTRACT_INVOCATION_VIA_PAYMASTER',
-    'CONTRACT_INVOCATION_VIA_BUNDLER'
-  )
-),
-
--- Calculate number of projects involved in internal invocations per transaction
-internal_projects_per_tx AS (
-  SELECT 
-    transaction_hash,
-    COUNT(DISTINCT project_id) as num_internal_projects
-  FROM base_events
-  WHERE event_type = 'CONTRACT_INTERNAL_INVOCATION'
-  GROUP BY transaction_hash
-),
-
--- Calculate weights for each event
-weighted_events AS (
+grouped_events AS (
   SELECT
-    e.*,
-    COALESCE(i.num_internal_projects, 0) as num_internal_projects,
-    CASE
-      WHEN e.event_type = 'CONTRACT_INVOCATION' THEN
-        CASE 
-          -- No internal projects, get full weight
-          WHEN COALESCE(i.num_internal_projects, 0) = 0 THEN 1.0
-          -- Has internal projects, get 50%
-          ELSE @direct_invocation_weight  
-        END
-      WHEN e.event_type = 'CONTRACT_INTERNAL_INVOCATION' THEN
-        -- Split remaining 50% among internal projects
-        @internal_invocation_weight / NULLIF(i.num_internal_projects, 0)
-    END as transaction_weight
-  FROM base_events e
-  LEFT JOIN internal_projects_per_tx i
-    ON e.transaction_hash = i.transaction_hash
+    sample_date,
+    project_id,
+    chain,
+    event_type,
+    COUNT(*) AS count_events,
+    SUM(gas_fee) AS gas_fee,
+  FROM all_events
+  GROUP BY 1, 2, 3, 4
 ),
 
 -- Amortized transaction counts
@@ -108,10 +47,10 @@ amortized_transaction_count AS (
   SELECT
     project_id,
     chain,
-    bucket_month AS sample_date,
+    sample_date,
     'amortized_contract_invocations_monthly' AS metric_name,
-    SUM(transaction_weight) AS amount
-  FROM weighted_events
+    SUM(event_weight) AS amount
+  FROM all_events
   GROUP BY 1, 2, 3
 ),
 
@@ -120,10 +59,10 @@ transaction_count AS (
   SELECT
     project_id,
     chain,
-    bucket_month AS sample_date,
+    sample_date,
     'transactions_monthly' AS metric_name,
-    APPROX_DISTINCT(transaction_hash) AS amount
-  FROM base_events
+    SUM(count_events) AS amount
+  FROM grouped_events
   WHERE event_type = 'CONTRACT_INVOCATION'
   GROUP BY 1, 2, 3
 ),
@@ -133,11 +72,11 @@ internal_transaction_count AS (
   SELECT
     project_id,
     chain,
-    bucket_month AS sample_date,
+    sample_date,
     'internal_transactions_monthly' AS metric_name,
-    APPROX_DISTINCT(transaction_hash) AS amount
-  FROM base_events
-  WHERE event_type = 'CONTRACT_INTERNAL_INVOCATION'
+    SUM(count_events) AS amount
+  FROM grouped_events
+  WHERE event_type != 'CONTRACT_INVOCATION'
   GROUP BY 1, 2, 3
 ),
 
@@ -146,10 +85,10 @@ contract_invocations_count AS (
   SELECT
     project_id,
     chain,
-    bucket_month AS sample_date,
+    sample_date,
     'contract_invocations_monthly' AS metric_name,
-    APPROX_DISTINCT(transaction_hash) AS amount
-  FROM weighted_events
+    SUM(count_events) AS amount
+  FROM grouped_events
   GROUP BY 1, 2, 3
 ),
 
@@ -158,41 +97,43 @@ aa_userop_count AS (
   SELECT
     project_id,
     chain,
-    bucket_month AS sample_date,
+    sample_date,
     'account_abstraction_userops_monthly' AS metric_name,
-    COUNT(*) AS amount
-  FROM aa_events
+    SUM(count_events) AS amount
+  FROM grouped_events
+  WHERE event_type IN (
+    'CONTRACT_INVOCATION_VIA_USEROP',
+    'CONTRACT_INVOCATION_VIA_PAYMASTER',
+    'CONTRACT_INVOCATION_VIA_BUNDLER'
+  )
+  GROUP BY 1, 2, 3
+),
+
+-- Worldchain events
+worldchain_events AS (
+  SELECT
+    project_id,
+    chain,
+    sample_date,
+    'worldchain_events_monthly' AS metric_name,
+    SUM(count_events) AS amount
+  FROM grouped_events
+  WHERE event_type IN (
+    'WORLDCHAIN_VERIFIED_USEROP',
+    'WORLDCHAIN_NONVERIFIED_USEROP'
+  )
   GROUP BY 1, 2, 3
 ),
 
 -- Gas fees
 transaction_gas_fee AS (
-  WITH project_event_types AS (
-    -- First, identify which projects have direct CONTRACT_INVOCATION events
-    SELECT DISTINCT project_id, chain
-    FROM base_events
-    WHERE event_type = 'CONTRACT_INVOCATION'
-  )
   SELECT
     project_id,
     chain,
-    bucket_month AS sample_date,
+    sample_date,
     'gas_fees_monthly' AS metric_name,
     SUM(gas_fee) AS amount
-  FROM weighted_events AS e
-  WHERE (
-    -- Include CONTRACT_INVOCATION events for all projects that have them
-    event_type = 'CONTRACT_INVOCATION'
-    OR
-    -- Include CONTRACT_INTERNAL_INVOCATION only for projects that don't have direct invocations
-    (event_type = 'CONTRACT_INTERNAL_INVOCATION' 
-     AND NOT EXISTS (
-       SELECT 1 
-       FROM project_event_types AS pet 
-       WHERE pet.project_id = e.project_id 
-         AND pet.chain = e.chain
-     ))
-  )
+  FROM grouped_events
   GROUP BY 1, 2, 3
 ),
 
@@ -201,8 +142,7 @@ defillama_tvl_events AS (
   SELECT
     dl.project_id,
     UPPER(dl.from_artifact_namespace) AS chain,
-    DATE_TRUNC('DAY', dl.bucket_day::DATE) AS bucket_day,
-    DATE_TRUNC('MONTH', dl.bucket_day::DATE) AS bucket_month,
+    DATE_TRUNC('MONTH', dl.bucket_day::DATE) AS sample_date,
     dl.amount
   FROM oso.int_events_daily_to_project__defillama_tvl AS dl
   WHERE
@@ -218,9 +158,9 @@ defillama_tvl AS (
   SELECT
     project_id,
     chain,
-    bucket_month AS sample_date,
+    sample_date,
     'average_tvl_monthly' AS metric_name,
-    SUM(amount) / DAY(DATE_ADD('MONTH', 1, bucket_month) - INTERVAL '1' DAY)
+    SUM(amount) / DAY(DATE_ADD('MONTH', 1, sample_date) - INTERVAL '1' DAY)
       AS amount
   FROM defillama_tvl_events
   GROUP BY 1, 2, 3
@@ -231,7 +171,7 @@ monthly_active_farcaster_users AS (
   SELECT
     project_id,
     chain,
-    bucket_month AS sample_date,
+    sample_date,
     'active_farcaster_users_monthly' AS metric_name,
     APPROX_DISTINCT(from_artifact_id) AS amount
   FROM all_events
@@ -244,11 +184,11 @@ monthly_active_worldchain_verified_addresses AS (
   SELECT
     project_id,
     chain,
-    bucket_month AS sample_date,
+    sample_date,
     'active_worldchain_verified_addresses_monthly' AS metric_name,
     APPROX_DISTINCT(from_artifact_id) AS amount
   FROM all_events
-  WHERE is_worldchain_verified = true
+  WHERE event_type = 'WORLDCHAIN_VERIFIED_USEROP'
   GROUP BY 1, 2, 3
 ),
 
@@ -257,7 +197,7 @@ monthly_active_addresses AS (
   SELECT
     project_id,
     chain,
-    bucket_month AS sample_date,
+    sample_date,
     'active_addresses_monthly' AS metric_name,
     APPROX_DISTINCT(from_artifact_id) AS amount
   FROM all_events
@@ -279,6 +219,9 @@ union_all_metrics AS (
   UNION ALL
   SELECT *
   FROM aa_userop_count
+  UNION ALL
+  SELECT *
+  FROM worldchain_events
   UNION ALL
   SELECT *
   FROM transaction_gas_fee
