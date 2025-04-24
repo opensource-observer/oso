@@ -1,0 +1,120 @@
+MODEL (
+  name oso.int_superchain_s7_timeseries_metrics_by_project,
+  description "S7 Retro Funding timeseries metrics by project (for API)",
+  dialect trino,
+  kind full,
+  grain (project_id, sample_date),
+  tags (
+    'entity_category=project'
+  ),
+  audits (
+    has_at_least_n_rows(threshold := 0)
+  )
+);
+
+
+@DEF(default_sample_date, DATE '2025-03-01');
+
+WITH onchain_builder_metrics AS (
+  SELECT
+    project_id,
+    sample_date,
+    CONCAT('S7_ONCHAIN_BUILDERS_', metric_name) AS metric,
+    SUM(amount)::DOUBLE AS amount,
+    '' AS unit
+  FROM oso.int_superchain_s7_onchain_metrics_by_project
+  GROUP BY 1, 2, 3
+),
+
+devtooling_metrics AS (
+  SELECT DISTINCT
+    project_id,
+    @default_sample_date AS sample_date,
+    'S7_DEVTOOLING_is_eligible' AS metric,
+    is_eligible::DOUBLE AS amount,
+    'boolean' AS unit
+  FROM oso.int_superchain_s7_devtooling_metrics_by_project
+  UNION ALL
+  SELECT DISTINCT
+    project_id,
+    @default_sample_date AS sample_date,
+    'S7_DEVTOOLING_incremental_star_count' AS metric,
+    star_count::DOUBLE AS amount,
+    'stars' AS unit
+  FROM oso.int_superchain_s7_devtooling_metrics_by_project
+  UNION ALL
+  SELECT DISTINCT
+    project_id,
+    @default_sample_date AS sample_date,
+    'S7_DEVTOOLING_incremental_fork_count' AS metric,
+    fork_count::DOUBLE AS amount,
+    'forks' AS unit
+  FROM oso.int_superchain_s7_devtooling_metrics_by_project
+  UNION ALL
+  SELECT DISTINCT
+    project_id,
+    @default_sample_date AS sample_date,
+    'S7_DEVTOOLING_num_packages_in_deps_dev' AS metric,
+    num_packages_in_deps_dev::DOUBLE AS amount,
+    'packages' AS unit
+  FROM oso.int_superchain_s7_devtooling_metrics_by_project
+  UNION ALL
+  SELECT DISTINCT
+    project_id,
+    @default_sample_date AS sample_date,
+    'S7_DEVTOOLING_package_connection_count' AS metric,
+    package_connection_count::DOUBLE AS amount,
+    'connections to onchain builder projects' AS unit
+  FROM oso.int_superchain_s7_devtooling_metrics_by_project
+  UNION ALL
+  SELECT DISTINCT
+    project_id,
+    @default_sample_date AS sample_date,
+    'S7_DEVTOOLING_developer_connection_count' AS metric,
+    developer_connection_count::DOUBLE AS amount,
+    'connections to trusted onchain developers' AS unit
+  FROM oso.int_superchain_s7_devtooling_metrics_by_project
+  UNION ALL
+  SELECT DISTINCT
+    project_id,
+    @default_sample_date AS sample_date,
+    'S7_DEVTOOLING_onchain_builder_oso_project_count' AS metric,
+    ARRAY_LENGTH(onchain_builder_oso_project_ids)::DOUBLE AS amount,
+    'onchain builder projects' AS unit
+  FROM oso.int_superchain_s7_devtooling_metrics_by_project
+  UNION ALL
+  SELECT DISTINCT
+    project_id,
+    @default_sample_date AS sample_date,
+    'S7_DEVTOOLING_onchain_builder_op_atlas_count' AS metric,
+    ARRAY_LENGTH(onchain_builder_op_atlas_ids)::DOUBLE AS amount,
+    'onchain builder projects' AS unit
+  FROM oso.int_superchain_s7_devtooling_metrics_by_project
+),
+
+rewards AS (
+  SELECT
+    project_id,
+    sample_date,
+    metric,
+    amount,
+    'OP' AS unit
+  FROM oso.int_superchain_s7_m1_rewards
+),
+
+
+all_metrics AS (
+  SELECT * FROM onchain_builder_metrics
+  UNION ALL
+  SELECT * FROM rewards
+  UNION ALL
+  SELECT * FROM devtooling_metrics
+)
+
+SELECT
+  project_id,
+  sample_date,
+  metric,
+  amount,
+  unit
+FROM all_metrics
