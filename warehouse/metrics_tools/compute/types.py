@@ -9,7 +9,7 @@ from fastapi import FastAPI
 from metrics_tools.definition import MetricModelDefinition
 from pydantic import BaseModel, Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from sqlmesh.core.dialect import parse_one
+from sqlmesh.core.dialect import exp, parse_one
 
 logger = logging.getLogger(__name__)
 
@@ -59,7 +59,12 @@ class ColumnsDefinition(BaseModel):
 
     def columns_as(self, dialect: str) -> t.List[t.Tuple[str, str]]:
         return [
-            (col_name, parse_one(col_type, dialect=self.dialect).sql(dialect=dialect))
+            (
+                col_name,
+                parse_one(col_type, into=exp.DataType, dialect=self.dialect).sql(
+                    dialect=dialect
+                ),
+            )
             for col_name, col_type in self.columns
         ]
 
