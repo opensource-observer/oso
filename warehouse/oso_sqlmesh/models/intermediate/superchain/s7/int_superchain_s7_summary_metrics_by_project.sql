@@ -3,7 +3,7 @@ MODEL (
   description "S7 Retro Funding summary metrics by project",
   dialect trino,
   kind full,
-  grain (project_id, sample_date),
+  grain (project_id, sample_date, metric_name),
   tags (
     'entity_category=project'
   ),
