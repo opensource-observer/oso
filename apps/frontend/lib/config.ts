@@ -13,7 +13,11 @@ export const requireEnv = (value: string | undefined, identifier: string) => {
 
 export const NODE_ENV = process.env.NODE_ENV ?? "development";
 export const STATIC_EXPORT = !!process.env.STATIC_EXPORT;
-export const SEGMENT_KEY = process.env.NEXT_PUBLIC_SEGMENT_KEY ?? "MISSING";
+export const POSTHOG_HOST =
+  process.env.NEXT_PUBLIC_POSTHOG_HOST ?? "https://us.i.posthog.com";
+export const POSTHOG_KEY = process.env.NEXT_PUBLIC_POSTHOG_KEY ?? "MISSING";
+export const GOOGLE_ANALYTICS_KEY =
+  process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_KEY ?? "MISSING";
 export const PLASMIC_PROJECT_ID = process.env.PLASMIC_PROJECT_ID ?? "MISSING";
 export const PLASMIC_PROJECT_API_TOKEN =
   process.env.PLASMIC_PROJECT_API_TOKEN ?? "MISSING";
@@ -27,8 +31,6 @@ export const DB_GRAPHQL_URL = requireEnv(
 );
 export const HASURA_URL = process.env.HASURA_URL ?? "MISSING";
 export const HASURA_PAT = process.env.HASURA_PAT;
-export const CUBE_URL = process.env.NEXT_PUBLIC_CUBE_URL ?? "MISSING";
-export const CUBE_TOKEN = process.env.NEXT_PUBLIC_CUBE_TOKEN ?? "MISSING";
 export const OSO_API_KEY = process.env.OSO_API_KEY;
 
 export const SUPABASE_URL = requireEnv(
