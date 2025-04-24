@@ -105,7 +105,7 @@ SELECT
   metric_name::VARCHAR,
   display_name::VARCHAR,
   description::VARCHAR,
-  rendered_sql::ARRAY<VARCHAR>,
+  rendered_sql,
   sql_source_path::VARCHAR,
   aggregation_function::VARCHAR
 FROM metrics_v0_no_casting
