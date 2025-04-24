@@ -56,3 +56,21 @@ def hex_to_int(
             to=to_data_type_exp,
         )
     raise ValueError(f"Unsupported dialect: {evaluator.engine_adapter.dialect}")
+
+@macro()
+def safe_hex_to_int(
+    evaluator: MacroEvaluator,
+    hex_exp: exp.Expression,
+    to_data_type: str = "BIGINT",
+    to_data_type_dialect: str = "trino",
+    no_prefix: bool = True,
+):
+    """Converts a hex string to an integer."""
+    from sqlmesh.core.dialect import parse_one
+
+    if evaluator.runtime_stage in ["loading", "creating"]:
+        return parse_one("1::BIGINT", dialect="trino")
+
+
+    resolved = hex_to_int(evaluator, hex_exp, to_data_type, to_data_type_dialect, no_prefix)
+    return exp.Try(this=resolved)

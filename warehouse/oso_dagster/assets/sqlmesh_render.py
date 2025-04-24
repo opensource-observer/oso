@@ -4,6 +4,7 @@ import dlt
 import sqlglot as sql
 from dagster import AssetExecutionContext
 from dagster_sqlmesh import SQLMeshResource
+from dagster_sqlmesh.controller.base import DEFAULT_CONTEXT_FACTORY
 from sqlglot import exp
 
 from ..factories import dlt_factory
@@ -30,7 +31,7 @@ def get_rendered_models(
     Yields:
         Dict: Information about each rendered model
     """
-    controller = sqlmesh.get_controller(log_override=context.log)
+    controller = sqlmesh.get_controller(context_factory=DEFAULT_CONTEXT_FACTORY, log_override=context.log)
 
     with controller.instance(environment, "model_renderer") as mesh:
         models = mesh.models()
