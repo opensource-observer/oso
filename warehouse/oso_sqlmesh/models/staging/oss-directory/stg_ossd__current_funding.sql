@@ -15,7 +15,7 @@ SELECT
     CONCAT(
       COALESCE(funding.to_project_name, ''),
       COALESCE(funding.from_funder_name, ''),
-      COALESCE(funding.funding_date, '')
+      COALESCE(CAST(funding.funding_date AS VARCHAR), '')
     )
   ) AS funding_id,
   'OSS_FUNDING' AS funding_source,
