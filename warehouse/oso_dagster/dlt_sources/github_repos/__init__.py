@@ -1,9 +1,12 @@
+import csv
 import logging
 import typing as t
+from base64 import b64decode
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from enum import Enum
 from functools import partial, wraps
+from io import StringIO
 from urllib.parse import ParseResult, urlparse
 
 import arrow
@@ -15,6 +18,7 @@ from githubkit import GitHub
 from githubkit.exception import RequestFailed
 from githubkit.retry import RetryChainDecision, RetryRateLimit, RetryServerError
 from githubkit.versions.latest.models import (
+    ContentFile,
     FullRepository,
     MinimalRepository,
     MinimalRepositoryPropLicense,
@@ -474,3 +478,48 @@ def oss_directory_github_sbom_resource(
     )
 
     yield from with_progress_logger(funcs)
+
+
+@dlt.resource(
+    name="funding",
+    table_name="funding",
+    write_disposition="replace",
+)
+async def oss_directory_github_funding_resource(
+    owner: str,
+    repo: str,
+    path: str,
+    /,
+    gh_token: str = dlt.secrets.value,
+    rate_limit_max_retry: int = 5,
+    server_error_max_rety: int = 3,
+):
+    config = GithubClientConfig(
+        gh_token=gh_token,
+        rate_limit_max_retry=rate_limit_max_retry,
+        server_error_max_rety=server_error_max_rety,
+    )
+
+    gh = GithubRepositoryResolver.get_github_client(config)
+    request = await gh.rest.repos.async_get_content(
+        owner=owner,
+        repo=repo,
+        path=path,
+        headers={
+            "Accept": "application/vnd.github.object+json",
+        },
+    )
+    request.raise_for_status()
+
+    if not isinstance(request.parsed_data, ContentFile):
+        raise ValueError(f"Expected ContentFile, got {type(request.parsed_data)}")
+
+    src = StringIO(
+        b64decode(request.parsed_data.content).decode("utf-8")
+        if request.parsed_data.encoding == "base64"
+        else request.parsed_data.content
+    )
+    reader = csv.DictReader(src)
+
+    for row in reader:
+        yield row
