@@ -39,6 +39,18 @@ const nextConfig = {
               source: "/api/auth",
               destination: "/api/v1/auth",
             },
+            {
+              source: "/ingest/static/:path*",
+              destination: "https://us-assets.i.posthog.com/static/:path*",
+            },
+            {
+              source: "/ingest/:path*",
+              destination: "https://us.i.posthog.com/:path*",
+            },
+            {
+              source: "/ingest/decide",
+              destination: "https://us.i.posthog.com/decide",
+            },
           ];
         },
         async redirects() {
@@ -96,6 +108,8 @@ const nextConfig = {
   experimental: {
     serverComponentsExternalPackages: ["typeorm", "graphql"],
   },
+  // This is required to support PostHog trailing slash API requests
+  skipTrailingSlashRedirect: true,
   webpack: (config, { isServer }) => {
     if (isServer) {
       config.plugins = [...config.plugins];

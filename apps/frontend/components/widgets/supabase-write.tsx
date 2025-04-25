@@ -4,6 +4,7 @@ import Snackbar from "@mui/material/Snackbar";
 import Alert from "@mui/material/Alert";
 import { ADT } from "ts-adt";
 import { HttpError, assertNever, spawn } from "@opensource-observer/utils";
+import { usePostHog } from "posthog-js/react";
 import { RegistrationProps } from "../../lib/types/plasmic";
 import { supabaseClient } from "../../lib/clients/supabase";
 
@@ -81,6 +82,7 @@ function SupabaseWrite(props: SupabaseWriteProps) {
     redirectOnComplete,
     errorCodeMap,
   } = props;
+  const posthog = usePostHog();
   const router = useRouter();
   const [snackbarState, setSnackbarState] = React.useState<SnackbarState>({
     _type: "closed",
@@ -133,6 +135,11 @@ function SupabaseWrite(props: SupabaseWriteProps) {
 
     // Execute query
     const { error, status } = await query;
+    posthog.capture("supabase_write", {
+      tableName,
+      actionType,
+      status,
+    });
     if (error) {
       console.warn("SupabaseWrite error: ", error);
       setSnackbarState({ _type: "error", ...error });
