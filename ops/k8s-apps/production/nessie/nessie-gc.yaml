@@ -15,7 +15,7 @@ spec:
                 - /bin/bash
                 - -c
                 - |
-                  java -jar /nessie-gc.jar gc \
+                  java -Xmx512M -jar /nessie-gc.jar gc \
                     --uri=http://production-nessie.production-nessie.svc.cluster.local:19120/api/v2 \
                     --jdbc-url=jdbc:postgresql://production-nessie-cloudsql-proxy-gcloud-sqlproxy.production-nessie-cloudsql-proxy.svc.cluster.local:5432/nessie-gc \
                     --jdbc-user=$JDBC_USER \
@@ -29,9 +29,9 @@ spec:
                   value: gcp:secretmanager:production-nessie-db-password/versions/latest
               resources:
                 requests:
-                  cpu: 100m
+                  cpu: 1
                   memory: 512Mi
                 limits:
-                  memory: 512Mi
+                  memory: 1Gi
           restartPolicy: Never
           serviceAccountName: production-nessie
