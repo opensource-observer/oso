@@ -3,6 +3,7 @@ kind: Kustomization
 resources:
   - ../../base/nessie
   - ./secrets.yaml
+  - ./nessie-gc.yaml
 namespace: production-nessie
 patches:
   - path: ./custom-helm-values.yaml
