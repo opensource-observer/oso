@@ -19,20 +19,19 @@ env:
   DOCS_ALGOLIA_API_KEY: "test"
   DOCS_ALGOLIA_INDEX: "test"
   DOCS_GOOGLE_ANALYTICS_KEY: "test"
-  # Hasura variables
-  DBT_TARGET: "production"
+  # dbt variables
+  #DBT_TARGET: "production"
   # Google variables
-  GOOGLE_PROJECT_ID: "opensource-observer"
-  GOOGLE_TEST_DUMMY_CREDENTIALS_JSON: ${{ vars.GOOGLE_TEST_DUMMY_CREDENTIALS_JSON }}
+  #GOOGLE_PROJECT_ID: "opensource-observer"
+  #GOOGLE_TEST_DUMMY_CREDENTIALS_JSON: ${{ vars.GOOGLE_TEST_DUMMY_CREDENTIALS_JSON }}
+  # Clickhouse variables
   CLICKHOUSE_URL: "http://127.0.0.1:8123" # dummy value
   CLICKHOUSE_USERNAME: "username"
   CLICKHOUSE_PASSWORD: "password"
   # SQLMesh variables
   SQLMESH_DUCKDB_LOCAL_PATH: "/tmp/oso.duckdb"
-
-  # should not be set to a legitimate value for testing. This will use up API
-  # quota otherwise
-  DUNE_API_KEY: "none"
+  # should not be set to a legitimate value for testing. This will use up API quota otherwise
+  #DUNE_API_KEY: "none"
 
 # Trigger the workflow when:
 on:
@@ -122,11 +121,11 @@ jobs:
           version: nightly-87bc53fc6c874bd4c92d97ed180b949e3a36d78c
         if: ${{ matrix.component == 'node' }}        
 
-      - name: Authenticate to google (test dummy)
-        uses: google-github-actions/auth@v2
-        with:
-          credentials_json: "${{ env.GOOGLE_TEST_DUMMY_CREDENTIALS_JSON }}"
-          create_credentials_file: true
+      #- name: Authenticate to google (test dummy)
+      #  uses: google-github-actions/auth@v2
+      #  with:
+      #    credentials_json: "${{ env.GOOGLE_TEST_DUMMY_CREDENTIALS_JSON }}"
+      #    create_credentials_file: true
 
       # ─────────────────────────────────────────────────────────────────────
       # Python steps
@@ -164,11 +163,11 @@ jobs:
 
       # ─────────────────────────────────────────────────────────────────────
       # Node steps
-      - name: Run supabase local
-        id: supabase
-        run: |
-          bash .github/scripts/run-supabase-local.sh apps/frontend
-        if: ${{ matrix.component == 'node' }}
+      #- name: Run supabase local
+      #  id: supabase
+      #  run: |
+      #    bash .github/scripts/run-supabase-local.sh apps/frontend
+      #  if: ${{ matrix.component == 'node' }}
 
       - name: Build (Node)
         uses: nick-fields/retry@v3
