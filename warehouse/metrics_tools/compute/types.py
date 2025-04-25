@@ -63,10 +63,13 @@ class ColumnsDefinition(BaseModel):
         return [
             (
                 col_name,
-                exp.DataType(
-                    this=parse_one(
+                # Because of clickhouse, we need to do this workaround to remove the
+                # Nullable references.
+                exp.DataType.build(
+                    dtype=parse_one(
                         col_type, into=exp.DataType, dialect=self.dialect
-                    ).this,
+                    ).sql(dialect=self.dialect),
+                    dialect=dialect,
                     nullable=False,
                 ).sql(dialect=dialect),
             )
