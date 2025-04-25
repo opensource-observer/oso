@@ -50,6 +50,7 @@ DUCKDB_TO_PANDAS_TYPE_MAP = {
     "BLOB": "bytes",
     "BYTEA": "bytes",
     "NUMERIC": "float64",
+    "DECIMAL": "float64",
     "DECIMAL(18, 3)": "float64",
 }
 
@@ -62,9 +63,12 @@ class ColumnsDefinition(BaseModel):
         return [
             (
                 col_name,
-                parse_one(col_type, into=exp.DataType, dialect=self.dialect).sql(
-                    dialect=dialect
-                ),
+                exp.DataType(
+                    this=parse_one(
+                        col_type, into=exp.DataType, dialect=self.dialect
+                    ).this,
+                    nullable=False,
+                ).sql(dialect=dialect),
             )
             for col_name, col_type in self.columns
         ]
