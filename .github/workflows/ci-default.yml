@@ -25,7 +25,7 @@ env:
   #GOOGLE_PROJECT_ID: "opensource-observer"
   #GOOGLE_TEST_DUMMY_CREDENTIALS_JSON: ${{ vars.GOOGLE_TEST_DUMMY_CREDENTIALS_JSON }}
   # Supabase
-  NEXT_PUBLIC_SUPABASE_URL=https://test.supabase.co
+    NEXT_PUBLIC_SUPABASE_URL: "https://test.supabase.co"
   NEXT_PUBLIC_SUPABASE_ANON_KEY: "test"
   SUPABASE_SERVICE_KEY: "test"
   SUPABASE_JWT_SECRET: "test"
