@@ -21,11 +21,10 @@ SELECT
   'OSS_FUNDING' AS funding_source,
   'oso' AS funding_namespace,
   LOWER(funding.to_project_name) AS to_project_name,
-  CAST(REPLACE(COALESCE(CAST(funding.amount AS VARCHAR), '0'), ',', '')
-    AS DOUBLE) AS amount,
-  funding.funding_date::TIMESTAMP AS funding_date,
+  COALESCE(funding.amount, 0.0) AS amount,
+  funding.funding_date AS funding_date,
   LOWER(funding.from_funder_name) AS from_funder_name,
   LOWER(funding.grant_pool_name) AS grant_pool_name,
-  funding.metadata::JSON AS metadata,
+  funding.metadata AS metadata,
   funding.file_path
 FROM @oso_source('bigquery.ossd.funding') AS funding
