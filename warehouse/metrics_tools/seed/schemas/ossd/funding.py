@@ -1,3 +1,4 @@
+from datetime import date
 
 from metrics_tools.seed.types import Column, SeedConfig
 from pydantic import BaseModel
@@ -9,8 +10,8 @@ class Funding(BaseModel):
     to_project_name: str | None = Column(
         "VARCHAR", description="The name of the project receiving funding"
     )
-    amount: str | None = Column("DOUBLE", description="The amount of funding")
-    funding_date: str | None = Column(
+    amount: float | None = Column("DOUBLE", description="The amount of funding")
+    funding_date: date | None = Column(
         "DATE", description="The date the funding was provided"
     )
     from_funder_name: str | None = Column(
@@ -45,8 +46,8 @@ seed = SeedConfig(
     rows=[
         Funding(
             to_project_name="1hive",
-            amount="3026.0",
-            funding_date="2023-03-29",
+            amount=3026.0,
+            funding_date=date(2023, 3, 29),
             from_funder_name="dao-drops-dorgtech",
             grant_pool_name="round_1",
             metadata="{\"application_name\": \"Gardens\", \"application_url\": \"https://daodrops.io/\", \"token_amount\": 3026, \"token_unit\": \"DAI\"}",
@@ -56,8 +57,8 @@ seed = SeedConfig(
         ),
         Funding(
             to_project_name="bankless-africa",
-            amount="4690.0",
-            funding_date="2023-03-29",
+            amount=4690.0,
+            funding_date=date(2023, 3, 29),
             from_funder_name="dao-drops-dorgtech",
             grant_pool_name="round_1",
             metadata="{\"application_name\": \"Bankless Africa\", \"application_url\": \"https://daodrops.io/\", \"token_amount\": 4690, \"token_unit\": \"DAI\"}",
@@ -67,8 +68,8 @@ seed = SeedConfig(
         ),
         Funding(
             to_project_name="crypto-stats",
-            amount="1271.0",
-            funding_date="2023-03-29",
+            amount=1271.0,
+            funding_date=date(2023, 3, 29),
             from_funder_name="dao-drops-dorgtech",
             grant_pool_name="round_1",
             metadata="{\"application_name\": \"CryptoStats\", \"application_url\": \"https://daodrops.io/\", \"token_amount\": 1271, \"token_unit\": \"DAI\"}",
@@ -78,8 +79,8 @@ seed = SeedConfig(
         ),
         Funding(
             to_project_name="eth-limo",
-            amount="10530.0",
-            funding_date="2023-03-29",
+            amount=10530.0,
+            funding_date=date(2023, 3, 29),
             from_funder_name="dao-drops-dorgtech",
             grant_pool_name="round_1",
             metadata="{\"application_name\": \"eth.limo\", \"application_url\": \"https://daodrops.io/\", \"token_amount\": 10530, \"token_unit\": \"DAI\"}",
@@ -89,8 +90,8 @@ seed = SeedConfig(
         ),
         Funding(
             to_project_name="ethereum-attestation-service",
-            amount="4539.0",
-            funding_date="2023-03-29",
+            amount=4539.0,
+            funding_date=date(2023, 3, 29),
             from_funder_name="dao-drops-dorgtech",
             grant_pool_name="round_1",
             metadata="{\"application_name\": \"Ethereum Attestation Service (EAS)\", \"application_url\": \"https://daodrops.io/\", \"token_amount\": 4539, \"token_unit\": \"DAI\"}",
